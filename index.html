@@ -364,8 +364,8 @@
   const BUCKET   = 'koe-media';
 
   let sb = null;
-  if (SB_URL !== 'https://tmqzqlrpjpydiftlrzmj.supabase.co') {
-    sb = supabase.createClient(SB_URL , SB_KEY );
+  if (SB_URL !== 'YOUR_SUPABASE_URL') {
+    sb = supabase.createClient(SB_URL , SB_KEY )
   } else {
     document.getElementById('sBanner').classList.add('show');
   }

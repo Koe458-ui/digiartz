@@ -1536,9 +1536,20 @@ function closeMenu(){
         /* Clear existing items */
         trackEl.innerHTML = '';
         origCount = 0;
+
+        /* FIX 1: split comma-separated category string and use includes()
+           so multi-category images (e.g. "characters,others") match correctly */
         var list = catFilter
-          ? artworks.filter(function(a){ return (a.category||'').toLowerCase() === catFilter.toLowerCase(); })
+          ? artworks.filter(function(a){
+              var cats = (a.category || 'others').split(',').map(function(s){ return s.trim().toLowerCase(); });
+              return cats.indexOf(catFilter.toLowerCase()) !== -1;
+            })
           : artworks;
+
+        /* FIX 2: always sort newest first by created_at before rendering */
+        list = list.slice().sort(function(a, b){
+          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        });
 
         if(!list.length) return false; /* signal: empty */
 

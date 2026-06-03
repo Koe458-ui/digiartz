@@ -1118,13 +1118,20 @@
     if(m.classList.contains('open')){closeMenu();}else{openMenu();}
   }
   function openMenu(){
-    document.getElementById('sideMenu').classList.add('open');
-    document.getElementById('menuOverlay').classList.add('open');
-  }
-  function closeMenu(){
-    document.getElementById('sideMenu').classList.remove('open');
-    document.getElementById('menuOverlay').classList.remove('open');
-  }
+  document.getElementById('sideMenu').classList.add('open');
+  document.getElementById('menuOverlay').classList.add('open');
+
+  document.body.style.overflow = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
+}
+
+function closeMenu(){
+  document.getElementById('sideMenu').classList.remove('open');
+  document.getElementById('menuOverlay').classList.remove('open');
+
+  document.body.style.overflow = '';
+  document.documentElement.style.overflow = '';
+}
   function smGoHome(){closeMenu();window.scrollTo({top:0,behavior:'smooth'});}
   function smGoAbout(){closeMenu();document.getElementById('about').scrollIntoView({behavior:'smooth'});}
   function smGoContact(){closeMenu();document.getElementById('connect').scrollIntoView({behavior:'smooth'});}

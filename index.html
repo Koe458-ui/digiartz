@@ -71,13 +71,91 @@
     nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.2rem 2rem;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(5,3,8,.95),transparent);backdrop-filter:blur(2px);}
     .nLogo{font-family:var(--fd);font-size:1.1rem;font-weight:700;letter-spacing:.15em;color:var(--tx);text-decoration:none;display:flex;align-items:center;gap:.4rem;}
     .nLogo .s{color:var(--pg);font-size:.7rem;}
-    .nLinks{display:flex;align-items:center;gap:2rem;list-style:none;}
-    .nLinks a{font-family:var(--fm);font-size:.65rem;letter-spacing:.18em;color:var(--txd);text-decoration:none;transition:color .25s;cursor:pointer;}
-    .nLinks a:hover{color:var(--pg);}
-    .nAdm{background:none;border:none;cursor:pointer;color:var(--txd);font-size:1rem;transition:color .25s,transform .25s;padding:.2rem;}
-    .nAdm:hover{color:var(--pg);transform:rotate(30deg);}
-    .nAdm.on{color:var(--pb);}
-    @media(max-width:640px){nav{padding:1rem 1.2rem}.nLinks{gap:1rem}.nLinks a{font-size:.55rem}}
+    /* Hamburger button */
+    .nHam{background:none;border:none;cursor:pointer;color:var(--txd);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding:.3rem;width:36px;height:36px;transition:color .25s;}
+    .nHam:hover{color:var(--pg);}
+    .nHam span{display:block;width:22px;height:1.5px;background:currentColor;transition:background .25s;}
+    @media(max-width:640px){nav{padding:1rem 1.2rem}}
+
+    /* SIDE MENU OVERLAY */
+    #menuOverlay{position:fixed;inset:0;z-index:300;background:rgba(5,3,8,.55);opacity:0;pointer-events:none;transition:opacity .35s ease;backdrop-filter:blur(2px);}
+    #menuOverlay.open{opacity:1;pointer-events:all;}
+
+    /* SIDE PANEL */
+    #sideMenu{
+      position:fixed;top:0;right:0;bottom:0;z-index:301;
+      width:70%;max-width:320px;
+      background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%);
+      border-left:1px solid var(--bdrh);
+      box-shadow:-8px 0 40px rgba(5,3,8,.7), inset 1px 0 0 color-mix(in srgb,var(--tc) 10%,transparent);
+      transform:translateX(100%);
+      transition:transform .38s cubic-bezier(.22,1,.36,1);
+      display:flex;flex-direction:column;
+      overflow:hidden;
+    }
+    #sideMenu.open{transform:translateX(0);}
+
+    /* Desktop: auto-width */
+    @media(min-width:641px){
+      #sideMenu{width:auto;min-width:220px;max-width:280px;}
+    }
+
+    /* Menu top bar */
+    .smTop{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.4rem 1rem;border-bottom:1px solid var(--bdr);flex-shrink:0;}
+    .smLogo{font-family:var(--fd);font-size:.95rem;font-weight:700;letter-spacing:.15em;color:var(--tx);display:flex;align-items:center;gap:.35rem;}
+    .smLogo .s{color:var(--pg);font-size:.6rem;}
+    .smClose{background:none;border:none;cursor:pointer;color:var(--txd);font-size:1.1rem;line-height:1;transition:color .2s,transform .2s;padding:.2rem;}
+    .smClose:hover{color:var(--pg);transform:rotate(90deg);}
+
+    /* Menu body */
+    .smBody{flex:1;padding:.6rem 0;overflow:hidden;}
+
+    /* Menu items */
+    .smItem{
+      display:flex;align-items:center;gap:.65rem;
+      padding:.65rem 1.4rem;
+      font-family:var(--fm);font-size:.65rem;letter-spacing:.2em;
+      color:var(--txd);text-decoration:none;cursor:pointer;
+      background:none;border:none;width:100%;text-align:left;
+      transition:color .2s,background .2s;
+      position:relative;
+    }
+    .smItem:hover{color:var(--ps);background:color-mix(in srgb,var(--tc) 7%,transparent);}
+    .smItem:hover::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--pg);box-shadow:0 0 8px var(--pg);}
+    .smItem.active{color:var(--ps);}
+    .smItem .smIco{color:var(--pg);font-size:.75rem;flex-shrink:0;width:14px;text-align:center;line-height:1;}
+
+    /* Category sub-items */
+    .smCat{
+      display:flex;align-items:center;gap:.65rem;
+      padding:.5rem 1.4rem .5rem 2.6rem;
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.18em;
+      color:var(--txd);text-decoration:none;cursor:pointer;
+      background:none;border:none;width:100%;text-align:left;
+      transition:color .2s,background .2s;
+      position:relative;
+    }
+    .smCat:hover{color:var(--ps);background:color-mix(in srgb,var(--tc) 5%,transparent);}
+    .smCat .smCIco{color:color-mix(in srgb,var(--pg) 70%,transparent);font-size:.65rem;flex-shrink:0;width:12px;text-align:center;}
+
+    /* Divider */
+    .smDiv{height:1px;background:linear-gradient(to right,transparent,var(--bdr),transparent);margin:.35rem 1rem;}
+
+    /* Admin button pinned at bottom */
+    .smFoot{border-top:1px solid var(--bdr);padding:.8rem 1.4rem;flex-shrink:0;}
+    .smAdmin{
+      display:flex;align-items:center;gap:.65rem;
+      padding:.6rem .9rem;
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.18em;
+      color:var(--txd);cursor:pointer;
+      background:color-mix(in srgb,var(--tc) 5%,transparent);
+      border:1px solid var(--bdr);
+      width:100%;text-align:left;
+      transition:all .25s;
+    }
+    .smAdmin:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
+    .smAdmin.on{color:var(--pb);border-color:color-mix(in srgb,var(--pb) 50%,transparent);background:color-mix(in srgb,var(--pb) 8%,transparent);}
+    .smAdmin .smIco{color:inherit;font-size:.8rem;flex-shrink:0;width:14px;text-align:center;}
 
     /* HERO */
     #hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;overflow:hidden;}
@@ -378,33 +456,70 @@
    </a>
   </div>
   <nav>
-   <a class="nLogo" href="#hero">
+   <a class="nLogo" href="#hero" onclick="closeMenu()">
     KOE
-    <span class="s">
-     ✦
-    </span>
+    <span class="s">✦</span>
    </a>
-   <ul class="nLinks">
-    <li>
-     <a onclick="openFG()">
-      GALLERY
-     </a>
-    </li>
-    <li>
-     <a href="#about">
-      ABOUT
-     </a>
-    </li>
-    <li>
-     <a href="#connect">
-      CONTACT
-     </a>
-    </li>
-   </ul>
-   <button class="nAdm" id="admBtn" onclick="handleAdm()" title="Admin">
-    ☀
+   <button class="nHam" id="hamBtn" onclick="toggleMenu()" title="Menu" aria-label="Open menu">
+    <span></span>
+    <span></span>
+    <span></span>
    </button>
   </nav>
+
+  <!-- MENU OVERLAY -->
+  <div id="menuOverlay" onclick="closeMenu()"></div>
+
+  <!-- SIDE PANEL MENU -->
+  <div id="sideMenu" role="dialog" aria-label="Navigation menu">
+   <div class="smTop">
+    <div class="smLogo">KOE <span class="s">✦</span></div>
+    <button class="smClose" onclick="closeMenu()" title="Close">✕</button>
+   </div>
+   <div class="smBody">
+    <!-- Home -->
+    <button class="smItem" onclick="smGoHome()">
+     <span class="smIco">⌂</span>HOME
+    </button>
+    <div class="smDiv"></div>
+    <!-- Gallery -->
+    <button class="smItem" onclick="smOpenGallery()">
+     <span class="smIco">✦</span>GALLERY
+    </button>
+    <!-- Gallery categories -->
+    <button class="smCat" onclick="smOpenCat('characters')">
+     <span class="smCIco">✦</span>CHARACTER
+    </button>
+    <button class="smCat" onclick="smOpenCat('landscapes')">
+     <span class="smCIco">✦</span>LANDSCAPE
+    </button>
+    <button class="smCat" onclick="smOpenCat('sketches')">
+     <span class="smCIco">✦</span>SKETCH
+    </button>
+    <button class="smCat" onclick="smOpenCat('cars')">
+     <span class="smCIco">✦</span>CARS
+    </button>
+    <button class="smCat" onclick="smOpenCat('others')">
+     <span class="smCIco">✦</span>OTHERS
+    </button>
+    <div class="smDiv"></div>
+    <!-- About -->
+    <button class="smItem" onclick="smGoAbout()">
+     <span class="smIco">◈</span>ABOUT
+    </button>
+    <div class="smDiv"></div>
+    <!-- Contact -->
+    <button class="smItem" onclick="smGoContact()">
+     <span class="smIco">◉</span>CONTACT
+    </button>
+   </div>
+   <!-- Admin pinned at bottom -->
+   <div class="smFoot">
+    <button class="smAdmin" id="smAdmBtn" onclick="smHandleAdm()">
+     <span class="smIco">⚙</span>ADMIN PANEL
+    </button>
+   </div>
+  </div>
   <section id="hero">
    <div class="hBg" id="heroBg">
    </div>
@@ -412,8 +527,11 @@
    </div>
    <div class="hCon">
     <h1 class="hT">
-  <span class="logo-text">KOE</span>
-  <span class="si">✦</span>
+     K
+     <span class="si">
+      ✦
+     </span>
+     OE
     </h1>
     <p class="hSub">
      ART HAS NO LIMITS
@@ -452,34 +570,34 @@
         <!-- FEATURED SECTION START -->
 
         <!-- FEATURED IMAGE 1 — replace FEATURED_IMAGE_URL_1 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_1"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED IMAGE 2 — replace FEATURED_IMAGE_URL_2 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_2"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED IMAGE 3 — replace FEATURED_IMAGE_URL_3 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_3"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED IMAGE 4 — replace FEATURED_IMAGE_URL_4 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_4"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED IMAGE 5 — replace FEATURED_IMAGE_URL_5 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_5"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED IMAGE 6 — replace FEATURED_IMAGE_URL_6 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_6"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED IMAGE 7 — replace FEATURED_IMAGE_URL_7 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_7"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED IMAGE 8 — replace FEATURED_IMAGE_URL_8 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_8"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED IMAGE 9 — replace FEATURED_IMAGE_URL_9 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_9"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED IMAGE 10 — replace FEATURED_IMAGE_URL_10 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780142538137_Melissa_moretti.jpg"><!-- FEATURED IMAGE URL HERE --></div>
+        <div class="fsItem" data-fssrc="FEATURED_IMAGE_URL_10"><!-- FEATURED IMAGE URL HERE --></div>
 
         <!-- FEATURED SECTION END -->
 
@@ -908,12 +1026,13 @@
     g.innerHTML=b||'<p style="font-family:var(--fm);font-size:.65rem;letter-spacing:.2em;color:var(--txd);">NO LINKS YET</p>';
   }
 
-  function handleAdm(){if(isAdm){isAdm=false;document.body.classList.remove('admin');document.getElementById('admBtn').classList.remove('on');showToast('Admin mode off');}else{openPW();}}
+  function handleAdm(){if(isAdm){isAdm=false;document.body.classList.remove('admin');syncAdmBtn();showToast('Admin mode off');}else{openPW();}}
+  function syncAdmBtn(){var b=document.getElementById('smAdmBtn');if(b){b.classList.toggle('on',isAdm);b.innerHTML='<span class="smIco">'+(isAdm?'★':'⚙')+'</span>'+(isAdm?'ADMIN MODE ON':'ADMIN PANEL');}}
   function openPW(){document.getElementById('pwMod').classList.add('open');document.getElementById('pwIn').value='';document.getElementById('pwErr').classList.remove('show');setTimeout(()=>document.getElementById('pwIn').focus(),100);}
   function closePW(){document.getElementById('pwMod').classList.remove('open');}
   function checkPW(){
     if(document.getElementById('pwIn').value===ADMIN_PW){
-      isAdm=true;document.body.classList.add('admin');document.getElementById('admBtn').classList.add('on');
+      isAdm=true;document.body.classList.add('admin');syncAdmBtn();
       closePW();populateAdm();showToast('Admin unlocked ✦');
       if(sessionStorage.getItem('pendUp')==='1'){sessionStorage.removeItem('pendUp');setTimeout(openUp,200);}
     }else{document.getElementById('pwErr').classList.add('show');document.getElementById('pwIn').value='';}
@@ -994,7 +1113,40 @@
 
   let tT;
   function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000);}
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();}});
+
+  /* ── HAMBURGER MENU ── */
+  function toggleMenu(){
+    var m=document.getElementById('sideMenu');
+    if(m.classList.contains('open')){closeMenu();}else{openMenu();}
+  }
+  function openMenu(){
+    document.getElementById('sideMenu').classList.add('open');
+    document.getElementById('menuOverlay').classList.add('open');
+  }
+  function closeMenu(){
+    document.getElementById('sideMenu').classList.remove('open');
+    document.getElementById('menuOverlay').classList.remove('open');
+  }
+  function smGoHome(){closeMenu();window.scrollTo({top:0,behavior:'smooth'});}
+  function smGoAbout(){closeMenu();document.getElementById('about').scrollIntoView({behavior:'smooth'});}
+  function smGoContact(){closeMenu();document.getElementById('connect').scrollIntoView({behavior:'smooth'});}
+  function smOpenGallery(){closeMenu();openFG();}
+  function smOpenCat(cat){
+    closeMenu();
+    document.getElementById('fg').classList.add('open');
+    document.body.style.overflow='hidden';
+    document.getElementById('fgCat').value=cat;
+    renderFG();
+  }
+  function smHandleAdm(){
+    if(isAdm){
+      isAdm=false;document.body.classList.remove('admin');syncAdmBtn();showToast('Admin mode off');
+    } else {
+      closeMenu();
+      openPW();
+    }
+  }
 
   function spawnPts(){const c=document.getElementById('iPts');for(let i=0;i<28;i++){const s=document.createElement('span');s.style.left=Math.random()*100+'%';s.style.top=(40+Math.random()*40)+'%';s.style.animationDuration=(1.5+Math.random()*1.5)+'s';s.style.animationDelay=(Math.random()*2)+'s';c.appendChild(s);}}
 

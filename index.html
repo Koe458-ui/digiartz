@@ -157,35 +157,97 @@
     .smAdmin.on{color:var(--pb);border-color:color-mix(in srgb,var(--pb) 50%,transparent);background:color-mix(in srgb,var(--pb) 8%,transparent);}
     .smAdmin .smIco{color:inherit;font-size:.8rem;flex-shrink:0;width:14px;text-align:center;}
 
-    /* HERO */
+    /* ── HERO ── */
     #hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;overflow:hidden;}
+
+    /* ══════════════════════════════════════════════════════
+       BACKGROUND SYSTEM — 4-layer stack (bottom → top):
+         1. #hBgImg   — image fallback (always present)
+         2. #hBgVideo — video layer (covers image when playing)
+         3. .hBg      — particle overlay
+         4. .hOv      — dark gradient overlay for text legibility
+         5. .hCon     — content (z-index:2)
+       ══════════════════════════════════════════════════════ */
+
+    /* Layer 1 — Fallback image (always visible until video loads) */
+    #hBgImg{
+      position:absolute;
+      inset:0;
+      background-image:url('https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780168844469_1000102021.png');
+      background-size:cover;
+      background-position:center center;
+      background-repeat:no-repeat;
+      z-index:0;
+      /* Subtle slow zoom on image fallback only */
+      animation:bgZoom 20s ease-in-out infinite alternate;
+    }
+
+    /* Layer 2 — Background video */
+    #hBgVideo{
+      position:absolute;
+      inset:0;
+      z-index:1;
+      overflow:hidden;
+    }
+    #hBgVideo video{
+      position:absolute;
+      top:50%;
+      left:50%;
+      /* Cinematic full-cover: no black bars, no gaps */
+      min-width:100%;
+      min-height:100%;
+      width:auto;
+      height:auto;
+      transform:translate(-50%,-50%);
+      object-fit:cover;
+      /* Fade in smoothly once loaded */
+      opacity:0;
+      transition:opacity 1s ease;
+    }
+    /* When video is ready, fade it in over the image fallback */
+    #hBgVideo video.ready{opacity:1;}
+
+    /* Layer 3 — Particle shimmer overlay (keeps existing animation) */
     .hBg{
-  position:absolute;
-  inset:0;
-  background-size:cover;
-  background-position:center;
-  background-repeat:no-repeat;
-  animation:bgZoom 20s ease-in-out infinite alternate;
-}
+      position:absolute;
+      inset:0;
+      z-index:2;
+      pointer-events:none;
+    }
+    .hBg::before{
+      content:'';
+      position:absolute;
+      inset:0;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.8) 8px, transparent 8px),
+        radial-gradient(circle, color-mix(in srgb,var(--tc) 70%,transparent) 12px, transparent 12px),
+        radial-gradient(circle, color-mix(in srgb,var(--tc) 55%,transparent) 10px, transparent 10px);
+      background-size: 400px 400px, 600px 600px, 500px 500px;
+      animation: particlesMove 15s linear infinite;
+    }
+    @keyframes particlesMove{
+      from{transform:translateY(0);}
+      to{transform:translateY(-300px);}
+    }
 
-.hBg::before{
-  content:'';
-  position:absolute;
-  inset:0;
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,.8) 8px, transparent 8px),
-    radial-gradient(circle, color-mix(in srgb,var(--tc) 70%,transparent) 12px, transparent 12px),
-    radial-gradient(circle, color-mix(in srgb,var(--tc) 55%,transparent) 10px, transparent 10px);
-  background-size: 400px 400px, 600px 600px, 500px 500px;
-  animation: particlesMove 15s linear infinite;
-}
-
-@keyframes particlesMove{
-  from{transform:translateY(0);}
-  to{transform:translateY(-300px);}
-}
-    .hOv{position:absolute;inset:0;background:radial-gradient(ellipse at center 60%,color-mix(in srgb,var(--tc) 18%,transparent),transparent 60%),linear-gradient(to bottom,rgba(5,3,8,.2),rgba(5,3,8,.6) 80%,var(--bg));}
-    .hCon{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+    /* ── Mobile optimisations ── */
+    @media(max-width:768px){
+      /* On mobile, freeze the image zoom to save CPU */
+      #hBgImg{ animation:none; }
+      /* Video still uses object-fit:cover — handled above */
+      #hBgVideo video{
+        /* Force portrait-friendly cropping on small screens */
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        top:0; left:0;
+        transform:none;
+        min-width:unset;
+        min-height:unset;
+      }
+    }
+    .hOv{position:absolute;inset:0;z-index:3;background:radial-gradient(ellipse at center 60%,color-mix(in srgb,var(--tc) 18%,transparent),transparent 60%),linear-gradient(to bottom,rgba(5,3,8,.2),rgba(5,3,8,.6) 80%,var(--bg));}
+    .hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
     .hT{font-family:var(--fd);font-size:clamp(5rem,22vw,16rem);font-weight:900;line-height:.9;background:linear-gradient(135deg,rgba(255,255,255,.95),color-mix(in srgb,var(--tc) 70%,white),rgba(255,255,255,.9));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 60px color-mix(in srgb,var(--tc) 50%,transparent));position:relative;}
     .hT .si{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.12em;color:var(--pb);-webkit-text-fill-color:var(--pb);animation:sP 3s ease-in-out infinite;filter:drop-shadow(0 0 8px var(--pb));}
     @keyframes sP{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.7}}
@@ -193,7 +255,7 @@
     .hDesc{font-family:var(--fb);font-size:clamp(.85rem,2.5vw,1.05rem);color:var(--txd);font-style:italic;}
     .hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid var(--pg);background:color-mix(in srgb,var(--tc) 8%,transparent);color:var(--tx);font-family:var(--fm);font-size:.7rem;letter-spacing:.2em;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;}
     .hCta:hover{background:color-mix(in srgb,var(--tc) 20%,transparent);border-color:var(--pb);box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);transform:translateY(-2px);}
-    .hScr{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.4rem;z-index:2;}
+    .hScr{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.4rem;z-index:4;}
     .hScr span{font-family:var(--fm);font-size:.5rem;letter-spacing:.3em;color:var(--txd);}
     .sLn{width:1px;height:50px;background:linear-gradient(to bottom,var(--pg),transparent);animation:sD 2s ease-in-out infinite;}
     @keyframes sD{0%{transform:scaleY(0);transform-origin:top;opacity:1}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom;opacity:.3}}
@@ -619,10 +681,31 @@
    </div>
   </div>
   <section id="hero">
-   <div class="hBg" id="heroBg">
+   <!-- Layer 1: Image fallback (shown while video loads or if video fails) -->
+   <div id="hBgImg"></div>
+
+   <!-- Layer 2: Background video -->
+   <div id="hBgVideo">
+    <video
+     id="heroBgVideo"
+     autoplay
+     muted
+     loop
+     playsinline
+     preload="auto"
+     aria-hidden="true"
+    >
+     <source src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/0603-01_1780485334128.mp4" type="video/mp4"/>
+     <!-- No <source> fallback needed — image layer below handles it -->
+    </video>
    </div>
-   <div class="hOv">
-   </div>
+
+   <!-- Layer 3: Particle shimmer overlay -->
+   <div class="hBg" id="heroBg"></div>
+
+   <!-- Layer 4: Dark gradient overlay for text readability -->
+   <div class="hOv"></div>
+
    <div class="hCon">
     <h1 class="hT">
   <span class="logo-text">KOE</span>
@@ -1167,13 +1250,35 @@
       const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
       cfg.hero_bg=publicUrl;
       await saveSetting('hero_bg',publicUrl);
-      applyBg();showToast('Background updated ✦');
+      applyBg();showToast('Background image updated ✦');
     }catch(err){showToast('Error: '+err.message);}
   }
   function applyBg(){
-  document.getElementById('heroBg').style.backgroundImage =
-    "url('https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780168844469_1000102021.png')";
+    /* Update the image fallback layer */
+    var imgUrl = cfg.hero_bg ||
+      'https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780168844469_1000102021.png';
+    document.getElementById('hBgImg').style.backgroundImage = "url('" + imgUrl + "')";
   }
+
+  /* ── Video ready handler: fade the video in over the image fallback ── */
+  (function(){
+    var vid = document.getElementById('heroBgVideo');
+    if(!vid) return;
+    function markReady(){
+      vid.classList.add('ready');
+      /* Try to play (needed on some browsers even with autoplay attr) */
+      vid.play().catch(function(){
+        /* Autoplay blocked (e.g. low-power mode) — image fallback stays visible */
+      });
+    }
+    if(vid.readyState >= 3){
+      markReady();
+    } else {
+      vid.addEventListener('canplay', markReady, {once:true});
+      /* Extra fallback: if canplay never fires within 4s, try playing anyway */
+      setTimeout(function(){ if(!vid.classList.contains('ready')) markReady(); }, 4000);
+    }
+  })();
 
   function openUp(){
     if(!sb){showToast('Configure Supabase first');return;}

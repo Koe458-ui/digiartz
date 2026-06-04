@@ -1358,16 +1358,23 @@ min-height:56px;
     </button>
    </div>
   </div>
-  <!-- LOGIN MODAL -->
+  <!-- LOGIN / CREATE ACCOUNT MODAL -->
   <div class="mOvr" id="authMod">
    <div class="modal">
     <button class="mX" onclick="closeAuthMod()">✕</button>
-    <h2>LOGIN</h2>
+    <h2 id="authTitle">LOGIN</h2>
+    <p id="authSubtitle" style="display:none;font-size:.8rem;color:var(--txd);font-style:italic;margin-bottom:1.2rem;line-height:1.5;"></p>
     <input class="mIn" id="authUser" placeholder="USERNAME" type="text" autocomplete="username"/>
     <input class="mIn" id="authEmail" placeholder="EMAIL" type="email" autocomplete="email"/>
-    <input class="mIn" id="authPass" placeholder="PASSWORD" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
+    <input class="mIn" id="authPass" placeholder="PASSWORD" type="password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter'){ authMode==='signup'?doSignUp():doAuth(); }"/>
     <div class="mErr" id="authErr"></div>
+    <!-- Success message (signup confirmation / email-confirm notice) -->
+    <div id="authMsg" style="display:none;font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:#86efac;margin-bottom:.6rem;line-height:1.6;"></div>
+    <!-- Primary action button — label + handler change per mode -->
     <button class="mBtn" id="authBtn" onclick="doAuth()">LOGIN ✦</button>
+    <!-- Create Account / Back to Login toggle -->
+    <button class="mBtn sec" id="authToggleBtn" onclick="switchAuthMode('signup')">CREATE ACCOUNT</button>
     <button class="mBtn sec" onclick="closeAuthMod()">CANCEL</button>
    </div>
   </div>
@@ -1644,6 +1651,7 @@ min-height:56px;
 
   /* ── State ── */
   var authUser = null; /* null = logged out, object = logged in */
+  var authMode = 'login'; /* 'login' | 'signup' */
 
   /* ── Sync the menu button label ── */
   function syncAuthBtn() {
@@ -1666,6 +1674,10 @@ min-height:56px;
     document.getElementById('authPass').value  = '';
     var err = document.getElementById('authErr');
     err.textContent = ''; err.classList.remove('show');
+    var msg = document.getElementById('authMsg');
+    if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
+    /* Always open in login mode */
+    switchAuthMode('login');
     document.getElementById('authMod').classList.add('open');
     setTimeout(function(){ document.getElementById('authEmail').focus(); }, 120);
   }
@@ -1710,6 +1722,135 @@ min-height:56px;
       err.classList.add('show');
     } finally {
       btn.textContent = 'LOGIN ✦'; btn.disabled = false;
+    }
+  }
+
+  /* ── Toggle between login and signup views ── */
+  function switchAuthMode(mode) {
+    authMode = mode;
+    var title      = document.getElementById('authTitle');
+    var subtitle   = document.getElementById('authSubtitle');
+    var btn        = document.getElementById('authBtn');
+    var toggleBtn  = document.getElementById('authToggleBtn');
+    var err        = document.getElementById('authErr');
+    var msg        = document.getElementById('authMsg');
+    var userField  = document.getElementById('authUser');
+    var passField  = document.getElementById('authPass');
+
+    /* Reset error / success state */
+    err.textContent = ''; err.classList.remove('show');
+    msg.style.display = 'none'; msg.textContent = '';
+
+    if (mode === 'signup') {
+      title.textContent = 'CREATE ACCOUNT';
+      subtitle.textContent = 'Register with your email and a password of at least 6 characters.';
+      subtitle.style.display = 'block';
+      btn.textContent = 'CREATE ACCOUNT ✦';
+      btn.onclick = doSignUp;
+      toggleBtn.textContent = '← BACK TO LOGIN';
+      toggleBtn.onclick = function(){ switchAuthMode('login'); };
+      /* Hide the unused username field in signup mode */
+      if (userField) userField.style.display = 'none';
+      passField.setAttribute('autocomplete', 'new-password');
+    } else {
+      title.textContent = 'LOGIN';
+      subtitle.style.display = 'none';
+      btn.textContent = 'LOGIN ✦';
+      btn.onclick = doAuth;
+      toggleBtn.textContent = 'CREATE ACCOUNT';
+      toggleBtn.onclick = function(){ switchAuthMode('signup'); };
+      if (userField) userField.style.display = '';
+      passField.setAttribute('autocomplete', 'current-password');
+    }
+  }
+
+  /* ── Perform signup ── */
+  async function doSignUp() {
+    if (!sb) { showToast('Supabase not configured'); return; }
+
+    var email = document.getElementById('authEmail').value.trim();
+    var pass  = document.getElementById('authPass').value;
+    var err   = document.getElementById('authErr');
+    var msg   = document.getElementById('authMsg');
+
+    err.textContent = ''; err.classList.remove('show');
+    msg.style.display = 'none'; msg.textContent = '';
+
+    /* ── Validate email ── */
+    if (!email) {
+      err.textContent = 'Please enter your email address.';
+      err.classList.add('show'); return;
+    }
+    var emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRx.test(email)) {
+      err.textContent = 'Please enter a valid email address.';
+      err.classList.add('show'); return;
+    }
+
+    /* ── Validate password (min 6 chars) ── */
+    if (!pass) {
+      err.textContent = 'Please enter a password.';
+      err.classList.add('show'); return;
+    }
+    if (pass.length < 6) {
+      err.textContent = 'Password must be at least 6 characters long.';
+      err.classList.add('show'); return;
+    }
+
+    var btn = document.getElementById('authBtn');
+    btn.textContent = 'CREATING ACCOUNT…'; btn.disabled = true;
+
+    try {
+      var result = await sb.auth.signUp({ email: email, password: pass });
+      if (result.error) throw result.error;
+
+      var session = result.data && result.data.session;
+
+      if (session) {
+        /* ── Email confirmation DISABLED: user is signed in immediately ──
+           onAuthStateChange('SIGNED_IN') fires → closes modal, syncs UI, shows toast.
+           No extra work needed here. */
+        showToast('Account created ✦ Welcome!');
+        /* modal will close via onAuthStateChange */
+      } else {
+        /* ── Email confirmation ENABLED: show check-your-email notice ── */
+        document.getElementById('authEmail').value = '';
+        document.getElementById('authPass').value  = '';
+        msg.textContent = '✦ Check your email to confirm your account.';
+        msg.style.display = 'block';
+        btn.textContent = 'CREATE ACCOUNT ✦'; btn.disabled = false;
+        /* Auto-close modal after 5 s */
+        setTimeout(function(){
+          if (document.getElementById('authMod').classList.contains('open')) {
+            closeAuthMod();
+          }
+        }, 5000);
+        return; /* keep modal open to show message */
+      }
+    } catch (e) {
+      /* ── Map Supabase error messages to user-friendly copy ── */
+      var raw = (e.message || '').toLowerCase();
+      var friendly;
+      if (raw.includes('already registered') || raw.includes('already in use') || raw.includes('user already')) {
+        friendly = 'This email is already registered. Try logging in instead.';
+      } else if (raw.includes('weak password') || raw.includes('password should') || raw.includes('at least')) {
+        friendly = 'Password is too weak. Use at least 6 characters.';
+      } else if (raw.includes('invalid email') || raw.includes('unable to validate email')) {
+        friendly = 'Invalid email address. Please check and try again.';
+      } else if (raw.includes('network') || raw.includes('fetch') || raw.includes('failed to fetch')) {
+        friendly = 'Network error. Please check your connection and try again.';
+      } else if (raw.includes('rate limit') || raw.includes('too many')) {
+        friendly = 'Too many attempts. Please wait a moment and try again.';
+      } else {
+        friendly = e.message || 'Sign-up failed. Please try again.';
+      }
+      err.textContent = friendly;
+      err.classList.add('show');
+    } finally {
+      /* Only reset button text if we didn't return early (email-confirm path) */
+      if (btn.disabled) {
+        btn.textContent = 'CREATE ACCOUNT ✦'; btn.disabled = false;
+      }
     }
   }
 

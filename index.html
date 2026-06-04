@@ -2147,8 +2147,8 @@ async function openComments(){
       body.appendChild(div);
     });
 
-    /* Newest-first — scroll to top */
-    body.scrollTop = 0;
+    /* Oldest-first — scroll to bottom so newest comment is visible */
+    body.scrollTop = body.scrollHeight;
   }
 
   async function cpSend(){
@@ -2197,7 +2197,7 @@ async function openComments(){
   });
   /* ──────────────────────────────────────────────
      cpLoadComments — fetch comments from Supabase
-     Ordered newest-first. Guests can read.
+     Ordered oldest-first. Guests can read.
      ────────────────────────────────────────────── */
   async function cpLoadComments(){
     if(!sb){
@@ -2214,7 +2214,7 @@ async function openComments(){
       }
       var result = await sb.from('comments')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
       if(result.error) throw result.error;
       var rows = result.data || [];
       cpComments = rows.map(function(row){

@@ -203,6 +203,12 @@
       /* Fade in smoothly once loaded */
       opacity:0;
       transition:opacity 1s ease;
+      /* ── Cinematic video treatment ──
+         blur(4px)       — softens video so it reads as backdrop, not foreground
+         brightness(.48) — darkens; overlays handle the final levels
+         saturate(.28)   — strips colour so theme colours stay on content,
+                           not flooding the background                           */
+      filter:blur(4px) brightness(.48) saturate(.28);
     }
     /* When video is ready, fade it in over the image fallback */
     #hBgVideo video.ready{opacity:1;}
@@ -244,9 +250,12 @@
         transform:none;
         min-width:unset;
         min-height:unset;
+        /* Slightly lighter blur on mobile for perf; colour treatment same */
+        filter:blur(3px) brightness(.48) saturate(.28);
       }
     }
-    .hOv{position:absolute;inset:0;z-index:3;background:radial-gradient(ellipse at center 60%,color-mix(in srgb,var(--tc) 18%,transparent),transparent 60%),linear-gradient(to bottom,rgba(5,3,8,.2),rgba(5,3,8,.6) 80%,var(--bg));}
+    /* hOv — dark cinematic overlay only; theme-color radial removed (was causing large colour haze across hero) */
+    .hOv{position:absolute;inset:0;z-index:3;background:radial-gradient(ellipse at center,rgba(0,0,0,.38),transparent 65%),linear-gradient(to bottom,rgba(5,3,8,.32),rgba(5,3,8,.72) 82%,var(--bg));}
     .hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
     .hT{font-family:var(--fd);font-size:clamp(5rem,22vw,16rem);font-weight:900;line-height:.9;background:linear-gradient(135deg,rgba(255,255,255,.95),color-mix(in srgb,var(--tc) 70%,white),rgba(255,255,255,.9));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 60px color-mix(in srgb,var(--tc) 50%,transparent));position:relative;}
     .hT .si{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.12em;color:var(--pb);-webkit-text-fill-color:var(--pb);animation:sP 3s ease-in-out infinite;filter:drop-shadow(0 0 8px var(--pb));}

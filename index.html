@@ -405,19 +405,42 @@
     .fltDone:active{transform:translateY(0) scale(.98);}
 
     .fgBdy{padding:1.5rem;}
+    /* Legacy masonry classes kept for backward compat but unused by default */
     .fgMas{column-count:4;column-gap:.8rem;}
     .fgMas .gItem{break-inside:avoid;margin-bottom:.8rem;}
     .fgUni{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;}
     .fgUni .gItem img{aspect-ratio:1;}
     .fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.2em;}
-    /* New grid layout classes */
-    .fgGrid{column-gap:.8rem;}
-    .fgGrid .gItem{break-inside:avoid;margin-bottom:.8rem;}
-    .fg2{column-count:2;}
-    .fg3{column-count:3;}
-    .fg4{column-count:4;}
-    @media(max-width:900px){.fgMas{column-count:3}.fgUni{grid-template-columns:repeat(3,1fr)}.fg4{column-count:3}}
-    @media(max-width:640px){.fgMas{column-count:2;column-gap:.5rem}.fgUni{grid-template-columns:repeat(2,1fr);gap:.5rem}.fgHdr{padding:.8rem 1rem}.fg4{column-count:2}.fg3{column-count:2}.fg2{column-count:2}.fgGrid{column-gap:.5rem}.fgGrid .gItem{margin-bottom:.5rem}}
+    /* ── FIXED: fgGrid now uses display:grid (row-first) instead of
+       column-count (column-first masonry). This ensures the sorted DOM
+       order (newest → oldest) maps directly to visual reading order:
+         New1  New2
+         New3  Old1
+         Old2  Old3
+       column-count was causing items to flow top-of-col-1, top-of-col-2,
+       which mixed new/old items visually regardless of DOM sort order. ── */
+    .fgGrid{
+      display:grid;
+      gap:.8rem;
+    }
+    .fgGrid .gItem{margin-bottom:0;} /* gap handles spacing in grid mode */
+    .fg2{grid-template-columns:repeat(2,1fr);}
+    .fg3{grid-template-columns:repeat(3,1fr);}
+    .fg4{grid-template-columns:repeat(4,1fr);}
+    @media(max-width:900px){
+      .fgMas{column-count:3}
+      .fgUni{grid-template-columns:repeat(3,1fr)}
+      .fg4{grid-template-columns:repeat(3,1fr)}
+    }
+    @media(max-width:640px){
+      .fgMas{column-count:2;column-gap:.5rem}
+      .fgUni{grid-template-columns:repeat(2,1fr);gap:.5rem}
+      .fgHdr{padding:.8rem 1rem}
+      .fg4{grid-template-columns:repeat(2,1fr)}
+      .fg3{grid-template-columns:repeat(2,1fr)}
+      .fg2{grid-template-columns:repeat(2,1fr)}
+      .fgGrid{gap:.5rem}
+    }
 
     /* LIGHTBOX */
     #lb{position:fixed;inset:0;z-index:600;background:rgba(5,3,8,.95);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;padding:2rem;}
@@ -1534,6 +1557,15 @@ min-height:56px;
   let homeScrollObserver = null;
 
   function renderHome(){
+    /* ── FIXED: always sort newest-first before rendering so carousels
+       and the hidden homeGrid both reflect correct priority order,
+       even if Supabase returns rows in a different sequence. ── */
+    images.sort(function(a,b){
+      var tA=a.created_at?new Date(a.created_at).getTime():0;
+      var tB=b.created_at?new Date(b.created_at).getTime():0;
+      if(tB!==tA)return tB-tA;
+      return (parseInt(b.id,10)||0)-(parseInt(a.id,10)||0);
+    });
     /* Rebuild all gallery carousels from current images array */
     if(window.rebuildGalCarousels) window.rebuildGalCarousels(images);
     /* Keep homeGrid and infinite scroll sentinel for legacy FG overlay compatibility */
@@ -1577,7 +1609,17 @@ min-height:56px;
     let imgs=[...images];
     if(filterCat!=='all')imgs=imgs.filter(i=>(i.category||'others').split(',').map(s=>s.trim()).includes(filterCat));
     if(q)imgs=imgs.filter(i=>i.name.toLowerCase().includes(q));
-    imgs.sort((a,b)=>filterSrt==='new'?new Date(b.created_at)-new Date(a.created_at):new Date(a.created_at)-new Date(b.created_at));
+    /* ── FIXED sort: guard against null timestamps; id tie-breaker for
+       deterministic ordering when two items share the same created_at.
+       'new' = newest first (desc); 'old' = oldest first (asc). ── */
+    imgs.sort(function(a,b){
+      var tA=a.created_at?new Date(a.created_at).getTime():0;
+      var tB=b.created_at?new Date(b.created_at).getTime():0;
+      var diff=filterSrt==='new'?(tB-tA):(tA-tB);
+      if(diff!==0)return diff;
+      var idA=parseInt(a.id,10)||0,idB=parseInt(b.id,10)||0;
+      return filterSrt==='new'?(idB-idA):(idA-idB);
+    });
     if(!imgs.length){c.innerHTML='<div class="fgEmp">NO ARTWORK FOUND</div>';return;}
     c.innerHTML=`<div class="fgGrid fg${filterGrid}">${imgs.map(itemHTML).join('')}</div>`;
     /* Update filter button active indicator */

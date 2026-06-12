@@ -5,6 +5,14 @@
   <script data-cf-beacon='{"token": "aa4b7177387e4f689739a5fdf44cbffa"}' defer="" src="https://static.cloudflareinsights.com/beacon.min.js">
   </script>
   <!-- End Cloudflare Web Analytics -->
+  <!-- ═══════════════════════════════════════════════
+       GOOGLE ADSENSE
+       ═══════════════════════════════════════════════ -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1351696642556147"
+       crossorigin="anonymous"></script>
+  <!-- ═══════════════════════════════════════════════
+       END GOOGLE ADSENSE
+       ═══════════════════════════════════════════════ -->
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
@@ -797,6 +805,340 @@ height:80px;
 
 
 
+/* ═══════════════════════════════════════════════
+   AD CONTAINERS — theme-aware, mobile-first
+   ═══════════════════════════════════════════════ */
+
+/* Wrapper: full-width section break */
+.adUnit {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .55rem;
+  padding: 2rem 1.25rem;
+  /* No background on the section itself — keep page breathable */
+}
+
+/* The visible card holding the ad */
+.adCard {
+  width: 100%;
+  max-width: 728px;           /* leaderboard max on desktop */
+  background: color-mix(in srgb, var(--tc) 5%, var(--sur));
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  box-shadow:
+    0 2px 16px rgba(5,3,8,.55),
+    inset 0 1px 0 color-mix(in srgb, var(--tc) 10%, transparent);
+  overflow: hidden;
+  /* Prevent empty AdSense slot from collapsing to 0px and breaking layout */
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: border-color .3s;
+}
+.adCard:hover { border-color: var(--bdrh); }
+
+/* Inner ad element fills the card */
+.adCard ins.adsbygoogle {
+  display: block;
+  width: 100%;
+  /* height is managed by AdSense itself */
+}
+
+/* Subtle label above each ad */
+.adLabel {
+  font-family: var(--fm);
+  font-size: .48rem;
+  letter-spacing: .28em;
+  color: var(--txd);
+  opacity: .5;
+  text-transform: uppercase;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ── Mobile (< 640 px) ──────────────────────── */
+@media (max-width: 640px) {
+  .adUnit   { padding: 1.25rem .75rem; gap: .4rem; }
+  .adCard   { max-width: 100%; min-height: 60px; border-radius: 8px; }
+}
+
+/* ── Wide desktop (≥ 1024 px) ───────────────── */
+@media (min-width: 1024px) {
+  .adUnit { padding: 2.5rem 2rem; }
+  .adCard { max-width: 970px; }   /* expands to billboard when slot allows */
+}
+
+/* ── Pre-load shimmer so the slot doesn't look broken ── */
+.adCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--tc) 6%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: adShimmer 2s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+  /* Disappears once the ad iframe loads and paints over it */
+}
+@keyframes adShimmer {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════════
+   END AD CONTAINERS
+   ═══════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════
+   ADS PANEL — full-page overlay, horizontal scroll
+   ═══════════════════════════════════════════════ */
+
+/* Full-page panel — same slide-in pattern as #fg */
+#adsPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform .45s cubic-bezier(.22,1,.36,1);
+}
+#adsPanel.open { transform: translateX(0); }
+
+/* Sticky header */
+.apHdr {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(5,3,8,.96);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--bdr);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+}
+.apX {
+  background: none;
+  border: none;
+  color: var(--txd);
+  cursor: pointer;
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: color .2s, transform .2s;
+  flex-shrink: 0;
+  padding: .2rem .4rem;
+}
+.apX:hover { color: var(--pg); transform: translateX(-3px); }
+.apTitle {
+  font-family: var(--fd);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  color: var(--tx);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.apTitle .s { color: var(--pg); font-size: .6em; }
+
+/* Body */
+.apBody {
+  padding: 2rem 1.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Intro label */
+.apIntro {
+  font-family: var(--fm);
+  font-size: .6rem;
+  letter-spacing: .25em;
+  color: var(--txd);
+  text-align: center;
+  padding: .5rem 0 0;
+}
+
+/* Horizontal scroll track wrapper */
+.apTrackWrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;           /* Firefox */
+  cursor: grab;
+}
+.apTrackWrap:active { cursor: grabbing; }
+.apTrackWrap::-webkit-scrollbar { display: none; }
+
+/* The flex row of cards */
+.apTrack {
+  display: flex;
+  gap: 1rem;
+  padding: .25rem .25rem 1rem;
+  width: max-content;
+}
+
+/* Individual square ad card */
+.apCard {
+  flex: 0 0 auto;
+  width: min(80vw, 480px);         /* grows up to 480px on desktop */
+  aspect-ratio: 1 / 1;
+  background: color-mix(in srgb, var(--tc) 5%, var(--sur));
+  border: 1px solid var(--bdr);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 24px rgba(5,3,8,.6),
+    inset 0 1px 0 color-mix(in srgb, var(--tc) 12%, transparent);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  position: relative;
+  transition: border-color .3s, transform .3s, box-shadow .3s;
+}
+.apCard:hover {
+  border-color: var(--bdrh);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(5,3,8,.7), 0 0 20px color-mix(in srgb,var(--tc) 15%,transparent);
+}
+
+/* Card label */
+.apCardLbl {
+  font-family: var(--fm);
+  font-size: .48rem;
+  letter-spacing: .28em;
+  color: var(--txd);
+  opacity: .45;
+  padding: .6rem .8rem .3rem;
+  user-select: none;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* AdSense ins fills remaining space */
+.apCard ins.adsbygoogle {
+  display: block;
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Shimmer while loading */
+.apCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--tc) 7%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: adShimmer 2s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+@keyframes adShimmer {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Scroll hint dots */
+.apDots {
+  display: flex;
+  justify-content: center;
+  gap: .45rem;
+  margin-top: .25rem;
+}
+.apDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--bdrh);
+  transition: background .25s, transform .25s;
+}
+.apDot.active {
+  background: var(--pg);
+  transform: scale(1.35);
+  box-shadow: 0 0 6px var(--pg);
+}
+
+/* Scroll hint arrow on first load */
+.apHint {
+  font-family: var(--fm);
+  font-size: .55rem;
+  letter-spacing: .2em;
+  color: var(--txd);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  opacity: .6;
+  animation: apHintFade 3s ease forwards 1s;
+}
+@keyframes apHintFade {
+  0%  { opacity: .6; }
+  100%{ opacity: 0; pointer-events: none; }
+}
+
+/* ── Sponsor description (styled like About section) ── */
+.apDesc {
+  border-left: 2px solid var(--bdr);
+  padding-left: 2rem;
+  max-width: 800px;
+  width: 100%;
+  margin-top: 1rem;
+}
+.apDescTitle {
+  font-family: var(--fd);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -.02em;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .3rem;
+}
+.apDescTitle .s { color: var(--pg); font-size: .5em; }
+.apDescSub {
+  font-family: var(--fm);
+  font-size: .6rem;
+  letter-spacing: .3em;
+  color: var(--txd);
+  margin-bottom: 1.5rem;
+}
+.apDescTxt {
+  font-family: var(--fb);
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  line-height: 1.85;
+  color: var(--txd);
+  font-style: italic;
+  word-wrap: break-word;
+}
+.apDescTxt strong { color: var(--tx); font-style: normal; font-weight: 400; }
+@media (max-width: 640px) {
+  .apDesc { padding-left: 1.2rem; }
+  .apDescTitle { font-size: clamp(1.6rem, 8vw, 2.4rem); }
+}
+
+/* ═══════════════════════════════════════════════
+   END ADS PANEL CSS
+   ═══════════════════════════════════════════════ */
+
 /* LIGHTBOX ACTION BUTTONS UPGRADE */
 .lbActions{
 width:100%;
@@ -937,6 +1279,11 @@ min-height:56px;
     <!-- Contact -->
     <button class="smItem" onclick="smGoContact()">
      <span class="smIco">◉</span>CONTACT
+    </button>
+    <div class="smDiv"></div>
+    <!-- Sponsor / Ads -->
+    <button class="smItem" onclick="openAdsPanel()">
+     <span class="smIco">◈</span>SPONSOR
     </button>
     <div class="smDiv"></div>
     <!-- Login / Logout -->
@@ -1283,6 +1630,80 @@ min-height:56px;
   </div>
   <!-- ═══════════════════════════════════════════════
        END COMMENTS PAGE
+       ═══════════════════════════════════════════════ -->
+
+  <!-- ═══════════════════════════════════════════════
+       ADS PANEL
+       ═══════════════════════════════════════════════ -->
+  <div id="adsPanel">
+    <div class="apHdr">
+      <button class="apX" onclick="closeAdsPanel()" aria-label="Close">←</button>
+      <div class="apTitle">SPONSOR <span class="s">✦</span></div>
+    </div>
+    <div class="apBody">
+      <div class="apIntro">SWIPE TO BROWSE ADS</div>
+      <div class="apHint">← SCROLL →</div>
+
+      <!-- Horizontal scroll track -->
+      <div class="apTrackWrap" id="apTrackWrap">
+        <div class="apTrack" id="apTrack">
+
+          <!-- Ad Card 1 -->
+          <div class="apCard">
+            <div class="apCardLbl">AD · 01</div>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1351696642556147"
+                 data-ad-slot="auto"
+                 data-ad-format="auto"
+                 data-full-width-responsive="false"></ins>
+          </div>
+
+          <!-- Ad Card 2 -->
+          <div class="apCard">
+            <div class="apCardLbl">AD · 02</div>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1351696642556147"
+                 data-ad-slot="auto"
+                 data-ad-format="auto"
+                 data-full-width-responsive="false"></ins>
+          </div>
+
+          <!-- Ad Card 3 -->
+          <div class="apCard">
+            <div class="apCardLbl">AD · 03</div>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1351696642556147"
+                 data-ad-slot="auto"
+                 data-ad-format="auto"
+                 data-full-width-responsive="false"></ins>
+          </div>
+
+        </div><!-- /apTrack -->
+      </div><!-- /apTrackWrap -->
+
+      <!-- Scroll position dots -->
+      <div class="apDots" id="apDots">
+        <div class="apDot active" data-idx="0"></div>
+        <div class="apDot" data-idx="1"></div>
+        <div class="apDot" data-idx="2"></div>
+      </div>
+
+      <!-- Description — styled like About section -->
+      <div class="apDesc">
+        <div class="apDescTitle">SPONSOR <span class="s">✦</span></div>
+        <div class="apDescSub">SUPPORTING DIGIARTZ</div>
+        <p class="apDescTxt">
+          This section features sponsored content and advertisements that help support <strong>DigiArtz</strong> and keep the platform running. The ads shown here may include products, services, or creative tools from third-party partners. We try to keep everything relevant and useful so it blends naturally with the creative and digital art experience of the website. <strong>Sponsored content is clearly separated from the main content</strong> so users can easily identify it.
+        </p>
+      </div>
+
+    </div><!-- /apBody -->
+  </div>
+  <!-- ═══════════════════════════════════════════════
+       END ADS PANEL
        ═══════════════════════════════════════════════ -->
 
   <div id="lb" onclick="closeLB()">
@@ -2829,5 +3250,89 @@ function commentCurrentImage(imageId, imageUrl){
   });
 })();
 </script>
+<!-- ════════════════════════════════════════════════════════
+     ADS PANEL — open / close / drag-scroll / dot indicator
+     ════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  var panel  = document.getElementById('adsPanel');
+  var wrap   = document.getElementById('apTrackWrap');
+  var dots   = document.querySelectorAll('#apDots .apDot');
+  var cards  = document.querySelectorAll('#apTrack .apCard');
+  var adsInit = false;
+
+  /* ── Open ── */
+  window.openAdsPanel = function(){
+    closeMenu();
+    panel.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    /* Push AdSense slots exactly once, after the panel is visible */
+    if(!adsInit){
+      adsInit = true;
+      setTimeout(function(){
+        var slots = panel.querySelectorAll('ins.adsbygoogle');
+        slots.forEach(function(ins){
+          try{ (adsbygoogle = window.adsbygoogle || []).push({}); }catch(e){}
+        });
+      }, 350); /* wait for slide-in transition */
+    }
+  };
+
+  /* ── Close ── */
+  window.closeAdsPanel = function(){
+    panel.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  /* ── Dot updater on scroll ── */
+  function updateDots(){
+    if(!wrap || !cards.length) return;
+    var scrollLeft = wrap.scrollLeft;
+    var cardW = cards[0].offsetWidth + 16; /* width + gap */
+    var idx = Math.round(scrollLeft / cardW);
+    idx = Math.max(0, Math.min(idx, cards.length - 1));
+    dots.forEach(function(d, i){ d.classList.toggle('active', i === idx); });
+  }
+  if(wrap) wrap.addEventListener('scroll', updateDots, {passive:true});
+
+  /* ── Dot click → scroll to card ── */
+  dots.forEach(function(dot){
+    dot.addEventListener('click', function(){
+      var idx = parseInt(dot.getAttribute('data-idx'), 10);
+      var cardW = cards[0] ? cards[0].offsetWidth + 16 : 0;
+      wrap.scrollTo({ left: idx * cardW, behavior: 'smooth' });
+    });
+  });
+
+  /* ── Mouse drag-to-scroll (desktop) ── */
+  var isDragging = false, startX = 0, scrollStart = 0;
+  if(wrap){
+    wrap.addEventListener('mousedown', function(e){
+      isDragging = true;
+      startX = e.pageX - wrap.offsetLeft;
+      scrollStart = wrap.scrollLeft;
+      wrap.style.cursor = 'grabbing';
+    });
+    document.addEventListener('mousemove', function(e){
+      if(!isDragging) return;
+      var x = e.pageX - wrap.offsetLeft;
+      wrap.scrollLeft = scrollStart - (x - startX);
+    });
+    document.addEventListener('mouseup', function(){
+      isDragging = false;
+      if(wrap) wrap.style.cursor = 'grab';
+    });
+  }
+
+  /* ── Close on Escape ── */
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && panel.classList.contains('open')) closeAdsPanel();
+  });
+})();
+</script>
+<!-- ════════════════════════════════════════════════════════
+     END ADS PANEL JS
+     ════════════════════════════════════════════════════════ -->
 </body>
 </html>

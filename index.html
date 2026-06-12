@@ -694,10 +694,10 @@
       -webkit-backdrop-filter:blur(8px);
       display:flex;align-items:center;justify-content:center;
       padding:1.2rem;
-      opacity:0;pointer-events:none;
-      transition:opacity .3s ease;
+      opacity:0;pointer-events:none;visibility:hidden;
+      transition:opacity .3s ease,visibility 0s linear .3s;
     }
-    #legalBackdrop.open{opacity:1;pointer-events:all;}
+    #legalBackdrop.open{opacity:1;pointer-events:all;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s;}
     .legalModal{
       background:var(--sur);
       border:1px solid var(--bdrh);

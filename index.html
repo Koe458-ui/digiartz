@@ -781,32 +781,6 @@
        ═══════════════════════════════════════════════ */
     #featured{padding:5rem 0 3rem;overflow:hidden;}
     .fsHdr{max-width:1200px;margin:0 auto;padding:0 2rem;}
-    .fsCarousel{position:relative;width:100%;overflow:hidden;cursor:grab;margin-top:2.5rem;}
-    .fsCarousel:active{cursor:grabbing;}
-    .fsTrack{display:flex;gap:.8rem;will-change:transform;user-select:none;-webkit-user-select:none;}
-    /* Each item matches gItem: square, same border/radius/shadow/hover */
-    .fsItem{
-      flex:0 0 auto;
-      width:clamp(160px,20vw,260px);
-      aspect-ratio:1;
-      position:relative;
-      background:var(--sur);
-      border:1px solid var(--bdr);
-      overflow:hidden;
-      transition:border-color .3s,transform .3s;
-      border-radius:6px;
-    }
-    .fsItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
-    .fsItem img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s;pointer-events:none;draggable:false;}
-    .fsItem:hover img{transform:scale(1.04);}
-    .fsItemOv{
-      position:absolute;top:0;left:0;right:0;bottom:0;
-      background:rgba(5,3,8,.7);
-      display:flex;align-items:center;justify-content:center;
-      opacity:0;transition:opacity .3s;
-    }
-    .fsItem:hover .fsItemOv{opacity:1;}
-    .fsItemOv svg{width:36px;height:36px;color:var(--ps);}
     /* Black placeholder for empty/missing URLs */
     .fsEmpty{
       width:100%;height:100%;
@@ -841,6 +815,165 @@
       cursor:pointer;transition:color .2s;z-index:701;
     }
     .fsVwrX:hover{color:var(--pg);}
+
+    /* ═══════════════════════════════════════════════
+       SHOWCASE CARD — Gallery
+       ═══════════════════════════════════════════════ */
+    .shWrap{max-width:1200px;margin:2.5rem auto 0;padding:0 2rem;}
+    /* ── Desktop: all 3 in one row ── */
+    .shCard{
+      background:color-mix(in srgb,var(--sur) 88%,transparent);
+      border:1px solid var(--bdr);
+      border-radius:4px;
+      /* Card-level floating shadow — deeper/wider than image shadows */
+      box-shadow:
+        0 2px 6px  rgba(0,0,0,.14),
+        0 10px 28px rgba(0,0,0,.13),
+        0 28px 56px rgba(0,0,0,.10),
+        0 48px 80px rgba(0,0,0,.06);
+      padding:1.4rem;
+      display:grid;
+      grid-template-columns:1.3fr 1fr 1fr;
+      gap:1.4rem;
+      align-items:start;
+    }
+    .shMain{
+      position:relative;
+      overflow:hidden;
+      border-radius:4px;
+      border:1px solid var(--bdr);
+      background:var(--sur2);
+      aspect-ratio:1;
+      width:100%;
+      /* Realistic floating shadow: close sharp + mid + far diffuse */
+      box-shadow:
+        0 2px 4px  rgba(0,0,0,.18),
+        0 8px 20px rgba(0,0,0,.15),
+        0 20px 44px rgba(0,0,0,.10);
+    }
+    .shSide{
+      display:flex;
+      flex-direction:column;
+      gap:1.4rem;
+    }
+    .shSideImg{
+      position:relative;
+      overflow:hidden;
+      border-radius:4px;
+      border:1px solid var(--bdr);
+      background:var(--sur2);
+      /* Always square — width drives height via aspect-ratio */
+      width:100%;
+      aspect-ratio:1;
+      /* Same floating shadow as shMain */
+      box-shadow:
+        0 2px 4px  rgba(0,0,0,.18),
+        0 8px 20px rgba(0,0,0,.15),
+        0 20px 44px rgba(0,0,0,.10);
+    }
+    .shMain img,.shSideImg img{
+      width:100%;height:100%;
+      object-fit:cover;
+      display:block;
+      transition:transform .5s cubic-bezier(.22,1,.36,1);
+    }
+    @media(hover:hover){
+      .shMain:hover img,.shSideImg:hover img{transform:scale(1.045);}
+    }
+    .shInfo{
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      padding:.6rem .4rem;
+    }
+    .shInfo .secT{font-size:clamp(1.7rem,3vw,2.3rem);margin-bottom:.7rem;}
+    .shInfo .secT .s{color:var(--pg);font-size:.5em;}
+    .shTxt{
+      font-family:var(--fb);
+      font-size:1rem;
+      line-height:1.75;
+      color:var(--txd);
+      margin-bottom:.6rem;
+    }
+    .shTxt:last-of-type{margin-bottom:1.4rem;}
+    .shBtn{
+      align-self:flex-start;
+      padding:.75rem 1.5rem;
+      border:1px solid var(--bdr);
+      background:transparent;
+      color:var(--ps);
+      font-family:var(--fm);
+      font-size:.72rem;
+      letter-spacing:.18em;
+      cursor:pointer;
+      transition:all .3s;
+      border-radius:4px;
+      /* Floating button shadow */
+      box-shadow:
+        0 2px 4px  rgba(0,0,0,.14),
+        0 6px 14px rgba(0,0,0,.11),
+        0 14px 28px rgba(0,0,0,.07);
+    }
+    .shBtn:hover{border-color:var(--pg);background:var(--pdim);}
+    @media(max-width:1024px) and (min-width:641px){
+      /* ONE ROW: [Big square] [Small sq / Small sq] then text below */
+      .shCard{
+        display:grid;
+        grid-template-columns:2fr 1fr;
+        grid-template-areas:
+          "main side"
+          "info info";
+        padding:1.1rem;
+        gap:1rem;
+        align-items:start;
+      }
+      /* Big image: square */
+      .shMain{
+        grid-area:main;
+        width:100%;
+        aspect-ratio:1;
+      }
+      /* Side: flex column, two images stacked */
+      .shSide{
+        grid-area:side;
+        display:flex;
+        flex-direction:column;
+        gap:.5rem;
+      }
+      /* Each small image: full column width, square.
+         Side col = 1fr, big col = 2fr so side width = ~half big width.
+         Two smalls stacked = 2x side_width tall, big = big_width = 2x side_width. MATCH. */
+      .shSideImg{
+        width:100%;
+        aspect-ratio:1;
+        flex:none;
+      }
+      .shInfo{
+        grid-area:info;
+        padding:.4rem .2rem 0;
+        justify-content:flex-start;
+      }
+    }
+    /* ── Mobile (<=640px): single column stack ── */
+    @media(max-width:640px){
+      .shWrap{padding:0 1.2rem;}
+      .shCard{
+        display:grid;
+        grid-template-columns:1fr;
+        grid-template-areas:
+          "main"
+          "side"
+          "info";
+        padding:1rem;
+        gap:.8rem;
+      }
+      .shMain{grid-area:main;width:100%;aspect-ratio:1;}
+      .shSide{grid-area:side;display:flex;flex-direction:row;gap:.8rem;}
+      /* Two small images side by side, each square */
+      .shSideImg{aspect-ratio:1;flex:1 1 0;width:auto;}
+      .shInfo{grid-area:info;padding:.4rem 0 0;}
+      .shTxt{font-size:.92rem;}
+    }
   
 /* IMAGE LINKED COMMENTS PATCH */
 .cpSelectedImage{
@@ -1299,11 +1432,11 @@ min-height:56px;
 body{background:var(--bg);}
 
 /* Soften/neutralize neon glow + heavy dark shadows outside the hero */
-.gItem,.fsItem,.adCard,.apCard,.modal,.legalModal,#fgFltPanel{
+.gItem,.adCard,.apCard,.modal,.legalModal,#fgFltPanel{
   box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important;
 }
 #navWrap.open #navDrop{box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important;}
-.gItem:hover,.fsItem:hover{box-shadow:0 6px 20px rgba(20,20,30,.10)!important;}
+.gItem:hover{box-shadow:0 6px 20px rgba(20,20,30,.10)!important;}
 .hCta:hover,.fltDone:hover,.mBtn:hover,.admSv:hover,.sCard:hover,.cpBarSend:hover,.upBtn:hover,.fgFltBtn:hover,.fgFltBtn.active,.fltOptH:has(input:checked){box-shadow:none!important;}
 .lmTitle::after{display:none;}
 
@@ -1314,12 +1447,12 @@ body{background:var(--bg);}
 .cpBar{background:rgba(255,255,255,.96)!important;border-top:1px solid var(--bdr);}
 #legalBackdrop,.mOvr{background:rgba(20,20,30,.45)!important;}
 #lb,#fsViewer{background:rgba(15,15,20,.92)!important;}
-.gOv,.fsItemOv{background:rgba(20,20,30,.55)!important;}
+.gOv{background:rgba(20,20,30,.55)!important;}
 .admBar{background:rgba(255,255,255,.97)!important;}
 .iLoadTrack{background:rgba(0,0,0,.08);}
 
 /* Cards / containers get a clean white surface with a soft border */
-.gItem,.fsItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{
+.gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{
   background:#ffffff;border-color:var(--bdr);
 }
 #navDrop{background:#ffffff;}
@@ -1471,46 +1604,28 @@ body{background:var(--bg);}
       <div class="secT">FEATURED <span class="s">✦</span></div>
       <div class="secSub">HANDPICKED HIGHLIGHTS</div>
     </div>
-    <div class="fsCarousel" id="fsCarousel">
-      <div class="fsTrack" id="fsTrack">
-
-        <!-- FEATURED SECTION START -->
-
-        <!-- FEATURED IMAGE 1 — replace FEATURED_IMAGE_URL_1 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780766256380_Reinhard_van_Astrea.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED IMAGE 2 — replace FEATURED_IMAGE_URL_2 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780836584964_Crimson_Horizon.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED IMAGE 3 — replace FEATURED_IMAGE_URL_3 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780944274654_Lelouch_vi_Britannia.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED IMAGE 4 — replace FEATURED_IMAGE_URL_4 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781024008823_Misa_Amane.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED IMAGE 5 — replace FEATURED_IMAGE_URL_5 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781091495828_Makima.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED IMAGE 6 — replace FEATURED_IMAGE_URL_6 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780918474836_Thorfinn_Karlsefni.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED IMAGE 7 — replace FEATURED_IMAGE_URL_7 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781195618071_Fushi.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED IMAGE 8 — replace FEATURED_IMAGE_URL_8 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781282837085_Kyojuro_Rengoku.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED IMAGE 9 — replace FEATURED_IMAGE_URL_9 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781459752137_Junko_Enoshima.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED IMAGE 10 — replace FEATURED_IMAGE_URL_10 with your image URL -->
-        <div class="fsItem" data-fssrc="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501989833_Mountain_Field.png"><!-- FEATURED IMAGE URL HERE --></div>
-
-        <!-- FEATURED SECTION END -->
-
-      </div><!-- /fsTrack -->
-    </div><!-- /fsCarousel -->
+    <div class="shWrap">
+      <div class="shCard" id="fsCard">
+        <div class="shMain" id="fsMain"></div>
+        <div class="shSide">
+          <div class="shSideImg" id="fsSide1"></div>
+          <div class="shSideImg" id="fsSide2"></div>
+        </div>
+        <div class="shInfo">
+          <div class="secT">About the Showcase <span class="s">✦</span></div>
+          <p class="shTxt">The Featured Showcase presents a curated selection of artworks chosen for their creativity, quality, and visual impact. Bringing together a variety of styles, characters, and scenes, this collection highlights some of the most notable pieces featured throughout DigiArtz.</p>
+          <p class="shTxt">Each artwork has been selected for its artistic merit, attention to detail, and overall presentation, offering visitors a refined look at the work displayed within the gallery. Designed to provide an engaging viewing experience, the showcase celebrates digital art through imagination, craftsmanship, and creative expression.</p>
+          <button class="shBtn" onclick="ddOpenGallery()">VIEW SHOWCASE →</button>
+        </div>
+      </div>
+    </div>
   </section>
+  <!-- FEATURED SECTION IMAGES — edit the data-fssrc URLs below to change which artworks appear -->
+  <div id="fsImageData" style="display:none;"
+    data-fssrc-1="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780766256380_Reinhard_van_Astrea.png"
+    data-fssrc-2="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780836584964_Crimson_Horizon.png"
+    data-fssrc-3="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780944274654_Lelouch_vi_Britannia.png"
+  ></div>
   <!-- Fullscreen viewer for FEATURED SHOWCASE -->
   <div id="fsViewer" onclick="if(event.target===this)fsCloseViewer()">
     <button class="fsVwrX" onclick="fsCloseViewer()">✕</button>
@@ -1518,62 +1633,59 @@ body{background:var(--bg);}
   </div>
   <!-- FEATURED SHOWCASE HTML END -->
 
-  <!-- GALLERY CAROUSEL START -->
+
+  <!-- GALLERY SHOWCASE START -->
   <div id="homeGrid" style="display:none;"></div>
   <!-- FIXED: BUG-002 — dead scroll sentinel element removed -->
-  <section id="gallery" style="padding:4rem 0 3rem;overflow:hidden;">
+  <section id="gallery" style="padding:4rem 0 3rem;">
     <div class="fsHdr" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
       <div>
         <div class="secT">GALLERY <span class="s">✦</span></div>
-        <div class="secSub">EXPLORE MY LATEST ARTWORK</div>
       </div>
       <!-- ADMIN UPLOAD BUTTON — only visible when body.admin -->
       <button class="upBtn adminOnly" onclick="openUp()" style="display:none;">↑ UPLOAD ART</button>
     </div>
-    <div class="fsCarousel" id="galCarousel">
-      <div class="fsTrack" id="galTrack"></div>
+    <div class="shWrap" style="margin-top:1.5rem;">
+      <div class="shCard" id="galCard">
+        <div class="shMain" id="galMain"></div>
+        <div class="shSide">
+          <div class="shSideImg" id="galSide1"></div>
+          <div class="shSideImg" id="galSide2"></div>
+        </div>
+        <div class="shInfo">
+          <div class="secT">About the Gallery <span class="s">✦</span></div>
+          <p class="shTxt">The Gallery features the latest additions to DigiArtz, showcasing newly uploaded artworks as they become available. From character illustrations and landscapes to creative experiments and detailed compositions, this collection is constantly growing with fresh content.</p>
+          <p class="shTxt">Visitors can explore recent creations, discover new styles, and stay up to date with the newest artwork featured on the platform. The gallery serves as an evolving archive of digital art, highlighting the most current additions while celebrating creativity and artistic expression.</p>
+          <button class="shBtn" onclick="ddOpenGallery()">VIEW GALLERY →</button>
+        </div>
+      </div>
     </div>
     <div id="galEmpty" style="display:none;padding:3rem 2rem;text-align:center;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;color:var(--txd);">NO ARTWORK YET</div>
   </section>
-  <!-- GALLERY CAROUSEL END -->
-  <!-- CHARACTERS SECTION START -->
-  <section id="secCharacters" style="padding:3rem 0 3rem;overflow:hidden;">
+  <!-- GALLERY SHOWCASE END -->
+  <!-- CHARACTERS SHOWCASE START -->
+  <section id="secCharacters" style="padding:3rem 0 3rem;">
     <div class="fsHdr">
       <div class="secT">CHARACTERS <span class="s">✦</span></div>
-      <div class="secSub">ORIGINAL CHARACTERS, ANIME FAN ART, PORTRAITS, AND CHARACTER ILLUSTRATIONS.</div>
     </div>
-    <div class="fsCarousel" id="charCarousel">
-      <div class="fsTrack" id="charTrack"></div>
+    <div class="shWrap" style="margin-top:1.5rem;">
+      <div class="shCard" id="charCard">
+        <div class="shMain" id="charMain"></div>
+        <div class="shSide">
+          <div class="shSideImg" id="charSide1"></div>
+          <div class="shSideImg" id="charSide2"></div>
+        </div>
+        <div class="shInfo">
+          <div class="secT">About the Characters <span class="s">✦</span></div>
+          <p class="shTxt">The Characters collection brings together a diverse range of character-focused artwork, featuring original creations, fan art, game characters, anime-inspired designs, and real-life inspired portraits. Each piece explores unique personalities, styles, and visual storytelling through character illustration.</p>
+          <p class="shTxt">From iconic fan-favorite characters to completely original concepts, this collection highlights the creativity and artistic interpretation behind every design. Whether inspired by existing worlds or created from imagination, these artworks celebrate the appeal and diversity of character art across different genres and mediums.</p>
+          <button class="shBtn" onclick="ddOpenGalleryChar()">VIEW CHARACTERS →</button>
+        </div>
+      </div>
     </div>
     <div id="charEmpty" style="display:none;padding:3rem 2rem;text-align:center;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;color:var(--txd);">NO CHARACTER ARTWORK YET</div>
   </section>
-  <!-- CHARACTERS SECTION END -->
-
-  <!-- LANDSCAPE SECTION START -->
-  <section id="secLandscape" style="padding:3rem 0 3rem;overflow:hidden;">
-    <div class="fsHdr">
-      <div class="secT">LANDSCAPE <span class="s">✦</span></div>
-      <div class="secSub">SCENERY, ENVIRONMENTS, NATURE STUDIES, BACKGROUNDS, AND WORLD-BUILDING ARTWORK.</div>
-    </div>
-    <div class="fsCarousel" id="landCarousel">
-      <div class="fsTrack" id="landTrack"></div>
-    </div>
-    <div id="landEmpty" style="display:none;padding:3rem 2rem;text-align:center;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;color:var(--txd);">NO LANDSCAPE ARTWORK YET</div>
-  </section>
-  <!-- LANDSCAPE SECTION END -->
-
-  <!-- SKETCH SECTION START -->
-  <section id="secSketch" style="padding:3rem 0 3rem;overflow:hidden;">
-    <div class="fsHdr">
-      <div class="secT">SKETCH <span class="s">✦</span></div>
-      <div class="secSub">PRACTICE SKETCHES, LINE ART, CONCEPTS, ROUGH IDEAS, AND WORK-IN-PROGRESS DRAWINGS.</div>
-    </div>
-    <div class="fsCarousel" id="sketchCarousel">
-      <div class="fsTrack" id="sketchTrack"></div>
-    </div>
-    <div id="sketchEmpty" style="display:none;padding:3rem 2rem;text-align:center;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;color:var(--txd);">NO SKETCH ARTWORK YET</div>
-  </section>
-  <!-- SKETCH SECTION END -->
+  <!-- CHARACTERS SHOWCASE END -->
 
   <section id="about" style="max-width:1200px;margin:0 auto;">
    <div class="secT" style="margin-bottom:.3rem;">
@@ -2140,7 +2252,14 @@ body{background:var(--bg);}
       if(q) q.focus();
     }, 50);
   }
-  function closeFG(){document.getElementById('fg').classList.remove('open');document.body.style.overflow='';}
+  function closeFG(){
+    document.getElementById('fg').classList.remove('open');
+    document.body.style.overflow='';
+    /* Reset category filter to 'all' so next open is always clean */
+    filterCat = 'all';
+    var catR = document.querySelector('input[name="fltCat"][value="all"]');
+    if(catR) catR.checked = true;
+  }
   function openLB(src,name){currentLightboxImageSrc=src;document.getElementById('lbImg').src=src;document.getElementById('lbNm').textContent=name;document.getElementById('lb').classList.add('open');document.body.style.overflow='hidden';
     /* FIXED: A11Y-002 */
     setTimeout(function(){
@@ -2536,7 +2655,23 @@ body{background:var(--bg);}
     if(w && w.classList.contains('open') && !w.contains(e.target)){ closeMenu(); }
   });
   function ddGoHome(){closeMenu();window.scrollTo({top:0,behavior:'smooth'});}
-  function ddOpenGallery(){closeMenu();openFG();}
+  function ddOpenGallery(){
+    closeMenu();
+    /* Always reset to full gallery when opening from nav or VIEW GALLERY button */
+    filterCat = 'all';
+    var catR = document.querySelector('input[name="fltCat"][value="all"]');
+    if(catR) catR.checked = true;
+    openFG();
+  }
+  function ddOpenGalleryChar(){
+    closeMenu();
+    /* Pre-select the Characters category filter before opening */
+    filterCat = 'characters';
+    /* Sync the radio button so the filter panel shows the correct state */
+    var catR = document.querySelector('input[name="fltCat"][value="characters"]');
+    if(catR) catR.checked = true;
+    openFG();
+  }
   function ddOpenComments(){ openComments(); }
   function smHandleAdm(){
     if(isAdm){
@@ -2922,389 +3057,141 @@ async function openComments(){
   })();
 
   /* ═══════════════════════════════════════════════════════════
-     GALLERY CAROUSEL JAVASCRIPT
-     Reusable carousel engine — powers Main Gallery, Characters,
-     Landscape, and Sketch sections.
+     SHOWCASE CARD JAVASCRIPT
+     Populates the Featured, Gallery, and Characters showcase
+     cards (1 large + 2 small images each). Featured uses its
+     static curated image list; Gallery and Characters pull live
+     from artwork data, newest first. All three share the single
+     #fsViewer lightbox. No carousels, no auto-scroll, no clones.
      ═══════════════════════════════════════════════════════════ */
   (function(){
+    var viewer = document.getElementById('fsViewer');
+    var vImg   = document.getElementById('fsViewerImg');
 
-    /* ── Generic carousel factory ──
-       Creates an auto-scroll + drag/swipe carousel identical to
-       Featured Showcase for any trackEl.
-       Returns { rebuild } so data can be refreshed after DB load. */
-    function makeCarousel(trackEl, viewerEl, viewerImgEl, speed){
-      speed = speed || 0.55;
-      var pos = 0, curSpeed = speed, raf = null;
-      var paused = false;
-      var dragging = false, dragX0 = 0, dragPos0 = 0;
-      var dragMoved = false, velocity = 0;
-      var lastDragX = 0, lastDragT = 0, momentumTimer = null;
-      var origCount = 0;
+    function openViewer(src){
+      if(!viewer || !vImg || !src) return;
+      vImg.src = src;
+      viewer.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    window.fsCloseViewer = function(){
+      if(!viewer || !vImg) return;
+      viewer.classList.remove('open');
+      document.body.style.overflow = '';
+      vImg.src = '';
+    };
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && viewer && viewer.classList.contains('open')){ window.fsCloseViewer(); }
+    });
 
-      function singleWidth(){
-        var first = trackEl.querySelector('.fsItem');
-        if(!first) return 1;
-        var style = window.getComputedStyle(trackEl);
-        var gap = parseFloat(style.gap || style.columnGap || '12');
-        return (first.offsetWidth + gap) * origCount;
-      }
-      function normPos(p){ var sw = singleWidth(); p = p % sw; if(p < 0) p += sw; return p; }
-      function applyTf(){ trackEl.style.transform = 'translateX(' + (-pos) + 'px)'; }
+    /* Fill mainEl/side1El/side2El with up to 3 images from `list`.
+       Returns true if at least one image was placed. */
+    function fillTriad(mainEl, side1El, side2El, list){
+      var slots = [mainEl, side1El, side2El];
+      slots.forEach(function(el){ if(el) el.innerHTML = ''; });
+      if(!list.length) return false;
 
-      function tick(){
-        if(!paused && !dragging && !window.__carouselsPaused){ pos = normPos(pos + curSpeed); applyTf(); } /* FIXED: PERF-002 */
-        raf = requestAnimationFrame(tick);
-      }
-
-      function openViewer(src){
-        if(!viewerEl || !viewerImgEl) return;
-        viewerImgEl.src = src;
-        viewerEl.classList.add('open');
-        document.body.style.overflow = 'hidden';
-        paused = true;
-      }
-      function closeViewer(){
-        if(!viewerEl || !viewerImgEl) return;
-        viewerEl.classList.remove('open');
-        document.body.style.overflow = '';
-        paused = false;
-        viewerImgEl.src = '';
-      }
-
-      function onDragStart(cx){
-        dragging = true; dragMoved = false;
-        dragX0 = cx; dragPos0 = pos;
-        velocity = 0; lastDragX = cx; lastDragT = Date.now();
-        if(momentumTimer){ clearTimeout(momentumTimer); momentumTimer = null; }
-        trackEl.style.transition = 'none';
-      }
-      function onDragMove(cx){
-        if(!dragging) return;
-        var dx = cx - dragX0;
-        if(Math.abs(dx) > 3) dragMoved = true;
-        var now = Date.now(), dt = now - lastDragT || 1;
-        velocity = (lastDragX - cx) / dt * 16;
-        lastDragX = cx; lastDragT = now;
-        pos = normPos(dragPos0 - dx); applyTf();
-      }
-      function onDragEnd(){
-        if(!dragging) return;
-        dragging = false;
-        curSpeed = Math.max(-4, Math.min(4, velocity));
-        momentumTimer = setTimeout(function(){ curSpeed = speed; momentumTimer = null; }, 1200);
-      }
-
-      trackEl.addEventListener('mousedown', function(e){ onDragStart(e.clientX); });
-      document.addEventListener('mousemove', function(e){ onDragMove(e.clientX); });
-      document.addEventListener('mouseup', onDragEnd);
-      trackEl.addEventListener('touchstart', function(e){ onDragStart(e.touches[0].clientX); }, {passive:true});
-      document.addEventListener('touchmove', function(e){ if(dragging) onDragMove(e.touches[0].clientX); }, {passive:true});
-      document.addEventListener('touchend', onDragEnd);
-      trackEl.addEventListener('dragstart', function(e){ e.preventDefault(); });
-
-      if(viewerEl){
-        document.addEventListener('keydown', function(e){
-          if(e.key === 'Escape' && viewerEl.classList.contains('open')){ closeViewer(); }
-        });
-        viewerEl.addEventListener('click', function(e){ if(e.target === viewerEl) closeViewer(); });
-        var vx = viewerEl.querySelector('.fsVwrX');
-        if(vx) vx.addEventListener('click', closeViewer);
-      }
-
-      raf = requestAnimationFrame(tick);
-
-      /* Build items from artwork array, filtered by category (null = all) */
-      function rebuild(artworks, catFilter){
-        /* Clear existing items */
-        trackEl.innerHTML = '';
-        origCount = 0;
-
-        /* FIX 1: split comma-separated category string and use includes()
-           so multi-category images (e.g. "characters,others") match correctly */
-        var list = catFilter
-          ? artworks.filter(function(a){
-              var cats = (a.category || 'others').split(',').map(function(s){ return s.trim().toLowerCase(); });
-              return cats.indexOf(catFilter.toLowerCase()) !== -1;
-            })
-          : artworks;
-
-        /* FIX 2: always sort newest first by created_at before rendering */
-        list = list.slice().sort(function(a, b){
-          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-        });
-
-        if(!list.length) return false; /* signal: empty */
-
-        /* Build original items */
-        list.forEach(function(art){
-          var item = document.createElement('div');
-          item.className = 'fsItem';
-          var src = art.image_url || '';
-          item.setAttribute('data-src', src);
-
-          var img = document.createElement('img');
-          img.src = getThumbnailUrl(src);
-          img.alt = art.name || '';
-          img.loading = 'lazy';
-          img.decoding = 'async';
-          img.draggable = false;
-
-          var ov = document.createElement('div');
-          ov.className = 'fsItemOv';
-          ov.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
-
-          item.appendChild(img);
-          item.appendChild(ov);
-          item.style.cursor = 'pointer';
-          item.addEventListener('click', (function(s){ return function(){ if(!dragMoved){ openViewer(s); } }; })(src));
-          trackEl.appendChild(item);
-          origCount++;
-        });
-
-        /* Duplicate for seamless loop */
-        var origItems = trackEl.querySelectorAll('.fsItem');
-        origItems.forEach(function(orig){
-          var clone = orig.cloneNode(true);
-          clone.classList.add('fsClone');
-          var s2 = orig.getAttribute('data-src') || '';
-          clone.addEventListener('click', (function(s){ return function(){ if(!dragMoved){ openViewer(s); } }; })(s2));
-          trackEl.appendChild(clone);
-        });
-
-        pos = 0; applyTf();
-        return true; /* signal: has items */
-      }
-
-      return { rebuild: rebuild, closeViewer: closeViewer };
+      list.slice(0, 3).forEach(function(art, i){
+        var el = slots[i];
+        if(!el) return;
+        var fullSrc = art.image_url || '';
+        var img = document.createElement('img');
+        img.src = getThumbnailUrl(fullSrc);
+        img.alt = art.name || '';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.draggable = false;
+        /* Same fallback as renderFeatured() — keeps the rounded-corner
+           box intact even if a thumbnail URL 404s or fails to load. */
+        img.onerror = function(){ el.innerHTML = '<div class="fsEmpty"></div>'; el.style.cursor = 'default'; };
+        el.appendChild(img);
+        el.style.cursor = 'pointer';
+        el.onclick = (function(s){ return function(){ openViewer(s); }; })(fullSrc);
+      });
+      return true;
     }
 
-    /* ── Shared viewer for all gallery carousels ──
-       Reuse the existing #fsViewer to keep one overlay for everything */
-    var sharedViewer    = document.getElementById('fsViewer');
-    var sharedViewerImg = document.getElementById('fsViewerImg');
-
-    /* ── Instantiate all carousels ── */
-    var galTrack    = document.getElementById('galTrack');
-    var charTrack   = document.getElementById('charTrack');
-    var landTrack   = document.getElementById('landTrack');
-    var sketchTrack = document.getElementById('sketchTrack');
-
-    var galCar    = makeCarousel(galTrack,    sharedViewer, sharedViewerImg, 0.55);
-    var charCar   = makeCarousel(charTrack,   sharedViewer, sharedViewerImg, 0.50);
-    var landCar   = makeCarousel(landTrack,   sharedViewer, sharedViewerImg, 0.45);
-    var sketchCar = makeCarousel(sketchTrack, sharedViewer, sharedViewerImg, 0.60);
-
-    /* ── Expose rebuild function for use after DB loads ── */
-    window.rebuildGalCarousels = function(artworks){
-      /* Main gallery: all artworks */
-      var galHas = galCar.rebuild(artworks, null);
-      document.getElementById('galEmpty').style.display  = galHas  ? 'none' : 'block';
-      document.getElementById('galCarousel').style.display = galHas ? '' : 'none';
-
-      /* Characters: filter by "characters" category */
-      var charHas = charCar.rebuild(artworks, 'characters');
-      document.getElementById('charEmpty').style.display  = charHas  ? 'none' : 'block';
-      document.getElementById('charCarousel').style.display = charHas ? '' : 'none';
-
-      /* Landscape: filter by "landscapes" category */
-      var landHas = landCar.rebuild(artworks, 'landscapes');
-      document.getElementById('landEmpty').style.display  = landHas  ? 'none' : 'block';
-      document.getElementById('landCarousel').style.display = landHas ? '' : 'none';
-
-      /* Sketch: filter by "sketches" category */
-      var sketchHas = sketchCar.rebuild(artworks, 'sketches');
-      document.getElementById('sketchEmpty').style.display  = sketchHas  ? 'none' : 'block';
-      document.getElementById('sketchCarousel').style.display = sketchHas ? '' : 'none';
-    };
-
-    /* Build with empty data initially — will be rebuilt after DB loads */
-    window.rebuildGalCarousels([]);
-
-  })();
-  /* ═══════════════════════════════════════════════════════════
-     END GALLERY CAROUSEL JAVASCRIPT
-     ═══════════════════════════════════════════════════════════ */
-
-  /* FIXED: PERF-002 & PERF-003 — Pause all RAF loops when tab is hidden */
-  (function(){
-    window.__carouselsPaused = false;
-    document.addEventListener('visibilitychange', function(){
-      window.__carouselsPaused = document.hidden;
-    });
-  })();
-
-  /* ═══════════════════════════════════════════════════════════
-     FEATURED SHOWCASE JAVASCRIPT
-     Infinite auto-scroll carousel with drag/swipe + fullscreen
-     ═══════════════════════════════════════════════════════════ */
-  (function(){
-    /* ── Build carousel items from data-fssrc attributes ── */
-    var track   = document.getElementById('fsTrack');
-    var viewer  = document.getElementById('fsViewer');
-    var vImg    = document.getElementById('fsViewerImg');
-
-    /* Populate each .fsItem with either an <img> or a placeholder */
-    var origItems = track.querySelectorAll('.fsItem');
-    origItems.forEach(function(item){
-      var src = (item.getAttribute('data-fssrc') || '').trim();
-      var isPlaceholder = !src || src.indexOf('FEATURED_IMAGE_URL') !== -1;
-      if(isPlaceholder){
-        item.innerHTML = '<div class="fsEmpty"></div>';
-        item.style.cursor = 'default';
-      } else {
+    /* ── Featured: static curated images from #fsImageData ── */
+    function renderFeatured(){
+      var data = document.getElementById('fsImageData');
+      var slots = [
+        { el: document.getElementById('fsMain'),  src: data ? data.getAttribute('data-fssrc-1') : '' },
+        { el: document.getElementById('fsSide1'), src: data ? data.getAttribute('data-fssrc-2') : '' },
+        { el: document.getElementById('fsSide2'), src: data ? data.getAttribute('data-fssrc-3') : '' }
+      ];
+      slots.forEach(function(slot){
+        var el  = slot.el;
+        var src = (slot.src || '').trim();
+        if(!el) return;
+        el.innerHTML = '';
+        if(!src){
+          el.innerHTML = '<div class="fsEmpty"></div>';
+          return;
+        }
         var img = document.createElement('img');
         img.src = src;
         img.alt = 'Featured artwork';
         img.loading = 'lazy';
         img.decoding = 'async';
         img.draggable = false;
-        img.onerror = function(){ item.innerHTML = '<div class="fsEmpty"></div>'; item.style.cursor='default'; };
-        /* Zoom overlay icon */
-        var ov = document.createElement('div');
-        ov.className = 'fsItemOv';
-        ov.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
-        item.appendChild(img);
-        item.appendChild(ov);
-        item.style.cursor = 'pointer';
-        /* click → open fullscreen (only if not dragging) */
-        item.addEventListener('click', function(){
-          if(!fsDragMoved){ fsOpenViewer(src); }
-        });
-      }
-    });
-
-    /* Duplicate items for seamless infinite loop (clone set) */
-    var origCount = origItems.length; /* 10 */
-    origItems.forEach(function(item){
-      var clone = item.cloneNode(true);
-      clone.classList.add('fsClone');
-      /* Re-attach click on clone */
-      var src2 = (item.getAttribute('data-fssrc') || '').trim();
-      var isP2 = !src2 || src2.indexOf('FEATURED_IMAGE_URL') !== -1;
-      if(!isP2){
-        clone.addEventListener('click', function(){
-          if(!fsDragMoved){ fsOpenViewer(src2); }
-        });
-      }
-      track.appendChild(clone);
-    });
-
-    /* ── Scroll state ── */
-    var fsPos      = 0;   /* current left offset in px */
-    var fsSpeed    = 0.6; /* base auto-scroll speed px/frame */
-    var fsCurSpeed = fsSpeed;
-    var fsRAF      = null;
-    var fsPaused   = false;
-
-    /* ── Drag state ── */
-    var fsDragging  = false;
-    var fsDragX0    = 0;
-    var fsDragPos0  = 0;
-    var fsDragMoved = false;
-    var fsVelocity  = 0;
-    var fsLastDragX = 0;
-    var fsLastDragT = 0;
-    var fsMomentumTimer = null;
-
-    function fsSingleWidth(){
-      /* Width of one item set = origCount * (itemWidth + gap) */
-      var first = track.querySelector('.fsItem');
-      if(!first) return 2920;
-      var style = window.getComputedStyle(track);
-      var gap = parseFloat(style.gap || style.columnGap || '12');
-      return (first.offsetWidth + gap) * origCount;
+        img.onerror = function(){ el.innerHTML = '<div class="fsEmpty"></div>'; el.style.cursor = 'default'; };
+        el.appendChild(img);
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', function(){ openViewer(src); });
+      });
     }
+    renderFeatured();
 
-    function fsNormPos(p){
-      var sw = fsSingleWidth();
-      p = p % sw;
-      if(p < 0) p += sw;
-      return p;
-    }
+    /* ── Gallery + Characters: live artwork data, rebuilt after DB loads ── */
+    window.rebuildGalCarousels = function(artworks){
+      /* Gallery: most recent uploads across all categories */
+      var galList = artworks.slice().sort(function(a,b){
+        var tA = new Date(a.created_at || 0).getTime();
+        var tB = new Date(b.created_at || 0).getTime();
+        if(tB !== tA) return tB - tA;
+        return (parseInt(b.id,10)||0) - (parseInt(a.id,10)||0);
+      });
+      var galHas = fillTriad(
+        document.getElementById('galMain'),
+        document.getElementById('galSide1'),
+        document.getElementById('galSide2'),
+        galList
+      );
+      document.getElementById('galEmpty').style.display = galHas ? 'none' : 'block';
+      document.getElementById('galCard').style.display   = galHas ? '' : 'none';
 
-    function fsApplyTransform(){
-      track.style.transform = 'translateX(' + (-fsPos) + 'px)';
-    }
+      /* Collect the image_urls already used by the Gallery triad so Characters can skip them */
+      var galUsedUrls = {};
+      galList.slice(0, 3).forEach(function(a){ if(a.image_url) galUsedUrls[a.image_url] = true; });
 
-    function fsTick(){
-      if(!fsPaused && !fsDragging && !window.__carouselsPaused){ /* FIXED: PERF-003 */
-        fsPos = fsNormPos(fsPos + fsCurSpeed);
-        fsApplyTransform();
-      }
-      fsRAF = requestAnimationFrame(fsTick);
-    }
-
-    /* ── Fullscreen viewer ── */
-    function fsOpenViewer(src){
-      vImg.src = src;
-      viewer.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      fsPaused = true;
-    }
-    window.fsCloseViewer = function(){
-      viewer.classList.remove('open');
-      document.body.style.overflow = '';
-      fsPaused = false;
-      vImg.src = '';
+      /* Characters: most recent uploads tagged "characters", skipping any already shown in Gallery */
+      var charList = artworks.filter(function(a){
+        var cats = (a.category || 'others').split(',').map(function(s){ return s.trim().toLowerCase(); });
+        return cats.indexOf('characters') !== -1;
+      }).sort(function(a,b){
+        var tA = new Date(a.created_at || 0).getTime();
+        var tB = new Date(b.created_at || 0).getTime();
+        if(tB !== tA) return tB - tA;
+        return (parseInt(b.id,10)||0) - (parseInt(a.id,10)||0);
+      }).filter(function(a){
+        /* Skip images already displayed in the Gallery showcase */
+        return !galUsedUrls[a.image_url];
+      });
+      var charHas = fillTriad(
+        document.getElementById('charMain'),
+        document.getElementById('charSide1'),
+        document.getElementById('charSide2'),
+        charList
+      );
+      document.getElementById('charEmpty').style.display = charHas ? 'none' : 'block';
+      document.getElementById('charCard').style.display   = charHas ? '' : 'none';
     };
 
-    /* ── Drag / Swipe ── */
-    function fsOnDragStart(clientX){
-      fsDragging  = true;
-      fsDragMoved = false;
-      fsDragX0    = clientX;
-      fsDragPos0  = fsPos;
-      fsVelocity  = 0;
-      fsLastDragX = clientX;
-      fsLastDragT = Date.now();
-      if(fsMomentumTimer){ clearTimeout(fsMomentumTimer); fsMomentumTimer = null; }
-      track.style.transition = 'none';
-    }
-    function fsOnDragMove(clientX){
-      if(!fsDragging) return;
-      var dx = clientX - fsDragX0;
-      if(Math.abs(dx) > 3) fsDragMoved = true;
-      var now = Date.now();
-      var dt  = now - fsLastDragT || 1;
-      fsVelocity = (fsLastDragX - clientX) / dt * 16; /* px per 60fps frame */
-      fsLastDragX = clientX;
-      fsLastDragT = now;
-      fsPos = fsNormPos(fsDragPos0 - dx);
-      fsApplyTransform();
-    }
-    function fsOnDragEnd(){
-      if(!fsDragging) return;
-      fsDragging = false;
-      /* Apply momentum then ease back to base speed */
-      fsCurSpeed = Math.max(-4, Math.min(4, fsVelocity));
-      fsMomentumTimer = setTimeout(function(){
-        fsCurSpeed = fsSpeed;
-        fsMomentumTimer = null;
-      }, 1200);
-    }
-
-    /* Mouse */
-    track.addEventListener('mousedown', function(e){ fsOnDragStart(e.clientX); });
-    document.addEventListener('mousemove', function(e){ fsOnDragMove(e.clientX); });
-    document.addEventListener('mouseup', fsOnDragEnd);
-    /* Touch */
-    track.addEventListener('touchstart', function(e){ fsOnDragStart(e.touches[0].clientX); }, {passive:true});
-    document.addEventListener('touchmove', function(e){ if(fsDragging) fsOnDragMove(e.touches[0].clientX); }, {passive:true});
-    document.addEventListener('touchend', fsOnDragEnd);
-
-    /* Prevent context menu while dragging */
-    track.addEventListener('dragstart', function(e){ e.preventDefault(); });
-
-    /* ── Start the loop ── */
-    fsRAF = requestAnimationFrame(fsTick);
-
-    /* Close viewer on Escape (piggybacks existing keydown listener) */
-    document.addEventListener('keydown', function(e){
-      if(e.key === 'Escape' && viewer.classList.contains('open')){ window.fsCloseViewer(); }
-    });
+    /* Build with empty data initially — will be rebuilt after DB loads */
+    window.rebuildGalCarousels([]);
   })();
   /* ═══════════════════════════════════════════════════════════
-     END FEATURED SHOWCASE JAVASCRIPT
+     END SHOWCASE CARD JAVASCRIPT
      ═══════════════════════════════════════════════════════════ */
   </script>
  <!-- ════════════════════════════════════════════════════════

@@ -58,7 +58,7 @@
       --pdim:color-mix(in srgb,var(--tc) 12%,transparent);
       --tx:var(--theme-tx);
       --txd:var(--theme-txd);
-      --fd:'Cinzel',serif;--fb:'Cormorant Garamond',serif;--fm:'Space Mono',monospace;
+      --fd:'Cinzel',serif;--fb:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;--fm:'Space Mono',monospace;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     html{scroll-behavior:smooth;}
@@ -82,7 +82,7 @@
     /* ══════════════════════════════════════════════
        NAV — unified rounded bar + attached dropdown
        ══════════════════════════════════════════════ */
-    #navWrap{position:fixed;top:1rem;left:50%;transform:translateX(-50%);z-index:500;width:min(560px,calc(100% - 2rem));display:flex;flex-direction:column;align-items:stretch;}
+    #navWrap{position:fixed;top:1rem;left:50%;transform:translateX(-50%);z-index:500;width:min(560px,calc(100% - 2rem));display:flex;flex-direction:column;align-items:stretch;will-change:width,top;}
 
     #navBar{
       display:flex;align-items:center;justify-content:space-between;
@@ -101,17 +101,16 @@
       -webkit-backdrop-filter:blur(14px);
       position:relative;z-index:2;
       overflow:hidden;
+      will-change:border-radius,padding;
       transition:border-radius .45s ease-in-out,border-bottom-color .45s ease-in-out,padding .45s ease-in-out;
     }
     #navWrap.open #navBar{border-radius:22px 22px 0 0;border-bottom-color:transparent;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--tc) 8%,transparent);}
 
-    .nLogo{font-family:var(--fd);font-size:1.05rem;font-weight:700;letter-spacing:.15em;color:var(--tx);text-decoration:none;display:flex;align-items:center;gap:.4rem;background:none;border:none;cursor:pointer;
-      transition:opacity .35s ease,transform .35s ease;}
-    .nLogo .s{color:var(--pg);font-size:.72rem;}
+    .nLogo{display:none;}
 
     /* Right-side group: Login + Hamburger */
     .nRight{display:flex;align-items:center;gap:.55rem;
-      transition:opacity .35s ease,transform .35s ease;}
+      transition:opacity .35s ease .5s,transform .35s ease .5s;}
 
     /* Login icon button — circular glass chip, matches hamburger button */
     .nLoginBtn{
@@ -122,19 +121,19 @@
       cursor:pointer;
       display:flex;align-items:center;justify-content:center;
       box-shadow:0 2px 8px rgba(5,3,8,.10);
-      transition:color .25s,border-color .25s,background .25s,box-shadow .25s;
+      transition:color .25s,border-color .25s,background .25s,box-shadow .25s,opacity .35s ease .5s;
       flex-shrink:0;
     }
     .nLoginBtn svg{width:16px;height:16px;display:block;}
     .nLoginBtn:hover{color:var(--ps);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
     .nLoginBtn.loggedIn{color:var(--ps);border-color:color-mix(in srgb,var(--tc) 35%,transparent);}
 
-    /* "Menu" centered label — hidden by default, shown when collapsed */
+    /* "Menu" label — always visible now (Koe logo removed) */
     .nMenuLabel{
       font-family:var(--fm);font-size:.78rem;letter-spacing:.3em;
       color:var(--txd);
       position:absolute;left:50%;transform:translateX(-50%);
-      opacity:0;pointer-events:none;white-space:nowrap;
+      opacity:1;pointer-events:auto;white-space:nowrap;
       transition:opacity .3s ease;
     }
 
@@ -152,7 +151,8 @@
       border-radius:31px !important; /* keep full pill even if open class were somehow set */
     }
     #navWrap.navCollapsed .nLogo{opacity:0;pointer-events:none;position:absolute;left:-9999px;}
-    #navWrap.navCollapsed .nRight{opacity:0;pointer-events:none;position:absolute;right:-9999px;}
+    #navWrap.navCollapsed .nLoginBtn{opacity:0;pointer-events:none;position:absolute;left:-9999px;transition-delay:0s;}
+    #navWrap.navCollapsed .nRight{opacity:0;pointer-events:none;position:absolute;right:-9999px;transition-delay:0s;}
     #navWrap.navCollapsed .nMenuLabel{opacity:1;pointer-events:auto;}
     /* Also hide dropdown trigger when collapsed (clicking pill opens menu) */
     #navWrap.navCollapsed #navDrop{display:none;}
@@ -270,18 +270,18 @@
     /* hOv — dark cinematic overlay only; theme-color radial removed (was causing large colour haze across hero) */
     .hOv{position:absolute;inset:0;z-index:3;background:none;}
     .hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
-    .hT{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:clamp(2.2rem,9vw,5.5rem);font-weight:700;letter-spacing:-.01em;line-height:.95;color:#000;-webkit-text-fill-color:#000;filter:none;position:relative;}
+    .hT{font-family:var(--fd);font-size:clamp(2.5rem,11vw,7rem);font-weight:900;line-height:.9;color:#000;-webkit-text-fill-color:#000;filter:none;position:relative;}
     .hT .si{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.12em;color:#000;-webkit-text-fill-color:#000;animation:sP 3s ease-in-out infinite;filter:none;}
     @keyframes sP{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.7}}
     .hSub{font-family:var(--fm);font-size:clamp(.5rem,2.2vw,.9rem);letter-spacing:.4em;color:#000;margin-top:.5rem;}
     .hDesc{font-family:var(--fb);font-size:clamp(.85rem,2.5vw,1.05rem);color:#000;font-style:italic;}
-    .hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid rgba(0,0,0,.1);background:#fff;color:#000;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;border-radius:6px;box-shadow:0 2px 18px rgba(0,0,0,.12);}
-    .hCta:hover{background:#fff;border-color:rgba(0,0,0,.18);box-shadow:0 4px 24px rgba(0,0,0,.18);transform:translateY(-2px);}
+    .hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid var(--pg);background:rgba(255,255,255,.55);color:#000;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;border-radius:6px;}
+    .hCta:hover{background:rgba(255,255,255,.75);border-color:var(--pb);box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);transform:translateY(-2px);}
     .hScr{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.4rem;z-index:4;}
     .hScr span{font-family:var(--fm);font-size:.62rem;letter-spacing:.3em;color:#000;}
     .sLn{width:1px;height:50px;background:linear-gradient(to bottom,var(--pg),transparent);animation:sD 2s ease-in-out infinite;}
     @keyframes sD{0%{transform:scaleY(0);transform-origin:top;opacity:1}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom;opacity:.3}}
-    .hEBg{position:absolute;bottom:1rem;right:1.5rem;z-index:10;padding:.5rem 1rem;background:color-mix(in srgb,var(--tc) 15%,transparent);border:1px solid var(--bdr);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;cursor:pointer;display:none;align-items:center;gap:.4rem;transition:all .25s;border-radius:6px;}
+    .hEBg{position:absolute;bottom:1rem;right:1.5rem;z-index:10;padding:.5rem 1rem;background:color-mix(in srgb,var(--tc) 15%,transparent);border:1px solid var(--bdr);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;cursor:pointer;display:none;align-items:center;gap:.4rem;transition:background .25s,border-color .25s;border-radius:6px;}
     .hEBg:hover{background:color-mix(in srgb,var(--tc) 30%,transparent);border-color:var(--pg);}
     body.admin .hEBg{display:flex;}
     #bgF{display:none;}
@@ -297,7 +297,7 @@
     .secT .s{color:var(--pg);font-size:.5em;}
     .secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
     .gHdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:.3rem;flex-wrap:wrap;gap:1rem;}
-    .upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:all .3s;border-radius:6px;}
+    .upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
     .upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
     /* Admin-only upload button: hidden by default, shown only when body.admin */
     body.admin .adminOnly{display:flex !important;}
@@ -336,7 +336,7 @@
     .fgQ::placeholder{color:var(--txd);}
     /* ── FILTER BUTTON ── */
     .fgFil{display:flex;align-items:center;flex-shrink:0;} /* FIXED: HTML-001 */
-    .fgFltBtn{flex-shrink:0;width:42px;height:42px;background:color-mix(in srgb,var(--tc) 8%,transparent);border:1px solid var(--bdrh);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;position:relative;border-radius:6px;}
+    .fgFltBtn{flex-shrink:0;width:42px;height:42px;background:color-mix(in srgb,var(--tc) 8%,transparent);border:1px solid var(--bdrh);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .25s,color .25s,background .25s,box-shadow .25s;position:relative;border-radius:6px;}
     .fgFltBtn svg{width:18px;height:18px;pointer-events:none;}
     .fgFltBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
     .fgFltBtn.active{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
@@ -400,7 +400,7 @@
 
     /* Grid options — horizontal row */
     .fltOptsH{display:flex;flex-direction:row;gap:.5rem;}
-    .fltOptH{flex:1;display:flex;flex-direction:column;align-items:center;gap:.45rem;padding:.65rem .3rem;cursor:pointer;border:1px solid var(--bdr);background:color-mix(in srgb,var(--tc) 4%,transparent);border-radius:6px;transition:all .2s;user-select:none;}
+    .fltOptH{flex:1;display:flex;flex-direction:column;align-items:center;gap:.45rem;padding:.65rem .3rem;cursor:pointer;border:1px solid var(--bdr);background:color-mix(in srgb,var(--tc) 4%,transparent);border-radius:6px;transition:border-color .2s,background .2s,box-shadow .2s;user-select:none;}
     .fltOptH:hover{border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 8%,transparent);}
     .fltOptH input[type=radio]{display:none;}
     .fltOptH:has(input[type=radio]:checked){border-color:var(--pg);background:var(--pdim);box-shadow:0 0 14px color-mix(in srgb,var(--tc) 28%,transparent);}
@@ -413,7 +413,7 @@
     .fltSep{height:1px;background:linear-gradient(to right,transparent,var(--bdr),transparent);margin:0 1rem;}
 
     /* Done button */
-    .fltDone{display:block;width:calc(100% - 2.8rem);margin:1rem 1.4rem 1.5rem;padding:.9rem 1rem;background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.3em;cursor:pointer;transition:all .3s;text-align:center;border-radius:6px;}
+    .fltDone{display:block;width:calc(100% - 2.8rem);margin:1rem 1.4rem 1.5rem;padding:.9rem 1rem;background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.3em;cursor:pointer;transition:background .3s,box-shadow .3s,transform .3s;text-align:center;border-radius:6px;}
     .fltDone:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 26px color-mix(in srgb,var(--tc) 42%,transparent),inset 0 0 20px color-mix(in srgb,var(--tc) 8%,transparent);transform:translateY(-1px);}
     .fltDone:active{transform:translateY(0) scale(.98);}
 
@@ -597,7 +597,7 @@
       border:1px solid var(--pg);
       color:var(--ps);
       font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;
-      cursor:pointer;transition:all .25s;
+      cursor:pointer;transition:background .25s,box-shadow .25s,transform .25s;
       white-space:nowrap;
       border-radius:6px;
     }
@@ -643,7 +643,7 @@
       letter-spacing:.16em;
       text-decoration:none;
       cursor:pointer;
-      transition:all .3s;
+      transition:border-color .3s,color .3s,background .3s,transform .3s,box-shadow .3s;
       white-space:nowrap;
       flex:1;
       min-width:0;
@@ -815,7 +815,7 @@
     .mIn{width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fm);font-size:.8rem;letter-spacing:.1em;padding:.75rem 1rem;outline:none;transition:border-color .25s;margin-bottom:.8rem;border-radius:6px;}
     .mIn:focus{border-color:var(--pg);}
     .mIn::placeholder{color:var(--txd);opacity:.5;}
-    .mBtn{width:100%;padding:.8rem 1rem;background:var(--pdim);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:all .3s;margin-bottom:.6rem;border-radius:6px;}
+    .mBtn{width:100%;padding:.8rem 1rem;background:var(--pdim);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,box-shadow .3s;margin-bottom:.6rem;border-radius:6px;}
     .mBtn:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 20px color-mix(in srgb,var(--tc) 20%,transparent);}
     .mBtn.sec{background:transparent;border-color:var(--bdr);color:var(--txd);}
     .mBtn.sec:hover{border-color:var(--txd);background:var(--sur2);}
@@ -823,7 +823,7 @@
     .mX:hover{color:var(--pg);}
     .mErr{font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;color:#f87171;margin-bottom:.6rem;display:none;}
     .mErr.show{display:block;}
-    .dz{border:2px dashed var(--bdr);padding:2rem;text-align:center;margin-bottom:1rem;cursor:pointer;transition:all .3s;position:relative;border-radius:6px;}
+    .dz{border:2px dashed var(--bdr);padding:2rem;text-align:center;margin-bottom:1rem;cursor:pointer;transition:border-color .3s,background .3s;position:relative;border-radius:6px;}
     .dz:hover,.dz.over{border-color:var(--pg);background:var(--pdim);}
     .dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
     .dzIco{font-size:2rem;color:var(--txd);margin-bottom:.5rem;}
@@ -834,10 +834,10 @@
     .admBar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(13,10,20,.97);border-top:1px solid var(--bdr);padding:.8rem 2rem;display:none;align-items:center;justify-content:space-between;gap:1rem;}
     body.admin .admBar{display:flex;}
     .admBar p{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--ps);}
-    .admSv{padding:.6rem 1.5rem;background:var(--pdim);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;cursor:pointer;transition:all .25s;border-radius:6px;}
+    .admSv{padding:.6rem 1.5rem;background:var(--pdim);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;cursor:pointer;transition:background .25s,box-shadow .25s;border-radius:6px;}
     .admSv:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 15px color-mix(in srgb,var(--tc) 30%,transparent);}
 
-    .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:900;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;border-radius:6px;}
+    .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:900;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;border-radius:6px;}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
     /* ═══════════════════════════════════════════════
@@ -954,10 +954,9 @@
     .shInfo .secT .s{color:var(--pg);font-size:.5em;}
     .shTxt{
       font-family:var(--fb);
-      font-size:1rem;
-      line-height:1.75;
-      color:var(--tx);
-      opacity:.82;
+      font-size:clamp(.95rem,2.2vw,1.05rem);
+      line-height:1.7;
+      color:var(--txd);
       margin-bottom:.6rem;
     }
     .shTxt:last-of-type{margin-bottom:1.4rem;}
@@ -971,9 +970,7 @@
       font-size:.72rem;
       letter-spacing:.18em;
       cursor:pointer;
-      transition:all .3s;
-      border-radius:4px;
-      /* Floating button shadow */
+      transition:border-color .3s,background .3s;
       box-shadow:
         0 2px 4px  rgba(0,0,0,.14),
         0 6px 14px rgba(0,0,0,.11),
@@ -1037,7 +1034,6 @@
       /* Two small images side by side, each square */
       .shSideImg{aspect-ratio:1;flex:1 1 0;width:auto;}
       .shInfo{grid-area:info;padding:.4rem 0 0;}
-      .shTxt{font-size:.92rem;}
     }
   
 /* IMAGE LINKED COMMENTS PATCH */
@@ -1442,7 +1438,7 @@ font-family:var(--fm);
 font-size:.8rem;
 letter-spacing:.2em;
 cursor:pointer;
-transition:all .3s;
+transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;
 display:flex;
 align-items:center;
 justify-content:center;
@@ -1593,15 +1589,14 @@ body{background:var(--bg);}
        ══════════════════════════════════════════════ -->
   <div id="navWrap">
    <div id="navBar">
-    <button class="nLogo" id="navLogo" onclick="ddGoHome()">Koe <span class="s">✦</span></button>
+    <button class="nLoginBtn" id="navLoginBtn" onclick="smHandleAuth()" title="Login" aria-label="Login">
+     <svg fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.6"></circle>
+      <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7" stroke="currentColor" stroke-linecap="round" stroke-width="1.6"></path>
+     </svg>
+    </button>
     <span class="nMenuLabel" id="navMenuLabel">Menu</span>
     <div class="nRight" id="navRight">
-     <button class="nLoginBtn" id="navLoginBtn" onclick="smHandleAuth()" title="Login" aria-label="Login">
-      <svg fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-       <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.6"></circle>
-       <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7" stroke="currentColor" stroke-linecap="round" stroke-width="1.6"></path>
-      </svg>
-     </button>
      <button class="nHam" id="hamBtn" onclick="toggleMenu()" title="Menu" aria-label="Open menu" aria-expanded="false" aria-controls="navDrop">
       <span></span>
       <span></span>
@@ -1684,8 +1679,8 @@ body{background:var(--bg);}
         </div>
         <div class="shInfo">
           <div class="secT">About the Showcase <span class="s">✦</span></div>
-          <p class="shTxt">A curated selection of artworks chosen for their creativity, quality, and visual impact. This collection brings together a range of styles, characters, and scenes, highlighting some of the strongest pieces featured across DigiArtz.</p>
-          <p class="shTxt">Each piece is selected for its craftsmanship, attention to detail, and overall presentation. The showcase offers a refined view of the gallery's work, celebrating digital art through skill, imagination, and creative expression.</p>
+          <p class="shTxt">The Featured Showcase presents a curated selection of artworks chosen for their creativity, quality, and visual impact. Bringing together a variety of styles, characters, and scenes, this collection highlights some of the most notable pieces featured throughout DigiArtz.</p>
+          <p class="shTxt">Each artwork has been selected for its artistic merit, attention to detail, and overall presentation, offering visitors a refined look at the work displayed within the gallery. Designed to provide an engaging viewing experience, the showcase celebrates digital art through imagination, craftsmanship, and creative expression.</p>
           <button class="shBtn" onclick="ddOpenGallery()">VIEW SHOWCASE →</button>
         </div>
       </div>
@@ -1725,8 +1720,8 @@ body{background:var(--bg);}
         </div>
         <div class="shInfo">
           <div class="secT">About the Gallery <span class="s">✦</span></div>
-          <p class="shTxt">The Gallery features the latest additions to DigiArtz, showcasing new artwork as it's uploaded. From character illustrations and landscapes to sketches and detailed compositions, this collection keeps growing with fresh work.</p>
-          <p class="shTxt">Browse recent pieces, discover new styles, and stay up to date with what's newest on the platform. The Gallery serves as a living archive of the work shown here, reflecting ongoing creativity and craft.</p>
+          <p class="shTxt">The Gallery features the latest additions to DigiArtz, showcasing newly uploaded artworks as they become available. From character illustrations and landscapes to creative experiments and detailed compositions, this collection is constantly growing with fresh content.</p>
+          <p class="shTxt">Visitors can explore recent creations, discover new styles, and stay up to date with the newest artwork featured on the platform. The gallery serves as an evolving archive of digital art, highlighting the most current additions while celebrating creativity and artistic expression.</p>
           <button class="shBtn" onclick="ddOpenGallery()">VIEW GALLERY →</button>
         </div>
       </div>
@@ -1748,8 +1743,8 @@ body{background:var(--bg);}
         </div>
         <div class="shInfo">
           <div class="secT">About the Characters <span class="s">✦</span></div>
-          <p class="shTxt">The Characters collection brings together character-focused artwork, including original creations, fan art, game characters, anime-inspired designs, and portrait studies. Each piece explores personality and style through character illustration.</p>
-          <p class="shTxt">From fan-favorite characters to original concepts, this collection reflects the range of approaches behind character design. Whether inspired by existing worlds or built from scratch, these pieces highlight the variety found across character art.</p>
+          <p class="shTxt">The Characters collection brings together a diverse range of character-focused artwork, featuring original creations, fan art, game characters, anime-inspired designs, and real-life inspired portraits. Each piece explores unique personalities, styles, and visual storytelling through character illustration.</p>
+          <p class="shTxt">From iconic fan-favorite characters to completely original concepts, this collection highlights the creativity and artistic interpretation behind every design. Whether inspired by existing worlds or created from imagination, these artworks celebrate the appeal and diversity of character art across different genres and mediums.</p>
           <button class="shBtn" onclick="ddOpenGalleryChar()">VIEW CHARACTERS →</button>
         </div>
       </div>
@@ -1770,7 +1765,7 @@ body{background:var(--bg);}
    </div>
    <div class="aIn">
     <p class="aTxt" id="aTxt">
-     I'm <strong>KOE</strong>, a digital artist working in Ibis Paint, turning ideas into sketches and finished pieces. I draw characters, cars, landscapes, and other concepts, always working to improve and add more detail with each piece. Drawing is how I express what's hard to put into words, and how I keep growing with every piece I make. <strong>"Art has no limit."</strong>
+     I am <strong>KOE</strong> — a digital artist working on Ibis Paint, turning ideas in my head into sketches and finished pieces. I draw characters, cars, landscapes, and different creative concepts, always trying to improve my style and add more detail with each work. For me, drawing is just a way to express what I can't always say in words and keep growing with every piece I make. <strong>"Art has no limit."</strong>
     </p>
     <!-- ⚠ This admin textarea is currently non-functional: content is not saved or loaded. Either implement save/load logic or remove this field. -->
     <textarea class="aEA" id="aEA" placeholder="Write your about text here..." disabled></textarea>
@@ -2033,7 +2028,7 @@ body{background:var(--bg);}
         <div class="apDescTitle">SPONSOR <span class="s">✦</span></div>
         <div class="apDescSub">SUPPORTING DIGIARTZ</div>
         <p class="apDescTxt">
-          This section shows sponsored content and ads that help support <strong>DigiArtz</strong> and keep the site running. Ads here may include products, services, or tools from third-party partners. We aim to keep this relevant so it fits naturally alongside the rest of the site. <strong>Sponsored content is clearly separated from the main content</strong> so it's easy to tell apart.
+          This section features sponsored content and advertisements that help support <strong>DigiArtz</strong> and keep the platform running. The ads shown here may include products, services, or creative tools from third-party partners. We try to keep everything relevant and useful so it blends naturally with the creative and digital art experience of the website. <strong>Sponsored content is clearly separated from the main content</strong> so users can easily identify it.
         </p>
       </div>
 
@@ -2723,6 +2718,11 @@ body{background:var(--bg);}
     var w = document.getElementById('navWrap');
     if(w && w.classList.contains('open') && !w.contains(e.target)){ closeMenu(); }
   });
+  /* Close the dropdown if the user scrolls the page while it's open */
+  window.addEventListener('scroll', function(){
+    var w = document.getElementById('navWrap');
+    if(w && w.classList.contains('open')){ closeMenu(); }
+  }, {passive:true});
   function ddGoHome(){closeMenu();window.scrollTo({top:0,behavior:'smooth'});}
 
   /* ── SMART SHRINKING NAVBAR ──────────────────────────────
@@ -2742,12 +2742,11 @@ body{background:var(--bg);}
     if(!wrap) return;
 
     var collapsed = false;
-    var manualOverride = false; /* true after a manual "Menu" expand, until hero state flips */
+    var pinnedOpen = false; /* true after clicking "Menu" while collapsed, until user scrolls back up past the threshold */
 
     function setCollapsed(yes){
       if(yes === collapsed){ return; }
       collapsed = yes;
-      manualOverride = false; /* hero state changed — clear any manual pin */
       if(yes){
         /* Close dropdown before collapsing */
         closeMenu();
@@ -2757,72 +2756,34 @@ body{background:var(--bg);}
       }
     }
 
-    /* Clicking the pill "Menu" label only restores the full navbar.
-       It must NEVER open the hamburger dropdown — the dropdown opens
-       only via an explicit click on the hamburger icon itself. */
+    /* Clicking the pill "Menu" label restores the full navbar and pins
+       it open until the user actually scrolls back up past the
+       threshold — so it doesn't instantly re-collapse from the very
+       next scroll tick while still scrolled down. It never opens the
+       hamburger dropdown — that opens only via the hamburger icon. */
     if(menuLbl){
       menuLbl.addEventListener('click', function(e){
         e.stopPropagation();
-        if(!collapsed) return;
-        manualOverride = true;
-        wrap.classList.remove('navCollapsed');
+        pinnedOpen = true;
+        setCollapsed(false);
       });
     }
 
-    /* Use IntersectionObserver on the hero section */
-    if(hero && 'IntersectionObserver' in window){
-      var obs = new IntersectionObserver(function(entries){
-        var heroVisible = entries[0].isIntersecting;
-        var wantCollapsed = !heroVisible;
-        if(manualOverride){
-          if(heroVisible){
-            /* Converged back to the natural "expanded" state — the
-               override is no longer needed, release it cleanly. */
-            manualOverride = false;
-            collapsed = false;
-            wrap.classList.remove('navCollapsed');
-            return;
-          }
-          if(wantCollapsed === collapsed){
-            /* Hero state diverged from the pinned visual state — the
-               user scrolled enough to flip it again. Release the pin
-               and force the navbar back in sync with reality. */
-            manualOverride = false;
-            collapsed = !wantCollapsed; /* force setCollapsed to actually apply */
-            setCollapsed(wantCollapsed);
-          }
-          /* else: still the same state that triggered the override,
-             nothing to do — keep the manual pin in place. */
-          return;
-        }
-        setCollapsed(wantCollapsed);
-      }, { threshold: 0.05 });
-      obs.observe(hero);
-    } else {
-      /* Fallback: scroll listener */
-      var heroH = 0;
-      function onScroll(){
-        if(!heroH){ heroH = (hero ? hero.offsetHeight : window.innerHeight) * 0.05; }
-        var pastHero = window.scrollY > heroH;
-        if(manualOverride){
-          if(!pastHero){
-            manualOverride = false;
-            collapsed = false;
-            wrap.classList.remove('navCollapsed');
-            return;
-          }
-          if(pastHero === collapsed){
-            manualOverride = false;
-            collapsed = !pastHero;
-            setCollapsed(pastHero);
-          }
-          return;
-        }
-        setCollapsed(pastHero);
+    /* Trigger collapse/expand after a small, fixed scroll distance —
+       responsive to a single swipe/scroll-tick rather than waiting
+       for the full hero to scroll past. Scroll position is the
+       source of truth, except while pinnedOpen holds it open. */
+    var SCROLL_TRIGGER_PX = 80;
+    function onScroll(){
+      var pastTrigger = window.scrollY > SCROLL_TRIGGER_PX;
+      if(pinnedOpen){
+        if(!pastTrigger){ pinnedOpen = false; } /* scrolled back to top: release the pin */
+        else { return; } /* still scrolled down: stay pinned open */
       }
-      window.addEventListener('scroll', onScroll, {passive:true});
-      onScroll();
+      setCollapsed(pastTrigger);
     }
+    window.addEventListener('scroll', onScroll, {passive:true});
+    onScroll();
   })();
   function ddOpenGallery(){
     closeMenu();

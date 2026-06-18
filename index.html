@@ -208,6 +208,11 @@
     .ddItem:hover::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--pg);box-shadow:0 0 8px var(--pg);}
     .ddItem .ddIco{color:var(--pg);font-size:.85rem;flex-shrink:0;width:14px;text-align:center;line-height:1;}
     .ddItem.on{color:var(--pb);}
+    /* FIXED: RBAC-001 — Admin button hidden by default; JS only reveals it
+       (adds .devOnly) after confirming role==='dev' via Supabase. Non-dev
+       users never have it shown, keeping it out of the visible/interactive DOM. */
+    #smAdmBtn{display:none;}
+    #smAdmBtn.devOnly{display:flex;}
 
     /* Divider between dropdown items */
     .ddDiv{height:1px;background:linear-gradient(to right,transparent,var(--bdr),transparent);}
@@ -2047,30 +2052,8 @@ body{background:var(--bg);}
     </div>
    </div>
   </div>
-  <!-- PASSWORD MODAL -->
-  <div class="mOvr" id="pwMod">
-   <div class="modal">
-    <button class="mX" onclick="closePW()">
-     ✕
-    </button>
-    <h2>
-     ADMIN ACCESS <!-- FIXED: BUG-006 -->
-    </h2>
-    <p>
-     Enter the admin password to unlock editing and upload capabilities.
-    </p>
-    <input class="mIn" id="pwIn" onkeydown="if(event.key==='Enter')checkPW()" placeholder="PASSWORD" type="password"/>
-    <div class="mErr" id="pwErr">
-     Incorrect password. Try again.
-    </div>
-    <button class="mBtn" onclick="checkPW()">
-     UNLOCK ✦
-    </button>
-    <button class="mBtn sec" onclick="closePW()">
-     CANCEL
-    </button>
-   </div>
-  </div>
+  <!-- FIXED: SEC-001 — password modal removed; admin access is now
+       granted via Supabase role (profiles.role = 'dev'), not a password. -->
   <!-- LOGIN / CREATE ACCOUNT MODAL -->
   <div class="mOvr" id="authMod">
    <div class="modal">
@@ -2154,11 +2137,9 @@ body{background:var(--bg);}
   const SB_KEY = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
   // ════════════════════════════════════════════════
 
-  // ⚠ SECURITY WARNING: This admin password is visible to all users in
-  // page source / devtools. Anyone who views source can extract it.
-  // For production: replace this client-side check with Supabase RLS
-  // policies and server-side role validation. /* FIXED: SEC-001 */
-  const ADMIN_PW = '20052004200320022001';
+  // FIXED: SEC-001 — client-side ADMIN_PW removed. Admin status is now
+  // derived from the authenticated user's role in the Supabase
+  // `profiles` table (role = 'dev'), enforced server-side via RLS.
   const BUCKET   = 'koe-media';
 
   let sb = null;
@@ -2336,16 +2317,10 @@ body{background:var(--bg);}
 
   /* FIXED: BUG-003 — dead social/about render functions removed (referenced undefined cfg properties) */
   /* FIXED: DUP-002 — handleAdm() removed (dead; never called — smHandleAdm() at ~line 2570 handles admin toggle) */
-  function syncAdmBtn(){var b=document.getElementById('smAdmBtn');if(b){b.classList.toggle('on',isAdm);b.innerHTML='<span class="ddIco">'+(isAdm?'★':'⚙')+'</span>'+(isAdm?'ADMIN MODE ON':'ADMIN PANEL');}}
-  function openPW(){document.getElementById('pwMod').classList.add('open');document.getElementById('pwIn').value='';document.getElementById('pwErr').classList.remove('show');setTimeout(()=>document.getElementById('pwIn').focus(),100);}
-  function closePW(){document.getElementById('pwMod').classList.remove('open');}
-  function checkPW(){
-    if(document.getElementById('pwIn').value===ADMIN_PW){
-      isAdm=true;document.body.classList.add('admin');syncAdmBtn();
-      closePW();showToast('Admin unlocked ✦'); /* FIXED: LOGIC-001 — populateAdm() call removed (function was empty) */
-      if(sessionStorage.getItem('pendUp')==='1'){sessionStorage.removeItem('pendUp');setTimeout(openUp,200);}
-    }else{document.getElementById('pwErr').classList.add('show');document.getElementById('pwIn').value='';}
-  }
+  function syncAdmBtn(){var b=document.getElementById('smAdmBtn');if(b){b.classList.toggle('devOnly',isDev);b.classList.toggle('on',isAdm);b.innerHTML='<span class="ddIco">'+(isAdm?'★':'⚙')+'</span>'+(isAdm?'ADMIN MODE ON':'ADMIN PANEL');}}
+  /* FIXED: SEC-001 — openPW/closePW/checkPW removed along with the password
+     modal flow. Admin is now granted purely by checkUserRole() based on the
+     signed-in user's `profiles.role`. See smHandleAdm() below. */
   /* FIXED: LOGIC-001 — populateAdm() removed (body was empty; only contained a comment) */
 
   /* ══════════════════════════════════════════════════════════
@@ -2577,6 +2552,24 @@ body{background:var(--bg);}
     }
   }
 
+  /* ── Role check (replaces password-based admin unlock) ──
+     isDev reflects DB truth (profiles.role === 'dev') and controls whether
+     the Admin button exists in the DOM at all. isAdm is the separate
+     edit-mode toggle — a dev can be on the site with edit mode OFF.
+     Enforced server-side via RLS regardless of either flag. */
+  let isDev = false;
+  async function checkUserRole(){
+    if(!sb || !authUser){ isDev=false; isAdm=false; document.body.classList.remove('admin'); syncAdmBtn(); return; }
+    try{
+      const{data,error}=await sb.from('profiles').select('role').eq('id',authUser.id).single();
+      if(error) throw error;
+      isDev = !!data && data.role==='dev';
+    }catch(e){ console.error(e); isDev=false; }
+    if(!isDev){ isAdm=false; document.body.classList.remove('admin'); }
+    syncAdmBtn();
+    if(isDev && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
+  }
+
   /* ── Listen for auth state changes (login / logout / refresh) ── */
   if (sb) {
     sb.auth.onAuthStateChange(function(event, session) {
@@ -2589,17 +2582,21 @@ body{background:var(--bg);}
           ? authUser.user_metadata.username
           : '';
         showToast(greetName ? ('Welcome, ' + greetName + ' ✦') : 'Signed in ✦');
+        checkUserRole();
       }
       if (event === 'SIGNED_OUT') {
         syncAuthBtn();
+        isDev=false; isAdm=false; document.body.classList.remove('admin'); syncAdmBtn();
       }
     });
+
 
     /* Restore session on page load (keeps user logged in after refresh) */
     sb.auth.getSession().then(function(res) {
       if (res.data && res.data.session) {
         authUser = res.data.session.user;
         syncAuthBtn();
+        checkUserRole();
       }
     });
   }
@@ -2640,7 +2637,12 @@ body{background:var(--bg);}
 
   function openUp(){
     if(!sb){showToast('Configure Supabase first');return;}
-    if(!isAdm){openPW();sessionStorage.setItem('pendUp','1');return;}
+    if(!isAdm){
+      if(!authUser){ sessionStorage.setItem('pendUp','1'); showToast('Sign in with a dev account to upload'); openAuthMod(); }
+      else if(isDev){ showToast('Turn on Admin Mode first'); }
+      else { showToast('This account does not have dev access'); }
+      return;
+    }
     resetUp();document.getElementById('upMod').classList.add('open');
   }
   function closeUp(){document.getElementById('upMod').classList.remove('open');upFile=null;}
@@ -2840,11 +2842,20 @@ body{background:var(--bg);}
   }
   function ddOpenComments(){ openComments(); }
   function smHandleAdm(){
+    if(!isDev){
+      /* Defensive fallback — button shouldn't be in the DOM at all unless isDev,
+         but guard anyway in case of a stale click or race condition. */
+      closeMenu();
+      if(!authUser){ showToast('Sign in with a dev account to access admin'); openAuthMod(); }
+      else { showToast('This account does not have dev access'); }
+      return;
+    }
     if(isAdm){
       isAdm=false;document.body.classList.remove('admin');syncAdmBtn();showToast('Admin mode off');
     } else {
+      isAdm=true;document.body.classList.add('admin');syncAdmBtn();showToast('Admin mode on ✦');
       closeMenu();
-      openPW();
+      if(sessionStorage.getItem('pendUp')==='1'){sessionStorage.removeItem('pendUp');setTimeout(openUp,200);}
     }
   }
 

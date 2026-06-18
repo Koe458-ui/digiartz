@@ -1,0 +1,17 @@
+# Cloudflare Pages SPA fallback for dedicated artwork URLs.
+#
+# This is a single-file static site — there is no real file at
+# /artwork/123, /artwork/456, etc. Without this rule, visiting one of
+# those URLs directly (a shared link, or a search engine crawling the
+# <a href="/artwork/{id}"> links rendered in the gallery) would 404.
+#
+# This rule tells Cloudflare Pages to serve index.html for any
+# /artwork/* path while keeping the URL in the browser's address bar
+# unchanged (status 200, not a redirect). index.html's own JS then
+# reads the id from the URL on load and opens the matching artwork's
+# modal + SEO metadata (see openArtworkById() in the main script).
+/artwork/*  /index.html  200
+
+# Sitemap and robots.txt are real files / a Pages Function and are
+# NOT covered by the catch-all above, so they keep being served
+# directly and are not redirected to index.html.

@@ -18,6 +18,33 @@
   <title>
    KOE — Art Has No Limits
   </title>
+  <!-- ═══════════════════════════════════════════════
+       SEO + GOOGLE IMAGE SEARCH METADATA
+       Default/site-wide values. updateArtworkSEO()/resetArtworkSEO()
+       in the main script swap these between "site default" and
+       "currently open artwork" — they never duplicate tags, only
+       update the content/href of the ones below by selector, so
+       there is always exactly one of each.
+       ═══════════════════════════════════════════════ -->
+  <meta name="description" content="Digiartz (KOE) — a digital art showcase featuring character illustrations, landscapes, vehicles, sketches, and creative digital artwork. Art has no limits."/>
+  <link rel="canonical" href="https://digiartz.pages.dev/"/>
+  <meta name="robots" content="index, follow, max-image-preview:large"/>
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="Digiartz"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:title" content="KOE — Art Has No Limits"/>
+  <meta property="og:description" content="Digiartz (KOE) — a digital art showcase featuring character illustrations, landscapes, vehicles, sketches, and creative digital artwork."/>
+  <meta property="og:url" content="https://digiartz.pages.dev/"/>
+  <meta property="og:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ce747207a4d38297fc2edb3e.png"/>
+  <meta property="og:image:alt" content="Digiartz — digital art showcase"/>
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="KOE — Art Has No Limits"/>
+  <meta name="twitter:description" content="Digiartz (KOE) — a digital art showcase featuring character illustrations, landscapes, vehicles, sketches, and creative digital artwork."/>
+  <meta name="twitter:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ce747207a4d38297fc2edb3e.png"/>
+  <!-- ═══════════════════════════════════════════════
+       END SEO + GOOGLE IMAGE SEARCH METADATA
+       ═══════════════════════════════════════════════ -->
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&amp;family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
@@ -304,7 +331,12 @@
     /* Keep homeGrid hidden — data source only for Full Gallery overlay */
     .gGrid{display:none;}
     /* FIXED: BUG-002 — dead scroll sentinel CSS rule removed */
-    .gItem{break-inside:avoid;margin-bottom:.8rem;position:relative;cursor:pointer;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;}
+    .gItem{break-inside:avoid;margin-bottom:.8rem;position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;}
+    /* gItemLink: the real, crawlable <a href="/artwork/{id}"> wrapping
+       the image + name. Reset to look and behave identically to the
+       plain clickable <div> it replaces — block, no underline,
+       inherits text color, full width/height of the parent .gItem. */
+    .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
     .gItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
     .gItem img{width:100%;display:block;aspect-ratio:1;object-fit:cover;transition:transform .4s;}
     /* LAZY LOADING START */
@@ -320,6 +352,12 @@
     .gDel{position:absolute;top:.4rem;right:.4rem;width:24px;height:24px;background:rgba(220,38,38,.85);border:none;color:white;font-size:.75rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:5;transition:background .2s;border-radius:6px;}
     .gDel:hover{background:rgb(220,38,38);}
     body.admin .gDel{display:flex;}
+    /* gEdit: admin-only edit button, sits left of gDel using the same
+       small glass-icon-button language. Additive only — does not
+       alter any existing element. */
+    .gEdit{position:absolute;top:.4rem;right:2.05rem;width:24px;height:24px;background:color-mix(in srgb,var(--tc) 80%,#1a1c22);border:none;color:white;font-size:.72rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:5;transition:background .2s;border-radius:6px;}
+    .gEdit:hover{background:var(--tc);}
+    body.admin .gEdit{display:flex;}
     .cBadgeWrap{position:absolute;top:.4rem;left:.4rem;z-index:3;display:flex;gap:.3rem;pointer-events:none;}
     .cBadge{background:#ffffff;border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:#1a1c22;padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
     .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,#1a1c22);border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
@@ -446,14 +484,237 @@
       .fgGrid{gap:.5rem}
     }
 
-    /* LIGHTBOX */
-    #lb{position:fixed;inset:0;z-index:600;background:rgba(5,3,8,.95);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;padding:2rem;}
-    #lb.open{opacity:1;pointer-events:all;}
-    .lbIn{max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:1rem;}
-    .lbIn img{max-width:100%;max-height:80vh;object-fit:contain;border:1px solid var(--bdr);}
-    .lbNm{font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;color:var(--ps);}
-    .lbX{position:fixed;top:1.5rem;right:1.5rem;background:none;border:none;color:var(--txd);font-size:1.5rem;cursor:pointer;transition:color .2s;}
-    .lbX:hover{color:var(--pg);}
+    /* ═══════════════════════════════════════════════
+       ARTWORK MODAL — premium centered viewer
+       Used for every artwork click site-wide (Gallery,
+       Characters, Featured Showcase, linked comment images).
+       Single glass container: image, then a stacked info
+       block (Name → Description → Category → Actions),
+       each separated by a thin divider line.
+       ═══════════════════════════════════════════════ */
+    #artModal{
+      position:fixed;inset:0;z-index:950;
+      display:flex;align-items:center;justify-content:center;
+      padding:2rem;
+      background:rgba(8,8,10,.5);
+      backdrop-filter:blur(10px) saturate(120%);
+      -webkit-backdrop-filter:blur(10px) saturate(120%);
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+      transition:opacity .32s cubic-bezier(.22,1,.36,1),visibility .32s;
+    }
+    #artModal.open{
+      opacity:1;
+      visibility:visible;
+      pointer-events:all;
+    }
+    /* Closing state plays a faster, slightly different curve so the
+       fade-out doesn't feel like a mirrored fade-in. */
+    #artModal.closing{
+      opacity:0;
+      transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;
+    }
+    /* ── Single glass container ──
+       width clamps to 900–1100px on desktop, scales fluidly on
+       tablet, and goes near-full-width with safe gutters on mobile. */
+    .amCard{
+      position:relative;
+      width:min(1100px,94vw);
+      max-width:1100px;
+      min-width:min(900px,94vw);
+      max-height:90vh;
+      display:flex;
+      flex-direction:column;
+      background:linear-gradient(160deg,color-mix(in srgb,var(--sur) 78%,transparent) 0%,color-mix(in srgb,var(--sur2) 72%,transparent) 100%);
+      border:1px solid color-mix(in srgb,var(--bdr) 80%,white 10%);
+      border-radius:28px;
+      overflow:hidden;
+      backdrop-filter:blur(28px) saturate(160%);
+      -webkit-backdrop-filter:blur(28px) saturate(160%);
+      box-shadow:0 40px 100px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.22),inset 0 1px 0 color-mix(in srgb,white 18%,transparent);
+      transform:scale(.92) translateY(10px);
+      opacity:0;
+      transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
+    }
+    #artModal.open .amCard{
+      transform:scale(1) translateY(0);
+      opacity:1;
+    }
+    #artModal.closing .amCard{
+      transform:scale(.95) translateY(6px);
+      opacity:0;
+      transition:transform .22s cubic-bezier(.4,0,1,1),opacity .2s cubic-bezier(.4,0,1,1);
+    }
+    /* ── Image: the main focus, always given the most space ── */
+    .amImgWrap{
+      position:relative;
+      width:100%;
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:color-mix(in srgb,var(--bg) 90%,black 6%);
+      overflow:hidden;
+    }
+    .amImgWrap img{
+      max-width:100%;
+      max-height:66vh;
+      width:auto;
+      height:auto;
+      object-fit:contain;
+      display:block;
+    }
+    .amImgWrap.loading::after{
+      content:'';
+      position:absolute;inset:0;
+      background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--tc) 8%,transparent) 50%,transparent 70%);
+      background-size:200% 100%;
+      animation:amShimmer 1.3s ease-in-out infinite;
+    }
+    @keyframes amShimmer{0%{background-position:140% 0;}100%{background-position:-40% 0;}}
+    /* ── Stacked info block, all inside the same container ── */
+    .amInfo{
+      flex:0 0 auto;
+      padding:1.8rem clamp(1.5rem,4vw,2.8rem) clamp(1.6rem,4vw,2.4rem);
+      display:flex;
+      flex-direction:column;
+      gap:1.1rem;
+      border-top:1px solid color-mix(in srgb,var(--bdr) 80%,white 8%);
+      max-height:34vh;
+      overflow-y:auto;
+    }
+    .amDiv{
+      width:100%;
+      height:1px;
+      background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--bdr) 90%,white 10%) 18%,color-mix(in srgb,var(--bdr) 90%,white 10%) 82%,transparent);
+      flex:0 0 auto;
+    }
+    .amName{
+      font-family:var(--fd);
+      font-size:clamp(1.2rem,2.4vw,1.55rem);
+      font-weight:700;
+      letter-spacing:.02em;
+      color:var(--tx);
+      line-height:1.3;
+      word-break:break-word;
+    }
+    .amDesc{
+      font-family:var(--fb);
+      font-size:.92rem;
+      line-height:1.65;
+      color:var(--txd);
+      word-break:break-word;
+    }
+    .amDesc:empty,.amDesc[hidden]{display:none;}
+    .amCatRow{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+    .amCatLbl{
+      font-family:var(--fm);
+      font-size:.62rem;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      color:var(--txd);
+      opacity:.7;
+    }
+    .amCat{
+      display:inline-block;
+      font-family:var(--fm);
+      font-size:.68rem;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:var(--ps);
+      padding:.3rem .75rem;
+      border:1px solid var(--bdr);
+      border-radius:999px;
+      background:color-mix(in srgb,var(--tc) 8%,transparent);
+    }
+    /* ── Actions row: Download + Comments, premium pill buttons ── */
+    .amActions{
+      display:flex;
+      align-items:stretch;
+      gap:.85rem;
+      flex:0 0 auto;
+      margin-top:.2rem;
+    }
+    .amDl{
+      flex:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:.5rem;
+      font-family:var(--fm);
+      font-size:.74rem;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:var(--txd);
+      background:color-mix(in srgb,var(--sur) 85%,transparent);
+      border:1px solid var(--bdr);
+      border-radius:12px;
+      padding:.85rem 1.1rem;
+      min-height:48px;
+      cursor:pointer;
+      text-decoration:none;
+      transition:color .2s,border-color .2s,background .2s,transform .15s;
+      white-space:nowrap;
+    }
+    .amDl:hover{color:var(--ps);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 10%,transparent);transform:translateY(-1px);}
+    .amDl:active{transform:translateY(0) scale(.98);}
+    /* ── Close button ── */
+    .amX{
+      position:absolute;
+      top:1.1rem;right:1.1rem;
+      width:2.4rem;height:2.4rem;
+      display:flex;align-items:center;justify-content:center;
+      background:color-mix(in srgb,var(--bg) 45%,transparent);
+      border:1px solid color-mix(in srgb,var(--bdr) 80%,white 10%);
+      border-radius:50%;
+      color:var(--tx);
+      font-size:1.05rem;
+      line-height:1;
+      cursor:pointer;
+      z-index:5;
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      transition:color .2s,border-color .2s,background .2s,transform .15s;
+    }
+    .amX:hover{color:var(--pg);border-color:var(--bdrh);transform:scale(1.06);}
+    .amX:active{transform:scale(.94);}
+
+    /* ── Tablet ── */
+    @media(max-width:1024px){
+      .amCard{width:min(92vw,860px);min-width:0;border-radius:22px;}
+      .amImgWrap img{max-height:58vh;}
+    }
+    /* ── Mobile: near-full width, comfortable touch spacing, no
+         horizontal scroll anywhere in the modal ── */
+    @media(max-width:640px){
+      #artModal{padding:.6rem;}
+      .amCard{
+        width:100%;
+        min-width:0;
+        max-height:96vh;
+        border-radius:18px;
+      }
+      .amImgWrap img{max-height:48vh;}
+      .amInfo{
+        padding:1.3rem 1.2rem 1.4rem;
+        gap:.9rem;
+        max-height:40vh;
+      }
+      .amName{font-size:1.08rem;}
+      .amDesc{font-size:.88rem;}
+      .amActions{flex-direction:row;gap:.6rem;}
+      .amDl{min-height:52px;font-size:.7rem;padding:.8rem .6rem;}
+      .amX{top:.7rem;right:.7rem;width:2.2rem;height:2.2rem;font-size:.95rem;}
+    }
+    @media(max-width:380px){
+      .amActions{flex-direction:column;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      #artModal,#artModal .amCard{transition:opacity .15s linear;}
+      .amCard{transform:none!important;}
+    }
 
     /* ABOUT */
     #about{
@@ -857,29 +1118,6 @@
       color:var(--bdr);
       font-size:1.8rem;
     }
-    /* Fullscreen viewer */
-    #fsViewer{
-      position:fixed;inset:0;z-index:700;
-      background:rgba(5,3,8,.95);
-      display:flex;align-items:center;justify-content:center;
-      opacity:0;pointer-events:none;
-      transition:opacity .3s;
-      padding:2rem;
-    }
-    #fsViewer.open{opacity:1;pointer-events:all;}
-    #fsViewerImg{
-      max-width:90vw;max-height:88vh;
-      object-fit:contain;
-      border:1px solid var(--bdr);
-    }
-    .fsVwrX{
-      position:fixed;top:1.5rem;right:1.5rem;
-      background:none;border:none;
-      color:var(--txd);font-size:1.5rem;
-      cursor:pointer;transition:color .2s;z-index:701;
-    }
-    .fsVwrX:hover{color:var(--pg);}
-
     /* ═══════════════════════════════════════════════
        SHOWCASE CARD — Gallery
        ═══════════════════════════════════════════════ */
@@ -1418,56 +1656,16 @@ height:80px;
    END ADS PANEL CSS
    ═══════════════════════════════════════════════ */
 
-/* LIGHTBOX ACTION BUTTONS UPGRADE */
+/* LIGHTBOX ACTION BUTTONS — Download/Comment now sit in the .amInfo
+   footer row alongside the name + category tag; .amDl/.amActions in
+   the ARTWORK MODAL block above define the primary look. */
 .lbActions{
-width:100%;
-display:flex;
-gap:12px;
-align-items:stretch;
-justify-content:stretch;
-margin-top:.25rem;
-}
-.lbActionBtn{
-flex:1;
-min-height:52px;
-padding:.85rem 1rem;
-border:1px solid var(--bdr);
-background:#ffffff;
-color:#1a1c22;
-font-family:var(--fm);
-font-size:.8rem;
-letter-spacing:.2em;
-cursor:pointer;
-transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;
-display:flex;
-align-items:center;
-justify-content:center;
-text-transform:uppercase;
-}
-.lbActionBtn:hover{
-background:#f6f7f9;
-border-color:var(--pg);
-box-shadow:0 0 24px color-mix(in srgb,var(--tc) 25%,transparent);
-transform:translateY(-2px);
-}
-.lbActionBtn:active{
-transform:translateY(0) scale(.98);
-}
-.lbIn{
-width:min(90vw,1000px);
-}
-.lbNm{
-width:100%;
-text-align:center;
+  display:flex;
+  gap:.6rem;
 }
 @media(max-width:640px){
-.lbActions{
-flex-direction:row;
-width:100%;
-}
-.lbActionBtn{
-min-height:56px;
-}
+  .lbActions{width:100%;}
+  .lbActionBtn{flex:1;min-height:48px;}
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1493,7 +1691,7 @@ min-height:56px;
 body{background:var(--bg);}
 
 /* Soften/neutralize neon glow + heavy dark shadows outside the hero */
-.gItem,.adCard,.apCard,.modal,.legalModal,#fgFltPanel{
+.gItem,.adCard,.apCard,.modal,.legalModal,#fgFltPanel,.amCard{
   box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important;
 }
 #navWrap.open #navDrop{box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important;}
@@ -1507,7 +1705,7 @@ body{background:var(--bg);}
 .fgHdr,.cpHdr,.apHdr{background:rgba(255,255,255,.92)!important;border-bottom:1px solid var(--bdr);}
 .cpBar{background:rgba(255,255,255,.96)!important;border-top:1px solid var(--bdr);}
 #legalBackdrop,.mOvr{background:rgba(20,20,30,.45)!important;}
-#lb,#fsViewer{background:rgba(15,15,20,.92)!important;}
+#artModal{background:rgba(20,20,30,.4)!important;}
 .gOv{background:rgba(20,20,30,.55)!important;}
 .admBar{background:rgba(255,255,255,.97)!important;}
 .iLoadTrack{background:rgba(0,0,0,.08);}
@@ -1692,11 +1890,7 @@ body{background:var(--bg);}
     data-fssrc-2="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780836584964_Crimson_Horizon.png"
     data-fssrc-3="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780944274654_Lelouch_vi_Britannia.png"
   ></div>
-  <!-- Fullscreen viewer for FEATURED SHOWCASE -->
-  <div id="fsViewer" onclick="if(event.target===this)fsCloseViewer()">
-    <button class="fsVwrX" onclick="fsCloseViewer()">✕</button>
-    <img id="fsViewerImg" src="" alt="Featured artwork">
-  </div>
+  <!-- Featured Showcase images use the unified artwork modal (#artModal / openLB) -->
   <!-- FEATURED SHOWCASE HTML END -->
 
 
@@ -2038,13 +2232,30 @@ body{background:var(--bg);}
        END ADS PANEL
        ═══════════════════════════════════════════════ -->
 
-  <div id="lb" role="dialog" aria-modal="true" aria-label="Image viewer" onclick="closeLB()"> <!-- FIXED: A11Y-002 -->
-   <button class="lbX" onclick="closeLB()">
-    ✕
-   </button>
-   <div class="lbIn" onclick="event.stopPropagation()">
-    <img alt="" id="lbImg" src=""/>
-    <div class="lbNm" id="lbNm">
+  <!-- ═══════════════════════════════════════════════
+       ARTWORK MODAL — premium centered viewer
+       Single glass container: image, then Name → Description →
+       Category → Actions, each separated by a thin divider.
+       id="lb" / .lbIn / .lbNm / #lbImg / .lbX are kept so the
+       existing Download+Comment button injection script and
+       theme overrides keep working unchanged.
+       ═══════════════════════════════════════════════ -->
+  <div id="artModal" role="dialog" aria-modal="true" aria-label="Artwork viewer" data-state="closed">
+   <div id="lb" class="amCard" onclick="event.stopPropagation()">
+    <button class="amX lbX" onclick="closeLB()" aria-label="Close">✕</button>
+    <div class="amImgWrap" id="amImgWrap">
+     <img alt="" id="lbImg" src=""/>
+    </div>
+    <div class="amInfo">
+     <div class="amName lbNm" id="lbNm"></div>
+     <div class="amDiv"></div>
+     <div class="amDesc" id="lbDesc" hidden></div>
+     <div class="amDiv" id="lbDescDiv" hidden></div>
+     <div class="amCatRow" id="lbCatRow" hidden>
+      <span class="amCatLbl">Category</span>
+      <span class="amCat" id="lbCat"></span>
+     </div>
+     <div class="lbIn amActions" id="lbActionsHost" onclick="event.stopPropagation()"></div>
     </div>
    </div>
   </div>
@@ -2070,29 +2281,36 @@ body{background:var(--bg);}
     <button class="mBtn sec" onclick="closeAuthMod()">CANCEL</button>
    </div>
   </div>
-  <!-- UPLOAD MODAL -->
+  <!-- UPLOAD MODAL — also reused for EDITING an existing artwork's
+       name/description/category (image itself is not replaced via
+       edit mode; only metadata fields). #upEditId is empty for a
+       fresh upload and holds the artwork id when editing. -->
   <div class="mOvr" id="upMod">
    <div class="modal">
     <button class="mX" onclick="closeUp()">
      ✕
     </button>
-    <h2>
+    <h2 id="upTitle">
      UPLOAD ART
     </h2>
-    <p>
+    <p id="upSubtitle">
      Add a new piece to the gallery. Supports JPG, PNG, WEBP, GIF.
     </p>
+    <input id="upEditId" type="hidden" value=""/>
     <div class="dz" id="dz">
      <input accept="image/*" id="upF" onchange="handleFile(event)" type="file"/>
      <div class="dzIco">
       🖼
      </div>
-     <div class="dzTxt">
+     <div class="dzTxt" id="dzTxt">
       DROP IMAGE HERE OR CLICK TO BROWSE
      </div>
     </div>
     <img alt="preview" class="upPrev" id="upPrev" src=""/>
     <input class="mIn" id="upNm" placeholder="ARTWORK NAME" type="text"/>
+    <!-- DESCRIPTION FIELD START — optional, maps to artworks.description (TEXT, nullable) -->
+    <textarea class="mIn" id="upDesc" placeholder="DESCRIPTION (OPTIONAL)" rows="3" style="resize:vertical;min-height:4.5rem;font-family:var(--fb);line-height:1.5;"></textarea>
+    <!-- DESCRIPTION FIELD END -->
     <!-- MULTI-CATEGORY SELECT START -->
     <div id="upCatWrap" style="background:var(--sur2);border:1px solid var(--bdr);padding:.6rem .8rem;margin-bottom:.8rem;transition:border-color .25s;">
       <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.5rem;">CATEGORIES (SELECT ONE OR MORE)</div>
@@ -2137,6 +2355,14 @@ body{background:var(--bg);}
   // derived from the authenticated user's role in the Supabase
   // `profiles` table (role = 'dev'), enforced server-side via RLS.
   const BUCKET   = 'koe-media';
+
+  /* SEO defaults — must mirror the static <head> tags exactly, since
+     resetArtworkSEO() uses these to restore the head after an
+     artwork modal closes. Read once from the head itself so the two
+     can never drift apart. */
+  var SITE_DEFAULT_TITLE = document.title;
+  var SITE_DEFAULT_DESC  = (document.querySelector('meta[name="description"]')||{}).content || '';
+  var SITE_DEFAULT_IMAGE = (document.querySelector('meta[property="og:image"]')||{}).content || '';
 
   let sb = null;
   if (SB_URL !== 'YOUR_SUPABASE_URL') {
@@ -2208,12 +2434,27 @@ body{background:var(--bg);}
     const cats=(img.category||'others').split(',').map(c=>c.trim()).filter(Boolean);
     const extraCats=cats.slice(1);
     const moreBadge=extraCats.length?`<span class="cBadgeMore" tabindex="0" role="text" aria-label="Also tagged: ${esc(extraCats.join(', '))}" title="${esc(extraCats.join(', '))}">+${extraCats.length}</span>`:'';
-    return`<div class="gItem" onclick="openLB('${fullSrc}','${esc(img.name)}')" data-fullsrc="${fullSrc}">
-      <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>
-      <button class="gDel" onclick="delImg('${esc(String(img.id))}','${esc(img.storage_path||'')}',event)" title="Delete">✕</button>
-      <img src="${thumbSrc}" alt="${esc(img.name)}" loading="lazy" decoding="async">
-      <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
-      <div class="gNm">${esc(img.name)}</div>
+    const idStr=esc(String(img.id));
+    /* SEO: alt text always falls back to the artwork title — never
+       empty, never generic "image" text — for Google Image Search. */
+    const altText=esc(img.name||'Untitled artwork');
+    /* DEDICATED ARTWORK URL — purely additive <a> wrapper around the
+       image so crawlers have a real, crawlable, indexable link to a
+       per-artwork URL (/artwork/{id}). Click is intercepted by JS to
+       keep the existing modal-first UX unchanged for real users;
+       crawlers that don't execute the click still see and follow the
+       href. data-* attributes carry the full record (incl. raw,
+       un-rendered description) to openItemModal() without any fragile
+       inline string-escaping into onclick="" attributes. */
+    return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
+      <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
+        <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>
+        <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl">
+        <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+        <div class="gNm" itemprop="name">${esc(img.name)}</div>
+      </a>
+      <button class="gEdit" onclick="openEditArt('${idStr}',event)" title="Edit">✎</button>
+      <button class="gDel" onclick="delImg('${idStr}','${esc(img.storage_path||'')}',event)" title="Delete">✕</button>
     </div>`;
     /* LAZY LOADING END */
   }
@@ -2302,14 +2543,269 @@ body{background:var(--bg);}
     var catR = document.querySelector('input[name="fltCat"][value="all"]');
     if(catR) catR.checked = true;
   }
-  function openLB(src,name){currentLightboxImageSrc=src;document.getElementById('lbImg').src=src;document.getElementById('lbNm').textContent=name;document.getElementById('lb').classList.add('open');document.body.style.overflow='hidden';
+  /* ── Premium artwork modal: open/close ──
+     #artModal is the fixed, blurred backdrop. #lb (.amCard) is the
+     centered card inside it. Closing plays the .closing animation
+     class for ~220ms before the modal is fully hidden, so the
+     scale-down/fade-out is visible rather than an abrupt cut. */
+  var amCloseTimer = null;
+  /* DEDICATED ARTWORK URLS START
+     openLB gained a 5th optional `id` + 6th optional `pushUrl` param.
+     Existing callers that only pass (src,name,cat[,desc]) are 100%
+     unaffected — id defaults to null (no URL change, no structured
+     data), pushUrl defaults to true. This keeps every pre-existing
+     call site (Featured/Gallery/Characters showcases, comment-linked
+     images) working exactly as before while the main grid (itemHTML)
+     and full-gallery grid (which both now have the id) get URL +
+     SEO behavior for free. */
+  function openLB(src,name,cat,desc,id,pushUrl){
+    currentLightboxImageSrc=src;
+    var modal=document.getElementById('artModal');
+    var wrap=document.getElementById('amImgWrap');
+    if(amCloseTimer){clearTimeout(amCloseTimer);amCloseTimer=null;}
+    modal.classList.remove('closing');
+    if(wrap)wrap.classList.add('loading');
+    var imgEl=document.getElementById('lbImg');
+    imgEl.src=src;
+    /* SEO: the full-resolution image shown in the modal is the one
+       most likely to be the actual indexed/served image in Google
+       Image Search results, so it needs real alt text too — not
+       just the gallery thumbnail. */
+    imgEl.alt=name||'Untitled artwork';
+    imgEl.onload=function(){if(wrap)wrap.classList.remove('loading');};
+    imgEl.onerror=function(){if(wrap)wrap.classList.remove('loading');};
+    document.getElementById('lbNm').textContent=name||'';
+    /* Description: optional. Hides itself (and its divider) cleanly
+       when there's no description text for this artwork. */
+    var descEl=document.getElementById('lbDesc');
+    var descDiv=document.getElementById('lbDescDiv');
+    if(descEl){
+      if(desc){descEl.textContent=desc;descEl.hidden=false;if(descDiv)descDiv.hidden=false;}
+      else{descEl.textContent='';descEl.hidden=true;if(descDiv)descDiv.hidden=true;}
+    }
+    /* Category: shown as a labeled row ("Category  TAG") */
+    var catEl=document.getElementById('lbCat');
+    var catRow=document.getElementById('lbCatRow');
+    if(catEl){
+      if(cat){catEl.textContent=cat;if(catRow)catRow.hidden=false;}
+      else{catEl.textContent='';if(catRow)catRow.hidden=true;}
+    }
+    modal.setAttribute('data-state','open');
+    modal.classList.add('open');
+    document.body.style.overflow='hidden';
     /* FIXED: A11Y-002 */
     setTimeout(function(){
       var lbX = document.querySelector('#lb .lbX');
       if(lbX) lbX.focus();
     }, 50);
+    /* DEDICATED ARTWORK URL + SEO: only runs when an id is supplied.
+       Updates document title/meta/OG/Twitter/JSON-LD to describe the
+       open artwork, and pushes /artwork/{id} into the address bar so
+       the URL is shareable/bookmarkable. Modal behavior is otherwise
+       completely unchanged. */
+    if(id){
+      if(pushUrl!==false && window.location.pathname!=='/artwork/'+id){
+        try{ history.pushState({artId:id},'',  '/artwork/'+id); }catch(e){}
+      }
+      updateArtworkSEO({id:id,name:name,description:desc,category:cat,image_url:src});
+    }
   }
-  function closeLB(){document.getElementById('lb').classList.remove('open');document.body.style.overflow='';}
+  /* DEDICATED ARTWORK URLS END */
+  function closeLB(){
+    var modal=document.getElementById('artModal');
+    if(!modal || !modal.classList.contains('open'))return;
+    modal.classList.add('closing');
+    if(amCloseTimer)clearTimeout(amCloseTimer);
+    amCloseTimer=setTimeout(function(){
+      modal.classList.remove('open');
+      modal.classList.remove('closing');
+      modal.setAttribute('data-state','closed');
+      document.body.style.overflow='';
+      var imgEl=document.getElementById('lbImg');
+      if(imgEl){imgEl.src='';imgEl.alt='';}
+    },230);
+    /* DEDICATED ARTWORK URL: revert the address bar + SEO meta back
+       to the homepage state when leaving a /artwork/{id} URL. Only
+       acts on URLs this same modal system created, so it never
+       interferes with normal navigation. */
+    if(/^\/artwork\//.test(window.location.pathname)){
+      try{ history.pushState({},'', '/'); }catch(e){}
+      resetArtworkSEO();
+    }
+  }
+  /* Click outside the card (on the backdrop itself) closes the modal */
+  (function(){
+    var modal=document.getElementById('artModal');
+    if(modal){
+      modal.addEventListener('click',function(e){
+        if(e.target===modal)closeLB();
+      });
+    }
+  })();
+
+  /* ═══════════════════════════════════════════════════════════
+     DEDICATED ARTWORK URLS + GOOGLE IMAGE SEARCH SEO
+     ═══════════════════════════════════════════════════════════
+     The gallery grid (itemHTML) renders real <a href="/artwork/{id}">
+     elements with data-* attributes instead of relying purely on
+     onclick. handleArtClick() is what real browsers run: it reads
+     the artwork's data straight off the clicked element (no fragile
+     string-escaping through inline onclick arguments) and opens the
+     existing modal exactly as before, just also passing the id so a
+     real, navigable URL and per-artwork metadata come along with it.
+     A crawler that does not execute JS still sees a normal <a href>
+     it can follow and index independently. */
+  function handleArtClick(e,id){
+    if(e){
+      // Allow opening in a new tab/window via modifier-click or
+      // middle-click — don't hijack that into the modal.
+      if(e.metaKey||e.ctrlKey||e.shiftKey||e.button===1) return true;
+      e.preventDefault();
+    }
+    var el = document.querySelector('.gItem[data-id="'+id+'"]');
+    if(!el) return false;
+    openLB(el.getAttribute('data-fullsrc'), el.getAttribute('data-name'), el.getAttribute('data-cat'), el.getAttribute('data-desc'), id);
+    return false;
+  }
+
+  /* Look up a full artwork record by id from the in-memory `images`
+     array (already loaded from Supabase by loadDB()). */
+  function findArtworkById(id){
+    if(!id) return null;
+    var idS = String(id);
+    for(var i=0;i<images.length;i++){
+      if(String(images[i].id)===idS) return images[i];
+    }
+    return null;
+  }
+
+  /* Open an artwork's dedicated URL directly (used on initial page
+     load when the user lands on /artwork/{id}, and by popstate). */
+  function openArtworkById(id,pushUrl){
+    var art = findArtworkById(id);
+    if(!art) return false;
+    var cats=(art.category||'others').split(',').map(function(c){return c.trim();}).filter(Boolean);
+    openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), pushUrl);
+    return true;
+  }
+
+  /* ── SEO: per-artwork document <head> metadata ──
+     Updates <title>, meta description, canonical link, Open Graph
+     image/title/description, Twitter Card tags, and injects an
+     ImageObject JSON-LD block describing the open artwork. All of
+     this is additive DOM manipulation — no existing tag is removed,
+     only ever swapped between "site default" and "this artwork". */
+  var SITE_NAME = 'Digiartz';
+  var SITE_URL  = 'https://digiartz.pages.dev';
+  function setMeta(selector, attr, value){
+    var el = document.querySelector(selector);
+    if(el) el.setAttribute(attr, value);
+  }
+  function updateArtworkSEO(art){
+    if(!art) return;
+    var title = (art.name||'Untitled artwork') + ' — ' + SITE_NAME;
+    var desc = (art.description && art.description.trim())
+      ? art.description.trim().slice(0,300)
+      : ('View "'+(art.name||'this artwork')+'"'+(art.category?(' in the '+art.category+' collection'):'')+' on '+SITE_NAME+', a digital art showcase by KOE.');
+    var url = SITE_URL + '/artwork/' + art.id;
+    document.title = title;
+    setMeta('meta[name="description"]','content',desc);
+    setMeta('link[rel="canonical"]','href',url);
+    setMeta('meta[property="og:title"]','content',title);
+    setMeta('meta[property="og:description"]','content',desc);
+    setMeta('meta[property="og:image"]','content',art.image_url||'');
+    setMeta('meta[property="og:url"]','content',url);
+    setMeta('meta[property="og:type"]','content','article');
+    setMeta('meta[name="twitter:title"]','content',title);
+    setMeta('meta[name="twitter:description"]','content',desc);
+    setMeta('meta[name="twitter:image"]','content',art.image_url||'');
+    setMeta('meta[name="twitter:card"]','content','summary_large_image');
+    /* ImageObject structured data — replaces (not duplicates) any
+       previously-injected per-artwork block. */
+    var ld = document.getElementById('ldArtwork');
+    if(!ld){
+      ld = document.createElement('script');
+      ld.type = 'application/ld+json';
+      ld.id = 'ldArtwork';
+      document.head.appendChild(ld);
+    }
+    ld.textContent = JSON.stringify({
+      '@context':'https://schema.org',
+      '@type':'ImageObject',
+      'contentUrl':art.image_url||'',
+      'name':art.name||'Untitled artwork',
+      'description':desc,
+      'url':url,
+      'creator':{'@type':'Organization','name':'KOE'},
+      'representativeOfPage':true
+    });
+  }
+  function resetArtworkSEO(){
+    document.title = SITE_DEFAULT_TITLE;
+    setMeta('meta[name="description"]','content',SITE_DEFAULT_DESC);
+    setMeta('link[rel="canonical"]','href',SITE_URL+'/');
+    setMeta('meta[property="og:title"]','content',SITE_DEFAULT_TITLE);
+    setMeta('meta[property="og:description"]','content',SITE_DEFAULT_DESC);
+    setMeta('meta[property="og:image"]','content',SITE_DEFAULT_IMAGE);
+    setMeta('meta[property="og:url"]','content',SITE_URL+'/');
+    setMeta('meta[property="og:type"]','content','website');
+    setMeta('meta[name="twitter:title"]','content',SITE_DEFAULT_TITLE);
+    setMeta('meta[name="twitter:description"]','content',SITE_DEFAULT_DESC);
+    setMeta('meta[name="twitter:image"]','content',SITE_DEFAULT_IMAGE);
+    var ld = document.getElementById('ldArtwork');
+    if(ld) ld.remove();
+  }
+
+  /* Back/forward browser navigation: keep the modal and meta in
+     sync with the URL instead of leaving the modal open on a URL
+     that no longer matches it (or vice versa). */
+  window.addEventListener('popstate', function(){
+    var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
+    if(m){
+      openArtworkById(m[1], false);
+    } else {
+      var modal=document.getElementById('artModal');
+      if(modal && modal.classList.contains('open')){
+        modal.classList.remove('open');
+        modal.classList.remove('closing');
+        modal.setAttribute('data-state','closed');
+        document.body.style.overflow='';
+      }
+      resetArtworkSEO();
+    }
+  });
+
+  /* ── Admin: edit an existing artwork's name/description/category ──
+     Reuses the upload modal in "edit mode": image upload UI is
+     hidden (the stored image itself isn't replaced by this flow),
+     fields are pre-filled from the clicked artwork, and doUp() below
+     branches to an UPDATE instead of an INSERT when upEditId is set. */
+  function openEditArt(id,e){
+    if(e) e.stopPropagation();
+    if(!isAdm) return;
+    var art = findArtworkById(id);
+    if(!art){ showToast('Artwork not found'); return; }
+    document.getElementById('upEditId').value = String(art.id);
+    document.getElementById('upTitle').textContent = 'EDIT ARTWORK';
+    document.getElementById('upSubtitle').textContent = 'Update the name, description, or categories for this piece.';
+    document.getElementById('dz').style.display = 'none';
+    document.getElementById('upNm').value = art.name||'';
+    document.getElementById('upDesc').value = art.description||'';
+    var prev = document.getElementById('upPrev');
+    prev.src = art.image_url||'';
+    prev.style.display = art.image_url ? 'block' : 'none';
+    var cats=(art.category||'others').split(',').map(function(c){return c.trim();}).filter(Boolean);
+    document.querySelectorAll('#upCatBoxes input[type=checkbox]').forEach(function(cb){
+      cb.checked = cats.indexOf(cb.value) !== -1;
+    });
+    updateUpCatDisplay();
+    document.getElementById('upBtn').textContent = 'SAVE CHANGES ✦';
+    upFile = null;
+    document.getElementById('upMod').classList.add('open');
+  }
+  /* ═══════════════════════════════════════════════════════════
+     END DEDICATED ARTWORK URLS + SEO
+     ═══════════════════════════════════════════════════════════ */
 
   /* FIXED: BUG-003 — dead social/about render functions removed (referenced undefined cfg properties) */
   /* FIXED: DUP-002 — handleAdm() removed (dead; never called — smHandleAdm() at ~line 2570 handles admin toggle) */
@@ -2641,12 +3137,21 @@ body{background:var(--bg);}
     }
     resetUp();document.getElementById('upMod').classList.add('open');
   }
-  function closeUp(){document.getElementById('upMod').classList.remove('open');upFile=null;}
+  function closeUp(){
+    document.getElementById('upMod').classList.remove('open');
+    upFile=null;
+  }
   function resetUp(){
+    document.getElementById('upEditId').value='';
+    document.getElementById('upTitle').textContent='UPLOAD ART';
+    document.getElementById('upSubtitle').textContent='Add a new piece to the gallery. Supports JPG, PNG, WEBP, GIF.';
+    document.getElementById('dz').style.display='';
     document.getElementById('upNm').value='';
+    document.getElementById('upDesc').value='';
     document.querySelectorAll('#upCatBoxes input[type=checkbox]').forEach(cb=>{cb.checked=cb.value==='others';});
     updateUpCatDisplay();
     document.getElementById('upPrev').style.display='none';
+    document.getElementById('upBtn').textContent='ADD TO GALLERY ✦';
     upFile=null;
   }
   function handleFile(e){
@@ -2654,26 +3159,53 @@ body{background:var(--bg);}
     const r=new FileReader();r.onload=ev=>{const p=document.getElementById('upPrev');p.src=ev.target.result;p.style.display='block';if(!document.getElementById('upNm').value.trim())document.getElementById('upNm').value=f.name.replace(/\.[^.]+$/,'');};r.readAsDataURL(f);
   }
   async function doUp(){
+    const editId=document.getElementById('upEditId').value;
     const nm=document.getElementById('upNm').value.trim();
+    const desc=document.getElementById('upDesc').value.trim(); // optional — sent as null when empty, never breaks older rows
     const cats=[...document.querySelectorAll('#upCatBoxes input[type=checkbox]:checked')].map(cb=>cb.value);
     const cat=cats.length?cats.join(','):'others';
-    if(!upFile){showToast('Select an image');return;}
     if(!nm){showToast('Enter a name');return;}
-    const btn=document.getElementById('upBtn');btn.textContent='UPLOADING…';btn.disabled=true;
+    if(!editId && !upFile){showToast('Select an image');return;}
+    const btn=document.getElementById('upBtn');
+    btn.disabled=true;
     try{
-      const ext=upFile.name.split('.').pop();
-      const path=`artworks/${Date.now()}_${nm.replace(/\s+/g,'_')}.${ext}`;
-      const{error:ue}=await sb.storage.from(BUCKET).upload(path,upFile,{cacheControl:'3600'});
-      if(ue)throw ue;
-      const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
-      const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path}).select();
-      if(de)throw de;
-      images.unshift(rows[0]);
-      renderHome();
-      if(document.getElementById('fg').classList.contains('open'))renderFG();
-      closeUp();showToast('Artwork added ✦');
+      if(editId){
+        /* EDIT MODE — UPDATE existing row. Image itself is not
+           replaced here; only name/description/category. */
+        btn.textContent='SAVING…';
+        const{data:rows,error:de}=await sb.from('artworks')
+          .update({name:nm,category:cat,description:desc||null})
+          .eq('id',editId).select();
+        if(de)throw de;
+        if(rows && rows[0]){
+          const idx=images.findIndex(i=>String(i.id)===String(editId));
+          if(idx!==-1) images[idx]=rows[0];
+        }
+        renderHome();
+        if(document.getElementById('fg').classList.contains('open'))renderFG();
+        /* If this artwork's dedicated URL/modal happens to be open
+           right now, refresh the displayed data + SEO meta in place. */
+        if(window.location.pathname==='/artwork/'+editId) openArtworkById(editId,false);
+        injectGallerySEO();
+        closeUp();showToast('Artwork updated ✦');
+      } else {
+        /* UPLOAD MODE — INSERT new row, including optional description. */
+        btn.textContent='UPLOADING…';
+        const ext=upFile.name.split('.').pop();
+        const path=`artworks/${Date.now()}_${nm.replace(/\s+/g,'_')}.${ext}`;
+        const{error:ue}=await sb.storage.from(BUCKET).upload(path,upFile,{cacheControl:'3600'});
+        if(ue)throw ue;
+        const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
+        const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null}).select();
+        if(de)throw de;
+        images.unshift(rows[0]);
+        renderHome();
+        if(document.getElementById('fg').classList.contains('open'))renderFG();
+        injectGallerySEO();
+        closeUp();showToast('Artwork added ✦');
+      }
     }catch(err){showToast('Error: '+err.message);}
-    finally{btn.textContent='ADD TO GALLERY ✦';btn.disabled=false;}
+    finally{btn.disabled=false;btn.textContent=editId?'SAVE CHANGES ✦':'ADD TO GALLERY ✦';}
   }
 
   async function delImg(id,sp,e){
@@ -2683,6 +3215,7 @@ body{background:var(--bg);}
       await sb.from('artworks').delete().eq('id',id);
       images=images.filter(i=>String(i.id)!==String(id));
       renderHome();if(document.getElementById('fg').classList.contains('open'))renderFG();
+      injectGallerySEO();
       showToast('Artwork removed');
     }catch(err){showToast('Error: '+err.message);}
   }
@@ -3193,35 +3726,69 @@ async function openComments(){
     await loadDB();
     applyBg();renderHome();
     /* FIXED: BUG-003 — renderAbout() and renderSoc() removed; About and Let's Connect are now static/code-only */
+    /* DEDICATED ARTWORK URLS: if the page was loaded directly at
+       /artwork/{id} (a shared link, or a crawler following an <a
+       href> from the grid), open that artwork's modal + SEO meta
+       immediately once the data is in. Falls through silently (stays
+       on the normal homepage) if the id isn't found. */
+    var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
+    if(m) openArtworkById(m[1], false);
+    /* Site-wide ImageGallery structured data — lists every artwork's
+       image + name + per-artwork URL so Google can associate each
+       image with its dedicated, indexable page from the homepage
+       itself, not only from within the modal. */
+    injectGallerySEO();
   })();
+
+  /* SEO: one ImageGallery JSON-LD block listing all artworks, each
+     pointing at its own /artwork/{id} URL. Runs once images are
+     loaded; safe to call again (replaces, never duplicates). */
+  function injectGallerySEO(){
+    if(!images.length) return;
+    var ld = document.getElementById('ldGallery');
+    if(!ld){
+      ld = document.createElement('script');
+      ld.type = 'application/ld+json';
+      ld.id = 'ldGallery';
+      document.head.appendChild(ld);
+    }
+    ld.textContent = JSON.stringify({
+      '@context':'https://schema.org',
+      '@type':'ImageGallery',
+      'name':'Digiartz Gallery',
+      'url':SITE_URL+'/',
+      'image':images.slice(0,100).map(function(a){
+        return {
+          '@type':'ImageObject',
+          'contentUrl':a.image_url||'',
+          'name':a.name||'Untitled artwork',
+          'description':(a.description&&a.description.trim())?a.description.trim().slice(0,300):undefined,
+          'url':SITE_URL+'/artwork/'+a.id
+        };
+      })
+    });
+  }
 
   /* ═══════════════════════════════════════════════════════════
      SHOWCASE CARD JAVASCRIPT
      Populates the Featured, Gallery, and Characters showcase
      cards (1 large + 2 small images each). Featured uses its
      static curated image list; Gallery and Characters pull live
-     from artwork data, newest first. All three share the single
-     #fsViewer lightbox. No carousels, no auto-scroll, no clones.
+     from artwork data, newest first. All three open the single,
+     unified artwork modal (#artModal / openLB). No carousels,
+     no auto-scroll, no clones.
      ═══════════════════════════════════════════════════════════ */
   (function(){
-    var viewer = document.getElementById('fsViewer');
-    var vImg   = document.getElementById('fsViewerImg');
-
-    function openViewer(src){
-      if(!viewer || !vImg || !src) return;
-      vImg.src = src;
-      viewer.classList.add('open');
-      document.body.style.overflow = 'hidden';
+    /* openViewer forwards to the shared premium modal so Featured/
+       Gallery/Characters showcase clicks behave identically to the
+       full-gallery grid clicks (blur backdrop, scale animation,
+       ESC/outside-click close, name + category tag). desc/id are
+       optional — Featured (static curated images, no DB row) simply
+       omits them and behaves exactly as before. */
+    function openViewer(src,name,cat,desc,id){
+      if(!src) return;
+      openLB(src,name||'',cat||'',desc||'',id||null);
     }
-    window.fsCloseViewer = function(){
-      if(!viewer || !vImg) return;
-      viewer.classList.remove('open');
-      document.body.style.overflow = '';
-      vImg.src = '';
-    };
-    document.addEventListener('keydown', function(e){
-      if(e.key === 'Escape' && viewer && viewer.classList.contains('open')){ window.fsCloseViewer(); }
-    });
 
     /* Fill mainEl/side1El/side2El with up to 3 images from `list`.
        Returns true if at least one image was placed. */
@@ -3234,9 +3801,13 @@ async function openComments(){
         var el = slots[i];
         if(!el) return;
         var fullSrc = art.image_url || '';
+        var name = art.name || '';
+        var cat = (art.category||'').split(',')[0].trim();
+        var desc = art.description || '';
+        var id = art.id;
         var img = document.createElement('img');
         img.src = getThumbnailUrl(fullSrc);
-        img.alt = art.name || '';
+        img.alt = name || 'Untitled artwork';
         img.loading = 'lazy';
         img.decoding = 'async';
         img.draggable = false;
@@ -3245,7 +3816,7 @@ async function openComments(){
         img.onerror = function(){ el.innerHTML = '<div class="fsEmpty"></div>'; el.style.cursor = 'default'; };
         el.appendChild(img);
         el.style.cursor = 'pointer';
-        el.onclick = (function(s){ return function(){ openViewer(s); }; })(fullSrc);
+        el.onclick = (function(s,n,c,d,i){ return function(){ openViewer(s,n,c,d,i); }; })(fullSrc,name,cat,desc,id);
       });
       return true;
     }
@@ -3276,7 +3847,7 @@ async function openComments(){
         img.onerror = function(){ el.innerHTML = '<div class="fsEmpty"></div>'; el.style.cursor = 'default'; };
         el.appendChild(img);
         el.style.cursor = 'pointer';
-        el.addEventListener('click', function(){ openViewer(src); });
+        el.addEventListener('click', function(){ openViewer(src,'Featured Artwork',''); });
       });
     }
     renderFeatured();
@@ -3441,32 +4012,30 @@ function commentCurrentImage(imageId, imageUrl){
 }
 </script>
 <script>
-/* LIGHTBOX ACTION BUTTONS — inject Download + Comment buttons into the lightbox */
+/* LIGHTBOX ACTION BUTTONS — inject Download + Comment buttons into the artwork modal */
 (function(){
   document.addEventListener('DOMContentLoaded', function(){
-    var lbIn = document.querySelector('.lbIn');
-    if(lbIn && !document.getElementById('commentFromImageBtn')){
+    var host = document.getElementById('lbActionsHost');
+    if(host && !document.getElementById('commentFromImageBtn')){
       var actions = document.createElement('div');
-      actions.className = 'lbActions';
+      actions.className = 'lbActions amActions';
       actions.innerHTML =
-        '<button class="lbActionBtn" id="downloadImageBtn">DOWNLOAD</button>' +
-        '<button class="lbActionBtn" id="commentFromImageBtn">COMMENT</button>';
-      lbIn.appendChild(actions);
+        '<button class="lbActionBtn amDl" id="downloadImageBtn">DOWNLOAD</button>' +
+        '<button class="lbActionBtn amDl" id="commentFromImageBtn">COMMENT</button>';
+      host.appendChild(actions);
 
       document.getElementById('commentFromImageBtn').onclick = function(){
-        /* Capture the currently open lightbox image as the comment thumbnail */
-        var img = document.querySelector('.lbIn img');
+        /* Capture the currently open artwork image as the comment thumbnail */
+        var img = document.getElementById('lbImg');
         currentLightboxImageSrc = (img && img.src) ? img.src : '';
-        /* Close lightbox */
-        document.getElementById('lb').classList.remove('open');
-        document.body.style.overflow = '';
-        document.documentElement.style.overflow = '';
+        /* Close modal */
+        closeLB();
         /* Open comments with the thumbnail pre-populated */
         openComments();
       };
 
       document.getElementById('downloadImageBtn').onclick = function(){
-        var img = document.querySelector('.lbIn img');
+        var img = document.getElementById('lbImg');
         if(!img || !img.src) return;
         var a = document.createElement('a');
         a.href = img.src;

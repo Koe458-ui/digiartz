@@ -1,6 +1,209 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║                    DIGIARTZ — FILE STRUCTURE MAP                 ║
+  ║           Single-file app · index.html · ~4,500 lines            ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║  Use this map to jump to any major section.                      ║
+  ║  All sections are searchable by their section header text.       ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║                                                                  ║
+  ║  ── <head> ────────────────────────────────── lines 3–1919 ──   ║
+  ║                                                                  ║
+  ║   1. ANALYTICS & ADS SCRIPTS    ~ln 5   Cloudflare beacon,      ║
+  ║                                         Google AdSense loader    ║
+  ║                                                                  ║
+  ║   2. META & SEO                 ~ln 17  viewport, description,   ║
+  ║                                         Open Graph, Twitter card ║
+  ║                                                                  ║
+  ║   3. FONTS & EXTERNAL DEPS      ~ln 48  Google Fonts preconnect, ║
+  ║                                         Supabase JS CDN          ║
+  ║                                                                  ║
+  ║   4. HERO / PRELOAD             ~ln 53  LCP image preload hint   ║
+  ║                                                                  ║
+  ║  ── <style> ───────────────────────────── lines 57–1918 ──      ║
+  ║                                                                  ║
+  ║   5. THEME SYSTEM               ~ln 58  CSS custom properties,   ║
+  ║                                         @property tokens, root   ║
+  ║                                         vars (--tc, --bg, etc.)  ║
+  ║                                                                  ║
+  ║   6. INTRO / LOADING SCREEN     ~ln 80  #intro splash, particle  ║
+  ║                                         dots, logo animation      ║
+  ║                                                                  ║
+  ║   7. NAVIGATION                 ~ln 109 #navWrap pill bar,       ║
+  ║                                         dropdown menu, profile   ║
+  ║                                         icon / avatar button     ║
+  ║                                                                  ║
+  ║   8. HERO                       ~ln 230 #hero, background layers,║
+  ║                                         cinematic scroll system,  ║
+  ║                                         site bg (#siteBg),        ║
+  ║                                         scroll indicator          ║
+  ║                                                                  ║
+  ║   9. GALLERY (grid + items)     ~ln 310 #fullGallery, .gItem,    ║
+  ║                                         lazy-load shimmer,        ║
+  ║                                         admin delete/edit btns   ║
+  ║                                                                  ║
+  ║  10. ARTWORK MODAL              ~ln 482 #artModal, glass viewer, ║
+  ║                                         image + info block,       ║
+  ║                                         action buttons            ║
+  ║                                                                  ║
+  ║  11. FEATURED SHOWCASE          ~ln 1103 #featured section CSS,  ║
+  ║                                         .fsCard, .fsEmpty         ║
+  ║                                                                  ║
+  ║  12. SHOWCASE CARDS             ~ln 1120 .shWrap / .shCard —     ║
+  ║                                         Gallery + Characters      ║
+  ║                                         static card layout        ║
+  ║                                                                  ║
+  ║  13. ABOUT                      ~ln 720 #about section, admin    ║
+  ║                                         editable textarea         ║
+  ║                                                                  ║
+  ║  14. COMMENTS                   ~ln 751 #commentsPage overlay,   ║
+  ║                                         composer bar CSS          ║
+  ║                                                                  ║
+  ║  15. CONNECT                    ~ln 871 #connect social links    ║
+  ║                                                                  ║
+  ║  16. FOOTER                     ~ln 942 footer, copyright        ║
+  ║                                                                  ║
+  ║  17. LEGAL MODAL                ~ln 980 #legalBackdrop,          ║
+  ║                                         .legalModal slide-up      ║
+  ║                                                                  ║
+  ║  18. AUTH & UPLOAD MODALS       ~ln 1069 .mOvr/.modal — login,  ║
+  ║                                         upload, edit modals       ║
+  ║                                                                  ║
+  ║  19. ADMIN BAR                  ~ln 1093 .admBar sticky bottom   ║
+  ║                                                                  ║
+  ║  20. AD CONTAINERS              ~ln 1327 .adUnit inline units    ║
+  ║                                                                  ║
+  ║  21. ADS PANEL                  ~ln 1420 #adsPanel full-page     ║
+  ║                                         overlay, horizontal       ║
+  ║                                         scroll, dot indicators   ║
+  ║                                                                  ║
+  ║  22. WHITE THEME OVERRIDE       ~ln 1673 light/professional       ║
+  ║                                         palette override block    ║
+  ║                                                                  ║
+  ║  23. NAVBAR AVATAR &            ~ln 1751 .nAvatarBtn,            ║
+  ║      PROFILE POPUP                      #profilePopup            ║
+  ║                                                                  ║
+  ║  ── <body> ────────────────────────────── lines 1920–4495 ──    ║
+  ║                                                                  ║
+  ║  24. SUPABASE CONFIG BANNER     ~ln 1921 "not configured" notice ║
+  ║                                                                  ║
+  ║  25. NAVIGATION HTML            ~ln 1949 #navWrap, #navBar,      ║
+  ║                                         #navDD dropdown          ║
+  ║                                                                  ║
+  ║  26. PROFILE POPUP HTML         ~ln 2006 #profilePopup card      ║
+  ║                                                                  ║
+  ║  27. HERO HTML                  ~ln 2023 #hero, #siteBg, #bgF,  ║
+  ║                                         CTA button               ║
+  ║                                                                  ║
+  ║  28. FEATURED SHOWCASE HTML     ~ln 2062 #featured, .fsCard,     ║
+  ║                                         curated image slots       ║
+  ║                                                                  ║
+  ║  29. GALLERY SHOWCASE HTML      ~ln 2094 .shWrap Gallery card    ║
+  ║                                                                  ║
+  ║  30. CHARACTERS SHOWCASE HTML   ~ln 2123 .shWrap Characters card ║
+  ║                                                                  ║
+  ║  31. ABOUT HTML                 ~ln 2146 #about, static text,    ║
+  ║                                         admin editable textarea  ║
+  ║                                                                  ║
+  ║  32. CONNECT HTML               ~ln 2166 #connect, social links  ║
+  ║                                                                  ║
+  ║  33. FOOTER HTML                ~ln 2209 <footer>, legal links   ║
+  ║                                                                  ║
+  ║  34. LEGAL MODAL HTML           ~ln 2221 #legalBackdrop,         ║
+  ║                                         tab switcher, content    ║
+  ║                                                                  ║
+  ║  35. FULL GALLERY HTML          ~ln 2236 #fg dialog overlay,     ║
+  ║                                         #fgGrid, filter panel    ║
+  ║                                                                  ║
+  ║  36. COMMENTS PAGE HTML         ~ln 2311 #commentsPage,          ║
+  ║                                         composer bar             ║
+  ║                                                                  ║
+  ║  37. ADS PANEL HTML             ~ln 2355 #adsPanel, .apCard ×3, ║
+  ║                                         scroll dots              ║
+  ║                                                                  ║
+  ║  38. ARTWORK MODAL HTML         ~ln 2432 #artModal centered       ║
+  ║                                         viewer                   ║
+  ║                                                                  ║
+  ║  39. AUTHENTICATION HTML        ~ln 2461 #authMod login/signup   ║
+  ║                                                                  ║
+  ║  40. UPLOAD / EDIT MODAL HTML   ~ln 2481 #uploadMod, drag-drop,  ║
+  ║                                         multi-category picker    ║
+  ║                                                                  ║
+  ║  ── <script> (main) ─────────────── lines 2546–4178 ──          ║
+  ║                                                                  ║
+  ║  41. SUPABASE INIT              ~ln 2546 createClient, BUCKET,   ║
+  ║                                         SEO defaults             ║
+  ║                                                                  ║
+  ║  42. CORE UTILITIES             ~ln 2580 showToast, getThumbnail,║
+  ║                                         loadDB, renderHome,       ║
+  ║                                         applyBg, renderGallery   ║
+  ║                                                                  ║
+  ║  43. FEATURE SYSTEM — MODAL
+  ║                                         (Artwork Viewer)
+  ║
+  ║  43. ARTWORK MODAL JS           ~ln 2855 openLB/closeLB,         ║
+  ║                                         openArtworkById, SEO     ║
+  ║                                         update/reset             ║
+  ║                                                                  ║
+  ║  44. FEATURE SYSTEM — GALLERY
+  ║
+  ║  44. GALLERY OVERLAY JS         ~ln 3017 openFG/closeFG,         ║
+  ║                                         filter panel, sort,      ║
+  ║                                         lazy-load, admin btns    ║
+  ║                                                                  ║
+  ║  45. FEATURE SYSTEM — AUTHENTICATION
+  ║
+  ║  45. AUTHENTICATION JS          ~ln 3029 doAuth, toggleAuthMode, ║
+  ║                                         checkUserRole, logout,   ║
+  ║                                         onAuthStateChange        ║
+  ║                                                                  ║
+  ║  46. FEATURE SYSTEM — ADMIN
+  ║
+  ║  46. ADMIN JS                   ~ln 3384 smHandleAdm, syncAdm,   ║
+  ║                                         upload/edit/delete,      ║
+  ║                                         save settings            ║
+  ║                                                                  ║
+  ║  47. EVENT LISTENERS            ~ln 3518 keydown (ESC), click-   ║
+  ║                                         outside, scroll,         ║
+  ║                                         nav open/close           ║
+  ║                                                                  ║
+  ║  48. FEATURE SYSTEM — COMMENTS
+  ║
+  ║  48. COMMENTS JS                ~ln 3646 openComments/close,     ║
+  ║                                         cpLoadComments,          ║
+  ║                                         cpSaveComment            ║
+  ║                                                                  ║
+  ║  49. THEME SYSTEM JS            ~ln 3879 applyTheme, spawnPts    ║
+  ║                                                                  ║
+  ║  50. INITIALIZATION             ~ln 3996 async init() — loadDB,  ║
+  ║                                         applyBg, artwork URL     ║
+  ║                                         routing, structured data ║
+  ║                                                                  ║
+  ║  51. FEATURE SYSTEM — HERO / NAVIGATION / SHOWCASE
+  ║
+  ║  51. SHOWCASE CARD JS           ~ln 4044 populateFeatured,       ║
+  ║                                         populateGalleryCard,     ║
+  ║                                         populateCharactersCard   ║
+  ║                                                                  ║
+  ║  ── Appended <script> / <style> blocks ── lines 4179–4494 ──    ║
+  ║                                                                  ║
+  ║  52. GLOBAL RIPPLE EFFECT       ~ln 4179 #rippleHost CSS + JS   ║
+  ║                                                                  ║
+  ║  53. IMAGE-LINKED COMMENTS PATCH ~ln 4276 commentCurrentImage(), ║
+  ║                                         lbActions injector       ║
+  ║                                                                  ║
+  ║  54. ADS PANEL JS               ~ln 4327 openAdsPanel/close,     ║
+  ║                                         drag-scroll, dot sync    ║
+  ║                                                                  ║
+  ║  55. LEGAL MODAL JS             ~ln 4420 openLegal/closeLegal,   ║
+  ║                                         tab switcher, ESC key    ║
+  ║                                                                  ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
 <!DOCTYPE html>
 <html lang="en">
  <head>
+  <meta charset="utf-8"/>
   <!-- Cloudflare Web Analytics -->
   <script data-cf-beacon='{"token": "aa4b7177387e4f689739a5fdf44cbffa"}' defer="" src="https://static.cloudflareinsights.com/beacon.min.js">
   </script>
@@ -13,7 +216,6 @@
   <!-- ═══════════════════════════════════════════════
        END GOOGLE ADSENSE
        ═══════════════════════════════════════════════ -->
-  <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
    KOE — Art Has No Limits
@@ -55,7 +257,20 @@
   <link as="image" fetchpriority="high" href="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ce747207a4d38297fc2edb3e.png" rel="preload"/>
   <!-- LAZY LOADING END -->
   <style>
-   /* ── DYNAMIC THEME SYSTEM ── */
+
+    /* ══════════════════════════════════════════════════════════
+       ROOT VARIABLES
+       ├─ @property — registers animatable CSS custom properties
+       │   so the browser understands their type and can
+       │   interpolate them during theme transitions.
+       └─ :root — defines every design token used site-wide:
+           ├─ Theme base  (--tc, --theme-bg, --theme-sur …)
+           ├─ Transitions (smooth 0.5s on all theme vars)
+           ├─ Mapped tokens (--bg, --sur, --bdr, --pg …)
+           └─ Fonts (--fd Cinzel · --fb system · --fm Space Mono)
+       ══════════════════════════════════════════════════════════ */
+
+    /* ── Animatable property registrations ── */
     @property --tc       { syntax:'<color>'; inherits:true; initial-value:#a855f7; }
     @property --theme-bg { syntax:'<color>'; inherits:true; initial-value:#050308; }
     @property --theme-sur{ syntax:'<color>'; inherits:true; initial-value:#0d0a14; }
@@ -63,6 +278,7 @@
     @property --theme-tx { syntax:'<color>'; inherits:true; initial-value:#f0e8ff; }
     @property --theme-txd{ syntax:'<color>'; inherits:true; initial-value:rgba(196,181,253,.6); }
 
+    /* ── Design tokens ── */
     :root{
       /* theme base */
       --tc:#a855f7;
@@ -87,7 +303,19 @@
       --txd:var(--theme-txd);
       --fd:'Cinzel',serif;--fb:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;--fm:'Space Mono',monospace;
     }
+
+    /* ══════════════════════════════════════════════════════════
+       RESET
+       └─ Universal box-sizing + margin/padding zero-out.
+          Applied to all elements and their pseudo-elements.
+       ══════════════════════════════════════════════════════════ */
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+    /* ══════════════════════════════════════════════════════════
+       BASE ELEMENTS
+       ├─ html — smooth scrolling
+       └─ body — background, text color, font, overflow, min-height
+       ══════════════════════════════════════════════════════════ */
     html{scroll-behavior:smooth;}
     body{background:var(--bg);color:var(--tx);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
 
@@ -106,9 +334,16 @@
     .iLoadBar{height:100%;width:0%;background:linear-gradient(90deg,var(--tc),color-mix(in srgb,var(--tc) 60%,white));border-radius:2px;transition:width .25s ease-out;box-shadow:0 0 8px var(--tc);}
     .iLoadPct{font-family:var(--fm);font-size:.72rem;letter-spacing:.2em;color:color-mix(in srgb,var(--tc) 70%,#333);opacity:.8;}
 
-    /* ══════════════════════════════════════════════
-       NAV — unified rounded bar + attached dropdown
-       ══════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════
+       § 7  NAVIGATION
+       ├─ #navWrap    — outer fixed positioner + width controller
+       ├─ #navBar     — pill bar (glass surface, border, backdrop-blur)
+       ├─ .nLogo      — logo (hidden; reserved slot)
+       ├─ .nRight     — right-side icon group (login + hamburger)
+       ├─ .nLoginBtn  — circular glass login icon button
+       ├─ .nMenuLabel — centred "Menu" label (always visible)
+       └─ Collapsed state (.navCollapsed) — shrinks bar to mini pill
+       ══════════════════════════════════════════════════════════ */
     #navWrap{position:fixed;top:1rem;left:50%;transform:translateX(-50%);z-index:500;width:min(560px,calc(100% - 2rem));display:flex;flex-direction:column;align-items:stretch;will-change:width,top;}
 
     #navBar{
@@ -201,6 +436,14 @@
     #navWrap.open .nHam span:nth-child(2){opacity:0;transform:scaleX(0);}
     #navWrap.open .nHam span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);}
 
+    /* ══════════════════════════════════════════════════════════
+       § 7a DROPDOWN MENU
+       ├─ #navDrop    — collapsible panel below the bar
+       ├─ .ddInner    — overflow guard inside the panel
+       ├─ .ddItem     — individual menu row (icon + label)
+       ├─ .ddDiv      — horizontal rule divider between groups
+       └─ #navSep     — gradient separator between bar and panel
+       ══════════════════════════════════════════════════════════ */
     /* Dropdown — physically attached beneath the bar.
        The menu items carry NO animation — always fully rendered/visible.
        The panel's height is animated as an exact PIXEL value (measured
@@ -267,10 +510,23 @@
       #navBar{padding:.75rem 1.1rem;}
     }
 
-    /* ── HERO ── */
+    /* ══════════════════════════════════════════════════════════
+       § 8  HERO SYSTEM
+       ├─ #hero     — full-viewport section container
+       ├─ #hBgImg   — static art background (cover, centre)
+       ├─ .hOv      — cinematic dark overlay (z-index 3)
+       ├─ .hCon     — centred content stack (z-index 4)
+       ├─ .hT       — display title + .si sparkle child
+       ├─ .hSub     — mono eyebrow / tagline
+       ├─ .hDesc    — italic descriptor line
+       ├─ .hScr     — scroll indicator (label + animated line)
+       ├─ .sLn      — animated vertical line inside .hScr
+       ├─ .hEBg     — admin-only "Edit Background" button
+       └─ #bgF      — hidden file input for background upload
+       ══════════════════════════════════════════════════════════ */
     #hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;overflow:hidden;}
 
-    /* STATIC ART BACKGROUND */
+    /* Static art background — single cover image, no animation */
     #hBgImg{
       position:absolute;
       inset:0;
@@ -281,28 +537,60 @@
       z-index:0;
     }
 
-    /* ── Mobile optimisations ── */
-    @media(max-width:768px){
-      /* FIXED: N-11 — animation:none on #hBgImg removed; #hBgImg has no animation declared */
-    }
     /* hOv — dark cinematic overlay only; theme-color radial removed (was causing large colour haze across hero) */
     .hOv{position:absolute;inset:0;z-index:3;background:none;}
     .hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
     .hT{font-family:var(--fd);font-size:clamp(2.5rem,11vw,7rem);font-weight:900;line-height:.9;color:#000;-webkit-text-fill-color:#000;filter:none;position:relative;}
     .hT .si{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.12em;color:#000;-webkit-text-fill-color:#000;animation:sP 3s ease-in-out infinite;filter:none;}
-    @keyframes sP{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.7}}
     .hSub{font-family:var(--fm);font-size:clamp(.5rem,2.2vw,.9rem);letter-spacing:.4em;color:#000;margin-top:.5rem;}
     .hDesc{font-family:var(--fb);font-size:clamp(.85rem,2.5vw,1.05rem);color:#000;font-style:italic;}
-    .hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid var(--pg);background:rgba(255,255,255,.55);color:#000;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;border-radius:6px;}
-    .hCta:hover{background:rgba(255,255,255,.75);border-color:var(--pb);box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);transform:translateY(-2px);}
     .hScr{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.4rem;z-index:4;}
     .hScr span{font-family:var(--fm);font-size:.62rem;letter-spacing:.3em;color:#000;}
     .sLn{width:1px;height:50px;background:linear-gradient(to bottom,var(--pg),transparent);animation:sD 2s ease-in-out infinite;}
-    @keyframes sD{0%{transform:scaleY(0);transform-origin:top;opacity:1}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom;opacity:.3}}
     .hEBg{position:absolute;bottom:1rem;right:1.5rem;z-index:10;padding:.5rem 1rem;background:color-mix(in srgb,var(--tc) 15%,transparent);border:1px solid var(--bdr);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;cursor:pointer;display:none;align-items:center;gap:.4rem;transition:background .25s,border-color .25s;border-radius:6px;}
     .hEBg:hover{background:color-mix(in srgb,var(--tc) 30%,transparent);border-color:var(--pg);}
     body.admin .hEBg{display:flex;}
     #bgF{display:none;}
+
+    /* ══════════════════════════════════════════════════════════
+       § 8a HERO ANIMATIONS
+       ├─ @keyframes sP — sparkle pulse on .hT .si
+       └─ @keyframes sD — scroll-line draw/erase on .sLn
+       ══════════════════════════════════════════════════════════ */
+    @keyframes sP{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.7}}
+    @keyframes sD{0%{transform:scaleY(0);transform-origin:top;opacity:1}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom;opacity:.3}}
+
+    /* ══════════════════════════════════════════════════════════
+       § 8b HERO RESPONSIVE RULES
+       ├─ max-width:768px — mobile background note
+       └─ max-width:640px — hide scroll indicator on small screens
+       ══════════════════════════════════════════════════════════ */
+    
+    /* ══════════════════════════════════════════════════════════
+       RESPONSIVE CSS — MOBILE RULES
+       ══════════════════════════════════════════════════════════ */
+
+    @media(max-width:768px){
+      /* FIXED: N-11 — animation:none on #hBgImg removed; #hBgImg has no animation declared */
+    }
+    @media(max-width:640px){ .hScr{ display:none; } }
+    /* ══════════════════════════════════════════════════════════
+       § 7b BUTTONS — shared interactive controls
+       ├─ .hCta   — hero call-to-action link button
+       └─ .upBtn  — upload / action button (ghost outline style)
+       ══════════════════════════════════════════════════════════ */
+    .hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid var(--pg);background:rgba(255,255,255,.55);color:#000;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;border-radius:6px;}
+    .hCta:hover{background:rgba(255,255,255,.75);border-color:var(--pb);box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);transform:translateY(-2px);}
+
+    /* ══════════════════════════════════════════════════════════
+       § 7c GLOBAL UI ELEMENTS
+       ├─ .srOnly   — visually-hidden a11y utility
+       ├─ #sBanner  — Supabase setup notice banner
+       ├─ .sec      — section wrapper (max-width + padding)
+       ├─ .secT     — section heading typography
+       ├─ .secSub   — section sub-heading / eyebrow label
+       └─ .gHdr     — section header row (title + action button)
+       ══════════════════════════════════════════════════════════ */
     /* FIXED: N-04 — standard visually-hidden utility for the #bgF label element;
        keeps content available to screen readers without showing on screen. */
     .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
@@ -312,18 +600,61 @@
     #sBanner.show{display:block;}
     #sBanner a{color:var(--pb);}
 
-    /* GALLERY (HOME) */
-    .sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
-    .secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
-    .secT .s{color:var(--pg);font-size:.5em;}
-    .secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
-    .gHdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:.3rem;flex-wrap:wrap;gap:1rem;}
-    .upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
-    .upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
-    /* Admin-only upload button: hidden by default, shown only when body.admin */
-    body.admin .adminOnly{display:flex !important;}
+    /* ══════════════════════════════════════════════════════════
+       § 9  GALLERY GRID
+       ├─ .gHdr     — section header row (title + upload button)
+       ├─ .gGrid    — home grid (hidden; data source for overlay)
+       ├─ #fg       — full gallery overlay (slide-in from right)
+       ├─ .fgHdr    — sticky overlay header (search + filter bar)
+       ├─ .fgX      — close button
+       ├─ .fgQ      — search input
+       ├─ .fgBdy    — scrollable body padding wrapper
+       ├─ .fgEmp    — empty-state message
+       ├─ .fgGrid   — CSS grid container (display:grid, row-first)
+       └─ .fg2/.fg3/.fg4 — column-count variant classes
+       ══════════════════════════════════════════════════════════ */
+    .hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+.sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
+.secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
+.secT .s{color:var(--pg);font-size:.5em;}
+.secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
+.upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
+.upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
+    /* RESTORED HERO & GLOBAL UI CSS */
+.hOv{position:absolute;inset:0;z-index:3;background:none;}
+.hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+.hT{font-family:var(--fd);font-size:clamp(2.5rem,11vw,7rem);font-weight:900;line-height:.9;color:#000;-webkit-text-fill-color:#000;filter:none;position:relative;}
+.hT .si{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.12em;color:#000;-webkit-text-fill-color:#000;animation:sP 3s ease-in-out infinite;filter:none;}
+@keyframes sP{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.7}}
+.hSub{font-family:var(--fm);font-size:clamp(.5rem,2.2vw,.9rem);letter-spacing:.4em;color:#000;margin-top:.5rem;}
+.hDesc{font-family:var(--fb);font-size:clamp(.85rem,2.5vw,1.05rem);color:#000;font-style:italic;}
+.hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid var(--pg);background:rgba(255,255,255,.55);color:#000;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;border-radius:6px;}
+.hCta:hover{background:rgba(255,255,255,.75);border-color:var(--pb);box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);transform:translateY(-2px);}
+.sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
+.secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
+.secT .s{color:var(--pg);font-size:.5em;}
+.secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
+.upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
+.upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
+
+.gHdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:.3rem;flex-wrap:wrap;gap:1rem;}
     /* Keep homeGrid hidden — data source only for Full Gallery overlay */
     .gGrid{display:none;}
+
+    /* ══════════════════════════════════════════════════════════
+       § 9a GALLERY CARDS
+       ├─ .gItem       — card shell (border, bg, overflow, radius)
+       ├─ .gItemLink   — crawlable <a> wrapper (resets to block)
+       ├─ .gItem img   — square cover image + lazy-load shimmer
+       ├─ @keyframes imgShimmer — skeleton loading animation
+       ├─ .gNm         — title strip below image
+       ├─ .gOv         — hover overlay (icon reveal)
+       ├─ .gDel        — admin delete button (top-right)
+       ├─ .gEdit       — admin edit button (top-right, left of delete)
+       ├─ .cBadgeWrap  — category badge row (top-left)
+       ├─ .cBadge      — individual category chip
+       └─ .cBadgeMore  — "+N more" overflow chip
+       ══════════════════════════════════════════════════════════ */
     /* FIXED: BUG-002 — dead scroll sentinel CSS rule removed */
     .gItem{break-inside:avoid;margin-bottom:.8rem;position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;}
     /* gItemLink: the real, crawlable <a href="/artwork/{id}"> wrapping
@@ -355,9 +686,15 @@
     .cBadgeWrap{position:absolute;top:.4rem;left:.4rem;z-index:3;display:flex;gap:.3rem;pointer-events:none;}
     .cBadge{background:#ffffff;border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:#1a1c22;padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
     .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,#1a1c22);border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
+    /* ══════════════════════════════════════════════════════════
+       § 9b GALLERY RESPONSIVE RULES
+       ├─ max-width:640px — tighter card margin on mobile
+       ├─ max-width:900px — fg4 collapses to 3 columns
+       └─ max-width:640px — fg overlay: 2-col grid, tighter gap
+       ══════════════════════════════════════════════════════════ */
     @media(max-width:640px){.gItem{margin-bottom:.5rem}}
 
-    /* FULL GALLERY OVERLAY */
+    /* ── Full gallery overlay — slide-in panel ── */
     #fg{position:fixed;inset:0;z-index:500;background:var(--bg);overflow-y:auto;transform:translateX(100%);transition:transform .45s cubic-bezier(.22,1,.36,1);}
     #fg.open{transform:translateX(0);}
     .fgHdr{position:sticky;top:0;z-index:10;background:rgba(5,3,8,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;}
@@ -366,8 +703,30 @@
     .fgQ{flex:1;min-width:140px;max-width:280px;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.1em;padding:.55rem .9rem;outline:none;transition:border-color .25s;border-radius:6px;}
     .fgQ:focus{border-color:var(--pg);}
     .fgQ::placeholder{color:var(--txd);}
-    /* ── FILTER BUTTON ── */
-    .fgFil{display:flex;align-items:center;flex-shrink:0;} /* FIXED: HTML-001 */
+
+    /* ══════════════════════════════════════════════════════════
+       § 9c GALLERY FILTERS
+       ├─ .fgFil       — filter button wrapper (flex container)
+       ├─ .fgFltBtn    — icon toggle button (active dot indicator)
+       ├─ #fgFltOvr    — scrim overlay behind filter panel
+       ├─ #fgFltPanel  — slide-up panel (desktop: dropdown)
+       ├─ .fltPBdy     — scrollable panel body
+       ├─ .fltPH       — panel header row (title + close)
+       ├─ .fltPX       — panel close button
+       ├─ .fltSec      — filter section group wrapper
+       ├─ .fltSecLbl   — section label with trailing rule line
+       ├─ .fltOpts     — radio list container
+       ├─ .fltOpt      — individual radio row (dot + label)
+       ├─ .fltDot      — custom radio dot indicator
+       ├─ .fltLbl      — option label text
+       ├─ .fltOptsH    — horizontal grid-size option row
+       ├─ .fltOptH     — individual grid-size tile
+       ├─ .fltGridIco  — icon inside grid-size tile
+       ├─ .fltSep      — horizontal rule separator
+       └─ .fltDone     — "Done" confirm button
+       ══════════════════════════════════════════════════════════ */
+    /* FIXED: HTML-001 */
+    .fgFil{display:flex;align-items:center;flex-shrink:0;}
     .fgFltBtn{flex-shrink:0;width:42px;height:42px;background:color-mix(in srgb,var(--tc) 8%,transparent);border:1px solid var(--bdrh);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .25s,color .25s,background .25s,box-shadow .25s;position:relative;border-radius:6px;}
     .fgFltBtn svg{width:18px;height:18px;pointer-events:none;}
     .fgFltBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
@@ -376,7 +735,7 @@
 
     /* ── FILTER PANEL OVERLAY ── */
     #fgFltOvr{position:fixed;inset:0;z-index:550;background:rgba(5,3,8,.55);opacity:0;pointer-events:none;transition:opacity .3s ease;backdrop-filter:blur(3px);}
-    #fgFltOvr.open{opacity:1;pointer-events:all;}
+    #fgFltOvr.open{opacity:1;pointer-events:auto;}
 
     /* ── FILTER PANEL ── */
     #fgFltPanel{
@@ -467,6 +826,7 @@
     .fg2{grid-template-columns:repeat(2,1fr);}
     .fg3{grid-template-columns:repeat(3,1fr);}
     .fg4{grid-template-columns:repeat(4,1fr);}
+    /* Gallery overlay responsive rules (also part of § 9b) */
     @media(max-width:900px){
       .fg4{grid-template-columns:repeat(3,1fr)}
     }
@@ -478,14 +838,32 @@
       .fgGrid{gap:.5rem}
     }
 
-    /* ═══════════════════════════════════════════════
-       ARTWORK MODAL — premium centered viewer
-       Used for every artwork click site-wide (Gallery,
-       Characters, Featured Showcase, linked comment images).
-       Single glass container: image, then a stacked info
-       block (Name → Description → Category → Actions),
-       each separated by a thin divider line.
-       ═══════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════
+       § 10 ARTWORK MODAL
+       Full-viewport overlay opened on every artwork click site-wide
+       (Gallery, Characters, Featured Showcase, linked comment images).
+       Single glass card: image area → info block → action row.
+       ├─ #artModal          — fixed backdrop (blur + fade)
+       │   ├─ .open          — visible state
+       │   └─ .closing       — faster out-curve on dismiss
+       ├─ .amCard            — glass container (scale-in animation)
+       ├─ .amImgWrap         — image area (flex, contain fit)
+       │   ├─ img            — displayed artwork
+       │   └─ .loading::after — shimmer skeleton while loading
+       ├─ @keyframes amShimmer — skeleton sweep animation
+       ├─ .amInfo            — scrollable info panel (flex column)
+       ├─ .amDiv             — thin gradient divider line
+       ├─ .amName            — artwork title
+       ├─ .amDesc            — description text (hidden when empty)
+       ├─ .amCatRow          — category chips row
+       │   ├─ .amCatLbl      — "CATEGORY" eyebrow label
+       │   └─ .amCat         — individual category pill
+       ├─ .amActions         — download + comments button row
+       │   └─ .amDl          — action pill button (download / comments)
+       ├─ .amX               — close button (top-right corner)
+       └─ Responsive: tablet (max-width:1024px), mobile (max-width:640px),
+          narrow (max-width:380px), prefers-reduced-motion
+       ══════════════════════════════════════════════════════════ */
     #artModal{
       position:fixed;inset:0;z-index:950;
       display:flex;align-items:center;justify-content:center;
@@ -501,7 +879,7 @@
     #artModal.open{
       opacity:1;
       visibility:visible;
-      pointer-events:all;
+      pointer-events:auto;
     }
     /* Closing state plays a faster, slightly different curve so the
        fade-out doesn't feel like a mirrored fade-in. */
@@ -676,6 +1054,11 @@
     .amX:active{transform:scale(.94);}
 
     /* ── Tablet ── */
+    
+    /* ══════════════════════════════════════════════════════════
+       RESPONSIVE CSS — TABLET RULES
+       ══════════════════════════════════════════════════════════ */
+
     @media(max-width:1024px){
       .amCard{width:min(92vw,860px);min-width:0;border-radius:22px;}
       .amImgWrap img{max-height:58vh;}
@@ -747,14 +1130,20 @@
       .aIn{padding-left:1.2rem;}
     }
 
-    /* ── COMMENTS SECTION ── */
+    /* ══════════════════════════════════════════════════════════
+       § 14 COMMUNITY CSS
+       ├─ Comments        — #commentsPage, .cpHdr, .cpBody, .cpComment
+       ├─ User Avatars    — .cpAvatar, .cpBarAvatar
+       ├─ User Profiles   — .nAvatarBtn, #profilePopup, .pp*
+       └─ Community Tools — .cpComposerWrap, .cpBar, shared comment UI
+       ══════════════════════════════════════════════════════════ */
     #commentsPage{
-      position:fixed;inset:0;z-index:500;
-      background:var(--bg);
-      display:flex;flex-direction:column;
-      transform:translateX(100%);
-      transition:transform .45s cubic-bezier(.22,1,.36,1);
-    }
+  position:fixed;inset:0;z-index:500;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
     #commentsPage.open{transform:translateX(0);}
 
     /* Header bar */
@@ -799,6 +1188,7 @@
     }
     .cpComment:last-child{border-bottom:none;}
     .cpComment.hasImage{align-items:flex-start;} /* FIXED: A11Y-004 */
+    /* ── USER AVATARS ── */
     .cpAvatar{
       width:34px;height:34px;border-radius:50%;
       background:color-mix(in srgb,var(--tc) 22%,transparent);
@@ -812,6 +1202,7 @@
     .cpCommentText{font-family:var(--fb);font-size:.95rem;font-weight:400;color:var(--tx);line-height:1.6;word-break:break-word;}
     .cpCommentTime{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);}
 
+    /* ── COMMUNITY FEATURES ── */
     .cpComposerWrap{width:100%;display:flex;flex-direction:column;gap:6px;} /* FIXED: HTML-004 */
     /* FIXED: N-16 — changed from position:fixed to position:sticky so .cpBar
        is scoped to the #commentsPage flex column instead of the viewport.
@@ -862,6 +1253,11 @@
     }
     .cpBarSend:hover{background:color-mix(in srgb,var(--tc) 28%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 30%,transparent);}
     .cpBarSend:active{transform:scale(.97);}
+    
+    /* ══════════════════════════════════════════════════════════
+       RESPONSIVE CSS — SMALL DEVICE RULES
+       ══════════════════════════════════════════════════════════ */
+
     @media(max-width:480px){
       .cpBarSend{padding:.6rem .8rem;font-size:.68rem;letter-spacing:.1em;}
       .cpBar{padding:.6rem .9rem;gap:.55rem;}
@@ -976,7 +1372,31 @@
     /* Copyright line — sits BELOW the divider */
     footer p{font-family:var(--fm);font-size:.66rem;letter-spacing:.2em;color:var(--txd);}
 
-    /* ── LEGAL MODAL ── */
+    /* ══════════════════════════════════════════════════════════
+       § 11 OVERLAY SYSTEMS
+       Two independent full-viewport overlay stacks, each with
+       its own backdrop and inner container.
+       ├─ LEGAL OVERLAY (z-index 2000)
+       │   ├─ #legalBackdrop  — scrim + blur, fade transition
+       │   ├─ .legalModal     — slide-up glass panel
+       │   ├─ .lmHead         — header row (title + close button)
+       │   │   ├─ .lmTitle    — modal heading text
+       │   │   └─ .lmClose    — close button
+       │   ├─ .lmBody         — scrollable content area
+       │   │   └─ h2/p/li/ul  — legal text typography
+       │   └─ .lmDate         — "Last Updated" date chip
+       └─ AUTH / UPLOAD OVERLAY (z-index 800)
+           ├─ .mOvr           — scrim backdrop (shared by auth + upload)
+           ├─ .modal          — inner panel (auth login/signup)
+           │   ├─ h2 / p      — modal heading + subtitle
+           │   ├─ .mIn        — text input field
+           │   ├─ .mBtn       — primary action button (.sec = ghost)
+           │   ├─ .mX         — close button
+           │   ├─ .mErr       — inline error message
+           │   └─ .dz / .dz*  — drag-and-drop upload zone
+           └─ .upPrev         — image preview thumbnail
+       ══════════════════════════════════════════════════════════ */
+    /* ── Legal overlay ── */
     #legalBackdrop{
       position:fixed;inset:0;z-index:2000;
       background:rgba(5,3,8,.75);
@@ -987,7 +1407,7 @@
       opacity:0;pointer-events:none;visibility:hidden;
       transition:opacity .3s ease,visibility 0s linear .3s;
     }
-    #legalBackdrop.open{opacity:1;pointer-events:all;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s;}
+    #legalBackdrop.open{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s;}
     .legalModal{
       background:var(--sur);
       border:1px solid var(--bdrh);
@@ -1065,9 +1485,15 @@
       .lmBody{padding:1.2rem 1.2rem 1.6rem;}
     }
 
-    /* MODALS */
+    /* ══════════════════════════════════════════════════════════
+   AUTHENTICATION CSS
+   ├─ Login Modal
+   ├─ Signup Modal
+   └─ Shared Authentication Overlay
+   ══════════════════════════════════════════════════════════ */
+    /* ── Auth / upload overlay ── */
     .mOvr{position:fixed;inset:0;z-index:800;background:rgba(5,3,8,.9);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;padding:1rem;}
-    .mOvr.open{opacity:1;pointer-events:all;}
+    .mOvr.open{opacity:1;pointer-events:auto;}
     .modal{background:var(--sur);border:1px solid var(--bdr);padding:2.5rem 2rem;max-width:420px;width:100%;position:relative;border-radius:6px;}
     .modal h2{font-family:var(--fd);font-size:1.4rem;font-weight:700;letter-spacing:.05em;margin-bottom:.4rem;}
     .modal p{font-size:.92rem;color:var(--txd);font-style:italic;margin-bottom:1.5rem;line-height:1.5;}
@@ -1088,6 +1514,25 @@
     .dzIco{font-size:2rem;color:var(--txd);margin-bottom:.5rem;}
     .dzTxt{font-family:var(--fm);font-size:.7rem;letter-spacing:.15em;color:var(--txd);}
     .upPrev{width:100%;max-height:150px;object-fit:cover;margin-bottom:.8rem;display:none;}
+
+    /* ══════════════════════════════════════════════════════════
+       § 12 POPUP SYSTEMS
+       Lightweight non-modal UI surfaces that appear over content.
+       ├─ .admBar   — sticky admin toolbar (bottom of viewport)
+       │   ├─ p     — status/info text
+       │   └─ .admSv — "Save" button
+       └─ .toast    — transient notification chip (bottom-centre)
+       Note: #profilePopup is documented in § 23 NAVBAR AVATAR.
+       ══════════════════════════════════════════════════════════ */
+    
+    /* ══════════════════════════════════════════════════════════
+       PHASE 11 — ADMIN CSS ORGANIZATION
+       ├─ Admin Panels
+       ├─ Upload Tools
+       ├─ Management UI
+       └─ Developer Controls
+       No functionality changes
+       ══════════════════════════════════════════════════════════ */
 
     /* ADMIN BAR */
     .admBar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(13,10,20,.97);border-top:1px solid var(--bdr);padding:.8rem 2rem;display:none;align-items:center;justify-content:space-between;gap:1rem;}
@@ -1748,9 +2193,16 @@ body{background:var(--bg);}
 #intro{background:#ffffff;}
 
 /* ══════════════════════════════════════════════════════════
-   NAVBAR AVATAR — replaces profile icon after login.
-   Shares the exact same base shape/size as .nLoginBtn.
-   Uses the same first-letter + colour logic as .cpAvatar.
+   § 23 COMMUNITY USER PROFILES
+   ├─ .nAvatarBtn   — navbar avatar trigger
+   │   ├─ .nAvLetter — first-letter monogram inside the button
+   │   └─ Collapsed state: follows same hide logic as .nLoginBtn
+   └─ #profilePopup  — floating profile card (viewport-centred)
+       ├─ .ppAvatar   — large avatar circle inside popup
+       ├─ .ppUsername — username label (overflow-safe)
+       ├─ .ppDiv      — horizontal divider
+       ├─ .ppBtns     — button stack container
+       └─ .ppBtn*     — .ppBtnLogout (accent) + .ppBtnCancel (ghost)
    ══════════════════════════════════════════════════════════ */
 .nAvatarBtn{
   /* Identical glass-box to .nLoginBtn */
@@ -1790,8 +2242,12 @@ body{background:var(--bg);}
   opacity:0;pointer-events:none;position:absolute;left:-9999px;transition-delay:0s;
 }
 
+/* ── Profile popup card ── */
 /* ══════════════════════════════════════════════════════════
-   PROFILE POPUP — floating card anchored to avatar button.
+   USER SESSION & PROFILE UI
+   ├─ Logged-in User Session Controls
+   ├─ Profile Popup Card
+   └─ User Information Display
    ══════════════════════════════════════════════════════════ */
 #profilePopup{
   position:fixed;
@@ -1914,23 +2370,71 @@ body{background:var(--bg);}
     0 2px 0 color-mix(in srgb,var(--tc) 8%,transparent) inset;
 }
 
+/* RESTORED ADMIN BUTTON AND LIGHT THEME OVERRIDE */
+body.admin .adminOnly{display:flex !important;}
+
+:root{ --tc:#8a8f98; --bg:#ffffff; --sur:#ffffff; --sur2:#f6f7f9; --bdr:#e3e5ea; --bdrh:#cdd1d9; --tx:#1a1c22; --txd:rgba(26,28,34,.62); --pg:#666b73; --pb:#4a4f57; --ps:#33373d; --pdim:color-mix(in srgb,var(--tc) 8%,transparent); }
+body{background:var(--bg);}
+.gItem,.adCard,.apCard,.modal,.legalModal,#fgFltPanel,.amCard{ box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important; }
+#navWrap.open #navDrop{box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important;}
+.gItem:hover{box-shadow:0 6px 20px rgba(20,20,30,.10)!important;}
+.hCta:hover,.fltDone:hover,.mBtn:hover,.admSv:hover,.sCard:hover,.cpBarSend:hover,.upBtn:hover,.fgFltBtn:hover,.fgFltBtn.active,.fltOptH:has(input:checked){box-shadow:none!important;}
+#fgFltOvr{background:rgba(20,20,30,.25)!important;}
+.fgHdr,.cpHdr,.apHdr{background:rgba(255,255,255,.92)!important;border-bottom:1px solid var(--bdr);}
+.cpBar{background:rgba(255,255,255,.96)!important;border-top:1px solid var(--bdr);}
+#legalBackdrop,.mOvr{background:rgba(20,20,30,.45)!important;}
+#artModal{background:rgba(20,20,30,.4)!important;}
+.gOv{background:rgba(20,20,30,.55)!important;}
+.admBar{background:rgba(255,255,255,.97)!important;}
+.iLoadTrack{background:rgba(0,0,0,.08);}
+.gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{ background:#ffffff;border-color:var(--bdr); }
+#navDrop{background:#ffffff;}
+#navWrap.open #navDrop{border-top:none;border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);}
+.gNm{border-top:1px solid var(--bdr);}
+.fsEmpty{background:#f1f2f5;}
+.fsEmpty::after{color:var(--bdrh);}
+.fgQ,.mIn,.aEA,.cpBarInput,.upCatWrap{background:#f6f7f9!important;color:var(--tx);border-color:var(--bdr)!important;}
+#navBar,#navDrop{background:#ffffff!important;}
+.nLoginBtn,.nHam{background:#ffffff!important;}
+.nAvatarBtn{background:#ffffff!important;}
+.nLogo,.nHam,.nLoginBtn,.nAvatarBtn{text-shadow:0 1px 6px rgba(255,255,255,.9),0 1px 2px rgba(255,255,255,.85);}
+#hero,#hero *{ --bg:#050308;--sur:#0d0a14;--sur2:#120e1c; --tx:#f0e8ff;--txd:rgba(196,181,253,.6); --tc:#9a9ea5;--pg:#8a8f98;--pb:#b8bcc2;--ps:#cfd2d6; --bdr:color-mix(in srgb,var(--tc) 18%,transparent); --bdrh:color-mix(in srgb,var(--tc) 45%,transparent); --pdim:color-mix(in srgb,var(--tc) 12%,transparent); }
+#intro{background:#ffffff;}
+
 </style>
  </head>
  <body>
+
+  <!-- =========================================================
+       INTRO / LOADING SCREEN
+       ├─ Particle Dots Canvas (#iPts)
+       ├─ Logo (.iLogo)
+       ├─ Tagline (.iTag)
+       └─ Progress Bar (.iLoadWrap)
+           ├─ Track + Bar (#iLoadBar)
+           └─ Percentage Label (#iLoadPct)
+       ========================================================= -->
   <div id="intro">
+   <!-- ── Particle Dots Canvas ── -->
    <div class="iPts" id="iPts">
    </div>
+   <!-- ── Logo ── -->
    <h1 class="iLogo">
     Digiartz
    </h1>
+   <!-- ── Tagline ── -->
    <p class="iTag">
     ART HAS NO LIMITS
    </p>
+   <!-- ── Progress Bar ── -->
    <div class="iLoadWrap">
     <div class="iLoadTrack"><div class="iLoadBar" id="iLoadBar"></div></div>
     <div class="iLoadPct" id="iLoadPct">0%</div>
    </div>
   </div>
+  <!-- =========================================================
+       SUPABASE CONFIG BANNER
+       ========================================================= -->
   <div id="sBanner">
    ⚠ Supabase not configured — open the HTML file and fill in
    <strong>
@@ -1945,12 +2449,21 @@ body{background:var(--bg);}
     Get a free Supabase project →
    </a>
   </div>
-  <!-- ══════════════════════════════════════════════
-       TOP NAV — unified rounded bar + attached dropdown
-       ══════════════════════════════════════════════ -->
+  <!-- =========================================================
+       NAVIGATION SYSTEM
+       ├─ Navbar Bar (#navBar)
+       │   ├─ Profile Area (#navProfileArea)
+       │   │   ├─ Login Button (.nLoginBtn)     [logged-out]
+       │   │   └─ Avatar Button (.nAvatarBtn)   [logged-in]
+       │   ├─ Menu Label (.nMenuLabel)
+       │   └─ Hamburger Button (.nHam)
+       ├─ Separator (#navSep)
+       └─ Dropdown Menu (#navDrop)
+       ========================================================= -->
   <div id="navWrap">
    <div id="navBar">
-    <!-- Profile area: shows face icon (logged-out) or avatar button (logged-in) -->
+
+    <!-- ── Profile Area ── -->
     <div id="navProfileArea" style="display:flex;align-items:center;flex-shrink:0;">
      <!-- LOGGED-OUT: generic face icon (unchanged appearance) -->
      <button class="nLoginBtn" id="navLoginBtn" onclick="openAuthMod()" title="Login" aria-label="Login">
@@ -1959,7 +2472,7 @@ body{background:var(--bg);}
        <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7" stroke="currentColor" stroke-linecap="round" stroke-width="1.6"></path>
       </svg>
      </button>
-     <!-- LOGGED-IN: circular avatar with first letter -->
+     <!-- LOGGED-IN: circular avatar with first letter (replaces login btn) -->
      <button class="nAvatarBtn" id="navAvatarBtn"
        onclick="toggleProfilePopup(event)"
        title="Profile"
@@ -1971,7 +2484,11 @@ body{background:var(--bg);}
       <span class="nAvLetter" id="navAvatarLetter">?</span>
      </button>
     </div>
+
+    <!-- ── Menu Label ── -->
     <span class="nMenuLabel" id="navMenuLabel">Menu</span>
+
+    <!-- ── Hamburger Button ── -->
     <div class="nRight" id="navRight">
      <button class="nHam" id="hamBtn" onclick="toggleMenu()" title="Menu" aria-label="Open menu" aria-expanded="false" aria-controls="navDrop">
       <span></span>
@@ -1980,7 +2497,11 @@ body{background:var(--bg);}
      </button>
     </div>
    </div>
+
+   <!-- ── Separator ── -->
    <div id="navSep" aria-hidden="true"></div>
+
+   <!-- ── Dropdown Menu ── -->
    <div id="navDrop" role="menu" aria-label="Navigation menu">
     <div class="ddInner">
     <button class="ddItem" onclick="ddOpenGallery()">
@@ -2002,64 +2523,77 @@ body{background:var(--bg);}
    </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════
-       PROFILE POPUP — shown when logged-in avatar is clicked
-       ══════════════════════════════════════════════ -->
+  <!-- =========================================================
+       PROFILE POPUP
+       ├─ Avatar (.ppAvatar)
+       ├─ Username (.ppUsername)
+       ├─ Divider (.ppDiv)
+       └─ Action Buttons (.ppBtns)
+           ├─ Logout (.ppBtnLogout)
+           └─ Cancel (.ppBtnCancel)
+       ========================================================= -->
   <div id="profilePopup" role="dialog" aria-modal="false" aria-label="Profile menu">
-    <!-- Avatar (same style as comment avatars) -->
+    <!-- ── Avatar ── -->
     <div class="ppAvatar" id="ppAvatar" aria-hidden="true">?</div>
-    <!-- Username -->
+    <!-- ── Username ── -->
     <div class="ppUsername" id="ppUsername"></div>
-    <!-- Divider -->
+    <!-- ── Divider ── -->
     <div class="ppDiv" aria-hidden="true"></div>
-    <!-- Action buttons -->
+    <!-- ── Action Buttons ── -->
     <div class="ppBtns">
       <button class="ppBtn ppBtnLogout" id="ppLogoutBtn" onclick="ppDoLogout()">LOGOUT</button>
       <button class="ppBtn ppBtnCancel" onclick="closeProfilePopup()">CANCEL</button>
     </div>
   </div>
+  <!-- =========================================================
+       HERO SECTION
+       ├─ Background Image Layer (#hBgImg)
+       ├─ Gradient Overlay (.hOv)
+       ├─ Content Block (.hCon)
+       │   ├─ Title (.hT)
+       │   ├─ Subtitle (.hSub)
+       │   ├─ Description (.hDesc)
+       │   └─ CTA Button (.hCta)
+       ├─ Scroll Indicator (.hScr)
+       └─ Admin Controls (change background button + file input)
+       ========================================================= -->
   <section id="hero">
-   <!-- FIXED: N-06 — stale comment removed; this layer was never video-backed,
-        it's the cinematic scroll background image layer (see chBgA/chBgB). -->
-   <div id="hBgImg"></div>
+ <div id="hBgImg"></div>
+ <div class="hOv"></div>
+ 
+ <div class="hCon">
+  <h1 class="hT">
+    <span>Digiartz</span>
+    <span class="si">✦</span>
+  </h1>
+  <p class="hSub">ART HAS NO LIMITS</p>
+  <p class="hDesc">A digital art showcase by KOE</p>
+  <button class="hCta" onclick="openFG()">
+   <span>✦</span> EXPLORE GALLERY
+  </button>
+ </div>
 
-   <!-- Dark gradient overlay for text readability -->
-   <div class="hOv"></div>
-
-   <div class="hCon">
-    <h1 class="hT">
-  <span>Digiartz</span>
-  <span class="si">✦</span>
-    </h1>
-    <p class="hSub">
-     ART HAS NO LIMITS
-    </p>
-    <p class="hDesc">
-     A digital art showcase by KOE
-    </p>
-    <button class="hCta" onclick="openFG()"> <!-- FIXED: A11Y-003 -->
-     <span>
-      ✦
-     </span>
-     EXPLORE GALLERY
-    </button>
-   </div>
-   <div class="hScr">
-    <span>
-     SCROLL
-    </span>
-    <div class="sLn">
-    </div>
-   </div>
-   <button class="hEBg" onclick="document.getElementById('bgF').click()">
-    🖼 CHANGE BACKGROUND
-   </button>
-   <input accept="image/*" id="bgF" onchange="handleBg(event)" type="file"/>
-   <!-- FIXED: N-04 — visually-hidden label associated with #bgF for screen readers / form semantics -->
-   <label for="bgF" class="srOnly">Choose hero background image</label>
-  </section>
-  <!-- FEATURED SHOWCASE HTML START -->
+ <div class="hScr">
+  <span>SCROLL</span>
+  <div class="sLn"></div>
+ </div>
+ <button class="hEBg" onclick="document.getElementById('bgF').click()">🖼 CHANGE BACKGROUND</button>
+ <input accept="image/*" id="bgF" onchange="handleBg(event)" type="file"/>
+ <label for="bgF" class="srOnly">Choose hero background image</label>
+</section>
+  <!-- =========================================================
+       FEATURED SHOWCASE
+       ├─ Section Header (.fsHdr)
+       ├─ Showcase Card (.shCard #fsCard)
+       │   ├─ Main Image Slot (.shMain #fsMain)
+       │   ├─ Side Images (.shSide)
+       │   │   ├─ Side Slot 1 (#fsSide1)
+       │   │   └─ Side Slot 2 (#fsSide2)
+       │   └─ Info Block (.shInfo)
+       └─ Image URL Data (hidden data-source element #fsImageData)
+       ========================================================= -->
   <section id="featured">
+    <!-- ── Section Header ── -->
     <div class="fsHdr">
       <div class="secT">FEATURED <span class="s">✦</span></div>
       <div class="secSub">HANDPICKED HIGHLIGHTS</div>
@@ -2080,6 +2614,7 @@ body{background:var(--bg);}
       </div>
     </div>
   </section>
+  <!-- ── Image URL Data (edit src URLs here to change featured images) ── -->
   <!-- FEATURED SECTION IMAGES — edit the data-fssrc URLs below to change which artworks appear -->
   <div id="fsImageData" style="display:none;"
     data-fssrc-1="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780766256380_Reinhard_van_Astrea.png"
@@ -2090,15 +2625,29 @@ body{background:var(--bg);}
   <!-- FEATURED SHOWCASE HTML END -->
 
 
-  <!-- GALLERY SHOWCASE START -->
+  <!-- =========================================================
+       GALLERY SHOWCASE
+       ├─ Hidden Data Grid (#homeGrid) — source for Full Gallery overlay
+       ├─ Section Header (.fsHdr)
+       │   └─ Admin Upload Button (.upBtn.adminOnly)
+       ├─ Showcase Card (.shCard #galCard)
+       │   ├─ Main Image Slot (.shMain #galMain)
+       │   ├─ Side Images (.shSide)
+       │   │   ├─ Side Slot 1 (#galSide1)
+       │   │   └─ Side Slot 2 (#galSide2)
+       │   └─ Info Block (.shInfo)
+       └─ Empty State (#galEmpty)
+       ========================================================= -->
+  <!-- ── Hidden Data Grid (source for Full Gallery overlay) ── -->
   <div id="homeGrid" style="display:none;"></div>
   <!-- FIXED: BUG-002 — dead scroll sentinel element removed -->
   <section id="gallery" style="padding:4rem 0 3rem;">
+    <!-- ── Section Header ── -->
     <div class="fsHdr" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
       <div>
         <div class="secT">GALLERY <span class="s">✦</span></div>
       </div>
-      <!-- ADMIN UPLOAD BUTTON — only visible when body.admin -->
+      <!-- ── Admin Upload Button (admin-only, hidden by default) ── -->
       <button class="upBtn adminOnly" onclick="openUp()" style="display:none;">↑ UPLOAD ART</button>
     </div>
     <div class="shWrap" style="margin-top:1.5rem;">
@@ -2119,8 +2668,19 @@ body{background:var(--bg);}
     <div id="galEmpty" style="display:none;padding:3rem 2rem;text-align:center;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;color:var(--txd);">NO ARTWORK YET</div>
   </section>
   <!-- GALLERY SHOWCASE END -->
-  <!-- CHARACTERS SHOWCASE START -->
+  <!-- =========================================================
+       CHARACTERS SHOWCASE
+       ├─ Section Header (.fsHdr)
+       ├─ Showcase Card (.shCard #charCard)
+       │   ├─ Main Image Slot (.shMain #charMain)
+       │   ├─ Side Images (.shSide)
+       │   │   ├─ Side Slot 1 (#charSide1)
+       │   │   └─ Side Slot 2 (#charSide2)
+       │   └─ Info Block (.shInfo)
+       └─ Empty State (#charEmpty)
+       ========================================================= -->
   <section id="secCharacters" style="padding:3rem 0 3rem;">
+    <!-- ── Section Header ── -->
     <div class="fsHdr">
       <div class="secT">CHARACTERS <span class="s">✦</span></div>
     </div>
@@ -2143,6 +2703,14 @@ body{background:var(--bg);}
   </section>
   <!-- CHARACTERS SHOWCASE END -->
 
+  <!-- =========================================================
+       ABOUT SECTION
+       ├─ Section Title (.secT)
+       ├─ Section Subtitle (.secSub)
+       └─ Content Block (.aIn)
+           ├─ Bio Text (#aTxt)          [shown to visitors]
+           └─ Edit Textarea (#aEA)      [admin-only, save via admin bar]
+       ========================================================= -->
   <section id="about" style="max-width:1200px;margin:0 auto;">
    <div class="secT" style="margin-bottom:.3rem;">
     ABOUT
@@ -2161,6 +2729,16 @@ body{background:var(--bg);}
     <textarea class="aEA" id="aEA" placeholder="Write your about text here..."></textarea>
    </div>
   </section>
+
+  <!-- =========================================================
+       CONNECT SECTION
+       ├─ Section Label (.cDiv .cLbl)
+       └─ Social Grid (#socGrid)
+           ├─ Instagram (.sCard)
+           ├─ YouTube (.sCard)
+           ├─ Email (.sCard)
+           └─ Website (.sCard)
+       ========================================================= -->
   <section id="connect">
    <div class="cDiv">
     <div class="cLbl">
@@ -2205,6 +2783,15 @@ body{background:var(--bg);}
    <!-- === End Social Media Connect Here === -->
 
   </section>
+
+  <!-- =========================================================
+       FOOTER
+       ├─ Legal Links (.ftrLinks)
+       │   ├─ Privacy Policy button
+       │   └─ Terms & Conditions button
+       ├─ Divider Label (.ftrDiv)
+       └─ Copyright Line
+       ========================================================= -->
   <footer>
    <div class="ftrLinks">
      <button class="ftrLink" onclick="openLegal('privacy')" aria-label="Privacy Policy">PRIVACY POLICY</button>
@@ -2217,9 +2804,15 @@ body{background:var(--bg);}
    <p>© 2026 Digiartz. ALL RIGHTS RESERVED.</p>
   </footer>
 
-  <!-- ═══════════════════════════════════════════════
-       LEGAL MODAL (Privacy Policy + Terms & Conditions)
-       ═══════════════════════════════════════════════ -->
+  <!-- =========================================================
+       LEGAL MODAL
+       ├─ Backdrop (#legalBackdrop) — click outside to close
+       └─ Modal Card (.legalModal)
+           ├─ Header (.lmHead)
+           │   ├─ Title (#lmTitleText)
+           │   └─ Close Button (.lmClose)
+           └─ Body (#lmBody) — content injected by openLegal(type)
+       ========================================================= -->
   <div id="legalBackdrop" role="dialog" aria-modal="true" aria-labelledby="lmTitleText" onclick="handleBackdropClick(event)">
     <div class="legalModal">
       <div class="lmHead">
@@ -2232,7 +2825,20 @@ body{background:var(--bg);}
   <!-- ═══════════════════════════════════════════════
        END LEGAL MODAL
        ═══════════════════════════════════════════════ -->
-  <!-- FULL GALLERY -->
+  <!-- =========================================================
+       FULL GALLERY OVERLAY
+       ├─ Header Bar (.fgHdr)
+       │   ├─ Close Button (.fgX)
+       │   ├─ Search Input (#fgQ)
+       │   └─ Filter Button (.fgFltBtn)
+       ├─ Content Body (.fgBdy #fgC) — grid rendered by renderFG()
+       ├─ Filter Panel Overlay (#fgFltOvr) — backdrop blur
+       └─ Filter Panel (#fgFltPanel)
+           ├─ Category (.fltSec)
+           ├─ Sort (.fltSec)
+           ├─ Grid Size (.fltSec)
+           └─ Done Button (.fltDone)
+       ========================================================= -->
   <div id="fg" role="dialog" aria-modal="true" aria-label="Full Gallery"> <!-- FIXED: A11Y-002 -->
    <div class="fgHdr">
     <button class="fgX" onclick="closeFG()">
@@ -2307,9 +2913,19 @@ body{background:var(--bg);}
     <button class="fltDone" onclick="applyFilters()">DONE ✦</button>
    </div>
   </div>
-  <!-- ═══════════════════════════════════════════════
+  <!-- =========================================================
        COMMENTS PAGE
-       ═══════════════════════════════════════════════ -->
+       ├─ Header Bar (.cpHdr)
+       │   ├─ Back Button (.cpX)
+       │   └─ Title (.cpTitle)
+       ├─ Comments List (#cpBody)
+       │   └─ Empty State (#cpEmpty)
+       └─ Composer Bar (#cpBar) — fixed at bottom when comments open
+           ├─ Selected Image Preview (#cpSelectedImage)
+           ├─ Avatar (.cpBarAvatar)
+           ├─ Text Input (#cpBarInput)
+           └─ Send Button (#cpBarSend)
+       ========================================================= -->
   <div id="commentsPage">
     <!-- Header -->
     <div class="cpHdr">
@@ -2351,9 +2967,20 @@ body{background:var(--bg);}
        END COMMENTS PAGE
        ═══════════════════════════════════════════════ -->
 
-  <!-- ═══════════════════════════════════════════════
-       ADS PANEL
-       ═══════════════════════════════════════════════ -->
+  <!-- =========================================================
+       ADS / SPONSOR PANEL
+       ├─ Header Bar (.apHdr)
+       │   ├─ Back Button (.apX)
+       │   └─ Title (.apTitle)
+       └─ Body (.apBody)
+           ├─ Intro Label (.apIntro) + Hint (.apHint)
+           ├─ Ad Cards Track (#apTrackWrap > #apTrack)
+           │   ├─ Ad Card 1 (.apCard)
+           │   ├─ Ad Card 2 (.apCard)
+           │   └─ Ad Card 3 (.apCard)
+           ├─ Scroll Dots (#apDots)
+           └─ Description Block (.apDesc)
+       ========================================================= -->
   <div id="adsPanel">
     <div class="apHdr">
       <button class="apX" onclick="closeAdsPanel()" aria-label="Close">←</button>
@@ -2363,11 +2990,11 @@ body{background:var(--bg);}
       <div class="apIntro">SWIPE TO BROWSE ADS</div>
       <div class="apHint">← SCROLL →</div>
 
-      <!-- Horizontal scroll track -->
+      <!-- ── Ad Cards Track ── -->
       <div class="apTrackWrap" id="apTrackWrap">
         <div class="apTrack" id="apTrack">
 
-          <!-- Ad Card 1 -->
+          <!-- ── Ad Card 1 ── -->
           <div class="apCard">
             <div class="apCardLbl">AD · 01</div>
             <!-- ⚠ Replace data-ad-slot="" with your real AdSense numeric slot ID from your AdSense dashboard -->
@@ -2379,7 +3006,7 @@ body{background:var(--bg);}
                  data-full-width-responsive="false"></ins>
           </div>
 
-          <!-- Ad Card 2 -->
+          <!-- ── Ad Card 2 ── -->
           <div class="apCard">
             <div class="apCardLbl">AD · 02</div>
             <!-- ⚠ Replace data-ad-slot="" with your real AdSense numeric slot ID from your AdSense dashboard -->
@@ -2391,7 +3018,7 @@ body{background:var(--bg);}
                  data-full-width-responsive="false"></ins>
           </div>
 
-          <!-- Ad Card 3 -->
+          <!-- ── Ad Card 3 ── -->
           <div class="apCard">
             <div class="apCardLbl">AD · 03</div>
             <!-- ⚠ Replace data-ad-slot="" with your real AdSense numeric slot ID from your AdSense dashboard -->
@@ -2406,14 +3033,14 @@ body{background:var(--bg);}
         </div><!-- /apTrack -->
       </div><!-- /apTrackWrap -->
 
-      <!-- Scroll position dots -->
+      <!-- ── Scroll Position Dots ── -->
       <div class="apDots" id="apDots">
         <div class="apDot active" data-idx="0"></div>
         <div class="apDot" data-idx="1"></div>
         <div class="apDot" data-idx="2"></div>
       </div>
 
-      <!-- Description — styled like About section -->
+      <!-- ── Description Block ── -->
       <div class="apDesc">
         <div class="apDescTitle">SPONSOR <span class="s">✦</span></div>
         <div class="apDescSub">SUPPORTING DIGIARTZ</div>
@@ -2428,14 +3055,20 @@ body{background:var(--bg);}
        END ADS PANEL
        ═══════════════════════════════════════════════ -->
 
-  <!-- ═══════════════════════════════════════════════
-       ARTWORK MODAL — premium centered viewer
-       Single glass container: image, then Name → Description →
-       Category → Actions, each separated by a thin divider.
-       id="lb" / .lbIn / .lbNm / #lbImg / .lbX are kept so the
-       existing Download+Comment button injection script and
-       theme overrides keep working unchanged.
-       ═══════════════════════════════════════════════ -->
+  <!-- =========================================================
+       ARTWORK MODAL
+       ├─ Modal Backdrop (#artModal)
+       └─ Card (.amCard #lb)
+           ├─ Close Button (.amX)
+           ├─ Image Wrapper (.amImgWrap)
+           │   └─ Image (#lbImg)
+           └─ Info Panel (.amInfo)
+               ├─ Title (#lbNm)
+               ├─ Divider (.amDiv)
+               ├─ Description (#lbDesc)
+               ├─ Category Row (#lbCatRow)
+               └─ Actions Host (#lbActionsHost) — buttons injected by JS
+       ========================================================= -->
   <div id="artModal" role="dialog" aria-modal="true" aria-label="Artwork viewer" data-state="closed">
    <div id="lb" class="amCard" onclick="event.stopPropagation()">
     <button class="amX lbX" onclick="closeLB()" aria-label="Close">✕</button>
@@ -2457,7 +3090,23 @@ body{background:var(--bg);}
   </div>
   <!-- FIXED: SEC-001 — password modal removed; admin access is now
        granted via Supabase role (profiles.role = 'dev'), not a password. -->
-  <!-- LOGIN / CREATE ACCOUNT MODAL -->
+
+  <!-- =========================================================
+       AUTHENTICATION MODAL
+       ├─ Modal Overlay (.mOvr #authMod)
+       └─ Modal Card (.modal)
+           ├─ Close Button (.mX)
+           ├─ Title (#authTitle)
+           ├─ Subtitle (#authSubtitle)    [shown on signup]
+           ├─ Username Field (#authUser)  [signup mode only]
+           ├─ Email Field (#authEmail)
+           ├─ Password Field (#authPass)
+           ├─ Error Message (#authErr)
+           ├─ Success Message (#authMsg)
+           ├─ Primary Action Button (#authBtn)
+           ├─ Toggle Mode Button (#authToggleBtn)
+           └─ Cancel Button
+       ========================================================= -->
   <div class="mOvr" id="authMod">
    <div class="modal">
     <button class="mX" onclick="closeAuthMod()">✕</button>
@@ -2477,10 +3126,26 @@ body{background:var(--bg);}
     <button class="mBtn sec" onclick="closeAuthMod()">CANCEL</button>
    </div>
   </div>
-  <!-- UPLOAD MODAL — also reused for EDITING an existing artwork's
-       name/description/category (image itself is not replaced via
-       edit mode; only metadata fields). #upEditId is empty for a
-       fresh upload and holds the artwork id when editing. -->
+  <!-- =========================================================
+       UPLOAD / EDIT MODAL
+       ├─ Modal Overlay (.mOvr #upMod)
+       └─ Modal Card (.modal)
+           ├─ Close Button (.mX)
+           ├─ Title (#upTitle)
+           ├─ Subtitle (#upSubtitle)
+           ├─ Hidden Edit ID (#upEditId)     [empty = upload, set = edit]
+           ├─ Drop Zone (.dz #dz)
+           │   ├─ File Input (#upF)
+           │   └─ Drop Zone Label (.dzTxt)
+           ├─ Preview Image (#upPrev)
+           ├─ Name Field (#upNm)
+           ├─ Description Field (#upDesc)
+           ├─ Category Picker (#upCatWrap)
+           │   ├─ Checkboxes (#upCatBoxes)
+           │   └─ Selected Display (#upCatDisplay)
+           ├─ Submit Button (#upBtn)
+           └─ Cancel Button
+       ========================================================= -->
   <div class="mOvr" id="upMod">
    <div class="modal">
     <button class="mX" onclick="closeUp()">
@@ -2529,6 +3194,11 @@ body{background:var(--bg);}
     </button>
    </div>
   </div>
+  <!-- =========================================================
+       ADMIN BAR
+       ├─ Status Label
+       └─ Save Settings Button (.admSv)
+       ========================================================= -->
   <div class="admBar">
    <p>
     ✦ ADMIN MODE — CHANGES SAVE TO CLOUD
@@ -2537,12 +3207,21 @@ body{background:var(--bg);}
     SAVE SETTINGS
    </button>
   </div>
+
+  <!-- ── Toast Notification ── -->
   <div class="toast" id="toast">
   </div>
   <!-- FIXED: C-01 — Supabase credentials moved out of source into config.js
        (gitignored on deploy). See config.example.js for the template. -->
   <script src="config.js"></script>
   <script>
+
+  /* ══════════════════════════════════════════════════════════
+     JAVASCRIPT CORE — CONFIGURATION
+     ├─ Loads environment configuration from config.js
+     ├─ Provides Supabase URL and API key
+     └─ Shows setup banner when configuration is missing
+     ══════════════════════════════════════════════════════════ */
   // FIXED: C-01 — credentials no longer hardcoded inline. They now live in
   // config.js (gitignored), which must define window.KOE_CONFIG = { SB_URL, SB_KEY }.
   // See config.example.js for the template. Falls back to the banner below
@@ -2550,10 +3229,21 @@ body{background:var(--bg);}
   const SB_URL = (window.KOE_CONFIG && window.KOE_CONFIG.SB_URL) || '';
   const SB_KEY = (window.KOE_CONFIG && window.KOE_CONFIG.SB_KEY) || '';
 
+  /* ══════════════════════════════════════════════════════════
+     JAVASCRIPT CORE — CONSTANTS
+     ├─ Storage bucket identifiers
+     ├─ Site-wide immutable values
+     └─ Core application constants
+     ══════════════════════════════════════════════════════════ */
   // FIXED: SEC-001 — client-side ADMIN_PW removed. Admin status is now
   // derived from the authenticated user's role in the Supabase
   // `profiles` table (role = 'dev'), enforced server-side via RLS.
   const BUCKET   = 'koe-media';
+
+  /* ══════════════════════════════════════════════════════════
+     JAVASCRIPT CORE — SEO CONSTANTS
+     └─ Default metadata restored after artwork views
+     ══════════════════════════════════════════════════════════ */
 
   /* SEO defaults — must mirror the static <head> tags exactly, since
      resetArtworkSEO() uses these to restore the head after an
@@ -2563,6 +3253,12 @@ body{background:var(--bg);}
   var SITE_DEFAULT_DESC  = (document.querySelector('meta[name="description"]')||{}).content || '';
   var SITE_DEFAULT_IMAGE = (document.querySelector('meta[property="og:image"]')||{}).content || '';
 
+  /* ══════════════════════════════════════════════════════════
+     JAVASCRIPT CORE — SUPABASE
+     ├─ Creates authenticated Supabase client
+     ├─ Enables database and storage access
+     └─ Falls back gracefully when not configured
+     ══════════════════════════════════════════════════════════ */
   let sb = null;
   if (SB_URL && SB_KEY) {
     sb = supabase.createClient(SB_URL , SB_KEY )
@@ -2570,11 +3266,27 @@ body{background:var(--bg);}
     document.getElementById('sBanner').classList.add('show');
   }
 
+  /* ══════════════════════════════════════════════════════════
+     JAVASCRIPT CORE — INITIALIZATION VARIABLES
+     ├─ Authentication state
+     ├─ Upload state
+     ├─ Artwork cache
+     ├─ Runtime configuration
+     └─ Gallery filter state
+     ══════════════════════════════════════════════════════════ */
   let isAdm = false, upFile = null, images = [], cfg = {hero_bg:''};
   let filterCat = 'all', filterSrt = 'new', filterGrid = 4;
 
   /* FIXED: BUG-003 — SDEFS array removed (only used by dead social rendering functions) */
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+  function restoreScroll(){
+    var locks=['fg','artModal','commentsPage','adsPanel'];
+    var anyOpen=locks.some(function(id){
+      var el=document.getElementById(id);
+      return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
+    });
+    if(!anyOpen){ document.body.style.overflow=''; document.documentElement.style.overflow=''; }
+  }
 
   async function loadDB(){
     if(!sb)return;
@@ -2743,7 +3455,7 @@ body{background:var(--bg);}
   }
   function closeFG(){
     document.getElementById('fg').classList.remove('open');
-    document.body.style.overflow='';
+    restoreScroll();
     /* Reset category filter to 'all' so next open is always clean */
     filterCat = 'all';
     var catR = document.querySelector('input[name="fltCat"][value="all"]');
@@ -2826,7 +3538,7 @@ body{background:var(--bg);}
       modal.classList.remove('open');
       modal.classList.remove('closing');
       modal.setAttribute('data-state','closed');
-      document.body.style.overflow='';
+      restoreScroll();
       var imgEl=document.getElementById('lbImg');
       if(imgEl){imgEl.src='';imgEl.alt='';}
     },230);
@@ -2901,7 +3613,9 @@ body{background:var(--bg);}
      ImageObject JSON-LD block describing the open artwork. All of
      this is additive DOM manipulation — no existing tag is removed,
      only ever swapped between "site default" and "this artwork". */
+  /* ⚠ Must match <head> og:site_name and canonical href exactly */
   var SITE_NAME = 'Digiartz';
+  /* ⚠ Must match <head> canonical href and og:url exactly */
   var SITE_URL  = 'https://digiartz.pages.dev';
   function setMeta(selector, attr, value){
     var el = document.querySelector(selector);
@@ -3982,7 +4696,19 @@ async function openComments(){
     }, 9000);
   })();
 
-  (async function init(){
+  (/* ==========================================
+   STARTUP LOGIC
+   ==========================================
+
+   Startup Sequence
+   1. Load configuration
+   2. Restore session/state
+   3. Initialize UI
+   4. Register events
+   5. Start observers
+   ========================================== */
+
+  async function init(){
     spawnPts();
     await loadDB();
     applyBg();renderHome();
@@ -4328,6 +5054,12 @@ function commentCurrentImage(imageId, imageUrl){
   window.openAdsPanel = function(){
     closeMenu();
     panel.classList.add('open');
+    var hint = panel.querySelector('.apHint');
+    if (hint) {
+      hint.style.animation = 'none';
+      void hint.offsetWidth; // force reflow
+      hint.style.animation = '';
+    }
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
 
@@ -4470,6 +5202,27 @@ function commentCurrentImage(imageId, imageUrl){
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape' && backdrop.classList.contains('open')) closeLegal();
   });
+
+/* ==========================================
+   INITIALIZATION
+   ==========================================
+
+   Navigation Initialization
+   Search Initialization
+   Community Initialization
+   Admin Initialization
+
+   Initialization functions are grouped here.
+   ========================================== */
+
+/* ==========================================
+   APPLICATION BOOTSTRAP
+   ==========================================
+
+   Final startup execution entry point.
+   Execution order preserved.
+   ========================================== */
+
 })();
 </script>
 <!-- ════════════════════════════════════════════════════════

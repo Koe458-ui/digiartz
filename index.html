@@ -368,7 +368,7 @@
     }
     #navWrap.open #navBar{border-radius:22px 22px 0 0;border-bottom-color:transparent;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--tc) 8%,transparent);}
 
-    .nLogo{display:none;}
+
 
     /* Right-side group: Login + Hamburger */
     .nRight{display:flex;align-items:center;gap:.55rem;
@@ -388,7 +388,6 @@
     }
     .nLoginBtn svg{width:16px;height:16px;display:block;}
     .nLoginBtn:hover{color:var(--ps);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
-    .nLoginBtn.loggedIn{color:var(--ps);border-color:color-mix(in srgb,var(--tc) 35%,transparent);}
 
     /* "Menu" label — always visible now (Koe logo removed) */
     .nMenuLabel{
@@ -537,28 +536,12 @@
       z-index:0;
     }
 
-    /* hOv — dark cinematic overlay only; theme-color radial removed (was causing large colour haze across hero) */
-    .hOv{position:absolute;inset:0;z-index:3;background:none;}
-    .hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
-    .hT{font-family:var(--fd);font-size:clamp(2.5rem,11vw,7rem);font-weight:900;line-height:.9;color:#000;-webkit-text-fill-color:#000;filter:none;position:relative;}
-    .hT .si{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.12em;color:#000;-webkit-text-fill-color:#000;animation:sP 3s ease-in-out infinite;filter:none;}
-    .hSub{font-family:var(--fm);font-size:clamp(.5rem,2.2vw,.9rem);letter-spacing:.4em;color:#000;margin-top:.5rem;}
-    .hDesc{font-family:var(--fb);font-size:clamp(.85rem,2.5vw,1.05rem);color:#000;font-style:italic;}
-    .hScr{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.4rem;z-index:4;}
-    .hScr span{font-family:var(--fm);font-size:.62rem;letter-spacing:.3em;color:#000;}
-    .sLn{width:1px;height:50px;background:linear-gradient(to bottom,var(--pg),transparent);animation:sD 2s ease-in-out infinite;}
-    .hEBg{position:absolute;bottom:1rem;right:1.5rem;z-index:10;padding:.5rem 1rem;background:color-mix(in srgb,var(--tc) 15%,transparent);border:1px solid var(--bdr);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;cursor:pointer;display:none;align-items:center;gap:.4rem;transition:background .25s,border-color .25s;border-radius:6px;}
-    .hEBg:hover{background:color-mix(in srgb,var(--tc) 30%,transparent);border-color:var(--pg);}
-    body.admin .hEBg{display:flex;}
-    #bgF{display:none;}
-
     /* ══════════════════════════════════════════════════════════
        § 8a HERO ANIMATIONS
        ├─ @keyframes sP — sparkle pulse on .hT .si
        └─ @keyframes sD — scroll-line draw/erase on .sLn
+       Hero overlay / content / element rules live in § 8 HERO & GLOBAL UI CSS below.
        ══════════════════════════════════════════════════════════ */
-    @keyframes sP{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.7}}
-    @keyframes sD{0%{transform:scaleY(0);transform-origin:top;opacity:1}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom;opacity:.3}}
 
     /* ══════════════════════════════════════════════════════════
        § 8b HERO RESPONSIVE RULES
@@ -570,26 +553,14 @@
        RESPONSIVE CSS — MOBILE RULES
        ══════════════════════════════════════════════════════════ */
 
-    @media(max-width:768px){
-      /* FIXED: N-11 — animation:none on #hBgImg removed; #hBgImg has no animation declared */
-    }
     @media(max-width:640px){ .hScr{ display:none; } }
     /* ══════════════════════════════════════════════════════════
-       § 7b BUTTONS — shared interactive controls
-       ├─ .hCta   — hero call-to-action link button
-       └─ .upBtn  — upload / action button (ghost outline style)
-       ══════════════════════════════════════════════════════════ */
-    .hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid var(--pg);background:rgba(255,255,255,.55);color:#000;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;border-radius:6px;}
-    .hCta:hover{background:rgba(255,255,255,.75);border-color:var(--pb);box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);transform:translateY(-2px);}
-
-    /* ══════════════════════════════════════════════════════════
-       § 7c GLOBAL UI ELEMENTS
+       § 7b GLOBAL UI ELEMENTS
        ├─ .srOnly   — visually-hidden a11y utility
        ├─ #sBanner  — Supabase setup notice banner
-       ├─ .sec      — section wrapper (max-width + padding)
-       ├─ .secT     — section heading typography
-       ├─ .secSub   — section sub-heading / eyebrow label
        └─ .gHdr     — section header row (title + action button)
+       Hero buttons (.hCta, .upBtn) and section layout (.sec, .secT, .secSub)
+       are defined in § 8 HERO & GLOBAL UI CSS below.
        ══════════════════════════════════════════════════════════ */
     /* FIXED: N-04 — standard visually-hidden utility for the #bgF label element;
        keeps content available to screen readers without showing on screen. */
@@ -599,6 +570,45 @@
     #sBanner{background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);padding:1rem 1.5rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.12em;color:var(--ps);line-height:1.8;display:none;}
     #sBanner.show{display:block;}
     #sBanner a{color:var(--pb);}
+
+    /* ══════════════════════════════════════════════════════════
+       § 8 HERO & GLOBAL UI CSS
+       ├─ .hOv      — cinematic dark overlay
+       ├─ .hCon     — centred content stack
+       ├─ .hT       — display title + sparkle
+       ├─ .hSub     — tagline
+       ├─ .hDesc    — italic descriptor
+       ├─ .hCta     — hero CTA button
+       ├─ .sec      — section wrapper
+       ├─ .secT     — section heading
+       ├─ .secSub   — section sub-heading
+       ├─ .upBtn    — upload/action button
+       ├─ @keyframes sP — sparkle pulse
+       └─ @keyframes sD — scroll-line draw
+       ══════════════════════════════════════════════════════════ */
+.hOv{position:absolute;inset:0;z-index:3;background:none;}
+.hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+.hT{font-family:var(--fd);font-size:clamp(2.5rem,11vw,7rem);font-weight:900;line-height:.9;color:#000;-webkit-text-fill-color:#000;filter:none;position:relative;}
+.hT .si{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.12em;color:#000;-webkit-text-fill-color:#000;animation:sP 3s ease-in-out infinite;filter:none;}
+@keyframes sP{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.7}}
+.hSub{font-family:var(--fm);font-size:clamp(.5rem,2.2vw,.9rem);letter-spacing:.4em;color:#000;margin-top:.5rem;}
+.hDesc{font-family:var(--fb);font-size:clamp(.85rem,2.5vw,1.05rem);color:#000;font-style:italic;}
+.hScr{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.4rem;z-index:4;}
+.hScr span{font-family:var(--fm);font-size:.62rem;letter-spacing:.3em;color:#000;}
+.sLn{width:1px;height:50px;background:linear-gradient(to bottom,var(--pg),transparent);animation:sD 2s ease-in-out infinite;}
+@keyframes sD{0%{transform:scaleY(0);transform-origin:top;opacity:1}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom;opacity:.3}}
+.hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid var(--pg);background:rgba(255,255,255,.55);color:#000;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;border-radius:6px;}
+.hCta:hover{background:rgba(255,255,255,.75);border-color:var(--pb);box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);transform:translateY(-2px);}
+.hEBg{position:absolute;bottom:1rem;right:1.5rem;z-index:10;padding:.5rem 1rem;background:color-mix(in srgb,var(--tc) 15%,transparent);border:1px solid var(--bdr);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;cursor:pointer;display:none;align-items:center;gap:.4rem;transition:background .25s,border-color .25s;border-radius:6px;}
+.hEBg:hover{background:color-mix(in srgb,var(--tc) 30%,transparent);border-color:var(--pg);}
+body.admin .hEBg{display:flex;}
+#bgF{display:none;}
+.sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
+.secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
+.secT .s{color:var(--pg);font-size:.5em;}
+.secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
+.upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
+.upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
 
     /* ══════════════════════════════════════════════════════════
        § 9  GALLERY GRID
@@ -613,31 +623,6 @@
        ├─ .fgGrid   — CSS grid container (display:grid, row-first)
        └─ .fg2/.fg3/.fg4 — column-count variant classes
        ══════════════════════════════════════════════════════════ */
-    .hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
-.sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
-.secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
-.secT .s{color:var(--pg);font-size:.5em;}
-.secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
-.upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
-.upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
-    /* RESTORED HERO & GLOBAL UI CSS */
-.hOv{position:absolute;inset:0;z-index:3;background:none;}
-.hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
-.hT{font-family:var(--fd);font-size:clamp(2.5rem,11vw,7rem);font-weight:900;line-height:.9;color:#000;-webkit-text-fill-color:#000;filter:none;position:relative;}
-.hT .si{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.12em;color:#000;-webkit-text-fill-color:#000;animation:sP 3s ease-in-out infinite;filter:none;}
-@keyframes sP{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.7}}
-.hSub{font-family:var(--fm);font-size:clamp(.5rem,2.2vw,.9rem);letter-spacing:.4em;color:#000;margin-top:.5rem;}
-.hDesc{font-family:var(--fb);font-size:clamp(.85rem,2.5vw,1.05rem);color:#000;font-style:italic;}
-.hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid var(--pg);background:rgba(255,255,255,.55);color:#000;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;border-radius:6px;}
-.hCta:hover{background:rgba(255,255,255,.75);border-color:var(--pb);box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);transform:translateY(-2px);}
-.sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
-.secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
-.secT .s{color:var(--pg);font-size:.5em;}
-.secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
-.upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
-.upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
-
-.gHdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:.3rem;flex-wrap:wrap;gap:1rem;}
     /* Keep homeGrid hidden — data source only for Full Gallery overlay */
     .gGrid{display:none;}
 
@@ -1204,12 +1189,8 @@
 
     /* ── COMMUNITY FEATURES ── */
     .cpComposerWrap{width:100%;display:flex;flex-direction:column;gap:6px;} /* FIXED: HTML-004 */
-    /* FIXED: N-16 — changed from position:fixed to position:sticky so .cpBar
-       is scoped to the #commentsPage flex column instead of the viewport.
-       #commentsPage is already position:fixed with flex-direction:column,
-       so sticky:bottom:0 pins .cpBar to the bottom of that container reliably. */
     .cpBar{
-      position:sticky;bottom:0;
+      position:fixed;bottom:0;left:0;right:0;
       z-index:501;
       background:rgba(5,3,8,.97);
       border-top:1px solid var(--bdrh);
@@ -1540,6 +1521,7 @@
     .admBar p{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--ps);}
     .admSv{padding:.6rem 1.5rem;background:var(--pdim);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;cursor:pointer;transition:background .25s,box-shadow .25s;border-radius:6px;}
     .admSv:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 15px color-mix(in srgb,var(--tc) 30%,transparent);}
+    body.admin .adminOnly{display:flex !important;}
 
     .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:900;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;border-radius:6px;}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -2370,36 +2352,6 @@ body{background:var(--bg);}
     0 2px 0 color-mix(in srgb,var(--tc) 8%,transparent) inset;
 }
 
-/* RESTORED ADMIN BUTTON AND LIGHT THEME OVERRIDE */
-body.admin .adminOnly{display:flex !important;}
-
-:root{ --tc:#8a8f98; --bg:#ffffff; --sur:#ffffff; --sur2:#f6f7f9; --bdr:#e3e5ea; --bdrh:#cdd1d9; --tx:#1a1c22; --txd:rgba(26,28,34,.62); --pg:#666b73; --pb:#4a4f57; --ps:#33373d; --pdim:color-mix(in srgb,var(--tc) 8%,transparent); }
-body{background:var(--bg);}
-.gItem,.adCard,.apCard,.modal,.legalModal,#fgFltPanel,.amCard{ box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important; }
-#navWrap.open #navDrop{box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important;}
-.gItem:hover{box-shadow:0 6px 20px rgba(20,20,30,.10)!important;}
-.hCta:hover,.fltDone:hover,.mBtn:hover,.admSv:hover,.sCard:hover,.cpBarSend:hover,.upBtn:hover,.fgFltBtn:hover,.fgFltBtn.active,.fltOptH:has(input:checked){box-shadow:none!important;}
-#fgFltOvr{background:rgba(20,20,30,.25)!important;}
-.fgHdr,.cpHdr,.apHdr{background:rgba(255,255,255,.92)!important;border-bottom:1px solid var(--bdr);}
-.cpBar{background:rgba(255,255,255,.96)!important;border-top:1px solid var(--bdr);}
-#legalBackdrop,.mOvr{background:rgba(20,20,30,.45)!important;}
-#artModal{background:rgba(20,20,30,.4)!important;}
-.gOv{background:rgba(20,20,30,.55)!important;}
-.admBar{background:rgba(255,255,255,.97)!important;}
-.iLoadTrack{background:rgba(0,0,0,.08);}
-.gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{ background:#ffffff;border-color:var(--bdr); }
-#navDrop{background:#ffffff;}
-#navWrap.open #navDrop{border-top:none;border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);}
-.gNm{border-top:1px solid var(--bdr);}
-.fsEmpty{background:#f1f2f5;}
-.fsEmpty::after{color:var(--bdrh);}
-.fgQ,.mIn,.aEA,.cpBarInput,.upCatWrap{background:#f6f7f9!important;color:var(--tx);border-color:var(--bdr)!important;}
-#navBar,#navDrop{background:#ffffff!important;}
-.nLoginBtn,.nHam{background:#ffffff!important;}
-.nAvatarBtn{background:#ffffff!important;}
-.nLogo,.nHam,.nLoginBtn,.nAvatarBtn{text-shadow:0 1px 6px rgba(255,255,255,.9),0 1px 2px rgba(255,255,255,.85);}
-#hero,#hero *{ --bg:#050308;--sur:#0d0a14;--sur2:#120e1c; --tx:#f0e8ff;--txd:rgba(196,181,253,.6); --tc:#9a9ea5;--pg:#8a8f98;--pb:#b8bcc2;--ps:#cfd2d6; --bdr:color-mix(in srgb,var(--tc) 18%,transparent); --bdrh:color-mix(in srgb,var(--tc) 45%,transparent); --pdim:color-mix(in srgb,var(--tc) 12%,transparent); }
-#intro{background:#ffffff;}
 
 </style>
  </head>
@@ -4247,7 +4199,6 @@ body{background:var(--bg);}
     var w = document.getElementById('navWrap');
     if(w && w.classList.contains('open')){ closeMenu(); }
   }, {passive:true});
-  function ddGoHome(){closeMenu();window.scrollTo({top:0,behavior:'smooth'});}
 
   /* ── SMART SHRINKING NAVBAR ──────────────────────────────
      Single source of truth for navbar collapse state.

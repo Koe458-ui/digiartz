@@ -52,8 +52,9 @@
   ║                                         Gallery + Characters      ║
   ║                                         static card layout        ║
   ║                                                                  ║
-  ║  13. ABOUT                      ~ln 720 #about section, admin    ║
-  ║                                         editable textarea         ║
+  ║  13. ABOUT                      ~ln 720 #about section,          ║
+  ║                                         .shWrap showcase card,    ║
+  ║                                         admin editable textarea   ║
   ║                                                                  ║
   ║  14. COMMENTS                   ~ln 751 #commentsPage overlay,   ║
   ║                                         composer bar CSS          ║
@@ -246,13 +247,13 @@
   <meta property="og:title" content="KOE — Art Has No Limits"/>
   <meta property="og:description" content="Digiartz (KOE) — a digital art showcase featuring character illustrations, landscapes, vehicles, sketches, and creative digital artwork."/>
   <meta property="og:url" content="https://digiartz.pages.dev/"/>
-  <meta property="og:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ce747207a4d38297fc2edb3e.png"/>
+  <meta property="og:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png"/>
   <meta property="og:image:alt" content="Digiartz — digital art showcase"/>
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="KOE — Art Has No Limits"/>
   <meta name="twitter:description" content="Digiartz (KOE) — a digital art showcase featuring character illustrations, landscapes, vehicles, sketches, and creative digital artwork."/>
-  <meta name="twitter:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ce747207a4d38297fc2edb3e.png"/>
+  <meta name="twitter:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png"/>
   <!-- ═══════════════════════════════════════════════
        END SEO + GOOGLE IMAGE SEARCH METADATA
        ═══════════════════════════════════════════════ -->
@@ -263,7 +264,7 @@
   </script>
   <!-- LAZY LOADING START -->
   <!-- Preload the hero background image to improve LCP (Largest Contentful Paint) -->
-  <link as="image" fetchpriority="high" href="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ce747207a4d38297fc2edb3e.png" rel="preload"/>
+  <link as="image" fetchpriority="high" href="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png" rel="preload"/>
   <!-- LAZY LOADING END -->
   <style>
 
@@ -514,7 +515,7 @@
     #hBgImg{
       position:absolute;
       inset:0;
-      background-image:url('https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ce747207a4d38297fc2edb3e.png');
+      background-image:url('https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png');
       background-size:cover;
       background-position:center center;
       background-repeat:no-repeat;
@@ -1135,42 +1136,24 @@ body.admin .hEBg{display:flex;}
       .amCard{transform:none!important;}
     }
 
-    /* ABOUT */
-    #about{
-      padding:5rem 2rem;
-      display:flex;
-      flex-direction:column;
-      height:auto;
-      box-sizing:border-box;
-    }
-    #about .secT{margin-bottom:.3rem;}
-    .aIn{
-      border-left:2px solid var(--bdr);
-      padding-left:2rem;
-      display:flex;
-      flex-direction:column;
-      height:auto;
-      max-width:800px;
-      width:100%;
-    }
-    .aTxt{
-      font-size:clamp(1rem,2.5vw,1.3rem);
-      line-height:1.85;
-      color:var(--txd);
+    /* ABOUT — layout now uses shared .shWrap/.shCard/.shInfo formula */
+    /* Closing quote — italic accent below the bio paragraphs */
+    .aQuote{
+      margin-top:1.2rem;
+      padding-top:1.2rem;
+      border-top:1px solid var(--bdr);
+      font-family:var(--fd);
+      font-size:clamp(.88rem,2vw,1.05rem);
+      font-weight:700;
+      letter-spacing:.04em;
+      color:var(--pg);
       font-style:italic;
-      word-wrap:break-word;
-      overflow-wrap:break-word;
-      white-space:normal;
     }
-    .aTxt strong{color:var(--tx);font-style:normal;font-weight:400;}
     .aEA{display:none;width:100%;min-height:120px;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fb);font-size:1.1rem;line-height:1.7;padding:1rem;outline:none;resize:vertical;margin-top:1rem;border-radius:6px;}
     .aEA:focus{border-color:var(--pg);}
-    body.admin .aTxt{display:none;}
+    body.admin #about .shTxt{display:none;}
+    body.admin #about .aQuote{display:none;}
     body.admin .aEA{display:block;}
-    @media(max-width:640px){
-      #about{min-height:auto;padding:3.5rem 1.2rem;}
-      .aIn{padding-left:1.2rem;}
-    }
 
     /* ══════════════════════════════════════════════════════════
        § 14 COMMUNITY CSS
@@ -1372,43 +1355,279 @@ body.admin .hEBg{display:flex;}
     }
 
 
-    /* ── FOOTER ── */
-    footer{
-      border-top:1px solid var(--bdr);
-      padding:2.5rem 2rem 2rem;
-      text-align:center;
-      display:flex;flex-direction:column;align-items:center;gap:1.4rem;
+    /* ══════════════════════════════════════════════════════════
+       § 16  PREMIUM FOOTER
+       ├─ footer.siteFooter        — outer shell, pastel-pink bg
+       ├─ .ftMain                  — content band (max-width cap)
+       │   ├─ .ftBrand             — logo column (left)
+       │   └─ .ftCols              — right column group (flex row)
+       │       ├─ .ftCol           — one link-list column
+       │       │   ├─ .ftColHead   — column heading (Space Mono, caps)
+       │       │   └─ .ftColList   — ul of links / buttons
+       │       │       └─ .ftColLink — individual link / button
+       └─ .ftBase                  — bottom copyright band
+           ├─ .ftBaseLogo          — small wordmark repeat
+           ├─ .ftBaseCopy          — © notice (short line)
+           └─ .ftBaseLegal         — extended copyright paragraph
+       ══════════════════════════════════════════════════════════ */
+
+    /* ── Outer shell ── */
+    footer.siteFooter {
+      /* Pastel pink: soft, elegant, not saturated */
+      background: #fdf0f3;
+      border-top: 1px solid #f0d8de;
+      padding: 0;
+      text-align: left;
+      display: block;
     }
-    /* Links row — sits ABOVE the divider */
-    .ftrLinks{display:flex;align-items:center;gap:1.4rem;}
-    .ftrLink{
-      font-family:var(--fm);font-size:.68rem;letter-spacing:.18em;
-      color:var(--txd);background:none;border:none;cursor:pointer;padding:0;
-      position:relative;transition:color .25s;
+
+    /* ── Main content band ── */
+    .ftMain {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 4rem 3rem 3.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 5rem;
     }
-    .ftrLink::after{
-      content:'';position:absolute;bottom:-2px;left:0;right:0;
-      height:1px;background:var(--pg);
-      transform:scaleX(0);transform-origin:center;transition:transform .3s ease;
+
+    /* ── Brand column ── */
+    .ftBrand {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-width: 0;
     }
-    .ftrLink:hover{color:var(--ps);}
-    .ftrLink:hover::after{transform:scaleX(1);}
-    .ftrSep{width:1px;height:10px;background:var(--bdrh);}
-    /* Divider row — same style as .cDiv */
-    .ftrDiv{
-      display:flex;align-items:center;justify-content:center;
-      gap:1.5rem;width:100%;max-width:480px;
+    .ftBrandName {
+      font-family: var(--fd);
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: .06em;
+      color: var(--tx);
+      line-height: 1;
     }
-    .ftrDiv::before,.ftrDiv::after{
-      content:'';flex:1;height:1px;background:var(--bdr);
+    .ftBrandName .ftBrandAccent {
+      color: #c9768e; /* muted rose — reads on pink bg */
     }
-    .ftrDivLbl{
-      font-family:var(--fm);font-size:.66rem;letter-spacing:.3em;
-      color:var(--txd);display:flex;align-items:center;gap:.4rem;white-space:nowrap;
+    .ftBrandTagline {
+      font-family: var(--fm);
+      font-size: .64rem;
+      letter-spacing: .28em;
+      color: #a0737e; /* warmer muted tone, stays within palette */
+      text-transform: uppercase;
+      line-height: 1.4;
     }
-    .ftrDivLbl .s{color:var(--pg);}
-    /* Copyright line — sits BELOW the divider */
-    footer p{font-family:var(--fm);font-size:.66rem;letter-spacing:.2em;color:var(--txd);}
+    .ftBrandDivider {
+      width: 28px;
+      height: 1px;
+      background: #e0b8c2;
+      margin: .25rem 0;
+    }
+    .ftBrandDesc {
+      font-family: var(--fb);
+      font-size: .82rem;
+      line-height: 1.7;
+      color: #8a5e68;
+      max-width: 230px;
+    }
+
+    /* ── Column group ── */
+    .ftCols {
+      flex: 1;
+      display: flex;
+      gap: 3.5rem;
+      justify-content: flex-end;
+      min-width: 0;
+    }
+
+    /* ── Individual column ── */
+    .ftCol {
+      display: flex;
+      flex-direction: column;
+      gap: .9rem;
+      min-width: 120px;
+    }
+    .ftColHead {
+      font-family: var(--fm);
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .32em;
+      text-transform: uppercase;
+      color: #b07080; /* rose-toned label, readable on pink */
+      padding-bottom: .5rem;
+      border-bottom: 1px solid #f0d8de;
+      white-space: nowrap;
+    }
+    .ftColList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: .1rem;
+    }
+
+    /* ── Link / button base ── */
+    .ftColLink {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      font-family: var(--fb);
+      font-size: .83rem;
+      color: #7a5260;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: .38rem 0;
+      text-decoration: none;
+      position: relative;
+      transition: color .22s ease;
+      text-align: left;
+      line-height: 1.3;
+    }
+    .ftColLink::after {
+      content: '';
+      position: absolute;
+      bottom: .32rem;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #c9768e;
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform .28s cubic-bezier(.22,1,.36,1);
+    }
+    .ftColLink:hover {
+      color: #9e3f58;
+    }
+    .ftColLink:hover::after {
+      transform: scaleX(1);
+    }
+    .ftColLink:focus-visible {
+      outline: 2px solid #c9768e;
+      outline-offset: 2px;
+      border-radius: 3px;
+    }
+    /* Small arrow indicator for mailto links */
+    .ftColLink--mail::before {
+      content: '→';
+      font-family: var(--fb);
+      font-size: .7rem;
+      color: #c9768e;
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity .22s ease, transform .22s ease;
+      flex-shrink: 0;
+    }
+    .ftColLink--mail:hover::before {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ── Bottom copyright band ── */
+    .ftBase {
+      border-top: 1px solid #f0d8de;
+      padding: 2rem 3rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 1.5rem 2.5rem;
+    }
+    .ftBaseLogo {
+      font-family: var(--fd);
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .22em;
+      color: #b07080;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .ftBaseLogo .s {
+      color: #c9768e;
+    }
+    .ftBaseCopy {
+      font-family: var(--fm);
+      font-size: .62rem;
+      letter-spacing: .12em;
+      color: #a0737e;
+      text-align: center;
+    }
+    .ftBaseLegal {
+      font-family: var(--fb);
+      font-size: .73rem;
+      line-height: 1.65;
+      color: #9a6a75;
+      text-align: right;
+      max-width: 480px;
+    }
+
+    /* ── Responsive: Tablet ── */
+    @media (max-width: 1024px) {
+      .ftMain { padding: 3.5rem 2.5rem 3rem; gap: 3.5rem; }
+      .ftCols { gap: 2.5rem; }
+      .ftBase { padding: 1.8rem 2.5rem; gap: 1rem 2rem; }
+    }
+    @media (max-width: 860px) {
+      .ftMain {
+        flex-direction: column;
+        gap: 2.5rem;
+        padding: 3rem 2rem 2.5rem;
+      }
+      .ftBrand { max-width: 100%; }
+      .ftBrandDesc { max-width: 100%; }
+      .ftCols {
+        justify-content: flex-start;
+        gap: 2.5rem;
+        flex-wrap: wrap;
+      }
+      .ftBase {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        padding: 1.6rem 2rem;
+        gap: .9rem 2rem;
+      }
+      .ftBaseCopy { text-align: left; grid-column: 1; grid-row: 1; }
+      .ftBaseLogo { grid-column: 2; grid-row: 1; text-align: right; }
+      .ftBaseLegal {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        text-align: left;
+        max-width: 100%;
+      }
+    }
+
+    /* ── Responsive: Mobile ── */
+    @media (max-width: 640px) {
+      .ftMain {
+        padding: 2.5rem 1.4rem 2rem;
+        gap: 2rem;
+      }
+      .ftCols {
+        gap: 1.8rem 2rem;
+        width: 100%;
+      }
+      .ftCol { min-width: calc(50% - 1rem); flex: 1 1 calc(50% - 1rem); }
+      .ftBase {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        padding: 1.4rem;
+        gap: .75rem;
+        text-align: center;
+      }
+      .ftBaseLogo { grid-column: 1; grid-row: 1; text-align: center; }
+      .ftBaseCopy { grid-column: 1; grid-row: 2; text-align: center; }
+      .ftBaseLegal { grid-column: 1; grid-row: 3; text-align: center; max-width: 100%; }
+    }
+    @media (max-width: 400px) {
+      .ftCols { flex-direction: column; gap: 1.5rem; }
+      .ftCol { min-width: 0; flex: none; width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ftColLink, .ftColLink::after, .ftColLink--mail::before { transition: none; }
+    }
 
     /* ══════════════════════════════════════════════════════════
        § 11 OVERLAY SYSTEMS
@@ -2069,6 +2288,56 @@ height:80px;
 }
 
 /* ══════════════════════════════════════════════════════════
+   COMIC ARTS PAGE & WEBSITE TEMPLATES PAGE
+   Both panels follow the exact same overlay pattern as
+   #subPage / #commentsPage / #adsPanel:
+   · position:fixed inset:0 — full viewport cover
+   · transform:translateX(100%) hidden → translateX(0) open
+   · z-index:500 — same layer as other overlays
+   · var(--bg) background so white theme is respected
+   ══════════════════════════════════════════════════════════ */
+#comicArtsPage,
+#webTemplatesPage {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform .45s cubic-bezier(.22,1,.36,1);
+}
+#comicArtsPage.open,
+#webTemplatesPage.open { transform: translateX(0); }
+
+/* ── Placeholder body — centred empty-state layout ── */
+.pgPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px); /* viewport minus header */
+  padding: 3rem 2rem;
+  text-align: center;
+  gap: 1rem;
+}
+.pgPlaceholder h1 {
+  font-family: var(--fd);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 900;
+  letter-spacing: -.02em;
+  color: var(--tx);
+  line-height: 1.1;
+}
+.pgPlaceholder h1 .s { color: var(--pg); font-size: .45em; vertical-align: middle; }
+.pgPlaceholder p {
+  font-family: var(--fm);
+  font-size: .76rem;
+  letter-spacing: .28em;
+  color: var(--txd);
+  text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════════
    WHITE / LIGHT PROFESSIONAL THEME
    All token values are now set directly in :root above.
    The rules below handle element-specific overrides that
@@ -2088,7 +2357,7 @@ body{background:var(--bg);}
 /* Overlay / scrim backgrounds used by non-hero panels — lightened so the
    white theme reads as light chrome instead of dark glass */
 #fgFltOvr{background:rgba(20,20,30,.25)!important;}
-.fgHdr,.cpHdr,.apHdr{background:rgba(255,255,255,.92)!important;border-bottom:1px solid var(--bdr);}
+.fgHdr,.cpHdr,.apHdr,.subPgHdr{background:rgba(255,255,255,.92)!important;border-bottom:1px solid var(--bdr);}
 .cpBar{background:rgba(255,255,255,.96)!important;border-top:1px solid var(--bdr);}
 #legalBackdrop,.mOvr{background:rgba(20,20,30,.45)!important;}
 #artModal{background:rgba(20,20,30,.4)!important;}
@@ -2733,6 +3002,248 @@ body{background:var(--bg);}
 .subModalClose:active { transform: scale(.97); }
 .subModalClose:focus-visible { outline: 2px solid var(--pg); outline-offset: 3px; }
 
+/* ══════════════════════════════════════════════════════════
+   FAQ SECTION
+   Positioned directly below the Subscription overlay.
+   Lives inside #subPage as a continuation of .subPgBdy.
+   ├─ .faqSection          — outer wrapper, max-width cap
+   ├─ .faqHdr              — section title + subtitle block
+   │   ├─ .faqTitle        — Cinzel display heading
+   │   └─ .faqSubtitle     — Space Mono eyebrow subtitle
+   ├─ .faqCategory         — one category group (4 total)
+   │   ├─ .faqCatLabel     — category heading with rule line
+   │   └─ .faqItem         — single accordion row
+   │       ├─ .faqQ        — question trigger button
+   │       │   ├─ .faqQTxt — question text
+   │       │   └─ .faqIcon — animated +/× chevron indicator
+   │       └─ .faqA        — answer panel (height-animated)
+   │           └─ .faqATxt — answer body text
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Outer wrapper ── */
+.faqSection {
+  padding: 4rem 0 3rem;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ── Section header ── */
+.faqHdr {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+.faqTitle {
+  font-family: var(--fd);
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 900;
+  letter-spacing: -.03em;
+  color: var(--tx);
+  line-height: 1.1;
+  margin-bottom: .7rem;
+}
+.faqTitle .s {
+  color: var(--pg);
+  font-size: .5em;
+  vertical-align: middle;
+}
+.faqSubtitle {
+  font-family: var(--fm);
+  font-size: .7rem;
+  letter-spacing: .22em;
+  color: var(--txd);
+  text-transform: uppercase;
+  line-height: 1.7;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* ── Top divider above first category ── */
+.faqSection .faqTopDiv {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--bdr) 20%, var(--bdr) 80%, transparent);
+  margin-bottom: 2.5rem;
+}
+
+/* ── Category group ── */
+.faqCategory {
+  margin-bottom: 2.8rem;
+}
+.faqCategory:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Category heading label ── */
+.faqCatLabel {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  font-family: var(--fm);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .3em;
+  color: var(--pg);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.faqCatLabel::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--bdr), transparent);
+}
+.faqCatLabel .faqCatIco {
+  font-size: .75em;
+  opacity: .7;
+}
+
+/* ── Accordion item ── */
+.faqItem {
+  border: 1px solid var(--bdr);
+  border-radius: 8px;
+  background: #ffffff;
+  margin-bottom: .45rem;
+  overflow: hidden;
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.faqItem:last-child {
+  margin-bottom: 0;
+}
+.faqItem:hover {
+  border-color: var(--bdrh);
+  box-shadow: 0 2px 12px rgba(20,20,30,.06);
+}
+.faqItem.faq--open {
+  border-color: var(--bdrh);
+  box-shadow: 0 2px 16px rgba(20,20,30,.08);
+}
+
+/* ── Question trigger button ── */
+.faqQ {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.05rem 1.3rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  outline: none;
+  transition: background .2s ease;
+}
+.faqQ:hover {
+  background: color-mix(in srgb, var(--tc) 4%, transparent);
+}
+.faqQ:focus-visible {
+  outline: 2px solid var(--pg);
+  outline-offset: -2px;
+  border-radius: 7px;
+}
+.faqItem.faq--open .faqQ {
+  background: color-mix(in srgb, var(--tc) 3%, transparent);
+}
+
+/* Question text */
+.faqQTxt {
+  font-family: var(--fb);
+  font-size: .92rem;
+  font-weight: 500;
+  color: var(--tx);
+  line-height: 1.5;
+  flex: 1;
+}
+.faqItem.faq--open .faqQTxt {
+  color: var(--ps);
+}
+
+/* +/× icon */
+.faqIcon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--bdr);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txd);
+  font-size: .82rem;
+  line-height: 1;
+  transition: transform .32s cubic-bezier(.22,1,.36,1),
+              background .25s ease,
+              border-color .25s ease,
+              color .25s ease;
+  font-family: var(--fm);
+  font-weight: 700;
+  user-select: none;
+}
+.faqItem.faq--open .faqIcon {
+  transform: rotate(45deg);
+  background: color-mix(in srgb, var(--tc) 10%, transparent);
+  border-color: var(--bdrh);
+  color: var(--ps);
+}
+
+/* ── Answer panel — height animated via max-height ── */
+.faqA {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .38s cubic-bezier(.22,1,.36,1);
+}
+.faqItem.faq--open .faqA {
+  max-height: 400px; /* large enough for any answer */
+}
+
+/* Answer body */
+.faqATxt {
+  font-family: var(--fb);
+  font-size: .89rem;
+  line-height: 1.75;
+  color: var(--txd);
+  padding: 0 1.3rem 1.1rem 1.3rem;
+  border-top: 1px solid var(--bdr);
+  padding-top: .85rem;
+}
+
+/* ── Between-category divider ── */
+.faqCatDiv {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--bdr) 30%, var(--bdr) 70%, transparent);
+  margin: 2.8rem 0;
+}
+
+/* ══════════════════════════════════════════════════════════
+   FAQ RESPONSIVE RULES
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 699px) {
+  .faqSection { padding: 3rem 0 2rem; }
+  .faqHdr     { margin-bottom: 2.5rem; }
+  .faqTitle   { font-size: clamp(1.5rem, 6vw, 2rem); }
+  .faqQ       { padding: .9rem 1.1rem; gap: .75rem; }
+  .faqQTxt    { font-size: .87rem; }
+  .faqATxt    { font-size: .85rem; padding: 0 1.1rem .95rem; padding-top: .75rem; }
+}
+@media (max-width: 519px) {
+  .faqSection { padding: 2.5rem 0 1.5rem; }
+  .faqHdr     { margin-bottom: 2rem; }
+  .faqQ       { padding: .85rem 1rem; }
+  .faqQTxt    { font-size: .84rem; }
+  .faqATxt    { font-size: .83rem; padding: 0 1rem .9rem; padding-top: .7rem; }
+  .faqCatDiv  { margin: 2rem 0; }
+  .faqCategory{ margin-bottom: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .faqA       { transition: none; }
+  .faqIcon    { transition: none; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   END FAQ CSS
+   ══════════════════════════════════════════════════════════ */
+
 </style>
  </head>
  <body>
@@ -2838,6 +3349,14 @@ body{background:var(--bg);}
     <div class="ddInner">
     <button class="ddItem" onclick="ddOpenGallery()">
      <span class="ddIco">✦</span>GALLERY
+    </button>
+    <div class="ddDiv"></div>
+    <button class="ddItem" onclick="openComicArts()">
+     <span class="ddIco">◉</span>COMIC ARTS
+    </button>
+    <div class="ddDiv"></div>
+    <button class="ddItem" onclick="openWebTemplates()">
+     <span class="ddIco">◧</span>WEBSITE TEMPLATES
     </button>
     <div class="ddDiv"></div>
     <button class="ddItem" onclick="ddOpenComments()">
@@ -3040,29 +3559,38 @@ body{background:var(--bg);}
 
   <!-- =========================================================
        ABOUT SECTION
-       ├─ Section Title (.secT)
-       ├─ Section Subtitle (.secSub)
-       └─ Content Block (.aIn)
-           ├─ Bio Text (#aTxt)          [shown to visitors]
-           └─ Edit Textarea (#aEA)      [admin-only, save via admin bar]
+       ├─ Section Header (.fsHdr)
+       │   ├─ Section Title (.secT)
+       │   └─ Section Subtitle (.secSub)
+       ├─ Showcase Card (.shWrap > .shCard)
+       │   ├─ Main Image Slot (.shMain #aboutMain)
+       │   ├─ Side Images (.shSide)
+       │   │   ├─ Side Slot 1 (#aboutSide1)
+       │   │   └─ Side Slot 2 (#aboutSide2)
+       │   └─ Info Block (.shInfo)
+       │       ├─ Title (.secT)
+       │       ├─ Bio Paragraphs (.shTxt ×2)  [shown to visitors]
+       │       ├─ Closing Quote (.aQuote)
+       │       └─ Edit Textarea (#aEA)         [admin-only]
        ========================================================= -->
-  <section id="about" style="max-width:1200px;margin:0 auto;">
-   <div class="secT" style="margin-bottom:.3rem;">
-    ABOUT
-    <span class="s">
-     ✦
-    </span>
-   </div>
-   <div class="secSub">
-    THE ARTIST BEHIND THE WORK
-   </div>
-   <div class="aIn">
-    <p class="aTxt" id="aTxt">
-     I am <strong>KOE</strong> — a digital artist working on Ibis Paint, turning ideas in my head into sketches and finished pieces. I draw characters, cars, landscapes, and different creative concepts, always trying to improve my style and add more detail with each work. For me, drawing is just a way to express what I can't always say in words and keep growing with every piece I make. <strong>"Art has no limit."</strong>
-    </p>
-    <!-- Admin textarea: edit and save via the admin bar's SAVE SETTINGS button -->
-    <textarea class="aEA" id="aEA" placeholder="Write your about text here..."></textarea>
-   </div>
+  <section id="about" style="padding:4rem 0 3rem;">
+    <!-- ── Section Header ── -->
+    <div class="fsHdr">
+      <div class="secT">ABOUT <span class="s">✦</span></div>
+      <div class="secSub">THE ARTIST BEHIND THE WORK</div>
+    </div>
+    <div class="shWrap" style="margin-top:1.5rem;">
+      <div class="shCard" style="grid-template-columns:1fr;">
+        <div class="shInfo">
+          <div class="secT">The Artist <span class="s">✦</span></div>
+          <p class="shTxt" id="aTxt">I'm <strong>KOE</strong> — a digital artist working primarily in <strong>ibisPaint</strong>. I create character illustrations, car designs, landscapes, and original concepts, focusing on detail and pushing each piece further than the last.</p>
+          <p class="shTxt">Art is how I translate ideas into something visible. Every piece is a chance to refine my style, experiment with new approaches, and grow as an artist.</p>
+          <p class="aQuote">"Art has no limit."</p>
+          <!-- Admin textarea: edit and save via the admin bar's SAVE SETTINGS button -->
+          <textarea class="aEA" id="aEA" placeholder="Write your about text here..."></textarea>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- =========================================================
@@ -3120,24 +3648,128 @@ body{background:var(--bg);}
   </section>
 
   <!-- =========================================================
-       FOOTER
-       ├─ Legal Links (.ftrLinks)
-       │   ├─ Privacy Policy button
-       │   └─ Terms & Conditions button
-       ├─ Divider Label (.ftrDiv)
-       └─ Copyright Line
+       FOOTER — Premium multi-column layout
+       ├─ footer.siteFooter
+       │   ├─ .ftMain  — brand col + two link-list cols
+       │   │   ├─ .ftBrand  — wordmark, tagline, description
+       │   │   └─ .ftCols   — Legal column + Support column
+       │   └─ .ftBase  — bottom copyright band
        ========================================================= -->
-  <footer>
-   <div class="ftrLinks">
-     <button class="ftrLink" onclick="openLegal('privacy')" aria-label="Privacy Policy">PRIVACY POLICY</button>
-     <div class="ftrSep" aria-hidden="true"></div>
-     <button class="ftrLink" onclick="openLegal('terms')" aria-label="Terms and Conditions">TERMS &amp; CONDITIONS</button>
-   </div>
-   <div class="ftrDiv">
-     <div class="ftrDivLbl"><span class="s">✦</span> Digiartz <span class="s">✦</span></div>
-   </div>
-   <p>© 2026 Digiartz. ALL RIGHTS RESERVED.</p>
+  <!-- =========================================================
+       COMIC ARTS PAGE
+       ├─ Header Bar (.subPgHdr pattern)
+       │   ├─ Back Button
+       │   └─ Title
+       └─ Placeholder Body (.pgPlaceholder)
+       ========================================================= -->
+  <div id="comicArtsPage" role="dialog" aria-modal="true" aria-label="Comic Arts">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeComicArts()" aria-label="Close Comic Arts">←</button>
+      <div class="subPgTitle">COMIC ARTS <span class="s">◉</span></div>
+    </div>
+    <div class="pgPlaceholder">
+      <h1>Comic Arts <span class="s">✦</span></h1>
+      <p>Content coming soon.</p>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       WEBSITE TEMPLATES PAGE
+       ├─ Header Bar (.subPgHdr pattern)
+       │   ├─ Back Button
+       │   └─ Title
+       └─ Placeholder Body (.pgPlaceholder)
+       ========================================================= -->
+  <div id="webTemplatesPage" role="dialog" aria-modal="true" aria-label="Website Templates">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeWebTemplates()" aria-label="Close Website Templates">←</button>
+      <div class="subPgTitle">WEBSITE TEMPLATES <span class="s">◧</span></div>
+    </div>
+    <div class="pgPlaceholder">
+      <h1>Website Templates <span class="s">✦</span></h1>
+      <p>Content coming soon.</p>
+    </div>
+  </div>
+
+  <footer class="siteFooter" role="contentinfo">
+
+    <!-- ── Main content ── -->
+    <div class="ftMain">
+
+      <!-- Brand column -->
+      <div class="ftBrand">
+        <div class="ftBrandName">DIGI<span class="ftBrandAccent">ARTZ</span></div>
+        <div class="ftBrandDivider" aria-hidden="true"></div>
+        <div class="ftBrandTagline">Art Has No Limits</div>
+        <p class="ftBrandDesc">A digital art showcase by KOE — featuring character illustrations, landscapes, vehicles, and creative artwork.</p>
+      </div>
+
+      <!-- Link columns -->
+      <div class="ftCols">
+
+        <!-- Legal column -->
+        <div class="ftCol">
+          <div class="ftColHead">Legal</div>
+          <ul class="ftColList">
+            <li>
+              <!-- Placeholder: connect real /privacy page here -->
+              <button class="ftColLink" onclick="openLegal('privacy')" aria-label="Privacy Policy">Privacy Policy</button>
+            </li>
+            <li>
+              <!-- Placeholder: connect real /terms page here -->
+              <button class="ftColLink" onclick="openLegal('terms')" aria-label="Terms of Service">Terms of Service</button>
+            </li>
+            <li>
+              <!-- Placeholder: connect real /refund-policy page here -->
+              <button class="ftColLink" aria-label="Refund Policy" onclick="openLegal('refund')">Refund Policy</button>
+            </li>
+            <li>
+              <!-- Placeholder: connect real /cookie-policy page here -->
+              <button class="ftColLink" aria-label="Cookie Policy" onclick="openLegal('cookie')">Cookie Policy</button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Support column -->
+        <div class="ftCol">
+          <div class="ftColHead">Support</div>
+          <ul class="ftColList">
+            <li>
+              <!-- Placeholder: connect real FAQ page here (openSubscription opens FAQ in sub panel) -->
+              <button class="ftColLink" onclick="openSubscription()" aria-label="FAQ">FAQ</button>
+            </li>
+            <li>
+              <!-- Help Center → support email -->
+              <a class="ftColLink ftColLink--mail" href="mailto:duttaanish458@gmail.com" aria-label="Help Center">Help Center</a>
+            </li>
+            <li>
+              <!-- Contact Us → support email -->
+              <a class="ftColLink ftColLink--mail" href="mailto:duttaanish458@gmail.com" aria-label="Contact Us">Contact Us</a>
+            </li>
+            <li>
+              <!-- Report an Issue → support email -->
+              <a class="ftColLink ftColLink--mail" href="mailto:duttaanish458@gmail.com" aria-label="Report an Issue">Report an Issue</a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+      <!-- ── End .ftCols ── -->
+
+    </div>
+    <!-- ── End .ftMain ── -->
+
+    <!-- ── Bottom copyright band ── -->
+    <div class="ftBase">
+      <div class="ftBaseLogo"><span class="s">✦</span> DIGIARTZ</div>
+      <div class="ftBaseCopy">© 2026 DigiArtz. All rights reserved.</div>
+      <p class="ftBaseLegal">All artwork, manga, comics, website content, designs, graphics, assets, and website content on DigiArtz are protected by copyright law. Unauthorized reproduction, redistribution, resale, modification, or commercial use without permission is prohibited.</p>
+    </div>
+
   </footer>
+  <!-- ═══════════════════════════════════════════════
+       END FOOTER
+       ═══════════════════════════════════════════════ -->
 
   <!-- =========================================================
        LEGAL MODAL
@@ -3426,6 +4058,354 @@ body{background:var(--bg);}
   </div>
   <!-- ═══════════════════════════════════════════════
        END SUBSCRIPTION PAGE OVERLAY
+       ═══════════════════════════════════════════════ -->
+
+  <!-- =========================================================
+       FAQ SECTION
+       Positioned inside the Subscription page body, directly
+       below the plan cards grid (.subGrid).
+       ├─ .faqSection        — constrained max-width wrapper
+       ├─ .faqHdr            — title + subtitle block
+       ├─ .faqCategory (×4)  — Billing · Account · Support · Trust
+       │   ├─ .faqCatLabel   — labelled rule-line heading
+       │   └─ .faqItem (×N)  — accordion row (button + answer)
+       JS: inline <script> at bottom of this block powers the
+       accordion — single-open, ARIA, keyboard navigation.
+       ========================================================= -->
+
+  <!-- ── FAQ is appended inside #subPage via JS on DOMContentLoaded ──
+       (It lives here in the DOM and is moved into .subPgBdy by the
+        script below so it renders correctly inside the slide-in panel.) -->
+  <div id="faqSection" class="faqSection" aria-label="Frequently Asked Questions">
+
+    <!-- Divider between plan cards and FAQ -->
+    <div class="faqCatDiv" aria-hidden="true"></div>
+
+    <!-- ── Section Header ── -->
+    <header class="faqHdr">
+      <h2 class="faqTitle">Frequently Asked Questions <span class="s" aria-hidden="true">★</span></h2>
+      <p class="faqSubtitle">Find answers to common questions about subscriptions, billing, account access, support, and security.</p>
+    </header>
+
+    <div class="faqTopDiv" aria-hidden="true"></div>
+
+    <!-- ══════════════════════════════════
+         CATEGORY 1 — BILLING & PAYMENTS
+         ══════════════════════════════════ -->
+    <section class="faqCategory" aria-labelledby="faqCat1">
+      <div class="faqCatLabel" id="faqCat1" aria-hidden="false">
+        <span class="faqCatIco" aria-hidden="true">◈</span>Billing &amp; Payments
+      </div>
+
+      <!-- Q1 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-1-1"
+          id="faqQ-1-1"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">How do I subscribe?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-1-1" role="region" aria-labelledby="faqQ-1-1" hidden>
+          <p class="faqATxt">Select the subscription plan that best suits your needs and complete the checkout process using our secure payment system.</p>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-1-2"
+          id="faqQ-1-2"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">What payment methods do you accept?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-1-2" role="region" aria-labelledby="faqQ-1-2" hidden>
+          <p class="faqATxt">We accept the payment methods supported by our payment provider at the time of checkout.</p>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-1-3"
+          id="faqQ-1-3"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">Is the subscription billed monthly or yearly?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-1-3" role="region" aria-labelledby="faqQ-1-3" hidden>
+          <p class="faqATxt">All subscription plans are billed on a monthly basis.</p>
+        </div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-1-4"
+          id="faqQ-1-4"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">Will my subscription renew automatically?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-1-4" role="region" aria-labelledby="faqQ-1-4" hidden>
+          <p class="faqATxt">No. Subscriptions do not renew automatically. Once your subscription expires, you may choose to purchase a new plan at any time.</p>
+        </div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-1-5"
+          id="faqQ-1-5"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">Can I cancel my subscription?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-1-5" role="region" aria-labelledby="faqQ-1-5" hidden>
+          <p class="faqATxt">Since subscriptions do not automatically renew, there is no cancellation process required. Access simply ends when your subscription period expires.</p>
+        </div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-1-6"
+          id="faqQ-1-6"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">Do you offer refunds?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-1-6" role="region" aria-labelledby="faqQ-1-6" hidden>
+          <p class="faqATxt">All subscription purchases are final and non-refundable.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="faqCatDiv" aria-hidden="true"></div>
+
+    <!-- ══════════════════════════════════
+         CATEGORY 2 — ACCOUNT & ACCESS
+         ══════════════════════════════════ -->
+    <section class="faqCategory" aria-labelledby="faqCat2">
+      <div class="faqCatLabel" id="faqCat2" aria-hidden="false">
+        <span class="faqCatIco" aria-hidden="true">◎</span>Account &amp; Access
+      </div>
+
+      <!-- Q1 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-2-1"
+          id="faqQ-2-1"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">When will my subscription be activated?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-2-1" role="region" aria-labelledby="faqQ-2-1" hidden>
+          <p class="faqATxt">Your subscription benefits are activated automatically as soon as your payment is successfully processed.</p>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-2-2"
+          id="faqQ-2-2"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">How do I access my subscription benefits?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-2-2" role="region" aria-labelledby="faqQ-2-2" hidden>
+          <p class="faqATxt">Once activated, all eligible subscription features become available directly through your account.</p>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-2-3"
+          id="faqQ-2-3"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">Can I use my subscription on multiple accounts?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-2-3" role="region" aria-labelledby="faqQ-2-3" hidden>
+          <p class="faqATxt">No. Each subscription is intended for a single account and may not be shared across multiple accounts.</p>
+        </div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-2-4"
+          id="faqQ-2-4"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">What happens when my subscription expires?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-2-4" role="region" aria-labelledby="faqQ-2-4" hidden>
+          <p class="faqATxt">When your subscription expires, access to subscription-only features and benefits will no longer be available until a new subscription is purchased.</p>
+        </div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-2-5"
+          id="faqQ-2-5"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">Can I upgrade or downgrade my plan?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-2-5" role="region" aria-labelledby="faqQ-2-5" hidden>
+          <p class="faqATxt">Plan changes are not currently supported. You may select a different plan when purchasing your next subscription.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="faqCatDiv" aria-hidden="true"></div>
+
+    <!-- ══════════════════════════════════
+         CATEGORY 3 — SUPPORT
+         ══════════════════════════════════ -->
+    <section class="faqCategory" aria-labelledby="faqCat3">
+      <div class="faqCatLabel" id="faqCat3" aria-hidden="false">
+        <span class="faqCatIco" aria-hidden="true">✦</span>Support
+      </div>
+
+      <!-- Q1 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-3-1"
+          id="faqQ-3-1"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">What should I do if I am charged more than once or an incorrect amount is deducted?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-3-1" role="region" aria-labelledby="faqQ-3-1" hidden>
+          <p class="faqATxt">If an overcharge occurs due to an issue on our side, we will review the transaction and refund any excess amount. We are unable to provide refunds or compensation for issues caused by banks, payment providers, or user-side errors.</p>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-3-2"
+          id="faqQ-3-2"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">How can I contact support?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-3-2" role="region" aria-labelledby="faqQ-3-2" hidden>
+          <p class="faqATxt">You can reach us through the "Let's Connect" section of our website.</p>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-3-3"
+          id="faqQ-3-3"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">How long does it take to receive a response?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-3-3" role="region" aria-labelledby="faqQ-3-3" hidden>
+          <p class="faqATxt">Most support inquiries receive a response within 1–2 business days.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="faqCatDiv" aria-hidden="true"></div>
+
+    <!-- ══════════════════════════════════
+         CATEGORY 4 — TRUST & SECURITY
+         ══════════════════════════════════ -->
+    <section class="faqCategory" aria-labelledby="faqCat4">
+      <div class="faqCatLabel" id="faqCat4" aria-hidden="false">
+        <span class="faqCatIco" aria-hidden="true">◉</span>Trust &amp; Security
+      </div>
+
+      <!-- Q1 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-4-1"
+          id="faqQ-4-1"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">Is my payment information secure?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-4-1" role="region" aria-labelledby="faqQ-4-1" hidden>
+          <p class="faqATxt">Payments are processed through our secure payment provider. While no online system can guarantee absolute security, we take reasonable measures to help protect your information.</p>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-4-2"
+          id="faqQ-4-2"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">Do you store my card or payment details?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-4-2" role="region" aria-labelledby="faqQ-4-2" hidden>
+          <p class="faqATxt">No. We do not store card information or payment details on our servers.</p>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="faqItem" role="listitem">
+        <button
+          class="faqQ"
+          aria-expanded="false"
+          aria-controls="faqA-4-3"
+          id="faqQ-4-3"
+          onclick="faqToggle(this)">
+          <span class="faqQTxt">Will my personal information be shared with third parties?</span>
+          <span class="faqIcon" aria-hidden="true">+</span>
+        </button>
+        <div class="faqA" id="faqA-4-3" role="region" aria-labelledby="faqQ-4-3" hidden>
+          <p class="faqATxt">No. We do not sell, rent, or share your personal information with third parties.</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  <!-- ═══════════════════════════════════════════════
+       END FAQ SECTION
        ═══════════════════════════════════════════════ -->
 
   <!-- =========================================================
@@ -4612,7 +5592,7 @@ body{background:var(--bg);}
   function applyBg(){
     /* Update the image fallback layer */
     var imgUrl = cfg.hero_bg ||
-      'https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ce747207a4d38297fc2edb3e.png';
+      'https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png';
     document.getElementById('hBgImg').style.backgroundImage = "url('" + imgUrl + "')";
   }
 
@@ -4724,7 +5704,7 @@ body{background:var(--bg);}
 
   let tT;
   function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000);}
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeComments();closeProfilePopup();closeSubscription();closeSubModal();}}); /* FIXED: BUG-005 */
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeComments();closeProfilePopup();closeSubscription();closeSubModal();closeComicArts();closeWebTemplates();}}); /* FIXED: BUG-005 */
 
   /* ── HAMBURGER MENU (attached dropdown) ── */
   function toggleMenu(){
@@ -5417,6 +6397,7 @@ async function openComments(){
       );
       document.getElementById('charEmpty').style.display = charHas ? 'none' : 'block';
       document.getElementById('charCard').style.display   = charHas ? '' : 'none';
+
     };
 
     /* Build with empty data initially — will be rebuilt after DB loads */
@@ -5441,6 +6422,38 @@ async function openComments(){
 
   function closeSubscription() {
     var el = document.getElementById('subPage');
+    if (!el) return;
+    el.classList.remove('open');
+    restoreScroll();
+  }
+
+  /* ── Comic Arts panel ── */
+  function openComicArts() {
+    closeMenu();
+    var el = document.getElementById('comicArtsPage');
+    if (!el) return;
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+  }
+  function closeComicArts() {
+    var el = document.getElementById('comicArtsPage');
+    if (!el) return;
+    el.classList.remove('open');
+    restoreScroll();
+  }
+
+  /* ── Website Templates panel ── */
+  function openWebTemplates() {
+    closeMenu();
+    var el = document.getElementById('webTemplatesPage');
+    if (!el) return;
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+  }
+  function closeWebTemplates() {
+    var el = document.getElementById('webTemplatesPage');
     if (!el) return;
     el.classList.remove('open');
     restoreScroll();
@@ -5703,7 +6716,8 @@ async function openComments(){
      ════════════════════════════════════════════════════════ -->
 
 <!-- ════════════════════════════════════════════════════════
-     LEGAL MODAL JS (Privacy Policy + Terms & Conditions)
+     LEGAL MODAL JS (Privacy Policy · Terms & Conditions ·
+                     Cookie Policy · Refund Policy)
      ════════════════════════════════════════════════════════ -->
 <script>
 (function(){
@@ -5738,6 +6752,23 @@ async function openComments(){
         '<p>Third-party advertisements may appear through services such as <strong>Google AdSense</strong>. Digiartz is not responsible for external websites or third-party content.</p>' +
         '<p>We reserve the right to update these terms at any time without prior notice.</p>' +
         '<p>Continued use of this website constitutes acceptance of these Terms &amp; Conditions.</p>' +
+        '<span class="lmDate">LAST UPDATED: JUNE 2026</span>'
+    },
+    cookie: {
+      title: 'COOKIE POLICY',
+      html: '<h2>Cookie Policy for Digiartz</h2>' +
+        '<p>We use cookies and similar technologies to improve your experience on our website. These small files help us remember your preferences, understand how visitors use our services, and keep the website running smoothly.</p>' +
+        '<p>Some cookies are essential for the website to function properly, while others help us improve performance and provide a better user experience. We do not use cookies to collect sensitive personal information, and we never sell your data to third parties.</p>' +
+        '<p>By continuing to use our website, you agree to the use of cookies as described in this policy. You can manage or disable cookies through your browser settings at any time, although some features of the website may not work as intended.</p>' +
+        '<p>If you have any questions about our Cookie Policy, feel free to contact us.</p>' +
+        '<span class="lmDate">LAST UPDATED: JUNE 2026</span>'
+    },
+    refund: {
+      title: 'REFUND POLICY',
+      html: '<h2>Refund Policy for Digiartz</h2>' +
+        '<p>Due to the nature of our digital services and content, all purchases are final and non-refundable. Once a subscription, digital product, or service has been purchased, we are unable to provide refunds, exchanges, or cancellations.</p>' +
+        '<p>Please review all details carefully before completing your purchase. If you experience a billing error, such as being charged multiple times for the same transaction, contact our support team and we will investigate the issue and provide assistance where appropriate.</p>' +
+        '<p>By making a purchase on our website, you acknowledge and agree to this Refund Policy.</p>' +
         '<span class="lmDate">LAST UPDATED: JUNE 2026</span>'
     }
   };
@@ -5777,6 +6808,441 @@ async function openComments(){
 </script>
 <!-- ════════════════════════════════════════════════════════
      END LEGAL MODAL JS
+     ════════════════════════════════════════════════════════ -->
+
+<!-- ════════════════════════════════════════════════════════
+     FAQ SECTION JS
+     ├─ faqToggle(btn)   — open/close a single item, collapse others
+     ├─ Keyboard nav     — Home/End/Arrow keys within category,
+     │                     Tab follows natural DOM order
+     └─ DOM mount        — moves #faqSection into .subPgBdy so it
+                           renders correctly inside the slide-in panel
+     ════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+
+  /* ── Mount FAQ into the subscription page body ── */
+  function mountFaq(){
+    var faqEl  = document.getElementById('faqSection');
+    var subBdy = document.querySelector('.subPgBdy');
+    if(!faqEl || !subBdy){ return; }
+    /* Remove hidden attribute set during initial parse (FAQ is outside subPage) */
+    faqEl.removeAttribute('hidden');
+    subBdy.appendChild(faqEl);
+    /* Reveal answer panels that were hidden so ARIA hidden attr is removed */
+    var panels = faqEl.querySelectorAll('.faqA[hidden]');
+    panels.forEach(function(p){ p.removeAttribute('hidden'); });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', mountFaq);
+  } else {
+    mountFaq();
+  }
+
+  /* ── Toggle accordion item ── */
+  window.faqToggle = function(btn){
+    var item   = btn.closest('.faqItem');
+    var panel  = document.getElementById(btn.getAttribute('aria-controls'));
+    var icon   = btn.querySelector('.faqIcon');
+    var isOpen = item.classList.contains('faq--open');
+
+    /* Collapse all open items in the same section */
+    var section = item.closest('.faqCategory');
+    if(section){
+      section.querySelectorAll('.faqItem.faq--open').forEach(function(openItem){
+        if(openItem === item) return;
+        var ob  = openItem.querySelector('.faqQ');
+        var op  = openItem.querySelector('.faqA');
+        var oi  = openItem.querySelector('.faqIcon');
+        openItem.classList.remove('faq--open');
+        if(ob) ob.setAttribute('aria-expanded','false');
+        if(oi) oi.textContent = '+';
+      });
+    }
+
+    /* Toggle the clicked item */
+    if(isOpen){
+      item.classList.remove('faq--open');
+      btn.setAttribute('aria-expanded','false');
+      if(icon) icon.textContent = '+';
+    } else {
+      item.classList.add('faq--open');
+      btn.setAttribute('aria-expanded','true');
+      if(icon) icon.textContent = '+'; /* stays + , CSS rotate handles × look */
+    }
+  };
+
+  /* ── Keyboard navigation within a category ── */
+  document.addEventListener('keydown', function(e){
+    var btn = e.target;
+    if(!btn || !btn.classList.contains('faqQ')) return;
+
+    var section = btn.closest('.faqCategory');
+    if(!section) return;
+
+    var btns = Array.from(section.querySelectorAll('.faqQ'));
+    var idx  = btns.indexOf(btn);
+
+    switch(e.key){
+      case 'ArrowDown':
+        e.preventDefault();
+        if(idx < btns.length - 1) btns[idx + 1].focus();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if(idx > 0) btns[idx - 1].focus();
+        break;
+      case 'Home':
+        e.preventDefault();
+        btns[0].focus();
+        break;
+      case 'End':
+        e.preventDefault();
+        btns[btns.length - 1].focus();
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        faqToggle(btn);
+        break;
+    }
+  });
+
+})();
+</script>
+<!-- ════════════════════════════════════════════════════════
+     END FAQ SECTION JS
+     ════════════════════════════════════════════════════════ -->
+
+<!-- ════════════════════════════════════════════════════════
+     COOKIE CONSENT SYSTEM
+     ├─ CSS    — banner card, buttons, animations, responsive
+     ├─ HTML   — #cookieBanner fixed floating card
+     └─ JS     — localStorage check, 5-min timer, accept/reject
+     ════════════════════════════════════════════════════════ -->
+<style>
+/* ══════════════════════════════════════════════════════════
+   COOKIE CONSENT BANNER
+   ├─ #cookieBanner   — fixed card (bottom-left desktop,
+   │                    full-width anchored strip on mobile)
+   ├─ .ckInner        — flex column content wrapper
+   ├─ .ckText         — title + body copy block
+   │   ├─ .ckTitle    — Space Mono heading row with icon
+   │   └─ .ckBody     — description + inline Cookie Policy link
+   └─ .ckActions      — Accept / Reject button row
+       ├─ .ckAccept   — filled primary CTA
+       └─ .ckReject   — ghost secondary CTA
+   ══════════════════════════════════════════════════════════ */
+
+#cookieBanner {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  z-index: 3000;
+  width: min(400px, calc(100vw - 3rem));
+  background: #ffffff;
+  border: 1px solid var(--bdrh);
+  border-radius: 14px;
+  box-shadow:
+    0 2px 8px  rgba(20,20,30,.06),
+    0 8px 28px rgba(20,20,30,.10),
+    0 20px 48px rgba(20,20,30,.08);
+  padding: 1.4rem 1.5rem 1.3rem;
+  opacity: 0;
+  transform: translateY(16px);
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    opacity   .38s cubic-bezier(.22,1,.36,1),
+    transform .38s cubic-bezier(.22,1,.36,1),
+    visibility 0s linear .38s;
+}
+#cookieBanner.ck--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
+  transition:
+    opacity   .38s cubic-bezier(.22,1,.36,1),
+    transform .38s cubic-bezier(.22,1,.36,1),
+    visibility 0s linear 0s;
+}
+#cookieBanner.ck--dismiss {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    opacity   .28s cubic-bezier(.4,0,1,1),
+    transform .28s cubic-bezier(.4,0,1,1),
+    visibility 0s linear .28s;
+}
+.ckInner {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.ckText {
+  display: flex;
+  flex-direction: column;
+  gap: .42rem;
+}
+.ckTitle {
+  font-family: var(--fm);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .22em;
+  color: var(--tx);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: .48rem;
+}
+.ckIcon {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+}
+.ckBody {
+  font-family: var(--fb);
+  font-size: .845rem;
+  line-height: 1.67;
+  color: var(--txd);
+}
+.ckLink {
+  color: var(--pg);
+  text-decoration: none;
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  display: inline;
+  transition: color .2s, border-color .2s;
+}
+.ckLink:hover {
+  color: var(--ps);
+  border-bottom-color: var(--bdrh);
+}
+.ckLink:focus-visible {
+  outline: 2px solid var(--pg);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.ckActions {
+  display: flex;
+  gap: .6rem;
+}
+.ckAccept,
+.ckReject {
+  flex: 1;
+  min-width: 0;
+  padding: .68rem .9rem;
+  font-family: var(--fm);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition:
+    background   .2s ease,
+    border-color .2s ease,
+    color        .2s ease,
+    box-shadow   .2s ease,
+    transform    .15s ease;
+  outline: none;
+}
+.ckAccept:focus-visible,
+.ckReject:focus-visible {
+  outline: 2px solid var(--pg);
+  outline-offset: 2px;
+}
+.ckAccept:active,
+.ckReject:active { transform: scale(.97); }
+.ckAccept {
+  background: var(--tx);
+  border: 1px solid var(--tx);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(20,20,30,.14);
+}
+.ckAccept:hover {
+  background: var(--ps);
+  border-color: var(--ps);
+  box-shadow: 0 4px 18px rgba(20,20,30,.20);
+}
+.ckReject {
+  background: transparent;
+  border: 1px solid var(--bdr);
+  color: var(--txd);
+}
+.ckReject:hover {
+  background: color-mix(in srgb, var(--tc) 5%, transparent);
+  border-color: var(--bdrh);
+  color: var(--ps);
+}
+
+/* ── Mobile: anchored full-width strip ── */
+@media (max-width: 560px) {
+  #cookieBanner {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 14px 14px 0 0;
+    border-bottom: none;
+    padding: 1.2rem 1.2rem calc(1.4rem + env(safe-area-inset-bottom, 0px));
+  }
+  .ckAccept,
+  .ckReject {
+    min-height: 44px;
+    font-size: .66rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #cookieBanner,
+  #cookieBanner.ck--visible,
+  #cookieBanner.ck--dismiss {
+    transition: opacity .15s linear, visibility 0s linear .15s;
+    transform: none !important;
+  }
+}
+</style>
+
+<div
+  id="cookieBanner"
+  role="dialog"
+  aria-modal="false"
+  aria-label="Cookie consent"
+  aria-live="polite"
+  aria-hidden="true"
+>
+  <div class="ckInner">
+    <div class="ckText">
+      <div class="ckTitle">
+        <span class="ckIcon" aria-hidden="true">🍪</span>
+        We use cookies
+      </div>
+      <p class="ckBody">
+        We use cookies to improve your experience and keep the site running smoothly. See our
+        <button class="ckLink" onclick="openLegal('cookie')" aria-label="Open Cookie Policy">Cookie Policy</button>
+        for details.
+      </p>
+    </div>
+    <div class="ckActions">
+      <button class="ckAccept" id="ckAcceptBtn" onclick="ckAccept()" aria-label="Accept cookies">
+        Accept Cookies
+      </button>
+      <button class="ckReject" id="ckRejectBtn" onclick="ckReject()" aria-label="Reject non-essential cookies">
+        Reject Cookies
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   COOKIE CONSENT JS
+   Storage key  : 'dga_cookie_consent'
+   Stored values: 'accepted' | 'rejected'
+   Timer        : banner appears 5 min after page load,
+                  only when no prior choice is stored.
+   ckAccept()   : saves 'accepted', enables analytics,
+                  hides banner.
+   ckReject()   : saves 'rejected', disables analytics,
+                  hides banner.
+   ════════════════════════════════════════════════════════ */
+(function(){
+
+  var STORAGE_KEY  = 'dga_cookie_consent';
+  var DELAY_MS     = 5 * 60 * 1000; /* 5 minutes */
+  var banner       = document.getElementById('cookieBanner');
+  var acceptBtn    = document.getElementById('ckAcceptBtn');
+  var hideTimer    = null;
+
+  /* ── localStorage helpers — fail silently in restricted contexts ── */
+  function getChoice(){
+    try{ return localStorage.getItem(STORAGE_KEY); }
+    catch(e){ return null; }
+  }
+  function saveChoice(v){
+    try{ localStorage.setItem(STORAGE_KEY, v); }
+    catch(e){}
+  }
+
+  /* ── GA4 consent mode helpers ── */
+  function enableAnalytics(){
+    if(typeof gtag === 'function'){
+      gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted'});
+    }
+  }
+  function disableAnalytics(){
+    if(typeof gtag === 'function'){
+      gtag('consent','update',{analytics_storage:'denied',ad_storage:'denied'});
+    }
+  }
+
+  /* ── Show / hide ── */
+  function showBanner(){
+    if(!banner) return;
+    banner.removeAttribute('aria-hidden');
+    banner.classList.remove('ck--dismiss');
+    void banner.offsetWidth; /* force reflow so transition fires */
+    banner.classList.add('ck--visible');
+    if(acceptBtn) setTimeout(function(){ acceptBtn.focus(); }, 420);
+  }
+
+  function hideBanner(){
+    if(!banner) return;
+    banner.classList.remove('ck--visible');
+    banner.classList.add('ck--dismiss');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function(){
+      banner.setAttribute('aria-hidden','true');
+    }, 300);
+  }
+
+  /* ── Public handlers ── */
+  window.ckAccept = function(){
+    saveChoice('accepted');
+    enableAnalytics();
+    hideBanner();
+  };
+  window.ckReject = function(){
+    saveChoice('rejected');
+    disableAnalytics();
+    hideBanner();
+  };
+
+  /* Escape key: soft dismiss only — no stored choice, banner will
+     reappear on the next visit if the user hasn't decided yet. */
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && banner && banner.classList.contains('ck--visible')){
+      hideBanner();
+    }
+  });
+
+  /* ── Initialise ── */
+  var stored = getChoice();
+  if(stored){
+    /* Prior choice found — apply silently, never show banner again */
+    if(stored === 'accepted') enableAnalytics();
+    else disableAnalytics();
+  } else {
+    /* No prior choice — privacy-first default, show banner after 5 min */
+    disableAnalytics();
+    setTimeout(showBanner, DELAY_MS);
+  }
+
+})();
+</script>
+<!-- ════════════════════════════════════════════════════════
+     END COOKIE CONSENT SYSTEM
      ════════════════════════════════════════════════════════ -->
 </body>
 </html>

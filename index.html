@@ -357,7 +357,8 @@
 
 
     /* Right-side group: Login + Hamburger */
-    .nRight{display:flex;align-items:center;gap:.55rem;}
+    .nRight{display:flex;align-items:center;gap:.55rem;
+      transition:opacity .35s ease .5s,transform .35s ease .5s;}
 
     /* Login icon button — circular glass chip, matches hamburger button */
     .nLoginBtn{
@@ -368,57 +369,40 @@
       cursor:pointer;
       display:flex;align-items:center;justify-content:center;
       box-shadow:0 2px 8px rgba(5,3,8,.10);
-      transition:color .25s,border-color .25s,background .25s,box-shadow .25s;
+      transition:color .25s,border-color .25s,background .25s,box-shadow .25s,opacity .35s ease .5s;
       flex-shrink:0;
     }
     .nLoginBtn svg{width:16px;height:16px;display:block;}
     .nLoginBtn:hover{color:var(--ps);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
 
+    /* "Menu" label — always visible now (Koe logo removed) */
+    .nMenuLabel{
+      font-family:var(--fm);font-size:.78rem;letter-spacing:.3em;
+      color:var(--txd);
+      position:absolute;left:50%;transform:translateX(-50%);
+      opacity:1;pointer-events:auto;white-space:nowrap;
+      transition:opacity .3s ease;
+    }
 
     /* ── COLLAPSED (scrolled) state ── */
+    /* navWrap shrinks to a pill; override width and centering */
     #navWrap{
-      transition: width .45s cubic-bezier(.4,0,.2,1);
+      transition:width .5s cubic-bezier(.4,0,.2,1), top .5s cubic-bezier(.4,0,.2,1);
     }
     #navWrap.navCollapsed{
-      width: min(120px,calc(100% - 2rem));
+      width:min(120px,calc(100% - 2rem));
     }
     #navWrap.navCollapsed #navBar{
-      justify-content: center;
-      padding: .72rem 1.4rem;
-      border-radius: 31px !important;
+      justify-content:center;
+      padding:.72rem 1.4rem;
+      border-radius:31px !important; /* keep full pill even if open class were somehow set */
     }
-
-    /* Login + hamburger group: fade + shrink out, then pointer-events off */
-    .nLoginBtn{
-      transition: color .25s, border-color .25s, background .25s,
-                  box-shadow .25s, opacity .3s ease, transform .3s ease;
-    }
-    .nRight{
-      transition: opacity .3s ease, transform .3s ease;
-    }
-    #navWrap.navCollapsed .nLoginBtn{
-      opacity: 0; transform: scale(.8); pointer-events: none;
-    }
-    #navWrap.navCollapsed .nRight{
-      opacity: 0; transform: scale(.8); pointer-events: none;
-    }
-
-    /* "Menu" label: hidden when expanded, fades in when collapsed */
-    .nMenuLabel{
-      font-family: var(--fm); font-size: .78rem; letter-spacing: .3em;
-      color: var(--txd);
-      position: absolute; left: 50%; transform: translateX(-50%);
-      white-space: nowrap;
-      opacity: 0; pointer-events: none;
-      transition: opacity .3s ease;
-    }
-    #navWrap.navCollapsed .nMenuLabel{
-      opacity: 1; pointer-events: auto;
-    }
-
-    /* Hide dropdown + separator instantly when collapsed (no animation needed) */
-    #navWrap.navCollapsed #navDrop{ display: none; }
-    #navWrap.navCollapsed #navSep{  display: none; }
+    #navWrap.navCollapsed .nLoginBtn{opacity:0;pointer-events:none;position:absolute;left:-9999px;transition-delay:0s;}
+    #navWrap.navCollapsed .nRight{opacity:0;pointer-events:none;position:absolute;right:-9999px;transition-delay:0s;}
+    #navWrap.navCollapsed .nMenuLabel{opacity:1;pointer-events:auto;}
+    /* Also hide dropdown trigger when collapsed (clicking pill opens menu) */
+    #navWrap.navCollapsed #navDrop{display:none;}
+    #navWrap.navCollapsed #navSep{display:none;}
 
     /* Hamburger button — matches .nLoginBtn glass-box style */
     .nHam{
@@ -524,7 +508,7 @@
        ├─ .hEBg     — admin-only "Edit Background" button
        └─ #bgF      — hidden file input for background upload
        ══════════════════════════════════════════════════════════ */
-    #hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;}
+    #hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;overflow:hidden;}
 
     /* Static art background — single cover image, no animation */
     #hBgImg{
@@ -2161,14 +2145,16 @@ body{background:var(--bg);}
        └─ .ppBtn*     — .ppBtnLogout (accent) + .ppBtnCancel (ghost)
    ══════════════════════════════════════════════════════════ */
 .nAvatarBtn{
+  /* Identical glass-box to .nLoginBtn */
   background:color-mix(in srgb,var(--sur) 92%,transparent);
   border:1px solid var(--bdrh);
   width:34px;height:34px;border-radius:50%;
   cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 2px 8px rgba(5,3,8,.10),0 0 0 2px color-mix(in srgb,var(--tc) 18%,transparent);
-  transition:border-color .25s,background .25s,box-shadow .25s,opacity .3s ease,transform .3s ease;
+  transition:border-color .25s,background .25s,box-shadow .25s,opacity .35s ease .5s;
   flex-shrink:0;
+  /* Avatar glow ring — same accent as comment avatars */
   outline:none;
   position:relative;
 }
@@ -2191,9 +2177,9 @@ body{background:var(--bg);}
   user-select:none;
   pointer-events:none;
 }
-/* Collapsed state: avatar fades + shrinks out smoothly */
+/* Collapsed state: avatar follows same hide logic as .nLoginBtn */
 #navWrap.navCollapsed .nAvatarBtn{
-  opacity:0; transform:scale(.8); pointer-events:none;
+  opacity:0;pointer-events:none;position:absolute;left:-9999px;transition-delay:0s;
 }
 
 /* ── Profile popup card ── */
@@ -2328,48 +2314,535 @@ body{background:var(--bg);}
    § CINEMATIC SCROLL TRANSITION SYSTEM
    ─────────────────────────────────────────────────────────────
    Architecture:
-   · #hero        — sticky; pins at top:0 while the page scrolls
-                    past it. Content + bg both stay visible as a
-                    fixed scene. z-index 0 so .cst-riser covers it.
-   · #hBgImg      — absolute fill inside the sticky hero; JS drives
-                    a subtle scale pull-back for the cinematic feel.
-   · .cst-riser   — normal-flow section; slides over the pinned hero
-                    as the user scrolls. No JS transform needed —
-                    the sticky hero just stays behind it naturally.
+   · #hBgImg         — GPU-composited parallax layer (transform only)
+   · #hero           — clip container; overflow:hidden keeps the
+                        scaled image from bleeding out
+   · .cst-riser      — the first content section; rises over the
+                        hero via translateY driven by scroll progress
+   · .cst-shadow     — inset shadow at top of riser for depth
+   · .cst-bg-fade    — opacity fade applied to #hBgImg as cover completes
+
+   Performance contract:
+   · Only transform + opacity on GPU layers → zero layout/paint
+   · Single rAF-gated passive scroll listener (no jank)
+   · IntersectionObserver disables rAF loop when hero is off-screen
+   · prefers-reduced-motion: all motion disabled at CSS level
    ══════════════════════════════════════════════════════════════ */
 
-/* ── Hero pins in place; everything inside scrolls with the page
-   stopping at viewport top, then content slides over it ── */
+/* ── Hero: clip the parallax image so scale doesn't bleed ── */
 #hero{
-  position: sticky;
-  top: 0;
-  z-index: 0;   /* sits behind the rising content */
+  overflow: hidden;
+  /* Ensure it stacks below the rising section in z-order */
+  isolation: isolate;
 }
 
-/* ── Background image: subtle JS-driven scale only ── */
+/* ── Background image layer: GPU-composited, no layout impact ── */
 #hBgImg{
+  /* Extend slightly beyond bounds to absorb parallax travel without gap.
+     The scale(1.05) also helps cover this, but the extra height is cheap
+     insurance for fast scrollers and tall viewports. */
+  top: -8%;
+  bottom: -8%;
+  left: 0;
+  right: 0;
+  inset: unset; /* override the inset:0 shorthand from base rule */
+  position: absolute;
+  /* Transform origin center — scale grows outward symmetrically */
   transform-origin: center center;
-  will-change: transform;
+  /* Promote to own compositor layer */
+  will-change: transform, opacity;
+  /* Smooth the JS-driven values; duration 0 = JS owns easing fully */
   transition: none;
 }
 
-/* ── Rising content section — slides naturally over the sticky hero ── */
+/* ── Rising content section ── */
 .cst-riser{
   position: relative;
-  z-index: 1;           /* above the sticky hero */
-  background: var(--bg);
+  /* Sits above the hero in paint order */
+  z-index: 2;
+  /* GPU layer for transform */
+  will-change: transform;
+  /* Tight top-radius creates the "card emerging" feel */
   border-radius: 18px 18px 0 0;
-  /* Soft shadow so the card looks lifted over the hero */
-  box-shadow: 0 -8px 32px rgba(0,0,0,.18);
+  /* Clip so rounded corners work cleanly */
+  overflow: hidden;
 }
 
+/* ── Inset depth shadow at the top of the rising section ──
+   Mimics the shadow cast by a card sliding over a surface.
+   Composited purely as a box-shadow → no repaint cost. ── */
+.cst-riser::before{
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  /* Inset shadow: darkens the top edge as it rises over the image */
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,.18) 0%,
+    rgba(0,0,0,.06) 45%,
+    transparent 100%
+  );
+  z-index: 3;
+  pointer-events: none;
+  /* Fade the shadow in as the riser clears the hero */
+  opacity: 0;
+  transition: opacity .1s linear;
+}
+.cst-riser.cst-active::before{
+  opacity: 1;
+}
+
+/* ── Remove border-radius on mobile (full-bleed feel) ── */
 @media(max-width: 640px){
-  .cst-riser{ border-radius: 12px 12px 0 0; }
+  .cst-riser{
+    border-radius: 12px 12px 0 0;
+  }
 }
 
+/* ── Reduced-motion: zero out ALL cinematic motion ──
+   Users who prefer reduced motion get a clean, instant
+   section transition with no parallax or scale. ── */
 @media(prefers-reduced-motion: reduce){
-  #hBgImg{ will-change: auto !important; transform: none !important; }
+  #hBgImg{
+    top: 0 !important;
+    bottom: 0 !important;
+    will-change: auto !important;
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
+  .cst-riser{
+    will-change: auto !important;
+    transform: none !important;
+    border-radius: 0 !important;
+  }
+  .cst-riser::before{
+    display: none !important;
+  }
 }
+/* ══════════════════════════════════════════════════════════
+   § SUBSCRIPTION PAGE OVERLAY
+   Pattern mirrors #fg (Full Gallery) and #commentsPage:
+   · position:fixed inset:0 — covers the full viewport
+   · transform:translateX(100%) hidden → translateX(0) open
+   · z-index:500 — same layer as gallery overlay
+   · Background uses var(--bg) so it respects the white theme
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ── */
+@keyframes subBorderSpin {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes subGlowPurple {
+  0%,100% { box-shadow: 0 0 0 1px rgba(168,85,247,.22), 0 4px 24px rgba(168,85,247,.10); }
+  50%      { box-shadow: 0 0 0 1px rgba(168,85,247,.48), 0 4px 32px rgba(168,85,247,.20); }
+}
+@keyframes subGlowGold {
+  0%,100% { box-shadow: 0 0 0 1px rgba(234,179,8,.20), 0 4px 24px rgba(234,179,8,.08); }
+  50%      { box-shadow: 0 0 0 1px rgba(234,179,8,.42), 0 4px 32px rgba(234,179,8,.18); }
+}
+@keyframes subCardIn {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes subBadgePulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:.7; }
+}
+@keyframes subModalIn {
+  from { opacity:0; transform:translate(-50%,-50%) scale(.94); }
+  to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
+}
+
+/* ── Overlay panel ── */
+#subPage {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform .45s cubic-bezier(.22,1,.36,1);
+}
+#subPage.open { transform: translateX(0); }
+
+/* ── Header bar — same language as .fgHdr / .cpHdr ── */
+.subPgHdr {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid var(--bdr);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.subPgX {
+  background: none;
+  border: none;
+  color: var(--txd);
+  cursor: pointer;
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: color .2s;
+  flex-shrink: 0;
+  font-family: var(--fm);
+  padding: 0;
+}
+.subPgX:hover { color: var(--tc); }
+.subPgTitle {
+  font-family: var(--fm);
+  font-size: .78rem;
+  letter-spacing: .28em;
+  color: var(--txd);
+  text-transform: uppercase;
+}
+.subPgTitle .s { color: var(--pg); }
+
+/* ── Scrollable body
+   Generous side padding on large screens keeps content
+   from stretching edge-to-edge on ultrawide displays.      ── */
+.subPgBdy {
+  padding: 3.5rem 2.5rem 6rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ── Page headline ── */
+.subPgHeadline {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.subPgHeadline h2 {
+  font-family: var(--fd);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -.03em;
+  color: var(--tx);
+  line-height: 1.1;
+  margin-bottom: .55rem;
+}
+.subPgHeadline h2 .s { color: var(--pg); font-size: .5em; vertical-align: middle; }
+.subPgHeadline p {
+  font-family: var(--fm);
+  font-size: .72rem;
+  letter-spacing: .25em;
+  color: var(--txd);
+  text-transform: uppercase;
+}
+
+/* ── Card grid
+   Desktop (≥1200px)  : 4 equal columns, generous gap
+   Laptop  (900–1199px): 4 columns, slightly tighter gap
+   Tablet  (600–899px) : 2 columns, cards taller/richer
+   Mobile  (<600px)    : 1 column, full-width cards           ── */
+.subGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  align-items: start; /* cards don't stretch to same height per row */
+}
+
+/* ── Card shell ── */
+.subCard {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid var(--bdr);
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform .28s cubic-bezier(.22,1,.36,1),
+              box-shadow .28s ease,
+              border-color .28s ease;
+  animation: subCardIn .5s ease both;
+  box-shadow: 0 1px 3px rgba(20,20,30,.04), 0 4px 18px rgba(20,20,30,.06);
+  /* Ensure all cards in a row reach the same height */
+  height: 100%;
+}
+.subCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 32px rgba(20,20,30,.12);
+}
+
+/* Animated colour accent top bar */
+.subCard::before {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 100%;
+  flex-shrink: 0;
+  background-size: 300% 100%;
+  animation: subBorderSpin 4s ease infinite;
+}
+.subCard--blue::before   { background: linear-gradient(90deg,#3b82f6,#6366f1,#3b82f6); background-size:300% 100%; }
+.subCard--purple::before { background: linear-gradient(90deg,#a855f7,#ec4899,#a855f7); background-size:300% 100%; }
+.subCard--gold::before   { background: linear-gradient(90deg,#eab308,#f97316,#eab308); background-size:300% 100%; }
+.subCard--green::before  { background: linear-gradient(90deg,#22c55e,#10b981,#22c55e); background-size:300% 100%; }
+
+/* Glow on featured plans */
+.subCard--purple { animation: subCardIn .5s ease both, subGlowPurple 3.5s ease-in-out 1s infinite; }
+.subCard--gold   { animation: subCardIn .5s ease both, subGlowGold   3.5s ease-in-out 1.2s infinite; }
+
+/* Stagger-in delays */
+.subCard:nth-child(1) { animation-delay: .06s; }
+.subCard:nth-child(2) { animation-delay: .14s; }
+.subCard:nth-child(3) { animation-delay: .22s; }
+.subCard:nth-child(4) { animation-delay: .30s; }
+
+/* ── Card inner padding ── */
+.subCardInner {
+  padding: 2rem 1.8rem 1.8rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Badge ── */
+.subBadge {
+  display: inline-block;
+  font-family: var(--fm);
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  padding: .24em .8em;
+  border-radius: 99px;
+  margin-bottom: 1rem;
+  width: fit-content;
+  animation: subBadgePulse 2.5s ease-in-out infinite;
+}
+.subBadge--purple {
+  background: rgba(168,85,247,.08);
+  border: 1px solid rgba(168,85,247,.32);
+  color: #7c3aed;
+}
+.subBadge--gold {
+  background: rgba(234,179,8,.09);
+  border: 1px solid rgba(234,179,8,.38);
+  color: #b45309;
+}
+
+/* ── Plan name ── */
+.subPlanName {
+  font-family: var(--fm);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  margin-bottom: .45rem;
+}
+.subCard--blue   .subPlanName { color: #2563eb; }
+.subCard--purple .subPlanName { color: #7c3aed; }
+.subCard--gold   .subPlanName { color: #b45309; }
+.subCard--green  .subPlanName { color: #15803d; }
+
+/* ── Price ── */
+.subPrice {
+  font-family: var(--fd);
+  font-size: clamp(2rem, 2.8vw, 2.8rem);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: 1;
+  color: var(--tx);
+  margin-bottom: .25rem;
+}
+.subPricePer {
+  font-family: var(--fm);
+  font-size: .62rem;
+  letter-spacing: .2em;
+  color: var(--txd);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Divider ── */
+.subCardDiv {
+  height: 1px;
+  background: var(--bdr);
+  margin-bottom: 1.4rem;
+  flex-shrink: 0;
+}
+
+/* ── Feature list ── */
+.subFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.8rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  flex: 1; /* pushes button to bottom of card */
+}
+.subFeatures li {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  font-family: var(--fb, sans-serif);
+  font-size: .84rem;
+  line-height: 1.5;
+  color: var(--txd);
+}
+.subFeatures li::before {
+  content: '✓';
+  flex-shrink: 0;
+  margin-top: .08em;
+  font-size: .72rem;
+  font-weight: 700;
+}
+.subCard--blue   .subFeatures li::before { color: #3b82f6; }
+.subCard--purple .subFeatures li::before { color: #a855f7; }
+.subCard--gold   .subFeatures li::before { color: #eab308; }
+.subCard--green  .subFeatures li::before { color: #22c55e; }
+
+/* ── CTA button — always pinned to card bottom via flex ── */
+.subBtn {
+  width: 100%;
+  padding: .82rem 1rem;
+  border: none;
+  border-radius: 9px;
+  font-family: var(--fm);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+.subBtn:hover   { transform: translateY(-2px); filter: brightness(1.08); }
+.subBtn:active  { transform: scale(.97); }
+.subBtn:focus-visible { outline: 2px solid var(--pg); outline-offset: 3px; }
+
+.subBtn--blue   { background: linear-gradient(135deg,#2563eb,#4f46e5); color:#eff6ff; box-shadow:0 3px 14px rgba(59,130,246,.28); }
+.subBtn--purple { background: linear-gradient(135deg,#9333ea,#ec4899); color:#fdf4ff; box-shadow:0 3px 14px rgba(168,85,247,.30); }
+.subBtn--gold   { background: linear-gradient(135deg,#d97706,#ea580c); color:#fffbeb; box-shadow:0 3px 14px rgba(234,179,8,.26); }
+.subBtn--green  { background: linear-gradient(135deg,#16a34a,#0d9488); color:#f0fdf4; box-shadow:0 3px 14px rgba(34,197,94,.24); }
+.subBtn--blue:hover   { box-shadow:0 5px 22px rgba(59,130,246,.42); }
+.subBtn--purple:hover { box-shadow:0 5px 22px rgba(168,85,247,.46); }
+.subBtn--gold:hover   { box-shadow:0 5px 22px rgba(234,179,8,.40); }
+.subBtn--green:hover  { box-shadow:0 5px 22px rgba(34,197,94,.38); }
+
+/* ══════════════════════════════════════════════════════════
+   SUBSCRIPTION RESPONSIVE RULES
+   ══════════════════════════════════════════════════════════ */
+
+/* Laptop — slight padding reduction, gap tightens */
+@media (max-width: 1199px) {
+  .subPgBdy    { padding: 3rem 2rem 5rem; }
+  .subGrid     { gap: 1.2rem; }
+  .subCardInner{ padding: 1.8rem 1.5rem 1.6rem; }
+}
+
+/* Tablet landscape (900px) — drop to 2 columns.
+   Cards become richer: more breathing room per card. */
+@media (max-width: 899px) {
+  .subGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.2rem;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .subPgBdy { padding: 2.5rem 1.8rem 5rem; }
+  .subPrice  { font-size: clamp(2rem, 4vw, 2.6rem); }
+}
+
+/* Tablet portrait (700px) — still 2 columns, tighter padding */
+@media (max-width: 699px) {
+  .subGrid {
+    max-width: 100%;
+    gap: 1rem;
+  }
+  .subCardInner { padding: 1.6rem 1.3rem 1.4rem; }
+  .subPgBdy     { padding: 2rem 1.2rem 5rem; }
+}
+
+/* Mobile (520px) — single column, full bleed */
+@media (max-width: 519px) {
+  .subGrid          { grid-template-columns: 1fr; gap: .85rem; }
+  .subPgBdy         { padding: 1.8rem 1rem 4rem; }
+  .subPgHeadline    { margin-bottom: 2rem; }
+  .subCardInner     { padding: 1.5rem 1.2rem 1.3rem; }
+  .subFeatures li   { font-size: .8rem; }
+  .subModalCard     { padding: 1.8rem 1.3rem 1.4rem; }
+}
+
+/* ── "Coming Soon" modal ── */
+#subModal {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(20,20,30,.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .22s ease, visibility .22s ease;
+}
+#subModal.subModal--open {
+  opacity: 1;
+  visibility: visible;
+}
+.subModalCard {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: #ffffff;
+  border: 1px solid var(--bdr);
+  border-radius: 16px;
+  padding: 2.5rem 2.2rem 2rem;
+  max-width: 420px;
+  width: calc(100% - 2.5rem);
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(20,20,30,.06), 0 12px 40px rgba(20,20,30,.14);
+  animation: subModalIn .28s cubic-bezier(.22,1,.36,1) both;
+}
+.subModalIcon  { font-size: 2.4rem; display: block; margin-bottom: .9rem; }
+.subModalTitle {
+  font-family: var(--fd);
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  color: var(--tx);
+  margin-bottom: .55rem;
+}
+.subModalMsg {
+  font-family: var(--fb, sans-serif);
+  font-size: .88rem;
+  line-height: 1.65;
+  color: var(--txd);
+  margin-bottom: 1.6rem;
+}
+.subModalClose {
+  background: var(--tc);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--fm);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  padding: .8rem 2.2rem;
+  cursor: pointer;
+  transition: transform .18s, filter .18s;
+  box-shadow: 0 3px 14px rgba(20,20,30,.18);
+}
+.subModalClose:hover  { transform: translateY(-2px); filter: brightness(1.1); }
+.subModalClose:active { transform: scale(.97); }
+.subModalClose:focus-visible { outline: 2px solid var(--pg); outline-offset: 3px; }
 
 </style>
  </head>
@@ -2484,6 +2957,10 @@ body{background:var(--bg);}
     <div class="ddDiv"></div>
     <button class="ddItem" onclick="openAdsPanel()">
      <span class="ddIco">◈</span>SPONSOR
+    </button>
+    <div class="ddDiv"></div>
+    <button class="ddItem" onclick="openSubscription()">
+     <span class="ddIco">★</span>SUBSCRIPTION
     </button>
     <div class="ddDiv"></div>
     <button class="ddItem" id="smAdmBtn" onclick="smHandleAdm()">
@@ -2941,6 +3418,145 @@ body{background:var(--bg);}
        ═══════════════════════════════════════════════ -->
 
   <!-- =========================================================
+       SUBSCRIPTION PAGE OVERLAY
+       Pattern: same as #fg (Full Gallery) and #commentsPage.
+       Opens via openSubscription(), closes via closeSubscription().
+       ├─ Header Bar (.subPgHdr)
+       │   ├─ Back Button (.subPgX)
+       │   └─ Title (.subPgTitle)
+       └─ Body (.subPgBdy)
+           ├─ Headline (.subPgHeadline)
+           └─ Card Grid (.subGrid)
+               ├─ Plan 1 — Premium Lite   (.subCard--blue)
+               ├─ Plan 2 — Premium        (.subCard--purple)
+               ├─ Plan 3 — MAX            (.subCard--gold)
+               └─ Plan 4 — Support        (.subCard--green)
+       ========================================================= -->
+  <div id="subPage" role="dialog" aria-modal="true" aria-label="Subscription plans">
+
+   <!-- ── Header ── -->
+   <div class="subPgHdr">
+    <button class="subPgX" onclick="closeSubscription()" aria-label="Close subscription">←</button>
+    <div class="subPgTitle">SUBSCRIPTION <span class="s">★</span></div>
+   </div>
+
+   <!-- ── Body ── -->
+   <div class="subPgBdy">
+
+    <!-- Page headline -->
+    <div class="subPgHeadline">
+     <h2>Choose Your Plan <span class="s">★</span></h2>
+     <p>Support the project and unlock exclusive benefits</p>
+    </div>
+
+    <!-- Card grid -->
+    <div class="subGrid">
+
+     <!-- Plan 1: Premium Lite (Blue) -->
+     <div class="subCard subCard--blue">
+      <div class="subCardInner">
+       <div class="subPlanName">Premium Lite</div>
+       <div class="subPrice">$0.50</div>
+       <div class="subPricePer">per month</div>
+       <div class="subCardDiv"></div>
+       <ul class="subFeatures">
+        <li>Download copyright-free images</li>
+        <li>Download images in the highest available quality</li>
+        <li>Get 2 premium website templates for free</li>
+       </ul>
+       <button class="subBtn subBtn--blue" onclick="openSubModal()" aria-label="Get Premium Lite">Get Premium Lite</button>
+      </div>
+     </div>
+
+     <!-- Plan 2: Premium (Purple) — Most Popular -->
+     <div class="subCard subCard--purple">
+      <div class="subCardInner">
+       <div class="subBadge subBadge--purple">★ Most Popular</div>
+       <div class="subPlanName">Premium</div>
+       <div class="subPrice">$1</div>
+       <div class="subPricePer">per month</div>
+       <div class="subCardDiv"></div>
+       <ul class="subFeatures">
+        <li>Download copyright-free images</li>
+        <li>Download images in the highest available quality</li>
+        <li>Get 4 premium website templates</li>
+        <li>Request 1 custom artwork</li>
+        <li>Early access to future features</li>
+        <li>More benefits coming soon</li>
+       </ul>
+       <button class="subBtn subBtn--purple" onclick="openSubModal()" aria-label="Upgrade to Premium">Upgrade to Premium</button>
+      </div>
+     </div>
+
+     <!-- Plan 3: MAX (Gold) — Best Value -->
+     <div class="subCard subCard--gold">
+      <div class="subCardInner">
+       <div class="subBadge subBadge--gold">⚡ Best Value</div>
+       <div class="subPlanName">MAX</div>
+       <div class="subPrice">$100</div>
+       <div class="subPricePer">per month</div>
+       <div class="subCardDiv"></div>
+       <ul class="subFeatures">
+        <li>Download copyright-free images</li>
+        <li>Download images in the highest available quality</li>
+        <li>Get 6 premium website templates</li>
+        <li>Request up to 5 custom artworks</li>
+        <li>Custom website development</li>
+        <li>Website size up to 5,000 lines of code</li>
+        <li>Priority support</li>
+        <li>More benefits coming soon</li>
+       </ul>
+       <button class="subBtn subBtn--gold" onclick="openSubModal()" aria-label="Go MAX">Go MAX</button>
+      </div>
+     </div>
+
+     <!-- Plan 4: Support (Green) -->
+     <div class="subCard subCard--green">
+      <div class="subCardInner">
+       <div class="subPlanName">Support</div>
+       <div class="subPrice" style="font-size:clamp(1.3rem,3vw,1.8rem);letter-spacing:-.01em;">Any Amount</div>
+       <div class="subPricePer">your choice</div>
+       <div class="subCardDiv"></div>
+       <ul class="subFeatures">
+        <li>Support the project</li>
+        <li>Help fund future updates</li>
+        <li>Help create more free content</li>
+        <li>Optional donation tier</li>
+        <li>Support independent development</li>
+       </ul>
+       <button class="subBtn subBtn--green" onclick="openSubModal()" aria-label="Support the Project">Support the Project</button>
+      </div>
+     </div>
+
+    </div>
+    <!-- ── End .subGrid ── -->
+
+   </div>
+   <!-- ── End .subPgBdy ── -->
+
+  </div>
+  <!-- ═══════════════════════════════════════════════
+       END SUBSCRIPTION PAGE OVERLAY
+       ═══════════════════════════════════════════════ -->
+
+  <!-- =========================================================
+       SUBSCRIPTION COMING SOON MODAL
+       ├─ #subModal  — scrim overlay (click outside to close)
+       └─ .subModalCard — white card centered via position:fixed
+       ========================================================= -->
+  <div id="subModal" role="dialog" aria-modal="true" aria-labelledby="subModalTitle" onclick="handleSubModalBackdrop(event)">
+   <div class="subModalCard">
+    <span class="subModalIcon" aria-hidden="true">🚀</span>
+    <div class="subModalTitle" id="subModalTitle">Subscription Coming Soon</div>
+    <p class="subModalMsg">Payment integration and subscriptions will be available in a future update.</p>
+    <button class="subModalClose" onclick="closeSubModal()" aria-label="Close">Got It</button>
+   </div>
+  </div>
+  <!-- ═══════════════════════════════════════════════
+       END SUBSCRIPTION MODAL
+       ═══════════════════════════════════════════════ -->
+
+  <!-- =========================================================
        ADS / SPONSOR PANEL
        ├─ Header Bar (.apHdr)
        │   ├─ Back Button (.apX)
@@ -3246,7 +3862,7 @@ body{background:var(--bg);}
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function restoreScroll(){
-    var locks=['fg','artModal','commentsPage','adsPanel','legalBackdrop'];
+    var locks=['fg','artModal','commentsPage','adsPanel','legalBackdrop','subPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -4219,7 +4835,7 @@ body{background:var(--bg);}
 
   let tT;
   function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000);}
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeComments();closeProfilePopup();}}); /* FIXED: BUG-005 */
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeComments();closeProfilePopup();closeSubscription();closeSubModal();}}); /* FIXED: BUG-005 */
 
   /* ── HAMBURGER MENU (attached dropdown) ── */
   function toggleMenu(){
@@ -4293,36 +4909,16 @@ body{background:var(--bg);}
       });
     }
 
-    /* Collapse when the rising card's top edge reaches the navbar bottom.
-       Expand when the riser pulls back below the navbar. */
-    var riser    = document.querySelector('.cst-riser');
-    var featured = riser ? riser.querySelector('.secT') : null;
-
-    /* Hysteresis: collapse when text reaches nav bottom,
-       but only expand again once text is 80px BELOW nav bottom.
-       The gap prevents the layout-shift feedback loop (slim→fat→slim). */
-    var COLLAPSE_AT = 0;   /* px: text top <= navBottom + this → collapse */
-    var EXPAND_AT   = 80;  /* px: text top >= navBottom + this → expand   */
-
+    /* Trigger collapse/expand after a small, fixed scroll distance —
+       responsive to a single swipe/scroll-tick rather than waiting
+       for the full hero to scroll past. Scroll position is the
+       source of truth, except while pinnedOpen holds it open. */
+    var SCROLL_TRIGGER_PX = 80;
     function onScroll(){
-      var trigger = featured || riser;
-      var pastTrigger;
-      if(trigger){
-        var navBottom  = wrap.getBoundingClientRect().bottom;
-        var triggerTop = trigger.getBoundingClientRect().top;
-        var gap        = triggerTop - navBottom;
-        if(!collapsed){
-          pastTrigger = gap <= COLLAPSE_AT;
-        } else {
-          pastTrigger = gap <= EXPAND_AT;
-        }
-      } else {
-        pastTrigger = window.scrollY > 80;
-      }
-
+      var pastTrigger = window.scrollY > SCROLL_TRIGGER_PX;
       if(pinnedOpen){
-        if(!pastTrigger){ pinnedOpen = false; }
-        else { return; }
+        if(!pastTrigger){ pinnedOpen = false; } /* scrolled back to top: release the pin */
+        else { return; } /* still scrolled down: stay pinned open */
       }
       setCollapsed(pastTrigger);
     }
@@ -4940,6 +5536,48 @@ async function openComments(){
   /* ═══════════════════════════════════════════════════════════
      END SHOWCASE CARD JAVASCRIPT
      ═══════════════════════════════════════════════════════════ */
+
+  /* ══════════════════════════════════════════════════════════
+     SUBSCRIPTION OVERLAY
+     Mirrors openComments/closeComments and openAdsPanel patterns.
+     ══════════════════════════════════════════════════════════ */
+  function openSubscription() {
+    closeMenu();
+    var el = document.getElementById('subPage');
+    if (!el) return;
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+  }
+
+  function closeSubscription() {
+    var el = document.getElementById('subPage');
+    if (!el) return;
+    el.classList.remove('open');
+    restoreScroll();
+  }
+
+  /* ── Coming Soon modal ── */
+  function openSubModal() {
+    var m = document.getElementById('subModal');
+    if (!m) return;
+    m.classList.add('subModal--open');
+    var btn = m.querySelector('.subModalClose');
+    if (btn) setTimeout(function(){ btn.focus(); }, 40);
+  }
+
+  function closeSubModal() {
+    var m = document.getElementById('subModal');
+    if (!m) return;
+    m.classList.remove('subModal--open');
+  }
+
+  function handleSubModalBackdrop(e) {
+    if (e.target === document.getElementById('subModal')) closeSubModal();
+  }
+  /* ══════════════════════════════════════════════════════════
+     END SUBSCRIPTION OVERLAY
+     ══════════════════════════════════════════════════════════ */
   </script>
  <!-- ════════════════════════════════════════════════════════
       GLOBAL RIPPLE EFFECT
@@ -5258,82 +5896,162 @@ async function openComments(){
 (function(){
   'use strict';
 
+  /* ── Respect prefers-reduced-motion at JS level too ── */
   var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
   if(mq && mq.matches) return;
 
-  var hero  = document.getElementById('hero');
-  var bgImg = document.getElementById('hBgImg');
-  var riser = document.querySelector('.cst-riser');
+  /* ── Element refs ── */
+  var hero   = document.getElementById('hero');
+  var bgImg  = document.getElementById('hBgImg');
+  var riser  = document.querySelector('.cst-riser');
+
   if(!hero || !bgImg || !riser) return;
 
-  var fadeEls = [
-    { el: hero.querySelector('.hScr span'), lead: 80  }, /* SCROLL text — fades when riser is ~2 lines away */
-    { el: hero.querySelector('.hCta'),      lead: 150 },
-    { el: hero.querySelector('.hDesc'),     lead: 150 },
-    { el: hero.querySelector('.hSub'),      lead: 150 },
-    { el: hero.querySelector('.hT'),        lead: 150 }
-  ].filter(function(e){ return e.el; });
+  /* ── Config ──────────────────────────────────────────────
+     PARALLAX_RATE  : how much slower the bg moves vs scroll
+                      0 = locked, 1 = moves at full scroll speed.
+                      0.35 = bg moves at 35% of scroll speed →
+                      subtle depth without being distracting.
+     SCALE_MAX      : maximum scale applied to bg at rest (1.0)
+                      as scroll goes from 0 → heroH, scale goes
+                      1.05 → 1.0 (zooms in at top, normalises as
+                      you scroll — gives the cinematic "pull back"
+                      feel on load without jarring motion).
+     RISE_LEAD_PX   : how many px before the hero bottom the riser
+                      starts moving. Larger = earlier rise start.
+     OPACITY_START  : fraction of heroH at which bg starts fading.
+     OPACITY_END    : fraction of heroH at which bg is fully gone.
+  ── */
+  var PARALLAX_RATE  = 0.35;
+  var SCALE_MAX      = 1.05;
+  var SCALE_MIN      = 1.0;
+  var RISE_LEAD_PX   = 220;
+  var OPACITY_START  = 0.55;
+  var OPACITY_END    = 0.88;
 
-  var SCALE_MAX = 1.06;
-  var SCALE_MIN = 1.0;
-  var rafId = null;
-  var heroH = 0;
+  /* ── State ── */
+  var rafId        = null;
+  var lastScrollY  = -1;
+  var heroH        = 0;
+  var heroActive   = true; /* set false by IntersectionObserver */
 
-  function clamp(v,lo,hi){ return v<lo?lo:v>hi?hi:v; }
-  function easeOut(t){ return 1-Math.pow(1-t,3); }
-  function measureHero(){ heroH = hero.offsetHeight; }
+  /* ── Clamp helper ── */
+  function clamp(v, lo, hi){ return v < lo ? lo : v > hi ? hi : v; }
 
+  /* ── Ease out cubic — smooth deceleration ── */
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+  /* ── Measure hero height (cheap, cached) ── */
+  function measureHero(){
+    heroH = hero.offsetHeight;
+  }
+
+  /* ── Core frame update ──────────────────────────────────
+     All writes happen in a single rAF callback.
+     Only transform + opacity are modified → compositor-only.
+  ── */
   function applyFrame(){
     rafId = null;
+    if(!heroActive) return;
 
-    /* Subtle bg scale */
-    var progress = clamp(window.scrollY / (heroH || 1), 0, 1);
-    var scale = SCALE_MAX - (SCALE_MAX - SCALE_MIN) * easeOut(progress);
-    bgImg.style.transform = 'scale(' + scale.toFixed(4) + ')';
+    var sy = window.scrollY;
 
-    /* Riser top edge in viewport coords */
-    var riserTop = riser.getBoundingClientRect().top;
+    /* Parallax: bg translates upward at PARALLAX_RATE * scroll */
+    var parallaxY = sy * PARALLAX_RATE;
 
-    for(var i = 0; i < fadeEls.length; i++){
-      var entry    = fadeEls[i];
-      var el       = entry.el;
-      var lead     = entry.lead;
-      var elBottom = el.getBoundingClientRect().bottom;
+    /* Scale: starts at SCALE_MAX when sy=0, falls to SCALE_MIN at heroH */
+    var scaleProgress = clamp(sy / (heroH || 1), 0, 1);
+    var scale = SCALE_MAX - (SCALE_MAX - SCALE_MIN) * easeOutCubic(scaleProgress);
 
-      var fadeP = clamp((elBottom + lead - riserTop) / lead, 0, 1);
-      var op    = 1 - easeOut(fadeP);
-      var driftY = (-fadeP * 14).toFixed(2);
+    /* Opacity: fades the bg as the riser covers it */
+    var opProgress = clamp(
+      (scaleProgress - OPACITY_START) / (OPACITY_END - OPACITY_START),
+      0, 1
+    );
+    var bgOpacity = 1 - easeOutCubic(opProgress);
 
-      el.style.opacity = op.toFixed(3);
-      el.style.transform = 'translateY(' + driftY + 'px)';
+    /* Riser translateY: starts rising RISE_LEAD_PX before hero bottom.
+       riserOffset goes from +RISE_LEAD_PX (off by that much at start)
+       to 0 (fully settled) as scroll reaches heroH. */
+    var riserProgress = clamp(
+      (sy - (heroH - RISE_LEAD_PX)) / RISE_LEAD_PX,
+      0, 1
+    );
+    /* Use an ease that accelerates in then decelerates — feels physical */
+    var riserEased = easeOutCubic(riserProgress);
+    /* translateY: starts at RISE_LEAD_PX, eases to 0 */
+    var riserY = RISE_LEAD_PX * (1 - riserEased);
+
+    /* Apply — only transform + opacity, always on compositor layers */
+    bgImg.style.transform  = 'scale(' + scale.toFixed(4) + ') translateY(' + (-parallaxY).toFixed(2) + 'px)';
+    bgImg.style.opacity    = bgOpacity.toFixed(3);
+    riser.style.transform  = 'translateY(' + riserY.toFixed(2) + 'px)';
+
+    /* Toggle depth shadow when riser has risen enough to overlap hero */
+    if(riserProgress > 0.05){
+      riser.classList.add('cst-active');
+    } else {
+      riser.classList.remove('cst-active');
     }
   }
 
+  /* ── rAF-gated scroll handler ──────────────────────────── */
   function onScroll(){
-    if(rafId === null) rafId = requestAnimationFrame(applyFrame);
+    var sy = window.scrollY;
+    if(sy === lastScrollY) return;
+    lastScrollY = sy;
+    if(rafId === null){
+      rafId = requestAnimationFrame(applyFrame);
+    }
   }
 
-  var ro = typeof ResizeObserver !== 'undefined'
+  /* ── IntersectionObserver: pause rAF when hero entirely off-screen ──
+     This prevents wasted rAF budget when the user is deep in the page. */
+  var io = new IntersectionObserver(function(entries){
+    heroActive = entries[0].isIntersecting;
+    if(heroActive){
+      /* Re-arm: make sure we paint the current state immediately */
+      if(rafId === null) rafId = requestAnimationFrame(applyFrame);
+    }
+  }, {
+    rootMargin: '200px 0px 0px 0px', /* fire a bit early so frame is ready */
+    threshold: 0
+  });
+  io.observe(hero);
+
+  /* ── ResizeObserver: re-measure on resize / orientation change ──
+     Avoids stale heroH causing wrong parallax math after resize. */
+  var ro = (typeof ResizeObserver !== 'undefined')
     ? new ResizeObserver(function(){ measureHero(); applyFrame(); })
     : null;
   if(ro) ro.observe(hero);
 
+  /* ── Initial measurement + first paint ── */
   measureHero();
-  window.addEventListener('scroll', onScroll, {passive:true});
 
+  /* ── Kick off on first real scroll tick ── */
+  window.addEventListener('scroll', onScroll, {passive: true});
+
+  /* ── Apply once on load (in case page is restored mid-scroll) ── */
   if(document.readyState === 'complete'){
     applyFrame();
   } else {
-    window.addEventListener('load', applyFrame, {once:true});
+    window.addEventListener('load', applyFrame, {once: true});
   }
 
+  /* ── Also re-run after intro screen hides (Digiartz splash) ──
+     The intro is position:fixed so it doesn't affect scrollY, but
+     firing once after it hides ensures the first visible frame is correct. */
   var introEl = document.getElementById('intro');
   if(introEl){
     introEl.addEventListener('transitionend', function(){
-      measureHero(); applyFrame();
-    }, {once:true});
+      measureHero();
+      applyFrame();
+    }, {once: true});
   }
 
+  /* ── Mobile: iOS Safari reports wrong innerHeight before resize event.
+     Re-measure after 150ms on orientation change. ── */
   window.addEventListener('orientationchange', function(){
     setTimeout(function(){ measureHero(); applyFrame(); }, 150);
   });

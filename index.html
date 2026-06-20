@@ -2310,117 +2310,6 @@ body{background:var(--bg);}
     0 2px 0 color-mix(in srgb,var(--tc) 8%,transparent) inset;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   § CINEMATIC SCROLL TRANSITION SYSTEM
-   ─────────────────────────────────────────────────────────────
-   Architecture:
-   · #hBgImg         — GPU-composited parallax layer (transform only)
-   · #hero           — clip container; overflow:hidden keeps the
-                        scaled image from bleeding out
-   · .cst-riser      — the first content section; rises over the
-                        hero via translateY driven by scroll progress
-   · .cst-shadow     — inset shadow at top of riser for depth
-   · .cst-bg-fade    — opacity fade applied to #hBgImg as cover completes
-
-   Performance contract:
-   · Only transform + opacity on GPU layers → zero layout/paint
-   · Single rAF-gated passive scroll listener (no jank)
-   · IntersectionObserver disables rAF loop when hero is off-screen
-   · prefers-reduced-motion: all motion disabled at CSS level
-   ══════════════════════════════════════════════════════════════ */
-
-/* ── Hero: clip the parallax image so scale doesn't bleed ── */
-#hero{
-  overflow: hidden;
-  /* Ensure it stacks below the rising section in z-order */
-  isolation: isolate;
-}
-
-/* ── Background image layer: GPU-composited, no layout impact ── */
-#hBgImg{
-  /* Extend slightly beyond bounds to absorb parallax travel without gap.
-     The scale(1.05) also helps cover this, but the extra height is cheap
-     insurance for fast scrollers and tall viewports. */
-  top: -8%;
-  bottom: -8%;
-  left: 0;
-  right: 0;
-  inset: unset; /* override the inset:0 shorthand from base rule */
-  position: absolute;
-  /* Transform origin center — scale grows outward symmetrically */
-  transform-origin: center center;
-  /* Promote to own compositor layer */
-  will-change: transform, opacity;
-  /* Smooth the JS-driven values; duration 0 = JS owns easing fully */
-  transition: none;
-}
-
-/* ── Rising content section ── */
-.cst-riser{
-  position: relative;
-  /* Sits above the hero in paint order */
-  z-index: 2;
-  /* GPU layer for transform */
-  will-change: transform;
-  /* Tight top-radius creates the "card emerging" feel */
-  border-radius: 18px 18px 0 0;
-  /* Clip so rounded corners work cleanly */
-  overflow: hidden;
-}
-
-/* ── Inset depth shadow at the top of the rising section ──
-   Mimics the shadow cast by a card sliding over a surface.
-   Composited purely as a box-shadow → no repaint cost. ── */
-.cst-riser::before{
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 60px;
-  /* Inset shadow: darkens the top edge as it rises over the image */
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,.18) 0%,
-    rgba(0,0,0,.06) 45%,
-    transparent 100%
-  );
-  z-index: 3;
-  pointer-events: none;
-  /* Fade the shadow in as the riser clears the hero */
-  opacity: 0;
-  transition: opacity .1s linear;
-}
-.cst-riser.cst-active::before{
-  opacity: 1;
-}
-
-/* ── Remove border-radius on mobile (full-bleed feel) ── */
-@media(max-width: 640px){
-  .cst-riser{
-    border-radius: 12px 12px 0 0;
-  }
-}
-
-/* ── Reduced-motion: zero out ALL cinematic motion ──
-   Users who prefer reduced motion get a clean, instant
-   section transition with no parallax or scale. ── */
-@media(prefers-reduced-motion: reduce){
-  #hBgImg{
-    top: 0 !important;
-    bottom: 0 !important;
-    will-change: auto !important;
-    transform: none !important;
-    opacity: 1 !important;
-    transition: none !important;
-  }
-  .cst-riser{
-    will-change: auto !important;
-    transform: none !important;
-    border-radius: 0 !important;
-  }
-  .cst-riser::before{
-    display: none !important;
-  }
-}
 /* ══════════════════════════════════════════════════════════
    § SUBSCRIPTION PAGE OVERLAY
    Pattern mirrors #fg (Full Gallery) and #commentsPage:
@@ -5888,10 +5777,6 @@ async function openComments(){
 </script>
 <!-- ════════════════════════════════════════════════════════
      END LEGAL MODAL JS
-     ════════════════════════════════════════════════════════ -->
-
-<!-- ════════════════════════════════════════════════════════
-     END CINEMATIC SCROLL TRANSITION ENGINE
      ════════════════════════════════════════════════════════ -->
 </body>
 </html>

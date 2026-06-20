@@ -357,8 +357,7 @@
 
 
     /* Right-side group: Login + Hamburger */
-    .nRight{display:flex;align-items:center;gap:.55rem;
-      transition:opacity .35s ease .5s,transform .35s ease .5s;}
+    .nRight{display:flex;align-items:center;gap:.55rem;}
 
     /* Login icon button — circular glass chip, matches hamburger button */
     .nLoginBtn{
@@ -369,40 +368,57 @@
       cursor:pointer;
       display:flex;align-items:center;justify-content:center;
       box-shadow:0 2px 8px rgba(5,3,8,.10);
-      transition:color .25s,border-color .25s,background .25s,box-shadow .25s,opacity .35s ease .5s;
+      transition:color .25s,border-color .25s,background .25s,box-shadow .25s;
       flex-shrink:0;
     }
     .nLoginBtn svg{width:16px;height:16px;display:block;}
     .nLoginBtn:hover{color:var(--ps);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
 
-    /* "Menu" label — always visible now (Koe logo removed) */
-    .nMenuLabel{
-      font-family:var(--fm);font-size:.78rem;letter-spacing:.3em;
-      color:var(--txd);
-      position:absolute;left:50%;transform:translateX(-50%);
-      opacity:1;pointer-events:auto;white-space:nowrap;
-      transition:opacity .3s ease;
-    }
 
     /* ── COLLAPSED (scrolled) state ── */
-    /* navWrap shrinks to a pill; override width and centering */
     #navWrap{
-      transition:width .5s cubic-bezier(.4,0,.2,1), top .5s cubic-bezier(.4,0,.2,1);
+      transition: width .45s cubic-bezier(.4,0,.2,1);
     }
     #navWrap.navCollapsed{
-      width:min(120px,calc(100% - 2rem));
+      width: min(120px,calc(100% - 2rem));
     }
     #navWrap.navCollapsed #navBar{
-      justify-content:center;
-      padding:.72rem 1.4rem;
-      border-radius:31px !important; /* keep full pill even if open class were somehow set */
+      justify-content: center;
+      padding: .72rem 1.4rem;
+      border-radius: 31px !important;
     }
-    #navWrap.navCollapsed .nLoginBtn{opacity:0;pointer-events:none;position:absolute;left:-9999px;transition-delay:0s;}
-    #navWrap.navCollapsed .nRight{opacity:0;pointer-events:none;position:absolute;right:-9999px;transition-delay:0s;}
-    #navWrap.navCollapsed .nMenuLabel{opacity:1;pointer-events:auto;}
-    /* Also hide dropdown trigger when collapsed (clicking pill opens menu) */
-    #navWrap.navCollapsed #navDrop{display:none;}
-    #navWrap.navCollapsed #navSep{display:none;}
+
+    /* Login + hamburger group: fade + shrink out, then pointer-events off */
+    .nLoginBtn{
+      transition: color .25s, border-color .25s, background .25s,
+                  box-shadow .25s, opacity .3s ease, transform .3s ease;
+    }
+    .nRight{
+      transition: opacity .3s ease, transform .3s ease;
+    }
+    #navWrap.navCollapsed .nLoginBtn{
+      opacity: 0; transform: scale(.8); pointer-events: none;
+    }
+    #navWrap.navCollapsed .nRight{
+      opacity: 0; transform: scale(.8); pointer-events: none;
+    }
+
+    /* "Menu" label: hidden when expanded, fades in when collapsed */
+    .nMenuLabel{
+      font-family: var(--fm); font-size: .78rem; letter-spacing: .3em;
+      color: var(--txd);
+      position: absolute; left: 50%; transform: translateX(-50%);
+      white-space: nowrap;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    #navWrap.navCollapsed .nMenuLabel{
+      opacity: 1; pointer-events: auto;
+    }
+
+    /* Hide dropdown + separator instantly when collapsed (no animation needed) */
+    #navWrap.navCollapsed #navDrop{ display: none; }
+    #navWrap.navCollapsed #navSep{  display: none; }
 
     /* Hamburger button — matches .nLoginBtn glass-box style */
     .nHam{
@@ -508,7 +524,7 @@
        ├─ .hEBg     — admin-only "Edit Background" button
        └─ #bgF      — hidden file input for background upload
        ══════════════════════════════════════════════════════════ */
-    #hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;overflow:hidden;}
+    #hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;}
 
     /* Static art background — single cover image, no animation */
     #hBgImg{
@@ -2145,16 +2161,14 @@ body{background:var(--bg);}
        └─ .ppBtn*     — .ppBtnLogout (accent) + .ppBtnCancel (ghost)
    ══════════════════════════════════════════════════════════ */
 .nAvatarBtn{
-  /* Identical glass-box to .nLoginBtn */
   background:color-mix(in srgb,var(--sur) 92%,transparent);
   border:1px solid var(--bdrh);
   width:34px;height:34px;border-radius:50%;
   cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 2px 8px rgba(5,3,8,.10),0 0 0 2px color-mix(in srgb,var(--tc) 18%,transparent);
-  transition:border-color .25s,background .25s,box-shadow .25s,opacity .35s ease .5s;
+  transition:border-color .25s,background .25s,box-shadow .25s,opacity .3s ease,transform .3s ease;
   flex-shrink:0;
-  /* Avatar glow ring — same accent as comment avatars */
   outline:none;
   position:relative;
 }
@@ -2177,9 +2191,9 @@ body{background:var(--bg);}
   user-select:none;
   pointer-events:none;
 }
-/* Collapsed state: avatar follows same hide logic as .nLoginBtn */
+/* Collapsed state: avatar fades + shrinks out smoothly */
 #navWrap.navCollapsed .nAvatarBtn{
-  opacity:0;pointer-events:none;position:absolute;left:-9999px;transition-delay:0s;
+  opacity:0; transform:scale(.8); pointer-events:none;
 }
 
 /* ── Profile popup card ── */
@@ -2314,113 +2328,47 @@ body{background:var(--bg);}
    § CINEMATIC SCROLL TRANSITION SYSTEM
    ─────────────────────────────────────────────────────────────
    Architecture:
-   · #hBgImg         — GPU-composited parallax layer (transform only)
-   · #hero           — clip container; overflow:hidden keeps the
-                        scaled image from bleeding out
-   · .cst-riser      — the first content section; rises over the
-                        hero via translateY driven by scroll progress
-   · .cst-shadow     — inset shadow at top of riser for depth
-   · .cst-bg-fade    — opacity fade applied to #hBgImg as cover completes
-
-   Performance contract:
-   · Only transform + opacity on GPU layers → zero layout/paint
-   · Single rAF-gated passive scroll listener (no jank)
-   · IntersectionObserver disables rAF loop when hero is off-screen
-   · prefers-reduced-motion: all motion disabled at CSS level
+   · #hero        — sticky; pins at top:0 while the page scrolls
+                    past it. Content + bg both stay visible as a
+                    fixed scene. z-index 0 so .cst-riser covers it.
+   · #hBgImg      — absolute fill inside the sticky hero; JS drives
+                    a subtle scale pull-back for the cinematic feel.
+   · .cst-riser   — normal-flow section; slides over the pinned hero
+                    as the user scrolls. No JS transform needed —
+                    the sticky hero just stays behind it naturally.
    ══════════════════════════════════════════════════════════════ */
 
-/* ── Hero: clip the parallax image so scale doesn't bleed ── */
+/* ── Hero pins in place; everything inside scrolls with the page
+   stopping at viewport top, then content slides over it ── */
 #hero{
-  overflow: hidden;
-  /* Ensure it stacks below the rising section in z-order */
-  isolation: isolate;
+  position: sticky;
+  top: 0;
+  z-index: 0;   /* sits behind the rising content */
 }
 
-/* ── Background image layer: GPU-composited, no layout impact ── */
+/* ── Background image: subtle JS-driven scale only ── */
 #hBgImg{
-  /* Extend beyond bounds to absorb parallax travel without gap.
-     Using explicit TRBL instead of inset shorthand so we can
-     break the symmetry (extra top/bottom for parallax headroom). */
-  position: absolute;
-  top: -8%;
-  bottom: -8%;
-  left: 0;
-  right: 0;
-  /* Transform origin center — scale grows outward symmetrically */
   transform-origin: center center;
-  /* Promote to own compositor layer */
-  will-change: transform, opacity;
-  /* JS drives all values — no CSS transition so easing is fully JS-owned */
+  will-change: transform;
   transition: none;
 }
 
-/* ── Rising content section ── */
+/* ── Rising content section — slides naturally over the sticky hero ── */
 .cst-riser{
   position: relative;
-  /* Sits above the hero in paint order */
-  z-index: 2;
-  /* GPU layer for transform */
-  will-change: transform;
-  /* Tight top-radius creates the "card emerging" feel */
-  border-radius: 18px 18px 0 0;
-  /* Clip so rounded corners work cleanly */
-  overflow: hidden;
-  /* Must have a background — without this it's transparent over the hero */
+  z-index: 1;           /* above the sticky hero */
   background: var(--bg);
+  border-radius: 18px 18px 0 0;
+  /* Soft shadow so the card looks lifted over the hero */
+  box-shadow: 0 -8px 32px rgba(0,0,0,.18);
 }
 
-/* ── Inset depth shadow at the top of the rising section ──
-   Mimics the shadow cast by a card sliding over a surface.
-   Composited purely as a box-shadow → no repaint cost. ── */
-.cst-riser::before{
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 60px;
-  /* Inset shadow: darkens the top edge as it rises over the image */
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,.18) 0%,
-    rgba(0,0,0,.06) 45%,
-    transparent 100%
-  );
-  z-index: 3;
-  pointer-events: none;
-  /* Fade the shadow in as the riser clears the hero */
-  opacity: 0;
-  transition: opacity .1s linear;
-}
-.cst-riser.cst-active::before{
-  opacity: 1;
-}
-
-/* ── Remove border-radius on mobile (full-bleed feel) ── */
 @media(max-width: 640px){
-  .cst-riser{
-    border-radius: 12px 12px 0 0;
-  }
+  .cst-riser{ border-radius: 12px 12px 0 0; }
 }
 
-/* ── Reduced-motion: zero out ALL cinematic motion ──
-   Users who prefer reduced motion get a clean, instant
-   section transition with no parallax or scale. ── */
 @media(prefers-reduced-motion: reduce){
-  #hBgImg{
-    top: 0 !important;
-    bottom: 0 !important;
-    will-change: auto !important;
-    transform: none !important;
-    opacity: 1 !important;
-    transition: none !important;
-  }
-  .cst-riser{
-    will-change: auto !important;
-    transform: none !important;
-    border-radius: 0 !important;
-  }
-  .cst-riser::before{
-    display: none !important;
-  }
+  #hBgImg{ will-change: auto !important; transform: none !important; }
 }
 
 </style>
@@ -4345,16 +4293,36 @@ body{background:var(--bg);}
       });
     }
 
-    /* Trigger collapse/expand after a small, fixed scroll distance —
-       responsive to a single swipe/scroll-tick rather than waiting
-       for the full hero to scroll past. Scroll position is the
-       source of truth, except while pinnedOpen holds it open. */
-    var SCROLL_TRIGGER_PX = 80;
+    /* Collapse when the rising card's top edge reaches the navbar bottom.
+       Expand when the riser pulls back below the navbar. */
+    var riser    = document.querySelector('.cst-riser');
+    var featured = riser ? riser.querySelector('.secT') : null;
+
+    /* Hysteresis: collapse when text reaches nav bottom,
+       but only expand again once text is 80px BELOW nav bottom.
+       The gap prevents the layout-shift feedback loop (slim→fat→slim). */
+    var COLLAPSE_AT = 0;   /* px: text top <= navBottom + this → collapse */
+    var EXPAND_AT   = 80;  /* px: text top >= navBottom + this → expand   */
+
     function onScroll(){
-      var pastTrigger = window.scrollY > SCROLL_TRIGGER_PX;
+      var trigger = featured || riser;
+      var pastTrigger;
+      if(trigger){
+        var navBottom  = wrap.getBoundingClientRect().bottom;
+        var triggerTop = trigger.getBoundingClientRect().top;
+        var gap        = triggerTop - navBottom;
+        if(!collapsed){
+          pastTrigger = gap <= COLLAPSE_AT;
+        } else {
+          pastTrigger = gap <= EXPAND_AT;
+        }
+      } else {
+        pastTrigger = window.scrollY > 80;
+      }
+
       if(pinnedOpen){
-        if(!pastTrigger){ pinnedOpen = false; } /* scrolled back to top: release the pin */
-        else { return; } /* still scrolled down: stay pinned open */
+        if(!pastTrigger){ pinnedOpen = false; }
+        else { return; }
       }
       setCollapsed(pastTrigger);
     }
@@ -5290,162 +5258,82 @@ async function openComments(){
 (function(){
   'use strict';
 
-  /* ── Respect prefers-reduced-motion at JS level too ── */
   var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
   if(mq && mq.matches) return;
 
-  /* ── Element refs ── */
-  var hero   = document.getElementById('hero');
-  var bgImg  = document.getElementById('hBgImg');
-  var riser  = document.querySelector('.cst-riser');
-
+  var hero  = document.getElementById('hero');
+  var bgImg = document.getElementById('hBgImg');
+  var riser = document.querySelector('.cst-riser');
   if(!hero || !bgImg || !riser) return;
 
-  /* ── Config ──────────────────────────────────────────────
-     PARALLAX_RATE  : how much slower the bg moves vs scroll
-                      0 = locked, 1 = moves at full scroll speed.
-                      0.35 = bg moves at 35% of scroll speed →
-                      subtle depth without being distracting.
-     SCALE_MAX      : maximum scale applied to bg at rest (1.0)
-                      as scroll goes from 0 → heroH, scale goes
-                      1.05 → 1.0 (zooms in at top, normalises as
-                      you scroll — gives the cinematic "pull back"
-                      feel on load without jarring motion).
-     RISE_LEAD_PX   : how many px before the hero bottom the riser
-                      starts moving. Larger = earlier rise start.
-     OPACITY_START  : fraction of heroH at which bg starts fading.
-     OPACITY_END    : fraction of heroH at which bg is fully gone.
-  ── */
-  var PARALLAX_RATE  = 0.35;
-  var SCALE_MAX      = 1.05;
-  var SCALE_MIN      = 1.0;
-  var RISE_LEAD_PX   = 220;
-  var OPACITY_START  = 0.55;
-  var OPACITY_END    = 0.88;
+  var fadeEls = [
+    { el: hero.querySelector('.hScr span'), lead: 80  }, /* SCROLL text — fades when riser is ~2 lines away */
+    { el: hero.querySelector('.hCta'),      lead: 150 },
+    { el: hero.querySelector('.hDesc'),     lead: 150 },
+    { el: hero.querySelector('.hSub'),      lead: 150 },
+    { el: hero.querySelector('.hT'),        lead: 150 }
+  ].filter(function(e){ return e.el; });
 
-  /* ── State ── */
-  var rafId        = null;
-  var lastScrollY  = -1;
-  var heroH        = 0;
-  var heroActive   = true; /* set false by IntersectionObserver */
+  var SCALE_MAX = 1.06;
+  var SCALE_MIN = 1.0;
+  var rafId = null;
+  var heroH = 0;
 
-  /* ── Clamp helper ── */
-  function clamp(v, lo, hi){ return v < lo ? lo : v > hi ? hi : v; }
+  function clamp(v,lo,hi){ return v<lo?lo:v>hi?hi:v; }
+  function easeOut(t){ return 1-Math.pow(1-t,3); }
+  function measureHero(){ heroH = hero.offsetHeight; }
 
-  /* ── Ease out cubic — smooth deceleration ── */
-  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
-
-  /* ── Measure hero height (cheap, cached) ── */
-  function measureHero(){
-    heroH = hero.offsetHeight;
-  }
-
-  /* ── Core frame update ──────────────────────────────────
-     All writes happen in a single rAF callback.
-     Only transform + opacity are modified → compositor-only.
-  ── */
   function applyFrame(){
     rafId = null;
-    if(!heroActive) return;
 
-    var sy = window.scrollY;
+    /* Subtle bg scale */
+    var progress = clamp(window.scrollY / (heroH || 1), 0, 1);
+    var scale = SCALE_MAX - (SCALE_MAX - SCALE_MIN) * easeOut(progress);
+    bgImg.style.transform = 'scale(' + scale.toFixed(4) + ')';
 
-    /* Parallax: bg translates upward at PARALLAX_RATE * scroll */
-    var parallaxY = sy * PARALLAX_RATE;
+    /* Riser top edge in viewport coords */
+    var riserTop = riser.getBoundingClientRect().top;
 
-    /* Scale: starts at SCALE_MAX when sy=0, falls to SCALE_MIN at heroH */
-    var scaleProgress = clamp(sy / (heroH || 1), 0, 1);
-    var scale = SCALE_MAX - (SCALE_MAX - SCALE_MIN) * easeOutCubic(scaleProgress);
+    for(var i = 0; i < fadeEls.length; i++){
+      var entry    = fadeEls[i];
+      var el       = entry.el;
+      var lead     = entry.lead;
+      var elBottom = el.getBoundingClientRect().bottom;
 
-    /* Opacity: fades the bg as the riser covers it */
-    var opProgress = clamp(
-      (scaleProgress - OPACITY_START) / (OPACITY_END - OPACITY_START),
-      0, 1
-    );
-    var bgOpacity = 1 - easeOutCubic(opProgress);
+      var fadeP = clamp((elBottom + lead - riserTop) / lead, 0, 1);
+      var op    = 1 - easeOut(fadeP);
+      var driftY = (-fadeP * 14).toFixed(2);
 
-    /* Riser translateY: starts rising RISE_LEAD_PX before hero bottom.
-       riserOffset goes from +RISE_LEAD_PX (off by that much at start)
-       to 0 (fully settled) as scroll reaches heroH. */
-    var riserProgress = clamp(
-      (sy - (heroH - RISE_LEAD_PX)) / RISE_LEAD_PX,
-      0, 1
-    );
-    /* Use an ease that accelerates in then decelerates — feels physical */
-    var riserEased = easeOutCubic(riserProgress);
-    /* translateY: starts at RISE_LEAD_PX, eases to 0 */
-    var riserY = RISE_LEAD_PX * (1 - riserEased);
-
-    /* Apply — only transform + opacity, always on compositor layers */
-    bgImg.style.transform  = 'translateY(' + (-parallaxY).toFixed(2) + 'px) scale(' + scale.toFixed(4) + ')';
-    bgImg.style.opacity    = bgOpacity.toFixed(3);
-    riser.style.transform  = 'translateY(' + riserY.toFixed(2) + 'px)';
-
-    /* Toggle depth shadow when riser has risen enough to overlap hero */
-    if(riserProgress > 0.05){
-      riser.classList.add('cst-active');
-    } else {
-      riser.classList.remove('cst-active');
+      el.style.opacity = op.toFixed(3);
+      el.style.transform = 'translateY(' + driftY + 'px)';
     }
   }
 
-  /* ── rAF-gated scroll handler ──────────────────────────── */
   function onScroll(){
-    var sy = window.scrollY;
-    if(sy === lastScrollY) return;
-    lastScrollY = sy;
-    if(rafId === null){
-      rafId = requestAnimationFrame(applyFrame);
-    }
+    if(rafId === null) rafId = requestAnimationFrame(applyFrame);
   }
 
-  /* ── IntersectionObserver: pause rAF when hero entirely off-screen ──
-     This prevents wasted rAF budget when the user is deep in the page. */
-  var io = new IntersectionObserver(function(entries){
-    heroActive = entries[0].isIntersecting;
-    if(heroActive){
-      /* Re-arm: make sure we paint the current state immediately */
-      if(rafId === null) rafId = requestAnimationFrame(applyFrame);
-    }
-  }, {
-    rootMargin: '200px 0px 0px 0px', /* fire a bit early so frame is ready */
-    threshold: 0
-  });
-  io.observe(hero);
-
-  /* ── ResizeObserver: re-measure on resize / orientation change ──
-     Avoids stale heroH causing wrong parallax math after resize. */
-  var ro = (typeof ResizeObserver !== 'undefined')
+  var ro = typeof ResizeObserver !== 'undefined'
     ? new ResizeObserver(function(){ measureHero(); applyFrame(); })
     : null;
   if(ro) ro.observe(hero);
 
-  /* ── Initial measurement + first paint ── */
   measureHero();
+  window.addEventListener('scroll', onScroll, {passive:true});
 
-  /* ── Kick off on first real scroll tick ── */
-  window.addEventListener('scroll', onScroll, {passive: true});
-
-  /* ── Apply once on load (in case page is restored mid-scroll) ── */
   if(document.readyState === 'complete'){
     applyFrame();
   } else {
-    window.addEventListener('load', applyFrame, {once: true});
+    window.addEventListener('load', applyFrame, {once:true});
   }
 
-  /* ── Also re-run after intro screen hides (Digiartz splash) ──
-     The intro is position:fixed so it doesn't affect scrollY, but
-     firing once after it hides ensures the first visible frame is correct. */
   var introEl = document.getElementById('intro');
   if(introEl){
     introEl.addEventListener('transitionend', function(){
-      measureHero();
-      applyFrame();
-    }, {once: true});
+      measureHero(); applyFrame();
+    }, {once:true});
   }
 
-  /* ── Mobile: iOS Safari reports wrong innerHeight before resize event.
-     Re-measure after 150ms on orientation change. ── */
   window.addEventListener('orientationchange', function(){
     setTimeout(function(){ measureHero(); applyFrame(); }, 150);
   });

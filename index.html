@@ -23,8 +23,8 @@
   ║  ── <style> ───────────────────────────── lines 57–1918 ──      ║
   ║                                                                  ║
   ║   5. THEME SYSTEM               ~ln 58  CSS custom properties,   ║
-  ║                                         @property tokens, root   ║
-  ║                                         vars (--tc, --bg, etc.)  ║
+  ║                                         root vars (--tc, --bg,   ║
+  ║                                         --sur, --tx, etc.)       ║
   ║                                                                  ║
   ║   6. INTRO / LOADING SCREEN     ~ln 80  #intro splash, particle  ║
   ║                                         dots, logo animation      ║
@@ -35,7 +35,6 @@
   ║                                                                  ║
   ║   8. HERO                       ~ln 230 #hero, background layers,║
   ║                                         cinematic scroll system,  ║
-  ║                                         site bg (#siteBg),        ║
   ║                                         scroll indicator          ║
   ║                                                                  ║
   ║   9. GALLERY (grid + items)     ~ln 310 #fullGallery, .gItem,    ║
@@ -71,7 +70,7 @@
   ║                                                                  ║
   ║  19. ADMIN BAR                  ~ln 1093 .admBar sticky bottom   ║
   ║                                                                  ║
-  ║  20. AD CONTAINERS              ~ln 1327 .adUnit inline units    ║
+  ║  20. AD SHIMMER KEYFRAME        ~ln 1327 shared by .apCard        ║
   ║                                                                  ║
   ║  21. ADS PANEL                  ~ln 1420 #adsPanel full-page     ║
   ║                                         overlay, horizontal       ║
@@ -92,7 +91,7 @@
   ║                                                                  ║
   ║  26. PROFILE POPUP HTML         ~ln 2006 #profilePopup card      ║
   ║                                                                  ║
-  ║  27. HERO HTML                  ~ln 2023 #hero, #siteBg, #bgF,  ║
+  ║  27. HERO HTML                  ~ln 2023 #hero, #bgF,            ║
   ║                                         CTA button               ║
   ║                                                                  ║
   ║  28. FEATURED SHOWCASE HTML     ~ln 2062 #featured, .fsCard,     ║
@@ -173,7 +172,7 @@
   ║                                         cpLoadComments,          ║
   ║                                         cpSaveComment            ║
   ║                                                                  ║
-  ║  49. THEME SYSTEM JS            ~ln 3879 applyTheme, spawnPts    ║
+  ║  49. INTRO UTILITIES JS         ~ln 3879 spawnPts (intro dots)    ║
   ║                                                                  ║
   ║  50. INITIALIZATION             ~ln 3996 async init() — loadDB,  ║
   ║                                         applyBg, artwork URL     ║
@@ -216,6 +215,16 @@
   <!-- ═══════════════════════════════════════════════
        END GOOGLE ADSENSE
        ═══════════════════════════════════════════════ -->
+  <!-- Google Analytics (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-21DL9JWJ58"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-21DL9JWJ58');
+  </script>
+  <!-- End Google Analytics (GA4) -->
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
    KOE — Art Has No Limits
@@ -259,48 +268,26 @@
   <style>
 
     /* ══════════════════════════════════════════════════════════
-       ROOT VARIABLES
-       ├─ @property — registers animatable CSS custom properties
-       │   so the browser understands their type and can
-       │   interpolate them during theme transitions.
+       ROOT VARIABLES — White / Light Professional Theme
        └─ :root — defines every design token used site-wide:
-           ├─ Theme base  (--tc, --theme-bg, --theme-sur …)
-           ├─ Transitions (smooth 0.5s on all theme vars)
-           ├─ Mapped tokens (--bg, --sur, --bdr, --pg …)
+           ├─ Colour tokens (--tc, --bg, --sur, --bdr, --pg …)
            └─ Fonts (--fd Cinzel · --fb system · --fm Space Mono)
        ══════════════════════════════════════════════════════════ */
 
-    /* ── Animatable property registrations ── */
-    @property --tc       { syntax:'<color>'; inherits:true; initial-value:#a855f7; }
-    @property --theme-bg { syntax:'<color>'; inherits:true; initial-value:#050308; }
-    @property --theme-sur{ syntax:'<color>'; inherits:true; initial-value:#0d0a14; }
-    @property --theme-su2{ syntax:'<color>'; inherits:true; initial-value:#120e1c; }
-    @property --theme-tx { syntax:'<color>'; inherits:true; initial-value:#f0e8ff; }
-    @property --theme-txd{ syntax:'<color>'; inherits:true; initial-value:rgba(196,181,253,.6); }
-
-    /* ── Design tokens ── */
+    /* ── Design tokens — White / Light Professional Theme ── */
     :root{
-      /* theme base */
-      --tc:#a855f7;
-      --theme-bg:#050308;
-      --theme-sur:#0d0a14;
-      --theme-su2:#120e1c;
-      --theme-tx:#f0e8ff;
-      --theme-txd:rgba(196,181,253,.6);
-      /* smooth 0.5s transitions on all theme vars */
-      transition:--tc .5s ease,--theme-bg .5s ease,--theme-sur .5s ease,--theme-su2 .5s ease,--theme-tx .5s ease,--theme-txd .5s ease;
-      /* mapped design tokens */
-      --bg:var(--theme-bg);
-      --sur:var(--theme-sur);
-      --sur2:var(--theme-su2);
-      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
-      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
-      --pg:var(--tc);
-      --pb:var(--tc);
-      --ps:color-mix(in srgb,var(--tc) 65%,white);
-      --pdim:color-mix(in srgb,var(--tc) 12%,transparent);
-      --tx:var(--theme-tx);
-      --txd:var(--theme-txd);
+      --tc:#8a8f98;
+      --bg:#ffffff;
+      --sur:#ffffff;
+      --sur2:#f6f7f9;
+      --bdr:#e3e5ea;
+      --bdrh:#cdd1d9;
+      --tx:#1a1c22;
+      --txd:rgba(26,28,34,.62);
+      --pg:#666b73;
+      --pb:#4a4f57;
+      --ps:#33373d;
+      --pdim:color-mix(in srgb,var(--tc) 8%,transparent);
       --fd:'Cinzel',serif;--fb:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;--fm:'Space Mono',monospace;
     }
 
@@ -338,7 +325,6 @@
        § 7  NAVIGATION
        ├─ #navWrap    — outer fixed positioner + width controller
        ├─ #navBar     — pill bar (glass surface, border, backdrop-blur)
-       ├─ .nLogo      — logo (hidden; reserved slot)
        ├─ .nRight     — right-side icon group (login + hamburger)
        ├─ .nLoginBtn  — circular glass login icon button
        ├─ .nMenuLabel — centred "Menu" label (always visible)
@@ -411,7 +397,6 @@
       padding:.72rem 1.4rem;
       border-radius:31px !important; /* keep full pill even if open class were somehow set */
     }
-    #navWrap.navCollapsed .nLogo{opacity:0;pointer-events:none;position:absolute;left:-9999px;}
     #navWrap.navCollapsed .nLoginBtn{opacity:0;pointer-events:none;position:absolute;left:-9999px;transition-delay:0s;}
     #navWrap.navCollapsed .nRight{opacity:0;pointer-events:none;position:absolute;right:-9999px;transition-delay:0s;}
     #navWrap.navCollapsed .nMenuLabel{opacity:1;pointer-events:auto;}
@@ -640,7 +625,6 @@ body.admin .hEBg{display:flex;}
        ├─ .cBadge      — individual category chip
        └─ .cBadgeMore  — "+N more" overflow chip
        ══════════════════════════════════════════════════════════ */
-    /* FIXED: BUG-002 — dead scroll sentinel CSS rule removed */
     .gItem{break-inside:avoid;margin-bottom:.8rem;position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;}
     /* gItemLink: the real, crawlable <a href="/artwork/{id}"> wrapping
        the image + name. Reset to look and behave identically to the
@@ -653,7 +637,6 @@ body.admin .hEBg{display:flex;}
     .gItem img[data-src]{background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);background-size:200% 100%;animation:imgShimmer 1.4s infinite;}
     @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
     /* LAZY LOADING END */
-    /* FIXED: BUG-002 — dead INFINITE SCROLL sentinel CSS block removed */
     .gItem:hover img{transform:scale(1.04);}
     .gNm{padding:.5rem .6rem;font-family:var(--fm);font-size:.72rem;letter-spacing:.08em;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:1px solid var(--bdr);}
     .gOv{position:absolute;top:0;left:0;right:0;bottom:40px;background:rgba(5,3,8,.7);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;}
@@ -1634,6 +1617,7 @@ body.admin .hEBg{display:flex;}
       letter-spacing:.18em;
       cursor:pointer;
       transition:border-color .3s,background .3s;
+      border-radius:6px;
       box-shadow:
         0 2px 4px  rgba(0,0,0,.14),
         0 6px 14px rgba(0,0,0,.11),
@@ -1751,97 +1735,13 @@ height:80px;
 
 
 /* ═══════════════════════════════════════════════
-   AD CONTAINERS — theme-aware, mobile-first
+   AD SHIMMER KEYFRAME
+   Shared by .apCard (Sponsor Panel)
    ═══════════════════════════════════════════════ */
-
-/* Wrapper: full-width section break */
-.adUnit {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .55rem;
-  padding: 2rem 1.25rem;
-  /* No background on the section itself — keep page breathable */
-}
-
-/* The visible card holding the ad */
-.adCard {
-  width: 100%;
-  max-width: 728px;           /* leaderboard max on desktop */
-  background: color-mix(in srgb, var(--tc) 5%, var(--sur));
-  border: 1px solid var(--bdr);
-  border-radius: 6px;
-  box-shadow:
-    0 2px 16px rgba(5,3,8,.55),
-    inset 0 1px 0 color-mix(in srgb, var(--tc) 10%, transparent);
-  overflow: hidden;
-  /* Prevent empty AdSense slot from collapsing to 0px and breaking layout */
-  min-height: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  transition: border-color .3s;
-}
-.adCard:hover { border-color: var(--bdrh); }
-
-/* Inner ad element fills the card */
-.adCard ins.adsbygoogle {
-  display: block;
-  width: 100%;
-  /* height is managed by AdSense itself */
-}
-
-/* Subtle label above each ad */
-.adLabel {
-  font-family: var(--fm);
-  font-size: .62rem;
-  letter-spacing: .28em;
-  color: var(--txd);
-  opacity: .5;
-  text-transform: uppercase;
-  user-select: none;
-  pointer-events: none;
-}
-
-/* ── Mobile (< 640 px) ──────────────────────── */
-@media (max-width: 640px) {
-  .adUnit   { padding: 1.25rem .75rem; gap: .4rem; }
-  .adCard   { max-width: 100%; min-height: 60px; border-radius: 6px; }
-}
-
-/* ── Wide desktop (≥ 1024 px) ───────────────── */
-@media (min-width: 1024px) {
-  .adUnit { padding: 2.5rem 2rem; }
-  .adCard { max-width: 970px; }   /* expands to billboard when slot allows */
-}
-
-/* ── Pre-load shimmer so the slot doesn't look broken ── */
-.adCard::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--tc) 6%, transparent) 50%,
-    transparent 100%
-  );
-  background-size: 200% 100%;
-  animation: adShimmer 2s ease-in-out infinite;
-  pointer-events: none;
-  border-radius: inherit;
-  /* Disappears once the ad iframe loads and paints over it */
-}
 @keyframes adShimmer {
   0%   { background-position:  200% 0; }
   100% { background-position: -200% 0; }
 }
-
-/* ═══════════════════════════════════════════════
-   END AD CONTAINERS
-   ═══════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════
    ADS PANEL — full-page overlay, horizontal scroll
@@ -1996,8 +1896,6 @@ height:80px;
   pointer-events: none;
   border-radius: inherit;
 }
-/* FIXED: DUP-001 — duplicate @keyframes adShimmer removed here; first declaration at .adCard section is kept */
-
 /* Scroll hint dots */
 .apDots {
   display: flex;
@@ -2097,25 +1995,11 @@ height:80px;
 }
 
 /* ══════════════════════════════════════════════════════════
-   WHITE / LIGHT PROFESSIONAL THEME OVERRIDE
-   Restyles every section EXCEPT the hero background, which is
-   intentionally re-pinned below to its original dark values so
-   it renders pixel-identical to before this override.
+   WHITE / LIGHT PROFESSIONAL THEME
+   All token values are now set directly in :root above.
+   The rules below handle element-specific overrides that
+   cannot be expressed via tokens alone.
    ══════════════════════════════════════════════════════════ */
-:root{
-  --tc:#8a8f98;
-  --bg:#ffffff;
-  --sur:#ffffff;
-  --sur2:#f6f7f9;
-  --bdr:#e3e5ea;
-  --bdrh:#cdd1d9;
-  --tx:#1a1c22;
-  --txd:rgba(26,28,34,.62);
-  --pg:#666b73;
-  --pb:#4a4f57;
-  --ps:#33373d;
-  --pdim:color-mix(in srgb,var(--tc) 8%,transparent);
-}
 body{background:var(--bg);}
 
 /* Soften/neutralize neon glow + heavy dark shadows outside the hero */
@@ -2156,7 +2040,7 @@ body{background:var(--bg);}
 #navBar,#navDrop{background:#ffffff!important;}
 .nLoginBtn,.nHam{background:#ffffff!important;}
 .nAvatarBtn{background:#ffffff!important;}
-.nLogo,.nHam,.nLoginBtn,.nAvatarBtn{text-shadow:0 1px 6px rgba(255,255,255,.9),0 1px 2px rgba(255,255,255,.85);}
+.nHam,.nLoginBtn,.nAvatarBtn{text-shadow:0 1px 6px rgba(255,255,255,.9),0 1px 2px rgba(255,255,255,.85);}
 
 
 /* ── Re-pin the HERO and elements layered over it to their
@@ -2371,9 +2255,9 @@ body{background:var(--bg);}
    <div class="iPts" id="iPts">
    </div>
    <!-- ── Logo ── -->
-   <h1 class="iLogo">
+   <div class="iLogo">
     Digiartz
-   </h1>
+   </div>
    <!-- ── Tagline ── -->
    <p class="iTag">
     ART HAS NO LIMITS
@@ -2569,9 +2453,9 @@ body{background:var(--bg);}
   <!-- ── Image URL Data (edit src URLs here to change featured images) ── -->
   <!-- FEATURED SECTION IMAGES — edit the data-fssrc URLs below to change which artworks appear -->
   <div id="fsImageData" style="display:none;"
-    data-fssrc-1="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780766256380_Reinhard_van_Astrea.png"
-    data-fssrc-2="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780836584964_Crimson_Horizon.png"
-    data-fssrc-3="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780944274654_Lelouch_vi_Britannia.png"
+    data-fssrc-1="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781717079470_Prushka.png"
+    data-fssrc-2="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781630475302_Meili_Portroute.png"
+    data-fssrc-3="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780918474836_Thorfinn_Karlsefni.png"
   ></div>
   <!-- Featured Showcase images use the unified artwork modal (#artModal / openLB) -->
   <!-- FEATURED SHOWCASE HTML END -->
@@ -2592,7 +2476,6 @@ body{background:var(--bg);}
        ========================================================= -->
   <!-- ── Hidden Data Grid (source for Full Gallery overlay) ── -->
   <div id="homeGrid" style="display:none;"></div>
-  <!-- FIXED: BUG-002 — dead scroll sentinel element removed -->
   <section id="gallery" style="padding:4rem 0 3rem;">
     <!-- ── Section Header ── -->
     <div class="fsHdr" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
@@ -2793,7 +2676,7 @@ body{background:var(--bg);}
        ========================================================= -->
   <div id="fg" role="dialog" aria-modal="true" aria-label="Full Gallery"> <!-- FIXED: A11Y-002 -->
    <div class="fgHdr">
-    <button class="fgX" onclick="closeFG()">
+    <button class="fgX" onclick="closeFG()" aria-label="Close gallery">
      ✕
     </button>
     <input class="fgQ" id="fgQ" oninput="renderFG()" placeholder="SEARCH ARTWORK..." type="text"/>
@@ -2949,37 +2832,34 @@ body{background:var(--bg);}
           <!-- ── Ad Card 1 ── -->
           <div class="apCard">
             <div class="apCardLbl">AD · 01</div>
-            <!-- ⚠ Replace data-ad-slot="" with your real AdSense numeric slot ID from your AdSense dashboard -->
             <ins class="adsbygoogle"
                  style="display:block"
                  data-ad-client="ca-pub-1351696642556147"
-                 data-ad-slot=""
+                 data-ad-slot="7070525551"
                  data-ad-format="auto"
-                 data-full-width-responsive="false"></ins>
+                 data-full-width-responsive="true"></ins>
           </div>
 
           <!-- ── Ad Card 2 ── -->
           <div class="apCard">
             <div class="apCardLbl">AD · 02</div>
-            <!-- ⚠ Replace data-ad-slot="" with your real AdSense numeric slot ID from your AdSense dashboard -->
             <ins class="adsbygoogle"
                  style="display:block"
                  data-ad-client="ca-pub-1351696642556147"
-                 data-ad-slot=""
+                 data-ad-slot="7070525551"
                  data-ad-format="auto"
-                 data-full-width-responsive="false"></ins>
+                 data-full-width-responsive="true"></ins>
           </div>
 
           <!-- ── Ad Card 3 ── -->
           <div class="apCard">
             <div class="apCardLbl">AD · 03</div>
-            <!-- ⚠ Replace data-ad-slot="" with your real AdSense numeric slot ID from your AdSense dashboard -->
             <ins class="adsbygoogle"
                  style="display:block"
                  data-ad-client="ca-pub-1351696642556147"
-                 data-ad-slot=""
+                 data-ad-slot="7070525551"
                  data-ad-format="auto"
-                 data-full-width-responsive="false"></ins>
+                 data-full-width-responsive="true"></ins>
           </div>
 
         </div><!-- /apTrack -->
@@ -3040,9 +2920,6 @@ body{background:var(--bg);}
     </div>
    </div>
   </div>
-  <!-- FIXED: SEC-001 — password modal removed; admin access is now
-       granted via Supabase role (profiles.role = 'dev'), not a password. -->
-
   <!-- =========================================================
        AUTHENTICATION MODAL
        ├─ Modal Overlay (.mOvr #authMod)
@@ -3229,10 +3106,9 @@ body{background:var(--bg);}
   let isAdm = false, upFile = null, images = [], cfg = {hero_bg:''};
   let filterCat = 'all', filterSrt = 'new', filterGrid = 4;
 
-  /* FIXED: BUG-003 — SDEFS array removed (only used by dead social rendering functions) */
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function restoreScroll(){
-    var locks=['fg','artModal','commentsPage','adsPanel'];
+    var locks=['fg','artModal','commentsPage','adsPanel','legalBackdrop'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -3271,8 +3147,6 @@ body{background:var(--bg);}
     ]);
     showToast('Saved to cloud ✦');
   }
-
-  /* FIXED: BUG-003 — "saveSoc and readSocForm removed" comment deleted (refers to removed feature) */
 
   /* THUMBNAIL SYSTEM START */
   /* getThumbnailUrl: generates a Supabase transform URL for gallery thumbnails.
@@ -3330,18 +3204,21 @@ body{background:var(--bg);}
     /* LAZY LOADING END */
   }
 
-  /* FIXED: BUG-002 — dead infinite scroll JS block removed (variables + appendHomeItems + initHomeScrollObserver) */
-
-  function renderHome(){
-    /* ── FIXED: always sort newest-first before rendering so carousels
-       and the hidden homeGrid both reflect correct priority order,
-       even if Supabase returns rows in a different sequence. ── */
-    images.sort(function(a,b){
+  /* ── Shared sort utility — newest first, id as tie-breaker ── */
+  function sortByNewest(arr){
+    return arr.sort(function(a,b){
       var tA=a.created_at?new Date(a.created_at).getTime():0;
       var tB=b.created_at?new Date(b.created_at).getTime():0;
       if(tB!==tA)return tB-tA;
       return (parseInt(b.id,10)||0)-(parseInt(a.id,10)||0);
     });
+  }
+
+  function renderHome(){
+    /* ── FIXED: always sort newest-first before rendering so carousels
+       and the hidden homeGrid both reflect correct priority order,
+       even if Supabase returns rows in a different sequence. ── */
+    sortByNewest(images);
     /* Rebuild all gallery carousels from current images array */
     if(window.rebuildGalCarousels) window.rebuildGalCarousels(images);
     const g=document.getElementById('homeGrid');
@@ -3673,13 +3550,7 @@ body{background:var(--bg);}
      END DEDICATED ARTWORK URLS + SEO
      ═══════════════════════════════════════════════════════════ */
 
-  /* FIXED: BUG-003 — dead social/about render functions removed (referenced undefined cfg properties) */
-  /* FIXED: DUP-002 — handleAdm() removed (dead; never called — smHandleAdm() at ~line 2570 handles admin toggle) */
   function syncAdmBtn(){var b=document.getElementById('smAdmBtn');if(b){b.classList.toggle('devOnly',isDev);b.classList.toggle('on',isAdm);b.innerHTML='<span class="ddIco">'+(isAdm?'★':'⚙')+'</span>'+(isAdm?'ADMIN MODE ON':'ADMIN PANEL');}}
-  /* FIXED: SEC-001 — openPW/closePW/checkPW removed along with the password
-     modal flow. Admin is now granted purely by checkUserRole() based on the
-     signed-in user's `profiles.role`. See smHandleAdm() below. */
-  /* FIXED: LOGIC-001 — populateAdm() removed (body was empty; only contained a comment) */
 
   /* ══════════════════════════════════════════════════════════
      SUPABASE USER AUTH — Login / Logout
@@ -3689,7 +3560,7 @@ body{background:var(--bg);}
      ══════════════════════════════════════════════════════════ */
 
   /* ── State ── */
-  var authUser = null; /* null = logged out, object = logged in */
+  var currentUser = null; /* null = logged out, object = logged in */
   var authMode = 'login'; /* 'login' | 'signup' */
 
   /* ══════════════════════════════════════════════════════════
@@ -3698,7 +3569,7 @@ body{background:var(--bg);}
        1. Navbar avatar button  (#navAvatarBtn / #navAvatarLetter)
        2. Profile popup         (#ppAvatar / #ppUsername)
        3. Comment bar avatar    (#cpBarAvatar) — already existed
-     All three read from the same authUser source via these helpers.
+     All three read from the same currentUser source via these helpers.
      ══════════════════════════════════════════════════════════ */
 
   /* ── Sync the navbar: swap face icon ↔ avatar button ── */
@@ -3707,7 +3578,7 @@ body{background:var(--bg);}
     var avatarBtn = document.getElementById('navAvatarBtn');
     var letterEl  = document.getElementById('navAvatarLetter');
 
-    if (authUser) {
+    if (currentUser) {
       /* Logged in: hide face icon, show avatar */
       var letter = cpGetAvatarLetter(); /* reuse existing helper */
       if (letterEl) letterEl.textContent = letter;
@@ -3733,7 +3604,7 @@ body{background:var(--bg);}
   function syncProfilePopupContent() {
     var ppAv   = document.getElementById('ppAvatar');
     var ppName = document.getElementById('ppUsername');
-    if (!authUser) return;
+    if (!currentUser) return;
     var letter = cpGetAvatarLetter();
     var name   = cpGetDisplayName();
     if (ppAv)   ppAv.textContent   = letter;
@@ -3748,7 +3619,7 @@ body{background:var(--bg);}
 
 
   function openProfilePopup() {
-    if (!authUser) return;
+    if (!currentUser) return;
     syncProfilePopupContent();
     var popup     = document.getElementById('profilePopup');
     var avatarBtn = document.getElementById('navAvatarBtn');
@@ -3994,9 +3865,9 @@ body{background:var(--bg);}
      Enforced server-side via RLS regardless of either flag. */
   let isDev = false;
   async function checkUserRole(){
-    if(!sb || !authUser){ isDev=false; isAdm=false; document.body.classList.remove('admin'); syncAdmBtn(); return; }
+    if(!sb || !currentUser){ isDev=false; isAdm=false; document.body.classList.remove('admin'); syncAdmBtn(); return; }
     try{
-      const{data,error}=await sb.from('profiles').select('role').eq('id',authUser.id).single();
+      const{data,error}=await sb.from('profiles').select('role').eq('id',currentUser.id).single();
       if(error) throw error;
       isDev = !!data && data.role==='dev';
     }catch(e){ console.error(e); isDev=false; }
@@ -4008,13 +3879,13 @@ body{background:var(--bg);}
   /* ── Listen for auth state changes (login / logout / refresh) ── */
   if (sb) {
     sb.auth.onAuthStateChange(function(event, session) {
-      authUser = session ? session.user : null;
+      currentUser = session ? session.user : null;
       syncAuthBtn();
       if (event === 'SIGNED_IN') {
         closeAuthMod();
         /* Greet by username only — never expose email */
-        var greetName = (authUser && authUser.user_metadata && authUser.user_metadata.username)
-          ? authUser.user_metadata.username
+        var greetName = (currentUser && currentUser.user_metadata && currentUser.user_metadata.username)
+          ? currentUser.user_metadata.username
           : '';
         showToast(greetName ? ('Welcome, ' + greetName + ' ✦') : 'Signed in ✦');
         checkUserRole();
@@ -4029,7 +3900,7 @@ body{background:var(--bg);}
     /* Restore session on page load (keeps user logged in after refresh) */
     sb.auth.getSession().then(function(res) {
       if (res.data && res.data.session) {
-        authUser = res.data.session.user;
+        currentUser = res.data.session.user;
         syncAuthBtn();
         checkUserRole();
       }
@@ -4073,7 +3944,7 @@ body{background:var(--bg);}
   function openUp(){
     if(!sb){showToast('Configure Supabase first');return;}
     if(!isAdm){
-      if(!authUser){ sessionStorage.setItem('pendUp','1'); showToast('Sign in with a dev account to upload'); openAuthMod(); }
+      if(!currentUser){ sessionStorage.setItem('pendUp','1'); showToast('Sign in with a dev account to upload'); openAuthMod(); }
       else if(isDev){ showToast('Turn on Admin Mode first'); }
       else { showToast('This account does not have dev access'); }
       return;
@@ -4283,7 +4154,7 @@ body{background:var(--bg);}
       /* Defensive fallback — button shouldn't be in the DOM at all unless isDev,
          but guard anyway in case of a stale click or race condition. */
       closeMenu();
-      if(!authUser){ showToast('Sign in with a dev account to access admin'); openAuthMod(); }
+      if(!currentUser){ showToast('Sign in with a dev account to access admin'); openAuthMod(); }
       else { showToast('This account does not have dev access'); }
       return;
     }
@@ -4304,8 +4175,8 @@ body{background:var(--bg);}
 
   function cpGetAvatarLetter(){
     /* Use logged-in username initial only — never derive from email or other fields */
-    if(authUser){
-      var name = (authUser.user_metadata && authUser.user_metadata.username) || '';
+    if(currentUser){
+      var name = (currentUser.user_metadata && currentUser.user_metadata.username) || '';
       return name ? name.charAt(0).toUpperCase() : '?';
     }
     return '?';
@@ -4313,8 +4184,8 @@ body{background:var(--bg);}
 
   function cpGetDisplayName(){
     /* Username is the only public display name — never use email or derived values */
-    if(authUser){
-      return (authUser.user_metadata && authUser.user_metadata.username) || 'User';
+    if(currentUser){
+      return (currentUser.user_metadata && currentUser.user_metadata.username) || 'User';
     }
     return 'Guest';
   }
@@ -4410,7 +4281,7 @@ async function openComments(){
     var text=inp?inp.value.trim():'';
     if(!text) return;
 
-    if(!authUser){
+    if(!currentUser){
       showToast('Please login to comment.');
       return;
     }
@@ -4485,7 +4356,7 @@ async function openComments(){
      ────────────────────────────────────────────── */
   async function cpSaveComment(text){
     if(!sb){ showToast('Supabase not configured'); return false; }
-    if(!authUser){ showToast('Please login to comment.'); openAuthMod(); return false; }
+    if(!currentUser){ showToast('Please login to comment.'); openAuthMod(); return false; }
 
     /* Gather optional linked image URL from the thumbnail preview */
     var imageUrl = null;
@@ -4501,9 +4372,9 @@ async function openComments(){
 
     try{
       /* Username is the only public display name — never fall back to email or .name */
-      var commentUsername = (authUser.user_metadata && authUser.user_metadata.username) || 'User';
+      var commentUsername = (currentUser.user_metadata && currentUser.user_metadata.username) || 'User';
       var result = await sb.from('comments').insert({
-        user_id      : authUser.id,
+        user_id      : currentUser.id,
         /* FIXED: SEC-002 — user_email removed; storing email in public comments table is a PII risk */
         username     : commentUsername,
         comment_text : text,
@@ -4529,33 +4400,6 @@ async function openComments(){
      ══════════════════════════════════════════════ */
 
   function spawnPts(){const c=document.getElementById('iPts');for(let i=0;i<28;i++){const s=document.createElement('span');s.style.left=Math.random()*100+'%';s.style.top=(40+Math.random()*40)+'%';s.style.animationDuration=(1.5+Math.random()*1.5)+'s';s.style.animationDelay=(Math.random()*2)+'s';c.appendChild(s);}}
-
-  /* ══════════════════════════════════════════════
-     THEME SYSTEM
-     White-theme conversion: the previous auto-cycling RGB/neon array
-     (purple→pink→red→...) and its nextTheme() stepper were dead code —
-     only the purple entry was ever applied, with no interval or call
-     site for cycling. FIXED: N-01 — removed; fixed on purple only.
-     ══════════════════════════════════════════════ */
-  var THEME_PURPLE = { tc:'#a855f7', bg:'#050308', sur:'#0d0a14', su2:'#120e1c', tx:'#f0e8ff', txd:'rgba(196,181,253,.6)' };
-
-  function applyTheme(t) {
-    var r = document.documentElement;
-    r.style.setProperty('--tc',         t.tc);
-    r.style.setProperty('--theme-bg',   t.bg);
-    r.style.setProperty('--theme-sur',  t.sur);
-    r.style.setProperty('--theme-su2',  t.su2);
-    r.style.setProperty('--theme-tx',   t.tx);
-    r.style.setProperty('--theme-txd',  t.txd);
-    /* update intro particles color live */
-    var pts = document.querySelectorAll('.iPts span');
-    for (var i = 0; i < pts.length; i++) {
-      pts[i].style.background  = t.tc;
-      pts[i].style.boxShadow   = '0 0 6px ' + t.tc;
-    }
-  }
-
-  applyTheme(THEME_PURPLE);
 
   (function(){
     var bar = document.getElementById('iLoadBar');
@@ -4663,12 +4507,6 @@ async function openComments(){
     spawnPts();
     await loadDB();
     applyBg();renderHome();
-    /* FIXED: BUG-003 — renderAbout() and renderSoc() removed; About and Let's Connect are now static/code-only */
-    /* DEDICATED ARTWORK URLS: if the page was loaded directly at
-       /artwork/{id} (a shared link, or a crawler following an <a
-       href> from the grid), open that artwork's modal + SEO meta
-       immediately once the data is in. Falls through silently (stays
-       on the normal homepage) if the id isn't found. */
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
     if(m) openArtworkById(m[1], false);
     /* Site-wide ImageGallery structured data — lists every artwork's
@@ -4777,7 +4615,7 @@ async function openComments(){
           return;
         }
         var img = document.createElement('img');
-        img.src = src;
+        img.src = getThumbnailUrl(src);
         img.alt = 'Featured artwork';
         img.loading = 'lazy';
         img.decoding = 'async';
@@ -4793,12 +4631,7 @@ async function openComments(){
     /* ── Gallery + Characters: live artwork data, rebuilt after DB loads ── */
     window.rebuildGalCarousels = function(artworks){
       /* Gallery: most recent uploads across all categories */
-      var galList = artworks.slice().sort(function(a,b){
-        var tA = new Date(a.created_at || 0).getTime();
-        var tB = new Date(b.created_at || 0).getTime();
-        if(tB !== tA) return tB - tA;
-        return (parseInt(b.id,10)||0) - (parseInt(a.id,10)||0);
-      });
+      var galList = sortByNewest(artworks.slice());
       var galHas = fillTriad(
         document.getElementById('galMain'),
         document.getElementById('galSide1'),
@@ -4813,15 +4646,10 @@ async function openComments(){
       galList.slice(0, 3).forEach(function(a){ if(a.image_url) galUsedUrls[a.image_url] = true; });
 
       /* Characters: most recent uploads tagged "characters", skipping any already shown in Gallery */
-      var charList = artworks.filter(function(a){
+      var charList = sortByNewest(artworks.filter(function(a){
         var cats = (a.category || 'others').split(',').map(function(s){ return s.trim().toLowerCase(); });
         return cats.indexOf('characters') !== -1;
-      }).sort(function(a,b){
-        var tA = new Date(a.created_at || 0).getTime();
-        var tB = new Date(b.created_at || 0).getTime();
-        if(tB !== tA) return tB - tA;
-        return (parseInt(b.id,10)||0) - (parseInt(a.id,10)||0);
-      }).filter(function(a){
+      })).filter(function(a){
         /* Skip images already displayed in the Gallery showcase */
         return !galUsedUrls[a.image_url];
       });
@@ -4939,15 +4767,8 @@ async function openComments(){
  <!-- ════════════════════════════════════════════════════════
       END GLOBAL RIPPLE EFFECT
       ════════════════════════════════════════════════════════ -->
- <!-- FIXED: BUG-001 — duplicate id="cpSelectedImage" removed here --><script>
+ <script>
 /* IMAGE LINKED COMMENTS PATCH — UI helpers only; Supabase handled in main script */
-
-/* commentCurrentImage: called when user clicks "Comment" on a gallery image.
-   Sets the thumbnail context and opens the comments panel. */
-function commentCurrentImage(imageId, imageUrl){
-  currentLightboxImageSrc = imageUrl || '';
-  openComments();
-}
 </script>
 <script>
 /* LIGHTBOX ACTION BUTTONS — inject Download + Comment buttons into the artwork modal */
@@ -5153,26 +4974,6 @@ function commentCurrentImage(imageId, imageUrl){
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape' && backdrop.classList.contains('open')) closeLegal();
   });
-
-/* ==========================================
-   INITIALIZATION
-   ==========================================
-
-   Navigation Initialization
-   Search Initialization
-   Community Initialization
-   Admin Initialization
-
-   Initialization functions are grouped here.
-   ========================================== */
-
-/* ==========================================
-   APPLICATION BOOTSTRAP
-   ==========================================
-
-   Final startup execution entry point.
-   Execution order preserved.
-   ========================================== */
 
 })();
 </script>

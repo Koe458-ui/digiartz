@@ -198,6 +198,13 @@
   ║  55. LEGAL MODAL JS             ~ln 4420 openLegal/closeLegal,   ║
   ║                                         tab switcher, ESC key    ║
   ║                                                                  ║
+  ║  56. WEBSITE TEMPLATES SYSTEM   CSS: §WT in <style>              ║
+  ║      (added build)                   HTML: #webTemplatesPage,    ║
+  ║                                           #wtDetail, #wtMod      ║
+  ║                                      JS:  wtTemplates[], CRUD,   ║
+  ║                                           open/close, render,    ║
+  ║                                           admin sync             ║
+  ║                                                                  ║
   ╚══════════════════════════════════════════════════════════════════╝
 -->
 <!DOCTYPE html>
@@ -3244,6 +3251,624 @@ body{background:var(--bg);}
    END FAQ CSS
    ══════════════════════════════════════════════════════════ */
 
+/* ══════════════════════════════════════════════════════════
+   § WEBSITE TEMPLATES
+   ├─ #webTemplatesPage  — full-screen slide-in overlay
+   ├─ .wtHdr             — sticky header (reuses .subPgHdr)
+   ├─ .wtAdmBtn          — admin upload button in header
+   ├─ .wtBar             — search + filter bar
+   ├─ .wtBdy             — scrollable grid container
+   ├─ .wtCard            — template card
+   ├─ .wtTierBadge       — tier colour badge
+   ├─ #wtDetail          — nested detail sub-page
+   └─ #wtMod             — admin upload/edit modal
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Overlay: mirrors #subPage exactly ── */
+#webTemplatesPage {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg);
+  overflow: hidden;
+  transform: translateX(100%);
+  transition: transform .45s cubic-bezier(.22,1,.36,1);
+  display: flex;
+  flex-direction: column;
+}
+#webTemplatesPage.open { transform: translateX(0); }
+
+/* ── Header: extends .subPgHdr ── */
+.wtHdr {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+/* Admin upload button in header */
+.wtAdmBtn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .38rem .8rem;
+  background: color-mix(in srgb, var(--tc) 10%, transparent);
+  border: 1px solid var(--bdrh);
+  border-radius: 8px;
+  color: var(--ps);
+  font-family: var(--fm);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  cursor: pointer;
+  transition: background .22s, border-color .22s, transform .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.wtAdmBtn:hover {
+  background: color-mix(in srgb, var(--tc) 18%, transparent);
+  border-color: var(--pg);
+  transform: translateY(-1px);
+}
+.wtAdmBtn:active { transform: scale(.97); }
+
+/* ── Search + filter bar ── */
+.wtBar {
+  flex-shrink: 0;
+  padding: .9rem 1.5rem;
+  border-bottom: 1px solid var(--bdr);
+  background: rgba(255,255,255,.97);
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.wtSearchWrap {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  background: var(--sur2);
+  border: 1px solid var(--bdr);
+  border-radius: 8px;
+  padding: .55rem .9rem;
+  transition: border-color .22s;
+}
+.wtSearchWrap:focus-within { border-color: var(--bdrh); }
+.wtSearchIco {
+  width: 15px;
+  height: 15px;
+  color: var(--txd);
+  flex-shrink: 0;
+}
+.wtSearchInp {
+  flex: 1;
+  border: none;
+  background: none;
+  color: var(--tx);
+  font-family: var(--fm);
+  font-size: .72rem;
+  letter-spacing: .14em;
+  outline: none;
+}
+.wtSearchInp::placeholder { color: var(--txd); opacity: .7; }
+
+/* Filter pill row */
+.wtFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+.wtFil {
+  padding: .3rem .75rem;
+  border: 1px solid var(--bdr);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--txd);
+  font-family: var(--fm);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, color .2s;
+  white-space: nowrap;
+}
+.wtFil:hover { border-color: var(--bdrh); color: var(--ps); background: color-mix(in srgb, var(--tc) 5%, transparent); }
+.wtFil--active {
+  background: var(--tx);
+  border-color: var(--tx);
+  color: var(--bg);
+}
+
+/* ── Scrollable grid body ── */
+.wtBdy {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem 1.5rem 4rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Responsive grid ── */
+.wtGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.4rem;
+}
+
+/* ── Empty state ── */
+.wtEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  padding: 5rem 2rem;
+  text-align: center;
+}
+.wtEmptyIco {
+  font-size: 2.5rem;
+  opacity: .25;
+  margin-bottom: .5rem;
+}
+.wtEmptyTxt {
+  font-family: var(--fm);
+  font-size: .78rem;
+  letter-spacing: .28em;
+  color: var(--txd);
+}
+.wtEmptySub {
+  font-family: var(--fb);
+  font-size: .82rem;
+  color: var(--txd);
+  opacity: .65;
+  max-width: 320px;
+}
+
+/* ── Template card ── */
+.wtCard {
+  background: #ffffff;
+  border: 1px solid var(--bdr);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform .28s cubic-bezier(.22,1,.36,1),
+              box-shadow .28s ease,
+              border-color .28s ease;
+  box-shadow: 0 1px 3px rgba(20,20,30,.04), 0 4px 14px rgba(20,20,30,.05);
+  cursor: default;
+  animation: wtCardIn .4s ease both;
+  position: relative;
+}
+.wtCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 28px rgba(20,20,30,.10);
+  border-color: var(--bdrh);
+}
+@keyframes wtCardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* stagger */
+.wtCard:nth-child(1)  { animation-delay: .04s; }
+.wtCard:nth-child(2)  { animation-delay: .08s; }
+.wtCard:nth-child(3)  { animation-delay: .12s; }
+.wtCard:nth-child(4)  { animation-delay: .16s; }
+.wtCard:nth-child(5)  { animation-delay: .20s; }
+.wtCard:nth-child(6)  { animation-delay: .24s; }
+
+/* Tier accent bar at top */
+.wtCard::before {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 100%;
+  flex-shrink: 0;
+}
+.wtCard--free::before    { background: #9ca3af; }
+.wtCard--lite::before    { background: linear-gradient(90deg, #3b82f6, #6366f1); }
+.wtCard--premium::before { background: linear-gradient(90deg, #a855f7, #ec4899); }
+.wtCard--max::before     { background: linear-gradient(90deg, #eab308, #f97316); }
+
+/* Preview image container */
+.wtCardImgWrap {
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: var(--sur2);
+  position: relative;
+}
+.wtCardImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .4s cubic-bezier(.22,1,.36,1);
+}
+.wtCard:hover .wtCardImg { transform: scale(1.03); }
+
+/* Placeholder when no image */
+.wtCardImgPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  opacity: .18;
+}
+
+/* Card body */
+.wtCardBdy {
+  padding: 1.1rem 1.2rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: .6rem;
+}
+
+/* Title row */
+.wtCardTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .6rem;
+}
+.wtCardTitle {
+  font-family: var(--fm);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--tx);
+  line-height: 1.3;
+  flex: 1;
+}
+
+/* Tier badge */
+.wtTierBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: .18em .6em;
+  border-radius: 99px;
+  font-family: var(--fm);
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.wtTierBadge--free {
+  background: rgba(156,163,175,.12);
+  border: 1px solid rgba(156,163,175,.45);
+  color: #6b7280;
+}
+.wtTierBadge--lite {
+  background: rgba(59,130,246,.08);
+  border: 1px solid rgba(59,130,246,.35);
+  color: #2563eb;
+}
+.wtTierBadge--premium {
+  background: rgba(168,85,247,.08);
+  border: 1px solid rgba(168,85,247,.35);
+  color: #7c3aed;
+}
+.wtTierBadge--max {
+  background: rgba(234,179,8,.09);
+  border: 1px solid rgba(234,179,8,.40);
+  color: #b45309;
+}
+
+/* Short description (truncated) */
+.wtCardDesc {
+  font-family: var(--fb);
+  font-size: .84rem;
+  color: var(--txd);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+/* Admin card buttons */
+.wtCardAdm {
+  display: none;
+  gap: .4rem;
+  position: absolute;
+  top: .55rem;
+  right: .55rem;
+}
+body.admin .wtCardAdm { display: flex; }
+.wtCardAdmBtn {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.55);
+  background: rgba(255,255,255,.88);
+  color: var(--ps);
+  font-size: .72rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: background .2s, color .2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.10);
+}
+.wtCardAdmBtn:hover { background: #fff; color: var(--tx); }
+.wtCardAdmBtn--del:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+
+/* Show More button */
+.wtShowMore {
+  align-self: flex-start;
+  padding: .42rem .95rem;
+  background: transparent;
+  border: 1px solid var(--bdrh);
+  border-radius: 8px;
+  color: var(--ps);
+  font-family: var(--fm);
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, transform .15s;
+  margin-top: auto;
+}
+.wtShowMore:hover {
+  background: color-mix(in srgb, var(--tc) 8%, transparent);
+  border-color: var(--pg);
+  transform: translateY(-1px);
+}
+.wtShowMore:active { transform: scale(.97); }
+
+/* ── Template Detail Sub-Page ── */
+#wtDetail {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .4s cubic-bezier(.22,1,.36,1);
+  overflow: hidden;
+}
+#wtDetail.open { transform: translateX(0); }
+
+.wtDetHdr {
+  flex-shrink: 0;
+  justify-content: flex-start;
+}
+.wtDetAdmBtns {
+  display: flex;
+  gap: .4rem;
+  margin-left: auto;
+}
+.wtDetAdmBtn {
+  padding: .35rem .75rem;
+  border-radius: 7px;
+  border: 1px solid var(--bdrh);
+  background: color-mix(in srgb, var(--tc) 8%, transparent);
+  color: var(--ps);
+  font-family: var(--fm);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.wtDetAdmBtn:hover { background: color-mix(in srgb, var(--tc) 16%, transparent); }
+.wtDetAdmBtn--del:hover { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+
+.wtDetBdy {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2.5rem 1.5rem 5rem;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Title + badge row */
+.wtDetTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.8rem;
+  flex-wrap: wrap;
+}
+.wtDetTitle {
+  font-family: var(--fd);
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: -.03em;
+  color: var(--tx);
+  line-height: 1.1;
+  flex: 1;
+}
+
+/* Preview image */
+.wtDetImgWrap {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--bdr);
+  background: var(--sur2);
+  margin-bottom: 2.5rem;
+  box-shadow: 0 4px 24px rgba(20,20,30,.07);
+}
+.wtDetImg {
+  width: 100%;
+  display: block;
+  max-height: 520px;
+  object-fit: cover;
+}
+
+/* Sections */
+.wtDetSection {
+  margin-bottom: 2.4rem;
+}
+.wtDetSectionLabel {
+  font-family: var(--fm);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .3em;
+  color: var(--pg);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+.wtDetSectionLabel::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--bdr), transparent);
+}
+.wtDetDesc,
+.wtDetHowTo {
+  font-family: var(--fb);
+  font-size: .92rem;
+  line-height: 1.72;
+  color: var(--tx);
+  white-space: pre-wrap;
+}
+
+/* Download area */
+.wtDetDl {
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+.wtDlCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.3rem;
+  background: var(--sur2);
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  transition: border-color .22s, box-shadow .22s;
+}
+.wtDlCard:hover {
+  border-color: var(--bdrh);
+  box-shadow: 0 2px 10px rgba(20,20,30,.06);
+}
+.wtDlIco {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--tc) 9%, transparent);
+  border: 1px solid var(--bdr);
+  border-radius: 8px;
+}
+.wtDlInfo {
+  flex: 1;
+  min-width: 0;
+}
+.wtDlName {
+  font-family: var(--fm);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--tx);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wtDlMeta {
+  font-family: var(--fm);
+  font-size: .62rem;
+  letter-spacing: .1em;
+  color: var(--txd);
+  margin-top: .15rem;
+}
+.wtDlBtn {
+  padding: .5rem 1.1rem;
+  background: var(--tx);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg);
+  font-family: var(--fm);
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  flex-shrink: 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+}
+.wtDlBtn:hover { opacity: .85; transform: translateY(-1px); }
+.wtDlBtn:active { transform: scale(.97); }
+.wtDlNone {
+  font-family: var(--fm);
+  font-size: .72rem;
+  letter-spacing: .14em;
+  color: var(--txd);
+  padding: 1.2rem 0;
+  opacity: .65;
+}
+
+/* Load more */
+.wtLoadMoreWrap {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0 .5rem;
+}
+.wtLoadMore {
+  padding: .7rem 2rem;
+  background: transparent;
+  border: 1px solid var(--bdrh);
+  border-radius: 99px;
+  color: var(--ps);
+  font-family: var(--fm);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .22em;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, transform .15s;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.wtLoadMore:hover {
+  background: color-mix(in srgb, var(--tc) 7%, transparent);
+  border-color: var(--pg);
+  transform: translateY(-1px);
+}
+.wtLoadMore span { color: var(--pg); }
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .wtBdy { padding: 1.5rem 1rem 3.5rem; }
+  .wtGrid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+  .wtDetBdy { padding: 2rem 1.2rem 4rem; }
+}
+@media (max-width: 600px) {
+  .wtBar { padding: .75rem 1rem; }
+  .wtBdy { padding: 1.2rem .9rem 3rem; }
+  .wtGrid { grid-template-columns: 1fr; gap: .85rem; }
+  .wtDetBdy { padding: 1.5rem 1rem 3.5rem; }
+  .wtDetTitle { font-size: clamp(1.3rem, 6vw, 1.8rem); }
+  .wtDlBtn { padding: .45rem .85rem; font-size: .6rem; }
+  .wtFilters { gap: .3rem; }
+  .wtFil { font-size: .58rem; padding: .26rem .6rem; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   END WEBSITE TEMPLATES CSS
+   ══════════════════════════════════════════════════════════ */
+
 </style>
  </head>
  <body>
@@ -3675,21 +4300,172 @@ body{background:var(--bg);}
 
   <!-- =========================================================
        WEBSITE TEMPLATES PAGE
-       ├─ Header Bar (.subPgHdr pattern)
-       │   ├─ Back Button
-       │   └─ Title
-       └─ Placeholder Body (.pgPlaceholder)
+       ├─ Header Bar (.wtHdr)
+       │   ├─ Back Button (.subPgX)
+       │   ├─ Title (.subPgTitle)
+       │   └─ Admin Upload Button (#wtAdmBtn)
+       ├─ Search + Filter Bar (.wtBar)
+       ├─ Templates Grid Body (#wtBdy)
+       ├─ Template Detail Sub-Page (#wtDetail)
+       │   ├─ Detail Header
+       │   ├─ Detail Preview Image
+       │   ├─ Detail Description
+       │   ├─ How To Use Section
+       │   └─ Download Section
+       └─ Template Upload/Edit Modal (#wtMod)
        ========================================================= -->
   <div id="webTemplatesPage" role="dialog" aria-modal="true" aria-label="Website Templates">
-    <div class="subPgHdr">
+
+    <!-- ── Header ── -->
+    <div class="wtHdr subPgHdr">
       <button class="subPgX" onclick="closeWebTemplates()" aria-label="Close Website Templates">←</button>
       <div class="subPgTitle">WEBSITE TEMPLATES <span class="s">◧</span></div>
+      <!-- Admin-only upload button — shown via JS when isAdm=true -->
+      <button class="wtAdmBtn" id="wtAdmBtn" onclick="wtOpenMod(null)" aria-label="Upload template" title="Upload Template" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        UPLOAD
+      </button>
     </div>
-    <div class="pgPlaceholder">
-      <h1>Website Templates <span class="s">✦</span></h1>
-      <p>Content coming soon.</p>
+
+    <!-- ── Search + Filter bar ── -->
+    <div class="wtBar">
+      <div class="wtSearchWrap">
+        <svg class="wtSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="wtSearchInp" id="wtSearchInp" type="text" placeholder="SEARCH TEMPLATES..." oninput="wtRender()" autocomplete="off"/>
+      </div>
+      <div class="wtFilters" id="wtFilters">
+        <button class="wtFil wtFil--active" data-fil="all"        onclick="wtSetFil('all',this)">ALL</button>
+        <button class="wtFil" data-fil="new"        onclick="wtSetFil('new',this)">NEW → OLD</button>
+        <button class="wtFil" data-fil="free"       onclick="wtSetFil('free',this)">FREE</button>
+        <button class="wtFil" data-fil="lite"       onclick="wtSetFil('lite',this)">PREMIUM LITE</button>
+        <button class="wtFil" data-fil="premium"    onclick="wtSetFil('premium',this)">PREMIUM</button>
+        <button class="wtFil" data-fil="max"        onclick="wtSetFil('max',this)">MAX</button>
+      </div>
+    </div>
+
+    <!-- ── Grid body ── -->
+    <div class="wtBdy" id="wtBdy">
+      <div class="wtEmpty" id="wtEmpty">
+        <div class="wtEmptyIco">◧</div>
+        <div class="wtEmptyTxt">NO TEMPLATES YET</div>
+        <div class="wtEmptySub">Check back soon — templates are on their way.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         TEMPLATE DETAIL SUB-PAGE
+         Slides in over the templates list when "Show More" is clicked.
+         ══════════════════════════════════════════════════════ -->
+    <div id="wtDetail" aria-label="Template detail" aria-modal="false">
+
+      <!-- Detail header -->
+      <div class="wtDetHdr subPgHdr">
+        <button class="subPgX" onclick="wtCloseDetail()" aria-label="Back to templates">←</button>
+        <div class="subPgTitle" id="wtDetHdrTitle">TEMPLATE</div>
+        <!-- Admin edit/delete buttons -->
+        <div class="wtDetAdmBtns" id="wtDetAdmBtns" style="display:none;">
+          <button class="wtDetAdmBtn" id="wtDetEditBtn" onclick="wtEditFromDetail()" title="Edit">✎ EDIT</button>
+          <button class="wtDetAdmBtn wtDetAdmBtn--del" id="wtDetDelBtn" onclick="wtDelFromDetail()" title="Delete">✕ DELETE</button>
+        </div>
+      </div>
+
+      <!-- Detail scrollable body -->
+      <div class="wtDetBdy">
+
+        <!-- Title + tier badge -->
+        <div class="wtDetTitleRow">
+          <h1 class="wtDetTitle" id="wtDetTitle"></h1>
+          <span class="wtTierBadge" id="wtDetTierBadge"></span>
+        </div>
+
+        <!-- Preview image -->
+        <div class="wtDetImgWrap">
+          <img class="wtDetImg" id="wtDetImg" src="" alt="" loading="lazy" decoding="async"/>
+        </div>
+
+        <!-- Full description -->
+        <div class="wtDetSection">
+          <div class="wtDetSectionLabel">DESCRIPTION</div>
+          <div class="wtDetDesc" id="wtDetDesc"></div>
+        </div>
+
+        <!-- How To Use -->
+        <div class="wtDetSection">
+          <div class="wtDetSectionLabel">HOW TO USE</div>
+          <div class="wtDetHowTo" id="wtDetHowTo"></div>
+        </div>
+
+        <!-- Download -->
+        <div class="wtDetSection">
+          <div class="wtDetSectionLabel">DOWNLOAD</div>
+          <div class="wtDetDl" id="wtDetDl">
+            <!-- Injected by wtOpenDetail() -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════
+         END TEMPLATE DETAIL
+         ═══════════════════════════════════════════════ -->
+
+  </div>
+  <!-- ═══════════════════════════════════════════════
+       END WEBSITE TEMPLATES PAGE
+       ═══════════════════════════════════════════════ -->
+
+  <!-- =========================================================
+       WEBSITE TEMPLATES UPLOAD/EDIT MODAL
+       Admin-only. Appears over #webTemplatesPage.
+       ========================================================= -->
+  <div class="mOvr" id="wtMod" style="z-index:620;">
+    <div class="modal" style="max-height:90vh;overflow-y:auto;">
+      <button class="mX" onclick="wtCloseMod()">✕</button>
+      <h2 id="wtModTitle">UPLOAD TEMPLATE</h2>
+      <p id="wtModSubtitle" style="font-size:.8rem;color:var(--txd);margin-bottom:1.2rem;line-height:1.5;">Add a new website template. Preview image should be a desktop screenshot.</p>
+
+      <input id="wtEditId" type="hidden" value=""/>
+
+      <!-- Preview image upload -->
+      <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.4rem;">PREVIEW IMAGE</div>
+      <div class="dz" id="wtDz" onclick="document.getElementById('wtImgF').click()" style="cursor:pointer;margin-bottom:.8rem;">
+        <input accept="image/*" id="wtImgF" type="file" onchange="wtHandleImg(event)" style="display:none;"/>
+        <div class="dzIco">🖼</div>
+        <div class="dzTxt" id="wtDzTxt">DROP IMAGE OR CLICK TO BROWSE</div>
+      </div>
+      <img alt="preview" id="wtImgPrev" src="" style="display:none;width:100%;max-height:200px;object-fit:cover;border-radius:6px;margin-bottom:.8rem;border:1px solid var(--bdr);"/>
+
+      <!-- Template file upload -->
+      <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.4rem;">DOWNLOADABLE FILE (ZIP, HTML, etc.)</div>
+      <div class="dz" id="wtFileDz" onclick="document.getElementById('wtFileF').click()" style="cursor:pointer;margin-bottom:.8rem;background:var(--sur2);">
+        <input id="wtFileF" type="file" onchange="wtHandleFile(event)" style="display:none;"/>
+        <div class="dzIco">📦</div>
+        <div class="dzTxt" id="wtFileDzTxt">DROP FILE OR CLICK TO BROWSE</div>
+      </div>
+
+      <input class="mIn" id="wtNm" placeholder="TEMPLATE NAME" type="text"/>
+      <textarea class="mIn" id="wtShortDesc" placeholder="SHORT DESCRIPTION (shown on card)" rows="2" style="resize:vertical;min-height:3rem;font-family:var(--fb);line-height:1.5;"></textarea>
+      <textarea class="mIn" id="wtFullDesc" placeholder="FULL DESCRIPTION (shown on detail page)" rows="4" style="resize:vertical;min-height:5rem;font-family:var(--fb);line-height:1.5;"></textarea>
+      <textarea class="mIn" id="wtHowTo" placeholder="HOW TO USE (instructions for this template)" rows="4" style="resize:vertical;min-height:5rem;font-family:var(--fb);line-height:1.5;"></textarea>
+
+      <!-- Tier picker -->
+      <div style="background:var(--sur2);border:1px solid var(--bdr);padding:.6rem .8rem;margin-bottom:.8rem;">
+        <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.5rem;">TIER</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.55rem;" id="wtTierBoxes">
+          <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="radio" name="wtTier" value="free"    checked  style="accent-color:var(--pg);cursor:pointer;"> FREE</label>
+          <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="radio" name="wtTier" value="lite"           style="accent-color:#3b82f6;cursor:pointer;"> PREMIUM LITE</label>
+          <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="radio" name="wtTier" value="premium"        style="accent-color:#a855f7;cursor:pointer;"> PREMIUM</label>
+          <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="radio" name="wtTier" value="max"            style="accent-color:#eab308;cursor:pointer;"> MAX</label>
+        </div>
+      </div>
+
+      <button class="mBtn" id="wtModBtn" onclick="wtDoSave()">ADD TEMPLATE ✦</button>
+      <button class="mBtn sec" onclick="wtCloseMod()">CANCEL</button>
     </div>
   </div>
+  <!-- ═══════════════════════════════════════════════
+       END WEBSITE TEMPLATES UPLOAD/EDIT MODAL
+       ═══════════════════════════════════════════════ -->
 
   <footer class="siteFooter" role="contentinfo">
 
@@ -4731,7 +5507,7 @@ body{background:var(--bg);}
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function restoreScroll(){
-    var locks=['fg','artModal','commentsPage','adsPanel','legalBackdrop','subPage'];
+    var locks=['fg','artModal','commentsPage','adsPanel','legalBackdrop','subPage','webTemplatesPage','comicArtsPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -5213,7 +5989,10 @@ body{background:var(--bg);}
      END DEDICATED ARTWORK URLS + SEO
      ═══════════════════════════════════════════════════════════ */
 
-  function syncAdmBtn(){var b=document.getElementById('smAdmBtn');if(b){b.classList.toggle('devOnly',isDev);b.classList.toggle('on',isAdm);b.innerHTML='<span class="ddIco">'+(isAdm?'★':'⚙')+'</span>'+(isAdm?'ADMIN MODE ON':'ADMIN PANEL');}}
+  function syncAdmBtn(){var b=document.getElementById('smAdmBtn');if(b){b.classList.toggle('devOnly',isDev);b.classList.toggle('on',isAdm);b.innerHTML='<span class="ddIco">'+(isAdm?'★':'⚙')+'</span>'+(isAdm?'ADMIN MODE ON':'ADMIN PANEL');}
+    /* Sync Website Templates admin button whenever admin state changes */
+    if(typeof wtSyncAdmBtn==='function') wtSyncAdmBtn();
+  }
 
   /* ══════════════════════════════════════════════════════════
      SUPABASE USER AUTH — Login / Logout
@@ -5704,7 +6483,15 @@ body{background:var(--bg);}
 
   let tT;
   function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000);}
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeComments();closeProfilePopup();closeSubscription();closeSubModal();closeComicArts();closeWebTemplates();}}); /* FIXED: BUG-005 */
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeComments();closeProfilePopup();closeSubscription();closeSubModal();closeComicArts();
+    /* WT: close detail first, then overlay; also close WT modal */
+    var wtDet=document.getElementById('wtDetail');
+    var wtPage=document.getElementById('webTemplatesPage');
+    var wtM=document.getElementById('wtMod');
+    if(wtM&&wtM.classList.contains('open')){ wtCloseMod(); }
+    else if(wtDet&&wtDet.classList.contains('open')){ wtCloseDetail(); }
+    else if(wtPage&&wtPage.classList.contains('open')){ closeWebTemplates(); }
+  }}); /* FIXED: BUG-005 */
 
   /* ── HAMBURGER MENU (attached dropdown) ── */
   function toggleMenu(){
@@ -6444,6 +7231,27 @@ async function openComments(){
   }
 
   /* ── Website Templates panel ── */
+  /* ══════════════════════════════════════════════════════════
+     WEBSITE TEMPLATES SYSTEM
+     ├─ State  : wtTemplates[], wtFilter, wtVisible, wtCurrentId
+     ├─ Open/close overlay + detail sub-page
+     ├─ Search + filter + pagination rendering
+     ├─ Admin CRUD (upload image, upload file, edit, delete)
+     └─ openWebTemplates() / closeWebTemplates() (public)
+     ══════════════════════════════════════════════════════════ */
+
+  /* ── State ── */
+  var wtTemplates   = [];   /* local cache from Supabase */
+  var wtFilter      = 'all';
+  var wtVisible     = 0;
+  var WT_PAGE_STEP  = 20;
+  var wtCurrentId   = null; /* id of template open in detail */
+  var wtImgFile     = null; /* pending image upload file */
+  var wtFileUpload  = null; /* pending download file */
+
+  function wtPageSize(){ return window.innerWidth >= 1025 ? 24 : 12; }
+
+  /* ── Open / close overlay ── */
   function openWebTemplates() {
     closeMenu();
     var el = document.getElementById('webTemplatesPage');
@@ -6451,13 +7259,415 @@ async function openComments(){
     el.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
+    /* Load from Supabase on first open */
+    wtLoadTemplates();
+    /* Sync admin button visibility */
+    wtSyncAdmBtn();
   }
   function closeWebTemplates() {
     var el = document.getElementById('webTemplatesPage');
     if (!el) return;
+    wtCloseDetail();
     el.classList.remove('open');
     restoreScroll();
   }
+
+  /* ── Sync admin UI ── */
+  function wtSyncAdmBtn(){
+    var btn = document.getElementById('wtAdmBtn');
+    if (!btn) return;
+    btn.style.display = (isAdm) ? 'flex' : 'none';
+    var detBtns = document.getElementById('wtDetAdmBtns');
+    if (detBtns) detBtns.style.display = (isAdm) ? 'flex' : 'none';
+  }
+
+  /* ── Load templates from Supabase ── */
+  async function wtLoadTemplates(){
+    if (!sb) { wtRender(); return; }
+    try {
+      var res = await sb.from('web_templates').select('*').order('created_at', { ascending: false });
+      if (res.error) throw res.error;
+      wtTemplates = res.data || [];
+    } catch(e) {
+      console.error('WT load error:', e);
+      wtTemplates = [];
+    }
+    wtRender();
+  }
+
+  /* ── Set filter ── */
+  function wtSetFil(fil, btn) {
+    wtFilter = fil;
+    document.querySelectorAll('.wtFil').forEach(function(b){ b.classList.remove('wtFil--active'); });
+    if (btn) btn.classList.add('wtFil--active');
+    wtVisible = wtPageSize();
+    wtRenderPage();
+  }
+
+  /* ── Main render entry ── */
+  function wtRender(){
+    wtVisible = wtPageSize();
+    wtRenderPage();
+  }
+
+  /* ── Render the filtered, paginated grid ── */
+  function wtRenderPage(){
+    var bdy  = document.getElementById('wtBdy');
+    var empty = document.getElementById('wtEmpty');
+    if (!bdy) return;
+
+    var q = (document.getElementById('wtSearchInp') || {}).value || '';
+    q = q.toLowerCase().trim();
+
+    var list = wtTemplates.slice();
+
+    /* Filter by tier */
+    if (wtFilter === 'free')    list = list.filter(function(t){ return t.tier === 'free'; });
+    if (wtFilter === 'lite')    list = list.filter(function(t){ return t.tier === 'lite'; });
+    if (wtFilter === 'premium') list = list.filter(function(t){ return t.tier === 'premium'; });
+    if (wtFilter === 'max')     list = list.filter(function(t){ return t.tier === 'max'; });
+    /* Sort filter */
+    if (wtFilter === 'new' || wtFilter === 'all') {
+      list.sort(function(a,b){
+        return new Date(b.created_at||0) - new Date(a.created_at||0);
+      });
+    }
+    /* Search */
+    if (q) {
+      list = list.filter(function(t){
+        return (t.name||'').toLowerCase().includes(q) ||
+               (t.short_desc||'').toLowerCase().includes(q);
+      });
+    }
+
+    if (!list.length) {
+      bdy.innerHTML = '';
+      if (empty) { empty.style.display = 'flex'; bdy.appendChild(empty); }
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    var showCount = Math.min(wtVisible, list.length);
+    var visible   = list.slice(0, showCount);
+    var hasMore   = showCount < list.length;
+
+    var gridHtml = '<div class="wtGrid">' + visible.map(wtCardHTML).join('') + '</div>';
+    var moreHtml = hasMore
+      ? '<div class="wtLoadMoreWrap"><button class="wtLoadMore" onclick="wtLoadMore()"><span>✦</span> LOAD MORE</button></div>'
+      : '';
+
+    bdy.innerHTML = gridHtml + moreHtml;
+  }
+
+  function wtLoadMore(){
+    wtVisible += WT_PAGE_STEP;
+    wtRenderPage();
+  }
+
+  /* ── Tier helpers ── */
+  function wtTierClass(tier){ return 'wtCard--' + (tier || 'free'); }
+  function wtTierLabel(tier){
+    var m = { free:'Free', lite:'Premium Lite', premium:'Premium', max:'Max' };
+    return m[tier] || 'Free';
+  }
+  function wtTierBadgeClass(tier){ return 'wtTierBadge--' + (tier || 'free'); }
+
+  /* ── Card HTML ── */
+  function wtCardHTML(t){
+    var idStr     = esc(String(t.id));
+    var nm        = esc(t.name || 'Untitled');
+    var shortDesc = esc(t.short_desc || '');
+    var tier      = t.tier || 'free';
+    var imgSrc    = t.preview_url ? esc(t.preview_url) : '';
+    var imgBlock  = imgSrc
+      ? '<img class="wtCardImg" src="' + imgSrc + '" alt="' + nm + '" loading="lazy" decoding="async"/>'
+      : '<div class="wtCardImgPlaceholder">◧</div>';
+
+    return '<div class="wtCard ' + wtTierClass(tier) + '" data-wt-id="' + idStr + '">' +
+      '<div class="wtCardImgWrap">' + imgBlock + '</div>' +
+      '<div class="wtCardAdm">' +
+        '<button class="wtCardAdmBtn" onclick="wtOpenMod(\'' + idStr + '\',event)" title="Edit">✎</button>' +
+        '<button class="wtCardAdmBtn wtCardAdmBtn--del" onclick="wtDel(\'' + idStr + '\',event)" title="Delete">✕</button>' +
+      '</div>' +
+      '<div class="wtCardBdy">' +
+        '<div class="wtCardTitleRow">' +
+          '<div class="wtCardTitle">' + nm + '</div>' +
+          '<span class="wtTierBadge ' + wtTierBadgeClass(tier) + '">' + wtTierLabel(tier) + '</span>' +
+        '</div>' +
+        '<div class="wtCardDesc">' + shortDesc + '</div>' +
+        '<button class="wtShowMore" onclick="wtOpenDetail(\'' + idStr + '\')">SHOW MORE →</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* ── Detail page ── */
+  function wtOpenDetail(id){
+    var t = wtTemplates.find(function(x){ return String(x.id) === String(id); });
+    if (!t) return;
+    wtCurrentId = id;
+
+    document.getElementById('wtDetHdrTitle').textContent = 'TEMPLATE';
+    document.getElementById('wtDetTitle').textContent = t.name || 'Untitled';
+
+    /* Tier badge */
+    var badge = document.getElementById('wtDetTierBadge');
+    badge.textContent = wtTierLabel(t.tier);
+    badge.className   = 'wtTierBadge ' + wtTierBadgeClass(t.tier);
+
+    /* Preview image */
+    var img = document.getElementById('wtDetImg');
+    if (t.preview_url) {
+      img.src = t.preview_url; img.alt = t.name || '';
+      img.style.display = 'block';
+    } else {
+      img.src = ''; img.style.display = 'none';
+    }
+
+    /* Description */
+    document.getElementById('wtDetDesc').textContent = t.full_desc || t.short_desc || '';
+    /* How to use */
+    document.getElementById('wtDetHowTo').textContent = t.how_to_use || '';
+
+    /* Download section */
+    var dlHost = document.getElementById('wtDetDl');
+    if (t.file_url) {
+      var fname = t.file_name || t.file_url.split('/').pop() || 'template-file';
+      dlHost.innerHTML =
+        '<div class="wtDlCard">' +
+          '<div class="wtDlIco">📦</div>' +
+          '<div class="wtDlInfo">' +
+            '<div class="wtDlName">' + esc(fname) + '</div>' +
+            '<div class="wtDlMeta">CLICK TO DOWNLOAD</div>' +
+          '</div>' +
+          '<a class="wtDlBtn" href="' + esc(t.file_url) + '" download target="_blank" rel="noopener">DOWNLOAD ↓</a>' +
+        '</div>';
+    } else {
+      dlHost.innerHTML = '<div class="wtDlNone">No downloadable file attached yet.</div>';
+    }
+
+    /* Admin buttons */
+    wtSyncAdmBtn();
+
+    /* Open the sub-page */
+    document.getElementById('wtDetail').classList.add('open');
+    /* Scroll body to top */
+    var detBdy = document.querySelector('.wtDetBdy');
+    if (detBdy) detBdy.scrollTop = 0;
+  }
+
+  function wtCloseDetail(){
+    var det = document.getElementById('wtDetail');
+    if (det) det.classList.remove('open');
+    wtCurrentId = null;
+  }
+
+  /* ── Admin: open upload/edit modal ── */
+  function wtOpenMod(id, e){
+    if (e) e.stopPropagation();
+    if (!isAdm) { showToast('Admin mode required'); return; }
+    wtResetMod();
+    if (id) {
+      var t = wtTemplates.find(function(x){ return String(x.id) === String(id); });
+      if (!t) return;
+      document.getElementById('wtEditId').value  = id;
+      document.getElementById('wtModTitle').textContent  = 'EDIT TEMPLATE';
+      document.getElementById('wtModSubtitle').textContent = 'Update the template details below.';
+      document.getElementById('wtNm').value        = t.name || '';
+      document.getElementById('wtShortDesc').value = t.short_desc || '';
+      document.getElementById('wtFullDesc').value  = t.full_desc || '';
+      document.getElementById('wtHowTo').value     = t.how_to_use || '';
+      var radios = document.querySelectorAll('[name="wtTier"]');
+      radios.forEach(function(r){ r.checked = r.value === (t.tier || 'free'); });
+      document.getElementById('wtModBtn').textContent = 'SAVE CHANGES ✦';
+      if (t.preview_url) {
+        var p = document.getElementById('wtImgPrev');
+        p.src = t.preview_url; p.style.display = 'block';
+      }
+      if (t.file_url) {
+        var fn = t.file_name || t.file_url.split('/').pop() || 'file';
+        document.getElementById('wtFileDzTxt').textContent = '✓ ' + fn;
+      }
+    }
+    document.getElementById('wtMod').classList.add('open');
+  }
+
+  function wtCloseMod(){
+    document.getElementById('wtMod').classList.remove('open');
+  }
+
+  function wtResetMod(){
+    document.getElementById('wtEditId').value  = '';
+    document.getElementById('wtModTitle').textContent  = 'UPLOAD TEMPLATE';
+    document.getElementById('wtModSubtitle').textContent = 'Add a new website template. Preview image should be a desktop screenshot.';
+    document.getElementById('wtNm').value        = '';
+    document.getElementById('wtShortDesc').value = '';
+    document.getElementById('wtFullDesc').value  = '';
+    document.getElementById('wtHowTo').value     = '';
+    document.getElementById('wtModBtn').textContent = 'ADD TEMPLATE ✦';
+    document.querySelectorAll('[name="wtTier"]').forEach(function(r){ r.checked = r.value === 'free'; });
+    var p = document.getElementById('wtImgPrev');
+    p.src = ''; p.style.display = 'none';
+    document.getElementById('wtDzTxt').textContent   = 'DROP IMAGE OR CLICK TO BROWSE';
+    document.getElementById('wtFileDzTxt').textContent = 'DROP FILE OR CLICK TO BROWSE';
+    wtImgFile    = null;
+    wtFileUpload = null;
+  }
+
+  function wtHandleImg(e){
+    var f = e.target.files[0]; if (!f) return;
+    wtImgFile = f;
+    var r = new FileReader();
+    r.onload = function(ev){
+      var p = document.getElementById('wtImgPrev');
+      p.src = ev.target.result; p.style.display = 'block';
+      document.getElementById('wtDzTxt').textContent = '✓ ' + f.name;
+    };
+    r.readAsDataURL(f);
+  }
+
+  function wtHandleFile(e){
+    var f = e.target.files[0]; if (!f) return;
+    wtFileUpload = f;
+    document.getElementById('wtFileDzTxt').textContent = '✓ ' + f.name;
+  }
+
+  /* ── Save template (create or update) ── */
+  async function wtDoSave(){
+    if (!isAdm) { showToast('Admin mode required'); return; }
+    var id       = document.getElementById('wtEditId').value;
+    var nm       = document.getElementById('wtNm').value.trim();
+    var shortD   = document.getElementById('wtShortDesc').value.trim();
+    var fullD    = document.getElementById('wtFullDesc').value.trim();
+    var howTo    = document.getElementById('wtHowTo').value.trim();
+    var tier     = (document.querySelector('[name="wtTier"]:checked') || {}).value || 'free';
+
+    if (!nm) { showToast('Enter a template name'); return; }
+    if (!id && !wtImgFile) { showToast('Select a preview image'); return; }
+
+    var btn = document.getElementById('wtModBtn');
+    btn.disabled = true;
+
+    try {
+      var prevUrl  = null;
+      var fileUrl  = null;
+      var fileName = null;
+
+      /* Upload preview image */
+      if (wtImgFile) {
+        btn.textContent = 'UPLOADING IMAGE…';
+        var ext  = wtImgFile.name.split('.').pop();
+        var path = 'web-templates/previews/' + Date.now() + '_' + nm.replace(/\s+/g,'_') + '.' + ext;
+        var upRes = await sb.storage.from(BUCKET).upload(path, wtImgFile, { cacheControl:'3600', upsert:true });
+        if (upRes.error) throw upRes.error;
+        prevUrl = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      }
+
+      /* Upload downloadable file */
+      if (wtFileUpload) {
+        btn.textContent = 'UPLOADING FILE…';
+        var fPath = 'web-templates/files/' + Date.now() + '_' + wtFileUpload.name.replace(/\s+/g,'_');
+        var fRes  = await sb.storage.from(BUCKET).upload(fPath, wtFileUpload, { cacheControl:'3600', upsert:true });
+        if (fRes.error) throw fRes.error;
+        fileUrl  = sb.storage.from(BUCKET).getPublicUrl(fPath).data.publicUrl;
+        fileName = wtFileUpload.name;
+      }
+
+      btn.textContent = id ? 'SAVING…' : 'CREATING…';
+
+      if (id) {
+        /* UPDATE */
+        var patch = { name:nm, short_desc:shortD||null, full_desc:fullD||null, how_to_use:howTo||null, tier:tier };
+        if (prevUrl)  patch.preview_url = prevUrl;
+        if (fileUrl)  { patch.file_url = fileUrl; patch.file_name = fileName; }
+        var res = await sb.from('web_templates').update(patch).eq('id', id).select();
+        if (res.error) throw res.error;
+        var idx = wtTemplates.findIndex(function(x){ return String(x.id)===String(id); });
+        if (idx !== -1 && res.data && res.data[0]) wtTemplates[idx] = res.data[0];
+        showToast('Template updated ✦');
+      } else {
+        /* INSERT */
+        var row = { name:nm, short_desc:shortD||null, full_desc:fullD||null, how_to_use:howTo||null,
+                    tier:tier, preview_url:prevUrl||null, file_url:fileUrl||null, file_name:fileName||null };
+        var res = await sb.from('web_templates').insert(row).select();
+        if (res.error) throw res.error;
+        if (res.data && res.data[0]) wtTemplates.unshift(res.data[0]);
+        showToast('Template added ✦');
+      }
+
+      wtRender();
+      wtCloseMod();
+    } catch(err) {
+      showToast('Error: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = id ? 'SAVE CHANGES ✦' : 'ADD TEMPLATE ✦';
+    }
+  }
+
+  /* ── Delete ── */
+  async function wtDel(id, e){
+    if (e) e.stopPropagation();
+    if (!isAdm || !confirm('Delete this template?')) return;
+    try {
+      await sb.from('web_templates').delete().eq('id', id);
+      wtTemplates = wtTemplates.filter(function(x){ return String(x.id) !== String(id); });
+      wtRender();
+      showToast('Template removed');
+    } catch(err) { showToast('Error: ' + err.message); }
+  }
+
+  /* ── Edit from detail page ── */
+  function wtEditFromDetail(){
+    if (!wtCurrentId) return;
+    wtOpenMod(wtCurrentId);
+  }
+  function wtDelFromDetail(){
+    if (!wtCurrentId) return;
+    var id = wtCurrentId;
+    wtCloseDetail();
+    wtDel(id, null);
+  }
+
+  /* ── Patch syncAdmBtn to also sync WT UI ── */
+  var _origSyncAdmBtn = typeof syncAdmBtn === 'function' ? syncAdmBtn : null;
+  /* Hook into admin mode toggle: whenever isAdm changes, wtSyncAdmBtn() is called
+     if the WT page is open. We patch it after DOM load. */
+  document.addEventListener('DOMContentLoaded', function(){
+    /* Also move drag-drop on wtDz */
+    var wtDz = document.getElementById('wtDz');
+    if (wtDz) {
+      wtDz.addEventListener('dragover', function(e){ e.preventDefault(); wtDz.style.borderColor = 'var(--bdrh)'; });
+      wtDz.addEventListener('dragleave', function(){ wtDz.style.borderColor = ''; });
+      wtDz.addEventListener('drop', function(e){
+        e.preventDefault(); wtDz.style.borderColor = '';
+        var f = e.dataTransfer.files[0]; if (!f) return;
+        var inp = document.getElementById('wtImgF');
+        /* synthetic event to reuse handler */
+        wtImgFile = f;
+        var r = new FileReader();
+        r.onload = function(ev){
+          var p = document.getElementById('wtImgPrev');
+          p.src = ev.target.result; p.style.display = 'block';
+          document.getElementById('wtDzTxt').textContent = '✓ ' + f.name;
+        };
+        r.readAsDataURL(f);
+      });
+      var wtFDz = document.getElementById('wtFileDz');
+      if (wtFDz) {
+        wtFDz.addEventListener('dragover', function(e){ e.preventDefault(); wtFDz.style.borderColor = 'var(--bdrh)'; });
+        wtFDz.addEventListener('dragleave', function(){ wtFDz.style.borderColor = ''; });
+        wtFDz.addEventListener('drop', function(e){
+          e.preventDefault(); wtFDz.style.borderColor = '';
+          var f = e.dataTransfer.files[0]; if (!f) return;
+          wtFileUpload = f;
+          document.getElementById('wtFileDzTxt').textContent = '✓ ' + f.name;
+        });
+      }
+    }
+  });
+  /* ══════════════════════════════════════════════════════════
+     END WEBSITE TEMPLATES SYSTEM
+     ══════════════════════════════════════════════════════════ */
 
   /* ── Coming Soon modal ── */
   function openSubModal() {

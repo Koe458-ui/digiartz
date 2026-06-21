@@ -7556,7 +7556,7 @@ async function openComments(){
       if (wtImgFile) {
         btn.textContent = 'UPLOADING IMAGE…';
         var ext  = wtImgFile.name.split('.').pop();
-        var path = 'web-templates/previews/' + Date.now() + '_' + nm.replace(/\s+/g,'_') + '.' + ext;
+        var path = 'templates/previews/' + Date.now() + '_' + nm.replace(/\s+/g,'_') + '.' + ext;
         var upRes = await sb.storage.from(BUCKET).upload(path, wtImgFile, { cacheControl:'3600', upsert:true });
         if (upRes.error) throw upRes.error;
         prevUrl = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
@@ -7565,7 +7565,7 @@ async function openComments(){
       /* Upload downloadable file */
       if (wtFileUpload) {
         btn.textContent = 'UPLOADING FILE…';
-        var fPath = 'web-templates/files/' + Date.now() + '_' + wtFileUpload.name.replace(/\s+/g,'_');
+        var fPath = 'templates/files/' + Date.now() + '_' + wtFileUpload.name.replace(/\s+/g,'_');
         var fRes  = await sb.storage.from(BUCKET).upload(fPath, wtFileUpload, { cacheControl:'3600', upsert:true });
         if (fRes.error) throw fRes.error;
         fileUrl  = sb.storage.from(BUCKET).getPublicUrl(fPath).data.publicUrl;

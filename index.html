@@ -3312,72 +3312,110 @@ body{background:var(--bg);}
 }
 .wtAdmBtn:active { transform: scale(.97); }
 
-/* ── Search + filter bar ── */
-.wtBar {
+/* ── Header bar: mirrors .fgHdr exactly, white-theme aware ── */
+.wtHdrBar {
   flex-shrink: 0;
-  padding: .9rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--bdr);
-  background: rgba(255,255,255,.97);
-  display: flex;
-  flex-direction: column;
-  gap: .7rem;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-.wtSearchWrap {
+  padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
-  gap: .6rem;
+  gap: .8rem;
+}
+/* Search input: mirrors .fgQ */
+.wtQ {
+  flex: 1;
+  min-width: 120px;
   background: var(--sur2);
   border: 1px solid var(--bdr);
-  border-radius: 8px;
-  padding: .55rem .9rem;
-  transition: border-color .22s;
-}
-.wtSearchWrap:focus-within { border-color: var(--bdrh); }
-.wtSearchIco {
-  width: 15px;
-  height: 15px;
-  color: var(--txd);
-  flex-shrink: 0;
-}
-.wtSearchInp {
-  flex: 1;
-  border: none;
-  background: none;
   color: var(--tx);
   font-family: var(--fm);
-  font-size: .72rem;
-  letter-spacing: .14em;
+  font-size: .78rem;
+  letter-spacing: .1em;
+  padding: .55rem .9rem;
   outline: none;
+  transition: border-color .25s;
+  border-radius: 6px;
 }
-.wtSearchInp::placeholder { color: var(--txd); opacity: .7; }
+.wtQ:focus { border-color: var(--pg); }
+.wtQ::placeholder { color: var(--txd); }
 
-/* Filter pill row */
-.wtFilters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .4rem;
-}
+/* Filter icon button: mirrors .fgFltBtn */
 .wtFil {
-  padding: .3rem .75rem;
-  border: 1px solid var(--bdr);
-  border-radius: 99px;
-  background: transparent;
-  color: var(--txd);
-  font-family: var(--fm);
-  font-size: .62rem;
-  font-weight: 700;
-  letter-spacing: .18em;
-  cursor: pointer;
-  transition: background .2s, border-color .2s, color .2s;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
-.wtFil:hover { border-color: var(--bdrh); color: var(--ps); background: color-mix(in srgb, var(--tc) 5%, transparent); }
-.wtFil--active {
-  background: var(--tx);
-  border-color: var(--tx);
-  color: var(--bg);
+.wtFltBtn {
+  flex-shrink: 0;
+  width: 42px; height: 42px;
+  background: color-mix(in srgb, var(--tc) 8%, transparent);
+  border: 1px solid var(--bdrh);
+  color: var(--txd);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .25s, color .25s, background .25s, box-shadow .25s;
+  position: relative;
+  border-radius: 6px;
+}
+.wtFltBtn svg { width: 18px; height: 18px; pointer-events: none; }
+.wtFltBtn:hover {
+  border-color: var(--pg); color: var(--ps);
+  background: var(--pdim);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--tc) 35%, transparent);
+}
+.wtFltBtn.active {
+  border-color: var(--pg); color: var(--ps);
+  background: var(--pdim);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--tc) 35%, transparent);
+}
+.wtFltBtn.active::after {
+  content: '';
+  position: absolute; top: 7px; right: 7px;
+  width: 6px; height: 6px;
+  background: var(--pg); border-radius: 50%;
+  box-shadow: 0 0 6px var(--pg);
+}
+
+/* ── WT Filter panel overlay: mirrors #fgFltOvr ── */
+#wtFltOvr {
+  position: fixed; inset: 0; z-index: 560;
+  background: rgba(5,3,8,.55);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s ease;
+  backdrop-filter: blur(3px);
+}
+#wtFltOvr.open { opacity: 1; pointer-events: auto; }
+
+/* ── WT Filter panel: mirrors #fgFltPanel ── */
+#wtFltPanel {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 561;
+  background: linear-gradient(160deg, var(--sur) 0%, var(--sur2) 100%);
+  border-top: 1px solid var(--bdrh);
+  border-left: 1px solid var(--bdr); border-right: 1px solid var(--bdr);
+  box-shadow: 0 -8px 40px rgba(5,3,8,.75), inset 0 1px 0 color-mix(in srgb,var(--tc) 14%,transparent);
+  border-radius: 6px 6px 0 0;
+  max-height: 88vh; overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform .4s cubic-bezier(.22,1,.36,1);
+}
+#wtFltPanel.open { transform: translateY(0); }
+@media (min-width: 641px) {
+  #wtFltPanel {
+    bottom: auto; top: 64px; right: 1.4rem; left: auto;
+    border-radius: 6px; border: 1px solid var(--bdrh);
+    max-width: 300px; max-height: calc(100vh - 80px);
+    transform: translateY(-8px) scale(.97);
+    opacity: 0; pointer-events: none;
+    transition: transform .3s cubic-bezier(.22,1,.36,1), opacity .3s ease;
+  }
+  #wtFltPanel.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+  #wtFltOvr { backdrop-filter: none; background: transparent; }
 }
 
 /* ── Scrollable grid body ── */
@@ -3855,14 +3893,151 @@ body.admin .wtCardAdm { display: flex; }
   .wtDetBdy { padding: 2rem 1.2rem 4rem; }
 }
 @media (max-width: 600px) {
-  .wtBar { padding: .75rem 1rem; }
+  .wtHdrBar { padding: .75rem 1rem; gap: .6rem; }
   .wtBdy { padding: 1.2rem .9rem 3rem; }
   .wtGrid { grid-template-columns: 1fr; gap: .85rem; }
   .wtDetBdy { padding: 1.5rem 1rem 3.5rem; }
   .wtDetTitle { font-size: clamp(1.3rem, 6vw, 1.8rem); }
   .wtDlBtn { padding: .45rem .85rem; font-size: .6rem; }
-  .wtFilters { gap: .3rem; }
-  .wtFil { font-size: .58rem; padding: .26rem .6rem; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   WT UPSELL MODAL
+   ══════════════════════════════════════════════════════════ */
+
+/* Backdrop — fixed, above the WT overlay (z:500) and detail (z:510) */
+#wtUpsell {
+  position: fixed;
+  inset: 0;
+  z-index: 610;
+  background: rgba(5,3,8,.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s ease;
+}
+#wtUpsell.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Card */
+.wtUpsellCard {
+  background: #ffffff;
+  border: 1px solid var(--bdrh);
+  border-radius: 18px;
+  padding: 2.2rem 2rem 1.8rem;
+  max-width: 340px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  text-align: center;
+  box-shadow:
+    0 4px 6px rgba(20,20,30,.06),
+    0 16px 40px rgba(20,20,30,.14);
+  transform: scale(.94);
+  transition: transform .28s cubic-bezier(.22,1,.36,1);
+}
+#wtUpsell.open .wtUpsellCard {
+  transform: scale(1);
+}
+
+/* Lock icon */
+.wtUpsellIco {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: .2rem;
+}
+
+/* Tier label */
+.wtUpsellTitle {
+  font-family: var(--fm);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .3em;
+  color: var(--tx);
+  text-transform: uppercase;
+}
+
+/* Divider */
+.wtUpsellCard::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--bdrh), transparent);
+  margin: .1rem 0;
+}
+
+/* Body message */
+.wtUpsellMsg {
+  font-family: var(--fb);
+  font-size: .85rem;
+  line-height: 1.6;
+  color: var(--txd);
+  max-width: 260px;
+}
+
+/* CTA button */
+.wtUpsellCta {
+  width: 100%;
+  padding: .85rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--tx);
+  color: var(--bg);
+  font-family: var(--fm);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .24em;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  margin-top: .3rem;
+}
+.wtUpsellCta:hover { opacity: .88; transform: translateY(-1px); }
+.wtUpsellCta:active { transform: scale(.97); }
+
+/* Per-tier CTA tint — coloured accents matching tier badges */
+.wtUpsellCta--lite    { background: #2563eb; }
+.wtUpsellCta--premium { background: #7c3aed; }
+.wtUpsellCta--max     { background: linear-gradient(135deg,#b45309,#eab308); }
+
+/* Cancel / dismiss */
+.wtUpsellCancel {
+  background: none;
+  border: none;
+  font-family: var(--fm);
+  font-size: .64rem;
+  letter-spacing: .14em;
+  color: var(--txd);
+  cursor: pointer;
+  padding: .2rem;
+  transition: color .2s;
+}
+.wtUpsellCancel:hover { color: var(--pg); }
+
+/* ── Locked card visual on the grid card itself ── */
+.wtCard--locked .wtCardImg {
+  filter: blur(4px) brightness(.85);
+}
+.wtCard--locked .wtCardImgWrap::after {
+  content: '🔒';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 1.6rem;
+  pointer-events: none;
+}
+.wtCard--locked .wtShowMore {
+  border-color: var(--bdrh);
+  color: var(--txd);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -4327,19 +4502,13 @@ body.admin .wtCardAdm { display: flex; }
       </button>
     </div>
 
-    <!-- ── Search + Filter bar ── -->
-    <div class="wtBar">
-      <div class="wtSearchWrap">
-        <svg class="wtSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="wtSearchInp" id="wtSearchInp" type="text" placeholder="SEARCH TEMPLATES..." oninput="wtRender()" autocomplete="off"/>
-      </div>
-      <div class="wtFilters" id="wtFilters">
-        <button class="wtFil wtFil--active" data-fil="all"        onclick="wtSetFil('all',this)">ALL</button>
-        <button class="wtFil" data-fil="new"        onclick="wtSetFil('new',this)">NEW → OLD</button>
-        <button class="wtFil" data-fil="free"       onclick="wtSetFil('free',this)">FREE</button>
-        <button class="wtFil" data-fil="lite"       onclick="wtSetFil('lite',this)">PREMIUM LITE</button>
-        <button class="wtFil" data-fil="premium"    onclick="wtSetFil('premium',this)">PREMIUM</button>
-        <button class="wtFil" data-fil="max"        onclick="wtSetFil('max',this)">MAX</button>
+    <!-- ── Search + Filter header bar (mirrors .fgHdr / gallery pattern) ── -->
+    <div class="wtHdrBar">
+      <input class="wtQ" id="wtQ" type="text" placeholder="SEARCH TEMPLATES..." oninput="wtRender()" autocomplete="off"/>
+      <div class="wtFil">
+        <button class="wtFltBtn" id="wtFltBtn" onclick="wtOpenFilterPanel()" title="FILTERS" aria-label="Open template filters">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        </button>
       </div>
     </div>
 
@@ -4414,6 +4583,47 @@ body.admin .wtCardAdm { display: flex; }
        END WEBSITE TEMPLATES PAGE
        ═══════════════════════════════════════════════ -->
 
+  <!-- WT FILTER PANEL OVERLAY -->
+  <div id="wtFltOvr" onclick="wtCloseFilterPanel()"></div>
+  <!-- WT FILTER PANEL — mirrors #fgFltPanel structure exactly -->
+  <div id="wtFltPanel" role="dialog" aria-label="Template filter options">
+    <div class="fltPH">
+      <h3>FILTERS <span class="s">✦</span></h3>
+      <button class="fltPX" onclick="wtCloseFilterPanel()" aria-label="Close filters">✕</button>
+    </div>
+    <div class="fltPBdy">
+
+      <!-- ORDER -->
+      <div class="fltSec">
+        <div class="fltSecLbl">ORDER</div>
+        <div class="fltOpts" id="wtFltSrtOpts">
+          <label class="fltOpt"><input type="radio" name="wtFltSrt" value="new" checked><div class="fltDot"></div><span class="fltLbl">NEW → OLD</span></label>
+          <label class="fltOpt"><input type="radio" name="wtFltSrt" value="old"><div class="fltDot"></div><span class="fltLbl">OLD → NEW</span></label>
+        </div>
+      </div>
+
+      <div class="fltSep"></div>
+
+      <!-- PLAN -->
+      <div class="fltSec">
+        <div class="fltSecLbl">PLAN</div>
+        <div class="fltOpts" id="wtFltTierOpts">
+          <label class="fltOpt"><input type="radio" name="wtFltTier" value="all" checked><div class="fltDot"></div><span class="fltLbl">ALL PLANS</span></label>
+          <label class="fltOpt"><input type="radio" name="wtFltTier" value="premium"><div class="fltDot"></div><span class="fltLbl">PREMIUM</span></label>
+          <label class="fltOpt"><input type="radio" name="wtFltTier" value="lite"><div class="fltDot"></div><span class="fltLbl">PREMIUM LITE</span></label>
+          <label class="fltOpt"><input type="radio" name="wtFltTier" value="max"><div class="fltDot"></div><span class="fltLbl">MAX</span></label>
+          <label class="fltOpt"><input type="radio" name="wtFltTier" value="free"><div class="fltDot"></div><span class="fltLbl">FREE</span></label>
+        </div>
+      </div>
+
+      <div class="fltSep"></div>
+
+      <button class="fltDone" onclick="wtApplyFilters()">DONE ✦</button>
+
+    </div>
+  </div>
+  <!-- END WT FILTER PANEL -->
+
   <!-- =========================================================
        WEBSITE TEMPLATES UPLOAD/EDIT MODAL
        Admin-only. Appears over #webTemplatesPage.
@@ -4465,6 +4675,31 @@ body.admin .wtCardAdm { display: flex; }
   </div>
   <!-- ═══════════════════════════════════════════════
        END WEBSITE TEMPLATES UPLOAD/EDIT MODAL
+       ═══════════════════════════════════════════════ -->
+
+  <!-- =========================================================
+       WT UPSELL MODAL
+       Shown when a user taps "Show More" on a template they
+       don't have access to. Sits above the WT overlay (z:610).
+       ├─ #wtUpsell       — fixed backdrop (click-outside closes)
+       └─ .wtUpsellCard   — centred card
+           ├─ .wtUpsellIco    — lock icon
+           ├─ .wtUpsellTitle  — tier name
+           ├─ .wtUpsellMsg    — short message
+           ├─ .wtUpsellCta    — "GO PREMIUM" button → openSubscription()
+           └─ .wtUpsellCancel — dismiss link
+       ========================================================= -->
+  <div id="wtUpsell" onclick="wtCloseUpsell(event)">
+    <div class="wtUpsellCard" onclick="event.stopPropagation()">
+      <div class="wtUpsellIco" id="wtUpsellIco">🔒</div>
+      <div class="wtUpsellTitle" id="wtUpsellTitle">PREMIUM TEMPLATE</div>
+      <p class="wtUpsellMsg" id="wtUpsellMsg">This template requires a paid plan. Upgrade to unlock it and all other premium content.</p>
+      <button class="wtUpsellCta" id="wtUpsellCta" onclick="wtUpsellGo()">VIEW PLANS ✦</button>
+      <button class="wtUpsellCancel" onclick="wtCloseUpsell()">Maybe later</button>
+    </div>
+  </div>
+  <!-- ═══════════════════════════════════════════════
+       END WT UPSELL MODAL
        ═══════════════════════════════════════════════ -->
 
   <footer class="siteFooter" role="contentinfo">
@@ -6306,13 +6541,22 @@ body.admin .wtCardAdm { display: flex; }
      edit-mode toggle — a dev can be on the site with edit mode OFF.
      Enforced server-side via RLS regardless of either flag. */
   let isDev = false;
+  /* userPlan: null = not logged in (guest/no session).
+     Values mirror profiles.subscription_tier:
+       'guest'        = logged in, no paid plan (DB default)
+       'lite'         = Premium Lite subscriber
+       'premium'      = Premium subscriber
+       'max'          = Max subscriber
+     'dev' role bypasses all checks via isDev. */
+  let userPlan = null;
   async function checkUserRole(){
-    if(!sb || !currentUser){ isDev=false; isAdm=false; document.body.classList.remove('admin'); syncAdmBtn(); return; }
+    if(!sb || !currentUser){ isDev=false; isAdm=false; userPlan=null; document.body.classList.remove('admin'); syncAdmBtn(); return; }
     try{
-      const{data,error}=await sb.from('profiles').select('role').eq('id',currentUser.id).single();
+      const{data,error}=await sb.from('profiles').select('role,subscription_tier').eq('id',currentUser.id).single();
       if(error) throw error;
-      isDev = !!data && data.role==='dev';
-    }catch(e){ console.error(e); isDev=false; }
+      isDev    = !!data && data.role==='dev';
+      userPlan = (data && data.subscription_tier) ? data.subscription_tier : 'guest';
+    }catch(e){ console.error(e); isDev=false; userPlan='guest'; }
     if(!isDev){ isAdm=false; document.body.classList.remove('admin'); }
     syncAdmBtn();
     if(isDev && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
@@ -6330,11 +6574,11 @@ body.admin .wtCardAdm { display: flex; }
           ? currentUser.user_metadata.username
           : '';
         showToast(greetName ? ('Welcome, ' + greetName + ' ✦') : 'Signed in ✦');
-        checkUserRole();
+        checkUserRole().then(function(){ if(typeof wtRender==='function') wtRender(); });
       }
       if (event === 'SIGNED_OUT') {
         syncAuthBtn();
-        isDev=false; isAdm=false; document.body.classList.remove('admin'); syncAdmBtn();
+        isDev=false; isAdm=false; userPlan=null; document.body.classList.remove('admin'); syncAdmBtn();
       }
     });
 
@@ -6488,7 +6732,9 @@ body.admin .wtCardAdm { display: flex; }
     var wtDet=document.getElementById('wtDetail');
     var wtPage=document.getElementById('webTemplatesPage');
     var wtM=document.getElementById('wtMod');
-    if(wtM&&wtM.classList.contains('open')){ wtCloseMod(); }
+    var wtUp=document.getElementById('wtUpsell');
+    if(wtUp&&wtUp.classList.contains('open')){ wtCloseUpsell(); }
+    else if(wtM&&wtM.classList.contains('open')){ wtCloseMod(); }
     else if(wtDet&&wtDet.classList.contains('open')){ wtCloseDetail(); }
     else if(wtPage&&wtPage.classList.contains('open')){ closeWebTemplates(); }
   }}); /* FIXED: BUG-005 */
@@ -7242,7 +7488,8 @@ async function openComments(){
 
   /* ── State ── */
   var wtTemplates   = [];   /* local cache from Supabase */
-  var wtFilter      = 'all';
+  var wtSortOrder   = 'new';  /* 'new' | 'old' */
+  var wtTierFilter  = 'all';  /* 'all' | 'free' | 'lite' | 'premium' | 'max' */
   var wtVisible     = 0;
   var WT_PAGE_STEP  = 20;
   var wtCurrentId   = null; /* id of template open in detail */
@@ -7295,11 +7542,26 @@ async function openComments(){
     wtRender();
   }
 
-  /* ── Set filter ── */
-  function wtSetFil(fil, btn) {
-    wtFilter = fil;
-    document.querySelectorAll('.wtFil').forEach(function(b){ b.classList.remove('wtFil--active'); });
-    if (btn) btn.classList.add('wtFil--active');
+  /* ── Filter panel open / close / apply ── */
+  function wtOpenFilterPanel(){
+    /* Sync radios to current state */
+    var srtR = document.querySelector('input[name="wtFltSrt"][value="'+wtSortOrder+'"]');
+    if (srtR) srtR.checked = true;
+    var tierR = document.querySelector('input[name="wtFltTier"][value="'+wtTierFilter+'"]');
+    if (tierR) tierR.checked = true;
+    document.getElementById('wtFltOvr').classList.add('open');
+    document.getElementById('wtFltPanel').classList.add('open');
+  }
+  function wtCloseFilterPanel(){
+    document.getElementById('wtFltOvr').classList.remove('open');
+    document.getElementById('wtFltPanel').classList.remove('open');
+  }
+  function wtApplyFilters(){
+    var srtR  = document.querySelector('input[name="wtFltSrt"]:checked');
+    var tierR = document.querySelector('input[name="wtFltTier"]:checked');
+    wtSortOrder  = srtR  ? srtR.value  : 'new';
+    wtTierFilter = tierR ? tierR.value : 'all';
+    wtCloseFilterPanel();
     wtVisible = wtPageSize();
     wtRenderPage();
   }
@@ -7310,28 +7572,27 @@ async function openComments(){
     wtRenderPage();
   }
 
-  /* ── Render the filtered, paginated grid ── */
+  /* ── Render the filtered, sorted, paginated grid ── */
   function wtRenderPage(){
-    var bdy  = document.getElementById('wtBdy');
+    var bdy   = document.getElementById('wtBdy');
     var empty = document.getElementById('wtEmpty');
     if (!bdy) return;
 
-    var q = (document.getElementById('wtSearchInp') || {}).value || '';
+    var q = (document.getElementById('wtQ') || {}).value || '';
     q = q.toLowerCase().trim();
 
     var list = wtTemplates.slice();
 
     /* Filter by tier */
-    if (wtFilter === 'free')    list = list.filter(function(t){ return t.tier === 'free'; });
-    if (wtFilter === 'lite')    list = list.filter(function(t){ return t.tier === 'lite'; });
-    if (wtFilter === 'premium') list = list.filter(function(t){ return t.tier === 'premium'; });
-    if (wtFilter === 'max')     list = list.filter(function(t){ return t.tier === 'max'; });
-    /* Sort filter */
-    if (wtFilter === 'new' || wtFilter === 'all') {
-      list.sort(function(a,b){
-        return new Date(b.created_at||0) - new Date(a.created_at||0);
-      });
+    if (wtTierFilter !== 'all') {
+      list = list.filter(function(t){ return t.tier === wtTierFilter; });
     }
+    /* Sort */
+    list.sort(function(a,b){
+      var tA = new Date(a.created_at||0).getTime();
+      var tB = new Date(b.created_at||0).getTime();
+      return wtSortOrder === 'new' ? (tB - tA) : (tA - tB);
+    });
     /* Search */
     if (q) {
       list = list.filter(function(t){
@@ -7339,6 +7600,11 @@ async function openComments(){
                (t.short_desc||'').toLowerCase().includes(q);
       });
     }
+
+    /* Update filter button active indicator */
+    var isFiltered = (wtTierFilter !== 'all' || wtSortOrder !== 'new');
+    var fltBtn = document.getElementById('wtFltBtn');
+    if (fltBtn) fltBtn.classList.toggle('active', isFiltered);
 
     if (!list.length) {
       bdy.innerHTML = '';
@@ -7365,12 +7631,17 @@ async function openComments(){
   }
 
   /* ── Tier helpers ── */
-  function wtTierClass(tier){ return 'wtCard--' + (tier || 'free'); }
+  /* DB tier values match CSS suffixes directly: free | lite | premium | max */
+  function wtTierCSSKey(tier){
+    var m = { free:'free', lite:'lite', premium:'premium', max:'max' };
+    return m[(tier||'free')] || 'free';
+  }
+  function wtTierClass(tier){ return 'wtCard--' + wtTierCSSKey(tier); }
   function wtTierLabel(tier){
     var m = { free:'Free', lite:'Premium Lite', premium:'Premium', max:'Max' };
     return m[tier] || 'Free';
   }
-  function wtTierBadgeClass(tier){ return 'wtTierBadge--' + (tier || 'free'); }
+  function wtTierBadgeClass(tier){ return 'wtTierBadge--' + wtTierCSSKey(tier); }
 
   /* ── Card HTML ── */
   function wtCardHTML(t){
@@ -7378,12 +7649,15 @@ async function openComments(){
     var nm        = esc(t.name || 'Untitled');
     var shortDesc = esc(t.short_desc || '');
     var tier      = t.tier || 'free';
+    var locked    = !wtCanAccess(tier);
     var imgSrc    = t.preview_url ? esc(t.preview_url) : '';
     var imgBlock  = imgSrc
       ? '<img class="wtCardImg" src="' + imgSrc + '" alt="' + nm + '" loading="lazy" decoding="async"/>'
       : '<div class="wtCardImgPlaceholder">◧</div>';
+    var lockedClass = locked ? ' wtCard--locked' : '';
+    var btnLabel    = locked ? '🔒 UNLOCK' : 'SHOW MORE →';
 
-    return '<div class="wtCard ' + wtTierClass(tier) + '" data-wt-id="' + idStr + '">' +
+    return '<div class="wtCard ' + wtTierClass(tier) + lockedClass + '" data-wt-id="' + idStr + '">' +
       '<div class="wtCardImgWrap">' + imgBlock + '</div>' +
       '<div class="wtCardAdm">' +
         '<button class="wtCardAdmBtn" onclick="wtOpenMod(\'' + idStr + '\',event)" title="Edit">✎</button>' +
@@ -7395,7 +7669,7 @@ async function openComments(){
           '<span class="wtTierBadge ' + wtTierBadgeClass(tier) + '">' + wtTierLabel(tier) + '</span>' +
         '</div>' +
         '<div class="wtCardDesc">' + shortDesc + '</div>' +
-        '<button class="wtShowMore" onclick="wtOpenDetail(\'' + idStr + '\')">SHOW MORE →</button>' +
+        '<button class="wtShowMore" onclick="wtOpenDetail(\'' + idStr + '\')">' + btnLabel + '</button>' +
       '</div>' +
     '</div>';
   }
@@ -7404,6 +7678,13 @@ async function openComments(){
   function wtOpenDetail(id){
     var t = wtTemplates.find(function(x){ return String(x.id) === String(id); });
     if (!t) return;
+
+    /* ── ACCESS GATE ── */
+    if (!wtCanAccess(t.tier)) {
+      wtOpenUpsell(t.tier);
+      return;
+    }
+
     wtCurrentId = id;
 
     document.getElementById('wtDetHdrTitle').textContent = 'TEMPLATE';
@@ -7556,7 +7837,7 @@ async function openComments(){
       if (wtImgFile) {
         btn.textContent = 'UPLOADING IMAGE…';
         var ext  = wtImgFile.name.split('.').pop();
-        var path = 'templates/previews/' + Date.now() + '_' + nm.replace(/\s+/g,'_') + '.' + ext;
+        var path = 'web-templates/previews/' + Date.now() + '_' + nm.replace(/\s+/g,'_') + '.' + ext;
         var upRes = await sb.storage.from(BUCKET).upload(path, wtImgFile, { cacheControl:'3600', upsert:true });
         if (upRes.error) throw upRes.error;
         prevUrl = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
@@ -7565,7 +7846,7 @@ async function openComments(){
       /* Upload downloadable file */
       if (wtFileUpload) {
         btn.textContent = 'UPLOADING FILE…';
-        var fPath = 'templates/files/' + Date.now() + '_' + wtFileUpload.name.replace(/\s+/g,'_');
+        var fPath = 'web-templates/files/' + Date.now() + '_' + wtFileUpload.name.replace(/\s+/g,'_');
         var fRes  = await sb.storage.from(BUCKET).upload(fPath, wtFileUpload, { cacheControl:'3600', upsert:true });
         if (fRes.error) throw fRes.error;
         fileUrl  = sb.storage.from(BUCKET).getPublicUrl(fPath).data.publicUrl;
@@ -7665,6 +7946,83 @@ async function openComments(){
       }
     }
   });
+  /* ══════════════════════════════════════════════════════════
+     WT ACCESS GATE
+     ├─ wtCanAccess(tier)   — returns bool, reads userPlan / isDev
+     ├─ wtOpenUpsell(tier)  — shows upsell modal with correct copy
+     └─ wtCloseUpsell()     — hides it
+     Access matrix:
+       guest    → everyone (all users, no login needed)
+       lite     → lite, premium, max, dev
+       premium  → premium, max, dev
+       max      → max, dev only
+     ══════════════════════════════════════════════════════════ */
+
+  function wtCanAccess(tier) {
+    /* dev bypasses all gates */
+    if (isDev) return true;
+    tier = (tier || 'free').toLowerCase();
+    /* 'free'-tier templates: everyone can access, no login needed */
+    if (tier === 'free') return true;
+    /* Paid tiers require a logged-in session */
+    if (!currentUser) return false;
+    /* userPlan mirrors profiles.subscription_tier: guest | lite | premium | max
+       'guest' = logged in but no paid plan */
+    var plan = (userPlan || 'guest').toLowerCase();
+    /* lite template: requires lite, premium, or max plan */
+    if (tier === 'lite')    return plan === 'lite' || plan === 'premium' || plan === 'max';
+    /* premium template: requires premium or max plan */
+    if (tier === 'premium') return plan === 'premium' || plan === 'max';
+    /* max template: requires max plan only */
+    if (tier === 'max')     return plan === 'max';
+    return false;
+  }
+
+  /* Open upsell modal, tailored to which tier is required */
+  function wtOpenUpsell(tier) {
+    tier = (tier || 'premium').toLowerCase();
+    var ico   = document.getElementById('wtUpsellIco');
+    var title = document.getElementById('wtUpsellTitle');
+    var msg   = document.getElementById('wtUpsellMsg');
+    var cta   = document.getElementById('wtUpsellCta');
+
+    /* Tier-specific copy */
+    var tierLabels = { free:'FREE', lite:'PREMIUM LITE', premium:'PREMIUM', max:'MAX' };
+    var tierLabel  = tierLabels[tier] || 'PREMIUM';
+
+    if (ico)   ico.textContent   = '🔒';
+    if (title) title.textContent = tierLabel + ' TEMPLATE';
+
+    if (!currentUser) {
+      /* Guest: not logged in */
+      if (msg) msg.textContent = 'Sign in or create an account, then upgrade to unlock this ' + tierLabel.toLowerCase() + ' template.';
+      if (cta) { cta.textContent = 'SIGN IN ✦'; cta.className = 'wtUpsellCta'; }
+    } else {
+      /* Logged in but wrong plan */
+      var planNeeded = tierLabel;
+      if (msg) msg.textContent = 'This template requires a ' + planNeeded + ' plan. Upgrade to unlock it and all other ' + planNeeded.toLowerCase() + ' content.';
+      if (cta) { cta.textContent = 'VIEW PLANS ✦'; cta.className = 'wtUpsellCta wtUpsellCta--' + wtTierCSSKey(tier); }
+    }
+
+    document.getElementById('wtUpsell').classList.add('open');
+  }
+
+  /* The CTA button action */
+  function wtUpsellGo() {
+    wtCloseUpsell();
+    if (!currentUser) {
+      openAuthMod();
+    } else {
+      openSubscription();
+    }
+  }
+
+  function wtCloseUpsell(e) {
+    /* If called from the backdrop click, only close if clicking the backdrop itself */
+    if (e && e.target !== document.getElementById('wtUpsell')) return;
+    document.getElementById('wtUpsell').classList.remove('open');
+  }
+
   /* ══════════════════════════════════════════════════════════
      END WEBSITE TEMPLATES SYSTEM
      ══════════════════════════════════════════════════════════ */

@@ -45,12 +45,12 @@
   ║                                         image + info block,       ║
   ║                                         action buttons            ║
   ║                                                                  ║
-  ║  11. FEATURED SHOWCASE          ~ln 1103 #featured section CSS,  ║
-  ║                                         .fsCard, .fsEmpty         ║
+  ║  11. ARTWORKS SECTION           ~ln 2014 #artworks grid CSS,     ║
+  ║                                         .awGrid, .awCard,         ║
+  ║                                         .awImgWrap, .awMeta       ║
   ║                                                                  ║
-  ║  12. SHOWCASE CARDS             ~ln 1120 .shWrap / .shCard —     ║
-  ║                                         Gallery + Characters      ║
-  ║                                         static card layout        ║
+  ║  12. ABOUT CARD                 ~ln 2120 .shWrap / .shCard —     ║
+  ║                                         About section text card   ║
   ║                                                                  ║
   ║  13. ABOUT                      ~ln 720 #about section,          ║
   ║                                         .shWrap showcase card,    ║
@@ -95,12 +95,8 @@
   ║  27. HERO HTML                  ~ln 2023 #hero, #bgF,            ║
   ║                                         CTA button               ║
   ║                                                                  ║
-  ║  28. FEATURED SHOWCASE HTML     ~ln 2062 #featured, .fsCard,     ║
-  ║                                         curated image slots       ║
-  ║                                                                  ║
-  ║  29. GALLERY SHOWCASE HTML      ~ln 2094 .shWrap Gallery card    ║
-  ║                                                                  ║
-  ║  30. CHARACTERS SHOWCASE HTML   ~ln 2123 .shWrap Characters card ║
+  ║  28. ARTWORKS HTML              ~ln 4546 #artworks, .awGrid,     ║
+  ║                                         20-card responsive grid   ║
   ║                                                                  ║
   ║  31. ABOUT HTML                 ~ln 2146 #about, static text,    ║
   ║                                         admin editable textarea  ║
@@ -710,6 +706,60 @@
     .hDesc  { display: none; }
 
     /* ══════════════════════════════════════════════════════════
+       HERO SCROLL FADE — per-element, independent thresholds
+       Each piece fades only itself — no layout shift, no clipping.
+       ├─ .hBrand          — "DigitArts"    — fades first
+       ├─ .hTL1            — line 1 of h1   — fades second
+       ├─ .hTL2            — line 2 of h1   — fades third
+       └─ .hCta            — Explore btn    — fades last
+       ══════════════════════════════════════════════════════════ */
+
+    /* hT must never clip its children */
+    #hero .hT { overflow: visible; }
+
+    /* Each line span sits on its own line, no overflow clip */
+    .hTL1,
+    .hTL2 {
+      display: block;
+      overflow: visible;
+    }
+
+    /* Base transition — opacity only so nothing outside moves */
+    .hBrand,
+    .hTL1,
+    .hTL2 {
+      transition: opacity 480ms cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: opacity;
+    }
+    /* CTA already has transform transition for hover — add opacity only */
+    .hCta {
+      transition:
+        background  .28s,
+        border-color .28s,
+        transform   .28s,
+        box-shadow  .28s,
+        opacity     480ms cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: opacity;
+    }
+
+    /* Faded state — each toggled independently by JS */
+    .hBrand.hFaded,
+    .hTL1.hFaded,
+    .hTL2.hFaded,
+    .hCta.hFaded {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Reduced-motion: instant switch */
+    @media (prefers-reduced-motion: reduce) {
+      .hBrand, .hTL1, .hTL2, .hCta {
+        transition: opacity 100ms linear, background .28s, border-color .28s,
+                    transform .28s, box-shadow .28s;
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════════
        § 8a HERO RESPONSIVE RULES
        ├─ Tablet/desktop  (≥769px) — split layout, desktop image
        └─ Mobile          (≤768px) — stacked layout, mobile image
@@ -730,10 +780,9 @@
       .hRight {
         flex: 0 0 auto;
         width: 100%;
-        height: 62vw;
-        min-height: 220px;
-        max-height: 420px;
+        height: 100svh;
         order: 0;
+        position: relative;
       }
       .hRight::before { display: none; }
       .hArtImg    { display: none; }
@@ -742,13 +791,20 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: center top;
+        object-position: center center;
       }
+      /* Content overlays the bottom of the portrait image */
       .hLeft {
-        flex: 1;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
         order: 1;
-        padding: 2.8rem 1.8rem 4rem;
-        justify-content: flex-start;
+        z-index: 3;
+        flex: unset;
+        background: linear-gradient(to top, rgba(255,255,255,1) 55%, rgba(255,255,255,.7) 78%, transparent 100%);
+        padding: 2.8rem 1.8rem 3rem;
+        justify-content: flex-end;
       }
       .hLeft::after { display: none; }
       #hero .hT { font-size: clamp(1.9rem, 8vw, 2.8rem); }
@@ -757,7 +813,7 @@
     }
 
     @media (max-width: 480px) {
-      .hLeft { padding: 2.2rem 1.4rem 3.5rem; }
+      .hLeft { padding: 2.2rem 1.4rem 2.8rem; }
     }
     /* ══════════════════════════════════════════════════════════
        § 7b GLOBAL UI ELEMENTS
@@ -2005,83 +2061,213 @@
     .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:900;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;border-radius:6px;}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-    /* ═══════════════════════════════════════════════
-       FEATURED SHOWCASE CSS
-       ═══════════════════════════════════════════════ */
     /* ══════════════════════════════════════════════════════════
-       WEBSITE TEMPLATES SHOWCASE — carousel, mirrors #featured
+       WEBSITE TEMPLATES SHOWCASE — grid
        ══════════════════════════════════════════════════════════ */
-    #wtShowcase{padding:5rem 0 3rem;overflow:hidden;}
-    #wtShowcase .fsHdr{max-width:1200px;margin:0 auto;padding:0 2rem;}
-    /* Carousel track wrapper — same max-width/padding as .shWrap */
-    .wtscWrap{max-width:1200px;margin:2.5rem auto 0;padding:0 2rem;}
-    /* Overflow clip so only one card is visible */
-    .wtscClip{overflow:hidden;position:relative;}
-    /* Slide track — flexbox, each slide is 100% wide */
-    .wtscTrack{
-      display:flex;
-      transition:transform .45s cubic-bezier(.22,1,.36,1);
-      will-change:transform;
-    }
-    /* Each slide holds one wtCard; force full width */
-    .wtscSlide{
-      flex:0 0 100%;
-      min-width:0;
-      cursor:pointer;
-    }
-    /* Override animation stagger inside carousel — all slides same timing */
-    .wtscSlide .wtCard{
-      animation:none;
-      cursor:pointer;
-    }
-    /* Navigation dots — same visual DNA as .apDot */
-    .wtscDots{
-      display:flex;
-      justify-content:center;
-      gap:.55rem;
-      margin-top:1.2rem;
-    }
-    .wtscDot{
-      width:6px;height:6px;
-      border-radius:50%;
-      background:var(--bdrh);
-      border:none;
-      padding:0;
-      cursor:pointer;
-      transition:background .25s,transform .25s;
-    }
-    .wtscDot.active{
-      background:var(--pg);
-      transform:scale(1.35);
-      box-shadow:0 0 6px var(--pg);
-    }
-    /* Touch swipe: disable text selection during drag */
-    .wtscClip.wtsc--dragging{user-select:none;}
-
-    #featured{padding:5rem 0 3rem;overflow:hidden;}
+    #wtShowcase{padding:5rem 0 3rem;}
     .fsHdr{max-width:1200px;margin:0 auto;padding:0 2rem;}
-    /* Black placeholder for empty/missing URLs */
-    .fsEmpty{
-      width:100%;height:100%;
-      background:#000;
-      display:flex;align-items:center;justify-content:center;
+    /* Grid — same auto-fill pattern as .awGrid */
+    .wtscGrid{
+      max-width:1200px;
+      margin:2.5rem auto 0;
+      padding:0 2rem;
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:1.4rem;
     }
-    .fsEmpty::after{
-      content:'✦';
-      font-family:var(--fd);
-      color:var(--bdr);
-      font-size:1.8rem;
+    .wtscEmpty{
+      max-width:1200px;
+      margin:3rem auto;
+      padding:4rem 2rem;
+      text-align:center;
+      font-family:var(--fm);
+      font-size:.8rem;
+      letter-spacing:.2em;
+      color:var(--txd);
+      display:none;
     }
-    /* ═══════════════════════════════════════════════
-       SHOWCASE CARD — Gallery
-       ═══════════════════════════════════════════════ */
+    /* Mobile: single column */
+    @media(max-width:480px){
+      .wtscGrid{grid-template-columns:1fr;gap:1rem;padding:0 1.2rem;}
+    }
+    /* Small tablet: 2 columns */
+    @media(min-width:481px) and (max-width:767px){
+      .wtscGrid{grid-template-columns:repeat(2,1fr);}
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       SCROLL FADE-UP ANIMATION SYSTEM
+       ├─ .fu-el          — initial hidden state (pre-animation)
+       ├─ .fu-visible     — final visible state (post-animation)
+       └─ Covers: #wtShowcase → #artworks → #about
+          Targets: headings, subheadings, paragraphs, buttons,
+                   cards, grid items, images, icons, quotes
+       ══════════════════════════════════════════════════════════ */
+
+    /* ── Base: element waiting to animate in ── */
+    .fu-el {
+      opacity: 0;
+      transform: translateY(50px);
+      transition:
+        opacity  850ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: opacity, transform;
+    }
+
+    /* ── Triggered: element has entered viewport ── */
+    .fu-el.fu-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Respect reduced-motion preference ── */
+    @media (prefers-reduced-motion: reduce) {
+      .fu-el {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       § 11 ARTWORKS SECTION
+       ├─ #artworks         — section wrapper
+       ├─ .awHdr            — section header
+       ├─ .awGrid           — responsive CSS grid (auto-fill columns)
+       ├─ .awCard           — individual artwork card
+       │   ├─ .awImgWrap    — square image container
+       │   │   └─ img       — artwork thumbnail
+       ├─ .awName           — artwork title
+       ├─ .awCat            — artwork category chip
+       └─ .awEmpty          — empty state message
+       ══════════════════════════════════════════════════════════ */
+    #artworks{
+      padding:5rem 0 4rem;
+    }
+    .awHdr{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+    }
+    /* ── Grid: auto-fill columns, min 220px, fills to ~4 cols on desktop ── */
+    .awGrid{
+      max-width:1200px;
+      margin:2.5rem auto 0;
+      padding:0 2rem;
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:1.4rem;
+    }
+    /* ── Card shell ── */
+    .awCard{
+      position:relative;
+      background:var(--sur);
+      border:1px solid var(--bdr);
+      border-radius:10px;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      cursor:pointer;
+      transition:border-color .28s,transform .28s,box-shadow .28s;
+      box-shadow:
+        0 2px 6px rgba(0,0,0,.10),
+        0 8px 20px rgba(0,0,0,.09);
+    }
+    @media(hover:hover){
+      .awCard:hover{
+        border-color:var(--bdrh);
+        transform:translateY(-4px);
+        box-shadow:
+          0 4px 12px rgba(0,0,0,.14),
+          0 16px 36px rgba(0,0,0,.13);
+      }
+      .awCard:hover .awImgWrap img{
+        transform:scale(1.04);
+      }
+    }
+    .awCard:active{transform:translateY(-1px) scale(.99);}
+    /* ── Square image wrapper ── */
+    .awImgWrap{
+      width:100%;
+      aspect-ratio:1;
+      overflow:hidden;
+      background:var(--sur2);
+      flex-shrink:0;
+    }
+    .awImgWrap img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      transition:transform .42s cubic-bezier(.22,1,.36,1);
+    }
+    /* Shimmer skeleton while image loads */
+    .awImgWrap.awLoading img{
+      background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
+      background-size:200% 100%;
+      animation:imgShimmer 1.4s infinite;
+    }
+    /* ── Text area below image ── */
+    .awMeta{
+      padding:.7rem .8rem .85rem;
+      display:flex;
+      flex-direction:column;
+      gap:.32rem;
+      border-top:1px solid var(--bdr);
+    }
+    .awName{
+      font-family:var(--fm);
+      font-size:.76rem;
+      font-weight:700;
+      letter-spacing:.06em;
+      color:var(--tx);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      line-height:1.3;
+    }
+    .awCat{
+      font-family:var(--fm);
+      font-size:.63rem;
+      letter-spacing:.12em;
+      color:var(--txd);
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    /* ── Empty state ── */
+    .awEmpty{
+      max-width:1200px;
+      margin:3rem auto;
+      padding:4rem 2rem;
+      text-align:center;
+      font-family:var(--fm);
+      font-size:.8rem;
+      letter-spacing:.2em;
+      color:var(--txd);
+      display:none;
+    }
+    /* ── Mobile: single-column ── */
+    @media(max-width:480px){
+      .awGrid{
+        grid-template-columns:1fr;
+        gap:1rem;
+        padding:0 1.2rem;
+      }
+    }
+    /* ── Small tablet: 2 columns ── */
+    @media(min-width:481px) and (max-width:767px){
+      .awGrid{
+        grid-template-columns:repeat(2,1fr);
+      }
+    }
+    /* About section still uses shInfo/shTxt/shCard for its text block */
     .shWrap{max-width:1200px;margin:2.5rem auto 0;padding:0 2rem;}
-    /* ── Desktop: all 3 in one row ── */
     .shCard{
       background:color-mix(in srgb,var(--sur) 88%,transparent);
       border:1px solid var(--bdr);
       border-radius:4px;
-      /* Card-level floating shadow — deeper/wider than image shadows */
       box-shadow:
         0 2px 6px  rgba(0,0,0,.14),
         0 10px 28px rgba(0,0,0,.13),
@@ -2089,52 +2275,9 @@
         0 48px 80px rgba(0,0,0,.06);
       padding:1.4rem;
       display:grid;
-      grid-template-columns:1.3fr 1fr 1fr;
+      grid-template-columns:1fr;
       gap:1.4rem;
       align-items:start;
-    }
-    .shMain{
-      position:relative;
-      overflow:hidden;
-      border-radius:4px;
-      border:1px solid var(--bdr);
-      background:var(--sur2);
-      aspect-ratio:1;
-      width:100%;
-      /* Realistic floating shadow: close sharp + mid + far diffuse */
-      box-shadow:
-        0 2px 4px  rgba(0,0,0,.18),
-        0 8px 20px rgba(0,0,0,.15),
-        0 20px 44px rgba(0,0,0,.10);
-    }
-    .shSide{
-      display:flex;
-      flex-direction:column;
-      gap:1.4rem;
-    }
-    .shSideImg{
-      position:relative;
-      overflow:hidden;
-      border-radius:4px;
-      border:1px solid var(--bdr);
-      background:var(--sur2);
-      /* Always square — width drives height via aspect-ratio */
-      width:100%;
-      aspect-ratio:1;
-      /* Same floating shadow as shMain */
-      box-shadow:
-        0 2px 4px  rgba(0,0,0,.18),
-        0 8px 20px rgba(0,0,0,.15),
-        0 20px 44px rgba(0,0,0,.10);
-    }
-    .shMain img,.shSideImg img{
-      width:100%;height:100%;
-      object-fit:cover;
-      display:block;
-      transition:transform .5s cubic-bezier(.22,1,.36,1);
-    }
-    @media(hover:hover){
-      .shMain:hover img,.shSideImg:hover img{transform:scale(1.045);}
     }
     .shInfo{
       display:flex;
@@ -2152,81 +2295,10 @@
       margin-bottom:.6rem;
     }
     .shTxt:last-of-type{margin-bottom:1.4rem;}
-    .shBtn{
-      align-self:flex-start;
-      padding:.75rem 1.5rem;
-      border:1px solid var(--bdr);
-      background:transparent;
-      color:var(--ps);
-      font-family:var(--fm);
-      font-size:.72rem;
-      letter-spacing:.18em;
-      cursor:pointer;
-      transition:border-color .3s,background .3s;
-      border-radius:6px;
-      box-shadow:
-        0 2px 4px  rgba(0,0,0,.14),
-        0 6px 14px rgba(0,0,0,.11),
-        0 14px 28px rgba(0,0,0,.07);
-    }
-    .shBtn:hover{border-color:var(--pg);background:var(--pdim);}
-    @media(max-width:1024px) and (min-width:641px){
-      /* ONE ROW: [Big square] [Small sq / Small sq] then text below */
-      .shCard{
-        display:grid;
-        grid-template-columns:2fr 1fr;
-        grid-template-areas:
-          "main side"
-          "info info";
-        padding:1.1rem;
-        gap:1rem;
-        align-items:start;
-      }
-      /* Big image: square */
-      .shMain{
-        grid-area:main;
-        width:100%;
-        aspect-ratio:1;
-      }
-      /* Side: flex column, two images stacked */
-      .shSide{
-        grid-area:side;
-        display:flex;
-        flex-direction:column;
-        gap:.5rem;
-      }
-      /* Each small image: full column width, square.
-         Side col = 1fr, big col = 2fr so side width = ~half big width.
-         Two smalls stacked = 2x side_width tall, big = big_width = 2x side_width. MATCH. */
-      .shSideImg{
-        width:100%;
-        aspect-ratio:1;
-        flex:none;
-      }
-      .shInfo{
-        grid-area:info;
-        padding:.4rem .2rem 0;
-        justify-content:flex-start;
-      }
-    }
-    /* ── Mobile (<=640px): single column stack ── */
     @media(max-width:640px){
       .shWrap{padding:0 1.2rem;}
-      .shCard{
-        display:grid;
-        grid-template-columns:1fr;
-        grid-template-areas:
-          "main"
-          "side"
-          "info";
-        padding:1rem;
-        gap:.8rem;
-      }
-      .shMain{grid-area:main;width:100%;aspect-ratio:1;}
-      .shSide{grid-area:side;display:flex;flex-direction:row;gap:.8rem;}
-      /* Two small images side by side, each square */
-      .shSideImg{aspect-ratio:1;flex:1 1 0;width:auto;}
-      .shInfo{grid-area:info;padding:.4rem 0 0;}
+      .shCard{padding:1rem;gap:.8rem;}
+      .shInfo{padding:.4rem 0 0;}
     }
   
 /* IMAGE LINKED COMMENTS PATCH */
@@ -2625,8 +2697,8 @@ body{background:var(--bg);}
 #navDrop{background:#ffffff;}
 #navWrap.open #navDrop{border-top:none;border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);}
 .gNm{border-top:1px solid var(--bdr);}
-.fsEmpty{background:#f1f2f5;}
-.fsEmpty::after{color:var(--bdrh);}
+.awCard{background:#ffffff;border-color:var(--bdr);}
+.awMeta{border-top-color:var(--bdr);}
 
 /* Inputs / fields */
 .fgQ,.mIn,.aEA,.cpBarInput,.upCatWrap{background:#f6f7f9!important;color:var(--tx);border-color:var(--bdr)!important;}
@@ -4463,7 +4535,7 @@ body.admin .wtCardAdm { display: flex; }
     <!-- ── Left: Content ── -->
     <div class="hLeft">
       <p class="hBrand">DigitArts</p>
-      <h1 class="hT">Where Creativity Becomes<br>Timeless Art</h1>
+      <h1 class="hT"><span class="hTL1">Where Creativity Becomes</span><span class="hTL2">Timeless Art</span></h1>
       <button class="hCta" onclick="openFG()">
         Explore Gallery <span class="hCtaArrow">→</span>
       </button>
@@ -4494,10 +4566,15 @@ body.admin .wtCardAdm { display: flex; }
       <div class="sLn"></div>
     </div>
 
-    <!-- ── Admin: change background ── -->
-    <button class="hEBg" onclick="document.getElementById('bgF').click()">🖼 CHANGE ARTWORK</button>
+    <!-- ── Admin: change desktop artwork ── -->
+    <button class="hEBg" style="right:1.5rem;" onclick="document.getElementById('bgF').click()">🖼 DESKTOP ART</button>
     <input accept="image/*" id="bgF" onchange="handleBg(event)" type="file"/>
-    <label for="bgF" class="srOnly">Choose hero artwork image</label>
+    <label for="bgF" class="srOnly">Choose hero desktop artwork image</label>
+
+    <!-- ── Admin: change mobile artwork ── -->
+    <button class="hEBg" style="right:10rem;" onclick="document.getElementById('bgFMob').click()">📱 MOBILE ART</button>
+    <input accept="image/*" id="bgFMob" onchange="handleBgMobile(event)" type="file"/>
+    <label for="bgFMob" class="srOnly">Choose hero mobile artwork image</label>
 
     <!-- Legacy elements kept for JS compatibility -->
     <div id="hBgImg" style="display:none;"></div>
@@ -4506,152 +4583,48 @@ body.admin .wtCardAdm { display: flex; }
   </section>
   <!-- =========================================================
        WEBSITE TEMPLATES SHOWCASE
-       Carousel of the 3 newest website templates. Clicking any
-       card opens the Website Templates page. Mirrors the visual
-       design of the Featured Showcase section.
+       Grid of the 10 newest website templates, left-to-right.
+       Clicking any card opens the Website Templates page.
        ├─ Section Header (.fsHdr)
-       ├─ Carousel Wrapper (.wtscWrap)
-       │   ├─ Clip (.wtscClip)
-       │   │   └─ Track (.wtscTrack)
-       │   │       └─ Slides (.wtscSlide × 3) — injected by JS
-       │   └─ Dots (.wtscDots)
-       └─ Populated by initWtShowcase() on page load
+       ├─ Grid (.wtscGrid #wtscGrid) — injected by initWtShowcase()
+       └─ Empty State (.wtscEmpty #wtscEmpty)
        ========================================================= -->
   <section id="wtShowcase">
     <div class="fsHdr">
       <div class="secT">WEBSITE TEMPLATES <span class="s">✦</span></div>
+      <div class="secSub">READY TO USE DESIGNS</div>
     </div>
-    <div class="wtscWrap">
-      <div class="wtscClip" id="wtscClip">
-        <div class="wtscTrack" id="wtscTrack">
-          <!-- Slides injected by JS -->
-        </div>
-      </div>
-      <div class="wtscDots" id="wtscDots" aria-label="Template carousel navigation"></div>
-    </div>
+    <div class="wtscGrid" id="wtscGrid"></div>
+    <div class="wtscEmpty" id="wtscEmpty">NO TEMPLATES YET</div>
   </section>
   <!-- WEBSITE TEMPLATES SHOWCASE END -->
 
-  <!-- =========================================================
-       FEATURED SHOWCASE
-       ├─ Section Header (.fsHdr)
-       ├─ Showcase Card (.shCard #fsCard)
-       │   ├─ Main Image Slot (.shMain #fsMain)
-       │   ├─ Side Images (.shSide)
-       │   │   ├─ Side Slot 1 (#fsSide1)
-       │   │   └─ Side Slot 2 (#fsSide2)
-       │   └─ Info Block (.shInfo)
-       └─ Image URL Data (hidden data-source element #fsImageData)
-       ========================================================= -->
-  <section id="featured">
-    <!-- ── Section Header ── -->
-    <div class="fsHdr">
-      <div class="secT">FEATURED <span class="s">✦</span></div>
-      <div class="secSub">HANDPICKED HIGHLIGHTS</div>
-    </div>
-    <div class="shWrap">
-      <div class="shCard" id="fsCard">
-        <div class="shMain" id="fsMain"></div>
-        <div class="shSide">
-          <div class="shSideImg" id="fsSide1"></div>
-          <div class="shSideImg" id="fsSide2"></div>
-        </div>
-        <div class="shInfo">
-          <div class="secT">About the Showcase <span class="s">✦</span></div>
-          <p class="shTxt">The Featured Showcase presents a curated selection of artworks chosen for their creativity, quality, and visual impact. Bringing together a variety of styles, characters, and scenes, this collection highlights some of the most notable pieces featured throughout DigiArtz.</p>
-          <p class="shTxt">Each artwork has been selected for its artistic merit, attention to detail, and overall presentation, offering visitors a refined look at the work displayed within the gallery. Designed to provide an engaging viewing experience, the showcase celebrates digital art through imagination, craftsmanship, and creative expression.</p>
-          <button class="shBtn" onclick="ddOpenGallery()">VIEW SHOWCASE →</button>
-        </div>
-      </div>
-    </div>
-  </section>
-  <!-- ── Image URL Data (edit src URLs here to change featured images) ── -->
-  <!-- FEATURED SECTION IMAGES — edit the data-fssrc URLs below to change which artworks appear -->
-  <div id="fsImageData" style="display:none;"
-    data-fssrc-1="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781717079470_Prushka.png"
-    data-fssrc-2="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781630475302_Meili_Portroute.png"
-    data-fssrc-3="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780918474836_Thorfinn_Karlsefni.png"
-  ></div>
-  <!-- Featured Showcase images use the unified artwork modal (#artModal / openLB) -->
-  <!-- FEATURED SHOWCASE HTML END -->
-
-
-  <!-- =========================================================
-       GALLERY SHOWCASE
-       ├─ Hidden Data Grid (#homeGrid) — source for Full Gallery overlay
-       ├─ Section Header (.fsHdr)
-       │   └─ Admin Upload Button (.upBtn.adminOnly)
-       ├─ Showcase Card (.shCard #galCard)
-       │   ├─ Main Image Slot (.shMain #galMain)
-       │   ├─ Side Images (.shSide)
-       │   │   ├─ Side Slot 1 (#galSide1)
-       │   │   └─ Side Slot 2 (#galSide2)
-       │   └─ Info Block (.shInfo)
-       └─ Empty State (#galEmpty)
-       ========================================================= -->
   <!-- ── Hidden Data Grid (source for Full Gallery overlay) ── -->
   <div id="homeGrid" style="display:none;"></div>
-  <section id="gallery" style="padding:4rem 0 3rem;">
+
+  <!-- =========================================================
+       ARTWORKS SECTION
+       Displays the 20 most recent artworks in a responsive grid.
+       ├─ Section Header (.awHdr)
+       ├─ Admin Upload Button (.upBtn.adminOnly)
+       ├─ Grid (.awGrid #awGrid)
+       │   └─ Cards (.awCard × up to 20) — injected by rebuildArtworks()
+       └─ Empty State (.awEmpty #awEmpty)
+       ========================================================= -->
+  <section id="artworks">
     <!-- ── Section Header ── -->
-    <div class="fsHdr" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+    <div class="awHdr" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
       <div>
-        <div class="secT">GALLERY <span class="s">✦</span></div>
+        <div class="secT">ARTWORKS <span class="s">✦</span></div>
+        <div class="secSub">RECENT CREATIONS</div>
       </div>
-      <!-- ── Admin Upload Button (admin-only, hidden by default) ── -->
+      <!-- Admin Upload Button (admin-only, hidden by default) -->
       <button class="upBtn adminOnly" onclick="openUp()" style="display:none;">↑ UPLOAD ART</button>
     </div>
-    <div class="shWrap" style="margin-top:1.5rem;">
-      <div class="shCard" id="galCard">
-        <div class="shMain" id="galMain"></div>
-        <div class="shSide">
-          <div class="shSideImg" id="galSide1"></div>
-          <div class="shSideImg" id="galSide2"></div>
-        </div>
-        <div class="shInfo">
-          <div class="secT">About the Gallery <span class="s">✦</span></div>
-          <p class="shTxt">The Gallery features the latest additions to DigiArtz, showcasing newly uploaded artworks as they become available. From character illustrations and landscapes to creative experiments and detailed compositions, this collection is constantly growing with fresh content.</p>
-          <p class="shTxt">Visitors can explore recent creations, discover new styles, and stay up to date with the newest artwork featured on the platform. The gallery serves as an evolving archive of digital art, highlighting the most current additions while celebrating creativity and artistic expression.</p>
-          <button class="shBtn" onclick="ddOpenGallery()">VIEW GALLERY →</button>
-        </div>
-      </div>
-    </div>
-    <div id="galEmpty" style="display:none;padding:3rem 2rem;text-align:center;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;color:var(--txd);">NO ARTWORK YET</div>
+    <div class="awGrid" id="awGrid"></div>
+    <div class="awEmpty" id="awEmpty">NO ARTWORK YET</div>
   </section>
-  <!-- GALLERY SHOWCASE END -->
-  <!-- =========================================================
-       CHARACTERS SHOWCASE
-       ├─ Section Header (.fsHdr)
-       ├─ Showcase Card (.shCard #charCard)
-       │   ├─ Main Image Slot (.shMain #charMain)
-       │   ├─ Side Images (.shSide)
-       │   │   ├─ Side Slot 1 (#charSide1)
-       │   │   └─ Side Slot 2 (#charSide2)
-       │   └─ Info Block (.shInfo)
-       └─ Empty State (#charEmpty)
-       ========================================================= -->
-  <section id="secCharacters" style="padding:3rem 0 3rem;">
-    <!-- ── Section Header ── -->
-    <div class="fsHdr">
-      <div class="secT">CHARACTERS <span class="s">✦</span></div>
-    </div>
-    <div class="shWrap" style="margin-top:1.5rem;">
-      <div class="shCard" id="charCard">
-        <div class="shMain" id="charMain"></div>
-        <div class="shSide">
-          <div class="shSideImg" id="charSide1"></div>
-          <div class="shSideImg" id="charSide2"></div>
-        </div>
-        <div class="shInfo">
-          <div class="secT">About the Characters <span class="s">✦</span></div>
-          <p class="shTxt">The Characters collection brings together a diverse range of character-focused artwork, featuring original creations, fan art, game characters, anime-inspired designs, and real-life inspired portraits. Each piece explores unique personalities, styles, and visual storytelling through character illustration.</p>
-          <p class="shTxt">From iconic fan-favorite characters to completely original concepts, this collection highlights the creativity and artistic interpretation behind every design. Whether inspired by existing worlds or created from imagination, these artworks celebrate the appeal and diversity of character art across different genres and mediums.</p>
-          <button class="shBtn" onclick="ddOpenGalleryChar()">VIEW CHARACTERS →</button>
-        </div>
-      </div>
-    </div>
-    <div id="charEmpty" style="display:none;padding:3rem 2rem;text-align:center;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;color:var(--txd);">NO CHARACTER ARTWORK YET</div>
-  </section>
-  <!-- CHARACTERS SHOWCASE END -->
+  <!-- ARTWORKS SECTION END -->
 
   <!-- =========================================================
        ABOUT SECTION
@@ -6033,7 +6006,10 @@ body.admin .wtCardAdm { display: flex; }
      ├─ Runtime configuration
      └─ Gallery filter state
      ══════════════════════════════════════════════════════════ */
-  let isAdm = false, upFile = null, images = [], cfg = {hero_bg:''};
+  let isAdm = false, upFile = null, images = [], cfg = {
+    hero_bg:        'https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000a74472309db623dd9eb1a83a.png',
+    hero_bg_mobile: 'https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ad88723095f174a725265f4d.png'
+  };
   let filterCat = 'all', filterSrt = 'new', filterGrid = 4;
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -6055,7 +6031,8 @@ body.admin .wtCardAdm { display: flex; }
       ]);
       images=imgs||[];
       (sets||[]).forEach(r=>{
-        if(r.key==='hero_bg')cfg.hero_bg=r.value||'';
+        if(r.key==='hero_bg')cfg.hero_bg=r.value||cfg.hero_bg;
+        if(r.key==='hero_bg_mobile')cfg.hero_bg_mobile=r.value||cfg.hero_bg_mobile;
         if(r.key==='about_text'){
           const txt = document.getElementById('aTxt');
           const ea = document.getElementById('aEA');
@@ -6908,7 +6885,22 @@ body.admin .wtCardAdm { display: flex; }
       applyBg();showToast('Background image updated ✦');
     }catch(err){showToast('Error: '+err.message);}
   }
-  function applyBg(){
+  async function handleBgMobile(e){
+    const f=e.target.files[0];if(!f||!sb)return;
+    showToast('Uploading mobile image…');
+    try{
+      const ext=f.name.split('.').pop();
+      const path=`backgrounds/hero-bg-mobile.${ext}`;
+      await sb.storage.from(BUCKET).remove([path]);
+      const{error}=await sb.storage.from(BUCKET).upload(path,f,{cacheControl:'3600',upsert:true});
+      if(error)throw error;
+      const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
+      cfg.hero_bg_mobile=publicUrl;
+      await saveSetting('hero_bg_mobile',publicUrl);
+      applyBg();showToast('Mobile artwork updated ✶');
+    }catch(err){showToast('Error: '+err.message);}
+  }
+    function applyBg(){
     /* Drive the new split-screen hero <img> elements */
     var imgUrl = cfg.hero_bg || '';
     var mobUrl = cfg.hero_bg_mobile || imgUrl;
@@ -7129,6 +7121,61 @@ body.admin .wtCardAdm { display: flex; }
     window.addEventListener('scroll', onScroll, {passive:true});
     onScroll();
   })();
+  /* ── HERO SCROLL FADE — per-element, independent thresholds ──────
+     Each element watches its own position vs the nav bottom edge.
+     Fades out as it scrolls up toward the nav (2-line-height gap).
+     Fades back in when scrolled back down into the hero.
+     Order: .hBrand → .hTL1 → .hTL2 → .hCta (each triggers
+     when THAT element reaches 2 line-heights below nav bottom).
+     rAF throttled. opacity-only — no layout shift.
+     ─────────────────────────────────────────────────────────────── */
+  (function(){
+    var nav = document.getElementById('navWrap');
+    if(!nav) return;
+
+    /* The 4 elements to watch, in scroll order (top → bottom in DOM) */
+    var targets = [
+      document.querySelector('.hBrand'),
+      document.querySelector('.hTL1'),
+      document.querySelector('.hTL2'),
+      document.querySelector('#hero .hCta')
+    ].filter(Boolean);
+
+    if(!targets.length) return;
+
+    /* Gap: 2 line-heights below nav bottom before element fades */
+    var GAP = 56; /* 2 × 28px */
+
+    var ticking = false;
+    /* Track faded state per element to skip no-op DOM writes */
+    var states = targets.map(function(){ return false; });
+
+    function check(){
+      ticking = false;
+      var navBottom = nav.getBoundingClientRect().bottom;
+      var threshold = navBottom + GAP;
+
+      targets.forEach(function(el, i){
+        /* Each element's own top edge */
+        var elTop = el.getBoundingClientRect().top;
+        var shouldFade = elTop < threshold;
+        if(shouldFade === states[i]) return; /* no change */
+        states[i] = shouldFade;
+        el.classList.toggle('hFaded', shouldFade);
+      });
+    }
+
+    window.addEventListener('scroll', function(){
+      if(!ticking){
+        ticking = true;
+        requestAnimationFrame(check);
+      }
+    }, {passive: true});
+
+    /* Run once immediately */
+    check();
+  })();
+
   function ddOpenGallery(){
     closeMenu();
     /* Always reset to full gallery when opening from nav or VIEW GALLERY button */
@@ -7618,152 +7665,94 @@ async function openComments(){
   }
 
   /* ═══════════════════════════════════════════════════════════
-     SHOWCASE CARD JAVASCRIPT
-     Populates the Featured, Gallery, and Characters showcase
-     cards (1 large + 2 small images each). Featured uses its
-     static curated image list; Gallery and Characters pull live
-     from artwork data, newest first. All three open the single,
-     unified artwork modal (#artModal / openLB). No carousels,
-     no auto-scroll, no clones.
+     ARTWORKS GRID JAVASCRIPT
+     Populates #awGrid with the 20 most recent artworks.
+     Clicking any card opens the existing artwork modal (openLB).
+     Called by renderHome() after DB loads.
      ═══════════════════════════════════════════════════════════ */
-  (function(){
-    /* openViewer forwards to the shared premium modal so Featured/
-       Gallery/Characters showcase clicks behave identically to the
-       full-gallery grid clicks (blur backdrop, scale animation,
-       ESC/outside-click close, name + category tag). desc/id are
-       optional — Featured (static curated images, no DB row) simply
-       omits them and behaves exactly as before. */
-    function openViewer(src,name,cat,desc,id){
-      if(!src) return;
-      openLB(src,name||'',cat||'',desc||'',id||null);
+  window.rebuildGalCarousels = function(artworks){
+    var grid  = document.getElementById('awGrid');
+    var empty = document.getElementById('awEmpty');
+    if(!grid) return;
+
+    var list = sortByNewest(artworks.slice()).slice(0, 20);
+    grid.innerHTML = '';
+
+    if(!list.length){
+      if(empty) empty.style.display = 'block';
+      return;
     }
+    if(empty) empty.style.display = 'none';
 
-    /* Fill mainEl/side1El/side2El with up to 3 images from `list`.
-       Returns true if at least one image was placed. */
-    function fillTriad(mainEl, side1El, side2El, list){
-      var slots = [mainEl, side1El, side2El];
-      slots.forEach(function(el){ if(el) el.innerHTML = ''; });
-      if(!list.length) return false;
+    list.forEach(function(art){
+      var fullSrc = art.image_url || '';
+      var name    = art.name || 'Untitled';
+      var cat     = (art.category || 'others').split(',')[0].trim();
+      var desc    = art.description || '';
+      var id      = art.id;
 
-      list.slice(0, 3).forEach(function(art, i){
-        var el = slots[i];
-        if(!el) return;
-        var fullSrc = art.image_url || '';
-        var name = art.name || '';
-        var cat = (art.category||'').split(',')[0].trim();
-        var desc = art.description || '';
-        var id = art.id;
-        var img = document.createElement('img');
-        img.src = getThumbnailUrl(fullSrc);
-        img.alt = name || 'Untitled artwork';
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.draggable = false;
-        /* Same fallback as renderFeatured() — keeps the rounded-corner
-           box intact even if a thumbnail URL 404s or fails to load. */
-        img.onerror = function(){ el.innerHTML = '<div class="fsEmpty"></div>'; el.style.cursor = 'default'; };
-        el.appendChild(img);
-        el.style.cursor = 'pointer';
-        el.onclick = (function(s,n,c,d,i){ return function(){ openViewer(s,n,c,d,i); }; })(fullSrc,name,cat,desc,id);
-      });
-      return true;
-    }
+      var card = document.createElement('div');
+      card.className = 'awCard';
+      card.setAttribute('role','button');
+      card.setAttribute('tabindex','0');
+      card.setAttribute('aria-label','View ' + name);
 
-    /* ── Featured: static curated images from #fsImageData ── */
-    function renderFeatured(){
-      var data = document.getElementById('fsImageData');
-      var slots = [
-        { el: document.getElementById('fsMain'),  src: data ? data.getAttribute('data-fssrc-1') : '' },
-        { el: document.getElementById('fsSide1'), src: data ? data.getAttribute('data-fssrc-2') : '' },
-        { el: document.getElementById('fsSide2'), src: data ? data.getAttribute('data-fssrc-3') : '' }
-      ];
-      slots.forEach(function(slot){
-        var el  = slot.el;
-        var src = (slot.src || '').trim();
-        if(!el) return;
-        el.innerHTML = '';
-        if(!src){
-          el.innerHTML = '<div class="fsEmpty"></div>';
-          return;
-        }
-        var img = document.createElement('img');
-        img.src = getThumbnailUrl(src);
-        img.alt = 'Featured artwork';
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.draggable = false;
-        img.onerror = function(){ el.innerHTML = '<div class="fsEmpty"></div>'; el.style.cursor = 'default'; };
-        el.appendChild(img);
-        el.style.cursor = 'pointer';
-        el.addEventListener('click', function(){ openViewer(src,'Featured Artwork',''); });
-      });
-    }
-    renderFeatured();
+      var wrap = document.createElement('div');
+      wrap.className = 'awImgWrap';
 
-    /* ── Gallery + Characters: live artwork data, rebuilt after DB loads ── */
-    window.rebuildGalCarousels = function(artworks){
-      /* Gallery: most recent uploads across all categories */
-      var galList = sortByNewest(artworks.slice());
-      var galHas = fillTriad(
-        document.getElementById('galMain'),
-        document.getElementById('galSide1'),
-        document.getElementById('galSide2'),
-        galList
-      );
-      document.getElementById('galEmpty').style.display = galHas ? 'none' : 'block';
-      document.getElementById('galCard').style.display   = galHas ? '' : 'none';
+      var img = document.createElement('img');
+      img.src = getThumbnailUrl(fullSrc);
+      img.alt = name;
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.draggable = false;
 
-      /* Collect the image_urls already used by the Gallery triad so Characters can skip them */
-      var galUsedUrls = {};
-      galList.slice(0, 3).forEach(function(a){ if(a.image_url) galUsedUrls[a.image_url] = true; });
+      wrap.appendChild(img);
 
-      /* Characters: most recent uploads tagged "characters", skipping any already shown in Gallery */
-      var charList = sortByNewest(artworks.filter(function(a){
-        var cats = (a.category || 'others').split(',').map(function(s){ return s.trim().toLowerCase(); });
-        return cats.indexOf('characters') !== -1;
-      })).filter(function(a){
-        /* Skip images already displayed in the Gallery showcase */
-        return !galUsedUrls[a.image_url];
-      });
-      var charHas = fillTriad(
-        document.getElementById('charMain'),
-        document.getElementById('charSide1'),
-        document.getElementById('charSide2'),
-        charList
-      );
-      document.getElementById('charEmpty').style.display = charHas ? 'none' : 'block';
-      document.getElementById('charCard').style.display   = charHas ? '' : 'none';
+      var meta = document.createElement('div');
+      meta.className = 'awMeta';
 
-    };
+      var nm = document.createElement('div');
+      nm.className = 'awName';
+      nm.textContent = name;
 
-    /* Build with empty data initially — will be rebuilt after DB loads */
-    window.rebuildGalCarousels([]);
-  })();
+      var ct = document.createElement('div');
+      ct.className = 'awCat';
+      ct.textContent = cat;
+
+      meta.appendChild(nm);
+      meta.appendChild(ct);
+      card.appendChild(wrap);
+      card.appendChild(meta);
+
+      /* Click / keyboard open artwork modal */
+      (function(s,n,c,d,i){
+        card.onclick = function(){ openLB(s,n,c,d,i); };
+        card.onkeydown = function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openLB(s,n,c,d,i); } };
+      })(fullSrc, name, cat, desc, id);
+
+      grid.appendChild(card);
+    });
+  };
+
+  /* Populate with empty list on first paint — rebuilt after DB loads */
+  window.rebuildGalCarousels([]);
   /* ═══════════════════════════════════════════════════════════
-     END SHOWCASE CARD JAVASCRIPT
+     END ARTWORKS GRID JAVASCRIPT
      ═══════════════════════════════════════════════════════════ */
 
   /* ═══════════════════════════════════════════════════════════
-     WEBSITE TEMPLATES SHOWCASE CAROUSEL
-     ├─ Displays the 3 newest templates from Supabase
-     ├─ 1 card visible at a time, infinite-loop carousel
-     ├─ Auto-slides every 4 seconds
-     ├─ Touch/pointer swipe support
-     ├─ Navigation dots
+     WEBSITE TEMPLATES SHOWCASE GRID
+     ├─ Displays the 10 newest templates from Supabase
+     ├─ Responsive grid, left-to-right (matches Artworks grid)
      └─ Clicking any card opens openWebTemplates()
      ═══════════════════════════════════════════════════════════ */
   (function(){
-    var SLIDE_INTERVAL = 4000; /* ms between auto-advances */
-    var track  = document.getElementById('wtscTrack');
-    var clip   = document.getElementById('wtscClip');
-    var dotsEl = document.getElementById('wtscDots');
-    var templates = [];  /* up to 3 newest */
-    var current  = 0;
-    var total    = 0;
-    var autoTimer = null;
+    var grid  = document.getElementById('wtscGrid');
+    var empty = document.getElementById('wtscEmpty');
 
-    /* ── Build card HTML (re-uses wtCardHTML shape) ── */
-    function cardHTMLForShowcase(t){
+    /* ── Build card HTML (re-uses existing wtCard classes) ── */
+    function cardHTML(t){
       var tier = t.tier || 'free';
       var tierClasses = {free:'wtCard--free',lite:'wtCard--lite',premium:'wtCard--premium',max:'wtCard--max'};
       var badgeClasses= {free:'wtTierBadge--free',lite:'wtTierBadge--lite',premium:'wtTierBadge--premium',max:'wtTierBadge--max'};
@@ -7776,8 +7765,7 @@ async function openComments(){
       var imgBlock = t.preview_url
         ? '<img class="wtCardImg" src="' + t.preview_url + '" alt="' + nm + '" loading="lazy" decoding="async"/>'
         : '<div class="wtCardImgPlaceholder">◧</div>';
-
-      return '<div class="wtCard ' + tc + '">' +
+      return '<div class="wtCard ' + tc + '" onclick="openWebTemplates()" style="cursor:pointer;">' +
         '<div class="wtCardImgWrap">' + imgBlock + '</div>' +
         '<div class="wtCardBdy">' +
           '<div class="wtCardTitleRow">' +
@@ -7789,109 +7777,26 @@ async function openComments(){
       '</div>';
     }
 
-    /* ── Build dots ── */
-    function buildDots(){
-      dotsEl.innerHTML = '';
-      for(var i = 0; i < total; i++){
-        var btn = document.createElement('button');
-        btn.className = 'wtscDot' + (i === 0 ? ' active' : '');
-        btn.setAttribute('aria-label', 'Go to template ' + (i + 1));
-        btn.dataset.idx = i;
-        btn.addEventListener('click', function(){
-          goTo(parseInt(this.dataset.idx, 10));
-          resetTimer();
-        });
-        dotsEl.appendChild(btn);
-      }
-    }
-
-    /* ── Sync track position and dots ── */
-    function syncUI(){
-      track.style.transform = 'translateX(-' + (current * 100) + '%)';
-      var dots = dotsEl.querySelectorAll('.wtscDot');
-      dots.forEach(function(d, i){ d.classList.toggle('active', i === current); });
-    }
-
-    /* ── Navigate to a slide (infinite loop) ── */
-    function goTo(idx){
-      current = ((idx % total) + total) % total;
-      syncUI();
-    }
-
-    function next(){ goTo(current + 1); }
-    function prev(){ goTo(current - 1); }
-
-    /* ── Auto-slide ── */
-    function startTimer(){
-      stopTimer();
-      autoTimer = setInterval(next, SLIDE_INTERVAL);
-    }
-    function stopTimer(){ clearInterval(autoTimer); }
-    function resetTimer(){ stopTimer(); startTimer(); }
-
-    /* ── Touch / pointer swipe ── */
-    var swipeStartX = null;
-    var didSwipe = false;
-    clip.addEventListener('pointerdown', function(e){
-      swipeStartX = e.clientX;
-      didSwipe = false;
-      clip.classList.add('wtsc--dragging');
-    });
-    clip.addEventListener('pointermove', function(e){
-      if(swipeStartX === null) return;
-      /* Prevent scroll during deliberate horizontal swipe */
-      if(Math.abs(e.clientX - swipeStartX) > 8) e.preventDefault();
-    }, { passive: false });
-    clip.addEventListener('pointerup', function(e){
-      if(swipeStartX === null){ clip.classList.remove('wtsc--dragging'); return; }
-      var dx = e.clientX - swipeStartX;
-      swipeStartX = null;
-      clip.classList.remove('wtsc--dragging');
-      if(dx < -40){ didSwipe = true; next(); resetTimer(); }
-      else if(dx > 40){ didSwipe = true; prev(); resetTimer(); }
-    });
-    clip.addEventListener('pointercancel', function(){
-      swipeStartX = null;
-      didSwipe = false;
-      clip.classList.remove('wtsc--dragging');
-    });
-
-    /* ── Click card → open Website Templates ── */
-    clip.addEventListener('click', function(){
-      if(didSwipe){ didSwipe = false; return; }
-      openWebTemplates();
-    });
-
-    /* ── Render ── */
+    /* ── Render grid ── */
     function render(list){
-      templates = list.slice(0, 3);
-      total = templates.length;
-      if(!total){
-        /* No templates: hide the section entirely */
+      var items = list.slice(0, 10);
+      if(!items.length){
+        if(empty) empty.style.display = 'block';
         var sec = document.getElementById('wtShowcase');
         if(sec) sec.style.display = 'none';
         return;
       }
-      /* Show section in case it was hidden */
       var sec = document.getElementById('wtShowcase');
       if(sec) sec.style.display = '';
-
-      /* Build slides */
-      track.innerHTML = templates.map(function(t){
-        return '<div class="wtscSlide">' + cardHTMLForShowcase(t) + '</div>';
-      }).join('');
-
-      current = 0;
-      buildDots();
-      syncUI();
-      startTimer();
+      if(empty) empty.style.display = 'none';
+      if(grid) grid.innerHTML = items.map(cardHTML).join('');
     }
 
-    /* ── Fetch newest 3 templates from Supabase ── */
+    /* ── Fetch newest 10 templates from Supabase ── */
     async function loadShowcase(){
       if(!sb) return;
       try{
-        var res = await sb.from('web_templates').select('id,name,short_desc,preview_url,tier,created_at').order('created_at',{ascending:false}).limit(3);
+        var res = await sb.from('web_templates').select('id,name,short_desc,preview_url,tier,created_at').order('created_at',{ascending:false}).limit(10);
         if(res.error) throw res.error;
         render(res.data || []);
       }catch(e){
@@ -7899,11 +7804,10 @@ async function openComments(){
       }
     }
 
-    /* Expose so init() can call it after Supabase is ready */
     window.initWtShowcase = loadShowcase;
   })();
   /* ═══════════════════════════════════════════════════════════
-     END WEBSITE TEMPLATES SHOWCASE CAROUSEL
+     END WEBSITE TEMPLATES SHOWCASE GRID
      ═══════════════════════════════════════════════════════════ */
 
   /* ══════════════════════════════════════════════════════════
@@ -8947,6 +8851,170 @@ async function openComments(){
 </script>
 <!-- ════════════════════════════════════════════════════════
      END FAQ SECTION JS
+     ════════════════════════════════════════════════════════ -->
+
+<!-- ════════════════════════════════════════════════════════
+     SCROLL FADE-UP ANIMATION SYSTEM
+     ├─ Scope   : #wtShowcase → #artworks → #about → #connect
+     ├─ Method  : IntersectionObserver (one-shot, no replay)
+     ├─ Targets : headings, subheadings, paras, buttons,
+     │            cards, grid items, images, icons, quotes
+     └─ Stagger : applied to cards & grid items via CSS delay
+     ════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── Sections in scope ── */
+  var SCOPE_IDS = ['wtShowcase', 'artworks', 'about', 'connect'];
+
+  /* ── CSS selectors to animate (within scope sections) ── */
+  var TARGETS = [
+    /* Section headers */
+    '.fsHdr', '.awHdr',
+    /* Individual heading / sub elements (fallback if parent already targeted) */
+    '.secT', '.secSub',
+    /* Artworks section cards */
+    '.awCard',
+    /* Website Templates showcase cards */
+    '.wtscCard',
+    /* About card wrapper and its inner pieces */
+    '.shWrap', '.shCard', '.shInfo',
+    /* Text content */
+    '.shTxt', '.aQuote',
+    /* Buttons */
+    '.upBtn', '.hCta',
+    /* Empty states */
+    '.awEmpty', '.wtscEmpty',
+    /* Connect section */
+    '.cDiv', '.sCard'
+  ].join(',');
+
+  /* ── Staggered groups: cards & grid items get cascade delays ── */
+  var STAGGER_SELECTORS = ['.awCard', '.wtscCard', '.sCard'];
+  var STAGGER_BASE_MS   = 80;   /* ms between each sibling card */
+  var STAGGER_MAX_MS    = 560;  /* cap so late cards don't wait forever */
+
+  /* ── Stamp .fu-el on every target inside the scoped sections ── */
+  function stampElements() {
+    SCOPE_IDS.forEach(function (id) {
+      var section = document.getElementById(id);
+      if (!section) return;
+
+      /* Animate the section wrapper itself */
+      addFuEl(section);
+
+      /* Animate all matching children */
+      var children = section.querySelectorAll(TARGETS);
+      children.forEach(function (el) {
+        /* Skip elements that are already a scoped section root */
+        if (SCOPE_IDS.indexOf(el.id) !== -1) return;
+        addFuEl(el);
+      });
+    });
+  }
+
+  function addFuEl(el) {
+    /* Never double-stamp */
+    if (el.classList.contains('fu-el')) return;
+    el.classList.add('fu-el');
+  }
+
+  /* ── Apply stagger delays to sibling card groups ── */
+  function applyStagger() {
+    SCOPE_IDS.forEach(function (id) {
+      var section = document.getElementById(id);
+      if (!section) return;
+
+      STAGGER_SELECTORS.forEach(function (sel) {
+        var cards = section.querySelectorAll(sel);
+        cards.forEach(function (card, i) {
+          var delay = Math.min(i * STAGGER_BASE_MS, STAGGER_MAX_MS);
+          card.style.transitionDelay = delay + 'ms';
+        });
+      });
+    });
+  }
+
+  /* ── IntersectionObserver: trigger once per element ── */
+  function initObserver() {
+    if (!('IntersectionObserver' in window)) {
+      /* Fallback: just show everything immediately */
+      document.querySelectorAll('.fu-el').forEach(function (el) {
+        el.classList.add('fu-visible');
+      });
+      return;
+    }
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('fu-visible');
+          io.unobserve(entry.target); /* one-shot — never replays */
+        }
+      });
+    }, {
+      threshold: 0.08,        /* trigger when 8% of element is in view */
+      rootMargin: '0px 0px -40px 0px'  /* slight bottom buffer */
+    });
+
+    document.querySelectorAll('.fu-el').forEach(function (el) {
+      io.observe(el);
+    });
+  }
+
+  /* ── MutationObserver: catch dynamically injected cards ── */
+  function watchDynamicCards() {
+    if (!('MutationObserver' in window)) return;
+
+    var mo = new MutationObserver(function (mutations) {
+      var needsRestamp = false;
+
+      mutations.forEach(function (mutation) {
+        mutation.addedNodes.forEach(function (node) {
+          if (node.nodeType !== 1) return;
+          /* Only care about nodes inside our scoped sections */
+          var inScope = SCOPE_IDS.some(function (id) {
+            var sec = document.getElementById(id);
+            return sec && sec.contains(node);
+          });
+          if (inScope) needsRestamp = true;
+        });
+      });
+
+      if (needsRestamp) {
+        stampElements();
+        applyStagger();
+        initObserver();
+      }
+    });
+
+    SCOPE_IDS.forEach(function (id) {
+      var section = document.getElementById(id);
+      if (section) {
+        mo.observe(section, { childList: true, subtree: true });
+      }
+    });
+  }
+
+  /* ── Boot ── */
+  function boot() {
+    stampElements();
+    applyStagger();
+    initObserver();
+    watchDynamicCards();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+})();
+</script>
+<!-- ════════════════════════════════════════════════════════
+     END SCROLL FADE-UP ANIMATION SYSTEM
      ════════════════════════════════════════════════════════ -->
 
 <!-- ════════════════════════════════════════════════════════

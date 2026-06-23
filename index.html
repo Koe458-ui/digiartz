@@ -269,10 +269,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&amp;family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
   </script>
-  <!-- LAZY LOADING START -->
-  <!-- Preload the hero background image to improve LCP (Largest Contentful Paint) -->
-  <link as="image" fetchpriority="high" href="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png" rel="preload"/>
-  <!-- LAZY LOADING END -->
+  <!-- Hero artwork images are set via JS (applyBg / Supabase settings) — no static preload needed -->
   <style>
 
     /* ══════════════════════════════════════════════════════════
@@ -503,50 +500,265 @@
     }
 
     /* ══════════════════════════════════════════════════════════
-       § 8  HERO SYSTEM
-       ├─ #hero     — full-viewport section container
-       ├─ #hBgImg   — static art background (cover, centre)
-       ├─ .hOv      — cinematic dark overlay (z-index 3)
-       ├─ .hCon     — centred content stack (z-index 4)
-       ├─ .hT       — display title + .si sparkle child
-       ├─ .hSub     — mono eyebrow / tagline
-       ├─ .hDesc    — italic descriptor line
-       ├─ .hScr     — scroll indicator (label + animated line)
-       ├─ .sLn      — animated vertical line inside .hScr
-       ├─ .hEBg     — admin-only "Edit Background" button
-       └─ #bgF      — hidden file input for background upload
+       § 8  HERO SYSTEM — Premium Split-Screen Layout
+       ├─ #hero        — full-viewport section, flex row
+       ├─ .hLeft       — content side (40–45% width)
+       ├─ .hRight      — artwork side (55–60% width)
+       ├─ .hBrand      — small eyebrow brand label
+       ├─ .hT          — main headline
+       ├─ .hCta        — primary CTA button
+       ├─ .hArtImg     — desktop artwork image
+       ├─ .hArtImgMob  — mobile artwork image (hidden on desktop)
+       ├─ .hScr        — scroll indicator
+       ├─ .sLn         — animated vertical line
+       ├─ .hEBg        — admin-only edit button
+       └─ #bgF         — hidden file input for background upload
        ══════════════════════════════════════════════════════════ */
-    #hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;overflow:hidden;}
 
-    /* Static art background — single cover image, no animation */
-    #hBgImg{
-      position:absolute;
-      inset:0;
-      background-image:url('https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png');
-      background-size:cover;
-      background-position:center center;
-      background-repeat:no-repeat;
-      z-index:0;
+    #hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+      background: #ffffff;
     }
 
-    /* ══════════════════════════════════════════════════════════
-       § 8a HERO ANIMATIONS
-       ├─ @keyframes sP — sparkle pulse on .hT .si
-       └─ @keyframes sD — scroll-line draw/erase on .sLn
-       Hero overlay / content / element rules live in § 8 HERO & GLOBAL UI CSS below.
-       ══════════════════════════════════════════════════════════ */
+    /* ── Left content panel ── */
+    .hLeft {
+      flex: 0 0 42%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 7rem 4rem 7rem 5rem;
+      position: relative;
+      z-index: 2;
+      background: #ffffff;
+    }
+
+    /* Subtle vertical rule separating content from art */
+    .hLeft::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 12%;
+      bottom: 12%;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, #e3e5ea 30%, #e3e5ea 70%, transparent);
+    }
+
+    /* ── Brand eyebrow ── */
+    .hBrand {
+      font-family: var(--fm);
+      font-size: .68rem;
+      letter-spacing: .45em;
+      color: #8a8f98;
+      text-transform: uppercase;
+      margin-bottom: 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+    }
+    .hBrand::before {
+      content: '';
+      display: block;
+      width: 28px;
+      height: 1px;
+      background: #8a8f98;
+      flex-shrink: 0;
+    }
+
+    /* ── Headline ── */
+    #hero .hT {
+      font-family: var(--fd);
+      font-size: clamp(2.2rem, 3.8vw, 4rem);
+      font-weight: 900;
+      line-height: 1.08;
+      letter-spacing: -.025em;
+      color: #1a1c22;
+      -webkit-text-fill-color: #1a1c22;
+      filter: none;
+      margin-bottom: 2.2rem;
+      position: static;
+    }
+    #hero .hT .si { display: none; }
+
+    /* ── CTA button ── */
+    .hCta {
+      display: inline-flex;
+      align-items: center;
+      gap: .65rem;
+      padding: .9rem 2.4rem;
+      background: #1a1c22;
+      color: #ffffff;
+      border: 1.5px solid #1a1c22;
+      font-family: var(--fm);
+      font-size: .75rem;
+      letter-spacing: .22em;
+      cursor: pointer;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background .28s, border-color .28s, transform .28s, box-shadow .28s;
+      align-self: flex-start;
+    }
+    .hCta:hover {
+      background: transparent;
+      color: #1a1c22;
+      border-color: #1a1c22;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(26,28,34,.12);
+    }
+    .hCta .hCtaArrow {
+      display: inline-block;
+      transition: transform .28s;
+    }
+    .hCta:hover .hCtaArrow { transform: translateX(3px); }
+
+    /* ── Right artwork panel ── */
+    .hRight {
+      flex: 0 0 58%;
+      position: relative;
+      overflow: hidden;
+      background: #f6f7f9;
+    }
+
+    /* Desktop artwork image */
+    .hArtImg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      display: block;
+    }
+
+    /* Mobile artwork image — hidden on desktop */
+    .hArtImgMob { display: none; }
+
+    /* Subtle inner shadow on left edge of image for seamless blend */
+    .hRight::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      left: 0;
+      width: 60px;
+      background: linear-gradient(to right, rgba(255,255,255,.18), transparent);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ── Scroll indicator ── */
+    .hScr {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 2.8rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .4rem;
+      z-index: 4;
+    }
+    .hScr span {
+      font-family: var(--fm);
+      font-size: .58rem;
+      letter-spacing: .35em;
+      color: #8a8f98;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+    .sLn {
+      width: 1px;
+      height: 44px;
+      background: linear-gradient(to bottom, #8a8f98, transparent);
+      animation: sD 2s ease-in-out infinite;
+    }
+    @keyframes sD {
+      0%   { transform: scaleY(0); transform-origin: top; opacity: 1; }
+      50%  { transform: scaleY(1); transform-origin: top; }
+      51%  { transform-origin: bottom; }
+      100% { transform: scaleY(0); transform-origin: bottom; opacity: .3; }
+    }
+
+    /* ── Admin edit background button ── */
+    .hEBg {
+      position: absolute;
+      bottom: 1rem;
+      right: 1.5rem;
+      z-index: 10;
+      padding: .5rem 1rem;
+      background: rgba(255,255,255,.88);
+      border: 1px solid var(--bdr);
+      color: var(--ps);
+      font-family: var(--fm);
+      font-size: .72rem;
+      letter-spacing: .15em;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: .4rem;
+      transition: background .25s, border-color .25s;
+      border-radius: 6px;
+    }
+    .hEBg:hover { background: rgba(255,255,255,1); border-color: var(--pg); }
+    body.admin .hEBg { display: flex; }
+    #bgF { display: none; }
+
+    /* Unused legacy rules kept for JS compatibility */
+    #hBgImg { display: none; }
+    .hOv    { display: none; }
+    .hCon   { display: none; }
+    .hSub   { display: none; }
+    .hDesc  { display: none; }
 
     /* ══════════════════════════════════════════════════════════
-       § 8b HERO RESPONSIVE RULES
-       ├─ max-width:768px — mobile background note
-       └─ max-width:640px — hide scroll indicator on small screens
-       ══════════════════════════════════════════════════════════ */
-    
-    /* ══════════════════════════════════════════════════════════
-       RESPONSIVE CSS — MOBILE RULES
+       § 8a HERO RESPONSIVE RULES
+       ├─ Tablet/desktop  (≥769px) — split layout, desktop image
+       └─ Mobile          (≤768px) — stacked layout, mobile image
        ══════════════════════════════════════════════════════════ */
 
-    @media(max-width:640px){ .hScr{ display:none; } }
+    /* ── Tablet & desktop: show desktop art, hide mobile art ── */
+    @media (min-width: 769px) {
+      .hArtImg    { display: block; }
+      .hArtImgMob { display: none; }
+    }
+
+    /* ── Mobile: stacked vertical layout ── */
+    @media (max-width: 768px) {
+      #hero {
+        flex-direction: column;
+        min-height: 100svh;
+      }
+      .hRight {
+        flex: 0 0 auto;
+        width: 100%;
+        height: 62vw;
+        min-height: 220px;
+        max-height: 420px;
+        order: 0;
+      }
+      .hRight::before { display: none; }
+      .hArtImg    { display: none; }
+      .hArtImgMob {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .hLeft {
+        flex: 1;
+        order: 1;
+        padding: 2.8rem 1.8rem 4rem;
+        justify-content: flex-start;
+      }
+      .hLeft::after { display: none; }
+      #hero .hT { font-size: clamp(1.9rem, 8vw, 2.8rem); }
+      .hCta { align-self: flex-start; }
+      .hScr { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .hLeft { padding: 2.2rem 1.4rem 3.5rem; }
+    }
     /* ══════════════════════════════════════════════════════════
        § 7b GLOBAL UI ELEMENTS
        ├─ .srOnly   — visually-hidden a11y utility
@@ -579,23 +791,7 @@
        ├─ @keyframes sP — sparkle pulse
        └─ @keyframes sD — scroll-line draw
        ══════════════════════════════════════════════════════════ */
-.hOv{position:absolute;inset:0;z-index:3;background:none;}
-.hCon{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1rem;}
-.hT{font-family:var(--fd);font-size:clamp(2.5rem,11vw,7rem);font-weight:900;line-height:.9;color:#000;-webkit-text-fill-color:#000;filter:none;position:relative;}
-.hT .si{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.12em;color:#000;-webkit-text-fill-color:#000;animation:sP 3s ease-in-out infinite;filter:none;}
-@keyframes sP{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3);opacity:.7}}
-.hSub{font-family:var(--fm);font-size:clamp(.5rem,2.2vw,.9rem);letter-spacing:.4em;color:#000;margin-top:.5rem;}
-.hDesc{font-family:var(--fb);font-size:clamp(.85rem,2.5vw,1.05rem);color:#000;font-style:italic;}
-.hScr{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.4rem;z-index:4;}
-.hScr span{font-family:var(--fm);font-size:.62rem;letter-spacing:.3em;color:#000;}
-.sLn{width:1px;height:50px;background:linear-gradient(to bottom,var(--pg),transparent);animation:sD 2s ease-in-out infinite;}
-@keyframes sD{0%{transform:scaleY(0);transform-origin:top;opacity:1}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom;opacity:.3}}
-.hCta{margin-top:1rem;padding:.85rem 2.2rem;border:1px solid var(--pg);background:rgba(255,255,255,.55);color:#000;font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;display:flex;align-items:center;gap:.6rem;text-decoration:none;border-radius:6px;}
-.hCta:hover{background:rgba(255,255,255,.75);border-color:var(--pb);box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);transform:translateY(-2px);}
-.hEBg{position:absolute;bottom:1rem;right:1.5rem;z-index:10;padding:.5rem 1rem;background:color-mix(in srgb,var(--tc) 15%,transparent);border:1px solid var(--bdr);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;cursor:pointer;display:none;align-items:center;gap:.4rem;transition:background .25s,border-color .25s;border-radius:6px;}
-.hEBg:hover{background:color-mix(in srgb,var(--tc) 30%,transparent);border-color:var(--pg);}
-body.admin .hEBg{display:flex;}
-#bgF{display:none;}
+/* Legacy hero class stubs — kept for JS safety, visual output handled in § 8 above */
 .sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
 .secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
 .secT .s{color:var(--pg);font-size:.5em;}
@@ -4251,41 +4447,63 @@ body.admin .wtCardAdm { display: flex; }
     </div>
   </div>
   <!-- =========================================================
-       HERO SECTION
-       ├─ Background Image Layer (#hBgImg)
-       ├─ Gradient Overlay (.hOv)
-       ├─ Content Block (.hCon)
-       │   ├─ Title (.hT)
-       │   ├─ Subtitle (.hSub)
-       │   ├─ Description (.hDesc)
+       HERO SECTION — Premium Split-Screen Layout
+       ├─ Left Panel (.hLeft)
+       │   ├─ Brand Eyebrow (.hBrand)
+       │   ├─ Headline (.hT)
        │   └─ CTA Button (.hCta)
+       ├─ Right Panel (.hRight)
+       │   ├─ Desktop Artwork (.hArtImg)
+       │   └─ Mobile Artwork (.hArtImgMob)
        ├─ Scroll Indicator (.hScr)
-       └─ Admin Controls (change background button + file input)
+       └─ Admin Controls
        ========================================================= -->
   <section id="hero">
- <div id="hBgImg"></div>
- <div class="hOv"></div>
- 
- <div class="hCon">
-  <h1 class="hT">
-    <span>Digiartz</span>
-    <span class="si">✦</span>
-  </h1>
-  <p class="hSub">ART HAS NO LIMITS</p>
-  <p class="hDesc">A digital art showcase by KOE</p>
-  <button class="hCta" onclick="openFG()">
-   <span>✦</span> EXPLORE GALLERY
-  </button>
- </div>
 
- <div class="hScr">
-  <span>SCROLL</span>
-  <div class="sLn"></div>
- </div>
- <button class="hEBg" onclick="document.getElementById('bgF').click()">🖼 CHANGE BACKGROUND</button>
- <input accept="image/*" id="bgF" onchange="handleBg(event)" type="file"/>
- <label for="bgF" class="srOnly">Choose hero background image</label>
-</section>
+    <!-- ── Left: Content ── -->
+    <div class="hLeft">
+      <p class="hBrand">DigitArts</p>
+      <h1 class="hT">Where Creativity Becomes<br>Timeless Art</h1>
+      <button class="hCta" onclick="openFG()">
+        Explore Gallery <span class="hCtaArrow">→</span>
+      </button>
+    </div>
+
+    <!-- ── Right: Artwork ── -->
+    <div class="hRight">
+      <!-- Desktop image (tablet, laptop, desktop, ultrawide) -->
+      <img
+        class="hArtImg"
+        src=""
+        alt="Featured digital artwork by DigitArts"
+        fetchpriority="high"
+        id="hDesktopImg"
+      />
+      <!-- Mobile image (phones ≤768px) -->
+      <img
+        class="hArtImgMob"
+        src=""
+        alt="Featured digital artwork by DigitArts"
+        id="hMobileImg"
+      />
+    </div>
+
+    <!-- ── Scroll indicator ── -->
+    <div class="hScr">
+      <span>SCROLL</span>
+      <div class="sLn"></div>
+    </div>
+
+    <!-- ── Admin: change background ── -->
+    <button class="hEBg" onclick="document.getElementById('bgF').click()">🖼 CHANGE ARTWORK</button>
+    <input accept="image/*" id="bgF" onchange="handleBg(event)" type="file"/>
+    <label for="bgF" class="srOnly">Choose hero artwork image</label>
+
+    <!-- Legacy elements kept for JS compatibility -->
+    <div id="hBgImg" style="display:none;"></div>
+    <div class="hOv" style="display:none;"></div>
+    <div class="hCon" style="display:none;"></div>
+  </section>
   <!-- =========================================================
        WEBSITE TEMPLATES SHOWCASE
        Carousel of the 3 newest website templates. Clicking any
@@ -6691,10 +6909,16 @@ body.admin .wtCardAdm { display: flex; }
     }catch(err){showToast('Error: '+err.message);}
   }
   function applyBg(){
-    /* Update the image fallback layer */
-    var imgUrl = cfg.hero_bg ||
-      'https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png';
-    document.getElementById('hBgImg').style.backgroundImage = "url('" + imgUrl + "')";
+    /* Drive the new split-screen hero <img> elements */
+    var imgUrl = cfg.hero_bg || '';
+    var mobUrl = cfg.hero_bg_mobile || imgUrl;
+    var deskEl = document.getElementById('hDesktopImg');
+    var mobEl  = document.getElementById('hMobileImg');
+    if(deskEl && imgUrl) deskEl.src = imgUrl;
+    if(mobEl  && mobUrl) mobEl.src  = mobUrl;
+    /* Legacy stub — keep hBgImg style in sync so any old JS that reads it still works */
+    var legacy = document.getElementById('hBgImg');
+    if(legacy && imgUrl) legacy.style.backgroundImage = "url('" + imgUrl + "')";
   }
 
   function updateUpCatDisplay(){

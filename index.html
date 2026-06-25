@@ -98,6 +98,11 @@
   ║  28. ARTWORKS HTML              ~ln 4546 #artworks, .awGrid,     ║
   ║                                         20-card responsive grid   ║
   ║                                                                  ║
+  ║  29. SUBSCRIPTION OVERVIEW     ~ln 4628 #subOverview — 4-card   ║
+  ║      HTML                               row: profile + 3 plan    ║
+  ║                                         preview cards with arrow ║
+  ║                                         buttons → openSubscript. ║
+  ║                                                                  ║
   ║  31. ABOUT HTML                 ~ln 2146 #about, static text,    ║
   ║                                         admin editable textarea  ║
   ║                                                                  ║
@@ -2125,6 +2130,284 @@
       .fu-el {
         opacity: 1;
         transform: none;
+        transition: none;
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       § 10b SUBSCRIPTION OVERVIEW SECTION
+       ├─ #subOverview         — section wrapper (padding, max-width)
+       ├─ .subOvHdr            — section heading block (.fsHdr pattern)
+       ├─ .subOvGrid           — 4-column flex row (desktop) / stack (mobile)
+       │   ├─ .subOvCard       — base card shell (glass surface, border)
+       │   │   └─ .subOvCard--profile — user profile card variant
+       │   ├─ .subOvCardInner  — inner flex column (stretches full height)
+       │   ├─ .subOvAvatar     — circular initial avatar (profile card)
+       │   ├─ .subOvUsername   — display name (profile card)
+       │   ├─ .subOvPlanBadge  — tier badge pill (profile card)
+       │   ├─ .subOvPlanName   — plan title text (plan cards)
+       │   ├─ .subOvDesc       — plan short description
+       │   └─ .subOvArrow      — circular CTA arrow button (plan cards)
+       ══════════════════════════════════════════════════════════ */
+
+    /* ── Section wrapper ── */
+    #subOverview {
+      padding: 5rem 0 4rem;
+    }
+
+    /* ── Section header — reuses .fsHdr pattern ── */
+    .subOvHdr {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ── 4-column grid ── */
+    .subOvGrid {
+      max-width: 1200px;
+      margin: 2.5rem auto 0;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.4rem;
+      align-items: stretch;
+    }
+
+    /* ── Base card shell ── */
+    .subOvCard {
+      background: color-mix(in srgb, var(--sur) 88%, transparent);
+      border: 1px solid var(--bdr);
+      border-radius: 10px;
+      box-shadow:
+        0 2px 6px  rgba(0,0,0,.10),
+        0 8px 20px rgba(0,0,0,.09);
+      transition: border-color .28s, transform .28s, box-shadow .28s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (hover: hover) {
+      .subOvCard:hover {
+        border-color: var(--bdrh);
+        transform: translateY(-4px);
+        box-shadow:
+          0 4px 12px rgba(0,0,0,.14),
+          0 16px 36px rgba(0,0,0,.13);
+      }
+    }
+    .subOvCard:active { transform: translateY(-1px) scale(.99); }
+
+    /* ── Inner: flex column, full height ── */
+    .subOvCardInner {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 1.5rem 1.4rem 1.4rem;
+      gap: .7rem;
+      flex: 1;
+    }
+
+    /* ── Profile card special alignment ── */
+    .subOvCard--profile .subOvCardInner {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    /* ── Avatar circle (profile card) ── */
+    .subOvAvatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--tc) 18%, transparent);
+      border: 1.5px solid var(--bdrh);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--fd);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--ps);
+      flex-shrink: 0;
+      transition: border-color .28s, background .28s;
+    }
+    .subOvCard:hover .subOvAvatar {
+      border-color: var(--pg);
+      background: color-mix(in srgb, var(--tc) 26%, transparent);
+    }
+
+    /* ── Username (profile card) ── */
+    .subOvUsername {
+      font-family: var(--fd);
+      font-size: clamp(.82rem, 1.5vw, 1rem);
+      font-weight: 700;
+      letter-spacing: .06em;
+      color: var(--tx);
+      word-break: break-word;
+      line-height: 1.3;
+    }
+
+    /* ── Tier badge pill ── */
+    .subOvPlanBadge {
+      display: inline-block;
+      font-family: var(--fm);
+      font-size: .6rem;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      padding: .25rem .7rem;
+      border-radius: 999px;
+      border: 1px solid var(--bdrh);
+      background: color-mix(in srgb, var(--tc) 8%, transparent);
+      color: var(--ps);
+      transition: border-color .28s, background .28s;
+    }
+    /* Tier colour accents */
+    .subOvPlanBadge--guest   { color: var(--txd); }
+    .subOvPlanBadge--lite    { color: #2563eb; border-color: #93c5fd; background: #eff6ff; }
+    .subOvPlanBadge--premium { color: #7c3aed; border-color: #c4b5fd; background: #f5f3ff; }
+    .subOvPlanBadge--max     { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
+    .subOvPlanBadge--dev     { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
+
+    /* ── Per-plan card border colours (border only, no fill) ── */
+    /* Lite — blue */
+    .subOvCard--lite    { border-color: #93c5fd; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(59,130,246,.18); }
+    .subOvCard--lite .subOvArrow { border-color: #93c5fd; color: #2563eb; }
+    @media (hover: hover) {
+      .subOvCard--lite:hover    { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(59,130,246,.32); }
+      .subOvCard--lite .subOvArrow:hover { border-color: #3b82f6; background: #eff6ff; box-shadow: 0 0 14px rgba(59,130,246,.35); }
+    }
+    /* Premium — purple */
+    .subOvCard--premium { border-color: #c4b5fd; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(168,85,247,.18); }
+    .subOvCard--premium .subOvArrow { border-color: #c4b5fd; color: #7c3aed; }
+    @media (hover: hover) {
+      .subOvCard--premium:hover    { border-color: #a855f7; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(168,85,247,.32); }
+      .subOvCard--premium .subOvArrow:hover { border-color: #a855f7; background: #f5f3ff; box-shadow: 0 0 14px rgba(168,85,247,.35); }
+    }
+    /* Max — gold */
+    .subOvCard--max     { border-color: #fcd34d; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(234,179,8,.20); }
+    .subOvCard--max .subOvArrow { border-color: #fcd34d; color: #b45309; }
+    @media (hover: hover) {
+      .subOvCard--max:hover    { border-color: #eab308; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(234,179,8,.34); }
+      .subOvCard--max .subOvArrow:hover { border-color: #eab308; background: #fffbeb; box-shadow: 0 0 14px rgba(234,179,8,.38); }
+    }
+
+    /* ── Profile card: border reflects current plan tier ── */
+    /* guest / logged-out: default grey border (no modifier needed) */
+    .subOvCard--profile-lite    { border-color: #93c5fd; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(59,130,246,.18); }
+    .subOvCard--profile-lite .subOvAvatar { border-color: #93c5fd; }
+    @media (hover: hover) {
+      .subOvCard--profile-lite:hover    { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(59,130,246,.32); }
+      .subOvCard--profile-lite:hover .subOvAvatar { border-color: #3b82f6; }
+    }
+    .subOvCard--profile-premium { border-color: #c4b5fd; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(168,85,247,.18); }
+    .subOvCard--profile-premium .subOvAvatar { border-color: #c4b5fd; }
+    @media (hover: hover) {
+      .subOvCard--profile-premium:hover    { border-color: #a855f7; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(168,85,247,.32); }
+      .subOvCard--profile-premium:hover .subOvAvatar { border-color: #a855f7; }
+    }
+    .subOvCard--profile-max     { border-color: #fcd34d; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(234,179,8,.20); }
+    .subOvCard--profile-max .subOvAvatar { border-color: #fcd34d; }
+    @media (hover: hover) {
+      .subOvCard--profile-max:hover    { border-color: #eab308; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(234,179,8,.34); }
+      .subOvCard--profile-max:hover .subOvAvatar { border-color: #eab308; }
+    }
+    /* dev — red */
+    .subOvCard--profile-dev     { border-color: #fca5a5; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(220,38,38,.18); }
+    .subOvCard--profile-dev .subOvAvatar { border-color: #fca5a5; }
+    @media (hover: hover) {
+      .subOvCard--profile-dev:hover    { border-color: #ef4444; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(220,38,38,.32); }
+      .subOvCard--profile-dev:hover .subOvAvatar { border-color: #ef4444; }
+    }
+
+    /* ── Plan card: name ── */
+    .subOvPlanName {
+      font-family: var(--fd);
+      font-size: clamp(.95rem, 1.8vw, 1.15rem);
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: var(--tx);
+      line-height: 1.3;
+    }
+    .subOvCard--lite    .subOvPlanName { color: #2563eb; }
+    .subOvCard--premium .subOvPlanName { color: #7c3aed; }
+    .subOvCard--max     .subOvPlanName { color: #b45309; }
+
+    /* ── Plan card: description ── */
+    .subOvDesc {
+      font-family: var(--fb);
+      font-size: .85rem;
+      line-height: 1.6;
+      color: var(--txd);
+      flex: 1; /* push arrow to bottom */
+    }
+
+    /* ── Arrow button row (aligns button right) ── */
+    .subOvArrowRow {
+      display: flex;
+      justify-content: flex-end;
+      width: 100%;
+      margin-top: .3rem;
+    }
+
+    /* ── Circular arrow button ── */
+    .subOvArrow {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--bdrh);
+      background: color-mix(in srgb, var(--tc) 8%, transparent);
+      color: var(--txd);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition:
+        border-color .25s,
+        color .25s,
+        background .25s,
+        box-shadow .25s,
+        transform .25s;
+    }
+    .subOvArrow svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      transition: transform .28s cubic-bezier(.22,1,.36,1);
+    }
+    .subOvArrow:hover {
+      border-color: var(--pg);
+      color: var(--ps);
+      background: var(--pdim);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--tc) 28%, transparent);
+      transform: translateY(-1px);
+    }
+    .subOvArrow:hover svg {
+      transform: translateX(3px);
+    }
+    .subOvArrow:active {
+      transform: scale(.95);
+    }
+
+    /* ── Responsive: tablet (≤900px) — 2×2 grid ── */
+    @media (max-width: 900px) {
+      .subOvGrid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* ── Responsive: mobile (≤560px) — single column ── */
+    @media (max-width: 560px) {
+      .subOvGrid {
+        grid-template-columns: 1fr;
+        padding: 0 1.2rem;
+      }
+    }
+
+    /* ── Reduced-motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .subOvCard, .subOvArrow, .subOvArrow svg, .subOvAvatar {
         transition: none;
       }
     }
@@ -4627,6 +4910,110 @@ body.admin .wtCardAdm { display: flex; }
   <!-- ARTWORKS SECTION END -->
 
   <!-- =========================================================
+       SUBSCRIPTION OVERVIEW SECTION
+       Positioned between the Artworks section and the About
+       section. Shows: user profile card (with current plan
+       badge), then Lite / Premium / Max plan preview cards with
+       arrow buttons that open the Subscription page overlay.
+       ├─ Section Header (.subOvHdr)
+       ├─ 4-card grid (.subOvGrid)
+       │   ├─ Profile Card (#subOvProfileCard)
+       │   │   ├─ Avatar (.subOvAvatar #subOvAvatarLetter)
+       │   │   ├─ Username (.subOvUsername #subOvUsernameLabel)
+       │   │   └─ Plan Badge (.subOvPlanBadge #subOvBadge)
+       │   ├─ Lite Plan Card
+       │   ├─ Premium Plan Card
+       │   └─ Max Plan Card
+       ========================================================= -->
+  <section id="subOverview" aria-labelledby="subOvTitle">
+
+    <!-- ── Section header ── -->
+    <div class="subOvHdr fsHdr">
+      <div class="secT" id="subOvTitle">SUBSCRIPTION <span class="s">✦</span></div>
+      <div class="secSub">CHOOSE YOUR PLAN</div>
+    </div>
+
+    <!-- ── 4-card grid ── -->
+    <div class="subOvGrid">
+
+      <!-- ── CARD 1: User Profile ── -->
+      <div class="subOvCard subOvCard--profile" id="subOvProfileCard">
+        <div class="subOvCardInner">
+          <!-- Avatar -->
+          <div class="subOvAvatar" id="subOvAvatarLetter" aria-hidden="true">?</div>
+          <!-- Username -->
+          <div class="subOvUsername" id="subOvUsernameLabel">Profile</div>
+          <!-- Current plan badge -->
+          <div class="subOvPlanBadge subOvPlanBadge--guest" id="subOvBadge" aria-label="Current plan">FREE</div>
+        </div>
+      </div>
+
+      <!-- ── CARD 2: Lite Plan ── -->
+      <div class="subOvCard subOvCard--lite">
+        <div class="subOvCardInner">
+          <div class="subOvPlanName">Lite</div>
+          <p class="subOvDesc">Downloads, high-quality exports, and 2 free premium templates.</p>
+          <div class="subOvArrowRow">
+            <button
+              class="subOvArrow"
+              onclick="openSubscription()"
+              aria-label="View Lite plan"
+              title="View Lite plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CARD 3: Premium Plan ── -->
+      <div class="subOvCard subOvCard--premium">
+        <div class="subOvCardInner">
+          <div class="subOvPlanName">Premium</div>
+          <p class="subOvDesc">Everything in Lite, plus 4 templates, custom artwork requests, and early access.</p>
+          <div class="subOvArrowRow">
+            <button
+              class="subOvArrow"
+              onclick="openSubscription()"
+              aria-label="View Premium plan"
+              title="View Premium plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CARD 4: Max Plan ── -->
+      <div class="subOvCard subOvCard--max">
+        <div class="subOvCardInner">
+          <div class="subOvPlanName">Max</div>
+          <p class="subOvDesc">Full access — 6 templates, 5 custom artworks, custom website build, and priority support.</p>
+          <div class="subOvArrowRow">
+            <button
+              class="subOvArrow"
+              onclick="openSubscription()"
+              aria-label="View Max plan"
+              title="View Max plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <!-- ── End .subOvGrid ── -->
+
+  </section>
+  <!-- ═══════════════════════════════════════════════
+       END SUBSCRIPTION OVERVIEW SECTION
+       ═══════════════════════════════════════════════ -->
+
+  <!-- =========================================================
        ABOUT SECTION
        ├─ Section Header (.fsHdr)
        │   ├─ Section Title (.secT)
@@ -6547,6 +6934,7 @@ body.admin .wtCardAdm { display: flex; }
 
     /* Also sync popup content and comment bar avatar */
     syncProfilePopupContent();
+    syncSubOverviewCard();
     cpSyncAvatar();
   }
 
@@ -6559,6 +6947,59 @@ body.admin .wtCardAdm { display: flex; }
     var name   = cpGetDisplayName();
     if (ppAv)   ppAv.textContent   = letter;
     if (ppName) ppName.textContent = name;
+  }
+
+  /* ── Sync the Subscription Overview profile card ── */
+  function syncSubOverviewCard() {
+    var avatarEl   = document.getElementById('subOvAvatarLetter');
+    var nameEl     = document.getElementById('subOvUsernameLabel');
+    var badgeEl    = document.getElementById('subOvBadge');
+    var profileCard = document.getElementById('subOvProfileCard');
+    if (!avatarEl || !nameEl || !badgeEl) return;
+
+    /* Helper: remove all profile-tier border classes then add the right one */
+    function setProfileTier(tier) {
+      if (!profileCard) return;
+      profileCard.classList.remove(
+        'subOvCard--profile-lite',
+        'subOvCard--profile-premium',
+        'subOvCard--profile-max',
+        'subOvCard--profile-dev'
+      );
+      if (tier === 'lite')    profileCard.classList.add('subOvCard--profile-lite');
+      if (tier === 'premium') profileCard.classList.add('subOvCard--profile-premium');
+      if (tier === 'max')     profileCard.classList.add('subOvCard--profile-max');
+      if (tier === 'dev')     profileCard.classList.add('subOvCard--profile-dev');
+      /* guest / null: no tier class → default grey border */
+    }
+
+    if (currentUser) {
+      var letter = cpGetAvatarLetter();
+      var name   = cpGetDisplayName();
+      avatarEl.textContent = letter;
+      nameEl.textContent   = name;
+
+      /* Determine badge label and tier class — userPlan may not be set yet
+         (checkUserRole is async) so fall back to 'guest' if null. */
+      var plan   = (typeof userPlan === 'string') ? userPlan : 'guest';
+      /* Dev role gets its own red tier */
+      if (typeof isDev !== 'undefined' && isDev) plan = 'dev';
+      var labels = { guest:'FREE', lite:'LITE', premium:'PREMIUM', max:'MAX', dev:'DEV' };
+      var label  = labels[plan] || 'FREE';
+      badgeEl.textContent = label;
+
+      /* Sync badge pill class */
+      badgeEl.className = 'subOvPlanBadge subOvPlanBadge--' + (labels[plan] ? plan : 'guest');
+      /* Sync profile card border colour */
+      setProfileTier(plan);
+    } else {
+      /* Logged out: reset to default */
+      avatarEl.textContent = '?';
+      nameEl.textContent   = 'Profile';
+      badgeEl.textContent  = 'FREE';
+      badgeEl.className    = 'subOvPlanBadge subOvPlanBadge--guest';
+      setProfileTier('guest');
+    }
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -6832,6 +7273,7 @@ body.admin .wtCardAdm { display: flex; }
     }catch(e){ console.error(e); isDev=false; userPlan='guest'; }
     if(!isDev){ isAdm=false; document.body.classList.remove('admin'); }
     syncAdmBtn();
+    syncSubOverviewCard(); /* update profile card tier badge */
     if(isDev && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
   }
 
@@ -6852,6 +7294,7 @@ body.admin .wtCardAdm { display: flex; }
       if (event === 'SIGNED_OUT') {
         syncAuthBtn();
         isDev=false; isAdm=false; userPlan=null; document.body.classList.remove('admin'); syncAdmBtn();
+        syncSubOverviewCard(); /* reset profile card to guest state */
       }
     });
 
@@ -7582,24 +8025,18 @@ async function openComments(){
       progress.fonts = 100;
     }
 
-    /* Hero background image slice — main focus, heaviest weight */
-    var heroImgUrl = (function(){
-      var el = document.getElementById('hBgImg');
-      if(!el) return null;
-      var bg = getComputedStyle(el).backgroundImage;
-      var m = bg && bg.match(/url\(["']?(.*?)["']?\)/);
-      return m ? m[1] : null;
-    })();
-
-    if(heroImgUrl){
+    /* Hero image slice — driven by init() once applyBg() has set the URLs.
+       Expose a callback so init() can hand us the correct device URL after
+       loadDB() resolves. Until then the slice stays at 0 so the bar cannot
+       reach 100% before the real image has loaded. */
+    window._heroLoadCb = function(url){
+      if(!url){ progress.img = 100; paint(); return; }
       var pre = new Image();
-      pre.onload = function(){ progress.img = 100; paint(); };
+      pre.onload  = function(){ progress.img = 100; paint(); };
       pre.onerror = function(){ progress.img = 100; paint(); };
-      pre.src = heroImgUrl;
+      pre.src = url;
       if(pre.complete){ progress.img = 100; paint(); }
-    } else {
-      progress.img = 100;
-    }
+    };
 
     paint();
     /* Safety net: never let users get stuck on the intro */
@@ -7625,6 +8062,14 @@ async function openComments(){
     spawnPts();
     await loadDB();
     applyBg();renderHome();
+    /* Hero image preload — feed the correct device URL to the loading bar
+       now that loadDB() has populated cfg. Pick mobile URL on narrow
+       viewports (matches the ≤768px CSS breakpoint), desktop otherwise. */
+    if(typeof window._heroLoadCb === 'function'){
+      var _isMob = window.matchMedia('(max-width:768px)').matches;
+      var _heroUrl = _isMob ? (cfg.hero_bg_mobile || cfg.hero_bg || '') : (cfg.hero_bg || '');
+      window._heroLoadCb(_heroUrl || null);
+    }
     if(typeof window.initWtShowcase==='function') window.initWtShowcase();
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
     if(m) openArtworkById(m[1], false);
@@ -8866,16 +9311,18 @@ async function openComments(){
   'use strict';
 
   /* ── Sections in scope ── */
-  var SCOPE_IDS = ['wtShowcase', 'artworks', 'about', 'connect'];
+  var SCOPE_IDS = ['wtShowcase', 'artworks', 'subOverview', 'about', 'connect'];
 
   /* ── CSS selectors to animate (within scope sections) ── */
   var TARGETS = [
     /* Section headers */
-    '.fsHdr', '.awHdr',
+    '.fsHdr', '.awHdr', '.subOvHdr',
     /* Individual heading / sub elements (fallback if parent already targeted) */
     '.secT', '.secSub',
     /* Artworks section cards */
     '.awCard',
+    /* Subscription overview cards */
+    '.subOvCard',
     /* Website Templates showcase cards */
     '.wtscCard',
     /* About card wrapper and its inner pieces */
@@ -8891,7 +9338,7 @@ async function openComments(){
   ].join(',');
 
   /* ── Staggered groups: cards & grid items get cascade delays ── */
-  var STAGGER_SELECTORS = ['.awCard', '.wtscCard', '.sCard'];
+  var STAGGER_SELECTORS = ['.awCard', '.wtscCard', '.subOvCard', '.sCard'];
   var STAGGER_BASE_MS   = 80;   /* ms between each sibling card */
   var STAGGER_MAX_MS    = 560;  /* cap so late cards don't wait forever */
 

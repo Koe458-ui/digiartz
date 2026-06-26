@@ -4645,6 +4645,457 @@ body.admin .wtCardAdm { display: flex; }
    END WEBSITE TEMPLATES CSS
    ══════════════════════════════════════════════════════════ */
 
+/* ══════════════════════════════════════════════════════════
+   § ZEO AI ASSISTANT WIDGET
+   ├─ #zeoBtn         — floating circular bot button
+   ├─ .zeoBubble      — speech bubble above bot
+   ├─ #zeoChatPanel   — the chat window
+   ├─ .zeoChatHeader  — panel top bar
+   ├─ .zeoChatBody    — scrollable message area
+   ├─ .zeoMsg         — individual message bubble
+   └─ .zeoOption      — clickable option button
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ── */
+@keyframes zeoFloat {
+  0%,100% { transform: translateY(0px); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes zeoBubbleIn {
+  0%   { opacity: 0; transform: translateY(8px) scale(.95); }
+  60%  { opacity: 1; transform: translateY(-2px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes zeoBubbleOut {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(6px) scale(.95); }
+}
+@keyframes zeoBubbleIdle {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-3px); }
+}
+@keyframes zeoPanelIn {
+  0%   { opacity: 0; transform: translateY(18px) scale(.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes zeoPanelOut {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(18px) scale(.96); }
+}
+@keyframes zeoMsgIn {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes zeoGlow {
+  0%,100% { box-shadow: 0 0 18px rgba(99,179,237,.35), 0 8px 32px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.22); }
+  50%     { box-shadow: 0 0 32px rgba(99,179,237,.55), 0 8px 32px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.22); }
+}
+
+/* ── Floating button ── */
+#zeoBtn {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  left: auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  /* Background shows while image loads or as fallback SVG backdrop */
+  background: linear-gradient(135deg, rgba(20,30,55,.95) 0%, rgba(15,22,44,.98) 100%);
+  border: 2px solid rgba(99,179,237,.45);
+  box-shadow: 0 0 18px rgba(99,179,237,.35), 0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.12);
+  cursor: pointer;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #90cdf4;
+  font-size: 1.45rem;
+  overflow: hidden; /* clips avatar image to circle */
+  padding: 0;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: zeoFloat 3.2s ease-in-out infinite, zeoGlow 3.2s ease-in-out infinite;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease;
+  user-select: none;
+  touch-action: none;
+  /* Will be overridden by drag / localStorage */
+}
+#zeoBtn:hover {
+  transform: scale(1.09);
+  box-shadow: 0 0 42px rgba(99,179,237,.7), 0 10px 36px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.28);
+  animation: zeoGlow 1.2s ease-in-out infinite;
+}
+#zeoBtn.zeoDragging {
+  animation: none;
+  transform: scale(1.06);
+  cursor: grabbing;
+}
+#zeoBtn.zeoOpen {
+  animation: zeoGlow 1.2s ease-in-out infinite;
+}
+
+/* Tooltip on hover */
+#zeoBtn .zeoTooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,30,55,.9);
+  border: 1px solid rgba(99,179,237,.28);
+  color: #90cdf4;
+  font-size: .7rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: .05em;
+  padding: .35rem .75rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+}
+#zeoBtn:hover .zeoTooltip {
+  opacity: 1;
+}
+
+
+/* ── Bot avatar image ── */
+.zeoBtnAvatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+  /* Crisp rendering on all DPR screens */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ── Speech bubble ── */
+.zeoBubble {
+  position: fixed;
+  right: 24px; /* synced to button by JS */
+  left: auto;
+  bottom: 90px;
+  z-index: 8999;
+  background: linear-gradient(135deg, rgba(20,30,55,.92) 0%, rgba(30,42,72,.92) 100%);
+  border: 1px solid rgba(99,179,237,.28);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #e8f4fd;
+  font-size: .82rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: .55rem 1rem;
+  border-radius: 14px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 0 18px rgba(99,179,237,.22), 0 8px 28px rgba(0,0,0,.22);
+  /* State: hidden by default */
+  opacity: 0;
+  transform: translateY(0) scale(.95);
+}
+.zeoBubble.zbVisible {
+  animation: zeoBubbleIn .3s cubic-bezier(.34,1.2,.64,1) forwards,
+             zeoBubbleIdle 2.4s ease-in-out .3s infinite;
+}
+.zeoBubble.zbHiding {
+  animation: zeoBubbleOut .28s ease-in-out forwards;
+}
+/* Tail */
+.zeoBubble::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  right: 20px;
+  left: auto;
+  width: 12px;
+  height: 7px;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: rgba(30,42,72,.92);
+  filter: drop-shadow(0 2px 3px rgba(99,179,237,.18));
+}
+
+/* ── Chat panel ── */
+#zeoChatPanel {
+  position: fixed;
+  right: 24px;
+  left: auto;
+  bottom: 90px;
+  width: min(360px, calc(100vw - 48px));
+  max-height: min(520px, calc(100vh - 120px));
+  z-index: 9001;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(155deg, rgba(15,22,44,.96) 0%, rgba(18,26,52,.97) 100%);
+  border: 1px solid rgba(99,179,237,.22);
+  border-radius: 22px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 0 40px rgba(99,179,237,.14), 0 24px 60px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06);
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(18px) scale(.96);
+  transform-origin: bottom right;
+}
+#zeoChatPanel.zeoVisible {
+  animation: zeoPanelIn .3s cubic-bezier(.34,1.2,.64,1) forwards;
+  pointer-events: auto;
+}
+#zeoChatPanel.zeoHiding {
+  animation: zeoPanelOut .25s ease-in-out forwards;
+  pointer-events: none;
+}
+
+/* Panel header */
+.zeoChatHeader {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: 1rem 1.1rem .9rem;
+  border-bottom: 1px solid rgba(99,179,237,.12);
+  background: rgba(255,255,255,.03);
+  flex-shrink: 0;
+}
+.zeoChatHeaderAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a2a4a, #2a4080);
+  border: 1px solid rgba(99,179,237,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #90cdf4;
+  flex-shrink: 0;
+}
+.zeoChatHeaderInfo {
+  flex: 1;
+  min-width: 0;
+}
+.zeoChatHeaderName {
+  font-size: .88rem;
+  font-weight: 600;
+  color: #e8f4fd;
+  letter-spacing: .01em;
+  line-height: 1.2;
+}
+.zeoChatHeaderStatus {
+  font-size: .7rem;
+  color: rgba(144,205,244,.6);
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  margin-top: .15rem;
+}
+.zeoChatHeaderStatus::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #68d391;
+  flex-shrink: 0;
+}
+.zeoChatCloseBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  color: rgba(232,244,253,.55);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .85rem;
+  transition: background .2s, color .2s, border-color .2s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.zeoChatCloseBtn:hover {
+  background: rgba(255,255,255,.12);
+  color: #e8f4fd;
+  border-color: rgba(99,179,237,.3);
+}
+
+/* Body / messages */
+.zeoChatBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,179,237,.2) transparent;
+}
+.zeoChatBody::-webkit-scrollbar { width: 4px; }
+.zeoChatBody::-webkit-scrollbar-track { background: transparent; }
+.zeoChatBody::-webkit-scrollbar-thumb { background: rgba(99,179,237,.25); border-radius: 4px; }
+
+/* Message bubble */
+.zeoMsg {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  animation: zeoMsgIn .28s ease-out forwards;
+}
+.zeoMsgBubble {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(99,179,237,.14);
+  border-radius: 14px 14px 14px 4px;
+  padding: .75rem .9rem;
+  color: #d4e8f8;
+  font-size: .85rem;
+  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  max-width: 100%;
+}
+
+/* Option buttons */
+.zeoOptions {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding-top: .15rem;
+}
+.zeoOption {
+  background: rgba(99,179,237,.08);
+  border: 1px solid rgba(99,179,237,.22);
+  border-radius: 10px;
+  color: #90cdf4;
+  font-size: .82rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: .65rem .95rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background .18s, border-color .18s, transform .15s;
+  line-height: 1.4;
+}
+.zeoOption:hover {
+  background: rgba(99,179,237,.17);
+  border-color: rgba(99,179,237,.42);
+  transform: translateX(3px);
+}
+.zeoOption:active {
+  transform: translateX(3px) scale(.98);
+}
+
+/* Category grid */
+.zeoCategories {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  padding-top: .15rem;
+}
+.zeoCatCard {
+  background: rgba(99,179,237,.07);
+  border: 1px solid rgba(99,179,237,.18);
+  border-radius: 12px;
+  padding: .7rem .9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  transition: background .18s, border-color .18s, transform .15s;
+}
+.zeoCatCard:hover {
+  background: rgba(99,179,237,.15);
+  border-color: rgba(99,179,237,.38);
+  transform: translateX(3px);
+}
+.zeoCatIcon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+.zeoCatLabel {
+  font-size: .84rem;
+  font-weight: 600;
+  color: #c6e4f8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.2;
+}
+.zeoCatDesc {
+  font-size: .74rem;
+  color: rgba(144,205,244,.55);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  margin-top: .12rem;
+}
+
+/* Coming soon placeholder */
+.zeoComingSoon {
+  text-align: center;
+  padding: 1.5rem .5rem;
+  color: rgba(144,205,244,.45);
+  font-size: .8rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  border: 1px dashed rgba(99,179,237,.18);
+  border-radius: 12px;
+  line-height: 1.6;
+}
+.zeoComingSoon span {
+  display: block;
+  font-size: 1.6rem;
+  margin-bottom: .5rem;
+  opacity: .6;
+}
+
+/* Back button */
+.zeoBackBtn {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  color: rgba(232,244,253,.5);
+  font-size: .74rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: .45rem .8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  transition: background .18s, color .18s;
+  margin-top: .3rem;
+  align-self: flex-start;
+}
+.zeoBackBtn:hover {
+  background: rgba(255,255,255,.1);
+  color: #c6e4f8;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  #zeoBtn {
+    right: 16px;
+    left: auto;
+    bottom: 16px;
+  }
+  #zeoChatPanel {
+    right: 12px;
+    left: 12px;
+    width: auto;
+    bottom: 84px;
+    border-radius: 18px;
+  }
+  .zeoBubble {
+    right: 16px;
+    left: auto;
+    font-size: .78rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   END ZEO AI ASSISTANT WIDGET CSS
+   ══════════════════════════════════════════════════════════ */
+
 </style>
  </head>
  <body>
@@ -9792,6 +10243,497 @@ async function openComments(){
 </script>
 <!-- ════════════════════════════════════════════════════════
      END COOKIE CONSENT SYSTEM
+     ════════════════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════════════
+     ZEO AI ASSISTANT WIDGET
+     ├─ #zeoBtn        — floating circular button (bottom-left)
+     ├─ .zeoBubble     — speech bubble above button
+     └─ #zeoChatPanel  — chat window
+     ════════════════════════════════════════════════════════ -->
+
+<!-- ── AI Assistant Data ──────────────────────────────── -->
+<!-- All chatbot content lives in aiAssistantData.js.
+     In production, serve this as a standalone file.
+     It is inlined here for single-file compatibility. -->
+<script>
+/* ═══════════════════════════════════════════════════════════
+   DigiArtz — AI Assistant Data  (mirrors /src/data/aiAssistantData.js)
+   Edit ONLY this block to change messages, options, categories.
+   ═══════════════════════════════════════════════════════════ */
+window.ZEO_DATA = {
+
+  welcomeMessage: "Welcome! I'm Zeo, your AI assistant. Whether you need answers, guidance, or quick assistance, just select one of the options below and I'll be happy to help.",
+
+  welcomeOptions: [
+    { id: "helpCenter", label: "Need Help?" }
+  ],
+
+  helpCenterMessage: "Welcome to the Help Center. Choose a category below to get started, and I'll provide quick, accurate assistance tailored to your selection.",
+
+  /* Add category objects here when ready:
+     { id: "myCategory", icon: "🎨", label: "Category Name", description: "Short desc." } */
+  categories: [],
+
+  /* Add Q&A responses keyed by category id:
+     myCategory: [{ question: "...", answer: "..." }] */
+  responses: {},
+
+  speechBubbles: [
+    "✨ I'm here to help!",
+    "👀 Looking for something?",
+    "🚀 Ready to begin?",
+    "💡 Got a question?",
+    "🤝 Let's figure it out!",
+    "🌟 Need a quick answer?",
+    "😄 What can I do for you?",
+    "🤖 Zeo is here to help!"
+  ]
+};
+</script>
+
+<!-- ── AI Assistant HTML ───────────────────────────────── -->
+
+<!-- Floating bot button -->
+<button id="zeoBtn" aria-label="Open AI Assistant" title="AI Assistant">
+  <!-- Avatar image — falls back to SVG bot icon if load fails -->
+  <img
+    id="zeoBtnImg"
+    class="zeoBtnAvatar"
+    src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000e09071fdb5d040b64f9ce7a9.png"
+    alt="Zeo AI Assistant"
+    aria-hidden="true"
+    draggable="false"
+    onerror="this.style.display='none';document.getElementById('zeoBtnFallback').style.display='flex';"
+  />
+  <!-- Fallback SVG (hidden unless image fails) -->
+  <svg id="zeoBtnFallback" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
+    <rect x="3" y="11" width="18" height="10" rx="3"/>
+    <path d="M12 3a2 2 0 0 1 2 2v2H10V5a2 2 0 0 1 2-2z"/>
+    <circle cx="9" cy="16" r="1" fill="currentColor" stroke="none"/>
+    <circle cx="15" cy="16" r="1" fill="currentColor" stroke="none"/>
+    <path d="M8 11V9M16 11V9"/>
+  </svg>
+  <!-- Tooltip -->
+  <span class="zeoTooltip">Need Help?</span>
+</button>
+
+<!-- Speech bubble (rendered by JS, moved around by JS) -->
+<div class="zeoBubble" id="zeoBubble" aria-hidden="true" role="status"></div>
+
+<!-- Chat panel -->
+<div id="zeoChatPanel" role="dialog" aria-label="Zeo AI Assistant" aria-modal="true">
+  <div class="zeoChatHeader">
+    <div class="zeoChatHeaderAvatar" aria-hidden="true">🤖</div>
+    <div class="zeoChatHeaderInfo">
+      <div class="zeoChatHeaderName">Zeo</div>
+      <div class="zeoChatHeaderStatus">AI Assistant · Online</div>
+    </div>
+    <button class="zeoChatCloseBtn" id="zeoChatClose" aria-label="Close AI Assistant">✕</button>
+  </div>
+  <div class="zeoChatBody" id="zeoChatBody" aria-live="polite"></div>
+</div>
+
+<!-- ── AI Assistant JS ────────────────────────────────── -->
+<script>
+/* ════════════════════════════════════════════════════════════
+   ZEO AI ASSISTANT — Widget Engine
+   Reads all content from window.ZEO_DATA (defined above).
+   Do NOT edit this block to change content; edit ZEO_DATA.
+   ════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  /* ── References ───────────────────────────────────────── */
+  var btn       = document.getElementById('zeoBtn');
+  var panel     = document.getElementById('zeoChatPanel');
+  var closeBtn  = document.getElementById('zeoChatClose');
+  var body      = document.getElementById('zeoChatBody');
+  var bubble    = document.getElementById('zeoBubble');
+  var data      = window.ZEO_DATA;
+
+  /* ── State ─────────────────────────────────────────────── */
+  var isOpen      = false;
+  var currentScreen = 'welcome'; // 'welcome' | 'helpCenter' | categoryId
+  var bubbleTimer = null;
+  var bubblePaused = false;
+  var lastBubbleIdx = -1;
+
+  /* ════════════════════════════════════════════════════════
+     DRAGGABLE BUTTON
+  ════════════════════════════════════════════════════════ */
+  var drag = {
+    active: false,
+    startX: 0, startY: 0,
+    origLeft: 0, origBottom: 0,
+    wasDrag: false
+  };
+
+  /* Load saved position from localStorage */
+  (function loadPos() {
+    try {
+      var saved = localStorage.getItem('zeo_btn_pos');
+      if (saved) {
+        var pos = JSON.parse(saved);
+        var maxRight  = window.innerWidth  - btn.offsetWidth  - 8;
+        var maxBottom = window.innerHeight - btn.offsetHeight - 8;
+        btn.style.right  = Math.min(Math.max(8, pos.right),  maxRight)  + 'px';
+        btn.style.bottom = Math.min(Math.max(8, pos.bottom), maxBottom) + 'px';
+        btn.style.left = 'auto';
+        btn.style.top  = 'auto';
+      }
+    } catch(e) {}
+  })();
+
+  function savePos(right, bottom) {
+    try {
+      localStorage.setItem('zeo_btn_pos', JSON.stringify({ right: right, bottom: bottom }));
+    } catch(e) {}
+  }
+
+  /* Sync floating UI positions to the button */
+  function syncUI() {
+    var rect   = btn.getBoundingClientRect();
+    var btnTop = rect.top;
+
+    /* Speech bubble — above the button, right-aligned to btn right edge */
+    var bubbleW  = bubble.offsetWidth || 160;
+    var bRight   = window.innerWidth - rect.right; /* distance from right edge of viewport */
+    bRight = Math.max(8, bRight);
+    /* Prevent bubble going off left edge */
+    if (window.innerWidth - bRight - bubbleW < 8) {
+      bRight = window.innerWidth - bubbleW - 8;
+    }
+    bubble.style.right  = bRight + 'px';
+    bubble.style.left   = 'auto';
+    bubble.style.bottom = (window.innerHeight - btnTop + 10) + 'px';
+    bubble.style.top    = 'auto';
+
+    /* Chat panel — right-aligned to button */
+    var panelW = Math.min(360, window.innerWidth - 48);
+    var pRight = Math.max(8, window.innerWidth - rect.right);
+    /* Prevent panel going off left edge */
+    if (window.innerWidth - pRight - panelW < 8) pRight = window.innerWidth - panelW - 8;
+    panel.style.right  = pRight + 'px';
+    panel.style.left   = 'auto';
+    panel.style.bottom = (window.innerHeight - btnTop + 10) + 'px';
+    panel.style.top    = 'auto';
+  }
+
+  /* Pointer down — start potential drag */
+  function onPointerDown(e) {
+    drag.active  = true;
+    drag.wasDrag = false;
+    var rect = btn.getBoundingClientRect();
+    drag.startX    = e.clientX;
+    drag.startY    = e.clientY;
+    drag.origRight  = window.innerWidth - rect.right;
+    drag.origBottom = window.innerHeight - rect.bottom;
+    btn.classList.add('zeoDragging');
+    /* Prevent text selection during drag */
+    e.preventDefault();
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup',   onPointerUp);
+  }
+
+  function onPointerMove(e) {
+    if (!drag.active) return;
+    var dx = e.clientX - drag.startX;
+    var dy = e.clientY - drag.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) drag.wasDrag = true;
+
+    var newRight  = drag.origRight  - dx; /* inverted: drag right = smaller right */
+    var newBottom = drag.origBottom - dy; /* inverted: drag down = smaller bottom */
+
+    /* Clamp inside viewport */
+    var maxRight  = window.innerWidth  - btn.offsetWidth  - 8;
+    var maxBottom = window.innerHeight - btn.offsetHeight - 8;
+    newRight  = Math.min(Math.max(8, newRight),  maxRight);
+    newBottom = Math.min(Math.max(8, newBottom), maxBottom);
+
+    btn.style.right  = newRight  + 'px';
+    btn.style.bottom = newBottom + 'px';
+    btn.style.left = 'auto';
+    btn.style.top  = 'auto';
+    syncUI();
+  }
+
+  function onPointerUp(e) {
+    if (!drag.active) return;
+    drag.active = false;
+    btn.classList.remove('zeoDragging');
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup',   onPointerUp);
+    if (drag.wasDrag) {
+      /* Save final position */
+      savePos(parseInt(btn.style.right, 10), parseInt(btn.style.bottom, 10));
+    } else {
+      /* Was a click, not a drag — toggle chat */
+      toggleChat();
+    }
+  }
+
+  btn.addEventListener('pointerdown', onPointerDown);
+
+  /* ════════════════════════════════════════════════════════
+     SPEECH BUBBLE CYCLE
+  ════════════════════════════════════════════════════════ */
+  var BUBBLE_VISIBLE_MS = 3000;
+  var BUBBLE_WAIT_MS    = 6000;
+  var BUBBLE_IN_MS      = 300;
+  var BUBBLE_OUT_MS     = 280;
+
+  function pickBubbleMsg() {
+    var msgs = data.speechBubbles;
+    if (!msgs || msgs.length === 0) return '';
+    if (msgs.length === 1) return msgs[0];
+    var idx;
+    do { idx = Math.floor(Math.random() * msgs.length); } while (idx === lastBubbleIdx);
+    lastBubbleIdx = idx;
+    return msgs[idx];
+  }
+
+  function showBubble() {
+    if (bubblePaused) return;
+    var msg = pickBubbleMsg();
+    if (!msg) return;
+    bubble.textContent = msg;
+    bubble.classList.remove('zbHiding');
+    bubble.classList.add('zbVisible');
+    syncUI();
+
+    /* After visible duration, hide */
+    bubbleTimer = setTimeout(function() {
+      hideBubble();
+    }, BUBBLE_VISIBLE_MS + BUBBLE_IN_MS);
+  }
+
+  function hideBubble() {
+    bubble.classList.remove('zbVisible');
+    bubble.classList.add('zbHiding');
+
+    bubbleTimer = setTimeout(function() {
+      /* Guard: stay hidden if paused during animation */
+      bubble.classList.remove('zbHiding');
+      bubble.textContent = '';
+      if (!bubblePaused) {
+        bubbleTimer = setTimeout(showBubble, BUBBLE_WAIT_MS);
+      }
+    }, BUBBLE_OUT_MS);
+  }
+
+  function pauseBubble() {
+    bubblePaused = true;
+    /* Cancel every pending timer immediately */
+    clearTimeout(bubbleTimer);
+    bubbleTimer = null;
+    /* Snap invisible — no animation, no residual async callbacks */
+    bubble.classList.remove('zbVisible', 'zbHiding');
+    bubble.style.opacity = '0';
+    bubble.textContent = '';
+    /* Re-enable CSS-controlled opacity on next frame */
+    requestAnimationFrame(function() {
+      bubble.style.opacity = '';
+    });
+  }
+
+  function resumeBubble() {
+    bubblePaused = false;
+    bubbleTimer = setTimeout(showBubble, BUBBLE_WAIT_MS);
+  }
+
+  /* Start the cycle after a short delay */
+  setTimeout(showBubble, 1800);
+
+  /* ════════════════════════════════════════════════════════
+     CHAT PANEL OPEN / CLOSE
+  ════════════════════════════════════════════════════════ */
+  function openChat() {
+    isOpen = true;
+    pauseBubble();
+    syncUI();
+    panel.classList.remove('zeoHiding');
+    panel.classList.add('zeoVisible');
+    btn.classList.add('zeoOpen');
+    btn.setAttribute('aria-expanded', 'true');
+    renderScreen('welcome');
+  }
+
+  function closeChat() {
+    isOpen = false;
+    panel.classList.remove('zeoVisible');
+    panel.classList.add('zeoHiding');
+    btn.classList.remove('zeoOpen');
+    btn.setAttribute('aria-expanded', 'false');
+    setTimeout(function() {
+      panel.classList.remove('zeoHiding');
+      resumeBubble();
+    }, 280);
+  }
+
+  function toggleChat() {
+    if (isOpen) closeChat(); else openChat();
+  }
+
+  closeBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    closeChat();
+  });
+
+  /* ESC key closes panel */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isOpen) closeChat();
+  });
+
+  /* ════════════════════════════════════════════════════════
+     RENDER ENGINE
+     Reads from ZEO_DATA and builds HTML dynamically.
+  ════════════════════════════════════════════════════════ */
+
+  /* Helper: create a message bubble node */
+  function makeMsg(text) {
+    var msg  = document.createElement('div');
+    msg.className = 'zeoMsg';
+    var bub = document.createElement('div');
+    bub.className = 'zeoMsgBubble';
+    bub.textContent = text;
+    msg.appendChild(bub);
+    return msg;
+  }
+
+  /* Helper: create an options container */
+  function makeOptions(items, onClick) {
+    var wrap = document.createElement('div');
+    wrap.className = 'zeoOptions';
+    items.forEach(function(item) {
+      var btn = document.createElement('button');
+      btn.className = 'zeoOption';
+      btn.textContent = item.label;
+      btn.addEventListener('click', function() { onClick(item); });
+      wrap.appendChild(btn);
+    });
+    return wrap;
+  }
+
+  /* Helper: categories grid */
+  function makeCategories(categories, onClick) {
+    var wrap = document.createElement('div');
+    wrap.className = 'zeoCategories';
+
+    if (!categories || categories.length === 0) {
+      var placeholder = document.createElement('div');
+      placeholder.className = 'zeoComingSoon';
+      placeholder.innerHTML = '<span>🛠️</span>Categories coming soon.<br>Check back later for help topics.';
+      wrap.appendChild(placeholder);
+      return wrap;
+    }
+
+    categories.forEach(function(cat) {
+      var card = document.createElement('button');
+      card.className = 'zeoCatCard';
+      card.innerHTML =
+        '<span class="zeoCatIcon">' + (cat.icon || '📂') + '</span>' +
+        '<span>' +
+          '<span class="zeoCatLabel">' + cat.label + '</span>' +
+          (cat.description ? '<span class="zeoCatDesc">' + cat.description + '</span>' : '') +
+        '</span>';
+      card.addEventListener('click', function() { onClick(cat); });
+      wrap.appendChild(card);
+    });
+
+    return wrap;
+  }
+
+  /* Helper: back button */
+  function makeBack(onClick) {
+    var b = document.createElement('button');
+    b.className = 'zeoBackBtn';
+    b.innerHTML = '← Back';
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  /* Clear and populate the message body */
+  function renderScreen(screenId) {
+    currentScreen = screenId;
+
+    /* Clear */
+    while (body.firstChild) body.removeChild(body.firstChild);
+
+    if (screenId === 'welcome') {
+      body.appendChild(makeMsg(data.welcomeMessage));
+      body.appendChild(makeOptions(data.welcomeOptions, function(item) {
+        renderScreen(item.id);
+      }));
+    }
+    else if (screenId === 'helpCenter') {
+      body.appendChild(makeMsg(data.helpCenterMessage));
+      body.appendChild(makeCategories(data.categories, function(cat) {
+        renderScreen('cat_' + cat.id);
+      }));
+      body.appendChild(makeBack(function() { renderScreen('welcome'); }));
+    }
+    else if (screenId.indexOf('cat_') === 0) {
+      var catId = screenId.slice(4);
+      var cat   = (data.categories || []).find(function(c) { return c.id === catId; });
+      var resps = (data.responses || {})[catId] || [];
+
+      if (cat) {
+        body.appendChild(makeMsg(cat.icon + ' ' + cat.label));
+      }
+
+      if (resps.length === 0) {
+        var placeholder = document.createElement('div');
+        placeholder.className = 'zeoComingSoon';
+        placeholder.innerHTML = '<span>💬</span>Answers for this category<br>are coming soon.';
+        body.appendChild(placeholder);
+      } else {
+        body.appendChild(makeOptions(resps.map(function(r) {
+          return { id: r.question, label: r.question, answer: r.answer };
+        }), function(item) {
+          renderScreen('answer_' + catId + '_' + item.id);
+        }));
+      }
+
+      body.appendChild(makeBack(function() { renderScreen('helpCenter'); }));
+    }
+    else if (screenId.indexOf('answer_') === 0) {
+      /* screenId: answer_catId_question */
+      var rest  = screenId.slice(7); // catId_question
+      var under = rest.indexOf('_');
+      var catId2 = rest.slice(0, under);
+      var qText  = rest.slice(under + 1);
+      var resps2 = (data.responses || {})[catId2] || [];
+      var resp   = resps2.find(function(r) { return r.question === qText; });
+
+      body.appendChild(makeMsg('💬 ' + qText));
+      if (resp) {
+        body.appendChild(makeMsg(resp.answer));
+      }
+      body.appendChild(makeBack(function() { renderScreen('cat_' + catId2); }));
+    }
+
+    /* Scroll to bottom */
+    body.scrollTop = body.scrollHeight;
+  }
+
+  /* ════════════════════════════════════════════════════════
+     WINDOW RESIZE — re-sync UI positions
+  ════════════════════════════════════════════════════════ */
+  window.addEventListener('resize', function() {
+    /* Clamp button on resize */
+    var curLeft   = parseInt(btn.style.left,   10) || 24;
+    var curBottom = parseInt(btn.style.bottom, 10) || 24;
+    var maxLeft   = window.innerWidth  - btn.offsetWidth  - 8;
+    var maxBottom = window.innerHeight - btn.offsetHeight - 8;
+    btn.style.left   = Math.min(Math.max(8, curLeft),   maxLeft)   + 'px';
+    btn.style.bottom = Math.min(Math.max(8, curBottom), maxBottom) + 'px';
+    if (isOpen) syncUI();
+  });
+
+})();
+</script>
+<!-- ════════════════════════════════════════════════════════
+     END ZEO AI ASSISTANT WIDGET
      ════════════════════════════════════════════════════════ -->
 </body>
 </html>

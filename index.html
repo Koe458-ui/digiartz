@@ -522,10 +522,10 @@
       display: flex;
       align-items: stretch;
       overflow: hidden;
-      background: #ffffff;
+      background: #000;
     }
 
-    /* ── Left content panel ── */
+    /* ── Left content panel — floats over full-bleed image ── */
     .hLeft {
       flex: 0 0 42%;
       display: flex;
@@ -534,18 +534,12 @@
       padding: 7rem 4rem 7rem 5rem;
       position: relative;
       z-index: 2;
-      background: #ffffff;
+      background: transparent;
     }
 
-    /* Subtle vertical rule separating content from art */
+    /* Removed: vertical rule divider (no longer relevant on full-bleed layout) */
     .hLeft::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 12%;
-      bottom: 12%;
-      width: 1px;
-      background: linear-gradient(to bottom, transparent, #e3e5ea 30%, #e3e5ea 70%, transparent);
+      display: none;
     }
 
     /* ── Brand eyebrow ── */
@@ -553,7 +547,7 @@
       font-family: var(--fm);
       font-size: .68rem;
       letter-spacing: .45em;
-      color: #8a8f98;
+      color: rgba(255,255,255,.75);
       text-transform: uppercase;
       margin-bottom: 1.6rem;
       display: flex;
@@ -565,7 +559,7 @@
       display: block;
       width: 28px;
       height: 1px;
-      background: #8a8f98;
+      background: rgba(255,255,255,.55);
       flex-shrink: 0;
     }
 
@@ -576,11 +570,12 @@
       font-weight: 900;
       line-height: 1.08;
       letter-spacing: -.025em;
-      color: #1a1c22;
-      -webkit-text-fill-color: #1a1c22;
+      color: #ffffff;
+      -webkit-text-fill-color: #ffffff;
       filter: none;
       margin-bottom: 2.2rem;
       position: static;
+      text-shadow: 0 2px 20px rgba(0,0,0,.45);
     }
     #hero .hT .si { display: none; }
 
@@ -590,24 +585,26 @@
       align-items: center;
       gap: .65rem;
       padding: .9rem 2.4rem;
-      background: #1a1c22;
+      background: rgba(255,255,255,.15);
       color: #ffffff;
-      border: 1.5px solid #1a1c22;
+      border: 1.5px solid rgba(255,255,255,.6);
       font-family: var(--fm);
       font-size: .75rem;
       letter-spacing: .22em;
       cursor: pointer;
       text-decoration: none;
       border-radius: 4px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       transition: background .28s, border-color .28s, transform .28s, box-shadow .28s;
       align-self: flex-start;
     }
     .hCta:hover {
-      background: transparent;
-      color: #1a1c22;
-      border-color: #1a1c22;
+      background: rgba(255,255,255,.28);
+      color: #ffffff;
+      border-color: rgba(255,255,255,.9);
       transform: translateY(-2px);
-      box-shadow: 0 8px 28px rgba(26,28,34,.12);
+      box-shadow: 0 8px 28px rgba(0,0,0,.25);
     }
     .hCta .hCtaArrow {
       display: inline-block;
@@ -615,12 +612,15 @@
     }
     .hCta:hover .hCtaArrow { transform: translateX(3px); }
 
-    /* ── Right artwork panel ── */
+    /* ── Right artwork panel — full-bleed behind everything ── */
     .hRight {
-      flex: 0 0 58%;
-      position: relative;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
-      background: #f6f7f9;
+      background: #000;
+      z-index: 0;
     }
 
     /* Desktop artwork image */
@@ -635,17 +635,8 @@
     /* Mobile artwork image — hidden on desktop */
     .hArtImgMob { display: none; }
 
-    /* Subtle inner shadow on left edge of image for seamless blend */
-    .hRight::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      left: 0;
-      width: 60px;
-      background: linear-gradient(to right, rgba(255,255,255,.18), transparent);
-      z-index: 1;
-      pointer-events: none;
-    }
+    /* hRight::before removed — no overlay on full-bleed image */
+    .hRight::before { display: none; }
 
     /* ── Scroll indicator ── */
     .hScr {
@@ -662,14 +653,14 @@
       font-family: var(--fm);
       font-size: .58rem;
       letter-spacing: .35em;
-      color: #8a8f98;
+      color: rgba(255,255,255,.6);
       writing-mode: vertical-rl;
       text-orientation: mixed;
     }
     .sLn {
       width: 1px;
       height: 44px;
-      background: linear-gradient(to bottom, #8a8f98, transparent);
+      background: linear-gradient(to bottom, rgba(255,255,255,.6), transparent);
       animation: sD 2s ease-in-out infinite;
     }
     @keyframes sD {
@@ -783,11 +774,11 @@
         min-height: 100svh;
       }
       .hRight {
-        flex: 0 0 auto;
+        position: absolute;
+        inset: 0;
         width: 100%;
-        height: 100svh;
+        height: 100%;
         order: 0;
-        position: relative;
       }
       .hRight::before { display: none; }
       .hArtImg    { display: none; }
@@ -807,7 +798,7 @@
         order: 1;
         z-index: 3;
         flex: unset;
-        background: linear-gradient(to top, rgba(255,255,255,1) 55%, rgba(255,255,255,.7) 78%, transparent 100%);
+        background: transparent;
         padding: 2.8rem 1.8rem 3rem;
         justify-content: flex-end;
       }
@@ -4691,6 +4682,17 @@ body.admin .wtCardAdm { display: flex; }
   50%     { box-shadow: 0 0 32px rgba(99,179,237,.55), 0 8px 32px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.22); }
 }
 
+/* ── Return-home glide transition ── */
+#zeoBtn.zeoGliding {
+  transition:
+    right   1.4s cubic-bezier(0.4, 0, 0.2, 1),
+    bottom  1.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform .22s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .22s ease;
+  /* Override the float + glow animation while gliding */
+  animation: zeoGlow 3.2s ease-in-out infinite !important;
+}
+
 /* ── Floating button ── */
 #zeoBtn {
   position: fixed;
@@ -4794,7 +4796,8 @@ body.admin .wtCardAdm { display: flex; }
   padding: .55rem 1rem;
   border-radius: 14px;
   white-space: nowrap;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   box-shadow: 0 0 18px rgba(99,179,237,.22), 0 8px 28px rgba(0,0,0,.22);
   /* State: hidden by default */
   opacity: 0;
@@ -10374,14 +10377,22 @@ window.ZEO_DATA = {
       var saved = localStorage.getItem('zeo_btn_pos');
       if (saved) {
         var pos = JSON.parse(saved);
+        /* Discard any stale left-based saved position */
+        if (typeof pos.right === 'undefined') {
+          localStorage.removeItem('zeo_btn_pos');
+          return;
+        }
         var maxRight  = window.innerWidth  - btn.offsetWidth  - 8;
         var maxBottom = window.innerHeight - btn.offsetHeight - 8;
         btn.style.right  = Math.min(Math.max(8, pos.right),  maxRight)  + 'px';
         btn.style.bottom = Math.min(Math.max(8, pos.bottom), maxBottom) + 'px';
-        btn.style.left = 'auto';
-        btn.style.top  = 'auto';
       }
-    } catch(e) {}
+      /* Always force right-side anchoring — never left */
+      btn.style.left = 'auto';
+      btn.style.top  = 'auto';
+    } catch(e) {
+      btn.style.left = 'auto';
+    }
   })();
 
   function savePos(right, bottom) {
@@ -10421,6 +10432,8 @@ window.ZEO_DATA = {
 
   /* Pointer down — start potential drag */
   function onPointerDown(e) {
+    cancelReturn(); /* abort any in-progress return animation */
+    pauseBubble();  /* suppress bubbles while user is interacting */
     drag.active  = true;
     drag.wasDrag = false;
     var rect = btn.getBoundingClientRect();
@@ -10464,15 +10477,89 @@ window.ZEO_DATA = {
     window.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup',   onPointerUp);
     if (drag.wasDrag) {
-      /* Save final position */
+      /* Save drag position, then schedule the return-home sequence */
       savePos(parseInt(btn.style.right, 10), parseInt(btn.style.bottom, 10));
+      scheduleReturn(); /* bubbles stay paused; resumeBubble() called inside scheduleReturn when done */
     } else {
-      /* Was a click, not a drag — toggle chat */
+      /* Was a click, not a drag — toggle chat (bubble pause handled by openChat/closeChat) */
+      resumeBubble();
       toggleChat();
     }
   }
 
   btn.addEventListener('pointerdown', onPointerDown);
+
+  /* Clicking the speech bubble dismisses the current message and resets the cycle */
+  bubble.addEventListener('click', function() {
+    clearTimeout(bubbleTimer);
+    bubbleTimer = null;
+    bubble.classList.remove('zbVisible', 'zbHiding');
+    bubble.style.opacity = '0';
+    bubble.textContent = '';
+    requestAnimationFrame(function() { bubble.style.opacity = ''; });
+    if (!bubblePaused) {
+      bubbleTimer = setTimeout(showBubble, BUBBLE_WAIT_MS);
+    }
+  });
+
+  /* ════════════════════════════════════════════════════════
+     RETURN-HOME SYSTEM
+     After drag ends, wait 4s → glide to nearest right corner
+     → wait 2s → glide to home (bottom-right 24px/24px).
+  ════════════════════════════════════════════════════════ */
+  var HOME_RIGHT  = 24;
+  var HOME_BOTTOM = 24;
+  var returnTimer   = null; /* 4s idle countdown */
+  var returnInFlight = false; /* true while glide is running */
+
+  /* Cancel any in-progress return sequence */
+  function cancelReturn() {
+    clearTimeout(returnTimer);
+    returnTimer = null;
+    if (returnInFlight) {
+      returnInFlight = false;
+      btn.classList.remove('zeoGliding');
+    }
+  }
+
+  /* Glide button to a right+bottom position over ~1.4s,
+     then call onDone after the transition completes. */
+  function glideTo(toRight, toBottom, onDone) {
+    btn.classList.add('zeoGliding');
+    /* Force reflow so transition picks up the new values */
+    btn.getBoundingClientRect();
+    btn.style.right  = toRight  + 'px';
+    btn.style.bottom = toBottom + 'px';
+    btn.style.left   = 'auto';
+    btn.style.top    = 'auto';
+    syncUI();
+
+    /* 1400ms matches the CSS transition duration */
+    returnTimer = setTimeout(function() {
+      if (onDone) onDone();
+    }, 1400);
+  }
+
+  /* Kick off the return after a drag — straight glide directly to home */
+  function scheduleReturn() {
+    cancelReturn();
+    returnInFlight = false;
+    returnTimer = setTimeout(function() {
+      /* Check button isn't already home */
+      var curRight  = parseInt(btn.style.right,  10);
+      var curBottom = parseInt(btn.style.bottom, 10);
+      if (curRight === HOME_RIGHT && curBottom === HOME_BOTTOM) return;
+
+      returnInFlight = true;
+      glideTo(HOME_RIGHT, HOME_BOTTOM, function() {
+        returnInFlight = false;
+        btn.classList.remove('zeoGliding');
+        savePos(HOME_RIGHT, HOME_BOTTOM);
+        syncUI();
+        if (!isOpen) resumeBubble();
+      });
+    }, 4000); /* 4s idle wait */
+  }
 
   /* ════════════════════════════════════════════════════════
      SPEECH BUBBLE CYCLE
@@ -10720,13 +10807,17 @@ window.ZEO_DATA = {
      WINDOW RESIZE — re-sync UI positions
   ════════════════════════════════════════════════════════ */
   window.addEventListener('resize', function() {
-    /* Clamp button on resize */
-    var curLeft   = parseInt(btn.style.left,   10) || 24;
-    var curBottom = parseInt(btn.style.bottom, 10) || 24;
-    var maxLeft   = window.innerWidth  - btn.offsetWidth  - 8;
+    /* Clamp button on resize — always right-anchored */
+    var curRight  = parseInt(btn.style.right,  10);
+    var curBottom = parseInt(btn.style.bottom, 10);
+    /* If right is not set yet, default to 24 */
+    if (isNaN(curRight))  curRight  = 24;
+    if (isNaN(curBottom)) curBottom = 24;
+    var maxRight  = window.innerWidth  - btn.offsetWidth  - 8;
     var maxBottom = window.innerHeight - btn.offsetHeight - 8;
-    btn.style.left   = Math.min(Math.max(8, curLeft),   maxLeft)   + 'px';
+    btn.style.right  = Math.min(Math.max(8, curRight),  maxRight)  + 'px';
     btn.style.bottom = Math.min(Math.max(8, curBottom), maxBottom) + 'px';
+    btn.style.left = 'auto';
     if (isOpen) syncUI();
   });
 

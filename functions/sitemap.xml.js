@@ -32,7 +32,7 @@ export async function onRequestGet(context) {
   const { env } = context;
   const SUPABASE_URL = env.SUPABASE_URL || 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
   const SUPABASE_ANON_KEY = env.SUPABASE_ANON_KEY || '';
-  const SITE_URL = 'https://digiartz.pages.dev';
+  const SITE_URL = 'https://digiartz.net';
 
   let artworks = [];
   try {

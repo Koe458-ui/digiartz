@@ -11,4 +11,4 @@ Allow: /
 User-agent: Googlebot
 Allow: /
 
-Sitemap: https://digiartz.pages.dev/sitemap.xml
+Sitemap: https://digiartz.net/sitemap.xml

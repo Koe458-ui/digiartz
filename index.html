@@ -87,160 +87,86 @@
     .iLoadBar{height:100%;width:0%;background:linear-gradient(90deg,var(--tc),color-mix(in srgb,var(--tc) 60%,white));border-radius:2px;transition:width .25s ease-out;box-shadow:0 0 8px var(--tc);}
     .iLoadPct{font-family:var(--fm);font-size:.72rem;letter-spacing:.2em;color:color-mix(in srgb,var(--tc) 70%,#333);opacity:.8;}
 
-    #navWrap{position:fixed;top:1rem;left:50%;transform:translateX(-50%);z-index:500;width:min(560px,calc(100% - 2rem));display:flex;flex-direction:column;align-items:stretch;will-change:width,top;}
-
-    #navBar{
+    /* =========================================================
+       FLOATING BOTTOM NAVIGATION
+       ├─ Bar (#bnNav) — near-full-width pill, icon-only
+       │   └─ Items (.bnItem) × 5 — circular icon buttons,
+       │       Home / Gallery / Comic / Comment / Profile,
+       │       evenly spaced with justify-content:space-between
+       │   z-index sits above every full-page panel (gallery,
+       │   comments, comic, templates, subscription) so the bar
+       │   stays visible/usable across the whole site, not just
+       │   the hero section.
+       └─ AI Assistant button floats just above, aligned over
+          the Profile icon (#zeoBtn)
+       ========================================================= */
+    #bnNav{
+      position:fixed;
+      left:16px;right:16px;bottom:1.1rem;
+      margin:0 auto;
+      max-width:460px;
+      z-index:1000;
       display:flex;align-items:center;justify-content:space-between;
-      padding:.85rem 1.3rem;
-      /* Effective radius, not 999px: the bar is ~61px tall, so 31px
-         already renders a true full pill — but unlike 999px, every px
-         between 31 and 22 is part of the bar's real visible curvature,
-         so the transition shows continuous motion instead of doing
-         nothing for most of the range then snapping square at the end. */
-      border-radius:31px;
-      background:linear-gradient(160deg,color-mix(in srgb,var(--sur) 92%,transparent) 0%,color-mix(in srgb,var(--sur2) 92%,transparent) 100%);
+      padding:.55rem 1rem;
+      border-radius:999px;
+      background:linear-gradient(160deg,color-mix(in srgb,var(--sur) 88%,transparent) 0%,color-mix(in srgb,var(--sur2) 88%,transparent) 100%);
       border:1px solid var(--bdr);
-      border-bottom-color:transparent;
-      box-shadow:0 8px 28px rgba(5,3,8,.45), inset 0 1px 0 color-mix(in srgb,var(--tc) 8%,transparent);
-      backdrop-filter:blur(14px);
-      -webkit-backdrop-filter:blur(14px);
-      position:relative;z-index:2;
-      overflow:hidden;
-      will-change:border-radius,padding;
-      transition:border-radius .45s ease-in-out,border-bottom-color .45s ease-in-out,padding .45s ease-in-out;
+      box-shadow:0 10px 32px rgba(5,3,8,.45), inset 0 1px 0 color-mix(in srgb,var(--tc) 8%,transparent);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      will-change:transform;
     }
-    #navWrap.open #navBar{border-radius:22px 22px 0 0;border-bottom-color:transparent;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--tc) 8%,transparent);}
-
-
-
-    /* Right-side group: Login + Hamburger */
-    .nRight{display:flex;align-items:center;gap:.55rem;
-      transition:opacity .35s ease .5s,transform .35s ease .5s;}
-
-    /* Login icon button — circular glass chip, matches hamburger button */
-    .nLoginBtn{
-      background:color-mix(in srgb,var(--sur) 92%,transparent);
-      border:1px solid var(--bdr);
-      color:var(--txd);
-      width:34px;height:34px;border-radius:50%;
-      cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      box-shadow:0 2px 8px rgba(5,3,8,.10);
-      transition:color .25s,border-color .25s,background .25s,box-shadow .25s,opacity .35s ease .5s;
-      flex-shrink:0;
-    }
-    .nLoginBtn svg{width:16px;height:16px;display:block;}
-    .nLoginBtn:hover{color:var(--ps);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
-
-    /* "Menu" label — always visible now (Koe logo removed) */
-    .nMenuLabel{
-      font-family:var(--fm);font-size:.78rem;letter-spacing:.3em;
-      color:var(--txd);
-      position:absolute;left:50%;transform:translateX(-50%);
-      opacity:1;pointer-events:auto;white-space:nowrap;
-      transition:opacity .3s ease;
-    }
-
-    /* ── COLLAPSED (scrolled) state ── */
-    /* navWrap shrinks to a pill; override width and centering */
-    #navWrap{
-      transition:width .5s cubic-bezier(.4,0,.2,1), top .5s cubic-bezier(.4,0,.2,1);
-    }
-    #navWrap.navCollapsed{
-      width:min(120px,calc(100% - 2rem));
-    }
-    #navWrap.navCollapsed #navBar{
-      justify-content:center;
-      padding:.72rem 1.4rem;
-      border-radius:31px !important; /* keep full pill even if open class were somehow set */
-    }
-    #navWrap.navCollapsed .nLoginBtn{opacity:0;pointer-events:none;position:absolute;left:-9999px;transition-delay:0s;}
-    #navWrap.navCollapsed .nRight{opacity:0;pointer-events:none;position:absolute;right:-9999px;transition-delay:0s;}
-    #navWrap.navCollapsed .nMenuLabel{opacity:1;pointer-events:auto;}
-    /* Also hide dropdown trigger when collapsed (clicking pill opens menu) */
-    #navWrap.navCollapsed #navDrop{display:none;}
-    #navWrap.navCollapsed #navSep{display:none;}
-
-    /* Hamburger button — matches .nLoginBtn glass-box style */
-    .nHam{
-      background:color-mix(in srgb,var(--sur) 92%,transparent);
-      border:1px solid var(--bdr);
-      cursor:pointer;color:var(--txd);
-      display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;
-      width:34px;height:34px;border-radius:50%;
-      box-shadow:0 2px 8px rgba(5,3,8,.10);
-      flex-shrink:0;transition:color .25s,border-color .25s,background .25s,box-shadow .25s;
-    }
-    .nHam:hover{color:var(--pg);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
-    .nHam span{display:block;width:20px;height:1.5px;background:currentColor;border-radius:1px;transition:transform .45s ease-in-out,opacity .45s ease-in-out;}
-    #navWrap.open .nHam span:nth-child(1){transform:translateY(6.5px) rotate(45deg);}
-    #navWrap.open .nHam span:nth-child(2){opacity:0;transform:scaleX(0);}
-    #navWrap.open .nHam span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);}
-
-    /* Dropdown — physically attached beneath the bar.
-       The menu items carry NO animation — always fully rendered/visible.
-       The panel's height is animated as an exact PIXEL value (measured
-       in JS and written to --ddh), not grid-rows/fr units or max-height
-       against an arbitrary cap — fr/max-height transitions resolve the
-       0-end asymmetrically in most browsers, which made closing snap.
-       ease-in-out spreads the motion evenly across the duration in both
-       directions (an expo-style curve front-loads ~80% of the visible
-       motion into the first 20% of the time, which looks like a snap). */
-    #navDrop{
-      overflow:hidden;
-      height:0;
-      background:linear-gradient(160deg,color-mix(in srgb,var(--sur) 96%,transparent) 0%,color-mix(in srgb,var(--sur2) 96%,transparent) 100%);
-      border:none;
-      border-radius:0 0 22px 22px;
-      transition:height .45s ease-in-out,box-shadow .2s;
-      pointer-events:none;
-    }
-    #navWrap.open #navDrop{height:var(--ddh,340px);pointer-events:auto;border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);box-shadow:0 14px 34px rgba(5,3,8,.45);}
-    #navDrop > .ddInner{overflow:hidden;}
-
-    .ddItem{
-      display:flex;align-items:center;gap:.65rem;
-      padding:.8rem 1.3rem;
-      font-family:var(--fm);font-size:.78rem;letter-spacing:.2em;
-      color:var(--txd);text-decoration:none;cursor:pointer;
-      background:none;border:none;width:100%;text-align:left;
+    .bnItem{
       position:relative;
-      transition:color .2s,background .2s;
+      display:flex;align-items:center;justify-content:center;
+      flex:0 0 auto;
+      width:58px;height:58px;
+      border-radius:50%;
+      background:none;border:none;cursor:pointer;
+      color:var(--txd);
+      transition:color .22s,background .22s,transform .15s;
     }
-    .ddItem:hover{color:var(--ps);background:color-mix(in srgb,var(--tc) 7%,transparent);}
-    .ddItem:hover::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--pg);box-shadow:0 0 8px var(--pg);}
-    .ddItem .ddIco{color:var(--pg);font-size:.85rem;flex-shrink:0;width:14px;text-align:center;line-height:1;}
-    .ddItem.on{color:var(--pb);}
-    /* Admin button hidden by default; .devOnly class is added only after role==='dev' is confirmed via Supabase */
-    #smAdmBtn{display:none;}
-    #smAdmBtn.devOnly{display:flex;}
-
-    /* Divider between dropdown items */
-    .ddDiv{height:1px;background:linear-gradient(to right,transparent,var(--bdr),transparent);}
-
-    /* Separator between nav bar and dropdown */
-    #navSep{
-      height:1px;
-      margin:0 1.3rem;
-      background:linear-gradient(to right,
-        transparent 0%,
-        color-mix(in srgb,var(--pg) 25%,transparent) 20%,
-        color-mix(in srgb,var(--pg) 55%,transparent) 50%,
-        color-mix(in srgb,var(--pg) 25%,transparent) 80%,
-        transparent 100%
-      );
-      box-shadow:0 0 8px color-mix(in srgb,var(--pg) 30%,transparent);
-      opacity:0;
-      transition:opacity .3s ease .15s;
-      flex-shrink:0;
+    .bnItem svg{width:26px;height:26px;display:block;stroke-width:1.8;transition:transform .22s cubic-bezier(.34,1.56,.64,1);}
+    .bnItem:hover{color:var(--ps);background:color-mix(in srgb,var(--tc) 8%,transparent);}
+    .bnItem:active{transform:scale(.92);}
+    .bnItem:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    .bnItem.bnActive{color:var(--pg);background:color-mix(in srgb,var(--tc) 12%,transparent);}
+    .bnItem.bnActive svg{transform:translateY(-1px) scale(1.08);}
+    .bnItem.bnActive::after{
+      content:'';
+      position:absolute;
+      bottom:5px;left:50%;
+      width:4px;height:4px;
+      transform:translateX(-50%);
+      border-radius:50%;
+      background:var(--pg);
+      box-shadow:0 0 6px var(--pg);
     }
-    #navWrap.open #navSep{opacity:1;}
+    /* Profile item hosts the existing login/avatar swap buttons,
+       sized to match the other icons exactly, still circular */
+    .bnItem.bnProfile{padding:0;}
+    .bnItem .nLoginBtn,
+    .bnItem .nAvatarBtn{
+      width:42px;height:42px;margin:0;border-radius:50%;
+    }
+    .bnItem .nLoginBtn svg{width:24px;height:24px;stroke-width:1.8;}
+    .bnItem .nAvLetter{font-size:1.05rem;}
+
+    /* Text labels removed — icon-only nav; .bnLabel spans are kept
+       in markup for screen-reader / SEO continuity but hidden visually */
+    .bnLabel{
+      position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+      overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+    }
 
     @media(max-width:640px){
-      #navWrap{top:.8rem;width:calc(100% - 1.6rem);}
-      #navBar{padding:.75rem 1.1rem;}
+      #bnNav{bottom:.8rem;left:10px;right:10px;padding:.45rem .7rem;}
+      .bnItem{width:52px;height:52px;}
+      .bnItem svg{width:24px;height:24px;}
+      .bnItem .nLoginBtn,
+      .bnItem .nAvatarBtn{width:38px;height:38px;}
+      .bnItem .nLoginBtn svg{width:22px;height:22px;}
     }
-
 
     #hero {
       position: relative;
@@ -584,12 +510,12 @@
     .fgFltBtn.active::after{content:'';position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);}
 
     /* ── FILTER PANEL OVERLAY ── */
-    #fgFltOvr{position:fixed;inset:0;z-index:550;background:rgba(5,3,8,.55);opacity:0;pointer-events:none;transition:opacity .3s ease;backdrop-filter:blur(3px);}
+    #fgFltOvr{position:fixed;inset:0;z-index:1050;background:rgba(5,3,8,.55);opacity:0;pointer-events:none;transition:opacity .3s ease;backdrop-filter:blur(3px);}
     #fgFltOvr.open{opacity:1;pointer-events:auto;}
 
     /* ── FILTER PANEL ── */
     #fgFltPanel{
-      position:fixed;bottom:0;left:0;right:0;z-index:551;
+      position:fixed;bottom:0;left:0;right:0;z-index:1051;
       background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%);
       border-top:1px solid var(--bdrh);
       border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);
@@ -1061,11 +987,12 @@
     .cpComposerWrap{width:100%;display:flex;flex-direction:column;gap:6px;}
     .cpBar{
       position:fixed;bottom:0;left:0;right:0;
-      z-index:501;
+      z-index:1001;
       background:rgba(5,3,8,.97);
       border-top:1px solid var(--bdrh);
       backdrop-filter:blur(16px);
       padding:.75rem 1.2rem;
+      padding-bottom:calc(.75rem + 84px);
       display:none;
       align-items:center;gap:.75rem;
       flex-shrink:0;
@@ -1966,6 +1893,117 @@
       color:var(--txd);
       display:none;
     }
+
+    /* =========================================================
+       PROFILE PAGE (#profilePage)
+       Same sliding full-page panel language as #subPage /
+       #comicArtsPage — .subPgHdr / .subPgX / .subPgTitle reused
+       as-is, everything below is page-specific.
+       ========================================================= */
+    #profilePage{
+      position:fixed;inset:0;z-index:500;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #profilePage.open{transform:translateX(0);}
+    .pfBdy{max-width:1100px;margin:0 auto;padding:0 0 6rem;}
+
+    /* ── Header block ── */
+    .pfHead{
+      display:flex;align-items:center;gap:1.2rem;
+      padding:2.5rem 2rem 1.6rem;
+      flex-wrap:wrap;
+    }
+    .pfAvatar{
+      width:84px;height:84px;border-radius:50%;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,var(--tc),color-mix(in srgb,var(--tc) 55%,white));
+      color:#fff;font-family:var(--fd);font-size:2rem;font-weight:700;
+      box-shadow:0 4px 16px color-mix(in srgb,var(--tc) 35%,transparent);
+    }
+    .pfHeadInfo{flex:1 1 auto;min-width:160px;}
+    .pfUsername{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--tx);}
+    .pfJoined{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);margin-top:.3rem;}
+    .pfUpBtn{
+      flex-shrink:0;font-family:var(--fm);font-size:.7rem;letter-spacing:.12em;
+      padding:.7rem 1.3rem;border:1px solid var(--tc);border-radius:6px;
+      background:var(--tc);color:#fff;cursor:pointer;transition:opacity .2s,transform .15s;
+    }
+    .pfUpBtn:hover{opacity:.88;}
+    .pfUpBtn:active{transform:scale(.97);}
+    .pfUpBtn.sec{background:none;color:var(--tc);}
+
+    /* ── Tabs ── */
+    .pfTabs{
+      display:flex;gap:.4rem;padding:0 2rem;border-bottom:1px solid var(--bdr);
+      position:sticky;top:0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);z-index:5;
+    }
+    .pfTab{
+      font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;
+      padding:.9rem 1rem;background:none;border:none;cursor:pointer;
+      color:var(--txd);border-bottom:2px solid transparent;transition:color .2s,border-color .2s;
+    }
+    .pfTab:hover{color:var(--ps);}
+    .pfTab.active{color:var(--tx);border-bottom-color:var(--tc);}
+    .pfPanel{display:none;padding:1.8rem 2rem 0;}
+    .pfPanel.active{display:block;}
+
+    /* ── Gallery / Comic cards reuse .awGrid / .awCard but need an
+       optional admin action row appended at the bottom of the card ── */
+    .pfGrid{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      gap:1.2rem;margin-top:1.2rem;
+    }
+    @media(max-width:480px){.pfGrid{grid-template-columns:1fr;}}
+    .pfCardMeta{padding:.65rem .75rem .8rem;border-top:1px solid var(--bdr);}
+    .pfCardTitle{font-family:var(--fm);font-size:.74rem;font-weight:700;letter-spacing:.05em;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .pfCardDate{font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;color:var(--txd);margin-top:.2rem;}
+    .pfCardTags{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem;}
+    .pfTagChip{font-family:var(--fm);font-size:.6rem;letter-spacing:.06em;padding:.1rem .4rem;background:color-mix(in srgb,var(--tc) 10%,transparent);color:var(--ps);border-radius:3px;}
+    .pfCardAdmin{display:flex;gap:.5rem;margin-top:.55rem;}
+    .pfCardAdmin button{flex:1;font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;padding:.35rem;border:1px solid var(--bdr);background:var(--sur2);color:var(--txd);cursor:pointer;border-radius:4px;}
+    .pfCardAdmin button:hover{border-color:var(--bdrh);color:var(--tx);}
+    .pfCardAdmin button.danger:hover{color:#dc2626;border-color:#fca5a5;}
+    .pfEmpty{padding:3rem 1rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;color:var(--txd);}
+    .pfLoadMoreWrap{text-align:center;margin:1.6rem 0;}
+
+    /* ── About tab ── */
+    .pfStats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;margin-bottom:1.6rem;}
+    .pfStatCard{background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:1rem;text-align:center;}
+    .pfStatNum{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--tx);}
+    .pfStatLbl{font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--txd);margin-top:.2rem;}
+    .pfBioWrap{background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:1.2rem;}
+    .pfBioLbl{font-family:var(--fm);font-size:.65rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.6rem;}
+    .pfBioText{font-family:var(--fb);font-size:.88rem;line-height:1.6;color:var(--tx);white-space:pre-wrap;}
+    .pfBioEdit{width:100%;font-family:var(--fb);font-size:.88rem;line-height:1.6;color:var(--tx);background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:.7rem;resize:vertical;min-height:5rem;display:none;}
+    .pfBioBtns{display:none;gap:.6rem;margin-top:.7rem;}
+    .pfBioBtns button{font-family:var(--fm);font-size:.66rem;letter-spacing:.1em;padding:.5rem 1rem;border-radius:5px;cursor:pointer;}
+    .pfBioSaveBtn{background:var(--tc);color:#fff;border:1px solid var(--tc);}
+    .pfBioCancelBtn{background:none;color:var(--txd);border:1px solid var(--bdr);}
+    .pfBioEditLink{font-family:var(--fm);font-size:.65rem;letter-spacing:.1em;color:var(--tc);background:none;border:none;cursor:pointer;margin-top:.6rem;padding:0;}
+
+    /* ── Skeleton loading state ── */
+    .pfSkeleton{background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);background-size:200% 100%;animation:imgShimmer 1.4s infinite;border-radius:8px;}
+
+    /* =========================================================
+       LOGIN / SIGNUP PAGE (#authMod)
+       Full-screen sliding panel, same language as #profilePage —
+       form card (.authCard) is just .modal centered in the body.
+       ========================================================= */
+    #authMod{
+      position:fixed;inset:0;z-index:500;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #authMod.open{transform:translateX(0);}
+    .authBdy{
+      min-height:calc(100% - 60px);
+      display:flex;align-items:center;justify-content:center;
+      padding:2.5rem 1.5rem 4rem;
+    }
+    .authCard{max-width:420px;width:100%;}
+
     /* ── Mobile: single-column ── */
     @media(max-width:480px){
       .awGrid{
@@ -2321,9 +2359,8 @@ height:80px;
   .lbActionBtn{flex:1;min-height:48px;}
 }
 
-/* Comic Arts + Website Templates page overlays — same pattern as #fg, #commentsPage, #adsPanel */
-#comicArtsPage,
-#webTemplatesPage {
+/* Comic Arts page overlay — same pattern as #fg, #commentsPage, #adsPanel */
+#comicArtsPage {
   position: fixed;
   inset: 0;
   z-index: 500;
@@ -2332,8 +2369,7 @@ height:80px;
   transform: translateX(100%);
   transition: transform .45s cubic-bezier(.22,1,.36,1);
 }
-#comicArtsPage.open,
-#webTemplatesPage.open { transform: translateX(0); }
+#comicArtsPage.open { transform: translateX(0); }
 
 /* ── Placeholder body — centred empty-state layout ── */
 .pgPlaceholder {
@@ -2370,7 +2406,6 @@ body{background:var(--bg);}
 .gItem,.adCard,.apCard,.modal,.legalModal,#fgFltPanel,.amCard{
   box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important;
 }
-#navWrap.open #navDrop{box-shadow:0 1px 3px rgba(20,20,30,.06),0 4px 14px rgba(20,20,30,.06)!important;}
 .gItem:hover{box-shadow:0 6px 20px rgba(20,20,30,.10)!important;}
 .hCta:hover,.fltDone:hover,.mBtn:hover,.admSv:hover,.sCard:hover,.cpBarSend:hover,.upBtn:hover,.fgFltBtn:hover,.fgFltBtn.active,.fltOptH:has(input:checked){box-shadow:none!important;}
 
@@ -2389,8 +2424,6 @@ body{background:var(--bg);}
 .gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{
   background:#ffffff;border-color:var(--bdr);
 }
-#navDrop{background:#ffffff;}
-#navWrap.open #navDrop{border-top:none;border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);}
 .gNm{border-top:1px solid var(--bdr);}
 .awCard{background:#ffffff;border-color:var(--bdr);}
 .awMeta{border-top-color:var(--bdr);}
@@ -2400,10 +2433,8 @@ body{background:var(--bg);}
 
 /* Nav adopts the white theme; subtle text-shadow keeps the logo legible
    over the hero photo without altering the hero background itself */
-#navBar,#navDrop{background:#ffffff!important;}
-.nLoginBtn,.nHam{background:#ffffff!important;}
-.nAvatarBtn{background:#ffffff!important;}
-.nHam,.nLoginBtn,.nAvatarBtn{text-shadow:0 1px 6px rgba(255,255,255,.9),0 1px 2px rgba(255,255,255,.85);}
+/* Bottom nav adopts the white theme; login/avatar chips stay legible */
+.nLoginBtn,.nAvatarBtn{background:#ffffff!important;}
 
 
 /* ── Re-pin the HERO and elements layered over it to their
@@ -2420,6 +2451,20 @@ body{background:var(--bg);}
 /* #intro uses white background regardless of theme */
 #intro{background:#ffffff;}
 
+.nLoginBtn{
+  background:color-mix(in srgb,var(--sur) 92%,transparent);
+  border:1px solid var(--bdr);
+  color:var(--txd);
+  width:34px;height:34px;border-radius:50%;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(5,3,8,.10);
+  transition:color .25s,border-color .25s,background .25s,box-shadow .25s;
+  flex-shrink:0;
+}
+.nLoginBtn svg{width:16px;height:16px;display:block;}
+.nLoginBtn:hover{color:var(--ps);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
+
 .nAvatarBtn{
   /* Identical glass-box to .nLoginBtn */
   background:color-mix(in srgb,var(--sur) 92%,transparent);
@@ -2428,7 +2473,7 @@ body{background:var(--bg);}
   cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 2px 8px rgba(5,3,8,.10),0 0 0 2px color-mix(in srgb,var(--tc) 18%,transparent);
-  transition:border-color .25s,background .25s,box-shadow .25s,opacity .35s ease .5s;
+  transition:border-color .25s,background .25s,box-shadow .25s;
   flex-shrink:0;
   /* Avatar glow ring — same accent as comment avatars */
   outline:none;
@@ -2452,10 +2497,6 @@ body{background:var(--bg);}
   line-height:1;
   user-select:none;
   pointer-events:none;
-}
-/* Collapsed state: avatar follows same hide logic as .nLoginBtn */
-#navWrap.navCollapsed .nAvatarBtn{
-  opacity:0;pointer-events:none;position:absolute;left:-9999px;transition-delay:0s;
 }
 
 /* ── Profile popup card ── */
@@ -2570,6 +2611,32 @@ body{background:var(--bg);}
   border-color:var(--bdrh);
   color:var(--ps);
 }
+
+/* Ghost utility action (Sponsor) — same look as Cancel */
+.ppBtnGhost{
+  background:transparent;
+  border:1px solid var(--bdr);
+  color:var(--txd);
+}
+.ppBtnGhost:hover{
+  background:color-mix(in srgb,var(--tc) 5%,transparent);
+  border-color:var(--bdrh);
+  color:var(--ps);
+}
+
+/* Admin Panel toggle — accent-bordered, switches tint when ON */
+#smAdmBtn{display:none;}
+#smAdmBtn.devOnly{display:block;}
+#smAdmBtn.ppBtn{
+  background:color-mix(in srgb,var(--tc) 10%,transparent);
+  border:1px solid var(--bdrh);
+  color:var(--ps);
+}
+#smAdmBtn.ppBtn:hover{
+  background:color-mix(in srgb,var(--tc) 20%,transparent);
+  border-color:var(--pg);
+}
+#smAdmBtn.ppBtn.on{color:var(--pb);border-color:var(--pb);}
 
 /* White-theme overrides — keep popup consistent with the site surface */
 #profilePopup{
@@ -3215,780 +3282,6 @@ body{background:var(--bg);}
 
 
 
-/* ── Overlay: mirrors #subPage exactly ── */
-#webTemplatesPage {
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  background: var(--bg);
-  overflow: hidden;
-  transform: translateX(100%);
-  transition: transform .45s cubic-bezier(.22,1,.36,1);
-  display: flex;
-  flex-direction: column;
-}
-#webTemplatesPage.open { transform: translateX(0); }
-
-/* ── Header: extends .subPgHdr ── */
-.wtHdr {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-/* Admin upload button in header */
-.wtAdmBtn {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: .4rem;
-  padding: .38rem .8rem;
-  background: color-mix(in srgb, var(--tc) 10%, transparent);
-  border: 1px solid var(--bdrh);
-  border-radius: 8px;
-  color: var(--ps);
-  font-family: var(--fm);
-  font-size: .65rem;
-  font-weight: 700;
-  letter-spacing: .18em;
-  cursor: pointer;
-  transition: background .22s, border-color .22s, transform .15s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.wtAdmBtn:hover {
-  background: color-mix(in srgb, var(--tc) 18%, transparent);
-  border-color: var(--pg);
-  transform: translateY(-1px);
-}
-.wtAdmBtn:active { transform: scale(.97); }
-
-/* ── Header bar: mirrors .fgHdr exactly, white-theme aware ── */
-.wtHdrBar {
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: rgba(255,255,255,.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--bdr);
-  padding: 1rem 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: .8rem;
-}
-/* Search input: mirrors .fgQ */
-.wtQ {
-  flex: 1;
-  min-width: 120px;
-  background: var(--sur2);
-  border: 1px solid var(--bdr);
-  color: var(--tx);
-  font-family: var(--fm);
-  font-size: .78rem;
-  letter-spacing: .1em;
-  padding: .55rem .9rem;
-  outline: none;
-  transition: border-color .25s;
-  border-radius: 6px;
-}
-.wtQ:focus { border-color: var(--pg); }
-.wtQ::placeholder { color: var(--txd); }
-
-/* Filter icon button: mirrors .fgFltBtn */
-.wtFil {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-.wtFltBtn {
-  flex-shrink: 0;
-  width: 42px; height: 42px;
-  background: color-mix(in srgb, var(--tc) 8%, transparent);
-  border: 1px solid var(--bdrh);
-  color: var(--txd);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: border-color .25s, color .25s, background .25s, box-shadow .25s;
-  position: relative;
-  border-radius: 6px;
-}
-.wtFltBtn svg { width: 18px; height: 18px; pointer-events: none; }
-.wtFltBtn:hover {
-  border-color: var(--pg); color: var(--ps);
-  background: var(--pdim);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--tc) 35%, transparent);
-}
-.wtFltBtn.active {
-  border-color: var(--pg); color: var(--ps);
-  background: var(--pdim);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--tc) 35%, transparent);
-}
-.wtFltBtn.active::after {
-  content: '';
-  position: absolute; top: 7px; right: 7px;
-  width: 6px; height: 6px;
-  background: var(--pg); border-radius: 50%;
-  box-shadow: 0 0 6px var(--pg);
-}
-
-/* ── WT Filter panel overlay: mirrors #fgFltOvr ── */
-#wtFltOvr {
-  position: fixed; inset: 0; z-index: 560;
-  background: rgba(5,3,8,.55);
-  opacity: 0; pointer-events: none;
-  transition: opacity .3s ease;
-  backdrop-filter: blur(3px);
-}
-#wtFltOvr.open { opacity: 1; pointer-events: auto; }
-
-/* ── WT Filter panel: mirrors #fgFltPanel ── */
-#wtFltPanel {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 561;
-  background: linear-gradient(160deg, var(--sur) 0%, var(--sur2) 100%);
-  border-top: 1px solid var(--bdrh);
-  border-left: 1px solid var(--bdr); border-right: 1px solid var(--bdr);
-  box-shadow: 0 -8px 40px rgba(5,3,8,.75), inset 0 1px 0 color-mix(in srgb,var(--tc) 14%,transparent);
-  border-radius: 6px 6px 0 0;
-  max-height: 88vh; overflow-y: auto;
-  transform: translateY(100%);
-  transition: transform .4s cubic-bezier(.22,1,.36,1);
-}
-#wtFltPanel.open { transform: translateY(0); }
-@media (min-width: 641px) {
-  #wtFltPanel {
-    bottom: auto; top: 64px; right: 1.4rem; left: auto;
-    border-radius: 6px; border: 1px solid var(--bdrh);
-    max-width: 300px; max-height: calc(100vh - 80px);
-    transform: translateY(-8px) scale(.97);
-    opacity: 0; pointer-events: none;
-    transition: transform .3s cubic-bezier(.22,1,.36,1), opacity .3s ease;
-  }
-  #wtFltPanel.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
-  #wtFltOvr { backdrop-filter: none; background: transparent; }
-}
-
-/* ── Scrollable grid body ── */
-.wtBdy {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem 1.5rem 4rem;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ── Responsive grid ── */
-.wtGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.4rem;
-}
-
-/* ── Empty state ── */
-.wtEmpty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: .55rem;
-  padding: 5rem 2rem;
-  text-align: center;
-}
-.wtEmptyIco {
-  font-size: 2.5rem;
-  opacity: .25;
-  margin-bottom: .5rem;
-}
-.wtEmptyTxt {
-  font-family: var(--fm);
-  font-size: .78rem;
-  letter-spacing: .28em;
-  color: var(--txd);
-}
-.wtEmptySub {
-  font-family: var(--fb);
-  font-size: .82rem;
-  color: var(--txd);
-  opacity: .65;
-  max-width: 320px;
-}
-
-/* ── Template card ── */
-.wtCard {
-  background: #ffffff;
-  border: 1px solid var(--bdr);
-  border-radius: 14px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: transform .28s cubic-bezier(.22,1,.36,1),
-              box-shadow .28s ease,
-              border-color .28s ease;
-  box-shadow: 0 1px 3px rgba(20,20,30,.04), 0 4px 14px rgba(20,20,30,.05);
-  cursor: default;
-  animation: wtCardIn .4s ease both;
-  position: relative;
-}
-.wtCard:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 28px rgba(20,20,30,.10);
-  border-color: var(--bdrh);
-}
-@keyframes wtCardIn {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-/* stagger */
-.wtCard:nth-child(1)  { animation-delay: .04s; }
-.wtCard:nth-child(2)  { animation-delay: .08s; }
-.wtCard:nth-child(3)  { animation-delay: .12s; }
-.wtCard:nth-child(4)  { animation-delay: .16s; }
-.wtCard:nth-child(5)  { animation-delay: .20s; }
-.wtCard:nth-child(6)  { animation-delay: .24s; }
-
-/* Tier accent bar at top */
-.wtCard::before {
-  content: '';
-  display: block;
-  height: 3px;
-  width: 100%;
-  flex-shrink: 0;
-}
-.wtCard--free::before    { background: #9ca3af; }
-.wtCard--lite::before    { background: linear-gradient(90deg, #3b82f6, #6366f1); }
-.wtCard--premium::before { background: linear-gradient(90deg, #a855f7, #ec4899); }
-.wtCard--max::before     { background: linear-gradient(90deg, #eab308, #f97316); }
-
-/* Preview image container */
-.wtCardImgWrap {
-  width: 100%;
-  aspect-ratio: 16/9;
-  overflow: hidden;
-  background: var(--sur2);
-  position: relative;
-}
-.wtCardImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform .4s cubic-bezier(.22,1,.36,1);
-}
-.wtCard:hover .wtCardImg { transform: scale(1.03); }
-
-/* Placeholder when no image */
-.wtCardImgPlaceholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
-  opacity: .18;
-}
-
-/* Card body */
-.wtCardBdy {
-  padding: 1.1rem 1.2rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: .6rem;
-}
-
-/* Title row */
-.wtCardTitleRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: .6rem;
-}
-.wtCardTitle {
-  font-family: var(--fm);
-  font-size: .78rem;
-  font-weight: 700;
-  letter-spacing: .14em;
-  color: var(--tx);
-  line-height: 1.3;
-  flex: 1;
-}
-
-/* Tier badge */
-.wtTierBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: .18em .6em;
-  border-radius: 99px;
-  font-family: var(--fm);
-  font-size: .58rem;
-  font-weight: 700;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.wtTierBadge--free {
-  background: rgba(156,163,175,.12);
-  border: 1px solid rgba(156,163,175,.45);
-  color: #6b7280;
-}
-.wtTierBadge--lite {
-  background: rgba(59,130,246,.08);
-  border: 1px solid rgba(59,130,246,.35);
-  color: #2563eb;
-}
-.wtTierBadge--premium {
-  background: rgba(168,85,247,.08);
-  border: 1px solid rgba(168,85,247,.35);
-  color: #7c3aed;
-}
-.wtTierBadge--max {
-  background: rgba(234,179,8,.09);
-  border: 1px solid rgba(234,179,8,.40);
-  color: #b45309;
-}
-
-/* Short description (truncated) */
-.wtCardDesc {
-  font-family: var(--fb);
-  font-size: .84rem;
-  color: var(--txd);
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  flex: 1;
-}
-
-/* Admin card buttons */
-.wtCardAdm {
-  display: none;
-  gap: .4rem;
-  position: absolute;
-  top: .55rem;
-  right: .55rem;
-}
-body.admin .wtCardAdm { display: flex; }
-.wtCardAdmBtn {
-  width: 28px; height: 28px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,.55);
-  background: rgba(255,255,255,.88);
-  color: var(--ps);
-  font-size: .72rem;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(4px);
-  transition: background .2s, color .2s;
-  box-shadow: 0 1px 4px rgba(0,0,0,.10);
-}
-.wtCardAdmBtn:hover { background: #fff; color: var(--tx); }
-.wtCardAdmBtn--del:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
-
-/* Show More button */
-.wtShowMore {
-  align-self: flex-start;
-  padding: .42rem .95rem;
-  background: transparent;
-  border: 1px solid var(--bdrh);
-  border-radius: 8px;
-  color: var(--ps);
-  font-family: var(--fm);
-  font-size: .64rem;
-  font-weight: 700;
-  letter-spacing: .2em;
-  cursor: pointer;
-  transition: background .2s, border-color .2s, transform .15s;
-  margin-top: auto;
-}
-.wtShowMore:hover {
-  background: color-mix(in srgb, var(--tc) 8%, transparent);
-  border-color: var(--pg);
-  transform: translateY(-1px);
-}
-.wtShowMore:active { transform: scale(.97); }
-
-/* ── Template Detail Sub-Page ── */
-#wtDetail {
-  position: absolute;
-  inset: 0;
-  background: var(--bg);
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform .4s cubic-bezier(.22,1,.36,1);
-  overflow: hidden;
-}
-#wtDetail.open { transform: translateX(0); }
-
-.wtDetHdr {
-  flex-shrink: 0;
-  justify-content: flex-start;
-}
-.wtDetAdmBtns {
-  display: flex;
-  gap: .4rem;
-  margin-left: auto;
-}
-.wtDetAdmBtn {
-  padding: .35rem .75rem;
-  border-radius: 7px;
-  border: 1px solid var(--bdrh);
-  background: color-mix(in srgb, var(--tc) 8%, transparent);
-  color: var(--ps);
-  font-family: var(--fm);
-  font-size: .62rem;
-  font-weight: 700;
-  letter-spacing: .15em;
-  cursor: pointer;
-  transition: background .2s, border-color .2s;
-}
-.wtDetAdmBtn:hover { background: color-mix(in srgb, var(--tc) 16%, transparent); }
-.wtDetAdmBtn--del:hover { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
-
-.wtDetBdy {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2.5rem 1.5rem 5rem;
-  max-width: 860px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Title + badge row */
-.wtDetTitleRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.8rem;
-  flex-wrap: wrap;
-}
-.wtDetTitle {
-  font-family: var(--fd);
-  font-size: clamp(1.5rem, 4vw, 2.4rem);
-  font-weight: 900;
-  letter-spacing: -.03em;
-  color: var(--tx);
-  line-height: 1.1;
-  flex: 1;
-}
-
-/* Preview image */
-.wtDetImgWrap {
-  width: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--bdr);
-  background: var(--sur2);
-  margin-bottom: 2.5rem;
-  box-shadow: 0 4px 24px rgba(20,20,30,.07);
-}
-.wtDetImg {
-  width: 100%;
-  display: block;
-  max-height: 520px;
-  object-fit: cover;
-}
-
-/* Sections */
-.wtDetSection {
-  margin-bottom: 2.4rem;
-}
-.wtDetSectionLabel {
-  font-family: var(--fm);
-  font-size: .65rem;
-  font-weight: 700;
-  letter-spacing: .3em;
-  color: var(--pg);
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: .7rem;
-}
-.wtDetSectionLabel::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(to right, var(--bdr), transparent);
-}
-.wtDetDesc,
-.wtDetHowTo {
-  font-family: var(--fb);
-  font-size: .92rem;
-  line-height: 1.72;
-  color: var(--tx);
-  white-space: pre-wrap;
-}
-
-/* Download area */
-.wtDetDl {
-  display: flex;
-  flex-direction: column;
-  gap: .8rem;
-}
-.wtDlCard {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.3rem;
-  background: var(--sur2);
-  border: 1px solid var(--bdr);
-  border-radius: 10px;
-  transition: border-color .22s, box-shadow .22s;
-}
-.wtDlCard:hover {
-  border-color: var(--bdrh);
-  box-shadow: 0 2px 10px rgba(20,20,30,.06);
-}
-.wtDlIco {
-  font-size: 1.4rem;
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in srgb, var(--tc) 9%, transparent);
-  border: 1px solid var(--bdr);
-  border-radius: 8px;
-}
-.wtDlInfo {
-  flex: 1;
-  min-width: 0;
-}
-.wtDlName {
-  font-family: var(--fm);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .1em;
-  color: var(--tx);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.wtDlMeta {
-  font-family: var(--fm);
-  font-size: .62rem;
-  letter-spacing: .1em;
-  color: var(--txd);
-  margin-top: .15rem;
-}
-.wtDlBtn {
-  padding: .5rem 1.1rem;
-  background: var(--tx);
-  border: none;
-  border-radius: 8px;
-  color: var(--bg);
-  font-family: var(--fm);
-  font-size: .64rem;
-  font-weight: 700;
-  letter-spacing: .2em;
-  cursor: pointer;
-  transition: opacity .2s, transform .15s;
-  flex-shrink: 0;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: .3rem;
-}
-.wtDlBtn:hover { opacity: .85; transform: translateY(-1px); }
-.wtDlBtn:active { transform: scale(.97); }
-.wtDlNone {
-  font-family: var(--fm);
-  font-size: .72rem;
-  letter-spacing: .14em;
-  color: var(--txd);
-  padding: 1.2rem 0;
-  opacity: .65;
-}
-
-/* Load more */
-.wtLoadMoreWrap {
-  display: flex;
-  justify-content: center;
-  padding: 1.5rem 0 .5rem;
-}
-.wtLoadMore {
-  padding: .7rem 2rem;
-  background: transparent;
-  border: 1px solid var(--bdrh);
-  border-radius: 99px;
-  color: var(--ps);
-  font-family: var(--fm);
-  font-size: .68rem;
-  font-weight: 700;
-  letter-spacing: .22em;
-  cursor: pointer;
-  transition: background .2s, border-color .2s, transform .15s;
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
-.wtLoadMore:hover {
-  background: color-mix(in srgb, var(--tc) 7%, transparent);
-  border-color: var(--pg);
-  transform: translateY(-1px);
-}
-.wtLoadMore span { color: var(--pg); }
-
-/* ── Responsive ── */
-@media (max-width: 860px) {
-  .wtBdy { padding: 1.5rem 1rem 3.5rem; }
-  .wtGrid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
-  .wtDetBdy { padding: 2rem 1.2rem 4rem; }
-}
-@media (max-width: 600px) {
-  .wtHdrBar { padding: .75rem 1rem; gap: .6rem; }
-  .wtBdy { padding: 1.2rem .9rem 3rem; }
-  .wtGrid { grid-template-columns: 1fr; gap: .85rem; }
-  .wtDetBdy { padding: 1.5rem 1rem 3.5rem; }
-  .wtDetTitle { font-size: clamp(1.3rem, 6vw, 1.8rem); }
-  .wtDlBtn { padding: .45rem .85rem; font-size: .6rem; }
-}
-
-/* WT UPSELL MODAL */
-
-/* Backdrop — fixed, above the WT overlay (z:500) and detail (z:510) */
-#wtUpsell {
-  position: fixed;
-  inset: 0;
-  z-index: 610;
-  background: rgba(5,3,8,.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .28s ease;
-}
-#wtUpsell.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Card */
-.wtUpsellCard {
-  background: #ffffff;
-  border: 1px solid var(--bdrh);
-  border-radius: 18px;
-  padding: 2.2rem 2rem 1.8rem;
-  max-width: 340px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .75rem;
-  text-align: center;
-  box-shadow:
-    0 4px 6px rgba(20,20,30,.06),
-    0 16px 40px rgba(20,20,30,.14);
-  transform: scale(.94);
-  transition: transform .28s cubic-bezier(.22,1,.36,1);
-}
-#wtUpsell.open .wtUpsellCard {
-  transform: scale(1);
-}
-
-/* Lock icon */
-.wtUpsellIco {
-  font-size: 2rem;
-  line-height: 1;
-  margin-bottom: .2rem;
-}
-
-/* Tier label */
-.wtUpsellTitle {
-  font-family: var(--fm);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .3em;
-  color: var(--tx);
-  text-transform: uppercase;
-}
-
-/* Divider */
-.wtUpsellCard::after {
-  content: '';
-  display: block;
-  width: 40px;
-  height: 1px;
-  background: linear-gradient(to right, transparent, var(--bdrh), transparent);
-  margin: .1rem 0;
-}
-
-/* Body message */
-.wtUpsellMsg {
-  font-family: var(--fb);
-  font-size: .85rem;
-  line-height: 1.6;
-  color: var(--txd);
-  max-width: 260px;
-}
-
-/* CTA button */
-.wtUpsellCta {
-  width: 100%;
-  padding: .85rem 1.2rem;
-  border: none;
-  border-radius: 10px;
-  background: var(--tx);
-  color: var(--bg);
-  font-family: var(--fm);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .24em;
-  cursor: pointer;
-  transition: opacity .2s, transform .15s;
-  margin-top: .3rem;
-}
-.wtUpsellCta:hover { opacity: .88; transform: translateY(-1px); }
-.wtUpsellCta:active { transform: scale(.97); }
-
-/* Per-tier CTA tint — coloured accents matching tier badges */
-.wtUpsellCta--lite    { background: #2563eb; }
-.wtUpsellCta--premium { background: #7c3aed; }
-.wtUpsellCta--max     { background: linear-gradient(135deg,#b45309,#eab308); }
-
-/* Cancel / dismiss */
-.wtUpsellCancel {
-  background: none;
-  border: none;
-  font-family: var(--fm);
-  font-size: .64rem;
-  letter-spacing: .14em;
-  color: var(--txd);
-  cursor: pointer;
-  padding: .2rem;
-  transition: color .2s;
-}
-.wtUpsellCancel:hover { color: var(--pg); }
-
-/* ── Locked card visual on the grid card itself ── */
-.wtCard--locked .wtCardImg {
-  filter: blur(4px) brightness(.85);
-}
-.wtCard--locked .wtCardImgWrap::after {
-  content: '🔒';
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  font-size: 1.6rem;
-  pointer-events: none;
-}
-.wtCard--locked .wtShowMore {
-  border-color: var(--bdrh);
-  color: var(--txd);
-}
-
 
 
 /* ── Keyframes ── */
@@ -4037,11 +3330,11 @@ body.admin .wtCardAdm { display: flex; }
   animation: zeoGlow 3.2s ease-in-out infinite !important;
 }
 
-/* ── Floating button ── */
+/* ── Floating button — rests centred just above the bottom nav ── */
 #zeoBtn {
   position: fixed;
   right: 24px;
-  bottom: 24px;
+  bottom: 96px;
   left: auto;
   width: 56px;
   height: 56px;
@@ -4423,13 +3716,13 @@ body.admin .wtCardAdm { display: flex; }
   #zeoBtn {
     right: 16px;
     left: auto;
-    bottom: 16px;
+    bottom: 86px;
   }
   #zeoChatPanel {
     right: 12px;
     left: 12px;
     width: auto;
-    bottom: 84px;
+    bottom: 150px;
     border-radius: 18px;
   }
   .zeoBubble {
@@ -4489,90 +3782,56 @@ body.admin .wtCardAdm { display: flex; }
    </a>
   </div>
   <!-- =========================================================
-       NAVIGATION SYSTEM
-       ├─ Navbar Bar (#navBar)
-       │   ├─ Profile Area (#navProfileArea)
-       │   │   ├─ Login Button (.nLoginBtn)     [logged-out]
-       │   │   └─ Avatar Button (.nAvatarBtn)   [logged-in]
-       │   ├─ Menu Label (.nMenuLabel)
-       │   └─ Hamburger Button (.nHam)
-       ├─ Separator (#navSep)
-       └─ Dropdown Menu (#navDrop)
+       FLOATING BOTTOM NAVIGATION
+       ├─ Bar (#bnNav)
+       │   ├─ Home     → scrolls to hero / closes open panels
+       │   ├─ Gallery  → ddOpenGallery()
+       │   ├─ Comic    → openComicArts()
+       │   ├─ Comment  → ddOpenComments()
+       │   └─ Profile  → login face icon ↔ avatar (existing buttons,
+       │                 relocated unchanged so all auth/admin JS
+       │                 keeps working without modification)
        ========================================================= -->
-  <div id="navWrap">
-   <div id="navBar">
-
-    <!-- ── Profile Area ── -->
-    <div id="navProfileArea" style="display:flex;align-items:center;flex-shrink:0;">
-     <!-- LOGGED-OUT: generic face icon (unchanged appearance) -->
-     <button class="nLoginBtn" id="navLoginBtn" onclick="openAuthMod()" title="Login" aria-label="Login">
-      <svg fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-       <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.6"></circle>
-       <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7" stroke="currentColor" stroke-linecap="round" stroke-width="1.6"></path>
-      </svg>
-     </button>
-     <!-- LOGGED-IN: circular avatar with first letter (replaces login btn) -->
-     <button class="nAvatarBtn" id="navAvatarBtn"
-       onclick="toggleProfilePopup(event)"
-       title="Profile"
-       aria-label="Open profile menu"
-       aria-haspopup="true"
-       aria-expanded="false"
-       aria-controls="profilePopup"
-       style="display:none;">
-      <span class="nAvLetter" id="navAvatarLetter">?</span>
-     </button>
-    </div>
-
-    <!-- ── Menu Label ── -->
-    <span class="nMenuLabel" id="navMenuLabel">Menu</span>
-
-    <!-- ── Hamburger Button ── -->
-    <div class="nRight" id="navRight">
-     <button class="nHam" id="hamBtn" onclick="toggleMenu()" title="Menu" aria-label="Open menu" aria-expanded="false" aria-controls="navDrop">
-      <span></span>
-      <span></span>
-      <span></span>
-     </button>
-    </div>
+  <nav id="bnNav" aria-label="Primary navigation">
+   <button class="bnItem" id="bnHome" onclick="bnGoHome()" title="Home" aria-label="Home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h4.5v-6h2v6H17.5a1 1 0 0 0 1-1v-9"/></svg>
+    <span class="bnLabel">Home</span>
+   </button>
+   <button class="bnItem" id="bnGallery" onclick="bnGoGallery()" title="Gallery" aria-label="Gallery">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+    <span class="bnLabel">Gallery</span>
+   </button>
+   <button class="bnItem" id="bnComic" onclick="bnGoComic()" title="Comic" aria-label="Comic">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><path d="M17 4v3h3"/><path d="M8 12h8M8 16h5"/></svg>
+    <span class="bnLabel">Comic</span>
+   </button>
+   <button class="bnItem" id="bnComment" onclick="bnGoComment()" title="Comment" aria-label="Comment">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 20l1.1-5.4A8.38 8.38 0 0 1 3.5 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/></svg>
+    <span class="bnLabel">Comment</span>
+   </button>
+   <div class="bnItem bnProfile" id="bnProfile">
+    <!-- LOGGED-OUT: generic face icon, redrawn to match the
+         outline/stroke style of the other nav icons exactly -->
+    <button class="nLoginBtn" id="navLoginBtn" onclick="openAuthMod()" title="Login" aria-label="Login">
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="8" r="3.5"/>
+      <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7"/>
+     </svg>
+    </button>
+    <!-- LOGGED-IN: circular avatar with first letter (replaces login btn) -->
+    <button class="nAvatarBtn" id="navAvatarBtn"
+      onclick="toggleProfilePopup(event)"
+      title="Profile"
+      aria-label="Open profile menu"
+      aria-haspopup="true"
+      aria-expanded="false"
+      aria-controls="profilePopup"
+      style="display:none;">
+     <span class="nAvLetter" id="navAvatarLetter">?</span>
+    </button>
+    <span class="bnLabel">Profile</span>
    </div>
-
-   <!-- ── Separator ── -->
-   <div id="navSep" aria-hidden="true"></div>
-
-   <!-- ── Dropdown Menu ── -->
-   <div id="navDrop" role="menu" aria-label="Navigation menu">
-    <div class="ddInner">
-    <button class="ddItem" onclick="ddOpenGallery()">
-     <span class="ddIco">✦</span>GALLERY
-    </button>
-    <div class="ddDiv"></div>
-    <button class="ddItem" onclick="openComicArts()">
-     <span class="ddIco">◉</span>COMIC ARTS
-    </button>
-    <div class="ddDiv"></div>
-    <button class="ddItem" onclick="openWebTemplates()">
-     <span class="ddIco">◧</span>WEBSITE TEMPLATES
-    </button>
-    <div class="ddDiv"></div>
-    <button class="ddItem" onclick="ddOpenComments()">
-     <span class="ddIco">◎</span>COMMENTS
-    </button>
-    <div class="ddDiv"></div>
-    <button class="ddItem" onclick="openAdsPanel()">
-     <span class="ddIco">◈</span>SPONSOR
-    </button>
-    <div class="ddDiv"></div>
-    <button class="ddItem" onclick="openSubscription()">
-     <span class="ddIco">★</span>SUBSCRIPTION
-    </button>
-    <div class="ddDiv"></div>
-    <button class="ddItem" id="smAdmBtn" onclick="smHandleAdm()">
-     <span class="ddIco">⚙</span>ADMIN PANEL
-    </button>
-    </div>
-   </div>
-  </div>
+  </nav>
 
   <!-- =========================================================
        PROFILE POPUP
@@ -4580,6 +3839,8 @@ body.admin .wtCardAdm { display: flex; }
        ├─ Username (.ppUsername)
        ├─ Divider (.ppDiv)
        └─ Action Buttons (.ppBtns)
+           ├─ Subscription (.ppBtnGhost)
+           ├─ Admin Panel (#smAdmBtn, dev-only)
            ├─ Logout (.ppBtnLogout)
            └─ Cancel (.ppBtnCancel)
        ========================================================= -->
@@ -4592,6 +3853,9 @@ body.admin .wtCardAdm { display: flex; }
     <div class="ppDiv" aria-hidden="true"></div>
     <!-- ── Action Buttons ── -->
     <div class="ppBtns">
+      <button class="ppBtn ppBtnGhost" onclick="closeProfilePopup();openOwnProfile()">VIEW PROFILE</button>
+      <button class="ppBtn ppBtnGhost" onclick="closeProfilePopup();openSubscription()">SUBSCRIPTION</button>
+      <button class="ppBtn" id="smAdmBtn" onclick="smHandleAdm()">ADMIN PANEL</button>
       <button class="ppBtn ppBtnLogout" id="ppLogoutBtn" onclick="ppDoLogout()">LOGOUT</button>
       <button class="ppBtn ppBtnCancel" onclick="closeProfilePopup()">CANCEL</button>
     </div>
@@ -4730,7 +3994,7 @@ body.admin .wtCardAdm { display: flex; }
       <div class="subOvCard subOvCard--lite">
         <div class="subOvCardInner">
           <div class="subOvPlanName">Lite</div>
-          <p class="subOvDesc">Downloads, high-quality exports, and 2 free premium templates.</p>
+          <p class="subOvDesc">Downloads and high-quality exports.</p>
           <div class="subOvArrowRow">
             <button
               class="subOvArrow"
@@ -4749,7 +4013,7 @@ body.admin .wtCardAdm { display: flex; }
       <div class="subOvCard subOvCard--premium">
         <div class="subOvCardInner">
           <div class="subOvPlanName">Premium</div>
-          <p class="subOvDesc">Everything in Lite, plus 4 templates, custom artwork requests, and early access.</p>
+          <p class="subOvDesc">Everything in Lite, plus custom artwork requests and early access.</p>
           <div class="subOvArrowRow">
             <button
               class="subOvArrow"
@@ -4768,7 +4032,7 @@ body.admin .wtCardAdm { display: flex; }
       <div class="subOvCard subOvCard--max">
         <div class="subOvCardInner">
           <div class="subOvPlanName">Max</div>
-          <p class="subOvDesc">Full access — 6 templates, 5 custom artworks, custom website build, and priority support.</p>
+          <p class="subOvDesc">Full access — 5 custom artworks, custom website build, and priority support.</p>
           <div class="subOvArrowRow">
             <button
               class="subOvArrow"
@@ -4905,217 +4169,111 @@ body.admin .wtCardAdm { display: flex; }
   </div>
 
   <!-- =========================================================
-       WEBSITE TEMPLATES PAGE
-       ├─ Header Bar (.wtHdr)
-       │   ├─ Back Button (.subPgX)
-       │   ├─ Title (.subPgTitle)
-       │   └─ Admin Upload Button (#wtAdmBtn)
-       ├─ Search + Filter Bar (.wtBar)
-       ├─ Templates Grid Body (#wtBdy)
-       ├─ Template Detail Sub-Page (#wtDetail)
-       │   ├─ Detail Header
-       │   ├─ Detail Preview Image
-       │   ├─ Detail Description
-       │   ├─ How To Use Section
-       │   └─ Download Section
-       └─ Template Upload/Edit Modal (#wtMod)
+       USER PROFILE PAGE (#profilePage)
+       ├─ Header Bar (.subPgHdr pattern, back + title)
+       ├─ Profile Header (.pfHead) — avatar, username, joined,
+       │   Upload Artwork button (owner only — opens submission
+       │   form only, never edit/delete)
+       ├─ Tabs (.pfTabs) — Gallery / Comic / About
+       └─ Panels (.pfPanel)
+           ├─ Gallery  → #pfGalleryGrid (+ load more)
+           ├─ Comic    → #pfComicGrid (+ load more)
+           └─ About    → stats + bio (owner-editable)
        ========================================================= -->
-  <div id="webTemplatesPage" role="dialog" aria-modal="true" aria-label="Website Templates">
-
-    <!-- ── Header ── -->
-    <div class="wtHdr subPgHdr">
-      <button class="subPgX" onclick="closeWebTemplates()" aria-label="Close Website Templates">←</button>
-      <div class="subPgTitle">WEBSITE TEMPLATES <span class="s">◧</span></div>
-      <!-- Admin-only upload button — shown via JS when isAdm=true -->
-      <button class="wtAdmBtn" id="wtAdmBtn" onclick="wtOpenMod(null)" aria-label="Upload template" title="Upload Template" style="display:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        UPLOAD
-      </button>
+  <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeProfilePage()" aria-label="Close profile">←</button>
+      <div class="subPgTitle">PROFILE <span class="s">◉</span></div>
     </div>
-
-    <!-- ── Search + Filter header bar (mirrors .fgHdr / gallery pattern) ── -->
-    <div class="wtHdrBar">
-      <input class="wtQ" id="wtQ" type="text" placeholder="SEARCH TEMPLATES..." oninput="wtRender()" autocomplete="off"/>
-      <div class="wtFil">
-        <button class="wtFltBtn" id="wtFltBtn" onclick="wtOpenFilterPanel()" title="FILTERS" aria-label="Open template filters">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-        </button>
+    <div class="pfBdy">
+      <div class="pfHead">
+        <div class="pfAvatar" id="pfAvatar">?</div>
+        <div class="pfHeadInfo">
+          <div class="pfUsername" id="pfUsername">—</div>
+          <div class="pfJoined" id="pfJoined"></div>
+        </div>
+        <button class="pfUpBtn" id="pfUploadArtBtn" onclick="openPfUpload('art')" style="display:none;">UPLOAD ARTWORK</button>
+        <button class="pfUpBtn sec" id="pfUploadComicBtn" onclick="openPfUpload('comic')" style="display:none;">UPLOAD COMIC</button>
       </div>
-    </div>
 
-    <!-- ── Grid body ── -->
-    <div class="wtBdy" id="wtBdy">
-      <div class="wtEmpty" id="wtEmpty">
-        <div class="wtEmptyIco">◧</div>
-        <div class="wtEmptyTxt">NO TEMPLATES YET</div>
-        <div class="wtEmptySub">Check back soon — templates are on their way.</div>
+      <div class="pfTabs" role="tablist">
+        <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" onclick="pfSwitchTab('gallery')">GALLERY</button>
+        <button class="pfTab" id="pfTabComic" role="tab" aria-selected="false" onclick="pfSwitchTab('comic')">COMIC</button>
+        <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" onclick="pfSwitchTab('about')">ABOUT</button>
       </div>
-    </div>
 
-    <!-- TEMPLATE DETAIL SUB-PAGE Slides in over the templates list when "Show More" is clicked. -->
-    <div id="wtDetail" aria-label="Template detail" aria-modal="false">
-
-      <!-- Detail header -->
-      <div class="wtDetHdr subPgHdr">
-        <button class="subPgX" onclick="wtCloseDetail()" aria-label="Back to templates">←</button>
-        <div class="subPgTitle" id="wtDetHdrTitle">TEMPLATE</div>
-        <!-- Admin edit/delete buttons -->
-        <div class="wtDetAdmBtns" id="wtDetAdmBtns" style="display:none;">
-          <button class="wtDetAdmBtn" id="wtDetEditBtn" onclick="wtEditFromDetail()" title="Edit">✎ EDIT</button>
-          <button class="wtDetAdmBtn wtDetAdmBtn--del" id="wtDetDelBtn" onclick="wtDelFromDetail()" title="Delete">✕ DELETE</button>
+      <!-- GALLERY -->
+      <div class="pfPanel active" id="pfPanelGallery">
+        <div class="pfGrid" id="pfGalleryGrid"></div>
+        <div class="pfEmpty" id="pfGalleryEmpty" style="display:none;">No artwork uploaded yet.</div>
+        <div class="pfLoadMoreWrap" id="pfGalleryLoadMoreWrap" style="display:none;">
+          <button class="fgLoadMore" onclick="pfLoadMoreGallery()"><span>✦</span> LOAD MORE</button>
         </div>
       </div>
 
-      <!-- Detail scrollable body -->
-      <div class="wtDetBdy">
-
-        <!-- Title + tier badge -->
-        <div class="wtDetTitleRow">
-          <h1 class="wtDetTitle" id="wtDetTitle"></h1>
-          <span class="wtTierBadge" id="wtDetTierBadge"></span>
+      <!-- COMIC -->
+      <div class="pfPanel" id="pfPanelComic">
+        <div class="pfGrid" id="pfComicGrid"></div>
+        <div class="pfEmpty" id="pfComicEmpty" style="display:none;">No comics uploaded yet.</div>
+        <div class="pfLoadMoreWrap" id="pfComicLoadMoreWrap" style="display:none;">
+          <button class="fgLoadMore" onclick="pfLoadMoreComic()"><span>✦</span> LOAD MORE</button>
         </div>
+      </div>
 
-        <!-- Preview image -->
-        <div class="wtDetImgWrap">
-          <img class="wtDetImg" id="wtDetImg" src="" alt="" loading="lazy" decoding="async"/>
+      <!-- ABOUT -->
+      <div class="pfPanel" id="pfPanelAbout">
+        <div class="pfStats">
+          <div class="pfStatCard"><div class="pfStatNum" id="pfStatArt">0</div><div class="pfStatLbl">ARTWORKS</div></div>
+          <div class="pfStatCard"><div class="pfStatNum" id="pfStatComic">0</div><div class="pfStatLbl">COMICS</div></div>
         </div>
-
-        <!-- Full description -->
-        <div class="wtDetSection">
-          <div class="wtDetSectionLabel">DESCRIPTION</div>
-          <div class="wtDetDesc" id="wtDetDesc"></div>
-        </div>
-
-        <!-- How To Use -->
-        <div class="wtDetSection">
-          <div class="wtDetSectionLabel">HOW TO USE</div>
-          <div class="wtDetHowTo" id="wtDetHowTo"></div>
-        </div>
-
-        <!-- Download -->
-        <div class="wtDetSection">
-          <div class="wtDetSectionLabel">DOWNLOAD</div>
-          <div class="wtDetDl" id="wtDetDl">
-            <!-- Injected by wtOpenDetail() -->
+        <div class="pfBioWrap">
+          <div class="pfBioLbl">BIO</div>
+          <div class="pfBioText" id="pfBioText">No bio yet.</div>
+          <textarea class="pfBioEdit" id="pfBioEdit" maxlength="500" placeholder="Tell people about yourself…"></textarea>
+          <div class="pfBioBtns" id="pfBioBtns">
+            <button class="pfBioSaveBtn" onclick="savePfBio()">SAVE</button>
+            <button class="pfBioCancelBtn" onclick="cancelPfBioEdit()">CANCEL</button>
           </div>
-        </div>
-
-      </div>
-    </div>
-
-  </div>
-
-  <!-- WT FILTER PANEL OVERLAY -->
-  <div id="wtFltOvr" onclick="wtCloseFilterPanel()"></div>
-  <!-- WT FILTER PANEL — mirrors #fgFltPanel structure exactly -->
-  <div id="wtFltPanel" role="dialog" aria-label="Template filter options">
-    <div class="fltPH">
-      <h3>FILTERS <span class="s">✦</span></h3>
-      <button class="fltPX" onclick="wtCloseFilterPanel()" aria-label="Close filters">✕</button>
-    </div>
-    <div class="fltPBdy">
-
-      <!-- ORDER -->
-      <div class="fltSec">
-        <div class="fltSecLbl">ORDER</div>
-        <div class="fltOpts" id="wtFltSrtOpts">
-          <label class="fltOpt"><input type="radio" name="wtFltSrt" value="new" checked><div class="fltDot"></div><span class="fltLbl">NEW → OLD</span></label>
-          <label class="fltOpt"><input type="radio" name="wtFltSrt" value="old"><div class="fltDot"></div><span class="fltLbl">OLD → NEW</span></label>
+          <button class="pfBioEditLink" id="pfBioEditLink" style="display:none;" onclick="startPfBioEdit()">EDIT BIO</button>
         </div>
       </div>
-
-      <div class="fltSep"></div>
-
-      <!-- PLAN -->
-      <div class="fltSec">
-        <div class="fltSecLbl">PLAN</div>
-        <div class="fltOpts" id="wtFltTierOpts">
-          <label class="fltOpt"><input type="radio" name="wtFltTier" value="all" checked><div class="fltDot"></div><span class="fltLbl">ALL PLANS</span></label>
-          <label class="fltOpt"><input type="radio" name="wtFltTier" value="premium"><div class="fltDot"></div><span class="fltLbl">PREMIUM</span></label>
-          <label class="fltOpt"><input type="radio" name="wtFltTier" value="lite"><div class="fltDot"></div><span class="fltLbl">PREMIUM LITE</span></label>
-          <label class="fltOpt"><input type="radio" name="wtFltTier" value="max"><div class="fltDot"></div><span class="fltLbl">MAX</span></label>
-          <label class="fltOpt"><input type="radio" name="wtFltTier" value="free"><div class="fltDot"></div><span class="fltLbl">FREE</span></label>
-        </div>
-      </div>
-
-      <div class="fltSep"></div>
-
-      <button class="fltDone" onclick="wtApplyFilters()">DONE ✦</button>
-
-    </div>
-  </div>
-  <!-- END WT FILTER PANEL -->
-
-  <!-- =========================================================
-       WEBSITE TEMPLATES UPLOAD/EDIT MODAL
-       Admin-only. Appears over #webTemplatesPage.
-       ========================================================= -->
-  <div class="mOvr" id="wtMod" style="z-index:620;">
-    <div class="modal" style="max-height:90vh;overflow-y:auto;">
-      <button class="mX" onclick="wtCloseMod()">✕</button>
-      <h2 id="wtModTitle">UPLOAD TEMPLATE</h2>
-      <p id="wtModSubtitle" style="font-size:.8rem;color:var(--txd);margin-bottom:1.2rem;line-height:1.5;">Add a new website template. Preview image should be a desktop screenshot.</p>
-
-      <input id="wtEditId" type="hidden" value=""/>
-
-      <!-- Preview image upload -->
-      <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.4rem;">PREVIEW IMAGE</div>
-      <div class="dz" id="wtDz" onclick="document.getElementById('wtImgF').click()" style="cursor:pointer;margin-bottom:.8rem;">
-        <input accept="image/*" id="wtImgF" type="file" onchange="wtHandleImg(event)" style="display:none;"/>
-        <div class="dzIco">🖼</div>
-        <div class="dzTxt" id="wtDzTxt">DROP IMAGE OR CLICK TO BROWSE</div>
-      </div>
-      <img alt="preview" id="wtImgPrev" src="" style="display:none;width:100%;max-height:200px;object-fit:cover;border-radius:6px;margin-bottom:.8rem;border:1px solid var(--bdr);"/>
-
-      <!-- Template file upload -->
-      <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.4rem;">DOWNLOADABLE FILE (ZIP, HTML, etc.)</div>
-      <div class="dz" id="wtFileDz" onclick="document.getElementById('wtFileF').click()" style="cursor:pointer;margin-bottom:.8rem;background:var(--sur2);">
-        <input id="wtFileF" type="file" onchange="wtHandleFile(event)" style="display:none;"/>
-        <div class="dzIco">📦</div>
-        <div class="dzTxt" id="wtFileDzTxt">DROP FILE OR CLICK TO BROWSE</div>
-      </div>
-
-      <input class="mIn" id="wtNm" placeholder="TEMPLATE NAME" type="text"/>
-      <textarea class="mIn" id="wtShortDesc" placeholder="SHORT DESCRIPTION (shown on card)" rows="2" style="resize:vertical;min-height:3rem;font-family:var(--fb);line-height:1.5;"></textarea>
-      <textarea class="mIn" id="wtFullDesc" placeholder="FULL DESCRIPTION (shown on detail page)" rows="4" style="resize:vertical;min-height:5rem;font-family:var(--fb);line-height:1.5;"></textarea>
-      <textarea class="mIn" id="wtHowTo" placeholder="HOW TO USE (instructions for this template)" rows="4" style="resize:vertical;min-height:5rem;font-family:var(--fb);line-height:1.5;"></textarea>
-
-      <!-- Tier picker -->
-      <div style="background:var(--sur2);border:1px solid var(--bdr);padding:.6rem .8rem;margin-bottom:.8rem;">
-        <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.5rem;">TIER</div>
-        <div style="display:flex;flex-wrap:wrap;gap:.55rem;" id="wtTierBoxes">
-          <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="radio" name="wtTier" value="free"    checked  style="accent-color:var(--pg);cursor:pointer;"> FREE</label>
-          <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="radio" name="wtTier" value="lite"           style="accent-color:#3b82f6;cursor:pointer;"> PREMIUM LITE</label>
-          <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="radio" name="wtTier" value="premium"        style="accent-color:#a855f7;cursor:pointer;"> PREMIUM</label>
-          <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="radio" name="wtTier" value="max"            style="accent-color:#eab308;cursor:pointer;"> MAX</label>
-        </div>
-      </div>
-
-      <button class="mBtn" id="wtModBtn" onclick="wtDoSave()">ADD TEMPLATE ✦</button>
-      <button class="mBtn sec" onclick="wtCloseMod()">CANCEL</button>
     </div>
   </div>
 
   <!-- =========================================================
-       WT UPSELL MODAL
-       Shown when a user taps "Show More" on a template they
-       don't have access to. Sits above the WT overlay (z:610).
-       ├─ #wtUpsell       — fixed backdrop (click-outside closes)
-       └─ .wtUpsellCard   — centred card
-           ├─ .wtUpsellIco    — lock icon
-           ├─ .wtUpsellTitle  — tier name
-           ├─ .wtUpsellMsg    — short message
-           ├─ .wtUpsellCta    — "GO PREMIUM" button → openSubscription()
-           └─ .wtUpsellCancel — dismiss link
+       PROFILE UPLOAD MODALS — separate from the admin-only
+       #upMod above. These always insert with user_id = the
+       signed-in user's own id (enforced by RLS too), and never
+       expose edit/delete. Comic uploads support multiple page
+       images in addition to a cover.
        ========================================================= -->
-  <div id="wtUpsell" onclick="wtCloseUpsell(event)">
-    <div class="wtUpsellCard" onclick="event.stopPropagation()">
-      <div class="wtUpsellIco" id="wtUpsellIco">🔒</div>
-      <div class="wtUpsellTitle" id="wtUpsellTitle">PREMIUM TEMPLATE</div>
-      <p class="wtUpsellMsg" id="wtUpsellMsg">This template requires a paid plan. Upgrade to unlock it and all other premium content.</p>
-      <button class="wtUpsellCta" id="wtUpsellCta" onclick="wtUpsellGo()">VIEW PLANS ✦</button>
-      <button class="wtUpsellCancel" onclick="wtCloseUpsell()">Maybe later</button>
+  <div class="mOvr" id="pfUpMod">
+   <div class="modal">
+    <button class="mX" onclick="closePfUpload()">✕</button>
+    <h2 id="pfUpTitle">UPLOAD ART</h2>
+    <p id="pfUpSubtitle">Add a new piece to your gallery. Supports JPG, PNG, WEBP, GIF.</p>
+    <input id="pfUpEditId" type="hidden" value=""/>
+    <div class="dz" id="pfDz">
+     <input accept="image/*" id="pfUpF" onchange="handlePfFile(event)" type="file"/>
+     <div class="dzIco">🖼</div>
+     <div class="dzTxt" id="pfDzTxt">DROP IMAGE HERE OR CLICK TO BROWSE</div>
     </div>
+    <img alt="preview" class="upPrev" id="pfUpPrev" src=""/>
+    <input class="mIn" id="pfUpNm" placeholder="TITLE" type="text"/>
+    <textarea class="mIn" id="pfUpDesc" placeholder="DESCRIPTION (OPTIONAL)" rows="3" style="resize:vertical;min-height:4.5rem;font-family:var(--fb);line-height:1.5;"></textarea>
+    <input class="mIn" id="pfUpTags" placeholder="TAGS (COMMA SEPARATED)" type="text"/>
+    <!-- Comic-only: additional page images -->
+    <div id="pfComicPagesWrap" style="display:none;">
+      <div class="dz" id="pfDzPages">
+       <input accept="image/*" id="pfUpPages" multiple="" onchange="handlePfPagesFile(event)" type="file"/>
+       <div class="dzIco">📖</div>
+       <div class="dzTxt">DROP PAGE IMAGES HERE OR CLICK TO BROWSE (MULTIPLE)</div>
+      </div>
+      <div id="pfPagesPreview" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;"></div>
+    </div>
+    <button class="mBtn" id="pfUpBtn" onclick="doPfUp()">UPLOAD ✦</button>
+    <button class="mBtn sec" onclick="closePfUpload()">CANCEL</button>
+   </div>
   </div>
 
   <footer class="siteFooter" role="contentinfo">
@@ -5176,6 +4334,9 @@ body.admin .wtCardAdm { display: flex; }
             <li>
               <!-- Report an Issue → support email -->
               <a class="ftColLink ftColLink--mail" href="mailto:duttaanish458@gmail.com" aria-label="Report an Issue">Report an Issue</a>
+            </li>
+            <li>
+              <button class="ftColLink" onclick="openAdsPanel()" aria-label="Sponsor">Sponsor</button>
             </li>
           </ul>
         </div>
@@ -5401,7 +4562,6 @@ body.admin .wtCardAdm { display: flex; }
        <ul class="subFeatures">
         <li>Download copyright-free images</li>
         <li>Download images in the highest available quality</li>
-        <li>Get 2 premium website templates for free</li>
        </ul>
        <button class="subBtn subBtn--blue" onclick="openSubModal()" aria-label="Get Premium Lite">Get Premium Lite</button>
       </div>
@@ -5418,7 +4578,6 @@ body.admin .wtCardAdm { display: flex; }
        <ul class="subFeatures">
         <li>Download copyright-free images</li>
         <li>Download images in the highest available quality</li>
-        <li>Get 4 premium website templates</li>
         <li>Request 1 custom artwork</li>
         <li>Early access to future features</li>
         <li>More benefits coming soon</li>
@@ -5438,7 +4597,6 @@ body.admin .wtCardAdm { display: flex; }
        <ul class="subFeatures">
         <li>Download copyright-free images</li>
         <li>Download images in the highest available quality</li>
-        <li>Get 6 premium website templates</li>
         <li>Request up to 5 custom artworks</li>
         <li>Custom website development</li>
         <li>Website size up to 5,000 lines of code</li>
@@ -5942,10 +5100,12 @@ body.admin .wtCardAdm { display: flex; }
    </div>
   </div>
   <!-- =========================================================
-       AUTHENTICATION MODAL
-       ├─ Modal Overlay (.mOvr #authMod)
-       └─ Modal Card (.modal)
-           ├─ Close Button (.mX)
+       AUTHENTICATION PAGE (#authMod) — full-screen sliding panel,
+       same language as #profilePage / #subPage / #comicArtsPage,
+       reachable at /login. Form card (.modal) is centered inside
+       the page body instead of floating over a dimmed backdrop.
+       ├─ Header Bar (.subPgHdr) — back button + title
+       └─ Centered Card (.modal)
            ├─ Title (#authTitle)
            ├─ Subtitle (#authSubtitle)    [shown on signup]
            ├─ Username Field (#authUser)  [signup mode only]
@@ -5957,24 +5117,29 @@ body.admin .wtCardAdm { display: flex; }
            ├─ Toggle Mode Button (#authToggleBtn)
            └─ Cancel Button
        ========================================================= -->
-  <div class="mOvr" id="authMod">
-   <div class="modal">
-    <button class="mX" onclick="closeAuthMod()">✕</button>
-    <h2 id="authTitle">LOGIN</h2>
-    <p id="authSubtitle" style="display:none;font-size:.8rem;color:var(--txd);font-style:italic;margin-bottom:1.2rem;line-height:1.5;"></p>
-    <input class="mIn" id="authUser" placeholder="USERNAME" type="text" autocomplete="username" style="display:none;"/>
-    <input class="mIn" id="authEmail" placeholder="EMAIL" type="email" autocomplete="email"/>
-    <input class="mIn" id="authPass" placeholder="PASSWORD" type="password" autocomplete="current-password"
-      onkeydown="if(event.key==='Enter'){ authMode==='signup'?doSignUp():doAuth(); }"/>
-    <div class="mErr" id="authErr"></div>
-    <!-- Success message (signup confirmation / email-confirm notice) -->
-    <div id="authMsg" style="display:none;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:#86efac;margin-bottom:.6rem;line-height:1.6;"></div>
-    <!-- Primary action button — label + handler change per mode -->
-    <button class="mBtn" id="authBtn" onclick="doAuth()">LOGIN ✦</button>
-    <!-- Create Account / Back to Login toggle -->
-    <button class="mBtn sec" id="authToggleBtn" onclick="switchAuthMode('signup')">CREATE ACCOUNT</button>
-    <button class="mBtn sec" onclick="closeAuthMod()">CANCEL</button>
-   </div>
+  <div id="authMod" role="dialog" aria-modal="true" aria-label="Login">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeAuthMod()" aria-label="Close login">←</button>
+      <div class="subPgTitle">LOGIN <span class="s">◉</span></div>
+    </div>
+    <div class="authBdy">
+     <div class="modal authCard">
+      <h2 id="authTitle">LOGIN</h2>
+      <p id="authSubtitle" style="display:none;font-size:.8rem;color:var(--txd);font-style:italic;margin-bottom:1.2rem;line-height:1.5;"></p>
+      <input class="mIn" id="authUser" placeholder="USERNAME" type="text" autocomplete="username" style="display:none;"/>
+      <input class="mIn" id="authEmail" placeholder="EMAIL" type="email" autocomplete="email"/>
+      <input class="mIn" id="authPass" placeholder="PASSWORD" type="password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter'){ authMode==='signup'?doSignUp():doAuth(); }"/>
+      <div class="mErr" id="authErr"></div>
+      <!-- Success message (signup confirmation / email-confirm notice) -->
+      <div id="authMsg" style="display:none;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:#86efac;margin-bottom:.6rem;line-height:1.6;"></div>
+      <!-- Primary action button — label + handler change per mode -->
+      <button class="mBtn" id="authBtn" onclick="doAuth()">LOGIN ✦</button>
+      <!-- Create Account / Back to Login toggle -->
+      <button class="mBtn sec" id="authToggleBtn" onclick="switchAuthMode('signup')">CREATE ACCOUNT</button>
+      <button class="mBtn sec" onclick="closeAuthMod()">CANCEL</button>
+     </div>
+    </div>
   </div>
   <!-- =========================================================
        UPLOAD / EDIT MODAL
@@ -6093,7 +5258,7 @@ body.admin .wtCardAdm { display: flex; }
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function restoreScroll(){
-    var locks=['fg','artModal','commentsPage','adsPanel','legalBackdrop','subPage','webTemplatesPage','comicArtsPage'];
+    var locks=['fg','artModal','commentsPage','adsPanel','legalBackdrop','subPage','comicArtsPage','profilePage','authMod'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -6476,11 +5641,22 @@ body.admin .wtCardAdm { display: flex; }
   /* Keep modal + meta in sync with browser history */
   window.addEventListener('popstate', function(){
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
+    var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
+    var cm = window.location.pathname.match(/^\/comic\/([^/]+)\/?$/);
     if(m){
       openArtworkById(m[1], false);
+    } else if(pm){
+      openProfileByUsername(decodeURIComponent(pm[1]), false);
+    } else if(cm){
+      openComicById(cm[1], false);
+    } else if(window.location.pathname === '/login'){
+      openAuthMod();
     } else {
       closeLB();
       resetArtworkSEO();
+      if(document.getElementById('profilePage').classList.contains('open')) closeProfilePage(false);
+      closeComicModal();
+      closeAuthMod(false);
     }
   });
 
@@ -6509,9 +5685,7 @@ body.admin .wtCardAdm { display: flex; }
     document.getElementById('upMod').classList.add('open');
   }
 
-  function syncAdmBtn(){var b=document.getElementById('smAdmBtn');if(b){b.classList.toggle('devOnly',isDev);b.classList.toggle('on',isAdm);b.innerHTML='<span class="ddIco">'+(isAdm?'★':'⚙')+'</span>'+(isAdm?'ADMIN MODE ON':'ADMIN PANEL');}
-    /* Sync Website Templates admin button whenever admin state changes */
-    if(typeof wtSyncAdmBtn==='function') wtSyncAdmBtn();
+  function syncAdmBtn(){var b=document.getElementById('smAdmBtn');if(b){b.classList.toggle('devOnly',isDev);b.classList.toggle('on',isAdm);b.textContent=(isAdm?'★ ':'⚙ ')+(isAdm?'ADMIN MODE ON':'ADMIN PANEL');}
   }
 
   /* Auth — email+password via Supabase; session persists via localStorage */
@@ -6682,7 +5856,12 @@ body.admin .wtCardAdm { display: flex; }
     if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
     /* Always open in login mode */
     switchAuthMode('login');
+    closeProfilePopup();
     document.getElementById('authMod').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (window.location.pathname !== '/login') {
+      try{ history.pushState({},'', '/login'); }catch(e){}
+    }
     /* Focus email on login (username field is hidden), focus username on signup */
     setTimeout(function(){
       var mode = authMode;
@@ -6691,8 +5870,14 @@ body.admin .wtCardAdm { display: flex; }
       if (el) el.focus();
     }, 120);
   }
-  function closeAuthMod() {
-    document.getElementById('authMod').classList.remove('open');
+  function closeAuthMod(revertUrl) {
+    var panel = document.getElementById('authMod');
+    if (!panel.classList.contains('open')) return;
+    panel.classList.remove('open');
+    restoreScroll();
+    if (revertUrl !== false && window.location.pathname === '/login') {
+      try{ history.pushState({},'', '/'); }catch(e){}
+    }
   }
 
   /* ── Perform login ── */
@@ -6900,7 +6085,7 @@ body.admin .wtCardAdm { display: flex; }
           ? currentUser.user_metadata.username
           : '';
         showToast(greetName ? ('Welcome, ' + greetName + ' ✦') : 'Signed in ✦');
-        checkUserRole().then(function(){ if(typeof wtRender==='function') wtRender(); });
+        checkUserRole();
       }
       if (event === 'SIGNED_OUT') {
         syncAuthBtn();
@@ -7070,162 +6255,491 @@ body.admin .wtCardAdm { display: flex; }
   ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over');}));
   dz.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))handleFile({target:{files:[f]}});});
 
+  /* =========================================================
+     USER PROFILE PAGE
+     ├─ openProfileByUsername / openOwnProfile / closeProfilePage
+     ├─ pfSwitchTab — Gallery / Comic / About
+     ├─ loadPfGallery / loadPfComic — paginated (range()), Load
+     │   More pattern matching .fgLoadMore
+     ├─ pfUpMod — shared upload modal for art + comic (own
+     │   user_id only; never exposes edit/delete to the owner)
+     ├─ Admin (isDev) sees Edit/Delete on every card regardless
+     │   of whose profile is being viewed
+     └─ Minimal comic viewer (#comicModal) for "full comic page"
+     ========================================================= */
+  var PF_PAGE_SIZE = 12;
+  var pf = {
+    profile: null,        // profiles row currently being viewed
+    isOwner: false,
+    tab: 'gallery',
+    galleryRows: [], galleryPage: 0, galleryDone: false,
+    comicRows: [],   comicPage: 0,   comicDone: false,
+    upMode: 'art',         // 'art' | 'comic'
+    upFile: null,
+    upPageFiles: []
+  };
+
+  function pfFormatDate(iso){
+    if(!iso) return '';
+    try{
+      return new Date(iso).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+    }catch(e){ return ''; }
+  }
+
+  async function openOwnProfile(){
+    if(!currentUser){ showToast('Sign in to view your profile'); openAuthMod(); return; }
+    if(!sb){ showToast('Configure Supabase first'); return; }
+    try{
+      const{data,error}=await sb.from('profiles').select('username').eq('id',currentUser.id).single();
+      if(error || !data || !data.username){ showToast('Profile not found'); return; }
+      openProfileByUsername(data.username);
+    }catch(e){ showToast('Error: '+e.message); }
+  }
+
+  async function openProfileByUsername(username, pushUrl){
+    if(!sb){ showToast('Configure Supabase first'); return; }
+    var panel = document.getElementById('profilePage');
+    panel.classList.add('open');
+    document.body.style.overflow='hidden';
+    closeProfilePopup();
+    /* Reset state + show skeletons immediately */
+    pf.profile=null; pf.galleryRows=[]; pf.galleryPage=0; pf.galleryDone=false;
+    pf.comicRows=[]; pf.comicPage=0; pf.comicDone=false;
+    document.getElementById('pfUsername').textContent='Loading…';
+    document.getElementById('pfAvatar').textContent='?';
+    document.getElementById('pfJoined').textContent='';
+    document.getElementById('pfGalleryGrid').innerHTML='';
+    document.getElementById('pfComicGrid').innerHTML='';
+    pfSwitchTab('gallery');
+    try{
+      const{data,error}=await sb.from('profiles').select('id,username,bio,role,created_at').eq('username',username).single();
+      if(error || !data){ showToast('Profile not found'); closeProfilePage(); return; }
+      pf.profile = data;
+      pf.isOwner = !!(currentUser && currentUser.id === data.id);
+      document.getElementById('pfUsername').textContent = data.username;
+      document.getElementById('pfAvatar').textContent = (data.username||'?').charAt(0).toUpperCase();
+      document.getElementById('pfJoined').textContent = data.created_at ? ('JOINED '+pfFormatDate(data.created_at).toUpperCase()) : '';
+      document.getElementById('pfUploadArtBtn').style.display = pf.isOwner ? '' : 'none';
+      document.getElementById('pfUploadComicBtn').style.display = pf.isOwner ? '' : 'none';
+      pfRenderBio();
+      pfLoadStats();
+      pfLoadMoreGallery();
+      pfLoadMoreComic();
+      if(pushUrl!==false){
+        try{ history.pushState({profileUser:username},'','/profile/'+encodeURIComponent(username)); }catch(e){}
+      }
+    }catch(e){ showToast('Error: '+e.message); closeProfilePage(); }
+  }
+
+  function closeProfilePage(revertUrl){
+    var panel = document.getElementById('profilePage');
+    if(!panel.classList.contains('open')) return;
+    panel.classList.remove('open');
+    restoreScroll();
+    if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
+      try{ history.pushState({},'', '/'); }catch(e){}
+    }
+  }
+
+  function pfSwitchTab(tab){
+    pf.tab=tab;
+    ['gallery','comic','about'].forEach(function(t){
+      document.getElementById('pfTab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+      document.getElementById('pfPanel'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+    });
+  }
+
+  /* ── GALLERY tab ── */
+  async function pfLoadMoreGallery(){
+    if(!pf.profile || pf.galleryDone) return;
+    var from = pf.galleryPage * PF_PAGE_SIZE, to = from + PF_PAGE_SIZE - 1;
+    try{
+      const{data,error}=await sb.from('artworks').select('*').eq('user_id',pf.profile.id).order('created_at',{ascending:false}).range(from,to);
+      if(error) throw error;
+      var rows = data||[];
+      pf.galleryRows = pf.galleryRows.concat(rows);
+      pf.galleryPage++;
+      if(rows.length < PF_PAGE_SIZE) pf.galleryDone = true;
+      rows.forEach(function(a){
+        if(images.findIndex(function(i){return String(i.id)===String(a.id);})===-1) images.push(a);
+      });
+      pfRenderGallery();
+    }catch(e){ showToast('Error: '+e.message); }
+  }
+  function pfRenderGallery(){
+    var grid = document.getElementById('pfGalleryGrid');
+    grid.innerHTML = pf.galleryRows.map(pfGalleryCardHTML).join('');
+    document.getElementById('pfGalleryEmpty').style.display = pf.galleryRows.length ? 'none' : '';
+    document.getElementById('pfGalleryLoadMoreWrap').style.display = pf.galleryDone ? 'none' : '';
+  }
+  function pfGalleryCardHTML(a){
+    var tags = (a.tags && a.tags.length) ? a.tags : (a.category||'').split(',').map(function(c){return c.trim();}).filter(Boolean);
+    var adminRow = isDev ? (
+      '<div class="pfCardAdmin" onclick="event.stopPropagation()">'+
+      '<button onclick="openEditArt(\''+a.id+'\',event)">EDIT</button>'+
+      '<button class="danger" onclick="delImg(\''+a.id+'\','+(a.storage_path?'\''+a.storage_path+'\'':'null')+',event)">DELETE</button>'+
+      '</div>'
+    ) : '';
+    return '<div class="awCard" onclick="pfOpenArtwork(\''+a.id+'\')">'+
+      '<div class="awImgWrap"><img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.name||'')+'"></div>'+
+      '<div class="pfCardMeta">'+
+        '<div class="pfCardTitle">'+esc(a.name||'Untitled')+'</div>'+
+        '<div class="pfCardDate">'+pfFormatDate(a.created_at)+'</div>'+
+        (tags.length ? '<div class="pfCardTags">'+tags.map(function(t){return '<span class="pfTagChip">'+esc(t)+'</span>';}).join('')+'</div>' : '')+
+        adminRow+
+      '</div></div>';
+  }
+  function pfOpenArtwork(id){
+    var art = findArtworkById(id);
+    if(!art) return;
+    var cats=(art.category||(art.tags||[]).join(',')||'others').split(',').map(function(c){return c.trim();}).filter(Boolean);
+    openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id));
+  }
+
+  /* ── COMIC tab ── */
+  async function pfLoadMoreComic(){
+    if(!pf.profile || pf.comicDone) return;
+    var from = pf.comicPage * PF_PAGE_SIZE, to = from + PF_PAGE_SIZE - 1;
+    try{
+      const{data,error}=await sb.from('comics').select('*').eq('user_id',pf.profile.id).order('created_at',{ascending:false}).range(from,to);
+      if(error) throw error;
+      var rows = data||[];
+      pf.comicRows = pf.comicRows.concat(rows);
+      pf.comicPage++;
+      if(rows.length < PF_PAGE_SIZE) pf.comicDone = true;
+      pfRenderComic();
+    }catch(e){ showToast('Error: '+e.message); }
+  }
+  function pfRenderComic(){
+    var grid = document.getElementById('pfComicGrid');
+    grid.innerHTML = pf.comicRows.map(pfComicCardHTML).join('');
+    document.getElementById('pfComicEmpty').style.display = pf.comicRows.length ? 'none' : '';
+    document.getElementById('pfComicLoadMoreWrap').style.display = pf.comicDone ? 'none' : '';
+  }
+  function pfComicCardHTML(c){
+    var tags = c.tags||[];
+    var adminRow = isDev ? (
+      '<div class="pfCardAdmin" onclick="event.stopPropagation()">'+
+      '<button onclick="openEditComic(\''+c.id+'\',event)">EDIT</button>'+
+      '<button class="danger" onclick="delComic(\''+c.id+'\',event)">DELETE</button>'+
+      '</div>'
+    ) : '';
+    return '<div class="awCard" onclick="openComicById(\''+c.id+'\')">'+
+      '<div class="awImgWrap"><img loading="lazy" src="'+esc(c.cover_image_url)+'" alt="'+esc(c.title||'')+'"></div>'+
+      '<div class="pfCardMeta">'+
+        '<div class="pfCardTitle">'+esc(c.title||'Untitled')+'</div>'+
+        '<div class="pfCardDate">'+pfFormatDate(c.created_at)+'</div>'+
+        (tags.length ? '<div class="pfCardTags">'+tags.map(function(t){return '<span class="pfTagChip">'+esc(t)+'</span>';}).join('')+'</div>' : '')+
+        adminRow+
+      '</div></div>';
+  }
+  async function delComic(id,e){
+    if(e) e.stopPropagation();
+    if(!isAdm || !confirm('Delete this comic?')) return;
+    try{
+      var c = pf.comicRows.find(function(r){return String(r.id)===String(id);});
+      if(c && c.cover_storage_path) await sb.storage.from(BUCKET).remove([c.cover_storage_path]);
+      await sb.from('comics').delete().eq('id',id);
+      pf.comicRows = pf.comicRows.filter(function(r){return String(r.id)!==String(id);});
+      pfRenderComic();
+      showToast('Comic removed');
+    }catch(err){ showToast('Error: '+err.message); }
+  }
+  function openEditComic(id,e){
+    if(e) e.stopPropagation();
+    if(!isAdm) return;
+    var c = pf.comicRows.find(function(r){return String(r.id)===String(id);});
+    if(!c){ showToast('Comic not found'); return; }
+    openPfUpload('comic');
+    document.getElementById('pfUpEditId').value = String(c.id);
+    document.getElementById('pfUpTitle').textContent = 'EDIT COMIC';
+    document.getElementById('pfUpNm').value = c.title||'';
+    document.getElementById('pfUpDesc').value = c.description||'';
+    document.getElementById('pfUpTags').value = (c.tags||[]).join(', ');
+    document.getElementById('pfDz').style.display='none';
+    document.getElementById('pfComicPagesWrap').style.display='none';
+    document.getElementById('pfUpBtn').textContent='SAVE CHANGES ✦';
+  }
+
+  /* ── Minimal comic viewer (#comicModal injected on demand) ── */
+  function ensureComicModal(){
+    if(document.getElementById('comicModal')) return;
+    var div = document.createElement('div');
+    div.id='comicModal';
+    div.setAttribute('role','dialog'); div.setAttribute('aria-modal','true');
+    div.style.cssText='position:fixed;inset:0;z-index:600;background:rgba(10,10,14,.92);display:none;align-items:center;justify-content:center;padding:1.2rem;';
+    div.innerHTML='<div class="amCard" style="max-width:560px;width:100%;max-height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">'+
+      '<button class="amX lbX" onclick="closeComicModal()" aria-label="Close">✕</button>'+
+      '<div class="amImgWrap"><img id="cmImg" alt="" style="width:100%;display:block;"/></div>'+
+      '<div class="amInfo">'+
+        '<div class="amName" id="cmTitle"></div>'+
+        '<div class="amDiv"></div>'+
+        '<div class="amDesc" id="cmDesc"></div>'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:.8rem;font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;color:var(--txd);">'+
+          '<button class="mBtn sec" style="width:auto;padding:.4rem .9rem;" onclick="cmNav(-1)">‹ PREV</button>'+
+          '<span id="cmCounter">1 / 1</span>'+
+          '<button class="mBtn sec" style="width:auto;padding:.4rem .9rem;" onclick="cmNav(1)">NEXT ›</button>'+
+        '</div>'+
+      '</div></div>';
+    document.body.appendChild(div);
+    div.addEventListener('click', function(e){ if(e.target===div) closeComicModal(); });
+  }
+  var cmState = { pages: [], idx: 0 };
+  async function openComicById(id, pushUrl){
+    if(!sb) return;
+    ensureComicModal();
+    var c = pf.comicRows.find(function(r){return String(r.id)===String(id);});
+    try{
+      if(!c){
+        const{data,error}=await sb.from('comics').select('*').eq('id',id).single();
+        if(error||!data){ showToast('Comic not found'); return; }
+        c = data;
+      }
+    }catch(e){ showToast('Error: '+e.message); return; }
+    cmState.pages = (c.pages && c.pages.length) ? c.pages : [c.cover_image_url];
+    cmState.idx = 0;
+    document.getElementById('cmTitle').textContent = c.title||'Untitled';
+    document.getElementById('cmDesc').textContent = c.description||'';
+    cmRenderPage();
+    var modal = document.getElementById('comicModal');
+    modal.style.display='flex';
+    document.body.style.overflow='hidden';
+    if(pushUrl!==false){
+      try{ history.pushState({comicId:id},'','/comic/'+id); }catch(e){}
+    }
+  }
+  function cmRenderPage(){
+    document.getElementById('cmImg').src = cmState.pages[cmState.idx];
+    document.getElementById('cmCounter').textContent = (cmState.idx+1)+' / '+cmState.pages.length;
+  }
+  function cmNav(dir){
+    var n = cmState.idx + dir;
+    if(n<0 || n>=cmState.pages.length) return;
+    cmState.idx = n; cmRenderPage();
+  }
+  function closeComicModal(){
+    var modal = document.getElementById('comicModal');
+    if(!modal) return;
+    modal.style.display='none';
+    restoreScroll();
+    if(/^\/comic\//.test(window.location.pathname)){
+      try{ history.pushState({},'', '/'); }catch(e){}
+    }
+  }
+
+  /* ── ABOUT tab — stats + bio ── */
+  async function pfLoadStats(){
+    try{
+      const[artC,comicC]=await Promise.all([
+        sb.from('artworks').select('id',{count:'exact',head:true}).eq('user_id',pf.profile.id),
+        sb.from('comics').select('id',{count:'exact',head:true}).eq('user_id',pf.profile.id)
+      ]);
+      document.getElementById('pfStatArt').textContent = artC.count||0;
+      document.getElementById('pfStatComic').textContent = comicC.count||0;
+    }catch(e){ /* non-fatal */ }
+  }
+  function pfRenderBio(){
+    var text = document.getElementById('pfBioText');
+    var editLink = document.getElementById('pfBioEditLink');
+    text.textContent = pf.profile.bio && pf.profile.bio.trim() ? pf.profile.bio : 'No bio yet.';
+    text.style.display='';
+    document.getElementById('pfBioEdit').style.display='none';
+    document.getElementById('pfBioBtns').style.display='none';
+    editLink.style.display = pf.isOwner ? '' : 'none';
+  }
+  function startPfBioEdit(){
+    if(!pf.isOwner) return;
+    document.getElementById('pfBioText').style.display='none';
+    document.getElementById('pfBioEditLink').style.display='none';
+    var ta = document.getElementById('pfBioEdit');
+    ta.value = (pf.profile.bio||'');
+    ta.style.display='block';
+    document.getElementById('pfBioBtns').style.display='flex';
+  }
+  function cancelPfBioEdit(){ pfRenderBio(); }
+  async function savePfBio(){
+    if(!pf.isOwner) return;
+    var val = document.getElementById('pfBioEdit').value.trim().slice(0,500);
+    try{
+      const{error}=await sb.from('profiles').update({bio:val}).eq('id',pf.profile.id);
+      if(error) throw error;
+      pf.profile.bio = val;
+      pfRenderBio();
+      showToast('Bio updated ✦');
+    }catch(e){ showToast('Error: '+e.message); }
+  }
+
+  /* ── UPLOAD MODAL (art + comic, own-profile only) ── */
+  function openPfUpload(mode){
+    if(!currentUser){ showToast('Sign in to upload'); openAuthMod(); return; }
+    if(!pf.isOwner){ showToast('You can only upload to your own profile'); return; }
+    pf.upMode = mode;
+    pf.upFile = null;
+    pf.upPageFiles = [];
+    document.getElementById('pfUpEditId').value = '';
+    document.getElementById('pfUpTitle').textContent = mode==='comic' ? 'UPLOAD COMIC' : 'UPLOAD ART';
+    document.getElementById('pfUpSubtitle').textContent = mode==='comic'
+      ? 'Add a new comic to your profile. Cover + page images, JPG/PNG/WEBP/GIF.'
+      : 'Add a new piece to your gallery. Supports JPG, PNG, WEBP, GIF.';
+    document.getElementById('pfDzTxt').textContent = mode==='comic' ? 'DROP COVER IMAGE HERE OR CLICK TO BROWSE' : 'DROP IMAGE HERE OR CLICK TO BROWSE';
+    document.getElementById('pfComicPagesWrap').style.display = mode==='comic' ? '' : 'none';
+    document.getElementById('pfDz').style.display='';
+    document.getElementById('pfUpNm').value='';
+    document.getElementById('pfUpDesc').value='';
+    document.getElementById('pfUpTags').value='';
+    document.getElementById('pfUpPrev').style.display='none';
+    document.getElementById('pfPagesPreview').innerHTML='';
+    document.getElementById('pfUpBtn').textContent='UPLOAD ✦';
+    document.getElementById('pfUpMod').classList.add('open');
+  }
+  function closePfUpload(){
+    document.getElementById('pfUpMod').classList.remove('open');
+    pf.upFile = null; pf.upPageFiles = [];
+  }
+  function handlePfFile(e){
+    var f = e.target.files[0]; if(!f) return;
+    pf.upFile = f;
+    var r = new FileReader();
+    r.onload = function(ev){
+      var p = document.getElementById('pfUpPrev');
+      p.src = ev.target.result; p.style.display='block';
+      if(!document.getElementById('pfUpNm').value.trim()) document.getElementById('pfUpNm').value = f.name.replace(/\.[^.]+$/,'');
+    };
+    r.readAsDataURL(f);
+  }
+  function handlePfPagesFile(e){
+    var files = Array.from(e.target.files||[]);
+    pf.upPageFiles = pf.upPageFiles.concat(files);
+    var wrap = document.getElementById('pfPagesPreview');
+    files.forEach(function(f){
+      var r = new FileReader();
+      r.onload = function(ev){
+        var img = document.createElement('img');
+        img.src = ev.target.result;
+        img.style.cssText='width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--bdr);';
+        wrap.appendChild(img);
+      };
+      r.readAsDataURL(f);
+    });
+  }
+  var pfDzEl = document.getElementById('pfDz');
+  if(pfDzEl){
+    ['dragenter','dragover'].forEach(function(ev){ pfDzEl.addEventListener(ev,function(e){e.preventDefault();pfDzEl.classList.add('over');}); });
+    ['dragleave','drop'].forEach(function(ev){ pfDzEl.addEventListener(ev,function(e){e.preventDefault();pfDzEl.classList.remove('over');}); });
+    pfDzEl.addEventListener('drop',function(e){ var f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')) handlePfFile({target:{files:[f]}}); });
+  }
+
+  async function doPfUp(){
+    if(!pf.isOwner){ showToast('You can only upload to your own profile'); return; }
+    var editIdEl = document.getElementById('pfUpEditId');
+    var editId = editIdEl ? editIdEl.value : '';
+    var nm = document.getElementById('pfUpNm').value.trim();
+    var desc = document.getElementById('pfUpDesc').value.trim();
+    var tags = document.getElementById('pfUpTags').value.split(',').map(function(t){return t.trim();}).filter(Boolean);
+    if(!nm){ showToast('Enter a title'); return; }
+    if(!editId && !pf.upFile){ showToast('Select an image'); return; }
+    var btn = document.getElementById('pfUpBtn');
+    btn.disabled = true;
+    try{
+      if(pf.upMode==='art'){
+        if(editId){
+          /* Edit is dev-only in practice (RLS blocks non-dev updates);
+             button is only reachable here via openEditArt's own gate. */
+          btn.textContent='SAVING…';
+          const{error}=await sb.from('artworks').update({name:nm,description:desc||null,tags:tags,category:tags.join(',')||'others'}).eq('id',editId);
+          if(error) throw error;
+          var idx = images.findIndex(function(i){return String(i.id)===String(editId);});
+          if(idx!==-1){ images[idx].name=nm; images[idx].description=desc; images[idx].tags=tags; }
+          pfRenderGallery();
+          closePfUpload(); showToast('Artwork updated ✦');
+        } else {
+          btn.textContent='UPLOADING…';
+          var ext = pf.upFile.name.split('.').pop();
+          var path = 'artworks/'+currentUser.id+'/'+Date.now()+'_'+nm.replace(/\s+/g,'_')+'.'+ext;
+          const{error:ue}=await sb.storage.from(BUCKET).upload(path,pf.upFile,{cacheControl:'3600'});
+          if(ue) throw ue;
+          const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
+          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:tags.join(',')||'others',image_url:publicUrl,storage_path:path,user_id:currentUser.id}).select();
+          if(de) throw de;
+          images.unshift(rows[0]);
+          pf.galleryRows.unshift(rows[0]);
+          pfRenderGallery();
+          document.getElementById('pfStatArt').textContent = (parseInt(document.getElementById('pfStatArt').textContent,10)||0)+1;
+          closePfUpload(); showToast('Artwork added ✦');
+        }
+      } else {
+        if(editId){
+          btn.textContent='SAVING…';
+          const{error}=await sb.from('comics').update({title:nm,description:desc||null,tags:tags}).eq('id',editId);
+          if(error) throw error;
+          var cidx = pf.comicRows.findIndex(function(r){return String(r.id)===String(editId);});
+          if(cidx!==-1){ pf.comicRows[cidx].title=nm; pf.comicRows[cidx].description=desc; pf.comicRows[cidx].tags=tags; }
+          pfRenderComic();
+          closePfUpload(); showToast('Comic updated ✦');
+        } else {
+          if(!pf.upPageFiles.length){ showToast('Add at least one page image'); btn.disabled=false; return; }
+          btn.textContent='UPLOADING…';
+          var cext = pf.upFile.name.split('.').pop();
+          var cpath = 'comics/'+currentUser.id+'/'+Date.now()+'_cover.'+cext;
+          const{error:cue}=await sb.storage.from(BUCKET).upload(cpath,pf.upFile,{cacheControl:'3600'});
+          if(cue) throw cue;
+          const{data:{publicUrl:coverUrl}}=sb.storage.from(BUCKET).getPublicUrl(cpath);
+          var pageUrls = [];
+          for(var i=0;i<pf.upPageFiles.length;i++){
+            var pf_ = pf.upPageFiles[i];
+            var pext = pf_.name.split('.').pop();
+            var ppath = 'comics/'+currentUser.id+'/'+Date.now()+'_p'+i+'.'+pext;
+            const{error:pue}=await sb.storage.from(BUCKET).upload(ppath,pf_,{cacheControl:'3600'});
+            if(pue) throw pue;
+            const{data:{publicUrl:pageUrl}}=sb.storage.from(BUCKET).getPublicUrl(ppath);
+            pageUrls.push(pageUrl);
+          }
+          const{data:rows,error:de}=await sb.from('comics').insert({title:nm,description:desc||null,tags:tags,cover_image_url:coverUrl,cover_storage_path:cpath,pages:pageUrls,user_id:currentUser.id}).select();
+          if(de) throw de;
+          pf.comicRows.unshift(rows[0]);
+          pfRenderComic();
+          document.getElementById('pfStatComic').textContent = (parseInt(document.getElementById('pfStatComic').textContent,10)||0)+1;
+          closePfUpload(); showToast('Comic added ✦');
+        }
+      }
+    }catch(err){ showToast('Error: '+err.message); }
+    finally{ btn.disabled=false; btn.textContent = editId ? 'SAVE CHANGES ✦' : 'UPLOAD ✦'; }
+  }
+
   let tT;
   function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000);}
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeComments();closeProfilePopup();closeSubscription();closeSubModal();closeComicArts();
-    /* WT: close detail first, then overlay; also close WT modal */
-    var wtDet=document.getElementById('wtDetail');
-    var wtPage=document.getElementById('webTemplatesPage');
-    var wtM=document.getElementById('wtMod');
-    var wtUp=document.getElementById('wtUpsell');
-    if(wtUp&&wtUp.classList.contains('open')){ wtCloseUpsell(); }
-    else if(wtM&&wtM.classList.contains('open')){ wtCloseMod(); }
-    else if(wtDet&&wtDet.classList.contains('open')){ wtCloseDetail(); }
-    else if(wtPage&&wtPage.classList.contains('open')){ closeWebTemplates(); }
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeComments();closeProfilePopup();closeSubscription();closeSubModal();closeComicArts();closeProfilePage();
   }});
 
-  /* ── HAMBURGER MENU (attached dropdown) ── */
-  function toggleMenu(){
-    var w=document.getElementById('navWrap');
-    if(w.classList.contains('open')){closeMenu();}else{openMenu();}
+  /* ── BOTTOM NAVIGATION ──────────────────────────────────
+     closeMenu() is kept as a harmless no-op: many existing
+     open*()/close*() functions across the file call it
+     defensively before opening another panel. */
+  function closeMenu(){}
+
+  /* ── Active-state highlighting for the 5 bottom nav items ── */
+  var BN_IDS = ['bnHome','bnGallery','bnComic','bnComment','bnProfile'];
+  function bnSetActive(id){
+    BN_IDS.forEach(function(bid){
+      var el = document.getElementById(bid);
+      if(el) el.classList.toggle('bnActive', bid === id);
+    });
   }
-  function openMenu(){
-    var drop = document.getElementById('navDrop');
-    var inner = drop ? drop.querySelector('.ddInner') : null;
-    if(drop && inner){ drop.style.setProperty('--ddh', inner.scrollHeight + 'px'); }
-    document.getElementById('navWrap').classList.add('open');
-    var hamBtn = document.getElementById('hamBtn');
-    if(hamBtn) hamBtn.setAttribute('aria-expanded','true');
+  function bnGoHome(){
+    closeFG(); closeComicArts(); closeComments(); closeSubscription();
+    closeProfilePopup(); closeProfilePage(); closeAuthMod();
+    var hero = document.getElementById('hero');
+    if(hero) hero.scrollIntoView({behavior:'smooth', block:'start'});
+    else window.scrollTo({top:0, behavior:'smooth'});
+    bnSetActive('bnHome');
   }
-  function closeMenu(){
-    document.getElementById('navWrap').classList.remove('open');
-    var hamBtn = document.getElementById('hamBtn');
-    if(hamBtn) hamBtn.setAttribute('aria-expanded','false');
-  }
-  document.addEventListener('click', function(e){
-    var w = document.getElementById('navWrap');
-    if(w && w.classList.contains('open') && !w.contains(e.target)){ closeMenu(); }
-  });
-  /* Close the dropdown if the user scrolls the page while it's open */
-  window.addEventListener('scroll', function(){
-    var w = document.getElementById('navWrap');
-    if(w && w.classList.contains('open')){ closeMenu(); }
-  }, {passive:true});
-
-  /* ── SMART SHRINKING NAVBAR ──────────────────────────────
-     Single collapse-state flag, updated by openMenu/closeMenu.
-     - Hero visible  → full navbar (logo + login + hamburger)
-     - Hero scrolled past → collapses into a compact "Menu" pill
-     - Clicking "Menu" ONLY restores the full navbar (manual override);
-       it never opens the hamburger dropdown. The override holds until
-       hero visibility actually changes again (scroll up into hero, or
-       back out), so it can't be instantly re-collapsed by the same
-       observer tick that is already in the "past hero" state.
-     ───────────────────────────────────────────────────────── */
-  (function(){
-    var wrap   = document.getElementById('navWrap');
-    var hero   = document.getElementById('hero');
-    var menuLbl= document.getElementById('navMenuLabel');
-    if(!wrap) return;
-
-    var collapsed = false;
-    var pinnedOpen = false; /* true after clicking "Menu" while collapsed, until user scrolls back up past the threshold */
-
-    function setCollapsed(yes){
-      if(yes === collapsed){ return; }
-      collapsed = yes;
-      if(yes){
-        /* Close dropdown before collapsing */
-        closeMenu();
-        wrap.classList.add('navCollapsed');
-      } else {
-        wrap.classList.remove('navCollapsed');
-      }
-    }
-
-    /* Clicking the pill "Menu" label restores the full navbar and pins
-       it open until the user actually scrolls back up past the
-       threshold — so it doesn't instantly re-collapse from the very
-       next scroll tick while still scrolled down. It never opens the
-       hamburger dropdown — that opens only via the hamburger icon. */
-    if(menuLbl){
-      menuLbl.addEventListener('click', function(e){
-        e.stopPropagation();
-        pinnedOpen = true;
-        setCollapsed(false);
-      });
-    }
-
-    /* Trigger collapse/expand after a small, fixed scroll distance —
-       responsive to a single swipe/scroll-tick rather than waiting
-       for the full hero to scroll past. Scroll position is the
-       source of truth, except while pinnedOpen holds it open. */
-    var SCROLL_TRIGGER_PX = 80;
-    function onScroll(){
-      var pastTrigger = window.scrollY > SCROLL_TRIGGER_PX;
-      if(pinnedOpen){
-        if(!pastTrigger){ pinnedOpen = false; } /* scrolled back to top: release the pin */
-        else { return; } /* still scrolled down: stay pinned open */
-      }
-      setCollapsed(pastTrigger);
-    }
-    window.addEventListener('scroll', onScroll, {passive:true});
-    onScroll();
-  })();
-  /* ── HERO SCROLL FADE — per-element, independent thresholds ──────
-     Each element watches its own position vs the nav bottom edge.
-     Fades out as it scrolls up toward the nav (2-line-height gap).
-     Fades back in when scrolled back down into the hero.
-     Order: .hBrand → .hTL1 → .hTL2 → .hCta (each triggers
-     when THAT element reaches 2 line-heights below nav bottom).
-     rAF throttled. opacity-only — no layout shift.
-     ─────────────────────────────────────────────────────────────── */
-  (function(){
-    var nav = document.getElementById('navWrap');
-    if(!nav) return;
-
-    /* The 4 elements to watch, in scroll order (top → bottom in DOM) */
-    var targets = [
-      document.querySelector('.hBrand'),
-      document.querySelector('.hTL1'),
-      document.querySelector('.hTL2'),
-      document.querySelector('#hero .hCta')
-    ].filter(Boolean);
-
-    if(!targets.length) return;
-
-    /* Gap: 2 line-heights below nav bottom before element fades */
-    var GAP = 56; /* 2 × 28px */
-
-    var ticking = false;
-    /* Track faded state per element to skip no-op DOM writes */
-    var states = targets.map(function(){ return false; });
-
-    function check(){
-      ticking = false;
-      var navBottom = nav.getBoundingClientRect().bottom;
-      var threshold = navBottom + GAP;
-
-      targets.forEach(function(el, i){
-        /* Each element's own top edge */
-        var elTop = el.getBoundingClientRect().top;
-        var shouldFade = elTop < threshold;
-        if(shouldFade === states[i]) return; /* no change */
-        states[i] = shouldFade;
-        el.classList.toggle('hFaded', shouldFade);
-      });
-    }
-
-    window.addEventListener('scroll', function(){
-      if(!ticking){
-        ticking = true;
-        requestAnimationFrame(check);
-      }
-    }, {passive: true});
-
-    /* Run once immediately */
-    check();
-  })();
+  function bnGoGallery(){ closeProfilePage(); ddOpenGallery(); bnSetActive('bnGallery'); }
+  function bnGoComic(){ closeProfilePage(); openComicArts(); bnSetActive('bnComic'); }
+  function bnGoComment(){ closeProfilePage(); ddOpenComments(); bnSetActive('bnComment'); }
+  document.getElementById('navAvatarBtn').addEventListener('click', function(){ bnSetActive('bnProfile'); });
+  document.getElementById('navLoginBtn').addEventListener('click', function(){ bnSetActive('bnProfile'); });
+  /* Default state on load */
+  bnSetActive('bnHome');
 
   function ddOpenGallery(){
     closeMenu();
@@ -7676,6 +7190,11 @@ async function openComments(){
     }
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
     if(m) openArtworkById(m[1], false);
+    var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
+    if(pm) openProfileByUsername(decodeURIComponent(pm[1]), false);
+    var cm = window.location.pathname.match(/^\/comic\/([^/]+)\/?$/);
+    if(cm) openComicById(cm[1], false);
+    if(window.location.pathname === '/login') openAuthMod();
     /* Site-wide ImageGallery structured data — lists every artwork's
        image + name + per-artwork URL so Google can associate each
        image with its dedicated, indexable page from the homepage
@@ -7815,535 +7334,6 @@ async function openComments(){
     if (!el) return;
     el.classList.remove('open');
     restoreScroll();
-  }
-
-  /* ── Website Templates panel ── */
-
-  /* ── State ── */
-  var wtTemplates   = [];   /* local cache from Supabase */
-  var wtSortOrder   = 'new';  /* 'new' | 'old' */
-  var wtTierFilter  = 'all';  /* 'all' | 'free' | 'lite' | 'premium' | 'max' */
-  var wtVisible     = 0;
-  var WT_PAGE_STEP  = 20;
-  var wtCurrentId   = null; /* id of template open in detail */
-  var wtImgFile     = null; /* pending image upload file */
-  var wtFileUpload  = null; /* pending download file */
-
-  function wtPageSize(){ return window.innerWidth >= 1025 ? 24 : 12; }
-
-  /* ── Open / close overlay ── */
-  function openWebTemplates() {
-    closeMenu();
-    var el = document.getElementById('webTemplatesPage');
-    if (!el) return;
-    el.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    /* Load from Supabase on first open */
-    wtLoadTemplates();
-    /* Sync admin button visibility */
-    wtSyncAdmBtn();
-    if(typeof zeoSectionTrigger==='function') zeoSectionTrigger();
-  }
-  function closeWebTemplates() {
-    var el = document.getElementById('webTemplatesPage');
-    if (!el) return;
-    wtCloseDetail();
-    el.classList.remove('open');
-    restoreScroll();
-  }
-
-  /* ── Sync admin UI ── */
-  function wtSyncAdmBtn(){
-    var btn = document.getElementById('wtAdmBtn');
-    if (!btn) return;
-    btn.style.display = (isAdm) ? 'flex' : 'none';
-    var detBtns = document.getElementById('wtDetAdmBtns');
-    if (detBtns) detBtns.style.display = (isAdm) ? 'flex' : 'none';
-  }
-
-  /* ── Load templates from Supabase ── */
-  async function wtLoadTemplates(){
-    if (!sb) { wtRender(); return; }
-    try {
-      var res = await sb.from('web_templates').select('*').order('created_at', { ascending: false });
-      if (res.error) throw res.error;
-      wtTemplates = res.data || [];
-    } catch(e) {
-      console.error('WT load error:', e);
-      wtTemplates = [];
-    }
-    wtRender();
-  }
-
-  /* ── Filter panel open / close / apply ── */
-  function wtOpenFilterPanel(){
-    /* Sync radios to current state */
-    var srtR = document.querySelector('input[name="wtFltSrt"][value="'+wtSortOrder+'"]');
-    if (srtR) srtR.checked = true;
-    var tierR = document.querySelector('input[name="wtFltTier"][value="'+wtTierFilter+'"]');
-    if (tierR) tierR.checked = true;
-    document.getElementById('wtFltOvr').classList.add('open');
-    document.getElementById('wtFltPanel').classList.add('open');
-  }
-  function wtCloseFilterPanel(){
-    document.getElementById('wtFltOvr').classList.remove('open');
-    document.getElementById('wtFltPanel').classList.remove('open');
-  }
-  function wtApplyFilters(){
-    var srtR  = document.querySelector('input[name="wtFltSrt"]:checked');
-    var tierR = document.querySelector('input[name="wtFltTier"]:checked');
-    wtSortOrder  = srtR  ? srtR.value  : 'new';
-    wtTierFilter = tierR ? tierR.value : 'all';
-    wtCloseFilterPanel();
-    wtVisible = wtPageSize();
-    wtRenderPage();
-  }
-
-  /* ── Main render entry ── */
-  function wtRender(){
-    wtVisible = wtPageSize();
-    wtRenderPage();
-  }
-
-  /* ── Render the filtered, sorted, paginated grid ── */
-  function wtRenderPage(){
-    var bdy   = document.getElementById('wtBdy');
-    var empty = document.getElementById('wtEmpty');
-    if (!bdy) return;
-
-    var q = (document.getElementById('wtQ') || {}).value || '';
-    q = q.toLowerCase().trim();
-
-    var list = wtTemplates.slice();
-
-    /* Filter by tier */
-    if (wtTierFilter !== 'all') {
-      list = list.filter(function(t){ return t.tier === wtTierFilter; });
-    }
-    /* Sort */
-    list.sort(function(a,b){
-      var tA = new Date(a.created_at||0).getTime();
-      var tB = new Date(b.created_at||0).getTime();
-      return wtSortOrder === 'new' ? (tB - tA) : (tA - tB);
-    });
-    /* Search */
-    if (q) {
-      list = list.filter(function(t){
-        return (t.name||'').toLowerCase().includes(q) ||
-               (t.short_desc||'').toLowerCase().includes(q);
-      });
-    }
-
-    /* Update filter button active indicator */
-    var isFiltered = (wtTierFilter !== 'all' || wtSortOrder !== 'new');
-    var fltBtn = document.getElementById('wtFltBtn');
-    if (fltBtn) fltBtn.classList.toggle('active', isFiltered);
-
-    if (!list.length) {
-      bdy.innerHTML = '';
-      if (empty) { empty.style.display = 'flex'; bdy.appendChild(empty); }
-      return;
-    }
-    if (empty) empty.style.display = 'none';
-
-    var showCount = Math.min(wtVisible, list.length);
-    var visible   = list.slice(0, showCount);
-    var hasMore   = showCount < list.length;
-
-    var gridHtml = '<div class="wtGrid">' + visible.map(wtCardHTML).join('') + '</div>';
-    var moreHtml = hasMore
-      ? '<div class="wtLoadMoreWrap"><button class="wtLoadMore" onclick="wtLoadMore()"><span>✦</span> LOAD MORE</button></div>'
-      : '';
-
-    bdy.innerHTML = gridHtml + moreHtml;
-  }
-
-  function wtLoadMore(){
-    wtVisible += WT_PAGE_STEP;
-    wtRenderPage();
-  }
-
-  /* ── Tier helpers ── */
-  /* DB tier values match CSS suffixes directly: free | lite | premium | max */
-  function wtTierCSSKey(tier){
-    var m = { free:'free', lite:'lite', premium:'premium', max:'max' };
-    return m[(tier||'free')] || 'free';
-  }
-  function wtTierClass(tier){ return 'wtCard--' + wtTierCSSKey(tier); }
-  function wtTierLabel(tier){
-    var m = { free:'Free', lite:'Premium Lite', premium:'Premium', max:'Max' };
-    return m[tier] || 'Free';
-  }
-  function wtTierBadgeClass(tier){ return 'wtTierBadge--' + wtTierCSSKey(tier); }
-
-  /* ── Card HTML ── */
-  function wtCardHTML(t){
-    var idStr     = esc(String(t.id));
-    var nm        = esc(t.name || 'Untitled');
-    var shortDesc = esc(t.short_desc || '');
-    var tier      = t.tier || 'free';
-    var locked    = !wtCanAccess(tier);
-    var imgSrc    = t.preview_url ? esc(t.preview_url) : '';
-    var imgBlock  = imgSrc
-      ? '<img class="wtCardImg" src="' + imgSrc + '" alt="' + nm + '" loading="lazy" decoding="async"/>'
-      : '<div class="wtCardImgPlaceholder">◧</div>';
-    var lockedClass = locked ? ' wtCard--locked' : '';
-    var btnLabel    = locked ? '🔒 UNLOCK' : 'SHOW MORE →';
-
-    return '<div class="wtCard ' + wtTierClass(tier) + lockedClass + '" data-wt-id="' + idStr + '">' +
-      '<div class="wtCardImgWrap">' + imgBlock + '</div>' +
-      '<div class="wtCardAdm">' +
-        '<button class="wtCardAdmBtn" onclick="wtOpenMod(\'' + idStr + '\',event)" title="Edit">✎</button>' +
-        '<button class="wtCardAdmBtn wtCardAdmBtn--del" onclick="wtDel(\'' + idStr + '\',event)" title="Delete">✕</button>' +
-      '</div>' +
-      '<div class="wtCardBdy">' +
-        '<div class="wtCardTitleRow">' +
-          '<div class="wtCardTitle">' + nm + '</div>' +
-          '<span class="wtTierBadge ' + wtTierBadgeClass(tier) + '">' + wtTierLabel(tier) + '</span>' +
-        '</div>' +
-        '<div class="wtCardDesc">' + shortDesc + '</div>' +
-        '<button class="wtShowMore" onclick="wtOpenDetail(\'' + idStr + '\')">' + btnLabel + '</button>' +
-      '</div>' +
-    '</div>';
-  }
-
-  /* ── Detail page ── */
-  function wtOpenDetail(id){
-    var t = wtTemplates.find(function(x){ return String(x.id) === String(id); });
-    if (!t) return;
-
-    /* ── ACCESS GATE ── */
-    if (!wtCanAccess(t.tier)) {
-      wtOpenUpsell(t.tier);
-      return;
-    }
-
-    wtCurrentId = id;
-
-    document.getElementById('wtDetHdrTitle').textContent = 'TEMPLATE';
-    document.getElementById('wtDetTitle').textContent = t.name || 'Untitled';
-
-    /* Tier badge */
-    var badge = document.getElementById('wtDetTierBadge');
-    badge.textContent = wtTierLabel(t.tier);
-    badge.className   = 'wtTierBadge ' + wtTierBadgeClass(t.tier);
-
-    /* Preview image */
-    var img = document.getElementById('wtDetImg');
-    if (t.preview_url) {
-      img.src = t.preview_url; img.alt = t.name || '';
-      img.style.display = 'block';
-    } else {
-      img.src = ''; img.style.display = 'none';
-    }
-
-    /* Description */
-    document.getElementById('wtDetDesc').textContent = t.full_desc || t.short_desc || '';
-    /* How to use */
-    document.getElementById('wtDetHowTo').textContent = t.how_to_use || '';
-
-    /* Download section */
-    var dlHost = document.getElementById('wtDetDl');
-    if (t.file_url) {
-      var fname = t.file_name || t.file_url.split('/').pop() || 'template-file';
-      dlHost.innerHTML =
-        '<div class="wtDlCard">' +
-          '<div class="wtDlIco">📦</div>' +
-          '<div class="wtDlInfo">' +
-            '<div class="wtDlName">' + esc(fname) + '</div>' +
-            '<div class="wtDlMeta">CLICK TO DOWNLOAD</div>' +
-          '</div>' +
-          '<a class="wtDlBtn" href="' + esc(t.file_url) + '" download target="_blank" rel="noopener">DOWNLOAD ↓</a>' +
-        '</div>';
-    } else {
-      dlHost.innerHTML = '<div class="wtDlNone">No downloadable file attached yet.</div>';
-    }
-
-    /* Admin buttons */
-    wtSyncAdmBtn();
-
-    /* Open the sub-page */
-    document.getElementById('wtDetail').classList.add('open');
-    /* Scroll body to top */
-    var detBdy = document.querySelector('.wtDetBdy');
-    if (detBdy) detBdy.scrollTop = 0;
-  }
-
-  function wtCloseDetail(){
-    var det = document.getElementById('wtDetail');
-    if (det) det.classList.remove('open');
-    wtCurrentId = null;
-  }
-
-  /* ── Admin: open upload/edit modal ── */
-  function wtOpenMod(id, e){
-    if (e) e.stopPropagation();
-    if (!isAdm) { showToast('Admin mode required'); return; }
-    wtResetMod();
-    if (id) {
-      var t = wtTemplates.find(function(x){ return String(x.id) === String(id); });
-      if (!t) return;
-      document.getElementById('wtEditId').value  = id;
-      document.getElementById('wtModTitle').textContent  = 'EDIT TEMPLATE';
-      document.getElementById('wtModSubtitle').textContent = 'Update the template details below.';
-      document.getElementById('wtNm').value        = t.name || '';
-      document.getElementById('wtShortDesc').value = t.short_desc || '';
-      document.getElementById('wtFullDesc').value  = t.full_desc || '';
-      document.getElementById('wtHowTo').value     = t.how_to_use || '';
-      var radios = document.querySelectorAll('[name="wtTier"]');
-      radios.forEach(function(r){ r.checked = r.value === (t.tier || 'free'); });
-      document.getElementById('wtModBtn').textContent = 'SAVE CHANGES ✦';
-      if (t.preview_url) {
-        var p = document.getElementById('wtImgPrev');
-        p.src = t.preview_url; p.style.display = 'block';
-      }
-      if (t.file_url) {
-        var fn = t.file_name || t.file_url.split('/').pop() || 'file';
-        document.getElementById('wtFileDzTxt').textContent = '✓ ' + fn;
-      }
-    }
-    document.getElementById('wtMod').classList.add('open');
-  }
-
-  function wtCloseMod(){
-    document.getElementById('wtMod').classList.remove('open');
-  }
-
-  function wtResetMod(){
-    document.getElementById('wtEditId').value  = '';
-    document.getElementById('wtModTitle').textContent  = 'UPLOAD TEMPLATE';
-    document.getElementById('wtModSubtitle').textContent = 'Add a new website template. Preview image should be a desktop screenshot.';
-    document.getElementById('wtNm').value        = '';
-    document.getElementById('wtShortDesc').value = '';
-    document.getElementById('wtFullDesc').value  = '';
-    document.getElementById('wtHowTo').value     = '';
-    document.getElementById('wtModBtn').textContent = 'ADD TEMPLATE ✦';
-    document.querySelectorAll('[name="wtTier"]').forEach(function(r){ r.checked = r.value === 'free'; });
-    var p = document.getElementById('wtImgPrev');
-    p.src = ''; p.style.display = 'none';
-    document.getElementById('wtDzTxt').textContent   = 'DROP IMAGE OR CLICK TO BROWSE';
-    document.getElementById('wtFileDzTxt').textContent = 'DROP FILE OR CLICK TO BROWSE';
-    wtImgFile    = null;
-    wtFileUpload = null;
-  }
-
-  function wtHandleImg(e){
-    var f = e.target.files[0]; if (!f) return;
-    wtImgFile = f;
-    var r = new FileReader();
-    r.onload = function(ev){
-      var p = document.getElementById('wtImgPrev');
-      p.src = ev.target.result; p.style.display = 'block';
-      document.getElementById('wtDzTxt').textContent = '✓ ' + f.name;
-    };
-    r.readAsDataURL(f);
-  }
-
-  function wtHandleFile(e){
-    var f = e.target.files[0]; if (!f) return;
-    wtFileUpload = f;
-    document.getElementById('wtFileDzTxt').textContent = '✓ ' + f.name;
-  }
-
-  /* ── Save template (create or update) ── */
-  async function wtDoSave(){
-    if (!isAdm) { showToast('Admin mode required'); return; }
-    var id       = document.getElementById('wtEditId').value;
-    var nm       = document.getElementById('wtNm').value.trim();
-    var shortD   = document.getElementById('wtShortDesc').value.trim();
-    var fullD    = document.getElementById('wtFullDesc').value.trim();
-    var howTo    = document.getElementById('wtHowTo').value.trim();
-    var tier     = (document.querySelector('[name="wtTier"]:checked') || {}).value || 'free';
-
-    if (!nm) { showToast('Enter a template name'); return; }
-    if (!id && !wtImgFile) { showToast('Select a preview image'); return; }
-
-    var btn = document.getElementById('wtModBtn');
-    btn.disabled = true;
-
-    try {
-      var prevUrl  = null;
-      var fileUrl  = null;
-      var fileName = null;
-
-      /* Upload preview image */
-      if (wtImgFile) {
-        btn.textContent = 'UPLOADING IMAGE…';
-        var ext  = wtImgFile.name.split('.').pop();
-        var path = 'web-templates/previews/' + Date.now() + '_' + nm.replace(/\s+/g,'_') + '.' + ext;
-        var upRes = await sb.storage.from(BUCKET).upload(path, wtImgFile, { cacheControl:'3600', upsert:true });
-        if (upRes.error) throw upRes.error;
-        prevUrl = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-      }
-
-      /* Upload downloadable file */
-      if (wtFileUpload) {
-        btn.textContent = 'UPLOADING FILE…';
-        var fPath = 'web-templates/files/' + Date.now() + '_' + wtFileUpload.name.replace(/\s+/g,'_');
-        var fRes  = await sb.storage.from(BUCKET).upload(fPath, wtFileUpload, { cacheControl:'3600', upsert:true });
-        if (fRes.error) throw fRes.error;
-        fileUrl  = sb.storage.from(BUCKET).getPublicUrl(fPath).data.publicUrl;
-        fileName = wtFileUpload.name;
-      }
-
-      btn.textContent = id ? 'SAVING…' : 'CREATING…';
-
-      if (id) {
-        /* UPDATE */
-        var patch = { name:nm, short_desc:shortD||null, full_desc:fullD||null, how_to_use:howTo||null, tier:tier };
-        if (prevUrl)  patch.preview_url = prevUrl;
-        if (fileUrl)  { patch.file_url = fileUrl; patch.file_name = fileName; }
-        var res = await sb.from('web_templates').update(patch).eq('id', id).select();
-        if (res.error) throw res.error;
-        var idx = wtTemplates.findIndex(function(x){ return String(x.id)===String(id); });
-        if (idx !== -1 && res.data && res.data[0]) wtTemplates[idx] = res.data[0];
-        showToast('Template updated ✦');
-      } else {
-        /* INSERT */
-        var row = { name:nm, short_desc:shortD||null, full_desc:fullD||null, how_to_use:howTo||null,
-                    tier:tier, preview_url:prevUrl||null, file_url:fileUrl||null, file_name:fileName||null };
-        var res = await sb.from('web_templates').insert(row).select();
-        if (res.error) throw res.error;
-        if (res.data && res.data[0]) wtTemplates.unshift(res.data[0]);
-        showToast('Template added ✦');
-      }
-
-      wtRender();
-      wtCloseMod();
-    } catch(err) {
-      showToast('Error: ' + err.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = id ? 'SAVE CHANGES ✦' : 'ADD TEMPLATE ✦';
-    }
-  }
-
-  /* ── Delete ── */
-  async function wtDel(id, e){
-    if (e) e.stopPropagation();
-    if (!isAdm || !confirm('Delete this template?')) return;
-    try {
-      await sb.from('web_templates').delete().eq('id', id);
-      wtTemplates = wtTemplates.filter(function(x){ return String(x.id) !== String(id); });
-      wtRender();
-      showToast('Template removed');
-    } catch(err) { showToast('Error: ' + err.message); }
-  }
-
-  /* ── Edit from detail page ── */
-  function wtEditFromDetail(){
-    if (!wtCurrentId) return;
-    wtOpenMod(wtCurrentId);
-  }
-  function wtDelFromDetail(){
-    if (!wtCurrentId) return;
-    var id = wtCurrentId;
-    wtCloseDetail();
-    wtDel(id, null);
-  }
-
-  /* ── Patch syncAdmBtn to also sync WT UI ── */
-  var _origSyncAdmBtn = typeof syncAdmBtn === 'function' ? syncAdmBtn : null;
-  /* Hook into admin mode toggle: whenever isAdm changes, wtSyncAdmBtn() is called
-     if the WT page is open. We patch it after DOM load. */
-  document.addEventListener('DOMContentLoaded', function(){
-    /* Also move drag-drop on wtDz */
-    var wtDz = document.getElementById('wtDz');
-    if (wtDz) {
-      wtDz.addEventListener('dragover', function(e){ e.preventDefault(); wtDz.style.borderColor = 'var(--bdrh)'; });
-      wtDz.addEventListener('dragleave', function(){ wtDz.style.borderColor = ''; });
-      wtDz.addEventListener('drop', function(e){
-        e.preventDefault(); wtDz.style.borderColor = '';
-        var f = e.dataTransfer.files[0]; if (!f) return;
-        var inp = document.getElementById('wtImgF');
-        /* synthetic event to reuse handler */
-        wtImgFile = f;
-        var r = new FileReader();
-        r.onload = function(ev){
-          var p = document.getElementById('wtImgPrev');
-          p.src = ev.target.result; p.style.display = 'block';
-          document.getElementById('wtDzTxt').textContent = '✓ ' + f.name;
-        };
-        r.readAsDataURL(f);
-      });
-      var wtFDz = document.getElementById('wtFileDz');
-      if (wtFDz) {
-        wtFDz.addEventListener('dragover', function(e){ e.preventDefault(); wtFDz.style.borderColor = 'var(--bdrh)'; });
-        wtFDz.addEventListener('dragleave', function(){ wtFDz.style.borderColor = ''; });
-        wtFDz.addEventListener('drop', function(e){
-          e.preventDefault(); wtFDz.style.borderColor = '';
-          var f = e.dataTransfer.files[0]; if (!f) return;
-          wtFileUpload = f;
-          document.getElementById('wtFileDzTxt').textContent = '✓ ' + f.name;
-        });
-      }
-    }
-  });
-
-  function wtCanAccess(tier) {
-    /* dev bypasses all gates */
-    if (isDev) return true;
-    tier = (tier || 'free').toLowerCase();
-    /* 'free'-tier templates: everyone can access, no login needed */
-    if (tier === 'free') return true;
-    /* Paid tiers require a logged-in session */
-    if (!currentUser) return false;
-    /* userPlan mirrors profiles.subscription_tier: guest | lite | premium | max
-       'guest' = logged in but no paid plan */
-    var plan = (userPlan || 'guest').toLowerCase();
-    /* lite template: requires lite, premium, or max plan */
-    if (tier === 'lite')    return plan === 'lite' || plan === 'premium' || plan === 'max';
-    /* premium template: requires premium or max plan */
-    if (tier === 'premium') return plan === 'premium' || plan === 'max';
-    /* max template: requires max plan only */
-    if (tier === 'max')     return plan === 'max';
-    return false;
-  }
-
-  /* Open upsell modal, tailored to which tier is required */
-  function wtOpenUpsell(tier) {
-    tier = (tier || 'premium').toLowerCase();
-    var ico   = document.getElementById('wtUpsellIco');
-    var title = document.getElementById('wtUpsellTitle');
-    var msg   = document.getElementById('wtUpsellMsg');
-    var cta   = document.getElementById('wtUpsellCta');
-
-    /* Tier-specific copy */
-    var tierLabels = { free:'FREE', lite:'PREMIUM LITE', premium:'PREMIUM', max:'MAX' };
-    var tierLabel  = tierLabels[tier] || 'PREMIUM';
-
-    if (ico)   ico.textContent   = '🔒';
-    if (title) title.textContent = tierLabel + ' TEMPLATE';
-
-    if (!currentUser) {
-      /* Guest: not logged in */
-      if (msg) msg.textContent = 'Sign in or create an account, then upgrade to unlock this ' + tierLabel.toLowerCase() + ' template.';
-      if (cta) { cta.textContent = 'SIGN IN ✦'; cta.className = 'wtUpsellCta'; }
-    } else {
-      /* Logged in but wrong plan */
-      var planNeeded = tierLabel;
-      if (msg) msg.textContent = 'This template requires a ' + planNeeded + ' plan. Upgrade to unlock it and all other ' + planNeeded.toLowerCase() + ' content.';
-      if (cta) { cta.textContent = 'VIEW PLANS ✦'; cta.className = 'wtUpsellCta wtUpsellCta--' + wtTierCSSKey(tier); }
-    }
-
-    document.getElementById('wtUpsell').classList.add('open');
-  }
-
-  /* The CTA button action */
-  function wtUpsellGo() {
-    wtCloseUpsell();
-    if (!currentUser) {
-      openAuthMod();
-    } else {
-      openSubscription();
-    }
-  }
-
-  function wtCloseUpsell(e) {
-    /* If called from the backdrop click, only close if clicking the backdrop itself */
-    if (e && e.target !== document.getElementById('wtUpsell')) return;
-    document.getElementById('wtUpsell').classList.remove('open');
   }
 
 
@@ -9323,12 +8313,19 @@ window.ZEO_DATA = {
         /* Discard any stale left-based saved position */
         if (typeof pos.right === 'undefined') {
           localStorage.removeItem('zeo_btn_pos');
+          btn.style.right  = homeRight()  + 'px';
+          btn.style.bottom = homeBottom() + 'px';
+          btn.style.left = 'auto'; btn.style.top  = 'auto';
           return;
         }
         var maxRight  = window.innerWidth  - btn.offsetWidth  - 8;
         var maxBottom = window.innerHeight - btn.offsetHeight - 8;
         btn.style.right  = Math.min(Math.max(8, pos.right),  maxRight)  + 'px';
         btn.style.bottom = Math.min(Math.max(8, pos.bottom), maxBottom) + 'px';
+      } else {
+        /* No saved position — rest centred above the bottom nav */
+        btn.style.right  = homeRight()  + 'px';
+        btn.style.bottom = homeBottom() + 'px';
       }
       /* Always force right-side anchoring — never left */
       btn.style.left = 'auto';
@@ -9448,9 +8445,26 @@ window.ZEO_DATA = {
     }
   });
 
-  /* Return-home — after drag, wait 4s then glide button back to default position */
-  var HOME_RIGHT  = 24;
-  var HOME_BOTTOM = 24;
+  /* Return-home — after drag, wait 4s then glide button back to default
+     position, which rests directly above the Profile icon in the
+     bottom nav (right-aligned), instead of a fixed corner or centre. */
+  function homeRight() {
+    var profile = document.getElementById('bnProfile');
+    if (profile) {
+      var r = profile.getBoundingClientRect();
+      var centerX = r.left + r.width / 2;
+      return Math.round(window.innerWidth - centerX - btn.offsetWidth / 2);
+    }
+    return 24;
+  }
+  function homeBottom() {
+    var nav = document.getElementById('bnNav');
+    if (nav) {
+      var r = nav.getBoundingClientRect();
+      return Math.round((window.innerHeight - r.top) + 14);
+    }
+    return 96;
+  }
   var returnTimer   = null; /* 4s idle countdown */
   var returnInFlight = false; /* true while glide is running */
 
@@ -9487,16 +8501,18 @@ window.ZEO_DATA = {
     cancelReturn();
     returnInFlight = false;
     returnTimer = setTimeout(function() {
+      var hRight  = homeRight();
+      var hBottom = homeBottom();
       /* Check button isn't already home */
       var curRight  = parseInt(btn.style.right,  10);
       var curBottom = parseInt(btn.style.bottom, 10);
-      if (curRight === HOME_RIGHT && curBottom === HOME_BOTTOM) return;
+      if (curRight === hRight && curBottom === hBottom) return;
 
       returnInFlight = true;
-      glideTo(HOME_RIGHT, HOME_BOTTOM, function() {
+      glideTo(hRight, hBottom, function() {
         returnInFlight = false;
         btn.classList.remove('zeoGliding');
-        savePos(HOME_RIGHT, HOME_BOTTOM);
+        savePos(hRight, hBottom);
         syncUI();
         if (!isOpen) resumeBubble();
       });
@@ -9604,7 +8620,7 @@ window.ZEO_DATA = {
       /* If bot was dragged away from home while chat was open, return it now */
       var curRight  = parseInt(btn.style.right,  10);
       var curBottom = parseInt(btn.style.bottom, 10);
-      if (curRight !== HOME_RIGHT || curBottom !== HOME_BOTTOM) {
+      if (curRight !== homeRight() || curBottom !== homeBottom()) {
         scheduleReturn(); /* resumes bubbles after glide */
       } else {
         resumeBubble();

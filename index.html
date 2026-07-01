@@ -97,8 +97,8 @@
        │   comments, comic, templates, subscription) so the bar
        │   stays visible/usable across the whole site, not just
        │   the hero section.
-       └─ AI Assistant button floats just above, aligned over
-          the Profile icon (#zeoBtn)
+       (AI Assistant button #zeoBtn now lives up top, left of the
+        notification icon — see .fpFloat widgets in the hero)
        ========================================================= */
     #bnNav{
       position:fixed;
@@ -322,6 +322,67 @@
       100% { transform: scaleY(0); transform-origin: bottom; opacity: .3; }
     }
 
+    /* ── Front-page floating widgets — brand badge + notification
+       button. Fixed like the bottom nav so they stay put over the
+       whole home page scroll (hero through the last section) and
+       never disappear; only absent from full-screen overlay panels
+       since those simply paint over everything, same as the rest
+       of the page underneath them.
+       Sizing uses clamp() throughout instead of a single breakpoint
+       so both widgets scale smoothly across phones, tablets, and
+       desktops rather than snapping at one fixed width. ── */
+    .fpFloat {
+      position: fixed;
+      top: clamp(1rem, 2.6vw, 2rem);
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: linear-gradient(160deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.1) 100%);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,.35);
+      box-shadow: 0 10px 32px rgba(5,3,8,.35), inset 0 1px 0 rgba(255,255,255,.15);
+      color: #ffffff;
+    }
+
+    /* ── Brand badge — top-left ── */
+    .hBadge {
+      left: clamp(1rem, 2.6vw, 2rem);
+      width: clamp(112px, 24vw, 156px);
+      height: clamp(44px, 8vw, 60px);
+      font-family: var(--fd);
+      font-weight: 800;
+      font-size: clamp(.85rem, 2.6vw, 1.2rem);
+      letter-spacing: .01em;
+      pointer-events: none;
+    }
+
+    /* ── Notification button — top-right, plain circle ── */
+    .hNotifBtn {
+      right: clamp(1rem, 2.6vw, 2rem);
+      width: clamp(42px, 8vw, 54px);
+      height: clamp(42px, 8vw, 54px);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .hNotifBtn svg { width: clamp(18px, 3.6vw, 22px); height: clamp(18px, 3.6vw, 22px); stroke-width: 1.8; display: block; }
+    .hNotifBtn:hover { background: linear-gradient(160deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,.15) 100%); }
+    .hNotifBtn:active { transform: scale(.95); }
+    .hNotifBtn:focus-visible { outline: 2px solid var(--pg); outline-offset: 2px; }
+    /* Unread dot — hidden until an admin notification actually exists */
+    .hNotifDot {
+      position: absolute;
+      top: 6px; right: 6px;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--pg);
+      box-shadow: 0 0 6px var(--pg);
+      display: none;
+    }
+    .hNotifBtn.hasUnread .hNotifDot { display: block; }
+
     /* ── Admin edit background button ── */
     .hEBg {
       position: absolute;
@@ -469,15 +530,18 @@
     /* Keep homeGrid hidden — data source only for Full Gallery overlay */
     .gGrid{display:none;}
 
-    .gItem{break-inside:avoid;margin-bottom:.8rem;position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;}
+    /* ── ArtStation-style masonry card: full-bleed image at its
+       natural aspect ratio (landscape/square/portrait all fit with
+       no crop, no gaps) with the title overlaid via bottom scrim ── */
+    .gItem{break-inside:avoid;margin-bottom:.8rem;position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;line-height:0;}
     .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
     .gItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
-    .gItem img{width:100%;display:block;aspect-ratio:1;object-fit:cover;transition:transform .4s;}
-    .gItem img[data-src]{background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);background-size:200% 100%;animation:imgShimmer 1.4s infinite;}
+    .gItem img{width:100%;display:block;height:auto;transition:transform .4s;}
+    .gItem img[data-src]{background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);background-size:200% 100%;animation:imgShimmer 1.4s infinite;min-height:120px;}
     @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
     .gItem:hover img{transform:scale(1.04);}
-    .gNm{padding:.5rem .6rem;font-family:var(--fm);font-size:.72rem;letter-spacing:.08em;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:1px solid var(--bdr);}
-    .gOv{position:absolute;top:0;left:0;right:0;bottom:40px;background:rgba(5,3,8,.7);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;}
+    .gNm{position:absolute;left:0;right:0;bottom:0;padding:1.5rem .65rem .6rem;background:linear-gradient(to top, rgba(5,3,8,.88) 0%, rgba(5,3,8,.48) 55%, transparent 100%);font-family:var(--fm);font-size:.72rem;letter-spacing:.08em;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:none;pointer-events:none;}
+    .gOv{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(5,3,8,.7);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;}
     .gItem:hover .gOv{opacity:1;}
     .gOv svg{width:36px;height:36px;color:var(--ps);}
     .gDel{position:absolute;top:.4rem;right:.4rem;width:24px;height:24px;background:rgba(220,38,38,.85);border:none;color:white;font-size:.75rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:5;transition:background .2s;border-radius:6px;}
@@ -496,8 +560,6 @@
     #fg{position:fixed;inset:0;z-index:500;background:var(--bg);overflow-y:auto;transform:translateX(100%);transition:transform .45s cubic-bezier(.22,1,.36,1);}
     #fg.open{transform:translateX(0);}
     .fgHdr{position:sticky;top:0;z-index:10;background:rgba(5,3,8,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;}
-    .fgX{background:none;border:none;color:var(--txd);cursor:pointer;font-size:1.3rem;line-height:1;transition:color .2s;flex-shrink:0;}
-    .fgX:hover{color:var(--pg);}
     .fgQ{flex:1;min-width:140px;max-width:280px;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.1em;padding:.55rem .9rem;outline:none;transition:border-color .25s;border-radius:6px;}
     .fgQ:focus{border-color:var(--pg);}
     .fgQ::placeholder{color:var(--txd);}
@@ -651,25 +713,29 @@
 
     .fgBdy{padding:1.5rem;}
     .fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;}
-    /* Grid layout uses display:grid so DOM/visual order match — newest items read left-to-right, top-to-bottom */
+    /* ── Masonry grid via CSS columns — column-count matches the user's
+       chosen density (fg2/fg3/fg4). Reading order flows down each
+       column before moving to the next, which is the trade-off every
+       masonry layout (Pinterest, ArtStation, etc.) makes to get
+       gapless mixed aspect-ratio images. ── */
     .fgGrid{
-      display:grid;
-      gap:.8rem;
+      column-gap:.8rem;
     }
-    .fgGrid .gItem{margin-bottom:0;} /* gap handles spacing in grid mode */
-    .fg2{grid-template-columns:repeat(2,1fr);}
-    .fg3{grid-template-columns:repeat(3,1fr);}
-    .fg4{grid-template-columns:repeat(4,1fr);}
+    .fgGrid .gItem{margin-bottom:.8rem;}
+    .fg2{column-count:2;}
+    .fg3{column-count:3;}
+    .fg4{column-count:4;}
     /* Gallery overlay responsive rules (also part of § 9b) */
     @media(max-width:900px){
-      .fg4{grid-template-columns:repeat(3,1fr)}
+      .fg4{column-count:3}
     }
     @media(max-width:640px){
       .fgHdr{padding:.8rem 1rem}
-      .fg4{grid-template-columns:repeat(2,1fr)}
-      .fg3{grid-template-columns:repeat(2,1fr)}
-      .fg2{grid-template-columns:repeat(2,1fr)}
-      .fgGrid{gap:.5rem}
+      .fg4{column-count:2}
+      .fg3{column-count:2}
+      .fg2{column-count:2}
+      .fgGrid{column-gap:.5rem}
+      .fgGrid .gItem{margin-bottom:.5rem;}
     }
 
     #artModal{
@@ -937,8 +1003,6 @@
       display:flex;align-items:center;gap:.8rem;
       flex-shrink:0;
     }
-    .cpX{background:none;border:none;color:var(--txd);cursor:pointer;font-size:1.3rem;line-height:1;transition:color .2s,transform .2s;flex-shrink:0;padding:.2rem .4rem;}
-    .cpX:hover{color:var(--pg);transform:translateX(-3px);}
     .cpTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;letter-spacing:.15em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
     .cpTitle .s{color:var(--pg);font-size:.6em;}
 
@@ -1790,20 +1854,89 @@
       padding:5rem 0 4rem;
     }
     .awHdr{
-      max-width:1200px;
+      max-width:1300px;
       margin:0 auto;
       padding:0 2rem;
     }
-    /* ── Grid: auto-fill columns, min 220px, fills to ~4 cols on desktop ── */
+    /* ── Artworks / ComicArts tab switcher — replaces the old
+       title + subtitle heading ── */
+    .awTabs{
+      display:flex;
+      flex-wrap:nowrap;
+      align-items:flex-end;
+      gap:.6rem 1.6rem;
+      position:relative;
+      overflow-x:auto;
+      overflow-y:hidden;
+      scrollbar-width:none;
+      -ms-overflow-style:none;
+      -webkit-overflow-scrolling:touch;
+    }
+    .awTabs::-webkit-scrollbar{display:none;}
+    .awTabBtn{
+      font-family:var(--fd);
+      font-size:clamp(1.4rem,3.2vw,2rem);
+      font-weight:900;
+      letter-spacing:-.01em;
+      background:none;
+      border:none;
+      padding:0 0 .3rem;
+      cursor:pointer;
+      color:var(--txd);
+      border-bottom:2px solid transparent;
+      transition:color .25s,border-color .25s;
+      flex-shrink:0;
+      white-space:nowrap;
+      opacity:0;
+      transform:translateY(20px);
+      animation:awTabIn .7s cubic-bezier(.22,1,.36,1) forwards;
+    }
+    .awTabBtn:nth-of-type(1){animation-delay:.05s;}
+    .awTabBtn:nth-of-type(2){animation-delay:.13s;}
+    .awTabBtn:nth-of-type(3){animation-delay:.21s;}
+    .awTabBtn:nth-of-type(4){animation-delay:.29s;}
+    .awTabBtn:nth-of-type(5){animation-delay:.37s;}
+    @keyframes awTabIn{
+      to{opacity:1;transform:translateY(0);}
+    }
+    @media (prefers-reduced-motion: reduce){
+      .awTabBtn{opacity:1;transform:none;animation:none;}
+    }
+    .awTabBtn:hover{color:var(--tx);}
+    .awTabBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
+    /* ── Sliding underline — a single element that glides between
+       tabs instead of the line just appearing under whichever one
+       is active. JS keeps its left/width synced to the active tab. ── */
+    .awTabIndicator{
+      position:absolute;
+      bottom:0;
+      height:2px;
+      background:var(--pg);
+      border-radius:1px;
+      transition:left .32s cubic-bezier(.22,1,.36,1),width .32s cubic-bezier(.22,1,.36,1);
+      pointer-events:none;
+    }
+    @media(max-width:560px){
+      .awTabBtn{font-size:1.15rem;}
+      .awTabs{gap:.5rem 1.1rem;}
+    }
+    /* ── ArtStation-style masonry grid — CSS columns so landscape,
+       square, and portrait artworks all sit at their natural aspect
+       ratio with zero gaps, on every device. Column count only
+       (not layout method) changes per breakpoint. ── */
     .awGrid{
-      max-width:1200px;
+      max-width:1300px;
       margin:2.5rem auto 0;
       padding:0 2rem;
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-      gap:1.4rem;
+      column-count:2;
+      column-gap:1rem;
     }
-    /* ── Card shell ── */
+    @media(min-width:640px){ .awGrid{column-count:3;column-gap:1.2rem;} }
+    @media(min-width:1025px){ .awGrid{column-count:4;column-gap:1.4rem;} }
+    @media(min-width:1440px){ .awGrid{column-count:5;} }
+    /* ── Card shell — kept as a generic reusable class (also used by
+       the Profile page's .pfGrid, which is unaffected by the masonry
+       rules below since those are scoped to .awGrid specifically) ── */
     .awCard{
       position:relative;
       background:var(--sur);
@@ -1827,17 +1960,27 @@
           0 16px 36px rgba(0,0,0,.13);
       }
       .awCard:hover .awImgWrap img{
-        transform:scale(1.04);
+        transform:scale(1.045);
       }
     }
     .awCard:active{transform:translateY(-1px) scale(.99);}
-    /* ── Square image wrapper ── */
+    /* ── Masonry-only overrides: each card sits inside its column with
+       no gap between the ones above/below it ── */
+    .awGrid .awCard{
+      break-inside:avoid;
+      -webkit-column-break-inside:avoid;
+      margin:0 0 1rem;
+    }
+    /* ── Image wrapper — square/cropped by default (Profile page), but
+       inside the masonry grid it's overridden to natural aspect ratio
+       so nothing gets cropped ── */
     .awImgWrap{
       width:100%;
       aspect-ratio:1;
       overflow:hidden;
       background:var(--sur2);
       flex-shrink:0;
+      line-height:0;
     }
     .awImgWrap img{
       width:100%;
@@ -1846,26 +1989,34 @@
       display:block;
       transition:transform .42s cubic-bezier(.22,1,.36,1);
     }
+    .awGrid .awImgWrap{aspect-ratio:auto;}
+    .awGrid .awImgWrap img{height:auto;object-fit:unset;}
     /* Shimmer skeleton while image loads */
     .awImgWrap.awLoading img{
       background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
       background-size:200% 100%;
       animation:imgShimmer 1.4s infinite;
+      min-height:140px;
     }
-    /* ── Text area below image ── */
+    /* ── Title + category overlaid directly on the artwork with a
+       bottom gradient scrim — ArtStation-style, no caption bar ── */
     .awMeta{
-      padding:.7rem .8rem .85rem;
+      position:absolute;
+      left:0;right:0;bottom:0;
+      padding:1.7rem .85rem .75rem;
       display:flex;
       flex-direction:column;
-      gap:.32rem;
-      border-top:1px solid var(--bdr);
+      gap:.25rem;
+      background:linear-gradient(to top, rgba(5,3,8,.88) 0%, rgba(5,3,8,.48) 55%, transparent 100%);
+      pointer-events:none;
     }
     .awName{
       font-family:var(--fm);
-      font-size:.76rem;
+      font-size:.78rem;
       font-weight:700;
-      letter-spacing:.06em;
-      color:var(--tx);
+      letter-spacing:.05em;
+      color:#fff;
+      text-shadow:0 1px 4px rgba(0,0,0,.45);
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
@@ -1873,9 +2024,10 @@
     }
     .awCat{
       font-family:var(--fm);
-      font-size:.63rem;
+      font-size:.62rem;
       letter-spacing:.12em;
-      color:var(--txd);
+      color:rgba(255,255,255,.78);
+      text-shadow:0 1px 4px rgba(0,0,0,.4);
       text-transform:uppercase;
       white-space:nowrap;
       overflow:hidden;
@@ -1883,7 +2035,7 @@
     }
     /* ── Empty state ── */
     .awEmpty{
-      max-width:1200px;
+      max-width:1300px;
       margin:3rem auto;
       padding:4rem 2rem;
       text-align:center;
@@ -2004,19 +2156,13 @@
     }
     .authCard{max-width:420px;width:100%;}
 
-    /* ── Mobile: single-column ── */
+    /* ── Small phones: tighten the masonry gutters a touch ── */
     @media(max-width:480px){
       .awGrid{
-        grid-template-columns:1fr;
-        gap:1rem;
+        column-gap:.7rem;
         padding:0 1.2rem;
       }
-    }
-    /* ── Small tablet: 2 columns ── */
-    @media(min-width:481px) and (max-width:767px){
-      .awGrid{
-        grid-template-columns:repeat(2,1fr);
-      }
+      .awGrid .awCard{margin-bottom:.7rem;}
     }
     /* About section still uses shInfo/shTxt/shCard for its text block */
     .shWrap{max-width:1200px;margin:2.5rem auto 0;padding:0 2rem;}
@@ -2424,9 +2570,7 @@ body{background:var(--bg);}
 .gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{
   background:#ffffff;border-color:var(--bdr);
 }
-.gNm{border-top:1px solid var(--bdr);}
 .awCard{background:#ffffff;border-color:var(--bdr);}
-.awMeta{border-top-color:var(--bdr);}
 
 /* Inputs / fields */
 .fgQ,.mIn,.aEA,.cpBarInput,.upCatWrap{background:#f6f7f9!important;color:var(--tx);border-color:var(--bdr)!important;}
@@ -3285,99 +3429,67 @@ body{background:var(--bg);}
 
 
 /* ── Keyframes ── */
-@keyframes zeoFloat {
-  0%,100% { transform: translateY(0px); }
-  50%      { transform: translateY(-6px); }
-}
 @keyframes zeoBubbleIn {
-  0%   { opacity: 0; transform: translateY(8px) scale(.95); }
-  60%  { opacity: 1; transform: translateY(-2px) scale(1.01); }
+  0%   { opacity: 0; transform: translateY(-8px) scale(.95); }
+  60%  { opacity: 1; transform: translateY(2px) scale(1.01); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes zeoBubbleOut {
   0%   { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(6px) scale(.95); }
+  100% { opacity: 0; transform: translateY(-6px) scale(.95); }
 }
 @keyframes zeoBubbleIdle {
   0%,100% { transform: translateY(0); }
   50%     { transform: translateY(-3px); }
 }
-@keyframes zeoPanelIn {
-  0%   { opacity: 0; transform: translateY(18px) scale(.96); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes zeoPanelOut {
-  0%   { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(18px) scale(.96); }
-}
 @keyframes zeoMsgIn {
   0%   { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0); }
 }
-@keyframes zeoGlow {
-  0%,100% { box-shadow: 0 0 18px rgba(99,179,237,.35), 0 8px 32px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.22); }
-  50%     { box-shadow: 0 0 32px rgba(99,179,237,.55), 0 8px 32px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.22); }
-}
 
-/* ── Return-home glide transition ── */
-#zeoBtn.zeoGliding {
-  transition:
-    right   1.4s cubic-bezier(0.4, 0, 0.2, 1),
-    bottom  1.4s cubic-bezier(0.4, 0, 0.2, 1),
-    transform .22s cubic-bezier(.34,1.56,.64,1),
-    box-shadow .22s ease;
-  /* Override the float + glow animation while gliding */
-  animation: zeoGlow 3.2s ease-in-out infinite !important;
-}
-
-/* ── Floating button — rests centred just above the bottom nav ── */
+/* ── Fixed spawn point — sits directly to the left of the
+   notification button, top row, same dimensions as .hNotifBtn.
+   No drag, no localStorage position, no return-home glide, no
+   idle animation — static, exactly like the notification icon. ── */
 #zeoBtn {
   position: fixed;
-  right: 24px;
-  bottom: 96px;
+  top: clamp(1rem, 2.6vw, 2rem);
+  right: calc(clamp(1rem, 2.6vw, 2rem) + clamp(42px, 8vw, 54px) + 10px);
   left: auto;
-  width: 56px;
-  height: 56px;
+  bottom: auto;
+  width: clamp(42px, 8vw, 54px);
+  height: clamp(42px, 8vw, 54px);
   border-radius: 50%;
   /* Background shows while image loads or as fallback SVG backdrop */
   background: linear-gradient(135deg, rgba(20,30,55,.95) 0%, rgba(15,22,44,.98) 100%);
   border: 2px solid rgba(99,179,237,.45);
   box-shadow: 0 0 18px rgba(99,179,237,.35), 0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.12);
   cursor: pointer;
-  z-index: 9000;
+  z-index: 1001;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #90cdf4;
-  font-size: 1.45rem;
+  font-size: 1.25rem;
   overflow: hidden; /* clips avatar image to circle */
   padding: 0;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  animation: zeoFloat 3.2s ease-in-out infinite, zeoGlow 3.2s ease-in-out infinite;
-  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, background .3s ease;
   user-select: none;
-  touch-action: none;
-  /* Will be overridden by drag / localStorage */
 }
 #zeoBtn:hover {
-  transform: scale(1.09);
-  box-shadow: 0 0 42px rgba(99,179,237,.7), 0 10px 36px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.28);
-  animation: zeoGlow 1.2s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(28,40,70,.95) 0%, rgba(20,30,58,.98) 100%);
 }
-#zeoBtn.zeoDragging {
-  animation: none;
-  transform: scale(1.06);
-  cursor: grabbing;
-}
-#zeoBtn.zeoOpen {
-  animation: zeoGlow 1.2s ease-in-out infinite;
+#zeoBtn:active {
+  transform: scale(.95);
 }
 
-/* Tooltip on hover */
+/* Tooltip on hover — sits below the button since the button now
+   lives at the top of the screen (above would clip off-viewport) ── */
 #zeoBtn .zeoTooltip {
   position: absolute;
-  bottom: calc(100% + 10px);
+  top: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
   background: rgba(20,30,55,.9);
@@ -3416,12 +3528,14 @@ body{background:var(--bg);}
   -webkit-user-drag: none;
 }
 
-/* ── Speech bubble ── */
+/* ── Speech bubble — sits below the bot's fixed spawn point,
+   tail points up at him so it reads as him speaking downward ── */
 .zeoBubble {
   position: fixed;
-  right: 24px; /* synced to button by JS */
+  top: calc(clamp(1rem, 2.6vw, 2rem) + clamp(42px, 8vw, 54px) + 12px);
+  right: calc(clamp(1rem, 2.6vw, 2rem) + clamp(42px, 8vw, 54px) + 10px);
   left: auto;
-  bottom: 90px;
+  bottom: auto;
   z-index: 8999;
   background: linear-gradient(135deg, rgba(20,30,55,.92) 0%, rgba(30,42,72,.92) 100%);
   border: 1px solid rgba(99,179,237,.28);
@@ -3447,50 +3561,37 @@ body{background:var(--bg);}
 .zeoBubble.zbHiding {
   animation: zeoBubbleOut .28s ease-in-out forwards;
 }
-/* Tail */
+/* Tail — points up toward the bot sitting above the bubble */
 .zeoBubble::after {
   content: '';
   position: absolute;
-  bottom: -7px;
+  top: -7px;
   right: 20px;
   left: auto;
   width: 12px;
   height: 7px;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  background: rgba(30,42,72,.92);
-  filter: drop-shadow(0 2px 3px rgba(99,179,237,.18));
+  clip-path: polygon(0 100%, 100% 100%, 50% 0);
+  background: rgba(20,30,55,.92);
+  filter: drop-shadow(0 -2px 3px rgba(99,179,237,.18));
 }
 
-/* ── Chat panel ── */
-#zeoChatPanel {
+/* ── Full-page AI Assistant panel — same slide-in convention as
+   the rest of the site's full pages (#fg, #profilePage, #commentsPage):
+   fixed, covers the whole viewport, slides in from the right via a
+   plain .open class toggle rather than a floating popup. ── */
+#zeoPage {
   position: fixed;
-  right: 24px;
-  left: auto;
-  bottom: 90px;
-  width: min(360px, calc(100vw - 48px));
-  max-height: min(520px, calc(100vh - 120px));
-  z-index: 9001;
+  inset: 0;
+  z-index: 9500;
+  background: linear-gradient(155deg, rgba(15,22,44,.98) 0%, rgba(18,26,52,.99) 100%);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(155deg, rgba(15,22,44,.96) 0%, rgba(18,26,52,.97) 100%);
-  border: 1px solid rgba(99,179,237,.22);
-  border-radius: 22px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 0 40px rgba(99,179,237,.14), 0 24px 60px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06);
+  transform: translateX(100%);
+  transition: transform .4s cubic-bezier(.22,1,.36,1);
   overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(18px) scale(.96);
-  transform-origin: bottom right;
 }
-#zeoChatPanel.zeoVisible {
-  animation: zeoPanelIn .3s cubic-bezier(.34,1.2,.64,1) forwards;
-  pointer-events: auto;
-}
-#zeoChatPanel.zeoHiding {
-  animation: zeoPanelOut .25s ease-in-out forwards;
-  pointer-events: none;
+#zeoPage.open {
+  transform: translateX(0);
 }
 
 /* Panel header */
@@ -3502,6 +3603,7 @@ body{background:var(--bg);}
   border-bottom: 1px solid rgba(99,179,237,.12);
   background: rgba(255,255,255,.03);
   flex-shrink: 0;
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
 }
 .zeoChatHeaderAvatar {
   width: 34px;
@@ -3713,22 +3815,10 @@ body{background:var(--bg);}
 
 /* Mobile adjustments */
 @media (max-width: 480px) {
-  #zeoBtn {
-    right: 16px;
-    left: auto;
-    bottom: 86px;
-  }
-  #zeoChatPanel {
-    right: 12px;
-    left: 12px;
-    width: auto;
-    bottom: 150px;
-    border-radius: 18px;
-  }
   .zeoBubble {
-    right: 16px;
-    left: auto;
     font-size: .78rem;
+    max-width: calc(100vw - 32px);
+    white-space: normal;
   }
 }
 
@@ -3812,7 +3902,7 @@ body{background:var(--bg);}
    <div class="bnItem bnProfile" id="bnProfile">
     <!-- LOGGED-OUT: generic face icon, redrawn to match the
          outline/stroke style of the other nav icons exactly -->
-    <button class="nLoginBtn" id="navLoginBtn" onclick="openAuthMod()" title="Login" aria-label="Login">
+    <button class="nLoginBtn" id="navLoginBtn" onclick="bnGoProfile(event)" title="Login" aria-label="Login">
      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="8" r="3.5"/>
       <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7"/>
@@ -3820,7 +3910,7 @@ body{background:var(--bg);}
     </button>
     <!-- LOGGED-IN: circular avatar with first letter (replaces login btn) -->
     <button class="nAvatarBtn" id="navAvatarBtn"
-      onclick="toggleProfilePopup(event)"
+      onclick="bnGoProfile(event)"
       title="Profile"
       aria-label="Open profile menu"
       aria-haspopup="true"
@@ -3873,6 +3963,20 @@ body{background:var(--bg);}
        └─ Admin Controls
        ========================================================= -->
   <section id="hero">
+
+    <!-- ── Brand badge — floating pill, present across the whole
+         front page (not just hero), top-left ── -->
+    <div class="hBadge fpFloat" aria-hidden="true">DigiArtz</div>
+
+    <!-- ── Notification button — floating icon, present across the
+         whole front page, top-right ── -->
+    <button class="hNotifBtn fpFloat" id="hNotifBtn" onclick="openNotifications()" title="Notifications" aria-label="Notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      <span class="hNotifDot" aria-hidden="true"></span>
+    </button>
 
     <!-- ── Left: Content ── -->
     <div class="hLeft">
@@ -3929,19 +4033,24 @@ body{background:var(--bg);}
 
   <!-- =========================================================
        ARTWORKS SECTION
-       Displays the 20 most recent artworks in a responsive grid.
-       ├─ Section Header (.awHdr)
+       Displays the 200 most recent artworks in a responsive ArtStation-
+       style masonry grid (full-bleed image, overlaid title/gradient).
+       ├─ Section Header (.awHdr) — Artworks / ComicArts tabs
        ├─ Admin Upload Button (.upBtn.adminOnly)
        ├─ Grid (.awGrid #awGrid)
-       │   └─ Cards (.awCard × up to 20) — injected by rebuildArtworks()
+       │   └─ Cards (.awCard × up to 200) — injected by renderAwGrid()
        └─ Empty State (.awEmpty #awEmpty)
        ========================================================= -->
   <section id="artworks">
-    <!-- ── Section Header ── -->
-    <div class="awHdr" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-      <div>
-        <div class="secT">ARTWORKS <span class="s">✦</span></div>
-        <div class="secSub">RECENT CREATIONS</div>
+    <!-- ── Section Header — tab switcher replaces the old title/subtitle ── -->
+    <div class="awHdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div class="awTabs" role="tablist" aria-label="Browse Artworks by category or Comic Arts">
+        <button class="awTabBtn active" id="awTabArt" role="tab" aria-selected="true" onclick="awSwitchTab('artworks')">Artworks</button>
+        <button class="awTabBtn" id="awTabCharacter" role="tab" aria-selected="false" onclick="awSwitchTab('character')">Character</button>
+        <button class="awTabBtn" id="awTabSketch" role="tab" aria-selected="false" onclick="awSwitchTab('sketch')">Sketch</button>
+        <button class="awTabBtn" id="awTabLandscape" role="tab" aria-selected="false" onclick="awSwitchTab('landscape')">Landscape</button>
+        <button class="awTabBtn" id="awTabComic" role="tab" aria-selected="false" onclick="awSwitchTab('comicarts')">ComicArts</button>
+        <span class="awTabIndicator" id="awTabIndicator" aria-hidden="true"></span>
       </div>
       <!-- Admin Upload Button (admin-only, hidden by default) -->
       <button class="upBtn adminOnly" onclick="openUp()" style="display:none;">↑ UPLOAD ART</button>
@@ -4153,13 +4262,12 @@ body{background:var(--bg);}
   <!-- =========================================================
        COMIC ARTS PAGE
        ├─ Header Bar (.subPgHdr pattern)
-       │   ├─ Back Button
-       │   └─ Title
+       │   └─ Title (no back button — closed via bottom nav tabs,
+       │       same as Instagram/YouTube tab screens)
        └─ Placeholder Body (.pgPlaceholder)
        ========================================================= -->
   <div id="comicArtsPage" role="dialog" aria-modal="true" aria-label="Comic Arts">
     <div class="subPgHdr">
-      <button class="subPgX" onclick="closeComicArts()" aria-label="Close Comic Arts">←</button>
       <div class="subPgTitle">COMIC ARTS <span class="s">◉</span></div>
     </div>
     <div class="pgPlaceholder">
@@ -4170,7 +4278,8 @@ body{background:var(--bg);}
 
   <!-- =========================================================
        USER PROFILE PAGE (#profilePage)
-       ├─ Header Bar (.subPgHdr pattern, back + title)
+       ├─ Header Bar (.subPgHdr pattern, title only — no back
+       │   button, closed via the bottom nav Profile/Home tab)
        ├─ Profile Header (.pfHead) — avatar, username, joined,
        │   Upload Artwork button (owner only — opens submission
        │   form only, never edit/delete)
@@ -4182,7 +4291,6 @@ body{background:var(--bg);}
        ========================================================= -->
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
     <div class="subPgHdr">
-      <button class="subPgX" onclick="closeProfilePage()" aria-label="Close profile">←</button>
       <div class="subPgTitle">PROFILE <span class="s">◉</span></div>
     </div>
     <div class="pfBdy">
@@ -4376,8 +4484,8 @@ body{background:var(--bg);}
   </div>
   <!-- =========================================================
        FULL GALLERY OVERLAY
-       ├─ Header Bar (.fgHdr)
-       │   ├─ Close Button (.fgX)
+       ├─ Header Bar (.fgHdr) — no close button, tab-switched via
+       │   the bottom nav (Instagram/YouTube style)
        │   ├─ Search Input (#fgQ)
        │   └─ Filter Button (.fgFltBtn)
        ├─ Content Body (.fgBdy #fgC) — grid rendered by renderFG()
@@ -4390,9 +4498,6 @@ body{background:var(--bg);}
        ========================================================= -->
   <div id="fg" role="dialog" aria-modal="true" aria-label="Full Gallery">
    <div class="fgHdr">
-    <button class="fgX" onclick="closeFG()" aria-label="Close gallery">
-     ✕
-    </button>
     <input class="fgQ" id="fgQ" oninput="renderFG()" placeholder="SEARCH ARTWORK..." type="text"/>
     <div class="fgFil">
      <button class="fgFltBtn" id="fgFltBtn" onclick="openFilterPanel()" title="FILTERS" aria-label="Open filters">
@@ -4465,8 +4570,8 @@ body{background:var(--bg);}
   <!-- =========================================================
        COMMENTS PAGE
        ├─ Header Bar (.cpHdr)
-       │   ├─ Back Button (.cpX)
-       │   └─ Title (.cpTitle)
+       │   └─ Title (.cpTitle) — no back button, tab-switched
+       │       via the bottom nav
        ├─ Comments List (#cpBody)
        │   └─ Empty State (#cpEmpty)
        └─ Composer Bar (#cpBar) — fixed at bottom when comments open
@@ -4478,7 +4583,6 @@ body{background:var(--bg);}
   <div id="commentsPage">
     <!-- Header -->
     <div class="cpHdr">
-      <button class="cpX" onclick="closeComments()" aria-label="Close comments">←</button>
       <div class="cpTitle">COMMENTS <span class="s">✦</span></div>
     </div>
 
@@ -5250,7 +5354,7 @@ body{background:var(--bg);}
     document.getElementById('sBanner').classList.add('show');
   }
 
-  let isAdm = false, upFile = null, images = [], cfg = {
+  let isAdm = false, upFile = null, images = [], comics = [], cfg = {
     hero_bg:        'https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000a74472309db623dd9eb1a83a.png',
     hero_bg_mobile: 'https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000ad88723095f174a725265f4d.png'
   };
@@ -5285,6 +5389,17 @@ body{background:var(--bg);}
         }
       });
     }catch(e){console.error(e);}
+
+    /* Site-wide comics — kept separate from the block above so that if
+       the comics table/policies aren't fully set up yet (ComicArts is
+       still in development), it can never break the artworks load.
+       The ComicArts tab just falls back to its empty state. */
+    try{
+      const{data:cmx,error:cmxErr}=await sb.from('comics').select('*').order('created_at',{ascending:false});
+      if(cmxErr) throw cmxErr;
+      comics=cmx||[];
+    }catch(e){ comics=[]; console.warn('ComicArts fetch skipped:',e.message||e); }
+    if(window.rebuildComicGrid) window.rebuildComicGrid(comics);
   }
 
   async function saveSetting(k,v){if(!sb)return;await sb.from('settings').upsert({key:k,value:v},{onConflict:'key'});}
@@ -5357,11 +5472,11 @@ body{background:var(--bg);}
 
   /* ── Gallery pagination state ──
      fgVisible: how many items are currently shown.
-     Initial load: 30 on mobile/tablet (< 1025px), 50 on desktop.
+     Initial load: 200 on every device (mobile, tablet, desktop).
      Each "Load More" press adds exactly 20 more, regardless of device. */
   var fgVisible = 0;
   var FG_LOAD_MORE_STEP = 20;
-  function fgInitialLoad(){ return window.innerWidth >= 1025 ? 50 : 30; }
+  function fgInitialLoad(){ return 200; }
 
   function renderFG(){
     /* Reset to initial batch whenever query/filters change */
@@ -5445,10 +5560,6 @@ body{background:var(--bg);}
     renderFG();
   }
   function openFG(){document.getElementById('fg').classList.add('open');document.body.style.overflow='hidden';fgVisible=fgInitialLoad();renderFG();
-    setTimeout(function(){
-      var q = document.getElementById('fgQ');
-      if(q) q.focus();
-    }, 50);
   }
   function closeFG(){
     document.getElementById('fg').classList.remove('open');
@@ -6136,6 +6247,14 @@ body{background:var(--bg);}
       applyBg();showToast('Mobile artwork updated ✶');
     }catch(err){showToast('Error: '+err.message);}
   }
+
+  /* ── Notification button ── placeholder until the admin broadcast
+     system is wired up: opens nothing yet, just confirms the button
+     is live. Swap this out once notifications actually exist. */
+  function openNotifications(){
+    showToast('Notifications — coming soon ✦');
+  }
+
     function applyBg(){
     /* Drive the new split-screen hero <img> elements */
     var imgUrl = cfg.hero_bg || '';
@@ -6725,19 +6844,55 @@ body{background:var(--bg);}
       if(el) el.classList.toggle('bnActive', bid === id);
     });
   }
+
+  /* Close every full-page section before opening the next one, so
+     tabs behave like Instagram/YouTube's bottom nav — exactly one
+     screen visible at a time, never stacked on top of each other. */
+  function bnCloseAllSections(){
+    closeFG();
+    closeComicArts();
+    closeComments();
+    closeProfilePage();
+    closeProfilePopup();
+    closeSubscription();
+    closeAuthMod();
+  }
+
   function bnGoHome(){
-    closeFG(); closeComicArts(); closeComments(); closeSubscription();
-    closeProfilePopup(); closeProfilePage(); closeAuthMod();
+    bnCloseAllSections();
     var hero = document.getElementById('hero');
     if(hero) hero.scrollIntoView({behavior:'smooth', block:'start'});
     else window.scrollTo({top:0, behavior:'smooth'});
     bnSetActive('bnHome');
   }
-  function bnGoGallery(){ closeProfilePage(); ddOpenGallery(); bnSetActive('bnGallery'); }
-  function bnGoComic(){ closeProfilePage(); openComicArts(); bnSetActive('bnComic'); }
-  function bnGoComment(){ closeProfilePage(); ddOpenComments(); bnSetActive('bnComment'); }
-  document.getElementById('navAvatarBtn').addEventListener('click', function(){ bnSetActive('bnProfile'); });
-  document.getElementById('navLoginBtn').addEventListener('click', function(){ bnSetActive('bnProfile'); });
+  function bnGoGallery(){
+    bnCloseAllSections();
+    ddOpenGallery();
+    bnSetActive('bnGallery');
+  }
+  function bnGoComic(){
+    bnCloseAllSections();
+    openComicArts();
+    bnSetActive('bnComic');
+  }
+  function bnGoComment(){
+    bnCloseAllSections();
+    ddOpenComments();
+    bnSetActive('bnComment');
+  }
+  function bnGoProfile(e){
+    /* Close every OTHER section, but leave the profile popup's own
+       open/closed state alone so tapping the avatar still toggles
+       it shut on a second tap instead of force-reopening it. */
+    closeFG();
+    closeComicArts();
+    closeComments();
+    closeProfilePage();
+    closeSubscription();
+    closeAuthMod();
+    if(currentUser){ toggleProfilePopup(e); } else { closeProfilePopup(); openAuthMod(); }
+    bnSetActive('bnProfile');
+  }
   /* Default state on load */
   bnSetActive('bnHome');
 
@@ -6835,11 +6990,6 @@ async function openComments(){
       thumbImg.src=currentLightboxImageSrc;
       thumb.style.display='flex';
     }
-    /* Focus input after transition */
-    setTimeout(function(){
-      if(!page.classList.contains('open')) return;
-      var inp=document.getElementById('cpBarInput'); if(inp) inp.focus();
-    }, 420);
   }
 
   function closeComments(){
@@ -7231,70 +7381,180 @@ async function openComments(){
     });
   }
 
-  /* Artworks grid — populate #awGrid with the 20 most recent artworks */
-  window.rebuildGalCarousels = function(artworks){
-    var grid  = document.getElementById('awGrid');
-    var empty = document.getElementById('awEmpty');
-    if(!grid) return;
+  /* ── Artworks / ComicArts tab state ──
+     awTab: which dataset is currently shown in #awGrid.
+     awArtworksCache / awComicsCache: last data each fetch delivered,
+     so switching tabs re-renders instantly with no extra fetch. */
+  var awTab = 'artworks';
+  var awArtworksCache = [];
+  var awComicsCache = [];
 
-    var list = sortByNewest(artworks.slice()).slice(0, 20);
-    grid.innerHTML = '';
+  /* Category tabs pull straight from awArtworksCache, filtered by
+     whichever category name the artwork was tagged with (comma-
+     separated categories are matched against, same as the gallery
+     filter elsewhere on the site). */
+  var AW_CATEGORY_TABS = {
+    character: 'Character',
+    sketch:    'Sketch',
+    landscape: 'Landscape'
+  };
+  var AW_TAB_BTN_IDS = {
+    artworks:  'awTabArt',
+    character: 'awTabCharacter',
+    sketch:    'awTabSketch',
+    landscape: 'awTabLandscape',
+    comicarts: 'awTabComic'
+  };
 
-    if(!list.length){
-      if(empty) empty.style.display = 'block';
-      return;
-    }
-    if(empty) empty.style.display = 'none';
+  function awCategoryList(catName){
+    return awArtworksCache.filter(function(item){
+      return (item.category || '').split(',').map(function(c){ return c.trim().toLowerCase(); }).indexOf(catName.toLowerCase()) !== -1;
+    });
+  }
 
-    list.forEach(function(art){
-      var fullSrc = art.image_url || '';
-      var name    = art.name || 'Untitled';
-      var cat     = (art.category || 'others').split(',')[0].trim();
-      var desc    = art.description || '';
-      var id      = art.id;
+  function awListForTab(tab){
+    if(tab === 'artworks') return awArtworksCache;
+    if(tab === 'comicarts') return awComicsCache;
+    return awCategoryList(AW_CATEGORY_TABS[tab] || tab);
+  }
 
-      var card = document.createElement('div');
-      card.className = 'awCard';
-      card.setAttribute('role','button');
-      card.setAttribute('tabindex','0');
-      card.setAttribute('aria-label','View ' + name);
+  /* Slide the underline to sit under whichever button is active,
+     instead of it just popping into place. */
+  function awUpdateIndicator(activeBtn){
+    var ind = document.getElementById('awTabIndicator');
+    if(!ind || !activeBtn) return;
+    ind.style.left  = activeBtn.offsetLeft + 'px';
+    ind.style.width = activeBtn.offsetWidth + 'px';
+  }
 
-      var wrap = document.createElement('div');
-      wrap.className = 'awImgWrap';
+  function awSwitchTab(tab){
+    if(awTab === tab) return;
+    awTab = tab;
+    var activeBtn = null;
+    Object.keys(AW_TAB_BTN_IDS).forEach(function(key){
+      var btn = document.getElementById(AW_TAB_BTN_IDS[key]);
+      if(!btn) return;
+      var isActive = key === tab;
+      btn.classList.toggle('active', isActive);
+      if(isActive) activeBtn = btn;
+    });
+    awUpdateIndicator(activeBtn);
+    if(activeBtn) activeBtn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+    renderAwGrid(awListForTab(tab), tab);
+  }
 
-      var img = document.createElement('img');
-      img.src = getThumbnailUrl(fullSrc);
-      img.alt = name;
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.draggable = false;
+  /* Position the indicator under the default active tab once layout
+     has settled (fonts etc.), and keep it aligned on resize. */
+  function awInitIndicator(){
+    awUpdateIndicator(document.getElementById(AW_TAB_BTN_IDS[awTab]));
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', awInitIndicator);
+  }else{
+    awInitIndicator();
+  }
+  window.addEventListener('resize', awInitIndicator);
 
-      wrap.appendChild(img);
+  /* Build one .awCard for either an artwork or a comic — same markup/
+     styling (ArtStation-style masonry card), different data mapping
+     and click target. */
+  function buildAwCard(item, type){
+    var isComic = type === 'comicarts';
+    var fullSrc = isComic ? (item.cover_image_url || '') : (item.image_url || '');
+    var name    = isComic ? (item.title || 'Untitled') : (item.name || 'Untitled');
+    var cat     = isComic ? 'comic' : (item.category || 'others').split(',')[0].trim();
+    var desc    = item.description || '';
+    var id      = item.id;
 
-      var meta = document.createElement('div');
-      meta.className = 'awMeta';
+    var card = document.createElement('div');
+    card.className = 'awCard';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label','View ' + name);
 
-      var nm = document.createElement('div');
-      nm.className = 'awName';
-      nm.textContent = name;
+    var wrap = document.createElement('div');
+    wrap.className = 'awImgWrap';
 
-      var ct = document.createElement('div');
-      ct.className = 'awCat';
-      ct.textContent = cat;
+    var img = document.createElement('img');
+    img.src = getThumbnailUrl(fullSrc);
+    img.alt = name;
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.draggable = false;
 
-      meta.appendChild(nm);
-      meta.appendChild(ct);
-      card.appendChild(wrap);
-      card.appendChild(meta);
+    wrap.appendChild(img);
 
-      /* Click / keyboard open artwork modal */
+    var meta = document.createElement('div');
+    meta.className = 'awMeta';
+
+    var nm = document.createElement('div');
+    nm.className = 'awName';
+    nm.textContent = name;
+
+    var ct = document.createElement('div');
+    ct.className = 'awCat';
+    ct.textContent = cat;
+
+    meta.appendChild(nm);
+    meta.appendChild(ct);
+    card.appendChild(wrap);
+    card.appendChild(meta);
+
+    if(isComic){
+      card.onclick = function(){ openComicById(id); };
+      card.onkeydown = function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openComicById(id); } };
+    }else{
       (function(s,n,c,d,i){
         card.onclick = function(){ openLB(s,n,c,d,i); };
         card.onkeydown = function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openLB(s,n,c,d,i); } };
       })(fullSrc, name, cat, desc, id);
+    }
+    return card;
+  }
 
-      grid.appendChild(card);
+  /* Render whichever dataset is passed into #awGrid — used for both
+     tabs, only actually painting if that tab is the active one. */
+  function renderAwGrid(list, type){
+    var grid  = document.getElementById('awGrid');
+    var empty = document.getElementById('awEmpty');
+    if(!grid) return;
+
+    var sorted = sortByNewest((list||[]).slice()).slice(0, 200);
+    grid.innerHTML = '';
+
+    if(!sorted.length){
+      if(empty){
+        var emptyMsgs = {
+          comicarts: 'COMIC ARTS — COMING SOON',
+          character: 'NO CHARACTER ART YET',
+          sketch:    'NO SKETCHES YET',
+          landscape: 'NO LANDSCAPE ART YET'
+        };
+        empty.textContent = emptyMsgs[type] || 'NO ARTWORK YET';
+        empty.style.display = 'block';
+      }
+      return;
+    }
+    if(empty) empty.style.display = 'none';
+
+    sorted.forEach(function(item){
+      grid.appendChild(buildAwCard(item, type));
     });
+  }
+
+  /* Artworks tab — called by renderHome() whenever `images` changes */
+  window.rebuildGalCarousels = function(artworks){
+    awArtworksCache = artworks || [];
+    if(awTab !== 'comicarts') renderAwGrid(awListForTab(awTab), awTab);
+  };
+
+  /* ComicArts tab — called by loadDB() whenever `comics` changes.
+     ComicArts is still in development: this simply keeps the tab wired
+     up to the live `comics` table so it goes fully live the moment
+     content exists, with no further code changes needed. */
+  window.rebuildComicGrid = function(list){
+    awComicsCache = list || [];
+    if(awTab === 'comicarts') renderAwGrid(awComicsCache, 'comicarts');
   };
 
   /* Populate with empty list on first paint — rebuilt after DB loads */
@@ -8261,11 +8521,12 @@ window.ZEO_DATA = {
   <span class="zeoTooltip">Need Help?</span>
 </button>
 
-<!-- Speech bubble (rendered by JS, moved around by JS) -->
+<!-- Speech bubble (fixed position via CSS, text set by JS) -->
 <div class="zeoBubble" id="zeoBubble" aria-hidden="true" role="status"></div>
 
-<!-- Chat panel -->
-<div id="zeoChatPanel" role="dialog" aria-label="Zeo AI Assistant" aria-modal="true">
+<!-- AI Assistant — full page (opens on tap, slides in like the
+     rest of the site's full pages instead of a small popup) -->
+<div id="zeoPage" role="dialog" aria-label="Zeo AI Assistant" aria-modal="true">
   <div class="zeoChatHeader">
     <div class="zeoChatHeaderAvatar" aria-hidden="true">🤖</div>
     <div class="zeoChatHeaderInfo">
@@ -8284,7 +8545,7 @@ window.ZEO_DATA = {
   'use strict';
 
   var btn       = document.getElementById('zeoBtn');
-  var panel     = document.getElementById('zeoChatPanel');
+  var page      = document.getElementById('zeoPage');
   var closeBtn  = document.getElementById('zeoChatClose');
   var body      = document.getElementById('zeoChatBody');
   var bubble    = document.getElementById('zeoBubble');
@@ -8296,141 +8557,10 @@ window.ZEO_DATA = {
   var bubblePaused = false;
   var lastBubbleIdx = -1;
 
-  /* DRAGGABLE BUTTON */
-  var drag = {
-    active: false,
-    startX: 0, startY: 0,
-    origLeft: 0, origBottom: 0,
-    wasDrag: false
-  };
-
-  /* Load saved position from localStorage */
-  (function loadPos() {
-    try {
-      var saved = localStorage.getItem('zeo_btn_pos');
-      if (saved) {
-        var pos = JSON.parse(saved);
-        /* Discard any stale left-based saved position */
-        if (typeof pos.right === 'undefined') {
-          localStorage.removeItem('zeo_btn_pos');
-          btn.style.right  = homeRight()  + 'px';
-          btn.style.bottom = homeBottom() + 'px';
-          btn.style.left = 'auto'; btn.style.top  = 'auto';
-          return;
-        }
-        var maxRight  = window.innerWidth  - btn.offsetWidth  - 8;
-        var maxBottom = window.innerHeight - btn.offsetHeight - 8;
-        btn.style.right  = Math.min(Math.max(8, pos.right),  maxRight)  + 'px';
-        btn.style.bottom = Math.min(Math.max(8, pos.bottom), maxBottom) + 'px';
-      } else {
-        /* No saved position — rest centred above the bottom nav */
-        btn.style.right  = homeRight()  + 'px';
-        btn.style.bottom = homeBottom() + 'px';
-      }
-      /* Always force right-side anchoring — never left */
-      btn.style.left = 'auto';
-      btn.style.top  = 'auto';
-    } catch(e) {
-      btn.style.left = 'auto';
-    }
-  })();
-
-  function savePos(right, bottom) {
-    try {
-      localStorage.setItem('zeo_btn_pos', JSON.stringify({ right: right, bottom: bottom }));
-    } catch(e) {}
-  }
-
-  /* Sync floating UI positions to the button */
-  function syncUI() {
-    var rect   = btn.getBoundingClientRect();
-    var btnTop = rect.top;
-
-    /* Speech bubble — above the button, right-aligned to btn right edge */
-    var bubbleW  = bubble.offsetWidth || 160;
-    var bRight   = window.innerWidth - rect.right; /* distance from right edge of viewport */
-    bRight = Math.max(8, bRight);
-    /* Prevent bubble going off left edge */
-    if (window.innerWidth - bRight - bubbleW < 8) {
-      bRight = window.innerWidth - bubbleW - 8;
-    }
-    bubble.style.right  = bRight + 'px';
-    bubble.style.left   = 'auto';
-    bubble.style.bottom = (window.innerHeight - btnTop + 10) + 'px';
-    bubble.style.top    = 'auto';
-
-    /* Chat panel — right-aligned to button */
-    var panelW = Math.min(360, window.innerWidth - 48);
-    var pRight = Math.max(8, window.innerWidth - rect.right);
-    /* Prevent panel going off left edge */
-    if (window.innerWidth - pRight - panelW < 8) pRight = window.innerWidth - panelW - 8;
-    panel.style.right  = pRight + 'px';
-    panel.style.left   = 'auto';
-    panel.style.bottom = (window.innerHeight - btnTop + 10) + 'px';
-    panel.style.top    = 'auto';
-  }
-
-  /* Pointer down — start potential drag */
-  function onPointerDown(e) {
-    cancelReturn(); /* abort any in-progress return animation */
-    pauseBubble();  /* suppress bubbles while user is interacting */
-    drag.active  = true;
-    drag.wasDrag = false;
-    var rect = btn.getBoundingClientRect();
-    drag.startX    = e.clientX;
-    drag.startY    = e.clientY;
-    drag.origRight  = window.innerWidth - rect.right;
-    drag.origBottom = window.innerHeight - rect.bottom;
-    btn.classList.add('zeoDragging');
-    /* Prevent text selection during drag */
-    e.preventDefault();
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup',   onPointerUp);
-  }
-
-  function onPointerMove(e) {
-    if (!drag.active) return;
-    var dx = e.clientX - drag.startX;
-    var dy = e.clientY - drag.startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) drag.wasDrag = true;
-
-    var newRight  = drag.origRight  - dx; /* inverted: drag right = smaller right */
-    var newBottom = drag.origBottom - dy; /* inverted: drag down = smaller bottom */
-
-    /* Clamp inside viewport */
-    var maxRight  = window.innerWidth  - btn.offsetWidth  - 8;
-    var maxBottom = window.innerHeight - btn.offsetHeight - 8;
-    newRight  = Math.min(Math.max(8, newRight),  maxRight);
-    newBottom = Math.min(Math.max(8, newBottom), maxBottom);
-
-    btn.style.right  = newRight  + 'px';
-    btn.style.bottom = newBottom + 'px';
-    btn.style.left = 'auto';
-    btn.style.top  = 'auto';
-    syncUI();
-  }
-
-  function onPointerUp(e) {
-    if (!drag.active) return;
-    drag.active = false;
-    btn.classList.remove('zeoDragging');
-    window.removeEventListener('pointermove', onPointerMove);
-    window.removeEventListener('pointerup',   onPointerUp);
-    if (drag.wasDrag) {
-      /* Save drag position; only start return if chat is closed */
-      savePos(parseInt(btn.style.right, 10), parseInt(btn.style.bottom, 10));
-      if (!isOpen) {
-        scheduleReturn(); /* bubbles stay paused; resumeBubble() called inside scheduleReturn when done */
-      }
-      /* If chat is open, return will be scheduled when the user closes it (see closeChat) */
-    } else {
-      /* Was a click, not a drag — toggle chat (bubble pause handled by openChat/closeChat) */
-      resumeBubble();
-      toggleChat();
-    }
-  }
-
-  btn.addEventListener('pointerdown', onPointerDown);
+  /* Zeo has one fixed spawn point — left of the notification button,
+     set entirely in CSS (#zeoBtn). No drag, no saved position, no
+     return-home glide: it lives here the same way the notification
+     icon does. */
 
   /* Clicking bubble dismisses it and resets the cycle */
   bubble.addEventListener('click', function() {
@@ -8445,79 +8575,10 @@ window.ZEO_DATA = {
     }
   });
 
-  /* Return-home — after drag, wait 4s then glide button back to default
-     position, which rests directly above the Profile icon in the
-     bottom nav (right-aligned), instead of a fixed corner or centre. */
-  function homeRight() {
-    var profile = document.getElementById('bnProfile');
-    if (profile) {
-      var r = profile.getBoundingClientRect();
-      var centerX = r.left + r.width / 2;
-      return Math.round(window.innerWidth - centerX - btn.offsetWidth / 2);
-    }
-    return 24;
-  }
-  function homeBottom() {
-    var nav = document.getElementById('bnNav');
-    if (nav) {
-      var r = nav.getBoundingClientRect();
-      return Math.round((window.innerHeight - r.top) + 14);
-    }
-    return 96;
-  }
-  var returnTimer   = null; /* 4s idle countdown */
-  var returnInFlight = false; /* true while glide is running */
-
-  /* Cancel any in-progress return sequence */
-  function cancelReturn() {
-    clearTimeout(returnTimer);
-    returnTimer = null;
-    if (returnInFlight) {
-      returnInFlight = false;
-      btn.classList.remove('zeoGliding');
-    }
-  }
-
-  /* Glide button to a right+bottom position over ~1.4s,
-     then call onDone after the transition completes. */
-  function glideTo(toRight, toBottom, onDone) {
-    btn.classList.add('zeoGliding');
-    /* Force reflow so transition picks up the new values */
-    btn.getBoundingClientRect();
-    btn.style.right  = toRight  + 'px';
-    btn.style.bottom = toBottom + 'px';
-    btn.style.left   = 'auto';
-    btn.style.top    = 'auto';
-    syncUI();
-
-    /* 1400ms matches the CSS transition duration */
-    returnTimer = setTimeout(function() {
-      if (onDone) onDone();
-    }, 1400);
-  }
-
-  /* Kick off the return after a drag — straight glide directly to home */
-  function scheduleReturn() {
-    cancelReturn();
-    returnInFlight = false;
-    returnTimer = setTimeout(function() {
-      var hRight  = homeRight();
-      var hBottom = homeBottom();
-      /* Check button isn't already home */
-      var curRight  = parseInt(btn.style.right,  10);
-      var curBottom = parseInt(btn.style.bottom, 10);
-      if (curRight === hRight && curBottom === hBottom) return;
-
-      returnInFlight = true;
-      glideTo(hRight, hBottom, function() {
-        returnInFlight = false;
-        btn.classList.remove('zeoGliding');
-        savePos(hRight, hBottom);
-        syncUI();
-        if (!isOpen) resumeBubble();
-      });
-    }, 4000); /* 4s idle wait */
-  }
+  /* Tapping the bot opens the full-page assistant */
+  btn.addEventListener('click', function() {
+    toggleChat();
+  });
 
   /* SPEECH BUBBLE CYCLE */
   var BUBBLE_VISIBLE_MS = 3000;
@@ -8542,7 +8603,6 @@ window.ZEO_DATA = {
     bubble.textContent = msg;
     bubble.classList.remove('zbHiding');
     bubble.classList.add('zbVisible');
-    syncUI();
 
     /* After visible duration, hide */
     bubbleTimer = setTimeout(function() {
@@ -8597,35 +8657,22 @@ window.ZEO_DATA = {
     }, 2000);
   };
 
-  /* CHAT PANEL OPEN / CLOSE */
+  /* FULL PAGE OPEN / CLOSE */
   function openChat() {
     isOpen = true;
     pauseBubble();
-    syncUI();
-    panel.classList.remove('zeoHiding');
-    panel.classList.add('zeoVisible');
-    btn.classList.add('zeoOpen');
+    page.classList.add('open');
+    document.body.style.overflow = 'hidden';
     btn.setAttribute('aria-expanded', 'true');
     renderScreen('welcome');
   }
 
   function closeChat() {
     isOpen = false;
-    panel.classList.remove('zeoVisible');
-    panel.classList.add('zeoHiding');
-    btn.classList.remove('zeoOpen');
+    page.classList.remove('open');
+    document.body.style.overflow = '';
     btn.setAttribute('aria-expanded', 'false');
-    setTimeout(function() {
-      panel.classList.remove('zeoHiding');
-      /* If bot was dragged away from home while chat was open, return it now */
-      var curRight  = parseInt(btn.style.right,  10);
-      var curBottom = parseInt(btn.style.bottom, 10);
-      if (curRight !== homeRight() || curBottom !== homeBottom()) {
-        scheduleReturn(); /* resumes bubbles after glide */
-      } else {
-        resumeBubble();
-      }
-    }, 280);
+    resumeBubble();
   }
 
   function toggleChat() {
@@ -8765,22 +8812,6 @@ window.ZEO_DATA = {
     /* Scroll to bottom */
     body.scrollTop = body.scrollHeight;
   }
-
-  /* WINDOW RESIZE — re-sync UI positions */
-  window.addEventListener('resize', function() {
-    /* Clamp button on resize — always right-anchored */
-    var curRight  = parseInt(btn.style.right,  10);
-    var curBottom = parseInt(btn.style.bottom, 10);
-    /* If right is not set yet, default to 24 */
-    if (isNaN(curRight))  curRight  = 24;
-    if (isNaN(curBottom)) curBottom = 24;
-    var maxRight  = window.innerWidth  - btn.offsetWidth  - 8;
-    var maxBottom = window.innerHeight - btn.offsetHeight - 8;
-    btn.style.right  = Math.min(Math.max(8, curRight),  maxRight)  + 'px';
-    btn.style.bottom = Math.min(Math.max(8, curBottom), maxBottom) + 'px';
-    btn.style.left = 'auto';
-    if (isOpen) syncUI();
-  });
 
 })();
 </script>

@@ -540,13 +540,14 @@
     /* Keep homeGrid hidden — data source only for Full Gallery overlay */
     .gGrid{display:none;}
 
-    /* ── ArtStation-style masonry card: full-bleed image at its
-       natural aspect ratio (landscape/square/portrait all fit with
-       no crop, no gaps) with the title overlaid via bottom scrim ── */
-    .gItem{break-inside:avoid;margin-bottom:.8rem;position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;line-height:0;}
+    /* ── ArtStation-style card: full-bleed image cropped to a uniform
+       aspect ratio so cards sit in a standard row-major grid (correct
+       newest→oldest reading order) with the title overlaid via bottom
+       scrim ── */
+    .gItem{position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;line-height:0;}
     .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
     .gItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
-    .gItem img{width:100%;display:block;height:auto;transition:transform .4s;}
+    .gItem img{width:100%;aspect-ratio:1;display:block;height:auto;object-fit:cover;transition:transform .4s;}
     .gItem img[data-src]{background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);background-size:200% 100%;animation:imgShimmer 1.4s infinite;min-height:120px;}
     @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
     .gItem:hover img{transform:scale(1.04);}
@@ -564,7 +565,7 @@
     .cBadgeWrap{position:absolute;top:.4rem;left:.4rem;z-index:3;display:flex;gap:.3rem;pointer-events:none;}
     .cBadge{background:#ffffff;border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:#1a1c22;padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
     .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,#1a1c22);border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
-    @media(max-width:640px){.gItem{margin-bottom:.5rem}}
+
 
     /* ── Full gallery overlay — slide-in panel ── */
     #fg{position:fixed;inset:0;z-index:500;background:var(--bg);overflow-y:auto;transform:translateX(100%);transition:transform .45s cubic-bezier(.22,1,.36,1);}
@@ -723,29 +724,28 @@
 
     .fgBdy{padding:1.5rem;}
     .fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;}
-    /* ── Masonry grid via CSS columns — column-count matches the user's
-       chosen density (fg2/fg3/fg4). Reading order flows down each
-       column before moving to the next, which is the trade-off every
-       masonry layout (Pinterest, ArtStation, etc.) makes to get
-       gapless mixed aspect-ratio images. ── */
+    /* ── Grid via CSS Grid — column count matches the user's chosen
+       density (fg2/fg3/fg4). Reading order flows left-to-right, top-to-
+       bottom (row-major), matching newest→oldest sort order. Uniform
+       row heights trade off the old gapless masonry waterfall for
+       correct chronological reading order. ── */
     .fgGrid{
-      column-gap:.8rem;
+      display:grid;
+      gap:.8rem;
     }
-    .fgGrid .gItem{margin-bottom:.8rem;}
-    .fg2{column-count:2;}
-    .fg3{column-count:3;}
-    .fg4{column-count:4;}
+    .fg2{grid-template-columns:repeat(2,1fr);}
+    .fg3{grid-template-columns:repeat(3,1fr);}
+    .fg4{grid-template-columns:repeat(4,1fr);}
     /* Gallery overlay responsive rules (also part of § 9b) */
     @media(max-width:900px){
-      .fg4{column-count:3}
+      .fg4{grid-template-columns:repeat(3,1fr);}
     }
     @media(max-width:640px){
       .fgHdr{padding:.8rem 1rem}
-      .fg4{column-count:2}
-      .fg3{column-count:2}
-      .fg2{column-count:2}
-      .fgGrid{column-gap:.5rem}
-      .fgGrid .gItem{margin-bottom:.5rem;}
+      .fg4{grid-template-columns:repeat(2,1fr);}
+      .fg3{grid-template-columns:repeat(2,1fr);}
+      .fg2{grid-template-columns:repeat(2,1fr);}
+      .fgGrid{gap:.5rem;}
     }
 
     #artModal{
@@ -2168,20 +2168,21 @@
       .awTabBtn{font-size:1.15rem;}
       .awTabs{gap:.5rem 1.1rem;}
     }
-    /* ── ArtStation-style masonry grid — CSS columns so landscape,
-       square, and portrait artworks all sit at their natural aspect
-       ratio with zero gaps, on every device. Column count only
-       (not layout method) changes per breakpoint. ── */
+    /* ── ArtStation-style grid — standard CSS Grid so cards flow
+       left-to-right, top-to-bottom (row-major), matching newest→oldest
+       sort order, on every device. Column count only changes per
+       breakpoint. ── */
     .awGrid{
       max-width:1300px;
       margin:2.5rem auto 0;
       padding:0 2rem;
-      column-count:2;
-      column-gap:1rem;
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:1rem;
     }
-    @media(min-width:640px){ .awGrid{column-count:3;column-gap:1.2rem;} }
-    @media(min-width:1025px){ .awGrid{column-count:4;column-gap:1.4rem;} }
-    @media(min-width:1440px){ .awGrid{column-count:5;} }
+    @media(min-width:640px){ .awGrid{grid-template-columns:repeat(3,1fr);gap:1.2rem;} }
+    @media(min-width:1025px){ .awGrid{grid-template-columns:repeat(4,1fr);gap:1.4rem;} }
+    @media(min-width:1440px){ .awGrid{grid-template-columns:repeat(5,1fr);} }
     /* ── Card shell — kept as a generic reusable class (also used by
        the Profile page's .pfGrid, which is unaffected by the masonry
        rules below since those are scoped to .awGrid specifically) ── */
@@ -2212,16 +2213,8 @@
       }
     }
     .awCard:active{transform:translateY(-1px) scale(.99);}
-    /* ── Masonry-only overrides: each card sits inside its column with
-       no gap between the ones above/below it ── */
-    .awGrid .awCard{
-      break-inside:avoid;
-      -webkit-column-break-inside:avoid;
-      margin:0 0 1rem;
-    }
-    /* ── Image wrapper — square/cropped by default (Profile page), but
-       inside the masonry grid it's overridden to natural aspect ratio
-       so nothing gets cropped ── */
+    /* ── Image wrapper — square/cropped so every card is a uniform
+       height, giving correct row-major (newest→oldest) reading order ── */
     .awImgWrap{
       width:100%;
       aspect-ratio:1;
@@ -2237,8 +2230,6 @@
       display:block;
       transition:transform .42s cubic-bezier(.22,1,.36,1);
     }
-    .awGrid .awImgWrap{aspect-ratio:auto;}
-    .awGrid .awImgWrap img{height:auto;object-fit:unset;}
     /* Shimmer skeleton while image loads */
     .awImgWrap.awLoading img{
       background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
@@ -2553,13 +2544,12 @@
       .laSocialBtn{ flex:1 1 calc(50% - .35rem); }
     }
 
-    /* ── Small phones: tighten the masonry gutters a touch ── */
+    /* ── Small phones: tighten the grid gutters a touch ── */
     @media(max-width:480px){
       .awGrid{
-        column-gap:.7rem;
+        gap:.7rem;
         padding:0 1.2rem;
       }
-      .awGrid .awCard{margin-bottom:.7rem;}
     }
     /* About section still uses shInfo/shTxt/shCard for its text block */
     .shWrap{max-width:1200px;margin:2.5rem auto 0;padding:0 2rem;}

@@ -20,7 +20,7 @@
     gtag('config', 'G-21DL9JWJ58');
   </script>
   <!-- End Google Analytics (GA4) -->
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta content="width=device-width, initial-scale=1.0, interactive-widget=overlays-content" name="viewport"/>
   <title>
    KOE — Art Has No Limits
   </title>
@@ -91,10 +91,10 @@
        FLOATING BOTTOM NAVIGATION
        ├─ Bar (#bnNav) — near-full-width pill, icon-only
        │   └─ Items (.bnItem) × 5 — circular icon buttons,
-       │       Home / Gallery / Comic / Comment / Profile,
+       │       Home / Gallery / Comic / Community / Profile,
        │       evenly spaced with justify-content:space-between
        │   z-index sits above every full-page panel (gallery,
-       │   comments, comic, templates, subscription) so the bar
+       │   comments, comic, subscription) so the bar
        │   stays visible/usable across the whole site, not just
        │   the hero section.
        (AI Assistant button #zeoBtn now lives up top, left of the
@@ -109,9 +109,9 @@
       display:flex;align-items:center;justify-content:space-between;
       padding:.55rem 1rem;
       border-radius:999px;
-      background:linear-gradient(160deg,color-mix(in srgb,var(--sur) 88%,transparent) 0%,color-mix(in srgb,var(--sur2) 88%,transparent) 100%);
-      border:1px solid var(--bdr);
-      box-shadow:0 10px 32px rgba(5,3,8,.45), inset 0 1px 0 color-mix(in srgb,var(--tc) 8%,transparent);
+      background:linear-gradient(160deg,rgba(19,19,32,.92) 0%,rgba(13,13,22,.94) 100%);
+      border:1px solid rgba(139,92,246,.22);
+      box-shadow:0 10px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(139,92,246,.08);
       backdrop-filter:blur(18px);
       -webkit-backdrop-filter:blur(18px);
       will-change:transform;
@@ -123,14 +123,14 @@
       width:58px;height:58px;
       border-radius:50%;
       background:none;border:none;cursor:pointer;
-      color:var(--txd);
+      color:rgba(214,212,232,.62);
       transition:color .22s,background .22s,transform .15s;
     }
     .bnItem svg{width:26px;height:26px;display:block;stroke-width:1.8;transition:transform .22s cubic-bezier(.34,1.56,.64,1);}
-    .bnItem:hover{color:var(--ps);background:color-mix(in srgb,var(--tc) 8%,transparent);}
+    .bnItem:hover{color:#f5f4fb;background:rgba(139,92,246,.14);}
     .bnItem:active{transform:scale(.92);}
-    .bnItem:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    .bnItem.bnActive{color:var(--pg);background:color-mix(in srgb,var(--tc) 12%,transparent);}
+    .bnItem:focus-visible{outline:2px solid #8b5cf6;outline-offset:2px;}
+    .bnItem.bnActive{color:#b9a3fb;background:rgba(139,92,246,.18);}
     .bnItem.bnActive svg{transform:translateY(-1px) scale(1.08);}
     .bnItem.bnActive::after{
       content:'';
@@ -139,8 +139,8 @@
       width:4px;height:4px;
       transform:translateX(-50%);
       border-radius:50%;
-      background:var(--pg);
-      box-shadow:0 0 6px var(--pg);
+      background:#8b5cf6;
+      box-shadow:0 0 6px #8b5cf6;
     }
     /* Profile item hosts the existing login/avatar swap buttons,
        sized to match the other icons exactly, still circular */
@@ -323,11 +323,11 @@
     }
 
     /* ── Front-page floating widgets — brand badge + notification
-       button. Fixed like the bottom nav so they stay put over the
-       whole home page scroll (hero through the last section) and
-       never disappear; only absent from full-screen overlay panels
-       since those simply paint over everything, same as the rest
-       of the page underneath them.
+       button. Fixed like the bottom nav, but only shown while the
+       hero/main section is in view and no full-page overlay panel
+       (login, subscription, comic arts, etc.) is open — see the
+       hero-only-widgets script near the end of the file for the
+       show/hide logic (adds/removes the .heroOut class below).
        Sizing uses clamp() throughout instead of a single breakpoint
        so both widgets scale smoothly across phones, tablets, and
        desktops rather than snapping at one fixed width. ── */
@@ -345,6 +345,16 @@
       border: 1px solid rgba(255,255,255,.35);
       box-shadow: 0 10px 32px rgba(5,3,8,.35), inset 0 1px 0 rgba(255,255,255,.15);
       color: #ffffff;
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    /* Hidden once the hero section has scrolled out of view — these
+       widgets (brand badge, notification button, and #zeoBtn below)
+       belong to the main/hero page only, not every section. */
+    .fpFloat.heroOut,
+    #zeoBtn.heroOut {
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
     }
 
     /* ── Brand badge — top-left ── */
@@ -984,19 +994,20 @@
     body.admin #about .aQuote{display:none;}
     body.admin .aEA{display:block;}
 
-    #commentsPage{
+    #communityPage{
   position:fixed;inset:0;z-index:500;
   background:var(--bg);
   display:flex;flex-direction:column;
   transform:translateX(100%);
   transition:transform .45s cubic-bezier(.22,1,.36,1);
 }
-    #commentsPage.open{transform:translateX(0);}
+    #communityPage.open{transform:translateX(0);}
 
-    /* Header bar */
+    /* Header bar — shared by the Art Talk chat sub-header
+       (.cpHdr is reused inside #cmChatView) */
     .cpHdr{
       position:sticky;top:0;z-index:10;
-      background:rgba(5,3,8,.96);
+      background:color-mix(in srgb,var(--sur) 92%,transparent);
       backdrop-filter:blur(12px);
       border-bottom:1px solid var(--bdr);
       padding:1rem 1.5rem;
@@ -1005,6 +1016,27 @@
     }
     .cpTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;letter-spacing:.15em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
     .cpTitle .s{color:var(--pg);font-size:.6em;}
+
+    /* ── Top tab bar (Community / Friends) ── */
+    .cmHdr{
+      position:sticky;top:0;z-index:10;
+      background:color-mix(in srgb,var(--sur) 92%,transparent);
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--bdr);
+      padding:1.1rem 1.5rem 0;
+      flex-shrink:0;
+    }
+    .cmTabs{display:flex;gap:1.6rem;}
+    .cmTab{
+      background:none;border:none;cursor:pointer;
+      font-family:var(--fb);font-size:.98rem;font-weight:600;
+      color:var(--txd);
+      padding:0 0 .9rem;
+      border-bottom:2px solid transparent;
+      transition:color .25s,border-color .25s;
+    }
+    .cmTab.active{color:var(--tx);border-color:var(--ps);}
+    .cmTab:hover{color:var(--tx);}
 
     /* Comments list area */
     .cpBody{
@@ -1095,7 +1127,223 @@
     }
     .cpBarSend:hover{background:color-mix(in srgb,var(--tc) 28%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 30%,transparent);}
     .cpBarSend:active{transform:scale(.97);}
-    
+
+    /* ================= COMMUNITY / FRIENDS TAB CONTENT ================= */
+    .cmView{flex:1;min-height:0;flex-direction:column;}
+    .cmScroll{flex:1;min-height:0;overflow-y:auto;padding:1.4rem 1.5rem 100px;}
+    @media(max-width:640px){.cmScroll{padding:1.1rem 1.1rem 100px;}}
+
+    /* Hero banner */
+    .cmBanner{
+      background:linear-gradient(160deg,var(--sur2) 0%,color-mix(in srgb,var(--tc) 6%,var(--sur2)) 100%);
+      border:1px solid var(--bdr);
+      border-radius:14px;
+      padding:1.8rem 1.8rem;
+      margin-bottom:1.8rem;
+    }
+    .cmBannerTitle{font-family:var(--fd);font-size:clamp(1.5rem,4.5vw,2.2rem);font-weight:900;letter-spacing:-.01em;color:var(--tx);margin-bottom:.6rem;}
+    .cmBannerSub{font-family:var(--fb);font-size:.92rem;color:var(--txd);line-height:1.6;max-width:520px;}
+    .cmStats{display:flex;gap:2rem;margin-top:1.3rem;flex-wrap:wrap;}
+    .cmStat{display:flex;align-items:center;gap:.65rem;}
+    .cmStat svg{width:22px;height:22px;color:var(--ps);flex-shrink:0;}
+    .cmStatNum{font-family:var(--fd);font-size:1.15rem;font-weight:700;color:var(--tx);display:block;line-height:1.2;}
+    .cmStatLbl{font-family:var(--fm);font-size:.66rem;letter-spacing:.1em;color:var(--txd);}
+
+    /* Section head */
+    .cmSectionHead{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+    .cmSectionHead h3{font-family:var(--fd);font-size:1.3rem;font-weight:700;color:var(--tx);}
+    .cmSectionHead p{font-family:var(--fb);font-size:.82rem;color:var(--txd);margin-top:.3rem;}
+    .cmCreateBtn{
+      flex-shrink:0;
+      padding:.65rem 1.1rem;
+      background:color-mix(in srgb,var(--tc) 12%,transparent);
+      border:1px solid var(--pg);
+      color:var(--ps);
+      font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;
+      cursor:pointer;border-radius:8px;
+      transition:background .25s,box-shadow .25s,transform .2s;
+      white-space:nowrap;
+    }
+    .cmCreateBtn:hover{background:color-mix(in srgb,var(--tc) 24%,transparent);box-shadow:0 0 16px color-mix(in srgb,var(--tc) 25%,transparent);}
+    .cmCreateBtn:active{transform:scale(.97);}
+
+    /* Community cards grid */
+    .cmGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem;}
+    .cmCard{
+      background:var(--sur);
+      border:1px solid var(--bdr);
+      border-radius:12px;
+      padding:1.2rem 1.3rem;
+      cursor:pointer;
+      transition:border-color .25s,transform .2s,box-shadow .25s;
+      display:flex;flex-direction:column;
+    }
+    .cmCard:hover{border-color:var(--bdrh);transform:translateY(-2px);box-shadow:0 8px 24px color-mix(in srgb,var(--tc) 14%,transparent);}
+    .cmCard:active{transform:translateY(0) scale(.99);}
+    .cmCardTop{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;}
+    .cmCard h4{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--tx);}
+    .cmBadge{
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;
+      color:var(--ps);background:var(--pdim);
+      border:1px solid var(--pg);border-radius:999px;
+      padding:.18rem .55rem;flex-shrink:0;
+    }
+    .cmCard p{font-family:var(--fb);font-size:.82rem;color:var(--txd);line-height:1.55;flex:1;}
+    .cmCardMeta{display:flex;align-items:center;gap:.45rem;margin-top:1rem;font-family:var(--fm);font-size:.68rem;letter-spacing:.04em;color:var(--txd);}
+    .cmDot{width:6px;height:6px;border-radius:50%;background:#3ecf8e;flex-shrink:0;box-shadow:0 0 6px #3ecf8e;}
+
+    /* Footer CTA */
+    .cmFooterCta{
+      display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+      margin-top:1.6rem;padding:1.3rem 1.5rem;
+      background:var(--sur2);border:1px solid var(--bdr);border-radius:12px;
+    }
+    .cmFooterCta strong{font-family:var(--fb);font-size:.95rem;color:var(--tx);display:block;}
+    .cmFooterCta p{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-top:.2rem;}
+
+    /* Art Talk chat view (reuses .cpBody/.cpEmpty/.cpComment styles) */
+    .cmChat{display:none;flex-direction:column;flex:1;min-height:0;}
+    .cmBack{
+      background:none;border:1px solid var(--bdr);border-radius:8px;
+      width:34px;height:34px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      color:var(--tx);cursor:pointer;transition:border-color .2s,background .2s;
+    }
+    .cmBack:hover{border-color:var(--pg);background:var(--pdim);}
+    .cmBack svg{width:16px;height:16px;}
+
+    /* Friends tab — empty state (mirrors .cpEmpty) */
+    .cmEmpty{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:.7rem;padding:3.5rem 2rem;text-align:center;
+      font-family:var(--fm);font-size:.76rem;letter-spacing:.2em;color:var(--txd);
+      border:1px dashed var(--bdr);border-radius:12px;
+    }
+    .cmEmpty .cmEmptyIco{font-size:2rem;color:color-mix(in srgb,var(--tc) 40%,transparent);}
+    .cmEmptySub{font-size:.68rem;letter-spacing:.05em;opacity:.7;font-family:var(--fb);max-width:280px;}
+
+    @media(max-width:480px){
+      .cmBanner{padding:1.4rem;}
+      .cmStats{gap:1.3rem;}
+    }
+
+    /* =========================================================
+       COMMUNITY PAGE — DARK / VIOLET THEME
+       Scoped entirely to #communityPage via local CSS variables
+       so the rest of the (light) site is untouched. Selectors are
+       written as "#communityPage .xyz" so they win specificity
+       over the site-wide white-theme overrides further below,
+       regardless of source order.
+       ========================================================= */
+    #communityPage{
+      --cmBg:#08080d;
+      --cmSur:#131320;
+      --cmSur2:#191927;
+      --cmBdr:#26263a;
+      --cmBdrh:#3a3a56;
+      --cmTx:#f5f4fb;
+      --cmTxd:rgba(214,212,232,.62);
+      --cmAccent:#8b5cf6;
+      --cmAccentSoft:#b9a3fb;
+      --cmAccentDim:rgba(139,92,246,.16);
+      --cmOnline:#2ecf7e;
+      background:var(--cmBg);
+    }
+    #communityPage .cmHdr{
+      background:var(--cmBg)!important;
+      border-bottom:1px solid var(--cmBdr);
+    }
+    #communityPage .cmTab{color:var(--cmTxd);}
+    #communityPage .cmTab.active{color:var(--cmTx);border-color:var(--cmAccent);}
+    #communityPage .cmTab:hover{color:var(--cmTx);}
+
+    #communityPage .cmBanner{
+      background:linear-gradient(150deg,#1c1236 0%,#130d24 100%);
+      border:1px solid #362a5c;
+    }
+    #communityPage .cmBannerTitle{color:#ffffff;}
+    #communityPage .cmBannerSub{color:rgba(226,224,240,.72);}
+    #communityPage .cmStat svg{color:#e4e1f5;}
+    #communityPage .cmStatNum{color:#ffffff;}
+    #communityPage .cmStatLbl{color:rgba(255,255,255,.55);}
+
+    #communityPage .cmSectionHead h3{color:var(--cmTx);}
+    #communityPage .cmSectionHead p{color:var(--cmTxd);}
+    #communityPage .cmCreateBtn{
+      background:var(--cmAccentDim);
+      border:1px solid var(--cmAccent);
+      color:var(--cmAccentSoft);
+    }
+    #communityPage .cmCreateBtn:hover{
+      background:color-mix(in srgb,var(--cmAccent) 28%,transparent);
+      box-shadow:0 0 18px rgba(139,92,246,.35);
+    }
+
+    #communityPage .cmCard{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cmCard:hover{border-color:var(--cmBdrh);box-shadow:0 8px 26px rgba(0,0,0,.45);}
+    #communityPage .cmCard h4{color:var(--cmTx);}
+    #communityPage .cmCard p{color:var(--cmTxd);}
+    #communityPage .cmBadge{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
+    #communityPage .cmCardMeta{color:var(--cmTxd);}
+    #communityPage .cmDot{background:var(--cmOnline);box-shadow:0 0 6px var(--cmOnline);}
+
+    #communityPage .cmFooterCta{background:var(--cmSur2);border:1px solid var(--cmBdr);}
+    #communityPage .cmFooterCta strong{color:var(--cmTx);}
+    #communityPage .cmFooterCta p{color:var(--cmTxd);}
+
+    #communityPage .cmEmpty{border-color:var(--cmBdr);color:var(--cmTxd);}
+    #communityPage .cmEmpty .cmEmptyIco{color:var(--cmAccentSoft);}
+
+    /* Friends list — default "Zeo" AI bot entry */
+    .cmFriendList{display:flex;flex-direction:column;gap:.7rem;margin-bottom:1.6rem;}
+    .cmFriendItem{
+      display:flex;align-items:center;gap:.9rem;
+      padding:.9rem 1.1rem;
+      border-radius:12px;cursor:pointer;
+      transition:border-color .25s,transform .2s,box-shadow .25s;
+    }
+    .cmFriendItem:active{transform:scale(.99);}
+    .cmFriendAvatar{
+      width:46px;height:46px;border-radius:50%;flex-shrink:0;
+      overflow:hidden;display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;
+    }
+    .cmFriendAvatar img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cmFriendMeta{flex:1;min-width:0;}
+    .cmFriendName{font-family:var(--fb);font-size:.98rem;font-weight:700;display:flex;align-items:center;gap:.5rem;}
+    .cmFriendStatus{font-family:var(--fm);font-size:.68rem;letter-spacing:.04em;display:flex;align-items:center;gap:.4rem;margin-top:.25rem;}
+
+    #communityPage .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(139,92,246,.18);}
+    #communityPage .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
+    #communityPage .cmFriendName{color:var(--cmTx);}
+    #communityPage .cmFriendStatus{color:var(--cmTxd);}
+
+    /* Art Talk chat — reuses .cpHdr/.cpBody/.cpComment/.cpBar markup */
+    #communityPage .cpHdr{background:var(--cmBg)!important;border-bottom:1px solid var(--cmBdr);}
+    #communityPage .cpTitle{color:var(--cmTx);}
+    #communityPage .cpTitle .s{color:var(--cmAccentSoft);}
+    #communityPage .cmBack{border:1px solid var(--cmBdr);color:var(--cmTx);}
+    #communityPage .cmBack:hover{border-color:var(--cmAccent);background:var(--cmAccentDim);}
+    #communityPage .cpEmpty{color:var(--cmTxd);}
+    #communityPage .cpEmpty .cpEIco{color:var(--cmAccentSoft);}
+    #communityPage .cpComment{border-bottom:1px solid var(--cmBdr);}
+    #communityPage .cpAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
+    #communityPage .cpCommentUser{color:var(--cmAccentSoft);}
+    #communityPage .cpCommentText{color:var(--cmTx);}
+    #communityPage .cpCommentTime{color:var(--cmTxd);}
+    #communityPage .cpPhoto{border:1px solid var(--cmBdr);}
+    #communityPage .cpRefreshSpinner{border-color:color-mix(in srgb,var(--cmAccent) 25%,transparent);border-top-color:var(--cmAccent);}
+
+    #communityPage .cpBar{background:var(--cmSur)!important;border-top:1px solid var(--cmBdr);}
+    #communityPage .cpBarAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
+    #communityPage .cpBarInput{background:var(--cmSur2)!important;color:var(--cmTx)!important;border:1px solid var(--cmBdr)!important;}
+    #communityPage .cpBarInput::placeholder{color:var(--cmTxd);}
+    #communityPage .cpBarSend{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
+    #communityPage .cpBarSend:hover{background:color-mix(in srgb,var(--cmAccent) 30%,transparent)!important;box-shadow:0 0 18px rgba(139,92,246,.35)!important;}
+    #communityPage .cpSelectedImage img,#communityPage .cpThumbPreview{border:1px solid var(--cmBdr);background:var(--cmSur);}
+    #communityPage .cpThumbClose{background:var(--cmSur2);border:1px solid var(--cmBdrh);color:var(--cmTx);}
+
     /* RESPONSIVE CSS — SMALL DEVICE RULES */
 
     @media(max-width:480px){
@@ -2058,39 +2306,117 @@
       transition:transform .45s cubic-bezier(.22,1,.36,1);
     }
     #profilePage.open{transform:translateX(0);}
-    .pfBdy{max-width:1100px;margin:0 auto;padding:0 0 6rem;}
+    /* Dark, banner-led theme — scoped to the profile page only,
+       the rest of the site stays on the white theme. */
+    #profilePage,#profilePage *{
+      --bg:#050308;--sur:#0d0a14;--sur2:#120e1c;
+      --tx:#f0e8ff;--txd:rgba(196,181,253,.6);
+      --tc:#9a9ea5;--pg:#8a8f98;--pb:#b8bcc2;--ps:#cfd2d6;
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #profilePage .subPgHdr{background:rgba(5,3,8,.92)!important;border-bottom:1px solid rgba(255,255,255,.08);}
+    #profilePage .subPgTitle{color:#fff;}
+    #profilePage .awCard{background:var(--sur);}
+    .pfBdy{max-width:1100px;margin:0 auto;padding:0 0 6rem;background:var(--bg);}
 
-    /* ── Header block ── */
-    .pfHead{
-      display:flex;align-items:center;gap:1.2rem;
-      padding:2.5rem 2rem 1.6rem;
-      flex-wrap:wrap;
+    /* ── Banner ── */
+    .pfBanner{
+      position:relative;width:100%;
+      height:clamp(150px,26vw,240px);
+      background:
+        radial-gradient(ellipse at 25% 20%,rgba(59,130,246,.28),transparent 60%),
+        linear-gradient(160deg,#0b1220 0%,#111827 45%,#1e293b 80%,#0b1220 100%);
+      overflow:visible;
+    }
+    .pfMenuBtn{
+      position:absolute;top:1rem;right:1rem;z-index:2;
+      width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.45);color:#fff;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      transition:background .2s;
+    }
+    .pfMenuBtn:hover{background:rgba(0,0,0,.65);}
+    .pfMenuBtn svg{width:18px;height:18px;}
+    .pfMenu{
+      position:absolute;top:3.4rem;right:1rem;z-index:3;
+      background:var(--sur);border:1px solid var(--bdrh);border-radius:10px;
+      box-shadow:0 8px 28px rgba(0,0,0,.45);
+      min-width:180px;padding:.4rem;
+      display:flex;flex-direction:column;gap:.15rem;
+      opacity:0;transform:translateY(-6px);pointer-events:none;
+      transition:opacity .18s,transform .18s;
+    }
+    .pfMenu.open{opacity:1;transform:translateY(0);pointer-events:auto;}
+    .pfMenuItem{
+      font-family:var(--fm);font-size:.7rem;letter-spacing:.08em;text-align:left;
+      padding:.65rem .8rem;border-radius:6px;border:none;background:none;
+      color:var(--ps);cursor:pointer;transition:background .18s,color .18s;
+    }
+    .pfMenuItem:hover{background:color-mix(in srgb,#3b82f6 16%,transparent);color:#fff;}
+    .pfMenuItem--danger:hover{background:rgba(220,38,38,.18);color:#fca5a5;}
+    #smAdmBtn{display:none;}
+    #smAdmBtn.devOnly{display:block;}
+    #smAdmBtn.on{color:#93c5fd;}
+    .pfAvatarWrap{
+      position:absolute;left:2rem;bottom:-42px;z-index:2;
     }
     .pfAvatar{
       width:84px;height:84px;border-radius:50%;flex-shrink:0;
       display:flex;align-items:center;justify-content:center;
-      background:linear-gradient(135deg,var(--tc),color-mix(in srgb,var(--tc) 55%,white));
+      background:linear-gradient(135deg,#3b82f6,#1e293b);
       color:#fff;font-family:var(--fd);font-size:2rem;font-weight:700;
-      box-shadow:0 4px 16px color-mix(in srgb,var(--tc) 35%,transparent);
+      border:4px solid var(--bg);
+      box-shadow:0 4px 16px rgba(0,0,0,.4);
+    }
+
+    /* ── Header block ── */
+    .pfHead{
+      display:flex;align-items:center;gap:1.2rem;
+      padding:3.2rem 2rem 1.6rem;
+      flex-wrap:wrap;
     }
     .pfHeadInfo{flex:1 1 auto;min-width:160px;}
     .pfUsername{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--tx);}
     .pfJoined{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);margin-top:.3rem;}
-    .pfUpBtn{
-      flex-shrink:0;font-family:var(--fm);font-size:.7rem;letter-spacing:.12em;
-      padding:.7rem 1.3rem;border:1px solid var(--tc);border-radius:6px;
-      background:var(--tc);color:#fff;cursor:pointer;transition:opacity .2s,transform .15s;
+
+    /* ── Upload dropdown ── */
+    .pfUploadWrap{position:relative;flex-shrink:0;}
+    .pfUpTrigger{
+      display:flex;align-items:center;gap:.4rem;
+      font-family:var(--fm);font-size:.7rem;letter-spacing:.12em;
+      padding:.6rem 1.1rem;border:1px solid #3b82f6;border-radius:8px;
+      background:#3b82f6;color:#fff;cursor:pointer;transition:opacity .2s,transform .15s;
     }
-    .pfUpBtn:hover{opacity:.88;}
-    .pfUpBtn:active{transform:scale(.97);}
-    .pfUpBtn.sec{background:none;color:var(--tc);}
+    .pfUpTrigger:hover{opacity:.88;}
+    .pfUpTrigger:active{transform:scale(.97);}
+    .pfUpCh{font-size:.85em;}
+    .pfUploadMenu{
+      position:absolute;top:calc(100% + .5rem);right:0;z-index:6;
+      background:var(--sur);border:1px solid var(--bdrh);border-radius:10px;
+      box-shadow:0 8px 28px rgba(0,0,0,.45);
+      min-width:170px;padding:.4rem;
+      display:flex;flex-direction:column;gap:.15rem;
+      opacity:0;transform:translateY(-6px);pointer-events:none;
+      transition:opacity .18s,transform .18s;
+    }
+    .pfUploadMenu.open{opacity:1;transform:translateY(0);pointer-events:auto;}
+    .pfUploadMenu button{
+      font-family:var(--fm);font-size:.68rem;letter-spacing:.06em;text-align:left;
+      padding:.6rem .75rem;border-radius:6px;border:none;background:none;
+      color:var(--ps);cursor:pointer;transition:background .18s,color .18s;
+    }
+    .pfUploadMenu button:hover{background:color-mix(in srgb,#3b82f6 16%,transparent);color:#fff;}
 
     /* ── Tabs ── */
     .pfTabs{
-      display:flex;gap:.4rem;padding:0 2rem;border-bottom:1px solid var(--bdr);
-      position:sticky;top:0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
-      -webkit-backdrop-filter:blur(12px);z-index:5;
+      display:flex;align-items:center;justify-content:space-between;gap:.4rem;
+      padding:0 2rem;border-bottom:1px solid var(--bdr);
+      position:sticky;top:0;background:color-mix(in srgb,var(--bg) 92%,transparent);
+      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:5;
     }
+    .pfTabGroup{display:flex;gap:.4rem;}
     .pfTab{
       font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;
       padding:.9rem 1rem;background:none;border:none;cursor:pointer;
@@ -2108,6 +2434,14 @@
       gap:1.2rem;margin-top:1.2rem;
     }
     @media(max-width:480px){.pfGrid{grid-template-columns:1fr;}}
+    @media(max-width:480px){
+      .pfAvatarWrap{left:1.2rem;}
+      .pfAvatar{width:72px;height:72px;font-size:1.7rem;}
+      .pfHead{padding:2.8rem 1.2rem 1.2rem;}
+      .pfTabs{padding:0 1.2rem;}
+      .pfTab{padding:.8rem .6rem;font-size:.64rem;}
+      .pfUpTrigger{padding:.5rem .8rem;font-size:.62rem;}
+    }
     .pfCardMeta{padding:.65rem .75rem .8rem;border-top:1px solid var(--bdr);}
     .pfCardTitle{font-family:var(--fm);font-size:.74rem;font-weight:700;letter-spacing:.05em;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .pfCardDate{font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;color:var(--txd);margin-top:.2rem;}
@@ -2140,21 +2474,84 @@
 
     /* =========================================================
        LOGIN / SIGNUP PAGE (#authMod)
-       Full-screen sliding panel, same language as #profilePage —
-       form card (.authCard) is just .modal centered in the body.
+       Full-screen sliding panel with its own self-contained dark
+       theme (independent of the site's white default, same idea
+       as #hero scoping its own palette). Redesigned to match the
+       DigiArtz welcome/login mockup: brand block, feature strip,
+       Welcome Back form, social row (Google/Discord/Apple —
+       currently show a "coming soon" toast), and a safety footer.
        ========================================================= */
     #authMod{
-      position:fixed;inset:0;z-index:500;background:var(--bg);
+      position:fixed;inset:0;z-index:500;background:#050308;
       overflow-y:auto;transform:translateX(100%);
       transition:transform .45s cubic-bezier(.22,1,.36,1);
     }
     #authMod.open{transform:translateX(0);}
-    .authBdy{
-      min-height:calc(100% - 60px);
-      display:flex;align-items:center;justify-content:center;
-      padding:2.5rem 1.5rem 4rem;
+    #authMod .subPgHdr{background:rgba(5,3,8,.92)!important;border-bottom:1px solid rgba(255,255,255,.08);}
+    #authMod .subPgTitle{color:#fff;}
+
+    .laBody{ max-width:460px; margin:0 auto; padding:1.6rem 1.5rem 3.5rem; color:#fff; }
+
+    .laTopLink{ text-align:center; font-size:.85rem; color:rgba(255,255,255,.6); margin:.2rem 0 2.2rem; }
+    .laTopLink button{ background:none; border:none; color:#a78bfa; font-weight:700; font-size:.85rem; cursor:pointer; padding:0; margin-left:.35rem; font-family:inherit; }
+    .laTopLink button:hover{ text-decoration:underline; }
+
+    .laBrand{ text-align:center; margin-bottom:1.7rem; }
+    .laEyebrow{ font-family:var(--fm); font-size:.65rem; letter-spacing:.4em; color:#a78bfa; text-transform:uppercase; margin-bottom:.6rem; }
+    .laLogo{ font-family:var(--fd); font-weight:800; font-size:2.5rem; color:#fff; letter-spacing:-.01em; }
+    .laLogo span{ color:#a78bfa; }
+    .laTag{ color:rgba(255,255,255,.55); font-size:.85rem; line-height:1.55; margin-top:.9rem; }
+
+    .laFeatures{ display:flex; justify-content:center; gap:1.5rem; flex-wrap:wrap; margin:1.8rem 0; }
+    .laFeat{ display:flex; align-items:center; gap:.4rem; font-size:.76rem; color:rgba(255,255,255,.75); }
+    .laFeat svg{ width:15px; height:15px; color:#a78bfa; flex-shrink:0; }
+
+    .laDivider{ height:1px; background:rgba(255,255,255,.1); margin:1.8rem 0 2rem; }
+
+    .laHead{ font-family:var(--fb); font-weight:800; font-size:1.7rem; color:#fff; text-align:center; margin:0 0 .4rem; }
+    .laSub{ text-align:center; color:rgba(255,255,255,.55); font-size:.85rem; margin:0 0 1.8rem; }
+
+    .laErr{ display:none; color:#f87171; font-size:.8rem; margin:-.6rem 0 1rem; }
+    .laErr.show{ display:block; }
+    .laMsg{ display:none; color:#86efac; font-size:.78rem; line-height:1.55; margin:-.6rem 0 1rem; }
+
+    .laFieldWrap{ margin-bottom:1.3rem; }
+    .laLabel{ display:block; font-size:.8rem; font-weight:700; color:#fff; margin-bottom:.55rem; }
+    .laInputBox{ position:relative; }
+    .laIcon{ position:absolute; left:.95rem; top:50%; transform:translateY(-50%); width:18px; height:18px; color:rgba(255,255,255,.4); pointer-events:none; }
+    .laInput{ width:100%; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.14); border-radius:12px; color:#fff; font-size:.88rem; padding:.85rem 1rem .85rem 2.65rem; font-family:var(--fb); transition:border-color .2s,box-shadow .2s; }
+    .laInput[type="password"],.laInput.laHasEye{ padding-right:2.65rem; }
+    .laInput::placeholder{ color:rgba(255,255,255,.35); }
+    .laInput:focus{ outline:none; border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,.22); }
+    .laEyeBtn{ position:absolute; right:.85rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:rgba(255,255,255,.5); padding:.2rem; display:flex; }
+    .laEyeBtn svg{ width:18px; height:18px; }
+    .laEyeBtn:hover{ color:rgba(255,255,255,.8); }
+
+    .laRow{ display:flex; align-items:center; justify-content:space-between; margin-bottom:1.7rem; font-size:.82rem; flex-wrap:wrap; gap:.6rem; }
+    .laCheck{ display:flex; align-items:center; gap:.55rem; color:rgba(255,255,255,.7); cursor:pointer; }
+    .laCheck input{ width:16px; height:16px; accent-color:#7c3aed; }
+    .laForgot{ background:none; border:none; color:#a78bfa; font-size:.82rem; cursor:pointer; font-family:inherit; padding:0; }
+    .laForgot:hover{ text-decoration:underline; }
+
+    .laSubmit{ width:100%; padding:.9rem; border-radius:12px; background:rgba(124,58,237,.1); border:1.5px solid #7c3aed; color:#c4b5fd; font-weight:700; font-size:.92rem; cursor:pointer; transition:background .2s,box-shadow .2s; font-family:var(--fb); }
+    .laSubmit:hover{ background:rgba(124,58,237,.18); box-shadow:0 0 20px rgba(124,58,237,.28); }
+    .laSubmit:disabled{ opacity:.6; cursor:default; }
+
+    .laOrDiv{ display:flex; align-items:center; gap:1rem; margin:1.9rem 0 1.2rem; color:rgba(255,255,255,.4); font-size:.76rem; }
+    .laOrDiv::before,.laOrDiv::after{ content:''; flex:1; height:1px; background:rgba(255,255,255,.12); }
+
+    .laSocial{ display:flex; gap:.7rem; margin-bottom:1.9rem; }
+    .laSocialBtn{ flex:1; display:flex; align-items:center; justify-content:center; gap:.45rem; padding:.75rem .4rem; border-radius:12px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.03); color:#fff; font-size:.76rem; font-weight:600; cursor:pointer; font-family:var(--fb); transition:background .2s; }
+    .laSocialBtn:hover{ background:rgba(255,255,255,.08); }
+    .laSocialBtn svg{ width:17px; height:17px; flex-shrink:0; }
+
+    .laFooter{ display:flex; align-items:center; justify-content:center; gap:.5rem; color:rgba(255,255,255,.4); font-size:.73rem; text-align:center; }
+    .laFooter svg{ width:14px; height:14px; flex-shrink:0; }
+
+    @media(max-width:420px){
+      .laSocial{ flex-wrap:wrap; }
+      .laSocialBtn{ flex:1 1 calc(50% - .35rem); }
     }
-    .authCard{max-width:420px;width:100%;}
 
     /* ── Small phones: tighten the masonry gutters a touch ── */
     @media(max-width:480px){
@@ -2505,7 +2902,7 @@ height:80px;
   .lbActionBtn{flex:1;min-height:48px;}
 }
 
-/* Comic Arts page overlay — same pattern as #fg, #commentsPage, #adsPanel */
+/* Comic Arts page overlay — same pattern as #fg, #communityPage, #adsPanel */
 #comicArtsPage {
   position: fixed;
   inset: 0;
@@ -2575,10 +2972,8 @@ body{background:var(--bg);}
 /* Inputs / fields */
 .fgQ,.mIn,.aEA,.cpBarInput,.upCatWrap{background:#f6f7f9!important;color:var(--tx);border-color:var(--bdr)!important;}
 
-/* Nav adopts the white theme; subtle text-shadow keeps the logo legible
-   over the hero photo without altering the hero background itself */
-/* Bottom nav adopts the white theme; login/avatar chips stay legible */
-.nLoginBtn,.nAvatarBtn{background:#ffffff!important;}
+/* Bottom nav — login/avatar chips match the dark/violet nav bar */
+.nLoginBtn,.nAvatarBtn{background:rgba(139,92,246,.14)!important;}
 
 
 /* ── Re-pin the HERO and elements layered over it to their
@@ -2596,27 +2991,27 @@ body{background:var(--bg);}
 #intro{background:#ffffff;}
 
 .nLoginBtn{
-  background:color-mix(in srgb,var(--sur) 92%,transparent);
-  border:1px solid var(--bdr);
-  color:var(--txd);
+  background:rgba(139,92,246,.14);
+  border:1px solid rgba(139,92,246,.22);
+  color:rgba(214,212,232,.62);
   width:34px;height:34px;border-radius:50%;
   cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 8px rgba(5,3,8,.10);
+  box-shadow:0 2px 8px rgba(0,0,0,.35);
   transition:color .25s,border-color .25s,background .25s,box-shadow .25s;
   flex-shrink:0;
 }
 .nLoginBtn svg{width:16px;height:16px;display:block;}
-.nLoginBtn:hover{color:var(--ps);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
+.nLoginBtn:hover{color:#f5f4fb;border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.24);}
 
 .nAvatarBtn{
   /* Identical glass-box to .nLoginBtn */
-  background:color-mix(in srgb,var(--sur) 92%,transparent);
-  border:1px solid var(--bdrh);
+  background:rgba(139,92,246,.14);
+  border:1px solid rgba(139,92,246,.3);
   width:34px;height:34px;border-radius:50%;
   cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 8px rgba(5,3,8,.10),0 0 0 2px color-mix(in srgb,var(--tc) 18%,transparent);
+  box-shadow:0 2px 8px rgba(0,0,0,.35),0 0 0 2px rgba(139,92,246,.14);
   transition:border-color .25s,background .25s,box-shadow .25s;
   flex-shrink:0;
   /* Avatar glow ring — same accent as comment avatars */
@@ -2624,12 +3019,12 @@ body{background:var(--bg);}
   position:relative;
 }
 .nAvatarBtn:hover{
-  border-color:var(--bdrh);
-  background:color-mix(in srgb,var(--tc) 9%,transparent);
-  box-shadow:0 2px 8px rgba(5,3,8,.10),0 0 0 2px color-mix(in srgb,var(--tc) 38%,transparent);
+  border-color:rgba(139,92,246,.45);
+  background:rgba(139,92,246,.24);
+  box-shadow:0 2px 8px rgba(0,0,0,.35),0 0 0 2px rgba(139,92,246,.32);
 }
 .nAvatarBtn:focus-visible{
-  outline:2px solid var(--pg);
+  outline:2px solid #8b5cf6;
   outline-offset:2px;
 }
 /* The letter inside — matches .cpAvatar typography exactly */
@@ -2637,161 +3032,14 @@ body{background:var(--bg);}
   font-family:var(--fd);
   font-size:.82rem;
   font-weight:700;
-  color:var(--ps);
+  color:#b9a3fb;
   line-height:1;
   user-select:none;
   pointer-events:none;
 }
 
-/* ── Profile popup card ── */
-#profilePopup{
-  position:fixed;
-  top:50%;
-  left:50%;
-  z-index:600;
-  background:var(--sur);
-  border:1px solid var(--bdrh);
-  border-radius:16px;
-  box-shadow:
-    0 4px 6px rgba(20,20,30,.05),
-    0 12px 32px rgba(20,20,30,.09),
-    0 2px 0 color-mix(in srgb,var(--tc) 10%,transparent) inset;
-  padding:1.6rem 1.4rem 1.2rem;
-  width:clamp(210px,88vw,260px);
-  display:flex;flex-direction:column;align-items:center;gap:.7rem;
-  /* Hidden state */
-  opacity:0;
-  transform:translate(-50%,-50%) scale(.96);
-  pointer-events:none;
-  transition:opacity .22s cubic-bezier(.22,1,.36,1),transform .22s cubic-bezier(.22,1,.36,1);
-  will-change:opacity,transform;
-}
-#profilePopup.open{
-  opacity:1;
-  transform:translate(-50%,-50%) scale(1);
-  pointer-events:auto;
-}
 
-/* Avatar inside popup — same dimensions/style as .cpAvatar */
-.ppAvatar{
-  width:54px;height:54px;border-radius:50%;
-  background:color-mix(in srgb,var(--tc) 22%,transparent);
-  border:1.5px solid var(--bdrh);
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--fd);font-size:1.25rem;font-weight:700;
-  color:var(--ps);
-  flex-shrink:0;
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--tc) 12%,transparent);
-  user-select:none;
-}
-
-/* Username */
-.ppUsername{
-  font-family:var(--fm);
-  font-size:.78rem;
-  font-weight:700;
-  letter-spacing:.14em;
-  color:var(--ps);
-  text-align:center;
-  /* Safe long-username handling */
-  max-width:100%;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  width:100%;
-}
-
-/* Divider */
-.ppDiv{
-  width:100%;height:1px;
-  background:linear-gradient(to right,transparent,var(--bdr),transparent);
-  margin:.1rem 0;
-}
-
-/* Buttons container */
-.ppBtns{
-  display:flex;flex-direction:column;gap:.5rem;width:100%;
-}
-
-/* Shared button base */
-.ppBtn{
-  width:100%;
-  padding:.7rem 1rem;
-  font-family:var(--fm);
-  font-size:.74rem;
-  letter-spacing:.2em;
-  cursor:pointer;
-  border-radius:8px;
-  transition:background .22s,border-color .22s,color .22s,box-shadow .22s,transform .15s;
-  text-align:center;
-  outline:none;
-}
-.ppBtn:focus-visible{
-  outline:2px solid var(--pg);
-  outline-offset:2px;
-}
-.ppBtn:active{ transform:scale(.97); }
-
-/* Logout — accent-bordered primary action */
-.ppBtnLogout{
-  background:color-mix(in srgb,var(--tc) 10%,transparent);
-  border:1px solid var(--bdrh);
-  color:var(--ps);
-}
-.ppBtnLogout:hover{
-  background:color-mix(in srgb,var(--tc) 20%,transparent);
-  border-color:var(--pg);
-  box-shadow:0 0 14px color-mix(in srgb,var(--tc) 22%,transparent);
-}
-
-/* Cancel — ghost secondary */
-.ppBtnCancel{
-  background:transparent;
-  border:1px solid var(--bdr);
-  color:var(--txd);
-}
-.ppBtnCancel:hover{
-  background:color-mix(in srgb,var(--tc) 5%,transparent);
-  border-color:var(--bdrh);
-  color:var(--ps);
-}
-
-/* Ghost utility action (Sponsor) — same look as Cancel */
-.ppBtnGhost{
-  background:transparent;
-  border:1px solid var(--bdr);
-  color:var(--txd);
-}
-.ppBtnGhost:hover{
-  background:color-mix(in srgb,var(--tc) 5%,transparent);
-  border-color:var(--bdrh);
-  color:var(--ps);
-}
-
-/* Admin Panel toggle — accent-bordered, switches tint when ON */
-#smAdmBtn{display:none;}
-#smAdmBtn.devOnly{display:block;}
-#smAdmBtn.ppBtn{
-  background:color-mix(in srgb,var(--tc) 10%,transparent);
-  border:1px solid var(--bdrh);
-  color:var(--ps);
-}
-#smAdmBtn.ppBtn:hover{
-  background:color-mix(in srgb,var(--tc) 20%,transparent);
-  border-color:var(--pg);
-}
-#smAdmBtn.ppBtn.on{color:var(--pb);border-color:var(--pb);}
-
-/* White-theme overrides — keep popup consistent with the site surface */
-#profilePopup{
-  background:#ffffff;
-  box-shadow:
-    0 1px 3px rgba(20,20,30,.06),
-    0 8px 28px rgba(20,20,30,.09),
-    0 2px 0 color-mix(in srgb,var(--tc) 8%,transparent) inset;
-}
-
-/* Subscription page overlay — same pattern as #fg, #commentsPage */
+/* Subscription page overlay — same pattern as #fg, #communityPage */
 
 /* ── Keyframes ── */
 @keyframes subBorderSpin {
@@ -3475,7 +3723,7 @@ body{background:var(--bg);}
   padding: 0;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, background .3s ease;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, background .3s ease, opacity .25s ease;
   user-select: none;
 }
 #zeoBtn:hover {
@@ -3576,7 +3824,7 @@ body{background:var(--bg);}
 }
 
 /* ── Full-page AI Assistant panel — same slide-in convention as
-   the rest of the site's full pages (#fg, #profilePage, #commentsPage):
+   the rest of the site's full pages (#fg, #profilePage, #communityPage):
    fixed, covers the whole viewport, slides in from the right via a
    plain .open class toggle rather than a floating popup. ── */
 #zeoPage {
@@ -3877,7 +4125,7 @@ body{background:var(--bg);}
        │   ├─ Home     → scrolls to hero / closes open panels
        │   ├─ Gallery  → ddOpenGallery()
        │   ├─ Comic    → openComicArts()
-       │   ├─ Comment  → ddOpenComments()
+       │   ├─ Community → ddOpenCommunity()
        │   └─ Profile  → login face icon ↔ avatar (existing buttons,
        │                 relocated unchanged so all auth/admin JS
        │                 keeps working without modification)
@@ -3895,9 +4143,9 @@ body{background:var(--bg);}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><path d="M17 4v3h3"/><path d="M8 12h8M8 16h5"/></svg>
     <span class="bnLabel">Comic</span>
    </button>
-   <button class="bnItem" id="bnComment" onclick="bnGoComment()" title="Comment" aria-label="Comment">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 20l1.1-5.4A8.38 8.38 0 0 1 3.5 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/></svg>
-    <span class="bnLabel">Comment</span>
+   <button class="bnItem" id="bnCommunity" onclick="bnGoCommunity()" title="Community" aria-label="Community">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
+    <span class="bnLabel">Community</span>
    </button>
    <div class="bnItem bnProfile" id="bnProfile">
     <!-- LOGGED-OUT: generic face icon, redrawn to match the
@@ -3912,10 +4160,8 @@ body{background:var(--bg);}
     <button class="nAvatarBtn" id="navAvatarBtn"
       onclick="bnGoProfile(event)"
       title="Profile"
-      aria-label="Open profile menu"
-      aria-haspopup="true"
-      aria-expanded="false"
-      aria-controls="profilePopup"
+      aria-label="Open profile"
+      aria-controls="profilePage"
       style="display:none;">
      <span class="nAvLetter" id="navAvatarLetter">?</span>
     </button>
@@ -3923,33 +4169,6 @@ body{background:var(--bg);}
    </div>
   </nav>
 
-  <!-- =========================================================
-       PROFILE POPUP
-       ├─ Avatar (.ppAvatar)
-       ├─ Username (.ppUsername)
-       ├─ Divider (.ppDiv)
-       └─ Action Buttons (.ppBtns)
-           ├─ Subscription (.ppBtnGhost)
-           ├─ Admin Panel (#smAdmBtn, dev-only)
-           ├─ Logout (.ppBtnLogout)
-           └─ Cancel (.ppBtnCancel)
-       ========================================================= -->
-  <div id="profilePopup" role="dialog" aria-modal="false" aria-label="Profile menu">
-    <!-- ── Avatar ── -->
-    <div class="ppAvatar" id="ppAvatar" aria-hidden="true">?</div>
-    <!-- ── Username ── -->
-    <div class="ppUsername" id="ppUsername"></div>
-    <!-- ── Divider ── -->
-    <div class="ppDiv" aria-hidden="true"></div>
-    <!-- ── Action Buttons ── -->
-    <div class="ppBtns">
-      <button class="ppBtn ppBtnGhost" onclick="closeProfilePopup();openOwnProfile()">VIEW PROFILE</button>
-      <button class="ppBtn ppBtnGhost" onclick="closeProfilePopup();openSubscription()">SUBSCRIPTION</button>
-      <button class="ppBtn" id="smAdmBtn" onclick="smHandleAdm()">ADMIN PANEL</button>
-      <button class="ppBtn ppBtnLogout" id="ppLogoutBtn" onclick="ppDoLogout()">LOGOUT</button>
-      <button class="ppBtn ppBtnCancel" onclick="closeProfilePopup()">CANCEL</button>
-    </div>
-  </div>
   <!-- =========================================================
        HERO SECTION — Premium Split-Screen Layout
        ├─ Left Panel (.hLeft)
@@ -4278,36 +4497,53 @@ body{background:var(--bg);}
 
   <!-- =========================================================
        USER PROFILE PAGE (#profilePage)
-       ├─ Header Bar (.subPgHdr pattern, title only — no back
-       │   button, closed via the bottom nav Profile/Home tab)
-       ├─ Profile Header (.pfHead) — avatar, username, joined,
-       │   Upload Artwork button (owner only — opens submission
-       │   form only, never edit/delete)
-       ├─ Tabs (.pfTabs) — Gallery / Comic / About
+       ├─ Banner (.pfBanner) — dark gradient banner, overlapping
+       │   avatar (.pfAvatarWrap), ⋮ menu button (.pfMenuBtn) →
+       │   .pfMenu dropdown (Subscription / Admin Panel / Log Out,
+       │   replaces the old #profilePopup)
+       ├─ Head (.pfHead) — username, joined date
+       ├─ Tabs (.pfTabs) — Artwork / ComicArts / About, with the
+       │   Upload dropdown (.pfUploadWrap, owner-only) on the right
        └─ Panels (.pfPanel)
            ├─ Gallery  → #pfGalleryGrid (+ load more)
            ├─ Comic    → #pfComicGrid (+ load more)
            └─ About    → stats + bio (owner-editable)
        ========================================================= -->
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
-    <div class="subPgHdr">
-      <div class="subPgTitle">PROFILE <span class="s">◉</span></div>
+    <div class="pfBanner" id="pfBanner">
+      <button class="pfMenuBtn" onclick="togglePfMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="pfMenu" aria-label="Profile options">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+      </button>
+      <div class="pfMenu" id="pfMenu" role="menu">
+        <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openSubscription()">Subscription</button>
+        <button class="pfMenuItem" id="smAdmBtn" role="menuitem" onclick="closePfMenu();smHandleAdm()">Admin Panel</button>
+        <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
+      </div>
+      <div class="pfAvatarWrap">
+        <div class="pfAvatar" id="pfAvatar">?</div>
+      </div>
     </div>
     <div class="pfBdy">
       <div class="pfHead">
-        <div class="pfAvatar" id="pfAvatar">?</div>
         <div class="pfHeadInfo">
           <div class="pfUsername" id="pfUsername">—</div>
           <div class="pfJoined" id="pfJoined"></div>
         </div>
-        <button class="pfUpBtn" id="pfUploadArtBtn" onclick="openPfUpload('art')" style="display:none;">UPLOAD ARTWORK</button>
-        <button class="pfUpBtn sec" id="pfUploadComicBtn" onclick="openPfUpload('comic')" style="display:none;">UPLOAD COMIC</button>
       </div>
 
       <div class="pfTabs" role="tablist">
-        <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" onclick="pfSwitchTab('gallery')">GALLERY</button>
-        <button class="pfTab" id="pfTabComic" role="tab" aria-selected="false" onclick="pfSwitchTab('comic')">COMIC</button>
-        <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" onclick="pfSwitchTab('about')">ABOUT</button>
+        <div class="pfTabGroup">
+          <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" onclick="pfSwitchTab('gallery')">ARTWORK</button>
+          <button class="pfTab" id="pfTabComic" role="tab" aria-selected="false" onclick="pfSwitchTab('comic')">COMICARTS</button>
+          <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" onclick="pfSwitchTab('about')">ABOUT</button>
+        </div>
+        <div class="pfUploadWrap" id="pfUploadWrap" style="display:none;">
+          <button class="pfUpTrigger" onclick="togglePfUploadMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="pfUploadMenu">UPLOAD <span class="pfUpCh">⌄</span></button>
+          <div class="pfUploadMenu" id="pfUploadMenu">
+            <button id="pfUploadArtBtn" onclick="closePfUploadMenu();openPfUpload('art')">Upload Artwork</button>
+            <button id="pfUploadComicBtn" onclick="closePfUploadMenu();openPfUpload('comic')">Upload Comic</button>
+          </div>
+        </div>
       </div>
 
       <!-- GALLERY -->
@@ -4568,62 +4804,205 @@ body{background:var(--bg);}
    </div>
   </div>
   <!-- =========================================================
-       COMMENTS PAGE
-       ├─ Header Bar (.cpHdr)
-       │   └─ Title (.cpTitle) — no back button, tab-switched
-       │       via the bottom nav
-       ├─ Comments List (#cpBody)
-       │   └─ Empty State (#cpEmpty)
-       └─ Composer Bar (#cpBar) — fixed at bottom when comments open
-           ├─ Selected Image Preview (#cpSelectedImage)
-           ├─ Avatar (.cpBarAvatar)
-           ├─ Text Input (#cpBarInput)
-           └─ Send Button (#cpBarSend)
+       COMMUNITY PAGE
+       ├─ Tab Bar (.cmHdr) — Community / Friends (cmSwitchTab())
+       ├─ COMMUNITY TAB (#cmViewCommunity)
+       │   ├─ Grid view (#cmGridScroll) — hero banner + 6 community
+       │   │   cards (cmOpenCommunity()). Only "Art Talk" is wired
+       │   │   to Supabase today; the other 5 are placeholders
+       │   │   until their tables/policies are added.
+       │   └─ Chat view (#cmChatView) — the "Art Talk" room, reusing
+       │       the original Comments feed markup unchanged:
+       │       ├─ Header + back button (cmCloseChat())
+       │       ├─ Comments List (#cpBody) → Empty State (#cpEmpty)
+       │       └─ Composer Bar (#cpBar) — fixed at bottom
+       │           ├─ Selected Image Preview (#cpSelectedImage)
+       │           ├─ Avatar (.cpBarAvatar)
+       │           ├─ Text Input (#cpBarInput)
+       │           └─ Send Button (#cpBarSend)
+       └─ FRIENDS TAB (#cmViewFriends) — same hero banner + a
+           friends list placeholder (to be wired to Supabase later)
+
+       No "Join" buttons anywhere: tapping a card auto-joins a
+       logged-in user, or opens the login page (openAuthMod()) for
+       a guest — see cmOpenCommunity() in the script.
        ========================================================= -->
-  <div id="commentsPage">
-    <!-- Header -->
-    <div class="cpHdr">
-      <div class="cpTitle">COMMENTS <span class="s">✦</span></div>
-    </div>
-
-    
-
-    <!-- Comments list -->
-    <div class="cpBody" id="cpBody">
-      <!-- Placeholder — no comments yet -->
-      <div class="cpEmpty" id="cpEmpty">
-        <div class="cpEIco">◎</div>
-        <div>NO COMMENTS YET</div>
-        <div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>
-      </div>
-      <!-- Dynamically added comments will go here -->
-      <!-- Pull-to-refresh spinner (appears when scrolled past last comment) -->
-      <div class="cpRefreshWrap" id="cpRefreshWrap" aria-hidden="true">
-        <div class="cpRefreshSpinner"></div>
+  <div id="communityPage">
+    <!-- Tab bar -->
+    <div class="cmHdr">
+      <div class="cmTabs">
+        <button class="cmTab active" id="cmTabCommunity" onclick="cmSwitchTab('community')">Community</button>
+        <button class="cmTab" id="cmTabFriends" onclick="cmSwitchTab('friends')">Friends</button>
       </div>
     </div>
-  </div>
 
-  <!-- Fixed comment composer bar (shown only when comments page is open) -->
-  <div class="cpBar" id="cpBar">
-    <div class="cpComposerWrap">
-      <div class="cpSelectedImage" id="cpSelectedImage" style="display:none;border-bottom:1px solid var(--bdr);padding:0 0 6px 0;margin:0;">
-        <div class="cpThumbWrap">
-          <img id="cpSelectedImageImg" class="cpThumbPreview" src="" alt="">
-          <button class="cpThumbClose" onclick="hideCommentThumbnail()">✕</button>
+    <!-- ============== COMMUNITY TAB ============== -->
+    <div class="cmView" id="cmViewCommunity" style="display:flex;">
+
+      <!-- Grid view -->
+      <div class="cmScroll" id="cmGridScroll">
+        <div class="cmBanner">
+          <div class="cmBannerTitle">Connect. Share. Grow Together.</div>
+          <div class="cmBannerSub">Join communities, share ideas, collaborate and grow with fellow artists.</div>
+          <div class="cmStats">
+            <div class="cmStat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
+              <div><span class="cmStatNum">48K+</span><span class="cmStatLbl">MEMBERS</span></div>
+            </div>
+            <div class="cmStat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+              <div><span class="cmStatNum">6</span><span class="cmStatLbl">COMMUNITIES</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cmSectionHead">
+          <div>
+            <h3>Explore Communities</h3>
+            <p>Find the perfect community to connect and share.</p>
+          </div>
+          <button class="cmCreateBtn" onclick="cmCreateCommunity()">+ Create Community</button>
+        </div>
+
+        <div class="cmGrid">
+          <div class="cmCard" onclick="cmOpenCommunity('official')">
+            <div class="cmCardTop"><h4>DigiArtz Official</h4><span class="cmBadge">Official</span></div>
+            <p>Official community of DigiArtz. Get updates, announcements and more.</p>
+            <div class="cmCardMeta"><span>12.4K Members</span><span class="cmDot"></span><span>342 Online</span></div>
+          </div>
+          <div class="cmCard" onclick="cmOpenCommunity('arttalk')">
+            <div class="cmCardTop"><h4>Art Talk</h4></div>
+            <p>Discuss about art, share your thoughts, ask questions and grow together.</p>
+            <div class="cmCardMeta"><span>8.7K Members</span><span class="cmDot"></span><span>256 Online</span></div>
+          </div>
+          <div class="cmCard" onclick="cmOpenCommunity('feedback')">
+            <div class="cmCardTop"><h4>Art Feedback</h4></div>
+            <p>Share your work and get constructive feedback from the community.</p>
+            <div class="cmCardMeta"><span>6.3K Members</span><span class="cmDot"></span><span>189 Online</span></div>
+          </div>
+          <div class="cmCard" onclick="cmOpenCommunity('collab')">
+            <div class="cmCardTop"><h4>Collab Hub</h4></div>
+            <p>Find artists to collaborate with on projects and bring ideas to life.</p>
+            <div class="cmCardMeta"><span>4.6K Members</span><span class="cmDot"></span><span>132 Online</span></div>
+          </div>
+          <div class="cmCard" onclick="cmOpenCommunity('tips')">
+            <div class="cmCardTop"><h4>Tips &amp; Resources</h4></div>
+            <p>Share helpful tips, tutorials, tools and resources for artists.</p>
+            <div class="cmCardMeta"><span>5.1K Members</span><span class="cmDot"></span><span>118 Online</span></div>
+          </div>
+          <div class="cmCard" onclick="cmOpenCommunity('showcase')">
+            <div class="cmCardTop"><h4>Showcase</h4></div>
+            <p>Share your latest work, celebrate progress and inspire others.</p>
+            <div class="cmCardMeta"><span>7.2K Members</span><span class="cmDot"></span><span>205 Online</span></div>
+          </div>
+        </div>
+
+        <div class="cmFooterCta">
+          <div>
+            <strong>Can't find what you're looking for?</strong>
+            <p>Create your own community and build your space.</p>
+          </div>
+          <button class="cmCreateBtn" onclick="cmCreateCommunity()">+ Create Community</button>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:.75rem;">
-        <div class="cpBarAvatar" id="cpBarAvatar">?</div>
-        <input class="cpBarInput" id="cpBarInput" type="text" placeholder="Comment here..." maxlength="500" autocomplete="off"/>
-        <button class="cpBarSend" id="cpBarSend" onclick="cpSend()">SEND ✦</button>
+
+      <!-- Chat view — "Art Talk" room (the original Comments feed) -->
+      <div class="cmChat" id="cmChatView">
+        <div class="cpHdr">
+          <button class="cmBack" onclick="cmCloseChat()" title="Back" aria-label="Back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="cpTitle">ART TALK <span class="s">✦</span></div>
+        </div>
+
+        <!-- Comments list -->
+        <div class="cpBody" id="cpBody">
+          <!-- Placeholder — no comments yet -->
+          <div class="cpEmpty" id="cpEmpty">
+            <div class="cpEIco">◎</div>
+            <div>NO COMMENTS YET</div>
+            <div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>
+          </div>
+          <!-- Dynamically added comments will go here -->
+          <!-- Pull-to-refresh spinner (appears when scrolled past last comment) -->
+          <div class="cpRefreshWrap" id="cpRefreshWrap" aria-hidden="true">
+            <div class="cpRefreshSpinner"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== FRIENDS TAB ============== -->
+    <div class="cmView" id="cmViewFriends" style="display:none;">
+      <div class="cmScroll">
+        <div class="cmBanner">
+          <div class="cmBannerTitle">Connect. Share. Grow Together.</div>
+          <div class="cmBannerSub">Join communities, share ideas, collaborate and grow with fellow artists.</div>
+          <div class="cmStats">
+            <div class="cmStat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
+              <div><span class="cmStatNum">48K+</span><span class="cmStatLbl">MEMBERS</span></div>
+            </div>
+            <div class="cmStat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+              <div><span class="cmStatNum">6</span><span class="cmStatLbl">COMMUNITIES</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cmSectionHead">
+          <div>
+            <h3>Friends</h3>
+            <p>People you connect with will show up here.</p>
+          </div>
+        </div>
+
+        <!-- Default friend: Zeo, the AI assistant — always present,
+             opens the existing #zeoPage assistant via cmOpenZeo() -->
+        <div class="cmFriendList">
+          <div class="cmFriendItem" onclick="cmOpenZeo()">
+            <div class="cmFriendAvatar">
+              <img src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000e09071fdb5d040b64f9ce7a9.png"
+                   alt="Zeo" draggable="false"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
+              <span class="cmFriendAvatarFallback" style="display:none;">🤖</span>
+            </div>
+            <div class="cmFriendMeta">
+              <div class="cmFriendName">Zeo <span class="cmBadge">AI</span></div>
+              <div class="cmFriendStatus"><span class="cmDot"></span>Always online · Your AI assistant</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cmEmpty">
+          <div class="cmEmptyIco">◎</div>
+          <div>NO FRIENDS YET</div>
+          <div class="cmEmptySub">Once friends are live, the people you follow and connect with will appear here too.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fixed comment composer bar (shown only when Art Talk chat is open) -->
+    <div class="cpBar" id="cpBar">
+      <div class="cpComposerWrap">
+        <div class="cpSelectedImage" id="cpSelectedImage" style="display:none;border-bottom:1px solid var(--bdr);padding:0 0 6px 0;margin:0;">
+          <div class="cpThumbWrap">
+            <img id="cpSelectedImageImg" class="cpThumbPreview" src="" alt="">
+            <button class="cpThumbClose" onclick="hideCommentThumbnail()">✕</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem;">
+          <div class="cpBarAvatar" id="cpBarAvatar">?</div>
+          <input class="cpBarInput" id="cpBarInput" type="text" placeholder="Comment here..." maxlength="500" autocomplete="off"/>
+          <button class="cpBarSend" id="cpBarSend" onclick="cpSend()">SEND ✦</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- =========================================================
        SUBSCRIPTION PAGE OVERLAY
-       Pattern: same as #fg (Full Gallery) and #commentsPage.
+       Pattern: same as #fg (Full Gallery) and #communityPage.
        Opens via openSubscription(), closes via closeSubscription().
        ├─ Header Bar (.subPgHdr)
        │   ├─ Back Button (.subPgX)
@@ -5205,46 +5584,131 @@ body{background:var(--bg);}
   </div>
   <!-- =========================================================
        AUTHENTICATION PAGE (#authMod) — full-screen sliding panel,
-       same language as #profilePage / #subPage / #comicArtsPage,
-       reachable at /login. Form card (.modal) is centered inside
-       the page body instead of floating over a dimmed backdrop.
-       ├─ Header Bar (.subPgHdr) — back button + title
-       └─ Centered Card (.modal)
-           ├─ Title (#authTitle)
-           ├─ Subtitle (#authSubtitle)    [shown on signup]
-           ├─ Username Field (#authUser)  [signup mode only]
+       same slide-in language as #profilePage / #subPage /
+       #comicArtsPage, reachable at /login. Self-contained dark
+       theme (own palette, independent of the site's white
+       default). No back-arrow — the bottom nav bar is the only
+       way in/out, closing via bnGoProfile()/closeAuthMod().
+       ├─ Header Bar (.subPgHdr) — title only
+       └─ Body (.laBody)
+           ├─ Login/Signup toggle link (#authLeadText / #authToggleBtn)
+           ├─ Brand block (logo, tagline)
+           ├─ Feature strip (Share/Connect/Grow)
+           ├─ Heading (#authTitle) + Subtitle (#authSubtitle)
+           ├─ Error Message (#authErr) / Success Message (#authMsg)
+           ├─ Username Field wrap (#authUserWrap)  [signup mode only]
            ├─ Email Field (#authEmail)
-           ├─ Password Field (#authPass)
-           ├─ Error Message (#authErr)
-           ├─ Success Message (#authMsg)
+           ├─ Password Field (#authPass) + show/hide toggle (#authEyeIcon)
+           ├─ Remember me (#authRemember) + Forgot password
            ├─ Primary Action Button (#authBtn)
-           ├─ Toggle Mode Button (#authToggleBtn)
-           └─ Cancel Button
+           └─ Social row (Google/Discord/Apple — "coming soon" toast)
        ========================================================= -->
   <div id="authMod" role="dialog" aria-modal="true" aria-label="Login">
     <div class="subPgHdr">
-      <button class="subPgX" onclick="closeAuthMod()" aria-label="Close login">←</button>
-      <div class="subPgTitle">LOGIN <span class="s">◉</span></div>
+      <div class="subPgTitle">ACCOUNT <span class="s">◉</span></div>
     </div>
-    <div class="authBdy">
-     <div class="modal authCard">
-      <h2 id="authTitle">LOGIN</h2>
-      <p id="authSubtitle" style="display:none;font-size:.8rem;color:var(--txd);font-style:italic;margin-bottom:1.2rem;line-height:1.5;"></p>
-      <input class="mIn" id="authUser" placeholder="USERNAME" type="text" autocomplete="username" style="display:none;"/>
-      <input class="mIn" id="authEmail" placeholder="EMAIL" type="email" autocomplete="email"/>
-      <input class="mIn" id="authPass" placeholder="PASSWORD" type="password" autocomplete="current-password"
-        onkeydown="if(event.key==='Enter'){ authMode==='signup'?doSignUp():doAuth(); }"/>
-      <div class="mErr" id="authErr"></div>
-      <!-- Success message (signup confirmation / email-confirm notice) -->
-      <div id="authMsg" style="display:none;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:#86efac;margin-bottom:.6rem;line-height:1.6;"></div>
+    <div class="laBody">
+
+      <!-- ── Login/Signup switch — top link ── -->
+      <p class="laTopLink"><span id="authLeadText">Don't have an account?</span><button id="authToggleBtn" onclick="switchAuthMode('signup')" type="button">Sign up</button></p>
+
+      <!-- ── Brand block ── -->
+      <div class="laBrand">
+        <div class="laEyebrow">Welcome to</div>
+        <div class="laLogo">Digi<span>Artz</span></div>
+        <p class="laTag">A creative community for artists<br>to share, inspire, and grow together.</p>
+      </div>
+
+      <!-- ── Feature strip ── -->
+      <div class="laFeatures">
+        <div class="laFeat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2Z"/></svg>
+          Share Your Art
+        </div>
+        <div class="laFeat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Connect &amp; Inspire
+        </div>
+        <div class="laFeat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Grow Together
+        </div>
+      </div>
+
+      <div class="laDivider"></div>
+
+      <!-- ── Form heading ── -->
+      <h2 class="laHead" id="authTitle">Welcome Back</h2>
+      <p class="laSub" id="authSubtitle">Sign in to continue to your account.</p>
+
+      <div class="laErr" id="authErr"></div>
+      <div class="laMsg" id="authMsg"></div>
+
+      <!-- Username — signup mode only -->
+      <div class="laFieldWrap" id="authUserWrap" style="display:none;">
+        <label class="laLabel" for="authUser">Username</label>
+        <div class="laInputBox">
+          <svg class="laIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+          <input class="laInput" id="authUser" placeholder="Choose a username" type="text" autocomplete="username"/>
+        </div>
+      </div>
+
+      <!-- Email / Username -->
+      <div class="laFieldWrap">
+        <label class="laLabel" for="authEmail">Email or Username</label>
+        <div class="laInputBox">
+          <svg class="laIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+          <input class="laInput" id="authEmail" placeholder="Enter your email or username" type="email" autocomplete="email"/>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="laFieldWrap">
+        <label class="laLabel" for="authPass">Password</label>
+        <div class="laInputBox">
+          <svg class="laIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="laInput laHasEye" id="authPass" placeholder="Enter your password" type="password" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter'){ authMode==='signup'?doSignUp():doAuth(); }"/>
+          <button type="button" class="laEyeBtn" onclick="toggleAuthPassVis()" aria-label="Show password">
+            <svg id="authEyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="laRow">
+        <label class="laCheck"><input type="checkbox" id="authRemember"/> Remember me</label>
+        <button type="button" class="laForgot" onclick="showToast('Password reset — coming soon ✦')">Forgot password?</button>
+      </div>
+
       <!-- Primary action button — label + handler change per mode -->
-      <button class="mBtn" id="authBtn" onclick="doAuth()">LOGIN ✦</button>
-      <!-- Create Account / Back to Login toggle -->
-      <button class="mBtn sec" id="authToggleBtn" onclick="switchAuthMode('signup')">CREATE ACCOUNT</button>
-      <button class="mBtn sec" onclick="closeAuthMod()">CANCEL</button>
-     </div>
+      <button class="laSubmit" id="authBtn" onclick="doAuth()">Log In</button>
+
+      <div class="laOrDiv">or continue with</div>
+
+      <!-- Social sign-in — not wired up yet -->
+      <div class="laSocial">
+        <button type="button" class="laSocialBtn" onclick="showToast('Google sign-in is currently unavailable — coming soon ✦')" aria-label="Continue with Google">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 6.1 29.5 4 24 4c-7.6 0-14.1 4.3-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.1-2 13.7-5.4l-6.3-5.3C29.4 34.9 26.8 36 24 36c-5.3 0-9.7-3.6-11.3-8.4l-6.5 5C9.8 39.6 16.4 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.3 5.3C40.9 36.6 44 30.9 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+          Google
+        </button>
+        <button type="button" class="laSocialBtn" onclick="showToast('Discord sign-in is currently unavailable — coming soon ✦')" aria-label="Continue with Discord">
+          <svg viewBox="0 0 24 24" fill="#5865F2" aria-hidden="true"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.07.07 0 0 0-.032.027C.533 9.045-.32 13.579.099 18.057a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.211 0 2.176 1.094 2.157 2.418 0 1.334-.946 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.211 0 2.176 1.094 2.157 2.418 0 1.334-.946 2.419-2.157 2.419z"/></svg>
+          Discord
+        </button>
+        <button type="button" class="laSocialBtn" onclick="showToast('Apple sign-in is currently unavailable — coming soon ✦')" aria-label="Continue with Apple">
+          <svg viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.377 0-2.335-1.25-3.4-2.79-1.23-1.75-2.24-4.53-2.24-7.17 0-4.22 2.74-6.46 5.44-6.46 1.398 0 2.598.94 3.5.94.86 0 2.187-1 3.83-1 .61 0 2.905.06 4.394 2.19-.108.07-2.617 1.53-2.617 4.62 0 3.62 3.14 4.9 3.34 4.99z"/></svg>
+          Apple
+        </button>
+      </div>
+
+      <p class="laFooter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+        Your data is safe and secure with us.
+      </p>
+
     </div>
   </div>
+
   <!-- =========================================================
        UPLOAD / EDIT MODAL
        ├─ Modal Overlay (.mOvr #upMod)
@@ -5362,7 +5826,7 @@ body{background:var(--bg);}
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function restoreScroll(){
-    var locks=['fg','artModal','commentsPage','adsPanel','legalBackdrop','subPage','comicArtsPage','profilePage','authMod'];
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','comicArtsPage','profilePage','authMod'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -5805,7 +6269,7 @@ body{background:var(--bg);}
   var currentUser = null; /* null = logged out, object = logged in */
   var authMode = 'login'; /* 'login' | 'signup' */
 
-  /* Avatar helpers — shared by navbar, profile popup, and comment bar */
+  /* Avatar helpers — shared by navbar, profile page, and comment bar */
 
   /* ── Sync the navbar: swap face icon ↔ avatar button ── */
   function syncAuthBtn() {
@@ -5821,30 +6285,16 @@ body{background:var(--bg);}
       if (avatarBtn) {
         avatarBtn.style.display = 'flex';
         avatarBtn.title = 'Profile — ' + cpGetDisplayName();
-        avatarBtn.setAttribute('aria-label', 'Open profile menu');
       }
     } else {
-      /* Logged out: show face icon, hide avatar, close popup */
+      /* Logged out: show face icon, hide avatar */
       if (loginBtn)  loginBtn.style.display  = '';
       if (avatarBtn) avatarBtn.style.display  = 'none';
-      closeProfilePopup();
     }
 
-    /* Also sync popup content and comment bar avatar */
-    syncProfilePopupContent();
+    /* Also sync the subscription overview card and comment bar avatar */
     syncSubOverviewCard();
     cpSyncAvatar();
-  }
-
-  /* ── Populate popup avatar + username label ── */
-  function syncProfilePopupContent() {
-    var ppAv   = document.getElementById('ppAvatar');
-    var ppName = document.getElementById('ppUsername');
-    if (!currentUser) return;
-    var letter = cpGetAvatarLetter();
-    var name   = cpGetDisplayName();
-    if (ppAv)   ppAv.textContent   = letter;
-    if (ppName) ppName.textContent = name;
   }
 
   /* ── Sync the Subscription Overview profile card ── */
@@ -5900,45 +6350,36 @@ body{background:var(--bg);}
     }
   }
 
-  /* PROFILE POPUP LOGIC */
+  /* PROFILE PAGE ⋮ MENU LOGIC (Subscription / Admin Panel / Log Out) */
 
-  var _ppOpen = false;
+  var _pfMenuOpen = false;
 
-
-  function openProfilePopup() {
-    if (!currentUser) return;
-    syncProfilePopupContent();
-    var popup     = document.getElementById('profilePopup');
-    var avatarBtn = document.getElementById('navAvatarBtn');
-    if (!popup) return;
-    /* Close hamburger menu if open */
-    closeMenu();
-    popup.classList.add('open');
-    _ppOpen = true;
-    if (avatarBtn) avatarBtn.setAttribute('aria-expanded','true');
-    /* Focus the first button for keyboard users */
-    setTimeout(function(){
-      var first = popup.querySelector('.ppBtn');
-      if (first) first.focus();
-    }, 60);
+  function openPfMenu() {
+    var menu = document.getElementById('pfMenu');
+    var btn  = document.querySelector('.pfMenuBtn');
+    if (!menu) return;
+    closePfUploadMenu();
+    menu.classList.add('open');
+    _pfMenuOpen = true;
+    if (btn) btn.setAttribute('aria-expanded','true');
   }
 
-  function closeProfilePopup() {
-    var popup     = document.getElementById('profilePopup');
-    var avatarBtn = document.getElementById('navAvatarBtn');
-    if (popup) popup.classList.remove('open');
-    _ppOpen = false;
-    if (avatarBtn) avatarBtn.setAttribute('aria-expanded','false');
+  function closePfMenu() {
+    var menu = document.getElementById('pfMenu');
+    var btn  = document.querySelector('.pfMenuBtn');
+    if (menu) menu.classList.remove('open');
+    _pfMenuOpen = false;
+    if (btn) btn.setAttribute('aria-expanded','false');
   }
 
-  function toggleProfilePopup(e) {
+  function togglePfMenu(e) {
     if (e) e.stopPropagation();
-    if (_ppOpen) { closeProfilePopup(); } else { openProfilePopup(); }
+    if (_pfMenuOpen) { closePfMenu(); } else { openPfMenu(); }
   }
 
-  /* Logout from popup — executes existing signOut flow then closes popup */
-  function ppDoLogout() {
-    closeProfilePopup();
+  /* Logout from the profile menu — executes existing signOut flow then closes menu */
+  function pfMenuLogout() {
+    closePfMenu();
     if (sb) {
       sb.auth.signOut()
         .then(function(){ showToast('Signed out'); })
@@ -5946,14 +6387,43 @@ body{background:var(--bg);}
     }
   }
 
-  /* Close popup on outside click */
+  /* ── Upload dropdown (Upload Artwork / Upload Comic) ── */
+  var _pfUpMenuOpen = false;
+
+  function openPfUploadMenu() {
+    var menu = document.getElementById('pfUploadMenu');
+    var trigger = document.querySelector('.pfUpTrigger');
+    if (!menu) return;
+    closePfMenu();
+    menu.classList.add('open');
+    _pfUpMenuOpen = true;
+    if (trigger) trigger.setAttribute('aria-expanded','true');
+  }
+
+  function closePfUploadMenu() {
+    var menu = document.getElementById('pfUploadMenu');
+    var trigger = document.querySelector('.pfUpTrigger');
+    if (menu) menu.classList.remove('open');
+    _pfUpMenuOpen = false;
+    if (trigger) trigger.setAttribute('aria-expanded','false');
+  }
+
+  function togglePfUploadMenu(e) {
+    if (e) e.stopPropagation();
+    if (_pfUpMenuOpen) { closePfUploadMenu(); } else { openPfUploadMenu(); }
+  }
+
+  /* Close either dropdown on outside click */
   document.addEventListener('click', function(e) {
-    if (!_ppOpen) return;
-    var popup     = document.getElementById('profilePopup');
-    var avatarBtn = document.getElementById('navAvatarBtn');
-    if (popup && !popup.contains(e.target) &&
-        avatarBtn && !avatarBtn.contains(e.target)) {
-      closeProfilePopup();
+    if (_pfMenuOpen) {
+      var menu = document.getElementById('pfMenu');
+      var btn  = document.querySelector('.pfMenuBtn');
+      if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) closePfMenu();
+    }
+    if (_pfUpMenuOpen) {
+      var umenu = document.getElementById('pfUploadMenu');
+      var utrig = document.querySelector('.pfUpTrigger');
+      if (umenu && !umenu.contains(e.target) && utrig && !utrig.contains(e.target)) closePfUploadMenu();
     }
   });
 
@@ -5967,7 +6437,6 @@ body{background:var(--bg);}
     if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
     /* Always open in login mode */
     switchAuthMode('login');
-    closeProfilePopup();
     document.getElementById('authMod').classList.add('open');
     document.body.style.overflow = 'hidden';
     if (window.location.pathname !== '/login') {
@@ -6013,7 +6482,7 @@ body{background:var(--bg);}
       err.textContent = e.message || 'Login failed. Check your credentials.';
       err.classList.add('show');
     } finally {
-      btn.textContent = 'LOGIN ✦'; btn.disabled = false;
+      btn.textContent = 'Log In'; btn.disabled = false;
     }
   }
 
@@ -6024,9 +6493,10 @@ body{background:var(--bg);}
     var subtitle   = document.getElementById('authSubtitle');
     var btn        = document.getElementById('authBtn');
     var toggleBtn  = document.getElementById('authToggleBtn');
+    var leadText   = document.getElementById('authLeadText');
     var err        = document.getElementById('authErr');
     var msg        = document.getElementById('authMsg');
-    var userField  = document.getElementById('authUser');
+    var userWrap   = document.getElementById('authUserWrap');
     var passField  = document.getElementById('authPass');
 
     /* Reset error / success state */
@@ -6034,29 +6504,44 @@ body{background:var(--bg);}
     msg.style.display = 'none'; msg.textContent = '';
 
     if (mode === 'signup') {
-      title.textContent = 'CREATE ACCOUNT';
+      title.textContent = 'Create Account';
       subtitle.textContent = 'Choose a username (your public display name), enter your email, and set a password of at least 6 characters.';
       subtitle.style.display = 'block';
-      btn.textContent = 'CREATE ACCOUNT ✦';
+      btn.textContent = 'Create Account';
       btn.onclick = doSignUp;
-      toggleBtn.textContent = '← BACK TO LOGIN';
+      leadText.textContent = 'Already have an account?';
+      toggleBtn.textContent = 'Log in';
       toggleBtn.onclick = function(){ switchAuthMode('login'); };
       /* Show the username field in signup mode */
-      if (userField) userField.style.display = '';
+      if (userWrap) userWrap.style.display = '';
       passField.setAttribute('autocomplete', 'new-password');
       /* Focus username field when switching to signup */
-      setTimeout(function(){ if(userField) userField.focus(); }, 60);
+      setTimeout(function(){ var u = document.getElementById('authUser'); if (u) u.focus(); }, 60);
     } else {
-      title.textContent = 'LOGIN';
-      subtitle.style.display = 'none';
-      btn.textContent = 'LOGIN ✦';
+      title.textContent = 'Welcome Back';
+      subtitle.textContent = 'Sign in to continue to your account.';
+      subtitle.style.display = 'block';
+      btn.textContent = 'Log In';
       btn.onclick = doAuth;
-      toggleBtn.textContent = 'CREATE ACCOUNT';
+      leadText.textContent = "Don't have an account?";
+      toggleBtn.textContent = 'Sign up';
       toggleBtn.onclick = function(){ switchAuthMode('signup'); };
       /* Hide username field on login — not needed */
-      if (userField) userField.style.display = 'none';
+      if (userWrap) userWrap.style.display = 'none';
       passField.setAttribute('autocomplete', 'current-password');
     }
+  }
+
+  /* ── Show/hide password text in the login form ── */
+  var AUTH_EYE_OPEN = '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>';
+  var AUTH_EYE_OFF  = '<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.86 13.86 0 0 0 1 11s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  function toggleAuthPassVis() {
+    var inp  = document.getElementById('authPass');
+    var icon = document.getElementById('authEyeIcon');
+    if (!inp) return;
+    var showing = inp.type === 'password';
+    inp.type = showing ? 'text' : 'password';
+    if (icon) icon.innerHTML = showing ? AUTH_EYE_OFF : AUTH_EYE_OPEN;
   }
 
   /* ── Perform signup ── */
@@ -6120,7 +6605,7 @@ body{background:var(--bg);}
         document.getElementById('authPass').value  = '';
         msg.textContent = '✦ Check your email to confirm your account.';
         msg.style.display = 'block';
-        btn.textContent = 'CREATE ACCOUNT ✦'; btn.disabled = false;
+        btn.textContent = 'Create Account'; btn.disabled = false;
         /* Auto-close modal after 5 s */
         setTimeout(function(){
           if (document.getElementById('authMod').classList.contains('open')) {
@@ -6151,7 +6636,7 @@ body{background:var(--bg);}
     } finally {
       /* Only reset button text if we didn't return early (email-confirm path) */
       if (btn.disabled) {
-        btn.textContent = 'CREATE ACCOUNT ✦'; btn.disabled = false;
+        btn.textContent = 'Create Account'; btn.disabled = false;
       }
     }
   }
@@ -6420,8 +6905,7 @@ body{background:var(--bg);}
     var panel = document.getElementById('profilePage');
     panel.classList.add('open');
     document.body.style.overflow='hidden';
-    closeProfilePopup();
-    /* Reset state + show skeletons immediately */
+    closePfMenu();
     pf.profile=null; pf.galleryRows=[]; pf.galleryPage=0; pf.galleryDone=false;
     pf.comicRows=[]; pf.comicPage=0; pf.comicDone=false;
     document.getElementById('pfUsername').textContent='Loading…';
@@ -6438,8 +6922,9 @@ body{background:var(--bg);}
       document.getElementById('pfUsername').textContent = data.username;
       document.getElementById('pfAvatar').textContent = (data.username||'?').charAt(0).toUpperCase();
       document.getElementById('pfJoined').textContent = data.created_at ? ('JOINED '+pfFormatDate(data.created_at).toUpperCase()) : '';
-      document.getElementById('pfUploadArtBtn').style.display = pf.isOwner ? '' : 'none';
-      document.getElementById('pfUploadComicBtn').style.display = pf.isOwner ? '' : 'none';
+      document.getElementById('pfUploadWrap').style.display = pf.isOwner ? '' : 'none';
+      document.querySelector('.pfMenuBtn').style.display = pf.isOwner ? '' : 'none';
+      if(!pf.isOwner) closePfMenu();
       pfRenderBio();
       pfLoadStats();
       pfLoadMoreGallery();
@@ -6454,6 +6939,8 @@ body{background:var(--bg);}
     var panel = document.getElementById('profilePage');
     if(!panel.classList.contains('open')) return;
     panel.classList.remove('open');
+    closePfMenu();
+    closePfUploadMenu();
     restoreScroll();
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
       try{ history.pushState({},'', '/'); }catch(e){}
@@ -6827,7 +7314,7 @@ body{background:var(--bg);}
 
   let tT;
   function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000);}
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeComments();closeProfilePopup();closeSubscription();closeSubModal();closeComicArts();closeProfilePage();
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closePfMenu();closePfUploadMenu();closeSubscription();closeSubModal();closeComicArts();closeProfilePage();
   }});
 
   /* ── BOTTOM NAVIGATION ──────────────────────────────────
@@ -6837,7 +7324,7 @@ body{background:var(--bg);}
   function closeMenu(){}
 
   /* ── Active-state highlighting for the 5 bottom nav items ── */
-  var BN_IDS = ['bnHome','bnGallery','bnComic','bnComment','bnProfile'];
+  var BN_IDS = ['bnHome','bnGallery','bnComic','bnCommunity','bnProfile'];
   function bnSetActive(id){
     BN_IDS.forEach(function(bid){
       var el = document.getElementById(bid);
@@ -6851,9 +7338,8 @@ body{background:var(--bg);}
   function bnCloseAllSections(){
     closeFG();
     closeComicArts();
-    closeComments();
+    closeCommunityPage();
     closeProfilePage();
-    closeProfilePopup();
     closeSubscription();
     closeAuthMod();
   }
@@ -6875,22 +7361,18 @@ body{background:var(--bg);}
     openComicArts();
     bnSetActive('bnComic');
   }
-  function bnGoComment(){
+  function bnGoCommunity(){
     bnCloseAllSections();
-    ddOpenComments();
-    bnSetActive('bnComment');
+    ddOpenCommunity();
+    bnSetActive('bnCommunity');
   }
   function bnGoProfile(e){
-    /* Close every OTHER section, but leave the profile popup's own
-       open/closed state alone so tapping the avatar still toggles
-       it shut on a second tap instead of force-reopening it. */
+    if(e) e.stopPropagation();
     closeFG();
     closeComicArts();
-    closeComments();
-    closeProfilePage();
+    closeCommunityPage();
     closeSubscription();
-    closeAuthMod();
-    if(currentUser){ toggleProfilePopup(e); } else { closeProfilePopup(); openAuthMod(); }
+    if(currentUser){ closeAuthMod(); openOwnProfile(); } else { closeProfilePage(); openAuthMod(); }
     bnSetActive('bnProfile');
   }
   /* Default state on load */
@@ -6914,7 +7396,7 @@ body{background:var(--bg);}
     if(catR) catR.checked = true;
     openFG();
   }
-  function ddOpenComments(){ openComments(); }
+  function ddOpenCommunity(){ openCommunityHome(); }
   function smHandleAdm(){
     if(!isDev){
       /* Defensive fallback — button shouldn't be in the DOM at all unless isDev,
@@ -6968,20 +7450,71 @@ function hideCommentThumbnail(){
 }
 
 async function openComments(){
+    /* Open the community page then jump straight into the Art Talk
+       room — used by the "COMMENT" button on an artwork lightbox. */
+    openCommunityHome();
+    await cmOpenCommunity('arttalk');
+  }
+
+  /* ── Community page: open/close the whole overlay ── */
+  function openCommunityHome(){
     closeMenu();
-    /* Reset offset so each fresh open starts at the initial load amount */
-    cpOffset = 0;
-    var page = document.getElementById('commentsPage');
+    var page = document.getElementById('communityPage');
     page.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
+    cmSwitchTab('community');
+    cmCloseChat(); /* always land on the grid, never mid-chat */
+  }
+
+  function closeCommunityPage(){
+    document.getElementById('communityPage').classList.remove('open');
+    document.getElementById('cpBar').style.display = 'none';
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+  }
+
+  /* ── Community / Friends tab switch ── */
+  function cmSwitchTab(tab){
+    var isCommunity = tab === 'community';
+    var tabC = document.getElementById('cmTabCommunity');
+    var tabF = document.getElementById('cmTabFriends');
+    var viewC = document.getElementById('cmViewCommunity');
+    var viewF = document.getElementById('cmViewFriends');
+    if(tabC) tabC.classList.toggle('active', isCommunity);
+    if(tabF) tabF.classList.toggle('active', !isCommunity);
+    if(viewC) viewC.style.display = isCommunity ? 'flex' : 'none';
+    if(viewF) viewF.style.display = isCommunity ? 'none' : 'flex';
+    if(!isCommunity){
+      /* Composer bar is Art Talk-specific, hide it on the Friends tab */
+      var bar = document.getElementById('cpBar');
+      if(bar) bar.style.display = 'none';
+    }
+  }
+
+  /* ── Community card tap ──
+     id: 'official' | 'arttalk' | 'feedback' | 'collab' | 'tips' | 'showcase'
+     No "Join" button anywhere — tapping a card auto-joins a logged-in
+     user (or opens the "Art Talk" room directly); a guest is sent to
+     the login page instead. Every community except Art Talk is a
+     placeholder until its Supabase table/policies are added. */
+  async function cmOpenCommunity(id){
+    if(!currentUser){
+      showToast('Please login to join this community.');
+      openAuthMod();
+      return;
+    }
+    if(id !== 'arttalk'){
+      showToast('This community is coming soon ✦');
+      return;
+    }
+    var grid = document.getElementById('cmGridScroll');
+    var chat = document.getElementById('cmChatView');
+    if(grid) grid.style.display = 'none';
+    if(chat) chat.style.display = 'flex';
+    /* Reset offset so each fresh open starts at the initial load amount */
+    cpOffset = 0;
     await cpLoadComments();
-    /* Guard: cpLoadComments() awaits a network call, so the user may
-       have already tapped close (or hit Escape) before it resolved.
-       If the page is no longer open, bail out here instead of
-       re-showing the composer bar — this is what was leaving cpBar
-       stuck visible at the bottom after the comments page had closed. */
-    if(!page.classList.contains('open')) return;
     document.getElementById('cpBar').style.display = 'flex';
     cpSyncAvatar();
     var thumb=document.getElementById('cpSelectedImage');
@@ -6992,11 +7525,26 @@ async function openComments(){
     }
   }
 
-  function closeComments(){
-    document.getElementById('commentsPage').classList.remove('open');
-    document.getElementById('cpBar').style.display = 'none';
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
+  /* Back button inside the Art Talk chat — return to the grid */
+  function cmCloseChat(){
+    var grid = document.getElementById('cmGridScroll');
+    var chat = document.getElementById('cmChatView');
+    if(chat) chat.style.display = 'none';
+    if(grid) grid.style.display = 'block';
+    var bar = document.getElementById('cpBar');
+    if(bar) bar.style.display = 'none';
+  }
+
+  function cmCreateCommunity(){
+    if(!currentUser){ openAuthMod(); return; }
+    showToast('Community creation is coming soon ✦');
+  }
+
+  /* Friends tab — default "Zeo" entry opens the existing AI
+     assistant page (#zeoPage) instead of a separate chat UI. */
+  function cmOpenZeo(){
+    var zeoBtn = document.getElementById('zeoBtn');
+    if(zeoBtn) zeoBtn.click();
   }
 
   /* ── Comments pagination state ──
@@ -7098,7 +7646,7 @@ async function openComments(){
         if(nearBottom && !_cpRefreshing){
           clearTimeout(_cpRefreshTimer);
           _cpRefreshTimer = setTimeout(function(){
-            var page = document.getElementById('commentsPage');
+            var page = document.getElementById('communityPage');
             if(page && page.classList.contains('open')){
               cpTriggerRefresh();
             }
@@ -8813,6 +9361,101 @@ window.ZEO_DATA = {
     body.scrollTop = body.scrollHeight;
   }
 
+  /* Exposed so the hero-only-widgets script can silence the
+     speech-bubble cycle whenever the bot button itself is
+     hidden (off the hero section, or an overlay page is open) —
+     otherwise the bubble, being independently fixed-position,
+     would keep popping up on its own timer regardless. */
+  window.zeoPauseBubble  = pauseBubble;
+  window.zeoResumeBubble = resumeBubble;
+
+})();
+</script>
+
+<!-- ── Hero-only floating widgets ─────────────────────────
+     The brand badge, notification button, and Zeo AI button
+     are fixed-position with a high z-index, so without this
+     they'd stay pinned on screen through:
+       (a) every in-page section as you scroll (Artworks,
+           Subscriptions, About, Connect, FAQ...), and
+       (b) every full-page overlay panel that slides in
+           (Comic Arts, Profile, Full Gallery, Comments,
+           Subscription plans, Ads) — those panels sit at
+           z-index 500, below the widgets' z-index 1001, so
+           the widgets used to float on top of them too.
+     They should only show while the hero/main section is in
+     view AND no overlay panel is open. ── -->
+<script>
+(function () {
+  'use strict';
+  var hero = document.getElementById('hero');
+  if (!hero) return;
+
+  var widgets = Array.prototype.slice.call(document.querySelectorAll('.fpFloat'));
+  var zeoBtn = document.getElementById('zeoBtn');
+  if (zeoBtn) widgets.push(zeoBtn);
+  if (!widgets.length) return;
+
+  var heroVisible = true;
+  var panelOpen = false;
+  var wasOut = false;
+
+  function apply() {
+    var out = !heroVisible || panelOpen;
+    widgets.forEach(function (el) {
+      el.classList.toggle('heroOut', out);
+    });
+    /* The bot's speech bubble is a separately fixed-position element
+       driven by its own timer, independent of the button — muting
+       it here stops it from popping up while the button is hidden. */
+    if (out !== wasOut) {
+      wasOut = out;
+      if (out) {
+        if (typeof window.zeoPauseBubble === 'function') window.zeoPauseBubble();
+      } else {
+        if (typeof window.zeoResumeBubble === 'function') window.zeoResumeBubble();
+      }
+    }
+  }
+
+  /* ── Hero visibility (scroll) ── */
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      heroVisible = entries[0].isIntersecting;
+      apply();
+    }, { threshold: 0, rootMargin: '-1px 0px -1px 0px' });
+    io.observe(hero);
+  } else {
+    var check = function () {
+      var r = hero.getBoundingClientRect();
+      heroVisible = !(r.bottom <= 0 || r.top >= window.innerHeight);
+      apply();
+    };
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    check();
+  }
+
+  /* ── Full-page overlay panels — hide widgets whenever any of
+     these slide-in pages is open, since they otherwise float
+     above the panel's lower z-index. ── */
+  var OVERLAY_IDS = ['comicArtsPage', 'profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod'];
+  var overlayEls = OVERLAY_IDS
+    .map(function (id) { return document.getElementById(id); })
+    .filter(Boolean);
+
+  function refreshPanelOpen() {
+    panelOpen = overlayEls.some(function (el) { return el.classList.contains('open'); });
+    apply();
+  }
+
+  if (overlayEls.length && 'MutationObserver' in window) {
+    var mo = new MutationObserver(refreshPanelOpen);
+    overlayEls.forEach(function (el) {
+      mo.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+    refreshPanelOpen();
+  }
 })();
 </script>
 </body>

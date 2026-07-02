@@ -270,10 +270,10 @@
     }
     .tsTrack{
       display:flex;
-      gap:.7rem;
+      gap:.3rem;
       max-width:1300px;
       margin:0 auto;
-      padding:0 2rem;
+      padding:0 .6rem;
       overflow-x:auto;
       scroll-snap-type:x mandatory;
       -webkit-overflow-scrolling:touch;
@@ -285,7 +285,7 @@
       flex:0 0 auto;
       width:300px;
       height:190px;
-      border-radius:14px;
+      border-radius:8px;
       background:var(--sur2);
       border:1px solid var(--bdr);
       scroll-snap-align:start;
@@ -575,7 +575,7 @@
     }
 
     #artModal{
-      position:fixed;inset:0;z-index:950;
+      position:fixed;inset:0;z-index:1100;
       display:flex;align-items:center;justify-content:center;
       padding:2rem;
       background:rgba(8,8,10,.5);
@@ -618,15 +618,6 @@
       transform:scale(.92) translateY(10px);
       opacity:0;
       transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
-    }
-    #artModal.open .amCard{
-      transform:scale(1) translateY(0);
-      opacity:1;
-    }
-    #artModal.closing .amCard{
-      transform:scale(.95) translateY(6px);
-      opacity:0;
-      transition:transform .22s cubic-bezier(.4,0,1,1),opacity .2s cubic-bezier(.4,0,1,1);
     }
     /* ── Image: the main focus, always given the most space ── */
     .amImgWrap{
@@ -690,58 +681,6 @@
       word-break:break-word;
     }
     .amDesc:empty,.amDesc[hidden]{display:none;}
-    .amCatRow{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
-    .amCatLbl{
-      font-family:var(--fm);
-      font-size:.62rem;
-      letter-spacing:.2em;
-      text-transform:uppercase;
-      color:var(--txd);
-      opacity:.7;
-    }
-    .amCat{
-      display:inline-block;
-      font-family:var(--fm);
-      font-size:.68rem;
-      letter-spacing:.16em;
-      text-transform:uppercase;
-      color:var(--ps);
-      padding:.3rem .75rem;
-      border:1px solid var(--bdr);
-      border-radius:999px;
-      background:color-mix(in srgb,var(--tc) 8%,transparent);
-    }
-    /* ── Actions row: Download + Comments, premium pill buttons ── */
-    .amActions{
-      display:flex;
-      align-items:stretch;
-      gap:.85rem;
-      flex:0 0 auto;
-      margin-top:.2rem;
-    }
-    .amDl{
-      flex:1;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:.5rem;
-      font-family:var(--fm);
-      font-size:.74rem;
-      letter-spacing:.14em;
-      text-transform:uppercase;
-      color:var(--txd);
-      background:color-mix(in srgb,var(--sur) 85%,transparent);
-      border:1px solid var(--bdr);
-      border-radius:12px;
-      padding:.85rem 1.1rem;
-      min-height:48px;
-      cursor:pointer;
-      text-decoration:none;
-      transition:color .2s,border-color .2s,background .2s,transform .15s;
-      white-space:nowrap;
-    }
-    .amDl:hover{color:var(--ps);border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 10%,transparent);transform:translateY(-1px);}
-    .amDl:active{transform:translateY(0) scale(.98);}
     /* ── Close button ── */
     .amX{
       position:absolute;
@@ -789,18 +728,226 @@
       }
       .amName{font-size:1.08rem;}
       .amDesc{font-size:.88rem;}
-      .amActions{flex-direction:row;gap:.6rem;}
-      .amDl{min-height:52px;font-size:.7rem;padding:.8rem .6rem;}
       .amX{top:.7rem;right:.7rem;width:2.2rem;height:2.2rem;font-size:.95rem;}
     }
-    @media(max-width:380px){
-      .amActions{flex-direction:column;}
-    }
     @media(prefers-reduced-motion:reduce){
-      #artModal,#artModal .amCard{transition:opacity .15s linear;}
-      .amCard{transform:none!important;}
+      #artModal,#artModal .amCard,#artModal .avBox{transition:opacity .15s linear;}
+      .amCard,.avBox{transform:none!important;}
     }
 
+    /* =========================================================
+       ARTWORK VIEWER — new two-pane modal (image + detail sidebar).
+       Hardcodes the hero/community dark-violet palette directly
+       (not the light-theme var() tokens) so it always matches that
+       part of the site regardless of the global theme toggle —
+       same approach #artModal's backdrop already used.
+       Lives inside the existing #artModal backdrop; .amCard/.amImgWrap/
+       .amX/.amInfo/.amName/.amDesc/.amDiv above are left untouched
+       since the comic viewer (#comicModal) still reuses them.
+       ========================================================= */
+    .avBox{
+      position:relative;
+      width:min(1400px,94vw);
+      height:min(860px,90vh);
+      /* dvh tracks the *actual* visible viewport on mobile (address bar
+         included/excluded as it collapses); plain vh is measured against
+         the largest possible viewport, so the box could compute taller
+         than what's on screen and get clipped top/bottom. Browsers that
+         don't understand dvh ignore this line and keep the vh value above. */
+      height:min(860px,90dvh);
+      max-width:1400px;
+      display:flex;
+      flex-direction:column;
+      background:#0b0b14;
+      border:1px solid #26263a;
+      border-radius:20px;
+      overflow:hidden;
+      box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
+      transform:scale(.92) translateY(10px);
+      opacity:0;
+      transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
+    }
+    #artModal.open .avBox{transform:scale(1) translateY(0);opacity:1;}
+    #artModal.closing .avBox{
+      transform:scale(.95) translateY(6px);
+      opacity:0;
+      transition:transform .22s cubic-bezier(.4,0,1,1),opacity .2s cubic-bezier(.4,0,1,1);
+    }
+    .avTopBar{
+      flex:0 0 auto;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:.9rem 1.3rem;
+      border-bottom:1px solid #1c1c2b;
+      position:relative;
+      z-index:6;
+    }
+    .avTopBtn{
+      display:inline-flex;align-items:center;gap:.45rem;
+      background:none;border:none;color:#f5f4fb;
+      font-family:var(--fb);
+      font-size:.85rem;font-weight:600;cursor:pointer;
+      padding:.4rem .65rem;border-radius:8px;
+      transition:background .2s,color .2s;
+    }
+    .avTopBtn:hover{background:rgba(255,255,255,.07);}
+    .avTopBtn kbd{
+      font-family:var(--fm);font-size:.62rem;color:rgba(245,244,251,.4);
+      border:1px solid #2a2a3d;border-radius:4px;padding:.1rem .35rem;margin-left:.15rem;
+    }
+    .avTopRight{display:flex;align-items:center;gap:.3rem;position:relative;}
+    .avMoreMenu{
+      position:absolute;top:2.6rem;right:0;
+      background:#191927;border:1px solid #26263a;border-radius:10px;
+      padding:.4rem;min-width:170px;
+      box-shadow:0 12px 30px rgba(0,0,0,.45);
+      display:none;flex-direction:column;gap:.15rem;z-index:8;
+    }
+    .avMoreMenu.open{display:flex;}
+    .avMoreMenu button{
+      text-align:left;background:none;border:none;color:#f5f4fb;
+      font-family:var(--fb);
+      font-size:.82rem;padding:.55rem .7rem;border-radius:6px;cursor:pointer;
+    }
+    .avMoreMenu button:hover{background:rgba(255,255,255,.07);}
+    .avBody{flex:1 1 auto;display:flex;min-height:0;}
+    .avImgPane{
+      position:relative;flex:1 1 auto;min-width:0;
+      display:flex;align-items:center;justify-content:center;
+      background:#000;overflow:hidden;
+    }
+    .avImgViewport{
+      position:relative;width:100%;height:100%;
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;cursor:grab;touch-action:none;
+    }
+    .avImgViewport.dragging{cursor:grabbing;}
+    .avImgViewport.loading::after{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(100deg,transparent 30%,rgba(139,92,246,.1) 50%,transparent 70%);
+      background-size:200% 100%;
+      animation:amShimmer 1.3s ease-in-out infinite;
+    }
+    .avImgViewport img{
+      max-width:92%;max-height:88%;width:auto;height:auto;
+      object-fit:contain;display:block;
+      transition:transform .05s linear;
+      user-select:none;-webkit-user-drag:none;
+    }
+    .avNavBtn{
+      position:absolute;top:50%;transform:translateY(-50%);
+      width:2.6rem;height:2.6rem;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(20,20,30,.55);border:1px solid rgba(255,255,255,.12);
+      color:#f5f4fb;font-size:1.2rem;cursor:pointer;z-index:4;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      transition:background .2s,transform .15s;
+    }
+    .avNavBtn:hover{background:rgba(139,92,246,.4);}
+    .avNavBtn:active{transform:translateY(-50%) scale(.92);}
+    .avNavPrev{left:1rem;}
+    .avNavNext{right:1rem;}
+    .avZoomBar{
+      position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);
+      display:flex;align-items:center;gap:.1rem;
+      background:rgba(20,20,30,.72);border:1px solid rgba(255,255,255,.1);
+      border-radius:999px;padding:.35rem .5rem;
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:4;
+    }
+    .avZoomBar button{
+      width:2rem;height:2rem;border-radius:50%;border:none;background:none;
+      color:#f5f4fb;font-size:1rem;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .2s;
+    }
+    .avZoomBar button:hover{background:rgba(255,255,255,.12);}
+    .avZoomPct{
+      font-family:var(--fm);font-size:.7rem;color:rgba(245,244,251,.75);
+      min-width:3rem;text-align:center;
+    }
+    .avZoomDiv{width:1px;height:1.1rem;background:rgba(255,255,255,.15);margin:0 .15rem;}
+    .avSide{
+      flex:0 0 360px;width:360px;
+      background:#131320;border-left:1px solid #26263a;
+      display:flex;flex-direction:column;min-height:0;
+    }
+    .avSideScroll{
+      flex:1 1 auto;overflow-y:auto;min-height:0;
+      padding:1.6rem 1.5rem 1.5rem;
+      display:flex;flex-direction:column;gap:1.25rem;
+    }
+    .avSideScroll::-webkit-scrollbar{width:6px;}
+    .avSideScroll::-webkit-scrollbar-thumb{background:#2a2a3d;border-radius:3px;}
+    .avAuthorRow{display:flex;align-items:center;gap:.75rem;cursor:pointer;}
+    .avAvatar{
+      width:2.6rem;height:2.6rem;border-radius:50%;
+      background:linear-gradient(135deg,#8b5cf6,#5b3fa0);
+      color:#fff;font-family:var(--fd);font-weight:700;font-size:1rem;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .avAuthorName{
+      font-family:var(--fb);font-weight:700;font-size:.95rem;color:#f5f4fb;
+      display:flex;align-items:center;gap:.35rem;
+    }
+    .avVerified{color:#8b5cf6;font-size:.8rem;}
+    .avAuthorHandle{
+      font-family:var(--fm);font-size:.7rem;color:rgba(214,212,232,.55);margin-top:.15rem;
+    }
+    .avTitle{
+      font-family:var(--fd);font-weight:800;font-size:1.45rem;
+      color:#f5f4fb;line-height:1.25;word-break:break-word;
+    }
+    .avSubType{
+      font-family:var(--fb);font-size:.82rem;font-weight:600;
+      color:#8b5cf6;margin-top:.3rem;
+    }
+    .avDiv{width:100%;height:1px;background:#1e1e2d;flex:0 0 auto;}
+    .avMetaList{display:flex;flex-direction:column;gap:.75rem;}
+    .avMetaRow{display:flex;align-items:center;justify-content:space-between;font-size:.83rem;gap:1rem;}
+    .avMetaLbl{color:rgba(214,212,232,.55);font-family:var(--fb);}
+    .avMetaVal{color:#f5f4fb;font-family:var(--fb);font-weight:500;text-align:right;}
+    .avBlockH{
+      font-family:var(--fb);font-weight:700;font-size:.92rem;
+      color:#f5f4fb;margin-bottom:.6rem;
+    }
+    .avDescTxt{
+      font-family:var(--fb);font-size:.85rem;line-height:1.65;
+      color:rgba(214,212,232,.75);word-break:break-word;
+    }
+    .avTagList{display:flex;flex-wrap:wrap;gap:.5rem;}
+    .avTagChip{
+      font-family:var(--fb);font-size:.75rem;font-weight:600;color:#c9b8fd;
+      background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);
+      padding:.3rem .7rem;border-radius:8px;
+    }
+    .avReportBtn{
+      margin-top:auto;flex:0 0 auto;
+      display:flex;align-items:center;justify-content:center;gap:.5rem;
+      background:rgba(255,255,255,.04);border:1px solid #26263a;
+      color:rgba(214,212,232,.7);font-family:var(--fb);
+      font-size:.82rem;font-weight:600;padding:.75rem 1rem;border-radius:10px;
+      cursor:pointer;transition:background .2s,color .2s,border-color .2s;
+    }
+    .avReportBtn:hover{background:rgba(220,38,38,.14);color:#fca5a5;border-color:rgba(220,38,38,.35);}
+    @media(max-width:900px){
+      #artModal{padding:.7rem;}
+      .avBox{width:100%;height:96vh;height:96dvh;border-radius:16px;}
+      .avBody{flex-direction:column;}
+      .avImgPane{flex:0 0 44%;}
+      .avSide{flex:1 1 auto;width:100%;border-left:none;border-top:1px solid #26263a;}
+      .avNavBtn{width:2.2rem;height:2.2rem;font-size:1rem;}
+      .avTitle{font-size:1.2rem;}
+    }
+    @media(max-width:480px){
+      #artModal{padding:.5rem;}
+      .avTopBar{padding:.7rem 1rem;}
+      .avTopBtn span{display:none;}
+      .avTopBtn kbd{display:none;}
+      .avZoomBar{bottom:.7rem;padding:.3rem .4rem;}
+      .avSideScroll{padding:1.2rem 1.1rem;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .avImgViewport img{transition:none;}
+    }
 
     #communityPage{
   position:fixed;inset:0;z-index:500;
@@ -2034,13 +2181,13 @@
     .awGrid{
       max-width:1300px;
       margin:2.5rem auto 0;
-      padding:0 2rem;
+      padding:0 .6rem;
       display:grid;
       grid-template-columns:repeat(2,1fr);
-      gap:1rem;
+      gap:.3rem;
     }
-    @media(min-width:640px){ .awGrid{grid-template-columns:repeat(3,1fr);gap:1.2rem;} }
-    @media(min-width:1025px){ .awGrid{grid-template-columns:repeat(4,1fr);gap:1.4rem;} }
+    @media(min-width:640px){ .awGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
+    @media(min-width:1025px){ .awGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
     @media(min-width:1440px){ .awGrid{grid-template-columns:repeat(5,1fr);} }
     /* ── Card shell — kept as a generic reusable class (also used by
        the Profile page's .pfGrid, which is unaffected by the masonry
@@ -2049,7 +2196,7 @@
       position:relative;
       background:var(--sur);
       border:1px solid var(--bdr);
-      border-radius:10px;
+      border-radius:6px;
       overflow:hidden;
       display:flex;
       flex-direction:column;
@@ -2412,8 +2559,8 @@
     /* ── Small phones: tighten the grid gutters a touch ── */
     @media(max-width:480px){
       .awGrid{
-        gap:.7rem;
-        padding:0 1.2rem;
+        gap:.3rem;
+        padding:0 .6rem;
       }
     }
 
@@ -2706,18 +2853,6 @@ height:80px;
   .apDescTitle { font-size: clamp(1.6rem, 8vw, 2.4rem); }
 }
 
-
-/* LIGHTBOX ACTION BUTTONS — Download/Comment now sit in the .amInfo
-   footer row alongside the name + category tag; .amDl/.amActions in
-   the ARTWORK MODAL block above define the primary look. */
-.lbActions{
-  display:flex;
-  gap:.6rem;
-}
-@media(max-width:640px){
-  .lbActions{width:100%;}
-  .lbActionBtn{flex:1;min-height:48px;}
-}
 
 /* Comic Arts page overlay — same pattern as #fg, #communityPage, #adsPanel */
 #comicArtsPage {
@@ -4354,7 +4489,7 @@ body{background:var(--bg);}
   <style>
     .upPop{position:fixed;inset:0;z-index:20000;background:rgba(5,3,8,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:.9rem;opacity:0;pointer-events:none;transition:opacity .25s ease;}
     .upPop.open{opacity:1;pointer-events:auto;}
-    .upPopBox{background:#0c0c15;border:1px solid rgba(139,92,246,.28);border-radius:16px;width:100%;max-width:960px;max-height:min(90vh,780px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);}
+    .upPopBox{background:#0c0c15;border:1px solid rgba(139,92,246,.28);border-radius:16px;width:100%;max-width:960px;max-height:min(90vh,780px);max-height:min(90dvh,780px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);}
     .upPopHead{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1.2rem 1.3rem;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
     .upPopHead h2{font-size:1.25rem;font-weight:800;color:#f5f4fb;margin-bottom:.25rem;letter-spacing:.01em;}
     .upPopHead p{font-size:.82rem;color:rgba(214,212,232,.58);line-height:1.4;}
@@ -4506,6 +4641,23 @@ body{background:var(--bg);}
           </div>
           <input id="pfUpTags" type="hidden" value=""/>
         </div>
+      </div>
+
+      <div class="upField" id="pfUpSoftwareField">
+        <label class="upLbl" for="pfUpSoftware">Software Used</label>
+        <select class="upIn" id="pfUpSoftware">
+          <option value="">Select software…</option>
+          <option value="Photoshop">Photoshop</option>
+          <option value="ibisPaint">ibisPaint</option>
+          <option value="Procreate">Procreate</option>
+          <option value="Clip Studio Paint">Clip Studio Paint</option>
+          <option value="Krita">Krita</option>
+          <option value="MediBang Paint">MediBang Paint</option>
+          <option value="Autodesk SketchBook">Autodesk SketchBook</option>
+          <option value="Illustrator">Illustrator</option>
+          <option value="Affinity Designer">Affinity Designer</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
      </div>
 
@@ -5475,35 +5627,88 @@ body{background:var(--bg);}
   </div>
 
   <!-- =========================================================
-       ARTWORK MODAL
-       ├─ Modal Backdrop (#artModal)
-       └─ Card (.amCard #lb)
-           ├─ Close Button (.amX)
-           ├─ Image Wrapper (.amImgWrap)
-           │   └─ Image (#lbImg)
-           └─ Info Panel (.amInfo)
-               ├─ Title (#lbNm)
-               ├─ Divider (.amDiv)
-               ├─ Description (#lbDesc)
-               ├─ Category Row (#lbCatRow)
-               └─ Actions Host (#lbActionsHost) — buttons injected by JS
+       ARTWORK VIEWER MODAL — two-pane layout (image + detail
+       sidebar), styled to match the hero/community dark-violet
+       palette. Box itself (.avBox) is a fixed size; only the
+       sidebar (.avSideScroll) scrolls, and the image can be
+       zoomed/panned in place without the box ever resizing.
+       ├─ Backdrop (#artModal)
+       └─ Box (.avBox)
+           ├─ Top bar (.avTopBar) — Close / Share / More
+           └─ Body (.avBody)
+               ├─ Image pane (.avImgPane)
+               │   ├─ Prev/Next (.avNavBtn)
+               │   ├─ Image (#lbImg)
+               │   └─ Zoom bar (.avZoomBar) — zoom/fullscreen/download
+               └─ Sidebar (.avSide → .avSideScroll)
+                   ├─ Author (#avAuthorRow)
+                   ├─ Title (#lbNm) + type (#avSubType)
+                   ├─ Meta rows (#avMetaList)
+                   ├─ Description (#lbDesc)
+                   ├─ Tags (#avTagList)
+                   └─ Report button
        ========================================================= -->
   <div id="artModal" role="dialog" aria-modal="true" aria-label="Artwork viewer" data-state="closed">
-   <div id="lb" class="amCard" onclick="event.stopPropagation()">
-    <button class="amX lbX" onclick="closeLB()" aria-label="Close">✕</button>
-    <div class="amImgWrap" id="amImgWrap">
-     <img alt="" id="lbImg" src=""/>
-    </div>
-    <div class="amInfo">
-     <div class="amName lbNm" id="lbNm"></div>
-     <div class="amDiv"></div>
-     <div class="amDesc" id="lbDesc" hidden></div>
-     <div class="amDiv" id="lbDescDiv" hidden></div>
-     <div class="amCatRow" id="lbCatRow" hidden>
-      <span class="amCatLbl">Category</span>
-      <span class="amCat" id="lbCat"></span>
+   <div class="avBox" onclick="event.stopPropagation()">
+    <div class="avTopBar">
+     <button class="avTopBtn avCloseBtn" onclick="closeLB()" aria-label="Close">
+      <span>✕ Close</span><kbd>ESC</kbd>
+     </button>
+     <div class="avTopRight">
+      <button class="avTopBtn" onclick="avShare()"><span>↗ Share</span></button>
+      <button class="avTopBtn avMoreBtn" onclick="avToggleMore(event)" aria-label="More options">⋮</button>
+      <div class="avMoreMenu" id="avMoreMenu" onclick="event.stopPropagation()">
+       <button onclick="avShare()">🔗 Copy link</button>
+       <button onclick="avDownload()">⬇ Download</button>
+       <button onclick="avComment()">💬 Comment</button>
+       <button onclick="avReport()">⚑ Report artwork</button>
+      </div>
      </div>
-     <div class="lbIn amActions" id="lbActionsHost" onclick="event.stopPropagation()"></div>
+    </div>
+    <div class="avBody">
+     <div class="avImgPane">
+      <button class="avNavBtn avNavPrev" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous artwork">‹</button>
+      <div class="avImgViewport" id="avImgViewport">
+       <img alt="" id="lbImg" src="" draggable="false"/>
+      </div>
+      <button class="avNavBtn avNavNext" id="avNextBtn" onclick="avNav(1)" aria-label="Next artwork">›</button>
+      <div class="avZoomBar">
+       <button onclick="avZoom(-1)" aria-label="Zoom out">−</button>
+       <span class="avZoomPct" id="avZoomPct">100%</span>
+       <button onclick="avZoom(1)" aria-label="Zoom in">+</button>
+       <span class="avZoomDiv"></span>
+       <button onclick="avToggleFullscreen()" aria-label="Fullscreen">⛶</button>
+       <button onclick="avDownload()" aria-label="Download">⬇</button>
+      </div>
+     </div>
+     <div class="avSide" id="avSide">
+      <div class="avSideScroll">
+       <div class="avAuthorRow" id="avAuthorRow" onclick="avGoToAuthor()">
+        <div class="avAvatar" id="avAvatar"></div>
+        <div>
+         <div class="avAuthorName" id="avAuthorName"></div>
+         <div class="avAuthorHandle" id="avAuthorHandle"></div>
+        </div>
+       </div>
+       <div>
+        <div class="avTitle" id="lbNm"></div>
+        <div class="avSubType" id="avSubType"></div>
+       </div>
+       <div class="avDiv"></div>
+       <div class="avMetaList" id="avMetaList"></div>
+       <div class="avDiv" id="avDescDiv" hidden></div>
+       <div id="avDescBlock" hidden>
+        <div class="avBlockH">Description</div>
+        <p class="avDescTxt" id="lbDesc"></p>
+       </div>
+       <div class="avDiv" id="avTagsDiv" hidden></div>
+       <div id="avTagsBlock" hidden>
+        <div class="avBlockH">Tags</div>
+        <div class="avTagList" id="avTagList"></div>
+       </div>
+       <button class="avReportBtn" onclick="avReport()">⚑ Report artwork</button>
+      </div>
+     </div>
     </div>
    </div>
   </div>
@@ -5694,6 +5899,24 @@ body{background:var(--bg);}
       <div id="upCatDisplay" style="margin-top:.55rem;min-height:1.4rem;display:flex;flex-wrap:wrap;gap:.3rem;"></div>
     </div>
     <!-- MULTI-CATEGORY SELECT END -->
+    <!-- SOFTWARE FIELD START — optional, maps to artworks.software (TEXT, nullable) -->
+    <div style="margin-bottom:.8rem;">
+      <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.4rem;">SOFTWARE USED</div>
+      <select class="mIn" id="upSoftware" style="margin-bottom:0;">
+        <option value="">Select software…</option>
+        <option value="Photoshop">Photoshop</option>
+        <option value="ibisPaint">ibisPaint</option>
+        <option value="Procreate">Procreate</option>
+        <option value="Clip Studio Paint">Clip Studio Paint</option>
+        <option value="Krita">Krita</option>
+        <option value="MediBang Paint">MediBang Paint</option>
+        <option value="Autodesk SketchBook">Autodesk SketchBook</option>
+        <option value="Illustrator">Illustrator</option>
+        <option value="Affinity Designer">Affinity Designer</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <!-- SOFTWARE FIELD END -->
     <button class="mBtn" id="upBtn" onclick="doUp()">
      ADD TO GALLERY ✦
     </button>
@@ -5950,19 +6173,221 @@ body{background:var(--bg);}
     var catR = document.querySelector('input[name="fltCat"][value="all"]');
     if(catR) catR.checked = true;
   }
-  /* ── Premium artwork modal: open/close ──
-     #artModal is the fixed, blurred backdrop. #lb (.amCard) is the
-     centered card inside it. Closing plays the .closing animation
-     class for ~220ms before the modal is fully hidden, so the
-     scale-down/fade-out is visible rather than an abrupt cut. */
+  /* ── Artwork viewer: open/close ──
+     #artModal is the fixed, blurred backdrop. .avBox is the fixed-size
+     two-pane card inside it (image pane + scrollable detail sidebar).
+     Closing plays the .closing animation class for ~220ms before the
+     modal is fully hidden. */
   var amCloseTimer = null;
-  function openLB(src,name,cat,desc,id,pushUrl){
+  var avNavList = [];
+  var avNavIndex = -1;
+  var avZoomLevel = 1, avPanX = 0, avPanY = 0;
+  var avCurrentArt = null;
+
+  function avCap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+
+  function avFormatDate(iso){
+    if(!iso) return null;
+    try{
+      var d = new Date(iso);
+      if(isNaN(d.getTime())) return null;
+      return d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    }catch(e){ return null; }
+  }
+
+  function avRenderMeta(m){
+    /* Only include rows we actually have data for. A linked image with
+       no backing artwork record (e.g. opened from a comment) has no
+       category/medium/upload-date, so those rows are omitted entirely
+       rather than rendered as "—" clutter. Resolution is always shown
+       since it's read straight off the loaded image, not the record. */
+    var rows = [];
+    if(m.hasArt){
+      if(m.category) rows.push(['Category', avCap(m.category)]);
+      rows.push(['Medium', 'Digital Art']);
+      if(m.software) rows.push(['Software', m.software]);
+    }
+    rows.push(['Resolution', '—', 'avMetaResVal']);
+    if(m.hasArt && m.createdAt) rows.push(['Uploaded', avFormatDate(m.createdAt) || '—']);
+    var list = document.getElementById('avMetaList');
+    if(!list) return;
+    list.innerHTML = rows.map(function(r){
+      var valId = r[2] ? ' id="'+r[2]+'"' : '';
+      return '<div class="avMetaRow"><span class="avMetaLbl">'+esc(r[0])+'</span><span class="avMetaVal"'+valId+'>'+esc(r[1])+'</span></div>';
+    }).join('');
+  }
+  function avUpdateResolution(w,h){
+    var el = document.getElementById('avMetaResVal');
+    if(el && w && h) el.textContent = w+' × '+h+' px';
+  }
+
+  var avAuthorProfileCache = {};
+  function avRenderAuthor(art){
+    var row = document.getElementById('avAuthorRow');
+    var avatarEl = document.getElementById('avAvatar');
+    var nameEl = document.getElementById('avAuthorName');
+    var handleEl = document.getElementById('avAuthorHandle');
+    if(!row || !avatarEl || !nameEl || !handleEl) return;
+    if(!art || !art.user_id){ row.style.display='none'; return; }
+    row.style.display='';
+    var uid = art.user_id;
+    function paint(uname){
+      avatarEl.textContent = (uname||'?').charAt(0).toUpperCase();
+      nameEl.textContent = uname || 'Artist';
+      handleEl.textContent = '@'+(uname||'artist');
+    }
+    if(pf.profile && pf.profile.id===uid){ paint(pf.profile.username); return; }
+    if(avAuthorProfileCache[uid]){ paint(avAuthorProfileCache[uid]); return; }
+    avatarEl.textContent='?'; nameEl.textContent='…'; handleEl.textContent='';
+    if(sb){
+      sb.from('profiles').select('username').eq('id',uid).single().then(function(res){
+        var uname = res && res.data && res.data.username ? res.data.username : 'Artist';
+        avAuthorProfileCache[uid] = uname;
+        if(!avCurrentArt || avCurrentArt.user_id!==uid) return; // modal moved on
+        paint(uname);
+      }).catch(function(){});
+    }
+  }
+  function avGoToAuthor(){
+    if(!avCurrentArt || !avCurrentArt.user_id) return;
+    var uname = avAuthorProfileCache[avCurrentArt.user_id] || (pf.profile && pf.profile.id===avCurrentArt.user_id ? pf.profile.username : null);
+    if(!uname) return;
+    closeLB();
+    openProfileByUsername(uname);
+  }
+
+  function avSetupNav(id, navSource){
+    var prevBtn = document.getElementById('avPrevBtn');
+    var nextBtn = document.getElementById('avNextBtn');
+    var source = (navSource && navSource.length) ? navSource : images;
+    if(!id || !source || !source.length){
+      avNavList=[]; avNavIndex=-1;
+      if(prevBtn) prevBtn.style.display='none';
+      if(nextBtn) nextBtn.style.display='none';
+      return;
+    }
+    avNavList = source;
+    avNavIndex = avNavList.findIndex(function(a){ return String(a.id)===String(id); });
+    var show = avNavIndex!==-1 && avNavList.length>1;
+    if(prevBtn) prevBtn.style.display = show ? '' : 'none';
+    if(nextBtn) nextBtn.style.display = show ? '' : 'none';
+  }
+  function avNav(dir){
+    if(avNavIndex===-1 || !avNavList.length) return;
+    var next=(avNavIndex+dir+avNavList.length)%avNavList.length;
+    var art=avNavList[next];
+    if(!art) return;
+    var cats=catList(art.category).length?catList(art.category):['others'];
+    /* Pass the same list we're already navigating (avNavList) through so
+       stepping prev/next repeatedly stays within its source — e.g. a
+       profile's gallery — instead of falling back to the global feed. */
+    openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, avNavList);
+  }
+
+  function avResetZoom(){
+    avZoomLevel=1; avPanX=0; avPanY=0;
+    avApplyTransform();
+  }
+  function avApplyTransform(){
+    var img=document.getElementById('lbImg');
+    if(img) img.style.transform='translate('+avPanX+'px,'+avPanY+'px) scale('+avZoomLevel+')';
+    var pct=document.getElementById('avZoomPct');
+    if(pct) pct.textContent=Math.round(avZoomLevel*100)+'%';
+  }
+  function avZoom(dir){
+    avZoomLevel=Math.max(1,Math.min(4,avZoomLevel+dir*0.25));
+    if(avZoomLevel===1){ avPanX=0; avPanY=0; }
+    avApplyTransform();
+  }
+  function avToggleFullscreen(){
+    var box=document.querySelector('#artModal .avBox');
+    if(!box) return;
+    if(!document.fullscreenElement){ if(box.requestFullscreen) box.requestFullscreen(); }
+    else { if(document.exitFullscreen) document.exitFullscreen(); }
+  }
+  function avDownload(){
+    var img=document.getElementById('lbImg');
+    if(!img || !img.src) return;
+    var a=document.createElement('a');
+    var fullSrc=img.src.replace(/[?&]width=\d+/g,'').replace(/[?&]quality=\d+/g,'').replace(/\?&/g,'?').replace(/\?$/,'');
+    a.href=fullSrc; a.download=''; document.body.appendChild(a); a.click(); a.remove();
+  }
+  function avShare(){
+    var url=window.location.href;
+    var title=(document.getElementById('lbNm')||{}).textContent||'Artwork';
+    if(navigator.share){ navigator.share({title:title,url:url}).catch(function(){}); }
+    else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(function(){ showToast('Link copied ✦'); }); }
+    else { showToast('Share not supported'); }
+    avCloseMoreMenu();
+  }
+  function avReport(){
+    showToast('Report submitted — thank you ✦');
+    avCloseMoreMenu();
+  }
+  function avComment(){
+    var img=document.getElementById('lbImg');
+    var src=(img && img.src) ? img.src : '';
+    currentLightboxImageSrc = src.replace(/[?&]width=\d+/g,'').replace(/[?&]quality=\d+/g,'').replace(/\?&/g,'?').replace(/\?$/,'');
+    avCloseMoreMenu();
+    closeLB();
+    openComments();
+  }
+  function avToggleMore(e){
+    if(e) e.stopPropagation();
+    var menu=document.getElementById('avMoreMenu');
+    if(menu) menu.classList.toggle('open');
+  }
+  function avCloseMoreMenu(){
+    var menu=document.getElementById('avMoreMenu');
+    if(menu) menu.classList.remove('open');
+  }
+  document.addEventListener('click',function(e){
+    var menu=document.getElementById('avMoreMenu');
+    if(menu && menu.classList.contains('open') && !menu.contains(e.target)) menu.classList.remove('open');
+  });
+
+  /* Drag-to-pan the image once zoomed in; double-click/tap toggles 2x zoom */
+  (function(){
+    var dragging=false,startX=0,startY=0,origX=0,origY=0;
+    document.addEventListener('DOMContentLoaded', function(){
+      var vp=document.getElementById('avImgViewport');
+      if(!vp) return;
+      vp.addEventListener('pointerdown',function(e){
+        if(avZoomLevel<=1) return;
+        dragging=true; startX=e.clientX; startY=e.clientY; origX=avPanX; origY=avPanY;
+        try{ vp.setPointerCapture(e.pointerId); }catch(err){}
+        vp.classList.add('dragging');
+      });
+      vp.addEventListener('pointermove',function(e){
+        if(!dragging) return;
+        avPanX=origX+(e.clientX-startX); avPanY=origY+(e.clientY-startY);
+        avApplyTransform();
+      });
+      ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+        vp.addEventListener(ev,function(){ dragging=false; vp.classList.remove('dragging'); });
+      });
+      vp.addEventListener('dblclick',function(){
+        if(avZoomLevel>1){ avZoomLevel=1; avPanX=0; avPanY=0; } else { avZoomLevel=2; }
+        avApplyTransform();
+      });
+    });
+  })();
+
+  function openLB(src,name,cat,desc,id,pushUrl,navSource){
     currentLightboxImageSrc=src;
+    var art = id ? findArtworkById(id) : null;
+    if(!art && id && navSource && navSource.length){
+      art = navSource.find(function(a){ return String(a.id)===String(id); }) || null;
+    }
+    avCurrentArt = art;
     var modal=document.getElementById('artModal');
-    var wrap=document.getElementById('amImgWrap');
     if(amCloseTimer){clearTimeout(amCloseTimer);amCloseTimer=null;}
     modal.classList.remove('closing');
-    if(wrap)wrap.classList.add('loading');
+    avResetZoom();
+    avCloseMoreMenu();
+
+    var viewport=document.getElementById('avImgViewport');
+    if(viewport) viewport.classList.add('loading');
     var imgEl=document.getElementById('lbImg');
     imgEl.src=src;
     /* SEO: the full-resolution image shown in the modal is the one
@@ -5970,31 +6395,51 @@ body{background:var(--bg);}
        Image Search results, so it needs real alt text too — not
        just the gallery thumbnail. */
     imgEl.alt=name||'Untitled artwork';
-    imgEl.onload=function(){if(wrap)wrap.classList.remove('loading');};
-    imgEl.onerror=function(){if(wrap)wrap.classList.remove('loading');};
+    imgEl.onload=function(){
+      if(viewport) viewport.classList.remove('loading');
+      avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
+    };
+    imgEl.onerror=function(){ if(viewport) viewport.classList.remove('loading'); };
+
     document.getElementById('lbNm').textContent=name||'';
+
+    var tags = art ? ((art.tags && art.tags.length) ? art.tags : catList(art.category)) : (cat ? [cat] : []);
+    var catLabel = cat || (tags[0]||'');
+    var subType = document.getElementById('avSubType');
+    if(subType) subType.textContent = catLabel ? avCap(catLabel)+' Artwork' : 'Digital Artwork';
+
     /* Description: optional. Hides itself (and its divider) cleanly
        when there's no description text for this artwork. */
     var descEl=document.getElementById('lbDesc');
-    var descDiv=document.getElementById('lbDescDiv');
+    var descBlock=document.getElementById('avDescBlock');
+    var descDiv=document.getElementById('avDescDiv');
     if(descEl){
-      if(desc){descEl.textContent=desc;descEl.hidden=false;if(descDiv)descDiv.hidden=false;}
-      else{descEl.textContent='';descEl.hidden=true;if(descDiv)descDiv.hidden=true;}
+      if(desc){ descEl.textContent=desc; descBlock.hidden=false; descDiv.hidden=false; }
+      else{ descEl.textContent=''; descBlock.hidden=true; descDiv.hidden=true; }
     }
-    /* Category: shown as a labeled row ("Category  TAG") */
-    var catEl=document.getElementById('lbCat');
-    var catRow=document.getElementById('lbCatRow');
-    if(catEl){
-      if(cat){catEl.textContent=cat;if(catRow)catRow.hidden=false;}
-      else{catEl.textContent='';if(catRow)catRow.hidden=true;}
+
+    /* Tags */
+    var tagListEl=document.getElementById('avTagList');
+    var tagsBlock=document.getElementById('avTagsBlock');
+    var tagsDiv=document.getElementById('avTagsDiv');
+    if(tagListEl){
+      if(tags && tags.length){
+        tagListEl.innerHTML=tags.map(function(t){return '<span class="avTagChip">'+esc(avCap(t))+'</span>';}).join('');
+        tagsBlock.hidden=false; tagsDiv.hidden=false;
+      } else { tagListEl.innerHTML=''; tagsBlock.hidden=true; tagsDiv.hidden=true; }
     }
+
+    avRenderMeta({ category:catLabel, software: art?art.software:null, createdAt: art?art.created_at:null, hasArt: !!art });
+    avRenderAuthor(art);
+    avSetupNav(id, navSource);
+
     modal.setAttribute('data-state','open');
     modal.classList.add('open');
     document.body.style.overflow='hidden';
     setTimeout(function(){
-      var lbX = document.querySelector('#lb .lbX');
-      if(lbX) lbX.focus();
-    }, 50);
+      var closeBtn=document.querySelector('#artModal .avCloseBtn');
+      if(closeBtn) closeBtn.focus();
+    },50);
     /* Update URL + SEO meta when an id is supplied */
     if(id){
       if(pushUrl!==false && window.location.pathname!=='/artwork/'+id){
@@ -6007,6 +6452,7 @@ body{background:var(--bg);}
     var modal=document.getElementById('artModal');
     if(!modal || !modal.classList.contains('open'))return;
     modal.classList.add('closing');
+    avCloseMoreMenu();
     if(amCloseTimer)clearTimeout(amCloseTimer);
     amCloseTimer=setTimeout(function(){
       modal.classList.remove('open');
@@ -6015,6 +6461,7 @@ body{background:var(--bg);}
       restoreScroll();
       var imgEl=document.getElementById('lbImg');
       if(imgEl){imgEl.src='';imgEl.alt='';}
+      avCurrentArt=null;
     },230);
     /* Revert address bar + SEO meta when leaving an artwork URL */
     if(/^\/artwork\//.test(window.location.pathname)){
@@ -6171,6 +6618,7 @@ body{background:var(--bg);}
       cb.checked = cats.indexOf(cb.value) !== -1;
     });
     updateUpCatDisplay();
+    document.getElementById('upSoftware').value = art.software || '';
     document.getElementById('upBtn').textContent = 'SAVE CHANGES ✦';
     upFile = null;
     document.getElementById('upMod').classList.add('open');
@@ -6656,6 +7104,7 @@ body{background:var(--bg);}
     document.getElementById('upDesc').value='';
     document.querySelectorAll('#upCatBoxes input[type=checkbox]').forEach(cb=>{cb.checked=cb.value==='others';});
     updateUpCatDisplay();
+    document.getElementById('upSoftware').value='';
     document.getElementById('upPrev').style.display='none';
     document.getElementById('upBtn').textContent='ADD TO GALLERY ✦';
     upFile=null;
@@ -6670,6 +7119,7 @@ body{background:var(--bg);}
     const desc=document.getElementById('upDesc').value.trim(); // optional — sent as null when empty, never breaks older rows
     const cats=[...document.querySelectorAll('#upCatBoxes input[type=checkbox]:checked')].map(cb=>cb.value);
     const cat=cats.length?cats:['others'];
+    const software=document.getElementById('upSoftware').value;
     if(!nm){showToast('Enter a name');return;}
     if(!editId && !upFile){showToast('Select an image');return;}
     const btn=document.getElementById('upBtn');
@@ -6680,7 +7130,7 @@ body{background:var(--bg);}
            replaced here; only name/description/category. */
         btn.textContent='SAVING…';
         const{data:rows,error:de}=await sb.from('artworks')
-          .update({name:nm,category:cat,description:desc||null})
+          .update({name:nm,category:cat,description:desc||null,software:software||null})
           .eq('id',editId).select();
         if(de)throw de;
         if(rows && rows[0]){
@@ -6702,7 +7152,7 @@ body{background:var(--bg);}
         const{error:ue}=await sb.storage.from(BUCKET).upload(path,upFile,{cacheControl:'3600'});
         if(ue)throw ue;
         const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
-        const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null}).select();
+        const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null,software:software||null}).select();
         if(de)throw de;
         images.unshift(rows[0]);
         renderHome();
@@ -6868,10 +7318,13 @@ body{background:var(--bg);}
       '</div></div>';
   }
   function pfOpenArtwork(id){
-    var art = findArtworkById(id);
+    /* Artwork may belong to the viewed profile's gallery even if it
+       hasn't been paginated into the global `images` feed yet, so look
+       it up in pf.galleryRows first and fall back to the global list. */
+    var art = pf.galleryRows.find(function(a){ return String(a.id)===String(id); }) || findArtworkById(id);
     if(!art) return;
     var cats=catList(art.category).length?catList(art.category):(catList(art.tags).length?catList(art.tags):['others']);
-    openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id));
+    openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, pf.galleryRows);
   }
 
   /* ── COMIC tab ── */
@@ -7135,6 +7588,8 @@ body{background:var(--bg);}
     document.getElementById('pfDzTxt').textContent = mode==='comic' ? 'Drag & drop your cover image here' : 'Drag & drop your artwork here';
     document.getElementById('pfUpCatField').style.display = mode==='comic' ? 'none' : '';
     document.getElementById('pfComicPagesWrap').style.display = mode==='comic' ? '' : 'none';
+    document.getElementById('pfUpSoftwareField').style.display = mode==='comic' ? 'none' : '';
+    document.getElementById('pfUpSoftware').value = '';
     document.getElementById('pfDz').style.display='';
     document.getElementById('pfUpNm').value='';
     document.getElementById('pfUpDesc').value='';
@@ -7194,6 +7649,7 @@ body{background:var(--bg);}
     var editId = editIdEl ? editIdEl.value : '';
     var nm = document.getElementById('pfUpNm').value.trim();
     var desc = document.getElementById('pfUpDesc').value.trim();
+    var software = document.getElementById('pfUpSoftware').value;
     var tags = document.getElementById('pfUpTags').value.split(',').map(function(t){return t.trim();}).filter(Boolean);
     if(!nm){ showToast('Enter a title'); return; }
     if(!editId && !pf.upFile){ showToast('Select an image'); return; }
@@ -7205,7 +7661,7 @@ body{background:var(--bg);}
           /* Edit is dev-only in practice (RLS blocks non-dev updates);
              button is only reachable here via openEditArt's own gate. */
           btn.textContent='SAVING…';
-          const{error}=await sb.from('artworks').update({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others']}).eq('id',editId);
+          const{error}=await sb.from('artworks').update({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],software:software||null}).eq('id',editId);
           if(error) throw error;
           var idx = images.findIndex(function(i){return String(i.id)===String(editId);});
           if(idx!==-1){ images[idx].name=nm; images[idx].description=desc; images[idx].tags=tags; }
@@ -7218,7 +7674,7 @@ body{background:var(--bg);}
           const{error:ue}=await sb.storage.from(BUCKET).upload(path,pf.upFile,{cacheControl:'3600'});
           if(ue) throw ue;
           const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
-          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,user_id:currentUser.id}).select();
+          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,user_id:currentUser.id,software:software||null}).select();
           if(de) throw de;
           images.unshift(rows[0]);
           pf.galleryRows.unshift(rows[0]);
@@ -8191,47 +8647,6 @@ async function openComments(){
  </script>
  <script>
 /* IMAGE LINKED COMMENTS PATCH — UI helpers only; Supabase handled in main script */
-</script>
-<script>
-/* LIGHTBOX ACTION BUTTONS — inject Download + Comment buttons into the artwork modal */
-(function(){
-  document.addEventListener('DOMContentLoaded', function(){
-    var host = document.getElementById('lbActionsHost');
-    if(host && !document.getElementById('commentFromImageBtn')){
-      var actions = document.createElement('div');
-      actions.className = 'lbActions amActions';
-      actions.innerHTML =
-        '<button class="lbActionBtn amDl" id="downloadImageBtn">DOWNLOAD</button>' +
-        '<button class="lbActionBtn amDl" id="commentFromImageBtn">COMMENT</button>';
-      host.appendChild(actions);
-
-      document.getElementById('commentFromImageBtn').onclick = function(){
-        /* Capture the currently open artwork image as the comment thumbnail */
-        var img = document.getElementById('lbImg');
-        // Use full-resolution URL: strip Supabase transform params if present
-        var src = (img && img.src) ? img.src : '';
-        currentLightboxImageSrc = src.replace(/[?&]width=\d+/g, '').replace(/[?&]quality=\d+/g, '').replace(/\?&/g, '?').replace(/\?$/, '');
-        /* Close modal */
-        closeLB();
-        /* Open comments with the thumbnail pre-populated */
-        openComments();
-      };
-
-      document.getElementById('downloadImageBtn').onclick = function(){
-        var img = document.getElementById('lbImg');
-        if(!img || !img.src) return;
-        var a = document.createElement('a');
-        // Use full-resolution URL: strip Supabase transform params if present
-        var fullSrc = img.src.replace(/[?&]width=\d+/g, '').replace(/[?&]quality=\d+/g, '').replace(/\?&/g, '?').replace(/\?$/, '');
-        a.href = fullSrc;
-        a.download = '';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      };
-    }
-  });
-})();
 </script>
 <!-- ADS PANEL — open / close / drag-scroll / dot indicator -->
 <script>
@@ -9366,7 +9781,7 @@ window.ZEO_DATA = {
   /* ── Full-page overlay panels — hide widgets whenever any of
      these slide-in pages is open, since they otherwise float
      above the panel's lower z-index. ── */
-  var OVERLAY_IDS = ['comicArtsPage', 'profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod'];
+  var OVERLAY_IDS = ['comicArtsPage', 'profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);

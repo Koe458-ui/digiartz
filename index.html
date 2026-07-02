@@ -795,20 +795,8 @@
       border:1px solid #2a2a3d;border-radius:4px;padding:.1rem .35rem;margin-left:.15rem;
     }
     .avTopRight{display:flex;align-items:center;gap:.3rem;position:relative;}
-    .avMoreMenu{
-      position:absolute;top:2.6rem;right:0;
-      background:#191927;border:1px solid #26263a;border-radius:10px;
-      padding:.4rem;min-width:170px;
-      box-shadow:0 12px 30px rgba(0,0,0,.45);
-      display:none;flex-direction:column;gap:.15rem;z-index:8;
-    }
-    .avMoreMenu.open{display:flex;}
-    .avMoreMenu button{
-      text-align:left;background:none;border:none;color:#f5f4fb;
-      font-family:var(--fb);
-      font-size:.82rem;padding:.55rem .7rem;border-radius:6px;cursor:pointer;
-    }
-    .avMoreMenu button:hover{background:rgba(255,255,255,.07);}
+    .avBtnIcon{display:inline-flex;}
+    .avBtnLabel{display:inline-flex;}
     .avBody{flex:1 1 auto;display:flex;min-height:0;}
     .avImgPane{
       position:relative;flex:1 1 auto;min-width:0;
@@ -940,7 +928,7 @@
     @media(max-width:480px){
       #artModal{padding:.5rem;}
       .avTopBar{padding:.7rem 1rem;}
-      .avTopBtn span{display:none;}
+      .avTopBtn .avBtnLabel{display:none;}
       .avTopBtn kbd{display:none;}
       .avZoomBar{bottom:.7rem;padding:.3rem .4rem;}
       .avSideScroll{padding:1.2rem 1.1rem;}
@@ -1879,16 +1867,18 @@
 
     /* ── Section header — reuses .fsHdr pattern ── */
     .subOvHdr {
-      max-width: 1200px;
+      width: 100%;
       margin: 0 auto;
-      padding: 0 2rem;
+      padding: 0 clamp(.9rem,2.5vw,2rem);
+      box-sizing: border-box;
     }
 
     /* ── 4-column grid ── */
     .subOvGrid {
-      max-width: 1200px;
+      width: 100%;
       margin: 2.5rem auto 0;
-      padding: 0 2rem;
+      padding: 0 clamp(.9rem,2.5vw,2rem);
+      box-sizing: border-box;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 1.4rem;
@@ -1997,21 +1987,21 @@
     .subOvCard--lite .subOvArrow { border-color: #93c5fd; color: #2563eb; }
     @media (hover: hover) {
       .subOvCard--lite:hover    { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(59,130,246,.32); }
-      .subOvCard--lite .subOvArrow:hover { border-color: #3b82f6; background: #eff6ff; box-shadow: 0 0 14px rgba(59,130,246,.35); }
+      .subOvCard--lite .subOvArrow:hover { border-color: #3b82f6; background: rgba(59,130,246,.16); box-shadow: 0 0 14px rgba(59,130,246,.35); }
     }
     /* Premium — purple */
     .subOvCard--premium { border-color: #c4b5fd; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(168,85,247,.18); }
     .subOvCard--premium .subOvArrow { border-color: #c4b5fd; color: #7c3aed; }
     @media (hover: hover) {
       .subOvCard--premium:hover    { border-color: #a855f7; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(168,85,247,.32); }
-      .subOvCard--premium .subOvArrow:hover { border-color: #a855f7; background: #f5f3ff; box-shadow: 0 0 14px rgba(168,85,247,.35); }
+      .subOvCard--premium .subOvArrow:hover { border-color: #a855f7; background: rgba(168,85,247,.18); box-shadow: 0 0 14px rgba(168,85,247,.35); }
     }
     /* Max — gold */
     .subOvCard--max     { border-color: #fcd34d; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(234,179,8,.20); }
     .subOvCard--max .subOvArrow { border-color: #fcd34d; color: #b45309; }
     @media (hover: hover) {
       .subOvCard--max:hover    { border-color: #eab308; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(234,179,8,.34); }
-      .subOvCard--max .subOvArrow:hover { border-color: #eab308; background: #fffbeb; box-shadow: 0 0 14px rgba(234,179,8,.38); }
+      .subOvCard--max .subOvArrow:hover { border-color: #eab308; background: rgba(234,179,8,.18); box-shadow: 0 0 14px rgba(234,179,8,.38); }
     }
 
     /* ── Profile card: border reflects current plan tier ── */
@@ -2138,9 +2128,10 @@
       padding:1.8rem 0 4rem;
     }
     .awHdr{
-      max-width:1300px;
+      width:100%;
       margin:0 auto;
-      padding:0 2rem;
+      padding:0 clamp(.7rem,2vw,2rem);
+      box-sizing:border-box;
     }
     /* ── Artworks / ComicArts tab switcher — replaces the old
        title + subtitle heading ── */
@@ -2209,16 +2200,17 @@
        sort order, on every device. Column count only changes per
        breakpoint. ── */
     .awGrid{
-      max-width:1300px;
+      width:100%;
       margin:2.5rem auto 0;
-      padding:0 .6rem;
+      padding:0 clamp(.3rem,1vw,.6rem);
+      box-sizing:border-box;
       display:grid;
-      grid-template-columns:repeat(2,1fr);
+      grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
       gap:.3rem;
     }
-    @media(min-width:640px){ .awGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
-    @media(min-width:1025px){ .awGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
-    @media(min-width:1440px){ .awGrid{grid-template-columns:repeat(5,1fr);} }
+    @media(min-width:640px){ .awGrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.35rem;} }
+    @media(min-width:1025px){ .awGrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem;} }
+    @media(min-width:1440px){ .awGrid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));} }
     /* ── Card shell — kept as a generic reusable class (also used by
        the Profile page's .pfGrid, which is unaffected by the masonry
        rules below since those are scoped to .awGrid specifically) ── */
@@ -2272,6 +2264,35 @@
       background-size:200% 100%;
       animation:imgShimmer 1.4s infinite;
       min-height:140px;
+    }
+    /* ── Pending-review state — blurred thumbnail + spinner overlay,
+       shown on a submitter's own profile until a dev approves the
+       piece (status:'pending'). Tapping opens openVerifyModal(). ── */
+    .awImgWrap.awPending{position:relative;}
+    .awImgWrap.awPending img{
+      filter:blur(11px) saturate(.75) brightness(.72);
+      transform:scale(1.12);
+    }
+    .awPendingOv{
+      position:absolute;inset:0;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:.5rem;
+      background:rgba(5,3,8,.28);
+    }
+    .awPendingSpin{
+      width:22px;height:22px;border-radius:50%;
+      border:2px solid color-mix(in srgb,var(--tc) 25%,transparent);
+      border-top-color:var(--pg);
+      animation:awPendingSpin .8s linear infinite;
+    }
+    .awPendingLbl{
+      font-family:var(--fm);font-size:.58rem;font-weight:700;
+      letter-spacing:.14em;color:#fff;
+      text-shadow:0 1px 4px rgba(0,0,0,.5);
+    }
+    @keyframes awPendingSpin{to{transform:rotate(360deg);}}
+    @media(prefers-reduced-motion:reduce){
+      .awPendingSpin{animation:none;border-top-color:color-mix(in srgb,var(--tc) 25%,transparent);}
     }
     /* ── Title + category overlaid directly on the artwork with a
        bottom gradient scrim — ArtStation-style, no caption bar ──
@@ -2454,17 +2475,17 @@
       gap:1.2rem;margin-top:1.2rem;
     }
     @media(max-width:480px){.pfGrid{grid-template-columns:1fr;}}
-    /* ── Gallery tab reuses the same fixed column-count breakpoints
-       as the main Artworks grid (.awGrid) — 2/3/4/5 columns — so
-       artwork thumbnails look identical everywhere. Comic tab keeps
-       the auto-fill .pfGrid layout above (still developing). ── */
+    /* ── Gallery tab reuses the same fluid auto-fill layout as the
+       main Artworks grid (.awGrid) so thumbnails fill edge-to-edge
+       and look identical everywhere. Comic tab keeps the auto-fill
+       .pfGrid layout above (still developing). ── */
     .pfGridArt{
-      grid-template-columns:repeat(2,1fr);
+      grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
       gap:1rem;
     }
-    @media(min-width:640px){ .pfGridArt{grid-template-columns:repeat(3,1fr);gap:1.2rem;} }
-    @media(min-width:1025px){ .pfGridArt{grid-template-columns:repeat(4,1fr);gap:1.4rem;} }
-    @media(min-width:1440px){ .pfGridArt{grid-template-columns:repeat(5,1fr);} }
+    @media(min-width:640px){ .pfGridArt{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1.2rem;} }
+    @media(min-width:1025px){ .pfGridArt{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1.4rem;} }
+    @media(min-width:1440px){ .pfGridArt{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));} }
     @media(max-width:480px){ .pfGridArt{grid-template-columns:repeat(2,1fr);gap:.7rem;} }
     @media(max-width:480px){
       .pfAvatarWrap{left:1.2rem;}
@@ -5954,17 +5975,12 @@ body{background:var(--bg);}
    <div class="avBox" onclick="event.stopPropagation()">
     <div class="avTopBar">
      <button class="avTopBtn avCloseBtn" onclick="closeLB()" aria-label="Close">
-      <span>✕ Close</span><kbd>ESC</kbd>
+      <span class="avBtnIcon">✕</span><span class="avBtnLabel">Close</span><kbd>ESC</kbd>
      </button>
      <div class="avTopRight">
-      <button class="avTopBtn" onclick="avShare()"><span>↗ Share</span></button>
-      <button class="avTopBtn avMoreBtn" onclick="avToggleMore(event)" aria-label="More options">⋮</button>
-      <div class="avMoreMenu" id="avMoreMenu" onclick="event.stopPropagation()">
-       <button onclick="avShare()">🔗 Copy link</button>
-       <button onclick="avDownload()">⬇ Download</button>
-       <button onclick="avComment()">💬 Comment</button>
-       <button onclick="avReport()">⚑ Report artwork</button>
-      </div>
+      <button class="avTopBtn" onclick="avDownload()" aria-label="Download"><span class="avBtnIcon">⬇</span><span class="avBtnLabel">Download</span></button>
+      <button class="avTopBtn" onclick="avShare()" aria-label="Share"><span class="avBtnIcon">↗</span><span class="avBtnLabel">Share</span></button>
+      <button class="avTopBtn" onclick="avReport()" aria-label="Report"><span class="avBtnIcon">⚑</span><span class="avBtnLabel">Report</span></button>
      </div>
     </div>
     <div class="avBody">
@@ -6626,33 +6642,11 @@ body{background:var(--bg);}
     if(navigator.share){ navigator.share({title:title,url:url}).catch(function(){}); }
     else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(function(){ showToast('Link copied ✦'); }); }
     else { showToast('Share not supported'); }
-    avCloseMoreMenu();
   }
   function avReport(){
     showToast('Report submitted — thank you ✦');
-    avCloseMoreMenu();
   }
-  function avComment(){
-    var img=document.getElementById('lbImg');
-    var src=(img && img.src) ? img.src : '';
-    currentLightboxImageSrc = src.replace(/[?&]width=\d+/g,'').replace(/[?&]quality=\d+/g,'').replace(/\?&/g,'?').replace(/\?$/,'');
-    avCloseMoreMenu();
-    closeLB();
-    openComments();
-  }
-  function avToggleMore(e){
-    if(e) e.stopPropagation();
-    var menu=document.getElementById('avMoreMenu');
-    if(menu) menu.classList.toggle('open');
-  }
-  function avCloseMoreMenu(){
-    var menu=document.getElementById('avMoreMenu');
-    if(menu) menu.classList.remove('open');
-  }
-  document.addEventListener('click',function(e){
-    var menu=document.getElementById('avMoreMenu');
-    if(menu && menu.classList.contains('open') && !menu.contains(e.target)) menu.classList.remove('open');
-  });
+  function avCloseMoreMenu(){}
 
   /* Drag-to-pan the image once zoomed in; double-click/tap toggles 2x zoom */
   (function(){
@@ -7783,8 +7777,11 @@ body{background:var(--bg);}
       '<button class="danger" onclick="delImg(\''+a.id+'\','+(a.storage_path?'\''+a.storage_path+'\'':'null')+',event)">DELETE</button>'+
       '</div>'
     ) : '';
+    var pending = a.status === 'pending';
     return '<div class="awCard" onclick="pfOpenArtwork(\''+a.id+'\')">'+
-      '<div class="awImgWrap"><img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.name||'')+'"></div>'+
+      '<div class="awImgWrap'+(pending?' awPending':'')+'"><img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.name||'')+'">'+
+        (pending?'<div class="awPendingOv"><div class="awPendingSpin"></div><div class="awPendingLbl">IN REVIEW</div></div>':'')+
+      '</div>'+
       '<div class="pfCardMeta">'+
         '<div class="pfCardTitle">'+esc(a.name||'Untitled')+'</div>'+
         '<div class="pfCardDate">'+pfFormatDate(a.created_at)+'</div>'+
@@ -7798,6 +7795,7 @@ body{background:var(--bg);}
        it up in pf.galleryRows first and fall back to the global list. */
     var art = pf.galleryRows.find(function(a){ return String(a.id)===String(id); }) || findArtworkById(id);
     if(!art) return;
+    if(art.status === 'pending'){ openVerifyModal(art); return; }
     var cats=catList(art.category).length?catList(art.category):(catList(art.tags).length?catList(art.tags):['others']);
     openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, pf.galleryRows);
   }
@@ -9469,6 +9467,9 @@ async function openComments(){
   var backdrop = document.getElementById('legalBackdrop');
   var titleEl  = document.getElementById('lmTitleText');
   var bodyEl   = document.getElementById('lmBody');
+  /* Local escaper — this script runs in its own IIFE, separate from
+     the main app scope's esc(), so it can't reach that one. */
+  function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
   window.openLegal = function(type){
     var c = CONTENT[type];
@@ -9486,6 +9487,30 @@ async function openComments(){
   window.closeLegal = function(){
     backdrop.classList.remove('open');
     document.body.style.overflow = '';
+  };
+
+  /* ── Verification-status modal — shown when a submitter taps their
+     own blurred, still-pending artwork. Reuses the legal modal's
+     backdrop/card/theme so it looks native to the rest of the site. ── */
+  window.openVerifyModal = function(art){
+    titleEl.innerHTML = 'UNDER REVIEW';
+    bodyEl.innerHTML =
+      '<div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.4rem;">'+
+        '<img src="'+esc(art.image_url)+'" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr);filter:blur(3px);flex-shrink:0;">'+
+        '<div>'+
+          '<div style="font-family:var(--fb);font-size:1rem;color:var(--tx);font-weight:600;margin-bottom:.3rem;">'+esc(art.name||'Untitled')+'</div>'+
+          '<span class="lmDate" style="margin-top:0;">IN REVIEW</span>'+
+        '</div>'+
+      '</div>'+
+      '<h2>Your artwork is being reviewed</h2>'+
+      '<p>Thank you for your submission. Our team is currently reviewing this piece to confirm it meets our community guidelines and quality standards. Reviews are usually completed quickly, and you don\'t need to do anything in the meantime.</p>'+
+      '<p>Once it\'s approved, the blur will disappear automatically and your artwork will go live in the public gallery.</p>'+
+      '<p>If any changes are needed before it can be approved, we\'ll let you know.</p>';
+    bodyEl.scrollTop = 0;
+    backdrop.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    var closeBtn = backdrop.querySelector('.lmClose');
+    if(closeBtn) setTimeout(function(){ closeBtn.focus(); }, 80);
   };
 
   window.handleBackdropClick = function(e){

@@ -972,26 +972,22 @@
     .cpTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;letter-spacing:.15em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
     .cpTitle .s{color:var(--pg);font-size:.6em;}
 
-    /* ── Top tab bar (Community / Friends) ── */
+    /* ── Header (was a Community/Friends tab bar — page is now one
+       continuous scroll, Friends sits below Community, no tabs) ── */
     .cmHdr{
       position:sticky;top:0;z-index:10;
       background:color-mix(in srgb,var(--sur) 92%,transparent);
       backdrop-filter:blur(12px);
       border-bottom:1px solid var(--bdr);
-      padding:1.1rem 1.5rem 0;
+      padding:1.1rem 1.5rem;
       flex-shrink:0;
     }
-    .cmTabs{display:flex;gap:1.6rem;}
-    .cmTab{
-      background:none;border:none;cursor:pointer;
-      font-family:var(--fb);font-size:.98rem;font-weight:600;
-      color:var(--txd);
-      padding:0 0 .9rem;
-      border-bottom:2px solid transparent;
-      transition:color .25s,border-color .25s;
+    .cmHdrTitle{
+      font-family:var(--fd);font-size:1.05rem;font-weight:700;
+      letter-spacing:.1em;color:var(--tx);
+      display:flex;align-items:center;gap:.4rem;
     }
-    .cmTab.active{color:var(--tx);border-color:var(--ps);}
-    .cmTab:hover{color:var(--tx);}
+    .cmHdrTitle .s{color:var(--pg);font-size:.7em;}
 
     /* Comments list area */
     .cpBody{
@@ -1122,30 +1118,64 @@
     .cmCreateBtn:hover{background:color-mix(in srgb,var(--tc) 24%,transparent);box-shadow:0 0 16px color-mix(in srgb,var(--tc) 25%,transparent);}
     .cmCreateBtn:active{transform:scale(.97);}
 
-    /* Community cards grid */
-    .cmGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem;}
-    .cmCard{
-      background:var(--sur);
-      border:1px solid var(--bdr);
-      border-radius:12px;
-      padding:1.2rem 1.3rem;
-      cursor:pointer;
-      transition:border-color .25s,transform .2s,box-shadow .25s;
-      display:flex;flex-direction:column;
-    }
-    .cmCard:hover{border-color:var(--bdrh);transform:translateY(-2px);box-shadow:0 8px 24px color-mix(in srgb,var(--tc) 14%,transparent);}
-    .cmCard:active{transform:translateY(0) scale(.99);}
-    .cmCardTop{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;}
-    .cmCard h4{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--tx);}
+    /* Generic small pill badge — used for the Zeo "AI" badge in the
+       Friends list (separate from .cmCardBadge, the cover-corner tag). */
     .cmBadge{
       font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;
       color:var(--ps);background:var(--pdim);
       border:1px solid var(--pg);border-radius:999px;
       padding:.18rem .55rem;flex-shrink:0;
     }
+    /* Community cards grid — back to the original text-card layout
+       (title + description + member meta), now with an improved
+       cover-image strip up top instead of plain gradient-only fill. */
+    .cmGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.1rem;}
+    .cmCard{
+      background:var(--sur);
+      border:1px solid var(--bdr);
+      border-radius:12px;
+      overflow:hidden;
+      cursor:pointer;
+      transition:border-color .25s,transform .25s,box-shadow .25s;
+      display:flex;flex-direction:column;
+    }
+    .cmCard:hover{border-color:var(--bdrh);transform:translateY(-3px);box-shadow:0 10px 28px color-mix(in srgb,var(--tc) 16%,transparent);}
+    .cmCard:active{transform:translateY(-1px) scale(.99);}
+    /* ── Cover strip — richer gradient + soft radial glow + subtle
+       grain-like texture via layered gradients, icon centered, badge
+       pinned to the corner with a frosted-glass pill ── */
+    .cmCardCover{
+      position:relative;
+      height:118px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:2.3rem;line-height:1;
+      overflow:hidden;
+      flex-shrink:0;
+    }
+    .cmCardCover::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.22),transparent 55%),
+                 radial-gradient(circle at 80% 90%,rgba(0,0,0,.25),transparent 60%);
+      pointer-events:none;
+    }
+    .cmCardCoverIcon{position:relative;z-index:1;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35));transition:transform .35s;}
+    .cmCard:hover .cmCardCoverIcon{transform:scale(1.08) translateY(-2px);}
+    .cmCardBadge{
+      position:absolute;top:.6rem;right:.6rem;z-index:2;
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;
+      color:#fff;background:rgba(5,3,8,.45);
+      border:1px solid rgba(255,255,255,.35);
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      padding:.22rem .5rem;text-transform:uppercase;border-radius:999px;
+    }
+    .cmCardBody{padding:1rem 1.1rem 1.1rem;display:flex;flex-direction:column;flex:1;}
+    .cmCardTop{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;}
+    .cmCard h4{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--tx);}
     .cmCard p{font-family:var(--fb);font-size:.82rem;color:var(--txd);line-height:1.55;flex:1;}
     .cmCardMeta{display:flex;align-items:center;gap:.45rem;margin-top:1rem;font-family:var(--fm);font-size:.68rem;letter-spacing:.04em;color:var(--txd);}
     .cmDot{width:6px;height:6px;border-radius:50%;background:#3ecf8e;flex-shrink:0;box-shadow:0 0 6px #3ecf8e;}
+
+
 
     /* Footer CTA */
     .cmFooterCta{
@@ -2476,6 +2506,155 @@
     .pfSkeleton{background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);background-size:200% 100%;animation:imgShimmer 1.4s infinite;border-radius:8px;}
 
     /* =========================================================
+       ADMIN REVIEW PAGE (#admPage)
+       Moderation queue — everything a non-dev uploads lands here
+       as status:'pending' and never touches the public gallery
+       arrays until a dev approves it. Same sliding full-page /
+       dark-violet language as #profilePage; reuses .subPgHdr /
+       .subPgTitle / .subPgX / .pfTabs / .pfTab / .pfPanel /
+       .pfGrid / .pfGridArt / .pfEmpty as-is.
+       ========================================================= */
+    #admPage{
+      position:fixed;inset:0;z-index:520;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #admPage.open{transform:translateX(0);}
+    #admPage,#admPage *{
+      --bg:#050308;--sur:#0d0a14;--sur2:#120e1c;
+      --tx:#f0e8ff;--txd:rgba(196,181,253,.6);
+      --tc:#9a9ea5;--pg:#8a8f98;--pb:#b8bcc2;--ps:#cfd2d6;
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #admPage .subPgHdr{background:rgba(5,3,8,.92)!important;border-bottom:1px solid rgba(255,255,255,.08);}
+    #admPage .subPgTitle{color:#fff;}
+    .admBdy{max-width:1100px;margin:0 auto;padding:1.6rem 2rem 6rem;}
+    @media(max-width:480px){.admBdy{padding:1.2rem 1.2rem 6rem;}}
+
+    /* ── Admin Mode toggle row ── */
+    .admModeRow{
+      display:flex;align-items:center;justify-content:space-between;gap:1rem;
+      background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;
+      padding:1rem 1.2rem;margin-bottom:1.6rem;
+    }
+    .admModeLbl{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--tx);}
+    .admModeSub{font-family:var(--fb);font-size:.72rem;color:var(--txd);margin-top:.25rem;}
+    .admSwitch{position:relative;width:46px;height:26px;flex-shrink:0;}
+    .admSwitch input{opacity:0;width:0;height:0;}
+    .admSwitchTrack{
+      position:absolute;inset:0;background:var(--sur);border:1px solid var(--bdr);
+      border-radius:999px;cursor:pointer;transition:background .2s,border-color .2s;
+    }
+    .admSwitchTrack:before{
+      content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;
+      background:var(--txd);border-radius:50%;transition:transform .2s,background .2s;
+    }
+    .admSwitch input:checked + .admSwitchTrack{background:color-mix(in srgb,#9a5cff 35%,transparent);border-color:#9a5cff;}
+    .admSwitch input:checked + .admSwitchTrack:before{transform:translateX(20px);background:#c9a8ff;}
+
+    /* ── Tabs (Artwork / Comic Arts / Notifications) ── */
+    #admPage .pfTabs{padding:0;border-bottom:1px solid var(--bdr);position:static;background:none;backdrop-filter:none;margin-bottom:.4rem;}
+    #admPage .pfTab{position:relative;}
+    .admTabCount{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:16px;height:16px;padding:0 4px;margin-left:.35rem;
+      background:#9a5cff;color:#fff;border-radius:999px;
+      font-family:var(--fm);font-size:.58rem;letter-spacing:0;vertical-align:middle;
+    }
+    #admPage .pfPanel{padding:1.4rem 0 0;}
+
+    /* ── Review cards — reuse .pfGrid/.pfGridArt, add a caption strip ── */
+    .admCard{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;}
+    .admCardImg{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--sur2);}
+    .admCardBody{padding:.65rem .75rem .8rem;}
+    .admCardTitle{font-family:var(--fb);font-size:.8rem;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .admCardMeta{font-family:var(--fm);font-size:.6rem;letter-spacing:.06em;color:var(--txd);margin-top:.25rem;}
+    .admCardActions{display:flex;gap:.5rem;margin-top:.6rem;}
+    .admCardActions button{
+      flex:1;font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;padding:.45rem;
+      border-radius:5px;cursor:pointer;transition:opacity .15s,background .15s;
+    }
+    .admApproveBtn{background:#16a34a;color:#fff;border:1px solid #16a34a;}
+    .admApproveBtn:hover{opacity:.88;}
+    .admRejectBtn{background:none;color:#f87171;border:1px solid #7f1d1d;}
+    .admRejectBtn:hover{background:rgba(220,38,38,.15);}
+    .admEmptyIcon{font-size:1.6rem;display:block;margin-bottom:.6rem;opacity:.6;}
+
+    /* ── Admin broadcast composer (inside #admPanelNoti) ──
+       Sends a notification with user_id:null — visible to every
+       user (see notifications RLS select policy). Nothing here
+       edits a notification once sent; only new rows are inserted. */
+    .admNotiLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--tx);margin-bottom:.6rem;}
+    .admNotiCompose{background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;padding:1rem;margin-bottom:1.6rem;}
+    .admNotiInput,.admNotiTextarea{
+      width:100%;background:var(--sur);border:1px solid var(--bdr);border-radius:7px;
+      color:var(--tx);font-family:var(--fb);font-size:.82rem;padding:.6rem .7rem;margin-bottom:.6rem;
+      resize:vertical;box-sizing:border-box;
+    }
+    .admNotiInput:focus,.admNotiTextarea:focus{outline:none;border-color:#9a5cff;}
+    .admNotiSendBtn{
+      background:#9a5cff;color:#fff;border:1px solid #9a5cff;border-radius:6px;
+      font-family:var(--fm);font-size:.68rem;letter-spacing:.08em;padding:.6rem 1.1rem;
+      cursor:pointer;transition:opacity .15s;
+    }
+    .admNotiSendBtn:hover{opacity:.88;}
+    .admNotiSendBtn:disabled{opacity:.5;cursor:default;}
+    .admNotiSentLbl{font-family:var(--fm);font-size:.66rem;letter-spacing:.12em;color:var(--txd);margin-bottom:.6rem;}
+    .admNotiSentList{display:flex;flex-direction:column;gap:.5rem;}
+    .admNotiSentItem{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:.7rem .8rem;}
+    .admNotiSentTitle{font-family:var(--fb);font-size:.8rem;font-weight:700;color:var(--tx);}
+    .admNotiSentMsg{font-family:var(--fb);font-size:.76rem;color:var(--txd);margin-top:.2rem;}
+    .admNotiSentTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.06em;color:var(--txd);opacity:.65;margin-top:.35rem;}
+
+    /* =========================================================
+       NOTIFICATIONS PAGE (#notifPage)
+       Opened by tapping the bell (#hNotifBtn). Read-only feed —
+       admin broadcasts (notifications.user_id IS NULL) plus the
+       signed-in user's own artwork/comic approve+reject notices.
+       Same sliding full-page / dark-violet language as #admPage.
+       No edit or delete control exists anywhere on this page —
+       the notifications table is never written to by a normal
+       user; only per-user read-state (notification_reads) is.
+       ========================================================= */
+    #notifPage{
+      position:fixed;inset:0;z-index:525;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #notifPage.open{transform:translateX(0);}
+    #notifPage,#notifPage *{
+      --bg:#050308;--sur:#0d0a14;--sur2:#120e1c;
+      --tx:#f0e8ff;--txd:rgba(196,181,253,.6);
+      --tc:#9a9ea5;--pg:#8a8f98;--pb:#b8bcc2;--ps:#cfd2d6;
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #notifPage .subPgHdr{background:rgba(5,3,8,.92)!important;border-bottom:1px solid rgba(255,255,255,.08);}
+    #notifPage .subPgTitle{color:#fff;}
+    .notifBdy{max-width:640px;margin:0 auto;padding:1.4rem 1.4rem 6rem;}
+    .notifListWrap{display:flex;flex-direction:column;gap:.6rem;}
+    .notifItem{
+      position:relative;display:flex;gap:.75rem;align-items:flex-start;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:10px;
+      padding:.85rem 2rem .85rem .95rem;
+    }
+    .notifItem.unread{border-color:color-mix(in srgb,#9a5cff 45%,var(--bdr));background:color-mix(in srgb,#9a5cff 7%,var(--sur));}
+    .notifIcoWrap{
+      flex-shrink:0;width:32px;height:32px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:var(--sur2);border:1px solid var(--bdr);font-size:.9rem;
+    }
+    .notifIcoWrap.ico-artwork_approved,.notifIcoWrap.ico-comic_approved{color:#4ade80;border-color:#16a34a;}
+    .notifIcoWrap.ico-artwork_rejected,.notifIcoWrap.ico-comic_rejected{color:#f87171;border-color:#7f1d1d;}
+    .notifIcoWrap.ico-admin{color:#c9a8ff;border-color:#9a5cff;}
+    .notifBody{flex:1;min-width:0;}
+    .notifTitle{font-family:var(--fb);font-size:.86rem;font-weight:700;color:var(--tx);}
+    .notifMsg{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-top:.2rem;line-height:1.45;word-break:break-word;}
+    .notifTime{font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;color:var(--txd);opacity:.7;margin-top:.4rem;}
+    .notifDot{position:absolute;top:.9rem;right:.9rem;width:8px;height:8px;border-radius:50%;background:#9a5cff;}
+
+    /* =========================================================
        LOGIN / SIGNUP PAGE (#authMod)
        Full-screen sliding panel with its own self-contained dark
        theme (independent of the site's white default, same idea
@@ -2864,7 +3043,26 @@ height:80px;
   transform: translateX(100%);
   transition: transform .45s cubic-bezier(.22,1,.36,1);
 }
+/* Same dark-violet theme as the Gallery page (#fg) — every child
+   that already styles itself with var(--bg)/var(--sur)/var(--tx)/
+   var(--pg)/etc. (including .awGrid/.awCard) repaints to match
+   automatically. */
+#comicArtsPage,#comicArtsPage * {
+  --bg:#08080d;--sur:#131320;--sur2:#191927;
+  --bdr:#26263a;--bdrh:#3a3a56;
+  --tx:#f5f4fb;--txd:rgba(214,212,232,.62);
+  --pg:#8b5cf6;--pb:#b9a3fb;--ps:#c9b8fd;
+  --pdim:rgba(139,92,246,.16);
+}
+#comicArtsPage .subPgHdr{background:rgba(5,3,8,.96)!important;border-bottom:1px solid var(--bdr);}
+#comicArtsPage .subPgTitle{color:#fff;}
+#comicArtsPage .awCard{background:var(--sur);}
 #comicArtsPage.open { transform: translateX(0); }
+
+/* ── Grid body — same idea as .admBdy's bottom padding: clears
+   the floating pill bottom-nav, which stays visible/usable on
+   this tab screen (see comicArtsPage header comment). ── */
+.caBdy { padding-bottom: 6rem; }
 
 /* ── Placeholder body — centred empty-state layout ── */
 .pgPlaceholder {
@@ -4373,15 +4571,19 @@ body{background:var(--bg);}
        ├─ Header Bar (.subPgHdr pattern)
        │   └─ Title (no back button — closed via bottom nav tabs,
        │       same as Instagram/YouTube tab screens)
-       └─ Placeholder Body (.pgPlaceholder)
+       └─ Grid Body (.caBdy) — reuses .awGrid/.awCard exactly as
+           built for the homepage Artworks/ComicArts tab: cover
+           image only, no bookmark, no overlaid title/tag text,
+           same responsive column spacing (2/3/4/5 cols) as the
+           Artworks gallery. See caRenderGrid() / buildAwCard().
        ========================================================= -->
   <div id="comicArtsPage" role="dialog" aria-modal="true" aria-label="Comic Arts">
     <div class="subPgHdr">
       <div class="subPgTitle">COMIC ARTS <span class="s">◉</span></div>
     </div>
-    <div class="pgPlaceholder">
-      <h1>Comic Arts <span class="s">✦</span></h1>
-      <p>Content coming soon.</p>
+    <div class="caBdy">
+      <div class="awGrid" id="caGrid"></div>
+      <div class="awEmpty" id="caEmpty" style="display:none;">NO COMICS YET</div>
     </div>
   </div>
 
@@ -4471,6 +4673,93 @@ body{background:var(--bg);}
           <button class="pfBioEditLink" id="pfBioEditLink" style="display:none;" onclick="startPfBioEdit()">EDIT BIO</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       ADMIN REVIEW PAGE (#admPage)
+       Moderation queue for everything non-devs upload. Opened via
+       the "Admin Panel" item in the profile ⋮ menu (smHandleAdm).
+       ├─ Header (.subPgHdr) — title + close (.subPgX)
+       ├─ Admin Mode toggle (.admModeRow) — on/off switch, same
+       │   isAdm flag the rest of the site already uses for
+       │   gEdit/gDel/upload-button visibility
+       └─ Tabs (.pfTabs) — Artwork / Comic Arts / Notifications
+           ├─ Artwork    → #admArtGrid  (pending artworks)
+           ├─ Comic Arts → #admComicGrid (pending comics)
+           └─ Notifications → placeholder, empty for now
+       ========================================================= -->
+  <div id="admPage" role="dialog" aria-modal="true" aria-label="Admin review">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeAdmPage()" aria-label="Close admin review">←</button>
+      <div class="subPgTitle">ADMIN REVIEW <span class="s">✦</span></div>
+    </div>
+    <div class="admBdy">
+      <div class="admModeRow">
+        <div>
+          <div class="admModeLbl">ADMIN MODE</div>
+          <div class="admModeSub" id="admModeSub">Off — edit/delete controls are hidden site-wide.</div>
+        </div>
+        <label class="admSwitch">
+          <input type="checkbox" id="admModeToggle" onchange="admToggleMode()">
+          <span class="admSwitchTrack"></span>
+        </label>
+      </div>
+
+      <div class="pfTabs" role="tablist">
+        <div class="pfTabGroup">
+          <button class="pfTab active" id="admTabArt" role="tab" aria-selected="true" onclick="admSwitchTab('art')">ARTWORK<span class="admTabCount" id="admCountArt" style="display:none;">0</span></button>
+          <button class="pfTab" id="admTabComic" role="tab" aria-selected="false" onclick="admSwitchTab('comic')">COMIC ARTS<span class="admTabCount" id="admCountComic" style="display:none;">0</span></button>
+          <button class="pfTab" id="admTabNoti" role="tab" aria-selected="false" onclick="admSwitchTab('noti')">NOTIFICATIONS</button>
+        </div>
+      </div>
+
+      <!-- ARTWORK -->
+      <div class="pfPanel active" id="admPanelArt">
+        <div class="pfGrid pfGridArt" id="admArtGrid"></div>
+        <div class="pfEmpty" id="admArtEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>Nothing pending — all artwork is reviewed.</div>
+      </div>
+
+      <!-- COMIC ARTS -->
+      <div class="pfPanel" id="admPanelComic">
+        <div class="pfGrid pfGridArt" id="admComicGrid"></div>
+        <div class="pfEmpty" id="admComicEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>Nothing pending — all comics are reviewed.</div>
+      </div>
+
+      <!-- NOTIFICATIONS — broadcast composer + recently sent list.
+           Sending inserts a row with user_id:null, which every
+           user's notifications feed picks up (see #notifPage). -->
+      <div class="pfPanel" id="admPanelNoti">
+        <div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>
+        <div class="admNotiCompose">
+          <input type="text" id="admNotiTitle" class="admNotiInput" placeholder="Title" maxlength="80">
+          <textarea id="admNotiMsg" class="admNotiTextarea" placeholder="Message" maxlength="500" rows="3"></textarea>
+          <button class="admNotiSendBtn" id="admNotiSendBtn" onclick="admSendBroadcast()">Send to All Users</button>
+        </div>
+        <div class="admNotiSentLbl">RECENTLY SENT</div>
+        <div class="pfEmpty" id="admNotiEmpty" style="display:none;"><span class="admEmptyIcon">🔔</span>No notifications sent yet.</div>
+        <div id="admNotiSentList" class="admNotiSentList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       NOTIFICATIONS PAGE (#notifPage)
+       Opened via the bell button (#hNotifBtn → openNotifications()).
+       Read-only feed: admin broadcasts (user_id NULL) + the signed
+       -in user's own artwork/comic approve+reject notices. Nothing
+       on this page can be edited or deleted — see notifications
+       RLS (insert restricted to devs, no update/delete policy at
+       all) and notification_reads (per-user read-state only).
+       ========================================================= -->
+  <div id="notifPage" role="dialog" aria-modal="true" aria-label="Notifications">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeNotifPage()" aria-label="Close notifications">←</button>
+      <div class="subPgTitle">NOTIFICATIONS <span class="s">🔔</span></div>
+    </div>
+    <div class="notifBdy">
+      <div class="pfEmpty" id="notifEmpty" style="display:none;"><span class="admEmptyIcon">🔔</span>No notifications yet.</div>
+      <div id="notifList" class="notifListWrap"></div>
     </div>
   </div>
 
@@ -4881,39 +5170,37 @@ body{background:var(--bg);}
    </div>
   </div>
   <!-- =========================================================
-       COMMUNITY PAGE
-       ├─ Tab Bar (.cmHdr) — Community / Friends (cmSwitchTab())
-       ├─ COMMUNITY TAB (#cmViewCommunity)
-       │   ├─ Grid view (#cmGridScroll) — hero banner + 6 community
-       │   │   cards (cmOpenCommunity()). Only "Art Talk" is wired
-       │   │   to Supabase today; the other 5 are placeholders
-       │   │   until their tables/policies are added.
-       │   └─ Chat view (#cmChatView) — the "Art Talk" room, reusing
-       │       the original Comments feed markup unchanged:
-       │       ├─ Header + back button (cmCloseChat())
-       │       ├─ Comments List (#cpBody) → Empty State (#cpEmpty)
-       │       └─ Composer Bar (#cpBar) — fixed at bottom
-       │           ├─ Selected Image Preview (#cpSelectedImage)
-       │           ├─ Avatar (.cpBarAvatar)
-       │           ├─ Text Input (#cpBarInput)
-       │           └─ Send Button (#cpBarSend)
-       └─ FRIENDS TAB (#cmViewFriends) — same hero banner + a
-           friends list placeholder (to be wired to Supabase later)
+       COMMUNITY PAGE — now a single continuous page (no tabs).
+       ├─ Header (.cmHdr) — static title
+       ├─ Grid view (#cmGridScroll)
+       │   ├─ Hero banner
+       │   ├─ Explore Communities — #cmGrid, gallery-style square
+       │   │   image cards (cmOpenCommunity()), same column layout
+       │   │   as the artwork gallery (.awGrid: 2/3/4/5 cols). Only
+       │   │   "Art Talk" is wired to Supabase today; the other 5
+       │   │   are placeholders until their tables/policies exist.
+       │   └─ Friends — sits directly below Community on the same
+       │       scroll, no separate tab/page anymore.
+       └─ Chat view (#cmChatView) — the "Art Talk" room, reusing
+           the original Comments feed markup unchanged:
+           ├─ Header + back button (cmCloseChat())
+           ├─ Comments List (#cpBody) → Empty State (#cpEmpty)
+           └─ Composer Bar (#cpBar) — fixed at bottom
+               ├─ Selected Image Preview (#cpSelectedImage)
+               ├─ Avatar (.cpBarAvatar)
+               ├─ Text Input (#cpBarInput)
+               └─ Send Button (#cpBarSend)
 
        No "Join" buttons anywhere: tapping a card auto-joins a
        logged-in user, or opens the login page (openAuthMod()) for
        a guest — see cmOpenCommunity() in the script.
        ========================================================= -->
   <div id="communityPage">
-    <!-- Tab bar -->
+    <!-- Header -->
     <div class="cmHdr">
-      <div class="cmTabs">
-        <button class="cmTab active" id="cmTabCommunity" onclick="cmSwitchTab('community')">Community</button>
-        <button class="cmTab" id="cmTabFriends" onclick="cmSwitchTab('friends')">Friends</button>
-      </div>
+      <div class="cmHdrTitle">COMMUNITY <span class="s">✦</span></div>
     </div>
 
-    <!-- ============== COMMUNITY TAB ============== -->
     <div class="cmView" id="cmViewCommunity" style="display:flex;">
 
       <!-- Grid view -->
@@ -4941,36 +5228,70 @@ body{background:var(--bg);}
           <button class="cmCreateBtn" onclick="cmCreateCommunity()">+ Create Community</button>
         </div>
 
+        <!-- Cards: cover-image strip on top (gradient + icon + corner
+             badge) with the original title/description/meta text
+             body below it. -->
         <div class="cmGrid">
           <div class="cmCard" onclick="cmOpenCommunity('official')">
-            <div class="cmCardTop"><h4>DigiArtz Official</h4><span class="cmBadge">Official</span></div>
-            <p>Official community of DigiArtz. Get updates, announcements and more.</p>
-            <div class="cmCardMeta"><span>12.4K Members</span><span class="cmDot"></span><span>342 Online</span></div>
+            <div class="cmCardCover" style="background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 55%,#a855f7 100%);">
+              <span class="cmCardCoverIcon">🎨</span>
+              <span class="cmCardBadge">Official</span>
+            </div>
+            <div class="cmCardBody">
+              <div class="cmCardTop"><h4>DigiArtz Official</h4></div>
+              <p>Official community of DigiArtz. Get updates, announcements and more.</p>
+              <div class="cmCardMeta"><span>12.4K Members</span><span class="cmDot"></span><span>342 Online</span></div>
+            </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('arttalk')">
-            <div class="cmCardTop"><h4>Art Talk</h4></div>
-            <p>Discuss about art, share your thoughts, ask questions and grow together.</p>
-            <div class="cmCardMeta"><span>8.7K Members</span><span class="cmDot"></span><span>256 Online</span></div>
+            <div class="cmCardCover" style="background:linear-gradient(135deg,#0f766e 0%,#0891b2 55%,#8b5cf6 100%);">
+              <span class="cmCardCoverIcon">💬</span>
+            </div>
+            <div class="cmCardBody">
+              <div class="cmCardTop"><h4>Art Talk</h4></div>
+              <p>Discuss about art, share your thoughts, ask questions and grow together.</p>
+              <div class="cmCardMeta"><span>8.7K Members</span><span class="cmDot"></span><span>256 Online</span></div>
+            </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('feedback')">
-            <div class="cmCardTop"><h4>Art Feedback</h4></div>
-            <p>Share your work and get constructive feedback from the community.</p>
-            <div class="cmCardMeta"><span>6.3K Members</span><span class="cmDot"></span><span>189 Online</span></div>
+            <div class="cmCardCover" style="background:linear-gradient(135deg,#9d174d 0%,#db2777 55%,#f97316 100%);">
+              <span class="cmCardCoverIcon">📝</span>
+            </div>
+            <div class="cmCardBody">
+              <div class="cmCardTop"><h4>Art Feedback</h4></div>
+              <p>Share your work and get constructive feedback from the community.</p>
+              <div class="cmCardMeta"><span>6.3K Members</span><span class="cmDot"></span><span>189 Online</span></div>
+            </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('collab')">
-            <div class="cmCardTop"><h4>Collab Hub</h4></div>
-            <p>Find artists to collaborate with on projects and bring ideas to life.</p>
-            <div class="cmCardMeta"><span>4.6K Members</span><span class="cmDot"></span><span>132 Online</span></div>
+            <div class="cmCardCover" style="background:linear-gradient(135deg,#065f46 0%,#059669 55%,#22d3ee 100%);">
+              <span class="cmCardCoverIcon">🤝</span>
+            </div>
+            <div class="cmCardBody">
+              <div class="cmCardTop"><h4>Collab Hub</h4></div>
+              <p>Find artists to collaborate with on projects and bring ideas to life.</p>
+              <div class="cmCardMeta"><span>4.6K Members</span><span class="cmDot"></span><span>132 Online</span></div>
+            </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('tips')">
-            <div class="cmCardTop"><h4>Tips &amp; Resources</h4></div>
-            <p>Share helpful tips, tutorials, tools and resources for artists.</p>
-            <div class="cmCardMeta"><span>5.1K Members</span><span class="cmDot"></span><span>118 Online</span></div>
+            <div class="cmCardCover" style="background:linear-gradient(135deg,#78350f 0%,#b45309 55%,#facc15 100%);">
+              <span class="cmCardCoverIcon">💡</span>
+            </div>
+            <div class="cmCardBody">
+              <div class="cmCardTop"><h4>Tips &amp; Resources</h4></div>
+              <p>Share helpful tips, tutorials, tools and resources for artists.</p>
+              <div class="cmCardMeta"><span>5.1K Members</span><span class="cmDot"></span><span>118 Online</span></div>
+            </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('showcase')">
-            <div class="cmCardTop"><h4>Showcase</h4></div>
-            <p>Share your latest work, celebrate progress and inspire others.</p>
-            <div class="cmCardMeta"><span>7.2K Members</span><span class="cmDot"></span><span>205 Online</span></div>
+            <div class="cmCardCover" style="background:linear-gradient(135deg,#701a75 0%,#a21caf 55%,#6366f1 100%);">
+              <span class="cmCardCoverIcon">✦</span>
+            </div>
+            <div class="cmCardBody">
+              <div class="cmCardTop"><h4>Showcase</h4></div>
+              <p>Share your latest work, celebrate progress and inspire others.</p>
+              <div class="cmCardMeta"><span>7.2K Members</span><span class="cmDot"></span><span>205 Online</span></div>
+            </div>
           </div>
         </div>
 
@@ -4981,53 +5302,9 @@ body{background:var(--bg);}
           </div>
           <button class="cmCreateBtn" onclick="cmCreateCommunity()">+ Create Community</button>
         </div>
-      </div>
 
-      <!-- Chat view — "Art Talk" room (the original Comments feed) -->
-      <div class="cmChat" id="cmChatView">
-        <div class="cpHdr">
-          <button class="cmBack" onclick="cmCloseChat()" title="Back" aria-label="Back">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <div class="cpTitle">ART TALK <span class="s">✦</span></div>
-        </div>
-
-        <!-- Comments list -->
-        <div class="cpBody" id="cpBody">
-          <!-- Placeholder — no comments yet -->
-          <div class="cpEmpty" id="cpEmpty">
-            <div class="cpEIco">◎</div>
-            <div>NO COMMENTS YET</div>
-            <div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>
-          </div>
-          <!-- Dynamically added comments will go here -->
-          <!-- Pull-to-refresh spinner (appears when scrolled past last comment) -->
-          <div class="cpRefreshWrap" id="cpRefreshWrap" aria-hidden="true">
-            <div class="cpRefreshSpinner"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============== FRIENDS TAB ============== -->
-    <div class="cmView" id="cmViewFriends" style="display:none;">
-      <div class="cmScroll">
-        <div class="cmBanner">
-          <div class="cmBannerTitle">Connect. Share. Grow Together.</div>
-          <div class="cmBannerSub">Join communities, share ideas, collaborate and grow with fellow artists.</div>
-          <div class="cmStats">
-            <div class="cmStat">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
-              <div><span class="cmStatNum">48K+</span><span class="cmStatLbl">MEMBERS</span></div>
-            </div>
-            <div class="cmStat">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
-              <div><span class="cmStatNum">6</span><span class="cmStatLbl">COMMUNITIES</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="cmSectionHead">
+        <!-- ============== FRIENDS — same page, below Community ============== -->
+        <div class="cmSectionHead" style="margin-top:2.4rem;">
           <div>
             <h3>Friends</h3>
             <p>People you connect with will show up here.</p>
@@ -5055,6 +5332,31 @@ body{background:var(--bg);}
           <div class="cmEmptyIco">◎</div>
           <div>NO FRIENDS YET</div>
           <div class="cmEmptySub">Once friends are live, the people you follow and connect with will appear here too.</div>
+        </div>
+      </div>
+
+      <!-- Chat view — "Art Talk" room (the original Comments feed) -->
+      <div class="cmChat" id="cmChatView">
+        <div class="cpHdr">
+          <button class="cmBack" onclick="cmCloseChat()" title="Back" aria-label="Back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="cpTitle">ART TALK <span class="s">✦</span></div>
+        </div>
+
+        <!-- Comments list -->
+        <div class="cpBody" id="cpBody">
+          <!-- Placeholder — no comments yet -->
+          <div class="cpEmpty" id="cpEmpty">
+            <div class="cpEIco">◎</div>
+            <div>NO COMMENTS YET</div>
+            <div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>
+          </div>
+          <!-- Dynamically added comments will go here -->
+          <!-- Pull-to-refresh spinner (appears when scrolled past last comment) -->
+          <div class="cpRefreshWrap" id="cpRefreshWrap" aria-hidden="true">
+            <div class="cpRefreshSpinner"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -5992,7 +6294,11 @@ body{background:var(--bg);}
     if(!sb)return;
     try{
       const[{data:imgs},{data:sets}]=await Promise.all([
-        sb.from('artworks').select('*').order('created_at',{ascending:false}),
+        /* Public-facing load — only approved items ever reach the
+           homepage/gallery/hero-showcase arrays. Anything still
+           status:'pending' (or rejected) is invisible here; it
+           only shows up inside #admPage for a dev to review. */
+        sb.from('artworks').select('*').eq('status','approved').order('created_at',{ascending:false}),
         sb.from('settings').select('*')
       ]);
       images=imgs||[];
@@ -6003,11 +6309,13 @@ body{background:var(--bg);}
        still in development), it can never break the artworks load.
        The ComicArts tab just falls back to its empty state. */
     try{
-      const{data:cmx,error:cmxErr}=await sb.from('comics').select('*').order('created_at',{ascending:false});
+      const{data:cmx,error:cmxErr}=await sb.from('comics').select('*').eq('status','approved').order('created_at',{ascending:false});
       if(cmxErr) throw cmxErr;
       comics=cmx||[];
     }catch(e){ comics=[]; console.warn('ComicArts fetch skipped:',e.message||e); }
     if(window.rebuildComicGrid) window.rebuildComicGrid(comics);
+    /* Refresh the pending badge counts on the Admin Panel menu item, if a dev is signed in. */
+    if(typeof admRefreshBadge==='function') admRefreshBadge();
   }
 
   async function saveSetting(k,v){if(!sb)return;await sb.from('settings').upsert({key:k,value:v},{onConflict:'key'});}
@@ -6624,7 +6932,16 @@ body{background:var(--bg);}
     document.getElementById('upMod').classList.add('open');
   }
 
-  function syncAdmBtn(){var b=document.getElementById('smAdmBtn');if(b){b.classList.toggle('devOnly',isDev);b.classList.toggle('on',isAdm);b.textContent=(isAdm?'★ ':'⚙ ')+(isAdm?'ADMIN MODE ON':'ADMIN PANEL');}
+  function syncAdmBtn(){
+    var b=document.getElementById('smAdmBtn');
+    if(!b) return;
+    b.classList.toggle('devOnly',isDev);
+    b.classList.toggle('on',isAdm);
+    /* Label is static now — the button opens #admPage rather than
+       toggling Admin Mode directly (that switch lives inside the
+       page). admRefreshBadge() appends the pending-count suffix. */
+    b.textContent=(isAdm?'★ ':'⚙ ')+'ADMIN PANEL';
+    if(typeof admRefreshBadge==='function') admRefreshBadge();
   }
 
   /* Auth — email+password via Supabase; session persists via localStorage */
@@ -7030,6 +7347,7 @@ body{background:var(--bg);}
     if(!isDev){ isAdm=false; document.body.classList.remove('admin'); }
     syncAdmBtn();
     syncSubOverviewCard(); /* update profile card tier badge */
+    notifRefreshBadge();
     if(isDev && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
   }
 
@@ -7051,6 +7369,7 @@ body{background:var(--bg);}
         syncAuthBtn();
         isDev=false; isAdm=false; userPlan=null; document.body.classList.remove('admin'); syncAdmBtn();
         syncSubOverviewCard(); /* reset profile card to guest state */
+        notifRefreshBadge(); /* clears the dot — guests have no read-state to track */
       }
     });
 
@@ -7066,11 +7385,167 @@ body{background:var(--bg);}
   }
 
 
-  /* ── Notification button ── placeholder until the admin broadcast
-     system is wired up: opens nothing yet, just confirms the button
-     is live. Swap this out once notifications actually exist. */
+  /* ── NOTIFICATIONS ──
+     Two sources feed the same #notifPage list:
+       1) Admin broadcasts — notifications.user_id IS NULL, sent
+          from the admin panel (admSendBroadcast) and visible to
+          every visitor, signed in or not.
+       2) Personal notices — notifications.user_id = the owner's
+          id, auto-sent whenever a dev approves/rejects one of
+          their uploads (see admApprove / admReject).
+     The notifications table itself is read-only from the app —
+     there is no update/delete anywhere in this UI, matching the
+     "no one can edit a notification" requirement. Per-user read
+     state lives in a separate notification_reads table so the
+     notifications rows never need to be touched to mark them
+     read. */
+  var notifList = [];       /* rows currently loaded, newest first */
+  var notifReadIds = {};    /* {notification_id: true} for the current user */
+
   function openNotifications(){
-    showToast('Notifications — coming soon ✦');
+    var el = document.getElementById('notifPage');
+    if(!el) return;
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    var nav = document.getElementById('bnNav');
+    if(nav) nav.style.display = 'none';
+    notifLoad();
+  }
+
+  function closeNotifPage(){
+    var el = document.getElementById('notifPage');
+    if(!el) return;
+    el.classList.remove('open');
+    var nav = document.getElementById('bnNav');
+    if(nav) nav.style.display = '';
+    restoreScroll();
+  }
+
+  function notifIcon(type){
+    if(type==='artwork_approved' || type==='comic_approved') return '✓';
+    if(type==='artwork_rejected' || type==='comic_rejected') return '✕';
+    return '🔔';
+  }
+
+  /* Lightweight "2h ago" style relative time, falls back to a
+     plain date once it's more than a week old. */
+  function notifRelTime(iso){
+    var d = new Date(iso), diff = Math.max(0, (Date.now()-d.getTime())/1000);
+    if(diff < 60) return 'Just now';
+    if(diff < 3600) return Math.floor(diff/60)+'m ago';
+    if(diff < 86400) return Math.floor(diff/3600)+'h ago';
+    if(diff < 604800) return Math.floor(diff/86400)+'d ago';
+    return d.toLocaleDateString();
+  }
+
+  async function notifLoad(){
+    if(!sb){ notifList=[]; notifRender(); return; }
+    try{
+      const{data,error} = await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(60);
+      if(error) throw error;
+      notifList = data||[];
+      if(currentUser){
+        const{data:reads,error:re} = await sb.from('notification_reads').select('notification_id').eq('user_id',currentUser.id);
+        if(re) throw re;
+        notifReadIds = {};
+        (reads||[]).forEach(function(r){ notifReadIds[r.notification_id]=true; });
+      } else {
+        notifReadIds = {};
+      }
+    }catch(e){ showToast('Error loading notifications: '+e.message); notifList=[]; }
+    notifRender();
+    notifMarkAllVisibleRead();
+  }
+
+  function notifRender(){
+    var wrap = document.getElementById('notifList'), empty = document.getElementById('notifEmpty');
+    if(!wrap) return;
+    if(!notifList.length){ wrap.innerHTML=''; if(empty) empty.style.display='block'; return; }
+    if(empty) empty.style.display='none';
+    wrap.innerHTML = notifList.map(function(n){
+      var unread = !!currentUser && !notifReadIds[n.id];
+      return '<div class="notifItem'+(unread?' unread':'')+'">'+
+        '<div class="notifIcoWrap ico-'+esc(n.type||'admin')+'">'+notifIcon(n.type)+'</div>'+
+        '<div class="notifBody">'+
+          '<div class="notifTitle">'+esc(n.title)+'</div>'+
+          '<div class="notifMsg">'+esc(n.message)+'</div>'+
+          '<div class="notifTime">'+(n.created_at?notifRelTime(n.created_at):'')+'</div>'+
+        '</div>'+
+        (unread?'<span class="notifDot" aria-hidden="true"></span>':'')+
+      '</div>';
+    }).join('');
+  }
+
+  /* Marks every currently-loaded notification as read for the
+     signed-in user. Writes only to notification_reads — never
+     touches the notifications rows themselves. */
+  async function notifMarkAllVisibleRead(){
+    if(!sb || !currentUser){ notifRefreshBadge(); return; }
+    var unread = notifList.filter(function(n){ return !notifReadIds[n.id]; });
+    if(!unread.length){ notifRefreshBadge(); return; }
+    try{
+      var rows = unread.map(function(n){ return {user_id:currentUser.id, notification_id:n.id}; });
+      const{error} = await sb.from('notification_reads').upsert(rows, {onConflict:'user_id,notification_id'});
+      if(error) throw error;
+      unread.forEach(function(n){ notifReadIds[n.id]=true; });
+      notifRender();
+    }catch(e){ /* non-critical — badge just stays on until next successful load */ }
+    notifRefreshBadge();
+  }
+
+  /* Bell unread-dot (.hasUnread → .hNotifDot, already in the CSS).
+     Guests have no read-state to compare against, so the dot only
+     ever lights up for signed-in users. */
+  async function notifRefreshBadge(){
+    var btn = document.getElementById('hNotifBtn');
+    if(!btn) return;
+    if(!sb || !currentUser){ btn.classList.remove('hasUnread'); return; }
+    try{
+      const{data:all,error:e1} = await sb.from('notifications').select('id').limit(200);
+      if(e1) throw e1;
+      const{data:reads,error:e2} = await sb.from('notification_reads').select('notification_id').eq('user_id',currentUser.id);
+      if(e2) throw e2;
+      var readSet = {}; (reads||[]).forEach(function(r){ readSet[r.notification_id]=true; });
+      var hasUnread = (all||[]).some(function(n){ return !readSet[n.id]; });
+      btn.classList.toggle('hasUnread', hasUnread);
+    }catch(e){ /* silent — badge just won't update this cycle */ }
+  }
+
+  /* ── Admin broadcast composer (inside #admPanelNoti) ── */
+  async function admSendBroadcast(){
+    if(!isDev) return;
+    var titleEl = document.getElementById('admNotiTitle'), msgEl = document.getElementById('admNotiMsg');
+    var title = (titleEl.value||'').trim(), msg = (msgEl.value||'').trim();
+    if(!title || !msg){ showToast('Enter a title and message'); return; }
+    var btn = document.getElementById('admNotiSendBtn');
+    if(btn) btn.disabled = true;
+    try{
+      const{error} = await sb.from('notifications').insert({user_id:null, type:'admin', title:title, message:msg});
+      if(error) throw error;
+      titleEl.value=''; msgEl.value='';
+      showToast('Notification sent to all users ✦');
+      admLoadNotifSent();
+    }catch(e){ showToast('Error: '+e.message); }
+    if(btn) btn.disabled = false;
+  }
+
+  async function admLoadNotifSent(){
+    var wrap = document.getElementById('admNotiSentList'), empty = document.getElementById('admNotiEmpty');
+    if(!sb || !wrap) return;
+    try{
+      const{data,error} = await sb.from('notifications').select('*').is('user_id',null).order('created_at',{ascending:false}).limit(20);
+      if(error) throw error;
+      var rows = data||[];
+      wrap.innerHTML = rows.map(function(r){
+        return '<div class="admNotiSentItem">'+
+          '<div class="admNotiSentTitle">'+esc(r.title)+'</div>'+
+          '<div class="admNotiSentMsg">'+esc(r.message)+'</div>'+
+          '<div class="admNotiSentTime">'+(r.created_at?new Date(r.created_at).toLocaleString():'')+'</div>'+
+        '</div>';
+      }).join('');
+      if(empty) empty.style.display = rows.length ? 'none' : 'block';
+    }catch(e){ showToast('Error loading sent notifications: '+e.message); }
   }
 
   function updateUpCatDisplay(){
@@ -7152,7 +7627,7 @@ body{background:var(--bg);}
         const{error:ue}=await sb.storage.from(BUCKET).upload(path,upFile,{cacheControl:'3600'});
         if(ue)throw ue;
         const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
-        const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null,software:software||null}).select();
+        const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null,software:software||null,status:'approved'}).select();
         if(de)throw de;
         images.unshift(rows[0]);
         renderHome();
@@ -7674,13 +8149,17 @@ body{background:var(--bg);}
           const{error:ue}=await sb.storage.from(BUCKET).upload(path,pf.upFile,{cacheControl:'3600'});
           if(ue) throw ue;
           const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
-          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,user_id:currentUser.id,software:software||null}).select();
+          /* status:'pending' — hidden from the public gallery until a
+             dev reviews it in #admPage. Not added to the global
+             `images` array (that array only ever holds approved work);
+             it IS added to pf.galleryRows so the owner can see it
+             sitting in their own profile while it's under review. */
+          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,user_id:currentUser.id,software:software||null,status:'pending'}).select();
           if(de) throw de;
-          images.unshift(rows[0]);
           pf.galleryRows.unshift(rows[0]);
           pfRenderGallery();
           document.getElementById('pfStatArt').textContent = (parseInt(document.getElementById('pfStatArt').textContent,10)||0)+1;
-          closePfUpload(); showToast('Artwork added ✦');
+          closePfUpload(); showToast('Submitted for review ✦');
         }
       } else {
         if(editId){
@@ -7709,12 +8188,12 @@ body{background:var(--bg);}
             const{data:{publicUrl:pageUrl}}=sb.storage.from(BUCKET).getPublicUrl(ppath);
             pageUrls.push(pageUrl);
           }
-          const{data:rows,error:de}=await sb.from('comics').insert({title:nm,description:desc||null,tags:tags,cover_image_url:coverUrl,cover_storage_path:cpath,pages:pageUrls,user_id:currentUser.id}).select();
+          const{data:rows,error:de}=await sb.from('comics').insert({title:nm,description:desc||null,tags:tags,cover_image_url:coverUrl,cover_storage_path:cpath,pages:pageUrls,user_id:currentUser.id,status:'pending'}).select();
           if(de) throw de;
           pf.comicRows.unshift(rows[0]);
           pfRenderComic();
           document.getElementById('pfStatComic').textContent = (parseInt(document.getElementById('pfStatComic').textContent,10)||0)+1;
-          closePfUpload(); showToast('Comic added ✦');
+          closePfUpload(); showToast('Submitted for review ✦');
         }
       }
     }catch(err){ showToast('Error: '+err.message); }
@@ -7751,6 +8230,7 @@ body{background:var(--bg);}
     closeProfilePage();
     closeSubscription();
     closeAuthMod();
+    closeAdmPage();
   }
 
   function bnGoHome(){
@@ -7806,6 +8286,10 @@ body{background:var(--bg);}
     openFG();
   }
   function ddOpenCommunity(){ openCommunityHome(); }
+  /* Tapping "Admin Panel" in the profile ⋮ menu now opens the
+     full #admPage review page (rather than directly flipping
+     Admin Mode on/off, like before). The on/off switch lives
+     inside that page now — see admToggleMode(). */
   function smHandleAdm(){
     if(!isDev){
       /* Defensive fallback — button shouldn't be in the DOM at all unless isDev,
@@ -7815,14 +8299,199 @@ body{background:var(--bg);}
       else { showToast('This account does not have dev access'); }
       return;
     }
-    if(isAdm){
-      isAdm=false;document.body.classList.remove('admin');syncAdmBtn();showToast('Admin mode off');
-      closeMenu();
-    } else {
-      isAdm=true;document.body.classList.add('admin');syncAdmBtn();showToast('Admin mode on ✦');
-      closeMenu();
-      if(sessionStorage.getItem('pendUp')==='1'){sessionStorage.removeItem('pendUp');setTimeout(openUp,200);}
-    }
+    closeMenu();
+    openAdmPage();
+  }
+
+  /* ── ADMIN REVIEW PAGE ──
+     Pending queue for user-submitted artwork/comics. Every upload
+     that comes in through the profile upload modal (doPfUp) is
+     inserted with status:'pending' and is invisible everywhere on
+     the public site (loadDB only ever pulls status:'approved') —
+     it only shows up here for a dev to approve or reject. */
+  var admPending = { art: [], comic: [] };
+  var admTab = 'art';
+
+  function openAdmPage(){
+    var el = document.getElementById('admPage');
+    if(!el) return;
+    var toggle = document.getElementById('admModeToggle');
+    if(toggle) toggle.checked = isAdm;
+    admUpdateModeSub();
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    admLoadPending();
+  }
+
+  function closeAdmPage(){
+    var el = document.getElementById('admPage');
+    if(!el) return;
+    el.classList.remove('open');
+    restoreScroll();
+  }
+
+  function admUpdateModeSub(){
+    var sub = document.getElementById('admModeSub');
+    if(!sub) return;
+    sub.textContent = isAdm
+      ? 'On — edit/delete controls are visible site-wide.'
+      : 'Off — edit/delete controls are hidden site-wide.';
+  }
+
+  /* Same isAdm flag the rest of the site already reads for
+     gEdit/gDel/adminOnly visibility — the toggle just lives here now. */
+  function admToggleMode(){
+    if(!isDev) return;
+    var toggle = document.getElementById('admModeToggle');
+    isAdm = !!(toggle && toggle.checked);
+    document.body.classList.toggle('admin', isAdm);
+    syncAdmBtn();
+    admUpdateModeSub();
+    showToast(isAdm ? 'Admin mode on ✦' : 'Admin mode off');
+    if(isAdm && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
+  }
+
+  function admSwitchTab(tab){
+    admTab = tab;
+    ['Art','Comic','Noti'].forEach(function(t){
+      var key = t.toLowerCase()==='noti' ? 'noti' : t.toLowerCase();
+      document.getElementById('admTab'+t).classList.toggle('active', key===tab);
+      document.getElementById('admPanel'+t).classList.toggle('active', key===tab);
+    });
+    if(tab==='noti') admLoadNotifSent();
+  }
+
+  async function admLoadPending(){
+    if(!sb) return;
+    try{
+      const[{data:art,error:ae},{data:cmx,error:ce}]=await Promise.all([
+        sb.from('artworks').select('*').eq('status','pending').order('created_at',{ascending:true}),
+        sb.from('comics').select('*').eq('status','pending').order('created_at',{ascending:true})
+      ]);
+      if(ae) throw ae;
+      if(ce) throw ce;
+      admPending.art = art||[];
+      admPending.comic = cmx||[];
+    }catch(e){ showToast('Error loading queue: '+e.message); admPending={art:[],comic:[]}; }
+    admRenderArt();
+    admRenderComic();
+    admRefreshBadge();
+  }
+
+  /* Small unread-style badge on the "Admin Panel" menu item, so a
+     dev can tell at a glance there's something waiting for review
+     without having to open the page first. */
+  function admRefreshBadge(){
+    var btn = document.getElementById('smAdmBtn');
+    if(!btn || !isDev) return;
+    var n = admPending.art.length + admPending.comic.length;
+    btn.textContent = (isAdm?'★ ':'⚙ ')+'ADMIN PANEL' + (n ? ' ('+n+')' : '');
+  }
+
+  function admCardHTML(kind, row){
+    var idStr = esc(String(row.id));
+    var img = kind==='art' ? esc(row.image_url) : esc(row.cover_image_url);
+    var title = esc(kind==='art' ? (row.name||'Untitled') : (row.title||'Untitled'));
+    return '<div class="admCard" data-id="'+idStr+'">'+
+      '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy">'+
+      '<div class="admCardBody">'+
+        '<div class="admCardTitle">'+title+'</div>'+
+        '<div class="admCardMeta">Submitted '+(row.created_at?new Date(row.created_at).toLocaleDateString():'')+'</div>'+
+        '<div class="admCardActions">'+
+          '<button class="admApproveBtn" onclick="admApprove(\''+kind+'\',\''+idStr+'\')">✓ Approve</button>'+
+          '<button class="admRejectBtn" onclick="admReject(\''+kind+'\',\''+idStr+'\')">✕ Reject</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function admRenderArt(){
+    var grid = document.getElementById('admArtGrid'), empty = document.getElementById('admArtEmpty');
+    var count = document.getElementById('admCountArt');
+    if(!grid) return;
+    grid.innerHTML = admPending.art.map(function(r){ return admCardHTML('art', r); }).join('');
+    empty.style.display = admPending.art.length ? 'none' : 'block';
+    if(count){ count.textContent = admPending.art.length; count.style.display = admPending.art.length ? 'inline-flex' : 'none'; }
+  }
+
+  function admRenderComic(){
+    var grid = document.getElementById('admComicGrid'), empty = document.getElementById('admComicEmpty');
+    var count = document.getElementById('admCountComic');
+    if(!grid) return;
+    grid.innerHTML = admPending.comic.map(function(r){ return admCardHTML('comic', r); }).join('');
+    empty.style.display = admPending.comic.length ? 'none' : 'block';
+    if(count){ count.textContent = admPending.comic.length; count.style.display = admPending.comic.length ? 'inline-flex' : 'none'; }
+  }
+
+  /* Approve — flips status to 'approved'. RLS restricts this update
+     to devs only, same pattern already used for edit/delete. Once
+     approved, the item is spliced into the public images/comics
+     arrays so it appears on the site immediately without a reload. */
+  async function admApprove(kind, id){
+    var table = kind==='art' ? 'artworks' : 'comics';
+    try{
+      const{data,error}=await sb.from(table).update({status:'approved'}).eq('id',id).select();
+      if(error) throw error;
+      var row = data && data[0];
+      if(row && row.user_id){
+        var okName = kind==='art' ? (row.name||'Your artwork') : (row.title||'Your comic');
+        sb.from('notifications').insert({
+          user_id: row.user_id,
+          type: kind==='art' ? 'artwork_approved' : 'comic_approved',
+          title: 'Approved ✓',
+          message: '"'+okName+'" has been approved and is now live.',
+          ref_table: kind==='art' ? 'artworks' : 'comics',
+          ref_id: row.id
+        }).then(function(res){ if(res.error) console.error(res.error); });
+      }
+      if(kind==='art'){
+        admPending.art = admPending.art.filter(function(r){ return String(r.id)!==String(id); });
+        if(row && images.findIndex(function(i){return String(i.id)===String(id);})===-1) images.unshift(row);
+        admRenderArt();
+      } else {
+        admPending.comic = admPending.comic.filter(function(r){ return String(r.id)!==String(id); });
+        if(row && comics.findIndex(function(c){return String(c.id)===String(id);})===-1) comics.unshift(row);
+        if(window.rebuildComicGrid) window.rebuildComicGrid(comics);
+        admRenderComic();
+      }
+      renderHome();
+      if(document.getElementById('fg') && document.getElementById('fg').classList.contains('open')) renderFG();
+      admRefreshBadge();
+      showToast('Approved ✦');
+    }catch(e){ showToast('Error: '+e.message); }
+  }
+
+  /* Reject — permanently deletes the row (and its storage file), so
+     it never touches the public database, exactly as requested. */
+  async function admReject(kind, id){
+    if(!confirm('Reject and permanently delete this submission?')) return;
+    var table = kind==='art' ? 'artworks' : 'comics';
+    var list = kind==='art' ? admPending.art : admPending.comic;
+    var row = list.find(function(r){ return String(r.id)===String(id); });
+    try{
+      if(row){
+        if(kind==='art' && row.storage_path){ await sb.storage.from(BUCKET).remove([row.storage_path]); }
+        if(kind==='comic' && row.cover_storage_path){ await sb.storage.from(BUCKET).remove([row.cover_storage_path]); }
+      }
+      const{error}=await sb.from(table).delete().eq('id',id);
+      if(error) throw error;
+      if(row && row.user_id){
+        var rjName = kind==='art' ? (row.name||'Your artwork') : (row.title||'Your comic');
+        sb.from('notifications').insert({
+          user_id: row.user_id,
+          type: kind==='art' ? 'artwork_rejected' : 'comic_rejected',
+          title: 'Not approved',
+          message: '"'+rjName+'" was not approved and has been removed.',
+          ref_table: kind==='art' ? 'artworks' : 'comics',
+          ref_id: Number(id)
+        }).then(function(res){ if(res.error) console.error(res.error); });
+      }
+      if(kind==='art'){ admPending.art = admPending.art.filter(function(r){ return String(r.id)!==String(id); }); admRenderArt(); }
+      else { admPending.comic = admPending.comic.filter(function(r){ return String(r.id)!==String(id); }); admRenderComic(); }
+      admRefreshBadge();
+      showToast('Rejected');
+    }catch(e){ showToast('Error: '+e.message); }
   }
 
   /* COMMENTS PAGE */
@@ -7872,7 +8541,6 @@ async function openComments(){
     page.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-    cmSwitchTab('community');
     cmCloseChat(); /* always land on the grid, never mid-chat */
   }
 
@@ -7881,24 +8549,6 @@ async function openComments(){
     document.getElementById('cpBar').style.display = 'none';
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
-  }
-
-  /* ── Community / Friends tab switch ── */
-  function cmSwitchTab(tab){
-    var isCommunity = tab === 'community';
-    var tabC = document.getElementById('cmTabCommunity');
-    var tabF = document.getElementById('cmTabFriends');
-    var viewC = document.getElementById('cmViewCommunity');
-    var viewF = document.getElementById('cmViewFriends');
-    if(tabC) tabC.classList.toggle('active', isCommunity);
-    if(tabF) tabF.classList.toggle('active', !isCommunity);
-    if(viewC) viewC.style.display = isCommunity ? 'flex' : 'none';
-    if(viewF) viewF.style.display = isCommunity ? 'none' : 'flex';
-    if(!isCommunity){
-      /* Composer bar is Art Talk-specific, hide it on the Friends tab */
-      var bar = document.getElementById('cpBar');
-      if(bar) bar.style.display = 'none';
-    }
   }
 
   /* ── Community card tap ──
@@ -8508,7 +9158,30 @@ async function openComments(){
   window.rebuildComicGrid = function(list){
     awComicsCache = list || [];
     if(awTab === 'comicarts') renderAwGrid(awComicsCache, 'comicarts');
+    caRenderGrid(); /* keep the dedicated #comicArtsPage tab screen in sync too */
   };
+
+  /* ── Dedicated Comic Arts tab screen (#comicArtsPage) ──
+     Reuses the exact same buildAwCard('comicarts') component as
+     the homepage Artworks/ComicArts tab — cover image only, no
+     bookmark, no overlaid title/tag text, identical .awGrid
+     column spacing. Fed from the same awComicsCache the homepage
+     tab uses, so no extra fetch is needed. */
+  function caRenderGrid(){
+    var grid = document.getElementById('caGrid');
+    var empty = document.getElementById('caEmpty');
+    if(!grid) return;
+    var sorted = sortByNewest((awComicsCache||[]).slice());
+    grid.innerHTML = '';
+    if(!sorted.length){
+      if(empty) empty.style.display = 'block';
+      return;
+    }
+    if(empty) empty.style.display = 'none';
+    sorted.forEach(function(item){
+      grid.appendChild(buildAwCard(item, 'comicarts'));
+    });
+  }
 
   /* Populate with empty list on first paint — rebuilt after DB loads */
   window.rebuildGalCarousels([]);
@@ -8540,6 +9213,7 @@ async function openComments(){
     el.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
+    caRenderGrid();
     if(typeof zeoSectionTrigger==='function') zeoSectionTrigger();
   }
   function closeComicArts() {
@@ -9781,7 +10455,7 @@ window.ZEO_DATA = {
   /* ── Full-page overlay panels — hide widgets whenever any of
      these slide-in pages is open, since they otherwise float
      above the panel's lower z-index. ── */
-  var OVERLAY_IDS = ['comicArtsPage', 'profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal'];
+  var OVERLAY_IDS = ['comicArtsPage', 'profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);

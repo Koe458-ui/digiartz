@@ -794,7 +794,17 @@
       font-family:var(--fm);font-size:.62rem;color:rgba(245,244,251,.4);
       border:1px solid #2a2a3d;border-radius:4px;padding:.1rem .35rem;margin-left:.15rem;
     }
-    .avTopRight{display:flex;align-items:center;gap:.3rem;position:relative;}
+    .avTopRight{display:flex;align-items:center;gap:.5rem;position:relative;}
+    .avActBtn{
+      width:2.3rem;height:2.3rem;border-radius:50%;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(20,20,30,.55);border:1px solid rgba(255,255,255,.12);
+      color:#f5f4fb;font-size:1.05rem;cursor:pointer;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      transition:background .2s,transform .15s;
+    }
+    .avActBtn:hover{background:rgba(139,92,246,.4);}
+    .avActBtn:active{transform:scale(.92);}
     .avBtnIcon{display:inline-flex;}
     .avBtnLabel{display:inline-flex;}
     .avBody{flex:1 1 auto;display:flex;min-height:0;}
@@ -959,6 +969,8 @@
     }
     .cpTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;letter-spacing:.15em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
     .cpTitle .s{color:var(--pg);font-size:.6em;}
+    .cpHdrText{display:flex;flex-direction:column;gap:.2rem;min-width:0;}
+    .cpSubtitle{font-family:var(--fb);font-size:.74rem;font-weight:400;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
     /* ── Header (was a Community/Friends tab bar — page is now one
        continuous scroll, Friends sits below Community, no tabs) ── */
@@ -996,22 +1008,33 @@
     }
     .cpEmpty .cpEIco{font-size:2rem;color:color-mix(in srgb,var(--tc) 40%,transparent);}
 
-    /* Individual comment */
+    /* Individual comment — rounded message card, Discord/Slack style */
     .cpComment{
       display:flex;gap:.9rem;
-      padding:.9rem 0;
-      border-bottom:1px solid var(--bdr);
+      padding:.9rem 1rem;
+      margin-bottom:.65rem;
+      border-radius:14px;
+      background:color-mix(in srgb,var(--tc) 6%,transparent);
+      border:1px solid var(--bdr);
+      transition:border-color .2s,background .2s;
     }
-    .cpComment:last-child{border-bottom:none;}
+    .cpComment:last-child{margin-bottom:0;}
+    .cpComment:hover{border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
     .cpComment.hasImage{align-items:flex-start;}
     /* ── USER AVATARS ── */
     .cpAvatar{
+      position:relative;
       width:34px;height:34px;border-radius:50%;
       background:color-mix(in srgb,var(--tc) 22%,transparent);
       border:1px solid var(--bdrh);
       display:flex;align-items:center;justify-content:center;
       font-family:var(--fd);font-size:.85rem;font-weight:700;
       color:var(--ps);flex-shrink:0;
+    }
+    .cpAvatar::after{
+      content:'';position:absolute;right:-1px;bottom:-1px;
+      width:10px;height:10px;border-radius:50%;
+      background:#22c55e;border:2px solid var(--sur);
     }
     .cpCommentMeta{display:flex;flex-direction:column;gap:.3rem;flex:1;min-width:0;}
     .cpCommentUser{font-family:var(--fm);font-size:.78rem;font-weight:700;letter-spacing:.15em;color:var(--ps);}
@@ -1066,6 +1089,94 @@
     }
     .cpBarSend:hover{background:color-mix(in srgb,var(--tc) 28%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 30%,transparent);}
     .cpBarSend:active{transform:scale(.97);}
+
+    /* Locked-channel notice — replaces the composer bar for
+       read-only channels when the viewer isn't the dev account */
+    .cpLockNote{
+      position:fixed;bottom:0;left:0;right:0;
+      z-index:1001;
+      background:rgba(5,3,8,.97);
+      border-top:1px solid var(--bdrh);
+      backdrop-filter:blur(16px);
+      padding:.9rem 1.2rem;
+      padding-bottom:calc(.9rem + 84px);
+      display:none;
+      align-items:center;gap:.6rem;
+      flex-shrink:0;
+      font-family:var(--fm);font-size:.72rem;letter-spacing:.06em;
+      color:var(--txd);
+    }
+    .cpLockNote svg{width:18px;height:18px;flex-shrink:0;color:var(--txd);}
+
+    /* + attach button — only shown in the Showcase channel composer */
+    .cpAttachBtn{
+      width:36px;height:36px;border-radius:50%;flex-shrink:0;
+      background:color-mix(in srgb,var(--tc) 14%,transparent);
+      border:1px solid var(--pg);
+      color:var(--ps);
+      display:none;align-items:center;justify-content:center;
+      cursor:pointer;transition:background .25s,transform .25s;
+    }
+    .cpAttachBtn svg{width:18px;height:18px;}
+    .cpAttachBtn:hover{background:color-mix(in srgb,var(--tc) 28%,transparent);}
+    .cpAttachBtn:active{transform:scale(.92);}
+
+    /* Showcase channel — post-style cards (image on top, caption
+       below) instead of the plain chat-message card used elsewhere */
+    .cpShowcase{
+      border-radius:16px;
+      background:color-mix(in srgb,var(--tc) 6%,transparent);
+      border:1px solid var(--bdr);
+      overflow:hidden;
+      margin-bottom:1rem;
+    }
+    .cpShowcase:last-child{margin-bottom:0;}
+    .cpShowcaseHead{display:flex;align-items:center;gap:.7rem;padding:.85rem 1rem;}
+    .cpShowcaseMeta{display:flex;flex-direction:column;gap:.15rem;min-width:0;}
+    .cpShowcaseImg{width:100%;max-height:560px;object-fit:cover;display:block;cursor:pointer;}
+    .cpShowcaseText{padding:.9rem 1rem 1.1rem;font-family:var(--fb);font-size:.92rem;line-height:1.65;color:var(--tx);word-break:break-word;}
+
+    /* Showcase artwork/comic picker overlay */
+    #showcasePicker{
+      position:fixed;inset:0;z-index:2200;
+      display:none;flex-direction:column;
+      background:rgba(5,3,8,.97);
+      backdrop-filter:blur(16px);
+    }
+    #showcasePicker.open{display:flex;}
+    .spHdr{
+      position:sticky;top:0;z-index:1;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:1.1rem 1.5rem;
+      border-bottom:1px solid var(--bdr);
+      flex-shrink:0;
+    }
+    .spTitle{font-family:var(--fd);font-size:1rem;font-weight:700;letter-spacing:.12em;color:var(--tx);}
+    .spTitle .s{color:var(--pg);font-size:.7em;}
+    .spBody{
+      flex:1;overflow-y:auto;
+      padding:1.3rem 1.5rem 2.5rem;
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+      gap:.9rem;
+      align-content:start;
+    }
+    .spItem{
+      cursor:pointer;
+      border-radius:10px;overflow:hidden;
+      border:1px solid var(--bdr);
+      background:color-mix(in srgb,var(--tc) 6%,transparent);
+      transition:border-color .2s,transform .2s;
+    }
+    .spItem:hover{border-color:var(--pg);transform:translateY(-2px);}
+    .spItem img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;}
+    .spItem span{display:block;padding:.5rem .6rem;font-family:var(--fb);font-size:.74rem;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .spEmpty{
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      flex:1;gap:.8rem;
+      font-family:var(--fm);font-size:.76rem;letter-spacing:.2em;color:var(--txd);
+      text-align:center;padding:3rem 2rem;
+    }
 
     /* ================= COMMUNITY / FRIENDS TAB CONTENT ================= */
     .cmView{flex:1;min-height:0;flex-direction:column;}
@@ -1334,11 +1445,20 @@
     #communityPage .cmBack:hover{border-color:var(--cmAccent);background:var(--cmAccentDim);}
     #communityPage .cpEmpty{color:var(--cmTxd);}
     #communityPage .cpEmpty .cpEIco{color:var(--cmAccentSoft);}
-    #communityPage .cpComment{border-bottom:1px solid var(--cmBdr);}
+    #communityPage .cpComment{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cpComment:hover{border-color:var(--cmBdrh);background:var(--cmSur2);}
     #communityPage .cpAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
+    #communityPage .cpAvatar::after{border-color:var(--cmSur);}
     #communityPage .cpCommentUser{color:var(--cmAccentSoft);}
     #communityPage .cpCommentText{color:var(--cmTx);}
     #communityPage .cpCommentTime{color:var(--cmTxd);}
+    #communityPage .cpSubtitle{color:var(--cmTxd);}
+    #communityPage .cpLockNote{background:var(--cmBg)!important;border-top:1px solid var(--cmBdr);color:var(--cmTxd);}
+    #communityPage .cpLockNote svg{color:var(--cmAccentSoft);}
+    #communityPage .cpAttachBtn{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
+    #communityPage .cpAttachBtn:hover{background:color-mix(in srgb,var(--cmAccent) 30%,transparent)!important;}
+    #communityPage .cpShowcase{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cpShowcaseText{color:var(--cmTx);}
     #communityPage .cpPhoto{border:1px solid var(--cmBdr);}
     #communityPage .cpRefreshSpinner{border-color:color-mix(in srgb,var(--cmAccent) 25%,transparent);border-top-color:var(--cmAccent);}
 
@@ -1802,6 +1922,7 @@
     .modal p{font-size:.92rem;color:var(--txd);font-style:italic;margin-bottom:1.5rem;line-height:1.5;}
     .mIn{width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fm);font-size:.8rem;letter-spacing:.1em;padding:.75rem 1rem;outline:none;transition:border-color .25s;margin-bottom:.8rem;border-radius:6px;}
     .mIn:focus{border-color:var(--pg);}
+    select.mIn option{background:#15151f;color:#f5f4fb;}
     .mIn::placeholder{color:var(--txd);opacity:.5;}
     .mBtn{width:100%;padding:.8rem 1rem;background:var(--pdim);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,box-shadow .3s;margin-bottom:.6rem;border-radius:6px;}
     .mBtn:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 20px color-mix(in srgb,var(--tc) 20%,transparent);}
@@ -2410,7 +2531,23 @@
       color:#fff;font-family:var(--fd);font-size:2rem;font-weight:700;
       border:4px solid var(--bg);
       box-shadow:0 4px 16px rgba(0,0,0,.4);
+      position:relative;overflow:hidden;
     }
+    .pfAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:none;}
+    .pfBanner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0;}
+    /* Owner-only edit affordances for avatar/banner — hidden by
+       default; a trigger (e.g. a small pencil button) can be wired
+       up wherever it's needed and just needs to call
+       openPfAvatarPicker() / openPfBannerPicker(). Both enforce the
+       7-day re-upload cooldown and swap out the previous Supabase
+       Storage file automatically. */
+    .pfAvBEditBtn{
+      position:absolute;z-index:3;width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:background .2s;
+    }
+    .pfAvBEditBtn:hover{background:rgba(0,0,0,.75);}
+    .pfAvBEditBtn svg{width:14px;height:14px;}
 
     /* ── Header block ── */
     .pfHead{
@@ -2508,6 +2645,68 @@
     .pfEmpty{padding:3rem 1rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;color:var(--txd);}
     .pfLoadMoreWrap{text-align:center;margin:1.6rem 0;}
 
+    /* ── Edit-profile entry point — pencil icon on the banner,
+       left of the ⋮ menu button. Owner-only, hidden by default. ── */
+    .pfEditBtn{
+      position:absolute;top:1rem;right:3.6rem;z-index:2;
+      width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+      display:none;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.45);color:#fff;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      transition:background .2s;
+    }
+    .pfEditBtn:hover{background:rgba(0,0,0,.65);}
+    .pfEditBtn svg{width:16px;height:16px;}
+
+    /* ── Edit Profile page (#pfEditPage) — same sliding full-page
+       language as #profilePage, opened as a layer on top of it. ── */
+    #pfEditPage{
+      position:fixed;inset:0;z-index:560;
+      background:#050308;color:#f0e8ff;
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .4s cubic-bezier(.22,1,.36,1);
+    }
+    #pfEditPage.open{transform:translateX(0);}
+    #pfEditPage .subPgHdr{background:rgba(5,3,8,.92)!important;border-bottom:1px solid rgba(255,255,255,.08);}
+    #pfEditPage .subPgTitle{color:#fff;}
+    .pfEditBdy{max-width:520px;margin:0 auto;padding:1.6rem 1.4rem 4rem;}
+    .pfEditBannerWrap{
+      position:relative;width:100%;height:140px;border-radius:12px;overflow:hidden;
+      background:radial-gradient(ellipse at 25% 20%,rgba(59,130,246,.28),transparent 60%),
+        linear-gradient(160deg,#0b1220 0%,#111827 45%,#1e293b 80%,#0b1220 100%);
+      margin-bottom:2.6rem;
+    }
+    .pfEditBannerWrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;}
+    .pfEditBannerBtn{position:absolute;bottom:.7rem;right:.7rem;}
+    .pfEditAvatarWrap{position:absolute;left:1.4rem;top:96px;}
+    .pfEditAvatar{
+      width:88px;height:88px;border-radius:50%;position:relative;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,#3b82f6,#1e293b);
+      color:#fff;font-family:var(--fd);font-size:2rem;font-weight:700;
+      border:4px solid #050308;box-shadow:0 4px 16px rgba(0,0,0,.4);
+    }
+    .pfEditAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:none;}
+    .pfEditAvatarBtn{position:absolute;bottom:-2px;right:-2px;width:28px;height:28px;}
+    .pfEditAvatarBtn svg{width:13px;height:13px;}
+    .pfEditField{margin-bottom:1.4rem;}
+    .pfEditLbl{display:block;font-family:var(--fm);font-size:.65rem;letter-spacing:.15em;color:rgba(196,181,253,.6);margin-bottom:.55rem;}
+    .pfEditInput,.pfEditTextarea{
+      width:100%;font-family:var(--fb);font-size:.9rem;color:#f0e8ff;
+      background:#120e1c;border:1px solid rgba(154,158,165,.28);border-radius:8px;
+      padding:.7rem .85rem;outline:none;transition:border-color .2s;
+    }
+    .pfEditInput:focus,.pfEditTextarea:focus{border-color:#8b5cf6;}
+    .pfEditTextarea{resize:vertical;min-height:6rem;line-height:1.6;}
+    .pfEditHint{font-family:var(--fm);font-size:.62rem;letter-spacing:.06em;color:rgba(196,181,253,.4);margin-top:.4rem;}
+    .pfEditSaveBtn{
+      width:100%;font-family:var(--fm);font-size:.75rem;letter-spacing:.12em;
+      padding:.85rem;border-radius:8px;border:1px solid #3b82f6;background:#3b82f6;color:#fff;
+      cursor:pointer;transition:opacity .2s;margin-top:.6rem;
+    }
+    .pfEditSaveBtn:hover{opacity:.88;}
+    .pfEditSaveBtn:disabled{opacity:.5;cursor:not-allowed;}
+
     /* ── About tab ── */
     .pfStats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;margin-bottom:1.6rem;}
     .pfStatCard{background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:1rem;text-align:center;}
@@ -2516,12 +2715,21 @@
     .pfBioWrap{background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:1.2rem;}
     .pfBioLbl{font-family:var(--fm);font-size:.65rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.6rem;}
     .pfBioText{font-family:var(--fb);font-size:.88rem;line-height:1.6;color:var(--tx);white-space:pre-wrap;}
-    .pfBioEdit{width:100%;font-family:var(--fb);font-size:.88rem;line-height:1.6;color:var(--tx);background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:.7rem;resize:vertical;min-height:5rem;display:none;}
-    .pfBioBtns{display:none;gap:.6rem;margin-top:.7rem;}
-    .pfBioBtns button{font-family:var(--fm);font-size:.66rem;letter-spacing:.1em;padding:.5rem 1rem;border-radius:5px;cursor:pointer;}
-    .pfBioSaveBtn{background:var(--tc);color:#fff;border:1px solid var(--tc);}
-    .pfBioCancelBtn{background:none;color:var(--txd);border:1px solid var(--bdr);}
-    .pfBioEditLink{font-family:var(--fm);font-size:.65rem;letter-spacing:.1em;color:var(--tc);background:none;border:none;cursor:pointer;margin-top:.6rem;padding:0;}
+
+    /* ── Connect (social links) — About tab, read-only display ── */
+    .pfConnectWrap{background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:1.2rem;margin-top:1rem;}
+    .pfConnectLbl{font-family:var(--fm);font-size:.65rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.75rem;}
+    .pfConnectList{display:flex;flex-wrap:wrap;gap:.5rem 1.3rem;}
+    .pfConnectItem{font-family:var(--fb);font-size:.84rem;font-weight:600;text-decoration:none;}
+    .pfConnectItem--on{color:#3b82f6;}
+    .pfConnectItem--on:hover{text-decoration:underline;}
+    .pfConnectItem--off{color:var(--txd);cursor:default;}
+
+    /* ── Connect — Edit Profile page rows ── */
+    .pfConnectRow{margin-bottom:.9rem;}
+    .pfConnectRow:last-child{margin-bottom:0;}
+    .pfConnectRowLbl{display:block;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;color:rgba(196,181,253,.55);margin-bottom:.35rem;}
+    .pfEditInput.err{border-color:#ef4444;}
 
     /* ── Skeleton loading state ── */
     .pfSkeleton{background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);background-size:200% 100%;animation:imgShimmer 1.4s infinite;border-radius:8px;}
@@ -4624,6 +4832,10 @@ body{background:var(--bg);}
        ========================================================= -->
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
     <div class="pfBanner" id="pfBanner">
+      <img alt="" id="pfBannerImg">
+      <button class="pfEditBtn" id="pfEditBtn" onclick="openPfEditPage()" aria-label="Edit profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
       <button class="pfMenuBtn" onclick="togglePfMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="pfMenu" aria-label="Profile options">
         <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
       </button>
@@ -4633,7 +4845,7 @@ body{background:var(--bg);}
         <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
       </div>
       <div class="pfAvatarWrap">
-        <div class="pfAvatar" id="pfAvatar">?</div>
+        <div class="pfAvatar" id="pfAvatar"><img alt="" id="pfAvatarImg"><span id="pfAvatarLetter">?</span></div>
       </div>
     </div>
     <div class="pfBdy">
@@ -4686,14 +4898,94 @@ body{background:var(--bg);}
         <div class="pfBioWrap">
           <div class="pfBioLbl">BIO</div>
           <div class="pfBioText" id="pfBioText">No bio yet.</div>
-          <textarea class="pfBioEdit" id="pfBioEdit" maxlength="500" placeholder="Tell people about yourself…"></textarea>
-          <div class="pfBioBtns" id="pfBioBtns">
-            <button class="pfBioSaveBtn" onclick="savePfBio()">SAVE</button>
-            <button class="pfBioCancelBtn" onclick="cancelPfBioEdit()">CANCEL</button>
-          </div>
-          <button class="pfBioEditLink" id="pfBioEditLink" style="display:none;" onclick="startPfBioEdit()">EDIT BIO</button>
+        </div>
+        <div class="pfConnectWrap">
+          <div class="pfConnectLbl">CONNECT</div>
+          <div class="pfConnectList" id="pfConnectList"></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       EDIT PROFILE PAGE (#pfEditPage)
+       Opened via the pencil icon on the profile banner (left of
+       the ⋮ menu), owner-only. Slides in as a layer above
+       #profilePage. Banner/avatar photo buttons call the existing
+       openPfBannerPicker() / openPfAvatarPicker() (cooldown +
+       cropper flow already built); username + bio are saved
+       together via savePfEditProfile().
+       ========================================================= -->
+  <div id="pfEditPage" role="dialog" aria-modal="true" aria-label="Edit profile">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closePfEditPage()" aria-label="Close edit profile">←</button>
+      <div class="subPgTitle">EDIT PROFILE</div>
+    </div>
+    <div class="pfEditBdy">
+      <div class="pfEditBannerWrap" id="pfEditBannerWrap">
+        <img alt="" id="pfEditBannerImg">
+        <button class="pfAvBEditBtn pfEditBannerBtn" onclick="openPfBannerPicker()" aria-label="Change banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+      </div>
+      <div class="pfEditAvatarWrap">
+        <div class="pfEditAvatar" id="pfEditAvatar">
+          <img alt="" id="pfEditAvatarImg">
+          <span id="pfEditAvatarLetter">?</span>
+        </div>
+        <button class="pfAvBEditBtn pfEditAvatarBtn" onclick="openPfAvatarPicker()" aria-label="Change profile photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+      </div>
+      <div class="pfEditField">
+        <label class="pfEditLbl">USERNAME</label>
+        <input class="pfEditInput" id="pfEditUsername" maxlength="30" placeholder="Username" autocomplete="off">
+      </div>
+      <div class="pfEditField">
+        <label class="pfEditLbl">BIO</label>
+        <textarea class="pfEditTextarea" id="pfEditBio" maxlength="500" placeholder="Tell people about yourself…"></textarea>
+        <div class="pfEditHint" id="pfEditBioCount">0/500</div>
+      </div>
+      <div class="pfEditField">
+        <label class="pfEditLbl">CONNECT</label>
+        <div class="pfConnectRow">
+          <label class="pfConnectRowLbl" for="pfConnect_instagram">Instagram</label>
+          <input class="pfEditInput" id="pfConnect_instagram" placeholder="Add Instagram link here" autocomplete="off">
+        </div>
+        <div class="pfConnectRow">
+          <label class="pfConnectRowLbl" for="pfConnect_facebook">Facebook</label>
+          <input class="pfEditInput" id="pfConnect_facebook" placeholder="Add Facebook link here" autocomplete="off">
+        </div>
+        <div class="pfConnectRow">
+          <label class="pfConnectRowLbl" for="pfConnect_youtube">YouTube</label>
+          <input class="pfEditInput" id="pfConnect_youtube" placeholder="Add YouTube link here" autocomplete="off">
+        </div>
+        <div class="pfConnectRow">
+          <label class="pfConnectRowLbl" for="pfConnect_x">X</label>
+          <input class="pfEditInput" id="pfConnect_x" placeholder="Add X link here" autocomplete="off">
+        </div>
+        <div class="pfConnectRow">
+          <label class="pfConnectRowLbl" for="pfConnect_tiktok">TikTok</label>
+          <input class="pfEditInput" id="pfConnect_tiktok" placeholder="Add TikTok link here" autocomplete="off">
+        </div>
+        <div class="pfConnectRow">
+          <label class="pfConnectRowLbl" for="pfConnect_linkedin">LinkedIn</label>
+          <input class="pfEditInput" id="pfConnect_linkedin" placeholder="Add LinkedIn link here" autocomplete="off">
+        </div>
+        <div class="pfConnectRow">
+          <label class="pfConnectRowLbl" for="pfConnect_discord">Discord</label>
+          <input class="pfEditInput" id="pfConnect_discord" placeholder="Add Discord link here" autocomplete="off">
+        </div>
+        <div class="pfConnectRow">
+          <label class="pfConnectRowLbl" for="pfConnect_reddit">Reddit</label>
+          <input class="pfEditInput" id="pfConnect_reddit" placeholder="Add Reddit link here" autocomplete="off">
+        </div>
+        <div class="pfConnectRow">
+          <label class="pfConnectRowLbl" for="pfConnect_pinterest">Pinterest</label>
+          <input class="pfEditInput" id="pfConnect_pinterest" placeholder="Add Pinterest link here" autocomplete="off">
+        </div>
+      </div>
+      <button class="pfEditSaveBtn" id="pfEditSaveBtn" onclick="savePfEditProfile()">SAVE CHANGES</button>
     </div>
   </div>
 
@@ -4829,6 +5121,9 @@ body{background:var(--bg);}
     .upInWrap{position:relative;}
     .upIn{width:100%;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#f5f4fb;padding:.68rem 3.3rem .68rem .85rem;font-size:.86rem;font-family:var(--fb);outline:none;transition:border-color .2s;}
     .upIn:focus{border-color:#8b5cf6;}
+    select.upIn{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right .85rem center;background-size:1rem;}
+    select.upIn option{background:#15151f;color:#f5f4fb;}
+    select.upIn option:disabled{color:rgba(245,244,251,.4);}
     .upArea{resize:vertical;min-height:4.5rem;line-height:1.5;padding-right:.85rem;}
     .upInWrapArea .upCount{top:auto;bottom:.5rem;}
     .upCount{position:absolute;right:.75rem;top:.72rem;font-size:.68rem;color:rgba(214,212,232,.4);pointer-events:none;}
@@ -4876,7 +5171,92 @@ body{background:var(--bg);}
       .upPopBody{padding:1rem;}
       .upPopFoot{padding:.8rem 1rem;}
     }
+
+    /* ── Square thumbnail cropper (shown right after picking a file,
+       before the rest of the upload form) ──
+       .cropStage is a fixed square viewport; the source image sits
+       inside it oversized and is dragged/zoomed by the user, then
+       canvas-rendered into a 640×640 JPEG at confirm time. The full
+       original file is untouched and still uploaded separately as
+       the main/full-view image. */
+    .cropPop{position:fixed;inset:0;z-index:20050;background:rgba(5,3,8,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity .25s ease;}
+    .cropPop.open{opacity:1;pointer-events:auto;}
+    .cropBox{background:#0c0c15;border:1px solid rgba(139,92,246,.28);border-radius:16px;width:100%;max-width:420px;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);overflow:hidden;}
+    .cropHead{padding:1.1rem 1.3rem .3rem;}
+    .cropHead h2{font-family:var(--fd);font-size:1.15rem;color:#f5f4fb;margin:0 0 .2rem;}
+    .cropHead p{font-size:.78rem;color:rgba(214,212,232,.62);margin:0;}
+    .cropBody{padding:1.1rem 1.3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+    .cropStage{
+      width:min(320px,100%);aspect-ratio:1;border-radius:12px;
+      overflow:hidden;position:relative;background:#000;
+      border:1px solid rgba(255,255,255,.12);cursor:grab;touch-action:none;
+    }
+    .cropStage.dragging{cursor:grabbing;}
+    .cropStage img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;}
+    .cropGrid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.35) 1px,transparent 1px);background-size:33.33% 33.33%;}
+    .cropFoot{padding:1rem 1.3rem;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:flex-end;gap:.7rem;}
+
+    /* ── Avatar / Banner focal-point cropper ──
+       Same drag-to-reposition language as .cropStage above, but this
+       one's stage aspect-ratio switches between 1:1 (avatar) and a
+       wide banner ratio depending on which is being edited, via the
+       .cropStage--banner modifier. Unlike the gallery thumbnail
+       picker (which only stores a focal point), this one actually
+       renders the crop to a fixed-size canvas on confirm — see
+       confirmPfAvBCrop() — since avatar/banner are singular,
+       replace-on-reupload assets rather than reused thumbnails. */
+    .cropStage--banner{aspect-ratio:16/5;width:min(420px,100%);}
+    @media(max-width:480px){.cropStage--banner{aspect-ratio:3/1;}}
   </style>
+  <div class="cropPop" id="pfCropMod">
+   <div class="cropBox" onclick="event.stopPropagation()">
+    <div class="cropHead">
+      <h2>Set Thumbnail</h2>
+      <p>Drag the photo to choose what shows in the square thumbnail.</p>
+    </div>
+    <div class="cropBody">
+      <div class="cropStage" id="pfCropStage">
+        <img alt="" id="pfCropImg"/>
+        <div class="cropGrid"></div>
+      </div>
+    </div>
+    <div class="cropFoot">
+      <button class="upBtnSec" onclick="cancelPfCrop()">Cancel</button>
+      <button class="upBtnPri" onclick="confirmPfCrop()">Use This ✦</button>
+    </div>
+   </div>
+  </div>
+
+  <!-- =========================================================
+       AVATAR / BANNER UPLOAD — hidden file inputs + shared focal-
+       point crop modal (#pfAvBCropMod). Triggers are intentionally
+       NOT wired up anywhere yet — call openPfAvatarPicker() /
+       openPfBannerPicker() from wherever the edit affordance ends
+       up living. Both enforce a 7-day re-upload cooldown per field
+       (profiles.avatar_updated_at / banner_updated_at) and delete
+       the previous Storage file automatically on re-upload.
+       ========================================================= -->
+  <input type="file" id="pfAvatarFileInput" accept="image/*" style="display:none" onchange="handlePfAvBFile(event,'avatar')">
+  <input type="file" id="pfBannerFileInput" accept="image/*" style="display:none" onchange="handlePfAvBFile(event,'banner')">
+  <div class="cropPop" id="pfAvBCropMod">
+   <div class="cropBox" onclick="event.stopPropagation()">
+    <div class="cropHead">
+      <h2 id="pfAvBCropTitle">Set Profile Photo</h2>
+      <p id="pfAvBCropSub">Drag the photo to choose what shows in the square frame.</p>
+    </div>
+    <div class="cropBody">
+      <div class="cropStage" id="pfAvBCropStage">
+        <img alt="" id="pfAvBCropImg"/>
+        <div class="cropGrid"></div>
+      </div>
+    </div>
+    <div class="cropFoot">
+      <button class="upBtnSec" onclick="cancelPfAvBCrop()">Cancel</button>
+      <button class="upBtnPri" id="pfAvBCropBtn" onclick="confirmPfAvBCrop()">Use This ✦</button>
+    </div>
+   </div>
+  </div>
+
   <div class="upPop" id="pfUpMod">
    <div class="upPopBox">
     <div class="upPopHead">
@@ -4955,8 +5335,8 @@ body{background:var(--bg);}
 
       <div class="upField" id="pfUpSoftwareField">
         <label class="upLbl" for="pfUpSoftware">Software Used</label>
-        <select class="upIn" id="pfUpSoftware">
-          <option value="">Select software…</option>
+        <select class="upIn" id="pfUpSoftware" required>
+          <option value="" disabled selected hidden>Select software…</option>
           <option value="Photoshop">Photoshop</option>
           <option value="ibisPaint">ibisPaint</option>
           <option value="Procreate">Procreate</option>
@@ -5362,7 +5742,10 @@ body{background:var(--bg);}
           <button class="cmBack" onclick="cmCloseChat()" title="Back" aria-label="Back">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <div class="cpTitle">ART TALK <span class="s">✦</span></div>
+          <div class="cpHdrText">
+            <div class="cpTitle" id="cpChanTitle"># ART TALK <span class="s">✦</span></div>
+            <div class="cpSubtitle" id="cpChanSub">Discuss about art, share your thoughts, ask questions and grow together.</div>
+          </div>
         </div>
 
         <!-- Comments list -->
@@ -5382,7 +5765,7 @@ body{background:var(--bg);}
       </div>
     </div>
 
-    <!-- Fixed comment composer bar (shown only when Art Talk chat is open) -->
+    <!-- Fixed comment composer bar (shown only when a postable channel is open) -->
     <div class="cpBar" id="cpBar">
       <div class="cpComposerWrap">
         <div class="cpSelectedImage" id="cpSelectedImage" style="display:none;border-bottom:1px solid var(--bdr);padding:0 0 6px 0;margin:0;">
@@ -5392,11 +5775,47 @@ body{background:var(--bg);}
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:.75rem;">
+          <button class="cpAttachBtn" id="cpAttachBtn" onclick="cpOpenShowcasePicker()" title="Add your artwork" aria-label="Add your artwork" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
           <div class="cpBarAvatar" id="cpBarAvatar">?</div>
           <input class="cpBarInput" id="cpBarInput" type="text" placeholder="Comment here..." maxlength="500" autocomplete="off"/>
           <button class="cpBarSend" id="cpBarSend" onclick="cpSend()">SEND ✦</button>
         </div>
       </div>
+    </div>
+
+    <!-- Locked notice — shown instead of the composer in read-only
+         channels (currently just DigiArtz Official) for non-dev users -->
+    <div class="cpLockNote" id="cpLockNote">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      <span>Only DigiArtz can post here — everyone else can view</span>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       SHOWCASE ARTWORK/COMIC PICKER
+       Opened by the + button in the Showcase channel's composer.
+       Lists only the current user's OWN already-posted artworks
+       and comics (pulled from the site-wide `images`/`comics`
+       arrays, filtered to user_id === currentUser.id) — never the
+       full gallery. Tapping a tile attaches it via the same
+       #cpSelectedImage thumbnail the artwork-lightbox "comment
+       with image" flow already uses, so cpSaveComment needs no
+       changes to pick it up.
+       ========================================================= -->
+  <div id="showcasePicker">
+    <div class="spHdr">
+      <div class="spTitle">SELECT ARTWORK TO SHOWCASE <span class="s">✦</span></div>
+      <button class="cmBack" onclick="closeShowcasePicker()" title="Close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="spBody" id="spBody"></div>
+    <div class="spEmpty" id="spEmpty" style="display:none;">
+      <div class="cpEIco">◎</div>
+      <div>NO ARTWORK YET</div>
+      <div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">POST AN ARTWORK OR COMIC FROM YOUR PROFILE FIRST</div>
     </div>
   </div>
 
@@ -5978,9 +6397,9 @@ body{background:var(--bg);}
       <span class="avBtnIcon">✕</span><span class="avBtnLabel">Close</span><kbd>ESC</kbd>
      </button>
      <div class="avTopRight">
-      <button class="avTopBtn" onclick="avDownload()" aria-label="Download"><span class="avBtnIcon">⬇</span><span class="avBtnLabel">Download</span></button>
-      <button class="avTopBtn" onclick="avShare()" aria-label="Share"><span class="avBtnIcon">↗</span><span class="avBtnLabel">Share</span></button>
-      <button class="avTopBtn" onclick="avReport()" aria-label="Report"><span class="avBtnIcon">⚑</span><span class="avBtnLabel">Report</span></button>
+      <button class="avActBtn" onclick="avDownload()" aria-label="Download">⬇</button>
+      <button class="avActBtn" onclick="avShare()" aria-label="Share">↗</button>
+      <button class="avActBtn" onclick="avReport()" aria-label="Report">⚑</button>
      </div>
     </div>
     <div class="avBody">
@@ -6298,7 +6717,7 @@ body{background:var(--bg);}
     return String(val||'').split(',').map(function(c){return c.trim();}).filter(Boolean);
   }
   function restoreScroll(){
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','comicArtsPage','profilePage','authMod'];
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','comicArtsPage','profilePage','pfEditPage','authMod'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -6358,6 +6777,7 @@ body{background:var(--bg);}
 
   function itemHTML(img){
     const thumbSrc=getThumbnailUrl(esc(img.image_url));
+    const thumbPos=(img.thumb_x!=null&&img.thumb_y!=null)?(img.thumb_x+'% '+img.thumb_y+'%'):'50% 50%';
     const fullSrc=esc(img.image_url);
     const cats=catList(img.category).length?catList(img.category):['others'];
     const extraCats=cats.slice(1);
@@ -6369,7 +6789,7 @@ body{background:var(--bg);}
     return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
         <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>
-        <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl">
+        <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="object-position:${thumbPos}">
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
       </a>
@@ -7671,6 +8091,7 @@ body{background:var(--bg);}
     comicRows: [],   comicPage: 0,   comicDone: false,
     upMode: 'art',         // 'art' | 'comic'
     upFile: null,
+    upThumbFocus: null,    // {x,y} percentages set by confirmPfCrop()
     upPageFiles: []
   };
 
@@ -7700,23 +8121,29 @@ body{background:var(--bg);}
     pf.profile=null; pf.galleryRows=[]; pf.galleryPage=0; pf.galleryDone=false;
     pf.comicRows=[]; pf.comicPage=0; pf.comicDone=false;
     document.getElementById('pfUsername').textContent='Loading…';
-    document.getElementById('pfAvatar').textContent='?';
+    document.getElementById('pfAvatarLetter').textContent='?';
+    document.getElementById('pfAvatarImg').style.display='none';
+    document.getElementById('pfBannerImg').style.display='none';
     document.getElementById('pfJoined').textContent='';
     document.getElementById('pfGalleryGrid').innerHTML='';
     document.getElementById('pfComicGrid').innerHTML='';
     pfSwitchTab('gallery');
     try{
-      const{data,error}=await sb.from('profiles').select('id,username,bio,role,created_at').eq('username',username).single();
+      const{data,error}=await sb.from('profiles').select('id,username,bio,role,created_at,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links').eq('username',username).single();
       if(error || !data){ showToast('Profile not found'); closeProfilePage(); return; }
       pf.profile = data;
       pf.isOwner = !!(currentUser && currentUser.id === data.id);
       document.getElementById('pfUsername').textContent = data.username;
-      document.getElementById('pfAvatar').textContent = (data.username||'?').charAt(0).toUpperCase();
+      document.getElementById('pfAvatarLetter').textContent = (data.username||'?').charAt(0).toUpperCase();
+      document.getElementById('pfEditAvatarLetter').textContent = (data.username||'?').charAt(0).toUpperCase();
+      pfRenderAvatarBanner();
       document.getElementById('pfJoined').textContent = data.created_at ? ('JOINED '+pfFormatDate(data.created_at).toUpperCase()) : '';
       document.getElementById('pfUploadWrap').style.display = pf.isOwner ? '' : 'none';
       document.querySelector('.pfMenuBtn').style.display = pf.isOwner ? '' : 'none';
+      document.getElementById('pfEditBtn').style.display = pf.isOwner ? 'flex' : 'none';
       if(!pf.isOwner) closePfMenu();
       pfRenderBio();
+      pfRenderConnect();
       pfLoadStats();
       pfLoadMoreGallery();
       pfLoadMoreComic();
@@ -7732,6 +8159,7 @@ body{background:var(--bg);}
     panel.classList.remove('open');
     closePfMenu();
     closePfUploadMenu();
+    document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
       try{ history.pushState({},'', '/'); }catch(e){}
@@ -7779,7 +8207,7 @@ body{background:var(--bg);}
     ) : '';
     var pending = a.status === 'pending';
     return '<div class="awCard" onclick="pfOpenArtwork(\''+a.id+'\')">'+
-      '<div class="awImgWrap'+(pending?' awPending':'')+'"><img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.name||'')+'">'+
+      '<div class="awImgWrap'+(pending?' awPending':'')+'"><img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null?a.thumb_x:50)+'% '+(a.thumb_y!=null?a.thumb_y:50)+'%">'+
         (pending?'<div class="awPendingOv"><div class="awPendingSpin"></div><div class="awPendingLbl">IN REVIEW</div></div>':'')+
       '</div>'+
       '<div class="pfCardMeta">'+
@@ -7829,7 +8257,7 @@ body{background:var(--bg);}
       '</div>'
     ) : '';
     return '<div class="awCard" onclick="openComicById(\''+c.id+'\')">'+
-      '<div class="awImgWrap"><img loading="lazy" src="'+esc(c.cover_image_url)+'" alt="'+esc(c.title||'')+'"></div>'+
+      '<div class="awImgWrap"><img loading="lazy" src="'+esc(c.cover_image_url)+'" alt="'+esc(c.title||'')+'" style="object-position:'+(c.cover_thumb_x!=null?c.cover_thumb_x:50)+'% '+(c.cover_thumb_y!=null?c.cover_thumb_y:50)+'%"></div>'+
       '<div class="pfCardMeta">'+
         '<div class="pfCardTitle">'+esc(c.title||'Untitled')+'</div>'+
         '<div class="pfCardDate">'+pfFormatDate(c.created_at)+'</div>'+
@@ -7946,33 +8374,50 @@ body{background:var(--bg);}
   }
   function pfRenderBio(){
     var text = document.getElementById('pfBioText');
-    var editLink = document.getElementById('pfBioEditLink');
     text.textContent = pf.profile.bio && pf.profile.bio.trim() ? pf.profile.bio : 'No bio yet.';
-    text.style.display='';
-    document.getElementById('pfBioEdit').style.display='none';
-    document.getElementById('pfBioBtns').style.display='none';
-    editLink.style.display = pf.isOwner ? '' : 'none';
   }
-  function startPfBioEdit(){
-    if(!pf.isOwner) return;
-    document.getElementById('pfBioText').style.display='none';
-    document.getElementById('pfBioEditLink').style.display='none';
-    var ta = document.getElementById('pfBioEdit');
-    ta.value = (pf.profile.bio||'');
-    ta.style.display='block';
-    document.getElementById('pfBioBtns').style.display='flex';
+
+  /* ── Connect (social links) ──
+     Single source of truth for the 9 supported platforms — used to
+     render the read-only About-tab list (blue = linked, grey =
+     not), populate/save the Edit Profile inputs, and validate that
+     each URL actually belongs to the platform it was entered under.
+     Stored as profiles.social_links jsonb, e.g. {"instagram":"https://instagram.com/…"}. */
+  var PF_SOCIAL_PLATFORMS = [
+    {key:'instagram', label:'Instagram', domains:['instagram.com','instagr.am']},
+    {key:'facebook',  label:'Facebook',  domains:['facebook.com','fb.com','fb.me']},
+    {key:'youtube',   label:'YouTube',   domains:['youtube.com','youtu.be']},
+    {key:'x',         label:'X',         domains:['x.com','twitter.com']},
+    {key:'tiktok',    label:'TikTok',    domains:['tiktok.com']},
+    {key:'linkedin',  label:'LinkedIn',  domains:['linkedin.com']},
+    {key:'discord',   label:'Discord',   domains:['discord.gg','discord.com']},
+    {key:'reddit',    label:'Reddit',    domains:['reddit.com','redd.it']},
+    {key:'pinterest', label:'Pinterest', domains:['pinterest.com','pin.it']}
+  ];
+  function pfRenderConnect(){
+    var wrap = document.getElementById('pfConnectList');
+    var links = (pf.profile && pf.profile.social_links) || {};
+    wrap.innerHTML = PF_SOCIAL_PLATFORMS.map(function(p){
+      var url = links[p.key];
+      return url
+        ? '<a class="pfConnectItem pfConnectItem--on" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+p.label+'</a>'
+        : '<span class="pfConnectItem pfConnectItem--off">'+p.label+'</span>';
+    }).join('');
   }
-  function cancelPfBioEdit(){ pfRenderBio(); }
-  async function savePfBio(){
-    if(!pf.isOwner) return;
-    var val = document.getElementById('pfBioEdit').value.trim().slice(0,500);
-    try{
-      const{error}=await sb.from('profiles').update({bio:val}).eq('id',pf.profile.id);
-      if(error) throw error;
-      pf.profile.bio = val;
-      pfRenderBio();
-      showToast('Bio updated ✦');
-    }catch(e){ showToast('Error: '+e.message); }
+  /* Accepts a raw string typed into a platform's field; empty clears
+     the link. Auto-prepends https:// if no scheme was typed, then
+     checks the resulting hostname actually belongs to that platform. */
+  function pfValidateSocialLink(platform, raw){
+    raw = (raw||'').trim();
+    if(!raw) return {ok:true, value:null};
+    var candidate = /^https?:\/\//i.test(raw) ? raw : 'https://'+raw;
+    var url;
+    try{ url = new URL(candidate); }
+    catch(e){ return {ok:false, msg:'That doesn\'t look like a valid '+platform.label+' link.'}; }
+    var host = url.hostname.toLowerCase().replace(/^www\./,'');
+    var matched = platform.domains.some(function(d){ return host===d || host.endsWith('.'+d); });
+    if(!matched) return {ok:false, msg:'This link doesn\'t look like a '+platform.label+' link.'};
+    return {ok:true, value:url.href};
   }
 
   /* ── UPLOAD POPUP (art + comic, own-profile only) ── */
@@ -8079,21 +8524,106 @@ body{background:var(--bg);}
   function closePfUpload(){
     document.getElementById('pfUpMod').classList.remove('open');
     closePfCatDd();
-    pf.upFile = null; pf.upPageFiles = [];
+    pf.upFile = null; pf.upThumbFocus = null; pf.upPageFiles = [];
   }
   function handlePfFile(e){
     var f = e.target.files[0]; if(!f) return;
-    pf.upFile = f;
+    if(!document.getElementById('pfUpNm').value.trim()){
+      document.getElementById('pfUpNm').value = f.name.replace(/\.[^.]+$/,'');
+      pfUpdateCount('pfUpNm','pfUpNmCount',100);
+    }
     var r = new FileReader();
-    r.onload = function(ev){
-      var p = document.getElementById('pfUpPrev');
-      p.src = ev.target.result; p.style.display='block';
-      if(!document.getElementById('pfUpNm').value.trim()){
-        document.getElementById('pfUpNm').value = f.name.replace(/\.[^.]+$/,'');
-        pfUpdateCount('pfUpNm','pfUpNmCount',100);
-      }
-    };
+    r.onload = function(ev){ openPfCrop(f, ev.target.result); };
     r.readAsDataURL(f);
+  }
+
+  /* ── Square thumbnail focal-point picker ──
+     Opens right after a file is picked. Rather than generating and
+     uploading a second cropped image (double the storage/bandwidth
+     per upload), this just lets the user drag to choose a focal
+     point (x%,y%) using the exact same object-fit:cover math the
+     grid already renders with. Only two small numbers are stored
+     (pf.upThumbFocus); the browser re-crops the original image live
+     via CSS object-position everywhere it's shown as a thumbnail —
+     the original file itself is never duplicated. */
+  var pfCropPending = null; // the File waiting to become pf.upFile once confirmed
+  var pfCrop = { natW:0, natH:0, stage:280, x:50, y:50, axis:null, dragging:false, sx:0, sy:0, ox:50, oy:50 };
+  function openPfCrop(file, dataUrl){
+    pfCropPending = file;
+    var img = document.getElementById('pfCropImg');
+    img.onload = function(){
+      var stageEl = document.getElementById('pfCropStage');
+      pfCrop.stage = stageEl.getBoundingClientRect().width || 280;
+      pfCrop.natW = img.naturalWidth; pfCrop.natH = img.naturalHeight;
+      /* object-fit:cover only ever overflows on one axis (the longer
+         one relative to the square box), so only that axis is
+         draggable — matches how the CSS crop actually behaves. */
+      pfCrop.axis = (pfCrop.natW/pfCrop.natH) > 1 ? 'x' : (pfCrop.natW/pfCrop.natH) < 1 ? 'y' : null;
+      pfCrop.x = 50; pfCrop.y = 50;
+      pfCropRender();
+      document.getElementById('pfCropMod').classList.add('open');
+    };
+    img.src = dataUrl;
+  }
+  function pfCropRender(){
+    document.getElementById('pfCropImg').style.objectPosition = pfCrop.x+'% '+pfCrop.y+'%';
+  }
+  (function initPfCropDrag(){
+    var stageEl = null;
+    function down(e){
+      if(!pfCrop.axis) return; // nothing to drag — image already matches the square
+      stageEl = document.getElementById('pfCropStage');
+      pfCrop.dragging = true; stageEl.classList.add('dragging');
+      var p = e.touches ? e.touches[0] : e;
+      pfCrop.sx = p.clientX; pfCrop.sy = p.clientY;
+      pfCrop.ox = pfCrop.x; pfCrop.oy = pfCrop.y;
+      e.preventDefault();
+    }
+    function move(e){
+      if(!pfCrop.dragging) return;
+      var p = e.touches ? e.touches[0] : e;
+      /* Convert a screen-pixel drag into an object-position % change.
+         At the current stage size S, the overflow (in px) on the
+         draggable axis is S*(long/short - 1); moving across that
+         full overflow sweeps object-position 0%→100%. */
+      var ratio = pfCrop.axis==='x' ? pfCrop.natW/pfCrop.natH : pfCrop.natH/pfCrop.natW;
+      var overflowPx = pfCrop.stage*(ratio-1);
+      if(overflowPx <= 0) return;
+      var dPx = pfCrop.axis==='x' ? (p.clientX-pfCrop.sx) : (p.clientY-pfCrop.sy);
+      var dPct = -(dPx/overflowPx)*100; // dragging right/down reveals the left/top side
+      var val = Math.max(0, Math.min(100, (pfCrop.axis==='x'?pfCrop.ox:pfCrop.oy) + dPct));
+      if(pfCrop.axis==='x') pfCrop.x = val; else pfCrop.y = val;
+      pfCropRender();
+    }
+    function up(){
+      pfCrop.dragging = false;
+      if(stageEl) stageEl.classList.remove('dragging');
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      var el = document.getElementById('pfCropStage');
+      if(!el) return;
+      el.addEventListener('mousedown', down);
+      el.addEventListener('touchstart', down, {passive:false});
+    });
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move, {passive:false});
+    document.addEventListener('mouseup', up);
+    document.addEventListener('touchend', up);
+  })();
+  function cancelPfCrop(){
+    document.getElementById('pfCropMod').classList.remove('open');
+    pfCropPending = null;
+    document.getElementById('pfUpF').value = '';
+  }
+  function confirmPfCrop(){
+    pf.upFile = pfCropPending;
+    pf.upThumbFocus = { x: Math.round(pfCrop.x), y: Math.round(pfCrop.y) };
+    var p = document.getElementById('pfUpPrev');
+    p.src = document.getElementById('pfCropImg').src;
+    p.style.objectPosition = pfCrop.x+'% '+pfCrop.y+'%';
+    p.style.display = 'block';
+    document.getElementById('pfCropMod').classList.remove('open');
+    pfCropPending = null;
   }
   function handlePfPagesFile(e){
     var files = Array.from(e.target.files||[]);
@@ -8126,6 +8656,7 @@ body{background:var(--bg);}
     var tags = document.getElementById('pfUpTags').value.split(',').map(function(t){return t.trim();}).filter(Boolean);
     if(!nm){ showToast('Enter a title'); return; }
     if(!editId && !pf.upFile){ showToast('Select an image'); return; }
+    if(pf.upMode==='art' && !software){ showToast('Select the software used'); return; }
     var btn = document.getElementById('pfUpBtn');
     btn.disabled = true;
     try{
@@ -8147,12 +8678,13 @@ body{background:var(--bg);}
           const{error:ue}=await sb.storage.from(BUCKET).upload(path,pf.upFile,{cacheControl:'3600'});
           if(ue) throw ue;
           const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
+          var artThumb = pf.upThumbFocus || {x:50,y:50};
           /* status:'pending' — hidden from the public gallery until a
              dev reviews it in #admPage. Not added to the global
              `images` array (that array only ever holds approved work);
              it IS added to pf.galleryRows so the owner can see it
              sitting in their own profile while it's under review. */
-          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,user_id:currentUser.id,software:software||null,status:'pending'}).select();
+          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,thumb_x:artThumb.x,thumb_y:artThumb.y,user_id:currentUser.id,software:software||null,status:'pending'}).select();
           if(de) throw de;
           pf.galleryRows.unshift(rows[0]);
           pfRenderGallery();
@@ -8176,6 +8708,7 @@ body{background:var(--bg);}
           const{error:cue}=await sb.storage.from(BUCKET).upload(cpath,pf.upFile,{cacheControl:'3600'});
           if(cue) throw cue;
           const{data:{publicUrl:coverUrl}}=sb.storage.from(BUCKET).getPublicUrl(cpath);
+          var coverThumb = pf.upThumbFocus || {x:50,y:50};
           var pageUrls = [];
           for(var i=0;i<pf.upPageFiles.length;i++){
             var pf_ = pf.upPageFiles[i];
@@ -8186,7 +8719,7 @@ body{background:var(--bg);}
             const{data:{publicUrl:pageUrl}}=sb.storage.from(BUCKET).getPublicUrl(ppath);
             pageUrls.push(pageUrl);
           }
-          const{data:rows,error:de}=await sb.from('comics').insert({title:nm,description:desc||null,tags:tags,cover_image_url:coverUrl,cover_storage_path:cpath,pages:pageUrls,user_id:currentUser.id,status:'pending'}).select();
+          const{data:rows,error:de}=await sb.from('comics').insert({title:nm,description:desc||null,tags:tags,cover_image_url:coverUrl,cover_storage_path:cpath,cover_thumb_x:coverThumb.x,cover_thumb_y:coverThumb.y,pages:pageUrls,user_id:currentUser.id,status:'pending'}).select();
           if(de) throw de;
           pf.comicRows.unshift(rows[0]);
           pfRenderComic();
@@ -8198,9 +8731,321 @@ body{background:var(--bg);}
     finally{ btn.disabled=false; btn.textContent = editId ? '📤 Save Changes' : (pf.upMode==='comic' ? '📤 Upload Comic' : '📤 Upload Artwork'); }
   }
 
+  /* =========================================================
+     AVATAR / BANNER UPLOAD
+     ├─ pfRenderAvatarBanner() — paints pf.profile.avatar_url /
+     │   banner_url into #pfAvatarImg / #pfBannerImg, falling back
+     │   to the letter avatar / gradient banner when unset.
+     ├─ openPfAvatarPicker() / openPfBannerPicker() — owner-only,
+     │   gated by a 7-day cooldown read off
+     │   pf.profile.avatar_updated_at / banner_updated_at.
+     ├─ handlePfAvBFile → openPfAvBCrop — shared focal-point
+     │   cropper (square stage for avatar, wide stage for banner).
+     ├─ confirmPfAvBCrop() — actually renders the crop to a fixed-
+     │   size canvas (unlike the gallery thumb picker, which only
+     │   stores a focal point) and hands the JPEG blob to
+     │   doPfAvBUpload().
+     └─ doPfAvBUpload() — uploads the new file, deletes the
+         previous one from Storage, updates the profiles row +
+         pf.profile + the on-screen image, all in one go.
+
+     Requires these columns on `profiles` (nullable):
+       avatar_url text, avatar_storage_path text, avatar_updated_at timestamptz,
+       banner_url text, banner_storage_path text, banner_updated_at timestamptz
+     ========================================================= */
+  var PF_AVB_COOLDOWN_MS = 7*24*60*60*1000; // 1 week
+  var PF_AVB_DIMS = { avatar:{w:480,h:480}, banner:{w:1600,h:500} };
+
+  function pfRenderAvatarBanner(){
+    if(!pf.profile) return;
+    var aImg = document.getElementById('pfAvatarImg');
+    var aLetter = document.getElementById('pfAvatarLetter');
+    var eaImg = document.getElementById('pfEditAvatarImg');
+    var eaLetter = document.getElementById('pfEditAvatarLetter');
+    if(pf.profile.avatar_url){
+      aImg.src = pf.profile.avatar_url; aImg.style.display='block'; aLetter.style.display='none';
+      eaImg.src = pf.profile.avatar_url; eaImg.style.display='block'; eaLetter.style.display='none';
+    } else {
+      aImg.style.display='none'; aLetter.style.display='';
+      eaImg.style.display='none'; eaLetter.style.display='';
+    }
+    var bImg = document.getElementById('pfBannerImg');
+    var ebImg = document.getElementById('pfEditBannerImg');
+    if(pf.profile.banner_url){
+      bImg.src = pf.profile.banner_url; bImg.style.display='block';
+      ebImg.src = pf.profile.banner_url; ebImg.style.display='block';
+    } else {
+      bImg.style.display='none';
+      ebImg.style.display='none';
+    }
+  }
+
+  /* Returns ms remaining before a re-upload is allowed (0 = allowed now). */
+  function pfAvBCooldownLeft(updatedAt){
+    if(!updatedAt) return 0;
+    var elapsed = Date.now() - new Date(updatedAt).getTime();
+    return Math.max(0, PF_AVB_COOLDOWN_MS - elapsed);
+  }
+  function pfAvBCooldownMsg(msLeft){
+    var days = Math.ceil(msLeft/(24*60*60*1000));
+    return 'You can re-upload in '+days+' day'+(days===1?'':'s')+'.';
+  }
+
+  function openPfAvatarPicker(){
+    if(!pf.isOwner){ showToast('You can only edit your own profile'); return; }
+    var left = pfAvBCooldownLeft(pf.profile && pf.profile.avatar_updated_at);
+    if(left>0){ showToast('Profile photo was updated recently. '+pfAvBCooldownMsg(left)); return; }
+    document.getElementById('pfAvatarFileInput').click();
+  }
+  function openPfBannerPicker(){
+    if(!pf.isOwner){ showToast('You can only edit your own profile'); return; }
+    var left = pfAvBCooldownLeft(pf.profile && pf.profile.banner_updated_at);
+    if(left>0){ showToast('Banner was updated recently. '+pfAvBCooldownMsg(left)); return; }
+    document.getElementById('pfBannerFileInput').click();
+  }
+
+  function handlePfAvBFile(e, kind){
+    var f = e.target.files[0]; if(!f) return;
+    if(!f.type.startsWith('image/')){ showToast('Please select an image'); e.target.value=''; return; }
+    var r = new FileReader();
+    r.onload = function(ev){ openPfAvBCrop(f, ev.target.result, kind); };
+    r.readAsDataURL(f);
+  }
+
+  var pfAvBCropPending = null;
+  var pfAvBCrop = { kind:'avatar', natW:0, natH:0, stageW:280, stageH:280, x:50, y:50, axis:null, dragging:false, sx:0, sy:0, ox:50, oy:50 };
+  function openPfAvBCrop(file, dataUrl, kind){
+    pfAvBCropPending = file;
+    pfAvBCrop.kind = kind;
+    var stageEl = document.getElementById('pfAvBCropStage');
+    stageEl.classList.toggle('cropStage--banner', kind==='banner');
+    document.getElementById('pfAvBCropTitle').textContent = kind==='banner' ? 'Set Banner' : 'Set Profile Photo';
+    document.getElementById('pfAvBCropSub').textContent = kind==='banner'
+      ? 'Drag the photo to choose what shows across your banner.'
+      : 'Drag the photo to choose what shows in the square frame.';
+    var img = document.getElementById('pfAvBCropImg');
+    img.onload = function(){
+      var rect = stageEl.getBoundingClientRect();
+      pfAvBCrop.stageW = rect.width || 280; pfAvBCrop.stageH = rect.height || 280;
+      pfAvBCrop.natW = img.naturalWidth; pfAvBCrop.natH = img.naturalHeight;
+      var boxRatio = pfAvBCrop.stageW/pfAvBCrop.stageH;
+      var srcRatio = pfAvBCrop.natW/pfAvBCrop.natH;
+      pfAvBCrop.axis = srcRatio > boxRatio ? 'x' : (srcRatio < boxRatio ? 'y' : null);
+      pfAvBCrop.x = 50; pfAvBCrop.y = 50;
+      pfAvBCropRender();
+      document.getElementById('pfAvBCropMod').classList.add('open');
+    };
+    img.src = dataUrl;
+  }
+  function pfAvBCropRender(){
+    document.getElementById('pfAvBCropImg').style.objectPosition = pfAvBCrop.x+'% '+pfAvBCrop.y+'%';
+  }
+  (function initPfAvBCropDrag(){
+    var stageEl = null;
+    function down(e){
+      if(!pfAvBCrop.axis) return;
+      stageEl = document.getElementById('pfAvBCropStage');
+      pfAvBCrop.dragging = true; stageEl.classList.add('dragging');
+      var p = e.touches ? e.touches[0] : e;
+      pfAvBCrop.sx = p.clientX; pfAvBCrop.sy = p.clientY;
+      pfAvBCrop.ox = pfAvBCrop.x; pfAvBCrop.oy = pfAvBCrop.y;
+      e.preventDefault();
+    }
+    function move(e){
+      if(!pfAvBCrop.dragging) return;
+      var p = e.touches ? e.touches[0] : e;
+      var boxRatio = pfAvBCrop.stageW/pfAvBCrop.stageH;
+      var srcRatio = pfAvBCrop.natW/pfAvBCrop.natH;
+      var ratio = pfAvBCrop.axis==='x' ? (srcRatio/boxRatio) : (boxRatio/srcRatio);
+      var overflowPx = pfAvBCrop.axis==='x' ? pfAvBCrop.stageW*(ratio-1) : pfAvBCrop.stageH*(ratio-1);
+      if(overflowPx <= 0) return;
+      var dPx = pfAvBCrop.axis==='x' ? (p.clientX-pfAvBCrop.sx) : (p.clientY-pfAvBCrop.sy);
+      var dPct = -(dPx/overflowPx)*100;
+      var val = Math.max(0, Math.min(100, (pfAvBCrop.axis==='x'?pfAvBCrop.ox:pfAvBCrop.oy) + dPct));
+      if(pfAvBCrop.axis==='x') pfAvBCrop.x = val; else pfAvBCrop.y = val;
+      pfAvBCropRender();
+    }
+    function up(){ pfAvBCrop.dragging = false; if(stageEl) stageEl.classList.remove('dragging'); }
+    document.addEventListener('DOMContentLoaded', function(){
+      var el = document.getElementById('pfAvBCropStage');
+      if(!el) return;
+      el.addEventListener('mousedown', down);
+      el.addEventListener('touchstart', down, {passive:false});
+    });
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move, {passive:false});
+    document.addEventListener('mouseup', up);
+    document.addEventListener('touchend', up);
+  })();
+  function cancelPfAvBCrop(){
+    document.getElementById('pfAvBCropMod').classList.remove('open');
+    pfAvBCropPending = null;
+    document.getElementById('pfAvatarFileInput').value = '';
+    document.getElementById('pfBannerFileInput').value = '';
+  }
+  function confirmPfAvBCrop(){
+    if(!pfAvBCropPending) return;
+    var kind = pfAvBCrop.kind;
+    var dims = PF_AVB_DIMS[kind];
+    var natW = pfAvBCrop.natW, natH = pfAvBCrop.natH;
+    var targetRatio = dims.w/dims.h;
+    var srcRatio = natW/natH;
+    var cropW, cropH;
+    if(srcRatio > targetRatio){ cropH = natH; cropW = natH*targetRatio; }
+    else { cropW = natW; cropH = natW/targetRatio; }
+    var cropX = (natW-cropW) * (pfAvBCrop.x/100);
+    var cropY = (natH-cropH) * (pfAvBCrop.y/100);
+    var canvas = document.createElement('canvas');
+    canvas.width = dims.w; canvas.height = dims.h;
+    var ctx = canvas.getContext('2d');
+    var img = document.getElementById('pfAvBCropImg');
+    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, dims.w, dims.h);
+    var btn = document.getElementById('pfAvBCropBtn');
+    btn.disabled = true; btn.textContent = 'SAVING…';
+    canvas.toBlob(function(blob){
+      doPfAvBUpload(kind, blob).finally(function(){
+        btn.disabled = false; btn.textContent = 'Use This ✦';
+        document.getElementById('pfAvBCropMod').classList.remove('open');
+        pfAvBCropPending = null;
+      });
+    }, 'image/jpeg', 0.9);
+  }
+  async function doPfAvBUpload(kind, blob){
+    try{
+      if(!currentUser){ showToast('Sign in required'); return; }
+      var left = pfAvBCooldownLeft(pf.profile && pf.profile[kind+'_updated_at']);
+      if(left>0){ showToast((kind==='banner'?'Banner':'Profile photo')+' was updated recently. '+pfAvBCooldownMsg(left)); return; }
+      var oldPath = pf.profile && pf.profile[kind+'_storage_path'];
+      var path = kind+'s/'+currentUser.id+'/'+Date.now()+'.jpg';
+      var{error:ue}=await sb.storage.from(BUCKET).upload(path, blob, {cacheControl:'3600', contentType:'image/jpeg'});
+      if(ue) throw ue;
+      var{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
+      var nowIso = new Date().toISOString();
+      var updates = {}; 
+      updates[kind+'_url'] = publicUrl;
+      updates[kind+'_storage_path'] = path;
+      updates[kind+'_updated_at'] = nowIso;
+      var{error:de}=await sb.from('profiles').update(updates).eq('id',currentUser.id);
+      if(de) throw de;
+      /* Old file is removed only after the new row commits successfully,
+         so a failed update never leaves the profile pointing at a file
+         that's already been deleted. */
+      if(oldPath) await sb.storage.from(BUCKET).remove([oldPath]);
+      Object.assign(pf.profile, updates);
+      pfRenderAvatarBanner();
+      showToast((kind==='banner'?'Banner':'Profile photo')+' updated ✦');
+    }catch(err){ showToast('Error: '+err.message); }
+    finally{
+      document.getElementById('pfAvatarFileInput').value = '';
+      document.getElementById('pfBannerFileInput').value = '';
+    }
+  }
+
   let tT;
   function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000);}
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closePfMenu();closePfUploadMenu();closeSubscription();closeSubModal();closeComicArts();closeProfilePage();closePfUpload();
+
+  /* =========================================================
+     EDIT PROFILE PAGE
+     ├─ openPfEditPage/closePfEditPage — slide-in layer above
+     │   #profilePage; pre-fills username/bio from pf.profile,
+     │   photos are already kept in sync by pfRenderAvatarBanner().
+     └─ savePfEditProfile() — saves username + bio together.
+         Username is checked for availability (case-insensitive,
+         excluding the user's own row) before writing; on success
+         the profile URL/header/nav are updated in place so nothing
+         is left pointing at the old handle.
+     ========================================================= */
+  function openPfEditPage(){
+    if(!pf.isOwner || !pf.profile){ showToast('You can only edit your own profile'); return; }
+    document.getElementById('pfEditUsername').value = pf.profile.username || '';
+    document.getElementById('pfEditBio').value = pf.profile.bio || '';
+    pfUpdateEditBioCount();
+    pfRenderAvatarBanner();
+    var links = pf.profile.social_links || {};
+    PF_SOCIAL_PLATFORMS.forEach(function(p){
+      var input = document.getElementById('pfConnect_'+p.key);
+      if(input){ input.value = links[p.key] || ''; input.classList.remove('err'); }
+    });
+    document.getElementById('pfEditPage').classList.add('open');
+    document.body.style.overflow='hidden';
+  }
+  function closePfEditPage(){
+    document.getElementById('pfEditPage').classList.remove('open');
+    restoreScroll();
+  }
+  function pfUpdateEditBioCount(){
+    var len = document.getElementById('pfEditBio').value.length;
+    document.getElementById('pfEditBioCount').textContent = len+'/500';
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    var ta = document.getElementById('pfEditBio');
+    if(ta) ta.addEventListener('input', pfUpdateEditBioCount);
+    PF_SOCIAL_PLATFORMS.forEach(function(p){
+      var input = document.getElementById('pfConnect_'+p.key);
+      if(input) input.addEventListener('input', function(){ input.classList.remove('err'); });
+    });
+  });
+
+  async function savePfEditProfile(){
+    if(!pf.isOwner || !pf.profile) return;
+    var newUsername = document.getElementById('pfEditUsername').value.trim();
+    var newBio = document.getElementById('pfEditBio').value.trim().slice(0,500);
+    if(!newUsername){ showToast('Username can\'t be empty'); return; }
+    if(newUsername.length>30){ showToast('Username must be 30 characters or fewer'); return; }
+    if(!/^[a-zA-Z0-9_.]+$/.test(newUsername)){ showToast('Username can only contain letters, numbers, "_" and "."'); return; }
+
+    /* Validate every Connect field up front — first mismatch wins,
+       nothing is saved (not even the valid ones) until it's fixed,
+       so the profile never ends up half-updated. */
+    var newSocialLinks = {};
+    for(var i=0;i<PF_SOCIAL_PLATFORMS.length;i++){
+      var p = PF_SOCIAL_PLATFORMS[i];
+      var input = document.getElementById('pfConnect_'+p.key);
+      var res = pfValidateSocialLink(p, input.value);
+      if(!res.ok){
+        input.classList.add('err');
+        input.scrollIntoView({behavior:'smooth', block:'center'});
+        input.focus();
+        showToast(res.msg);
+        return;
+      }
+      input.classList.remove('err');
+      newSocialLinks[p.key] = res.value;
+    }
+
+    var btn = document.getElementById('pfEditSaveBtn');
+    btn.disabled = true; btn.textContent = 'SAVING…';
+    try{
+      var usernameChanged = newUsername.toLowerCase() !== (pf.profile.username||'').toLowerCase();
+      if(usernameChanged){
+        const{data:existing,error:ce}=await sb.from('profiles').select('id').ilike('username',newUsername).neq('id',pf.profile.id).maybeSingle();
+        if(ce) throw ce;
+        if(existing){ showToast('That username is already taken'); return; }
+      }
+      var updates = { username:newUsername, bio:newBio||null, social_links:newSocialLinks };
+      const{error:de}=await sb.from('profiles').update(updates).eq('id',pf.profile.id);
+      if(de) throw de;
+      pf.profile.username = newUsername;
+      pf.profile.bio = newBio;
+      pf.profile.social_links = newSocialLinks;
+      document.getElementById('pfUsername').textContent = newUsername;
+      document.getElementById('pfAvatarLetter').textContent = newUsername.charAt(0).toUpperCase();
+      document.getElementById('pfEditAvatarLetter').textContent = newUsername.charAt(0).toUpperCase();
+      pfRenderBio();
+      pfRenderConnect();
+      if(usernameChanged){
+        try{ history.replaceState({profileUser:newUsername},'','/profile/'+encodeURIComponent(newUsername)); }catch(e){}
+        /* Keep the auth-side copy in sync too — non-fatal if it fails,
+           profiles.username stays the source of truth everywhere else. */
+        try{ await sb.auth.updateUser({ data:{ username:newUsername } }); }catch(e){}
+      }
+      showToast('Profile updated ✦');
+      closePfEditPage();
+    }catch(err){ showToast('Error: '+err.message); }
+    finally{ btn.disabled=false; btn.textContent='SAVE CHANGES'; }
+  }
+
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closePfMenu();closePfUploadMenu();closeSubscription();closeSubModal();closeComicArts();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
   }});
 
   /* ── BOTTOM NAVIGATION ──────────────────────────────────
@@ -8390,9 +9235,11 @@ body{background:var(--bg);}
   function admCardHTML(kind, row){
     var idStr = esc(String(row.id));
     var img = kind==='art' ? esc(row.image_url) : esc(row.cover_image_url);
+    var tx = kind==='art' ? (row.thumb_x!=null?row.thumb_x:50) : (row.cover_thumb_x!=null?row.cover_thumb_x:50);
+    var ty = kind==='art' ? (row.thumb_y!=null?row.thumb_y:50) : (row.cover_thumb_y!=null?row.cover_thumb_y:50);
     var title = esc(kind==='art' ? (row.name||'Untitled') : (row.title||'Untitled'));
     return '<div class="admCard" data-id="'+idStr+'">'+
-      '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy">'+
+      '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="object-position:'+tx+'% '+ty+'%">'+
       '<div class="admCardBody">'+
         '<div class="admCardTitle">'+title+'</div>'+
         '<div class="admCardMeta">Submitted '+(row.created_at?new Date(row.created_at).toLocaleDateString():'')+'</div>'+
@@ -8495,6 +9342,25 @@ body{background:var(--bg);}
   /* COMMENTS PAGE */
   var cpComments = [];   /* in-memory comment list (UI only) */
 
+  /* ── Live chat channels ──
+     Every entry here gets a real Slack/Discord-style chat room
+     (message cards, avatar, live Supabase feed).
+     'official' IS live, but readOnly:true — everyone can view it,
+     only the dev account (isDev) gets a composer bar to post in it.
+     'showcase' IS live, but type:'showcase' — every post MUST carry
+     an image (picked from the user's own already-posted artworks/
+     comics via the + button) AND a caption, and each user can only
+     post once every `cooldownMs` (1 hour). */
+  var CM_CHANNELS = {
+    official: { name:'DigiArtz Official', desc:'Official community of DigiArtz. Get updates, announcements and more.', readOnly:true },
+    arttalk : { name:'Art Talk',         desc:'Discuss about art, share your thoughts, ask questions and grow together.' },
+    feedback: { name:'Art Feedback',     desc:'Share your work and get constructive feedback from the community.' },
+    collab  : { name:'Collab Hub',       desc:'Find artists to collaborate with on projects and bring ideas to life.' },
+    tips    : { name:'Tips & Resources', desc:'Share helpful tips, tutorials, tools and resources for artists.' },
+    showcase: { name:'Showcase',         desc:'Share your latest work, celebrate progress and inspire others.', type:'showcase', cooldownMs:3600000 }
+  };
+  var cpCurrentChannel = 'arttalk'; /* which channel's messages cpBody is currently showing */
+
   function cpGetAvatarLetter(){
     /* Use logged-in username initial only — never derive from email or other fields */
     if(currentUser){
@@ -8545,26 +9411,46 @@ async function openComments(){
   function closeCommunityPage(){
     document.getElementById('communityPage').classList.remove('open');
     document.getElementById('cpBar').style.display = 'none';
+    var lockNote = document.getElementById('cpLockNote');
+    if(lockNote) lockNote.style.display = 'none';
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
+    var nav = document.getElementById('bnNav');
+    if(nav) nav.style.display = '';
   }
 
   /* ── Community card tap ──
      id: 'official' | 'arttalk' | 'feedback' | 'collab' | 'tips' | 'showcase'
      No "Join" button anywhere — tapping a card auto-joins a logged-in
-     user (or opens the "Art Talk" room directly); a guest is sent to
-     the login page instead. Every community except Art Talk is a
-     placeholder until its Supabase table/policies are added. */
+     user (or opens that channel's chat room directly); a guest is sent
+     to the login page instead. Every card in CM_CHANNELS is a live
+     room backed by the same Supabase `comments` table filtered by
+     `channel`. Any id NOT in CM_CHANNELS (none currently) falls back
+     to a "coming soon" toast — kept as a safety net for future cards. */
   async function cmOpenCommunity(id){
     if(!currentUser){
       showToast('Please login to join this community.');
       openAuthMod();
       return;
     }
-    if(id !== 'arttalk'){
+    var chan = CM_CHANNELS[id];
+    if(!chan){
       showToast('This community is coming soon ✦');
       return;
     }
+    cpCurrentChannel = id;
+
+    /* Update header + composer to reflect the channel we just opened */
+    var titleEl    = document.getElementById('cpChanTitle');
+    var subEl      = document.getElementById('cpChanSub');
+    var inpEl      = document.getElementById('cpBarInput');
+    var attachBtn  = document.getElementById('cpAttachBtn');
+    var isShowcase = chan.type === 'showcase';
+    if(titleEl) titleEl.innerHTML = '# ' + esc(chan.name.toUpperCase()) + ' <span class="s">✦</span>';
+    if(subEl)   subEl.textContent = chan.desc;
+    if(inpEl)   inpEl.placeholder = isShowcase ? 'Write a caption for your artwork...' : ('Message #' + chan.name);
+    if(attachBtn) attachBtn.style.display = isShowcase ? 'flex' : 'none';
+
     var grid = document.getElementById('cmGridScroll');
     var chat = document.getElementById('cmChatView');
     if(grid) grid.style.display = 'none';
@@ -8572,17 +9458,37 @@ async function openComments(){
     /* Reset offset so each fresh open starts at the initial load amount */
     cpOffset = 0;
     await cpLoadComments();
-    document.getElementById('cpBar').style.display = 'flex';
+
+    /* Read-only channels (currently just 'official'): everyone can
+       view, but only the dev account gets the composer bar — regular
+       members see a locked notice instead. */
+    var canPost = !chan.readOnly || isDev;
+    var bar = document.getElementById('cpBar');
+    var lockNote = document.getElementById('cpLockNote');
+    if(bar) bar.style.display = canPost ? 'flex' : 'none';
+    if(lockNote) lockNote.style.display = canPost ? 'none' : 'flex';
     cpSyncAvatar();
     var thumb=document.getElementById('cpSelectedImage');
     var thumbImg=document.getElementById('cpSelectedImageImg');
-    if(currentLightboxImageSrc && thumb && thumbImg){
+    if(isShowcase){
+      /* Showcase requires a deliberate pick of the user's OWN work via
+         the + picker — never carry over a leftover "comment with this
+         image" attachment from another artwork's lightbox. */
+      if(thumb) thumb.style.display = 'none';
+      if(thumbImg) thumbImg.src = '';
+    } else if(currentLightboxImageSrc && thumb && thumbImg){
       thumbImg.src=currentLightboxImageSrc;
       thumb.style.display='flex';
     }
+    /* Inside a channel the bottom tab bar is hidden, same as any
+       other full-page overlay (notifications, profile edit, etc.) —
+       tapping the back arrow in the chat header is the only way
+       back to the community grid while chatting. */
+    var nav = document.getElementById('bnNav');
+    if(nav) nav.style.display = 'none';
   }
 
-  /* Back button inside the Art Talk chat — return to the grid */
+  /* Back button inside a channel chat — return to the community grid */
   function cmCloseChat(){
     var grid = document.getElementById('cmGridScroll');
     var chat = document.getElementById('cmChatView');
@@ -8590,6 +9496,13 @@ async function openComments(){
     if(grid) grid.style.display = 'block';
     var bar = document.getElementById('cpBar');
     if(bar) bar.style.display = 'none';
+    var lockNote = document.getElementById('cpLockNote');
+    if(lockNote) lockNote.style.display = 'none';
+    var attachBtn = document.getElementById('cpAttachBtn');
+    if(attachBtn) attachBtn.style.display = 'none';
+    /* Restore the bottom nav — we're back on a normal tab screen */
+    var nav = document.getElementById('bnNav');
+    if(nav) nav.style.display = '';
   }
 
   function cmCreateCommunity(){
@@ -8617,8 +9530,8 @@ async function openComments(){
     var empty = document.getElementById('cpEmpty');
     if(!body) return;
 
-    /* Remove existing rendered comments (keep #cpEmpty and #cpRefreshWrap) */
-    body.querySelectorAll('.cpComment').forEach(function(el){ el.remove(); });
+    /* Remove existing rendered items (keep #cpEmpty and #cpRefreshWrap) */
+    body.querySelectorAll('.cpComment, .cpShowcase').forEach(function(el){ el.remove(); });
 
     if(cpComments.length === 0){
       if(empty) empty.style.display = 'flex';
@@ -8639,23 +9552,42 @@ async function openComments(){
 
     /* Insert before the refresh spinner so spinner stays at bottom */
     var spinner = document.getElementById('cpRefreshWrap');
+    var isShowcase = cpCurrentChannel === 'showcase';
 
     toShow.forEach(function(c){
       var div = document.createElement('div');
-      div.className = 'cpComment' + (c.image_url ? ' hasImage' : '');
-      var thumbHtml = '';
-      if(c.image_url){
-        var safeUrl = esc(c.image_url);
-        thumbHtml = '<img class="cpPhoto" src="' + safeUrl + '" alt="linked image" onclick="openLB(\'' + safeUrl.replace(/'/g,'&#39;') + '\',\'linked image\')">';
+      if(isShowcase){
+        /* Post-style card: header (avatar/name/time), full-width
+           image, caption below — image is always present here since
+           it's required to post in this channel. */
+        div.className = 'cpShowcase';
+        var safeUrl = esc(c.image_url || '');
+        div.innerHTML =
+          '<div class="cpShowcaseHead">' +
+            '<div class="cpAvatar">' + esc(c.initial) + '</div>' +
+            '<div class="cpShowcaseMeta">' +
+              '<div class="cpCommentUser">' + esc(c.user) + '</div>' +
+              '<div class="cpCommentTime">' + esc(c.time) + '</div>' +
+            '</div>' +
+          '</div>' +
+          (c.image_url ? ('<img class="cpShowcaseImg" src="' + safeUrl + '" alt="' + esc(c.user) + '\'s artwork" onclick="openLB(\'' + safeUrl.replace(/'/g,'&#39;') + '\',\'' + esc(c.user).replace(/'/g,'&#39;') + '\'s artwork\')">') : '') +
+          '<div class="cpShowcaseText">' + esc(c.text) + '</div>';
+      } else {
+        div.className = 'cpComment' + (c.image_url ? ' hasImage' : '');
+        var thumbHtml = '';
+        if(c.image_url){
+          var safeUrl2 = esc(c.image_url);
+          thumbHtml = '<img class="cpPhoto" src="' + safeUrl2 + '" alt="linked image" onclick="openLB(\'' + safeUrl2.replace(/'/g,'&#39;') + '\',\'linked image\')">';
+        }
+        div.innerHTML =
+          thumbHtml +
+          '<div class="cpAvatar">' + esc(c.initial) + '</div>' +
+          '<div class="cpCommentMeta">' +
+            '<div class="cpCommentUser">' + esc(c.user) + '</div>' +
+            '<div class="cpCommentText">' + esc(c.text) + '</div>' +
+            '<div class="cpCommentTime">' + esc(c.time) + '</div>' +
+          '</div>';
       }
-      div.innerHTML =
-        thumbHtml +
-        '<div class="cpAvatar">' + esc(c.initial) + '</div>' +
-        '<div class="cpCommentMeta">' +
-          '<div class="cpCommentUser">' + esc(c.user) + '</div>' +
-          '<div class="cpCommentText">' + esc(c.text) + '</div>' +
-          '<div class="cpCommentTime">' + esc(c.time) + '</div>' +
-        '</div>';
       if(spinner) { body.insertBefore(div, spinner); }
       else { body.appendChild(div); }
     });
@@ -8723,11 +9655,112 @@ async function openComments(){
       return;
     }
 
+    var chan = CM_CHANNELS[cpCurrentChannel];
+    if(chan && chan.readOnly && !isDev){
+      showToast('Only DigiArtz can post in this channel.');
+      return;
+    }
+
+    if(chan && chan.type === 'showcase'){
+      var thumbEl = document.getElementById('cpSelectedImage');
+      var hasImage = thumbEl && thumbEl.style.display !== 'none';
+      if(!hasImage){
+        showToast('Tap + and pick one of your artworks or comics first.');
+        return;
+      }
+      var remaining = cpShowcaseCooldownRemaining();
+      if(remaining > 0){
+        showToast('You can showcase again in ' + cpFormatCooldown(remaining) + '.');
+        return;
+      }
+    }
+
     const ok=await cpSaveComment(text);
     if(!ok) return;
 
     if(inp) inp.value='';
     await cpLoadComments();
+  }
+
+  /* ── Showcase cooldown ──
+     Scans the currently-loaded Showcase messages for the current
+     user's most recent post and returns how many ms remain before
+     they can post again (0 if they're clear). This is a client-side
+     convenience check — the real enforcement is the Postgres trigger
+     on the `comments` table (see the SQL migration). */
+  function cpShowcaseCooldownRemaining(){
+    if(!currentUser) return 0;
+    var last = 0;
+    cpComments.forEach(function(c){
+      if(c.user_id === currentUser.id && c.raw_time){
+        var t = new Date(c.raw_time).getTime();
+        if(t > last) last = t;
+      }
+    });
+    if(!last) return 0;
+    var cooldownMs = (CM_CHANNELS.showcase && CM_CHANNELS.showcase.cooldownMs) || 3600000;
+    var remaining = cooldownMs - (Date.now() - last);
+    return remaining > 0 ? remaining : 0;
+  }
+
+  function cpFormatCooldown(ms){
+    var mins = Math.ceil(ms / 60000);
+    if(mins >= 60) return Math.ceil(mins / 60) + 'h';
+    return mins + 'm';
+  }
+
+  /* ── Showcase artwork/comic picker ──
+     Lists only the current user's OWN already-posted artworks and
+     comics (filtered from the site-wide `images`/`comics` arrays —
+     never the full gallery). Tapping a tile attaches it via the
+     existing #cpSelectedImage thumbnail, which cpSaveComment already
+     reads from. */
+  function cpOpenShowcasePicker(){
+    if(!currentUser){ showToast('Please login first.'); openAuthMod(); return; }
+    var body  = document.getElementById('spBody');
+    var empty = document.getElementById('spEmpty');
+    if(!body) return;
+    body.innerHTML = '';
+
+    var myArt    = (images || []).filter(function(a){ return a.user_id === currentUser.id; });
+    var myComics = (comics || []).filter(function(c){ return c.user_id === currentUser.id; });
+    var items = myArt.map(function(a){
+      return { url:a.image_url, name:a.name || 'Untitled' };
+    }).concat(myComics.map(function(c){
+      return { url:c.cover_image_url, name:(c.title || 'Untitled') + ' (Comic)' };
+    }));
+
+    if(items.length === 0){
+      if(empty) empty.style.display = 'flex';
+    } else {
+      if(empty) empty.style.display = 'none';
+      items.forEach(function(it){
+        if(!it.url) return;
+        var div = document.createElement('div');
+        div.className = 'spItem';
+        div.innerHTML = '<img src="' + esc(it.url) + '" alt="' + esc(it.name) + '"><span>' + esc(it.name) + '</span>';
+        div.addEventListener('click', function(){ cpPickShowcaseImage(it.url); });
+        body.appendChild(div);
+      });
+    }
+
+    var el = document.getElementById('showcasePicker');
+    if(el) el.classList.add('open');
+  }
+
+  function cpPickShowcaseImage(url){
+    var thumb    = document.getElementById('cpSelectedImage');
+    var thumbImg = document.getElementById('cpSelectedImageImg');
+    if(thumb && thumbImg){
+      thumbImg.src = url;
+      thumb.style.display = 'flex';
+    }
+    closeShowcasePicker();
+  }
+
+  function closeShowcasePicker(){
+    var el = document.getElementById('showcasePicker');
+    if(el) el.classList.remove('open');
   }
 
   /* Allow Enter key to send */
@@ -8759,6 +9792,7 @@ async function openComments(){
       }
       var result = await sb.from('comments')
         .select('*')
+        .eq('channel', cpCurrentChannel)
         .order('created_at', { ascending: true });
       if(result.error) throw result.error;
       var rows = result.data || [];
@@ -8767,16 +9801,21 @@ async function openComments(){
         return {
           initial   : displayName.charAt(0).toUpperCase(),
           user      : displayName,
+          user_id   : row.user_id || null,
           text      : row.comment_text || '',
           time      : row.created_at
             ? new Date(row.created_at).toLocaleString(undefined, { dateStyle:'medium', timeStyle:'short' })
             : '',
+          raw_time  : row.created_at || null,
           image_url : row.image_url || null
         };
       });
-      /* Restore empty placeholder text */
+      /* Restore empty placeholder text — Showcase gets its own copy
+         since it's a post feed, not a comment thread */
       if(emptyEl){
-        emptyEl.innerHTML = '<div class="cpEIco">◎</div><div>NO COMMENTS YET</div><div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>';
+        emptyEl.innerHTML = cpCurrentChannel === 'showcase'
+          ? '<div class="cpEIco">◎</div><div>NOTHING SHOWCASED YET</div><div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO SHARE YOUR WORK</div>'
+          : '<div class="cpEIco">◎</div><div>NO COMMENTS YET</div><div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>';
       }
       cpRender();
     }catch(e){
@@ -8815,7 +9854,8 @@ async function openComments(){
         /* user_email omitted — storing email in public comments table is a PII risk */
         username     : commentUsername,
         comment_text : text,
-        image_url    : imageUrl
+        image_url    : imageUrl,
+        channel      : cpCurrentChannel
       });
       if(result.error) throw result.error;
       /* Clear thumbnail after successful insert */
@@ -9062,6 +10102,8 @@ async function openComments(){
   function buildAwCard(item, type){
     var isComic = type === 'comicarts';
     var fullSrc = isComic ? (item.cover_image_url || '') : (item.image_url || '');
+    var tx = isComic ? (item.cover_thumb_x!=null?item.cover_thumb_x:50) : (item.thumb_x!=null?item.thumb_x:50);
+    var ty = isComic ? (item.cover_thumb_y!=null?item.cover_thumb_y:50) : (item.thumb_y!=null?item.thumb_y:50);
     var name    = isComic ? (item.title || 'Untitled') : (item.name || 'Untitled');
     var cat     = isComic ? 'comic' : (catList(item.category)[0] || 'others');
     var desc    = item.description || '';
@@ -9078,6 +10120,7 @@ async function openComments(){
 
     var img = document.createElement('img');
     img.src = getThumbnailUrl(fullSrc);
+    img.style.objectPosition = tx+'% '+ty+'%';
     img.alt = name;
     img.loading = 'lazy';
     img.decoding = 'async';
@@ -9496,7 +10539,7 @@ async function openComments(){
     titleEl.innerHTML = 'UNDER REVIEW';
     bodyEl.innerHTML =
       '<div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.4rem;">'+
-        '<img src="'+esc(art.image_url)+'" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr);filter:blur(3px);flex-shrink:0;">'+
+        '<img src="'+esc(art.image_url)+'" alt="" style="width:64px;height:64px;object-fit:cover;object-position:'+(art.thumb_x!=null?art.thumb_x:50)+'% '+(art.thumb_y!=null?art.thumb_y:50)+'%;border-radius:6px;border:1px solid var(--bdr);filter:blur(3px);flex-shrink:0;">'+
         '<div>'+
           '<div style="font-family:var(--fb);font-size:1rem;color:var(--tx);font-weight:600;margin-bottom:.3rem;">'+esc(art.name||'Untitled')+'</div>'+
           '<span class="lmDate" style="margin-top:0;">IN REVIEW</span>'+

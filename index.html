@@ -22,24 +22,24 @@
   <!-- End Google Analytics (GA4) -->
   <meta content="width=device-width, initial-scale=1.0, interactive-widget=overlays-content" name="viewport"/>
   <title>
-   KOE — Art Has No Limits
+   DigiArtz — The Creative Community for Digital Artists
   </title>
   <!-- SEO — site defaults; swapped per-artwork by updateArtworkSEO/resetArtworkSEO -->
-  <meta name="description" content="Digiartz (KOE) — a digital art showcase featuring character illustrations, landscapes, vehicles, sketches, and creative digital artwork. Art has no limits."/>
+  <meta name="description" content="Showcase your artwork, explore stunning creations, and connect with artists around the world. DigiArtz is a professional community dedicated to digital art, creativity, and artistic expression."/>
   <link rel="canonical" href="https://digiartz.net/"/>
   <meta name="robots" content="index, follow, max-image-preview:large"/>
   <!-- Open Graph -->
   <meta property="og:site_name" content="Digiartz"/>
   <meta property="og:type" content="website"/>
-  <meta property="og:title" content="KOE — Art Has No Limits"/>
-  <meta property="og:description" content="Digiartz (KOE) — a digital art showcase featuring character illustrations, landscapes, vehicles, sketches, and creative digital artwork."/>
+  <meta property="og:title" content="DigiArtz — The Creative Community for Digital Artists"/>
+  <meta property="og:description" content="Showcase your artwork, explore stunning creations, and connect with artists around the world. DigiArtz is a professional community dedicated to digital art, creativity, and artistic expression."/>
   <meta property="og:url" content="https://digiartz.net/"/>
   <meta property="og:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png"/>
   <meta property="og:image:alt" content="Digiartz — digital art showcase"/>
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image"/>
-  <meta name="twitter:title" content="KOE — Art Has No Limits"/>
-  <meta name="twitter:description" content="Digiartz (KOE) — a digital art showcase featuring character illustrations, landscapes, vehicles, sketches, and creative digital artwork."/>
+  <meta name="twitter:title" content="DigiArtz — The Creative Community for Digital Artists"/>
+  <meta name="twitter:description" content="Showcase your artwork, explore stunning creations, and connect with artists around the world. DigiArtz is a professional community dedicated to digital art, creativity, and artistic expression."/>
   <meta name="twitter:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png"/>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -199,7 +199,7 @@
       border: 1px solid rgba(255,255,255,.35);
       box-shadow: 0 10px 32px rgba(5,3,8,.35), inset 0 1px 0 rgba(255,255,255,.15);
       color: #ffffff;
-      transition: opacity .25s ease, transform .25s ease;
+      transition: opacity .25s ease, transform .25s ease, top .25s ease;
     }
     /* Hidden once the hero section has scrolled out of view — these
        widgets (brand badge, notification button, and #zeoBtn below)
@@ -289,10 +289,26 @@
       background:var(--sur2);
       border:1px solid var(--bdr);
       scroll-snap-align:start;
+      position:relative;
+      overflow:hidden;
     }
     @media(max-width:1024px){
       .tsBox{ scroll-snap-align:center; }
     }
+    /* ── Populated card (image + caption, ArtStation-style) ──
+       Content is public — driven by the hero_slides table, fetched
+       for everyone (anon included) via loadHeroSlides(). Only a
+       dev sees edit/delete controls, and only inside #heroMgrPage,
+       never here on the public track. */
+    .tsBoxImg{width:100%;height:100%;object-fit:cover;display:block;background:var(--sur2);}
+    .tsBoxCaption{
+      position:absolute;left:0;right:0;bottom:0;padding:.85rem .9rem .7rem;
+      background:linear-gradient(0deg,rgba(0,0,0,.82) 0%,rgba(0,0,0,.45) 55%,transparent 100%);
+      pointer-events:none;
+    }
+    .tsBoxTitle{font-family:var(--fb);font-size:.86rem;font-weight:700;color:#fff;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .tsBoxSub{font-family:var(--fb);font-size:.72rem;color:rgba(255,255,255,.72);margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .tsBox.tsBoxEmpty{display:flex;align-items:center;justify-content:center;}
 
     /* Visually hidden — accessible to screen readers, invisible on screen */
     .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
@@ -2534,6 +2550,8 @@
     #smAdmBtn{display:none;}
     #smAdmBtn.devOnly{display:block;}
     #smAdmBtn.on{color:#93c5fd;}
+    #smHeroBtn{display:none;}
+    #smHeroBtn.devOnly{display:block;}
     .pfAvatarWrap{
       position:absolute;left:2rem;bottom:-42px;z-index:2;
     }
@@ -2850,14 +2868,51 @@
     .admNotiSentTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.06em;color:var(--txd);opacity:.65;margin-top:.35rem;}
 
     /* =========================================================
-       NOTIFICATIONS PAGE (#notifPage)
-       Opened by tapping the bell (#hNotifBtn). Read-only feed —
-       admin broadcasts (notifications.user_id IS NULL) plus the
-       signed-in user's own artwork/comic approve+reject notices.
-       Same sliding full-page / dark-violet language as #admPage.
-       No edit or delete control exists anywhere on this page —
-       the notifications table is never written to by a normal
-       user; only per-user read-state (notification_reads) is.
+       HERO SLIDES MANAGER (#heroMgrPage)
+       Dev-only page (opened via the "Hero Slides" item in the
+       profile ⋮ menu — hidden entirely unless isDev) for managing
+       the boxes shown in the public #topSlide strip. Reuses the
+       exact same sliding full-page / dark-violet language and
+       .admCard/.pfGrid/.pfGridArt building blocks as #admPage.
+       Only image + title + subtitle ever reach the public strip —
+       these edit/delete controls live only in here.
+       ========================================================= */
+    #heroMgrPage{
+      position:fixed;inset:0;z-index:520;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #heroMgrPage.open{transform:translateX(0);}
+    #heroMgrPage,#heroMgrPage *{
+      --bg:#050308;--sur:#0d0a14;--sur2:#120e1c;
+      --tx:#f0e8ff;--txd:rgba(196,181,253,.6);
+      --tc:#9a9ea5;--pg:#8a8f98;--pb:#b8bcc2;--ps:#cfd2d6;
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #heroMgrPage .subPgHdr{background:rgba(5,3,8,.92)!important;border-bottom:1px solid rgba(255,255,255,.08);}
+    #heroMgrPage .subPgTitle{color:#fff;}
+    .heroMgrBdy{max-width:1100px;margin:0 auto;padding:1.6rem 2rem 6rem;}
+    @media(max-width:480px){.heroMgrBdy{padding:1.2rem 1.2rem 6rem;}}
+    .heroMgrHint{font-family:var(--fb);font-size:.78rem;color:var(--txd);margin-bottom:1.4rem;}
+    .heroMgrGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.2rem;}
+    .heroMgrCard{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;}
+    .heroMgrImgWrap{width:100%;aspect-ratio:300/190;background:var(--sur2);position:relative;}
+    .heroMgrImg{width:100%;height:100%;object-fit:cover;display:block;}
+    .heroMgrCard .admCardBody{padding:.65rem .75rem .8rem;}
+    .heroMgrAdd{
+      border:1px dashed var(--bdr);border-radius:10px;background:none;
+      aspect-ratio:300/190;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:.4rem;cursor:pointer;color:var(--txd);font-family:var(--fm);font-size:.68rem;letter-spacing:.08em;
+      transition:border-color .15s,color .15s;
+    }
+    .heroMgrAdd:hover{border-color:#9a5cff;color:#c9a8ff;}
+    .heroMgrAddIco{font-size:1.6rem;line-height:1;}
+    .heroMgrEmpty{text-align:center;padding:3rem 1rem;color:var(--txd);font-family:var(--fb);font-size:.85rem;}
+
+    /* ── Hero slide edit/add modal — reuses .upPop/.upPopBox etc. ── */
+    #heroEditMod .upPopBox{max-width:480px;}
+
        ========================================================= */
     #notifPage{
       position:fixed;inset:0;z-index:525;background:var(--bg);
@@ -4605,18 +4660,15 @@ body{background:var(--bg);}
   <!-- =========================================================
        TOP ARTWORK SLIDE
        Horizontal strip directly below the floating top bar (brand
-       badge / notifications / Zeo). Desktop: 4 boxes in a row.
+       badge / notifications / Zeo). Desktop: row of boxes.
        Mobile/tablet: same box size, swipes left/right one at a
-       time via scroll-snap. Empty placeholders — no content wired
-       in yet.
+       time via scroll-snap. Content (image + title + subtitle) is
+       loaded from the public `hero_slides` table via
+       loadHeroSlides()/renderHeroTrack() — visible to everyone.
+       Editing only happens in the dev-only #heroMgrPage.
        ========================================================= -->
   <section id="topSlide" aria-label="Featured artwork slideshow">
-    <div class="tsTrack" id="tsTrack">
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-    </div>
+    <div class="tsTrack" id="tsTrack"></div>
   </section>
 
   <!-- ── Hidden Data Grid (source for Full Gallery overlay) ── -->
@@ -4864,6 +4916,7 @@ body{background:var(--bg);}
       <div class="pfMenu" id="pfMenu" role="menu">
         <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openSubscription()">Subscription</button>
         <button class="pfMenuItem" id="smAdmBtn" role="menuitem" onclick="closePfMenu();smHandleAdm()">Admin Panel</button>
+        <button class="pfMenuItem" id="smHeroBtn" role="menuitem" onclick="closePfMenu();smHandleHero()">Hero Slides</button>
         <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
       </div>
       <div class="pfAvatarWrap">
@@ -5076,6 +5129,81 @@ body{background:var(--bg);}
         <div id="admNotiSentList" class="admNotiSentList"></div>
       </div>
     </div>
+  </div>
+
+  <!-- =========================================================
+       HERO SLIDES MANAGER (#heroMgrPage)
+       Dev-only. Manages the boxes shown in the public #topSlide
+       strip (image + title + subtitle). Opened via "Hero Slides"
+       in the profile ⋮ menu (smHandleHero) — the menu item itself
+       only exists in the DOM/visible when isDev (see #smHeroBtn).
+       Edit/delete controls live only on this page; the public
+       strip (#tsTrack) only ever renders the image + text.
+       ========================================================= -->
+  <div id="heroMgrPage" role="dialog" aria-modal="true" aria-label="Hero slides manager">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeHeroMgr()" aria-label="Close hero slides manager">←</button>
+      <div class="subPgTitle">HERO SLIDES <span class="s">✦</span></div>
+    </div>
+    <div class="heroMgrBdy">
+      <div class="heroMgrHint">These show at the top of the homepage, above Artworks. Only image + title + subtitle are public — edit/delete are dev-only.</div>
+      <div class="heroMgrGrid" id="heroMgrGrid">
+        <button class="heroMgrAdd" onclick="openHeroEdit(null)" type="button">
+          <span class="heroMgrAddIco">＋</span>
+          <span>ADD SLIDE</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Hero slide edit/add modal (#heroEditMod) — reuses the
+       .upPop/.upPopBox upload-modal chrome for a consistent,
+       professional look with the rest of the upload UI. ── -->
+  <div class="upPop" id="heroEditMod">
+   <div class="upPopBox">
+    <div class="upPopHead">
+      <div>
+        <h2 id="heroEditTitle">Add Hero Slide</h2>
+        <p>Shown to everyone at the top of the homepage.</p>
+      </div>
+      <button class="upPopX" onclick="closeHeroEdit()" aria-label="Close">✕</button>
+    </div>
+    <div class="upPopBody">
+     <div class="upMain">
+      <input id="heroEditId" type="hidden" value=""/>
+      <div class="upDz" id="heroDz">
+       <input accept="image/*" id="heroUpF" onchange="handleHeroFile(event)" type="file"/>
+       <div class="upDzIco">⬆</div>
+       <div class="upDzTitle">Drag &amp; drop an image here</div>
+       <div class="upDzSub">or click to browse files</div>
+       <div class="upDzHint">JPG, PNG, WEBP, GIF up to 20MB</div>
+       <button type="button" class="upDzBtn" tabindex="-1">📁 Choose File</button>
+      </div>
+      <img alt="preview" class="upPrev" id="heroUpPrev" src="" style="display:none;"/>
+
+      <div class="upField">
+        <label class="upLbl" for="heroUpTitle">Text here <span class="upReq">*</span></label>
+        <div class="upInWrap">
+          <input class="upIn" id="heroUpTitle" maxlength="60" oninput="pfUpdateCount('heroUpTitle','heroUpTitleCount',60)" placeholder="Main title…" type="text"/>
+          <span class="upCount" id="heroUpTitleCount">0/60</span>
+        </div>
+      </div>
+
+      <div class="upField">
+        <label class="upLbl" for="heroUpSub">Same text here</label>
+        <div class="upInWrap">
+          <input class="upIn" id="heroUpSub" maxlength="80" oninput="pfUpdateCount('heroUpSub','heroUpSubCount',80)" placeholder="Subtitle / caption…" type="text"/>
+          <span class="upCount" id="heroUpSubCount">0/80</span>
+        </div>
+      </div>
+     </div>
+    </div>
+    <div class="upPopFoot">
+      <button class="upBtnSec" id="heroDelBtn" onclick="deleteHeroSlide()" style="display:none;margin-right:auto;color:#f87171;">Delete</button>
+      <button class="upBtnSec" onclick="closeHeroEdit()">Cancel</button>
+      <button class="upBtnPri" id="heroSaveBtn" onclick="saveHeroSlide()">📤 Save Slide</button>
+    </div>
+   </div>
   </div>
 
   <!-- =========================================================
@@ -7415,6 +7543,8 @@ body{background:var(--bg);}
        page). admRefreshBadge() appends the pending-count suffix. */
     b.textContent=(isAdm?'★ ':'⚙ ')+'ADMIN PANEL';
     if(typeof admRefreshBadge==='function') admRefreshBadge();
+    var hb=document.getElementById('smHeroBtn');
+    if(hb) hb.classList.toggle('devOnly',isDev);
   }
 
   /* Auth — email+password via Supabase; session persists via localStorage */
@@ -9367,6 +9497,200 @@ body{background:var(--bg);}
     if(isAdm && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
   }
 
+  /* =========================================================
+     HERO SLIDES — public strip (#tsTrack) + dev-only manager
+     (#heroMgrPage). Table: hero_slides (public select; insert/
+     update/delete restricted to dev via RLS — see SQL provided
+     separately). Storage bucket: 'hero-slides' (public read,
+     dev-only write — see SQL provided separately).
+     ========================================================= */
+  const HERO_BUCKET = 'hero-slides';
+  var heroSlides = [];
+  var heroUpFile = null;
+
+  /* Public fetch — runs for every visitor (anon included) via
+     init(). Only image/title/subtitle ever reach this render. */
+  async function loadHeroSlides(){
+    if(!sb) return;
+    try{
+      const{data,error} = await sb.from('hero_slides').select('*').order('position',{ascending:true}).order('created_at',{ascending:true});
+      if(error) throw error;
+      heroSlides = data || [];
+    }catch(e){ console.error(e); heroSlides = []; }
+    renderHeroTrack();
+  }
+
+  function renderHeroTrack(){
+    var track = document.getElementById('tsTrack');
+    if(!track) return;
+    if(!heroSlides.length){
+      /* Empty shells — same size/spacing as before, just nothing to show yet. */
+      var shells = '';
+      for(var i=0;i<4;i++) shells += '<div class="tsBox tsBoxEmpty"></div>';
+      track.innerHTML = shells;
+      return;
+    }
+    track.innerHTML = heroSlides.map(function(h){
+      return '<div class="tsBox">'
+        + '<img class="tsBoxImg" src="'+esc(h.image_url)+'" alt="'+esc(h.title||'')+'" loading="lazy">'
+        + '<div class="tsBoxCaption">'
+          + (h.title ? '<div class="tsBoxTitle">'+esc(h.title)+'</div>' : '')
+          + (h.subtitle ? '<div class="tsBoxSub">'+esc(h.subtitle)+'</div>' : '')
+        + '</div>'
+      + '</div>';
+    }).join('');
+  }
+
+  /* ── Hamburger menu entry point (dev-only; button itself is
+     hidden unless isDev — see syncAdmBtn) ── */
+  function smHandleHero(){
+    if(!isDev){
+      closeMenu();
+      if(!currentUser){ showToast('Sign in with a dev account to access this'); openAuthMod(); }
+      else { showToast('This account does not have dev access'); }
+      return;
+    }
+    closeMenu();
+    openHeroMgr();
+  }
+
+  function openHeroMgr(){
+    var el = document.getElementById('heroMgrPage');
+    if(!el || !isDev) return;
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    renderHeroMgrGrid();
+  }
+
+  function closeHeroMgr(){
+    var el = document.getElementById('heroMgrPage');
+    if(!el) return;
+    el.classList.remove('open');
+    restoreScroll();
+  }
+
+  function renderHeroMgrGrid(){
+    var grid = document.getElementById('heroMgrGrid');
+    if(!grid) return;
+    var cards = heroSlides.map(function(h){
+      return '<div class="heroMgrCard">'
+        + '<div class="heroMgrImgWrap"><img class="heroMgrImg" src="'+esc(h.image_url)+'" alt="'+esc(h.title||'')+'"></div>'
+        + '<div class="admCardBody">'
+          + '<div class="admCardTitle">'+esc(h.title||'Untitled')+'</div>'
+          + (h.subtitle ? '<div class="admCardMeta">'+esc(h.subtitle)+'</div>' : '')
+          + '<div class="admCardActions">'
+            + '<button class="admApproveBtn" onclick="openHeroEdit(\''+h.id+'\')" type="button">EDIT / DELETE</button>'
+          + '</div>'
+        + '</div>'
+      + '</div>';
+    }).join('');
+    grid.innerHTML = cards + '<button class="heroMgrAdd" onclick="openHeroEdit(null)" type="button">'
+      + '<span class="heroMgrAddIco">＋</span><span>ADD SLIDE</span></button>';
+  }
+
+  function openHeroEdit(id){
+    if(!isDev) return;
+    heroUpFile = null;
+    var editing = heroSlides.find(function(h){ return h.id === id; });
+    document.getElementById('heroEditId').value = editing ? editing.id : '';
+    document.getElementById('heroEditTitle').textContent = editing ? 'Edit Hero Slide' : 'Add Hero Slide';
+    document.getElementById('heroUpTitle').value = editing ? (editing.title||'') : '';
+    document.getElementById('heroUpSub').value = editing ? (editing.subtitle||'') : '';
+    pfUpdateCount('heroUpTitle','heroUpTitleCount',60);
+    pfUpdateCount('heroUpSub','heroUpSubCount',80);
+    var prev = document.getElementById('heroUpPrev');
+    if(editing && editing.image_url){ prev.src = editing.image_url; prev.style.display='block'; document.getElementById('heroDz').style.display='none'; }
+    else { prev.src=''; prev.style.display='none'; document.getElementById('heroDz').style.display=''; }
+    document.getElementById('heroUpF').value = '';
+    document.getElementById('heroDelBtn').style.display = editing ? '' : 'none';
+    document.getElementById('heroSaveBtn').textContent = editing ? '📤 Save Changes' : '📤 Save Slide';
+    document.getElementById('heroEditMod').classList.add('open');
+  }
+
+  function closeHeroEdit(){
+    document.getElementById('heroEditMod').classList.remove('open');
+    heroUpFile = null;
+  }
+
+  function handleHeroFile(e){
+    var f = e.target.files[0]; if(!f) return;
+    heroUpFile = f;
+    var r = new FileReader();
+    r.onload = function(ev){
+      var prev = document.getElementById('heroUpPrev');
+      prev.src = ev.target.result; prev.style.display='block';
+      document.getElementById('heroDz').style.display='none';
+    };
+    r.readAsDataURL(f);
+  }
+
+  async function saveHeroSlide(){
+    if(!isDev){ showToast('Dev access required'); return; }
+    var id = document.getElementById('heroEditId').value || null;
+    var title = document.getElementById('heroUpTitle').value.trim();
+    var subtitle = document.getElementById('heroUpSub').value.trim();
+    var editing = id ? heroSlides.find(function(h){ return h.id === id; }) : null;
+    if(!editing && !heroUpFile){ showToast('Choose an image'); return; }
+    if(!title){ showToast('Add a title'); return; }
+    var btn = document.getElementById('heroSaveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try{
+      var image_url = editing ? editing.image_url : null;
+      var storage_path = editing ? editing.storage_path : null;
+      if(heroUpFile){
+        var path = 'hero/' + Date.now() + '_' + heroUpFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+        const{error:ue} = await sb.storage.from(HERO_BUCKET).upload(path, heroUpFile, {cacheControl:'3600'});
+        if(ue) throw ue;
+        const{data:{publicUrl}} = sb.storage.from(HERO_BUCKET).getPublicUrl(path);
+        image_url = publicUrl;
+        var oldPath = storage_path;
+        storage_path = path;
+        if(oldPath) await sb.storage.from(HERO_BUCKET).remove([oldPath]);
+      }
+      var row = { image_url:image_url, storage_path:storage_path, title:title, subtitle:subtitle||null };
+      if(editing){
+        const{error:upErr} = await sb.from('hero_slides').update(row).eq('id', editing.id);
+        if(upErr) throw upErr;
+      } else {
+        row.position = heroSlides.length;
+        const{error:inErr} = await sb.from('hero_slides').insert(row);
+        if(inErr) throw inErr;
+      }
+      showToast(editing ? 'Slide updated ✦' : 'Slide added ✦');
+      closeHeroEdit();
+      await loadHeroSlides();
+      renderHeroMgrGrid();
+    }catch(e){
+      console.error(e);
+      showToast('Could not save slide');
+    }finally{
+      btn.disabled = false;
+      btn.textContent = editing ? '📤 Save Changes' : '📤 Save Slide';
+    }
+  }
+
+  async function deleteHeroSlide(){
+    if(!isDev) return;
+    var id = document.getElementById('heroEditId').value;
+    if(!id) return;
+    var editing = heroSlides.find(function(h){ return h.id === id; });
+    if(!editing) return;
+    if(!confirm('Delete this hero slide? This cannot be undone.')) return;
+    try{
+      if(editing.storage_path) await sb.storage.from(HERO_BUCKET).remove([editing.storage_path]);
+      const{error} = await sb.from('hero_slides').delete().eq('id', id);
+      if(error) throw error;
+      showToast('Slide deleted');
+      closeHeroEdit();
+      await loadHeroSlides();
+      renderHeroMgrGrid();
+    }catch(e){
+      console.error(e);
+      showToast('Could not delete slide');
+    }
+  }
+
   function admSwitchTab(tab){
     admTab = tab;
     ['Art','Comic','Noti'].forEach(function(t){
@@ -10011,7 +10335,7 @@ async function openComments(){
      Returns true on success, false on failure.
      ────────────────────────────────────────────── */
   async function cpSaveComment(text){
-    if(!sb){ showToast('Supabase not configured'); return false; }
+    if(!sb){ showToast('Configure Supabase first'); return false; }
     if(!currentUser){ showToast('Please login to comment.'); openAuthMod(); return false; }
 
     /* Gather optional linked image URL from the thumbnail preview */
@@ -10154,6 +10478,7 @@ async function openComments(){
     spawnPts();
     await loadDB();
     renderHome();
+    loadHeroSlides();
     /* No hero image to preload anymore — resolve the loading bar's
        image slice immediately so it isn't stuck waiting on it. */
     if(typeof window._heroLoadCb === 'function'){

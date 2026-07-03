@@ -70,7 +70,7 @@
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
     html{scroll-behavior:smooth;}
-    body{background:var(--bg);color:var(--tx);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
+    body{background:var(--bg);color:var(--tx);font-family:var(--fb);overflow-x:hidden;min-height:100vh;padding-top:var(--bannerH,0px);transition:padding-top .25s ease;}
 
     /* INTRO — dark/violet theme, matching the Community page
        (--cmBg #08080d, --cmAccent #8b5cf6, --cmAccentSoft #b9a3fb) */
@@ -187,7 +187,7 @@
        desktops rather than snapping at one fixed width. ── */
     .fpFloat {
       position: fixed;
-      top: clamp(1rem, 2.6vw, 2rem);
+      top: calc(clamp(1rem, 2.6vw, 2rem) + var(--bannerH,0px));
       z-index: 1001;
       display: flex;
       align-items: center;
@@ -199,7 +199,7 @@
       border: 1px solid rgba(255,255,255,.35);
       box-shadow: 0 10px 32px rgba(5,3,8,.35), inset 0 1px 0 rgba(255,255,255,.15);
       color: #ffffff;
-      transition: opacity .25s ease, transform .25s ease;
+      transition: opacity .25s ease, transform .25s ease, top .25s ease;
     }
     /* Hidden once the hero section has scrolled out of view — these
        widgets (brand badge, notification button, and #zeoBtn below)
@@ -289,18 +289,49 @@
       background:var(--sur2);
       border:1px solid var(--bdr);
       scroll-snap-align:start;
+      position:relative;
+      overflow:hidden;
     }
     @media(max-width:1024px){
       .tsBox{ scroll-snap-align:center; }
     }
+    /* ── Populated card (image + caption, ArtStation-style) ──
+       Content is public — driven by the hero_slides table, fetched
+       for everyone (anon included) via loadHeroSlides(). Only a
+       dev sees edit/delete controls, and only inside #heroMgrPage,
+       never here on the public track. */
+    .tsBoxImg{width:100%;height:100%;object-fit:cover;display:block;background:var(--sur2);}
+    .tsBoxCaption{
+      position:absolute;left:0;right:0;bottom:0;padding:.85rem .9rem .7rem;
+      background:linear-gradient(0deg,rgba(0,0,0,.82) 0%,rgba(0,0,0,.45) 55%,transparent 100%);
+      pointer-events:none;
+    }
+    .tsBoxTitle{font-family:var(--fb);font-size:.86rem;font-weight:700;color:#fff;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .tsBoxSub{font-family:var(--fb);font-size:.72rem;color:rgba(255,255,255,.72);margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .tsBox.tsBoxEmpty{display:flex;align-items:center;justify-content:center;}
 
     /* Visually hidden — accessible to screen readers, invisible on screen */
     .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
-    /* SETUP BANNER */
-    #sBanner{background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);padding:1rem 1.5rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.12em;color:var(--ps);line-height:1.8;display:none;}
+    /* NETWORK ERROR BANNER — hardcoded dark/violet theme (matches
+       #authMod's .laErr styling) rather than the light-mode root
+       vars. Fixed to the top of the viewport so it always shows
+       where a connectivity notice belongs, regardless of scroll
+       position or where it sits in the document. */
+    #sBanner{
+      position:fixed;top:0;left:0;right:0;z-index:9990;
+      background:#0d0a14;
+      border-bottom:1px solid rgba(248,113,113,.28);
+      color:#f87171;
+      padding:.9rem 1.5rem;
+      text-align:center;
+      font-family:var(--fm);
+      font-size:.76rem;
+      letter-spacing:.08em;
+      line-height:1.6;
+      display:none;
+    }
     #sBanner.show{display:block;}
-    #sBanner a{color:var(--pb);}
 
 /* Legacy hero class stubs — kept for JS safety, visual output handled in § 8 above */
 .sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
@@ -881,7 +912,9 @@
       background:linear-gradient(135deg,#8b5cf6,#5b3fa0);
       color:#fff;font-family:var(--fd);font-weight:700;font-size:1rem;
       display:flex;align-items:center;justify-content:center;flex-shrink:0;
+      overflow:hidden;
     }
+    .avAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
     .avAuthorName{
       font-family:var(--fb);font-weight:700;font-size:.95rem;color:#f5f4fb;
       display:flex;align-items:center;gap:.35rem;
@@ -981,13 +1014,17 @@
       border-bottom:1px solid var(--bdr);
       padding:1.1rem 1.5rem;
       flex-shrink:0;
+      display:flex;justify-content:center;
     }
     .cmHdrTitle{
-      font-family:var(--fd);font-size:1.05rem;font-weight:700;
-      letter-spacing:.1em;color:var(--tx);
+      font-family:var(--fd);font-size:1.15rem;font-weight:900;
+      letter-spacing:.16em;
+      background:linear-gradient(135deg,#f5f4fb,#b9a3fb,#8b5cf6);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
       display:flex;align-items:center;gap:.4rem;
+      text-shadow:0 0 18px rgba(139,92,246,.35);
     }
-    .cmHdrTitle .s{color:var(--pg);font-size:.7em;}
+    .cmHdrTitle .s{color:#b9a3fb;font-size:.7em;-webkit-text-fill-color:#b9a3fb;}
 
     /* Comments list area */
     .cpBody{
@@ -1061,7 +1098,9 @@
       border:1px solid var(--bdrh);
       display:flex;align-items:center;justify-content:center;
       font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--ps);
+      overflow:hidden;
     }
+    .cpBarAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
     .cpBarInput{
       flex:1;
       background:var(--sur2);
@@ -1271,7 +1310,6 @@
     .cmCardTop{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;}
     .cmCard h4{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--tx);}
     .cmCard p{font-family:var(--fb);font-size:.82rem;color:var(--txd);line-height:1.55;flex:1;}
-    .cmCardMeta{display:flex;align-items:center;gap:.45rem;margin-top:1rem;font-family:var(--fm);font-size:.68rem;letter-spacing:.04em;color:var(--txd);}
     .cmDot{width:6px;height:6px;border-radius:50%;background:#3ecf8e;flex-shrink:0;box-shadow:0 0 6px #3ecf8e;}
 
 
@@ -1402,7 +1440,6 @@
     #communityPage .cmCard h4{color:var(--cmTx);}
     #communityPage .cmCard p{color:var(--cmTxd);}
     #communityPage .cmBadge{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
-    #communityPage .cmCardMeta{color:var(--cmTxd);}
     #communityPage .cmDot{background:var(--cmOnline);box-shadow:0 0 6px var(--cmOnline);}
 
     #communityPage .cmFooterCta{background:var(--cmSur2);border:1px solid var(--cmBdr);}
@@ -2063,7 +2100,9 @@
       color: var(--ps);
       flex-shrink: 0;
       transition: border-color .28s, background .28s;
+      overflow: hidden;
     }
+    .subOvAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
     .subOvCard:hover .subOvAvatar {
       border-color: var(--pg);
       background: color-mix(in srgb, var(--tc) 26%, transparent);
@@ -2324,6 +2363,11 @@
       width:100%;
       margin:2.5rem auto 0;
       padding:0 clamp(.3rem,1vw,.6rem);
+      /* Extra bottom clearance — same 84px the comment bar (.cpBar) uses
+         to clear the floating pill nav — so the last row of cards never
+         sits underneath #bnNav. Shared by both the main gallery (#awGrid)
+         and the Comic Arts tab (#caGrid) since they reuse this class. */
+      padding-bottom:calc(1rem + 84px);
       box-sizing:border-box;
       display:grid;
       grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
@@ -2521,6 +2565,8 @@
     #smAdmBtn{display:none;}
     #smAdmBtn.devOnly{display:block;}
     #smAdmBtn.on{color:#93c5fd;}
+    #smHeroBtn{display:none;}
+    #smHeroBtn.devOnly{display:block;}
     .pfAvatarWrap{
       position:absolute;left:2rem;bottom:-42px;z-index:2;
     }
@@ -2837,14 +2883,51 @@
     .admNotiSentTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.06em;color:var(--txd);opacity:.65;margin-top:.35rem;}
 
     /* =========================================================
-       NOTIFICATIONS PAGE (#notifPage)
-       Opened by tapping the bell (#hNotifBtn). Read-only feed —
-       admin broadcasts (notifications.user_id IS NULL) plus the
-       signed-in user's own artwork/comic approve+reject notices.
-       Same sliding full-page / dark-violet language as #admPage.
-       No edit or delete control exists anywhere on this page —
-       the notifications table is never written to by a normal
-       user; only per-user read-state (notification_reads) is.
+       HERO SLIDES MANAGER (#heroMgrPage)
+       Dev-only page (opened via the "Hero Slides" item in the
+       profile ⋮ menu — hidden entirely unless isDev) for managing
+       the boxes shown in the public #topSlide strip. Reuses the
+       exact same sliding full-page / dark-violet language and
+       .admCard/.pfGrid/.pfGridArt building blocks as #admPage.
+       Only image + title + subtitle ever reach the public strip —
+       these edit/delete controls live only in here.
+       ========================================================= */
+    #heroMgrPage{
+      position:fixed;inset:0;z-index:520;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #heroMgrPage.open{transform:translateX(0);}
+    #heroMgrPage,#heroMgrPage *{
+      --bg:#050308;--sur:#0d0a14;--sur2:#120e1c;
+      --tx:#f0e8ff;--txd:rgba(196,181,253,.6);
+      --tc:#9a9ea5;--pg:#8a8f98;--pb:#b8bcc2;--ps:#cfd2d6;
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #heroMgrPage .subPgHdr{background:rgba(5,3,8,.92)!important;border-bottom:1px solid rgba(255,255,255,.08);}
+    #heroMgrPage .subPgTitle{color:#fff;}
+    .heroMgrBdy{max-width:1100px;margin:0 auto;padding:1.6rem 2rem 6rem;}
+    @media(max-width:480px){.heroMgrBdy{padding:1.2rem 1.2rem 6rem;}}
+    .heroMgrHint{font-family:var(--fb);font-size:.78rem;color:var(--txd);margin-bottom:1.4rem;}
+    .heroMgrGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.2rem;}
+    .heroMgrCard{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;}
+    .heroMgrImgWrap{width:100%;aspect-ratio:300/190;background:var(--sur2);position:relative;}
+    .heroMgrImg{width:100%;height:100%;object-fit:cover;display:block;}
+    .heroMgrCard .admCardBody{padding:.65rem .75rem .8rem;}
+    .heroMgrAdd{
+      border:1px dashed var(--bdr);border-radius:10px;background:none;
+      aspect-ratio:300/190;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:.4rem;cursor:pointer;color:var(--txd);font-family:var(--fm);font-size:.68rem;letter-spacing:.08em;
+      transition:border-color .15s,color .15s;
+    }
+    .heroMgrAdd:hover{border-color:#9a5cff;color:#c9a8ff;}
+    .heroMgrAddIco{font-size:1.6rem;line-height:1;}
+    .heroMgrEmpty{text-align:center;padding:3rem 1rem;color:var(--txd);font-family:var(--fb);font-size:.85rem;}
+
+    /* ── Hero slide edit/add modal — reuses .upPop/.upPopBox etc. ── */
+    #heroEditMod .upPopBox{max-width:480px;}
+
        ========================================================= */
     #notifPage{
       position:fixed;inset:0;z-index:525;background:var(--bg);
@@ -3405,7 +3488,12 @@ body{background:var(--bg);}
   /* Avatar glow ring — same accent as comment avatars */
   outline:none;
   position:relative;
+  overflow:hidden;
 }
+/* Real profile photo, when set — same img-or-letter pattern used by
+   every avatar chip app-wide (nav, comment bar, subscription card,
+   artwork-viewer author row). */
+.nAvatarBtn img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
 .nAvatarBtn:hover{
   border-color:rgba(139,92,246,.45);
   background:rgba(139,92,246,.24);
@@ -4089,7 +4177,7 @@ body{background:var(--bg);}
    idle animation — static, exactly like the notification icon. ── */
 #zeoBtn {
   position: fixed;
-  top: clamp(1rem, 2.6vw, 2rem);
+  top: calc(clamp(1rem, 2.6vw, 2rem) + var(--bannerH,0px));
   right: calc(clamp(1rem, 2.6vw, 2rem) + clamp(42px, 8vw, 54px) + 10px);
   left: auto;
   bottom: auto;
@@ -4110,6 +4198,7 @@ body{background:var(--bg);}
   overflow: hidden; /* clips avatar image to circle */
   padding: 0;
   backdrop-filter: blur(14px);
+  transition: top .25s ease;
   -webkit-backdrop-filter: blur(14px);
   transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, background .3s ease, opacity .25s ease;
   user-select: none;
@@ -4491,21 +4580,14 @@ body{background:var(--bg);}
    </div>
   </div>
   <!-- =========================================================
-       SUPABASE CONFIG BANNER
+       NETWORK ERROR BANNER
+       Shown whenever a connection to the backend fails — missing
+       config, or a failed fetch on core content. Deliberately
+       generic: never names Supabase or exposes any backend detail
+       to visitors. Toggled via showNetworkError()/hideNetworkError().
        ========================================================= -->
   <div id="sBanner">
-   ⚠ Supabase not configured — open the HTML file and fill in
-   <strong>
-    SUPABASE_URL
-   </strong>
-   and
-   <strong>
-    SUPABASE_ANON_KEY
-   </strong>
-   near the top of the &lt;script&gt; tag.
-   <a href="https://supabase.com" rel="noopener" target="_blank">
-    Get a free Supabase project →
-   </a>
+   ⚠ Network error — some content couldn't load. Please check your connection and refresh the page.
   </div>
   <!-- =========================================================
        FLOATING BOTTOM NAVIGATION
@@ -4551,6 +4633,7 @@ body{background:var(--bg);}
       aria-label="Open profile"
       aria-controls="profilePage"
       style="display:none;">
+     <img id="navAvatarImg" alt="" style="display:none;">
      <span class="nAvLetter" id="navAvatarLetter">?</span>
     </button>
     <span class="bnLabel">Profile</span>
@@ -4586,18 +4669,15 @@ body{background:var(--bg);}
   <!-- =========================================================
        TOP ARTWORK SLIDE
        Horizontal strip directly below the floating top bar (brand
-       badge / notifications / Zeo). Desktop: 4 boxes in a row.
+       badge / notifications / Zeo). Desktop: row of boxes.
        Mobile/tablet: same box size, swipes left/right one at a
-       time via scroll-snap. Empty placeholders — no content wired
-       in yet.
+       time via scroll-snap. Content (image + title + subtitle) is
+       loaded from the public `hero_slides` table via
+       loadHeroSlides()/renderHeroTrack() — visible to everyone.
+       Editing only happens in the dev-only #heroMgrPage.
        ========================================================= -->
   <section id="topSlide" aria-label="Featured artwork slideshow">
-    <div class="tsTrack" id="tsTrack">
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-    </div>
+    <div class="tsTrack" id="tsTrack"></div>
   </section>
 
   <!-- ── Hidden Data Grid (source for Full Gallery overlay) ── -->
@@ -4663,7 +4743,10 @@ body{background:var(--bg);}
       <div class="subOvCard subOvCard--profile" id="subOvProfileCard">
         <div class="subOvCardInner">
           <!-- Avatar -->
-          <div class="subOvAvatar" id="subOvAvatarLetter" aria-hidden="true">?</div>
+          <div class="subOvAvatar" id="subOvAvatarLetter" aria-hidden="true">
+            <img id="subOvAvatarImg" alt="" style="display:none;">
+            <span id="subOvAvatarTxt">?</span>
+          </div>
           <!-- Username -->
           <div class="subOvUsername" id="subOvUsernameLabel">Profile</div>
           <!-- Current plan badge -->
@@ -4842,6 +4925,7 @@ body{background:var(--bg);}
       <div class="pfMenu" id="pfMenu" role="menu">
         <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openSubscription()">Subscription</button>
         <button class="pfMenuItem" id="smAdmBtn" role="menuitem" onclick="closePfMenu();smHandleAdm()">Admin Panel</button>
+        <button class="pfMenuItem" id="smHeroBtn" role="menuitem" onclick="closePfMenu();smHandleHero()">Hero Slides</button>
         <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
       </div>
       <div class="pfAvatarWrap">
@@ -5054,6 +5138,81 @@ body{background:var(--bg);}
         <div id="admNotiSentList" class="admNotiSentList"></div>
       </div>
     </div>
+  </div>
+
+  <!-- =========================================================
+       HERO SLIDES MANAGER (#heroMgrPage)
+       Dev-only. Manages the boxes shown in the public #topSlide
+       strip (image + title + subtitle). Opened via "Hero Slides"
+       in the profile ⋮ menu (smHandleHero) — the menu item itself
+       only exists in the DOM/visible when isDev (see #smHeroBtn).
+       Edit/delete controls live only on this page; the public
+       strip (#tsTrack) only ever renders the image + text.
+       ========================================================= -->
+  <div id="heroMgrPage" role="dialog" aria-modal="true" aria-label="Hero slides manager">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeHeroMgr()" aria-label="Close hero slides manager">←</button>
+      <div class="subPgTitle">HERO SLIDES <span class="s">✦</span></div>
+    </div>
+    <div class="heroMgrBdy">
+      <div class="heroMgrHint">These show at the top of the homepage, above Artworks. Only image + title + subtitle are public — edit/delete are dev-only.</div>
+      <div class="heroMgrGrid" id="heroMgrGrid">
+        <button class="heroMgrAdd" onclick="openHeroEdit(null)" type="button">
+          <span class="heroMgrAddIco">＋</span>
+          <span>ADD SLIDE</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Hero slide edit/add modal (#heroEditMod) — reuses the
+       .upPop/.upPopBox upload-modal chrome for a consistent,
+       professional look with the rest of the upload UI. ── -->
+  <div class="upPop" id="heroEditMod">
+   <div class="upPopBox">
+    <div class="upPopHead">
+      <div>
+        <h2 id="heroEditTitle">Add Hero Slide</h2>
+        <p>Shown to everyone at the top of the homepage.</p>
+      </div>
+      <button class="upPopX" onclick="closeHeroEdit()" aria-label="Close">✕</button>
+    </div>
+    <div class="upPopBody">
+     <div class="upMain">
+      <input id="heroEditId" type="hidden" value=""/>
+      <div class="upDz" id="heroDz">
+       <input accept="image/*" id="heroUpF" onchange="handleHeroFile(event)" type="file"/>
+       <div class="upDzIco">⬆</div>
+       <div class="upDzTitle">Drag &amp; drop an image here</div>
+       <div class="upDzSub">or click to browse files</div>
+       <div class="upDzHint">JPG, PNG, WEBP, GIF up to 20MB</div>
+       <button type="button" class="upDzBtn" tabindex="-1">📁 Choose File</button>
+      </div>
+      <img alt="preview" class="upPrev" id="heroUpPrev" src="" style="display:none;"/>
+
+      <div class="upField">
+        <label class="upLbl" for="heroUpTitle">Text here <span class="upReq">*</span></label>
+        <div class="upInWrap">
+          <input class="upIn" id="heroUpTitle" maxlength="60" oninput="pfUpdateCount('heroUpTitle','heroUpTitleCount',60)" placeholder="Main title…" type="text"/>
+          <span class="upCount" id="heroUpTitleCount">0/60</span>
+        </div>
+      </div>
+
+      <div class="upField">
+        <label class="upLbl" for="heroUpSub">Same text here</label>
+        <div class="upInWrap">
+          <input class="upIn" id="heroUpSub" maxlength="80" oninput="pfUpdateCount('heroUpSub','heroUpSubCount',80)" placeholder="Subtitle / caption…" type="text"/>
+          <span class="upCount" id="heroUpSubCount">0/80</span>
+        </div>
+      </div>
+     </div>
+    </div>
+    <div class="upPopFoot">
+      <button class="upBtnSec" id="heroDelBtn" onclick="deleteHeroSlide()" style="display:none;margin-right:auto;color:#f87171;">Delete</button>
+      <button class="upBtnSec" onclick="closeHeroEdit()">Cancel</button>
+      <button class="upBtnPri" id="heroSaveBtn" onclick="saveHeroSlide()">📤 Save Slide</button>
+    </div>
+   </div>
   </div>
 
   <!-- =========================================================
@@ -5334,20 +5493,25 @@ body{background:var(--bg);}
       </div>
 
       <div class="upField" id="pfUpSoftwareField">
-        <label class="upLbl" for="pfUpSoftware">Software Used</label>
-        <select class="upIn" id="pfUpSoftware" required>
-          <option value="" disabled selected hidden>Select software…</option>
-          <option value="Photoshop">Photoshop</option>
-          <option value="ibisPaint">ibisPaint</option>
-          <option value="Procreate">Procreate</option>
-          <option value="Clip Studio Paint">Clip Studio Paint</option>
-          <option value="Krita">Krita</option>
-          <option value="MediBang Paint">MediBang Paint</option>
-          <option value="Autodesk SketchBook">Autodesk SketchBook</option>
-          <option value="Illustrator">Illustrator</option>
-          <option value="Affinity Designer">Affinity Designer</option>
-          <option value="Other">Other</option>
-        </select>
+        <label class="upLbl">Software Used</label>
+        <div class="upCatDd" id="pfUpSoftwareDd">
+          <button type="button" class="upCatTrigger" onclick="togglePfSoftwareDd(event)" id="pfUpSoftwareTrigger">
+            <span id="pfUpSoftwareTriggerLbl">Select software…</span><span class="upChev">⌄</span>
+          </button>
+          <div class="upCatPanel" id="pfUpSoftwarePanel">
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Photoshop"/> Photoshop</label>
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="ibisPaint"/> ibisPaint</label>
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Procreate"/> Procreate</label>
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Clip Studio Paint"/> Clip Studio Paint</label>
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Krita"/> Krita</label>
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="MediBang Paint"/> MediBang Paint</label>
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Autodesk SketchBook"/> Autodesk SketchBook</label>
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Illustrator"/> Illustrator</label>
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Affinity Designer"/> Affinity Designer</label>
+            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Other"/> Other</label>
+          </div>
+        </div>
+        <input type="hidden" id="pfUpSoftware" value=""/>
       </div>
      </div>
 
@@ -5599,7 +5763,7 @@ body{background:var(--bg);}
   <div id="communityPage">
     <!-- Header -->
     <div class="cmHdr">
-      <div class="cmHdrTitle">COMMUNITY <span class="s">✦</span></div>
+      <div class="cmHdrTitle"><span id="cmHdrTitleTxt">COMMUNITY</span> <span class="s">✦</span></div>
     </div>
 
     <div class="cmView" id="cmViewCommunity" style="display:flex;">
@@ -5610,10 +5774,6 @@ body{background:var(--bg);}
           <div class="cmBannerTitle">Connect. Share. Grow Together.</div>
           <div class="cmBannerSub">Join communities, share ideas, collaborate and grow with fellow artists.</div>
           <div class="cmStats">
-            <div class="cmStat">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
-              <div><span class="cmStatNum">48K+</span><span class="cmStatLbl">MEMBERS</span></div>
-            </div>
             <div class="cmStat">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
               <div><span class="cmStatNum">6</span><span class="cmStatLbl">COMMUNITIES</span></div>
@@ -5630,8 +5790,7 @@ body{background:var(--bg);}
         </div>
 
         <!-- Cards: cover-image strip on top (gradient + icon + corner
-             badge) with the original title/description/meta text
-             body below it. -->
+             badge) with the title/description body below it. -->
         <div class="cmGrid">
           <div class="cmCard" onclick="cmOpenCommunity('official')">
             <div class="cmCardCover" style="background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 55%,#a855f7 100%);">
@@ -5641,7 +5800,6 @@ body{background:var(--bg);}
             <div class="cmCardBody">
               <div class="cmCardTop"><h4>DigiArtz Official</h4></div>
               <p>Official community of DigiArtz. Get updates, announcements and more.</p>
-              <div class="cmCardMeta"><span>12.4K Members</span><span class="cmDot"></span><span>342 Online</span></div>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('arttalk')">
@@ -5651,7 +5809,6 @@ body{background:var(--bg);}
             <div class="cmCardBody">
               <div class="cmCardTop"><h4>Art Talk</h4></div>
               <p>Discuss about art, share your thoughts, ask questions and grow together.</p>
-              <div class="cmCardMeta"><span>8.7K Members</span><span class="cmDot"></span><span>256 Online</span></div>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('feedback')">
@@ -5661,7 +5818,6 @@ body{background:var(--bg);}
             <div class="cmCardBody">
               <div class="cmCardTop"><h4>Art Feedback</h4></div>
               <p>Share your work and get constructive feedback from the community.</p>
-              <div class="cmCardMeta"><span>6.3K Members</span><span class="cmDot"></span><span>189 Online</span></div>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('collab')">
@@ -5671,7 +5827,6 @@ body{background:var(--bg);}
             <div class="cmCardBody">
               <div class="cmCardTop"><h4>Collab Hub</h4></div>
               <p>Find artists to collaborate with on projects and bring ideas to life.</p>
-              <div class="cmCardMeta"><span>4.6K Members</span><span class="cmDot"></span><span>132 Online</span></div>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('tips')">
@@ -5681,7 +5836,6 @@ body{background:var(--bg);}
             <div class="cmCardBody">
               <div class="cmCardTop"><h4>Tips &amp; Resources</h4></div>
               <p>Share helpful tips, tutorials, tools and resources for artists.</p>
-              <div class="cmCardMeta"><span>5.1K Members</span><span class="cmDot"></span><span>118 Online</span></div>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('showcase')">
@@ -5691,7 +5845,6 @@ body{background:var(--bg);}
             <div class="cmCardBody">
               <div class="cmCardTop"><h4>Showcase</h4></div>
               <p>Share your latest work, celebrate progress and inspire others.</p>
-              <div class="cmCardMeta"><span>7.2K Members</span><span class="cmDot"></span><span>205 Online</span></div>
             </div>
           </div>
         </div>
@@ -5778,7 +5931,10 @@ body{background:var(--bg);}
           <button class="cpAttachBtn" id="cpAttachBtn" onclick="cpOpenShowcasePicker()" title="Add your artwork" aria-label="Add your artwork" style="display:none;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           </button>
-          <div class="cpBarAvatar" id="cpBarAvatar">?</div>
+          <div class="cpBarAvatar" id="cpBarAvatar">
+            <img id="cpBarAvatarImg" alt="" style="display:none;">
+            <span id="cpBarAvatarTxt">?</span>
+          </div>
           <input class="cpBarInput" id="cpBarInput" type="text" placeholder="Comment here..." maxlength="500" autocomplete="off"/>
           <button class="cpBarSend" id="cpBarSend" onclick="cpSend()">SEND ✦</button>
         </div>
@@ -6421,7 +6577,10 @@ body{background:var(--bg);}
      <div class="avSide" id="avSide">
       <div class="avSideScroll">
        <div class="avAuthorRow" id="avAuthorRow" onclick="avGoToAuthor()">
-        <div class="avAvatar" id="avAvatar"></div>
+        <div class="avAvatar" id="avAvatar">
+         <img id="avAvatarImg" alt="" style="display:none;">
+         <span id="avAvatarTxt"></span>
+        </div>
         <div>
          <div class="avAuthorName" id="avAuthorName"></div>
          <div class="avAuthorHandle" id="avAuthorHandle"></div>
@@ -6577,16 +6736,19 @@ body{background:var(--bg);}
   </div>
 
   <!-- =========================================================
-       UPLOAD / EDIT MODAL
-       ├─ Modal Overlay (.mOvr #upMod)
-       └─ Modal Card (.modal)
-           ├─ Close Button (.mX)
+       UPLOAD / EDIT MODAL — restyled to match the profile upload
+       popup (#pfUpMod): same .upPop/.upPopBox card, same max-width,
+       same field components. z-index (20000, via .upPop) sits well
+       above #bnNav (1000), so the bottom nav never shows through.
+       ├─ Modal Overlay (.upPop #upMod)
+       └─ Modal Card (.upPopBox)
+           ├─ Close Button (.upPopX)
            ├─ Title (#upTitle)
            ├─ Subtitle (#upSubtitle)
            ├─ Hidden Edit ID (#upEditId)     [empty = upload, set = edit]
-           ├─ Drop Zone (.dz #dz)
+           ├─ Drop Zone (.upDz #dz)
            │   ├─ File Input (#upF)
-           │   └─ Drop Zone Label (.dzTxt)
+           │   └─ Drop Zone Label (#dzTxt)
            ├─ Preview Image (#upPrev)
            ├─ Name Field (#upNm)
            ├─ Description Field (#upDesc)
@@ -6596,70 +6758,99 @@ body{background:var(--bg);}
            ├─ Submit Button (#upBtn)
            └─ Cancel Button
        ========================================================= -->
-  <div class="mOvr" id="upMod">
-   <div class="modal">
-    <button class="mX" onclick="closeUp()">
-     ✕
-    </button>
-    <h2 id="upTitle">
-     UPLOAD ART
-    </h2>
-    <p id="upSubtitle">
-     Add a new piece to the gallery. Supports JPG, PNG, WEBP, GIF.
-    </p>
-    <input id="upEditId" type="hidden" value=""/>
-    <div class="dz" id="dz">
-     <input accept="image/*" id="upF" onchange="handleFile(event)" type="file"/>
-     <div class="dzIco">
-      🖼
-     </div>
-     <div class="dzTxt" id="dzTxt">
-      DROP IMAGE HERE OR CLICK TO BROWSE
-     </div>
-    </div>
-    <img alt="preview" class="upPrev" id="upPrev" src=""/>
-    <input class="mIn" id="upNm" placeholder="ARTWORK NAME" type="text"/>
-    <!-- DESCRIPTION FIELD START — optional, maps to artworks.description (TEXT, nullable) -->
-    <textarea class="mIn" id="upDesc" placeholder="DESCRIPTION (OPTIONAL)" rows="3" style="resize:vertical;min-height:4.5rem;font-family:var(--fb);line-height:1.5;"></textarea>
-    <!-- DESCRIPTION FIELD END -->
-    <!-- MULTI-CATEGORY SELECT START -->
-    <div id="upCatWrap" style="background:var(--sur2);border:1px solid var(--bdr);padding:.6rem .8rem;margin-bottom:.8rem;transition:border-color .25s;">
-      <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.5rem;">CATEGORIES (SELECT ONE OR MORE)</div>
-      <div style="display:flex;flex-wrap:wrap;gap:.55rem;" id="upCatBoxes">
-        <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="checkbox" value="others"     id="upCat_others"     onchange="updateUpCatDisplay()" checked style="accent-color:var(--pg);cursor:pointer;"> OTHERS</label>
-        <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="checkbox" value="cars"       id="upCat_cars"       onchange="updateUpCatDisplay()"        style="accent-color:var(--pg);cursor:pointer;"> CARS</label>
-        <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="checkbox" value="characters" id="upCat_characters" onchange="updateUpCatDisplay()"        style="accent-color:var(--pg);cursor:pointer;"> CHARACTERS</label>
-        <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="checkbox" value="landscapes" id="upCat_landscapes" onchange="updateUpCatDisplay()"        style="accent-color:var(--pg);cursor:pointer;"> LANDSCAPES</label>
-        <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;color:var(--txd);"><input type="checkbox" value="sketches"   id="upCat_sketches"   onchange="updateUpCatDisplay()"        style="accent-color:var(--pg);cursor:pointer;"> SKETCHES</label>
+  <div class="upPop" id="upMod">
+   <div class="upPopBox">
+    <div class="upPopHead">
+      <div>
+        <h2 id="upTitle">Upload Artwork</h2>
+        <p id="upSubtitle">Add a new piece to the gallery. Supports JPG, PNG, WEBP, GIF.</p>
       </div>
-      <!-- Selected category display section -->
-      <div id="upCatDisplay" style="margin-top:.55rem;min-height:1.4rem;display:flex;flex-wrap:wrap;gap:.3rem;"></div>
+      <button class="upPopX" onclick="closeUp()" aria-label="Close">✕</button>
     </div>
-    <!-- MULTI-CATEGORY SELECT END -->
-    <!-- SOFTWARE FIELD START — optional, maps to artworks.software (TEXT, nullable) -->
-    <div style="margin-bottom:.8rem;">
-      <div style="font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.4rem;">SOFTWARE USED</div>
-      <select class="mIn" id="upSoftware" style="margin-bottom:0;">
-        <option value="">Select software…</option>
-        <option value="Photoshop">Photoshop</option>
-        <option value="ibisPaint">ibisPaint</option>
-        <option value="Procreate">Procreate</option>
-        <option value="Clip Studio Paint">Clip Studio Paint</option>
-        <option value="Krita">Krita</option>
-        <option value="MediBang Paint">MediBang Paint</option>
-        <option value="Autodesk SketchBook">Autodesk SketchBook</option>
-        <option value="Illustrator">Illustrator</option>
-        <option value="Affinity Designer">Affinity Designer</option>
-        <option value="Other">Other</option>
-      </select>
+    <div class="upPopBody">
+     <div class="upMain">
+      <input id="upEditId" type="hidden" value=""/>
+      <div class="upDz" id="dz">
+       <input accept="image/*" id="upF" onchange="handleFile(event)" type="file"/>
+       <div class="upDzIco">🖼</div>
+       <div class="upDzTitle" id="dzTxt">Drag &amp; drop your artwork here</div>
+       <div class="upDzSub">or click to browse files</div>
+       <div class="upDzHint">JPG, PNG, WEBP, GIF up to 20MB</div>
+       <button type="button" class="upDzBtn" tabindex="-1">📁 Choose Files</button>
+      </div>
+      <img alt="preview" class="upPrev" id="upPrev" src=""/>
+
+      <div class="upField">
+        <label class="upLbl" for="upNm">Artwork Name <span class="upReq">*</span></label>
+        <input class="upIn" id="upNm" placeholder="Give your artwork a title…" type="text"/>
+      </div>
+
+      <!-- DESCRIPTION FIELD START — optional, maps to artworks.description (TEXT, nullable) -->
+      <div class="upField">
+        <label class="upLbl" for="upDesc">Description</label>
+        <textarea class="upIn upArea" id="upDesc" placeholder="Tell the story behind your artwork…" rows="3"></textarea>
+      </div>
+      <!-- DESCRIPTION FIELD END -->
+
+      <!-- MULTI-CATEGORY SELECT START -->
+      <div class="upField" id="upCatWrap">
+        <label class="upLbl">Categories <span class="upReq">*</span></label>
+        <div id="upCatBoxes" style="display:flex;flex-wrap:wrap;gap:.2rem .4rem;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.5rem .6rem;">
+          <label class="upCatOpt"><input type="checkbox" value="others"     id="upCat_others"     onchange="updateUpCatDisplay()" checked> Others</label>
+          <label class="upCatOpt"><input type="checkbox" value="cars"       id="upCat_cars"       onchange="updateUpCatDisplay()"> Cars</label>
+          <label class="upCatOpt"><input type="checkbox" value="characters" id="upCat_characters" onchange="updateUpCatDisplay()"> Characters</label>
+          <label class="upCatOpt"><input type="checkbox" value="landscapes" id="upCat_landscapes" onchange="updateUpCatDisplay()"> Landscapes</label>
+          <label class="upCatOpt"><input type="checkbox" value="sketches"   id="upCat_sketches"   onchange="updateUpCatDisplay()"> Sketches</label>
+        </div>
+        <!-- Selected category display section -->
+        <div id="upCatDisplay" style="margin-top:.55rem;min-height:1.4rem;display:flex;flex-wrap:wrap;gap:.3rem;"></div>
+      </div>
+      <!-- MULTI-CATEGORY SELECT END -->
+
+      <!-- SOFTWARE FIELD START — optional, maps to artworks.software (TEXT, nullable) -->
+      <div class="upField">
+        <label class="upLbl" for="upSoftware">Software Used</label>
+        <select class="upIn" id="upSoftware">
+          <option value="">Select software…</option>
+          <option value="Photoshop">Photoshop</option>
+          <option value="ibisPaint">ibisPaint</option>
+          <option value="Procreate">Procreate</option>
+          <option value="Clip Studio Paint">Clip Studio Paint</option>
+          <option value="Krita">Krita</option>
+          <option value="MediBang Paint">MediBang Paint</option>
+          <option value="Autodesk SketchBook">Autodesk SketchBook</option>
+          <option value="Illustrator">Illustrator</option>
+          <option value="Affinity Designer">Affinity Designer</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <!-- SOFTWARE FIELD END -->
+     </div>
+
+     <div class="upSide">
+       <div class="upSideCard">
+         <h3>Guidelines</h3>
+         <ul class="upGuideList">
+           <li><span class="upGIco">🖼</span><div><strong>Original work only</strong>Make sure you own the rights.</div></li>
+           <li><span class="upGIco">✦</span><div><strong>High quality recommended</strong>Best results with high resolution files.</div></li>
+           <li><span class="upGIco">🛡</span><div><strong>Appropriate content</strong>No offensive, hateful or explicit content.</div></li>
+         </ul>
+       </div>
+       <div class="upSideCard">
+         <h3>Tips for better visibility</h3>
+         <ul class="upTipList">
+           <li>Use a clear and attractive thumbnail</li>
+           <li>Add a relevant title and description</li>
+           <li>Choose the right category</li>
+         </ul>
+       </div>
+     </div>
     </div>
-    <!-- SOFTWARE FIELD END -->
-    <button class="mBtn" id="upBtn" onclick="doUp()">
-     ADD TO GALLERY ✦
-    </button>
-    <button class="mBtn sec" onclick="closeUp()">
-     CANCEL
-    </button>
+
+    <div class="upPopFoot">
+      <button class="upBtnSec" onclick="closeUp()">Cancel</button>
+      <button class="upBtnPri" id="upBtn" onclick="doUp()">📤 Upload Artwork</button>
+    </div>
    </div>
   </div>
   <!-- =========================================================
@@ -6700,8 +6891,36 @@ body{background:var(--bg);}
   if (SB_URL && SB_KEY) {
     sb = supabase.createClient(SB_URL , SB_KEY )
   } else {
-    document.getElementById('sBanner').classList.add('show');
+    showNetworkError();
   }
+
+  /* ── Generic network-error banner ──
+     Deliberately never names Supabase or exposes any backend
+     detail — visitors just see a plain "network error" notice,
+     same tone as the auth error message. Triggered when the
+     backend client couldn't be created, or when a core content
+     fetch (artworks, hero slides) actually fails. */
+  function showNetworkError(){
+    var el = document.getElementById('sBanner');
+    if(!el) return;
+    el.classList.add('show');
+    /* Push the whole site (and the fixed brand badge/notif bell)
+       down by the banner's real rendered height, so the banner
+       sits above everything instead of covering it. */
+    var h = el.offsetHeight;
+    document.documentElement.style.setProperty('--bannerH', h + 'px');
+  }
+  function hideNetworkError(){
+    var el = document.getElementById('sBanner');
+    if(el) el.classList.remove('show');
+    document.documentElement.style.setProperty('--bannerH', '0px');
+  }
+  window.addEventListener('resize', function(){
+    var el = document.getElementById('sBanner');
+    if(el && el.classList.contains('show')){
+      document.documentElement.style.setProperty('--bannerH', el.offsetHeight + 'px');
+    }
+  });
 
   let isAdm = false, upFile = null, images = [], comics = [], cfg = {};
   let filterCat = 'all', filterSrt = 'new', filterGrid = 4;
@@ -6737,7 +6956,8 @@ body{background:var(--bg);}
         sb.from('settings').select('*')
       ]);
       images=imgs||[];
-    }catch(e){console.error(e);}
+      hideNetworkError();
+    }catch(e){console.error(e); showNetworkError();}
 
     /* Site-wide comics — kept separate from the block above so that if
        the comics table/policies aren't fully set up yet (ComicArts is
@@ -6968,27 +7188,32 @@ body{background:var(--bg);}
   var avAuthorProfileCache = {};
   function avRenderAuthor(art){
     var row = document.getElementById('avAuthorRow');
-    var avatarEl = document.getElementById('avAvatar');
     var nameEl = document.getElementById('avAuthorName');
     var handleEl = document.getElementById('avAuthorHandle');
-    if(!row || !avatarEl || !nameEl || !handleEl) return;
+    if(!row || !nameEl || !handleEl) return;
     if(!art || !art.user_id){ row.style.display='none'; return; }
     row.style.display='';
     var uid = art.user_id;
-    function paint(uname){
-      avatarEl.textContent = (uname||'?').charAt(0).toUpperCase();
+    function paint(uname, avatarUrl){
+      paintAvatarChip('avAvatarImg', 'avAvatarTxt', avatarUrl||null, (uname||'?').charAt(0).toUpperCase());
       nameEl.textContent = uname || 'Artist';
       handleEl.textContent = '@'+(uname||'artist');
     }
-    if(pf.profile && pf.profile.id===uid){ paint(pf.profile.username); return; }
-    if(avAuthorProfileCache[uid]){ paint(avAuthorProfileCache[uid]); return; }
-    avatarEl.textContent='?'; nameEl.textContent='…'; handleEl.textContent='';
+    /* Own artwork: reuse the freshest copy rather than a possibly-stale
+       cache entry — pf.profile.avatar_url is kept current by
+       pfRenderAvatarBanner(), and currentUserAvatarUrl is equally fresh
+       for the signed-in viewer's own uploads. */
+    if(pf.profile && pf.profile.id===uid){ paint(pf.profile.username, pf.profile.avatar_url); return; }
+    if(currentUser && currentUser.id===uid){ paint(cpGetDisplayName(), currentUserAvatarUrl); return; }
+    if(avAuthorProfileCache[uid]){ paint(avAuthorProfileCache[uid].username, avAuthorProfileCache[uid].avatar_url); return; }
+    paintAvatarChip('avAvatarImg', 'avAvatarTxt', null, '?'); nameEl.textContent='…'; handleEl.textContent='';
     if(sb){
-      sb.from('profiles').select('username').eq('id',uid).single().then(function(res){
+      sb.from('profiles').select('username,avatar_url').eq('id',uid).single().then(function(res){
         var uname = res && res.data && res.data.username ? res.data.username : 'Artist';
-        avAuthorProfileCache[uid] = uname;
+        var avatarUrl = res && res.data ? res.data.avatar_url : null;
+        avAuthorProfileCache[uid] = { username:uname, avatar_url:avatarUrl };
         if(!avCurrentArt || avCurrentArt.user_id!==uid) return; // modal moved on
-        paint(uname);
+        paint(uname, avatarUrl);
       }).catch(function(){});
     }
   }
@@ -7327,7 +7552,7 @@ body{background:var(--bg);}
     var art = findArtworkById(id);
     if(!art){ showToast('Artwork not found'); return; }
     document.getElementById('upEditId').value = String(art.id);
-    document.getElementById('upTitle').textContent = 'EDIT ARTWORK';
+    document.getElementById('upTitle').textContent = 'Edit Artwork';
     document.getElementById('upSubtitle').textContent = 'Update the name, description, or categories for this piece.';
     document.getElementById('dz').style.display = 'none';
     document.getElementById('upNm').value = art.name||'';
@@ -7341,7 +7566,7 @@ body{background:var(--bg);}
     });
     updateUpCatDisplay();
     document.getElementById('upSoftware').value = art.software || '';
-    document.getElementById('upBtn').textContent = 'SAVE CHANGES ✦';
+    document.getElementById('upBtn').textContent = '📤 Save Changes';
     upFile = null;
     document.getElementById('upMod').classList.add('open');
   }
@@ -7356,15 +7581,41 @@ body{background:var(--bg);}
        page). admRefreshBadge() appends the pending-count suffix. */
     b.textContent=(isAdm?'★ ':'⚙ ')+'ADMIN PANEL';
     if(typeof admRefreshBadge==='function') admRefreshBadge();
+    var hb=document.getElementById('smHeroBtn');
+    if(hb) hb.classList.toggle('devOnly',isDev);
   }
 
   /* Auth — email+password via Supabase; session persists via localStorage */
 
   /* ── State ── */
   var currentUser = null; /* null = logged out, object = logged in */
+  var currentUserAvatarUrl = null; /* logged-in user's photo, kept in sync with
+       profiles.avatar_url — feeds every avatar chip app-wide (nav, comment
+       bar, subscription card). Set on login/role-check and refreshed the
+       instant a new photo is uploaded via doPfAvBUpload(). */
   var authMode = 'login'; /* 'login' | 'signup' */
 
   /* Avatar helpers — shared by navbar, profile page, and comment bar */
+
+  /* ── Paint a single avatar chip: real photo if we have a URL, else the
+     letter fallback. Every avatar chip in the app (nav, comment bar,
+     subscription card, artwork-viewer author row) follows this same
+     img-or-letter pattern so a new upload only has to update one URL. ── */
+  function paintAvatarChip(imgId, txtId, url, letter){
+    var img = document.getElementById(imgId);
+    var txt = document.getElementById(txtId);
+    if(!img || !txt) return;
+    if(url){
+      img.src = url;
+      img.style.display = 'block';
+      txt.style.display = 'none';
+    } else {
+      img.removeAttribute('src');
+      img.style.display = 'none';
+      txt.style.display = '';
+      txt.textContent = letter || '?';
+    }
+  }
 
   /* ── Sync the navbar: swap face icon ↔ avatar button ── */
   function syncAuthBtn() {
@@ -7375,7 +7626,7 @@ body{background:var(--bg);}
     if (currentUser) {
       /* Logged in: hide face icon, show avatar */
       var letter = cpGetAvatarLetter(); /* reuse existing helper */
-      if (letterEl) letterEl.textContent = letter;
+      paintAvatarChip('navAvatarImg', 'navAvatarLetter', currentUserAvatarUrl, letter);
       if (loginBtn)  loginBtn.style.display  = 'none';
       if (avatarBtn) {
         avatarBtn.style.display = 'flex';
@@ -7419,7 +7670,7 @@ body{background:var(--bg);}
     if (currentUser) {
       var letter = cpGetAvatarLetter();
       var name   = cpGetDisplayName();
-      avatarEl.textContent = letter;
+      paintAvatarChip('subOvAvatarImg', 'subOvAvatarTxt', currentUserAvatarUrl, letter);
       nameEl.textContent   = name;
 
       /* Determine badge label and tier class — userPlan may not be set yet
@@ -7437,7 +7688,7 @@ body{background:var(--bg);}
       setProfileTier(plan);
     } else {
       /* Logged out: reset to default */
-      avatarEl.textContent = '?';
+      paintAvatarChip('subOvAvatarImg', 'subOvAvatarTxt', null, '?');
       nameEl.textContent   = 'Profile';
       badgeEl.textContent  = 'FREE';
       badgeEl.className    = 'subOvPlanBadge subOvPlanBadge--guest';
@@ -7557,7 +7808,7 @@ body{background:var(--bg);}
 
   /* ── Perform login ── */
   async function doAuth() {
-    if (!sb) { showToast('Supabase not configured'); return; }
+    if (!sb) { showToast('Network error. Please check your connection and try again.'); return; }
     var email = document.getElementById('authEmail').value.trim();
     var pass  = document.getElementById('authPass').value;
     var err   = document.getElementById('authErr');
@@ -7641,7 +7892,7 @@ body{background:var(--bg);}
 
   /* ── Perform signup ── */
   async function doSignUp() {
-    if (!sb) { showToast('Supabase not configured'); return; }
+    if (!sb) { showToast('Network error. Please check your connection and try again.'); return; }
 
     var email    = document.getElementById('authEmail').value.trim();
     var pass     = document.getElementById('authPass').value;
@@ -7751,16 +8002,17 @@ body{background:var(--bg);}
      'dev' role bypasses all checks via isDev. */
   let userPlan = null;
   async function checkUserRole(){
-    if(!sb || !currentUser){ isDev=false; isAdm=false; userPlan=null; document.body.classList.remove('admin'); syncAdmBtn(); return; }
+    if(!sb || !currentUser){ isDev=false; isAdm=false; userPlan=null; currentUserAvatarUrl=null; document.body.classList.remove('admin'); syncAdmBtn(); return; }
     try{
-      const{data,error}=await sb.from('profiles').select('role,subscription_tier').eq('id',currentUser.id).single();
+      const{data,error}=await sb.from('profiles').select('role,subscription_tier,avatar_url').eq('id',currentUser.id).single();
       if(error) throw error;
       isDev    = !!data && data.role==='dev';
       userPlan = (data && data.subscription_tier) ? data.subscription_tier : 'guest';
+      currentUserAvatarUrl = (data && data.avatar_url) ? data.avatar_url : null;
     }catch(e){ console.error(e); isDev=false; userPlan='guest'; }
     if(!isDev){ isAdm=false; document.body.classList.remove('admin'); }
     syncAdmBtn();
-    syncSubOverviewCard(); /* update profile card tier badge */
+    syncAuthBtn(); /* repaints nav avatar + subscription card + comment bar with the fetched photo */
     notifRefreshBadge();
     if(isDev && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
   }
@@ -7780,6 +8032,7 @@ body{background:var(--bg);}
         checkUserRole();
       }
       if (event === 'SIGNED_OUT') {
+        currentUserAvatarUrl = null;
         syncAuthBtn();
         isDev=false; isAdm=false; userPlan=null; document.body.classList.remove('admin'); syncAdmBtn();
         syncSubOverviewCard(); /* reset profile card to guest state */
@@ -7966,12 +8219,12 @@ body{background:var(--bg);}
     const disp=document.getElementById('upCatDisplay');
     if(!disp)return;
     const selected=[...document.querySelectorAll('#upCatBoxes input[type=checkbox]:checked')].map(cb=>cb.value);
-    if(!selected.length){disp.innerHTML='<span style="font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);opacity:.5;">NONE SELECTED</span>';return;}
-    disp.innerHTML=selected.map(v=>`<span style="display:inline-flex;align-items:center;padding:.15rem .45rem;background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid color-mix(in srgb,var(--tc) 35%,transparent);font-family:var(--fm);font-size:.65rem;letter-spacing:.1em;color:var(--ps);">${v.toUpperCase()}</span>`).join('');
+    if(!selected.length){disp.innerHTML='<span style="font-size:.74rem;color:rgba(214,212,232,.4);">None selected</span>';return;}
+    disp.innerHTML=selected.map(v=>`<span class="upTagChip" style="cursor:default;">${v.charAt(0).toUpperCase()+v.slice(1)}</span>`).join('');
   }
 
   function openUp(){
-    if(!sb){showToast('Configure Supabase first');return;}
+    if(!sb){showToast('Network error. Please check your connection and try again.');return;}
     if(!isAdm){
       if(!currentUser){ sessionStorage.setItem('pendUp','1'); showToast('Sign in with a dev account to upload'); openAuthMod(); }
       else if(isDev){ showToast('Turn on Admin Mode first'); }
@@ -7986,7 +8239,7 @@ body{background:var(--bg);}
   }
   function resetUp(){
     document.getElementById('upEditId').value='';
-    document.getElementById('upTitle').textContent='UPLOAD ART';
+    document.getElementById('upTitle').textContent='Upload Artwork';
     document.getElementById('upSubtitle').textContent='Add a new piece to the gallery. Supports JPG, PNG, WEBP, GIF.';
     document.getElementById('dz').style.display='';
     document.getElementById('upNm').value='';
@@ -7995,7 +8248,7 @@ body{background:var(--bg);}
     updateUpCatDisplay();
     document.getElementById('upSoftware').value='';
     document.getElementById('upPrev').style.display='none';
-    document.getElementById('upBtn').textContent='ADD TO GALLERY ✦';
+    document.getElementById('upBtn').textContent='📤 Upload Artwork';
     upFile=null;
   }
   function handleFile(e){
@@ -8050,7 +8303,7 @@ body{background:var(--bg);}
         closeUp();showToast('Artwork added ✦');
       }
     }catch(err){showToast('Error: '+err.message);}
-    finally{btn.disabled=false;btn.textContent=editId?'SAVE CHANGES ✦':'ADD TO GALLERY ✦';}
+    finally{btn.disabled=false;btn.textContent=editId?'📤 Save Changes':'📤 Upload Artwork';}
   }
 
   async function delImg(id,sp,e){
@@ -8095,6 +8348,20 @@ body{background:var(--bg);}
     upPageFiles: []
   };
 
+  /* ── Profile avatar/banner preload ──
+     pfMediaCache remembers the last-known avatar_url/banner_url per
+     username so a repeat visit to a profile can start loading those
+     images the instant the panel opens — in parallel with the slide-in
+     transition — instead of waiting on the profile row fetch first.
+     pfPreloadImage() just primes the browser's HTTP cache; the actual
+     <img> tags still get their src set as normal once data arrives. */
+  var pfMediaCache = {};
+  function pfPreloadImage(url){
+    if(!url) return;
+    var img = new Image();
+    img.src = url;
+  }
+
   function pfFormatDate(iso){
     if(!iso) return '';
     try{
@@ -8104,7 +8371,13 @@ body{background:var(--bg);}
 
   async function openOwnProfile(){
     if(!currentUser){ showToast('Sign in to view your profile'); openAuthMod(); return; }
-    if(!sb){ showToast('Configure Supabase first'); return; }
+    if(!sb){ showToast('Network error. Please check your connection and try again.'); return; }
+    /* The signed-in session already carries the username (set at
+       login/signup) — use it directly so the panel opens instantly,
+       same as Gallery/Comic. Only hit the DB as a rare fallback if
+       that field is somehow missing from the session. */
+    var uname = currentUser.user_metadata && currentUser.user_metadata.username;
+    if(uname){ openProfileByUsername(uname); return; }
     try{
       const{data,error}=await sb.from('profiles').select('username').eq('id',currentUser.id).single();
       if(error || !data || !data.username){ showToast('Profile not found'); return; }
@@ -8113,11 +8386,25 @@ body{background:var(--bg);}
   }
 
   async function openProfileByUsername(username, pushUrl){
-    if(!sb){ showToast('Configure Supabase first'); return; }
+    if(!sb){ showToast('Network error. Please check your connection and try again.'); return; }
     var panel = document.getElementById('profilePage');
     panel.classList.add('open');
     document.body.style.overflow='hidden';
     closePfMenu();
+    /* Preload avatar/banner right as the panel starts its slide-in
+       transition — using any URL we already know (a cached URL from
+       a previous visit to this profile, or the signed-in user's own
+       cached avatar) so the image bytes are downloading in parallel
+       with the animation + profile-row fetch below, instead of only
+       starting once that fetch resolves. */
+    var mediaCached = pfMediaCache[username];
+    if(mediaCached){
+      pfPreloadImage(mediaCached.avatar_url);
+      pfPreloadImage(mediaCached.banner_url);
+    }
+    if(currentUser && currentUser.user_metadata && currentUser.user_metadata.username===username){
+      pfPreloadImage(currentUserAvatarUrl);
+    }
     pf.profile=null; pf.galleryRows=[]; pf.galleryPage=0; pf.galleryDone=false;
     pf.comicRows=[]; pf.comicPage=0; pf.comicDone=false;
     document.getElementById('pfUsername').textContent='Loading…';
@@ -8133,6 +8420,11 @@ body{background:var(--bg);}
       if(error || !data){ showToast('Profile not found'); closeProfilePage(); return; }
       pf.profile = data;
       pf.isOwner = !!(currentUser && currentUser.id === data.id);
+      /* Cache for next time + preload immediately in case these
+         URLs weren't already covered by the head-start above. */
+      pfMediaCache[username] = { avatar_url: data.avatar_url||null, banner_url: data.banner_url||null };
+      pfPreloadImage(data.avatar_url);
+      pfPreloadImage(data.banner_url);
       document.getElementById('pfUsername').textContent = data.username;
       document.getElementById('pfAvatarLetter').textContent = (data.username||'?').charAt(0).toUpperCase();
       document.getElementById('pfEditAvatarLetter').textContent = (data.username||'?').charAt(0).toUpperCase();
@@ -8161,6 +8453,8 @@ body{background:var(--bg);}
     closePfUploadMenu();
     document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
+    var nav = document.getElementById('bnNav');
+    if(nav) nav.style.display = '';
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
       try{ history.pushState({},'', '/'); }catch(e){}
     }
@@ -8432,6 +8726,7 @@ body{background:var(--bg);}
   /* ── Category multi-select dropdown (same options as the gallery) ── */
   function togglePfCatDd(e){
     if(e) e.stopPropagation();
+    closePfSoftwareDd(); /* only one dropdown open at a time */
     document.getElementById('pfUpCatDd').classList.toggle('open');
   }
   function closePfCatDd(){
@@ -8450,9 +8745,38 @@ body{background:var(--bg);}
     PF_CATS.forEach(function(c){ document.getElementById('pfUpCat_'+c).checked = list.indexOf(c)!==-1; });
     updatePfCatDisplay();
   }
+
+  /* ── Software single-select dropdown — same styled-dropdown pattern as
+     Category above, swapped to radio buttons since only one software can
+     be picked. #pfUpSoftware stays a plain hidden input so every existing
+     .value read/write (validation, save, reset) keeps working untouched. ── */
+  function togglePfSoftwareDd(e){
+    if(e) e.stopPropagation();
+    closePfCatDd(); /* only one dropdown open at a time */
+    document.getElementById('pfUpSoftwareDd').classList.toggle('open');
+  }
+  function closePfSoftwareDd(){
+    document.getElementById('pfUpSoftwareDd').classList.remove('open');
+  }
+  function updatePfSoftwareDisplay(){
+    var checked = document.querySelector('#pfUpSoftwarePanel input[name="pfUpSoftwareRadio"]:checked');
+    var val = checked ? checked.value : '';
+    document.getElementById('pfUpSoftware').value = val;
+    document.getElementById('pfUpSoftwareTriggerLbl').textContent = val || 'Select software…';
+    closePfSoftwareDd();
+  }
+  function pfSetSoftware(value){
+    document.querySelectorAll('#pfUpSoftwarePanel input[name="pfUpSoftwareRadio"]').forEach(function(r){
+      r.checked = (r.value === value);
+    });
+    document.getElementById('pfUpSoftware').value = value || '';
+    document.getElementById('pfUpSoftwareTriggerLbl').textContent = value || 'Select software…';
+  }
   document.addEventListener('click',function(e){
     var dd = document.getElementById('pfUpCatDd');
     if(dd && dd.classList.contains('open') && !dd.contains(e.target)) closePfCatDd();
+    var sd = document.getElementById('pfUpSoftwareDd');
+    if(sd && sd.classList.contains('open') && !sd.contains(e.target)) closePfSoftwareDd();
   });
 
   /* ── Tags — YouTube-style chip input (type, press Enter/comma to add) ── */
@@ -8507,7 +8831,7 @@ body{background:var(--bg);}
     document.getElementById('pfUpCatField').style.display = mode==='comic' ? 'none' : '';
     document.getElementById('pfComicPagesWrap').style.display = mode==='comic' ? '' : 'none';
     document.getElementById('pfUpSoftwareField').style.display = mode==='comic' ? 'none' : '';
-    document.getElementById('pfUpSoftware').value = '';
+    pfSetSoftware('');
     document.getElementById('pfDz').style.display='';
     document.getElementById('pfUpNm').value='';
     document.getElementById('pfUpDesc').value='';
@@ -8933,6 +9257,16 @@ body{background:var(--bg);}
       if(oldPath) await sb.storage.from(BUCKET).remove([oldPath]);
       Object.assign(pf.profile, updates);
       pfRenderAvatarBanner();
+      if(pf.profile.username){
+        pfMediaCache[pf.profile.username] = { avatar_url: pf.profile.avatar_url||null, banner_url: pf.profile.banner_url||null };
+      }
+      if(kind==='avatar'){
+        /* Push the new photo to every other avatar chip app-wide — nav
+           bar, comment bar, subscription card — not just the profile page. */
+        currentUserAvatarUrl = publicUrl;
+        avAuthorProfileCache[currentUser.id] = { username: pf.profile.username, avatar_url: publicUrl };
+        syncAuthBtn();
+      }
       showToast((kind==='banner'?'Banner':'Profile photo')+' updated ✦');
     }catch(err){ showToast('Error: '+err.message); }
     finally{
@@ -8968,10 +9302,16 @@ body{background:var(--bg);}
     });
     document.getElementById('pfEditPage').classList.add('open');
     document.body.style.overflow='hidden';
+    /* Full-page overlay, same treatment as notifications/community chat —
+       the floating nav pill shouldn't float over the edit form. */
+    var nav = document.getElementById('bnNav');
+    if(nav) nav.style.display = 'none';
   }
   function closePfEditPage(){
     document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
+    var nav = document.getElementById('bnNav');
+    if(nav) nav.style.display = '';
   }
   function pfUpdateEditBioCount(){
     var len = document.getElementById('pfEditBio').value.length;
@@ -9195,6 +9535,200 @@ body{background:var(--bg);}
     if(isAdm && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
   }
 
+  /* =========================================================
+     HERO SLIDES — public strip (#tsTrack) + dev-only manager
+     (#heroMgrPage). Table: hero_slides (public select; insert/
+     update/delete restricted to dev via RLS — see SQL provided
+     separately). Storage bucket: 'hero-slides' (public read,
+     dev-only write — see SQL provided separately).
+     ========================================================= */
+  const HERO_BUCKET = 'hero-slides';
+  var heroSlides = [];
+  var heroUpFile = null;
+
+  /* Public fetch — runs for every visitor (anon included) via
+     init(). Only image/title/subtitle ever reach this render. */
+  async function loadHeroSlides(){
+    if(!sb) return;
+    try{
+      const{data,error} = await sb.from('hero_slides').select('*').order('position',{ascending:true}).order('created_at',{ascending:true});
+      if(error) throw error;
+      heroSlides = data || [];
+    }catch(e){ console.error(e); heroSlides = []; showNetworkError(); }
+    renderHeroTrack();
+  }
+
+  function renderHeroTrack(){
+    var track = document.getElementById('tsTrack');
+    if(!track) return;
+    if(!heroSlides.length){
+      /* Empty shells — same size/spacing as before, just nothing to show yet. */
+      var shells = '';
+      for(var i=0;i<4;i++) shells += '<div class="tsBox tsBoxEmpty"></div>';
+      track.innerHTML = shells;
+      return;
+    }
+    track.innerHTML = heroSlides.map(function(h){
+      return '<div class="tsBox">'
+        + '<img class="tsBoxImg" src="'+esc(h.image_url)+'" alt="'+esc(h.title||'')+'" loading="lazy">'
+        + '<div class="tsBoxCaption">'
+          + (h.title ? '<div class="tsBoxTitle">'+esc(h.title)+'</div>' : '')
+          + (h.subtitle ? '<div class="tsBoxSub">'+esc(h.subtitle)+'</div>' : '')
+        + '</div>'
+      + '</div>';
+    }).join('');
+  }
+
+  /* ── Hamburger menu entry point (dev-only; button itself is
+     hidden unless isDev — see syncAdmBtn) ── */
+  function smHandleHero(){
+    if(!isDev){
+      closeMenu();
+      if(!currentUser){ showToast('Sign in with a dev account to access this'); openAuthMod(); }
+      else { showToast('This account does not have dev access'); }
+      return;
+    }
+    closeMenu();
+    openHeroMgr();
+  }
+
+  function openHeroMgr(){
+    var el = document.getElementById('heroMgrPage');
+    if(!el || !isDev) return;
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    renderHeroMgrGrid();
+  }
+
+  function closeHeroMgr(){
+    var el = document.getElementById('heroMgrPage');
+    if(!el) return;
+    el.classList.remove('open');
+    restoreScroll();
+  }
+
+  function renderHeroMgrGrid(){
+    var grid = document.getElementById('heroMgrGrid');
+    if(!grid) return;
+    var cards = heroSlides.map(function(h){
+      return '<div class="heroMgrCard">'
+        + '<div class="heroMgrImgWrap"><img class="heroMgrImg" src="'+esc(h.image_url)+'" alt="'+esc(h.title||'')+'"></div>'
+        + '<div class="admCardBody">'
+          + '<div class="admCardTitle">'+esc(h.title||'Untitled')+'</div>'
+          + (h.subtitle ? '<div class="admCardMeta">'+esc(h.subtitle)+'</div>' : '')
+          + '<div class="admCardActions">'
+            + '<button class="admApproveBtn" onclick="openHeroEdit(\''+h.id+'\')" type="button">EDIT / DELETE</button>'
+          + '</div>'
+        + '</div>'
+      + '</div>';
+    }).join('');
+    grid.innerHTML = cards + '<button class="heroMgrAdd" onclick="openHeroEdit(null)" type="button">'
+      + '<span class="heroMgrAddIco">＋</span><span>ADD SLIDE</span></button>';
+  }
+
+  function openHeroEdit(id){
+    if(!isDev) return;
+    heroUpFile = null;
+    var editing = heroSlides.find(function(h){ return h.id === id; });
+    document.getElementById('heroEditId').value = editing ? editing.id : '';
+    document.getElementById('heroEditTitle').textContent = editing ? 'Edit Hero Slide' : 'Add Hero Slide';
+    document.getElementById('heroUpTitle').value = editing ? (editing.title||'') : '';
+    document.getElementById('heroUpSub').value = editing ? (editing.subtitle||'') : '';
+    pfUpdateCount('heroUpTitle','heroUpTitleCount',60);
+    pfUpdateCount('heroUpSub','heroUpSubCount',80);
+    var prev = document.getElementById('heroUpPrev');
+    if(editing && editing.image_url){ prev.src = editing.image_url; prev.style.display='block'; document.getElementById('heroDz').style.display='none'; }
+    else { prev.src=''; prev.style.display='none'; document.getElementById('heroDz').style.display=''; }
+    document.getElementById('heroUpF').value = '';
+    document.getElementById('heroDelBtn').style.display = editing ? '' : 'none';
+    document.getElementById('heroSaveBtn').textContent = editing ? '📤 Save Changes' : '📤 Save Slide';
+    document.getElementById('heroEditMod').classList.add('open');
+  }
+
+  function closeHeroEdit(){
+    document.getElementById('heroEditMod').classList.remove('open');
+    heroUpFile = null;
+  }
+
+  function handleHeroFile(e){
+    var f = e.target.files[0]; if(!f) return;
+    heroUpFile = f;
+    var r = new FileReader();
+    r.onload = function(ev){
+      var prev = document.getElementById('heroUpPrev');
+      prev.src = ev.target.result; prev.style.display='block';
+      document.getElementById('heroDz').style.display='none';
+    };
+    r.readAsDataURL(f);
+  }
+
+  async function saveHeroSlide(){
+    if(!isDev){ showToast('Dev access required'); return; }
+    var id = document.getElementById('heroEditId').value || null;
+    var title = document.getElementById('heroUpTitle').value.trim();
+    var subtitle = document.getElementById('heroUpSub').value.trim();
+    var editing = id ? heroSlides.find(function(h){ return h.id === id; }) : null;
+    if(!editing && !heroUpFile){ showToast('Choose an image'); return; }
+    if(!title){ showToast('Add a title'); return; }
+    var btn = document.getElementById('heroSaveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try{
+      var image_url = editing ? editing.image_url : null;
+      var storage_path = editing ? editing.storage_path : null;
+      if(heroUpFile){
+        var path = 'hero/' + Date.now() + '_' + heroUpFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+        const{error:ue} = await sb.storage.from(HERO_BUCKET).upload(path, heroUpFile, {cacheControl:'3600'});
+        if(ue) throw ue;
+        const{data:{publicUrl}} = sb.storage.from(HERO_BUCKET).getPublicUrl(path);
+        image_url = publicUrl;
+        var oldPath = storage_path;
+        storage_path = path;
+        if(oldPath) await sb.storage.from(HERO_BUCKET).remove([oldPath]);
+      }
+      var row = { image_url:image_url, storage_path:storage_path, title:title, subtitle:subtitle||null };
+      if(editing){
+        const{error:upErr} = await sb.from('hero_slides').update(row).eq('id', editing.id);
+        if(upErr) throw upErr;
+      } else {
+        row.position = heroSlides.length;
+        const{error:inErr} = await sb.from('hero_slides').insert(row);
+        if(inErr) throw inErr;
+      }
+      showToast(editing ? 'Slide updated ✦' : 'Slide added ✦');
+      closeHeroEdit();
+      await loadHeroSlides();
+      renderHeroMgrGrid();
+    }catch(e){
+      console.error(e);
+      showToast('Could not save slide');
+    }finally{
+      btn.disabled = false;
+      btn.textContent = editing ? '📤 Save Changes' : '📤 Save Slide';
+    }
+  }
+
+  async function deleteHeroSlide(){
+    if(!isDev) return;
+    var id = document.getElementById('heroEditId').value;
+    if(!id) return;
+    var editing = heroSlides.find(function(h){ return h.id === id; });
+    if(!editing) return;
+    if(!confirm('Delete this hero slide? This cannot be undone.')) return;
+    try{
+      if(editing.storage_path) await sb.storage.from(HERO_BUCKET).remove([editing.storage_path]);
+      const{error} = await sb.from('hero_slides').delete().eq('id', id);
+      if(error) throw error;
+      showToast('Slide deleted');
+      closeHeroEdit();
+      await loadHeroSlides();
+      renderHeroMgrGrid();
+    }catch(e){
+      console.error(e);
+      showToast('Could not delete slide');
+    }
+  }
+
   function admSwitchTab(tab){
     admTab = tab;
     ['Art','Comic','Noti'].forEach(function(t){
@@ -9379,8 +9913,7 @@ body{background:var(--bg);}
   }
 
   function cpSyncAvatar(){
-    var av = document.getElementById('cpBarAvatar');
-    if(av) av.textContent = cpGetAvatarLetter();
+    paintAvatarChip('cpBarAvatarImg', 'cpBarAvatarTxt', currentUser ? currentUserAvatarUrl : null, cpGetAvatarLetter());
   }
 
   
@@ -9451,6 +9984,12 @@ async function openComments(){
     if(inpEl)   inpEl.placeholder = isShowcase ? 'Write a caption for your artwork...' : ('Message #' + chan.name);
     if(attachBtn) attachBtn.style.display = isShowcase ? 'flex' : 'none';
 
+    /* Top page header now reads as the community's own page —
+       swap the generic "COMMUNITY" label for this community's name,
+       keeping the exact same gradient title style. */
+    var pageTitleEl = document.getElementById('cmHdrTitleTxt');
+    if(pageTitleEl) pageTitleEl.textContent = chan.name.toUpperCase();
+
     var grid = document.getElementById('cmGridScroll');
     var chat = document.getElementById('cmChatView');
     if(grid) grid.style.display = 'none';
@@ -9500,6 +10039,9 @@ async function openComments(){
     if(lockNote) lockNote.style.display = 'none';
     var attachBtn = document.getElementById('cpAttachBtn');
     if(attachBtn) attachBtn.style.display = 'none';
+    /* Restore the top page header back to the generic label */
+    var pageTitleEl = document.getElementById('cmHdrTitleTxt');
+    if(pageTitleEl) pageTitleEl.textContent = 'COMMUNITY';
     /* Restore the bottom nav — we're back on a normal tab screen */
     var nav = document.getElementById('bnNav');
     if(nav) nav.style.display = '';
@@ -9831,7 +10373,7 @@ async function openComments(){
      Returns true on success, false on failure.
      ────────────────────────────────────────────── */
   async function cpSaveComment(text){
-    if(!sb){ showToast('Supabase not configured'); return false; }
+    if(!sb){ showToast('Network error. Please check your connection and try again.'); return false; }
     if(!currentUser){ showToast('Please login to comment.'); openAuthMod(); return false; }
 
     /* Gather optional linked image URL from the thumbnail preview */
@@ -9974,6 +10516,7 @@ async function openComments(){
     spawnPts();
     await loadDB();
     renderHome();
+    loadHeroSlides();
     /* No hero image to preload anymore — resolve the loading bar's
        image slice immediately so it isn't stuck waiting on it. */
     if(typeof window._heroLoadCb === 'function'){

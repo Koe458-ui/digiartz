@@ -17,6 +17,16 @@
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
+    /* Consent Mode default — denied until the cookie banner records a
+       choice (ckAccept flips these to granted via gtag('consent','update')).
+       Must run BEFORE gtag('config') or the first pageview fires with
+       cookies regardless of the banner. */
+    gtag('consent', 'default', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied'
+    });
     gtag('js', new Date());
 
     gtag('config', 'G-21DL9JWJ58');
@@ -314,9 +324,6 @@
     }
     .hNotifBtn.hasUnread .hNotifDot { display: block; }
 
-    /* Unused legacy rule kept for JS compatibility */
-    #hBgImg { display: none; }
-
     /* =========================================================
        TOP ARTWORK SLIDE — horizontal showcase strip that sits
        directly below the floating top bar (brand badge /
@@ -354,7 +361,17 @@
       background:var(--sur2);
       border:1px solid var(--bdr);
       scroll-snap-align:start;
+      position:relative;
+      overflow:hidden;
     }
+    /* ── Live slide content — image fill + bottom-gradient caption,
+       injected by renderTopSlide() from the hero_slides table.
+       Mirrors the admin preview (.ahsBox/.ahsText) so what a dev
+       sees in the Hero Slides editor is exactly what ships here. ── */
+    .tsBox img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+    .tsBoxText{position:absolute;left:0;right:0;bottom:0;padding:.55rem .7rem;background:linear-gradient(to top,rgba(5,3,8,.85),transparent);}
+    .tsBoxTitle{font-family:var(--fb);font-size:.8rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .tsBoxSub{font-family:var(--fb);font-size:.68rem;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.1rem;}
     @media(max-width:1024px){
       .tsBox{ scroll-snap-align:center; }
     }
@@ -375,9 +392,6 @@
 .upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
 .upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
 
-    /* Keep homeGrid hidden — data source only for Full Gallery overlay */
-    .gGrid{display:none;}
-
     /* ── ArtStation-style card: full-bleed image cropped to a uniform
        aspect ratio so cards sit in a standard row-major grid (correct
        newest→oldest reading order) with the title overlaid via bottom
@@ -386,7 +400,7 @@
     .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
     .gItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
     .gItem img{width:100%;aspect-ratio:1;display:block;height:auto;object-fit:cover;transition:transform .4s;}
-    .gItem img[data-src]{background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);background-size:200% 100%;animation:imgShimmer 1.4s infinite;min-height:120px;}
+    /* imgShimmer keyframe is shared by .awImgWrap.awLoading and .pfSkeleton */
     @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
     .gItem:hover img{transform:scale(1.04);}
     .gNm{display:none;}
@@ -2034,29 +2048,16 @@
       .lmBody{padding:1.2rem 1.2rem 1.6rem;}
     }
 
-    /* ── Auth / upload overlay ── */
-    .mOvr{position:fixed;inset:0;z-index:800;background:rgba(5,3,8,.9);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;padding:1rem;}
-    .mOvr.open{opacity:1;pointer-events:auto;}
-    .modal{background:var(--sur);border:1px solid var(--bdr);padding:2.5rem 2rem;max-width:420px;width:100%;position:relative;border-radius:6px;}
-    .modal h2{font-family:var(--fd);font-size:1.4rem;font-weight:700;letter-spacing:.05em;margin-bottom:.4rem;}
-    .modal p{font-size:.92rem;color:var(--txd);font-style:italic;margin-bottom:1.5rem;line-height:1.5;}
-    .mIn{width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fm);font-size:.8rem;letter-spacing:.1em;padding:.75rem 1rem;outline:none;transition:border-color .25s;margin-bottom:.8rem;border-radius:6px;}
-    .mIn:focus{border-color:var(--pg);}
-    select.mIn option{background:#15151f;color:#f5f4fb;}
-    .mIn::placeholder{color:var(--txd);opacity:.5;}
+    /* ── Legacy modal remnants — only the pieces still in use ──
+       .mBtn/.mBtn.sec: PREV/NEXT buttons inside the injected comic
+       viewer (ensureComicModal). .upPrev: preview <img> in both
+       upload popups. The rest of the old .mOvr/.modal component
+       (.mIn/.mX/.mErr/.dz*) was superseded by .upPop/.laBody and
+       has been removed. ── */
     .mBtn{width:100%;padding:.8rem 1rem;background:var(--pdim);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,box-shadow .3s;margin-bottom:.6rem;border-radius:6px;}
     .mBtn:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 20px color-mix(in srgb,var(--tc) 20%,transparent);}
     .mBtn.sec{background:transparent;border-color:var(--bdr);color:var(--txd);}
     .mBtn.sec:hover{border-color:var(--txd);background:var(--sur2);}
-    .mX{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--txd);font-size:1.1rem;cursor:pointer;transition:color .2s;border-radius:6px;}
-    .mX:hover{color:var(--pg);}
-    .mErr{font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;color:#f87171;margin-bottom:.6rem;display:none;}
-    .mErr.show{display:block;}
-    .dz{border:2px dashed var(--bdr);padding:2rem;text-align:center;margin-bottom:1rem;cursor:pointer;transition:border-color .3s,background .3s;position:relative;border-radius:6px;}
-    .dz:hover,.dz.over{border-color:var(--pg);background:var(--pdim);}
-    .dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-    .dzIco{font-size:2rem;color:var(--txd);margin-bottom:.5rem;}
-    .dzTxt{font-family:var(--fm);font-size:.7rem;letter-spacing:.15em;color:var(--txd);}
     .upPrev{width:100%;max-height:150px;object-fit:cover;margin-bottom:.8rem;display:none;}
 
     
@@ -2069,7 +2070,7 @@
     .admSv:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 15px color-mix(in srgb,var(--tc) 30%,transparent);}
     body.admin .adminOnly{display:flex !important;}
 
-    .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:900;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;border-radius:6px;}
+    .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:20100;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;border-radius:6px;}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
     .fsHdr{max-width:1200px;margin:0 auto;padding:0 2rem;}
@@ -3559,7 +3560,7 @@ body{background:var(--bg);}
 .fgHdr,.cpHdr,.apHdr,.subPgHdr{border-bottom:1px solid var(--bdr);}
 .cpBar::before{background:rgba(5,3,8,.96)!important;}
 .cpBar{border-top:1px solid var(--bdr);}
-#legalBackdrop::before,.mOvr{background:rgba(5,3,8,.75)!important;}
+#legalBackdrop::before{background:rgba(5,3,8,.75)!important;}
 #artModal::before{background:rgba(5,3,8,.85)!important;}
 .gOv{background:rgba(5,3,8,.65)!important;}
 .admBar{background:rgba(13,10,20,.97)!important;}
@@ -3581,7 +3582,7 @@ body{background:var(--bg);}
 #fgFltPanel .fltOptH{background:color-mix(in srgb,var(--tc) 4%,transparent)!important;border-color:var(--bdr)!important;}
 
 /* Inputs / fields */
-.fgQ,.mIn,.cpBarInput,.upCatWrap{background:var(--sur2)!important;color:var(--tx);border-color:var(--bdr)!important;}
+.fgQ,.cpBarInput{background:var(--sur2)!important;color:var(--tx);border-color:var(--bdr)!important;}
 #fg .fgQ{background:var(--sur2)!important;color:var(--tx)!important;border-color:var(--bdr)!important;}
 
 /* Bottom nav — login/avatar chips match the dark/violet nav bar */
@@ -4738,14 +4739,14 @@ body{background:var(--bg);}
 /* ══════════════════════════════════════════════════════════════
    DARK VIOLET FIX — remaining white-theme leftovers
    Covers: Legal modal (Privacy/Terms/Cookie/Refund policy),
-   Auth/Upload modal (.mOvr/.modal), Admin bar (.admBar).
+   the comic viewer's .mBtn.sec buttons, Admin bar (.admBar).
    These sit outside #fg's scope so they never picked up the
    dark-violet tokens — they were still using the old white
    :root defaults. Re-declaring the tokens locally (same pattern
    as #fg/#comicArtsPage) makes every child that already styles
    itself with var(--bg)/var(--sur)/var(--tx)/etc. repaint dark.
    ══════════════════════════════════════════════════════════════ */
-#legalBackdrop,.mOvr,.admBar{
+#legalBackdrop,.admBar{
   --bg:#08080d;--sur:#131320;--sur2:#191927;
   --bdr:#26263a;--bdrh:#3a3a56;
   --tx:#f5f4fb;--txd:rgba(214,212,232,.62);
@@ -4753,28 +4754,21 @@ body{background:var(--bg);}
   --pdim:rgba(139,92,246,.16);
 }
 #legalBackdrop::before{background:rgba(5,3,8,.75)!important;}
-.legalModal,.modal{
+.legalModal{
   background:var(--sur)!important;
   border-color:var(--bdr)!important;
   box-shadow:0 0 60px rgba(139,92,246,.12),0 32px 64px rgba(5,3,8,.7),inset 0 1px 0 rgba(139,92,246,.1)!important;
 }
 .lmHead{border-bottom-color:var(--bdr)!important;background:linear-gradient(to right,rgba(139,92,246,.06),transparent)!important;}
-.lmTitle,.modal h2{color:var(--tx)!important;}
+.lmTitle{color:var(--tx)!important;}
 .lmClose{border-color:var(--bdr)!important;color:var(--txd)!important;background:none!important;}
 .lmClose:hover{border-color:var(--pg)!important;color:var(--ps)!important;background:var(--pdim)!important;}
 .lmBody{background:var(--sur2)!important;}
 .lmBody h2{color:var(--ps)!important;}
-.lmBody p,.lmBody li,.modal p{color:var(--txd)!important;}
+.lmBody p,.lmBody li{color:var(--txd)!important;}
 .lmBody strong{color:var(--tx)!important;}
 .lmDate{color:var(--ps)!important;background:rgba(139,92,246,.1)!important;border-color:var(--bdr)!important;}
-.mOvr{background:rgba(5,3,8,.9)!important;}
-.mIn{background:var(--sur2)!important;color:var(--tx)!important;border-color:var(--bdr)!important;}
-.mIn::placeholder{color:var(--txd)!important;}
 .mBtn.sec{color:var(--txd)!important;border-color:var(--bdr)!important;}
-.mX{color:var(--txd)!important;}
-.mX:hover{color:var(--pg)!important;}
-.dz{border-color:var(--bdr)!important;}
-.dzIco,.dzTxt{color:var(--txd)!important;}
 .admBar{background:rgba(13,10,20,.97)!important;border-top-color:var(--bdr)!important;}
 
 /* ── "Coming Soon" subscription popup — was hardcoded white ── */
@@ -4805,6 +4799,30 @@ body{background:var(--bg);}
 .ckAccept:hover{background:#c9b8fd!important;border-color:#c9b8fd!important;color:#131320!important;box-shadow:0 4px 18px rgba(139,92,246,.4)!important;}
 .ckReject{background:transparent!important;border-color:#26263a!important;color:rgba(214,212,232,.62)!important;}
 .ckReject:hover{background:rgba(139,92,246,.06)!important;border-color:#3a3a56!important;color:#c9b8fd!important;}
+
+/* ══════════════════════════════════════════════════════════════
+   HIDDEN-PANEL VISIBILITY FIX (a11y + paint performance)
+   Every slide-in page was parked off-screen with translateX(100%)
+   only — still focusable by keyboard Tab, still exposed to screen
+   readers (several are aria-modal dialogs), and still composited
+   by the browser on every frame. Toggling `visibility` with a
+   delay equal to each panel's slide duration removes closed
+   panels from the a11y tree, tab order, and the paint pipeline
+   while keeping the open/close animations pixel-identical —
+   the exact pattern #artModal already uses.
+   ══════════════════════════════════════════════════════════════ */
+#fg,#communityPage,#adsPanel,#comicArtsPage,#subPage,#profilePage,#admPage,#notifPage,#pfMyWorkPage,#authMod{
+  visibility:hidden;
+  transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s linear .45s;
+}
+#pfEditPage,#zeoPage{
+  visibility:hidden;
+  transition:transform .4s cubic-bezier(.22,1,.36,1),visibility 0s linear .4s;
+}
+#fg.open,#communityPage.open,#adsPanel.open,#comicArtsPage.open,#subPage.open,#profilePage.open,#admPage.open,#notifPage.open,#pfMyWorkPage.open,#authMod.open,#pfEditPage.open,#zeoPage.open{
+  visibility:visible;
+  transition-delay:0s,0s;
+}
 
 </style>
  </head>
@@ -4841,15 +4859,15 @@ body{background:var(--bg);}
        SUPABASE CONFIG BANNER
        ========================================================= -->
   <div id="sBanner">
-   ⚠ Supabase not configured — open the HTML file and fill in
+   ⚠ Supabase not configured — create a
    <strong>
-    SUPABASE_URL
+    config.js
    </strong>
-   and
+   next to this file defining
    <strong>
-    SUPABASE_ANON_KEY
+    window.KOE_CONFIG = { SB_URL, SB_KEY }
    </strong>
-   near the top of the &lt;script&gt; tag.
+   with your project URL and anon key.
    <a href="https://supabase.com" rel="noopener" target="_blank">
     Get a free Supabase project →
    </a>
@@ -4913,6 +4931,11 @@ body{background:var(--bg);}
        ========================================================= -->
   <section id="hero">
 
+    <!-- ── Page h1 — visually hidden (the hero is intentionally
+         text-free), present for SEO / heading outline / screen
+         readers. The visible h2s below it nest correctly. ── -->
+    <h1 class="srOnly">KOE — Digital Art Portfolio · Art Has No Limits</h1>
+
     <!-- ── Brand badge — floating pill, present across the whole
          front page (not just hero), top-left ── -->
     <div class="hBadge fpFloat" aria-hidden="true"><span class="hBadgeD">Digi</span><span class="hBadgeA">Artz</span></div>
@@ -4927,8 +4950,6 @@ body{background:var(--bg);}
       <span class="hNotifDot" aria-hidden="true"></span>
     </button>
 
-    <!-- Legacy elements kept for JS compatibility -->
-    <div id="hBgImg" style="display:none;"></div>
   </section>
 
   <!-- =========================================================
@@ -5721,7 +5742,7 @@ body{background:var(--bg);}
        <div class="upDzHint">JPG, PNG, WEBP, GIF up to 20MB</div>
        <button type="button" class="upDzBtn" tabindex="-1">📁 Choose Files</button>
       </div>
-      <img alt="preview" class="upPrev" id="pfUpPrev" src=""/>
+      <img alt="preview" class="upPrev" id="pfUpPrev"/>
 
       <!-- Comic-only: additional page images -->
       <div id="pfComicPagesWrap" style="display:none;">
@@ -6179,7 +6200,7 @@ body{background:var(--bg);}
       <div class="cpComposerWrap">
         <div class="cpSelectedImage" id="cpSelectedImage" style="display:none;border-bottom:1px solid var(--bdr);padding:0 0 6px 0;margin:0;">
           <div class="cpThumbWrap">
-            <img id="cpSelectedImageImg" class="cpThumbPreview" src="" alt="">
+            <img id="cpSelectedImageImg" class="cpThumbPreview" alt="">
             <button class="cpThumbClose" onclick="hideCommentThumbnail()">✕</button>
           </div>
         </div>
@@ -6378,7 +6399,7 @@ body{background:var(--bg);}
 
     <!-- CATEGORY 1 — BILLING & PAYMENTS -->
     <section class="faqCategory" aria-labelledby="faqCat1">
-      <div class="faqCatLabel" id="faqCat1" aria-hidden="false">
+      <div class="faqCatLabel" id="faqCat1">
         <span class="faqCatIco" aria-hidden="true">◈</span>Billing &amp; Payments
       </div>
 
@@ -6483,7 +6504,7 @@ body{background:var(--bg);}
 
     <!-- CATEGORY 2 — ACCOUNT & ACCESS -->
     <section class="faqCategory" aria-labelledby="faqCat2">
-      <div class="faqCatLabel" id="faqCat2" aria-hidden="false">
+      <div class="faqCatLabel" id="faqCat2">
         <span class="faqCatIco" aria-hidden="true">◎</span>Account &amp; Access
       </div>
 
@@ -6572,7 +6593,7 @@ body{background:var(--bg);}
 
     <!-- CATEGORY 3 — SUPPORT -->
     <section class="faqCategory" aria-labelledby="faqCat3">
-      <div class="faqCatLabel" id="faqCat3" aria-hidden="false">
+      <div class="faqCatLabel" id="faqCat3">
         <span class="faqCatIco" aria-hidden="true">✦</span>Support
       </div>
 
@@ -6629,7 +6650,7 @@ body{background:var(--bg);}
 
     <!-- CATEGORY 4 — TRUST & SECURITY -->
     <section class="faqCategory" aria-labelledby="faqCat4">
-      <div class="faqCatLabel" id="faqCat4" aria-hidden="false">
+      <div class="faqCatLabel" id="faqCat4">
         <span class="faqCatIco" aria-hidden="true">◉</span>Trust &amp; Security
       </div>
 
@@ -6818,7 +6839,7 @@ body{background:var(--bg);}
      <div class="avImgPane">
       <button class="avNavBtn avNavPrev" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous artwork">‹</button>
       <div class="avImgViewport" id="avImgViewport">
-       <img alt="" id="lbImg" src="" draggable="false"/>
+       <img alt="" id="lbImg" draggable="false"/>
       </div>
       <button class="avNavBtn avNavNext" id="avNextBtn" onclick="avNav(1)" aria-label="Next artwork">›</button>
       <div class="avZoomBar">
@@ -6935,12 +6956,12 @@ body{background:var(--bg);}
         </div>
       </div>
 
-      <!-- Email / Username -->
+      <!-- Email -->
       <div class="laFieldWrap">
-        <label class="laLabel" for="authEmail">Email or Username</label>
+        <label class="laLabel" for="authEmail">Email</label>
         <div class="laInputBox">
           <svg class="laIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
-          <input class="laInput" id="authEmail" placeholder="Enter your email or username" type="email" autocomplete="email"/>
+          <input class="laInput" id="authEmail" placeholder="Enter your email" type="email" autocomplete="email"/>
         </div>
       </div>
 
@@ -7034,7 +7055,7 @@ body{background:var(--bg);}
        <div class="upDzHint">JPG, PNG, WEBP, GIF up to 20MB</div>
        <button type="button" class="upDzBtn" tabindex="-1">📁 Choose Files</button>
       </div>
-      <img alt="preview" class="upPrev" id="upPrev" src=""/>
+      <img alt="preview" class="upPrev" id="upPrev"/>
 
       <div class="upField">
         <label class="upLbl" for="upNm">Artwork Name <span class="upReq">*</span></label>
@@ -7151,7 +7172,7 @@ body{background:var(--bg);}
     document.getElementById('sBanner').classList.add('show');
   }
 
-  let isAdm = false, upFile = null, images = [], comics = [], cfg = {};
+  let isAdm = false, upFile = null, images = [], comics = [];
   let filterCat = 'all', filterSrt = 'new';
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -7165,7 +7186,13 @@ body{background:var(--bg);}
     return String(val||'').split(',').map(function(c){return c.trim();}).filter(Boolean);
   }
   function restoreScroll(){
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','comicArtsPage','profilePage','pfEditPage','pfMyWorkPage','authMod'];
+    /* FIX: list now includes every overlay that locks body scroll —
+       notifPage, admPage, zeoPage and the injected comic viewer were
+       missing, so closing any other panel while one of them was open
+       silently re-enabled background scrolling behind it. comicModal
+       reports its state via data-state (set in openComicById /
+       closeComicModal) since it toggles display, not a class. */
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','comicArtsPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','comicModal'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -7176,14 +7203,11 @@ body{background:var(--bg);}
   async function loadDB(){
     if(!sb)return;
     try{
-      const[{data:imgs},{data:sets}]=await Promise.all([
-        /* Public-facing load — only approved items ever reach the
-           homepage/gallery/hero-showcase arrays. Anything still
-           status:'pending' (or rejected) is invisible here; it
-           only shows up inside #admPage for a dev to review. */
-        sb.from('artworks').select('*').eq('status','approved').order('created_at',{ascending:false}),
-        sb.from('settings').select('*')
-      ]);
+      /* Public-facing load — only approved items ever reach the
+         homepage/gallery/hero-showcase arrays. Anything still
+         status:'pending' (or rejected) is invisible here; it
+         only shows up inside #admPage for a dev to review. */
+      const{data:imgs}=await sb.from('artworks').select('*').eq('status','approved').order('created_at',{ascending:false});
       images=imgs||[];
     }catch(e){console.error(e);}
 
@@ -7200,8 +7224,6 @@ body{background:var(--bg);}
     /* Refresh the pending badge counts on the Admin Panel menu item, if a dev is signed in. */
     if(typeof admRefreshBadge==='function') admRefreshBadge();
   }
-
-  async function saveSetting(k,v){if(!sb)return;await sb.from('settings').upsert({key:k,value:v},{onConflict:'key'});}
 
   async function saveAll(){
     if(!sb||!isAdm)return;
@@ -7503,7 +7525,12 @@ body{background:var(--bg);}
     if(!img || !img.src) return;
     var a=document.createElement('a');
     var fullSrc=img.src.replace(/[?&]width=\d+/g,'').replace(/[?&]quality=\d+/g,'').replace(/\?&/g,'?').replace(/\?$/,'');
-    a.href=fullSrc; a.download=''; document.body.appendChild(a); a.click(); a.remove();
+    /* FIX: `download` is ignored for cross-origin URLs (Supabase
+       storage), so the click used to navigate the whole app away to
+       the raw image. Opening in a new tab keeps the site intact and
+       still lets the browser save the file. */
+    a.href=fullSrc; a.download=''; a.target='_blank'; a.rel='noopener';
+    document.body.appendChild(a); a.click(); a.remove();
   }
   function avShare(){
     var url=window.location.href;
@@ -8259,6 +8286,12 @@ body{background:var(--bg);}
         isDev=false; isAdm=false; userPlan=null; document.body.classList.remove('admin'); syncAdmBtn();
         syncSubOverviewCard(); /* reset profile card to guest state */
         notifRefreshBadge(); /* clears the dot — guests have no read-state to track */
+        /* FIX: signing out from the profile ⋮ menu used to leave the
+           now-stale profile page open, still painted with owner-only
+           controls. Close it and the owner-only pages outright. */
+        closeProfilePage();
+        closeMyWorkPage();
+        closeAdmPage();
       }
     });
 
@@ -8661,7 +8694,7 @@ body{background:var(--bg);}
       pfLoadStats();
       pfLoadMoreGallery();
       pfLoadMoreComic();
-      if(pushUrl!==false){
+      if(pushUrl!==false && window.location.pathname !== '/profile/'+encodeURIComponent(username)){
         try{ history.pushState({profileUser:username},'','/profile/'+encodeURIComponent(username)); }catch(e){}
       }
     }catch(e){ console.error('Error: '+e.message); closeProfilePage(); }
@@ -8702,6 +8735,13 @@ body{background:var(--bg);}
       pf.galleryPage++;
       if(rows.length < PF_PAGE_SIZE) pf.galleryDone = true;
       rows.forEach(function(a){
+        /* FIX: only APPROVED rows may enter the public `images` array.
+           This profile query intentionally pulls every status so the
+           owner can see their own pending items on their profile —
+           but pushing those into `images` leaked unreviewed artwork
+           into the homepage grid, Full Gallery, and gallery JSON-LD
+           for the rest of the session. */
+        if(a.status!=='approved') return;
         if(images.findIndex(function(i){return String(i.id)===String(a.id);})===-1) images.push(a);
       });
       pfRenderGallery();
@@ -8848,6 +8888,7 @@ body{background:var(--bg);}
     cmRenderPage();
     var modal = document.getElementById('comicModal');
     modal.style.display='flex';
+    modal.setAttribute('data-state','open');
     document.body.style.overflow='hidden';
     if(pushUrl!==false){
       try{ history.pushState({comicId:id},'','/comic/'+id); }catch(e){}
@@ -8866,6 +8907,7 @@ body{background:var(--bg);}
     var modal = document.getElementById('comicModal');
     if(!modal) return;
     modal.style.display='none';
+    modal.setAttribute('data-state','closed');
     restoreScroll();
     if(/^\/comic\//.test(window.location.pathname)){
       try{ history.pushState({},'', '/'); }catch(e){}
@@ -9118,6 +9160,14 @@ body{background:var(--bg);}
       var p = e.touches ? e.touches[0] : e;
       pfCrop.sx = p.clientX; pfCrop.sy = p.clientY;
       pfCrop.ox = pfCrop.x; pfCrop.oy = pfCrop.y;
+      /* FIX: move/up listeners attach only for the drag's duration.
+         Registered permanently, the non-passive touchmove forced the
+         browser to wait on this handler for EVERY touch scroll on the
+         whole site — measurable scroll jank on mobile. */
+      document.addEventListener('mousemove', move);
+      document.addEventListener('touchmove', move, {passive:false});
+      document.addEventListener('mouseup', up);
+      document.addEventListener('touchend', up);
       e.preventDefault();
     }
     function move(e){
@@ -9139,6 +9189,10 @@ body{background:var(--bg);}
     function up(){
       pfCrop.dragging = false;
       if(stageEl) stageEl.classList.remove('dragging');
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('touchmove', move);
+      document.removeEventListener('mouseup', up);
+      document.removeEventListener('touchend', up);
     }
     document.addEventListener('DOMContentLoaded', function(){
       var el = document.getElementById('pfCropStage');
@@ -9146,10 +9200,6 @@ body{background:var(--bg);}
       el.addEventListener('mousedown', down);
       el.addEventListener('touchstart', down, {passive:false});
     });
-    document.addEventListener('mousemove', move);
-    document.addEventListener('touchmove', move, {passive:false});
-    document.addEventListener('mouseup', up);
-    document.addEventListener('touchend', up);
   })();
   function cancelPfCrop(){
     document.getElementById('pfCropMod').classList.remove('open');
@@ -9402,6 +9452,12 @@ body{background:var(--bg);}
       var p = e.touches ? e.touches[0] : e;
       pfAvBCrop.sx = p.clientX; pfAvBCrop.sy = p.clientY;
       pfAvBCrop.ox = pfAvBCrop.x; pfAvBCrop.oy = pfAvBCrop.y;
+      /* FIX: same drag-scoped listener wiring as initPfCropDrag —
+         no permanent non-passive document touchmove handler. */
+      document.addEventListener('mousemove', move);
+      document.addEventListener('touchmove', move, {passive:false});
+      document.addEventListener('mouseup', up);
+      document.addEventListener('touchend', up);
       e.preventDefault();
     }
     function move(e){
@@ -9418,17 +9474,20 @@ body{background:var(--bg);}
       if(pfAvBCrop.axis==='x') pfAvBCrop.x = val; else pfAvBCrop.y = val;
       pfAvBCropRender();
     }
-    function up(){ pfAvBCrop.dragging = false; if(stageEl) stageEl.classList.remove('dragging'); }
+    function up(){
+      pfAvBCrop.dragging = false;
+      if(stageEl) stageEl.classList.remove('dragging');
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('touchmove', move);
+      document.removeEventListener('mouseup', up);
+      document.removeEventListener('touchend', up);
+    }
     document.addEventListener('DOMContentLoaded', function(){
       var el = document.getElementById('pfAvBCropStage');
       if(!el) return;
       el.addEventListener('mousedown', down);
       el.addEventListener('touchstart', down, {passive:false});
     });
-    document.addEventListener('mousemove', move);
-    document.addEventListener('touchmove', move, {passive:false});
-    document.addEventListener('mouseup', up);
-    document.addEventListener('touchend', up);
   })();
   function cancelPfAvBCrop(){
     document.getElementById('pfAvBCropMod').classList.remove('open');
@@ -9615,6 +9674,8 @@ body{background:var(--bg);}
   }
 
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closePfMenu();closePfUploadMenu();closeSubscription();closeSubModal();closeComicArts();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
+    /* FIX: these overlays previously ignored Escape entirely */
+    closeUp();cancelPfCrop();closeComicModal();closeNotifPage();closeAdmPage();closeMyWorkPage();ahsCloseEdit();
   }});
 
   /* ── BOTTOM NAVIGATION ──────────────────────────────────
@@ -9643,6 +9704,11 @@ body{background:var(--bg);}
     closeSubscription();
     closeAuthMod();
     closeAdmPage();
+    /* FIX: Edit My Work (z:520) keeps the bottom nav visible, so a
+       nav tap used to open the next section invisibly BEHIND it.
+       Notifications added too for symmetry/safety. */
+    closeMyWorkPage();
+    closeNotifPage();
   }
 
   function bnGoHome(){
@@ -9687,15 +9753,6 @@ body{background:var(--bg);}
     if(catR) catR.checked = true;
     openFG();
     if(typeof zeoSectionTrigger==='function') zeoSectionTrigger();
-  }
-  function ddOpenGalleryChar(){
-    closeMenu();
-    /* Pre-select the Characters category filter before opening */
-    filterCat = 'characters';
-    /* Sync the radio button so the filter panel shows the correct state */
-    var catR = document.querySelector('input[name="fltCat"][value="characters"]');
-    if(catR) catR.checked = true;
-    openFG();
   }
   function ddOpenCommunity(){ openCommunityHome(); }
   /* Tapping "Admin Panel" in the profile ⋮ menu now opens the
@@ -9763,6 +9820,41 @@ body{background:var(--bg);}
     admUpdateModeSub();
     showToast(isAdm ? 'Admin mode on ✦' : 'Admin mode off');
     if(isAdm && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
+  }
+
+  /* ── PUBLIC FEATURED SLIDES (#topSlide) ──
+     Reads the same hero_slides table the admin editor below writes
+     to, and paints the horizontal strip under the floating top bar.
+     heroSlides holds only rows that actually have an image, in
+     `position` order. renderTopSlide() replaces the static grey
+     placeholder boxes (which now act purely as a loading skeleton);
+     with zero slides the track is emptied so visitors never see
+     unfinished-looking empty shells. Requires a public SELECT RLS
+     policy on hero_slides (write stays dev-only). */
+  var heroSlides = [];
+  async function loadHeroSlides(){
+    if(!sb) return;
+    try{
+      const{data,error} = await sb.from('hero_slides').select('*').order('position',{ascending:true});
+      if(error) throw error;
+      heroSlides = (data||[]).filter(function(r){ return !!r.image_url; });
+    }catch(e){ heroSlides = []; console.warn('Featured slides fetch skipped:', e.message||e); }
+    renderTopSlide();
+  }
+  function renderTopSlide(){
+    var track = document.getElementById('tsTrack');
+    if(!track) return;
+    track.innerHTML = heroSlides.map(function(s){
+      return '<div class="tsBox">'+
+        '<img src="'+esc(s.image_url)+'" alt="'+esc(s.title||'Featured slide')+'" loading="lazy" decoding="async" draggable="false">'+
+        ((s.title||s.subtitle)
+          ? '<div class="tsBoxText">'+
+              (s.title?'<div class="tsBoxTitle">'+esc(s.title)+'</div>':'')+
+              (s.subtitle?'<div class="tsBoxSub">'+esc(s.subtitle)+'</div>':'')+
+            '</div>'
+          : '')+
+      '</div>';
+    }).join('');
   }
 
   /* ── HERO SLIDES (admin) — wired to Supabase ──
@@ -9875,6 +9967,7 @@ body{background:var(--bg);}
       if(result.error) throw result.error;
       ahSlides[ahsEditingIndex] = result.data;
       ahsRenderBox(ahsEditingIndex);
+      loadHeroSlides(); /* keep the public #topSlide strip in sync */
       showToast('Slide '+(ahsEditingIndex+1)+' saved ✦');
       ahsCloseEdit();
     }catch(e){
@@ -9903,6 +9996,7 @@ body{background:var(--bg);}
       if(error) throw error;
       ahSlides[ahsEditingIndex] = ahsEmptySlot();
       ahsRenderBox(ahsEditingIndex);
+      loadHeroSlides(); /* keep the public #topSlide strip in sync */
       showToast('Slide '+(ahsEditingIndex+1)+' deleted');
       ahsCloseEdit();
     }catch(e){
@@ -10288,13 +10382,6 @@ function hideCommentThumbnail(){
   if(box) box.style.display='none';
 }
 
-async function openComments(){
-    /* Open the community page then jump straight into the Art Talk
-       room — used by the "COMMENT" button on an artwork lightbox. */
-    openCommunityHome();
-    await cmOpenCommunity('arttalk');
-  }
-
   /* ── Community page: open/close the whole overlay ── */
   function openCommunityHome(){
     closeMenu();
@@ -10310,8 +10397,10 @@ async function openComments(){
     document.getElementById('cpBar').style.display = 'none';
     var lockNote = document.getElementById('cpLockNote');
     if(lockNote) lockNote.style.display = 'none';
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
+    /* FIX: restoreScroll() instead of a blind unlock — another overlay
+       (e.g. the artwork viewer opened from a showcase post) may still
+       be open above this page and must keep the body locked. */
+    restoreScroll();
     var nav = document.getElementById('bnNav');
     if(nav) nav.style.display = '';
   }
@@ -10879,6 +10968,9 @@ async function openComments(){
 
   async function init(){
     spawnPts();
+    /* Featured slides load in parallel with the main artworks fetch —
+       fire-and-forget; renderTopSlide() paints whenever it resolves. */
+    loadHeroSlides();
     await loadDB();
     renderHome();
     /* No hero image to preload anymore — resolve the loading bar's
@@ -11002,6 +11094,10 @@ async function openComments(){
     awInitIndicator();
   }
   window.addEventListener('resize', awInitIndicator);
+  /* FIX: Cinzel loads after DOMContentLoaded and reflows the tab
+     widths — without this the underline sat misaligned until the
+     first window resize. */
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(awInitIndicator); }
 
   /* Build one .awCard for either an artwork or a comic — same markup/
      styling (ArtStation-style masonry card), different data mapping
@@ -11135,7 +11231,7 @@ async function openComments(){
   window.rebuildGalCarousels([]);
 
 
-  /* SUBSCRIPTION OVERLAY Mirrors openComments/closeComments and openAdsPanel patterns. */
+  /* SUBSCRIPTION OVERLAY Mirrors the openAdsPanel / openCommunityHome patterns. */
   function openSubscription() {
     closeMenu();
     var el = document.getElementById('subPage');
@@ -11252,13 +11348,20 @@ async function openComments(){
       }, DUR + 60);
     }
 
+    /* FIX: on touch devices every tap fires touchstart AND a
+       synthesized click ~300ms later — two overlapping ripples per
+       tap. Remember the last touch and skip the click twin. */
+    var lastTouch = 0;
+
     /* Mouse click — desktop, laptop, touchscreen laptop */
     document.addEventListener('click', function(e){
+      if (Date.now() - lastTouch < 700) return;
       spawnRipple(e.clientX, e.clientY);
     }, {capture:true, passive:true});
 
     /* Touch — mobile, tablet, touchscreen laptop */
     document.addEventListener('touchstart', function(e){
+      lastTouch = Date.now();
       for(var i = 0; i < e.changedTouches.length; i++){
         spawnRipple(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
       }
@@ -11308,8 +11411,9 @@ async function openComments(){
   /* ── Close ── */
   window.closeAdsPanel = function(){
     panel.classList.remove('open');
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
+    /* FIX: consistent lock accounting via restoreScroll() */
+    if (typeof restoreScroll === 'function') restoreScroll();
+    else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
   };
 
   /* ── Dot updater on scroll ── */
@@ -11638,6 +11742,11 @@ async function openComments(){
       STAGGER_SELECTORS.forEach(function (sel) {
         var cards = section.querySelectorAll(sel);
         cards.forEach(function (card, i) {
+          /* FIX: never re-stamp a delay onto an already-revealed card —
+             the reveal handler just cleared it to unblock hover
+             transitions; re-applying it here would bring the lag back
+             on every dynamic restamp. */
+          if (card.classList.contains('fu-visible')) return;
           var delay = Math.min(i * STAGGER_BASE_MS, STAGGER_MAX_MS);
           card.style.transitionDelay = delay + 'ms';
         });
@@ -11645,45 +11754,62 @@ async function openComments(){
     });
   }
 
-  /* ── IntersectionObserver: trigger once per element ── */
+  /* ── IntersectionObserver: trigger once per element ──
+     FIX: a single shared observer instance, created once. Previously
+     every MutationObserver restamp (each grid re-render, tab switch,
+     load-more) built a brand-new IntersectionObserver observing ALL
+     .fu-el nodes — instances piled up for the page's lifetime, each
+     still watching every unrevealed card. Elements are now marked
+     with data-fu-obs so each is observed exactly once. */
+  var io = null;
   function initObserver() {
     if (!('IntersectionObserver' in window)) {
       /* Fallback: just show everything immediately */
       document.querySelectorAll('.fu-el').forEach(function (el) {
         el.classList.add('fu-visible');
+        el.style.transitionDelay = '';
       });
       return;
     }
 
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          var el = entry.target;
-          el.classList.add('fu-visible');
-          io.unobserve(el); /* one-shot — never replays */
+    if (!io) {
+      io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            var el = entry.target;
+            el.classList.add('fu-visible');
+            io.unobserve(el); /* one-shot — never replays */
 
-          /* FIX: will-change must not persist forever. Left on
-             indefinitely, every revealed card stays promoted to
-             its own GPU compositing layer for the rest of the
-             page's life. On a gallery with many cards this stacks
-             up fast and starves the raster thread during fast/fling
-             scrolling, which is what causes the brief white flash
-             (an unpainted layer backing store) that clears itself
-             once scrolling slows. Drop the hint once the 850ms
-             reveal transition is actually done, with a timeout
-             fallback in case transitionend doesn't fire (e.g. the
-             element was already mid-transition or off-screen). */
-          var freeLayer = function () { el.style.willChange = 'auto'; };
-          el.addEventListener('transitionend', freeLayer, { once: true });
-          setTimeout(freeLayer, 900);
-        }
+            /* FIX: will-change must not persist forever. Left on
+               indefinitely, every revealed card stays promoted to
+               its own GPU compositing layer for the rest of the
+               page's life. On a gallery with many cards this stacks
+               up fast and starves the raster thread during fast/fling
+               scrolling, which is what causes the brief white flash
+               (an unpainted layer backing store) that clears itself
+               once scrolling slows. Drop the hint once the 850ms
+               reveal transition is actually done, with a timeout
+               fallback in case transitionend doesn't fire.
+               FIX: the stagger transitionDelay is cleared here too —
+               left in place it delayed every LATER transition on the
+               card (hover lift, border glow) by up to 560ms. */
+            var freeLayer = function () {
+              el.style.willChange = 'auto';
+              el.style.transitionDelay = '';
+            };
+            el.addEventListener('transitionend', freeLayer, { once: true });
+            setTimeout(freeLayer, 900);
+          }
+        });
+      }, {
+        threshold: 0.08,        /* trigger when 8% of element is in view */
+        rootMargin: '0px 0px -40px 0px'  /* slight bottom buffer */
       });
-    }, {
-      threshold: 0.08,        /* trigger when 8% of element is in view */
-      rootMargin: '0px 0px -40px 0px'  /* slight bottom buffer */
-    });
+    }
 
     document.querySelectorAll('.fu-el').forEach(function (el) {
+      if (el.dataset.fuObs) return; /* already being watched */
+      el.dataset.fuObs = '1';
       io.observe(el);
     });
   }
@@ -12248,7 +12374,13 @@ window.ZEO_DATA = {
   function closeChat() {
     isOpen = false;
     page.classList.remove('open');
-    document.body.style.overflow = '';
+    /* FIX: Zeo can be opened on top of another locked panel (the
+       Community Friends list opens it via cmOpenZeo) — a blind
+       overflow reset here unlocked background scroll behind that
+       still-open panel. restoreScroll() only unlocks when nothing
+       else is open. */
+    if (typeof restoreScroll === 'function') restoreScroll();
+    else document.body.style.overflow = '';
     btn.setAttribute('aria-expanded', 'false');
     resumeBubble();
   }

@@ -69,7 +69,7 @@
 
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
-    html{scroll-behavior:smooth;}
+    html{scroll-behavior:smooth;background:#050308;}
     body{background:var(--bg);color:var(--tx);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
 
     /* INTRO — dark/violet theme, matching the Community page
@@ -111,12 +111,26 @@
       display:flex;align-items:center;justify-content:space-between;
       padding:.55rem 1rem;
       border-radius:999px;
-      background:linear-gradient(160deg,rgba(19,19,32,.92) 0%,rgba(13,13,22,.94) 100%);
       border:1px solid rgba(139,92,246,.22);
       box-shadow:0 10px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(139,92,246,.08);
-      backdrop-filter:blur(18px);
-      -webkit-backdrop-filter:blur(18px);
-      will-change:transform;
+      isolation:isolate;
+    }
+    /* FIX: background + blur moved off #bnNav itself and onto this
+       ::before layer. WebKit's compositor flashes white on fast
+       scroll when a position:fixed element ALSO carries
+       backdrop-filter, because it has to re-snapshot the blur
+       source for the SAME layer it's repositioning every frame.
+       Putting the blur on a separate absolutely-positioned layer
+       behind the content decouples "track the viewport" from
+       "sample + blur the backdrop", which stops the flash. Visual
+       result is pixel-identical. */
+    #bnNav::before{
+      content:'';
+      position:absolute;
+      inset:0;
+      border-radius:inherit;
+      background:linear-gradient(160deg,rgba(19,19,32,.92) 0%,rgba(13,13,22,.94) 100%);
+      z-index:-1;
     }
     .bnItem{
       position:relative;
@@ -174,6 +188,7 @@
       position: relative;
       min-height: 1px;
       overflow: hidden;
+      background: var(--bg);
     }
 
     /* ── Front-page floating widgets — brand badge + notification
@@ -193,13 +208,23 @@
       align-items: center;
       justify-content: center;
       border-radius: 999px;
-      background: linear-gradient(160deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.1) 100%);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
       border: 1px solid rgba(255,255,255,.35);
       box-shadow: 0 10px 32px rgba(5,3,8,.35), inset 0 1px 0 rgba(255,255,255,.15);
       color: #ffffff;
       transition: opacity .25s ease, transform .25s ease;
+      isolation: isolate;
+    }
+    /* FIX: same decoupling as #bnNav — blur lives on its own layer
+       behind the content instead of on the fixed element itself,
+       so WebKit isn't re-snapshotting the backdrop for a layer
+       it's simultaneously repositioning every scroll frame. */
+    .fpFloat::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(160deg,rgba(255,255,255,.32) 0%,rgba(255,255,255,.2) 100%);
+      z-index: -1;
     }
     /* Hidden once the hero section has scrolled out of view — these
        widgets (brand badge, notification button, and #zeoBtn below)
@@ -4114,8 +4139,6 @@ body{background:var(--bg);}
   width: clamp(42px, 8vw, 54px);
   height: clamp(42px, 8vw, 54px);
   border-radius: 50%;
-  /* Background shows while image loads or as fallback SVG backdrop */
-  background: linear-gradient(135deg, rgba(20,30,55,.95) 0%, rgba(15,22,44,.98) 100%);
   border: 2px solid rgba(99,179,237,.45);
   box-shadow: 0 0 18px rgba(99,179,237,.35), 0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.12);
   cursor: pointer;
@@ -4127,12 +4150,26 @@ body{background:var(--bg);}
   font-size: 1.25rem;
   overflow: hidden; /* clips avatar image to circle */
   padding: 0;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, background .3s ease, opacity .25s ease;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, opacity .25s ease;
   user-select: none;
+  isolation: isolate;
 }
-#zeoBtn:hover {
+/* FIX: background + blur split onto ::before, same decoupling as
+   #bnNav / .fpFloat, so the fixed positioning layer isn't also
+   the layer WebKit has to re-snapshot the blur for every scroll
+   frame. Avatar <img> (normal in-flow child) still paints above
+   this negative-z-index layer, so it's visually unchanged. */
+#zeoBtn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Background shows while avatar image loads or as fallback */
+  background: linear-gradient(135deg, rgba(20,30,55,.95) 0%, rgba(15,22,44,.98) 100%);
+  transition: background .3s ease;
+  z-index: -1;
+}
+#zeoBtn:hover::before {
   background: linear-gradient(135deg, rgba(28,40,70,.95) 0%, rgba(20,30,58,.98) 100%);
 }
 #zeoBtn:active {
@@ -10937,8 +10974,24 @@ async function openComments(){
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
-          entry.target.classList.add('fu-visible');
-          io.unobserve(entry.target); /* one-shot — never replays */
+          var el = entry.target;
+          el.classList.add('fu-visible');
+          io.unobserve(el); /* one-shot — never replays */
+
+          /* FIX: will-change must not persist forever. Left on
+             indefinitely, every revealed card stays promoted to
+             its own GPU compositing layer for the rest of the
+             page's life. On a gallery with many cards this stacks
+             up fast and starves the raster thread during fast/fling
+             scrolling, which is what causes the brief white flash
+             (an unpainted layer backing store) that clears itself
+             once scrolling slows. Drop the hint once the 850ms
+             reveal transition is actually done, with a timeout
+             fallback in case transitionend doesn't fire (e.g. the
+             element was already mid-transition or off-screen). */
+          var freeLayer = function () { el.style.willChange = 'auto'; };
+          el.addEventListener('transitionend', freeLayer, { once: true });
+          setTimeout(freeLayer, 900);
         }
       });
     }, {

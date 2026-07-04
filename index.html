@@ -30,6 +30,27 @@
   <meta name="description" content="Digiartz (KOE) — a digital art showcase featuring character illustrations, landscapes, vehicles, sketches, and creative digital artwork. Art has no limits."/>
   <link rel="canonical" href="https://digiartz.net/"/>
   <meta name="robots" content="index, follow, max-image-preview:large"/>
+  <!-- Favicon / site icons — generated from the new KOE "D" logo -->
+  <link rel="icon" href="/favicon.ico" sizes="any"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+  <!-- Organization schema — tells Google which logo belongs to Digiartz
+       so it can show it beside the site name in search results
+       (separate mechanism from the favicon above; Google needs both
+       structured data AND enough site authority before it will
+       actually display this in results — it's not instant). -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Digiartz",
+    "url": "https://digiartz.net/",
+    "logo": "https://digiartz.net/icon-512.png"
+  }
+  </script>
   <!-- Open Graph -->
   <meta property="og:site_name" content="Digiartz"/>
   <meta property="og:type" content="website"/>
@@ -2937,6 +2958,53 @@
     .admNotiSentTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.06em;color:var(--txd);opacity:.65;margin-top:.35rem;}
 
     /* =========================================================
+       HERO SLIDES (admin-only, UI ONLY — no Supabase wiring yet)
+       Lives inside #admPage, between the Admin Mode toggle and the
+       Artwork/Comic/Notifications tabs. 10 fixed slots, same
+       300×190 "desktop card" box as the live #topSlide strip.
+       Each box gets a pencil button → opens .ahsEditOvr with an
+       image picker (local preview only, FileReader dataURL) + a
+       text field + Delete. State lives in ahSlides[] (in-memory
+       array of 10 {image,text}) — nothing persists yet by design.
+       ========================================================= */
+    .ahsSection{margin-bottom:1.6rem;}
+    .ahsLbl{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--tx);margin-bottom:.7rem;}
+    .ahsGrid{display:flex;flex-wrap:wrap;gap:.7rem;}
+    .ahsBox{position:relative;width:300px;height:190px;border-radius:8px;background:var(--sur2);border:1px solid var(--bdr);overflow:hidden;flex:0 0 auto;}
+    .ahsImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+    .ahsText{position:absolute;left:0;right:0;bottom:0;padding:.5rem .6rem;background:linear-gradient(to top,rgba(5,3,8,.85),transparent);min-height:1.2em;}
+    .ahsTitleTxt{font-family:var(--fb);font-size:.78rem;font-weight:700;color:var(--tx);word-break:break-word;}
+    .ahsSubTxt{font-family:var(--fb);font-size:.68rem;color:var(--txd);word-break:break-word;margin-top:.1rem;}
+    .ahsPencil{position:absolute;top:.45rem;right:.45rem;width:30px;height:30px;border-radius:50%;background:rgba(5,3,8,.65);border:1px solid var(--bdr);color:var(--tx);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;transition:background .15s,border-color .15s;}
+    .ahsPencil:hover{background:rgba(5,3,8,.85);border-color:#9a5cff;}
+    @media(max-width:480px){.ahsBox{width:100%;max-width:300px;}}
+
+    .ahsEditOvr{position:fixed;inset:0;z-index:950;background:rgba(5,3,8,.9);display:none;align-items:center;justify-content:center;padding:1rem;}
+    .ahsEditOvr.open{display:flex;}
+    .ahsEditCard{width:100%;max-width:360px;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:1.3rem;}
+    .ahsEditOvr,.ahsEditOvr *{
+      --bg:#050308;--sur:#0d0a14;--sur2:#120e1c;
+      --tx:#f0e8ff;--txd:rgba(196,181,253,.6);
+      --bdr:color-mix(in srgb,#9a9ea5 18%,transparent);
+      --bdrh:color-mix(in srgb,#9a9ea5 45%,transparent);
+    }
+    .ahsEditTitle{font-family:var(--fm);font-size:.74rem;letter-spacing:.1em;color:var(--tx);margin-bottom:1rem;}
+    .ahsFieldLbl{font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--txd);margin-bottom:.4rem;display:block;}
+    .ahsImgPick{position:relative;width:100%;height:150px;border-radius:8px;background:var(--sur2);border:1px dashed var(--bdr);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;margin-bottom:1rem;}
+    .ahsImgPick img{width:100%;height:100%;object-fit:cover;display:block;}
+    .ahsImgPickHint{font-family:var(--fb);font-size:.75rem;color:var(--txd);}
+    .ahsTextInput{width:100%;background:var(--sur2);border:1px solid var(--bdr);border-radius:7px;color:var(--tx);font-family:var(--fb);font-size:.82rem;padding:.6rem .7rem;margin-bottom:1.2rem;box-sizing:border-box;}
+    .ahsTextInput:focus{outline:none;border-color:#9a5cff;}
+    .ahsEditActions{display:flex;align-items:center;justify-content:space-between;gap:.6rem;}
+    .ahsEditActionsRight{display:flex;gap:.6rem;}
+    .ahsDeleteBtn{background:none;color:#f87171;border:1px solid #7f1d1d;border-radius:6px;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;padding:.55rem .9rem;cursor:pointer;}
+    .ahsDeleteBtn:hover{background:rgba(220,38,38,.15);}
+    .ahsCancelBtn{background:none;color:var(--txd);border:1px solid var(--bdr);border-radius:6px;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;padding:.55rem .9rem;cursor:pointer;}
+    .ahsCancelBtn:hover{color:var(--tx);border-color:var(--bdrh);}
+    .ahsSaveBtn{background:#9a5cff;color:#fff;border:1px solid #9a5cff;border-radius:6px;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;padding:.55rem 1rem;cursor:pointer;}
+    .ahsSaveBtn:hover{opacity:.88;}
+
+    /* =========================================================
        NOTIFICATIONS PAGE (#notifPage)
        Opened by tapping the bell (#hNotifBtn). Read-only feed —
        admin broadcasts (notifications.user_id IS NULL) plus the
@@ -5263,6 +5331,25 @@ body{background:var(--bg);}
         </label>
       </div>
 
+      <!-- HERO SLIDES — UI only for now, no Supabase wiring yet.
+           10 fixed slots, pencil opens the edit overlay (image +
+           text + delete). See ahSlides[] / ahs* functions in JS. -->
+      <div class="ahsSection">
+        <div class="ahsLbl">HERO SLIDES</div>
+        <div class="ahsGrid" id="ahsGrid">
+          <div class="ahsBox" data-i="0"><img class="ahsImg" id="ahsImg0" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle0"></div><div class="ahsSubTxt" id="ahsSub0"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(0)" aria-label="Edit slide 1">✎</button></div>
+          <div class="ahsBox" data-i="1"><img class="ahsImg" id="ahsImg1" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle1"></div><div class="ahsSubTxt" id="ahsSub1"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(1)" aria-label="Edit slide 2">✎</button></div>
+          <div class="ahsBox" data-i="2"><img class="ahsImg" id="ahsImg2" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle2"></div><div class="ahsSubTxt" id="ahsSub2"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(2)" aria-label="Edit slide 3">✎</button></div>
+          <div class="ahsBox" data-i="3"><img class="ahsImg" id="ahsImg3" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle3"></div><div class="ahsSubTxt" id="ahsSub3"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(3)" aria-label="Edit slide 4">✎</button></div>
+          <div class="ahsBox" data-i="4"><img class="ahsImg" id="ahsImg4" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle4"></div><div class="ahsSubTxt" id="ahsSub4"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(4)" aria-label="Edit slide 5">✎</button></div>
+          <div class="ahsBox" data-i="5"><img class="ahsImg" id="ahsImg5" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle5"></div><div class="ahsSubTxt" id="ahsSub5"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(5)" aria-label="Edit slide 6">✎</button></div>
+          <div class="ahsBox" data-i="6"><img class="ahsImg" id="ahsImg6" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle6"></div><div class="ahsSubTxt" id="ahsSub6"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(6)" aria-label="Edit slide 7">✎</button></div>
+          <div class="ahsBox" data-i="7"><img class="ahsImg" id="ahsImg7" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle7"></div><div class="ahsSubTxt" id="ahsSub7"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(7)" aria-label="Edit slide 8">✎</button></div>
+          <div class="ahsBox" data-i="8"><img class="ahsImg" id="ahsImg8" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle8"></div><div class="ahsSubTxt" id="ahsSub8"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(8)" aria-label="Edit slide 9">✎</button></div>
+          <div class="ahsBox" data-i="9"><img class="ahsImg" id="ahsImg9" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle9"></div><div class="ahsSubTxt" id="ahsSub9"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(9)" aria-label="Edit slide 10">✎</button></div>
+        </div>
+      </div>
+
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
           <button class="pfTab active" id="admTabArt" role="tab" aria-selected="true" onclick="admSwitchTab('art')">ARTWORK<span class="admTabCount" id="admCountArt" style="display:none;">0</span></button>
@@ -5296,6 +5383,31 @@ body{background:var(--bg);}
         <div class="admNotiSentLbl">RECENTLY SENT</div>
         <div class="pfEmpty" id="admNotiEmpty" style="display:none;"><span class="admEmptyIcon">🔔</span>No notifications sent yet.</div>
         <div id="admNotiSentList" class="admNotiSentList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO SLIDE EDIT OVERLAY — UI only, no Supabase wiring yet.
+       Opened by the pencil on any of the 10 boxes above. -->
+  <div id="ahsEditOvr" class="ahsEditOvr" role="dialog" aria-modal="true" aria-label="Edit hero slide">
+    <div class="ahsEditCard">
+      <div class="ahsEditTitle">EDIT SLIDE <span id="ahsEditNum">1</span></div>
+      <label class="ahsFieldLbl">IMAGE</label>
+      <div class="ahsImgPick" onclick="document.getElementById('ahsFileInput').click()">
+        <img id="ahsEditPreview" style="display:none;">
+        <span class="ahsImgPickHint" id="ahsImgPickHint">Tap to choose image</span>
+      </div>
+      <input type="file" id="ahsFileInput" accept="image/*" style="display:none;" onchange="ahsPickFile(event)">
+      <label class="ahsFieldLbl">TITLE</label>
+      <input type="text" id="ahsEditTitle" class="ahsTextInput" placeholder="Slide title" maxlength="120">
+      <label class="ahsFieldLbl">SUBTITLE (optional)</label>
+      <input type="text" id="ahsEditSubtitle" class="ahsTextInput" placeholder="Slide subtitle" maxlength="160">
+      <div class="ahsEditActions">
+        <button class="ahsDeleteBtn" onclick="ahsDeleteSlide()">Delete</button>
+        <div class="ahsEditActionsRight">
+          <button class="ahsCancelBtn" onclick="ahsCloseEdit()">Cancel</button>
+          <button class="ahsSaveBtn" onclick="ahsSaveSlide()">Save</button>
+        </div>
       </div>
     </div>
   </div>
@@ -6969,6 +7081,7 @@ body{background:var(--bg);}
 
   // Admin role derived from profiles.role in Supabase, enforced via RLS
   const BUCKET   = 'koe-media';
+  const HERO_BUCKET = 'hero-slides'; // separate bucket for hero_slides images (see SQL setup)
 
 
   /* SEO defaults read from <head> so resetArtworkSEO() stays in sync */
@@ -7279,7 +7392,7 @@ body{background:var(--bg);}
   }
   function avGoToAuthor(){
     if(!avCurrentArt || !avCurrentArt.user_id) return;
-    var uname = avAuthorProfileCache[avCurrentArt.user_id] || (pf.profile && pf.profile.id===avCurrentArt.user_id ? pf.profile.username : null);
+    var uname = (avAuthorProfileCache[avCurrentArt.user_id] && avAuthorProfileCache[avCurrentArt.user_id].username) || (pf.profile && pf.profile.id===avCurrentArt.user_id ? pf.profile.username : null);
     if(!uname) return;
     closeLB();
     openProfileByUsername(uname);
@@ -9563,6 +9676,7 @@ body{background:var(--bg);}
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
     admLoadPending();
+    ahsLoadSlides();
   }
 
   function closeAdmPage(){
@@ -9591,6 +9705,152 @@ body{background:var(--bg);}
     admUpdateModeSub();
     showToast(isAdm ? 'Admin mode on ✦' : 'Admin mode off');
     if(isAdm && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
+  }
+
+  /* ── HERO SLIDES (admin) — wired to Supabase ──
+     Table: public.hero_slides (id, image_url, storage_path, title,
+     subtitle, position, created_at). Bucket: hero-slides.
+     ahSlides holds 10 slots in memory, indexed 0-9 to match
+     `position`: {id, image_url, storage_path, title, subtitle}.
+     A slot with id:null means nothing saved there yet.
+     ahsPendingFile holds the raw File object picked in the modal
+     (only uploaded to storage on Save, not on pick) — the preview
+     shown while editing is a local FileReader dataURL and is never
+     itself written to the DB. */
+  function ahsEmptySlot(){ return {id:null, image_url:null, storage_path:null, title:'', subtitle:''}; }
+  var ahSlides = [0,1,2,3,4,5,6,7,8,9].map(ahsEmptySlot);
+  var ahsEditingIndex = -1;
+  var ahsPendingFile = null;
+
+  async function ahsLoadSlides(){
+    if(!sb) return;
+    ahSlides = [0,1,2,3,4,5,6,7,8,9].map(ahsEmptySlot);
+    for(var i=0;i<10;i++) ahsRenderBox(i);
+    try{
+      const{data,error} = await sb.from('hero_slides').select('*').order('position',{ascending:true});
+      if(error) throw error;
+      (data||[]).forEach(function(row){
+        if(typeof row.position==='number' && row.position>=0 && row.position<10){
+          ahSlides[row.position] = row;
+        }
+      });
+    }catch(e){ console.error('Error loading hero slides: '+e.message); }
+    for(var j=0;j<10;j++) ahsRenderBox(j);
+  }
+
+  function ahsRenderBox(i){
+    var img = document.getElementById('ahsImg'+i);
+    var titleEl = document.getElementById('ahsTitle'+i);
+    var subEl = document.getElementById('ahsSub'+i);
+    if(!img || !titleEl || !subEl) return;
+    var slide = ahSlides[i];
+    if(slide.image_url){ img.src = slide.image_url; img.style.display=''; } else { img.style.display='none'; img.removeAttribute('src'); }
+    titleEl.textContent = slide.title || '';
+    subEl.textContent = slide.subtitle || '';
+  }
+
+  function ahsOpenEdit(i){
+    ahsEditingIndex = i;
+    ahsPendingFile = null;
+    document.getElementById('ahsEditNum').textContent = (i+1);
+    document.getElementById('ahsEditTitle').value = ahSlides[i].title || '';
+    document.getElementById('ahsEditSubtitle').value = ahSlides[i].subtitle || '';
+    var preview = document.getElementById('ahsEditPreview');
+    var hint = document.getElementById('ahsImgPickHint');
+    if(ahSlides[i].image_url){ preview.src = ahSlides[i].image_url; preview.style.display=''; hint.style.display='none'; }
+    else { preview.style.display='none'; preview.removeAttribute('src'); hint.style.display=''; }
+    document.getElementById('ahsEditOvr').classList.add('open');
+  }
+
+  function ahsCloseEdit(){
+    document.getElementById('ahsEditOvr').classList.remove('open');
+    ahsEditingIndex = -1;
+    ahsPendingFile = null;
+  }
+
+  function ahsPickFile(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    ahsPendingFile = file;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var preview = document.getElementById('ahsEditPreview');
+      preview.src = ev.target.result;
+      preview.style.display='';
+      document.getElementById('ahsImgPickHint').style.display='none';
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  async function ahsSaveSlide(){
+    if(ahsEditingIndex<0) return;
+    if(!sb){ showToast('Configure Supabase first'); return; }
+    var title = (document.getElementById('ahsEditTitle').value || '').trim();
+    if(!title){ showToast('Title is required'); return; }
+    var subtitle = (document.getElementById('ahsEditSubtitle').value || '').trim();
+    var slot = ahSlides[ahsEditingIndex];
+    var imageUrl = slot.image_url || null;
+    var storagePath = slot.storage_path || null;
+    if(!ahsPendingFile && !imageUrl){ showToast('Image is required'); return; }
+    var saveBtn = document.querySelector('.ahsSaveBtn');
+    if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='SAVING…'; }
+    try{
+      if(ahsPendingFile){
+        var ext = ahsPendingFile.name.split('.').pop();
+        var path = 'slide_'+ahsEditingIndex+'_'+Date.now()+'.'+ext;
+        const{error:ue} = await sb.storage.from(HERO_BUCKET).upload(path, ahsPendingFile, {cacheControl:'3600'});
+        if(ue) throw ue;
+        const{data:{publicUrl}} = sb.storage.from(HERO_BUCKET).getPublicUrl(path);
+        var oldPath = storagePath;
+        imageUrl = publicUrl;
+        storagePath = path;
+        if(oldPath) await sb.storage.from(HERO_BUCKET).remove([oldPath]);
+      }
+      var payload = {image_url:imageUrl, storage_path:storagePath, title:title, subtitle:subtitle||null, position:ahsEditingIndex};
+      var result;
+      if(slot.id){
+        result = await sb.from('hero_slides').update(payload).eq('id',slot.id).select().single();
+      } else {
+        result = await sb.from('hero_slides').insert(payload).select().single();
+      }
+      if(result.error) throw result.error;
+      ahSlides[ahsEditingIndex] = result.data;
+      ahsRenderBox(ahsEditingIndex);
+      showToast('Slide '+(ahsEditingIndex+1)+' saved ✦');
+      ahsCloseEdit();
+    }catch(e){
+      console.error('Error saving hero slide: '+e.message);
+      showToast('Error saving slide');
+    }finally{
+      if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent='Save'; }
+    }
+  }
+
+  async function ahsDeleteSlide(){
+    if(ahsEditingIndex<0) return;
+    var slot = ahSlides[ahsEditingIndex];
+    if(!slot.id){
+      // Nothing saved to this slot yet — just clear the local UI.
+      ahSlides[ahsEditingIndex] = ahsEmptySlot();
+      ahsRenderBox(ahsEditingIndex);
+      ahsCloseEdit();
+      return;
+    }
+    if(!sb){ showToast('Configure Supabase first'); return; }
+    if(!confirm('Delete this slide?')) return;
+    try{
+      if(slot.storage_path) await sb.storage.from(HERO_BUCKET).remove([slot.storage_path]);
+      const{error} = await sb.from('hero_slides').delete().eq('id',slot.id);
+      if(error) throw error;
+      ahSlides[ahsEditingIndex] = ahsEmptySlot();
+      ahsRenderBox(ahsEditingIndex);
+      showToast('Slide '+(ahsEditingIndex+1)+' deleted');
+      ahsCloseEdit();
+    }catch(e){
+      console.error('Error deleting hero slide: '+e.message);
+      showToast('Error deleting slide');
+    }
   }
 
   function admSwitchTab(tab){

@@ -5344,6 +5344,7 @@ body{background:var(--bg);}
       <div class="pfMenu" id="pfMenu" role="menu">
         <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openSubscription()">Subscription</button>
         <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openMyWorkPage()">Edit My Work</button>
+        <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openBookmarksPage()">Bookmarks</button>
         <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openThemePage()">Theme</button>
         <button class="pfMenuItem" id="smAdmBtn" role="menuitem" onclick="closePfMenu();smHandleAdm()">Admin Panel</button>
         <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
@@ -5398,6 +5399,8 @@ body{background:var(--bg);}
         <div class="pfStats">
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatArt">0</div><div class="pfStatLbl">ARTWORKS</div></div>
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatComic">0</div><div class="pfStatLbl">COMICS</div></div>
+          <div class="pfStatCard"><div class="pfStatNum" id="pfStatViews">—</div><div class="pfStatLbl">TOTAL VIEWS</div></div>
+          <div class="pfStatCard"><div class="pfStatNum" id="pfStatLikes">—</div><div class="pfStatLbl">TOTAL LIKES</div></div>
         </div>
         <div class="pfBioWrap">
           <div class="pfBioLbl">BIO</div>
@@ -7305,6 +7308,8 @@ body{background:var(--bg);}
       <span class="avBtnIcon">✕</span><span class="avBtnLabel">Close</span><kbd>ESC</kbd>
      </button>
      <div class="avTopRight">
+      <button type="button" class="avActBtn engBtn engLike" aria-label="Like" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 1 1 12 6.3a5 5 0 1 1 7.5 6.3Z"/></svg></button>
+      <button type="button" class="avActBtn engBtn engBm" aria-label="Bookmark" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1Z"/></svg></button>
       <button class="avActBtn" onclick="avDownload()" aria-label="Download">⬇</button>
       <button class="avActBtn" onclick="avShare()" aria-label="Share">↗</button>
       <button class="avActBtn" onclick="avReport()" aria-label="Report">⚑</button>
@@ -7738,6 +7743,7 @@ body{background:var(--bg);}
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
       </a>
+      <div class="engBtns"><button type="button" class="engBtn engLike" data-id="${idStr}" aria-label="Like" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 1 1 12 6.3a5 5 0 1 1 7.5 6.3Z"/></svg></button><button type="button" class="engBtn engBm" data-id="${idStr}" aria-label="Bookmark" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1Z"/></svg></button></div>
       <button class="gEdit" onclick="openEditArt('${idStr}',event)" title="Edit">✎</button>
       <button class="gDel" onclick="delImg('${idStr}','${esc(img.storage_path||'')}',event)" title="Delete">✕</button>
     </div>`;
@@ -11656,6 +11662,8 @@ function hideCommentThumbnail(){
     meta.appendChild(nm);
     meta.appendChild(ct);
     card.appendChild(wrap);
+    /* engagement: like + bookmark quick actions (artworks only) */
+    if(!isComic && id != null && window.__engMakeBtns){ card.appendChild(window.__engMakeBtns(String(id))); }
     card.appendChild(meta);
 
     if(isComic){
@@ -13515,6 +13523,386 @@ html.thmFade #themePage{
 </script>
 
 
+<!-- =========================================================
+     ENGAGEMENT (views • likes • bookmarks)
+     ├─ Views: history.pushState is wrapped — every path that
+     │   opens an artwork (/artwork/{id}) funnels through it, so
+     │   gallery clicks, prev/next and deep links all register.
+     │   Client cooldown (6h, localStorage) + server dedup
+     │   (1/viewer/artwork/day via SECURITY DEFINER RPC).
+     ├─ Likes/bookmarks: optimistic toggles, PK-deduped in the DB,
+     │   RLS-scoped reads. Like counts are never shown (product
+     │   rule) — they surface only as profile totals via RPC.
+     ├─ Bookmarks page: overlay reusing the site's page pattern.
+     ├─ Profile totals: observer on #pfUsername → works for own
+     │   AND public profiles without touching closure internals.
+     └─ Hard guards: no supabase / signed-out → graceful, no crash.
+     ========================================================= -->
+<style>
+/* ── Card quick actions (gallery + artworks masonry) ── */
+.engBtns{
+  position:absolute;bottom:.55rem;right:.55rem;z-index:3;
+  display:flex;gap:.4rem;
+}
+@media(hover:hover){
+  .gItem .engBtns,.awCard .engBtns{opacity:0;transition:opacity .18s ease;}
+  .gItem:hover .engBtns,.gItem:focus-within .engBtns,
+  .awCard:hover .engBtns,.awCard:focus-within .engBtns{opacity:1;}
+}
+.engBtn{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border:1px solid var(--bdr);
+  background:color-mix(in srgb,var(--bg) 62%,transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  color:var(--tx);transition:transform .15s ease,border-color .15s ease;
+}
+.engBtn:hover{border-color:var(--bdrh);transform:scale(1.08);}
+.engBtn:active{transform:scale(.94);}
+.engBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+.engBtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:fill .15s ease;}
+.engBtn[aria-pressed="true"]{border-color:rgba(var(--pg-rgb),.55);color:var(--pg);}
+.engBtn[aria-pressed="true"] svg{fill:var(--pg);stroke:var(--pg);}
+/* lightbox variants sit in the existing action bar */
+.avActBtn.engBtn{position:static;width:auto;height:auto;border-radius:8px;backdrop-filter:none;-webkit-backdrop-filter:none;}
+/* ── Bookmarks page ── */
+#bmPage{
+  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#bmPage.open{transform:translateX(0);}
+.bmBdy{
+  max-width:1080px;margin:0 auto;
+  padding:1.4rem max(1.4rem,env(safe-area-inset-right))
+          calc(6.5rem + env(safe-area-inset-bottom))
+          max(1.4rem,env(safe-area-inset-left));
+}
+.bmGrid{
+  display:grid;gap:1rem;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));
+}
+.bmCard{
+  position:relative;background:var(--sur);border:1px solid var(--bdr);
+  border-radius:12px;overflow:hidden;
+  transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s;
+}
+@media(hover:hover){.bmCard:hover{transform:translateY(-3px);border-color:var(--bdrh);}}
+.bmThumb{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:var(--sur2);}
+.bmMeta{padding:.6rem .7rem .7rem;}
+.bmName{
+  font-family:var(--fb);font-weight:600;font-size:.82rem;color:var(--tx);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.bmCat{font-family:var(--fm);font-size:.58rem;letter-spacing:.12em;color:var(--txd);text-transform:uppercase;margin-top:.25rem;}
+.bmRemove{
+  position:absolute;top:.5rem;right:.5rem;z-index:2;
+  width:30px;height:30px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--bdr);color:var(--tx);
+  background:color-mix(in srgb,var(--bg) 62%,transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+.bmRemove:hover{border-color:var(--pg);color:var(--pg);}
+.bmEmpty{
+  text-align:center;padding:3.5rem 1rem;color:var(--txd);
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.14em;
+}
+.bmEmpty .ico{font-size:1.8rem;margin-bottom:.8rem;opacity:.6;}
+@media(prefers-reduced-motion:reduce){
+  #bmPage,.bmCard,.engBtn{transition:none;}
+}
+</style>
+
+<div id="bmPage" role="dialog" aria-modal="true" aria-label="Bookmarked artworks">
+  <div class="subPgHdr">
+    <button class="subPgX" onclick="closeBookmarksPage()" aria-label="Close bookmarks">←</button>
+    <div class="subPgTitle">BOOKMARKS <span class="s">✦</span></div>
+  </div>
+  <div class="bmBdy">
+    <div class="bmGrid" id="bmGrid"></div>
+    <div class="bmEmpty" id="bmEmptyState" style="display:none;">
+      <div class="ico">◈</div>
+      <div>NO BOOKMARKS YET</div>
+      <div style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">Tap the bookmark icon on any artwork to save it here.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Engagement module ──────────────────────────────────── */
+(function () {
+  'use strict';
+  var VIEW_COOLDOWN = 6 * 3600 * 1000, SEEN_KEY = 'koeViewSeen', VKEY = 'koeViewerKey';
+  var liked = new Set(), marked = new Set(), setsReady = false;
+  var busy = {};            /* per-artwork in-flight lock for toggles   */
+  var profileIdCache = {};  /* username → user id                       */
+  var paintTimer = null;
+
+  var HEART = '<svg viewBox="0 0 24 24"><path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 1 1 12 6.3a5 5 0 1 1 7.5 6.3Z"/></svg>';
+  var BMARK = '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1Z"/></svg>';
+
+  function $ (id) { return document.getElementById(id); }
+  function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
+  function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
+  function toast (m) { if (typeof showToast === 'function') showToast(m); }
+
+  /* ══ VIEWS ══════════════════════════════════════════════ */
+  function viewerKey () {
+    var k = null;
+    try { k = localStorage.getItem(VKEY); } catch (e) {}
+    if (!k) {
+      k = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+        : ('k' + Date.now() + Math.random().toString(36).slice(2, 12));
+      try { localStorage.setItem(VKEY, k); } catch (e) {}
+    }
+    return k;
+  }
+  function seenMap () {
+    try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '{}'); } catch (e) { return {}; }
+  }
+  function registerView (id) {
+    if (!id || !db()) return;
+    var now = Date.now(), map = seenMap();
+    if (map[id] && now - map[id] < VIEW_COOLDOWN) return;   /* client cooldown */
+    map[id] = now;
+    for (var k in map) if (now - map[k] > 2 * VIEW_COOLDOWN * 4) delete map[k]; /* prune */
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify(map)); } catch (e) {}
+    db().rpc('register_artwork_view', { p_artwork: id, p_anon_key: viewerKey() })
+      .then(function () {}, function () {});               /* fire-and-forget */
+  }
+  function idFromPath (path) {
+    var m = /^\/artwork\/([^/]+)$/.exec(path || '');
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  /* One funnel for every open path: gallery clicks, prev/next
+     navigation and SPA routing all push /artwork/{id}. */
+  var origPush = history.pushState.bind(history);
+  history.pushState = function (state, title, url) {
+    var out = origPush(state, title, url);
+    try {
+      var id = idFromPath(typeof url === 'string' ? url : (url && url.pathname));
+      if (id) registerView(id);
+    } catch (e) {}
+    return out;
+  };
+  /* Deep links load with the URL already set — no pushState fires. */
+  document.addEventListener('DOMContentLoaded', function () {
+    var id = idFromPath(location.pathname);
+    if (id) setTimeout(function () { registerView(id); }, 1200);
+  });
+
+  /* ══ LIKE / BOOKMARK state ══════════════════════════════ */
+  async function loadSets () {
+    if (!db() || !me()) { liked.clear(); marked.clear(); setsReady = true; paintSoon(); return; }
+    try {
+      var l = await db().from('artwork_likes').select('artwork_id').limit(3000);
+      var b = await db().from('artwork_bookmarks').select('artwork_id').limit(3000);
+      liked  = new Set((l.data || []).map(function (r) { return String(r.artwork_id); }));
+      marked = new Set((b.data || []).map(function (r) { return String(r.artwork_id); }));
+    } catch (e) { /* stay with last known */ }
+    setsReady = true;
+    paintSoon();
+  }
+
+  function makeBtns (id) {
+    var wrap = document.createElement('div');
+    wrap.className = 'engBtns';
+    wrap.innerHTML =
+      '<button type="button" class="engBtn engLike" data-id="' + id + '" aria-label="Like" aria-pressed="false">' + HEART + '</button>' +
+      '<button type="button" class="engBtn engBm" data-id="' + id + '" aria-label="Bookmark" aria-pressed="false">' + BMARK + '</button>';
+    return wrap;
+  }
+  window.__engMakeBtns = makeBtns; /* used by buildAwCard patch */
+
+  function paintAll () {
+    document.querySelectorAll('.engLike,.engBm').forEach(function (b) {
+      var id = b.getAttribute('data-id') || idFromPath(location.pathname) || '';
+      if (b.classList.contains('engLike')) b.setAttribute('aria-pressed', liked.has(String(id)) ? 'true' : 'false');
+      else b.setAttribute('aria-pressed', marked.has(String(id)) ? 'true' : 'false');
+    });
+  }
+  function paintSoon () { clearTimeout(paintTimer); paintTimer = setTimeout(paintAll, 200); }
+  /* Cards render asynchronously after data loads — repaint states
+     whenever new engagement buttons enter the DOM. */
+  new MutationObserver(function (muts) {
+    for (var i = 0; i < muts.length; i++) {
+      if (muts[i].addedNodes.length) { paintSoon(); return; }
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  async function toggle (kind, id, btn) {
+    if (!db()) { toast('Backend not configured'); return; }
+    if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
+    var key = kind + ':' + id;
+    if (busy[key]) return;
+    busy[key] = true;
+    var set   = kind === 'like' ? liked : marked;
+    var table = kind === 'like' ? 'artwork_likes' : 'artwork_bookmarks';
+    var on    = !set.has(id);
+    /* optimistic */
+    on ? set.add(id) : set.delete(id);
+    paintAll();
+    try {
+      var r = on
+        ? await db().from(table).insert({ artwork_id: id, user_id: me().id })
+        : await db().from(table).delete().match({ artwork_id: id, user_id: me().id });
+      if (r.error && !(on && r.error.code === '23505')) throw r.error; /* 23505 dup = already in desired state */
+      if (kind === 'bm') toast(on ? 'Saved to bookmarks ✦' : 'Removed from bookmarks');
+      if (kind === 'like') refreshProfileStatsIfOpen();
+      if (!on && kind === 'bm') removeBmCard(id);
+    } catch (e) {
+      on ? set.delete(id) : set.add(id);  /* revert */
+      paintAll();
+      toast('Action failed — try again');
+    } finally { busy[key] = false; }
+  }
+
+  /* One delegated listener covers cards, lightbox and bookmarks page. */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.engLike,.engBm,.bmRemove');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var id = b.getAttribute('data-id') || idFromPath(location.pathname);
+    if (!id) return;
+    if (b.classList.contains('bmRemove')) { toggle('bm', String(id), b); return; }
+    toggle(b.classList.contains('engLike') ? 'like' : 'bm', String(id), b);
+  }, true);
+
+  /* ══ BOOKMARKS PAGE ═════════════════════════════════════ */
+  var bmLastFocus = null;
+  async function loadBookmarksPage () {
+    var grid = $('bmGrid'), empty = $('bmEmptyState');
+    grid.innerHTML = '<div class="bmEmpty">LOADING…</div>';
+    empty.style.display = 'none';
+    if (!db() || !me()) { grid.innerHTML = ''; empty.style.display = ''; return; }
+    try {
+      var b = await db().from('artwork_bookmarks')
+        .select('artwork_id,created_at')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (b.error) throw b.error;
+      var ids = (b.data || []).map(function (r) { return r.artwork_id; });
+      if (!ids.length) { grid.innerHTML = ''; empty.style.display = ''; return; }
+      var a = await db().from('artworks')
+        .select('id,name,image_url,category')
+        .in('id', ids);
+      if (a.error) throw a.error;
+      var byId = {};
+      (a.data || []).forEach(function (art) { byId[String(art.id)] = art; });
+      grid.innerHTML = '';
+      ids.forEach(function (rawId) {
+        var art = byId[String(rawId)];
+        if (!art) return;                       /* artwork was deleted */
+        grid.appendChild(bmCard(art));
+      });
+      if (!grid.children.length) empty.style.display = '';
+    } catch (e) {
+      grid.innerHTML = '<div class="bmEmpty">COULDN\u2019T LOAD BOOKMARKS — TRY AGAIN</div>';
+    }
+  }
+  function bmCard (art) {
+    var id = String(art.id);
+    var card = document.createElement('div');
+    card.className = 'bmCard';
+    var link = document.createElement('a');
+    link.href = '/artwork/' + encodeURIComponent(id);
+    link.style.cssText = 'display:block;color:inherit;text-decoration:none;';
+    link.addEventListener('click', function (ev) {
+      /* Prefer the in-page modal when the artwork is in the loaded
+         gallery; otherwise fall through to real navigation. */
+      if (typeof window.handleArtClick === 'function' &&
+          document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
+        closeBookmarksPage();
+        window.handleArtClick(ev, id);
+      }
+    });
+    var img = document.createElement('img');
+    img.className = 'bmThumb'; img.loading = 'lazy'; img.decoding = 'async';
+    img.src = art.image_url || ''; img.alt = art.name || 'Artwork';
+    var meta = document.createElement('div'); meta.className = 'bmMeta';
+    var nm = document.createElement('div'); nm.className = 'bmName';
+    nm.textContent = art.name || 'Untitled';
+    var ct = document.createElement('div'); ct.className = 'bmCat';
+    ct.textContent = Array.isArray(art.category) ? (art.category[0] || 'art') : (art.category || 'art');
+    meta.appendChild(nm); meta.appendChild(ct);
+    link.appendChild(img); link.appendChild(meta);
+    var rm = document.createElement('button');
+    rm.className = 'bmRemove'; rm.setAttribute('data-id', id);
+    rm.setAttribute('aria-label', 'Remove bookmark'); rm.textContent = '✕';
+    card.appendChild(link); card.appendChild(rm);
+    return card;
+  }
+  function removeBmCard (id) {
+    var page = $('bmPage');
+    if (!page || !page.classList.contains('open')) return;
+    var btn = page.querySelector('.bmRemove[data-id="' + CSS.escape(String(id)) + '"]');
+    if (btn && btn.closest('.bmCard')) btn.closest('.bmCard').remove();
+    if (!$('bmGrid').children.length) $('bmEmptyState').style.display = '';
+  }
+  function openBookmarksPage () {
+    if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
+    bmLastFocus = document.activeElement;
+    var page = $('bmPage'); page.classList.add('open');
+    var nav = $('bnNav'); if (nav) nav.style.display = 'none';
+    document.body.style.overflow = 'hidden';
+    loadBookmarksPage();
+  }
+  function closeBookmarksPage () {
+    var page = $('bmPage'); page.classList.remove('open');
+    var nav = $('bnNav'); if (nav) nav.style.display = '';
+    document.body.style.overflow = '';
+    if (bmLastFocus && bmLastFocus.focus) bmLastFocus.focus({ preventScroll: true });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && $('bmPage') && $('bmPage').classList.contains('open')) closeBookmarksPage();
+  });
+  window.openBookmarksPage  = openBookmarksPage;
+  window.closeBookmarksPage = closeBookmarksPage;
+
+  /* ══ PROFILE TOTALS (Total Views / Total Likes) ═════════ */
+  async function refreshStatsFor (username) {
+    var vEl = $('pfStatViews'), lEl = $('pfStatLikes');
+    if (!vEl || !lEl || !db() || !username || username === '—' || /^Loading/.test(username)) return;
+    vEl.textContent = '—'; lEl.textContent = '—';
+    try {
+      var uid = profileIdCache[username];
+      if (!uid) {
+        var p = await db().from('profiles').select('id').eq('username', username).single();
+        if (p.error || !p.data) return;
+        uid = profileIdCache[username] = p.data.id;
+      }
+      var r = await db().rpc('get_profile_engagement', { p_user: uid });
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row) return;
+      vEl.textContent = Number(row.total_views  || 0).toLocaleString();
+      lEl.textContent = Number(row.total_likes || 0).toLocaleString();
+    } catch (e) { /* leave dashes */ }
+  }
+  function refreshProfileStatsIfOpen () {
+    var page = $('profilePage'), un = $('pfUsername');
+    if (page && page.classList.contains('open') && un) refreshStatsFor(un.textContent.trim());
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    var un = $('pfUsername');
+    if (un) {
+      /* fires for own AND public profiles — the site writes the
+         displayed username here on every profile load */
+      new MutationObserver(function () {
+        refreshStatsFor(un.textContent.trim());
+      }).observe(un, { childList: true, characterData: true, subtree: true });
+    }
+    if (db() && db().auth && db().auth.onAuthStateChange) {
+      db().auth.onAuthStateChange(function () { setTimeout(loadSets, 400); });
+    } else {
+      loadSets();
+    }
+  });
+})();
+</script>
+
+
 <!-- ── Front-page floating widgets ─────────────────────────
      The brand badge, notification button, and Zeo AI button
      are fixed-position with a high z-index, so without this
@@ -13559,7 +13947,7 @@ html.thmFade #themePage{
   /* ── Full-page overlay panels — hide widgets whenever any of
      these slide-in pages is open, since they otherwise float
      above the panel's lower z-index. ── */
-  var OVERLAY_IDS = ['comicArtsPage', 'profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage'];
+  var OVERLAY_IDS = ['comicArtsPage', 'profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage', 'bmPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);

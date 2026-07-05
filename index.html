@@ -96,7 +96,7 @@
   <meta name="twitter:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png"/>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&amp;family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
   </script>
   <!-- Hero background/artwork feature fully removed -->
@@ -131,7 +131,14 @@
       --vpg:#8A8F98; --vpb:#B8BCC2; --vps:#CFD2D6;
       --fbg:#040406; --fsur:#0B0B13; --fsur2:#101018;
       --fbdr:#1C1C2C; --fbdrh:#2C2C44;
-      --fd:'Cinzel',serif;--fb:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;--fm:'Space Mono',monospace;
+      /* fonts — two families only: Sora (display) + Inter (UI/body).
+         --fm keeps its name (96 call sites) but its role is now
+         "UI label / eyebrow" rendered in Inter; the mono-era
+         tracking on those labels reads as a deliberate style. */
+      --fd:'Sora','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      --fb:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+      --fm:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      --text-on-accent:#FFFFFF; /* other semantic text tokens: see the *-level alias rule below */
     }
     /* ── Dark (default) — neutral near-black, violet accent ── */
     html[data-theme="dark"]{
@@ -172,6 +179,43 @@
       --fbg:#E9E8F0; --fsur:#F4F3F8; --fsur2:#EEEDF4;
       --fbdr:#D8D7E4; --fbdrh:#C2C0D4;
     }
+    /* ── Semantic text tokens ─────────────────────────────────
+       Declared on * (not :root) deliberately: a custom property
+       declared only on :root bakes in :root's values — descendants
+       inherit the COMPUTED alias, so scoped re-declarations of
+       --tx/--pb (profile graphite layer, footer floor) would be
+       ignored. Declaring per-element makes each alias re-resolve
+       against the tokens the element actually inherits, so these
+       are theme-aware AND scope-aware. Trade-off: setting e.g.
+       --text-primary directly on a container will not inherit —
+       set the underlying token (--tx) instead. ── */
+    *{
+      --text-primary:var(--tx);   --text-secondary:var(--txd);
+      --text-muted:var(--tc);     --heading-color:var(--tx);
+      --link-color:var(--pb);     --border-color:var(--bdr);
+    }
+    /* ── Rendering perf: below-fold sections skip style/layout/paint
+       until scrolled near. contain-intrinsic-size's `auto` keyword
+       remembers the real size after first render, so the scrollbar
+       never jumps. #connect is deliberately NOT listed — it contains
+       position:fixed modals whose containing block paint containment
+       would hijack. ── */
+    #topSlide,#artworks,#subOverview,footer.siteFooter{
+      content-visibility:auto;
+    }
+    #topSlide{contain-intrinsic-size:auto 560px;}
+    #artworks{contain-intrinsic-size:auto 900px;}
+    #subOverview{contain-intrinsic-size:auto 700px;}
+    footer.siteFooter{contain-intrinsic-size:auto 480px;}
+
+    /* ══ Typography base — applies in every theme; classed styles
+       keep precedence, this layer only sets sane defaults. ══ */
+    body{line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+    h1,h2,h3,h4,h5,h6{color:var(--heading-color);line-height:1.15;}
+    h1{font-weight:800;letter-spacing:-.02em;}
+    h2,h3{font-weight:700;letter-spacing:-.01em;}
+    a{color:var(--link-color);}
+    kbd,.iLoadPct,.avZoomPct{font-variant-numeric:tabular-nums;}
 
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
@@ -183,7 +227,7 @@
     #intro{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:1;transition:opacity 1s ease;pointer-events:auto;}
     #intro.iHide{opacity:0;pointer-events:none;}
     #intro.iGone{visibility:hidden;}
-    .iLogo{font-family:var(--fd);font-size:clamp(2.2rem,9vw,6rem);font-weight:900;background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;opacity:1;}
+    .iLogo{font-family:var(--fd);font-size:clamp(2.2rem,9vw,6rem);font-weight:800;background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;opacity:1;}
     .iTag{font-family:var(--fm);font-size:clamp(.65rem,2vw,.8rem);letter-spacing:.35em;color:rgba(var(--tx2-rgb),.62);margin-top:1rem;opacity:1;}
     .iPts{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
     .iPts span{position:absolute;width:2px;height:2px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);animation:pD linear forwards;}
@@ -458,7 +502,7 @@
 
 /* Legacy hero class stubs — kept for JS safety, visual output handled in § 8 above */
 .sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
-.secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
+.secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
 .secT .s{color:var(--pg);font-size:.5em;}
 .secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
 .upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
@@ -520,7 +564,7 @@
     .fgTitle{
       font-family:var(--fd);
       font-size:clamp(1.8rem,5vw,2.5rem);
-      font-weight:900;
+      font-weight:800;
       letter-spacing:-.01em;
       line-height:1.1;
       background:linear-gradient(100deg,var(--tx) 0%,var(--tx) 40%,var(--pb) 72%,var(--pg) 100%);
@@ -1147,7 +1191,11 @@
     .cmHdr{
       position:sticky;top:0;z-index:10;
       border-bottom:1px solid var(--bdr);
-      padding:1.1rem 1.5rem;
+      /* horizontal padding reserves the absolute back-button zone
+         (1.5rem edge + 34px button + gap) on BOTH sides, so the
+         centered title stays optically centered and can never
+         slide under the button on narrow screens */
+      padding:1.1rem 4.2rem;
       flex-shrink:0;
       display:flex;align-items:center;justify-content:center;gap:.8rem;
       isolation:isolate;
@@ -1169,14 +1217,23 @@
     /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
     .cmHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--sur) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
     .cmHdrTitle{
-      font-family:var(--fd);font-size:1.15rem;font-weight:900;
+      font-family:var(--fd);font-size:1.15rem;font-weight:800;
       letter-spacing:.16em;
       background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
       -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
       display:flex;align-items:center;gap:.4rem;
       text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
     }
-    .cmHdrTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);}
+    .cmHdrTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);flex-shrink:0;}
+    .cmHdrTitle{min-width:0;max-width:100%;}
+    #cmHdrTitleTxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    /* narrow screens: soften the display tracking so real channel
+       names fit before the ellipsis has to kick in */
+    @media(max-width:480px){
+      .cmHdrTitle{font-size:1.02rem;letter-spacing:.08em;}
+      .cmHdr{padding:1rem 3.9rem;}
+      .cmHdrBack{left:1rem;}
+    }
 
     /* Comments list area */
     .cpBody{
@@ -1384,7 +1441,7 @@
       padding:1.8rem 1.8rem;
       margin-bottom:1.8rem;
     }
-    .cmBannerTitle{font-family:var(--fd);font-size:clamp(1.5rem,4.5vw,2.2rem);font-weight:900;letter-spacing:-.01em;color:var(--tx);margin-bottom:.6rem;}
+    .cmBannerTitle{font-family:var(--fd);font-size:clamp(1.5rem,4.5vw,2.2rem);font-weight:800;letter-spacing:-.01em;color:var(--tx);margin-bottom:.6rem;}
     .cmBannerSub{font-family:var(--fb);font-size:.92rem;color:var(--txd);line-height:1.6;max-width:520px;}
     .cmStats{display:flex;gap:2rem;margin-top:1.3rem;flex-wrap:wrap;}
     .cmStat{display:flex;align-items:center;gap:.65rem;}
@@ -2461,7 +2518,7 @@
     .awTabBtn{
       font-family:var(--fd);
       font-size:clamp(1.4rem,3.2vw,2rem);
-      font-weight:900;
+      font-weight:800;
       letter-spacing:-.01em;
       background:none;
       border:none;
@@ -2706,7 +2763,7 @@
     }
     .pfMenu.open{opacity:1;transform:translateY(0);pointer-events:auto;}
     .pfMenuItem{
-      font-family:var(--fm);font-size:.7rem;letter-spacing:.08em;text-align:left;
+      font-family:var(--fb);font-size:.78rem;font-weight:500;letter-spacing:.02em;text-align:left;
       padding:.65rem .8rem;border-radius:6px;border:none;background:none;
       color:var(--ps);cursor:pointer;transition:background .18s,color .18s;
     }
@@ -3801,6 +3858,7 @@ body{background:var(--bg);}
 .subPgX:hover { color: var(--tc); }
 .subPgTitle {
   font-family: var(--fm);
+  font-weight: 600;
   font-size: .78rem;
   letter-spacing: .28em;
   color: var(--txd);
@@ -6236,12 +6294,362 @@ body{background:var(--bg);}
           </div>
         </div>
 
-        <div class="cmEmpty">
+        <!-- DM: find people + start conversations -->
+        <div class="dmSearchWrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input class="dmSearchInput" id="dmSearchInput" type="text"
+                 placeholder="Find people by username..." maxlength="30"
+                 autocomplete="off" aria-label="Search users by username"/>
+        </div>
+        <div class="dmResults" id="dmResults" aria-live="polite"></div>
+        <div class="dmConvoHead" id="dmConvoHead" style="display:none;">MESSAGES ✦</div>
+        <div class="cmFriendList" id="dmConvoList"></div>
+        <div class="cmEmpty" id="dmEmpty">
           <div class="cmEmptyIco">◎</div>
-          <div>NO FRIENDS YET</div>
-          <div class="cmEmptySub">Once friends are live, the people you follow and connect with will appear here too.</div>
+          <div>NO CONVERSATIONS YET</div>
+          <div class="cmEmptySub">Search a username above to find artists and start a chat.</div>
         </div>
       </div>
+
+<!-- =========================================================
+     DIRECT MESSAGES (Friends → find users + 1:1 text chat)
+     ├─ Search profiles by username (debounced ilike)
+     ├─ Conversations = distinct partners from direct_messages
+     ├─ Thread view reuses the community chat shell: same header,
+     │   same back button (window.cmCloseChat is decorated — the
+     │   wrapper handles DM state and falls through to the original)
+     ├─ Text only: links blocked client-side AND by a DB CHECK
+     │   constraint (see dm_setup.sql); content always esc()'d
+     ├─ Polling (5s, only while open + tab visible) — matches the
+     │   codebase's existing pattern; no realtime dependency
+     └─ Hard guards: no supabase config / signed-out → graceful
+     ========================================================= -->
+<style>
+/* ── Friends: user search ── */
+.dmSearchWrap{
+  position:relative;display:flex;align-items:center;
+  margin:0 0 1rem;
+}
+.dmSearchWrap svg{
+  position:absolute;left:.85rem;width:15px;height:15px;
+  color:var(--tc);pointer-events:none;
+}
+.dmSearchInput{
+  width:100%;font-family:var(--fb);font-size:.88rem;
+  color:var(--tx);background:var(--sur);
+  border:1px solid var(--bdr);border-radius:10px;
+  padding:.65rem .9rem .65rem 2.3rem;
+  transition:border-color .2s;
+}
+.dmSearchInput::placeholder{color:var(--txd);}
+.dmSearchInput:focus{outline:none;border-color:var(--pg);}
+.dmSearchNote{
+  font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;
+  color:var(--txd);text-align:center;padding:.9rem 0;
+}
+.dmResults{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1.2rem;}
+.dmResults:empty,.dmConvoHead:has(+ #dmConvoList:empty){display:none;}
+.dmGo{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;
+  color:var(--pb);flex-shrink:0;display:flex;align-items:center;gap:.3rem;
+}
+.dmConvoHead{
+  font-family:var(--fm);font-size:.64rem;letter-spacing:.22em;
+  color:var(--txd);margin:.4rem 0 .7rem;
+}
+.dmPreview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txd);}
+.dmWhen{font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:var(--tc);flex-shrink:0;margin-left:.5rem;}
+/* ── Thread view ── */
+#dmChatView .cpBody{display:flex;flex-direction:column;gap:.55rem;}
+.dmMsg{
+  max-width:min(78%,520px);width:fit-content;
+  padding:.55rem .85rem;border-radius:14px;
+  font-family:var(--fb);font-size:.9rem;line-height:1.45;
+  color:var(--tx);overflow-wrap:anywhere;white-space:pre-wrap;
+}
+.dmMsg--them{background:var(--sur2);border:1px solid var(--bdr);border-bottom-left-radius:4px;}
+.dmMsg--me{
+  margin-left:auto;background:var(--pdim);
+  border:1px solid rgba(var(--pg-rgb),.35);border-bottom-right-radius:4px;
+}
+.dmMsgTime{
+  display:block;font-family:var(--fm);font-size:.58rem;
+  letter-spacing:.05em;color:var(--txd);margin-top:.3rem;text-align:right;
+}
+.dmBar{
+  display:flex;align-items:center;gap:.6rem;flex-shrink:0;
+  border-top:1px solid var(--bdr);
+  padding:.75rem 1rem calc(.75rem + env(safe-area-inset-bottom));
+  background:color-mix(in srgb,var(--sur) 92%,transparent);
+}
+.dmBar .cpBarInput{flex:1;}
+.dmHint{
+  font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;
+  color:var(--txd);text-align:center;padding:.35rem 0 0;
+}
+@media(prefers-reduced-motion:no-preference){
+  .dmMsg{animation:dmIn .18s ease both;}
+  @keyframes dmIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+}
+</style>
+
+<div class="cmChat" id="dmChatView">
+  <div class="cpBody" id="dmBody"></div>
+  <div class="dmBar">
+    <input class="cpBarInput" id="dmInput" type="text" maxlength="1000"
+           placeholder="Message... (text only, no links)" autocomplete="off"/>
+    <button class="cpBarSend" id="dmSendBtn">SEND ✦</button>
+  </div>
+</div>
+
+<script>
+/* ── Direct messages module ─────────────────────────────── */
+(function () {
+  'use strict';
+  var LINK_RE = /(https?:\/\/|www\.|\S+\.(com|net|org|io|gg|xyz)\b)/i; /* mirror of the DB CHECK */
+  var POLL_MS = 5000, MAX_LEN = 1000;
+  var dmPartner = null;     /* {id, username} while a thread is open */
+  var dmPoll = null, dmSending = false, searchTimer = null;
+
+  function $ (id) { return document.getElementById(id); }
+  function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
+  function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
+  function escq (s) { /* reuse-safe HTML escape (mirrors site esc()) */
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function toast (m) { if (typeof showToast === 'function') showToast(m); }
+  function when (iso) {
+    var d = new Date(iso), diff = (Date.now() - d.getTime()) / 6e4;
+    if (diff < 1)    return 'now';
+    if (diff < 60)   return Math.floor(diff) + 'm';
+    if (diff < 1440) return Math.floor(diff / 60) + 'h';
+    if (diff < 10080)return Math.floor(diff / 1440) + 'd';
+    return d.toLocaleDateString();
+  }
+
+  /* ── Username search ── */
+  function initSearch () {
+    var inp = $('dmSearchInput'), box = $('dmResults');
+    if (!inp || !box) return;
+    inp.addEventListener('input', function () {
+      clearTimeout(searchTimer);
+      var q = inp.value.trim();
+      if (q.length < 2) { box.innerHTML = ''; return; }
+      searchTimer = setTimeout(function () { runSearch(q, box); }, 300);
+    });
+  }
+  async function runSearch (q, box) {
+    if (!db()) { toast('Backend not configured'); return; }
+    var safe = q.replace(/[%_]/g, '\\$&');
+    try {
+      var r = await db().from('profiles')
+        .select('id,username,avatar_url')
+        .ilike('username', '%' + safe + '%')
+        .limit(8);
+      if (r.error) throw r.error;
+      var rows = (r.data || []).filter(function (p) { return !me() || p.id !== me().id; });
+      box.innerHTML = '';
+      if (!rows.length) {
+        box.innerHTML = '<div class="dmSearchNote">NO USERS FOUND</div>';
+        return;
+      }
+      rows.forEach(function (p) { box.appendChild(userRow(p, true)); });
+    } catch (e) { box.innerHTML = '<div class="dmSearchNote">SEARCH FAILED — TRY AGAIN</div>'; }
+  }
+
+  /* One row — used for both search results and conversations.
+     Built with createElement so usernames can't break out of
+     attributes regardless of characters. */
+  function userRow (p, isSearch, preview, ts) {
+    var item = document.createElement('div');
+    item.className = 'cmFriendItem';
+    item.setAttribute('role', 'button');
+    item.tabIndex = 0;
+    var av = document.createElement('div');
+    av.className = 'cmFriendAvatar';
+    if (p.avatar_url) {
+      var img = document.createElement('img');
+      img.src = p.avatar_url; img.alt = ''; img.draggable = false;
+      img.onerror = function () { this.remove(); av.textContent = (p.username || '?')[0].toUpperCase(); };
+      av.appendChild(img);
+    } else {
+      av.textContent = (p.username || '?')[0].toUpperCase();
+    }
+    var meta = document.createElement('div');
+    meta.className = 'cmFriendMeta';
+    var name = document.createElement('div');
+    name.className = 'cmFriendName';
+    name.textContent = p.username || 'Artist';
+    var status = document.createElement('div');
+    status.className = 'cmFriendStatus' + (preview ? ' dmPreview' : '');
+    status.textContent = isSearch ? 'Tap to message' : (preview || '');
+    meta.appendChild(name); meta.appendChild(status);
+    item.appendChild(av); item.appendChild(meta);
+    if (isSearch) {
+      var go = document.createElement('span');
+      go.className = 'dmGo'; go.textContent = 'MESSAGE ✦';
+      item.appendChild(go);
+    } else if (ts) {
+      var w = document.createElement('span');
+      w.className = 'dmWhen'; w.textContent = when(ts);
+      item.appendChild(w);
+    }
+    var open = function () { openThread(p); };
+    item.addEventListener('click', open);
+    item.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+    return item;
+  }
+
+  /* ── Conversations (distinct partners from recent messages) ── */
+  async function refreshConvos () {
+    var list = $('dmConvoList'), empty = $('dmEmpty'), head = $('dmConvoHead');
+    if (!list || !db() || !me()) return;
+    try {
+      var uid = me().id;
+      var r = await db().from('direct_messages')
+        .select('sender_id,recipient_id,content,created_at')
+        .or('sender_id.eq.' + uid + ',recipient_id.eq.' + uid)
+        .order('created_at', { ascending: false })
+        .limit(120);
+      if (r.error) throw r.error;
+      var seen = {}, partners = [];
+      (r.data || []).forEach(function (m) {
+        var pid = m.sender_id === uid ? m.recipient_id : m.sender_id;
+        if (seen[pid]) return;
+        seen[pid] = true;
+        partners.push({ id: pid, preview: (m.sender_id === uid ? 'You: ' : '') + m.content, ts: m.created_at });
+      });
+      list.innerHTML = '';
+      if (head) head.style.display = partners.length ? '' : 'none';
+      if (empty) empty.style.display = partners.length ? 'none' : '';
+      if (!partners.length) return;
+      var pr = await db().from('profiles')
+        .select('id,username,avatar_url')
+        .in('id', partners.map(function (p) { return p.id; }));
+      var byId = {};
+      (pr.data || []).forEach(function (p) { byId[p.id] = p; });
+      partners.forEach(function (pt) {
+        var prof = byId[pt.id] || { id: pt.id, username: 'Artist' };
+        list.appendChild(userRow(prof, false, pt.preview, pt.ts));
+      });
+    } catch (e) { /* leave list as-is; never crash */ }
+  }
+
+  /* ── Thread ── */
+  function openThread (p) {
+    if (!db()) { toast('Backend not configured'); return; }
+    if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
+    dmPartner = p;
+    var grid = $('cmGridScroll'), chat = $('dmChatView');
+    if (grid) grid.style.display = 'none';
+    if (chat) chat.style.display = 'flex';
+    var t = $('cmHdrTitleTxt'); if (t) t.textContent = (p.username || 'CHAT').toUpperCase();
+    var back = $('cmHdrBack');  if (back) back.classList.add('show');
+    var nav = $('bnNav');       if (nav) nav.style.display = 'none';
+    var res = $('dmResults');   if (res) res.innerHTML = '';
+    var inp = $('dmSearchInput'); if (inp) inp.value = '';
+    $('dmBody').innerHTML = '<div class="dmSearchNote">LOADING…</div>';
+    loadThread(true);
+    clearInterval(dmPoll);
+    dmPoll = setInterval(function () {
+      if (document.visibilityState === 'visible') loadThread(false);
+    }, POLL_MS);
+    setTimeout(function () { var i = $('dmInput'); if (i) i.focus({ preventScroll: true }); }, 250);
+  }
+  function closeThread () {
+    dmPartner = null;
+    clearInterval(dmPoll); dmPoll = null;
+    var chat = $('dmChatView'); if (chat) chat.style.display = 'none';
+    var grid = $('cmGridScroll'); if (grid) grid.style.display = 'block';
+    var t = $('cmHdrTitleTxt'); if (t) t.textContent = 'COMMUNITY';
+    var back = $('cmHdrBack');  if (back) back.classList.remove('show');
+    var nav = $('bnNav');       if (nav) nav.style.display = '';
+    refreshConvos();
+  }
+  async function loadThread (scrollToEnd) {
+    if (!dmPartner || !db() || !me()) return;
+    var uid = me().id, pid = dmPartner.id;
+    try {
+      var r = await db().from('direct_messages')
+        .select('id,sender_id,content,created_at')
+        .or('and(sender_id.eq.' + uid + ',recipient_id.eq.' + pid + '),and(sender_id.eq.' + pid + ',recipient_id.eq.' + uid + ')')
+        .order('created_at', { ascending: true })
+        .limit(200);
+      if (r.error) throw r.error;
+      if (!dmPartner || dmPartner.id !== pid) return; /* stale response */
+      var body = $('dmBody'), atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
+      var html = (r.data || []).map(function (m) {
+        var mine = m.sender_id === uid;
+        return '<div class="dmMsg ' + (mine ? 'dmMsg--me' : 'dmMsg--them') + '">' +
+                 escq(m.content) +
+                 '<span class="dmMsgTime">' + when(m.created_at) + '</span>' +
+               '</div>';
+      }).join('');
+      body.innerHTML = html ||
+        '<div class="dmSearchNote">SAY HI — THIS IS THE START OF YOUR CHAT ✦</div>';
+      if (scrollToEnd || atEnd) body.scrollTop = body.scrollHeight;
+    } catch (e) { /* keep last good render */ }
+  }
+
+  /* ── Send (validation mirrors the DB constraints) ── */
+  async function send () {
+    var inp = $('dmInput'), btn = $('dmSendBtn');
+    if (!inp || dmSending || !dmPartner) return;
+    if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
+    var text = inp.value.trim();
+    if (!text) return;
+    if (text.length > MAX_LEN) { toast('Message is too long (max 1000 characters)'); return; }
+    if (LINK_RE.test(text)) { toast('Links aren\'t allowed in messages ✦'); return; }
+    dmSending = true; if (btn) btn.disabled = true;
+    try {
+      var r = await db().from('direct_messages')
+        .insert({ sender_id: me().id, recipient_id: dmPartner.id, content: text });
+      if (r.error) throw r.error;
+      inp.value = '';
+      await loadThread(true);
+    } catch (e) {
+      toast((e && e.message && /dm_no_links/.test(e.message)) ? 'Links aren\'t allowed in messages ✦' : 'Message failed to send — try again');
+    } finally {
+      dmSending = false; if (btn) btn.disabled = false;
+    }
+  }
+
+  /* ── Wiring — decorate, never modify, existing functions ── */
+  document.addEventListener('DOMContentLoaded', function () {
+    initSearch();
+    var btn = $('dmSendBtn'); if (btn) btn.addEventListener('click', send);
+    var inp = $('dmInput');
+    if (inp) inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+    /* Back button: intercept while a DM thread is open, else fall
+       through to the original channel-chat close. */
+    var orig = window.cmCloseChat;
+    window.cmCloseChat = function () {
+      if (dmPartner) { closeThread(); return; }
+      if (typeof orig === 'function') orig.apply(this, arguments);
+    };
+    /* Refresh conversations when the Community page opens. */
+    var origOpen = window.openCommunityHome;
+    if (typeof origOpen === 'function') {
+      window.openCommunityHome = function () {
+        var out = origOpen.apply(this, arguments);
+        refreshConvos();
+        return out;
+      };
+    }
+    /* First load once auth resolves (site registers its own listener;
+       Supabase supports multiple). */
+    if (db() && db().auth && db().auth.onAuthStateChange) {
+      db().auth.onAuthStateChange(function () { setTimeout(refreshConvos, 400); });
+    }
+  });
+})();
+</script>
+
 
       <!-- Chat view — "Art Talk" room (the original Comments feed) -->
       <div class="cmChat" id="cmChatView">
@@ -11188,10 +11596,19 @@ function hideCommentThumbnail(){
     awInitIndicator();
   }
   window.addEventListener('resize', awInitIndicator);
-  /* FIX: Cinzel loads after DOMContentLoaded and reflows the tab
+  /* FIX: webfonts (Sora/Inter) load after DOMContentLoaded and reflow the tab
      widths — without this the underline sat misaligned until the
      first window resize. */
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(awInitIndicator); }
+  /* #artworks uses content-visibility:auto — while skipped, its tab
+     rects measure 0×0, so re-run the indicator when rendering starts.
+     (Event only fires in browsers that support content-visibility.) */
+  var awSec = document.getElementById('artworks');
+  if(awSec && 'oncontentvisibilityautostatechange' in awSec){
+    awSec.addEventListener('contentvisibilityautostatechange', function(e){
+      if(!e.skipped) awInitIndicator();
+    });
+  }
 
   /* Build one .awCard for either an artwork or a comic — same markup/
      styling (ArtStation-style masonry card), different data mapping
@@ -12658,7 +13075,7 @@ window.ZEO_DATA = {
 /* ── Intro — gradient display title, same treatment as the hero ── */
 .thmIntro{text-align:center;padding:1.2rem 0 2rem;}
 .thmTitle{
-  font-family:var(--fd);font-weight:900;
+  font-family:var(--fd);font-weight:800;
   font-size:clamp(1.6rem,4.6vw,2.6rem);
   background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
   -webkit-background-clip:text;background-clip:text;
@@ -12821,9 +13238,12 @@ window.ZEO_DATA = {
      micro-interactions are re-declared below so the broad rule
      doesn't cancel the checkmark spring / card lift / page slide. ── */
 html.thmFade *,html.thmFade *::before,html.thmFade *::after{
-  transition:background .35s ease,background-color .35s ease,
-             color .35s ease,border-color .35s ease,
-             box-shadow .35s ease,fill .35s ease,stroke .35s ease !important;
+  /* colors only — box-shadow/fill/stroke were dropped: shadows are
+     the most paint-expensive transition and SVG icons use
+     currentColor, so they already follow the color fade. Keeps the
+     swap at 60fps on low-end devices. */
+  transition:background .3s ease,background-color .3s ease,
+             color .3s ease,border-color .3s ease !important;
 }
 html.thmFade .thmCard{
   transition:transform .3s cubic-bezier(.22,1,.36,1),border-color .35s ease,
@@ -13008,7 +13428,7 @@ html.thmFade #themePage{
     var root = document.documentElement;
     root.classList.add('thmFade');
     clearTimeout(fadeTimer);
-    fadeTimer = setTimeout(function () { root.classList.remove('thmFade'); }, 420);
+    fadeTimer = setTimeout(function () { root.classList.remove('thmFade'); }, 360);
   }
 
   function apply (pref) {

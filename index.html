@@ -7661,18 +7661,35 @@ body{background:var(--bg);}
     return 'Bearer '+session.access_token;
   }
   async function s3Upload(bucket, path, file){
-    if(!S3_FN_URL) throw new Error('Storage endpoint not configured');
+    if(!S3_FN_URL) throw new Error('Storage endpoint not configured (S3_FN_URL missing in config.js)');
     const auth = await s3AuthHeader();
     const key = bucket+'/'+path;
-    const signRes = await fetch(S3_FN_URL, {
-      method:'POST',
-      headers:{'content-type':'application/json', 'authorization':auth},
-      body: JSON.stringify({action:'upload', path:key, contentType:file.type, size:file.size})
-    });
+    /* Step 1 — ask the s3-sign edge function for a presigned PUT URL.
+       A network-level failure here means the endpoint itself is
+       unreachable (bad S3_FN_URL, function not deployed, or its CORS). */
+    let signRes;
+    try{
+      signRes = await fetch(S3_FN_URL, {
+        method:'POST',
+        headers:{'content-type':'application/json', 'authorization':auth},
+        body: JSON.stringify({action:'upload', path:key, contentType:file.type, size:file.size})
+      });
+    }catch(e){
+      throw new Error('Could not reach the upload service — check S3_FN_URL and the edge function\u2019s CORS');
+    }
     const signJson = await signRes.json().catch(function(){return{};});
-    if(!signRes.ok) throw new Error(signJson.error || 'Upload authorization failed');
-    const putRes = await fetch(signJson.uploadUrl, {method:'PUT', headers:{'content-type':file.type}, body:file});
-    if(!putRes.ok) throw new Error('Upload failed');
+    if(!signRes.ok) throw new Error(signJson.error || ('Upload authorization failed ('+signRes.status+')'));
+    if(!signJson.uploadUrl) throw new Error('Upload service returned no uploadUrl');
+    /* Step 2 — PUT the file to S3. A network-level failure here is
+       almost always the S3 bucket's CORS policy not allowing PUT
+       from this origin (the browser blocks it before any bytes move). */
+    let putRes;
+    try{
+      putRes = await fetch(signJson.uploadUrl, {method:'PUT', headers:{'content-type':file.type}, body:file});
+    }catch(e){
+      throw new Error('Upload blocked by the storage server — add this site\u2019s origin with PUT to the S3 bucket\u2019s CORS policy');
+    }
+    if(!putRes.ok) throw new Error('Upload failed ('+putRes.status+') — presigned URL rejected by S3');
     return signJson.publicUrl;
   }
   async function s3Delete(bucket, path){
@@ -9092,7 +9109,7 @@ body{background:var(--bg);}
         injectGallerySEO();
         closeUp();showToast('Artwork added ✦');
       }
-    }catch(err){console.error('Error: '+err.message);}
+    }catch(err){console.error('Error: '+err.message);showToast(err.message||'Upload failed');}
     finally{btn.disabled=false;btn.textContent=editId?'📤 Save Changes':'📤 Upload Artwork';}
   }
 
@@ -9929,7 +9946,7 @@ body{background:var(--bg);}
           closePfUpload(); showToast('Submitted for review ✦');
         }
       }
-    }catch(err){ console.error('Error: '+err.message); }
+    }catch(err){ console.error('Error: '+err.message); showToast(err.message || 'Upload failed'); }
     finally{ btn.disabled=false; btn.textContent = editId ? '📤 Save Changes' : (pf.upMode==='comic' ? '📤 Upload Comic' : '📤 Upload Artwork'); }
   }
 
@@ -10153,7 +10170,7 @@ body{background:var(--bg);}
         syncAuthBtn();
       }
       showToast((kind==='banner'?'Banner':'Profile photo')+' updated ✦');
-    }catch(err){ console.error('Error: '+err.message); }
+    }catch(err){ console.error('Error: '+err.message); showToast(err.message || 'Upload failed'); }
     finally{
       document.getElementById('pfAvatarFileInput').value = '';
       document.getElementById('pfBannerFileInput').value = '';

@@ -729,17 +729,24 @@
       box-shadow:0 0 26px color-mix(in srgb,var(--tc) 35%,transparent);
     }
 
-    /* Comments pull-to-refresh spinner */
+    /* Chat load-older spinner — shared by the community feed and DMs.
+       Collapses to zero height when idle so, sitting at the TOP of the
+       thread, it never leaves a gap above the first message; expands
+       while loading older messages. */
     .cpRefreshWrap{
       display:flex;
       justify-content:center;
       align-items:center;
-      padding:1.2rem 0 .5rem;
+      max-height:0;
+      padding:0;
+      overflow:hidden;
       opacity:0;
       pointer-events:none;
-      transition:opacity .3s ease;
+      transition:opacity .3s ease,max-height .3s ease,padding .3s ease;
     }
     .cpRefreshWrap.visible{
+      max-height:60px;
+      padding:1.2rem 0 .5rem;
       opacity:1;
     }
     .cpRefreshSpinner{
@@ -1468,7 +1475,7 @@
     .cmCreateBtn:active{transform:scale(.97);}
 
     /* Generic small pill badge — used for the Zeo "AI" badge in the
-       Friends list (separate from .cmCardBadge, the cover-corner tag). */
+       Friends list and the "Official" tag on the DigiArtz community row. */
     .cmBadge{
       font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;
       color:var(--ps);background:var(--pdim);
@@ -1478,49 +1485,33 @@
     /* Community cards grid — back to the original text-card layout
        (title + description + member meta), now with an improved
        cover-image strip up top instead of plain gradient-only fill. */
-    .cmGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.1rem;}
+    /* Community cards now stack as a vertical list of horizontal rows,
+       mirroring the Friends list (.cmFriendList) below. */
+    .cmGrid{display:flex;flex-direction:column;gap:.7rem;}
     .cmCard{
       background:var(--sur);
       border:1px solid var(--bdr);
       border-radius:12px;
-      overflow:hidden;
       cursor:pointer;
-      transition:border-color .25s,transform .25s,box-shadow .25s;
-      display:flex;flex-direction:column;
+      transition:border-color .25s,transform .2s,box-shadow .25s;
+      display:flex;align-items:center;gap:.9rem;
+      padding:.9rem 1.1rem;
     }
-    .cmCard:hover{border-color:var(--bdrh);transform:translateY(-3px);box-shadow:0 10px 28px color-mix(in srgb,var(--tc) 16%,transparent);}
-    .cmCard:active{transform:translateY(-1px) scale(.99);}
-    /* ── Cover strip — richer gradient + soft radial glow + subtle
-       grain-like texture via layered gradients, icon centered, badge
-       pinned to the corner with a frosted-glass pill ── */
-    .cmCardCover{
-      position:relative;
-      height:118px;
+    .cmCard:hover{border-color:var(--bdrh);}
+    .cmCard:active{transform:scale(.99);}
+    /* ── Icon chip — mirrors .cmFriendAvatar (circular, 46px) but keeps
+       each community's own gradient so it retains its colour identity.
+       The old full-width cover strip is gone; the icon now sits inline
+       to the left of the text, exactly like a Friends-list avatar. ── */
+    .cmCardIcon{
+      width:46px;height:46px;border-radius:50%;flex-shrink:0;
       display:flex;align-items:center;justify-content:center;
-      font-size:2.3rem;line-height:1;
-      overflow:hidden;
-      flex-shrink:0;
+      font-size:1.4rem;line-height:1;overflow:hidden;
+      filter:drop-shadow(0 2px 6px rgba(0,0,0,.28));
     }
-    .cmCardCover::before{
-      content:'';position:absolute;inset:0;
-      background:radial-gradient(circle at 30% 20%,rgba(var(--pg-rgb),.22),transparent 55%),
-                 radial-gradient(circle at 80% 90%,rgba(0,0,0,.25),transparent 60%);
-      pointer-events:none;
-    }
-    .cmCardCoverIcon{position:relative;z-index:1;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35));transition:transform .35s;}
-    .cmCard:hover .cmCardCoverIcon{transform:scale(1.08) translateY(-2px);}
-    .cmCardBadge{
-      position:absolute;top:.6rem;right:.6rem;z-index:2;
-      font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;
-      color:var(--tx);background:color-mix(in srgb,var(--bg) 45%,transparent);
-      border:1px solid rgba(var(--pg-rgb),.35);
-      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-      padding:.22rem .5rem;text-transform:uppercase;border-radius:999px;
-    }
-    .cmCardBody{padding:1rem 1.1rem 1.1rem;display:flex;flex-direction:column;flex:1;}
-    .cmCardTop{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;}
-    .cmCard h4{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--tx);}
-    .cmCard p{font-family:var(--fb);font-size:.82rem;color:var(--txd);line-height:1.55;flex:1;}
+    .cmCardMeta{flex:1;min-width:0;}
+    .cmCardName{font-family:var(--fb);font-size:.98rem;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+    .cmCard p{font-family:var(--fb);font-size:.8rem;color:var(--txd);line-height:1.5;margin-top:.25rem;}
     .cmDot{width:6px;height:6px;border-radius:50%;background:#3ecf8e;flex-shrink:0;box-shadow:0 0 6px #3ecf8e;}
 
 
@@ -1641,8 +1632,9 @@
     }
 
     #communityPage .cmCard{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cmCard:hover{border-color:var(--cmBdrh);box-shadow:0 8px 26px rgba(0,0,0,.45);}
-    #communityPage .cmCard h4{color:var(--cmTx);}
+    #communityPage .cmCard:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
+    #communityPage .cmCard .cmCardIcon{border:1px solid var(--cmBdrh);}
+    #communityPage .cmCard .cmCardName{color:var(--cmTx);}
     #communityPage .cmCard p{color:var(--cmTxd);}
     #communityPage .cmBadge{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
     #communityPage .cmDot{background:var(--cmOnline);box-shadow:0 0 6px var(--cmOnline);}
@@ -3329,6 +3321,8 @@
     .laSocialBtn{ flex:1; display:flex; align-items:center; justify-content:center; gap:.45rem; padding:.75rem .4rem; border-radius:12px; border:1px solid rgba(var(--pg-rgb),.14); background:rgba(var(--pg-rgb),.03); color:var(--vtx); font-size:.76rem; font-weight:600; cursor:pointer; font-family:var(--fb); transition:background .2s; }
     .laSocialBtn:hover{ background:rgba(var(--pg-rgb),.08); }
     .laSocialBtn svg{ width:17px; height:17px; flex-shrink:0; }
+    .laSocialBtn:disabled{ opacity:.55; cursor:default; }
+    .laSocialBtn:disabled:hover{ background:rgba(var(--pg-rgb),.03); }
 
     .laFooter{ display:flex; align-items:center; justify-content:center; gap:.5rem; color:rgba(var(--vtx2-rgb),.4); font-size:.73rem; text-align:center; }
     .laFooter svg{ width:14px; height:14px; flex-shrink:0; }
@@ -6180,9 +6174,9 @@ body{background:var(--bg);}
        ├─ Header (.cmHdr) — static title
        ├─ Grid view (#cmGridScroll)
        │   ├─ Hero banner
-       │   ├─ Explore Communities — #cmGrid, gallery-style square
-       │   │   image cards (cmOpenCommunity()), same column layout
-       │   │   as the artwork gallery (.awGrid: 2/3/4/5 cols). Only
+       │   ├─ Explore Communities — #cmGrid, a vertical list of
+       │   │   horizontal rows (cmOpenCommunity()) styled to match the
+       │   │   Friends list items (icon chip + title + description). Only
        │   │   "Art Talk" is wired to Supabase today; the other 5
        │   │   are placeholders until their tables/policies exist.
        │   └─ Friends — sits directly below Community on the same
@@ -6233,61 +6227,49 @@ body{background:var(--bg);}
           <button class="cmCreateBtn" onclick="cmCreateCommunity()">+ Create Community</button>
         </div>
 
-        <!-- Cards: cover-image strip on top (gradient + icon + corner
-             badge) with the title/description body below it. -->
+        <!-- Cards: circular icon chip on the left (keeps each community's
+             gradient) with the title + description to the right — same row
+             layout as the Friends list items below. -->
         <div class="cmGrid">
           <div class="cmCard" onclick="cmOpenCommunity('official')">
-            <div class="cmCardCover" style="background:linear-gradient(135deg,#4c1d95 0%,var(--pgd) 55%,#a855f7 100%);">
-              <span class="cmCardCoverIcon">🎨</span>
-              <span class="cmCardBadge">Official</span>
-            </div>
-            <div class="cmCardBody">
-              <div class="cmCardTop"><h4>DigiArtz Official</h4></div>
+            <div class="cmCardIcon" style="background:linear-gradient(135deg,#4c1d95 0%,var(--pgd) 55%,#a855f7 100%);">🎨</div>
+            <div class="cmCardMeta">
+              <div class="cmCardName">DigiArtz Official <span class="cmBadge">Official</span></div>
               <p>Official community of DigiArtz. Get updates, announcements and more.</p>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('arttalk')">
-            <div class="cmCardCover" style="background:linear-gradient(135deg,#0f766e 0%,#0891b2 55%,var(--pg) 100%);">
-              <span class="cmCardCoverIcon">💬</span>
-            </div>
-            <div class="cmCardBody">
-              <div class="cmCardTop"><h4>Art Talk</h4></div>
+            <div class="cmCardIcon" style="background:linear-gradient(135deg,#0f766e 0%,#0891b2 55%,var(--pg) 100%);">💬</div>
+            <div class="cmCardMeta">
+              <div class="cmCardName">Art Talk</div>
               <p>Discuss about art, share your thoughts, ask questions and grow together.</p>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('feedback')">
-            <div class="cmCardCover" style="background:linear-gradient(135deg,#9d174d 0%,#db2777 55%,#f97316 100%);">
-              <span class="cmCardCoverIcon">📝</span>
-            </div>
-            <div class="cmCardBody">
-              <div class="cmCardTop"><h4>Art Feedback</h4></div>
+            <div class="cmCardIcon" style="background:linear-gradient(135deg,#9d174d 0%,#db2777 55%,#f97316 100%);">📝</div>
+            <div class="cmCardMeta">
+              <div class="cmCardName">Art Feedback</div>
               <p>Share your work and get constructive feedback from the community.</p>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('collab')">
-            <div class="cmCardCover" style="background:linear-gradient(135deg,#065f46 0%,#059669 55%,#22d3ee 100%);">
-              <span class="cmCardCoverIcon">🤝</span>
-            </div>
-            <div class="cmCardBody">
-              <div class="cmCardTop"><h4>Collab Hub</h4></div>
+            <div class="cmCardIcon" style="background:linear-gradient(135deg,#065f46 0%,#059669 55%,#22d3ee 100%);">🤝</div>
+            <div class="cmCardMeta">
+              <div class="cmCardName">Collab Hub</div>
               <p>Find artists to collaborate with on projects and bring ideas to life.</p>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('tips')">
-            <div class="cmCardCover" style="background:linear-gradient(135deg,#78350f 0%,#b45309 55%,#facc15 100%);">
-              <span class="cmCardCoverIcon">💡</span>
-            </div>
-            <div class="cmCardBody">
-              <div class="cmCardTop"><h4>Tips &amp; Resources</h4></div>
+            <div class="cmCardIcon" style="background:linear-gradient(135deg,#78350f 0%,#b45309 55%,#facc15 100%);">💡</div>
+            <div class="cmCardMeta">
+              <div class="cmCardName">Tips &amp; Resources</div>
               <p>Share helpful tips, tutorials, tools and resources for artists.</p>
             </div>
           </div>
           <div class="cmCard" onclick="cmOpenCommunity('showcase')">
-            <div class="cmCardCover" style="background:linear-gradient(135deg,#701a75 0%,#a21caf 55%,#6366f1 100%);">
-              <span class="cmCardCoverIcon">✦</span>
-            </div>
-            <div class="cmCardBody">
-              <div class="cmCardTop"><h4>Showcase</h4></div>
+            <div class="cmCardIcon" style="background:linear-gradient(135deg,#701a75 0%,#a21caf 55%,#6366f1 100%);">✦</div>
+            <div class="cmCardMeta">
+              <div class="cmCardName">Showcase</div>
               <p>Share your latest work, celebrate progress and inspire others.</p>
             </div>
           </div>
@@ -6442,6 +6424,10 @@ body{background:var(--bg);}
   var POLL_MS = 5000, MAX_LEN = 1000;
   var dmPartner = null;     /* {id, username} while a thread is open */
   var dmPoll = null, dmSending = false, searchTimer = null;
+  /* Message paging: newest 25 first, +25 each time the user scrolls to
+     the top. dmHasMore flags that older messages remain; dmLoadingOlder
+     pins the scroll position while a load-older fetch is in flight. */
+  var dmLimit = 25, DM_LOAD_STEP = 25, dmHasMore = false, dmLoadingOlder = false;
 
   function $ (id) { return document.getElementById(id); }
   function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
@@ -6593,6 +6579,7 @@ body{background:var(--bg);}
     var res = $('dmResults');   if (res) res.innerHTML = '';
     var inp = $('dmSearchInput'); if (inp) inp.value = '';
     $('dmBody').innerHTML = '<div class="dmSearchNote">LOADING…</div>';
+    dmLimit = 25; dmHasMore = false; dmLoadingOlder = false;
     loadThread(true);
     clearInterval(dmPoll);
     dmPoll = setInterval(function () {
@@ -6614,25 +6601,61 @@ body{background:var(--bg);}
     if (!dmPartner || !db() || !me()) return;
     var uid = me().id, pid = dmPartner.id;
     try {
+      /* Fetch the newest dmLimit messages (plus one probe row to learn
+         whether older history still exists), then flip to chronological
+         order for display. */
       var r = await db().from('direct_messages')
         .select('id,sender_id,content,created_at')
         .or('and(sender_id.eq.' + uid + ',recipient_id.eq.' + pid + '),and(sender_id.eq.' + pid + ',recipient_id.eq.' + uid + ')')
-        .order('created_at', { ascending: true })
-        .limit(200);
+        .order('created_at', { ascending: false })
+        .limit(dmLimit + 1);
       if (r.error) throw r.error;
       if (!dmPartner || dmPartner.id !== pid) return; /* stale response */
-      var body = $('dmBody'), atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
-      var html = (r.data || []).map(function (m) {
+      var rows = r.data || [];
+      dmHasMore = rows.length > dmLimit;
+      if (dmHasMore) rows = rows.slice(0, dmLimit);
+      rows.reverse(); /* oldest → newest for top-to-bottom display */
+
+      var body = $('dmBody');
+      var atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
+      var prevHeight = body.scrollHeight, prevTop = body.scrollTop;
+
+      var msgHtml = rows.map(function (m) {
         var mine = m.sender_id === uid;
         return '<div class="dmMsg ' + (mine ? 'dmMsg--me' : 'dmMsg--them') + '">' +
                  escq(m.content) +
                  '<span class="dmMsgTime">' + when(m.created_at) + '</span>' +
                '</div>';
       }).join('');
-      body.innerHTML = html ||
-        '<div class="dmSearchNote">SAY HI — THIS IS THE START OF YOUR CHAT ✦</div>';
-      if (scrollToEnd || atEnd) body.scrollTop = body.scrollHeight;
-    } catch (e) { /* keep last good render */ }
+
+      /* Load-older spinner pinned to the TOP, shown only while more
+         history remains (reuses the community feed's .cpRefreshWrap). */
+      var loaderHtml = dmHasMore
+        ? '<div class="cpRefreshWrap visible" id="dmRefreshWrap" aria-hidden="true"><div class="cpRefreshSpinner"></div></div>'
+        : '';
+
+      body.innerHTML = loaderHtml + (msgHtml ||
+        '<div class="dmSearchNote">SAY HI — THIS IS THE START OF YOUR CHAT ✦</div>');
+
+      if (dmLoadingOlder) {
+        /* Older messages just prepended — keep the reading position. */
+        body.scrollTop = prevTop + (body.scrollHeight - prevHeight);
+        dmLoadingOlder = false;
+      } else if (scrollToEnd || atEnd) {
+        body.scrollTop = body.scrollHeight;
+      } else {
+        /* Background poll while reading history — don't yank the view. */
+        body.scrollTop = prevTop;
+      }
+    } catch (e) { dmLoadingOlder = false; /* keep last good render */ }
+  }
+
+  /* Reveal the next 25 older messages when the user scrolls to the top. */
+  function dmMaybeLoadOlder () {
+    if (dmLoadingOlder || !dmHasMore || !dmPartner) return;
+    dmLoadingOlder = true;
+    dmLimit += DM_LOAD_STEP;
+    loadThread(false);
   }
 
   /* ── Send (validation mirrors the DB constraints) ── */
@@ -6729,6 +6752,14 @@ body{background:var(--bg);}
     if (inp) inp.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
+    /* Scroll to the top of a thread → reveal 25 older messages. */
+    var dmScrollT = null, dmBodyEl = $('dmBody');
+    if (dmBodyEl) dmBodyEl.addEventListener('scroll', function () {
+      if (dmBodyEl.scrollTop <= 40 && !dmLoadingOlder && dmHasMore) {
+        clearTimeout(dmScrollT);
+        dmScrollT = setTimeout(dmMaybeLoadOlder, 250);
+      }
+    }, { passive: true });
     /* Back button: intercept while a DM thread is open, else fall
        through to the original channel-chat close. */
     var orig = window.cmCloseChat;
@@ -6759,17 +6790,18 @@ body{background:var(--bg);}
       <div class="cmChat" id="cmChatView">
         <!-- Comments list -->
         <div class="cpBody" id="cpBody">
+          <!-- Load-older spinner — sits at the TOP; appears when the user
+               scrolls up to reveal older messages (25 at a time). -->
+          <div class="cpRefreshWrap" id="cpRefreshWrap" aria-hidden="true">
+            <div class="cpRefreshSpinner"></div>
+          </div>
           <!-- Placeholder — no comments yet -->
           <div class="cpEmpty" id="cpEmpty">
             <div class="cpEIco">◎</div>
             <div>NO COMMENTS YET</div>
             <div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>
           </div>
-          <!-- Dynamically added comments will go here -->
-          <!-- Pull-to-refresh spinner (appears when scrolled past last comment) -->
-          <div class="cpRefreshWrap" id="cpRefreshWrap" aria-hidden="true">
-            <div class="cpRefreshSpinner"></div>
-          </div>
+          <!-- Dynamically added comments are appended below the loader -->
         </div>
       </div>
     </div>
@@ -7489,7 +7521,7 @@ body{background:var(--bg);}
            ├─ Password Field (#authPass) + show/hide toggle (#authEyeIcon)
            ├─ Remember me (#authRemember) + Forgot password
            ├─ Primary Action Button (#authBtn)
-           └─ Social row (Google/Discord/Apple — "coming soon" toast)
+           └─ Social row (Google/Discord/Apple — Supabase OAuth via doOAuth())
        ========================================================= -->
   <div id="authMod" role="dialog" aria-modal="true" aria-label="Login">
     <div class="subPgHdr">
@@ -7573,17 +7605,19 @@ body{background:var(--bg);}
 
       <div class="laOrDiv">or continue with</div>
 
-      <!-- Social sign-in — not wired up yet -->
+      <!-- Social sign-in — Supabase OAuth (google/discord/apple). Enable each
+           provider in Supabase → Authentication → Providers, and add this
+           site's URL under Authentication → URL Configuration → Redirect URLs. -->
       <div class="laSocial">
-        <button type="button" class="laSocialBtn" onclick="showToast('Google sign-in is currently unavailable — coming soon ✦')" aria-label="Continue with Google">
+        <button type="button" class="laSocialBtn" onclick="doOAuth('google', this)" aria-label="Continue with Google">
           <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 6.1 29.5 4 24 4c-7.6 0-14.1 4.3-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.1-2 13.7-5.4l-6.3-5.3C29.4 34.9 26.8 36 24 36c-5.3 0-9.7-3.6-11.3-8.4l-6.5 5C9.8 39.6 16.4 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.3 5.3C40.9 36.6 44 30.9 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
           Google
         </button>
-        <button type="button" class="laSocialBtn" onclick="showToast('Discord sign-in is currently unavailable — coming soon ✦')" aria-label="Continue with Discord">
+        <button type="button" class="laSocialBtn" onclick="doOAuth('discord', this)" aria-label="Continue with Discord">
           <svg viewBox="0 0 24 24" fill="#5865F2" aria-hidden="true"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.07.07 0 0 0-.032.027C.533 9.045-.32 13.579.099 18.057a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.211 0 2.176 1.094 2.157 2.418 0 1.334-.946 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.211 0 2.176 1.094 2.157 2.418 0 1.334-.946 2.419-2.157 2.419z"/></svg>
           Discord
         </button>
-        <button type="button" class="laSocialBtn" onclick="showToast('Apple sign-in is currently unavailable — coming soon ✦')" aria-label="Continue with Apple">
+        <button type="button" class="laSocialBtn" onclick="doOAuth('apple', this)" aria-label="Continue with Apple">
           <svg viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.377 0-2.335-1.25-3.4-2.79-1.23-1.75-2.24-4.53-2.24-7.17 0-4.22 2.74-6.46 5.44-6.46 1.398 0 2.598.94 3.5.94.86 0 2.187-1 3.83-1 .61 0 2.905.06 4.394 2.19-.108.07-2.617 1.53-2.617 4.62 0 3.62 3.14 4.9 3.34 4.99z"/></svg>
           Apple
         </button>
@@ -8782,6 +8816,48 @@ body{background:var(--bg);}
     }
   }
 
+  /* ── OAuth sign-in (Google / Discord / Apple) ──
+     signInWithOAuth redirects the browser to the provider; on return
+     the Supabase client exchanges the code automatically and
+     onAuthStateChange('SIGNED_IN') fires — which already closes the
+     modal, syncs the nav button and runs checkUserRole(), exactly like
+     password login. No username is set for OAuth users; their profiles
+     row is seeded server-side by the on-signup trigger (see SQL) and
+     self-healed by pfEnsureOwnProfile() as a fallback. */
+  var OAUTH_LABELS = { google:'Google', discord:'Discord', apple:'Apple' };
+  async function doOAuth(provider, btnEl) {
+    if (!sb) { showToast('Supabase not configured'); return; }
+    var label = OAUTH_LABELS[provider] || provider;
+    var err = document.getElementById('authErr');
+    err.textContent = ''; err.classList.remove('show');
+
+    /* Lock the whole social row while we hand off to the provider */
+    var row = document.querySelector('.laSocial');
+    var btns = row ? row.querySelectorAll('.laSocialBtn') : [];
+    Array.prototype.forEach.call(btns, function(b){ b.disabled = true; });
+
+    try {
+      var opts = { redirectTo: window.location.origin };
+      /* Let Google users pick which account to use rather than silently
+         reusing whichever one the browser is already signed into. */
+      if (provider === 'google') opts.queryParams = { prompt: 'select_account' };
+
+      var result = await sb.auth.signInWithOAuth({ provider: provider, options: opts });
+      if (result.error) throw result.error;
+      /* Success → browser is now navigating away to the provider. */
+    } catch (e) {
+      Array.prototype.forEach.call(btns, function(b){ b.disabled = false; });
+      var raw = (e && e.message || '').toLowerCase();
+      if (raw.includes('provider is not enabled') || raw.includes('unsupported provider')) {
+        err.textContent = label + ' sign-in isn\u2019t enabled yet. Enable it in Supabase \u2192 Authentication \u2192 Providers.';
+      } else {
+        err.textContent = (e && e.message) ? (label + ' sign-in failed: ' + e.message)
+                                           : (label + ' sign-in is unavailable right now.');
+      }
+      err.classList.add('show');
+    }
+  }
+
   /* ── Toggle between login and signup views ── */
   function switchAuthMode(mode) {
     authMode = mode;
@@ -8980,13 +9056,20 @@ body{background:var(--bg);}
            so the welcome toast animated in WHILE #authMod was still mid
            way through its .45s slide-close transition. Delaying it past
            that transition means the toast now appears only after the
-           login panel has fully closed, instead of during its animation. */
+           login panel has fully closed, instead of during its animation.
+           FIX 2: on a page-load session restore this event fires while the
+           #intro loading screen is still animating, so the greeting used to
+           flash behind/over it. afterIntro() holds the toast until the intro
+           has fully faded out; on a manual login (intro long gone) it runs
+           immediately, so that path is unchanged. */
         var greetName = (currentUser && currentUser.user_metadata && currentUser.user_metadata.username)
           ? currentUser.user_metadata.username
           : '';
-        setTimeout(function(){
-          showToast(greetName ? ('Welcome, ' + greetName + ' ✦') : 'Signed in ✦');
-        }, 460);
+        afterIntro(function(){
+          setTimeout(function(){
+            showToast(greetName ? ('Welcome, ' + greetName + ' ✦') : 'Signed in ✦');
+          }, 460);
+        });
       }
       if (event === 'SIGNED_OUT') {
         currentUserAvatarUrl = null;
@@ -11301,16 +11384,25 @@ function hideCommentThumbnail(){
 
   /* ── Comments pagination state ──
      cpOffset: how many comments back from the end are currently shown.
-     Initial: 20 (mobile/tablet < 1025px) or 50 (desktop).
-     Each pull-to-refresh adds exactly 20 more older comments. */
+     Initial 25 on every device; scrolling to the TOP reveals 25 more
+     older comments each time (see cpTriggerRefresh). */
   var cpOffset = 0; /* set properly in cpRender on first call */
-  var CP_INITIAL_LOAD = function(){ return window.innerWidth >= 1025 ? 50 : 20; };
-  var CP_LOAD_STEP = 20;
+  var CP_INITIAL_LOAD = function(){ return 25; };
+  var CP_LOAD_STEP = 25;
+  /* True only while a "load older" pull is in flight, so cpRender pins
+     the reading position instead of jumping to the newest message. */
+  var cpLoadingOlder = false;
 
   function cpRender(){
     var body  = document.getElementById('cpBody');
     var empty = document.getElementById('cpEmpty');
     if(!body) return;
+
+    /* Capture scroll state BEFORE mutating the list so we can either pin
+       to the bottom (fresh open / new message) or preserve the reading
+       position when older messages are prepended at the top. */
+    var prevHeight = body.scrollHeight;
+    var prevTop    = body.scrollTop;
 
     /* Remove existing rendered items (keep #cpEmpty and #cpRefreshWrap) */
     body.querySelectorAll('.cpComment, .cpShowcase').forEach(function(el){ el.remove(); });
@@ -11332,8 +11424,7 @@ function hideCommentThumbnail(){
        but as offset grows we walk further back in history */
     var toShow = cpComments.slice(cpComments.length - showCount);
 
-    /* Insert before the refresh spinner so spinner stays at bottom */
-    var spinner = document.getElementById('cpRefreshWrap');
+    /* Loader now sits at the top; messages are appended below it. */
     var isShowcase = cpCurrentChannel === 'showcase';
 
     toShow.forEach(function(c){
@@ -11370,28 +11461,37 @@ function hideCommentThumbnail(){
             '<div class="cpCommentTime">' + esc(c.time) + '</div>' +
           '</div>';
       }
-      if(spinner) { body.insertBefore(div, spinner); }
-      else { body.appendChild(div); }
+      body.appendChild(div);
     });
 
-    /* Scroll to bottom so newest comment is visible */
-    body.scrollTop = body.scrollHeight;
+    if(cpLoadingOlder){
+      /* Older messages were just added above the previous top — keep the
+         same messages under the viewport instead of jumping to the end. */
+      body.scrollTop = prevTop + (body.scrollHeight - prevHeight);
+      cpLoadingOlder = false;
+    } else {
+      /* Fresh open or a new message — show the newest at the bottom. */
+      body.scrollTop = body.scrollHeight;
+    }
   }
 
-  /* ── Pull-to-refresh: show spinner at bottom when scrolled past last comment.
-     Each trigger adds 20 more older comments (cpOffset += 20) then re-fetches
-     to catch any truly new ones. Repeats indefinitely until all are shown. */
+  /* ── Load older: show the spinner at the TOP when the user scrolls up
+     past the first visible comment. Each trigger reveals 25 more older
+     comments (cpOffset += 25) then re-renders. Repeats until all shown. */
   (function(){
     var _cpRefreshing = false;
     var _cpRefreshTimer = null;
 
     function cpTriggerRefresh(){
       if(_cpRefreshing) return;
+      /* Nothing older left to reveal — don't flash the spinner. */
+      if(cpOffset >= cpComments.length) return;
       _cpRefreshing = true;
       var wrap = document.getElementById('cpRefreshWrap');
       if(wrap) wrap.classList.add('visible');
 
-      /* Extend the visible window by 20 more older comments */
+      /* Reveal 25 more older comments, pinning the reading position. */
+      cpLoadingOlder = true;
       cpOffset += CP_LOAD_STEP;
 
       cpLoadComments().then(function(){
@@ -11403,6 +11503,7 @@ function hideCommentThumbnail(){
       }).catch(function(){
         if(wrap) wrap.classList.remove('visible');
         _cpRefreshing = false;
+        cpLoadingOlder = false;
       });
     }
 
@@ -11412,9 +11513,9 @@ function hideCommentThumbnail(){
       if(!body) return;
 
       body.addEventListener('scroll', function(){
-        /* Trigger when within 40px of the scrollable bottom */
-        var nearBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 40;
-        if(nearBottom && !_cpRefreshing){
+        /* Trigger when within 40px of the TOP (scrolling up into history) */
+        var nearTop = body.scrollTop <= 40;
+        if(nearTop && !_cpRefreshing){
           clearTimeout(_cpRefreshTimer);
           _cpRefreshTimer = setTimeout(function(){
             var page = document.getElementById('communityPage');
@@ -11657,6 +11758,24 @@ function hideCommentThumbnail(){
 
   function spawnPts(){const c=document.getElementById('iPts');for(let i=0;i<28;i++){const s=document.createElement('span');s.style.left=Math.random()*100+'%';s.style.top=(40+Math.random()*40)+'%';s.style.animationDuration=(1.5+Math.random()*1.5)+'s';s.style.animationDelay=(Math.random()*2)+'s';c.appendChild(s);}}
 
+  /* ── Post-intro callback queue ──
+     Anything that should only surface once the #intro loading screen has
+     fully faded (e.g. the "Welcome" toast on a page-load session restore)
+     registers here. Callbacks run immediately if the intro is already
+     gone, so post-load actions like a manual login are unaffected. */
+  var __introRevealed = false;
+  var __afterIntroQueue = [];
+  function afterIntro(cb){
+    if(__introRevealed){ cb(); return; }
+    __afterIntroQueue.push(cb);
+  }
+  function __flushAfterIntro(){
+    if(__introRevealed) return;
+    __introRevealed = true;
+    var q = __afterIntroQueue; __afterIntroQueue = [];
+    q.forEach(function(fn){ try{ fn(); }catch(e){} });
+  }
+
   (function(){
     var bar = document.getElementById('iLoadBar');
     var pct = document.getElementById('iLoadPct');
@@ -11681,8 +11800,14 @@ function hideCommentThumbnail(){
           if(e.propertyName === 'opacity'){
             introEl.classList.add('iGone');
             introEl.removeEventListener('transitionend', handler);
+            __flushAfterIntro(); /* intro fully faded → release queued toasts */
           }
         });
+        /* Fallback: if transitionend never fires (reduced-motion, display
+           quirks) still release the queue just after the 1s opacity fade. */
+        setTimeout(__flushAfterIntro, 1150);
+      } else {
+        __flushAfterIntro();
       }
     }
 

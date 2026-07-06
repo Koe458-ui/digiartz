@@ -7627,7 +7627,10 @@ body{background:var(--bg);}
   <!-- ── Toast Notification ── -->
   <div class="toast" id="toast">
   </div>
-  <!-- Supabase credentials loaded from config.js (gitignored) -->
+  <!-- Supabase credentials + S3 upload endpoint loaded from
+       config.js (gitignored) — see config.example.js for the
+       template. window.KOE_CONFIG now also carries S3_FN_URL,
+       the deployed s3-sign edge function's endpoint. -->
   <script src="config.js"></script>
   <script>
 
@@ -7638,6 +7641,52 @@ body{background:var(--bg);}
   // Admin role derived from profiles.role in Supabase, enforced via RLS
   const BUCKET   = 'koe-media';
   const HERO_BUCKET = 'hero-slides'; // separate bucket for hero_slides images (see SQL setup)
+  const S3_FN_URL = (window.KOE_CONFIG && window.KOE_CONFIG.S3_FN_URL) || '';
+
+  /* ── S3 upload/delete — replaces sb.storage.from(...).upload/remove.
+     Images now live in AWS S3 (via CloudFront); Supabase Storage is
+     no longer used for new uploads. Both helpers throw on failure
+     with a `.message`, matching the shape every call site's existing
+     `catch(err){ ...err.message }` already expects — so none of
+     that error handling needed to change.
+
+     `bucket` keeps meaning what it always meant at each call site
+     (BUCKET or HERO_BUCKET) — here it's used as the S3 key prefix
+     (koe-media/... or hero-slides/...) instead of a Supabase bucket
+     name, matching what the s3-sign edge function expects. */
+  async function s3AuthHeader(){
+    if(!sb) throw new Error('Backend not configured');
+    const{data:{session}} = await sb.auth.getSession();
+    if(!session) throw new Error('Sign in required');
+    return 'Bearer '+session.access_token;
+  }
+  async function s3Upload(bucket, path, file){
+    if(!S3_FN_URL) throw new Error('Storage endpoint not configured');
+    const auth = await s3AuthHeader();
+    const key = bucket+'/'+path;
+    const signRes = await fetch(S3_FN_URL, {
+      method:'POST',
+      headers:{'content-type':'application/json', 'authorization':auth},
+      body: JSON.stringify({action:'upload', path:key, contentType:file.type, size:file.size})
+    });
+    const signJson = await signRes.json().catch(function(){return{};});
+    if(!signRes.ok) throw new Error(signJson.error || 'Upload authorization failed');
+    const putRes = await fetch(signJson.uploadUrl, {method:'PUT', headers:{'content-type':file.type}, body:file});
+    if(!putRes.ok) throw new Error('Upload failed');
+    return signJson.publicUrl;
+  }
+  async function s3Delete(bucket, path){
+    if(!path) return;
+    if(!S3_FN_URL) throw new Error('Storage endpoint not configured');
+    const auth = await s3AuthHeader();
+    const res = await fetch(S3_FN_URL, {
+      method:'POST',
+      headers:{'content-type':'application/json', 'authorization':auth},
+      body: JSON.stringify({action:'delete', path:bucket+'/'+path})
+    });
+    const j = await res.json().catch(function(){return{};});
+    if(!res.ok || j.ok===false) throw new Error(j.error || 'Delete failed');
+  }
 
 
   /* SEO defaults read from <head> so resetArtworkSEO() stays in sync */
@@ -9034,9 +9083,7 @@ body{background:var(--bg);}
         btn.textContent='UPLOADING…';
         const ext=upFile.name.split('.').pop();
         const path=`artworks/${Date.now()}_${nm.replace(/\s+/g,'_')}.${ext}`;
-        const{error:ue}=await sb.storage.from(BUCKET).upload(path,upFile,{cacheControl:'3600'});
-        if(ue)throw ue;
-        const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
+        const publicUrl = await s3Upload(BUCKET,path,upFile);
         const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null,software:software||null,status:'approved'}).select();
         if(de)throw de;
         images.unshift(rows[0]);
@@ -9052,7 +9099,7 @@ body{background:var(--bg);}
   async function delImg(id,sp,e){
     e.stopPropagation();if(!isAdm||!confirm('Delete this artwork?'))return;
     try{
-      if(sp)await sb.storage.from(BUCKET).remove([sp]);
+      if(sp)await s3Delete(BUCKET,sp);
       await sb.from('artworks').delete().eq('id',id);
       images=images.filter(i=>String(i.id)!==String(id));
       renderHome();if(document.getElementById('fg').classList.contains('open'))renderFG();
@@ -9309,7 +9356,7 @@ body{background:var(--bg);}
     if(!isAdm || !confirm('Delete this comic?')) return;
     try{
       var c = pf.comicRows.find(function(r){return String(r.id)===String(id);});
-      if(c && c.cover_storage_path) await sb.storage.from(BUCKET).remove([c.cover_storage_path]);
+      if(c && c.cover_storage_path) await s3Delete(BUCKET,c.cover_storage_path);
       await sb.from('comics').delete().eq('id',id);
       pf.comicRows = pf.comicRows.filter(function(r){return String(r.id)!==String(id);});
       pfRenderComic();
@@ -9763,9 +9810,7 @@ body{background:var(--bg);}
           btn.textContent='UPLOADING…';
           var ext = pf.upFile.name.split('.').pop();
           var path = 'artworks/'+currentUser.id+'/'+Date.now()+'_'+nm.replace(/\s+/g,'_')+'.'+ext;
-          const{error:ue}=await sb.storage.from(BUCKET).upload(path,pf.upFile,{cacheControl:'3600'});
-          if(ue) throw ue;
-          const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
+          const publicUrl = await s3Upload(BUCKET,path,pf.upFile);
           var artThumb = pf.upThumbFocus || {x:50,y:50};
           /* status:'pending' — hidden from the public gallery until a
              dev reviews it in #admPage. Not added to the global
@@ -9796,18 +9841,14 @@ body{background:var(--bg);}
           btn.textContent='UPLOADING…';
           var cext = pf.upFile.name.split('.').pop();
           var cpath = 'comics/'+currentUser.id+'/'+Date.now()+'_cover.'+cext;
-          const{error:cue}=await sb.storage.from(BUCKET).upload(cpath,pf.upFile,{cacheControl:'3600'});
-          if(cue) throw cue;
-          const{data:{publicUrl:coverUrl}}=sb.storage.from(BUCKET).getPublicUrl(cpath);
+          const coverUrl = await s3Upload(BUCKET,cpath,pf.upFile);
           var coverThumb = pf.upThumbFocus || {x:50,y:50};
           var pageUrls = [];
           for(var i=0;i<pf.upPageFiles.length;i++){
             var pf_ = pf.upPageFiles[i];
             var pext = pf_.name.split('.').pop();
             var ppath = 'comics/'+currentUser.id+'/'+Date.now()+'_p'+i+'.'+pext;
-            const{error:pue}=await sb.storage.from(BUCKET).upload(ppath,pf_,{cacheControl:'3600'});
-            if(pue) throw pue;
-            const{data:{publicUrl:pageUrl}}=sb.storage.from(BUCKET).getPublicUrl(ppath);
+            const pageUrl = await s3Upload(BUCKET,ppath,pf_);
             pageUrls.push(pageUrl);
           }
           const{data:rows,error:de}=await sb.from('comics').insert({title:nm,description:desc||null,tags:tags,cover_image_url:coverUrl,cover_storage_path:cpath,cover_thumb_x:coverThumb.x,cover_thumb_y:coverThumb.y,pages:pageUrls,user_id:currentUser.id,status:'pending'}).select();
@@ -10017,9 +10058,7 @@ body{background:var(--bg);}
       if(left>0){ showToast((kind==='banner'?'Banner':'Profile photo')+' was updated recently. '+pfAvBCooldownMsg(left)); return; }
       var oldPath = pf.profile && pf.profile[kind+'_storage_path'];
       var path = kind+'s/'+currentUser.id+'/'+Date.now()+'.jpg';
-      var{error:ue}=await sb.storage.from(BUCKET).upload(path, blob, {cacheControl:'3600', contentType:'image/jpeg'});
-      if(ue) throw ue;
-      var{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(path);
+      var publicUrl = await s3Upload(BUCKET,path,blob);
       var nowIso = new Date().toISOString();
       var updates = {}; 
       updates[kind+'_url'] = publicUrl;
@@ -10030,7 +10069,7 @@ body{background:var(--bg);}
       /* Old file is removed only after the new row commits successfully,
          so a failed update never leaves the profile pointing at a file
          that's already been deleted. */
-      if(oldPath) await sb.storage.from(BUCKET).remove([oldPath]);
+      if(oldPath) await s3Delete(BUCKET,oldPath);
       Object.assign(pf.profile, updates);
       pfRenderAvatarBanner();
       if(pf.profile.username){
@@ -10437,13 +10476,11 @@ body{background:var(--bg);}
       if(ahsPendingFile){
         var ext = ahsPendingFile.name.split('.').pop();
         var path = 'slide_'+ahsEditingIndex+'_'+Date.now()+'.'+ext;
-        const{error:ue} = await sb.storage.from(HERO_BUCKET).upload(path, ahsPendingFile, {cacheControl:'3600'});
-        if(ue) throw ue;
-        const{data:{publicUrl}} = sb.storage.from(HERO_BUCKET).getPublicUrl(path);
+        const publicUrl = await s3Upload(HERO_BUCKET,path,ahsPendingFile);
         var oldPath = storagePath;
         imageUrl = publicUrl;
         storagePath = path;
-        if(oldPath) await sb.storage.from(HERO_BUCKET).remove([oldPath]);
+        if(oldPath) await s3Delete(HERO_BUCKET,oldPath);
       }
       var payload = {image_url:imageUrl, storage_path:storagePath, title:title, subtitle:subtitle||null, position:ahsEditingIndex};
       var result;
@@ -10479,7 +10516,7 @@ body{background:var(--bg);}
     if(!sb){ showToast('Configure Supabase first'); return; }
     if(!confirm('Delete this slide?')) return;
     try{
-      if(slot.storage_path) await sb.storage.from(HERO_BUCKET).remove([slot.storage_path]);
+      if(slot.storage_path) await s3Delete(HERO_BUCKET,slot.storage_path);
       const{error} = await sb.from('hero_slides').delete().eq('id',slot.id);
       if(error) throw error;
       ahSlides[ahsEditingIndex] = ahsEmptySlot();
@@ -10614,8 +10651,8 @@ body{background:var(--bg);}
     var row = list.find(function(r){ return String(r.id)===String(id); });
     try{
       if(row){
-        if(kind==='art' && row.storage_path){ await sb.storage.from(BUCKET).remove([row.storage_path]); }
-        if(kind==='comic' && row.cover_storage_path){ await sb.storage.from(BUCKET).remove([row.cover_storage_path]); }
+        if(kind==='art' && row.storage_path){ await s3Delete(BUCKET,row.storage_path); }
+        if(kind==='comic' && row.cover_storage_path){ await s3Delete(BUCKET,row.cover_storage_path); }
       }
       const{error}=await sb.from(table).delete().eq('id',id);
       if(error) throw error;
@@ -10781,7 +10818,7 @@ body{background:var(--bg);}
     if(!currentUser || String(art.user_id)!==String(currentUser.id)){ showToast('You can only delete your own artwork'); return; }
     if(!confirm('Delete this artwork? This cannot be undone.')) return;
     try{
-      if(art.storage_path) await sb.storage.from(BUCKET).remove([art.storage_path]);
+      if(art.storage_path) await s3Delete(BUCKET,art.storage_path);
       const{error}=await sb.from('artworks').delete().eq('id',id);
       if(error) throw error;
       mw.art = mw.art.filter(function(r){ return String(r.id)!==String(id); });
@@ -10804,7 +10841,7 @@ body{background:var(--bg);}
     if(!currentUser || String(c.user_id)!==String(currentUser.id)){ showToast('You can only delete your own comic'); return; }
     if(!confirm('Delete this comic? This cannot be undone.')) return;
     try{
-      if(c.cover_storage_path) await sb.storage.from(BUCKET).remove([c.cover_storage_path]);
+      if(c.cover_storage_path) await s3Delete(BUCKET,c.cover_storage_path);
       const{error}=await sb.from('comics').delete().eq('id',id);
       if(error) throw error;
       mw.comic = mw.comic.filter(function(r){ return String(r.id)!==String(id); });

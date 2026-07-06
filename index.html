@@ -9159,20 +9159,72 @@ body{background:var(--bg);}
     }catch(e){ return ''; }
   }
 
+  /* Every column the profile page needs — shared by the normal fetch
+     in openProfileByUsername and the self-heal below so both paths
+     always return an identically-shaped row. */
+  var PF_PROFILE_COLS = 'id,username,bio,role,created_at,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
+
+  /* ── Self-heal: guarantee the signed-in user has a profiles row ──
+     Accounts created before the on-signup trigger existed have a
+     username in auth user_metadata but NO row in public.profiles,
+     which made every "view my profile" attempt fail with
+     "Profile not found" (and, since pf.isOwner never got set,
+     blocked all uploads too). This checks for the row by id and
+     creates it from session metadata if it's missing.
+     Returns the full profiles row, or null if it truly can't
+     be read/created (e.g. missing RLS insert policy). */
+  async function pfEnsureOwnProfile(){
+    if(!sb || !currentUser) return null;
+    try{
+      /* maybeSingle(): 0 rows is expected here, not an error */
+      const{data:existing,error:se}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('id',currentUser.id).maybeSingle();
+      if(se) throw se;
+      if(existing) return existing;
+      /* No row — build a username from the session, matching the same
+         charset/length rules savePfEditProfile() enforces. */
+      var base = (currentUser.user_metadata && currentUser.user_metadata.username) ||
+                 (currentUser.email ? currentUser.email.split('@')[0] : '') || 'user';
+      base = base.replace(/[^a-zA-Z0-9_.]/g,'').slice(0,30) || 'user';
+      var uname = base;
+      for(var attempt=0; attempt<3; attempt++){
+        const{data:ins,error:ie}=await sb.from('profiles').insert({id:currentUser.id,username:uname}).select(PF_PROFILE_COLS).single();
+        if(!ie && ins){
+          /* Keep the auth-side copy in sync (non-fatal if it fails) */
+          if(uname !== (currentUser.user_metadata && currentUser.user_metadata.username)){
+            try{ await sb.auth.updateUser({data:{username:uname}}); }catch(e){}
+          }
+          return ins;
+        }
+        var msg = (ie && ie.message) || '';
+        if(/duplicate|unique|23505/i.test(msg)){
+          /* Conflict on id → a row appeared concurrently, re-read it.
+             Conflict on username → someone else owns it, add a suffix. */
+          const{data:again}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('id',currentUser.id).maybeSingle();
+          if(again) return again;
+          uname = base.slice(0,24)+'_'+Math.random().toString(36).slice(2,6);
+          continue;
+        }
+        console.error('pfEnsureOwnProfile: '+msg);
+        return null;
+      }
+    }catch(e){ console.error('pfEnsureOwnProfile: '+(e.message||e)); }
+    return null;
+  }
+
   async function openOwnProfile(){
     if(!currentUser){ showToast('Sign in to view your profile'); openAuthMod(); return; }
     if(!sb){ showToast('Configure Supabase first'); return; }
     /* The signed-in session already carries the username (set at
        login/signup) — use it directly so the panel opens instantly,
-       same as Gallery/Comic. Only hit the DB as a rare fallback if
-       that field is somehow missing from the session. */
+       same as Gallery/Comic. If the profiles row turns out to be
+       missing, openProfileByUsername self-heals it via
+       pfEnsureOwnProfile(). Only hit the DB here as a rare fallback
+       if the username is somehow missing from the session too. */
     var uname = currentUser.user_metadata && currentUser.user_metadata.username;
     if(uname){ openProfileByUsername(uname); return; }
-    try{
-      const{data,error}=await sb.from('profiles').select('username').eq('id',currentUser.id).single();
-      if(error || !data || !data.username){ showToast('Profile not found'); return; }
-      openProfileByUsername(data.username);
-    }catch(e){ console.error('Error: '+e.message); }
+    var row = await pfEnsureOwnProfile();
+    if(row && row.username){ openProfileByUsername(row.username); return; }
+    showToast('Could not load your profile — please try again');
   }
 
   async function openProfileByUsername(username, pushUrl){
@@ -9206,8 +9258,26 @@ body{background:var(--bg);}
     document.getElementById('pfComicGrid').innerHTML='';
     pfSwitchTab('gallery');
     try{
-      const{data,error}=await sb.from('profiles').select('id,username,bio,role,created_at,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links').eq('username',username).single();
-      if(error || !data){ showToast('Profile not found'); closeProfilePage(); return; }
+      /* maybeSingle(): a missing row shouldn't surface as an error —
+         we want to distinguish "not found" from a real query failure. */
+      let{data,error}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('username',username).maybeSingle();
+      if(error) throw error;
+      if(!data && currentUser){
+        /* Row missing — if this is the signed-in user's own username
+           (their session metadata says so), their profiles row was
+           never created at signup. Create it now and carry on instead
+           of dead-ending on "Profile not found". Case-insensitive so
+           a stale-cased metadata copy still matches. */
+        var metaName = currentUser.user_metadata && currentUser.user_metadata.username;
+        if(metaName && metaName.toLowerCase() === String(username).toLowerCase()){
+          data = await pfEnsureOwnProfile();
+        }
+      }
+      if(!data){ showToast('Profile not found'); closeProfilePage(); return; }
+      /* The row is canonical — the username arg may differ in case or
+         have been suffixed by the self-heal, so use the DB value from
+         here on (cache key, URL, rendering). */
+      username = data.username;
       pf.profile = data;
       pf.isOwner = !!(currentUser && currentUser.id === data.id);
       /* Cache for next time + preload immediately in case these

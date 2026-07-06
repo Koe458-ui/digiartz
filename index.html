@@ -2721,7 +2721,7 @@
     #profilePage.open{transform:translateX(0);}
     /* Dark, banner-led theme — scoped to the profile page only,
        the rest of the site stays on the white theme. */
-    #profilePage,#profilePage *{
+    #profilePage,#profilePage *,#pfMenu,#pfMenu *{
       --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
       --tx:var(--vtx);--txd:var(--vtxd);
       --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
@@ -2752,23 +2752,60 @@
     }
     .pfMenuBtn:hover{background:rgba(0,0,0,.65);}
     .pfMenuBtn svg{width:18px;height:18px;}
+    /* ── Profile menu: right-side slide-in drawer ──
+       Lives at body level (NOT inside #profilePage) because that
+       page has transform + its own scroll — a fixed drawer inside
+       it would scroll away with the content. */
+    .pfMenuScrim{
+      position:fixed;inset:0;z-index:530;background:rgba(0,0,0,.55);
+      opacity:0;pointer-events:none;transition:opacity .3s ease;
+    }
+    .pfMenuScrim.show{opacity:1;pointer-events:auto;}
     .pfMenu{
-      position:absolute;top:3.4rem;right:1rem;z-index:3;
-      background:var(--sur);border:1px solid var(--bdrh);border-radius:10px;
-      box-shadow:0 8px 28px rgba(0,0,0,.45);
-      min-width:180px;padding:.4rem;
+      position:fixed;top:0;right:0;bottom:0;z-index:531;
+      width:min(320px,86vw);height:100dvh;
+      background:var(--sur);border-left:1px solid var(--bdr);
+      box-shadow:-12px 0 40px rgba(0,0,0,.45);
       display:flex;flex-direction:column;gap:.15rem;
-      opacity:0;transform:translateY(-6px);pointer-events:none;
-      transition:opacity .18s,transform .18s;
+      padding:0 .85rem 1.1rem;
+      transform:translateX(100%);
+      transition:transform .38s cubic-bezier(.22,1,.36,1);
     }
-    .pfMenu.open{opacity:1;transform:translateY(0);pointer-events:auto;}
+    .pfMenu.open{transform:translateX(0);}
+    .pfMenuHdr{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:1.05rem .15rem .9rem;margin-bottom:.35rem;
+      border-bottom:1px solid var(--bdr);
+    }
+    .pfMenuHdrTitle{
+      font-family:var(--fb);font-size:.72rem;font-weight:600;
+      letter-spacing:.14em;text-transform:uppercase;color:var(--txd);
+    }
+    .pfMenuX{
+      width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      background:none;color:var(--ps);font-size:1rem;line-height:1;
+      transition:background .18s,color .18s;
+    }
+    .pfMenuX:hover{background:var(--pdim);color:var(--tx);}
     .pfMenuItem{
-      font-family:var(--fb);font-size:.78rem;font-weight:500;letter-spacing:.02em;text-align:left;
-      padding:.65rem .8rem;border-radius:6px;border:none;background:none;
+      font-family:var(--fb);font-size:.88rem;font-weight:500;letter-spacing:.02em;text-align:left;
+      padding:.85rem .8rem;border-radius:8px;border:none;background:none;
       color:var(--ps);cursor:pointer;transition:background .18s,color .18s;
+      display:flex;align-items:center;justify-content:space-between;gap:.75rem;
     }
+    .pfMenuCount{
+      font-family:var(--fm);font-size:.68rem;letter-spacing:.05em;
+      color:var(--txd);min-width:1.2em;text-align:right;
+    }
+    .pfMenuCount:empty{display:none;}
     .pfMenuItem:hover{background:var(--pdim);color:var(--tx);}
+    /* Destructive action anchored to the drawer's bottom */
+    .pfMenuItem--danger{margin-top:auto;}
     .pfMenuItem--danger:hover{background:rgba(220,38,38,.18);color:#fca5a5;}
+    @media (prefers-reduced-motion:reduce){
+      .pfMenu,.pfMenuScrim{transition:none;}
+    }
     #smAdmBtn{display:none;}
     #smAdmBtn.devOnly{display:block;}
     #smAdmBtn.on{color:#93c5fd;}
@@ -5341,14 +5378,6 @@ body{background:var(--bg);}
       <button class="pfMenuBtn" onclick="togglePfMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="pfMenu" aria-label="Profile options">
         <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
       </button>
-      <div class="pfMenu" id="pfMenu" role="menu">
-        <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openSubscription()">Subscription</button>
-        <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openMyWorkPage()">Edit My Work</button>
-        <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openBookmarksPage()">Bookmarks</button>
-        <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openThemePage()">Theme</button>
-        <button class="pfMenuItem" id="smAdmBtn" role="menuitem" onclick="closePfMenu();smHandleAdm()">Admin Panel</button>
-        <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
-      </div>
       <div class="pfAvatarWrap">
         <div class="pfAvatar" id="pfAvatar"><img alt="" id="pfAvatarImg"><span id="pfAvatarLetter">?</span></div>
       </div>
@@ -6442,7 +6471,7 @@ body{background:var(--bg);}
       searchTimer = setTimeout(function () { runSearch(q, box); }, 300);
     });
   }
-  async function runSearch (q, box) {
+  async function runSearch (q, box, onOpen) {
     if (!db()) { toast('Backend not configured'); return; }
     var safe = q.replace(/[%_]/g, '\\$&');
     try {
@@ -6457,14 +6486,14 @@ body{background:var(--bg);}
         box.innerHTML = '<div class="dmSearchNote">NO USERS FOUND</div>';
         return;
       }
-      rows.forEach(function (p) { box.appendChild(userRow(p, true)); });
+      rows.forEach(function (p) { box.appendChild(userRow(p, true, null, null, onOpen)); });
     } catch (e) { box.innerHTML = '<div class="dmSearchNote">SEARCH FAILED — TRY AGAIN</div>'; }
   }
 
   /* One row — used for both search results and conversations.
      Built with createElement so usernames can't break out of
      attributes regardless of characters. */
-  function userRow (p, isSearch, preview, ts) {
+  function userRow (p, isSearch, preview, ts, onOpen) {
     var item = document.createElement('div');
     item.className = 'cmFriendItem';
     item.setAttribute('role', 'button');
@@ -6498,7 +6527,7 @@ body{background:var(--bg);}
       w.className = 'dmWhen'; w.textContent = when(ts);
       item.appendChild(w);
     }
-    var open = function () { openThread(p); };
+    var open = function () { (onOpen || openThread)(p); };
     item.addEventListener('click', open);
     item.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
@@ -6506,25 +6535,34 @@ body{background:var(--bg);}
     return item;
   }
 
-  /* ── Conversations (distinct partners from recent messages) ── */
+  /* ── Conversations (distinct partners from recent messages) ──
+     Partner derivation is shared: convo list, Friends page, and the
+     profile drawer's friends count all use fetchPartners(). */
+  async function fetchPartners () {
+    if (!db() || !me()) return [];
+    var uid = me().id;
+    var r = await db().from('direct_messages')
+      .select('sender_id,recipient_id,content,created_at')
+      .or('sender_id.eq.' + uid + ',recipient_id.eq.' + uid)
+      .order('created_at', { ascending: false })
+      .limit(120);
+    if (r.error) throw r.error;
+    var seen = {}, partners = [];
+    (r.data || []).forEach(function (m) {
+      var pid = m.sender_id === uid ? m.recipient_id : m.sender_id;
+      if (seen[pid]) return;
+      seen[pid] = true;
+      partners.push({ id: pid, preview: (m.sender_id === uid ? 'You: ' : '') + m.content, ts: m.created_at });
+    });
+    return partners;
+  }
+  window.__dmFetchPartners = fetchPartners; /* profile drawer count */
+
   async function refreshConvos () {
     var list = $('dmConvoList'), empty = $('dmEmpty'), head = $('dmConvoHead');
     if (!list || !db() || !me()) return;
     try {
-      var uid = me().id;
-      var r = await db().from('direct_messages')
-        .select('sender_id,recipient_id,content,created_at')
-        .or('sender_id.eq.' + uid + ',recipient_id.eq.' + uid)
-        .order('created_at', { ascending: false })
-        .limit(120);
-      if (r.error) throw r.error;
-      var seen = {}, partners = [];
-      (r.data || []).forEach(function (m) {
-        var pid = m.sender_id === uid ? m.recipient_id : m.sender_id;
-        if (seen[pid]) return;
-        seen[pid] = true;
-        partners.push({ id: pid, preview: (m.sender_id === uid ? 'You: ' : '') + m.content, ts: m.created_at });
-      });
+      var partners = await fetchPartners();
       list.innerHTML = '';
       if (head) head.style.display = partners.length ? '' : 'none';
       if (empty) empty.style.display = partners.length ? 'none' : '';
@@ -6620,9 +6658,72 @@ body{background:var(--bg);}
     }
   }
 
+  /* ── Friends page (#frdPage) — DM partners + user search ── */
+  var frdLastFocus = null, frdSearchTimer = null;
+  function frdStartChat (p) {
+    closeFriendsPage();
+    if (typeof window.openCommunityHome === 'function') window.openCommunityHome();
+    openThread(p);
+  }
+  async function loadFriendsPage () {
+    var list = $('frdList'), empty = $('frdEmptyState'),
+        head = $('frdListHead'), cnt = $('frdCount');
+    if (!list) return;
+    list.innerHTML = '<div class="dmSearchNote">LOADING…</div>';
+    empty.style.display = 'none'; head.style.display = 'none';
+    try {
+      var partners = await fetchPartners();
+      list.innerHTML = '';
+      if (cnt) cnt.textContent = partners.length;
+      if (!partners.length) { empty.style.display = ''; return; }
+      head.style.display = '';
+      var pr = await db().from('profiles')
+        .select('id,username,avatar_url')
+        .in('id', partners.map(function (p) { return p.id; }));
+      var byId = {};
+      (pr.data || []).forEach(function (p) { byId[p.id] = p; });
+      partners.forEach(function (pt) {
+        var prof = byId[pt.id] || { id: pt.id, username: 'Artist' };
+        list.appendChild(userRow(prof, false, pt.preview, pt.ts, frdStartChat));
+      });
+    } catch (e) {
+      list.innerHTML = '<div class="dmSearchNote">COULDN\u2019T LOAD FRIENDS — TRY AGAIN</div>';
+    }
+  }
+  function openFriendsPage () {
+    if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
+    frdLastFocus = document.activeElement;
+    $('frdPage').classList.add('open');
+    var nav = $('bnNav'); if (nav) nav.style.display = 'none';
+    document.body.style.overflow = 'hidden';
+    var inp = $('frdSearchInput'); if (inp) inp.value = '';
+    var res = $('frdResults'); if (res) res.innerHTML = '';
+    loadFriendsPage();
+  }
+  function closeFriendsPage () {
+    $('frdPage').classList.remove('open');
+    var nav = $('bnNav'); if (nav) nav.style.display = '';
+    document.body.style.overflow = '';
+    if (frdLastFocus && frdLastFocus.focus) frdLastFocus.focus({ preventScroll: true });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && $('frdPage') && $('frdPage').classList.contains('open')) closeFriendsPage();
+  });
+  window.openFriendsPage  = openFriendsPage;
+  window.closeFriendsPage = closeFriendsPage;
+
   /* ── Wiring — decorate, never modify, existing functions ── */
   document.addEventListener('DOMContentLoaded', function () {
     initSearch();
+    /* Friends-page search: same debounce/query as the community
+       search, results open a chat via frdStartChat. */
+    var fInp = $('frdSearchInput'), fBox = $('frdResults');
+    if (fInp && fBox) fInp.addEventListener('input', function () {
+      clearTimeout(frdSearchTimer);
+      var q = fInp.value.trim();
+      if (q.length < 2) { fBox.innerHTML = ''; return; }
+      frdSearchTimer = setTimeout(function () { runSearch(q, fBox, frdStartChat); }, 300);
+    });
     var btn = $('dmSendBtn'); if (btn) btn.addEventListener('click', send);
     var inp = $('dmInput');
     if (inp) inp.addEventListener('keydown', function (e) {
@@ -7308,8 +7409,6 @@ body{background:var(--bg);}
       <span class="avBtnIcon">✕</span><span class="avBtnLabel">Close</span><kbd>ESC</kbd>
      </button>
      <div class="avTopRight">
-      <button type="button" class="avActBtn engBtn engLike" aria-label="Like" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 1 1 12 6.3a5 5 0 1 1 7.5 6.3Z"/></svg></button>
-      <button type="button" class="avActBtn engBtn engBm" aria-label="Bookmark" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1Z"/></svg></button>
       <button class="avActBtn" onclick="avDownload()" aria-label="Download">⬇</button>
       <button class="avActBtn" onclick="avShare()" aria-label="Share">↗</button>
       <button class="avActBtn" onclick="avReport()" aria-label="Report">⚑</button>
@@ -7344,7 +7443,13 @@ body{background:var(--bg);}
         </div>
        </div>
        <div>
-        <div class="avTitle" id="lbNm"></div>
+        <div class="avTitleRow">
+         <div class="avTitle" id="lbNm"></div>
+         <div class="avTitleActs">
+          <button type="button" class="engBtn engLike" aria-label="Like" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 1 1 12 6.3a5 5 0 1 1 7.5 6.3Z"/></svg></button>
+          <button type="button" class="engBtn engBm" aria-label="Bookmark" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1Z"/></svg></button>
+         </div>
+        </div>
         <div class="avSubType" id="avSubType"></div>
        </div>
        <div class="avDiv"></div>
@@ -7624,6 +7729,23 @@ body{background:var(--bg);}
    </button>
   </div>
 
+  <!-- ── Profile menu drawer (body-level; see .pfMenu CSS note) ── -->
+  <div class="pfMenuScrim" id="pfMenuScrim" onclick="closePfMenu()"></div>
+  <div class="pfMenu" id="pfMenu" role="menu" aria-label="Profile options">
+    <div class="pfMenuHdr">
+      <span class="pfMenuHdrTitle">Menu</span>
+      <button class="pfMenuX" onclick="closePfMenu()" aria-label="Close menu">✕</button>
+    </div>
+    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openSubscription()">Subscription</button>
+    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openMyWorkPage()">Edit My Work</button>
+    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openLikesPage()">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
+    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openBookmarksPage()">Bookmarks <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
+    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openFriendsPage()">Friends <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
+    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openThemePage()">Theme</button>
+    <button class="pfMenuItem" id="smAdmBtn" role="menuitem" onclick="closePfMenu();smHandleAdm()">Admin Panel</button>
+    <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
+  </div>
+
   <!-- ── Toast Notification ── -->
   <div class="toast" id="toast">
   </div>
@@ -7809,7 +7931,6 @@ body{background:var(--bg);}
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
       </a>
-      <div class="engBtns"><button type="button" class="engBtn engLike" data-id="${idStr}" aria-label="Like" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 1 1 12 6.3a5 5 0 1 1 7.5 6.3Z"/></svg></button><button type="button" class="engBtn engBm" data-id="${idStr}" aria-label="Bookmark" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1Z"/></svg></button></div>
       <button class="gEdit" onclick="openEditArt('${idStr}',event)" title="Edit">✎</button>
       <button class="gDel" onclick="delImg('${idStr}','${esc(img.storage_path||'')}',event)" title="Delete">✕</button>
     </div>`;
@@ -8502,14 +8623,47 @@ body{background:var(--bg);}
     if (!menu) return;
     closePfUploadMenu();
     menu.classList.add('open');
+    var scrim = document.getElementById('pfMenuScrim');
+    if (scrim) scrim.classList.add('show');
+    var pg = document.getElementById('profilePage');
+    if (pg) pg.style.overflowY = 'hidden'; /* lock page scroll behind the drawer */
     _pfMenuOpen = true;
     if (btn) btn.setAttribute('aria-expanded','true');
+    pfMenuRefreshCounts(); /* fire-and-forget; badges fill in as data lands */
+  }
+
+  /* Likes / Bookmarks / Friends counts in the drawer. Errors leave the
+     badge blank (CSS hides empty badges) — the drawer never blocks on this. */
+  async function pfMenuRefreshCounts() {
+    var L = document.getElementById('pfMenuLikeCount'),
+        B = document.getElementById('pfMenuBmCount'),
+        F = document.getElementById('pfMenuFrdCount');
+    if (L) L.textContent = ''; if (B) B.textContent = ''; if (F) F.textContent = '';
+    if (!sb || !currentUser) return;
+    var uid = currentUser.id;
+    sb.from('artwork_likes').select('artwork_id', { count: 'exact', head: true })
+      .eq('user_id', uid).then(function (r) {
+        if (L && !r.error && typeof r.count === 'number') L.textContent = r.count;
+      });
+    sb.from('artwork_bookmarks').select('artwork_id', { count: 'exact', head: true })
+      .eq('user_id', uid).then(function (r) {
+        if (B && !r.error && typeof r.count === 'number') B.textContent = r.count;
+      });
+    if (typeof window.__dmFetchPartners === 'function') {
+      window.__dmFetchPartners().then(function (partners) {
+        if (F) F.textContent = partners.length;
+      }).catch(function(){});
+    }
   }
 
   function closePfMenu() {
     var menu = document.getElementById('pfMenu');
     var btn  = document.querySelector('.pfMenuBtn');
     if (menu) menu.classList.remove('open');
+    var scrim = document.getElementById('pfMenuScrim');
+    if (scrim) scrim.classList.remove('show');
+    var pg = document.getElementById('profilePage');
+    if (pg) pg.style.overflowY = '';
     _pfMenuOpen = false;
     if (btn) btn.setAttribute('aria-expanded','false');
   }
@@ -11786,8 +11940,6 @@ function hideCommentThumbnail(){
     meta.appendChild(nm);
     meta.appendChild(ct);
     card.appendChild(wrap);
-    /* engagement: like + bookmark quick actions (artworks only) */
-    if(!isComic && id != null && window.__engMakeBtns){ card.appendChild(window.__engMakeBtns(String(id))); }
     card.appendChild(meta);
 
     if(isComic){
@@ -13663,16 +13815,8 @@ html.thmFade #themePage{
      └─ Hard guards: no supabase / signed-out → graceful, no crash.
      ========================================================= -->
 <style>
-/* ── Card quick actions (gallery + artworks masonry) ── */
-.engBtns{
-  position:absolute;bottom:.55rem;right:.55rem;z-index:3;
-  display:flex;gap:.4rem;
-}
-@media(hover:hover){
-  .gItem .engBtns,.awCard .engBtns{opacity:0;transition:opacity .18s ease;}
-  .gItem:hover .engBtns,.gItem:focus-within .engBtns,
-  .awCard:hover .engBtns,.awCard:focus-within .engBtns{opacity:1;}
-}
+/* ── Engagement buttons (artwork viewer title row only —
+     removed from gallery/masonry cards by design) ── */
 .engBtn{
   width:34px;height:34px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -13687,8 +13831,29 @@ html.thmFade #themePage{
 .engBtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:fill .15s ease;}
 .engBtn[aria-pressed="true"]{border-color:rgba(var(--pg-rgb),.55);color:var(--pg);}
 .engBtn[aria-pressed="true"] svg{fill:var(--pg);stroke:var(--pg);}
-/* lightbox variants sit in the existing action bar */
-.avActBtn.engBtn{position:static;width:auto;height:auto;border-radius:8px;backdrop-filter:none;-webkit-backdrop-filter:none;}
+/* Viewer title row — title left, actions flush right */
+.avTitleRow{display:flex;align-items:flex-start;gap:.75rem;}
+.avTitleRow .avTitle{flex:1 1 auto;min-width:0;}
+.avTitleActs{display:flex;gap:.5rem;flex-shrink:0;padding-top:.1rem;}
+.avTitleActs .engBtn{
+  width:42px;height:42px;border-radius:12px;
+  background:color-mix(in srgb,var(--sur2) 55%,transparent);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+.avTitleActs .engBtn svg{width:20px;height:20px;}
+/* ── Friends page — same shell as #bmPage ── */
+#frdPage{
+  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#frdPage.open{transform:translateX(0);}
+.frdBdy{max-width:640px;margin:0 auto;padding:1.2rem 1rem 3rem;}
+.frdSection{
+  font-family:var(--fm);font-size:.68rem;letter-spacing:.14em;
+  color:var(--txd);margin:1.5rem 0 .7rem;
+}
+@media (prefers-reduced-motion:reduce){#frdPage{transition:none;}}
 /* ── Bookmarks page ── */
 #bmPage{
   position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
@@ -13741,14 +13906,36 @@ html.thmFade #themePage{
 <div id="bmPage" role="dialog" aria-modal="true" aria-label="Bookmarked artworks">
   <div class="subPgHdr">
     <button class="subPgX" onclick="closeBookmarksPage()" aria-label="Close bookmarks">←</button>
-    <div class="subPgTitle">BOOKMARKS <span class="s">✦</span></div>
+    <div class="subPgTitle" id="bmPageTitle">BOOKMARKS <span class="s">✦</span></div>
   </div>
   <div class="bmBdy">
     <div class="bmGrid" id="bmGrid"></div>
     <div class="bmEmpty" id="bmEmptyState" style="display:none;">
       <div class="ico">◈</div>
-      <div>NO BOOKMARKS YET</div>
-      <div style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">Tap the bookmark icon on any artwork to save it here.</div>
+      <div id="bmEmptyTitle">NO BOOKMARKS YET</div>
+      <div id="bmEmptyHint" style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">Tap the bookmark icon on any artwork to save it here.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Friends page — DM partners + community-style user search ── -->
+<div id="frdPage" role="dialog" aria-modal="true" aria-label="Friends">
+  <div class="subPgHdr">
+    <button class="subPgX" onclick="closeFriendsPage()" aria-label="Close friends">←</button>
+    <div class="subPgTitle">FRIENDS <span class="s">✦</span></div>
+  </div>
+  <div class="frdBdy">
+    <div class="dmSearchWrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="dmSearchInput" id="frdSearchInput" type="text" placeholder="Search artists by username…" autocomplete="off">
+    </div>
+    <div id="frdResults"></div>
+    <div class="frdSection" id="frdListHead" style="display:none;">YOUR FRIENDS · <span id="frdCount">0</span></div>
+    <div class="cmFriendList" id="frdList"></div>
+    <div class="bmEmpty" id="frdEmptyState" style="display:none;">
+      <div class="ico">✦</div>
+      <div>NO FRIENDS YET</div>
+      <div style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">Search for artists above and start a chat — anyone you message shows up here.</div>
     </div>
   </div>
 </div>
@@ -13763,8 +13950,6 @@ html.thmFade #themePage{
   var profileIdCache = {};  /* username → user id                       */
   var paintTimer = null;
 
-  var HEART = '<svg viewBox="0 0 24 24"><path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 1 1 12 6.3a5 5 0 1 1 7.5 6.3Z"/></svg>';
-  var BMARK = '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1Z"/></svg>';
 
   function $ (id) { return document.getElementById(id); }
   function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
@@ -13829,16 +14014,6 @@ html.thmFade #themePage{
     paintSoon();
   }
 
-  function makeBtns (id) {
-    var wrap = document.createElement('div');
-    wrap.className = 'engBtns';
-    wrap.innerHTML =
-      '<button type="button" class="engBtn engLike" data-id="' + id + '" aria-label="Like" aria-pressed="false">' + HEART + '</button>' +
-      '<button type="button" class="engBtn engBm" data-id="' + id + '" aria-label="Bookmark" aria-pressed="false">' + BMARK + '</button>';
-    return wrap;
-  }
-  window.__engMakeBtns = makeBtns; /* used by buildAwCard patch */
-
   function paintAll () {
     document.querySelectorAll('.engLike,.engBm').forEach(function (b) {
       var id = b.getAttribute('data-id') || idFromPath(location.pathname) || '';
@@ -13874,7 +14049,7 @@ html.thmFade #themePage{
       if (r.error && !(on && r.error.code === '23505')) throw r.error; /* 23505 dup = already in desired state */
       if (kind === 'bm') toast(on ? 'Saved to bookmarks ✦' : 'Removed from bookmarks');
       if (kind === 'like') refreshProfileStatsIfOpen();
-      if (!on && kind === 'bm') removeBmCard(id);
+      if (!on) removeBmCard(id, kind);
     } catch (e) {
       on ? set.delete(id) : set.add(id);  /* revert */
       paintAll();
@@ -13889,19 +14064,22 @@ html.thmFade #themePage{
     e.preventDefault(); e.stopPropagation();
     var id = b.getAttribute('data-id') || idFromPath(location.pathname);
     if (!id) return;
-    if (b.classList.contains('bmRemove')) { toggle('bm', String(id), b); return; }
+    if (b.classList.contains('bmRemove')) { toggle(b.getAttribute('data-kind') === 'like' ? 'like' : 'bm', String(id), b); return; }
     toggle(b.classList.contains('engLike') ? 'like' : 'bm', String(id), b);
   }, true);
 
   /* ══ BOOKMARKS PAGE ═════════════════════════════════════ */
   var bmLastFocus = null;
+  /* The page serves two modes off one shell: 'bm' (bookmarks)
+     and 'like' (liked artworks). */
+  var bmMode = 'bm';
   async function loadBookmarksPage () {
     var grid = $('bmGrid'), empty = $('bmEmptyState');
     grid.innerHTML = '<div class="bmEmpty">LOADING…</div>';
     empty.style.display = 'none';
     if (!db() || !me()) { grid.innerHTML = ''; empty.style.display = ''; return; }
     try {
-      var b = await db().from('artwork_bookmarks')
+      var b = await db().from(bmMode === 'like' ? 'artwork_likes' : 'artwork_bookmarks')
         .select('artwork_id,created_at')
         .order('created_at', { ascending: false })
         .limit(200);
@@ -13953,25 +14131,39 @@ html.thmFade #themePage{
     link.appendChild(img); link.appendChild(meta);
     var rm = document.createElement('button');
     rm.className = 'bmRemove'; rm.setAttribute('data-id', id);
+    rm.setAttribute('data-kind', bmMode);
     rm.setAttribute('aria-label', 'Remove bookmark'); rm.textContent = '✕';
     card.appendChild(link); card.appendChild(rm);
     return card;
   }
-  function removeBmCard (id) {
+  function removeBmCard (id, kind) {
     var page = $('bmPage');
-    if (!page || !page.classList.contains('open')) return;
+    if (!page || !page.classList.contains('open') || bmMode !== (kind || 'bm')) return;
     var btn = page.querySelector('.bmRemove[data-id="' + CSS.escape(String(id)) + '"]');
     if (btn && btn.closest('.bmCard')) btn.closest('.bmCard').remove();
     if (!$('bmGrid').children.length) $('bmEmptyState').style.display = '';
   }
-  function openBookmarksPage () {
+  function openSavedPage (mode) {
     if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
+    bmMode = mode === 'like' ? 'like' : 'bm';
+    var like = bmMode === 'like';
+    var t = $('bmPageTitle');
+    if (t) t.innerHTML = (like ? 'LIKES' : 'BOOKMARKS') + ' <span class="s">✦</span>';
+    var et = $('bmEmptyTitle');
+    if (et) et.textContent = like ? 'NO LIKES YET' : 'NO BOOKMARKS YET';
+    var eh = $('bmEmptyHint');
+    if (eh) eh.textContent = like
+      ? 'Tap the heart on any artwork and it shows up here.'
+      : 'Tap the bookmark icon on any artwork to save it here.';
+    $('bmPage').setAttribute('aria-label', like ? 'Liked artworks' : 'Bookmarked artworks');
     bmLastFocus = document.activeElement;
     var page = $('bmPage'); page.classList.add('open');
     var nav = $('bnNav'); if (nav) nav.style.display = 'none';
     document.body.style.overflow = 'hidden';
     loadBookmarksPage();
   }
+  function openBookmarksPage () { openSavedPage('bm'); }
+  function openLikesPage () { openSavedPage('like'); }
   function closeBookmarksPage () {
     var page = $('bmPage'); page.classList.remove('open');
     var nav = $('bnNav'); if (nav) nav.style.display = '';
@@ -13982,6 +14174,7 @@ html.thmFade #themePage{
     if (e.key === 'Escape' && $('bmPage') && $('bmPage').classList.contains('open')) closeBookmarksPage();
   });
   window.openBookmarksPage  = openBookmarksPage;
+  window.openLikesPage      = openLikesPage;
   window.closeBookmarksPage = closeBookmarksPage;
 
   /* ══ PROFILE TOTALS (Total Views / Total Likes) ═════════ */

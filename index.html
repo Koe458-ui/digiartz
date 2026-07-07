@@ -2758,21 +2758,31 @@
        page has transform + its own scroll — a fixed drawer inside
        it would scroll away with the content. */
     .pfMenuScrim{
-      position:fixed;inset:0;z-index:530;background:rgba(0,0,0,.55);
+      position:fixed;inset:0;z-index:1010;background:rgba(0,0,0,.55);
       opacity:0;pointer-events:none;transition:opacity .3s ease;
     }
     .pfMenuScrim.show{opacity:1;pointer-events:auto;}
     .pfMenu{
-      position:fixed;top:0;right:0;bottom:0;z-index:531;
+      position:fixed;top:0;right:0;bottom:0;z-index:1011;
       width:min(320px,86vw);height:100dvh;
       background:var(--sur);border-left:1px solid var(--bdr);
       box-shadow:-12px 0 40px rgba(0,0,0,.45);
-      display:flex;flex-direction:column;gap:.15rem;
-      padding:0 .85rem 1.1rem;
+      display:flex;flex-direction:column;
+      /* Header stays fixed; .pfMenuBody scrolls. No bottom padding here —
+         it lives on .pfMenuBody so the scroll area clears the nav. */
+      padding:0 .85rem;
       transform:translateX(100%);
       transition:transform .38s cubic-bezier(.22,1,.36,1);
     }
     .pfMenu.open{transform:translateX(0);}
+    /* Scrollable item list — on short screens everything (including the
+       Log Out button anchored at the bottom) can be reached by scrolling,
+       instead of being clipped below the fold. */
+    .pfMenuBody{
+      flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      display:flex;flex-direction:column;gap:.15rem;
+      padding-bottom:calc(4.75rem + env(safe-area-inset-bottom));
+    }
     .pfMenuHdr{
       display:flex;align-items:center;justify-content:space-between;
       padding:1.05rem .15rem .9rem;margin-bottom:.35rem;
@@ -3669,8 +3679,9 @@ height:80px;
   --pg:inherit;--pb:inherit;--ps:inherit;
   --pdim:inherit;
 }
-#comicArtsPage .subPgHdr{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;border-bottom:1px solid var(--bdr);}
-#comicArtsPage .subPgTitle{color:var(--tx);}
+/* Dead-code note: #comicArtsPage no longer uses .subPgHdr/.subPgTitle —
+   its header was swapped to the shared .fgIntro/.fgTitle (centered,
+   gradient, divider line) to match the Community page title. */
 #comicArtsPage .awCard{background:var(--sur);}
 #comicArtsPage.open { transform: translateX(0); }
 
@@ -7829,6 +7840,9 @@ body{background:var(--bg);}
       <span class="pfMenuHdrTitle">Menu</span>
       <button class="pfMenuX" onclick="closePfMenu()" aria-label="Close menu">✕</button>
     </div>
+    <!-- Scrollable item area — on short screens the list (incl. Log Out)
+         scrolls instead of getting clipped off the bottom. -->
+    <div class="pfMenuBody">
     <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openSubscription()">Subscription</button>
     <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openMyWorkPage()">Edit My Work</button>
     <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openLikesPage()">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
@@ -7837,6 +7851,7 @@ body{background:var(--bg);}
     <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openThemePage()">Theme</button>
     <button class="pfMenuItem" id="smAdmBtn" role="menuitem" onclick="closePfMenu();smHandleAdm()">Admin Panel</button>
     <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
+    </div>
   </div>
 
   <!-- ── Toast Notification ── -->
@@ -7869,6 +7884,25 @@ body{background:var(--bg);}
      (BUCKET or HERO_BUCKET) — here it's used as the S3 key prefix
      (koe-media/... or hero-slides/...) instead of a Supabase bucket
      name, matching what the s3-sign edge function expects. */
+  /* ── S3 key sanitizer ──
+     FIX ("bad path" upload error): artwork titles were dropped straight
+     into the S3 key with only whitespace replaced (nm.replace(/\s+/g,'_')).
+     A title containing '/', '#', '?', '%', '&', '\', or certain unicode/
+     emoji produces an invalid or dangerous key — '/' silently creates
+     extra "folders", and '#'/'?'/'%' break URL parsing — which the
+     s3-sign edge function (correctly) rejects as a bad path.
+     safeSlug() strips everything down to a plain, S3-safe token so any
+     title can be uploaded. The file extension goes through the same
+     sanitizer as a second layer of defense. */
+  function safeSlug(str, maxLen){
+    var s = String(str || '')
+      .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')  /* fold accents (é→e) */
+      .replace(/[^a-zA-Z0-9]+/g, '_')                    /* anything not alnum → _ */
+      .replace(/_+/g, '_')                               /* collapse repeats */
+      .replace(/^_+|_+$/g, '');                          /* trim edges */
+    if(!s) s = 'untitled';
+    return s.slice(0, maxLen || 60);
+  }
   async function s3AuthHeader(){
     if(!sb) throw new Error('Backend not configured');
     const{data:{session}} = await sb.auth.getSession();
@@ -9426,8 +9460,8 @@ body{background:var(--bg);}
       } else {
         /* UPLOAD MODE — INSERT new row, including optional description. */
         btn.textContent='UPLOADING…';
-        const ext=upFile.name.split('.').pop();
-        const path=`artworks/${Date.now()}_${nm.replace(/\s+/g,'_')}.${ext}`;
+        const ext=safeSlug(upFile.name.split('.').pop(), 8) || 'jpg';
+        const path=`artworks/${Date.now()}_${safeSlug(nm)}.${ext}`;
         const publicUrl = await s3Upload(BUCKET,path,upFile);
         const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null,software:software||null,status:'approved'}).select();
         if(de)throw de;
@@ -10223,8 +10257,8 @@ body{background:var(--bg);}
           closePfUpload(); showToast('Artwork updated ✦');
         } else {
           btn.textContent='UPLOADING…';
-          var ext = pf.upFile.name.split('.').pop();
-          var path = 'artworks/'+currentUser.id+'/'+Date.now()+'_'+nm.replace(/\s+/g,'_')+'.'+ext;
+          var ext = safeSlug(pf.upFile.name.split('.').pop(), 8) || 'jpg';
+          var path = 'artworks/'+currentUser.id+'/'+Date.now()+'_'+safeSlug(nm)+'.'+ext;
           const publicUrl = await s3Upload(BUCKET,path,pf.upFile);
           var artThumb = pf.upThumbFocus || {x:50,y:50};
           /* status:'pending' — hidden from the public gallery until a
@@ -10254,14 +10288,14 @@ body{background:var(--bg);}
         } else {
           if(!pf.upPageFiles.length){ showToast('Add at least one page image'); btn.disabled=false; return; }
           btn.textContent='UPLOADING…';
-          var cext = pf.upFile.name.split('.').pop();
+          var cext = safeSlug(pf.upFile.name.split('.').pop(), 8) || 'jpg';
           var cpath = 'comics/'+currentUser.id+'/'+Date.now()+'_cover.'+cext;
           const coverUrl = await s3Upload(BUCKET,cpath,pf.upFile);
           var coverThumb = pf.upThumbFocus || {x:50,y:50};
           var pageUrls = [];
           for(var i=0;i<pf.upPageFiles.length;i++){
             var pf_ = pf.upPageFiles[i];
-            var pext = pf_.name.split('.').pop();
+            var pext = safeSlug(pf_.name.split('.').pop(), 8) || 'jpg';
             var ppath = 'comics/'+currentUser.id+'/'+Date.now()+'_p'+i+'.'+pext;
             const pageUrl = await s3Upload(BUCKET,ppath,pf_);
             pageUrls.push(pageUrl);
@@ -10893,7 +10927,7 @@ body{background:var(--bg);}
     if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='SAVING…'; }
     try{
       if(ahsPendingFile){
-        var ext = ahsPendingFile.name.split('.').pop();
+        var ext = safeSlug(ahsPendingFile.name.split('.').pop(), 8) || 'jpg';
         var path = 'slide_'+ahsEditingIndex+'_'+Date.now()+'.'+ext;
         const publicUrl = await s3Upload(HERO_BUCKET,path,ahsPendingFile);
         var oldPath = storagePath;

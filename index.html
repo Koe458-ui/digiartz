@@ -1698,6 +1698,10 @@
     #communityPage .cpBar::before{background:var(--cmSur)!important;}
     #communityPage .cpBar{border-top:1px solid var(--cmBdr);}
     #communityPage .cpBarAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
+    /* Match the Friends (DM) composer: drop the avatar chip so the community
+       chat box is a clean [ input + Send ] like WhatsApp. Delete this one
+       line to bring the avatar back. */
+    #communityPage .cpBarAvatar{display:none;}
     #communityPage .cpBarInput{background:var(--cmSur2)!important;color:var(--cmTx)!important;border:1px solid var(--cmBdr)!important;}
     #communityPage .cpBarInput::placeholder{color:var(--cmTxd);}
     #communityPage .cpBarSend{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
@@ -7862,6 +7866,7 @@ body{background:var(--bg);}
        template. window.KOE_CONFIG now also carries S3_FN_URL,
        the deployed s3-sign edge function's endpoint. -->
   <script src="config.js"></script>
+  <script src="uploadVerifier.js"></script>
   <script>
 
   // config.js must define window.KOE_CONFIG = { SB_URL, SB_KEY }
@@ -10257,6 +10262,23 @@ body{background:var(--bg);}
           closePfUpload(); showToast('Artwork updated ✦');
         } else {
           btn.textContent='UPLOADING…';
+          /* ── Automated pre-upload verification (uploadVerifier.js) ──
+             Runs BEFORE any S3 upload so blocked images never cost storage.
+               verdict 'approve' → status:'approved' (goes live now)
+               verdict 'review'  → status:'pending'  (admin fallback #admPage)
+               verdict 'block'   → aborted here, nothing uploaded. */
+          if(!window.UploadVerifier){ showToast('Verifier not loaded — please refresh and try again'); return; }
+          window.uvUI.show();
+          var vres;
+          try{
+            vres = await window.UploadVerifier.verify(pf.upFile, { sb:sb, userId:currentUser.id, kind:'art', onStep:window.uvUI.step });
+          }catch(vErr){
+            window.uvUI.fail('Verification error: '+(vErr && vErr.message ? vErr.message : vErr));
+            return;
+          }
+          if(vres.verdict==='block'){ window.uvUI.fail(vres.reason || 'This upload was blocked.'); return; }
+          window.uvUI.hide();
+          var artStatus = (vres.verdict==='review') ? 'pending' : 'approved';
           var ext = safeSlug(pf.upFile.name.split('.').pop(), 8) || 'jpg';
           var path = 'artworks/'+currentUser.id+'/'+Date.now()+'_'+safeSlug(nm)+'.'+ext;
           const publicUrl = await s3Upload(BUCKET,path,pf.upFile);
@@ -10266,12 +10288,19 @@ body{background:var(--bg);}
              `images` array (that array only ever holds approved work);
              it IS added to pf.galleryRows so the owner can see it
              sitting in their own profile while it's under review. */
-          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,thumb_x:artThumb.x,thumb_y:artThumb.y,user_id:currentUser.id,software:software||null,status:'pending'}).select();
+          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,thumb_x:artThumb.x,thumb_y:artThumb.y,user_id:currentUser.id,software:software||null,phash:vres.phash||null,status:artStatus}).select();
           if(de) throw de;
           pf.galleryRows.unshift(rows[0]);
           pfRenderGallery();
           document.getElementById('pfStatArt').textContent = (parseInt(document.getElementById('pfStatArt').textContent,10)||0)+1;
-          closePfUpload(); showToast('Submitted for review ✦');
+          if(artStatus==='approved'){
+            /* clean upload → publish to the public gallery right away,
+               same effect as an admin approval (see admApprove). */
+            if(rows[0] && images.findIndex(function(i){return String(i.id)===String(rows[0].id);})===-1) images.unshift(rows[0]);
+            if(typeof renderHome==='function') renderHome();
+            var _fgEl=document.getElementById('fg'); if(_fgEl && _fgEl.classList.contains('open') && typeof renderFG==='function') renderFG();
+          }
+          closePfUpload(); showToast(artStatus==='approved' ? 'Artwork published \u2726' : 'Flagged for review \u2014 a moderator will confirm it shortly');
         }
       } else {
         if(editId){
@@ -10288,6 +10317,21 @@ body{background:var(--bg);}
         } else {
           if(!pf.upPageFiles.length){ showToast('Add at least one page image'); btn.disabled=false; return; }
           btn.textContent='UPLOADING…';
+          /* ── Automated pre-upload verification (uploadVerifier.js) ──
+             Verifies the cover for rate/duplicate/AI and AI-scans every
+             page. Same verdict mapping as artworks (approve/review/block). */
+          if(!window.UploadVerifier){ showToast('Verifier not loaded — please refresh and try again'); return; }
+          window.uvUI.show();
+          var cvres;
+          try{
+            cvres = await window.UploadVerifier.verify(pf.upFile, { sb:sb, userId:currentUser.id, kind:'comic', pages:pf.upPageFiles, onStep:window.uvUI.step });
+          }catch(vErr){
+            window.uvUI.fail('Verification error: '+(vErr && vErr.message ? vErr.message : vErr));
+            return;
+          }
+          if(cvres.verdict==='block'){ window.uvUI.fail(cvres.reason || 'This upload was blocked.'); return; }
+          window.uvUI.hide();
+          var comicStatus = (cvres.verdict==='review') ? 'pending' : 'approved';
           var cext = safeSlug(pf.upFile.name.split('.').pop(), 8) || 'jpg';
           var cpath = 'comics/'+currentUser.id+'/'+Date.now()+'_cover.'+cext;
           const coverUrl = await s3Upload(BUCKET,cpath,pf.upFile);
@@ -10300,12 +10344,17 @@ body{background:var(--bg);}
             const pageUrl = await s3Upload(BUCKET,ppath,pf_);
             pageUrls.push(pageUrl);
           }
-          const{data:rows,error:de}=await sb.from('comics').insert({title:nm,description:desc||null,tags:tags,cover_image_url:coverUrl,cover_storage_path:cpath,cover_thumb_x:coverThumb.x,cover_thumb_y:coverThumb.y,pages:pageUrls,user_id:currentUser.id,status:'pending'}).select();
+          const{data:rows,error:de}=await sb.from('comics').insert({title:nm,description:desc||null,tags:tags,cover_image_url:coverUrl,cover_storage_path:cpath,cover_thumb_x:coverThumb.x,cover_thumb_y:coverThumb.y,pages:pageUrls,user_id:currentUser.id,phash:cvres.phash||null,status:comicStatus}).select();
           if(de) throw de;
           pf.comicRows.unshift(rows[0]);
           pfRenderComic();
           document.getElementById('pfStatComic').textContent = (parseInt(document.getElementById('pfStatComic').textContent,10)||0)+1;
-          closePfUpload(); showToast('Submitted for review ✦');
+          if(comicStatus==='approved'){
+            if(rows[0] && comics.findIndex(function(c){return String(c.id)===String(rows[0].id);})===-1) comics.unshift(rows[0]);
+            if(window.rebuildComicGrid) window.rebuildComicGrid(comics);
+            if(typeof renderHome==='function') renderHome();
+          }
+          closePfUpload(); showToast(comicStatus==='approved' ? 'Comic published \u2726' : 'Flagged for review \u2014 a moderator will confirm it shortly');
         }
       }
     }catch(err){ console.error('Error: '+err.message); showToast(err.message || 'Upload failed'); }
@@ -14768,6 +14817,99 @@ html.thmFade #themePage{
     refreshPanelOpen();
   }
 })();
+</script>
+<!-- ══ Upload verification overlay (driven by uploadVerifier.js via window.uvUI) ══ -->
+<style>
+  #uvOverlay{position:fixed;inset:0;z-index:4000;display:none;align-items:center;justify-content:center;padding:1.2rem;background:rgba(3,2,6,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+  #uvOverlay.open{display:flex;}
+  #uvOverlay .uvCard{width:100%;max-width:420px;background:var(--sur,#0d0910);border:1px solid var(--bdr,rgba(255,255,255,.09));border-radius:16px;padding:1.6rem 1.4rem 1.35rem;box-shadow:0 24px 60px rgba(0,0,0,.55);font-family:var(--fb,system-ui,sans-serif);color:var(--tx,#e8e2ef);}
+  #uvOverlay .uvHead{text-align:center;margin-bottom:1.1rem;}
+  #uvOverlay .uvSpinner{width:38px;height:38px;margin:0 auto .7rem;border-radius:50%;border:3px solid rgba(var(--pg-rgb,154,92,240),.22);border-top-color:var(--pg,#9a5cf0);animation:uvSpin .8s linear infinite;}
+  @keyframes uvSpin{to{transform:rotate(360deg);}}
+  #uvOverlay h3{margin:0 0 .25rem;font-size:1.05rem;letter-spacing:.02em;}
+  #uvOverlay .uvSub{margin:0;font-size:.82rem;opacity:.72;}
+  #uvOverlay .uvBar{height:6px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;margin:0 0 1.15rem;}
+  #uvOverlay .uvBarFill{height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--pg,#9a5cf0),var(--ps,#c98bff));transition:width .35s ease;}
+  #uvOverlay .uvList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.55rem;}
+  #uvOverlay .uvList li{display:flex;align-items:center;gap:.6rem;font-size:.86rem;}
+  #uvOverlay .uvIco{width:20px;height:20px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;line-height:1;border:1px solid var(--bdr,rgba(255,255,255,.16));background:rgba(255,255,255,.03);opacity:.5;}
+  #uvOverlay li.is-run .uvIco{opacity:1;border-color:var(--pg,#9a5cf0);color:var(--pg,#9a5cf0);animation:uvPulse 1s ease-in-out infinite;}
+  #uvOverlay li.is-pass .uvIco{opacity:1;border-color:#33c07a;color:#33c07a;}
+  #uvOverlay li.is-flag .uvIco{opacity:1;border-color:#e0a92a;color:#e0a92a;}
+  #uvOverlay li.is-block .uvIco{opacity:1;border-color:#e0563f;color:#e0563f;}
+  #uvOverlay .uvLbl{flex:1;}
+  #uvOverlay .uvState{font-size:.72rem;opacity:.6;text-align:right;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  @keyframes uvPulse{0%,100%{opacity:.45;}50%{opacity:1;}}
+  #uvOverlay .uvResult{display:none;margin-top:1.1rem;padding:.7rem .8rem;border-radius:10px;font-size:.84rem;line-height:1.45;border:1px solid transparent;}
+  #uvOverlay .uvResult.show{display:block;}
+  #uvOverlay .uvResult.block{border-color:rgba(224,86,63,.5);background:rgba(224,86,63,.1);color:#f0a99a;}
+  #uvOverlay .uvCloseBtn{display:none;margin:1.1rem auto 0;padding:.55rem 1.5rem;border-radius:9px;border:1px solid var(--bdr,rgba(255,255,255,.16));background:transparent;color:var(--tx,#e8e2ef);font-family:var(--fb,inherit);font-size:.85rem;cursor:pointer;}
+  #uvOverlay .uvCloseBtn.show{display:block;}
+  #uvOverlay .uvCloseBtn:hover{border-color:var(--pg,#9a5cf0);}
+</style>
+<div id="uvOverlay" role="dialog" aria-modal="true" aria-label="Verifying your upload">
+  <div class="uvCard">
+    <div class="uvHead">
+      <div class="uvSpinner" id="uvSpinner"></div>
+      <h3 id="uvTitle">Verifying your upload</h3>
+      <p class="uvSub" id="uvSub">Running anti-spam &amp; integrity checks…</p>
+    </div>
+    <div class="uvBar"><div class="uvBarFill" id="uvBarFill"></div></div>
+    <ul class="uvList">
+      <li data-step="ratelimit"><span class="uvIco">•</span><span class="uvLbl">Upload rate &amp; spam</span><span class="uvState"></span></li>
+      <li data-step="duplicate"><span class="uvIco">•</span><span class="uvLbl">Duplicate / repost scan</span><span class="uvState"></span></li>
+      <li data-step="ai"><span class="uvIco">•</span><span class="uvLbl">AI-content check</span><span class="uvState"></span></li>
+    </ul>
+    <div class="uvResult" id="uvResult"></div>
+    <button type="button" class="uvCloseBtn" id="uvClose">Close</button>
+  </div>
+</div>
+<script>
+  /* window.uvUI — thin DOM controller for #uvOverlay. uploadVerifier.js
+     stays pure logic and drives this through the onStep callback. */
+  window.uvUI = (function(){
+    var ORDER = ['ratelimit','duplicate','ai'];
+    function el(id){ return document.getElementById(id); }
+    function li(step){ return document.querySelector('#uvOverlay li[data-step="'+step+'"]'); }
+    function setState(step, state, detail){
+      var node = li(step); if(!node) return;
+      node.classList.remove('is-run','is-pass','is-flag','is-block');
+      var ico = node.querySelector('.uvIco'), st = node.querySelector('.uvState');
+      if(state==='run'){ node.classList.add('is-run'); ico.textContent='•'; if(st) st.textContent='checking…'; }
+      else if(state==='pass'){ node.classList.add('is-pass'); ico.textContent='✓'; if(st) st.textContent=detail||'ok'; }
+      else if(state==='flag'){ node.classList.add('is-flag'); ico.textContent='!'; if(st) st.textContent='flagged'; }
+      else if(state==='block'){ node.classList.add('is-block'); ico.textContent='✕'; if(st) st.textContent='blocked'; }
+      else { ico.textContent='•'; if(st) st.textContent=''; }
+    }
+    function progress(step, state){
+      var i = ORDER.indexOf(step); if(i<0) return;
+      var done = i + (state==='run' ? 0.35 : 1);
+      var f = el('uvBarFill'); if(f) f.style.width = Math.min(100, Math.round(done/ORDER.length*100)) + '%';
+    }
+    return {
+      show: function(){
+        ORDER.forEach(function(s){ setState(s,'wait'); });
+        el('uvBarFill').style.width = '0%';
+        el('uvTitle').textContent = 'Verifying your upload';
+        el('uvSub').textContent = 'Running anti-spam & integrity checks…';
+        el('uvSpinner').style.display = '';
+        var r = el('uvResult'); r.className = 'uvResult'; r.textContent = '';
+        var c = el('uvClose'); c.className = 'uvCloseBtn'; c.onclick = window.uvUI.hide;
+        el('uvOverlay').classList.add('open');
+      },
+      step: function(id, state, detail){ setState(id, state, detail); progress(id, state); },
+      hide: function(){ var o = el('uvOverlay'); if(o) o.classList.remove('open'); },
+      fail: function(reason){
+        el('uvBarFill').style.width = '100%';
+        el('uvSpinner').style.display = 'none';
+        el('uvTitle').textContent = 'Upload blocked';
+        el('uvSub').textContent = 'This upload didn’t pass our checks.';
+        var r = el('uvResult'); r.className = 'uvResult show block'; r.textContent = reason || 'Blocked.';
+        var c = el('uvClose'); c.className = 'uvCloseBtn show'; c.onclick = window.uvUI.hide;
+        el('uvOverlay').classList.add('open');
+      }
+    };
+  })();
 </script>
 </body>
 </html>

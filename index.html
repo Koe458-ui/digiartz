@@ -6475,8 +6475,10 @@ body{background:var(--bg);}
   var dmPoll = null, dmSending = false, searchTimer = null;
   /* Message paging: newest 25 first, +25 each time the user scrolls to
      the top. dmHasMore flags that older messages remain; dmLoadingOlder
-     pins the scroll position while a load-older fetch is in flight. */
-  var dmLimit = 25, DM_LOAD_STEP = 25, dmHasMore = false, dmLoadingOlder = false;
+     pins the scroll position while a load-older fetch is in flight.
+     dmLastSig is a fingerprint of the last painted set so the 5s poll can
+     skip re-rendering when nothing changed (no flicker). */
+  var dmLimit = 25, DM_LOAD_STEP = 25, dmHasMore = false, dmLoadingOlder = false, dmLastSig = '';
 
   function $ (id) { return document.getElementById(id); }
   function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
@@ -6628,7 +6630,7 @@ body{background:var(--bg);}
     var res = $('dmResults');   if (res) res.innerHTML = '';
     var inp = $('dmSearchInput'); if (inp) inp.value = '';
     $('dmBody').innerHTML = '<div class="dmSearchNote">LOADING…</div>';
-    dmLimit = 25; dmHasMore = false; dmLoadingOlder = false;
+    dmLimit = 25; dmHasMore = false; dmLoadingOlder = false; dmLastSig = '';
     loadThread(true);
     clearInterval(dmPoll);
     dmPoll = setInterval(function () {
@@ -6664,6 +6666,14 @@ body{background:var(--bg);}
       dmHasMore = rows.length > dmLimit;
       if (dmHasMore) rows = rows.slice(0, dmLimit);
       rows.reverse(); /* oldest → newest for top-to-bottom display */
+
+      /* Fingerprint the set about to be shown. On a background poll with
+         no change, bail before touching the DOM so the thread never
+         flickers. Opening the thread (scrollToEnd) or loading older
+         messages (dmLoadingOlder) always renders. */
+      var sig = dmLimit + '|' + dmHasMore + '|' + rows.map(function (m) { return m.id; }).join(',');
+      if (!scrollToEnd && !dmLoadingOlder && sig === dmLastSig) return;
+      dmLastSig = sig;
 
       var body = $('dmBody');
       var atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
@@ -7981,19 +7991,46 @@ body{background:var(--bg);}
     showToast('Saved to cloud ✦');
   }
 
-  function getThumbnailUrl(url){
-    if(!url)return url;
-    // Supabase Storage image transformation: resize to 400px wide, quality 75
-    try{
-      const u=new URL(url);
-      // Only apply transform to Supabase storage URLs
-      if(u.hostname.endsWith('.supabase.co')&&u.pathname.includes('/storage/')){
-        u.searchParams.set('width','400');
-        u.searchParams.set('quality','75');
-        return u.toString();
-      }
-    }catch(e){}
-    return url;
+  /* ── Responsive image sizing (AWS Dynamic Image Transformation) ──────
+     Full-size originals live in S3 behind CloudFront. A second CloudFront
+     distribution — the "Dynamic Image Transformation for CloudFront"
+     solution — resizes and re-encodes on the fly via Thumbor-style URLs:
+
+       https://<DIT_HOST>/fit-in/<W>x0/filters:format(webp):quality(<Q>)/<key>
+
+     where <key> is the object path in the source bucket (e.g.
+     koe-media/artworks/<id>/<file>.png). We serve a small WebP for grid
+     thumbnails and a medium WebP in the viewer; Download always uses the
+     untouched original (its stored URL, which we never rewrite).
+
+     DIT_HOST is your image-resizer distribution. Override it in config.js
+     with window.KOE_CONFIG.DIT_HOST if it ever changes. */
+  var DIT_HOST = (window.KOE_CONFIG && window.KOE_CONFIG.DIT_HOST) || 'https://d1l8dn7jegdgem.cloudfront.net';
+  var DIT_HOSTNAME = '';
+  try{ DIT_HOSTNAME = new URL(DIT_HOST).hostname; }catch(e){}
+
+  function imgResize(url, width, quality){
+    if(!url || typeof url !== 'string') return url;
+    var u;
+    try{ u = new URL(url); }catch(e){ return url; }        /* data:/blob:/relative → leave alone */
+    if(DIT_HOSTNAME && u.hostname === DIT_HOSTNAME) return url; /* already a resizer URL */
+    /* Supabase Storage objects can't be read by DIT (which reads from the
+       S3 source bucket), so leave those old URLs untouched. */
+    if(u.hostname.endsWith('.supabase.co')) return url;
+    var key = u.pathname.replace(/^\/+/, '');              /* S3 object key */
+    if(!key) return url;
+    return DIT_HOST.replace(/\/$/,'') + '/fit-in/' + width + 'x0/filters:format(webp):quality(' + quality + ')/' + key;
+  }
+  /* Grid thumbnail — small + low quality to minimise egress cost. */
+  function getThumbnailUrl(url){ return imgResize(url, 300, 55); }
+  /* Lightbox viewing size — modest + low quality (full original is on Download). */
+  function getViewUrl(url){ return imgResize(url, 1000, 68); }
+  /* Download = the untouched original. Stored URLs are already originals,
+     so just return them (strip any stray query string as a safeguard). */
+  function getFullUrl(url){
+    if(!url || typeof url !== 'string') return url;
+    try{ var u = new URL(url); u.search=''; return u.toString(); }
+    catch(e){ return url; }
   }
 
   function itemHTML(img){
@@ -8273,13 +8310,16 @@ body{background:var(--bg);}
   }
   function avDownload(){
     var img=document.getElementById('lbImg');
-    if(!img || !img.src) return;
+    /* Download the untouched original — currentLightboxImageSrc holds the
+       pristine URL (the on-screen image is a resized WebP). getFullUrl
+       also strips any sizing params as a belt-and-braces guarantee. */
+    var fullSrc=getFullUrl(currentLightboxImageSrc || (img && img.src) || '');
+    if(!fullSrc) return;
     var a=document.createElement('a');
-    var fullSrc=img.src.replace(/[?&]width=\d+/g,'').replace(/[?&]quality=\d+/g,'').replace(/\?&/g,'?').replace(/\?$/,'');
-    /* FIX: `download` is ignored for cross-origin URLs (Supabase
-       storage), so the click used to navigate the whole app away to
-       the raw image. Opening in a new tab keeps the site intact and
-       still lets the browser save the file. */
+    /* FIX: `download` is ignored for cross-origin URLs (S3/CloudFront),
+       so the click used to navigate the whole app away to the raw image.
+       Opening in a new tab keeps the site intact and still lets the
+       browser save the file. */
     a.href=fullSrc; a.download=''; a.target='_blank'; a.rel='noopener';
     document.body.appendChild(a); a.click(); a.remove();
   }
@@ -8338,7 +8378,9 @@ body{background:var(--bg);}
     var viewport=document.getElementById('avImgViewport');
     if(viewport) viewport.classList.add('loading');
     var imgEl=document.getElementById('lbImg');
-    imgEl.src=src;
+    /* Show the medium (~500 KB WebP) view; the untouched original is kept
+       in currentLightboxImageSrc for Download. */
+    imgEl.src=getViewUrl(src);
     /* SEO: the full-resolution image shown in the modal is the one
        most likely to be the actual indexed/served image in Google
        Image Search results, so it needs real alt text too — not
@@ -9667,7 +9709,7 @@ body{background:var(--bg);}
        dev/admin viewer — to keep this grid a pure read-only showcase. */
     var pending = a.status === 'pending';
     return '<div class="awCard" onclick="pfOpenArtwork(\''+a.id+'\')">'+
-      '<div class="awImgWrap'+(pending?' awPending':'')+'"><img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null?a.thumb_x:50)+'% '+(a.thumb_y!=null?a.thumb_y:50)+'%">'+
+      '<div class="awImgWrap'+(pending?' awPending':'')+'"><img loading="lazy" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null?a.thumb_x:50)+'% '+(a.thumb_y!=null?a.thumb_y:50)+'%">'+
         (pending?'<div class="awPendingOv"><div class="awPendingSpin"></div><div class="awPendingLbl">IN REVIEW</div></div>':'')+
       '</div>'+
       '<div class="pfCardMeta">'+
@@ -9716,7 +9758,7 @@ body{background:var(--bg);}
       '</div>'
     ) : '';
     return '<div class="awCard" onclick="openComicById(\''+c.id+'\')">'+
-      '<div class="awImgWrap"><img loading="lazy" src="'+esc(c.cover_image_url)+'" alt="'+esc(c.title||'')+'" style="object-position:'+(c.cover_thumb_x!=null?c.cover_thumb_x:50)+'% '+(c.cover_thumb_y!=null?c.cover_thumb_y:50)+'%"></div>'+
+      '<div class="awImgWrap"><img loading="lazy" src="'+esc(getThumbnailUrl(c.cover_image_url))+'" alt="'+esc(c.title||'')+'" style="object-position:'+(c.cover_thumb_x!=null?c.cover_thumb_x:50)+'% '+(c.cover_thumb_y!=null?c.cover_thumb_y:50)+'%"></div>'+
       '<div class="pfCardMeta">'+
         '<div class="pfCardTitle">'+esc(c.title||'Untitled')+'</div>'+
         '<div class="pfCardDate">'+pfFormatDate(c.created_at)+'</div>'+
@@ -9803,7 +9845,7 @@ body{background:var(--bg);}
     }
   }
   function cmRenderPage(){
-    document.getElementById('cmImg').src = cmState.pages[cmState.idx];
+    document.getElementById('cmImg').src = getViewUrl(cmState.pages[cmState.idx]);
     document.getElementById('cmCounter').textContent = (cmState.idx+1)+' / '+cmState.pages.length;
   }
   function cmNav(dir){
@@ -10749,7 +10791,7 @@ body{background:var(--bg);}
     if(!tracks.length) return;
     var html = heroSlides.map(function(s){
       return '<div class="tsBox">'+
-        '<img src="'+esc(s.image_url)+'" alt="'+esc(s.title||'Featured slide')+'" loading="lazy" decoding="async" draggable="false">'+
+        '<img src="'+esc(getViewUrl(s.image_url))+'" alt="'+esc(s.title||'Featured slide')+'" loading="lazy" decoding="async" draggable="false">'+
         ((s.title||s.subtitle)
           ? '<div class="tsBoxText">'+
               (s.title?'<div class="tsBoxTitle">'+esc(s.title)+'</div>':'')+
@@ -10946,7 +10988,7 @@ body{background:var(--bg);}
 
   function admCardHTML(kind, row){
     var idStr = esc(String(row.id));
-    var img = kind==='art' ? esc(row.image_url) : esc(row.cover_image_url);
+    var img = esc(getThumbnailUrl(kind==='art' ? row.image_url : row.cover_image_url));
     var tx = kind==='art' ? (row.thumb_x!=null?row.thumb_x:50) : (row.cover_thumb_x!=null?row.cover_thumb_x:50);
     var ty = kind==='art' ? (row.thumb_y!=null?row.thumb_y:50) : (row.cover_thumb_y!=null?row.cover_thumb_y:50);
     var title = esc(kind==='art' ? (row.name||'Untitled') : (row.title||'Untitled'));
@@ -11097,7 +11139,7 @@ body{background:var(--bg);}
   }
   function mwCardHTML(kind, row){
     var idStr = esc(String(row.id));
-    var img = kind==='art' ? esc(row.image_url) : esc(row.cover_image_url);
+    var img = esc(getThumbnailUrl(kind==='art' ? row.image_url : row.cover_image_url));
     var tx = kind==='art' ? (row.thumb_x!=null?row.thumb_x:50) : (row.cover_thumb_x!=null?row.cover_thumb_x:50);
     var ty = kind==='art' ? (row.thumb_y!=null?row.thumb_y:50) : (row.cover_thumb_y!=null?row.cover_thumb_y:50);
     var title = esc(kind==='art' ? (row.name||'Untitled') : (row.title||'Untitled'));
@@ -11295,6 +11337,7 @@ function hideCommentThumbnail(){
   }
 
   function closeCommunityPage(){
+    clearInterval(cpPoll); cpPoll = null; /* stop the live-update poll */
     document.getElementById('communityPage').classList.remove('open');
     document.getElementById('cpBar').style.display = 'none';
     var lockNote = document.getElementById('cpLockNote');
@@ -11355,6 +11398,7 @@ function hideCommentThumbnail(){
     if(chat) chat.style.display = 'flex';
     /* Reset offset so each fresh open starts at the initial load amount */
     cpOffset = 0;
+    cpLastSig = ''; /* force a paint for the newly-opened channel */
     await cpLoadComments();
 
     /* FIX: while the fetch above was in flight, the user may have already
@@ -11392,10 +11436,22 @@ function hideCommentThumbnail(){
        back to the community grid while chatting. */
     var nav = document.getElementById('bnNav');
     if(nav) nav.style.display = 'none';
+
+    /* ── Live update — poll this channel so new messages from other
+       people appear without a manual refresh. The signature guard in
+       cpRender() means an unchanged poll never touches the DOM, so
+       there's no flicker; only a genuinely new message repaints. */
+    clearInterval(cpPoll);
+    cpPoll = setInterval(function(){
+      if(document.visibilityState === 'visible' && cpCurrentChannel === id){
+        cpLoadComments(true);
+      }
+    }, CP_POLL_MS);
   }
 
   /* Back button inside a channel chat — return to the community grid */
   function cmCloseChat(){
+    clearInterval(cpPoll); cpPoll = null; /* stop the live-update poll */
     var grid = document.getElementById('cmGridScroll');
     var chat = document.getElementById('cmChatView');
     if(chat) chat.style.display = 'none';
@@ -11445,31 +11501,48 @@ function hideCommentThumbnail(){
   /* True only while a "load older" pull is in flight, so cpRender pins
      the reading position instead of jumping to the newest message. */
   var cpLoadingOlder = false;
+  /* Live-update poll for the open channel. cpLastSig fingerprints the
+     last painted set so an unchanged poll skips the rebuild (no flicker);
+     a real new message changes the signature and paints once. */
+  var cpPoll = null;
+  var CP_POLL_MS = 5000;
+  var cpLastSig = '';
 
   function cpRender(){
     var body  = document.getElementById('cpBody');
     var empty = document.getElementById('cpEmpty');
     if(!body) return;
 
+    /* Seed the visible window on first paint so the signature below stays
+       stable across background polls. */
+    if(cpOffset === 0) cpOffset = CP_INITIAL_LOAD();
+
+    /* Skip the rebuild when nothing changed since the last paint — this is
+       what stops the live-update poll from flickering the feed. Opening a
+       channel or loading older messages changes cpComments/cpOffset, so
+       the signature differs and a real render happens. */
+    var sig = cpComments.length + '|' + cpOffset + '|' +
+              (cpComments.length ? (cpComments[cpComments.length - 1].raw_time || '') : '');
+    var firstPaint = (cpLastSig === '');
+    if(sig === cpLastSig) return;
+    cpLastSig = sig;
+
     /* Capture scroll state BEFORE mutating the list so we can either pin
-       to the bottom (fresh open / new message) or preserve the reading
-       position when older messages are prepended at the top. */
+       to the bottom (fresh open / new message while already at the bottom)
+       or preserve the reading position (older messages prepended, or a new
+       message arriving while the user is scrolled up reading history). */
     var prevHeight = body.scrollHeight;
     var prevTop    = body.scrollTop;
+    var atBottom   = (prevHeight - prevTop - body.clientHeight) < 80;
 
     /* Remove existing rendered items (keep #cpEmpty and #cpRefreshWrap) */
     body.querySelectorAll('.cpComment, .cpShowcase').forEach(function(el){ el.remove(); });
 
     if(cpComments.length === 0){
       if(empty) empty.style.display = 'flex';
-      /* Reset offset so next open starts fresh */
-      cpOffset = CP_INITIAL_LOAD();
       return;
     }
     if(empty) empty.style.display = 'none';
-
-    /* On first render (cpOffset === 0) seed it to initial amount */
-    if(cpOffset === 0) cpOffset = CP_INITIAL_LOAD();
 
     /* Clamp so we never ask for more than we have */
     var showCount = Math.min(cpOffset, cpComments.length);
@@ -11496,14 +11569,14 @@ function hideCommentThumbnail(){
               '<div class="cpCommentTime">' + esc(c.time) + '</div>' +
             '</div>' +
           '</div>' +
-          (c.image_url ? ('<img class="cpShowcaseImg" src="' + safeUrl + '" alt="' + esc(c.user) + '\'s artwork" onclick="openLB(\'' + safeUrl.replace(/'/g,'&#39;') + '\',\'' + esc(c.user).replace(/'/g,'&#39;') + '\'s artwork\')">') : '') +
+          (c.image_url ? ('<img class="cpShowcaseImg" src="' + esc(getThumbnailUrl(c.image_url||'')) + '" alt="' + esc(c.user) + '\'s artwork" onclick="openLB(\'' + safeUrl.replace(/'/g,'&#39;') + '\',\'' + esc(c.user).replace(/'/g,'&#39;') + '\'s artwork\')">') : '') +
           '<div class="cpShowcaseText">' + esc(c.text) + '</div>';
       } else {
         div.className = 'cpComment' + (c.image_url ? ' hasImage' : '');
         var thumbHtml = '';
         if(c.image_url){
           var safeUrl2 = esc(c.image_url);
-          thumbHtml = '<img class="cpPhoto" src="' + safeUrl2 + '" alt="linked image" onclick="openLB(\'' + safeUrl2.replace(/'/g,'&#39;') + '\',\'linked image\')">';
+          thumbHtml = '<img class="cpPhoto" src="' + esc(getThumbnailUrl(c.image_url)) + '" alt="linked image" onclick="openLB(\'' + safeUrl2.replace(/'/g,'&#39;') + '\',\'linked image\')">';
         }
         div.innerHTML =
           thumbHtml +
@@ -11522,9 +11595,14 @@ function hideCommentThumbnail(){
          same messages under the viewport instead of jumping to the end. */
       body.scrollTop = prevTop + (body.scrollHeight - prevHeight);
       cpLoadingOlder = false;
-    } else {
-      /* Fresh open or a new message — show the newest at the bottom. */
+    } else if(firstPaint || atBottom){
+      /* Fresh open, or a new message arrived while already at the bottom —
+         show the newest at the bottom. */
       body.scrollTop = body.scrollHeight;
+    } else {
+      /* A new message arrived while the user was scrolled up reading
+         history — don't yank them to the bottom. */
+      body.scrollTop = prevTop;
     }
   }
 
@@ -11713,8 +11791,9 @@ function hideCommentThumbnail(){
      cpLoadComments — fetch comments from Supabase
      Ordered oldest-first. Guests can read.
      ────────────────────────────────────────────── */
-  async function cpLoadComments(){
+  async function cpLoadComments(silent){
     if(!sb){
+      if(silent) return; /* background poll — keep what's on screen */
       cpComments = [];
       cpRender();
       return;
@@ -11756,6 +11835,7 @@ function hideCommentThumbnail(){
       cpRender();
     }catch(e){
       console.error('cpLoadComments:', e);
+      if(silent) return; /* transient poll error — don't wipe the feed or nag */
       showToast('Failed to load comments');
       cpComments = [];
       cpRender();
@@ -12734,7 +12814,7 @@ function hideCommentThumbnail(){
     titleEl.innerHTML = 'UNDER REVIEW';
     bodyEl.innerHTML =
       '<div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.4rem;">'+
-        '<img src="'+esc(art.image_url)+'" alt="" style="width:64px;height:64px;object-fit:cover;object-position:'+(art.thumb_x!=null?art.thumb_x:50)+'% '+(art.thumb_y!=null?art.thumb_y:50)+'%;border-radius:6px;border:1px solid var(--bdr);filter:blur(3px);flex-shrink:0;">'+
+        '<img src="'+esc(getThumbnailUrl(art.image_url))+'" alt="" style="width:64px;height:64px;object-fit:cover;object-position:'+(art.thumb_x!=null?art.thumb_x:50)+'% '+(art.thumb_y!=null?art.thumb_y:50)+'%;border-radius:6px;border:1px solid var(--bdr);filter:blur(3px);flex-shrink:0;">'+
         '<div>'+
           '<div style="font-family:var(--fb);font-size:1rem;color:var(--tx);font-weight:600;margin-bottom:.3rem;">'+esc(art.name||'Untitled')+'</div>'+
           '<span class="lmDate" style="margin-top:0;">IN REVIEW</span>'+

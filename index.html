@@ -24,6 +24,23 @@
     if(s)s.setAttribute('content',l==='light'?'light':'dark');
   })();
   </script>
+  <!-- ── Critical paint style — MUST stay above the font <link> and any
+       <script src>. The main stylesheet is ~5,000 lines further down and
+       the parser can't reach it until every blocking resource above it
+       resolves; until then the document has no background and the canvas
+       falls back to white. These four rules give the root element its
+       colour from the very first frame.
+
+       Note the shape: this declares the --vbg *token*, not `background`
+       directly. A rule like html[data-theme="dark"]{background:…} would
+       out-specify the main sheet's html{background:var(--vbg)} forever
+       and quietly break the runtime theme switcher. ── -->
+  <style>
+    html{background:var(--vbg,#050308);}
+    html[data-theme="dark"]{--vbg:#060609;}
+    html[data-theme="graydark"]{--vbg:#0E0E12;}
+    html[data-theme="light"]{--vbg:#EFEEF4;}
+  </style>
   <!-- Cloudflare Web Analytics -->
   <script data-cf-beacon='{"token": "aa4b7177387e4f689739a5fdf44cbffa"}' defer="" src="https://static.cloudflareinsights.com/beacon.min.js">
   </script>
@@ -96,9 +113,12 @@
   <meta name="twitter:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png"/>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-  </script>
+  <!-- Loaded without blocking the first paint: fetched as a preload, then
+       promoted to a stylesheet on load. The URL already carries
+       display=swap, so text paints in the fallback face and swaps in
+       Sora/Inter when they arrive — a font swap instead of a white screen. -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <!-- Hero background/artwork feature fully removed -->
   <style>
 
@@ -533,6 +553,23 @@
     .cBadgeWrap{display:none;}
     .cBadge{background:var(--sur2);border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
     .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,var(--bg));border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
+    /* Multi-image marker — top-right of a gallery card, opposite the
+       category badge. Purely informational, never a click target. */
+    .gMulti{
+      position:absolute;top:.4rem;right:.4rem;z-index:2;
+      display:inline-flex;align-items:center;gap:.2rem;
+      background:rgba(20,20,30,.72);
+      border:1px solid rgba(var(--pg-rgb),.18);
+      border-radius:6px;
+      padding:.18rem .38rem;
+      font-family:var(--fm);font-size:.58rem;letter-spacing:.04em;
+      color:#fff;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      pointer-events:none;
+    }
+    /* Admin mode puts ✎/✕ in the top-right corner — slide the marker
+       over to the left so the two never sit on top of each other. */
+    body.admin .gMulti{right:auto;left:.4rem;}
 
 
     /* ── Full gallery overlay — slide-in panel ──
@@ -580,7 +617,7 @@
     /* Featured hero slides inside the gallery / comic overlays — reuses
        the home page .tsTrack/.tsBox component, just without the top-bar
        offset. */
-    #topSlideGallery,#topSlideComic{position:relative;background:transparent;padding:.2rem 0 1.1rem;}
+    #topSlideGallery{position:relative;background:transparent;padding:.2rem 0 1.1rem;}
     .fgHdr{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;isolation:isolate;}
     /* FIX: background + blur split onto ::before, same decoupling as
        #bnNav — sticky elements have the same fixed-during-scroll
@@ -766,8 +803,8 @@
       display:grid;
       grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
       gap:.3rem;
-      /* Extra bottom clearance — same 84px pattern used by .awGrid/
-         .caBdy — so the last row of images never sits underneath
+      /* Extra bottom clearance — same 84px pattern used by .awGrid
+         — so the last row of images never sits underneath
          the floating #bnNav pill, which stays visible over this
          full-page overlay. */
       padding-bottom:calc(1rem + 84px);
@@ -957,8 +994,7 @@
        part of the site regardless of the global theme toggle —
        same approach #artModal's backdrop already used.
        Lives inside the existing #artModal backdrop; .amCard/.amImgWrap/
-       .amX/.amInfo/.amName/.amDesc/.amDiv above are left untouched
-       since the comic viewer (#comicModal) still reuses them.
+       .amX/.amInfo/.amName/.amDesc/.amDiv above are left untouched.
        ========================================================= */
     .avBox{
       position:relative;
@@ -1025,8 +1061,15 @@
     .avBody{flex:1 1 auto;display:flex;min-height:0;}
     .avImgPane{
       position:relative;flex:1 1 auto;min-width:0;
-      display:flex;align-items:center;justify-content:center;
+      display:flex;flex-direction:column;
       background:#000;overflow:hidden;
+    }
+    /* Stage fills whatever height the strip doesn't take. min-height:0
+       is what lets it actually shrink inside the column flex parent. */
+    .avImgStage{
+      position:relative;
+      flex:1 1 auto;min-height:0;width:100%;
+      display:flex;align-items:center;justify-content:center;
     }
     .avImgViewport{
       position:relative;width:100%;height:100%;
@@ -1059,6 +1102,57 @@
     .avNavBtn:active{transform:translateY(-50%) scale(.92);}
     .avNavPrev{left:1rem;}
     .avNavNext{right:1rem;}
+    /* ── Multi-image artworks: counter pill + thumbnail strip ──
+       The counter sits in the top-left of the viewport (clear of the
+       zoom bar and the prev/next arrows, which page between *artworks*,
+       not between images within one). ── */
+    .avImgCount{
+      position:absolute;top:1rem;left:1rem;z-index:4;
+      background:rgba(20,20,30,.72);
+      border:1px solid rgba(var(--pg-rgb),.14);
+      border-radius:999px;
+      padding:.28rem .7rem;
+      font-family:var(--fm);font-size:.68rem;letter-spacing:.12em;
+      color:var(--tx);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      pointer-events:none;
+    }
+    .avStrip{
+      flex:0 0 auto;            /* never squeezed by the stage above */
+      width:100%;
+      display:flex;gap:.45rem;
+      padding:.7rem 1rem;
+      overflow-x:auto;
+      scrollbar-width:none;-ms-overflow-style:none;
+      -webkit-overflow-scrolling:touch;
+      border-top:1px solid rgba(255,255,255,.09);
+      background:rgba(12,10,18,.92);
+    }
+    /* Centre the thumbs while they still fit; once they overflow, the
+       auto margins collapse and the row scrolls from the left as normal
+       (justify-content:center would make the first thumb unreachable). */
+    .avStrip > :first-child{margin-left:auto;}
+    .avStrip > :last-child{margin-right:auto;}
+    .avStrip::-webkit-scrollbar{display:none;}
+    .avStrip[hidden]{display:none;}
+    .avThumb{
+      flex:0 0 auto;
+      width:52px;height:52px;
+      padding:0;border-radius:6px;overflow:hidden;cursor:pointer;
+      background:none;
+      border:1px solid var(--bdr);
+      opacity:.55;
+      transition:opacity .2s,border-color .2s,transform .15s;
+    }
+    .avThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .avThumb:hover{opacity:.85;}
+    .avThumb:active{transform:scale(.94);}
+    .avThumb:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    .avThumb.active{opacity:1;border-color:var(--pg);box-shadow:0 0 10px rgba(var(--pg-rgb),.4);}
+    @media(max-width:640px){
+      .avThumb{width:44px;height:44px;}
+      .avStrip{padding:.55rem .8rem;}
+    }
     .avZoomBar{
       position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);
       display:flex;align-items:center;gap:.1rem;
@@ -2178,7 +2272,7 @@
 
     /* ── Legacy modal remnants — only the pieces still in use ──
        .mBtn/.mBtn.sec: PREV/NEXT buttons inside the injected comic
-       viewer (ensureComicModal). .upPrev: preview <img> in both
+       viewer. .upPrev: preview <img> in both
        upload popups. The rest of the old .mOvr/.modal component
        (.mIn/.mX/.mErr/.dz*) was superseded by .upPop/.laBody and
        has been removed. ── */
@@ -2505,7 +2599,7 @@
       padding:0 clamp(.7rem,2vw,2rem);
       box-sizing:border-box;
     }
-    /* ── Artworks / ComicArts tab switcher — replaces the old
+    /* ── Artworks / category tab switcher — replaces the old
        title + subtitle heading ── */
     .awTabs{
       display:flex;
@@ -2577,8 +2671,8 @@
       padding:0 clamp(.3rem,1vw,.6rem);
       /* Extra bottom clearance — same 84px the comment bar (.cpBar) uses
          to clear the floating pill nav — so the last row of cards never
-         sits underneath #bnNav. Shared by both the main gallery (#awGrid)
-         and the Comic Arts tab (#caGrid) since they reuse this class. */
+         sits underneath #bnNav. Used by the main gallery (#awGrid)
+         — this class is shared wherever that grid appears. */
       padding-bottom:calc(1rem + 84px);
       box-sizing:border-box;
       display:grid;
@@ -2714,8 +2808,8 @@
 
     /* =========================================================
        PROFILE PAGE (#profilePage)
-       Same sliding full-page panel language as #subPage /
-       #comicArtsPage — .subPgHdr / .subPgX / .subPgTitle reused
+       Same sliding full-page panel language as #subPage —
+       .subPgHdr / .subPgX / .subPgTitle reused
        as-is, everything below is page-specific.
        ========================================================= */
     #profilePage{
@@ -2918,8 +3012,7 @@
     @media(max-width:480px){.pfGrid{grid-template-columns:1fr;}}
     /* ── Gallery tab reuses the same fluid auto-fill layout as the
        main Artworks grid (.awGrid) so thumbnails fill edge-to-edge
-       and look identical everywhere. Comic tab keeps the auto-fill
-       .pfGrid layout above (still developing). ── */
+       and look identical everywhere. ── */
     .pfGridArt{
       grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
       gap:.3rem;
@@ -3661,38 +3754,6 @@ height:80px;
   .apDescTitle { font-size: clamp(1.6rem, 8vw, 2.4rem); }
 }
 
-
-/* Comic Arts page overlay — same pattern as #fg, #communityPage, #adsPanel */
-#comicArtsPage {
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  background: var(--bg);
-  overflow-y: auto;
-  transform: translateX(100%);
-  transition: transform .45s cubic-bezier(.22,1,.36,1);
-}
-/* Same dark-violet theme as the Gallery page (#fg) — every child
-   that already styles itself with var(--bg)/var(--sur)/var(--tx)/
-   var(--pg)/etc. (including .awGrid/.awCard) repaints to match
-   automatically. */
-#comicArtsPage,#comicArtsPage * {
-  --bg:inherit;--sur:inherit;--sur2:inherit;
-  --bdr:inherit;--bdrh:inherit;
-  --tx:inherit;--txd:inherit;
-  --pg:inherit;--pb:inherit;--ps:inherit;
-  --pdim:inherit;
-}
-/* Dead-code note: #comicArtsPage no longer uses .subPgHdr/.subPgTitle —
-   its header was swapped to the shared .fgIntro/.fgTitle (centered,
-   gradient, divider line) to match the Community page title. */
-#comicArtsPage .awCard{background:var(--sur);}
-#comicArtsPage.open { transform: translateX(0); }
-
-/* ── Grid body — same idea as .admBdy's bottom padding: clears
-   the floating pill bottom-nav, which stays visible/usable on
-   this tab screen (see comicArtsPage header comment). ── */
-.caBdy { padding-bottom: 6rem; }
 
 /* ── Placeholder body — centred empty-state layout ── */
 .pgPlaceholder {
@@ -4919,11 +4980,11 @@ body{background:var(--bg);}
 /* ══════════════════════════════════════════════════════════════
    DARK VIOLET FIX — remaining white-theme leftovers
    Covers: Legal modal (Privacy/Terms/Cookie/Refund policy),
-   the comic viewer's .mBtn.sec buttons, Admin bar (.admBar).
+   the .mBtn.sec buttons, Admin bar (.admBar).
    These sit outside #fg's scope so they never picked up the
    dark-violet tokens — they were still using the old white
    :root defaults. Re-declaring the tokens locally (same pattern
-   as #fg/#comicArtsPage) makes every child that already styles
+   as #fg) makes every child that already styles
    itself with var(--bg)/var(--sur)/var(--tx)/etc. repaint dark.
    ══════════════════════════════════════════════════════════════ */
 #legalBackdrop,.admBar{
@@ -4992,7 +5053,7 @@ body{background:var(--bg);}
    while keeping the open/close animations pixel-identical —
    the exact pattern #artModal already uses.
    ══════════════════════════════════════════════════════════════ */
-#fg,#communityPage,#adsPanel,#comicArtsPage,#subPage,#profilePage,#admPage,#notifPage,#pfMyWorkPage,#authMod{
+#fg,#communityPage,#adsPanel,#subPage,#profilePage,#admPage,#notifPage,#pfMyWorkPage,#authMod{
   visibility:hidden;
   transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s linear .45s;
 }
@@ -5000,7 +5061,7 @@ body{background:var(--bg);}
   visibility:hidden;
   transition:transform .4s cubic-bezier(.22,1,.36,1),visibility 0s linear .4s;
 }
-#fg.open,#communityPage.open,#adsPanel.open,#comicArtsPage.open,#subPage.open,#profilePage.open,#admPage.open,#notifPage.open,#pfMyWorkPage.open,#authMod.open,#pfEditPage.open,#zeoPage.open{
+#fg.open,#communityPage.open,#adsPanel.open,#subPage.open,#profilePage.open,#admPage.open,#notifPage.open,#pfMyWorkPage.open,#authMod.open,#pfEditPage.open,#zeoPage.open{
   visibility:visible;
   transition-delay:0s,0s;
 }
@@ -5058,7 +5119,6 @@ body{background:var(--bg);}
        ├─ Bar (#bnNav)
        │   ├─ Home     → scrolls to hero / closes open panels
        │   ├─ Gallery  → ddOpenGallery()
-       │   ├─ Comic    → openComicArts()
        │   ├─ Community → ddOpenCommunity()
        │   └─ Profile  → login face icon ↔ avatar (existing buttons,
        │                 relocated unchanged so all auth/admin JS
@@ -5073,9 +5133,9 @@ body{background:var(--bg);}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
     <span class="bnLabel">Gallery</span>
    </button>
-   <button class="bnItem" id="bnComic" onclick="bnGoComic()" title="Comic" aria-label="Comic">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><path d="M17 4v3h3"/><path d="M8 12h8M8 16h5"/></svg>
-    <span class="bnLabel">Comic</span>
+   <button class="bnItem" id="bnUpload" onclick="bnGoUpload()" title="Upload" aria-label="Upload artwork">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span class="bnLabel">Upload</span>
    </button>
    <button class="bnItem" id="bnCommunity" onclick="bnGoCommunity()" title="Community" aria-label="Community">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
@@ -5163,7 +5223,7 @@ body{background:var(--bg);}
        ARTWORKS SECTION
        Displays the 200 most recent artworks in a responsive ArtStation-
        style masonry grid (full-bleed image, overlaid title/gradient).
-       ├─ Section Header (.awHdr) — Artworks / ComicArts tabs
+       ├─ Section Header (.awHdr) — Artworks / category tabs
        ├─ Admin Upload Button (.upBtn.adminOnly)
        ├─ Grid (.awGrid #awGrid)
        │   └─ Cards (.awCard × up to 200) — injected by renderAwGrid()
@@ -5172,12 +5232,9 @@ body{background:var(--bg);}
   <section id="artworks">
     <!-- ── Section Header — tab switcher replaces the old title/subtitle ── -->
     <div class="awHdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-      <div class="awTabs" role="tablist" aria-label="Browse Artworks by category or Comic Arts">
+      <div class="awTabs" id="awTabs" role="tablist" aria-label="Browse Artworks by category or Comic Arts">
         <button class="awTabBtn active" id="awTabArt" role="tab" aria-selected="true" onclick="awSwitchTab('artworks')">Artworks</button>
-        <button class="awTabBtn" id="awTabCharacter" role="tab" aria-selected="false" onclick="awSwitchTab('character')">Character</button>
-        <button class="awTabBtn" id="awTabSketch" role="tab" aria-selected="false" onclick="awSwitchTab('sketch')">Sketch</button>
-        <button class="awTabBtn" id="awTabLandscape" role="tab" aria-selected="false" onclick="awSwitchTab('landscape')">Landscape</button>
-        <button class="awTabBtn" id="awTabComic" role="tab" aria-selected="false" onclick="awSwitchTab('comicarts')">ComicArts</button>
+        <!-- Category tabs injected by buildCategoryUI(), before the indicator. -->
         <span class="awTabIndicator" id="awTabIndicator" aria-hidden="true"></span>
       </div>
       <!-- Admin Upload Button (admin-only, hidden by default) -->
@@ -5355,59 +5412,16 @@ body{background:var(--bg);}
        │   └─ .ftBase  — bottom copyright band
        ========================================================= -->
   <!-- =========================================================
-       COMIC ARTS PAGE
-       ├─ Header Bar (.subPgHdr pattern)
-       │   └─ Title (no back button — closed via bottom nav tabs,
-       │       same as Instagram/YouTube tab screens)
-       └─ Grid Body (.caBdy) — reuses .awGrid/.awCard exactly as
-           built for the homepage Artworks/ComicArts tab: cover
-           image only, no bookmark, no overlaid title/tag text,
-           same responsive column spacing (2/3/4/5 cols) as the
-           Artworks gallery. See caRenderGrid() / buildAwCard().
-       ========================================================= -->
-  <div id="comicArtsPage" role="dialog" aria-modal="true" aria-label="Comic Arts">
-    <!-- Intro — "Comic Arts" title styled like the Community heading,
-         reusing the exact same .fgIntro/.fgTitle as the Gallery overlay. -->
-    <div class="fgIntro">
-      <h2 class="fgTitle">Comic Arts <span class="s">✦</span></h2>
-    </div>
-    <!-- Featured hero slides — the same component as the home page
-         #topSlide strip and the Gallery strip: identical .tsTrack/.tsBox
-         markup painted from the same hero_slides table by renderTopSlide().
-         Own ids (topSlideComic / tsTrackComic) keep the DOM valid while
-         showing the very same slides. -->
-    <section id="topSlideComic" aria-label="Featured artwork slideshow">
-      <div class="tsTrack" id="tsTrackComic">
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-      </div>
-    </section>
-    <div class="caBdy">
-      <div class="awGrid" id="caGrid"></div>
-      <div class="awEmpty" id="caEmpty" style="display:none;">NO COMICS YET</div>
-    </div>
-  </div>
-
-  <!-- =========================================================
        USER PROFILE PAGE (#profilePage)
        ├─ Banner (.pfBanner) — dark gradient banner, overlapping
        │   avatar (.pfAvatarWrap), ⋮ menu button (.pfMenuBtn) →
        │   .pfMenu dropdown (Subscription / Admin Panel / Log Out,
        │   replaces the old #profilePopup)
        ├─ Head (.pfHead) — username, joined date
-       ├─ Tabs (.pfTabs) — Artwork / ComicArts / About, with the
+       ├─ Tabs (.pfTabs) — Artwork / About, with the
        │   Upload dropdown (.pfUploadWrap, owner-only) on the right
        └─ Panels (.pfPanel)
            ├─ Gallery  → #pfGalleryGrid (+ load more)
-           ├─ Comic    → #pfComicGrid (+ load more)
            └─ About    → stats + bio (owner-editable)
        ========================================================= -->
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
@@ -5434,14 +5448,12 @@ body{background:var(--bg);}
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
           <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" onclick="pfSwitchTab('gallery')">ARTWORK</button>
-          <button class="pfTab" id="pfTabComic" role="tab" aria-selected="false" onclick="pfSwitchTab('comic')">COMICARTS</button>
           <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" onclick="pfSwitchTab('about')">ABOUT</button>
         </div>
         <div class="pfUploadWrap" id="pfUploadWrap" style="display:none;">
           <button class="pfUpTrigger" onclick="togglePfUploadMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="pfUploadMenu">UPLOAD <span class="pfUpCh">⌄</span></button>
           <div class="pfUploadMenu" id="pfUploadMenu">
-            <button id="pfUploadArtBtn" onclick="closePfUploadMenu();openPfUpload('art')">Upload Artwork</button>
-            <button id="pfUploadComicBtn" onclick="closePfUploadMenu();openPfUpload('comic')">Upload Comic</button>
+            <button id="pfUploadArtBtn" onclick="closePfUploadMenu();openPfUpload()">Upload Artwork</button>
           </div>
         </div>
       </div>
@@ -5455,20 +5467,10 @@ body{background:var(--bg);}
         </div>
       </div>
 
-      <!-- COMIC -->
-      <div class="pfPanel" id="pfPanelComic">
-        <div class="pfGrid" id="pfComicGrid"></div>
-        <div class="pfEmpty" id="pfComicEmpty" style="display:none;">No comics uploaded yet.</div>
-        <div class="pfLoadMoreWrap" id="pfComicLoadMoreWrap" style="display:none;">
-          <button class="fgLoadMore" onclick="pfLoadMoreComic()"><span>✦</span> LOAD MORE</button>
-        </div>
-      </div>
-
       <!-- ABOUT -->
       <div class="pfPanel" id="pfPanelAbout">
         <div class="pfStats">
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatArt">0</div><div class="pfStatLbl">ARTWORKS</div></div>
-          <div class="pfStatCard"><div class="pfStatNum" id="pfStatComic">0</div><div class="pfStatLbl">COMICS</div></div>
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatViews">—</div><div class="pfStatLbl">TOTAL VIEWS</div></div>
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatLikes">—</div><div class="pfStatLbl">TOTAL LIKES</div></div>
         </div>
@@ -5576,7 +5578,6 @@ body{background:var(--bg);}
        │   gEdit/gDel/upload-button visibility
        └─ Tabs (.pfTabs) — Artwork / Comic Arts / Notifications
            ├─ Artwork    → #admArtGrid  (pending artworks)
-           ├─ Comic Arts → #admComicGrid (pending comics)
            └─ Notifications → placeholder, empty for now
        ========================================================= -->
   <div id="admPage" role="dialog" aria-modal="true" aria-label="Admin review">
@@ -5618,7 +5619,6 @@ body{background:var(--bg);}
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
           <button class="pfTab active" id="admTabArt" role="tab" aria-selected="true" onclick="admSwitchTab('art')">ARTWORK<span class="admTabCount" id="admCountArt" style="display:none;">0</span></button>
-          <button class="pfTab" id="admTabComic" role="tab" aria-selected="false" onclick="admSwitchTab('comic')">COMIC ARTS<span class="admTabCount" id="admCountComic" style="display:none;">0</span></button>
           <button class="pfTab" id="admTabNoti" role="tab" aria-selected="false" onclick="admSwitchTab('noti')">NOTIFICATIONS</button>
         </div>
       </div>
@@ -5630,14 +5630,6 @@ body{background:var(--bg);}
       </div>
 
       <!-- COMIC ARTS -->
-      <div class="pfPanel" id="admPanelComic">
-        <div class="pfGrid pfGridArt" id="admComicGrid"></div>
-        <div class="pfEmpty" id="admComicEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>Nothing pending — all comics are reviewed.</div>
-      </div>
-
-      <!-- NOTIFICATIONS — broadcast composer + recently sent list.
-           Sending inserts a row with user_id:null, which every
-           user's notifications feed picks up (see #notifPage). -->
       <div class="pfPanel" id="admPanelNoti">
         <div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>
         <div class="admNotiCompose">
@@ -5661,7 +5653,6 @@ body{background:var(--bg);}
        visual language, swapping Approve/Reject for Edit/Delete.
        ├─ Tabs (.pfTabs) — Artwork / Comic
        │   ├─ Artwork → #mwArtGrid  (mwRenderArt)
-       │   └─ Comic   → #mwComicGrid (mwRenderComic)
        ========================================================= -->
   <div id="pfMyWorkPage" role="dialog" aria-modal="true" aria-label="Edit my work">
     <div class="subPgHdr">
@@ -5672,7 +5663,6 @@ body{background:var(--bg);}
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
           <button class="pfTab active" id="mwTabArt" role="tab" aria-selected="true" onclick="mwSwitchTab('art')">ARTWORK</button>
-          <button class="pfTab" id="mwTabComic" role="tab" aria-selected="false" onclick="mwSwitchTab('comic')">COMIC</button>
         </div>
       </div>
 
@@ -5682,11 +5672,6 @@ body{background:var(--bg);}
         <div class="pfEmpty" id="mwArtEmpty" style="display:none;">You haven't uploaded any artwork yet.</div>
       </div>
 
-      <!-- COMIC -->
-      <div class="pfPanel" id="mwPanelComic">
-        <div class="pfGrid pfGridArt" id="mwComicGrid"></div>
-        <div class="pfEmpty" id="mwComicEmpty" style="display:none;">You haven't uploaded any comics yet.</div>
-      </div>
     </div>
   </div>
 
@@ -5736,8 +5721,7 @@ body{background:var(--bg);}
   </div>
 
   <!-- =========================================================
-       PROFILE UPLOAD POPUP — shared by "Upload Artwork" and
-       "Upload Comic" (mode toggled via openPfUpload('art'|'comic')).
+       PROFILE UPLOAD POPUP — opened via openPfUpload().
        Always inserts with user_id = the signed-in user's own id
        (enforced by RLS too). No visibility control by design —
        everything uploaded here is public, same as the gallery.
@@ -5942,13 +5926,14 @@ body{background:var(--bg);}
       </div>
       <img alt="preview" class="upPrev" id="pfUpPrev"/>
 
-      <!-- Comic-only: additional page images -->
+      <!-- Additional images — comic pages, or extra images on an artwork.
+           Copy is re-labelled per mode by openPfUpload(). -->
       <div id="pfComicPagesWrap" style="display:none;">
         <div class="upDz upDzSm" id="pfDzPages">
          <input accept="image/*" id="pfUpPages" multiple="" onchange="handlePfPagesFile(event)" type="file"/>
-         <div class="upDzIco">📖</div>
-         <div class="upDzTitle">Drop page images here or click to browse</div>
-         <div class="upDzSub">Multiple pages supported</div>
+         <div class="upDzIco" id="pfDzPagesIco">📖</div>
+         <div class="upDzTitle" id="pfDzPagesTitle">Drop page images here or click to browse</div>
+         <div class="upDzSub" id="pfDzPagesSub">Multiple pages supported</div>
         </div>
         <div id="pfPagesPreview" class="upPagesPreview"></div>
       </div>
@@ -5977,11 +5962,7 @@ body{background:var(--bg);}
               <span id="pfUpCatTriggerLbl">Others</span><span class="upChev">⌄</span>
             </button>
             <div class="upCatPanel" id="pfUpCatPanel">
-              <label class="upCatOpt"><input checked="" id="pfUpCat_others" onchange="updatePfCatDisplay()" type="checkbox" value="others"/> Others</label>
-              <label class="upCatOpt"><input id="pfUpCat_cars" onchange="updatePfCatDisplay()" type="checkbox" value="cars"/> Cars</label>
-              <label class="upCatOpt"><input id="pfUpCat_characters" onchange="updatePfCatDisplay()" type="checkbox" value="characters"/> Characters</label>
-              <label class="upCatOpt"><input id="pfUpCat_landscapes" onchange="updatePfCatDisplay()" type="checkbox" value="landscapes"/> Landscapes</label>
-              <label class="upCatOpt"><input id="pfUpCat_sketches" onchange="updatePfCatDisplay()" type="checkbox" value="sketches"/> Sketches</label>
+              <!-- Options injected by buildCategoryUI() from SITE_CATEGORIES -->
             </div>
           </div>
         </div>
@@ -6161,10 +6142,10 @@ body{background:var(--bg);}
            └─ Done Button (.fltDone)
        ========================================================= -->
   <div id="fg" role="dialog" aria-modal="true" aria-label="Full Gallery">
-   <!-- ── Intro — just the "Artworks" title now (styled like the
-        Community heading). The search/filter bar below stays sticky. ── -->
+   <!-- ── Intro — "Gallery" title (styled like the Community heading).
+        The search/filter bar below stays sticky. ── -->
    <div class="fgIntro">
-    <h2 class="fgTitle">Artworks <span class="s">✦</span></h2>
+    <h2 class="fgTitle">Gallery <span class="s">✦</span></h2>
    </div>
    <!-- Featured hero slides — the exact same component as the home page
         #topSlide strip: identical .tsTrack/.tsBox markup, painted from the
@@ -6212,11 +6193,7 @@ body{background:var(--bg);}
      <div class="fltSecLbl">CATEGORY</div>
      <div class="fltOpts" id="fltCatOpts">
       <label class="fltOpt"><input type="radio" name="fltCat" value="all" checked><div class="fltDot"></div><span class="fltLbl">ALL CATEGORIES</span></label>
-      <label class="fltOpt"><input type="radio" name="fltCat" value="cars"><div class="fltDot"></div><span class="fltLbl">CARS</span></label>
-      <label class="fltOpt"><input type="radio" name="fltCat" value="characters"><div class="fltDot"></div><span class="fltLbl">CHARACTERS</span></label>
-      <label class="fltOpt"><input type="radio" name="fltCat" value="landscapes"><div class="fltDot"></div><span class="fltLbl">LANDSCAPES</span></label>
-      <label class="fltOpt"><input type="radio" name="fltCat" value="sketches"><div class="fltDot"></div><span class="fltLbl">SKETCHES</span></label>
-      <label class="fltOpt"><input type="radio" name="fltCat" value="others"><div class="fltDot"></div><span class="fltLbl">OTHERS</span></label>
+      <!-- Remaining options injected by buildCategoryUI() from SITE_CATEGORIES -->
      </div>
     </div>
     <div class="fltSep"></div>
@@ -7522,19 +7499,28 @@ body{background:var(--bg);}
     </div>
     <div class="avBody">
      <div class="avImgPane">
-      <button class="avNavBtn avNavPrev" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous artwork">‹</button>
-      <div class="avImgViewport" id="avImgViewport">
-       <img alt="" id="lbImg" draggable="false"/>
+      <!-- Stage — the big image plus its floating chrome (prev/next
+           artwork arrows, zoom bar). Positioned ancestor for all of it,
+           so nothing centres against the thumbnail strip below. -->
+      <div class="avImgStage">
+       <button class="avNavBtn avNavPrev" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous artwork">‹</button>
+       <div class="avImgViewport" id="avImgViewport">
+        <img alt="" id="lbImg" draggable="false"/>
+        <div class="avImgCount" id="avImgCount" hidden></div>
+       </div>
+       <button class="avNavBtn avNavNext" id="avNextBtn" onclick="avNav(1)" aria-label="Next artwork">›</button>
+       <div class="avZoomBar">
+        <button onclick="avZoom(-1)" aria-label="Zoom out">−</button>
+        <span class="avZoomPct" id="avZoomPct">100%</span>
+        <button onclick="avZoom(1)" aria-label="Zoom in">+</button>
+        <span class="avZoomDiv"></span>
+        <button onclick="avToggleFullscreen()" aria-label="Fullscreen">⛶</button>
+        <button onclick="avDownload()" aria-label="Download">⬇</button>
+       </div>
       </div>
-      <button class="avNavBtn avNavNext" id="avNextBtn" onclick="avNav(1)" aria-label="Next artwork">›</button>
-      <div class="avZoomBar">
-       <button onclick="avZoom(-1)" aria-label="Zoom out">−</button>
-       <span class="avZoomPct" id="avZoomPct">100%</span>
-       <button onclick="avZoom(1)" aria-label="Zoom in">+</button>
-       <span class="avZoomDiv"></span>
-       <button onclick="avToggleFullscreen()" aria-label="Fullscreen">⛶</button>
-       <button onclick="avDownload()" aria-label="Download">⬇</button>
-      </div>
+      <!-- Thumbnail strip — every image in this artwork, as little
+           squares under the big one. Hidden when there's only one. -->
+      <div class="avStrip" id="avStrip" hidden role="tablist" aria-label="Images in this artwork"></div>
      </div>
      <div class="avSide" id="avSide">
       <div class="avSideScroll">
@@ -7578,8 +7564,8 @@ body{background:var(--bg);}
   </div>
   <!-- =========================================================
        AUTHENTICATION PAGE (#authMod) — full-screen sliding panel,
-       same slide-in language as #profilePage / #subPage /
-       #comicArtsPage, reachable at /login. Self-contained dark
+       same slide-in language as #profilePage / #subPage,
+       reachable at /login. Self-contained dark
        theme (own palette, independent of the site's white
        default). No back-arrow — the bottom nav bar is the only
        way in/out, closing via bnGoProfile()/closeAuthMod().
@@ -7765,12 +7751,8 @@ body{background:var(--bg);}
       <!-- MULTI-CATEGORY SELECT START -->
       <div class="upField" id="upCatWrap">
         <label class="upLbl">Categories <span class="upReq">*</span></label>
-        <div id="upCatBoxes" style="display:flex;flex-wrap:wrap;gap:.2rem .4rem;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;padding:.5rem .6rem;">
-          <label class="upCatOpt"><input type="checkbox" value="others"     id="upCat_others"     onchange="updateUpCatDisplay()" checked> Others</label>
-          <label class="upCatOpt"><input type="checkbox" value="cars"       id="upCat_cars"       onchange="updateUpCatDisplay()"> Cars</label>
-          <label class="upCatOpt"><input type="checkbox" value="characters" id="upCat_characters" onchange="updateUpCatDisplay()"> Characters</label>
-          <label class="upCatOpt"><input type="checkbox" value="landscapes" id="upCat_landscapes" onchange="updateUpCatDisplay()"> Landscapes</label>
-          <label class="upCatOpt"><input type="checkbox" value="sketches"   id="upCat_sketches"   onchange="updateUpCatDisplay()"> Sketches</label>
+        <div id="upCatBoxes" style="display:flex;flex-wrap:wrap;gap:.2rem .4rem;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;padding:.5rem .6rem;max-height:190px;overflow-y:auto;">
+          <!-- Options injected by buildCategoryUI() from SITE_CATEGORIES -->
         </div>
         <!-- Selected category display section -->
         <div id="upCatDisplay" style="margin-top:.55rem;min-height:1.4rem;display:flex;flex-wrap:wrap;gap:.3rem;"></div>
@@ -7865,6 +7847,12 @@ body{background:var(--bg);}
        config.js (gitignored) — see config.example.js for the
        template. window.KOE_CONFIG now also carries S3_FN_URL,
        the deployed s3-sign edge function's endpoint. -->
+  <!-- Moved out of <head>: this is parser-blocking (no defer/async), and up
+       there it stalled the parser before it could reach the stylesheet or
+       #intro, leaving a white canvas for a whole network round-trip. Down
+       here the intro is already painted. It must still load before the
+       inline script below, which calls supabase.createClient() at top level. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="uploadVerifier.js"></script>
   <script>
@@ -7972,7 +7960,7 @@ body{background:var(--bg);}
     document.getElementById('sBanner').classList.add('show');
   }
 
-  let isAdm = false, upFile = null, images = [], comics = [];
+  let isAdm = false, upFile = null, images = [];
   let filterCat = 'all', filterSrt = 'new';
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -7985,20 +7973,157 @@ body{background:var(--bg);}
     if(Array.isArray(val)) return val.map(function(c){return String(c).trim();}).filter(Boolean);
     return String(val||'').split(',').map(function(c){return c.trim();}).filter(Boolean);
   }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SITE_CATEGORIES — the single source of truth for categories.
+     ───────────────────────────────────────────────────────────────
+     Order here is the order everywhere: the homepage tab strip
+     (.awTabs), the gallery filter panel, and both upload pickers are
+     all generated from this array. To add/remove/reorder a category,
+     edit this list and nothing else.
+
+       slug  → what's written to artworks.category (NEVER change an
+               existing slug: live rows reference it)
+       label → what the user sees
+
+     Two deliberate quirks:
+     • 'landscapes' keeps its legacy plural slug (labelled "Landscape")
+       so the artworks already tagged with it aren't orphaned.
+     • 'others' isn't in the design list but stays last — it's the
+       fallback the upload code writes when nothing is picked. ── */
+  var SITE_CATEGORIES = [
+    {slug:'characters',      label:'Characters'},
+    {slug:'anime',           label:'Anime'},
+    {slug:'manga',           label:'Manga'},
+    {slug:'comic',           label:'Comic'},
+    {slug:'fan-art',         label:'Fan Art'},
+    {slug:'chibi',           label:'Chibi'},
+    {slug:'sketches',        label:'Sketches'},
+    {slug:'illustrations',   label:'Illustrations'},
+    {slug:'concept-art',     label:'Concept Art'},
+    {slug:'ai-art',          label:'AI Art'},
+    {slug:'digital-art',     label:'Digital Art'},
+    {slug:'traditional-art', label:'Traditional Art'},
+    {slug:'abstract',        label:'Abstract'},
+    {slug:'typography',      label:'Typography'},
+    {slug:'poster-art',      label:'Poster Art'},
+    {slug:'logos',           label:'Logos'},
+    {slug:'icons',           label:'Icons'},
+    {slug:'wallpapers',      label:'Wallpapers'},
+    {slug:'cars',            label:'Cars'},
+    {slug:'bikes',           label:'Bikes'},
+    {slug:'trucks',          label:'Trucks'},
+    {slug:'buses',           label:'Buses'},
+    {slug:'aircraft',        label:'Aircraft'},
+    {slug:'ships',           label:'Ships'},
+    {slug:'robots',          label:'Robots'},
+    {slug:'mecha',           label:'Mecha'},
+    {slug:'weapons',         label:'Weapons'},
+    {slug:'fantasy',         label:'Fantasy'},
+    {slug:'dragons',         label:'Dragons'},
+    {slug:'monsters',        label:'Monsters'},
+    {slug:'mythology',       label:'Mythology'},
+    {slug:'sci-fi',          label:'Sci-Fi'},
+    {slug:'space',           label:'Space'},
+    {slug:'nature',          label:'Nature'},
+    {slug:'animals',         label:'Animals'},
+    {slug:'birds',           label:'Birds'},
+    {slug:'marine-life',     label:'Marine Life'},
+    {slug:'landscapes',      label:'Landscape'},
+    {slug:'scenery',         label:'Scenery'},
+    {slug:'cityscape',       label:'Cityscape'},
+    {slug:'architecture',    label:'Architecture'},
+    {slug:'buildings',       label:'Buildings'},
+    {slug:'interior-design', label:'Interior Design'},
+    {slug:'food-art',        label:'Food Art'},
+    {slug:'flowers',         label:'Flowers'},
+    {slug:'trees',           label:'Trees'},
+    {slug:'patterns',        label:'Patterns'},
+    {slug:'3d-art',          label:'3D Art'},
+    {slug:'pixel-art',       label:'Pixel Art'},
+    {slug:'aesthetic-art',   label:'Aesthetic Art'},
+    {slug:'others',          label:'Others'}
+  ];
+  var CAT_SLUGS = SITE_CATEGORIES.map(function(c){ return c.slug; });
+  /* slug → label, for rendering a stored category back to the user.
+     Unknown slugs (from older rows) fall back to a title-cased slug. */
+  var CAT_LABELS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]=c.label; return m; },{});
+  function catLabel(slug){
+    if(!slug) return '';
+    if(CAT_LABELS[slug]) return CAT_LABELS[slug];
+    return String(slug).replace(/-/g,' ').replace(/\b\w/g,function(ch){ return ch.toUpperCase(); });
+  }
+
+  /* Paints every category-driven UI from SITE_CATEGORIES:
+       1. #fltCatOpts    — gallery filter radios (after "ALL CATEGORIES")
+       2. #pfUpCatPanel  — profile upload checkboxes
+       3. #upCatBoxes    — admin upload checkboxes
+       4. #awTabs        — homepage tab strip (before the indicator)
+     Runs once on DOMContentLoaded. Element ids are built with
+     getElementById-safe names, so slugs starting with a digit
+     ('3d-art') are fine — they're never used as CSS selectors. */
+  function buildCategoryUI(){
+    /* 1. Filter panel radios */
+    var fo = document.getElementById('fltCatOpts');
+    if(fo){
+      fo.insertAdjacentHTML('beforeend', SITE_CATEGORIES.map(function(c){
+        return '<label class="fltOpt"><input type="radio" name="fltCat" value="'+esc(c.slug)+'">'+
+               '<div class="fltDot"></div><span class="fltLbl">'+esc(c.label.toUpperCase())+'</span></label>';
+      }).join(''));
+    }
+    /* 2. Profile upload checkboxes — 'others' is the default check */
+    var pp = document.getElementById('pfUpCatPanel');
+    if(pp){
+      pp.innerHTML = SITE_CATEGORIES.map(function(c){
+        return '<label class="upCatOpt"><input type="checkbox" id="pfUpCat_'+esc(c.slug)+'" value="'+esc(c.slug)+'"'+
+               (c.slug==='others'?' checked':'')+' onchange="updatePfCatDisplay()"/> '+esc(c.label)+'</label>';
+      }).join('');
+    }
+    /* 3. Admin upload checkboxes */
+    var ub = document.getElementById('upCatBoxes');
+    if(ub){
+      ub.innerHTML = SITE_CATEGORIES.map(function(c){
+        return '<label class="upCatOpt"><input type="checkbox" id="upCat_'+esc(c.slug)+'" value="'+esc(c.slug)+'"'+
+               (c.slug==='others'?' checked':'')+' onchange="updateUpCatDisplay()"> '+esc(c.label)+'</label>';
+      }).join('');
+    }
+    /* 4. Homepage tab strip — inserted after the "Artworks" tab and
+          before the sliding indicator, which must stay the last child. */
+    var awInd = document.getElementById('awTabIndicator');
+    if(awInd){
+      awInd.insertAdjacentHTML('beforebegin', SITE_CATEGORIES.map(function(c){
+        return '<button class="awTabBtn" id="awTab_'+esc(c.slug)+'" role="tab" aria-selected="false"'+
+               ' onclick="awSwitchTab(\''+esc(c.slug)+'\')">'+esc(c.label)+'</button>';
+      }).join(''));
+    }
+  }
+  /* Every container above is parsed earlier in the document than this
+     script, so paint synchronously rather than waiting for
+     DOMContentLoaded — the tab-strip indicator is measured by a later
+     DOMContentLoaded handler and must find the tabs already in place. */
+  buildCategoryUI();
   function restoreScroll(){
     /* FIX: list now includes every overlay that locks body scroll —
-       notifPage, admPage, zeoPage and the injected comic viewer were
+       notifPage, admPage and zeoPage were
        missing, so closing any other panel while one of them was open
-       silently re-enabled background scrolling behind it. comicModal
-       reports its state via data-state (set in openComicById /
-       closeComicModal) since it toggles display, not a class. */
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','comicArtsPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','comicModal'];
+       silently re-enabled background scrolling behind it. */
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
     });
     if(!anyOpen){ document.body.style.overflow=''; document.documentElement.style.overflow=''; }
   }
+
+  /* ═══════════════════════════════════════════════════════════════
+     MERGED ARTWORKS TABLE
+     ───────────────────────────────────────────────────────────────
+     Everything lives in `artworks`. Rows carry kind='art'; the legacy
+     kind='comic' rows left over from the retired ComicArts feature are
+     filtered out of every query below, so they stay dormant in the DB
+     rather than surfacing as broken cards. An artwork with several
+     images keeps them in `pages` (see avBuildStrip). ── */
+  var ART_KIND_ART = 'art';
 
   async function loadDB(){
     if(!sb)return;
@@ -8007,20 +8132,9 @@ body{background:var(--bg);}
          homepage/gallery/hero-showcase arrays. Anything still
          status:'pending' (or rejected) is invisible here; it
          only shows up inside #admPage for a dev to review. */
-      const{data:imgs}=await sb.from('artworks').select('*').eq('status','approved').order('created_at',{ascending:false});
+      const{data:imgs}=await sb.from('artworks').select('*').eq('status','approved').eq('kind',ART_KIND_ART).order('created_at',{ascending:false});
       images=imgs||[];
     }catch(e){console.error(e);}
-
-    /* Site-wide comics — kept separate from the block above so that if
-       the comics table/policies aren't fully set up yet (ComicArts is
-       still in development), it can never break the artworks load.
-       The ComicArts tab just falls back to its empty state. */
-    try{
-      const{data:cmx,error:cmxErr}=await sb.from('comics').select('*').eq('status','approved').order('created_at',{ascending:false});
-      if(cmxErr) throw cmxErr;
-      comics=cmx||[];
-    }catch(e){ comics=[]; console.warn('ComicArts fetch skipped:',e.message||e); }
-    if(window.rebuildComicGrid) window.rebuildComicGrid(comics);
     /* Refresh the pending badge counts on the Admin Panel menu item, if a dev is signed in. */
     if(typeof admRefreshBadge==='function') admRefreshBadge();
   }
@@ -8082,10 +8196,16 @@ body{background:var(--bg);}
     const idStr=esc(String(img.id));
     /* alt text falls back to artwork title for image search */
     const altText=esc(img.name||'Untitled artwork');
+    /* Multi-image marker — mirrors the stacked-frames convention so the
+       grid hints that there's more than one image behind this card. */
+    let pgs=img.pages;
+    if(typeof pgs==='string'){ try{ pgs=JSON.parse(pgs); }catch(e){ pgs=null; } }
+    const extraCount=Array.isArray(pgs)?pgs.length:0;
+    const multiBadge=extraCount?`<span class="gMulti" aria-label="${extraCount+1} images">⧉ ${extraCount+1}</span>`:'';
     /* Wrap item in a crawlable <a href="/artwork/{id}"> — JS intercepts clicks for modal UX */
     return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
-        <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>
+        <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>${multiBadge}
         <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="object-position:${thumbPos}">
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
@@ -8094,6 +8214,7 @@ body{background:var(--bg);}
       <button class="gDel" onclick="delImg('${idStr}','${esc(img.storage_path||'')}',event)" title="Delete">✕</button>
     </div>`;
   }
+
 
   /* ── Shared sort utility — newest first, id as tie-breaker ── */
   function sortByNewest(arr){
@@ -8133,7 +8254,8 @@ body{background:var(--bg);}
     const c=document.getElementById('fgC');
     let imgs=[...images];
     if(filterCat!=='all')imgs=imgs.filter(i=>(catList(i.category).length?catList(i.category):['others']).includes(filterCat));
-    if(q)imgs=imgs.filter(i=>i.name.toLowerCase().includes(q));
+    if(q)imgs=imgs.filter(i=>(i.name||'').toLowerCase().includes(q));
+
     /* ── FIXED sort: guard against null timestamps; id tie-breaker for
        deterministic ordering when two items share the same created_at.
        'new' = newest first (desc); 'old' = oldest first (asc). ── */
@@ -8145,14 +8267,13 @@ body{background:var(--bg);}
       var idA=parseInt(a.id,10)||0,idB=parseInt(b.id,10)||0;
       return filterSrt==='new'?(idB-idA):(idA-idB);
     });
-    if(!imgs.length){c.innerHTML='<div class="fgEmp">NO ARTWORK FOUND</div>';return;}
+    if(!imgs.length){c.innerHTML='<div class="fgEmp">NO ARTWORK FOUND</div>';_fgSyncFilterBtn();return;}
 
     /* Clamp fgVisible so it never exceeds total */
     var showCount = Math.min(fgVisible, imgs.length);
     var visible = imgs.slice(0, showCount);
     var hasMore = showCount < imgs.length;
 
-    /* Rebuild grid */
     var gridHtml = `<div class="fgGrid">${visible.map(itemHTML).join('')}</div>`;
 
     /* Load More button — always adds 20 more */
@@ -8161,8 +8282,10 @@ body{background:var(--bg);}
       : '';
 
     c.innerHTML = gridHtml + moreHtml;
-
-    /* Update filter button active indicator */
+    _fgSyncFilterBtn();
+  }
+  /* Keep the filter button's "active" dot in sync with current sort/category. */
+  function _fgSyncFilterBtn(){
     const isFiltered=(filterCat!=='all'||filterSrt!=='new');
     const btn=document.getElementById('fgFltBtn');
     if(btn)btn.classList.toggle('active',isFiltered);
@@ -8199,7 +8322,11 @@ body{background:var(--bg);}
     closeFilterPanel();
     renderFG();
   }
-  function openFG(){document.getElementById('fg').classList.add('open');document.body.style.overflow='hidden';fgVisible=fgInitialLoad();renderFG();
+  function openFG(){
+    document.getElementById('fg').classList.add('open');
+    document.body.style.overflow='hidden';
+    fgVisible=fgInitialLoad();
+    renderFG();
   }
   function closeFG(){
     document.getElementById('fg').classList.remove('open');
@@ -8220,6 +8347,75 @@ body{background:var(--bg);}
   var avNavIndex = -1;
   var avZoomLevel = 1, avPanX = 0, avPanY = 0;
   var avCurrentArt = null;
+  /* ── Multi-image artworks ──
+     avImages holds every image for the item currently open in the
+     lightbox: the cover (image_url) first, then any extras from
+     `pages`. avNav()'s prev/next arrows page between *artworks*;
+     these page between images *within* one artwork. */
+  var avImages = [];
+  var avImgIdx = 0;
+
+  /* Cover first, then extras, de-duplicated. Falls back to the raw src
+     when we have no row object (e.g. a card clicked before load). */
+  function avImageList(art, src){
+    var list = [];
+    if(art && art.image_url) list.push(art.image_url);
+    else if(src) list.push(src);
+    var pages = art && art.pages;
+    if(typeof pages === 'string'){ try{ pages = JSON.parse(pages); }catch(e){ pages = null; } }
+    if(Array.isArray(pages)){
+      pages.forEach(function(u){ if(u && list.indexOf(u) === -1) list.push(u); });
+    }
+    return list;
+  }
+  /* Build the thumbnail strip. openLB has already painted image 0, so
+     this only sets state + chrome — it never re-loads the main image. */
+  function avBuildStrip(art, src){
+    avImages = avImageList(art, src);
+    avImgIdx = 0;
+    var strip = document.getElementById('avStrip');
+    var cnt   = document.getElementById('avImgCount');
+    if(!strip) return;
+    if(avImages.length < 2){
+      strip.hidden = true; strip.innerHTML = '';
+      if(cnt) cnt.hidden = true;
+      return;
+    }
+    strip.hidden = false;
+    strip.innerHTML = avImages.map(function(u,n){
+      return '<button class="avThumb'+(n===0?' active':'')+'" role="tab" aria-selected="'+(n===0?'true':'false')+'"'+
+             ' onclick="avShowImage('+n+')" aria-label="Image '+(n+1)+' of '+avImages.length+'">'+
+             '<img src="'+esc(getThumbnailUrl(u))+'" alt="" loading="lazy"></button>';
+    }).join('');
+    if(cnt){ cnt.hidden = false; cnt.textContent = '1 / '+avImages.length; }
+  }
+  /* Swap the main image. Download always follows the visible image, so
+     currentLightboxImageSrc is repointed at the untouched original. */
+  function avShowImage(i){
+    if(!avImages.length) return;
+    avImgIdx = Math.max(0, Math.min(i, avImages.length - 1));
+    var url = avImages[avImgIdx];
+    currentLightboxImageSrc = url;
+    var viewport = document.getElementById('avImgViewport');
+    var imgEl    = document.getElementById('lbImg');
+    if(viewport) viewport.classList.add('loading');
+    avResetZoom();
+    if(imgEl) imgEl.src = getViewUrl(url);
+    var strip = document.getElementById('avStrip');
+    if(strip){
+      Array.prototype.forEach.call(strip.children, function(btn,n){
+        btn.classList.toggle('active', n === avImgIdx);
+        btn.setAttribute('aria-selected', n === avImgIdx ? 'true' : 'false');
+      });
+      /* With a lot of images the active thumb can sit off-screen. */
+      var activeThumb = strip.children[avImgIdx];
+      if(activeThumb && activeThumb.scrollIntoView){
+        activeThumb.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+      }
+    }
+    var cnt = document.getElementById('avImgCount');
+    if(cnt){ cnt.textContent = (avImgIdx+1)+' / '+avImages.length; cnt.hidden = avImages.length < 2; }
+  }
 
   function avCap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
 
@@ -8431,6 +8627,10 @@ body{background:var(--bg);}
     };
     imgEl.onerror=function(){ if(viewport) viewport.classList.remove('loading'); };
 
+    /* Multi-image support — populates the thumbnail strip + counter, or
+       hides both when this artwork has a single image. */
+    avBuildStrip(art, src);
+
     document.getElementById('lbNm').textContent=name||'';
 
     var tags = art ? ((art.tags && art.tags.length) ? art.tags : catList(art.category)) : (cat ? [cat] : []);
@@ -8610,20 +8810,16 @@ body{background:var(--bg);}
   window.addEventListener('popstate', function(){
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
-    var cm = window.location.pathname.match(/^\/comic\/([^/]+)\/?$/);
     if(m){
       openArtworkById(m[1], false);
     } else if(pm){
       openProfileByUsername(decodeURIComponent(pm[1]), false);
-    } else if(cm){
-      openComicById(cm[1], false);
     } else if(window.location.pathname === '/login'){
       openAuthMod();
     } else {
       closeLB();
       resetArtworkSEO();
       if(document.getElementById('profilePage').classList.contains('open')) closeProfilePage(false);
-      closeComicModal();
       closeAuthMod(false);
     }
   });
@@ -8847,7 +9043,7 @@ body{background:var(--bg);}
     }
   }
 
-  /* ── Upload dropdown (Upload Artwork / Upload Comic) ── */
+  /* ── Upload dropdown ── */
   var _pfUpMenuOpen = false;
 
   function openPfUploadMenu() {
@@ -9396,7 +9592,7 @@ body{background:var(--bg);}
     if(!disp)return;
     const selected=[...document.querySelectorAll('#upCatBoxes input[type=checkbox]:checked')].map(cb=>cb.value);
     if(!selected.length){disp.innerHTML='<span style="font-size:.74rem;color:rgba(var(--tx2-rgb),.4);">None selected</span>';return;}
-    disp.innerHTML=selected.map(v=>`<span class="upTagChip" style="cursor:default;">${v.charAt(0).toUpperCase()+v.slice(1)}</span>`).join('');
+    disp.innerHTML=selected.map(v=>`<span class="upTagChip" style="cursor:default;">${esc(catLabel(v))}</span>`).join('');
   }
 
   function openUp(){
@@ -9468,7 +9664,7 @@ body{background:var(--bg);}
         const ext=safeSlug(upFile.name.split('.').pop(), 8) || 'jpg';
         const path=`artworks/${Date.now()}_${safeSlug(nm)}.${ext}`;
         const publicUrl = await s3Upload(BUCKET,path,upFile);
-        const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null,software:software||null,status:'approved'}).select();
+        const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null,software:software||null,kind:ART_KIND_ART,status:'approved'}).select();
         if(de)throw de;
         images.unshift(rows[0]);
         renderHome();
@@ -9507,7 +9703,6 @@ body{background:var(--bg);}
      │   user_id only; never exposes edit/delete to the owner)
      ├─ Admin (isDev) sees Edit/Delete on every card regardless
      │   of whose profile is being viewed
-     └─ Minimal comic viewer (#comicModal) for "full comic page"
      ========================================================= */
   var PF_PAGE_SIZE = 12;
   var pf = {
@@ -9515,8 +9710,6 @@ body{background:var(--bg);}
     isOwner: false,
     tab: 'gallery',
     galleryRows: [], galleryPage: 0, galleryDone: false,
-    comicRows: [],   comicPage: 0,   comicDone: false,
-    upMode: 'art',         // 'art' | 'comic'
     upFile: null,
     upThumbFocus: null,    // {x,y} percentages set by confirmPfCrop()
     upPageFiles: []
@@ -9632,14 +9825,12 @@ body{background:var(--bg);}
       pfPreloadImage(currentUserAvatarUrl);
     }
     pf.profile=null; pf.galleryRows=[]; pf.galleryPage=0; pf.galleryDone=false;
-    pf.comicRows=[]; pf.comicPage=0; pf.comicDone=false;
     document.getElementById('pfUsername').textContent='Loading…';
     document.getElementById('pfAvatarLetter').textContent='?';
     document.getElementById('pfAvatarImg').style.display='none';
     document.getElementById('pfBannerImg').style.display='none';
     document.getElementById('pfJoined').textContent='';
     document.getElementById('pfGalleryGrid').innerHTML='';
-    document.getElementById('pfComicGrid').innerHTML='';
     pfSwitchTab('gallery');
     try{
       /* maybeSingle(): a missing row shouldn't surface as an error —
@@ -9682,7 +9873,6 @@ body{background:var(--bg);}
       pfRenderConnect();
       pfLoadStats();
       pfLoadMoreGallery();
-      pfLoadMoreComic();
       if(pushUrl!==false && window.location.pathname !== '/profile/'+encodeURIComponent(username)){
         try{ history.pushState({profileUser:username},'','/profile/'+encodeURIComponent(username)); }catch(e){}
       }
@@ -9706,7 +9896,7 @@ body{background:var(--bg);}
 
   function pfSwitchTab(tab){
     pf.tab=tab;
-    ['gallery','comic','about'].forEach(function(t){
+    ['gallery','about'].forEach(function(t){
       document.getElementById('pfTab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
       document.getElementById('pfPanel'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
     });
@@ -9717,7 +9907,7 @@ body{background:var(--bg);}
     if(!pf.profile || pf.galleryDone) return;
     var from = pf.galleryPage * PF_PAGE_SIZE, to = from + PF_PAGE_SIZE - 1;
     try{
-      const{data,error}=await sb.from('artworks').select('*').eq('user_id',pf.profile.id).order('created_at',{ascending:false}).range(from,to);
+      const{data,error}=await sb.from('artworks').select('*').eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART).order('created_at',{ascending:false}).range(from,to);
       if(error) throw error;
       var rows = data||[];
       pf.galleryRows = pf.galleryRows.concat(rows);
@@ -9768,150 +9958,11 @@ body{background:var(--bg);}
     openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, pf.galleryRows);
   }
 
-  /* ── COMIC tab ── */
-  async function pfLoadMoreComic(){
-    if(!pf.profile || pf.comicDone) return;
-    var from = pf.comicPage * PF_PAGE_SIZE, to = from + PF_PAGE_SIZE - 1;
-    try{
-      const{data,error}=await sb.from('comics').select('*').eq('user_id',pf.profile.id).order('created_at',{ascending:false}).range(from,to);
-      if(error) throw error;
-      var rows = data||[];
-      pf.comicRows = pf.comicRows.concat(rows);
-      pf.comicPage++;
-      if(rows.length < PF_PAGE_SIZE) pf.comicDone = true;
-      pfRenderComic();
-    }catch(e){ console.error('Error: '+e.message); }
-  }
-  function pfRenderComic(){
-    var grid = document.getElementById('pfComicGrid');
-    grid.innerHTML = pf.comicRows.map(pfComicCardHTML).join('');
-    document.getElementById('pfComicEmpty').style.display = pf.comicRows.length ? 'none' : '';
-    document.getElementById('pfComicLoadMoreWrap').style.display = pf.comicDone ? 'none' : '';
-  }
-  function pfComicCardHTML(c){
-    var tags = c.tags||[];
-    var adminRow = isDev ? (
-      '<div class="pfCardAdmin" onclick="event.stopPropagation()">'+
-      '<button onclick="openEditComic(\''+c.id+'\',event)">EDIT</button>'+
-      '<button class="danger" onclick="delComic(\''+c.id+'\',event)">DELETE</button>'+
-      '</div>'
-    ) : '';
-    return '<div class="awCard" onclick="openComicById(\''+c.id+'\')">'+
-      '<div class="awImgWrap"><img loading="lazy" src="'+esc(getThumbnailUrl(c.cover_image_url))+'" alt="'+esc(c.title||'')+'" style="object-position:'+(c.cover_thumb_x!=null?c.cover_thumb_x:50)+'% '+(c.cover_thumb_y!=null?c.cover_thumb_y:50)+'%"></div>'+
-      '<div class="pfCardMeta">'+
-        '<div class="pfCardTitle">'+esc(c.title||'Untitled')+'</div>'+
-        '<div class="pfCardDate">'+pfFormatDate(c.created_at)+'</div>'+
-        (tags.length ? '<div class="pfCardTags">'+tags.map(function(t){return '<span class="pfTagChip">'+esc(t)+'</span>';}).join('')+'</div>' : '')+
-        adminRow+
-      '</div></div>';
-  }
-  async function delComic(id,e){
-    if(e) e.stopPropagation();
-    if(!isAdm || !confirm('Delete this comic?')) return;
-    try{
-      var c = pf.comicRows.find(function(r){return String(r.id)===String(id);});
-      if(c && c.cover_storage_path) await s3Delete(BUCKET,c.cover_storage_path);
-      await sb.from('comics').delete().eq('id',id);
-      pf.comicRows = pf.comicRows.filter(function(r){return String(r.id)!==String(id);});
-      pfRenderComic();
-      showToast('Comic removed');
-    }catch(err){ console.error('Error: '+err.message); }
-  }
-  function openEditComic(id,e){
-    if(e) e.stopPropagation();
-    if(!isAdm) return;
-    var c = pf.comicRows.find(function(r){return String(r.id)===String(id);});
-    if(!c){ showToast('Comic not found'); return; }
-    openPfUpload('comic');
-    document.getElementById('pfUpEditId').value = String(c.id);
-    document.getElementById('pfUpTitle').textContent = 'Edit Comic';
-    document.getElementById('pfUpNm').value = c.title||'';
-    document.getElementById('pfUpDesc').value = c.description||'';
-    pfUpdateCount('pfUpNm','pfUpNmCount',100);
-    pfUpdateCount('pfUpDesc','pfUpDescCount',1000);
-    pfSetTagsFromArray(c.tags||[]);
-    document.getElementById('pfDz').style.display='none';
-    document.getElementById('pfComicPagesWrap').style.display='none';
-    document.getElementById('pfUpBtn').textContent='📤 Save Changes';
-  }
-
-  /* ── Minimal comic viewer (#comicModal injected on demand) ── */
-  function ensureComicModal(){
-    if(document.getElementById('comicModal')) return;
-    var div = document.createElement('div');
-    div.id='comicModal';
-    div.setAttribute('role','dialog'); div.setAttribute('aria-modal','true');
-    div.style.cssText='position:fixed;inset:0;z-index:600;background:rgba(10,10,14,.92);display:none;align-items:center;justify-content:center;padding:1.2rem;';
-    div.innerHTML='<div class="amCard" style="max-width:560px;width:100%;max-height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">'+
-      '<button class="amX lbX" onclick="closeComicModal()" aria-label="Close">✕</button>'+
-      '<div class="amImgWrap"><img id="cmImg" alt="" style="width:100%;display:block;"/></div>'+
-      '<div class="amInfo">'+
-        '<div class="amName" id="cmTitle"></div>'+
-        '<div class="amDiv"></div>'+
-        '<div class="amDesc" id="cmDesc"></div>'+
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:.8rem;font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;color:var(--txd);">'+
-          '<button class="mBtn sec" style="width:auto;padding:.4rem .9rem;" onclick="cmNav(-1)">‹ PREV</button>'+
-          '<span id="cmCounter">1 / 1</span>'+
-          '<button class="mBtn sec" style="width:auto;padding:.4rem .9rem;" onclick="cmNav(1)">NEXT ›</button>'+
-        '</div>'+
-      '</div></div>';
-    document.body.appendChild(div);
-    div.addEventListener('click', function(e){ if(e.target===div) closeComicModal(); });
-  }
-  var cmState = { pages: [], idx: 0 };
-  async function openComicById(id, pushUrl){
-    if(!sb) return;
-    ensureComicModal();
-    var c = pf.comicRows.find(function(r){return String(r.id)===String(id);});
-    try{
-      if(!c){
-        const{data,error}=await sb.from('comics').select('*').eq('id',id).single();
-        if(error||!data){ showToast('Comic not found'); return; }
-        c = data;
-      }
-    }catch(e){ console.error('Error: '+e.message); return; }
-    cmState.pages = (c.pages && c.pages.length) ? c.pages : [c.cover_image_url];
-    cmState.idx = 0;
-    document.getElementById('cmTitle').textContent = c.title||'Untitled';
-    document.getElementById('cmDesc').textContent = c.description||'';
-    cmRenderPage();
-    var modal = document.getElementById('comicModal');
-    modal.style.display='flex';
-    modal.setAttribute('data-state','open');
-    document.body.style.overflow='hidden';
-    if(pushUrl!==false){
-      try{ history.pushState({comicId:id},'','/comic/'+id); }catch(e){}
-    }
-  }
-  function cmRenderPage(){
-    document.getElementById('cmImg').src = getViewUrl(cmState.pages[cmState.idx]);
-    document.getElementById('cmCounter').textContent = (cmState.idx+1)+' / '+cmState.pages.length;
-  }
-  function cmNav(dir){
-    var n = cmState.idx + dir;
-    if(n<0 || n>=cmState.pages.length) return;
-    cmState.idx = n; cmRenderPage();
-  }
-  function closeComicModal(){
-    var modal = document.getElementById('comicModal');
-    if(!modal) return;
-    modal.style.display='none';
-    modal.setAttribute('data-state','closed');
-    restoreScroll();
-    if(/^\/comic\//.test(window.location.pathname)){
-      try{ history.pushState({},'', '/'); }catch(e){}
-    }
-  }
-
   /* ── ABOUT tab — stats + bio ── */
   async function pfLoadStats(){
     try{
-      const[artC,comicC]=await Promise.all([
-        sb.from('artworks').select('id',{count:'exact',head:true}).eq('user_id',pf.profile.id),
-        sb.from('comics').select('id',{count:'exact',head:true}).eq('user_id',pf.profile.id)
-      ]);
+      const artC = await sb.from('artworks').select('id',{count:'exact',head:true}).eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART);
       document.getElementById('pfStatArt').textContent = artC.count||0;
-      document.getElementById('pfStatComic').textContent = comicC.count||0;
     }catch(e){ /* non-fatal */ }
   }
   function pfRenderBio(){
@@ -9980,17 +10031,29 @@ body{background:var(--bg);}
   function closePfCatDd(){
     document.getElementById('pfUpCatDd').classList.remove('open');
   }
-  var PF_CATS = ['others','cars','characters','landscapes','sketches'];
+  var PF_CATS = CAT_SLUGS;
   function updatePfCatDisplay(){
-    var checked = PF_CATS.filter(function(c){ return document.getElementById('pfUpCat_'+c).checked; });
-    if(!checked.length){ checked=['others']; document.getElementById('pfUpCat_others').checked = true; }
+    var checked = PF_CATS.filter(function(c){
+      var el = document.getElementById('pfUpCat_'+c);
+      return el && el.checked;
+    });
+    if(!checked.length){
+      checked=['others'];
+      var oth = document.getElementById('pfUpCat_others');
+      if(oth) oth.checked = true;
+    }
     pf.upCats = checked;
-    var lbl = checked.map(function(c){ return c.charAt(0).toUpperCase()+c.slice(1); }).join(', ');
+    /* Show the real labels ("Fan Art", "3D Art"), not a naive
+       capitalisation of the slug ("Fan-art", "3d-art"). */
+    var lbl = checked.map(catLabel).join(', ');
     document.getElementById('pfUpCatTriggerLbl').textContent = lbl;
   }
   function pfSetCats(cats){
     var list = (cats && cats.length) ? cats : ['others'];
-    PF_CATS.forEach(function(c){ document.getElementById('pfUpCat_'+c).checked = list.indexOf(c)!==-1; });
+    PF_CATS.forEach(function(c){
+      var el = document.getElementById('pfUpCat_'+c);
+      if(el) el.checked = list.indexOf(c)!==-1;
+    });
     updatePfCatDisplay();
   }
 
@@ -10064,21 +10127,24 @@ body{background:var(--bg);}
     }
   }
 
-  function openPfUpload(mode){
+  function openPfUpload(){
     if(!currentUser){ showToast('Sign in to upload'); openAuthMod(); return; }
     if(!pf.isOwner){ showToast('You can only upload to your own profile'); return; }
-    pf.upMode = mode;
     pf.upFile = null;
     pf.upPageFiles = [];
     document.getElementById('pfUpEditId').value = '';
-    document.getElementById('pfUpTitle').textContent = mode==='comic' ? 'Upload Comic' : 'Upload Artwork';
-    document.getElementById('pfUpSubtitle').textContent = mode==='comic'
-      ? 'Add a new comic to your profile. Cover + page images, JPG/PNG/WEBP/GIF.'
-      : 'Share your creativity with artists around the world.';
-    document.getElementById('pfDzTxt').textContent = mode==='comic' ? 'Drag & drop your cover image here' : 'Drag & drop your artwork here';
-    document.getElementById('pfUpCatField').style.display = mode==='comic' ? 'none' : '';
-    document.getElementById('pfComicPagesWrap').style.display = mode==='comic' ? '' : 'none';
-    document.getElementById('pfUpSoftwareField').style.display = mode==='comic' ? 'none' : '';
+    document.getElementById('pfUpTitle').textContent = 'Upload Artwork';
+    document.getElementById('pfUpSubtitle').textContent = 'Share your creativity with artists around the world.';
+    document.getElementById('pfDzTxt').textContent = 'Drag & drop your artwork here';
+    document.getElementById('pfUpCatField').style.display = '';
+    /* Optional extra images — the first image above stays the cover
+       and thumbnail; extras are stored in `pages` and shown as a
+       thumbnail strip in the lightbox. */
+    document.getElementById('pfComicPagesWrap').style.display = '';
+    document.getElementById('pfDzPagesIco').textContent   = '🖼';
+    document.getElementById('pfDzPagesTitle').textContent = 'Add more images (optional)';
+    document.getElementById('pfDzPagesSub').textContent   = 'The image above stays the cover. Add as many extras as you like.';
+    document.getElementById('pfUpSoftwareField').style.display = '';
     pfSetSoftware('');
     document.getElementById('pfDz').style.display='';
     document.getElementById('pfUpNm').value='';
@@ -10090,9 +10156,10 @@ body{background:var(--bg);}
     closePfCatDd();
     document.getElementById('pfUpPrev').style.display='none';
     document.getElementById('pfPagesPreview').innerHTML='';
-    document.getElementById('pfUpBtn').textContent = mode==='comic' ? '📤 Upload Comic' : '📤 Upload Artwork';
+    document.getElementById('pfUpBtn').textContent = '📤 Upload Artwork';
     document.getElementById('pfUpMod').classList.add('open');
   }
+
   function closePfUpload(){
     document.getElementById('pfUpMod').classList.remove('open');
     closePfCatDd();
@@ -10231,8 +10298,8 @@ body{background:var(--bg);}
     var editIdEl = document.getElementById('pfUpEditId');
     var editId = editIdEl ? editIdEl.value : '';
     /* New uploads must be to the owner's own profile; edits reaching
-       here have already been ownership-checked by mwEditArt/mwEditComic
-       (or openEditComic), and are enforced for real by the "own rows
+       here have already been ownership-checked by mwEditArt,
+       and are enforced for real by the "own rows
        only" RLS update policy — so editId doesn't require pf.isOwner. */
     if(!editId && !pf.isOwner){ showToast('You can only upload to your own profile'); return; }
     var nm = document.getElementById('pfUpNm').value.trim();
@@ -10241,11 +10308,11 @@ body{background:var(--bg);}
     var tags = document.getElementById('pfUpTags').value.split(',').map(function(t){return t.trim();}).filter(Boolean);
     if(!nm){ showToast('Enter a title'); return; }
     if(!editId && !pf.upFile){ showToast('Select an image'); return; }
-    if(pf.upMode==='art' && !software){ showToast('Select the software used'); return; }
+    if(!software){ showToast('Select the software used'); return; }
     var btn = document.getElementById('pfUpBtn');
     btn.disabled = true;
     try{
-      if(pf.upMode==='art'){
+      {
         if(editId){
           /* Edit reaches here from either the owner's profile-page
              upload menu, or the Edit My Work page (mwEditArt) —
@@ -10271,7 +10338,12 @@ body{background:var(--bg);}
           window.uvUI.show();
           var vres;
           try{
-            vres = await window.UploadVerifier.verify(pf.upFile, { sb:sb, userId:currentUser.id, kind:'art', onStep:window.uvUI.step });
+            /* Pass extras through the same AI/duplicate scan the comic
+               path uses. Only sent when there are extras, so a plain
+               single-image upload verifies exactly as it did before. */
+            var vOpts = { sb:sb, userId:currentUser.id, kind:'art', onStep:window.uvUI.step };
+            if(pf.upPageFiles.length) vOpts.pages = pf.upPageFiles;
+            vres = await window.UploadVerifier.verify(pf.upFile, vOpts);
           }catch(vErr){
             window.uvUI.fail('Verification error: '+(vErr && vErr.message ? vErr.message : vErr));
             return;
@@ -10283,12 +10355,24 @@ body{background:var(--bg);}
           var path = 'artworks/'+currentUser.id+'/'+Date.now()+'_'+safeSlug(nm)+'.'+ext;
           const publicUrl = await s3Upload(BUCKET,path,pf.upFile);
           var artThumb = pf.upThumbFocus || {x:50,y:50};
+          /* Extra images (optional) — same bucket, same 'artworks/' key
+             prefix as the cover. Stored in `pages`, exactly like comic
+             pages, so the viewer can swipe through them. Left null when
+             the artist uploaded a single image. */
+          var artPageUrls = [];
+          for(var ai=0; ai<pf.upPageFiles.length; ai++){
+            var af = pf.upPageFiles[ai];
+            var aext = safeSlug(af.name.split('.').pop(), 8) || 'jpg';
+            var apath = 'artworks/'+currentUser.id+'/'+Date.now()+'_i'+ai+'.'+aext;
+            var aUrl = await s3Upload(BUCKET,apath,af);
+            artPageUrls.push(aUrl);
+          }
           /* status:'pending' — hidden from the public gallery until a
              dev reviews it in #admPage. Not added to the global
              `images` array (that array only ever holds approved work);
              it IS added to pf.galleryRows so the owner can see it
              sitting in their own profile while it's under review. */
-          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,thumb_x:artThumb.x,thumb_y:artThumb.y,user_id:currentUser.id,software:software||null,phash:vres.phash||null,status:artStatus}).select();
+          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,thumb_x:artThumb.x,thumb_y:artThumb.y,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:software||null,phash:vres.phash||null,status:artStatus}).select();
           if(de) throw de;
           pf.galleryRows.unshift(rows[0]);
           pfRenderGallery();
@@ -10302,63 +10386,9 @@ body{background:var(--bg);}
           }
           closePfUpload(); showToast(artStatus==='approved' ? 'Artwork published \u2726' : 'Flagged for review \u2014 a moderator will confirm it shortly');
         }
-      } else {
-        if(editId){
-          btn.textContent='SAVING…';
-          const{error}=await sb.from('comics').update({title:nm,description:desc||null,tags:tags}).eq('id',editId);
-          if(error) throw error;
-          var cidx = pf.comicRows.findIndex(function(r){return String(r.id)===String(editId);});
-          if(cidx!==-1){ pf.comicRows[cidx].title=nm; pf.comicRows[cidx].description=desc; pf.comicRows[cidx].tags=tags; }
-          var mwCidx = mw.comic.findIndex(function(r){return String(r.id)===String(editId);});
-          if(mwCidx!==-1){ mw.comic[mwCidx].title=nm; mw.comic[mwCidx].description=desc; mw.comic[mwCidx].tags=tags; }
-          pfRenderComic();
-          if(typeof mwRenderComic==='function') mwRenderComic();
-          closePfUpload(); showToast('Comic updated ✦');
-        } else {
-          if(!pf.upPageFiles.length){ showToast('Add at least one page image'); btn.disabled=false; return; }
-          btn.textContent='UPLOADING…';
-          /* ── Automated pre-upload verification (uploadVerifier.js) ──
-             Verifies the cover for rate/duplicate/AI and AI-scans every
-             page. Same verdict mapping as artworks (approve/review/block). */
-          if(!window.UploadVerifier){ showToast('Verifier not loaded — please refresh and try again'); return; }
-          window.uvUI.show();
-          var cvres;
-          try{
-            cvres = await window.UploadVerifier.verify(pf.upFile, { sb:sb, userId:currentUser.id, kind:'comic', pages:pf.upPageFiles, onStep:window.uvUI.step });
-          }catch(vErr){
-            window.uvUI.fail('Verification error: '+(vErr && vErr.message ? vErr.message : vErr));
-            return;
-          }
-          if(cvres.verdict==='block'){ window.uvUI.fail(cvres.reason || 'This upload was blocked.'); return; }
-          window.uvUI.hide();
-          var comicStatus = (cvres.verdict==='review') ? 'pending' : 'approved';
-          var cext = safeSlug(pf.upFile.name.split('.').pop(), 8) || 'jpg';
-          var cpath = 'comics/'+currentUser.id+'/'+Date.now()+'_cover.'+cext;
-          const coverUrl = await s3Upload(BUCKET,cpath,pf.upFile);
-          var coverThumb = pf.upThumbFocus || {x:50,y:50};
-          var pageUrls = [];
-          for(var i=0;i<pf.upPageFiles.length;i++){
-            var pf_ = pf.upPageFiles[i];
-            var pext = safeSlug(pf_.name.split('.').pop(), 8) || 'jpg';
-            var ppath = 'comics/'+currentUser.id+'/'+Date.now()+'_p'+i+'.'+pext;
-            const pageUrl = await s3Upload(BUCKET,ppath,pf_);
-            pageUrls.push(pageUrl);
-          }
-          const{data:rows,error:de}=await sb.from('comics').insert({title:nm,description:desc||null,tags:tags,cover_image_url:coverUrl,cover_storage_path:cpath,cover_thumb_x:coverThumb.x,cover_thumb_y:coverThumb.y,pages:pageUrls,user_id:currentUser.id,phash:cvres.phash||null,status:comicStatus}).select();
-          if(de) throw de;
-          pf.comicRows.unshift(rows[0]);
-          pfRenderComic();
-          document.getElementById('pfStatComic').textContent = (parseInt(document.getElementById('pfStatComic').textContent,10)||0)+1;
-          if(comicStatus==='approved'){
-            if(rows[0] && comics.findIndex(function(c){return String(c.id)===String(rows[0].id);})===-1) comics.unshift(rows[0]);
-            if(window.rebuildComicGrid) window.rebuildComicGrid(comics);
-            if(typeof renderHome==='function') renderHome();
-          }
-          closePfUpload(); showToast(comicStatus==='approved' ? 'Comic published \u2726' : 'Flagged for review \u2014 a moderator will confirm it shortly');
-        }
       }
     }catch(err){ console.error('Error: '+err.message); showToast(err.message || 'Upload failed'); }
-    finally{ btn.disabled=false; btn.textContent = editId ? '📤 Save Changes' : (pf.upMode==='comic' ? '📤 Upload Comic' : '📤 Upload Artwork'); }
+    finally{ btn.disabled=false; btn.textContent = editId ? '📤 Save Changes' : '📤 Upload Artwork'; }
   }
 
   /* =========================================================
@@ -10698,9 +10728,9 @@ body{background:var(--bg);}
     finally{ btn.disabled=false; btn.textContent='SAVE CHANGES'; }
   }
 
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closePfMenu();closePfUploadMenu();closeSubscription();closeSubModal();closeComicArts();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closePfMenu();closePfUploadMenu();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     /* FIX: these overlays previously ignored Escape entirely */
-    closeUp();cancelPfCrop();closeComicModal();closeNotifPage();closeAdmPage();closeMyWorkPage();ahsCloseEdit();
+    closeUp();cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();ahsCloseEdit();
   }});
 
   /* ── BOTTOM NAVIGATION ──────────────────────────────────
@@ -10710,7 +10740,7 @@ body{background:var(--bg);}
   function closeMenu(){}
 
   /* ── Active-state highlighting for the 5 bottom nav items ── */
-  var BN_IDS = ['bnHome','bnGallery','bnComic','bnCommunity','bnProfile'];
+  var BN_IDS = ['bnHome','bnGallery','bnUpload','bnCommunity','bnProfile'];
   function bnSetActive(id){
     BN_IDS.forEach(function(bid){
       var el = document.getElementById(bid);
@@ -10723,7 +10753,6 @@ body{background:var(--bg);}
      screen visible at a time, never stacked on top of each other. */
   function bnCloseAllSections(){
     closeFG();
-    closeComicArts();
     closeCommunityPage();
     closeProfilePage();
     closeSubscription();
@@ -10748,10 +10777,13 @@ body{background:var(--bg);}
     ddOpenGallery();
     bnSetActive('bnGallery');
   }
-  function bnGoComic(){
-    bnCloseAllSections();
-    openComicArts();
-    bnSetActive('bnComic');
+  /* Upload (+) — opens the artwork upload modal. It's an action, not a
+     destination, so it deliberately does NOT close the current section or
+     take over the active-tab highlight; the upload modal simply layers on
+     top of wherever the user already is. openUp() keeps its own gate
+     (dev/admin only — guests get a sign-in prompt). */
+  function bnGoUpload(){
+    openUp();
   }
   function bnGoCommunity(){
     bnCloseAllSections();
@@ -10761,7 +10793,6 @@ body{background:var(--bg);}
   function bnGoProfile(e){
     if(e) e.stopPropagation();
     closeFG();
-    closeComicArts();
     closeCommunityPage();
     closeSubscription();
     if(currentUser){ closeAuthMod(); openOwnProfile(); } else { closeProfilePage(); openAuthMod(); }
@@ -10803,7 +10834,7 @@ body{background:var(--bg);}
      inserted with status:'pending' and is invisible everywhere on
      the public site (loadDB only ever pulls status:'approved') —
      it only shows up here for a dev to approve or reject. */
-  var admPending = { art: [], comic: [] };
+  var admPending = { art: [] };
   var admTab = 'art';
 
   function openAdmPage(){
@@ -11034,7 +11065,7 @@ body{background:var(--bg);}
 
   function admSwitchTab(tab){
     admTab = tab;
-    ['Art','Comic','Noti'].forEach(function(t){
+    ['Art','Noti'].forEach(function(t){
       var key = t.toLowerCase()==='noti' ? 'noti' : t.toLowerCase();
       document.getElementById('admTab'+t).classList.toggle('active', key===tab);
       document.getElementById('admPanel'+t).classList.toggle('active', key===tab);
@@ -11045,17 +11076,11 @@ body{background:var(--bg);}
   async function admLoadPending(){
     if(!sb) return;
     try{
-      const[{data:art,error:ae},{data:cmx,error:ce}]=await Promise.all([
-        sb.from('artworks').select('*').eq('status','pending').order('created_at',{ascending:true}),
-        sb.from('comics').select('*').eq('status','pending').order('created_at',{ascending:true})
-      ]);
+      const{data:art,error:ae} = await sb.from('artworks').select('*').eq('status','pending').eq('kind',ART_KIND_ART).order('created_at',{ascending:true});
       if(ae) throw ae;
-      if(ce) throw ce;
       admPending.art = art||[];
-      admPending.comic = cmx||[];
-    }catch(e){ console.error('Error loading queue: '+e.message); admPending={art:[],comic:[]}; }
+    }catch(e){ console.error('Error loading queue: '+e.message); admPending={art:[]}; }
     admRenderArt();
-    admRenderComic();
     admRefreshBadge();
   }
 
@@ -11065,24 +11090,24 @@ body{background:var(--bg);}
   function admRefreshBadge(){
     var btn = document.getElementById('smAdmBtn');
     if(!btn || !isDev) return;
-    var n = admPending.art.length + admPending.comic.length;
+    var n = admPending.art.length;
     btn.textContent = (isAdm?'★ ':'⚙ ')+'ADMIN PANEL' + (n ? ' ('+n+')' : '');
   }
 
-  function admCardHTML(kind, row){
+  function admCardHTML(row){
     var idStr = esc(String(row.id));
-    var img = esc(getThumbnailUrl(kind==='art' ? row.image_url : row.cover_image_url));
-    var tx = kind==='art' ? (row.thumb_x!=null?row.thumb_x:50) : (row.cover_thumb_x!=null?row.cover_thumb_x:50);
-    var ty = kind==='art' ? (row.thumb_y!=null?row.thumb_y:50) : (row.cover_thumb_y!=null?row.cover_thumb_y:50);
-    var title = esc(kind==='art' ? (row.name||'Untitled') : (row.title||'Untitled'));
+    var img = esc(getThumbnailUrl(row.image_url));
+    var tx = row.thumb_x!=null?row.thumb_x:50;
+    var ty = row.thumb_y!=null?row.thumb_y:50;
+    var title = esc(row.name||'Untitled');
     return '<div class="admCard" data-id="'+idStr+'">'+
       '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="object-position:'+tx+'% '+ty+'%">'+
       '<div class="admCardBody">'+
         '<div class="admCardTitle">'+title+'</div>'+
         '<div class="admCardMeta">Submitted '+(row.created_at?new Date(row.created_at).toLocaleDateString():'')+'</div>'+
         '<div class="admCardActions">'+
-          '<button class="admApproveBtn" onclick="admApprove(\''+kind+'\',\''+idStr+'\')">✓ Approve</button>'+
-          '<button class="admRejectBtn" onclick="admReject(\''+kind+'\',\''+idStr+'\')">✕ Reject</button>'+
+          '<button class="admApproveBtn" onclick="admApprove(\''+idStr+'\')">✓ Approve</button>'+
+          '<button class="admRejectBtn" onclick="admReject(\''+idStr+'\')">✕ Reject</button>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -11092,85 +11117,60 @@ body{background:var(--bg);}
     var grid = document.getElementById('admArtGrid'), empty = document.getElementById('admArtEmpty');
     var count = document.getElementById('admCountArt');
     if(!grid) return;
-    grid.innerHTML = admPending.art.map(function(r){ return admCardHTML('art', r); }).join('');
+    grid.innerHTML = admPending.art.map(admCardHTML).join('');
     empty.style.display = admPending.art.length ? 'none' : 'block';
     if(count){ count.textContent = admPending.art.length; count.style.display = admPending.art.length ? 'inline-flex' : 'none'; }
   }
 
-  function admRenderComic(){
-    var grid = document.getElementById('admComicGrid'), empty = document.getElementById('admComicEmpty');
-    var count = document.getElementById('admCountComic');
-    if(!grid) return;
-    grid.innerHTML = admPending.comic.map(function(r){ return admCardHTML('comic', r); }).join('');
-    empty.style.display = admPending.comic.length ? 'none' : 'block';
-    if(count){ count.textContent = admPending.comic.length; count.style.display = admPending.comic.length ? 'inline-flex' : 'none'; }
-  }
 
   /* Approve — flips status to 'approved'. RLS restricts this update
      to devs only, same pattern already used for edit/delete. Once
      approved, the item is spliced into the public images/comics
      arrays so it appears on the site immediately without a reload. */
-  async function admApprove(kind, id){
-    var table = kind==='art' ? 'artworks' : 'comics';
+  async function admApprove(id){
     try{
-      const{data,error}=await sb.from(table).update({status:'approved'}).eq('id',id).select();
+      const{data,error}=await sb.from('artworks').update({status:'approved'}).eq('id',id).select();
       if(error) throw error;
       var row = data && data[0];
       if(row && row.user_id){
-        var okName = kind==='art' ? (row.name||'Your artwork') : (row.title||'Your comic');
         sb.from('notifications').insert({
           user_id: row.user_id,
-          type: kind==='art' ? 'artwork_approved' : 'comic_approved',
-          title: 'Approved ✓',
-          message: '"'+okName+'" has been approved and is now live.',
-          ref_table: kind==='art' ? 'artworks' : 'comics',
+          type: 'artwork_approved',
+          title: 'Approved \u2713',
+          message: '"'+(row.name||'Your artwork')+'" has been approved and is now live.',
+          ref_table: 'artworks',
           ref_id: row.id
         }).then(function(res){ if(res.error) console.error(res.error); });
       }
-      if(kind==='art'){
-        admPending.art = admPending.art.filter(function(r){ return String(r.id)!==String(id); });
-        if(row && images.findIndex(function(i){return String(i.id)===String(id);})===-1) images.unshift(row);
-        admRenderArt();
-      } else {
-        admPending.comic = admPending.comic.filter(function(r){ return String(r.id)!==String(id); });
-        if(row && comics.findIndex(function(c){return String(c.id)===String(id);})===-1) comics.unshift(row);
-        if(window.rebuildComicGrid) window.rebuildComicGrid(comics);
-        admRenderComic();
-      }
+      admPending.art = admPending.art.filter(function(r){ return String(r.id)!==String(id); });
+      if(row && images.findIndex(function(i){return String(i.id)===String(id);})===-1) images.unshift(row);
+      admRenderArt();
       renderHome();
       if(document.getElementById('fg') && document.getElementById('fg').classList.contains('open')) renderFG();
       admRefreshBadge();
-      showToast('Approved ✦');
+      showToast('Approved \u2726');
     }catch(e){ console.error('Error: '+e.message); }
   }
 
-  /* Reject — permanently deletes the row (and its storage file), so
-     it never touches the public database, exactly as requested. */
-  async function admReject(kind, id){
+  async function admReject(id){
     if(!confirm('Reject and permanently delete this submission?')) return;
-    var table = kind==='art' ? 'artworks' : 'comics';
-    var list = kind==='art' ? admPending.art : admPending.comic;
-    var row = list.find(function(r){ return String(r.id)===String(id); });
+    var row = admPending.art.find(function(r){ return String(r.id)===String(id); });
     try{
-      if(row){
-        if(kind==='art' && row.storage_path){ await s3Delete(BUCKET,row.storage_path); }
-        if(kind==='comic' && row.cover_storage_path){ await s3Delete(BUCKET,row.cover_storage_path); }
-      }
-      const{error}=await sb.from(table).delete().eq('id',id);
+      if(row && row.storage_path){ await s3Delete(BUCKET,row.storage_path); }
+      const{error}=await sb.from('artworks').delete().eq('id',id);
       if(error) throw error;
       if(row && row.user_id){
-        var rjName = kind==='art' ? (row.name||'Your artwork') : (row.title||'Your comic');
         sb.from('notifications').insert({
           user_id: row.user_id,
-          type: kind==='art' ? 'artwork_rejected' : 'comic_rejected',
+          type: 'artwork_rejected',
           title: 'Not approved',
-          message: '"'+rjName+'" was not approved and has been removed.',
-          ref_table: kind==='art' ? 'artworks' : 'comics',
+          message: '"'+(row.name||'Your artwork')+'" was not approved and has been removed.',
+          ref_table: 'artworks',
           ref_id: Number(id)
         }).then(function(res){ if(res.error) console.error(res.error); });
       }
-      if(kind==='art'){ admPending.art = admPending.art.filter(function(r){ return String(r.id)!==String(id); }); admRenderArt(); }
-      else { admPending.comic = admPending.comic.filter(function(r){ return String(r.id)!==String(id); }); admRenderComic(); }
+      admPending.art = admPending.art.filter(function(r){ return String(r.id)!==String(id); });
+      admRenderArt();
       admRefreshBadge();
       showToast('Rejected');
     }catch(e){ console.error('Error: '+e.message); }
@@ -11185,7 +11185,7 @@ body{background:var(--bg);}
      on every action, and enforced for real by the Supabase RLS
      policies below (see chat) — this UI can never touch another
      user's rows even if someone tampers with the DOM/JS. */
-  var mw = { art: [], comic: [], tab: 'art' };
+  var mw = { art: [], tab: 'art' };
 
   function openMyWorkPage(){
     if(!currentUser){ showToast('Sign in first'); return; }
@@ -11201,31 +11201,23 @@ body{background:var(--bg);}
   function mwSwitchTab(tab){
     mw.tab = tab;
     document.getElementById('mwTabArt').classList.toggle('active', tab==='art');
-    document.getElementById('mwTabComic').classList.toggle('active', tab==='comic');
     document.getElementById('mwPanelArt').classList.toggle('active', tab==='art');
-    document.getElementById('mwPanelComic').classList.toggle('active', tab==='comic');
   }
   async function mwLoadData(){
     if(!sb || !currentUser) return;
     try{
-      const[{data:art,error:ae},{data:cmx,error:ce}]=await Promise.all([
-        sb.from('artworks').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
-        sb.from('comics').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false})
-      ]);
+      const{data:art,error:ae} = await sb.from('artworks').select('*').eq('user_id',currentUser.id).eq('kind',ART_KIND_ART).order('created_at',{ascending:false});
       if(ae) throw ae;
-      if(ce) throw ce;
       mw.art = art||[];
-      mw.comic = cmx||[];
-    }catch(e){ console.error('Error loading your work: '+e.message); mw.art=[]; mw.comic=[]; }
+    }catch(e){ console.error('Error loading your work: '+e.message); mw.art=[]; }
     mwRenderArt();
-    mwRenderComic();
   }
-  function mwCardHTML(kind, row){
+  function mwCardHTML(row){
     var idStr = esc(String(row.id));
-    var img = esc(getThumbnailUrl(kind==='art' ? row.image_url : row.cover_image_url));
-    var tx = kind==='art' ? (row.thumb_x!=null?row.thumb_x:50) : (row.cover_thumb_x!=null?row.cover_thumb_x:50);
-    var ty = kind==='art' ? (row.thumb_y!=null?row.thumb_y:50) : (row.cover_thumb_y!=null?row.cover_thumb_y:50);
-    var title = esc(kind==='art' ? (row.name||'Untitled') : (row.title||'Untitled'));
+    var img = esc(getThumbnailUrl(row.image_url));
+    var tx = row.thumb_x!=null?row.thumb_x:50;
+    var ty = row.thumb_y!=null?row.thumb_y:50;
+    var title = esc(row.name||'Untitled');
     var status = row.status||'approved';
     var chip = status!=='approved' ? '<span class="mwStatusChip '+esc(status)+'">'+esc(status)+'</span>' : '';
     return '<div class="admCard" data-id="'+idStr+'">'+
@@ -11235,8 +11227,8 @@ body{background:var(--bg);}
         '<div class="admCardMeta">'+(row.created_at?new Date(row.created_at).toLocaleDateString():'')+'</div>'+
         chip+
         '<div class="admCardActions">'+
-          '<button class="mwEditBtn" onclick="'+(kind==='art'?'mwEditArt':'mwEditComic')+'(\''+idStr+'\',event)">✎ Edit</button>'+
-          '<button class="mwDeleteBtn" onclick="'+(kind==='art'?'mwDeleteArt':'mwDeleteComic')+'(\''+idStr+'\',event)">✕ Delete</button>'+
+          '<button class="mwEditBtn" onclick="mwEditArt(\''+idStr+'\',event)">✎ Edit</button>'+
+          '<button class="mwDeleteBtn" onclick="mwDeleteArt(\''+idStr+'\',event)">✕ Delete</button>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -11244,14 +11236,8 @@ body{background:var(--bg);}
   function mwRenderArt(){
     var grid = document.getElementById('mwArtGrid'), empty = document.getElementById('mwArtEmpty');
     if(!grid) return;
-    grid.innerHTML = mw.art.map(function(r){ return mwCardHTML('art', r); }).join('');
+    grid.innerHTML = mw.art.map(mwCardHTML).join('');
     empty.style.display = mw.art.length ? 'none' : 'block';
-  }
-  function mwRenderComic(){
-    var grid = document.getElementById('mwComicGrid'), empty = document.getElementById('mwComicEmpty');
-    if(!grid) return;
-    grid.innerHTML = mw.comic.map(function(r){ return mwCardHTML('comic', r); }).join('');
-    empty.style.display = mw.comic.length ? 'none' : 'block';
   }
 
   /* ── Edit — opens the same #pfUpMod modal the owner already
@@ -11261,7 +11247,6 @@ body{background:var(--bg);}
     var art = mw.art.find(function(r){ return String(r.id)===String(id); });
     if(!art){ showToast('Artwork not found'); return; }
     if(!currentUser || String(art.user_id)!==String(currentUser.id)){ showToast('You can only edit your own artwork'); return; }
-    pf.upMode = 'art';
     pf.upFile = null;
     pf.upThumbFocus = null;
     document.getElementById('pfUpEditId').value = String(art.id);
@@ -11287,29 +11272,6 @@ body{background:var(--bg);}
     document.getElementById('pfUpBtn').textContent = '📤 Save Changes';
     document.getElementById('pfUpMod').classList.add('open');
   }
-  function mwEditComic(id, e){
-    if(e) e.stopPropagation();
-    var c = mw.comic.find(function(r){ return String(r.id)===String(id); });
-    if(!c){ showToast('Comic not found'); return; }
-    if(!currentUser || String(c.user_id)!==String(currentUser.id)){ showToast('You can only edit your own comic'); return; }
-    pf.upMode = 'comic';
-    pf.upFile = null;
-    pf.upThumbFocus = null;
-    document.getElementById('pfUpEditId').value = String(c.id);
-    document.getElementById('pfUpTitle').textContent = 'Edit Comic';
-    document.getElementById('pfUpCatField').style.display = 'none';
-    document.getElementById('pfUpSoftwareField').style.display = 'none';
-    document.getElementById('pfUpNm').value = c.title||'';
-    document.getElementById('pfUpDesc').value = c.description||'';
-    pfUpdateCount('pfUpNm','pfUpNmCount',100);
-    pfUpdateCount('pfUpDesc','pfUpDescCount',1000);
-    pfSetTagsFromArray(c.tags||[]);
-    document.getElementById('pfDz').style.display='none';
-    document.getElementById('pfComicPagesWrap').style.display='none';
-    document.getElementById('pfUpBtn').textContent='📤 Save Changes';
-    document.getElementById('pfUpMod').classList.add('open');
-  }
-
   /* ── Delete — permanently removes the row + its storage file(s).
      Ownership is checked client-side here and enforced for real by
      the "own rows only" RLS delete policy on the DB side. ── */
@@ -11334,27 +11296,6 @@ body{background:var(--bg);}
       }
       injectGallerySEO();
       showToast('Artwork removed');
-    }catch(err){ console.error('Error: '+err.message); }
-  }
-  async function mwDeleteComic(id, e){
-    if(e) e.stopPropagation();
-    var c = mw.comic.find(function(r){ return String(r.id)===String(id); });
-    if(!c){ return; }
-    if(!currentUser || String(c.user_id)!==String(currentUser.id)){ showToast('You can only delete your own comic'); return; }
-    if(!confirm('Delete this comic? This cannot be undone.')) return;
-    try{
-      if(c.cover_storage_path) await s3Delete(BUCKET,c.cover_storage_path);
-      const{error}=await sb.from('comics').delete().eq('id',id);
-      if(error) throw error;
-      mw.comic = mw.comic.filter(function(r){ return String(r.id)!==String(id); });
-      mwRenderComic();
-      comics = comics.filter(function(cm){ return String(cm.id)!==String(id); });
-      if(window.rebuildComicGrid) window.rebuildComicGrid(comics);
-      if(pf.profile && currentUser && pf.profile.id===currentUser.id){
-        pf.comicRows = pf.comicRows.filter(function(r){ return String(r.id)!==String(id); });
-        pfRenderComic();
-      }
-      showToast('Comic removed');
     }catch(err){ console.error('Error: '+err.message); }
   }
 
@@ -12109,8 +12050,6 @@ function hideCommentThumbnail(){
     if(m) openArtworkById(m[1], false);
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
     if(pm) openProfileByUsername(decodeURIComponent(pm[1]), false);
-    var cm = window.location.pathname.match(/^\/comic\/([^/]+)\/?$/);
-    if(cm) openComicById(cm[1], false);
     if(window.location.pathname === '/login') openAuthMod();
     /* Site-wide ImageGallery structured data — lists every artwork's
        image + name + per-artwork URL so Google can associate each
@@ -12148,30 +12087,24 @@ function hideCommentThumbnail(){
     });
   }
 
-  /* ── Artworks / ComicArts tab state ──
+  /* ── Artworks / category tab state ──
      awTab: which dataset is currently shown in #awGrid.
-     awArtworksCache / awComicsCache: last data each fetch delivered,
+     awArtworksCache: last data the fetch delivered,
      so switching tabs re-renders instantly with no extra fetch. */
   var awTab = 'artworks';
   var awArtworksCache = [];
-  var awComicsCache = [];
 
   /* Category tabs pull straight from awArtworksCache, filtered by
      whichever category name the artwork was tagged with (comma-
      separated categories are matched against, same as the gallery
      filter elsewhere on the site). */
-  var AW_CATEGORY_TABS = {
-    character: 'characters',
-    sketch:    'sketches',
-    landscape: 'landscapes'
-  };
-  var AW_TAB_BTN_IDS = {
-    artworks:  'awTabArt',
-    character: 'awTabCharacter',
-    sketch:    'awTabSketch',
-    landscape: 'awTabLandscape',
-    comicarts: 'awTabComic'
-  };
+  /* Tab keys are now the category slugs themselves, so these maps are
+     derived from SITE_CATEGORIES rather than hand-maintained. The two
+     the non-category 'artworks' tab keeps its fixed id. */
+  var AW_CATEGORY_TABS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]=c.slug; return m; },{});
+  var AW_TAB_BTN_IDS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]='awTab_'+c.slug; return m; },{
+    artworks: 'awTabArt'
+  });
 
   function awCategoryList(catName){
     return awArtworksCache.filter(function(item){
@@ -12181,7 +12114,6 @@ function hideCommentThumbnail(){
 
   function awListForTab(tab){
     if(tab === 'artworks') return awArtworksCache;
-    if(tab === 'comicarts') return awComicsCache;
     return awCategoryList(AW_CATEGORY_TABS[tab] || tab);
   }
 
@@ -12203,6 +12135,7 @@ function hideCommentThumbnail(){
       if(!btn) return;
       var isActive = key === tab;
       btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
       if(isActive) activeBtn = btn;
     });
     awUpdateIndicator(activeBtn);
@@ -12235,16 +12168,13 @@ function hideCommentThumbnail(){
     });
   }
 
-  /* Build one .awCard for either an artwork or a comic — same markup/
-     styling (ArtStation-style masonry card), different data mapping
-     and click target. */
-  function buildAwCard(item, type){
-    var isComic = type === 'comicarts';
-    var fullSrc = isComic ? (item.cover_image_url || '') : (item.image_url || '');
-    var tx = isComic ? (item.cover_thumb_x!=null?item.cover_thumb_x:50) : (item.thumb_x!=null?item.thumb_x:50);
-    var ty = isComic ? (item.cover_thumb_y!=null?item.cover_thumb_y:50) : (item.thumb_y!=null?item.thumb_y:50);
-    var name    = isComic ? (item.title || 'Untitled') : (item.name || 'Untitled');
-    var cat     = isComic ? 'comic' : (catList(item.category)[0] || 'others');
+  /* Build one .awCard for an artwork — ArtStation-style masonry card. */
+  function buildAwCard(item){
+    var fullSrc = item.image_url || '';
+    var tx = item.thumb_x!=null?item.thumb_x:50;
+    var ty = item.thumb_y!=null?item.thumb_y:50;
+    var name    = item.name || 'Untitled';
+    var cat     = catList(item.category)[0] || 'others';
     var desc    = item.description || '';
     var id      = item.id;
 
@@ -12283,15 +12213,10 @@ function hideCommentThumbnail(){
     card.appendChild(wrap);
     card.appendChild(meta);
 
-    if(isComic){
-      card.onclick = function(){ openComicById(id); };
-      card.onkeydown = function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openComicById(id); } };
-    }else{
-      (function(s,n,c,d,i){
-        card.onclick = function(){ openLB(s,n,c,d,i); };
-        card.onkeydown = function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openLB(s,n,c,d,i); } };
-      })(fullSrc, name, cat, desc, id);
-    }
+    (function(s,n,c,d,i){
+      card.onclick = function(){ openLB(s,n,c,d,i); };
+      card.onkeydown = function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openLB(s,n,c,d,i); } };
+    })(fullSrc, name, cat, desc, id);
     return card;
   }
 
@@ -12307,13 +12232,9 @@ function hideCommentThumbnail(){
 
     if(!sorted.length){
       if(empty){
-        var emptyMsgs = {
-          comicarts: 'COMIC ARTS — COMING SOON',
-          character: 'NO CHARACTER ART YET',
-          sketch:    'NO SKETCHES YET',
-          landscape: 'NO LANDSCAPE ART YET'
-        };
-        empty.textContent = emptyMsgs[type] || 'NO ARTWORK YET';
+        empty.textContent = (type && type !== 'artworks')
+          ? ('NO ' + catLabel(type).toUpperCase() + ' ART YET')
+          : 'NO ARTWORK YET';
         empty.style.display = 'block';
       }
       return;
@@ -12321,47 +12242,15 @@ function hideCommentThumbnail(){
     if(empty) empty.style.display = 'none';
 
     sorted.forEach(function(item){
-      grid.appendChild(buildAwCard(item, type));
+      grid.appendChild(buildAwCard(item));
     });
   }
 
   /* Artworks tab — called by renderHome() whenever `images` changes */
   window.rebuildGalCarousels = function(artworks){
     awArtworksCache = artworks || [];
-    if(awTab !== 'comicarts') renderAwGrid(awListForTab(awTab), awTab);
+    renderAwGrid(awListForTab(awTab), awTab);
   };
-
-  /* ComicArts tab — called by loadDB() whenever `comics` changes.
-     ComicArts is still in development: this simply keeps the tab wired
-     up to the live `comics` table so it goes fully live the moment
-     content exists, with no further code changes needed. */
-  window.rebuildComicGrid = function(list){
-    awComicsCache = list || [];
-    if(awTab === 'comicarts') renderAwGrid(awComicsCache, 'comicarts');
-    caRenderGrid(); /* keep the dedicated #comicArtsPage tab screen in sync too */
-  };
-
-  /* ── Dedicated Comic Arts tab screen (#comicArtsPage) ──
-     Reuses the exact same buildAwCard('comicarts') component as
-     the homepage Artworks/ComicArts tab — cover image only, no
-     bookmark, no overlaid title/tag text, identical .awGrid
-     column spacing. Fed from the same awComicsCache the homepage
-     tab uses, so no extra fetch is needed. */
-  function caRenderGrid(){
-    var grid = document.getElementById('caGrid');
-    var empty = document.getElementById('caEmpty');
-    if(!grid) return;
-    var sorted = sortByNewest((awComicsCache||[]).slice());
-    grid.innerHTML = '';
-    if(!sorted.length){
-      if(empty) empty.style.display = 'block';
-      return;
-    }
-    if(empty) empty.style.display = 'none';
-    sorted.forEach(function(item){
-      grid.appendChild(buildAwCard(item, 'comicarts'));
-    });
-  }
 
   /* Populate with empty list on first paint — rebuilt after DB loads */
   window.rebuildGalCarousels([]);
@@ -12384,25 +12273,6 @@ function hideCommentThumbnail(){
     el.classList.remove('open');
     restoreScroll();
   }
-
-  /* ── Comic Arts panel ── */
-  function openComicArts() {
-    closeMenu();
-    var el = document.getElementById('comicArtsPage');
-    if (!el) return;
-    el.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    caRenderGrid();
-    if(typeof zeoSectionTrigger==='function') zeoSectionTrigger();
-  }
-  function closeComicArts() {
-    var el = document.getElementById('comicArtsPage');
-    if (!el) return;
-    el.classList.remove('open');
-    restoreScroll();
-  }
-
 
   /* ── Coming Soon modal ── */
   function openSubModal() {
@@ -14799,7 +14669,7 @@ html.thmFade #themePage{
   /* ── Full-page overlay panels — hide widgets whenever any of
      these slide-in pages is open, since they otherwise float
      above the panel's lower z-index. ── */
-  var OVERLAY_IDS = ['comicArtsPage', 'profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage', 'bmPage'];
+  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage', 'bmPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);

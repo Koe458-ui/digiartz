@@ -609,28 +609,44 @@
        accent, plus a divider line beneath. Every colour uses theme
        variables, so it adapts to every theme exactly like the Community
        header does. */
+    /* ── Title bar — now matches the Community header (.cmHdr):
+       sticky at the top, frosted-blur surface, all-caps gradient
+       title. The search/filter bar (.fgHdr) sticks directly below
+       it (top offset = this bar's fixed 3.4rem height). ── */
     .fgIntro{
-      margin:0 0 1.3rem;
-      padding:1.7rem 1.5rem 1.1rem;
+      position:sticky;top:0;z-index:11;
+      margin:0;
+      height:3.4rem;
+      padding:0 1.5rem;
+      display:flex;align-items:center;justify-content:center;
       text-align:center;
       border-bottom:1px solid var(--bdr);
+      isolation:isolate;
     }
+    /* background + blur split onto ::before, same decoupling as .cmHdr */
+    .fgIntro::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
     .fgTitle{
       display:inline-flex;align-items:center;gap:.45rem;margin:0;
       font-family:var(--fd);
-      font-size:clamp(1.35rem,4.5vw,1.9rem);
+      font-size:1.15rem;
       font-weight:800;
       letter-spacing:.16em;
+      text-transform:uppercase;
+      white-space:nowrap;
       background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
       -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
       text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
     }
     .fgTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);}
+    /* narrow screens: same tracking reduction as .cmHdrTitle */
+    @media(max-width:480px){
+      .fgTitle{font-size:1.02rem;letter-spacing:.08em;}
+    }
     /* Featured hero slides inside the gallery / comic overlays — reuses
        the home page .tsTrack/.tsBox component, just without the top-bar
        offset. */
     #topSlideGallery{position:relative;background:transparent;padding:.2rem 0 1.1rem;}
-    .fgHdr{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;isolation:isolate;}
+    .fgHdr{position:sticky;top:3.4rem;z-index:10;border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;isolation:isolate;}
     /* FIX: background + blur split onto ::before, same decoupling as
        #bnNav — sticky elements have the same fixed-during-scroll
        repaint issue while they're pinned. */
@@ -1397,6 +1413,115 @@
     .cpCommentText{font-family:var(--fb);font-size:.95rem;font-weight:400;color:var(--tx);line-height:1.6;word-break:break-word;}
     .cpCommentTime{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);}
 
+    /* ══ WhatsApp-style chat rows — used by the community channel
+       feed (#cmChatView) and mirrored by the DM thread bubbles.
+       Own messages sit right in an accent bubble; others sit left
+       with avatar + coloured sender name (group-chat style).
+       Consecutive messages from the same sender within 5 minutes
+       are grouped (avatar/name shown once, tighter spacing). ══ */
+    .chatDay{display:flex;justify-content:center;margin:1rem 0 .7rem;}
+    .chatDay span{
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;
+      color:var(--txd);
+      background:color-mix(in srgb,var(--sur2) 85%,transparent);
+      border:1px solid var(--bdr);
+      padding:.3rem .85rem;border-radius:999px;
+      backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    }
+    .cpMsgRow{display:flex;align-items:flex-end;gap:.5rem;margin-bottom:.45rem;}
+    .cpMsgRow--cont{margin-top:-.2rem;}
+    .cpMsgRow--me{justify-content:flex-end;}
+    .cpMsgAvatar{width:30px;height:30px;font-size:.76rem;}
+    .cpMsgAvatar::after{display:none;} /* no online dot on chat rows */
+    .cpMsgAvatar--ghost{visibility:hidden;}
+    .cpBubble{
+      position:relative;
+      max-width:min(78%,520px);
+      padding:.45rem .7rem .3rem .75rem;
+      border-radius:14px;
+      font-family:var(--fb);font-size:.92rem;line-height:1.45;
+      color:var(--tx);
+      box-shadow:0 1px 1px rgba(0,0,0,.12);
+    }
+    .cpMsgRow--them .cpBubble{background:var(--sur2);border:1px solid var(--bdr);}
+    .cpMsgRow--them:not(.cpMsgRow--cont) .cpBubble{border-bottom-left-radius:4px;}
+    .cpMsgRow--me .cpBubble{background:var(--pdim);border:1px solid rgba(var(--pg-rgb),.35);}
+    .cpMsgRow--me:not(.cpMsgRow--cont) .cpBubble{border-bottom-right-radius:4px;}
+    .cpBubbleName{
+      font-family:var(--fm);font-size:.66rem;font-weight:700;
+      letter-spacing:.08em;color:var(--pb);margin:.1rem 0 .2rem;
+    }
+    .cpBubbleText{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
+    /* WhatsApp trick: the timestamp floats into the last text line */
+    .cpBubbleTime{
+      float:right;margin:.65em -.1em 0 .65em;
+      font-family:var(--fm);font-size:.56rem;letter-spacing:.04em;
+      color:var(--txd);white-space:nowrap;user-select:none;
+    }
+    .cpBubble .cpPhoto{
+      display:block;width:100%;height:auto;max-width:260px;max-height:260px;
+      object-fit:cover;border-radius:10px;margin:.25rem 0 .35rem;cursor:pointer;
+    }
+    /* Chat wallpaper — subtle theme-aware dot grid, WhatsApp-style */
+    #cmChatView .cpBody,#dmChatView .cpBody{
+      background-image:radial-gradient(color-mix(in srgb,var(--tc) 8%,transparent) 1px,transparent 1.5px);
+      background-size:22px 22px;
+    }
+
+    /* ── Emoji picker panel — opens above whichever composer bar
+       (community or DM) invoked it; built lazily by JS. ── */
+    #emojiPanel{
+      position:fixed;z-index:2100;
+      width:min(340px,calc(100vw - 1.6rem));
+      max-height:320px;
+      display:none;flex-direction:column;
+      background:var(--sur);
+      border:1px solid var(--bdrh);border-radius:16px;
+      box-shadow:0 14px 44px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+    #emojiPanel.open{display:flex;}
+    .emojiTabs{
+      display:flex;gap:.15rem;flex-shrink:0;
+      padding:.45rem .5rem;border-bottom:1px solid var(--bdr);
+      background:var(--sur2);
+      overflow-x:auto;scrollbar-width:none;
+    }
+    .emojiTabs::-webkit-scrollbar{display:none;}
+    .emojiTab{
+      flex-shrink:0;width:34px;height:34px;border-radius:9px;
+      display:flex;align-items:center;justify-content:center;
+      background:transparent;border:none;cursor:pointer;
+      font-size:1.05rem;line-height:1;opacity:.55;
+      transition:background .2s,opacity .2s;
+    }
+    .emojiTab:hover{opacity:.9;background:var(--pdim);}
+    .emojiTab.active{opacity:1;background:var(--pdim);}
+    .emojiGrid{
+      flex:1;overflow-y:auto;
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));
+      gap:.1rem;padding:.5rem;
+      overscroll-behavior:contain;
+    }
+    .emojiCatLbl{
+      grid-column:1/-1;
+      font-family:var(--fm);font-size:.58rem;letter-spacing:.18em;
+      color:var(--txd);padding:.45rem .3rem .2rem;
+    }
+    .emojiCell{
+      width:100%;aspect-ratio:1;border:none;border-radius:9px;
+      background:transparent;cursor:pointer;
+      font-size:1.35rem;line-height:1;padding:0;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .15s,transform .1s;
+    }
+    .emojiCell:hover{background:var(--pdim);}
+    .emojiCell:active{transform:scale(.85);}
+    @media(prefers-reduced-motion:no-preference){
+      #emojiPanel.open{animation:emojiIn .18s ease both;}
+      @keyframes emojiIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+    }
+
     /* ── COMMUNITY FEATURES ── */
     .cpComposerWrap{width:100%;display:flex;flex-direction:column;gap:6px;}
     .cpBar{
@@ -1426,28 +1551,41 @@
       background:var(--sur2);
       border:1px solid var(--bdr);
       color:var(--tx);
-      font-family:var(--fb);font-size:.9rem;
-      padding:.6rem .9rem;
+      font-family:var(--fb);font-size:.92rem;
+      padding:.66rem 1.1rem;
       outline:none;
       transition:border-color .25s;
       min-width:60px;
-      border-radius:6px;
+      border-radius:999px; /* WhatsApp-style pill */
     }
     .cpBarInput:focus{border-color:var(--pg);}
-    .cpBarInput::placeholder{color:var(--txd);opacity:.5;font-style:italic;}
+    .cpBarInput::placeholder{color:var(--txd);opacity:.6;}
+    /* Emoji button — round ghost button on the left of the input,
+       shared by the community composer and the DM bar. */
+    .cpEmojiBtn{
+      flex-shrink:0;
+      width:40px;height:40px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:transparent;border:1px solid var(--bdr);
+      color:var(--txd);cursor:pointer;
+      transition:color .2s,border-color .2s,background .2s;
+    }
+    .cpEmojiBtn:hover,.cpEmojiBtn.active{color:var(--ps);border-color:var(--pg);background:var(--pdim);}
+    .cpEmojiBtn svg{width:21px;height:21px;}
     .cpBarSend{
       flex-shrink:0;
-      padding:.6rem 1.1rem;
-      background:color-mix(in srgb,var(--tc) 14%,transparent);
-      border:1px solid var(--pg);
-      color:var(--ps);
-      font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;
-      cursor:pointer;transition:background .25s,box-shadow .25s,transform .25s;
-      white-space:nowrap;
-      border-radius:6px;
+      width:42px;height:42px;padding:0;
+      display:flex;align-items:center;justify-content:center;
+      background:var(--pg);
+      border:none;
+      color:var(--text-on-accent);
+      cursor:pointer;transition:filter .2s,transform .15s,box-shadow .25s;
+      border-radius:50%; /* WhatsApp-style circular send */
+      box-shadow:0 2px 10px rgba(var(--pg-rgb),.3);
     }
-    .cpBarSend:hover{background:color-mix(in srgb,var(--tc) 28%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 30%,transparent);}
-    .cpBarSend:active{transform:scale(.97);}
+    .cpBarSend svg{width:19px;height:19px;margin-left:2px;}
+    .cpBarSend:hover{filter:brightness(1.08);box-shadow:0 3px 14px rgba(var(--pg-rgb),.4);}
+    .cpBarSend:active{transform:scale(.94);}
 
     /* Locked-channel notice — replaces the composer bar for
        read-only channels when the viewer isn't the dev account */
@@ -1810,15 +1948,16 @@
     #communityPage .cpBarAvatar{display:none;}
     #communityPage .cpBarInput{background:var(--cmSur2)!important;color:var(--cmTx)!important;border:1px solid var(--cmBdr)!important;}
     #communityPage .cpBarInput::placeholder{color:var(--cmTxd);}
-    #communityPage .cpBarSend{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
-    #communityPage .cpBarSend:hover{background:color-mix(in srgb,var(--cmAccent) 30%,transparent)!important;box-shadow:0 0 18px rgba(var(--pg-rgb),.35)!important;}
+    #communityPage .cpBarSend{background:var(--cmAccent);border:none;color:var(--text-on-accent);}
+    #communityPage .cpBarSend:hover{filter:brightness(1.08);box-shadow:0 3px 14px rgba(var(--pg-rgb),.4)!important;}
     #communityPage .cpSelectedImage img,#communityPage .cpThumbPreview{border:1px solid var(--cmBdr);background:var(--cmSur);}
     #communityPage .cpThumbClose{background:var(--cmSur2);border:1px solid var(--cmBdrh);color:var(--cmTx);}
 
     /* RESPONSIVE CSS — SMALL DEVICE RULES */
 
     @media(max-width:480px){
-      .cpBarSend{padding:.6rem .8rem;font-size:.68rem;letter-spacing:.1em;}
+      .cpBarSend{width:40px;height:40px;padding:0;}
+      .cpEmojiBtn{width:38px;height:38px;}
       .cpBar{padding:.6rem .9rem;gap:.55rem;}
     }
 
@@ -2304,7 +2443,7 @@
     .admSv:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 15px color-mix(in srgb,var(--tc) 30%,transparent);}
     body.admin .adminOnly{display:flex !important;}
 
-    .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:20100;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;border-radius:6px;}
+    .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:20100;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:normal;max-width:min(560px,calc(100vw - 2rem));width:max-content;text-align:center;line-height:1.5;border-radius:6px;}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
     .fsHdr{max-width:1200px;margin:0 auto;padding:0 2rem;}
@@ -2842,6 +2981,22 @@
     #profilePage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
     #profilePage .subPgTitle{color:var(--tx);}
     #profilePage .awCard{background:var(--sur);}
+    /* ── Page header — same fixed, all-caps title bar as the Community
+       page: sticky, frosted-blur, centered gradient title (reuses the
+       global .cmHdrTitle text treatment for a pixel-identical look).
+       Fixed 3.4rem height so the sticky .pfTabs below can stack. ── */
+    .pfPageHdr{
+      position:sticky;top:0;z-index:12;
+      height:3.4rem;
+      padding:0 1.5rem;
+      display:flex;align-items:center;justify-content:center;gap:.8rem;
+      border-bottom:1px solid var(--bdr);
+      isolation:isolate;
+    }
+    .pfPageHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    /* Tabs now stick just below the fixed page header (base .pfTabs
+       keeps top:0 — admPage / pfMyWorkPage override it to static). */
+    #profilePage .pfTabs{top:3.4rem;}
     .pfBdy{max-width:1100px;margin:0 auto;padding:0 0 6rem;background:var(--bg);}
 
     /* ── Banner ── */
@@ -3829,6 +3984,8 @@ body{background:var(--bg);}
    deliberately left out of this list. */
 #fg .fgHdr::before{background:var(--bg)!important;}
 #fg .fgHdr{border-bottom:1px solid var(--bdr);}
+#fg .fgIntro::before{background:var(--bg)!important;}
+#fg .fgIntro{border-bottom:1px solid var(--bdr);}
 #fgFltPanel{background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%)!important;border-color:var(--bdr)!important;}
 #fgFltPanel .fltOptH{background:color-mix(in srgb,var(--tc) 4%,transparent)!important;border-color:var(--bdr)!important;}
 
@@ -5437,6 +5594,10 @@ body{background:var(--bg);}
            └─ About    → stats + bio (owner-editable)
        ========================================================= -->
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
+    <!-- ── Fixed page header — same all-caps title bar as Community ── -->
+    <div class="pfPageHdr">
+      <div class="cmHdrTitle"><span>PROFILE</span> <span class="s">✦</span></div>
+    </div>
     <div class="pfBanner" id="pfBanner">
       <img alt="" id="pfBannerImg">
       <button class="pfEditBtn" id="pfEditBtn" onclick="openPfEditPage()" aria-label="Edit profile">
@@ -6430,18 +6591,24 @@ body{background:var(--bg);}
 #dmChatView .cpBody{display:flex;flex-direction:column;gap:.55rem;}
 .dmMsg{
   max-width:min(78%,520px);width:fit-content;
-  padding:.55rem .85rem;border-radius:14px;
+  padding:.5rem .75rem .32rem .8rem;border-radius:14px;
   font-family:var(--fb);font-size:.9rem;line-height:1.45;
   color:var(--tx);overflow-wrap:anywhere;white-space:pre-wrap;
+  box-shadow:0 1px 1px rgba(0,0,0,.12);
 }
-.dmMsg--them{background:var(--sur2);border:1px solid var(--bdr);border-bottom-left-radius:4px;}
+.dmMsg--them{background:var(--sur2);border:1px solid var(--bdr);}
+.dmMsg--them:not(.dmMsg--cont){border-bottom-left-radius:4px;}
 .dmMsg--me{
   margin-left:auto;background:var(--pdim);
-  border:1px solid rgba(var(--pg-rgb),.35);border-bottom-right-radius:4px;
+  border:1px solid rgba(var(--pg-rgb),.35);
 }
+.dmMsg--me:not(.dmMsg--cont){border-bottom-right-radius:4px;}
+/* grouped follow-up message — tighter to the previous bubble */
+.dmMsg--cont{margin-top:-.32rem;}
 .dmMsgTime{
-  display:block;font-family:var(--fm);font-size:.58rem;
-  letter-spacing:.05em;color:var(--txd);margin-top:.3rem;text-align:right;
+  float:right;font-family:var(--fm);font-size:.56rem;
+  letter-spacing:.04em;color:var(--txd);
+  margin:.65em -.05em 0 .65em;white-space:nowrap;user-select:none;
 }
 .dmBar{
   display:flex;align-items:center;gap:.6rem;flex-shrink:0;
@@ -6463,9 +6630,14 @@ body{background:var(--bg);}
 <div class="cmChat" id="dmChatView">
   <div class="cpBody" id="dmBody"></div>
   <div class="dmBar">
+    <button class="cpEmojiBtn" id="dmEmojiBtn" type="button" title="Emoji" aria-label="Insert emoji" aria-haspopup="true" aria-expanded="false" onclick="toggleEmojiPanel(this,'dmInput')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5s1.2 1.8 3.5 1.8 3.5-1.8 3.5-1.8"/><line x1="9" y1="9.4" x2="9.01" y2="9.4" stroke-width="2.6"/><line x1="15" y1="9.4" x2="15.01" y2="9.4" stroke-width="2.6"/></svg>
+    </button>
     <input class="cpBarInput" id="dmInput" type="text" maxlength="1000"
-           placeholder="Message... (text only, no links)" autocomplete="off"/>
-    <button class="cpBarSend" id="dmSendBtn">SEND ✦</button>
+           placeholder="Message" title="Text only — links aren't allowed" autocomplete="off"/>
+    <button class="cpBarSend" id="dmSendBtn" title="Send" aria-label="Send message">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.6 21.8 12 3.4 3.4l-.01 6.7L15 12 3.39 13.9z"/></svg>
+    </button>
   </div>
 </div>
 
@@ -6499,6 +6671,20 @@ body{background:var(--bg);}
     if (diff < 1440) return Math.floor(diff / 60) + 'h';
     if (diff < 10080)return Math.floor(diff / 1440) + 'd';
     return d.toLocaleDateString();
+  }
+  /* WhatsApp-style in-bubble clock time (e.g. "14:32" / "2:32 PM") */
+  function hhmm (iso) {
+    if (!iso) return '';
+    try { return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
+    catch (e) { return ''; }
+  }
+  /* WhatsApp-style date separator label: Today / Yesterday / 12 Jul 2026 */
+  function dayChip (d) {
+    var now = new Date(), y = new Date(); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === now.toDateString()) return 'TODAY';
+    if (d.toDateString() === y.toDateString())   return 'YESTERDAY';
+    try { return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase(); }
+    catch (e) { return d.toDateString().toUpperCase(); }
   }
 
   /* ── Username search ── */
@@ -6683,13 +6869,29 @@ body{background:var(--bg);}
       var atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
       var prevHeight = body.scrollHeight, prevTop = body.scrollTop;
 
-      var msgHtml = rows.map(function (m) {
+      /* WhatsApp-style render: date separator chips between days,
+         consecutive messages from the same sender within 5 minutes
+         grouped (tighter spacing, squared shared corner), and a
+         clock time floated into each bubble's last line. */
+      var msgHtml = '';
+      var lastDayKey = '', lastSender = null, lastTs = 0;
+      rows.forEach(function (m) {
         var mine = m.sender_id === uid;
-        return '<div class="dmMsg ' + (mine ? 'dmMsg--me' : 'dmMsg--them') + '">' +
+        var d = m.created_at ? new Date(m.created_at) : null;
+        var dayKey = d ? d.toDateString() : '';
+        if (dayKey && dayKey !== lastDayKey) {
+          msgHtml += '<div class="chatDay"><span>' + dayChip(d) + '</span></div>';
+          lastDayKey = dayKey;
+          lastSender = null; /* new day always restarts the group */
+        }
+        var ts = d ? d.getTime() : 0;
+        var cont = lastSender === m.sender_id && ts && (ts - lastTs) < 300000;
+        lastSender = m.sender_id; lastTs = ts;
+        msgHtml += '<div class="dmMsg ' + (mine ? 'dmMsg--me' : 'dmMsg--them') + (cont ? ' dmMsg--cont' : '') + '">' +
                  escq(m.content) +
-                 '<span class="dmMsgTime">' + when(m.created_at) + '</span>' +
+                 '<span class="dmMsgTime">' + hhmm(m.created_at) + '</span>' +
                '</div>';
-      }).join('');
+      });
 
       /* Load-older spinner pinned to the TOP, shown only while more
          history remains (reuses the community feed's .cpRefreshWrap). */
@@ -6789,7 +6991,12 @@ body{background:var(--bg);}
   function closeFriendsPage () {
     $('frdPage').classList.remove('open');
     var nav = $('bnNav'); if (nav) nav.style.display = '';
-    document.body.style.overflow = '';
+    /* FIX: Friends opens on top of the Community page — a blind
+       overflow reset here unlocked background scroll behind the
+       still-open panel. restoreScroll() only unlocks when nothing
+       else is open (same pattern as Zeo's closeChat). */
+    if (typeof restoreScroll === 'function') restoreScroll();
+    else document.body.style.overflow = '';
     if (frdLastFocus && frdLastFocus.focus) frdLastFocus.focus({ preventScroll: true });
   }
   document.addEventListener('keydown', function (e) {
@@ -6848,6 +7055,138 @@ body{background:var(--bg);}
 })();
 </script>
 
+<script>
+/* ── Emoji picker ─────────────────────────────────────────────
+   Shared by the community composer (#cpBarInput) and the DM bar
+   (#dmInput). One fixed-position panel, built lazily on first
+   open, anchored above whichever composer bar invoked it.
+   Inserts at the caret, respects maxlength, keeps input focus. */
+(function () {
+  'use strict';
+  var CATS = [
+    { n:'Smileys',   i:'😀', e:['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤗','🤭','🤫','🤔','😐','😑','😶','🙄','😏','😴','🥱','😪','😌','😔','😕','🙁','😮','😯','😲','😳','🥺','😢','😭','😤','😠','😡','🤯','😬','😰','😱','🥵','🥶','😷','🥳','😎','🤓','🧐'] },
+    { n:'Gestures',  i:'👍', e:['👍','👎','👊','✊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✌️','🤞','🤟','🤘','👌','🤌','🤏','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','👋','🤙','💪','✍️'] },
+    { n:'Hearts',    i:'❤️', e:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','♥️','😻','💌'] },
+    { n:'Animals',   i:'🐱', e:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐔','🐧','🐦','🦆','🦅','🦉','🦄','🐝','🦋','🐢','🐍','🐙','🦈','🐬','🐳','🐟','🦀'] },
+    { n:'Food',      i:'🍕', e:['🍏','🍎','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🍜','🍣','🍩','🍪','🎂','🍰','🧁','🍫','🍬','🍭','☕','🍵','🧋','🥤'] },
+    { n:'Activity',  i:'🎨', e:['🎨','🖌️','🖍️','✏️','📸','⚽','🏀','🏈','⚾','🎾','🏐','🎱','🏓','🏸','🥊','🎮','🎧','🎤','🎸','🎹','🥁','🎺','🎻','🎬','🎯','🎲','♟️','🧩','🛹','🚴','🏆','🥇','🎖️'] },
+    { n:'Objects',   i:'💡', e:['💡','🔥','⭐','🌟','✨','⚡','☀️','🌙','🌈','☁️','❄️','💧','🎁','🎈','🎉','🎊','📱','💻','🖥️','⌚','📷','🔑','🔒','📌','📎','✂️','🖊️','📖','📚','💎','🕹️','🧸'] },
+    { n:'Symbols',   i:'✅', e:['✅','❌','❓','❗','💯','🔔','🔕','➕','➖','➗','✖️','💤','💢','💥','💫','🆗','🆒','🆕','🔝','🔜','⚠️','♻️','✳️','✴️','❇️','™️'] }
+  ];
+  var panel = null, grid = null, targetId = null, anchorBtn = null, catEls = [], tabEls = [];
+
+  function build () {
+    if (panel) return;
+    panel = document.createElement('div');
+    panel.id = 'emojiPanel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', 'Emoji picker');
+    var tabs = document.createElement('div');
+    tabs.className = 'emojiTabs';
+    grid = document.createElement('div');
+    grid.className = 'emojiGrid';
+    CATS.forEach(function (cat, ci) {
+      var tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'emojiTab' + (ci === 0 ? ' active' : '');
+      tab.textContent = cat.i;
+      tab.title = cat.n;
+      tab.setAttribute('aria-label', cat.n + ' emojis');
+      tab.addEventListener('click', function () {
+        tabEls.forEach(function (t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        if (catEls[ci]) grid.scrollTop = catEls[ci].offsetTop - grid.offsetTop;
+      });
+      tabs.appendChild(tab);
+      tabEls.push(tab);
+
+      var lbl = document.createElement('div');
+      lbl.className = 'emojiCatLbl';
+      lbl.textContent = cat.n.toUpperCase();
+      grid.appendChild(lbl);
+      catEls.push(lbl);
+      cat.e.forEach(function (ch) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'emojiCell';
+        b.textContent = ch;
+        b.setAttribute('aria-label', ch);
+        b.addEventListener('click', function () { insert(ch); });
+        grid.appendChild(b);
+      });
+    });
+    panel.appendChild(tabs);
+    panel.appendChild(grid);
+    document.body.appendChild(panel);
+  }
+
+  function position () {
+    if (!panel || !anchorBtn) return;
+    var bar = anchorBtn.closest('.cpBar, .dmBar') || anchorBtn;
+    var r = bar.getBoundingClientRect();
+    panel.style.bottom = Math.max(8, window.innerHeight - r.top + 8) + 'px';
+    var br = anchorBtn.getBoundingClientRect();
+    var w = panel.offsetWidth || 340;
+    panel.style.left = Math.min(Math.max(8, br.left), Math.max(8, window.innerWidth - w - 8)) + 'px';
+  }
+
+  function open (btn, inputId) {
+    build();
+    targetId = inputId;
+    if (anchorBtn) anchorBtn.classList.remove('active');
+    anchorBtn = btn;
+    btn.classList.add('active');
+    btn.setAttribute('aria-expanded', 'true');
+    panel.classList.add('open');
+    position();
+  }
+  function close () {
+    if (!panel) return;
+    panel.classList.remove('open');
+    if (anchorBtn) {
+      anchorBtn.classList.remove('active');
+      anchorBtn.setAttribute('aria-expanded', 'false');
+    }
+  }
+  window.toggleEmojiPanel = function (btn, inputId) {
+    if (panel && panel.classList.contains('open') && targetId === inputId) { close(); return; }
+    open(btn, inputId);
+  };
+
+  function insert (ch) {
+    var inp = document.getElementById(targetId);
+    if (!inp) return;
+    var max = parseInt(inp.getAttribute('maxlength') || '0', 10);
+    var v = inp.value;
+    var s = inp.selectionStart != null ? inp.selectionStart : v.length;
+    var e = inp.selectionEnd != null ? inp.selectionEnd : v.length;
+    var next = v.slice(0, s) + ch + v.slice(e);
+    if (max && next.length > max) return; /* respect the input's maxlength */
+    inp.value = next;
+    var pos = s + ch.length;
+    try { inp.setSelectionRange(pos, pos); } catch (err) {}
+    inp.focus({ preventScroll: true });
+    /* let any listeners (e.g. draft counters) know the value changed */
+    try { inp.dispatchEvent(new Event('input', { bubbles: true })); } catch (err) {}
+  }
+
+  /* Close on outside tap, Escape, or viewport changes */
+  document.addEventListener('click', function (e) {
+    if (!panel || !panel.classList.contains('open')) return;
+    if (panel.contains(e.target)) return;
+    if (anchorBtn && (e.target === anchorBtn || anchorBtn.contains(e.target))) return;
+    /* clicking back into the target input keeps the panel open */
+    var t = targetId ? document.getElementById(targetId) : null;
+    if (t && e.target === t) return;
+    close();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  window.addEventListener('resize', function () {
+    if (panel && panel.classList.contains('open')) position();
+  });
+})();
+</script>
+
 
       <!-- Chat view — "Art Talk" room (the original Comments feed) -->
       <div class="cmChat" id="cmChatView">
@@ -6886,8 +7225,13 @@ body{background:var(--bg);}
             <img id="cpBarAvatarImg" alt="" style="display:none;">
             <span id="cpBarAvatarTxt">?</span>
           </div>
-          <input class="cpBarInput" id="cpBarInput" type="text" placeholder="Comment here..." maxlength="500" autocomplete="off"/>
-          <button class="cpBarSend" id="cpBarSend" onclick="cpSend()">SEND ✦</button>
+          <button class="cpEmojiBtn" id="cpEmojiBtn" type="button" title="Emoji" aria-label="Insert emoji" aria-haspopup="true" aria-expanded="false" onclick="toggleEmojiPanel(this,'cpBarInput')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5s1.2 1.8 3.5 1.8 3.5-1.8 3.5-1.8"/><line x1="9" y1="9.4" x2="9.01" y2="9.4" stroke-width="2.6"/><line x1="15" y1="9.4" x2="15.01" y2="9.4" stroke-width="2.6"/></svg>
+          </button>
+          <input class="cpBarInput" id="cpBarInput" type="text" placeholder="Message" maxlength="500" autocomplete="off"/>
+          <button class="cpBarSend" id="cpBarSend" onclick="cpSend()" title="Send" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.6 21.8 12 3.4 3.4l-.01 6.7L15 12 3.39 13.9z"/></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -8118,8 +8462,10 @@ body{background:var(--bg);}
     /* FIX: list now includes every overlay that locks body scroll —
        notifPage, admPage and zeoPage were
        missing, so closing any other panel while one of them was open
-       silently re-enabled background scrolling behind it. */
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage'];
+       silently re-enabled background scrolling behind it.
+       FIX 2: frdPage (Friends) and bmPage (Bookmarks/Likes) also lock
+       scroll and were missing from this list. */
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -8200,7 +8546,7 @@ body{background:var(--bg);}
 
   function itemHTML(img){
     const thumbSrc=getThumbnailUrl(esc(img.image_url));
-    const thumbPos=(img.thumb_x!=null&&img.thumb_y!=null)?(img.thumb_x+'% '+img.thumb_y+'%'):'50% 50%';
+    const thumbPos=(img.thumb_x!=null&&img.thumb_y!=null&&isFinite(+img.thumb_x)&&isFinite(+img.thumb_y))?((+img.thumb_x)+'% '+(+img.thumb_y)+'%'):'50% 50%';
     const fullSrc=esc(img.image_url);
     const cats=catList(img.category).length?catList(img.category):['others'];
     const extraCats=cats.slice(1);
@@ -9949,8 +10295,8 @@ body{background:var(--bg);}
     /* Profile artwork cards never show Edit/Delete — not even for a
        dev/admin viewer — to keep this grid a pure read-only showcase. */
     var pending = a.status === 'pending';
-    return '<div class="awCard" onclick="pfOpenArtwork(\''+a.id+'\')">'+
-      '<div class="awImgWrap'+(pending?' awPending':'')+'"><img loading="lazy" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null?a.thumb_x:50)+'% '+(a.thumb_y!=null?a.thumb_y:50)+'%">'+
+    return '<div class="awCard" onclick="pfOpenArtwork(\''+esc(String(a.id))+'\')">'+
+      '<div class="awImgWrap'+(pending?' awPending':'')+'"><img loading="lazy" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%">'+
         (pending?'<div class="awPendingOv"><div class="awPendingSpin"></div><div class="awPendingLbl">IN REVIEW</div></div>':'')+
       '</div>'+
       '<div class="pfCardMeta">'+
@@ -10004,8 +10350,14 @@ body{background:var(--bg);}
     var links = (pf.profile && pf.profile.social_links) || {};
     wrap.innerHTML = PF_SOCIAL_PLATFORMS.map(function(p){
       var url = links[p.key];
-      return url
-        ? '<a class="pfConnectItem pfConnectItem--on" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+p.label+'</a>'
+      /* FIX (defense in depth): pfValidateSocialLink guards the save
+         path, but this render path trusted the DB — a javascript: URL
+         written to profiles.social_links by any other means would have
+         rendered as a clickable link. Only http(s) URLs become links;
+         anything else falls back to the unlinked state. */
+      var safe = (typeof url === 'string' && /^https?:\/\//i.test(url.trim())) ? url.trim() : null;
+      return safe
+        ? '<a class="pfConnectItem pfConnectItem--on" href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+p.label+'</a>'
         : '<span class="pfConnectItem pfConnectItem--off">'+p.label+'</span>';
     }).join('');
   }
@@ -11109,8 +11461,8 @@ body{background:var(--bg);}
   function admCardHTML(row){
     var idStr = esc(String(row.id));
     var img = esc(getThumbnailUrl(row.image_url));
-    var tx = row.thumb_x!=null?row.thumb_x:50;
-    var ty = row.thumb_y!=null?row.thumb_y:50;
+    var tx = row.thumb_x!=null&&isFinite(+row.thumb_x)?+row.thumb_x:50;
+    var ty = row.thumb_y!=null&&isFinite(+row.thumb_y)?+row.thumb_y:50;
     var title = esc(row.name||'Untitled');
     return '<div class="admCard" data-id="'+idStr+'">'+
       '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="object-position:'+tx+'% '+ty+'%">'+
@@ -11227,8 +11579,8 @@ body{background:var(--bg);}
   function mwCardHTML(row){
     var idStr = esc(String(row.id));
     var img = esc(getThumbnailUrl(row.image_url));
-    var tx = row.thumb_x!=null?row.thumb_x:50;
-    var ty = row.thumb_y!=null?row.thumb_y:50;
+    var tx = row.thumb_x!=null&&isFinite(+row.thumb_x)?+row.thumb_x:50;
+    var ty = row.thumb_y!=null&&isFinite(+row.thumb_y)?+row.thumb_y:50;
     var title = esc(row.name||'Untitled');
     var status = row.status||'approved';
     var chip = status!=='approved' ? '<span class="mwStatusChip '+esc(status)+'">'+esc(status)+'</span>' : '';
@@ -11544,6 +11896,20 @@ function hideCommentThumbnail(){
   var CP_POLL_MS = 5000;
   var cpLastSig = '';
 
+  /* WhatsApp-style helpers for the channel feed */
+  function cpHHMM(iso){
+    if(!iso) return '';
+    try{ return new Date(iso).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+    catch(e){ return ''; }
+  }
+  function cpDayChip(d){
+    var now = new Date(), y = new Date(); y.setDate(now.getDate()-1);
+    if(d.toDateString() === now.toDateString()) return 'TODAY';
+    if(d.toDateString() === y.toDateString())   return 'YESTERDAY';
+    try{ return d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}).toUpperCase(); }
+    catch(e){ return d.toDateString().toUpperCase(); }
+  }
+
   function cpRender(){
     var body  = document.getElementById('cpBody');
     var empty = document.getElementById('cpEmpty');
@@ -11572,7 +11938,7 @@ function hideCommentThumbnail(){
     var atBottom   = (prevHeight - prevTop - body.clientHeight) < 80;
 
     /* Remove existing rendered items (keep #cpEmpty and #cpRefreshWrap) */
-    body.querySelectorAll('.cpComment, .cpShowcase').forEach(function(el){ el.remove(); });
+    body.querySelectorAll('.cpComment, .cpShowcase, .cpMsgRow, .chatDay').forEach(function(el){ el.remove(); });
 
     if(cpComments.length === 0){
       if(empty) empty.style.display = 'flex';
@@ -11588,6 +11954,9 @@ function hideCommentThumbnail(){
 
     /* Loader now sits at the top; messages are appended below it. */
     var isShowcase = cpCurrentChannel === 'showcase';
+
+    /* WhatsApp-style grouping/date-chip state for the chat channels */
+    var cpLastDayKey = '', cpLastSenderKey = null, cpLastTs = 0;
 
     toShow.forEach(function(c){
       var div = document.createElement('div');
@@ -11608,19 +11977,42 @@ function hideCommentThumbnail(){
           (c.image_url ? ('<img class="cpShowcaseImg" src="' + esc(getThumbnailUrl(c.image_url||'')) + '" alt="' + esc(c.user) + '\'s artwork" onclick="openLB(\'' + safeUrl.replace(/'/g,'&#39;') + '\',\'' + esc(c.user).replace(/'/g,'&#39;') + '\'s artwork\')">') : '') +
           '<div class="cpShowcaseText">' + esc(c.text) + '</div>';
       } else {
-        div.className = 'cpComment' + (c.image_url ? ' hasImage' : '');
+        /* WhatsApp-style chat row: date chips between days; own
+           messages right-aligned in an accent bubble; others left
+           with avatar + coloured sender name (group-chat style).
+           Consecutive messages from the same sender within 5 min
+           are grouped — avatar/name shown once, tighter spacing. */
+        var mine = !!(typeof currentUser !== 'undefined' && currentUser && c.user_id && String(c.user_id) === String(currentUser.id));
+        var d = c.raw_time ? new Date(c.raw_time) : null;
+        var dayKey = d ? d.toDateString() : '';
+        if(dayKey && dayKey !== cpLastDayKey){
+          var chip = document.createElement('div');
+          chip.className = 'chatDay';
+          chip.innerHTML = '<span>' + cpDayChip(d) + '</span>';
+          body.appendChild(chip);
+          cpLastDayKey = dayKey;
+          cpLastSenderKey = null; /* new day always restarts the group */
+        }
+        var senderKey = c.user_id != null ? 's:'+c.user_id : 'n:'+c.user;
+        var ts = d ? d.getTime() : 0;
+        var cont = cpLastSenderKey === senderKey && ts && (ts - cpLastTs) < 300000;
+        cpLastSenderKey = senderKey; cpLastTs = ts;
+
         var thumbHtml = '';
         if(c.image_url){
           var safeUrl2 = esc(c.image_url);
           thumbHtml = '<img class="cpPhoto" src="' + esc(getThumbnailUrl(c.image_url)) + '" alt="linked image" onclick="openLB(\'' + safeUrl2.replace(/'/g,'&#39;') + '\',\'linked image\')">';
         }
+        var shortTime = cpHHMM(c.raw_time) || esc(c.time);
+
+        div.className = 'cpMsgRow ' + (mine ? 'cpMsgRow--me' : 'cpMsgRow--them') + (cont ? ' cpMsgRow--cont' : '');
         div.innerHTML =
-          thumbHtml +
-          '<div class="cpAvatar">' + esc(c.initial) + '</div>' +
-          '<div class="cpCommentMeta">' +
-            '<div class="cpCommentUser">' + esc(c.user) + '</div>' +
-            '<div class="cpCommentText">' + esc(c.text) + '</div>' +
-            '<div class="cpCommentTime">' + esc(c.time) + '</div>' +
+          (!mine ? '<div class="cpAvatar cpMsgAvatar' + (cont ? ' cpMsgAvatar--ghost' : '') + '">' + esc(c.initial) + '</div>' : '') +
+          '<div class="cpBubble">' +
+            (!mine && !cont ? '<div class="cpBubbleName">' + esc(c.user) + '</div>' : '') +
+            thumbHtml +
+            (c.text ? '<span class="cpBubbleText">' + esc(c.text) + '</span>' : '') +
+            '<span class="cpBubbleTime">' + shortTime + '</span>' +
           '</div>';
       }
       body.appendChild(div);
@@ -11894,9 +12286,11 @@ function hideCommentThumbnail(){
       imageUrl = thumbImg.src;
     }
 
-    /* Disable Send while saving */
+    /* Disable Send while saving — FIX: the button now holds an SVG
+       icon, so a textContent swap would wipe it permanently; a
+       disabled + dimmed state keeps the icon intact. */
     var sendBtn = document.getElementById('cpBarSend');
-    if(sendBtn){ sendBtn.disabled = true; sendBtn.textContent = '…'; }
+    if(sendBtn){ sendBtn.disabled = true; sendBtn.style.opacity = '.55'; }
 
     try{
       /* Username is the only public display name — never fall back to email or .name */
@@ -11917,10 +12311,12 @@ function hideCommentThumbnail(){
       return true;
     }catch(e){
       console.error('cpSaveComment:', e);
-      console.error('Error: ' + (e.message || 'Could not save comment'));
+      /* FIX: failures were console-only — surface the real reason so
+         the user isn't left with a silently-vanishing message. */
+      showToast(e && e.message ? e.message : 'Could not send — try again');
       return false;
     }finally{
-      if(sendBtn){ sendBtn.disabled = false; sendBtn.textContent = 'SEND ✦'; }
+      if(sendBtn){ sendBtn.disabled = false; sendBtn.style.opacity = ''; }
     }
   }
 
@@ -12769,7 +13165,12 @@ function hideCommentThumbnail(){
 
   window.closeLegal = function(){
     backdrop.classList.remove('open');
-    document.body.style.overflow = '';
+    /* FIX: the legal backdrop is also reused by the verification-status
+       modal, which opens on top of My Work / Profile — a blind overflow
+       reset unlocked background scroll behind those still-open panels.
+       restoreScroll() only unlocks when nothing else is open. */
+    if (typeof restoreScroll === 'function') restoreScroll();
+    else document.body.style.overflow = '';
   };
 
   /* ── Verification-status modal — shown when a submitter taps their
@@ -12779,7 +13180,7 @@ function hideCommentThumbnail(){
     titleEl.innerHTML = 'UNDER REVIEW';
     bodyEl.innerHTML =
       '<div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.4rem;">'+
-        '<img src="'+esc(getThumbnailUrl(art.image_url))+'" alt="" style="width:64px;height:64px;object-fit:cover;object-position:'+(art.thumb_x!=null?art.thumb_x:50)+'% '+(art.thumb_y!=null?art.thumb_y:50)+'%;border-radius:6px;border:1px solid var(--bdr);filter:blur(3px);flex-shrink:0;">'+
+        '<img src="'+esc(getThumbnailUrl(art.image_url))+'" alt="" style="width:64px;height:64px;object-fit:cover;object-position:'+(art.thumb_x!=null&&isFinite(+art.thumb_x)?+art.thumb_x:50)+'% '+(art.thumb_y!=null&&isFinite(+art.thumb_y)?+art.thumb_y:50)+'%;border-radius:6px;border:1px solid var(--bdr);filter:blur(3px);flex-shrink:0;">'+
         '<div>'+
           '<div style="font-family:var(--fb);font-size:1rem;color:var(--tx);font-weight:600;margin-bottom:.3rem;">'+esc(art.name||'Untitled')+'</div>'+
           '<span class="lmDate" style="margin-top:0;">IN REVIEW</span>'+
@@ -14584,7 +14985,11 @@ html.thmFade #themePage{
   function closeBookmarksPage () {
     var page = $('bmPage'); page.classList.remove('open');
     var nav = $('bnNav'); if (nav) nav.style.display = '';
-    document.body.style.overflow = '';
+    /* FIX: Bookmarks/Likes opens on top of the Profile page — a blind
+       overflow reset unlocked background scroll behind it.
+       restoreScroll() only unlocks when nothing else is open. */
+    if (typeof restoreScroll === 'function') restoreScroll();
+    else document.body.style.overflow = '';
     if (bmLastFocus && bmLastFocus.focus) bmLastFocus.focus({ preventScroll: true });
   }
   document.addEventListener('keydown', function (e) {

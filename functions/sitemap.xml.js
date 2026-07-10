@@ -1,33 +1,3 @@
-// functions/sitemap.xml.js
-//
-// Cloudflare Pages Function — serves a live, always-up-to-date
-// sitemap.xml at https://<your-domain>/sitemap.xml.
-//
-// Why this exists: index.html is a single static file with no
-// server-side rendering, so a sitemap can't be "baked in" at build
-// time without going stale every time an artwork is added or
-// removed. This function queries Supabase directly (same public
-// project the client already talks to) on every request and lists:
-//   • the homepage
-//   • one <url> per artwork, pointing at its dedicated
-//     /artwork/{id} URL — the exact URLs the SEO update in
-//     index.html (handleArtClick / openArtworkById) makes real and
-//     navigable.
-//
-// SETUP:
-//   1. Drop this file at: functions/sitemap.xml.js  (already in the
-//      right place relative to your Cloudflare Pages project root —
-//      i.e. alongside your index.html, NOT inside it).
-//   2. In the Cloudflare Pages dashboard → your project → Settings →
-//      Environment variables, add:
-//        SUPABASE_URL  = https://tmqzqlrpjpydiftlrzmj.supabase.co
-//        SUPABASE_ANON_KEY = <same publishable/anon key already in index.html>
-//      (Using env vars here instead of hardcoding keeps this file
-//      identical across environments and avoids a second place to
-//      update the key if it's ever rotated.)
-//   3. Deploy. /sitemap.xml will now be live and dynamic — no further
-//      action needed when artworks are added, edited, or removed.
-
 export async function onRequestGet(context) {
   const { env } = context;
   const SUPABASE_URL = env.SUPABASE_URL || 'https://tmqzqlrpjpydiftlrzmj.supabase.co';

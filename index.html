@@ -69,7 +69,7 @@
     gtag('config', 'G-21DL9JWJ58');
   </script>
   <!-- End Google Analytics (GA4) -->
-  <meta content="width=device-width, initial-scale=1.0, interactive-widget=overlays-content" name="viewport"/>
+  <meta content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual" name="viewport"/>
   <title>
    DigiArtz — The Digital Art Community
   </title>
@@ -558,10 +558,8 @@
     .gDel{position:absolute;top:.4rem;right:.4rem;width:24px;height:24px;background:rgba(220,38,38,.85);border:none;color:white;font-size:.75rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:5;transition:background .2s;border-radius:6px;}
     .gDel:hover{background:rgb(220,38,38);}
     body.admin .gDel{display:flex;}
-    /* gEdit: admin-only edit button, sits left of gDel */
-    .gEdit{position:absolute;top:.4rem;right:2.05rem;width:24px;height:24px;background:color-mix(in srgb,var(--tc) 80%,var(--bg));border:none;color:white;font-size:.72rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:5;transition:background .2s;border-radius:6px;}
-    .gEdit:hover{background:var(--tc);}
-    body.admin .gEdit{display:flex;}
+    /* (admin edit pencil removed — uploads/edits are per-user now;
+       admin keeps gDel delete + the #admPage review queue) */
     .cBadgeWrap{display:none;}
     .cBadge{background:var(--sur2);border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
     .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,var(--bg));border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
@@ -1537,6 +1535,13 @@
     }
     /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
     .cpBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 97%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:-1;}
+    /* ── Keyboard avoidance — while the composer input is focused and
+       the on-screen keyboard occludes the viewport, JS translates the
+       bar up to ride just above it (see the kbLift module). The big
+       bottom-nav clearance is dropped while lifted since the nav is
+       behind the keyboard anyway. ── */
+    .cpBar,.dmBar{transition:transform .18s ease;will-change:transform;}
+    .cpBar.kbLift{padding-bottom:calc(.75rem + env(safe-area-inset-bottom,0px));}
     .cpBarAvatar{
       width:36px;height:36px;border-radius:50%;flex-shrink:0;
       background:color-mix(in srgb,var(--tc) 22%,transparent);
@@ -5407,7 +5412,6 @@ body{background:var(--bg);}
         <span class="awTabIndicator" id="awTabIndicator" aria-hidden="true"></span>
       </div>
       <!-- Admin Upload Button (admin-only, hidden by default) -->
-      <button class="upBtn adminOnly" onclick="openUp()" style="display:none;">↑ UPLOAD ART</button>
     </div>
     <div class="awGrid" id="awGrid"></div>
     <div class="awEmpty" id="awEmpty">NO ARTWORK YET</div>
@@ -5623,12 +5627,8 @@ body{background:var(--bg);}
           <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" onclick="pfSwitchTab('gallery')">ARTWORK</button>
           <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" onclick="pfSwitchTab('about')">ABOUT</button>
         </div>
-        <div class="pfUploadWrap" id="pfUploadWrap" style="display:none;">
-          <button class="pfUpTrigger" onclick="togglePfUploadMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="pfUploadMenu">UPLOAD <span class="pfUpCh">⌄</span></button>
-          <div class="pfUploadMenu" id="pfUploadMenu">
-            <button id="pfUploadArtBtn" onclick="closePfUploadMenu();openPfUpload()">Upload Artwork</button>
-          </div>
-        </div>
+        <!-- Profile UPLOAD dropdown removed — uploading now lives solely
+             behind the nav-bar ➕ button (universal, login-only). -->
       </div>
 
       <!-- GALLERY -->
@@ -5748,7 +5748,7 @@ body{background:var(--bg);}
        ├─ Header (.subPgHdr) — title + close (.subPgX)
        ├─ Admin Mode toggle (.admModeRow) — on/off switch, same
        │   isAdm flag the rest of the site already uses for
-       │   gEdit/gDel/upload-button visibility
+       │   gDel/upload-button visibility
        └─ Tabs (.pfTabs) — Artwork / Comic Arts / Notifications
            ├─ Artwork    → #admArtGrid  (pending artworks)
            └─ Notifications → placeholder, empty for now
@@ -5955,6 +5955,39 @@ body{background:var(--bg);}
     .upCatDd.open .upChev{transform:rotate(180deg);}
     .upCatPanel{position:absolute;top:calc(100% + .4rem);left:0;right:0;background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.3);border-radius:8px;padding:.5rem;display:none;flex-direction:column;gap:.15rem;z-index:5;box-shadow:0 10px 26px rgba(0,0,0,.45);max-height:210px;overflow-y:auto;}
     .upCatDd.open .upCatPanel{display:flex;}
+    /* ── Category picker with search — the wrap pins the search bar
+       at the top while only the list below it scrolls. Taller than
+       the plain panel since it now holds all 51 categories. ── */
+    #pfUpCatPanelWrap{overflow:hidden;padding:0;gap:0;max-height:min(300px,46vh);}
+    .upCatSearchWrap{
+      position:relative;flex-shrink:0;
+      padding:.5rem .5rem .45rem;
+      border-bottom:1px solid var(--bdr);
+    }
+    .upCatSearchWrap svg{
+      position:absolute;left:1.1rem;top:50%;transform:translateY(-52%);
+      width:14px;height:14px;color:var(--txd);pointer-events:none;
+    }
+    .upCatSearch{
+      width:100%;box-sizing:border-box;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:999px;
+      color:var(--tx);font-family:var(--fb);font-size:.82rem;
+      padding:.45rem .8rem .45rem 2.1rem;outline:none;
+      transition:border-color .2s;
+    }
+    .upCatSearch:focus{border-color:var(--pg);}
+    .upCatSearch::placeholder{color:var(--txd);opacity:.6;}
+    .upCatList{
+      flex:1;overflow-y:auto;
+      display:flex;flex-direction:column;gap:.15rem;
+      padding:.4rem .5rem .5rem;
+      overscroll-behavior:contain;
+    }
+    .upCatNoMatch{
+      flex-shrink:0;
+      font-family:var(--fm);font-size:.64rem;letter-spacing:.1em;
+      color:var(--txd);text-align:center;padding:.7rem 0 .8rem;
+    }
     .upCatOpt{display:flex;align-items:center;gap:.55rem;font-size:.82rem;color:rgb(var(--tx2-rgb));cursor:pointer;padding:.4rem .5rem;border-radius:6px;}
     .upCatOpt:hover{background:rgba(var(--pg-rgb),.12);}
     .upCatOpt input{accent-color:var(--pg);cursor:pointer;}
@@ -6134,8 +6167,18 @@ body{background:var(--bg);}
             <button type="button" class="upCatTrigger" onclick="togglePfCatDd(event)" id="pfUpCatTrigger">
               <span id="pfUpCatTriggerLbl">Others</span><span class="upChev">⌄</span>
             </button>
-            <div class="upCatPanel" id="pfUpCatPanel">
-              <!-- Options injected by buildCategoryUI() from SITE_CATEGORIES -->
+            <div class="upCatPanel" id="pfUpCatPanelWrap">
+              <!-- Search sits OUTSIDE #pfUpCatPanel so buildCategoryUI()'s
+                   innerHTML rebuilds never wipe it. No autofocus — the
+                   keyboard only opens when the field itself is tapped. -->
+              <div class="upCatSearchWrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <input type="text" class="upCatSearch" id="pfUpCatSearch" placeholder="Search categories…" autocomplete="off" oninput="pfFilterCats(this.value)" onclick="event.stopPropagation()"/>
+              </div>
+              <div class="upCatList" id="pfUpCatPanel">
+                <!-- Options injected by buildCategoryUI() from SITE_CATEGORIES -->
+              </div>
+              <div class="upCatNoMatch" id="pfUpCatNoMatch" style="display:none;">No matching category</div>
             </div>
           </div>
         </div>
@@ -6617,6 +6660,31 @@ body{background:var(--bg);}
   background:color-mix(in srgb,var(--sur) 92%,transparent);
 }
 .dmBar .cpBarInput{flex:1;}
+/* ── Friend gate + friend-action buttons ──
+   .dmGate replaces the composer until the pair are friends. */
+.dmGate{
+  flex-shrink:0;border-top:1px solid var(--bdr);
+  padding:1rem 1.2rem calc(1rem + env(safe-area-inset-bottom,0px));
+  background:color-mix(in srgb,var(--sur) 92%,transparent);
+  display:none;flex-direction:column;align-items:center;gap:.65rem;text-align:center;
+}
+.dmGateTxt{font-family:var(--fm);font-size:.64rem;letter-spacing:.14em;color:var(--txd);line-height:1.6;}
+.dmGateRow{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;}
+.frBtn{
+  font-family:var(--fm);font-size:.64rem;letter-spacing:.14em;
+  padding:.55rem 1.15rem;border-radius:999px;cursor:pointer;
+  background:var(--pg);border:1px solid var(--pg);color:var(--text-on-accent);
+  transition:filter .2s,transform .15s,background .2s,border-color .2s;
+  white-space:nowrap;
+}
+.frBtn:hover{filter:brightness(1.08);}
+.frBtn:active{transform:scale(.96);}
+.frBtn--ghost{background:transparent;color:var(--tx);border:1px solid var(--bdrh);}
+.frBtn--ghost:hover{border-color:var(--pg);filter:none;background:var(--pdim);}
+.frBtn--danger{background:transparent;border:1px solid rgba(239,68,68,.45);color:#ef8080;}
+.frBtn--danger:hover{background:rgba(239,68,68,.12);filter:none;}
+.frRowBtns{display:flex;gap:.4rem;flex-shrink:0;align-items:center;margin-left:auto;}
+.frRowBtns .frBtn{padding:.42rem .8rem;font-size:.58rem;}
 .dmHint{
   font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;
   color:var(--txd);text-align:center;padding:.35rem 0 0;
@@ -6629,13 +6697,16 @@ body{background:var(--bg);}
 
 <div class="cmChat" id="dmChatView">
   <div class="cpBody" id="dmBody"></div>
+  <!-- Friend gate — replaces the composer until the two users are
+       friends: Add Friend / request states / blocked notice. -->
+  <div class="dmGate" id="dmGate" style="display:none;"></div>
   <div class="dmBar">
     <button class="cpEmojiBtn" id="dmEmojiBtn" type="button" title="Emoji" aria-label="Insert emoji" aria-haspopup="true" aria-expanded="false" onclick="toggleEmojiPanel(this,'dmInput')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5s1.2 1.8 3.5 1.8 3.5-1.8 3.5-1.8"/><line x1="9" y1="9.4" x2="9.01" y2="9.4" stroke-width="2.6"/><line x1="15" y1="9.4" x2="15.01" y2="9.4" stroke-width="2.6"/></svg>
     </button>
     <input class="cpBarInput" id="dmInput" type="text" maxlength="1000"
            placeholder="Message" title="Text only — links aren't allowed" autocomplete="off"/>
-    <button class="cpBarSend" id="dmSendBtn" title="Send" aria-label="Send message">
+    <button class="cpBarSend" id="dmSendBtn" onmousedown="event.preventDefault()" title="Send" aria-label="Send message">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.6 21.8 12 3.4 3.4l-.01 6.7L15 12 3.39 13.9z"/></svg>
     </button>
   </div>
@@ -6687,6 +6758,98 @@ body{background:var(--bg);}
     catch (e) { return d.toDateString().toUpperCase(); }
   }
 
+  /* ══ Friendships ══════════════════════════════════════════
+     One row per pair in public.friendships (RLS + a transition
+     trigger enforce everything server-side; the DM INSERT policy
+     requires status='accepted'). frMap: other-user-id → row. */
+  var frMap = {};
+  async function loadFriendships () {
+    frMap = {};
+    if (!db() || !me()) return;
+    try {
+      var r = await db().from('friendships')
+        .select('id,requester_id,addressee_id,status,blocked_by')
+        .or('requester_id.eq.' + me().id + ',addressee_id.eq.' + me().id);
+      if (r.error) throw r.error;
+      (r.data || []).forEach(function (f) {
+        frMap[f.requester_id === me().id ? f.addressee_id : f.requester_id] = f;
+      });
+    } catch (e) { /* keep last good map */ }
+  }
+  function frState (pid) {
+    var f = frMap[pid];
+    if (!f) return 'none';
+    if (f.status === 'accepted') return 'friends';
+    if (f.status === 'blocked') return f.blocked_by === (me() && me().id) ? 'blocked_by_me' : 'blocked_me';
+    return f.requester_id === (me() && me().id) ? 'sent' : 'incoming';
+  }
+  async function refreshAfterFrChange () {
+    await loadFriendships();
+    if ($('frdPage') && $('frdPage').classList.contains('open')) loadFriendsPage();
+    if (dmPartner) dmApplyGate();
+    /* live-update any open search boxes */
+    ['dmSearchInput', 'frdSearchInput'].forEach(function (id) {
+      var i = $(id);
+      if (i && i.value.trim().length >= 2) i.dispatchEvent(new Event('input'));
+    });
+  }
+  async function frSendReq (pid) {
+    if (!db() || !me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
+    try {
+      var r = await db().from('friendships').insert({ requester_id: me().id, addressee_id: pid });
+      if (r.error) throw r.error;
+      toast('Friend request sent ✦');
+    } catch (e) {
+      toast(e && e.message && /duplicate|uniq/i.test(e.message) ? 'A request already exists' : 'Couldn\u2019t send the request');
+    }
+    await refreshAfterFrChange();
+  }
+  async function frAccept (pid) {
+    var f = frMap[pid]; if (!f || !db()) return;
+    try {
+      var r = await db().from('friendships').update({ status: 'accepted' }).eq('id', f.id);
+      if (r.error) throw r.error;
+      toast('You are now friends ✦');
+    } catch (e) { toast('Couldn\u2019t accept — try again'); }
+    await refreshAfterFrChange();
+  }
+  /* delete row = cancel request / decline / unblock (back to strangers) */
+  async function frRemove (pid, okMsg) {
+    var f = frMap[pid]; if (!f || !db()) return;
+    try {
+      var r = await db().from('friendships').delete().eq('id', f.id);
+      if (r.error) throw r.error;
+      if (okMsg) toast(okMsg);
+    } catch (e) { toast('Action failed — try again'); }
+    await refreshAfterFrChange();
+  }
+  async function frBlock (pid) {
+    if (!db() || !me()) return;
+    try {
+      var f = frMap[pid];
+      if (f) {
+        var r = await db().from('friendships').update({ status: 'blocked' }).eq('id', f.id);
+        if (r.error) throw r.error;
+      } else {
+        /* blocking a stranger: create the pair row, then flip it */
+        var i = await db().from('friendships').insert({ requester_id: me().id, addressee_id: pid }).select().single();
+        if (i.error) throw i.error;
+        var u = await db().from('friendships').update({ status: 'blocked' }).eq('id', i.data.id);
+        if (u.error) throw u.error;
+      }
+      toast('Blocked');
+    } catch (e) { toast('Couldn\u2019t block — try again'); }
+    await refreshAfterFrChange();
+  }
+  /* small action pill that never triggers the row's click */
+  function frBtnEl (label, cls, fn) {
+    var b = document.createElement('button');
+    b.className = 'frBtn' + (cls ? ' ' + cls : '');
+    b.textContent = label;
+    b.addEventListener('click', function (ev) { ev.stopPropagation(); fn(); });
+    return b;
+  }
+
   /* ── Username search ── */
   function initSearch () {
     var inp = $('dmSearchInput'), box = $('dmResults');
@@ -6707,7 +6870,11 @@ body{background:var(--bg);}
         .ilike('username', '%' + safe + '%')
         .limit(8);
       if (r.error) throw r.error;
-      var rows = (r.data || []).filter(function (p) { return !me() || p.id !== me().id; });
+      await loadFriendships(); /* fresh states for the action buttons */
+      var rows = (r.data || []).filter(function (p) {
+        if (me() && p.id === me().id) return false;
+        return frState(p.id) !== 'blocked_me'; /* users who blocked me stay invisible */
+      });
       box.innerHTML = '';
       if (!rows.length) {
         box.innerHTML = '<div class="dmSearchNote">NO USERS FOUND</div>';
@@ -6742,13 +6909,26 @@ body{background:var(--bg);}
     name.textContent = p.username || 'Artist';
     var status = document.createElement('div');
     status.className = 'cmFriendStatus' + (preview ? ' dmPreview' : '');
-    status.textContent = isSearch ? 'Tap to message' : (preview || '');
+    var st = isSearch ? frState(p.id) : null;
+    status.textContent = isSearch
+      ? ({ none: 'Send a friend request', sent: 'Request sent — waiting', incoming: 'Sent you a friend request', friends: 'Tap to message', blocked_by_me: 'Blocked' }[st] || '')
+      : (preview || '');
     meta.appendChild(name); meta.appendChild(status);
     item.appendChild(av); item.appendChild(meta);
     if (isSearch) {
-      var go = document.createElement('span');
-      go.className = 'dmGo'; go.textContent = 'MESSAGE ✦';
-      item.appendChild(go);
+      /* Friend-gated actions: only accepted friends get MESSAGE ✦ */
+      var acts = document.createElement('span');
+      acts.className = 'frRowBtns';
+      if (st === 'none')            acts.appendChild(frBtnEl('ADD FRIEND', '', function () { frSendReq(p.id); }));
+      else if (st === 'sent')       acts.appendChild(frBtnEl('CANCEL', 'frBtn--ghost', function () { frRemove(p.id, 'Request cancelled'); }));
+      else if (st === 'incoming')   acts.appendChild(frBtnEl('ACCEPT', '', function () { frAccept(p.id); }));
+      else if (st === 'blocked_by_me') acts.appendChild(frBtnEl('UNBLOCK', 'frBtn--ghost', function () { frRemove(p.id, 'Unblocked'); }));
+      else if (st === 'friends') {
+        var go = document.createElement('span');
+        go.className = 'dmGo'; go.textContent = 'MESSAGE ✦';
+        acts.appendChild(go);
+      }
+      item.appendChild(acts);
     } else if (ts) {
       var w = document.createElement('span');
       w.className = 'dmWhen'; w.textContent = when(ts);
@@ -6783,7 +6963,13 @@ body{background:var(--bg);}
     });
     return partners;
   }
-  window.__dmFetchPartners = fetchPartners; /* profile drawer count */
+  /* Profile drawer count — counts ACCEPTED FRIENDS now, not DM partners */
+  window.__dmFetchPartners = async function () {
+    await loadFriendships();
+    return Object.keys(frMap)
+      .filter(function (k) { return frMap[k].status === 'accepted'; })
+      .map(function (k) { return { id: k }; });
+  };
 
   async function refreshConvos () {
     var list = $('dmConvoList'), empty = $('dmEmpty'), head = $('dmConvoHead');
@@ -6820,6 +7006,13 @@ body{background:var(--bg);}
     var res = $('dmResults');   if (res) res.innerHTML = '';
     var inp = $('dmSearchInput'); if (inp) inp.value = '';
     $('dmBody').innerHTML = '<div class="dmSearchNote">LOADING…</div>';
+    /* Friend gate: composer stays hidden until the friendship state
+       is known; dmApplyGate() then shows either the input bar
+       (friends) or the Add-Friend / request / blocked bar. */
+    var gEl = $('dmGate'), bEl = document.querySelector('#dmChatView .dmBar');
+    if (bEl) bEl.style.display = 'none';
+    if (gEl) { gEl.style.display = 'flex'; gEl.innerHTML = '<div class="dmGateTxt">…</div>'; }
+    loadFriendships().then(dmApplyGate);
     dmLimit = 25; dmHasMore = false; dmLoadingOlder = false; dmLastSig = '';
     loadThread(true);
     clearInterval(dmPoll);
@@ -6923,6 +7116,43 @@ body{background:var(--bg);}
     loadThread(false);
   }
 
+  /* Show the composer for friends, the gate bar for everyone else. */
+  function dmApplyGate () {
+    var bar = document.querySelector('#dmChatView .dmBar'), gate = $('dmGate');
+    if (!bar || !gate || !dmPartner) return;
+    var st = frState(dmPartner.id);
+    if (st === 'friends') {
+      gate.style.display = 'none';
+      bar.style.display = 'flex';
+      var i = $('dmInput'); if (i) setTimeout(function () { i.focus({ preventScroll: true }); }, 60);
+      return;
+    }
+    bar.style.display = 'none';
+    gate.style.display = 'flex';
+    gate.innerHTML = '';
+    var txt = document.createElement('div'); txt.className = 'dmGateTxt';
+    var row = document.createElement('div'); row.className = 'dmGateRow';
+    var nm = (dmPartner.username || 'this artist').toUpperCase();
+    if (st === 'none') {
+      txt.textContent = 'YOU CAN ONLY MESSAGE FRIENDS';
+      row.appendChild(frBtnEl('ADD FRIEND', '', function () { frSendReq(dmPartner.id); }));
+    } else if (st === 'sent') {
+      txt.textContent = 'FRIEND REQUEST SENT — WAITING FOR ' + nm;
+      row.appendChild(frBtnEl('CANCEL REQUEST', 'frBtn--ghost', function () { frRemove(dmPartner.id, 'Request cancelled'); }));
+    } else if (st === 'incoming') {
+      txt.textContent = nm + ' WANTS TO BE FRIENDS';
+      row.appendChild(frBtnEl('ACCEPT', '', function () { frAccept(dmPartner.id); }));
+      row.appendChild(frBtnEl('DECLINE', 'frBtn--ghost', function () { frRemove(dmPartner.id); }));
+    } else if (st === 'blocked_by_me') {
+      txt.textContent = 'YOU BLOCKED ' + nm;
+      row.appendChild(frBtnEl('UNBLOCK', 'frBtn--ghost', function () { frRemove(dmPartner.id, 'Unblocked'); }));
+    } else {
+      txt.textContent = 'YOU CAN’T MESSAGE THIS ARTIST';
+    }
+    gate.appendChild(txt);
+    if (row.children.length) gate.appendChild(row);
+  }
+
   /* ── Send (validation mirrors the DB constraints) ── */
   async function send () {
     var inp = $('dmInput'), btn = $('dmSendBtn');
@@ -6932,6 +7162,8 @@ body{background:var(--bg);}
     if (!text) return;
     if (text.length > MAX_LEN) { toast('Message is too long (max 1000 characters)'); return; }
     if (LINK_RE.test(text)) { toast('Links aren\'t allowed in messages ✦'); return; }
+    /* Friends-only — mirrors the dm_insert_friends_only RLS policy */
+    if (frState(dmPartner.id) !== 'friends') { dmApplyGate(); toast('You can only message friends ✦'); return; }
     dmSending = true; if (btn) btn.disabled = true;
     try {
       var r = await db().from('direct_messages')
@@ -6940,7 +7172,11 @@ body{background:var(--bg);}
       inp.value = '';
       await loadThread(true);
     } catch (e) {
-      toast((e && e.message && /dm_no_links/.test(e.message)) ? 'Links aren\'t allowed in messages ✦' : 'Message failed to send — try again');
+      var m = (e && e.message) || '';
+      toast(/dm_no_links/.test(m) ? 'Links aren\'t allowed in messages ✦'
+          : /row-level security|policy/i.test(m) ? 'You can only message friends ✦'
+          : 'Message failed to send — try again');
+      if (/row-level security|policy/i.test(m)) { loadFriendships().then(dmApplyGate); }
     } finally {
       dmSending = false; if (btn) btn.disabled = false;
     }
@@ -6954,26 +7190,76 @@ body{background:var(--bg);}
     openThread(p);
   }
   async function loadFriendsPage () {
+    /* Three sections driven by public.friendships:
+       FRIEND REQUESTS (incoming, Accept/Decline) · YOUR FRIENDS
+       (chat + Block) · BLOCKED (Unblock). */
     var list = $('frdList'), empty = $('frdEmptyState'),
-        head = $('frdListHead'), cnt = $('frdCount');
+        head = $('frdListHead'), cnt = $('frdCount'),
+        reqHead = $('frdReqHead'), reqList = $('frdReqList'), reqCnt = $('frdReqCount'),
+        blkHead = $('frdBlockHead'), blkList = $('frdBlockList'), blkCnt = $('frdBlockCount');
     if (!list) return;
     list.innerHTML = '<div class="dmSearchNote">LOADING…</div>';
+    if (reqList) reqList.innerHTML = '';
+    if (blkList) blkList.innerHTML = '';
     empty.style.display = 'none'; head.style.display = 'none';
+    if (reqHead) reqHead.style.display = 'none';
+    if (blkHead) blkHead.style.display = 'none';
     try {
-      var partners = await fetchPartners();
+      await loadFriendships();
+      var uid = me().id, reqs = [], friends = [], blocked = [];
+      Object.keys(frMap).forEach(function (pid) {
+        var f = frMap[pid];
+        if (f.status === 'accepted') friends.push(pid);
+        else if (f.status === 'pending' && f.addressee_id === uid) reqs.push(pid);
+        else if (f.status === 'blocked' && f.blocked_by === uid) blocked.push(pid);
+      });
       list.innerHTML = '';
-      if (cnt) cnt.textContent = partners.length;
-      if (!partners.length) { empty.style.display = ''; return; }
-      head.style.display = '';
+      if (cnt) cnt.textContent = friends.length;
+      var allIds = reqs.concat(friends, blocked);
+      if (!allIds.length) { empty.style.display = ''; return; }
       var pr = await db().from('profiles')
         .select('id,username,avatar_url')
-        .in('id', partners.map(function (p) { return p.id; }));
+        .in('id', allIds);
       var byId = {};
       (pr.data || []).forEach(function (p) { byId[p.id] = p; });
-      partners.forEach(function (pt) {
-        var prof = byId[pt.id] || { id: pt.id, username: 'Artist' };
-        list.appendChild(userRow(prof, false, pt.preview, pt.ts, frdStartChat));
-      });
+      function prof (pid) { return byId[pid] || { id: pid, username: 'Artist' }; }
+
+      if (reqs.length && reqHead && reqList) {
+        reqHead.style.display = '';
+        if (reqCnt) reqCnt.textContent = reqs.length;
+        reqs.forEach(function (pid) {
+          var row = userRow(prof(pid), false, 'Wants to be friends', null, frdStartChat);
+          var acts = document.createElement('span'); acts.className = 'frRowBtns';
+          acts.appendChild(frBtnEl('ACCEPT', '', function () { frAccept(pid); }));
+          acts.appendChild(frBtnEl('✕', 'frBtn--ghost', function () { frRemove(pid, 'Request declined'); }));
+          row.appendChild(acts);
+          reqList.appendChild(row);
+        });
+      }
+      if (friends.length) {
+        head.style.display = '';
+        friends.forEach(function (pid) {
+          var row = userRow(prof(pid), false, 'Friend ✦ tap to chat', null, frdStartChat);
+          var acts = document.createElement('span'); acts.className = 'frRowBtns';
+          acts.appendChild(frBtnEl('BLOCK', 'frBtn--danger', function () {
+            var u = prof(pid).username || 'this artist';
+            if (confirm('Block ' + u + '? They won\u2019t be able to message you, and you won\u2019t see their requests.')) frBlock(pid);
+          }));
+          row.appendChild(acts);
+          list.appendChild(row);
+        });
+      }
+      if (blocked.length && blkHead && blkList) {
+        blkHead.style.display = '';
+        if (blkCnt) blkCnt.textContent = blocked.length;
+        blocked.forEach(function (pid) {
+          var row = userRow(prof(pid), false, 'Blocked', null, frdStartChat);
+          var acts = document.createElement('span'); acts.className = 'frRowBtns';
+          acts.appendChild(frBtnEl('UNBLOCK', 'frBtn--ghost', function () { frRemove(pid, 'Unblocked'); }));
+          row.appendChild(acts);
+          blkList.appendChild(row);
+        });
+      }
     } catch (e) {
       list.innerHTML = '<div class="dmSearchNote">COULDN\u2019T LOAD FRIENDS — TRY AGAIN</div>';
     }
@@ -7049,7 +7335,7 @@ body{background:var(--bg);}
     /* First load once auth resolves (site registers its own listener;
        Supabase supports multiple). */
     if (db() && db().auth && db().auth.onAuthStateChange) {
-      db().auth.onAuthStateChange(function () { setTimeout(refreshConvos, 400); });
+      db().auth.onAuthStateChange(function () { setTimeout(function () { loadFriendships(); refreshConvos(); }, 400); });
     }
   });
 })();
@@ -7184,6 +7470,100 @@ body{background:var(--bg);}
   window.addEventListener('resize', function () {
     if (panel && panel.classList.contains('open')) position();
   });
+  /* Follow the composer bar when the keyboard-lift module moves it */
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+      if (panel && panel.classList.contains('open')) setTimeout(position, 60);
+    });
+  }
+  /* Tapping emojis/tabs must not steal focus from the input (which
+     would close the mobile keyboard) — insert() refocuses anyway,
+     but this stops the close/reopen flicker. */
+  document.addEventListener('mousedown', function (e) {
+    if (panel && panel.contains(e.target)) e.preventDefault();
+  });
+})();
+</script>
+
+<script>
+/* ── Keyboard lift ────────────────────────────────────────────
+   The composer bars (#cpBar fixed at the bottom, .dmBar at the
+   bottom of the DM view) sit under the on-screen keyboard on
+   iOS and on Android since Chrome 108 (keyboard resizes only
+   the *visual* viewport, never the layout). This module lifts
+   ONLY the focused composer: when an input inside .cpBar/.dmBar
+   gains focus, the bar is translated up by exactly the occluded
+   height reported by the VisualViewport API, and the matching
+   chat scrolls to its latest message. Everything is restored on
+   blur / keyboard dismissal. Browsers where the layout already
+   resizes (older Android, desktop) report zero occlusion, so
+   this is a natural no-op there — safe on all devices. */
+(function () {
+  'use strict';
+  var vv = window.visualViewport;
+  if (!vv) return; /* pre-2019 browsers: keep default behavior */
+
+  var activeBar = null;
+
+  function occlusion () {
+    return Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  }
+  function chatBodyFor (bar) {
+    if (!bar) return null;
+    return bar.id === 'cpBar' ? document.getElementById('cpBody')
+                              : document.getElementById('dmBody');
+  }
+  function update () {
+    if (!activeBar) return;
+    var kb = occlusion();
+    if (kb > 0) {
+      activeBar.style.transform = 'translateY(-' + kb + 'px)';
+      activeBar.classList.add('kbLift');
+      var b = chatBodyFor(activeBar);
+      if (b) b.scrollTop = b.scrollHeight; /* keep latest message visible */
+    } else {
+      activeBar.style.transform = '';
+      activeBar.classList.remove('kbLift');
+    }
+  }
+  function release (bar) {
+    if (!bar) return;
+    bar.style.transform = '';
+    bar.classList.remove('kbLift');
+    if (activeBar === bar) activeBar = null;
+  }
+
+  /* Lift ONLY when the text box itself is tapped/focused */
+  document.addEventListener('focusin', function (e) {
+    var t = e.target;
+    if (!t || !t.matches || !t.matches('input, textarea')) return;
+    var bar = t.closest ? t.closest('.cpBar, .dmBar') : null;
+    if (!bar) return;
+    if (activeBar && activeBar !== bar) release(activeBar);
+    activeBar = bar;
+    update();
+    /* iOS reports the new viewport a beat after focus */
+    setTimeout(update, 120);
+    setTimeout(update, 350);
+  });
+
+  document.addEventListener('focusout', function (e) {
+    var t = e.target;
+    if (!t || !t.closest || !t.closest('.cpBar, .dmBar')) return;
+    /* Grace period: focus may bounce back instantly (emoji insert,
+       send-button mousedown guards) — only drop if it truly left. */
+    setTimeout(function () {
+      var a = document.activeElement;
+      if (a && a.closest && a.closest('.cpBar, .dmBar')) return;
+      release(activeBar);
+    }, 80);
+  });
+
+  /* Track keyboard show/hide/resize + viewport pans while lifted */
+  vv.addEventListener('resize', update);
+  vv.addEventListener('scroll', update);
+  /* Keyboard dismissed via system back/done without a blur event */
+  window.addEventListener('orientationchange', function () { setTimeout(update, 250); });
 })();
 </script>
 
@@ -7229,7 +7609,7 @@ body{background:var(--bg);}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5s1.2 1.8 3.5 1.8 3.5-1.8 3.5-1.8"/><line x1="9" y1="9.4" x2="9.01" y2="9.4" stroke-width="2.6"/><line x1="15" y1="9.4" x2="15.01" y2="9.4" stroke-width="2.6"/></svg>
           </button>
           <input class="cpBarInput" id="cpBarInput" type="text" placeholder="Message" maxlength="500" autocomplete="off"/>
-          <button class="cpBarSend" id="cpBarSend" onclick="cpSend()" title="Send" aria-label="Send message">
+          <button class="cpBarSend" id="cpBarSend" onclick="cpSend()" onmousedown="event.preventDefault()" title="Send" aria-label="Send message">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.6 21.8 12 3.4 3.4l-.01 6.7L15 12 3.39 13.9z"/></svg>
           </button>
         </div>
@@ -8048,120 +8428,6 @@ body{background:var(--bg);}
   </div>
 
   <!-- =========================================================
-       UPLOAD / EDIT MODAL — restyled to match the profile upload
-       popup (#pfUpMod): same .upPop/.upPopBox card, same max-width,
-       same field components. z-index (20000, via .upPop) sits well
-       above #bnNav (1000), so the bottom nav never shows through.
-       ├─ Modal Overlay (.upPop #upMod)
-       └─ Modal Card (.upPopBox)
-           ├─ Close Button (.upPopX)
-           ├─ Title (#upTitle)
-           ├─ Subtitle (#upSubtitle)
-           ├─ Hidden Edit ID (#upEditId)     [empty = upload, set = edit]
-           ├─ Drop Zone (.upDz #dz)
-           │   ├─ File Input (#upF)
-           │   └─ Drop Zone Label (#dzTxt)
-           ├─ Preview Image (#upPrev)
-           ├─ Name Field (#upNm)
-           ├─ Description Field (#upDesc)
-           ├─ Category Picker (#upCatWrap)
-           │   ├─ Checkboxes (#upCatBoxes)
-           │   └─ Selected Display (#upCatDisplay)
-           ├─ Submit Button (#upBtn)
-           └─ Cancel Button
-       ========================================================= -->
-  <div class="upPop" id="upMod">
-   <div class="upPopBox">
-    <div class="upPopHead">
-      <div>
-        <h2 id="upTitle">Upload Artwork</h2>
-        <p id="upSubtitle">Add a new piece to the gallery. Supports JPG, PNG, WEBP, GIF.</p>
-      </div>
-      <button class="upPopX" onclick="closeUp()" aria-label="Close">✕</button>
-    </div>
-    <div class="upPopBody">
-     <div class="upMain">
-      <input id="upEditId" type="hidden" value=""/>
-      <div class="upDz" id="dz">
-       <input accept="image/*" id="upF" onchange="handleFile(event)" type="file"/>
-       <div class="upDzIco">🖼</div>
-       <div class="upDzTitle" id="dzTxt">Drag &amp; drop your artwork here</div>
-       <div class="upDzSub">or click to browse files</div>
-       <div class="upDzHint">JPG, PNG, WEBP, GIF up to 20MB</div>
-       <button type="button" class="upDzBtn" tabindex="-1">📁 Choose Files</button>
-      </div>
-      <img alt="preview" class="upPrev" id="upPrev"/>
-
-      <div class="upField">
-        <label class="upLbl" for="upNm">Artwork Name <span class="upReq">*</span></label>
-        <input class="upIn" id="upNm" placeholder="Give your artwork a title…" type="text"/>
-      </div>
-
-      <!-- DESCRIPTION FIELD START — optional, maps to artworks.description (TEXT, nullable) -->
-      <div class="upField">
-        <label class="upLbl" for="upDesc">Description</label>
-        <textarea class="upIn upArea" id="upDesc" placeholder="Tell the story behind your artwork…" rows="3"></textarea>
-      </div>
-      <!-- DESCRIPTION FIELD END -->
-
-      <!-- MULTI-CATEGORY SELECT START -->
-      <div class="upField" id="upCatWrap">
-        <label class="upLbl">Categories <span class="upReq">*</span></label>
-        <div id="upCatBoxes" style="display:flex;flex-wrap:wrap;gap:.2rem .4rem;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;padding:.5rem .6rem;max-height:190px;overflow-y:auto;">
-          <!-- Options injected by buildCategoryUI() from SITE_CATEGORIES -->
-        </div>
-        <!-- Selected category display section -->
-        <div id="upCatDisplay" style="margin-top:.55rem;min-height:1.4rem;display:flex;flex-wrap:wrap;gap:.3rem;"></div>
-      </div>
-      <!-- MULTI-CATEGORY SELECT END -->
-
-      <!-- SOFTWARE FIELD START — optional, maps to artworks.software (TEXT, nullable) -->
-      <div class="upField">
-        <label class="upLbl" for="upSoftware">Software Used</label>
-        <select class="upIn" id="upSoftware">
-          <option value="">Select software…</option>
-          <option value="Photoshop">Photoshop</option>
-          <option value="ibisPaint">ibisPaint</option>
-          <option value="Procreate">Procreate</option>
-          <option value="Clip Studio Paint">Clip Studio Paint</option>
-          <option value="Krita">Krita</option>
-          <option value="MediBang Paint">MediBang Paint</option>
-          <option value="Autodesk SketchBook">Autodesk SketchBook</option>
-          <option value="Illustrator">Illustrator</option>
-          <option value="Affinity Designer">Affinity Designer</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <!-- SOFTWARE FIELD END -->
-     </div>
-
-     <div class="upSide">
-       <div class="upSideCard">
-         <h3>Guidelines</h3>
-         <ul class="upGuideList">
-           <li><span class="upGIco">🖼</span><div><strong>Original work only</strong>Make sure you own the rights.</div></li>
-           <li><span class="upGIco">✦</span><div><strong>High quality recommended</strong>Best results with high resolution files.</div></li>
-           <li><span class="upGIco">🛡</span><div><strong>Appropriate content</strong>No offensive, hateful or explicit content.</div></li>
-         </ul>
-       </div>
-       <div class="upSideCard">
-         <h3>Tips for better visibility</h3>
-         <ul class="upTipList">
-           <li>Use a clear and attractive thumbnail</li>
-           <li>Add a relevant title and description</li>
-           <li>Choose the right category</li>
-         </ul>
-       </div>
-     </div>
-    </div>
-
-    <div class="upPopFoot">
-      <button class="upBtnSec" onclick="closeUp()">Cancel</button>
-      <button class="upBtnPri" id="upBtn" onclick="doUp()">📤 Upload Artwork</button>
-    </div>
-   </div>
-  </div>
-  <!-- =========================================================
        ADMIN BAR
        ├─ Status Label
        └─ Save Settings Button (.admSv)
@@ -8316,7 +8582,7 @@ body{background:var(--bg);}
     document.getElementById('sBanner').classList.add('show');
   }
 
-  let isAdm = false, upFile = null, images = [];
+  let isAdm = false, images = [];
   let filterCat = 'all', filterSrt = 'new';
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -8412,8 +8678,7 @@ body{background:var(--bg);}
 
   /* Paints every category-driven UI from SITE_CATEGORIES:
        1. #fltCatOpts    — gallery filter radios (after "ALL CATEGORIES")
-       2. #pfUpCatPanel  — profile upload checkboxes
-       3. #upCatBoxes    — admin upload checkboxes
+       2. #pfUpCatPanel  — universal upload checkboxes
        4. #awTabs        — homepage tab strip (before the indicator)
      Runs once on DOMContentLoaded. Element ids are built with
      getElementById-safe names, so slugs starting with a digit
@@ -8433,14 +8698,6 @@ body{background:var(--bg);}
       pp.innerHTML = SITE_CATEGORIES.map(function(c){
         return '<label class="upCatOpt"><input type="checkbox" id="pfUpCat_'+esc(c.slug)+'" value="'+esc(c.slug)+'"'+
                (c.slug==='others'?' checked':'')+' onchange="updatePfCatDisplay()"/> '+esc(c.label)+'</label>';
-      }).join('');
-    }
-    /* 3. Admin upload checkboxes */
-    var ub = document.getElementById('upCatBoxes');
-    if(ub){
-      ub.innerHTML = SITE_CATEGORIES.map(function(c){
-        return '<label class="upCatOpt"><input type="checkbox" id="upCat_'+esc(c.slug)+'" value="'+esc(c.slug)+'"'+
-               (c.slug==='others'?' checked':'')+' onchange="updateUpCatDisplay()"> '+esc(c.label)+'</label>';
       }).join('');
     }
     /* 4. Homepage tab strip — inserted after the "Artworks" tab and
@@ -8568,7 +8825,6 @@ body{background:var(--bg);}
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
       </a>
-      <button class="gEdit" onclick="openEditArt('${idStr}',event)" title="Edit">✎</button>
       <button class="gDel" onclick="delImg('${idStr}','${esc(img.storage_path||'')}',event)" title="Delete">✕</button>
     </div>`;
   }
@@ -9182,32 +9438,6 @@ body{background:var(--bg);}
     }
   });
 
-  /* Open upload modal in edit mode for an existing artwork */
-  function openEditArt(id,e){
-    if(e) e.stopPropagation();
-    if(!isAdm) return;
-    var art = findArtworkById(id);
-    if(!art){ showToast('Artwork not found'); return; }
-    document.getElementById('upEditId').value = String(art.id);
-    document.getElementById('upTitle').textContent = 'Edit Artwork';
-    document.getElementById('upSubtitle').textContent = 'Update the name, description, or categories for this piece.';
-    document.getElementById('dz').style.display = 'none';
-    document.getElementById('upNm').value = art.name||'';
-    document.getElementById('upDesc').value = art.description||'';
-    var prev = document.getElementById('upPrev');
-    prev.src = art.image_url||'';
-    prev.style.display = art.image_url ? 'block' : 'none';
-    var cats=catList(art.category).length?catList(art.category):['others'];
-    document.querySelectorAll('#upCatBoxes input[type=checkbox]').forEach(function(cb){
-      cb.checked = cats.indexOf(cb.value) !== -1;
-    });
-    updateUpCatDisplay();
-    document.getElementById('upSoftware').value = art.software || '';
-    document.getElementById('upBtn').textContent = '📤 Save Changes';
-    upFile = null;
-    document.getElementById('upMod').classList.add('open');
-  }
-
   function syncAdmBtn(){
     var b=document.getElementById('smAdmBtn');
     if(!b) return;
@@ -9404,28 +9634,12 @@ body{background:var(--bg);}
   /* ── Upload dropdown ── */
   var _pfUpMenuOpen = false;
 
-  function openPfUploadMenu() {
-    var menu = document.getElementById('pfUploadMenu');
-    var trigger = document.querySelector('.pfUpTrigger');
-    if (!menu) return;
-    closePfMenu();
-    menu.classList.add('open');
-    _pfUpMenuOpen = true;
-    if (trigger) trigger.setAttribute('aria-expanded','true');
-  }
+  /* Profile upload dropdown removed — stubs kept because the global
+     Escape/outside-click handlers still call closePfUploadMenu(). */
+  function openPfUploadMenu() {}
+  function closePfUploadMenu() {}
+  function togglePfUploadMenu() {}
 
-  function closePfUploadMenu() {
-    var menu = document.getElementById('pfUploadMenu');
-    var trigger = document.querySelector('.pfUpTrigger');
-    if (menu) menu.classList.remove('open');
-    _pfUpMenuOpen = false;
-    if (trigger) trigger.setAttribute('aria-expanded','false');
-  }
-
-  function togglePfUploadMenu(e) {
-    if (e) e.stopPropagation();
-    if (_pfUpMenuOpen) { closePfUploadMenu(); } else { openPfUploadMenu(); }
-  }
 
   /* Close either dropdown on outside click */
   document.addEventListener('click', function(e) {
@@ -9724,7 +9938,8 @@ body{background:var(--bg);}
     syncAdmBtn();
     syncAuthBtn(); /* repaints nav avatar + subscription card + comment bar with the fetched photo */
     notifRefreshBadge();
-    if(isDev && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
+    /* Universal upload queued before login → open it now */
+    if(currentUser && sessionStorage.getItem('pendPfUp')==='1'){ sessionStorage.removeItem('pendPfUp'); setTimeout(openPfUpload,250); }
   }
 
   /* ── Listen for auth state changes (login / logout / refresh) ── */
@@ -9945,95 +10160,9 @@ body{background:var(--bg);}
     }catch(e){ console.error('Error loading sent notifications: '+e.message); }
   }
 
-  function updateUpCatDisplay(){
-    const disp=document.getElementById('upCatDisplay');
-    if(!disp)return;
-    const selected=[...document.querySelectorAll('#upCatBoxes input[type=checkbox]:checked')].map(cb=>cb.value);
-    if(!selected.length){disp.innerHTML='<span style="font-size:.74rem;color:rgba(var(--tx2-rgb),.4);">None selected</span>';return;}
-    disp.innerHTML=selected.map(v=>`<span class="upTagChip" style="cursor:default;">${esc(catLabel(v))}</span>`).join('');
-  }
-
-  function openUp(){
-    if(!sb){showToast('Configure Supabase first');return;}
-    if(!isAdm){
-      if(!currentUser){ sessionStorage.setItem('pendUp','1'); showToast('Sign in with a dev account to upload'); openAuthMod(); }
-      else if(isDev){ showToast('Turn on Admin Mode first'); }
-      else { showToast('This account does not have dev access'); }
-      return;
-    }
-    resetUp();document.getElementById('upMod').classList.add('open');
-  }
-  function closeUp(){
-    document.getElementById('upMod').classList.remove('open');
-    upFile=null;
-  }
-  function resetUp(){
-    document.getElementById('upEditId').value='';
-    document.getElementById('upTitle').textContent='Upload Artwork';
-    document.getElementById('upSubtitle').textContent='Add a new piece to the gallery. Supports JPG, PNG, WEBP, GIF.';
-    document.getElementById('dz').style.display='';
-    document.getElementById('upNm').value='';
-    document.getElementById('upDesc').value='';
-    document.querySelectorAll('#upCatBoxes input[type=checkbox]').forEach(cb=>{cb.checked=cb.value==='others';});
-    updateUpCatDisplay();
-    document.getElementById('upSoftware').value='';
-    document.getElementById('upPrev').style.display='none';
-    document.getElementById('upBtn').textContent='📤 Upload Artwork';
-    upFile=null;
-  }
-  function handleFile(e){
-    const f=e.target.files[0];if(!f)return;upFile=f;
-    const r=new FileReader();r.onload=ev=>{const p=document.getElementById('upPrev');p.src=ev.target.result;p.style.display='block';if(!document.getElementById('upNm').value.trim())document.getElementById('upNm').value=f.name.replace(/\.[^.]+$/,'');};r.readAsDataURL(f);
-  }
-  async function doUp(){
-    const editId=document.getElementById('upEditId').value;
-    const nm=document.getElementById('upNm').value.trim();
-    const desc=document.getElementById('upDesc').value.trim(); // optional — sent as null when empty, never breaks older rows
-    const cats=[...document.querySelectorAll('#upCatBoxes input[type=checkbox]:checked')].map(cb=>cb.value);
-    const cat=cats.length?cats:['others'];
-    const software=document.getElementById('upSoftware').value;
-    if(!nm){showToast('Enter a name');return;}
-    if(!editId && !upFile){showToast('Select an image');return;}
-    const btn=document.getElementById('upBtn');
-    btn.disabled=true;
-    try{
-      if(editId){
-        /* EDIT MODE — UPDATE existing row. Image itself is not
-           replaced here; only name/description/category. */
-        btn.textContent='SAVING…';
-        const{data:rows,error:de}=await sb.from('artworks')
-          .update({name:nm,category:cat,description:desc||null,software:software||null})
-          .eq('id',editId).select();
-        if(de)throw de;
-        if(rows && rows[0]){
-          const idx=images.findIndex(i=>String(i.id)===String(editId));
-          if(idx!==-1) images[idx]=rows[0];
-        }
-        renderHome();
-        if(document.getElementById('fg').classList.contains('open'))renderFG();
-        /* If this artwork's dedicated URL/modal happens to be open
-           right now, refresh the displayed data + SEO meta in place. */
-        if(window.location.pathname==='/artwork/'+editId) openArtworkById(editId,false);
-        injectGallerySEO();
-        closeUp();showToast('Artwork updated ✦');
-      } else {
-        /* UPLOAD MODE — INSERT new row, including optional description. */
-        btn.textContent='UPLOADING…';
-        const ext=safeSlug(upFile.name.split('.').pop(), 8) || 'jpg';
-        const path=`artworks/${Date.now()}_${safeSlug(nm)}.${ext}`;
-        const publicUrl = await s3Upload(BUCKET,path,upFile);
-        const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,category:cat,image_url:publicUrl,storage_path:path,description:desc||null,software:software||null,kind:ART_KIND_ART,status:'approved'}).select();
-        if(de)throw de;
-        images.unshift(rows[0]);
-        renderHome();
-        if(document.getElementById('fg').classList.contains('open'))renderFG();
-        injectGallerySEO();
-        closeUp();showToast('Artwork added ✦');
-      }
-    }catch(err){console.error('Error: '+err.message);showToast(err.message||'Upload failed');}
-    finally{btn.disabled=false;btn.textContent=editId?'📤 Save Changes':'📤 Upload Artwork';}
-  }
-
+/* Admin upload/edit modal removed — uploading is now one universal
+     flow for every signed-in user (nav ➕ → #pfUpMod). Admin delete
+     (delImg) and the #admPage review queue are unchanged. */
   async function delImg(id,sp,e){
     e.stopPropagation();if(!isAdm||!confirm('Delete this artwork?'))return;
     try{
@@ -10046,10 +10175,6 @@ body{background:var(--bg);}
     }catch(err){console.error('Error: '+err.message);}
   }
 
-  const dz=document.getElementById('dz');
-  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));
-  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over');}));
-  dz.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))handleFile({target:{files:[f]}});});
 
   /* =========================================================
      USER PROFILE PAGE
@@ -10223,7 +10348,7 @@ body{background:var(--bg);}
       document.getElementById('pfEditAvatarLetter').textContent = (data.username||'?').charAt(0).toUpperCase();
       pfRenderAvatarBanner();
       document.getElementById('pfJoined').textContent = data.created_at ? ('JOINED '+pfFormatDate(data.created_at).toUpperCase()) : '';
-      document.getElementById('pfUploadWrap').style.display = pf.isOwner ? '' : 'none';
+      var _pfUpWrap = document.getElementById('pfUploadWrap'); if(_pfUpWrap) _pfUpWrap.style.display = 'none'; /* upload moved to nav ➕ */
       document.querySelector('.pfMenuBtn').style.display = pf.isOwner ? '' : 'none';
       document.getElementById('pfEditBtn').style.display = pf.isOwner ? 'flex' : 'none';
       if(!pf.isOwner) closePfMenu();
@@ -10391,9 +10516,33 @@ body{background:var(--bg);}
     if(e) e.stopPropagation();
     closePfSoftwareDd(); /* only one dropdown open at a time */
     document.getElementById('pfUpCatDd').classList.toggle('open');
+    /* Fresh search state each time it opens — deliberately NOT
+       focusing the field, so the keyboard only opens if the user
+       taps the search box itself. */
+    pfResetCatSearch();
   }
   function closePfCatDd(){
     document.getElementById('pfUpCatDd').classList.remove('open');
+    pfResetCatSearch();
+  }
+  /* ── Category search — filters the 51 checkboxes by label ── */
+  function pfResetCatSearch(){
+    var s = document.getElementById('pfUpCatSearch');
+    if(s && s.value){ s.value = ''; }
+    pfFilterCats('');
+  }
+  function pfFilterCats(q){
+    q = (q || '').trim().toLowerCase();
+    var panel = document.getElementById('pfUpCatPanel');
+    if(!panel) return;
+    var any = false;
+    panel.querySelectorAll('.upCatOpt').forEach(function(lbl){
+      var hit = !q || lbl.textContent.toLowerCase().indexOf(q) !== -1;
+      lbl.style.display = hit ? '' : 'none';
+      if(hit) any = true;
+    });
+    var nm = document.getElementById('pfUpCatNoMatch');
+    if(nm) nm.style.display = any ? 'none' : '';
   }
   var PF_CATS = CAT_SLUGS;
   function updatePfCatDisplay(){
@@ -10492,8 +10641,10 @@ body{background:var(--bg);}
   }
 
   function openPfUpload(){
-    if(!currentUser){ showToast('Sign in to upload'); openAuthMod(); return; }
-    if(!pf.isOwner){ showToast('You can only upload to your own profile'); return; }
+    /* Universal upload — any signed-in user, from anywhere (nav ➕).
+       The row is always inserted with the uploader's own user_id, so
+       no owner check is needed. */
+    if(!currentUser){ sessionStorage.setItem('pendPfUp','1'); showToast('Sign in to upload'); openAuthMod(); return; }
     pf.upFile = null;
     pf.upPageFiles = [];
     document.getElementById('pfUpEditId').value = '';
@@ -10738,9 +10889,16 @@ body{background:var(--bg);}
              sitting in their own profile while it's under review. */
           const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,thumb_x:artThumb.x,thumb_y:artThumb.y,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:software||null,phash:vres.phash||null,status:artStatus}).select();
           if(de) throw de;
-          pf.galleryRows.unshift(rows[0]);
-          pfRenderGallery();
-          document.getElementById('pfStatArt').textContent = (parseInt(document.getElementById('pfStatArt').textContent,10)||0)+1;
+          /* Only mutate the profile page state when the uploader's OWN
+             profile is the one currently loaded — the universal flow
+             can run with no profile open, or while viewing someone
+             else's. */
+          if(pf.profile && String(pf.profile.id)===String(currentUser.id) && Array.isArray(pf.galleryRows)){
+            pf.galleryRows.unshift(rows[0]);
+            pfRenderGallery();
+            var _st=document.getElementById('pfStatArt');
+            if(_st) _st.textContent = (parseInt(_st.textContent,10)||0)+1;
+          }
           if(artStatus==='approved'){
             /* clean upload → publish to the public gallery right away,
                same effect as an admin approval (see admApprove). */
@@ -11094,7 +11252,7 @@ body{background:var(--bg);}
 
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closePfMenu();closePfUploadMenu();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     /* FIX: these overlays previously ignored Escape entirely */
-    closeUp();cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();ahsCloseEdit();
+    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();ahsCloseEdit();
   }});
 
   /* ── BOTTOM NAVIGATION ──────────────────────────────────
@@ -11144,10 +11302,18 @@ body{background:var(--bg);}
   /* Upload (+) — opens the artwork upload modal. It's an action, not a
      destination, so it deliberately does NOT close the current section or
      take over the active-tab highlight; the upload modal simply layers on
-     top of wherever the user already is. openUp() keeps its own gate
-     (dev/admin only — guests get a sign-in prompt). */
+     top of wherever the user already is. openPfUpload() is the single
+     universal upload flow (login-only). */
   function bnGoUpload(){
-    openUp();
+    /* Universal upload — one flow for every signed-in user. Queues
+       the intent (pendPfUp) when logged out and opens after login. */
+    if(!currentUser){
+      sessionStorage.setItem('pendPfUp','1');
+      showToast('Sign in to upload');
+      openAuthMod();
+      return;
+    }
+    openPfUpload();
   }
   function bnGoCommunity(){
     bnCloseAllSections();
@@ -11230,7 +11396,7 @@ body{background:var(--bg);}
   }
 
   /* Same isAdm flag the rest of the site already reads for
-     gEdit/gDel/adminOnly visibility — the toggle just lives here now. */
+     gDel/adminOnly visibility — the toggle just lives here now. */
   function admToggleMode(){
     if(!isDev) return;
     var toggle = document.getElementById('admModeToggle');
@@ -11239,7 +11405,6 @@ body{background:var(--bg);}
     syncAdmBtn();
     admUpdateModeSub();
     showToast(isAdm ? 'Admin mode on ✦' : 'Admin mode off');
-    if(isAdm && sessionStorage.getItem('pendUp')==='1'){ sessionStorage.removeItem('pendUp'); setTimeout(openUp,200); }
   }
 
   /* ── PUBLIC FEATURED SLIDES (#topSlide) ──
@@ -11981,7 +12146,12 @@ function hideCommentThumbnail(){
            messages right-aligned in an accent bubble; others left
            with avatar + coloured sender name (group-chat style).
            Consecutive messages from the same sender within 5 min
-           are grouped — avatar/name shown once, tighter spacing. */
+           are grouped — avatar/name shown once, tighter spacing.
+           TEXT-ONLY: images are Showcase-exclusive — legacy image
+           attachments in chat channels are no longer rendered, and
+           rows that were image-only are skipped entirely so they
+           don't leave empty bubbles. */
+        if(!c.text){ return; }
         var mine = !!(typeof currentUser !== 'undefined' && currentUser && c.user_id && String(c.user_id) === String(currentUser.id));
         var d = c.raw_time ? new Date(c.raw_time) : null;
         var dayKey = d ? d.toDateString() : '';
@@ -11998,11 +12168,6 @@ function hideCommentThumbnail(){
         var cont = cpLastSenderKey === senderKey && ts && (ts - cpLastTs) < 300000;
         cpLastSenderKey = senderKey; cpLastTs = ts;
 
-        var thumbHtml = '';
-        if(c.image_url){
-          var safeUrl2 = esc(c.image_url);
-          thumbHtml = '<img class="cpPhoto" src="' + esc(getThumbnailUrl(c.image_url)) + '" alt="linked image" onclick="openLB(\'' + safeUrl2.replace(/'/g,'&#39;') + '\',\'linked image\')">';
-        }
         var shortTime = cpHHMM(c.raw_time) || esc(c.time);
 
         div.className = 'cpMsgRow ' + (mine ? 'cpMsgRow--me' : 'cpMsgRow--them') + (cont ? ' cpMsgRow--cont' : '');
@@ -12010,8 +12175,7 @@ function hideCommentThumbnail(){
           (!mine ? '<div class="cpAvatar cpMsgAvatar' + (cont ? ' cpMsgAvatar--ghost' : '') + '">' + esc(c.initial) + '</div>' : '') +
           '<div class="cpBubble">' +
             (!mine && !cont ? '<div class="cpBubbleName">' + esc(c.user) + '</div>' : '') +
-            thumbHtml +
-            (c.text ? '<span class="cpBubbleText">' + esc(c.text) + '</span>' : '') +
+            '<span class="cpBubbleText">' + esc(c.text) + '</span>' +
             '<span class="cpBubbleTime">' + shortTime + '</span>' +
           '</div>';
       }
@@ -14748,12 +14912,16 @@ html.thmFade #themePage{
       <input class="dmSearchInput" id="frdSearchInput" type="text" placeholder="Search artists by username…" autocomplete="off">
     </div>
     <div id="frdResults"></div>
+    <div class="frdSection" id="frdReqHead" style="display:none;">FRIEND REQUESTS · <span id="frdReqCount">0</span></div>
+    <div class="cmFriendList" id="frdReqList"></div>
     <div class="frdSection" id="frdListHead" style="display:none;">YOUR FRIENDS · <span id="frdCount">0</span></div>
     <div class="cmFriendList" id="frdList"></div>
+    <div class="frdSection" id="frdBlockHead" style="display:none;">BLOCKED · <span id="frdBlockCount">0</span></div>
+    <div class="cmFriendList" id="frdBlockList"></div>
     <div class="bmEmpty" id="frdEmptyState" style="display:none;">
       <div class="ico">✦</div>
       <div>NO FRIENDS YET</div>
-      <div style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">Search for artists above and start a chat — anyone you message shows up here.</div>
+      <div style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">Search for artists above and send a friend request — once they accept, you can chat.</div>
     </div>
   </div>
 </div>

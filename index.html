@@ -827,7 +827,12 @@
        sort order. ── */
     .fgGrid{
       display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+/* ── Unified responsive columns ──
+         2 columns on phones · 3 on tablets & phone "desktop site"
+         mode (~700-1279px) · 4 on real desktops (1280px+). Columns
+         are 1fr, so on larger/ultrawide screens the cards simply
+         grow to fill — no extra columns, boxes auto-adjust. ── */
+      grid-template-columns:repeat(2,1fr);
       gap:.3rem;
       /* Extra bottom clearance — same 84px pattern used by .awGrid
          — so the last row of images never sits underneath
@@ -835,9 +840,8 @@
          full-page overlay. */
       padding-bottom:calc(1rem + 84px);
     }
-    @media(min-width:640px){ .fgGrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.35rem;} }
-    @media(min-width:1025px){ .fgGrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem;} }
-    @media(min-width:1440px){ .fgGrid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));} }
+    @media(min-width:700px){ .fgGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
+    @media(min-width:1280px){ .fgGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
     /* Gallery overlay responsive rules (also part of § 9b) */
     @media(max-width:640px){
       .fgHdr{padding:.8rem 1rem}
@@ -2832,12 +2836,16 @@
       padding-bottom:calc(1rem + 84px);
       box-sizing:border-box;
       display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+      /* ── Unified responsive columns ──
+         2 columns on phones · 3 on tablets & phone "desktop site"
+         mode (~700-1279px) · 4 on real desktops (1280px+). Columns
+         are 1fr, so on larger/ultrawide screens the cards simply
+         grow to fill — no extra columns, boxes auto-adjust. ── */
+      grid-template-columns:repeat(2,1fr);
       gap:.3rem;
     }
-    @media(min-width:640px){ .awGrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.35rem;} }
-    @media(min-width:1025px){ .awGrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem;} }
-    @media(min-width:1440px){ .awGrid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));} }
+    @media(min-width:700px){ .awGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
+    @media(min-width:1280px){ .awGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
     /* ── Card shell — kept as a generic reusable class (also used by
        the Profile page's .pfGrid, which is unaffected by the masonry
        rules below since those are scoped to .awGrid specifically) ── */
@@ -3084,6 +3092,43 @@
     /* Destructive action anchored to the drawer's bottom */
     .pfMenuItem--danger{margin-top:auto;}
     .pfMenuItem--danger:hover{background:rgba(220,38,38,.18);color:#fca5a5;}
+    /* ── Share Profile sheet ── */
+    .pfShareBox{max-width:340px;align-items:center;padding:1.6rem 1.4rem 1.5rem;position:relative;}
+    .pfShareTitle{
+      font-family:var(--fd);font-size:.92rem;font-weight:800;letter-spacing:.18em;
+      color:var(--tx);margin:0 0 1.1rem;text-align:center;
+    }
+    .pfShareTitle .s{color:var(--pb);font-size:.75em;}
+    /* QR stays dark-on-white in every theme — scanners need contrast */
+    .pfShareQrCard{
+      background:#FFFFFF;border-radius:14px;padding:10px;
+      width:min(210px,62vw);aspect-ratio:1;
+      box-shadow:0 6px 24px rgba(0,0,0,.35);
+    }
+    .pfShareQrCard svg{display:block;width:100%;height:100%;}
+    .pfShareUser{
+      margin-top:.85rem;font-family:var(--fd);font-weight:800;
+      font-size:.95rem;color:var(--tx);letter-spacing:.04em;text-align:center;
+    }
+    .pfShareLink{
+      margin-top:.25rem;font-family:var(--fm);font-size:.62rem;
+      letter-spacing:.06em;color:var(--txd);text-align:center;
+      overflow-wrap:anywhere;padding:0 .5rem;
+    }
+    .pfShareBtns{display:flex;gap:2rem;margin-top:1.25rem;justify-content:center;}
+    .pfShareAct{display:flex;flex-direction:column;align-items:center;gap:.45rem;}
+    .pfShareAct > span{font-family:var(--fm);font-size:.58rem;letter-spacing:.16em;color:var(--txd);}
+    .pfShareCirc{
+      width:54px;height:54px;border-radius:50%;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      background:transparent;border:1px solid var(--bdrh);color:var(--tx);
+      transition:border-color .2s,background .2s,transform .15s,filter .2s;
+    }
+    .pfShareCirc svg{width:22px;height:22px;}
+    .pfShareCirc:hover{border-color:var(--pg);background:var(--pdim);}
+    .pfShareCirc:active{transform:scale(.92);}
+    .pfShareCirc--pri{background:var(--pg);border-color:var(--pg);color:var(--text-on-accent);box-shadow:0 3px 14px rgba(var(--pg-rgb),.35);}
+    .pfShareCirc--pri:hover{filter:brightness(1.08);background:var(--pg);}
     @media (prefers-reduced-motion:reduce){
       .pfMenu,.pfMenuScrim{transition:none;}
     }
@@ -3164,7 +3209,13 @@
     }
     /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
     .pfTabs::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
-    .pfTabGroup{display:flex;gap:.4rem;}
+    .pfTabGroup{
+      display:flex;gap:.4rem;flex:1;min-width:0;
+      overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+      -webkit-overflow-scrolling:touch;
+    }
+    .pfTabGroup::-webkit-scrollbar{display:none;}
+    .pfTabGroup .pfTab{white-space:nowrap;flex-shrink:0;}
     .pfTab{
       font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;
       padding:.9rem 1rem;background:none;border:none;cursor:pointer;
@@ -3186,12 +3237,16 @@
        main Artworks grid (.awGrid) so thumbnails fill edge-to-edge
        and look identical everywhere. ── */
     .pfGridArt{
-      grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+/* ── Unified responsive columns ──
+         2 columns on phones · 3 on tablets & phone "desktop site"
+         mode (~700-1279px) · 4 on real desktops (1280px+). Columns
+         are 1fr, so on larger/ultrawide screens the cards simply
+         grow to fill — no extra columns, boxes auto-adjust. ── */
+      grid-template-columns:repeat(2,1fr);
       gap:.3rem;
     }
-    @media(min-width:640px){ .pfGridArt{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.35rem;} }
-    @media(min-width:1025px){ .pfGridArt{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem;} }
-    @media(min-width:1440px){ .pfGridArt{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));} }
+    @media(min-width:700px){ .pfGridArt{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
+    @media(min-width:1280px){ .pfGridArt{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
     @media(max-width:480px){
       .pfAvatarWrap{left:1.2rem;}
       .pfAvatar{width:72px;height:72px;font-size:1.7rem;}
@@ -5625,7 +5680,11 @@ body{background:var(--bg);}
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
           <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" onclick="pfSwitchTab('gallery')">ARTWORK</button>
+          <button class="pfTab" id="pfTabLike" role="tab" aria-selected="false" onclick="pfSwitchTab('like')">LIKE</button>
+          <button class="pfTab" id="pfTabBookmark" role="tab" aria-selected="false" onclick="pfSwitchTab('bookmark')">BOOKMARK</button>
+          <button class="pfTab" id="pfTabProgress" role="tab" aria-selected="false" onclick="pfSwitchTab('progress')">LEVEL</button>
           <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" onclick="pfSwitchTab('about')">ABOUT</button>
+          <button class="pfTab" onclick="openPfShare()" aria-label="Share this profile">SHARE</button>
         </div>
         <!-- Profile UPLOAD dropdown removed — uploading now lives solely
              behind the nav-bar ➕ button (universal, login-only). -->
@@ -5638,6 +5697,26 @@ body{background:var(--bg);}
         <div class="pfLoadMoreWrap" id="pfGalleryLoadMoreWrap" style="display:none;">
           <button class="fgLoadMore" onclick="pfLoadMoreGallery()"><span>✦</span> LOAD MORE</button>
         </div>
+      </div>
+
+      <!-- LIKE / BOOKMARK — READ-ONLY grids of artworks this artist
+           has liked / bookmarked. Visible to every visitor; the data
+           comes from SECURITY DEFINER viewer functions while the
+           tables' own RLS keeps INSERT/DELETE owner-only, so viewers
+           can look but never modify. -->
+      <div class="pfPanel" id="pfPanelLike">
+        <div class="pfGrid pfGridArt" id="pfLikeGrid"></div>
+        <div class="pfEmpty" id="pfLikeEmpty" style="display:none;">No liked artworks yet.</div>
+      </div>
+      <div class="pfPanel" id="pfPanelBookmark">
+        <div class="pfGrid pfGridArt" id="pfBookmarkGrid"></div>
+        <div class="pfEmpty" id="pfBookmarkEmpty" style="display:none;">No bookmarked artworks yet.</div>
+      </div>
+
+      <!-- PROGRESS (LEVEL tab) — XP / level / milestones for the viewed
+           artist. Rendered by the Artist Progress module (xpRenderInto). -->
+      <div class="pfPanel" id="pfPanelProgress">
+        <div class="xpWrap" id="pfXpWrap"></div>
       </div>
 
       <!-- ABOUT -->
@@ -7567,6 +7646,579 @@ body{background:var(--bg);}
 })();
 </script>
 
+<script>
+/* ── Share Profile ────────────────────────────────────────────
+   QR code + Copy + native Share for the profile currently open.
+   The QR generator below is self-contained (byte mode, ECC M,
+   versions 1-10 auto-selected) and was verified against the QR
+   spec: Reed-Solomon syndromes, format BCH, and full payload
+   decode-back all check out — no external QR service involved. */
+(function () {
+  'use strict';
+
+/* Minimal QR generator — byte mode, ECC level M, versions 1-10.
+   Returns { size, get(x,y) } where get is true for dark modules. */
+function qrMake (text) {
+  'use strict';
+  var ECL_M = { ord: 1, fmt: 0 }; /* format bits for M = 0b00 */
+  var data = [];
+  for (var i = 0; i < text.length; i++) {
+    var c = text.charCodeAt(i);
+    if (c < 128) { data.push(c); }
+    else { /* UTF-8 encode */
+      var enc = unescape(encodeURIComponent(text[i]));
+      for (var k = 0; k < enc.length; k++) data.push(enc.charCodeAt(k));
+    }
+  }
+
+  var ECC_PER_BLOCK_M  = [10,16,26,18,24,16,18,22,22,26];       /* v1..v10 */
+  var NUM_BLOCKS_M     = [1,1,1,2,2,4,4,4,5,5];
+
+  function rawModules (ver) {
+    var r = (16 * ver + 128) * ver + 64;
+    if (ver >= 2) {
+      var na = Math.floor(ver / 7) + 2;
+      r -= (25 * na - 10) * na - 55;
+      if (ver >= 7) r -= 36;
+    }
+    return r;
+  }
+  function dataCapacityBytes (ver) {
+    return Math.floor(rawModules(ver) / 8) - ECC_PER_BLOCK_M[ver-1] * NUM_BLOCKS_M[ver-1];
+  }
+
+  /* pick version */
+  var ver = -1;
+  for (var v = 1; v <= 10; v++) {
+    var cntBits = v <= 9 ? 8 : 16;
+    var needBits = 4 + cntBits + data.length * 8;
+    if (needBits <= dataCapacityBytes(v) * 8) { ver = v; break; }
+  }
+  if (ver < 0) throw new Error('Data too long');
+  var size = ver * 4 + 17;
+  var countBits = ver <= 9 ? 8 : 16;
+
+  /* ── bitstream: mode + count + data + terminator + pad ── */
+  var bits = [];
+  function pushBits (val, n) { for (var b = n - 1; b >= 0; b--) bits.push((val >>> b) & 1); }
+  pushBits(4, 4);                 /* byte mode */
+  pushBits(data.length, countBits);
+  data.forEach(function (byte) { pushBits(byte, 8); });
+  var capBits = dataCapacityBytes(ver) * 8;
+  pushBits(0, Math.min(4, capBits - bits.length));        /* terminator */
+  pushBits(0, (8 - bits.length % 8) % 8);                 /* byte align */
+  for (var pad = 0xEC; bits.length < capBits; pad ^= 0xEC ^ 0x11) pushBits(pad, 8);
+  var dataCw = [];
+  for (var bi = 0; bi < bits.length; bi += 8) {
+    var by = 0;
+    for (var j = 0; j < 8; j++) by = (by << 1) | bits[bi + j];
+    dataCw.push(by);
+  }
+
+  /* ── Reed-Solomon (GF(256), poly 0x11D) ── */
+  function gfMul (x, y) {
+    var z = 0;
+    for (var b = 7; b >= 0; b--) {
+      z = (z << 1) ^ ((z >>> 7) * 0x11D);
+      z ^= ((y >>> b) & 1) * x;
+    }
+    return z;
+  }
+  function rsDivisor (degree) {
+    var result = [];
+    for (var i = 0; i < degree - 1; i++) result.push(0);
+    result.push(1);                    /* monic, x^0 coefficient last */
+    var root = 1;
+    for (var i = 0; i < degree; i++) {
+      for (var j = 0; j < result.length; j++) {
+        result[j] = gfMul(result[j], root);
+        if (j + 1 < result.length) result[j] ^= result[j + 1];
+      }
+      root = gfMul(root, 2);
+    }
+    return result;
+  }
+  function rsRemainder (msg, divisor) {
+    var result = divisor.map(function () { return 0; });
+    msg.forEach(function (b) {
+      var factor = b ^ result.shift();
+      result.push(0);
+      divisor.forEach(function (coef, i) { result[i] ^= gfMul(coef, factor); });
+    });
+    return result;
+  }
+
+  /* ── split into blocks, add ECC, interleave ── */
+  var numBlocks = NUM_BLOCKS_M[ver-1], eccLen = ECC_PER_BLOCK_M[ver-1];
+  var totalCw = Math.floor(rawModules(ver) / 8);
+  var numShort = numBlocks - totalCw % numBlocks;
+  var shortLen = Math.floor(totalCw / numBlocks);   /* incl. ecc */
+  var blocks = [], off = 0, divisor = rsDivisor(eccLen);
+  for (var b2 = 0; b2 < numBlocks; b2++) {
+    var dlen = shortLen - eccLen + (b2 < numShort ? 0 : 1);
+    var dat = dataCw.slice(off, off + dlen); off += dlen;
+    var ecc = rsRemainder(dat, divisor);
+    blocks.push({ data: dat, ecc: ecc });
+  }
+  /* Spec interleave: data codewords column-by-column across blocks
+     (blocks that ran out are skipped), THEN ecc column-by-column. */
+  var allCw = [];
+  var maxDataLen = shortLen - eccLen + 1;
+  for (var ci = 0; ci < maxDataLen; ci++)
+    blocks.forEach(function (blk) { if (ci < blk.data.length) allCw.push(blk.data[ci]); });
+  for (var ce = 0; ce < eccLen; ce++)
+    blocks.forEach(function (blk) { allCw.push(blk.ecc[ce]); });
+
+  /* ── module grids ── */
+  var grid = [], func = [];
+  for (var y = 0; y < size; y++) { grid.push(new Array(size).fill(false)); func.push(new Array(size).fill(false)); }
+  function setF (x, y, dark) { grid[y][x] = dark; func[y][x] = true; }
+
+  /* finders + separators */
+  function finder (cx, cy) {
+    for (var dy = -4; dy <= 4; dy++) for (var dx = -4; dx <= 4; dx++) {
+      var x = cx + dx, y = cy + dy;
+      if (x < 0 || x >= size || y < 0 || y >= size) continue;
+      var dist = Math.max(Math.abs(dx), Math.abs(dy));
+      setF(x, y, dist !== 2 && dist !== 4);
+    }
+  }
+  finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+  /* timing */
+  for (var t = 0; t < size; t++) {
+    if (!func[6][t]) setF(t, 6, t % 2 === 0);
+    if (!func[t][6]) setF(6, t, t % 2 === 0);
+  }
+  /* alignment */
+  var alignPos = [];
+  if (ver > 1) {
+    var na2 = Math.floor(ver / 7) + 2;
+    var step = ver === 32 ? 26 : Math.ceil((ver * 4 + 4) / (na2 * 2 - 2)) * 2;
+    alignPos = [6];
+    for (var pos = size - 7; alignPos.length < na2; pos -= step) alignPos.splice(1, 0, pos);
+  }
+  alignPos.forEach(function (ay) {
+    alignPos.forEach(function (ax) {
+      /* skip the three finder corners */
+      if ((ax === 6 && ay === 6) || (ax === 6 && ay === size - 7) || (ax === size - 7 && ay === 6)) return;
+      for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++)
+        setF(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    });
+  });
+  /* format info areas (values drawn later) — reserve */
+  for (var fi = 0; fi <= 8; fi++) {
+    if (fi !== 6) { setF(8, fi, false); setF(fi, 8, false); }
+    if (fi < 8)  { setF(size - 1 - fi, 8, false); setF(8, size - 1 - fi, false); }
+  }
+  setF(8, size - 8, true); /* dark module */
+  /* version info (v>=7) */
+  if (ver >= 7) {
+    var vrem = ver;
+    for (var vi = 0; vi < 12; vi++) vrem = (vrem << 1) ^ ((vrem >>> 11) * 0x1F25);
+    var vbits = ver << 12 | vrem;
+    for (var vb = 0; vb < 18; vb++) {
+      var bit = ((vbits >>> vb) & 1) === 1;
+      var a = size - 11 + vb % 3, c = Math.floor(vb / 3);
+      setF(a, c, bit); setF(c, a, bit);
+    }
+  }
+
+  /* ── zigzag data placement ── */
+  function placeData (cw, readMode) {
+    var out = readMode ? [] : null;
+    var i2 = 0;
+    for (var right = size - 1; right >= 1; right -= 2) {
+      if (right === 6) right = 5;
+      for (var vert = 0; vert < size; vert++) {
+        for (var jx = 0; jx < 2; jx++) {
+          var x = right - jx;
+          var upward = ((right + 1) & 2) === 0;
+          var y = upward ? size - 1 - vert : vert;
+          if (func[y][x]) continue;
+          if (readMode) { out.push(grid[y][x] ? 1 : 0); }
+          else {
+            var dark = false;
+            if (i2 < cw.length * 8) dark = ((cw[i2 >>> 3] >>> (7 - (i2 & 7))) & 1) === 1;
+            grid[y][x] = dark;
+          }
+          i2++;
+        }
+      }
+    }
+    return readMode ? out : i2;
+  }
+  var placed = placeData(allCw, false);
+
+  /* ── masking + penalty ── */
+  var MASKS = [
+    function (x, y) { return (x + y) % 2 === 0; },
+    function (x, y) { return y % 2 === 0; },
+    function (x, y) { return x % 3 === 0; },
+    function (x, y) { return (x + y) % 3 === 0; },
+    function (x, y) { return (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; },
+    function (x, y) { return x * y % 2 + x * y % 3 === 0; },
+    function (x, y) { return (x * y % 2 + x * y % 3) % 2 === 0; },
+    function (x, y) { return ((x + y) % 2 + x * y % 3) % 2 === 0; }
+  ];
+  function applyMask (m) {
+    for (var y2 = 0; y2 < size; y2++) for (var x2 = 0; x2 < size; x2++)
+      if (!func[y2][x2] && MASKS[m](x2, y2)) grid[y2][x2] = !grid[y2][x2];
+  }
+  function drawFormat (mask) {
+    var fdata = ECL_M.fmt << 3 | mask;
+    var rem = fdata;
+    for (var r2 = 0; r2 < 10; r2++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+    var fbits = (fdata << 10 | rem) ^ 0x5412;
+    function bit (i3) { return ((fbits >>> i3) & 1) === 1; }
+    for (var i3 = 0; i3 <= 5; i3++) setF(8, i3, bit(i3));
+    setF(8, 7, bit(6)); setF(8, 8, bit(7)); setF(7, 8, bit(8));
+    for (var i4 = 9; i4 < 15; i4++) setF(14 - i4, 8, bit(i4));
+    for (var i5 = 0; i5 < 8; i5++) setF(size - 1 - i5, 8, bit(i5));
+    for (var i6 = 8; i6 < 15; i6++) setF(8, size - 15 + i6, bit(i6));
+    setF(8, size - 8, true);
+  }
+  function penalty () {
+    var p = 0, y3, x3;
+    for (y3 = 0; y3 < size; y3++) {           /* rows: runs */
+      var runC = grid[y3][0], runL = 1;
+      for (x3 = 1; x3 < size; x3++) {
+        if (grid[y3][x3] === runC) { runL++; if (runL === 5) p += 3; else if (runL > 5) p++; }
+        else { runC = grid[y3][x3]; runL = 1; }
+      }
+    }
+    for (x3 = 0; x3 < size; x3++) {           /* cols: runs */
+      var runC2 = grid[0][x3], runL2 = 1;
+      for (y3 = 1; y3 < size; y3++) {
+        if (grid[y3][x3] === runC2) { runL2++; if (runL2 === 5) p += 3; else if (runL2 > 5) p++; }
+        else { runC2 = grid[y3][x3]; runL2 = 1; }
+      }
+    }
+    for (y3 = 0; y3 < size - 1; y3++) for (x3 = 0; x3 < size - 1; x3++) {   /* 2x2 */
+      var c2 = grid[y3][x3];
+      if (c2 === grid[y3][x3+1] && c2 === grid[y3+1][x3] && c2 === grid[y3+1][x3+1]) p += 3;
+    }
+    var PAT = [1,0,1,1,1,0,1];                 /* finder-like 1:1:3:1:1 + 4 light */
+    function runHas (get, len) {
+      for (var s2 = 0; s2 < len - 10; s2++) {
+        var okA = true, okB = true;
+        for (var q2 = 0; q2 < 7; q2++) if (!!get(s2 + 4 + q2) !== !!PAT[q2]) { okA = false; break; }
+        for (var q3 = 0; q3 < 4; q3++) if (get(s2 + q3)) { okA = false; break; }
+        for (var q4 = 0; q4 < 7; q4++) if (!!get(s2 + q4) !== !!PAT[q4]) { okB = false; break; }
+        for (var q5 = 0; q5 < 4; q5++) if (get(s2 + 7 + q5)) { okB = false; break; }
+        if (okA) p += 40;
+        if (okB) p += 40;
+      }
+    }
+    for (y3 = 0; y3 < size; y3++) (function (yy) { runHas(function (x4) { return grid[yy][x4]; }, size); })(y3);
+    for (x3 = 0; x3 < size; x3++) (function (xx) { runHas(function (y4) { return grid[y4][xx]; }, size); })(x3);
+    var dark = 0;
+    for (y3 = 0; y3 < size; y3++) for (x3 = 0; x3 < size; x3++) if (grid[y3][x3]) dark++;
+    var pct = dark * 100 / (size * size);
+    p += Math.floor(Math.abs(pct * 2 - 100) / 10) * 10;
+    return p;
+  }
+  var best = 0, bestP = Infinity;
+  for (var m2 = 0; m2 < 8; m2++) {
+    applyMask(m2); drawFormat(m2);
+    var pp = penalty();
+    if (pp < bestP) { bestP = pp; best = m2; }
+    applyMask(m2); /* undo (mask is an involution) */
+  }
+  applyMask(best); drawFormat(best);
+
+  return { size: size, get: function (x, y) { return grid[y][x]; } };
+}
+
+
+  function qrToSvg (q, quiet) {
+    quiet = quiet == null ? 4 : quiet;
+    var n = q.size, t = n + quiet * 2, path = '';
+    for (var y = 0; y < n; y++)
+      for (var x = 0; x < n; x++)
+        if (q.get(x, y)) path += 'M' + (x + quiet) + ' ' + (y + quiet) + 'h1v1h-1z';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + t + ' ' + t + '" shape-rendering="crispEdges" role="img">' +
+           '<rect width="' + t + '" height="' + t + '" fill="#FFFFFF"/>' +
+           '<path d="' + path + '" fill="#131317"/></svg>';
+  }
+
+  var shareUrl = '';
+
+  window.openPfShare = function () {
+    var prof = (window.pf && window.pf.profile) || null;
+    var uname = prof && prof.username;
+    if (!uname) { if (typeof showToast === 'function') showToast('Open a profile to share it'); return; }
+    shareUrl = location.origin + '/profile/' + encodeURIComponent(uname);
+    var qrEl = document.getElementById('pfShareQr');
+    try { qrEl.innerHTML = qrToSvg(qrMake(shareUrl), 4); }
+    catch (e) { qrEl.innerHTML = ''; }
+    document.getElementById('pfShareUser').textContent = '@' + uname;
+    document.getElementById('pfShareLink').textContent = shareUrl.replace(/^https?:\/\//, '');
+    document.getElementById('pfShareMod').classList.add('open');
+  };
+  window.closePfShare = function () {
+    document.getElementById('pfShareMod').classList.remove('open');
+  };
+  window.pfShareCopy = function () {
+    if (!shareUrl) return;
+    function ok () { if (typeof showToast === 'function') showToast('Link copied \u2726'); }
+    function fallback () {
+      var ta = document.createElement('textarea');
+      ta.value = shareUrl;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try { document.execCommand('copy'); ok(); }
+      catch (e) { if (typeof showToast === 'function') showToast('Couldn\u2019t copy \u2014 long-press the link instead'); }
+      ta.remove();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(ok, fallback);
+    } else fallback();
+  };
+  window.pfShareNative = function () {
+    if (!shareUrl) return;
+    var uname = document.getElementById('pfShareUser').textContent || '';
+    if (navigator.share) {
+      navigator.share({
+        title: 'DigiArtz \u2014 ' + uname,
+        text: 'Check out ' + uname + ' on DigiArtz \u2726',
+        url: shareUrl
+      }).catch(function () { /* user cancelled the sheet */ });
+    } else {
+      /* no native share sheet on this device \u2014 copy instead */
+      window.pfShareCopy();
+    }
+  };
+
+  /* backdrop tap + Escape close */
+  document.addEventListener('click', function (e) {
+    var mod = document.getElementById('pfShareMod');
+    if (mod && e.target === mod) window.closePfShare();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var mod = document.getElementById('pfShareMod');
+    if (mod && mod.classList.contains('open')) window.closePfShare();
+  });
+})();
+</script>
+
+<script>
+/* ── Artist Progress ──────────────────────────────────────────
+   XP / level / milestones / leaderboard. XP is derived server-side
+   by get_artist_progress() / get_xp_leaderboard() (uploads x10,
+   likes x2, bookmarks x2, comments x1) — nothing stored, nothing
+   to tamper with. The level curve below is Koe's exact 100-level
+   table and matches public.xp_to_level() in the database. */
+(function () {
+  'use strict';
+  var XP_TOTALS = [0,8,16,24,32,41,50,59,68,78,88,98,108,119,130,141,152,164,176,188,
+    200,213,226,239,252,266,280,294,308,323,338,353,368,384,400,416,432,449,466,483,
+    500,518,536,554,572,591,610,629,648,668,688,708,728,749,770,791,812,834,856,878,
+    900,923,946,969,992,1016,1040,1064,1089,1115,1141,1167,1193,1220,1247,1274,1301,1329,1357,1385,
+    1413,1442,1471,1500,1529,1559,1589,1619,1649,1680,1711,1742,1773,1805,1837,1869,1901,1934,1967,2000];
+  var RANKS = [
+    { lvl: 5,   name: 'New Artist' },
+    { lvl: 10,  name: 'Sketch Explorer' },
+    { lvl: 20,  name: 'Creative Soul' },
+    { lvl: 35,  name: 'Gallery Artist' },
+    { lvl: 50,  name: 'Community Star' },
+    { lvl: 70,  name: 'Master Creator' },
+    { lvl: 85,  name: 'Elite Artist' },
+    { lvl: 100, name: 'DigiArtz Legend' }
+  ];
+  function levelOf (xp) {
+    var l = 1;
+    for (var i = 0; i < XP_TOTALS.length; i++) { if (xp >= XP_TOTALS[i]) l = i + 1; else break; }
+    return l;
+  }
+  function rankTitle (level) {
+    var t = 'Newcomer';
+    RANKS.forEach(function (r) { if (level >= r.lvl) t = r.name; });
+    return t;
+  }
+  function el (tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function svgIcon (d) {
+    var w = document.createElement('span');
+    w.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+    return w.firstChild;
+  }
+  var ICONS = {
+    upload:   '<path d="M12 17V4m0 0 5 5m-5-5-5 5"/><path d="M4 20h16"/>',
+    like:     '<path d="M12 20.3 4.8 13a4.6 4.6 0 1 1 6.5-6.5l.7.7.7-.7A4.6 4.6 0 1 1 19.2 13Z"/>',
+    bookmark: '<path d="M6.5 3.5h11V21L12 16.8 6.5 21Z"/>',
+    comment:  '<path d="M21 12a8 8 0 0 1-8 8H4l1.6-3.2A8 8 0 1 1 21 12Z"/>'
+  };
+
+  /* ── data + render ── */
+  function client () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
+
+  window.xpLoadInto = async function (wrapId, targetId, opts) {
+    opts = opts || {};
+    var wrap = document.getElementById(wrapId);
+    if (!wrap) return;
+    if (!targetId) { wrap.innerHTML = ''; wrap.appendChild(el('div', 'xpNote', 'SIGN IN TO SEE YOUR PROGRESS \u2726')); return; }
+    var c = client();
+    if (!c) { wrap.innerHTML = ''; wrap.appendChild(el('div', 'xpNote', 'PROGRESS UNAVAILABLE \u2014 TRY AGAIN')); return; }
+    wrap.innerHTML = '';
+    wrap.appendChild(el('div', 'xpNote', 'LOADING\u2026'));
+    try {
+      var calls = [c.rpc('get_artist_progress', { target: targetId })];
+      if (opts.leaderboard) calls.push(c.rpc('get_xp_leaderboard', { lim: 10 }));
+      var res = await Promise.all(calls);
+      if (res[0].error) throw res[0].error;
+      var p = (res[0].data && res[0].data[0]) || { uploads: 0, likes_given: 0, bookmarks_given: 0, comments_made: 0, xp: 0, level: 1 };
+      var lb = (opts.leaderboard && res[1] && !res[1].error) ? (res[1].data || []) : null;
+      renderAll(wrap, p, lb, targetId);
+    } catch (e) {
+      wrap.innerHTML = '';
+      wrap.appendChild(el('div', 'xpNote', 'COULDN\u2019T LOAD PROGRESS \u2014 TRY AGAIN'));
+    }
+  };
+
+  function renderAll (wrap, p, lb, targetId) {
+    wrap.innerHTML = '';
+    var xp = Number(p.xp) || 0;
+    var level = Number(p.level) || levelOf(xp);
+
+    /* rank card */
+    var rank = el('div', 'xpCard xpRank');
+    rank.appendChild(el('div', 'xpRankLvl', 'LEVEL ' + level));
+    rank.appendChild(el('div', 'xpRankTitle', '\u2726 ' + rankTitle(level) + ' \u2726'));
+    var cur = XP_TOTALS[level - 1];
+    var next = level < 100 ? XP_TOTALS[level] : null;
+    var track = el('div', 'xpBarTrack');
+    var fill = el('div', 'xpBarFill');
+    track.appendChild(fill);
+    rank.appendChild(track);
+    var nums = el('div', 'xpBarNums');
+    nums.appendChild(el('span', null, xp + ' XP'));
+    nums.appendChild(el('span', null, next != null ? next + ' XP' : 'MAX'));
+    rank.appendChild(nums);
+    var nxt = el('div', 'xpNext');
+    if (next != null) {
+      nxt.appendChild(document.createTextNode(''));
+      var b = el('b', null, String(next - xp) + ' XP');
+      nxt.appendChild(b);
+      nxt.appendChild(document.createTextNode(' UNTIL LEVEL ' + (level + 1)));
+    } else {
+      nxt.textContent = 'MAX LEVEL REACHED \u2726';
+    }
+    rank.appendChild(nxt);
+    wrap.appendChild(rank);
+    /* animate the fill after layout */
+    var pct = next != null ? Math.max(0, Math.min(100, (xp - cur) * 100 / (next - cur))) : 100;
+    requestAnimationFrame(function () { requestAnimationFrame(function () { fill.style.width = pct + '%'; }); });
+
+    /* how to earn */
+    var earn = el('div', 'xpCard');
+    earn.appendChild(el('div', 'xpCardLbl', 'HOW TO EARN XP'));
+    var eg = el('div', 'xpGrid2');
+    [['upload', 'Upload an artwork', '+10 XP'],
+     ['like', 'Like an artwork', '+2 XP'],
+     ['bookmark', 'Bookmark an artwork', '+2 XP'],
+     ['comment', 'Comment', '+1 XP']].forEach(function (r) {
+      var row = el('div', 'xpEarnRow');
+      row.appendChild(svgIcon(ICONS[r[0]]));
+      row.appendChild(el('span', null, r[1]));
+      row.appendChild(el('span', 'xpEarnAmt', r[2]));
+      eg.appendChild(row);
+    });
+    earn.appendChild(eg);
+    wrap.appendChild(earn);
+
+    /* stats */
+    var stats = el('div', 'xpCard');
+    stats.appendChild(el('div', 'xpCardLbl', 'COMMUNITY ACTIVITY'));
+    var sg = el('div', 'xpGrid2');
+    [[p.uploads, 'ARTWORKS UPLOADED'], [p.likes_given, 'LIKES GIVEN'],
+     [p.bookmarks_given, 'BOOKMARKS GIVEN'], [p.comments_made, 'COMMENTS MADE']].forEach(function (s) {
+      var t = el('div', 'xpStat');
+      t.appendChild(el('div', 'xpStatNum', String(Number(s[0]) || 0)));
+      t.appendChild(el('div', 'xpStatLbl', s[1]));
+      sg.appendChild(t);
+    });
+    stats.appendChild(sg);
+    wrap.appendChild(stats);
+
+    /* milestones */
+    var mile = el('div', 'xpCard');
+    mile.appendChild(el('div', 'xpCardLbl', 'ARTIST MILESTONES'));
+    var curTitle = rankTitle(level);
+    RANKS.forEach(function (r) {
+      var done = level >= r.lvl;
+      var row = el('div', 'xpMile' + (done ? ' done' : '') + (done && r.name === curTitle ? ' cur' : ''));
+      row.appendChild(el('div', 'xpMileBadge', done ? '\u2713' : String(r.lvl)));
+      row.appendChild(el('div', 'xpMileName', r.name));
+      row.appendChild(el('div', 'xpMileLvl', 'LVL ' + r.lvl));
+      mile.appendChild(row);
+    });
+    wrap.appendChild(mile);
+
+    /* leaderboard */
+    if (lb) {
+      var board = el('div', 'xpCard');
+      board.appendChild(el('div', 'xpCardLbl', 'COMMUNITY LEADERBOARD'));
+      if (!lb.length) board.appendChild(el('div', 'xpNote', 'NO RANKED ARTISTS YET'));
+      lb.forEach(function (row, i) {
+        var r = el('div', 'xpLbRow' + (row.user_id === targetId ? ' self' : ''));
+        r.appendChild(el('div', 'xpLbRank' + (i < 3 ? ' m' + (i + 1) : ''), i < 3 ? ['1ST', '2ND', '3RD'][i] : '#' + (i + 1)));
+        var ava = el('div', 'xpLbAva');
+        if (row.avatar_url) {
+          var img = document.createElement('img');
+          img.alt = ''; img.loading = 'lazy';
+          img.src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(row.avatar_url) : row.avatar_url;
+          ava.appendChild(img);
+        } else {
+          ava.textContent = (row.username || '?').charAt(0).toUpperCase();
+        }
+        r.appendChild(ava);
+        r.appendChild(el('div', 'xpLbName', row.username || 'Artist'));
+        r.appendChild(el('div', 'xpLbLvl', 'LEVEL ' + (Number(row.level) || 1)));
+        board.appendChild(r);
+      });
+      wrap.appendChild(board);
+    }
+  }
+
+  /* ── sliding page (profile hamburger) ── */
+  var xpLastFocus = null;
+  window.openXpPage = function () {
+    var pg = document.getElementById('xpPage');
+    if (!pg) return;
+    xpLastFocus = document.activeElement;
+    pg.classList.add('open');
+    var nav = document.getElementById('bnNav');
+    if (nav) nav.style.display = 'none';
+    document.body.style.overflow = 'hidden';
+    /* show the profile currently being viewed; fall back to self */
+    var target = (window.pf && window.pf.profile && window.pf.profile.id) ||
+                 (typeof currentUser !== 'undefined' && currentUser && currentUser.id) || null;
+    window.xpLoadInto('xpPageWrap', target, { leaderboard: true });
+  };
+  window.closeXpPage = function () {
+    var pg = document.getElementById('xpPage');
+    if (!pg) return;
+    pg.classList.remove('open');
+    var nav = document.getElementById('bnNav');
+    if (nav) nav.style.display = '';
+    if (typeof restoreScroll === 'function') restoreScroll();
+    else document.body.style.overflow = '';
+    if (xpLastFocus && xpLastFocus.focus) xpLastFocus.focus({ preventScroll: true });
+  };
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var pg = document.getElementById('xpPage');
+    if (pg && pg.classList.contains('open')) window.closeXpPage();
+  });
+})();
+</script>
+
 
       <!-- Chat view — "Art Talk" room (the original Comments feed) -->
       <div class="cmChat" id="cmChatView">
@@ -8456,9 +9108,54 @@ body{background:var(--bg);}
     <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openLikesPage()">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
     <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openBookmarksPage()">Bookmarks <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
     <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openFriendsPage()">Friends <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
+    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openPfShare()">Share Profile</button>
+    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openXpPage()">Artist Progress</button>
     <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openThemePage()">Theme</button>
     <button class="pfMenuItem" id="smAdmBtn" role="menuitem" onclick="closePfMenu();smHandleAdm()">Admin Panel</button>
     <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
+    </div>
+  </div>
+
+  <!-- ═══ ARTIST PROGRESS — XP, level, milestones, leaderboard.
+       Same sliding full-page shell as #bmPage; content rendered by
+       the Artist Progress module below. ═══ -->
+  <div id="xpPage" role="dialog" aria-modal="true" aria-label="Artist progress">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeXpPage()" aria-label="Close progress">←</button>
+      <div class="subPgTitle">ARTIST PROGRESS <span class="s">✦</span></div>
+    </div>
+    <div class="bmBdy">
+      <div class="xpWrap" id="xpPageWrap"></div>
+    </div>
+  </div>
+
+  <!-- ═══ SHARE PROFILE — QR code + circular Copy / Share actions.
+       The QR is generated fully offline by the module below (byte
+       mode, ECC level M, versions 1-10 picked automatically) — no
+       third-party QR service, so profiles stay private. ═══ -->
+  <div class="upPop" id="pfShareMod" role="dialog" aria-modal="true" aria-label="Share profile">
+    <div class="upPopBox pfShareBox">
+      <button class="upPopX" onclick="closePfShare()" aria-label="Close">✕</button>
+      <h3 class="pfShareTitle">SHARE PROFILE <span class="s">✦</span></h3>
+      <div class="pfShareQrCard">
+        <div id="pfShareQr" aria-label="Profile QR code"></div>
+      </div>
+      <div class="pfShareUser" id="pfShareUser"></div>
+      <div class="pfShareLink" id="pfShareLink"></div>
+      <div class="pfShareBtns">
+        <div class="pfShareAct">
+          <button class="pfShareCirc" onclick="pfShareCopy()" aria-label="Copy profile link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+          </button>
+          <span>COPY</span>
+        </div>
+        <div class="pfShareAct">
+          <button class="pfShareCirc pfShareCirc--pri" onclick="pfShareNative()" aria-label="Share profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>
+          </button>
+          <span>SHARE</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -8722,7 +9419,7 @@ body{background:var(--bg);}
        silently re-enabled background scrolling behind it.
        FIX 2: frdPage (Friends) and bmPage (Bookmarks/Likes) also lock
        scroll and were missing from this list. */
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage'];
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -10308,6 +11005,12 @@ body{background:var(--bg);}
       pfPreloadImage(currentUserAvatarUrl);
     }
     pf.profile=null; pf.galleryRows=[]; pf.galleryPage=0; pf.galleryDone=false;
+    pf.likeLoaded=false; pf.bmLoaded=false;
+    document.getElementById('pfLikeGrid').innerHTML='';
+    document.getElementById('pfBookmarkGrid').innerHTML='';
+    document.getElementById('pfLikeEmpty').style.display='none';
+    document.getElementById('pfBookmarkEmpty').style.display='none';
+    var _xpW=document.getElementById('pfXpWrap'); if(_xpW) _xpW.innerHTML='';
     document.getElementById('pfUsername').textContent='Loading…';
     document.getElementById('pfAvatarLetter').textContent='?';
     document.getElementById('pfAvatarImg').style.display='none';
@@ -10379,10 +11082,56 @@ body{background:var(--bg);}
 
   function pfSwitchTab(tab){
     pf.tab=tab;
-    ['gallery','about'].forEach(function(t){
+    ['gallery','like','bookmark','progress','about'].forEach(function(t){
       document.getElementById('pfTab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
       document.getElementById('pfPanel'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
     });
+    /* on-demand tabs (data fetched once per profile) */
+    if(tab==='progress' && typeof xpLoadInto==='function' && pf.profile){
+      xpLoadInto('pfXpWrap', pf.profile.id, { leaderboard:true });
+    }
+    if(tab==='like' || tab==='bookmark') pfLoadSaved(tab);
+  }
+
+  /* ── LIKE / BOOKMARK tabs — read-only grids for any profile ── */
+  function pfSavedCardHTML(a){
+    return '<div class="awCard" onclick="pfSavedOpen(\''+esc(String(a.id))+'\')">'+
+      '<div class="awImgWrap"><img loading="lazy" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%"></div>'+
+    '</div>';
+  }
+  async function pfSavedOpen(id){
+    /* not necessarily in the home feed or this profile's gallery —
+       fall back to fetching the single (approved-only via RLS) row */
+    if(openArtworkById(id,false)) return;
+    try{
+      const{data}=await sb.from('artworks').select('*').eq('id',id).maybeSingle();
+      if(!data) return;
+      var cats=catList(data.category).length?catList(data.category):['others'];
+      openLB(data.image_url, data.name, cats[0]||'', data.description||'', String(data.id), false);
+    }catch(e){}
+  }
+  async function pfLoadSaved(kind){
+    if(!pf.profile) return;
+    var like = kind==='like';
+    var grid  = document.getElementById(like?'pfLikeGrid':'pfBookmarkGrid');
+    var empty = document.getElementById(like?'pfLikeEmpty':'pfBookmarkEmpty');
+    var flag  = like?'likeLoaded':'bmLoaded';
+    if(pf[flag]) return; /* already fetched for this profile */
+    empty.style.display='none';
+    grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
+    try{
+      const{data,error}=await sb.rpc(like?'get_user_liked_artworks':'get_user_bookmarked_artworks',
+                                     {target: pf.profile.id, lim: 100, off: 0});
+      if(error) throw error;
+      var rows = data||[];
+      pf[flag]=true;
+      grid.innerHTML = rows.map(pfSavedCardHTML).join('');
+      empty.style.display = rows.length ? 'none' : '';
+    }catch(e){
+      grid.innerHTML='';
+      empty.style.display='';
+      showToast('Couldn\u2019t load \u2014 try again');
+    }
   }
 
   /* ── GALLERY tab ── */
@@ -14843,6 +15592,98 @@ html.thmFade #themePage{
   transition:transform .45s cubic-bezier(.22,1,.36,1);
 }
 #bmPage.open{transform:translateX(0);}
+/* ═══ Artist Progress ═══ — same sliding shell as #bmPage; every
+   surface uses theme tokens so all four themes render correctly. */
+#xpPage{
+  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#xpPage.open{transform:translateX(0);}
+.xpWrap{display:flex;flex-direction:column;gap:1rem;max-width:640px;margin:0 auto;padding:.35rem 0 1.2rem;}
+.xpCard{
+  background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
+  padding:1.15rem 1.2rem;
+}
+.xpCardLbl{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.22em;
+  color:var(--txd);margin-bottom:.85rem;
+}
+/* rank card */
+.xpRank{text-align:center;padding:1.5rem 1.2rem 1.35rem;}
+.xpRankLvl{
+  font-family:var(--fd);font-weight:800;font-size:2.1rem;letter-spacing:.06em;
+  background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.xpRankTitle{
+  display:inline-flex;align-items:center;gap:.4rem;margin-top:.45rem;
+  font-family:var(--fm);font-size:.62rem;letter-spacing:.2em;color:var(--pb);
+  border:1px solid rgba(var(--pg-rgb),.35);background:var(--pdim);
+  padding:.35rem .9rem;border-radius:999px;
+}
+.xpBarTrack{
+  margin-top:1.15rem;height:10px;border-radius:999px;
+  background:var(--sur2);border:1px solid var(--bdr);overflow:hidden;
+}
+.xpBarFill{
+  height:100%;width:0;border-radius:999px;
+  background:linear-gradient(90deg,var(--pgd),var(--pg));
+  box-shadow:0 0 10px rgba(var(--pg-rgb),.45);
+  transition:width .7s cubic-bezier(.22,1,.36,1);
+}
+.xpBarNums{
+  display:flex;justify-content:space-between;margin-top:.5rem;
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--txd);
+}
+.xpNext{margin-top:.65rem;font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;color:var(--tx);}
+.xpNext b{color:var(--pb);font-weight:700;}
+/* earn guide + stats */
+.xpGrid2{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;}
+.xpEarnRow{
+  display:flex;align-items:center;gap:.6rem;
+  background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;
+  padding:.6rem .7rem;font-family:var(--fb);font-size:.78rem;color:var(--tx);
+}
+.xpEarnRow svg{width:16px;height:16px;color:var(--pb);flex-shrink:0;}
+.xpEarnAmt{margin-left:auto;font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;color:var(--pb);white-space:nowrap;}
+.xpStat{
+  background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;
+  padding:.8rem .7rem;text-align:center;
+}
+.xpStatNum{font-family:var(--fd);font-weight:800;font-size:1.15rem;color:var(--tx);}
+.xpStatLbl{font-family:var(--fm);font-size:.54rem;letter-spacing:.16em;color:var(--txd);margin-top:.25rem;}
+/* milestones */
+.xpMile{display:flex;align-items:center;gap:.7rem;padding:.5rem .2rem;border-bottom:1px solid var(--bdr);}
+.xpMile:last-child{border-bottom:none;}
+.xpMileBadge{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:.58rem;
+  border:1px solid var(--bdr);color:var(--txd);background:var(--sur2);
+}
+.xpMile.done .xpMileBadge{background:var(--pg);border-color:var(--pg);color:var(--text-on-accent);}
+.xpMileName{font-family:var(--fb);font-size:.82rem;color:var(--txd);}
+.xpMile.done .xpMileName{color:var(--tx);}
+.xpMile.cur .xpMileName{color:var(--pb);font-weight:600;}
+.xpMileLvl{margin-left:auto;font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;color:var(--txd);}
+/* leaderboard */
+.xpLbRow{display:flex;align-items:center;gap:.7rem;padding:.55rem .2rem;border-bottom:1px solid var(--bdr);}
+.xpLbRow:last-child{border-bottom:none;}
+.xpLbRow.self{background:var(--pdim);border-radius:10px;padding:.55rem .6rem;border-bottom-color:transparent;}
+.xpLbRank{width:26px;text-align:center;font-family:var(--fm);font-size:.62rem;color:var(--txd);flex-shrink:0;}
+.xpLbRank.m1{color:#E7B94C;} .xpLbRank.m2{color:#B8BDC7;} .xpLbRank.m3{color:#C88A5B;}
+.xpLbAva{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;overflow:hidden;
+  background:linear-gradient(135deg,var(--pg),var(--pgd));
+  color:var(--text-on-accent);display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-weight:700;font-size:.72rem;
+}
+.xpLbAva img{width:100%;height:100%;object-fit:cover;}
+.xpLbName{font-family:var(--fb);font-size:.82rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.xpLbLvl{margin-left:auto;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--pb);white-space:nowrap;}
+.xpNote{font-family:var(--fm);font-size:.6rem;letter-spacing:.12em;color:var(--txd);text-align:center;padding:1.2rem 0;}
+@media(max-width:400px){ .xpGrid2{grid-template-columns:1fr;} }
 .bmBdy{
   max-width:1080px;margin:0 auto;
   padding:1.4rem max(1.4rem,env(safe-area-inset-right))
@@ -14851,8 +15692,15 @@ html.thmFade #themePage{
 }
 .bmGrid{
   display:grid;gap:1rem;
-  grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));
+  /* ── Unified responsive columns ──
+     2 columns on phones · 3 on tablets & phone "desktop site"
+     mode (~700-1279px) · 4 on real desktops (1280px+). Columns
+     are 1fr, so on larger/ultrawide screens the cards simply
+     grow to fill — no extra columns, boxes auto-adjust. ── */
+  grid-template-columns:repeat(2,1fr);
 }
+@media(min-width:700px){ .bmGrid{grid-template-columns:repeat(3,1fr);} }
+@media(min-width:1280px){ .bmGrid{grid-template-columns:repeat(4,1fr);} }
 .bmCard{
   position:relative;background:var(--sur);border:1px solid var(--bdr);
   border-radius:12px;overflow:hidden;
@@ -15254,7 +16102,7 @@ html.thmFade #themePage{
   /* ── Full-page overlay panels — hide widgets whenever any of
      these slide-in pages is open, since they otherwise float
      above the panel's lower z-index. ── */
-  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage', 'bmPage'];
+  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage', 'bmPage', 'xpPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);

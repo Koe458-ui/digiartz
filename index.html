@@ -1547,7 +1547,10 @@
        bar up to ride just above it (see the kbLift module). The big
        bottom-nav clearance is dropped while lifted since the nav is
        behind the keyboard anyway. ── */
-    .cpBar,.dmBar{transition:transform .18s ease;will-change:transform;}
+    /* FIX(B4): will-change moved out of the always-on stylesheet — a permanent
+       compositor layer per bar for a transform that only exists while the
+       keyboard is open. The kbLift module now sets it on focus, clears on release. */
+    .cpBar,.dmBar{transition:transform .18s ease;}
     .cpBar.kbLift{padding-bottom:calc(.75rem + env(safe-area-inset-bottom,0px));}
     .cpBarAvatar{
       width:36px;height:36px;border-radius:50%;flex-shrink:0;
@@ -1780,6 +1783,50 @@
 
     /* Art Talk chat view (reuses .cpBody/.cpEmpty/.cpComment styles) */
     .cmChat{display:none;flex-direction:column;flex:1;min-height:0;}
+
+    /* ── Grid ⇄ chat/DM view transition ───────────────────────────
+       Opening a community room (#cmChatView) or a friend DM
+       (#dmChatView) used to swap the grid → chat instantly — a hard
+       display flip that felt jarring. These one-shot entrance
+       animations slide the incoming view in and fade the composer
+       bar up, matching the "page slides in" feel used elsewhere.
+
+       Perf: only `transform` + `opacity` are animated, so every frame
+       stays on the compositor (no layout/paint) and runs smoothly on
+       low-end phones. No JS wiring is needed — flipping the element
+       from display:none back to a visible display value re-triggers
+       the animation on its own, so it fires on every open. Skipped
+       entirely for users who prefer reduced motion. */
+    @media(prefers-reduced-motion:no-preference){
+      /* FIX(B2): fill-mode was `both`, which retained the final keyframe's
+         transform:translate3d(0,0,0) FOREVER — a permanent containing block +
+         stacking context that would silently re-anchor any future
+         position:fixed child of these views. `backwards` keeps the identical
+         visual (from-frame applied at start; natural styles restored at end,
+         which equal the to-frame) without leaving any transform behind. */
+      #cmChatView,#dmChatView{
+        animation:cmChatSlideIn .3s cubic-bezier(.22,1,.36,1) backwards;
+      }
+      #cmGridScroll{
+        animation:cmGridSlideIn .3s cubic-bezier(.22,1,.36,1) backwards;
+      }
+      /* Fixed community composer — opacity only (never transform) so it
+         can't fight the keyboard-lift transform on .cpBar.kbLift. */
+      #cpBar{animation:cmBarFadeIn .28s ease backwards;}
+
+      @keyframes cmChatSlideIn{
+        from{opacity:0;transform:translate3d(26px,0,0);}
+        to{opacity:1;transform:translate3d(0,0,0);}
+      }
+      @keyframes cmGridSlideIn{
+        from{opacity:0;transform:translate3d(-22px,0,0);}
+        to{opacity:1;transform:translate3d(0,0,0);}
+      }
+      @keyframes cmBarFadeIn{
+        from{opacity:0;}
+        to{opacity:1;}
+      }
+    }
     .cmBack{
       background:none;border:1px solid var(--bdr);border-radius:8px;
       width:34px;height:34px;flex-shrink:0;
@@ -3139,7 +3186,7 @@
     #smAdmBtn.devOnly{display:block;}
     #smAdmBtn.on{color:#93c5fd;}
     .pfAvatarWrap{
-      position:absolute;left:2rem;bottom:-42px;z-index:2;
+      position:absolute;left:50%;transform:translateX(-50%);bottom:-42px;z-index:2;
     }
     .pfAvatar{
       width:84px;height:84px;border-radius:50%;flex-shrink:0;
@@ -3167,14 +3214,39 @@
     .pfAvBEditBtn svg{width:14px;height:14px;}
 
     /* ── Header block ── */
+    /* ── Centered profile header stack ──
+       Avatar (centered over banner edge) → Display name → @handle →
+       bio teaser → stats row (❤ · 👁 · LV) → joined date. */
     .pfHead{
-      display:flex;align-items:center;gap:1.2rem;
-      padding:3.2rem 2rem 1.6rem;
-      flex-wrap:wrap;
+      display:flex;flex-direction:column;align-items:center;text-align:center;
+      padding:3.4rem 1.5rem 1.4rem;
     }
-    .pfHeadInfo{flex:1 1 auto;min-width:160px;}
+    .pfHeadInfo{display:flex;flex-direction:column;align-items:center;max-width:36rem;}
     .pfUsername{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--tx);}
-    .pfJoined{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);margin-top:.3rem;}
+    .pfHandle{font-family:var(--fm);font-size:.72rem;letter-spacing:.08em;color:var(--txd);margin-top:.15rem;}
+    /* Bio teaser — truncated by JS at ~100 chars with a tappable
+       "Show more" that jumps to the ABOUT tab. */
+    .pfHeadBio{font-family:var(--fb);font-size:.82rem;line-height:1.5;color:var(--txm,var(--txd));margin-top:.55rem;max-width:34rem;}
+    .pfHeadBioMore{color:var(--pg);cursor:pointer;font-family:var(--fm);font-size:.7rem;letter-spacing:.08em;}
+    .pfHeadBioMore:hover{text-decoration:underline;}
+    .pfStatsRow{
+      display:flex;align-items:center;justify-content:center;gap:.55rem;
+      margin-top:.7rem;flex-wrap:wrap;
+      font-family:var(--fm);font-size:.72rem;letter-spacing:.06em;color:var(--tx);
+    }
+    .pfStatsRow .pfStatDot{color:var(--txd);}
+    /* [ADD FRD] [CRED] action row between bio and stats */
+    .pfActionRow{display:flex;gap:.6rem;margin-top:.8rem;justify-content:center;flex-wrap:wrap;}
+    .pfActBtn{
+      font-family:var(--fm);font-size:.7rem;letter-spacing:.12em;
+      padding:.55rem 1.4rem;border:1px solid var(--bdr);border-radius:8px;
+      background:none;color:var(--tx);cursor:pointer;
+      transition:border-color .2s,background .2s,color .2s;
+    }
+    .pfActBtn:hover{border-color:var(--pg);}
+    .pfActBtn.on{border-color:var(--pg);background:var(--pdim);color:var(--pg);}
+    .pfActBtn:disabled{opacity:.55;cursor:default;}
+    .pfJoined{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);margin-top:.55rem;}
 
     /* ── Upload dropdown ── */
     .pfUploadWrap{position:relative;flex-shrink:0;}
@@ -3251,9 +3323,9 @@
     @media(min-width:700px){ .pfGridArt{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
     @media(min-width:1280px){ .pfGridArt{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
     @media(max-width:480px){
-      .pfAvatarWrap{left:1.2rem;}
+      .pfAvatarWrap{left:50%;transform:translateX(-50%);}
       .pfAvatar{width:72px;height:72px;font-size:1.7rem;}
-      .pfHead{padding:2.8rem 1.2rem 1.2rem;}
+      .pfHead{padding:2.9rem 1.2rem 1.1rem;}
       .pfTabs{padding:0 1.2rem;}
       .pfTab{padding:.8rem .6rem;font-size:.64rem;}
       .pfUpTrigger{padding:.5rem .8rem;font-size:.62rem;}
@@ -5458,6 +5530,10 @@ body{background:var(--bg);}
     <div class="awHdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
       <div class="awTabs" id="awTabs" role="tablist" aria-label="Browse Artworks by category or Comic Arts">
         <button class="awTabBtn active" id="awTabArt" role="tab" aria-selected="true" onclick="awSwitchTab('artworks')">Artworks</button>
+        <!-- "Latest" is NOT a category — it's a view of the newest posts, so it
+             lives here statically (before buildCategoryUI() injects the category
+             tabs) and is deliberately absent from the gallery's Category filter. -->
+        <button class="awTabBtn" id="awTabLatest" role="tab" aria-selected="false" onclick="awSwitchTab('latest')">Latest</button>
         <!-- Category tabs injected by buildCategoryUI(), before the indicator. -->
         <span class="awTabIndicator" id="awTabIndicator" aria-hidden="true"></span>
       </div>
@@ -5708,6 +5784,21 @@ body{background:var(--bg);}
       <div class="pfHead">
         <div class="pfHeadInfo">
           <div class="pfUsername" id="pfUsername">—</div>
+          <div class="pfHandle" id="pfHandle"></div>
+          <div class="pfHeadBio" id="pfHeadBio"></div>
+          <div class="pfActionRow" id="pfActionRow" style="display:none;">
+            <button class="pfActBtn" id="pfBtnFriend" onclick="pfFriendBtnTap()">ADD FRD</button>
+            <button class="pfActBtn" id="pfBtnCred" onclick="pfCredToggle()">CRED</button>
+          </div>
+          <div class="pfStatsRow" id="pfStatsRow" style="display:none;">
+            <span class="pfStat" id="pfStatLikes">❤️ 0</span>
+            <span class="pfStatDot">•</span>
+            <span class="pfStat" id="pfStatViews">👁️ 0</span>
+            <span class="pfStatDot">•</span>
+            <span class="pfStat" id="pfStatLevel">LV 1</span>
+            <span class="pfStatDot">•</span>
+            <span class="pfStat" id="pfStatCred">⭐ 0</span>
+          </div>
           <div class="pfJoined" id="pfJoined"></div>
         </div>
       </div>
@@ -5763,7 +5854,7 @@ body{background:var(--bg);}
         </div>
         <div class="pfBioWrap">
           <div class="pfBioLbl">BIO</div>
-          <div class="pfBioText" id="pfBioText">No bio yet.</div>
+          <div class="pfBioText" id="pfBioText">Just a regular human who likes art and creativity.</div>
         </div>
         <div class="pfConnectWrap">
           <div class="pfConnectLbl">CONNECT</div>
@@ -5804,8 +5895,14 @@ body{background:var(--bg);}
         </button>
       </div>
       <div class="pfEditField">
+        <label class="pfEditLbl">DISPLAY NAME</label>
+        <input class="pfEditInput" id="pfEditDisplayName" maxlength="30" placeholder="How your name appears on your profile" autocomplete="off">
+        <div class="pfEditHint">Leave empty to use your username.</div>
+      </div>
+      <div class="pfEditField">
         <label class="pfEditLbl">USERNAME</label>
         <input class="pfEditInput" id="pfEditUsername" maxlength="30" placeholder="Username" autocomplete="off">
+        <div class="pfEditHint" id="pfEditUsernameHint" style="display:none;">Your @handle can't be changed.</div>
       </div>
       <div class="pfEditField">
         <label class="pfEditLbl">BIO</label>
@@ -6531,8 +6628,11 @@ body{background:var(--bg);}
     <div class="fltSec">
      <div class="fltSecLbl">SORT</div>
      <div class="fltOpts" id="fltSrtOpts">
-      <label class="fltOpt"><input type="radio" name="fltSrt" value="new" checked><div class="fltDot"></div><span class="fltLbl">NEWEST FIRST</span></label>
-      <label class="fltOpt"><input type="radio" name="fltSrt" value="old"><div class="fltDot"></div><span class="fltLbl">OLDEST FIRST</span></label>
+      <label class="fltOpt"><input type="radio" name="fltSrt" value="liked" checked><div class="fltDot"></div><span class="fltLbl">MOST LIKED</span></label>
+      <!-- "Latest" is a sort, not a category — deliberately kept out of the
+           CATEGORY section above. Value stays 'new' so the sort path is shared. -->
+      <label class="fltOpt"><input type="radio" name="fltSrt" value="new"><div class="fltDot"></div><span class="fltLbl">LATEST</span></label>
+      <label class="fltOpt"><input type="radio" name="fltSrt" value="old"><div class="fltDot"></div><span class="fltLbl">OLDEST</span></label>
      </div>
     </div>
     <div class="fltSep"></div>
@@ -6888,7 +6988,13 @@ body{background:var(--bg);}
       (r.data || []).forEach(function (f) {
         frMap[f.requester_id === me().id ? f.addressee_id : f.requester_id] = f;
       });
-    } catch (e) { /* keep last good map */ }
+      if (typeof dzcSet === 'function') dzcSet('frMap', frMap); /* offline snapshot */
+    } catch (e) {
+      /* offline → restore the saved map so friend states still work */
+      if (!Object.keys(frMap).length && typeof dzcGet === 'function') {
+        frMap = dzcGet('frMap') || {};
+      }
+    }
   }
   function frState (pid) {
     var f = frMap[pid];
@@ -7010,7 +7116,7 @@ body{background:var(--bg);}
     av.className = 'cmFriendAvatar';
     if (p.avatar_url) {
       var img = document.createElement('img');
-      img.src = p.avatar_url; img.alt = ''; img.draggable = false;
+      img.src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(p.avatar_url) : p.avatar_url; img.alt = ''; img.draggable = false;
       img.onerror = function () { this.remove(); av.textContent = (p.username || '?')[0].toUpperCase(); };
       av.appendChild(img);
     } else {
@@ -7103,7 +7209,22 @@ body{background:var(--bg);}
         var prof = byId[pt.id] || { id: pt.id, username: 'Artist' };
         list.appendChild(userRow(prof, false, pt.preview, pt.ts));
       });
-    } catch (e) { /* leave list as-is; never crash */ }
+      /* offline snapshot of the conversation list */
+      if (typeof dzcSet === 'function') dzcSet('convos', { partners: partners, profiles: byId });
+    } catch (e) {
+      /* offline → rebuild the list from the saved snapshot */
+      var snap = (typeof dzcGet === 'function') && dzcGet('convos');
+      if (snap && snap.partners && snap.partners.length && list) {
+        list.innerHTML = '';
+        if (head) head.style.display = '';
+        if (empty) empty.style.display = 'none';
+        snap.partners.forEach(function (pt) {
+          var prof = (snap.profiles && snap.profiles[pt.id]) || { id: pt.id, username: 'Artist' };
+          list.appendChild(userRow(prof, false, pt.preview, pt.ts));
+        });
+      }
+      /* otherwise leave list as-is; never crash */
+    }
   }
 
   /* ── Thread ── */
@@ -7133,7 +7254,10 @@ body{background:var(--bg);}
     dmPoll = setInterval(function () {
       if (document.visibilityState === 'visible') loadThread(false);
     }, POLL_MS);
-    setTimeout(function () { var i = $('dmInput'); if (i) i.focus({ preventScroll: true }); }, 250);
+    /* FIX(A3): focus AFTER the 300ms entrance animation completes — the old
+       250ms delay opened the keyboard (and its kbLift transform) while the
+       view was still sliding in, causing a visible stutter on slower phones. */
+    setTimeout(function () { var i = $('dmInput'); if (i) i.focus({ preventScroll: true }); }, 340);
   }
   function closeThread () {
     dmPartner = null;
@@ -7304,38 +7428,51 @@ body{background:var(--bg);}
     openThread(p);
   }
   async function loadFriendsPage () {
-    /* Three sections driven by public.friendships:
-       FRIEND REQUESTS (incoming, Accept/Decline) · YOUR FRIENDS
-       (chat + Block) · BLOCKED (Unblock). */
+    /* Four sections driven by public.friendships:
+       FRIEND REQUESTS (incoming, Accept/Decline) · REQUESTS SENT
+       (outgoing pending, Cancel) · YOUR FRIENDS (chat + Block) ·
+       BLOCKED (Unblock). */
     var list = $('frdList'), empty = $('frdEmptyState'),
         head = $('frdListHead'), cnt = $('frdCount'),
         reqHead = $('frdReqHead'), reqList = $('frdReqList'), reqCnt = $('frdReqCount'),
+        sentHead = $('frdSentHead'), sentList = $('frdSentList'), sentCnt = $('frdSentCount'),
         blkHead = $('frdBlockHead'), blkList = $('frdBlockList'), blkCnt = $('frdBlockCount');
     if (!list) return;
     list.innerHTML = '<div class="dmSearchNote">LOADING…</div>';
     if (reqList) reqList.innerHTML = '';
+    if (sentList) sentList.innerHTML = '';
     if (blkList) blkList.innerHTML = '';
     empty.style.display = 'none'; head.style.display = 'none';
     if (reqHead) reqHead.style.display = 'none';
+    if (sentHead) sentHead.style.display = 'none';
     if (blkHead) blkHead.style.display = 'none';
     try {
       await loadFriendships();
-      var uid = me().id, reqs = [], friends = [], blocked = [];
+      var uid = me().id, reqs = [], sent = [], friends = [], blocked = [];
       Object.keys(frMap).forEach(function (pid) {
         var f = frMap[pid];
         if (f.status === 'accepted') friends.push(pid);
         else if (f.status === 'pending' && f.addressee_id === uid) reqs.push(pid);
+        else if (f.status === 'pending' && f.requester_id === uid) sent.push(pid);
         else if (f.status === 'blocked' && f.blocked_by === uid) blocked.push(pid);
       });
       list.innerHTML = '';
       if (cnt) cnt.textContent = friends.length;
-      var allIds = reqs.concat(friends, blocked);
+      var allIds = reqs.concat(sent, friends, blocked);
       if (!allIds.length) { empty.style.display = ''; return; }
-      var pr = await db().from('profiles')
-        .select('id,username,avatar_url')
-        .in('id', allIds);
       var byId = {};
-      (pr.data || []).forEach(function (p) { byId[p.id] = p; });
+      try {
+        var pr = await db().from('profiles')
+          .select('id,username,avatar_url')
+          .in('id', allIds);
+        if (pr.error) throw pr.error;
+        (pr.data || []).forEach(function (p) { byId[p.id] = p; });
+        if (typeof dzcSet === 'function') dzcSet('frProfiles', byId); /* offline snapshot */
+      } catch (ppe) {
+        /* offline → cached usernames/avatars (frMap itself already
+           restored by loadFriendships) */
+        byId = (typeof dzcGet === 'function' && dzcGet('frProfiles')) || {};
+      }
       function prof (pid) { return byId[pid] || { id: pid, username: 'Artist' }; }
 
       if (reqs.length && reqHead && reqList) {
@@ -7348,6 +7485,20 @@ body{background:var(--bg);}
           acts.appendChild(frBtnEl('✕', 'frBtn--ghost', function () { frRemove(pid, 'Request declined'); }));
           row.appendChild(acts);
           reqList.appendChild(row);
+        });
+      }
+      if (sent.length && sentHead && sentList) {
+        sentHead.style.display = '';
+        if (sentCnt) sentCnt.textContent = sent.length;
+        sent.forEach(function (pid) {
+          /* Outgoing pending — no chat until accepted. userRow falls back to
+             openThread when the handler is null, so pass an explicit no-op;
+             CANCEL deletes the friendship row (same frRemove as decline). */
+          var row = userRow(prof(pid), false, 'Request pending…', null, function(){});
+          var acts = document.createElement('span'); acts.className = 'frRowBtns';
+          acts.appendChild(frBtnEl('CANCEL', 'frBtn--ghost', function () { frRemove(pid, 'Request cancelled'); }));
+          row.appendChild(acts);
+          sentList.appendChild(row);
         });
       }
       if (friends.length) {
@@ -7403,6 +7554,17 @@ body{background:var(--bg);}
     if (e.key === 'Escape' && $('frdPage') && $('frdPage').classList.contains('open')) closeFriendsPage();
   });
   window.openFriendsPage  = openFriendsPage;
+  /* Minimal bridge for the profile-page [ADD FRD]/[MESSAGE] button — the
+     profile script lives in another scope. Wraps the same primitives the
+     Friends page uses, so behavior stays identical everywhere. */
+  window.pfFriendBridge = {
+    load:   loadFriendships,
+    state:  frState,
+    send:   frSendReq,
+    accept: frAccept,
+    cancel: function (pid) { return frRemove(pid, 'Request cancelled'); },
+    chat:   frdStartChat
+  };
   window.closeFriendsPage = closeFriendsPage;
 
   /* ── Wiring — decorate, never modify, existing functions ── */
@@ -7643,6 +7805,7 @@ body{background:var(--bg);}
   function release (bar) {
     if (!bar) return;
     bar.style.transform = '';
+    bar.style.willChange = '';   /* FIX(B4): drop the compositor hint with the lift */
     bar.classList.remove('kbLift');
     if (activeBar === bar) activeBar = null;
   }
@@ -7655,6 +7818,7 @@ body{background:var(--bg);}
     if (!bar) return;
     if (activeBar && activeBar !== bar) release(activeBar);
     activeBar = bar;
+    bar.style.willChange = 'transform'; /* FIX(B4): hint only while the keyboard interaction is live */
     update();
     /* iOS reports the new viewport a beat after focus */
     setTimeout(update, 120);
@@ -8250,6 +8414,32 @@ function qrMake (text) {
     if (e.key !== 'Escape') return;
     var pg = document.getElementById('xpPage');
     if (pg && pg.classList.contains('open')) window.closeXpPage();
+  });
+})();
+</script>
+
+<script>
+/* ── Offline cache layer ──────────────────────────────────────
+   Registers /sw.js (app shell + top-50 thumbnails + last-50
+   viewed artworks + fonts, all cached on-device) and surfaces
+   connectivity changes. Data snapshots are saved by the loaders
+   above via dzcSet(); together they make the site browsable with
+   no internet: gallery, community messages, friends, your
+   profile and the conversation list all render from cache. */
+(function () {
+  'use strict';
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {
+        /* registration is best-effort — the site works without it */
+      });
+    });
+  }
+  window.addEventListener('offline', function () {
+    if (typeof showToast === 'function') showToast('You\u2019re offline \u2014 showing saved copies \u2726');
+  });
+  window.addEventListener('online', function () {
+    if (typeof showToast === 'function') showToast('Back online \u2726');
   });
 })();
 </script>
@@ -9317,7 +9507,7 @@ function qrMake (text) {
   }
 
   let isAdm = false, images = [];
-  let filterCat = 'all', filterSrt = 'new';
+  let filterCat = 'all', filterSrt = 'liked';
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   /* Normalizes the `category` column into a clean array of lowercase-
@@ -9474,6 +9664,42 @@ function qrMake (text) {
      images keeps them in `pages` (see avBuildStrip). ── */
   var ART_KIND_ART = 'art';
 
+  /* ══ Offline data snapshots ═══════════════════════════════
+     localStorage copies (≈50 items per section) saved on every
+     successful load and served back when the network is gone, so
+     the site stays browsable offline. Image files themselves are
+     cached by /sw.js (top-50 thumbnails prefetched on launch,
+     last-50 clicked artworks cached on view). */
+  var DZC_PREFIX = 'dzc1:';
+  function dzcSet(key, val){
+    try{ localStorage.setItem(DZC_PREFIX+key, JSON.stringify({t:Date.now(), v:val})); }
+    catch(e){ /* quota — offline copies are best-effort */ }
+  }
+  function dzcGet(key){
+    try{
+      var r = JSON.parse(localStorage.getItem(DZC_PREFIX+key) || 'null');
+      return (r && r.v) || null;
+    }catch(e){ return null; }
+  }
+  /* Warm the top-50 grid thumbnails through the service worker at
+     idle priority — one at a time so it never competes with the
+     page's own image loads. */
+  function dzcPrefetchThumbs(list){
+    if(!('serviceWorker' in navigator)) return;
+    var urls = (list||[]).slice(0,50)
+      .map(function(a){ return getThumbnailUrl(a.image_url); })
+      .filter(function(u){ return typeof u === 'string' && u.indexOf('http') === 0; });
+    var i = 0;
+    function next(){
+      if(i >= urls.length) return;
+      var u = urls[i++];
+      try{ fetch(u, { mode:'no-cors' }).then(next, next); }
+      catch(e){ next(); }
+    }
+    if('requestIdleCallback' in window) requestIdleCallback(next, { timeout: 4000 });
+    else setTimeout(next, 2500);
+  }
+
   async function loadDB(){
     if(!sb)return;
     try{
@@ -9483,7 +9709,27 @@ function qrMake (text) {
          only shows up inside #admPage for a dev to review. */
       const{data:imgs}=await sb.from('artworks').select('*').eq('status','approved').eq('kind',ART_KIND_ART).order('created_at',{ascending:false});
       images=imgs||[];
-    }catch(e){console.error(e);}
+      if(images.length){
+        /* offline snapshot: top 50, trimmed to the fields renderers use */
+        dzcSet('artworks', images.slice(0,50).map(function(a){
+          return { id:a.id, name:a.name, image_url:a.image_url,
+                   thumb_x:a.thumb_x, thumb_y:a.thumb_y,
+                   category:a.category, tags:a.tags||null, kind:a.kind,
+                   status:a.status, created_at:a.created_at,
+                   user_id:a.user_id||null, description:a.description||null,
+                   software:a.software||null, pages:a.pages||null };
+        }));
+        dzcPrefetchThumbs(images); /* warm top-50 thumbs into sw.js cache */
+      }
+    }catch(e){
+      console.error(e);
+      /* offline → serve the saved copy so the gallery still shows */
+      var cached = dzcGet('artworks');
+      if(cached && cached.length && !images.length){
+        images = cached;
+        showToast('Offline \u2014 showing saved artworks \u2726');
+      }
+    }
     /* Refresh the pending badge counts on the Admin Panel menu item, if a dev is signed in. */
     if(typeof admRefreshBadge==='function') admRefreshBadge();
   }
@@ -9536,7 +9782,11 @@ function qrMake (text) {
   }
 
   function itemHTML(img){
-    const thumbSrc=getThumbnailUrl(esc(img.image_url));
+    /* FIX(A1): resize FIRST, escape AFTER. esc() ran before getThumbnailUrl,
+       so a source URL containing & or quotes got HTML-entity-mangled inside
+       the CloudFront resize path → broken thumbnail. esc() is for embedding
+       the finished URL in the attribute, matching every other card builder. */
+    const thumbSrc=esc(getThumbnailUrl(img.image_url||''));
     const thumbPos=(img.thumb_x!=null&&img.thumb_y!=null&&isFinite(+img.thumb_x)&&isFinite(+img.thumb_y))?((+img.thumb_x)+'% '+(+img.thumb_y)+'%'):'50% 50%';
     const fullSrc=esc(img.image_url);
     const cats=catList(img.category).length?catList(img.category):['others'];
@@ -9564,19 +9814,43 @@ function qrMake (text) {
   }
 
 
-  /* ── Shared sort utility — newest first, id as tie-breaker ── */
+  /* ── Shared sort utility — MOST LIKED first ──
+     like_count is a denormalized counter on `artworks`, kept in sync by a DB
+     trigger on artwork_likes. It has to live there because artwork_likes is
+     RLS-scoped to its owner (you can only read your OWN likes), so the client
+     can never aggregate real like totals itself.
+     Ties fall back to newest, then id, so ordering is always deterministic
+     (ids are uuids, so they're compared as strings, not parseInt'd). */
+  function sortByLikes(arr){
+    return arr.sort(function(a,b){
+      var lA=parseInt(a.like_count,10)||0, lB=parseInt(b.like_count,10)||0;
+      if(lB!==lA) return lB-lA;
+      var tA=a.created_at?new Date(a.created_at).getTime():0;
+      var tB=b.created_at?new Date(b.created_at).getTime():0;
+      if(tB!==tA) return tB-tA;
+      var iA=String(a.id||''), iB=String(b.id||'');
+      return iA<iB?1:(iA>iB?-1:0);
+    });
+  }
+
+  /* ── Shared sort utility — newest first, id as tie-breaker.
+     Used by the "Latest" tab / "Latest" gallery sort, which deliberately
+     bypass the most-liked default so brand-new posts stay discoverable. ── */
   function sortByNewest(arr){
     return arr.sort(function(a,b){
       var tA=a.created_at?new Date(a.created_at).getTime():0;
       var tB=b.created_at?new Date(b.created_at).getTime():0;
       if(tB!==tA)return tB-tA;
-      return (parseInt(b.id,10)||0)-(parseInt(a.id,10)||0);
+      var iA=String(a.id||''), iB=String(b.id||'');
+      return iA<iB?1:(iA>iB?-1:0);
     });
   }
 
   function renderHome(){
-    /* Sort newest-first before rendering */
-    sortByNewest(images);
+    /* Sort most-liked-first before rendering (was newest-first). The gallery
+       carousels below read from this same `images` array, so every category
+       row inherits the same most→least liked order. */
+    sortByLikes(images);
     /* Rebuild all gallery carousels from current images array */
     if(window.rebuildGalCarousels) window.rebuildGalCarousels(images);
     const g=document.getElementById('homeGrid');
@@ -9604,17 +9878,27 @@ function qrMake (text) {
     if(filterCat!=='all')imgs=imgs.filter(i=>(catList(i.category).length?catList(i.category):['others']).includes(filterCat));
     if(q)imgs=imgs.filter(i=>(i.name||'').toLowerCase().includes(q));
 
-    /* ── FIXED sort: guard against null timestamps; id tie-breaker for
-       deterministic ordering when two items share the same created_at.
-       'new' = newest first (desc); 'old' = oldest first (asc). ── */
-    imgs.sort(function(a,b){
-      var tA=a.created_at?new Date(a.created_at).getTime():0;
-      var tB=b.created_at?new Date(b.created_at).getTime():0;
-      var diff=filterSrt==='new'?(tB-tA):(tA-tB);
-      if(diff!==0)return diff;
-      var idA=parseInt(a.id,10)||0,idB=parseInt(b.id,10)||0;
-      return filterSrt==='new'?(idB-idA):(idA-idB);
-    });
+    /* ── Sort. 'liked' (default) = most liked → least liked, applied to every
+       category alike. 'new'/'old' remain available from the filter panel.
+       Guards against null timestamps; id tie-breaker keeps ordering
+       deterministic when two items share the same created_at. ── */
+    if(filterSrt==='liked'){
+      sortByLikes(imgs);
+    } else {
+      imgs.sort(function(a,b){
+        var tA=a.created_at?new Date(a.created_at).getTime():0;
+        var tB=b.created_at?new Date(b.created_at).getTime():0;
+        var diff=filterSrt==='new'?(tB-tA):(tA-tB);
+        if(diff!==0)return diff;
+        /* FIX(A2): ids are uuids — parseInt always gave 0, so the tie-breaker
+           never fired and equal-timestamp items shuffled between renders.
+           Compare as strings, mirroring sortByNewest/sortByLikes. */
+        var iA=String(a.id||''), iB=String(b.id||'');
+        if(iA===iB) return 0;
+        var asc = iA<iB ? -1 : 1;
+        return filterSrt==='new' ? -asc : asc;
+      });
+    }
     if(!imgs.length){c.innerHTML='<div class="fgEmp">NO ARTWORK FOUND</div>';_fgSyncFilterBtn();return;}
 
     /* Clamp fgVisible so it never exceeds total */
@@ -9634,7 +9918,7 @@ function qrMake (text) {
   }
   /* Keep the filter button's "active" dot in sync with current sort/category. */
   function _fgSyncFilterBtn(){
-    const isFiltered=(filterCat!=='all'||filterSrt!=='new');
+    const isFiltered=(filterCat!=='all'||filterSrt!=='liked');
     const btn=document.getElementById('fgFltBtn');
     if(btn)btn.classList.toggle('active',isFiltered);
   }
@@ -9665,7 +9949,7 @@ function qrMake (text) {
     var catR=document.querySelector('input[name="fltCat"]:checked');
     var srtR=document.querySelector('input[name="fltSrt"]:checked');
     filterCat=catR?catR.value:'all';
-    filterSrt=srtR?srtR.value:'new';
+    filterSrt=srtR?srtR.value:'liked';
     fgVisible=fgInitialLoad();
     closeFilterPanel();
     renderFG();
@@ -9954,26 +10238,30 @@ function qrMake (text) {
     avCurrentArt = art;
     var modal=document.getElementById('artModal');
     if(amCloseTimer){clearTimeout(amCloseTimer);amCloseTimer=null;}
-    modal.classList.remove('closing');
+    if(modal) modal.classList.remove('closing');
     avResetZoom();
     avCloseMoreMenu();
 
     var viewport=document.getElementById('avImgViewport');
     if(viewport) viewport.classList.add('loading');
     var imgEl=document.getElementById('lbImg');
-    /* Show the medium (~500 KB WebP) view; the untouched original is kept
-       in currentLightboxImageSrc for Download. */
-    imgEl.src=getViewUrl(src);
-    /* SEO: the full-resolution image shown in the modal is the one
-       most likely to be the actual indexed/served image in Google
-       Image Search results, so it needs real alt text too — not
-       just the gallery thumbnail. */
-    imgEl.alt=name||'Untitled artwork';
-    imgEl.onload=function(){
-      if(viewport) viewport.classList.remove('loading');
-      avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
-    };
-    imgEl.onerror=function(){ if(viewport) viewport.classList.remove('loading'); };
+    /* FIX(A5): guard imgEl like its sibling viewport — without it, any
+       refactor that renames #lbImg turns every artwork open into a crash. */
+    if(imgEl){
+      /* Show the medium (~500 KB WebP) view; the untouched original is kept
+         in currentLightboxImageSrc for Download. */
+      imgEl.src=getViewUrl(src);
+      /* SEO: the full-resolution image shown in the modal is the one
+         most likely to be the actual indexed/served image in Google
+         Image Search results, so it needs real alt text too — not
+         just the gallery thumbnail. */
+      imgEl.alt=name||'Untitled artwork';
+      imgEl.onload=function(){
+        if(viewport) viewport.classList.remove('loading');
+        avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
+      };
+      imgEl.onerror=function(){ if(viewport) viewport.classList.remove('loading'); };
+    }
 
     /* Multi-image support — populates the thumbnail strip + counter, or
        hides both when this artwork has a single image. */
@@ -9982,9 +10270,12 @@ function qrMake (text) {
     document.getElementById('lbNm').textContent=name||'';
 
     var tags = art ? ((art.tags && art.tags.length) ? art.tags : catList(art.category)) : (cat ? [cat] : []);
-    var catLabel = cat || (tags[0]||'');
+    /* FIX(B1): renamed from `catLabel` — the old name shadowed the global
+       catLabel() helper for this whole function scope, so any future call to
+       catLabel(slug) inside openLB would crash with "not a function". */
+    var catLabelStr = cat || (tags[0]||'');
     var subType = document.getElementById('avSubType');
-    if(subType) subType.textContent = catLabel ? avCap(catLabel)+' Artwork' : 'Digital Artwork';
+    if(subType) subType.textContent = catLabelStr ? avCap(catLabelStr)+' Artwork' : 'Digital Artwork';
 
     /* Description: optional. Hides itself (and its divider) cleanly
        when there's no description text for this artwork. */
@@ -10007,7 +10298,7 @@ function qrMake (text) {
       } else { tagListEl.innerHTML=''; tagsBlock.hidden=true; tagsDiv.hidden=true; }
     }
 
-    avRenderMeta({ category:catLabel, software: art?art.software:null, createdAt: art?art.created_at:null, hasArt: !!art });
+    avRenderMeta({ category:catLabelStr, software: art?art.software:null, createdAt: art?art.created_at:null, hasArt: !!art });
     avRenderAuthor(art);
     avSetupNav(id, navSource);
 
@@ -10205,7 +10496,10 @@ function qrMake (text) {
     var txt = document.getElementById(txtId);
     if(!img || !txt) return;
     if(url){
-      img.src = url;
+      /* Avatar chips are tiny (≤36px) — serve the small resized WebP
+         instead of the full original. imgResize is idempotent, so a
+         caller that already passed a resized URL is left untouched. */
+      img.src = getThumbnailUrl(url);
       img.style.display = 'block';
       txt.style.display = 'none';
     } else {
@@ -10956,7 +11250,7 @@ function qrMake (text) {
   /* Every column the profile page needs — shared by the normal fetch
      in openProfileByUsername and the self-heal below so both paths
      always return an identically-shaped row. */
-  var PF_PROFILE_COLS = 'id,username,bio,role,created_at,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
+  var PF_PROFILE_COLS = 'id,username,display_name,bio,role,created_at,username_changed_at,cred_received_count,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
 
   /* ── Self-heal: guarantee the signed-in user has a profiles row ──
      Accounts created before the on-signup trigger existed have a
@@ -10973,7 +11267,7 @@ function qrMake (text) {
       /* maybeSingle(): 0 rows is expected here, not an error */
       const{data:existing,error:se}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('id',currentUser.id).maybeSingle();
       if(se) throw se;
-      if(existing) return existing;
+      if(existing){ dzcSet('ownProfile', existing); return existing; }
       /* No row — build a username from the session, matching the same
          charset/length rules savePfEditProfile() enforces. */
       var base = (currentUser.user_metadata && currentUser.user_metadata.username) ||
@@ -11001,7 +11295,12 @@ function qrMake (text) {
         console.error('pfEnsureOwnProfile: '+msg);
         return null;
       }
-    }catch(e){ console.error('pfEnsureOwnProfile: '+(e.message||e)); }
+    }catch(e){
+      console.error('pfEnsureOwnProfile: '+(e.message||e));
+      /* offline → the saved copy still opens your profile */
+      var cachedProf = dzcGet('ownProfile');
+      if(cachedProf){ showToast('Offline \u2014 showing saved profile \u2726'); return cachedProf; }
+    }
     return null;
   }
 
@@ -11035,11 +11334,11 @@ function qrMake (text) {
        starting once that fetch resolves. */
     var mediaCached = pfMediaCache[username];
     if(mediaCached){
-      pfPreloadImage(mediaCached.avatar_url);
-      pfPreloadImage(mediaCached.banner_url);
+      pfPreloadImage(getThumbnailUrl(mediaCached.avatar_url));
+      pfPreloadImage(getViewUrl(mediaCached.banner_url));
     }
     if(currentUser && currentUser.user_metadata && currentUser.user_metadata.username===username){
-      pfPreloadImage(currentUserAvatarUrl);
+      pfPreloadImage(getThumbnailUrl(currentUserAvatarUrl));
     }
     pf.profile=null; pf.galleryRows=[]; pf.galleryPage=0; pf.galleryDone=false;
     pf.likeLoaded=false; pf.bmLoaded=false;
@@ -11053,6 +11352,10 @@ function qrMake (text) {
     document.getElementById('pfAvatarImg').style.display='none';
     document.getElementById('pfBannerImg').style.display='none';
     document.getElementById('pfJoined').textContent='';
+    var _hb=document.getElementById('pfHeadBio'); if(_hb) _hb.textContent='';
+    var _hn=document.getElementById('pfHandle'); if(_hn) _hn.textContent='';
+    var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.style.display='none';
+    var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.style.display='none';
     document.getElementById('pfGalleryGrid').innerHTML='';
     pfSwitchTab('gallery');
     try{
@@ -11081,11 +11384,13 @@ function qrMake (text) {
       /* Cache for next time + preload immediately in case these
          URLs weren't already covered by the head-start above. */
       pfMediaCache[username] = { avatar_url: data.avatar_url||null, banner_url: data.banner_url||null };
-      pfPreloadImage(data.avatar_url);
-      pfPreloadImage(data.banner_url);
-      document.getElementById('pfUsername').textContent = data.username;
-      document.getElementById('pfAvatarLetter').textContent = (data.username||'?').charAt(0).toUpperCase();
-      document.getElementById('pfEditAvatarLetter').textContent = (data.username||'?').charAt(0).toUpperCase();
+      pfPreloadImage(getThumbnailUrl(data.avatar_url));
+      pfPreloadImage(getViewUrl(data.banner_url));
+      var pfVisibleName = data.display_name || data.username;
+      document.getElementById('pfUsername').textContent = pfVisibleName;
+      var _hnEl=document.getElementById('pfHandle'); if(_hnEl) _hnEl.textContent = '@' + data.username;
+      document.getElementById('pfAvatarLetter').textContent = (pfVisibleName||'?').charAt(0).toUpperCase();
+      document.getElementById('pfEditAvatarLetter').textContent = (pfVisibleName||'?').charAt(0).toUpperCase();
       pfRenderAvatarBanner();
       document.getElementById('pfJoined').textContent = data.created_at ? ('JOINED '+pfFormatDate(data.created_at).toUpperCase()) : '';
       var _pfUpWrap = document.getElementById('pfUploadWrap'); if(_pfUpWrap) _pfUpWrap.style.display = 'none'; /* upload moved to nav ➕ */
@@ -11093,8 +11398,11 @@ function qrMake (text) {
       document.getElementById('pfEditBtn').style.display = pf.isOwner ? 'flex' : 'none';
       if(!pf.isOwner) closePfMenu();
       pfRenderBio();
+      pfRenderHeadBio();
       pfRenderConnect();
       pfLoadStats();
+      pfLoadHeadStats();
+      pfLoadActionRow();
       pfLoadMoreGallery();
       if(pushUrl!==false && window.location.pathname !== '/profile/'+encodeURIComponent(username)){
         try{ history.pushState({profileUser:username},'','/profile/'+encodeURIComponent(username)); }catch(e){}
@@ -11234,9 +11542,198 @@ function qrMake (text) {
       document.getElementById('pfStatArt').textContent = artC.count||0;
     }catch(e){ /* non-fatal */ }
   }
+  /* Default shown wherever a profile has no bio — friendlier than
+     an empty "No bio yet." and shared by the header line + About tab. */
+  var PF_DEFAULT_BIO = 'Just a regular human who likes art and creativity.';
+  var PF_HEAD_BIO_LIMIT = 100;
+  var PF_USERNAME_COOLDOWN_MS = 90*24*3600*1000;
+
+  /* Returns the Date when the @handle can next be changed, or null if it can
+     be changed right now. Dev accounts bypass the cooldown (mirrors the
+     guard_profile_update trigger — the DB is still the enforcer). */
+  function pfUsernameNextChange(){
+    if(!pf.profile) return null;
+    if(pf.profile.role === 'dev') return null;
+    if(!pf.profile.username_changed_at) return null;
+    var next = new Date(pf.profile.username_changed_at).getTime() + PF_USERNAME_COOLDOWN_MS;
+    return (isFinite(next) && next > Date.now()) ? new Date(next) : null;
+  }
+
+  /* Compact counts for the header stats row: 950 → 950, 1.2K, 3.4M */
+  function pfFmtCount(n){
+    n = +n || 0;
+    if(n >= 1e6) return (n/1e6).toFixed(n%1e6 >= 1e5 ? 1 : 0).replace(/\.0$/,'') + 'M';
+    if(n >= 1e3) return (n/1e3).toFixed(n%1e3 >= 100 ? 1 : 0).replace(/\.0$/,'') + 'K';
+    return String(n);
+  }
+
+  /* ── Header stats row: ❤️ total likes · 👁️ total views · LV ──
+     Likes/views are summed from the viewer-readable artworks rows
+     (like_count/view_count are the trigger-guarded counters); level
+     comes from the same get_artist_progress RPC the LEVEL tab uses.
+     Guarded against profile switches mid-flight: if another profile
+     opened while we awaited, the stale result is dropped. */
+  async function pfLoadHeadStats(){
+    var row = document.getElementById('pfStatsRow');
+    if(!row || !pf.profile) return;
+    var forId = pf.profile.id;
+    try{
+      var likes = 0, views = 0, bms = 0, level = 1;
+      var r = await sb.from('artworks').select('like_count,view_count,bookmark_count').eq('user_id', forId).limit(1000);
+      if(!pf.profile || pf.profile.id !== forId) return;   /* stale — a different profile opened */
+      (r.data || []).forEach(function(a){
+        likes += (+a.like_count || 0);
+        views += (+a.view_count || 0);
+        bms   += (+a.bookmark_count || 0);
+      });
+      try{
+        var pr = await sb.rpc('get_artist_progress', { target: forId });
+        if(pr.data && pr.data[0] && pr.data[0].level) level = pr.data[0].level;
+      }catch(e){ /* level stays 1 — row still shows */ }
+      if(!pf.profile || pf.profile.id !== forId) return;
+      /* CRED = 100 per profile cred received + 2 per like + 5 per bookmark.
+         cred_received_count is the trigger-guarded counter on profiles. */
+      pfCredTotal = 100*(+pf.profile.cred_received_count || 0) + 2*likes + 5*bms;
+      document.getElementById('pfStatLikes').textContent = '\u2764\uFE0F ' + pfFmtCount(likes);
+      document.getElementById('pfStatViews').textContent = '\uD83D\uDC41\uFE0F ' + pfFmtCount(views);
+      document.getElementById('pfStatLevel').textContent = 'LV ' + level;
+      document.getElementById('pfStatCred').textContent  = '\u2B50 ' + pfFmtCount(pfCredTotal);
+      row.style.display = '';
+    }catch(e){ row.style.display = 'none'; /* offline — hide rather than show zeros */ }
+  }
+
+  /* ── [ADD FRD] [CRED] action row ─────────────────────────────
+     Shown on every profile except your own. Friend button walks the
+     friendship state machine (ADD FRD → REQ SENT → MESSAGE, or ACCEPT
+     when they asked first) via the pfFriendBridge from the community
+     module. Cred is a once-per-profile toggle worth +100, stored in
+     profile_creds; tapping CREDITED removes it again. */
+  var pfCredTotal = 0;              /* current ⭐ value shown in the stats row */
+  var pfCredited = false, pfCredBusy = false, pfFrBusy = false;
+
+  function pfPaintCredBtn(){
+    var b = document.getElementById('pfBtnCred'); if(!b) return;
+    b.textContent = pfCredited ? 'CREDITED' : 'CRED';
+    b.classList.toggle('on', pfCredited);
+  }
+  function pfPaintFriendBtn(state){
+    var b = document.getElementById('pfBtnFriend'); if(!b) return;
+    var map = { none:'ADD FRD', sent:'REQ SENT', incoming:'ACCEPT', friends:'MESSAGE' };
+    if(state === 'blocked_by_me' || state === 'blocked'){ b.style.display='none'; return; }
+    b.style.display = '';
+    b.textContent = map[state] || 'ADD FRD';
+    b.classList.toggle('on', state === 'friends');
+    b.dataset.frState = state || 'none';
+  }
+
+  async function pfLoadActionRow(){
+    var row = document.getElementById('pfActionRow');
+    if(!row || !pf.profile) return;
+    if(pf.isOwner){ row.style.display = 'none'; return; }
+    var forId = pf.profile.id;
+    row.style.display = '';
+    pfCredited = false; pfPaintCredBtn(); pfPaintFriendBtn('none');
+    if(!currentUser) return;   /* logged out: defaults shown, taps prompt sign-in */
+    try{
+      if(window.pfFriendBridge){
+        await window.pfFriendBridge.load();
+        if(!pf.profile || pf.profile.id !== forId) return;
+        pfPaintFriendBtn(window.pfFriendBridge.state(forId));
+      }
+      var c = await sb.from('profile_creds').select('id')
+        .eq('giver_id', currentUser.id).eq('receiver_id', forId).maybeSingle();
+      if(!pf.profile || pf.profile.id !== forId) return;
+      pfCredited = !!(c && c.data);
+      pfPaintCredBtn();
+    }catch(e){ /* buttons stay at defaults — actions still re-check */ }
+  }
+
+  async function pfCredToggle(){
+    if(!pf.profile || pf.isOwner || pfCredBusy) return;
+    if(!currentUser){ showToast('Sign in to cred artists'); openAuthMod(); return; }
+    var forId = pf.profile.id, statEl = document.getElementById('pfStatCred');
+    pfCredBusy = true;
+    /* optimistic flip (+/−100), rolled back on failure */
+    var was = pfCredited;
+    pfCredited = !was; pfPaintCredBtn();
+    pfCredTotal += pfCredited ? 100 : -100;
+    if(statEl) statEl.textContent = '\u2B50 ' + pfFmtCount(Math.max(pfCredTotal,0));
+    try{
+      if(was){
+        var d = await sb.from('profile_creds').delete()
+          .eq('giver_id', currentUser.id).eq('receiver_id', forId);
+        if(d.error) throw d.error;
+      } else {
+        var i = await sb.from('profile_creds').insert({ giver_id: currentUser.id, receiver_id: forId });
+        if(i.error && i.error.code !== '23505') throw i.error;  /* duplicate → already credited, fine */
+      }
+      pf.profile.cred_received_count = Math.max((+pf.profile.cred_received_count||0) + (pfCredited?1:-1), 0);
+    }catch(e){
+      pfCredited = was; pfPaintCredBtn();                        /* roll back */
+      pfCredTotal += pfCredited ? 100 : -100;
+      if(statEl) statEl.textContent = '\u2B50 ' + pfFmtCount(Math.max(pfCredTotal,0));
+      showToast('Couldn\u2019t update cred \u2014 try again');
+    }finally{ pfCredBusy = false; }
+  }
+
+  async function pfFriendBtnTap(){
+    if(!pf.profile || pf.isOwner || pfFrBusy || !window.pfFriendBridge) return;
+    if(!currentUser){ showToast('Sign in to add friends'); openAuthMod(); return; }
+    var b = document.getElementById('pfBtnFriend'); if(!b) return;
+    var st = b.dataset.frState || 'none', forId = pf.profile.id;
+    if(st === 'friends'){
+      /* MESSAGE — jump into the DM thread (community module handles the rest) */
+      window.pfFriendBridge.chat({ id: forId, username: pf.profile.username, avatar_url: pf.profile.avatar_url });
+      return;
+    }
+    pfFrBusy = true; b.disabled = true;
+    try{
+      if(st === 'none')          await window.pfFriendBridge.send(forId);
+      else if(st === 'sent')     await window.pfFriendBridge.cancel(forId);
+      else if(st === 'incoming') await window.pfFriendBridge.accept(forId);
+      await window.pfFriendBridge.load();
+      if(pf.profile && pf.profile.id === forId) pfPaintFriendBtn(window.pfFriendBridge.state(forId));
+    }catch(e){ showToast('Action failed \u2014 try again'); }
+    finally{ pfFrBusy = false; b.disabled = false; }
+  }
+
   function pfRenderBio(){
     var text = document.getElementById('pfBioText');
-    text.textContent = pf.profile.bio && pf.profile.bio.trim() ? pf.profile.bio : 'No bio yet.';
+    text.textContent = pf.profile.bio && pf.profile.bio.trim() ? pf.profile.bio : PF_DEFAULT_BIO;
+  }
+
+  /* ── Header bio teaser (under the username) ──
+     Full bio if it fits in PF_HEAD_BIO_LIMIT chars; otherwise a word-safe
+     cut + "…more" that jumps to the ABOUT tab. Built with textContent /
+     createTextNode only — the bio is user input, never innerHTML. */
+  function pfGoAboutTab(){
+    pfSwitchTab('about');
+    var tabs = document.querySelector('#profilePage .pfTabs');
+    if(tabs && tabs.scrollIntoView) tabs.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+  function pfRenderHeadBio(){
+    var el = document.getElementById('pfHeadBio');
+    if(!el) return;
+    var bio = (pf.profile && pf.profile.bio && pf.profile.bio.trim())
+                ? pf.profile.bio.trim() : PF_DEFAULT_BIO;
+    bio = bio.replace(/\s+/g, ' ');           /* single teaser line — collapse newlines */
+    el.textContent = '';
+    if(bio.length <= PF_HEAD_BIO_LIMIT){ el.textContent = bio; return; }
+    var cut = bio.slice(0, PF_HEAD_BIO_LIMIT);
+    var sp  = cut.lastIndexOf(' ');
+    if(sp > 60) cut = cut.slice(0, sp);       /* don't chop mid-word unless the word is huge */
+    el.appendChild(document.createTextNode(cut + '… '));
+    var more = document.createElement('span');
+    more.className = 'pfHeadBioMore';
+    more.textContent = 'Show more';
+    more.setAttribute('role','button');
+    more.tabIndex = 0;
+    more.setAttribute('aria-label','Read full bio in About');
+    more.addEventListener('click', pfGoAboutTab);
+    more.addEventListener('keydown', function(e){
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); pfGoAboutTab(); }
+    });
+    el.appendChild(more);
   }
 
   /* ── Connect (social links) ──
@@ -11731,8 +12228,8 @@ function qrMake (text) {
     var eaImg = document.getElementById('pfEditAvatarImg');
     var eaLetter = document.getElementById('pfEditAvatarLetter');
     if(pf.profile.avatar_url){
-      aImg.src = pf.profile.avatar_url; aImg.style.display='block'; aLetter.style.display='none';
-      eaImg.src = pf.profile.avatar_url; eaImg.style.display='block'; eaLetter.style.display='none';
+      aImg.src = getThumbnailUrl(pf.profile.avatar_url); aImg.style.display='block'; aLetter.style.display='none';
+      eaImg.src = getThumbnailUrl(pf.profile.avatar_url); eaImg.style.display='block'; eaLetter.style.display='none';
     } else {
       aImg.style.display='none'; aLetter.style.display='';
       eaImg.style.display='none'; eaLetter.style.display='';
@@ -11740,8 +12237,8 @@ function qrMake (text) {
     var bImg = document.getElementById('pfBannerImg');
     var ebImg = document.getElementById('pfEditBannerImg');
     if(pf.profile.banner_url){
-      bImg.src = pf.profile.banner_url; bImg.style.display='block';
-      ebImg.src = pf.profile.banner_url; ebImg.style.display='block';
+      bImg.src = getViewUrl(pf.profile.banner_url); bImg.style.display='block';
+      ebImg.src = getViewUrl(pf.profile.banner_url); ebImg.style.display='block';
     } else {
       bImg.style.display='none';
       ebImg.style.display='none';
@@ -11942,7 +12439,24 @@ function qrMake (text) {
      ========================================================= */
   function openPfEditPage(){
     if(!pf.isOwner || !pf.profile){ showToast('You can only edit your own profile'); return; }
+    document.getElementById('pfEditDisplayName').value = pf.profile.display_name || '';
     document.getElementById('pfEditUsername').value = pf.profile.username || '';
+    /* @handle changes: any user, once every 90 days (enforced by the
+       guard_profile_update trigger via username_changed_at, which only the
+       trigger itself can write). Mirror that honestly in the UI: inside the
+       cooldown the field locks with the exact unlock date. */
+    (function(){
+      var uIn = document.getElementById('pfEditUsername');
+      var uHint = document.getElementById('pfEditUsernameHint');
+      var next = pfUsernameNextChange();
+      if(next){
+        uIn.disabled = true;
+        if(uHint){ uHint.style.display=''; uHint.textContent = 'You can change your @handle again on ' + pfFormatDate(next.toISOString()) + '.'; }
+      } else {
+        uIn.disabled = false;
+        if(uHint){ uHint.style.display=''; uHint.textContent = 'Your @handle can be changed once every 90 days.'; }
+      }
+    })();
     document.getElementById('pfEditBio').value = pf.profile.bio || '';
     pfUpdateEditBioCount();
     pfRenderAvatarBanner();
@@ -11980,6 +12494,7 @@ function qrMake (text) {
   async function savePfEditProfile(){
     if(!pf.isOwner || !pf.profile) return;
     var newUsername = document.getElementById('pfEditUsername').value.trim();
+    var newDisplayName = document.getElementById('pfEditDisplayName').value.trim().slice(0,30);
     var newBio = document.getElementById('pfEditBio').value.trim().slice(0,500);
     if(!newUsername){ showToast('Username can\'t be empty'); return; }
     if(newUsername.length>30){ showToast('Username must be 30 characters or fewer'); return; }
@@ -12009,20 +12524,36 @@ function qrMake (text) {
     try{
       var usernameChanged = newUsername.toLowerCase() !== (pf.profile.username||'').toLowerCase();
       if(usernameChanged){
+        /* Client-side cooldown pre-check (input should already be locked —
+           this is the seatbelt; the trigger is the real enforcer). */
+        var nextChg = pfUsernameNextChange();
+        if(nextChg){ showToast('You can change your @handle again on ' + pfFormatDate(nextChg.toISOString())); return; }
         const{data:existing,error:ce}=await sb.from('profiles').select('id').ilike('username',newUsername).neq('id',pf.profile.id).maybeSingle();
         if(ce) throw ce;
         if(existing){ showToast('That username is already taken'); return; }
       }
-      var updates = { username:newUsername, bio:newBio||null, social_links:newSocialLinks };
+      var updates = { username:newUsername, display_name:newDisplayName||null, bio:newBio||null, social_links:newSocialLinks };
       const{error:de}=await sb.from('profiles').update(updates).eq('id',pf.profile.id);
       if(de) throw de;
       pf.profile.username = newUsername;
+      pf.profile.display_name = newDisplayName || null;
       pf.profile.bio = newBio;
       pf.profile.social_links = newSocialLinks;
-      document.getElementById('pfUsername').textContent = newUsername;
-      document.getElementById('pfAvatarLetter').textContent = newUsername.charAt(0).toUpperCase();
-      document.getElementById('pfEditAvatarLetter').textContent = newUsername.charAt(0).toUpperCase();
+      if(usernameChanged){
+        /* Mirror the trigger's clock stamp locally so re-opening Edit
+           Profile shows the lock immediately, without a refetch. */
+        pf.profile.username_changed_at = new Date().toISOString();
+      }
+      /* Live update — the big name shows display name (fallback: username);
+         the @handle always shows the username; avatar letters follow the
+         visible name so the initial matches what people see. */
+      var visibleName = newDisplayName || newUsername;
+      document.getElementById('pfUsername').textContent = visibleName;
+      var _hnSv=document.getElementById('pfHandle'); if(_hnSv) _hnSv.textContent = '@' + newUsername;
+      document.getElementById('pfAvatarLetter').textContent = visibleName.charAt(0).toUpperCase();
+      document.getElementById('pfEditAvatarLetter').textContent = visibleName.charAt(0).toUpperCase();
       pfRenderBio();
+      pfRenderHeadBio();
       pfRenderConnect();
       if(usernameChanged){
         try{ history.replaceState({profileUser:newUsername},'','/profile/'+encodeURIComponent(newUsername)); }catch(e){}
@@ -12032,7 +12563,18 @@ function qrMake (text) {
       }
       showToast('Profile updated ✦');
       closePfEditPage();
-    }catch(err){ console.error('Error: '+err.message); }
+    }catch(err){
+      /* Backstop: if a stale tab slipped past the pre-check, the trigger
+         raises USERNAME_COOLDOWN — show it instead of console-only. */
+      if(err && /USERNAME_COOLDOWN/.test(err.message||'')){
+        var m = /until\s+([0-9T:.\- +]+)/.exec(err.message);
+        var when = m ? new Date(m[1].trim()) : null;
+        showToast('You can change your @handle again' + (when && isFinite(+when) ? ' on ' + pfFormatDate(when.toISOString()) : ' in a while'));
+      } else {
+        console.error('Error: '+err.message);
+        showToast('Couldn\u2019t save \u2014 try again');
+      }
+    }
     finally{ btn.disabled=false; btn.textContent='SAVE CHANGES'; }
   }
 
@@ -12759,16 +13301,15 @@ function hideCommentThumbnail(){
     cpSyncAvatar();
     var thumb=document.getElementById('cpSelectedImage');
     var thumbImg=document.getElementById('cpSelectedImageImg');
-    if(isShowcase){
-      /* Showcase requires a deliberate pick of the user's OWN work via
-         the + picker — never carry over a leftover "comment with this
-         image" attachment from another artwork's lightbox. */
-      if(thumb) thumb.style.display = 'none';
-      if(thumbImg) thumbImg.src = '';
-    } else if(currentLightboxImageSrc && thumb && thumbImg){
-      thumbImg.src=currentLightboxImageSrc;
-      thumb.style.display='flex';
-    }
+    /* Always open a channel with an EMPTY composer. A leftover image
+       from the artwork lightbox (currentLightboxImageSrc) used to be
+       auto-attached here for non-showcase channels, so simply viewing
+       an image then opening any community made that image pop into the
+       composer across every channel — unwanted. Showcase attaches its
+       own image deliberately via the + picker (cpPickShowcaseImage),
+       which runs later on a user tap, so clearing here is safe. */
+    if(thumb) thumb.style.display = 'none';
+    if(thumbImg) thumbImg.src = '';
     /* Inside a channel the bottom tab bar is hidden, same as any
        other full-page overlay (notifications, profile edit, etc.) —
        tapping the back arrow in the chat header is the only way
@@ -13211,9 +13752,20 @@ function hideCommentThumbnail(){
           : '<div class="cpEIco">◎</div><div>NO COMMENTS YET</div><div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>';
       }
       cpRender();
+      /* offline snapshot: last 50 messages of this channel */
+      dzcSet('cp:'+cpCurrentChannel, cpComments.slice(-50));
     }catch(e){
       console.error('cpLoadComments:', e);
       if(silent) return; /* transient poll error — don't wipe the feed or nag */
+      /* offline → serve the saved copy of this channel */
+      var cachedCp = dzcGet('cp:'+cpCurrentChannel);
+      if(cachedCp && cachedCp.length){
+        cpComments = cachedCp;
+        cpHasMore = false;
+        cpRender();
+        showToast('Offline \u2014 showing saved messages \u2726');
+        return;
+      }
       showToast('Failed to load comments');
       cpComments = [];
       cpRender();
@@ -13257,7 +13809,6 @@ function hideCommentThumbnail(){
       /* Clear thumbnail after successful insert */
       if(thumbEl)  thumbEl.style.display = 'none';
       if(thumbImg) thumbImg.src = '';
-      currentLightboxImageSrc = '';
       return true;
     }catch(e){
       console.error('cpSaveComment:', e);
@@ -13461,7 +14012,8 @@ function hideCommentThumbnail(){
      the non-category 'artworks' tab keeps its fixed id. */
   var AW_CATEGORY_TABS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]=c.slug; return m; },{});
   var AW_TAB_BTN_IDS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]='awTab_'+c.slug; return m; },{
-    artworks: 'awTabArt'
+    artworks: 'awTabArt',
+    latest:   'awTabLatest'
   });
 
   function awCategoryList(catName){
@@ -13472,6 +14024,9 @@ function hideCommentThumbnail(){
 
   function awListForTab(tab){
     if(tab === 'artworks') return awArtworksCache;
+    /* 'latest' is a view, not a category — it spans every category and is
+       ordered newest-first (renderAwGrid skips the most-liked sort for it). */
+    if(tab === 'latest')   return awArtworksCache;
     return awCategoryList(AW_CATEGORY_TABS[tab] || tab);
   }
 
@@ -13585,12 +14140,15 @@ function hideCommentThumbnail(){
     var empty = document.getElementById('awEmpty');
     if(!grid) return;
 
-    var sorted = sortByNewest((list||[]).slice()).slice(0, 200);
+    /* Every tab is most-liked → least-liked, EXCEPT "Latest", which is the
+       one view that stays newest-first (that's its whole purpose). */
+    var src = (list||[]).slice();
+    var sorted = (type === 'latest' ? sortByNewest(src) : sortByLikes(src)).slice(0, 200);
     grid.innerHTML = '';
 
     if(!sorted.length){
       if(empty){
-        empty.textContent = (type && type !== 'artworks')
+        empty.textContent = (type && type !== 'artworks' && type !== 'latest')
           ? ('NO ' + catLabel(type).toUpperCase() + ' ART YET')
           : 'NO ARTWORK YET';
         empty.style.display = 'block';
@@ -15799,6 +16357,9 @@ html.thmFade #themePage{
     <div id="frdResults"></div>
     <div class="frdSection" id="frdReqHead" style="display:none;">FRIEND REQUESTS · <span id="frdReqCount">0</span></div>
     <div class="cmFriendList" id="frdReqList"></div>
+    <!-- Outgoing pending requests — cancellable until the other artist accepts -->
+    <div class="frdSection" id="frdSentHead" style="display:none;">REQUESTS SENT · <span id="frdSentCount">0</span></div>
+    <div class="cmFriendList" id="frdSentList"></div>
     <div class="frdSection" id="frdListHead" style="display:none;">YOUR FRIENDS · <span id="frdCount">0</span></div>
     <div class="cmFriendList" id="frdList"></div>
     <div class="frdSection" id="frdBlockHead" style="display:none;">BLOCKED · <span id="frdBlockCount">0</span></div>
@@ -15866,18 +16427,39 @@ html.thmFade #themePage{
     } catch (e) {}
     return out;
   };
-  /* Deep links load with the URL already set — no pushState fires. */
+  /* Deep links load with the URL already set — no pushState fires.
+     FIX(B5): the old fixed 1200ms delay raced auth restore — on a slow
+     connection the session wasn't back yet, so the view registered under
+     the anon dedup key instead of the user (occasional double count).
+     Now we wait for getSession() to settle (it resolves once the client
+     has restored the stored session), with a hard 4s fallback so a hung
+     auth call can never swallow the view entirely. */
   document.addEventListener('DOMContentLoaded', function () {
     var id = idFromPath(location.pathname);
-    if (id) setTimeout(function () { registerView(id); }, 1200);
+    if (!id) return;
+    var fired = false;
+    function go () { if (fired) return; fired = true; registerView(id); }
+    var c = db();
+    if (c && c.auth && typeof c.auth.getSession === 'function') {
+      try { c.auth.getSession().then(go, go); } catch (e) { setTimeout(go, 1200); }
+      setTimeout(go, 4000); /* fallback: never lose the view */
+    } else {
+      setTimeout(go, 1200);
+    }
   });
 
   /* ══ LIKE / BOOKMARK state ══════════════════════════════ */
   async function loadSets () {
     if (!db() || !me()) { liked.clear(); marked.clear(); setsReady = true; paintSoon(); return; }
     try {
-      var l = await db().from('artwork_likes').select('artwork_id').limit(3000);
-      var b = await db().from('artwork_bookmarks').select('artwork_id').limit(3000);
+      /* FIX(A4): filter by user_id explicitly. Correctness previously relied
+         entirely on the likes_select_own RLS policy — if that policy is ever
+         loosened (e.g. public like feeds), this would silently paint OTHER
+         people's likes as yours. The explicit filter also keeps the 3000-row
+         cap scoped to this user's rows only. */
+      var uid = me().id;
+      var l = await db().from('artwork_likes').select('artwork_id').eq('user_id', uid).limit(3000);
+      var b = await db().from('artwork_bookmarks').select('artwork_id').eq('user_id', uid).limit(3000);
       liked  = new Set((l.data || []).map(function (r) { return String(r.artwork_id); }));
       marked = new Set((b.data || []).map(function (r) { return String(r.artwork_id); }));
     } catch (e) { /* stay with last known */ }
@@ -15894,10 +16476,23 @@ html.thmFade #themePage{
   }
   function paintSoon () { clearTimeout(paintTimer); paintTimer = setTimeout(paintAll, 200); }
   /* Cards render asynchronously after data loads — repaint states
-     whenever new engagement buttons enter the DOM. */
+     whenever new engagement buttons enter the DOM.
+     FIX(B3): previously ANY DOM insertion anywhere (every 5s chat poll
+     repaint, every toast) scheduled a whole-document querySelectorAll.
+     Now we only schedule a repaint when an added subtree actually
+     contains an engagement button — checking the small added node is
+     far cheaper than rescanning the full document each time. */
+  function hasEngBtn(node){
+    if (node.nodeType !== 1) return false;
+    if (node.matches && node.matches('.engLike,.engBm')) return true;
+    return !!(node.querySelector && node.querySelector('.engLike,.engBm'));
+  }
   new MutationObserver(function (muts) {
     for (var i = 0; i < muts.length; i++) {
-      if (muts[i].addedNodes.length) { paintSoon(); return; }
+      var added = muts[i].addedNodes;
+      for (var j = 0; j < added.length; j++) {
+        if (hasEngBtn(added[j])) { paintSoon(); return; }
+      }
     }
   }).observe(document.documentElement, { childList: true, subtree: true });
 
@@ -15992,7 +16587,15 @@ html.thmFade #themePage{
     });
     var img = document.createElement('img');
     img.className = 'bmThumb'; img.loading = 'lazy'; img.decoding = 'async';
-    img.src = art.image_url || ''; img.alt = art.name || 'Artwork';
+    /* FIX: this grid used the raw full-size original (art.image_url), so
+       Likes/Bookmarks thumbnails loaded uncapped while every other grid
+       serves a small resized WebP. Route through the shared thumbnail
+       helper (300px @ q55) — guarded with typeof since this Engagement
+       module is a separate IIFE scope (mirrors the avatar-thumb call). */
+    img.src = (typeof getThumbnailUrl === 'function')
+      ? getThumbnailUrl(art.image_url || '')
+      : (art.image_url || '');
+    img.alt = art.name || 'Artwork';
     var meta = document.createElement('div'); meta.className = 'bmMeta';
     var nm = document.createElement('div'); nm.className = 'bmName';
     nm.textContent = art.name || 'Untitled';

@@ -1145,10 +1145,16 @@
       background-size:200% 100%;
       animation:amShimmer 1.3s ease-in-out infinite;
     }
+    /* The shimmer above is a TRANSPARENT overlay, so while a new image was
+       downloading the PREVIOUS one stayed fully visible underneath it —
+       switching images looked like the old one lingered. Hide the img itself
+       for the duration of the load so you drop straight to the dark loading
+       state instead. */
+    .avImgViewport.loading img{opacity:0;}
     .avImgViewport img{
       max-width:92%;max-height:88%;width:auto;height:auto;
       object-fit:contain;display:block;
-      transition:transform .05s linear;
+      transition:transform .05s linear, opacity .1s ease;
       user-select:none;-webkit-user-drag:none;
     }
     .avNavBtn{
@@ -9805,8 +9811,16 @@ function qrMake (text) {
        here the intro is already painted. It must still load before the
        inline script below, which calls supabase.createClient() at top level. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="uploadVerifier.js"></script>
+  <!-- ROOT-ABSOLUTE paths (leading "/") are required, not optional.
+       The app pushes deep URLs (/profile/<name>, /artwork/<id>). With a
+       relative src, a browser sitting on /profile/Koe resolves "config.js"
+       against /profile/ and requests /profile/config.js -> 404. KOE_CONFIG
+       then never defines SB_URL/SB_KEY, so createClient() is skipped and the
+       "Supabase not configured" banner fires. That's why opening a shared
+       profile/artwork link — or reloading (e.g. toggling mobile<->desktop)
+       while already on a deep URL — broke, while the homepage worked. -->
+  <script src="/config.js"></script>
+  <script src="/uploadVerifier.js"></script>
   <script>
 
   // config.js must define window.KOE_CONFIG = { SB_URL, SB_KEY }
@@ -9909,15 +9923,37 @@ function qrMake (text) {
   if (SB_URL && SB_KEY) {
     sb = supabase.createClient(SB_URL , SB_KEY )
   } else {
+    /* User-facing copy only. This used to print the whole dev setup guide
+       ("create a config.js ... Get a free Supabase project"), which named
+       our backend, leaked the config shape, and meant nothing to a visitor.
+       The real cause is logged for us; the visitor just sees a plain notice. */
+    console.error('KOE_CONFIG missing SB_URL/SB_KEY \u2014 backend client not created.');
     var _sb = document.getElementById('sBanner');
-    _sb.innerHTML = '\u26a0 Supabase not configured \u2014 create a <strong>config.js</strong> next to this file defining <strong>window.KOE_CONFIG = { SB_URL, SB_KEY }</strong> with your project URL and anon key. <a href="https://supabase.com" rel="noopener" target="_blank">Get a free Supabase project \u2192</a>';
-    _sb.classList.add('show');
+    if(_sb){
+      _sb.textContent = '\u26a0 Can\u2019t connect right now. Please refresh, or try again in a moment.';
+      _sb.classList.add('show');
+    }
   }
 
   let isAdm = false, images = [];
   let filterCat = 'all', filterSrt = 'liked';
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+  /* Only ever show the user a message WE wrote. Raw backend errors leak schema
+     details ("new row violates row-level security policy for table \"comments\"",
+     "duplicate key value violates unique constraint ...") and tell a visitor
+     nothing useful. Anything that smells internal is logged and swapped for the
+     caller's plain-English fallback. */
+  function safeErr(e, fallback){
+    var m = (e && e.message) ? String(e.message) : '';
+    var internal = /row-level security|violates|constraint|relation |column |permission denied|JWT|supabase|postgres|duplicate key|null value|schema cache|Failed to fetch|NetworkError|\b(42501|23505|23503)\b|PGRST/i;
+    if(!m || internal.test(m)){
+      if(m) console.error('Suppressed internal error:', m);
+      return fallback;
+    }
+    return m;
+  }
   /* Normalizes the `category` column into a clean array of lowercase-
      trimmed strings, whether it comes back from Supabase as a real
      text[] array (current schema) or a legacy comma-joined string
@@ -10485,7 +10521,13 @@ function qrMake (text) {
     var imgEl    = document.getElementById('lbImg');
     if(viewport) viewport.classList.add('loading');
     avResetZoom();
-    if(imgEl) imgEl.src = getViewUrl(url);
+    if(imgEl){
+      imgEl.src = getViewUrl(url);
+      /* A browser-cached image can finish before (or without) firing onload,
+         which would leave the img stuck at opacity:0 behind the loading
+         state. If it's already decoded, drop the loading class now. */
+      if(imgEl.complete && imgEl.naturalWidth && viewport) viewport.classList.remove('loading');
+    }
     var strip = document.getElementById('avStrip');
     if(strip){
       Array.prototype.forEach.call(strip.children, function(btn,n){
@@ -10776,6 +10818,11 @@ function qrMake (text) {
         avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
       };
       imgEl.onerror=function(){ if(viewport) viewport.classList.remove('loading'); };
+      /* Cached images may never fire onload — don't leave the img hidden. */
+      if(imgEl.complete && imgEl.naturalWidth){
+        if(viewport) viewport.classList.remove('loading');
+        avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
+      }
     }
 
     /* Multi-image support — populates the thumbnail strip + counter, or
@@ -11214,7 +11261,7 @@ function qrMake (text) {
 
   /* ── Perform login ── */
   async function doAuth() {
-    if (!sb) { showToast('Supabase not configured'); return; }
+    if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
     var email = document.getElementById('authEmail').value.trim();
     var pass  = document.getElementById('authPass').value;
     var err   = document.getElementById('authErr');
@@ -11248,7 +11295,7 @@ function qrMake (text) {
      self-healed by pfEnsureOwnProfile() as a fallback. */
   var OAUTH_LABELS = { google:'Google', discord:'Discord', apple:'Apple' };
   async function doOAuth(provider, btnEl) {
-    if (!sb) { showToast('Supabase not configured'); return; }
+    if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
     var label = OAUTH_LABELS[provider] || provider;
     var err = document.getElementById('authErr');
     err.textContent = ''; err.classList.remove('show');
@@ -11271,7 +11318,9 @@ function qrMake (text) {
       Array.prototype.forEach.call(btns, function(b){ b.disabled = false; });
       var raw = (e && e.message || '').toLowerCase();
       if (raw.includes('provider is not enabled') || raw.includes('unsupported provider')) {
-        err.textContent = label + ' sign-in isn\u2019t enabled yet. Enable it in Supabase \u2192 Authentication \u2192 Providers.';
+        /* Was a dev instruction naming the backend console — useless and
+           confusing to the person actually trying to sign in. */
+        err.textContent = label + ' sign-in isn\u2019t available right now. Try another method.';
       } else {
         err.textContent = (e && e.message) ? (label + ' sign-in failed: ' + e.message)
                                            : (label + ' sign-in is unavailable right now.');
@@ -11340,7 +11389,7 @@ function qrMake (text) {
 
   /* ── Perform signup ── */
   async function doSignUp() {
-    if (!sb) { showToast('Supabase not configured'); return; }
+    if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
 
     var email    = document.getElementById('authEmail').value.trim();
     var pass     = document.getElementById('authPass').value;
@@ -11471,6 +11520,10 @@ function qrMake (text) {
     sb.auth.onAuthStateChange(function(event, session) {
       currentUser = session ? session.user : null;
       syncAuthBtn();
+      /* Wipe the stale-while-revalidate caches on any auth change — otherwise
+         a signed-out (or newly signed-in) user could be shown the previous
+         account's cached profile, community list or chat messages. */
+      pfRowCache = {}; cmMineRows = []; cpMsgCache = {}; cmMineCache = {};
       /* Hide-list follows the session: load on sign-in/restore, clear on
          sign-out, then repaint so the feed reflects it immediately. */
       loadHiddenArtworks().then(function(){
@@ -11736,6 +11789,10 @@ function qrMake (text) {
      pfPreloadImage() just primes the browser's HTTP cache; the actual
      <img> tags still get their src set as normal once data arrives. */
   var pfMediaCache = {};
+  /* username(lower) -> profiles row. Powers the instant repaint above; kept
+     fresh by every successful fetch and invalidated on profile edits. */
+  var pfRowCache = {};
+  var pfOpenSeq = 0;   /* guards against a stale profile fetch painting over a newer one */
   function pfPreloadImage(url){
     if(!url) return;
     var img = new Image();
@@ -11808,7 +11865,7 @@ function qrMake (text) {
 
   async function openOwnProfile(){
     if(!currentUser){ showToast('Sign in to view your profile'); openAuthMod(); return; }
-    if(!sb){ showToast('Configure Supabase first'); return; }
+    if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
     /* The signed-in session already carries the username (set at
        login/signup) — use it directly so the panel opens instantly,
        same as Gallery/Comic. If the profiles row turns out to be
@@ -11823,7 +11880,7 @@ function qrMake (text) {
   }
 
   async function openProfileByUsername(username, pushUrl){
-    if(!sb){ showToast('Configure Supabase first'); return; }
+    if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
     var panel = document.getElementById('profilePage');
     panel.classList.add('open');
     document.body.style.overflow='hidden';
@@ -11843,23 +11900,38 @@ function qrMake (text) {
     }
     pf.profile=null; pf.galleryRows=[]; pf.galleryPage=0; pf.galleryDone=false;
     pf.likeLoaded=false; pf.bmLoaded=false;
-    document.getElementById('pfLikeGrid').innerHTML='';
-    document.getElementById('pfBookmarkGrid').innerHTML='';
-    document.getElementById('pfLikeEmpty').style.display='none';
-    document.getElementById('pfBookmarkEmpty').style.display='none';
-    var _xpW=document.getElementById('pfXpWrap'); if(_xpW) _xpW.innerHTML='';
-    document.getElementById('pfUsername').textContent='Loading…';
-    document.getElementById('pfAvatarLetter').textContent='?';
-    document.getElementById('pfAvatarImg').style.display='none';
-    document.getElementById('pfBannerImg').style.display='none';
-    document.getElementById('pfJoined').textContent='';
-    var _hb=document.getElementById('pfHeadBio'); if(_hb) _hb.textContent='';
-    var _hn=document.getElementById('pfHandle'); if(_hn) _hn.textContent='';
-    var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.style.display='none';
-    var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.style.display='none';
-    var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
-    document.getElementById('pfGalleryGrid').innerHTML='';
-    pfSwitchTab('gallery');
+    /* Bumped on every open; a fetch that finishes after a newer open is stale. */
+    var mySeq = ++pfOpenSeq;
+
+    /* ── Stale-while-revalidate ──────────────────────────────────
+       Re-opening a profile used to blank everything to "Loading…" and wait
+       on the network before painting a single pixel — so you watched an
+       empty skeleton every time, even for a profile you'd just viewed.
+       If we already have the row, paint it NOW and refresh underneath. */
+    var cachedRow = pfRowCache[String(username).toLowerCase()];
+    if(cachedRow){
+      pfSwitchTab('gallery');
+      pfPaintProfile(cachedRow, cachedRow.username, pushUrl);
+    } else {
+      /* First visit — show the skeleton (nothing better to show). */
+      document.getElementById('pfLikeGrid').innerHTML='';
+      document.getElementById('pfBookmarkGrid').innerHTML='';
+      document.getElementById('pfLikeEmpty').style.display='none';
+      document.getElementById('pfBookmarkEmpty').style.display='none';
+      var _xpW=document.getElementById('pfXpWrap'); if(_xpW) _xpW.innerHTML='';
+      document.getElementById('pfUsername').textContent='Loading…';
+      document.getElementById('pfAvatarLetter').textContent='?';
+      document.getElementById('pfAvatarImg').style.display='none';
+      document.getElementById('pfBannerImg').style.display='none';
+      document.getElementById('pfJoined').textContent='';
+      var _hb=document.getElementById('pfHeadBio'); if(_hb) _hb.textContent='';
+      var _hn=document.getElementById('pfHandle'); if(_hn) _hn.textContent='';
+      var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.style.display='none';
+      var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.style.display='none';
+      var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
+      document.getElementById('pfGalleryGrid').innerHTML='';
+      pfSwitchTab('gallery');
+    }
     try{
       /* maybeSingle(): a missing row shouldn't surface as an error —
          we want to distinguish "not found" from a real query failure. */
@@ -11877,10 +11949,28 @@ function qrMake (text) {
         }
       }
       if(!data){ showToast('Profile not found'); closeProfilePage(); return; }
+      /* A slower fetch for a PREVIOUS profile must not overwrite the one the
+         user has since opened — bail if another open superseded this call. */
+      if(mySeq !== pfOpenSeq) return;
       /* The row is canonical — the username arg may differ in case or
          have been suffixed by the self-heal, so use the DB value from
          here on (cache key, URL, rendering). */
       username = data.username;
+      pfRowCache[String(username).toLowerCase()] = data;   /* warm for next open */
+      pfPaintProfile(data, username, pushUrl);
+    }catch(e){
+      console.error('Error: '+e.message);
+      /* Only bail out if there's nothing on screen. When we already painted a
+         cached row, a failed refresh (offline, flaky network) should leave the
+         cached profile visible rather than slamming the page shut. */
+      if(!cachedRow && mySeq === pfOpenSeq) closeProfilePage();
+    }
+  }
+
+  /* Paints a profile row into the page. Split out of openProfileByUsername so
+     a CACHED row can be painted instantly on re-open (stale-while-revalidate)
+     instead of showing "Loading…" and an empty skeleton on every single visit. */
+  function pfPaintProfile(data, username, pushUrl){
       pf.profile = data;
       pf.isOwner = !!(currentUser && currentUser.id === data.id);
       /* Cache for next time + preload immediately in case these
@@ -11907,7 +11997,6 @@ function qrMake (text) {
       if(pushUrl!==false && window.location.pathname !== '/profile/'+encodeURIComponent(username)){
         try{ history.pushState({profileUser:username},'','/profile/'+encodeURIComponent(username)); }catch(e){}
       }
-    }catch(e){ console.error('Error: '+e.message); closeProfilePage(); }
   }
 
   function closeProfilePage(revertUrl){
@@ -12741,7 +12830,7 @@ function qrMake (text) {
     }catch(err){ console.error('Error: '+err.message);
       /* Merit gate (<80) surfaces as a raw RLS error — explain it. */
       if(window.meritDenied && window.meritDenied(err, 'upload')) return;
-      showToast(err.message || 'Upload failed'); }
+      showToast(safeErr(err, 'Upload failed \u2014 try again')); }
     finally{ btn.disabled=false; btn.textContent = editId ? '📤 Save Changes' : '📤 Upload Artwork'; }
   }
 
@@ -12978,7 +13067,7 @@ function qrMake (text) {
     }catch(err){ console.error('Error: '+err.message);
       /* Merit gate (<80) surfaces as a raw RLS error — explain it. */
       if(window.meritDenied && window.meritDenied(err, 'upload')) return;
-      showToast(err.message || 'Upload failed'); }
+      showToast(safeErr(err, 'Upload failed \u2014 try again')); }
     finally{
       document.getElementById('pfAvatarFileInput').value = '';
       document.getElementById('pfBannerFileInput').value = '';
@@ -13085,6 +13174,7 @@ function qrMake (text) {
     btn.disabled = true; btn.textContent = 'SAVING…';
     try{
       var usernameChanged = newUsername.toLowerCase() !== (pf.profile.username||'').toLowerCase();
+      var oldUsername = pf.profile.username || '';
       if(usernameChanged){
         /* Client-side cooldown pre-check (input should already be locked —
            this is the seatbelt; the trigger is the real enforcer). */
@@ -13099,6 +13189,13 @@ function qrMake (text) {
       if(de) throw de;
       pf.profile.username = newUsername;
       pf.profile.display_name = newDisplayName || null;
+      /* Keep the SWR cache honest: refresh this row and drop the old
+         username key, or a rename would leave a stale entry behind that
+         repaints the previous name on the next open. */
+      try{
+        delete pfRowCache[String(oldUsername||'').toLowerCase()];
+        pfRowCache[String(newUsername).toLowerCase()] = pf.profile;
+      }catch(e){}
       pf.profile.bio = newBio;
       pf.profile.social_links = newSocialLinks;
       if(usernameChanged){
@@ -13414,7 +13511,7 @@ function qrMake (text) {
 
   async function ahsSaveSlide(){
     if(ahsEditingIndex<0) return;
-    if(!sb){ showToast('Configure Supabase first'); return; }
+    if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
     var title = (document.getElementById('ahsEditTitle').value || '').trim();
     if(!title){ showToast('Title is required'); return; }
     var subtitle = (document.getElementById('ahsEditSubtitle').value || '').trim();
@@ -13465,7 +13562,7 @@ function qrMake (text) {
       ahsCloseEdit();
       return;
     }
-    if(!sb){ showToast('Configure Supabase first'); return; }
+    if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
     if(!confirm('Delete this slide?')) return;
     try{
       if(slot.storage_path) await s3Delete(HERO_BUCKET,slot.storage_path);
@@ -13812,6 +13909,7 @@ function qrMake (text) {
 
   /* COMMENTS PAGE */
   var cpComments = [];   /* in-memory comment list (UI only) */
+  var cpMsgCache = {};   /* channel -> last loaded messages, for instant re-open */
 
   /* ── Live chat channels ──
      Every entry here gets a real Slack/Discord-style chat room
@@ -13946,6 +14044,12 @@ function hideCommentThumbnail(){
     /* Reset offset so each fresh open starts at the initial load amount */
     cpOffset = 0;
     cpLastSig = ''; /* force a paint for the newly-opened channel */
+    /* Switching rooms left cpComments holding the PREVIOUS channel's messages,
+       so the old conversation stayed on screen until the new fetch resolved.
+       Swap to this channel's content immediately — its cached messages if we
+       have them, otherwise empty — so the previous room is never shown. */
+    cpComments = cpMsgCache[id] || [];
+    try{ cpRender(); }catch(e){}
     await cpLoadComments();
 
     /* FIX: while the fetch above was in flight, the user may have already
@@ -14044,6 +14148,7 @@ function hideCommentThumbnail(){
   ];
   var cmMg = null;   /* community currently open in the manage modal */
   var cmMineCache = {};  /* 'c:<uuid>' -> community row, for chat channel lookup */
+  var cmMineRows  = [];  /* last-rendered membership rows — instant repaint on re-open */
 
   function cmErr(e){
     var m = (e && e.message) || '';
@@ -14147,16 +14252,28 @@ function hideCommentThumbnail(){
     var wrap = document.getElementById('cmMineWrap');
     var grid = document.getElementById('cmMineGrid');
     if(!wrap || !grid || !sb || !currentUser){ if(wrap) wrap.style.display='none'; return; }
+    /* Paint the last known list immediately so re-opening Community doesn't
+       flash empty while the query runs; the fetch below then repaints. */
+    if(cmMineRows.length) cmRenderMine(cmMineRows);
     try{
       var mem = await sb.from('community_members')
         .select('role,banned,community_id,communities(id,name,description,avatar_url,owner_id,join_code)')
         .eq('user_id', currentUser.id).eq('banned', false);
       if(mem.error) throw mem.error;
       var rows = (mem.data || []).filter(function(r){ return r.communities; });
-      if(!rows.length){ wrap.style.display='none'; return; }
-      wrap.style.display = '';
-      grid.innerHTML = '';
-      rows.forEach(function(r){
+      cmMineRows = rows;
+      cmRenderMine(rows);
+    }catch(e){ if(!cmMineRows.length && wrap) wrap.style.display='none'; }
+  }
+
+  function cmRenderMine(rows){
+    var wrap = document.getElementById('cmMineWrap');
+    var grid = document.getElementById('cmMineGrid');
+    if(!wrap || !grid) return;
+    if(!rows.length){ wrap.style.display='none'; return; }
+    wrap.style.display = '';
+    grid.innerHTML = '';
+    rows.forEach(function(r){
         var c = r.communities;
         var card = document.createElement('div');
         card.className = 'cmCard';
@@ -14199,7 +14316,6 @@ function hideCommentThumbnail(){
         }
         grid.appendChild(card);
       });
-    }catch(e){ wrap.style.display='none'; }
   }
 
   /* ── Manage / view a community ── */
@@ -14862,6 +14978,10 @@ function hideCommentThumbnail(){
       return;
     }
     try{
+      /* Pin the channel for this whole load. Without this, switching rooms
+         mid-fetch let the OLD room's rows land in cpComments and — worse —
+         get cached under the NEW room's key, poisoning it. */
+      var forChannel = cpCurrentChannel;
       /* Show subtle loading state on first open */
       var emptyEl = document.getElementById('cpEmpty');
       if(emptyEl && cpComments.length === 0){
@@ -14870,9 +14990,10 @@ function hideCommentThumbnail(){
       }
       var result = await sb.from('comments')
         .select('*')
-        .eq('channel', cpCurrentChannel)
+        .eq('channel', forChannel)
         .order('created_at', { ascending: true });
       if(result.error) throw result.error;
+      if(cpCurrentChannel !== forChannel) return;   /* user switched rooms — discard */
       var rows = result.data || [];
       cpComments = rows.map(function(row){
         var displayName = row.username || 'User';
@@ -14894,6 +15015,9 @@ function hideCommentThumbnail(){
          AND every poll tick, which is what makes avatar/name changes appear
          without a refresh. */
       await cpLoadAuthors(cpComments);
+      if(cpCurrentChannel !== forChannel) return;   /* switched during author fetch */
+      /* Warm the per-channel cache so re-opening this room paints instantly. */
+      cpMsgCache[forChannel] = cpComments;
       /* Restore empty placeholder text — Showcase gets its own copy
          since it's a post feed, not a comment thread */
       if(emptyEl){
@@ -14927,7 +15051,7 @@ function hideCommentThumbnail(){
      Returns true on success, false on failure.
      ────────────────────────────────────────────── */
   async function cpSaveComment(text){
-    if(!sb){ showToast('Supabase not configured'); return false; }
+    if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return false; }
     if(!currentUser){ showToast('Please login to comment.'); openAuthMod(); return false; }
 
     /* Gather optional linked image URL from the thumbnail preview */
@@ -14977,7 +15101,7 @@ function hideCommentThumbnail(){
       if(window.meritDenied && window.meritDenied(e, 'chat')) return false;
       /* FIX: failures were console-only — surface the real reason so
          the user isn't left with a silently-vanishing message. */
-      showToast(e && e.message ? e.message : 'Could not send — try again');
+      showToast(safeErr(e, 'Could not send \u2014 try again'));
       return false;
     }finally{
       if(sendBtn){ sendBtn.disabled = false; sendBtn.style.opacity = ''; }
@@ -16470,7 +16594,7 @@ function hideCommentThumbnail(){
 <!-- Zeo's content now lives in aiAssistantData.js — commit that file next
      to index.html. It's loaded synchronously here so window.ZEO_DATA is
      ready before the widget engine runs further down. -->
-<script src="aiAssistantData.js"></script>
+<script src="/aiAssistantData.js"></script>
 <script>
 /* Safety net: if aiAssistantData.js ever fails to load, Zeo still opens
    with a minimal menu instead of throwing. */

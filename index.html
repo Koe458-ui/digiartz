@@ -162,6 +162,22 @@
       --fb:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
       --fm:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       --text-on-accent:#FFFFFF; /* other semantic text tokens: see the *-level alias rule below */
+
+      /* ── Semantic status + role colours ──────────────────────────
+         Body-level overlays (report modal, community modals, mini profile
+         card) render under the GLOBAL theme, so they can't use the bright
+         hexes the dark-scoped panels rely on — those wash out on Light.
+         These tokens carry a dark-theme default and are re-mapped for
+         Light below, so every theme keeps readable contrast. */
+      --danger:#fca5a5;
+      --danger-strong:#dc2626;
+      --danger-bg:rgba(220,38,38,.14);
+      --danger-bg-hover:rgba(220,38,38,.24);
+      --danger-bd:rgba(220,38,38,.45);
+      --role-owner:#fbbf24;  --role-owner-bd:rgba(251,191,36,.45);
+      --role-admin:#f87171;  --role-admin-bd:rgba(248,113,113,.45);
+      --role-srmod:#60a5fa;  --role-srmod-bd:rgba(96,165,250,.45);
+      --role-jrmod:#34d399;  --role-jrmod-bd:rgba(52,211,153,.45);
     }
     /* ── Dark (default) — neutral near-black, monochrome WHITE accent
        (no violet: accent tokens re-mapped to white/off-white). ── */
@@ -213,6 +229,19 @@
       --vpg:#5F626C; --vpb:#4D505A; --vps:#3D404A;
       --fbg:#E9E8F0; --fsur:#F4F3F8; --fsur2:#EEEDF4;
       --fbdr:#D8D7E4; --fbdrh:#C2C0D4;
+
+      /* Status + role colours darkened for contrast on white surfaces —
+         the dark-theme pastels (#fca5a5, #fbbf24, #34d399…) are close to
+         unreadable here. */
+      --danger:#B3261E;
+      --danger-strong:#B3261E;
+      --danger-bg:rgba(179,38,30,.08);
+      --danger-bg-hover:rgba(179,38,30,.14);
+      --danger-bd:rgba(179,38,30,.38);
+      --role-owner:#8A5A00;  --role-owner-bd:rgba(138,90,0,.38);
+      --role-admin:#B3261E;  --role-admin-bd:rgba(179,38,30,.38);
+      --role-srmod:#1D4ED8;  --role-srmod-bd:rgba(29,78,216,.38);
+      --role-jrmod:#046B4E;  --role-jrmod-bd:rgba(4,107,78,.38);
     }
     /* ── Semantic text tokens ─────────────────────────────────
        Declared on * (not :root) deliberately: a custom property
@@ -1269,7 +1298,53 @@
       font-size:.82rem;font-weight:600;padding:.75rem 1rem;border-radius:10px;
       cursor:pointer;transition:background .2s,color .2s,border-color .2s;
     }
-    .avReportBtn:hover{background:rgba(220,38,38,.14);color:#fca5a5;border-color:rgba(220,38,38,.35);}
+    .avReportBtn:hover{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+
+    /* ── Report modal (#rptMod) ── */
+    #rptMod{
+      position:fixed;inset:0;z-index:4000;display:none;
+      align-items:center;justify-content:center;padding:1rem;
+      background:rgba(0,0,0,.72);backdrop-filter:blur(4px);
+    }
+    #rptMod.open{display:flex;}
+    .rptCard{
+      width:100%;max-width:460px;max-height:88dvh;overflow-y:auto;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
+      padding:1.3rem;
+      -webkit-overflow-scrolling:touch;
+    }
+    .rptTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--tx);margin-bottom:.2rem;}
+    .rptSub{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-bottom:1rem;}
+    .rptOpts{display:flex;flex-direction:column;gap:.1rem;margin-bottom:1rem;}
+    .rptOpt{
+      display:flex;align-items:center;gap:.6rem;cursor:pointer;
+      padding:.5rem .55rem;border-radius:8px;
+      font-family:var(--fb);font-size:.85rem;color:var(--tx);
+      transition:background .15s;
+    }
+    .rptOpt:hover{background:var(--sur2);}
+    .rptOpt input{accent-color:var(--pg);width:16px;height:16px;flex-shrink:0;cursor:pointer;}
+    .rptLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);margin-bottom:.4rem;}
+    .rptArea{
+      width:100%;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;
+      padding:.7rem;color:var(--tx);font-family:var(--fb);font-size:.85rem;
+      resize:vertical;min-height:72px;margin-bottom:1rem;
+    }
+    .rptArea:focus{outline:none;border-color:var(--pg);}
+    .rptChecks{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1.2rem;}
+    .rptCheck{display:flex;align-items:center;gap:.6rem;cursor:pointer;font-family:var(--fb);font-size:.84rem;color:var(--tx);}
+    .rptCheck input{accent-color:var(--pg);width:16px;height:16px;flex-shrink:0;cursor:pointer;}
+    .rptActions{display:flex;gap:.7rem;justify-content:flex-end;}
+    .rptBtn{
+      font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;
+      padding:.6rem 1.2rem;border-radius:8px;cursor:pointer;
+      border:1px solid var(--bdr);background:none;color:var(--tx);
+      transition:border-color .2s,background .2s;
+    }
+    .rptBtn:hover{border-color:var(--pg);}
+    .rptBtn--go{border-color:var(--danger-bd);background:var(--danger-bg);color:var(--danger);}
+    .rptBtn--go:hover{background:var(--danger-bg-hover);}
+    .rptBtn:disabled{opacity:.55;cursor:default;}
     @media(max-width:900px){
       #artModal{padding:.7rem;}
       .avBox{width:100%;height:96vh;height:96dvh;border-radius:16px;}
@@ -1407,6 +1482,13 @@
       display:flex;align-items:center;justify-content:center;
       font-family:var(--fd);font-size:.85rem;font-weight:700;
       color:var(--ps);flex-shrink:0;
+      overflow:visible;
+    }
+    /* Profile picture inside the avatar circle — clipped to the circle while
+       leaving the ::after status dot outside the clip. */
+    .cpAvatar .cpAvatarImg{
+      width:100%;height:100%;border-radius:50%;
+      object-fit:cover;display:block;
     }
     .cpAvatar::after{
       content:'';position:absolute;right:-1px;bottom:-1px;
@@ -1414,6 +1496,59 @@
       background:#22c55e;border:2px solid var(--sur);
     }
     .cpCommentMeta{display:flex;flex-direction:column;gap:.3rem;flex:1;min-width:0;}
+
+    /* ── Mini profile card — tapping another user's avatar/name in chat ── */
+    #cpuMod{
+      position:fixed;inset:0;z-index:4200;display:none;
+      align-items:center;justify-content:center;padding:1rem;
+      background:rgba(0,0,0,.6);backdrop-filter:blur(3px);
+    }
+    #cpuMod.open{display:flex;}
+    .cpuCard{
+      width:100%;max-width:280px;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:18px;
+      padding:1.1rem;
+      box-shadow:0 18px 50px rgba(0,0,0,.45);
+      animation:cpuPop .2s cubic-bezier(.22,1,.36,1) backwards;
+    }
+    @keyframes cpuPop{
+      from{opacity:0;transform:scale(.94) translateY(8px);}
+      to{opacity:1;transform:none;}
+    }
+    .cpuRow{display:flex;align-items:center;gap:.7rem;margin-bottom:.65rem;}
+    .cpuIco{
+      width:38px;height:38px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      background:linear-gradient(135deg,var(--pg),var(--pgd));
+      color:var(--text-on-accent);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fd);font-weight:700;font-size:.95rem;
+    }
+    .cpuIco img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cpuIco--sm{
+      background:none;border:1px solid var(--bdr);color:var(--txd);
+      font-size:.8rem;font-family:var(--fm);
+    }
+    .cpuName{
+      font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .cpuHandle{
+      font-family:var(--fm);font-size:.75rem;letter-spacing:.06em;color:var(--txd);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .cpuBtn{
+      width:100%;margin-top:.35rem;
+      font-family:var(--fm);font-size:.7rem;letter-spacing:.12em;
+      padding:.65rem 1rem;border-radius:10px;cursor:pointer;
+      border:1px solid var(--pg);background:var(--pdim);color:var(--pg);
+      transition:background .2s;
+    }
+    .cpuBtn:hover{background:color-mix(in srgb,var(--pg) 22%,transparent);}
+    /* Tappable identity in chat rows */
+    .cpMsgRow--them .cpMsgAvatar,
+    .cpMsgRow--them .cpBubbleName,
+    .cpShowcaseHead .cpAvatar,
+    .cpShowcaseHead .cpCommentUser{cursor:pointer;}
     .cpCommentUser{font-family:var(--fm);font-size:.78rem;font-weight:700;letter-spacing:.15em;color:var(--ps);}
     .cpCommentText{font-family:var(--fb);font-size:.95rem;font-weight:400;color:var(--tx);line-height:1.6;word-break:break-word;}
     .cpCommentTime{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);}
@@ -1730,6 +1865,140 @@
     .cmCreateBtn:hover{background:color-mix(in srgb,var(--tc) 24%,transparent);box-shadow:0 0 16px color-mix(in srgb,var(--tc) 25%,transparent);}
     .cmCreateBtn:active{transform:scale(.97);}
 
+    /* ── Create / Join buttons pair ── */
+    .cmHeadBtns{display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap;}
+    .cmJoinBtn{background:none;border-color:var(--bdrh);color:var(--tx);}
+
+    /* ── Community modals (create / join / manage / member actions) ── */
+    .cmMod{
+      position:fixed;inset:0;z-index:4300;display:none;
+      align-items:center;justify-content:center;padding:1rem;
+      background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+    }
+    .cmMod.open{display:flex;}
+    .cmModCard{
+      width:100%;max-width:440px;max-height:88dvh;overflow-y:auto;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:16px;padding:1.3rem;
+      -webkit-overflow-scrolling:touch;
+    }
+    .cmModTitle{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--tx);margin-bottom:.25rem;}
+    .cmModSub{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-bottom:1rem;}
+    .cmLbl{font-family:var(--fm);font-size:.66rem;letter-spacing:.1em;color:var(--txd);margin:.75rem 0 .35rem;}
+    .cmInput,.cmArea{
+      width:100%;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;
+      padding:.7rem;color:var(--tx);font-family:var(--fb);font-size:.88rem;
+    }
+    .cmInput:focus,.cmArea:focus{outline:none;border-color:var(--pg);}
+    .cmArea{resize:vertical;min-height:70px;}
+    .cmToggleRow{display:flex;align-items:center;gap:.6rem;margin:.9rem 0;font-family:var(--fb);font-size:.86rem;color:var(--tx);}
+    .cmToggleRow input{width:17px;height:17px;accent-color:var(--pg);cursor:pointer;}
+    .cmModActs{display:flex;gap:.6rem;justify-content:flex-end;margin-top:1.2rem;}
+    .cmModBtn{
+      font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;padding:.62rem 1.2rem;
+      border-radius:8px;cursor:pointer;border:1px solid var(--bdr);background:none;color:var(--tx);
+      transition:border-color .2s,background .2s;
+    }
+    .cmModBtn:hover{border-color:var(--pg);}
+    .cmModBtn--go{border-color:var(--pg);background:var(--pdim);color:var(--pg);}
+    .cmModBtn--danger{border-color:var(--danger-bd);background:var(--danger-bg);color:var(--danger);}
+    .cmModBtn:disabled{opacity:.55;cursor:default;}
+    .cmCode{
+      font-family:var(--fm);font-size:1rem;letter-spacing:.3em;color:var(--pg);
+      background:var(--sur2);border:1px dashed var(--bdrh);border-radius:8px;
+      padding:.6rem;text-align:center;margin-top:.4rem;
+    }
+    /* member list */
+    .cmMemRow{
+      display:flex;align-items:center;gap:.7rem;padding:.6rem .2rem;
+      border-bottom:1px solid var(--bdr);cursor:pointer;
+    }
+    .cmMemRow:last-child{border-bottom:none;}
+    .cmMemAva{
+      width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      background:linear-gradient(135deg,var(--pg),var(--pgd));color:var(--text-on-accent);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fd);font-weight:700;font-size:.8rem;
+    }
+    .cmMemAva img{width:100%;height:100%;object-fit:cover;}
+    .cmMemName{font-family:var(--fb);font-size:.88rem;color:var(--tx);flex:1;min-width:0;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .cmMemRole{
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;
+      padding:.2rem .5rem;border-radius:20px;border:1px solid var(--bdrh);color:var(--txd);flex-shrink:0;
+    }
+    .cmMemRole--owner{color:var(--role-owner);border-color:var(--role-owner-bd);}
+    .cmMemRole--admin{color:var(--role-admin);border-color:var(--role-admin-bd);}
+    .cmMemRole--sr_mod{color:var(--role-srmod);border-color:var(--role-srmod-bd);}
+    .cmMemRole--jr_mod{color:var(--role-jrmod);border-color:var(--role-jrmod-bd);}
+    .cmMemRole--banned{color:var(--danger-strong);border-color:var(--danger-bd);}
+    .cmActList{display:flex;flex-direction:column;gap:.1rem;}
+    .cmActItem{
+      text-align:left;padding:.8rem .7rem;border-radius:8px;border:none;background:none;
+      color:var(--tx);font-family:var(--fb);font-size:.9rem;cursor:pointer;transition:background .15s;
+    }
+    .cmActItem:hover{background:var(--pdim);}
+    .cmActItem--danger{color:var(--danger);}
+    .cmActItem--danger:hover{background:var(--danger-bg-hover);}
+
+    /* ══ DEVICE OPTIMIZATION ═══════════════════════════════════════
+       Applies to the overlays added recently (report modal, community
+       create/join/manage, member actions, mini profile card). */
+
+    /* iOS Safari ZOOMS the whole page when a focused input has a computed
+       font-size below 16px — every field below was ~13–14px, so tapping any
+       of them punted the layout out of alignment and left it zoomed. Pinning
+       16px on coarse pointers stops that without changing desktop sizing. */
+    @media (pointer:coarse){
+      .cmInput,.cmArea,.rptArea{font-size:16px;}
+    }
+
+    /* Modals must clear the notch and the home indicator, and never sit
+       under the on-screen keyboard. */
+    .cmMod,#rptMod,#cpuMod{
+      padding:calc(1rem + env(safe-area-inset-top)) 1rem
+              calc(1rem + env(safe-area-inset-bottom)) 1rem;
+    }
+
+    @media(max-width:520px){
+      /* Full-width cards with room to breathe; taller scroll area since the
+         keyboard eats the bottom half on phones. */
+      .cmModCard,.rptCard{max-width:100%;max-height:86dvh;padding:1.1rem;border-radius:14px;}
+      .cpuCard{max-width:100%;}
+
+      /* Create + Join stay side-by-side but share the row and stay INSIDE
+         the CTA card — .cmCreateBtn is nowrap + flex-shrink:0 by default,
+         which pushed them past the card's edge on narrow screens. */
+      .cmHeadBtns{width:100%;gap:.5rem;}
+      .cmHeadBtns .cmCreateBtn{
+        flex:1 1 0;min-width:0;padding:.8rem .6rem;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      }
+      .cmFooterCta{padding:1.1rem 1rem;}
+      .cmFooterCta > div:first-child{flex:1 1 100%;}
+
+      /* Comfortable tap targets (>=44px) on rows and action items. */
+      .cmActItem{padding:.95rem .8rem;}
+      .cmMemRow{padding:.75rem .2rem;}
+      .cmModBtn,.rptBtn{padding:.75rem 1.1rem;}
+
+      /* Long names shouldn't shove the role badge off-screen. */
+      .cmMemName{font-size:.85rem;}
+      .cmMemRole{font-size:.55rem;padding:.18rem .42rem;}
+
+      /* 5 stats + separators overflow a 360px screen — tighten and let it
+         wrap onto two tidy lines instead of clipping. */
+      .pfStatsRow{gap:.4rem;font-size:.68rem;}
+
+      /* Action buttons share the row evenly rather than overflowing. */
+      .pfActionRow{width:100%;}
+      .pfActBtn{flex:1 1 auto;min-width:44%;padding:.65rem .8rem;}
+    }
+
+    @media(max-width:360px){
+      .pfStatsRow{font-size:.63rem;gap:.3rem;}
+      .cmModCard,.rptCard{padding:.95rem;}
+    }
+
     /* Generic small pill badge — used for the Zeo "AI" badge in the
        Friends list and the "Official" tag on the DigiArtz community row. */
     .cmBadge{
@@ -1778,6 +2047,10 @@
       margin-top:1.6rem;padding:1.3rem 1.5rem;
       background:var(--sur2);border:1px solid var(--bdr);border-radius:12px;
     }
+    /* The text block must be allowed to shrink, or its min-content width
+       pushes the buttons past the card's right edge. */
+    .cmFooterCta > div:first-child{flex:1 1 240px;min-width:0;}
+    .cmFooterCta .cmHeadBtns{flex:0 0 auto;max-width:100%;}
     .cmFooterCta strong{font-family:var(--fb);font-size:.95rem;color:var(--tx);display:block;}
     .cmFooterCta p{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-top:.2rem;}
 
@@ -3034,7 +3307,7 @@
     #profilePage.open{transform:translateX(0);}
     /* Dark, banner-led theme — scoped to the profile page only,
        the rest of the site stays on the white theme. */
-    #profilePage,#profilePage *,#pfMenu,#pfMenu *{
+    #profilePage,#profilePage *,#setPage,#setPage *{
       --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
       --tx:var(--vtx);--txd:var(--vtxd);
       --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
@@ -3071,62 +3344,29 @@
         linear-gradient(160deg,#0b1220 0%,#111827 45%,#1e293b 80%,#0b1220 100%);
       overflow:visible;
     }
-    .pfMenuBtn{
-      position:absolute;top:1rem;right:1rem;z-index:2;
-      width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.45);color:#fff;
-      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-      transition:background .2s;
-    }
-    .pfMenuBtn:hover{background:rgba(0,0,0,.65);}
-    .pfMenuBtn svg{width:18px;height:18px;}
     /* ── Profile menu: right-side slide-in drawer ──
        Lives at body level (NOT inside #profilePage) because that
        page has transform + its own scroll — a fixed drawer inside
        it would scroll away with the content. */
-    .pfMenuScrim{
-      position:fixed;inset:0;z-index:1010;background:rgba(0,0,0,.55);
-      opacity:0;pointer-events:none;transition:opacity .3s ease;
-    }
-    .pfMenuScrim.show{opacity:1;pointer-events:auto;}
-    .pfMenu{
-      position:fixed;top:0;right:0;bottom:0;z-index:1011;
-      width:min(320px,86vw);height:100dvh;
-      background:var(--sur);border-left:1px solid var(--bdr);
-      box-shadow:-12px 0 40px rgba(0,0,0,.45);
-      display:flex;flex-direction:column;
-      /* Header stays fixed; .pfMenuBody scrolls. No bottom padding here —
-         it lives on .pfMenuBody so the scroll area clears the nav. */
-      padding:0 .85rem;
-      transform:translateX(100%);
-      transition:transform .38s cubic-bezier(.22,1,.36,1);
-    }
-    .pfMenu.open{transform:translateX(0);}
     /* Scrollable item list — on short screens everything (including the
        Log Out button anchored at the bottom) can be reached by scrolling,
        instead of being clipped below the fold. */
-    .pfMenuBody{
-      flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    /* ── Settings: full-page sliding shell (replaces the ⋮ drawer).
+       Same pattern as #xpPage / #bmPage. z-index sits above #profilePage
+       so it slides over the profile it was opened from. ── */
+    #setPage{
+      position:fixed;inset:0;z-index:546;background:var(--bg);color:var(--tx);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #setPage.open{transform:translateX(0);}
+    .setList{
       display:flex;flex-direction:column;gap:.15rem;
-      padding-bottom:calc(4.75rem + env(safe-area-inset-bottom));
+      max-width:640px;margin:0 auto;padding:.4rem 0 2rem;
     }
-    .pfMenuHdr{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:1.05rem .15rem .9rem;margin-bottom:.35rem;
-      border-bottom:1px solid var(--bdr);
-    }
-    .pfMenuHdrTitle{
-      font-family:var(--fb);font-size:.72rem;font-weight:600;
-      letter-spacing:.14em;text-transform:uppercase;color:var(--txd);
-    }
-    .pfMenuX{
-      width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      background:none;color:var(--ps);font-size:1rem;line-height:1;
-      transition:background .18s,color .18s;
-    }
-    .pfMenuX:hover{background:var(--pdim);color:var(--tx);}
+    .setList .pfMenuItem{font-size:.95rem;padding:1rem .9rem;}
+    @media(prefers-reduced-motion:reduce){ #setPage{transition:none;} }
+
     .pfMenuItem{
       font-family:var(--fb);font-size:.88rem;font-weight:500;letter-spacing:.02em;text-align:left;
       padding:.85rem .8rem;border-radius:8px;border:none;background:none;
@@ -3139,7 +3379,7 @@
     }
     .pfMenuCount:empty{display:none;}
     .pfMenuItem:hover{background:var(--pdim);color:var(--tx);}
-    /* Destructive action anchored to the drawer's bottom */
+    /* Destructive action (Log Out) — sits last in the settings list */
     .pfMenuItem--danger{margin-top:auto;}
     .pfMenuItem--danger:hover{background:rgba(220,38,38,.18);color:#fca5a5;}
     /* ── Share Profile sheet ── */
@@ -3180,7 +3420,6 @@
     .pfShareCirc--pri{background:var(--pg);border-color:var(--pg);color:var(--text-on-accent);box-shadow:0 3px 14px rgba(var(--pg-rgb),.35);}
     .pfShareCirc--pri:hover{filter:brightness(1.08);background:var(--pg);}
     @media (prefers-reduced-motion:reduce){
-      .pfMenu,.pfMenuScrim{transition:none;}
     }
     #smAdmBtn{display:none;}
     #smAdmBtn.devOnly{display:block;}
@@ -3224,9 +3463,15 @@
     .pfHeadInfo{display:flex;flex-direction:column;align-items:center;max-width:36rem;}
     .pfUsername{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--tx);}
     .pfHandle{font-family:var(--fm);font-size:.72rem;letter-spacing:.08em;color:var(--txd);margin-top:.15rem;}
+    /* Low-merit warning mark (merit <= 20) shown beside the display name */
+    .pfWarnMark{
+      display:none;margin-left:.45rem;color:var(--danger-strong);font-weight:900;
+      cursor:help;vertical-align:middle;
+    }
+    .pfWarnMark.on{display:inline;}
     /* Bio teaser — truncated by JS at ~100 chars with a tappable
        "Show more" that jumps to the ABOUT tab. */
-    .pfHeadBio{font-family:var(--fb);font-size:.82rem;line-height:1.5;color:var(--txm,var(--txd));margin-top:.55rem;max-width:34rem;}
+    .pfHeadBio{font-family:var(--fb);font-size:.82rem;line-height:1.5;color:var(--txd);margin-top:.55rem;max-width:34rem;}
     .pfHeadBioMore{color:var(--pg);cursor:pointer;font-family:var(--fm);font-size:.7rem;letter-spacing:.08em;}
     .pfHeadBioMore:hover{text-decoration:underline;}
     .pfStatsRow{
@@ -3343,19 +3588,6 @@
     .pfEmpty{padding:3rem 1rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;color:var(--txd);}
     .pfLoadMoreWrap{text-align:center;margin:1.6rem 0;}
 
-    /* ── Edit-profile entry point — pencil icon on the banner,
-       left of the ⋮ menu button. Owner-only, hidden by default. ── */
-    .pfEditBtn{
-      position:absolute;top:1rem;right:3.6rem;z-index:2;
-      width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
-      display:none;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.45);color:#fff;
-      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-      transition:background .2s;
-    }
-    .pfEditBtn:hover{background:rgba(0,0,0,.65);}
-    .pfEditBtn svg{width:16px;height:16px;}
-
     /* ── Edit Profile page (#pfEditPage) — same sliding full-page
        language as #profilePage, opened as a layer on top of it. ── */
     #pfEditPage{
@@ -3417,7 +3649,9 @@
     /* ── Connect (social links) — About tab, read-only display ── */
     .pfConnectWrap{background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:1.2rem;margin-top:1rem;}
     .pfConnectLbl{font-family:var(--fm);font-size:.65rem;letter-spacing:.15em;color:var(--txd);margin-bottom:.75rem;}
-    .pfConnectList{display:flex;flex-wrap:wrap;gap:.5rem 1.3rem;}
+    /* One platform per line, stacked with clear spacing (was a single
+       wrapped row that read as "Instagram Discord …" run together). */
+    .pfConnectList{display:flex;flex-direction:column;align-items:flex-start;gap:.85rem;}
     .pfConnectItem{font-family:var(--fb);font-size:.84rem;font-weight:600;text-decoration:none;}
     .pfConnectItem--on{color:#3b82f6;}
     .pfConnectItem--on:hover{text-decoration:underline;}
@@ -5753,10 +5987,10 @@ body{background:var(--bg);}
   <!-- =========================================================
        USER PROFILE PAGE (#profilePage)
        ├─ Banner (.pfBanner) — dark gradient banner, overlapping
-       │   avatar (.pfAvatarWrap), ⋮ menu button (.pfMenuBtn) →
-       │   .pfMenu dropdown (Subscription / Admin Panel / Log Out,
-       │   replaces the old #profilePopup)
-       ├─ Head (.pfHead) — username, joined date
+       │   avatar (.pfAvatarWrap). The ⋮ menu button and its drawer
+       │   were removed — Subscription / Admin Panel / Log Out etc.
+       │   now live in the full-page #setPage, opened by SETTINGS.
+       ├─ Head (.pfHead) — name, @handle, bio, stats, actions
        ├─ Tabs (.pfTabs) — Artwork / About, with the
        │   Upload dropdown (.pfUploadWrap, owner-only) on the right
        └─ Panels (.pfPanel)
@@ -5770,12 +6004,8 @@ body{background:var(--bg);}
     </div>
     <div class="pfBanner" id="pfBanner">
       <img alt="" id="pfBannerImg">
-      <button class="pfEditBtn" id="pfEditBtn" onclick="openPfEditPage()" aria-label="Edit profile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-      </button>
-      <button class="pfMenuBtn" onclick="togglePfMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="pfMenu" aria-label="Profile options">
-        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
-      </button>
+      <!-- (edit pencil + ⋮ menu removed — Edit and Settings now live in the
+           action row below the joined date; Settings opens the full page.) -->
       <div class="pfAvatarWrap">
         <div class="pfAvatar" id="pfAvatar"><img alt="" id="pfAvatarImg"><span id="pfAvatarLetter">?</span></div>
       </div>
@@ -5784,22 +6014,29 @@ body{background:var(--bg);}
       <div class="pfHead">
         <div class="pfHeadInfo">
           <div class="pfUsername" id="pfUsername">—</div>
+          <span class="pfWarnMark" id="pfWarnMark" title="This account has a low merit score" aria-label="Low merit warning">!</span>
           <div class="pfHandle" id="pfHandle"></div>
           <div class="pfHeadBio" id="pfHeadBio"></div>
+          <div class="pfStatsRow" id="pfStatsRow" style="display:none;">
+            <span class="pfStat" id="pfHeadStatLikes">❤️ 0</span>
+            <span class="pfStatDot">•</span>
+            <span class="pfStat" id="pfHeadStatBms">🔖 0</span>
+            <span class="pfStatDot">•</span>
+            <span class="pfStat" id="pfHeadStatViews">👁️ 0</span>
+            <span class="pfStatDot">•</span>
+            <span class="pfStat" id="pfHeadStatLevel">LV 1</span>
+            <span class="pfStatDot">•</span>
+            <span class="pfStat" id="pfHeadStatCred">⭐ 0</span>
+          </div>
+          <div class="pfJoined" id="pfJoined"></div>
+          <!-- Action row sits BELOW the joined date.
+               Others' profiles: [ADD FRD] [CRED] · Own profile: [EDIT] [SETTINGS] -->
           <div class="pfActionRow" id="pfActionRow" style="display:none;">
             <button class="pfActBtn" id="pfBtnFriend" onclick="pfFriendBtnTap()">ADD FRD</button>
             <button class="pfActBtn" id="pfBtnCred" onclick="pfCredToggle()">CRED</button>
+            <button class="pfActBtn" id="pfBtnEdit" onclick="openPfEditPage()" style="display:none;">EDIT</button>
+            <button class="pfActBtn" id="pfBtnSettings" onclick="openSettingsPage()" style="display:none;">SETTINGS</button>
           </div>
-          <div class="pfStatsRow" id="pfStatsRow" style="display:none;">
-            <span class="pfStat" id="pfStatLikes">❤️ 0</span>
-            <span class="pfStatDot">•</span>
-            <span class="pfStat" id="pfStatViews">👁️ 0</span>
-            <span class="pfStatDot">•</span>
-            <span class="pfStat" id="pfStatLevel">LV 1</span>
-            <span class="pfStatDot">•</span>
-            <span class="pfStat" id="pfStatCred">⭐ 0</span>
-          </div>
-          <div class="pfJoined" id="pfJoined"></div>
         </div>
       </div>
 
@@ -5851,6 +6088,10 @@ body{background:var(--bg);}
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatArt">0</div><div class="pfStatLbl">ARTWORKS</div></div>
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatViews">—</div><div class="pfStatLbl">TOTAL VIEWS</div></div>
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatLikes">—</div><div class="pfStatLbl">TOTAL LIKES</div></div>
+          <div class="pfStatCard"><div class="pfStatNum" id="pfStatLevelCard">—</div><div class="pfStatLbl">LEVEL</div></div>
+          <div class="pfStatCard"><div class="pfStatNum" id="pfStatCredCard">—</div><div class="pfStatLbl">CRED</div></div>
+          <!-- MERIT: placeholder stat — definition/earning rules to follow -->
+          <div class="pfStatCard"><div class="pfStatNum" id="pfStatMerit">0</div><div class="pfStatLbl">MERIT</div></div>
         </div>
         <div class="pfBioWrap">
           <div class="pfBioLbl">BIO</div>
@@ -6004,6 +6245,7 @@ body{background:var(--bg);}
         <div class="pfTabGroup">
           <button class="pfTab active" id="admTabArt" role="tab" aria-selected="true" onclick="admSwitchTab('art')">ARTWORK<span class="admTabCount" id="admCountArt" style="display:none;">0</span></button>
           <button class="pfTab" id="admTabNoti" role="tab" aria-selected="false" onclick="admSwitchTab('noti')">NOTIFICATIONS</button>
+          <button class="pfTab" id="admTabRpt" role="tab" aria-selected="false" onclick="admSwitchTab('rpt')">REPORT<span class="admTabCount" id="admCountRpt" style="display:none;">0</span></button>
         </div>
       </div>
 
@@ -6011,6 +6253,12 @@ body{background:var(--bg);}
       <div class="pfPanel active" id="admPanelArt">
         <div class="pfGrid pfGridArt" id="admArtGrid"></div>
         <div class="pfEmpty" id="admArtEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>Nothing pending — all artwork is reviewed.</div>
+      </div>
+
+      <!-- REPORTS — open user reports, newest first (dev-only via RLS) -->
+      <div class="pfPanel" id="admPanelRpt">
+        <div class="pfGrid" id="admRptList"></div>
+        <div class="pfEmpty" id="admRptEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>No open reports.</div>
       </div>
 
       <!-- COMIC ARTS -->
@@ -6695,7 +6943,7 @@ body{background:var(--bg);}
             <h3>Explore Communities</h3>
             <p>Find the perfect community to connect and share.</p>
           </div>
-          <button class="cmCreateBtn" onclick="cmCreateCommunity()">+ Create Community</button>
+          <!-- Create/Join live only in the footer CTA below (were duplicated here) -->
         </div>
 
         <!-- Cards: circular icon chip on the left (keeps each community's
@@ -6746,12 +6994,26 @@ body{background:var(--bg);}
           </div>
         </div>
 
+        <!-- Communities this user created or joined -->
+        <div id="cmMineWrap" style="display:none;">
+          <div class="cmSectionHead" style="margin-top:2.2rem;">
+            <div>
+              <h3>Your Communities</h3>
+              <p>Communities you created or joined.</p>
+            </div>
+          </div>
+          <div class="cmGrid" id="cmMineGrid"></div>
+        </div>
+
         <div class="cmFooterCta">
           <div>
             <strong>Can't find what you're looking for?</strong>
             <p>Create your own community and build your space.</p>
           </div>
-          <button class="cmCreateBtn" onclick="cmCreateCommunity()">+ Create Community</button>
+          <div class="cmHeadBtns">
+            <button class="cmCreateBtn" onclick="cmCreateCommunity()">Create</button>
+            <button class="cmCreateBtn cmJoinBtn" onclick="cmOpenJoin()">Join</button>
+          </div>
         </div>
 
         <!-- ============== FRIENDS — same page, below Community ============== -->
@@ -7424,8 +7686,25 @@ body{background:var(--bg);}
   var frdLastFocus = null, frdSearchTimer = null;
   function frdStartChat (p) {
     closeFriendsPage();
+    var page = document.getElementById('communityPage');
+    var wasOpen = !!(page && page.classList.contains('open'));
     if (typeof window.openCommunityHome === 'function') window.openCommunityHome();
-    openThread(p);
+    /* Community page already on screen (e.g. from the Friends row inside it):
+       no page transition will run, open the thread straight away. */
+    if (wasOpen || !page) { openThread(p); return; }
+    /* Coming from elsewhere (profile MESSAGE button, etc.): the page slide-in
+       (.45s) and the thread's own slide-in used to run at the SAME time, so
+       the thread finished animating while still in transit and looked like an
+       instant pop. Wait for the page transition to land, THEN slide the
+       thread in — same page → grid → chat sequence the community uses. */
+    var fired = false;
+    function go(){ if (fired) return; fired = true; openThread(p); }
+    page.addEventListener('transitionend', function h(e){
+      if (e.target !== page || e.propertyName !== 'transform') return;
+      page.removeEventListener('transitionend', h);
+      go();
+    });
+    setTimeout(go, 520);  /* fallback — never strand the tap if transitionend is missed */
   }
   async function loadFriendsPage () {
     /* Four sections driven by public.friendships:
@@ -7563,6 +7842,7 @@ body{background:var(--bg);}
     send:   frSendReq,
     accept: frAccept,
     cancel: function (pid) { return frRemove(pid, 'Request cancelled'); },
+    block:  frBlock,
     chat:   frdStartChat
   };
   window.closeFriendsPage = closeFriendsPage;
@@ -9098,6 +9378,132 @@ function qrMake (text) {
                    ├─ Tags (#avTagList)
                    └─ Report button
        ========================================================= -->
+  <!-- ── Report modal — filed against the artwork currently open in the
+       viewer. Reasons map to the artwork_reports.reason CHECK constraint. -->
+  <!-- ── Mini profile card — opens when you tap another user's avatar or
+       name in community chat. Identity comes from the live cpAuthors map. -->
+  <div id="cpuMod" role="dialog" aria-modal="true" aria-label="User" onclick="if(event.target===this)cpuClose()">
+    <div class="cpuCard">
+      <div class="cpuRow">
+        <div class="cpuIco" id="cpuIco">?</div>
+        <div class="cpuName" id="cpuName">—</div>
+      </div>
+      <div class="cpuRow">
+        <div class="cpuIco cpuIco--sm">@</div>
+        <div class="cpuHandle" id="cpuHandle">—</div>
+      </div>
+      <button class="cpuBtn" id="cpuView" onclick="cpuViewProfile()">VIEW PROFILE</button>
+    </div>
+  </div>
+
+  <!-- ═══ USER COMMUNITIES — create / join / manage / member actions ═══ -->
+
+  <div class="cmMod" id="cmCreateMod" onclick="if(event.target===this)cmCloseMod('cmCreateMod')">
+    <div class="cmModCard">
+      <div class="cmModTitle">Create Community</div>
+      <div class="cmModSub" id="cmCreateSub">Requires artist Level 100. One community per artist.</div>
+      <div class="cmLbl">NAME (MUST BE UNIQUE)</div>
+      <input class="cmInput" id="cmNewName" maxlength="40" placeholder="e.g. Concept Art Guild" autocomplete="off">
+      <div class="cmLbl">DESCRIPTION (OPTIONAL)</div>
+      <textarea class="cmArea" id="cmNewDesc" maxlength="500" placeholder="What's this community about?"></textarea>
+      <div class="cmModActs">
+        <button class="cmModBtn" onclick="cmCloseMod('cmCreateMod')">Cancel</button>
+        <button class="cmModBtn cmModBtn--go" id="cmCreateGo" onclick="cmDoCreate()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmMod" id="cmJoinMod" onclick="if(event.target===this)cmCloseMod('cmJoinMod')">
+    <div class="cmModCard">
+      <div class="cmModTitle">Join Community</div>
+      <div class="cmModSub">Enter the community name and its join ID.</div>
+      <div class="cmLbl">COMMUNITY NAME</div>
+      <input class="cmInput" id="cmJoinName" maxlength="40" placeholder="Community name" autocomplete="off">
+      <div class="cmLbl">JOIN ID</div>
+      <input class="cmInput" id="cmJoinCode" maxlength="12" placeholder="e.g. A1B2C3" autocomplete="off" style="text-transform:uppercase;">
+      <div class="cmModActs">
+        <button class="cmModBtn" onclick="cmCloseMod('cmJoinMod')">Cancel</button>
+        <button class="cmModBtn cmModBtn--go" id="cmJoinGo" onclick="cmDoJoin()">Join</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Owner settings + member management -->
+  <div class="cmMod" id="cmManageMod" onclick="if(event.target===this)cmCloseMod('cmManageMod')">
+    <div class="cmModCard">
+      <div class="cmModTitle" id="cmManageTitle">Manage Community</div>
+      <div class="cmModSub">Join ID — share this so others can join.</div>
+      <div class="cmCode" id="cmManageCode">------</div>
+
+      <div id="cmOwnerFields">
+        <div class="cmLbl">NAME</div>
+        <input class="cmInput" id="cmMgName" maxlength="40">
+        <div class="cmLbl">DESCRIPTION</div>
+        <textarea class="cmArea" id="cmMgDesc" maxlength="500"></textarea>
+        <div class="cmLbl">PROFILE IMAGE URL</div>
+        <input class="cmInput" id="cmMgAvatar" placeholder="https://…">
+        <div class="cmLbl">BANNER IMAGE URL</div>
+        <input class="cmInput" id="cmMgBanner" placeholder="https://…">
+        <div class="cmLbl">SERVER RULES</div>
+        <textarea class="cmArea" id="cmMgRules" maxlength="2000" placeholder="1. Be respectful…"></textarea>
+        <label class="cmToggleRow"><input type="checkbox" id="cmMgLinks"><span>Allow links in this community</span></label>
+        <div class="cmModActs">
+          <button class="cmModBtn cmModBtn--go" id="cmMgSave" onclick="cmSaveSettings()">Save Settings</button>
+        </div>
+      </div>
+
+      <div class="cmLbl" style="margin-top:1.2rem;">MEMBERS · <span id="cmMemCount">0</span></div>
+      <div id="cmMemList"></div>
+
+      <div class="cmModActs">
+        <button class="cmModBtn" onclick="cmCloseMod('cmManageMod')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Staff actions on a tapped member -->
+  <div class="cmMod" id="cmMemMod" onclick="if(event.target===this)cmCloseMod('cmMemMod')">
+    <div class="cmModCard" style="max-width:340px;">
+      <div class="cmModTitle" id="cmMemModName">Member</div>
+      <div class="cmModSub" id="cmMemModRole">member</div>
+      <div class="cmActList" id="cmMemActs"></div>
+      <div class="cmModActs">
+        <button class="cmModBtn" onclick="cmCloseMod('cmMemMod')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rptMod" role="dialog" aria-modal="true" aria-labelledby="rptTitle" onclick="if(event.target===this)rptClose()">
+    <div class="rptCard">
+      <div class="rptTitle" id="rptTitle">🚩 Report Artwork</div>
+      <div class="rptSub">Why are you reporting this artwork?</div>
+      <div class="rptOpts" id="rptOpts">
+        <label class="rptOpt"><input type="radio" name="rptReason" value="copyright"><span>Copyright infringement</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="ai_undisclosed"><span>AI-generated without disclosure</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="nudity"><span>Nudity / Sexual content</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="violence"><span>Violence / Gore</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="hate"><span>Hate speech / Harassment</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="spam"><span>Spam / Advertising</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="misinformation"><span>Misinformation</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="impersonation"><span>Impersonation</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="illegal"><span>Illegal content</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="offtopic"><span>Off-topic / Wrong category</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="lowquality"><span>Low-quality / Broken upload</span></label>
+        <label class="rptOpt"><input type="radio" name="rptReason" value="other"><span>Other</span></label>
+      </div>
+      <div class="rptLbl">ADDITIONAL DETAILS (OPTIONAL)</div>
+      <textarea class="rptArea" id="rptDetails" maxlength="1000" placeholder="Describe the issue..."></textarea>
+      <div class="rptChecks">
+        <label class="rptCheck"><input type="checkbox" id="rptBlock"><span>Block this creator</span></label>
+        <label class="rptCheck"><input type="checkbox" id="rptHide"><span>Hide this artwork from my feed</span></label>
+      </div>
+      <div class="rptActions">
+        <button class="rptBtn" onclick="rptClose()">Cancel</button>
+        <button class="rptBtn rptBtn--go" id="rptSubmit" onclick="rptSubmit()">🚩 Submit Report</button>
+      </div>
+    </div>
+  </div>
+
   <div id="artModal" role="dialog" aria-modal="true" aria-label="Artwork viewer" data-state="closed">
    <div class="avBox" onclick="event.stopPropagation()">
     <div class="avTopBar">
@@ -9318,26 +9724,28 @@ function qrMake (text) {
    </button>
   </div>
 
-  <!-- ── Profile menu drawer (body-level; see .pfMenu CSS note) ── -->
-  <div class="pfMenuScrim" id="pfMenuScrim" onclick="closePfMenu()"></div>
-  <div class="pfMenu" id="pfMenu" role="menu" aria-label="Profile options">
-    <div class="pfMenuHdr">
-      <span class="pfMenuHdrTitle">Menu</span>
-      <button class="pfMenuX" onclick="closePfMenu()" aria-label="Close menu">✕</button>
+  <!-- ═══ SETTINGS — full page, opened by the SETTINGS button on your own
+       profile. Replaces the old ⋮ hamburger drawer (pfMenu/pfMenuScrim),
+       which has been removed; item ids are kept so the existing count and
+       dev-only-admin logic keeps working unchanged. ═══ -->
+  <div id="setPage" role="dialog" aria-modal="true" aria-label="Settings">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeSettingsPage()" aria-label="Close settings">←</button>
+      <div class="subPgTitle">SETTINGS <span class="s">✦</span></div>
     </div>
-    <!-- Scrollable item area — on short screens the list (incl. Log Out)
-         scrolls instead of getting clipped off the bottom. -->
-    <div class="pfMenuBody">
-    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openSubscription()">Subscription</button>
-    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openMyWorkPage()">Edit My Work</button>
-    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openLikesPage()">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
-    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openBookmarksPage()">Bookmarks <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
-    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openFriendsPage()">Friends <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
-    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openPfShare()">Share Profile</button>
-    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openXpPage()">Artist Progress</button>
-    <button class="pfMenuItem" role="menuitem" onclick="closePfMenu();openThemePage()">Theme</button>
-    <button class="pfMenuItem" id="smAdmBtn" role="menuitem" onclick="closePfMenu();smHandleAdm()">Admin Panel</button>
-    <button class="pfMenuItem pfMenuItem--danger" role="menuitem" onclick="pfMenuLogout()">Log Out</button>
+    <div class="bmBdy">
+      <div class="setList">
+        <button class="pfMenuItem" onclick="closeSettingsPage();openSubscription()">Subscription</button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();openMyWorkPage()">Edit My Work</button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();openLikesPage()">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();openBookmarksPage()">Bookmarks <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();openFriendsPage()">Friends <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();openPfShare()">Share Profile</button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();openXpPage()">Artist Progress</button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();openThemePage()">Theme</button>
+        <button class="pfMenuItem" id="smAdmBtn" onclick="closeSettingsPage();smHandleAdm()">Admin Panel</button>
+        <button class="pfMenuItem pfMenuItem--danger" onclick="pfMenuLogout()">Log Out</button>
+      </div>
     </div>
   </div>
 
@@ -9646,7 +10054,7 @@ function qrMake (text) {
        silently re-enabled background scrolling behind it.
        FIX 2: frdPage (Friends) and bmPage (Bookmarks/Likes) also lock
        scroll and were missing from this list. */
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage'];
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -9865,6 +10273,51 @@ function qrMake (text) {
   var FG_LOAD_MORE_STEP = 20;
   function fgInitialLoad(){ return 200; }
 
+  /* Merit gates are enforced by RLS, so a blocked action comes back as a
+     generic row-level-security error. Translate it into something the user
+     can actually act on, instead of a vague "failed". */
+  window.MERIT_GATES = { upload:80, chat:60, like:40 };
+  window.meritDenied = function(err, action){
+    if(!err) return false;
+    var msg = (err.message || '') + ' ' + (err.code || '');
+    if(!/row-level security|violates row-level|42501/i.test(msg)) return false;
+    var t = { upload:'Your merit is below 80 — uploads are paused until it recovers (+2/day).',
+              chat:'Your merit is 60 or below — community chat is paused until it recovers (+2/day).',
+              like:'Your merit is 40 or below — likes and bookmarks are paused until it recovers (+2/day).' };
+    if(typeof showToast === 'function') showToast(t[action] || 'Action blocked by your merit score');
+    return true;
+  };
+
+  /* ── Per-user hidden artworks ("Hide this artwork from my feed") ──
+     Backed by public.hidden_artworks (own-rows-only via RLS). Kept as an
+     in-memory Set so the render path stays synchronous. Loaded on session
+     restore and on sign-in; cleared on sign-out (a signed-out visitor has
+     no hide list, so nothing is filtered). */
+  var hiddenArtworks = new Set();
+
+  async function loadHiddenArtworks(){
+    hiddenArtworks = new Set();
+    if(!sb || !currentUser) return;
+    try{
+      var r = await sb.from('hidden_artworks').select('artwork_id')
+        .eq('user_id', currentUser.id).limit(2000);
+      (r.data || []).forEach(function(row){ hiddenArtworks.add(String(row.artwork_id)); });
+    }catch(e){ /* offline → nothing hidden, fail open rather than blanking the feed */ }
+  }
+
+  /* Drop hidden artworks from any list about to be rendered. */
+  function filterHidden(list){
+    if(!hiddenArtworks.size) return list;
+    return (list || []).filter(function(a){ return !hiddenArtworks.has(String(a.id)); });
+  }
+
+  /* Called by the report modal after a successful hide. */
+  window.markArtworkHidden = function(id){
+    hiddenArtworks.add(String(id));
+    try{ renderHome(); }catch(e){}
+    try{ if(typeof renderFG === 'function') renderFG(); }catch(e){}
+  };
+
   function renderFG(){
     /* Reset to initial batch whenever query/filters change */
     fgVisible = fgInitialLoad();
@@ -9874,7 +10327,7 @@ function qrMake (text) {
   function _renderFGPage(){
     const q=document.getElementById('fgQ').value.toLowerCase().trim();
     const c=document.getElementById('fgC');
-    let imgs=[...images];
+    let imgs=filterHidden([...images]);
     if(filterCat!=='all')imgs=imgs.filter(i=>(catList(i.category).length?catList(i.category):['others']).includes(filterCat));
     if(q)imgs=imgs.filter(i=>(i.name||'').toLowerCase().includes(q));
 
@@ -10197,8 +10650,70 @@ function qrMake (text) {
     else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(function(){ showToast('Link copied ✦'); }); }
     else { showToast('Share not supported'); }
   }
+  /* ── Report flow ──────────────────────────────────────────────
+     Was a stub that toasted "Report submitted" without recording
+     anything. Now writes to artwork_reports (dev-readable only) and
+     optionally blocks the creator / hides the artwork for the reporter. */
+  var rptArt = null, rptBusy = false;
+
   function avReport(){
-    showToast('Report submitted — thank you ✦');
+    if(!currentUser){ showToast('Sign in to report artwork'); openAuthMod(); return; }
+    if(!avCurrentArt){ showToast('Nothing to report'); return; }
+    rptArt = avCurrentArt;
+    var m = document.getElementById('rptMod'); if(!m) return;
+    /* reset every field so a previous report never leaks into the next */
+    var chosen = m.querySelector('input[name="rptReason"]:checked'); if(chosen) chosen.checked = false;
+    document.getElementById('rptDetails').value = '';
+    document.getElementById('rptBlock').checked = false;
+    document.getElementById('rptHide').checked  = false;
+    var isOwn = rptArt.user_id && currentUser && rptArt.user_id === currentUser.id;
+    document.getElementById('rptBlock').closest('.rptCheck').style.display = isOwn ? 'none' : '';
+    m.classList.add('open');
+  }
+
+  function rptClose(){
+    var m = document.getElementById('rptMod');
+    if(m) m.classList.remove('open');
+    rptArt = null;
+  }
+
+  async function rptSubmit(){
+    if(rptBusy || !rptArt) return;
+    var m = document.getElementById('rptMod');
+    var picked = m.querySelector('input[name="rptReason"]:checked');
+    if(!picked){ showToast('Pick a reason first'); return; }
+    var btn = document.getElementById('rptSubmit');
+    rptBusy = true; btn.disabled = true; btn.textContent = 'SENDING…';
+    var art = rptArt;
+    try{
+      var ins = await sb.from('artwork_reports').insert({
+        artwork_id : art.id,
+        reporter_id: currentUser.id,
+        reason     : picked.value,
+        details    : (document.getElementById('rptDetails').value.trim() || null)
+      });
+      /* 23505 = already reported by this user (unique artwork+reporter) —
+         treat as success rather than scolding them for a double tap. */
+      if(ins.error && ins.error.code !== '23505') throw ins.error;
+
+      if(document.getElementById('rptHide').checked){
+        await sb.from('hidden_artworks')
+          .insert({ user_id: currentUser.id, artwork_id: art.id });
+        /* remove it from the feed right away, no reload needed */
+        if(window.markArtworkHidden) window.markArtworkHidden(art.id);
+      }
+      if(document.getElementById('rptBlock').checked && art.user_id && art.user_id !== currentUser.id){
+        if(window.pfFriendBridge && window.pfFriendBridge.block){
+          await window.pfFriendBridge.block(art.user_id);
+        }
+      }
+      rptClose();
+      showToast('Report submitted — thank you ✦');
+    }catch(e){
+      showToast('Couldn\u2019t submit report — try again');
+    }finally{
+      rptBusy = false; btn.disabled = false; btn.textContent = '🚩 Submit Report';
+    }
   }
   function avCloseMoreMenu(){}
 
@@ -10589,27 +11104,29 @@ function qrMake (text) {
     }
   }
 
-  /* PROFILE PAGE ⋮ MENU LOGIC (Subscription / Admin Panel / Log Out) */
+  /* SETTINGS PAGE (full page — replaced the old ⋮ drawer) */
 
-  var _pfMenuOpen = false;
+  var setLastFocus = null;
 
-  function openPfMenu() {
-    var menu = document.getElementById('pfMenu');
-    var btn  = document.querySelector('.pfMenuBtn');
-    if (!menu) return;
-    closePfUploadMenu();
-    menu.classList.add('open');
-    var scrim = document.getElementById('pfMenuScrim');
-    if (scrim) scrim.classList.add('show');
-    var pg = document.getElementById('profilePage');
-    if (pg) pg.style.overflowY = 'hidden'; /* lock page scroll behind the drawer */
-    _pfMenuOpen = true;
-    if (btn) btn.setAttribute('aria-expanded','true');
+  function openSettingsPage() {
+    var pg = document.getElementById('setPage');
+    if (!pg) return;
+    setLastFocus = document.activeElement;
+    pg.classList.add('open');
+    document.body.style.overflow = 'hidden';
     pfMenuRefreshCounts(); /* fire-and-forget; badges fill in as data lands */
   }
 
-  /* Likes / Bookmarks / Friends counts in the drawer. Errors leave the
-     badge blank (CSS hides empty badges) — the drawer never blocks on this. */
+  function closeSettingsPage() {
+    var pg = document.getElementById('setPage');
+    if (pg) pg.classList.remove('open');
+    restoreScroll();
+    if (setLastFocus && setLastFocus.focus) { try { setLastFocus.focus(); } catch (e) {} }
+    setLastFocus = null;
+  }
+
+  /* Likes / Bookmarks / Friends counts. Errors leave the badge blank
+     (CSS hides empty badges) — the page never blocks on this. */
   async function pfMenuRefreshCounts() {
     var L = document.getElementById('pfMenuLikeCount'),
         B = document.getElementById('pfMenuBmCount'),
@@ -10632,26 +11149,9 @@ function qrMake (text) {
     }
   }
 
-  function closePfMenu() {
-    var menu = document.getElementById('pfMenu');
-    var btn  = document.querySelector('.pfMenuBtn');
-    if (menu) menu.classList.remove('open');
-    var scrim = document.getElementById('pfMenuScrim');
-    if (scrim) scrim.classList.remove('show');
-    var pg = document.getElementById('profilePage');
-    if (pg) pg.style.overflowY = '';
-    _pfMenuOpen = false;
-    if (btn) btn.setAttribute('aria-expanded','false');
-  }
-
-  function togglePfMenu(e) {
-    if (e) e.stopPropagation();
-    if (_pfMenuOpen) { closePfMenu(); } else { openPfMenu(); }
-  }
-
-  /* Logout from the profile menu — executes existing signOut flow then closes menu */
+  /* Logout — runs the existing signOut flow, then closes the settings page */
   function pfMenuLogout() {
-    closePfMenu();
+    closeSettingsPage();
     if (sb) {
       sb.auth.signOut()
         .then(function(){ showToast('Signed out'); })
@@ -10669,13 +11169,9 @@ function qrMake (text) {
   function togglePfUploadMenu() {}
 
 
-  /* Close either dropdown on outside click */
+  /* Close the upload dropdown on outside click.
+     (The ⋮ profile-menu branch was removed with the drawer.) */
   document.addEventListener('click', function(e) {
-    if (_pfMenuOpen) {
-      var menu = document.getElementById('pfMenu');
-      var btn  = document.querySelector('.pfMenuBtn');
-      if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) closePfMenu();
-    }
     if (_pfUpMenuOpen) {
       var umenu = document.getElementById('pfUploadMenu');
       var utrig = document.querySelector('.pfUpTrigger');
@@ -10975,6 +11471,12 @@ function qrMake (text) {
     sb.auth.onAuthStateChange(function(event, session) {
       currentUser = session ? session.user : null;
       syncAuthBtn();
+      /* Hide-list follows the session: load on sign-in/restore, clear on
+         sign-out, then repaint so the feed reflects it immediately. */
+      loadHiddenArtworks().then(function(){
+        try{ renderHome(); }catch(e){}
+        try{ renderFG(); }catch(e){}
+      });
       if (event === 'SIGNED_IN') {
         closeAuthMod();
         checkUserRole();
@@ -11250,7 +11752,7 @@ function qrMake (text) {
   /* Every column the profile page needs — shared by the normal fetch
      in openProfileByUsername and the self-heal below so both paths
      always return an identically-shaped row. */
-  var PF_PROFILE_COLS = 'id,username,display_name,bio,role,created_at,username_changed_at,cred_received_count,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
+  var PF_PROFILE_COLS = 'id,username,display_name,bio,role,created_at,username_changed_at,cred_received_count,merit,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
 
   /* ── Self-heal: guarantee the signed-in user has a profiles row ──
      Accounts created before the on-signup trigger existed have a
@@ -11325,7 +11827,6 @@ function qrMake (text) {
     var panel = document.getElementById('profilePage');
     panel.classList.add('open');
     document.body.style.overflow='hidden';
-    closePfMenu();
     /* Preload avatar/banner right as the panel starts its slide-in
        transition — using any URL we already know (a cached URL from
        a previous visit to this profile, or the signed-in user's own
@@ -11356,6 +11857,7 @@ function qrMake (text) {
     var _hn=document.getElementById('pfHandle'); if(_hn) _hn.textContent='';
     var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.style.display='none';
     var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.style.display='none';
+    var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
     document.getElementById('pfGalleryGrid').innerHTML='';
     pfSwitchTab('gallery');
     try{
@@ -11394,9 +11896,7 @@ function qrMake (text) {
       pfRenderAvatarBanner();
       document.getElementById('pfJoined').textContent = data.created_at ? ('JOINED '+pfFormatDate(data.created_at).toUpperCase()) : '';
       var _pfUpWrap = document.getElementById('pfUploadWrap'); if(_pfUpWrap) _pfUpWrap.style.display = 'none'; /* upload moved to nav ➕ */
-      document.querySelector('.pfMenuBtn').style.display = pf.isOwner ? '' : 'none';
-      document.getElementById('pfEditBtn').style.display = pf.isOwner ? 'flex' : 'none';
-      if(!pf.isOwner) closePfMenu();
+      /* (pencil + ⋮ menu removed — owner's EDIT/SETTINGS live in the action row) */
       pfRenderBio();
       pfRenderHeadBio();
       pfRenderConnect();
@@ -11414,7 +11914,6 @@ function qrMake (text) {
     var panel = document.getElementById('profilePage');
     if(!panel.classList.contains('open')) return;
     panel.classList.remove('open');
-    closePfMenu();
     closePfUploadMenu();
     document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
@@ -11573,33 +12072,61 @@ function qrMake (text) {
      comes from the same get_artist_progress RPC the LEVEL tab uses.
      Guarded against profile switches mid-flight: if another profile
      opened while we awaited, the stale result is dropped. */
-  async function pfLoadHeadStats(){
+  /* Paints BOTH the header row and the About-tab cards from one fetch.
+     Every path paints — a failed fetch shows 0, never leaves the cards
+     stuck on their static "—" placeholder (which is what happened when an
+     error was swallowed silently). */
+  function pfPaintStats(likes, views, bms, level, merit, cred){
+    function set(id, val){ var e=document.getElementById(id); if(e) e.textContent = val; }
+    /* Header row */
+    set('pfHeadStatLikes', '\u2764\uFE0F ' + pfFmtCount(likes));
+    set('pfHeadStatBms',   '\uD83D\uDD16 ' + pfFmtCount(bms));
+    set('pfHeadStatViews', '\uD83D\uDC41\uFE0F ' + pfFmtCount(views));
+    set('pfHeadStatLevel', 'LV ' + level);
+    set('pfHeadStatCred',  '\u2B50 ' + pfFmtCount(cred));
     var row = document.getElementById('pfStatsRow');
-    if(!row || !pf.profile) return;
+    if(row) row.style.display = '';
+    /* About-tab cards */
+    set('pfStatViews',     pfFmtCount(views));
+    set('pfStatLikes',     pfFmtCount(likes));
+    set('pfStatLevelCard', level);
+    set('pfStatCredCard',  pfFmtCount(cred));
+    set('pfStatMerit',     merit);
+    /* Red "!" beside the name at merit <= 20 */
+    var warn = document.getElementById('pfWarnMark');
+    if(warn) warn.classList.toggle('on', merit <= 20);
+  }
+
+  async function pfLoadHeadStats(){
+    if(!pf.profile) return;
     var forId = pf.profile.id;
+    var likes = 0, views = 0, bms = 0, level = 1;
+    var merit = (pf.profile.merit == null) ? 100 : (+pf.profile.merit);
+
     try{
-      var likes = 0, views = 0, bms = 0, level = 1;
-      var r = await sb.from('artworks').select('like_count,view_count,bookmark_count').eq('user_id', forId).limit(1000);
-      if(!pf.profile || pf.profile.id !== forId) return;   /* stale — a different profile opened */
+      var r = await sb.from('artworks')
+        .select('like_count,view_count,bookmark_count')
+        .eq('user_id', forId).limit(1000);
+      if(!pf.profile || pf.profile.id !== forId) return;  /* stale — another profile opened */
+      /* Was swallowed before: a PostgREST error (e.g. stale schema cache
+         after a migration adds a column) left every card on "—". */
+      if(r.error) console.error('pfLoadHeadStats artworks:', r.error.message);
       (r.data || []).forEach(function(a){
         likes += (+a.like_count || 0);
         views += (+a.view_count || 0);
         bms   += (+a.bookmark_count || 0);
       });
-      try{
-        var pr = await sb.rpc('get_artist_progress', { target: forId });
-        if(pr.data && pr.data[0] && pr.data[0].level) level = pr.data[0].level;
-      }catch(e){ /* level stays 1 — row still shows */ }
-      if(!pf.profile || pf.profile.id !== forId) return;
-      /* CRED = 100 per profile cred received + 2 per like + 5 per bookmark.
-         cred_received_count is the trigger-guarded counter on profiles. */
-      pfCredTotal = 100*(+pf.profile.cred_received_count || 0) + 2*likes + 5*bms;
-      document.getElementById('pfStatLikes').textContent = '\u2764\uFE0F ' + pfFmtCount(likes);
-      document.getElementById('pfStatViews').textContent = '\uD83D\uDC41\uFE0F ' + pfFmtCount(views);
-      document.getElementById('pfStatLevel').textContent = 'LV ' + level;
-      document.getElementById('pfStatCred').textContent  = '\u2B50 ' + pfFmtCount(pfCredTotal);
-      row.style.display = '';
-    }catch(e){ row.style.display = 'none'; /* offline — hide rather than show zeros */ }
+    }catch(e){ console.error('pfLoadHeadStats artworks:', e); }
+
+    try{
+      var pr = await sb.rpc('get_artist_progress', { target: forId });
+      if(pr && pr.data && pr.data[0] && pr.data[0].level) level = pr.data[0].level;
+    }catch(e){ /* level stays 1 */ }
+
+    if(!pf.profile || pf.profile.id !== forId) return;
+    /* CRED = 100 per profile cred + 2 per like + 5 per bookmark. */
+    pfCredTotal = 100*(+pf.profile.cred_received_count || 0) + 2*likes + 5*bms;
+    pfPaintStats(likes, views, bms, level, merit, pfCredTotal);
   }
 
   /* ── [ADD FRD] [CRED] action row ─────────────────────────────
@@ -11629,9 +12156,24 @@ function qrMake (text) {
   async function pfLoadActionRow(){
     var row = document.getElementById('pfActionRow');
     if(!row || !pf.profile) return;
-    if(pf.isOwner){ row.style.display = 'none'; return; }
-    var forId = pf.profile.id;
+    var bF = document.getElementById('pfBtnFriend'),
+        bC = document.getElementById('pfBtnCred'),
+        bE = document.getElementById('pfBtnEdit'),
+        bS = document.getElementById('pfBtnSettings');
     row.style.display = '';
+    if(pf.isOwner){
+      /* Own profile: dedicated Edit (replaces the old banner pencil) +
+         Settings placeholder. Social buttons hidden. */
+      if(bF) bF.style.display = 'none';
+      if(bC) bC.style.display = 'none';
+      if(bE) bE.style.display = '';
+      if(bS) bS.style.display = '';
+      return;
+    }
+    if(bE) bE.style.display = 'none';
+    if(bS) bS.style.display = 'none';
+    if(bC) bC.style.display = '';
+    var forId = pf.profile.id;
     pfCredited = false; pfPaintCredBtn(); pfPaintFriendBtn('none');
     if(!currentUser) return;   /* logged out: defaults shown, taps prompt sign-in */
     try{
@@ -11651,13 +12193,16 @@ function qrMake (text) {
   async function pfCredToggle(){
     if(!pf.profile || pf.isOwner || pfCredBusy) return;
     if(!currentUser){ showToast('Sign in to cred artists'); openAuthMod(); return; }
-    var forId = pf.profile.id, statEl = document.getElementById('pfStatCred');
+    var forId = pf.profile.id;
+    var statEl = document.getElementById('pfHeadStatCred');
+    var cardEl = document.getElementById('pfStatCredCard');
     pfCredBusy = true;
     /* optimistic flip (+/−100), rolled back on failure */
     var was = pfCredited;
     pfCredited = !was; pfPaintCredBtn();
     pfCredTotal += pfCredited ? 100 : -100;
     if(statEl) statEl.textContent = '\u2B50 ' + pfFmtCount(Math.max(pfCredTotal,0));
+    if(cardEl) cardEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
     try{
       if(was){
         var d = await sb.from('profile_creds').delete()
@@ -11672,6 +12217,7 @@ function qrMake (text) {
       pfCredited = was; pfPaintCredBtn();                        /* roll back */
       pfCredTotal += pfCredited ? 100 : -100;
       if(statEl) statEl.textContent = '\u2B50 ' + pfFmtCount(Math.max(pfCredTotal,0));
+      if(cardEl) cardEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
       showToast('Couldn\u2019t update cred \u2014 try again');
     }finally{ pfCredBusy = false; }
   }
@@ -12192,7 +12738,10 @@ function qrMake (text) {
           closePfUpload(); showToast(artStatus==='approved' ? 'Artwork published \u2726' : 'Flagged for review \u2014 a moderator will confirm it shortly');
         }
       }
-    }catch(err){ console.error('Error: '+err.message); showToast(err.message || 'Upload failed'); }
+    }catch(err){ console.error('Error: '+err.message);
+      /* Merit gate (<80) surfaces as a raw RLS error — explain it. */
+      if(window.meritDenied && window.meritDenied(err, 'upload')) return;
+      showToast(err.message || 'Upload failed'); }
     finally{ btn.disabled=false; btn.textContent = editId ? '📤 Save Changes' : '📤 Upload Artwork'; }
   }
 
@@ -12414,9 +12963,22 @@ function qrMake (text) {
         currentUserAvatarUrl = publicUrl;
         avAuthorProfileCache[currentUser.id] = { username: pf.profile.username, avatar_url: publicUrl };
         syncAuthBtn();
+        /* Community chat resolves authors from a live map — update our own
+           entry and repaint so the new photo appears at once, rather than
+           waiting up to 5s for the next poll tick. */
+        if(typeof cpAuthors !== 'undefined' && cpAuthors){
+          cpAuthors[String(currentUser.id)] = {
+            name  : (pf.profile.display_name || pf.profile.username || 'User'),
+            avatar: publicUrl
+          };
+          try{ if(typeof cpRender === 'function') cpRender(); }catch(e){}
+        }
       }
       showToast((kind==='banner'?'Banner':'Profile photo')+' updated ✦');
-    }catch(err){ console.error('Error: '+err.message); showToast(err.message || 'Upload failed'); }
+    }catch(err){ console.error('Error: '+err.message);
+      /* Merit gate (<80) surfaces as a raw RLS error — explain it. */
+      if(window.meritDenied && window.meritDenied(err, 'upload')) return;
+      showToast(err.message || 'Upload failed'); }
     finally{
       document.getElementById('pfAvatarFileInput').value = '';
       document.getElementById('pfBannerFileInput').value = '';
@@ -12578,7 +13140,7 @@ function qrMake (text) {
     finally{ btn.disabled=false; btn.textContent='SAVE CHANGES'; }
   }
 
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closePfMenu();closePfUploadMenu();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closePfUploadMenu();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     /* FIX: these overlays previously ignored Escape entirely */
     cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();ahsCloseEdit();
   }});
@@ -12922,12 +13484,103 @@ function qrMake (text) {
 
   function admSwitchTab(tab){
     admTab = tab;
-    ['Art','Noti'].forEach(function(t){
-      var key = t.toLowerCase()==='noti' ? 'noti' : t.toLowerCase();
+    ['Art','Noti','Rpt'].forEach(function(t){
+      var key = t.toLowerCase();
       document.getElementById('admTab'+t).classList.toggle('active', key===tab);
       document.getElementById('admPanel'+t).classList.toggle('active', key===tab);
     });
     if(tab==='noti') admLoadNotifSent();
+    if(tab==='rpt')  admLoadReports();
+  }
+
+  /* ── Reports queue (dev-only; RLS blocks everyone else) ── */
+  var RPT_LABELS = {
+    copyright:'Copyright infringement', ai_undisclosed:'AI-generated without disclosure',
+    nudity:'Nudity / Sexual content', violence:'Violence / Gore',
+    hate:'Hate speech / Harassment', spam:'Spam / Advertising',
+    misinformation:'Misinformation', impersonation:'Impersonation',
+    illegal:'Illegal content', offtopic:'Off-topic / Wrong category',
+    lowquality:'Low-quality / Broken upload', other:'Other'
+  };
+
+  async function admLoadReports(){
+    var list = document.getElementById('admRptList');
+    var empty = document.getElementById('admRptEmpty');
+    if(!list || !sb) return;
+    list.innerHTML = '';
+    try{
+      var r = await sb.from('artwork_reports')
+        .select('id,artwork_id,reason,details,created_at,reporter_id,artworks(name,image_url,user_id)')
+        .eq('status','open').order('created_at',{ascending:false}).limit(100);
+      if(r.error) throw r.error;
+      var rows = r.data || [];
+      admSetRptCount(rows.length);
+      if(!rows.length){ empty.style.display='block'; return; }
+      empty.style.display='none';
+      rows.forEach(function(rep){
+        var card = document.createElement('div');
+        card.className = 'pfStatCard';
+        card.style.textAlign = 'left';
+        var art = rep.artworks || {};
+        /* textContent throughout — details/name are user input */
+        var h = document.createElement('div');
+        h.style.cssText = 'font-family:var(--fm);font-size:.7rem;letter-spacing:.08em;color:var(--danger);margin-bottom:.4rem;';
+        h.textContent = '🚩 ' + (RPT_LABELS[rep.reason] || rep.reason);
+        card.appendChild(h);
+        var n = document.createElement('div');
+        n.style.cssText = 'font-family:var(--fd);font-weight:700;color:var(--tx);margin-bottom:.3rem;';
+        n.textContent = art.name || '(untitled artwork)';
+        card.appendChild(n);
+        if(rep.details){
+          var d = document.createElement('div');
+          d.style.cssText = 'font-family:var(--fb);font-size:.82rem;color:var(--txd);margin-bottom:.5rem;white-space:pre-wrap;';
+          d.textContent = rep.details;
+          card.appendChild(d);
+        }
+        var when = document.createElement('div');
+        when.style.cssText = 'font-family:var(--fm);font-size:.65rem;color:var(--txd);margin-bottom:.6rem;';
+        when.textContent = new Date(rep.created_at).toLocaleString();
+        card.appendChild(when);
+        var acts = document.createElement('div');
+        acts.style.cssText = 'display:flex;gap:.5rem;flex-wrap:wrap;';
+        var view = document.createElement('button');
+        view.className = 'rptBtn'; view.textContent = 'VIEW';
+        view.onclick = function(){
+          /* openArtworkById fetches the full row and opens the viewer —
+             safer than reconstructing a partial artwork object here. */
+          openArtworkById(String(rep.artwork_id), false);
+        };
+        var res = document.createElement('button');
+        res.className = 'rptBtn'; res.textContent = 'RESOLVE';
+        res.onclick = function(){ admResolveReport(rep.id, 'resolved'); };
+        var dis = document.createElement('button');
+        dis.className = 'rptBtn'; dis.textContent = 'DISMISS';
+        dis.onclick = function(){ admResolveReport(rep.id, 'dismissed'); };
+        acts.appendChild(view); acts.appendChild(res); acts.appendChild(dis);
+        card.appendChild(acts);
+        list.appendChild(card);
+      });
+    }catch(e){
+      console.error('admLoadReports:', e);
+      empty.style.display='block';
+      empty.textContent = 'Couldn\u2019t load reports.';
+    }
+  }
+
+  function admSetRptCount(n){
+    var b = document.getElementById('admCountRpt');
+    if(!b) return;
+    b.textContent = n;
+    b.style.display = n ? '' : 'none';
+  }
+
+  async function admResolveReport(id, status){
+    try{
+      var r = await sb.from('artwork_reports').update({ status: status }).eq('id', id);
+      if(r.error) throw r.error;
+      showToast(status === 'resolved' ? 'Report resolved ✦' : 'Report dismissed');
+      admLoadReports();
+    }catch(e){ showToast('Action failed — try again'); }
   }
 
   async function admLoadPending(){
@@ -12939,6 +13592,7 @@ function qrMake (text) {
     }catch(e){ console.error('Error loading queue: '+e.message); admPending={art:[]}; }
     admRenderArt();
     admRefreshBadge();
+    admLoadReports();   /* populate the REPORT tab badge on open */
   }
 
   /* Small unread-style badge on the "Admin Panel" menu item, so a
@@ -13215,6 +13869,7 @@ function hideCommentThumbnail(){
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
     cmCloseChat(); /* always land on the grid, never mid-chat */
+    cmLoadMine();  /* refresh the user's own communities */
   }
 
   function closeCommunityPage(){
@@ -13251,6 +13906,17 @@ function hideCommentThumbnail(){
       return;
     }
     var chan = CM_CHANNELS[id];
+    /* User-created communities aren't in the static CM_CHANNELS map — their
+       channel is 'c:<uuid>' and is registered on the fly from cmMineCache.
+       RLS enforces membership on both read and write, so a non-member who
+       forged this call would just get an empty, unpostable channel. */
+    if(!chan && /^c:/.test(id)){
+      var uc = cmMineCache[id];
+      if(uc){
+        chan = { name: uc.name, type: 'chat', readOnly: false };
+        CM_CHANNELS[id] = chan;
+      }
+    }
     if(!chan){
       showToast('This community is coming soon ✦');
       return;
@@ -13359,9 +14025,350 @@ function hideCommentThumbnail(){
     if(nav) nav.style.display = '';
   }
 
-  function cmCreateCommunity(){
+  /* ══ USER-CREATED COMMUNITIES ══════════════════════════════════
+     Create needs artist Level 100 and one community per artist; names are
+     unique. All of that — plus every moderation rank rule — is enforced in
+     the DB (RLS + SECURITY DEFINER RPCs), so the UI here is a thin layer:
+     it can't grant anything the server wouldn't. Errors come back as short
+     CM_* codes which cmErr() turns into readable messages. */
+
+  var CM_ROLE_LABEL = { owner:'Owner', admin:'Admin', sr_mod:'Senior Mod', jr_mod:'Junior Mod', member:'Member' };
+  var CM_RANK = { owner:5, admin:4, sr_mod:3, jr_mod:2, member:1 };
+  var CM_TIMEOUTS = [
+    { m:5,     lbl:'5 minutes' },
+    { m:60,    lbl:'1 hour'    },
+    { m:1440,  lbl:'1 day'     },
+    { m:10080, lbl:'7 days'    },
+    { m:43200, lbl:'1 month'   },
+    { m:0,     lbl:'Clear timeout' }
+  ];
+  var cmMg = null;   /* community currently open in the manage modal */
+  var cmMineCache = {};  /* 'c:<uuid>' -> community row, for chat channel lookup */
+
+  function cmErr(e){
+    var m = (e && e.message) || '';
+    if(/CM_LEVEL/.test(m))         return 'You need artist Level 100 to create a community.';
+    if(/CM_ALREADY_OWNER/.test(m)) return 'You already own a community — one per artist.';
+    if(/CM_NAME_TAKEN/.test(m) || /communities_name_lower_idx/.test(m))
+                                   return 'That community name is already taken.';
+    if(/CM_NOT_FOUND/.test(m))     return 'No community matches that name and join ID.';
+    if(/CM_BANNED/.test(m))        return 'You are banned from that community.';
+    if(/CM_FORBIDDEN/.test(m))     return 'You don\u2019t have permission for that.';
+    if(/CM_RANK/.test(m))          return 'You can\u2019t act on someone at or above your rank.';
+    if(/CM_SELF/.test(m))          return 'You can\u2019t do that to yourself.';
+    if(/CM_NOT_MEMBER/.test(m))    return 'That person isn\u2019t a member.';
+    return 'Something went wrong — try again.';
+  }
+
+  function cmCloseMod(id){
+    var m = document.getElementById(id);
+    if(m) m.classList.remove('open');
+  }
+  function cmOpenMod(id){
+    var m = document.getElementById(id);
+    if(m) m.classList.add('open');
+  }
+
+  /* The viewport is set to interactive-widget=resizes-visual, so the mobile
+     keyboard OVERLAYS the page rather than shrinking it — a field near the
+     bottom of a modal ends up hidden behind the keyboard with no way to see
+     what you're typing. Scroll the focused field into view once the keyboard
+     has settled. Passive listener; only fires inside these overlays. */
+  document.addEventListener('focusin', function(e){
+    var t = e.target;
+    if(!t || !t.matches || !t.matches('input, textarea')) return;
+    if(!t.closest('.cmMod, #rptMod, #cpuMod')) return;
+    setTimeout(function(){
+      try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){}
+    }, 320);
+  });
+
+  /* ── Create ── */
+  async function cmCreateCommunity(){
     if(!currentUser){ openAuthMod(); return; }
-    showToast('Community creation is coming soon ✦');
+    document.getElementById('cmNewName').value = '';
+    document.getElementById('cmNewDesc').value = '';
+    var sub = document.getElementById('cmCreateSub');
+    sub.textContent = 'Requires artist Level 100. One community per artist.';
+    cmOpenMod('cmCreateMod');
+    /* Show their actual level so the requirement isn't a mystery. The DB is
+       still the gate — this is just honest signposting. */
+    try{
+      var pr = await sb.rpc('get_artist_progress', { target: currentUser.id });
+      var lvl = (pr.data && pr.data[0] && pr.data[0].level) || 1;
+      sub.textContent = lvl >= 100
+        ? 'You\u2019re Level ' + lvl + ' — you can create a community.'
+        : 'You\u2019re Level ' + lvl + '. Level 100 is required to create a community.';
+    }catch(e){}
+  }
+
+  async function cmDoCreate(){
+    var name = document.getElementById('cmNewName').value.trim();
+    var desc = document.getElementById('cmNewDesc').value.trim();
+    if(name.length < 3){ showToast('Name must be at least 3 characters'); return; }
+    var btn = document.getElementById('cmCreateGo');
+    btn.disabled = true; btn.textContent = 'CREATING…';
+    try{
+      var r = await sb.rpc('cm_create', { p_name: name, p_desc: desc || null });
+      if(r.error) throw r.error;
+      cmCloseMod('cmCreateMod');
+      showToast('Community created ✦');
+      cmLoadMine();
+    }catch(e){ showToast(cmErr(e)); }
+    finally{ btn.disabled = false; btn.textContent = 'Create'; }
+  }
+
+  /* ── Join ── */
+  function cmOpenJoin(){
+    if(!currentUser){ openAuthMod(); return; }
+    document.getElementById('cmJoinName').value = '';
+    document.getElementById('cmJoinCode').value = '';
+    cmOpenMod('cmJoinMod');
+  }
+
+  async function cmDoJoin(){
+    var name = document.getElementById('cmJoinName').value.trim();
+    var code = document.getElementById('cmJoinCode').value.trim();
+    if(!name || !code){ showToast('Enter both the name and the join ID'); return; }
+    var btn = document.getElementById('cmJoinGo');
+    btn.disabled = true; btn.textContent = 'JOINING…';
+    try{
+      var r = await sb.rpc('cm_join', { p_name: name, p_code: code });
+      if(r.error) throw r.error;
+      cmCloseMod('cmJoinMod');
+      showToast('Joined ' + name + ' ✦');
+      cmLoadMine();
+    }catch(e){ showToast(cmErr(e)); }
+    finally{ btn.disabled = false; btn.textContent = 'Join'; }
+  }
+
+  /* ── Render the communities this user belongs to, under the built-ins ── */
+  async function cmLoadMine(){
+    var wrap = document.getElementById('cmMineWrap');
+    var grid = document.getElementById('cmMineGrid');
+    if(!wrap || !grid || !sb || !currentUser){ if(wrap) wrap.style.display='none'; return; }
+    try{
+      var mem = await sb.from('community_members')
+        .select('role,banned,community_id,communities(id,name,description,avatar_url,owner_id,join_code)')
+        .eq('user_id', currentUser.id).eq('banned', false);
+      if(mem.error) throw mem.error;
+      var rows = (mem.data || []).filter(function(r){ return r.communities; });
+      if(!rows.length){ wrap.style.display='none'; return; }
+      wrap.style.display = '';
+      grid.innerHTML = '';
+      rows.forEach(function(r){
+        var c = r.communities;
+        var card = document.createElement('div');
+        card.className = 'cmCard';
+        var ico = document.createElement('div');
+        ico.className = 'cmCardIcon';
+        ico.style.background = 'linear-gradient(135deg,#1e3a8a 0%,#3b82f6 55%,#60a5fa 100%)';
+        if(c.avatar_url){
+          var im = document.createElement('img');
+          im.src = getThumbnailUrl(c.avatar_url);
+          im.alt = ''; im.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:inherit;';
+          ico.textContent=''; ico.appendChild(im);
+        } else {
+          ico.textContent = (c.name || '?').charAt(0).toUpperCase();
+        }
+        var meta = document.createElement('div');
+        meta.className = 'cmCardMeta';
+        var nm = document.createElement('div');
+        nm.className = 'cmCardName';
+        nm.textContent = c.name;
+        var badge = document.createElement('span');
+        badge.className = 'cmBadge';
+        badge.textContent = CM_ROLE_LABEL[r.role] || 'Member';
+        nm.appendChild(badge);
+        var p = document.createElement('p');
+        p.textContent = c.description || 'No description yet.';
+        meta.appendChild(nm); meta.appendChild(p);
+        card.appendChild(ico); card.appendChild(meta);
+        /* Card opens the community's CHAT. Staff get a separate Manage
+           button so tapping the card doesn't dump them in a settings sheet. */
+        var chKey = 'c:' + c.id;
+        cmMineCache[chKey] = c;
+        card.onclick = function(){ cmOpenCommunity(chKey); };
+        if((CM_RANK[r.role] || 1) >= 2){
+          var mg = document.createElement('button');
+          mg.className = 'cmModBtn';
+          mg.style.cssText = 'flex-shrink:0;margin-left:auto;font-size:.6rem;padding:.4rem .7rem;';
+          mg.textContent = 'MANAGE';
+          mg.onclick = function(ev){ ev.stopPropagation(); cmOpenManage(c.id); };
+          card.appendChild(mg);
+        }
+        grid.appendChild(card);
+      });
+    }catch(e){ wrap.style.display='none'; }
+  }
+
+  /* ── Manage / view a community ── */
+  async function cmOpenManage(cid){
+    if(!currentUser) return;
+    try{
+      var c = await sb.from('communities').select('*').eq('id', cid).maybeSingle();
+      if(c.error || !c.data) throw (c.error || new Error('missing'));
+      var me = await sb.from('community_members')
+        .select('role').eq('community_id', cid).eq('user_id', currentUser.id).maybeSingle();
+      cmMg = {
+        c: c.data,
+        myRole: (me.data && me.data.role) || 'member',
+        isOwner: c.data.owner_id === currentUser.id
+      };
+      cmMg.myRank = CM_RANK[cmMg.myRole] || 1;
+
+      document.getElementById('cmManageTitle').textContent = c.data.name;
+      document.getElementById('cmManageCode').textContent = c.data.join_code;
+      /* Settings are owner-only; everyone else sees just the member list. */
+      document.getElementById('cmOwnerFields').style.display = cmMg.isOwner ? '' : 'none';
+      if(cmMg.isOwner){
+        document.getElementById('cmMgName').value   = c.data.name || '';
+        document.getElementById('cmMgDesc').value   = c.data.description || '';
+        document.getElementById('cmMgAvatar').value = c.data.avatar_url || '';
+        document.getElementById('cmMgBanner').value = c.data.banner_url || '';
+        document.getElementById('cmMgRules').value  = c.data.rules || '';
+        document.getElementById('cmMgLinks').checked = !!c.data.links_allowed;
+      }
+      cmOpenMod('cmManageMod');
+      cmLoadMembers();
+    }catch(e){ showToast('Couldn\u2019t open that community'); }
+  }
+
+  async function cmSaveSettings(){
+    if(!cmMg || !cmMg.isOwner) return;
+    var btn = document.getElementById('cmMgSave');
+    btn.disabled = true; btn.textContent = 'SAVING…';
+    try{
+      var upd = {
+        name         : document.getElementById('cmMgName').value.trim(),
+        description  : document.getElementById('cmMgDesc').value.trim() || null,
+        avatar_url   : document.getElementById('cmMgAvatar').value.trim() || null,
+        banner_url   : document.getElementById('cmMgBanner').value.trim() || null,
+        rules        : document.getElementById('cmMgRules').value.trim() || null,
+        links_allowed: document.getElementById('cmMgLinks').checked
+      };
+      if(upd.name.length < 3){ showToast('Name must be at least 3 characters'); return; }
+      var r = await sb.from('communities').update(upd).eq('id', cmMg.c.id);
+      if(r.error) throw r.error;
+      cmMg.c.name = upd.name;
+      document.getElementById('cmManageTitle').textContent = upd.name;
+      showToast('Community updated ✦');
+      cmLoadMine();
+    }catch(e){ showToast(cmErr(e)); }
+    finally{ btn.disabled = false; btn.textContent = 'Save Settings'; }
+  }
+
+  async function cmLoadMembers(){
+    var list = document.getElementById('cmMemList');
+    if(!list || !cmMg) return;
+    list.innerHTML = '<div class="dmSearchNote">LOADING…</div>';
+    try{
+      var r = await sb.from('community_members')
+        .select('user_id,role,banned,timeout_until,profiles(username,display_name,avatar_url)')
+        .eq('community_id', cmMg.c.id);
+      if(r.error) throw r.error;
+      var rows = (r.data || []).slice().sort(function(a,b){
+        return (CM_RANK[b.role]||1) - (CM_RANK[a.role]||1);
+      });
+      document.getElementById('cmMemCount').textContent = rows.filter(function(x){return !x.banned;}).length;
+      list.innerHTML = '';
+      rows.forEach(function(m){
+        var p = m.profiles || {};
+        var row = document.createElement('div');
+        row.className = 'cmMemRow';
+        var ava = document.createElement('div');
+        ava.className = 'cmMemAva';
+        if(p.avatar_url){
+          var im = document.createElement('img');
+          im.src = getThumbnailUrl(p.avatar_url); im.alt='';
+          ava.appendChild(im);
+        } else {
+          ava.textContent = ((p.display_name || p.username || '?')).charAt(0).toUpperCase();
+        }
+        var nm = document.createElement('div');
+        nm.className = 'cmMemName';
+        nm.textContent = p.display_name || p.username || 'User';
+        var badge = document.createElement('span');
+        var isTimedOut = m.timeout_until && new Date(m.timeout_until) > new Date();
+        badge.className = 'cmMemRole cmMemRole--' + (m.banned ? 'banned' : m.role);
+        badge.textContent = m.banned ? 'BANNED'
+                          : isTimedOut ? 'TIMED OUT'
+                          : (CM_ROLE_LABEL[m.role] || 'Member');
+        row.appendChild(ava); row.appendChild(nm); row.appendChild(badge);
+        row.onclick = function(){ cmOpenMemberActions(m, p); };
+        list.appendChild(row);
+      });
+    }catch(e){ list.innerHTML = '<div class="dmSearchNote">COULDN\u2019T LOAD MEMBERS</div>'; }
+  }
+
+  /* ── Staff actions on a tapped member ── */
+  function cmOpenMemberActions(m, p){
+    if(!cmMg) return;
+    var uname = p.username || null;
+    var name  = p.display_name || p.username || 'User';
+    document.getElementById('cmMemModName').textContent = name;
+    document.getElementById('cmMemModRole').textContent =
+      m.banned ? 'Banned' : (CM_ROLE_LABEL[m.role] || 'Member');
+    var acts = document.getElementById('cmMemActs');
+    acts.innerHTML = '';
+
+    function add(label, fn, danger){
+      var b = document.createElement('button');
+      b.className = 'cmActItem' + (danger ? ' cmActItem--danger' : '');
+      b.textContent = label;
+      b.onclick = fn;
+      acts.appendChild(b);
+    }
+
+    /* Profile is available to everyone. */
+    if(uname) add('View profile', function(){
+      cmCloseMod('cmMemMod'); cmCloseMod('cmManageMod');
+      closeCommunityPage(); openProfileByUsername(uname, true);
+    });
+
+    var targetRank = CM_RANK[m.role] || 1;
+    var isSelf = String(m.user_id) === String(currentUser && currentUser.id);
+    /* Mirrors the server rules exactly: never yourself, never someone at or
+       above your rank. Showing options the DB would reject is just a lie. */
+    var canAct = !isSelf && cmMg.myRank >= 2 && targetRank < cmMg.myRank;
+
+    if(canAct){
+      if(cmMg.myRank >= 4){                       /* admin+ : promote / demote */
+        ['member','jr_mod','sr_mod','admin'].forEach(function(role){
+          if(CM_RANK[role] >= cmMg.myRank) return;   /* can't grant >= own rank */
+          if(role === m.role) return;
+          var verb = CM_RANK[role] > targetRank ? 'Promote to ' : 'Demote to ';
+          add(verb + CM_ROLE_LABEL[role], function(){ cmMod('cm_set_role', { cid: cmMg.c.id, target: m.user_id, new_role: role }); });
+        });
+      }
+      add('Kick from community', function(){ cmMod('cm_kick', { cid: cmMg.c.id, target: m.user_id }); }, true);
+
+      CM_TIMEOUTS.forEach(function(t){
+        add('Timeout — ' + t.lbl, function(){ cmMod('cm_timeout', { cid: cmMg.c.id, target: m.user_id, minutes: t.m }); });
+      });
+
+      if(cmMg.myRank >= 3){                       /* sr_mod+ : ban / unban */
+        add(m.banned ? 'Unban' : 'Ban from community',
+            function(){ cmMod('cm_set_ban', { cid: cmMg.c.id, target: m.user_id, do_ban: !m.banned }); }, true);
+      }
+    } else if(!isSelf){
+      var note = document.createElement('div');
+      note.className = 'cmModSub';
+      note.style.margin = '.4rem 0 0';
+      note.textContent = 'No moderation options for this member.';
+      acts.appendChild(note);
+    }
+    cmOpenMod('cmMemMod');
+  }
+
+  async function cmMod(rpc, args){
+    try{
+      var r = await sb.rpc(rpc, args);
+      if(r.error) throw r.error;
+      cmCloseMod('cmMemMod');
+      showToast('Done ✦');
+      cmLoadMembers();
+    }catch(e){ showToast(cmErr(e)); }
   }
 
   /* Friends tab — default "Zeo" entry opens the existing AI
@@ -13401,6 +14408,142 @@ function hideCommentThumbnail(){
     try{ return d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}).toUpperCase(); }
     catch(e){ return d.toDateString().toUpperCase(); }
   }
+
+  /* ── Chat author identity (avatar + current name) ──────────────
+     public.comments stores only the username captured at post time and
+     carries no avatar at all, so the chat could only ever draw an initial.
+     Authors are resolved from profiles (publicly readable) into this map,
+     refreshed on every poll tick → avatar / display-name changes go live. */
+  var cpAuthors = {};
+
+  async function cpLoadAuthors(list){
+    if(!sb || !list || !list.length) return;
+    var ids = [];
+    list.forEach(function(c){
+      if(c.user_id && ids.indexOf(String(c.user_id)) === -1) ids.push(String(c.user_id));
+    });
+    if(!ids.length) return;
+    try{
+      var r = await sb.from('profiles')
+        .select('id,username,display_name,avatar_url')
+        .in('id', ids);
+      if(r.error) throw r.error;
+      (r.data || []).forEach(function(p){
+        cpAuthors[String(p.id)] = {
+          name  : p.display_name || p.username || 'User',
+          avatar: p.avatar_url || null
+        };
+      });
+    }catch(e){ /* keep what we have — rows fall back to initials */ }
+  }
+
+  /* Avatar markup for a chat row: profile picture when available, else the
+     initial. Thumbnail-capped like every other avatar in the app. */
+  function cpAvatarHTML(c, extraCls){
+    var a = c.user_id ? cpAuthors[String(c.user_id)] : null;
+    var cls = 'cpAvatar' + (extraCls ? ' ' + extraCls : '');
+    /* data-uid lets one delegated listener open the mini profile card —
+       these rows are built as innerHTML strings, so no direct binding. */
+    var uid = c.user_id ? ' data-uid="' + esc(String(c.user_id)) + '"' : '';
+    if(a && a.avatar){
+      return '<div class="' + cls + '"' + uid + '>' +
+               '<img class="cpAvatarImg" src="' + esc(getThumbnailUrl(a.avatar)) +
+               '" alt="" loading="lazy" decoding="async">' +
+             '</div>';
+    }
+    return '<div class="' + cls + '"' + uid + '>' + esc(c.initial) + '</div>';
+  }
+
+  /* Current display name for a chat row (live), falling back to the name
+     stored on the comment row. */
+  function cpAuthorName(c){
+    var a = c.user_id ? cpAuthors[String(c.user_id)] : null;
+    return (a && a.name) ? a.name : c.user;
+  }
+
+  /* ── Mini profile card ───────────────────────────────────────
+     Tapping another user's avatar or name in community chat opens a small
+     rounded card: avatar + display name, @username, and View Profile.
+     Identity is read from the live cpAuthors map (already refreshed each
+     poll), with a direct profiles fetch as a fallback for authors that
+     aren't in the map yet. */
+  var cpuUser = null;
+
+  function cpuClose(){
+    var m = document.getElementById('cpuMod');
+    if(m) m.classList.remove('open');
+    cpuUser = null;
+  }
+
+  function cpuViewProfile(){
+    if(!cpuUser || !cpuUser.username) return;
+    var uname = cpuUser.username;
+    cpuClose();
+    /* Leave the community overlay so the profile isn't stranded behind it. */
+    if(typeof closeCommunityPage === 'function') closeCommunityPage();
+    openProfileByUsername(uname, true);
+  }
+
+  async function cpuOpen(uid){
+    if(!uid) return;
+    /* Never open the card on yourself — tapping your own row does nothing. */
+    if(typeof currentUser !== 'undefined' && currentUser && String(currentUser.id) === String(uid)) return;
+    var m = document.getElementById('cpuMod');
+    if(!m) return;
+
+    var a = cpAuthors[String(uid)] || null;
+    cpuUser = { id: uid, name: (a && a.name) || 'User', username: null, avatar: (a && a.avatar) || null };
+    cpuPaint();
+    m.classList.add('open');
+
+    /* The map holds display name + avatar but not the @handle, so fetch it. */
+    try{
+      var r = await sb.from('profiles')
+        .select('username,display_name,avatar_url')
+        .eq('id', uid).maybeSingle();
+      if(r.error || !r.data) throw (r.error || new Error('no profile'));
+      if(!cpuUser || String(cpuUser.id) !== String(uid)) return;  /* card closed / switched */
+      cpuUser.username = r.data.username || null;
+      cpuUser.name     = r.data.display_name || r.data.username || cpuUser.name;
+      cpuUser.avatar   = r.data.avatar_url || cpuUser.avatar;
+      cpuPaint();
+    }catch(e){
+      var btn = document.getElementById('cpuView');
+      if(btn){ btn.disabled = true; btn.textContent = 'PROFILE UNAVAILABLE'; }
+    }
+  }
+
+  function cpuPaint(){
+    if(!cpuUser) return;
+    var ico = document.getElementById('cpuIco');
+    var nm  = document.getElementById('cpuName');
+    var hd  = document.getElementById('cpuHandle');
+    var btn = document.getElementById('cpuView');
+    if(nm) nm.textContent = cpuUser.name || 'User';
+    if(hd) hd.textContent = cpuUser.username ? ('@' + cpuUser.username) : '…';
+    if(btn){ btn.disabled = !cpuUser.username; btn.textContent = 'VIEW PROFILE'; }
+    if(ico){
+      ico.textContent = '';
+      if(cpuUser.avatar){
+        var img = document.createElement('img');
+        img.src = getThumbnailUrl(cpuUser.avatar);
+        img.alt = ''; img.loading = 'lazy';
+        ico.appendChild(img);
+      } else {
+        ico.textContent = (cpuUser.name || '?').charAt(0).toUpperCase();
+      }
+    }
+  }
+
+  /* One delegated listener covers every chat row (they're innerHTML strings,
+     and re-rendered on each poll, so per-element binding would leak). */
+  document.addEventListener('click', function(e){
+    var t = e.target.closest && e.target.closest('[data-uid]');
+    if(!t) return;
+    if(!t.closest('#communityPage')) return;   /* chat rows only */
+    e.preventDefault(); e.stopPropagation();
+    cpuOpen(t.getAttribute('data-uid'));
+  });
 
   function cpRender(){
     var body  = document.getElementById('cpBody');
@@ -13458,15 +14601,16 @@ function hideCommentThumbnail(){
            it's required to post in this channel. */
         div.className = 'cpShowcase';
         var safeUrl = esc(c.image_url || '');
+        var scName = cpAuthorName(c);
         div.innerHTML =
           '<div class="cpShowcaseHead">' +
-            '<div class="cpAvatar">' + esc(c.initial) + '</div>' +
+            cpAvatarHTML(c) +
             '<div class="cpShowcaseMeta">' +
-              '<div class="cpCommentUser">' + esc(c.user) + '</div>' +
+              '<div class="cpCommentUser"' + (c.user_id ? ' data-uid="' + esc(String(c.user_id)) + '"' : '') + '>' + esc(scName) + '</div>' +
               '<div class="cpCommentTime">' + esc(c.time) + '</div>' +
             '</div>' +
           '</div>' +
-          (c.image_url ? ('<img class="cpShowcaseImg" src="' + esc(getThumbnailUrl(c.image_url||'')) + '" alt="' + esc(c.user) + '\'s artwork" onclick="openLB(\'' + safeUrl.replace(/'/g,'&#39;') + '\',\'' + esc(c.user).replace(/'/g,'&#39;') + '\'s artwork\')">') : '') +
+          (c.image_url ? ('<img class="cpShowcaseImg" src="' + esc(getThumbnailUrl(c.image_url||'')) + '" alt="' + esc(scName) + '\'s artwork" onclick="openLB(\'' + safeUrl.replace(/'/g,'&#39;') + '\',\'' + esc(scName).replace(/'/g,'&#39;') + '\'s artwork\')">') : '') +
           '<div class="cpShowcaseText">' + esc(c.text) + '</div>';
       } else {
         /* WhatsApp-style chat row: date chips between days; own
@@ -13499,9 +14643,9 @@ function hideCommentThumbnail(){
 
         div.className = 'cpMsgRow ' + (mine ? 'cpMsgRow--me' : 'cpMsgRow--them') + (cont ? ' cpMsgRow--cont' : '');
         div.innerHTML =
-          (!mine ? '<div class="cpAvatar cpMsgAvatar' + (cont ? ' cpMsgAvatar--ghost' : '') + '">' + esc(c.initial) + '</div>' : '') +
+          (!mine ? cpAvatarHTML(c, 'cpMsgAvatar' + (cont ? ' cpMsgAvatar--ghost' : '')) : '') +
           '<div class="cpBubble">' +
-            (!mine && !cont ? '<div class="cpBubbleName">' + esc(c.user) + '</div>' : '') +
+            (!mine && !cont ? '<div class="cpBubbleName"' + (c.user_id ? ' data-uid="' + esc(String(c.user_id)) + '"' : '') + '>' + esc(cpAuthorName(c)) + '</div>' : '') +
             '<span class="cpBubbleText">' + esc(c.text) + '</span>' +
             '<span class="cpBubbleTime">' + shortTime + '</span>' +
           '</div>';
@@ -13744,6 +14888,12 @@ function hideCommentThumbnail(){
           image_url : row.image_url || null
         };
       });
+      /* Pull each author's CURRENT avatar + name from profiles. The comments
+         table only stores the username as it was at post time and no avatar
+         at all, so identity has to be resolved live. This runs on every load
+         AND every poll tick, which is what makes avatar/name changes appear
+         without a refresh. */
+      await cpLoadAuthors(cpComments);
       /* Restore empty placeholder text — Showcase gets its own copy
          since it's a post feed, not a comment thread */
       if(emptyEl){
@@ -13812,6 +14962,19 @@ function hideCommentThumbnail(){
       return true;
     }catch(e){
       console.error('cpSaveComment:', e);
+      /* Community-channel rejections come back as raw RLS/trigger errors —
+         say what actually happened. */
+      var msg = (e && e.message) || '';
+      if(/CM_NO_LINKS/.test(msg)){
+        showToast('Links aren\u2019t allowed in this community');
+        return false;
+      }
+      if(/^c:/.test(cpCurrentChannel || '') && /row-level security|violates row-level|42501/i.test(msg)){
+        showToast('You can\u2019t post here right now — you may be timed out or banned.');
+        return false;
+      }
+      /* Merit gate (<=60) surfaces as a raw RLS error — explain it instead. */
+      if(window.meritDenied && window.meritDenied(e, 'chat')) return false;
       /* FIX: failures were console-only — surface the real reason so
          the user isn't left with a silently-vanishing message. */
       showToast(e && e.message ? e.message : 'Could not send — try again');
@@ -14141,8 +15304,9 @@ function hideCommentThumbnail(){
     if(!grid) return;
 
     /* Every tab is most-liked → least-liked, EXCEPT "Latest", which is the
-       one view that stays newest-first (that's its whole purpose). */
-    var src = (list||[]).slice();
+       one view that stays newest-first (that's its whole purpose).
+       Hidden artworks are dropped first (per-user "hide from my feed"). */
+    var src = filterHidden((list||[]).slice());
     var sorted = (type === 'latest' ? sortByNewest(src) : sortByLikes(src)).slice(0, 200);
     grid.innerHTML = '';
 
@@ -16519,6 +17683,8 @@ html.thmFade #themePage{
     } catch (e) {
       on ? set.delete(id) : set.add(id);  /* revert */
       paintAll();
+      /* Merit gate (<=40) arrives as a raw RLS error — explain it. */
+      if (window.meritDenied && window.meritDenied(e, 'like')) { busy[key] = false; return; }
       toast('Action failed — try again');
     } finally { busy[key] = false; }
   }

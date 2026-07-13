@@ -1,8 +1,12 @@
 export async function onRequestGet(context) {
   const { env } = context;
 
-  const SUPABASE_URL = env.SUPABASE_URL || 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
-  const SUPABASE_ANON_KEY = env.SUPABASE_ANON_KEY || '';
+  /* Accept either naming. _middleware.js uses SB_URL/SB_KEY, this file
+     originally used SUPABASE_URL/SUPABASE_ANON_KEY — having two names for
+     the same secret meant setting one and silently starving the other.
+     Whichever pair is set in the Pages dashboard now works for both. */
+  const SUPABASE_URL = env.SB_URL || env.SUPABASE_URL || 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
+  const SUPABASE_ANON_KEY = env.SB_KEY || env.SUPABASE_ANON_KEY || '';
   const SITE_URL = 'https://digiartz.net';
 
   /* Usernames we never hand to Google, matched case-insensitively and
@@ -109,4 +113,4 @@ ${profileEntries}
       'cache-control': 'public, max-age=3600',
     },
   });
-}
+    }

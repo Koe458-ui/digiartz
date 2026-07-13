@@ -143,12 +143,97 @@
     return out;
   }
 
+  function utf8(u8) {
+    try { return new TextDecoder('utf-8').decode(u8); }
+    catch (e) { return latin1(u8); }
+  }
+
+  /* ---- FIX 1: compressed PNG text chunks -----------------------------
+     The old scan was a raw byte search over the file. That only ever
+     saw tEXt chunks, which store their payload as plain text. PNG also
+     allows zTXt (always zlib-deflated) and iTXt (optionally deflated),
+     and plenty of generators — plus any PNG that has been through an
+     optimiser like oxipng/pngcrush, which rewrites tEXt as zTXt — put
+     the exact same "Negative prompt / Steps / Sampler / CFG scale"
+     block in there. Deflated bytes look like noise, so a byte search
+     finds nothing and the image sails through as clean.
+
+     So: walk the chunk table properly and inflate what needs it. */
+  async function inflate(u8) {
+    if (typeof DecompressionStream !== 'function') return null;   // old browser: skip, never throw
+    try {
+      var stream = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate'));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    } catch (e) { return null; }                                   // corrupt/odd chunk: ignore
+  }
+
+  function isPNG(u8) {
+    return u8.length > 8 && u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e && u8[3] === 0x47;
+  }
+
+  async function pngTextChunks(u8) {
+    var out = '', p = 8;
+    var dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    var guard = 0;
+    while (p + 8 <= u8.length && guard++ < 4096) {
+      var len  = dv.getUint32(p);
+      var type = String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
+      var at   = p + 8;
+      if (len < 0 || len > u8.length - at) break;                  // truncated / malformed
+      var d = u8.subarray(at, at + len);
+
+      if (type === 'tEXt') {
+        out += latin1(d) + '\n';
+      } else if (type === 'zTXt') {
+        /* keyword \0 method(1) deflate(...) */
+        var z = d.indexOf(0);
+        if (z !== -1) {
+          var inf = await inflate(d.subarray(z + 2));
+          out += latin1(d.subarray(0, z)) + '\n' + (inf ? utf8(inf) : '') + '\n';
+        }
+      } else if (type === 'iTXt') {
+        /* keyword \0 flag(1) method(1) lang \0 transKeyword \0 payload */
+        var k = d.indexOf(0);
+        if (k !== -1) {
+          var flag = d[k + 1];
+          var l1 = d.indexOf(0, k + 3);
+          var l2 = l1 === -1 ? -1 : d.indexOf(0, l1 + 1);
+          if (l2 !== -1) {
+            var pay = d.subarray(l2 + 1);
+            var txt = (flag === 1) ? await inflate(pay) : pay;
+            out += latin1(d.subarray(0, k)) + '\n' + (txt ? utf8(txt) : '') + '\n';
+          }
+        }
+      } else if (type === 'IEND') break;
+
+      p = at + len + 4;                                            // + CRC
+    }
+    return out;
+  }
+
   async function scanAIMeta(file) {
     try {
-      var buf = new Uint8Array(await file.arrayBuffer());
+      var buf  = new Uint8Array(await file.arrayBuffer());
       var head = buf.subarray(0, Math.min(buf.length, CONFIG.scanBytes));
       var tail = buf.length > 65536 ? buf.subarray(buf.length - 65536) : new Uint8Array(0);
-      var s = (latin1(head) + '\n' + latin1(tail)).toLowerCase();
+
+      var raw = latin1(head) + '\n' + latin1(tail);
+
+      /* FIX 1 — pull the real text out of every PNG text chunk,
+         inflating zTXt / compressed iTXt on the way. */
+      if (isPNG(buf)) {
+        try { raw += '\n' + await pngTextChunks(buf); } catch (e) {}
+      }
+
+      /* FIX 2 — UTF-16 metadata. EXIF UserComment (and anything written
+         by a Windows-side tool) is frequently UTF-16, i.e. the bytes read
+         as  N \0 e \0 g \0 a \0 …  — so indexOf('negative prompt') never
+         matched. Scanning a NUL-stripped copy alongside the raw one costs
+         nothing and catches it. Stripping NULs out of compressed pixel
+         data can't create a false hit: the signatures are long ASCII
+         phrases, not byte pairs. */
+      var s = (raw + '\n' + raw.replace(/\u0000/g, '')).toLowerCase();
+
       var found = [];
       for (var i = 0; i < STRONG_SIGS.length; i++) {
         if (s.indexOf(STRONG_SIGS[i].k) !== -1 && found.indexOf(STRONG_SIGS[i].label) === -1) {

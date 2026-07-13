@@ -184,6 +184,32 @@
       --role-admin:#f87171;  --role-admin-bd:rgba(248,113,113,.45);
       --role-srmod:#60a5fa;  --role-srmod-bd:rgba(96,165,250,.45);
       --role-jrmod:#34d399;  --role-jrmod-bd:rgba(52,211,153,.45);
+
+      /* ── Milestone colour system ─────────────────────────────────
+         One colour per rank, used flat (no gradient / glow / shadow)
+         for BOTH the artist's display name and their milestone ribbon,
+         so the two always match — that match IS the system.
+
+           --msN        the tier's identity colour. Fills the ribbon and
+                        the milestone badge, and colours the name on the
+                        dark themes, where every tier clears 5.2:1.
+           --msN-name   the NAME colour only. Identical to --msN on dark;
+                        re-mapped below on Light, where the raw hues sit
+                        at 1.5–4.2:1 on white and are unreadable. Same
+                        hue, dropped in lightness until it clears 4.5:1,
+                        so a Legend still reads as gold — just a gold
+                        that survives a white background.
+           --ms-ink     text ON a filled badge. See the note in the Light
+                        block for why this is near-black and not white. */
+      --ms1:#BFC5D2;  --ms1-name:#BFC5D2;   /* LVL 5   New Artist      */
+      --ms2:#22C55E;  --ms2-name:#22C55E;   /* LVL 10  Sketch Explorer */
+      --ms3:#3B82F6;  --ms3-name:#3B82F6;   /* LVL 20  Creative Soul   */
+      --ms4:#8B5CF6;  --ms4-name:#8B5CF6;   /* LVL 35  Gallery Artist  */
+      --ms5:#F59E0B;  --ms5-name:#F59E0B;   /* LVL 50  Community Star  */
+      --ms6:#EF4444;  --ms6-name:#EF4444;   /* LVL 70  Master Creator  */
+      --ms7:#06B6D4;  --ms7-name:#06B6D4;   /* LVL 85  Elite Artist    */
+      --ms8:#FACC15;  --ms8-name:#FACC15;   /* LVL 100 DigiArtz Legend */
+      --ms-ink:#0B0B12;
     }
     /* ── Dark (default) — neutral near-black, monochrome WHITE accent
        (no violet: accent tokens re-mapped to white/off-white). ── */
@@ -248,6 +274,21 @@
       --role-admin:#B3261E;  --role-admin-bd:rgba(179,38,30,.38);
       --role-srmod:#1D4ED8;  --role-srmod-bd:rgba(29,78,216,.38);
       --role-jrmod:#046B4E;  --role-jrmod-bd:rgba(4,107,78,.38);
+
+      /* Milestone NAME colours darkened for white surfaces. The ribbon
+         fills (--ms1..--ms8) are deliberately NOT re-mapped — a filled
+         chip carries its own background, so the brand colour stays exact
+         in every theme. Only text sitting directly on the page changes.
+         Measured on #FFFFFF: raw hues score 1.53:1 (Legend Gold) to
+         4.23:1 (Royal Purple); these all clear 4.50:1 (WCAG AA). */
+      --ms1-name:#687695;   /* Soft Gray     4.55:1 */
+      --ms2-name:#178841;   /* Emerald       4.53:1 */
+      --ms3-name:#1E6FF5;   /* Sapphire      4.52:1 */
+      --ms4-name:#8655F6;   /* Royal Purple  4.52:1 */
+      --ms5-name:#A56A07;   /* Amber Gold    4.50:1 */
+      --ms6-name:#EB1515;   /* Crimson       4.52:1 */
+      --ms7-name:#048196;   /* Cyan          4.58:1 */
+      --ms8-name:#8F7303;   /* Legend Gold   4.54:1 */
     }
     /* ── Semantic text tokens ─────────────────────────────────
        Declared on * (not :root) deliberately: a custom property
@@ -3481,6 +3522,39 @@
       cursor:help;vertical-align:middle;
     }
     .pfWarnMark.on{display:inline;}
+
+    /* ══ MILESTONE COMPONENTS ══════════════════════════════════════
+       Two elements, one colour. Both read it from --ms-c, which the
+       DZ_MS module sets per-element to var(--msN) or var(--msN-name).
+       Flat fills, one hairline border, no gradient, no glow, no shadow,
+       no animation — the colour is the whole signal. */
+
+    /* The artist's display name, tinted to their tier. */
+    .msName{ color:var(--ms-c, inherit); }
+
+    /* The milestone ribbon — a solid chip in the same colour. */
+    .msRibbon{
+      display:inline-flex; align-items:center;
+      max-width:100%;
+      margin-top:.4rem;
+      padding:.34rem .62rem;
+      border-radius:11px;
+      background:var(--ms-c, var(--sur2));
+      color:var(--ms-ink);
+      border:1px solid rgba(0,0,0,.10);
+      font-family:var(--fm);
+      font-size:.62rem;
+      font-weight:700;
+      letter-spacing:.09em;
+      text-transform:uppercase;
+      line-height:1;
+      white-space:nowrap;
+      overflow:hidden; text-overflow:ellipsis;
+    }
+    /* [hidden] must beat display:inline-flex */
+    .msRibbon[hidden]{ display:none; }
+    /* The level reads as a quiet prefix, not a second label. */
+    .msRibbon .msRibLvl{ opacity:.62; margin-right:.42rem; }
     /* Bio teaser — truncated by JS at ~100 chars with a tappable
        "Show more" that jumps to the ABOUT tab. */
     .pfHeadBio{font-family:var(--fb);font-size:.82rem;line-height:1.5;color:var(--txd);margin-top:.55rem;max-width:34rem;}
@@ -6028,6 +6102,7 @@ body{background:var(--bg);}
           <div class="pfUsername" id="pfUsername">—</div>
           <span class="pfWarnMark" id="pfWarnMark" title="This account has a low merit score" aria-label="Low merit warning">!</span>
           <div class="pfHandle" id="pfHandle"></div>
+          <div class="msRibbon" id="pfMsRibbon" hidden></div>
           <div class="pfHeadBio" id="pfHeadBio"></div>
           <div class="pfStatsRow" id="pfStatsRow" style="display:none;">
             <span class="pfStat" id="pfHeadStatLikes">❤️ 0</span>
@@ -8495,6 +8570,76 @@ function qrMake (text) {
 </script>
 
 <script>
+/* ── Milestone colour system (DZ_MS) ──────────────────────────
+   The single source of truth for "what colour is this artist?".
+   Anywhere a level is known, one call paints it — name and ribbon
+   pull the SAME token, so they can never drift apart.
+
+     DZ_MS.tierFor(level)          -> tier object, or null below LVL 5
+     DZ_MS.paintName(el, level)    -> tints a display name
+     DZ_MS.paintRibbon(el, level)  -> fills a .msRibbon chip
+     DZ_MS.fill(t) / DZ_MS.ink(t)  -> raw css values, for custom surfaces
+
+   Colours live in CSS (--ms1..--ms8), never here — that keeps the
+   light-theme remap working and means a palette change is a one-line
+   token edit, not a JS edit. */
+(function () {
+  'use strict';
+  var TIERS = [
+    { lvl: 5,   name: 'New Artist',      v: '--ms1' },
+    { lvl: 10,  name: 'Sketch Explorer', v: '--ms2' },
+    { lvl: 20,  name: 'Creative Soul',   v: '--ms3' },
+    { lvl: 35,  name: 'Gallery Artist',  v: '--ms4' },
+    { lvl: 50,  name: 'Community Star',  v: '--ms5' },
+    { lvl: 70,  name: 'Master Creator',  v: '--ms6' },
+    { lvl: 85,  name: 'Elite Artist',    v: '--ms7' },
+    { lvl: 100, name: 'DigiArtz Legend', v: '--ms8' }
+  ];
+
+  /* Highest tier the level has reached. Below LVL 5 there is no tier —
+     an unranked artist keeps the default name colour and shows no chip,
+     which is what makes the first ribbon feel earned. */
+  function tierFor (level) {
+    var lv = Number(level) || 0, t = null;
+    for (var i = 0; i < TIERS.length; i++) { if (lv >= TIERS[i].lvl) t = TIERS[i]; }
+    return t;
+  }
+  function fill (t) { return t ? 'var(' + t.v + ')' : ''; }        /* chip background */
+  function nameC (t) { return t ? 'var(' + t.v + '-name)' : ''; }  /* text on the page */
+
+  function paintName (el, level) {
+    if (!el) return;
+    var t = tierFor(level);
+    el.classList.toggle('msName', !!t);
+    if (t) el.style.setProperty('--ms-c', nameC(t));
+    else   el.style.removeProperty('--ms-c');
+  }
+
+  function paintRibbon (el, level) {
+    if (!el) return;
+    var t = tierFor(level);
+    el.textContent = '';
+    if (!t) { el.hidden = true; el.style.removeProperty('--ms-c'); return; }
+    el.hidden = false;
+    el.style.setProperty('--ms-c', fill(t));
+    var lv = document.createElement('span');
+    lv.className = 'msRibLvl';
+    lv.textContent = 'LVL ' + t.lvl;
+    el.appendChild(lv);
+    el.appendChild(document.createTextNode(' ' + t.name));
+    el.setAttribute('title', t.name + ' \u00B7 reached at level ' + t.lvl);
+  }
+
+  window.DZ_MS = {
+    TIERS: TIERS,
+    tierFor: tierFor,
+    fill: fill,
+    nameColor: nameC,
+    paintName: paintName,
+    paintRibbon: paintRibbon
+  };
+})();
+
 /* ── Artist Progress ──────────────────────────────────────────
    XP / level / milestones / leaderboard. XP is derived server-side
    by get_artist_progress() / get_xp_leaderboard() (uploads x10,
@@ -8644,6 +8789,15 @@ function qrMake (text) {
     RANKS.forEach(function (r) {
       var done = level >= r.lvl;
       var row = el('div', 'xpMile' + (done ? ' done' : '') + (done && r.name === curTitle ? ' cur' : ''));
+      /* Each row carries its OWN tier colour — the list doubles as the
+         palette key, so an artist can see exactly which colour they are
+         climbing toward. Locked rows stay neutral: the colour is the
+         reward. */
+      var t = window.DZ_MS && DZ_MS.tierFor(r.lvl);
+      if (t && done) {
+        row.style.setProperty('--ms-c', DZ_MS.fill(t));
+        row.style.setProperty('--ms-n', DZ_MS.nameColor(t));
+      }
       row.appendChild(el('div', 'xpMileBadge', done ? '\u2713' : String(r.lvl)));
       row.appendChild(el('div', 'xpMileName', r.name));
       row.appendChild(el('div', 'xpMileLvl', 'LVL ' + r.lvl));
@@ -8669,7 +8823,9 @@ function qrMake (text) {
           ava.textContent = (row.username || '?').charAt(0).toUpperCase();
         }
         r.appendChild(ava);
-        r.appendChild(el('div', 'xpLbName', row.username || 'Artist'));
+        var lbName = el('div', 'xpLbName', row.username || 'Artist');
+        if (window.DZ_MS) DZ_MS.paintName(lbName, Number(row.level) || 0);
+        r.appendChild(lbName);
         r.appendChild(el('div', 'xpLbLvl', 'LEVEL ' + (Number(row.level) || 1)));
         board.appendChild(r);
       });
@@ -11935,6 +12091,12 @@ function qrMake (text) {
       var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.style.display='none';
       var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.style.display='none';
       var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
+      /* Drop the previous artist's milestone colour immediately — otherwise
+         their tint sits on the new name for as long as the fetch takes. */
+      if(window.DZ_MS){
+        DZ_MS.paintName(document.getElementById('pfUsername'), 0);
+        DZ_MS.paintRibbon(document.getElementById('pfMsRibbon'), 0);
+      }
       document.getElementById('pfGalleryGrid').innerHTML='';
       pfSwitchTab('gallery');
     }
@@ -12190,6 +12352,12 @@ function qrMake (text) {
     /* Red "!" beside the name at merit <= 20 */
     var warn = document.getElementById('pfWarnMark');
     if(warn) warn.classList.toggle('on', merit <= 20);
+    /* Milestone colour — the display name and the ribbon take the same
+       tier token, so they always agree. Below LVL 5 both go neutral. */
+    if(window.DZ_MS){
+      DZ_MS.paintName(document.getElementById('pfUsername'), level);
+      DZ_MS.paintRibbon(document.getElementById('pfMsRibbon'), level);
+    }
   }
 
   async function pfLoadHeadStats(){
@@ -17546,15 +17714,23 @@ html.thmFade #themePage{
 .xpMile{display:flex;align-items:center;gap:.7rem;padding:.5rem .2rem;border-bottom:1px solid var(--bdr);}
 .xpMile:last-child{border-bottom:none;}
 .xpMileBadge{
-  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  width:30px;height:30px;border-radius:11px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
   font-family:var(--fm);font-size:.58rem;
   border:1px solid var(--bdr);color:var(--txd);background:var(--sur2);
 }
-.xpMile.done .xpMileBadge{background:var(--pg);border-color:var(--pg);color:var(--text-on-accent);}
+/* Reached: the badge fills with that tier's colour and the name takes the
+   matching text shade — same pairing as the profile header, so the list
+   reads as the legend for the whole system. Falls back to --pg if the
+   tier lookup ever comes back empty. */
+.xpMile.done .xpMileBadge{
+  background:var(--ms-c, var(--pg));
+  border-color:var(--ms-c, var(--pg));
+  color:var(--ms-ink);
+}
 .xpMileName{font-family:var(--fb);font-size:.82rem;color:var(--txd);}
-.xpMile.done .xpMileName{color:var(--tx);}
-.xpMile.cur .xpMileName{color:var(--pb);font-weight:600;}
+.xpMile.done .xpMileName{color:var(--ms-n, var(--tx));}
+.xpMile.cur .xpMileName{color:var(--ms-n, var(--pb));font-weight:600;}
 .xpMileLvl{margin-left:auto;font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;color:var(--txd);}
 /* leaderboard */
 .xpLbRow{display:flex;align-items:center;gap:.7rem;padding:.55rem .2rem;border-bottom:1px solid var(--bdr);}

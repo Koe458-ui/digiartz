@@ -12904,11 +12904,10 @@ function qrMake (text) {
     if(!currentUser){ showToast('Sign in to continue'); return; }
     var editIdEl = document.getElementById('pfUpEditId');
     var editId = editIdEl ? editIdEl.value : '';
-    /* New uploads must be to the owner's own profile; edits reaching
-       here have already been ownership-checked by mwEditArt,
-       and are enforced for real by the "own rows
-       only" RLS update policy — so editId doesn't require pf.isOwner. */
-    if(!editId && !pf.isOwner){ showToast('You can only upload to your own profile'); return; }
+    /* Universal upload — any signed-in user, from anywhere (nav ➕, home,
+       or while viewing someone else's profile). Rows always insert with
+       user_id: currentUser.id, and edits are ownership-checked by mwEditArt
+       plus the "own rows only" RLS update policy. No pf.isOwner gate. */
     var nm = document.getElementById('pfUpNm').value.trim();
     var desc = document.getElementById('pfUpDesc').value.trim();
     var software = document.getElementById('pfUpSoftware').value;
@@ -12925,14 +12924,24 @@ function qrMake (text) {
              upload menu, or the Edit My Work page (mwEditArt) —
              both are ownership-gated before this point. */
           btn.textContent='SAVING…';
-          const{error}=await sb.from('artworks').update({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],software:software||null}).eq('id',editId);
+          var editCats = pf.upCats.length ? pf.upCats : ['others'];
+          const{error}=await sb.from('artworks').update({name:nm,description:desc||null,tags:tags,category:editCats,software:software||null}).eq('id',editId);
           if(error) throw error;
+          /* Every in-memory copy of the row must be patched, or the DB and the
+             screen disagree until a hard refresh. `images` also needs category +
+             software — without them the gallery's category filter keeps sorting
+             the piece under its OLD category. */
           var idx = images.findIndex(function(i){return String(i.id)===String(editId);});
-          if(idx!==-1){ images[idx].name=nm; images[idx].description=desc; images[idx].tags=tags; }
+          if(idx!==-1){ images[idx].name=nm; images[idx].description=desc||null; images[idx].tags=tags; images[idx].category=editCats; images[idx].software=software||null; }
           var mwIdx = mw.art.findIndex(function(i){return String(i.id)===String(editId);});
-          if(mwIdx!==-1){ mw.art[mwIdx].name=nm; mw.art[mwIdx].description=desc; mw.art[mwIdx].tags=tags; mw.art[mwIdx].category=pf.upCats.length?pf.upCats:['others']; mw.art[mwIdx].software=software||null; }
+          if(mwIdx!==-1){ mw.art[mwIdx].name=nm; mw.art[mwIdx].description=desc||null; mw.art[mwIdx].tags=tags; mw.art[mwIdx].category=editCats; mw.art[mwIdx].software=software||null; }
+          /* pfRenderGallery() paints from pf.galleryRows — patch that row too,
+             otherwise the repaint below just re-draws the pre-edit data. */
+          var pgIdx = Array.isArray(pf.galleryRows) ? pf.galleryRows.findIndex(function(i){return String(i.id)===String(editId);}) : -1;
+          if(pgIdx!==-1){ pf.galleryRows[pgIdx].name=nm; pf.galleryRows[pgIdx].description=desc||null; pf.galleryRows[pgIdx].tags=tags; pf.galleryRows[pgIdx].category=editCats; pf.galleryRows[pgIdx].software=software||null; }
           pfRenderGallery();
           if(typeof mwRenderArt==='function') mwRenderArt();
+          if(typeof renderHome==='function') renderHome();
           closePfUpload(); showToast('Artwork updated ✦');
         } else {
           btn.textContent='UPLOADING…';

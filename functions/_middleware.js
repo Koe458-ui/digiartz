@@ -159,10 +159,15 @@ export async function onRequest(context) {
     .on('div#awGrid', {
       element(el) { el.setInnerContent(cards, { html: true }); }
     })
-    .on('head', {
-      element(el) {
-        el.append(`<script type="application/ld+json">${ld}</script>`, { html: true });
-      }
+    /* Overwrite the canonical block in index.html rather than appending a
+       new one. Appending gave the page TWO ImageGallery declarations (the
+       stale static one + this) — and since injectGallerySEO() looks the
+       element up by id and would have created a THIRD, a JS-executing
+       crawler saw three competing galleries. One element, three writers,
+       last one wins: edge → client. If Supabase is unreachable we never
+       get here, and the static JSON inside it stands as the fallback. */
+    .on('script#ldGallery', {
+      element(el) { el.setInnerContent(ld, { html: true }); }
     })
     .transform(origin);
-     }
+}

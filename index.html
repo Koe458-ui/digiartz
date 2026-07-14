@@ -1494,6 +1494,72 @@
       .cmHdrBack{left:1rem;}
     }
 
+    /* ── CHAT BANNER MODE ──────────────────────────────────────
+       The same .cmHdr bar, flipped into a messenger-style banner
+       whenever a channel or a friend DM is open:
+
+         ←  (avatar)  Name
+                      subtitle
+
+       Everything left-aligned (the centred gradient title is for
+       the grid only). Toggled by cmHdrChatMode() / cmHdrHomeMode()
+       below the header markup — the .chat class on .cmHdr is the
+       single switch. */
+    .cmHdrChat{display:none;align-items:center;gap:.7rem;flex:1;min-width:0;}
+    .cmHdr.chat{justify-content:flex-start;gap:.5rem;padding:.7rem 1rem;}
+    .cmHdr.chat .cmHdrTitle{display:none;}
+    .cmHdr.chat .cmHdrChat{display:flex;}
+    /* back arrow leaves the absolute "reserved zone" and joins the
+       flow, so it sits flush against the avatar like a real app */
+    .cmHdr.chat .cmHdrBack{
+      position:static;left:auto;border:none;background:none;
+      width:32px;height:32px;margin-left:-.35rem;
+    }
+    .cmHdr.chat .cmHdrBack svg{width:20px;height:20px;}
+    .cmHdr.chat .cmHdrBack:hover{background:var(--pdim);}
+    .cmHdrAv{
+      width:40px;height:40px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fb);font-size:1.02rem;font-weight:700;line-height:1;
+      color:#fff;background:linear-gradient(135deg,var(--pb),var(--pg));
+      border:1px solid var(--bdrh);
+    }
+    .cmHdrAv img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cmHdrInfo{display:flex;flex-direction:column;min-width:0;gap:.14rem;flex:1;}
+    .cmHdrName{
+      font-family:var(--fb);font-size:.95rem;font-weight:700;color:var(--tx);
+      line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .cmHdrSub{
+      font-family:var(--fm);font-size:.58rem;letter-spacing:.07em;color:var(--txd);
+      line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      display:flex;align-items:center;gap:.32rem;
+    }
+    .cmHdrSub .dot{
+      width:6px;height:6px;border-radius:50%;flex-shrink:0;
+      background:#2ecf7e;box-shadow:0 0 6px #2ecf7e;
+    }
+    /* avatar+name become one tap target (DM → opens the artist's profile) */
+    .cmHdrTap{
+      display:flex;align-items:center;gap:.7rem;flex:1;min-width:0;
+      border-radius:10px;padding:.2rem .35rem;margin:-.2rem -.35rem;
+      transition:background .2s;
+    }
+    .cmHdrTap.on{cursor:pointer;}
+    .cmHdrTap.on:active{background:var(--pdim);}
+    /* Community-page theme tokens (the page overrides --tx/--txd) */
+    #communityPage .cmHdrName{color:var(--cmTx);}
+    #communityPage .cmHdrSub{color:var(--cmTxd);}
+    #communityPage .cmHdrAv{border:1px solid var(--cmBdrh);}
+    #communityPage .cmHdr.chat .cmHdrBack{color:var(--cmTx);}
+    #communityPage .cmHdr.chat .cmHdrBack:hover{background:var(--cmAccentDim);}
+    #communityPage .cmHdrTap.on:active{background:var(--cmAccentDim);}
+    @media(max-width:480px){
+      .cmHdr.chat{padding:.6rem .8rem;}
+      .cmHdrAv{width:36px;height:36px;font-size:.92rem;}
+      .cmHdrName{font-size:.9rem;}
+    }
+
     /* Comments list area */
     .cpBody{
       flex:1;
@@ -2859,6 +2925,372 @@
       }
     }
 
+
+    /* =========================================================
+       RANKING SECTION (#rankSec) — sits directly ABOVE
+       #subOverview on the home page.
+
+       4 boards: LEVEL · CRED · LIKES · BOOKMARKS, shown ONE AT A
+       TIME in a full-bleed snap carousel — same idea as the hero
+       slide (#topSlide), edge to edge on every device:
+         touch    → swipe left / right
+         pointer  → arrows (≥760px) + dots
+       On a wide monitor the card still runs edge to edge while its
+       content is centred to a ~1040px column, so a ranking row is
+       never stretched across the whole screen.
+       Each card's list scrolls on its own (infinite, 20 at a time,
+       until the true end) and pins YOUR rank at the bottom. Data
+       comes from get_rank_board()/get_rank_me() and self-refreshes
+       — see the rank module script.
+       ========================================================= */
+    #rankSec{ padding: 4rem 0 0; }
+    .rkHdr{
+      width:100%; margin:0 auto;
+      padding:0 clamp(.9rem,2.5vw,2rem);
+      box-sizing:border-box;
+    }
+    /* live dot in the subtitle */
+    .rkLive{
+      display:inline-block; width:6px; height:6px; border-radius:50%;
+      background:#2ecf7e; box-shadow:0 0 8px #2ecf7e;
+      margin-right:.45rem; vertical-align:middle;
+    }
+    @media(prefers-reduced-motion:no-preference){
+      .rkLive{ animation:rkPulse 2s ease-in-out infinite; }
+      @keyframes rkPulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+    }
+
+    /* ── FOUR SEPARATE BOXES — never one connected band ──
+       Each board is its own closed panel: border on all four sides,
+       rounded corners, its own shadow, and a real gap between it and
+       the next. Two layouts, one markup:
+
+         ≤1000px  the track is a snap-scroll strip — you slide the
+                  boxes left → right, one snapping to centre with the
+                  next one peeking, so it always reads as separate
+                  cards. Swipe on touch, arrows + dots on pointer.
+         >1000px  the track becomes a 4-column grid — all four boxes
+                  on ONE line, arrows and dots gone.
+
+       (This replaced a full-bleed one-per-slide carousel whose cards
+       had no side borders and no radius, which made the four run
+       together as a single band.) */
+    .rkWrap{ position:relative; margin-top:2.2rem; }
+    .rkTrack{
+      position:relative;          /* offsetParent for the cards — slideTo() maths */
+      display:flex;
+      width:100%;
+      box-sizing:border-box;
+      margin:0;
+      padding:.4rem clamp(.9rem,2.5vw,2rem) 1rem;
+      gap:1rem;                   /* the space that keeps the boxes apart */
+      overflow-x:auto;
+      overscroll-behavior-x:contain;
+      scroll-snap-type:x mandatory;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none; -ms-overflow-style:none;
+      scroll-behavior:smooth;
+    }
+    .rkTrack::-webkit-scrollbar{ display:none; }
+    @media(prefers-reduced-motion:reduce){ .rkTrack{ scroll-behavior:auto; } }
+
+    /* ── Card shell — a closed box, same language as .subOvCard ── */
+    .rkCard{
+      flex:0 0 clamp(290px, 90%, 470px);
+      min-width:0;
+      scroll-snap-align:center;
+      scroll-snap-stop:always;
+      background:color-mix(in srgb, var(--sur) 88%, transparent);
+      border:1px solid var(--bdr);      /* ALL four sides */
+      border-radius:14px;
+      box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09);
+      display:flex; flex-direction:column;
+      overflow:hidden;                  /* clip the list to the rounded corners */
+      box-sizing:border-box;
+      transition:transform .28s, box-shadow .28s;
+    }
+
+    /* ── >1000px: all four boxes on one line, carousel chrome off ── */
+    @media (min-width:1001px){
+      .rkTrack{
+        display:grid;
+        grid-template-columns:repeat(4,1fr);
+        gap:1.4rem;
+        overflow:visible;
+        scroll-snap-type:none;
+        padding:.4rem clamp(.9rem,2.5vw,2rem) 0;
+      }
+      .rkCard{ flex:none; width:auto; }
+      .rkNav, .rkDots{ display:none !important; }
+      @media(hover:hover){ .rkCard:hover{ transform:translateY(-4px); } }
+    }
+
+    /* ── Nav arrows (pointer devices only) ── */
+    .rkNav{
+      position:absolute; top:50%; transform:translateY(-50%);
+      z-index:3;
+      width:42px; height:42px; border-radius:50%;
+      display:none; align-items:center; justify-content:center;
+      border:1px solid var(--bdrh);
+      background:color-mix(in srgb, var(--sur) 92%, transparent);
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+      color:var(--tx); cursor:pointer;
+      box-shadow:0 4px 14px rgba(0,0,0,.22);
+      transition:border-color .2s, background .2s, opacity .2s, transform .2s;
+    }
+    .rkNav svg{ width:18px; height:18px; display:block; }
+    .rkNav--prev{ left:1rem; }
+    .rkNav--next{ right:1rem; }
+    .rkNav:hover{ border-color:var(--pg); background:var(--pdim); }
+    .rkNav:active{ transform:translateY(-50%) scale(.94); }
+    .rkNav[disabled]{ opacity:.25; pointer-events:none; }
+    @media (hover:hover) and (min-width:760px){ .rkNav{ display:flex; } }
+
+    /* ── Dots ── */
+    .rkDots{
+      display:flex; justify-content:center; align-items:center; gap:.5rem;
+      padding:1rem 0 0;
+    }
+    .rkDot{
+      width:7px; height:7px; border-radius:99px; padding:0;
+      border:none; cursor:pointer;
+      background:var(--bdrh);
+      transition:width .25s, background .25s;
+    }
+    .rkDot.on{ width:22px; background:var(--pg); }
+
+    /* ── Card header ── */
+    .rkCardHdr{
+      display:flex; align-items:center; gap:.85rem;
+      padding:1.35rem 1.3rem 1.1rem;
+      border-bottom:1px solid var(--bdr);
+      flex-shrink:0;
+    }
+    .rkIco{
+      width:44px; height:44px; border-radius:11px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      border:1px solid var(--bdrh);
+      background:color-mix(in srgb, var(--tc) 8%, transparent);
+    }
+    .rkIco svg{ width:22px; height:22px; display:block; }
+    .rkName{
+      font-family:var(--fd); font-size:1.12rem; font-weight:800;
+      letter-spacing:.1em; color:var(--tx); line-height:1.2;
+    }
+    .rkSub{
+      font-family:var(--fm); font-size:.6rem; letter-spacing:.14em;
+      color:var(--txd); margin-top:.26rem; text-transform:uppercase;
+    }
+
+    /* ── Scrollable list ── */
+    .rkList{
+      flex:1;
+      max-height:clamp(24rem, 62vh, 38rem);
+      overflow-y:auto;
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:thin;
+      scrollbar-color:var(--bdrh) transparent;
+      padding:.35rem .5rem;
+    }
+    .rkList::-webkit-scrollbar{ width:5px; }
+    .rkList::-webkit-scrollbar-thumb{ background:var(--bdrh); border-radius:99px; }
+    .rkList::-webkit-scrollbar-track{ background:transparent; }
+
+    .rkRow{
+      display:flex; align-items:center; gap:.8rem;
+      padding:.72rem .8rem;
+      border-radius:10px;
+      cursor:pointer;
+      transition:background .2s;
+    }
+    .rkRow:hover{ background:var(--pdim); }
+    .rkRow:active{ transform:scale(.99); }
+    .rkRow.me{
+      background:color-mix(in srgb, var(--tc) 12%, transparent);
+      outline:1px solid var(--bdrh);
+    }
+    /* rank number chip */
+    .rkPos{
+      width:30px; flex-shrink:0; text-align:center;
+      font-family:var(--fm); font-size:.74rem; font-weight:700;
+      color:var(--txd); letter-spacing:.02em;
+    }
+    .rkPos--1{ color:#fcd34d; }
+    .rkPos--2{ color:#cbd5e1; }
+    .rkPos--3{ color:#d8a37a; }
+    .rkAv{
+      width:42px; height:42px; border-radius:50%; flex-shrink:0;
+      overflow:hidden; display:flex; align-items:center; justify-content:center;
+      font-family:var(--fb); font-size:.95rem; font-weight:700; color:#fff;
+      background:linear-gradient(135deg,var(--pb),var(--pg));
+      border:1px solid var(--bdrh);
+    }
+    .rkAv img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .rkNm{
+      flex:1; min-width:0;
+      font-family:var(--fb); font-size:.98rem; font-weight:600; color:var(--tx);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .rkVal{
+      flex-shrink:0;
+      font-family:var(--fm); font-size:.82rem; font-weight:700;
+      color:var(--ps); letter-spacing:.04em;
+    }
+    /* list states */
+    .rkNote{
+      font-family:var(--fm); font-size:.58rem; letter-spacing:.16em;
+      color:var(--txd); text-align:center; padding:1.4rem .5rem;
+    }
+    .rkSkel{
+      height:42px; margin:.6rem .8rem; border-radius:10px;
+      background:linear-gradient(90deg, var(--bdr) 25%, var(--bdrh) 50%, var(--bdr) 75%);
+      background-size:200% 100%;
+    }
+    @media(prefers-reduced-motion:no-preference){
+      .rkSkel{ animation:rkShim 1.3s linear infinite; }
+      @keyframes rkShim{ to{ background-position:-200% 0; } }
+    }
+
+    /* ── Pinned "your rank" footer ── */
+    .rkMine{
+      flex-shrink:0;
+      display:flex; align-items:center; gap:.6rem;
+      padding:.95rem 1.1rem;
+      border-top:1px solid var(--bdr);
+      background:color-mix(in srgb, var(--tc) 6%, transparent);
+      font-family:var(--fm); font-size:.66rem; letter-spacing:.1em;
+      color:var(--txd);
+      min-height:3.2rem; box-sizing:border-box;
+      cursor:default;
+    }
+    .rkMine.tap{ cursor:pointer; }
+    .rkMine.tap:hover{ background:var(--pdim); }
+    .rkMineLbl{ flex-shrink:0; text-transform:uppercase; }
+    .rkMinePos{
+      margin-left:auto; flex-shrink:0;
+      font-weight:700; color:var(--ps); font-size:.82rem; letter-spacing:.04em;
+    }
+    .rkMineOf{ flex-shrink:0; opacity:.65; }
+
+    /* ── Per-board accents ──
+       The whole border is tinted and the card keeps its drop shadow plus
+       a soft coloured glow, so each board reads as its own lifted box.
+       (These used to be inset-only shadows from the full-bleed layout,
+       which silently cancelled .rkCard's drop shadow and flattened the
+       four cards back into one sheet.) */
+    .rkCard--level     { border-color:#C4B5FD; box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 24px rgba(168,85,247,.18); }
+    .rkCard--level     .rkIco{ border-color:#C4B5FD; color:#a855f7; }
+    .rkCard--level     .rkName{ color:#a855f7; }
+    .rkCard--cred      { border-color:#fcd34d; box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 24px rgba(234,179,8,.18); }
+    .rkCard--cred      .rkIco{ border-color:#fcd34d; color:#eab308; }
+    .rkCard--cred      .rkName{ color:#eab308; }
+    .rkCard--likes     { border-color:#fda4af; box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 24px rgba(244,63,94,.18); }
+    .rkCard--likes     .rkIco{ border-color:#fda4af; color:#f43f5e; }
+    .rkCard--likes     .rkName{ color:#f43f5e; }
+    .rkCard--bookmarks { border-color:#93c5fd; box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 24px rgba(59,130,246,.18); }
+    .rkCard--bookmarks .rkIco{ border-color:#93c5fd; color:#3b82f6; }
+    .rkCard--bookmarks .rkName{ color:#3b82f6; }
+    @media(hover:hover){
+      .rkCard--level:hover    { box-shadow:0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 40px rgba(168,85,247,.32); }
+      .rkCard--cred:hover     { box-shadow:0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 40px rgba(234,179,8,.32); }
+      .rkCard--likes:hover    { box-shadow:0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 40px rgba(244,63,94,.32); }
+      .rkCard--bookmarks:hover{ box-shadow:0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 40px rgba(59,130,246,.32); }
+    }
+
+    @media (prefers-reduced-motion:reduce){
+      .rkRow{ transition:none; }
+    }
+
+    /* ── "View all" strip — the last thing in every box. The box only
+       ever holds the top 10; this (and any row, and the footer) opens
+       the dedicated full ranking page. ── */
+    .rkAll{
+      display:block; width:calc(100% - 1.6rem);
+      margin:.5rem .8rem .3rem;
+      padding:.7rem .8rem;
+      border:1px dashed var(--bdrh);
+      border-radius:10px;
+      background:none;
+      cursor:pointer;
+      font-family:var(--fm); font-size:.6rem; font-weight:700;
+      letter-spacing:.16em; color:var(--txd);
+      transition:border-color .2s, color .2s, background .2s;
+    }
+    .rkAll:hover{ border-color:var(--pg); color:var(--ps); background:var(--pdim); }
+    .rkAll:active{ transform:scale(.99); }
+
+    /* ═══════════════════════════════════════════════════════════
+       FULL RANKING PAGE (#rankPage)
+       Dedicated page, same overlay pattern as #notifPage: fixed,
+       slides in from the right, ← in the header closes it. Reuses
+       .rkRow / .rkAv / .rkPos / .rkVal so a row looks identical to
+       the one in the box the user tapped.
+       ═══════════════════════════════════════════════════════════ */
+    #rankPage{
+      position:fixed;inset:0;z-index:525;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #rankPage.open{transform:translateX(0);}
+    #rankPage,#rankPage *{
+      --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
+      --tx:var(--vtx);--txd:var(--vtxd);
+      --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #rankPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
+    #rankPage .subPgTitle{color:var(--tx);}
+    .rkPgBdy{max-width:640px;margin:0 auto;padding:1.2rem 1.1rem 6rem;}
+
+    /* board switcher */
+    .rkPgTabs{
+      display:flex; gap:.5rem;
+      overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
+      padding-bottom:.2rem; margin-bottom:1rem;
+    }
+    .rkPgTabs::-webkit-scrollbar{ display:none; }
+    .rkPgTab{
+      flex:0 0 auto;
+      padding:.55rem 1rem;
+      border:1px solid var(--bdr); border-radius:999px;
+      background:none; cursor:pointer;
+      font-family:var(--fm); font-size:.62rem; font-weight:700;
+      letter-spacing:.14em; color:var(--txd);
+      transition:border-color .2s, color .2s, background .2s;
+    }
+    .rkPgTab:hover{ border-color:var(--bdrh); color:var(--tx); }
+    .rkPgTab.on{
+      border-color:var(--pg); color:var(--ps);
+      background:var(--pdim);
+    }
+
+    /* your rank, above the list */
+    .rkPgMine{
+      display:flex; align-items:center; gap:.6rem;
+      padding:1rem 1.1rem; margin-bottom:1rem;
+      border:1px solid var(--bdr); border-radius:12px;
+      background:var(--sur);
+      font-family:var(--fm); font-size:.66rem; letter-spacing:.1em;
+      color:var(--txd);
+      min-height:3.2rem; box-sizing:border-box;
+    }
+    .rkPgMine.tap{ cursor:pointer; }
+    .rkPgMine.tap:hover{ border-color:var(--pg); }
+
+    /* the list itself — the PAGE scrolls, not this box */
+    .rkPgList{
+      display:flex; flex-direction:column; gap:.15rem;
+      border:1px solid var(--bdr); border-radius:12px;
+      background:var(--sur);
+      padding:.5rem;
+    }
+    .rkPgEnd{
+      font-family:var(--fm); font-size:.54rem; letter-spacing:.2em;
+      color:var(--txd); opacity:.6; text-align:center;
+      padding:1.2rem 0 .2rem;
+    }
 
     /* ── Section wrapper ── */
     #subOverview {
@@ -5920,6 +6352,601 @@ body{background:var(--bg);}
        │   ├─ Premium Plan Card
        │   └─ Max Plan Card
        ========================================================= -->
+  <!-- =========================================================
+       RANKING SECTION
+       Four live leaderboards — LEVEL · CRED · LIKES · BOOKMARKS —
+       sitting directly above SUBSCRIPTION.
+       ├─ Section header (.rkHdr) — reuses the .fsHdr/.secT pattern
+       ├─ .rkWrap
+       │   ├─ .rkNav ×2 — arrows (pointer devices, ≥760px)
+       │   └─ .rkTrack (#rkGrid) → 4 × .rkCard, built by the module
+       │        ├─ header  : icon + board name
+       │        ├─ .rkList : the ranking itself — its OWN vertical
+       │        │            scroll, paged 20 at a time to the real end
+       │        └─ .rkMine : YOUR rank, pinned at the bottom of the box
+       └─ .rkDots — which board you're on
+       ONE board per slide on every device, full-bleed edge to edge
+       like the hero slide: swipe on touch, arrows/dots on desktop.
+       Data: get_rank_board() / get_rank_me() — auto-refreshes.
+       ========================================================= -->
+  <section id="rankSec" aria-labelledby="rkTitle">
+    <div class="rkHdr fsHdr">
+      <div class="secT" id="rkTitle">RANKING <span class="s">✦</span></div>
+      <div class="secSub"><span class="rkLive" aria-hidden="true"></span>TOP ARTISTS · LIVE</div>
+    </div>
+    <div class="rkWrap">
+      <button class="rkNav rkNav--prev" id="rkPrev" type="button" aria-label="Previous board">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="rkTrack" id="rkGrid" role="group" aria-label="Ranking boards"></div>
+      <button class="rkNav rkNav--next" id="rkNext" type="button" aria-label="Next board">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div class="rkDots" id="rkDots" role="tablist" aria-label="Board"></div>
+  </section>
+
+  <script>
+  /* ── Ranking boards ───────────────────────────────────────────
+     Four independent boards, one card each. Every card owns its
+     own paging cursor + scroll listener, so scrolling one board to
+     the end never touches the others.
+
+     Server side (SECURITY DEFINER, search_path pinned):
+       get_rank_board(board, lim, off) -> rnk, uid, username,
+                                          avatar_url, score, lvl, total
+       get_rank_me(board)              -> rnk, score, lvl, total
+     Scores are derived, never stored: LEVEL = the same XP formula as
+     get_artist_progress(); CRED = profiles.cred_received_count;
+     LIKES / BOOKMARKS = totals RECEIVED across the artist's approved
+     artworks. Ties share a rank (two #1s, then #3) — rank() does that.
+
+     Live update: a 45s tick, but only while the section is actually
+     on screen (IntersectionObserver) and the tab is visible, so an
+     idle page makes zero requests. A repaint only happens when the
+     data signature really changed, and a board the user has scrolled
+     into is left alone until they scroll back to the top — nothing
+     ever yanks under their thumb. */
+  (function () {
+    'use strict';
+
+    var TICK_MS = 45000;    /* live refresh cadence */
+    var TOP = 10;           /* the box shows the TOP 10 only — everything else
+                               lives on the full ranking page (openRankPage) */
+    var PG_PAGE = 50;       /* full page: rows per fetch (server caps lim at 50) */
+    var NEAR_END = 240;     /* px from the bottom that triggers the next page */
+
+    var BOARDS = [
+      { key:'level',     name:'LEVEL',     sub:'By XP',              unit:'lv',
+        icon:'<path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12Z"/>' },
+      { key:'cred',      name:'CRED',      sub:'Given by artists',   unit:'n',
+        icon:'<path d="M12 2 4 5v6c0 5 3.4 9.2 8 11 4.6-1.8 8-6 8-11V5Z"/><path d="m9 12 2 2 4-4"/>' },
+      { key:'likes',     name:'LIKES',     sub:'Received on artwork', unit:'n',
+        icon:'<path d="M12 20.3 4.8 13a4.6 4.6 0 1 1 6.5-6.5l.7.7.7-.7A4.6 4.6 0 1 1 19.2 13Z"/>' },
+      { key:'bookmarks', name:'BOOKMARKS', sub:'Saved by others',    unit:'n',
+        icon:'<path d="M6.5 3.5h11V21L12 16.8 6.5 21Z"/>' }
+    ];
+
+    var state = {};   /* key -> { rows, total, off, done, busy, sig, listEl, mineEl, dirty } */
+    var timer = null, seen = false, started = false;
+
+    function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
+    function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
+    function el (tag, cls, text) {
+      var e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text != null) e.textContent = text;
+      return e;
+    }
+    function num (n) { return (Number(n) || 0).toLocaleString(); }
+    function thumb (u) {
+      if (!u) return null;
+      return (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(u) : u;
+    }
+    function valueOf (b, row) {
+      return b.unit === 'lv' ? ('LV ' + (Number(row.lvl) || 1)) : num(row.score);
+    }
+
+    /* ── card shell ── */
+    function buildCards () {
+      var grid = document.getElementById('rkGrid');
+      if (!grid) return false;
+      grid.innerHTML = '';
+      BOARDS.forEach(function (b) {
+        var card = el('article', 'rkCard rkCard--' + b.key);
+
+        var hdr = el('header', 'rkCardHdr');
+        var ico = el('span', 'rkIco');
+        ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + b.icon + '</svg>';
+        var head = el('div', 'rkHead');
+        head.appendChild(el('div', 'rkName', b.name));
+        head.appendChild(el('div', 'rkSub', b.sub));
+        hdr.appendChild(ico); hdr.appendChild(head);
+
+        var list = el('div', 'rkList');
+        list.id = 'rkList-' + b.key;
+        list.appendChild(el('div', 'rkSkel'));
+        list.appendChild(el('div', 'rkSkel'));
+        list.appendChild(el('div', 'rkSkel'));
+
+        var mine = el('footer', 'rkMine');
+        mine.id = 'rkMine-' + b.key;
+        mine.appendChild(el('span', 'rkMineLbl', 'Your rank'));
+
+        card.appendChild(hdr); card.appendChild(list); card.appendChild(mine);
+        grid.appendChild(card);
+
+        state[b.key] = { rows: [], total: 0, done: false, busy: false,
+                         sig: '', listEl: list, mineEl: mine, dirty: false };
+
+        /* No paging in the box any more — it holds the TOP 10, full stop.
+           The only thing this listener does is hold a live refresh back
+           until the user has scrolled the list to the top again. */
+        list.addEventListener('scroll', function () {
+          var s = state[b.key];
+          if (s.dirty && list.scrollTop < 8) { s.dirty = false; reload(b); }
+        }, { passive: true });
+      });
+      return true;
+    }
+
+    /* ── Carousel: ONE board per slide, on every device ───────────
+       The track is a plain CSS snap-scroller, so a swipe is a native
+       swipe — no drag JS, no jank. This only mirrors the scroll
+       position into the dots/arrows, and drives the track on click. */
+    var track, dotsWrap, prevBtn, nextBtn, cur = 0;
+
+    /* A card is no longer one track wide (they're separate boxes with a
+       gap and a peek), so slide/sync work off each card's real position
+       inside the track rather than index × viewport width. */
+    function cardAt (i) { return (track && track.children[i]) ? track.children[i] : null; }
+    function centreOf (c) { return c.offsetLeft + c.clientWidth / 2; }
+
+    function slideTo (i) {
+      if (!track) return;
+      i = Math.max(0, Math.min(BOARDS.length - 1, i));
+      var c = cardAt(i);
+      if (!c) return;
+      track.scrollTo({ left: centreOf(c) - track.clientWidth / 2, behavior: 'smooth' });
+    }
+    function syncNav () {
+      if (!track) return;
+      /* whichever card sits nearest the middle of the strip is "current" */
+      var mid = track.scrollLeft + track.clientWidth / 2, best = 0, bd = Infinity;
+      for (var i = 0; i < BOARDS.length; i++) {
+        var c = cardAt(i);
+        if (!c) continue;
+        var d = Math.abs(centreOf(c) - mid);
+        if (d < bd) { bd = d; best = i; }
+      }
+      cur = best;
+      if (dotsWrap) {
+        var dots = dotsWrap.children;
+        for (var k = 0; k < dots.length; k++) {
+          dots[k].classList.toggle('on', k === cur);
+          dots[k].setAttribute('aria-selected', k === cur ? 'true' : 'false');
+        }
+      }
+      if (prevBtn) prevBtn.disabled = (cur === 0);
+      if (nextBtn) nextBtn.disabled = (cur === BOARDS.length - 1);
+    }
+    function buildNav () {
+      track    = document.getElementById('rkGrid');
+      dotsWrap = document.getElementById('rkDots');
+      prevBtn  = document.getElementById('rkPrev');
+      nextBtn  = document.getElementById('rkNext');
+      if (!track) return;
+
+      if (dotsWrap) {
+        dotsWrap.innerHTML = '';
+        BOARDS.forEach(function (b, i) {
+          var d = el('button', 'rkDot' + (i === 0 ? ' on' : ''));
+          d.type = 'button';
+          d.setAttribute('role', 'tab');
+          d.setAttribute('aria-label', b.name);
+          d.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+          d.onclick = function () { slideTo(i); };
+          dotsWrap.appendChild(d);
+        });
+      }
+      if (prevBtn) prevBtn.onclick = function () { slideTo(cur - 1); };
+      if (nextBtn) nextBtn.onclick = function () { slideTo(cur + 1); };
+
+      var raf = null;
+      track.addEventListener('scroll', function () {
+        if (raf) return;
+        raf = requestAnimationFrame(function () { raf = null; syncNav(); });
+      }, { passive: true });
+      /* a rotate/resize changes the card width — re-anchor on the board the
+         user was actually looking at, don't drift mid-way. Above 1000px the
+         track is a grid (no scrolling), so this settles harmlessly at 0. */
+      window.addEventListener('resize', function () {
+        var c = cardAt(cur);
+        if (c) track.scrollLeft = centreOf(c) - track.clientWidth / 2;
+        syncNav();
+      });
+      syncNav();
+    }
+
+    /* ── fetch the TOP 10 for a box (one call, no paging) ── */
+    async function loadTop (b) {
+      var s = state[b.key], c = db();
+      if (!s || s.busy) return;
+      if (!c) { note(s, 'RANKING UNAVAILABLE'); return; }
+      s.busy = true;
+      try {
+        var r = await c.rpc('get_rank_board', { board: b.key, lim: TOP, off: 0 });
+        if (r.error) throw r.error;
+        var rows = r.data || [];
+        s.rows  = rows;
+        s.total = rows.length ? (Number(rows[0].total) || 0) : 0;
+        s.done  = true;
+        render(b);
+      } catch (e) {
+        if (!s.rows.length) note(s, 'COULDN\u2019T LOAD RANKING');
+      } finally {
+        s.busy = false;
+      }
+    }
+
+    function note (s, msg) {
+      s.listEl.innerHTML = '';
+      s.listEl.appendChild(el('div', 'rkNote', msg));
+    }
+
+    /* ── one ranking row, shared by the box and the full page ──
+       onTap decides what a row does: in a BOX it opens the full ranking
+       page (Koe's rule — tapping any rank goes to the dedicated page);
+       on the PAGE it opens that artist's profile. */
+    function rowEl (b, r, uid, onTap) {
+      var row = el('div', 'rkRow' + (uid && r.uid === uid ? ' me' : ''));
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+
+      var pos = Number(r.rnk) || 0;
+      row.appendChild(el('span', 'rkPos' + (pos <= 3 ? ' rkPos--' + pos : ''), String(pos)));
+
+      var av = el('span', 'rkAv');
+      var src = thumb(r.avatar_url);
+      if (src) {
+        var im = document.createElement('img');
+        im.src = src; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.draggable = false;
+        im.onerror = function () { av.textContent = (r.username || '?').charAt(0).toUpperCase(); };
+        av.appendChild(im);
+      } else {
+        av.textContent = (r.username || '?').charAt(0).toUpperCase();
+      }
+      row.appendChild(av);
+
+      row.appendChild(el('span', 'rkNm', r.username || 'Artist'));
+      row.appendChild(el('span', 'rkVal', valueOf(b, r)));
+
+      row.onclick = function () { onTap(r); };
+      row.onkeydown = function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onTap(r); }
+      };
+      return row;
+    }
+
+    /* ── paint a box: TOP 10 + a "view all" strip ──
+       Signature-guarded, so the 45s tick never causes a flicker or a
+       scroll jump when nothing actually moved. */
+    function render (b) {
+      var s = state[b.key];
+      var uid = me() ? me().id : null;
+      var sig = s.rows.map(function (r) { return r.rnk + ':' + r.uid + ':' + r.score + ':' + r.lvl; })
+                      .join('|') + '#' + s.total + '#' + uid;
+      if (sig === s.sig) return;
+      s.sig = sig;
+
+      var list = s.listEl;
+      list.innerHTML = '';
+
+      if (!s.rows.length) {
+        list.appendChild(el('div', 'rkNote', 'NO RANKED ARTISTS YET'));
+        return;
+      }
+
+      s.rows.forEach(function (r) {
+        list.appendChild(rowEl(b, r, uid, function () { openRankPage(b.key); }));
+      });
+
+      /* Only the top 10 live in the box. Everyone else is one tap away. */
+      var more = s.total > s.rows.length ? (s.total - s.rows.length) : 0;
+      var all = el('button', 'rkAll');
+      all.type = 'button';
+      all.textContent = more
+        ? ('VIEW ALL ' + num(s.total) + ' \u2192')
+        : 'VIEW FULL RANKING \u2192';
+      all.onclick = function () { openRankPage(b.key); };
+      list.appendChild(all);
+    }
+
+    /* ── the pinned "your rank" footer ── */
+    async function loadMine (b) {
+      var s = state[b.key], c = db(), u = me();
+      if (!s) return;
+      var f = s.mineEl;
+      f.innerHTML = '';
+      f.classList.remove('tap');
+      f.onclick = null;
+
+      if (!u) {
+        f.appendChild(el('span', 'rkMineLbl', 'Sign in to see your rank'));
+        f.classList.add('tap');
+        f.onclick = function () { if (typeof openAuthMod === 'function') openAuthMod(); };
+        return;
+      }
+      if (!c) { f.appendChild(el('span', 'rkMineLbl', 'Your rank')); return; }
+
+      f.appendChild(el('span', 'rkMineLbl', 'Your rank'));
+      /* signed in → the footer is a shortcut into the full ranking page */
+      f.classList.add('tap');
+      f.onclick = function () { openRankPage(b.key); };
+      try {
+        var r = await c.rpc('get_rank_me', { board: b.key });
+        if (r.error) throw r.error;
+        var d = (r.data && r.data[0]) || null;
+        if (!d) {
+          /* logged in but nothing scored on this board yet */
+          var un = el('span', 'rkMinePos', 'UNRANKED');
+          f.appendChild(un);
+          return;
+        }
+        f.appendChild(el('span', 'rkMineOf', 'of ' + num(d.total)));
+        var pos = el('span', 'rkMinePos', '#' + num(d.rnk) + ' \u00B7 ' + valueOf(b, d));
+        f.appendChild(pos);
+      } catch (e) {
+        f.appendChild(el('span', 'rkMinePos', '\u2014'));
+      }
+    }
+
+    /* ── refresh one board ── */
+    function reload (b) {
+      loadTop(b);
+      loadMine(b);
+    }
+
+    /* A tick refreshes every board, but a board the user has scrolled
+       into is only marked dirty — it reloads the moment they scroll back
+       to the top, never mid-read. */
+    function tick () {
+      if (document.visibilityState !== 'visible' || !seen) return;
+      BOARDS.forEach(function (b) {
+        var s = state[b.key];
+        if (!s) return;
+        if (s.listEl.scrollTop > 8) { s.dirty = true; loadMine(b); return; }
+        reload(b);
+      });
+    }
+
+    function start () {
+      if (started) return;
+      started = true;
+      BOARDS.forEach(reload);
+      clearInterval(timer);
+      timer = setInterval(tick, TICK_MS);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!buildCards()) return;
+      buildNav();
+      var sec = document.getElementById('rankSec');
+      /* Only wake up once the section is actually scrolled into view —
+         the home page shouldn't fire four RPCs above the fold. */
+      if (sec && 'IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            seen = en.isIntersecting;
+            if (seen) start();
+          });
+        }, { rootMargin: '200px 0px' });
+        io.observe(sec);
+      } else {
+        seen = true; start();
+      }
+      /* coming back to the tab after a while → refresh immediately */
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && started) tick();
+      });
+    });
+
+    /* ═══════════════════════════════════════════════════════════
+       FULL RANKING PAGE (#rankPage)
+       A dedicated page — same overlay pattern as Notifications /
+       Admin Review: slides in from the right, its own header with a
+       ← close button, and it takes the bottom nav out of the way.
+
+       Tapping ANY rank in a box lands here. It lists EVERY ranked
+       artist, not just the top 10, paging 50 at a time until the
+       real end. Board tabs across the top switch between the four
+       boards without leaving the page, and YOUR rank sits in a
+       banner above the list. A row here opens that artist's profile.
+       ═══════════════════════════════════════════════════════════ */
+    var pg = { board: 'level', rows: [], off: 0, total: 0, done: false, busy: false, wired: false };
+
+    function pgBoard () {
+      for (var i = 0; i < BOARDS.length; i++) if (BOARDS[i].key === pg.board) return BOARDS[i];
+      return BOARDS[0];
+    }
+
+    function pgBuildTabs () {
+      var wrap = document.getElementById('rkPgTabs');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      BOARDS.forEach(function (b) {
+        var t = el('button', 'rkPgTab' + (b.key === pg.board ? ' on' : ''), b.name);
+        t.type = 'button';
+        t.setAttribute('role', 'tab');
+        t.setAttribute('aria-selected', b.key === pg.board ? 'true' : 'false');
+        t.onclick = function () {
+          if (pg.board === b.key) return;
+          pg.board = b.key;
+          pgBuildTabs();
+          pgReset();
+        };
+        wrap.appendChild(t);
+      });
+    }
+
+    function pgReset () {
+      pg.rows = []; pg.off = 0; pg.total = 0; pg.done = false;
+      var list = document.getElementById('rkPgList');
+      if (list) {
+        list.innerHTML = '';
+        list.appendChild(el('div', 'rkSkel'));
+        list.appendChild(el('div', 'rkSkel'));
+        list.appendChild(el('div', 'rkSkel'));
+      }
+      var page = document.getElementById('rankPage');
+      if (page) page.scrollTop = 0;
+      pgLoadMine();
+      pgLoad();
+    }
+
+    /* everyone, 50 at a time, until the true end */
+    async function pgLoad () {
+      var c = db(), b = pgBoard();
+      if (pg.busy || pg.done) return;
+      var list = document.getElementById('rkPgList');
+      if (!list) return;
+      if (!c) { list.innerHTML = ''; list.appendChild(el('div', 'rkNote', 'RANKING UNAVAILABLE')); return; }
+      pg.busy = true;
+      try {
+        var r = await c.rpc('get_rank_board', { board: b.key, lim: PG_PAGE, off: pg.off });
+        if (r.error) throw r.error;
+        var rows = r.data || [];
+        if (!pg.off) list.innerHTML = '';               /* clear the skeletons */
+        if (rows.length) pg.total = Number(rows[0].total) || pg.total;
+        pg.rows = pg.rows.concat(rows);
+        pg.off += rows.length;
+        if (rows.length < PG_PAGE || (pg.total && pg.rows.length >= pg.total)) pg.done = true;
+
+        var uid = me() ? me().id : null;
+        rows.forEach(function (row) {
+          list.appendChild(rowEl(b, row, uid, function (rr) {
+            if (!rr.username || typeof openProfileByUsername !== 'function') return;
+            closeRankPage();
+            openProfileByUsername(rr.username, true);
+          }));
+        });
+
+        var end = document.getElementById('rkPgEnd');
+        if (end) {
+          end.textContent = pg.done
+            ? (pg.rows.length ? ('END \u00B7 ' + num(pg.total || pg.rows.length) + ' RANKED ARTISTS') : '')
+            : 'LOADING\u2026';
+        }
+        if (!pg.rows.length) list.appendChild(el('div', 'rkNote', 'NO RANKED ARTISTS YET'));
+      } catch (e) {
+        if (!pg.rows.length) { list.innerHTML = ''; list.appendChild(el('div', 'rkNote', 'COULDN\u2019T LOAD RANKING')); }
+      } finally {
+        pg.busy = false;
+      }
+    }
+
+    async function pgLoadMine () {
+      var box = document.getElementById('rkPgMine'), c = db(), u = me(), b = pgBoard();
+      if (!box) return;
+      box.innerHTML = '';
+      box.classList.remove('tap');
+      box.onclick = null;
+
+      if (!u) {
+        box.appendChild(el('span', 'rkMineLbl', 'Sign in to see your rank'));
+        box.classList.add('tap');
+        box.onclick = function () { if (typeof openAuthMod === 'function') openAuthMod(); };
+        return;
+      }
+      box.appendChild(el('span', 'rkMineLbl', 'Your rank'));
+      if (!c) return;
+      try {
+        var r = await c.rpc('get_rank_me', { board: b.key });
+        if (r.error) throw r.error;
+        var d = (r.data && r.data[0]) || null;
+        if (!d) { box.appendChild(el('span', 'rkMinePos', 'UNRANKED')); return; }
+        box.appendChild(el('span', 'rkMineOf', 'of ' + num(d.total)));
+        box.appendChild(el('span', 'rkMinePos', '#' + num(d.rnk) + ' \u00B7 ' + valueOf(b, d)));
+      } catch (e) {
+        box.appendChild(el('span', 'rkMinePos', '\u2014'));
+      }
+    }
+
+    window.openRankPage = function (boardKey) {
+      var page = document.getElementById('rankPage');
+      if (!page) return;
+      pg.board = boardKey || 'level';
+
+      if (!pg.wired) {
+        pg.wired = true;
+        /* the PAGE is the scroller — page in more rows as it nears the end */
+        page.addEventListener('scroll', function () {
+          if (pg.busy || pg.done) return;
+          if (page.scrollHeight - page.scrollTop - page.clientHeight < NEAR_END) pgLoad();
+        }, { passive: true });
+      }
+
+      page.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      var nav = document.getElementById('bnNav');
+      if (nav) nav.style.display = 'none';
+
+      pgBuildTabs();
+      pgReset();
+    };
+
+    window.closeRankPage = function () {
+      var page = document.getElementById('rankPage');
+      if (!page) return;
+      page.classList.remove('open');
+      var nav = document.getElementById('bnNav');
+      if (nav) nav.style.display = '';
+      if (typeof restoreScroll === 'function') restoreScroll();
+      else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
+    };
+
+    /* Esc closes it, same as the other overlays */
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape') return;
+      var page = document.getElementById('rankPage');
+      if (page && page.classList.contains('open')) closeRankPage();
+    });
+
+    /* Signing in/out changes the "you" highlight and the footer, so let the
+       auth code nudge us. Safe to call any time; a no-op before start(). */
+    window.rkRefresh = function () {
+      if (started) BOARDS.forEach(reload);
+      var page = document.getElementById('rankPage');
+      if (page && page.classList.contains('open')) { pgLoadMine(); pgReset(); }
+    };
+  })();
+  </script>
+
+  <!-- =========================================================
+       FULL RANKING PAGE — opened by tapping any rank in a board
+       box (openRankPage). Same overlay pattern as #notifPage:
+       slides in from the right, ← closes it.
+       ├─ .subPgHdr — title + ← close button
+       └─ .rkPgBdy
+           ├─ #rkPgTabs — LEVEL / CRED / LIKES / BOOKMARKS
+           ├─ #rkPgMine — YOUR rank on the active board
+           ├─ #rkPgList — EVERY ranked artist, paged 50 at a time
+           └─ #rkPgEnd  — end-of-list marker
+       ========================================================= -->
+  <div id="rankPage" role="dialog" aria-modal="true" aria-label="Full ranking">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeRankPage()" aria-label="Close ranking">←</button>
+      <div class="subPgTitle">RANKING <span class="s">✦</span></div>
+    </div>
+    <div class="rkPgBdy">
+      <div class="rkPgTabs" id="rkPgTabs" role="tablist" aria-label="Ranking board"></div>
+      <div class="rkPgMine" id="rkPgMine"></div>
+      <div class="rkPgList" id="rkPgList"></div>
+      <div class="rkPgEnd" id="rkPgEnd"></div>
+    </div>
+  </div>
+
   <section id="subOverview" aria-labelledby="subOvTitle">
 
     <!-- ── Section header ── -->
@@ -7003,12 +8030,92 @@ body{background:var(--bg);}
        ========================================================= -->
   <div id="communityPage">
     <!-- Header -->
-    <div class="cmHdr">
+    <div class="cmHdr" id="cmHdr">
       <button class="cmHdrBack" id="cmHdrBack" onclick="cmCloseChat()" title="Back" aria-label="Back">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <!-- ← proper left arrow (shaft + head), not a bare chevron -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       </button>
+      <!-- Grid title (centred) — shown on the Community/Friends scroll -->
       <div class="cmHdrTitle"><span id="cmHdrTitleTxt">COMMUNITY</span> <span class="s">✦</span></div>
+      <!-- Chat banner (left-aligned) — shown while a channel or DM is open -->
+      <div class="cmHdrChat" id="cmHdrChat">
+        <div class="cmHdrTap" id="cmHdrTap">
+          <div class="cmHdrAv" id="cmHdrAv">
+            <img id="cmHdrAvImg" alt="" style="display:none;">
+            <span id="cmHdrAvTxt">?</span>
+          </div>
+          <div class="cmHdrInfo">
+            <div class="cmHdrName" id="cmHdrName">Chat</div>
+            <div class="cmHdrSub" id="cmHdrSub"></div>
+          </div>
+        </div>
+      </div>
     </div>
+    <script>
+    /* ── Community header modes ───────────────────────────────────
+       ONE header bar, two faces:
+         cmHdrHomeMode()  → centred "COMMUNITY ✦" (the grid)
+         cmHdrChatMode(o) → "←  (avatar)  Name / subtitle" banner
+       Both are global because two separate modules drive them: the
+       DM module (openThread/closeThread) and the community module
+       (cmOpenCommunity/cmCloseChat).
+
+       o = { name, sub, subDot, avatar, letter, emoji, grad, tap }
+         avatar → image URL (thumbnailed if getThumbnailUrl exists)
+         emoji  → fallback glyph (built-in channels keep their chip)
+         letter → fallback initial when there's no avatar/emoji
+         grad   → CSS background for the avatar chip
+         subDot → prepend a green presence dot to the subtitle
+         tap    → fn to run when the avatar/name is tapped (or null) */
+    (function () {
+      'use strict';
+      function $ (id) { return document.getElementById(id); }
+      window.cmHdrChatMode = function (o) {
+        o = o || {};
+        var hdr = $('cmHdr'); if (!hdr) return;
+        var img = $('cmHdrAvImg'), txt = $('cmHdrAvTxt'), av = $('cmHdrAv');
+        var nm  = $('cmHdrName'), sub = $('cmHdrSub'), tap = $('cmHdrTap');
+
+        if (av)  av.style.background = o.grad || 'linear-gradient(135deg,var(--pb),var(--pg))';
+        if (img && txt) {
+          if (o.avatar) {
+            img.src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(o.avatar) : o.avatar;
+            img.style.display = 'block'; txt.style.display = 'none';
+            /* a dead/expired avatar URL falls back to the initial */
+            img.onerror = function () {
+              img.style.display = 'none'; txt.style.display = '';
+              txt.textContent = o.emoji || o.letter || '?';
+            };
+          } else {
+            img.removeAttribute('src'); img.style.display = 'none';
+            txt.style.display = ''; txt.textContent = o.emoji || o.letter || '?';
+          }
+        }
+        if (nm)  nm.textContent = o.name || 'Chat';
+        if (sub) {
+          sub.innerHTML = '';
+          if (o.subDot) { var d = document.createElement('span'); d.className = 'dot'; sub.appendChild(d); }
+          if (o.sub) { var s = document.createElement('span'); s.textContent = o.sub; sub.appendChild(s); }
+          sub.style.display = (o.sub || o.subDot) ? 'flex' : 'none';
+        }
+        if (tap) {
+          tap.onclick = o.tap || null;
+          tap.classList.toggle('on', !!o.tap);
+          if (o.tap) { tap.setAttribute('role', 'button'); tap.setAttribute('tabindex', '0'); }
+          else { tap.removeAttribute('role'); tap.removeAttribute('tabindex'); }
+        }
+        hdr.classList.add('chat');
+        var back = $('cmHdrBack'); if (back) back.classList.add('show');
+      };
+      window.cmHdrHomeMode = function () {
+        var hdr = $('cmHdr'); if (hdr) hdr.classList.remove('chat');
+        var t = $('cmHdrTitleTxt'); if (t) t.textContent = 'COMMUNITY';
+        var back = $('cmHdrBack'); if (back) back.classList.remove('show');
+        var tap = $('cmHdrTap');
+        if (tap) { tap.onclick = null; tap.classList.remove('on'); }
+      };
+    })();
+    </script>
 
     <div class="cmView" id="cmViewCommunity" style="display:flex;">
 
@@ -7584,8 +8691,20 @@ body{background:var(--bg);}
     var grid = $('cmGridScroll'), chat = $('dmChatView');
     if (grid) grid.style.display = 'none';
     if (chat) chat.style.display = 'flex';
-    var t = $('cmHdrTitleTxt'); if (t) t.textContent = (p.username || 'CHAT').toUpperCase();
-    var back = $('cmHdrBack');  if (back) back.classList.add('show');
+    /* Header becomes the DM banner: avatar + username, tappable → profile */
+    if (typeof cmHdrChatMode === 'function') {
+      cmHdrChatMode({
+        name  : p.username || 'Artist',
+        sub   : 'Tap to view profile',
+        avatar: p.avatar_url || null,
+        letter: (p.username || '?').charAt(0).toUpperCase(),
+        tap   : function () {
+          if (!p.username) return;
+          if (typeof closeCommunityPage === 'function') closeCommunityPage();
+          if (typeof openProfileByUsername === 'function') openProfileByUsername(p.username, true);
+        }
+      });
+    }
     var nav = $('bnNav');       if (nav) nav.style.display = 'none';
     var res = $('dmResults');   if (res) res.innerHTML = '';
     var inp = $('dmSearchInput'); if (inp) inp.value = '';
@@ -7613,8 +8732,7 @@ body{background:var(--bg);}
     clearInterval(dmPoll); dmPoll = null;
     var chat = $('dmChatView'); if (chat) chat.style.display = 'none';
     var grid = $('cmGridScroll'); if (grid) grid.style.display = 'block';
-    var t = $('cmHdrTitleTxt'); if (t) t.textContent = 'COMMUNITY';
-    var back = $('cmHdrBack');  if (back) back.classList.remove('show');
+    if (typeof cmHdrHomeMode === 'function') cmHdrHomeMode();
     var nav = $('bnNav');       if (nav) nav.style.display = '';
     refreshConvos();
   }
@@ -11686,6 +12804,9 @@ function qrMake (text) {
          a signed-out (or newly signed-in) user could be shown the previous
          account's cached profile, community list or chat messages. */
       pfRowCache = {}; cmMineRows = []; cpMsgCache = {}; cmMineCache = {};
+      /* Ranking boards: the "you" row highlight and the pinned Your-rank
+         footer both follow the session, so repaint them on any auth change. */
+      try{ if (typeof window.rkRefresh === 'function') window.rkRefresh(); }catch(e){}
       /* Hide-list follows the session: load on sign-in/restore, clear on
          sign-out, then repaint so the feed reflects it immediately. */
       loadHiddenArtworks().then(function(){
@@ -14103,13 +15224,21 @@ function qrMake (text) {
      an image (picked from the user's own already-posted artworks/
      comics via the + button) AND a caption, and each user can only
      post once every `cooldownMs` (1 hour). */
+  /* icon + grad mirror each card's chip in the grid, so the chat header
+     banner shows the SAME avatar the user just tapped (see .cmCardIcon). */
   var CM_CHANNELS = {
-    official: { name:'DigiArtz Official', desc:'Official community of DigiArtz. Get updates, announcements and more.', readOnly:true },
-    arttalk : { name:'Art Talk',         desc:'Discuss about art, share your thoughts, ask questions and grow together.' },
-    feedback: { name:'Art Feedback',     desc:'Share your work and get constructive feedback from the community.' },
-    collab  : { name:'Collab Hub',       desc:'Find artists to collaborate with on projects and bring ideas to life.' },
-    tips    : { name:'Tips & Resources', desc:'Share helpful tips, tutorials, tools and resources for artists.' },
-    showcase: { name:'Showcase',         desc:'Share your latest work, celebrate progress and inspire others.', type:'showcase', cooldownMs:3600000 }
+    official: { name:'DigiArtz Official', desc:'Official community of DigiArtz. Get updates, announcements and more.', readOnly:true,
+                icon:'🎨', grad:'linear-gradient(135deg,#4c1d95 0%,#7c3aed 55%,#a855f7 100%)' },
+    arttalk : { name:'Art Talk',         desc:'Discuss about art, share your thoughts, ask questions and grow together.',
+                icon:'💬', grad:'linear-gradient(135deg,#0f766e 0%,#0891b2 55%,#22d3ee 100%)' },
+    feedback: { name:'Art Feedback',     desc:'Share your work and get constructive feedback from the community.',
+                icon:'📝', grad:'linear-gradient(135deg,#9d174d 0%,#db2777 55%,#f97316 100%)' },
+    collab  : { name:'Collab Hub',       desc:'Find artists to collaborate with on projects and bring ideas to life.',
+                icon:'🤝', grad:'linear-gradient(135deg,#065f46 0%,#059669 55%,#22d3ee 100%)' },
+    tips    : { name:'Tips & Resources', desc:'Share helpful tips, tutorials, tools and resources for artists.',
+                icon:'💡', grad:'linear-gradient(135deg,#78350f 0%,#b45309 55%,#facc15 100%)' },
+    showcase: { name:'Showcase',         desc:'Share your latest work, celebrate progress and inspire others.', type:'showcase', cooldownMs:3600000,
+                icon:'✦', grad:'linear-gradient(135deg,#701a75 0%,#a21caf 55%,#6366f1 100%)' }
   };
   var cpCurrentChannel = 'arttalk'; /* which channel's messages cpBody is currently showing */
 
@@ -14194,7 +15323,9 @@ function hideCommentThumbnail(){
     if(!chan && /^c:/.test(id)){
       var uc = cmMineCache[id];
       if(uc){
-        chan = { name: uc.name, type: 'chat', readOnly: false };
+        chan = { name: uc.name, desc: uc.description || 'Community', type: 'chat', readOnly: false,
+                 avatar: uc.avatar_url || null,
+                 grad: 'linear-gradient(135deg,#1e3a8a 0%,#3b82f6 55%,#60a5fa 100%)' };
         CM_CHANNELS[id] = chan;
       }
     }
@@ -14211,14 +15342,19 @@ function hideCommentThumbnail(){
     if(inpEl)   inpEl.placeholder = isShowcase ? 'Write a caption for your artwork...' : ('Message #' + chan.name);
     if(attachBtn) attachBtn.style.display = isShowcase ? 'flex' : 'none';
 
-    /* Top page header now reads as the community's own page —
-       swap the generic "COMMUNITY" label for this community's name
-       and reveal the back button, so there's a single header per
-       channel instead of a duplicate title+back row below it. */
-    var pageTitleEl = document.getElementById('cmHdrTitleTxt');
-    if(pageTitleEl) pageTitleEl.textContent = chan.name.toUpperCase();
-    var hdrBack = document.getElementById('cmHdrBack');
-    if(hdrBack) hdrBack.classList.add('show');
+    /* Top page header flips into the chat banner — back arrow, the
+       community's own icon/avatar, its name and its topic line. One
+       header per channel, laid out like any messenger app. */
+    if(typeof cmHdrChatMode === 'function'){
+      cmHdrChatMode({
+        name  : chan.name,
+        sub   : chan.desc || 'Community',
+        avatar: chan.avatar || null,
+        emoji : chan.icon || null,
+        letter: (chan.name || '?').charAt(0).toUpperCase(),
+        grad  : chan.grad || null
+      });
+    }
 
     var grid = document.getElementById('cmGridScroll');
     var chat = document.getElementById('cmChatView');
@@ -14295,11 +15431,8 @@ function hideCommentThumbnail(){
     if(lockNote) lockNote.style.display = 'none';
     var attachBtn = document.getElementById('cpAttachBtn');
     if(attachBtn) attachBtn.style.display = 'none';
-    /* Restore the top page header back to the generic label */
-    var pageTitleEl = document.getElementById('cmHdrTitleTxt');
-    if(pageTitleEl) pageTitleEl.textContent = 'COMMUNITY';
-    var hdrBack = document.getElementById('cmHdrBack');
-    if(hdrBack) hdrBack.classList.remove('show');
+    /* Restore the top page header back to the centred grid title */
+    if(typeof cmHdrHomeMode === 'function') cmHdrHomeMode();
     /* FIX: cmOpenCommunity() is async (it awaits cpLoadComments()) — if the
        user taps back before that fetch resolves, the old call used to finish
        later and blindly re-show #cpBar / re-hide #bnNav on top of whichever
@@ -16287,7 +17420,7 @@ function hideCommentThumbnail(){
   'use strict';
 
   /* ── Sections in scope ── */
-  var SCOPE_IDS = ['topSlide', 'artworks', 'subOverview', 'connect'];
+  var SCOPE_IDS = ['topSlide', 'artworks', 'rankSec', 'subOverview', 'connect'];
 
   /* ── CSS selectors to animate (within scope sections) ── */
   var TARGETS = [
@@ -16299,6 +17432,9 @@ function hideCommentThumbnail(){
     '.awCard',
     /* Subscription overview cards */
     '.subOvCard',
+    /* Ranking boards — same rise-in as the subscription cards below them.
+       (.rkHdr already carries .fsHdr, so the section heading is covered.) */
+    '.rkCard',
     /* Buttons */
     '.upBtn',
     /* Empty states */
@@ -16308,7 +17444,7 @@ function hideCommentThumbnail(){
   ].join(',');
 
   /* ── Staggered groups: cards & grid items get cascade delays ── */
-  var STAGGER_SELECTORS = ['.awCard', '.subOvCard', '.sCard'];
+  var STAGGER_SELECTORS = ['.awCard', '.rkCard', '.subOvCard', '.sCard'];
   var STAGGER_BASE_MS   = 80;   /* ms between each sibling card */
   var STAGGER_MAX_MS    = 560;  /* cap so late cards don't wait forever */
 

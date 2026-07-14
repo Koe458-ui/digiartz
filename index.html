@@ -2925,23 +2925,21 @@
       }
     }
 
-
     /* =========================================================
        RANKING SECTION (#rankSec) — sits directly ABOVE
        #subOverview on the home page.
 
-       4 boards: LEVEL · CRED · LIKES · BOOKMARKS, shown ONE AT A
-       TIME in a full-bleed snap carousel — same idea as the hero
-       slide (#topSlide), edge to edge on every device:
-         touch    → swipe left / right
-         pointer  → arrows (≥760px) + dots
-       On a wide monitor the card still runs edge to edge while its
-       content is centred to a ~1040px column, so a ranking row is
-       never stretched across the whole screen.
-       Each card's list scrolls on its own (infinite, 20 at a time,
-       until the true end) and pins YOUR rank at the bottom. Data
-       comes from get_rank_board()/get_rank_me() and self-refreshes
-       — see the rank module script.
+       Built on the SAME language as the existing COMMUNITY
+       LEADERBOARD in Artist Progress (.xpCard / .xpCardLbl /
+       .xpLbRow / .xpLbRank / .xpLbAva / .xpLbName / .xpLbLvl) —
+       identical card, identical rows, identical 1ST/2ND/3RD
+       medals and tier-painted names. The only additions are a
+       clear per-board heading, a YOUR-RANK line and a VIEW ALL
+       link into the full ranking page.
+
+       4 boards: LEVEL · CRED · LIKES · BOOKMARKS.
+         >1000px  all four on ONE line (grid)
+         ≤1000px  one horizontal snap strip you slide left → right
        ========================================================= */
     #rankSec{ padding: 4rem 0 0; }
     .rkHdr{
@@ -2949,7 +2947,6 @@
       padding:0 clamp(.9rem,2.5vw,2rem);
       box-sizing:border-box;
     }
-    /* live dot in the subtitle */
     .rkLive{
       display:inline-block; width:6px; height:6px; border-radius:50%;
       background:#2ecf7e; box-shadow:0 0 8px #2ecf7e;
@@ -2960,21 +2957,7 @@
       @keyframes rkPulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
     }
 
-    /* ── FOUR SEPARATE BOXES — never one connected band ──
-       Each board is its own closed panel: border on all four sides,
-       rounded corners, its own shadow, and a real gap between it and
-       the next. Two layouts, one markup:
-
-         ≤1000px  the track is a snap-scroll strip — you slide the
-                  boxes left → right, one snapping to centre with the
-                  next one peeking, so it always reads as separate
-                  cards. Swipe on touch, arrows + dots on pointer.
-         >1000px  the track becomes a 4-column grid — all four boxes
-                  on ONE line, arrows and dots gone.
-
-       (This replaced a full-bleed one-per-slide carousel whose cards
-       had no side borders and no radius, which made the four run
-       together as a single band.) */
+    /* ── Board strip / grid ── */
     .rkWrap{ position:relative; margin-top:2.2rem; }
     .rkTrack{
       position:relative;          /* offsetParent for the cards — slideTo() maths */
@@ -2982,35 +2965,144 @@
       width:100%;
       box-sizing:border-box;
       margin:0;
-      padding:.4rem clamp(.9rem,2.5vw,2rem) 1rem;
-      gap:1rem;                   /* the space that keeps the boxes apart */
+      padding:.4rem clamp(.9rem,2.5vw,2rem) 2rem;
+      gap:1rem;
+      /* Left/right ONLY. overflow-x:auto alone is a trap: per spec, once one
+         axis isn't `visible` the other computes from `visible` to `auto`, so
+         the strip quietly became vertically scrollable too — and the fade-up
+         reveal (a translateY on each card) gave it something to scroll, which
+         is why the boxes could drift up a little. Pinning overflow-y kills it.
+         Vertical touch drags now chain straight through to the page. */
       overflow-x:auto;
+      overflow-y:hidden;
       overscroll-behavior-x:contain;
       scroll-snap-type:x mandatory;
       -webkit-overflow-scrolling:touch;
       scrollbar-width:none; -ms-overflow-style:none;
       scroll-behavior:smooth;
+      align-items:start;
     }
+    /* The strip clips vertically now, so the reveal rises a shorter distance
+       and the track's bottom padding leaves room for it — otherwise the card
+       would be cut off mid-animation. :not(.fu-visible) matters: without it
+       this rule (later in the sheet, equal specificity) would outrank
+       .fu-el.fu-visible and the cards would never settle back to 0. */
+    .rkCard.fu-el:not(.fu-visible){ transform:translateY(24px); }
     .rkTrack::-webkit-scrollbar{ display:none; }
     @media(prefers-reduced-motion:reduce){ .rkTrack{ scroll-behavior:auto; } }
 
-    /* ── Card shell — a closed box, same language as .subOvCard ── */
+    /* ── The board itself: an .xpCard, exactly like the Artist Progress
+       leaderboard. .rkCard only carries the sizing/snap so the card can
+       live in the strip; every visual is inherited from .xpCard. ── */
     .rkCard{
       flex:0 0 clamp(290px, 90%, 470px);
       min-width:0;
       scroll-snap-align:center;
       scroll-snap-stop:always;
-      background:color-mix(in srgb, var(--sur) 88%, transparent);
-      border:1px solid var(--bdr);      /* ALL four sides */
-      border-radius:14px;
-      box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09);
-      display:flex; flex-direction:column;
-      overflow:hidden;                  /* clip the list to the rounded corners */
       box-sizing:border-box;
-      transition:transform .28s, box-shadow .28s;
+      /* Boards hold different numbers of artists (level 6, cred 1…), so in
+         the desktop grid the cards stretch to equal height. Column + a
+         growing list keeps YOUR RANK and VIEW ALL pinned to the bottom
+         instead of floating half-way up a short card. */
+      display:flex; flex-direction:column;
+    }
+    .rkList{ flex:1 1 auto; }
+
+    /* ── The clear heading Koe asked for: board name on the left, the
+       live count on the right, sitting where .xpCardLbl normally is ── */
+    .rkHead{
+      display:flex; align-items:baseline; gap:.6rem;
+      margin-bottom:.85rem;
+      padding-bottom:.7rem;
+      border-bottom:1px solid var(--bdr);
+    }
+    .rkHeadT{
+      font-family:var(--fd); font-weight:800;
+      font-size:1.02rem; letter-spacing:.1em;
+      color:var(--tx); line-height:1.2;
+    }
+    .rkHeadN{
+      margin-left:auto; flex-shrink:0;
+      font-family:var(--fm); font-size:.54rem; letter-spacing:.16em;
+      color:var(--txd);
+    }
+    /* per-board tint on the heading only — the card stays neutral like .xpCard */
+    .rkCard--level     .rkHeadT{ color:#a855f7; }
+    .rkCard--cred      .rkHeadT{ color:#eab308; }
+    .rkCard--likes     .rkHeadT{ color:#f43f5e; }
+    .rkCard--bookmarks .rkHeadT{ color:#3b82f6; }
+
+    /* ── YOUR RANK, under the ten rows ── */
+    .rkMine{
+      display:flex; align-items:center; gap:.55rem;
+      margin-top:.9rem; padding:.7rem .6rem;
+      border-top:1px solid var(--bdr);
+      font-family:var(--fm); font-size:.6rem; letter-spacing:.12em;
+      color:var(--txd);
+      min-height:2.4rem; box-sizing:border-box;
+    }
+    .rkMine.tap{ cursor:pointer; border-radius:0 0 10px 10px; }
+    .rkMine.tap:hover{ background:var(--pdim); }
+    .rkMineLbl{ flex-shrink:0; text-transform:uppercase; }
+    .rkMinePos{
+      margin-left:auto; flex-shrink:0;
+      font-family:var(--fm); font-size:.62rem; letter-spacing:.1em;
+      color:var(--pb); white-space:nowrap;
     }
 
-    /* ── >1000px: all four boxes on one line, carousel chrome off ── */
+    /* ── VIEW ALL → the dedicated ranking page ── */
+    .rkAll{
+      display:block; width:100%;
+      margin-top:.55rem; padding:.65rem .6rem;
+      border:1px dashed var(--bdr); border-radius:10px;
+      background:none; cursor:pointer;
+      font-family:var(--fm); font-size:.58rem; font-weight:700;
+      letter-spacing:.16em; color:var(--txd);
+      transition:border-color .2s, color .2s, background .2s;
+    }
+    .rkAll:hover{ border-color:var(--pg); color:var(--pb); background:var(--pdim); }
+    .rkAll:active{ transform:scale(.99); }
+
+    /* loading placeholder — one per row */
+    .rkSkel{
+      height:30px; margin:.55rem .2rem; border-radius:8px;
+      background:linear-gradient(90deg, var(--bdr) 25%, var(--bdrh) 50%, var(--bdr) 75%);
+      background-size:200% 100%;
+    }
+    @media(prefers-reduced-motion:no-preference){
+      .rkSkel{ animation:rkShim 1.3s linear infinite; }
+      @keyframes rkShim{ to{ background-position:-200% 0; } }
+    }
+
+    /* ── carousel chrome (≤1000px only) ── */
+    .rkNav{
+      display:none;
+      position:absolute; top:50%; transform:translateY(-50%);
+      width:38px; height:38px; border-radius:50%; z-index:3;
+      align-items:center; justify-content:center;
+      background:color-mix(in srgb, var(--sur) 92%, transparent);
+      border:1px solid var(--bdr); color:var(--tx);
+      cursor:pointer; transition:border-color .2s, background .2s;
+    }
+    .rkNav:hover{ border-color:var(--pg); background:var(--pdim); }
+    .rkNav svg{ width:18px; height:18px; }
+    /* The buttons carry .rkNav--prev / .rkNav--next (rkPrev/rkNext are their
+       IDs, which the JS grabs) — these selectors must match the CLASS, or
+       neither arrow gets a left/right and both collapse to the same spot. */
+    .rkNav--prev{ left:.2rem; } .rkNav--next{ right:.2rem; }
+    @media (hover:hover) and (min-width:760px){ .rkNav{ display:flex; } }
+    .rkDots{
+      display:flex; justify-content:center; gap:.45rem;
+      margin-top:.2rem;
+    }
+    .rkDot{
+      width:7px; height:7px; border-radius:50%; padding:0;
+      border:1px solid var(--bdrh); background:none; cursor:pointer;
+      transition:background .2s, border-color .2s, transform .2s;
+    }
+    .rkDot.on{ background:var(--pg); border-color:var(--pg); transform:scale(1.25); }
+
+    /* ── >1000px: all four boards on one line, carousel chrome off ── */
     @media (min-width:1001px){
       .rkTrack{
         display:grid;
@@ -3022,210 +3114,14 @@
       }
       .rkCard{ flex:none; width:auto; }
       .rkNav, .rkDots{ display:none !important; }
-      @media(hover:hover){ .rkCard:hover{ transform:translateY(-4px); } }
     }
-
-    /* ── Nav arrows (pointer devices only) ── */
-    .rkNav{
-      position:absolute; top:50%; transform:translateY(-50%);
-      z-index:3;
-      width:42px; height:42px; border-radius:50%;
-      display:none; align-items:center; justify-content:center;
-      border:1px solid var(--bdrh);
-      background:color-mix(in srgb, var(--sur) 92%, transparent);
-      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-      color:var(--tx); cursor:pointer;
-      box-shadow:0 4px 14px rgba(0,0,0,.22);
-      transition:border-color .2s, background .2s, opacity .2s, transform .2s;
-    }
-    .rkNav svg{ width:18px; height:18px; display:block; }
-    .rkNav--prev{ left:1rem; }
-    .rkNav--next{ right:1rem; }
-    .rkNav:hover{ border-color:var(--pg); background:var(--pdim); }
-    .rkNav:active{ transform:translateY(-50%) scale(.94); }
-    .rkNav[disabled]{ opacity:.25; pointer-events:none; }
-    @media (hover:hover) and (min-width:760px){ .rkNav{ display:flex; } }
-
-    /* ── Dots ── */
-    .rkDots{
-      display:flex; justify-content:center; align-items:center; gap:.5rem;
-      padding:1rem 0 0;
-    }
-    .rkDot{
-      width:7px; height:7px; border-radius:99px; padding:0;
-      border:none; cursor:pointer;
-      background:var(--bdrh);
-      transition:width .25s, background .25s;
-    }
-    .rkDot.on{ width:22px; background:var(--pg); }
-
-    /* ── Card header ── */
-    .rkCardHdr{
-      display:flex; align-items:center; gap:.85rem;
-      padding:1.35rem 1.3rem 1.1rem;
-      border-bottom:1px solid var(--bdr);
-      flex-shrink:0;
-    }
-    .rkIco{
-      width:44px; height:44px; border-radius:11px; flex-shrink:0;
-      display:flex; align-items:center; justify-content:center;
-      border:1px solid var(--bdrh);
-      background:color-mix(in srgb, var(--tc) 8%, transparent);
-    }
-    .rkIco svg{ width:22px; height:22px; display:block; }
-    .rkName{
-      font-family:var(--fd); font-size:1.12rem; font-weight:800;
-      letter-spacing:.1em; color:var(--tx); line-height:1.2;
-    }
-    .rkSub{
-      font-family:var(--fm); font-size:.6rem; letter-spacing:.14em;
-      color:var(--txd); margin-top:.26rem; text-transform:uppercase;
-    }
-
-    /* ── Scrollable list ── */
-    .rkList{
-      flex:1;
-      max-height:clamp(24rem, 62vh, 38rem);
-      overflow-y:auto;
-      overscroll-behavior:contain;
-      -webkit-overflow-scrolling:touch;
-      scrollbar-width:thin;
-      scrollbar-color:var(--bdrh) transparent;
-      padding:.35rem .5rem;
-    }
-    .rkList::-webkit-scrollbar{ width:5px; }
-    .rkList::-webkit-scrollbar-thumb{ background:var(--bdrh); border-radius:99px; }
-    .rkList::-webkit-scrollbar-track{ background:transparent; }
-
-    .rkRow{
-      display:flex; align-items:center; gap:.8rem;
-      padding:.72rem .8rem;
-      border-radius:10px;
-      cursor:pointer;
-      transition:background .2s;
-    }
-    .rkRow:hover{ background:var(--pdim); }
-    .rkRow:active{ transform:scale(.99); }
-    .rkRow.me{
-      background:color-mix(in srgb, var(--tc) 12%, transparent);
-      outline:1px solid var(--bdrh);
-    }
-    /* rank number chip */
-    .rkPos{
-      width:30px; flex-shrink:0; text-align:center;
-      font-family:var(--fm); font-size:.74rem; font-weight:700;
-      color:var(--txd); letter-spacing:.02em;
-    }
-    .rkPos--1{ color:#fcd34d; }
-    .rkPos--2{ color:#cbd5e1; }
-    .rkPos--3{ color:#d8a37a; }
-    .rkAv{
-      width:42px; height:42px; border-radius:50%; flex-shrink:0;
-      overflow:hidden; display:flex; align-items:center; justify-content:center;
-      font-family:var(--fb); font-size:.95rem; font-weight:700; color:#fff;
-      background:linear-gradient(135deg,var(--pb),var(--pg));
-      border:1px solid var(--bdrh);
-    }
-    .rkAv img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .rkNm{
-      flex:1; min-width:0;
-      font-family:var(--fb); font-size:.98rem; font-weight:600; color:var(--tx);
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .rkVal{
-      flex-shrink:0;
-      font-family:var(--fm); font-size:.82rem; font-weight:700;
-      color:var(--ps); letter-spacing:.04em;
-    }
-    /* list states */
-    .rkNote{
-      font-family:var(--fm); font-size:.58rem; letter-spacing:.16em;
-      color:var(--txd); text-align:center; padding:1.4rem .5rem;
-    }
-    .rkSkel{
-      height:42px; margin:.6rem .8rem; border-radius:10px;
-      background:linear-gradient(90deg, var(--bdr) 25%, var(--bdrh) 50%, var(--bdr) 75%);
-      background-size:200% 100%;
-    }
-    @media(prefers-reduced-motion:no-preference){
-      .rkSkel{ animation:rkShim 1.3s linear infinite; }
-      @keyframes rkShim{ to{ background-position:-200% 0; } }
-    }
-
-    /* ── Pinned "your rank" footer ── */
-    .rkMine{
-      flex-shrink:0;
-      display:flex; align-items:center; gap:.6rem;
-      padding:.95rem 1.1rem;
-      border-top:1px solid var(--bdr);
-      background:color-mix(in srgb, var(--tc) 6%, transparent);
-      font-family:var(--fm); font-size:.66rem; letter-spacing:.1em;
-      color:var(--txd);
-      min-height:3.2rem; box-sizing:border-box;
-      cursor:default;
-    }
-    .rkMine.tap{ cursor:pointer; }
-    .rkMine.tap:hover{ background:var(--pdim); }
-    .rkMineLbl{ flex-shrink:0; text-transform:uppercase; }
-    .rkMinePos{
-      margin-left:auto; flex-shrink:0;
-      font-weight:700; color:var(--ps); font-size:.82rem; letter-spacing:.04em;
-    }
-    .rkMineOf{ flex-shrink:0; opacity:.65; }
-
-    /* ── Per-board accents ──
-       The whole border is tinted and the card keeps its drop shadow plus
-       a soft coloured glow, so each board reads as its own lifted box.
-       (These used to be inset-only shadows from the full-bleed layout,
-       which silently cancelled .rkCard's drop shadow and flattened the
-       four cards back into one sheet.) */
-    .rkCard--level     { border-color:#C4B5FD; box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 24px rgba(168,85,247,.18); }
-    .rkCard--level     .rkIco{ border-color:#C4B5FD; color:#a855f7; }
-    .rkCard--level     .rkName{ color:#a855f7; }
-    .rkCard--cred      { border-color:#fcd34d; box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 24px rgba(234,179,8,.18); }
-    .rkCard--cred      .rkIco{ border-color:#fcd34d; color:#eab308; }
-    .rkCard--cred      .rkName{ color:#eab308; }
-    .rkCard--likes     { border-color:#fda4af; box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 24px rgba(244,63,94,.18); }
-    .rkCard--likes     .rkIco{ border-color:#fda4af; color:#f43f5e; }
-    .rkCard--likes     .rkName{ color:#f43f5e; }
-    .rkCard--bookmarks { border-color:#93c5fd; box-shadow:0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 24px rgba(59,130,246,.18); }
-    .rkCard--bookmarks .rkIco{ border-color:#93c5fd; color:#3b82f6; }
-    .rkCard--bookmarks .rkName{ color:#3b82f6; }
-    @media(hover:hover){
-      .rkCard--level:hover    { box-shadow:0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 40px rgba(168,85,247,.32); }
-      .rkCard--cred:hover     { box-shadow:0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 40px rgba(234,179,8,.32); }
-      .rkCard--likes:hover    { box-shadow:0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 40px rgba(244,63,94,.32); }
-      .rkCard--bookmarks:hover{ box-shadow:0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 40px rgba(59,130,246,.32); }
-    }
-
-    @media (prefers-reduced-motion:reduce){
-      .rkRow{ transition:none; }
-    }
-
-    /* ── "View all" strip — the last thing in every box. The box only
-       ever holds the top 10; this (and any row, and the footer) opens
-       the dedicated full ranking page. ── */
-    .rkAll{
-      display:block; width:calc(100% - 1.6rem);
-      margin:.5rem .8rem .3rem;
-      padding:.7rem .8rem;
-      border:1px dashed var(--bdrh);
-      border-radius:10px;
-      background:none;
-      cursor:pointer;
-      font-family:var(--fm); font-size:.6rem; font-weight:700;
-      letter-spacing:.16em; color:var(--txd);
-      transition:border-color .2s, color .2s, background .2s;
-    }
-    .rkAll:hover{ border-color:var(--pg); color:var(--ps); background:var(--pdim); }
-    .rkAll:active{ transform:scale(.99); }
 
     /* ═══════════════════════════════════════════════════════════
        FULL RANKING PAGE (#rankPage)
        Dedicated page, same overlay pattern as #notifPage: fixed,
-       slides in from the right, ← in the header closes it. Reuses
-       .rkRow / .rkAv / .rkPos / .rkVal so a row looks identical to
-       the one in the box the user tapped.
+       slides in from the right, ← in the header closes it. The list
+       is one big .xpCard of .xpLbRow rows — identical to the boxes,
+       just every ranked artist instead of the top ten.
        ═══════════════════════════════════════════════════════════ */
     #rankPage{
       position:fixed;inset:0;z-index:525;background:var(--bg);
@@ -3261,37 +3157,26 @@
       transition:border-color .2s, color .2s, background .2s;
     }
     .rkPgTab:hover{ border-color:var(--bdrh); color:var(--tx); }
-    .rkPgTab.on{
-      border-color:var(--pg); color:var(--ps);
-      background:var(--pdim);
-    }
+    .rkPgTab.on{ border-color:var(--pg); color:var(--pb); background:var(--pdim); }
 
     /* your rank, above the list */
     .rkPgMine{
       display:flex; align-items:center; gap:.6rem;
       padding:1rem 1.1rem; margin-bottom:1rem;
-      border:1px solid var(--bdr); border-radius:12px;
+      border:1px solid var(--bdr); border-radius:14px;
       background:var(--sur);
-      font-family:var(--fm); font-size:.66rem; letter-spacing:.1em;
+      font-family:var(--fm); font-size:.62rem; letter-spacing:.12em;
       color:var(--txd);
-      min-height:3.2rem; box-sizing:border-box;
+      min-height:3rem; box-sizing:border-box;
     }
     .rkPgMine.tap{ cursor:pointer; }
     .rkPgMine.tap:hover{ border-color:var(--pg); }
 
-    /* the list itself — the PAGE scrolls, not this box */
-    .rkPgList{
-      display:flex; flex-direction:column; gap:.15rem;
-      border:1px solid var(--bdr); border-radius:12px;
-      background:var(--sur);
-      padding:.5rem;
-    }
     .rkPgEnd{
       font-family:var(--fm); font-size:.54rem; letter-spacing:.2em;
       color:var(--txd); opacity:.6; text-align:center;
       padding:1.2rem 0 .2rem;
     }
-
     /* ── Section wrapper ── */
     #subOverview {
       padding: 5rem 0 4rem;
@@ -6416,18 +6301,16 @@ body{background:var(--bg);}
     var PG_PAGE = 50;       /* full page: rows per fetch (server caps lim at 50) */
     var NEAR_END = 240;     /* px from the bottom that triggers the next page */
 
+    /* The right-hand value on every row reads like the Artist Progress
+       leaderboard's "LEVEL 23" — the board's own word, then the number. */
     var BOARDS = [
-      { key:'level',     name:'LEVEL',     sub:'By XP',              unit:'lv',
-        icon:'<path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12Z"/>' },
-      { key:'cred',      name:'CRED',      sub:'Given by artists',   unit:'n',
-        icon:'<path d="M12 2 4 5v6c0 5 3.4 9.2 8 11 4.6-1.8 8-6 8-11V5Z"/><path d="m9 12 2 2 4-4"/>' },
-      { key:'likes',     name:'LIKES',     sub:'Received on artwork', unit:'n',
-        icon:'<path d="M12 20.3 4.8 13a4.6 4.6 0 1 1 6.5-6.5l.7.7.7-.7A4.6 4.6 0 1 1 19.2 13Z"/>' },
-      { key:'bookmarks', name:'BOOKMARKS', sub:'Saved by others',    unit:'n',
-        icon:'<path d="M6.5 3.5h11V21L12 16.8 6.5 21Z"/>' }
+      { key:'level',     name:'LEVEL',     word:'LEVEL' },
+      { key:'cred',      name:'CRED',      word:'CRED' },
+      { key:'likes',     name:'LIKES',     word:'LIKES' },
+      { key:'bookmarks', name:'BOOKMARKS', word:'SAVES' }
     ];
 
-    var state = {};   /* key -> { rows, total, off, done, busy, sig, listEl, mineEl, dirty } */
+    var state = {};   /* key -> { rows, total, busy, sig, listEl, mineEl, headEl, allEl } */
     var timer = null, seen = false, started = false;
 
     function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
@@ -6444,7 +6327,9 @@ body{background:var(--bg);}
       return (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(u) : u;
     }
     function valueOf (b, row) {
-      return b.unit === 'lv' ? ('LV ' + (Number(row.lvl) || 1)) : num(row.score);
+      return b.key === 'level'
+        ? ('LEVEL ' + (Number(row.lvl) || 1))
+        : (b.word + ' ' + num(row.score));
     }
 
     /* ── card shell ── */
@@ -6453,39 +6338,35 @@ body{background:var(--bg);}
       if (!grid) return false;
       grid.innerHTML = '';
       BOARDS.forEach(function (b) {
-        var card = el('article', 'rkCard rkCard--' + b.key);
+        /* .xpCard = the exact card the Artist Progress leaderboard uses.
+           .rkCard only adds the strip sizing/snap on top of it. */
+        var card = el('article', 'rkCard rkCard--' + b.key + ' xpCard');
 
-        var hdr = el('header', 'rkCardHdr');
-        var ico = el('span', 'rkIco');
-        ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + b.icon + '</svg>';
+        /* the clear heading: board name + how many artists are ranked */
         var head = el('div', 'rkHead');
-        head.appendChild(el('div', 'rkName', b.name));
-        head.appendChild(el('div', 'rkSub', b.sub));
-        hdr.appendChild(ico); hdr.appendChild(head);
+        head.appendChild(el('div', 'rkHeadT', b.name + ' LEADERBOARD'));
+        head.appendChild(el('div', 'rkHeadN', 'TOP 10'));
+        card.appendChild(head);
 
         var list = el('div', 'rkList');
-        list.id = 'rkList-' + b.key;
         list.appendChild(el('div', 'rkSkel'));
         list.appendChild(el('div', 'rkSkel'));
         list.appendChild(el('div', 'rkSkel'));
+        card.appendChild(list);
 
-        var mine = el('footer', 'rkMine');
-        mine.id = 'rkMine-' + b.key;
+        var mine = el('div', 'rkMine');
         mine.appendChild(el('span', 'rkMineLbl', 'Your rank'));
+        card.appendChild(mine);
 
-        card.appendChild(hdr); card.appendChild(list); card.appendChild(mine);
+        var all = el('button', 'rkAll', 'VIEW FULL RANKING \u2192');
+        all.type = 'button';
+        all.onclick = function () { openRankPage(b.key); };
+        card.appendChild(all);
+
         grid.appendChild(card);
 
-        state[b.key] = { rows: [], total: 0, done: false, busy: false,
-                         sig: '', listEl: list, mineEl: mine, dirty: false };
-
-        /* No paging in the box any more — it holds the TOP 10, full stop.
-           The only thing this listener does is hold a live refresh back
-           until the user has scrolled the list to the top again. */
-        list.addEventListener('scroll', function () {
-          var s = state[b.key];
-          if (s.dirty && list.scrollTop < 8) { s.dirty = false; reload(b); }
-        }, { passive: true });
+        state[b.key] = { rows: [], total: 0, busy: false, sig: '',
+                         listEl: list, mineEl: mine, headEl: head, allEl: all };
       });
       return true;
     }
@@ -6580,7 +6461,6 @@ body{background:var(--bg);}
         var rows = r.data || [];
         s.rows  = rows;
         s.total = rows.length ? (Number(rows[0].total) || 0) : 0;
-        s.done  = true;
         render(b);
       } catch (e) {
         if (!s.rows.length) note(s, 'COULDN\u2019T LOAD RANKING');
@@ -6591,35 +6471,49 @@ body{background:var(--bg);}
 
     function note (s, msg) {
       s.listEl.innerHTML = '';
-      s.listEl.appendChild(el('div', 'rkNote', msg));
+      s.listEl.appendChild(el('div', 'xpNote', msg));
     }
 
-    /* ── one ranking row, shared by the box and the full page ──
+    /* ── one ranking row — the SAME .xpLbRow the Artist Progress
+       leaderboard paints: 1ST/2ND/3RD medal (then #4…), 30px avatar,
+       tier-painted name via DZ_MS, value on the right, .self highlight
+       for you. Shared by the boxes and the full page.
+
        onTap decides what a row does: in a BOX it opens the full ranking
-       page (Koe's rule — tapping any rank goes to the dedicated page);
-       on the PAGE it opens that artist's profile. */
+       page (tapping any rank goes to the dedicated page); on the PAGE it
+       opens that artist's profile. */
+    var MEDAL = ['1ST', '2ND', '3RD'];
+
     function rowEl (b, r, uid, onTap) {
-      var row = el('div', 'rkRow' + (uid && r.uid === uid ? ' me' : ''));
+      var row = el('div', 'xpLbRow' + (uid && r.uid === uid ? ' self' : ''));
       row.setAttribute('role', 'button');
       row.setAttribute('tabindex', '0');
 
+      /* real rank, not the array index — ties genuinely share a place */
       var pos = Number(r.rnk) || 0;
-      row.appendChild(el('span', 'rkPos' + (pos <= 3 ? ' rkPos--' + pos : ''), String(pos)));
+      row.appendChild(el('div',
+        'xpLbRank' + (pos >= 1 && pos <= 3 ? ' m' + pos : ''),
+        (pos >= 1 && pos <= 3) ? MEDAL[pos - 1] : ('#' + pos)));
 
-      var av = el('span', 'rkAv');
+      var ava = el('div', 'xpLbAva');
       var src = thumb(r.avatar_url);
       if (src) {
-        var im = document.createElement('img');
-        im.src = src; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.draggable = false;
-        im.onerror = function () { av.textContent = (r.username || '?').charAt(0).toUpperCase(); };
-        av.appendChild(im);
+        var img = document.createElement('img');
+        img.alt = ''; img.loading = 'lazy'; img.decoding = 'async'; img.draggable = false;
+        img.src = src;
+        img.onerror = function () { ava.textContent = (r.username || '?').charAt(0).toUpperCase(); };
+        ava.appendChild(img);
       } else {
-        av.textContent = (r.username || '?').charAt(0).toUpperCase();
+        ava.textContent = (r.username || '?').charAt(0).toUpperCase();
       }
-      row.appendChild(av);
+      row.appendChild(ava);
 
-      row.appendChild(el('span', 'rkNm', r.username || 'Artist'));
-      row.appendChild(el('span', 'rkVal', valueOf(b, r)));
+      var nameEl = el('div', 'xpLbName', r.username || 'Artist');
+      /* same tier tint the rest of the site gives a display name */
+      if (window.DZ_MS) DZ_MS.paintName(nameEl, Number(r.lvl) || 0);
+      row.appendChild(nameEl);
+
+      row.appendChild(el('div', 'xpLbLvl', valueOf(b, r)));
 
       row.onclick = function () { onTap(r); };
       row.onkeydown = function (ev) {
@@ -6628,9 +6522,8 @@ body{background:var(--bg);}
       return row;
     }
 
-    /* ── paint a box: TOP 10 + a "view all" strip ──
-       Signature-guarded, so the 45s tick never causes a flicker or a
-       scroll jump when nothing actually moved. */
+    /* ── paint a box: the heading, TOP 10 rows, then YOUR RANK + VIEW ALL.
+       Signature-guarded, so the 45s tick never repaints when nothing moved. */
     function render (b) {
       var s = state[b.key];
       var uid = me() ? me().id : null;
@@ -6639,27 +6532,28 @@ body{background:var(--bg);}
       if (sig === s.sig) return;
       s.sig = sig;
 
+      /* heading count: "6 ARTISTS" once we know, "TOP 10" until then */
+      var n = s.headEl && s.headEl.querySelector('.rkHeadN');
+      if (n) n.textContent = s.total ? (num(s.total) + (s.total === 1 ? ' ARTIST' : ' ARTISTS')) : 'TOP 10';
+
+      /* the button says how many are hidden behind it */
+      if (s.allEl) {
+        s.allEl.textContent = (s.total > s.rows.length)
+          ? ('VIEW ALL ' + num(s.total) + ' \u2192')
+          : 'VIEW FULL RANKING \u2192';
+      }
+
       var list = s.listEl;
       list.innerHTML = '';
 
       if (!s.rows.length) {
-        list.appendChild(el('div', 'rkNote', 'NO RANKED ARTISTS YET'));
+        list.appendChild(el('div', 'xpNote', 'NO RANKED ARTISTS YET'));
         return;
       }
 
       s.rows.forEach(function (r) {
         list.appendChild(rowEl(b, r, uid, function () { openRankPage(b.key); }));
       });
-
-      /* Only the top 10 live in the box. Everyone else is one tap away. */
-      var more = s.total > s.rows.length ? (s.total - s.rows.length) : 0;
-      var all = el('button', 'rkAll');
-      all.type = 'button';
-      all.textContent = more
-        ? ('VIEW ALL ' + num(s.total) + ' \u2192')
-        : 'VIEW FULL RANKING \u2192';
-      all.onclick = function () { openRankPage(b.key); };
-      list.appendChild(all);
     }
 
     /* ── the pinned "your rank" footer ── */
@@ -6693,9 +6587,8 @@ body{background:var(--bg);}
           f.appendChild(un);
           return;
         }
-        f.appendChild(el('span', 'rkMineOf', 'of ' + num(d.total)));
-        var pos = el('span', 'rkMinePos', '#' + num(d.rnk) + ' \u00B7 ' + valueOf(b, d));
-        f.appendChild(pos);
+        f.appendChild(el('span', 'rkMinePos',
+          '#' + num(d.rnk) + ' OF ' + num(d.total) + ' \u00B7 ' + valueOf(b, d)));
       } catch (e) {
         f.appendChild(el('span', 'rkMinePos', '\u2014'));
       }
@@ -6707,17 +6600,12 @@ body{background:var(--bg);}
       loadMine(b);
     }
 
-    /* A tick refreshes every board, but a board the user has scrolled
-       into is only marked dirty — it reloads the moment they scroll back
-       to the top, never mid-read. */
+    /* A tick refreshes every board. The box no longer scrolls (it's a fixed
+       top 10), so there's nothing to yank under the user — and render() is
+       signature-guarded, so an unchanged board doesn't even repaint. */
     function tick () {
       if (document.visibilityState !== 'visible' || !seen) return;
-      BOARDS.forEach(function (b) {
-        var s = state[b.key];
-        if (!s) return;
-        if (s.listEl.scrollTop > 8) { s.dirty = true; loadMine(b); return; }
-        reload(b);
-      });
+      BOARDS.forEach(reload);
     }
 
     function start () {
@@ -6810,7 +6698,7 @@ body{background:var(--bg);}
       if (pg.busy || pg.done) return;
       var list = document.getElementById('rkPgList');
       if (!list) return;
-      if (!c) { list.innerHTML = ''; list.appendChild(el('div', 'rkNote', 'RANKING UNAVAILABLE')); return; }
+      if (!c) { list.innerHTML = ''; list.appendChild(el('div', 'xpNote', 'RANKING UNAVAILABLE')); return; }
       pg.busy = true;
       try {
         var r = await c.rpc('get_rank_board', { board: b.key, lim: PG_PAGE, off: pg.off });
@@ -6837,9 +6725,9 @@ body{background:var(--bg);}
             ? (pg.rows.length ? ('END \u00B7 ' + num(pg.total || pg.rows.length) + ' RANKED ARTISTS') : '')
             : 'LOADING\u2026';
         }
-        if (!pg.rows.length) list.appendChild(el('div', 'rkNote', 'NO RANKED ARTISTS YET'));
+        if (!pg.rows.length) list.appendChild(el('div', 'xpNote', 'NO RANKED ARTISTS YET'));
       } catch (e) {
-        if (!pg.rows.length) { list.innerHTML = ''; list.appendChild(el('div', 'rkNote', 'COULDN\u2019T LOAD RANKING')); }
+        if (!pg.rows.length) { list.innerHTML = ''; list.appendChild(el('div', 'xpNote', 'COULDN\u2019T LOAD RANKING')); }
       } finally {
         pg.busy = false;
       }
@@ -6865,8 +6753,8 @@ body{background:var(--bg);}
         if (r.error) throw r.error;
         var d = (r.data && r.data[0]) || null;
         if (!d) { box.appendChild(el('span', 'rkMinePos', 'UNRANKED')); return; }
-        box.appendChild(el('span', 'rkMineOf', 'of ' + num(d.total)));
-        box.appendChild(el('span', 'rkMinePos', '#' + num(d.rnk) + ' \u00B7 ' + valueOf(b, d)));
+        box.appendChild(el('span', 'rkMinePos',
+          '#' + num(d.rnk) + ' OF ' + num(d.total) + ' \u00B7 ' + valueOf(b, d)));
       } catch (e) {
         box.appendChild(el('span', 'rkMinePos', '\u2014'));
       }
@@ -6942,7 +6830,7 @@ body{background:var(--bg);}
     <div class="rkPgBdy">
       <div class="rkPgTabs" id="rkPgTabs" role="tablist" aria-label="Ranking board"></div>
       <div class="rkPgMine" id="rkPgMine"></div>
-      <div class="rkPgList" id="rkPgList"></div>
+      <div class="xpCard" id="rkPgList"></div>
       <div class="rkPgEnd" id="rkPgEnd"></div>
     </div>
   </div>
@@ -11369,8 +11257,11 @@ function qrMake (text) {
        missing, so closing any other panel while one of them was open
        silently re-enabled background scrolling behind it.
        FIX 2: frdPage (Friends) and bmPage (Bookmarks/Likes) also lock
-       scroll and were missing from this list. */
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage'];
+       scroll and were missing from this list.
+       FIX 3: rankPage (full ranking) locks scroll too — without it,
+       closing any other panel while the ranking page was open would
+       silently re-enable scrolling of the home page behind it. */
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -19359,7 +19250,7 @@ html.thmFade #themePage{
   /* ── Full-page overlay panels — hide widgets whenever any of
      these slide-in pages is open, since they otherwise float
      above the panel's lower z-index. ── */
-  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage', 'bmPage', 'xpPage'];
+  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);

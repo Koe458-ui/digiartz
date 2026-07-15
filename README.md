@@ -7,8 +7,7 @@ https://digiartz.net
 ## ✨ Features
 - Dynamic gallery with Supabase backend
 - Subscription tiers (Lite / Premium / Max)
-- Website Templates section
-- Comment system
+- Comment systems 
 - Admin mode
 
 ## 🛠 Built With

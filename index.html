@@ -627,7 +627,8 @@
     .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
     .gItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
     .gItem img{width:100%;aspect-ratio:1;display:block;height:auto;object-fit:cover;transition:transform .4s;}
-    /* imgShimmer keyframe is shared by .awImgWrap.awLoading and .pfSkeleton */
+    /* imgShimmer keyframe is shared by .awImgWrap.awLoading, .igSkelCard
+       and the .gItem image skeleton */
     @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
     .gItem:hover img{transform:scale(1.04);}
     .gNm{display:none;}
@@ -825,47 +826,41 @@
     .fltDone:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 26px color-mix(in srgb,var(--tc) 42%,transparent),inset 0 0 20px color-mix(in srgb,var(--tc) 8%,transparent);transform:translateY(-1px);}
     .fltDone:active{transform:translateY(0) scale(.98);}
 
-    /* Gallery load-more button */
-    .fgLoadMoreWrap{
-      display:flex;
-      justify-content:center;
-      padding:2rem 1.5rem 1rem;
+    /* ── Infinite scroll — shared pieces ──
+       .igSentinel: invisible trip-wire observed by an
+       IntersectionObserver; when it scrolls near the viewport the
+       next batch is appended (replaces every Load More button).
+       Batch sizes follow the column layout: 4-col 16→8, 3-col
+       12→6, 2-col 10→4. grid-column:1/-1 lets the sentinel live
+       INSIDE a grid (spanning the full row) or after it alike. */
+    .igSentinel{
+      width:100%;
+      height:2px;
+      grid-column:1/-1;
+      pointer-events:none;
     }
-    .fgLoadMore{
-      padding:.85rem 2.2rem;
-      border:1px solid var(--pg);
-      background:rgba(var(--pg-rgb),.55);
-      color:var(--ps);
-      font-family:var(--fm);
-      font-size:.8rem;
-      letter-spacing:.2em;
-      cursor:pointer;
-      transition:background .3s,border-color .3s,box-shadow .3s,transform .3s;
-      display:flex;
-      align-items:center;
-      gap:.6rem;
+    /* Skeleton tile — shown while a server-backed grid (profile
+       gallery) is fetching its next batch; in-memory grids append
+       instantly so they never need these. Same square footprint
+       as a real card so the grid doesn't jump when tiles swap
+       for artwork. */
+    .igSkelCard{
+      aspect-ratio:1;
       border-radius:6px;
-      min-width:200px;
-      justify-content:center;
+      background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
+      background-size:200% 100%;
+      animation:imgShimmer 1.4s infinite;
     }
-    .fgLoadMore:hover{
-      background:rgba(var(--pg-rgb),.75);
-      border-color:var(--pb);
-      box-shadow:0 0 30px color-mix(in srgb,var(--tc) 30%,transparent);
-      transform:translateY(-2px);
-    }
-    .fgLoadMore:active{transform:translateY(0) scale(.98);}
-    /* In the gallery overlay the background is var(--bg) not the hero photo,
-       so override the rgba whites to use the design tokens instead */
-    #fg .fgLoadMore{
-      background:color-mix(in srgb,var(--tc) 8%,transparent);
-      color:var(--ps);
-      border-color:var(--bdrh);
-    }
-    #fg .fgLoadMore:hover{
-      background:color-mix(in srgb,var(--tc) 18%,transparent);
-      border-color:var(--pg);
-      box-shadow:0 0 26px color-mix(in srgb,var(--tc) 35%,transparent);
+    /* Gallery-card image skeleton — shimmer sits on the <img>
+       element's own background, visible until pixels arrive
+       (aspect-ratio:1 already reserves the space, so nothing
+       shifts). Cleared on load/error via .imgDone, which matters
+       for transparent PNGs — left on, the shimmer would show
+       through them forever. */
+    .gItem img:not(.imgDone){
+      background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
+      background-size:200% 100%;
+      animation:imgShimmer 1.4s infinite;
     }
 
     /* Chat load-older spinner — shared by the community feed and DMs.
@@ -3989,7 +3984,6 @@
     .pfCardAdmin button:hover{border-color:var(--bdrh);color:var(--tx);}
     .pfCardAdmin button.danger:hover{color:#dc2626;border-color:#fca5a5;}
     .pfEmpty{padding:3rem 1rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;color:var(--txd);}
-    .pfLoadMoreWrap{text-align:center;margin:1.6rem 0;}
 
     /* ── Edit Profile page (#pfEditPage) — same sliding full-page
        language as #profilePage, opened as a layer on top of it. ── */
@@ -4067,7 +4061,6 @@
     .pfEditInput.err{border-color:#ef4444;}
 
     /* ── Skeleton loading state ── */
-    .pfSkeleton{background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);background-size:200% 100%;animation:imgShimmer 1.4s infinite;border-radius:8px;}
 
     /* =========================================================
        ADMIN REVIEW PAGE (#admPage)
@@ -6159,7 +6152,8 @@ body{background:var(--bg);}
        ├─ Section Header (.awHdr) — Artworks / category tabs
        ├─ Admin Upload Button (.upBtn.adminOnly)
        ├─ Grid (.awGrid #awGrid)
-       │   └─ Cards (.awCard × up to 200) — injected by renderAwGrid()
+       │   └─ Cards (.awCard) — injected by renderAwGrid() in
+       │       column-sized batches via infinite scroll
        └─ Empty State (.awEmpty #awEmpty)
        ========================================================= -->
   <section id="artworks">
@@ -6995,7 +6989,7 @@ body{background:var(--bg);}
        ├─ Tabs (.pfTabs) — Artwork / About, with the
        │   Upload dropdown (.pfUploadWrap, owner-only) on the right
        └─ Panels (.pfPanel)
-           ├─ Gallery  → #pfGalleryGrid (+ load more)
+           ├─ Gallery  → #pfGalleryGrid (infinite scroll)
            └─ About    → stats + bio (owner-editable)
        ========================================================= -->
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
@@ -7059,9 +7053,10 @@ body{background:var(--bg);}
       <div class="pfPanel active" id="pfPanelGallery">
         <div class="pfGrid pfGridArt" id="pfGalleryGrid"></div>
         <div class="pfEmpty" id="pfGalleryEmpty" style="display:none;">No artwork uploaded yet.</div>
-        <div class="pfLoadMoreWrap" id="pfGalleryLoadMoreWrap" style="display:none;">
-          <button class="fgLoadMore" onclick="pfLoadMoreGallery()"><span>✦</span> LOAD MORE</button>
-        </div>
+        <!-- Infinite-scroll trip-wire — replaces the Load More button.
+             Observed against #profilePage (the scroll container);
+             hidden once every row has been fetched. -->
+        <div class="igSentinel" id="pfGallerySentinel" aria-hidden="true" style="display:none;"></div>
       </div>
 
       <!-- LIKE / BOOKMARK — READ-ONLY grids of artworks this artist
@@ -7072,10 +7067,12 @@ body{background:var(--bg);}
       <div class="pfPanel" id="pfPanelLike">
         <div class="pfGrid pfGridArt" id="pfLikeGrid"></div>
         <div class="pfEmpty" id="pfLikeEmpty" style="display:none;">No liked artworks yet.</div>
+        <div class="igSentinel" id="pfLikeSentinel" aria-hidden="true" style="display:none;"></div>
       </div>
       <div class="pfPanel" id="pfPanelBookmark">
         <div class="pfGrid pfGridArt" id="pfBookmarkGrid"></div>
         <div class="pfEmpty" id="pfBookmarkEmpty" style="display:none;">No bookmarked artworks yet.</div>
+        <div class="igSentinel" id="pfBookmarkSentinel" aria-hidden="true" style="display:none;"></div>
       </div>
 
       <!-- PROGRESS (LEVEL tab) — XP / level / milestones for the viewed
@@ -7878,7 +7875,7 @@ body{background:var(--bg);}
     <div class="fltSec">
      <div class="fltSecLbl">SORT</div>
      <div class="fltOpts" id="fltSrtOpts">
-      <label class="fltOpt"><input type="radio" name="fltSrt" value="liked" checked><div class="fltDot"></div><span class="fltLbl">MOST LIKED</span></label>
+      <label class="fltOpt"><input type="radio" name="fltSrt" value="trending" checked><div class="fltDot"></div><span class="fltLbl">TRENDING</span></label>
       <!-- "Latest" is a sort, not a category — deliberately kept out of the
            CATEGORY section above. Value stays 'new' so the sort path is shared. -->
       <label class="fltOpt"><input type="radio" name="fltSrt" value="new"><div class="fltDot"></div><span class="fltLbl">LATEST</span></label>
@@ -11104,7 +11101,7 @@ function qrMake (text) {
   }
 
   let isAdm = false, images = [];
-  let filterCat = 'all', filterSrt = 'liked';
+  let filterCat = 'all', filterSrt = 'trending';
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
@@ -11420,7 +11417,7 @@ function qrMake (text) {
     return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
         <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>${multiBadge}
-        <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="object-position:${thumbPos}">
+        <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="object-position:${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
       </a>
@@ -11429,17 +11426,32 @@ function qrMake (text) {
   }
 
 
-  /* ── Shared sort utility — MOST LIKED first ──
-     like_count is a denormalized counter on `artworks`, kept in sync by a DB
-     trigger on artwork_likes. It has to live there because artwork_likes is
-     RLS-scoped to its owner (you can only read your OWN likes), so the client
-     can never aggregate real like totals itself.
+  /* ── Shared sort utility — TRENDING first (replaces most-liked) ──
+     Score  = (views × 1) + (bookmarks × 8) + (downloads × 6)
+     Final  = Score / (age_in_hours + 2) ^ 1.35
+     view_count / bookmark_count / download_count are denormalized,
+     trigger-guarded counters on `artworks`, so the client just reads them.
+     The age-decay divisor means a fresh post with strong engagement can
+     outrank an old post with a huge raw view total — and stale posts sink
+     unless people keep engaging. `now` is passed in (snapshotted once per
+     sort) so the comparator stays internally consistent mid-sort.
      Ties fall back to newest, then id, so ordering is always deterministic
      (ids are uuids, so they're compared as strings, not parseInt'd). */
-  function sortByLikes(arr){
+  function trendingScore(a, now){
+    var v=parseInt(a.view_count,10)||0,
+        b=parseInt(a.bookmark_count,10)||0,
+        d=parseInt(a.download_count,10)||0;
+    var base=(v*1)+(b*8)+(d*6);
+    var t=a.created_at?new Date(a.created_at).getTime():0;
+    /* Missing timestamp → treat as a year old so it can't fake-trend */
+    var ageH=t?Math.max(0,(now-t)/3600000):(365*24);
+    return base/Math.pow(ageH+2,1.35);
+  }
+  function sortByTrending(arr){
+    var now=Date.now();
     return arr.sort(function(a,b){
-      var lA=parseInt(a.like_count,10)||0, lB=parseInt(b.like_count,10)||0;
-      if(lB!==lA) return lB-lA;
+      var sA=trendingScore(a,now), sB=trendingScore(b,now);
+      if(sB!==sA) return sB-sA;
       var tA=a.created_at?new Date(a.created_at).getTime():0;
       var tB=b.created_at?new Date(b.created_at).getTime():0;
       if(tB!==tA) return tB-tA;
@@ -11462,23 +11474,92 @@ function qrMake (text) {
   }
 
   function renderHome(){
-    /* Sort most-liked-first before rendering (was newest-first). The gallery
+    /* Sort by TRENDING before rendering (was most-liked-first). The gallery
        carousels below read from this same `images` array, so every category
-       row inherits the same most→least liked order. */
-    sortByLikes(images);
+       row inherits the same trending order — each category is then a
+       mini-ranking of trending posts inside that category only. */
+    sortByTrending(images);
     /* Rebuild all gallery carousels from current images array */
     if(window.rebuildGalCarousels) window.rebuildGalCarousels(images);
     const g=document.getElementById('homeGrid');
     if(g) g.innerHTML = images.map(itemHTML).join('');
   }
 
+  /* ── Column-aware batch sizes — shared by every artwork grid ──
+     The unified responsive grid is 2 columns on phones, 3 from
+     700px, 4 from 1280px (see .fgGrid/.awGrid/.pfGridArt CSS).
+     Batches follow the layout so every append lands as whole rows:
+       4-col → 16 first, then 8   (4 rows, then 2)
+       3-col → 12 first, then 6   (4 rows, then 2)
+       2-col → 10 first, then 4   (5 rows, then 2)
+     Sizes are read at call time, so rotating a tablet or resizing
+     the window simply changes the NEXT batch — nothing re-renders. */
+  function gridCols(){
+    var w = window.innerWidth || document.documentElement.clientWidth || 1280;
+    return w >= 1280 ? 4 : (w >= 700 ? 3 : 2);
+  }
+  function gridInitialBatch(){ var c = gridCols(); return c === 4 ? 16 : (c === 3 ? 12 : 10); }
+  function gridStepBatch(){    var c = gridCols(); return c === 4 ?  8 : (c === 3 ?  6 :  4); }
+
+  /* ── Shared infinite-scroll sentinel ──
+     Wraps one IntersectionObserver around a trip-wire element; when
+     it comes within 700px of the viewport (or of `rootEl`, for
+     overlays that scroll themselves like #fg / #profilePage), onHit
+     appends the next batch. recheck() matters: after an append the
+     sentinel may STILL be inside the viewport, and an observer only
+     fires on threshold CROSSINGS — re-observing forces the spec's
+     initial delivery, so short content keeps filling until the
+     sentinel is genuinely pushed out of range. Fallback for
+     museum-piece browsers is a passive scroll listener doing the
+     same proximity test. */
+  function makeGridSentinel(rootEl, onHit, existingEl){
+    var sent = existingEl || document.createElement('div');
+    if(!existingEl){
+      sent.className = 'igSentinel';
+      sent.setAttribute('aria-hidden','true');
+    }
+    var io = null, fb = null;
+    if('IntersectionObserver' in window){
+      io = new IntersectionObserver(function(entries){
+        for(var i = 0; i < entries.length; i++){
+          if(entries[i].isIntersecting){ onHit(); break; }
+        }
+      }, { root: rootEl || null, rootMargin: '700px 0px' });
+      io.observe(sent);
+    } else {
+      fb = function(){
+        if(sent.style.display === 'none' || !sent.parentNode) return;
+        var r = sent.getBoundingClientRect();
+        var vh = window.innerHeight || document.documentElement.clientHeight;
+        if(r.top < vh + 700) onHit();
+      };
+      (rootEl || window).addEventListener('scroll', fb, { passive: true });
+    }
+    return {
+      el: sent,
+      /* Force the observer to re-evaluate — call after every append. */
+      recheck: function(){
+        if(io){ io.unobserve(sent); io.observe(sent); }
+        else if(fb){ fb(); }
+      },
+      /* One-shot grids (fg / aw rebuild per render) destroy;
+         static sentinels (profile) just hide + recheck instead. */
+      destroy: function(){
+        if(io){ io.disconnect(); io = null; }
+        if(fb){ (rootEl || window).removeEventListener('scroll', fb); fb = null; }
+        if(sent.parentNode) sent.parentNode.removeChild(sent);
+      }
+    };
+  }
+
   /* ── Gallery pagination state ──
-     fgVisible: how many items are currently shown.
-     Initial load: 200 on every device (mobile, tablet, desktop).
-     Each "Load More" press adds exactly 20 more, regardless of device. */
+     fgList: the current filtered+sorted list backing the grid.
+     fgVisible: how many of those are in the DOM.
+     First batch renders immediately on open; scrolling appends the
+     rest automatically — no Load More button. */
   var fgVisible = 0;
-  var FG_LOAD_MORE_STEP = 20;
-  function fgInitialLoad(){ return 200; }
+  var fgList = [];
+  var fgSent = null;
 
   /* Merit gates are enforced by RLS, so a blocked action comes back as a
      generic row-level-security error. Translate it into something the user
@@ -11526,8 +11607,6 @@ function qrMake (text) {
   };
 
   function renderFG(){
-    /* Reset to initial batch whenever query/filters change */
-    fgVisible = fgInitialLoad();
     _renderFGPage();
   }
 
@@ -11538,12 +11617,13 @@ function qrMake (text) {
     if(filterCat!=='all')imgs=imgs.filter(i=>(catList(i.category).length?catList(i.category):['others']).includes(filterCat));
     if(q)imgs=imgs.filter(i=>(i.name||'').toLowerCase().includes(q));
 
-    /* ── Sort. 'liked' (default) = most liked → least liked, applied to every
-       category alike. 'new'/'old' remain available from the filter panel.
+    /* ── Sort. 'trending' (default) = trending score high → low, applied to
+       every category alike (each category filter yields its own mini-ranking).
+       'new'/'old' remain available from the filter panel.
        Guards against null timestamps; id tie-breaker keeps ordering
        deterministic when two items share the same created_at. ── */
-    if(filterSrt==='liked'){
-      sortByLikes(imgs);
+    if(filterSrt==='trending'){
+      sortByTrending(imgs);
     } else {
       imgs.sort(function(a,b){
         var tA=a.created_at?new Date(a.created_at).getTime():0;
@@ -11552,44 +11632,60 @@ function qrMake (text) {
         if(diff!==0)return diff;
         /* FIX(A2): ids are uuids — parseInt always gave 0, so the tie-breaker
            never fired and equal-timestamp items shuffled between renders.
-           Compare as strings, mirroring sortByNewest/sortByLikes. */
+           Compare as strings, mirroring sortByNewest/sortByTrending. */
         var iA=String(a.id||''), iB=String(b.id||'');
         if(iA===iB) return 0;
         var asc = iA<iB ? -1 : 1;
         return filterSrt==='new' ? -asc : asc;
       });
     }
+
+    /* Any prior sentinel belongs to a grid we're about to throw away */
+    if(fgSent){ fgSent.destroy(); fgSent = null; }
+    fgList = imgs;
+
     if(!imgs.length){c.innerHTML='<div class="fgEmp">NO ARTWORK FOUND</div>';_fgSyncFilterBtn();return;}
 
-    /* Clamp fgVisible so it never exceeds total */
-    var showCount = Math.min(fgVisible, imgs.length);
-    var visible = imgs.slice(0, showCount);
-    var hasMore = showCount < imgs.length;
+    /* First batch paints immediately; the rest streams in as the
+       user scrolls (fgAppendBatch via the sentinel below).
+       IMPORTANT: fgVisible is PRESERVED across re-renders — renderFG
+       fires mid-session after likes/edits/deletes while the user may
+       be scrolled deep into the grid, and collapsing back to the
+       first batch would yank their scroll position. Only openFG /
+       applyFilters zero it for a genuine fresh start. */
+    fgVisible = Math.min(Math.max(gridInitialBatch(), fgVisible||0), imgs.length);
+    c.innerHTML = `<div class="fgGrid" id="fgGridEl">${imgs.slice(0, fgVisible).map(itemHTML).join('')}</div>`;
 
-    var gridHtml = `<div class="fgGrid">${visible.map(itemHTML).join('')}</div>`;
-
-    /* Load More button — always adds 20 more */
-    var moreHtml = hasMore
-      ? `<div class="fgLoadMoreWrap"><button class="fgLoadMore" onclick="fgLoadMore()" aria-label="Load more artworks"><span>✦</span> LOAD MORE</button></div>`
-      : '';
-
-    c.innerHTML = gridHtml + moreHtml;
+    if(fgVisible < imgs.length){
+      /* #fg is the scroll container (overflow-y:auto), so it is the
+         observer root — viewport intersection would never fire while
+         the overlay pans in from the right. */
+      fgSent = makeGridSentinel(document.getElementById('fg'), fgAppendBatch);
+      c.appendChild(fgSent.el);
+    }
     _fgSyncFilterBtn();
+  }
+
+  /* Append the next column-sized batch into the EXISTING grid —
+     never a full re-render, so already-decoded images don't flicker
+     and the scroll position never moves. */
+  function fgAppendBatch(){
+    var grid = document.getElementById('fgGridEl');
+    if(!grid || fgVisible >= fgList.length) return;
+    var next = fgList.slice(fgVisible, fgVisible + gridStepBatch());
+    fgVisible += next.length;
+    grid.insertAdjacentHTML('beforeend', next.map(itemHTML).join(''));
+    if(fgVisible >= fgList.length){
+      if(fgSent){ fgSent.destroy(); fgSent = null; }
+    } else if(fgSent){
+      fgSent.recheck();
+    }
   }
   /* Keep the filter button's "active" dot in sync with current sort/category. */
   function _fgSyncFilterBtn(){
-    const isFiltered=(filterCat!=='all'||filterSrt!=='liked');
+    const isFiltered=(filterCat!=='all'||filterSrt!=='trending');
     const btn=document.getElementById('fgFltBtn');
     if(btn)btn.classList.toggle('active',isFiltered);
-  }
-
-  /* Each press adds exactly 20 more items, preserving scroll position */
-  function fgLoadMore(){
-    fgVisible += FG_LOAD_MORE_STEP;
-    var fgEl = document.getElementById('fg');
-    var scrollY = fgEl ? fgEl.scrollTop : 0;
-    _renderFGPage();
-    if(fgEl) fgEl.scrollTop = scrollY;
   }
 
   function openFilterPanel(){
@@ -11609,15 +11705,15 @@ function qrMake (text) {
     var catR=document.querySelector('input[name="fltCat"]:checked');
     var srtR=document.querySelector('input[name="fltSrt"]:checked');
     filterCat=catR?catR.value:'all';
-    filterSrt=srtR?srtR.value:'liked';
-    fgVisible=fgInitialLoad();
+    filterSrt=srtR?srtR.value:'trending';
+    fgVisible=0; /* filters changed — restart from the first batch */
     closeFilterPanel();
     renderFG();
   }
   function openFG(){
     document.getElementById('fg').classList.add('open');
     document.body.style.overflow='hidden';
-    fgVisible=fgInitialLoad();
+    fgVisible=0; /* fresh open — start from the first batch */
     renderFG();
   }
   function closeFG(){
@@ -11625,7 +11721,6 @@ function qrMake (text) {
     restoreScroll();
     /* Reset category filter to 'all' so next open is always clean */
     filterCat = 'all';
-    fgVisible = fgInitialLoad();
     var catR = document.querySelector('input[name="fltCat"][value="all"]');
     if(catR) catR.checked = true;
   }
@@ -11855,6 +11950,13 @@ function qrMake (text) {
        browser save the file. */
     a.href=fullSrc; a.download=''; a.target='_blank'; a.rel='noopener';
     document.body.appendChild(a); a.click(); a.remove();
+    /* Count the download toward trending (server dedups per viewer per day).
+       Also bump the in-memory counter so a re-render reflects it without a
+       refetch — the guard trigger makes the DB the source of truth anyway. */
+    if(avCurrentArt && avCurrentArt.id){
+      try{ window.registerArtworkDownload(avCurrentArt.id); }catch(e){}
+      avCurrentArt.download_count = (parseInt(avCurrentArt.download_count,10)||0) + 1;
+    }
   }
   function avShare(){
     var url=window.location.href;
@@ -12937,19 +13039,19 @@ function qrMake (text) {
      USER PROFILE PAGE
      ├─ openProfileByUsername / openOwnProfile / closeProfilePage
      ├─ pfSwitchTab — Gallery / Comic / About
-     ├─ loadPfGallery / loadPfComic — paginated (range()), Load
-     │   More pattern matching .fgLoadMore
+     ├─ pfLoadMoreGallery — paginated (range()) with column-aware
+     │   batches, appended automatically by an infinite-scroll
+     │   sentinel (no Load More button)
      ├─ pfUpMod — shared upload modal for art + comic (own
      │   user_id only; never exposes edit/delete to the owner)
      ├─ Admin (isDev) sees Edit/Delete on every card regardless
      │   of whose profile is being viewed
      ========================================================= */
-  var PF_PAGE_SIZE = 12;
   var pf = {
     profile: null,        // profiles row currently being viewed
     isOwner: false,
     tab: 'gallery',
-    galleryRows: [], galleryPage: 0, galleryDone: false,
+    galleryRows: [], galleryDone: false, galleryBusy: false,
     upFile: null,
     upThumbFocus: null,    // {x,y} percentages set by confirmPfCrop()
     upPageFiles: []
@@ -13072,8 +13174,12 @@ function qrMake (text) {
     if(currentUser && currentUser.user_metadata && currentUser.user_metadata.username===username){
       pfPreloadImage(getThumbnailUrl(currentUserAvatarUrl));
     }
-    pf.profile=null; pf.galleryRows=[]; pf.galleryPage=0; pf.galleryDone=false;
+    pf.profile=null; pf.galleryRows=[]; pf.galleryDone=false; pf.galleryBusy=false;
     pf.likeLoaded=false; pf.bmLoaded=false;
+    pf.savedRows={like:[],bookmark:[]}; pf.savedShown={like:0,bookmark:0};
+    var _pgs=document.getElementById('pfGallerySentinel'); if(_pgs) _pgs.style.display='none';
+    var _pls=document.getElementById('pfLikeSentinel'); if(_pls) _pls.style.display='none';
+    var _pbs=document.getElementById('pfBookmarkSentinel'); if(_pbs) _pbs.style.display='none';
     /* Bumped on every open; a fetch that finishes after a newer open is stale. */
     var mySeq = ++pfOpenSeq;
 
@@ -13209,7 +13315,7 @@ function qrMake (text) {
   /* ── LIKE / BOOKMARK tabs — read-only grids for any profile ── */
   function pfSavedCardHTML(a){
     return '<div class="awCard" onclick="pfSavedOpen(\''+esc(String(a.id))+'\')">'+
-      '<div class="awImgWrap"><img loading="lazy" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%"></div>'+
+      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%"></div>'+
     '</div>';
   }
   async function pfSavedOpen(id){
@@ -13222,6 +13328,35 @@ function qrMake (text) {
       var cats=catList(data.category).length?catList(data.category):['others'];
       openLB(data.image_url, data.name, cats[0]||'', data.description||'', String(data.id), false);
     }catch(e){}
+  }
+  var pfSavedSent = { like:null, bookmark:null };
+  function pfEnsureSavedSentinel(kind){
+    if(pfSavedSent[kind]) return;
+    var el = document.getElementById(kind==='like'?'pfLikeSentinel':'pfBookmarkSentinel');
+    if(!el) return;
+    pfSavedSent[kind] = makeGridSentinel(document.getElementById('profilePage'), function(){
+      pfSavedAppend(kind);
+    }, el);
+  }
+  /* Rows arrive in one RPC (they're capped at 100), but they RENDER
+     in column-sized batches through the same sentinel pattern as
+     every other grid — first batch instantly, the rest on scroll. */
+  function pfSavedAppend(kind){
+    if(!pf.savedRows) return;
+    var rows  = pf.savedRows[kind]||[];
+    var shown = (pf.savedShown && pf.savedShown[kind])||0;
+    var grid  = document.getElementById(kind==='like'?'pfLikeGrid':'pfBookmarkGrid');
+    var sentEl= document.getElementById(kind==='like'?'pfLikeSentinel':'pfBookmarkSentinel');
+    if(!grid || shown >= rows.length){ if(sentEl) sentEl.style.display='none'; return; }
+    var size = shown ? gridStepBatch() : gridInitialBatch();
+    var next = rows.slice(shown, shown + size);
+    pf.savedShown[kind] = shown + next.length;
+    grid.insertAdjacentHTML('beforeend', next.map(pfSavedCardHTML).join(''));
+    if(sentEl){
+      var more = pf.savedShown[kind] < rows.length;
+      sentEl.style.display = more ? '' : 'none';
+      if(more && pfSavedSent[kind]) pfSavedSent[kind].recheck();
+    }
   }
   async function pfLoadSaved(kind){
     if(!pf.profile) return;
@@ -13238,7 +13373,13 @@ function qrMake (text) {
       if(error) throw error;
       var rows = data||[];
       pf[flag]=true;
-      grid.innerHTML = rows.map(pfSavedCardHTML).join('');
+      pf.savedRows  = pf.savedRows ||{like:[],bookmark:[]};
+      pf.savedShown = pf.savedShown||{like:0,bookmark:0};
+      pf.savedRows[kind] = rows;
+      pf.savedShown[kind] = 0;
+      grid.innerHTML = '';
+      pfEnsureSavedSentinel(kind);
+      pfSavedAppend(kind);
       empty.style.display = rows.length ? 'none' : '';
     }catch(e){
       grid.innerHTML='';
@@ -13247,17 +13388,55 @@ function qrMake (text) {
     }
   }
 
-  /* ── GALLERY tab ── */
+  /* ── GALLERY tab — server-paginated infinite scroll ──
+     Batches follow the column layout (16/12/10 first, then 8/6/4);
+     offset is simply how many rows we already hold, so a resize
+     changing the batch size mid-profile can never skip or duplicate
+     rows. New rows APPEND into the grid — pfRenderGallery's full
+     redraw is reserved for the edit paths that patch galleryRows. */
+  var pfGallerySent = null;
+  function pfEnsureGallerySentinel(){
+    if(pfGallerySent) return;
+    var el = document.getElementById('pfGallerySentinel');
+    if(!el) return;
+    pfGallerySent = makeGridSentinel(document.getElementById('profilePage'), function(){
+      if(!pf.profile || pf.galleryDone || pf.galleryBusy) return;
+      pfLoadMoreGallery();
+    }, el);
+  }
+  function pfGallerySentinelSync(){
+    var el = document.getElementById('pfGallerySentinel');
+    if(!el) return;
+    el.style.display = (pf.profile && !pf.galleryDone) ? '' : 'none';
+    if(pfGallerySent && el.style.display !== 'none') pfGallerySent.recheck();
+  }
+  /* Skeleton tiles fill the incoming batch's slots while the network
+     round-trip is in flight — the grid grows smoothly instead of the
+     page ending abruptly and then jumping. */
+  function pfGallerySkeleton(n){
+    var grid = document.getElementById('pfGalleryGrid');
+    if(!grid) return;
+    if(n > 0){
+      var tiles = '';
+      for(var i = 0; i < n; i++) tiles += '<div class="igSkelCard" data-igskel="1" aria-hidden="true"></div>';
+      grid.insertAdjacentHTML('beforeend', tiles);
+    } else {
+      grid.querySelectorAll('[data-igskel]').forEach(function(t){ t.remove(); });
+    }
+  }
   async function pfLoadMoreGallery(){
-    if(!pf.profile || pf.galleryDone) return;
-    var from = pf.galleryPage * PF_PAGE_SIZE, to = from + PF_PAGE_SIZE - 1;
+    if(!pf.profile || pf.galleryDone || pf.galleryBusy) return;
+    pf.galleryBusy = true;
+    pfEnsureGallerySentinel();
+    var size = pf.galleryRows.length ? gridStepBatch() : gridInitialBatch();
+    var from = pf.galleryRows.length, to = from + size - 1;
+    pfGallerySkeleton(size);
     try{
       const{data,error}=await sb.from('artworks').select('*').eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART).order('created_at',{ascending:false}).range(from,to);
       if(error) throw error;
       var rows = data||[];
       pf.galleryRows = pf.galleryRows.concat(rows);
-      pf.galleryPage++;
-      if(rows.length < PF_PAGE_SIZE) pf.galleryDone = true;
+      if(rows.length < size) pf.galleryDone = true;
       rows.forEach(function(a){
         /* FIX: only APPROVED rows may enter the public `images` array.
            This profile query intentionally pulls every status so the
@@ -13268,14 +13447,22 @@ function qrMake (text) {
         if(a.status!=='approved') return;
         if(images.findIndex(function(i){return String(i.id)===String(a.id);})===-1) images.push(a);
       });
-      pfRenderGallery();
-    }catch(e){ console.error('Error: '+e.message); }
+      pfGallerySkeleton(0);
+      var grid = document.getElementById('pfGalleryGrid');
+      if(grid && rows.length) grid.insertAdjacentHTML('beforeend', rows.map(pfGalleryCardHTML).join(''));
+      document.getElementById('pfGalleryEmpty').style.display = pf.galleryRows.length ? 'none' : '';
+    }catch(e){
+      pfGallerySkeleton(0);
+      console.error('Error: '+e.message);
+    }
+    pf.galleryBusy = false;
+    pfGallerySentinelSync();
   }
   function pfRenderGallery(){
     var grid = document.getElementById('pfGalleryGrid');
     grid.innerHTML = pf.galleryRows.map(pfGalleryCardHTML).join('');
     document.getElementById('pfGalleryEmpty').style.display = pf.galleryRows.length ? 'none' : '';
-    document.getElementById('pfGalleryLoadMoreWrap').style.display = pf.galleryDone ? 'none' : '';
+    pfGallerySentinelSync();
   }
   function pfGalleryCardHTML(a){
     var tags = (a.tags && a.tags.length) ? a.tags : catList(a.category);
@@ -13283,7 +13470,7 @@ function qrMake (text) {
        dev/admin viewer — to keep this grid a pure read-only showcase. */
     var pending = a.status === 'pending';
     return '<div class="awCard" onclick="pfOpenArtwork(\''+esc(String(a.id))+'\')">'+
-      '<div class="awImgWrap'+(pending?' awPending':'')+'"><img loading="lazy" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%">'+
+      '<div class="awImgWrap awLoading'+(pending?' awPending':'')+'"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%">'+
         (pending?'<div class="awPendingOv"><div class="awPendingSpin"></div><div class="awPendingLbl">IN REVIEW</div></div>':'')+
       '</div>'+
       '<div class="pfCardMeta">'+
@@ -16591,10 +16778,18 @@ function hideCommentThumbnail(){
     card.setAttribute('tabindex','0');
     card.setAttribute('aria-label','View ' + name);
 
+    /* .awLoading paints the shimmer skeleton (CSS already existed,
+       nothing ever applied it) — cleared the moment pixels arrive.
+       onerror clears it too so a dead URL can't shimmer forever,
+       and transparent PNGs don't show the animation through
+       themselves once loaded. aspect-ratio:1 on the wrap reserves
+       the space, so cards never shift as images stream in. */
     var wrap = document.createElement('div');
-    wrap.className = 'awImgWrap';
+    wrap.className = 'awImgWrap awLoading';
 
     var img = document.createElement('img');
+    img.onload  = function(){ wrap.classList.remove('awLoading'); };
+    img.onerror = function(){ wrap.classList.remove('awLoading'); };
     img.src = getThumbnailUrl(fullSrc);
     img.style.objectPosition = tx+'% '+ty+'%';
     img.alt = name;
@@ -16629,19 +16824,36 @@ function hideCommentThumbnail(){
 
   /* Render whichever dataset is passed into #awGrid — used for both
      tabs, only actually painting if that tab is the active one. */
+  /* ── Batched render state for the main-page grid ──
+     awRList: full sorted list for the active tab; awRShown: how many
+     cards are in the DOM. The old flat slice(0,200) painted up to
+     200 cards in one go — now the first column-sized batch paints
+     immediately and the rest streams in on scroll (no cap needed:
+     batching IS the perf guard). Appended cards land inside
+     #artworks, so the fade-up MutationObserver restamps them and
+     the scroll-reveal ("parallax") rise keeps firing per batch. */
+  var awRList = [], awRShown = 0, awRType = null, awSent = null;
+
   function renderAwGrid(list, type){
     var grid  = document.getElementById('awGrid');
     var empty = document.getElementById('awEmpty');
     if(!grid) return;
 
-    /* Every tab is most-liked → least-liked, EXCEPT "Latest", which is the
-       one view that stays newest-first (that's its whole purpose).
+    /* Every tab is TRENDING (per-category mini-ranking), EXCEPT "Latest",
+       which is the one view that stays newest-first (that's its whole purpose).
        Hidden artworks are dropped first (per-user "hide from my feed"). */
     var src = filterHidden((list||[]).slice());
-    var sorted = (type === 'latest' ? sortByNewest(src) : sortByLikes(src)).slice(0, 200);
+    awRList = (type === 'latest' ? sortByNewest(src) : sortByTrending(src));
+    /* Same-tab re-render (rebuildGalCarousels after a like/edit/
+       upload) keeps however many cards were already showing so the
+       user's scroll depth survives; switching tabs starts fresh. */
+    var keep = (type === awRType) ? awRShown : 0;
+    awRType = type;
+    awRShown = 0;
+    if(awSent){ awSent.destroy(); awSent = null; }
     grid.innerHTML = '';
 
-    if(!sorted.length){
+    if(!awRList.length){
       if(empty){
         empty.textContent = (type && type !== 'artworks' && type !== 'latest')
           ? ('NO ' + catLabel(type).toUpperCase() + ' ART YET')
@@ -16652,9 +16864,34 @@ function hideCommentThumbnail(){
     }
     if(empty) empty.style.display = 'none';
 
-    sorted.forEach(function(item){
-      grid.appendChild(buildAwCard(item));
-    });
+    awAppendBatch(Math.max(gridInitialBatch(), keep));
+    if(awRShown < awRList.length){
+      /* Main page scrolls the document, so the observer root is the
+         viewport (null). The sentinel lives INSIDE .awGrid spanning
+         the full row (grid-column:1/-1 in .igSentinel). */
+      awSent = makeGridSentinel(null, function(){ awAppendBatch(); });
+      grid.appendChild(awSent.el);
+    }
+  }
+
+  /* Append the next batch of cards before the sentinel.
+     `count` overrides the batch size (used for the initial paint /
+     scroll-depth restore); omitted, it's one column-sized step. */
+  function awAppendBatch(count){
+    var grid = document.getElementById('awGrid');
+    if(!grid || awRShown >= awRList.length) return;
+    var size = count || gridStepBatch();
+    var end  = Math.min(awRShown + size, awRList.length);
+    var frag = document.createDocumentFragment();
+    for(var i = awRShown; i < end; i++) frag.appendChild(buildAwCard(awRList[i]));
+    awRShown = end;
+    if(awSent && awSent.el.parentNode === grid) grid.insertBefore(frag, awSent.el);
+    else grid.appendChild(frag);
+    if(awRShown >= awRList.length){
+      if(awSent){ awSent.destroy(); awSent = null; }
+    } else if(awSent){
+      awSent.recheck();
+    }
   }
 
   /* Artworks tab — called by renderHome() whenever `images` changes */
@@ -17393,7 +17630,7 @@ function hideCommentThumbnail(){
   /* ── IntersectionObserver: trigger once per element ──
      FIX: a single shared observer instance, created once. Previously
      every MutationObserver restamp (each grid re-render, tab switch,
-     load-more) built a brand-new IntersectionObserver observing ALL
+     batch append) built a brand-new IntersectionObserver observing ALL
      .fu-el nodes — instances piled up for the page's lifetime, each
      still watching every unrevealed card. Elements are now marked
      with data-fu-obs so each is observed exactly once. */
@@ -18918,6 +19155,16 @@ html.thmFade #themePage{
     db().rpc('register_artwork_view', { p_artwork: id, p_anon_key: viewerKey() })
       .then(function () {}, function () {});               /* fire-and-forget */
   }
+  /* ── Download tracking (feeds the trending score, ×6 weight) ──
+     Lives here because this closure already owns db() + viewerKey().
+     Server-side dedup: one count per viewer per artwork per day
+     (artwork_download_dedup), same anti-abuse shape as views — so
+     spam-clicking Download can't inflate an artwork's trending rank. */
+  window.registerArtworkDownload = function (id) {
+    if (!id || !db()) return;
+    db().rpc('register_artwork_download', { p_artwork: id, p_anon_key: viewerKey() })
+      .then(function () {}, function () {});               /* fire-and-forget */
+  };
   function idFromPath (path) {
     var m = /^\/artwork\/([^/]+)$/.exec(path || '');
     return m ? decodeURIComponent(m[1]) : null;

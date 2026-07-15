@@ -1,8 +1,5 @@
-# DigiArtz — KOE
+# DigiArtz 
 > Art Has No Limits
-
-A digital art portfolio and gallery platform built by KOE.
-Features character illustrations, landscapes, vehicles, and sketches.
 
 ## 🌐 Live Site
 https://digiartz.net
@@ -16,8 +13,11 @@ https://digiartz.net
 
 ## 🛠 Built With
 - HTML / CSS / JavaScript (single-file)
-- Supabase (database + storage)
+- Supabase (database)
 - Cloudflare Pages (hosting)
+- AWS S3 (storage)
+- Cloudflare worker ai (moderation)
+
 
 ## 👤 Artist
 KOE — digiartz.net

@@ -55,7 +55,7 @@ window.ZEO_DATA = {
     { id: "navigation",icon: "🧭", label: "Getting Around",         description: "Find your way and reach any section.",       prompt: "What are you trying to find or reach?" },
     { id: "account",   icon: "🔑", label: "Account & Login",        description: "Sign up, log in, passwords, sign-out.",      prompt: "What's happening with your account?" },
     { id: "profile",   icon: "👤", label: "Profile & Customizing",  description: "Avatar, banner, bio, links, username.",      prompt: "What do you want to change on your profile?" },
-    { id: "upload",    icon: "🎨", label: "Uploading Art",          description: "Post art & comics, tags, review status.",    prompt: "What do you need help with for your artwork?" },
+    { id: "upload",    icon: "🎨", label: "Uploading Art",          description: "Post art & comics, tags, categories.",    prompt: "What do you need help with for your artwork?" },
     { id: "gallery",   icon: "🖼️", label: "Viewing & Interacting",  description: "Download, share, like, comment, report.",    prompt: "What would you like to do with an artwork?" },
     { id: "community", icon: "💬", label: "Community & Chat",       description: "Communities, comments, and messages.",       prompt: "Which part of the community do you need help with?" },
     { id: "billing",   icon: "💎", label: "Subscriptions & Refunds",description: "Plans, payments, refunds, cancelling.",      prompt: "What are you facing with billing or your plan?" },
@@ -321,7 +321,7 @@ If a name is taken, try a small variation. Your username is how others find and 
 5. Choose the category and the software you used
 6. Submit
 
-Your art then goes into a quick review before it appears publicly.`
+Your art goes live in the public gallery immediately.`
       },
       {
         question: "How do I upload a comic?",
@@ -331,9 +331,9 @@ Your art then goes into a quick review before it appears publicly.`
 1. Profile tab → Upload → choose Comic
 2. Select your comic image/page
 3. Add a title, description and tags
-4. Submit for review
+4. Submit
 
-It shows up under the Comic section once approved.`
+It shows up under the Comic section right away.`
       },
       {
         question: "How do tags and software work?",
@@ -345,17 +345,6 @@ It shows up under the Comic section once approved.`
 3. Good tags help people discover your work in search
 
 Keep tags relevant — spammy tags can get flagged.`
-      },
-      {
-        question: "Why is my art \"In Review\"?",
-        answer:
-`New uploads are checked before going public.
-
-• While pending, your piece shows a blurred "IN REVIEW" overlay
-• Only you can see it in that state
-• Once approved it becomes visible to everyone
-
-This keeps the gallery safe and on-topic. It usually doesn't take long.`
       },
       {
         question: "How do I edit or delete my art?",

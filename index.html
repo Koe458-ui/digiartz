@@ -635,11 +635,6 @@
     .gOv{position:absolute;top:0;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--bg) 70%,transparent);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;}
     .gItem:hover .gOv{opacity:1;}
     .gOv svg{width:36px;height:36px;color:var(--ps);}
-    .gDel{position:absolute;top:.4rem;right:.4rem;width:24px;height:24px;background:rgba(220,38,38,.85);border:none;color:white;font-size:.75rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:5;transition:background .2s;border-radius:6px;}
-    .gDel:hover{background:rgb(220,38,38);}
-    body.admin .gDel{display:flex;}
-    /* (admin edit pencil removed — uploads/edits are per-user now;
-       admin keeps gDel delete + the #admPage review queue) */
     .cBadgeWrap{display:none;}
     .cBadge{background:var(--sur2);border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
     .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,var(--bg));border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
@@ -657,9 +652,6 @@
       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
       pointer-events:none;
     }
-    /* Admin mode puts ✎/✕ in the top-right corner — slide the marker
-       over to the left so the two never sit on top of each other. */
-    body.admin .gMulti{right:auto;left:.4rem;}
 
 
     /* ── Full gallery overlay — slide-in panel ──
@@ -2881,13 +2873,6 @@
 
     
 
-    /* ADMIN BAR */
-    .admBar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:color-mix(in srgb,var(--vsur) 97%,transparent);border-top:1px solid var(--bdr);padding:.8rem 2rem;display:none;align-items:center;justify-content:space-between;gap:1rem;}
-    body.admin .admBar{display:flex;}
-    .admBar p{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--ps);}
-    .admSv{padding:.6rem 1.5rem;background:var(--pdim);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;cursor:pointer;transition:background .25s,box-shadow .25s;border-radius:6px;}
-    .admSv:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 15px color-mix(in srgb,var(--tc) 30%,transparent);}
-    body.admin .adminOnly{display:flex !important;}
 
     .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:20100;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:normal;max-width:min(560px,calc(100vw - 2rem));width:max-content;text-align:center;line-height:1.5;border-radius:6px;}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -3588,35 +3573,6 @@
       animation:imgShimmer 1.4s infinite;
       min-height:140px;
     }
-    /* ── Pending-review state — blurred thumbnail + spinner overlay,
-       shown on a submitter's own profile until a dev approves the
-       piece (status:'pending'). Tapping opens openVerifyModal(). ── */
-    .awImgWrap.awPending{position:relative;}
-    .awImgWrap.awPending img{
-      filter:blur(11px) saturate(.75) brightness(.72);
-      transform:scale(1.12);
-    }
-    .awPendingOv{
-      position:absolute;inset:0;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:.5rem;
-      background:color-mix(in srgb,var(--bg) 28%,transparent);
-    }
-    .awPendingSpin{
-      width:22px;height:22px;border-radius:50%;
-      border:2px solid color-mix(in srgb,var(--tc) 25%,transparent);
-      border-top-color:var(--pg);
-      animation:awPendingSpin .8s linear infinite;
-    }
-    .awPendingLbl{
-      font-family:var(--fm);font-size:.58rem;font-weight:700;
-      letter-spacing:.14em;color:#fff;
-      text-shadow:0 1px 4px rgba(0,0,0,.5);
-    }
-    @keyframes awPendingSpin{to{transform:rotate(360deg);}}
-    @media(prefers-reduced-motion:reduce){
-      .awPendingSpin{animation:none;border-top-color:color-mix(in srgb,var(--tc) 25%,transparent);}
-    }
     /* ── Title + category overlaid directly on the artwork with a
        bottom gradient scrim — ArtStation-style, no caption bar ──
        Hidden: cards now show image only, name/category revealed in
@@ -3788,7 +3744,6 @@
     }
     #smAdmBtn{display:none;}
     #smAdmBtn.devOnly{display:block;}
-    #smAdmBtn.on{color:#93c5fd;}
     .pfAvatarWrap{
       position:absolute;left:50%;transform:translateX(-50%);bottom:-42px;z-index:2;
     }
@@ -3974,15 +3929,11 @@
       .pfUpTrigger{padding:.5rem .8rem;font-size:.62rem;}
     }
     .pfCardMeta{padding:.65rem .75rem .8rem;border-top:1px solid var(--bdr);}
-    .pfCardMeta:not(:has(.pfCardAdmin)){display:none;}
+    .pfCardMeta{display:none;}
     .pfCardTitle{display:none;}
     .pfCardDate{display:none;}
     .pfCardTags{display:none;}
     .pfTagChip{font-family:var(--fm);font-size:.6rem;letter-spacing:.06em;padding:.1rem .4rem;background:color-mix(in srgb,var(--tc) 10%,transparent);color:var(--ps);border-radius:3px;}
-    .pfCardAdmin{display:flex;gap:.5rem;margin-top:.55rem;}
-    .pfCardAdmin button{flex:1;font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;padding:.35rem;border:1px solid var(--bdr);background:var(--sur2);color:var(--txd);cursor:pointer;border-radius:4px;}
-    .pfCardAdmin button:hover{border-color:var(--bdrh);color:var(--tx);}
-    .pfCardAdmin button.danger:hover{color:#dc2626;border-color:#fca5a5;}
     .pfEmpty{padding:3rem 1rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;color:var(--txd);}
 
     /* ── Edit Profile page (#pfEditPage) — same sliding full-page
@@ -4063,10 +4014,9 @@
     /* ── Skeleton loading state ── */
 
     /* =========================================================
-       ADMIN REVIEW PAGE (#admPage)
-       Moderation queue — everything a non-dev uploads lands here
-       as status:'pending' and never touches the public gallery
-       arrays until a dev approves it. Same sliding full-page /
+       ADMIN PANEL PAGE (#admPage)
+       Dev-only panel: hero slides editor + broadcast notifications
+       + open reports. Nothing else. Same sliding full-page /
        dark-violet language as #profilePage; reuses .subPgHdr /
        .subPgTitle / .subPgX / .pfTabs / .pfTab / .pfPanel /
        .pfGrid / .pfGridArt / .pfEmpty as-is.
@@ -4089,26 +4039,6 @@
     .admBdy{max-width:1100px;margin:0 auto;padding:1.6rem 2rem 6rem;}
     @media(max-width:480px){.admBdy{padding:1.2rem 1.2rem 6rem;}}
 
-    /* ── Admin Mode toggle row ── */
-    .admModeRow{
-      display:flex;align-items:center;justify-content:space-between;gap:1rem;
-      background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;
-      padding:1rem 1.2rem;margin-bottom:1.6rem;
-    }
-    .admModeLbl{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--tx);}
-    .admModeSub{font-family:var(--fb);font-size:.72rem;color:var(--txd);margin-top:.25rem;}
-    .admSwitch{position:relative;width:46px;height:26px;flex-shrink:0;}
-    .admSwitch input{opacity:0;width:0;height:0;}
-    .admSwitchTrack{
-      position:absolute;inset:0;background:var(--sur);border:1px solid var(--bdr);
-      border-radius:999px;cursor:pointer;transition:background .2s,border-color .2s;
-    }
-    .admSwitchTrack:before{
-      content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;
-      background:var(--txd);border-radius:50%;transition:transform .2s,background .2s;
-    }
-    .admSwitch input:checked + .admSwitchTrack{background:color-mix(in srgb,var(--pg) 35%,transparent);border-color:var(--pg);}
-    .admSwitch input:checked + .admSwitchTrack:before{transform:translateX(20px);background:var(--pb);}
 
     /* ── Tabs (Artwork / Comic Arts / Notifications) ── */
     #admPage .pfTabs{padding:0;border-bottom:1px solid var(--bdr);position:static;margin-bottom:.4rem;}
@@ -4133,10 +4063,6 @@
       flex:1;font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;padding:.45rem;
       border-radius:5px;cursor:pointer;transition:opacity .15s,background .15s;
     }
-    .admApproveBtn{background:#16a34a;color:#fff;border:1px solid #16a34a;}
-    .admApproveBtn:hover{opacity:.88;}
-    .admRejectBtn{background:none;color:#f87171;border:1px solid #7f1d1d;}
-    .admRejectBtn:hover{background:rgba(220,38,38,.15);}
     .admEmptyIcon{font-size:1.6rem;display:block;margin-bottom:.6rem;opacity:.6;}
 
     /* ── Admin broadcast composer (inside #admPanelNoti) ──
@@ -4171,7 +4097,7 @@
        edit/delete their OWN artworks + comics, any status. Reuses
        the exact same sliding full-page / dark-violet language and
        card shell as #admPage (.subPgHdr/.pfTabs/.pfPanel/.admBdy/
-       .admCard), just swapping Approve/Reject for Edit/Delete. ── */
+       .admCard) with Edit/Delete actions. ── */
     #pfMyWorkPage{
       position:fixed;inset:0;z-index:520;background:var(--bg);
       overflow-y:auto;transform:translateX(100%);
@@ -4195,18 +4121,11 @@
     .mwEditBtn:hover{background:color-mix(in srgb,var(--tc) 12%,transparent);border-color:var(--bdrh);}
     .mwDeleteBtn{background:none;color:#f87171;border:1px solid #7f1d1d;}
     .mwDeleteBtn:hover{background:rgba(220,38,38,.15);}
-    .mwStatusChip{
-      display:inline-block;font-family:var(--fm);font-size:.56rem;letter-spacing:.08em;
-      padding:.15rem .4rem;border-radius:3px;margin-top:.3rem;text-transform:uppercase;
-    }
-    .mwStatusChip.pending{background:rgba(234,179,8,.15);color:#eab308;}
-    .mwStatusChip.rejected{background:rgba(220,38,38,.15);color:#f87171;}
-    .mwStatusChip.approved{background:rgba(22,163,74,.15);color:#4ade80;}
 
     /* =========================================================
-       HERO SLIDES (admin-only, UI ONLY — no Supabase wiring yet)
-       Lives inside #admPage, between the Admin Mode toggle and the
-       Artwork/Comic/Notifications tabs. 10 fixed slots, same
+       HERO SLIDES (dev-only, wired to the hero_slides table)
+       Lives inside #admPage, above the Notifications/Report tabs.
+       10 fixed slots, same
        300×190 "desktop card" box as the live #topSlide strip.
        Each box gets a pencil button → opens .ahsEditOvr with an
        image picker (local preview only, FileReader dataURL) + a
@@ -4253,8 +4172,8 @@
     /* =========================================================
        NOTIFICATIONS PAGE (#notifPage)
        Opened by tapping the bell (#hNotifBtn). Read-only feed —
-       admin broadcasts (notifications.user_id IS NULL) plus the
-       signed-in user's own artwork/comic approve+reject notices.
+       admin broadcasts (notifications.user_id IS NULL) plus any
+       personal notices addressed to the signed-in user.
        Same sliding full-page / dark-violet language as #admPage.
        No edit or delete control exists anywhere on this page —
        the notifications table is never written to by a normal
@@ -4723,7 +4642,7 @@ body{background:var(--bg);}
   box-shadow:0 1px 3px rgba(5,3,8,.3),0 4px 14px rgba(5,3,8,.35)!important;
 }
 .gItem:hover{box-shadow:0 6px 20px rgba(5,3,8,.4)!important;}
-.fltDone:hover,.mBtn:hover,.admSv:hover,.sCard:hover,.cpBarSend:hover,.upBtn:hover,.fgFltBtn:hover,.fgFltBtn.active,.fltOptH:has(input:checked){box-shadow:none!important;}
+.fltDone:hover,.mBtn:hover,.sCard:hover,.cpBarSend:hover,.upBtn:hover,.fgFltBtn:hover,.fgFltBtn.active,.fltOptH:has(input:checked){box-shadow:none!important;}
 
 /* Overlay / scrim backgrounds used by non-hero panels */
 #fgFltOvr::before{background:color-mix(in srgb,var(--bg) 55%,transparent)!important;}
@@ -4734,7 +4653,6 @@ body{background:var(--bg);}
 #legalBackdrop::before{background:color-mix(in srgb,var(--bg) 75%,transparent)!important;}
 #artModal::before{background:color-mix(in srgb,var(--bg) 85%,transparent)!important;}
 .gOv{background:color-mix(in srgb,var(--bg) 65%,transparent)!important;}
-.admBar{background:color-mix(in srgb,var(--vsur) 97%,transparent)!important;}
 
 /* Cards / containers get a dark violet surface with a soft border */
 .gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{
@@ -5914,14 +5832,14 @@ body{background:var(--bg);}
 /* ══════════════════════════════════════════════════════════════
    DARK VIOLET FIX — remaining white-theme leftovers
    Covers: Legal modal (Privacy/Terms/Cookie/Refund policy),
-   the .mBtn.sec buttons, Admin bar (.admBar).
+   the .mBtn.sec buttons.
    These sit outside #fg's scope so they never picked up the
    dark-violet tokens — they were still using the old white
    :root defaults. Re-declaring the tokens locally (same pattern
    as #fg) makes every child that already styles
    itself with var(--bg)/var(--sur)/var(--tx)/etc. repaint dark.
    ══════════════════════════════════════════════════════════════ */
-#legalBackdrop,.admBar{
+#legalBackdrop{
   --bg:inherit;--sur:inherit;--sur2:inherit;
   --bdr:inherit;--bdrh:inherit;
   --tx:inherit;--txd:inherit;
@@ -5945,7 +5863,6 @@ body{background:var(--bg);}
 .lmBody strong{color:var(--tx)!important;}
 .lmDate{color:var(--ps)!important;background:rgba(var(--pg-rgb),.1)!important;border-color:var(--bdr)!important;}
 .mBtn.sec{color:var(--txd)!important;border-color:var(--bdr)!important;}
-.admBar{background:color-mix(in srgb,var(--vsur) 97%,transparent)!important;border-top-color:var(--bdr)!important;}
 
 /* ── "Coming Soon" subscription popup — was hardcoded white ── */
 .subModalCard{
@@ -6150,7 +6067,6 @@ body{background:var(--bg);}
        Displays the 200 most recent artworks in a responsive ArtStation-
        style masonry grid (full-bleed image, overlaid title/gradient).
        ├─ Section Header (.awHdr) — Artworks / category tabs
-       ├─ Admin Upload Button (.upBtn.adminOnly)
        ├─ Grid (.awGrid #awGrid)
        │   └─ Cards (.awCard) — injected by renderAwGrid() in
        │       column-sized batches via infinite scroll
@@ -6168,7 +6084,6 @@ body{background:var(--bg);}
         <!-- Category tabs injected by buildCategoryUI(), before the indicator. -->
         <span class="awTabIndicator" id="awTabIndicator" aria-hidden="true"></span>
       </div>
-      <!-- Admin Upload Button (admin-only, hidden by default) -->
     </div>
     <div class="awGrid" id="awGrid">
       <!-- ═══ CRAWL SNAPSHOT (prerendered) ═══════════════════════
@@ -6636,7 +6551,7 @@ body{background:var(--bg);}
     /* ═══════════════════════════════════════════════════════════
        FULL RANKING PAGE (#rankPage)
        A dedicated page — same overlay pattern as Notifications /
-       Admin Review: slides in from the right, its own header with a
+       Admin Panel: slides in from the right, its own header with a
        ← close button, and it takes the bottom nav out of the way.
 
        Tapping ANY rank in a box lands here. It lists EVERY ranked
@@ -7193,35 +7108,20 @@ body{background:var(--bg);}
   </div>
 
   <!-- =========================================================
-       ADMIN REVIEW PAGE (#admPage)
-       Moderation queue for everything non-devs upload. Opened via
-       the "Admin Panel" item in the profile ⋮ menu (smHandleAdm).
-       ├─ Header (.subPgHdr) — title + close (.subPgX)
-       ├─ Admin Mode toggle (.admModeRow) — on/off switch, same
-       │   isAdm flag the rest of the site already uses for
-       │   gDel/upload-button visibility
-       └─ Tabs (.pfTabs) — Artwork / Comic Arts / Notifications
-           ├─ Artwork    → #admArtGrid  (pending artworks)
-           └─ Notifications → placeholder, empty for now
+       ADMIN PANEL (#admPage)
+       Dev-only panel, opened via the "Admin Panel" item in the
+       profile ⋮ menu (smHandleAdm). Exactly three capabilities:
+       ├─ Hero slides editor (.ahsSection)
+       ├─ Notifications — broadcast composer (#admPanelNoti)
+       └─ Reports — open user reports (#admPanelRpt)
        ========================================================= -->
-  <div id="admPage" role="dialog" aria-modal="true" aria-label="Admin review">
+  <div id="admPage" role="dialog" aria-modal="true" aria-label="Admin panel">
     <div class="subPgHdr">
-      <button class="subPgX" onclick="closeAdmPage()" aria-label="Close admin review">←</button>
-      <div class="subPgTitle">ADMIN REVIEW <span class="s">✦</span></div>
+      <button class="subPgX" onclick="closeAdmPage()" aria-label="Close admin panel">←</button>
+      <div class="subPgTitle">ADMIN PANEL <span class="s">✦</span></div>
     </div>
     <div class="admBdy">
-      <div class="admModeRow">
-        <div>
-          <div class="admModeLbl">ADMIN MODE</div>
-          <div class="admModeSub" id="admModeSub">Off — edit/delete controls are hidden site-wide.</div>
-        </div>
-        <label class="admSwitch">
-          <input type="checkbox" id="admModeToggle" onchange="admToggleMode()">
-          <span class="admSwitchTrack"></span>
-        </label>
-      </div>
-
-      <!-- HERO SLIDES — UI only for now, no Supabase wiring yet.
+      <!-- HERO SLIDES — wired to the hero_slides table (dev-only RLS).
            10 fixed slots, pencil opens the edit overlay (image +
            text + delete). See ahSlides[] / ahs* functions in JS. -->
       <div class="ahsSection">
@@ -7242,16 +7142,9 @@ body{background:var(--bg);}
 
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
-          <button class="pfTab active" id="admTabArt" role="tab" aria-selected="true" onclick="admSwitchTab('art')">ARTWORK<span class="admTabCount" id="admCountArt" style="display:none;">0</span></button>
-          <button class="pfTab" id="admTabNoti" role="tab" aria-selected="false" onclick="admSwitchTab('noti')">NOTIFICATIONS</button>
+          <button class="pfTab active" id="admTabNoti" role="tab" aria-selected="true" onclick="admSwitchTab('noti')">NOTIFICATIONS</button>
           <button class="pfTab" id="admTabRpt" role="tab" aria-selected="false" onclick="admSwitchTab('rpt')">REPORT<span class="admTabCount" id="admCountRpt" style="display:none;">0</span></button>
         </div>
-      </div>
-
-      <!-- ARTWORK -->
-      <div class="pfPanel active" id="admPanelArt">
-        <div class="pfGrid pfGridArt" id="admArtGrid"></div>
-        <div class="pfEmpty" id="admArtEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>Nothing pending — all artwork is reviewed.</div>
       </div>
 
       <!-- REPORTS — open user reports, newest first (dev-only via RLS) -->
@@ -7260,8 +7153,8 @@ body{background:var(--bg);}
         <div class="pfEmpty" id="admRptEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>No open reports.</div>
       </div>
 
-      <!-- COMIC ARTS -->
-      <div class="pfPanel" id="admPanelNoti">
+      <!-- NOTIFICATIONS — broadcast composer -->
+      <div class="pfPanel active" id="admPanelNoti">
         <div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>
         <div class="admNotiCompose">
           <input type="text" id="admNotiTitle" class="admNotiInput" placeholder="Title" maxlength="80">
@@ -7279,9 +7172,8 @@ body{background:var(--bg);}
        EDIT MY WORK PAGE (#pfMyWorkPage)
        Opened from the profile ⋮ menu (openMyWorkPage). Lets the
        signed-in owner edit or delete their OWN artworks + comics
-       (any status: approved/pending/rejected) — never anyone
-       else's. Reuses the #admPage sliding-panel/dark-violet/.admCard
-       visual language, swapping Approve/Reject for Edit/Delete.
+       — never anyone else's. Reuses the #admPage sliding-panel/
+       dark-violet/.admCard visual language with Edit/Delete actions.
        ├─ Tabs (.pfTabs) — Artwork / Comic
        │   ├─ Artwork → #mwArtGrid  (mwRenderArt)
        ========================================================= -->
@@ -7334,8 +7226,8 @@ body{background:var(--bg);}
   <!-- =========================================================
        NOTIFICATIONS PAGE (#notifPage)
        Opened via the bell button (#hNotifBtn → openNotifications()).
-       Read-only feed: admin broadcasts (user_id NULL) + the signed
-       -in user's own artwork/comic approve+reject notices. Nothing
+       Read-only feed: admin broadcasts (user_id NULL) + any
+       personal notices addressed to the signed-in user. Nothing
        on this page can be edited or deleted — see notifications
        RLS (insert restricted to devs, no update/delete policy at
        all) and notification_reads (per-user read-state only).
@@ -10881,20 +10773,6 @@ function qrMake (text) {
     </div>
   </div>
 
-  <!-- =========================================================
-       ADMIN BAR
-       ├─ Status Label
-       └─ Save Settings Button (.admSv)
-       ========================================================= -->
-  <div class="admBar">
-   <p>
-    ✦ ADMIN MODE — CHANGES SAVE TO CLOUD
-   </p>
-   <button class="admSv" onclick="saveAll()">
-    SAVE SETTINGS
-   </button>
-  </div>
-
   <!-- ═══ SETTINGS — full page, opened by the SETTINGS button on your own
        profile. Replaces the old ⋮ hamburger drawer (pfMenu/pfMenuScrim),
        which has been removed; item ids are kept so the existing count and
@@ -10985,7 +10863,6 @@ function qrMake (text) {
        profile/artwork link — or reloading (e.g. toggling mobile<->desktop)
        while already on a deep URL — broke, while the homepage worked. -->
   <script src="/config.js"></script>
-  <script src="/uploadVerifier.js"></script>
   <script>
 
   // config.js must define window.KOE_CONFIG = { SB_URL, SB_KEY }
@@ -11100,7 +10977,7 @@ function qrMake (text) {
     }
   }
 
-  let isAdm = false, images = [];
+  let images = [];
   let filterCat = 'all', filterSrt = 'trending';
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -11315,10 +11192,9 @@ function qrMake (text) {
   async function loadDB(){
     if(!sb)return;
     try{
-      /* Public-facing load — only approved items ever reach the
-         homepage/gallery/hero-showcase arrays. Anything still
-         status:'pending' (or rejected) is invisible here; it
-         only shows up inside #admPage for a dev to review. */
+      /* Public-facing load — the status:'approved' filter is kept
+         as a defensive guard even though every upload now inserts
+         as 'approved' directly. */
       const{data:imgs}=await sb.from('artworks').select('*').eq('status','approved').eq('kind',ART_KIND_ART).order('created_at',{ascending:false});
       images=imgs||[];
       if(images.length){
@@ -11342,13 +11218,6 @@ function qrMake (text) {
         showToast('Offline \u2014 showing saved artworks \u2726');
       }
     }
-    /* Refresh the pending badge counts on the Admin Panel menu item, if a dev is signed in. */
-    if(typeof admRefreshBadge==='function') admRefreshBadge();
-  }
-
-  async function saveAll(){
-    if(!sb||!isAdm)return;
-    showToast('Saved to cloud ✦');
   }
 
   /* ── Responsive image sizing (AWS Dynamic Image Transformation) ──────
@@ -11421,7 +11290,6 @@ function qrMake (text) {
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
       </a>
-      <button class="gDel" onclick="delImg('${idStr}','${esc(img.storage_path||'')}',event)" title="Delete">✕</button>
     </div>`;
   }
 
@@ -12302,12 +12170,7 @@ function qrMake (text) {
     var b=document.getElementById('smAdmBtn');
     if(!b) return;
     b.classList.toggle('devOnly',isDev);
-    b.classList.toggle('on',isAdm);
-    /* Label is static now — the button opens #admPage rather than
-       toggling Admin Mode directly (that switch lives inside the
-       page). admRefreshBadge() appends the pending-count suffix. */
-    b.textContent=(isAdm?'★ ':'⚙ ')+'ADMIN PANEL';
-    if(typeof admRefreshBadge==='function') admRefreshBadge();
+    b.textContent='⚙ ADMIN PANEL';
   }
 
   /* Auth — email+password via Supabase; session persists via localStorage */
@@ -12757,11 +12620,11 @@ function qrMake (text) {
     }
   }
 
-  /* ── Role check (replaces password-based admin unlock) ──
+  /* ── Role check ──
      isDev reflects DB truth (profiles.role === 'dev') and controls whether
-     the Admin button exists in the DOM at all. isAdm is the separate
-     edit-mode toggle — a dev can be on the site with edit mode OFF.
-     Enforced server-side via RLS regardless of either flag. */
+     the Admin Panel button exists in the DOM at all. The panel only holds
+     hero slides, broadcast notifications and reports — devs have NO other
+     powers anywhere on the site. Enforced server-side via RLS. */
   let isDev = false;
   /* userPlan: null = not logged in (guest/no session).
      Values mirror profiles.subscription_tier:
@@ -12772,7 +12635,7 @@ function qrMake (text) {
      'dev' role bypasses all checks via isDev. */
   let userPlan = null;
   async function checkUserRole(){
-    if(!sb || !currentUser){ isDev=false; isAdm=false; userPlan=null; currentUserAvatarUrl=null; document.body.classList.remove('admin'); syncAdmBtn(); return; }
+    if(!sb || !currentUser){ isDev=false; userPlan=null; currentUserAvatarUrl=null; syncAdmBtn(); return; }
     try{
       const{data,error}=await sb.from('profiles').select('role,subscription_tier,avatar_url').eq('id',currentUser.id).single();
       if(error) throw error;
@@ -12780,7 +12643,6 @@ function qrMake (text) {
       userPlan = (data && data.subscription_tier) ? data.subscription_tier : 'guest';
       currentUserAvatarUrl = (data && data.avatar_url) ? data.avatar_url : null;
     }catch(e){ console.error(e); isDev=false; userPlan='guest'; }
-    if(!isDev){ isAdm=false; document.body.classList.remove('admin'); }
     syncAdmBtn();
     syncAuthBtn(); /* repaints nav avatar + subscription card + comment bar with the fetched photo */
     notifRefreshBadge();
@@ -12832,7 +12694,7 @@ function qrMake (text) {
       if (event === 'SIGNED_OUT') {
         currentUserAvatarUrl = null;
         syncAuthBtn();
-        isDev=false; isAdm=false; userPlan=null; document.body.classList.remove('admin'); syncAdmBtn();
+        isDev=false; userPlan=null; syncAdmBtn();
         syncSubOverviewCard(); /* reset profile card to guest state */
         notifRefreshBadge(); /* clears the dot — guests have no read-state to track */
         /* FIX: signing out from the profile ⋮ menu used to leave the
@@ -12862,8 +12724,8 @@ function qrMake (text) {
           from the admin panel (admSendBroadcast) and visible to
           every visitor, signed in or not.
        2) Personal notices — notifications.user_id = the owner's
-          id, auto-sent whenever a dev approves/rejects one of
-          their uploads (see admApprove / admReject).
+          id (e.g. legacy review notices; nothing sends these
+          automatically anymore).
      The notifications table itself is read-only from the app —
      there is no update/delete anywhere in this UI, matching the
      "no one can edit a notification" requirement. Per-user read
@@ -13019,21 +12881,10 @@ function qrMake (text) {
     }catch(e){ console.error('Error loading sent notifications: '+e.message); }
   }
 
-/* Admin upload/edit modal removed — uploading is now one universal
-     flow for every signed-in user (nav ➕ → #pfUpMod). Admin delete
-     (delImg) and the #admPage review queue are unchanged. */
-  async function delImg(id,sp,e){
-    e.stopPropagation();if(!isAdm||!confirm('Delete this artwork?'))return;
-    try{
-      if(sp)await s3Delete(BUCKET,sp);
-      await sb.from('artworks').delete().eq('id',id);
-      images=images.filter(i=>String(i.id)!==String(id));
-      renderHome();if(document.getElementById('fg').classList.contains('open'))renderFG();
-      injectGallerySEO();
-      showToast('Artwork removed');
-    }catch(err){console.error('Error: '+err.message);}
-  }
-
+/* Admin upload/edit/delete removed — uploading is one universal
+     flow for every signed-in user (nav ➕ → #pfUpMod), and artwork
+     can only ever be edited/deleted by its owner (#pfMyWorkPage,
+     enforced by "own rows only" RLS on the DB side). */
 
   /* =========================================================
      USER PROFILE PAGE
@@ -13438,12 +13289,9 @@ function qrMake (text) {
       pf.galleryRows = pf.galleryRows.concat(rows);
       if(rows.length < size) pf.galleryDone = true;
       rows.forEach(function(a){
-        /* FIX: only APPROVED rows may enter the public `images` array.
-           This profile query intentionally pulls every status so the
-           owner can see their own pending items on their profile —
-           but pushing those into `images` leaked unreviewed artwork
-           into the homepage grid, Full Gallery, and gallery JSON-LD
-           for the rest of the session. */
+        /* Defensive guard: only APPROVED rows may enter the public
+           `images` array (every upload now inserts as approved, but
+           the guard is kept in case of legacy rows). */
         if(a.status!=='approved') return;
         if(images.findIndex(function(i){return String(i.id)===String(a.id);})===-1) images.push(a);
       });
@@ -13466,12 +13314,10 @@ function qrMake (text) {
   }
   function pfGalleryCardHTML(a){
     var tags = (a.tags && a.tags.length) ? a.tags : catList(a.category);
-    /* Profile artwork cards never show Edit/Delete — not even for a
-       dev/admin viewer — to keep this grid a pure read-only showcase. */
-    var pending = a.status === 'pending';
+    /* Profile artwork cards never show Edit/Delete — not even for
+       the profile owner — to keep this grid a pure read-only showcase. */
     return '<div class="awCard" onclick="pfOpenArtwork(\''+esc(String(a.id))+'\')">'+
-      '<div class="awImgWrap awLoading'+(pending?' awPending':'')+'"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%">'+
-        (pending?'<div class="awPendingOv"><div class="awPendingSpin"></div><div class="awPendingLbl">IN REVIEW</div></div>':'')+
+      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%">'+
       '</div>'+
       '<div class="pfCardMeta">'+
         '<div class="pfCardTitle">'+esc(a.name||'Untitled')+'</div>'+
@@ -13485,7 +13331,6 @@ function qrMake (text) {
        it up in pf.galleryRows first and fall back to the global list. */
     var art = pf.galleryRows.find(function(a){ return String(a.id)===String(id); }) || findArtworkById(id);
     if(!art) return;
-    if(art.status === 'pending'){ openVerifyModal(art); return; }
     var cats=catList(art.category).length?catList(art.category):(catList(art.tags).length?catList(art.tags):['others']);
     openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, pf.galleryRows);
   }
@@ -14144,28 +13989,6 @@ function qrMake (text) {
           closePfUpload(); showToast('Artwork updated ✦');
         } else {
           btn.textContent='UPLOADING…';
-          /* ── Automated pre-upload verification (uploadVerifier.js) ──
-             Runs BEFORE any S3 upload so blocked images never cost storage.
-               verdict 'approve' → status:'approved' (goes live now)
-               verdict 'review'  → status:'pending'  (admin fallback #admPage)
-               verdict 'block'   → aborted here, nothing uploaded. */
-          if(!window.UploadVerifier){ showToast('Verifier not loaded — please refresh and try again'); return; }
-          window.uvUI.show();
-          var vres;
-          try{
-            /* Pass extras through the same AI/duplicate scan the comic
-               path uses. Only sent when there are extras, so a plain
-               single-image upload verifies exactly as it did before. */
-            var vOpts = { sb:sb, userId:currentUser.id, kind:'art', onStep:window.uvUI.step };
-            if(pf.upPageFiles.length) vOpts.pages = pf.upPageFiles;
-            vres = await window.UploadVerifier.verify(pf.upFile, vOpts);
-          }catch(vErr){
-            window.uvUI.fail('Verification error: '+(vErr && vErr.message ? vErr.message : vErr));
-            return;
-          }
-          if(vres.verdict==='block'){ window.uvUI.fail(vres.reason || 'This upload was blocked.'); return; }
-          window.uvUI.hide();
-          var artStatus = (vres.verdict==='review') ? 'pending' : 'approved';
           var ext = safeSlug(pf.upFile.name.split('.').pop(), 8) || 'jpg';
           var path = 'artworks/'+currentUser.id+'/'+Date.now()+'_'+safeSlug(nm)+'.'+ext;
           const publicUrl = await s3Upload(BUCKET,path,pf.upFile);
@@ -14182,12 +14005,7 @@ function qrMake (text) {
             var aUrl = await s3Upload(BUCKET,apath,af);
             artPageUrls.push(aUrl);
           }
-          /* status:'pending' — hidden from the public gallery until a
-             dev reviews it in #admPage. Not added to the global
-             `images` array (that array only ever holds approved work);
-             it IS added to pf.galleryRows so the owner can see it
-             sitting in their own profile while it's under review. */
-          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,thumb_x:artThumb.x,thumb_y:artThumb.y,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:software||null,phash:vres.phash||null,status:artStatus}).select();
+          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,thumb_x:artThumb.x,thumb_y:artThumb.y,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:software||null,phash:null,status:'approved'}).select();
           if(de) throw de;
           /* Only mutate the profile page state when the uploader's OWN
              profile is the one currently loaded — the universal flow
@@ -14199,14 +14017,11 @@ function qrMake (text) {
             var _st=document.getElementById('pfStatArt');
             if(_st) _st.textContent = (parseInt(_st.textContent,10)||0)+1;
           }
-          if(artStatus==='approved'){
-            /* clean upload → publish to the public gallery right away,
-               same effect as an admin approval (see admApprove). */
-            if(rows[0] && images.findIndex(function(i){return String(i.id)===String(rows[0].id);})===-1) images.unshift(rows[0]);
-            if(typeof renderHome==='function') renderHome();
-            var _fgEl=document.getElementById('fg'); if(_fgEl && _fgEl.classList.contains('open') && typeof renderFG==='function') renderFG();
-          }
-          closePfUpload(); showToast(artStatus==='approved' ? 'Artwork published \u2726' : 'Flagged for review \u2014 a moderator will confirm it shortly');
+          /* Publish to the public gallery right away. */
+          if(rows[0] && images.findIndex(function(i){return String(i.id)===String(rows[0].id);})===-1) images.unshift(rows[0]);
+          if(typeof renderHome==='function') renderHome();
+          var _fgEl=document.getElementById('fg'); if(_fgEl && _fgEl.classList.contains('open') && typeof renderFG==='function') renderFG();
+          closePfUpload(); showToast('Artwork published \u2726');
         }
       }
     }catch(err){ console.error('Error: '+err.message);
@@ -14710,10 +14525,8 @@ function qrMake (text) {
     if(typeof zeoSectionTrigger==='function') zeoSectionTrigger();
   }
   function ddOpenCommunity(){ openCommunityHome(); }
-  /* Tapping "Admin Panel" in the profile ⋮ menu now opens the
-     full #admPage review page (rather than directly flipping
-     Admin Mode on/off, like before). The on/off switch lives
-     inside that page now — see admToggleMode(). */
+  /* Tapping "Admin Panel" in the profile ⋮ menu opens the #admPage
+     panel: hero slides + broadcast notifications + reports only. */
   function smHandleAdm(){
     if(!isDev){
       /* Defensive fallback — button shouldn't be in the DOM at all unless isDev,
@@ -14727,25 +14540,21 @@ function qrMake (text) {
     openAdmPage();
   }
 
-  /* ── ADMIN REVIEW PAGE ──
-     Pending queue for user-submitted artwork/comics. Every upload
-     that comes in through the profile upload modal (doPfUp) is
-     inserted with status:'pending' and is invisible everywhere on
-     the public site (loadDB only ever pulls status:'approved') —
-     it only shows up here for a dev to approve or reject. */
-  var admPending = { art: [] };
-  var admTab = 'art';
+  /* ── ADMIN PANEL PAGE ──
+     Dev-only. Holds exactly three things: the hero slides editor,
+     the broadcast-notification composer, and the open-reports
+     queue. No other admin capability exists anywhere in the app
+     or the database. */
+  var admTab = 'noti';
 
   function openAdmPage(){
     var el = document.getElementById('admPage');
     if(!el) return;
-    var toggle = document.getElementById('admModeToggle');
-    if(toggle) toggle.checked = isAdm;
-    admUpdateModeSub();
     el.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-    admLoadPending();
+    admLoadNotifSent();
+    admLoadReports();   /* populates the REPORT tab badge on open */
     ahsLoadSlides();
   }
 
@@ -14754,26 +14563,6 @@ function qrMake (text) {
     if(!el) return;
     el.classList.remove('open');
     restoreScroll();
-  }
-
-  function admUpdateModeSub(){
-    var sub = document.getElementById('admModeSub');
-    if(!sub) return;
-    sub.textContent = isAdm
-      ? 'On — edit/delete controls are visible site-wide.'
-      : 'Off — edit/delete controls are hidden site-wide.';
-  }
-
-  /* Same isAdm flag the rest of the site already reads for
-     gDel/adminOnly visibility — the toggle just lives here now. */
-  function admToggleMode(){
-    if(!isDev) return;
-    var toggle = document.getElementById('admModeToggle');
-    isAdm = !!(toggle && toggle.checked);
-    document.body.classList.toggle('admin', isAdm);
-    syncAdmBtn();
-    admUpdateModeSub();
-    showToast(isAdm ? 'Admin mode on ✦' : 'Admin mode off');
   }
 
   /* ── PUBLIC FEATURED SLIDES (#topSlide) ──
@@ -14963,7 +14752,7 @@ function qrMake (text) {
 
   function admSwitchTab(tab){
     admTab = tab;
-    ['Art','Noti','Rpt'].forEach(function(t){
+    ['Noti','Rpt'].forEach(function(t){
       var key = t.toLowerCase();
       document.getElementById('admTab'+t).classList.toggle('active', key===tab);
       document.getElementById('admPanel'+t).classList.toggle('active', key===tab);
@@ -15062,110 +14851,6 @@ function qrMake (text) {
     }catch(e){ showToast('Action failed — try again'); }
   }
 
-  async function admLoadPending(){
-    if(!sb) return;
-    try{
-      const{data:art,error:ae} = await sb.from('artworks').select('*').eq('status','pending').eq('kind',ART_KIND_ART).order('created_at',{ascending:true});
-      if(ae) throw ae;
-      admPending.art = art||[];
-    }catch(e){ console.error('Error loading queue: '+e.message); admPending={art:[]}; }
-    admRenderArt();
-    admRefreshBadge();
-    admLoadReports();   /* populate the REPORT tab badge on open */
-  }
-
-  /* Small unread-style badge on the "Admin Panel" menu item, so a
-     dev can tell at a glance there's something waiting for review
-     without having to open the page first. */
-  function admRefreshBadge(){
-    var btn = document.getElementById('smAdmBtn');
-    if(!btn || !isDev) return;
-    var n = admPending.art.length;
-    btn.textContent = (isAdm?'★ ':'⚙ ')+'ADMIN PANEL' + (n ? ' ('+n+')' : '');
-  }
-
-  function admCardHTML(row){
-    var idStr = esc(String(row.id));
-    var img = esc(getThumbnailUrl(row.image_url));
-    var tx = row.thumb_x!=null&&isFinite(+row.thumb_x)?+row.thumb_x:50;
-    var ty = row.thumb_y!=null&&isFinite(+row.thumb_y)?+row.thumb_y:50;
-    var title = esc(row.name||'Untitled');
-    return '<div class="admCard" data-id="'+idStr+'">'+
-      '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="object-position:'+tx+'% '+ty+'%">'+
-      '<div class="admCardBody">'+
-        '<div class="admCardTitle">'+title+'</div>'+
-        '<div class="admCardMeta">Submitted '+(row.created_at?new Date(row.created_at).toLocaleDateString():'')+'</div>'+
-        '<div class="admCardActions">'+
-          '<button class="admApproveBtn" onclick="admApprove(\''+idStr+'\')">✓ Approve</button>'+
-          '<button class="admRejectBtn" onclick="admReject(\''+idStr+'\')">✕ Reject</button>'+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  }
-
-  function admRenderArt(){
-    var grid = document.getElementById('admArtGrid'), empty = document.getElementById('admArtEmpty');
-    var count = document.getElementById('admCountArt');
-    if(!grid) return;
-    grid.innerHTML = admPending.art.map(admCardHTML).join('');
-    empty.style.display = admPending.art.length ? 'none' : 'block';
-    if(count){ count.textContent = admPending.art.length; count.style.display = admPending.art.length ? 'inline-flex' : 'none'; }
-  }
-
-
-  /* Approve — flips status to 'approved'. RLS restricts this update
-     to devs only, same pattern already used for edit/delete. Once
-     approved, the item is spliced into the public images/comics
-     arrays so it appears on the site immediately without a reload. */
-  async function admApprove(id){
-    try{
-      const{data,error}=await sb.from('artworks').update({status:'approved'}).eq('id',id).select();
-      if(error) throw error;
-      var row = data && data[0];
-      if(row && row.user_id){
-        sb.from('notifications').insert({
-          user_id: row.user_id,
-          type: 'artwork_approved',
-          title: 'Approved \u2713',
-          message: '"'+(row.name||'Your artwork')+'" has been approved and is now live.',
-          ref_table: 'artworks',
-          ref_id: row.id
-        }).then(function(res){ if(res.error) console.error(res.error); });
-      }
-      admPending.art = admPending.art.filter(function(r){ return String(r.id)!==String(id); });
-      if(row && images.findIndex(function(i){return String(i.id)===String(id);})===-1) images.unshift(row);
-      admRenderArt();
-      renderHome();
-      if(document.getElementById('fg') && document.getElementById('fg').classList.contains('open')) renderFG();
-      admRefreshBadge();
-      showToast('Approved \u2726');
-    }catch(e){ console.error('Error: '+e.message); }
-  }
-
-  async function admReject(id){
-    if(!confirm('Reject and permanently delete this submission?')) return;
-    var row = admPending.art.find(function(r){ return String(r.id)===String(id); });
-    try{
-      if(row && row.storage_path){ await s3Delete(BUCKET,row.storage_path); }
-      const{error}=await sb.from('artworks').delete().eq('id',id);
-      if(error) throw error;
-      if(row && row.user_id){
-        sb.from('notifications').insert({
-          user_id: row.user_id,
-          type: 'artwork_rejected',
-          title: 'Not approved',
-          message: '"'+(row.name||'Your artwork')+'" was not approved and has been removed.',
-          ref_table: 'artworks',
-          ref_id: Number(id)
-        }).then(function(res){ if(res.error) console.error(res.error); });
-      }
-      admPending.art = admPending.art.filter(function(r){ return String(r.id)!==String(id); });
-      admRenderArt();
-      admRefreshBadge();
-      showToast('Rejected');
-    }catch(e){ console.error('Error: '+e.message); }
-  }
-
   /* =========================================================
      EDIT MY WORK PAGE (#pfMyWorkPage)
      Owner-only editor: the signed-in user's own artworks + comics,
@@ -15208,14 +14893,11 @@ function qrMake (text) {
     var tx = row.thumb_x!=null&&isFinite(+row.thumb_x)?+row.thumb_x:50;
     var ty = row.thumb_y!=null&&isFinite(+row.thumb_y)?+row.thumb_y:50;
     var title = esc(row.name||'Untitled');
-    var status = row.status||'approved';
-    var chip = status!=='approved' ? '<span class="mwStatusChip '+esc(status)+'">'+esc(status)+'</span>' : '';
     return '<div class="admCard" data-id="'+idStr+'">'+
       '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="object-position:'+tx+'% '+ty+'%">'+
       '<div class="admCardBody">'+
         '<div class="admCardTitle">'+title+'</div>'+
         '<div class="admCardMeta">'+(row.created_at?new Date(row.created_at).toLocaleDateString():'')+'</div>'+
-        chip+
         '<div class="admCardActions">'+
           '<button class="mwEditBtn" onclick="mwEditArt(\''+idStr+'\',event)">✎ Edit</button>'+
           '<button class="mwDeleteBtn" onclick="mwDeleteArt(\''+idStr+'\',event)">✕ Delete</button>'+
@@ -17416,27 +17098,6 @@ function hideCommentThumbnail(){
   /* ── Verification-status modal — shown when a submitter taps their
      own blurred, still-pending artwork. Reuses the legal modal's
      backdrop/card/theme so it looks native to the rest of the site. ── */
-  window.openVerifyModal = function(art){
-    titleEl.innerHTML = 'UNDER REVIEW';
-    bodyEl.innerHTML =
-      '<div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.4rem;">'+
-        '<img src="'+esc(getThumbnailUrl(art.image_url))+'" alt="" style="width:64px;height:64px;object-fit:cover;object-position:'+(art.thumb_x!=null&&isFinite(+art.thumb_x)?+art.thumb_x:50)+'% '+(art.thumb_y!=null&&isFinite(+art.thumb_y)?+art.thumb_y:50)+'%;border-radius:6px;border:1px solid var(--bdr);filter:blur(3px);flex-shrink:0;">'+
-        '<div>'+
-          '<div style="font-family:var(--fb);font-size:1rem;color:var(--tx);font-weight:600;margin-bottom:.3rem;">'+esc(art.name||'Untitled')+'</div>'+
-          '<span class="lmDate" style="margin-top:0;">IN REVIEW</span>'+
-        '</div>'+
-      '</div>'+
-      '<h2>Your artwork is being reviewed</h2>'+
-      '<p>Thank you for your submission. Our team is currently reviewing this piece to confirm it meets our community guidelines and quality standards. Reviews are usually completed quickly, and you don\'t need to do anything in the meantime.</p>'+
-      '<p>Once it\'s approved, the blur will disappear automatically and your artwork will go live in the public gallery.</p>'+
-      '<p>If any changes are needed before it can be approved, we\'ll let you know.</p>';
-    bodyEl.scrollTop = 0;
-    backdrop.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    var closeBtn = backdrop.querySelector('.lmClose');
-    if(closeBtn) setTimeout(function(){ closeBtn.focus(); }, 80);
-  };
-
   window.handleBackdropClick = function(e){
     if(e.target === backdrop) closeLegal();
   };
@@ -19515,99 +19176,6 @@ html.thmFade #themePage{
     refreshPanelOpen();
   }
 })();
-</script>
-<!-- ══ Upload verification overlay (driven by uploadVerifier.js via window.uvUI) ══ -->
-<style>
-  #uvOverlay{position:fixed;inset:0;z-index:4000;display:none;align-items:center;justify-content:center;padding:1.2rem;background:rgba(3,2,6,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
-  #uvOverlay.open{display:flex;}
-  #uvOverlay .uvCard{width:100%;max-width:420px;background:var(--sur,#0d0910);border:1px solid var(--bdr,rgba(255,255,255,.09));border-radius:16px;padding:1.6rem 1.4rem 1.35rem;box-shadow:0 24px 60px rgba(0,0,0,.55);font-family:var(--fb,system-ui,sans-serif);color:var(--tx,#e8e2ef);}
-  #uvOverlay .uvHead{text-align:center;margin-bottom:1.1rem;}
-  #uvOverlay .uvSpinner{width:38px;height:38px;margin:0 auto .7rem;border-radius:50%;border:3px solid rgba(var(--pg-rgb,154,92,240),.22);border-top-color:var(--pg,#9a5cf0);animation:uvSpin .8s linear infinite;}
-  @keyframes uvSpin{to{transform:rotate(360deg);}}
-  #uvOverlay h3{margin:0 0 .25rem;font-size:1.05rem;letter-spacing:.02em;}
-  #uvOverlay .uvSub{margin:0;font-size:.82rem;opacity:.72;}
-  #uvOverlay .uvBar{height:6px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;margin:0 0 1.15rem;}
-  #uvOverlay .uvBarFill{height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--pg,#9a5cf0),var(--ps,#c98bff));transition:width .35s ease;}
-  #uvOverlay .uvList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.55rem;}
-  #uvOverlay .uvList li{display:flex;align-items:center;gap:.6rem;font-size:.86rem;}
-  #uvOverlay .uvIco{width:20px;height:20px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;line-height:1;border:1px solid var(--bdr,rgba(255,255,255,.16));background:rgba(255,255,255,.03);opacity:.5;}
-  #uvOverlay li.is-run .uvIco{opacity:1;border-color:var(--pg,#9a5cf0);color:var(--pg,#9a5cf0);animation:uvPulse 1s ease-in-out infinite;}
-  #uvOverlay li.is-pass .uvIco{opacity:1;border-color:#33c07a;color:#33c07a;}
-  #uvOverlay li.is-flag .uvIco{opacity:1;border-color:#e0a92a;color:#e0a92a;}
-  #uvOverlay li.is-block .uvIco{opacity:1;border-color:#e0563f;color:#e0563f;}
-  #uvOverlay .uvLbl{flex:1;}
-  #uvOverlay .uvState{font-size:.72rem;opacity:.6;text-align:right;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  @keyframes uvPulse{0%,100%{opacity:.45;}50%{opacity:1;}}
-  #uvOverlay .uvResult{display:none;margin-top:1.1rem;padding:.7rem .8rem;border-radius:10px;font-size:.84rem;line-height:1.45;border:1px solid transparent;}
-  #uvOverlay .uvResult.show{display:block;}
-  #uvOverlay .uvResult.block{border-color:rgba(224,86,63,.5);background:rgba(224,86,63,.1);color:#f0a99a;}
-  #uvOverlay .uvCloseBtn{display:none;margin:1.1rem auto 0;padding:.55rem 1.5rem;border-radius:9px;border:1px solid var(--bdr,rgba(255,255,255,.16));background:transparent;color:var(--tx,#e8e2ef);font-family:var(--fb,inherit);font-size:.85rem;cursor:pointer;}
-  #uvOverlay .uvCloseBtn.show{display:block;}
-  #uvOverlay .uvCloseBtn:hover{border-color:var(--pg,#9a5cf0);}
-</style>
-<div id="uvOverlay" role="dialog" aria-modal="true" aria-label="Verifying your upload">
-  <div class="uvCard">
-    <div class="uvHead">
-      <div class="uvSpinner" id="uvSpinner"></div>
-      <h3 id="uvTitle">Verifying your upload</h3>
-      <p class="uvSub" id="uvSub">Running anti-spam &amp; integrity checks…</p>
-    </div>
-    <div class="uvBar"><div class="uvBarFill" id="uvBarFill"></div></div>
-    <ul class="uvList">
-      <li data-step="ratelimit"><span class="uvIco">•</span><span class="uvLbl">Upload rate &amp; spam</span><span class="uvState"></span></li>
-      <li data-step="duplicate"><span class="uvIco">•</span><span class="uvLbl">Duplicate / repost scan</span><span class="uvState"></span></li>
-      <li data-step="ai"><span class="uvIco">•</span><span class="uvLbl">AI-content check</span><span class="uvState"></span></li>
-    </ul>
-    <div class="uvResult" id="uvResult"></div>
-    <button type="button" class="uvCloseBtn" id="uvClose">Close</button>
-  </div>
-</div>
-<script>
-  /* window.uvUI — thin DOM controller for #uvOverlay. uploadVerifier.js
-     stays pure logic and drives this through the onStep callback. */
-  window.uvUI = (function(){
-    var ORDER = ['ratelimit','duplicate','ai'];
-    function el(id){ return document.getElementById(id); }
-    function li(step){ return document.querySelector('#uvOverlay li[data-step="'+step+'"]'); }
-    function setState(step, state, detail){
-      var node = li(step); if(!node) return;
-      node.classList.remove('is-run','is-pass','is-flag','is-block');
-      var ico = node.querySelector('.uvIco'), st = node.querySelector('.uvState');
-      if(state==='run'){ node.classList.add('is-run'); ico.textContent='•'; if(st) st.textContent='checking…'; }
-      else if(state==='pass'){ node.classList.add('is-pass'); ico.textContent='✓'; if(st) st.textContent=detail||'ok'; }
-      else if(state==='flag'){ node.classList.add('is-flag'); ico.textContent='!'; if(st) st.textContent='flagged'; }
-      else if(state==='block'){ node.classList.add('is-block'); ico.textContent='✕'; if(st) st.textContent='blocked'; }
-      else { ico.textContent='•'; if(st) st.textContent=''; }
-    }
-    function progress(step, state){
-      var i = ORDER.indexOf(step); if(i<0) return;
-      var done = i + (state==='run' ? 0.35 : 1);
-      var f = el('uvBarFill'); if(f) f.style.width = Math.min(100, Math.round(done/ORDER.length*100)) + '%';
-    }
-    return {
-      show: function(){
-        ORDER.forEach(function(s){ setState(s,'wait'); });
-        el('uvBarFill').style.width = '0%';
-        el('uvTitle').textContent = 'Verifying your upload';
-        el('uvSub').textContent = 'Running anti-spam & integrity checks…';
-        el('uvSpinner').style.display = '';
-        var r = el('uvResult'); r.className = 'uvResult'; r.textContent = '';
-        var c = el('uvClose'); c.className = 'uvCloseBtn'; c.onclick = window.uvUI.hide;
-        el('uvOverlay').classList.add('open');
-      },
-      step: function(id, state, detail){ setState(id, state, detail); progress(id, state); },
-      hide: function(){ var o = el('uvOverlay'); if(o) o.classList.remove('open'); },
-      fail: function(reason){
-        el('uvBarFill').style.width = '100%';
-        el('uvSpinner').style.display = 'none';
-        el('uvTitle').textContent = 'Upload blocked';
-        el('uvSub').textContent = 'This upload didn’t pass our checks.';
-        var r = el('uvResult'); r.className = 'uvResult show block'; r.textContent = reason || 'Blocked.';
-        var c = el('uvClose'); c.className = 'uvCloseBtn show'; c.onclick = window.uvUI.hide;
-        el('uvOverlay').classList.add('open');
-      }
-    };
-  })();
 </script>
 </body>
 </html>

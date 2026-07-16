@@ -28,7 +28,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v5';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -45,7 +45,6 @@ const SHELL_URLS = [
   '/',
   '/index.html',
   '/config.js',
-  '/uploadVerifier.js',
   '/aiAssistantData.js',
   '/site.webmanifest',
   '/favicon.ico',

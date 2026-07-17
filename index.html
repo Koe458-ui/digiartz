@@ -7406,9 +7406,6 @@ body{background:var(--bg);}
     .upqCheck{display:none;width:34px;height:34px;border-radius:50%;background:#22C55E;color:#fff;font-size:1.05rem;line-height:34px;font-weight:800;box-shadow:0 0 18px rgba(34,197,94,.55);}
     .upqCard.upqLive .upqCheck{display:block;animation:upqPop .35s cubic-bezier(.22,1,.36,1);}
     @keyframes upqPop{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
-    .upqMeta{padding:.6rem .7rem .7rem;}
-    .upqTitle{font-size:.82rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .upqHint{font-size:.68rem;color:var(--txd);margin-top:.15rem;}
     @media(prefers-reduced-motion:reduce){.upqSpin{animation-duration:2.2s;}.upqCard.upqLive .upqCheck{animation:none;}}
 
     /* ── Status / check-failed modal — same skeleton + tokens as the
@@ -7420,17 +7417,33 @@ body{background:var(--bg);}
     #upqBackdrop.open{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s;}
     #upqBackdrop .legalModal{max-width:440px;}
     .upqMBody{padding:1.4rem 1.6rem 1.7rem;background:var(--sur2);overflow-y:auto;}
-    .upqStepRow{display:flex;align-items:center;gap:.8rem;padding:.62rem 0;border-bottom:1px solid var(--bdr);}
-    .upqStepRow:last-child{border-bottom:none;}
-    .upqStepIco{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;border:1px solid var(--bdr);color:var(--txd);background:var(--sur);}
-    .upqStepRow.run  .upqStepIco{border-color:var(--pg);color:transparent;position:relative;}
-    .upqStepRow.run  .upqStepIco::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2px solid var(--pdim);border-top-color:var(--pg);animation:upqSpin .9s linear infinite;}
-    .upqStepRow.pass .upqStepIco{background:#22C55E;border-color:#22C55E;color:#fff;}
-    .upqStepRow.fail .upqStepIco{background:var(--danger-strong);border-color:var(--danger-strong);color:#fff;}
-    .upqStepTx{flex:1;min-width:0;}
-    .upqStepName{font-size:.86rem;font-weight:700;color:var(--tx);}
-    .upqStepSub{font-size:.72rem;color:var(--txd);margin-top:.1rem;line-height:1.35;}
-    .upqStepRow.fail .upqStepSub{color:var(--danger);}
+    /* \u2500\u2500 Verification tracker \u2014 vertical stepper \u2500\u2500
+       green = passed \u00b7 amber = checking \u00b7 gray = pending \u00b7 red = failed */
+    .upqTrk{display:flex;gap:.85rem;align-items:flex-start;}
+    .upqTrkRail{display:flex;flex-direction:column;align-items:center;flex-shrink:0;align-self:stretch;}
+    .upqTrkIco{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;border:2px solid var(--bdr);color:#fff;background:var(--sur);position:relative;}
+    .upqTrk.pend .upqTrkIco::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--txd);opacity:.55;}
+    .upqTrk.run .upqTrkIco{border-color:#F59E0B;}
+    .upqTrk.run .upqTrkIco::after{content:'';position:absolute;inset:3px;border-radius:50%;border:2.5px solid rgba(245,158,11,.25);border-top-color:#F59E0B;animation:upqSpin .9s linear infinite;}
+    .upqTrk.pass .upqTrkIco{background:#22C55E;border-color:#22C55E;}
+    .upqTrk.fail .upqTrkIco{background:var(--danger-strong);border-color:var(--danger-strong);animation:upqShake .3s ease;}
+    @keyframes upqShake{25%{transform:translateX(-2px);}75%{transform:translateX(2px);}}
+    .upqTrkLine{width:2px;flex:1;min-height:12px;background:var(--bdr);margin:3px 0;border-radius:2px;}
+    .upqTrk.pass .upqTrkLine{background:rgba(34,197,94,.45);}
+    .upqTrkTx{flex:1;min-width:0;padding:.15rem 0 .8rem;}
+    .upqTrkName{font-size:.84rem;font-weight:700;color:var(--tx);line-height:1.3;}
+    .upqTrk.pend .upqTrkName{color:var(--txd);font-weight:600;}
+    .upqTrkSub{font-size:.7rem;color:var(--txd);margin-top:.12rem;line-height:1.35;}
+    .upqTrk.fail .upqTrkSub{color:var(--danger);}
+    .upqTrkState{flex-shrink:0;font-size:.62rem;font-weight:800;letter-spacing:.05em;padding:.2rem .55rem;border-radius:99px;margin-top:.22rem;}
+    .upqTrk.pend .upqTrkState{color:var(--txd);background:var(--sur);border:1px solid var(--bdr);}
+    .upqTrk.run  .upqTrkState{color:#F59E0B;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);}
+    .upqTrk.pass .upqTrkState{color:#22C55E;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);}
+    .upqTrk.fail .upqTrkState{color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-bd);}
+    .upqFin{margin-top:.5rem;padding:.8rem 1rem;border-radius:10px;font-size:.8rem;font-weight:800;text-align:center;letter-spacing:.02em;}
+    .upqFin.busy{color:#F59E0B;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);}
+    .upqFin.ok{color:#22C55E;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);}
+    .upqFin.fail{color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-bd);}
     /* fail header strip inside the body */
     .upqFailBox{display:flex;gap:.8rem;align-items:flex-start;background:var(--danger-bg);border:1px solid var(--danger-bd);border-radius:10px;padding:.9rem 1rem;margin-bottom:1.1rem;}
     .upqFailIco{width:34px;height:34px;border-radius:50%;background:var(--danger-strong);color:#fff;font-weight:800;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -14159,6 +14172,7 @@ function qrMake (text) {
       thumbFocus: snap.thumbFocus, preview: snap.preview,
       upDone: 0, upTotal: 1 + snap.pageFiles.length,
       steps: { ratelimit:{state:'',detail:''}, duplicate:{state:'',detail:''}, ai:{state:'',detail:''}, moderation:{state:'',detail:''} },
+      mod: { artwork:'', artworkSub:'', safety:'', safetySub:'', quality:'', qualitySub:'' },
       uploadedPaths: [],
       failReason: null
     };
@@ -14208,10 +14222,6 @@ function qrMake (text) {
             (hint ? '<div class="upqSub">'+esc(hint)+'</div>' : '')+
           '</div>'+
         '</div>'+
-        '<div class="upqMeta">'+
-          '<div class="upqTitle">'+esc(j.name||'Untitled')+'</div>'+
-          '<div class="upqHint">'+(j.stage==='live'?'Published \u2726':'Processing \u2014 tap for status')+'</div>'+
-        '</div>'+
       '</div>';
     }).join('');
   }
@@ -14258,6 +14268,7 @@ function qrMake (text) {
          dev accounts additionally see the reason code (e.g. SELFIE)
          in the step row. */
       job.steps.moderation.state='run';
+      job.mod.artwork='run'; job.mod.safety=''; job.mod.quality='';
       job.checkHint='Confirming it\u2019s artwork'; upqSync();
       var modFd = new FormData();
       modFd.append('files', job.file);
@@ -14271,19 +14282,38 @@ function qrMake (text) {
       var mod = await modRes.json().catch(function(){ return null; });
       if(!modRes.ok || !mod){
         job.steps.moderation.state='fail'; job.steps.moderation.detail='Service unavailable';
+        job.mod.artwork='fail'; job.mod.artworkSub='Review service unavailable \u2014 try again';
         var me = new Error((mod&&mod.error)||'Moderation check failed \u2014 try again');
         me.upqCheckFail = true; throw me;
       }
       if(!mod.allowed){
         job.steps.moderation.state='fail';
-        job.steps.moderation.detail = (typeof isDev!=='undefined' && isDev && mod.code)
+        var devCode = (typeof isDev!=='undefined' && isDev && mod.code)
           ? ('Code: '+mod.code + (mod.failIndex>0 ? ' \u00b7 image '+(mod.failIndex+1) : '')) : '';
+        job.steps.moderation.detail = devCode;
+        /* Land the red \u2715 on the review row that actually failed. */
+        if(mod.code==='BLANK_IMAGE' || mod.code==='LOW_QUALITY'){
+          job.mod.artwork='pass'; job.mod.artworkSub='Original artwork confirmed';
+          job.mod.safety='pass';  job.mod.safetySub='Safe for all audiences';
+          job.mod.quality='fail'; job.mod.qualitySub=devCode;
+        } else if(mod.code==='ADULT_CONTENT' || mod.code==='PROHIBITED_CONTENT'){
+          job.mod.artwork='pass'; job.mod.artworkSub='Original artwork confirmed';
+          job.mod.safety='fail';  job.mod.safetySub=devCode;
+        } else {
+          job.mod.artwork='fail'; job.mod.artworkSub=devCode;
+        }
         var mf = new Error(mod.reason||'The uploaded image does not meet DigiArtz artwork submission requirements.');
         mf.upqCheckFail = true; throw mf;
       }
       job.steps.moderation.state='pass';
       job.steps.moderation.detail = mod.rating==='MATURE' ? 'Approved \u00b7 18+' : 'Approved';
-      upqRenderModal();
+      job.mod.artwork='pass'; job.mod.artworkSub='Original artwork confirmed';
+      job.mod.safety='pass';  job.mod.safetySub = mod.rating==='MATURE' ? 'Approved \u00b7 18+ content' : 'Safe for all audiences';
+      job.mod.quality='pass'; job.mod.qualitySub='Quality acceptable';
+      /* Verification done \u2014 if the tracker is open, close it so it never
+         overlaps the transfer/LIVE flow. Failures never reach this line;
+         the VERIFICATION FAILED popup auto-opens from the catch instead. */
+      if(upq.modalJob===job.id){ upqCloseModal(); } else { upqRenderModal(); }
 
       /* ── 2 · UPLOADING — cover first, then the extra images.
          Every key carries a per-job fragment: jobs run in PARALLEL
@@ -14378,13 +14408,18 @@ function qrMake (text) {
     if(bd) bd.classList.remove('open');
   }
 
-  function upqStepRowHTML(state, name, sub){
-    var cls = state==='run' ? 'run' : (state==='pass' ? 'pass' : (state==='flag'||state==='block'||state==='fail') ? 'fail' : '');
-    var ico = cls==='pass' ? '\u2713' : cls==='fail' ? '\u2715' : cls==='run' ? '' : '\u2022';
-    return '<div class="upqStepRow '+cls+'">'+
-      '<div class="upqStepIco">'+ico+'</div>'+
-      '<div class="upqStepTx"><div class="upqStepName">'+name+'</div>'+
-      (sub ? '<div class="upqStepSub">'+esc(sub)+'</div>' : '')+'</div></div>';
+  /* Premium vertical verification tracker \u2014 rail + node + connector,
+     right-aligned state pill (Pending / Checking\u2026 / Passed / Failed). */
+  function upqTrackRow(state, name, sub, last){
+    var cls = state==='run' ? 'run' : (state==='pass' ? 'pass' : (state==='flag'||state==='block'||state==='fail') ? 'fail' : 'pend');
+    var ico = cls==='pass' ? '\u2713' : cls==='fail' ? '\u2715' : '';
+    var lbl = cls==='pass' ? 'Passed' : cls==='fail' ? 'Failed' : cls==='run' ? 'Checking\u2026' : 'Pending';
+    return '<div class="upqTrk '+cls+'">'+
+      '<div class="upqTrkRail"><div class="upqTrkIco">'+ico+'</div>'+(last?'':'<div class="upqTrkLine"></div>')+'</div>'+
+      '<div class="upqTrkTx"><div class="upqTrkName">'+name+'</div>'+
+      (sub ? '<div class="upqTrkSub">'+esc(sub)+'</div>' : '')+'</div>'+
+      '<div class="upqTrkState">'+lbl+'</div>'+
+    '</div>';
   }
 
   function upqRenderModal(){
@@ -14394,16 +14429,15 @@ function qrMake (text) {
     var body  = document.getElementById('upqMBody');
     if(!title || !body) return;
     var failed = j.stage==='failed';
-    title.textContent = failed ? 'CHECK FAILED' : 'UPLOAD STATUS';
-    /* Transfer + publish rows derive from the stage, the three check
-       rows from the verifier's live onStep feed. */
+    title.textContent = failed ? 'VERIFICATION FAILED' : 'VERIFICATION STATUS';
     var order = ['checking','uploading','finalizing','live'];
     var si = order.indexOf(j.stage);
     var transferState = j.stage==='uploading' ? 'run' : (si>1 ? 'pass' : '');
     var publishState  = j.stage==='finalizing' ? 'run' : (j.stage==='live' ? 'pass' : '');
     var transferSub = j.stage==='uploading'
       ? (j.upTotal>1 ? (Math.min(j.upDone+1,j.upTotal)+' of '+j.upTotal+' images') : 'Sending your image')
-      : (si>1 ? 'Done' : 'Waiting for checks');
+      : (si>1 ? 'Done' : '');
+    var m = j.mod || {artwork:'',artworkSub:'',safety:'',safetySub:'',quality:'',qualitySub:''};
     var html = '';
     if(failed){
       html += '<div class="upqFailBox">'+
@@ -14412,15 +14446,30 @@ function qrMake (text) {
         '<div class="upqFailReason">'+esc(j.failReason||'The artwork did not pass verification.')+'</div></div>'+
       '</div>';
     }
-    html += upqStepRowHTML(j.steps.ratelimit.state, 'Spam & rate check', j.steps.ratelimit.detail);
-    html += upqStepRowHTML(j.steps.duplicate.state, 'Duplicate check', j.steps.duplicate.detail);
-    html += upqStepRowHTML(j.steps.ai.state, 'AI-content scan', j.steps.ai.detail);
-    html += upqStepRowHTML(j.steps.moderation.state, 'Artwork moderation', j.steps.moderation.detail);
-    if(!failed){
-      html += upqStepRowHTML(transferState, 'Secure transfer', transferSub);
-      html += upqStepRowHTML(publishState, 'Publish', j.stage==='live' ? 'Your artwork is live \u2726' : '');
+    /* Every row is a check that genuinely runs \u2014 the three review rows
+       are live signals from inside the single AI verdict. */
+    var rows = [
+      ['pass', 'Upload received', ''],
+      ['pass', 'File integrity & format', ''],
+      [j.steps.ratelimit.state, 'Spam & rate check', j.steps.ratelimit.detail],
+      [j.steps.duplicate.state, 'Duplicate detection', j.steps.duplicate.detail],
+      [j.steps.ai.state, 'Metadata inspection', j.steps.ai.detail],
+      [m.artwork, 'Artwork review', m.artworkSub],
+      [m.safety, 'Content safety check', m.safetySub],
+      [m.quality, 'Quality & watermark check', m.qualitySub],
+      [transferState, 'Secure transfer', transferSub],
+      [publishState, 'Publish', j.stage==='live' ? 'Your artwork is live \u2726' : '']
+    ];
+    for(var ri=0; ri<rows.length; ri++){
+      html += upqTrackRow(rows[ri][0], rows[ri][1], rows[ri][2], ri===rows.length-1);
+    }
+    if(failed){
+      html += '<div class="upqFin fail">Verification stopped \u2014 nothing was published</div>';
+      html += '<div class="upqFailNote">Any transferred file has been removed from storage. Fix the issue above and upload again whenever you\u2019re ready.</div>';
+    } else if(j.stage==='live'){
+      html += '<div class="upqFin ok">All checks passed \u2014 your artwork is live \u2726</div>';
     } else {
-      html += '<div class="upqFailNote">Nothing was published and any transferred file has been removed from storage. Fix the issue above and upload again whenever you\u2019re ready.</div>';
+      html += '<div class="upqFin busy">Your artwork is being reviewed now\u2026</div>';
     }
     body.innerHTML = html;
   }

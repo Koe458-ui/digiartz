@@ -152,15 +152,28 @@ Choose exactly ONE category code that best describes the image:
 
 Return your verdict as JSON with fields: allow, artwork, rating, quality, category (one code from the list), reason (short internal note), confidence (0 to 1).`;
 
+// These two are PUBLIC values (they already ship in config.js on the site),
+// so hardcoding them here is safe. Env vars still override if ever needed.
+const SB_URL_FALLBACK = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
+const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
+
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const SB_URL = env.SUPABASE_URL || SB_URL_FALLBACK;
+  const SB_ANON = env.SUPABASE_ANON_KEY || SB_ANON_FALLBACK;
   try {
+    // The ONE truly secret variable — fail loudly if it never got set,
+    // instead of masking the problem as an image rejection.
+    if (!env.GEMINI_API_KEY) {
+      return json({ error: 'Server not configured: GEMINI_API_KEY missing in Cloudflare environment variables.' }, 500);
+    }
+
     // ---- Auth: verify the Supabase JWT ----
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
     if (!token) return json({ error: 'Not signed in.' }, 401);
 
-    const userRes = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
-      headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` }
+    const userRes = await fetch(`${SB_URL}/auth/v1/user`, {
+      headers: { apikey: SB_ANON, Authorization: `Bearer ${token}` }
     });
     if (!userRes.ok) return json({ error: 'Session expired — sign in again.' }, 401);
     const user = await userRes.json();
@@ -335,4 +348,4 @@ function json(obj, status) {
     status,
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
   });
-    }
+}

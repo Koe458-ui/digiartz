@@ -17,5 +17,5 @@ https://digiartz.net
 - AWS S3 (storage)
 
 
-## 👤 Artist
-KOE — digiartz.net
+## 👥 Team
+The DigiArtz Team — digiartz.net

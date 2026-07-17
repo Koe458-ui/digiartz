@@ -13,7 +13,7 @@
 
      dz-shell-v1  index.html + config.js + the two JS modules + icons
                   (stale-while-revalidate; also the offline fallback
-                  for deep links like /artwork/123 and /profile/koe)
+                  for deep links like /artwork/123 and /profile/artist)
      dz-thumb-v1  300px grid thumbnails    — cap 60
                   (warmed on launch by dzcPrefetchThumbs(), which
                   issues plain no-cors fetches we intercept here)
@@ -46,6 +46,7 @@ const SHELL_URLS = [
   '/index.html',
   '/config.js',
   '/aiAssistantData.js',
+  '/uploadVerifier.js',
   '/site.webmanifest',
   '/favicon.ico',
   '/favicon-32x32.png',
@@ -162,7 +163,7 @@ self.addEventListener('fetch', (event) => {
   /* Live data + telemetry: stay out of the way entirely. */
   if (SUPABASE_RE.test(url.hostname) || BYPASS_RE.test(url.hostname)) return;
 
-  /* Navigations (including deep links /artwork/123, /profile/koe —
+  /* Navigations (including deep links /artwork/123, /profile/artist —
      which Cloudflare rewrites to index.html). Network-first so a fresh
      build is picked up straight away; fall back to the cached shell so
      the app still boots with no connection. */

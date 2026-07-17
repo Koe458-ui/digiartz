@@ -2988,7 +2988,7 @@
     }
     .rkList{ flex:1 1 auto; }
 
-    /* ── The clear heading Koe asked for: board name on the left, the
+    /* ── The clear heading requested: board name on the left, the
        live count on the right, sitting where .xpCardLbl normally is ── */
     .rkHead{
       display:flex; align-items:baseline; gap:.6rem;
@@ -6018,7 +6018,7 @@ body{background:var(--bg);}
     <!-- ── Page h1 — visually hidden (the hero is intentionally
          text-free), present for SEO / heading outline / screen
          readers. The visible h2s below it nest correctly. ── -->
-    <h1 class="srOnly">KOE — Digital Art Portfolio · Art Has No Limits</h1>
+    <h1 class="srOnly">DigiArtz — The Digital Art Community · Art Has No Limits</h1>
 
     <!-- ── Brand badge — floating pill, present across the whole
          front page (not just hero), top-left ── -->
@@ -7373,6 +7373,74 @@ body{background:var(--bg);}
       .upPopFoot{padding:.8rem 1rem;}
     }
 
+    /* =========================================================
+       BACKGROUND UPLOAD QUEUE (upq*) — the blurred "processing"
+       cards + the tap-for-status / check-failed modal.
+
+       Cards render at the top of the uploader's OWN grids
+       (profile gallery + My Work) while the piece moves through
+       CHECKING → UPLOADING → ALMOST DONE → LIVE in the
+       background — the upload popup closes immediately, so a
+       second piece can be queued while the first is still
+       verifying. Every colour is a theme token, so all five
+       theme prefs (Dark Violet / Dark / Gray Dark / Light /
+       System) render it natively with zero extra rules.
+       ========================================================= */
+    .upqCard{position:relative;border-radius:12px;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);cursor:pointer;isolation:isolate;}
+    .upqImgWrap{position:relative;width:100%;aspect-ratio:1;overflow:hidden;background:var(--sur2);}
+    .upqImg{width:100%;height:100%;object-fit:cover;
+      filter:blur(16px) saturate(.85) brightness(.82);
+      transform:scale(1.12); /* hides the soft blurred edge */
+    }
+    /* Dark scrim so the white status text stays readable over any art,
+       in every theme — the scrim is on the IMAGE, not the page. */
+    .upqOvl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.55rem;background:rgba(8,8,13,.38);text-align:center;padding:.8rem;}
+    .upqSpin{width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.22);border-top-color:#FFFFFF;animation:upqSpin .9s linear infinite;}
+    @keyframes upqSpin{to{transform:rotate(360deg);}}
+    .upqStage{font-family:var(--fm);font-size:.68rem;font-weight:700;letter-spacing:.22em;color:#FFFFFF;text-transform:uppercase;text-shadow:0 1px 6px rgba(0,0,0,.55);}
+    .upqSub{font-size:.7rem;color:rgba(255,255,255,.78);line-height:1.35;text-shadow:0 1px 5px rgba(0,0,0,.5);max-width:92%;}
+    /* LIVE flash — spinner swaps for a green check, card fades itself out
+       (the real, unblurred row replaces it on the next repaint). */
+    .upqCard.upqLive .upqSpin{display:none;}
+    .upqCard.upqLive .upqOvl{background:rgba(8,8,13,.28);}
+    .upqCheck{display:none;width:34px;height:34px;border-radius:50%;background:#22C55E;color:#fff;font-size:1.05rem;line-height:34px;font-weight:800;box-shadow:0 0 18px rgba(34,197,94,.55);}
+    .upqCard.upqLive .upqCheck{display:block;animation:upqPop .35s cubic-bezier(.22,1,.36,1);}
+    @keyframes upqPop{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
+    .upqMeta{padding:.6rem .7rem .7rem;}
+    .upqTitle{font-size:.82rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .upqHint{font-size:.68rem;color:var(--txd);margin-top:.15rem;}
+    @media(prefers-reduced-motion:reduce){.upqSpin{animation-duration:2.2s;}.upqCard.upqLive .upqCheck{animation:none;}}
+
+    /* ── Status / check-failed modal — same skeleton + tokens as the
+       legal modal (.legalModal / .lmHead / .lmBody), so it inherits
+       every theme automatically. Opened by tapping a processing card,
+       or auto-opened when a check fails. ── */
+    #upqBackdrop{position:fixed;inset:0;z-index:20120;display:flex;align-items:center;justify-content:center;padding:1.2rem;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .3s ease,visibility 0s linear .3s;isolation:isolate;}
+    #upqBackdrop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 75%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:-1;}
+    #upqBackdrop.open{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s;}
+    #upqBackdrop .legalModal{max-width:440px;}
+    .upqMBody{padding:1.4rem 1.6rem 1.7rem;background:var(--sur2);overflow-y:auto;}
+    .upqStepRow{display:flex;align-items:center;gap:.8rem;padding:.62rem 0;border-bottom:1px solid var(--bdr);}
+    .upqStepRow:last-child{border-bottom:none;}
+    .upqStepIco{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;border:1px solid var(--bdr);color:var(--txd);background:var(--sur);}
+    .upqStepRow.run  .upqStepIco{border-color:var(--pg);color:transparent;position:relative;}
+    .upqStepRow.run  .upqStepIco::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2px solid var(--pdim);border-top-color:var(--pg);animation:upqSpin .9s linear infinite;}
+    .upqStepRow.pass .upqStepIco{background:#22C55E;border-color:#22C55E;color:#fff;}
+    .upqStepRow.fail .upqStepIco{background:var(--danger-strong);border-color:var(--danger-strong);color:#fff;}
+    .upqStepTx{flex:1;min-width:0;}
+    .upqStepName{font-size:.86rem;font-weight:700;color:var(--tx);}
+    .upqStepSub{font-size:.72rem;color:var(--txd);margin-top:.1rem;line-height:1.35;}
+    .upqStepRow.fail .upqStepSub{color:var(--danger);}
+    /* fail header strip inside the body */
+    .upqFailBox{display:flex;gap:.8rem;align-items:flex-start;background:var(--danger-bg);border:1px solid var(--danger-bd);border-radius:10px;padding:.9rem 1rem;margin-bottom:1.1rem;}
+    .upqFailIco{width:34px;height:34px;border-radius:50%;background:var(--danger-strong);color:#fff;font-weight:800;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .upqFailTitle{font-size:.92rem;font-weight:800;color:var(--tx);}
+    .upqFailReason{font-size:.78rem;color:var(--txd);margin-top:.2rem;line-height:1.45;}
+    .upqFailNote{font-size:.72rem;color:var(--txd);margin-top:1rem;line-height:1.45;}
+    .upqMFoot{display:flex;justify-content:flex-end;padding:.9rem 1.6rem;border-top:1px solid var(--bdr);background:var(--sur);}
+    .upqOkBtn{padding:.6rem 1.6rem;border-radius:8px;border:1px solid var(--pg);background:var(--pdim);color:var(--ps);font-family:var(--fm);font-size:.78rem;letter-spacing:.14em;cursor:pointer;transition:background .2s;}
+    .upqOkBtn:hover{background:color-mix(in srgb,var(--tc) 22%,transparent);}
+
     /* ── Square thumbnail cropper (shown right after picking a file,
        before the rest of the upload form) ──
        .cropStage is a fixed square viewport; the source image sits
@@ -7428,6 +7496,28 @@ body{background:var(--bg);}
       <button class="upBtnPri" onclick="confirmPfCrop()">Use This ✦</button>
     </div>
    </div>
+  </div>
+
+  <!-- =========================================================
+       UPLOAD-QUEUE STATUS MODAL (#upqBackdrop)
+       ├─ Tapping a blurred processing card opens it in STATUS
+       │  mode — a live checklist of the pipeline steps.
+       └─ A failed check auto-opens it in FAILED mode — danger
+          strip + the exact reason + "nothing was published /
+          any transferred file was removed" note.
+       Card + head reuse .legalModal/.lmHead so every theme
+       (Dark Violet / Dark / Gray Dark / Light / System) styles
+       it natively. Body content injected by upqRenderModal().
+       ========================================================= -->
+  <div id="upqBackdrop" role="dialog" aria-modal="true" aria-label="Upload status" onclick="if(event.target===this)upqCloseModal()">
+    <div class="legalModal">
+      <div class="lmHead">
+        <div class="lmTitle" id="upqMTitle">UPLOAD STATUS</div>
+        <button class="lmClose" onclick="upqCloseModal()" aria-label="Close">✕</button>
+      </div>
+      <div class="upqMBody" id="upqMBody"></div>
+      <div class="upqMFoot"><button class="upqOkBtn" onclick="upqCloseModal()">OK</button></div>
+    </div>
   </div>
 
   <!-- =========================================================
@@ -7605,7 +7695,7 @@ body{background:var(--bg);}
         <div class="ftBrandName">DIGI<span class="ftBrandAccent">ARTZ</span></div>
         <div class="ftBrandDivider" aria-hidden="true"></div>
         <div class="ftBrandTagline">Art Has No Limits</div>
-        <p class="ftBrandDesc">A digital art showcase by KOE — featuring character illustrations, landscapes, vehicles, and creative artwork.</p>
+        <p class="ftBrandDesc">DigiArtz — the digital art community. Character illustrations, landscapes, vehicles, and creative artwork from artists worldwide.</p>
       </div>
 
       <!-- Link columns -->
@@ -9539,7 +9629,7 @@ function qrMake (text) {
    XP / level / milestones / leaderboard. XP is derived server-side
    by get_artist_progress() / get_xp_leaderboard() (uploads x10,
    likes x2, bookmarks x2, comments x1) — nothing stored, nothing
-   to tamper with. The level curve below is Koe's exact 100-level
+   to tamper with. The level curve below is the site's exact 100-level
    table and matches public.xp_to_level() in the database. */
 (function () {
   'use strict';
@@ -10856,13 +10946,19 @@ function qrMake (text) {
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- ROOT-ABSOLUTE paths (leading "/") are required, not optional.
        The app pushes deep URLs (/profile/<name>, /artwork/<id>). With a
-       relative src, a browser sitting on /profile/Koe resolves "config.js"
+       relative src, a browser sitting on /profile/artist resolves "config.js"
        against /profile/ and requests /profile/config.js -> 404. KOE_CONFIG
        then never defines SB_URL/SB_KEY, so createClient() is skipped and the
        "Supabase not configured" banner fires. That's why opening a shared
        profile/artwork link — or reloading (e.g. toggling mobile<->desktop)
        while already on a deep URL — broke, while the homepage worked. -->
   <script src="/config.js"></script>
+  <!-- Upload gate — rate limit / duplicate dHash / AI-metadata scan.
+       Loaded here (not lazily) so UploadVerifier is ready the moment
+       the first upload is queued. If this file ever fails to load the
+       queue engine fails OPEN (skips the check) rather than bricking
+       uploads — see upqRun(). -->
+  <script src="/uploadVerifier.js"></script>
   <script>
 
   // config.js must define window.KOE_CONFIG = { SB_URL, SB_KEY }
@@ -12099,7 +12195,7 @@ function qrMake (text) {
     var title = (art.name||'Untitled artwork') + ' — ' + SITE_NAME;
     var desc = (art.description && art.description.trim())
       ? art.description.trim().slice(0,300)
-      : ('View "'+(art.name||'this artwork')+'"'+(catList(art.category).length?(' in the '+catList(art.category).join(', ')+' collection'):'')+' on '+SITE_NAME+', a digital art showcase by KOE.');
+      : ('View "'+(art.name||'this artwork')+'"'+(catList(art.category).length?(' in the '+catList(art.category).join(', ')+' collection'):'')+' on '+SITE_NAME+', the digital art community.');
     var url = SITE_URL + '/artwork/' + art.id;
     document.title = title;
     setMeta('meta[name="description"]','content',desc);
@@ -12128,7 +12224,7 @@ function qrMake (text) {
       'name':art.name||'Untitled artwork',
       'description':desc,
       'url':url,
-      'creator':{'@type':'Organization','name':'KOE'},
+      'creator':{'@type':'Organization','name':'DigiArtz'},
       'representativeOfPage':true
     });
   }
@@ -13308,8 +13404,12 @@ function qrMake (text) {
   }
   function pfRenderGallery(){
     var grid = document.getElementById('pfGalleryGrid');
-    grid.innerHTML = pf.galleryRows.map(pfGalleryCardHTML).join('');
-    document.getElementById('pfGalleryEmpty').style.display = pf.galleryRows.length ? 'none' : '';
+    /* Blurred background-upload cards lead the grid — but only on the
+       uploader's OWN profile; visitors never see processing pieces. */
+    var own = (typeof upq==='object' && currentUser && pf.profile && String(pf.profile.id)===String(currentUser.id));
+    var qHtml = own ? upqOwnQueueHTML() : '';
+    grid.innerHTML = qHtml + pf.galleryRows.map(pfGalleryCardHTML).join('');
+    document.getElementById('pfGalleryEmpty').style.display = (pf.galleryRows.length || qHtml) ? 'none' : '';
     pfGallerySentinelSync();
   }
   function pfGalleryCardHTML(a){
@@ -13944,49 +14044,6 @@ function qrMake (text) {
     pfDzEl.addEventListener('drop',function(e){ var f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')) handlePfFile({target:{files:[f]}}); });
   }
 
-  /* ── Moderation rejection card ──
-     Red title bar + one clear sentence + “Upload another image”.
-     The reason code (e.g. SELFIE) is shown ONLY to dev-role accounts;
-     normal users see the clean message alone. Built lazily on first
-     rejection so the DOM carries zero extra weight otherwise. */
-  function dzShowModReject(mod){
-    var el = document.getElementById('dzModReject');
-    if(!el){
-      el = document.createElement('div');
-      el.id = 'dzModReject';
-      el.style.cssText = 'position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);padding:20px;';
-      el.innerHTML =
-        '<div style="width:100%;max-width:380px;background:var(--sur);border:1px solid var(--danger-bg-hover);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5);">'
-        + '<div style="background:var(--danger-bg);border-bottom:1px solid var(--danger-bg-hover);padding:14px 18px;display:flex;align-items:center;gap:10px;">'
-        +   '<span style="font-size:18px;">\u26d4</span>'
-        +   '<span style="font-weight:800;letter-spacing:.4px;color:var(--danger);">Upload rejected</span>'
-        + '</div>'
-        + '<div style="padding:18px;">'
-        +   '<div id="dzModRejectMsg" style="color:var(--tx);font-size:14.5px;line-height:1.55;"></div>'
-        +   '<div id="dzModRejectCode" style="display:none;margin-top:10px;font-family:monospace;font-size:11px;color:var(--txd);"></div>'
-        +   '<button id="dzModRejectBtn" style="margin-top:16px;width:100%;padding:12px;border:none;border-radius:12px;background:var(--pg);color:#fff;font-weight:700;font-size:14px;cursor:pointer;">Upload another image</button>'
-        + '</div></div>';
-      document.body.appendChild(el);
-      document.getElementById('dzModRejectBtn').addEventListener('click', function(){
-        el.style.display = 'none';
-        /* Leave the upload sheet open with title/tags intact — the artist
-           only needs to swap the image, not retype everything. */
-        var fi = document.getElementById('pfUpF');
-        if(fi){ fi.value=''; fi.click(); }
-      });
-      el.addEventListener('click', function(e){ if(e.target===el) el.style.display='none'; });
-    }
-    document.getElementById('dzModRejectMsg').textContent = mod.reason || 'The uploaded image does not meet DigiArtz artwork submission requirements.';
-    var codeEl = document.getElementById('dzModRejectCode');
-    if(typeof isDev !== 'undefined' && isDev && mod.code){
-      codeEl.textContent = 'Code: ' + mod.code + (mod.failIndex > 0 ? ' \u00b7 image ' + (mod.failIndex+1) : '');
-      codeEl.style.display = 'block';
-    } else {
-      codeEl.style.display = 'none';
-    }
-    el.style.display = 'flex';
-  }
-
   async function doPfUp(){
     if(!currentUser){ showToast('Sign in to continue'); return; }
     var editIdEl = document.getElementById('pfUpEditId');
@@ -14031,57 +14088,26 @@ function qrMake (text) {
           if(typeof renderHome==='function') renderHome();
           closePfUpload(); showToast('Artwork updated ✦');
         } else {
-          /* AI moderation gate — every image (cover + extra pages) goes
-             through Gemini via /api/moderate-upload BEFORE anything is
-             uploaded to S3 or inserted. Rejection stops the flow here;
-             nothing is stored. */
-          btn.textContent='CHECKING…';
-          var modFd = new FormData();
-          modFd.append('files', pf.upFile);
-          for(var mi=0; mi<pf.upPageFiles.length; mi++) modFd.append('files', pf.upPageFiles[mi]);
-          var modSess = (await sb.auth.getSession()).data.session;
-          var modRes = await fetch('/api/moderate-upload', {
-            method:'POST',
-            headers:{ 'authorization':'Bearer '+(modSess?modSess.access_token:'') },
-            body: modFd
+          /* ── Background pipeline — the popup closes IMMEDIATELY and
+             the piece runs CHECKING → UPLOADING → ALMOST DONE → LIVE
+             as a blurred card at the top of the uploader's own grids
+             (profile gallery + My Work), so another piece can be
+             queued while this one is still verifying. Everything the
+             pipeline needs is snapshotted NOW — closePfUpload() wipes
+             pf.upFile / pf.upPageFiles the moment it runs. The S3
+             upload, DB insert and check-failure handling all live in
+             upqRun() below. */
+          var prevEl = document.getElementById('pfUpPrev');
+          upqStart({
+            name: nm, desc: desc, tags: tags, software: software,
+            cats: (pf.upCats && pf.upCats.length) ? pf.upCats.slice() : ['others'],
+            file: pf.upFile,
+            pageFiles: (pf.upPageFiles || []).slice(),
+            thumbFocus: pf.upThumbFocus ? { x: pf.upThumbFocus.x, y: pf.upThumbFocus.y } : { x: 50, y: 50 },
+            preview: (prevEl && prevEl.src) ? prevEl.src : ''
           });
-          var mod = await modRes.json().catch(function(){ return null; });
-          if(!modRes.ok || !mod){ throw new Error((mod&&mod.error)||'Moderation check failed — try again'); }
-          if(!mod.allowed){ dzShowModReject(mod); return; }
-          btn.textContent='UPLOADING…';
-          var ext = safeSlug(pf.upFile.name.split('.').pop(), 8) || 'jpg';
-          var path = 'artworks/'+currentUser.id+'/'+Date.now()+'_'+safeSlug(nm)+'.'+ext;
-          const publicUrl = await s3Upload(BUCKET,path,pf.upFile);
-          var artThumb = pf.upThumbFocus || {x:50,y:50};
-          /* Extra images (optional) — same bucket, same 'artworks/' key
-             prefix as the cover. Stored in `pages`, exactly like comic
-             pages, so the viewer can swipe through them. Left null when
-             the artist uploaded a single image. */
-          var artPageUrls = [];
-          for(var ai=0; ai<pf.upPageFiles.length; ai++){
-            var af = pf.upPageFiles[ai];
-            var aext = safeSlug(af.name.split('.').pop(), 8) || 'jpg';
-            var apath = 'artworks/'+currentUser.id+'/'+Date.now()+'_i'+ai+'.'+aext;
-            var aUrl = await s3Upload(BUCKET,apath,af);
-            artPageUrls.push(aUrl);
-          }
-          const{data:rows,error:de}=await sb.from('artworks').insert({name:nm,description:desc||null,tags:tags,category:pf.upCats.length?pf.upCats:['others'],image_url:publicUrl,storage_path:path,thumb_x:artThumb.x,thumb_y:artThumb.y,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:software||null,phash:null,status:'approved',content_rating:mod.rating,is_mature:mod.rating==='MATURE',ai_moderation:mod.audit}).select();
-          if(de) throw de;
-          /* Only mutate the profile page state when the uploader's OWN
-             profile is the one currently loaded — the universal flow
-             can run with no profile open, or while viewing someone
-             else's. */
-          if(pf.profile && String(pf.profile.id)===String(currentUser.id) && Array.isArray(pf.galleryRows)){
-            pf.galleryRows.unshift(rows[0]);
-            pfRenderGallery();
-            var _st=document.getElementById('pfStatArt');
-            if(_st) _st.textContent = (parseInt(_st.textContent,10)||0)+1;
-          }
-          /* Publish to the public gallery right away. */
-          if(rows[0] && images.findIndex(function(i){return String(i.id)===String(rows[0].id);})===-1) images.unshift(rows[0]);
-          if(typeof renderHome==='function') renderHome();
-          var _fgEl=document.getElementById('fg'); if(_fgEl && _fgEl.classList.contains('open') && typeof renderFG==='function') renderFG();
-          closePfUpload(); showToast('Artwork published \u2726');
+          closePfUpload();
+          showToast('Verifying your artwork \u2726 feel free to queue another');
         }
       }
     }catch(err){ console.error('Error: '+err.message);
@@ -14089,6 +14115,277 @@ function qrMake (text) {
       if(window.meritDenied && window.meritDenied(err, 'upload')) return;
       showToast(safeErr(err, 'Upload failed \u2014 try again')); }
     finally{ btn.disabled=false; btn.textContent = editId ? '📤 Save Changes' : '📤 Upload Artwork'; }
+  }
+
+  /* =========================================================
+     BACKGROUND UPLOAD QUEUE (upq)
+     ├─ upqStart(snap)        — queue a piece; runs immediately
+     ├─ upqRun(job)           — CHECKING → UPLOADING → ALMOST
+     │                          DONE → LIVE, or FAILED
+     ├─ upqOwnQueueHTML()     — blurred cards prepended into the
+     │                          uploader's OWN grids by
+     │                          pfRenderGallery() + mwRenderArt()
+     ├─ upqOpenModal(id)      — tap a card → live step checklist;
+     │                          auto-opened on a failed check
+     └─ upqSync()             — repaint every queue surface
+
+     Rules:
+     · CHECKING runs BEFORE any byte leaves the device, so a
+       failed check normally has nothing to clean up. If a later
+       stage fails (transfer / publish), every S3 key already
+       written is deleted — nothing orphaned in the datacenter.
+     · Verifier verdicts: only 'approve' publishes. 'review'
+       (near-duplicate / AI metadata markers) and 'block' both
+       stop the piece and show the reason. Soften by allowing
+       'review' through in the verdict test inside upqRun().
+     · If uploadVerifier.js ever fails to load, the check is
+       SKIPPED (fail-open) so uploads never brick on a CDN
+       hiccup.
+     · Jobs run in parallel and are pure client-side state —
+       no DB row exists until ALMOST DONE, so an abandoned tab
+       leaves nothing behind (at worst an S3 file whose insert
+       never ran; the same exposure the old inline flow had).
+     ========================================================= */
+  var upq = { jobs: [], seq: 0, modalJob: null, modalSnap: null };
+
+  var UPQ_STAGE_LABEL = { checking:'VERIFYING', uploading:'UPLOADING', finalizing:'ALMOST DONE', live:'LIVE', failed:'FAILED' };
+
+  function upqStart(snap){
+    var job = {
+      id: 'upq_' + (++upq.seq) + '_' + Date.now(),
+      stage: 'checking',
+      name: snap.name, desc: snap.desc, tags: snap.tags, cats: snap.cats,
+      software: snap.software, file: snap.file, pageFiles: snap.pageFiles,
+      thumbFocus: snap.thumbFocus, preview: snap.preview,
+      upDone: 0, upTotal: 1 + snap.pageFiles.length,
+      steps: { ratelimit:{state:'',detail:''}, duplicate:{state:'',detail:''}, ai:{state:'',detail:''} },
+      uploadedPaths: [],
+      failReason: null
+    };
+    upq.jobs.unshift(job);
+    upqSync();
+    upqRun(job);
+  }
+
+  function upqFind(id){ return upq.jobs.find(function(j){ return j.id===id; }); }
+
+  function upqRemove(id){
+    var i = upq.jobs.findIndex(function(j){ return j.id===id; });
+    if(i!==-1) upq.jobs.splice(i,1);
+    if(upq.modalJob===id) upqCloseModal();
+    upqSync();
+  }
+
+  /* Repaints every surface that can show queue cards. Both render fns
+     no-op safely when their page isn't the one on screen. */
+  function upqSync(){
+    if(currentUser && pf.profile && String(pf.profile.id)===String(currentUser.id) && Array.isArray(pf.galleryRows)){
+      pfRenderGallery();
+    }
+    if(typeof mwRenderArt==='function' && typeof mw==='object' && mw && Array.isArray(mw.art)){
+      mwRenderArt();
+    }
+    upqRenderModal();
+  }
+
+  /* Blurred processing cards — newest first, prepended before the real
+     rows. Only ever rendered into the uploader's own grids (the callers
+     enforce ownership). */
+  function upqOwnQueueHTML(){
+    if(!currentUser || !upq.jobs.length) return '';
+    return upq.jobs.map(function(j){
+      var hint = '';
+      if(j.stage==='checking')        hint = j.checkHint || 'Verifying artwork';
+      else if(j.stage==='uploading')  hint = j.upTotal>1 ? ('Transferring '+Math.min(j.upDone+1,j.upTotal)+' of '+j.upTotal+' images') : 'Transferring image';
+      else if(j.stage==='finalizing') hint = 'Publishing';
+      return '<div class="upqCard'+(j.stage==='live'?' upqLive':'')+'" onclick="upqOpenModal(\''+j.id+'\')" role="status" title="Tap for status">'+
+        '<div class="upqImgWrap">'+
+          (j.preview ? '<img class="upqImg" src="'+j.preview+'" alt="" style="object-position:'+j.thumbFocus.x+'% '+j.thumbFocus.y+'%">' : '')+
+          '<div class="upqOvl">'+
+            '<div class="upqSpin"></div>'+
+            '<div class="upqCheck">\u2713</div>'+
+            '<div class="upqStage">'+(UPQ_STAGE_LABEL[j.stage]||'CHECKING')+'</div>'+
+            (hint ? '<div class="upqSub">'+esc(hint)+'</div>' : '')+
+          '</div>'+
+        '</div>'+
+        '<div class="upqMeta">'+
+          '<div class="upqTitle">'+esc(j.name||'Untitled')+'</div>'+
+          '<div class="upqHint">'+(j.stage==='live'?'Published \u2726':'Processing \u2014 tap for status')+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  async function upqRun(job){
+    try{
+      /* ── 1 · CHECKING — before a single byte leaves the device ── */
+      job.stage='checking'; upqSync();
+      var phash = null;
+      if(window.UploadVerifier && typeof UploadVerifier.verify==='function'){
+        var vr = await UploadVerifier.verify(job.file, {
+          sb: sb, userId: currentUser.id, kind: 'art', pages: job.pageFiles,
+          onStep: function(stepId, state, detail){
+            if(job.steps[stepId]){ job.steps[stepId].state=state; job.steps[stepId].detail=detail||''; }
+            /* Live sub-status on the blurred card while each check runs —
+               reads like a professional pipeline instead of a generic wait. */
+            if(state==='run'){
+              job.checkHint = { ratelimit:'Running spam check',
+                                duplicate:'Scanning for duplicates',
+                                ai:'Analyzing file metadata' }[stepId] || 'Verifying artwork';
+              upqSync();
+            } else {
+              upqRenderModal();
+            }
+          }
+        });
+        phash = vr.phash || null;
+        if(vr.verdict !== 'approve'){
+          var fe = new Error(vr.reason || 'Artwork did not pass verification');
+          fe.upqCheckFail = true;
+          throw fe;
+        }
+      } else {
+        console.warn('UploadVerifier missing \u2014 check skipped (fail-open)');
+        ['ratelimit','duplicate','ai'].forEach(function(k){ job.steps[k].state='pass'; job.steps[k].detail='skipped'; });
+      }
+
+      /* ── 2 · UPLOADING — cover first, then the extra images.
+         Every key carries a per-job fragment: jobs run in PARALLEL
+         now, so two pieces landing in the same millisecond must not
+         mint the same Date.now()-based key and overwrite each other. */
+      job.stage='uploading'; job.upDone=0; upqSync();
+      var uniq = Date.now()+'_'+job.id.split('_')[1];
+      var ext = safeSlug(job.file.name.split('.').pop(), 8) || 'jpg';
+      var path = 'artworks/'+currentUser.id+'/'+uniq+'_'+safeSlug(job.name)+'.'+ext;
+      const publicUrl = await s3Upload(BUCKET, path, job.file);
+      job.uploadedPaths.push(path);
+      job.upDone=1; upqSync();
+      var artPageUrls = [];
+      for(var ai=0; ai<job.pageFiles.length; ai++){
+        var af = job.pageFiles[ai];
+        var aext = safeSlug(af.name.split('.').pop(), 8) || 'jpg';
+        var apath = 'artworks/'+currentUser.id+'/'+uniq+'_i'+ai+'.'+aext;
+        var aUrl = await s3Upload(BUCKET, apath, af);
+        job.uploadedPaths.push(apath);
+        artPageUrls.push(aUrl);
+        job.upDone = 1+ai+1; upqSync();
+      }
+
+      /* ── 3 · ALMOST DONE — the DB row (RLS merit gate fires here) ── */
+      job.stage='finalizing'; upqSync();
+      const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved'}).select();
+      if(de) throw de;
+
+      /* ── 4 · LIVE — flash the ✓ on the blurred card first; the real
+         row is spliced in ONLY when the card is removed, so the piece
+         never shows twice (blurred LIVE card + real card) during the
+         1.6s flash. One repaint swaps blur → real. ── */
+      job.stage='live';
+      upqSync();
+      var row = rows && rows[0];
+      setTimeout(function(){
+        if(row){
+          if(pf.profile && String(pf.profile.id)===String(currentUser.id) && Array.isArray(pf.galleryRows) &&
+             pf.galleryRows.findIndex(function(i){return String(i.id)===String(row.id);})===-1){
+            pf.galleryRows.unshift(row);
+            var _st=document.getElementById('pfStatArt');
+            if(_st) _st.textContent = (parseInt(_st.textContent,10)||0)+1;
+          }
+          if(images.findIndex(function(i){return String(i.id)===String(row.id);})===-1) images.unshift(row);
+          if(typeof mw==='object' && mw && Array.isArray(mw.art) && mw.art.findIndex(function(i){return String(i.id)===String(row.id);})===-1) mw.art.unshift(row);
+          if(typeof renderHome==='function') renderHome();
+          var _fgEl=document.getElementById('fg'); if(_fgEl && _fgEl.classList.contains('open') && typeof renderFG==='function') renderFG();
+        }
+        upqRemove(job.id); /* repaints the grids: blur card out, real card in */
+      }, 1600);
+      showToast('\u201C'+(job.name||'Artwork')+'\u201D is live \u2726');
+    }catch(err){
+      /* ── FAILED — wipe anything already in the datacenter, then the
+         themed popup with the exact reason. On a check failure nothing
+         was ever transferred, so the loop is a no-op. ── */
+      for(var d=0; d<job.uploadedPaths.length; d++){
+        try{ await s3Delete(BUCKET, job.uploadedPaths[d]); }
+        catch(e){ console.error('upq cleanup:', e.message); }
+      }
+      job.stage='failed';
+      if(err && err.upqCheckFail){
+        job.failReason = err.message;
+      } else if(err && /row-level security|violates row-level|42501/i.test((err.message||'')+' '+(err.code||''))){
+        job.failReason = 'Your merit is below 80 \u2014 uploads are paused until it recovers (+2/day).';
+      } else {
+        job.failReason = safeErr(err, 'Upload failed \u2014 please try again');
+      }
+      console.error('upq failed:', err && err.message);
+      upqOpenModal(job.id); /* auto-open the CHECK FAILED popup */
+    }
+  }
+
+  /* ── Status / failed modal ── */
+  function upqOpenModal(id){
+    var j = upqFind(id);
+    if(!j) return;
+    if(j.stage==='failed'){
+      /* Detach: the card leaves the grid immediately; the modal keeps
+         its own snapshot so the reason survives the removal. */
+      upq.modalSnap = j; upq.modalJob = null;
+      var i = upq.jobs.indexOf(j); if(i!==-1) upq.jobs.splice(i,1);
+      upqSync();
+    } else {
+      upq.modalJob = id; upq.modalSnap = null;
+    }
+    upqRenderModal();
+    document.getElementById('upqBackdrop').classList.add('open');
+  }
+  function upqCloseModal(){
+    upq.modalJob = null; upq.modalSnap = null;
+    var bd = document.getElementById('upqBackdrop');
+    if(bd) bd.classList.remove('open');
+  }
+
+  function upqStepRowHTML(state, name, sub){
+    var cls = state==='run' ? 'run' : (state==='pass' ? 'pass' : (state==='flag'||state==='block'||state==='fail') ? 'fail' : '');
+    var ico = cls==='pass' ? '\u2713' : cls==='fail' ? '\u2715' : cls==='run' ? '' : '\u2022';
+    return '<div class="upqStepRow '+cls+'">'+
+      '<div class="upqStepIco">'+ico+'</div>'+
+      '<div class="upqStepTx"><div class="upqStepName">'+name+'</div>'+
+      (sub ? '<div class="upqStepSub">'+esc(sub)+'</div>' : '')+'</div></div>';
+  }
+
+  function upqRenderModal(){
+    var j = upq.modalSnap || (upq.modalJob && upqFind(upq.modalJob));
+    if(!j) return;
+    var title = document.getElementById('upqMTitle');
+    var body  = document.getElementById('upqMBody');
+    if(!title || !body) return;
+    var failed = j.stage==='failed';
+    title.textContent = failed ? 'CHECK FAILED' : 'UPLOAD STATUS';
+    /* Transfer + publish rows derive from the stage, the three check
+       rows from the verifier's live onStep feed. */
+    var order = ['checking','uploading','finalizing','live'];
+    var si = order.indexOf(j.stage);
+    var transferState = j.stage==='uploading' ? 'run' : (si>1 ? 'pass' : '');
+    var publishState  = j.stage==='finalizing' ? 'run' : (j.stage==='live' ? 'pass' : '');
+    var transferSub = j.stage==='uploading'
+      ? (j.upTotal>1 ? (Math.min(j.upDone+1,j.upTotal)+' of '+j.upTotal+' images') : 'Sending your image')
+      : (si>1 ? 'Done' : 'Waiting for checks');
+    var html = '';
+    if(failed){
+      html += '<div class="upqFailBox">'+
+        '<div class="upqFailIco">!</div>'+
+        '<div><div class="upqFailTitle">\u201C'+esc(j.name||'Untitled')+'\u201D was not published</div>'+
+        '<div class="upqFailReason">'+esc(j.failReason||'The artwork did not pass verification.')+'</div></div>'+
+      '</div>';
+    }
+    html += upqStepRowHTML(j.steps.ratelimit.state, 'Spam & rate check', j.steps.ratelimit.detail);
+    html += upqStepRowHTML(j.steps.duplicate.state, 'Duplicate check', j.steps.duplicate.detail);
+    html += upqStepRowHTML(j.steps.ai.state, 'AI-content scan', j.steps.ai.detail);
+    if(!failed){
+      html += upqStepRowHTML(transferState, 'Secure transfer', transferSub);
+      html += upqStepRowHTML(publishState, 'Publish', j.stage==='live' ? 'Your artwork is live \u2726' : '');
+    } else {
+      html += '<div class="upqFailNote">Nothing was published and any transferred file has been removed from storage. Fix the issue above and upload again whenever you\u2019re ready.</div>';
+    }
+    body.innerHTML = html;
   }
 
   /* =========================================================
@@ -14968,8 +15265,11 @@ function qrMake (text) {
   function mwRenderArt(){
     var grid = document.getElementById('mwArtGrid'), empty = document.getElementById('mwArtEmpty');
     if(!grid) return;
-    grid.innerHTML = mw.art.map(mwCardHTML).join('');
-    empty.style.display = mw.art.length ? 'none' : 'block';
+    /* Blurred background-upload cards lead the grid — My Work is
+       always the signed-in user's own list. */
+    var qHtml = (typeof upq==='object' && currentUser) ? upqOwnQueueHTML() : '';
+    grid.innerHTML = qHtml + mw.art.map(mwCardHTML).join('');
+    empty.style.display = (mw.art.length || qHtml) ? 'none' : 'block';
   }
 
   /* ── Edit — opens the same #pfUpMod modal the owner already

@@ -55,7 +55,7 @@ window.ZEO_DATA = {
     { id: "navigation",icon: "🧭", label: "Getting Around",         description: "Find your way and reach any section.",       prompt: "What are you trying to find or reach?" },
     { id: "account",   icon: "🔑", label: "Account & Login",        description: "Sign up, log in, passwords, sign-out.",      prompt: "What's happening with your account?" },
     { id: "profile",   icon: "👤", label: "Profile & Customizing",  description: "Avatar, banner, bio, links, username.",      prompt: "What do you want to change on your profile?" },
-    { id: "upload",    icon: "🎨", label: "Uploading Art",          description: "Post art & comics, tags, categories.",    prompt: "What do you need help with for your artwork?" },
+    { id: "upload",    icon: "🎨", label: "Uploading Art",          description: "Post art, checks, multi-image, tags.",     prompt: "What do you need help with for your artwork?" },
     { id: "gallery",   icon: "🖼️", label: "Viewing & Interacting",  description: "Download, share, like, comment, report.",    prompt: "What would you like to do with an artwork?" },
     { id: "community", icon: "💬", label: "Community & Chat",       description: "Communities, comments, and messages.",       prompt: "Which part of the community do you need help with?" },
     { id: "billing",   icon: "💎", label: "Subscriptions & Refunds",description: "Plans, payments, refunds, cancelling.",      prompt: "What are you facing with billing or your plan?" },
@@ -77,7 +77,7 @@ window.ZEO_DATA = {
       {
         question: "What is DigiArtz?",
         answer:
-`DigiArtz is a digital art portfolio and community platform.
+`DigiArtz is a curated platform for digital artists — showcase exceptional artwork, build a professional portfolio, and connect with a global creative community.
 
 • Browse original art — characters, cars, landscapes and more
 • Create a free account to post your own work
@@ -89,9 +89,9 @@ Head to the Home tab any time to start exploring.`
       {
         question: "Who created DigiArtz?",
         answer:
-`DigiArtz is created and run by KOE — a digital artist who builds every piece in Ibis Paint and also designs and codes the whole platform.
+`DigiArtz is built and run by the DigiArtz team — artists and builders who design, develop and curate the platform.
 
-It's both KOE's personal portfolio and a space for the wider art community.`
+It exists for the community: a place where digital artists everywhere can showcase their work and get the recognition their talent deserves.`
       },
       {
         question: "Is it free to use?",
@@ -109,9 +109,9 @@ Optional paid subscription tiers add extra perks — see the "Subscriptions & Re
         answer:
 `Here's what you can do on DigiArtz:
 
-1. Explore art in the Gallery and Comic sections
+1. Explore art in the Gallery
 2. Open any piece to download, share, like or comment
-3. Upload your own art and comics from your Profile
+3. Post your own art with the ➕ Upload button in the bottom bar
 4. Join Communities and chat with other artists
 5. Message friends directly (DMs)
 
@@ -128,7 +128,7 @@ Pick any of those topics from the menu and I'll guide you.`
 
 1. 🏠 Home — hero highlights + featured art
 2. 🖼️ Gallery — all artworks
-3. 📖 Comic — comic works
+3. ➕ Upload — post a new piece from anywhere
 4. 💬 Community — communities, chat & friends
 5. 👤 Profile — your account, uploads & settings
 
@@ -141,7 +141,7 @@ Tap any icon to jump straight to that section.`
 
 1. Tap 🖼️ Gallery in the bottom bar
 2. Use the search box to find a title or tag
-3. Scroll down and tap "Load More" to keep browsing
+3. Just keep scrolling — more pieces load automatically
 4. Tap any thumbnail to open it full-size
 
 Use the category tabs (Characters, Sketch, Landscape) to filter.`
@@ -153,7 +153,7 @@ Use the category tabs (Characters, Sketch, Landscape) to filter.`
 
 1. Open any artwork they made
 2. Tap their name or avatar at the top of the viewer
-3. That opens their profile with all their art & comics
+3. That opens their profile with all their artwork
 
 Tip: in Community → Friends you can also search people by username.`
       },
@@ -314,26 +314,49 @@ If a name is taken, try a small variation. Your username is how others find and 
         answer:
 `To post a new piece:
 
-1. Go to your Profile tab
-2. Tap "Upload" and choose Artwork
-3. Pick your image
-4. Add a title, description and tags
-5. Choose the category and the software you used
-6. Submit
+1. Tap ➕ Upload in the bottom bar (works from anywhere)
+2. Pick your image and drag to set the square thumbnail
+3. Add a title, description and up to 10 tags
+4. Choose the category and the software you used
+5. Tap Upload Artwork
 
-Your art goes live in the public gallery immediately.`
+The popup closes right away — your piece appears at the top of your gallery as a blurred card while it's checked and published in the background. You can queue another upload immediately, no waiting.`
       },
       {
-        question: "How do I upload a comic?",
+        question: "What do Checking, Uploading and Live mean?",
         answer:
-`Posting a comic works the same way:
+`Every new piece moves through a quick pipeline, shown on its blurred card:
 
-1. Profile tab → Upload → choose Comic
-2. Select your comic image/page
-3. Add a title, description and tags
-4. Submit
+1. CHECKING — automatic verification (spam rate, duplicates, AI markers)
+2. UPLOADING — your image is transferred securely
+3. ALMOST DONE — the piece is being published
+4. LIVE ✓ — a green check flashes and the real card takes over
 
-It shows up under the Comic section right away.`
+Tap the blurred card anytime to open the full step-by-step status. It usually takes just a few seconds.`
+      },
+      {
+        question: "Why did my check fail?",
+        answer:
+`If a piece fails checking, a popup tells you the exact reason:
+
+1. Duplicate — the same or a very similar image is already on DigiArtz
+2. AI markers — the file's metadata shows it came from an AI generator
+3. Rate limit — too many uploads in a short time; wait a bit and retry
+4. Merit below 80 — uploads pause until your merit recovers (+2/day)
+
+Nothing is published on a failed check, and any transferred file is removed from storage automatically. Fix the issue and upload again whenever you're ready.`
+      },
+      {
+        question: "Can I add more than one image?",
+        answer:
+`Yes — one piece can hold several images:
+
+1. In the upload form, use "Add more images (optional)"
+2. The first image stays the cover and thumbnail
+3. Add as many extras as you like
+4. Viewers swipe through them in the full-size viewer
+
+Great for variants, close-ups, or step-by-step process shots.`
       },
       {
         question: "How do tags and software work?",
@@ -351,24 +374,24 @@ Keep tags relevant — spammy tags can get flagged.`
         answer:
 `To manage a piece you posted:
 
-1. Open your Profile
-2. Find the artwork in your gallery
-3. Open it and use the manage options to update or remove it
+1. Open your Profile and go to Settings
+2. Tap "Edit My Work"
+3. Find the piece — use ✎ Edit to update it or ✕ Delete to remove it
 
-If you can't find an option, email [your contact email] and we'll help.`
+Edits save instantly; deleting also removes the image file from storage.`
       },
       {
         question: "My upload failed",
         answer:
 `If an upload won't go through:
 
-1. Check your internet connection
-2. Make sure the file is an image and not too large
-3. Confirm you're logged in
-4. Reload the page and try once more
+1. If a "Check failed" popup appeared, it shows the exact reason — see "Why did my check fail?"
+2. Otherwise check your internet connection
+3. Make sure the file is an image and not too large
+4. Confirm you're logged in, reload, and try once more
 5. Still failing? Contact [your contact email] with the file details
 
-Large files are the most common cause — try a smaller export.`
+A failed upload never leaves a half-published piece — storage is cleaned up automatically.`
       }
     ],
 
@@ -722,7 +745,7 @@ This helps us track down display quirks.`
 
 1. Confirm you're logged in
 2. Check your connection
-3. Wait for the confirmation before leaving the page
+3. For uploads, keep the tab open until the blurred card shows LIVE ✓
 4. Reload and check if the change actually applied
 5. Try once more, then contact [your contact email] if it repeats`
       },
@@ -771,7 +794,7 @@ We'll get back to you as soon as we can.`
 2. Tell us who you are and what you have in mind
 3. Include any relevant links or references
 
-KOE reviews these personally.`
+The DigiArtz team reviews every message.`
       }
     ]
 

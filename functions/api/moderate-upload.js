@@ -26,7 +26,7 @@
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 6;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const MIN_CONFIDENCE = 0.7;
+const MIN_CONFIDENCE = 0.6;
 
 // Category codes Gemini may return. User-facing text NEVER comes from the
 // model — it is looked up in MESSAGES below, so wording stays professional
@@ -99,22 +99,29 @@ const MESSAGES = {
   UNCLEAR:           'We could not confirm this image as original artwork. Please upload a clearer artwork image.'
 };
 
-const MODERATION_PROMPT = `You are an artwork upload moderation AI for DigiArtz, a digital art community.
+const MODERATION_PROMPT = `You are the artwork upload moderator for DigiArtz, a digital art community.
 
-Your task is to inspect a user-uploaded image and decide whether it should be allowed or rejected.
+Decide whether a user-uploaded image should be allowed or rejected.
 
 Step 1: Artwork Check
 
-Accept only if the image is primarily original artwork or artistic creation, including digital art, illustrations, paintings, sketches, anime art, manga art, comic art, concept art, pixel art, vector art, stylized 3D renders, sculptures, handcrafted artwork, fantasy art, sci-fi art, abstract art, chibi art, game character artwork, fantasy creature artwork, vehicle concept art, weapon concept art, or architectural artwork.
+DigiArtz accepts artwork in these categories, so ACCEPT images of this kind:
+characters, anime, manga, comic pages, fan art, chibi, sketches, illustrations, concept art, AI-generated art, digital art, traditional art (pencil, ink, watercolor, oil, acrylic), abstract art, typography and lettering art, poster art designs, logo designs, icon designs, wallpaper art, cars, bikes, trucks, buses, aircraft, ships, robots, mecha, weapon designs, fantasy, dragons, monsters, mythology, sci-fi, space art, nature art, animal art, bird art, marine life art, landscape paintings, scenery art, cityscape art, architecture art, building art, interior design art, food art, flower art, tree art, patterns, 3D art and stylized renders, pixel art, aesthetic art, sculptures and handcrafted artwork.
 
-Reject if the image is primarily any of the following:
-selfies, mirror selfies, family photos, group photos, couple photos, baby photos, pet photos, casual camera photos, travel photos, food photos, drink photos, product photos, vehicle photographs, house photographs, room/interior photographs, landscape photographs, city photographs, street photographs, building photographs, object photographs, chat screenshots, game screenshots, app screenshots, social media screenshots, screen recordings, ID cards, passports, driving licences, bank documents, medical documents, school documents, office documents, legal documents, receipts, bills, invoices, salary slips, tax documents, loan documents, insurance papers, QR codes, barcodes, advertisements, flyers, spam images, blank images, random text-only images, memes, logos, icons, UI screenshots, copyrighted media uploads, unrelated AI-generated content, or any other image whose primary purpose is not artwork.
+CRITICAL clarifications — do NOT reject these:
+- FAN ART IS ALLOWED. Hand-drawn, painted, or digitally created artwork depicting existing anime, manga, movie, game, or cartoon characters is accepted. Only reject direct reposts of OFFICIAL media: unmodified screencaps from anime or games, official posters, movie stills, scanned published manga pages, or official promotional images.
+- AI-GENERATED ART IS ALLOWED. DigiArtz has an AI Art category. Accept AI-generated or AI-assisted images when they are artistic in nature.
+- TYPOGRAPHY AND LETTERING ART IS ALLOWED. Reject only plain documents, screenshots of text, or images that are just unstylized writing.
+- LOGO AND ICON DESIGNS ARE ALLOWED as original design work. Reject only reposted logos of real existing brands or companies.
+- POSTER ART IS ALLOWED as designed or illustrated work. Reject only real-world commercial advertisements and promotional flyers for actual products, events, or services.
+- Artwork depicting realistic people, animals, food, vehicles, buildings, or landscapes is still artwork. A painting or rendering OF a landscape is accepted; a PHOTOGRAPH of a landscape is not.
 
-Important:
-- Judge the PRIMARY CONTENT of the image.
-- If the image is clearly artwork, accept it even if it depicts realistic people, animals, food, buildings, or landscapes.
-- A painting or digital rendering OF a landscape is artwork; a PHOTOGRAPH of a landscape is not.
-- If the image is uncertain or borderline, prefer reject.
+The bias is: if the image shows artistic rendering of any kind — linework, brushwork, shading, cel shading, painterly texture, pixel art, vector shapes, 3D stylization, sculpting, or crafting — ACCEPT it.
+
+REJECT only when the image is clearly one of these non-art types:
+real photographs (selfies, mirror selfies, family or group or couple or baby photos, pet photos, casual camera photos, travel photos, food or drink photos, product photos, photographs of vehicles, houses, rooms, landscapes, cities, streets, buildings, or objects), screenshots (chat, game, app, social media, screen recordings), identity or financial or official documents (ID cards, passports, licences, bank or medical or school or office or legal documents, receipts, bills, invoices, salary slips, tax or loan or insurance papers), QR codes or barcodes as the main content, real-world advertisements or spam, blank images, or plain unstylized text.
+
+Reject as UNCLEAR only when you genuinely cannot tell whether the image is a photograph, screenshot, or document rather than artwork.
 
 Step 2: Content Rating
 
@@ -129,19 +136,11 @@ child sexual content, bestiality, extreme gore, terrorist or extremist content, 
 
 Step 3: Quality Check
 
-Set quality to BAD if the image is blank, corrupted, extremely blurry, very low resolution, too heavily compressed, mostly text instead of art, has a watermark covering most of the image, or is unusable or broken. Otherwise GOOD.
-
-Decision Rules
-
-- allow = false if the image is not artwork
-- allow = false if the rating is ADULT
-- allow = false if quality is BAD
-- allow = false if the image is uncertain or borderline
-- allow = true only if the image is artwork, the rating is SAFE or MATURE, and quality is GOOD
+Set quality to BAD only if the image is blank, corrupted, extremely blurry, unusably low resolution, or broken. Artistic style choices (minimalism, rough sketching, low-poly, pixel art) are NOT quality failures.
 
 Step 4: Category Code
 
-Choose exactly ONE category code that best describes the image:
+Choose exactly ONE category code:
 - ARTWORK_OK when the image is approved artwork
 - The specific rejection code matching what you see (SELFIE, PET_PHOTO, GAME_SCREENSHOT, ID_CARD, RECEIPT, QR_CODE, and so on)
 - BLANK_IMAGE, LOW_QUALITY, or TEXT_ONLY for quality failures
@@ -149,6 +148,11 @@ Choose exactly ONE category code that best describes the image:
 - PROHIBITED_CONTENT for the always-reject cases
 - NOT_ARTWORK when it is clearly not artwork but no specific code fits
 - UNCLEAR when you cannot confidently classify the image
+
+Decision Rules
+
+- allow = true when the image is artwork per the rules above, the rating is SAFE or MATURE, and quality is acceptable
+- allow = false when the image is a photograph, screenshot, or document, when the rating is ADULT, or when an always-reject rule applies
 
 Return your verdict as JSON with fields: allow, artwork, rating, quality, category (one code from the list), reason (short internal note), confidence (0 to 1).`;
 
@@ -235,6 +239,26 @@ export async function onRequestPost(context) {
         confidence: v.confidence ?? null
       });
     }
+
+    // Fire-and-forget decision log — approvals AND rejections — so no
+    // verdict is ever invisible. Uses the user's own token (RLS insert-own).
+    context.waitUntil(fetch(`${SB_URL}/rest/v1/moderation_logs`, {
+      method: 'POST',
+      headers: {
+        apikey: SB_ANON,
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({
+        user_id: user.id,
+        allowed,
+        code,
+        rating,
+        confidence: audit[failIndex >= 0 ? failIndex : 0]?.confidence ?? null,
+        audit: { images: audit }
+      })
+    }).catch(() => {}));
 
     return json({
       allowed,

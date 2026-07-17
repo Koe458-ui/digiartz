@@ -14158,7 +14158,7 @@ function qrMake (text) {
       software: snap.software, file: snap.file, pageFiles: snap.pageFiles,
       thumbFocus: snap.thumbFocus, preview: snap.preview,
       upDone: 0, upTotal: 1 + snap.pageFiles.length,
-      steps: { ratelimit:{state:'',detail:''}, duplicate:{state:'',detail:''}, ai:{state:'',detail:''} },
+      steps: { ratelimit:{state:'',detail:''}, duplicate:{state:'',detail:''}, ai:{state:'',detail:''}, moderation:{state:'',detail:''} },
       uploadedPaths: [],
       failReason: null
     };
@@ -14249,6 +14249,42 @@ function qrMake (text) {
         ['ratelimit','duplicate','ai'].forEach(function(k){ job.steps[k].state='pass'; job.steps[k].detail='skipped'; });
       }
 
+      /* ── 1b · GEMINI ARTWORK MODERATION — the server-side gate.
+         Every image (cover + extra pages) is judged by Gemini Vision
+         via /api/moderate-upload: artwork-or-not, SAFE/MATURE/ADULT,
+         and quality — all in one request per image, BEFORE any byte
+         reaches S3. Fails closed: no verdict means no upload. The
+         canonical rejection message lands in the CHECK FAILED popup;
+         dev accounts additionally see the reason code (e.g. SELFIE)
+         in the step row. */
+      job.steps.moderation.state='run';
+      job.checkHint='Confirming it\u2019s artwork'; upqSync();
+      var modFd = new FormData();
+      modFd.append('files', job.file);
+      for(var mfi=0; mfi<job.pageFiles.length; mfi++) modFd.append('files', job.pageFiles[mfi]);
+      var modSess = (await sb.auth.getSession()).data.session;
+      var modRes = await fetch('/api/moderate-upload', {
+        method:'POST',
+        headers:{ 'authorization':'Bearer '+(modSess?modSess.access_token:'') },
+        body: modFd
+      });
+      var mod = await modRes.json().catch(function(){ return null; });
+      if(!modRes.ok || !mod){
+        job.steps.moderation.state='fail'; job.steps.moderation.detail='Service unavailable';
+        var me = new Error((mod&&mod.error)||'Moderation check failed \u2014 try again');
+        me.upqCheckFail = true; throw me;
+      }
+      if(!mod.allowed){
+        job.steps.moderation.state='fail';
+        job.steps.moderation.detail = (typeof isDev!=='undefined' && isDev && mod.code)
+          ? ('Code: '+mod.code + (mod.failIndex>0 ? ' \u00b7 image '+(mod.failIndex+1) : '')) : '';
+        var mf = new Error(mod.reason||'The uploaded image does not meet DigiArtz artwork submission requirements.');
+        mf.upqCheckFail = true; throw mf;
+      }
+      job.steps.moderation.state='pass';
+      job.steps.moderation.detail = mod.rating==='MATURE' ? 'Approved \u00b7 18+' : 'Approved';
+      upqRenderModal();
+
       /* ── 2 · UPLOADING — cover first, then the extra images.
          Every key carries a per-job fragment: jobs run in PARALLEL
          now, so two pieces landing in the same millisecond must not
@@ -14273,7 +14309,7 @@ function qrMake (text) {
 
       /* ── 3 · ALMOST DONE — the DB row (RLS merit gate fires here) ── */
       job.stage='finalizing'; upqSync();
-      const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved'}).select();
+      const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved',content_rating:mod.rating,is_mature:mod.rating==='MATURE',ai_moderation:mod.audit}).select();
       if(de) throw de;
 
       /* ── 4 · LIVE — flash the ✓ on the blurred card first; the real
@@ -14379,6 +14415,7 @@ function qrMake (text) {
     html += upqStepRowHTML(j.steps.ratelimit.state, 'Spam & rate check', j.steps.ratelimit.detail);
     html += upqStepRowHTML(j.steps.duplicate.state, 'Duplicate check', j.steps.duplicate.detail);
     html += upqStepRowHTML(j.steps.ai.state, 'AI-content scan', j.steps.ai.detail);
+    html += upqStepRowHTML(j.steps.moderation.state, 'Artwork moderation', j.steps.moderation.detail);
     if(!failed){
       html += upqStepRowHTML(transferState, 'Secure transfer', transferSub);
       html += upqStepRowHTML(publishState, 'Publish', j.stage==='live' ? 'Your artwork is live \u2726' : '');

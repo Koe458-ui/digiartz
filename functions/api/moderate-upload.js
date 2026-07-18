@@ -20,7 +20,7 @@
 //   SUPABASE_URL          https://tmqzqlrpjpydiftlrzmj.supabase.co
 //   SUPABASE_ANON_KEY
 // Optional:
-//   GEMINI_MODEL          default "gemini-2.5-flash"
+//   GEMINI_MODEL          default "gemini-flash-latest" (pin e.g. "gemini-3.5-flash" if desired)
 // ============================================================
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -267,7 +267,7 @@ export async function onRequestPost(context) {
       failIndex,       // which image failed (-1 when approved)
       reason,          // canonical user-facing message
       audit: {
-        model: env.GEMINI_MODEL || 'gemini-2.5-flash',
+        model: env.GEMINI_MODEL || 'gemini-flash-latest',
         checked_at: new Date().toISOString(),
         images: audit
       }
@@ -282,7 +282,7 @@ export async function onRequestPost(context) {
 // Gemini Vision — structured JSON verdict, fail closed
 // ------------------------------------------------------------
 async function moderateWithGemini(env, b64, mimeType) {
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = env.GEMINI_MODEL || 'gemini-flash-latest';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
 
   const body = {
@@ -327,7 +327,10 @@ async function moderateWithGemini(env, b64, mimeType) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (!res.ok) return { ok: false, reason: 'Moderation service unavailable — try again.' };
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      return { ok: false, reason: 'Moderation service unavailable (HTTP ' + res.status + '): ' + errBody.slice(0, 180) };
+    }
 
     const data = await res.json();
 
@@ -356,20 +359,4 @@ async function moderateWithGemini(env, b64, mimeType) {
   }
 }
 
-// ------------------------------------------------------------
-function toBase64(buf) {
-  const bytes = new Uint8Array(buf);
-  let bin = '';
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
-  }
-  return btoa(bin);
-}
-
-function json(obj, status) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-  });
-}
+// ----------------------------------------------

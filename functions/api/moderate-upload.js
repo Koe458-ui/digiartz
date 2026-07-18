@@ -355,21 +355,8 @@ async function moderateWithGemini(env, b64, mimeType) {
       confidence: Number(v.confidence) || 0
     };
   } catch {
-    return { ok: false, reason: 'Moderation check failed — try again.' 
-    
-function toBase64(buf) {
-  const bytes = new Uint8Array(buf);
-  let bin = '';
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+    return { ok: false, reason: 'Moderation check failed — try again.' };
   }
-  return btoa(bin);
 }
 
-function json(obj, status) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-  });
-}
+// ----------------------------------------------

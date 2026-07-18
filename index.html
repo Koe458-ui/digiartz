@@ -7265,15 +7265,18 @@ body{background:var(--bg);}
     .upPop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:-1;}
     .upPop.open{opacity:1;pointer-events:auto;}
     .upPopBox{background:var(--sur);border:1px solid rgba(var(--pg-rgb),.28);border-radius:16px;width:100%;max-width:960px;max-height:min(90vh,780px);max-height:min(90dvh,780px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);}
-    .upPopHead{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1.2rem 1.3rem;border-bottom:1px solid rgba(var(--pg-rgb),.07);flex-shrink:0;}
-    .upPopHead h2{font-size:1.25rem;font-weight:800;color:var(--tx);margin-bottom:.25rem;letter-spacing:.01em;}
-    .upPopHead p{font-size:.82rem;color:rgba(var(--tx2-rgb),.58);line-height:1.4;}
     .upPopX{background:rgba(var(--pg-rgb),.06);border:1px solid rgba(var(--pg-rgb),.1);color:rgb(var(--tx2-rgb));width:32px;height:32px;border-radius:8px;cursor:pointer;flex-shrink:0;font-size:.85rem;line-height:1;transition:background .2s,color .2s;}
     .upPopX:hover{background:rgba(var(--pg-rgb),.2);color:var(--tx);}
     .upPopBody{overflow-y:auto;padding:1.3rem;display:grid;grid-template-columns:1fr;gap:1.3rem;}
     @media(min-width:860px){.upPopBody{grid-template-columns:1.7fr 1fr;align-items:start;}}
-    .upPopFoot{display:flex;justify-content:flex-end;gap:.65rem;padding:.9rem 1.3rem;border-top:1px solid rgba(var(--pg-rgb),.07);flex-shrink:0;background:var(--sur);}
-    @media(max-width:519px){.upPopFoot{flex-direction:column-reverse;}.upPopFoot button{width:100%;}}
+    /* Form actions — inline at the end of the fields column (no
+       footer bar, no Cancel: the page header's ← is the exit).
+       Upload takes the remaining width so it reads as primary;
+       on narrow screens they stack with Upload on top. */
+    .upActions{display:flex;gap:.7rem;margin-top:1.7rem;padding-top:1.3rem;border-top:1px solid rgba(var(--pg-rgb),.08);}
+    .upActions .upBtnPri{flex:1;}
+    .upActions .upBtnSec{flex:0 0 auto;}
+    @media(max-width:519px){.upActions{flex-direction:column-reverse;}.upActions button{width:100%;}}
 
     /* ── UPLOAD PAGE MODE ──
        #pfUpMod is no longer a centered popup — it's a full slide-in
@@ -7293,18 +7296,156 @@ body{background:var(--bg);}
     }
     #pfUpMod::before{display:none;}
     #pfUpMod.open{visibility:visible;pointer-events:auto;transform:translateX(0);transition-delay:0s,0s;}
+    /* Same dark-violet scoping as #profilePage / #admPage — this is
+       what makes the page "one of the nav pages" rather than a
+       restyled popup. Crop modals are DOM siblings, so they keep
+       their own styling. */
+    #pfUpMod,#pfUpMod *{
+      --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
+      --tx:var(--vtx);--txd:var(--vtxd);
+      --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #pfUpMod .pfPageHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
     #pfUpMod .upPopBox{
       background:transparent;border:0;border-radius:0;box-shadow:none;
-      max-width:960px;margin:0 auto;max-height:none;min-height:100%;overflow:visible;
-      padding-bottom:110px; /* clear the floating bottom nav */
+      max-width:none;margin:0;max-height:none;min-height:100%;overflow:visible;
+      display:block;
     }
-    #pfUpMod .upPopHead{
-      position:sticky;top:0;z-index:5;
-      background:color-mix(in srgb,var(--bg) 92%,transparent);
-      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    /* Body — .subPgBdy metrics without the class (see HTML comment):
+       1400px cap keeps ultrawide from stretching edge-to-edge, the
+       padding ladder matches the other pages' breakpoints, and the
+       bottom padding clears the floating nav. */
+    #pfUpMod .upPgBdy{padding:3.5rem 2.5rem 7.5rem;max-width:1400px;margin:0 auto;box-sizing:border-box;}
+    @media(max-width:1200px){#pfUpMod .upPgBdy{padding:3rem 2rem 7rem;}}
+    @media(max-width:900px){#pfUpMod .upPgBdy{padding:2.5rem 1.8rem 7rem;}}
+    @media(max-width:640px){#pfUpMod .upPgBdy{padding:2rem 1.2rem 6.5rem;}}
+    @media(max-width:420px){#pfUpMod .upPgBdy{padding:1.8rem 1rem 6rem;}}
+    #pfUpMod .upPopBody{overflow:visible;padding:0;}
+    /* Column plan — mobile: everything stacks. ≥860px: form + tips
+       sidebar (base .upPopBody rule). ≥1280px: the form gets more
+       of the width. ≥1100px: the form itself splits into media |
+       fields so big desktops fill horizontally instead of piling
+       one narrow column. */
+    @media(min-width:1280px){#pfUpMod .upPopBody{grid-template-columns:2.4fr 1fr;gap:2rem;}}
+    #pfUpMod .upMain{display:grid;grid-template-columns:1fr;gap:0 1.6rem;align-items:start;}
+    @media(min-width:1100px){#pfUpMod .upMain{grid-template-columns:1fr 1.15fr;}}
+    /* ── Drafts — sidebar card sitting above Upload Guidelines.
+       The rail scrolls horizontally so it stays tidy inside the
+       narrow sidebar column, and wraps to a 2-up grid on mobile
+       where the sidebar spans full width. ── */
+    .upOpt{font-size:.6rem;font-weight:600;color:rgba(var(--tx2-rgb),.45);text-transform:uppercase;letter-spacing:.12em;margin-left:.35rem;}
+    .upSchedHint{font-size:.68rem;color:rgba(var(--tx2-rgb),.5);margin-top:.35rem;}
+    .upSchedHint.bad{color:var(--danger);}
+    /* ── Schedule input ──
+       A native datetime-local otherwise renders with the browser's
+       own light chrome. These rules pull it into the site's input
+       language (.upIn) and, crucially, inherit `color-scheme` from
+       the active theme rather than hardcoding dark — so the picker
+       panel itself is light on the light theme and dark on the dark
+       ones. No literal colours here: everything is a theme token. */
+    /* ── Draft / scheduled preview modal ── */
+    .upPv{z-index:20010;}  /* above the upload page (600) */
+    .upPvHead{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem 1.1rem;border-bottom:1px solid rgba(var(--pg-rgb),.08);flex-shrink:0;}
+    .upPvKind{font-family:var(--fm);font-size:.62rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--txd);}
+    .upPvBody{overflow-y:auto;padding:1.1rem;display:grid;grid-template-columns:1fr;gap:1.1rem;}
+    @media(min-width:760px){.upPvBody{grid-template-columns:1.1fr 1fr;align-items:start;}}
+    .upPvImgWrap{background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.1);border-radius:12px;overflow:hidden;line-height:0;}
+    /* Full image, uncropped — the thumbnail framing is only for grids */
+    .upPvImgWrap img{width:100%;max-height:60vh;object-fit:contain;display:block;}
+    .upPvRow{margin-bottom:.9rem;}
+    .upPvRow:last-child{margin-bottom:0;}
+    .upPvLbl{font-family:var(--fm);font-size:.58rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--txd);margin-bottom:.3rem;}
+    .upPvVal{font-size:.86rem;color:var(--tx);line-height:1.5;word-break:break-word;white-space:pre-wrap;}
+    .upPvChips{display:flex;flex-wrap:wrap;gap:.35rem;}
+    .upPvChip{font-size:.7rem;padding:.22rem .5rem;border-radius:6px;background:rgba(var(--pg-rgb),.1);border:1px solid rgba(var(--pg-rgb),.16);color:var(--tx);}
+    .upPvFoot{padding:.9rem 1.1rem;border-top:1px solid rgba(var(--pg-rgb),.08);display:flex;gap:.6rem;justify-content:flex-end;align-items:center;flex-shrink:0;flex-wrap:wrap;}
+    .upPvWhen{font-size:.8rem;color:var(--tx);margin-right:auto;}
+    .upPvWhen b{color:var(--pg);}
+    .upPvWhen.bad{color:var(--danger);}
+    @media(max-width:519px){.upPvFoot button{width:100%;}.upPvWhen{width:100%;margin:0 0 .2rem;}}
+    /* Custom schedule picker — every part is a theme token, so it
+       renders correctly on all five themes (the native panel could
+       only ever follow color-scheme). */
+    #pfUpSchedTrigger{font-family:var(--fm);letter-spacing:.04em;}
+    .upSchedPh{color:rgba(var(--tx2-rgb),.42);}
+    .upSchedPanel{max-height:min(70vh,460px);overflow-y:auto;padding:.7rem;}
+    @media(max-width:420px){.upSchedPanel{padding:.55rem;}.upSchedDay{font-size:.7rem;}}
+    .upSchedNav{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tx);}
+    .upSchedNavBtn{background:rgba(var(--pg-rgb),.08);border:1px solid rgba(var(--pg-rgb),.16);color:var(--tx);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:.9rem;line-height:1;transition:background .2s;}
+    .upSchedNavBtn:hover{background:rgba(var(--pg-rgb),.2);}
+    .upSchedDows,.upSchedGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+    .upSchedDows{margin-bottom:2px;}
+    .upSchedDows span{text-align:center;font-family:var(--fm);font-size:.56rem;letter-spacing:.06em;color:var(--txd);padding:.2rem 0;}
+    .upSchedDay{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:7px;background:none;color:var(--tx);font-size:.74rem;cursor:pointer;font-family:var(--fb);transition:background .15s,border-color .15s;}
+    .upSchedDay:hover:not(:disabled){background:rgba(var(--pg-rgb),.14);}
+    .upSchedDay:disabled{color:rgba(var(--tx2-rgb),.22);cursor:default;}
+    .upSchedDay.sel{background:var(--pg);color:#fff;border-color:var(--pg);}
+    .upSchedDay.today:not(.sel){border-color:rgba(var(--pg-rgb),.45);}
+    .upSchedDay.pad{visibility:hidden;}
+    .upSchedTime{display:flex;align-items:center;gap:.4rem;margin-top:.6rem;padding-top:.6rem;border-top:1px solid rgba(var(--pg-rgb),.1);}
+    .upSchedTimeLbl{font-family:var(--fm);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--txd);margin-right:auto;}
+    .upSchedSel{background:rgba(var(--pg-rgb),.06);border:1px solid rgba(var(--pg-rgb),.16);color:var(--tx);border-radius:7px;padding:.32rem .4rem;font-family:var(--fm);font-size:.78rem;cursor:pointer;}
+    .upSchedColon{color:var(--txd);}
+    .upSchedActs{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.6rem;}
+    .upSchedActs button{padding:.45rem .9rem;font-size:.74rem;}
+
+    /* Scheduled cards reuse the draft card shell; the corner mark is
+       violet (time until publish) instead of the drafts' red expiry. */
+    .upSchedMark{background:var(--pg)!important;}
+    .upSchedBad{border-color:var(--danger-bd,rgba(214,58,63,.55));}
+    .upSchedBad img{opacity:.45;filter:grayscale(.5);}
+    /* Deliberately smaller than the .upSideCard h3 headings — this
+       is a micro-label in the site's mono-caps page language, not a
+       card title competing with "Upload Guidelines". */
+    .upDraftTitle{font-family:var(--fm);font-weight:600;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--txd);}
+    .upDraftTitle .s{color:var(--pg);}
+    .upDraftNote{font-size:.62rem;color:rgba(var(--tx2-rgb),.45);line-height:1.35;margin:.3rem 0 .7rem;}
+    /* Ghost slots — keep the rail filled when there's nothing saved
+       yet, so the card never collapses to an empty box. Same box
+       metrics as a real card; inert (no hover lift, no pointer). */
+    .upDraftGhost{cursor:default;background:rgba(var(--pg-rgb),.02);border-style:dashed;border-color:rgba(var(--pg-rgb),.14);}
+    .upDraftGhost:hover{transform:none;border-color:rgba(var(--pg-rgb),.14);}
+    .upDraftGhostIn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:rgba(var(--pg-rgb),.28);}
+    .upDraftGhost .upDraftExp{background:rgba(214,58,63,.45);}
+    /* Always a left-to-right rail (no mobile grid) — swiping the
+       strip is the interaction on every screen size. */
+    .upDraftRow{
+      --slots:2;            /* visible cards — mobile default */
+      --gap:.6rem;
+      display:flex;gap:var(--gap);
+      overflow-x:auto;overflow-y:hidden;
+      /* min-width:0 + max-width:100% keep this rail from pushing the
+         sidebar (and therefore the page) wider than the viewport */
+      min-width:0;max-width:100%;
+      padding-bottom:.45rem;scrollbar-width:thin;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
     }
-    #pfUpMod .upPopBody{overflow:visible;}
-    #pfUpMod .upPopFoot{background:transparent;}
+    @media(min-width:641px){.upDraftRow{--slots:3;}}   /* tablet / small desktop */
+    @media(min-width:1280px){.upDraftRow{--slots:4;}}  /* desktop */
+    /* Flex/grid children default to min-width:auto, which is what let
+       the fixed-width rail blow out the layout. Pin them to 0 so only
+       the rail itself scrolls — never the page. */
+    #pfUpMod{overflow-x:hidden;}
+    #pfUpMod .upPopBody>*,#pfUpMod .upMain>*,#pfUpMod .upSide>*{min-width:0;}
+    /* Same square tile as an artwork card (.awCard/.awImgWrap):
+       aspect-ratio 1, image cover, no meta strip — the only
+       adornments are the red expiry badge and the delete button. */
+    /* Exactly --slots cards fill the rail's visible width; anything
+       beyond that scrolls horizontally inside the rail only. */
+    .upDraftCard{position:relative;flex:0 0 calc((100% - (var(--slots) - 1) * var(--gap)) / var(--slots));aspect-ratio:1;cursor:pointer;background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.14);border-radius:10px;overflow:hidden;transition:border-color .2s,transform .2s;scroll-snap-align:start;}
+    .upDraftCard>img{width:100%;height:100%;object-fit:cover;display:block;}
+    .upDraftCard:hover{border-color:var(--pg);transform:translateY(-2px);}
+    /* Red expiry mark — top-right, days remaining before the 7-day
+       auto-delete. Ghost slots show the full 7d. */
+    .upDraftExp{position:absolute;top:5px;right:5px;z-index:2;background:var(--danger-strong,#D63A3F);color:#fff;font-family:var(--fm);font-size:.56rem;font-weight:700;letter-spacing:.02em;line-height:1;padding:.22rem .34rem;border-radius:5px;box-shadow:0 1px 5px rgba(0,0,0,.4);}
+    /* Delete moved to the top-LEFT so the red mark owns the right */
+    .upDraftX{position:absolute;top:5px;left:5px;z-index:2;width:22px;height:22px;border-radius:6px;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:.7rem;line-height:1;cursor:pointer;transition:background .2s;}
+    .upDraftX:hover{background:var(--danger-strong,#D63A3F);}
+    @media(min-width:860px){
+      /* Sidebar cards track the sticky header on tall desktop pages */
+      #pfUpMod .upSide{position:sticky;top:calc(3.4rem + 1rem);} /* clears .pfPageHdr */
+    }
 
     .upDz{border:2px dashed rgba(var(--pg-rgb),.35);border-radius:12px;padding:2rem 1.1rem;text-align:center;cursor:pointer;position:relative;transition:border-color .25s,background .25s;background:rgba(var(--pg-rgb),.035);margin-bottom:1rem;}
     .upDz.over,.upDz:hover{border-color:var(--pg);background:rgba(var(--pg-rgb),.08);}
@@ -7316,6 +7457,13 @@ body{background:var(--bg);}
     .upDzBtn{background:linear-gradient(135deg,var(--pg),var(--pgd));border:none;color:var(--text-on-accent);padding:.6rem 1.2rem;border-radius:8px;font-size:.8rem;font-weight:700;pointer-events:none;}
     .upDzSm{padding:1.2rem 1rem;margin-bottom:.6rem;}
     .upPopBody .upPrev{width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid rgba(var(--pg-rgb),.08);margin-bottom:1rem;}
+    /* Zoomed previews need a clipping frame — transform:scale on a
+       bare <img> would bleed over the form. The wrap takes over the
+       radius/border/margin; the img inside is always block. */
+    .upPrevWrap{display:none;overflow:hidden;border-radius:10px;border:1px solid rgba(var(--pg-rgb),.08);margin-bottom:1rem;line-height:0;}
+    .upPrevWrap .upPrev{display:block;width:100%;max-height:160px;object-fit:cover;margin:0;border:0;border-radius:0;}
+    /* Adjust Thumbnail — pulled up against the preview it belongs to */
+    .upThumbEditBtn{display:block;width:100%;margin:-.45rem 0 1rem;}
     .upPagesPreview{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;}
     .upPagesPreview img{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid rgba(var(--pg-rgb),.1);}
 
@@ -7403,10 +7551,7 @@ body{background:var(--bg);}
     .upBtnPri:disabled{opacity:.6;cursor:not-allowed;filter:none;}
 
     @media(max-width:519px){
-      .upPopHead{padding:1rem 1rem;}
-      .upPopHead h2{font-size:1.1rem;}
       .upPopBody{padding:1rem;}
-      .upPopFoot{padding:.8rem 1rem;}
     }
 
     /* =========================================================
@@ -7516,6 +7661,12 @@ body{background:var(--bg);}
     .cropStage img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;}
     .cropGrid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(var(--pg-rgb),.35) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--pg-rgb),.35) 1px,transparent 1px);background-size:33.33% 33.33%;}
     .cropFoot{padding:1rem 1.3rem;border-top:1px solid rgba(var(--pg-rgb),.08);display:flex;justify-content:flex-end;gap:.7rem;}
+    /* Thumbnail zoom controls (upload crop only — avatar/banner
+       crop keeps its own plain stage) */
+    .cropZoomRow{display:flex;align-items:center;gap:.6rem;width:min(320px,100%);}
+    .cropZoomBtn{width:30px;height:30px;flex-shrink:0;border-radius:8px;border:1px solid rgba(var(--pg-rgb),.15);background:rgba(var(--pg-rgb),.06);color:var(--tx);font-size:1rem;line-height:1;cursor:pointer;transition:background .2s;}
+    .cropZoomBtn:hover{background:rgba(var(--pg-rgb),.16);}
+    .cropZoom{flex:1;accent-color:var(--pg);cursor:pointer;min-width:0;}
 
     /* ── Avatar / Banner focal-point cropper ──
        Same drag-to-reposition language as .cropStage above, but this
@@ -7533,12 +7684,21 @@ body{background:var(--bg);}
    <div class="cropBox" onclick="event.stopPropagation()">
     <div class="cropHead">
       <h2>Set Thumbnail</h2>
-      <p>Drag the photo to choose what shows in the square thumbnail.</p>
+      <p>Drag to position, zoom to frame what shows in the square thumbnail.</p>
     </div>
     <div class="cropBody">
       <div class="cropStage" id="pfCropStage">
         <img alt="" id="pfCropImg"/>
         <div class="cropGrid"></div>
+      </div>
+      <!-- Zoom — 100–200%. 200% shows exactly 1/4 of the image
+           area, a professional cap: any tighter and square thumbs
+           start visibly upscaling. At >100% BOTH axes become
+           draggable in the stage above. -->
+      <div class="cropZoomRow">
+        <button type="button" class="cropZoomBtn" onclick="pfCropNudgeZoom(-10)" aria-label="Zoom out">−</button>
+        <input type="range" class="cropZoom" id="pfCropZoom" min="100" max="200" step="1" value="100" oninput="pfCropSetZoom(this.value)" aria-label="Thumbnail zoom"/>
+        <button type="button" class="cropZoomBtn" onclick="pfCropNudgeZoom(10)" aria-label="Zoom in">＋</button>
       </div>
     </div>
     <div class="cropFoot">
@@ -7602,38 +7762,62 @@ body{background:var(--bg);}
 
   <div class="upPop" id="pfUpMod">
    <div class="upPopBox">
-    <div class="upPopHead">
-      <div>
-        <h2 id="pfUpTitle">Upload Artwork</h2>
-        <p id="pfUpSubtitle">Share your creativity with artists around the world.</p>
-      </div>
-      <button class="upPopX" onclick="closePfUpload()" aria-label="Close">✕</button>
+    <!-- Same page furniture as Profile / Community: the .pfPageHdr
+         bar with the centred gradient .cmHdrTitle (NOT the .subPgHdr
+         sub-page pattern used by Rank / Admin / My Work), then the
+         .subPgHeadline. pfUpTitle / pfUpSubtitle keep their ids —
+         openPfUpload() and mwEditArt() re-label them per mode, and
+         pfUpNavTitle mirrors the mode in the sticky header. -->
+    <div class="pfPageHdr">
+      <div class="cmHdrTitle"><span id="pfUpNavTitle">UPLOAD</span> <span class="s">✦</span></div>
+    </div>
+    <!-- .upPgBdy mirrors .subPgBdy's metrics (1400px cap + the same
+         responsive padding ladder) but is deliberately a DIFFERENT
+         class: mountFaq() does querySelector('.subPgBdy') and this
+         page sits EARLIER in the DOM than #subPage — reusing the
+         literal class would hijack the FAQ mount. -->
+    <div class="upPgBdy">
+    <div class="subPgHeadline">
+      <h2 id="pfUpTitle">Upload Artwork</h2>
+      <p id="pfUpSubtitle">Share your creativity with artists around the world.</p>
     </div>
     <div class="upPopBody">
      <div class="upMain">
       <input id="pfUpEditId" type="hidden" value=""/>
+      <!-- Two internal columns ≥1100px: media (dropzone / preview /
+           extra pages) left, text fields right — so wide desktops
+           fill the page instead of scrolling one long column. -->
+      <div class="upMediaCol">
       <div class="upDz" id="pfDz">
-       <input accept="image/*" id="pfUpF" onchange="handlePfFile(event)" type="file"/>
+       <input accept="image/*" id="pfUpF" onclick="if(pfGuestGate(event))return;" onchange="handlePfFile(event)" type="file"/>
        <div class="upDzIco">⬆</div>
        <div class="upDzTitle" id="pfDzTxt">Drag &amp; drop your artwork here</div>
        <div class="upDzSub">or click to browse files</div>
        <div class="upDzHint">JPG, PNG, WEBP, GIF up to 20MB</div>
        <button type="button" class="upDzBtn" tabindex="-1">📁 Choose Files</button>
       </div>
-      <img alt="preview" class="upPrev" id="pfUpPrev"/>
+      <div class="upPrevWrap" id="pfUpPrevWrap"><img alt="preview" class="upPrev" id="pfUpPrev"/></div>
+      <!-- Re-opens the focal-point picker for the ALREADY-chosen
+           image, seeded with the current focus — so a user who
+           rushed through (or forgot) the thumbnail step can redo it
+           any time BEFORE uploading. Hidden in edit mode: thumb_x/y
+           of published pieces aren't editable from this form. -->
+      <button type="button" class="upBtnSec upThumbEditBtn" id="pfUpThumbBtn" style="display:none;" onclick="reopenPfCrop()">🖼 Adjust Thumbnail</button>
 
       <!-- Additional images — comic pages, or extra images on an artwork.
            Copy is re-labelled per mode by openPfUpload(). -->
       <div id="pfComicPagesWrap" style="display:none;">
         <div class="upDz upDzSm" id="pfDzPages">
-         <input accept="image/*" id="pfUpPages" multiple="" onchange="handlePfPagesFile(event)" type="file"/>
+         <input accept="image/*" id="pfUpPages" multiple="" onclick="if(pfGuestGate(event))return;" onchange="handlePfPagesFile(event)" type="file"/>
          <div class="upDzIco" id="pfDzPagesIco">📖</div>
          <div class="upDzTitle" id="pfDzPagesTitle">Drop page images here or click to browse</div>
          <div class="upDzSub" id="pfDzPagesSub">Multiple pages supported</div>
         </div>
         <div id="pfPagesPreview" class="upPagesPreview"></div>
       </div>
+      </div><!-- /.upMediaCol -->
 
+      <div class="upFieldsCol">
       <div class="upField">
         <label class="upLbl" for="pfUpNm">Title <span class="upReq">*</span></label>
         <div class="upInWrap">
@@ -7704,9 +7888,91 @@ body{background:var(--bg);}
         </div>
         <input type="hidden" id="pfUpSoftware" value=""/>
       </div>
+
+      <!-- ── SCHEDULE (optional) ── leave empty to publish now.
+           When set, the piece is still verified + uploaded straight
+           away; only the public row is held back until the chosen
+           time by a server cron job, so it goes live even if the
+           artist is offline. -->
+      <div class="upField" id="pfUpSchedField">
+        <label class="upLbl" for="pfUpSched">Schedule <span class="upOpt">optional</span></label>
+        <!-- Custom picker. A native datetime-local opens the BROWSER's
+             own panel, which can't be themed at all (color-scheme is
+             the only lever), so the control is built from the same
+             .upCatDd trigger/panel parts as Category and Software.
+             #pfUpSched stays an <input> so uschPicked()/pfSchedHint()
+             read .value exactly as before — it just holds a
+             "YYYY-MM-DDTHH:MM" string this code writes. -->
+        <div class="upCatDd" id="pfUpSchedDd">
+          <button type="button" class="upCatTrigger" id="pfUpSchedTrigger" onclick="pfSchedToggle(event)">
+            <span id="pfUpSchedLbl" class="upSchedPh">__/__/____&nbsp;&nbsp;__:__</span><span class="upChev">⌄</span>
+          </button>
+          <input type="hidden" id="pfUpSched" value=""/>
+          <div class="upCatPanel upSchedPanel" id="pfUpSchedPanel">
+            <div class="upSchedNav">
+              <button type="button" class="upSchedNavBtn" onclick="pfSchedNav(-1,event)" aria-label="Previous month">‹</button>
+              <span id="pfUpSchedMon">—</span>
+              <button type="button" class="upSchedNavBtn" onclick="pfSchedNav(1,event)" aria-label="Next month">›</button>
+            </div>
+            <div class="upSchedDows"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+            <div class="upSchedGrid" id="pfUpSchedGrid"></div>
+            <div class="upSchedTime">
+              <span class="upSchedTimeLbl">Time</span>
+              <select class="upSchedSel" id="pfUpSchedH" onchange="pfSchedApply()" aria-label="Hour"></select>
+              <span class="upSchedColon">:</span>
+              <select class="upSchedSel" id="pfUpSchedM" onchange="pfSchedApply()" aria-label="Minute"></select>
+            </div>
+            <div class="upSchedActs">
+              <button type="button" class="upBtnSec" onclick="pfSchedClear(event)">Clear</button>
+              <button type="button" class="upBtnPri" onclick="pfSchedDone(event)">Done</button>
+            </div>
+          </div>
+        </div>
+        <div class="upSchedHint" id="pfUpSchedHint">Leave empty to publish immediately.</div>
+      </div>
+
+      <!-- ── ACTIONS ── end of the form column: directly under
+           Software Used and above the sidebar guidelines (the
+           sidebar stacks right after this column on mobile).
+           Cancel was removed — this is a full page now, so the ←
+           in the page header is the way out. -->
+      <div class="upActions">
+        <!-- Edit mode only: this page opens OVER My Work, and the nav
+             would close both, so edit keeps an explicit way back. -->
+        <button class="upBtnSec" id="pfUpBackBtn" style="display:none;" onclick="closePfUpload()">← Back</button>
+        <button class="upBtnSec" id="pfDraftBtn" onclick="updrSave()">💾 Save Draft</button>
+        <button class="upBtnPri" id="pfUpBtn" onclick="doPfUp()">📤 Upload Artwork</button>
+      </div>
+      </div><!-- /.upFieldsCol -->
      </div>
 
      <div class="upSide">
+       <!-- ── DRAFTS ── first card in the sidebar, directly above
+            Upload Guidelines (so it reads above the guide at every
+            breakpoint — the sidebar stacks in source order on
+            mobile). Device-local (IndexedDB): draft images cost
+            zero storage and need no server cleanup job. Auto-purged
+            7 days after saving, checked on every page open and
+            every save. Hidden when empty and in edit mode. Tapping
+            a card loads it back into the form; resumed drafts run
+            through the normal verification pipeline on upload,
+            exactly like a fresh pick. -->
+       <!-- ── SCHEDULED ── same rail UI as drafts, sitting above it.
+            Backed by public.scheduled_uploads (server-side), so the
+            list is per-account and survives device changes. -->
+       <div class="upSideCard" id="upSchedSec">
+         <div class="upDraftTitle">SCHEDULED <span class="s">✦</span></div>
+         <p class="upDraftNote">Publishes automatically at the set time</p>
+         <div class="upDraftRow" id="upSchedRow"></div>
+       </div>
+       <div class="upSideCard" id="upDraftSec">
+         <div class="upDraftTitle">SAVED DRAFTS <span class="s">✦</span></div>
+         <p class="upDraftNote">Saved on this device · auto-deleted after 7 days</p>
+         <!-- Pre-filled with ghost slots so the card is never blank
+              on first paint; updrLoadStrip() swaps in real drafts
+              (and pads back up to UPDR_SLOTS with these). -->
+         <div class="upDraftRow" id="upDraftRow"><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div></div>
+       </div>
        <div class="upSideCard">
          <h3>Upload Guidelines</h3>
          <ul class="upGuideList">
@@ -7728,10 +7994,29 @@ body{background:var(--bg);}
      </div>
     </div>
 
-    <div class="upPopFoot">
-      <button class="upBtnSec" onclick="closePfUpload()">Cancel</button>
-      <button class="upBtnPri" id="pfUpBtn" onclick="doPfUp()">📤 Upload Artwork</button>
+    </div><!-- /.upPgBdy -->
+   </div>
+  </div>
+
+  <!-- ── DRAFT / SCHEDULED PREVIEW ──
+       Reuses the .upPop shell but deliberately carries NONE of the
+       artwork lightbox's social furniture: no artist name or avatar,
+       no report, no like / bookmark / download / share / comments.
+       It's the artist previewing their own unpublished work, so it
+       shows the image plus exactly what they typed during upload,
+       and ends with the one action that makes sense for its kind —
+       a button for drafts, a countdown line for scheduled. -->
+  <div class="upPop upPv" id="upPvMod" role="dialog" aria-modal="true" aria-label="Preview">
+   <div class="upPopBox">
+    <div class="upPvHead">
+      <div class="upPvKind" id="upPvKind">DRAFT</div>
+      <button class="upPopX" onclick="upPvClose()" aria-label="Close preview">✕</button>
     </div>
+    <div class="upPvBody">
+      <div class="upPvImgWrap"><img id="upPvImg" alt=""/></div>
+      <div id="upPvMeta"></div>
+    </div>
+    <div class="upPvFoot" id="upPvFoot"></div>
    </div>
   </div>
 
@@ -11351,7 +11636,7 @@ function qrMake (text) {
         /* offline snapshot: top 50, trimmed to the fields renderers use */
         dzcSet('artworks', images.slice(0,50).map(function(a){
           return { id:a.id, name:a.name, image_url:a.image_url,
-                   thumb_x:a.thumb_x, thumb_y:a.thumb_y,
+                   thumb_x:a.thumb_x, thumb_y:a.thumb_y, thumb_zoom:a.thumb_zoom,
                    category:a.category, tags:a.tags||null, kind:a.kind,
                    status:a.status, created_at:a.created_at,
                    user_id:a.user_id||null, description:a.description||null,
@@ -11418,7 +11703,10 @@ function qrMake (text) {
        the CloudFront resize path → broken thumbnail. esc() is for embedding
        the finished URL in the attribute, matching every other card builder. */
     const thumbSrc=esc(getThumbnailUrl(img.image_url||''));
-    const thumbPos=(img.thumb_x!=null&&img.thumb_y!=null&&isFinite(+img.thumb_x)&&isFinite(+img.thumb_y))?((+img.thumb_x)+'% '+(+img.thumb_y)+'%'):'50% 50%';
+    /* thumbStyle handles the null/NaN fallbacks AND the optional
+       thumb_zoom transform in one place — same markup as every
+       other thumbnail surface. */
+    const thumbPos=thumbStyle(img.thumb_x, img.thumb_y, img.thumb_zoom);
     const fullSrc=esc(img.image_url);
     const cats=catList(img.category).length?catList(img.category):['others'];
     const extraCats=cats.slice(1);
@@ -11436,7 +11724,7 @@ function qrMake (text) {
     return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
         <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>${multiBadge}
-        <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="object-position:${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
+        <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
       </a>
@@ -13324,9 +13612,28 @@ function qrMake (text) {
   }
 
   /* ── LIKE / BOOKMARK tabs — read-only grids for any profile ── */
+  /* ── thumbStyle — ONE inline-style builder for every thumbnail
+     renderer (home feed, gallery masonry, profile grids, saved
+     grids, My Work, upload queue, previews). Zoom keeps the same
+     "small numbers only" model as the focal point: no second image
+     file is ever generated — transform:scale about the focal
+     origin re-crops live in CSS, and object-position % still maps
+     linearly across the pan range under that transform. z is
+     clamped to 1–2 (200% shows 1/4 of the image area). At z=1 the
+     output is byte-identical to the old object-position-only
+     markup, so existing rows render exactly as before. ── */
+  function thumbStyle(x, y, z){
+    var tx = (x!=null && isFinite(+x)) ? +x : 50;
+    var ty = (y!=null && isFinite(+y)) ? +y : 50;
+    var tz = (z!=null && isFinite(+z)) ? Math.max(1, Math.min(2, +z)) : 1;
+    var s = 'object-position:'+tx+'% '+ty+'%';
+    if(tz > 1) s += ';transform:scale('+tz+');transform-origin:'+tx+'% '+ty+'%';
+    return s;
+  }
+
   function pfSavedCardHTML(a){
     return '<div class="awCard" onclick="pfSavedOpen(\''+esc(String(a.id))+'\')">'+
-      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%"></div>'+
+      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'"></div>'+
     '</div>';
   }
   async function pfSavedOpen(id){
@@ -13481,7 +13788,7 @@ function qrMake (text) {
     /* Profile artwork cards never show Edit/Delete — not even for
        the profile owner — to keep this grid a pure read-only showcase. */
     return '<div class="awCard" onclick="pfOpenArtwork(\''+esc(String(a.id))+'\')">'+
-      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="object-position:'+(a.thumb_x!=null&&isFinite(+a.thumb_x)?+a.thumb_x:50)+'% '+(a.thumb_y!=null&&isFinite(+a.thumb_y)?+a.thumb_y:50)+'%">'+
+      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'">'+
       '</div>'+
       '<div class="pfCardMeta">'+
         '<div class="pfCardTitle">'+esc(a.name||'Untitled')+'</div>'+
@@ -13940,16 +14247,66 @@ function qrMake (text) {
     }
   }
 
+  /* ── Guest gate — the upload PAGE itself is viewable logged-out
+     (better guest experience: guests see the form, guidelines and
+     tips), but any real ACTION — picking files, dropping files, or
+     submitting — routes through login first. Queues pendPfUp so a
+     successful sign-in lands them right back on the upload page.
+     #authMod is z:500 (below this page's z:600), so the page is
+     closed BEFORE auth opens — "navigate to login", not layered.
+     Defensive on e: the pfDz drop handler passes a synthetic
+     {target:{files:[f]}} object with no preventDefault. */
+  function pfGuestGate(e){
+    if(currentUser) return false;
+    if(e && typeof e.preventDefault==='function'){ e.preventDefault(); e.stopPropagation(); }
+    sessionStorage.setItem('pendPfUp','1');
+    closePfUpload();
+    showToast('Sign in to upload');
+    openAuthMod();
+    return true;
+  }
+
+  /* ── pfUpResetSession ──
+     Wipes every scrap of upload state so the next piece starts from
+     a clean sheet: picked files, the crop/focal point (thumb x/y +
+     zoom), the pending crop, the preview img's own src (which would
+     otherwise pin the old data URL in memory), the text fields,
+     tags, categories, software, the schedule, and any link back to
+     a draft. Called by openPfUpload() AND immediately after a
+     successful queue in doPfUp(), so a finished upload can never
+     bleed into the next one. */
+  function pfUpResetSession(){
+    pf.upFile = null;
+    pf.upPageFiles = [];
+    pf.upThumbFocus = null;      /* was surviving an upload */
+    pfCropPending = null;
+    updrActiveId = null;
+    var prev = document.getElementById('pfUpPrev');
+    if(prev){ prev.removeAttribute('style'); prev.removeAttribute('src'); }
+    var pw = document.getElementById('pfUpPrevWrap'); if(pw) pw.style.display = 'none';
+    var tb = document.getElementById('pfUpThumbBtn'); if(tb) tb.style.display = 'none';
+    var pp = document.getElementById('pfPagesPreview'); if(pp) pp.innerHTML = '';
+    var nm = document.getElementById('pfUpNm');   if(nm) nm.value = '';
+    var ds = document.getElementById('pfUpDesc'); if(ds) ds.value = '';
+    pfUpdateCount('pfUpNm','pfUpNmCount',100);
+    pfUpdateCount('pfUpDesc','pfUpDescCount',1000);
+    pfSetTagsFromArray([]);
+    pfSetCats(['others']);
+    pfSetSoftware('');
+    pfSchedReset();
+    closePfCatDd();
+  }
+
   function openPfUpload(){
     /* Universal upload — any signed-in user, from anywhere (nav ➕).
        The row is always inserted with the uploader's own user_id, so
-       no owner check is needed. */
-    if(!currentUser){ sessionStorage.setItem('pendPfUp','1'); showToast('Sign in to upload'); openAuthMod(); return; }
-    pf.upFile = null;
-    pf.upPageFiles = [];
+       no owner check is needed. Guests may OPEN this page too —
+       pfGuestGate() intercepts them at the first real action. */
+    pfUpResetSession();
     document.getElementById('pfUpEditId').value = '';
     document.getElementById('pfUpTitle').textContent = 'Upload Artwork';
     document.getElementById('pfUpSubtitle').textContent = 'Share your creativity with artists around the world.';
+    document.getElementById('pfUpNavTitle').textContent = 'UPLOAD';
     document.getElementById('pfDzTxt').textContent = 'Drag & drop your artwork here';
     document.getElementById('pfUpCatField').style.display = '';
     /* Optional extra images — the first image above stays the cover
@@ -13960,17 +14317,12 @@ function qrMake (text) {
     document.getElementById('pfDzPagesTitle').textContent = 'Add more images (optional)';
     document.getElementById('pfDzPagesSub').textContent   = 'The image above stays the cover. Add as many extras as you like.';
     document.getElementById('pfUpSoftwareField').style.display = '';
-    pfSetSoftware('');
+    var _drB = document.getElementById('pfDraftBtn'); if(_drB) _drB.style.display = '';
+    var _bkB = document.getElementById('pfUpBackBtn'); if(_bkB) _bkB.style.display = 'none';
+    var _schF = document.getElementById('pfUpSchedField'); if(_schF) _schF.style.display = '';
+    updrLoadStrip(); /* async fire-and-forget — purges >7d drafts too */
+    uschLoad();      /* SCHEDULED rail (server-backed) */
     document.getElementById('pfDz').style.display='';
-    document.getElementById('pfUpNm').value='';
-    document.getElementById('pfUpDesc').value='';
-    pfUpdateCount('pfUpNm','pfUpNmCount',100);
-    pfUpdateCount('pfUpDesc','pfUpDescCount',1000);
-    pfSetTagsFromArray([]);
-    pfSetCats(['others']);
-    closePfCatDd();
-    document.getElementById('pfUpPrev').style.display='none';
-    document.getElementById('pfPagesPreview').innerHTML='';
     document.getElementById('pfUpBtn').textContent = '📤 Upload Artwork';
     document.getElementById('pfUpMod').classList.add('open');
     /* Page mode — lock background scroll like every other full page.
@@ -13999,6 +14351,7 @@ function qrMake (text) {
     }
   }
   function handlePfFile(e){
+    if(pfGuestGate(e)) return; /* drop path bypasses the input's click gate */
     var f = e.target.files[0]; if(!f) return;
     if(!document.getElementById('pfUpNm').value.trim()){
       document.getElementById('pfUpNm').value = f.name.replace(/\.[^.]+$/,'');
@@ -14018,12 +14371,480 @@ function qrMake (text) {
      (pf.upThumbFocus); the browser re-crops the original image live
      via CSS object-position everywhere it's shown as a thumbnail —
      the original file itself is never duplicated. */
+  /* =========================================================
+     UPLOAD DRAFTS (updr) — device-local IndexedDB
+     ├─ updrSave()        — snapshot the current form (image blob,
+     │                      extra pages, fields, thumb focus+zoom)
+     ├─ updrLoadStrip()   — purge expired (>7 days) then render
+     ├─ updrResume(id)    — load a draft back into the form
+     ├─ updrRemove(id,e)  — delete one draft
+     └─ published drafts delete themselves (doPfUp → updrActiveId)
+
+     Deliberately CLIENT-side: draft images never hit S3/Supabase,
+     so they cost nothing, need no cleanup cron, and a resumed
+     draft's File goes through the full upqRun verification exactly
+     like a fresh pick. Trade-off: drafts live on this device only
+     (stated in the strip's note). Blobs/Files structured-clone
+     into IndexedDB natively. Capped at 12 drafts.
+     ========================================================= */
+  /* Ghost slots rendered = the DESKTOP slot count (4). CSS sizes the
+     cards per breakpoint, so on mobile the extra ghosts simply sit
+     off to the right of the rail — the visible count is 2/3/4 by
+     viewport, and the rail is never short. */
+  var UPDR_TTL = 7*24*60*60*1000, UPDR_MAX = 12, UPDR_SLOTS = 4;
+  var updrActiveId = null;   // draft currently loaded in the form
+  var updrUrls = [];         // object URLs to revoke on re-render
+  function updrDb(){
+    return new Promise(function(res, rej){
+      var rq = indexedDB.open('digiartz-drafts', 1);
+      rq.onupgradeneeded = function(){ rq.result.createObjectStore('drafts', {keyPath:'id'}); };
+      rq.onsuccess = function(){ res(rq.result); };
+      rq.onerror = function(){ rej(rq.error); };
+    });
+  }
+  function updrTx(mode, fn){
+    return updrDb().then(function(db){
+      return new Promise(function(res, rej){
+        var tx = db.transaction('drafts', mode);
+        var out = fn(tx.objectStore('drafts'));
+        tx.oncomplete = function(){ res(out && out.result); };
+        tx.onerror = function(){ rej(tx.error); };
+      });
+    });
+  }
+  function updrAll(){ return updrTx('readonly', function(st){ return st.getAll(); }); }
+  function updrDel(id){ return updrTx('readwrite', function(st){ st.delete(id); }); }
+  async function updrSave(){
+    if(pfGuestGate()) return;                       /* drafts are per-account-holder too */
+    if(document.getElementById('pfUpEditId').value) return; /* no drafts of published pieces */
+    if(!pf.upFile){ showToast('Pick an image first'); return; }
+    try{
+      var all = await updrAll();
+      if(!updrActiveId && (all||[]).length >= UPDR_MAX){ showToast('Draft limit reached ('+UPDR_MAX+') — delete one first'); return; }
+      var rec = {
+        id: updrActiveId || ('dr_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)),
+        name: document.getElementById('pfUpNm').value.trim(),
+        desc: document.getElementById('pfUpDesc').value.trim(),
+        tags: document.getElementById('pfUpTags').value,
+        cats: (pf.upCats||[]).slice(),
+        software: document.getElementById('pfUpSoftware').value || '',
+        file: pf.upFile, fname: pf.upFile.name || 'draft.png', ftype: pf.upFile.type || 'image/png',
+        pages: (pf.upPageFiles||[]).slice(),
+        thumb: pf.upThumbFocus ? {x:pf.upThumbFocus.x, y:pf.upThumbFocus.y, z:pf.upThumbFocus.z||1} : {x:50,y:50,z:1},
+        created: Date.now()
+      };
+      await updrTx('readwrite', function(st){ st.put(rec); });
+      updrActiveId = null;
+      showToast('Saved to drafts \u2726 kept for 7 days');
+      openPfUpload(); /* fresh form + re-rendered strip */
+    }catch(e){ console.error('draft save: '+(e&&e.message)); showToast('Could not save draft on this device'); }
+  }
+  /* =========================================================
+     DRAFT / SCHEDULED PREVIEW (upPv)
+     One modal serving both rails. Intentionally carries none of the
+     artwork lightbox's social layer (artist identity, report, like,
+     bookmark, download, comments) — this is the artist looking at
+     their own unpublished piece, so it shows the image plus the
+     exact fields they filled in, and one closing action:
+       · draft     → "Upload Now" button (plus Edit, so a draft is
+                     still editable now that a tap opens preview
+                     instead of loading it into the form)
+       · scheduled → a countdown line, no action
+     ========================================================= */
+  var upPvUrl = null;   // object URL to revoke on close
+  function upPvRow(label, val){
+    if(val===null || val===undefined || val==='') return '';
+    return '<div class="upPvRow"><div class="upPvLbl">'+esc(label)+'</div><div class="upPvVal">'+esc(String(val))+'</div></div>';
+  }
+  function upPvChips(label, arr){
+    var list = (arr||[]).filter(function(v){ return v!==null && v!==undefined && String(v).trim()!==''; });
+    if(!list.length) return '';
+    return '<div class="upPvRow"><div class="upPvLbl">'+esc(label)+'</div><div class="upPvChips">'+
+      list.map(function(v){ return '<span class="upPvChip">'+esc(String(v).trim())+'</span>'; }).join('')+'</div></div>';
+  }
+  function upPvClose(){
+    document.getElementById('upPvMod').classList.remove('open');
+    if(upPvUrl){ try{ URL.revokeObjectURL(upPvUrl); }catch(_){} upPvUrl = null; }
+  }
+  /* d = {kind,label,src,name,desc,tags[],cats[],software,pages,footHtml} */
+  function upPvOpen(d){
+    document.getElementById('upPvKind').textContent = d.label || '';
+    var img = document.getElementById('upPvImg');
+    img.src = d.src || '';
+    img.alt = d.name || '';
+    document.getElementById('upPvMeta').innerHTML =
+      upPvRow('Title', d.name || 'Untitled') +
+      upPvRow('Description', d.desc || '') +
+      upPvChips('Categories', d.cats) +
+      upPvChips('Tags', d.tags) +
+      upPvRow('Software', d.software || '') +
+      (d.pages ? upPvRow('Extra images', d.pages + (d.pages===1?' page':' pages')) : '');
+    document.getElementById('upPvFoot').innerHTML = d.footHtml || '';
+    document.getElementById('upPvMod').classList.add('open');
+  }
+  /* ── Draft preview ── */
+  async function updrPreview(id){
+    try{
+      var rec = await updrTx('readonly', function(st){ return st.get(id); });
+      if(!rec){ showToast('Draft not found'); updrLoadStrip(); return; }
+      if(upPvUrl){ try{ URL.revokeObjectURL(upPvUrl); }catch(_){} }
+      upPvUrl = URL.createObjectURL(rec.file);
+      var daysLeft = Math.max(1, Math.ceil((rec.created + UPDR_TTL - Date.now())/(24*60*60*1000)));
+      upPvOpen({
+        label:'DRAFT', src:upPvUrl, name:rec.name, desc:rec.desc,
+        tags:(rec.tags||'').split(','), cats:rec.cats, software:rec.software,
+        pages:(rec.pages&&rec.pages.length)||0,
+        footHtml:'<span class="upPvWhen">Auto-deletes in <b>'+daysLeft+'d</b></span>'+
+          '<button class="upBtnSec" onclick="upPvClose();updrResume(\''+esc(String(id))+'\')">Edit</button>'+
+          '<button class="upBtnPri" onclick="updrPublishNow(\''+esc(String(id))+'\')">📤 Upload Now</button>'
+      });
+    }catch(e){ showToast('Could not open that draft'); }
+  }
+  /* Load the draft into the form, then run the normal upload path —
+     so it gets the identical verification pipeline as any upload. */
+  async function updrPublishNow(id){
+    upPvClose();
+    await updrResume(id);
+    /* let the pages handler finish painting previews before submit */
+    setTimeout(function(){ doPfUp(); }, 350);
+  }
+  /* ── Scheduled preview ── */
+  async function uschPreview(id){
+    try{
+      var res = await sb.from('scheduled_uploads')
+        .select('id,name,description,tags,category,software,image_url,publish_at,publish_error,pages')
+        .eq('id', id).single();
+      var r = res && res.data;
+      if(!r){ showToast('Schedule not found'); uschLoad(); return; }
+      var foot;
+      if(r.publish_error){
+        foot = '<span class="upPvWhen bad">'+esc(r.publish_error)+'</span>'+
+               '<button class="upBtnSec" onclick="upPvClose();uschCancel(\''+esc(String(id))+'\')">Dismiss</button>';
+      }else{
+        foot = '<span class="upPvWhen">Publishes in <b>'+esc(uschLeft(r.publish_at))+'</b> \u00B7 '+esc(uschFmt(r.publish_at))+'</span>'+
+               '<button class="upBtnSec" onclick="upPvClose();uschCancel(\''+esc(String(id))+'\')">Cancel schedule</button>';
+      }
+      upPvOpen({
+        label:'SCHEDULED', src:r.image_url, name:r.name, desc:r.description,
+        tags:r.tags, cats:r.category, software:r.software,
+        pages:(r.pages&&r.pages.length)||0, footHtml:foot
+      });
+    }catch(e){ showToast('Could not open that schedule'); }
+  }
+
+  /* =========================================================
+     SCHEDULED UPLOADS (usch) — server-side (public.scheduled_uploads)
+     ├─ uschPicked()  — the chosen instant as ISO, or '' for "now"
+     ├─ uschLoad()    — render the SCHEDULED rail
+     └─ uschCancel()  — drop a pending schedule (+ its S3 object)
+
+     Unlike drafts (device-local), these live in Supabase so the
+     schedule survives a device change and, crucially, publishes
+     without the artist being online: pg_cron runs
+     publish_due_scheduled_uploads() every 5 minutes, which moves
+     due rows into artworks. Nothing else in the app needs to know
+     scheduling exists — artworks only ever holds live rows.
+     ========================================================= */
+  var USCH_MIN_LEAD = 5*60*1000; /* must be at least 5 min out */
+  /* ── Custom schedule picker ──
+     A native datetime-local hands the panel to the browser, which
+     can't be themed. This builds the same control out of the site's
+     own dropdown parts. #pfUpSched (hidden input) still holds a
+     "YYYY-MM-DDTHH:MM" local string, so uschPicked() and everything
+     downstream is unchanged. ── */
+  var pfSched = { y:null, m:null, d:null, vy:0, vm:0 };  /* picked + viewed month */
+  function pfSchedPad(n){ return (n<10?'0':'')+n; }
+  function pfSchedToggle(e){
+    if(e){ e.stopPropagation(); }
+    var dd = document.getElementById('pfUpSchedDd');
+    var open = dd.classList.toggle('open');
+    if(open){
+      closePfCatDd();                       /* never two panels at once */
+      if(pfSched.y===null){
+        var n = new Date();
+        pfSched.vy = n.getFullYear(); pfSched.vm = n.getMonth();
+      }
+      pfSchedBuildTime();
+      pfSchedRender();
+    }
+  }
+  function pfSchedClose(){
+    var dd = document.getElementById('pfUpSchedDd');
+    if(dd) dd.classList.remove('open');
+  }
+  /* Outside-click close, matching the other dropdowns' behaviour */
+  document.addEventListener('click', function(ev){
+    var dd = document.getElementById('pfUpSchedDd');
+    if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) pfSchedClose();
+  });
+  function pfSchedBuildTime(){
+    var hs = document.getElementById('pfUpSchedH'), ms = document.getElementById('pfUpSchedM');
+    if(!hs || hs.options.length) return;    /* build once */
+    var i, o;
+    for(i=0;i<24;i++){ o=document.createElement('option'); o.value=i; o.textContent=pfSchedPad(i); hs.appendChild(o); }
+    for(i=0;i<60;i+=5){ o=document.createElement('option'); o.value=i; o.textContent=pfSchedPad(i); ms.appendChild(o); }
+    /* default to roughly an hour out, snapped to 5 min */
+    var t = new Date(Date.now()+60*60*1000);
+    hs.value = t.getHours(); ms.value = Math.floor(t.getMinutes()/5)*5;
+  }
+  function pfSchedNav(delta, e){
+    if(e){ e.stopPropagation(); }
+    pfSched.vm += delta;
+    if(pfSched.vm < 0){ pfSched.vm = 11; pfSched.vy--; }
+    else if(pfSched.vm > 11){ pfSched.vm = 0; pfSched.vy++; }
+    pfSchedRender();
+  }
+  function pfSchedRender(){
+    var grid = document.getElementById('pfUpSchedGrid');
+    var mon  = document.getElementById('pfUpSchedMon');
+    if(!grid) return;
+    var y = pfSched.vy, m = pfSched.vm;
+    mon.textContent = new Date(y, m, 1).toLocaleString([], {month:'long', year:'numeric'});
+    var first = new Date(y, m, 1).getDay();
+    var days  = new Date(y, m+1, 0).getDate();
+    var now = new Date();
+    var todayKey = now.getFullYear()+'-'+now.getMonth()+'-'+now.getDate();
+    var html = '';
+    for(var p=0;p<first;p++) html += '<span class="upSchedDay pad"></span>';
+    for(var d=1; d<=days; d++){
+      /* a day is pickable only if it can still hold a future time */
+      var end = new Date(y, m, d, 23, 59, 59);
+      var past = end.getTime() < Date.now();
+      var cls = 'upSchedDay';
+      if(todayKey === y+'-'+m+'-'+d) cls += ' today';
+      if(pfSched.y===y && pfSched.m===m && pfSched.d===d) cls += ' sel';
+      html += '<button type="button" class="'+cls+'"'+(past?' disabled':'')+
+              ' onclick="pfSchedPick('+y+','+m+','+d+',event)">'+d+'</button>';
+    }
+    grid.innerHTML = html;
+  }
+  function pfSchedPick(y, m, d, e){
+    if(e){ e.stopPropagation(); }
+    pfSched.y=y; pfSched.m=m; pfSched.d=d;
+    pfSchedRender();
+    pfSchedApply();
+  }
+  /* Writes the hidden input + trigger label from the current state */
+  function pfSchedApply(){
+    if(pfSched.y===null) return;
+    var hs = document.getElementById('pfUpSchedH'), ms = document.getElementById('pfUpSchedM');
+    var h = +hs.value || 0, mi = +ms.value || 0;
+    document.getElementById('pfUpSched').value =
+      pfSched.y+'-'+pfSchedPad(pfSched.m+1)+'-'+pfSchedPad(pfSched.d)+'T'+pfSchedPad(h)+':'+pfSchedPad(mi);
+    pfSchedHint();
+  }
+  function pfSchedClear(e){
+    if(e){ e.stopPropagation(); }
+    pfSched.y = pfSched.m = pfSched.d = null;
+    document.getElementById('pfUpSched').value = '';
+    pfSchedRender();
+    pfSchedHint();
+    pfSchedClose();
+  }
+  function pfSchedDone(e){
+    if(e){ e.stopPropagation(); }
+    pfSchedClose();
+  }
+  /* Resets the control (called by openPfUpload) */
+  function pfSchedReset(){
+    pfSched.y = pfSched.m = pfSched.d = null;
+    var n = new Date();
+    pfSched.vy = n.getFullYear(); pfSched.vm = n.getMonth();
+    var el = document.getElementById('pfUpSched'); if(el) el.value = '';
+    pfSchedClose();
+    pfSchedHint();
+  }
+  function pfSchedHint(){
+    var el = document.getElementById('pfUpSched');
+    var hint = document.getElementById('pfUpSchedHint');
+    if(!el || !hint) return;
+    /* trigger label doubles as the __/__/____ __:__ mask when empty */
+    var lbl = document.getElementById('pfUpSchedLbl');
+    if(lbl){
+      if(el.value){
+        lbl.textContent = uschFmt(new Date(el.value).toISOString());
+        lbl.classList.remove('upSchedPh');
+      }else{
+        lbl.innerHTML = '__/__/____&nbsp;&nbsp;__:__';
+        lbl.classList.add('upSchedPh');
+      }
+    }
+    if(!el.value){ hint.textContent = 'Leave empty to publish immediately.'; hint.classList.remove('bad'); return; }
+    var t = new Date(el.value).getTime();
+    if(!isFinite(t) || t < Date.now() + USCH_MIN_LEAD){
+      hint.textContent = 'Pick a time at least 5 minutes from now.'; hint.classList.add('bad');
+    }else{
+      hint.textContent = 'Publishes ' + uschFmt(new Date(t).toISOString()) + ' \u00B7 verified now, re-checked at publish.'; hint.classList.remove('bad');
+    }
+  }
+  /* '' when empty or invalid — doPfUp treats that as "publish now",
+     and pfSchedHint has already flagged an invalid time to the user. */
+  function uschPicked(){
+    var el = document.getElementById('pfUpSched');
+    if(!el || !el.value) return '';
+    var t = new Date(el.value).getTime();
+    if(!isFinite(t) || t < Date.now() + USCH_MIN_LEAD) return '';
+    return new Date(t).toISOString();
+  }
+  function uschFmt(iso){
+    var d = new Date(iso);
+    return d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+  }
+  /* Compact countdown for the corner mark: 6d / 5h / 20m */
+  function uschLeft(iso){
+    var ms = new Date(iso).getTime() - Date.now();
+    if(ms <= 0) return 'due';
+    var m = Math.round(ms/60000);
+    if(m < 60) return m+'m';
+    var h = Math.round(m/60);
+    if(h < 24) return h+'h';
+    return Math.round(h/24)+'d';
+  }
+  function uschGhost(){
+    return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
+      '<span class="upDraftGhostIn">\u23F1</span>'+
+      '<span class="upDraftExp upSchedMark">--</span></div>';
+  }
+  async function uschLoad(){
+    var sec = document.getElementById('upSchedSec');
+    var row = document.getElementById('upSchedRow');
+    if(!sec || !row) return;
+    var edEl = document.getElementById('pfUpEditId');
+    if(edEl && edEl.value) return;   /* edit mode hides this card */
+    sec.style.display = '';
+    var list = [];
+    if(currentUser && typeof sb!=='undefined'){
+      try{
+        var res = await sb.from('scheduled_uploads')
+          .select('id,name,publish_at,image_url,storage_path,thumb_x,thumb_y,thumb_zoom,publish_error')
+          /* preview pulls its own full row on open — the rail only
+             needs what it renders */
+          .eq('user_id', currentUser.id).order('publish_at', {ascending:true}).limit(24);
+        list = (res && res.data) ? res.data : [];
+      }catch(e){ list = []; }
+    }
+    row.innerHTML = list.map(function(r){
+      /* A row that failed its publish-time gate keeps its card, but
+         marked red with the reason — so a piece never fails silently
+         (the artist also gets a notification). */
+      var bad = !!r.publish_error;
+      var tip = esc(r.name||'Untitled') + ' \u00B7 ' + (bad ? esc(r.publish_error) : esc(uschFmt(r.publish_at)));
+      return '<div class="upDraftCard'+(bad?' upSchedBad':'')+'" onclick="uschPreview(\''+esc(String(r.id))+'\')" role="button" tabindex="0" title="'+tip+'" aria-label="'+(bad?'Failed: ':'Scheduled: ')+esc(r.name||'Untitled')+'">'+
+        '<img src="'+esc(getThumbnailUrl(r.image_url))+'" alt="" style="'+thumbStyle(r.thumb_x, r.thumb_y, r.thumb_zoom)+'">'+
+        '<button type="button" class="upDraftX" onclick="uschCancel(\''+esc(String(r.id))+'\',event)" aria-label="'+(bad?'Dismiss':'Cancel schedule')+'">✕</button>'+
+        '<span class="upDraftExp'+(bad?'':' upSchedMark')+'">'+(bad?'!':uschLeft(r.publish_at))+'</span>'+
+      '</div>';
+    }).join('') + Array(Math.max(0, UPDR_SLOTS - list.length) + 1).join(uschGhost());
+  }
+  async function uschCancel(id, e){
+    if(e){ e.stopPropagation(); }
+    try{
+      /* Read the storage path first so the orphaned S3 object goes
+         with the row — cancelling should not leave paid storage. */
+      var got = await sb.from('scheduled_uploads').select('storage_path').eq('id', id).single();
+      var del = await sb.from('scheduled_uploads').delete().eq('id', id);
+      if(del && del.error) throw del.error;
+      if(got && got.data && got.data.storage_path){
+        try{ await s3Delete(BUCKET, got.data.storage_path); }catch(_){}
+      }
+      uschLoad();
+      showToast('Schedule cancelled');
+    }catch(err){ showToast('Could not cancel that schedule'); }
+  }
+
+  /* One ghost slot — an inert placeholder with a real card's box
+     metrics, used to keep the rail filled. */
+  function updrGhost(){
+    return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
+      '<span class="upDraftGhostIn">\u2726</span>'+
+      '<span class="upDraftExp">7d</span></div>';
+  }
+  async function updrLoadStrip(){
+    var sec = document.getElementById('upDraftSec');
+    var row = document.getElementById('upDraftRow');
+    if(!sec || !row) return;
+    /* Edit mode hides this card outright — and because this runs
+       async, it could otherwise re-show it after mwEditArt() hid
+       it. Bail before touching display. */
+    var edEl = document.getElementById('pfUpEditId');
+    if(edEl && edEl.value){ return; }
+    /* The card now ALWAYS shows: ghosts fill the space when there's
+       nothing saved (or nothing readable — guests, private mode, no
+       IndexedDB), so it never collapses to a blank box. */
+    sec.style.display = '';
+    var list = [];
+    if(currentUser && window.indexedDB){
+      try{
+        list = (await updrAll()) || [];
+        /* 1-week auto-delete — purge anything past its TTL */
+        var now = Date.now(), dead = list.filter(function(r){ return (now - r.created) > UPDR_TTL; });
+        for(var i=0;i<dead.length;i++){ await updrDel(dead[i].id); }
+        if(dead.length) list = list.filter(function(r){ return (now - r.created) <= UPDR_TTL; });
+      }catch(e){ list = []; }
+    }
+    updrUrls.forEach(function(u){ try{ URL.revokeObjectURL(u); }catch(_){}}); updrUrls = [];
+    list.sort(function(a,b){ return b.created - a.created; });
+    row.innerHTML = list.map(function(r){
+      var daysLeft = Math.max(1, Math.ceil((r.created + UPDR_TTL - Date.now())/(24*60*60*1000)));
+      var u = URL.createObjectURL(r.file); updrUrls.push(u);
+      /* title lives in the tooltip now — the tile itself stays a
+         clean square like an artwork card */
+      return '<div class="upDraftCard" onclick="updrPreview(\''+r.id+'\')" role="button" tabindex="0" title="'+esc(r.name||'Untitled draft')+'" aria-label="Preview draft: '+esc(r.name||'Untitled draft')+'">'+
+        '<img src="'+u+'" alt="" style="'+thumbStyle(r.thumb&&r.thumb.x, r.thumb&&r.thumb.y, r.thumb&&r.thumb.z)+'">'+
+        '<button type="button" class="upDraftX" onclick="updrRemove(\''+r.id+'\',event)" aria-label="Delete draft">✕</button>'+
+        '<span class="upDraftExp">'+daysLeft+'d</span>'+
+      '</div>';
+    }).join('') + Array(Math.max(0, UPDR_SLOTS - list.length) + 1).join(updrGhost());
+  }
+  async function updrResume(id){
+    try{
+      var rec = await updrTx('readonly', function(st){ return st.get(id); });
+      if(!rec){ showToast('Draft not found'); updrLoadStrip(); return; }
+      openPfUpload(); /* clean slate first (also re-renders the strip) */
+      updrActiveId = rec.id;
+      pf.upFile = new File([rec.file], rec.fname, {type:rec.ftype});
+      pf.upThumbFocus = rec.thumb || {x:50,y:50,z:1};
+      document.getElementById('pfUpNm').value = rec.name||'';
+      document.getElementById('pfUpDesc').value = rec.desc||'';
+      pfUpdateCount('pfUpNm','pfUpNmCount',100);
+      pfUpdateCount('pfUpDesc','pfUpDescCount',1000);
+      pfSetTagsFromArray((rec.tags||'').split(',').map(function(t){return t.trim();}).filter(Boolean));
+      pfSetCats(rec.cats&&rec.cats.length?rec.cats:['others']);
+      if(typeof pfSetSoftware==='function') pfSetSoftware(rec.software||'');
+      /* preview straight from the blob — no FileReader round-trip */
+      var u = URL.createObjectURL(pf.upFile); updrUrls.push(u);
+      var p = document.getElementById('pfUpPrev');
+      p.src = u;
+      p.style.cssText = thumbStyle(pf.upThumbFocus.x, pf.upThumbFocus.y, pf.upThumbFocus.z);
+      document.getElementById('pfUpPrevWrap').style.display = 'block';
+      document.getElementById('pfUpThumbBtn').style.display = '';
+      /* extra pages replay through the normal handler so previews +
+         pf.upPageFiles stay in sync with the real pick path */
+      if(rec.pages && rec.pages.length){
+        handlePfPagesFile({target:{files:rec.pages.map(function(b,i){ return new File([b], 'page'+(i+1)+'.png', {type:b.type||'image/png'}); })}});
+      }
+      showToast('Draft loaded \u2726 finish it up');
+    }catch(e){ console.error('draft resume: '+(e&&e.message)); showToast('Could not load that draft'); }
+  }
+  async function updrRemove(id, e){
+    if(e){ e.stopPropagation(); }
+    try{
+      await updrDel(id);
+      if(updrActiveId===id) updrActiveId=null;
+      updrLoadStrip();
+      showToast('Draft deleted');
+    }catch(err){ showToast('Could not delete draft'); }
+  }
+
   var pfCropPending = null; // the File waiting to become pf.upFile once confirmed
-  var pfCrop = { natW:0, natH:0, stage:280, x:50, y:50, axis:null, dragging:false, sx:0, sy:0, ox:50, oy:50 };
-  function openPfCrop(file, dataUrl){
+  var pfCrop = { natW:0, natH:0, stage:280, x:50, y:50, z:1, axis:null, dragging:false, sx:0, sy:0, ox:50, oy:50 };
+  function openPfCrop(file, dataUrl, seed){
+    /* seed ({x,y}) — passed by reopenPfCrop() so "Adjust Thumbnail"
+       starts from the CURRENT focal point instead of resetting to
+       center. First-time picks pass no seed and start at 50/50. */
     pfCropPending = file;
     var img = document.getElementById('pfCropImg');
-    img.onload = function(){
+    var ready = function(){
       var stageEl = document.getElementById('pfCropStage');
       pfCrop.stage = stageEl.getBoundingClientRect().width || 280;
       pfCrop.natW = img.naturalWidth; pfCrop.natH = img.naturalHeight;
@@ -14031,19 +14852,55 @@ function qrMake (text) {
          one relative to the square box), so only that axis is
          draggable — matches how the CSS crop actually behaves. */
       pfCrop.axis = (pfCrop.natW/pfCrop.natH) > 1 ? 'x' : (pfCrop.natW/pfCrop.natH) < 1 ? 'y' : null;
-      pfCrop.x = 50; pfCrop.y = 50;
+      pfCrop.x = (seed && isFinite(+seed.x)) ? Math.max(0,Math.min(100,+seed.x)) : 50;
+      pfCrop.y = (seed && isFinite(+seed.y)) ? Math.max(0,Math.min(100,+seed.y)) : 50;
+      pfCrop.z = (seed && isFinite(+seed.z)) ? Math.max(1,Math.min(2,+seed.z)) : 1;
+      var zs = document.getElementById('pfCropZoom');
+      if(zs) zs.value = Math.round(pfCrop.z*100);
       pfCropRender();
       document.getElementById('pfCropMod').classList.add('open');
     };
+    img.onload = ready;
     img.src = dataUrl;
+    /* Re-opening with the SAME dataURL (Adjust Thumbnail) doesn't
+       re-fire load in every browser — run directly if it's already
+       decoded. Worst case ready() runs twice; it's idempotent. */
+    if(img.complete && img.naturalWidth) ready();
+  }
+  /* ── Adjust Thumbnail — reopen the picker for the piece already
+     in the form, seeded with the current focal point AND zoom. The
+     preview src IS the original dataURL from the first pass, so no
+     FileReader round-trip is needed. Cancel in the picker keeps the
+     existing focal point + zoom untouched. ── */
+  function reopenPfCrop(){
+    var prev = document.getElementById('pfUpPrev');
+    if(!pf.upFile || !prev.src){ showToast('Choose an image first'); return; }
+    openPfCrop(pf.upFile, prev.src, pf.upThumbFocus);
   }
   function pfCropRender(){
-    document.getElementById('pfCropImg').style.objectPosition = pfCrop.x+'% '+pfCrop.y+'%';
+    var img = document.getElementById('pfCropImg');
+    img.style.objectPosition = pfCrop.x+'% '+pfCrop.y+'%';
+    /* Scale about the focal point so the framed area stays anchored
+       while zooming — the exact CSS the site's thumbnails render
+       with (thumbStyle), so this preview IS the final crop. */
+    img.style.transform = pfCrop.z>1 ? 'scale('+pfCrop.z+')' : '';
+    img.style.transformOrigin = pfCrop.z>1 ? (pfCrop.x+'% '+pfCrop.y+'%') : '';
+  }
+  function pfCropSetZoom(v){
+    pfCrop.z = Math.max(1, Math.min(2, (+v||100)/100));
+    pfCropRender();
+  }
+  function pfCropNudgeZoom(d){
+    var zs = document.getElementById('pfCropZoom');
+    if(!zs) return;
+    var v = Math.max(100, Math.min(200, (+zs.value||100) + d));
+    zs.value = v;
+    pfCropSetZoom(v);
   }
   (function initPfCropDrag(){
     var stageEl = null;
     function down(e){
-      if(!pfCrop.axis) return; // nothing to drag — image already matches the square
+      if(!pfCrop.axis && pfCrop.z<=1) return; // nothing to drag at 1× — image already matches the square
       stageEl = document.getElementById('pfCropStage');
       pfCrop.dragging = true; stageEl.classList.add('dragging');
       var p = e.touches ? e.touches[0] : e;
@@ -14062,17 +14919,23 @@ function qrMake (text) {
     function move(e){
       if(!pfCrop.dragging) return;
       var p = e.touches ? e.touches[0] : e;
-      /* Convert a screen-pixel drag into an object-position % change.
-         At the current stage size S, the overflow (in px) on the
-         draggable axis is S*(long/short - 1); moving across that
-         full overflow sweeps object-position 0%→100%. */
-      var ratio = pfCrop.axis==='x' ? pfCrop.natW/pfCrop.natH : pfCrop.natH/pfCrop.natW;
-      var overflowPx = pfCrop.stage*(ratio-1);
-      if(overflowPx <= 0) return;
-      var dPx = pfCrop.axis==='x' ? (p.clientX-pfCrop.sx) : (p.clientY-pfCrop.sy);
-      var dPct = -(dPx/overflowPx)*100; // dragging right/down reveals the left/top side
-      var val = Math.max(0, Math.min(100, (pfCrop.axis==='x'?pfCrop.ox:pfCrop.oy) + dPct));
-      if(pfCrop.axis==='x') pfCrop.x = val; else pfCrop.y = val;
+      /* Convert a screen-pixel drag into object-position % changes.
+         At stage size S and zoom Z, the drawn image spans S*ratio*Z
+         px per axis (ratio≥1 only on the long axis) against an S px
+         window, so the pan range is S*(ratio*Z − 1). At Z=1 this
+         collapses to the old single-axis long-side-only behavior;
+         at Z>1 BOTH axes overflow and become draggable. Because the
+         scale origin tracks the same focal %, object-position maps
+         LINEARLY across the whole range even under the transform —
+         so one % pair still describes the crop exactly. */
+      var rx = pfCrop.natW>=pfCrop.natH ? pfCrop.natW/pfCrop.natH : 1;
+      var ry = pfCrop.natH>pfCrop.natW ? pfCrop.natH/pfCrop.natW : 1;
+      var oxPx = pfCrop.stage*(rx*pfCrop.z-1);
+      var oyPx = pfCrop.stage*(ry*pfCrop.z-1);
+      if(oxPx<=0 && oyPx<=0) return;
+      /* dragging right/down reveals the left/top side */
+      if(oxPx>0) pfCrop.x = Math.max(0, Math.min(100, pfCrop.ox - ((p.clientX-pfCrop.sx)/oxPx)*100));
+      if(oyPx>0) pfCrop.y = Math.max(0, Math.min(100, pfCrop.oy - ((p.clientY-pfCrop.sy)/oyPx)*100));
       pfCropRender();
     }
     function up(){
@@ -14097,15 +14960,22 @@ function qrMake (text) {
   }
   function confirmPfCrop(){
     pf.upFile = pfCropPending;
-    pf.upThumbFocus = { x: Math.round(pfCrop.x), y: Math.round(pfCrop.y) };
+    pf.upThumbFocus = { x: Math.round(pfCrop.x), y: Math.round(pfCrop.y), z: Math.round(pfCrop.z*100)/100 };
     var p = document.getElementById('pfUpPrev');
     p.src = document.getElementById('pfCropImg').src;
-    p.style.objectPosition = pfCrop.x+'% '+pfCrop.y+'%';
-    p.style.display = 'block';
+    p.style.cssText = thumbStyle(pfCrop.x, pfCrop.y, pfCrop.z);
+    var pw = document.getElementById('pfUpPrevWrap');
+    if(pw) pw.style.display = 'block';
+    /* A confirmed thumbnail can always be redone before uploading.
+       This path only runs in NEW-upload mode (edit mode hides the
+       dropzone entirely), so no edit-mode guard is needed here. */
+    var tb = document.getElementById('pfUpThumbBtn');
+    if(tb) tb.style.display = '';
     document.getElementById('pfCropMod').classList.remove('open');
     pfCropPending = null;
   }
   function handlePfPagesFile(e){
+    if(pfGuestGate(e)) return; /* drop path bypasses the input's click gate */
     var files = Array.from(e.target.files||[]);
     pf.upPageFiles = pf.upPageFiles.concat(files);
     var wrap = document.getElementById('pfPagesPreview');
@@ -14127,7 +14997,7 @@ function qrMake (text) {
   }
 
   async function doPfUp(){
-    if(!currentUser){ showToast('Sign in to continue'); return; }
+    if(pfGuestGate()) return; /* guest submit → login, back here after */
     var editIdEl = document.getElementById('pfUpEditId');
     var editId = editIdEl ? editIdEl.value : '';
     /* Universal upload — any signed-in user, from anywhere (nav ➕, home,
@@ -14180,14 +15050,36 @@ function qrMake (text) {
              upload, DB insert and check-failure handling all live in
              upqRun() below. */
           var prevEl = document.getElementById('pfUpPrev');
+          /* Read the schedule BEFORE anything resets the form */
+          var _schedAt = uschPicked();
           upqStart({
             name: nm, desc: desc, tags: tags, software: software,
             cats: (pf.upCats && pf.upCats.length) ? pf.upCats.slice() : ['others'],
             file: pf.upFile,
             pageFiles: (pf.upPageFiles || []).slice(),
-            thumbFocus: pf.upThumbFocus ? { x: pf.upThumbFocus.x, y: pf.upThumbFocus.y } : { x: 50, y: 50 },
-            preview: (prevEl && prevEl.src) ? prevEl.src : ''
+            thumbFocus: pf.upThumbFocus ? { x: pf.upThumbFocus.x, y: pf.upThumbFocus.y, z: pf.upThumbFocus.z || 1 } : { x: 50, y: 50, z: 1 },
+            preview: (prevEl && prevEl.src) ? prevEl.src : '',
+            /* ISO instant or '' — set means the row goes to
+               scheduled_uploads instead of artworks (see upqRun). */
+            publishAt: _schedAt
           });
+          /* A resumed draft that just queued is done being a draft */
+          if(updrActiveId){ updrDel(updrActiveId); updrActiveId = null; }
+          /* Scheduled pieces never appear on the profile yet, so the
+             profile redirect would land on nothing. Stay on a fresh
+             upload page instead — the SCHEDULED rail picks the new
+             card up as soon as the row lands. openPfUpload() runs
+             pfUpResetSession(), so the form is already clean and the
+             artist can queue the next piece immediately. */
+          if(_schedAt){
+            openPfUpload();
+            showToast('Scheduled \u2726 publishes ' + uschFmt(_schedAt));
+            return;
+          }
+          /* Normal upload: the job now owns its own copies of the
+             files, so clear the form right away — returning to
+             Upload (or uploading again) always starts fresh. */
+          pfUpResetSession();
           closePfUpload();
           /* Redirect straight to the uploader's OWN profile — the
              blurred verification card (CHECKING → UPLOADING →
@@ -14291,7 +15183,7 @@ function qrMake (text) {
       else if(j.stage==='finalizing') hint = 'Publishing';
       return '<div class="upqCard'+(j.stage==='live'?' upqLive':'')+'" onclick="upqOpenModal(\''+j.id+'\')" role="status" title="Tap for status">'+
         '<div class="upqImgWrap">'+
-          (j.preview ? '<img class="upqImg" src="'+j.preview+'" alt="" style="object-position:'+j.thumbFocus.x+'% '+j.thumbFocus.y+'%">' : '')+
+          (j.preview ? '<img class="upqImg" src="'+j.preview+'" alt="" style="'+thumbStyle(j.thumbFocus.x, j.thumbFocus.y, j.thumbFocus.z)+'">' : '')+
           '<div class="upqOvl">'+
             '<div class="upqSpin"></div>'+
             '<div class="upqCheck">\u2713</div>'+
@@ -14416,7 +15308,30 @@ function qrMake (text) {
 
       /* ── 3 · ALMOST DONE — the DB row (RLS merit gate fires here) ── */
       job.stage='finalizing'; upqSync();
-      const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved',content_rating:mod.rating,is_mature:mod.rating==='MATURE',ai_moderation:mod.audit}).select();
+      /* ── SCHEDULED BRANCH ──
+         Same verification and S3 upload as a normal post; only the
+         destination differs. The row waits in scheduled_uploads and
+         a pg_cron job (publish_due_scheduled_uploads, every 5 min)
+         moves it into artworks at publish_at — so it goes live even
+         with the artist offline, and no feed/profile/search query
+         needs to know scheduling exists. */
+      if(job.publishAt){
+        const{error:se}=await sb.from('scheduled_uploads').insert({
+          user_id:currentUser.id, publish_at:job.publishAt,
+          name:job.name, description:job.desc||null, tags:job.tags, category:job.cats,
+          image_url:publicUrl, storage_path:path,
+          thumb_x:job.thumbFocus.x, thumb_y:job.thumbFocus.y, thumb_zoom:job.thumbFocus.z||1,
+          pages:artPageUrls.length?artPageUrls:null, kind:ART_KIND_ART,
+          software:job.software||null, phash:phash,
+          content_rating:mod.rating, is_mature:mod.rating==='MATURE', ai_moderation:mod.audit
+        });
+        if(se) throw se;
+        job.stage='done'; upqSync();
+        upqRemove(job.id);   /* clears the blurred queue card */
+        uschLoad();          /* new card appears in the SCHEDULED rail */
+        return;
+      }
+      const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,thumb_zoom:job.thumbFocus.z||1,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved',content_rating:mod.rating,is_mature:mod.rating==='MATURE',ai_moderation:mod.audit}).select();
       if(de) throw de;
 
       /* ── 4 · LIVE — flash the ✓ on the blurred card first; the real
@@ -15013,14 +15928,10 @@ function qrMake (text) {
      highlight. openPfUpload() is the single universal upload flow
      (login-only). */
   function bnGoUpload(){
-    /* Universal upload — one flow for every signed-in user. Queues
-       the intent (pendPfUp) when logged out and opens after login. */
-    if(!currentUser){
-      sessionStorage.setItem('pendPfUp','1');
-      showToast('Sign in to upload');
-      openAuthMod();
-      return;
-    }
+    /* Universal upload — one flow for everyone. Guests can VIEW the
+       page too; pfGuestGate() steps in only when they try to pick /
+       drop files or submit, queueing pendPfUp so login brings them
+       straight back here. */
     bnCloseAllSections();
     openPfUpload();
     bnSetActive('bnUpload');
@@ -15416,11 +16327,9 @@ function qrMake (text) {
   function mwCardHTML(row){
     var idStr = esc(String(row.id));
     var img = esc(getThumbnailUrl(row.image_url));
-    var tx = row.thumb_x!=null&&isFinite(+row.thumb_x)?+row.thumb_x:50;
-    var ty = row.thumb_y!=null&&isFinite(+row.thumb_y)?+row.thumb_y:50;
     var title = esc(row.name||'Untitled');
     return '<div class="admCard" data-id="'+idStr+'">'+
-      '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="object-position:'+tx+'% '+ty+'%">'+
+      '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="'+thumbStyle(row.thumb_x, row.thumb_y, row.thumb_zoom)+'">'+
       '<div class="admCardBody">'+
         '<div class="admCardTitle">'+title+'</div>'+
         '<div class="admCardMeta">'+(row.created_at?new Date(row.created_at).toLocaleDateString():'')+'</div>'+
@@ -15453,6 +16362,7 @@ function qrMake (text) {
     document.getElementById('pfUpEditId').value = String(art.id);
     document.getElementById('pfUpTitle').textContent = 'Edit Artwork';
     document.getElementById('pfUpSubtitle').textContent = 'Update the details for this piece.';
+    document.getElementById('pfUpNavTitle').textContent = 'EDIT ARTWORK';
     document.getElementById('pfDzTxt').textContent = 'Drag & drop your artwork here';
     document.getElementById('pfUpCatField').style.display = '';
     document.getElementById('pfComicPagesWrap').style.display = 'none';
@@ -15468,8 +16378,19 @@ function qrMake (text) {
     document.getElementById('pfDz').style.display='none';
     var prev = document.getElementById('pfUpPrev');
     prev.src = art.image_url||'';
-    prev.style.objectPosition = (art.thumb_x!=null?art.thumb_x:50)+'% '+(art.thumb_y!=null?art.thumb_y:50)+'%';
-    prev.style.display = art.image_url ? 'block' : 'none';
+    prev.style.cssText = thumbStyle(art.thumb_x, art.thumb_y, art.thumb_zoom);
+    var prevWrap = document.getElementById('pfUpPrevWrap');
+    if(prevWrap) prevWrap.style.display = art.image_url ? 'block' : 'none';
+    /* Edit mode: no Adjust Thumbnail — this form's update doesn't
+       write thumb_x/y, and there's no local File to re-crop.
+       Drafts are for unpublished work only, so the strip and the
+       Save Draft button hide too. */
+    document.getElementById('pfUpThumbBtn').style.display = 'none';
+    document.getElementById('upDraftSec').style.display = 'none';
+    document.getElementById('upSchedSec').style.display = 'none';
+    var _schF2 = document.getElementById('pfUpSchedField'); if(_schF2) _schF2.style.display = 'none';
+    var _drB2 = document.getElementById('pfDraftBtn'); if(_drB2) _drB2.style.display = 'none';
+    var _bkB2 = document.getElementById('pfUpBackBtn'); if(_bkB2) _bkB2.style.display = '';
     document.getElementById('pfUpBtn').textContent = '📤 Save Changes';
     document.getElementById('pfUpMod').classList.add('open');
   }
@@ -16976,8 +17897,6 @@ function hideCommentThumbnail(){
   /* Build one .awCard for an artwork — ArtStation-style masonry card. */
   function buildAwCard(item){
     var fullSrc = item.image_url || '';
-    var tx = item.thumb_x!=null?item.thumb_x:50;
-    var ty = item.thumb_y!=null?item.thumb_y:50;
     var name    = item.name || 'Untitled';
     var cat     = catList(item.category)[0] || 'others';
     var desc    = item.description || '';
@@ -17002,7 +17921,7 @@ function hideCommentThumbnail(){
     img.onload  = function(){ wrap.classList.remove('awLoading'); };
     img.onerror = function(){ wrap.classList.remove('awLoading'); };
     img.src = getThumbnailUrl(fullSrc);
-    img.style.objectPosition = tx+'% '+ty+'%';
+    img.style.cssText = thumbStyle(item.thumb_x, item.thumb_y, item.thumb_zoom);
     img.alt = name;
     img.loading = 'lazy';
     img.decoding = 'async';

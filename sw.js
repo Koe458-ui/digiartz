@@ -25,10 +25,19 @@
    come from the localStorage snapshots), analytics, and ads.
 
    Bump CACHE_VERSION to force every client to drop and refill.
+
+   v11 — upload session reset: a finished upload now clears every
+   scrap of form state (files, focal point/zoom, preview, fields,
+   schedule, draft link) so the next piece starts clean.
+   v10 — upload page rebuild: full-page Upload destination (guest-
+   viewable), thumbnail zoom (thumb_zoom), device-local Drafts,
+   server-side Scheduled uploads, draft/schedule preview modal and
+   the custom themed date picker. index.html changed substantially,
+   so every client must drop the old shell.
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v11';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

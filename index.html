@@ -7416,6 +7416,7 @@ body{background:var(--bg);}
     #upqBackdrop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 75%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:-1;}
     #upqBackdrop.open{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s;}
     #upqBackdrop .legalModal{max-width:440px;}
+    #upqBackdrop.open .legalModal{transform:translateY(0) scale(1);opacity:1;}
     .upqMBody{padding:1.4rem 1.6rem 1.7rem;background:var(--sur2);overflow-y:auto;}
     /* \u2500\u2500 Verification tracker \u2014 vertical stepper \u2500\u2500
        green = passed \u00b7 amber = checking \u00b7 gray = pending \u00b7 red = failed */

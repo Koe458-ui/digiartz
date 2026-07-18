@@ -7244,7 +7244,12 @@ body{background:var(--bg);}
   </div>
 
   <!-- =========================================================
-       PROFILE UPLOAD POPUP — opened via openPfUpload().
+       UPLOAD PAGE — opened via openPfUpload() (nav ➕ destination).
+       #pfUpMod keeps the .upPop markup but is restyled into a full
+       slide-in page (see UPLOAD PAGE MODE CSS). After a successful
+       upload the user is redirected to their OWN profile, where the
+       verification card (CHECKING → UPLOADING → ALMOST DONE → LIVE)
+       leads their gallery grid.
        Always inserts with user_id = the signed-in user's own id
        (enforced by RLS too). No visibility control by design —
        everything uploaded here is public, same as the gallery.
@@ -7269,6 +7274,37 @@ body{background:var(--bg);}
     @media(min-width:860px){.upPopBody{grid-template-columns:1.7fr 1fr;align-items:start;}}
     .upPopFoot{display:flex;justify-content:flex-end;gap:.65rem;padding:.9rem 1.3rem;border-top:1px solid rgba(var(--pg-rgb),.07);flex-shrink:0;background:var(--sur);}
     @media(max-width:519px){.upPopFoot{flex-direction:column-reverse;}.upPopFoot button{width:100%;}}
+
+    /* ── UPLOAD PAGE MODE ──
+       #pfUpMod is no longer a centered popup — it's a full slide-in
+       page, same panel language as #profilePage / #communityPage
+       (nav ➕ is now a destination, not a layered action). The crop
+       popups keep the plain .upPop modal styling and still layer ON
+       TOP of this page (their z:20000 > 600). Edit Artwork
+       (mwEditArt) reuses this same page and slides over My Work
+       (z:520), with #bnNav (z:1000) staying visible like every
+       other page. */
+    #pfUpMod{
+      z-index:600;display:block;padding:0;opacity:1;
+      background:var(--bg);overflow-y:auto;
+      transform:translateX(100%);
+      visibility:hidden;
+      transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s linear .45s;
+    }
+    #pfUpMod::before{display:none;}
+    #pfUpMod.open{visibility:visible;pointer-events:auto;transform:translateX(0);transition-delay:0s,0s;}
+    #pfUpMod .upPopBox{
+      background:transparent;border:0;border-radius:0;box-shadow:none;
+      max-width:960px;margin:0 auto;max-height:none;min-height:100%;overflow:visible;
+      padding-bottom:110px; /* clear the floating bottom nav */
+    }
+    #pfUpMod .upPopHead{
+      position:sticky;top:0;z-index:5;
+      background:color-mix(in srgb,var(--bg) 92%,transparent);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    }
+    #pfUpMod .upPopBody{overflow:visible;}
+    #pfUpMod .upPopFoot{background:transparent;}
 
     .upDz{border:2px dashed rgba(var(--pg-rgb),.35);border-radius:12px;padding:2rem 1.1rem;text-align:center;cursor:pointer;position:relative;transition:border-color .25s,background .25s;background:rgba(var(--pg-rgb),.035);margin-bottom:1rem;}
     .upDz.over,.upDz:hover{border-color:var(--pg);background:rgba(var(--pg-rgb),.08);}
@@ -11244,8 +11280,12 @@ function qrMake (text) {
        scroll and were missing from this list.
        FIX 3: rankPage (full ranking) locks scroll too — without it,
        closing any other panel while the ranking page was open would
-       silently re-enable scrolling of the home page behind it. */
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage'];
+       silently re-enable scrolling of the home page behind it.
+       FIX 4: pfUpMod is a full PAGE now (nav ➕ destination) and
+       locks scroll in openPfUpload() — it must sit in this list or
+       closing any other panel while the upload page is open would
+       re-enable background scrolling behind it. */
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -12757,7 +12797,17 @@ function qrMake (text) {
     syncAuthBtn(); /* repaints nav avatar + subscription card + comment bar with the fetched photo */
     notifRefreshBadge();
     /* Universal upload queued before login → open it now */
-    if(currentUser && sessionStorage.getItem('pendPfUp')==='1'){ sessionStorage.removeItem('pendPfUp'); setTimeout(openPfUpload,250); }
+    if(currentUser && sessionStorage.getItem('pendPfUp')==='1'){
+      sessionStorage.removeItem('pendPfUp');
+      /* Upload is a full page now — open it as a destination
+         (close everything else + take the ➕ tab highlight),
+         exactly like tapping nav ➕ while signed in. */
+      setTimeout(function(){
+        if(typeof bnCloseAllSections==='function') bnCloseAllSections();
+        openPfUpload();
+        if(typeof bnSetActive==='function') bnSetActive('bnUpload');
+      },250);
+    }
   }
 
   /* ── Listen for auth state changes (login / logout / refresh) ── */
@@ -13923,12 +13973,30 @@ function qrMake (text) {
     document.getElementById('pfPagesPreview').innerHTML='';
     document.getElementById('pfUpBtn').textContent = '📤 Upload Artwork';
     document.getElementById('pfUpMod').classList.add('open');
+    /* Page mode — lock background scroll like every other full page.
+       (Edit mode via mwEditArt skips this: My Work already holds the
+       lock underneath.) */
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
   }
 
   function closePfUpload(){
+    /* editId is only ever set by mwEditArt and cleared by
+       openPfUpload, so it reliably tells the two modes apart here. */
+    var wasEdit = !!document.getElementById('pfUpEditId').value;
     document.getElementById('pfUpMod').classList.remove('open');
     closePfCatDd();
     pf.upFile = null; pf.upThumbFocus = null; pf.upPageFiles = [];
+    /* restoreScroll() is safe in BOTH modes — 'pfUpMod' is in its
+       lock list and it only re-enables scrolling once no listed
+       page is left open, so edit mode (My Work still open under-
+       neath) keeps its lock while upload-page mode releases it. */
+    restoreScroll();
+    if(!wasEdit){
+      /* Nav highlight falls back to Home; doPfUp's success path
+         sets it to Profile right after this. */
+      if(typeof bnSetActive==='function') bnSetActive('bnHome');
+    }
   }
   function handlePfFile(e){
     var f = e.target.files[0]; if(!f) return;
@@ -14121,7 +14189,15 @@ function qrMake (text) {
             preview: (prevEl && prevEl.src) ? prevEl.src : ''
           });
           closePfUpload();
-          showToast('Verifying your artwork \u2726 feel free to queue another');
+          /* Redirect straight to the uploader's OWN profile — the
+             blurred verification card (CHECKING → UPLOADING →
+             ALMOST DONE → LIVE) leads their gallery grid there via
+             upqOwnQueueHTML(), so they watch verification start
+             immediately. Fire-and-forget: the queue job runs in
+             parallel regardless. */
+          openOwnProfile();
+          if(typeof bnSetActive==='function') bnSetActive('bnProfile');
+          showToast('Verifying your artwork \u2726 watch it on your profile');
         }
       }
     }catch(err){ console.error('Error: '+err.message);
@@ -14913,6 +14989,10 @@ function qrMake (text) {
        Notifications added too for symmetry/safety. */
     closeMyWorkPage();
     closeNotifPage();
+    /* Upload is a full page now too — a nav tap away from it must
+       close it like any other section. (Safe in edit mode as well:
+       My Work is closed just above, so no stale lock is left.) */
+    closePfUpload();
   }
 
   function bnGoHome(){
@@ -14927,11 +15007,11 @@ function qrMake (text) {
     ddOpenGallery();
     bnSetActive('bnGallery');
   }
-  /* Upload (+) — opens the artwork upload modal. It's an action, not a
-     destination, so it deliberately does NOT close the current section or
-     take over the active-tab highlight; the upload modal simply layers on
-     top of wherever the user already is. openPfUpload() is the single
-     universal upload flow (login-only). */
+  /* Upload (+) — now a real DESTINATION like Profile / Community:
+     it closes every other section, opens the full-page upload
+     screen (#pfUpMod in page mode) and takes the active-tab
+     highlight. openPfUpload() is the single universal upload flow
+     (login-only). */
   function bnGoUpload(){
     /* Universal upload — one flow for every signed-in user. Queues
        the intent (pendPfUp) when logged out and opens after login. */
@@ -14941,7 +15021,9 @@ function qrMake (text) {
       openAuthMod();
       return;
     }
+    bnCloseAllSections();
     openPfUpload();
+    bnSetActive('bnUpload');
   }
   function bnGoCommunity(){
     bnCloseAllSections();

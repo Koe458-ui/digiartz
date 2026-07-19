@@ -565,43 +565,101 @@
     #topSlide{
       position:relative;
       background:var(--bg);
-      padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) 0 .6rem;
+      /* Bottom is 0 on purpose: the gap down to the tag rail is owned
+         entirely by .tgRail's --tgPad, so it matches the gap below it. */
+      padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) 0 0;
     }
+    /* ── Featured strip carousel ──
+       Boxes-per-view is a single CSS variable; the box width is derived
+       from it, so the breakpoints below are the only place the count
+       lives. Slide mechanics mirror the RANKING boards (.rkTrack):
+       native CSS snap-scroller — a swipe is a real swipe, no drag JS —
+       with arrows/dots that only mirror scroll position and drive the
+       track on click. */
+    .tsWrap{ position:relative; margin-top:0; }
     .tsTrack{
+      /* offsetParent for the boxes — tsSlideTo()/tsSync() measure
+         offsetLeft against the track, exactly like .rkTrack does. */
+      position:relative;
       display:flex;
-      gap:.3rem;
-      max-width:1300px;
-      margin:0 auto;
-      padding:0 .6rem;
+      width:100%;
+      box-sizing:border-box;
+      margin:0;
+      --tsPer:1;                 /* phones — one at a time */
+      --tsGap:1rem;              /* matches .rkTrack */
+      --tsPadX:clamp(.9rem,2.5vw,2rem);
+      gap:var(--tsGap);
+      padding:.4rem var(--tsPadX) .5rem;
+      scroll-padding-left:var(--tsPadX);
       overflow-x:auto;
+      overflow-y:hidden;
       scroll-snap-type:x mandatory;
+      scroll-behavior:smooth;
       -webkit-overflow-scrolling:touch;
       scrollbar-width:none;
       -ms-overflow-style:none;
+      overscroll-behavior-x:contain;
     }
     .tsTrack::-webkit-scrollbar{display:none;}
     .tsBox{
-      flex:0 0 auto;
-      width:300px;
-      height:190px;
+      /* n across minus the gaps, but never wider than a RANKING card —
+         without the cap the box just grew to fill the track, which is
+         what made it tower over the old fixed 300x190. */
+      flex:0 0 min(calc((100% - (var(--tsPer) - 1) * var(--tsGap)) / var(--tsPer)), 470px);
+      aspect-ratio:300 / 190;
+      min-width:0;
       border-radius:8px;
       background:var(--sur2);
       border:1px solid var(--bdr);
       scroll-snap-align:start;
+      scroll-snap-stop:always;
       position:relative;
       overflow:hidden;
     }
+    @media(min-width:700px){  .tsTrack{ --tsPer:2; } }
+    @media(min-width:1280px){ .tsTrack{ --tsPer:3; } }
+    @media(min-width:1800px){ .tsTrack{ --tsPer:4; } }
     /* ── Live slide content — image fill + bottom-gradient caption,
        injected by renderTopSlide() from the hero_slides table.
        Mirrors the admin preview (.ahsBox/.ahsText) so what a dev
        sees in the Hero Slides editor is exactly what ships here. ── */
     .tsBox img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
-    .tsBoxText{position:absolute;left:0;right:0;bottom:0;padding:.55rem .7rem;background:linear-gradient(to top,color-mix(in srgb,var(--bg) 85%,transparent),transparent);}
-    .tsBoxTitle{font-family:var(--fb);font-size:.8rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .tsBoxSub{font-family:var(--fb);font-size:.68rem;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.1rem;}
-    @media(max-width:1024px){
-      .tsBox{ scroll-snap-align:center; }
+    .tsBox{cursor:pointer;}
+    .tsBox:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    /* Taller gradient — the title is now two lines of large type, so it
+       needs more dark behind it to stay readable over a bright image. */
+    .tsBoxText{position:absolute;left:0;right:0;bottom:0;padding:1.6rem .8rem .7rem;background:linear-gradient(to top,color-mix(in srgb,var(--bg) 92%,transparent) 15%,transparent);}
+    .tsBoxTitle{
+      font-family:var(--fb);font-weight:800;
+      font-size:clamp(1rem,1.9vw,1.3rem);
+      line-height:1.2;color:var(--tx);
+      /* two lines, then ellipsis */
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+      overflow:hidden;text-overflow:ellipsis;
     }
+    /* Arrows: pointer devices only, same gate as .rkNav */
+    .tsNav{
+      position:absolute; top:50%; transform:translateY(-50%);
+      z-index:2; display:none; align-items:center; justify-content:center;
+      width:38px; height:38px; border-radius:50%; padding:0; cursor:pointer;
+      border:1px solid var(--bdr); color:var(--tx);
+      background:color-mix(in srgb,var(--bg) 78%,transparent);
+      -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+      transition:border-color .2s, background .2s, opacity .2s;
+    }
+    .tsNav:hover{ border-color:var(--pg); background:var(--pdim); }
+    .tsNav svg{ width:18px; height:18px; }
+    .tsNav:disabled{ opacity:.3; cursor:default; }
+    .tsNav--prev{ left:.2rem; } .tsNav--next{ right:.2rem; }
+    @media (hover:hover) and (min-width:760px){ .tsNav{ display:flex; } }
+    .tsDots{ display:flex; justify-content:center; gap:.45rem; margin-top:.75rem; }
+    .tsDot{
+      width:7px; height:7px; border-radius:50%; padding:0;
+      border:1px solid var(--bdrh); background:none; cursor:pointer;
+      transition:background .2s, border-color .2s, transform .2s;
+    }
+    .tsDot.on{ background:var(--pg); border-color:var(--pg); transform:scale(1.25); }
+    @media(prefers-reduced-motion:reduce){ .tsTrack{ scroll-behavior:auto; } }
 
     /* Visually hidden — accessible to screen readers, invisible on screen */
     .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
@@ -715,7 +773,6 @@
     /* Featured hero slides inside the gallery / comic overlays — reuses
        the home page .tsTrack/.tsBox component, just without the top-bar
        offset. */
-    #topSlideGallery{position:relative;background:transparent;padding:.2rem 0 1.1rem;}
     .fgHdr{position:sticky;top:3.4rem;z-index:10;border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;isolation:isolate;}
     /* FIX: background + blur split onto ::before, same decoupling as
        #bnNav — sticky elements have the same fixed-during-scroll
@@ -3424,7 +3481,9 @@
     }
 
     #artworks{
-      padding:1.8rem 0 4rem;
+      /* padding-top is 0 so it can't stack on .tgRail's top margin — the
+         rail is the first child and owns the spacing on BOTH its sides. */
+      padding:0 0 4rem;
     }
     .awHdr{
       width:100%;
@@ -3628,7 +3687,11 @@
     #profilePage.open{transform:translateX(0);}
     /* Dark, banner-led theme — scoped to the profile page only,
        the rest of the site stays on the white theme. */
-    #profilePage,#profilePage *,#setPage,#setPage *{
+    /* Albums are a profile feature reached from the profile page and
+       from Settings, so they inherit the same dark-violet palette
+       rather than the plain page tokens used by Bookmarks / Friends. */
+    #profilePage,#profilePage *,#setPage,#setPage *,
+    #albPage,#albPage *,#albViewPage,#albViewPage *{
       --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
       --tx:var(--vtx);--txd:var(--vtxd);
       --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
@@ -6045,18 +6108,27 @@ body{background:var(--bg);}
        in yet.
        ========================================================= -->
   <section id="topSlide" aria-label="Featured artwork slideshow">
-    <div class="tsTrack" id="tsTrack">
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
-      <div class="tsBox"></div>
+    <div class="tsWrap">
+      <button class="tsNav tsNav--prev" id="tsPrev" type="button" aria-label="Previous slide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="tsTrack" id="tsTrack">
+        <div class="tsBox"></div>
+        <div class="tsBox"></div>
+        <div class="tsBox"></div>
+        <div class="tsBox"></div>
+        <div class="tsBox"></div>
+        <div class="tsBox"></div>
+        <div class="tsBox"></div>
+        <div class="tsBox"></div>
+        <div class="tsBox"></div>
+        <div class="tsBox"></div>
+      </div>
+      <button class="tsNav tsNav--next" id="tsNext" type="button" aria-label="Next slide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
+    <div class="tsDots" id="tsDots" role="tablist" aria-label="Slide"></div>
   </section>
 
   <!-- ── Hidden Data Grid (source for Full Gallery overlay) ── -->
@@ -6073,6 +6145,19 @@ body{background:var(--bg);}
        └─ Empty State (.awEmpty #awEmpty)
        ========================================================= -->
   <section id="artworks">
+    <!-- ── TAG RAIL — three rows inside ONE horizontal scroller, so a
+         swipe slides all three together as a single block. Rows 1 and
+         3 are indented and row 2 runs flush left with roughly double
+         the chips, so the middle line pokes out at both ends.
+         Ticking a tag rotates a fresh one into its slot; once every
+         tag is ticked, rotation pauses and chips stay ticked. ── -->
+    <div class="tgRail" id="tgRail" role="group" aria-label="Tag preferences">
+      <div class="tgScroll">
+        <div class="tgRowIn"></div>
+        <div class="tgRowIn"></div>
+        <div class="tgRowIn"></div>
+      </div>
+    </div>
     <!-- ── Section Header — tab switcher replaces the old title/subtitle ── -->
     <div class="awHdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
       <div class="awTabs" id="awTabs" role="tablist" aria-label="Browse Artworks by category or Comic Arts">
@@ -6954,6 +7039,7 @@ body{background:var(--bg);}
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
           <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" onclick="pfSwitchTab('gallery')">ARTWORK</button>
+          <button class="pfTab" id="pfTabAlbum" role="tab" aria-selected="false" onclick="pfSwitchTab('album')">ALBUMS</button>
           <button class="pfTab" id="pfTabLike" role="tab" aria-selected="false" onclick="pfSwitchTab('like')">LIKE</button>
           <button class="pfTab" id="pfTabBookmark" role="tab" aria-selected="false" onclick="pfSwitchTab('bookmark')">BOOKMARK</button>
           <button class="pfTab" id="pfTabProgress" role="tab" aria-selected="false" onclick="pfSwitchTab('progress')">LEVEL</button>
@@ -6972,6 +7058,16 @@ body{background:var(--bg);}
              Observed against #profilePage (the scroll container);
              hidden once every row has been fetched. -->
         <div class="igSentinel" id="pfGallerySentinel" aria-hidden="true" style="display:none;"></div>
+      </div>
+
+      <!-- ALBUMS — the artist's own collections. LIKES and BOOKMARKS
+           are pinned first as VIRTUAL albums (no albums row exists for
+           them; they read the artwork_likes / artwork_bookmarks data
+           the LIKE and BOOKMARK tabs already use), followed by every
+           album the artist created. Tapping a card opens #albViewPage. -->
+      <div class="pfPanel" id="pfPanelAlbum">
+        <div class="albGrid" id="pfAlbumGrid"></div>
+        <div class="pfEmpty" id="pfAlbumEmpty" style="display:none;">No albums yet.</div>
       </div>
 
       <!-- LIKE / BOOKMARK — READ-ONLY grids of artworks this artist
@@ -7861,7 +7957,7 @@ body{background:var(--bg);}
           <label class="upLbl" for="pfUpTagsInput">Tags</label>
           <div class="upTagBox" id="pfUpTagBox" onclick="document.getElementById('pfUpTagsInput').focus()">
             <span id="pfUpTagChips"></span>
-            <input class="upTagInput" id="pfUpTagsInput" onkeydown="pfTagKeydown(event)" placeholder="Add up to 10 tags…" type="text"/>
+            <input class="upTagInput" id="pfUpTagsInput" maxlength="15" onkeydown="pfTagKeydown(event)" placeholder="Add up to 10 tags…" type="text"/>
           </div>
           <input id="pfUpTags" type="hidden" value=""/>
         </div>
@@ -7887,6 +7983,24 @@ body{background:var(--bg);}
           </div>
         </div>
         <input type="hidden" id="pfUpSoftware" value=""/>
+      </div>
+
+      <!-- ── ALBUMS (optional) ── multi-select of the artist's own
+           albums. Same .upCatDd trigger/panel parts as Category, with
+           a create row pinned to the bottom of the panel so a new
+           album can be made without leaving the form. Options are
+           injected by albUpRender(); hidden entirely in edit mode. -->
+      <div class="upField" id="pfUpAlbumField">
+        <label class="upLbl">Add to Album <span class="upOpt">optional</span></label>
+        <div class="upCatDd" id="pfUpAlbumDd">
+          <button type="button" class="upCatTrigger" onclick="togglePfAlbumDd(event)" id="pfUpAlbumTrigger">
+            <span id="pfUpAlbumTriggerLbl">None</span><span class="upChev">⌄</span>
+          </button>
+          <div class="upCatPanel" id="pfUpAlbumPanel">
+            <!-- Options injected by albUpRender() -->
+          </div>
+        </div>
+        <div class="upSchedHint">Pick as many as you like — or none.</div>
       </div>
 
       <!-- ── SCHEDULE (optional) ── leave empty to publish now.
@@ -8138,25 +8252,21 @@ body{background:var(--bg);}
    <div class="fgIntro">
     <h2 class="fgTitle">Gallery <span class="s">✦</span></h2>
    </div>
-   <!-- Featured hero slides — the exact same component as the home page
-        #topSlide strip: identical .tsTrack/.tsBox markup, painted from the
-        same hero_slides table by renderTopSlide(). It carries its own ids
-        (topSlideGallery / tsTrackGallery) so the page has no duplicate ids,
-        while showing the very same slides as the home strip. -->
-   <section id="topSlideGallery" aria-label="Featured artwork slideshow">
-     <div class="tsTrack" id="tsTrackGallery">
-       <div class="tsBox"></div>
-       <div class="tsBox"></div>
-       <div class="tsBox"></div>
-       <div class="tsBox"></div>
-       <div class="tsBox"></div>
-       <div class="tsBox"></div>
-       <div class="tsBox"></div>
-       <div class="tsBox"></div>
-       <div class="tsBox"></div>
-       <div class="tsBox"></div>
+   <!-- ── TAG RAIL (gallery copy) ── replaced the featured-slide strip
+        here. Same component, same shared state as the home rail: both
+        carry class .tgRail, tgRenderRail() paints every one it finds,
+        and tgToggle() applies a tick to the matching chip in BOTH, so
+        the two stay identical without either owning the state.
+        #fg slides in via transform (never display:none), so this rail
+        keeps a real width and can lay itself out while closed.
+        The home #topSlide strip is deliberately untouched. -->
+   <div class="tgRail" id="tgRailGallery" role="group" aria-label="Tag preferences">
+     <div class="tgScroll">
+       <div class="tgRowIn"></div>
+       <div class="tgRowIn"></div>
+       <div class="tgRowIn"></div>
      </div>
-   </section>
+   </div>
    <div class="fgHdr">
     <input class="fgQ" id="fgQ" oninput="renderFG()" placeholder="SEARCH ARTWORK..." type="text"/>
     <div class="fgFil">
@@ -11211,6 +11321,7 @@ function qrMake (text) {
       <div class="setList">
         <button class="pfMenuItem" onclick="closeSettingsPage();openSubscription()">Subscription</button>
         <button class="pfMenuItem" onclick="closeSettingsPage();openMyWorkPage()">Edit My Work</button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();albOpenPage()">Albums</button>
         <button class="pfMenuItem" onclick="closeSettingsPage();openLikesPage()">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
         <button class="pfMenuItem" onclick="closeSettingsPage();openBookmarksPage()">Bookmarks <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
         <button class="pfMenuItem" onclick="closeSettingsPage();openFriendsPage()">Friends <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
@@ -11570,7 +11681,10 @@ function qrMake (text) {
        locks scroll in openPfUpload() — it must sit in this list or
        closing any other panel while the upload page is open would
        re-enable background scrolling behind it. */
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod'];
+    /* FIX 5: albPage (Settings ▸ Albums) and albViewPage (one album's
+       contents) both lock scroll — without them, closing any other
+       panel while an album is open would re-enable scrolling behind it. */
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','tsPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -13116,6 +13230,10 @@ function qrMake (text) {
         try{ renderHome(); }catch(e){}
         try{ renderFG(); }catch(e){}
       });
+      /* Tag preferences follow the session: the signed-in user's DB
+         copy replaces whatever was in localStorage, and signing out
+         falls back to the local mirror. */
+      try{ if(typeof tgLoad === 'function') tgLoad(true); }catch(e){}
       if (event === 'SIGNED_IN') {
         closeAuthMod();
         checkUserRole();
@@ -13353,7 +13471,9 @@ function qrMake (text) {
     galleryRows: [], galleryDone: false, galleryBusy: false,
     upFile: null,
     upThumbFocus: null,    // {x,y} percentages set by confirmPfCrop()
-    upPageFiles: []
+    upPageFiles: [],
+    upAlbums: [],          // album ids ticked on the upload page (optional)
+    albums: [], albumsLoaded: false   // ALBUMS tab strip for the viewed profile
   };
 
   /* ── Profile avatar/banner preload ──
@@ -13476,6 +13596,9 @@ function qrMake (text) {
     pf.profile=null; pf.galleryRows=[]; pf.galleryDone=false; pf.galleryBusy=false;
     pf.likeLoaded=false; pf.bmLoaded=false;
     pf.savedRows={like:[],bookmark:[]}; pf.savedShown={like:0,bookmark:0};
+    /* Albums are per-profile too — drop the previous artist's strip so a
+       fast re-open can never paint their collections under a new name. */
+    pf.albumsLoaded=false; pf.albums=[]; pf.albumSaved={like:[],bookmark:[]};
     var _pgs=document.getElementById('pfGallerySentinel'); if(_pgs) _pgs.style.display='none';
     var _pls=document.getElementById('pfLikeSentinel'); if(_pls) _pls.style.display='none';
     var _pbs=document.getElementById('pfBookmarkSentinel'); if(_pbs) _pbs.style.display='none';
@@ -13600,7 +13723,7 @@ function qrMake (text) {
 
   function pfSwitchTab(tab){
     pf.tab=tab;
-    ['gallery','like','bookmark','progress','about'].forEach(function(t){
+    ['gallery','album','like','bookmark','progress','about'].forEach(function(t){
       document.getElementById('pfTab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
       document.getElementById('pfPanel'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
     });
@@ -13609,6 +13732,7 @@ function qrMake (text) {
       xpLoadInto('pfXpWrap', pf.profile.id, { leaderboard:true });
     }
     if(tab==='like' || tab==='bookmark') pfLoadSaved(tab);
+    if(tab==='album') albLoadProfileTab();
   }
 
   /* ── LIKE / BOOKMARK tabs — read-only grids for any profile ── */
@@ -13703,6 +13827,407 @@ function qrMake (text) {
       grid.innerHTML='';
       empty.style.display='';
       showToast('Couldn\u2019t load \u2014 try again');
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ALBUMS (alb) — artist-curated collections of artworks
+     ├─ albLoadProfileTab()  → profile ALBUMS tab   (#pfAlbumGrid)
+     ├─ albOpenPage()        → Settings ▸ Albums    (#albPage, manager)
+     ├─ albOpen(src,id)      → one album's contents (#albViewPage)
+     └─ albUpRender()        → the optional upload-page picker
+
+     LIKES and BOOKMARKS are pinned to the front of every strip as
+     VIRTUAL albums: no `albums` row exists for them (those names are
+     reserved by a DB check constraint so a real album can never
+     shadow them) and they read the same two RPCs the LIKE / BOOKMARK
+     tabs already use. Everything else is a real row in `albums`,
+     with membership in `album_items`.
+
+     One card renderer + one contents renderer serve all three
+     surfaces; `src` ('pf' = viewed profile, 'me' = signed-in user)
+     says which in-memory strip an id should be looked up in, so the
+     manager page opening over someone else's profile can never
+     resolve an id against the wrong list.
+     ═══════════════════════════════════════════════════════════════ */
+  var ALB_VIRT = {
+    like:     { name:'Likes',     rpc:'get_user_liked_artworks',      ico:'\u2665' },
+    bookmark: { name:'Bookmarks', rpc:'get_user_bookmarked_artworks', ico:'\u2756' }
+  };
+  var albMine = [], albMineLoaded = false;   /* signed-in user's strip */
+  var albView = null;                        /* album currently on #albViewPage */
+  var albModMode = null, albModId = null;    /* create / rename popup state */
+
+  /* Four-up cover mosaic. Missing slots stay as empty cells so a
+     one-image album still reads as an album, not a broken card. */
+  function albMosaicHTML(covers){
+    var c = Array.isArray(covers) ? covers : [], out = '';
+    for(var i=0; i<4; i++){
+      out += c[i]
+        ? '<span class="albCell"><img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(c[i]))+'" alt=""></span>'
+        : '<span class="albCell albCellEmpty"></span>';
+    }
+    return '<span class="albMosaic">'+out+'</span>';
+  }
+  function albCardHTML(src, a){
+    var n = +a.item_count || 0;
+    return '<button type="button" class="albCard'+(a.virt?' albCard--virt':'')+'" '+
+        'onclick="albOpen(\''+src+'\',\''+esc(String(a.id))+'\')">'+
+      albMosaicHTML(a.covers)+
+      '<span class="albMeta">'+
+        '<span class="albName">'+(a.virt?'<span class="albPin">'+a.ico+'</span>':'')+esc(a.name||'Untitled')+'</span>'+
+        '<span class="albCount">'+n+(n===1?' ITEM':' ITEMS')+'</span>'+
+      '</span>'+
+    '</button>';
+  }
+  function albNewCardHTML(){
+    return '<button type="button" class="albCard albCardNew" onclick="albCreatePrompt()">'+
+      '<span class="albNewIco">+</span><span class="albNewLbl">NEW ALBUM</span></button>';
+  }
+
+  /* Builds a whole strip for one user in a single round of parallel
+     RPCs: the two virtual albums (covers + counts straight off the
+     saved-artwork lists, capped at 100 like every other saved grid)
+     followed by their real albums with server-side covers/counts.
+     Each promise degrades to an empty list on its own, so one failing
+     call can't blank the entire strip. */
+  async function albFetchStrip(userId){
+    function soft(p){ return p.then(function(r){ return r && !r.error ? r : {data:[]}; },
+                                    function(){ return {data:[]}; }); }
+    var res = await Promise.all([
+      soft(sb.rpc('get_user_liked_artworks',      {target:userId, lim:100, off:0})),
+      soft(sb.rpc('get_user_bookmarked_artworks', {target:userId, lim:100, off:0})),
+      soft(sb.rpc('get_user_albums',              {target:userId}))
+    ]);
+    var virt = ['like','bookmark'].map(function(k, i){
+      var rows = res[i].data || [];
+      return { id:k, key:k, virt:true, name:ALB_VIRT[k].name, ico:ALB_VIRT[k].ico,
+               item_count:rows.length,
+               covers:rows.slice(0,4).map(function(r){ return r.image_url; }),
+               rows:rows };
+    });
+    return virt.concat((res[2].data||[]).map(function(a){
+      return { id:a.id, virt:false, name:a.name, item_count:a.item_count, covers:a.covers||[] };
+    }));
+  }
+
+  /* ── Profile ALBUMS tab ── */
+  async function albLoadProfileTab(){
+    if(!pf.profile) return;
+    var grid = document.getElementById('pfAlbumGrid');
+    var empty = document.getElementById('pfAlbumEmpty');
+    if(!grid) return;
+    if(pf.albumsLoaded){ albRenderProfileTab(); return; }
+    empty.style.display = 'none';
+    grid.innerHTML = '<div class="albLoading">Loading\u2026</div>';
+    var forId = pf.profile.id;
+    try{
+      var strip = await albFetchStrip(forId);
+      /* Another profile opened while this was in flight — drop it. */
+      if(!pf.profile || String(pf.profile.id) !== String(forId)) return;
+      pf.albums = strip; pf.albumsLoaded = true;
+      albRenderProfileTab();
+    }catch(e){
+      grid.innerHTML = '';
+      empty.textContent = 'Couldn\u2019t load albums \u2014 try again.';
+      empty.style.display = '';
+    }
+  }
+  function albRenderProfileTab(){
+    var grid = document.getElementById('pfAlbumGrid');
+    var empty = document.getElementById('pfAlbumEmpty');
+    if(!grid) return;
+    var html = (pf.albums||[]).map(function(a){ return albCardHTML('pf', a); }).join('');
+    if(pf.isOwner) html += albNewCardHTML();
+    grid.innerHTML = html;
+    /* Likes + Bookmarks are always present, so the strip is never
+       actually empty — the hint only shows if a fetch wiped it. */
+    if(empty) empty.style.display = 'none';
+  }
+
+  /* ── Settings ▸ Albums — the manager page ── */
+  async function albLoadMine(force){
+    if(!currentUser) return;
+    if(albMineLoaded && !force){ albRenderManager(); return; }
+    var grid = document.getElementById('albGrid');
+    if(grid && !albMine.length) grid.innerHTML = '<div class="albLoading">Loading\u2026</div>';
+    try{
+      albMine = await albFetchStrip(currentUser.id);
+      albMineLoaded = true;
+      albRenderManager();
+    }catch(e){
+      if(grid) grid.innerHTML = '<div class="albLoading">Couldn\u2019t load \u2014 try again.</div>';
+    }
+  }
+  function albRenderManager(){
+    var grid = document.getElementById('albGrid');
+    if(!grid) return;
+    grid.innerHTML = albNewCardHTML() + albMine.map(function(a){ return albCardHTML('me', a); }).join('');
+  }
+  function albOpenPage(){
+    if(!currentUser){ showToast('Sign in to manage albums'); if(typeof openAuthMod==='function') openAuthMod(); return; }
+    document.getElementById('albPage').classList.add('open');
+    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = 'none';
+    document.body.style.overflow = 'hidden';
+    albLoadMine(false);
+  }
+  function albClosePage(){
+    document.getElementById('albPage').classList.remove('open');
+    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = '';
+    restoreScroll();
+  }
+
+  /* ── One album's contents (#albViewPage) ── */
+  function albFind(src, id){
+    var list = (src === 'me') ? albMine : (pf.albums || []);
+    return list.filter(function(a){ return String(a.id) === String(id); })[0] || null;
+  }
+  async function albOpen(src, id){
+    var a = albFind(src, id);
+    if(!a) return;
+    /* Virtual albums are never editable — they mirror like/bookmark
+       state, which is changed from the artwork itself. */
+    var owner = !a.virt && (src === 'me' || !!pf.isOwner);
+    albView = { src:src, id:String(id), virt:!!a.virt, name:a.name, owner:owner, rows:null };
+    document.getElementById('albViewTitle').innerHTML = esc(String(a.name||'').toUpperCase())+' <span class="s">\u2726</span>';
+    document.getElementById('albViewActs').style.display = owner ? '' : 'none';
+    document.getElementById('albViewPage').classList.add('open');
+    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = 'none';
+    document.body.style.overflow = 'hidden';
+    var grid = document.getElementById('albViewGrid'), empty = document.getElementById('albViewEmpty');
+    empty.style.display = 'none';
+    grid.innerHTML = '<div class="albLoading">Loading\u2026</div>';
+    try{
+      var rows;
+      if(a.virt){
+        rows = a.rows || [];
+      } else {
+        const{data,error} = await sb.rpc('get_album_artworks', {album:String(id), lim:100, off:0});
+        if(error) throw error;
+        rows = data || [];
+      }
+      if(!albView || albView.id !== String(id)) return;   /* superseded */
+      albView.rows = rows;
+      albRenderView();
+    }catch(e){
+      grid.innerHTML = '';
+      empty.innerHTML = '<div class="ico">\u25c8</div><div>COULDN\u2019T LOAD THIS ALBUM</div>';
+      empty.style.display = '';
+    }
+  }
+  function albRenderView(){
+    if(!albView) return;
+    var grid = document.getElementById('albViewGrid'), empty = document.getElementById('albViewEmpty');
+    var rows = albView.rows || [];
+    grid.innerHTML = rows.map(albItemHTML).join('');
+    document.getElementById('albViewCount').textContent = rows.length + (rows.length===1 ? ' ITEM' : ' ITEMS');
+    if(rows.length){ empty.style.display = 'none'; return; }
+    empty.innerHTML = '<div class="ico">\u25c8</div><div>'+(albView.virt ? 'NOTHING SAVED HERE YET' : 'THIS ALBUM IS EMPTY')+'</div>'+
+      '<div style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">'+
+      (albView.virt
+        ? 'Tap the heart or bookmark on any artwork to save it here.'
+        : 'Pick this album on the upload page to add artwork to it.')+'</div>';
+    empty.style.display = '';
+  }
+  /* Reuses pfSavedCardHTML verbatim so album thumbnails are pixel-
+     identical to the Like / Bookmark grids; the owner's remove button
+     is layered over it rather than forking the card renderer. */
+  function albItemHTML(a){
+    var card = pfSavedCardHTML(a);
+    if(!albView || !albView.owner) return card;
+    return '<div class="albItemWrap">'+card+
+      '<button type="button" class="albItemX" aria-label="Remove from album" '+
+      'onclick="event.stopPropagation();albRemoveItem(\''+esc(String(a.id))+'\')">\u2715</button></div>';
+  }
+  function albCloseView(){
+    document.getElementById('albViewPage').classList.remove('open');
+    albView = null;
+    var mgrOpen = document.getElementById('albPage').classList.contains('open');
+    var nav = document.getElementById('bnNav'); if(nav && !mgrOpen) nav.style.display = '';
+    restoreScroll();
+  }
+  async function albRemoveItem(artId){
+    if(!albView || !albView.owner) return;
+    try{
+      const{error} = await sb.from('album_items').delete()
+        .eq('album_id', albView.id).eq('artwork_id', artId);
+      if(error) throw error;
+      albView.rows = (albView.rows||[]).filter(function(r){ return String(r.id) !== String(artId); });
+      albRenderView();
+      albPatchStrip(albView.src, albView.id, albView.rows);
+      showToast('Removed from album');
+    }catch(e){ showToast(safeErr(e, 'Couldn\u2019t remove \u2014 try again')); }
+  }
+  /* Keeps the strip card's count + covers truthful after an in-album
+     edit, without paying for a whole refetch. */
+  function albPatchStrip(src, id, rows){
+    var a = albFind(src, id);
+    if(!a) return;
+    a.item_count = rows.length;
+    a.covers = rows.slice(0,4).map(function(r){ return r.image_url; });
+    if(src === 'me') albRenderManager(); else albRenderProfileTab();
+  }
+
+  /* ── Create / rename popup ── */
+  function albCreatePrompt(){
+    if(!currentUser){ showToast('Sign in to create albums'); if(typeof openAuthMod==='function') openAuthMod(); return; }
+    albModMode = 'new'; albModId = null;
+    document.getElementById('albModTitle').innerHTML = 'NEW ALBUM <span class="s">\u2726</span>';
+    document.getElementById('albModSave').textContent = 'Create';
+    var inp = document.getElementById('albModIn'); inp.value = '';
+    document.getElementById('albMod').classList.add('open');
+    setTimeout(function(){ inp.focus(); }, 80);
+  }
+  function albRenamePrompt(){
+    if(!albView || !albView.owner) return;
+    albModMode = 'rename'; albModId = albView.id;
+    document.getElementById('albModTitle').innerHTML = 'RENAME ALBUM <span class="s">\u2726</span>';
+    document.getElementById('albModSave').textContent = 'Save';
+    var inp = document.getElementById('albModIn'); inp.value = albView.name || '';
+    document.getElementById('albMod').classList.add('open');
+    setTimeout(function(){ inp.focus(); inp.select(); }, 80);
+  }
+  function albModClose(){
+    document.getElementById('albMod').classList.remove('open');
+    albModMode = null; albModId = null;
+  }
+  async function albModSave(){
+    var inp = document.getElementById('albModIn');
+    var name = (inp.value || '').trim();
+    if(!name){ showToast('Enter an album name'); return; }
+    if(/^(likes?|bookmarks?)$/i.test(name)){ showToast('\u201C'+name+'\u201D is reserved \u2014 pick another name'); return; }
+    var btn = document.getElementById('albModSave');
+    btn.disabled = true;
+    try{
+      if(albModMode === 'rename'){
+        const{error} = await sb.from('albums').update({name:name}).eq('id', albModId);
+        if(error) throw error;
+        if(albView && albView.id === String(albModId)){
+          albView.name = name;
+          document.getElementById('albViewTitle').innerHTML = esc(name.toUpperCase())+' <span class="s">\u2726</span>';
+        }
+        albModClose();
+        showToast('Album renamed');
+        await albRefreshAll();
+      } else {
+        const{data,error} = await sb.from('albums').insert({user_id:currentUser.id, name:name}).select().single();
+        if(error) throw error;
+        /* Tick it straight away if the upload picker is what opened
+           this popup — the artist shouldn't have to hunt for it. */
+        if(data && data.id && pf.upAlbums.indexOf(String(data.id)) === -1) pf.upAlbums.push(String(data.id));
+        albModClose();
+        showToast('Album created \u2726');
+        await albRefreshAll();
+      }
+    }catch(e){
+      /* Read the RAW message first — safeErr() deliberately swallows
+         anything that smells like a constraint, and these three are
+         exactly the cases worth explaining. */
+      var raw = (e && e.message) ? String(e.message) : '';
+      showToast(
+        /albums_user_name_uniq|duplicate key/i.test(raw) ? 'You already have an album with that name' :
+        /albums_name_reserved/i.test(raw)                ? 'That name is reserved \u2014 pick another' :
+        /albums_name_len/i.test(raw)                     ? 'Album names are 1\u201340 characters' :
+        /Album limit/i.test(raw)                         ? 'You\u2019ve reached the 100 album limit' :
+        safeErr(e, 'Couldn\u2019t save \u2014 try again')
+      );
+    }finally{ btn.disabled = false; }
+  }
+  async function albDeleteCurrent(){
+    if(!albView || !albView.owner) return;
+    if(!confirm('Delete the album \u201C'+albView.name+'\u201D?\n\nThe artworks inside are NOT deleted \u2014 only the album.')) return;
+    var id = albView.id;
+    try{
+      const{error} = await sb.from('albums').delete().eq('id', id);
+      if(error) throw error;
+      albCloseView();
+      showToast('Album deleted');
+      await albRefreshAll();
+    }catch(e){ showToast(safeErr(e, 'Couldn\u2019t delete \u2014 try again')); }
+  }
+  /* Repaints every album surface that's currently live after a
+     create / rename / delete, so no screen is left showing stale data. */
+  async function albRefreshAll(){
+    var jobs = [];
+    if(currentUser) jobs.push(albLoadMine(true));
+    if(pf.profile && currentUser && String(pf.profile.id) === String(currentUser.id)){
+      pf.albumsLoaded = false;
+      jobs.push(albLoadProfileTab());
+    }
+    try{ await Promise.all(jobs); }catch(e){}
+    albUpRender();
+  }
+
+  /* Escape unwinds the album stack innermost-first: popup, then the
+     contents page, then the manager — never two at once. */
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    var mod = document.getElementById('albMod');
+    if(mod && mod.classList.contains('open')){ albModClose(); return; }
+    var vw = document.getElementById('albViewPage');
+    if(vw && vw.classList.contains('open')){ albCloseView(); return; }
+    var pg = document.getElementById('albPage');
+    if(pg && pg.classList.contains('open')) albClosePage();
+  });
+
+  /* ── Upload page picker — optional, multi-select ──
+     Same styled-dropdown parts as Category / Software, with a create
+     row pinned to the bottom of the panel so a new album can be made
+     without leaving the form. */
+  function togglePfAlbumDd(e){
+    if(e) e.stopPropagation();
+    closePfCatDd(); closePfSoftwareDd();   /* only one panel open at a time */
+    document.getElementById('pfUpAlbumDd').classList.toggle('open');
+  }
+  function closePfAlbumDd(){
+    var d = document.getElementById('pfUpAlbumDd');
+    if(d) d.classList.remove('open');
+  }
+  function albUpRender(){
+    var panel = document.getElementById('pfUpAlbumPanel');
+    if(!panel) return;
+    var real = albMine.filter(function(a){ return !a.virt; });
+    panel.innerHTML =
+      (real.length
+        ? real.map(function(a){
+            return '<label class="upCatOpt"><input type="checkbox" value="'+esc(String(a.id))+'" '+
+              'onchange="albUpChanged()"'+(pf.upAlbums.indexOf(String(a.id))!==-1?' checked':'')+'/> '+
+              esc(a.name)+'</label>';
+          }).join('')
+        : '<div class="albUpNone">No albums yet</div>')+
+      '<button type="button" class="albUpNew" onclick="albCreatePrompt()">+ Create new album</button>';
+    albUpChanged();
+  }
+  function albUpChanged(){
+    var panel = document.getElementById('pfUpAlbumPanel');
+    if(!panel) return;
+    var picked = [];
+    panel.querySelectorAll('input[type="checkbox"]:checked').forEach(function(c){ picked.push(c.value); });
+    pf.upAlbums = picked;
+    var names = picked.map(function(id){
+      var a = albMine.filter(function(x){ return String(x.id) === String(id); })[0];
+      return a ? a.name : '';
+    }).filter(Boolean);
+    var lbl = document.getElementById('pfUpAlbumTriggerLbl');
+    if(lbl) lbl.textContent = names.length ? names.join(', ') : 'None';
+  }
+  /* Attaches a freshly published artwork to the albums picked on the
+     upload form. Deliberately NON-fatal: the piece is already live, so
+     a failure here is logged and surfaced as a toast rather than
+     failing the upload it belongs to. */
+  async function albAttach(artworkId, albumIds){
+    if(!artworkId || !albumIds || !albumIds.length) return;
+    try{
+      const{error} = await sb.from('album_items')
+        .insert(albumIds.map(function(id){ return {album_id:id, artwork_id:artworkId}; }));
+      if(error) throw error;
+      /* The strip's counts/covers just changed — force a refetch next
+         time either surface is opened. */
+      albMineLoaded = false;
+      if(pf.profile && currentUser && String(pf.profile.id) === String(currentUser.id)) pf.albumsLoaded = false;
+    }catch(e){
+      console.error('albAttach:', e && e.message);
+      showToast('Artwork is live, but couldn\u2019t be added to your album(s)');
     }
   }
 
@@ -14122,6 +14647,7 @@ function qrMake (text) {
   function togglePfCatDd(e){
     if(e) e.stopPropagation();
     closePfSoftwareDd(); /* only one dropdown open at a time */
+    if(typeof closePfAlbumDd==='function') closePfAlbumDd();
     document.getElementById('pfUpCatDd').classList.toggle('open');
     /* Fresh search state each time it opens — deliberately NOT
        focusing the field, so the keyboard only opens if the user
@@ -14184,6 +14710,7 @@ function qrMake (text) {
   function togglePfSoftwareDd(e){
     if(e) e.stopPropagation();
     closePfCatDd(); /* only one dropdown open at a time */
+    if(typeof closePfAlbumDd==='function') closePfAlbumDd();
     document.getElementById('pfUpSoftwareDd').classList.toggle('open');
   }
   function closePfSoftwareDd(){
@@ -14208,6 +14735,8 @@ function qrMake (text) {
     if(dd && dd.classList.contains('open') && !dd.contains(e.target)) closePfCatDd();
     var sd = document.getElementById('pfUpSoftwareDd');
     if(sd && sd.classList.contains('open') && !sd.contains(e.target)) closePfSoftwareDd();
+    var ad = document.getElementById('pfUpAlbumDd');
+    if(ad && ad.classList.contains('open') && !ad.contains(e.target)) closePfAlbumDd();
   });
 
   /* ── Tags — YouTube-style chip input (type, press Enter/comma to add) ── */
@@ -14218,9 +14747,16 @@ function qrMake (text) {
     }).join('');
     document.getElementById('pfUpTags').value = pf.upTags.join(',');
   }
+  /* One tag is capped at 15 characters — the same ceiling the DB
+     enforces on user_tag_prefs, and exactly the length of the longest
+     category slug ("traditional-art"), so categories stay valid tags.
+     maxlength on the input covers typing; this covers paste and the
+     comma-split path, which bypass it. */
+  var TAG_MAX = 15;
   function pfAddTag(raw){
     var t = (raw||'').trim();
     if(!t) return;
+    if(t.length > TAG_MAX){ showToast('Tags are up to '+TAG_MAX+' characters'); return; }
     if(pf.upTags.length>=10){ showToast('Up to 10 tags allowed'); return; }
     if(pf.upTags.some(function(x){return x.toLowerCase()===t.toLowerCase();})) return;
     pf.upTags.push(t);
@@ -14232,7 +14768,13 @@ function qrMake (text) {
     pfRenderTagChips();
   }
   function pfSetTagsFromArray(arr){
-    pf.upTags = (arr||[]).slice(0,10);
+    /* Resumed drafts (device-local, up to 7 days old) can carry tags
+       saved before the 15-char cap existed — drop those rather than
+       letting them fail the insert later. */
+    pf.upTags = (arr||[])
+      .map(function(t){ return String(t||'').trim(); })
+      .filter(function(t){ return t && t.length <= TAG_MAX; })
+      .slice(0,10);
     pfRenderTagChips();
   }
   function pfTagKeydown(e){
@@ -14294,7 +14836,10 @@ function qrMake (text) {
     pfSetCats(['others']);
     pfSetSoftware('');
     pfSchedReset();
+    pf.upAlbums = [];
+    if(typeof albUpRender==='function') albUpRender();
     closePfCatDd();
+    if(typeof closePfAlbumDd==='function') closePfAlbumDd();
   }
 
   function openPfUpload(){
@@ -14317,6 +14862,10 @@ function qrMake (text) {
     document.getElementById('pfDzPagesTitle').textContent = 'Add more images (optional)';
     document.getElementById('pfDzPagesSub').textContent   = 'The image above stays the cover. Add as many extras as you like.';
     document.getElementById('pfUpSoftwareField').style.display = '';
+    /* Optional album picker — fire-and-forget; the panel paints as
+       soon as the strip lands and the trigger reads "None" until then. */
+    var _albF = document.getElementById('pfUpAlbumField'); if(_albF) _albF.style.display = '';
+    if(typeof albLoadMine==='function') albLoadMine(false).then(albUpRender, function(){});
     var _drB = document.getElementById('pfDraftBtn'); if(_drB) _drB.style.display = '';
     var _bkB = document.getElementById('pfUpBackBtn'); if(_bkB) _bkB.style.display = 'none';
     var _schF = document.getElementById('pfUpSchedField'); if(_schF) _schF.style.display = '';
@@ -15059,6 +15608,9 @@ function qrMake (text) {
             pageFiles: (pf.upPageFiles || []).slice(),
             thumbFocus: pf.upThumbFocus ? { x: pf.upThumbFocus.x, y: pf.upThumbFocus.y, z: pf.upThumbFocus.z || 1 } : { x: 50, y: 50, z: 1 },
             preview: (prevEl && prevEl.src) ? prevEl.src : '',
+            /* Optional album ids — snapshotted NOW because
+               pfUpResetSession() clears pf.upAlbums moments later. */
+            albums: (pf.upAlbums || []).slice(),
             /* ISO instant or '' — set means the row goes to
                scheduled_uploads instead of artworks (see upqRun). */
             publishAt: _schedAt
@@ -15139,6 +15691,13 @@ function qrMake (text) {
       name: snap.name, desc: snap.desc, tags: snap.tags, cats: snap.cats,
       software: snap.software, file: snap.file, pageFiles: snap.pageFiles,
       thumbFocus: snap.thumbFocus, preview: snap.preview,
+      albums: (snap.albums || []).slice(),
+      /* FIX: this was never copied off the snapshot, so job.publishAt
+         was always undefined and upqRun's SCHEDULED branch could never
+         fire — every "scheduled" piece was inserted straight into
+         `artworks` and went live immediately, despite the toast saying
+         otherwise. Carrying it through makes scheduling real. */
+      publishAt: snap.publishAt || '',
       upDone: 0, upTotal: 1 + snap.pageFiles.length,
       steps: { ratelimit:{state:'',detail:''}, duplicate:{state:'',detail:''}, ai:{state:'',detail:''}, moderation:{state:'',detail:''} },
       mod: { artwork:'', artworkSub:'', safety:'', safetySub:'', quality:'', qualitySub:'' },
@@ -15323,6 +15882,9 @@ function qrMake (text) {
           thumb_x:job.thumbFocus.x, thumb_y:job.thumbFocus.y, thumb_zoom:job.thumbFocus.z||1,
           pages:artPageUrls.length?artPageUrls:null, kind:ART_KIND_ART,
           software:job.software||null, phash:phash,
+          /* Carried across the wait; publish_due_scheduled_uploads()
+             re-attaches them once the artwork row exists. */
+          album_ids: (job.albums && job.albums.length) ? job.albums : null,
           content_rating:mod.rating, is_mature:mod.rating==='MATURE', ai_moderation:mod.audit
         });
         if(se) throw se;
@@ -15333,6 +15895,13 @@ function qrMake (text) {
       }
       const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,thumb_zoom:job.thumbFocus.z||1,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved',content_rating:mod.rating,is_mature:mod.rating==='MATURE',ai_moderation:mod.audit}).select();
       if(de) throw de;
+
+      /* Album membership, if any was picked on the form. Runs AFTER the
+         artwork row lands (album_items needs a real artwork_id) and is
+         deliberately non-fatal — the piece is already published, so a
+         failure here must not roll the upload back. */
+      var _newRow = rows && rows[0];
+      if(_newRow && job.albums && job.albums.length) await albAttach(_newRow.id, job.albums);
 
       /* ── 4 · LIVE — flash the ✓ on the blurred card first; the real
          row is spliced in ONLY when the card is removed, so the piece
@@ -16022,24 +16591,186 @@ function qrMake (text) {
     renderTopSlide();
   }
   function renderTopSlide(){
-    /* Paint every featured strip on the page — the home #tsTrack and the
-       gallery #tsTrackGallery both use the .tsTrack class, so both stay
-       in sync from the single hero_slides source. */
+    /* Paints every .tsTrack on the page. Only the home #tsTrack remains
+       (the gallery strip was replaced by a tag rail), but the class-based
+       lookup means adding another strip anywhere still just works. */
     var tracks = document.querySelectorAll('.tsTrack');
     if(!tracks.length) return;
-    var html = heroSlides.map(function(s){
-      return '<div class="tsBox">'+
+    /* Only the TITLE rides on the slide now — the description lives on
+       the detail page opened by tapping it, so the caption can stay big
+       and legible instead of competing with body copy. */
+    var html = heroSlides.map(function(s, i){
+      return '<div class="tsBox" role="button" tabindex="0" onclick="tsOpenSlide('+i+')" '+
+             'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();tsOpenSlide('+i+');}">'+
         '<img src="'+esc(getViewUrl(s.image_url))+'" alt="'+esc(s.title||'Featured slide')+'" loading="lazy" decoding="async" draggable="false">'+
-        ((s.title||s.subtitle)
-          ? '<div class="tsBoxText">'+
-              (s.title?'<div class="tsBoxTitle">'+esc(s.title)+'</div>':'')+
-              (s.subtitle?'<div class="tsBoxSub">'+esc(s.subtitle)+'</div>':'')+
-            '</div>'
+        (s.title
+          ? '<div class="tsBoxText"><div class="tsBoxTitle">'+esc(s.title)+'</div></div>'
           : '')+
       '</div>';
     }).join('');
     tracks.forEach(function(track){ track.innerHTML = html; });
+    tsBuildNav();   /* slide count changed — rebuild dots/arrows */
   }
+
+  /* ── Featured strip carousel ──────────────────────────────────
+     Same mechanics as the RANKING boards: the track is a plain CSS
+     snap-scroller, so swiping is native. This only mirrors scroll
+     position into the dots/arrows and drives the track on click.
+
+     The difference from RANKING is that more than one slide can be
+     visible at once (1 / 2 / 3 / 4 by breakpoint), so a "page" is a
+     scroll position rather than a card — with N of M showing there
+     are M-N+1 reachable positions, and one dot per position. Using
+     one dot per SLIDE would leave the last N-1 dots unreachable. */
+  var tsCur = 0;
+  /* The strip is a CSS snap-scroller, so the static placeholder boxes
+     scroll natively the moment the page paints — but tsBuildNav() used
+     to run ONLY at the end of renderTopSlide(), which waits on the
+     hero_slides fetch (and never runs at all when sb is null). Until
+     then nothing was listening, so dragging the strip moved the slides
+     while the progress bar sat frozen at its CSS default. Wiring on DOM
+     ready fixes that; renderTopSlide() re-runs it when real slides land
+     and the listener is guarded by _tsWired so it attaches once. */
+  function tsBoot(){
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', function(){ tsBuildNav(); });
+    } else {
+      tsBuildNav();
+    }
+  }
+  /* ── Featured slide detail ── */
+  function tsOpenSlide(i){
+    var sl = heroSlides[i];
+    /* The placeholder boxes have no data behind them, so a tap before
+       the fetch resolves is a no-op rather than an empty page. */
+    if(!sl) return;
+    var img = document.getElementById('tsPgImg');
+    if(img){ img.src = getViewUrl(sl.image_url); img.alt = sl.title || 'Featured slide'; }
+    var t = document.getElementById('tsPgTitle');
+    if(t) t.textContent = sl.title || 'Untitled';
+    var d = document.getElementById('tsPgDate');
+    if(d){
+      var when = '';
+      try{
+        if(sl.created_at) when = new Date(sl.created_at)
+          .toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+      }catch(e){}
+      d.textContent = when;
+      d.style.display = when ? '' : 'none';
+    }
+    var desc = document.getElementById('tsPgDesc');
+    if(desc){
+      desc.textContent = sl.subtitle || '';
+      desc.style.display = sl.subtitle ? '' : 'none';
+    }
+    document.getElementById('tsPage').classList.add('open');
+    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = 'none';
+    document.body.style.overflow = 'hidden';
+  }
+  function tsClosePage(){
+    document.getElementById('tsPage').classList.remove('open');
+    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = '';
+    restoreScroll();
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    var p = document.getElementById('tsPage');
+    if(p && p.classList.contains('open')) tsClosePage();
+  });
+  function tsPadLeft(t){
+    return parseFloat(getComputedStyle(t).paddingLeft) || 0;
+  }
+  function tsPerView(){
+    var t = document.getElementById('tsTrack');
+    if(!t) return 1;
+    var v = parseInt(getComputedStyle(t).getPropertyValue('--tsPer'), 10);
+    return Math.max(1, v || 1);
+  }
+  function tsPages(){
+    var t = document.getElementById('tsTrack');
+    if(!t) return 1;
+    return Math.max(1, t.children.length - tsPerView() + 1);
+  }
+  function tsSlideTo(i){
+    var t = document.getElementById('tsTrack');
+    if(!t) return;
+    i = Math.max(0, Math.min(tsPages() - 1, i));
+    var box = t.children[i];
+    if(!box) return;
+    /* Align to the box's left edge, not its centre: with several
+       visible, centring would leave the row half-off at both ends.
+       offsetLeft is measured from the track's border box, so the left
+       padding has to come back off or every stop overshoots by it. */
+    t.scrollTo({ left: box.offsetLeft - tsPadLeft(t), behavior: 'smooth' });
+  }
+  function tsSync(){
+    var t = document.getElementById('tsTrack');
+    if(!t) return;
+    var pages = tsPages(), best = 0, bd = Infinity;
+    for(var i = 0; i < pages; i++){
+      var box = t.children[i];
+      if(!box) continue;
+      var d = Math.abs((box.offsetLeft - tsPadLeft(t)) - t.scrollLeft);
+      if(d < bd){ bd = d; best = i; }
+    }
+    tsCur = best;
+    var dots = document.getElementById('tsDots');
+    if(dots){
+      for(var k = 0; k < dots.children.length; k++){
+        dots.children[k].classList.toggle('on', k === tsCur);
+        dots.children[k].setAttribute('aria-selected', k === tsCur ? 'true' : 'false');
+      }
+    }
+    var p = document.getElementById('tsPrev'), n = document.getElementById('tsNext');
+    if(p) p.disabled = (tsCur === 0);
+    if(n) n.disabled = (tsCur >= pages - 1);
+  }
+  function tsBuildNav(){
+    var t = document.getElementById('tsTrack');
+    var dots = document.getElementById('tsDots');
+    var p = document.getElementById('tsPrev'), n = document.getElementById('tsNext');
+    if(!t) return;
+    var slides = t.children.length, pages = tsPages();
+    /* Nothing to page through — hide the chrome rather than show a
+       single dead dot and two disabled arrows. */
+    var chrome = slides > tsPerView();
+    if(dots){
+      dots.style.display = chrome ? '' : 'none';
+      dots.innerHTML = '';
+      if(chrome){
+        for(var i = 0; i < pages; i++){
+          var d = document.createElement('button');
+          d.type = 'button';
+          d.className = 'tsDot' + (i === 0 ? ' on' : '');
+          d.setAttribute('role', 'tab');
+          d.setAttribute('aria-label', 'Slide ' + (i + 1));
+          d.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+          (function(idx){ d.onclick = function(){ tsSlideTo(idx); }; })(i);
+          dots.appendChild(d);
+        }
+      }
+    }
+    if(p){ p.style.display = chrome ? '' : 'none'; p.onclick = function(){ tsSlideTo(tsCur - 1); }; }
+    if(n){ n.style.display = chrome ? '' : 'none'; n.onclick = function(){ tsSlideTo(tsCur + 1); }; }
+    if(!t._tsWired){
+      t._tsWired = true;
+      var raf = null;
+      t.addEventListener('scroll', function(){
+        if(raf) return;
+        raf = requestAnimationFrame(function(){ raf = null; tsSync(); });
+      }, { passive: true });
+      /* A rotate/resize changes both the box width AND how many fit, so
+         the page count changes too — rebuild, then re-anchor on the
+         slide the user was actually looking at rather than drifting. */
+      var rz = null;
+      window.addEventListener('resize', function(){
+        clearTimeout(rz);
+        rz = setTimeout(function(){ var keep = tsCur; tsBuildNav(); tsSlideTo(keep); }, 150);
+      });
+    }
+    tsSync();
+  }
+  tsBoot();
 
   /* ── HERO SLIDES (admin) — wired to Supabase ──
      Table: public.hero_slides (id, image_url, storage_path, title,
@@ -16367,6 +17098,10 @@ function qrMake (text) {
     document.getElementById('pfUpCatField').style.display = '';
     document.getElementById('pfComicPagesWrap').style.display = 'none';
     document.getElementById('pfUpSoftwareField').style.display = '';
+    /* Album membership isn't edited from this form — showing an empty
+       picker here would imply it reflects the piece's current albums
+       when it doesn't. Album contents are managed from the album itself. */
+    var _albF2 = document.getElementById('pfUpAlbumField'); if(_albF2) _albF2.style.display = 'none';
     document.getElementById('pfUpNm').value = art.name||'';
     document.getElementById('pfUpDesc').value = art.description||'';
     pfUpdateCount('pfUpNm','pfUpNmCount',100);
@@ -17964,6 +18699,625 @@ function hideCommentThumbnail(){
      the scroll-reveal ("parallax") rise keeps firing per batch. */
   var awRList = [], awRShown = 0, awRType = null, awSent = null;
 
+  /* ═══════════════════════════════════════════════════════════════
+     TAG RAIL + PREFERENCES (tg)
+     ├─ tgLoad()        — top vocabulary + this user's picks
+     ├─ tgRenderRail()  — the chip rail between #hero and .awTabs
+     ├─ tgToggle()      — tick from the rail (rotates a fresh tag in)
+     ├─ tgModOpen()     — the "Search tag" grid
+     └─ tgPrioritize()  — reorders any feed list by preference
+
+     Preferences BOOST, they never filter: tgPrioritize does a STABLE
+     partition, so matching artwork moves to the front while trending
+     order is preserved inside both halves. All 52 categories stay
+     visible no matter what — a user with zero picks sees exactly
+     what they see today, and there is no way to reach an empty feed.
+
+     Vocabulary = free tags UNION category slugs (see get_top_tags).
+     Free tags are unused site-wide right now, so a tags-only rail
+     would render blank; categories populate it today and real tags
+     mix in and outrank them as artists start tagging.
+     ═══════════════════════════════════════════════════════════════ */
+  var tgAll = [];              /* [{tag, uses, kind}] ranked vocabulary */
+  var tgPrefs = new Set();     /* lowercase tokens this user prefers */
+  var tgShown = [];            /* tokens currently in the rail, in order */
+  var tgLoaded = false;
+  var TG_ROWS  = 3;            /* independently scrollable rows */
+  var TG_SLOTS = 60;           /* upper bound; the width budget decides what fits */
+  var TG_LS = 'dz_tagprefs1';
+
+  /* Category slugs get their real label ("3d-art" → "3D Art"); free
+     tags render exactly as the artist typed them. */
+  function tgLabel(t){
+    if(typeof CAT_LABELS === 'object' && CAT_LABELS && CAT_LABELS[t]) return CAT_LABELS[t];
+    return t;
+  }
+  function tgLocalSave(){
+    try{ localStorage.setItem(TG_LS, JSON.stringify(Array.from(tgPrefs))); }catch(e){}
+  }
+  function tgLocalLoad(){
+    try{
+      var v = JSON.parse(localStorage.getItem(TG_LS) || '[]');
+      return Array.isArray(v) ? v.filter(function(x){ return typeof x === 'string'; }) : [];
+    }catch(e){ return []; }
+  }
+  /* Guests keep their picks in localStorage; signed-in users get the
+     DB copy so preferences follow them across devices. Writes go to
+     BOTH, so the local mirror doubles as the offline fallback. */
+  async function tgSave(tag, on){
+    tgLocalSave();
+    if(!currentUser || !sb) return;
+    try{
+      if(on){
+        await sb.from('user_tag_prefs')
+          .upsert({user_id:currentUser.id, tag:tag}, {onConflict:'user_id,tag', ignoreDuplicates:true});
+      } else {
+        await sb.from('user_tag_prefs').delete().eq('user_id', currentUser.id).eq('tag', tag);
+      }
+    }catch(e){ console.error('tgSave:', e && e.message); }
+  }
+  async function tgLoad(force){
+    if(tgLoaded && !force) return;
+    tgLoaded = true;
+    var local = tgLocalLoad();
+    tgPrefs = new Set(local);
+    if(sb){
+      try{
+        const{data,error} = await sb.rpc('get_top_tags', {lim:200});
+        if(error) throw error;
+        tgAll = (data || []).filter(function(x){ return x && x.tag; });
+      }catch(e){
+        /* Loud on purpose: this is the one call that decides whether the
+           rail has anything to show, so a failure needs to be visible in
+           the console rather than silently leaving an empty strip. */
+        console.warn('get_top_tags failed — falling back to categories:', (e && e.message) || e);
+        tgAll = [];
+      }
+      if(currentUser){
+        try{
+          const{data} = await sb.from('user_tag_prefs').select('tag').eq('user_id', currentUser.id);
+          var rows = (data || []).map(function(r){ return r.tag; });
+          if(rows.length){
+            tgPrefs = new Set(rows);
+            tgLocalSave();
+          } else if(local.length){
+            /* First sign-in on a device that already has picks — carry
+               them up rather than silently dropping them. */
+            await sb.from('user_tag_prefs')
+              .upsert(local.map(function(t){ return {user_id:currentUser.id, tag:t}; }),
+                      {onConflict:'user_id,tag', ignoreDuplicates:true});
+          }
+        }catch(e){ /* keep the local copy */ }
+      }
+    }
+    /* Never let a network result decide whether the rail exists. */
+    if(!tgAll.length) tgAll = tgFallbackVocab();
+    /* Union in every category, used or not. Two reasons: a desktop row
+       needs ~10 chips to reach the right edge and get_top_tags only
+       returns categories that already have artwork in them (21 of 51
+       today), and a user should be able to prefer a category before
+       anything has been posted to it. Unused ones sort last. */
+    (function(){
+      var seen = {};
+      for(var i=0;i<tgAll.length;i++) seen[tgAll[i].tag] = 1;
+      var extra = tgFallbackVocab();
+      for(var j=0;j<extra.length;j++) if(!seen[extra[j].tag]) tgAll.push(extra[j]);
+    })();
+    tgFill();
+    tgRenderRail();
+    /* Only disturb an already-painted grid if there's something to
+       reorder by — on a fresh load with no picks this is a no-op. */
+    if(tgPrefs.size) tgAfterChange();
+  }
+  /* The 51 categories are compiled into this page, so the rail can
+     always render with ZERO network. Without this, any RPC hiccup —
+     offline, a cold PostgREST schema cache right after a migration,
+     a bad key — left tgAll empty and tgRenderRail() hid the whole
+     strip, which looks identical to "the feature didn't deploy". */
+  function tgFallbackVocab(){
+    if(typeof SITE_CATEGORIES === 'undefined' || !Array.isArray(SITE_CATEGORIES)) return [];
+    return SITE_CATEGORIES
+      .filter(function(c){ return c && c.slug && c.slug.length <= TAG_MAX; })
+      .map(function(c){ return { tag:c.slug, uses:0, kind:'cat' }; });
+  }
+  /* Rebuilds the rail's slot list: unticked tags first, most-used
+     first. If EVERY tag is ticked the rail keeps showing them in
+     their ticked state rather than going blank. */
+  function tgFill(){
+    tgShown = [];
+    for(var i=0; i<tgAll.length && tgShown.length < TG_SLOTS; i++){
+      if(!tgPrefs.has(tgAll[i].tag)) tgShown.push(tgAll[i].tag);
+    }
+    if(!tgShown.length){
+      tgShown = tgAll.slice(0, TG_SLOTS).map(function(x){ return x.tag; });
+    }
+  }
+  /* The next tag to rotate in: highest-ranked one that isn't already
+     ticked and isn't already ON SCREEN.
+
+     It has to test the DOM, not tgShown. tgShown is the candidate
+     POOL — tgFill loads it with every unticked tag — while the layout
+     only displays as many as fit, leaving the remainder as reserve.
+     Testing tgShown therefore matched everything and always returned
+     null, so a tick fell straight through to the "all picked, stop
+     generating" branch and no replacement ever appeared. */
+  function tgNextCandidate(){
+    var onScreen = {};
+    try{
+      var els = document.querySelectorAll('.tgRail .tgChip[data-tag]');
+      for(var i = 0; i < els.length; i++) onScreen[els[i].getAttribute('data-tag')] = 1;
+    }catch(e){}
+    for(var j = 0; j < tgAll.length; j++){
+      var t = tgAll[j].tag;
+      if(!tgPrefs.has(t) && !onScreen[t]) return t;
+    }
+    return null;
+  }
+  function tgChipHTML(tag){
+    var on = tgPrefs.has(tag);
+    return '<button type="button" class="tgChip'+(on?' on':'')+'" data-tag="'+esc(tag)+'" '+
+      'onclick="tgToggle(this)" aria-pressed="'+(on?'true':'false')+'">'+
+      '<span class="tgMark">'+(on?'\u2713':'+')+'</span>'+
+      '<span class="tgLbl">'+esc(tgLabel(tag))+'</span></button>';
+  }
+  /* Lays the rail out to FIT rather than to a fixed chip count.
+     Chip widths vary with label length, so any fixed count either
+     leaves a gap on a wide monitor or overhangs on a narrow one.
+
+     Budgets: the outer rows are indented by --tgStag and stop short by
+     the same amount, so they span [stag, avail-stag]; the middle row
+     gets the full width and spans [0, avail]. That's the whole shape —
+     the middle pokes out by exactly one stagger at each end, and
+     nothing exceeds the container, so desktop never scrolls.
+
+     Widths are measured, never estimated — labels run from "nft" to
+     "traditional-art" and guessing would drift badly at the ends. */
+  /* How far under budget a row may drift before it's worth reshuffling.
+     Roughly half a chip — tighter than this and every tick would
+     trigger a full re-layout, which is what made ticking feel heavy. */
+  var TG_REFLOW_SLACK = 70;
+  /* Tick choreography, in ms. The tick mark itself is NOT on this
+     clock — it lands on the tap so the press always feels answered.
+     These only govern what happens after: hold the ✓ long enough to
+     read, shrink the chip out, drop the replacement in, then settle
+     before deciding whether the row needs reshuffling. */
+  var TG_T = { hold: 140, leave: 190, settle: 200 };
+  function tgRowBroken(rowEl){
+    if(!rowEl) return false;
+    var scroll = rowEl.parentNode, rail = scroll && scroll.parentNode;
+    if(!rail || !rail._tgBudget) return false;
+    /* Which of the three rows this is — read positionally so neither
+       rail needs unique row ids. */
+    var r = Array.prototype.indexOf.call(scroll.children, rowEl);
+    var b = rail._tgBudget[r];
+    if(r < 0 || !b) return false;
+    var gap = rail._tgGap || 10, w = 0, kids = rowEl.children;
+    for(var i = 0; i < kids.length; i++) w += kids[i].offsetWidth + (i ? gap : 0);
+    /* Over budget means it now overflows; far under means the swap
+       opened a visible gap. Either way the row no longer fits. */
+    return w > b || (b - w) > TG_REFLOW_SLACK;
+  }
+  var TG_SEARCH_CHIP =
+    '<button type="button" class="tgChip tgChipSearch" onclick="tgModOpen()" aria-label="Search tags">'+
+    '<span class="tgMark">\u2315</span><span class="tgLbl">Search tag</span></button>';
+
+  /* Paints EVERY rail on the page. There are two — the home one under
+     the hero and the gallery one that replaced the featured strip — and
+     they share all state, so a tick in either shows up in both. Each is
+     measured and packed independently because their containers can be
+     different widths. */
+  function tgRenderRail(animate){
+    var rails = document.querySelectorAll('.tgRail');
+    for(var i = 0; i < rails.length; i++) tgLayoutRail(rails[i], animate);
+  }
+  function tgLayoutRail(rail, animate){
+    if(!rail) return;
+        if(!tgAll.length){ rail.style.display = 'none'; return; }
+    rail.style.display = '';
+    var scroll = rail.firstElementChild;
+    /* Rows are found positionally, so every rail on the page uses the
+       same markup with no unique ids to keep in sync. */
+    var hosts = scroll ? scroll.querySelectorAll('.tgRowIn') : null;
+    if(!scroll || !hosts || hosts.length < 3) return;
+
+    /* Pass 0 — remember where every chip currently sits, BEFORE the
+       measuring pass wipes the rows. Keyed by tag so a chip that ends
+       up in a different row can still be matched to its old spot. */
+    var prev = null;
+    if(animate){
+      prev = {};
+      var cur = rail.querySelectorAll('.tgChip[data-tag]');
+      for(var c = 0; c < cur.length; c++){
+        prev[cur[c].getAttribute('data-tag')] = cur[c].getBoundingClientRect();
+      }
+    }
+
+    var items = [TG_SEARCH_CHIP].concat(tgShown.map(tgChipHTML));
+
+    /* Pass 1 — paint everything into one row to read real widths. */
+    hosts[1].innerHTML = ''; hosts[2].innerHTML = '';
+    hosts[0].innerHTML = items.join('');
+    var widths = [], kids = hosts[0].children;
+    for(var i = 0; i < kids.length; i++) widths.push(kids[i].offsetWidth);
+
+    /* Pass 2 — per-row budgets from live computed style, so the
+       rem-based stagger and responsive padding are picked up at every
+       breakpoint without duplicating the numbers here. */
+    var cs   = getComputedStyle(scroll);
+    var gap  = parseFloat(cs.columnGap || cs.gap) || 10;
+    var pad  = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    var stag = parseFloat(getComputedStyle(hosts[0]).paddingLeft) || 0;
+    var over = parseFloat(cs.getPropertyValue('--tgOver')) || 0;
+    var avail = Math.max(0, rail.clientWidth - pad);
+    /* How many screens wide the rail should run. Desktop is exactly 1 —
+       it fills left to right and never scrolls. Narrow screens get a
+       multiple, which is what produces the sideways scroll instead of
+       cramming the same content into less room. */
+    var span = avail * (avail < 700 ? 2.4 : 1);
+    /* Outer rows start at `stag` and stop at `span - stag`; the middle
+       starts flush and stops `over` past them. So the middle pokes out
+       by one stagger on the left and a sliver on the right, and the two
+       outer rows end at exactly the same x. `over` is capped at `stag`
+       so the middle can't exceed the container on desktop. */
+    var budget = [span - 2*stag, span - stag + Math.min(over, stag), span - 2*stag];
+
+    /* If the vocabulary can't fill those targets, shrink all three by
+       the SAME factor instead of letting the rows end wherever they run
+       out. That keeps the stagger intact on a small tag list — without
+       it, rows finish at arbitrary widths and the shape collapses. */
+    var poolW = 0;
+    for(var q = 0; q < items.length; q++) poolW += widths[q] + (q ? gap : 0);
+    var need = budget[0] + budget[1] + budget[2];
+    if(need > 0 && poolW < need){
+      var shrink = poolW / need;
+      budget[0] *= shrink; budget[1] *= shrink; budget[2] *= shrink;
+    }
+
+    /* ── Packing ───────────────────────────────────────────────
+       Rows are held as INDEX lists, because a row's width depends only
+       on which chips are in it (sum of widths + gaps), never on their
+       order. That makes every candidate rearrangement a cheap sum. */
+    var rows = [[],[],[]];
+    function rowW(r){
+      var arr = rows[r], t = 0;
+      for(var x = 0; x < arr.length; x++) t += widths[arr[x]];
+      return t + (arr.length > 1 ? (arr.length - 1) * gap : 0);
+    }
+    function err(){
+      var w0 = rowW(0), w1 = rowW(1), w2 = rowW(2);
+      /* Distance from each target, PLUS a penalty for the two outer
+         rows disagreeing with each other. They're indented equally, so
+         any difference between them shows up directly as a ragged
+         right edge — the "bottom line is a tag short" case. Weighted
+         up because that mismatch is far more visible than a row
+         finishing a few px shy of its target. */
+      return Math.abs(w0-budget[0]) + Math.abs(w1-budget[1]) + Math.abs(w2-budget[2])
+           + Math.abs(w0-w2) * 1.5;
+    }
+    /* items[0] is the Search chip: pinned to the middle row, which
+       starts flush left, so it sits at x=0 and stays reachable even
+       when the rail is scrolled hard right. Excluded from every move
+       below so the refinement can never bury it. */
+    rows[1].push(0);
+    var pool = [];
+    for(var p = 1; p < items.length; p++) pool.push(p);
+
+    /* Greedy seed — feed each chip to whichever row has the most room
+       left. Gets close; the refinement pass does the rest. */
+    for(var g = 0; g < pool.length; g++){
+      var best = -1, bestRoom = -Infinity;
+      for(var r = 0; r < 3; r++){
+        var room = budget[r] - rowW(r) - (rows[r].length ? gap : 0);
+        if(room < widths[pool[g]]) continue;
+        if(room > bestRoom){ bestRoom = room; best = r; }
+      }
+      if(best < 0) continue;
+      rows[best].push(pool[g]);
+      pool[g] = -1;
+    }
+    pool = pool.filter(function(x){ return x >= 0; });
+
+    /* ── Refinement ────────────────────────────────────────────
+       Hill-climb toward the target widths, applying the single best
+       improving change each pass and stopping the moment nothing helps.
+       Starting from an already-good greedy layout means only a handful
+       of chips ever actually move — which is what keeps the shuffle
+       small enough to read as a few tags sliding into place. */
+    for(var pass = 0; pass < 40; pass++){
+      var base = err(), bestGain = 0, mv = null;
+      for(var r = 0; r < 3; r++){
+        for(var i = 0; i < rows[r].length; i++){
+          if(rows[r][i] === 0) continue;              /* Search chip is pinned */
+          /* swap a placed chip for a leftover of a better width */
+          for(var q = 0; q < pool.length; q++){
+            var keep = rows[r][i]; rows[r][i] = pool[q];
+            var e1 = err(); rows[r][i] = keep;
+            if(base - e1 > bestGain){ bestGain = base - e1; mv = {t:'swap', r:r, i:i, q:q}; }
+          }
+          /* drop it entirely — sometimes a row is simply one chip long */
+          var cut = rows[r].splice(i, 1)[0];
+          var e2 = err();
+          rows[r].splice(i, 0, cut);
+          if(base - e2 > bestGain){ bestGain = base - e2; mv = {t:'drop', r:r, i:i}; }
+          /* hand it to another row */
+          for(var d = 0; d < 3; d++){
+            if(d === r) continue;
+            var cut2 = rows[r].splice(i, 1)[0];
+            rows[d].push(cut2);
+            var e3 = err();
+            rows[d].pop(); rows[r].splice(i, 0, cut2);
+            if(base - e3 > bestGain){ bestGain = base - e3; mv = {t:'move', r:r, i:i, d:d}; }
+          }
+        }
+        /* pull a leftover in to lengthen a short row */
+        for(var q2 = 0; q2 < pool.length; q2++){
+          rows[r].push(pool[q2]);
+          var e4 = err();
+          rows[r].pop();
+          if(base - e4 > bestGain){ bestGain = base - e4; mv = {t:'add', r:r, q:q2}; }
+        }
+      }
+      if(!mv || bestGain <= 0.5) break;              /* nothing worth doing */
+      if(mv.t === 'swap'){ var old = rows[mv.r][mv.i]; rows[mv.r][mv.i] = pool[mv.q]; pool[mv.q] = old; }
+      else if(mv.t === 'drop'){ pool.push(rows[mv.r].splice(mv.i, 1)[0]); }
+      else if(mv.t === 'move'){ rows[mv.d].push(rows[mv.r].splice(mv.i, 1)[0]); }
+      else if(mv.t === 'add'){ rows[mv.r].push(pool.splice(mv.q, 1)[0]); }
+    }
+
+    /* Cached so tgRowBroken() can test a single in-place chip swap
+       against the same numbers without re-running the whole measure. */
+    rail._tgGap = gap; rail._tgBudget = [budget[0], budget[1], budget[2]];
+
+    var plan = [[],[],[]];
+    for(var pr = 0; pr < 3; pr++){
+      for(var pi = 0; pi < rows[pr].length; pi++) plan[pr].push(items[rows[pr][pi]]);
+    }
+
+    for(var r2 = 0; r2 < 3; r2++){
+      hosts[r2].innerHTML = plan[r2].join('');
+      /* A vocabulary smaller than 3 rows leaves trailing rows empty —
+         hide them so they don't contribute phantom gap spacing. */
+      hosts[r2].style.display = plan[r2].length ? '' : 'none';
+    }
+
+    /* Pass 5 — FLIP the chips that actually moved. Anything whose
+       position is unchanged is left completely alone, so a re-layout
+       reads as a few tags sliding into place rather than the whole
+       rail twitching. */
+    if(prev) tgFlip(rail, prev);
+    tgSyncOverflow();
+  }
+  /* First/Last/Invert/Play: the rows have already been repainted, so
+     each chip is measured at its new spot, snapped back to the old one
+     with a transform, then released on the next frame. */
+  function tgFlip(rail, prev){
+    var els = rail.querySelectorAll('.tgChip[data-tag]');
+    var moved = [];
+    for(var i = 0; i < els.length; i++){
+      var el = els[i], was = prev[el.getAttribute('data-tag')];
+      if(!was){ el.classList.add('tgEnter'); continue; }   /* new arrival */
+      var now = el.getBoundingClientRect();
+      var dx = was.left - now.left, dy = was.top - now.top;
+      if(Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;   /* didn't move */
+      el.style.transition = 'none';
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      moved.push(el);
+    }
+    if(!moved.length) return;
+    /* Commit the inverted transforms with a forced reflow rather than
+       waiting on requestAnimationFrame — a double rAF costs a frame
+       before anything visibly moves, which is exactly the lag that
+       made the shuffle feel delayed. */
+    void moved[0].offsetHeight;
+    (function(){
+      {
+        for(var j = 0; j < moved.length; j++){
+          (function(el){
+            el.style.transition = 'transform .34s cubic-bezier(.22,1,.36,1)';
+            el.style.transform = '';
+            el.addEventListener('transitionend', function done(){
+              el.style.transition = ''; el.style.transform = '';
+              el.removeEventListener('transitionend', done);
+            });
+          })(moved[j]);
+        }
+      }
+    })();
+  }
+  /* Re-checked on resize and after every render, since both change
+     whether the rail overflows its container. */
+  function tgSyncOverflow(){
+    var rails = document.querySelectorAll('.tgRail');
+    for(var i = 0; i < rails.length; i++){
+      var el = rails[i];
+      el.classList.toggle('ov', el.scrollWidth > el.clientWidth + 2);
+    }
+  }
+  /* The row budgets are derived from the container width, so a resize
+     needs a full re-layout — retesting overflow alone would leave the
+     old chip distribution in place at the new width. */
+  var tgRzTimer = null;
+  window.addEventListener('resize', function(){
+    clearTimeout(tgRzTimer);
+    tgRzTimer = setTimeout(function(){ tgRenderRail(true); }, 150);
+  });
+  /* Every chip carrying this tag, across every rail. The home and
+     gallery rails each render their own copy, so a tick has to be
+     applied to both or they drift apart. */
+  function tgTwins(tag){
+    /* Matched in JS rather than via an attribute selector: building one
+       needs CSS.escape, and when that's missing the whole lookup throws
+       and silently collapses to just the clicked chip — which leaves the
+       two rails out of step. Comparing values can't fail. */
+    var out = [], els = document.querySelectorAll('.tgRail .tgChip[data-tag]');
+    for(var i = 0; i < els.length; i++){
+      if(els[i].getAttribute('data-tag') === tag) out.push(els[i]);
+    }
+    return out;
+  }
+  function tgMark(el, on){
+    el.classList.toggle('on', on);
+    el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var m = el.querySelector('.tgMark');
+    if(m) m.textContent = on ? '\u2713' : '+';
+  }
+  function tgToggle(btn){
+    var tag = btn && btn.getAttribute('data-tag');
+    if(!tag) return;
+    var twins = tgTwins(tag);
+    if(!twins.length) twins = [btn];
+
+    /* ── Untick — only reachable when the pool ran dry and the chip
+       stayed put (or from the search grid). ── */
+    if(tgPrefs.has(tag)){
+      tgPrefs.delete(tag);
+      tgSave(tag, false);
+      for(var u = 0; u < twins.length; u++) tgMark(twins[u], false);
+      requestAnimationFrame(function(){ tgAfterChange(); });
+      return;
+    }
+
+    tgPrefs.add(tag);
+    tgSave(tag, true);
+    /* Beat 1 — acknowledge the tap NOW, on every rail, before any
+       decision about what happens next. */
+    for(var k = 0; k < twins.length; k++) tgMark(twins[k], true);
+
+    var next = tgNextCandidate();
+    /* Every tag is ticked — stop generating. The chips simply stay,
+       ticked, until new tags enter the vocabulary. */
+    if(!next) return;
+
+    /* Drop the ticked tag from the pool. `next` is already in tgShown
+       (reserve, just not rendered), so splicing it in here would
+       duplicate it the next time the layout runs. */
+    var idx = tgShown.indexOf(tag);
+    if(idx !== -1) tgShown.splice(idx, 1);
+    if(tgShown.indexOf(next) === -1) tgShown.push(next);
+
+    /* The feed rebuild is the heaviest thing on this path, so let the
+       tick paint first rather than blocking the tap on it. */
+    requestAnimationFrame(function(){ tgAfterChange(); });
+
+    /* ── Staged hand-off, run on each rail's copy ──────────────────
+       tick (already shown) → chip leaves → replacement arrives →
+       reshuffle if it broke that rail's fit. Each stage re-checks the
+       chip is still in the document, because a resize or a search-grid
+       edit can re-render a rail mid-sequence and detach it. */
+    setTimeout(function(){
+      for(var a = 0; a < twins.length; a++){
+        if(twins[a].parentNode) twins[a].classList.add('tgLeave');
+      }
+      setTimeout(function(){
+        for(var b = 0; b < twins.length; b++){
+          (function(el){
+            var row = el.parentNode;
+            if(!row) return;
+            el.outerHTML = tgChipHTML(next);
+            var kids = row.children;
+            for(var f = 0; f < kids.length; f++){
+              if(kids[f].getAttribute('data-tag') === next){
+                kids[f].classList.add('tgEnter'); break;
+              }
+            }
+            /* Only reshuffle when the replacement actually breaks that
+               row's fit — a similar-width tag just slots in. Checked
+               per rail, since they can be different widths. */
+            setTimeout(function(){
+              if(tgRowBroken(row)) tgLayoutRail(row.parentNode && row.parentNode.parentNode, true);
+            }, TG_T.settle);
+          })(twins[b]);
+        }
+      }, TG_T.leave);
+    }, TG_T.hold);
+  }
+  /* Stable partition — preferred artwork first, trending order intact
+     inside each half. Matches on BOTH the tags and category arrays,
+     since the rail's vocabulary spans the two. */
+  function tgPrioritize(list){
+    if(!tgPrefs.size || !Array.isArray(list) || list.length < 2) return list;
+    var hit = [], rest = [];
+    for(var i=0; i<list.length; i++){
+      var a = list[i], toks = [], m = false;
+      if(Array.isArray(a.tags)) toks = toks.concat(a.tags);
+      toks = toks.concat(catList(a.category));
+      for(var j=0; j<toks.length; j++){
+        if(tgPrefs.has(String(toks[j]).trim().toLowerCase())){ m = true; break; }
+      }
+      (m ? hit : rest).push(a);
+    }
+    return hit.concat(rest);
+  }
+  function tgAfterChange(){
+    try{
+      if(typeof awTab !== 'undefined' && typeof awListForTab === 'function'){
+        renderAwGrid(awListForTab(awTab), awTab);
+      }
+    }catch(e){}
+  }
+
+  /* ── "Search tag" grid — 2 cols phone / 3 mid / 4 desktop ── */
+  function tgModOpen(){
+    document.getElementById('tgMod').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    var s = document.getElementById('tgModSearch');
+    if(s) s.value = '';
+    tgModRender('');
+    setTimeout(function(){ if(s) s.focus(); }, 80);
+  }
+  function tgModClose(){
+    document.getElementById('tgMod').classList.remove('open');
+    restoreScroll();
+    /* Picks made in the grid change which tags belong in the rail. */
+    tgFill(); tgRenderRail(true);
+  }
+  function tgModRender(q){
+    var host = document.getElementById('tgModGrid');
+    if(!host) return;
+    q = (q || '').trim().toLowerCase();
+    var rows = tgAll.filter(function(x){
+      return !q || x.tag.indexOf(q) !== -1 || tgLabel(x.tag).toLowerCase().indexOf(q) !== -1;
+    });
+    if(!rows.length){ host.innerHTML = '<div class="tgModNone">No matching tag</div>'; return; }
+    host.innerHTML = rows.map(function(x){
+      var on = tgPrefs.has(x.tag);
+      return '<button type="button" class="tgModOpt'+(on?' on':'')+'" data-tag="'+esc(x.tag)+'" '+
+        'onclick="tgModToggle(this)" aria-pressed="'+(on?'true':'false')+'">'+
+        '<span class="tgModName">'+esc(tgLabel(x.tag))+'</span>'+
+        '<span class="tgModTick" aria-hidden="true">'+(on?'\u2713':'')+'</span></button>';
+    }).join('');
+  }
+  function tgModToggle(btn){
+    var tag = btn && btn.getAttribute('data-tag');
+    if(!tag) return;
+    var on = !tgPrefs.has(tag);
+    if(on) tgPrefs.add(tag); else tgPrefs.delete(tag);
+    tgSave(tag, on);
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var tick = btn.querySelector('.tgModTick');
+    if(tick) tick.textContent = on ? '\u2713' : '';
+    /* Keep any on-screen rail chip for this tag in step. */
+    var tw = tgTwins(tag);
+    for(var t2 = 0; t2 < tw.length; t2++) tgMark(tw[t2], on);
+    requestAnimationFrame(function(){ tgAfterChange(); });
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    var m = document.getElementById('tgMod');
+    if(m && m.classList.contains('open')) tgModClose();
+  });
+
+  /* Boot the rail. Deliberately independent of the gallery load: the
+     rail paints as soon as the vocabulary lands, and tgPrioritize
+     reads live state on every subsequent grid render, so the two can
+     resolve in either order without a race. */
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ tgLoad(); });
+  } else {
+    tgLoad();
+  }
+
   function renderAwGrid(list, type){
     var grid  = document.getElementById('awGrid');
     var empty = document.getElementById('awEmpty');
@@ -17973,7 +19327,10 @@ function hideCommentThumbnail(){
        which is the one view that stays newest-first (that's its whole purpose).
        Hidden artworks are dropped first (per-user "hide from my feed"). */
     var src = filterHidden((list||[]).slice());
-    awRList = (type === 'latest' ? sortByNewest(src) : sortByTrending(src));
+    /* "Latest" stays strictly newest-first — that's its whole purpose,
+       so preferences deliberately don't reorder it. Every other tab
+       gets preferred tags pushed to the front of the trending order. */
+    awRList = (type === 'latest' ? sortByNewest(src) : tgPrioritize(sortByTrending(src)));
     /* Same-tab re-render (rebuildGalCarousels after a like/edit/
        upload) keeps however many cards were already showing so the
        user's scroll depth survives; switching tabs starts fresh. */
@@ -20178,7 +21535,431 @@ html.thmFade #themePage{
 @media(prefers-reduced-motion:reduce){
   #bmPage,.bmCard,.engBtn{transition:none;}
 }
+
+/* ═══ ALBUMS ═══════════════════════════════════════════════
+   Three surfaces share one card: the profile ALBUMS tab, the
+   Settings ▸ Albums manager (#albPage) and one album's contents
+   (#albViewPage). Columns follow the site-wide 2 / 3 / 4 ladder
+   so albums line up with every other grid. */
+.albGrid{
+  display:grid;gap:.9rem;margin-top:1.2rem;
+  grid-template-columns:repeat(2,1fr);
+}
+@media(min-width:700px){ .albGrid{grid-template-columns:repeat(3,1fr);gap:1rem;} }
+@media(min-width:1280px){ .albGrid{grid-template-columns:repeat(4,1fr);gap:1.1rem;} }
+.albLoading{
+  grid-column:1/-1;padding:3rem 1rem;text-align:center;
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;color:var(--txd);
+}
+.albCard{
+  display:flex;flex-direction:column;width:100%;padding:0;text-align:left;
+  background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
+  overflow:hidden;cursor:pointer;color:inherit;font:inherit;
+  transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s,box-shadow .25s;
+}
+@media(hover:hover){
+  .albCard:hover{transform:translateY(-3px);border-color:var(--bdrh);box-shadow:0 10px 26px rgba(0,0,0,.28);}
+}
+.albCard:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+/* 2×2 cover mosaic — the 1px gaps show the card border colour
+   through, so the four thumbs read as one tile, not four cards. */
+.albMosaic{
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:1px;background:var(--bdr);aspect-ratio:1;width:100%;
+}
+.albCell{display:block;overflow:hidden;background:var(--sur2);}
+.albCell img{width:100%;height:100%;object-fit:cover;display:block;}
+.albCellEmpty{
+  background:
+    repeating-linear-gradient(45deg,
+      color-mix(in srgb,var(--tc) 5%,transparent) 0 6px,
+      transparent 6px 12px),
+    var(--sur2);
+}
+.albMeta{display:block;padding:.6rem .7rem .7rem;min-width:0;}
+.albName{
+  display:flex;align-items:center;gap:.35rem;
+  font-family:var(--fb);font-weight:600;font-size:.82rem;color:var(--tx);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.albPin{color:var(--pb);font-size:.76rem;flex-shrink:0;}
+.albCount{
+  display:block;margin-top:.25rem;
+  font-family:var(--fm);font-size:.56rem;letter-spacing:.14em;color:var(--txd);
+}
+.albCard--virt{border-color:color-mix(in srgb,var(--pg) 26%,var(--bdr));}
+/* Create tile — stretches to the row height set by the real cards. */
+.albCardNew{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.55rem;
+  aspect-ratio:1;background:transparent;border-style:dashed;
+  border-color:color-mix(in srgb,var(--tc) 26%,transparent);
+}
+.albCardNew:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}
+.albNewIco{
+  width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;line-height:1;color:var(--pb);
+  border:1px solid color-mix(in srgb,var(--tc) 26%,transparent);
+}
+.albNewLbl{font-family:var(--fm);font-size:.58rem;letter-spacing:.16em;color:var(--txd);}
+
+/* ── Album pages — same sliding shell as #bmPage, stacked above
+   both #profilePage (500) and #setPage (546). ── */
+#albPage,#albViewPage{
+  position:fixed;inset:0;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#albPage{z-index:547;}
+#albViewPage{z-index:548;}
+#albPage.open,#albViewPage.open{transform:translateX(0);}
+.albBdy{
+  max-width:1080px;margin:0 auto;
+  padding:1.4rem max(1.4rem,env(safe-area-inset-right))
+          calc(6.5rem + env(safe-area-inset-bottom))
+          max(1.4rem,env(safe-area-inset-left));
+}
+.albNote{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;color:var(--txd);
+  padding:.2rem 0 .1rem;
+}
+/* Owner action bar under the header on #albViewPage. */
+.albViewBar{
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+  padding:.2rem 0 .9rem;border-bottom:1px solid var(--bdr);margin-bottom:.2rem;
+}
+.albViewCount{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.16em;color:var(--txd);margin-right:auto;
+}
+.albActBtn{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.12em;
+  padding:.45rem .85rem;border-radius:999px;cursor:pointer;
+  background:transparent;border:1px solid var(--bdr);color:var(--tx);
+  transition:border-color .2s,color .2s,background .2s;
+}
+.albActBtn:hover{border-color:var(--pg);color:var(--pb);}
+.albActBtn--danger:hover{border-color:#e0564f;color:#e0564f;background:rgba(224,86,79,.08);}
+/* Contents grid reuses .pfGridArt metrics so album thumbnails match
+   the Like / Bookmark grids exactly. */
+.albItemWrap{position:relative;}
+.albItemX{
+  position:absolute;top:.35rem;right:.35rem;z-index:3;
+  width:26px;height:26px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;line-height:1;
+  border:1px solid var(--bdr);color:var(--tx);
+  background:color-mix(in srgb,var(--bg) 66%,transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  opacity:0;transition:opacity .2s,border-color .2s,color .2s;
+}
+.albItemWrap:hover .albItemX,.albItemX:focus-visible{opacity:1;}
+@media(hover:none){.albItemX{opacity:1;}}
+.albItemX:hover{border-color:#e0564f;color:#e0564f;}
+.albEmpty{
+  text-align:center;padding:3.5rem 1rem;color:var(--txd);
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.14em;
+}
+.albEmpty .ico{font-size:1.8rem;margin-bottom:.8rem;opacity:.6;}
+
+/* ── Create / rename popup — narrow .upPop box ── */
+#albMod .albModBox{max-width:420px;padding:1.4rem 1.3rem 1.2rem;gap:.2rem;}
+.albModTitle{
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;
+  color:var(--tx);margin:0 0 1rem;text-align:center;
+}
+.albModIn{
+  width:100%;box-sizing:border-box;
+  background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.14);
+  border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.9rem;
+  padding:.7rem .85rem;outline:none;transition:border-color .2s;
+}
+.albModIn:focus{border-color:var(--pg);}
+.albModIn::placeholder{color:var(--txd);opacity:.6;}
+.albModHint{
+  font-family:var(--fm);font-size:.56rem;letter-spacing:.12em;
+  color:var(--txd);margin:.55rem .1rem 1.1rem;
+}
+.albModActs{display:flex;gap:.6rem;}
+.albModActs button{flex:1;}
+/* Upload-page picker extras */
+.albUpNone{
+  font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;
+  color:var(--txd);text-align:center;padding:.5rem 0 .2rem;
+}
+.albUpNew{
+  margin-top:.35rem;width:100%;text-align:left;cursor:pointer;
+  background:transparent;border:none;border-top:1px solid var(--bdr);
+  color:var(--pb);font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;
+  padding:.6rem .5rem .35rem;
+}
+.albUpNew:hover{color:var(--tx);}
+@media(prefers-reduced-motion:reduce){
+  #albPage,#albViewPage,.albCard{transition:none;}
+}
+/* ═══ FEATURED SLIDE DETAIL PAGE ═══════════════════════════
+   Same sliding shell as the album pages, one level above them so it
+   can be opened from anywhere the strip is visible. */
+#tsPage{
+  position:fixed;inset:0;z-index:549;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#tsPage.open{transform:translateX(0);}
+.tsPgBdy{
+  max-width:820px;margin:0 auto;
+  padding:1.2rem max(1.2rem,env(safe-area-inset-right))
+          calc(6rem + env(safe-area-inset-bottom))
+          max(1.2rem,env(safe-area-inset-left));
+}
+.tsPgImgWrap{
+  width:100%;aspect-ratio:300/190;border-radius:12px;overflow:hidden;
+  background:var(--sur2);border:1px solid var(--bdr);
+}
+.tsPgImgWrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.tsPgTitle{
+  font-family:var(--fd);font-weight:800;
+  font-size:clamp(1.35rem,3.4vw,2rem);line-height:1.2;
+  color:var(--tx);margin:1.1rem 0 .4rem;
+  /* full title here — the two-line clamp is a strip-only constraint */
+}
+.tsPgDate{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.16em;
+  color:var(--txd);margin-bottom:1.1rem;
+}
+.tsPgDesc{
+  font-family:var(--fb);font-size:.95rem;line-height:1.75;
+  color:var(--tx);white-space:pre-wrap;word-break:break-word;
+}
+@media(prefers-reduced-motion:reduce){ #tsPage{transition:none;} }
+
+/* ═══ TAG RAIL + TAG SEARCH ═══════════════════════════════
+   ONE horizontal scroller wrapping three stacked rows, so a swipe
+   moves all three together as a single block rather than sliding a
+   row out of alignment with its neighbours.
+   Shape: rows 1 and 3 are indented by --tgStag while row 2 sits flush
+   left and carries ~2x the chips (see the deal pattern in
+   tgRenderRail), so the middle line pokes out at BOTH ends. Chips
+   never wrap — the scroller's width is max-content, so the longest
+   row defines the scroll extent. */
+.tgRail{
+  /* Top and bottom driven by ONE value so they can't drift apart. This
+     was margin:0 0 1.25rem, which left the first row of chips flush
+     against the sticky .fgIntro heading and its border-bottom in the
+     gallery — no breathing room above, plenty below. */
+  --tgPad:1.25rem;
+  margin:var(--tgPad) 0;
+  --tgRow:40px;--tgGap:10px;--tgStag:2.6rem;--tgOver:1rem;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;-ms-overflow-style:none;
+  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+}
+.tgRail::-webkit-scrollbar{display:none;}
+/* The fade only applies when the rail ACTUALLY overflows (class set by
+   tgSyncOverflow) — applied unconditionally it would just dim the
+   first and last chip of a short rail for no reason. */
+.tgRail.ov{
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 26px,#000 calc(100% - 26px),transparent 100%);
+          mask-image:linear-gradient(90deg,transparent 0,#000 26px,#000 calc(100% - 26px),transparent 100%);
+}
+.tgScroll{
+  display:flex;flex-direction:column;gap:var(--tgGap);
+  width:max-content;
+  /* Inset lives on the CONTENT, not the scroller: padding on a scroll
+     container is unreliable on the trailing edge in several engines. */
+  padding:1px clamp(.7rem,2vw,2rem);
+}
+.tgRowIn{display:flex;flex-wrap:nowrap;gap:var(--tgGap);}
+.tgRowIn:nth-child(1),.tgRowIn:nth-child(3){padding-left:var(--tgStag);}
+.tgChip{
+  display:inline-flex;align-items:center;gap:.42rem;
+  height:var(--tgRow);padding:0 1.05rem;box-sizing:border-box;
+  border-radius:999px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  background:var(--sur);border:1px solid var(--bdr);color:var(--tx);
+  font-family:var(--fm);font-size:.76rem;letter-spacing:.05em;
+  transition:border-color .2s,background .2s,color .2s,transform .22s,opacity .22s;
+}
+.tgChip:hover{border-color:var(--pg);color:var(--pb);}
+.tgChip:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+.tgMark{
+  font-size:.92rem;line-height:1;color:var(--txd);
+  transition:color .2s;flex-shrink:0;
+}
+.tgChip:hover .tgMark{color:var(--pb);}
+.tgChip.on{background:var(--pdim);border-color:var(--pg);color:var(--pb);}
+.tgChip.on .tgMark{color:var(--pg);}
+.tgChipSearch{
+  border-style:dashed;
+  border-color:color-mix(in srgb,var(--pg) 45%,transparent);
+  color:var(--pb);
+}
+.tgChipSearch .tgMark{color:var(--pb);font-size:.95rem;}
+/* Ticked chip shrinking out of its slot. Duration is mirrored by
+   TG_T.leave in the JS — change one, change the other. */
+.tgChip.tgLeave{
+  transform:scale(.72);opacity:0;pointer-events:none;
+  transition:transform .19s ease-in,opacity .19s ease-in;
+}
+/* Replacement chips fade up in place; everything that merely shifts
+   is moved by the FLIP pass in tgFlip(), not by a CSS class. */
+@keyframes tgIn{from{transform:scale(.75);opacity:0;}to{transform:scale(1);opacity:1;}}
+.tgChip.tgEnter{animation:tgIn .28s cubic-bezier(.22,1,.36,1);}
+@media(max-width:900px){
+  .tgRail{--tgStag:1.8rem;--tgOver:.75rem;}
+}
+/* Phones: tighter chips and a shallower indent so the middle row's
+   overhang stays readable at narrow widths. */
+@media(max-width:600px){
+  .tgRail{--tgRow:36px;--tgGap:8px;--tgStag:1.2rem;--tgOver:.5rem;--tgPad:1rem;}
+  .tgChip{font-size:.7rem;padding:0 .9rem;}
+  .tgMark{font-size:.86rem;}
+  .tgRail.ov{
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);
+            mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .tgChip,.tgChip.tgLeave{transition:none;}
+  .tgChip.tgEnter{animation:none;}
+  .tgRail{scroll-behavior:auto;}
+}
+/* ── Search-tag grid — 2 / 3 / 4 columns, same ladder as every
+   other grid on the site. ── */
+#tgMod .tgModBox{max-width:640px;padding:1.3rem 1.2rem 1.1rem;}
+.tgModHead{
+  display:flex;align-items:center;gap:.7rem;margin-bottom:.9rem;
+}
+.tgModTitle{
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;
+  color:var(--tx);margin:0;flex:1;
+}
+.tgModSearchWrap{position:relative;margin-bottom:.9rem;}
+.tgModSearchWrap svg{
+  position:absolute;left:.75rem;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;color:var(--txd);pointer-events:none;
+}
+.tgModSearch{
+  width:100%;box-sizing:border-box;
+  background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.14);
+  border-radius:999px;color:var(--tx);font-family:var(--fb);font-size:.85rem;
+  padding:.6rem .9rem .6rem 2.2rem;outline:none;transition:border-color .2s;
+}
+.tgModSearch:focus{border-color:var(--pg);}
+.tgModSearch::placeholder{color:var(--txd);opacity:.6;}
+.tgModGrid{
+  display:grid;gap:.5rem;grid-template-columns:repeat(2,1fr);
+  overflow-y:auto;max-height:min(52vh,420px);padding:.1rem;
+  overscroll-behavior:contain;
+}
+@media(min-width:700px){ .tgModGrid{grid-template-columns:repeat(3,1fr);} }
+@media(min-width:1280px){ .tgModGrid{grid-template-columns:repeat(4,1fr);} }
+.tgModOpt{
+  display:flex;align-items:center;gap:.5rem;min-width:0;
+  padding:.55rem .7rem;border-radius:10px;cursor:pointer;text-align:left;
+  background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);
+  font-family:var(--fb);font-size:.8rem;
+  transition:border-color .2s,background .2s,color .2s;
+}
+.tgModOpt:hover{border-color:var(--pg);}
+.tgModOpt.on{background:var(--pdim);border-color:var(--pg);color:var(--pb);}
+.tgModName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tgModTick{
+  width:18px;height:18px;flex-shrink:0;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.66rem;line-height:1;
+  border:1px solid var(--bdr);color:var(--pg);background:var(--bg);
+}
+.tgModOpt.on .tgModTick{border-color:var(--pg);background:var(--pg);color:var(--text-on-accent,#fff);}
+.tgModNone{
+  grid-column:1/-1;text-align:center;padding:2rem 1rem;
+  font-family:var(--fm);font-size:.66rem;letter-spacing:.12em;color:var(--txd);
+}
+.tgModNote{
+  font-family:var(--fm);font-size:.56rem;letter-spacing:.1em;
+  color:var(--txd);margin-top:.9rem;text-align:center;
+}
 </style>
+
+<!-- ═══ FEATURED SLIDE DETAIL — opened by tapping a slide in the
+     home strip. Image, title, full description and date. The strip
+     itself carries only the title now. ═══ -->
+<div id="tsPage" role="dialog" aria-modal="true" aria-label="Featured slide">
+  <div class="subPgHdr">
+    <button class="subPgX" onclick="tsClosePage()" aria-label="Close">←</button>
+    <div class="subPgTitle">FEATURED <span class="s">✦</span></div>
+  </div>
+  <div class="tsPgBdy">
+    <div class="tsPgImgWrap"><img id="tsPgImg" alt="" decoding="async"></div>
+    <h1 class="tsPgTitle" id="tsPgTitle"></h1>
+    <div class="tsPgDate" id="tsPgDate"></div>
+    <div class="tsPgDesc" id="tsPgDesc"></div>
+  </div>
+</div>
+
+<!-- ═══ SEARCH TAG — the full vocabulary as a tickable grid.
+     Opened by the pinned "Search tag" chip in the rail. ═══ -->
+<div class="upPop" id="tgMod" role="dialog" aria-modal="true" aria-label="Search tags">
+  <div class="upPopBox tgModBox">
+    <div class="tgModHead">
+      <h3 class="tgModTitle">TAGS <span class="s">✦</span></h3>
+      <button class="upPopX" onclick="tgModClose()" aria-label="Close">✕</button>
+    </div>
+    <div class="tgModSearchWrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" class="tgModSearch" id="tgModSearch" placeholder="Search tags…"
+             autocomplete="off" oninput="tgModRender(this.value)">
+    </div>
+    <div class="tgModGrid" id="tgModGrid"></div>
+    <div class="tgModNote">Picked tags move matching artwork to the top. All 52 categories stay visible either way.</div>
+  </div>
+</div>
+
+<!-- ═══ SETTINGS ▸ ALBUMS — the manager. Same strip as the profile
+     ALBUMS tab (Likes + Bookmarks pinned first, then real albums),
+     led by a create tile. Tapping any card opens #albViewPage. ═══ -->
+<div id="albPage" role="dialog" aria-modal="true" aria-label="Albums">
+  <div class="subPgHdr">
+    <button class="subPgX" onclick="albClosePage()" aria-label="Close albums">←</button>
+    <div class="subPgTitle">ALBUMS <span class="s">✦</span></div>
+  </div>
+  <div class="albBdy">
+    <div class="albNote">Likes and Bookmarks are built in. Everything else is yours to make.</div>
+    <div class="albGrid" id="albGrid"></div>
+  </div>
+</div>
+
+<!-- ═══ ONE ALBUM'S CONTENTS — shared by the profile tab and the
+     manager. The owner gets Rename / Delete plus a per-card remove;
+     visitors get a read-only grid. ═══ -->
+<div id="albViewPage" role="dialog" aria-modal="true" aria-label="Album">
+  <div class="subPgHdr">
+    <button class="subPgX" onclick="albCloseView()" aria-label="Close album">←</button>
+    <div class="subPgTitle" id="albViewTitle">ALBUM <span class="s">✦</span></div>
+  </div>
+  <div class="albBdy">
+    <div class="albViewBar">
+      <span class="albViewCount" id="albViewCount"></span>
+      <span id="albViewActs" style="display:none;">
+        <button class="albActBtn" onclick="albRenamePrompt()">RENAME</button>
+        <button class="albActBtn albActBtn--danger" onclick="albDeleteCurrent()">DELETE</button>
+      </span>
+    </div>
+    <div class="pfGrid pfGridArt" id="albViewGrid"></div>
+    <div class="albEmpty" id="albViewEmpty" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ═══ Create / rename album ═══ -->
+<div class="upPop" id="albMod" role="dialog" aria-modal="true" aria-label="Album name">
+  <div class="upPopBox albModBox">
+    <h3 class="albModTitle" id="albModTitle">NEW ALBUM <span class="s">✦</span></h3>
+    <input class="albModIn" id="albModIn" maxlength="40" placeholder="Album name…" autocomplete="off"
+           onkeydown="if(event.key==='Enter'){event.preventDefault();albModSave();}">
+    <div class="albModHint">Up to 40 characters. “Likes” and “Bookmarks” are reserved.</div>
+    <div class="albModActs">
+      <button class="upBtnSec" onclick="albModClose()">Cancel</button>
+      <button class="upBtnPri" id="albModSave" onclick="albModSave()">Create</button>
+    </div>
+  </div>
+</div>
 
 <div id="bmPage" role="dialog" aria-modal="true" aria-label="Bookmarked artworks">
   <div class="subPgHdr">

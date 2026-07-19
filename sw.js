@@ -26,6 +26,21 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v13 — albums, tags and featured-strip rework (supersedes v12,
+   which covered the same work mid-flight).
+     - Albums: profile tab, Settings manager, album detail page and
+       an optional multi-select picker on upload. Likes and Bookmarks
+       show up as virtual albums.
+     - Tags: a chip rail under the hero plus a second one in the
+       gallery (both share state), per-user preferences that BOOST
+       feed order without ever filtering, and a tag search grid.
+     - Featured strip: 1/2/3/4 slides per view by breakpoint, snap
+       carousel with arrows + dots, a large two-line title, and a
+       tap-through detail page (image, title, description, date).
+     - Fixes scheduled uploads, which were publishing immediately
+       because publishAt never reached the upload job.
+   index.html changed substantially — every client must drop the
+   old shell.
    v11 — upload session reset: a finished upload now clears every
    scrap of form state (files, focal point/zoom, preview, fields,
    schedule, draft link) so the next piece starts clean.
@@ -37,7 +52,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v11';
+const CACHE_VERSION = 'v13';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

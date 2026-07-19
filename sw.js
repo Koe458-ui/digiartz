@@ -26,6 +26,10 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v14 — featured-strip caption resized. Title is now ~40% of the
+   banner height and a two-line description sits under it, together
+   filling ~60%. Both are measured in container units (cqh) so the
+   proportion holds whether one slide is showing or four.
    v13 — albums, tags and featured-strip rework (supersedes v12,
    which covered the same work mid-flight).
      - Albums: profile tab, Settings manager, album detail page and
@@ -52,7 +56,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v13';
+const CACHE_VERSION = 'v14';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

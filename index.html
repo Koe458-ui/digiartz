@@ -624,16 +624,39 @@
        Mirrors the admin preview (.ahsBox/.ahsText) so what a dev
        sees in the Hero Slides editor is exactly what ships here. ── */
     .tsBox img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
-    .tsBox{cursor:pointer;}
+    /* The caption is sized in CONTAINER units (cqh = 1% of the box's
+       own height), not viewport units, so it keeps the same proportion
+       of the banner whether one slide is showing or four. Budget:
+         title  2 lines x 1.2 line-height x 16cqh  = 38.4% of the box
+         desc   2 lines x 1.25          x 8.5cqh  = 21.3%
+         -------------------------------------------------- ~60%
+       Each rule carries a rem/vw fallback first for engines without
+       container query units; they simply ignore the cq line. */
+    .tsBox{cursor:pointer;container-type:size;}
     .tsBox:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    /* Taller gradient — the title is now two lines of large type, so it
-       needs more dark behind it to stay readable over a bright image. */
-    .tsBoxText{position:absolute;left:0;right:0;bottom:0;padding:1.6rem .8rem .7rem;background:linear-gradient(to top,color-mix(in srgb,var(--bg) 92%,transparent) 15%,transparent);}
+    .tsBoxText{
+      position:absolute;left:0;right:0;bottom:0;
+      padding:0 6% 5%;
+      /* headroom over the 60% budget so a descender never clips */
+      max-height:72%;max-height:72cqh;overflow:hidden;
+      background:linear-gradient(to top,
+        color-mix(in srgb,var(--bg) 95%,transparent) 0%,
+        color-mix(in srgb,var(--bg) 82%,transparent) 48%,
+        transparent 100%);
+    }
     .tsBoxTitle{
-      font-family:var(--fb);font-weight:800;
+      font-family:var(--fb);font-weight:800;color:var(--tx);
       font-size:clamp(1rem,1.9vw,1.3rem);
-      line-height:1.2;color:var(--tx);
-      /* two lines, then ellipsis */
+      font-size:16.6cqh;
+      line-height:1.2;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+      overflow:hidden;text-overflow:ellipsis;
+    }
+    .tsBoxDesc{
+      font-family:var(--fb);font-weight:500;color:var(--txd);
+      font-size:clamp(.72rem,1.05vw,.85rem);
+      font-size:7cqh;
+      line-height:1.25;margin-top:.35em;
       display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
       overflow:hidden;text-overflow:ellipsis;
     }
@@ -16596,15 +16619,18 @@ function qrMake (text) {
        lookup means adding another strip anywhere still just works. */
     var tracks = document.querySelectorAll('.tsTrack');
     if(!tracks.length) return;
-    /* Only the TITLE rides on the slide now — the description lives on
-       the detail page opened by tapping it, so the caption can stay big
-       and legible instead of competing with body copy. */
+    /* Title plus a two-line taste of the description; both clamp with
+       an ellipsis. The FULL description lives on the detail page that
+       tapping the slide opens. */
     var html = heroSlides.map(function(s, i){
       return '<div class="tsBox" role="button" tabindex="0" onclick="tsOpenSlide('+i+')" '+
              'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();tsOpenSlide('+i+');}">'+
         '<img src="'+esc(getViewUrl(s.image_url))+'" alt="'+esc(s.title||'Featured slide')+'" loading="lazy" decoding="async" draggable="false">'+
-        (s.title
-          ? '<div class="tsBoxText"><div class="tsBoxTitle">'+esc(s.title)+'</div></div>'
+        ((s.title || s.subtitle)
+          ? '<div class="tsBoxText">'+
+              (s.title    ? '<div class="tsBoxTitle">'+esc(s.title)+'</div>' : '')+
+              (s.subtitle ? '<div class="tsBoxDesc">'+esc(s.subtitle)+'</div>' : '')+
+            '</div>'
           : '')+
       '</div>';
     }).join('');

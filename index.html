@@ -311,10 +311,9 @@
        never jumps. #connect is deliberately NOT listed — it contains
        position:fixed modals whose containing block paint containment
        would hijack. ── */
-    #topSlide,#artworks,#subOverview,footer.siteFooter{
+    #artworks,#subOverview,footer.siteFooter{
       content-visibility:auto;
     }
-    #topSlide{contain-intrinsic-size:auto 560px;}
     #artworks{contain-intrinsic-size:auto 900px;}
     #subOverview{contain-intrinsic-size:auto 700px;}
     footer.siteFooter{contain-intrinsic-size:auto 480px;}
@@ -551,138 +550,94 @@
     }
     .hNotifBtn.hasUnread .hNotifDot { display: block; }
 
+
     /* =========================================================
-       TOP ARTWORK SLIDE — horizontal showcase strip that sits
-       directly below the floating top bar (brand badge /
-       notifications / Zeo), themed to match the dark Artworks
-       section right below it. Boxes are a fixed rectangular
-       "desktop card" size on every device — never resized down —
-       so mobile/tablet always scrolls sideways one box at a time,
-       and desktop shows 4 in a row with the strip still scrollable
-       once more boxes get added. Empty shells for now — content
-       gets wired in later.
+       HERO PITCH
        ========================================================= */
-    #topSlide{
+    #heroPitch{
       position:relative;
       background:var(--bg);
-      /* Bottom is 0 on purpose: the gap down to the tag rail is owned
-         entirely by .tgRail's --tgPad, so it matches the gap below it. */
-      padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) 0 0;
+      /* Same clearance the slide strip used, so the first thing on
+         the page still sits correctly under the floating top bar. */
+      padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) clamp(1rem,4vw,2rem) clamp(2.2rem,5vw,3.4rem);
     }
-    /* ── Featured strip carousel ──
-       Boxes-per-view is a single CSS variable; the box width is derived
-       from it, so the breakpoints below are the only place the count
-       lives. Slide mechanics mirror the RANKING boards (.rkTrack):
-       native CSS snap-scroller — a swipe is a real swipe, no drag JS —
-       with arrows/dots that only mirror scroll position and drive the
-       track on click. */
-    .tsWrap{ position:relative; margin-top:0; }
-    .tsTrack{
-      /* offsetParent for the boxes — tsSlideTo()/tsSync() measure
-         offsetLeft against the track, exactly like .rkTrack does. */
-      position:relative;
-      display:flex;
-      width:100%;
-      box-sizing:border-box;
-      margin:0;
-      --tsPer:1;                 /* phones — one at a time */
-      --tsGap:1rem;              /* matches .rkTrack */
-      --tsPadX:clamp(.9rem,2.5vw,2rem);
-      gap:var(--tsGap);
-      padding:.4rem var(--tsPadX) .5rem;
-      scroll-padding-left:var(--tsPadX);
-      overflow-x:auto;
-      overflow-y:hidden;
-      scroll-snap-type:x mandatory;
-      scroll-behavior:smooth;
-      -webkit-overflow-scrolling:touch;
-      scrollbar-width:none;
-      -ms-overflow-style:none;
-      overscroll-behavior-x:contain;
+    .hpInner{max-width:760px;margin:0 auto;}
+
+    /* ── Segmented toggle ── */
+    .hpTabs{
+      display:flex;gap:.25rem;padding:.3rem;margin:0 0 clamp(1.4rem,3.5vw,2rem);
+      background:var(--sur);border:1px solid var(--bdr);border-radius:999px;
+      width:max-content;max-width:100%;
+      overflow-x:auto;overscroll-behavior-x:contain;
+      scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
     }
-    .tsTrack::-webkit-scrollbar{display:none;}
-    .tsBox{
-      /* n across minus the gaps, but never wider than a RANKING card —
-         without the cap the box just grew to fill the track, which is
-         what made it tower over the old fixed 300x190. */
-      flex:0 0 min(calc((100% - (var(--tsPer) - 1) * var(--tsGap)) / var(--tsPer)), 470px);
-      aspect-ratio:300 / 190;
-      min-width:0;
-      border-radius:8px;
-      background:var(--sur2);
-      border:1px solid var(--bdr);
-      scroll-snap-align:start;
-      scroll-snap-stop:always;
-      position:relative;
-      overflow:hidden;
+    .hpTabs::-webkit-scrollbar{display:none;}
+    .hpTab{
+      flex-shrink:0;border:0;cursor:pointer;border-radius:999px;
+      padding:.55rem 1.15rem;
+      font-family:var(--fd);font-size:.86rem;font-weight:700;letter-spacing:.01em;
+      background:none;color:var(--txd);white-space:nowrap;
+      transition:color .2s,background .2s;
     }
-    @media(min-width:700px){  .tsTrack{ --tsPer:2; } }
-    @media(min-width:1280px){ .tsTrack{ --tsPer:3; } }
-    @media(min-width:1800px){ .tsTrack{ --tsPer:4; } }
-    /* ── Live slide content — image fill + bottom-gradient caption,
-       injected by renderTopSlide() from the hero_slides table.
-       Mirrors the admin preview (.ahsBox/.ahsText) so what a dev
-       sees in the Hero Slides editor is exactly what ships here. ── */
-    .tsBox img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
-    /* The caption is sized in CONTAINER units (cqh = 1% of the box's
-       own height), not viewport units, so it keeps the same proportion
-       of the banner whether one slide is showing or four. Budget:
-         title  2 lines x 1.2 line-height x 16cqh  = 38.4% of the box
-         desc   2 lines x 1.25          x 8.5cqh  = 21.3%
-         -------------------------------------------------- ~60%
-       Each rule carries a rem/vw fallback first for engines without
-       container query units; they simply ignore the cq line. */
-    .tsBox{cursor:pointer;container-type:size;}
-    .tsBox:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    .tsBoxText{
-      position:absolute;left:0;right:0;bottom:0;
-      padding:0 6% 5%;
-      /* headroom over the 60% budget so a descender never clips */
-      max-height:72%;max-height:72cqh;overflow:hidden;
-      background:linear-gradient(to top,
-        color-mix(in srgb,var(--bg) 95%,transparent) 0%,
-        color-mix(in srgb,var(--bg) 82%,transparent) 48%,
-        transparent 100%);
+    @media(hover:hover){.hpTab:hover{color:var(--tx);}}
+    .hpTab[aria-selected="true"]{background:var(--pg);color:var(--text-on-accent);}
+    .hpTab:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
+
+    /* ── Headline ── */
+    .hpHead{
+      margin:0 0 clamp(1.1rem,2.6vw,1.5rem);
+      font-family:var(--fd);font-weight:800;
+      font-size:clamp(1.85rem,5.6vw,3.1rem);
+      line-height:1.1;letter-spacing:-.02em;color:var(--tx);
+      text-wrap:balance;
     }
-    .tsBoxTitle{
-      font-family:var(--fb);font-weight:800;color:var(--tx);
-      font-size:clamp(1rem,1.9vw,1.3rem);
-      font-size:16.6cqh;
-      line-height:1.2;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-      overflow:hidden;text-overflow:ellipsis;
+    /* The one coloured phrase per tab — the brief's "make it pop".
+       Uses --pg so every theme supplies its own primary. */
+    .hpHead em{font-style:normal;color:var(--pg);}
+
+    /* ── Checklist ── */
+    .hpList{list-style:none;margin:0 0 clamp(1.5rem,3.5vw,2rem);padding:0;display:flex;flex-direction:column;gap:.7rem;}
+    .hpList li{display:flex;align-items:flex-start;gap:.65rem;font-family:var(--fb);font-size:clamp(.9rem,2.2vw,1rem);line-height:1.45;color:var(--txd);}
+    .hpTick{
+      flex-shrink:0;width:20px;height:20px;margin-top:.08rem;border-radius:50%;
+      background:color-mix(in srgb,var(--pg) 18%,transparent);
+      display:flex;align-items:center;justify-content:center;
     }
-    .tsBoxDesc{
-      font-family:var(--fb);font-weight:500;color:var(--txd);
-      font-size:clamp(.72rem,1.05vw,.85rem);
-      font-size:7cqh;
-      line-height:1.25;margin-top:.35em;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-      overflow:hidden;text-overflow:ellipsis;
+    .hpTick svg{width:11px;height:11px;stroke:var(--pg);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+
+    /* ── CTA ── */
+    .hpCta{
+      display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;
+      border:0;border-radius:999px;padding:.9rem 1.7rem;
+      background:var(--pg);color:var(--text-on-accent);
+      font-family:var(--fd);font-size:.95rem;font-weight:700;
+      box-shadow:0 8px 22px color-mix(in srgb,var(--pg) 32%,transparent);
+      transition:filter .2s,transform .2s;
     }
-    /* Arrows: pointer devices only, same gate as .rkNav */
-    .tsNav{
-      position:absolute; top:50%; transform:translateY(-50%);
-      z-index:2; display:none; align-items:center; justify-content:center;
-      width:38px; height:38px; border-radius:50%; padding:0; cursor:pointer;
-      border:1px solid var(--bdr); color:var(--tx);
-      background:color-mix(in srgb,var(--bg) 78%,transparent);
-      -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
-      transition:border-color .2s, background .2s, opacity .2s;
+    @media(hover:hover){.hpCta:hover{filter:brightness(1.08);transform:translateY(-1px);}}
+    .hpCta:active{transform:translateY(0);}
+    .hpCta:focus-visible{outline:2px solid var(--pb);outline-offset:3px;}
+
+    /* ── Fade & shift up ──
+       Re-triggered per tab change by reflowing the panel. The three
+       checklist rows follow the headline in sequence so the eye is
+       led down the list rather than hit with all of it at once. */
+    @keyframes hpRise{ from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:none;} }
+    .hpPanel.hpIn > *{animation:hpRise .45s cubic-bezier(.22,1,.36,1) both;}
+    .hpPanel.hpIn > .hpHead{animation-delay:0s;}
+    .hpPanel.hpIn > .hpList li{animation:hpRise .45s cubic-bezier(.22,1,.36,1) both;}
+    .hpPanel.hpIn > .hpList li:nth-child(1){animation-delay:.06s;}
+    .hpPanel.hpIn > .hpList li:nth-child(2){animation-delay:.12s;}
+    .hpPanel.hpIn > .hpList li:nth-child(3){animation-delay:.18s;}
+    .hpPanel.hpIn > .hpCta{animation-delay:.24s;}
+    @media(prefers-reduced-motion:reduce){
+      .hpPanel.hpIn > *, .hpPanel.hpIn > .hpList li{animation:none;}
+      .hpCta,.hpTab{transition:none;}
     }
-    .tsNav:hover{ border-color:var(--pg); background:var(--pdim); }
-    .tsNav svg{ width:18px; height:18px; }
-    .tsNav:disabled{ opacity:.3; cursor:default; }
-    .tsNav--prev{ left:.2rem; } .tsNav--next{ right:.2rem; }
-    @media (hover:hover) and (min-width:760px){ .tsNav{ display:flex; } }
-    .tsDots{ display:flex; justify-content:center; gap:.45rem; margin-top:.75rem; }
-    .tsDot{
-      width:7px; height:7px; border-radius:50%; padding:0;
-      border:1px solid var(--bdrh); background:none; cursor:pointer;
-      transition:background .2s, border-color .2s, transform .2s;
+    @media(max-width:480px){
+      .hpTabs{width:auto;}
+      .hpTab{padding:.5rem .95rem;font-size:.82rem;}
     }
-    .tsDot.on{ background:var(--pg); border-color:var(--pg); transform:scale(1.25); }
-    @media(prefers-reduced-motion:reduce){ .tsTrack{ scroll-behavior:auto; } }
 
     /* Visually hidden — accessible to screen readers, invisible on screen */
     .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
@@ -793,9 +748,6 @@
     @media(max-width:480px){
       .fgTitle{font-size:1.02rem;letter-spacing:.08em;}
     }
-    /* Featured hero slides inside the gallery / comic overlays — reuses
-       the home page .tsTrack/.tsBox component, just without the top-bar
-       offset. */
     .fgHdr{position:sticky;top:3.4rem;z-index:10;border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;isolation:isolate;}
     /* FIX: background + blur split onto ::before, same decoupling as
        #bnNav — sticky elements have the same fixed-during-scroll
@@ -813,6 +765,116 @@
     .fgFltBtn.active::after{content:'';position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);}
 
     /* ── FILTER PANEL OVERLAY ── */
+    /* ── SECTION TABS ─────────────────────────────────────────
+       The gallery is no longer artwork-only, so a tab rail sits
+       between the frosted title bar and the content. It takes the
+       sticky offset the old .fgHdr search row used to hold (3.4rem =
+       the .fgIntro height). Six labels never wrap: the rail scrolls
+       sideways so a phone simply swipes to reach Cart. */
+    .fgSecBar{
+      position:sticky;top:3.4rem;z-index:10;
+      border-bottom:1px solid var(--bdr);
+      padding:.5rem clamp(.7rem,2vw,2rem) 0;
+      isolation:isolate;
+    }
+    /* background + blur split onto ::before, same decoupling as .fgIntro */
+    .fgSecBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .fgSecTabs{
+      display:flex;flex-wrap:nowrap;align-items:flex-end;gap:0 1.5rem;
+      overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+      scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
+    }
+    .fgSecTabs::-webkit-scrollbar{display:none;}
+    .fgSecBtn{
+      display:flex;align-items:center;gap:.45rem;
+      font-family:var(--fd);font-size:.95rem;font-weight:700;letter-spacing:.05em;
+      background:none;border:0;border-bottom:2px solid transparent;
+      padding:.65rem 0 .7rem;margin:0;cursor:pointer;
+      color:var(--txd);white-space:nowrap;flex-shrink:0;
+      transition:color .25s,border-color .25s;
+    }
+    .fgSecBtn:hover{color:var(--tx);}
+    .fgSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
+    /* ── Section icon chips ───────────────────────────────────
+       DELIBERATELY hard-coded hex, not theme tokens: these are
+       section identity, the same way an app icon doesn't restyle
+       itself per wallpaper. dark / darkviolet / graydark / light
+       all render them identically. The white glyph is pinned in the
+       markup AND here so nothing can repaint it either. */
+    .fgSecIco{
+      width:24px;height:24px;border-radius:7px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;
+      transition:transform .25s ease,box-shadow .25s ease;
+    }
+    .fgSecIco svg{width:14px;height:14px;display:block;stroke:#fff;}
+    /* Inactive chips sit back a touch so the active tab still reads
+       as selected — colour is untouched, only presence. */
+    .fgSecBtn:not(.active) .fgSecIco{opacity:.72;}
+    .fgSecBtn:hover .fgSecIco{opacity:1;}
+    .fgSecBtn.active .fgSecIco{transform:translateY(-1px);}
+    .fgSecIco--artworks{background:linear-gradient(135deg,#A78BFA,#7C3AED);box-shadow:0 2px 8px rgba(124,58,237,.32);}
+    .fgSecIco--resources{background:linear-gradient(135deg,#4ADE80,#16A34A);box-shadow:0 2px 8px rgba(22,163,74,.32);}
+    .fgSecIco--blog{background:linear-gradient(135deg,#818CF8,#4F46E5);box-shadow:0 2px 8px rgba(79,70,229,.32);}
+    .fgSecIco--marketplace{background:linear-gradient(135deg,#FB923C,#EA580C);box-shadow:0 2px 8px rgba(234,88,12,.32);}
+    .fgSecIco--jobs{background:linear-gradient(135deg,#38BDF8,#0891B2);box-shadow:0 2px 8px rgba(8,145,178,.32);}
+    .fgSecIco--cart{background:linear-gradient(135deg,#F472B6,#DB2777);box-shadow:0 2px 8px rgba(219,39,119,.32);}
+    @media(max-width:480px){
+      .fgSecBar{padding:.4rem 1rem 0;}
+      .fgSecTabs{gap:0 1.15rem;}
+      .fgSecBtn{font-size:.86rem;gap:.4rem;padding:.7rem 0 .75rem;}
+      .fgSecIco{width:22px;height:22px;border-radius:6px;}
+      .fgSecIco svg{width:13px;height:13px;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .fgSecIco{transition:none;}
+      .fgSecBtn.active .fgSecIco{transform:none;}
+    }
+    /* ── Section content: cards + list rows ─────────────────────
+       Resources / Marketplace are visual (preview tile on top);
+       Blog / Jobs are text-led rows. Both reuse the theme tokens so
+       every skin picks them up for free. */
+    .dzGrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));}
+    .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s;}
+    @media(hover:hover){.dzCard:hover{border-color:var(--pg);transform:translateY(-2px);}}
+    .dzThumb{position:relative;aspect-ratio:4/3;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    .dzThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .dzExt{font-family:var(--fm);font-size:.9rem;letter-spacing:.14em;color:var(--txd);}
+    .dzBadge{position:absolute;top:.5rem;right:.5rem;background:color-mix(in srgb,var(--bg) 78%,transparent);border:1px solid var(--bdr);border-radius:999px;padding:.2rem .55rem;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);}
+    .dzBody{padding:.7rem .8rem .85rem;display:flex;flex-direction:column;gap:.3rem;}
+    .dzName{font-size:.88rem;font-weight:600;color:var(--tx);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .dzMeta{font-family:var(--fm);font-size:.63rem;letter-spacing:.08em;color:var(--txd);display:flex;flex-wrap:wrap;gap:.15rem .55rem;}
+    .dzPrice{font-size:.85rem;font-weight:700;color:var(--ps);}
+    .dzRow{display:flex;gap:.85rem;align-items:flex-start;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:.9rem 1rem;cursor:pointer;transition:border-color .2s;}
+    @media(hover:hover){.dzRow:hover{border-color:var(--pg);}}
+    .dzRowIco{width:44px;height:44px;border-radius:10px;flex-shrink:0;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--fd);font-weight:700;color:var(--txd);}
+    .dzRowIco img{width:100%;height:100%;object-fit:cover;}
+    .dzList{display:flex;flex-direction:column;gap:.7rem;}
+    .dzChipRow{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem;}
+    .dzChip{font-family:var(--fm);font-size:.58rem;letter-spacing:.09em;color:var(--txd);border:1px solid var(--bdr);border-radius:999px;padding:.15rem .5rem;}
+    .dzEmpty{text-align:center;padding:3.5rem 1.5rem;color:var(--txd);font-family:var(--fm);font-size:.75rem;letter-spacing:.16em;}
+    .dzBusy{text-align:center;padding:2.5rem;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.2em;}
+
+    /* ── Upload page section tabs — same shape as the gallery rail so
+       the two read as one system. */
+    .upSecTabs{display:flex;gap:0 1.3rem;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;border-bottom:1px solid var(--bdr);margin:0 0 1.4rem;}
+    .upSecTabs::-webkit-scrollbar{display:none;}
+    .upSecBtn{display:flex;align-items:center;gap:.4rem;background:none;border:0;border-bottom:2px solid transparent;padding:.6rem 0 .65rem;font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--txd);white-space:nowrap;flex-shrink:0;cursor:pointer;transition:color .2s,border-color .2s;}
+    .upSecBtn:hover{color:var(--tx);}
+    .upSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
+    .upSecBtn .fgSecIco{width:20px;height:20px;border-radius:6px;}
+    .upSecBtn .fgSecIco svg{width:12px;height:12px;}
+    .dzHint{font-size:.72rem;color:var(--txd);margin-top:.3rem;line-height:1.5;}
+    .dzRowFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;}
+    .dzSel{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.85rem;padding:.6rem .7rem;outline:none;}
+    .dzSel:focus{border-color:var(--pg);}
+    .dzFileName{font-family:var(--fm);font-size:.7rem;color:var(--ps);margin-top:.4rem;word-break:break-all;}
+
+    /* One panel visible at a time. display:none rather than an offset
+       so hidden panels cost no layout and can't be tabbed into. */
+    .fgSec{display:none;}
+    .fgSec.active{display:block;}
+
     #fgFltOvr{position:fixed;inset:0;z-index:1050;opacity:0;pointer-events:none;transition:opacity .3s ease;isolation:isolate;}
     /* FIX: background + blur moved to ::before, same decoupling as
        #bnNav — stops the fixed full-viewport scrim from flashing
@@ -869,7 +931,15 @@
 
     /* Radio list options */
     .fltOpts{display:flex;flex-direction:column;gap:0;}
-    .fltOpt{display:flex;align-items:center;gap:.7rem;padding:.5rem .35rem;cursor:pointer;border-radius:6px;transition:background .2s;user-select:none;}
+    .fltOpt{display:flex;align-items:center;gap:.6rem;padding:.5rem .35rem;cursor:pointer;border-radius:6px;transition:background .2s;user-select:none;}
+    /* Option icon — sits between the radio dot and the label and
+       tracks the label's colour, so a checked row lights both at once.
+       Theme tokens on purpose: unlike the section chips (fixed brand
+       colours), these are list chrome and belong to the active theme. */
+    .fltIco{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:17px;height:17px;color:var(--txd);transition:color .2s;}
+    .fltIco svg{width:17px;height:17px;display:block;}
+    .fltOpt input[type=radio]:checked ~ .fltIco{color:var(--ps);}
+    .fltOpt:hover .fltIco{color:var(--tx);}
     .fltOpt:hover{background:color-mix(in srgb,var(--tc) 6%,transparent);}
     .fltOpt input[type=radio]{display:none;}
     .fltDot{width:15px;height:15px;border:1.5px solid var(--bdrh);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:border-color .2s,box-shadow .2s;}
@@ -2322,7 +2392,7 @@
        profile pages, login, modals) keeps the original light
        tokens untouched.
        ========================================================= */
-    #topSlide, #artworks, #subOverview, #connect, footer.siteFooter{
+    #artworks, #subOverview, #connect, footer.siteFooter{
       --bg:inherit;--sur:inherit;--sur2:inherit;
       --bdr:inherit;--bdrh:inherit;
       --tx:inherit;--txd:inherit;
@@ -4232,52 +4302,6 @@
     .mwDeleteBtn{background:none;color:#f87171;border:1px solid #7f1d1d;}
     .mwDeleteBtn:hover{background:rgba(220,38,38,.15);}
 
-    /* =========================================================
-       HERO SLIDES (dev-only, wired to the hero_slides table)
-       Lives inside #admPage, above the Notifications/Report tabs.
-       10 fixed slots, same
-       300×190 "desktop card" box as the live #topSlide strip.
-       Each box gets a pencil button → opens .ahsEditOvr with an
-       image picker (local preview only, FileReader dataURL) + a
-       text field + Delete. State lives in ahSlides[] (in-memory
-       array of 10 {image,text}) — nothing persists yet by design.
-       ========================================================= */
-    .ahsSection{margin-bottom:1.6rem;}
-    .ahsLbl{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--tx);margin-bottom:.7rem;}
-    .ahsGrid{display:flex;flex-wrap:wrap;gap:.7rem;}
-    .ahsBox{position:relative;width:300px;height:190px;border-radius:8px;background:var(--sur2);border:1px solid var(--bdr);overflow:hidden;flex:0 0 auto;}
-    .ahsImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
-    .ahsText{position:absolute;left:0;right:0;bottom:0;padding:.5rem .6rem;background:linear-gradient(to top,color-mix(in srgb,var(--bg) 85%,transparent),transparent);min-height:1.2em;}
-    .ahsTitleTxt{font-family:var(--fb);font-size:.78rem;font-weight:700;color:var(--tx);word-break:break-word;}
-    .ahsSubTxt{font-family:var(--fb);font-size:.68rem;color:var(--txd);word-break:break-word;margin-top:.1rem;}
-    .ahsPencil{position:absolute;top:.45rem;right:.45rem;width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--bg) 65%,transparent);border:1px solid var(--bdr);color:var(--tx);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;transition:background .15s,border-color .15s;}
-    .ahsPencil:hover{background:color-mix(in srgb,var(--bg) 85%,transparent);border-color:var(--pg);}
-    @media(max-width:480px){.ahsBox{width:100%;max-width:300px;}}
-
-    .ahsEditOvr{position:fixed;inset:0;z-index:950;background:color-mix(in srgb,var(--bg) 90%,transparent);display:none;align-items:center;justify-content:center;padding:1rem;}
-    .ahsEditOvr.open{display:flex;}
-    .ahsEditCard{width:100%;max-width:360px;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:1.3rem;}
-    .ahsEditOvr,.ahsEditOvr *{
-      --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
-      --tx:var(--vtx);--txd:var(--vtxd);
-      --bdr:color-mix(in srgb,#9a9ea5 18%,transparent);
-      --bdrh:color-mix(in srgb,#9a9ea5 45%,transparent);
-    }
-    .ahsEditTitle{font-family:var(--fm);font-size:.74rem;letter-spacing:.1em;color:var(--tx);margin-bottom:1rem;}
-    .ahsFieldLbl{font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--txd);margin-bottom:.4rem;display:block;}
-    .ahsImgPick{position:relative;width:100%;height:150px;border-radius:8px;background:var(--sur2);border:1px dashed var(--bdr);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;margin-bottom:1rem;}
-    .ahsImgPick img{width:100%;height:100%;object-fit:cover;display:block;}
-    .ahsImgPickHint{font-family:var(--fb);font-size:.75rem;color:var(--txd);}
-    .ahsTextInput{width:100%;background:var(--sur2);border:1px solid var(--bdr);border-radius:7px;color:var(--tx);font-family:var(--fb);font-size:.82rem;padding:.6rem .7rem;margin-bottom:1.2rem;box-sizing:border-box;}
-    .ahsTextInput:focus{outline:none;border-color:var(--pg);}
-    .ahsEditActions{display:flex;align-items:center;justify-content:space-between;gap:.6rem;}
-    .ahsEditActionsRight{display:flex;gap:.6rem;}
-    .ahsDeleteBtn{background:none;color:#f87171;border:1px solid #7f1d1d;border-radius:6px;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;padding:.55rem .9rem;cursor:pointer;}
-    .ahsDeleteBtn:hover{background:rgba(220,38,38,.15);}
-    .ahsCancelBtn{background:none;color:var(--txd);border:1px solid var(--bdr);border-radius:6px;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;padding:.55rem .9rem;cursor:pointer;}
-    .ahsCancelBtn:hover{color:var(--tx);border-color:var(--bdrh);}
-    .ahsSaveBtn{background:var(--pg);color:var(--text-on-accent);border:1px solid var(--pg);border-radius:6px;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;padding:.55rem 1rem;cursor:pointer;}
-    .ahsSaveBtn:hover{opacity:.88;}
 
     /* =========================================================
        NOTIFICATIONS PAGE (#notifPage)
@@ -6147,36 +6171,23 @@ body{background:var(--bg);}
   </section>
 
   <!-- =========================================================
-       TOP ARTWORK SLIDE
-       Horizontal strip directly below the floating top bar (brand
-       badge / notifications / Zeo). Desktop: 4 boxes in a row.
-       Mobile/tablet: same box size, swipes left/right one at a
-       time via scroll-snap. Empty placeholders — no content wired
-       in yet.
+       HERO PITCH — segmented Explore / Learn / Buy / Sell.
+       Sits directly below the floating top bar, in the slot the
+       slide strip used to hold. Four audiences, one screen: the
+       toggle swaps headline, checklist and CTA in place, no
+       navigation, no reload. Each CTA lands on the real surface
+       that answers it, so the pitch and the product agree.
+       Copy and structure follow the brief exactly.
        ========================================================= -->
-  <section id="topSlide" aria-label="Featured artwork slideshow">
-    <div class="tsWrap">
-      <button class="tsNav tsNav--prev" id="tsPrev" type="button" aria-label="Previous slide">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <div class="tsTrack" id="tsTrack">
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-        <div class="tsBox"></div>
-      </div>
-      <button class="tsNav tsNav--next" id="tsNext" type="button" aria-label="Next slide">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+  <section id="heroPitch" aria-label="What DigiArtz offers">
+    <div class="hpInner">
+      <!-- Scrolls sideways under ~420px rather than wrapping to two
+           rows or shrinking the labels to unreadable. -->
+      <div class="hpTabs" id="hpTabs" role="tablist" aria-label="Choose what you came for"></div>
+      <div class="hpPanel" id="hpPanel" role="tabpanel" aria-live="polite"></div>
     </div>
-    <div class="tsDots" id="tsDots" role="tablist" aria-label="Slide"></div>
   </section>
+
 
   <!-- ── Hidden Data Grid (source for Full Gallery overlay) ── -->
   <div id="homeGrid" style="display:none;"></div>
@@ -7264,7 +7275,6 @@ body{background:var(--bg);}
        ADMIN PANEL (#admPage)
        Dev-only panel, opened via the "Admin Panel" item in the
        profile ⋮ menu (smHandleAdm). Exactly three capabilities:
-       ├─ Hero slides editor (.ahsSection)
        ├─ Notifications — broadcast composer (#admPanelNoti)
        └─ Reports — open user reports (#admPanelRpt)
        ========================================================= -->
@@ -7274,24 +7284,6 @@ body{background:var(--bg);}
       <div class="subPgTitle">ADMIN PANEL <span class="s">✦</span></div>
     </div>
     <div class="admBdy">
-      <!-- HERO SLIDES — wired to the hero_slides table (dev-only RLS).
-           10 fixed slots, pencil opens the edit overlay (image +
-           text + delete). See ahSlides[] / ahs* functions in JS. -->
-      <div class="ahsSection">
-        <div class="ahsLbl">HERO SLIDES</div>
-        <div class="ahsGrid" id="ahsGrid">
-          <div class="ahsBox" data-i="0"><img class="ahsImg" id="ahsImg0" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle0"></div><div class="ahsSubTxt" id="ahsSub0"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(0)" aria-label="Edit slide 1">✎</button></div>
-          <div class="ahsBox" data-i="1"><img class="ahsImg" id="ahsImg1" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle1"></div><div class="ahsSubTxt" id="ahsSub1"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(1)" aria-label="Edit slide 2">✎</button></div>
-          <div class="ahsBox" data-i="2"><img class="ahsImg" id="ahsImg2" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle2"></div><div class="ahsSubTxt" id="ahsSub2"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(2)" aria-label="Edit slide 3">✎</button></div>
-          <div class="ahsBox" data-i="3"><img class="ahsImg" id="ahsImg3" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle3"></div><div class="ahsSubTxt" id="ahsSub3"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(3)" aria-label="Edit slide 4">✎</button></div>
-          <div class="ahsBox" data-i="4"><img class="ahsImg" id="ahsImg4" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle4"></div><div class="ahsSubTxt" id="ahsSub4"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(4)" aria-label="Edit slide 5">✎</button></div>
-          <div class="ahsBox" data-i="5"><img class="ahsImg" id="ahsImg5" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle5"></div><div class="ahsSubTxt" id="ahsSub5"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(5)" aria-label="Edit slide 6">✎</button></div>
-          <div class="ahsBox" data-i="6"><img class="ahsImg" id="ahsImg6" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle6"></div><div class="ahsSubTxt" id="ahsSub6"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(6)" aria-label="Edit slide 7">✎</button></div>
-          <div class="ahsBox" data-i="7"><img class="ahsImg" id="ahsImg7" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle7"></div><div class="ahsSubTxt" id="ahsSub7"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(7)" aria-label="Edit slide 8">✎</button></div>
-          <div class="ahsBox" data-i="8"><img class="ahsImg" id="ahsImg8" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle8"></div><div class="ahsSubTxt" id="ahsSub8"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(8)" aria-label="Edit slide 9">✎</button></div>
-          <div class="ahsBox" data-i="9"><img class="ahsImg" id="ahsImg9" style="display:none;"><div class="ahsText"><div class="ahsTitleTxt" id="ahsTitle9"></div><div class="ahsSubTxt" id="ahsSub9"></div></div><button class="ahsPencil" onclick="ahsOpenEdit(9)" aria-label="Edit slide 10">✎</button></div>
-        </div>
-      </div>
 
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
@@ -7351,30 +7343,6 @@ body{background:var(--bg);}
     </div>
   </div>
 
-  <!-- HERO SLIDE EDIT OVERLAY — UI only, no Supabase wiring yet.
-       Opened by the pencil on any of the 10 boxes above. -->
-  <div id="ahsEditOvr" class="ahsEditOvr" role="dialog" aria-modal="true" aria-label="Edit hero slide">
-    <div class="ahsEditCard">
-      <div class="ahsEditTitle">EDIT SLIDE <span id="ahsEditNum">1</span></div>
-      <label class="ahsFieldLbl">IMAGE</label>
-      <div class="ahsImgPick" onclick="document.getElementById('ahsFileInput').click()">
-        <img id="ahsEditPreview" style="display:none;">
-        <span class="ahsImgPickHint" id="ahsImgPickHint">Tap to choose image</span>
-      </div>
-      <input type="file" id="ahsFileInput" accept="image/*" style="display:none;" onchange="ahsPickFile(event)">
-      <label class="ahsFieldLbl">TITLE</label>
-      <input type="text" id="ahsEditTitle" class="ahsTextInput" placeholder="Slide title" maxlength="120">
-      <label class="ahsFieldLbl">SUBTITLE (optional)</label>
-      <input type="text" id="ahsEditSubtitle" class="ahsTextInput" placeholder="Slide subtitle" maxlength="160">
-      <div class="ahsEditActions">
-        <button class="ahsDeleteBtn" onclick="ahsDeleteSlide()">Delete</button>
-        <div class="ahsEditActionsRight">
-          <button class="ahsCancelBtn" onclick="ahsCloseEdit()">Cancel</button>
-          <button class="ahsSaveBtn" onclick="ahsSaveSlide()">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- =========================================================
        NOTIFICATIONS PAGE (#notifPage)
@@ -7934,6 +7902,13 @@ body{background:var(--bg);}
       <h2 id="pfUpTitle">Upload Artwork</h2>
       <p id="pfUpSubtitle">Share your creativity with artists around the world.</p>
     </div>
+    <!-- ── What are you posting? ── mirrors the gallery's section rail
+         (same chips, same order) so the two halves of the site agree.
+         Artwork keeps the original .upPopBody form untouched; the other
+         four are built by dzBuildUploadForm() into #upSecForms.
+         Cart is absent by design — nothing is posted to a cart. -->
+    <div class="upSecTabs" id="upSecTabs" role="tablist" aria-label="What are you posting"></div>
+    <div id="upSecForms" style="display:none;"></div>
     <div class="upPopBody">
      <div class="upMain">
       <input id="pfUpEditId" type="hidden" value=""/>
@@ -8305,45 +8280,151 @@ body{background:var(--bg);}
        ========================================================= -->
   <div id="fg" role="dialog" aria-modal="true" aria-label="Full Gallery">
    <!-- ── Intro — "Gallery" title (styled like the Community heading).
-        The search/filter bar below stays sticky. ── -->
+        The section tabs below it stay sticky. ── -->
    <div class="fgIntro">
     <h2 class="fgTitle">Gallery <span class="s">✦</span></h2>
    </div>
-   <!-- ── TAG RAIL (gallery copy) ── replaced the featured-slide strip
-        here. Same component, same shared state as the home rail: both
-        carry class .tgRail, tgRenderRail() paints every one it finds,
-        and tgToggle() applies a tick to the matching chip in BOTH, so
-        the two stay identical without either owning the state.
-        #fg slides in via transform (never display:none), so this rail
-        keeps a real width and can lay itself out while closed.
-        The home #topSlide strip is deliberately untouched. -->
-   <div class="tgBlock">
+   <!-- ── SECTION TABS ──────────────────────────────────────────
+        The gallery used to BE the artwork list; now artwork is one of
+        six top-level sections. Each section owns its own search field,
+        and the filter rides at the TAIL of that field — the separate
+        .fgHdr row that used to hold #fgQ + the filter button is gone,
+        so there is exactly one search bar on screen at any time.
+        Artworks is the only section wired to data today. The other
+        five are deliberate stubs: tab + search bar, empty body. ── -->
+   <div class="fgSecBar">
+    <div class="fgSecTabs" id="fgSecTabs" role="tablist" aria-label="Gallery sections">
+     <button class="fgSecBtn active" id="fgSecBtn-artworks" role="tab" aria-selected="true" aria-controls="fgSec-artworks" onclick="fgSwitchSection('artworks')"><span class="fgSecIco fgSecIco--artworks" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span><span class="fgSecTxt">Artworks</span></button>
+     <button class="fgSecBtn" id="fgSecBtn-resources" role="tab" aria-selected="false" aria-controls="fgSec-resources" onclick="fgSwitchSection('resources')"><span class="fgSecIco fgSecIco--resources" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c-1.8-1.3-4-2-6.5-2H3v13h2.5c2.5 0 4.7.7 6.5 2 1.8-1.3 4-2 6.5-2H21V5h-2.5C16 5 13.8 5.7 12 7z"/><path d="M12 7v13"/></svg></span><span class="fgSecTxt">Resources</span></button>
+     <button class="fgSecBtn" id="fgSecBtn-blog" role="tab" aria-selected="false" aria-controls="fgSec-blog" onclick="fgSwitchSection('blog')"><span class="fgSecIco fgSecIco--blog" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span class="fgSecTxt">Blog</span></button>
+     <button class="fgSecBtn" id="fgSecBtn-marketplace" role="tab" aria-selected="false" aria-controls="fgSec-marketplace" onclick="fgSwitchSection('marketplace')"><span class="fgSecIco fgSecIco--marketplace" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span><span class="fgSecTxt">Marketplace</span></button>
+     <button class="fgSecBtn" id="fgSecBtn-jobs" role="tab" aria-selected="false" aria-controls="fgSec-jobs" onclick="fgSwitchSection('jobs')"><span class="fgSecIco fgSecIco--jobs" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span><span class="fgSecTxt">Jobs</span></button>
+     <button class="fgSecBtn" id="fgSecBtn-cart" role="tab" aria-selected="false" aria-controls="fgSec-cart" onclick="fgSwitchSection('cart')"><span class="fgSecIco fgSecIco--cart" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.4a1.8 1.8 0 0 0 1.8 1.4h8.4a1.8 1.8 0 0 0 1.8-1.4L21.5 7H6"/></svg></span><span class="fgSecTxt">Cart</span></button>
+    </div>
+   </div>
+
+   <!-- ══ ARTWORKS ══ the live section: search + tag rail + grid ══ -->
+   <div class="fgSec active" id="fgSec-artworks" role="tabpanel" aria-labelledby="fgSecBtn-artworks">
+    <!-- ── TAG RAIL (gallery copy) ── same component and same shared
+         state as the home rail: both carry class .tgRail,
+         tgRenderRail() paints every one it finds, and tgToggle() ticks
+         the matching chip in BOTH, so the two stay identical without
+         either owning the state. Artwork tags, so it lives inside the
+         Artworks section rather than above all six. -->
+    <div class="tgBlock">
      <div class="tgSearch" id="fgSearchInWrap">
-       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-       <input type="search" class="tgSearchIn" id="fgSearchIn" placeholder="Search artworks, artists or tags..."
-              autocomplete="off" autocapitalize="off" spellcheck="false"
-              aria-label="Search artworks" oninput="fgSearchInput(this.value)">
-       <button type="button" class="tgSearchClear" onclick="fgSearchClear()" aria-label="Clear search">✕</button>
-       <span class="tgSearchKbd" aria-hidden="true"><kbd class="tgKbdMod">⌘</kbd><kbd>K</kbd></span>
+      <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" class="tgSearchIn" id="fgSearchIn" placeholder="Search artworks, artists or tags..."
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             aria-label="Search artworks" oninput="fgSearchInput(this.value)">
+      <button type="button" class="tgSearchClear" onclick="fgSearchClear()" aria-label="Clear search">✕</button>
+      <span class="tgSearchKbd" aria-hidden="true"><kbd class="tgKbdMod">⌘</kbd><kbd>K</kbd></span>
+      <span class="tgFltDiv" aria-hidden="true"></span>
+      <button type="button" class="tgFltBtn" id="fgFltBtn" onclick="openFilterPanel()" title="FILTERS" aria-label="Open filters">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      </button>
      </div>
      <div class="tgRail" id="tgRailGallery" role="group" aria-label="Tag preferences">
-       <div class="tgScroll">
-         <div class="tgRowIn"></div>
-         <div class="tgRowIn"></div>
-       </div>
+      <div class="tgScroll">
+       <div class="tgRowIn"></div>
+       <div class="tgRowIn"></div>
+      </div>
      </div>
-   </div>
-   <div class="fgHdr">
-    <input class="fgQ" id="fgQ" oninput="renderFG()" placeholder="SEARCH ARTWORK..." type="text"/>
-    <div class="fgFil">
-     <button class="fgFltBtn" id="fgFltBtn" onclick="openFilterPanel()" title="FILTERS" aria-label="Open filters">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-     </button>
+    </div>
+    <div class="fgBdy">
+     <div id="fgC">
+     </div>
     </div>
    </div>
-   <div class="fgBdy">
-    <div id="fgC">
+
+   <!-- ══ RESOURCES ══ stub: tab + search bar, empty body until it has data ══ -->
+   <div class="fgSec" id="fgSec-resources" role="tabpanel" aria-labelledby="fgSecBtn-resources">
+    <div class="tgBlock">
+     <div class="tgSearch" id="resourcesSearchWrap">
+      <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" class="tgSearchIn" id="resourcesSearchIn" placeholder="Search tutorials, brushes or assets..."
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             aria-label="Search resources" oninput="fgSecSearchInput('resources',this.value)">
+      <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('resources')" aria-label="Clear search">✕</button>
+      <span class="tgFltDiv" aria-hidden="true"></span>
+      <button type="button" class="tgFltBtn" id="fgSecFltBtn-resources" onclick="openSecFilter('resources')" title="FILTERS" aria-label="Filter resources">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      </button>
+     </div>
     </div>
+    <div class="fgBdy"><div id="fgSecC-resources"></div></div>
+   </div>
+
+   <!-- ══ BLOG ══ stub: tab + search bar, empty body until it has data ══ -->
+   <div class="fgSec" id="fgSec-blog" role="tabpanel" aria-labelledby="fgSecBtn-blog">
+    <div class="tgBlock">
+     <div class="tgSearch" id="blogSearchWrap">
+      <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" class="tgSearchIn" id="blogSearchIn" placeholder="Search posts, spotlights or news..."
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             aria-label="Search blog posts" oninput="fgSecSearchInput('blog',this.value)">
+      <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('blog')" aria-label="Clear search">✕</button>
+      <span class="tgFltDiv" aria-hidden="true"></span>
+      <button type="button" class="tgFltBtn" id="fgSecFltBtn-blog" onclick="openSecFilter('blog')" title="FILTERS" aria-label="Filter blog posts">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      </button>
+     </div>
+    </div>
+    <div class="fgBdy"><div id="fgSecC-blog"></div></div>
+   </div>
+
+   <!-- ══ MARKETPLACE ══ stub: tab + search bar, empty body until it has data ══ -->
+   <div class="fgSec" id="fgSec-marketplace" role="tabpanel" aria-labelledby="fgSecBtn-marketplace">
+    <div class="tgBlock">
+     <div class="tgSearch" id="marketplaceSearchWrap">
+      <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" class="tgSearchIn" id="marketplaceSearchIn" placeholder="Search products, prints or services..."
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             aria-label="Search marketplace" oninput="fgSecSearchInput('marketplace',this.value)">
+      <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('marketplace')" aria-label="Clear search">✕</button>
+      <span class="tgFltDiv" aria-hidden="true"></span>
+      <button type="button" class="tgFltBtn" id="fgSecFltBtn-marketplace" onclick="openSecFilter('marketplace')" title="FILTERS" aria-label="Filter marketplace">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      </button>
+     </div>
+    </div>
+    <div class="fgBdy"><div id="fgSecC-marketplace"></div></div>
+   </div>
+
+   <!-- ══ JOBS ══ stub: tab + search bar, empty body until it has data ══ -->
+   <div class="fgSec" id="fgSec-jobs" role="tabpanel" aria-labelledby="fgSecBtn-jobs">
+    <div class="tgBlock">
+     <div class="tgSearch" id="jobsSearchWrap">
+      <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" class="tgSearchIn" id="jobsSearchIn" placeholder="Search jobs, gigs or collaborations..."
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             aria-label="Search jobs" oninput="fgSecSearchInput('jobs',this.value)">
+      <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('jobs')" aria-label="Clear search">✕</button>
+      <span class="tgFltDiv" aria-hidden="true"></span>
+      <button type="button" class="tgFltBtn" id="fgSecFltBtn-jobs" onclick="openSecFilter('jobs')" title="FILTERS" aria-label="Filter jobs">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      </button>
+     </div>
+    </div>
+    <div class="fgBdy"><div id="fgSecC-jobs"></div></div>
+   </div>
+
+   <!-- ══ CART ══ stub: tab + search bar, empty body until it has data ══ -->
+   <div class="fgSec" id="fgSec-cart" role="tabpanel" aria-labelledby="fgSecBtn-cart">
+    <div class="tgBlock">
+     <div class="tgSearch" id="cartSearchWrap">
+      <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" class="tgSearchIn" id="cartSearchIn" placeholder="Search orders, downloads or licenses..."
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             aria-label="Search cart" oninput="fgSecSearchInput('cart',this.value)">
+      <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('cart')" aria-label="Clear search">✕</button>
+      <span class="tgFltDiv" aria-hidden="true"></span>
+      <button type="button" class="tgFltBtn" id="fgSecFltBtn-cart" onclick="openSecFilter('cart')" title="FILTERS" aria-label="Filter cart">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      </button>
+     </div>
+    </div>
+    <div class="fgBdy"><div id="fgSecC-cart"></div></div>
    </div>
   </div>
   <!-- FILTER PANEL OVERLAY -->
@@ -8351,15 +8432,19 @@ body{background:var(--bg);}
   <!-- FILTER PANEL -->
   <div id="fgFltPanel" role="dialog" aria-label="Filter options">
    <div class="fltPH">
-    <h3>FILTERS <span class="s">✦</span></h3>
+    <h3><span id="fltPTitle">FILTERS</span> <span class="s">✦</span></h3>
     <button class="fltPX" onclick="closeFilterPanel()" aria-label="Close filters">✕</button>
    </div>
    <div class="fltPBdy">
+    <!-- ── ARTWORKS body — category + sort. One panel serves all six
+         sections: this block shows for Artworks, #fltSecBody is built
+         on the fly for the other five. ── -->
+    <div id="fltArtBody">
     <!-- CATEGORY -->
     <div class="fltSec">
      <div class="fltSecLbl">CATEGORY</div>
      <div class="fltOpts" id="fltCatOpts">
-      <label class="fltOpt"><input type="radio" name="fltCat" value="all" checked><div class="fltDot"></div><span class="fltLbl">ALL CATEGORIES</span></label>
+      <label class="fltOpt"><input type="radio" name="fltCat" value="all" checked><div class="fltDot"></div><span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg></span><span class="fltLbl">ALL CATEGORIES</span></label>
       <!-- Remaining options injected by buildCategoryUI() from SITE_CATEGORIES -->
      </div>
     </div>
@@ -8368,14 +8453,18 @@ body{background:var(--bg);}
     <div class="fltSec">
      <div class="fltSecLbl">SORT</div>
      <div class="fltOpts" id="fltSrtOpts">
-      <label class="fltOpt"><input type="radio" name="fltSrt" value="trending" checked><div class="fltDot"></div><span class="fltLbl">TRENDING</span></label>
+      <label class="fltOpt"><input type="radio" name="fltSrt" value="trending" checked><div class="fltDot"></div><span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M21 20H3"/></svg></span><span class="fltLbl">TRENDING</span></label>
       <!-- "Latest" is a sort, not a category — deliberately kept out of the
            CATEGORY section above. Value stays 'new' so the sort path is shared. -->
-      <label class="fltOpt"><input type="radio" name="fltSrt" value="new"><div class="fltDot"></div><span class="fltLbl">LATEST</span></label>
-      <label class="fltOpt"><input type="radio" name="fltSrt" value="old"><div class="fltDot"></div><span class="fltLbl">OLDEST</span></label>
+      <label class="fltOpt"><input type="radio" name="fltSrt" value="new"><div class="fltDot"></div><span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="fltLbl">LATEST</span></label>
+      <label class="fltOpt"><input type="radio" name="fltSrt" value="old"><div class="fltDot"></div><span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M5 8.5v10a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-10"/><path d="M10 12.5h4"/></svg></span><span class="fltLbl">OLDEST</span></label>
      </div>
     </div>
     <div class="fltSep"></div>
+    </div>
+    <!-- ── SECTION body — radios injected by openSecFilter() from
+         FG_SECTIONS. Empty (and hidden) while Artworks is open. ── -->
+    <div id="fltSecBody" style="display:none;"></div>
     <!-- DONE -->
     <button class="fltDone" onclick="applyFilters()">DONE ✦</button>
    </div>
@@ -11479,7 +11568,6 @@ function qrMake (text) {
 
   // Admin role derived from profiles.role in Supabase, enforced via RLS
   const BUCKET   = 'koe-media';
-  const HERO_BUCKET = 'hero-slides'; // separate bucket for hero_slides images (see SQL setup)
   const S3_FN_URL = (window.KOE_CONFIG && window.KOE_CONFIG.S3_FN_URL) || '';
 
   /* ── S3 upload/delete — replaces sb.storage.from(...).upload/remove.
@@ -11490,9 +11578,9 @@ function qrMake (text) {
      that error handling needed to change.
 
      `bucket` keeps meaning what it always meant at each call site
-     (BUCKET or HERO_BUCKET) — here it's used as the S3 key prefix
-     (koe-media/... or hero-slides/...) instead of a Supabase bucket
-     name, matching what the s3-sign edge function expects. */
+     (BUCKET) — here it's used as the S3 key prefix (koe-media/...)
+     instead of a Supabase bucket name, matching what the s3-sign
+     edge function expects. */
   /* ── S3 key sanitizer ──
      FIX ("bad path" upload error): artwork titles were dropped straight
      into the S3 key with only whitespace replaced (nm.replace(/\s+/g,'_')).
@@ -11631,6 +11719,183 @@ function qrMake (text) {
        so the artworks already tagged with it aren't orphaned.
      • 'others' isn't in the design list but stays last — it's the
        fallback the upload code writes when nothing is picked. ── */
+  /* ═══════════════════════════════════════════════════════════════
+     FILTER OPTION ICONS
+     A shared glyph table plus a slug → glyph map, so every filter row
+     (artwork categories, sort, and the five section lists) gets a
+     leading icon from ONE source instead of markup repeating SVG.
+     Glyphs are reused deliberately — three vehicle categories reading
+     as three near-identical trucks would be noise, so related slugs
+     share. Anything unmapped falls back to 'dots' rather than
+     rendering a hole.
+     Strokes use currentColor: .fltIco owns the colour, which follows
+     the row's selected state.
+     ═══════════════════════════════════════════════════════════════ */
+  var FLT_GLYPH = {
+    'anchor'   :'<circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21"/><path d="M7.5 11h9"/><path d="M4 15a8 8 0 0 0 16 0"/>',
+    'archive'  :'<rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M5 8.5v10a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-10"/><path d="M10 12.5h4"/>',
+    'atom'     :'<circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(120 12 12)"/>',
+    'bag'      :'<path d="M6 2.5 3.5 6.5v13A1.5 1.5 0 0 0 5 21h14a1.5 1.5 0 0 0 1.5-1.5v-13L18 2.5z"/><path d="M3.5 6.5h17"/><path d="M15.5 10a3.5 3.5 0 0 1-7 0"/>',
+    'bike'     :'<circle cx="6" cy="16.5" r="3.5"/><circle cx="18" cy="16.5" r="3.5"/><path d="M6 16.5l4-8h5l3 8"/><path d="M9 8.5h4"/>',
+    'book'     :'<path d="M12 7c-1.8-1.3-4-2-6.5-2H3v13h2.5c2.5 0 4.7.7 6.5 2 1.8-1.3 4-2 6.5-2H21V5h-2.5C16 5 13.8 5.7 12 7z"/><path d="M12 7v13"/>',
+    'briefcase':'<rect x="2.5" y="7" width="19" height="13.5" rx="2"/><path d="M16 20.5V5.5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v15"/>',
+    'brush'    :'<path d="M15.5 3.5a2.1 2.1 0 0 1 3 3L9.5 15.5l-4 1 1-4z"/><path d="M5 18.5c1.5 0 2.5 1 2.5 2.5H3c0-1.5.5-2.5 2-2.5z"/>',
+    'building' :'<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8.5 7.5h2"/><path d="M13.5 7.5h2"/><path d="M8.5 12h2"/><path d="M13.5 12h2"/><path d="M10 21v-4h4v4"/>',
+    'calendar' :'<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
+    'cap'      :'<path d="M2.5 8.5 12 4l9.5 4.5L12 13z"/><path d="M6.5 10.5V16c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3v-5.5"/>',
+    'car'      :'<path d="M3.5 16.5v-4l2-5h13l2 5v4z"/><path d="M5 16.5v2.5h2.5v-2.5"/><path d="M16.5 16.5V19H19v-2.5"/><circle cx="7.5" cy="13.5" r="1"/><circle cx="16.5" cy="13.5" r="1"/>',
+    'card'     :'<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/><path d="M6.5 15h3"/>',
+    'cart'     :'<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.4a1.8 1.8 0 0 0 1.8 1.4h8.4a1.8 1.8 0 0 0 1.8-1.4L21.5 7H6"/>',
+    'chart'    :'<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M21 20H3"/>',
+    'clock'    :'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    'cpu'      :'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 2.5V6"/><path d="M15 2.5V6"/><path d="M9 18v3.5"/><path d="M15 18v3.5"/><path d="M2.5 9H6"/><path d="M2.5 15H6"/><path d="M18 9h3.5"/><path d="M18 15h3.5"/>',
+    'cube'     :'<path d="M12 2.5l8 4.5v9l-8 4.5-8-4.5v-9z"/><path d="M4 7l8 4.5L20 7"/><path d="M12 11.5v9"/>',
+    'cup'      :'<path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 9.5h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M4 21.5h13"/>',
+    'dots'     :'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+    'download' :'<path d="M12 3v11"/><path d="M7.5 10L12 14.5 16.5 10"/><path d="M4 18.5h16"/>',
+    'droplet'  :'<path d="M12 3s6 6.3 6 10.2A6 6 0 0 1 6 13.2C6 9.3 12 3 12 3z"/>',
+    'feather'  :'<path d="M19.5 4.5a5.7 5.7 0 0 0-8 0L5 11v8h8l6.5-6.5a5.7 5.7 0 0 0 0-8z"/><path d="M13 4.5 5 19"/>',
+    'file'     :'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+    'flame'    :'<path d="M12 21c3.6 0 6.5-2.7 6.5-6 0-4.5-4.5-6.5-4-12-2.5 1.5-5 4.5-5 7.5 0 1.5-1 2-1.5 1.2-.6-.9-.5-2.2-.5-2.2C6 10.5 5.5 12.6 5.5 15c0 3.3 2.9 6 6.5 6z"/>',
+    'flower'   :'<circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="6.5" r="2.8"/><circle cx="12" cy="17.5" r="2.8"/><circle cx="6.5" cy="12" r="2.8"/><circle cx="17.5" cy="12" r="2.8"/>',
+    'grid'     :'<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>',
+    'heart'    :'<path d="M12 20s-7.5-4.6-7.5-9.4A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
+    'home'     :'<path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.5v10h13v-10"/><path d="M10 19.5v-5h4v5"/>',
+    'image'    :'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>',
+    'layers'   :'<path d="M12 3 3 8l9 5 9-5z"/><path d="M3 13l9 5 9-5"/>',
+    'layout'   :'<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18"/><path d="M9.5 9v12"/>',
+    'leaf'     :'<path d="M4 20s-.5-8 4.5-12.5S20 4 20 4s.5 8-4.5 12.5S4 20 4 20z"/><path d="M8 16l8-8"/>',
+    'megaphone':'<path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H8l7 4.5v-15L8 9H5.5A1.5 1.5 0 0 0 4 10.5z"/><path d="M18.5 9.5a4 4 0 0 1 0 5"/>',
+    'message'  :'<path d="M20.5 12.5a7.5 7.5 0 0 1-10.9 6.7L4 20.5l1.4-5.4A7.5 7.5 0 1 1 20.5 12.5z"/>',
+    'mic'      :'<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/>',
+    'monitor'  :'<rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M8.5 20.5h7"/><path d="M12 16.5v4"/>',
+    'moon'     :'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+    'mountain' :'<path d="M3 19l6-9 4 5.5 2.5-3.5L21 19z"/><circle cx="8" cy="6.5" r="1.8"/>',
+    'palette'  :'<path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2s-.7-1.5-.7-2.3c0-.9.7-1.7 1.7-1.7H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="12.5" r="1.1"/><circle cx="9.8" cy="7.8" r="1.1"/><circle cx="14.6" cy="7.8" r="1.1"/>',
+    'paw'      :'<circle cx="7" cy="9" r="2"/><circle cx="12" cy="6.5" r="2"/><circle cx="17" cy="9" r="2"/><path d="M12 11c-2.8 0-5 2.2-5 4.5S9 21 12 21s5-3.2 5-5.5S14.8 11 12 11z"/>',
+    'pencil'   :'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    'plane'    :'<path d="M2.5 13.5 21 4l-4 15-4.5-4.5-2.5 4-1-5.5z"/><path d="M10.5 13.5 21 4"/>',
+    'puzzle'   :'<path d="M5 8h3V6a2.5 2.5 0 0 1 5 0v2h3a1 1 0 0 1 1 1v3h2a2.5 2.5 0 0 1 0 5h-2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>',
+    'shield'   :'<path d="M12 2.5l8 3v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10v-6z"/><path d="M9 12l2 2 4-4"/>',
+    'smile'    :'<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01"/><path d="M15 9.5h.01"/>',
+    'sparkle'  :'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18.3 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
+    'star'     :'<path d="M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6.1L12 16.8 6.7 19.7l1.1-6.1L3.4 9.4l6-.8z"/>',
+    'tag'      :'<path d="M11 3H3v8l10 10 8-8z"/><circle cx="7" cy="7" r="1.4"/>',
+    'trophy'   :'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 5.5H5V7a3 3 0 0 0 3 3"/><path d="M16 5.5h3V7a3 3 0 0 1-3 3"/><path d="M12 13v4"/><path d="M8.5 20.5h7"/>',
+    'truck'    :'<rect x="2.5" y="7" width="11" height="9.5" rx="1.5"/><path d="M13.5 10.5h4l3 3v3h-7z"/><circle cx="7" cy="18.5" r="1.8"/><circle cx="17" cy="18.5" r="1.8"/>',
+    'type'     :'<path d="M4 6V4.5h16V6"/><path d="M12 4.5V20"/><path d="M9 20h6"/>',
+    'user'     :'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+    'users'    :'<circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 14.4a6.5 6.5 0 0 1 3.5 5.6"/>',
+    'wifi'     :'<path d="M2.5 9a14 14 0 0 1 19 0"/><path d="M6 12.5a9 9 0 0 1 12 0"/><path d="M9.5 16a4 4 0 0 1 5 0"/><circle cx="12" cy="19.5" r="1"/>',
+    'zap'      :'<path d="M13.5 2.5 4.5 13.5h6l-.5 8 9-11h-6z"/>'
+  };
+  var FLT_ICO_MAP = {
+    '3d-art'            :'cube',
+    '3d-assets'         :'cube',
+    '3d-models'         :'cube',
+    'abstract'          :'layers',
+    'aesthetic-art'     :'sparkle',
+    'ai-art'            :'cpu',
+    'aircraft'          :'plane',
+    'all'               :'grid',
+    'animals'           :'paw',
+    'anime'             :'smile',
+    'announcements'     :'megaphone',
+    'architecture'      :'building',
+    'artist-spotlights' :'star',
+    'artwork'           :'image',
+    'bikes'             :'bike',
+    'birds'             :'feather',
+    'brushes'           :'brush',
+    'buildings'         :'building',
+    'buses'             :'truck',
+    'cars'              :'car',
+    'challenges'        :'trophy',
+    'characters'        :'user',
+    'checkout'          :'card',
+    'chibi'             :'sparkle',
+    'cityscape'         :'building',
+    'collaboration'     :'users',
+    'color-palettes'    :'palette',
+    'comic'             :'book',
+    'commissions'       :'user',
+    'community'         :'users',
+    'concept-art'       :'palette',
+    'contest'           :'trophy',
+    'digital-art'       :'monitor',
+    'digital-downloads' :'download',
+    'downloads'         :'download',
+    'dragons'           :'flame',
+    'events'            :'calendar',
+    'fan-art'           :'brush',
+    'fantasy'           :'sparkle',
+    'flowers'           :'flower',
+    'fonts'             :'type',
+    'food-art'          :'cup',
+    'freelance'         :'briefcase',
+    'full-time'         :'building',
+    'hiring-artists'    :'user',
+    'icons'             :'smile',
+    'illustrations'     :'file',
+    'interior-design'   :'home',
+    'internship'        :'cap',
+    'interviews'        :'mic',
+    'landscapes'        :'mountain',
+    'licenses'          :'shield',
+    'logos'             :'tag',
+    'manga'             :'book',
+    'marine-life'       :'droplet',
+    'mecha'             :'cpu',
+    'mockups'           :'monitor',
+    'monsters'          :'flame',
+    'mythology'         :'flame',
+    'nature'            :'leaf',
+    'new'               :'clock',
+    'news'              :'file',
+    'old'               :'archive',
+    'orders'            :'archive',
+    'others'            :'dots',
+    'part-time'         :'clock',
+    'patterns'          :'grid',
+    'pixel-art'         :'grid',
+    'plugins'           :'puzzle',
+    'poster-art'        :'tag',
+    'prints'            :'tag',
+    'psd-files'         :'file',
+    'references'        :'image',
+    'releases'          :'archive',
+    'remote'            :'wifi',
+    'reviews'           :'message',
+    'robots'            :'cpu',
+    'saved-for-later'   :'heart',
+    'scenery'           :'mountain',
+    'sci-fi'            :'atom',
+    'services'          :'bag',
+    'ships'             :'anchor',
+    'shopping-cart'     :'cart',
+    'sketches'          :'pencil',
+    'space'             :'moon',
+    'templates'         :'layout',
+    'textures'          :'grid',
+    'tips-guides'       :'cube',
+    'traditional-art'   :'brush',
+    'trees'             :'leaf',
+    'trending'          :'chart',
+    'trucks'            :'truck',
+    'tutorials'         :'book',
+    'typography'        :'type',
+    'ui-kits'           :'layout',
+    'wallpapers'        :'image',
+    'weapons'           :'zap',
+    'website-templates' :'monitor'
+  };
+  function fltIco(key){
+    var g = FLT_GLYPH[FLT_ICO_MAP[key] || 'dots'] || FLT_GLYPH.dots;
+    return '<span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" '+
+           'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" '+
+           'stroke-linejoin="round">'+g+'</svg></span>';
+  }
+
   var SITE_CATEGORIES = [
     {slug:'characters',      label:'Characters'},
     {slug:'anime',           label:'Anime'},
@@ -11707,7 +11972,8 @@ function qrMake (text) {
     if(fo){
       fo.insertAdjacentHTML('beforeend', SITE_CATEGORIES.map(function(c){
         return '<label class="fltOpt"><input type="radio" name="fltCat" value="'+esc(c.slug)+'">'+
-               '<div class="fltDot"></div><span class="fltLbl">'+esc(c.label.toUpperCase())+'</span></label>';
+               '<div class="fltDot"></div>'+fltIco(c.slug)+
+               '<span class="fltLbl">'+esc(c.label.toUpperCase())+'</span></label>';
       }).join(''));
     }
     /* 2. Profile upload checkboxes — 'others' is the default check */
@@ -11750,7 +12016,7 @@ function qrMake (text) {
     /* FIX 5: albPage (Settings ▸ Albums) and albViewPage (one album's
        contents) both lock scroll — without them, closing any other
        panel while an album is open would re-enable scrolling behind it. */
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','tsPage'];
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -12097,7 +12363,10 @@ function qrMake (text) {
   }
 
   function _renderFGPage(){
-    const q=document.getElementById('fgQ').value.toLowerCase().trim();
+    /* The query lives on the in-bar field now — the .fgHdr row that
+       owned #fgQ was removed when the gallery gained section tabs. */
+    const _fgIn=document.getElementById('fgSearchIn');
+    const q=(_fgIn?_fgIn.value:'').toLowerCase().trim();
     const c=document.getElementById('fgC');
     let imgs=filterHidden([...images]);
     if(filterCat!=='all')imgs=imgs.filter(i=>(catList(i.category).length?catList(i.category):['others']).includes(filterCat));
@@ -12175,6 +12444,11 @@ function qrMake (text) {
   }
 
   function openFilterPanel(){
+    /* Artworks mode — show the category/sort body, hide the generic one. */
+    fgFltMode = 'artworks';
+    var _t=document.getElementById('fltPTitle'); if(_t) _t.textContent='FILTERS';
+    var _a=document.getElementById('fltArtBody'); if(_a) _a.style.display='';
+    var _s=document.getElementById('fltSecBody'); if(_s) _s.style.display='none';
     /* Sync radio buttons to current state before opening */
     var catR=document.querySelector('input[name="fltCat"][value="'+filterCat+'"]');
     if(catR)catR.checked=true;
@@ -12188,6 +12462,9 @@ function qrMake (text) {
     document.getElementById('fgFltPanel').classList.remove('open');
   }
   function applyFilters(){
+    /* One DONE button, two panels — hand off when a stub section owns
+       the panel, otherwise fall through to the artwork category/sort. */
+    if(fgFltMode!=='artworks'){ applySecFilter(); return; }
     var catR=document.querySelector('input[name="fltCat"]:checked');
     var srtR=document.querySelector('input[name="fltSrt"]:checked');
     filterCat=catR?catR.value:'all';
@@ -12199,9 +12476,110 @@ function qrMake (text) {
   function openFG(){
     document.getElementById('fg').classList.add('open');
     document.body.style.overflow='hidden';
+    fgSwitchSection('artworks'); /* every open lands on Artworks */
     fgVisible=0; /* fresh open — start from the first batch */
     renderFG();
   }
+
+  /* ═══════════════════════════════════════════════════════════════
+     GALLERY SECTIONS
+     Artworks / Resources / Blog / Marketplace / Jobs / Cart.
+     Artworks is the live one (grid + category/sort filter). The other
+     five are shells: a search field and a filter whose options are
+     listed below, with nothing to search yet. They are here so the
+     navigation is real while the data lands behind it — each `opts`
+     list is the menu that section's filter offers.
+     ═══════════════════════════════════════════════════════════════ */
+  var FG_SECTIONS = {
+    resources:   { label:'Resources',   opts:['Tutorials','Brushes','Textures','Fonts','PSD Files','3D Assets','References','Color Palettes','Mockups','Templates','Icons','Plugins'] },
+    blog:        { label:'Blog',        opts:['News','Community','Artist Spotlights','Tips & Guides','Interviews','Reviews','Events','Challenges','Releases','Announcements'] },
+    marketplace: { label:'Marketplace', opts:['Artwork','Prints','Digital Downloads','Website Templates','UI Kits','Icons','Brushes','3D Models','Commissions','Services'] },
+    jobs:        { label:'Jobs',        opts:['Freelance','Full-Time','Part-Time','Remote','Internship','Contest','Hiring Artists','Collaboration'] },
+    cart:        { label:'Cart',        opts:['Shopping Cart','Saved for Later','Checkout','Orders','Downloads','Licenses'] }
+  };
+  var fgSection = 'artworks';           /* which tab is showing        */
+  var fgFltMode = 'artworks';           /* which body the panel serves */
+  var fgSecFilter = {};                 /* section id → chosen option  */
+  var fgSecQuery  = {};                 /* section id → typed query    */
+
+  function fgSwitchSection(id){
+    if(!id) return;
+    var secs=document.querySelectorAll('#fg .fgSec'), i;
+    for(i=0;i<secs.length;i++) secs[i].classList.toggle('active', secs[i].id==='fgSec-'+id);
+    var btns=document.querySelectorAll('#fgSecTabs .fgSecBtn'), on;
+    for(i=0;i<btns.length;i++){
+      on = btns[i].id==='fgSecBtn-'+id;
+      btns[i].classList.toggle('active', on);
+      btns[i].setAttribute('aria-selected', on?'true':'false');
+    }
+    fgSection=id;
+    var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
+    /* The rail measures widths to pack its two rows, which it can only
+       do while its section is actually displayed. */
+    if(id==='artworks' && typeof tgRenderRail==='function'){ try{ tgRenderRail(false); }catch(e){} }
+    /* Sections load on first visit, not on page load — five extra
+       queries for tabs nobody opened would be wasted work. */
+    if(id!=='artworks' && typeof dzSecEnter==='function') dzSecEnter(id);
+  }
+
+  /* Stub sections have nothing to filter yet, so the query is simply
+     held. Wiring one up later means rendering into #fgSecC-<id> here. */
+  var fgSecQTimer={};
+  function fgSecSearchInput(id,v){
+    fgSecQuery[id]=String(v||'');
+    var w=document.getElementById(id+'SearchWrap');
+    if(w) w.classList.toggle('tgHasQ', !!fgSecQuery[id].length);
+    /* Debounced for the same reason the artwork bar is: repainting
+       per keystroke makes typing feel like it's fighting back. */
+    clearTimeout(fgSecQTimer[id]);
+    fgSecQTimer[id]=setTimeout(function(){
+      if(typeof dzSecRender==='function') dzSecRender(id);
+    },140);
+  }
+  function fgSecSearchClear(id){
+    var el=document.getElementById(id+'SearchIn');
+    if(el){ el.value=''; el.focus(); }
+    fgSecSearchInput(id,'');
+  }
+
+  /* Builds the shared panel's body from FG_SECTIONS[id].opts. */
+  function openSecFilter(id){
+    var sec=FG_SECTIONS[id]; if(!sec) return;
+    fgFltMode=id;
+    var cur=fgSecFilter[id]||'all', html='<div class="fltSec"><div class="fltSecLbl">'+
+      sec.label.toUpperCase()+'</div><div class="fltOpts" id="fltSecOpts">'+
+      '<label class="fltOpt"><input type="radio" name="fltSec" value="all"'+
+      (cur==='all'?' checked':'')+'><div class="fltDot"></div>'+fltIco('all')+
+      '<span class="fltLbl">ALL</span></label>';
+    for(var i=0;i<sec.opts.length;i++){
+      var o=sec.opts[i], v=o.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+      html+='<label class="fltOpt"><input type="radio" name="fltSec" value="'+v+'"'+
+        (cur===v?' checked':'')+'><div class="fltDot"></div>'+fltIco(v)+
+        '<span class="fltLbl">'+o.toUpperCase()+'</span></label>';
+    }
+    html+='</div></div><div class="fltSep"></div>';
+    var body=document.getElementById('fltSecBody');
+    if(body){ body.innerHTML=html; body.style.display=''; }
+    var art=document.getElementById('fltArtBody'); if(art) art.style.display='none';
+    var t=document.getElementById('fltPTitle'); if(t) t.textContent=sec.label.toUpperCase();
+    document.getElementById('fgFltOvr').classList.add('open');
+    document.getElementById('fgFltPanel').classList.add('open');
+  }
+  function applySecFilter(){
+    var id=fgFltMode, r=document.querySelector('input[name="fltSec"]:checked');
+    fgSecFilter[id]=r?r.value:'all';
+    var btn=document.getElementById('fgSecFltBtn-'+id);
+    if(btn) btn.classList.toggle('active', fgSecFilter[id]!=='all');
+    closeFilterPanel();
+    if(typeof dzSecRender==='function') dzSecRender(id);
+  }
+
+  /* Reachable from inline handlers regardless of how this block is scoped. */
+  window.fgSwitchSection=fgSwitchSection;
+  window.fgSecSearchInput=fgSecSearchInput;
+  window.fgSecSearchClear=fgSecSearchClear;
+  window.openSecFilter=openSecFilter;
+  window.applySecFilter=applySecFilter;
   function closeFG(){
     document.getElementById('fg').classList.remove('open');
     restoreScroll();
@@ -16522,7 +16900,7 @@ function qrMake (text) {
 
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closePfUploadMenu();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     /* FIX: these overlays previously ignored Escape entirely */
-    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();ahsCloseEdit();
+    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();
   }});
 
   /* ── BOTTOM NAVIGATION ──────────────────────────────────
@@ -16643,7 +17021,6 @@ function qrMake (text) {
     document.documentElement.style.overflow = 'hidden';
     admLoadNotifSent();
     admLoadReports();   /* populates the REPORT tab badge on open */
-    ahsLoadSlides();
   }
 
   function closeAdmPage(){
@@ -16653,355 +17030,7 @@ function qrMake (text) {
     restoreScroll();
   }
 
-  /* ── PUBLIC FEATURED SLIDES (#topSlide) ──
-     Reads the same hero_slides table the admin editor below writes
-     to, and paints the horizontal strip under the floating top bar.
-     heroSlides holds only rows that actually have an image, in
-     `position` order. renderTopSlide() replaces the static grey
-     placeholder boxes (which now act purely as a loading skeleton);
-     with zero slides the track is emptied so visitors never see
-     unfinished-looking empty shells. Requires a public SELECT RLS
-     policy on hero_slides (write stays dev-only). */
-  var heroSlides = [];
-  async function loadHeroSlides(){
-    if(!sb) return;
-    try{
-      const{data,error} = await sb.from('hero_slides').select('*').order('position',{ascending:true});
-      if(error) throw error;
-      heroSlides = (data||[]).filter(function(r){ return !!r.image_url; });
-    }catch(e){ heroSlides = []; console.warn('Featured slides fetch skipped:', e.message||e); }
-    renderTopSlide();
-  }
-  function renderTopSlide(){
-    /* Paints every .tsTrack on the page. Only the home #tsTrack remains
-       (the gallery strip was replaced by a tag rail), but the class-based
-       lookup means adding another strip anywhere still just works. */
-    var tracks = document.querySelectorAll('.tsTrack');
-    if(!tracks.length) return;
-    /* Title plus a two-line taste of the description; both clamp with
-       an ellipsis. The FULL description lives on the detail page that
-       tapping the slide opens. */
-    var html = heroSlides.map(function(s, i){
-      return '<div class="tsBox" role="button" tabindex="0" onclick="tsOpenSlide('+i+')" '+
-             'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();tsOpenSlide('+i+');}">'+
-        '<img src="'+esc(getViewUrl(s.image_url))+'" alt="'+esc(s.title||'Featured slide')+'" loading="lazy" decoding="async" draggable="false">'+
-        ((s.title || s.subtitle)
-          ? '<div class="tsBoxText">'+
-              (s.title    ? '<div class="tsBoxTitle">'+esc(s.title)+'</div>' : '')+
-              (s.subtitle ? '<div class="tsBoxDesc">'+esc(s.subtitle)+'</div>' : '')+
-            '</div>'
-          : '')+
-      '</div>';
-    }).join('');
-    tracks.forEach(function(track){ track.innerHTML = html; });
-    tsBuildNav();   /* slide count changed — rebuild dots/arrows */
-  }
 
-  /* ── Featured strip carousel ──────────────────────────────────
-     Same mechanics as the RANKING boards: the track is a plain CSS
-     snap-scroller, so swiping is native. This only mirrors scroll
-     position into the dots/arrows and drives the track on click.
-
-     The difference from RANKING is that more than one slide can be
-     visible at once (1 / 2 / 3 / 4 by breakpoint), so a "page" is a
-     scroll position rather than a card — with N of M showing there
-     are M-N+1 reachable positions, and one dot per position. Using
-     one dot per SLIDE would leave the last N-1 dots unreachable. */
-  var tsCur = 0;
-  /* The strip is a CSS snap-scroller, so the static placeholder boxes
-     scroll natively the moment the page paints — but tsBuildNav() used
-     to run ONLY at the end of renderTopSlide(), which waits on the
-     hero_slides fetch (and never runs at all when sb is null). Until
-     then nothing was listening, so dragging the strip moved the slides
-     while the progress bar sat frozen at its CSS default. Wiring on DOM
-     ready fixes that; renderTopSlide() re-runs it when real slides land
-     and the listener is guarded by _tsWired so it attaches once. */
-  function tsBoot(){
-    if(document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', function(){ tsBuildNav(); });
-    } else {
-      tsBuildNav();
-    }
-  }
-  /* ── Featured slide detail ── */
-  function tsOpenSlide(i){
-    var sl = heroSlides[i];
-    /* The placeholder boxes have no data behind them, so a tap before
-       the fetch resolves is a no-op rather than an empty page. */
-    if(!sl) return;
-    var img = document.getElementById('tsPgImg');
-    if(img){ img.src = getViewUrl(sl.image_url); img.alt = sl.title || 'Featured slide'; }
-    var t = document.getElementById('tsPgTitle');
-    if(t) t.textContent = sl.title || 'Untitled';
-    var d = document.getElementById('tsPgDate');
-    if(d){
-      var when = '';
-      try{
-        if(sl.created_at) when = new Date(sl.created_at)
-          .toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
-      }catch(e){}
-      d.textContent = when;
-      d.style.display = when ? '' : 'none';
-    }
-    var desc = document.getElementById('tsPgDesc');
-    if(desc){
-      desc.textContent = sl.subtitle || '';
-      desc.style.display = sl.subtitle ? '' : 'none';
-    }
-    document.getElementById('tsPage').classList.add('open');
-    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = 'none';
-    document.body.style.overflow = 'hidden';
-  }
-  function tsClosePage(){
-    document.getElementById('tsPage').classList.remove('open');
-    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = '';
-    restoreScroll();
-  }
-  document.addEventListener('keydown', function(e){
-    if(e.key !== 'Escape') return;
-    var p = document.getElementById('tsPage');
-    if(p && p.classList.contains('open')) tsClosePage();
-  });
-  function tsPadLeft(t){
-    return parseFloat(getComputedStyle(t).paddingLeft) || 0;
-  }
-  function tsPerView(){
-    var t = document.getElementById('tsTrack');
-    if(!t) return 1;
-    var v = parseInt(getComputedStyle(t).getPropertyValue('--tsPer'), 10);
-    return Math.max(1, v || 1);
-  }
-  function tsPages(){
-    var t = document.getElementById('tsTrack');
-    if(!t) return 1;
-    return Math.max(1, t.children.length - tsPerView() + 1);
-  }
-  function tsSlideTo(i){
-    var t = document.getElementById('tsTrack');
-    if(!t) return;
-    i = Math.max(0, Math.min(tsPages() - 1, i));
-    var box = t.children[i];
-    if(!box) return;
-    /* Align to the box's left edge, not its centre: with several
-       visible, centring would leave the row half-off at both ends.
-       offsetLeft is measured from the track's border box, so the left
-       padding has to come back off or every stop overshoots by it. */
-    t.scrollTo({ left: box.offsetLeft - tsPadLeft(t), behavior: 'smooth' });
-  }
-  function tsSync(){
-    var t = document.getElementById('tsTrack');
-    if(!t) return;
-    var pages = tsPages(), best = 0, bd = Infinity;
-    for(var i = 0; i < pages; i++){
-      var box = t.children[i];
-      if(!box) continue;
-      var d = Math.abs((box.offsetLeft - tsPadLeft(t)) - t.scrollLeft);
-      if(d < bd){ bd = d; best = i; }
-    }
-    tsCur = best;
-    var dots = document.getElementById('tsDots');
-    if(dots){
-      for(var k = 0; k < dots.children.length; k++){
-        dots.children[k].classList.toggle('on', k === tsCur);
-        dots.children[k].setAttribute('aria-selected', k === tsCur ? 'true' : 'false');
-      }
-    }
-    var p = document.getElementById('tsPrev'), n = document.getElementById('tsNext');
-    if(p) p.disabled = (tsCur === 0);
-    if(n) n.disabled = (tsCur >= pages - 1);
-  }
-  function tsBuildNav(){
-    var t = document.getElementById('tsTrack');
-    var dots = document.getElementById('tsDots');
-    var p = document.getElementById('tsPrev'), n = document.getElementById('tsNext');
-    if(!t) return;
-    var slides = t.children.length, pages = tsPages();
-    /* Nothing to page through — hide the chrome rather than show a
-       single dead dot and two disabled arrows. */
-    var chrome = slides > tsPerView();
-    if(dots){
-      dots.style.display = chrome ? '' : 'none';
-      dots.innerHTML = '';
-      if(chrome){
-        for(var i = 0; i < pages; i++){
-          var d = document.createElement('button');
-          d.type = 'button';
-          d.className = 'tsDot' + (i === 0 ? ' on' : '');
-          d.setAttribute('role', 'tab');
-          d.setAttribute('aria-label', 'Slide ' + (i + 1));
-          d.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
-          (function(idx){ d.onclick = function(){ tsSlideTo(idx); }; })(i);
-          dots.appendChild(d);
-        }
-      }
-    }
-    if(p){ p.style.display = chrome ? '' : 'none'; p.onclick = function(){ tsSlideTo(tsCur - 1); }; }
-    if(n){ n.style.display = chrome ? '' : 'none'; n.onclick = function(){ tsSlideTo(tsCur + 1); }; }
-    if(!t._tsWired){
-      t._tsWired = true;
-      var raf = null;
-      t.addEventListener('scroll', function(){
-        if(raf) return;
-        raf = requestAnimationFrame(function(){ raf = null; tsSync(); });
-      }, { passive: true });
-      /* A rotate/resize changes both the box width AND how many fit, so
-         the page count changes too — rebuild, then re-anchor on the
-         slide the user was actually looking at rather than drifting. */
-      var rz = null;
-      window.addEventListener('resize', function(){
-        clearTimeout(rz);
-        rz = setTimeout(function(){ var keep = tsCur; tsBuildNav(); tsSlideTo(keep); }, 150);
-      });
-    }
-    tsSync();
-  }
-  tsBoot();
-
-  /* ── HERO SLIDES (admin) — wired to Supabase ──
-     Table: public.hero_slides (id, image_url, storage_path, title,
-     subtitle, position, created_at). Bucket: hero-slides.
-     ahSlides holds 10 slots in memory, indexed 0-9 to match
-     `position`: {id, image_url, storage_path, title, subtitle}.
-     A slot with id:null means nothing saved there yet.
-     ahsPendingFile holds the raw File object picked in the modal
-     (only uploaded to storage on Save, not on pick) — the preview
-     shown while editing is a local FileReader dataURL and is never
-     itself written to the DB. */
-  function ahsEmptySlot(){ return {id:null, image_url:null, storage_path:null, title:'', subtitle:''}; }
-  var ahSlides = [0,1,2,3,4,5,6,7,8,9].map(ahsEmptySlot);
-  var ahsEditingIndex = -1;
-  var ahsPendingFile = null;
-
-  async function ahsLoadSlides(){
-    if(!sb) return;
-    ahSlides = [0,1,2,3,4,5,6,7,8,9].map(ahsEmptySlot);
-    for(var i=0;i<10;i++) ahsRenderBox(i);
-    try{
-      const{data,error} = await sb.from('hero_slides').select('*').order('position',{ascending:true});
-      if(error) throw error;
-      (data||[]).forEach(function(row){
-        if(typeof row.position==='number' && row.position>=0 && row.position<10){
-          ahSlides[row.position] = row;
-        }
-      });
-    }catch(e){ console.error('Error loading hero slides: '+e.message); }
-    for(var j=0;j<10;j++) ahsRenderBox(j);
-  }
-
-  function ahsRenderBox(i){
-    var img = document.getElementById('ahsImg'+i);
-    var titleEl = document.getElementById('ahsTitle'+i);
-    var subEl = document.getElementById('ahsSub'+i);
-    if(!img || !titleEl || !subEl) return;
-    var slide = ahSlides[i];
-    if(slide.image_url){ img.src = slide.image_url; img.style.display=''; } else { img.style.display='none'; img.removeAttribute('src'); }
-    titleEl.textContent = slide.title || '';
-    subEl.textContent = slide.subtitle || '';
-  }
-
-  function ahsOpenEdit(i){
-    ahsEditingIndex = i;
-    ahsPendingFile = null;
-    document.getElementById('ahsEditNum').textContent = (i+1);
-    document.getElementById('ahsEditTitle').value = ahSlides[i].title || '';
-    document.getElementById('ahsEditSubtitle').value = ahSlides[i].subtitle || '';
-    var preview = document.getElementById('ahsEditPreview');
-    var hint = document.getElementById('ahsImgPickHint');
-    if(ahSlides[i].image_url){ preview.src = ahSlides[i].image_url; preview.style.display=''; hint.style.display='none'; }
-    else { preview.style.display='none'; preview.removeAttribute('src'); hint.style.display=''; }
-    document.getElementById('ahsEditOvr').classList.add('open');
-  }
-
-  function ahsCloseEdit(){
-    document.getElementById('ahsEditOvr').classList.remove('open');
-    ahsEditingIndex = -1;
-    ahsPendingFile = null;
-  }
-
-  function ahsPickFile(e){
-    var file = e.target.files && e.target.files[0];
-    if(!file) return;
-    ahsPendingFile = file;
-    var reader = new FileReader();
-    reader.onload = function(ev){
-      var preview = document.getElementById('ahsEditPreview');
-      preview.src = ev.target.result;
-      preview.style.display='';
-      document.getElementById('ahsImgPickHint').style.display='none';
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  }
-
-  async function ahsSaveSlide(){
-    if(ahsEditingIndex<0) return;
-    if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
-    var title = (document.getElementById('ahsEditTitle').value || '').trim();
-    if(!title){ showToast('Title is required'); return; }
-    var subtitle = (document.getElementById('ahsEditSubtitle').value || '').trim();
-    var slot = ahSlides[ahsEditingIndex];
-    var imageUrl = slot.image_url || null;
-    var storagePath = slot.storage_path || null;
-    if(!ahsPendingFile && !imageUrl){ showToast('Image is required'); return; }
-    var saveBtn = document.querySelector('.ahsSaveBtn');
-    if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='SAVING…'; }
-    try{
-      if(ahsPendingFile){
-        var ext = safeSlug(ahsPendingFile.name.split('.').pop(), 8) || 'jpg';
-        var path = 'slide_'+ahsEditingIndex+'_'+Date.now()+'.'+ext;
-        const publicUrl = await s3Upload(HERO_BUCKET,path,ahsPendingFile);
-        var oldPath = storagePath;
-        imageUrl = publicUrl;
-        storagePath = path;
-        if(oldPath) await s3Delete(HERO_BUCKET,oldPath);
-      }
-      var payload = {image_url:imageUrl, storage_path:storagePath, title:title, subtitle:subtitle||null, position:ahsEditingIndex};
-      var result;
-      if(slot.id){
-        result = await sb.from('hero_slides').update(payload).eq('id',slot.id).select().single();
-      } else {
-        result = await sb.from('hero_slides').insert(payload).select().single();
-      }
-      if(result.error) throw result.error;
-      ahSlides[ahsEditingIndex] = result.data;
-      ahsRenderBox(ahsEditingIndex);
-      loadHeroSlides(); /* keep the public #topSlide strip in sync */
-      showToast('Slide '+(ahsEditingIndex+1)+' saved ✦');
-      ahsCloseEdit();
-    }catch(e){
-      console.error('Error saving hero slide: '+e.message);
-      showToast('Error saving slide');
-    }finally{
-      if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent='Save'; }
-    }
-  }
-
-  async function ahsDeleteSlide(){
-    if(ahsEditingIndex<0) return;
-    var slot = ahSlides[ahsEditingIndex];
-    if(!slot.id){
-      // Nothing saved to this slot yet — just clear the local UI.
-      ahSlides[ahsEditingIndex] = ahsEmptySlot();
-      ahsRenderBox(ahsEditingIndex);
-      ahsCloseEdit();
-      return;
-    }
-    if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
-    if(!confirm('Delete this slide?')) return;
-    try{
-      if(slot.storage_path) await s3Delete(HERO_BUCKET,slot.storage_path);
-      const{error} = await sb.from('hero_slides').delete().eq('id',slot.id);
-      if(error) throw error;
-      ahSlides[ahsEditingIndex] = ahsEmptySlot();
-      ahsRenderBox(ahsEditingIndex);
-      loadHeroSlides(); /* keep the public #topSlide strip in sync */
-      showToast('Slide '+(ahsEditingIndex+1)+' deleted');
-      ahsCloseEdit();
-    }catch(e){
-      console.error('Error deleting hero slide: '+e.message);
-      showToast('Error deleting slide');
-    }
-  }
 
   function admSwitchTab(tab){
     admTab = tab;
@@ -18580,9 +18609,6 @@ function hideCommentThumbnail(){
 
   async function init(){
     spawnPts();
-    /* Featured slides load in parallel with the main artworks fetch —
-       fire-and-forget; renderTopSlide() paints whenever it resolves. */
-    loadHeroSlides();
     await loadDB();
     renderHome();
     /* No hero image to preload anymore — resolve the loading bar's
@@ -19425,8 +19451,8 @@ function hideCommentThumbnail(){
 
      Two bars, two grids, one behaviour:
        #awSearchIn  → the home feed  (#awGrid, via renderAwGrid)
-       #fgSearchIn  → the gallery    (#fgQ + renderFG, whose query
-                      state stays exactly where it always was)
+       #fgSearchIn  → the gallery    (renderFG reads this field
+                      directly; the old #fgQ row is gone)
      ═══════════════════════════════════════════════════════════════ */
   var awQ = '', awQTimer = null, fgQTimer = null;
 
@@ -19513,13 +19539,10 @@ function hideCommentThumbnail(){
     if(el){ el.value = ''; el.focus(); }
     awSearchInput('');
   }
-  /* The gallery keeps its own query in #fgQ because renderFG() reads
-     that element directly. Writing through it lets this bar replace
-     the old field without touching the gallery's render path at all. */
+  /* This IS the gallery's query field now — _renderFGPage() reads
+     #fgSearchIn directly, so there is nothing to mirror into. */
   function fgSearchInput(v){
     awSearchChrome('fgSearchInWrap', v);
-    var q = document.getElementById('fgQ');
-    if(q) q.value = v || '';
     clearTimeout(fgQTimer);
     fgQTimer = setTimeout(function(){
       if(typeof renderFG === 'function') renderFG();
@@ -20232,7 +20255,7 @@ function hideCommentThumbnail(){
   'use strict';
 
   /* ── Sections in scope ── */
-  var SCOPE_IDS = ['topSlide', 'artworks', 'rankSec', 'subOverview', 'connect'];
+  var SCOPE_IDS = ['artworks', 'rankSec', 'subOverview', 'connect'];
 
   /* ── CSS selectors to animate (within scope sections) ── */
   var TARGETS = [
@@ -21946,41 +21969,6 @@ html.thmFade #themePage{
 @media(prefers-reduced-motion:reduce){
   #albPage,#albViewPage,.albCard{transition:none;}
 }
-/* ═══ FEATURED SLIDE DETAIL PAGE ═══════════════════════════
-   Same sliding shell as the album pages, one level above them so it
-   can be opened from anywhere the strip is visible. */
-#tsPage{
-  position:fixed;inset:0;z-index:549;background:var(--bg);color:var(--tx);
-  overflow-y:auto;transform:translateX(100%);
-  transition:transform .45s cubic-bezier(.22,1,.36,1);
-}
-#tsPage.open{transform:translateX(0);}
-.tsPgBdy{
-  max-width:820px;margin:0 auto;
-  padding:1.2rem max(1.2rem,env(safe-area-inset-right))
-          calc(6rem + env(safe-area-inset-bottom))
-          max(1.2rem,env(safe-area-inset-left));
-}
-.tsPgImgWrap{
-  width:100%;aspect-ratio:300/190;border-radius:12px;overflow:hidden;
-  background:var(--sur2);border:1px solid var(--bdr);
-}
-.tsPgImgWrap img{width:100%;height:100%;object-fit:cover;display:block;}
-.tsPgTitle{
-  font-family:var(--fd);font-weight:800;
-  font-size:clamp(1.35rem,3.4vw,2rem);line-height:1.2;
-  color:var(--tx);margin:1.1rem 0 .4rem;
-  /* full title here — the two-line clamp is a strip-only constraint */
-}
-.tsPgDate{
-  font-family:var(--fm);font-size:.6rem;letter-spacing:.16em;
-  color:var(--txd);margin-bottom:1.1rem;
-}
-.tsPgDesc{
-  font-family:var(--fb);font-size:.95rem;line-height:1.75;
-  color:var(--tx);white-space:pre-wrap;word-break:break-word;
-}
-@media(prefers-reduced-motion:reduce){ #tsPage{transition:none;} }
 
 /* ═══ TAG BLOCK — SEARCH BAR + TWO CHIP ROWS ═══════════════
    .tgBlock is the static frame. It owns the outer spacing and the
@@ -21995,8 +21983,8 @@ html.thmFade #themePage{
    max-content wide, so the rows define the scroll extent. */
 .tgBlock{
   /* Top and bottom driven by ONE value so they can't drift apart —
-     this is what keeps the gap up to #topSlide equal to the gap down
-     to the tabs. */
+     this is what keeps the gap above the rail equal to the gap below
+     it, down to the tabs. */
   --tgPad:1.25rem;
   --tgInset:clamp(.7rem,2vw,2rem);
   margin:var(--tgPad) 0;
@@ -22066,6 +22054,30 @@ html.thmFade #themePage{
   color:var(--txd);background:rgba(var(--pg-rgb),.06);
   border:1px solid var(--bdr);border-radius:5px;
   padding:.3rem .36rem;min-width:1.1em;text-align:center;
+}
+
+/* ── In-bar filter button ────────────────────────────────────
+   The filter moved OFF its own row and onto the tail of the search
+   field, so one strip now does search + filter. Sized to breathe
+   inside the 46px bar (the standalone .fgFltBtn was 42px, which
+   filled it edge to edge), with a hairline divider marking it as a
+   separate action from the field. */
+.tgFltDiv{width:1px;height:20px;flex-shrink:0;background:var(--bdr);}
+.tgFltBtn{
+  position:relative;flex-shrink:0;
+  width:30px;height:30px;border-radius:8px;
+  background:none;border:0;padding:0;color:var(--txd);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:color .2s,background .2s;
+}
+.tgFltBtn svg{width:17px;height:17px;pointer-events:none;}
+@media(hover:hover){ .tgFltBtn:hover{color:var(--ps);background:var(--pdim);} }
+/* Dot = at least one filter is set, mirroring the old .fgFltBtn. */
+.tgFltBtn.active{color:var(--ps);background:var(--pdim);}
+.tgFltBtn.active::after{content:'';position:absolute;top:4px;right:4px;width:5px;height:5px;background:var(--pg);border-radius:50%;box-shadow:0 0 5px var(--pg);}
+@media(max-width:480px){
+  .tgFltBtn{width:28px;height:28px;}
+  .tgFltBtn svg{width:16px;height:16px;}
 }
 
 /* ── Chip rail ── */
@@ -22247,18 +22259,6 @@ html.thmFade #themePage{
 <!-- ═══ FEATURED SLIDE DETAIL — opened by tapping a slide in the
      home strip. Image, title, full description and date. The strip
      itself carries only the title now. ═══ -->
-<div id="tsPage" role="dialog" aria-modal="true" aria-label="Featured slide">
-  <div class="subPgHdr">
-    <button class="subPgX" onclick="tsClosePage()" aria-label="Close">←</button>
-    <div class="subPgTitle">FEATURED <span class="s">✦</span></div>
-  </div>
-  <div class="tsPgBdy">
-    <div class="tsPgImgWrap"><img id="tsPgImg" alt="" decoding="async"></div>
-    <h1 class="tsPgTitle" id="tsPgTitle"></h1>
-    <div class="tsPgDate" id="tsPgDate"></div>
-    <div class="tsPgDesc" id="tsPgDesc"></div>
-  </div>
-</div>
 
 <!-- ═══ SEARCH TAG — the full vocabulary as a tickable grid.
      Opened by the pinned "Search tag" chip in the rail. ═══ -->
@@ -22770,6 +22770,697 @@ html.thmFade #themePage{
     });
     refreshPanelOpen();
   }
+})();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   SECTION CONTENT — Resources / Blog / Marketplace / Jobs
+   Four Supabase tables behind the four gallery tabs, plus the upload
+   forms that feed them.
+
+   Where the bytes live:
+     Resources    → S3 (file + preview), row in `resources`
+     Blog         → Supabase only; the optional cover reuses the
+                    existing image path
+     Marketplace  → S3 (file + preview) + Supabase row w/ pricing
+     Jobs         → Supabase only, no upload at all
+
+   Forms are generated from ONE field spec rather than four
+   hand-written HTML blocks: the sections share ~70% of their fields
+   (title, description, category, tags), and four copies would drift
+   the moment one of them changed.
+   ═══════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  /* Rows are cached per section so switching tabs doesn't re-query. */
+  var dzCache = {}, dzBusy = {}, dzLoaded = {};
+
+  var SEC = {
+    resources: {
+      table:'resources', kind:'grid', noun:'resource',
+      select:'id,user_id,title,description,category,tags,file_url,file_name,file_ext,file_size,preview_url,license,download_count,created_at'
+    },
+    blog: {
+      table:'blog_posts', kind:'list', noun:'post',
+      select:'id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at'
+    },
+    marketplace: {
+      table:'marketplace_items', kind:'grid', noun:'item',
+      select:'id,user_id,title,description,category,tags,item_type,price_cents,currency,file_url,file_ext,file_size,preview_url,license,delivery_days,created_at'
+    },
+    jobs: {
+      table:'jobs', kind:'list', noun:'job',
+      select:'id,user_id,title,company,company_url,description,category,tags,employment_type,is_remote,location_city,location_country,applicant_countries,salary_min,salary_max,salary_currency,salary_unit,apply_url,apply_email,valid_through,created_at'
+    }
+  };
+
+  /* ── small formatters ───────────────────────────────────────── */
+  function bytes(n){
+    n = Number(n)||0;
+    if(n <= 0) return '';
+    var u = ['B','KB','MB','GB'], i = 0;
+    while(n >= 1024 && i < u.length-1){ n /= 1024; i++; }
+    return (n < 10 && i > 0 ? n.toFixed(1) : Math.round(n)) + ' ' + u[i];
+  }
+  function ago(ts){
+    if(!ts) return '';
+    var s = (Date.now() - new Date(ts).getTime())/1000;
+    if(s < 60) return 'just now';
+    var m = [[31536000,'y'],[2592000,'mo'],[604800,'w'],[86400,'d'],[3600,'h'],[60,'m']];
+    for(var i=0;i<m.length;i++){ if(s >= m[i][0]) return Math.floor(s/m[i][0]) + m[i][1] + ' ago'; }
+    return 'just now';
+  }
+  function money(cents, cur){
+    if(!cents) return 'Free';
+    try{
+      return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD'}).format(cents/100);
+    }catch(e){ return ((cents/100).toFixed(2)) + ' ' + (cur||'USD'); }
+  }
+  function slugify(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  function labelOf(sec, slug){
+    var o = (window.FG_SECTIONS && FG_SECTIONS[sec] && FG_SECTIONS[sec].opts) || [];
+    for(var i=0;i<o.length;i++){ if(slugify(o[i]) === slug) return o[i]; }
+    return slug;
+  }
+
+  /* ── load ────────────────────────────────────────────────────── */
+  function dzSecEnter(sec){
+    if(!SEC[sec] || dzLoaded[sec] || dzBusy[sec]) { dzSecRender(sec); return; }
+    dzSecLoad(sec);
+  }
+  function dzSecLoad(sec){
+    var cfg = SEC[sec], host = document.getElementById('fgSecC-'+sec);
+    if(!cfg || !host) return;
+    if(!window.sb){ host.innerHTML = '<div class="dzEmpty">BACKEND NOT CONFIGURED</div>'; return; }
+    dzBusy[sec] = true;
+    host.innerHTML = '<div class="dzBusy">LOADING…</div>';
+    sb.from(cfg.table).select(cfg.select)
+      .eq('status','approved').order('created_at',{ascending:false}).limit(200)
+      .then(function(res){
+        dzBusy[sec] = false; dzLoaded[sec] = true;
+        dzCache[sec] = (res && res.data) || [];
+        dzSecRender(sec);
+      }, function(){
+        dzBusy[sec] = false;
+        host.innerHTML = '<div class="dzEmpty">COULD NOT LOAD — TRY AGAIN</div>';
+      });
+  }
+
+  /* ── filter + paint ──────────────────────────────────────────── */
+  function matches(row, q){
+    if(!q) return true;
+    var hay = [row.title, row.description, row.excerpt, row.company]
+                .concat(row.tags||[]).concat(row.category||[]).join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }
+  function dzSecRender(sec){
+    var host = document.getElementById('fgSecC-'+sec);
+    if(!host || !SEC[sec]) return;
+    if(dzBusy[sec]) return;
+    if(!dzLoaded[sec]){ host.innerHTML = ''; return; }
+
+    var q   = String((window.fgSecQuery||{})[sec]||'').trim().toLowerCase();
+    var cat = (window.fgSecFilter||{})[sec] || 'all';
+    var rows = (dzCache[sec]||[]).filter(function(r){
+      if(cat !== 'all' && (r.category||[]).indexOf(cat) === -1) return false;
+      return matches(r, q);
+    });
+
+    if(!rows.length){
+      host.innerHTML = '<div class="dzEmpty">' +
+        (q || cat !== 'all' ? 'NOTHING MATCHES THAT' : 'NOTHING HERE YET') + '</div>';
+      return;
+    }
+    var wrap = SEC[sec].kind === 'grid' ? 'dzGrid' : 'dzList';
+    host.innerHTML = '<div class="'+wrap+'">' + rows.map(function(r){ return card(sec, r); }).join('') + '</div>';
+  }
+
+  function chips(r){
+    var t = (r.tags||[]).slice(0,3);
+    if(!t.length) return '';
+    return '<div class="dzChipRow">' + t.map(function(x){
+      return '<span class="dzChip">'+esc(x)+'</span>'; }).join('') + '</div>';
+  }
+
+  function card(sec, r){
+    var id = esc(r.id);
+    if(sec === 'resources'){
+      var thumb = r.preview_url
+        ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.preview_url))+'" alt="'+esc(r.title)+'">'
+        : '<span class="dzExt">'+esc((r.file_ext||'FILE').toUpperCase())+'</span>';
+      return '<a class="dzCard" href="'+esc(r.file_url)+'" target="_blank" rel="noopener" download>'+
+        '<div class="dzThumb">'+thumb+'<span class="dzBadge">'+esc((r.file_ext||'').toUpperCase())+'</span></div>'+
+        '<div class="dzBody"><div class="dzName">'+esc(r.title)+'</div>'+
+        '<div class="dzMeta"><span>'+esc(bytes(r.file_size))+'</span>'+
+        '<span>'+esc(String(r.download_count||0))+' downloads</span>'+
+        '<span>'+esc(r.license||'')+'</span></div>'+chips(r)+'</div></a>';
+    }
+    if(sec === 'marketplace'){
+      var mt = r.preview_url
+        ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.preview_url))+'" alt="'+esc(r.title)+'">'
+        : '<span class="dzExt">'+esc((r.item_type||'ITEM').toUpperCase())+'</span>';
+      return '<div class="dzCard" data-id="'+id+'">'+
+        '<div class="dzThumb">'+mt+'<span class="dzBadge">'+esc((r.item_type||'').toUpperCase())+'</span></div>'+
+        '<div class="dzBody"><div class="dzName">'+esc(r.title)+'</div>'+
+        '<div class="dzPrice">'+esc(money(r.price_cents, r.currency))+'</div>'+
+        '<div class="dzMeta"><span>'+esc(r.license||'')+'</span>'+
+        (r.delivery_days ? '<span>'+esc(String(r.delivery_days))+'d delivery</span>' : '')+
+        '</div>'+chips(r)+'</div></div>';
+    }
+    if(sec === 'blog'){
+      var ico = r.cover_url
+        ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.cover_url))+'" alt="">'
+        : esc((r.title||'?').charAt(0).toUpperCase());
+      var ex = r.excerpt || String(r.body||'').slice(0,140);
+      return '<div class="dzRow" data-id="'+id+'"><div class="dzRowIco">'+ico+'</div>'+
+        '<div style="min-width:0;flex:1"><div class="dzName">'+esc(r.title)+'</div>'+
+        '<div class="dzMeta" style="margin:.2rem 0 .3rem"><span>'+esc(ago(r.created_at))+'</span>'+
+        '<span>'+esc(String(r.read_minutes||1))+' min read</span></div>'+
+        '<div class="dzHint">'+esc(ex)+'</div>'+chips(r)+'</div></div>';
+    }
+    /* jobs */
+    var where = r.is_remote ? 'Remote'
+      : [r.location_city, r.location_country].filter(Boolean).join(', ');
+    var pay = (r.salary_min || r.salary_max)
+      ? [r.salary_min, r.salary_max].filter(function(x){return x!=null;})
+          .map(function(x){ return money(Math.round(Number(x)*100), r.salary_currency); }).join(' – ')
+        + (r.salary_unit ? ' / '+r.salary_unit.toLowerCase() : '')
+      : '';
+    return '<div class="dzRow" data-id="'+id+'">'+
+      '<div class="dzRowIco">'+esc((r.company||'?').charAt(0).toUpperCase())+'</div>'+
+      '<div style="min-width:0;flex:1"><div class="dzName">'+esc(r.title)+'</div>'+
+      '<div class="dzMeta" style="margin:.2rem 0 .3rem"><span>'+esc(r.company)+'</span>'+
+      (where ? '<span>'+esc(where)+'</span>' : '')+
+      '<span>'+esc(String(r.employment_type||'').replace('_',' '))+'</span>'+
+      (pay ? '<span>'+esc(pay)+'</span>' : '')+
+      '<span>'+esc(ago(r.created_at))+'</span></div>'+chips(r)+'</div></div>';
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     UPLOAD FORMS
+     One spec per section. `type` drives both the rendered control and
+     how dzSubmit() reads it back, so adding a field is a one-line
+     change instead of edits in three places.
+     ═══════════════════════════════════════════════════════════════ */
+  var LICENSE_RES = [['personal','Personal use only'],['commercial','Commercial use OK'],
+                     ['cc0','CC0 — public domain'],['cc-by','CC BY — credit required'],['custom','Custom terms']];
+  var LICENSE_MKT = [['standard','Standard'],['extended','Extended'],['exclusive','Exclusive'],['custom','Custom']];
+  var EMP = [['CONTRACTOR','Freelance / contract'],['FULL_TIME','Full-time'],['PART_TIME','Part-time'],
+             ['INTERN','Internship'],['TEMPORARY','Temporary'],['VOLUNTEER','Volunteer / collab'],
+             ['PER_DIEM','Per diem'],['OTHER','Other']];
+
+  var FORMS = {
+    resources: { title:'Share a Resource', sub:'Brushes, textures, fonts, templates — anything that helps another artist work faster.',
+      fields:[
+        {k:'file',   t:'file',  label:'Resource file', req:true,
+         accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.woff2,.pdf,.obj,.fbx,.blend',
+         hint:'ZIP, PSD, ABR, brushset, fonts, 3D — up to 200MB.'},
+        {k:'preview',t:'image', label:'Preview image', hint:'Shown on the card. JPG/PNG/WEBP up to 25MB.'},
+        {k:'title',  t:'text',  label:'Title', req:true, max:120, ph:'Name your resource…'},
+        {k:'description', t:'area', label:'Description', max:2000, ph:'What is it, and how is it used?'},
+        {k:'category',t:'cat',  label:'Category', req:true},
+        {k:'license', t:'sel',  label:'License', options:LICENSE_RES},
+        {k:'software',t:'text', label:'Made with', max:60, ph:'Photoshop, Procreate…'},
+        {k:'tags',    t:'tags', label:'Tags'}
+      ]},
+    blog: { title:'Write a Post', sub:'Stories, tips and studio notes for the community.',
+      fields:[
+        {k:'cover', t:'image', label:'Cover image', hint:'Optional. JPG/PNG/WEBP up to 25MB.'},
+        {k:'title', t:'text',  label:'Title', req:true, max:160, ph:'Give the post a headline…'},
+        {k:'excerpt',t:'area', label:'Excerpt', max:300, ph:'One or two lines shown in the list.'},
+        {k:'body',  t:'area',  label:'Post', req:true, max:20000, rows:12, ph:'Write your post… (minimum 40 characters)'},
+        {k:'category',t:'cat', label:'Category', req:true},
+        {k:'tags',  t:'tags',  label:'Tags'}
+      ]},
+    marketplace: { title:'List a Product', sub:'Sell digital goods, or offer commissions and services.',
+      fields:[
+        {k:'item_type',t:'sel', label:'Listing type',
+         options:[['digital','Digital download'],['commission','Commission slot'],['service','Service']]},
+        {k:'file',   t:'file',  label:'Product file',
+         accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.pdf,.obj,.fbx,.blend',
+         hint:'Required for a digital download. Up to 200MB.'},
+        {k:'preview',t:'image', label:'Preview image', hint:'JPG/PNG/WEBP up to 25MB.'},
+        {k:'title',  t:'text',  label:'Title', req:true, max:140, ph:'Name your listing…'},
+        {k:'description',t:'area', label:'Description', max:3000, ph:'What the buyer receives…'},
+        {k:'category',t:'cat',  label:'Category', req:true},
+        {k:'price',  t:'num',   label:'Price', ph:'0.00', step:'0.01', hint:'Leave 0 to list it free.'},
+        {k:'currency',t:'sel',  label:'Currency', options:[['USD','USD'],['EUR','EUR'],['GBP','GBP'],['INR','INR'],['JPY','JPY']]},
+        {k:'license',t:'sel',   label:'License', options:LICENSE_MKT},
+        {k:'delivery_days',t:'num', label:'Delivery (days)', ph:'e.g. 7', hint:'For commissions and services.'},
+        {k:'tags',   t:'tags',  label:'Tags'}
+      ]},
+    jobs: { title:'Post a Job', sub:'Hire an artist, or find someone to build with.',
+      fields:[
+        {k:'title',  t:'text', label:'Job title', req:true, max:140, ph:'e.g. Character Concept Artist'},
+        {k:'company',t:'text', label:'Company / studio', req:true, max:100, ph:'Who is hiring?'},
+        {k:'company_url',t:'text', label:'Company website', ph:'https://…'},
+        {k:'description',t:'area', label:'Description', req:true, max:8000, rows:10,
+         ph:'Responsibilities, requirements, skills, hours… (minimum 80 characters)'},
+        {k:'category',t:'cat', label:'Category', req:true},
+        {k:'employment_type',t:'sel', label:'Employment type', options:EMP},
+        {k:'is_remote',t:'chk', label:'This role is 100% remote'},
+        {k:'location_city',t:'text', label:'City', ph:'e.g. Berlin'},
+        {k:'location_country',t:'text', label:'Country code', max:2, ph:'e.g. DE',
+         hint:'Two letters. Required unless the role is fully remote.'},
+        {k:'applicant_countries',t:'text', label:'Remote — eligible countries', ph:'e.g. IN, DE, US',
+         hint:'Comma separated. Required for a remote role.'},
+        {k:'salary_min',t:'num', label:'Pay from', ph:'0', step:'0.01'},
+        {k:'salary_max',t:'num', label:'Pay to', ph:'0', step:'0.01'},
+        {k:'salary_currency',t:'sel', label:'Currency', options:[['USD','USD'],['EUR','EUR'],['GBP','GBP'],['INR','INR'],['JPY','JPY']]},
+        {k:'salary_unit',t:'sel', label:'Per', options:[['','—'],['HOUR','Hour'],['DAY','Day'],['WEEK','Week'],['MONTH','Month'],['YEAR','Year']]},
+        {k:'apply_url',t:'text', label:'Apply link', ph:'https://…'},
+        {k:'apply_email',t:'text', label:'Apply email', ph:'jobs@studio.com',
+         hint:'A link or an email is required — a posting with no way to apply is rejected.'},
+        {k:'valid_through',t:'date', label:'Closes on', hint:'Expired postings are hidden automatically.'},
+        {k:'tags',  t:'tags', label:'Tags'}
+      ]}
+  };
+
+  /* Per-section scratch state: picked files and tag chips. */
+  var S = {};
+  function st(sec){ return (S[sec] = S[sec] || {tags:[], files:{}}); }
+
+  var ORDER = ['artwork','resources','blog','marketplace','jobs'];
+  var TAB_LABEL = {artwork:'Artwork', resources:'Resources', blog:'Blog', marketplace:'Marketplace', jobs:'Jobs'};
+  var TAB_ICO   = {artwork:'artworks', resources:'resources', blog:'blog', marketplace:'marketplace', jobs:'jobs'};
+  var upSec = 'artwork';
+
+  function buildTabs(){
+    var host = document.getElementById('upSecTabs');
+    if(!host || host.childNodes.length) return;
+    host.innerHTML = ORDER.map(function(s){
+      var ico = '<span class="fgSecIco fgSecIco--'+TAB_ICO[s]+'" aria-hidden="true">'+
+        (document.querySelector('.fgSecIco--'+TAB_ICO[s]+' svg') ?
+          document.querySelector('.fgSecIco--'+TAB_ICO[s]+' svg').outerHTML : '')+'</span>';
+      return '<button class="upSecBtn'+(s==='artwork'?' active':'')+'" id="upSecBtn-'+s+
+        '" role="tab" aria-selected="'+(s==='artwork')+'" onclick="upSwitchSection(\''+s+'\')">'+
+        ico+'<span>'+TAB_LABEL[s]+'</span></button>';
+    }).join('');
+  }
+
+  function upSwitchSection(sec, silent){
+    buildTabs();               /* idempotent — safe to call every time */
+    upSec = sec;
+    var btns = document.querySelectorAll('#upSecTabs .upSecBtn');
+    for(var i=0;i<btns.length;i++){
+      var on = btns[i].id === 'upSecBtn-'+sec;
+      btns[i].classList.toggle('active', on);
+      btns[i].setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+    var art = document.querySelector('#uploadPage .upPopBody') || document.querySelector('.upPopBody');
+    var box = document.getElementById('upSecForms');
+    var h   = document.getElementById('pfUpTitle');
+    var p   = document.getElementById('pfUpSubtitle');
+    if(sec === 'artwork'){
+      if(art) art.style.display = '';
+      if(box){ box.style.display = 'none'; }
+      /* silent = the caller already labelled the page (edit mode says
+         "Edit Artwork"); only restore which panel is showing. */
+      if(!silent){
+        if(h) h.textContent = 'Upload Artwork';
+        if(p) p.textContent = 'Share your creativity with artists around the world.';
+      }
+      return;
+    }
+    if(art) art.style.display = 'none';
+    if(box){ box.style.display = ''; box.innerHTML = buildForm(sec); }
+    if(h) h.textContent = FORMS[sec].title;
+    if(p) p.textContent = FORMS[sec].sub;
+    renderTags(sec);
+  }
+
+  function buildForm(sec){
+    var f = FORMS[sec], out = ['<div class="upMain">'];
+    f.fields.forEach(function(fd){ out.push(field(sec, fd)); });
+    out.push('<div class="upActions" style="display:flex;gap:.6rem;margin-top:1.4rem">'+
+      '<button type="button" class="upBtnPri upBtnPri" id="dzSubmit-'+sec+'" onclick="dzSubmit(\''+sec+'\')">Publish ✦</button>'+
+      '<button type="button" class="upBtnSec" onclick="dzResetForm(\''+sec+'\')">Reset</button></div>');
+    out.push('<p class="dzHint" style="margin-top:.9rem">Posts are reviewed before they appear publicly.</p>');
+    out.push('</div>');
+    return out.join('');
+  }
+
+  function field(sec, fd){
+    var id = 'dz_'+sec+'_'+fd.k;
+    var lbl = '<label class="upLbl" for="'+id+'">'+esc(fd.label)+
+      (fd.req ? ' <span class="upReq">*</span>' : '')+'</label>';
+    var hint = fd.hint ? '<div class="dzHint">'+esc(fd.hint)+'</div>' : '';
+    var body = '';
+
+    if(fd.t === 'text'){
+      body = '<input class="upIn" id="'+id+'" type="text" maxlength="'+(fd.max||200)+
+             '" placeholder="'+esc(fd.ph||'')+'">';
+    } else if(fd.t === 'num'){
+      body = '<input class="upIn" id="'+id+'" type="number" min="0" step="'+(fd.step||'1')+
+             '" placeholder="'+esc(fd.ph||'')+'">';
+    } else if(fd.t === 'date'){
+      body = '<input class="upIn" id="'+id+'" type="date">';
+    } else if(fd.t === 'area'){
+      body = '<textarea class="upIn" id="'+id+'" rows="'+(fd.rows||4)+'" maxlength="'+(fd.max||2000)+
+             '" placeholder="'+esc(fd.ph||'')+'"></textarea>';
+    } else if(fd.t === 'sel'){
+      body = '<select class="dzSel" id="'+id+'">'+ (fd.options||[]).map(function(o){
+        return '<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'; }).join('') +'</select>';
+    } else if(fd.t === 'chk'){
+      return '<div class="upField"><label class="upCatOpt" style="padding:.5rem 0">'+
+             '<input type="checkbox" id="'+id+'"> '+esc(fd.label)+'</label>'+hint+'</div>';
+    } else if(fd.t === 'cat'){
+      var opts = (window.FG_SECTIONS && FG_SECTIONS[sec] && FG_SECTIONS[sec].opts) || [];
+      body = '<select class="dzSel" id="'+id+'">'+ opts.map(function(o){
+        return '<option value="'+esc(slugify(o))+'">'+esc(o)+'</option>'; }).join('') +'</select>';
+    } else if(fd.t === 'tags'){
+      return '<div class="upField">'+lbl+
+        '<div class="upTagBox" onclick="document.getElementById(\''+id+'\').focus()">'+
+        '<span id="dzTags-'+sec+'"></span>'+
+        '<input class="upTagInput" id="'+id+'" maxlength="20" placeholder="Add up to 10 tags…" '+
+        'onkeydown="dzTagKey(event,\''+sec+'\')"></div>'+hint+'</div>';
+    } else if(fd.t === 'file' || fd.t === 'image'){
+      var acc = fd.t === 'image' ? 'image/*' : (fd.accept||'');
+      return '<div class="upField">'+lbl+
+        '<input class="upIn" id="'+id+'" type="file" accept="'+esc(acc)+'" '+
+        'onchange="dzPick(\''+sec+'\',\''+fd.k+'\',this)">'+
+        '<div class="dzFileName" id="'+id+'_nm"></div>'+hint+'</div>';
+    }
+    return '<div class="upField">'+lbl+body+hint+'</div>';
+  }
+
+  /* ── tags ────────────────────────────────────────────────────── */
+  function renderTags(sec){
+    var host = document.getElementById('dzTags-'+sec);
+    if(!host) return;
+    host.innerHTML = st(sec).tags.map(function(t,i){
+      return '<span class="upTagChip">'+esc(t)+
+        '<button type="button" onclick="dzTagDel(\''+sec+'\','+i+')" aria-label="Remove tag">✕</button></span>';
+    }).join('');
+  }
+  function dzTagKey(e, sec){
+    var el = e.target;
+    if(e.key === 'Enter' || e.key === ','){
+      e.preventDefault();
+      var v = String(el.value||'').trim().toLowerCase().replace(/^#/,'');
+      var s = st(sec);
+      if(v && s.tags.length < 10 && s.tags.indexOf(v) === -1){ s.tags.push(v); renderTags(sec); }
+      el.value = '';
+    } else if(e.key === 'Backspace' && !el.value && st(sec).tags.length){
+      st(sec).tags.pop(); renderTags(sec);
+    }
+  }
+  function dzTagDel(sec, i){ st(sec).tags.splice(i,1); renderTags(sec); }
+
+  /* ── file picking ────────────────────────────────────────────── */
+  function dzPick(sec, key, input){
+    if(typeof pfGuestGate === 'function' && pfGuestGate({preventDefault:function(){},stopPropagation:function(){}})) return;
+    var f = input.files && input.files[0];
+    var nm = document.getElementById('dz_'+sec+'_'+key+'_nm');
+    if(!f){ st(sec).files[key] = null; if(nm) nm.textContent = ''; return; }
+    st(sec).files[key] = f;
+    if(nm) nm.textContent = f.name + ' · ' + bytes(f.size);
+  }
+
+  function val(sec, k){
+    var el = document.getElementById('dz_'+sec+'_'+k);
+    if(!el) return '';
+    if(el.type === 'checkbox') return el.checked;
+    return String(el.value||'').trim();
+  }
+
+  function dzResetForm(sec){
+    S[sec] = {tags:[], files:{}};
+    var box = document.getElementById('upSecForms');
+    if(box) box.innerHTML = buildForm(sec);
+    renderTags(sec);
+  }
+
+  /* ── submit ──────────────────────────────────────────────────── */
+  async function dzSubmit(sec){
+    if(!window.sb){ showToast('Backend not configured'); return; }
+    if(!window.currentUser){
+      if(typeof pfGuestGate === 'function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+      return;
+    }
+    var btn = document.getElementById('dzSubmit-'+sec);
+    var s = st(sec), row = {user_id: currentUser.id, tags: s.tags};
+
+    /* Required fields come straight off the spec so the form and the
+       check can't disagree. */
+    var miss = FORMS[sec].fields.filter(function(fd){
+      if(!fd.req) return false;
+      if(fd.t === 'file' || fd.t === 'image') return !s.files[fd.k];
+      return !val(sec, fd.k);
+    });
+    if(miss.length){ showToast('Missing: ' + miss[0].label); return; }
+
+    if(btn){ btn.disabled = true; btn.textContent = 'Publishing…'; }
+    try{
+      var stamp = Date.now();
+      var base  = safeSlug(val(sec,'title') || sec, 60) || sec;
+
+      /* S3 first: a row pointing at a file that failed to upload is
+         worse than no row at all. */
+      async function put(key, prefix){
+        var f = s.files[key]; if(!f) return null;
+        var ext = safeSlug((f.name.split('.').pop()||'bin'), 10);
+        var path = prefix+'/'+currentUser.id+'/'+stamp+'_'+base+'.'+ext;
+        var url  = await s3Upload(BUCKET, path, f);
+        return {url:url, path:path, name:f.name, ext:ext, size:f.size};
+      }
+
+      if(sec === 'resources'){
+        var rf = await put('file','resources'), rp = await put('preview','resources');
+        row.title = val(sec,'title'); row.description = val(sec,'description');
+        row.category = [val(sec,'category')]; row.license = val(sec,'license') || 'personal';
+        row.software = val(sec,'software') || null;
+        row.file_url = rf.url; row.file_storage_path = rf.path;
+        row.file_name = rf.name; row.file_ext = rf.ext; row.file_size = rf.size;
+        if(rp){ row.preview_url = rp.url; row.preview_storage_path = rp.path; }
+      }
+
+      else if(sec === 'blog'){
+        var bc = await put('cover','blog');
+        var body = val(sec,'body');
+        if(body.length < 40){ throw new Error('The post needs at least 40 characters'); }
+        row.title = val(sec,'title'); row.body = body;
+        row.excerpt = val(sec,'excerpt') || body.slice(0,200);
+        row.category = [val(sec,'category')];
+        row.slug = slugify(val(sec,'title')).slice(0,80) + '-' + String(stamp).slice(-6);
+        row.read_minutes = Math.max(1, Math.round(body.split(/\s+/).length / 200));
+        if(bc){ row.cover_url = bc.url; row.cover_storage_path = bc.path; }
+      }
+
+      else if(sec === 'marketplace'){
+        var type = val(sec,'item_type') || 'digital';
+        if(type === 'digital' && !s.files.file){ throw new Error('A digital download needs a file'); }
+        var mf = await put('file','market'), mp = await put('preview','market');
+        row.title = val(sec,'title'); row.description = val(sec,'description');
+        row.category = [val(sec,'category')]; row.item_type = type;
+        row.price_cents = Math.round(parseFloat(val(sec,'price')||'0') * 100) || 0;
+        row.currency = val(sec,'currency') || 'USD';
+        row.license = val(sec,'license') || 'standard';
+        row.delivery_days = parseInt(val(sec,'delivery_days'),10) || null;
+        if(mf){ row.file_url = mf.url; row.file_storage_path = mf.path;
+                row.file_name = mf.name; row.file_ext = mf.ext; row.file_size = mf.size; }
+        if(mp){ row.preview_url = mp.url; row.preview_storage_path = mp.path; }
+      }
+
+      else if(sec === 'jobs'){
+        var remote = val(sec,'is_remote') === true;
+        var countries = val(sec,'applicant_countries')
+          .split(',').map(function(x){ return x.trim().toUpperCase(); }).filter(Boolean);
+        var cc = val(sec,'location_country').toUpperCase();
+        var url = val(sec,'apply_url'), mail = val(sec,'apply_email');
+
+        /* These mirror the table's CHECK constraints. Catching them
+           here turns a raw Postgres error into a readable sentence. */
+        if(!url && !mail) throw new Error('Add an apply link or an email');
+        if(remote && !countries.length) throw new Error('A remote role needs at least one eligible country');
+        if(!remote && cc.length !== 2) throw new Error('Add a two-letter country code');
+        if(val(sec,'description').length < 80) throw new Error('The description needs at least 80 characters');
+
+        row.title = val(sec,'title'); row.company = val(sec,'company');
+        row.company_url = val(sec,'company_url') || null;
+        row.description = val(sec,'description');
+        row.category = [val(sec,'category')];
+        row.employment_type = val(sec,'employment_type') || 'CONTRACTOR';
+        row.is_remote = remote;
+        row.location_city = val(sec,'location_city') || null;
+        row.location_country = remote ? (cc.length === 2 ? cc : null) : cc;
+        row.applicant_countries = countries;
+        row.salary_min = parseFloat(val(sec,'salary_min')) || null;
+        row.salary_max = parseFloat(val(sec,'salary_max')) || null;
+        row.salary_currency = val(sec,'salary_currency') || 'USD';
+        row.salary_unit = val(sec,'salary_unit') || null;
+        row.apply_url = url || null; row.apply_email = mail || null;
+        row.valid_through = val(sec,'valid_through') || null;
+      }
+
+      var res = await sb.from(SEC[sec].table).insert(row).select('id').single();
+      if(res.error) throw res.error;
+
+      showToast('Submitted for review ✦');
+      dzResetForm(sec);
+      dzLoaded[sec] = false;   /* next visit re-queries */
+    }catch(err){
+      showToast((err && err.message) ? err.message : 'Could not publish');
+    }finally{
+      if(btn){ btn.disabled = false; btn.textContent = 'Publish ✦'; }
+    }
+  }
+
+  /* This script is the last thing in <body>, so every element it
+     touches is already parsed — no need to wait for DOMContentLoaded.
+     The listener stays only as a fallback if the block is ever moved. */
+  buildTabs();
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildTabs);
+
+  /* Re-opening Upload (or entering edit mode) must never land on a
+     hidden artwork form because the user last picked "Blog". Wrapped
+     rather than edited so the original function is untouched. */
+  (function(){
+    var orig = window.openPfUpload;
+    if(typeof orig !== 'function') return;
+    window.openPfUpload = function(){
+      var r = orig.apply(this, arguments);
+      try{ upSwitchSection('artwork', true); }catch(e){}
+      return r;
+    };
+  })();
+
+  window.dzSecEnter      = dzSecEnter;
+  window.dzSecRender     = dzSecRender;
+  window.upSwitchSection = upSwitchSection;
+  window.dzSubmit        = dzSubmit;
+  window.dzResetForm     = dzResetForm;
+  window.dzTagKey        = dzTagKey;
+  window.dzTagDel        = dzTagDel;
+  window.dzPick          = dzPick;
+})();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   HERO PITCH — Explore / Learn / Buy / Sell
+   One screen that answers four different reasons for arriving. The
+   toggle swaps headline, checklist and CTA in place; nothing
+   navigates until the CTA is pressed, and each CTA opens the surface
+   that actually delivers on the sentence above it.
+   ═══════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  /* `em` marks the one phrase per headline that takes the brand
+     colour — kept in the data so copy and emphasis travel together. */
+  var TABS = [
+    { id:'explore', label:'Explore',
+      lead:'Discover the world\u2019s best', em:'Digital Art',
+      list:['Browse stunning galleries from top artists',
+            'Discover high-quality design resources',
+            'Find inspiration for your next project'],
+      cta:'\u2728 Start Exploring', to:'artworks' },
+    { id:'learn', label:'Learn',
+      lead:'Master new skills in', em:'Design & Art',
+      list:['Read in-depth tutorials on our blog',
+            'Download free educational resources',
+            'Stay updated with industry trends'],
+      cta:'\ud83d\udcda Read the Blog', to:'blog' },
+    { id:'buy', label:'Buy',
+      lead:'Shop premium', em:'Creative Assets',
+      list:['Purchase exclusive digital artworks directly',
+            'Find premium resources for your workflow',
+            'Enjoy a fast, secure checkout process'],
+      cta:'\ud83d\uded2 Browse Marketplace', to:'marketplace' },
+    { id:'sell', label:'Sell',
+      lead:'Monetize your', em:'Creative Work',
+      list:['Set up your creator profile in minutes',
+            'List your digital assets and artworks easily',
+            'Keep more of what you earn as an artist'],
+      cta:'\ud83d\ude80 Become a Seller', to:'sell' }
+  ];
+
+  var TICK = '<span class="hpTick" aria-hidden="true"><svg viewBox="0 0 24 24">'+
+             '<polyline points="20 6 9 17 4 12"/></svg></span>';
+  var cur = 0;
+
+  function esc2(s){ return (typeof esc === 'function') ? esc(s) : String(s); }
+
+  /* Explore / Learn / Buy open the gallery on the matching section;
+     Sell goes to the upload page with the Marketplace form already
+     chosen, because "become a seller" means "list something". */
+  function go(to){
+    if(to === 'sell'){
+      if(typeof openPfUpload === 'function'){
+        openPfUpload();
+        if(typeof upSwitchSection === 'function') upSwitchSection('marketplace');
+      }
+      return;
+    }
+    if(typeof openFG === 'function'){
+      openFG();
+      if(typeof fgSwitchSection === 'function') fgSwitchSection(to);
+    }
+  }
+
+  function paintTabs(){
+    var host = document.getElementById('hpTabs');
+    if(!host) return;
+    host.innerHTML = TABS.map(function(t, i){
+      return '<button class="hpTab" type="button" role="tab" id="hpTab-'+t.id+'"'+
+             ' aria-selected="'+(i === cur)+'" tabindex="'+(i === cur ? '0' : '-1')+'"'+
+             ' onclick="hpSelect('+i+')">'+esc2(t.label)+'</button>';
+    }).join('');
+  }
+
+  function paintPanel(){
+    var p = document.getElementById('hpPanel');
+    if(!p) return;
+    var t = TABS[cur];
+    p.innerHTML =
+      '<h1 class="hpHead">'+esc2(t.lead)+' <em>'+esc2(t.em)+'</em></h1>'+
+      '<ul class="hpList">'+ t.list.map(function(x){
+        return '<li>'+TICK+'<span>'+esc2(x)+'</span></li>'; }).join('') +'</ul>'+
+      '<button class="hpCta" type="button" onclick="hpGo()">'+esc2(t.cta)+'</button>';
+    p.setAttribute('aria-labelledby', 'hpTab-'+t.id);
+    /* Restart the animation: drop the class, force a reflow so the
+       browser can't batch the two writes into no change at all, then
+       re-add it. */
+    p.classList.remove('hpIn');
+    void p.offsetWidth;
+    p.classList.add('hpIn');
+  }
+
+  function hpSelect(i, focus){
+    if(i < 0 || i >= TABS.length || i === cur) {
+      if(focus) { var b0 = document.getElementById('hpTab-'+TABS[cur].id); if(b0) b0.focus(); }
+      return;
+    }
+    cur = i;
+    paintTabs();
+    paintPanel();
+    if(focus){
+      var b = document.getElementById('hpTab-'+TABS[cur].id);
+      if(b) b.focus();
+    }
+  }
+  function hpGo(){ go(TABS[cur].to); }
+
+  /* Arrow keys move between tabs, which is what a tablist is expected
+     to do once it claims the role. */
+  var tabsEl = document.getElementById('hpTabs');
+  if(tabsEl){
+    tabsEl.addEventListener('keydown', function(e){
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if(!d) return;
+      e.preventDefault();
+      hpSelect((cur + d + TABS.length) % TABS.length, true);
+    });
+  }
+
+  paintTabs();
+  paintPanel();
+
+  window.hpSelect = hpSelect;
+  window.hpGo     = hpGo;
 })();
 </script>
 </body>

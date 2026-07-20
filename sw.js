@@ -26,6 +26,16 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v16 — sub-pixel fix in the tag rail packer. It measured chips with
+   offsetWidth, which rounds to a whole pixel; with real webfont
+   metrics a chip laying out at 86.4px reported 86, so ~16 chips
+   under-counted a row by several px and the rail scrolled on desktop
+   by exactly that much at roughly one width in three. Now measured
+   with getBoundingClientRect, plus 1px of headroom because
+   scrollWidth rounds up. Also: the All chip sticks at its inset
+   instead of the raw scrollport edge, chip and clear-button touch
+   targets grow into the row gutter, and hover states sit behind
+   @media(hover:hover) so they can't stick after a tap.
    v15 — tag rail rebuilt, album tiles squared, thumbnail clip fixed.
      - Tag rail: a live artwork search bar over TWO chip rows instead
        of three. The bar filters the feed as you type (title,
@@ -75,7 +85,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v15';
+const CACHE_VERSION = 'v16';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

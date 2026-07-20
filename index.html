@@ -4140,7 +4140,31 @@
 
     /* ── Review cards — reuse .pfGrid/.pfGridArt, add a caption strip ── */
     .admCard{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;}
-    .admCardImg{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--sur2);}
+    /* ── Thumbnail box ──
+       This wrapper is NOT decorative — it is the clip that keeps a
+       zoomed thumbnail inside its square. thumbStyle() emits
+       transform:scale() for thumb_zoom, and a transform PAINTS outside
+       the element's layout box even though the box itself stays square.
+       With no wrapper the nearest clip was .admCard, so a 2x thumbnail
+       spilled straight down over the title, the date and the
+       Edit/Delete row — the card read as one tall blurry image with no
+       controls, and the taller the grid row, the further it bled.
+       The image is absolutely positioned inside it, so nothing about
+       the file can change the box either: not its aspect ratio, not a
+       failed load, not a missing intrinsic size. The square is owned by
+       the wrapper and by nothing else. */
+    .admCardThumb{
+      position:relative;width:100%;aspect-ratio:1/1;
+      overflow:hidden;background:var(--sur2);
+    }
+    /* Same square from width alone, for engines without aspect-ratio. */
+    @supports not (aspect-ratio:1/1){
+      .admCardThumb{height:0;padding-top:100%;}
+    }
+    .admCardImg{
+      position:absolute;inset:0;width:100%;height:100%;
+      object-fit:cover;display:block;
+    }
     .admCardBody{padding:.65rem .75rem .8rem;}
     .admCardTitle{font-family:var(--fb);font-size:.8rem;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .admCardMeta{font-family:var(--fm);font-size:.6rem;letter-spacing:.06em;color:var(--txd);margin-top:.25rem;}
@@ -6168,17 +6192,27 @@ body{background:var(--bg);}
        └─ Empty State (.awEmpty #awEmpty)
        ========================================================= -->
   <section id="artworks">
-    <!-- ── TAG RAIL — three rows inside ONE horizontal scroller, so a
-         swipe slides all three together as a single block. Rows 1 and
-         3 are indented and row 2 runs flush left with roughly double
-         the chips, so the middle line pokes out at both ends.
+    <!-- ── TAG BLOCK — a search bar over TWO chip rows. The rows live
+         inside ONE horizontal scroller, so a swipe slides both
+         together as a single block; the bar sits outside it and stays
+         put. Both rows run flush left and are packed to finish at the
+         same x (tgLayoutRail), so the right edge stays clean.
          Ticking a tag rotates a fresh one into its slot; once every
          tag is ticked, rotation pauses and chips stay ticked. ── -->
-    <div class="tgRail" id="tgRail" role="group" aria-label="Tag preferences">
-      <div class="tgScroll">
-        <div class="tgRowIn"></div>
-        <div class="tgRowIn"></div>
-        <div class="tgRowIn"></div>
+    <div class="tgBlock">
+      <div class="tgSearch" id="awSearchInWrap">
+        <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" class="tgSearchIn" id="awSearchIn" placeholder="Search artworks, artists or tags..."
+               autocomplete="off" autocapitalize="off" spellcheck="false"
+               aria-label="Search artworks" oninput="awSearchInput(this.value)">
+        <button type="button" class="tgSearchClear" onclick="awSearchClear()" aria-label="Clear search">✕</button>
+        <span class="tgSearchKbd" aria-hidden="true"><kbd class="tgKbdMod">⌘</kbd><kbd>K</kbd></span>
+      </div>
+      <div class="tgRail" id="tgRail" role="group" aria-label="Tag preferences">
+        <div class="tgScroll">
+          <div class="tgRowIn"></div>
+          <div class="tgRowIn"></div>
+        </div>
       </div>
     </div>
     <!-- ── Section Header — tab switcher replaces the old title/subtitle ── -->
@@ -8283,11 +8317,20 @@ body{background:var(--bg);}
         #fg slides in via transform (never display:none), so this rail
         keeps a real width and can lay itself out while closed.
         The home #topSlide strip is deliberately untouched. -->
-   <div class="tgRail" id="tgRailGallery" role="group" aria-label="Tag preferences">
-     <div class="tgScroll">
-       <div class="tgRowIn"></div>
-       <div class="tgRowIn"></div>
-       <div class="tgRowIn"></div>
+   <div class="tgBlock">
+     <div class="tgSearch" id="fgSearchInWrap">
+       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+       <input type="search" class="tgSearchIn" id="fgSearchIn" placeholder="Search artworks, artists or tags..."
+              autocomplete="off" autocapitalize="off" spellcheck="false"
+              aria-label="Search artworks" oninput="fgSearchInput(this.value)">
+       <button type="button" class="tgSearchClear" onclick="fgSearchClear()" aria-label="Clear search">✕</button>
+       <span class="tgSearchKbd" aria-hidden="true"><kbd class="tgKbdMod">⌘</kbd><kbd>K</kbd></span>
+     </div>
+     <div class="tgRail" id="tgRailGallery" role="group" aria-label="Tag preferences">
+       <div class="tgScroll">
+         <div class="tgRowIn"></div>
+         <div class="tgRowIn"></div>
+       </div>
      </div>
    </div>
    <div class="fgHdr">
@@ -13769,6 +13812,19 @@ function qrMake (text) {
      clamped to 1–2 (200% shows 1/4 of the image area). At z=1 the
      output is byte-identical to the old object-position-only
      markup, so existing rows render exactly as before. ── */
+  /* ── CONTRACT ─────────────────────────────────────────────────────
+     When thumb_zoom > 1 this returns a transform:scale(). A transform
+     PAINTS outside the element's layout box, so the box staying square
+     is not enough on its own.
+
+     Every <img> this style is applied to MUST sit inside a wrapper that
+     is square and overflow:hidden — .awImgWrap, .upqImgWrap,
+     .admCardThumb, .upDraftCard and .upPrevWrap all do this. Applying
+     it to an image whose nearest clip is the whole card lets a zoomed
+     thumbnail bleed down over the card's title and buttons, which is
+     exactly the bug .admCardThumb was added to close.
+
+     New thumbnail surface? Give it a wrapper first. ── */
   function thumbStyle(x, y, z){
     var tx = (x!=null && isFinite(+x)) ? +x : 50;
     var ty = (y!=null && isFinite(+y)) ? +y : 50;
@@ -13856,7 +13912,8 @@ function qrMake (text) {
   /* ═══════════════════════════════════════════════════════════════
      ALBUMS (alb) — artist-curated collections of artworks
      ├─ albLoadProfileTab()  → profile ALBUMS tab   (#pfAlbumGrid)
-     ├─ albOpenPage()        → Settings ▸ Albums    (#albPage, manager)
+     ├─ albOpenPage()        → hamburger ▸ Albums   (#albPage, manager —
+     │                        the ONLY surface that can create one)
      ├─ albOpen(src,id)      → one album's contents (#albViewPage)
      └─ albUpRender()        → the optional upload-page picker
 
@@ -13960,9 +14017,11 @@ function qrMake (text) {
     var grid = document.getElementById('pfAlbumGrid');
     var empty = document.getElementById('pfAlbumEmpty');
     if(!grid) return;
-    var html = (pf.albums||[]).map(function(a){ return albCardHTML('pf', a); }).join('');
-    if(pf.isOwner) html += albNewCardHTML();
-    grid.innerHTML = html;
+    /* No create tile here. Album creation lives on ONE surface — the
+       manager at hamburger ▸ Albums — so this tab is purely a view of
+       what exists, and it reads identically on your own profile and on
+       anyone else's. */
+    grid.innerHTML = (pf.albums||[]).map(function(a){ return albCardHTML('pf', a); }).join('');
     /* Likes + Bookmarks are always present, so the strip is never
        actually empty — the hint only shows if a fetch wiped it. */
     if(empty) empty.style.display = 'none';
@@ -17086,7 +17145,9 @@ function qrMake (text) {
     var img = esc(getThumbnailUrl(row.image_url));
     var title = esc(row.name||'Untitled');
     return '<div class="admCard" data-id="'+idStr+'">'+
-      '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="'+thumbStyle(row.thumb_x, row.thumb_y, row.thumb_zoom)+'">'+
+      '<div class="admCardThumb">'+
+        '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="'+thumbStyle(row.thumb_x, row.thumb_y, row.thumb_zoom)+'">'+
+      '</div>'+
       '<div class="admCardBody">'+
         '<div class="admCardTitle">'+title+'</div>'+
         '<div class="admCardMeta">'+(row.created_at?new Date(row.created_at).toLocaleDateString():'')+'</div>'+
@@ -18728,9 +18789,10 @@ function hideCommentThumbnail(){
   /* ═══════════════════════════════════════════════════════════════
      TAG RAIL + PREFERENCES (tg)
      ├─ tgLoad()        — top vocabulary + this user's picks
-     ├─ tgRenderRail()  — the chip rail between #hero and .awTabs
+     ├─ tgRenderRail()  — the chip rows between #hero and .awTabs
      ├─ tgToggle()      — tick from the rail (rotates a fresh tag in)
-     ├─ tgModOpen()     — the "Search tag" grid
+     ├─ tgModOpen()     — the tag grid, opened by the search bar
+     │                    above the rows (or ⌘K / Ctrl K)
      └─ tgPrioritize()  — reorders any feed list by preference
 
      Preferences BOOST, they never filter: tgPrioritize does a STABLE
@@ -18748,7 +18810,16 @@ function hideCommentThumbnail(){
   var tgPrefs = new Set();     /* lowercase tokens this user prefers */
   var tgShown = [];            /* tokens currently in the rail, in order */
   var tgLoaded = false;
-  var TG_ROWS  = 3;            /* independently scrollable rows */
+  /* Row count is a single knob: the markup ships this many .tgRowIn
+     divs per rail and every loop below is written against TG_ROWS, so
+     changing it here and in the two rails' HTML is the whole edit. */
+  var TG_ROWS  = 2;
+  /* The width the two rows are packed to, on EVERY device. A desktop
+     container is already at least this wide, so the rows fill it and
+     nothing scrolls; a phone packs the same length and swipes to reach
+     it. That's the point: the vocabulary doesn't shrink because the
+     screen did — a narrow screen just takes a swipe to see all of it. */
+  var TG_DESKTOP_SPAN = 1360;
   var TG_SLOTS = 60;           /* upper bound; the width budget decides what fits */
   var TG_LS = 'dz_tagprefs1';
 
@@ -18846,86 +18917,58 @@ function hideCommentThumbnail(){
       .filter(function(c){ return c && c.slug && c.slug.length <= TAG_MAX; })
       .map(function(c){ return { tag:c.slug, uses:0, kind:'cat' }; });
   }
-  /* Rebuilds the rail's slot list: unticked tags first, most-used
-     first. If EVERY tag is ticked the rail keeps showing them in
-     their ticked state rather than going blank. */
-  function tgFill(){
-    tgShown = [];
-    for(var i=0; i<tgAll.length && tgShown.length < TG_SLOTS; i++){
-      if(!tgPrefs.has(tgAll[i].tag)) tgShown.push(tgAll[i].tag);
-    }
-    if(!tgShown.length){
-      tgShown = tgAll.slice(0, TG_SLOTS).map(function(x){ return x.tag; });
-    }
-  }
-  /* The next tag to rotate in: highest-ranked one that isn't already
-     ticked and isn't already ON SCREEN.
+  /* Rebuilds the rail's slot list: PICKED tags first, then the rest by
+     usage.
 
-     It has to test the DOM, not tgShown. tgShown is the candidate
-     POOL — tgFill loads it with every unticked tag — while the layout
-     only displays as many as fit, leaving the remainder as reserve.
-     Testing tgShown therefore matched everything and always returned
-     null, so a tick fell straight through to the "all picked, stop
-     generating" branch and no replacement ever appeared. */
-  function tgNextCandidate(){
-    var onScreen = {};
-    try{
-      var els = document.querySelectorAll('.tgRail .tgChip[data-tag]');
-      for(var i = 0; i < els.length; i++) onScreen[els[i].getAttribute('data-tag')] = 1;
-    }catch(e){}
-    for(var j = 0; j < tgAll.length; j++){
-      var t = tgAll[j].tag;
-      if(!tgPrefs.has(t) && !onScreen[t]) return t;
+     Picked tags used to be excluded outright — ticking one removed it
+     and rotated a fresh tag into its slot. That made the filled state
+     impossible to see at rest: a pick vanished the moment you made it,
+     and the only way to review or undo one was to open the tag grid.
+     Keeping them, at the front, is what makes a picked chip a visible,
+     reversible state on the rail itself. */
+  function tgFill(){
+    var picked = [], rest = [];
+    for(var i = 0; i < tgAll.length; i++){
+      (tgPrefs.has(tgAll[i].tag) ? picked : rest).push(tgAll[i].tag);
     }
-    return null;
+    tgShown = picked.concat(rest).slice(0, TG_SLOTS);
   }
+  /* No tick and no plus: a picked chip is filled with the accent
+     colour and that IS the state. A glyph on every chip made a row
+     read as a checklist rather than a set of tags, and the fill is
+     legible at a glance from further away than a 12px mark. */
   function tgChipHTML(tag){
     var on = tgPrefs.has(tag);
     return '<button type="button" class="tgChip'+(on?' on':'')+'" data-tag="'+esc(tag)+'" '+
       'onclick="tgToggle(this)" aria-pressed="'+(on?'true':'false')+'">'+
-      '<span class="tgMark">'+(on?'\u2713':'+')+'</span>'+
       '<span class="tgLbl">'+esc(tgLabel(tag))+'</span></button>';
   }
+  /* The "All" chip. Not a tag — it opens the full tag grid, and it
+     carries no data-tag so every lookup that walks the rail
+     (tgTwins) skips it without a special case. */
+  var TG_ALL_CHIP =
+    '<button type="button" class="tgChip tgChipAll" onclick="tgModOpen()" '+
+    'aria-haspopup="dialog" aria-label="Browse all tags">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">'+
+    '<rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/>'+
+    '<rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>'+
+    '<span>All</span></button>';
   /* Lays the rail out to FIT rather than to a fixed chip count.
      Chip widths vary with label length, so any fixed count either
      leaves a gap on a wide monitor or overhangs on a narrow one.
 
-     Budgets: the outer rows are indented by --tgStag and stop short by
-     the same amount, so they span [stag, avail-stag]; the middle row
-     gets the full width and spans [0, avail]. That's the whole shape —
-     the middle pokes out by exactly one stagger at each end, and
-     nothing exceeds the container, so desktop never scrolls.
+     Budgets: both rows are flush left and share one target width, so
+     they span [0, span] and finish at the same x. On desktop `span` is
+     the container width, so nothing exceeds it and the rail never
+     scrolls; on phones it's a multiple of the viewport, which is what
+     turns the same two rows into one sideways swipe.
 
      Widths are measured, never estimated — labels run from "nft" to
      "traditional-art" and guessing would drift badly at the ends. */
-  /* How far under budget a row may drift before it's worth reshuffling.
-     Roughly half a chip — tighter than this and every tick would
-     trigger a full re-layout, which is what made ticking feel heavy. */
-  var TG_REFLOW_SLACK = 70;
-  /* Tick choreography, in ms. The tick mark itself is NOT on this
-     clock — it lands on the tap so the press always feels answered.
-     These only govern what happens after: hold the ✓ long enough to
-     read, shrink the chip out, drop the replacement in, then settle
-     before deciding whether the row needs reshuffling. */
-  var TG_T = { hold: 140, leave: 190, settle: 200 };
-  function tgRowBroken(rowEl){
-    if(!rowEl) return false;
-    var scroll = rowEl.parentNode, rail = scroll && scroll.parentNode;
-    if(!rail || !rail._tgBudget) return false;
-    /* Which of the three rows this is — read positionally so neither
-       rail needs unique row ids. */
-    var r = Array.prototype.indexOf.call(scroll.children, rowEl);
-    var b = rail._tgBudget[r];
-    if(r < 0 || !b) return false;
-    var gap = rail._tgGap || 10, w = 0, kids = rowEl.children;
-    for(var i = 0; i < kids.length; i++) w += kids[i].offsetWidth + (i ? gap : 0);
-    /* Over budget means it now overflows; far under means the swap
-       opened a visible gap. Either way the row no longer fits. */
-    return w > b || (b - w) > TG_REFLOW_SLACK;
+  function tgBlockOf(rail){
+    var p = rail && rail.parentNode;
+    return (p && p.classList && p.classList.contains('tgBlock')) ? p : rail;
   }
-  var TG_SEARCH_CHIP =
-    '<button type="button" class="tgChip tgChipSearch" onclick="tgModOpen()" aria-label="Search tags">'+
-    '<span class="tgMark">\u2315</span><span class="tgLbl">Search tag</span></button>';
 
   /* Paints EVERY rail on the page. There are two — the home one under
      the hero and the gallery one that replaced the featured strip — and
@@ -18938,13 +18981,14 @@ function hideCommentThumbnail(){
   }
   function tgLayoutRail(rail, animate){
     if(!rail) return;
-        if(!tgAll.length){ rail.style.display = 'none'; return; }
-    rail.style.display = '';
+    var block = tgBlockOf(rail);
+    if(!tgAll.length){ block.style.display = 'none'; return; }
+    block.style.display = '';
     var scroll = rail.firstElementChild;
     /* Rows are found positionally, so every rail on the page uses the
        same markup with no unique ids to keep in sync. */
     var hosts = scroll ? scroll.querySelectorAll('.tgRowIn') : null;
-    if(!scroll || !hosts || hosts.length < 3) return;
+    if(!scroll || !hosts || hosts.length < TG_ROWS) return;
 
     /* Pass 0 — remember where every chip currently sits, BEFORE the
        measuring pass wipes the rows. Keyed by tag so a chip that ends
@@ -18958,73 +19002,94 @@ function hideCommentThumbnail(){
       }
     }
 
-    var items = [TG_SEARCH_CHIP].concat(tgShown.map(tgChipHTML));
+    /* items[0] is the All chip. It's pinned to the front of row 0 and
+       excluded from every move below, so the packer can never bury or
+       drop it — it has to stay the first thing in the rail for the
+       sticky-left rule in the CSS to hold it against the edge. */
+    var items = [TG_ALL_CHIP].concat(tgShown.map(tgChipHTML));
 
     /* Pass 1 — paint everything into one row to read real widths. */
-    hosts[1].innerHTML = ''; hosts[2].innerHTML = '';
+    for(var e = 1; e < TG_ROWS; e++) hosts[e].innerHTML = '';
     hosts[0].innerHTML = items.join('');
     var widths = [], kids = hosts[0].children;
     for(var i = 0; i < kids.length; i++) widths.push(kids[i].offsetWidth);
 
     /* Pass 2 — per-row budgets from live computed style, so the
-       rem-based stagger and responsive padding are picked up at every
-       breakpoint without duplicating the numbers here. */
+       responsive inset is picked up at every breakpoint without
+       duplicating the numbers here. Both rows are flush left and get
+       the SAME budget: two equal lines reading left to right, which is
+       the whole shape now that there's no third row to stagger
+       against. */
     var cs   = getComputedStyle(scroll);
     var gap  = parseFloat(cs.columnGap || cs.gap) || 10;
     var pad  = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-    var stag = parseFloat(getComputedStyle(hosts[0]).paddingLeft) || 0;
-    var over = parseFloat(cs.getPropertyValue('--tgOver')) || 0;
     var avail = Math.max(0, rail.clientWidth - pad);
-    /* How many screens wide the rail should run. Desktop is exactly 1 —
-       it fills left to right and never scrolls. Narrow screens get a
-       multiple, which is what produces the sideways scroll instead of
-       cramming the same content into less room. */
-    var span = avail * (avail < 700 ? 2.4 : 1);
-    /* Outer rows start at `stag` and stop at `span - stag`; the middle
-       starts flush and stops `over` past them. So the middle pokes out
-       by one stagger on the left and a sliver on the right, and the two
-       outer rows end at exactly the same x. `over` is capped at `stag`
-       so the middle can't exceed the container on desktop. */
-    var budget = [span - 2*stag, span - stag + Math.min(over, stag), span - 2*stag];
+    /* See TG_DESKTOP_SPAN: one desktop's worth of tags everywhere. */
+    var span = Math.max(avail, TG_DESKTOP_SPAN);
+    var budget = [];
+    for(var s = 0; s < TG_ROWS; s++) budget.push(span);
 
-    /* If the vocabulary can't fill those targets, shrink all three by
+    /* If the vocabulary can't fill those targets, shrink every row by
        the SAME factor instead of letting the rows end wherever they run
-       out. That keeps the stagger intact on a small tag list — without
-       it, rows finish at arbitrary widths and the shape collapses. */
+       out. That keeps the two lines even on a small tag list — without
+       it, one row finishes short and the block looks broken. */
     var poolW = 0;
     for(var q = 0; q < items.length; q++) poolW += widths[q] + (q ? gap : 0);
-    var need = budget[0] + budget[1] + budget[2];
+    var need = 0;
+    for(var n = 0; n < TG_ROWS; n++) need += budget[n];
     if(need > 0 && poolW < need){
       var shrink = poolW / need;
-      budget[0] *= shrink; budget[1] *= shrink; budget[2] *= shrink;
+      for(var k2 = 0; k2 < TG_ROWS; k2++) budget[k2] *= shrink;
     }
 
     /* ── Packing ───────────────────────────────────────────────
        Rows are held as INDEX lists, because a row's width depends only
        on which chips are in it (sum of widths + gaps), never on their
        order. That makes every candidate rearrangement a cheap sum. */
-    var rows = [[],[],[]];
+    var rows = [];
+    for(var z = 0; z < TG_ROWS; z++) rows.push([]);
     function rowW(r){
       var arr = rows[r], t = 0;
       for(var x = 0; x < arr.length; x++) t += widths[arr[x]];
       return t + (arr.length > 1 ? (arr.length - 1) * gap : 0);
     }
     function err(){
-      var w0 = rowW(0), w1 = rowW(1), w2 = rowW(2);
-      /* Distance from each target, PLUS a penalty for the two outer
-         rows disagreeing with each other. They're indented equally, so
-         any difference between them shows up directly as a ragged
-         right edge — the "bottom line is a tag short" case. Weighted
-         up because that mismatch is far more visible than a row
-         finishing a few px shy of its target. */
-      return Math.abs(w0-budget[0]) + Math.abs(w1-budget[1]) + Math.abs(w2-budget[2])
-           + Math.abs(w0-w2) * 1.5;
+      var w = [], t = 0, mism = 0;
+      for(var a = 0; a < TG_ROWS; a++){
+        w[a] = rowW(a);
+        t += Math.abs(w[a] - budget[a]);
+        /* Overshoot is NOT symmetric with undershoot. A row finishing a
+           few px short is invisible; a row finishing a few px long
+           pushes the rail past its container, which switches the edge
+           fade on and starts a scroll that shouldn't exist on desktop.
+           Priced up so the hill-climb never trades a clean fit for a
+           marginally better balance. */
+        if(w[a] > budget[a]) t += (w[a] - budget[a]) * 12;
+      }
+      /* Distance from target, PLUS a penalty for the rows disagreeing
+         with each other. They start at the same x, so any difference
+         between them shows up directly as a ragged right edge — the
+         "bottom line is a tag short" case. Weighted up because that
+         mismatch is far more visible than a row finishing a few px shy
+         of its target; it's also the only term that cares about BALANCE
+         once both rows are under budget, since the distances above then
+         sum to a constant minus the total width. */
+      for(var b = 0; b < TG_ROWS; b++){
+        for(var d = b + 1; d < TG_ROWS; d++) mism += Math.abs(w[b] - w[d]);
+      }
+      return t + mism * 1.5;
     }
-    /* items[0] is the Search chip: pinned to the middle row, which
-       starts flush left, so it sits at x=0 and stays reachable even
-       when the rail is scrolled hard right. Excluded from every move
-       below so the refinement can never bury it. */
-    rows[1].push(0);
+    rows[0].push(0);                      /* All chip — pinned, first row */
+    /* tgFill() sorts picked tags to the front, so they occupy
+       items[1..pickedN]. Those are MUST-KEEP: the refinement may still
+       move them between rows to balance the two, but it may never drop
+       or swap one out. Without this a chip you just picked could be
+       packed straight back off the rail — the fill would land on the
+       tap and then the tag would vanish, which reads as the tap having
+       failed. */
+    var pickedN = 0;
+    while(pickedN < tgShown.length && tgPrefs.has(tgShown[pickedN])) pickedN++;
+    var mustKeep = 1 + pickedN;
     var pool = [];
     for(var p = 1; p < items.length; p++) pool.push(p);
 
@@ -19032,12 +19097,18 @@ function hideCommentThumbnail(){
        left. Gets close; the refinement pass does the rest. */
     for(var g = 0; g < pool.length; g++){
       var best = -1, bestRoom = -Infinity;
-      for(var r = 0; r < 3; r++){
+      for(var r = 0; r < TG_ROWS; r++){
         var room = budget[r] - rowW(r) - (rows[r].length ? gap : 0);
         if(room < widths[pool[g]]) continue;
         if(room > bestRoom){ bestRoom = room; best = r; }
       }
-      if(best < 0) continue;
+      /* A must-keep that fits nowhere still goes in — it lands in the
+         emptier row and that row simply runs a little long. Better a
+         slightly uneven pair of rows than a pick that isn't on screen. */
+      if(best < 0){
+        if(pool[g] >= mustKeep) continue;
+        best = rowW(0) <= rowW(1) ? 0 : 1;
+      }
       rows[best].push(pool[g]);
       pool[g] = -1;
     }
@@ -19051,22 +19122,26 @@ function hideCommentThumbnail(){
        small enough to read as a few tags sliding into place. */
     for(var pass = 0; pass < 40; pass++){
       var base = err(), bestGain = 0, mv = null;
-      for(var r = 0; r < 3; r++){
+      for(var r = 0; r < TG_ROWS; r++){
         for(var i = 0; i < rows[r].length; i++){
-          if(rows[r][i] === 0) continue;              /* Search chip is pinned */
-          /* swap a placed chip for a leftover of a better width */
-          for(var q = 0; q < pool.length; q++){
-            var keep = rows[r][i]; rows[r][i] = pool[q];
-            var e1 = err(); rows[r][i] = keep;
-            if(base - e1 > bestGain){ bestGain = base - e1; mv = {t:'swap', r:r, i:i, q:q}; }
+          if(rows[r][i] === 0) continue;             /* All chip is pinned */
+          /* Picked tags may be rebalanced across rows but never removed
+             from the rail, so swap and drop are skipped for them. */
+          if(rows[r][i] >= mustKeep){
+            /* swap a placed chip for a leftover of a better width */
+            for(var q = 0; q < pool.length; q++){
+              var keep = rows[r][i]; rows[r][i] = pool[q];
+              var e1 = err(); rows[r][i] = keep;
+              if(base - e1 > bestGain){ bestGain = base - e1; mv = {t:'swap', r:r, i:i, q:q}; }
+            }
+            /* drop it entirely — sometimes a row is simply one chip long */
+            var cut = rows[r].splice(i, 1)[0];
+            var e2 = err();
+            rows[r].splice(i, 0, cut);
+            if(base - e2 > bestGain){ bestGain = base - e2; mv = {t:'drop', r:r, i:i}; }
           }
-          /* drop it entirely — sometimes a row is simply one chip long */
-          var cut = rows[r].splice(i, 1)[0];
-          var e2 = err();
-          rows[r].splice(i, 0, cut);
-          if(base - e2 > bestGain){ bestGain = base - e2; mv = {t:'drop', r:r, i:i}; }
           /* hand it to another row */
-          for(var d = 0; d < 3; d++){
+          for(var d = 0; d < TG_ROWS; d++){
             if(d === r) continue;
             var cut2 = rows[r].splice(i, 1)[0];
             rows[d].push(cut2);
@@ -19090,20 +19165,24 @@ function hideCommentThumbnail(){
       else if(mv.t === 'add'){ rows[mv.r].push(pool.splice(mv.q, 1)[0]); }
     }
 
-    /* Cached so tgRowBroken() can test a single in-place chip swap
-       against the same numbers without re-running the whole measure. */
-    rail._tgGap = gap; rail._tgBudget = [budget[0], budget[1], budget[2]];
-
-    var plan = [[],[],[]];
-    for(var pr = 0; pr < 3; pr++){
+    var plan = [];
+    for(var pr = 0; pr < TG_ROWS; pr++){
+      plan.push([]);
       for(var pi = 0; pi < rows[pr].length; pi++) plan[pr].push(items[rows[pr][pi]]);
     }
 
-    for(var r2 = 0; r2 < 3; r2++){
+    for(var r2 = 0; r2 < TG_ROWS; r2++){
       hosts[r2].innerHTML = plan[r2].join('');
-      /* A vocabulary smaller than 3 rows leaves trailing rows empty —
-         hide them so they don't contribute phantom gap spacing. */
+      /* A vocabulary too small to fill both rows leaves the second one
+         empty — hide it so it doesn't contribute phantom gap spacing
+         under the first. */
       hosts[r2].style.display = plan[r2].length ? '' : 'none';
+    }
+    /* Rails ship with exactly TG_ROWS rows, but clear any extras that a
+       stale cached shell might still have in the markup. */
+    for(var r3 = TG_ROWS; r3 < hosts.length; r3++){
+      hosts[r3].innerHTML = '';
+      hosts[r3].style.display = 'none';
     }
 
     /* Pass 5 — FLIP the chips that actually moved. Anything whose
@@ -19184,78 +19263,29 @@ function hideCommentThumbnail(){
   function tgMark(el, on){
     el.classList.toggle('on', on);
     el.setAttribute('aria-pressed', on ? 'true' : 'false');
-    var m = el.querySelector('.tgMark');
-    if(m) m.textContent = on ? '\u2713' : '+';
   }
   function tgToggle(btn){
     var tag = btn && btn.getAttribute('data-tag');
     if(!tag) return;
+    var on = !tgPrefs.has(tag);
+    if(on) tgPrefs.add(tag); else tgPrefs.delete(tag);
+    tgSave(tag, on);
+
+    /* Beat 1 — answer the tap NOW, on every rail, before any layout
+       work. The fill lands on the press so it always feels answered. */
     var twins = tgTwins(tag);
     if(!twins.length) twins = [btn];
+    for(var i = 0; i < twins.length; i++) tgMark(twins[i], on);
 
-    /* ── Untick — only reachable when the pool ran dry and the chip
-       stayed put (or from the search grid). ── */
-    if(tgPrefs.has(tag)){
-      tgPrefs.delete(tag);
-      tgSave(tag, false);
-      for(var u = 0; u < twins.length; u++) tgMark(twins[u], false);
-      requestAnimationFrame(function(){ tgAfterChange(); });
-      return;
-    }
-
-    tgPrefs.add(tag);
-    tgSave(tag, true);
-    /* Beat 1 — acknowledge the tap NOW, on every rail, before any
-       decision about what happens next. */
-    for(var k = 0; k < twins.length; k++) tgMark(twins[k], true);
-
-    var next = tgNextCandidate();
-    /* Every tag is ticked — stop generating. The chips simply stay,
-       ticked, until new tags enter the vocabulary. */
-    if(!next) return;
-
-    /* Drop the ticked tag from the pool. `next` is already in tgShown
-       (reserve, just not rendered), so splicing it in here would
-       duplicate it the next time the layout runs. */
-    var idx = tgShown.indexOf(tag);
-    if(idx !== -1) tgShown.splice(idx, 1);
-    if(tgShown.indexOf(next) === -1) tgShown.push(next);
-
-    /* The feed rebuild is the heaviest thing on this path, so let the
-       tick paint first rather than blocking the tap on it. */
-    requestAnimationFrame(function(){ tgAfterChange(); });
-
-    /* ── Staged hand-off, run on each rail's copy ──────────────────
-       tick (already shown) → chip leaves → replacement arrives →
-       reshuffle if it broke that rail's fit. Each stage re-checks the
-       chip is still in the document, because a resize or a search-grid
-       edit can re-render a rail mid-sequence and detach it. */
-    setTimeout(function(){
-      for(var a = 0; a < twins.length; a++){
-        if(twins[a].parentNode) twins[a].classList.add('tgLeave');
-      }
-      setTimeout(function(){
-        for(var b = 0; b < twins.length; b++){
-          (function(el){
-            var row = el.parentNode;
-            if(!row) return;
-            el.outerHTML = tgChipHTML(next);
-            var kids = row.children;
-            for(var f = 0; f < kids.length; f++){
-              if(kids[f].getAttribute('data-tag') === next){
-                kids[f].classList.add('tgEnter'); break;
-              }
-            }
-            /* Only reshuffle when the replacement actually breaks that
-               row's fit — a similar-width tag just slots in. Checked
-               per rail, since they can be different widths. */
-            setTimeout(function(){
-              if(tgRowBroken(row)) tgLayoutRail(row.parentNode && row.parentNode.parentNode, true);
-            }, TG_T.settle);
-          })(twins[b]);
-        }
-      }, TG_T.leave);
-    }, TG_T.hold);
+    /* Beat 2 — picked tags sort to the front, so re-fill and let the
+       FLIP pass in tgLayoutRail glide every chip that moved to its new
+       slot. The feed rebuild rides along at the end: it's the heaviest
+       thing on this path, so it must not block the tap. */
+    requestAnimationFrame(function(){
+      tgFill();
+      tgRenderRail(true);
+      tgAfterChange();
+    });
   }
   /* Stable partition — preferred artwork first, trending order intact
      inside each half. Matches on BOTH the tags and category arrays,
@@ -19333,6 +19363,35 @@ function hideCommentThumbnail(){
     var m = document.getElementById('tgMod');
     if(m && m.classList.contains('open')) tgModClose();
   });
+  /* ⌘K / Ctrl K — the shortcut the bar advertises, so it has to work
+     from anywhere on the page. Deliberately inert while a field has
+     focus: the same chord is "delete to end of line" in a text input
+     on macOS, and stealing it there would be worse than not having the
+     shortcut at all. */
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'k' && e.key !== 'K') return;
+    if(!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
+    var t = e.target;
+    if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    /* Whichever bar is actually on screen — the gallery's while it's
+       open, the home one otherwise. */
+    var fg = document.getElementById('fg');
+    var el = document.getElementById(
+      (fg && fg.classList.contains('open')) ? 'fgSearchIn' : 'awSearchIn');
+    if(!el) return;
+    e.preventDefault();
+    el.focus();
+    el.select();
+  });
+  /* The hint is written as ⌘ in the markup and corrected here, so the
+     Mac case renders straight from HTML with no flash and everyone
+     else gets "Ctrl" before first paint of the bar. */
+  function tgKbdHint(){
+    if(/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '')) return;
+    var els = document.querySelectorAll('.tgSearchKbd .tgKbdMod');
+    for(var i = 0; i < els.length; i++) els[i].textContent = 'Ctrl';
+  }
+  tgKbdHint();
 
   /* Boot the rail. Deliberately independent of the gallery load: the
      rail paints as soon as the vocabulary lands, and tgPrioritize
@@ -19344,6 +19403,120 @@ function hideCommentThumbnail(){
     tgLoad();
   }
 
+  /* ═══════════════════════════════════════════════════════════════
+     FEED SEARCH (aw / fg)
+     The bar above the chip rows is a real input, not a button: it
+     filters the grid below as you type, so there is no results screen
+     to open and no way to get stranded on one.
+
+     Two bars, two grids, one behaviour:
+       #awSearchIn  → the home feed  (#awGrid, via renderAwGrid)
+       #fgSearchIn  → the gallery    (#fgQ + renderFG, whose query
+                      state stays exactly where it always was)
+     ═══════════════════════════════════════════════════════════════ */
+  var awQ = '', awQTimer = null, fgQTimer = null;
+
+  /* user_id → username, fetched once on the first keystroke and kept
+     for the session. Artwork rows come back as select('*') on
+     `artworks`, which carries user_id but no username, and joining a
+     profile onto every feed query to serve a search box nobody may
+     open would be the wrong trade. Failure is not fatal: search keeps
+     matching everything else and artists simply aren't part of it. */
+  var awArtists = null, awArtistsBusy = false;
+  function awLoadArtists(){
+    if(awArtists || awArtistsBusy || !sb) return;
+    awArtistsBusy = true;
+    sb.from('profiles').select('id,username').then(function(res){
+      var map = {}, rows = (res && res.data) || [];
+      for(var i = 0; i < rows.length; i++){
+        if(rows[i] && rows[i].id) map[rows[i].id] = String(rows[i].username || '').toLowerCase();
+      }
+      awArtists = map; awArtistsBusy = false;
+      /* Landed mid-query — redo the match now artists are searchable. */
+      if(awQ) awSearchRender();
+    }, function(){ awArtists = {}; awArtistsBusy = false; });
+  }
+
+  /* Matches the fields a row actually has: title, description, its own
+     tags, and its categories by slug AND by label, so typing "3D"
+     finds pieces stored under the "3d-art" slug. */
+  function awSearchFilter(list){
+    if(!awQ || !Array.isArray(list)) return list;
+    var q = awQ, out = [];
+    for(var i = 0; i < list.length; i++){
+      var a = list[i], hit = false, j;
+      if(String(a.name || '').toLowerCase().indexOf(q) !== -1) hit = true;
+      if(!hit && String(a.description || '').toLowerCase().indexOf(q) !== -1) hit = true;
+      if(!hit && Array.isArray(a.tags)){
+        for(j = 0; j < a.tags.length; j++){
+          if(String(a.tags[j]).toLowerCase().indexOf(q) !== -1){ hit = true; break; }
+        }
+      }
+      if(!hit){
+        var cats = catList(a.category);
+        for(j = 0; j < cats.length; j++){
+          if(String(cats[j]).toLowerCase().indexOf(q) !== -1 ||
+             String(tgLabel(cats[j])).toLowerCase().indexOf(q) !== -1){ hit = true; break; }
+        }
+      }
+      if(!hit && awArtists && a.user_id){
+        var u = awArtists[a.user_id];
+        if(u && u.indexOf(q) !== -1) hit = true;
+      }
+      if(hit) out.push(a);
+    }
+    return out;
+  }
+
+  function awSearchRender(){
+    try{
+      if(typeof awTab !== 'undefined' && typeof awListForTab === 'function'){
+        renderAwGrid(awListForTab(awTab), awTab);
+      }
+    }catch(e){}
+  }
+  /* Shared by both bars: the clear button only exists while there's
+     something to clear, and the ⌘K badge steps aside for it. */
+  function awSearchChrome(wrapId, v){
+    var w = document.getElementById(wrapId);
+    if(w) w.classList.toggle('tgHasQ', !!String(v || '').length);
+  }
+  function awSearchInput(v){
+    awSearchChrome('awSearchInWrap', v);
+    awLoadArtists();
+    clearTimeout(awQTimer);
+    /* Debounced. Every keystroke rebuilds the grid, and running that
+       per character makes typing feel like it's fighting back. */
+    awQTimer = setTimeout(function(){
+      var next = String(v || '').trim().toLowerCase();
+      if(next === awQ) return;
+      awQ = next;
+      awSearchRender();
+    }, 140);
+  }
+  function awSearchClear(){
+    var el = document.getElementById('awSearchIn');
+    if(el){ el.value = ''; el.focus(); }
+    awSearchInput('');
+  }
+  /* The gallery keeps its own query in #fgQ because renderFG() reads
+     that element directly. Writing through it lets this bar replace
+     the old field without touching the gallery's render path at all. */
+  function fgSearchInput(v){
+    awSearchChrome('fgSearchInWrap', v);
+    var q = document.getElementById('fgQ');
+    if(q) q.value = v || '';
+    clearTimeout(fgQTimer);
+    fgQTimer = setTimeout(function(){
+      if(typeof renderFG === 'function') renderFG();
+    }, 140);
+  }
+  function fgSearchClear(){
+    var el = document.getElementById('fgSearchIn');
+    if(el){ el.value = ''; el.focus(); }
+    fgSearchInput('');
+  }
+
   function renderAwGrid(list, type){
     var grid  = document.getElementById('awGrid');
     var empty = document.getElementById('awEmpty');
@@ -19352,7 +19525,10 @@ function hideCommentThumbnail(){
     /* Every tab is TRENDING (per-category mini-ranking), EXCEPT "Latest",
        which is the one view that stays newest-first (that's its whole purpose).
        Hidden artworks are dropped first (per-user "hide from my feed"). */
-    var src = filterHidden((list||[]).slice());
+    /* Applied here rather than at the call site so every path that
+       repaints the grid — tab switch, tag tick, upload, like —
+       keeps the active query instead of silently dropping it. */
+    var src = awSearchFilter(filterHidden((list||[]).slice()));
     /* "Latest" stays strictly newest-first — that's its whole purpose,
        so preferences deliberately don't reorder it. Every other tab
        gets preferred tags pushed to the front of the trending order. */
@@ -19368,9 +19544,11 @@ function hideCommentThumbnail(){
 
     if(!awRList.length){
       if(empty){
-        empty.textContent = (type && type !== 'artworks' && type !== 'latest')
-          ? ('NO ' + catLabel(type).toUpperCase() + ' ART YET')
-          : 'NO ARTWORK YET';
+        empty.textContent = awQ
+          ? ('NO MATCHES FOR \u201C' + awQ.toUpperCase() + '\u201D')
+          : ((type && type !== 'artworks' && type !== 'latest')
+              ? ('NO ' + catLabel(type).toUpperCase() + ' ART YET')
+              : 'NO ARTWORK YET');
         empty.style.display = 'block';
       }
       return;
@@ -21564,34 +21742,52 @@ html.thmFade #themePage{
 
 /* ═══ ALBUMS ═══════════════════════════════════════════════
    Three surfaces share one card: the profile ALBUMS tab, the
-   Settings ▸ Albums manager (#albPage) and one album's contents
-   (#albViewPage). Columns follow the site-wide 2 / 3 / 4 ladder
-   so albums line up with every other grid. */
+   Albums manager (#albPage, from the hamburger) and one album's
+   contents (#albViewPage).
+
+   The card IS a square. The 2×2 cover mosaic fills it edge to edge,
+   which is what keeps all four cells square as well, and the name and
+   item count sit INSIDE at the bottom over a scrim. A meta strip below
+   the mosaic — the old shape — made the tile taller than a square and
+   broke the line-up with the artwork grid beside it. */
 .albGrid{
-  display:grid;gap:.9rem;margin-top:1.2rem;
+  display:grid;margin-top:1.2rem;
+  /* Same ladder AND the same gaps as .pfGridArt, so an album tile has
+     the identical footprint to an artwork tile and the two grids line
+     up column for column on every screen:
+     2 on phones · 3 from 700px · 4 from 1280px. */
   grid-template-columns:repeat(2,1fr);
+  gap:.3rem;
 }
-@media(min-width:700px){ .albGrid{grid-template-columns:repeat(3,1fr);gap:1rem;} }
-@media(min-width:1280px){ .albGrid{grid-template-columns:repeat(4,1fr);gap:1.1rem;} }
+@media(min-width:700px){ .albGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
+@media(min-width:1280px){ .albGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
 .albLoading{
   grid-column:1/-1;padding:3rem 1rem;text-align:center;
   font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;color:var(--txd);
 }
 .albCard{
-  display:flex;flex-direction:column;width:100%;padding:0;text-align:left;
-  background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
+  position:relative;display:block;width:100%;aspect-ratio:1;
+  padding:0;text-align:left;
+  background:var(--sur);border:1px solid var(--bdr);border-radius:12px;
   overflow:hidden;cursor:pointer;color:inherit;font:inherit;
   transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s,box-shadow .25s;
+}
+/* Same square from width alone, for engines without aspect-ratio. */
+@supports not (aspect-ratio:1){
+  .albCard{height:0;padding-top:100%;}
 }
 @media(hover:hover){
   .albCard:hover{transform:translateY(-3px);border-color:var(--bdrh);box-shadow:0 10px 26px rgba(0,0,0,.28);}
 }
 .albCard:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-/* 2×2 cover mosaic — the 1px gaps show the card border colour
-   through, so the four thumbs read as one tile, not four cards. */
+/* 2×2 cover mosaic, absolutely filling the card — absolute so nothing
+   about the four images can change the tile's size. The 1px gaps show
+   the border colour through, so the four thumbs read as one tile
+   rather than four little cards. */
 .albMosaic{
+  position:absolute;inset:0;
   display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
-  gap:1px;background:var(--bdr);aspect-ratio:1;width:100%;
+  gap:1px;background:var(--bdr);
 }
 .albCell{display:block;overflow:hidden;background:var(--sur2);}
 .albCell img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -21602,31 +21798,46 @@ html.thmFade #themePage{
       transparent 6px 12px),
     var(--sur2);
 }
-.albMeta{display:block;padding:.6rem .7rem .7rem;min-width:0;}
-.albName{
-  display:flex;align-items:center;gap:.35rem;
-  font-family:var(--fb);font-weight:600;font-size:.82rem;color:var(--tx);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+/* Caption over a scrim rather than a solid bar: the covers stay
+   visible behind it while the text stays legible over any artwork.
+   pointer-events:none so the whole square remains one click target. */
+.albMeta{
+  position:absolute;left:0;right:0;bottom:0;z-index:1;
+  padding:1.7rem .65rem .55rem;pointer-events:none;
+  background:linear-gradient(to top,
+    rgba(0,0,0,.84) 0%, rgba(0,0,0,.58) 42%, rgba(0,0,0,0) 100%);
 }
-.albPin{color:var(--pb);font-size:.76rem;flex-shrink:0;}
+.albName{
+  display:flex;align-items:center;gap:.32rem;
+  font-family:var(--fb);font-weight:600;font-size:.8rem;color:#fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 1px 3px rgba(0,0,0,.55);
+}
+/* Fixed light values, not theme tokens: this text always sits on a
+   dark scrim over artwork, so it must not follow the page theme. */
+.albPin{color:rgba(255,255,255,.92);font-size:.74rem;flex-shrink:0;}
 .albCount{
-  display:block;margin-top:.25rem;
-  font-family:var(--fm);font-size:.56rem;letter-spacing:.14em;color:var(--txd);
+  display:block;margin-top:.16rem;
+  font-family:var(--fm);font-size:.54rem;letter-spacing:.14em;
+  color:rgba(255,255,255,.74);
 }
 .albCard--virt{border-color:color-mix(in srgb,var(--pg) 26%,var(--bdr));}
-/* Create tile — stretches to the row height set by the real cards. */
+/* Create tile — the same square footprint as an album card, just
+   empty. It only ever appears on the manager page, first in the grid. */
 .albCardNew{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.55rem;
-  aspect-ratio:1;background:transparent;border-style:dashed;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;
+  background:transparent;border-style:dashed;
   border-color:color-mix(in srgb,var(--tc) 26%,transparent);
 }
-.albCardNew:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}
+@media(hover:hover){
+  .albCardNew:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}
+}
 .albNewIco{
   width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:1.3rem;line-height:1;color:var(--pb);
+  font-size:1.35rem;line-height:1;color:var(--pb);
   border:1px solid color-mix(in srgb,var(--tc) 26%,transparent);
 }
-.albNewLbl{font-family:var(--fm);font-size:.58rem;letter-spacing:.16em;color:var(--txd);}
+.albNewLbl{font-family:var(--fm);font-size:.56rem;letter-spacing:.16em;color:var(--txd);}
 
 /* ── Album pages — same sliding shell as #bmPage, stacked above
    both #profilePage (500) and #setPage (546). ── */
@@ -21757,23 +21968,96 @@ html.thmFade #themePage{
 }
 @media(prefers-reduced-motion:reduce){ #tsPage{transition:none;} }
 
-/* ═══ TAG RAIL + TAG SEARCH ═══════════════════════════════
-   ONE horizontal scroller wrapping three stacked rows, so a swipe
-   moves all three together as a single block rather than sliding a
-   row out of alignment with its neighbours.
-   Shape: rows 1 and 3 are indented by --tgStag while row 2 sits flush
-   left and carries ~2x the chips (see the deal pattern in
-   tgRenderRail), so the middle line pokes out at BOTH ends. Chips
-   never wrap — the scroller's width is max-content, so the longest
-   row defines the scroll extent. */
-.tgRail{
-  /* Top and bottom driven by ONE value so they can't drift apart. This
-     was margin:0 0 1.25rem, which left the first row of chips flush
-     against the sticky .fgIntro heading and its border-bottom in the
-     gallery — no breathing room above, plenty below. */
+/* ═══ TAG BLOCK — SEARCH BAR + TWO CHIP ROWS ═══════════════
+   .tgBlock is the static frame. It owns the outer spacing and the
+   horizontal inset (--tgInset), which both the search bar and the chip
+   rows read, so the two always share a left edge. Only .tgRail inside
+   it scrolls sideways — that's why the bar stays put while the chips
+   slide under it.
+   Shape: two flush-left rows packed to the SAME width by
+   tgLayoutRail(). That width is one desktop's worth of tags on every
+   device (TG_DESKTOP_SPAN), so a phone shows exactly what a desktop
+   shows and simply swipes to reach it. Chips never wrap — .tgScroll is
+   max-content wide, so the rows define the scroll extent. */
+.tgBlock{
+  /* Top and bottom driven by ONE value so they can't drift apart —
+     this is what keeps the gap up to #topSlide equal to the gap down
+     to the tabs. */
   --tgPad:1.25rem;
+  --tgInset:clamp(.7rem,2vw,2rem);
   margin:var(--tgPad) 0;
-  --tgRow:40px;--tgGap:10px;--tgStag:2.6rem;--tgOver:1rem;
+}
+
+/* ── Search bar ──────────────────────────────────────────────
+   A real text input: it filters the feed below as you type, so there
+   is no modal and no second screen to get back from. The wrapper
+   carries the border and background; the input itself is transparent
+   and borderless, which is what lets the icon, field and clear button
+   sit on one continuous surface. */
+.tgSearch{
+  display:flex;align-items:center;gap:.65rem;
+  width:calc(100% - var(--tgInset) * 2);
+  margin:0 var(--tgInset) .85rem;
+  height:46px;padding:0 .8rem 0 .95rem;box-sizing:border-box;
+  border-radius:11px;
+  background:var(--sur);border:1px solid var(--bdr);
+  transition:border-color .22s,background .22s,box-shadow .22s;
+}
+@media(hover:hover){
+  .tgSearch:hover{border-color:var(--bdrh);}
+  .tgSearchClear:hover{background:color-mix(in srgb,var(--tc) 36%,transparent);}
+}
+/* Focus lives on the WRAPPER via :focus-within, because the element
+   that actually takes focus is the transparent input inside it. */
+.tgSearch:focus-within{
+  border-color:var(--pg);background:var(--sur);
+  box-shadow:0 0 0 3px var(--pdim);
+}
+.tgSearchIco{
+  width:16px;height:16px;flex-shrink:0;color:var(--txd);
+  transition:color .22s;
+}
+.tgSearch:focus-within .tgSearchIco{color:var(--pb);}
+.tgSearchIn{
+  flex:1;min-width:0;height:100%;
+  background:none;border:0;outline:none;padding:0;margin:0;
+  font-family:var(--fb);font-size:.88rem;color:var(--tx);
+  /* Safari paints its own inner shadow + a search-cancel widget on
+     type=search; both are removed so the field matches every theme. */
+  -webkit-appearance:none;appearance:none;
+}
+.tgSearchIn::-webkit-search-cancel-button{-webkit-appearance:none;display:none;}
+.tgSearchIn::placeholder{color:var(--txd);opacity:.85;}
+/* Only rendered once there's something to clear — an always-visible
+   ✕ on an empty field reads as a control that does nothing. */
+.tgSearchClear{
+  position:relative;display:none;flex-shrink:0;
+  width:22px;height:22px;border-radius:50%;border:0;cursor:pointer;
+  background:color-mix(in srgb,var(--tc) 20%,transparent);color:var(--tx);
+  font-size:.62rem;line-height:1;
+  align-items:center;justify-content:center;
+  transition:background .18s;
+}
+/* 22px drawn, 42px tappable. */
+.tgSearchClear::after{content:'';position:absolute;inset:-10px;}
+.tgSearch.tgHasQ .tgSearchClear{display:flex;}
+/* The ⌘K / Ctrl K hint. Glyph is set per platform by tgKbdHint(), and
+   the badge is dropped on touch where the shortcut is dead weight and
+   the space is better spent on the placeholder. It also hides once
+   there's a query, so it never sits next to the clear button. */
+.tgSearchKbd{display:flex;align-items:center;gap:3px;flex-shrink:0;}
+.tgSearch.tgHasQ .tgSearchKbd{display:none;}
+.tgSearchKbd kbd{
+  font-family:var(--fm);font-size:.62rem;letter-spacing:.04em;line-height:1;
+  color:var(--txd);background:rgba(var(--pg-rgb),.06);
+  border:1px solid var(--bdr);border-radius:5px;
+  padding:.3rem .36rem;min-width:1.1em;text-align:center;
+}
+
+/* ── Chip rail ── */
+.tgRail{
+  margin:0;
+  --tgRow:38px;--tgGap:9px;
   overflow-x:auto;overflow-y:hidden;
   scrollbar-width:none;-ms-overflow-style:none;
   -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
@@ -21781,71 +22065,113 @@ html.thmFade #themePage{
 .tgRail::-webkit-scrollbar{display:none;}
 /* The fade only applies when the rail ACTUALLY overflows (class set by
    tgSyncOverflow) — applied unconditionally it would just dim the
-   first and last chip of a short rail for no reason. */
+   first and last chip of a short rail for no reason. It stops short of
+   the left edge so the pinned All chip never sits under it. */
 .tgRail.ov{
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 26px,#000 calc(100% - 26px),transparent 100%);
-          mask-image:linear-gradient(90deg,transparent 0,#000 26px,#000 calc(100% - 26px),transparent 100%);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%);
+          mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%);
 }
 .tgScroll{
   display:flex;flex-direction:column;gap:var(--tgGap);
   width:max-content;
   /* Inset lives on the CONTENT, not the scroller: padding on a scroll
-     container is unreliable on the trailing edge in several engines. */
-  padding:1px clamp(.7rem,2vw,2rem);
+     container is unreliable on the trailing edge in several engines.
+     Same --tgInset the search bar uses, so the left edges line up. */
+  padding:calc(var(--tgGap) / 2) var(--tgInset);
 }
 .tgRowIn{display:flex;flex-wrap:nowrap;gap:var(--tgGap);}
-.tgRowIn:nth-child(1),.tgRowIn:nth-child(3){padding-left:var(--tgStag);}
 .tgChip{
-  display:inline-flex;align-items:center;gap:.42rem;
-  height:var(--tgRow);padding:0 1.05rem;box-sizing:border-box;
+  position:relative;
+  display:inline-flex;align-items:center;gap:.4rem;
+  height:var(--tgRow);padding:0 .95rem;box-sizing:border-box;
   border-radius:999px;cursor:pointer;white-space:nowrap;flex-shrink:0;
   background:var(--sur);border:1px solid var(--bdr);color:var(--tx);
-  font-family:var(--fm);font-size:.76rem;letter-spacing:.05em;
+  font-family:var(--fb);font-size:.8rem;letter-spacing:0;
   transition:border-color .2s,background .2s,color .2s,transform .22s,opacity .22s;
 }
-.tgChip:hover{border-color:var(--pg);color:var(--pb);}
+@media(hover:hover){
+  .tgChip:hover{border-color:var(--bdrh);}
+  .tgChip.on:hover{border-color:var(--pg);}
+}
 .tgChip:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-.tgMark{
-  font-size:.92rem;line-height:1;color:var(--txd);
-  transition:color .2s;flex-shrink:0;
+/* Chips are 35px tall on phones — under the ~44px that reads as a
+   comfortable tap. This extends the TOUCH target into the row gutter
+   without changing the drawn size: exactly half the gap each way, so
+   the two rows meet edge to edge and neither can steal the other's
+   taps. .tgScroll's padding is half a gap for the same reason, so the
+   outer edges get the same growth instead of being clipped by the
+   rail's overflow-y. */
+.tgChip::after{
+  content:'';position:absolute;left:0;right:0;
+  top:calc(var(--tgGap) / -2);bottom:calc(var(--tgGap) / -2);
 }
-.tgChip:hover .tgMark{color:var(--pb);}
-.tgChip.on{background:var(--pdim);border-color:var(--pg);color:var(--pb);}
-.tgChip.on .tgMark{color:var(--pg);}
-.tgChipSearch{
-  border-style:dashed;
-  border-color:color-mix(in srgb,var(--pg) 45%,transparent);
-  color:var(--pb);
+/* Picked = solid accent fill. No tick, no plus: the fill IS the state,
+   which is what keeps a row of chips readable at a glance instead of
+   making every one carry a glyph. --text-on-accent is re-mapped per
+   theme, so the label stays legible on the light theme's near-black
+   accent as well as the violet one. */
+.tgChip.on{
+  background:var(--pg);border-color:var(--pg);color:var(--text-on-accent);
 }
-.tgChipSearch .tgMark{color:var(--pb);font-size:.95rem;}
-/* Ticked chip shrinking out of its slot. Duration is mirrored by
-   TG_T.leave in the JS — change one, change the other. */
-.tgChip.tgLeave{
-  transform:scale(.72);opacity:0;pointer-events:none;
-  transition:transform .19s ease-in,opacity .19s ease-in;
+
+/* ── "All" chip ──
+   Opens the full tag grid. Pinned to the left edge of the scroller so
+   it stays reachable at any scroll position — on a phone the rows run
+   several screens wide, and a tag browser you have to swipe back to
+   find is one most people never find. At rest it sits exactly where
+   the mockup puts it: first chip, first row. */
+.tgChipAll{
+  /* Sticks at the SAME inset it rests at, not at 0 — sticking to the
+     raw scrollport edge made it jump the width of the inset on the
+     first pixel of scroll and then sit flush against the screen. */
+  position:sticky;left:var(--tgInset);z-index:2;
+  /* Its own background is opaque so chips scrolling under it are
+     covered cleanly rather than showing through. */
+  background:var(--bg);
+  box-shadow:6px 0 8px -6px rgba(0,0,0,.45);
 }
+.tgChipAll svg{width:14px;height:14px;flex-shrink:0;}
+
 /* Replacement chips fade up in place; everything that merely shifts
    is moved by the FLIP pass in tgFlip(), not by a CSS class. */
 @keyframes tgIn{from{transform:scale(.75);opacity:0;}to{transform:scale(1);opacity:1;}}
 .tgChip.tgEnter{animation:tgIn .28s cubic-bezier(.22,1,.36,1);}
+
+/* The gallery already had a search field. The rail's bar replaces it
+   in place rather than stacking a second one above it — #fgQ stays in
+   the DOM because renderFG() reads its value, it just isn't shown. */
+#fg .fgHdr .fgQ{display:none;}
+#fg .fgHdr{justify-content:flex-end;}
+
 @media(max-width:900px){
-  .tgRail{--tgStag:1.8rem;--tgOver:.75rem;}
+  .tgSearch{height:44px;}
 }
-/* Phones: tighter chips and a shallower indent so the middle row's
-   overhang stays readable at narrow widths. */
+/* The shortcut badge is meaningless without a hardware keyboard, and
+   (hover:none) catches the touch tablets that clear the width test. */
+@media(max-width:700px),(hover:none){
+  .tgSearchKbd{display:none;}
+}
+/* Phones: tighter chips, a shorter bar, a narrower edge fade. */
 @media(max-width:600px){
-  .tgRail{--tgRow:36px;--tgGap:8px;--tgStag:1.2rem;--tgOver:.5rem;--tgPad:1rem;}
-  .tgChip{font-size:.7rem;padding:0 .9rem;}
-  .tgMark{font-size:.86rem;}
+  .tgBlock{--tgPad:1rem;}
+  /* 10px, not 8: the gutter is what the chips' touch targets grow
+     into (half each way), and 10 is what takes a 35px chip over
+     the 44px comfortable-tap line. */
+  .tgRail{--tgRow:35px;--tgGap:10px;}
+  .tgChip{font-size:.76rem;padding:0 .85rem;}
+  .tgSearch{height:42px;border-radius:10px;padding:0 .7rem 0 .8rem;gap:.55rem;}
+  .tgSearchIn{font-size:.84rem;}
+  .tgSearchIco{width:15px;height:15px;}
   .tgRail.ov{
-    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);
-            mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);
+    -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
+            mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
   }
 }
 @media(prefers-reduced-motion:reduce){
-  .tgChip,.tgChip.tgLeave{transition:none;}
+  .tgChip{transition:none;}
   .tgChip.tgEnter{animation:none;}
   .tgRail{scroll-behavior:auto;}
+  .tgSearch{transition:none;}
 }
 /* ── Search-tag grid — 2 / 3 / 4 columns, same ladder as every
    other grid on the site. ── */

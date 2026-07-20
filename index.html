@@ -19011,8 +19011,15 @@ function hideCommentThumbnail(){
     /* Pass 1 — paint everything into one row to read real widths. */
     for(var e = 1; e < TG_ROWS; e++) hosts[e].innerHTML = '';
     hosts[0].innerHTML = items.join('');
+    /* getBoundingClientRect, NOT offsetWidth. offsetWidth rounds to a
+       whole pixel, and with real webfont metrics a chip that lays out
+       at 86.4px reports 86 — across ~16 chips that under-counts a row
+       by several pixels, so the packer believed a row fitted when the
+       real layout was a few px over and the rail scrolled on desktop
+       by exactly that much. Fractional widths make the arithmetic
+       match what the browser actually does. */
     var widths = [], kids = hosts[0].children;
-    for(var i = 0; i < kids.length; i++) widths.push(kids[i].offsetWidth);
+    for(var i = 0; i < kids.length; i++) widths.push(kids[i].getBoundingClientRect().width);
 
     /* Pass 2 — per-row budgets from live computed style, so the
        responsive inset is picked up at every breakpoint without
@@ -19023,7 +19030,10 @@ function hideCommentThumbnail(){
     var cs   = getComputedStyle(scroll);
     var gap  = parseFloat(cs.columnGap || cs.gap) || 10;
     var pad  = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-    var avail = Math.max(0, rail.clientWidth - pad);
+    /* One pixel of headroom: clientWidth is an integer while the row is
+       fractional, and scrollWidth rounds UP — without it a row landing
+       on exactly the budget can still report a 1px overflow. */
+    var avail = Math.max(0, rail.clientWidth - pad - 1);
     /* See TG_DESKTOP_SPAN: one desktop's worth of tags everywhere. */
     var span = Math.max(avail, TG_DESKTOP_SPAN);
     var budget = [];
@@ -19061,10 +19071,14 @@ function hideCommentThumbnail(){
         /* Overshoot is NOT symmetric with undershoot. A row finishing a
            few px short is invisible; a row finishing a few px long
            pushes the rail past its container, which switches the edge
-           fade on and starts a scroll that shouldn't exist on desktop.
-           Priced up so the hill-climb never trades a clean fit for a
-           marginally better balance. */
-        if(w[a] > budget[a]) t += (w[a] - budget[a]) * 12;
+           fade on and starts a scroll that shouldn't exist once the
+           container is wider than TG_DESKTOP_SPAN.
+           Priced to be PROHIBITIVE rather than merely expensive: at a
+           mild multiplier the hill-climb would still take a 5px
+           overshoot to close a 100px gap, and with real webfont metrics
+           that happened at roughly one desktop width in three. The flat
+           term is what makes any overshoot lose to any legal layout. */
+        if(w[a] > budget[a]) t += 10000 + (w[a] - budget[a]) * 100;
       }
       /* Distance from target, PLUS a penalty for the rows disagreeing
          with each other. They start at the same x, so any difference

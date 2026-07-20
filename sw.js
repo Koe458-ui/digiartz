@@ -26,6 +26,25 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v15 — tag rail rebuilt, album tiles squared, thumbnail clip fixed.
+     - Tag rail: a live artwork search bar over TWO chip rows instead
+       of three. The bar filters the feed as you type (title,
+       description, tags, category by slug and label, artist); the
+       pinned "All" chip opens the tag grid. Rows pack to one
+       desktop's worth of tags on every device, so a phone scrolls
+       sideways to the same vocabulary a desktop shows at once.
+       Picked tags now STAY on the rail, filled with the accent
+       colour, instead of rotating out of sight.
+     - Albums: the card is a square. The 2×2 cover mosaic fills it
+       edge to edge and the name + item count sit inside at the
+       bottom over a scrim. Grid columns and gaps now match
+       .pfGridArt exactly. Creating an album lives on one surface
+       only — the manager page, first tile.
+     - Thumbnails: .admCardThumb gives Edit My Work cards their own
+       square clip. thumbStyle()'s transform:scale() was painting
+       outside its box and covering the title and the Edit/Delete
+       row, which made zoomed cards look like tall blurry images
+       with no controls.
    v14 — featured-strip caption resized. Title is now ~40% of the
    banner height and a two-line description sits under it, together
    filling ~60%. Both are measured in container units (cqh) so the
@@ -56,7 +75,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v14';
+const CACHE_VERSION = 'v15';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

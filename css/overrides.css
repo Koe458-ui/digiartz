@@ -1,0 +1,172 @@
+/* ── overrides.css · detail-view restructure + desktop polish — keep this stylesheet last ── */
+/* ═══════════════════════════════════════════════════════════════════
+   DETAIL VIEWS — artwork viewer restructure + #dzView overlay.
+   Late in <body> on purpose: these override the viewer's original
+   two-pane layout with the full-page, top-to-bottom reading order
+   (top nav → images → author → details → comments → actions).
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Artwork viewer: full-page, NO boxes ──
+   The image sits directly on the page: no black stage, no viewport
+   frame, no zoom bar, no counter. Top bar is two plain-text words —
+   Previous left, Next right — over a hairline divider. Closing is the
+   browser back button (popstate → closeLB) or Escape. */
+/* Truly full page on EVERY device — desktop, tablet, ultrawide,
+   desktop-mode mobile. The backdrop's 2rem/.7rem/.5rem padding and
+   the .avBox card (min(1400px,94vw) × min(860px,90vh), 20px radius,
+   border, shadow) are all zeroed here; the ≤900px rule that capped
+   the image pane at 44% height is also beaten (later cascade +
+   higher specificity). */
+#artModal{padding:0;}
+#artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;border:0;box-shadow:none;background:var(--bg);}
+#artModal .avBody{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+#artModal .avImgPane{flex:0 0 auto;overflow:visible;background:transparent;}
+#artModal .avImgStage{position:static;height:auto;min-height:0;max-height:none;background:transparent;display:block;}
+#artModal .avImgViewport{position:static;height:auto;min-height:0;display:block;background:transparent;border:0;
+  padding:1rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;text-align:center;}
+/* Fit the first screen: the image scales to whatever remains of the
+   viewport under the top bar (100dvh − bar − padding), so the FULL
+   image is visible without scrolling on any screen size — small
+   devices simply get a smaller image. Width stays centered with the
+   side space and the 1100px cap. */
+#artModal #lbImg{position:static;width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;transform:none!important;cursor:default;}
+#artModal .avSide{width:100%;max-width:860px;margin:0 auto;border-left:0;flex:0 0 auto;background:transparent;}
+#artModal .avSideScroll{height:auto;max-height:none;overflow:visible;padding-bottom:6rem;}
+/* top bars: text-only nav over a divider line */
+#artModal .avTopBar,.dzvTop{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.1rem;border-bottom:1px solid var(--bdr);background:var(--bg);}
+.avNavTxt{background:none;border:0;padding:.35rem .2rem;margin:0;cursor:pointer;
+  color:var(--tx);font-family:var(--fb);font-size:16px;font-weight:600;letter-spacing:.01em;}
+.avNavTxt:hover{color:var(--ps);}
+.avNavTxt:active{opacity:.7;}
+/* stacked images 2..n — same centered treatment as image 1 */
+.avImgStack{display:flex;flex-direction:column;gap:.7rem;background:transparent;
+  padding:.7rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;}
+.avImgStack{text-align:center;}
+.avImgStack img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
+/* no stale pixels while a new image loads */
+.avImgViewport.loading img{opacity:0;}
+
+/* ── shared comments + wide actions ── */
+.avCmBlock{display:flex;flex-direction:column;gap:.6rem;}
+.avCmList{display:flex;flex-direction:column;gap:.65rem;max-height:340px;overflow-y:auto;padding-right:.2rem;}
+.avCmEmpty{font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;color:var(--txd);padding:.9rem 0;text-align:center;}
+.avCm{display:flex;gap:.6rem;align-items:flex-start;}
+.avCmAv{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:var(--sur2);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:var(--txd);}
+.avCmMain{min-width:0;flex:1;}
+.avCmHead{display:flex;align-items:center;gap:.5rem;}
+.avCmName{font-size:.8rem;font-weight:700;color:var(--tx);}
+.avCmTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.08em;color:var(--txd);}
+.avCmDel{margin-left:auto;background:none;border:0;color:var(--txd);cursor:pointer;font-size:.7rem;padding:.1rem .3rem;}
+.avCmDel:hover{color:#f87171;}
+.avCmBody{font-size:.86rem;line-height:1.5;color:var(--tx);overflow-wrap:anywhere;}
+.avCmBar{display:flex;gap:.5rem;align-items:center;}
+.avCmIn{flex:1;min-width:0;height:42px;border-radius:999px;border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);padding:0 1rem;font-size:.88rem;outline:none;}
+.avCmIn:focus{border-color:var(--pg);}
+.avCmSend{width:42px;height:42px;border-radius:50%;border:0;background:var(--pg);color:#fff;font-size:1rem;cursor:pointer;flex-shrink:0;}
+.avActWide{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;min-height:46px;border-radius:10px;border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.12em;cursor:pointer;text-decoration:none;box-sizing:border-box;}
+.avActWide:hover{border-color:var(--pg);color:var(--ps);}
+
+/* ── #dzView overlay ── */
+#dzView{position:fixed;inset:0;z-index:1300;background:var(--bg);display:none;flex-direction:column;}
+#dzView.open{display:flex;}
+.dzvTop{flex-shrink:0;}
+.dzvBody{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:6rem;}
+.dzvMedia{background:transparent;padding:1rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;text-align:center;}
+.dzvMedia img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
+.dzvCol{max-width:860px;margin:0 auto;padding:1.2rem 1.2rem 2rem;display:flex;flex-direction:column;gap:1.1rem;}
+.dzvTitle{font-family:var(--fd);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0;color:var(--tx);}
+.dzvExcerpt{font-size:1rem;color:var(--txd);line-height:1.55;margin:0;}
+.dzvDesc,.dzvArticle{font-size:.95rem;line-height:1.65;color:var(--tx);margin:0;overflow-wrap:anywhere;}
+.dzvArticle a{color:var(--ps);}
+.dzvAuthor{display:flex;align-items:center;gap:.7rem;cursor:pointer;min-height:44px;}
+.dzvAv{width:44px;height:44px;border-radius:50%;background:var(--sur2);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--txd);overflow:hidden;flex-shrink:0;}
+.dzvAv img{width:100%;height:100%;object-fit:cover;}
+.dzvAuthName{font-weight:700;font-size:.95rem;color:var(--tx);}
+.dzvAuthHandle{font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;color:var(--txd);}
+.dzvMeta{display:flex;flex-direction:column;gap:.35rem;border:1px solid var(--bdr);border-radius:12px;padding:.8rem 1rem;background:var(--sur);}
+.dzvMetaRow{display:flex;justify-content:space-between;gap:1rem;font-size:.85rem;}
+.dzvMetaRow span{color:var(--txd);}
+.dzvMetaRow b{color:var(--tx);font-weight:600;text-align:right;overflow-wrap:anywhere;}
+.dzvFileCard{display:flex;align-items:center;gap:.85rem;border:1px solid var(--bdr);border-radius:12px;padding:.8rem 1rem;background:var(--sur);}
+.dzvExt{font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:.5rem .6rem;color:var(--tx);flex-shrink:0;}
+.dzvFileName{font-weight:600;font-size:.9rem;color:var(--tx);overflow-wrap:anywhere;}
+.dzvFileMeta{font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;color:var(--txd);margin-top:.15rem;}
+.dzvBuyCard{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid var(--pg);border-radius:14px;padding:.9rem 1.1rem;background:color-mix(in srgb,var(--pg) 8%,var(--sur));}
+.dzvPrice{font-family:var(--fd);font-size:1.5rem;font-weight:800;color:var(--tx);}
+.dzvBuyCard .dzBuy{margin-top:0;min-height:46px;padding:12px 22px;font-size:14px;border-radius:10px;}
+/* ═══════════════════════════════════════════════════════════════════
+   DESKTOP POLISH (≥1280px)
+   The site is mobile-first and its desktop story was "same layout,
+   bigger" — tiny gaps, 4 loose columns, 11px mono labels and small
+   hit targets. This layer upgrades desktop only; nothing below
+   1280px changes. It sits at the very end of <body> on purpose:
+   last-in-cascade, so equal-specificity rules here always win over
+   the mobile-first declarations above.
+
+   Spec:
+   · Grids capped at 1680px and centered; 20px gap on small laptops,
+     22px at 1440+, 24px at 1920+ (more air, still 5 columns — six
+     squares of 300px+ text-less cards read worse, not better).
+   · 1280–1439px (small laptop / 1366 class): 4 columns.
+     1440px+: 5 columns everywhere (.awGrid home, .fgGrid full
+     gallery, .pfGridArt profile/likes/bookmarks, .dzGrid
+     resources/marketplace). Cards stay exact 1:1 via the existing
+     .awImgWrap aspect-ratio.
+   · Text: card titles 15px, meta/tags 12.5px, body copy 15px+/1.55.
+   · Buttons: primary actions ≥44px tall, 14px labels, 12/18 padding,
+     10px radius.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width:1280px){
+
+  /* ── Grid container + columns (small laptop: 4-up) ── */
+  .awGrid, .fgGrid, .pfGridArt, .dzGrid{
+    max-width:1680px;
+    margin-left:auto; margin-right:auto;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+    padding-left:24px; padding-right:24px;
+  }
+  .dzList{ max-width:1080px; margin-left:auto; margin-right:auto; gap:.9rem; }
+
+  /* ── Text — readable sizes for a normal viewing distance ── */
+  .dzName{ font-size:15px; line-height:1.4; }
+  .dzMeta{ font-size:12.5px; letter-spacing:.06em; gap:.2rem .7rem; }
+  .dzChip{ font-size:12px; letter-spacing:.07em; padding:.22rem .6rem; }
+  .dzHint{ font-size:15px; line-height:1.55; }
+  .dzExt{ font-size:15px; }
+  .dzEmpty,.dzBusy{ font-size:13px; }
+  .secSub{ font-size:13px; letter-spacing:.28em; }
+  .fgSecTxt{ font-size:13px; }
+  .tgSearchIn{ font-size:15px; }
+  .subTagline{ font-size:14px; }
+  .subFeatures li{ font-size:15px; line-height:1.55; }
+  .faqQTxt{ font-size:16px; }
+  .faqATxt{ font-size:15px; line-height:1.6; }
+  .upField label{ font-size:13px; }
+  .upIn, .upField textarea, .upField select{ font-size:15px; }
+
+  /* ── Buttons — proper desktop hit targets ── */
+  .upBtn, .upBtnPri, .dzBuy, .subBtn, .hpCta, .subModalClose{
+    min-height:46px;
+    font-size:14px;
+    padding:12px 18px;
+    border-radius:10px;
+  }
+  .subBtn{ letter-spacing:.14em; }
+  .dzBuy{ font-size:13.5px; letter-spacing:.09em; }
+  .hpCta{ font-size:15px; border-radius:999px; padding:12px 24px; }
+  .upBtn{ letter-spacing:.14em; font-size:13px; }
+}
+
+/* ── Normal desktop (1440px+): 5 columns, slightly wider gap ── */
+@media (min-width:1440px){
+  .awGrid, .fgGrid, .pfGridArt, .dzGrid{
+    grid-template-columns:repeat(5,1fr);
+    gap:22px;
+  }
+}
+
+/* ── Ultrawide (1920px+): keep 5 columns, add breathing room ── */
+@media (min-width:1920px){
+  .awGrid, .fgGrid, .pfGridArt, .dzGrid{ gap:24px; }
+                     }

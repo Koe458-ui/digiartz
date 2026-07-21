@@ -11353,6 +11353,7 @@ function qrMake (text) {
        <div class="avDiv"></div>
        <button class="avActWide" onclick="avDownload()">⬇ Download</button>
        <button class="avReportBtn" onclick="avReport()">⚑ Report artwork</button>
+       <button class="avActWide" onclick="avShare()">↗ Share</button>
       </div>
      </div>
     </div>
@@ -23944,12 +23945,25 @@ html.thmFade #themePage{
    frame, no zoom bar, no counter. Top bar is two plain-text words —
    Previous left, Next right — over a hairline divider. Closing is the
    browser back button (popstate → closeLB) or Escape. */
+/* Truly full page on EVERY device — desktop, tablet, ultrawide,
+   desktop-mode mobile. The backdrop's 2rem/.7rem/.5rem padding and
+   the .avBox card (min(1400px,94vw) × min(860px,90vh), 20px radius,
+   border, shadow) are all zeroed here; the ≤900px rule that capped
+   the image pane at 44% height is also beaten (later cascade +
+   higher specificity). */
+#artModal{padding:0;}
 #artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;border:0;box-shadow:none;background:var(--bg);}
 #artModal .avBody{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
 #artModal .avImgPane{flex:0 0 auto;overflow:visible;background:transparent;}
 #artModal .avImgStage{position:static;height:auto;min-height:0;max-height:none;background:transparent;display:block;}
-#artModal .avImgViewport{position:static;height:auto;min-height:0;display:block;background:transparent;border:0;}
-#artModal #lbImg{position:static;width:100%;height:auto;max-height:none;object-fit:unset;display:block;transform:none!important;cursor:default;}
+#artModal .avImgViewport{position:static;height:auto;min-height:0;display:block;background:transparent;border:0;
+  padding:1rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;text-align:center;}
+/* Fit the first screen: the image scales to whatever remains of the
+   viewport under the top bar (100dvh − bar − padding), so the FULL
+   image is visible without scrolling on any screen size — small
+   devices simply get a smaller image. Width stays centered with the
+   side space and the 1100px cap. */
+#artModal #lbImg{position:static;width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;transform:none!important;cursor:default;}
 #artModal .avSide{width:100%;max-width:860px;margin:0 auto;border-left:0;flex:0 0 auto;background:transparent;}
 #artModal .avSideScroll{height:auto;max-height:none;overflow:visible;padding-bottom:6rem;}
 /* top bars: text-only nav over a divider line */
@@ -23958,9 +23972,11 @@ html.thmFade #themePage{
   color:var(--tx);font-family:var(--fb);font-size:16px;font-weight:600;letter-spacing:.01em;}
 .avNavTxt:hover{color:var(--ps);}
 .avNavTxt:active{opacity:.7;}
-/* stacked images 2..n — same full-bleed, no letterbox */
-.avImgStack{display:flex;flex-direction:column;gap:0;background:transparent;padding:0;}
-.avImgStack img{width:100%;height:auto;max-height:none;object-fit:unset;display:block;}
+/* stacked images 2..n — same centered treatment as image 1 */
+.avImgStack{display:flex;flex-direction:column;gap:.7rem;background:transparent;
+  padding:.7rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;}
+.avImgStack{text-align:center;}
+.avImgStack img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
 /* no stale pixels while a new image loads */
 .avImgViewport.loading img{opacity:0;}
 
@@ -23989,8 +24005,8 @@ html.thmFade #themePage{
 #dzView.open{display:flex;}
 .dzvTop{flex-shrink:0;}
 .dzvBody{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:6rem;}
-.dzvMedia{background:transparent;}
-.dzvMedia img{width:100%;height:auto;max-height:none;display:block;}
+.dzvMedia{background:transparent;padding:1rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;text-align:center;}
+.dzvMedia img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
 .dzvCol{max-width:860px;margin:0 auto;padding:1.2rem 1.2rem 2rem;display:flex;flex-direction:column;gap:1.1rem;}
 .dzvTitle{font-family:var(--fd);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0;color:var(--tx);}
 .dzvExcerpt{font-size:1rem;color:var(--txd);line-height:1.55;margin:0;}

@@ -26,6 +26,18 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v25 — full-page + fit-first-screen. #artModal backdrop padding
+       zeroed and the .avBox card fully flattened on every width (the
+       old 2rem/.7rem paddings and min(1400px,94vw) card made it a
+       box on desktop/tablet); viewer + stack + detail images now
+       scale to calc(100dvh − 132px) so the whole image fits the
+       first screen on any device, centered with side space.
+
+   v24 — viewer spacing. Share is back as the last wide action after
+       Download/Report; viewer + detail images are centered with
+       clamp(1rem,5vw,3rem) side space and a 1100px cap instead of
+       edge-to-edge.
+
    v23 — boxless viewers + FOUC fix. Viewer top bars are plain-text
        Previous/Next only (close = browser back or Escape); zoom bar,
        counter, close button and top icon row removed; images render
@@ -154,7 +166,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v23';
+const CACHE_VERSION = 'v25';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

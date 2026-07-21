@@ -1,0 +1,315 @@
+/* ── hero.css · hero pitch ── */
+    /* =========================================================
+       HERO PITCH
+       ========================================================= */
+    #heroPitch{
+      position:relative;
+      background:var(--bg);
+      /* Same clearance the slide strip used, so the first thing on
+         the page still sits correctly under the floating top bar. */
+      padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) clamp(1rem,4vw,2rem) clamp(2.2rem,5vw,3.4rem);
+    }
+    .hpInner{max-width:760px;margin:0 auto;}
+
+    /* ── Segmented toggle ── */
+    .hpTabs{
+      display:flex;gap:.25rem;padding:.3rem;margin:0 0 clamp(1.4rem,3.5vw,2rem);
+      background:var(--sur);border:1px solid var(--bdr);border-radius:999px;
+      width:max-content;max-width:100%;
+      overflow-x:auto;overscroll-behavior-x:contain;
+      scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
+    }
+    .hpTabs::-webkit-scrollbar{display:none;}
+    .hpTab{
+      flex-shrink:0;border:0;cursor:pointer;border-radius:999px;
+      padding:.55rem 1.15rem;
+      font-family:var(--fd);font-size:.86rem;font-weight:700;letter-spacing:.01em;
+      background:none;color:var(--txd);white-space:nowrap;
+      transition:color .2s,background .2s;
+    }
+    @media(hover:hover){.hpTab:hover{color:var(--tx);}}
+    .hpTab[aria-selected="true"]{background:var(--pg);color:var(--text-on-accent);}
+    .hpTab:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
+
+    /* ── Headline ── */
+    .hpHead{
+      margin:0 0 clamp(1.1rem,2.6vw,1.5rem);
+      font-family:var(--fd);font-weight:800;
+      font-size:clamp(1.85rem,5.6vw,3.1rem);
+      line-height:1.1;letter-spacing:-.02em;color:var(--tx);
+      text-wrap:balance;
+    }
+    /* The one coloured phrase per tab — the brief's "make it pop".
+       Brand red (the "Artz" in the logo), themed via --brand-red so
+       light mode gets the deeper cut that survives a white page. */
+    .hpHead em{font-style:normal;color:var(--brand-red);}
+
+    /* ── Checklist ── */
+    .hpList{list-style:none;margin:0 0 clamp(1.5rem,3.5vw,2rem);padding:0;display:flex;flex-direction:column;gap:.7rem;}
+    .hpList li{display:flex;align-items:flex-start;gap:.65rem;font-family:var(--fb);font-size:clamp(.9rem,2.2vw,1rem);line-height:1.45;color:var(--txd);}
+    .hpTick{
+      flex-shrink:0;width:20px;height:20px;margin-top:.08rem;border-radius:50%;
+      background:color-mix(in srgb,var(--pg) 18%,transparent);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .hpTick svg{width:11px;height:11px;stroke:var(--pg);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+
+    /* ── CTA ── */
+    .hpCta{
+      display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;
+      border:0;border-radius:999px;padding:.9rem 1.7rem;
+      background:var(--pg);color:var(--text-on-accent);
+      font-family:var(--fd);font-size:.95rem;font-weight:700;
+      box-shadow:0 8px 22px color-mix(in srgb,var(--pg) 32%,transparent);
+      transition:filter .2s,transform .2s;
+    }
+    @media(hover:hover){.hpCta:hover{filter:brightness(1.08);transform:translateY(-1px);}}
+    .hpCta:active{transform:translateY(0);}
+    .hpCta:focus-visible{outline:2px solid var(--pb);outline-offset:3px;}
+
+    /* ── Fade & shift up ──
+       Re-triggered per tab change by reflowing the panel. The three
+       checklist rows follow the headline in sequence so the eye is
+       led down the list rather than hit with all of it at once. */
+    @keyframes hpRise{ from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:none;} }
+    .hpPanel.hpIn > *{animation:hpRise .45s cubic-bezier(.22,1,.36,1) both;}
+    .hpPanel.hpIn > .hpHead{animation-delay:0s;}
+    .hpPanel.hpIn > .hpList li{animation:hpRise .45s cubic-bezier(.22,1,.36,1) both;}
+    .hpPanel.hpIn > .hpList li:nth-child(1){animation-delay:.06s;}
+    .hpPanel.hpIn > .hpList li:nth-child(2){animation-delay:.12s;}
+    .hpPanel.hpIn > .hpList li:nth-child(3){animation-delay:.18s;}
+    .hpPanel.hpIn > .hpCta{animation-delay:.24s;}
+    @media(prefers-reduced-motion:reduce){
+      .hpPanel.hpIn > *, .hpPanel.hpIn > .hpList li{animation:none;}
+      .hpCta,.hpTab{transition:none;}
+    }
+    @media(max-width:480px){
+      .hpTabs{width:auto;}
+      .hpTab{padding:.5rem .95rem;font-size:.82rem;}
+    }
+
+    /* Visually hidden — accessible to screen readers, invisible on screen */
+    .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+    /* SETUP BANNER */
+    #sBanner{background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);padding:1rem 1.5rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.12em;color:var(--ps);line-height:1.8;display:none;}
+    #sBanner.show{display:block;}
+    #sBanner a{color:var(--pb);}
+
+/* Legacy hero class stubs — kept for JS safety, visual output handled in § 8 above */
+.sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
+.secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
+.secT .s{color:var(--pg);font-size:.5em;}
+.secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
+.upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
+.upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
+
+    /* ── ArtStation-style card: full-bleed image cropped to a uniform
+       aspect ratio so cards sit in a standard row-major grid (correct
+       newest→oldest reading order) with the title overlaid via bottom
+       scrim ── */
+    .gItem{position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;line-height:0;}
+    .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
+    .gItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
+    .gItem img{width:100%;aspect-ratio:1;display:block;height:auto;object-fit:cover;transition:transform .4s;}
+    /* imgShimmer keyframe is shared by .awImgWrap.awLoading, .igSkelCard
+       and the .gItem image skeleton */
+    @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .gItem:hover img{transform:scale(1.04);}
+    .gNm{display:none;}
+    .gOv{position:absolute;top:0;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--bg) 70%,transparent);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;}
+    .gItem:hover .gOv{opacity:1;}
+    .gOv svg{width:36px;height:36px;color:var(--ps);}
+    .cBadgeWrap{display:none;}
+    .cBadge{background:var(--sur2);border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
+    .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,var(--bg));border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
+    /* Multi-image marker — top-right of a gallery card, opposite the
+       category badge. Purely informational, never a click target. */
+    .gMulti{
+      position:absolute;top:.4rem;right:.4rem;z-index:2;
+      display:inline-flex;align-items:center;gap:.2rem;
+      background:rgba(20,20,30,.72);
+      border:1px solid rgba(var(--pg-rgb),.18);
+      border-radius:6px;
+      padding:.18rem .38rem;
+      font-family:var(--fm);font-size:.58rem;letter-spacing:.04em;
+      color:#fff;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      pointer-events:none;
+    }
+
+
+    /* ── Full gallery overlay — slide-in panel ──
+       Locally re-declares the shared design tokens (same values as
+       #communityPage) so every child that already styles itself with
+       var(--bg)/var(--sur)/var(--tx)/var(--pg)/etc. repaints to match
+       the Community page automatically. Artwork cards (.gItem) and
+       the image grid itself are intentionally left alone below. */
+    #fg{
+      position:fixed;inset:0;z-index:500;overflow-y:auto;
+      transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+      --bg:inherit;--sur:inherit;--sur2:inherit;
+      --bdr:inherit;--bdrh:inherit;
+      --tx:inherit;--txd:inherit;
+      --pg:inherit;--pb:inherit;--ps:inherit;
+      --pdim:inherit;
+      background:var(--bg);color:var(--tx);
+    }
+    #fg.open{transform:translateX(0);}
+    /* ── Title + subtitle — sits above the sticky search/filter bar,
+       scrolls away with the rest of the page ── */
+    /* Gallery / Comic overlay heading — mirrors the Community page title
+       (.cmHdrTitle): centred, gradient-coloured with a soft glow and a ✦
+       accent, plus a divider line beneath. Every colour uses theme
+       variables, so it adapts to every theme exactly like the Community
+       header does. */
+    /* ── Title bar — now matches the Community header (.cmHdr):
+       sticky at the top, frosted-blur surface, all-caps gradient
+       title. The search/filter bar (.fgHdr) sticks directly below
+       it (top offset = this bar's fixed 3.4rem height). ── */
+    .fgIntro{
+      position:sticky;top:0;z-index:11;
+      margin:0;
+      height:3.4rem;
+      padding:0 1.5rem;
+      display:flex;align-items:center;justify-content:center;
+      text-align:center;
+      border-bottom:1px solid var(--bdr);
+      isolation:isolate;
+    }
+    /* background + blur split onto ::before, same decoupling as .cmHdr */
+    .fgIntro::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .fgTitle{
+      display:inline-flex;align-items:center;gap:.45rem;margin:0;
+      font-family:var(--fd);
+      font-size:1.15rem;
+      font-weight:800;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
+    }
+    .fgTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);}
+    /* narrow screens: same tracking reduction as .cmHdrTitle */
+    @media(max-width:480px){
+      .fgTitle{font-size:1.02rem;letter-spacing:.08em;}
+    }
+    .fgHdr{position:sticky;top:3.4rem;z-index:10;border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;isolation:isolate;}
+    /* FIX: background + blur split onto ::before, same decoupling as
+       #bnNav — sticky elements have the same fixed-during-scroll
+       repaint issue while they're pinned. */
+    .fgHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .fgQ{flex:1;min-width:140px;max-width:280px;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.1em;padding:.55rem .9rem;outline:none;transition:border-color .25s;border-radius:6px;}
+    .fgQ:focus{border-color:var(--pg);}
+    .fgQ::placeholder{color:var(--txd);}
+
+    .fgFil{display:flex;align-items:center;flex-shrink:0;}
+    .fgFltBtn{flex-shrink:0;width:42px;height:42px;background:color-mix(in srgb,var(--tc) 8%,transparent);border:1px solid var(--bdrh);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .25s,color .25s,background .25s,box-shadow .25s;position:relative;border-radius:6px;}
+    .fgFltBtn svg{width:18px;height:18px;pointer-events:none;}
+    .fgFltBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
+    .fgFltBtn.active{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
+    .fgFltBtn.active::after{content:'';position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);}
+
+    /* ── FILTER PANEL OVERLAY ── */
+    /* ── SECTION TABS ─────────────────────────────────────────
+       The gallery is no longer artwork-only, so a tab rail sits
+       between the frosted title bar and the content. It takes the
+       sticky offset the old .fgHdr search row used to hold (3.4rem =
+       the .fgIntro height). Six labels never wrap: the rail scrolls
+       sideways so a phone simply swipes to reach Cart. */
+    .fgSecBar{
+      position:sticky;top:3.4rem;z-index:10;
+      border-bottom:1px solid var(--bdr);
+      padding:.5rem clamp(.7rem,2vw,2rem) 0;
+      isolation:isolate;
+    }
+    /* background + blur split onto ::before, same decoupling as .fgIntro */
+    .fgSecBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .fgSecTabs{
+      display:flex;flex-wrap:nowrap;align-items:flex-end;gap:0 1.5rem;
+      overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+      scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
+    }
+    .fgSecTabs::-webkit-scrollbar{display:none;}
+    .fgSecBtn{
+      display:flex;align-items:center;gap:.45rem;
+      font-family:var(--fd);font-size:.95rem;font-weight:700;letter-spacing:.05em;
+      background:none;border:0;border-bottom:2px solid transparent;
+      padding:.65rem 0 .7rem;margin:0;cursor:pointer;
+      color:var(--txd);white-space:nowrap;flex-shrink:0;
+      transition:color .25s,border-color .25s;
+    }
+    .fgSecBtn:hover{color:var(--tx);}
+    .fgSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
+    /* ── Section icon chips ───────────────────────────────────
+       DELIBERATELY hard-coded hex, not theme tokens: these are
+       section identity, the same way an app icon doesn't restyle
+       itself per wallpaper. dark / darkviolet / graydark / light
+       all render them identically. The white glyph is pinned in the
+       markup AND here so nothing can repaint it either. */
+    .fgSecIco{
+      width:24px;height:24px;border-radius:7px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;
+      transition:transform .25s ease,box-shadow .25s ease;
+    }
+    .fgSecIco svg{width:14px;height:14px;display:block;stroke:#fff;}
+    /* Inactive chips sit back a touch so the active tab still reads
+       as selected — colour is untouched, only presence. */
+    .fgSecBtn:not(.active) .fgSecIco{opacity:.72;}
+    .fgSecBtn:hover .fgSecIco{opacity:1;}
+    .fgSecBtn.active .fgSecIco{transform:translateY(-1px);}
+    .fgSecIco--artworks{background:linear-gradient(135deg,#A78BFA,#7C3AED);box-shadow:0 2px 8px rgba(124,58,237,.32);}
+    .fgSecIco--resources{background:linear-gradient(135deg,#4ADE80,#16A34A);box-shadow:0 2px 8px rgba(22,163,74,.32);}
+    .fgSecIco--blog{background:linear-gradient(135deg,#818CF8,#4F46E5);box-shadow:0 2px 8px rgba(79,70,229,.32);}
+    .fgSecIco--marketplace{background:linear-gradient(135deg,#FB923C,#EA580C);box-shadow:0 2px 8px rgba(234,88,12,.32);}
+    .fgSecIco--jobs{background:linear-gradient(135deg,#38BDF8,#0891B2);box-shadow:0 2px 8px rgba(8,145,178,.32);}
+    .fgSecIco--cart{background:linear-gradient(135deg,#F472B6,#DB2777);box-shadow:0 2px 8px rgba(219,39,119,.32);}
+    @media(max-width:480px){
+      .fgSecBar{padding:.4rem 1rem 0;}
+      .fgSecTabs{gap:0 1.15rem;}
+      .fgSecBtn{font-size:.86rem;gap:.4rem;padding:.7rem 0 .75rem;}
+      .fgSecIco{width:22px;height:22px;border-radius:6px;}
+      .fgSecIco svg{width:13px;height:13px;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .fgSecIco{transition:none;}
+      .fgSecBtn.active .fgSecIco{transform:none;}
+    }
+    /* ── Section content: cards + list rows ─────────────────────
+       Resources / Marketplace are visual (preview tile on top);
+       Blog / Jobs are text-led rows. Both reuse the theme tokens so
+       every skin picks them up for free. */
+    .dzGrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));}
+    .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s;}
+    @media(hover:hover){.dzCard:hover{border-color:var(--pg);transform:translateY(-2px);}}
+    .dzThumb{position:relative;aspect-ratio:4/3;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    .dzThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .dzExt{font-family:var(--fm);font-size:.9rem;letter-spacing:.14em;color:var(--txd);}
+    .dzBadge{position:absolute;top:.5rem;right:.5rem;background:color-mix(in srgb,var(--bg) 78%,transparent);border:1px solid var(--bdr);border-radius:999px;padding:.2rem .55rem;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);}
+    .dzBody{padding:.7rem .8rem .85rem;display:flex;flex-direction:column;gap:.3rem;}
+    .dzName{font-size:.88rem;font-weight:600;color:var(--tx);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .dzMeta{font-family:var(--fm);font-size:.63rem;letter-spacing:.08em;color:var(--txd);display:flex;flex-wrap:wrap;gap:.15rem .55rem;}
+    .dzPrice{font-size:.85rem;font-weight:700;color:var(--ps);}
+    .dzRow{display:flex;gap:.85rem;align-items:flex-start;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:.9rem 1rem;cursor:pointer;transition:border-color .2s;}
+    @media(hover:hover){.dzRow:hover{border-color:var(--pg);}}
+    .dzRowIco{width:44px;height:44px;border-radius:10px;flex-shrink:0;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--fd);font-weight:700;color:var(--txd);}
+    .dzRowIco img{width:100%;height:100%;object-fit:cover;}
+    .dzList{display:flex;flex-direction:column;gap:.7rem;}
+    .dzChipRow{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem;}
+    .dzChip{font-family:var(--fm);font-size:.58rem;letter-spacing:.09em;color:var(--txd);border:1px solid var(--bdr);border-radius:999px;padding:.15rem .5rem;}
+    .dzEmpty{text-align:center;padding:3.5rem 1.5rem;color:var(--txd);font-family:var(--fm);font-size:.75rem;letter-spacing:.16em;}
+    .dzBusy{text-align:center;padding:2.5rem;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.2em;}
+    .dzBuy{margin-top:.6rem;padding:.5rem .8rem;border:0;border-radius:9px;background:var(--pg);color:#fff;font-family:var(--fm);font-size:.62rem;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:filter .15s,transform .15s;}
+    .dzBuy:active{transform:scale(.97);}
+    @media(hover:hover){.dzBuy:hover{filter:brightness(1.12);}}
+    .dzBuy--free{background:var(--sur2);color:var(--tx);border:1px solid var(--bdr);}
+
+    /* ── Upload page section tabs — same shape as the gallery rail so
+       the two read as one system. */
+    .upSecTabs{display:flex;gap:0 1.3rem;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;border-bottom:1px solid var(--bdr);margin:0 0 1.4rem;}
+    .upSecTabs::-webkit-scrollbar{display:none;}
+    .upSecBtn{display:flex;align-items:center;gap:.4rem;background:none;border:0;b

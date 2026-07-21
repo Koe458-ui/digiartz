@@ -312,4 +312,377 @@
        the two read as one system. */
     .upSecTabs{display:flex;gap:0 1.3rem;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;border-bottom:1px solid var(--bdr);margin:0 0 1.4rem;}
     .upSecTabs::-webkit-scrollbar{display:none;}
-    .upSecBtn{display:flex;align-items:center;gap:.4rem;background:none;border:0;b
+    .upSecBtn{display:flex;align-items:center;gap:.4rem;background:none;border:0;border-bottom:2px solid transparent;padding:.6rem 0 .65rem;font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--txd);white-space:nowrap;flex-shrink:0;cursor:pointer;transition:color .2s,border-color .2s;}
+    .upSecBtn:hover{color:var(--tx);}
+    .upSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
+    .upSecBtn .fgSecIco{width:20px;height:20px;border-radius:6px;}
+    .upSecBtn .fgSecIco svg{width:12px;height:12px;}
+    .dzHint{font-size:.72rem;color:var(--txd);margin-top:.3rem;line-height:1.5;}
+    .dzRowFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;}
+    .dzSel{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.85rem;padding:.6rem .7rem;outline:none;}
+    .dzSel:focus{border-color:var(--pg);}
+    .dzFileName{font-family:var(--fm);font-size:.7rem;color:var(--ps);margin-top:.4rem;word-break:break-all;}
+
+    /* One panel visible at a time. display:none rather than an offset
+       so hidden panels cost no layout and can't be tabbed into. */
+    .fgSec{display:none;}
+    .fgSec.active{display:block;}
+
+    #fgFltOvr{position:fixed;inset:0;z-index:1050;opacity:0;pointer-events:none;transition:opacity .3s ease;isolation:isolate;}
+    /* FIX: background + blur moved to ::before, same decoupling as
+       #bnNav — stops the fixed full-viewport scrim from flashing
+       if the user scrolls behind it while it's open. */
+    #fgFltOvr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 55%,transparent);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:-1;}
+    #fgFltOvr.open{opacity:1;pointer-events:auto;}
+
+    /* ── FILTER PANEL ── — sits outside #fg in the DOM (sibling, not
+       child), so it needs the same token re-declaration as #fg above
+       to match the Community page theme. */
+    #fgFltPanel{
+      --bg:inherit;--sur:inherit;--sur2:inherit;
+      --bdr:inherit;--bdrh:inherit;
+      --tx:inherit;--txd:inherit;
+      --pg:inherit;--pb:inherit;--ps:inherit;
+      --pdim:inherit;
+      position:fixed;bottom:0;left:0;right:0;z-index:1051;
+      background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%);
+      border-top:1px solid var(--bdrh);
+      border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);
+      box-shadow:0 -8px 40px rgba(5,3,8,.75),inset 0 1px 0 color-mix(in srgb,var(--tc) 14%,transparent);
+      border-radius:6px 6px 0 0;
+      max-height:88vh;overflow-y:auto;
+      transform:translateY(100%);
+      transition:transform .4s cubic-bezier(.22,1,.36,1);
+    }
+    #fgFltPanel.open{transform:translateY(0);}
+    @media(min-width:641px){
+      #fgFltPanel{
+        bottom:auto;top:64px;right:1.4rem;left:auto;
+        border-radius:6px;border:1px solid var(--bdrh);
+        max-width:300px;max-height:calc(100vh - 80px);
+        transform:translateY(-8px) scale(.97);
+        opacity:0;
+        pointer-events:none;
+        transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .3s ease;
+      }
+      #fgFltPanel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:auto;}
+      #fgFltOvr::before{backdrop-filter:none;background:transparent;}
+    }
+
+    /* Panel header */
+    .fltPBdy{overflow-y:auto;}
+    .fltPH{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem .9rem;border-bottom:1px solid var(--bdr);}
+    .fltPH h3{font-family:var(--fd);font-size:.92rem;font-weight:700;letter-spacing:.2em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
+    .fltPH h3 .s{color:var(--pg);font-size:.6em;}
+    .fltPX{background:none;border:none;cursor:pointer;color:var(--txd);font-size:1rem;line-height:1;transition:color .2s,transform .2s;padding:.25rem;}
+    .fltPX:hover{color:var(--pg);transform:rotate(90deg);}
+
+    /* Section */
+    .fltSec{padding:.9rem 1.4rem .7rem;}
+    .fltSecLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.3em;color:var(--txd);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;}
+    .fltSecLbl::after{content:'';flex:1;height:1px;background:var(--bdr);}
+
+    /* Radio list options */
+    .fltOpts{display:flex;flex-direction:column;gap:0;}
+    .fltOpt{display:flex;align-items:center;gap:.6rem;padding:.5rem .35rem;cursor:pointer;border-radius:6px;transition:background .2s;user-select:none;}
+    /* Option icon — sits between the radio dot and the label and
+       tracks the label's colour, so a checked row lights both at once.
+       Theme tokens on purpose: unlike the section chips (fixed brand
+       colours), these are list chrome and belong to the active theme. */
+    .fltIco{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:17px;height:17px;color:var(--txd);transition:color .2s;}
+    .fltIco svg{width:17px;height:17px;display:block;}
+    .fltOpt input[type=radio]:checked ~ .fltIco{color:var(--ps);}
+    .fltOpt:hover .fltIco{color:var(--tx);}
+    .fltOpt:hover{background:color-mix(in srgb,var(--tc) 6%,transparent);}
+    .fltOpt input[type=radio]{display:none;}
+    .fltDot{width:15px;height:15px;border:1.5px solid var(--bdrh);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:border-color .2s,box-shadow .2s;}
+    .fltDot::after{content:'';width:6px;height:6px;background:var(--pg);border-radius:50%;opacity:0;transform:scale(0);transition:opacity .2s,transform .2s;box-shadow:0 0 5px var(--pg);}
+    .fltOpt input[type=radio]:checked + .fltDot{border-color:var(--pg);box-shadow:0 0 8px color-mix(in srgb,var(--tc) 40%,transparent);}
+    .fltOpt input[type=radio]:checked + .fltDot::after{opacity:1;transform:scale(1);}
+    .fltOpt input[type=radio]:checked ~ .fltLbl{color:var(--ps);}
+    .fltLbl{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--txd);transition:color .2s;}
+
+    /* Grid options — horizontal row */
+    .fltOptsH{display:flex;flex-direction:row;gap:.5rem;}
+    .fltOptH{flex:1;display:flex;flex-direction:column;align-items:center;gap:.45rem;padding:.65rem .3rem;cursor:pointer;border:1px solid var(--bdr);background:color-mix(in srgb,var(--tc) 4%,transparent);border-radius:6px;transition:border-color .2s,background .2s,box-shadow .2s;user-select:none;}
+    .fltOptH:hover{border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 8%,transparent);}
+    .fltOptH input[type=radio]{display:none;}
+    .fltOptH:has(input[type=radio]:checked){border-color:var(--pg);background:var(--pdim);box-shadow:0 0 14px color-mix(in srgb,var(--tc) 28%,transparent);}
+    .fltOptH:has(input[type=radio]:checked) .fltGridIco{color:var(--ps);}
+    .fltOptH:has(input[type=radio]:checked) .fltLbl{color:var(--ps);}
+    .fltGridIco{color:var(--txd);display:flex;gap:2px;transition:color .2s;}
+    .fltGridIco span{display:block;width:7px;height:7px;border:1px solid currentColor;border-radius:1px;opacity:.8;}
+
+    /* Separator */
+    .fltSep{height:1px;background:linear-gradient(to right,transparent,var(--bdr),transparent);margin:0 1rem;}
+
+    /* Done button */
+    .fltDone{display:block;width:calc(100% - 2.8rem);margin:1rem 1.4rem 1.5rem;padding:.9rem 1rem;background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.3em;cursor:pointer;transition:background .3s,box-shadow .3s,transform .3s;text-align:center;border-radius:6px;}
+    .fltDone:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 26px color-mix(in srgb,var(--tc) 42%,transparent),inset 0 0 20px color-mix(in srgb,var(--tc) 8%,transparent);transform:translateY(-1px);}
+    .fltDone:active{transform:translateY(0) scale(.98);}
+
+    /* ── Infinite scroll — shared pieces ──
+       .igSentinel: invisible trip-wire observed by an
+       IntersectionObserver; when it scrolls near the viewport the
+       next batch is appended (replaces every Load More button).
+       Batch sizes follow the column layout: 4-col 16→8, 3-col
+       12→6, 2-col 10→4. grid-column:1/-1 lets the sentinel live
+       INSIDE a grid (spanning the full row) or after it alike. */
+    .igSentinel{
+      width:100%;
+      height:2px;
+      grid-column:1/-1;
+      pointer-events:none;
+    }
+    /* Skeleton tile — shown while a server-backed grid (profile
+       gallery) is fetching its next batch; in-memory grids append
+       instantly so they never need these. Same square footprint
+       as a real card so the grid doesn't jump when tiles swap
+       for artwork. */
+    .igSkelCard{
+      aspect-ratio:1;
+      border-radius:6px;
+      background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
+      background-size:200% 100%;
+      animation:imgShimmer 1.4s infinite;
+    }
+    /* Gallery-card image skeleton — shimmer sits on the <img>
+       element's own background, visible until pixels arrive
+       (aspect-ratio:1 already reserves the space, so nothing
+       shifts). Cleared on load/error via .imgDone, which matters
+       for transparent PNGs — left on, the shimmer would show
+       through them forever. */
+    .gItem img:not(.imgDone){
+      background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
+      background-size:200% 100%;
+      animation:imgShimmer 1.4s infinite;
+    }
+
+    /* Chat load-older spinner — shared by the community feed and DMs.
+       Collapses to zero height when idle so, sitting at the TOP of the
+       thread, it never leaves a gap above the first message; expands
+       while loading older messages. */
+    .cpRefreshWrap{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      max-height:0;
+      padding:0;
+      overflow:hidden;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .3s ease,max-height .3s ease,padding .3s ease;
+    }
+    .cpRefreshWrap.visible{
+      max-height:60px;
+      padding:1.2rem 0 .5rem;
+      opacity:1;
+    }
+    .cpRefreshSpinner{
+      width:22px;height:22px;
+      border:2px solid color-mix(in srgb,var(--tc) 25%,transparent);
+      border-top-color:var(--pg);
+      border-radius:50%;
+      animation:cpSpin .9s linear infinite;
+    }
+    @keyframes cpSpin{to{transform:rotate(360deg);}}
+
+    .fgBdy{padding:1.5rem;}
+    .fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;}
+    /* ── Grid via CSS Grid — same fixed-size square-box auto-fill
+       system as the homepage Artworks grid (.awGrid), so boxes and
+       gaps are pixel-identical on every device. Reading order flows
+       left-to-right, top-to-bottom (row-major), matching newest→oldest
+       sort order. ── */
+    .fgGrid{
+      display:grid;
+/* ── Unified responsive columns ──
+         2 columns on phones · 3 on tablets & phone "desktop site"
+         mode (~700-1279px) · 4 on real desktops (1280px+). Columns
+         are 1fr, so on larger/ultrawide screens the cards simply
+         grow to fill — no extra columns, boxes auto-adjust. ── */
+      grid-template-columns:repeat(2,1fr);
+      gap:.3rem;
+      /* Extra bottom clearance — same 84px pattern used by .awGrid
+         — so the last row of images never sits underneath
+         the floating #bnNav pill, which stays visible over this
+         full-page overlay. */
+      padding-bottom:calc(1rem + 84px);
+    }
+    @media(min-width:700px){ .fgGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
+    @media(min-width:1280px){ .fgGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
+    /* Gallery overlay responsive rules (also part of § 9b) */
+    @media(max-width:640px){
+      .fgHdr{padding:.8rem 1rem}
+    }
+
+    #artModal{
+      position:fixed;inset:0;z-index:1100;
+      display:flex;align-items:center;justify-content:center;
+      padding:2rem;
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+      transition:opacity .32s cubic-bezier(.22,1,.36,1),visibility .32s;
+      isolation:isolate;
+    }
+    /* FIX: background + blur split onto ::before (position:absolute
+       takes it out of the flex flow so the image card still
+       centers normally) — same decoupling as #bnNav, stops the
+       flash if the page scrolls behind this while it's open. */
+    #artModal::before{
+      content:'';position:absolute;inset:0;
+      background:rgba(8,8,10,.5);
+      backdrop-filter:blur(10px) saturate(120%);
+      -webkit-backdrop-filter:blur(10px) saturate(120%);
+      z-index:-1;
+    }
+    #artModal.open{
+      opacity:1;
+      visibility:visible;
+      pointer-events:auto;
+    }
+    /* Closing state plays a faster, slightly different curve so the
+       fade-out doesn't feel like a mirrored fade-in. */
+    #artModal.closing{
+      opacity:0;
+      transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;
+    }
+    /* ── Single glass container ──
+       width clamps to 900–1100px on desktop, scales fluidly on
+       tablet, and goes near-full-width with safe gutters on mobile. */
+    .amCard{
+      position:relative;
+      width:min(1100px,94vw);
+      max-width:1100px;
+      min-width:min(900px,94vw);
+      max-height:90vh;
+      display:flex;
+      flex-direction:column;
+      background:linear-gradient(160deg,color-mix(in srgb,var(--sur) 78%,transparent) 0%,color-mix(in srgb,var(--sur2) 72%,transparent) 100%);
+      border:1px solid color-mix(in srgb,var(--bdr) 80%,white 10%);
+      border-radius:28px;
+      overflow:hidden;
+      backdrop-filter:blur(28px) saturate(160%);
+      -webkit-backdrop-filter:blur(28px) saturate(160%);
+      box-shadow:0 40px 100px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.22),inset 0 1px 0 color-mix(in srgb,white 18%,transparent);
+      transform:scale(.92) translateY(10px);
+      opacity:0;
+      transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
+    }
+    /* ── Image: the main focus, always given the most space ── */
+    .amImgWrap{
+      position:relative;
+      width:100%;
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:color-mix(in srgb,var(--bg) 90%,black 6%);
+      overflow:hidden;
+    }
+    .amImgWrap img{
+      max-width:100%;
+      max-height:66vh;
+      width:auto;
+      height:auto;
+      object-fit:contain;
+      display:block;
+    }
+    .amImgWrap.loading::after{
+      content:'';
+      position:absolute;inset:0;
+      background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--tc) 8%,transparent) 50%,transparent 70%);
+      background-size:200% 100%;
+      animation:amShimmer 1.3s ease-in-out infinite;
+    }
+    @keyframes amShimmer{0%{background-position:140% 0;}100%{background-position:-40% 0;}}
+    /* ── Stacked info block, all inside the same container ── */
+    .amInfo{
+      flex:0 0 auto;
+      padding:1.8rem clamp(1.5rem,4vw,2.8rem) clamp(1.6rem,4vw,2.4rem);
+      display:flex;
+      flex-direction:column;
+      gap:1.1rem;
+      border-top:1px solid color-mix(in srgb,var(--bdr) 80%,white 8%);
+      max-height:34vh;
+      overflow-y:auto;
+    }
+    .amDiv{
+      width:100%;
+      height:1px;
+      background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--bdr) 90%,white 10%) 18%,color-mix(in srgb,var(--bdr) 90%,white 10%) 82%,transparent);
+      flex:0 0 auto;
+    }
+    .amName{
+      font-family:var(--fd);
+      font-size:clamp(1.2rem,2.4vw,1.55rem);
+      font-weight:700;
+      letter-spacing:.02em;
+      color:var(--tx);
+      line-height:1.3;
+      word-break:break-word;
+    }
+    .amDesc{
+      font-family:var(--fb);
+      font-size:.92rem;
+      line-height:1.65;
+      color:var(--txd);
+      word-break:break-word;
+    }
+    .amDesc:empty,.amDesc[hidden]{display:none;}
+    /* ── Close button ── */
+    .amX{
+      position:absolute;
+      top:1.1rem;right:1.1rem;
+      width:2.4rem;height:2.4rem;
+      display:flex;align-items:center;justify-content:center;
+      background:color-mix(in srgb,var(--bg) 45%,transparent);
+      border:1px solid color-mix(in srgb,var(--bdr) 80%,white 10%);
+      border-radius:50%;
+      color:var(--tx);
+      font-size:1.05rem;
+      line-height:1;
+      cursor:pointer;
+      z-index:5;
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      transition:color .2s,border-color .2s,background .2s,transform .15s;
+    }
+    .amX:hover{color:var(--pg);border-color:var(--bdrh);transform:scale(1.06);}
+    .amX:active{transform:scale(.94);}
+
+    /* ── Tablet ── */
+    
+    /* RESPONSIVE CSS — TABLET RULES */
+
+    @media(max-width:1024px){
+      .amCard{width:min(92vw,860px);min-width:0;border-radius:22px;}
+      .amImgWrap img{max-height:58vh;}
+    }
+    /* ── Mobile: near-full width, comfortable touch spacing, no
+         horizontal scroll anywhere in the modal ── */
+    @media(max-width:640px){
+      #artModal{padding:.6rem;}
+      .amCard{
+        width:100%;
+        min-width:0;
+        max-height:96vh;
+        border-radius:18px;
+      }
+      .amImgWrap img{max-height:48vh;}
+      .amInfo{
+        padding:1.3rem 1.2rem 1.4rem;
+        gap:.9rem;
+        max-height:40vh;
+      }
+      .amName{font-size:1.08rem;}
+      .amDesc{font-size:.88rem;}
+      .amX{top:.7rem;right:.7rem;width:2.2rem;height:2.2rem;font-size:.95rem;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      #artModal,#artModal .amCard,#artModal .avBox{transition:opacity .15s linear;}
+      .amCard,.avBox{transform:none!important;}
+    }
+

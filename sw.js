@@ -26,6 +26,20 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v23 — boxless viewers + FOUC fix. Viewer top bars are plain-text
+       Previous/Next only (close = browser back or Escape); zoom bar,
+       counter, close button and top icon row removed; images render
+       directly on the page full-width with no stage/letterbox — in
+       #dzView too, which now closes via the back button (history
+       entry). 19 load-visible inline SVGs got width/height attributes
+       so nothing flashes giant behind the transparent veil before the
+       late stylesheet parses.
+
+   v22 — cache resync. v21 shipped ahead of its index.html, so the
+       v21 shell cache holds the OLD page; this bump forces every
+       client to drop it and pick up the payments/detail-view/veil
+       build in one visit instead of two (stale-while-revalidate).
+
    v21 — loading veil. The intro splash (logo, particles, progress
        bar, 2.8s minimum) is replaced by a transparent centered
        spinner + LOADING text. It blocks all input (see-through, not
@@ -140,7 +154,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v21';
+const CACHE_VERSION = 'v23';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

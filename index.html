@@ -6114,26 +6114,26 @@ body{background:var(--bg);}
        ========================================================= -->
   <nav id="bnNav" aria-label="Primary navigation">
    <button class="bnItem" id="bnHome" onclick="bnGoHome()" title="Home" aria-label="Home">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h4.5v-6h2v6H17.5a1 1 0 0 0 1-1v-9"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h4.5v-6h2v6H17.5a1 1 0 0 0 1-1v-9"/></svg>
     <span class="bnLabel">Home</span>
    </button>
    <button class="bnItem" id="bnGallery" onclick="bnGoGallery()" title="Gallery" aria-label="Gallery">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
     <span class="bnLabel">Gallery</span>
    </button>
    <button class="bnItem" id="bnUpload" onclick="bnGoUpload()" title="Upload" aria-label="Upload artwork">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     <span class="bnLabel">Upload</span>
    </button>
    <button class="bnItem" id="bnCommunity" onclick="bnGoCommunity()" title="Community" aria-label="Community">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
     <span class="bnLabel">Community</span>
    </button>
    <div class="bnItem bnProfile" id="bnProfile">
     <!-- LOGGED-OUT: generic face icon, redrawn to match the
          outline/stroke style of the other nav icons exactly -->
     <button class="nLoginBtn" id="navLoginBtn" onclick="bnGoProfile(event)" title="Login" aria-label="Login">
-     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
       <circle cx="12" cy="8" r="3.5"/>
       <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7"/>
      </svg>
@@ -6172,7 +6172,7 @@ body{background:var(--bg);}
     <!-- ── Notification button — floating icon, present across the
          whole front page, top-right ── -->
     <button class="hNotifBtn fpFloat" id="hNotifBtn" onclick="openNotifications()" title="Notifications" aria-label="Notifications">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
         <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
       </svg>
@@ -6223,7 +6223,7 @@ body{background:var(--bg);}
          tag is ticked, rotation pauses and chips stay ticked. ── -->
     <div class="tgBlock">
       <div class="tgSearch" id="awSearchInWrap">
-        <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="24" height="24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input type="search" class="tgSearchIn" id="awSearchIn" placeholder="Search artworks, artists or tags..."
                autocomplete="off" autocapitalize="off" spellcheck="false"
                aria-label="Search artworks" oninput="awSearchInput(this.value)">
@@ -6334,11 +6334,11 @@ body{background:var(--bg);}
     </div>
     <div class="rkWrap">
       <button class="rkNav rkNav--prev" id="rkPrev" type="button" aria-label="Previous board">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <div class="rkTrack" id="rkGrid" role="group" aria-label="Ranking boards"></div>
       <button class="rkNav rkNav--next" id="rkNext" type="button" aria-label="Next board">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </div>
     <div class="rkDots" id="rkDots" role="tablist" aria-label="Board"></div>
@@ -6945,7 +6945,7 @@ body{background:var(--bg);}
               onclick="openSubscription()"
               aria-label="View Lite plan"
               title="View Lite plan">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
             </button>
@@ -6964,7 +6964,7 @@ body{background:var(--bg);}
               onclick="openSubscription()"
               aria-label="View Premium plan"
               title="View Premium plan">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
             </button>
@@ -6983,7 +6983,7 @@ body{background:var(--bg);}
               onclick="openSubscription()"
               aria-label="View Max plan"
               title="View Max plan">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
             </button>
@@ -7023,25 +7023,25 @@ body{background:var(--bg);}
 
     <!-- Instagram URL here -->
     <a class="sCard" href="https://www.instagram.com/duttaanish458?igsh=MXVieThibGVxYndmcQ==" target="_blank" rel="noopener" aria-label="Instagram">
-     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
      <span class="sCardLbl">INSTAGRAM</span>
     </a>
 
     <!-- YouTube URL here -->
     <a class="sCard" href="https://youtube.com/@dirtblockd?si=qG599XY8HHxboRM1" target="_blank" rel="noopener" aria-label="YouTube">
-     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22.54 6.42A2.78 2.78 0 0 0 20.6 4.46C18.88 4 12 4 12 4s-6.88 0-8.6.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.4 19.54C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/></svg>
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><path d="M22.54 6.42A2.78 2.78 0 0 0 20.6 4.46C18.88 4 12 4 12 4s-6.88 0-8.6.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.4 19.54C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/></svg>
      <span class="sCardLbl">YOUTUBE</span>
     </a>
 
     <!-- Email link here -->
     <a class="sCard" href="mailto:duttaanish458@gmail.com" aria-label="Email">
-     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
      <span class="sCardLbl">EMAIL</span>
     </a>
 
     <!-- Website URL here -->
     <a class="sCard" href="https://digiartz.net" target="_blank" rel="noopener" aria-label="Website">
-     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
      <span class="sCardLbl">WEBSITE</span>
     </a>
 
@@ -7212,7 +7212,7 @@ body{background:var(--bg);}
       <div class="pfEditBannerWrap" id="pfEditBannerWrap">
         <img alt="" id="pfEditBannerImg">
         <button class="pfAvBEditBtn pfEditBannerBtn" onclick="openPfBannerPicker()" aria-label="Change banner">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
         </button>
       </div>
       <div class="pfEditAvatarWrap">
@@ -7221,7 +7221,7 @@ body{background:var(--bg);}
           <span id="pfEditAvatarLetter">?</span>
         </div>
         <button class="pfAvBEditBtn pfEditAvatarBtn" onclick="openPfAvatarPicker()" aria-label="Change profile photo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
         </button>
       </div>
       <div class="pfEditField">
@@ -7985,7 +7985,7 @@ body{background:var(--bg);}
                    innerHTML rebuilds never wipe it. No autofocus — the
                    keyboard only opens when the field itself is tapped. -->
               <div class="upCatSearchWrap">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="24" height="24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
                 <input type="text" class="upCatSearch" id="pfUpCatSearch" placeholder="Search categories…" autocomplete="off" oninput="pfFilterCats(this.value)" onclick="event.stopPropagation()"/>
               </div>
               <div class="upCatList" id="pfUpCatPanel">
@@ -11271,31 +11271,20 @@ function qrMake (text) {
        ========================================================= -->
   <div id="dzView" role="dialog" aria-modal="true" aria-label="Detail view">
    <div class="dzvTop">
-    <div class="avTopLeft">
-     <button class="avTopBtn" onclick="dzCloseView()" aria-label="Close">✕</button>
-     <button class="avNavBtn avNavTop" id="dzvPrev" onclick="dzViewNav(-1)" aria-label="Previous">‹ Previous</button>
-    </div>
-    <button class="avNavBtn avNavTop" id="dzvNext" onclick="dzViewNav(1)" aria-label="Next">Next ›</button>
+    <button class="avNavTxt" id="dzvPrev" onclick="dzViewNav(-1)" aria-label="Previous">Previous</button>
+    <button class="avNavTxt" id="dzvNext" onclick="dzViewNav(1)" aria-label="Next">Next</button>
    </div>
    <div class="dzvBody" id="dzvBody"></div>
   </div>
 
   <div id="artModal" role="dialog" aria-modal="true" aria-label="Artwork viewer" data-state="closed">
    <div class="avBox" onclick="event.stopPropagation()">
+    <!-- Top bar: ONLY Previous (left) and Next (right), plain text,
+         no boxes. Closing = browser back (popstate → closeLB) or
+         Escape; Download/Report sit in the body below. -->
     <div class="avTopBar">
-     <div class="avTopLeft">
-      <button class="avTopBtn avCloseBtn" onclick="closeLB()" aria-label="Close">
-       <span class="avBtnIcon">✕</span><span class="avBtnLabel">Close</span><kbd>ESC</kbd>
-      </button>
-      <!-- Previous lives top-left now (was floating over the image) -->
-      <button class="avNavBtn avNavTop" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous">‹ Previous</button>
-     </div>
-     <div class="avTopRight">
-      <button class="avNavBtn avNavTop" id="avNextBtn" onclick="avNav(1)" aria-label="Next">Next ›</button>
-      <button class="avActBtn" onclick="avDownload()" aria-label="Download">⬇</button>
-      <button class="avActBtn" onclick="avShare()" aria-label="Share">↗</button>
-      <button class="avActBtn" onclick="avReport()" aria-label="Report">⚑</button>
-     </div>
+     <button class="avNavTxt" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous">Previous</button>
+     <button class="avNavTxt" id="avNextBtn" onclick="avNav(1)" aria-label="Next">Next</button>
     </div>
     <div class="avBody">
      <div class="avImgPane">
@@ -11306,14 +11295,6 @@ function qrMake (text) {
        <div class="avImgViewport" id="avImgViewport">
         <img alt="" id="lbImg" draggable="false"/>
         <div class="avImgCount" id="avImgCount" hidden></div>
-       </div>
-       <div class="avZoomBar">
-        <button onclick="avZoom(-1)" aria-label="Zoom out">−</button>
-        <span class="avZoomPct" id="avZoomPct">100%</span>
-        <button onclick="avZoom(1)" aria-label="Zoom in">+</button>
-        <span class="avZoomDiv"></span>
-        <button onclick="avToggleFullscreen()" aria-label="Fullscreen">⛶</button>
-        <button onclick="avDownload()" aria-label="Download">⬇</button>
        </div>
       </div>
       <!-- Image stack — images 2..n of a multi-image artwork, shown
@@ -12680,7 +12661,7 @@ function qrMake (text) {
     /* Stacked layout: image 1 stays in the zoomable viewport, images
        2..n render full-width below it. The strip stays retired. */
     strip.hidden = true; strip.innerHTML = '';
-    if(cnt){ cnt.hidden = false; cnt.textContent = avImages.length+' images'; }
+    if(cnt){ cnt.hidden = true; }   /* counter box retired */
     var stack = document.getElementById('avImgStack');
     if(stack){
       stack.hidden = false;
@@ -23783,6 +23764,7 @@ html.thmFade #themePage{
     if(sec !== 'jobs') window.dzCmLoad(kind, String(r.id), 'dzvCmList');
   }
 
+  var pushed = false;
   window.dzOpenView = function(sec, id){
     var list = (typeof window.dzGetRows==='function' ? window.dzGetRows(sec) : []) || [];
     var idx = list.findIndex(function(x){ return String(x.id)===String(id); });
@@ -23792,7 +23774,14 @@ html.thmFade #themePage{
     var v = document.getElementById('dzView');
     if(v) v.classList.add('open');
     document.body.style.overflow = 'hidden';
+    /* No ✕ in the top bar — the browser back button/gesture is the
+       close control, so opening plants a history entry to consume. */
+    if(!pushed){ try{ history.pushState({dzv:1},''); pushed = true; }catch(e){} }
   };
+  window.addEventListener('popstate', function(){
+    var v = document.getElementById('dzView');
+    if(v && v.classList.contains('open')){ pushed = false; dzCloseView(); }
+  });
   window.dzViewNav = function(dir){
     var n = rows().length;
     if(!n) return;
@@ -23803,6 +23792,7 @@ html.thmFade #themePage{
     var v = document.getElementById('dzView');
     if(v) v.classList.remove('open');
     document.body.style.overflow = '';
+    if(pushed){ pushed = false; try{ history.back(); }catch(e){} }
   };
   document.addEventListener('keydown', function(e){
     var v = document.getElementById('dzView');
@@ -23949,27 +23939,28 @@ html.thmFade #themePage{
    (top nav → images → author → details → comments → actions).
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Artwork viewer: full-page single column ── */
-#artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;}
+/* ── Artwork viewer: full-page, NO boxes ──
+   The image sits directly on the page: no black stage, no viewport
+   frame, no zoom bar, no counter. Top bar is two plain-text words —
+   Previous left, Next right — over a hairline divider. Closing is the
+   browser back button (popstate → closeLB) or Escape. */
+#artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;border:0;box-shadow:none;background:var(--bg);}
 #artModal .avBody{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
-#artModal .avImgPane{flex:0 0 auto;overflow:visible;}
-#artModal .avImgStage{max-height:80vh;min-height:38vh;}
-#artModal .avSide{width:100%;max-width:860px;margin:0 auto;border-left:0;flex:0 0 auto;}
+#artModal .avImgPane{flex:0 0 auto;overflow:visible;background:transparent;}
+#artModal .avImgStage{position:static;height:auto;min-height:0;max-height:none;background:transparent;display:block;}
+#artModal .avImgViewport{position:static;height:auto;min-height:0;display:block;background:transparent;border:0;}
+#artModal #lbImg{position:static;width:100%;height:auto;max-height:none;object-fit:unset;display:block;transform:none!important;cursor:default;}
+#artModal .avSide{width:100%;max-width:860px;margin:0 auto;border-left:0;flex:0 0 auto;background:transparent;}
 #artModal .avSideScroll{height:auto;max-height:none;overflow:visible;padding-bottom:6rem;}
-/* prev/next relocated into the top bar */
-.avTopLeft{display:flex;align-items:center;gap:.6rem;min-width:0;}
-.avTopBar .avNavBtn,.dzvTop .avNavBtn{
-  position:static;transform:none;width:auto;height:38px;border-radius:999px;
-  padding:0 1rem;display:inline-flex;align-items:center;gap:.3rem;
-  background:color-mix(in srgb,var(--sur) 82%,transparent);
-  border:1px solid var(--bdr);color:var(--tx);
-  font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;cursor:pointer;
-}
-.avTopBar .avNavBtn:hover,.dzvTop .avNavBtn:hover{border-color:var(--pg);color:var(--ps);}
-.avTopRight{display:flex;align-items:center;gap:.5rem;}
-/* stacked images 2..n */
-.avImgStack{display:flex;flex-direction:column;gap:.4rem;background:#000;padding:.4rem 0;}
-.avImgStack img{width:100%;max-height:88vh;object-fit:contain;display:block;}
+/* top bars: text-only nav over a divider line */
+#artModal .avTopBar,.dzvTop{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.1rem;border-bottom:1px solid var(--bdr);background:var(--bg);}
+.avNavTxt{background:none;border:0;padding:.35rem .2rem;margin:0;cursor:pointer;
+  color:var(--tx);font-family:var(--fb);font-size:16px;font-weight:600;letter-spacing:.01em;}
+.avNavTxt:hover{color:var(--ps);}
+.avNavTxt:active{opacity:.7;}
+/* stacked images 2..n — same full-bleed, no letterbox */
+.avImgStack{display:flex;flex-direction:column;gap:0;background:transparent;padding:0;}
+.avImgStack img{width:100%;height:auto;max-height:none;object-fit:unset;display:block;}
 /* no stale pixels while a new image loads */
 .avImgViewport.loading img{opacity:0;}
 
@@ -23996,11 +23987,10 @@ html.thmFade #themePage{
 /* ── #dzView overlay ── */
 #dzView{position:fixed;inset:0;z-index:1300;background:var(--bg);display:none;flex-direction:column;}
 #dzView.open{display:flex;}
-.dzvTop{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.6rem .9rem;border-bottom:1px solid var(--bdr);flex-shrink:0;background:color-mix(in srgb,var(--bg) 94%,transparent);}
-.dzvTop .avTopBtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--bdr);background:var(--sur);color:var(--tx);cursor:pointer;font-size:.9rem;}
+.dzvTop{flex-shrink:0;}
 .dzvBody{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:6rem;}
-.dzvMedia{background:#000;}
-.dzvMedia img{width:100%;max-height:70vh;object-fit:contain;display:block;}
+.dzvMedia{background:transparent;}
+.dzvMedia img{width:100%;height:auto;max-height:none;display:block;}
 .dzvCol{max-width:860px;margin:0 auto;padding:1.2rem 1.2rem 2rem;display:flex;flex-direction:column;gap:1.1rem;}
 .dzvTitle{font-family:var(--fd);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0;color:var(--tx);}
 .dzvExcerpt{font-size:1rem;color:var(--txd);line-height:1.55;margin:0;}

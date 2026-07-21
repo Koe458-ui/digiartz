@@ -176,6 +176,10 @@
          These tokens carry a dark-theme default and are re-mapped for
          Light below, so every theme keeps readable contrast. */
       --danger:#fca5a5;
+      /* Brand red — the "Artz" in the logo lockup. Owned by a token so
+         the hero highlight and any future red accents stay in step
+         with the badge instead of scattering hexes. */
+      --brand-red:#EF4444;
       --danger-strong:#dc2626;
       --danger-bg:rgba(220,38,38,.14);
       --danger-bg-hover:rgba(220,38,38,.24);
@@ -215,6 +219,7 @@
        (no violet: accent tokens re-mapped to white/off-white). ── */
     html[data-theme="dark"]{
       --tc:#8B8E96;
+      --brand-red:#EF4444;
       --bg:#0A0A0E; --sur:#141419; --sur2:#1A1A21;
       --bdr:#262630; --bdrh:#3A3A47;
       --tx:#F4F4F7; --tx2-rgb:219,219,229;
@@ -231,6 +236,7 @@
        (no violet: accent tokens re-mapped to white/off-white). ── */
     html[data-theme="graydark"]{
       --tc:#94979F;
+      --brand-red:#EF4444;
       --bg:#131317; --sur:#1C1C22; --sur2:#23232B;
       --bdr:#30303A; --bdrh:#444450;
       --tx:#F2F2F5; --tx2-rgb:216,216,226;
@@ -266,6 +272,7 @@
          the dark-theme pastels (#fca5a5, #fbbf24, #34d399…) are close to
          unreadable here. */
       --danger:#B3261E;
+      --brand-red:#DC2626; /* logo red as-is — plenty of contrast on white */
       --danger-strong:#B3261E;
       --danger-bg:rgba(179,38,30,.08);
       --danger-bg-hover:rgba(179,38,30,.14);
@@ -520,7 +527,7 @@
       pointer-events: none;
     }
     .hBadge .hBadgeD { color: #0a0a0a; }
-    .hBadge .hBadgeA { color: #dc2626; }
+    .hBadge .hBadgeA { color: var(--brand-red); }
     /* Less see-through than the shared .fpFloat::before default —
        flat 70%-opaque fill (only ~30% transparent) so the brand
        pill reads as solidly as the notification button next to it. */
@@ -592,8 +599,9 @@
       text-wrap:balance;
     }
     /* The one coloured phrase per tab — the brief's "make it pop".
-       Uses --pg so every theme supplies its own primary. */
-    .hpHead em{font-style:normal;color:var(--pg);}
+       Brand red (the "Artz" in the logo), themed via --brand-red so
+       light mode gets the deeper cut that survives a white page. */
+    .hpHead em{font-style:normal;color:var(--brand-red);}
 
     /* ── Checklist ── */
     .hpList{list-style:none;margin:0 0 clamp(1.5rem,3.5vw,2rem);padding:0;display:flex;flex-direction:column;gap:.7rem;}

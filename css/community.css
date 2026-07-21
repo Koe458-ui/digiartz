@@ -1,0 +1,475 @@
+/* ── community.css · community tabs + community page theme ── */
+    /* ================= COMMUNITY / FRIENDS TAB CONTENT ================= */
+    .cmView{flex:1;min-height:0;flex-direction:column;}
+    .cmScroll{flex:1;min-height:0;overflow-y:auto;padding:1.4rem 1.5rem 100px;}
+    @media(max-width:640px){.cmScroll{padding:1.1rem 1.1rem 100px;}}
+
+    /* Hero banner */
+    .cmBanner{
+      background:linear-gradient(160deg,var(--sur2) 0%,color-mix(in srgb,var(--tc) 6%,var(--sur2)) 100%);
+      border:1px solid var(--bdr);
+      border-radius:14px;
+      padding:1.8rem 1.8rem;
+      margin-bottom:1.8rem;
+    }
+    .cmBannerTitle{font-family:var(--fd);font-size:clamp(1.5rem,4.5vw,2.2rem);font-weight:800;letter-spacing:-.01em;color:var(--tx);margin-bottom:.6rem;}
+    .cmBannerSub{font-family:var(--fb);font-size:.92rem;color:var(--txd);line-height:1.6;max-width:520px;}
+    .cmStats{display:flex;gap:2rem;margin-top:1.3rem;flex-wrap:wrap;}
+    .cmStat{display:flex;align-items:center;gap:.65rem;}
+    .cmStat svg{width:22px;height:22px;color:var(--ps);flex-shrink:0;}
+    .cmStatNum{font-family:var(--fd);font-size:1.15rem;font-weight:700;color:var(--tx);display:block;line-height:1.2;}
+    .cmStatLbl{font-family:var(--fm);font-size:.66rem;letter-spacing:.1em;color:var(--txd);}
+
+    /* Section head */
+    .cmSectionHead{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+    .cmSectionHead h3{font-family:var(--fd);font-size:1.3rem;font-weight:700;color:var(--tx);}
+    .cmSectionHead p{font-family:var(--fb);font-size:.82rem;color:var(--txd);margin-top:.3rem;}
+    .cmCreateBtn{
+      flex-shrink:0;
+      padding:.65rem 1.1rem;
+      background:color-mix(in srgb,var(--tc) 12%,transparent);
+      border:1px solid var(--pg);
+      color:var(--ps);
+      font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;
+      cursor:pointer;border-radius:8px;
+      transition:background .25s,box-shadow .25s,transform .2s;
+      white-space:nowrap;
+    }
+    .cmCreateBtn:hover{background:color-mix(in srgb,var(--tc) 24%,transparent);box-shadow:0 0 16px color-mix(in srgb,var(--tc) 25%,transparent);}
+    .cmCreateBtn:active{transform:scale(.97);}
+
+    /* ── Create / Join buttons pair ── */
+    .cmHeadBtns{display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap;}
+    .cmJoinBtn{background:none;border-color:var(--bdrh);color:var(--tx);}
+
+    /* ── Community modals (create / join / manage / member actions) ── */
+    .cmMod{
+      position:fixed;inset:0;z-index:4300;display:none;
+      align-items:center;justify-content:center;padding:1rem;
+      background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+    }
+    .cmMod.open{display:flex;}
+    .cmModCard{
+      width:100%;max-width:440px;max-height:88dvh;overflow-y:auto;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:16px;padding:1.3rem;
+      -webkit-overflow-scrolling:touch;
+    }
+    .cmModTitle{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--tx);margin-bottom:.25rem;}
+    .cmModSub{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-bottom:1rem;}
+    .cmLbl{font-family:var(--fm);font-size:.66rem;letter-spacing:.1em;color:var(--txd);margin:.75rem 0 .35rem;}
+    .cmInput,.cmArea{
+      width:100%;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;
+      padding:.7rem;color:var(--tx);font-family:var(--fb);font-size:.88rem;
+    }
+    .cmInput:focus,.cmArea:focus{outline:none;border-color:var(--pg);}
+    .cmArea{resize:vertical;min-height:70px;}
+    .cmToggleRow{display:flex;align-items:center;gap:.6rem;margin:.9rem 0;font-family:var(--fb);font-size:.86rem;color:var(--tx);}
+    .cmToggleRow input{width:17px;height:17px;accent-color:var(--pg);cursor:pointer;}
+    .cmModActs{display:flex;gap:.6rem;justify-content:flex-end;margin-top:1.2rem;}
+    .cmModBtn{
+      font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;padding:.62rem 1.2rem;
+      border-radius:8px;cursor:pointer;border:1px solid var(--bdr);background:none;color:var(--tx);
+      transition:border-color .2s,background .2s;
+    }
+    .cmModBtn:hover{border-color:var(--pg);}
+    .cmModBtn--go{border-color:var(--pg);background:var(--pdim);color:var(--pg);}
+    .cmModBtn--danger{border-color:var(--danger-bd);background:var(--danger-bg);color:var(--danger);}
+    .cmModBtn:disabled{opacity:.55;cursor:default;}
+    .cmCode{
+      font-family:var(--fm);font-size:1rem;letter-spacing:.3em;color:var(--pg);
+      background:var(--sur2);border:1px dashed var(--bdrh);border-radius:8px;
+      padding:.6rem;text-align:center;margin-top:.4rem;
+    }
+    /* member list */
+    .cmMemRow{
+      display:flex;align-items:center;gap:.7rem;padding:.6rem .2rem;
+      border-bottom:1px solid var(--bdr);cursor:pointer;
+    }
+    .cmMemRow:last-child{border-bottom:none;}
+    .cmMemAva{
+      width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      background:linear-gradient(135deg,var(--pg),var(--pgd));color:var(--text-on-accent);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fd);font-weight:700;font-size:.8rem;
+    }
+    .cmMemAva img{width:100%;height:100%;object-fit:cover;}
+    .cmMemName{font-family:var(--fb);font-size:.88rem;color:var(--tx);flex:1;min-width:0;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .cmMemRole{
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;
+      padding:.2rem .5rem;border-radius:20px;border:1px solid var(--bdrh);color:var(--txd);flex-shrink:0;
+    }
+    .cmMemRole--owner{color:var(--role-owner);border-color:var(--role-owner-bd);}
+    .cmMemRole--admin{color:var(--role-admin);border-color:var(--role-admin-bd);}
+    .cmMemRole--sr_mod{color:var(--role-srmod);border-color:var(--role-srmod-bd);}
+    .cmMemRole--jr_mod{color:var(--role-jrmod);border-color:var(--role-jrmod-bd);}
+    .cmMemRole--banned{color:var(--danger-strong);border-color:var(--danger-bd);}
+    .cmActList{display:flex;flex-direction:column;gap:.1rem;}
+    .cmActItem{
+      text-align:left;padding:.8rem .7rem;border-radius:8px;border:none;background:none;
+      color:var(--tx);font-family:var(--fb);font-size:.9rem;cursor:pointer;transition:background .15s;
+    }
+    .cmActItem:hover{background:var(--pdim);}
+    .cmActItem--danger{color:var(--danger);}
+    .cmActItem--danger:hover{background:var(--danger-bg-hover);}
+
+    /* ══ DEVICE OPTIMIZATION ═══════════════════════════════════════
+       Applies to the overlays added recently (report modal, community
+       create/join/manage, member actions, mini profile card). */
+
+    /* iOS Safari ZOOMS the whole page when a focused input has a computed
+       font-size below 16px — every field below was ~13–14px, so tapping any
+       of them punted the layout out of alignment and left it zoomed. Pinning
+       16px on coarse pointers stops that without changing desktop sizing. */
+    @media (pointer:coarse){
+      .cmInput,.cmArea,.rptArea{font-size:16px;}
+    }
+
+    /* Modals must clear the notch and the home indicator, and never sit
+       under the on-screen keyboard. */
+    .cmMod,#rptMod,#cpuMod{
+      padding:calc(1rem + env(safe-area-inset-top)) 1rem
+              calc(1rem + env(safe-area-inset-bottom)) 1rem;
+    }
+
+    @media(max-width:520px){
+      /* Full-width cards with room to breathe; taller scroll area since the
+         keyboard eats the bottom half on phones. */
+      .cmModCard,.rptCard{max-width:100%;max-height:86dvh;padding:1.1rem;border-radius:14px;}
+      .cpuCard{max-width:100%;}
+
+      /* Create + Join stay side-by-side but share the row and stay INSIDE
+         the CTA card — .cmCreateBtn is nowrap + flex-shrink:0 by default,
+         which pushed them past the card's edge on narrow screens. */
+      .cmHeadBtns{width:100%;gap:.5rem;}
+      .cmHeadBtns .cmCreateBtn{
+        flex:1 1 0;min-width:0;padding:.8rem .6rem;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      }
+      .cmFooterCta{padding:1.1rem 1rem;}
+      .cmFooterCta > div:first-child{flex:1 1 100%;}
+
+      /* Comfortable tap targets (>=44px) on rows and action items. */
+      .cmActItem{padding:.95rem .8rem;}
+      .cmMemRow{padding:.75rem .2rem;}
+      .cmModBtn,.rptBtn{padding:.75rem 1.1rem;}
+
+      /* Long names shouldn't shove the role badge off-screen. */
+      .cmMemName{font-size:.85rem;}
+      .cmMemRole{font-size:.55rem;padding:.18rem .42rem;}
+
+      /* 5 stats + separators overflow a 360px screen — tighten and let it
+         wrap onto two tidy lines instead of clipping. */
+      .pfStatsRow{gap:.4rem;font-size:.68rem;}
+
+      /* Action buttons share the row evenly rather than overflowing. */
+      .pfActionRow{width:100%;}
+      .pfActBtn{flex:1 1 auto;min-width:44%;padding:.65rem .8rem;}
+    }
+
+    @media(max-width:360px){
+      .pfStatsRow{font-size:.63rem;gap:.3rem;}
+      .cmModCard,.rptCard{padding:.95rem;}
+    }
+
+    /* Generic small pill badge — used for the Zeo "AI" badge in the
+       Friends list and the "Official" tag on the DigiArtz community row. */
+    .cmBadge{
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;
+      color:var(--ps);background:var(--pdim);
+      border:1px solid var(--pg);border-radius:999px;
+      padding:.18rem .55rem;flex-shrink:0;
+    }
+    /* Community cards grid — back to the original text-card layout
+       (title + description + member meta), now with an improved
+       cover-image strip up top instead of plain gradient-only fill. */
+    /* Community cards now stack as a vertical list of horizontal rows,
+       mirroring the Friends list (.cmFriendList) below. */
+    .cmGrid{display:flex;flex-direction:column;gap:.7rem;}
+    .cmCard{
+      background:var(--sur);
+      border:1px solid var(--bdr);
+      border-radius:12px;
+      cursor:pointer;
+      transition:border-color .25s,transform .2s,box-shadow .25s;
+      display:flex;align-items:center;gap:.9rem;
+      padding:.9rem 1.1rem;
+    }
+    .cmCard:hover{border-color:var(--bdrh);}
+    .cmCard:active{transform:scale(.99);}
+    /* ── Icon chip — mirrors .cmFriendAvatar (circular, 46px) but keeps
+       each community's own gradient so it retains its colour identity.
+       The old full-width cover strip is gone; the icon now sits inline
+       to the left of the text, exactly like a Friends-list avatar. ── */
+    .cmCardIcon{
+      width:46px;height:46px;border-radius:50%;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;line-height:1;overflow:hidden;
+      filter:drop-shadow(0 2px 6px rgba(0,0,0,.28));
+    }
+    .cmCardMeta{flex:1;min-width:0;}
+    .cmCardName{font-family:var(--fb);font-size:.98rem;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+    .cmCard p{font-family:var(--fb);font-size:.8rem;color:var(--txd);line-height:1.5;margin-top:.25rem;}
+    .cmDot{width:6px;height:6px;border-radius:50%;background:#3ecf8e;flex-shrink:0;box-shadow:0 0 6px #3ecf8e;}
+
+
+
+    /* Footer CTA */
+    .cmFooterCta{
+      display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+      margin-top:1.6rem;padding:1.3rem 1.5rem;
+      background:var(--sur2);border:1px solid var(--bdr);border-radius:12px;
+    }
+    /* The text block must be allowed to shrink, or its min-content width
+       pushes the buttons past the card's right edge. */
+    .cmFooterCta > div:first-child{flex:1 1 240px;min-width:0;}
+    .cmFooterCta .cmHeadBtns{flex:0 0 auto;max-width:100%;}
+    .cmFooterCta strong{font-family:var(--fb);font-size:.95rem;color:var(--tx);display:block;}
+    .cmFooterCta p{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-top:.2rem;}
+
+    /* Art Talk chat view (reuses .cpBody/.cpEmpty/.cpComment styles) */
+    .cmChat{display:none;flex-direction:column;flex:1;min-height:0;}
+
+    /* ── Grid ⇄ chat/DM view transition ───────────────────────────
+       Opening a community room (#cmChatView) or a friend DM
+       (#dmChatView) used to swap the grid → chat instantly — a hard
+       display flip that felt jarring. These one-shot entrance
+       animations slide the incoming view in and fade the composer
+       bar up, matching the "page slides in" feel used elsewhere.
+
+       Perf: only `transform` + `opacity` are animated, so every frame
+       stays on the compositor (no layout/paint) and runs smoothly on
+       low-end phones. No JS wiring is needed — flipping the element
+       from display:none back to a visible display value re-triggers
+       the animation on its own, so it fires on every open. Skipped
+       entirely for users who prefer reduced motion. */
+    @media(prefers-reduced-motion:no-preference){
+      /* FIX(B2): fill-mode was `both`, which retained the final keyframe's
+         transform:translate3d(0,0,0) FOREVER — a permanent containing block +
+         stacking context that would silently re-anchor any future
+         position:fixed child of these views. `backwards` keeps the identical
+         visual (from-frame applied at start; natural styles restored at end,
+         which equal the to-frame) without leaving any transform behind. */
+      #cmChatView,#dmChatView{
+        animation:cmChatSlideIn .3s cubic-bezier(.22,1,.36,1) backwards;
+      }
+      #cmGridScroll{
+        animation:cmGridSlideIn .3s cubic-bezier(.22,1,.36,1) backwards;
+      }
+      /* Fixed community composer — opacity only (never transform) so it
+         can't fight the keyboard-lift transform on .cpBar.kbLift. */
+      #cpBar{animation:cmBarFadeIn .28s ease backwards;}
+
+      @keyframes cmChatSlideIn{
+        from{opacity:0;transform:translate3d(26px,0,0);}
+        to{opacity:1;transform:translate3d(0,0,0);}
+      }
+      @keyframes cmGridSlideIn{
+        from{opacity:0;transform:translate3d(-22px,0,0);}
+        to{opacity:1;transform:translate3d(0,0,0);}
+      }
+      @keyframes cmBarFadeIn{
+        from{opacity:0;}
+        to{opacity:1;}
+      }
+    }
+    .cmBack{
+      background:none;border:1px solid var(--bdr);border-radius:8px;
+      width:34px;height:34px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      color:var(--tx);cursor:pointer;transition:border-color .2s,background .2s;
+    }
+    .cmBack:hover{border-color:var(--pg);background:var(--pdim);}
+    .cmBack svg{width:16px;height:16px;}
+
+    /* Friends tab — empty state (mirrors .cpEmpty) */
+    .cmEmpty{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:.7rem;padding:3.5rem 2rem;text-align:center;
+      font-family:var(--fm);font-size:.76rem;letter-spacing:.2em;color:var(--txd);
+      border:1px dashed var(--bdr);border-radius:12px;
+    }
+    .cmEmpty .cmEmptyIco{font-size:2rem;color:color-mix(in srgb,var(--tc) 40%,transparent);}
+    .cmEmptySub{font-size:.68rem;letter-spacing:.05em;opacity:.7;font-family:var(--fb);max-width:280px;}
+
+    @media(max-width:480px){
+      .cmBanner{padding:1.4rem;}
+      .cmStats{gap:1.3rem;}
+    }
+
+    /* =========================================================
+       FRONT PAGE — DARK / VIOLET THEME (matches Community page)
+       Scoped to the sections that make up the front page below
+       the hero (#hero is already dark/full-bleed on its own):
+       #artworks, #subOverview, #connect, footer.siteFooter.
+       Re-declaring the shared design tokens locally on each of
+       these section roots means every element inside that already
+       styles itself with var(--bg)/var(--sur)/var(--tx)/etc.
+       repaints automatically — the rest of the site (gallery,
+       profile pages, login, modals) keeps the original light
+       tokens untouched.
+       ========================================================= */
+    #artworks, #subOverview, #connect, footer.siteFooter{
+      --bg:inherit;--sur:inherit;--sur2:inherit;
+      --bdr:inherit;--bdrh:inherit;
+      --tx:inherit;--txd:inherit;
+      --pg:inherit;--pb:inherit;--ps:inherit;
+      --pdim:inherit;
+      background:var(--bg);
+      color:var(--tx);
+    }
+
+    /* ── subOverview tier-badge pastel fills → dark-safe tints ── */
+    #subOverview .subOvPlanBadge--lite    { color:#93c5fd; border-color:#3b5c8a; background:rgba(59,130,246,.14); }
+    #subOverview .subOvPlanBadge--premium { color:#C4B5FD; border-color:#5b4a8a; background:rgba(139,92,246,.16); }
+    #subOverview .subOvPlanBadge--max     { color:#fcd34d; border-color:#8a6a2a; background:rgba(234,179,8,.14); }
+    #subOverview .subOvPlanBadge--dev     { color:#fca5a5; border-color:#8a3a3a; background:rgba(220,38,38,.14); }
+
+    /* =========================================================
+       COMMUNITY PAGE — DARK / VIOLET THEME
+       Scoped entirely to #communityPage via local CSS variables
+       so the rest of the (light) site is untouched. Selectors are
+       written as "#communityPage .xyz" so they win specificity
+       over the site-wide white-theme overrides further below,
+       regardless of source order.
+       ========================================================= */
+    #communityPage{
+      --cmBg:var(--bg);
+      --cmSur:var(--sur);
+      --cmSur2:var(--sur2);
+      --cmBdr:var(--bdr);
+      --cmBdrh:var(--bdrh);
+      --cmTx:var(--tx);
+      --cmTxd:var(--txd);
+      --cmAccent:var(--pg);
+      --cmAccentSoft:var(--pb);
+      --cmAccentDim:var(--pdim);
+      --cmOnline:#2ecf7e;
+      background:var(--cmBg);
+    }
+    #communityPage .cmHdr{
+      border-bottom:1px solid var(--cmBdr);
+    }
+    #communityPage .cmHdr::before{background:var(--cmBg)!important;}
+    #communityPage .cmTab{color:var(--cmTxd);}
+    #communityPage .cmTab.active{color:var(--cmTx);border-color:var(--cmAccent);}
+    #communityPage .cmTab:hover{color:var(--cmTx);}
+
+    #communityPage .cmBanner{
+      background:linear-gradient(150deg,color-mix(in srgb,var(--pg) 10%,var(--vsur2)) 0%,var(--vsur) 100%);
+      border:1px solid color-mix(in srgb,var(--pg) 22%,var(--bdr));
+    }
+    #communityPage .cmBannerTitle{color:var(--vtx);}
+    #communityPage .cmBannerSub{color:rgba(var(--vtx2-rgb),.72);}
+    #communityPage .cmStat svg{color:rgba(var(--vtx2-rgb),.9);}
+    #communityPage .cmStatNum{color:var(--vtx);}
+    #communityPage .cmStatLbl{color:rgba(var(--vtx2-rgb),.55);}
+
+    #communityPage .cmSectionHead h3{color:var(--cmTx);}
+    #communityPage .cmSectionHead p{color:var(--cmTxd);}
+    #communityPage .cmCreateBtn{
+      background:var(--cmAccentDim);
+      border:1px solid var(--cmAccent);
+      color:var(--cmAccentSoft);
+    }
+    #communityPage .cmCreateBtn:hover{
+      background:color-mix(in srgb,var(--cmAccent) 28%,transparent);
+      box-shadow:0 0 18px rgba(var(--pg-rgb),.35);
+    }
+
+    #communityPage .cmCard{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cmCard:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
+    #communityPage .cmCard .cmCardIcon{border:1px solid var(--cmBdrh);}
+    #communityPage .cmCard .cmCardName{color:var(--cmTx);}
+    #communityPage .cmCard p{color:var(--cmTxd);}
+    #communityPage .cmBadge{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
+    #communityPage .cmDot{background:var(--cmOnline);box-shadow:0 0 6px var(--cmOnline);}
+
+    #communityPage .cmFooterCta{background:var(--cmSur2);border:1px solid var(--cmBdr);}
+    #communityPage .cmFooterCta strong{color:var(--cmTx);}
+    #communityPage .cmFooterCta p{color:var(--cmTxd);}
+
+    #communityPage .cmEmpty{border-color:var(--cmBdr);color:var(--cmTxd);}
+    #communityPage .cmEmpty .cmEmptyIco{color:var(--cmAccentSoft);}
+
+    /* Friends list — default "Zeo" AI bot entry */
+    .cmFriendList{display:flex;flex-direction:column;gap:.7rem;margin-bottom:1.6rem;}
+    .cmFriendItem{
+      display:flex;align-items:center;gap:.9rem;
+      padding:.9rem 1.1rem;
+      border-radius:12px;cursor:pointer;
+      transition:border-color .25s,transform .2s,box-shadow .25s;
+    }
+    .cmFriendItem:active{transform:scale(.99);}
+    .cmFriendAvatar{
+      width:46px;height:46px;border-radius:50%;flex-shrink:0;
+      overflow:hidden;display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;
+    }
+    .cmFriendAvatar img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cmFriendMeta{flex:1;min-width:0;}
+    .cmFriendName{font-family:var(--fb);font-size:.98rem;font-weight:700;display:flex;align-items:center;gap:.5rem;}
+    .cmFriendStatus{font-family:var(--fm);font-size:.68rem;letter-spacing:.04em;display:flex;align-items:center;gap:.4rem;margin-top:.25rem;}
+
+    #communityPage .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
+    #communityPage .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
+    #communityPage .cmFriendName{color:var(--cmTx);}
+    #communityPage .cmFriendStatus{color:var(--cmTxd);}
+
+    /* Art Talk chat — reuses .cpHdr/.cpBody/.cpComment/.cpBar markup */
+    #communityPage .cpHdr::before{background:var(--cmBg)!important;}
+    #communityPage .cpHdr{border-bottom:1px solid var(--cmBdr);}
+    #communityPage .cpTitle{color:var(--cmTx);}
+    #communityPage .cpTitle .s{color:var(--cmAccentSoft);}
+    #communityPage .cmBack{border:1px solid var(--cmBdr);color:var(--cmTx);}
+    #communityPage .cmBack:hover{border-color:var(--cmAccent);background:var(--cmAccentDim);}
+    #communityPage .cpEmpty{color:var(--cmTxd);}
+    #communityPage .cpEmpty .cpEIco{color:var(--cmAccentSoft);}
+    #communityPage .cpComment{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cpComment:hover{border-color:var(--cmBdrh);background:var(--cmSur2);}
+    #communityPage .cpAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
+    #communityPage .cpAvatar::after{border-color:var(--cmSur);}
+    #communityPage .cpCommentUser{color:var(--cmAccentSoft);}
+    #communityPage .cpCommentText{color:var(--cmTx);}
+    #communityPage .cpCommentTime{color:var(--cmTxd);}
+    #communityPage .cpSubtitle{color:var(--cmTxd);}
+    #communityPage .cpLockNote::before{background:var(--cmBg)!important;}
+    #communityPage .cpLockNote{border-top:1px solid var(--cmBdr);color:var(--cmTxd);}
+    #communityPage .cpLockNote svg{color:var(--cmAccentSoft);}
+    #communityPage .cpAttachBtn{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
+    #communityPage .cpAttachBtn:hover{background:color-mix(in srgb,var(--cmAccent) 30%,transparent)!important;}
+    #communityPage .cpShowcase{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cpShowcaseText{color:var(--cmTx);}
+    #communityPage .cpPhoto{border:1px solid var(--cmBdr);}
+    #communityPage .cpRefreshSpinner{border-color:color-mix(in srgb,var(--cmAccent) 25%,transparent);border-top-color:var(--cmAccent);}
+
+    #communityPage .cpBar::before{background:var(--cmSur)!important;}
+    #communityPage .cpBar{border-top:1px solid var(--cmBdr);}
+    #communityPage .cpBarAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
+    /* Match the Friends (DM) composer: drop the avatar chip so the community
+       chat box is a clean [ input + Send ] like WhatsApp. Delete this one
+       line to bring the avatar back. */
+    #communityPage .cpBarAvatar{display:none;}
+    #communityPage .cpBarInput{background:var(--cmSur2)!important;color:var(--cmTx)!important;border:1px solid var(--cmBdr)!important;}
+    #communityPage .cpBarInput::placeholder{color:var(--cmTxd);}
+    #communityPage .cpBarSend{background:var(--cmAccent);border:none;color:var(--text-on-accent);}
+    #communityPage .cpBarSend:hover{filter:brightness(1.08);box-shadow:0 3px 14px rgba(var(--pg-rgb),.4)!important;}
+    #communityPage .cpSelectedImage img,#communityPage .cpThumbPreview{border:1px solid var(--cmBdr);background:var(--cmSur);}
+    #communityPage .cpThumbClose{background:var(--cmSur2);border:1px solid var(--cmBdrh);color:var(--cmTx);}
+
+    /* RESPONSIVE CSS — SMALL DEVICE RULES */
+
+    @media(max-width:480px){
+      .cpBarSend{width:40px;height:40px;padding:0;}
+      .cpEmojiBtn{width:38px;height:38px;}
+      .cpBar{padding:.6rem .9rem;gap:.55rem;}
+    }
+
+    /* CONNECT */
+    #connect{padding:4rem 2rem;text-align:center;max-width:1200px;margin:0 auto;}
+    .cDiv{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:2.5rem;}
+    .cDiv::before,.cDiv::after{content:'';flex:1;max-width:200px;height:1px;background:var(--bdr);}
+    .cLbl{font-family:var(--fm);font-size:.75rem;letter-spacing:.35em;color:var(--txd);display:flex;align-items:center;gap:.5rem;}
+    .cLbl .s{color:var(--pg);}
+

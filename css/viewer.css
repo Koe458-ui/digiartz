@@ -1,0 +1,850 @@
+/* ── viewer.css · artwork viewer ── */
+    /* =========================================================
+       ARTWORK VIEWER — new two-pane modal (image + detail sidebar).
+       Hardcodes the hero/community dark-violet palette directly
+       (not the light-theme var() tokens) so it always matches that
+       part of the site regardless of the global theme toggle —
+       same approach #artModal's backdrop already used.
+       Lives inside the existing #artModal backdrop; .amCard/.amImgWrap/
+       .amX/.amInfo/.amName/.amDesc/.amDiv above are left untouched.
+       ========================================================= */
+    .avBox{
+      position:relative;
+      width:min(1400px,94vw);
+      height:min(860px,90vh);
+      /* dvh tracks the *actual* visible viewport on mobile (address bar
+         included/excluded as it collapses); plain vh is measured against
+         the largest possible viewport, so the box could compute taller
+         than what's on screen and get clipped top/bottom. Browsers that
+         don't understand dvh ignore this line and keep the vh value above. */
+      height:min(860px,90dvh);
+      max-width:1400px;
+      display:flex;
+      flex-direction:column;
+      background:var(--sur);
+      border:1px solid var(--bdr);
+      border-radius:20px;
+      overflow:hidden;
+      box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
+      transform:scale(.92) translateY(10px);
+      opacity:0;
+      transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
+    }
+    #artModal.open .avBox{transform:scale(1) translateY(0);opacity:1;}
+    #artModal.closing .avBox{
+      transform:scale(.95) translateY(6px);
+      opacity:0;
+      transition:transform .22s cubic-bezier(.4,0,1,1),opacity .2s cubic-bezier(.4,0,1,1);
+    }
+    .avTopBar{
+      flex:0 0 auto;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:.9rem 1.3rem;
+      border-bottom:1px solid var(--bdr);
+      position:relative;
+      z-index:6;
+    }
+    .avTopBtn{
+      display:inline-flex;align-items:center;gap:.45rem;
+      background:none;border:none;color:var(--tx);
+      font-family:var(--fb);
+      font-size:.85rem;font-weight:600;cursor:pointer;
+      padding:.4rem .65rem;border-radius:8px;
+      transition:background .2s,color .2s;
+    }
+    .avTopBtn:hover{background:rgba(var(--pg-rgb),.07);}
+    .avTopBtn kbd{
+      font-family:var(--fm);font-size:.62rem;color:color-mix(in srgb,var(--tx) 40%,transparent);
+      border:1px solid var(--bdr);border-radius:4px;padding:.1rem .35rem;margin-left:.15rem;
+    }
+    .avTopRight{display:flex;align-items:center;gap:.5rem;position:relative;}
+    .avActBtn{
+      width:2.3rem;height:2.3rem;border-radius:50%;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      background:color-mix(in srgb,var(--sur2) 55%,transparent);border:1px solid rgba(var(--pg-rgb),.12);
+      color:var(--tx);font-size:1.05rem;cursor:pointer;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      transition:background .2s,transform .15s;
+    }
+    .avActBtn:hover{background:rgba(var(--pg-rgb),.4);}
+    .avActBtn:active{transform:scale(.92);}
+    .avBtnIcon{display:inline-flex;}
+    .avBtnLabel{display:inline-flex;}
+    .avBody{flex:1 1 auto;display:flex;min-height:0;}
+    .avImgPane{
+      position:relative;flex:1 1 auto;min-width:0;
+      display:flex;flex-direction:column;
+      background:#000;overflow:hidden;
+    }
+    /* Stage fills whatever height the strip doesn't take. min-height:0
+       is what lets it actually shrink inside the column flex parent. */
+    .avImgStage{
+      position:relative;
+      flex:1 1 auto;min-height:0;width:100%;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .avImgViewport{
+      position:relative;width:100%;height:100%;
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;cursor:grab;touch-action:none;
+    }
+    .avImgViewport.dragging{cursor:grabbing;}
+    .avImgViewport.loading::after{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(100deg,transparent 30%,rgba(var(--pg-rgb),.1) 50%,transparent 70%);
+      background-size:200% 100%;
+      animation:amShimmer 1.3s ease-in-out infinite;
+    }
+    /* The shimmer above is a TRANSPARENT overlay, so while a new image was
+       downloading the PREVIOUS one stayed fully visible underneath it —
+       switching images looked like the old one lingered. Hide the img itself
+       for the duration of the load so you drop straight to the dark loading
+       state instead. */
+    .avImgViewport.loading img{opacity:0;}
+    .avImgViewport img{
+      max-width:92%;max-height:88%;width:auto;height:auto;
+      object-fit:contain;display:block;
+      transition:transform .05s linear, opacity .1s ease;
+      user-select:none;-webkit-user-drag:none;
+    }
+    .avNavBtn{
+      position:absolute;top:50%;transform:translateY(-50%);
+      width:2.6rem;height:2.6rem;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(20,20,30,.55);border:1px solid rgba(var(--pg-rgb),.12);
+      color:#F5F4FB;font-size:1.2rem;cursor:pointer;z-index:4;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      transition:background .2s,transform .15s;
+    }
+    .avNavBtn:hover{background:rgba(var(--pg-rgb),.4);}
+    .avNavBtn:active{transform:translateY(-50%) scale(.92);}
+    .avNavPrev{left:1rem;}
+    .avNavNext{right:1rem;}
+    /* ── Multi-image artworks: counter pill + thumbnail strip ──
+       The counter sits in the top-left of the viewport (clear of the
+       zoom bar and the prev/next arrows, which page between *artworks*,
+       not between images within one). ── */
+    .avImgCount{
+      position:absolute;top:1rem;left:1rem;z-index:4;
+      background:rgba(20,20,30,.72);
+      border:1px solid rgba(var(--pg-rgb),.14);
+      border-radius:999px;
+      padding:.28rem .7rem;
+      font-family:var(--fm);font-size:.68rem;letter-spacing:.12em;
+      color:var(--tx);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      pointer-events:none;
+    }
+    .avStrip{
+      flex:0 0 auto;            /* never squeezed by the stage above */
+      width:100%;
+      display:flex;gap:.45rem;
+      padding:.7rem 1rem;
+      overflow-x:auto;
+      scrollbar-width:none;-ms-overflow-style:none;
+      -webkit-overflow-scrolling:touch;
+      border-top:1px solid rgba(255,255,255,.09);
+      background:rgba(12,10,18,.92);
+    }
+    /* Centre the thumbs while they still fit; once they overflow, the
+       auto margins collapse and the row scrolls from the left as normal
+       (justify-content:center would make the first thumb unreachable). */
+    .avStrip > :first-child{margin-left:auto;}
+    .avStrip > :last-child{margin-right:auto;}
+    .avStrip::-webkit-scrollbar{display:none;}
+    .avStrip[hidden]{display:none;}
+    .avThumb{
+      flex:0 0 auto;
+      width:52px;height:52px;
+      padding:0;border-radius:6px;overflow:hidden;cursor:pointer;
+      background:none;
+      border:1px solid var(--bdr);
+      opacity:.55;
+      transition:opacity .2s,border-color .2s,transform .15s;
+    }
+    .avThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .avThumb:hover{opacity:.85;}
+    .avThumb:active{transform:scale(.94);}
+    .avThumb:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    .avThumb.active{opacity:1;border-color:var(--pg);box-shadow:0 0 10px rgba(var(--pg-rgb),.4);}
+    @media(max-width:640px){
+      .avThumb{width:44px;height:44px;}
+      .avStrip{padding:.55rem .8rem;}
+    }
+    .avZoomBar{
+      position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);
+      display:flex;align-items:center;gap:.1rem;
+      background:rgba(20,20,30,.72);border:1px solid rgba(var(--pg-rgb),.1);
+      border-radius:999px;padding:.35rem .5rem;
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:4;
+    }
+    .avZoomBar button{
+      width:2rem;height:2rem;border-radius:50%;border:none;background:none;
+      color:#F5F4FB;font-size:1rem;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .2s;
+    }
+    .avZoomBar button:hover{background:rgba(var(--pg-rgb),.12);}
+    .avZoomPct{
+      font-family:var(--fm);font-size:.7rem;color:rgba(245,244,251,.75)/*over image — stays light*/;
+      min-width:3rem;text-align:center;
+    }
+    .avZoomDiv{width:1px;height:1.1rem;background:rgba(var(--pg-rgb),.15);margin:0 .15rem;}
+    .avSide{
+      flex:0 0 360px;width:360px;
+      background:var(--sur);border-left:1px solid var(--bdr);
+      display:flex;flex-direction:column;min-height:0;
+    }
+    .avSideScroll{
+      flex:1 1 auto;overflow-y:auto;min-height:0;
+      padding:1.6rem 1.5rem 1.5rem;
+      display:flex;flex-direction:column;gap:1.25rem;
+    }
+    .avSideScroll::-webkit-scrollbar{width:6px;}
+    .avSideScroll::-webkit-scrollbar-thumb{background:var(--bdrh);border-radius:3px;}
+    .avAuthorRow{display:flex;align-items:center;gap:.75rem;cursor:pointer;}
+    .avAvatar{
+      width:2.6rem;height:2.6rem;border-radius:50%;
+      background:linear-gradient(135deg,var(--pg),var(--pgd));
+      color:var(--text-on-accent);font-family:var(--fd);font-weight:700;font-size:1rem;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+      overflow:hidden;
+    }
+    .avAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
+    .avAuthorName{
+      font-family:var(--fb);font-weight:700;font-size:.95rem;color:var(--tx);
+      display:flex;align-items:center;gap:.35rem;
+    }
+    .avVerified{color:var(--pg);font-size:.8rem;}
+    .avAuthorHandle{
+      font-family:var(--fm);font-size:.7rem;color:rgba(var(--tx2-rgb),.55);margin-top:.15rem;
+    }
+    .avTitle{
+      font-family:var(--fd);font-weight:800;font-size:1.45rem;
+      color:var(--tx);line-height:1.25;word-break:break-word;
+    }
+    .avSubType{
+      font-family:var(--fb);font-size:.82rem;font-weight:600;
+      color:var(--pg);margin-top:.3rem;
+    }
+    .avDiv{width:100%;height:1px;background:var(--bdr);flex:0 0 auto;}
+    .avMetaList{display:flex;flex-direction:column;gap:.75rem;}
+    .avMetaRow{display:flex;align-items:center;justify-content:space-between;font-size:.83rem;gap:1rem;}
+    .avMetaLbl{color:rgba(var(--tx2-rgb),.55);font-family:var(--fb);}
+    .avMetaVal{color:var(--tx);font-family:var(--fb);font-weight:500;text-align:right;}
+    .avBlockH{
+      font-family:var(--fb);font-weight:700;font-size:.92rem;
+      color:var(--tx);margin-bottom:.6rem;
+    }
+    .avDescTxt{
+      font-family:var(--fb);font-size:.85rem;line-height:1.65;
+      color:rgba(var(--tx2-rgb),.75);word-break:break-word;
+    }
+    .avTagList{display:flex;flex-wrap:wrap;gap:.5rem;}
+    .avTagChip{
+      font-family:var(--fb);font-size:.75rem;font-weight:600;color:var(--ps);
+      background:rgba(var(--pg-rgb),.12);border:1px solid rgba(var(--pg-rgb),.3);
+      padding:.3rem .7rem;border-radius:8px;
+    }
+    .avReportBtn{
+      margin-top:auto;flex:0 0 auto;
+      display:flex;align-items:center;justify-content:center;gap:.5rem;
+      background:rgba(var(--pg-rgb),.04);border:1px solid var(--bdr);
+      color:rgba(var(--tx2-rgb),.7);font-family:var(--fb);
+      font-size:.82rem;font-weight:600;padding:.75rem 1rem;border-radius:10px;
+      cursor:pointer;transition:background .2s,color .2s,border-color .2s;
+    }
+    .avReportBtn:hover{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+
+    /* ── Report modal (#rptMod) ── */
+    #rptMod{
+      position:fixed;inset:0;z-index:4000;display:none;
+      align-items:center;justify-content:center;padding:1rem;
+      background:rgba(0,0,0,.72);backdrop-filter:blur(4px);
+    }
+    #rptMod.open{display:flex;}
+    .rptCard{
+      width:100%;max-width:460px;max-height:88dvh;overflow-y:auto;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
+      padding:1.3rem;
+      -webkit-overflow-scrolling:touch;
+    }
+    .rptTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--tx);margin-bottom:.2rem;}
+    .rptSub{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-bottom:1rem;}
+    .rptOpts{display:flex;flex-direction:column;gap:.1rem;margin-bottom:1rem;}
+    .rptOpt{
+      display:flex;align-items:center;gap:.6rem;cursor:pointer;
+      padding:.5rem .55rem;border-radius:8px;
+      font-family:var(--fb);font-size:.85rem;color:var(--tx);
+      transition:background .15s;
+    }
+    .rptOpt:hover{background:var(--sur2);}
+    .rptOpt input{accent-color:var(--pg);width:16px;height:16px;flex-shrink:0;cursor:pointer;}
+    .rptLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);margin-bottom:.4rem;}
+    .rptArea{
+      width:100%;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;
+      padding:.7rem;color:var(--tx);font-family:var(--fb);font-size:.85rem;
+      resize:vertical;min-height:72px;margin-bottom:1rem;
+    }
+    .rptArea:focus{outline:none;border-color:var(--pg);}
+    .rptChecks{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1.2rem;}
+    .rptCheck{display:flex;align-items:center;gap:.6rem;cursor:pointer;font-family:var(--fb);font-size:.84rem;color:var(--tx);}
+    .rptCheck input{accent-color:var(--pg);width:16px;height:16px;flex-shrink:0;cursor:pointer;}
+    .rptActions{display:flex;gap:.7rem;justify-content:flex-end;}
+    .rptBtn{
+      font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;
+      padding:.6rem 1.2rem;border-radius:8px;cursor:pointer;
+      border:1px solid var(--bdr);background:none;color:var(--tx);
+      transition:border-color .2s,background .2s;
+    }
+    .rptBtn:hover{border-color:var(--pg);}
+    .rptBtn--go{border-color:var(--danger-bd);background:var(--danger-bg);color:var(--danger);}
+    .rptBtn--go:hover{background:var(--danger-bg-hover);}
+    .rptBtn:disabled{opacity:.55;cursor:default;}
+    @media(max-width:900px){
+      #artModal{padding:.7rem;}
+      .avBox{width:100%;height:96vh;height:96dvh;border-radius:16px;}
+      .avBody{flex-direction:column;}
+      .avImgPane{flex:0 0 44%;}
+      .avSide{flex:1 1 auto;width:100%;border-left:none;border-top:1px solid var(--bdr);}
+      .avNavBtn{width:2.2rem;height:2.2rem;font-size:1rem;}
+      .avTitle{font-size:1.2rem;}
+    }
+    @media(max-width:480px){
+      #artModal{padding:.5rem;}
+      .avTopBar{padding:.7rem 1rem;}
+      .avTopBtn .avBtnLabel{display:none;}
+      .avTopBtn kbd{display:none;}
+      .avZoomBar{bottom:.7rem;padding:.3rem .4rem;}
+      .avSideScroll{padding:1.2rem 1.1rem;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .avImgViewport img{transition:none;}
+    }
+
+    #communityPage{
+  position:fixed;inset:0;z-index:500;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+    #communityPage.open{transform:translateX(0);}
+
+    /* Header bar — shared by the Art Talk chat sub-header
+       (.cpHdr is reused inside #cmChatView) */
+    .cpHdr{
+      position:sticky;top:0;z-index:10;
+      border-bottom:1px solid var(--bdr);
+      padding:1rem 1.5rem;
+      display:flex;flex-direction:column;align-items:flex-start;gap:.6rem;
+      flex-shrink:0;
+      isolation:isolate;
+    }
+    /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+    .cpHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--sur) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .cpTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;letter-spacing:.15em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
+    .cpTitle .s{color:var(--pg);font-size:.6em;}
+    .cpHdrText{display:flex;flex-direction:column;gap:.2rem;min-width:0;}
+    .cpSubtitle{font-family:var(--fb);font-size:.74rem;font-weight:400;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+    /* ── Header (was a Community/Friends tab bar — page is now one
+       continuous scroll, Friends sits below Community, no tabs) ── */
+    .cmHdr{
+      position:sticky;top:0;z-index:10;
+      border-bottom:1px solid var(--bdr);
+      /* horizontal padding reserves the absolute back-button zone
+         (1.5rem edge + 34px button + gap) on BOTH sides, so the
+         centered title stays optically centered and can never
+         slide under the button on narrow screens */
+      padding:1.1rem 4.2rem;
+      flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;gap:.8rem;
+      isolation:isolate;
+    }
+    /* Back button — hidden on the main Community/Friends grid, shown
+       (via JS) once a channel is open, sitting to the left of the
+       title so there's only ONE header per channel (no duplicate
+       title/description row below it anymore). */
+    .cmHdrBack{
+      display:none;position:absolute;left:1.5rem;
+      background:none;border:1px solid var(--bdr);border-radius:8px;
+      width:34px;height:34px;flex-shrink:0;
+      align-items:center;justify-content:center;
+      color:var(--tx);cursor:pointer;transition:border-color .2s,background .2s;
+    }
+    .cmHdrBack.show{display:flex;}
+    .cmHdrBack:hover{border-color:var(--pg);background:var(--pdim);}
+    .cmHdrBack svg{width:16px;height:16px;}
+    /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+    .cmHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--sur) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .cmHdrTitle{
+      font-family:var(--fd);font-size:1.15rem;font-weight:800;
+      letter-spacing:.16em;
+      background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      display:flex;align-items:center;gap:.4rem;
+      text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
+    }
+    .cmHdrTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);flex-shrink:0;}
+    .cmHdrTitle{min-width:0;max-width:100%;}
+    #cmHdrTitleTxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    /* narrow screens: soften the display tracking so real channel
+       names fit before the ellipsis has to kick in */
+    @media(max-width:480px){
+      .cmHdrTitle{font-size:1.02rem;letter-spacing:.08em;}
+      .cmHdr{padding:1rem 3.9rem;}
+      .cmHdrBack{left:1rem;}
+    }
+
+    /* ── CHAT BANNER MODE ──────────────────────────────────────
+       The same .cmHdr bar, flipped into a messenger-style banner
+       whenever a channel or a friend DM is open:
+
+         ←  (avatar)  Name
+                      subtitle
+
+       Everything left-aligned (the centred gradient title is for
+       the grid only). Toggled by cmHdrChatMode() / cmHdrHomeMode()
+       below the header markup — the .chat class on .cmHdr is the
+       single switch. */
+    .cmHdrChat{display:none;align-items:center;gap:.7rem;flex:1;min-width:0;}
+    .cmHdr.chat{justify-content:flex-start;gap:.5rem;padding:.7rem 1rem;}
+    .cmHdr.chat .cmHdrTitle{display:none;}
+    .cmHdr.chat .cmHdrChat{display:flex;}
+    /* back arrow leaves the absolute "reserved zone" and joins the
+       flow, so it sits flush against the avatar like a real app */
+    .cmHdr.chat .cmHdrBack{
+      position:static;left:auto;border:none;background:none;
+      width:32px;height:32px;margin-left:-.35rem;
+    }
+    .cmHdr.chat .cmHdrBack svg{width:20px;height:20px;}
+    .cmHdr.chat .cmHdrBack:hover{background:var(--pdim);}
+    .cmHdrAv{
+      width:40px;height:40px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fb);font-size:1.02rem;font-weight:700;line-height:1;
+      color:#fff;background:linear-gradient(135deg,var(--pb),var(--pg));
+      border:1px solid var(--bdrh);
+    }
+    .cmHdrAv img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cmHdrInfo{display:flex;flex-direction:column;min-width:0;gap:.14rem;flex:1;}
+    .cmHdrName{
+      font-family:var(--fb);font-size:.95rem;font-weight:700;color:var(--tx);
+      line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .cmHdrSub{
+      font-family:var(--fm);font-size:.58rem;letter-spacing:.07em;color:var(--txd);
+      line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      display:flex;align-items:center;gap:.32rem;
+    }
+    .cmHdrSub .dot{
+      width:6px;height:6px;border-radius:50%;flex-shrink:0;
+      background:#2ecf7e;box-shadow:0 0 6px #2ecf7e;
+    }
+    /* avatar+name become one tap target (DM → opens the artist's profile) */
+    .cmHdrTap{
+      display:flex;align-items:center;gap:.7rem;flex:1;min-width:0;
+      border-radius:10px;padding:.2rem .35rem;margin:-.2rem -.35rem;
+      transition:background .2s;
+    }
+    .cmHdrTap.on{cursor:pointer;}
+    .cmHdrTap.on:active{background:var(--pdim);}
+    /* Community-page theme tokens (the page overrides --tx/--txd) */
+    #communityPage .cmHdrName{color:var(--cmTx);}
+    #communityPage .cmHdrSub{color:var(--cmTxd);}
+    #communityPage .cmHdrAv{border:1px solid var(--cmBdrh);}
+    #communityPage .cmHdr.chat .cmHdrBack{color:var(--cmTx);}
+    #communityPage .cmHdr.chat .cmHdrBack:hover{background:var(--cmAccentDim);}
+    #communityPage .cmHdrTap.on:active{background:var(--cmAccentDim);}
+    @media(max-width:480px){
+      .cmHdr.chat{padding:.6rem .8rem;}
+      .cmHdrAv{width:36px;height:36px;font-size:.92rem;}
+      .cmHdrName{font-size:.9rem;}
+    }
+
+    /* Comments list area */
+    .cpBody{
+      flex:1;
+      overflow-y:auto;
+      padding:1.5rem 1.5rem 80px;
+    }
+    @media(max-width:640px){.cpBody{padding:1rem 1rem 80px;}}
+
+    /* Placeholder */
+    .cpEmpty{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      height:100%;min-height:200px;
+      gap:.8rem;
+      font-family:var(--fm);font-size:.76rem;letter-spacing:.2em;color:var(--txd);
+      text-align:center;
+      padding:3rem 2rem;
+    }
+    .cpEmpty .cpEIco{font-size:2rem;color:color-mix(in srgb,var(--tc) 40%,transparent);}
+
+    /* Individual comment — rounded message card, Discord/Slack style */
+    .cpComment{
+      display:flex;gap:.9rem;
+      padding:.9rem 1rem;
+      margin-bottom:.65rem;
+      border-radius:14px;
+      background:color-mix(in srgb,var(--tc) 6%,transparent);
+      border:1px solid var(--bdr);
+      transition:border-color .2s,background .2s;
+    }
+    .cpComment:last-child{margin-bottom:0;}
+    .cpComment:hover{border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
+    .cpComment.hasImage{align-items:flex-start;}
+    /* ── USER AVATARS ── */
+    .cpAvatar{
+      position:relative;
+      width:34px;height:34px;border-radius:50%;
+      background:color-mix(in srgb,var(--tc) 22%,transparent);
+      border:1px solid var(--bdrh);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fd);font-size:.85rem;font-weight:700;
+      color:var(--ps);flex-shrink:0;
+      overflow:visible;
+    }
+    /* Profile picture inside the avatar circle — clipped to the circle while
+       leaving the ::after status dot outside the clip. */
+    .cpAvatar .cpAvatarImg{
+      width:100%;height:100%;border-radius:50%;
+      object-fit:cover;display:block;
+    }
+    .cpAvatar::after{
+      content:'';position:absolute;right:-1px;bottom:-1px;
+      width:10px;height:10px;border-radius:50%;
+      background:#22c55e;border:2px solid var(--sur);
+    }
+    .cpCommentMeta{display:flex;flex-direction:column;gap:.3rem;flex:1;min-width:0;}
+
+    /* ── Mini profile card — tapping another user's avatar/name in chat ── */
+    #cpuMod{
+      position:fixed;inset:0;z-index:4200;display:none;
+      align-items:center;justify-content:center;padding:1rem;
+      background:rgba(0,0,0,.6);backdrop-filter:blur(3px);
+    }
+    #cpuMod.open{display:flex;}
+    .cpuCard{
+      width:100%;max-width:280px;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:18px;
+      padding:1.1rem;
+      box-shadow:0 18px 50px rgba(0,0,0,.45);
+      animation:cpuPop .2s cubic-bezier(.22,1,.36,1) backwards;
+    }
+    @keyframes cpuPop{
+      from{opacity:0;transform:scale(.94) translateY(8px);}
+      to{opacity:1;transform:none;}
+    }
+    .cpuRow{display:flex;align-items:center;gap:.7rem;margin-bottom:.65rem;}
+    .cpuIco{
+      width:38px;height:38px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      background:linear-gradient(135deg,var(--pg),var(--pgd));
+      color:var(--text-on-accent);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fd);font-weight:700;font-size:.95rem;
+    }
+    .cpuIco img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cpuIco--sm{
+      background:none;border:1px solid var(--bdr);color:var(--txd);
+      font-size:.8rem;font-family:var(--fm);
+    }
+    .cpuName{
+      font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .cpuHandle{
+      font-family:var(--fm);font-size:.75rem;letter-spacing:.06em;color:var(--txd);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .cpuBtn{
+      width:100%;margin-top:.35rem;
+      font-family:var(--fm);font-size:.7rem;letter-spacing:.12em;
+      padding:.65rem 1rem;border-radius:10px;cursor:pointer;
+      border:1px solid var(--pg);background:var(--pdim);color:var(--pg);
+      transition:background .2s;
+    }
+    .cpuBtn:hover{background:color-mix(in srgb,var(--pg) 22%,transparent);}
+    /* Tappable identity in chat rows */
+    .cpMsgRow--them .cpMsgAvatar,
+    .cpMsgRow--them .cpBubbleName,
+    .cpShowcaseHead .cpAvatar,
+    .cpShowcaseHead .cpCommentUser{cursor:pointer;}
+    .cpCommentUser{font-family:var(--fm);font-size:.78rem;font-weight:700;letter-spacing:.15em;color:var(--ps);}
+    .cpCommentText{font-family:var(--fb);font-size:.95rem;font-weight:400;color:var(--tx);line-height:1.6;word-break:break-word;}
+    .cpCommentTime{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);}
+
+    /* ══ WhatsApp-style chat rows — used by the community channel
+       feed (#cmChatView) and mirrored by the DM thread bubbles.
+       Own messages sit right in an accent bubble; others sit left
+       with avatar + coloured sender name (group-chat style).
+       Consecutive messages from the same sender within 5 minutes
+       are grouped (avatar/name shown once, tighter spacing). ══ */
+    .chatDay{display:flex;justify-content:center;margin:1rem 0 .7rem;}
+    .chatDay span{
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;
+      color:var(--txd);
+      background:color-mix(in srgb,var(--sur2) 85%,transparent);
+      border:1px solid var(--bdr);
+      padding:.3rem .85rem;border-radius:999px;
+      backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    }
+    .cpMsgRow{display:flex;align-items:flex-end;gap:.5rem;margin-bottom:.45rem;}
+    .cpMsgRow--cont{margin-top:-.2rem;}
+    .cpMsgRow--me{justify-content:flex-end;}
+    .cpMsgAvatar{width:30px;height:30px;font-size:.76rem;}
+    .cpMsgAvatar::after{display:none;} /* no online dot on chat rows */
+    .cpMsgAvatar--ghost{visibility:hidden;}
+    .cpBubble{
+      position:relative;
+      max-width:min(78%,520px);
+      padding:.45rem .7rem .3rem .75rem;
+      border-radius:14px;
+      font-family:var(--fb);font-size:.92rem;line-height:1.45;
+      color:var(--tx);
+      box-shadow:0 1px 1px rgba(0,0,0,.12);
+    }
+    .cpMsgRow--them .cpBubble{background:var(--sur2);border:1px solid var(--bdr);}
+    .cpMsgRow--them:not(.cpMsgRow--cont) .cpBubble{border-bottom-left-radius:4px;}
+    .cpMsgRow--me .cpBubble{background:var(--pdim);border:1px solid rgba(var(--pg-rgb),.35);}
+    .cpMsgRow--me:not(.cpMsgRow--cont) .cpBubble{border-bottom-right-radius:4px;}
+    .cpBubbleName{
+      font-family:var(--fm);font-size:.66rem;font-weight:700;
+      letter-spacing:.08em;color:var(--pb);margin:.1rem 0 .2rem;
+    }
+    .cpBubbleText{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
+    /* WhatsApp trick: the timestamp floats into the last text line */
+    .cpBubbleTime{
+      float:right;margin:.65em -.1em 0 .65em;
+      font-family:var(--fm);font-size:.56rem;letter-spacing:.04em;
+      color:var(--txd);white-space:nowrap;user-select:none;
+    }
+    .cpBubble .cpPhoto{
+      display:block;width:100%;height:auto;max-width:260px;max-height:260px;
+      object-fit:cover;border-radius:10px;margin:.25rem 0 .35rem;cursor:pointer;
+    }
+    /* Chat wallpaper — subtle theme-aware dot grid, WhatsApp-style */
+    #cmChatView .cpBody,#dmChatView .cpBody{
+      background-image:radial-gradient(color-mix(in srgb,var(--tc) 8%,transparent) 1px,transparent 1.5px);
+      background-size:22px 22px;
+    }
+
+    /* ── Emoji picker panel — opens above whichever composer bar
+       (community or DM) invoked it; built lazily by JS. ── */
+    #emojiPanel{
+      position:fixed;z-index:2100;
+      width:min(340px,calc(100vw - 1.6rem));
+      max-height:320px;
+      display:none;flex-direction:column;
+      background:var(--sur);
+      border:1px solid var(--bdrh);border-radius:16px;
+      box-shadow:0 14px 44px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+    #emojiPanel.open{display:flex;}
+    .emojiTabs{
+      display:flex;gap:.15rem;flex-shrink:0;
+      padding:.45rem .5rem;border-bottom:1px solid var(--bdr);
+      background:var(--sur2);
+      overflow-x:auto;scrollbar-width:none;
+    }
+    .emojiTabs::-webkit-scrollbar{display:none;}
+    .emojiTab{
+      flex-shrink:0;width:34px;height:34px;border-radius:9px;
+      display:flex;align-items:center;justify-content:center;
+      background:transparent;border:none;cursor:pointer;
+      font-size:1.05rem;line-height:1;opacity:.55;
+      transition:background .2s,opacity .2s;
+    }
+    .emojiTab:hover{opacity:.9;background:var(--pdim);}
+    .emojiTab.active{opacity:1;background:var(--pdim);}
+    .emojiGrid{
+      flex:1;overflow-y:auto;
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));
+      gap:.1rem;padding:.5rem;
+      overscroll-behavior:contain;
+    }
+    .emojiCatLbl{
+      grid-column:1/-1;
+      font-family:var(--fm);font-size:.58rem;letter-spacing:.18em;
+      color:var(--txd);padding:.45rem .3rem .2rem;
+    }
+    .emojiCell{
+      width:100%;aspect-ratio:1;border:none;border-radius:9px;
+      background:transparent;cursor:pointer;
+      font-size:1.35rem;line-height:1;padding:0;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .15s,transform .1s;
+    }
+    .emojiCell:hover{background:var(--pdim);}
+    .emojiCell:active{transform:scale(.85);}
+    @media(prefers-reduced-motion:no-preference){
+      #emojiPanel.open{animation:emojiIn .18s ease both;}
+      @keyframes emojiIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+    }
+
+    /* ── COMMUNITY FEATURES ── */
+    .cpComposerWrap{width:100%;display:flex;flex-direction:column;gap:6px;}
+    .cpBar{
+      position:fixed;bottom:0;left:0;right:0;
+      z-index:1001;
+      border-top:1px solid var(--bdrh);
+      padding:.75rem 1.2rem;
+      padding-bottom:calc(.75rem + 84px);
+      display:none;
+      align-items:center;gap:.75rem;
+      flex-shrink:0;
+      isolation:isolate;
+    }
+    /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+    .cpBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 97%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:-1;}
+    /* ── Keyboard avoidance — while the composer input is focused and
+       the on-screen keyboard occludes the viewport, JS translates the
+       bar up to ride just above it (see the kbLift module). The big
+       bottom-nav clearance is dropped while lifted since the nav is
+       behind the keyboard anyway. ── */
+    /* FIX(B4): will-change moved out of the always-on stylesheet — a permanent
+       compositor layer per bar for a transform that only exists while the
+       keyboard is open. The kbLift module now sets it on focus, clears on release. */
+    .cpBar,.dmBar{transition:transform .18s ease;}
+    .cpBar.kbLift{padding-bottom:calc(.75rem + env(safe-area-inset-bottom,0px));}
+    .cpBarAvatar{
+      width:36px;height:36px;border-radius:50%;flex-shrink:0;
+      background:color-mix(in srgb,var(--tc) 22%,transparent);
+      border:1px solid var(--bdrh);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--ps);
+      overflow:hidden;
+    }
+    .cpBarAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
+    .cpBarInput{
+      flex:1;
+      background:var(--sur2);
+      border:1px solid var(--bdr);
+      color:var(--tx);
+      font-family:var(--fb);font-size:.92rem;
+      padding:.66rem 1.1rem;
+      outline:none;
+      transition:border-color .25s;
+      min-width:60px;
+      border-radius:999px; /* WhatsApp-style pill */
+    }
+    .cpBarInput:focus{border-color:var(--pg);}
+    .cpBarInput::placeholder{color:var(--txd);opacity:.6;}
+    /* Emoji button — round ghost button on the left of the input,
+       shared by the community composer and the DM bar. */
+    .cpEmojiBtn{
+      flex-shrink:0;
+      width:40px;height:40px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:transparent;border:1px solid var(--bdr);
+      color:var(--txd);cursor:pointer;
+      transition:color .2s,border-color .2s,background .2s;
+    }
+    .cpEmojiBtn:hover,.cpEmojiBtn.active{color:var(--ps);border-color:var(--pg);background:var(--pdim);}
+    .cpEmojiBtn svg{width:21px;height:21px;}
+    .cpBarSend{
+      flex-shrink:0;
+      width:42px;height:42px;padding:0;
+      display:flex;align-items:center;justify-content:center;
+      background:var(--pg);
+      border:none;
+      color:var(--text-on-accent);
+      cursor:pointer;transition:filter .2s,transform .15s,box-shadow .25s;
+      border-radius:50%; /* WhatsApp-style circular send */
+      box-shadow:0 2px 10px rgba(var(--pg-rgb),.3);
+    }
+    .cpBarSend svg{width:19px;height:19px;margin-left:2px;}
+    .cpBarSend:hover{filter:brightness(1.08);box-shadow:0 3px 14px rgba(var(--pg-rgb),.4);}
+    .cpBarSend:active{transform:scale(.94);}
+
+    /* Locked-channel notice — replaces the composer bar for
+       read-only channels when the viewer isn't the dev account */
+    .cpLockNote{
+      position:fixed;bottom:0;left:0;right:0;
+      z-index:1001;
+      border-top:1px solid var(--bdrh);
+      padding:.9rem 1.2rem;
+      padding-bottom:calc(.9rem + 84px);
+      display:none;
+      align-items:center;gap:.6rem;
+      flex-shrink:0;
+      font-family:var(--fm);font-size:.72rem;letter-spacing:.06em;
+      color:var(--txd);
+      isolation:isolate;
+    }
+    /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+    .cpLockNote::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 97%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:-1;}
+    .cpLockNote svg{width:18px;height:18px;flex-shrink:0;color:var(--txd);}
+
+    /* + attach button — only shown in the Showcase channel composer */
+    .cpAttachBtn{
+      width:36px;height:36px;border-radius:50%;flex-shrink:0;
+      background:color-mix(in srgb,var(--tc) 14%,transparent);
+      border:1px solid var(--pg);
+      color:var(--ps);
+      display:none;align-items:center;justify-content:center;
+      cursor:pointer;transition:background .25s,transform .25s;
+    }
+    .cpAttachBtn svg{width:18px;height:18px;}
+    .cpAttachBtn:hover{background:color-mix(in srgb,var(--tc) 28%,transparent);}
+    .cpAttachBtn:active{transform:scale(.92);}
+
+    /* Showcase channel — post-style cards (image on top, caption
+       below) instead of the plain chat-message card used elsewhere */
+    .cpShowcase{
+      border-radius:16px;
+      background:color-mix(in srgb,var(--tc) 6%,transparent);
+      border:1px solid var(--bdr);
+      overflow:hidden;
+      margin-bottom:1rem;
+    }
+    .cpShowcase:last-child{margin-bottom:0;}
+    .cpShowcaseHead{display:flex;align-items:center;gap:.7rem;padding:.85rem 1rem;}
+    .cpShowcaseMeta{display:flex;flex-direction:column;gap:.15rem;min-width:0;}
+    .cpShowcaseImg{width:100%;max-height:560px;object-fit:cover;display:block;cursor:pointer;}
+    .cpShowcaseText{padding:.9rem 1rem 1.1rem;font-family:var(--fb);font-size:.92rem;line-height:1.65;color:var(--tx);word-break:break-word;}
+
+    /* Showcase artwork/comic picker overlay */
+    #showcasePicker{
+      position:fixed;inset:0;z-index:2200;
+      display:none;flex-direction:column;
+      background:color-mix(in srgb,var(--bg) 97%,transparent);
+      backdrop-filter:blur(16px);
+    }
+    #showcasePicker.open{display:flex;}
+    .spHdr{
+      position:sticky;top:0;z-index:1;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:1.1rem 1.5rem;
+      border-bottom:1px solid var(--bdr);
+      flex-shrink:0;
+    }
+    .spTitle{font-family:var(--fd);font-size:1rem;font-weight:700;letter-spacing:.12em;color:var(--tx);}
+    .spTitle .s{color:var(--pg);font-size:.7em;}
+    .spBody{
+      flex:1;overflow-y:auto;
+      padding:1.3rem 1.5rem 2.5rem;
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+      gap:.9rem;
+      align-content:start;
+    }
+    .spItem{
+      cursor:pointer;
+      border-radius:10px;overflow:hidden;
+      border:1px solid var(--bdr);
+      background:color-mix(in srgb,var(--tc) 6%,transparent);
+      transition:border-color .2s,transform .2s;
+    }
+    .spItem:hover{border-color:var(--pg);transform:translateY(-2px);}
+    .spItem img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;}
+    .spItem span{display:block;padding:.5rem .6rem;font-family:var(--fb);font-size:.74rem;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .spEmpty{
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      flex:1;gap:.8rem;
+      font-family:var(--fm);font-size:.76rem;letter-spacing:.2em;color:var(--txd);
+      text-align:center;padding:3rem 2rem;
+    }
+

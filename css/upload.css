@@ -1,0 +1,420 @@
+/* ── upload.css · upload popup ── */
+    .upPop{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:.9rem;opacity:0;pointer-events:none;transition:opacity .25s ease;isolation:isolate;}
+    /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+    .upPop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:-1;}
+    .upPop.open{opacity:1;pointer-events:auto;}
+    .upPopBox{background:var(--sur);border:1px solid rgba(var(--pg-rgb),.28);border-radius:16px;width:100%;max-width:960px;max-height:min(90vh,780px);max-height:min(90dvh,780px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);}
+    .upPopX{background:rgba(var(--pg-rgb),.06);border:1px solid rgba(var(--pg-rgb),.1);color:rgb(var(--tx2-rgb));width:32px;height:32px;border-radius:8px;cursor:pointer;flex-shrink:0;font-size:.85rem;line-height:1;transition:background .2s,color .2s;}
+    .upPopX:hover{background:rgba(var(--pg-rgb),.2);color:var(--tx);}
+    .upPopBody{overflow-y:auto;padding:1.3rem;display:grid;grid-template-columns:1fr;gap:1.3rem;}
+    @media(min-width:860px){.upPopBody{grid-template-columns:1.7fr 1fr;align-items:start;}}
+    /* Form actions — inline at the end of the fields column (no
+       footer bar, no Cancel: the page header's ← is the exit).
+       Upload takes the remaining width so it reads as primary;
+       on narrow screens they stack with Upload on top. */
+    .upActions{display:flex;gap:.7rem;margin-top:1.7rem;padding-top:1.3rem;border-top:1px solid rgba(var(--pg-rgb),.08);}
+    .upActions .upBtnPri{flex:1;}
+    .upActions .upBtnSec{flex:0 0 auto;}
+    @media(max-width:519px){.upActions{flex-direction:column-reverse;}.upActions button{width:100%;}}
+
+    /* ── UPLOAD PAGE MODE ──
+       #pfUpMod is no longer a centered popup — it's a full slide-in
+       page, same panel language as #profilePage / #communityPage
+       (nav ➕ is now a destination, not a layered action). The crop
+       popups keep the plain .upPop modal styling and still layer ON
+       TOP of this page (their z:20000 > 600). Edit Artwork
+       (mwEditArt) reuses this same page and slides over My Work
+       (z:520), with #bnNav (z:1000) staying visible like every
+       other page. */
+    #pfUpMod{
+      z-index:600;display:block;padding:0;opacity:1;
+      background:var(--bg);overflow-y:auto;
+      transform:translateX(100%);
+      visibility:hidden;
+      transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s linear .45s;
+    }
+    #pfUpMod::before{display:none;}
+    #pfUpMod.open{visibility:visible;pointer-events:auto;transform:translateX(0);transition-delay:0s,0s;}
+    /* Same dark-violet scoping as #profilePage / #admPage — this is
+       what makes the page "one of the nav pages" rather than a
+       restyled popup. Crop modals are DOM siblings, so they keep
+       their own styling. */
+    #pfUpMod,#pfUpMod *{
+      --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
+      --tx:var(--vtx);--txd:var(--vtxd);
+      --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #pfUpMod .pfPageHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
+    #pfUpMod .upPopBox{
+      background:transparent;border:0;border-radius:0;box-shadow:none;
+      max-width:none;margin:0;max-height:none;min-height:100%;overflow:visible;
+      display:block;
+    }
+    /* Body — .subPgBdy metrics without the class (see HTML comment):
+       1400px cap keeps ultrawide from stretching edge-to-edge, the
+       padding ladder matches the other pages' breakpoints, and the
+       bottom padding clears the floating nav. */
+    #pfUpMod .upPgBdy{padding:3.5rem 2.5rem 7.5rem;max-width:1400px;margin:0 auto;box-sizing:border-box;}
+    @media(max-width:1200px){#pfUpMod .upPgBdy{padding:3rem 2rem 7rem;}}
+    @media(max-width:900px){#pfUpMod .upPgBdy{padding:2.5rem 1.8rem 7rem;}}
+    @media(max-width:640px){#pfUpMod .upPgBdy{padding:2rem 1.2rem 6.5rem;}}
+    @media(max-width:420px){#pfUpMod .upPgBdy{padding:1.8rem 1rem 6rem;}}
+    #pfUpMod .upPopBody{overflow:visible;padding:0;}
+    /* Column plan — mobile: everything stacks. ≥860px: form + tips
+       sidebar (base .upPopBody rule). ≥1280px: the form gets more
+       of the width. ≥1100px: the form itself splits into media |
+       fields so big desktops fill horizontally instead of piling
+       one narrow column. */
+    @media(min-width:1280px){#pfUpMod .upPopBody{grid-template-columns:2.4fr 1fr;gap:2rem;}}
+    #pfUpMod .upMain{display:grid;grid-template-columns:1fr;gap:0 1.6rem;align-items:start;}
+    @media(min-width:1100px){#pfUpMod .upMain{grid-template-columns:1fr 1.15fr;}}
+    /* ── Drafts — sidebar card sitting above Upload Guidelines.
+       The rail scrolls horizontally so it stays tidy inside the
+       narrow sidebar column, and wraps to a 2-up grid on mobile
+       where the sidebar spans full width. ── */
+    .upOpt{font-size:.6rem;font-weight:600;color:rgba(var(--tx2-rgb),.45);text-transform:uppercase;letter-spacing:.12em;margin-left:.35rem;}
+    .upSchedHint{font-size:.68rem;color:rgba(var(--tx2-rgb),.5);margin-top:.35rem;}
+    .upSchedHint.bad{color:var(--danger);}
+    /* ── Schedule input ──
+       A native datetime-local otherwise renders with the browser's
+       own light chrome. These rules pull it into the site's input
+       language (.upIn) and, crucially, inherit `color-scheme` from
+       the active theme rather than hardcoding dark — so the picker
+       panel itself is light on the light theme and dark on the dark
+       ones. No literal colours here: everything is a theme token. */
+    /* ── Draft / scheduled preview modal ── */
+    .upPv{z-index:20010;}  /* above the upload page (600) */
+    .upPvHead{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem 1.1rem;border-bottom:1px solid rgba(var(--pg-rgb),.08);flex-shrink:0;}
+    .upPvKind{font-family:var(--fm);font-size:.62rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--txd);}
+    .upPvBody{overflow-y:auto;padding:1.1rem;display:grid;grid-template-columns:1fr;gap:1.1rem;}
+    @media(min-width:760px){.upPvBody{grid-template-columns:1.1fr 1fr;align-items:start;}}
+    .upPvImgWrap{background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.1);border-radius:12px;overflow:hidden;line-height:0;}
+    /* Full image, uncropped — the thumbnail framing is only for grids */
+    .upPvImgWrap img{width:100%;max-height:60vh;object-fit:contain;display:block;}
+    .upPvRow{margin-bottom:.9rem;}
+    .upPvRow:last-child{margin-bottom:0;}
+    .upPvLbl{font-family:var(--fm);font-size:.58rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--txd);margin-bottom:.3rem;}
+    .upPvVal{font-size:.86rem;color:var(--tx);line-height:1.5;word-break:break-word;white-space:pre-wrap;}
+    .upPvChips{display:flex;flex-wrap:wrap;gap:.35rem;}
+    .upPvChip{font-size:.7rem;padding:.22rem .5rem;border-radius:6px;background:rgba(var(--pg-rgb),.1);border:1px solid rgba(var(--pg-rgb),.16);color:var(--tx);}
+    .upPvFoot{padding:.9rem 1.1rem;border-top:1px solid rgba(var(--pg-rgb),.08);display:flex;gap:.6rem;justify-content:flex-end;align-items:center;flex-shrink:0;flex-wrap:wrap;}
+    .upPvWhen{font-size:.8rem;color:var(--tx);margin-right:auto;}
+    .upPvWhen b{color:var(--pg);}
+    .upPvWhen.bad{color:var(--danger);}
+    @media(max-width:519px){.upPvFoot button{width:100%;}.upPvWhen{width:100%;margin:0 0 .2rem;}}
+    /* Custom schedule picker — every part is a theme token, so it
+       renders correctly on all five themes (the native panel could
+       only ever follow color-scheme). */
+    #pfUpSchedTrigger{font-family:var(--fm);letter-spacing:.04em;}
+    .upSchedPh{color:rgba(var(--tx2-rgb),.42);}
+    .upSchedPanel{max-height:min(70vh,460px);overflow-y:auto;padding:.7rem;}
+    @media(max-width:420px){.upSchedPanel{padding:.55rem;}.upSchedDay{font-size:.7rem;}}
+    .upSchedNav{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tx);}
+    .upSchedNavBtn{background:rgba(var(--pg-rgb),.08);border:1px solid rgba(var(--pg-rgb),.16);color:var(--tx);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:.9rem;line-height:1;transition:background .2s;}
+    .upSchedNavBtn:hover{background:rgba(var(--pg-rgb),.2);}
+    .upSchedDows,.upSchedGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+    .upSchedDows{margin-bottom:2px;}
+    .upSchedDows span{text-align:center;font-family:var(--fm);font-size:.56rem;letter-spacing:.06em;color:var(--txd);padding:.2rem 0;}
+    .upSchedDay{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:7px;background:none;color:var(--tx);font-size:.74rem;cursor:pointer;font-family:var(--fb);transition:background .15s,border-color .15s;}
+    .upSchedDay:hover:not(:disabled){background:rgba(var(--pg-rgb),.14);}
+    .upSchedDay:disabled{color:rgba(var(--tx2-rgb),.22);cursor:default;}
+    .upSchedDay.sel{background:var(--pg);color:#fff;border-color:var(--pg);}
+    .upSchedDay.today:not(.sel){border-color:rgba(var(--pg-rgb),.45);}
+    .upSchedDay.pad{visibility:hidden;}
+    .upSchedTime{display:flex;align-items:center;gap:.4rem;margin-top:.6rem;padding-top:.6rem;border-top:1px solid rgba(var(--pg-rgb),.1);}
+    .upSchedTimeLbl{font-family:var(--fm);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--txd);margin-right:auto;}
+    .upSchedSel{background:rgba(var(--pg-rgb),.06);border:1px solid rgba(var(--pg-rgb),.16);color:var(--tx);border-radius:7px;padding:.32rem .4rem;font-family:var(--fm);font-size:.78rem;cursor:pointer;}
+    .upSchedColon{color:var(--txd);}
+    .upSchedActs{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.6rem;}
+    .upSchedActs button{padding:.45rem .9rem;font-size:.74rem;}
+
+    /* Scheduled cards reuse the draft card shell; the corner mark is
+       violet (time until publish) instead of the drafts' red expiry. */
+    .upSchedMark{background:var(--pg)!important;}
+    .upSchedBad{border-color:var(--danger-bd,rgba(214,58,63,.55));}
+    .upSchedBad img{opacity:.45;filter:grayscale(.5);}
+    /* Deliberately smaller than the .upSideCard h3 headings — this
+       is a micro-label in the site's mono-caps page language, not a
+       card title competing with "Upload Guidelines". */
+    .upDraftTitle{font-family:var(--fm);font-weight:600;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--txd);}
+    .upDraftTitle .s{color:var(--pg);}
+    .upDraftNote{font-size:.62rem;color:rgba(var(--tx2-rgb),.45);line-height:1.35;margin:.3rem 0 .7rem;}
+    /* Ghost slots — keep the rail filled when there's nothing saved
+       yet, so the card never collapses to an empty box. Same box
+       metrics as a real card; inert (no hover lift, no pointer). */
+    .upDraftGhost{cursor:default;background:rgba(var(--pg-rgb),.02);border-style:dashed;border-color:rgba(var(--pg-rgb),.14);}
+    .upDraftGhost:hover{transform:none;border-color:rgba(var(--pg-rgb),.14);}
+    .upDraftGhostIn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:rgba(var(--pg-rgb),.28);}
+    .upDraftGhost .upDraftExp{background:rgba(214,58,63,.45);}
+    /* Always a left-to-right rail (no mobile grid) — swiping the
+       strip is the interaction on every screen size. */
+    .upDraftRow{
+      --slots:2;            /* visible cards — mobile default */
+      --gap:.6rem;
+      display:flex;gap:var(--gap);
+      overflow-x:auto;overflow-y:hidden;
+      /* min-width:0 + max-width:100% keep this rail from pushing the
+         sidebar (and therefore the page) wider than the viewport */
+      min-width:0;max-width:100%;
+      padding-bottom:.45rem;scrollbar-width:thin;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+    }
+    @media(min-width:641px){.upDraftRow{--slots:3;}}   /* tablet / small desktop */
+    @media(min-width:1280px){.upDraftRow{--slots:4;}}  /* desktop */
+    /* Flex/grid children default to min-width:auto, which is what let
+       the fixed-width rail blow out the layout. Pin them to 0 so only
+       the rail itself scrolls — never the page. */
+    #pfUpMod{overflow-x:hidden;}
+    #pfUpMod .upPopBody>*,#pfUpMod .upMain>*,#pfUpMod .upSide>*{min-width:0;}
+    /* Same square tile as an artwork card (.awCard/.awImgWrap):
+       aspect-ratio 1, image cover, no meta strip — the only
+       adornments are the red expiry badge and the delete button. */
+    /* Exactly --slots cards fill the rail's visible width; anything
+       beyond that scrolls horizontally inside the rail only. */
+    .upDraftCard{position:relative;flex:0 0 calc((100% - (var(--slots) - 1) * var(--gap)) / var(--slots));aspect-ratio:1;cursor:pointer;background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.14);border-radius:10px;overflow:hidden;transition:border-color .2s,transform .2s;scroll-snap-align:start;}
+    .upDraftCard>img{width:100%;height:100%;object-fit:cover;display:block;}
+    .upDraftCard:hover{border-color:var(--pg);transform:translateY(-2px);}
+    /* Red expiry mark — top-right, days remaining before the 7-day
+       auto-delete. Ghost slots show the full 7d. */
+    .upDraftExp{position:absolute;top:5px;right:5px;z-index:2;background:var(--danger-strong,#D63A3F);color:#fff;font-family:var(--fm);font-size:.56rem;font-weight:700;letter-spacing:.02em;line-height:1;padding:.22rem .34rem;border-radius:5px;box-shadow:0 1px 5px rgba(0,0,0,.4);}
+    /* Delete moved to the top-LEFT so the red mark owns the right */
+    .upDraftX{position:absolute;top:5px;left:5px;z-index:2;width:22px;height:22px;border-radius:6px;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:.7rem;line-height:1;cursor:pointer;transition:background .2s;}
+    .upDraftX:hover{background:var(--danger-strong,#D63A3F);}
+    @media(min-width:860px){
+      /* Sidebar cards track the sticky header on tall desktop pages */
+      #pfUpMod .upSide{position:sticky;top:calc(3.4rem + 1rem);} /* clears .pfPageHdr */
+    }
+
+    .upDz{border:2px dashed rgba(var(--pg-rgb),.35);border-radius:12px;padding:2rem 1.1rem;text-align:center;cursor:pointer;position:relative;transition:border-color .25s,background .25s;background:rgba(var(--pg-rgb),.035);margin-bottom:1rem;}
+    .upDz.over,.upDz:hover{border-color:var(--pg);background:rgba(var(--pg-rgb),.08);}
+    .upDz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .upDzIco{width:50px;height:50px;margin:0 auto .75rem;border-radius:12px;background:rgba(var(--pg-rgb),.16);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--pb);}
+    .upDzTitle{font-weight:700;color:var(--tx);margin-bottom:.25rem;font-size:.92rem;}
+    .upDzSub{color:rgba(var(--tx2-rgb),.55);font-size:.8rem;margin-bottom:.55rem;}
+    .upDzHint{color:rgba(var(--tx2-rgb),.4);font-size:.72rem;margin-bottom:1rem;}
+    .upDzBtn{background:linear-gradient(135deg,var(--pg),var(--pgd));border:none;color:var(--text-on-accent);padding:.6rem 1.2rem;border-radius:8px;font-size:.8rem;font-weight:700;pointer-events:none;}
+    .upDzSm{padding:1.2rem 1rem;margin-bottom:.6rem;}
+    .upPopBody .upPrev{width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid rgba(var(--pg-rgb),.08);margin-bottom:1rem;}
+    /* Zoomed previews need a clipping frame — transform:scale on a
+       bare <img> would bleed over the form. The wrap takes over the
+       radius/border/margin; the img inside is always block. */
+    .upPrevWrap{display:none;overflow:hidden;border-radius:10px;border:1px solid rgba(var(--pg-rgb),.08);margin-bottom:1rem;line-height:0;}
+    .upPrevWrap .upPrev{display:block;width:100%;max-height:160px;object-fit:cover;margin:0;border:0;border-radius:0;}
+    /* Adjust Thumbnail — pulled up against the preview it belongs to */
+    .upThumbEditBtn{display:block;width:100%;margin:-.45rem 0 1rem;}
+    .upPagesPreview{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;}
+    .upPagesPreview img{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid rgba(var(--pg-rgb),.1);}
+
+    .upField{margin-bottom:1rem;}
+    .upLbl{display:block;font-size:.78rem;font-weight:700;color:var(--tx);margin-bottom:.4rem;letter-spacing:.02em;}
+    .upReq{color:#f87171;}
+    .upInWrap{position:relative;}
+    .upIn{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);padding:.68rem 3.3rem .68rem .85rem;font-size:.86rem;font-family:var(--fb);outline:none;transition:border-color .2s;}
+    .upIn:focus{border-color:var(--pg);}
+    select.upIn{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right .85rem center;background-size:1rem;}
+    select.upIn option{background:var(--sur2);color:var(--tx);}
+    select.upIn option:disabled{color:color-mix(in srgb,var(--tx) 40%,transparent);}
+    .upArea{resize:vertical;min-height:4.5rem;line-height:1.5;padding-right:.85rem;}
+    .upInWrapArea .upCount{top:auto;bottom:.5rem;}
+    .upCount{position:absolute;right:.75rem;top:.72rem;font-size:.68rem;color:rgba(var(--tx2-rgb),.4);pointer-events:none;}
+    .upRow2{display:grid;grid-template-columns:1fr;gap:1rem;}
+    @media(min-width:600px){.upRow2{grid-template-columns:1fr 1fr;}}
+
+    .upCatDd{position:relative;}
+    .upCatTrigger{width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);padding:.68rem .85rem;font-size:.84rem;cursor:pointer;font-family:var(--fb);text-align:left;}
+    .upCatDd.open .upCatTrigger{border-color:var(--pg);}
+    .upChev{color:rgba(var(--tx2-rgb),.5);transition:transform .2s;flex-shrink:0;margin-left:.5rem;}
+    .upCatDd.open .upChev{transform:rotate(180deg);}
+    .upCatPanel{position:absolute;top:calc(100% + .4rem);left:0;right:0;background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.3);border-radius:8px;padding:.5rem;display:none;flex-direction:column;gap:.15rem;z-index:5;box-shadow:0 10px 26px rgba(0,0,0,.45);max-height:210px;overflow-y:auto;}
+    .upCatDd.open .upCatPanel{display:flex;}
+    /* ── Category picker with search — the wrap pins the search bar
+       at the top while only the list below it scrolls. Taller than
+       the plain panel since it now holds all 51 categories. ── */
+    #pfUpCatPanelWrap{overflow:hidden;padding:0;gap:0;max-height:min(300px,46vh);}
+    .upCatSearchWrap{
+      position:relative;flex-shrink:0;
+      padding:.5rem .5rem .45rem;
+      border-bottom:1px solid var(--bdr);
+    }
+    .upCatSearchWrap svg{
+      position:absolute;left:1.1rem;top:50%;transform:translateY(-52%);
+      width:14px;height:14px;color:var(--txd);pointer-events:none;
+    }
+    .upCatSearch{
+      width:100%;box-sizing:border-box;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:999px;
+      color:var(--tx);font-family:var(--fb);font-size:.82rem;
+      padding:.45rem .8rem .45rem 2.1rem;outline:none;
+      transition:border-color .2s;
+    }
+    .upCatSearch:focus{border-color:var(--pg);}
+    .upCatSearch::placeholder{color:var(--txd);opacity:.6;}
+    .upCatList{
+      flex:1;overflow-y:auto;
+      display:flex;flex-direction:column;gap:.15rem;
+      padding:.4rem .5rem .5rem;
+      overscroll-behavior:contain;
+    }
+    .upCatNoMatch{
+      flex-shrink:0;
+      font-family:var(--fm);font-size:.64rem;letter-spacing:.1em;
+      color:var(--txd);text-align:center;padding:.7rem 0 .8rem;
+    }
+    .upCatOpt{display:flex;align-items:center;gap:.55rem;font-size:.82rem;color:rgb(var(--tx2-rgb));cursor:pointer;padding:.4rem .5rem;border-radius:6px;}
+    .upCatOpt:hover{background:rgba(var(--pg-rgb),.12);}
+    .upCatOpt input{accent-color:var(--pg);cursor:pointer;}
+
+    .upTagBox{min-height:2.65rem;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;padding:.35rem .55rem;display:flex;flex-wrap:wrap;align-items:center;gap:.32rem;cursor:text;}
+    .upTagBox:focus-within{border-color:var(--pg);}
+    .upTagChip{display:inline-flex;align-items:center;gap:.28rem;background:rgba(var(--pg-rgb),.16);border:1px solid rgba(var(--pg-rgb),.35);color:var(--ps);font-size:.74rem;padding:.22rem .5rem;border-radius:999px;white-space:nowrap;}
+    .upTagChip button{background:none;border:none;color:var(--ps);cursor:pointer;font-size:.72rem;line-height:1;padding:0;}
+    .upTagInput{flex:1;min-width:70px;background:none;border:none;outline:none;color:var(--tx);font-size:.82rem;padding:.28rem .1rem;font-family:var(--fb);}
+
+    .upSide{display:flex;flex-direction:column;gap:1rem;}
+    .upSideCard{background:rgba(var(--pg-rgb),.03);border:1px solid rgba(var(--pg-rgb),.08);border-radius:12px;padding:1rem;}
+    .upSideCard h3{font-size:.82rem;font-weight:700;color:var(--tx);margin-bottom:.7rem;}
+    .upGuideList,.upTipList{list-style:none;}
+    .upGuideList{display:flex;flex-direction:column;gap:.7rem;}
+    .upGuideList li{display:flex;gap:.6rem;font-size:.77rem;color:rgba(var(--tx2-rgb),.62);align-items:flex-start;}
+    .upGuideList li strong{display:block;color:var(--tx);font-size:.79rem;margin-bottom:.1rem;}
+    .upGIco{flex-shrink:0;width:26px;height:26px;border-radius:6px;background:rgba(var(--pg-rgb),.14);display:flex;align-items:center;justify-content:center;font-size:.82rem;}
+    .upTipList{display:flex;flex-direction:column;gap:.55rem;font-size:.78rem;color:rgba(var(--tx2-rgb),.68);}
+    .upTipList li{display:flex;gap:.45rem;align-items:flex-start;}
+    .upTipList li::before{content:'✓';color:var(--pg);font-weight:700;flex-shrink:0;}
+
+    .upBtnSec{background:rgba(var(--pg-rgb),.05);border:1px solid rgba(var(--pg-rgb),.12);color:rgb(var(--tx2-rgb));padding:.68rem 1.25rem;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;transition:background .2s;}
+    .upBtnSec:hover{background:rgba(var(--pg-rgb),.09);}
+    .upBtnPri{background:linear-gradient(135deg,var(--pg),var(--pgd));border:none;color:var(--text-on-accent);padding:.68rem 1.35rem;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(var(--pg-rgb),.35);transition:filter .2s;}
+    .upBtnPri:hover{filter:brightness(1.08);}
+    .upBtnPri:disabled{opacity:.6;cursor:not-allowed;filter:none;}
+
+    @media(max-width:519px){
+      .upPopBody{padding:1rem;}
+    }
+
+    /* =========================================================
+       BACKGROUND UPLOAD QUEUE (upq*) — the blurred "processing"
+       cards + the tap-for-status / check-failed modal.
+
+       Cards render at the top of the uploader's OWN grids
+       (profile gallery + My Work) while the piece moves through
+       CHECKING → UPLOADING → ALMOST DONE → LIVE in the
+       background — the upload popup closes immediately, so a
+       second piece can be queued while the first is still
+       verifying. Every colour is a theme token, so all five
+       theme prefs (Dark Violet / Dark / Gray Dark / Light /
+       System) render it natively with zero extra rules.
+       ========================================================= */
+    .upqCard{position:relative;border-radius:12px;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);cursor:pointer;isolation:isolate;}
+    .upqImgWrap{position:relative;width:100%;aspect-ratio:1;overflow:hidden;background:var(--sur2);}
+    .upqImg{width:100%;height:100%;object-fit:cover;
+      filter:blur(16px) saturate(.85) brightness(.82);
+      transform:scale(1.12); /* hides the soft blurred edge */
+    }
+    /* Dark scrim so the white status text stays readable over any art,
+       in every theme — the scrim is on the IMAGE, not the page. */
+    .upqOvl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.55rem;background:rgba(8,8,13,.38);text-align:center;padding:.8rem;}
+    .upqSpin{width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.22);border-top-color:#FFFFFF;animation:upqSpin .9s linear infinite;}
+    @keyframes upqSpin{to{transform:rotate(360deg);}}
+    .upqStage{font-family:var(--fm);font-size:.68rem;font-weight:700;letter-spacing:.22em;color:#FFFFFF;text-transform:uppercase;text-shadow:0 1px 6px rgba(0,0,0,.55);}
+    .upqSub{font-size:.7rem;color:rgba(255,255,255,.78);line-height:1.35;text-shadow:0 1px 5px rgba(0,0,0,.5);max-width:92%;}
+    /* LIVE flash — spinner swaps for a green check, card fades itself out
+       (the real, unblurred row replaces it on the next repaint). */
+    .upqCard.upqLive .upqSpin{display:none;}
+    .upqCard.upqLive .upqOvl{background:rgba(8,8,13,.28);}
+    .upqCheck{display:none;width:34px;height:34px;border-radius:50%;background:#22C55E;color:#fff;font-size:1.05rem;line-height:34px;font-weight:800;box-shadow:0 0 18px rgba(34,197,94,.55);}
+    .upqCard.upqLive .upqCheck{display:block;animation:upqPop .35s cubic-bezier(.22,1,.36,1);}
+    @keyframes upqPop{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
+    @media(prefers-reduced-motion:reduce){.upqSpin{animation-duration:2.2s;}.upqCard.upqLive .upqCheck{animation:none;}}
+
+    /* ── Status / check-failed modal — same skeleton + tokens as the
+       legal modal (.legalModal / .lmHead / .lmBody), so it inherits
+       every theme automatically. Opened by tapping a processing card,
+       or auto-opened when a check fails. ── */
+    #upqBackdrop{position:fixed;inset:0;z-index:20120;display:flex;align-items:center;justify-content:center;padding:1.2rem;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .3s ease,visibility 0s linear .3s;isolation:isolate;}
+    #upqBackdrop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 75%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:-1;}
+    #upqBackdrop.open{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s;}
+    #upqBackdrop .legalModal{max-width:440px;}
+    #upqBackdrop.open .legalModal{transform:translateY(0) scale(1);opacity:1;}
+    .upqMBody{padding:1.4rem 1.6rem 1.7rem;background:var(--sur2);overflow-y:auto;}
+    /* \u2500\u2500 Verification tracker \u2014 vertical stepper \u2500\u2500
+       green = passed \u00b7 amber = checking \u00b7 gray = pending \u00b7 red = failed */
+    .upqTrk{display:flex;gap:.85rem;align-items:flex-start;}
+    .upqTrkRail{display:flex;flex-direction:column;align-items:center;flex-shrink:0;align-self:stretch;}
+    .upqTrkIco{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;border:2px solid var(--bdr);color:#fff;background:var(--sur);position:relative;}
+    .upqTrk.pend .upqTrkIco::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--txd);opacity:.55;}
+    .upqTrk.run .upqTrkIco{border-color:#F59E0B;}
+    .upqTrk.run .upqTrkIco::after{content:'';position:absolute;inset:3px;border-radius:50%;border:2.5px solid rgba(245,158,11,.25);border-top-color:#F59E0B;animation:upqSpin .9s linear infinite;}
+    .upqTrk.pass .upqTrkIco{background:#22C55E;border-color:#22C55E;}
+    .upqTrk.fail .upqTrkIco{background:var(--danger-strong);border-color:var(--danger-strong);animation:upqShake .3s ease;}
+    @keyframes upqShake{25%{transform:translateX(-2px);}75%{transform:translateX(2px);}}
+    .upqTrkLine{width:2px;flex:1;min-height:12px;background:var(--bdr);margin:3px 0;border-radius:2px;}
+    .upqTrk.pass .upqTrkLine{background:rgba(34,197,94,.45);}
+    .upqTrkTx{flex:1;min-width:0;padding:.15rem 0 .8rem;}
+    .upqTrkName{font-size:.84rem;font-weight:700;color:var(--tx);line-height:1.3;}
+    .upqTrk.pend .upqTrkName{color:var(--txd);font-weight:600;}
+    .upqTrkSub{font-size:.7rem;color:var(--txd);margin-top:.12rem;line-height:1.35;}
+    .upqTrk.fail .upqTrkSub{color:var(--danger);}
+    .upqTrkState{flex-shrink:0;font-size:.62rem;font-weight:800;letter-spacing:.05em;padding:.2rem .55rem;border-radius:99px;margin-top:.22rem;}
+    .upqTrk.pend .upqTrkState{color:var(--txd);background:var(--sur);border:1px solid var(--bdr);}
+    .upqTrk.run  .upqTrkState{color:#F59E0B;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);}
+    .upqTrk.pass .upqTrkState{color:#22C55E;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);}
+    .upqTrk.fail .upqTrkState{color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-bd);}
+    .upqFin{margin-top:.5rem;padding:.8rem 1rem;border-radius:10px;font-size:.8rem;font-weight:800;text-align:center;letter-spacing:.02em;}
+    .upqFin.busy{color:#F59E0B;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);}
+    .upqFin.ok{color:#22C55E;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);}
+    .upqFin.fail{color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-bd);}
+    /* fail header strip inside the body */
+    .upqFailBox{display:flex;gap:.8rem;align-items:flex-start;background:var(--danger-bg);border:1px solid var(--danger-bd);border-radius:10px;padding:.9rem 1rem;margin-bottom:1.1rem;}
+    .upqFailIco{width:34px;height:34px;border-radius:50%;background:var(--danger-strong);color:#fff;font-weight:800;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .upqFailTitle{font-size:.92rem;font-weight:800;color:var(--tx);}
+    .upqFailReason{font-size:.78rem;color:var(--txd);margin-top:.2rem;line-height:1.45;}
+    .upqFailNote{font-size:.72rem;color:var(--txd);margin-top:1rem;line-height:1.45;}
+    .upqMFoot{display:flex;justify-content:flex-end;padding:.9rem 1.6rem;border-top:1px solid var(--bdr);background:var(--sur);}
+    .upqOkBtn{padding:.6rem 1.6rem;border-radius:8px;border:1px solid var(--pg);background:var(--pdim);color:var(--ps);font-family:var(--fm);font-size:.78rem;letter-spacing:.14em;cursor:pointer;transition:background .2s;}
+    .upqOkBtn:hover{background:color-mix(in srgb,var(--tc) 22%,transparent);}
+
+    /* ── Square thumbnail cropper (shown right after picking a file,
+       before the rest of the upload form) ──
+       .cropStage is a fixed square viewport; the source image sits
+       inside it oversized and is dragged/zoomed by the user, then
+       canvas-rendered into a 640×640 JPEG at confirm time. The full
+       original file is untouched and still uploaded separately as
+       the main/full-view image. */
+    .cropPop{position:fixed;inset:0;z-index:20050;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity .25s ease;isolation:isolate;}
+    /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+    .cropPop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:-1;}
+    .cropPop.open{opacity:1;pointer-events:auto;}
+    .cropBox{background:var(--sur);border:1px solid rgba(var(--pg-rgb),.28);border-radius:16px;width:100%;max-width:420px;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);overflow:hidden;}
+    .cropHead{padding:1.1rem 1.3rem .3rem;}
+    .cropHead h2{font-family:var(--fd);font-size:1.15rem;color:var(--tx);margin:0 0 .2rem;}
+    .cropHead p{font-size:.78rem;color:rgba(var(--tx2-rgb),.62);margin:0;}
+    .cropBody{padding:1.1rem 1.3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+    .cropStage{
+      width:min(320px,100%);aspect-ratio:1;border-radius:12px;
+      overflow:hidden;position:relative;background:#000;
+      border:1px solid rgba(var(--pg-rgb),.12);cursor:grab;touch-action:none;
+    }
+    .cropStage.dragging{cursor:grabbing;}
+    .cropStage img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;}
+    .cropGrid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(var(--pg-rgb),.35) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--pg-rgb),.35) 1px,transparent 1px);background-size:33.33% 33.33%;}
+    .cropFoot{padding:1rem 1.3rem;border-top:1px solid rgba(var(--pg-rgb),.08);display:flex;justify-content:flex-end;gap:.7rem;}
+    /* Thumbnail zoom controls (upload crop only — avatar/banner
+       crop keeps its own plain stage) */
+    .cropZoomRow{display:flex;align-items:center;gap:.6rem;width:min(320px,100%);}
+    .cropZoomBtn{width:30px;height:30px;flex-shrink:0;border-radius:8px;border:1px solid rgba(var(--pg-rgb),.15);background:rgba(var(--pg-rgb),.06);color:var(--tx);font-size:1rem;line-height:1;cursor:pointer;transition:background .2s;}
+    .cropZoomBtn:hover{background:rgba(var(--pg-rgb),.16);}
+    .cropZoom{flex:1;accent-color:var(--pg);cursor:pointer;min-width:0;}
+
+    /* ── Avatar / Banner focal-point cropper ──
+       Same drag-to-reposition language as .cropStage above, but this
+       one's stage aspect-ratio switches between 1:1 (avatar) and a
+       wide banner ratio depending on which is being edited, via the
+       .cropStage--banner modifier. Unlike the gallery thumbnail
+       picker (which only stores a focal point), this one actually
+       renders the crop to a fixed-size canvas on confirm — see
+       confirmPfAvBCrop() — since avatar/banner are singular,
+       replace-on-reupload assets rather than reused thumbnails. */
+    .cropStage--banner{aspect-ratio:16/5;width:min(420px,100%);}
+    @media(max-width:480px){.cropStage--banner{aspect-ratio:3/1;}}

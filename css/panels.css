@@ -1,0 +1,1574 @@
+/* ── panels.css · ads panel, dark-violet overrides, subscription page ── */
+/* AD SHIMMER KEYFRAME Shared by .apCard (Sponsor Panel) */
+@keyframes adShimmer {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ADS PANEL — full-page overlay, horizontal scroll */
+
+/* Full-page panel — same slide-in pattern as #fg */
+#adsPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform .45s cubic-bezier(.22,1,.36,1);
+}
+#adsPanel.open { transform: translateX(0); }
+
+/* Sticky header */
+.apHdr {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--bdr);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  isolation: isolate;
+}
+/* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+.apHdr::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb,var(--bg) 96%,transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: -1;
+}
+.apX {
+  background: none;
+  border: none;
+  color: var(--txd);
+  cursor: pointer;
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: color .2s, transform .2s;
+  flex-shrink: 0;
+  padding: .2rem .4rem;
+}
+.apX:hover { color: var(--pg); transform: translateX(-3px); }
+.apTitle {
+  font-family: var(--fd);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  color: var(--tx);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.apTitle .s { color: var(--pg); font-size: .6em; }
+
+/* Body */
+.apBody {
+  padding: 2rem 1.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Intro label */
+.apIntro {
+  font-family: var(--fm);
+  font-size: .72rem;
+  letter-spacing: .25em;
+  color: var(--txd);
+  text-align: center;
+  padding: .5rem 0 0;
+}
+
+/* Horizontal scroll track wrapper */
+.apTrackWrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;           /* Firefox */
+  cursor: grab;
+}
+.apTrackWrap:active { cursor: grabbing; }
+.apTrackWrap::-webkit-scrollbar { display: none; }
+
+/* The flex row of cards */
+.apTrack {
+  display: flex;
+  gap: 1rem;
+  padding: .25rem .25rem 1rem;
+  width: max-content;
+}
+
+/* Individual square ad card */
+.apCard {
+  flex: 0 0 auto;
+  width: min(80vw, 480px);         /* grows up to 480px on desktop */
+  aspect-ratio: 1 / 1;
+  background: color-mix(in srgb, var(--tc) 5%, var(--sur));
+  border: 1px solid var(--bdr);
+  border-radius: 6px;
+  box-shadow:
+    0 4px 24px rgba(5,3,8,.6),
+    inset 0 1px 0 color-mix(in srgb, var(--tc) 12%, transparent);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  position: relative;
+  transition: border-color .3s, transform .3s, box-shadow .3s;
+}
+.apCard:hover {
+  border-color: var(--bdrh);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(5,3,8,.7), 0 0 20px color-mix(in srgb,var(--tc) 15%,transparent);
+}
+
+/* Card label */
+.apCardLbl {
+  font-family: var(--fm);
+  font-size: .62rem;
+  letter-spacing: .28em;
+  color: var(--txd);
+  opacity: .45;
+  padding: .6rem .8rem .3rem;
+  user-select: none;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* AdSense ins fills remaining space */
+.apCard ins.adsbygoogle {
+  display: block;
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Shimmer while loading */
+.apCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--tc) 7%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: adShimmer 2s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+/* Scroll hint dots */
+.apDots {
+  display: flex;
+  justify-content: center;
+  gap: .45rem;
+  margin-top: .25rem;
+}
+.apDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--bdrh);
+  transition: background .25s, transform .25s;
+}
+.apDot.active {
+  background: var(--pg);
+  transform: scale(1.35);
+  box-shadow: 0 0 6px var(--pg);
+}
+
+/* Scroll hint arrow on first load */
+.apHint {
+  font-family: var(--fm);
+  font-size: .68rem;
+  letter-spacing: .2em;
+  color: var(--txd);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  opacity: .6;
+  animation: apHintFade 3s ease forwards 1s;
+  /* pointer-events applied statically so it isn't blocked by animation timing */
+  pointer-events: none;
+}
+@keyframes apHintFade {
+  0%  { opacity: .6; }
+  100%{ opacity: 0; }
+}
+
+/* ── Sponsor description (styled like About section) ── */
+.apDesc {
+  border-left: 2px solid var(--bdr);
+  padding-left: 2rem;
+  max-width: 800px;
+  width: 100%;
+  margin-top: 1rem;
+}
+.apDescTitle {
+  font-family: var(--fd);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -.02em;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .3rem;
+}
+.apDescTitle .s { color: var(--pg); font-size: .5em; }
+.apDescSub {
+  font-family: var(--fm);
+  font-size: .7rem;
+  letter-spacing: .3em;
+  color: var(--txd);
+  margin-bottom: 1.5rem;
+}
+.apDescTxt {
+  font-family: var(--fb);
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  line-height: 1.85;
+  color: var(--txd);
+  font-style: italic;
+  word-wrap: break-word;
+}
+.apDescTxt strong { color: var(--tx); font-style: normal; font-weight: 400; }
+@media (max-width: 640px) {
+  .apDesc { padding-left: 1.2rem; }
+  .apDescTitle { font-size: clamp(1.6rem, 8vw, 2.4rem); }
+}
+
+
+/* ── Placeholder body — centred empty-state layout ── */
+.pgPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px); /* viewport minus header */
+  padding: 3rem 2rem;
+  text-align: center;
+  gap: 1rem;
+}
+.pgPlaceholder h1 {
+  font-family: var(--fd);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 900;
+  letter-spacing: -.02em;
+  color: var(--tx);
+  line-height: 1.1;
+}
+.pgPlaceholder h1 .s { color: var(--pg); font-size: .45em; vertical-align: middle; }
+.pgPlaceholder p {
+  font-family: var(--fm);
+  font-size: .76rem;
+  letter-spacing: .28em;
+  color: var(--txd);
+  text-transform: uppercase;
+}
+
+/* Dark violet theme — element-specific overrides beyond token scope */
+body{background:var(--bg);}
+
+/* Neon glow + shadow treatment outside the hero */
+.gItem,.adCard,.apCard,.modal,.legalModal,#fgFltPanel,.amCard{
+  box-shadow:0 1px 3px rgba(5,3,8,.3),0 4px 14px rgba(5,3,8,.35)!important;
+}
+.gItem:hover{box-shadow:0 6px 20px rgba(5,3,8,.4)!important;}
+.fltDone:hover,.mBtn:hover,.sCard:hover,.cpBarSend:hover,.upBtn:hover,.fgFltBtn:hover,.fgFltBtn.active,.fltOptH:has(input:checked){box-shadow:none!important;}
+
+/* Overlay / scrim backgrounds used by non-hero panels */
+#fgFltOvr::before{background:color-mix(in srgb,var(--bg) 55%,transparent)!important;}
+.fgHdr::before,.cpHdr::before,.apHdr::before,.subPgHdr::before{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;}
+.fgHdr,.cpHdr,.apHdr,.subPgHdr{border-bottom:1px solid var(--bdr);}
+.cpBar::before{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;}
+.cpBar{border-top:1px solid var(--bdr);}
+#legalBackdrop::before{background:color-mix(in srgb,var(--bg) 75%,transparent)!important;}
+#artModal::before{background:color-mix(in srgb,var(--bg) 85%,transparent)!important;}
+.gOv{background:color-mix(in srgb,var(--bg) 65%,transparent)!important;}
+
+/* Cards / containers get a dark violet surface with a soft border */
+.gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{
+  background:var(--sur);border-color:var(--bdr);
+}
+.awCard{background:var(--sur);border-color:var(--bdr);}
+#artworks .awCard{background:var(--sur);}
+
+/* Full Gallery chrome — re-applies the Community-matched dark tokens
+   on top of the base defaults above. Only the search/filter
+   surfaces + header are touched here; .gItem (the artwork cards) is
+   deliberately left out of this list. */
+#fg .fgHdr::before{background:var(--bg)!important;}
+#fg .fgHdr{border-bottom:1px solid var(--bdr);}
+#fg .fgIntro::before{background:var(--bg)!important;}
+#fg .fgIntro{border-bottom:1px solid var(--bdr);}
+#fgFltPanel{background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%)!important;border-color:var(--bdr)!important;}
+#fgFltPanel .fltOptH{background:color-mix(in srgb,var(--tc) 4%,transparent)!important;border-color:var(--bdr)!important;}
+
+/* Inputs / fields */
+.fgQ,.cpBarInput{background:var(--sur2)!important;color:var(--tx);border-color:var(--bdr)!important;}
+#fg .fgQ{background:var(--sur2)!important;color:var(--tx)!important;border-color:var(--bdr)!important;}
+
+/* Bottom nav — login/avatar chips match the dark/violet nav bar */
+.nLoginBtn,.nAvatarBtn{background:rgba(var(--pg-rgb),.14)!important;}
+
+
+/* ── Re-pin the HERO and elements layered over it to their
+   original dark presentation, but with the accent forced neutral
+   so the title/sparkle never resolve to purple ── */
+#hero,#hero *{
+  --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
+  --tx:var(--vtx);--txd:var(--vtxd);
+  --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
+  --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+  --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+  --pdim:color-mix(in srgb,var(--tc) 12%,transparent);
+}
+/* #intro now matches the Community dark/violet theme — see the
+   base #intro rule near the top of the stylesheet. */
+
+.nLoginBtn{
+  background:rgba(var(--pg-rgb),.14);
+  border:1px solid rgba(var(--pg-rgb),.22);
+  color:rgba(var(--tx2-rgb),.62);
+  width:34px;height:34px;border-radius:50%;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.35);
+  transition:color .25s,border-color .25s,background .25s,box-shadow .25s;
+  flex-shrink:0;
+}
+.nLoginBtn svg{width:16px;height:16px;display:block;}
+.nLoginBtn:hover{color:var(--tx);border-color:rgba(var(--pg-rgb),.4);background:rgba(var(--pg-rgb),.24);}
+
+.nAvatarBtn{
+  /* Identical glass-box to .nLoginBtn */
+  background:rgba(var(--pg-rgb),.14);
+  border:1px solid rgba(var(--pg-rgb),.3);
+  width:34px;height:34px;border-radius:50%;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.35),0 0 0 2px rgba(var(--pg-rgb),.14);
+  transition:border-color .25s,background .25s,box-shadow .25s;
+  flex-shrink:0;
+  /* Avatar glow ring — same accent as comment avatars */
+  outline:none;
+  position:relative;
+  overflow:hidden;
+}
+/* Real profile photo, when set — same img-or-letter pattern used by
+   every avatar chip app-wide (nav, comment bar, subscription card,
+   artwork-viewer author row). */
+.nAvatarBtn img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
+.nAvatarBtn:hover{
+  border-color:rgba(var(--pg-rgb),.45);
+  background:rgba(var(--pg-rgb),.24);
+  box-shadow:0 2px 8px rgba(0,0,0,.35),0 0 0 2px rgba(var(--pg-rgb),.32);
+}
+.nAvatarBtn:focus-visible{
+  outline:2px solid var(--pg);
+  outline-offset:2px;
+}
+/* The letter inside — matches .cpAvatar typography exactly */
+.nAvatarBtn .nAvLetter{
+  font-family:var(--fd);
+  font-size:.82rem;
+  font-weight:700;
+  color:var(--pb);
+  line-height:1;
+  user-select:none;
+  pointer-events:none;
+}
+
+
+/* Subscription page overlay — same pattern as #fg, #communityPage */
+
+/* ── Keyframes ── */
+@keyframes subBorderSpin {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes subGlowPurple {
+  0%,100% { box-shadow: 0 0 0 1px rgba(168,85,247,.22), 0 4px 24px rgba(168,85,247,.10); }
+  50%      { box-shadow: 0 0 0 1px rgba(168,85,247,.48), 0 4px 32px rgba(168,85,247,.20); }
+}
+@keyframes subGlowGold {
+  0%,100% { box-shadow: 0 0 0 1px rgba(234,179,8,.20), 0 4px 24px rgba(234,179,8,.08); }
+  50%      { box-shadow: 0 0 0 1px rgba(234,179,8,.42), 0 4px 32px rgba(234,179,8,.18); }
+}
+@keyframes subCardIn {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes subBadgePulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:.7; }
+}
+@keyframes subModalIn {
+  from { opacity:0; transform:translate(-50%,-50%) scale(.94); }
+  to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
+}
+
+/* ── Overlay panel ── */
+#subPage {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform .45s cubic-bezier(.22,1,.36,1);
+}
+#subPage.open { transform: translateX(0); }
+
+/* ── Header bar — same language as .fgHdr / .cpHdr ── */
+.subPgHdr {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--bdr);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  isolation: isolate;
+}
+/* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+.subPgHdr::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: -1;
+}
+.subPgX {
+  background: none;
+  border: none;
+  color: var(--txd);
+  cursor: pointer;
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: color .2s;
+  flex-shrink: 0;
+  font-family: var(--fm);
+  padding: 0;
+}
+.subPgX:hover { color: var(--tc); }
+.subPgTitle {
+  font-family: var(--fm);
+  font-weight: 600;
+  font-size: .78rem;
+  letter-spacing: .28em;
+  color: var(--txd);
+  text-transform: uppercase;
+}
+.subPgTitle .s { color: var(--pg); }
+
+/* ── Scrollable body
+   Generous side padding on large screens keeps content
+   from stretching edge-to-edge on ultrawide displays.      ── */
+.subPgBdy {
+  padding: 3.5rem 2.5rem 6rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ── Page headline ── */
+.subPgHeadline {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.subPgHeadline h2 {
+  font-family: var(--fd);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -.03em;
+  color: var(--tx);
+  line-height: 1.1;
+  margin-bottom: .55rem;
+}
+.subPgHeadline h2 .s { color: var(--pg); font-size: .5em; vertical-align: middle; }
+.subPgHeadline p {
+  font-family: var(--fm);
+  font-size: .72rem;
+  letter-spacing: .25em;
+  color: var(--txd);
+  text-transform: uppercase;
+}
+
+/* ── Card grid
+   Desktop (≥1200px)  : 4 equal columns, generous gap
+   Laptop  (900–1199px): 4 columns, slightly tighter gap
+   Tablet  (600–899px) : 2 columns, cards taller/richer
+   Mobile  (<600px)    : 1 column, full-width cards           ── */
+.subGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1040px;
+  margin-left: auto;
+  margin-right: auto;
+  gap: 1.5rem;
+  align-items: start; /* cards don't stretch to same height per row */
+}
+/* Short line under the plan name — replaces the old long copy. */
+.subTagline {
+  font-size: .78rem;
+  color: var(--txd);
+  margin: .2rem 0 .35rem;
+}
+/* Premium sits center and reads as the default choice. */
+.subCard--featured { box-shadow: 0 14px 44px rgba(124,58,237,.28); }
+@media (min-width: 900px) {
+  .subCard--featured { transform: scale(1.045); z-index: 1; }
+}
+
+/* ── Card shell ── */
+.subCard {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid var(--bdr);
+  background: var(--sur);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform .28s cubic-bezier(.22,1,.36,1),
+              box-shadow .28s ease,
+              border-color .28s ease;
+  animation: subCardIn .5s ease both;
+  box-shadow: 0 1px 3px rgba(5,3,8,.3), 0 4px 18px rgba(5,3,8,.35);
+  /* Ensure all cards in a row reach the same height */
+  height: 100%;
+}
+.subCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 32px rgba(20,20,30,.12);
+}
+
+/* Animated colour accent top bar */
+.subCard::before {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 100%;
+  flex-shrink: 0;
+  background-size: 300% 100%;
+  animation: subBorderSpin 4s ease infinite;
+}
+.subCard--blue::before   { background: linear-gradient(90deg,#3b82f6,#6366f1,#3b82f6); background-size:300% 100%; }
+.subCard--purple::before { background: linear-gradient(90deg,#a855f7,#ec4899,#a855f7); background-size:300% 100%; }
+.subCard--gold::before   { background: linear-gradient(90deg,#eab308,#f97316,#eab308); background-size:300% 100%; }
+.subCard--green::before  { background: linear-gradient(90deg,#22c55e,#10b981,#22c55e); background-size:300% 100%; }
+
+/* Glow on featured plans */
+.subCard--purple { animation: subCardIn .5s ease both, subGlowPurple 3.5s ease-in-out 1s infinite; }
+.subCard--gold   { animation: subCardIn .5s ease both, subGlowGold   3.5s ease-in-out 1.2s infinite; }
+
+/* Stagger-in delays */
+.subCard:nth-child(1) { animation-delay: .06s; }
+.subCard:nth-child(2) { animation-delay: .14s; }
+.subCard:nth-child(3) { animation-delay: .22s; }
+.subCard:nth-child(4) { animation-delay: .30s; }
+
+/* ── Card inner padding ── */
+.subCardInner {
+  padding: 2rem 1.8rem 1.8rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Badge ── */
+.subBadge {
+  display: inline-block;
+  font-family: var(--fm);
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  padding: .24em .8em;
+  border-radius: 99px;
+  margin-bottom: 1rem;
+  width: fit-content;
+  animation: subBadgePulse 2.5s ease-in-out infinite;
+}
+.subBadge--purple {
+  background: rgba(168,85,247,.08);
+  border: 1px solid rgba(168,85,247,.32);
+  color: #a855f7;
+}
+.subBadge--gold {
+  background: rgba(234,179,8,.09);
+  border: 1px solid rgba(234,179,8,.38);
+  color: #b45309;
+}
+
+/* ── Plan name ── */
+.subPlanName {
+  font-family: var(--fm);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  margin-bottom: .45rem;
+}
+.subCard--blue   .subPlanName { color: #2563eb; }
+.subCard--purple .subPlanName { color: #a855f7; }
+.subCard--gold   .subPlanName { color: #b45309; }
+.subCard--green  .subPlanName { color: #15803d; }
+
+/* ── Price ── */
+.subPrice {
+  font-family: var(--fd);
+  font-size: clamp(2rem, 2.8vw, 2.8rem);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: 1;
+  color: var(--tx);
+  margin-bottom: .25rem;
+}
+.subPricePer {
+  font-family: var(--fm);
+  font-size: .62rem;
+  letter-spacing: .2em;
+  color: var(--txd);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Divider ── */
+.subCardDiv {
+  height: 1px;
+  background: var(--bdr);
+  margin-bottom: 1.4rem;
+  flex-shrink: 0;
+}
+
+/* ── Feature list ── */
+.subFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.8rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  flex: 1; /* pushes button to bottom of card */
+}
+.subFeatures li {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  font-family: var(--fb, sans-serif);
+  font-size: .84rem;
+  line-height: 1.5;
+  color: var(--txd);
+}
+.subFeatures li::before {
+  content: '✓';
+  flex-shrink: 0;
+  margin-top: .08em;
+  font-size: .72rem;
+  font-weight: 700;
+}
+.subCard--blue   .subFeatures li::before { color: #3b82f6; }
+.subCard--purple .subFeatures li::before { color: #a855f7; }
+.subCard--gold   .subFeatures li::before { color: #eab308; }
+.subCard--green  .subFeatures li::before { color: #22c55e; }
+
+/* ── CTA button — always pinned to card bottom via flex ── */
+.subBtn {
+  width: 100%;
+  padding: .82rem 1rem;
+  border: none;
+  border-radius: 9px;
+  font-family: var(--fm);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+.subBtn:hover   { transform: translateY(-2px); filter: brightness(1.08); }
+.subBtn:active  { transform: scale(.97); }
+.subBtn:focus-visible { outline: 2px solid var(--pg); outline-offset: 3px; }
+
+.subBtn--blue   { background: linear-gradient(135deg,#2563eb,#4f46e5); color:#eff6ff; box-shadow:0 3px 14px rgba(59,130,246,.28); }
+.subBtn--purple { background: linear-gradient(135deg,#9333ea,#ec4899); color:#fdf4ff; box-shadow:0 3px 14px rgba(168,85,247,.30); }
+.subBtn--gold   { background: linear-gradient(135deg,#d97706,#ea580c); color:#fffbeb; box-shadow:0 3px 14px rgba(234,179,8,.26); }
+.subBtn--green  { background: linear-gradient(135deg,#16a34a,#0d9488); color:#f0fdf4; box-shadow:0 3px 14px rgba(34,197,94,.24); }
+.subBtn--blue:hover   { box-shadow:0 5px 22px rgba(59,130,246,.42); }
+.subBtn--purple:hover { box-shadow:0 5px 22px rgba(168,85,247,.46); }
+.subBtn--gold:hover   { box-shadow:0 5px 22px rgba(234,179,8,.40); }
+.subBtn--green:hover  { box-shadow:0 5px 22px rgba(34,197,94,.38); }
+
+/* SUBSCRIPTION RESPONSIVE RULES */
+
+/* Laptop — slight padding reduction, gap tightens */
+@media (max-width: 1199px) {
+  .subPgBdy    { padding: 3rem 2rem 5rem; }
+  .subGrid     { gap: 1.2rem; }
+  .subCardInner{ padding: 1.8rem 1.5rem 1.6rem; }
+}
+
+/* Tablet landscape (900px) — with three cards a 2-column grid strands
+   one card alone on the second row, so stack them instead. */
+@media (max-width: 899px) {
+  .subGrid {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .subPgBdy { padding: 2.5rem 1.8rem 5rem; }
+  .subPrice  { font-size: clamp(2rem, 4vw, 2.6rem); }
+}
+
+/* Tablet portrait (700px) — still 2 columns, tighter padding */
+@media (max-width: 699px) {
+  .subGrid {
+    max-width: 100%;
+    gap: 1rem;
+  }
+  .subCardInner { padding: 1.6rem 1.3rem 1.4rem; }
+  .subPgBdy     { padding: 2rem 1.2rem 5rem; }
+}
+
+/* Mobile (520px) — single column, full bleed */
+@media (max-width: 519px) {
+  .subGrid          { grid-template-columns: 1fr; gap: .85rem; }
+  .subPgBdy         { padding: 1.8rem 1rem 4rem; }
+  .subPgHeadline    { margin-bottom: 2rem; }
+  .subCardInner     { padding: 1.5rem 1.2rem 1.3rem; }
+  .subFeatures li   { font-size: .8rem; }
+  .subModalCard     { padding: 1.8rem 1.3rem 1.4rem; }
+}
+
+/* ── "Coming Soon" modal ── */
+#subModal {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .22s ease, visibility .22s ease;
+  isolation: isolate;
+}
+/* FIX: background + blur split onto ::before, same decoupling as
+   #bnNav — stops the flash if the page scrolls behind this while
+   it's open. */
+#subModal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb,var(--bg) 42%,transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: -1;
+}
+#subModal.subModal--open {
+  opacity: 1;
+  visibility: visible;
+}
+.subModalCard {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: var(--sur);
+  border: 1px solid var(--bdr);
+  border-radius: 16px;
+  padding: 2.5rem 2.2rem 2rem;
+  max-width: 420px;
+  width: calc(100% - 2.5rem);
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(5,3,8,.3), 0 12px 40px rgba(5,3,8,.5);
+  animation: subModalIn .28s cubic-bezier(.22,1,.36,1) both;
+}
+.subModalIcon  { font-size: 2.4rem; display: block; margin-bottom: .9rem; }
+.subModalTitle {
+  font-family: var(--fd);
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  color: var(--tx);
+  margin-bottom: .55rem;
+}
+.subModalMsg {
+  font-family: var(--fb, sans-serif);
+  font-size: .88rem;
+  line-height: 1.65;
+  color: var(--txd);
+  margin-bottom: 1.6rem;
+}
+.subModalClose {
+  background: var(--tc);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--fm);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  padding: .8rem 2.2rem;
+  cursor: pointer;
+  transition: transform .18s, filter .18s;
+  box-shadow: 0 3px 14px rgba(20,20,30,.18);
+}
+.subModalClose:hover  { transform: translateY(-2px); filter: brightness(1.1); }
+.subModalClose:active { transform: scale(.97); }
+.subModalClose:focus-visible { outline: 2px solid var(--pg); outline-offset: 3px; }
+
+
+/* ── Outer wrapper ── */
+.faqSection {
+  padding: 4rem 0 3rem;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ── Section header ── */
+.faqHdr {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+.faqTitle {
+  font-family: var(--fd);
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 900;
+  letter-spacing: -.03em;
+  color: var(--tx);
+  line-height: 1.1;
+  margin-bottom: .7rem;
+}
+.faqTitle .s {
+  color: var(--pg);
+  font-size: .5em;
+  vertical-align: middle;
+}
+.faqSubtitle {
+  font-family: var(--fm);
+  font-size: .7rem;
+  letter-spacing: .22em;
+  color: var(--txd);
+  text-transform: uppercase;
+  line-height: 1.7;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* ── Top divider above first category ── */
+.faqSection .faqTopDiv {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--bdr) 20%, var(--bdr) 80%, transparent);
+  margin-bottom: 2.5rem;
+}
+
+/* ── Category group ── */
+.faqCategory {
+  margin-bottom: 2.8rem;
+}
+.faqCategory:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Category heading label ── */
+.faqCatLabel {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  font-family: var(--fm);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .3em;
+  color: var(--pg);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.faqCatLabel::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--bdr), transparent);
+}
+.faqCatLabel .faqCatIco {
+  font-size: .75em;
+  opacity: .7;
+}
+
+/* ── Accordion item ── */
+.faqItem {
+  border: 1px solid var(--bdr);
+  border-radius: 8px;
+  background: var(--sur);
+  margin-bottom: .45rem;
+  overflow: hidden;
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.faqItem:last-child {
+  margin-bottom: 0;
+}
+.faqItem:hover {
+  border-color: var(--bdrh);
+  box-shadow: 0 2px 12px rgba(20,20,30,.06);
+}
+.faqItem.faq--open {
+  border-color: var(--bdrh);
+  box-shadow: 0 2px 16px rgba(20,20,30,.08);
+}
+
+/* ── Question trigger button ── */
+.faqQ {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.05rem 1.3rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  outline: none;
+  transition: background .2s ease;
+}
+.faqQ:hover {
+  background: color-mix(in srgb, var(--tc) 4%, transparent);
+}
+.faqQ:focus-visible {
+  outline: 2px solid var(--pg);
+  outline-offset: -2px;
+  border-radius: 7px;
+}
+.faqItem.faq--open .faqQ {
+  background: color-mix(in srgb, var(--tc) 3%, transparent);
+}
+
+/* Question text */
+.faqQTxt {
+  font-family: var(--fb);
+  font-size: .92rem;
+  font-weight: 500;
+  color: var(--tx);
+  line-height: 1.5;
+  flex: 1;
+}
+.faqItem.faq--open .faqQTxt {
+  color: var(--ps);
+}
+
+/* +/× icon */
+.faqIcon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--bdr);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txd);
+  font-size: .82rem;
+  line-height: 1;
+  transition: transform .32s cubic-bezier(.22,1,.36,1),
+              background .25s ease,
+              border-color .25s ease,
+              color .25s ease;
+  font-family: var(--fm);
+  font-weight: 700;
+  user-select: none;
+}
+.faqItem.faq--open .faqIcon {
+  transform: rotate(45deg);
+  background: color-mix(in srgb, var(--tc) 10%, transparent);
+  border-color: var(--bdrh);
+  color: var(--ps);
+}
+
+/* ── Answer panel — height animated via max-height ── */
+.faqA {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .38s cubic-bezier(.22,1,.36,1);
+}
+.faqItem.faq--open .faqA {
+  max-height: 400px; /* large enough for any answer */
+}
+
+/* Answer body */
+.faqATxt {
+  font-family: var(--fb);
+  font-size: .89rem;
+  line-height: 1.75;
+  color: var(--txd);
+  padding: 0 1.3rem 1.1rem 1.3rem;
+  border-top: 1px solid var(--bdr);
+  padding-top: .85rem;
+}
+
+/* ── Between-category divider ── */
+.faqCatDiv {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--bdr) 30%, var(--bdr) 70%, transparent);
+  margin: 2.8rem 0;
+}
+
+/* FAQ RESPONSIVE RULES */
+@media (max-width: 699px) {
+  .faqSection { padding: 3rem 0 2rem; }
+  .faqHdr     { margin-bottom: 2.5rem; }
+  .faqTitle   { font-size: clamp(1.5rem, 6vw, 2rem); }
+  .faqQ       { padding: .9rem 1.1rem; gap: .75rem; }
+  .faqQTxt    { font-size: .87rem; }
+  .faqATxt    { font-size: .85rem; padding: 0 1.1rem .95rem; padding-top: .75rem; }
+}
+@media (max-width: 519px) {
+  .faqSection { padding: 2.5rem 0 1.5rem; }
+  .faqHdr     { margin-bottom: 2rem; }
+  .faqQ       { padding: .85rem 1rem; }
+  .faqQTxt    { font-size: .84rem; }
+  .faqATxt    { font-size: .83rem; padding: 0 1rem .9rem; padding-top: .7rem; }
+  .faqCatDiv  { margin: 2rem 0; }
+  .faqCategory{ margin-bottom: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .faqA       { transition: none; }
+  .faqIcon    { transition: none; }
+}
+
+
+
+
+
+/* ── Keyframes ── */
+@keyframes zeoBubbleIn {
+  0%   { opacity: 0; transform: translateY(-8px) scale(.95); }
+  60%  { opacity: 1; transform: translateY(2px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes zeoBubbleOut {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-6px) scale(.95); }
+}
+@keyframes zeoBubbleIdle {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-3px); }
+}
+@keyframes zeoMsgIn {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Fixed spawn point — sits directly to the left of the
+   notification button, top row, same dimensions as .hNotifBtn.
+   No drag, no localStorage position, no return-home glide, no
+   idle animation — static, exactly like the notification icon. ── */
+#zeoBtn {
+  position: fixed;
+  top: clamp(1rem, 2.6vw, 2rem);
+  right: calc(clamp(1rem, 2.6vw, 2rem) + clamp(42px, 8vw, 54px) + 10px);
+  left: auto;
+  bottom: auto;
+  width: clamp(42px, 8vw, 54px);
+  height: clamp(42px, 8vw, 54px);
+  border-radius: 50%;
+  border: 2px solid rgba(99,179,237,.45);
+  box-shadow: 0 0 18px rgba(99,179,237,.35), 0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(var(--pg-rgb),.12);
+  cursor: pointer;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #90cdf4;
+  font-size: 1.25rem;
+  overflow: hidden; /* clips avatar image to circle */
+  padding: 0;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, opacity .25s ease;
+  user-select: none;
+  isolation: isolate;
+  /* FIX: promote to its own GPU layer up front, same reasoning as
+     #bnNav / .fpFloat. */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+}
+/* FIX: background + blur split onto ::before, same decoupling as
+   #bnNav / .fpFloat, so the fixed positioning layer isn't also
+   the layer WebKit has to re-snapshot the blur for every scroll
+   frame. Avatar <img> (normal in-flow child) still paints above
+   this negative-z-index layer, so it's visually unchanged. */
+#zeoBtn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Background shows while avatar image loads or as fallback */
+  background: linear-gradient(135deg, rgba(20,30,55,.95) 0%, rgba(15,22,44,.98) 100%);
+  transition: background .3s ease;
+  z-index: -1;
+}
+#zeoBtn:hover::before {
+  background: linear-gradient(135deg, rgba(28,40,70,.95) 0%, rgba(20,30,58,.98) 100%);
+}
+#zeoBtn:active {
+  transform: scale(.95) translateZ(0);
+}
+
+/* Tooltip on hover — sits below the button since the button now
+   lives at the top of the screen (above would clip off-viewport) ── */
+#zeoBtn .zeoTooltip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,30,55,.9);
+  border: 1px solid rgba(99,179,237,.28);
+  color: #90cdf4;
+  font-size: .7rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: .05em;
+  padding: .35rem .75rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+}
+#zeoBtn:hover .zeoTooltip {
+  opacity: 1;
+}
+
+
+/* ── Bot avatar image ── */
+.zeoBtnAvatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+  /* Crisp rendering on all DPR screens */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ── Speech bubble — sits below the bot's fixed spawn point,
+   tail points up at him so it reads as him speaking downward ── */
+.zeoBubble {
+  position: fixed;
+  top: calc(clamp(1rem, 2.6vw, 2rem) + clamp(42px, 8vw, 54px) + 12px);
+  right: calc(clamp(1rem, 2.6vw, 2rem) + clamp(42px, 8vw, 54px) + 10px);
+  left: auto;
+  bottom: auto;
+  z-index: 8999;
+  border: 1px solid rgba(99,179,237,.28);
+  color: #e8f4fd;
+  font-size: .82rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: .55rem 1rem;
+  border-radius: 14px;
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(99,179,237,.22), 0 8px 28px rgba(0,0,0,.22);
+  /* State: hidden by default */
+  opacity: 0;
+  transform: translateY(0) scale(.95);
+  isolation: isolate;
+}
+/* FIX: background + blur split onto ::before, same decoupling as
+   #bnNav — a fixed element that pops up mid-scroll is exactly the
+   case that flashes without this. Sits behind both the text content
+   and the ::after tail. */
+.zeoBubble::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(20,30,55,.92) 0%, rgba(30,42,72,.92) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: -1;
+}
+.zeoBubble.zbVisible {
+  animation: zeoBubbleIn .3s cubic-bezier(.34,1.2,.64,1) forwards,
+             zeoBubbleIdle 2.4s ease-in-out .3s infinite;
+}
+.zeoBubble.zbHiding {
+  animation: zeoBubbleOut .28s ease-in-out forwards;
+}
+/* Tail — points up toward the bot sitting above the bubble */
+.zeoBubble::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 20px;
+  left: auto;
+  width: 12px;
+  height: 7px;
+  clip-path: polygon(0 100%, 100% 100%, 50% 0);
+  background: rgba(20,30,55,.92);
+  filter: drop-shadow(0 -2px 3px rgba(99,179,237,.18));
+}
+
+/* ── Full-page AI Assistant panel — same slide-in convention as
+   the rest of the site's full pages (#fg, #profilePage, #communityPage):
+   fixed, covers the whole viewport, slides in from the right via a
+   plain .open class toggle rather than a floating popup. ── */
+#zeoPage {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: linear-gradient(155deg, rgba(15,22,44,.98) 0%, rgba(18,26,52,.99) 100%);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .4s cubic-bezier(.22,1,.36,1);
+  overflow: hidden;
+}
+#zeoPage.open {
+  transform: translateX(0);
+}
+
+/* Panel header */
+.zeoChatHeader {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: 1rem 1.1rem .9rem;
+  border-bottom: 1px solid rgba(99,179,237,.12);
+  background: rgba(var(--pg-rgb),.03);
+  flex-shrink: 0;
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}
+.zeoChatHeaderAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a2a4a, #2a4080);
+  border: 1px solid rgba(99,179,237,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #90cdf4;
+  flex-shrink: 0;
+}
+.zeoChatHeaderInfo {
+  flex: 1;
+  min-width: 0;
+}
+.zeoChatHeaderName {
+  font-size: .88rem;
+  font-weight: 600;
+  color: #e8f4fd;
+  letter-spacing: .01em;
+  line-height: 1.2;
+}
+.zeoChatHeaderStatus {
+  font-size: .7rem;
+  color: rgba(144,205,244,.6);
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  margin-top: .15rem;
+}
+.zeoChatHeaderStatus::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #68d391;
+  flex-shrink: 0;
+}
+.zeoChatCloseBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(var(--pg-rgb),.06);
+  border: 1px solid rgba(var(--pg-rgb),.1);
+  color: rgba(232,244,253,.55);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .85rem;
+  transition: background .2s, color .2s, border-color .2s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.zeoChatCloseBtn:hover {
+  background: rgba(var(--pg-rgb),.12);
+  color: #e8f4fd;
+  border-color: rgba(99,179,237,.3);
+}
+
+/* Body / messages */
+.zeoChatBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,179,237,.2) transparent;
+}
+.zeoChatBody::-webkit-scrollbar { width: 4px; }
+.zeoChatBody::-webkit-scrollbar-track { background: transparent; }
+.zeoChatBody::-webkit-scrollbar-thumb { background: rgba(99,179,237,.25); border-radius: 4px; }
+
+/* Message bubble */
+.zeoMsg {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  animation: zeoMsgIn .28s ease-out forwards;
+}
+.zeoMsgBubble {
+  background: rgba(var(--pg-rgb),.06);
+  border: 1px solid rgba(99,179,237,.14);
+  border-radius: 14px 14px 14px 4px;
+  padding: .75rem .9rem;
+  color: #d4e8f8;
+  font-size: .85rem;
+  line-height: 1.6;
+  white-space: pre-line;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  max-width: 100%;
+}
+
+/* Option buttons */
+.zeoOptions {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding-top: .15rem;
+}
+.zeoOption {
+  background: rgba(99,179,237,.08);
+  border: 1px solid rgba(99,179,237,.22);
+  border-radius: 10px;
+  color: #90cdf4;
+  font-size: .82rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: .65rem .95rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background .18s, border-color .18s, transform .15s;
+  line-height: 1.4;
+}
+.zeoOption:hover {
+  background: rgba(99,179,237,.17);
+  border-color: rgba(99,179,237,.42);
+  transform: translateX(3px);
+}
+.zeoOption:active {
+  transform: translateX(3px) scale(.98);
+}
+
+/* Category grid */
+.zeoCategories {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  padding-top: .15rem;
+}
+.zeoCatCard {
+  background: rgba(99,179,237,.07);
+  border: 1px solid rgba(99,179,237,.18);
+  border-radius: 12px;
+  padding: .7rem .9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  transition: background .18s, border-color .18s, transform .15s;
+}
+.zeoCatCard:hover {
+  background: rgba(99,179,237,.15);
+  border-color: rgba(99,179,237,.38);
+  transform: translateX(3px);
+}
+.zeoCatIcon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+.zeoCatLabel {
+  font-size: .84rem;
+  font-weight: 600;
+  color: #c6e4f8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.2;
+}
+.zeoCatDesc {
+  font-size: .74rem;
+  color: rgba(144,205,244,.55);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  margin-top: .12rem;
+}
+
+/* Coming soon placeholder */
+.zeoComingSoon {
+  text-align: center;
+  padding: 1.5rem .5rem;
+  color: rgba(144,205,244,.45);
+  font-size: .8rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  border: 1px dashed rgba(99,179,237,.18);
+  border-radius: 12px;
+  line-height: 1.6;
+}
+.zeoComingSoon span {
+  display: block;
+  font-size: 1.6rem;
+  margin-bottom: .5rem;
+  opacity: .6;
+}
+
+/* Back button */
+.zeoBackBtn {
+  background: rgba(var(--pg-rgb),.05);
+  border: 1px solid rgba(var(--pg-rgb),.1);
+  border-radius: 8px;
+  color: rgba(232,244,253,.5);
+  font-size: .74rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: .45rem .8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  transition: background .18s, color .18s;
+  margin-top: .3rem;
+  align-self: flex-start;
+}
+.zeoBackBtn:hover {
+  background: rgba(var(--pg-rgb),.1);
+  color: #c6e4f8;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .zeoBubble {
+    font-size: .78rem;
+    max-width: calc(100vw - 32px);
+    white-space: normal;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   DARK VIOLET FIX — remaining white-theme leftovers
+   Covers: Legal modal (Privacy/Terms/Cookie/Refund policy),
+   the .mBtn.sec buttons.
+   These sit outside #fg's scope so they never picked up the
+   dark-violet tokens — they were still using the old white
+   :root defaults. Re-declaring the tokens locally (same pattern
+   as #fg) makes every child that already styles
+   itself with var(--bg)/var(--sur)/var(--tx)/etc. repaint dark.
+   ══════════════════════════════════════════════════════════════ */
+#legalBackdrop{
+  --bg:inherit;--sur:inherit;--sur2:inherit;
+  --bdr:inherit;--bdrh:inherit;
+  --tx:inherit;--txd:inherit;
+  --pg:inherit;--pb:inherit;--ps:inherit;
+  --pdim:inherit;
+}
+#legalBackdrop::before{background:color-mix(in srgb,var(--bg) 75%,transparent)!important;}
+.legalModal{
+  background:var(--sur)!important;
+  border-color:var(--bdr)!important;
+  box-shadow:0 0 60px rgba(var(--pg-rgb),.12),0 32px 64px rgba(5,3,8,.7),inset 0 1px 0 rgba(var(--pg-rgb),.1)!important;
+}
+.lmHead{border-bottom-color:var(--bdr)!important;background:linear-gradient(to right,rgba(var(--pg-rgb),.06),transparent)!important;}
+.lmTitle{color:var(--tx)!important;}
+.lmClose{border-color:var(--bdr)!important;color:var(--txd)!important;background:none!important;}
+.lmClose:hover{border-color:var(--pg)!important;color:var(--ps)!important;background:var(--pdim)!important;}
+.lmBody{background:var(--sur2)!important;}
+.lmBody h2{color:var(--ps)!important;}
+.lmBody h3,.lmBody h4{color:var(--tx)!important;}
+.lmBody p,.lmBody li{color:var(--txd)!important;}
+.lmBody strong{color:var(--tx)!important;}
+.lmDate{color:var(--ps)!important;background:rgba(var(--pg-rgb),.1)!important;border-color:var(--bdr)!important;}
+.mBtn.sec{color:var(--txd)!important;border-color:var(--bdr)!important;}
+
+/* ── "Coming Soon" subscription popup — was hardcoded white ── */
+.subModalCard{
+  background:var(--sur)!important;
+  border-color:var(--bdr)!important;
+  box-shadow:0 0 60px rgba(var(--pg-rgb),.12),0 32px 64px rgba(5,3,8,.7)!important;
+}
+.subModalTitle{color:var(--tx)!important;}
+.subModalMsg{color:rgba(var(--tx2-rgb),.62)!important;}
+
+/* ── Cookie consent banner — was hardcoded white ── */
+#cookieBanner{
+  background:var(--sur)!important;
+  border-color:var(--bdrh)!important;
+  box-shadow:0 2px 8px rgba(5,3,8,.3),0 8px 28px rgba(5,3,8,.4),0 20px 48px rgba(5,3,8,.35)!important;
+}
+.ckTitle{color:var(--tx)!important;}
+.ckBody{color:rgba(var(--tx2-rgb),.62)!important;}
+.ckLink{color:var(--pg)!important;}
+.ckLink:hover{color:var(--ps)!important;border-bottom-color:var(--bdrh)!important;}
+.ckAccept{
+  background:var(--pg)!important;
+  border-color:var(--pg)!important;
+  color:var(--text-on-accent)!important;
+  box-shadow:0 2px 10px rgba(var(--pg-rgb),.3)!important;
+}
+.ckAccept:hover{background:var(--ps)!important;border-color:var(--ps)!important;color:var(--sur)!important;box-shadow:0 4px 18px rgba(var(--pg-rgb),.4)!important;}
+.ckReject{background:transparent!important;border-color:var(--bdr)!important;color:rgba(var(--tx2-rgb),.62)!important;}
+.ckReject:hover{background:rgba(var(--pg-rgb),.06)!important;border-color:var(--bdrh)!important;color:var(--ps)!important;}
+
+/* ══════════════════════════════════════════════════════════════
+   HIDDEN-PANEL VISIBILITY FIX (a11y + paint performance)
+   Every slide-in page was parked off-screen with translateX(100%)
+   only — still focusable by keyboard Tab, still exposed to screen
+   readers (several are aria-modal dialogs), and still composited
+   by the browser on every frame. Toggling `visibility` with a
+   delay equal to each panel's slide duration removes closed
+   panels from the a11y tree, tab order, and the paint pipeline
+   while keeping the open/close animations pixel-identical —
+   the exact pattern #artModal already uses.
+   ══════════════════════════════════════════════════════════════ */
+#fg,#communityPage,#adsPanel,#subPage,#profilePage,#admPage,#notifPage,#pfMyWorkPage,#authMod{
+  visibility:hidden;
+  transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s linear .45s;
+}
+#pfEditPage,#zeoPage{
+  visibility:hidden;
+  transition:transform .4s cubic-bezier(.22,1,.36,1),visibility 0s linear .4s;
+}
+#fg.open,#communityPage.open,#adsPanel.open,#subPage.open,#profilePage.open,#admPage.open,#notifPage.open,#pfMyWorkPage.open,#authMod.open,#pfEditPage.open,#zeoPage.open{
+  visibility:visible;
+  transition-delay:0s,0s;
+}
+

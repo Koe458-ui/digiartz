@@ -1,0 +1,1173 @@
+/* ── widgets.css · friends search, ripple, cookie banner, theme page, engagement buttons ── */
+/* ── Friends: user search ── */
+.dmSearchWrap{
+  position:relative;display:flex;align-items:center;
+  margin:0 0 1rem;
+}
+.dmSearchWrap svg{
+  position:absolute;left:.85rem;width:15px;height:15px;
+  color:var(--tc);pointer-events:none;
+}
+.dmSearchInput{
+  width:100%;font-family:var(--fb);font-size:.88rem;
+  color:var(--tx);background:var(--sur);
+  border:1px solid var(--bdr);border-radius:10px;
+  padding:.65rem .9rem .65rem 2.3rem;
+  transition:border-color .2s;
+}
+.dmSearchInput::placeholder{color:var(--txd);}
+.dmSearchInput:focus{outline:none;border-color:var(--pg);}
+.dmSearchNote{
+  font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;
+  color:var(--txd);text-align:center;padding:.9rem 0;
+}
+.dmResults{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1.2rem;}
+.dmResults:empty,.dmConvoHead:has(+ #dmConvoList:empty){display:none;}
+.dmGo{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;
+  color:var(--pb);flex-shrink:0;display:flex;align-items:center;gap:.3rem;
+}
+.dmConvoHead{
+  font-family:var(--fm);font-size:.64rem;letter-spacing:.22em;
+  color:var(--txd);margin:.4rem 0 .7rem;
+}
+.dmPreview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txd);}
+.dmWhen{font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:var(--tc);flex-shrink:0;margin-left:.5rem;}
+/* ── Thread view ── */
+#dmChatView .cpBody{display:flex;flex-direction:column;gap:.55rem;}
+.dmMsg{
+  max-width:min(78%,520px);width:fit-content;
+  padding:.5rem .75rem .32rem .8rem;border-radius:14px;
+  font-family:var(--fb);font-size:.9rem;line-height:1.45;
+  color:var(--tx);overflow-wrap:anywhere;white-space:pre-wrap;
+  box-shadow:0 1px 1px rgba(0,0,0,.12);
+}
+.dmMsg--them{background:var(--sur2);border:1px solid var(--bdr);}
+.dmMsg--them:not(.dmMsg--cont){border-bottom-left-radius:4px;}
+.dmMsg--me{
+  margin-left:auto;background:var(--pdim);
+  border:1px solid rgba(var(--pg-rgb),.35);
+}
+.dmMsg--me:not(.dmMsg--cont){border-bottom-right-radius:4px;}
+/* grouped follow-up message — tighter to the previous bubble */
+.dmMsg--cont{margin-top:-.32rem;}
+.dmMsgTime{
+  float:right;font-family:var(--fm);font-size:.56rem;
+  letter-spacing:.04em;color:var(--txd);
+  margin:.65em -.05em 0 .65em;white-space:nowrap;user-select:none;
+}
+.dmBar{
+  display:flex;align-items:center;gap:.6rem;flex-shrink:0;
+  border-top:1px solid var(--bdr);
+  padding:.75rem 1rem calc(.75rem + env(safe-area-inset-bottom));
+  background:color-mix(in srgb,var(--sur) 92%,transparent);
+}
+.dmBar .cpBarInput{flex:1;}
+/* ── Friend gate + friend-action buttons ──
+   .dmGate replaces the composer until the pair are friends. */
+.dmGate{
+  flex-shrink:0;border-top:1px solid var(--bdr);
+  padding:1rem 1.2rem calc(1rem + env(safe-area-inset-bottom,0px));
+  background:color-mix(in srgb,var(--sur) 92%,transparent);
+  display:none;flex-direction:column;align-items:center;gap:.65rem;text-align:center;
+}
+.dmGateTxt{font-family:var(--fm);font-size:.64rem;letter-spacing:.14em;color:var(--txd);line-height:1.6;}
+.dmGateRow{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;}
+.frBtn{
+  font-family:var(--fm);font-size:.64rem;letter-spacing:.14em;
+  padding:.55rem 1.15rem;border-radius:999px;cursor:pointer;
+  background:var(--pg);border:1px solid var(--pg);color:var(--text-on-accent);
+  transition:filter .2s,transform .15s,background .2s,border-color .2s;
+  white-space:nowrap;
+}
+.frBtn:hover{filter:brightness(1.08);}
+.frBtn:active{transform:scale(.96);}
+.frBtn--ghost{background:transparent;color:var(--tx);border:1px solid var(--bdrh);}
+.frBtn--ghost:hover{border-color:var(--pg);filter:none;background:var(--pdim);}
+.frBtn--danger{background:transparent;border:1px solid rgba(239,68,68,.45);color:#ef8080;}
+.frBtn--danger:hover{background:rgba(239,68,68,.12);filter:none;}
+.frRowBtns{display:flex;gap:.4rem;flex-shrink:0;align-items:center;margin-left:auto;}
+.frRowBtns .frBtn{padding:.42rem .8rem;font-size:.58rem;}
+.dmHint{
+  font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;
+  color:var(--txd);text-align:center;padding:.35rem 0 0;
+}
+@media(prefers-reduced-motion:no-preference){
+  .dmMsg{animation:dmIn .18s ease both;}
+  @keyframes dmIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+}
+  /* Kill Android blue tap flash site-wide */
+  *{-webkit-tap-highlight-color:transparent;}
+
+  /* ── Ripple host layer ──
+     position:fixed covers full viewport.
+     NO overflow:hidden — that was V1's fatal flaw (clips scaled transforms).
+     pointer-events:none so it never intercepts any clicks.             */
+  #rippleHost{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    pointer-events:none;
+    z-index:999999999;
+  }
+
+  /* ── Keyframe: scale 0→2, opacity 0.8→0 ──
+     "both" fill-mode applies the from-frame instantly on attachment,
+     preventing any single-frame flash at scale(1)/opacity(1).
+     NO static transform or opacity on .rpl — the keyframe owns them
+     entirely, so there is nothing for !important or cascade to fight. */
+  @keyframes rplGrow{
+    from{ transform:scale(0);   opacity:0.5; }
+    to  { transform:scale(1.2); opacity:0;    }
+  }
+
+#cookieBanner {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  z-index: 3000;
+  width: min(400px, calc(100vw - 3rem));
+  background: var(--sur);
+  border: 1px solid var(--bdrh);
+  border-radius: 14px;
+  box-shadow:
+    0 2px 8px  rgba(5,3,8,.3),
+    0 8px 28px rgba(5,3,8,.4),
+    0 20px 48px rgba(5,3,8,.35);
+  padding: 1.4rem 1.5rem 1.3rem;
+  opacity: 0;
+  transform: translateY(16px);
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    opacity   .38s cubic-bezier(.22,1,.36,1),
+    transform .38s cubic-bezier(.22,1,.36,1),
+    visibility 0s linear .38s;
+}
+#cookieBanner.ck--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
+  transition:
+    opacity   .38s cubic-bezier(.22,1,.36,1),
+    transform .38s cubic-bezier(.22,1,.36,1),
+    visibility 0s linear 0s;
+}
+#cookieBanner.ck--dismiss {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    opacity   .28s cubic-bezier(.4,0,1,1),
+    transform .28s cubic-bezier(.4,0,1,1),
+    visibility 0s linear .28s;
+}
+.ckInner {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.ckText {
+  display: flex;
+  flex-direction: column;
+  gap: .42rem;
+}
+.ckTitle {
+  font-family: var(--fm);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .22em;
+  color: var(--tx);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: .48rem;
+}
+.ckIcon {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+}
+.ckBody {
+  font-family: var(--fb);
+  font-size: .845rem;
+  line-height: 1.67;
+  color: var(--txd);
+}
+.ckLink {
+  color: var(--pg);
+  text-decoration: none;
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  display: inline;
+  transition: color .2s, border-color .2s;
+}
+.ckLink:hover {
+  color: var(--ps);
+  border-bottom-color: var(--bdrh);
+}
+.ckLink:focus-visible {
+  outline: 2px solid var(--pg);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.ckActions {
+  display: flex;
+  gap: .6rem;
+}
+.ckAccept,
+.ckReject {
+  flex: 1;
+  min-width: 0;
+  padding: .68rem .9rem;
+  font-family: var(--fm);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition:
+    background   .2s ease,
+    border-color .2s ease,
+    color        .2s ease,
+    box-shadow   .2s ease,
+    transform    .15s ease;
+  outline: none;
+}
+.ckAccept:focus-visible,
+.ckReject:focus-visible {
+  outline: 2px solid var(--pg);
+  outline-offset: 2px;
+}
+.ckAccept:active,
+.ckReject:active { transform: scale(.97); }
+.ckAccept {
+  background: var(--tx);
+  border: 1px solid var(--tx);
+  color: var(--bg);
+  box-shadow: 0 2px 10px rgba(20,20,30,.14);
+}
+.ckAccept:hover {
+  background: var(--ps);
+  border-color: var(--ps);
+  box-shadow: 0 4px 18px rgba(20,20,30,.20);
+}
+.ckReject {
+  background: transparent;
+  border: 1px solid var(--bdr);
+  color: var(--txd);
+}
+.ckReject:hover {
+  background: color-mix(in srgb, var(--tc) 5%, transparent);
+  border-color: var(--bdrh);
+  color: var(--ps);
+}
+
+/* ── Mobile: anchored full-width strip ── */
+@media (max-width: 560px) {
+  #cookieBanner {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 14px 14px 0 0;
+    border-bottom: none;
+    padding: 1.2rem 1.2rem calc(1.4rem + env(safe-area-inset-bottom, 0px));
+  }
+  .ckAccept,
+  .ckReject {
+    min-height: 44px;
+    font-size: .66rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #cookieBanner,
+  #cookieBanner.ck--visible,
+  #cookieBanner.ck--dismiss {
+    transition: opacity .15s linear, visibility 0s linear .15s;
+    transform: none !important;
+  }
+}
+#themePage{
+  position:fixed;inset:0;z-index:565;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#themePage.open{transform:translateX(0);}
+.thmBdy{
+  max-width:1240px;margin:0 auto;
+  padding:1.4rem max(1.4rem,env(safe-area-inset-right))
+          calc(6.5rem + env(safe-area-inset-bottom))
+          max(1.4rem,env(safe-area-inset-left));
+}
+/* ── Intro — gradient display title, same treatment as the hero ── */
+.thmIntro{text-align:center;padding:1.2rem 0 2rem;}
+.thmTitle{
+  font-family:var(--fd);font-weight:800;
+  font-size:clamp(1.6rem,4.6vw,2.6rem);
+  background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.thmSub{
+  font-family:var(--fb);font-size:clamp(.85rem,2.4vw,1rem);
+  color:var(--txd);margin-top:.55rem;
+}
+/* ── Card grid — fluid, wraps 5→3→2→1, never overflows at 320px ── */
+.thmGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,196px),1fr));
+  gap:clamp(.8rem,1.6vw,1.15rem);
+}
+/* Keep the row from stretching to comic widths on ultra-wide */
+@media(min-width:1500px){.thmGrid{grid-template-columns:repeat(5,1fr);}}
+.thmCard{
+  position:relative;display:flex;flex-direction:column;gap:0;
+  text-align:left;cursor:pointer;
+  background:var(--sur);border:1px solid var(--bdr);border-radius:16px;
+  padding:.7rem .7rem 1.15rem;
+  color:inherit;font-family:inherit;
+  transition:transform .3s cubic-bezier(.22,1,.36,1),
+             border-color .25s ease,box-shadow .3s ease,background .25s ease;
+  transform:translateZ(0); /* own layer → 60fps hover on weak GPUs */
+}
+@media(hover:hover){
+  .thmCard:hover{
+    transform:translateY(-4px) translateZ(0);
+    border-color:var(--bdrh);
+    box-shadow:0 14px 34px rgba(5,3,8,.4);
+    background:var(--sur2);
+  }
+}
+.thmCard:active{transform:translateY(-1px) scale(.995) translateZ(0);}
+.thmCard:focus-visible{outline:2px solid var(--pg);outline-offset:3px;}
+.thmCard[aria-checked="true"]{
+  border-color:var(--pg);
+  box-shadow:0 0 0 1px var(--pg),
+             0 0 26px rgba(var(--pg-rgb),.32),
+             0 10px 30px rgba(5,3,8,.35);
+}
+/* ── Selected checkmark — pops in with a spring ── */
+.thmCheck{
+  position:absolute;top:1rem;right:1rem;z-index:2;
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--pg);color:var(--text-on-accent);
+  box-shadow:0 2px 10px rgba(var(--pg-rgb),.5);
+  transform:scale(0);opacity:0;
+  transition:transform .32s cubic-bezier(.34,1.56,.64,1),opacity .2s ease;
+}
+.thmCheck svg{width:13px;height:13px;}
+.thmCard[aria-checked="true"] .thmCheck{transform:scale(1);opacity:1;}
+/* ── Mini interface preview — pure CSS, vector-crisp on Retina.
+     --p-* palette is fixed per card (previews depict their own
+     theme regardless of which theme is currently active). ── */
+.thmCard[data-theme="dark"]      {--p-bg:#0A0A0E;--p-sur:#1A1A21;--p-ln:#2C2C36;--p-ac:#F5F5F7;}
+.thmCard[data-theme="graydark"]  {--p-bg:#17171C;--p-sur:#23232B;--p-ln:#34343E;--p-ac:#F4F4F6;}
+.thmCard[data-theme="darkviolet"]{--p-bg:#0B0A14;--p-sur:rgb(25,25,39);--p-ln:#2E2E46;--p-ac:#8B5CF6;}
+.thmCard[data-theme="light"]     {--p-bg:#FFFFFF;--p-sur:#EDECF3;--p-ln:#DCDAE8;--p-ac:#17151F;}
+.thmCard[data-theme="system"]    {--p-bg:#0A0A0E;--p-sur:#1A1A21;--p-ln:#2C2C36;--p-ac:#F5F5F7;
+                                  --p-bg2:#FFFFFF;--p-sur2:#EDECF3;--p-ln2:#DCDAE8;}
+.thmPrev{
+  position:relative;display:block;overflow:hidden;
+  background:var(--p-bg);border:1px solid var(--p-ln);border-radius:10px;
+  aspect-ratio:10/9;
+}
+.thmPrevTop{
+  display:flex;align-items:center;height:16%;
+  border-bottom:1px solid var(--p-ln);padding-left:9%;
+}
+.thmPrevLogo{
+  width:9px;height:9px;background:var(--p-ac);
+  clip-path:polygon(50% 0,100% 100%,0 100%);
+}
+.thmPrevBody{display:flex;height:84%;}
+.thmPrevSide{
+  width:33%;flex-shrink:0;border-right:1px solid var(--p-ln);
+  padding:11% 8%;display:flex;flex-direction:column;gap:14%;
+}
+.thmLn{display:block;height:5px;border-radius:3px;background:var(--p-ln);}
+.thmLn--s{width:70%;}
+.thmLn--ac{background:var(--p-ac);box-shadow:0 0 7px var(--p-ac);}
+.thmPrevMain{
+  flex:1;padding:9% 9% 11%;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12% 10%;align-content:start;
+}
+.thmTbWrap{display:flex;flex-direction:column;gap:16%;min-width:0;}
+.thmTb{
+  position:relative;overflow:hidden;
+  background:var(--p-sur);border-radius:4px;aspect-ratio:5/4;
+}
+.thmTb::before{ /* tiny mountain */
+  content:'';position:absolute;left:18%;right:18%;bottom:22%;height:40%;
+  background:var(--p-ln);
+  clip-path:polygon(0 100%,36% 18%,58% 66%,78% 30%,100% 100%);
+}
+.thmTb::after{ /* tiny sun */
+  content:'';position:absolute;top:16%;right:20%;
+  width:13%;aspect-ratio:1;border-radius:50%;background:var(--p-ln);
+}
+.thmTbWrap .thmLn{height:4px;width:82%;}
+/* System card — split dark|light with a center sync badge */
+.thmPrev--split::after{
+  content:'';position:absolute;top:0;bottom:0;left:50%;right:0;
+  background:var(--p-bg2);border-left:1px solid var(--p-ln2);
+}
+.thmPrev--split .thmSplitLight{
+  position:absolute;top:16%;bottom:0;left:50%;right:0;z-index:1;
+  padding:7% 6%;display:grid;grid-template-columns:1fr 1fr;gap:10% 9%;
+  align-content:start;
+}
+.thmPrev--split .thmSplitLight .thmTb{background:var(--p-sur2);}
+.thmPrev--split .thmSplitLight .thmTb::before,
+.thmPrev--split .thmSplitLight .thmTb::after{background:var(--p-ln2);}
+.thmSyncBadge{
+  position:absolute;top:50%;left:50%;z-index:2;
+  width:30px;height:30px;border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:#fff;color:#17171f;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 12px rgba(5,3,8,.45);
+}
+.thmSyncBadge svg{width:14px;height:14px;}
+/* ── Card text ── */
+.thmMeta{display:block;padding:.95rem .35rem 0;}
+.thmName{
+  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+  font-family:var(--fb);font-weight:700;
+  font-size:clamp(.95rem,1.4vw,1.05rem);color:var(--tx);
+}
+.thmCard[aria-checked="true"] .thmName{color:var(--pb);}
+.thmBadge{
+  font-family:var(--fm);font-style:normal;font-size:.55rem;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--pb);background:var(--pdim);
+  border:1px solid rgba(var(--pg-rgb),.4);
+  border-radius:999px;padding:.18rem .55rem;
+}
+.thmDesc{
+  display:block;margin-top:.5rem;
+  font-family:var(--fb);font-size:.8rem;line-height:1.55;color:var(--txd);
+}
+/* ── Footer note ── */
+.thmFoot{
+  display:flex;align-items:center;justify-content:center;gap:.55rem;
+  margin-top:2.4rem;
+  font-family:var(--fm);font-size:.68rem;letter-spacing:.06em;
+  color:var(--txd);text-align:center;
+}
+.thmFoot svg{width:15px;height:15px;flex-shrink:0;opacity:.75;}
+/* ── Theme-switch crossfade — html.thmFade is applied by the
+     engine for ~420ms around a swap so every color-bearing
+     property eases instead of snapping. Works identically in
+     Chrome, Edge, Firefox and Safari (replaces the Chromium-only
+     View Transitions approach). The switcher's own
+     micro-interactions are re-declared below so the broad rule
+     doesn't cancel the checkmark spring / card lift / page slide. ── */
+html.thmFade *,html.thmFade *::before,html.thmFade *::after{
+  /* colors only — box-shadow/fill/stroke were dropped: shadows are
+     the most paint-expensive transition and SVG icons use
+     currentColor, so they already follow the color fade. Keeps the
+     swap at 60fps on low-end devices. */
+  transition:background .3s ease,background-color .3s ease,
+             color .3s ease,border-color .3s ease !important;
+}
+html.thmFade .thmCard{
+  transition:transform .3s cubic-bezier(.22,1,.36,1),border-color .35s ease,
+             box-shadow .35s ease,background .35s ease !important;
+}
+html.thmFade .thmCheck{
+  transition:transform .32s cubic-bezier(.34,1.56,.64,1),opacity .2s ease,
+             background .35s ease !important;
+}
+html.thmFade #themePage{
+  transition:transform .45s cubic-bezier(.22,1,.36,1),background .35s ease !important;
+}
+@media(prefers-reduced-motion:reduce){
+  .thmCard,.thmCheck,#themePage{transition:none;}
+  html.thmFade *,html.thmFade *::before,html.thmFade *::after{transition:none !important;}
+}
+/* ── Engagement buttons (artwork viewer title row only —
+     removed from gallery/masonry cards by design) ── */
+.engBtn{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border:1px solid var(--bdr);
+  background:color-mix(in srgb,var(--bg) 62%,transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  color:var(--tx);transition:transform .15s ease,border-color .15s ease;
+}
+.engBtn:hover{border-color:var(--bdrh);transform:scale(1.08);}
+.engBtn:active{transform:scale(.94);}
+.engBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+.engBtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:fill .15s ease;}
+.engBtn[aria-pressed="true"]{border-color:rgba(var(--pg-rgb),.55);color:var(--pg);}
+.engBtn[aria-pressed="true"] svg{fill:var(--pg);stroke:var(--pg);}
+/* Viewer title row — title left, actions flush right */
+.avTitleRow{display:flex;align-items:flex-start;gap:.75rem;}
+.avTitleRow .avTitle{flex:1 1 auto;min-width:0;}
+.avTitleActs{display:flex;gap:.5rem;flex-shrink:0;padding-top:.1rem;}
+.avTitleActs .engBtn{
+  width:42px;height:42px;border-radius:12px;
+  background:color-mix(in srgb,var(--sur2) 55%,transparent);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+.avTitleActs .engBtn svg{width:20px;height:20px;}
+/* ── Friends page — same shell as #bmPage ── */
+#frdPage{
+  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#frdPage.open{transform:translateX(0);}
+.frdBdy{max-width:640px;margin:0 auto;padding:1.2rem 1rem 3rem;}
+.frdSection{
+  font-family:var(--fm);font-size:.68rem;letter-spacing:.14em;
+  color:var(--txd);margin:1.5rem 0 .7rem;
+}
+@media (prefers-reduced-motion:reduce){#frdPage{transition:none;}}
+/* ── Bookmarks page ── */
+#bmPage{
+  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#bmPage.open{transform:translateX(0);}
+/* ═══ Artist Progress ═══ — same sliding shell as #bmPage; every
+   surface uses theme tokens so all four themes render correctly. */
+#xpPage{
+  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#xpPage.open{transform:translateX(0);}
+.xpWrap{display:flex;flex-direction:column;gap:1rem;max-width:640px;margin:0 auto;padding:.35rem 0 1.2rem;}
+.xpCard{
+  background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
+  padding:1.15rem 1.2rem;
+}
+.xpCardLbl{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.22em;
+  color:var(--txd);margin-bottom:.85rem;
+}
+/* rank card */
+.xpRank{text-align:center;padding:1.5rem 1.2rem 1.35rem;}
+.xpRankLvl{
+  font-family:var(--fd);font-weight:800;font-size:2.1rem;letter-spacing:.06em;
+  background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.xpRankTitle{
+  display:inline-flex;align-items:center;gap:.4rem;margin-top:.45rem;
+  font-family:var(--fm);font-size:.62rem;letter-spacing:.2em;color:var(--pb);
+  border:1px solid rgba(var(--pg-rgb),.35);background:var(--pdim);
+  padding:.35rem .9rem;border-radius:999px;
+}
+.xpBarTrack{
+  margin-top:1.15rem;height:10px;border-radius:999px;
+  background:var(--sur2);border:1px solid var(--bdr);overflow:hidden;
+}
+.xpBarFill{
+  height:100%;width:0;border-radius:999px;
+  background:linear-gradient(90deg,var(--pgd),var(--pg));
+  box-shadow:0 0 10px rgba(var(--pg-rgb),.45);
+  transition:width .7s cubic-bezier(.22,1,.36,1);
+}
+.xpBarNums{
+  display:flex;justify-content:space-between;margin-top:.5rem;
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--txd);
+}
+.xpNext{margin-top:.65rem;font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;color:var(--tx);}
+.xpNext b{color:var(--pb);font-weight:700;}
+/* earn guide + stats */
+.xpGrid2{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;}
+.xpEarnRow{
+  display:flex;align-items:center;gap:.6rem;
+  background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;
+  padding:.6rem .7rem;font-family:var(--fb);font-size:.78rem;color:var(--tx);
+}
+.xpEarnRow svg{width:16px;height:16px;color:var(--pb);flex-shrink:0;}
+.xpEarnAmt{margin-left:auto;font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;color:var(--pb);white-space:nowrap;}
+.xpStat{
+  background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;
+  padding:.8rem .7rem;text-align:center;
+}
+.xpStatNum{font-family:var(--fd);font-weight:800;font-size:1.15rem;color:var(--tx);}
+.xpStatLbl{font-family:var(--fm);font-size:.54rem;letter-spacing:.16em;color:var(--txd);margin-top:.25rem;}
+/* milestones */
+.xpMile{display:flex;align-items:center;gap:.7rem;padding:.5rem .2rem;border-bottom:1px solid var(--bdr);}
+.xpMile:last-child{border-bottom:none;}
+.xpMileBadge{
+  width:30px;height:30px;border-radius:11px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:.58rem;
+  border:1px solid var(--bdr);color:var(--txd);background:var(--sur2);
+}
+/* Reached: the badge fills with that tier's colour and the name takes the
+   matching text shade — same pairing as the profile header, so the list
+   reads as the legend for the whole system. Falls back to --pg if the
+   tier lookup ever comes back empty. */
+.xpMile.done .xpMileBadge{
+  background:var(--ms-c, var(--pg));
+  border-color:var(--ms-c, var(--pg));
+  color:var(--ms-ink);
+}
+.xpMileName{font-family:var(--fb);font-size:.82rem;color:var(--txd);}
+.xpMile.done .xpMileName{color:var(--ms-n, var(--tx));}
+.xpMile.cur .xpMileName{color:var(--ms-n, var(--pb));font-weight:600;}
+.xpMileLvl{margin-left:auto;font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;color:var(--txd);}
+/* leaderboard */
+.xpLbRow{display:flex;align-items:center;gap:.7rem;padding:.55rem .2rem;border-bottom:1px solid var(--bdr);}
+.xpLbRow:last-child{border-bottom:none;}
+.xpLbRow.self{background:var(--pdim);border-radius:10px;padding:.55rem .6rem;border-bottom-color:transparent;}
+.xpLbRank{width:26px;text-align:center;font-family:var(--fm);font-size:.62rem;color:var(--txd);flex-shrink:0;}
+.xpLbRank.m1{color:#E7B94C;} .xpLbRank.m2{color:#B8BDC7;} .xpLbRank.m3{color:#C88A5B;}
+.xpLbAva{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;overflow:hidden;
+  background:linear-gradient(135deg,var(--pg),var(--pgd));
+  color:var(--text-on-accent);display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-weight:700;font-size:.72rem;
+}
+.xpLbAva img{width:100%;height:100%;object-fit:cover;}
+.xpLbName{font-family:var(--fb);font-size:.82rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.xpLbLvl{margin-left:auto;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--pb);white-space:nowrap;}
+.xpNote{font-family:var(--fm);font-size:.6rem;letter-spacing:.12em;color:var(--txd);text-align:center;padding:1.2rem 0;}
+@media(max-width:400px){ .xpGrid2{grid-template-columns:1fr;} }
+.bmBdy{
+  max-width:1080px;margin:0 auto;
+  padding:1.4rem max(1.4rem,env(safe-area-inset-right))
+          calc(6.5rem + env(safe-area-inset-bottom))
+          max(1.4rem,env(safe-area-inset-left));
+}
+.bmGrid{
+  display:grid;gap:1rem;
+  /* ── Unified responsive columns ──
+     2 columns on phones · 3 on tablets & phone "desktop site"
+     mode (~700-1279px) · 4 on real desktops (1280px+). Columns
+     are 1fr, so on larger/ultrawide screens the cards simply
+     grow to fill — no extra columns, boxes auto-adjust. ── */
+  grid-template-columns:repeat(2,1fr);
+}
+@media(min-width:700px){ .bmGrid{grid-template-columns:repeat(3,1fr);} }
+@media(min-width:1280px){ .bmGrid{grid-template-columns:repeat(4,1fr);} }
+.bmCard{
+  position:relative;background:var(--sur);border:1px solid var(--bdr);
+  border-radius:12px;overflow:hidden;
+  transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s;
+}
+@media(hover:hover){.bmCard:hover{transform:translateY(-3px);border-color:var(--bdrh);}}
+.bmThumb{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:var(--sur2);}
+.bmMeta{padding:.6rem .7rem .7rem;}
+.bmName{
+  font-family:var(--fb);font-weight:600;font-size:.82rem;color:var(--tx);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.bmCat{font-family:var(--fm);font-size:.58rem;letter-spacing:.12em;color:var(--txd);text-transform:uppercase;margin-top:.25rem;}
+.bmRemove{
+  position:absolute;top:.5rem;right:.5rem;z-index:2;
+  width:30px;height:30px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--bdr);color:var(--tx);
+  background:color-mix(in srgb,var(--bg) 62%,transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+.bmRemove:hover{border-color:var(--pg);color:var(--pg);}
+.bmEmpty{
+  text-align:center;padding:3.5rem 1rem;color:var(--txd);
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.14em;
+}
+.bmEmpty .ico{font-size:1.8rem;margin-bottom:.8rem;opacity:.6;}
+@media(prefers-reduced-motion:reduce){
+  #bmPage,.bmCard,.engBtn{transition:none;}
+}
+
+/* ═══ ALBUMS ═══════════════════════════════════════════════
+   Three surfaces share one card: the profile ALBUMS tab, the
+   Albums manager (#albPage, from the hamburger) and one album's
+   contents (#albViewPage).
+
+   The card IS a square. The 2×2 cover mosaic fills it edge to edge,
+   which is what keeps all four cells square as well, and the name and
+   item count sit INSIDE at the bottom over a scrim. A meta strip below
+   the mosaic — the old shape — made the tile taller than a square and
+   broke the line-up with the artwork grid beside it. */
+.albGrid{
+  display:grid;margin-top:1.2rem;
+  /* Same ladder AND the same gaps as .pfGridArt, so an album tile has
+     the identical footprint to an artwork tile and the two grids line
+     up column for column on every screen:
+     2 on phones · 3 from 700px · 4 from 1280px. */
+  grid-template-columns:repeat(2,1fr);
+  gap:.3rem;
+}
+@media(min-width:700px){ .albGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
+@media(min-width:1280px){ .albGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
+.albLoading{
+  grid-column:1/-1;padding:3rem 1rem;text-align:center;
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;color:var(--txd);
+}
+.albCard{
+  position:relative;display:block;width:100%;aspect-ratio:1;
+  padding:0;text-align:left;
+  background:var(--sur);border:1px solid var(--bdr);border-radius:12px;
+  overflow:hidden;cursor:pointer;color:inherit;font:inherit;
+  transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s,box-shadow .25s;
+}
+/* Same square from width alone, for engines without aspect-ratio. */
+@supports not (aspect-ratio:1){
+  .albCard{height:0;padding-top:100%;}
+}
+@media(hover:hover){
+  .albCard:hover{transform:translateY(-3px);border-color:var(--bdrh);box-shadow:0 10px 26px rgba(0,0,0,.28);}
+}
+.albCard:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+/* 2×2 cover mosaic, absolutely filling the card — absolute so nothing
+   about the four images can change the tile's size. The 1px gaps show
+   the border colour through, so the four thumbs read as one tile
+   rather than four little cards. */
+.albMosaic{
+  position:absolute;inset:0;
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:1px;background:var(--bdr);
+}
+.albCell{display:block;overflow:hidden;background:var(--sur2);}
+.albCell img{width:100%;height:100%;object-fit:cover;display:block;}
+.albCellEmpty{
+  background:
+    repeating-linear-gradient(45deg,
+      color-mix(in srgb,var(--tc) 5%,transparent) 0 6px,
+      transparent 6px 12px),
+    var(--sur2);
+}
+/* Caption over a scrim rather than a solid bar: the covers stay
+   visible behind it while the text stays legible over any artwork.
+   pointer-events:none so the whole square remains one click target. */
+.albMeta{
+  position:absolute;left:0;right:0;bottom:0;z-index:1;
+  padding:1.7rem .65rem .55rem;pointer-events:none;
+  background:linear-gradient(to top,
+    rgba(0,0,0,.84) 0%, rgba(0,0,0,.58) 42%, rgba(0,0,0,0) 100%);
+}
+.albName{
+  display:flex;align-items:center;gap:.32rem;
+  font-family:var(--fb);font-weight:600;font-size:.8rem;color:#fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 1px 3px rgba(0,0,0,.55);
+}
+/* Fixed light values, not theme tokens: this text always sits on a
+   dark scrim over artwork, so it must not follow the page theme. */
+.albPin{color:rgba(255,255,255,.92);font-size:.74rem;flex-shrink:0;}
+.albCount{
+  display:block;margin-top:.16rem;
+  font-family:var(--fm);font-size:.54rem;letter-spacing:.14em;
+  color:rgba(255,255,255,.74);
+}
+.albCard--virt{border-color:color-mix(in srgb,var(--pg) 26%,var(--bdr));}
+/* Create tile — the same square footprint as an album card, just
+   empty. It only ever appears on the manager page, first in the grid. */
+.albCardNew{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;
+  background:transparent;border-style:dashed;
+  border-color:color-mix(in srgb,var(--tc) 26%,transparent);
+}
+@media(hover:hover){
+  .albCardNew:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}
+}
+.albNewIco{
+  width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:1.35rem;line-height:1;color:var(--pb);
+  border:1px solid color-mix(in srgb,var(--tc) 26%,transparent);
+}
+.albNewLbl{font-family:var(--fm);font-size:.56rem;letter-spacing:.16em;color:var(--txd);}
+
+/* ── Album pages — same sliding shell as #bmPage, stacked above
+   both #profilePage (500) and #setPage (546). ── */
+#albPage,#albViewPage{
+  position:fixed;inset:0;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#albPage{z-index:547;}
+#albViewPage{z-index:548;}
+#albPage.open,#albViewPage.open{transform:translateX(0);}
+.albBdy{
+  max-width:1080px;margin:0 auto;
+  padding:1.4rem max(1.4rem,env(safe-area-inset-right))
+          calc(6.5rem + env(safe-area-inset-bottom))
+          max(1.4rem,env(safe-area-inset-left));
+}
+.albNote{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;color:var(--txd);
+  padding:.2rem 0 .1rem;
+}
+/* Owner action bar under the header on #albViewPage. */
+.albViewBar{
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+  padding:.2rem 0 .9rem;border-bottom:1px solid var(--bdr);margin-bottom:.2rem;
+}
+.albViewCount{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.16em;color:var(--txd);margin-right:auto;
+}
+.albActBtn{
+  font-family:var(--fm);font-size:.6rem;letter-spacing:.12em;
+  padding:.45rem .85rem;border-radius:999px;cursor:pointer;
+  background:transparent;border:1px solid var(--bdr);color:var(--tx);
+  transition:border-color .2s,color .2s,background .2s;
+}
+.albActBtn:hover{border-color:var(--pg);color:var(--pb);}
+.albActBtn--danger:hover{border-color:#e0564f;color:#e0564f;background:rgba(224,86,79,.08);}
+/* Contents grid reuses .pfGridArt metrics so album thumbnails match
+   the Like / Bookmark grids exactly. */
+.albItemWrap{position:relative;}
+.albItemX{
+  position:absolute;top:.35rem;right:.35rem;z-index:3;
+  width:26px;height:26px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;line-height:1;
+  border:1px solid var(--bdr);color:var(--tx);
+  background:color-mix(in srgb,var(--bg) 66%,transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  opacity:0;transition:opacity .2s,border-color .2s,color .2s;
+}
+.albItemWrap:hover .albItemX,.albItemX:focus-visible{opacity:1;}
+@media(hover:none){.albItemX{opacity:1;}}
+.albItemX:hover{border-color:#e0564f;color:#e0564f;}
+.albEmpty{
+  text-align:center;padding:3.5rem 1rem;color:var(--txd);
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.14em;
+}
+.albEmpty .ico{font-size:1.8rem;margin-bottom:.8rem;opacity:.6;}
+
+/* ── Create / rename popup — narrow .upPop box ── */
+#albMod .albModBox{max-width:420px;padding:1.4rem 1.3rem 1.2rem;gap:.2rem;}
+.albModTitle{
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;
+  color:var(--tx);margin:0 0 1rem;text-align:center;
+}
+.albModIn{
+  width:100%;box-sizing:border-box;
+  background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.14);
+  border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.9rem;
+  padding:.7rem .85rem;outline:none;transition:border-color .2s;
+}
+.albModIn:focus{border-color:var(--pg);}
+.albModIn::placeholder{color:var(--txd);opacity:.6;}
+.albModHint{
+  font-family:var(--fm);font-size:.56rem;letter-spacing:.12em;
+  color:var(--txd);margin:.55rem .1rem 1.1rem;
+}
+.albModActs{display:flex;gap:.6rem;}
+.albModActs button{flex:1;}
+/* Upload-page picker extras */
+.albUpNone{
+  font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;
+  color:var(--txd);text-align:center;padding:.5rem 0 .2rem;
+}
+.albUpNew{
+  margin-top:.35rem;width:100%;text-align:left;cursor:pointer;
+  background:transparent;border:none;border-top:1px solid var(--bdr);
+  color:var(--pb);font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;
+  padding:.6rem .5rem .35rem;
+}
+.albUpNew:hover{color:var(--tx);}
+@media(prefers-reduced-motion:reduce){
+  #albPage,#albViewPage,.albCard{transition:none;}
+}
+
+/* ═══ TAG BLOCK — SEARCH BAR + TWO CHIP ROWS ═══════════════
+   .tgBlock is the static frame. It owns the outer spacing and the
+   horizontal inset (--tgInset), which both the search bar and the chip
+   rows read, so the two always share a left edge. Only .tgRail inside
+   it scrolls sideways — that's why the bar stays put while the chips
+   slide under it.
+   Shape: two flush-left rows packed to the SAME width by
+   tgLayoutRail(). That width is one desktop's worth of tags on every
+   device (TG_DESKTOP_SPAN), so a phone shows exactly what a desktop
+   shows and simply swipes to reach it. Chips never wrap — .tgScroll is
+   max-content wide, so the rows define the scroll extent. */
+.tgBlock{
+  /* Top and bottom driven by ONE value so they can't drift apart —
+     this is what keeps the gap above the rail equal to the gap below
+     it, down to the tabs. */
+  --tgPad:1.25rem;
+  --tgInset:clamp(.7rem,2vw,2rem);
+  margin:var(--tgPad) 0;
+}
+
+/* ── Search bar ──────────────────────────────────────────────
+   A real text input: it filters the feed below as you type, so there
+   is no modal and no second screen to get back from. The wrapper
+   carries the border and background; the input itself is transparent
+   and borderless, which is what lets the icon, field and clear button
+   sit on one continuous surface. */
+.tgSearch{
+  display:flex;align-items:center;gap:.65rem;
+  width:calc(100% - var(--tgInset) * 2);
+  margin:0 var(--tgInset) .85rem;
+  height:46px;padding:0 .8rem 0 .95rem;box-sizing:border-box;
+  border-radius:11px;
+  background:var(--sur);border:1px solid var(--bdr);
+  transition:border-color .22s,background .22s,box-shadow .22s;
+}
+@media(hover:hover){
+  .tgSearch:hover{border-color:var(--bdrh);}
+  .tgSearchClear:hover{background:color-mix(in srgb,var(--tc) 36%,transparent);}
+}
+/* Focus lives on the WRAPPER via :focus-within, because the element
+   that actually takes focus is the transparent input inside it. */
+.tgSearch:focus-within{
+  border-color:var(--pg);background:var(--sur);
+  box-shadow:0 0 0 3px var(--pdim);
+}
+.tgSearchIco{
+  width:16px;height:16px;flex-shrink:0;color:var(--txd);
+  transition:color .22s;
+}
+.tgSearch:focus-within .tgSearchIco{color:var(--pb);}
+.tgSearchIn{
+  flex:1;min-width:0;height:100%;
+  background:none;border:0;outline:none;padding:0;margin:0;
+  font-family:var(--fb);font-size:.88rem;color:var(--tx);
+  /* Safari paints its own inner shadow + a search-cancel widget on
+     type=search; both are removed so the field matches every theme. */
+  -webkit-appearance:none;appearance:none;
+}
+.tgSearchIn::-webkit-search-cancel-button{-webkit-appearance:none;display:none;}
+.tgSearchIn::placeholder{color:var(--txd);opacity:.85;}
+/* Only rendered once there's something to clear — an always-visible
+   ✕ on an empty field reads as a control that does nothing. */
+.tgSearchClear{
+  position:relative;display:none;flex-shrink:0;
+  width:22px;height:22px;border-radius:50%;border:0;cursor:pointer;
+  background:color-mix(in srgb,var(--tc) 20%,transparent);color:var(--tx);
+  font-size:.62rem;line-height:1;
+  align-items:center;justify-content:center;
+  transition:background .18s;
+}
+/* 22px drawn, 42px tappable. */
+.tgSearchClear::after{content:'';position:absolute;inset:-10px;}
+.tgSearch.tgHasQ .tgSearchClear{display:flex;}
+/* The ⌘K / Ctrl K hint. Glyph is set per platform by tgKbdHint(), and
+   the badge is dropped on touch where the shortcut is dead weight and
+   the space is better spent on the placeholder. It also hides once
+   there's a query, so it never sits next to the clear button. */
+.tgSearchKbd{display:flex;align-items:center;gap:3px;flex-shrink:0;}
+.tgSearch.tgHasQ .tgSearchKbd{display:none;}
+.tgSearchKbd kbd{
+  font-family:var(--fm);font-size:.62rem;letter-spacing:.04em;line-height:1;
+  color:var(--txd);background:rgba(var(--pg-rgb),.06);
+  border:1px solid var(--bdr);border-radius:5px;
+  padding:.3rem .36rem;min-width:1.1em;text-align:center;
+}
+
+/* ── In-bar filter button ────────────────────────────────────
+   The filter moved OFF its own row and onto the tail of the search
+   field, so one strip now does search + filter. Sized to breathe
+   inside the 46px bar (the standalone .fgFltBtn was 42px, which
+   filled it edge to edge), with a hairline divider marking it as a
+   separate action from the field. */
+.tgFltDiv{width:1px;height:20px;flex-shrink:0;background:var(--bdr);}
+.tgFltBtn{
+  position:relative;flex-shrink:0;
+  width:30px;height:30px;border-radius:8px;
+  background:none;border:0;padding:0;color:var(--txd);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:color .2s,background .2s;
+}
+.tgFltBtn svg{width:17px;height:17px;pointer-events:none;}
+@media(hover:hover){ .tgFltBtn:hover{color:var(--ps);background:var(--pdim);} }
+/* Dot = at least one filter is set, mirroring the old .fgFltBtn. */
+.tgFltBtn.active{color:var(--ps);background:var(--pdim);}
+.tgFltBtn.active::after{content:'';position:absolute;top:4px;right:4px;width:5px;height:5px;background:var(--pg);border-radius:50%;box-shadow:0 0 5px var(--pg);}
+@media(max-width:480px){
+  .tgFltBtn{width:28px;height:28px;}
+  .tgFltBtn svg{width:16px;height:16px;}
+}
+
+/* ── Chip rail ── */
+.tgRail{
+  margin:0;
+  --tgRow:38px;--tgGap:9px;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;-ms-overflow-style:none;
+  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+}
+.tgRail::-webkit-scrollbar{display:none;}
+/* The fade only applies when the rail ACTUALLY overflows (class set by
+   tgSyncOverflow) — applied unconditionally it would just dim the
+   first and last chip of a short rail for no reason. It stops short of
+   the left edge so the pinned All chip never sits under it. */
+.tgRail.ov{
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%);
+          mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%);
+}
+.tgScroll{
+  display:flex;flex-direction:column;gap:var(--tgGap);
+  width:max-content;
+  /* Inset lives on the CONTENT, not the scroller: padding on a scroll
+     container is unreliable on the trailing edge in several engines.
+     Same --tgInset the search bar uses, so the left edges line up. */
+  padding:calc(var(--tgGap) / 2) var(--tgInset);
+}
+.tgRowIn{display:flex;flex-wrap:nowrap;gap:var(--tgGap);}
+.tgChip{
+  position:relative;
+  display:inline-flex;align-items:center;gap:.4rem;
+  height:var(--tgRow);padding:0 .95rem;box-sizing:border-box;
+  border-radius:999px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  background:var(--sur);border:1px solid var(--bdr);color:var(--tx);
+  font-family:var(--fb);font-size:.8rem;letter-spacing:0;
+  transition:border-color .2s,background .2s,color .2s,transform .22s,opacity .22s;
+}
+@media(hover:hover){
+  .tgChip:hover{border-color:var(--bdrh);}
+  .tgChip.on:hover{border-color:var(--pg);}
+}
+.tgChip:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+/* Chips are 35px tall on phones — under the ~44px that reads as a
+   comfortable tap. This extends the TOUCH target into the row gutter
+   without changing the drawn size: exactly half the gap each way, so
+   the two rows meet edge to edge and neither can steal the other's
+   taps. .tgScroll's padding is half a gap for the same reason, so the
+   outer edges get the same growth instead of being clipped by the
+   rail's overflow-y. */
+.tgChip::after{
+  content:'';position:absolute;left:0;right:0;
+  top:calc(var(--tgGap) / -2);bottom:calc(var(--tgGap) / -2);
+}
+/* Picked = solid accent fill. No tick, no plus: the fill IS the state,
+   which is what keeps a row of chips readable at a glance instead of
+   making every one carry a glyph. --text-on-accent is re-mapped per
+   theme, so the label stays legible on the light theme's near-black
+   accent as well as the violet one. */
+.tgChip.on{
+  background:var(--pg);border-color:var(--pg);color:var(--text-on-accent);
+}
+
+/* ── "All" chip ──
+   Opens the full tag grid. Pinned to the left edge of the scroller so
+   it stays reachable at any scroll position — on a phone the rows run
+   several screens wide, and a tag browser you have to swipe back to
+   find is one most people never find. At rest it sits exactly where
+   the mockup puts it: first chip, first row. */
+.tgChipAll{
+  /* Sticks at the SAME inset it rests at, not at 0 — sticking to the
+     raw scrollport edge made it jump the width of the inset on the
+     first pixel of scroll and then sit flush against the screen. */
+  position:sticky;left:var(--tgInset);z-index:2;
+  /* Its own background is opaque so chips scrolling under it are
+     covered cleanly rather than showing through. */
+  background:var(--bg);
+  box-shadow:6px 0 8px -6px rgba(0,0,0,.45);
+}
+.tgChipAll svg{width:14px;height:14px;flex-shrink:0;}
+
+/* Replacement chips fade up in place; everything that merely shifts
+   is moved by the FLIP pass in tgFlip(), not by a CSS class. */
+@keyframes tgIn{from{transform:scale(.75);opacity:0;}to{transform:scale(1);opacity:1;}}
+.tgChip.tgEnter{animation:tgIn .28s cubic-bezier(.22,1,.36,1);}
+
+/* The gallery already had a search field. The rail's bar replaces it
+   in place rather than stacking a second one above it — #fgQ stays in
+   the DOM because renderFG() reads its value, it just isn't shown. */
+#fg .fgHdr .fgQ{display:none;}
+#fg .fgHdr{justify-content:flex-end;}
+
+@media(max-width:900px){
+  .tgSearch{height:44px;}
+}
+/* The shortcut badge is meaningless without a hardware keyboard, and
+   (hover:none) catches the touch tablets that clear the width test. */
+@media(max-width:700px),(hover:none){
+  .tgSearchKbd{display:none;}
+}
+/* Phones: tighter chips, a shorter bar, a narrower edge fade. */
+@media(max-width:600px){
+  .tgBlock{--tgPad:1rem;}
+  /* 10px, not 8: the gutter is what the chips' touch targets grow
+     into (half each way), and 10 is what takes a 35px chip over
+     the 44px comfortable-tap line. */
+  .tgRail{--tgRow:35px;--tgGap:10px;}
+  .tgChip{font-size:.76rem;padding:0 .85rem;}
+  .tgSearch{height:42px;border-radius:10px;padding:0 .7rem 0 .8rem;gap:.55rem;}
+  .tgSearchIn{font-size:.84rem;}
+  .tgSearchIco{width:15px;height:15px;}
+  .tgRail.ov{
+    -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
+            mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .tgChip{transition:none;}
+  .tgChip.tgEnter{animation:none;}
+  .tgRail{scroll-behavior:auto;}
+  .tgSearch{transition:none;}
+}
+/* ── Search-tag grid — 2 / 3 / 4 columns, same ladder as every
+   other grid on the site. ── */
+#tgMod .tgModBox{max-width:640px;padding:1.3rem 1.2rem 1.1rem;}
+.tgModHead{
+  display:flex;align-items:center;gap:.7rem;margin-bottom:.9rem;
+}
+.tgModTitle{
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;
+  color:var(--tx);margin:0;flex:1;
+}
+.tgModSearchWrap{position:relative;margin-bottom:.9rem;}
+.tgModSearchWrap svg{
+  position:absolute;left:.75rem;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;color:var(--txd);pointer-events:none;
+}
+.tgModSearch{
+  width:100%;box-sizing:border-box;
+  background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.14);
+  border-radius:999px;color:var(--tx);font-family:var(--fb);font-size:.85rem;
+  padding:.6rem .9rem .6rem 2.2rem;outline:none;transition:border-color .2s;
+}
+.tgModSearch:focus{border-color:var(--pg);}
+.tgModSearch::placeholder{color:var(--txd);opacity:.6;}
+.tgModGrid{
+  display:grid;gap:.5rem;grid-template-columns:repeat(2,1fr);
+  overflow-y:auto;max-height:min(52vh,420px);padding:.1rem;
+  overscroll-behavior:contain;
+}
+@media(min-width:700px){ .tgModGrid{grid-template-columns:repeat(3,1fr);} }
+@media(min-width:1280px){ .tgModGrid{grid-template-columns:repeat(4,1fr);} }
+.tgModOpt{
+  display:flex;align-items:center;gap:.5rem;min-width:0;
+  padding:.55rem .7rem;border-radius:10px;cursor:pointer;text-align:left;
+  background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);
+  font-family:var(--fb);font-size:.8rem;
+  transition:border-color .2s,background .2s,color .2s;
+}
+.tgModOpt:hover{border-color:var(--pg);}
+.tgModOpt.on{background:var(--pdim);border-color:var(--pg);color:var(--pb);}
+.tgModName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tgModTick{
+  width:18px;height:18px;flex-shrink:0;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.66rem;line-height:1;
+  border:1px solid var(--bdr);color:var(--pg);background:var(--bg);
+}
+.tgModOpt.on .tgModTick{border-color:var(--pg);background:var(--pg);color:var(--text-on-accent,#fff);}
+.tgModNone{
+  grid-column:1/-1;text-align:center;padding:2rem 1rem;
+  font-family:var(--fm);font-size:.66rem;letter-spacing:.12em;color:var(--txd);
+}
+.tgModNote{
+  font-family:var(--fm);font-size:.56rem;letter-spacing:.1em;
+  color:var(--txd);margin-top:.9rem;text-align:center;
+}

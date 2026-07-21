@@ -1,0 +1,182 @@
+/* ── admin.css · admin panel, edit my work, notifications ── */
+    /* =========================================================
+       ADMIN PANEL PAGE (#admPage)
+       Dev-only panel: hero slides editor + broadcast notifications
+       + open reports. Nothing else. Same sliding full-page /
+       dark-violet language as #profilePage; reuses .subPgHdr /
+       .subPgTitle / .subPgX / .pfTabs / .pfTab / .pfPanel /
+       .pfGrid / .pfGridArt / .pfEmpty as-is.
+       ========================================================= */
+    #admPage{
+      position:fixed;inset:0;z-index:520;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #admPage.open{transform:translateX(0);}
+    #admPage,#admPage *{
+      --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
+      --tx:var(--vtx);--txd:var(--vtxd);
+      --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #admPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
+    #admPage .subPgTitle{color:var(--tx);}
+    .admBdy{max-width:1100px;margin:0 auto;padding:1.6rem 2rem 6rem;}
+    @media(max-width:480px){.admBdy{padding:1.2rem 1.2rem 6rem;}}
+
+
+    /* ── Tabs (Artwork / Comic Arts / Notifications) ── */
+    #admPage .pfTabs{padding:0;border-bottom:1px solid var(--bdr);position:static;margin-bottom:.4rem;}
+    #admPage .pfTabs::before{display:none;}
+    #admPage .pfTab{position:relative;}
+    .admTabCount{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:16px;height:16px;padding:0 4px;margin-left:.35rem;
+      background:var(--pg);color:var(--text-on-accent);border-radius:999px;
+      font-family:var(--fm);font-size:.58rem;letter-spacing:0;vertical-align:middle;
+    }
+    #admPage .pfPanel{padding:1.4rem 0 0;}
+
+    /* ── Review cards — reuse .pfGrid/.pfGridArt, add a caption strip ── */
+    .admCard{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;}
+    /* ── Thumbnail box ──
+       This wrapper is NOT decorative — it is the clip that keeps a
+       zoomed thumbnail inside its square. thumbStyle() emits
+       transform:scale() for thumb_zoom, and a transform PAINTS outside
+       the element's layout box even though the box itself stays square.
+       With no wrapper the nearest clip was .admCard, so a 2x thumbnail
+       spilled straight down over the title, the date and the
+       Edit/Delete row — the card read as one tall blurry image with no
+       controls, and the taller the grid row, the further it bled.
+       The image is absolutely positioned inside it, so nothing about
+       the file can change the box either: not its aspect ratio, not a
+       failed load, not a missing intrinsic size. The square is owned by
+       the wrapper and by nothing else. */
+    .admCardThumb{
+      position:relative;width:100%;aspect-ratio:1/1;
+      overflow:hidden;background:var(--sur2);
+    }
+    /* Same square from width alone, for engines without aspect-ratio. */
+    @supports not (aspect-ratio:1/1){
+      .admCardThumb{height:0;padding-top:100%;}
+    }
+    .admCardImg{
+      position:absolute;inset:0;width:100%;height:100%;
+      object-fit:cover;display:block;
+    }
+    .admCardBody{padding:.65rem .75rem .8rem;}
+    .admCardTitle{font-family:var(--fb);font-size:.8rem;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .admCardMeta{font-family:var(--fm);font-size:.6rem;letter-spacing:.06em;color:var(--txd);margin-top:.25rem;}
+    .admCardActions{display:flex;gap:.5rem;margin-top:.6rem;}
+    .admCardActions button{
+      flex:1;font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;padding:.45rem;
+      border-radius:5px;cursor:pointer;transition:opacity .15s,background .15s;
+    }
+    .admEmptyIcon{font-size:1.6rem;display:block;margin-bottom:.6rem;opacity:.6;}
+
+    /* ── Admin broadcast composer (inside #admPanelNoti) ──
+       Sends a notification with user_id:null — visible to every
+       user (see notifications RLS select policy). Nothing here
+       edits a notification once sent; only new rows are inserted. */
+    .admNotiLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--tx);margin-bottom:.6rem;}
+    .admNotiCompose{background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;padding:1rem;margin-bottom:1.6rem;}
+    .admNotiInput,.admNotiTextarea{
+      width:100%;background:var(--sur);border:1px solid var(--bdr);border-radius:7px;
+      color:var(--tx);font-family:var(--fb);font-size:.82rem;padding:.6rem .7rem;margin-bottom:.6rem;
+      resize:vertical;box-sizing:border-box;
+    }
+    .admNotiInput:focus,.admNotiTextarea:focus{outline:none;border-color:var(--pg);}
+    .admNotiSendBtn{
+      background:var(--pg);color:var(--text-on-accent);border:1px solid var(--pg);border-radius:6px;
+      font-family:var(--fm);font-size:.68rem;letter-spacing:.08em;padding:.6rem 1.1rem;
+      cursor:pointer;transition:opacity .15s;
+    }
+    .admNotiSendBtn:hover{opacity:.88;}
+    .admNotiSendBtn:disabled{opacity:.5;cursor:default;}
+    .admNotiSentLbl{font-family:var(--fm);font-size:.66rem;letter-spacing:.12em;color:var(--txd);margin-bottom:.6rem;}
+    .admNotiSentList{display:flex;flex-direction:column;gap:.5rem;}
+    .admNotiSentItem{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:.7rem .8rem;}
+    .admNotiSentTitle{font-family:var(--fb);font-size:.8rem;font-weight:700;color:var(--tx);}
+    .admNotiSentMsg{font-family:var(--fb);font-size:.76rem;color:var(--txd);margin-top:.2rem;}
+    .admNotiSentTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.06em;color:var(--txd);opacity:.65;margin-top:.35rem;}
+
+    /* =========================================================
+       EDIT MY WORK PAGE (#pfMyWorkPage)
+       Opened from the profile ⋮ menu — lets the signed-in owner
+       edit/delete their OWN artworks + comics, any status. Reuses
+       the exact same sliding full-page / dark-violet language and
+       card shell as #admPage (.subPgHdr/.pfTabs/.pfPanel/.admBdy/
+       .admCard) with Edit/Delete actions. ── */
+    #pfMyWorkPage{
+      position:fixed;inset:0;z-index:520;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #pfMyWorkPage.open{transform:translateX(0);}
+    #pfMyWorkPage,#pfMyWorkPage *{
+      --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
+      --tx:var(--vtx);--txd:var(--vtxd);
+      --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #pfMyWorkPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
+    #pfMyWorkPage .subPgTitle{color:var(--tx);}
+    #pfMyWorkPage .pfTabs{padding:0;border-bottom:1px solid var(--bdr);position:static;margin-bottom:.4rem;}
+    #pfMyWorkPage .pfTabs::before{display:none;}
+    #pfMyWorkPage .pfTab{position:relative;}
+    #pfMyWorkPage .pfPanel{padding:1.4rem 0 0;}
+    .mwEditBtn{background:none;color:var(--ps);border:1px solid var(--bdr);}
+    .mwEditBtn:hover{background:color-mix(in srgb,var(--tc) 12%,transparent);border-color:var(--bdrh);}
+    .mwDeleteBtn{background:none;color:#f87171;border:1px solid #7f1d1d;}
+    .mwDeleteBtn:hover{background:rgba(220,38,38,.15);}
+
+
+    /* =========================================================
+       NOTIFICATIONS PAGE (#notifPage)
+       Opened by tapping the bell (#hNotifBtn). Read-only feed —
+       admin broadcasts (notifications.user_id IS NULL) plus any
+       personal notices addressed to the signed-in user.
+       Same sliding full-page / dark-violet language as #admPage.
+       No edit or delete control exists anywhere on this page —
+       the notifications table is never written to by a normal
+       user; only per-user read-state (notification_reads) is.
+       ========================================================= */
+    #notifPage{
+      position:fixed;inset:0;z-index:525;background:var(--bg);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #notifPage.open{transform:translateX(0);}
+    #notifPage,#notifPage *{
+      --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
+      --tx:var(--vtx);--txd:var(--vtxd);
+      --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
+      --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
+      --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
+    }
+    #notifPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
+    #notifPage .subPgTitle{color:var(--tx);}
+    .notifBdy{max-width:640px;margin:0 auto;padding:1.4rem 1.4rem 6rem;}
+    .notifListWrap{display:flex;flex-direction:column;gap:.6rem;}
+    .notifItem{
+      position:relative;display:flex;gap:.75rem;align-items:flex-start;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:10px;
+      padding:.85rem 2rem .85rem .95rem;
+    }
+    .notifItem.unread{border-color:color-mix(in srgb,var(--pg) 45%,var(--bdr));background:color-mix(in srgb,var(--pg) 7%,var(--sur));}
+    .notifIcoWrap{
+      flex-shrink:0;width:32px;height:32px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:var(--sur2);border:1px solid var(--bdr);font-size:.9rem;
+    }
+    .notifIcoWrap.ico-artwork_approved,.notifIcoWrap.ico-comic_approved{color:#4ade80;border-color:#16a34a;}
+    .notifIcoWrap.ico-artwork_rejected,.notifIcoWrap.ico-comic_rejected{color:#f87171;border-color:#7f1d1d;}
+    .notifIcoWrap.ico-admin{color:var(--pb);border-color:var(--pg);}
+    .notifBody{flex:1;min-width:0;}
+    .notifTitle{font-family:var(--fb);font-size:.86rem;font-weight:700;color:var(--tx);}
+    .notifMsg{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-top:.2rem;line-height:1.45;word-break:break-word;}
+    .notifTime{font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;color:var(--txd);opacity:.7;margin-top:.4rem;}
+    .notifDot{position:absolute;top:.9rem;right:.9rem;width:8px;height:8px;border-radius:50%;background:var(--pg);}
+

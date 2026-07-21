@@ -26,6 +26,12 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v26 — split shell. index.html's inline <style> and <script> blocks
+       now live in /css (13 files) and /js (25 files); all 38 are
+       precached alongside the shell so the first offline open still
+       has the full site. uploadVerifier.js joins the precache list
+       too — it was always part of the shell but only cached lazily.
+
    v25 — full-page + fit-first-screen. #artModal backdrop padding
        zeroed and the .avBox card fully flattened on every width (the
        old 2rem/.7rem paddings and min(1400px,94vw) card made it a
@@ -166,7 +172,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v25';
+const CACHE_VERSION = 'v26';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -183,12 +189,55 @@ const SHELL_URLS = [
   '/',
   '/index.html',
   '/config.js',
+  '/uploadVerifier.js',
   '/aiAssistantData.js',
   '/site.webmanifest',
   '/favicon.ico',
   '/favicon-32x32.png',
   '/apple-touch-icon.png',
-  '/icon-192.png'
+  '/icon-192.png',
+
+  /* Split stylesheets — see the <link> block in index.html <head> */
+  '/css/base.css',
+  '/css/hero.css',
+  '/css/viewer.css',
+  '/css/community.css',
+  '/css/connect.css',
+  '/css/ranking.css',
+  '/css/profile.css',
+  '/css/admin.css',
+  '/css/auth.css',
+  '/css/panels.css',
+  '/css/upload.css',
+  '/css/widgets.css',
+  '/css/overrides.css',
+
+  /* Split scripts — see the <script src> tags through index.html */
+  '/js/ranking.js',
+  '/js/community.js',
+  '/js/dm.js',
+  '/js/composer.js',
+  '/js/share.js',
+  '/js/misc-core.js',
+  '/js/app-core.js',
+  '/js/gallery.js',
+  '/js/auth.js',
+  '/js/profile.js',
+  '/js/albums.js',
+  '/js/drafts.js',
+  '/js/upqueue.js',
+  '/js/avatar.js',
+  '/js/pfedit.js',
+  '/js/mywork.js',
+  '/js/startup.js',
+  '/js/tagrail.js',
+  '/js/search.js',
+  '/js/effects.js',
+  '/js/cookie.js',
+  '/js/zeo.js',
+  '/js/theme.js',
+  '/js/engagement.js',
+  '/js/sections.js'
 ];
 
 /* Hosts. DIT = the resize distribution (thumbnails + lightbox).

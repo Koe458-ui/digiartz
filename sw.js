@@ -26,6 +26,31 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v17 — gallery becomes six sections; hero slides removed.
+     - Gallery: Artworks / Resources / Blog / Marketplace / Jobs /
+       Cart tabs (colour icon chips), one search bar per section with
+       the filter riding at its tail, and per-option filter icons.
+       The old SEARCH ARTWORK row (#fgQ) is gone.
+     - Sections are live: resources, blog_posts, marketplace_items
+       and jobs tables in Supabase; Resources/Marketplace files go to
+       S3 under koe-media/resources/ and koe-media/market/ via the
+       s3-sign edge function (now v14, ext-gated up to 200MB). Those
+       downloads are fetched on explicit save only, so this worker
+       deliberately does NOT cache them.
+     - Upload page: What-are-you-posting rail (Artwork keeps its
+       original form; Resources/Blog/Marketplace/Jobs forms are
+       spec-generated; tags everywhere).
+     - Hero banner slides deleted end to end: #topSlide strip + dot
+       bar, #tsPage detail dialog, admin editor, hero_slides table,
+       and the hero-slides/ signing prefix. 640 lines out.
+     - In their place: the segmented hero pitch (Explore / Learn /
+       Buy / Sell) — headline with brand-red highlight (--brand-red
+       token, shared with the logo badge), checklist, CTA wired to
+       the real surfaces, fade-and-rise per swap.
+     - Section tab tap targets raised to ~47px; horizontal rails get
+       overscroll containment.
+   index.html changed substantially — every client must drop the
+   old shell.
    v16 — sub-pixel fix in the tag rail packer. It measured chips with
    offsetWidth, which rounds to a whole pixel; with real webfont
    metrics a chip laying out at 86.4px reported 86, so ~16 chips
@@ -85,7 +110,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v16';
+const CACHE_VERSION = 'v17';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

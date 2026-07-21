@@ -26,6 +26,36 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v21 — loading veil. The intro splash (logo, particles, progress
+       bar, 2.8s minimum) is replaced by a transparent centered
+       spinner + LOADING text. It blocks all input (see-through, not
+       pass-through) and drops the instant the same tracked slices
+       finish — zero minimum display time; 9s hang failsafe kept.
+
+   v20 — detail views. Artwork viewer is a full-page single column:
+       Previous top-left, Next top-right, all images stacked, author →
+       details → NEW per-item comments (item_comments) → Download →
+       Report; prev/next now clears image/title/like state instantly
+       (data-id + synchronous engagement repaint). New #dzView overlay
+       gives Resources/Blog/Marketplace/Jobs the same full-page detail
+       treatment — comments on all but Jobs, Buy card top of the
+       marketplace page, report everywhere (item_reports).
+
+   v19 — desktop polish. ≥1280px layer at the end of <body>: grids
+       capped at 1680px and centered (4 cols on small laptops, 5 at
+       1440px+, wider gaps on ultrawide), 15px card titles and body
+       copy, 12.5px meta, all primary buttons ≥46px tall with 14px
+       labels. Mobile untouched.
+
+   v18 — Razorpay payments + subscription revamp. Three-card plan
+       grid ($1/$5/$10, Premium featured), checkout for plans and
+       marketplace items via the /api/rzp Pages Function, buy/download
+       buttons on marketplace cards, and the download button now asks
+       dz_request_download() for tier quota + quality before opening
+       the file. /api/* and checkout.razorpay.com are runtime-only and
+       never cached: /api/rzp is a POST endpoint (SW ignores non-GET),
+       and checkout.js is cross-origin, outside the cached hosts below.
+
    v17 — gallery becomes six sections; hero slides removed.
      - Gallery: Artworks / Resources / Blog / Marketplace / Jobs /
        Cart tabs (colour icon chips), one search bar per section with
@@ -110,7 +140,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v17';
+const CACHE_VERSION = 'v21';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

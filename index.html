@@ -332,7 +332,7 @@
     h1{font-weight:800;letter-spacing:-.02em;}
     h2,h3{font-weight:700;letter-spacing:-.01em;}
     a{color:var(--link-color);}
-    kbd,.iLoadPct,.avZoomPct{font-variant-numeric:tabular-nums;}
+    kbd,.avZoomPct{font-variant-numeric:tabular-nums;}
 
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
@@ -341,19 +341,17 @@
 
     /* INTRO — dark/violet theme, matching the Community page
        (--cmBg var(--bg), --cmAccent var(--pg), --cmAccentSoft var(--pb)) */
-    #intro{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:1;transition:opacity 1s ease;pointer-events:auto;}
+    /* Loading veil — transparent but input-opaque. The site paints in
+       behind it while pointer-events:auto swallows every interaction;
+       a faint tint keeps the spinner readable on any content without
+       hiding the page loading underneath. Short .3s fade on reveal. */
+    #intro{position:fixed;inset:0;z-index:9999;background:color-mix(in srgb,var(--bg) 28%,transparent);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;opacity:1;transition:opacity .3s ease;pointer-events:auto;}
     #intro.iHide{opacity:0;pointer-events:none;}
     #intro.iGone{visibility:hidden;}
-    .iLogo{font-family:var(--fd);font-size:clamp(2.2rem,9vw,6rem);font-weight:800;background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;opacity:1;}
-    .iTag{font-family:var(--fm);font-size:clamp(.65rem,2vw,.8rem);letter-spacing:.35em;color:rgba(var(--tx2-rgb),.62);margin-top:1rem;opacity:1;}
-    .iPts{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-    .iPts span{position:absolute;width:2px;height:2px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);animation:pD linear forwards;}
-    @keyframes pD{0%{opacity:0;transform:translateY(0) scale(0)}20%{opacity:1;transform:translateY(-20px) scale(1)}100%{opacity:0;transform:translateY(-120px) scale(.3)}}
-    /* Loading bar */
-    .iLoadWrap{position:absolute;bottom:8%;left:50%;transform:translateX(-50%);width:min(280px,70vw);display:flex;flex-direction:column;align-items:center;gap:.6rem;}
-    .iLoadTrack{width:100%;height:2px;background:rgba(var(--pg-rgb),.12);border-radius:2px;overflow:hidden;}
-    .iLoadBar{height:100%;width:0%;background:linear-gradient(90deg,var(--pg),var(--pb));border-radius:2px;transition:width .25s ease-out;box-shadow:0 0 8px var(--pg);}
-    .iLoadPct{font-family:var(--fm);font-size:.72rem;letter-spacing:.2em;color:rgba(var(--tx2-rgb),.7);opacity:.8;}
+    .iSpin{width:44px;height:44px;border-radius:50%;border:3px solid rgba(var(--pg-rgb),.18);border-top-color:var(--pg);animation:iSpin .8s linear infinite;}
+    @keyframes iSpin{to{transform:rotate(360deg)}}
+    .iTxt{font-family:var(--fm);font-size:.72rem;letter-spacing:.3em;color:var(--tx);text-shadow:0 1px 6px rgba(0,0,0,.35);}
+    @media(prefers-reduced-motion:reduce){.iSpin{animation-duration:1.6s;}}
 
 
     /* =========================================================
@@ -862,6 +860,10 @@
     .dzChip{font-family:var(--fm);font-size:.58rem;letter-spacing:.09em;color:var(--txd);border:1px solid var(--bdr);border-radius:999px;padding:.15rem .5rem;}
     .dzEmpty{text-align:center;padding:3.5rem 1.5rem;color:var(--txd);font-family:var(--fm);font-size:.75rem;letter-spacing:.16em;}
     .dzBusy{text-align:center;padding:2.5rem;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.2em;}
+    .dzBuy{margin-top:.6rem;padding:.5rem .8rem;border:0;border-radius:9px;background:var(--pg);color:#fff;font-family:var(--fm);font-size:.62rem;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:filter .15s,transform .15s;}
+    .dzBuy:active{transform:scale(.97);}
+    @media(hover:hover){.dzBuy:hover{filter:brightness(1.12);}}
+    .dzBuy--free{background:var(--sur2);color:var(--tx);border:1px solid var(--bdr);}
 
     /* ── Upload page section tabs — same shape as the gallery rail so
        the two read as one system. */
@@ -5016,9 +5018,23 @@ body{background:var(--bg);}
    Mobile  (<600px)    : 1 column, full-width cards           ── */
 .subGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1040px;
+  margin-left: auto;
+  margin-right: auto;
   gap: 1.5rem;
   align-items: start; /* cards don't stretch to same height per row */
+}
+/* Short line under the plan name — replaces the old long copy. */
+.subTagline {
+  font-size: .78rem;
+  color: var(--txd);
+  margin: .2rem 0 .35rem;
+}
+/* Premium sits center and reads as the default choice. */
+.subCard--featured { box-shadow: 0 14px 44px rgba(124,58,237,.28); }
+@media (min-width: 900px) {
+  .subCard--featured { transform: scale(1.045); z-index: 1; }
 }
 
 /* ── Card shell ── */
@@ -5213,13 +5229,13 @@ body{background:var(--bg);}
   .subCardInner{ padding: 1.8rem 1.5rem 1.6rem; }
 }
 
-/* Tablet landscape (900px) — drop to 2 columns.
-   Cards become richer: more breathing room per card. */
+/* Tablet landscape (900px) — with three cards a 2-column grid strands
+   one card alone on the second row, so stack them instead. */
 @media (max-width: 899px) {
   .subGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 1.2rem;
-    max-width: 700px;
+    max-width: 480px;
     margin-left: auto;
     margin-right: auto;
   }
@@ -6065,30 +6081,17 @@ body{background:var(--bg);}
 
   <!-- =========================================================
        INTRO / LOADING SCREEN
-       ├─ Particle Dots Canvas (#iPts)
-       ├─ Logo (.iLogo)
-       ├─ Tagline (.iTag)
-       └─ Progress Bar (.iLoadWrap)
-           ├─ Track + Bar (#iLoadBar)
-           └─ Percentage Label (#iLoadPct)
+       └─ Spinner (.iSpin) + LOADING text (.iTxt), centered
        ========================================================= -->
-  <div id="intro">
-   <!-- ── Particle Dots Canvas ── -->
-   <div class="iPts" id="iPts">
-   </div>
-   <!-- ── Logo ── -->
-   <div class="iLogo">
-    Digiartz
-   </div>
-   <!-- ── Tagline ── -->
-   <p class="iTag">
-    ART HAS NO LIMITS
-   </p>
-   <!-- ── Progress Bar ── -->
-   <div class="iLoadWrap">
-    <div class="iLoadTrack"><div class="iLoadBar" id="iLoadBar"></div></div>
-    <div class="iLoadPct" id="iLoadPct">0%</div>
-   </div>
+  <!-- Loading veil — deliberately minimal: a centered spinner and the
+       word LOADING, nothing else. The veil is TRANSPARENT (the site is
+       visible painting in behind it) but it still swallows every click
+       and scroll until reveal — see-through, not pass-through. It
+       drops the instant the tracked slices (DOM + fonts + image
+       callback) hit 100%; there is no minimum display time. -->
+  <div id="intro" aria-label="Loading" role="status">
+   <div class="iSpin" aria-hidden="true"></div>
+   <div class="iTxt">LOADING</div>
   </div>
   <!-- =========================================================
        SUPABASE CONFIG BANNER
@@ -10600,79 +10603,70 @@ function qrMake (text) {
      <p>Support the project and unlock exclusive benefits</p>
     </div>
 
-    <!-- Card grid -->
+    <!-- Card grid — three plans, Premium centered + featured.
+         Prices shown here are display only: the server-side PLANS
+         map in functions/api/rzp.js is the priced source of truth,
+         and the tier's actual powers (monthly download quota +
+         full-quality originals) are enforced by dz_request_download()
+         in Supabase. One payment = 31 days; an expired tier reads as
+         guest immediately and is downgraded by the nightly cron. -->
     <div class="subGrid">
 
-     <!-- Plan 1: Premium Lite (Blue) -->
+     <!-- Plan 1: Lite (Blue) -->
      <div class="subCard subCard--blue">
       <div class="subCardInner">
-       <div class="subPlanName">Premium Lite</div>
-       <div class="subPrice">$0.50</div>
-       <div class="subPricePer">per month</div>
-       <div class="subCardDiv"></div>
-       <ul class="subFeatures">
-        <li>Download copyright-free images</li>
-        <li>Download images in the highest available quality</li>
-       </ul>
-       <button class="subBtn subBtn--blue" onclick="openSubModal()" aria-label="Get Premium Lite">Get Premium Lite</button>
-      </div>
-     </div>
-
-     <!-- Plan 2: Premium (Purple) — Most Popular -->
-     <div class="subCard subCard--purple">
-      <div class="subCardInner">
-       <div class="subBadge subBadge--purple">★ Most Popular</div>
-       <div class="subPlanName">Premium</div>
+       <div class="subPlanName">Lite</div>
+       <div class="subTagline">For casual users</div>
        <div class="subPrice">$1</div>
        <div class="subPricePer">per month</div>
        <div class="subCardDiv"></div>
        <ul class="subFeatures">
-        <li>Download copyright-free images</li>
-        <li>Download images in the highest available quality</li>
-        <li>Request 1 custom artwork</li>
-        <li>Early access to future features</li>
-        <li>More benefits coming soon</li>
+        <li>Browse premium content previews</li>
+        <li>Download limited assets</li>
+        <li>Basic quality access</li>
+        <li>Good for trying the platform</li>
        </ul>
-       <button class="subBtn subBtn--purple" onclick="openSubModal()" aria-label="Upgrade to Premium">Upgrade to Premium</button>
+       <button class="subBtn subBtn--blue" onclick="dzSubBuy('lite')" aria-label="Start Lite">Start Lite</button>
       </div>
      </div>
 
-     <!-- Plan 3: MAX (Gold) — Best Value -->
-     <div class="subCard subCard--gold">
+     <!-- Plan 2: Premium (Purple) — center, featured -->
+     <div class="subCard subCard--purple subCard--featured">
       <div class="subCardInner">
-       <div class="subBadge subBadge--gold">⚡ Best Value</div>
-       <div class="subPlanName">MAX</div>
-       <div class="subPrice">$100</div>
+       <div class="subBadge subBadge--purple">&#9733; Most Popular</div>
+       <div class="subPlanName">Premium</div>
+       <div class="subTagline">For active creators</div>
+       <div class="subPrice">$5</div>
        <div class="subPricePer">per month</div>
        <div class="subCardDiv"></div>
        <ul class="subFeatures">
-        <li>Download copyright-free images</li>
-        <li>Download images in the highest available quality</li>
-        <li>Request up to 5 custom artworks</li>
-        <li>Custom website development</li>
-        <li>Website size up to 5,000 lines of code</li>
-        <li>Priority support</li>
-        <li>More benefits coming soon</li>
+        <li>Full access to premium artworks</li>
+        <li>High-quality downloads</li>
+        <li>More downloads per month</li>
+        <li>Premium resources &amp; blog extras</li>
+        <li>Better support</li>
        </ul>
-       <button class="subBtn subBtn--gold" onclick="openSubModal()" aria-label="Go MAX">Go MAX</button>
+       <button class="subBtn subBtn--purple" onclick="dzSubBuy('premium')" aria-label="Go Premium">Go Premium</button>
       </div>
      </div>
 
-     <!-- Plan 4: Support (Green) -->
-     <div class="subCard subCard--green">
+     <!-- Plan 3: Max (Gold) -->
+     <div class="subCard subCard--gold">
       <div class="subCardInner">
-       <div class="subPlanName">Support</div>
-       <div class="subPrice" style="font-size:clamp(1.3rem,3vw,1.8rem);letter-spacing:-.01em;">Any Amount</div>
-       <div class="subPricePer">your choice</div>
+       <div class="subBadge subBadge--gold">&#9889; Best Value</div>
+       <div class="subPlanName">Max</div>
+       <div class="subTagline">For power users and serious buyers</div>
+       <div class="subPrice">$10</div>
+       <div class="subPricePer">per month</div>
        <div class="subCardDiv"></div>
        <ul class="subFeatures">
-        <li>Support the project</li>
-        <li>Help fund future updates</li>
-        <li>Help create more free content</li>
-        <li>Optional donation tier</li>
-        <li>Support independent development</li>
+        <li>Everything in Premium</li>
+        <li>Highest download limits</li>
+        <li>Exclusive artworks and resources</li>
+        <li>Early access to new features</li>
+        <li>Priority support</li>
        </ul>
-       <button class="subBtn subBtn--green" onclick="openSubModal()" aria-label="Support the Project">Support the Project</button>
+       <button class="subBtn subBtn--gold" onclick="dzSubBuy('max')" aria-label="Get Max">Get Max</button>
       </div>
      </div>
 
@@ -11265,13 +11259,39 @@ function qrMake (text) {
     </div>
   </div>
 
+  <!-- =========================================================
+       SECTION DETAIL VIEW (#dzView)
+       Full-page overlay for Resources / Blog / Marketplace / Jobs —
+       the same reading order the artwork viewer now uses:
+       top bar (Close · ‹ Previous · Next ›) → media → [marketplace:
+       price + Buy] → author row → title/details → body → comments
+       (not for jobs) → Download / Report. Content is rendered per
+       kind by the dzView module; navigation walks the same rows the
+       section tab is currently showing (window.dzGetRows).
+       ========================================================= -->
+  <div id="dzView" role="dialog" aria-modal="true" aria-label="Detail view">
+   <div class="dzvTop">
+    <div class="avTopLeft">
+     <button class="avTopBtn" onclick="dzCloseView()" aria-label="Close">✕</button>
+     <button class="avNavBtn avNavTop" id="dzvPrev" onclick="dzViewNav(-1)" aria-label="Previous">‹ Previous</button>
+    </div>
+    <button class="avNavBtn avNavTop" id="dzvNext" onclick="dzViewNav(1)" aria-label="Next">Next ›</button>
+   </div>
+   <div class="dzvBody" id="dzvBody"></div>
+  </div>
+
   <div id="artModal" role="dialog" aria-modal="true" aria-label="Artwork viewer" data-state="closed">
    <div class="avBox" onclick="event.stopPropagation()">
     <div class="avTopBar">
-     <button class="avTopBtn avCloseBtn" onclick="closeLB()" aria-label="Close">
-      <span class="avBtnIcon">✕</span><span class="avBtnLabel">Close</span><kbd>ESC</kbd>
-     </button>
+     <div class="avTopLeft">
+      <button class="avTopBtn avCloseBtn" onclick="closeLB()" aria-label="Close">
+       <span class="avBtnIcon">✕</span><span class="avBtnLabel">Close</span><kbd>ESC</kbd>
+      </button>
+      <!-- Previous lives top-left now (was floating over the image) -->
+      <button class="avNavBtn avNavTop" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous">‹ Previous</button>
+     </div>
      <div class="avTopRight">
+      <button class="avNavBtn avNavTop" id="avNextBtn" onclick="avNav(1)" aria-label="Next">Next ›</button>
       <button class="avActBtn" onclick="avDownload()" aria-label="Download">⬇</button>
       <button class="avActBtn" onclick="avShare()" aria-label="Share">↗</button>
       <button class="avActBtn" onclick="avReport()" aria-label="Report">⚑</button>
@@ -11283,12 +11303,10 @@ function qrMake (text) {
            artwork arrows, zoom bar). Positioned ancestor for all of it,
            so nothing centres against the thumbnail strip below. -->
       <div class="avImgStage">
-       <button class="avNavBtn avNavPrev" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous artwork">‹</button>
        <div class="avImgViewport" id="avImgViewport">
         <img alt="" id="lbImg" draggable="false"/>
         <div class="avImgCount" id="avImgCount" hidden></div>
        </div>
-       <button class="avNavBtn avNavNext" id="avNextBtn" onclick="avNav(1)" aria-label="Next artwork">›</button>
        <div class="avZoomBar">
         <button onclick="avZoom(-1)" aria-label="Zoom out">−</button>
         <span class="avZoomPct" id="avZoomPct">100%</span>
@@ -11298,8 +11316,12 @@ function qrMake (text) {
         <button onclick="avDownload()" aria-label="Download">⬇</button>
        </div>
       </div>
-      <!-- Thumbnail strip — every image in this artwork, as little
-           squares under the big one. Hidden when there's only one. -->
+      <!-- Image stack — images 2..n of a multi-image artwork, shown
+           full-width under the main stage so the whole set reads
+           top-to-bottom (Image 1 stays in the zoomable viewport).
+           The old thumbnail strip is retired but its element remains
+           for any stale references; it is never unhidden. -->
+      <div class="avImgStack" id="avImgStack" hidden></div>
       <div class="avStrip" id="avStrip" hidden role="tablist" aria-label="Images in this artwork"></div>
      </div>
      <div class="avSide" id="avSide">
@@ -11336,6 +11358,19 @@ function qrMake (text) {
         <div class="avBlockH">Tags</div>
         <div class="avTagList" id="avTagList"></div>
        </div>
+       <div class="avDiv"></div>
+       <!-- Per-artwork comments (item_comments, kind='artwork') -->
+       <div class="avCmBlock">
+        <div class="avBlockH">Comments</div>
+        <div class="avCmList" id="avCmList"></div>
+        <div class="avCmBar">
+         <input class="avCmIn" id="avCmIn" type="text" maxlength="1000" placeholder="Write a comment…"
+                onkeydown="if(event.key==='Enter')dzCmPost('artwork',avCurrentArt&&avCurrentArt.id,'avCmIn','avCmList')">
+         <button class="avCmSend" onclick="dzCmPost('artwork',avCurrentArt&&avCurrentArt.id,'avCmIn','avCmList')" aria-label="Send comment">➤</button>
+        </div>
+       </div>
+       <div class="avDiv"></div>
+       <button class="avActWide" onclick="avDownload()">⬇ Download</button>
        <button class="avReportBtn" onclick="avReport()">⚑ Report artwork</button>
       </div>
      </div>
@@ -12638,15 +12673,21 @@ function qrMake (text) {
     if(avImages.length < 2){
       strip.hidden = true; strip.innerHTML = '';
       if(cnt) cnt.hidden = true;
+      var st0 = document.getElementById('avImgStack');
+      if(st0){ st0.hidden = true; st0.innerHTML = ''; }
       return;
     }
-    strip.hidden = false;
-    strip.innerHTML = avImages.map(function(u,n){
-      return '<button class="avThumb'+(n===0?' active':'')+'" role="tab" aria-selected="'+(n===0?'true':'false')+'"'+
-             ' onclick="avShowImage('+n+')" aria-label="Image '+(n+1)+' of '+avImages.length+'">'+
-             '<img src="'+esc(getThumbnailUrl(u))+'" alt="" loading="lazy"></button>';
-    }).join('');
-    if(cnt){ cnt.hidden = false; cnt.textContent = '1 / '+avImages.length; }
+    /* Stacked layout: image 1 stays in the zoomable viewport, images
+       2..n render full-width below it. The strip stays retired. */
+    strip.hidden = true; strip.innerHTML = '';
+    if(cnt){ cnt.hidden = false; cnt.textContent = avImages.length+' images'; }
+    var stack = document.getElementById('avImgStack');
+    if(stack){
+      stack.hidden = false;
+      stack.innerHTML = avImages.slice(1).map(function(u,n){
+        return '<img src="'+esc(getViewUrl(u))+'" alt="Image '+(n+2)+' of '+avImages.length+'" loading="lazy" decoding="async">';
+      }).join('');
+    }
   }
   /* Swap the main image. Download always follows the visible image, so
      currentLightboxImageSrc is repointed at the untouched original. */
@@ -12808,25 +12849,56 @@ function qrMake (text) {
     if(!document.fullscreenElement){ if(box.requestFullscreen) box.requestFullscreen(); }
     else { if(document.exitFullscreen) document.exitFullscreen(); }
   }
-  function avDownload(){
+  async function avDownload(){
     var img=document.getElementById('lbImg');
     /* Download the untouched original — currentLightboxImageSrc holds the
        pristine URL (the on-screen image is a resized WebP). getFullUrl
        also strips any sizing params as a belt-and-braces guarantee. */
     var fullSrc=getFullUrl(currentLightboxImageSrc || (img && img.src) || '');
     if(!fullSrc) return;
+    /* ── Tier gate ── the server decides the monthly quota and the
+       quality (guest 5 · lite 30 · premium 200 · max 1000; originals
+       for premium/max, 1600px for guest/lite; own artworks always
+       free + full). If the RPC itself errors the gate fails OPEN —
+       same philosophy as the upload verifier: an outage must never
+       brick a core feature. */
+    var gate={allowed:true, full:true};
+    var artId=avCurrentArt && avCurrentArt.id;
+    if(artId && sb){
+      try{
+        var gres=await sb.rpc('dz_request_download', {
+          p_artwork: artId,
+          p_anon_key: (typeof window.dzViewerKey==='function' ? window.dzViewerKey() : null)
+        });
+        if(!gres.error && gres.data) gate=gres.data;
+      }catch(e){}
+    }
+    if(!gate.allowed){
+      if(gate.reason==='limit'){
+        showToast('Monthly download limit reached \u2014 upgrade for more');
+        if(typeof openSubscription==='function') openSubscription();
+      }else{
+        showToast('Sign in to download');
+        if(typeof openAuthMod==='function') openAuthMod();
+      }
+      return;
+    }
+    var href = gate.full ? fullSrc : imgResize(fullSrc, 1600, 82);
     var a=document.createElement('a');
     /* FIX: `download` is ignored for cross-origin URLs (S3/CloudFront),
        so the click used to navigate the whole app away to the raw image.
        Opening in a new tab keeps the site intact and still lets the
        browser save the file. */
-    a.href=fullSrc; a.download=''; a.target='_blank'; a.rel='noopener';
+    a.href=href; a.download=''; a.target='_blank'; a.rel='noopener';
     document.body.appendChild(a); a.click(); a.remove();
+    if(typeof gate.remaining==='number' && gate.remaining<=3){
+      showToast(gate.remaining+' download'+(gate.remaining===1?'':'s')+' left this month');
+    }
     /* Count the download toward trending (server dedups per viewer per day).
        Also bump the in-memory counter so a re-render reflects it without a
        refetch — the guard trigger makes the DB the source of truth anyway. */
-    if(avCurrentArt && avCurrentArt.id){
-      try{ window.registerArtworkDownload(avCurrentArt.id); }catch(e){}
+    if(artId){
+      try{ window.registerArtworkDownload(artId); }catch(e){}
       avCurrentArt.download_count = (parseInt(avCurrentArt.download_count,10)||0) + 1;
     }
   }
@@ -12944,6 +13016,23 @@ function qrMake (text) {
     avResetZoom();
     avCloseMoreMenu();
 
+    /* ── INSTANT RESET ── everything from the previous artwork is
+       cleared SYNCHRONOUSLY before any async work, so prev/next never
+       shows the old image, title, like state or comments for even a
+       frame. The like/bookmark buttons get an explicit data-id and an
+       immediate repaint — previously they resolved their id from the
+       URL and only repainted when new buttons entered the DOM, so
+       stepping through artworks left the old pressed state behind. */
+    (function(){
+      var btns=document.querySelectorAll('#artModal .engLike,#artModal .engBm');
+      btns.forEach(function(b){ b.setAttribute('data-id', id?String(id):''); });
+      if(typeof window.dzRepaintEng==='function') window.dzRepaintEng();
+      var cl=document.getElementById('avCmList');
+      if(cl) cl.innerHTML='<div class="avCmEmpty">LOADING\u2026</div>';
+      var ci=document.getElementById('avCmIn'); if(ci) ci.value='';
+      var st=document.getElementById('avImgStack'); if(st){ st.hidden=true; st.innerHTML=''; }
+    })();
+
     var viewport=document.getElementById('avImgViewport');
     if(viewport) viewport.classList.add('loading');
     var imgEl=document.getElementById('lbImg');
@@ -12952,6 +13041,7 @@ function qrMake (text) {
     if(imgEl){
       /* Show the medium (~500 KB WebP) view; the untouched original is kept
          in currentLightboxImageSrc for Download. */
+      imgEl.removeAttribute('src');   /* blank the old pixels instantly */
       imgEl.src=getViewUrl(src);
       /* SEO: the full-resolution image shown in the modal is the one
          most likely to be the actual indexed/served image in Google
@@ -13008,6 +13098,7 @@ function qrMake (text) {
     avRenderMeta({ category:catLabelStr, software: art?art.software:null, createdAt: art?art.created_at:null, hasArt: !!art });
     avRenderAuthor(art);
     avSetupNav(id, navSource);
+    if(id && typeof window.dzCmLoad==='function') window.dzCmLoad('artwork', String(id), 'avCmList');
 
     modal.setAttribute('data-state','open');
     modal.classList.add('open');
@@ -18494,7 +18585,6 @@ function hideCommentThumbnail(){
   }
 
 
-  function spawnPts(){const c=document.getElementById('iPts');for(let i=0;i<28;i++){const s=document.createElement('span');s.style.left=Math.random()*100+'%';s.style.top=(40+Math.random()*40)+'%';s.style.animationDuration=(1.5+Math.random()*1.5)+'s';s.style.animationDelay=(Math.random()*2)+'s';c.appendChild(s);}}
 
   /* ── Post-intro callback queue ──
      Anything that should only surface once the #intro loading screen has
@@ -18515,18 +18605,16 @@ function hideCommentThumbnail(){
   }
 
   (function(){
-    var bar = document.getElementById('iLoadBar');
-    var pct = document.getElementById('iLoadPct');
     var introEl = document.getElementById('intro');
     var revealed = false;
-    var startTime = performance.now();
-    var MIN_DURATION = 2800; /* minimum intro duration in ms */
+    /* Same load criteria as before — DOM + fonts + the image callback
+       slice — but NO minimum display time and NO progress threshold:
+       the veil drops the moment everything tracked is in. A fast
+       device that has the front content ready reveals immediately. */
     var progress = {dom:0, img:0, fonts:0};
-    var weights = {dom:15, img:70, fonts:15}; /* image render is the main focus */
-    var reachedFortyAt = null;
 
     function total(){
-      return progress.dom*weights.dom/100 + progress.img*weights.img/100 + progress.fonts*weights.fonts/100;
+      return (progress.dom + progress.img + progress.fonts) / 3;
     }
 
     function reveal(){
@@ -18542,31 +18630,16 @@ function hideCommentThumbnail(){
           }
         });
         /* Fallback: if transitionend never fires (reduced-motion, display
-           quirks) still release the queue just after the 1s opacity fade. */
-        setTimeout(__flushAfterIntro, 1150);
+           quirks) still release the queue just after the .3s fade. */
+        setTimeout(__flushAfterIntro, 450);
       } else {
         __flushAfterIntro();
       }
     }
 
-    function tryReveal(p){
-      /* Mark the moment we first cross 40% real progress */
-      if(p >= 40 && reachedFortyAt === null) reachedFortyAt = performance.now();
-      if(reachedFortyAt === null) return;
-      var elapsed = performance.now() - startTime;
-      if(elapsed >= MIN_DURATION){
-        reveal();
-      } else {
-        /* Not enough time has passed yet — wait out the remainder of the minimum duration */
-        setTimeout(reveal, MIN_DURATION - elapsed);
-      }
-    }
-
     function paint(){
-      var p = Math.min(100, Math.round(total()));
-      if(bar) bar.style.width = p + '%';
-      if(pct) pct.textContent = p + '%';
-      tryReveal(p);
+      /* Loaded = done. No waiting, no cap. */
+      if(total() >= 100) reveal();
     }
 
     /* DOM ready slice */
@@ -18596,11 +18669,10 @@ function hideCommentThumbnail(){
     };
 
     paint();
-    /* Safety net: never let users get stuck on the intro */
-    setTimeout(function(){
-      progress.dom = 100; progress.img = 100; progress.fonts = 100; paint();
-      reveal();
-    }, 9000);
+    /* Safety net: never let users get stuck on the veil if a tracked
+       promise hangs (e.g. document.fonts.ready on a broken CDN). It
+       cannot delay anything — a completed load reveals immediately. */
+    setTimeout(reveal, 9000);
   })();
 
   (/* ==========================================
@@ -18616,7 +18688,6 @@ function hideCommentThumbnail(){
    ========================================== */
 
   async function init(){
-    spawnPts();
     await loadDB();
     renderHome();
     /* No hero image to preload anymore — resolve the loading bar's
@@ -22429,6 +22500,10 @@ html.thmFade #themePage{
     db().rpc('register_artwork_download', { p_artwork: id, p_anon_key: viewerKey() })
       .then(function () {}, function () {});               /* fire-and-forget */
   };
+  /* The download quota gate (avDownload → dz_request_download) needs
+     the same anonymous identity the trending dedup uses, so one
+     visitor is one viewer in both systems. */
+  window.dzViewerKey = viewerKey;
   function idFromPath (path) {
     var m = /^\/artwork\/([^/]+)$/.exec(path || '');
     return m ? decodeURIComponent(m[1]) : null;
@@ -22492,6 +22567,9 @@ html.thmFade #themePage{
     });
   }
   function paintSoon () { clearTimeout(paintTimer); paintTimer = setTimeout(paintAll, 200); }
+  /* The artwork viewer repaints synchronously on prev/next so the old
+     pressed state can never linger — see openLB's INSTANT RESET. */
+  window.dzRepaintEng = paintAll;
   /* Cards render asynchronously after data loads — repaint states
      whenever new engagement buttons enter the DOM.
      FIX(B3): previously ANY DOM insertion anywhere (every 5s chat poll
@@ -22816,7 +22894,11 @@ html.thmFade #themePage{
     },
     marketplace: {
       table:'marketplace_items', kind:'grid', noun:'item',
-      select:'id,user_id,title,description,category,tags,item_type,price_cents,currency,file_url,file_ext,file_size,preview_url,license,delivery_days,created_at'
+      /* file_url is deliberately absent: the column is revoked from
+         anon/authenticated (selecting it errors the whole query) and
+         the paid file is only reachable through the
+         dz_market_download() RPC after an entitlement check. */
+      select:'id,user_id,title,description,category,tags,item_type,price_cents,currency,file_ext,file_size,preview_url,license,delivery_days,created_at'
     },
     jobs: {
       table:'jobs', kind:'list', noun:'job',
@@ -22861,7 +22943,11 @@ html.thmFade #themePage{
   function dzSecLoad(sec){
     var cfg = SEC[sec], host = document.getElementById('fgSecC-'+sec);
     if(!cfg || !host) return;
-    if(!window.sb){ host.innerHTML = '<div class="dzEmpty">BACKEND NOT CONFIGURED</div>'; return; }
+    /* `sb` is a top-level `let` in the main script block — it lives in
+       the global lexical environment, NOT on window, so `window.sb` is
+       always undefined. Bare `sb` resolves correctly (null if config
+       is missing, the client otherwise). */
+    if(!sb){ host.innerHTML = '<div class="dzEmpty">BACKEND NOT CONFIGURED</div>'; return; }
     dzBusy[sec] = true;
     host.innerHTML = '<div class="dzBusy">LOADING…</div>';
     sb.from(cfg.table).select(cfg.select)
@@ -22918,31 +23004,43 @@ html.thmFade #themePage{
       var thumb = r.preview_url
         ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.preview_url))+'" alt="'+esc(r.title)+'">'
         : '<span class="dzExt">'+esc((r.file_ext||'FILE').toUpperCase())+'</span>';
-      return '<a class="dzCard" href="'+esc(r.file_url)+'" target="_blank" rel="noopener" download>'+
+      /* Card click opens the full detail view; the file download
+         moved inside it (with the comments and report options). */
+      return '<div class="dzCard" onclick="dzOpenView(\'resources\',\''+id+'\')">'+
         '<div class="dzThumb">'+thumb+'<span class="dzBadge">'+esc((r.file_ext||'').toUpperCase())+'</span></div>'+
         '<div class="dzBody"><div class="dzName">'+esc(r.title)+'</div>'+
         '<div class="dzMeta"><span>'+esc(bytes(r.file_size))+'</span>'+
         '<span>'+esc(String(r.download_count||0))+' downloads</span>'+
-        '<span>'+esc(r.license||'')+'</span></div>'+chips(r)+'</div></a>';
+        '<span>'+esc(r.license||'')+'</span></div>'+chips(r)+'</div></div>';
     }
     if(sec === 'marketplace'){
       var mt = r.preview_url
         ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.preview_url))+'" alt="'+esc(r.title)+'">'
         : '<span class="dzExt">'+esc((r.item_type||'ITEM').toUpperCase())+'</span>';
-      return '<div class="dzCard" data-id="'+id+'">'+
+      /* file_url never reaches the client — the button routes through
+         the Razorpay checkout (paid) or the entitlement RPC (free /
+         already purchased). hasFile tells the post-payment handler
+         whether a download should follow, since commissions and
+         services legitimately have no file. */
+      var hasFile = r.file_ext ? 1 : 0;
+      var priced  = (r.price_cents||0) > 0;
+      var buyBtn  = priced
+        ? '<button class="dzBuy" onclick="event.stopPropagation();dzMarketBuy(\''+id+'\','+hasFile+')">Buy \u00b7 '+esc(money(r.price_cents, r.currency))+'</button>'
+        : (hasFile ? '<button class="dzBuy dzBuy--free" onclick="event.stopPropagation();dzMarketGet(\''+id+'\')">Download \u00b7 Free</button>' : '');
+      return '<div class="dzCard" data-id="'+id+'" onclick="dzOpenView(\'marketplace\',\''+id+'\')">'+
         '<div class="dzThumb">'+mt+'<span class="dzBadge">'+esc((r.item_type||'').toUpperCase())+'</span></div>'+
         '<div class="dzBody"><div class="dzName">'+esc(r.title)+'</div>'+
         '<div class="dzPrice">'+esc(money(r.price_cents, r.currency))+'</div>'+
         '<div class="dzMeta"><span>'+esc(r.license||'')+'</span>'+
         (r.delivery_days ? '<span>'+esc(String(r.delivery_days))+'d delivery</span>' : '')+
-        '</div>'+chips(r)+'</div></div>';
+        '</div>'+chips(r)+buyBtn+'</div></div>';
     }
     if(sec === 'blog'){
       var ico = r.cover_url
         ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.cover_url))+'" alt="">'
         : esc((r.title||'?').charAt(0).toUpperCase());
       var ex = r.excerpt || String(r.body||'').slice(0,140);
-      return '<div class="dzRow" data-id="'+id+'"><div class="dzRowIco">'+ico+'</div>'+
+      return '<div class="dzRow" data-id="'+id+'" onclick="dzOpenView(\'blog\',\''+id+'\')"><div class="dzRowIco">'+ico+'</div>'+
         '<div style="min-width:0;flex:1"><div class="dzName">'+esc(r.title)+'</div>'+
         '<div class="dzMeta" style="margin:.2rem 0 .3rem"><span>'+esc(ago(r.created_at))+'</span>'+
         '<span>'+esc(String(r.read_minutes||1))+' min read</span></div>'+
@@ -22956,7 +23054,7 @@ html.thmFade #themePage{
           .map(function(x){ return money(Math.round(Number(x)*100), r.salary_currency); }).join(' – ')
         + (r.salary_unit ? ' / '+r.salary_unit.toLowerCase() : '')
       : '';
-    return '<div class="dzRow" data-id="'+id+'">'+
+    return '<div class="dzRow" data-id="'+id+'" onclick="dzOpenView(\'jobs\',\''+id+'\')">'+
       '<div class="dzRowIco">'+esc((r.company||'?').charAt(0).toUpperCase())+'</div>'+
       '<div style="min-width:0;flex:1"><div class="dzName">'+esc(r.title)+'</div>'+
       '<div class="dzMeta" style="margin:.2rem 0 .3rem"><span>'+esc(r.company)+'</span>'+
@@ -23203,13 +23301,17 @@ html.thmFade #themePage{
 
   /* ── submit ──────────────────────────────────────────────────── */
   async function dzSubmit(sec){
-    if(!window.sb){ showToast('Backend not configured'); return; }
+    if(!sb){ showToast('Backend not configured'); return; }
     if(!window.currentUser){
       if(typeof pfGuestGate === 'function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
       return;
     }
     var btn = document.getElementById('dzSubmit-'+sec);
-    var s = st(sec), row = {user_id: currentUser.id, tags: s.tags};
+    /* No moderation queue for these sections — rows insert as
+       'approved' (same as artworks) and are live the moment the
+       insert lands. The eq('status','approved') read filter stays,
+       so a status column edit can still unpublish a row later. */
+    var s = st(sec), row = {user_id: currentUser.id, tags: s.tags, status:'approved'};
 
     /* Required fields come straight off the spec so the form and the
        check can't disagree. */
@@ -23306,7 +23408,7 @@ html.thmFade #themePage{
       var res = await sb.from(SEC[sec].table).insert(row).select('id').single();
       if(res.error) throw res.error;
 
-      showToast('Submitted for review ✦');
+      showToast('Published ✦');
       dzResetForm(sec);
       dzLoaded[sec] = false;   /* next visit re-queries */
     }catch(err){
@@ -23343,8 +23445,375 @@ html.thmFade #themePage{
   window.dzTagKey        = dzTagKey;
   window.dzTagDel        = dzTagDel;
   window.dzPick          = dzPick;
+  /* The detail overlay (#dzView) navigates the same rows the tab is
+     showing and reuses these formatters — exposed read-only. */
+  window.dzGetRows = function(sec){ return dzCache[sec] || []; };
+  window.dzHelpers = { money:money, bytes:bytes, ago:ago };
 })();
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   RAZORPAY CHECKOUT — subscriptions + marketplace
+   Server half lives in functions/api/rzp.js (Cloudflare Pages
+   Function at /api/rzp). Prices are decided there, never here — this
+   module only opens the Razorpay modal and reports the result back
+   for signature verification. checkout.js is loaded lazily on the
+   first pay press so visitors who never buy never fetch it.
+   ═══════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  var loadP = null;
+  function loadRzp(){
+    if(window.Razorpay) return Promise.resolve();
+    if(loadP) return loadP;
+    loadP = new Promise(function(res, rej){
+      var s = document.createElement('script');
+      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      s.async = true;
+      s.onload = res;
+      s.onerror = function(){ loadP = null; rej(new Error('Could not load the payment window')); };
+      document.head.appendChild(s);
+    });
+    return loadP;
+  }
+
+  async function api(body){
+    var{data:{session}} = await sb.auth.getSession();
+    if(!session) throw new Error('Sign in required');
+    var res = await fetch('/api/rzp', {
+      method:'POST',
+      headers:{'content-type':'application/json', 'authorization':'Bearer '+session.access_token},
+      body: JSON.stringify(body)
+    });
+    var j = await res.json().catch(function(){return{};});
+    if(!res.ok) throw new Error(j.error || 'Payment service error');
+    return j;
+  }
+
+  function gate(){
+    if(currentUser) return false;
+    if(typeof pfGuestGate === 'function')
+      pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+    return true;
+  }
+
+  function openCheckout(order, onPaid){
+    return loadRzp().then(function(){
+      new Razorpay({
+        key: order.keyId,
+        order_id: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'DigiArtz',
+        description: order.label || '',
+        theme: { color: '#7C3AED' },
+        handler: function(r){
+          api({action:'verify', orderId:r.razorpay_order_id,
+               paymentId:r.razorpay_payment_id, signature:r.razorpay_signature})
+            .then(onPaid, function(e){ showToast(e.message || 'Could not verify the payment'); });
+        },
+        modal: { ondismiss: function(){ showToast('Payment cancelled'); } }
+      }).open();
+    });
+  }
+
+  /* ── subscriptions ─────────────────────────────────────────────
+     One-time payment granting 31 days; the server stamps
+     profiles.subscription_tier + subscription_expires_at after the
+     signature verifies. */
+  window.dzSubBuy = function(plan){
+    if(gate()) return;
+    var amount = null;
+    if(plan === 'support'){
+      var v = prompt('Support amount in USD (minimum $0.50):', '5');
+      if(v === null) return;
+      amount = Math.round(parseFloat(v) * 100);
+      if(!Number.isFinite(amount) || amount < 50){ showToast('Minimum is $0.50'); return; }
+    }
+    api({action:'sub-order', plan:plan, amount:amount})
+      .then(function(o){
+        return openCheckout(o, function(r){
+          showToast(r.tier ? 'Subscription active \u2726' : 'Thank you for the support \u2726');
+        });
+      })
+      .catch(function(e){ showToast(e.message || 'Could not start checkout'); });
+  };
+
+  /* ── marketplace ───────────────────────────────────────────────
+     Free (or already-owned) files come straight from the
+     entitlement RPC; paid ones go through checkout first. hasFile=0
+     for commissions/services, where paying is the whole product. */
+  window.dzMarketGet = function(id){
+    if(gate()) return;
+    sb.rpc('dz_market_download', {p_item:id}).then(function(res){
+      if(res.error){ showToast(res.error.message || 'Could not fetch the file'); return; }
+      if(res.data) window.open(res.data, '_blank', 'noopener');
+    });
+  };
+
+  window.dzMarketBuy = function(id, hasFile){
+    if(gate()) return;
+    api({action:'market-order', itemId:id})
+      .then(function(o){
+        if(o.owned){                      /* bought before — just download */
+          if(hasFile) window.dzMarketGet(id);
+          else showToast('Already purchased \u2726');
+          return;
+        }
+        return openCheckout(o, function(){
+          showToast('Purchased \u2726');
+          if(hasFile) window.dzMarketGet(id);
+        });
+      })
+      .catch(function(e){ showToast(e.message || 'Could not start checkout'); });
+  };
+})();
+</script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   DETAIL VIEW (#dzView) + shared per-item comments (dzCm*)
+   One overlay serves Resources / Blog / Marketplace / Jobs. It walks
+   window.dzGetRows(sec) — the exact rows the section tab is showing —
+   so Previous/Next steps through what the user was just browsing.
+   Every navigation rebuilds the body SYNCHRONOUSLY from the cached
+   row (no stale frame), then async work (author profile, comments)
+   fills in. Comments live in item_comments (username stamped by a
+   DB trigger); reports in item_reports. Jobs: details + report only.
+   The artwork viewer shares dzCmLoad/dzCmPost for its own thread.
+   ═══════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  var KIND = { resources:'resource', blog:'blog', marketplace:'marketplace', jobs:'job' };
+  var cur = { sec:null, idx:-1 };
+  var profCache = {};
+
+  function H(){ return window.dzHelpers || { money:function(){return '';}, bytes:function(){return '';}, ago:function(){return '';} }; }
+  function esc2(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function rows(){ return (typeof window.dzGetRows==='function' ? window.dzGetRows(cur.sec) : []) || []; }
+
+  /* ── comments (shared with the artwork viewer) ─────────────── */
+  window.dzCmLoad = async function(kind, id, listId){
+    var host = document.getElementById(listId);
+    if(!host || !id || !sb) return;
+    var token = host.dataset.cmToken = String(Math.random());
+    try{
+      var res = await sb.from('item_comments')
+        .select('id,user_id,username,body,created_at')
+        .eq('kind',kind).eq('subject_id',id)
+        .order('created_at',{ascending:true}).limit(200);
+      if(host.dataset.cmToken !== token) return;   /* user already navigated on */
+      var list = (res && res.data) || [];
+      if(!list.length){ host.innerHTML = '<div class="avCmEmpty">NO COMMENTS YET \u2014 BE THE FIRST</div>'; return; }
+      host.innerHTML = list.map(function(c){
+        var mine = window.currentUser && c.user_id === currentUser.id;
+        return '<div class="avCm">'+
+          '<div class="avCmAv">'+esc2((c.username||'?').charAt(0).toUpperCase())+'</div>'+
+          '<div class="avCmMain"><div class="avCmHead"><span class="avCmName">'+esc2(c.username||'artist')+'</span>'+
+          '<span class="avCmTime">'+esc2(H().ago(c.created_at))+'</span>'+
+          (mine ? '<button class="avCmDel" onclick="dzCmDel('+c.id+',\''+esc2(kind)+'\',\''+esc2(id)+'\',\''+listId+'\')" aria-label="Delete comment">\u2715</button>' : '')+
+          '</div><div class="avCmBody">'+esc2(c.body)+'</div></div></div>';
+      }).join('');
+      host.scrollTop = host.scrollHeight;
+    }catch(e){
+      if(host.dataset.cmToken === token) host.innerHTML = '<div class="avCmEmpty">COULD NOT LOAD COMMENTS</div>';
+    }
+  };
+  window.dzCmPost = async function(kind, id, inputId, listId){
+    if(!id) return;
+    if(!window.currentUser){
+      if(typeof pfGuestGate==='function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+      return;
+    }
+    var input = document.getElementById(inputId);
+    var body = input ? String(input.value||'').trim() : '';
+    if(!body) return;
+    if(input) input.disabled = true;
+    try{
+      var res = await sb.from('item_comments').insert({ kind:kind, subject_id:id, user_id:currentUser.id, body:body });
+      if(res.error) throw res.error;
+      if(input) input.value = '';
+      window.dzCmLoad(kind, id, listId);
+    }catch(e){ showToast((e && e.message) || 'Could not post the comment'); }
+    finally{ if(input) input.disabled = false; }
+  };
+  window.dzCmDel = async function(cid, kind, id, listId){
+    try{
+      var res = await sb.from('item_comments').delete().eq('id', cid);
+      if(res.error) throw res.error;
+      window.dzCmLoad(kind, id, listId);
+    }catch(e){ showToast('Could not delete'); }
+  };
+
+  /* ── report (all four kinds + jobs) ────────────────────────── */
+  window.dzReportItem = function(kind, id){
+    if(!window.currentUser){
+      if(typeof pfGuestGate==='function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+      return;
+    }
+    var reason = prompt('Why are you reporting this?');
+    if(reason === null) return;
+    reason = String(reason).trim();
+    if(reason.length < 3){ showToast('Add a short reason'); return; }
+    sb.from('item_reports').insert({ kind:kind, subject_id:id, reporter_id:currentUser.id, reason:reason.slice(0,500) })
+      .then(function(res){ showToast(res.error ? 'Could not send the report' : 'Report sent \u2726'); });
+  };
+
+  /* ── author row (async fill) ───────────────────────────────── */
+  async function fillAuthor(uid, elId){
+    var el = document.getElementById(elId);
+    if(!el || !uid || !sb) return;
+    var p = profCache[uid];
+    if(!p){
+      try{
+        var res = await sb.from('profiles').select('id,username,display_name,avatar_url').eq('id',uid).single();
+        p = profCache[uid] = (res && res.data) || null;
+      }catch(e){ p = null; }
+    }
+    el = document.getElementById(elId);            /* may have re-rendered */
+    if(!el || !p) return;
+    var name = p.display_name || p.username || 'artist';
+    el.innerHTML = '<div class="dzvAv">'+
+        (p.avatar_url ? '<img src="'+esc2(getThumbnailUrl(p.avatar_url))+'" alt="">' : esc2(name.charAt(0).toUpperCase()))+
+      '</div><div><div class="dzvAuthName">'+esc2(name)+'</div>'+
+      (p.username ? '<div class="dzvAuthHandle">@'+esc2(p.username)+'</div>' : '')+'</div>';
+    el.onclick = function(){
+      if(p.username && typeof openProfileByUsername==='function'){ dzCloseView(); openProfileByUsername(p.username); }
+    };
+  }
+
+  function metaRow(pairs){
+    var out = pairs.filter(function(x){ return x[1]; }).map(function(x){
+      return '<div class="dzvMetaRow"><span>'+esc2(x[0])+'</span><b>'+esc2(x[1])+'</b></div>';
+    }).join('');
+    return out ? '<div class="dzvMeta">'+out+'</div>' : '';
+  }
+  function cmBlock(kind, id){
+    return '<div class="avCmBlock"><div class="avBlockH">Comments</div>'+
+      '<div class="avCmList" id="dzvCmList"></div>'+
+      '<div class="avCmBar">'+
+      '<input class="avCmIn" id="dzvCmIn" type="text" maxlength="1000" placeholder="Write a comment\u2026" '+
+      'onkeydown="if(event.key===\'Enter\')dzCmPost(\''+kind+'\',\''+id+'\',\'dzvCmIn\',\'dzvCmList\')">'+
+      '<button class="avCmSend" onclick="dzCmPost(\''+kind+'\',\''+id+'\',\'dzvCmIn\',\'dzvCmList\')" aria-label="Send">\u27a4</button>'+
+      '</div></div>';
+  }
+
+  /* ── per-kind renderers ────────────────────────────────────── */
+  function render(){
+    var host = document.getElementById('dzvBody');
+    var r = rows()[cur.idx];
+    if(!host || !r) return;
+    host.scrollTop = 0;
+    var sec = cur.sec, kind = KIND[sec], id = esc2(r.id), h = H(), html = '';
+    var img = function(u, alt){ return u ? '<div class="dzvMedia"><img src="'+esc2(getViewUrl(u))+'" alt="'+esc2(alt||'')+'" loading="lazy"></div>' : ''; };
+
+    if(sec === 'resources'){
+      html = img(r.preview_url, r.title) +
+        '<div class="dzvCol">'+
+        '<div class="dzvFileCard"><span class="dzvExt">'+esc2((r.file_ext||'FILE').toUpperCase())+'</span>'+
+        '<div><div class="dzvFileName">'+esc2(r.file_name||r.title)+'</div>'+
+        '<div class="dzvFileMeta">'+esc2(h.bytes(r.file_size))+' \u00b7 '+esc2(String(r.download_count||0))+' downloads</div></div></div>'+
+        '<div class="dzvAuthor" id="dzvAuthor"></div>'+
+        '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
+        (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
+        metaRow([['License', r.license],['Made with', r.software],['Posted', h.ago(r.created_at)]])+
+        cmBlock(kind, id)+
+        '<a class="avActWide" href="'+esc2(r.file_url)+'" target="_blank" rel="noopener" download>\u2b07 Download file</a>'+
+        '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
+        '</div>';
+    }
+    else if(sec === 'blog'){
+      html = img(r.cover_url, r.title) +
+        '<div class="dzvCol">'+
+        '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
+        (r.excerpt ? '<p class="dzvExcerpt">'+esc2(r.excerpt)+'</p>' : '')+
+        metaRow([['Posted', h.ago(r.created_at)],['Read time', (r.read_minutes||1)+' min']])+
+        '<div class="dzvAuthor" id="dzvAuthor"></div>'+
+        '<div class="dzvArticle">'+esc2(r.body||'').replace(/\n/g,'<br>')+'</div>'+
+        cmBlock(kind, id)+
+        (r.cover_url ? '<a class="avActWide" href="'+esc2(getFullUrl(r.cover_url))+'" target="_blank" rel="noopener" download>\u2b07 Download cover</a>' : '')+
+        '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
+        '</div>';
+    }
+    else if(sec === 'marketplace'){
+      var priced = (r.price_cents||0) > 0, hasFile = r.file_ext ? 1 : 0;
+      html = img(r.preview_url, r.title) +
+        '<div class="dzvCol">'+
+        /* Buy sits directly under the media, before everything else —
+           it is the primary action of this page. */
+        '<div class="dzvBuyCard"><div class="dzvPrice">'+esc2(h.money(r.price_cents, r.currency))+'</div>'+
+        (priced
+          ? '<button class="dzBuy" onclick="dzMarketBuy(\''+id+'\','+hasFile+')">Buy now</button>'
+          : (hasFile ? '<button class="dzBuy dzBuy--free" onclick="dzMarketGet(\''+id+'\')">Download \u00b7 Free</button>' : ''))+
+        '</div>'+
+        '<div class="dzvAuthor" id="dzvAuthor"></div>'+
+        '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
+        (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
+        metaRow([['Type', r.item_type],['License', r.license],
+                 ['Delivery', r.delivery_days ? r.delivery_days+' days' : ''],['Listed', h.ago(r.created_at)]])+
+        cmBlock(kind, id)+
+        (hasFile ? '<button class="avActWide" onclick="dzMarketGet(\''+id+'\')">\u2b07 Download (owners)</button>' : '')+
+        '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
+        '</div>';
+    }
+    else { /* jobs — details only, report only */
+      var where = r.is_remote ? 'Remote' : [r.location_city, r.location_country].filter(Boolean).join(', ');
+      html = '<div class="dzvCol">'+
+        '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
+        '<p class="dzvExcerpt">'+esc2(r.company||'')+(r.company_url ? ' \u00b7 <a href="'+esc2(r.company_url)+'" target="_blank" rel="noopener">website</a>' : '')+'</p>'+
+        metaRow([['Location', where],['Type', String(r.employment_type||'').replace('_',' ')],
+                 ['Pay', (r.salary_min||r.salary_max) ? [r.salary_min,r.salary_max].filter(function(x){return x!=null;}).join(' \u2013 ')+' '+(r.salary_currency||'') : ''],
+                 ['Closes', r.valid_through],['Posted', h.ago(r.created_at)]])+
+        '<div class="dzvArticle">'+esc2(r.description||'').replace(/\n/g,'<br>')+'</div>'+
+        (r.apply_url ? '<a class="avActWide" href="'+esc2(r.apply_url)+'" target="_blank" rel="noopener">Apply \u2197</a>'
+         : r.apply_email ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Apply by email \u2709</a>' : '')+
+        '<button class="avReportBtn" onclick="dzReportItem(\'job\',\''+id+'\')">\u2691 Report</button>'+
+        '</div>';
+    }
+    host.innerHTML = html;
+
+    var multi = rows().length > 1;
+    var pb=document.getElementById('dzvPrev'), nb=document.getElementById('dzvNext');
+    if(pb) pb.style.visibility = multi ? 'visible' : 'hidden';
+    if(nb) nb.style.visibility = multi ? 'visible' : 'hidden';
+
+    /* async fills — token-guarded comments, cached profiles */
+    if(r.user_id) fillAuthor(r.user_id, 'dzvAuthor');
+    if(sec !== 'jobs') window.dzCmLoad(kind, String(r.id), 'dzvCmList');
+  }
+
+  window.dzOpenView = function(sec, id){
+    var list = (typeof window.dzGetRows==='function' ? window.dzGetRows(sec) : []) || [];
+    var idx = list.findIndex(function(x){ return String(x.id)===String(id); });
+    if(idx === -1) return;
+    cur = { sec:sec, idx:idx };
+    render();
+    var v = document.getElementById('dzView');
+    if(v) v.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  window.dzViewNav = function(dir){
+    var n = rows().length;
+    if(!n) return;
+    cur.idx = (cur.idx + dir + n) % n;
+    render();                                       /* synchronous — no stale frame */
+  };
+  window.dzCloseView = function(){
+    var v = document.getElementById('dzView');
+    if(v) v.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  document.addEventListener('keydown', function(e){
+    var v = document.getElementById('dzView');
+    if(!v || !v.classList.contains('open')) return;
+    if(e.key === 'Escape') dzCloseView();
+    else if(e.key === 'ArrowLeft') dzViewNav(-1);
+    else if(e.key === 'ArrowRight') dzViewNav(1);
+  });
+})();
+</script>
+
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════
@@ -23471,5 +23940,167 @@ html.thmFade #themePage{
   window.hpGo     = hpGo;
 })();
 </script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   DETAIL VIEWS — artwork viewer restructure + #dzView overlay.
+   Late in <body> on purpose: these override the viewer's original
+   two-pane layout with the full-page, top-to-bottom reading order
+   (top nav → images → author → details → comments → actions).
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Artwork viewer: full-page single column ── */
+#artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;}
+#artModal .avBody{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+#artModal .avImgPane{flex:0 0 auto;overflow:visible;}
+#artModal .avImgStage{max-height:80vh;min-height:38vh;}
+#artModal .avSide{width:100%;max-width:860px;margin:0 auto;border-left:0;flex:0 0 auto;}
+#artModal .avSideScroll{height:auto;max-height:none;overflow:visible;padding-bottom:6rem;}
+/* prev/next relocated into the top bar */
+.avTopLeft{display:flex;align-items:center;gap:.6rem;min-width:0;}
+.avTopBar .avNavBtn,.dzvTop .avNavBtn{
+  position:static;transform:none;width:auto;height:38px;border-radius:999px;
+  padding:0 1rem;display:inline-flex;align-items:center;gap:.3rem;
+  background:color-mix(in srgb,var(--sur) 82%,transparent);
+  border:1px solid var(--bdr);color:var(--tx);
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;cursor:pointer;
+}
+.avTopBar .avNavBtn:hover,.dzvTop .avNavBtn:hover{border-color:var(--pg);color:var(--ps);}
+.avTopRight{display:flex;align-items:center;gap:.5rem;}
+/* stacked images 2..n */
+.avImgStack{display:flex;flex-direction:column;gap:.4rem;background:#000;padding:.4rem 0;}
+.avImgStack img{width:100%;max-height:88vh;object-fit:contain;display:block;}
+/* no stale pixels while a new image loads */
+.avImgViewport.loading img{opacity:0;}
+
+/* ── shared comments + wide actions ── */
+.avCmBlock{display:flex;flex-direction:column;gap:.6rem;}
+.avCmList{display:flex;flex-direction:column;gap:.65rem;max-height:340px;overflow-y:auto;padding-right:.2rem;}
+.avCmEmpty{font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;color:var(--txd);padding:.9rem 0;text-align:center;}
+.avCm{display:flex;gap:.6rem;align-items:flex-start;}
+.avCmAv{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:var(--sur2);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:var(--txd);}
+.avCmMain{min-width:0;flex:1;}
+.avCmHead{display:flex;align-items:center;gap:.5rem;}
+.avCmName{font-size:.8rem;font-weight:700;color:var(--tx);}
+.avCmTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.08em;color:var(--txd);}
+.avCmDel{margin-left:auto;background:none;border:0;color:var(--txd);cursor:pointer;font-size:.7rem;padding:.1rem .3rem;}
+.avCmDel:hover{color:#f87171;}
+.avCmBody{font-size:.86rem;line-height:1.5;color:var(--tx);overflow-wrap:anywhere;}
+.avCmBar{display:flex;gap:.5rem;align-items:center;}
+.avCmIn{flex:1;min-width:0;height:42px;border-radius:999px;border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);padding:0 1rem;font-size:.88rem;outline:none;}
+.avCmIn:focus{border-color:var(--pg);}
+.avCmSend{width:42px;height:42px;border-radius:50%;border:0;background:var(--pg);color:#fff;font-size:1rem;cursor:pointer;flex-shrink:0;}
+.avActWide{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;min-height:46px;border-radius:10px;border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.12em;cursor:pointer;text-decoration:none;box-sizing:border-box;}
+.avActWide:hover{border-color:var(--pg);color:var(--ps);}
+
+/* ── #dzView overlay ── */
+#dzView{position:fixed;inset:0;z-index:1300;background:var(--bg);display:none;flex-direction:column;}
+#dzView.open{display:flex;}
+.dzvTop{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.6rem .9rem;border-bottom:1px solid var(--bdr);flex-shrink:0;background:color-mix(in srgb,var(--bg) 94%,transparent);}
+.dzvTop .avTopBtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--bdr);background:var(--sur);color:var(--tx);cursor:pointer;font-size:.9rem;}
+.dzvBody{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:6rem;}
+.dzvMedia{background:#000;}
+.dzvMedia img{width:100%;max-height:70vh;object-fit:contain;display:block;}
+.dzvCol{max-width:860px;margin:0 auto;padding:1.2rem 1.2rem 2rem;display:flex;flex-direction:column;gap:1.1rem;}
+.dzvTitle{font-family:var(--fd);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0;color:var(--tx);}
+.dzvExcerpt{font-size:1rem;color:var(--txd);line-height:1.55;margin:0;}
+.dzvDesc,.dzvArticle{font-size:.95rem;line-height:1.65;color:var(--tx);margin:0;overflow-wrap:anywhere;}
+.dzvArticle a{color:var(--ps);}
+.dzvAuthor{display:flex;align-items:center;gap:.7rem;cursor:pointer;min-height:44px;}
+.dzvAv{width:44px;height:44px;border-radius:50%;background:var(--sur2);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--txd);overflow:hidden;flex-shrink:0;}
+.dzvAv img{width:100%;height:100%;object-fit:cover;}
+.dzvAuthName{font-weight:700;font-size:.95rem;color:var(--tx);}
+.dzvAuthHandle{font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;color:var(--txd);}
+.dzvMeta{display:flex;flex-direction:column;gap:.35rem;border:1px solid var(--bdr);border-radius:12px;padding:.8rem 1rem;background:var(--sur);}
+.dzvMetaRow{display:flex;justify-content:space-between;gap:1rem;font-size:.85rem;}
+.dzvMetaRow span{color:var(--txd);}
+.dzvMetaRow b{color:var(--tx);font-weight:600;text-align:right;overflow-wrap:anywhere;}
+.dzvFileCard{display:flex;align-items:center;gap:.85rem;border:1px solid var(--bdr);border-radius:12px;padding:.8rem 1rem;background:var(--sur);}
+.dzvExt{font-family:var(--fm);font-size:.72rem;letter-spacing:.1em;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:.5rem .6rem;color:var(--tx);flex-shrink:0;}
+.dzvFileName{font-weight:600;font-size:.9rem;color:var(--tx);overflow-wrap:anywhere;}
+.dzvFileMeta{font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;color:var(--txd);margin-top:.15rem;}
+.dzvBuyCard{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid var(--pg);border-radius:14px;padding:.9rem 1.1rem;background:color-mix(in srgb,var(--pg) 8%,var(--sur));}
+.dzvPrice{font-family:var(--fd);font-size:1.5rem;font-weight:800;color:var(--tx);}
+.dzvBuyCard .dzBuy{margin-top:0;min-height:46px;padding:12px 22px;font-size:14px;border-radius:10px;}
+</style>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   DESKTOP POLISH (≥1280px)
+   The site is mobile-first and its desktop story was "same layout,
+   bigger" — tiny gaps, 4 loose columns, 11px mono labels and small
+   hit targets. This layer upgrades desktop only; nothing below
+   1280px changes. It sits at the very end of <body> on purpose:
+   last-in-cascade, so equal-specificity rules here always win over
+   the mobile-first declarations above.
+
+   Spec:
+   · Grids capped at 1680px and centered; 20px gap on small laptops,
+     22px at 1440+, 24px at 1920+ (more air, still 5 columns — six
+     squares of 300px+ text-less cards read worse, not better).
+   · 1280–1439px (small laptop / 1366 class): 4 columns.
+     1440px+: 5 columns everywhere (.awGrid home, .fgGrid full
+     gallery, .pfGridArt profile/likes/bookmarks, .dzGrid
+     resources/marketplace). Cards stay exact 1:1 via the existing
+     .awImgWrap aspect-ratio.
+   · Text: card titles 15px, meta/tags 12.5px, body copy 15px+/1.55.
+   · Buttons: primary actions ≥44px tall, 14px labels, 12/18 padding,
+     10px radius.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width:1280px){
+
+  /* ── Grid container + columns (small laptop: 4-up) ── */
+  .awGrid, .fgGrid, .pfGridArt, .dzGrid{
+    max-width:1680px;
+    margin-left:auto; margin-right:auto;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+    padding-left:24px; padding-right:24px;
+  }
+  .dzList{ max-width:1080px; margin-left:auto; margin-right:auto; gap:.9rem; }
+
+  /* ── Text — readable sizes for a normal viewing distance ── */
+  .dzName{ font-size:15px; line-height:1.4; }
+  .dzMeta{ font-size:12.5px; letter-spacing:.06em; gap:.2rem .7rem; }
+  .dzChip{ font-size:12px; letter-spacing:.07em; padding:.22rem .6rem; }
+  .dzHint{ font-size:15px; line-height:1.55; }
+  .dzExt{ font-size:15px; }
+  .dzEmpty,.dzBusy{ font-size:13px; }
+  .secSub{ font-size:13px; letter-spacing:.28em; }
+  .fgSecTxt{ font-size:13px; }
+  .tgSearchIn{ font-size:15px; }
+  .subTagline{ font-size:14px; }
+  .subFeatures li{ font-size:15px; line-height:1.55; }
+  .faqQTxt{ font-size:16px; }
+  .faqATxt{ font-size:15px; line-height:1.6; }
+  .upField label{ font-size:13px; }
+  .upIn, .upField textarea, .upField select{ font-size:15px; }
+
+  /* ── Buttons — proper desktop hit targets ── */
+  .upBtn, .upBtnPri, .dzBuy, .subBtn, .hpCta, .subModalClose{
+    min-height:46px;
+    font-size:14px;
+    padding:12px 18px;
+    border-radius:10px;
+  }
+  .subBtn{ letter-spacing:.14em; }
+  .dzBuy{ font-size:13.5px; letter-spacing:.09em; }
+  .hpCta{ font-size:15px; border-radius:999px; padding:12px 24px; }
+  .upBtn{ letter-spacing:.14em; font-size:13px; }
+}
+
+/* ── Normal desktop (1440px+): 5 columns, slightly wider gap ── */
+@media (min-width:1440px){
+  .awGrid, .fgGrid, .pfGridArt, .dzGrid{
+    grid-template-columns:repeat(5,1fr);
+    gap:22px;
+  }
+}
+
+/* ── Ultrawide (1920px+): keep 5 columns, add breathing room ── */
+@media (min-width:1920px){
+  .awGrid, .fgGrid, .pfGridArt, .dzGrid{ gap:24px; }
+}
+</style>
 </body>
 </html>

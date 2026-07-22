@@ -26,6 +26,13 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v27 — new favicon. Site icons regenerated from the DigiArtz bird
+       logo (replacing the old "D"). Tab favicons now ship a dark-mode
+       white variant switched by prefers-color-scheme in index.html;
+       favicon-32x32.png is in the precache below, so this bump is what
+       forces returning visitors off the stale cached icon. The 16/48
+       and -dark variants cache lazily on first request.
+
    v26 — split shell. index.html's inline <style> and <script> blocks
        now live in /css (13 files) and /js (25 files); all 38 are
        precached alongside the shell so the first offline open still
@@ -172,7 +179,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v26';
+const CACHE_VERSION = 'v27';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

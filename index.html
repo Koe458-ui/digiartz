@@ -77,11 +77,18 @@
   <meta name="description" content="DigiArtz is a curated platform for digital artists to showcase exceptional artwork, build a professional portfolio, connect with a global creative community, and gain the recognition their talent deserves."/>
   <link rel="canonical" href="https://digiartz.net/"/>
   <meta name="robots" content="index, follow, max-image-preview:large"/>
-  <!-- Favicon / site icons — generated from the new DIGIARTZ "D" logo -->
+  <!-- Favicon / site icons — generated from the DigiArtz bird logo.
+       Light-mode tabs get the black line art; dark-mode tabs swap to a
+       white version via prefers-color-scheme so it never disappears on a
+       dark tab bar. favicon.ico stays first as the universal fallback for
+       browsers that ignore the media queries. -->
   <link rel="icon" href="/favicon.ico" sizes="any"/>
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" media="(prefers-color-scheme: light)"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" media="(prefers-color-scheme: light)"/>
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" media="(prefers-color-scheme: light)"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-dark.png" media="(prefers-color-scheme: dark)"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-dark.png" media="(prefers-color-scheme: dark)"/>
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48-dark.png" media="(prefers-color-scheme: dark)"/>
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
   <link rel="manifest" href="/site.webmanifest"/>
   <!-- Organization schema — tells Google which logo belongs to Digiartz
@@ -1745,8 +1752,8 @@
              opens the existing #zeoPage assistant via cmOpenZeo() -->
         <div class="cmFriendList">
           <div class="cmFriendItem" onclick="cmOpenZeo()">
-            <div class="cmFriendAvatar">
-              <img src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000e09071fdb5d040b64f9ce7a9.png"
+            <div class="cmFriendAvatar zeoChip">
+              <img src="/zeo-avatar.png"
                    alt="Zeo" draggable="false"
                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
               <span class="cmFriendAvatarFallback" style="display:none;">🤖</span>
@@ -3006,7 +3013,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <img
     id="zeoBtnImg"
     class="zeoBtnAvatar"
-    src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000e09071fdb5d040b64f9ce7a9.png"
+    src="/zeo-avatar.png"
     alt="Zeo AI Assistant"
     aria-hidden="true"
     draggable="false"
@@ -3031,7 +3038,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
      rest of the site's full pages instead of a small popup) -->
 <div id="zeoPage" role="dialog" aria-label="Zeo AI Assistant" aria-modal="true">
   <div class="zeoChatHeader">
-    <div class="zeoChatHeaderAvatar" aria-hidden="true">🤖</div>
+    <div class="zeoChatHeaderAvatar" aria-hidden="true"><img src="/zeo-avatar.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.remove();this.parentElement.textContent='🤖';"/></div>
     <div class="zeoChatHeaderInfo">
       <div class="zeoChatHeaderName">Zeo</div>
       <div class="zeoChatHeaderStatus">AI Assistant · Online</div>

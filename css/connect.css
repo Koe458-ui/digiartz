@@ -472,29 +472,3 @@
 
     .fsHdr{max-width:1200px;margin:0 auto;padding:0 2rem;}
 
-
-    /* ── Base: element waiting to animate in ── */
-    .fu-el {
-      opacity: 0;
-      transform: translateY(50px);
-      transition:
-        opacity  850ms cubic-bezier(0.22, 1, 0.36, 1),
-        transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
-      will-change: opacity, transform;
-    }
-
-    /* ── Triggered: element has entered viewport ── */
-    .fu-el.fu-visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* ── Respect reduced-motion preference ── */
-    @media (prefers-reduced-motion: reduce) {
-      .fu-el {
-        opacity: 1;
-        transform: none;
-        transition: none;
-      }
-    }
-

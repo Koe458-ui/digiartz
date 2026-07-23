@@ -56,12 +56,6 @@
       scroll-behavior:smooth;
       align-items:start;
     }
-    /* The strip clips vertically now, so the reveal rises a shorter distance
-       and the track's bottom padding leaves room for it — otherwise the card
-       would be cut off mid-animation. :not(.fu-visible) matters: without it
-       this rule (later in the sheet, equal specificity) would outrank
-       .fu-el.fu-visible and the cards would never settle back to 0. */
-    .rkCard.fu-el:not(.fu-visible){ transform:translateY(24px); }
     .rkTrack::-webkit-scrollbar{ display:none; }
     @media(prefers-reduced-motion:reduce){ .rkTrack{ scroll-behavior:auto; } }
 

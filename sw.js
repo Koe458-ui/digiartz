@@ -26,6 +26,17 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v34 — hero motion stripped + connect links. The hero pitch no longer
+       fades and rises 14px on every tab switch, the CTA no longer lifts
+       on hover, and the floating badge / bell / Zeo button now cut in
+       and out instead of sliding down 8px with a 250ms fade. Their
+       translateZ(0) layer promotion stays — that's the iOS Safari
+       white-flash fix, not decoration. In #connect, YouTube is gone and
+       X is in at the new @DigiArtzHQ handle, leaving X / Instagram /
+       Website / Email. No new precache paths; index.html, base.css and
+       hero.css all already ship in the shell, so this bump is purely to
+       get returning visitors off the stale copies.
+
    v33 — v32 shipped index.html and this file without the three /js
        badwords files, so the page requested scripts that 404'd and the
        filter never ran. This bump exists to re-run install once those
@@ -228,7 +239,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v33';
+const CACHE_VERSION = 'v34';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

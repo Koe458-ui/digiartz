@@ -38,6 +38,15 @@
 
   /* Category slugs get their real label ("3d-art" → "3D Art"); free
      tags render exactly as the artist typed them. */
+  /* A hidden category must not reach the rail from ANY direction.
+     tgLabel() falls back to the raw slug for anything it has no label
+     for, so a retired category would otherwise resurface as a bare
+     lowercase chip ("ai-art") rather than disappearing. Guarded with a
+     typeof test so the rail still works if app-core failed to load. */
+  function tgVisible(tag){
+    if(!tag) return false;
+    return (typeof catHidden === 'function') ? !catHidden(tag) : true;
+  }
   function tgLabel(t){
     if(typeof CAT_LABELS === 'object' && CAT_LABELS && CAT_LABELS[t]) return CAT_LABELS[t];
     return t;
@@ -48,7 +57,9 @@
   function tgLocalLoad(){
     try{
       var v = JSON.parse(localStorage.getItem(TG_LS) || '[]');
-      return Array.isArray(v) ? v.filter(function(x){ return typeof x === 'string'; }) : [];
+      return Array.isArray(v)
+        ? v.filter(function(x){ return typeof x === 'string' && tgVisible(x); })
+        : [];
     }catch(e){ return []; }
   }
   /* Guests keep their picks in localStorage; signed-in users get the
@@ -75,7 +86,7 @@
       try{
         const{data,error} = await sb.rpc('get_top_tags', {lim:200});
         if(error) throw error;
-        tgAll = (data || []).filter(function(x){ return x && x.tag; });
+        tgAll = (data || []).filter(function(x){ return x && x.tag && tgVisible(x.tag); });
       }catch(e){
         /* Loud on purpose: this is the one call that decides whether the
            rail has anything to show, so a failure needs to be visible in
@@ -86,7 +97,7 @@
       if(currentUser){
         try{
           const{data} = await sb.from('user_tag_prefs').select('tag').eq('user_id', currentUser.id);
-          var rows = (data || []).map(function(r){ return r.tag; });
+          var rows = (data || []).map(function(r){ return r.tag; }).filter(tgVisible);
           if(rows.length){
             tgPrefs = new Set(rows);
             tgLocalSave();

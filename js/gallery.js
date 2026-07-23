@@ -541,11 +541,16 @@
 
     document.getElementById('lbNm').textContent=name||'';
 
+    /* Retired categories must not reappear here either: art.tags is
+       used raw (artist-typed tags aren't categories) and `cat` arrives
+       straight from the caller, so both get the hidden-slug filter
+       that catList() already applies to art.category. */
     var tags = art ? ((art.tags && art.tags.length) ? art.tags : catList(art.category)) : (cat ? [cat] : []);
+    if(typeof catHidden === 'function') tags = (tags||[]).filter(function(t){ return !catHidden(t); });
     /* FIX(B1): renamed from `catLabel` — the old name shadowed the global
        catLabel() helper for this whole function scope, so any future call to
        catLabel(slug) inside openLB would crash with "not a function". */
-    var catLabelStr = cat || (tags[0]||'');
+    var catLabelStr = (cat && !(typeof catHidden === 'function' && catHidden(cat))) ? cat : (tags[0]||'');
     var subType = document.getElementById('avSubType');
     if(subType) subType.textContent = catLabelStr ? avCap(catLabelStr)+' Artwork' : 'Digital Artwork';
 

@@ -139,6 +139,9 @@
      stops it being shown, offered as a filter, or title-cased into a
      stray chip. Empty this list to bring one back. */
   var CAT_HIDDEN = { 'ai-art':1 };
+  /* Shared so other modules (the tag rail especially) test the SAME
+     list instead of keeping their own copy that drifts out of sync. */
+  function catHidden(slug){ return !!CAT_HIDDEN[String(slug||'').trim()]; }
   function catList(val){
     var out = Array.isArray(val)
       ? val.map(function(c){return String(c).trim();})

@@ -26,6 +26,18 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v35 — scroll-reveal deleted. The .fu-el rise (opacity 0 + 50px,
+       850ms, staggered 80ms per card) is gone from artworks, ranking,
+       subscriptions and connect — not gated, removed. js/effects.js
+       loses its last module entirely, 192 lines, taking with it the
+       IntersectionObserver and the MutationObserver that re-scanned
+       every grid re-render; the .fu-el rules go from css/connect.css
+       and the 24px rank-card variant from css/ranking.css. A stale
+       cached effects.js can no longer hide anything, because nothing
+       stamps the class and no rule acts on it. The stale note in
+       js/startup.js describing the restamp is corrected. Four shell
+       files changed, no new paths.
+
    v34 — hero motion stripped + connect links. The hero pitch no longer
        fades and rises 14px on every tab switch, the CTA no longer lifts
        on hover, and the floating badge / bell / Zeo button now cut in
@@ -239,7 +251,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v34';
+const CACHE_VERSION = 'v35';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

@@ -99,6 +99,75 @@ const MESSAGES = {
   UNCLEAR:           'We could not confirm this image as original artwork. Please upload a clearer artwork image.'
 };
 
+// ============================================================
+// RESOURCE / MARKETPLACE MODE (mode=resource | mode=marketplace)
+// The downloadable file itself (a .abr brush, .zip template, .blend
+// model, font, etc.) is NOT an image, so Gemini can't read it. What
+// gets judged is the PREVIEW image the uploader attaches — the same
+// picture that ends up on the card. A separate prompt + code set is
+// used because a resource preview legitimately shows things the
+// artwork moderator rejects: website/UI mockups, code screenshots,
+// 3D renders, product mockups.
+// ============================================================
+const RESOURCE_CATEGORIES = [
+  'RESOURCE_OK','AI_GENERATED','PERSON_PHOTO','NSFW_CONTENT','GORE_CONTENT',
+  'TEXT_ONLY','SCREENSHOT','DOCUMENT','SPAM_IMAGE','BLANK_IMAGE','LOW_QUALITY',
+  'NOT_RESOURCE','PROHIBITED_CONTENT','UNCLEAR'
+];
+
+const RESOURCE_MESSAGES = {
+  AI_GENERATED:      'The preview looks AI-generated. DigiArtz resources need a real preview of the asset (a 3D render is fine — AI-generated art is not).',
+  PERSON_PHOTO:      'A real photograph of a person was detected. Please use a preview that shows the resource itself.',
+  NSFW_CONTENT:      'The preview contains adult or NSFW content, which is not permitted on DigiArtz.',
+  GORE_CONTENT:      'The preview contains graphic or violent content and cannot be uploaded.',
+  TEXT_ONLY:         'The preview is mostly plain text. Please show what the resource actually looks like (code snippets are fine).',
+  SCREENSHOT:        'A chat, forum, social, or game screenshot was detected. Please use a preview of the resource itself.',
+  DOCUMENT:          'A document or form was detected. Please use a preview image of your resource.',
+  SPAM_IMAGE:        'The preview was flagged as spam or promotional content. Please upload a genuine preview.',
+  BLANK_IMAGE:       'The preview image appears to be blank.',
+  LOW_QUALITY:       'The preview is too low quality or could not be processed.',
+  NOT_RESOURCE:      'This does not look like a usable resource preview. Show the brush, texture, template, font, model, or asset.',
+  PROHIBITED_CONTENT:'The preview contains prohibited content and cannot be uploaded.',
+  UNCLEAR:           'We could not confirm this as a valid resource preview. Please upload a clearer preview image.'
+};
+
+const RESOURCE_PROMPT = `You are the resource preview moderator for DigiArtz, a digital creator community.
+
+The user is uploading a downloadable creative RESOURCE (a brush, texture, font, template, code pack, 3D model, etc.). You are shown its PREVIEW IMAGE only — judge whether that preview is acceptable.
+
+Step 1: Resource Preview Check
+
+ACCEPT the preview when it shows a usable digital asset a creator would download and use, for example:
+- brushes, brush packs, stamp/brush stroke sheets, textures, patterns, seamless tiles, materials
+- fonts, typefaces, lettering or type specimens
+- website templates, landing-page or UI mockups, app UI kits, dashboard designs, design systems
+- code, code snippets, or syntax-highlighted code screenshots offered as a developer resource
+- 3D models and renders from 3D software (Blender, Maya, Cinema4D, ZBrush, etc.), sculpts, wireframes, turntables
+- icon sets, vector asset sheets, logo/template kits, mockup scenes, device/product mockups
+- wallpapers, backgrounds, presets, LUTs, grading previews, plugin or tool UI previews
+
+The bias: if it plausibly shows a downloadable creative asset, ACCEPT it (resource=true).
+
+Step 2: Always-reject rules (set resource=false and the matching category)
+- AI_GENERATED — the preview is an AI-generated / generative-diffusion image (Midjourney, Stable Diffusion, DALL·E, etc.). IMPORTANT: a 3D RENDER from Blender/Maya/C4D/ZBrush is NOT AI-generated and must be ACCEPTED — do not confuse rendered CGI with AI art. Only flag AI_GENERATED when it genuinely looks like generative AI art.
+- PERSON_PHOTO — a real photograph of a person (selfie, portrait, casual camera photo of people).
+- NSFW_CONTENT — sexual, adult, or explicit content.
+- GORE_CONTENT — graphic gore or extreme violence.
+- TEXT_ONLY — the preview is just plain paragraph text or a wall of writing with no design or code purpose. (Syntax-highlighted CODE is NOT text-only — accept it.)
+- SCREENSHOT — a chat, forum, social-media, or game screenshot that is not itself the resource.
+- DOCUMENT — an ID, receipt, invoice, form, or official document.
+- SPAM_IMAGE — an advertisement, promo, or spam image.
+- BLANK_IMAGE / LOW_QUALITY — blank, corrupted, or unusably low-resolution.
+- NOT_RESOURCE — clearly not any kind of usable resource preview, with no better code.
+
+Always reject regardless of anything else (PROHIBITED_CONTENT): child sexual content, bestiality, extreme gore, terrorist or extremist content, malware/phishing images, illegal content.
+
+Step 3: Rating — SAFE, MATURE, or ADULT (same meaning as art). SAFE and MATURE are both accepted; only ADULT (explicit) is rejected downstream.
+
+Step 4: Quality — GOOD unless blank, corrupted, extremely blurry, or unusably low resolution. Deliberate style (pixel art, low-poly, minimal) is NOT a quality failure.
+
+Return JSON: allow (true only if it is an acceptable SAFE resource preview that is not AI-generated), resource (bool), rating, ai_generated (bool), quality, category (one code from the allowed list), reason (short internal note), confidence (0 to 1).`;
+
 const MODERATION_PROMPT = `You are the artwork upload moderator for DigiArtz, a digital art community.
 
 Decide whether a user-uploaded image should be allowed or rejected.
@@ -195,10 +264,21 @@ export async function onRequestPost(context) {
       if (f.size > MAX_BYTES) return json({ error: 'Each image must be under 10 MB.' }, 400);
     }
 
+    // ---- Pick the moderator: artwork (default) or resource preview ----
+    // `mode` is an optional form field. Absent  -> artwork, so the
+    // existing artwork upload flow is completely unchanged. resource
+    // and marketplace share the resource preview moderator.
+    const modeRaw = String(form.get('mode') || 'artwork').toLowerCase();
+    const isResource = (modeRaw === 'resource' || modeRaw === 'marketplace');
+    const cfg = isResource
+      ? { resource: true,  prompt: RESOURCE_PROMPT,   categories: RESOURCE_CATEGORIES }
+      : { resource: false, prompt: MODERATION_PROMPT,  categories: CATEGORIES };
+    const MSG = isResource ? RESOURCE_MESSAGES : MESSAGES;
+
     // ---- Moderate every image (parallel Gemini calls) ----
     const verdicts = await Promise.all(files.map(async f => {
       const b64 = toBase64(await f.arrayBuffer());
-      return moderateWithGemini(env, b64, f.type);
+      return moderateWithGemini(env, b64, f.type, cfg);
     }));
 
     // ---- Combine: ALL must pass; worst rating wins ----
@@ -209,22 +289,36 @@ export async function onRequestPost(context) {
     let failIndex = -1;
     const audit = [];
 
+    // Default worst-case code differs per mode.
+    code = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
     for (let i = 0; i < verdicts.length; i++) {
       const v = verdicts[i];
-      const pass =
-        v.ok && v.allow === true && v.artwork === true &&
-        v.quality === 'GOOD' &&
-        (v.rating === 'SAFE' || v.rating === 'MATURE') &&
-        v.confidence >= MIN_CONFIDENCE;
+      // Resources: must be a SAFE, non-AI, good-quality resource preview.
+      // Artwork: SAFE or MATURE artwork, good quality (unchanged).
+      const pass = isResource
+        ? ( v.ok && v.allow === true && v.resource === true &&
+            v.ai_generated !== true && v.quality === 'GOOD' &&
+            (v.rating === 'SAFE' || v.rating === 'MATURE') &&
+            v.confidence >= MIN_CONFIDENCE )
+        : ( v.ok && v.allow === true && v.artwork === true &&
+            v.quality === 'GOOD' &&
+            (v.rating === 'SAFE' || v.rating === 'MATURE') &&
+            v.confidence >= MIN_CONFIDENCE );
 
       if (!pass && allowed) {
         allowed = false;
         failIndex = i;
         // Canonical, professional message — never the model's own wording.
-        code = (v.ok && v.category && v.category !== 'ARTWORK_OK') ? v.category : 'UNCLEAR';
-        if (v.ok && v.rating === 'ADULT' && code === 'ARTWORK_OK') code = 'ADULT_CONTENT';
+        const okCode = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
+        code = (v.ok && v.category && v.category !== okCode) ? v.category : 'UNCLEAR';
+        if (isResource) {
+          if (v.ok && v.ai_generated === true && code === 'RESOURCE_OK') code = 'AI_GENERATED';
+          if (v.ok && v.rating === 'ADULT' && code === 'RESOURCE_OK') code = 'NSFW_CONTENT';
+        } else if (v.ok && v.rating === 'ADULT' && code === 'ARTWORK_OK') {
+          code = 'ADULT_CONTENT';
+        }
         reason = (files.length > 1 ? `Image ${i + 1}: ` : '') +
-                 (MESSAGES[code] || MESSAGES.UNCLEAR);
+                 (MSG[code] || MSG.UNCLEAR);
       }
       if (v.rating === 'MATURE' && rating === 'SAFE') rating = 'MATURE';
 
@@ -232,6 +326,8 @@ export async function onRequestPost(context) {
         i,
         allow: !!v.allow,
         artwork: !!v.artwork,
+        resource: !!v.resource,
+        ai_generated: !!v.ai_generated,
         rating: v.rating || null,
         quality: v.quality || null,
         category: v.category || null,
@@ -281,33 +377,49 @@ export async function onRequestPost(context) {
 // ------------------------------------------------------------
 // Gemini Vision — structured JSON verdict, fail closed
 // ------------------------------------------------------------
-async function moderateWithGemini(env, b64, mimeType) {
+async function moderateWithGemini(env, b64, mimeType, cfg) {
+  cfg = cfg || { resource: false, prompt: MODERATION_PROMPT, categories: CATEGORIES };
   const model = env.GEMINI_MODEL || 'gemini-flash-latest';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+
+  // Schema shape depends on the mode. Artwork keeps its exact original
+  // fields; resource swaps `artwork` for `resource` and adds the
+  // `ai_generated` flag the resource rules key off.
+  const props = cfg.resource
+    ? {
+        allow: { type: 'BOOLEAN' },
+        resource: { type: 'BOOLEAN' },
+        rating: { type: 'STRING', enum: ['SAFE', 'MATURE', 'ADULT'] },
+        ai_generated: { type: 'BOOLEAN' },
+        quality: { type: 'STRING', enum: ['GOOD', 'BAD'] },
+        category: { type: 'STRING', enum: cfg.categories },
+        reason: { type: 'STRING' },
+        confidence: { type: 'NUMBER' }
+      }
+    : {
+        allow: { type: 'BOOLEAN' },
+        artwork: { type: 'BOOLEAN' },
+        rating: { type: 'STRING', enum: ['SAFE', 'MATURE', 'ADULT'] },
+        quality: { type: 'STRING', enum: ['GOOD', 'BAD'] },
+        category: { type: 'STRING', enum: cfg.categories },
+        reason: { type: 'STRING' },
+        confidence: { type: 'NUMBER' }
+      };
+  const required = cfg.resource
+    ? ['allow', 'resource', 'rating', 'ai_generated', 'quality', 'category', 'reason', 'confidence']
+    : ['allow', 'artwork', 'rating', 'quality', 'category', 'reason', 'confidence'];
 
   const body = {
     contents: [{
       parts: [
         { inline_data: { mime_type: mimeType, data: b64 } },
-        { text: MODERATION_PROMPT }
+        { text: cfg.prompt }
       ]
     }],
     generationConfig: {
       temperature: 0,
       responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'OBJECT',
-        properties: {
-          allow: { type: 'BOOLEAN' },
-          artwork: { type: 'BOOLEAN' },
-          rating: { type: 'STRING', enum: ['SAFE', 'MATURE', 'ADULT'] },
-          quality: { type: 'STRING', enum: ['GOOD', 'BAD'] },
-          category: { type: 'STRING', enum: CATEGORIES },
-          reason: { type: 'STRING' },
-          confidence: { type: 'NUMBER' }
-        },
-        required: ['allow', 'artwork', 'rating', 'quality', 'category', 'reason', 'confidence']
-      }
+      responseSchema: { type: 'OBJECT', properties: props, required: required }
     },
     // The moderator must SEE and CLASSIFY mature art rather than have
     // Gemini's default filter silently refuse. Illegal content is still
@@ -335,8 +447,8 @@ async function moderateWithGemini(env, b64, mimeType) {
     const data = await res.json();
 
     if (data.promptFeedback?.blockReason) {
-      return { ok: true, allow: false, artwork: false, rating: 'ADULT', quality: 'BAD',
-               category: 'PROHIBITED_CONTENT',
+      return { ok: true, allow: false, artwork: false, resource: false, ai_generated: false,
+               rating: 'ADULT', quality: 'BAD', category: 'PROHIBITED_CONTENT',
                reason: 'Blocked by provider safety system.', confidence: 1 };
     }
 
@@ -348,9 +460,11 @@ async function moderateWithGemini(env, b64, mimeType) {
       ok: true,
       allow: !!v.allow,
       artwork: !!v.artwork,
+      resource: !!v.resource,
+      ai_generated: !!v.ai_generated,
       rating: v.rating,
       quality: v.quality,
-      category: CATEGORIES.includes(v.category) ? v.category : 'UNCLEAR',
+      category: cfg.categories.includes(v.category) ? v.category : 'UNCLEAR',
       reason: (v.reason || '').slice(0, 300),
       confidence: Number(v.confidence) || 0
     };

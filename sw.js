@@ -26,18 +26,26 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v33 — v32 shipped index.html and this file without the three /js
+       badwords files, so the page requested scripts that 404'd and the
+       filter never ran. This bump exists to re-run install once those
+       files are actually there, otherwise clients that took v32 keep a
+       shell that never precached them. Also strips the third-party
+       source name out of the note below — that credit now lives in
+       ATTRIBUTIONS.md at the repo root, which is where it has to stay:
+       the word list is CC BY 4.0 and attribution is a condition of use.
+
    v32 — profanity + link mask. Three new files in /js: two word-list
-       files (badwords-list-a/b.js, 2,536 entries across 27 languages,
-       LDNOOBW under CC BY 4.0) and badwords.js, which wraps
-       supabase.createClient() so every insert/update/upsert/rpc gets
-       masked on the way out. All three are precached below — the engine
-       is useless without its lists, so an offline client must never end
-       up holding one and not the others. index.html changed too (the
-       three new script tags), so this bump is what moves returning
-       visitors onto it. Numbers are deliberately NOT filtered: order and
-       payment references, image IDs and timestamps all live in that
-       space. badwords-review.js is NOT precached — it ships nothing
-       active and is only loaded if a held-back word gets switched on.
+       files (badwords-list-a/b.js, 2,536 entries across 27 languages)
+       and badwords.js, which wraps supabase.createClient() so every
+       insert/update/upsert/rpc gets masked on the way out. All three are
+       precached below — the engine is useless without its lists, so an
+       offline client must never hold one and not the others. index.html
+       changed too (the three new script tags). Numbers are deliberately
+       NOT filtered: order and payment references, image IDs and
+       timestamps all live in that space. badwords-review.js is NOT
+       precached — it ships nothing active and is only loaded if a
+       held-back word gets switched on.
 
    v31 — follow-up to v30: the retired AI Art category was still
        reaching the tag rail. tgLabel() falls back to the raw slug for
@@ -220,7 +228,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v32';
+const CACHE_VERSION = 'v33';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

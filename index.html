@@ -2919,6 +2919,14 @@
        here the intro is already painted. It must still load before the
        inline script below, which calls supabase.createClient() at top level. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Profanity / link mask. Order is load-bearing: the two list files
+       only populate window.DZ_WORDLIST, and badwords.js reads that list
+       when it builds its dictionary, so the engine must come last. It
+       also wraps supabase.createClient(), which is why it sits above
+       js/app-core.js — that's the file that actually calls createClient. -->
+  <script src="/js/badwords-list-a.js?v=1"></script>
+  <script src="/js/badwords-list-b.js?v=1"></script>
+  <script src="/js/badwords.js?v=1"></script>
   <!-- ROOT-ABSOLUTE paths (leading "/") are required, not optional.
        The app pushes deep URLs (/profile/<name>, /artwork/<id>). With a
        relative src, a browser sitting on /profile/artist resolves "config.js"

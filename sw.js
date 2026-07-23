@@ -26,6 +26,19 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v32 — profanity + link mask. Three new files in /js: two word-list
+       files (badwords-list-a/b.js, 2,536 entries across 27 languages,
+       LDNOOBW under CC BY 4.0) and badwords.js, which wraps
+       supabase.createClient() so every insert/update/upsert/rpc gets
+       masked on the way out. All three are precached below — the engine
+       is useless without its lists, so an offline client must never end
+       up holding one and not the others. index.html changed too (the
+       three new script tags), so this bump is what moves returning
+       visitors onto it. Numbers are deliberately NOT filtered: order and
+       payment references, image IDs and timestamps all live in that
+       space. badwords-review.js is NOT precached — it ships nothing
+       active and is only loaded if a held-back word gets switched on.
+
    v31 — follow-up to v30: the retired AI Art category was still
        reaching the tag rail. tgLabel() falls back to the raw slug for
        anything it has no label for, so dropping it from SITE_CATEGORIES
@@ -207,7 +220,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v31';
+const CACHE_VERSION = 'v32';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -246,6 +259,11 @@ const SHELL_URLS = [
   '/css/upload.css',
   '/css/widgets.css',
   '/css/overrides.css',
+
+  /* Word list must be cached alongside the engine that reads it */
+  '/js/badwords-list-a.js',
+  '/js/badwords-list-b.js',
+  '/js/badwords.js',
 
   /* Split scripts — see the <script src> tags through index.html */
   '/js/ranking.js',

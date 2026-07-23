@@ -210,8 +210,8 @@
      cards are in the DOM. The old flat slice(0,200) painted up to
      200 cards in one go — now the first column-sized batch paints
      immediately and the rest streams in on scroll (no cap needed:
-     batching IS the perf guard). Appended cards land inside
-     #artworks, so the fade-up MutationObserver restamps them and
-     the scroll-reveal ("parallax") rise keeps firing per batch. */
+     batching IS the perf guard). Appended cards paint straight
+     away — the scroll-reveal that used to restamp and re-animate
+     every appended batch is gone. */
   var awRList = [], awRShown = 0, awRType = null, awSent = null;
 

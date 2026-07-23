@@ -61,26 +61,20 @@
       background:var(--pg);color:var(--text-on-accent);
       font-family:var(--fd);font-size:.95rem;font-weight:700;
       box-shadow:0 8px 22px color-mix(in srgb,var(--pg) 32%,transparent);
-      transition:filter .2s,transform .2s;
+      transition:filter .2s;
     }
-    @media(hover:hover){.hpCta:hover{filter:brightness(1.08);transform:translateY(-1px);}}
-    .hpCta:active{transform:translateY(0);}
+    @media(hover:hover){.hpCta:hover{filter:brightness(1.08);}}
     .hpCta:focus-visible{outline:2px solid var(--pb);outline-offset:3px;}
 
-    /* ── Fade & shift up ──
-       Re-triggered per tab change by reflowing the panel. The three
-       checklist rows follow the headline in sequence so the eye is
-       led down the list rather than hit with all of it at once. */
-    @keyframes hpRise{ from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:none;} }
-    .hpPanel.hpIn > *{animation:hpRise .45s cubic-bezier(.22,1,.36,1) both;}
-    .hpPanel.hpIn > .hpHead{animation-delay:0s;}
-    .hpPanel.hpIn > .hpList li{animation:hpRise .45s cubic-bezier(.22,1,.36,1) both;}
-    .hpPanel.hpIn > .hpList li:nth-child(1){animation-delay:.06s;}
-    .hpPanel.hpIn > .hpList li:nth-child(2){animation-delay:.12s;}
-    .hpPanel.hpIn > .hpList li:nth-child(3){animation-delay:.18s;}
-    .hpPanel.hpIn > .hpCta{animation-delay:.24s;}
+    /* ── Rise-in removed ──
+       The panel used to fade in and shift up 14px on every tab
+       change, with the three checklist rows staggered in behind
+       the headline. Tabs swap instantly now. paintPanel() in
+       js/sections.js still adds .hpIn — it just has nothing
+       hanging off it any more, so leaving it there is harmless. */
+    .hpPanel.hpIn > *,
+    .hpPanel.hpIn > .hpList li{animation:none;opacity:1;transform:none;}
     @media(prefers-reduced-motion:reduce){
-      .hpPanel.hpIn > *, .hpPanel.hpIn > .hpList li{animation:none;}
       .hpCta,.hpTab{transition:none;}
     }
     @media(max-width:480px){

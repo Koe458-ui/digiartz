@@ -273,7 +273,7 @@
         {k:'file',   t:'file',  label:'Resource file', req:true,
          accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.woff2,.pdf,.obj,.fbx,.blend',
          hint:'ZIP, PSD, ABR, brushset, fonts, 3D — up to 200MB.'},
-        {k:'preview',t:'image', label:'Preview image', hint:'Shown on the card. JPG/PNG/WEBP up to 25MB.'},
+        {k:'preview',t:'image', label:'Preview image', req:true, accept:'image/jpeg,image/png,image/webp,image/gif', hint:'Required. Shown on the card and auto-checked. JPG/PNG/WEBP up to 25MB.'},
         {k:'title',  t:'text',  label:'Title', req:true, max:120, ph:'Name your resource…'},
         {k:'description', t:'area', label:'Description', max:2000, ph:'What is it, and how is it used?'},
         {k:'category',t:'cat',  label:'Category', req:true},
@@ -297,7 +297,7 @@
         {k:'file',   t:'file',  label:'Product file',
          accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.pdf,.obj,.fbx,.blend',
          hint:'Required for a digital download. Up to 200MB.'},
-        {k:'preview',t:'image', label:'Preview image', hint:'JPG/PNG/WEBP up to 25MB.'},
+        {k:'preview',t:'image', label:'Preview image', req:true, accept:'image/jpeg,image/png,image/webp,image/gif', hint:'Required. Shown on the card and auto-checked. JPG/PNG/WEBP up to 25MB.'},
         {k:'title',  t:'text',  label:'Title', req:true, max:140, ph:'Name your listing…'},
         {k:'description',t:'area', label:'Description', max:3000, ph:'What the buyer receives…'},
         {k:'category',t:'cat',  label:'Category', req:true},
@@ -433,7 +433,7 @@
         '<input class="upTagInput" id="'+id+'" maxlength="20" placeholder="Add up to 10 tags…" '+
         'onkeydown="dzTagKey(event,\''+sec+'\')"></div>'+hint+'</div>';
     } else if(fd.t === 'file' || fd.t === 'image'){
-      var acc = fd.t === 'image' ? 'image/*' : (fd.accept||'');
+      var acc = fd.accept ? fd.accept : (fd.t === 'image' ? 'image/*' : '');
       return '<div class="upField">'+lbl+
         '<input class="upIn" id="'+id+'" type="file" accept="'+esc(acc)+'" '+
         'onchange="dzPick(\''+sec+'\',\''+fd.k+'\',this)">'+
@@ -490,6 +490,68 @@
   }
 
   /* ── submit ──────────────────────────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════════
+     RESOURCE / MARKETPLACE VERIFICATION TRACKER
+     Reuses the SAME modal box (#upqBackdrop) and the SAME row
+     component (upqTrackRow) the artwork queue paints, so the
+     experience is identical to an artwork upload — only the rows are
+     section-appropriate. Only these two sections are gated; Blog and
+     Jobs publish as before (no image to moderate). The check runs on
+     the PREVIEW image before a single byte reaches S3, and fails
+     closed: a rejection means nothing was uploaded.
+     ═══════════════════════════════════════════════════════════════ */
+  var dzV = {
+    title:'', safety:'', safetySub:'', transfer:'', publish:'', failReason:null,
+    recvLabel:'File & preview received',
+    reset:function(t){
+      this.title=t||'Upload'; this.safety='run'; this.safetySub='';
+      this.transfer=''; this.publish=''; this.failReason=null;
+    },
+    open:function(t, recv){
+      this.reset(t);
+      this.recvLabel = recv || 'File & preview received';
+      var bd=document.getElementById('upqBackdrop'); if(bd) bd.classList.add('open');
+      this.render();
+    },
+    close:function(){
+      if(typeof upqCloseModal==='function'){ upqCloseModal(); return; }
+      var bd=document.getElementById('upqBackdrop'); if(bd) bd.classList.remove('open');
+    },
+    step:function(k,state,sub){ this[k]=state; if(sub!=null) this[k+'Sub']=sub; this.render(); },
+    fail:function(reason){
+      this.failReason=reason;
+      var bd=document.getElementById('upqBackdrop'); if(bd) bd.classList.add('open');
+      this.render();
+    },
+    render:function(){
+      var t=document.getElementById('upqMTitle'), b=document.getElementById('upqMBody');
+      if(!t||!b) return;
+      var trk=(typeof upqTrackRow==='function') ? upqTrackRow
+              : function(st,n,sub){ return '<div>'+esc(n)+'</div>'; };
+      var failed=!!this.failReason, html='';
+      t.textContent = failed ? 'VERIFICATION FAILED' : 'VERIFICATION STATUS';
+      if(failed){
+        html+='<div class="upqFailBox"><div class="upqFailIco">!</div>'+
+          '<div><div class="upqFailTitle">\u201C'+esc(this.title||'Untitled')+'\u201D was not published</div>'+
+          '<div class="upqFailReason">'+esc(this.failReason)+'</div></div></div>';
+      }
+      html+=trk('pass','Upload received','',false);
+      html+=trk('pass', this.recvLabel || 'File & preview received', '', false);
+      html+=trk(this.safety,'Content safety check',this.safetySub,false);
+      html+=trk(this.transfer,'Secure transfer','',false);
+      html+=trk(this.publish,'Publish', this.publish==='pass' ? 'It\u2019s live \u2726' : '', true);
+      if(failed){
+        html+='<div class="upqFin fail">Verification stopped \u2014 nothing was published</div>';
+        html+='<div class="upqFailNote">Any transferred file has been removed. Fix the issue above and publish again whenever you\u2019re ready.</div>';
+      } else if(this.publish==='pass'){
+        html+='<div class="upqFin ok">All checks passed \u2014 it\u2019s live \u2726</div>';
+      } else {
+        html+='<div class="upqFin busy">Reviewing your upload now\u2026</div>';
+      }
+      b.innerHTML=html;
+    }
+  };
+
   async function dzSubmit(sec){
     if(!sb){ showToast('Backend not configured'); return; }
     if(!window.currentUser){
@@ -513,7 +575,68 @@
     if(miss.length){ showToast('Missing: ' + miss[0].label); return; }
 
     if(btn){ btn.disabled = true; btn.textContent = 'Publishing…'; }
+    /* Which sections get the Gemini image gate, and how:
+         resources / marketplace → the REQUIRED preview, resource mode
+         blog                    → the cover image IF present, ARTWORK
+                                    mode (same rules as an artwork post)
+       "Only image": text is never sent — just the one image. Blog is
+       gated only when it actually has a cover. ── */
+    var modImg = null, modMode = null, modRecv = 'File & preview received';
+    if(sec === 'resources'){   modImg = st(sec).files.preview; modMode = 'resource'; }
+    else if(sec === 'marketplace'){ modImg = st(sec).files.preview; modMode = 'marketplace'; }
+    else if(sec === 'blog'){   modImg = st(sec).files.cover;   modMode = 'artwork'; modRecv = 'Cover image received'; }
+    var moderated = !!modImg;
     try{
+      /* ── IMAGE MODERATION ──
+         Gemini reads only the image (preview / cover), never the file
+         bytes or the post text. Runs before S3 so a rejection leaves
+         nothing behind. ── */
+      if(moderated){
+        dzV.open(val(sec,'title') || SEC[sec].noun, modRecv);
+
+        /* Reliable AI-metadata scan first — catches images exported
+           straight from an AI tool. Same gate artwork uploads use.
+           Metadata only; a scan error alone never blocks (a real 3D
+           render or hand-made piece has no such markers). */
+        if(window.UploadVerifier && typeof UploadVerifier.scanAIMeta === 'function'){
+          var aiHits = [];
+          try{ aiHits = (await UploadVerifier.scanAIMeta(modImg)) || []; }catch(e){ aiHits = []; }
+          if(aiHits.length){
+            dzV.step('safety','fail','AI markers: ' + aiHits.slice(0,2).join(', '));
+            throw new Error('The image looks AI-generated (' + aiHits.slice(0,2).join(', ') + ').' +
+              (modMode === 'artwork'
+                ? ' DigiArtz accepts original artwork only.'
+                : ' DigiArtz resources need a real preview of the asset — a 3D render is fine, AI-generated art is not.'));
+          }
+        }
+
+        /* Gemini image check — same endpoint as artworks. Resources /
+           marketplace use resource mode; blog uses artwork mode, so a
+           blog cover follows the exact artwork rules. Fails closed:
+           no verdict → no upload. */
+        var mFd = new FormData();
+        mFd.append('files', modImg);
+        mFd.append('mode', modMode);
+        var mSess = (await sb.auth.getSession()).data.session;
+        var mRes = await fetch('/api/moderate-upload', {
+          method:'POST',
+          headers:{ 'authorization':'Bearer ' + (mSess ? mSess.access_token : '') },
+          body: mFd
+        });
+        var mod = await mRes.json().catch(function(){ return null; });
+        if(!mRes.ok || !mod){
+          dzV.step('safety','fail','Review service unavailable');
+          throw new Error((mod && mod.error) || 'Content check failed — please try again.');
+        }
+        if(!mod.allowed){
+          var devNote = (typeof isDev !== 'undefined' && isDev && mod.code) ? ('Code: ' + mod.code) : '';
+          dzV.step('safety','fail', devNote);
+          throw new Error(mod.reason || 'This upload did not pass the content check.');
+        }
+        dzV.step('safety','pass', mod.rating === 'MATURE' ? 'Approved · 18+' : 'Safe for all audiences');
+        dzV.step('transfer','run');
+      }
+
       var stamp = Date.now();
       var base  = safeSlug(val(sec,'title') || sec, 60) || sec;
 
@@ -595,14 +718,17 @@
         row.valid_through = val(sec,'valid_through') || null;
       }
 
+      if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
       var res = await sb.from(SEC[sec].table).insert(row).select('id').single();
       if(res.error) throw res.error;
 
+      if(moderated){ dzV.step('publish','pass'); setTimeout(function(){ dzV.close(); }, 1400); }
       showToast('Published ✦');
       dzResetForm(sec);
       dzLoaded[sec] = false;   /* next visit re-queries */
     }catch(err){
-      showToast((err && err.message) ? err.message : 'Could not publish');
+      if(moderated){ dzV.fail((err && err.message) ? err.message : 'Could not publish'); }
+      else { showToast((err && err.message) ? err.message : 'Could not publish'); }
     }finally{
       if(btn){ btn.disabled = false; btn.textContent = 'Publish ✦'; }
     }
@@ -774,6 +900,7 @@
   'use strict';
   var KIND = { resources:'resource', blog:'blog', marketplace:'marketplace', jobs:'job' };
   var cur = { sec:null, idx:-1 };
+  var curExt = null;   /* when set, render() shows this one row (profile tabs) */
   var profCache = {};
 
   function H(){ return window.dzHelpers || { money:function(){return '';}, bytes:function(){return '';}, ago:function(){return '';} }; }
@@ -889,7 +1016,7 @@
   /* ── per-kind renderers ────────────────────────────────────── */
   function render(){
     var host = document.getElementById('dzvBody');
-    var r = rows()[cur.idx];
+    var r = curExt || rows()[cur.idx];
     if(!host || !r) return;
     host.scrollTop = 0;
     var sec = cur.sec, kind = KIND[sec], id = esc2(r.id), h = H(), html = '';
@@ -960,7 +1087,7 @@
     }
     host.innerHTML = html;
 
-    var multi = rows().length > 1;
+    var multi = !curExt && rows().length > 1;
     var pb=document.getElementById('dzvPrev'), nb=document.getElementById('dzvNext');
     if(pb) pb.style.visibility = multi ? 'visible' : 'hidden';
     if(nb) nb.style.visibility = multi ? 'visible' : 'hidden';
@@ -972,6 +1099,7 @@
 
   var pushed = false;
   window.dzOpenView = function(sec, id){
+    curExt = null;
     var list = (typeof window.dzGetRows==='function' ? window.dzGetRows(sec) : []) || [];
     var idx = list.findIndex(function(x){ return String(x.id)===String(id); });
     if(idx === -1) return;
@@ -984,11 +1112,21 @@
        close control, so opening plants a history entry to consume. */
     if(!pushed){ try{ history.pushState({dzv:1},''); pushed = true; }catch(e){} }
   };
+  window.dzOpenRow = function(sec, row){
+    if(!row) return;
+    curExt = row; cur = { sec:sec, idx:-1 };
+    render();
+    var v = document.getElementById('dzView'); if(v) v.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if(!pushed){ try{ history.pushState({dzv:1},''); pushed = true; }catch(e){} }
+  };
+
   window.addEventListener('popstate', function(){
     var v = document.getElementById('dzView');
     if(v && v.classList.contains('open')){ pushed = false; dzCloseView(); }
   });
   window.dzViewNav = function(dir){
+    if(curExt) return;
     var n = rows().length;
     if(!n) return;
     cur.idx = (cur.idx + dir + n) % n;
@@ -998,6 +1136,7 @@
     var v = document.getElementById('dzView');
     if(v) v.classList.remove('open');
     document.body.style.overflow = '';
+    curExt = null;
     if(pushed){ pushed = false; try{ history.back(); }catch(e){} }
   };
   document.addEventListener('keydown', function(e){

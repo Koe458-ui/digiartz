@@ -26,6 +26,12 @@
     bookmark: { name:'Bookmarks', rpc:'get_user_bookmarked_artworks', ico:'\u2756' }
   };
   var albMine = [], albMineLoaded = false;   /* signed-in user's strip */
+  /* Album cap is per tier: 25 normally, 30 on premium/max. The DB
+     trigger albums_cap_guard() is the real enforcement — this copy
+     only exists so we can say "you're full" before a round trip. */
+  var albTier = 'guest';
+  function albCap(){ return (albTier === 'premium' || albTier === 'max') ? 30 : 25; }
+  function albRealCount(){ return albMine.filter(function(a){ return !a.virt; }).length; }
   var albView = null;                        /* album currently on #albViewPage */
   var albModMode = null, albModId = null;    /* create / rename popup state */
 
@@ -40,16 +46,35 @@
     }
     return '<span class="albMosaic">'+out+'</span>';
   }
+  /* Can the person looking at this strip manage this album? The
+     manager page is always the signed-in user's own; the profile tab
+     only when it's their own profile. Virtual albums are manageable
+     too, but only their visibility — see albMenuOpen. */
+  function albCanManage(src, a){
+    if(!currentUser) return false;
+    return src === 'me' || !!pf.isOwner;
+  }
   function albCardHTML(src, a){
     var n = +a.item_count || 0;
-    return '<button type="button" class="albCard'+(a.virt?' albCard--virt':'')+'" '+
-        'onclick="albOpen(\''+src+'\',\''+esc(String(a.id))+'\')">'+
-      albMosaicHTML(a.covers)+
-      '<span class="albMeta">'+
-        '<span class="albName">'+(a.virt?'<span class="albPin">'+a.ico+'</span>':'')+esc(a.name||'Untitled')+'</span>'+
-        '<span class="albCount">'+n+(n===1?' ITEM':' ITEMS')+'</span>'+
-      '</span>'+
-    '</button>';
+    var id = esc(String(a.id));
+    var priv = (a.is_public === false);
+    /* The card is a <button>, so the 3-dot cannot live inside it —
+       nested buttons are invalid and swallow the click. It sits as a
+       sibling inside a positioned wrapper instead. */
+    return '<div class="albCardWrap">'+
+      '<button type="button" class="albCard'+(a.virt?' albCard--virt':'')+(priv?' albCard--priv':'')+'" '+
+          'onclick="albOpen(\''+src+'\',\''+id+'\')">'+
+        albMosaicHTML(a.covers)+
+        '<span class="albMeta">'+
+          '<span class="albName">'+(a.virt?'<span class="albPin">'+a.ico+'</span>':'')+esc(a.name||'Untitled')+'</span>'+
+          '<span class="albCount">'+n+(n===1?' ITEM':' ITEMS')+(priv?' \u00B7 PRIVATE':'')+'</span>'+
+        '</span>'+
+      '</button>'+
+      (albCanManage(src, a)
+        ? '<button type="button" class="albDots" aria-label="Album options" aria-haspopup="menu" '+
+          'onclick="albMenuOpen(event,\''+src+'\',\''+id+'\')">\u22EF</button>'
+        : '')+
+    '</div>';
   }
   function albNewCardHTML(){
     return '<button type="button" class="albCard albCardNew" onclick="albCreatePrompt()">'+
@@ -65,20 +90,39 @@
   async function albFetchStrip(userId){
     function soft(p){ return p.then(function(r){ return r && !r.error ? r : {data:[]}; },
                                     function(){ return {data:[]}; }); }
+    function soft1(p){ return p.then(function(r){ return r && !r.error && r.data ? r : {data:{}}; },
+                                     function(){ return {data:{}}; }); }
     var res = await Promise.all([
       soft(sb.rpc('get_user_liked_artworks',      {target:userId, lim:100, off:0})),
       soft(sb.rpc('get_user_bookmarked_artworks', {target:userId, lim:100, off:0})),
-      soft(sb.rpc('get_user_albums',              {target:userId}))
+      soft(sb.rpc('get_user_albums',              {target:userId})),
+      /* Visibility flags for the two virtual albums, plus the tier the
+         cap is derived from. One row, same round trip as the rest. */
+      soft1(sb.from('profiles')
+              .select('likes_public,bookmarks_public,subscription_tier,subscription_expires_at')
+              .eq('id', userId).maybeSingle())
     ]);
+    var flags = res[3].data || {};
+    var owner = !!currentUser && String(currentUser.id) === String(userId);
+    if(owner){
+      var exp = flags.subscription_expires_at ? new Date(flags.subscription_expires_at) : null;
+      albTier = (exp && exp.getTime() < Date.now())
+        ? 'guest' : (flags.subscription_tier || 'guest');
+    }
+    var pubOf = { like: flags.likes_public === true, bookmark: flags.bookmarks_public === true };
     var virt = ['like','bookmark'].map(function(k, i){
       var rows = res[i].data || [];
       return { id:k, key:k, virt:true, name:ALB_VIRT[k].name, ico:ALB_VIRT[k].ico,
+               is_public:pubOf[k],
                item_count:rows.length,
                covers:rows.slice(0,4).map(function(r){ return r.image_url; }),
                rows:rows };
-    });
+    /* A visitor never even sees that a private Likes/Bookmarks album
+       exists — it's dropped from the strip, not shown empty. */
+    }).filter(function(v){ return owner || v.is_public; });
     return virt.concat((res[2].data||[]).map(function(a){
-      return { id:a.id, virt:false, name:a.name, item_count:a.item_count, covers:a.covers||[] };
+      return { id:a.id, virt:false, name:a.name, item_count:a.item_count,
+               covers:a.covers||[], is_public:a.is_public !== false };
     }));
   }
 
@@ -241,9 +285,120 @@
     if(src === 'me') albRenderManager(); else albRenderProfileTab();
   }
 
+  /* ── Album 3-dot menu ─────────────────────────────────────────
+     Rename · Public/Private · Delete, on every album card the viewer
+     owns. Likes and Bookmarks are virtual — they have no albums row,
+     so they can only be toggled public/private: renaming them would
+     break the reserved-name rule and deleting them is meaningless,
+     since they simply mirror what you've liked/bookmarked. ── */
+  var albMenuEl = null;
+  function albMenuClose(){
+    if(albMenuEl && albMenuEl.parentNode) albMenuEl.parentNode.removeChild(albMenuEl);
+    albMenuEl = null;
+    document.removeEventListener('click', albMenuClose, true);
+    window.removeEventListener('resize', albMenuClose, true);
+    window.removeEventListener('scroll', albMenuClose, true);
+  }
+  function albMenuOpen(ev, src, id){
+    ev.preventDefault(); ev.stopPropagation();
+    var wasOpen = !!albMenuEl;
+    albMenuClose();
+    if(wasOpen) return;                       /* second tap closes it */
+    var a = albFind(src, id);
+    if(!a || !albCanManage(src, a)) return;
+    var pub = (a.is_public !== false);
+    var sid = esc(String(src)), aid = esc(String(id));
+    var html = '';
+    if(!a.virt){
+      html += '<button type="button" class="albMenuItem" onclick="albMenuRename(\'' + sid + '\',\'' + aid + '\')">Rename</button>';
+    }
+    html += '<button type="button" class="albMenuItem" onclick="albMenuVis(\'' + sid + '\',\'' + aid + '\')">' +
+            (pub ? 'Make private' : 'Make public') + '</button>';
+    if(!a.virt){
+      html += '<button type="button" class="albMenuItem albMenuDanger" onclick="albMenuDelete(\'' + sid + '\',\'' + aid + '\')">Delete</button>';
+    }
+    var m = document.createElement('div');
+    m.className = 'albMenu'; m.setAttribute('role','menu'); m.innerHTML = html;
+    document.body.appendChild(m);
+    albMenuEl = m;
+    /* getBoundingClientRect, not offsetTop — the card sits inside a
+       transformed, scrolled grid, so only the viewport rect is true. */
+    var r = ev.currentTarget.getBoundingClientRect();
+    var mw = m.offsetWidth, mh = m.offsetHeight;
+    var top = (r.bottom + 6 + mh > window.innerHeight) ? (r.top - mh - 6) : (r.bottom + 6);
+    m.style.top  = Math.max(8, top) + 'px';
+    m.style.left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8)) + 'px';
+    /* Capture phase, next frame: this same click must not close it. */
+    setTimeout(function(){
+      document.addEventListener('click', albMenuClose, true);
+      window.addEventListener('resize', albMenuClose, true);
+      window.addEventListener('scroll', albMenuClose, true);
+    }, 0);
+  }
+  /* Public ⇄ private. Real albums flip albums.is_public; the two
+     virtual ones flip the matching flag on the profile, which is what
+     the server RPCs check before returning anyone else's likes. */
+  async function albMenuVis(src, id){
+    var a = albFind(src, id);
+    albMenuClose();
+    if(!a || !albCanManage(src, a) || !currentUser) return;
+    var next = (a.is_public === false);
+    try{
+      if(a.virt){
+        var patch = {};
+        patch[a.key === 'like' ? 'likes_public' : 'bookmarks_public'] = next;
+        const{error} = await sb.from('profiles').update(patch).eq('id', currentUser.id);
+        if(error) throw error;
+      } else {
+        const{error} = await sb.from('albums').update({is_public:next}).eq('id', id);
+        if(error) throw error;
+      }
+      a.is_public = next;
+      if(src === 'me') albRenderManager(); else albRenderProfileTab();
+      showToast(next
+        ? (a.virt ? a.name + ' are public now' : 'Album is public')
+        : (a.virt ? a.name + ' are private now' : 'Album is private'));
+    }catch(e){ showToast(safeErr(e, 'Couldn\u2019t update \u2014 try again')); }
+  }
+  function albMenuRename(src, id){
+    var a = albFind(src, id);
+    albMenuClose();
+    if(!a || a.virt || !albCanManage(src, a)) return;
+    albModMode = 'rename'; albModId = String(id);
+    document.getElementById('albModTitle').innerHTML = 'RENAME ALBUM <span class="s">\u2726</span>';
+    document.getElementById('albModSave').textContent = 'Save';
+    var inp = document.getElementById('albModIn'); inp.value = a.name || '';
+    document.getElementById('albMod').classList.add('open');
+    setTimeout(function(){ inp.focus(); inp.select(); }, 80);
+  }
+  async function albMenuDelete(src, id){
+    var a = albFind(src, id);
+    albMenuClose();
+    if(!a || !albCanManage(src, a)) return;
+    /* Belt and braces — the menu never offers Delete on a virtual
+       album, and this refuses it even if something else calls in. */
+    if(a.virt){ showToast(a.name + ' can\u2019t be deleted'); return; }
+    if(!confirm('Delete the album \u201C' + a.name + '\u201D?\n\nThe artworks inside are NOT deleted \u2014 only the album.')) return;
+    try{
+      const{error} = await sb.from('albums').delete().eq('id', id);
+      if(error) throw error;
+      if(albView && String(albView.id) === String(id)) albCloseView();
+      showToast('Album deleted');
+      await albRefreshAll();
+    }catch(e){ showToast(safeErr(e, 'Couldn\u2019t delete \u2014 try again')); }
+  }
+
   /* ── Create / rename popup ── */
   function albCreatePrompt(){
     if(!currentUser){ showToast('Sign in to create albums'); if(typeof openAuthMod==='function') openAuthMod(); return; }
+    /* Server-side albums_cap_guard() is the real gate; this just
+       saves a round trip and explains the upgrade. */
+    if(albMineLoaded && albRealCount() >= albCap()){
+      showToast(albCap() >= 30
+        ? 'You\u2019ve reached the 30 album limit'
+        : 'Album limit reached (25) \u2014 Premium or Max raises it to 30');
+      return;
+    }
     albModMode = 'new'; albModId = null;
     document.getElementById('albModTitle').innerHTML = 'NEW ALBUM <span class="s">\u2726</span>';
     document.getElementById('albModSave').textContent = 'Create';
@@ -301,7 +456,9 @@
         /albums_user_name_uniq|duplicate key/i.test(raw) ? 'You already have an album with that name' :
         /albums_name_reserved/i.test(raw)                ? 'That name is reserved \u2014 pick another' :
         /albums_name_len/i.test(raw)                     ? 'Album names are 1\u201340 characters' :
-        /Album limit/i.test(raw)                         ? 'You\u2019ve reached the 100 album limit' :
+        /Album limit/i.test(raw)                         ? (albCap() >= 30
+            ? 'You\u2019ve reached the 30 album limit'
+            : 'Album limit reached (25) \u2014 Premium or Max raises it to 30') :
         safeErr(e, 'Couldn\u2019t save \u2014 try again')
       );
     }finally{ btn.disabled = false; }

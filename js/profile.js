@@ -142,6 +142,7 @@
     }
     pf.profile=null; pf.galleryRows=[]; pf.galleryDone=false; pf.galleryBusy=false;
     pf.likeLoaded=false; pf.bmLoaded=false;
+    pf.resLoaded=false; pf.mktLoaded=false; pf.blogLoaded=false; pf.resRows=[]; pf.mktRows=[]; pf.blogRows=[];
     pf.savedRows={like:[],bookmark:[]}; pf.savedShown={like:0,bookmark:0};
     /* Albums are per-profile too — drop the previous artist's strip so a
        fast re-open can never paint their collections under a new name. */
@@ -163,10 +164,13 @@
       pfPaintProfile(cachedRow, cachedRow.username, pushUrl);
     } else {
       /* First visit — show the skeleton (nothing better to show). */
-      document.getElementById('pfLikeGrid').innerHTML='';
-      document.getElementById('pfBookmarkGrid').innerHTML='';
-      document.getElementById('pfLikeEmpty').style.display='none';
-      document.getElementById('pfBookmarkEmpty').style.display='none';
+      /* Like / Bookmark tabs were removed — saved artwork is private
+         now and reachable only through your own Albums. These nodes
+         may not exist, so every reset is guarded. */
+      var _lg=document.getElementById('pfLikeGrid');     if(_lg) _lg.innerHTML='';
+      var _bg=document.getElementById('pfBookmarkGrid'); if(_bg) _bg.innerHTML='';
+      var _le=document.getElementById('pfLikeEmpty');    if(_le) _le.style.display='none';
+      var _be=document.getElementById('pfBookmarkEmpty');if(_be) _be.style.display='none';
       var _xpW=document.getElementById('pfXpWrap'); if(_xpW) _xpW.innerHTML='';
       document.getElementById('pfUsername').textContent='Loading…';
       document.getElementById('pfAvatarLetter').textContent='?';
@@ -270,7 +274,7 @@
 
   function pfSwitchTab(tab){
     pf.tab=tab;
-    ['gallery','album','like','bookmark','progress','about'].forEach(function(t){
+    ['gallery','resources','blog','marketplace','album','progress','about'].forEach(function(t){
       document.getElementById('pfTab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
       document.getElementById('pfPanel'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
     });
@@ -278,8 +282,133 @@
     if(tab==='progress' && typeof xpLoadInto==='function' && pf.profile){
       xpLoadInto('pfXpWrap', pf.profile.id, { leaderboard:true });
     }
-    if(tab==='like' || tab==='bookmark') pfLoadSaved(tab);
     if(tab==='album') albLoadProfileTab();
+    if(tab==='resources') pfLoadResources();
+    if(tab==='blog') pfLoadBlog();
+    if(tab==='marketplace') pfLoadMarket();
+  }
+
+  /* ── RESOURCES / MARKETPLACE tabs — this artist's own uploads ──
+     Cards reuse the section styling (dzCard/dzThumb/…). Tapping one
+     opens the SAME detail overlay the Resources/Marketplace sections
+     use, via dzOpenRow() with the row object (these rows aren't in the
+     section browse cache, so dzOpenView's id lookup wouldn't find
+     them). Read-only on every profile; RLS already limits it to
+     approved rows. ── */
+  function pfDzCard(sec){
+    return function(r){
+      var id = esc(String(r.id));
+      var H  = window.dzHelpers || { bytes:function(){return '';}, money:function(){return '';} };
+      var thumb = r.preview_url
+        ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.preview_url))+'" alt="'+esc(r.title||'')+'">'
+        : '<span class="dzExt">'+esc(String(sec==='resources'?(r.file_ext||'FILE'):(r.item_type||'ITEM')).toUpperCase())+'</span>';
+      if(sec==='resources'){
+        return '<div class="dzCard" onclick="pfDzOpen(\'resources\',\''+id+'\')">'+
+          '<div class="dzThumb">'+thumb+'<span class="dzBadge">'+esc((r.file_ext||'').toUpperCase())+'</span></div>'+
+          '<div class="dzBody"><div class="dzName">'+esc(r.title||'')+'</div>'+
+          '<div class="dzMeta"><span>'+esc(H.bytes(r.file_size))+'</span>'+
+          '<span>'+esc(String(r.download_count||0))+' downloads</span>'+
+          '<span>'+esc(r.license||'')+'</span></div></div></div>';
+      }
+      var priced = (r.price_cents||0) > 0;
+      return '<div class="dzCard" onclick="pfDzOpen(\'marketplace\',\''+id+'\')">'+
+        '<div class="dzThumb">'+thumb+'<span class="dzBadge">'+esc((r.item_type||'').toUpperCase())+'</span></div>'+
+        '<div class="dzBody"><div class="dzName">'+esc(r.title||'')+'</div>'+
+        '<div class="dzPrice">'+esc(H.money(r.price_cents, r.currency))+'</div>'+
+        '<div class="dzMeta"><span>'+esc(r.license||'')+'</span>'+
+        (r.delivery_days ? '<span>'+esc(String(r.delivery_days))+'d delivery</span>' : '')+
+        '</div></div></div>';
+    };
+  }
+
+  function pfDzOpen(sec, id){
+    var arr = sec==='resources' ? (pf.resRows||[]) : sec==='blog' ? (pf.blogRows||[]) : (pf.mktRows||[]);
+    var row = arr.find(function(x){ return String(x.id)===String(id); });
+    if(row && typeof window.dzOpenRow==='function') window.dzOpenRow(sec, row);
+  }
+
+  async function pfLoadResources(){
+    if(!pf.profile || pf.resLoaded) return;
+    var grid = document.getElementById('pfResGrid'), empty = document.getElementById('pfResEmpty');
+    if(!grid) return;
+    if(empty) empty.style.display='none';
+    grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
+    try{
+      const{data,error}=await sb.from('resources')
+        .select('id,user_id,title,description,category,tags,file_url,file_name,file_ext,file_size,preview_url,license,software,download_count,created_at')
+        .eq('user_id', pf.profile.id).eq('status','approved')
+        .order('created_at',{ascending:false}).limit(60);
+      if(error) throw error;
+      var rows = data||[];
+      pf.resLoaded=true; pf.resRows=rows;
+      grid.innerHTML = rows.map(pfDzCard('resources')).join('');
+      if(empty) empty.style.display = rows.length ? 'none' : '';
+    }catch(e){
+      grid.innerHTML=''; if(empty) empty.style.display='';
+      showToast('Couldn\u2019t load \u2014 try again');
+    }
+  }
+
+  async function pfLoadMarket(){
+    if(!pf.profile || pf.mktLoaded) return;
+    var grid = document.getElementById('pfMktGrid'), empty = document.getElementById('pfMktEmpty');
+    if(!grid) return;
+    if(empty) empty.style.display='none';
+    grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
+    try{
+      /* file_url is deliberately NOT selected — the column is revoked
+         for anon/authenticated and would error the whole query. */
+      const{data,error}=await sb.from('marketplace_items')
+        .select('id,user_id,title,description,category,tags,item_type,price_cents,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
+        .eq('user_id', pf.profile.id).eq('status','approved')
+        .order('created_at',{ascending:false}).limit(60);
+      if(error) throw error;
+      var rows = data||[];
+      pf.mktLoaded=true; pf.mktRows=rows;
+      grid.innerHTML = rows.map(pfDzCard('marketplace')).join('');
+      if(empty) empty.style.display = rows.length ? 'none' : '';
+    }catch(e){
+      grid.innerHTML=''; if(empty) empty.style.display='';
+      showToast('Couldn\u2019t load \u2014 try again');
+    }
+  }
+
+  /* Blog is a LIST (dzRow), not a grid — mirror the section markup so
+     styling matches, and open the same detail overlay via dzOpenRow. */
+  function pfBlogRow(r){
+    var id = esc(String(r.id));
+    var H  = window.dzHelpers || { ago:function(){return '';} };
+    var ico = r.cover_url
+      ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.cover_url))+'" alt="">'
+      : esc((r.title||'?').charAt(0).toUpperCase());
+    var ex = r.excerpt || String(r.body||'').slice(0,140);
+    return '<div class="dzRow" onclick="pfDzOpen(\'blog\',\''+id+'\')"><div class="dzRowIco">'+ico+'</div>'+
+      '<div style="min-width:0;flex:1"><div class="dzName">'+esc(r.title||'')+'</div>'+
+      '<div class="dzMeta" style="margin:.2rem 0 .3rem"><span>'+esc(H.ago(r.created_at))+'</span>'+
+      '<span>'+esc(String(r.read_minutes||1))+' min read</span></div>'+
+      '<div class="dzHint">'+esc(ex)+'</div></div></div>';
+  }
+
+  async function pfLoadBlog(){
+    if(!pf.profile || pf.blogLoaded) return;
+    var host = document.getElementById('pfBlogList'), empty = document.getElementById('pfBlogEmpty');
+    if(!host) return;
+    if(empty) empty.style.display='none';
+    host.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
+    try{
+      const{data,error}=await sb.from('blog_posts')
+        .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at')
+        .eq('user_id', pf.profile.id).eq('status','approved')
+        .order('created_at',{ascending:false}).limit(60);
+      if(error) throw error;
+      var rows = data||[];
+      pf.blogLoaded=true; pf.blogRows=rows;
+      host.innerHTML = rows.map(pfBlogRow).join('');
+      if(empty) empty.style.display = rows.length ? 'none' : '';
+    }catch(e){
+      host.innerHTML=''; if(empty) empty.style.display='';
+      showToast('Couldn\u2019t load \u2014 try again');
+    }
   }
 
   /* ── LIKE / BOOKMARK tabs — read-only grids for any profile ── */

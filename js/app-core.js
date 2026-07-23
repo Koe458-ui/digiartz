@@ -135,9 +135,15 @@
      text[] array (current schema) or a legacy comma-joined string
      (pre-migration rows) — every read of art.category should go
      through this instead of calling .split(',') directly. */
+  /* Slugs kept out of the UI. The rows keep their value — this only
+     stops it being shown, offered as a filter, or title-cased into a
+     stray chip. Empty this list to bring one back. */
+  var CAT_HIDDEN = { 'ai-art':1 };
   function catList(val){
-    if(Array.isArray(val)) return val.map(function(c){return String(c).trim();}).filter(Boolean);
-    return String(val||'').split(',').map(function(c){return c.trim();}).filter(Boolean);
+    var out = Array.isArray(val)
+      ? val.map(function(c){return String(c).trim();})
+      : String(val||'').split(',').map(function(c){return c.trim();});
+    return out.filter(function(c){ return c && !CAT_HIDDEN[c]; });
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -233,7 +239,6 @@
     '3d-models'         :'cube',
     'abstract'          :'layers',
     'aesthetic-art'     :'sparkle',
-    'ai-art'            :'cpu',
     'aircraft'          :'plane',
     'all'               :'grid',
     'animals'           :'paw',
@@ -344,7 +349,6 @@
     {slug:'sketches',        label:'Sketches'},
     {slug:'illustrations',   label:'Illustrations'},
     {slug:'concept-art',     label:'Concept Art'},
-    {slug:'ai-art',          label:'AI Art'},
     {slug:'digital-art',     label:'Digital Art'},
     {slug:'traditional-art', label:'Traditional Art'},
     {slug:'abstract',        label:'Abstract'},

@@ -654,9 +654,10 @@
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
           <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" onclick="pfSwitchTab('gallery')">ARTWORK</button>
+          <button class="pfTab" id="pfTabResources" role="tab" aria-selected="false" onclick="pfSwitchTab('resources')">RESOURCES</button>
+          <button class="pfTab" id="pfTabBlog" role="tab" aria-selected="false" onclick="pfSwitchTab('blog')">BLOG</button>
+          <button class="pfTab" id="pfTabMarketplace" role="tab" aria-selected="false" onclick="pfSwitchTab('marketplace')">MARKETPLACE</button>
           <button class="pfTab" id="pfTabAlbum" role="tab" aria-selected="false" onclick="pfSwitchTab('album')">ALBUMS</button>
-          <button class="pfTab" id="pfTabLike" role="tab" aria-selected="false" onclick="pfSwitchTab('like')">LIKE</button>
-          <button class="pfTab" id="pfTabBookmark" role="tab" aria-selected="false" onclick="pfSwitchTab('bookmark')">BOOKMARK</button>
           <button class="pfTab" id="pfTabProgress" role="tab" aria-selected="false" onclick="pfSwitchTab('progress')">LEVEL</button>
           <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" onclick="pfSwitchTab('about')">ABOUT</button>
           <button class="pfTab" onclick="openPfShare()" aria-label="Share this profile">SHARE</button>
@@ -675,6 +676,25 @@
         <div class="igSentinel" id="pfGallerySentinel" aria-hidden="true" style="display:none;"></div>
       </div>
 
+      <!-- RESOURCES — this artist's uploaded resources. Cards + detail
+           overlay are shared with the Resources section (js/sections.js). -->
+      <div class="pfPanel" id="pfPanelResources">
+        <div class="dzGrid" id="pfResGrid"></div>
+        <div class="pfEmpty" id="pfResEmpty" style="display:none;">No resources uploaded yet.</div>
+      </div>
+
+      <!-- BLOG — this artist's posts (list). -->
+      <div class="pfPanel" id="pfPanelBlog">
+        <div class="dzList" id="pfBlogList"></div>
+        <div class="pfEmpty" id="pfBlogEmpty" style="display:none;">No blog posts yet.</div>
+      </div>
+
+      <!-- MARKETPLACE — this artist's listings. -->
+      <div class="pfPanel" id="pfPanelMarketplace">
+        <div class="dzGrid" id="pfMktGrid"></div>
+        <div class="pfEmpty" id="pfMktEmpty" style="display:none;">No marketplace listings yet.</div>
+      </div>
+
       <!-- ALBUMS — the artist's own collections. LIKES and BOOKMARKS
            are pinned first as VIRTUAL albums (no albums row exists for
            them; they read the artwork_likes / artwork_bookmarks data
@@ -685,21 +705,12 @@
         <div class="pfEmpty" id="pfAlbumEmpty" style="display:none;">No albums yet.</div>
       </div>
 
-      <!-- LIKE / BOOKMARK — READ-ONLY grids of artworks this artist
-           has liked / bookmarked. Visible to every visitor; the data
-           comes from SECURITY DEFINER viewer functions while the
-           tables' own RLS keeps INSERT/DELETE owner-only, so viewers
-           can look but never modify. -->
-      <div class="pfPanel" id="pfPanelLike">
-        <div class="pfGrid pfGridArt" id="pfLikeGrid"></div>
-        <div class="pfEmpty" id="pfLikeEmpty" style="display:none;">No liked artworks yet.</div>
-        <div class="igSentinel" id="pfLikeSentinel" aria-hidden="true" style="display:none;"></div>
-      </div>
-      <div class="pfPanel" id="pfPanelBookmark">
-        <div class="pfGrid pfGridArt" id="pfBookmarkGrid"></div>
-        <div class="pfEmpty" id="pfBookmarkEmpty" style="display:none;">No bookmarked artworks yet.</div>
-        <div class="igSentinel" id="pfBookmarkSentinel" aria-hidden="true" style="display:none;"></div>
-      </div>
+      <!-- LIKE / BOOKMARK tabs were removed: what an artist likes or
+           bookmarks is private. They now surface only as the two
+           virtual albums on your OWN Albums tab, and reach other
+           people only if you switch them to public from the album's
+           3-dot menu (profiles.likes_public / bookmarks_public, which
+           the viewer RPCs check). -->
 
       <!-- PROGRESS (LEVEL tab) — XP / level / milestones for the viewed
            artist. Rendered by the Artist Progress module (xpRenderInto). -->
@@ -1759,8 +1770,8 @@
               <span class="cmFriendAvatarFallback" style="display:none;">🤖</span>
             </div>
             <div class="cmFriendMeta">
-              <div class="cmFriendName">Zeo <span class="cmBadge">AI</span></div>
-              <div class="cmFriendStatus"><span class="cmDot"></span>Always online · Your AI assistant</div>
+              <div class="cmFriendName">Zeo <span class="cmBadge">BOT</span></div>
+              <div class="cmFriendStatus"><span class="cmDot"></span>Always online · Your DigiArtz bot</div>
             </div>
           </div>
         </div>
@@ -3008,13 +3019,13 @@ window.ZEO_DATA = window.ZEO_DATA || {
 <!-- ── AI Assistant HTML ───────────────────────────────── -->
 
 <!-- Floating bot button -->
-<button id="zeoBtn" aria-label="Open AI Assistant" title="AI Assistant">
+<button id="zeoBtn" aria-label="Open Zeo Bot" title="Zeo Bot">
   <!-- Avatar image — falls back to SVG bot icon if load fails -->
   <img
     id="zeoBtnImg"
     class="zeoBtnAvatar"
     src="/zeo-avatar.png"
-    alt="Zeo AI Assistant"
+    alt="Zeo Bot"
     aria-hidden="true"
     draggable="false"
     onerror="this.style.display='none';document.getElementById('zeoBtnFallback').style.display='flex';"
@@ -3036,14 +3047,14 @@ window.ZEO_DATA = window.ZEO_DATA || {
 
 <!-- AI Assistant — full page (opens on tap, slides in like the
      rest of the site's full pages instead of a small popup) -->
-<div id="zeoPage" role="dialog" aria-label="Zeo AI Assistant" aria-modal="true">
+<div id="zeoPage" role="dialog" aria-label="Zeo Bot" aria-modal="true">
   <div class="zeoChatHeader">
     <div class="zeoChatHeaderAvatar" aria-hidden="true"><img src="/zeo-avatar.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.remove();this.parentElement.textContent='🤖';"/></div>
     <div class="zeoChatHeaderInfo">
       <div class="zeoChatHeaderName">Zeo</div>
-      <div class="zeoChatHeaderStatus">AI Assistant · Online</div>
+      <div class="zeoChatHeaderStatus">Bot · Online</div>
     </div>
-    <button class="zeoChatCloseBtn" id="zeoChatClose" aria-label="Close AI Assistant">✕</button>
+    <button class="zeoChatCloseBtn" id="zeoChatClose" aria-label="Close Zeo Bot">✕</button>
   </div>
   <div class="zeoChatBody" id="zeoChatBody" aria-live="polite"></div>
 </div>

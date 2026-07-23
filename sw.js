@@ -26,6 +26,26 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v30 — AI Art category retired from the UI and Zeo relabelled as a
+       bot. The 18 artworks already tagged ai-art keep the value in the
+       database; catList() just filters it out of every chip, filter and
+       picker, so nothing is orphaned and the change is one line to
+       revert. Zeo's badge and labels now read Bot instead of AI. The
+       report reason and the upload rejection wording are unchanged.
+   v29 — album privacy + per-tier cap. Like/Bookmark profile tabs are
+       gone (saved artwork is private now); every album card gets a
+       3-dot menu — Rename / Public-Private / Delete — with Likes and
+       Bookmarks toggleable but never renameable or deletable. Album
+       cap moved from a flat 100 to 25, or 30 on premium/max. Needs the
+       album_visibility_and_tier_cap migration. css/widgets.css gains
+       the menu styles; no new precache paths.
+   v28 — resource / blog / marketplace image moderation. Gemini now
+       gates Resources + Marketplace uploads (resource mode, MATURE
+       allowed, AI previews rejected) and Blog covers (artwork mode),
+       all through the same #upqBackdrop tracker artworks use. profile.js
+       gains Resources / Blog / Marketplace tabs. No new precache paths —
+       every changed file already ships in the shell — so this bump only
+       forces returning clients onto the new JS.
    v27 — new favicon. Site icons regenerated from the DigiArtz bird
        logo (replacing the old "D"). Tab favicons now ship a dark-mode
        white variant switched by prefers-color-scheme in index.html;
@@ -179,7 +199,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v27';
+const CACHE_VERSION = 'v30';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

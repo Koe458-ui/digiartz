@@ -26,6 +26,14 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v31 — follow-up to v30: the retired AI Art category was still
+       reaching the tag rail. tgLabel() falls back to the raw slug for
+       anything it has no label for, so dropping it from SITE_CATEGORIES
+       turned the chip into a bare lowercase "ai-art" instead of hiding
+       it. The rail feeds from get_top_tags() and saved user_tag_prefs,
+       neither of which goes through catList(), so both are now filtered
+       through a shared catHidden() predicate. The lightbox tag chips
+       are guarded the same way.
    v30 — AI Art category retired from the UI and Zeo relabelled as a
        bot. The 18 artworks already tagged ai-art keep the value in the
        database; catList() just filters it out of every chip, filter and
@@ -199,7 +207,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v30';
+const CACHE_VERSION = 'v31';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

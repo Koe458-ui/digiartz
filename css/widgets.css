@@ -776,6 +776,40 @@ html.thmFade #themePage{
   color:rgba(255,255,255,.74);
 }
 .albCard--virt{border-color:color-mix(in srgb,var(--pg) 26%,var(--bdr));}
+/* Private albums read a shade quieter than public ones, so the strip
+   tells you what's visible to other people at a glance. */
+.albCard--priv{border-style:dashed;border-color:color-mix(in srgb,var(--tc) 22%,var(--bdr));}
+/* The 3-dot has to sit OUTSIDE .albCard — a button can't be nested in
+   a button — so the card and the dots are siblings in this wrapper. */
+.albCardWrap{position:relative;display:block;}
+.albDots{
+  position:absolute;top:.3rem;right:.3rem;z-index:2;
+  width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;
+  border:none;border-radius:50%;cursor:pointer;
+  font-size:.86rem;line-height:1;color:#fff;
+  background:rgba(0,0,0,.46);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  opacity:.9;transition:background .18s,opacity .18s;
+}
+@media(hover:hover){ .albDots:hover{background:rgba(0,0,0,.66);opacity:1;} }
+.albDots:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+/* Fixed-position so it escapes the grid's overflow; placed from the
+   button's viewport rect in albMenuOpen(). */
+.albMenu{
+  position:fixed;z-index:120;min-width:168px;padding:.3rem;
+  background:var(--sur);border:1px solid var(--bdr);border-radius:11px;
+  box-shadow:0 14px 34px rgba(0,0,0,.34);
+  display:flex;flex-direction:column;gap:.1rem;
+}
+.albMenuItem{
+  display:block;width:100%;padding:.55rem .6rem;
+  background:none;border:none;border-radius:8px;cursor:pointer;text-align:left;
+  font-family:var(--fb);font-size:.78rem;color:var(--tc);
+  transition:background .15s;
+}
+@media(hover:hover){ .albMenuItem:hover{background:var(--sur2);} }
+.albMenuItem:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
+.albMenuDanger{color:var(--danger);}
+@media(hover:hover){ .albMenuDanger:hover{background:var(--danger-bg);} }
 /* Create tile — the same square footprint as an album card, just
    empty. It only ever appears on the manager page, first in the grid. */
 .albCardNew{

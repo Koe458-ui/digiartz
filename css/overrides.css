@@ -170,3 +170,197 @@
 @media (min-width:1920px){
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{ gap:24px; }
                      }
+
+/* ══════════════════════════════════════════════════════════════
+   § TITLE COLOUR
+   The four-pointed star that used to sit after every heading was
+   the only thing putting accent colour into a title, so pulling it
+   left the whole app monochrome. The colour moves onto the words
+   themselves instead — same accent, no ornament.
+
+   var(--pg) is the theme accent, not a hard-coded purple: it is
+   #8B5CF6 on the default dark theme, near-black on Light and
+   near-white on the mono themes, so this follows the theme picker
+   instead of fighting it.
+
+   Two titles are deliberately NOT in this list. .fgTitle (Gallery)
+   and .cmHdrTitle (Profile / Upload / Community) already run a
+   tx→pb→pg gradient with a glow. They stay the top tier; the flat
+   accent below is the second tier — page and panel headers.
+
+   Loads last, so these win over the base rules in panels.css,
+   viewer.css, widgets.css etc. on equal specificity. Delete this
+   whole block to go back.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Home-page section headings — RANKING, SUBSCRIPTION */
+.secT{ color:var(--pg); }
+
+/* Sub-page headers — Subscription, Settings, Albums, Bookmarks,
+   Friends, Ranking, Admin, Theme, Account, Notifications, Edit My Work */
+.subPgTitle{ color:var(--pg); }
+
+/* Subscription page headline + FAQ */
+.subPgHeadline h2{ color:var(--pg); }
+.faqTitle{ color:var(--pg); }
+
+/* Panels + modals */
+.apTitle,
+.apDescTitle,
+.spTitle,
+.cpTitle,
+.albModTitle,
+.tgModTitle,
+.pfShareTitle,
+.fltPH h3{ color:var(--pg); }
+
+/* Section labels inside pages */
+.upDraftTitle,
+.dmConvoHead{ color:var(--pg); }
+
+/* LET'S CONNECT divider */
+.cLbl{ color:var(--pg); }
+
+/* Artist Progress rank title — was the lighter --pb, matched up */
+.xpRankTitle{ color:var(--pg); }
+
+/* ══════════════════════════════════════════════════════════════
+   § UPLOAD SELECTS + CALENDAR
+   The artwork upload's controls are all custom-skinned — the .upIn
+   box plus a ⌄ chevron. But the section forms (Resources / Blog /
+   Marketplace / Jobs, built in js/sections.js) drop native <select
+   class="dzSel"> boxes, and the schedule row's hour/minute use
+   native <select class="upSchedSel">. Both render as raw Chrome
+   selects — grey, system font, wrong arrow — next to the styled
+   fields around them.
+
+   These rules give them the exact treatment select.upIn already
+   uses in upload.css: kill the native appearance, drop in the same
+   SVG chevron, and paint the option list with theme tokens. The
+   result is pixel-identical to the artwork upload. Chevron colour
+   %23c9c7db is the same literal the shipping select.upIn uses, kept
+   so the two match; everything else is a theme token.
+
+   Loads last, so this beats the plain .dzSel base in hero.css on
+   equal specificity. Delete this block to revert.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Section-form selects — match the .upIn box exactly */
+.dzSel{
+  width:100%;
+  background:rgba(var(--pg-rgb),.045);
+  border:1px solid rgba(var(--pg-rgb),.1);
+  border-radius:8px;
+  color:var(--tx);
+  font-family:var(--fb);
+  font-size:.86rem;
+  padding:.68rem 3.3rem .68rem .85rem;
+  outline:none;
+  cursor:pointer;
+  transition:border-color .2s;
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right .85rem center;
+  background-size:1rem;
+}
+.dzSel:focus{border-color:var(--pg);}
+.dzSel option{background:var(--sur2);color:var(--tx);}
+.dzSel option:disabled{color:color-mix(in srgb,var(--tx) 40%,transparent);}
+
+/* Schedule hour / minute — same skin, compact so the ⌄ fits the
+   smaller box without crowding the digits */
+.upSchedSel{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  padding:.32rem 1.35rem .32rem .5rem;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right .38rem center;
+  background-size:.8rem;
+  transition:border-color .2s;
+}
+.upSchedSel:focus{outline:none;border-color:var(--pg);}
+.upSchedSel option{background:var(--sur2);color:var(--tx);}
+
+/* Native date field ("Closes on" in Jobs). The box is already .upIn,
+   so only the calendar glyph needs help: dim by default, full on
+   hover/focus. The popup panel itself follows color-scheme, which
+   base.css already flips per theme, so it needs nothing here. */
+input[type=date].upIn::-webkit-calendar-picker-indicator{
+  opacity:.55;
+  cursor:pointer;
+  transition:opacity .2s;
+}
+input[type=date].upIn:hover::-webkit-calendar-picker-indicator,
+input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
+
+/* ══════════════════════════════════════════════════════════════
+   § SECTION UPLOAD — schedule, drafts, guide/tips sidebar
+   The artwork upload is a form column + a sidebar (scheduled strip,
+   drafts strip, guidelines, tips). The section forms (Resources /
+   Blog / Marketplace / Jobs) now use the same shape, built in
+   js/sections.js. This adds the two-column wrapper and a text-first
+   card (.dzPCard) for the strips — job and resource posts are mostly
+   words, not thumbnails, so the card leads with a status badge, the
+   title, a two-line excerpt and a meta row, instead of the artwork
+   image tile. Four slots per strip, padded with dashed ghosts.
+   Reuses .upSideCard / .upGuideList / .upTipList as-is.
+   ══════════════════════════════════════════════════════════════ */
+.dzUpWrap{ display:grid; grid-template-columns:1fr; gap:1.5rem; align-items:start; }
+@media(min-width:960px){ .dzUpWrap{ grid-template-columns:minmax(0,1fr) 320px; gap:2rem; } }
+.dzUpForm{ min-width:0; }
+.dzUpSide{ display:flex; flex-direction:column; gap:1rem; min-width:0; }
+@media(min-width:960px){ .dzUpSide{ position:sticky; top:calc(3.4rem + 1rem); } }
+
+/* strip: 4 slots as a 2×2 grid */
+.dzPRow{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+
+.dzPCard{
+  background:rgba(var(--pg-rgb),.045);
+  border:1px solid rgba(var(--pg-rgb),.1);
+  border-radius:10px; padding:.7rem .75rem;
+  display:flex; flex-direction:column; gap:.35rem;
+  min-height:104px; cursor:pointer; text-align:left;
+  transition:border-color .2s, background .2s, transform .1s;
+}
+.dzPCard:hover{ border-color:var(--pg); background:rgba(var(--pg-rgb),.09); }
+.dzPCard:active{ transform:scale(.99); }
+.dzPSched{ cursor:default; }
+
+.dzPGhost{
+  background:rgba(var(--pg-rgb),.02);
+  border:1px dashed rgba(var(--pg-rgb),.16);
+  min-height:104px; cursor:default; pointer-events:none;
+}
+
+.dzPTop{ display:flex; align-items:center; justify-content:space-between; gap:.4rem; }
+.dzPBadge{
+  font-family:var(--fm); font-size:.54rem; font-weight:700;
+  letter-spacing:.13em; text-transform:uppercase;
+  padding:.16rem .42rem; border-radius:5px; white-space:nowrap;
+}
+.dzPBadge.draft{ background:rgba(var(--tx2-rgb),.14); color:var(--txd); }
+.dzPBadge.sched{ background:rgba(var(--pg-rgb),.18); color:var(--pg); }
+.dzPBadge.err{ background:color-mix(in srgb,var(--danger) 16%,transparent); color:var(--danger); }
+
+.dzPDel{
+  background:none; border:none; color:rgba(var(--tx2-rgb),.42);
+  cursor:pointer; font-size:.82rem; line-height:1; padding:.1rem .25rem;
+  border-radius:4px; flex-shrink:0;
+}
+.dzPDel:hover{ color:var(--danger); background:rgba(var(--tx2-rgb),.08); }
+
+.dzPTitle{
+  font-size:.82rem; font-weight:600; color:var(--tx); line-height:1.25;
+  overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+}
+.dzPExc{
+  font-size:.68rem; color:rgba(var(--tx2-rgb),.6); line-height:1.35;
+  overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+}
+.dzPMeta{
+  margin-top:auto; display:flex; align-items:center; justify-content:space-between;
+  gap:.4rem; font-size:.6rem; color:rgba(var(--tx2-rgb),.5); padding-top:.15rem;
+}
+.dzPKind{ font-family:var(--fm); letter-spacing:.05em; text-transform:capitalize; color:var(--pg); }
+.dzPMeta span:last-child{ text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

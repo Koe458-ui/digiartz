@@ -26,6 +26,60 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v39 — section schedule + drafts. The section forms (Resources, Blog,
+       Marketplace, Jobs) now match the artwork upload: a two-column
+       layout with a sidebar (SCHEDULED strip, SAVED DRAFTS strip,
+       Upload Guidelines, Tips), the Reset button replaced by 💾 Save
+       Draft, and a Schedule field using the same custom calendar the
+       artwork upload uses. Scheduling is fully server-side, mirroring
+       artworks: the built row + its S3 files are parked in the new
+       public.scheduled_sections table and a five-minute pg_cron
+       (publish_due_scheduled_sections) inserts it into the real table
+       at the set time, so a post goes live even with the device off.
+       Drafts are device-local (IndexedDB 'dzsecdrafts'), text + tags
+       only, auto-purged after 7 days. Drafts and scheduled posts show
+       as text-first cards (.dzPCard) — status badge, title, excerpt,
+       meta — since these posts are words, not thumbnails. Changed:
+       js/sections.js, css/overrides.css. Backend applied separately.
+
+   v38 — upload selects skinned. The section forms (Resources, Blog,
+       Marketplace, Jobs) shipped native Chrome <select> boxes —
+       .dzSel — and the schedule hour/minute (.upSchedSel) did too, so
+       they stuck out grey and system-font next to the artwork upload's
+       custom controls. css/overrides.css gains a § UPLOAD SELECTS +
+       CALENDAR block giving both the same appearance:none + SVG chevron
+       + theme-token option list that select.upIn already uses, so they
+       now read identically to the artwork upload. The Jobs date field's
+       calendar glyph is dimmed until hover/focus; its popup already
+       follows color-scheme. One file changed, loads last, nothing else
+       touched.
+
+   v37 — title colour. Removing the star in v36 took the only accent
+       colour out of every heading, so the accent moves onto the words:
+       css/overrides.css gains a § TITLE COLOUR block setting .secT,
+       .subPgTitle, .subPgHeadline h2, .faqTitle, .apTitle, .apDescTitle,
+       .spTitle, .cpTitle, .albModTitle, .tgModTitle, .pfShareTitle,
+       .fltPH h3, .upDraftTitle, .dmConvoHead, .cLbl and .xpRankTitle to
+       var(--pg). It is the theme token, not a fixed purple, so Light and
+       the mono themes follow their own accent. .fgTitle and .cmHdrTitle
+       keep their gradient — they stay the top tier. One file changed,
+       and it already loads last, so nothing else needed touching.
+
+   v36 — heading stars removed. The decorative four-pointed star that
+       sat in the <span class="s"> slot after almost every page and
+       section title is gone: Gallery, Profile, Upload, Community,
+       Ranking, Subscription, Settings, Albums, Bookmarks, Friends,
+       Filters, Sponsor, Admin, Drafts, Share Profile, Tags, the FAQ
+       and Choose Your Plan headings, the LET'S CONNECT divider, the
+       MESSAGES conversation head and the footer logo mark. Titles
+       built in JS lose it too — album name / rename / new album
+       (js/albums.js), the Likes-Bookmarks page head (js/engagement.js)
+       and the XP rank title (js/misc-core.js). The .s rules stay in
+       CSS because four non-star markers still use them: Edit My Work,
+       Notifications, Account and Theme. Four shell files changed, no
+       new paths, so this bump is purely to pull returning visitors
+       off the stale cached copies.
+
    v35 — scroll-reveal deleted. The .fu-el rise (opacity 0 + 50px,
        850ms, staggered 80ms per card) is gone from artworks, ranking,
        subscriptions and connect — not gated, removed. js/effects.js
@@ -251,7 +305,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v35';
+const CACHE_VERSION = 'v39';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

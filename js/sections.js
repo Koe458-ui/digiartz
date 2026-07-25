@@ -1372,6 +1372,23 @@
   async function fillAuthor(uid, elId){
     var el = document.getElementById(elId);
     if(!el || !uid || !sb) return;
+    /* Wire the click FIRST — before any await — and resolve the username
+       at click time. Previously the handler was attached only after the
+       profile fetch resolved, so a click during the fetch (or a failed
+       fetch) left the row inert with no feedback, the same dead-click the
+       artwork viewer had. Now the row is always actionable: it opens from
+       the cached profile if we have it, otherwise looks the username up on
+       demand. */
+    el.style.cursor = 'pointer';
+    el.onclick = function(){
+      var cp = profCache[uid];
+      if(cp && cp.username){ dzCloseView(); openProfileByUsername(cp.username); return; }
+      sb.from('profiles').select('username').eq('id',uid).single().then(function(r){
+        var u = r && r.data && r.data.username;
+        if(!u){ if(typeof showToast==='function') showToast('Profile not found'); return; }
+        dzCloseView(); openProfileByUsername(u);
+      }).catch(function(){ if(typeof showToast==='function') showToast('Couldn\u2019t open profile'); });
+    };
     var p = profCache[uid];
     if(!p){
       try{
@@ -1380,15 +1397,25 @@
       }catch(e){ p = null; }
     }
     el = document.getElementById(elId);            /* may have re-rendered */
-    if(!el || !p) return;
+    if(!el){ return; }
+    /* Element survived — but if it was replaced by a re-render, the click
+       we wired above is gone with the old node, so re-arm it here too. */
+    el.style.cursor = 'pointer';
+    el.onclick = function(){
+      var cp = profCache[uid];
+      if(cp && cp.username){ dzCloseView(); openProfileByUsername(cp.username); return; }
+      sb.from('profiles').select('username').eq('id',uid).single().then(function(r){
+        var u = r && r.data && r.data.username;
+        if(!u){ if(typeof showToast==='function') showToast('Profile not found'); return; }
+        dzCloseView(); openProfileByUsername(u);
+      }).catch(function(){ if(typeof showToast==='function') showToast('Couldn\u2019t open profile'); });
+    };
+    if(!p) return;
     var name = p.display_name || p.username || 'artist';
     el.innerHTML = '<div class="dzvAv">'+
         (p.avatar_url ? '<img src="'+esc2(getThumbnailUrl(p.avatar_url))+'" alt="">' : esc2(name.charAt(0).toUpperCase()))+
       '</div><div><div class="dzvAuthName">'+esc2(name)+'</div>'+
       (p.username ? '<div class="dzvAuthHandle">@'+esc2(p.username)+'</div>' : '')+'</div>';
-    el.onclick = function(){
-      if(p.username && typeof openProfileByUsername==='function'){ dzCloseView(); openProfileByUsername(p.username); }
-    };
   }
 
   function metaRow(pairs){

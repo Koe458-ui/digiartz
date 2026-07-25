@@ -253,8 +253,8 @@
        cache entry — pf.profile.avatar_url is kept current by
        pfRenderAvatarBanner(), and currentUserAvatarUrl is equally fresh
        for the signed-in viewer's own uploads. */
-    if(pf.profile && pf.profile.id===uid){ paint(pf.profile.username, pf.profile.avatar_url); return; }
-    if(currentUser && currentUser.id===uid){ paint(cpGetDisplayName(), currentUserAvatarUrl); return; }
+    if(pf.profile && pf.profile.id===uid){ avAuthorProfileCache[uid] = { username:pf.profile.username, avatar_url:pf.profile.avatar_url }; paint(pf.profile.username, pf.profile.avatar_url); return; }
+    if(currentUser && currentUser.id===uid){ var _ownU=(currentUser.user_metadata && currentUser.user_metadata.username)||null; if(_ownU) avAuthorProfileCache[uid]={ username:_ownU, avatar_url:currentUserAvatarUrl||null }; paint(cpGetDisplayName(), currentUserAvatarUrl); return; }
     if(avAuthorProfileCache[uid]){ paint(avAuthorProfileCache[uid].username, avAuthorProfileCache[uid].avatar_url); return; }
     paintAvatarChip('avAvatarImg', 'avAvatarTxt', null, '?'); nameEl.textContent='…'; handleEl.textContent='';
     if(sb){
@@ -269,10 +269,30 @@
   }
   function avGoToAuthor(){
     if(!avCurrentArt || !avCurrentArt.user_id) return;
-    var uname = (avAuthorProfileCache[avCurrentArt.user_id] && avAuthorProfileCache[avCurrentArt.user_id].username) || (pf.profile && pf.profile.id===avCurrentArt.user_id ? pf.profile.username : null);
-    if(!uname) return;
-    closeLB();
-    openProfileByUsername(uname);
+    var uid = avCurrentArt.user_id;
+    /* Resolve the author's *username* from whatever we already hold, in
+       order of freshness. The old version read only the cache and
+       pf.profile — but the cache is warmed lazily by the profiles fetch
+       in avRenderAuthor, and pf.profile is only set once you've opened a
+       profile page. So on your own gallery (own uploads short-circuit
+       without a username handy) or on a quick click before that fetch
+       lands, every synchronous source misses and the row did nothing at
+       all — no navigation, no feedback. Now, when they all miss, we look
+       the username up by id and then open, so the row always acts. */
+    var cached = avAuthorProfileCache[uid];
+    var uname = (cached && cached.username)
+      || (pf.profile && pf.profile.id===uid ? pf.profile.username : null)
+      || (currentUser && currentUser.id===uid && currentUser.user_metadata ? currentUser.user_metadata.username : null)
+      || null;
+    if(uname){ closeLB(); openProfileByUsername(uname); return; }
+    if(!sb){ if(typeof showToast==='function') showToast('Can\u2019t open profile \u2014 try again'); return; }
+    sb.from('profiles').select('username').eq('id',uid).single().then(function(res){
+      var u = res && res.data && res.data.username;
+      if(!u){ if(typeof showToast==='function') showToast('Profile not found'); return; }
+      avAuthorProfileCache[uid] = avAuthorProfileCache[uid] || { username:u, avatar_url:null };
+      closeLB();
+      openProfileByUsername(u);
+    }).catch(function(){ if(typeof showToast==='function') showToast('Couldn\u2019t open profile'); });
   }
 
   function avSetupNav(id, navSource){

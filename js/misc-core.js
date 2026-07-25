@@ -154,7 +154,7 @@
     /* rank card */
     var rank = el('div', 'xpCard xpRank');
     rank.appendChild(el('div', 'xpRankLvl', 'LEVEL ' + level));
-    rank.appendChild(el('div', 'xpRankTitle', '\u2726 ' + rankTitle(level) + ' \u2726'));
+    rank.appendChild(el('div', 'xpRankTitle', rankTitle(level)));
     var cur = XP_TOTALS[level - 1];
     var next = level < 100 ? XP_TOTALS[level] : null;
     var track = el('div', 'xpBarTrack');

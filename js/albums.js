@@ -206,7 +206,7 @@
        state, which is changed from the artwork itself. */
     var owner = !a.virt && (src === 'me' || !!pf.isOwner);
     albView = { src:src, id:String(id), virt:!!a.virt, name:a.name, owner:owner, rows:null };
-    document.getElementById('albViewTitle').innerHTML = esc(String(a.name||'').toUpperCase())+' <span class="s">\u2726</span>';
+    document.getElementById('albViewTitle').innerHTML = esc(String(a.name||'').toUpperCase());
     document.getElementById('albViewActs').style.display = owner ? '' : 'none';
     document.getElementById('albViewPage').classList.add('open');
     var nav = document.getElementById('bnNav'); if(nav) nav.style.display = 'none';
@@ -365,7 +365,7 @@
     albMenuClose();
     if(!a || a.virt || !albCanManage(src, a)) return;
     albModMode = 'rename'; albModId = String(id);
-    document.getElementById('albModTitle').innerHTML = 'RENAME ALBUM <span class="s">\u2726</span>';
+    document.getElementById('albModTitle').innerHTML = 'RENAME ALBUM';
     document.getElementById('albModSave').textContent = 'Save';
     var inp = document.getElementById('albModIn'); inp.value = a.name || '';
     document.getElementById('albMod').classList.add('open');
@@ -400,7 +400,7 @@
       return;
     }
     albModMode = 'new'; albModId = null;
-    document.getElementById('albModTitle').innerHTML = 'NEW ALBUM <span class="s">\u2726</span>';
+    document.getElementById('albModTitle').innerHTML = 'NEW ALBUM';
     document.getElementById('albModSave').textContent = 'Create';
     var inp = document.getElementById('albModIn'); inp.value = '';
     document.getElementById('albMod').classList.add('open');
@@ -409,7 +409,7 @@
   function albRenamePrompt(){
     if(!albView || !albView.owner) return;
     albModMode = 'rename'; albModId = albView.id;
-    document.getElementById('albModTitle').innerHTML = 'RENAME ALBUM <span class="s">\u2726</span>';
+    document.getElementById('albModTitle').innerHTML = 'RENAME ALBUM';
     document.getElementById('albModSave').textContent = 'Save';
     var inp = document.getElementById('albModIn'); inp.value = albView.name || '';
     document.getElementById('albMod').classList.add('open');
@@ -432,7 +432,7 @@
         if(error) throw error;
         if(albView && albView.id === String(albModId)){
           albView.name = name;
-          document.getElementById('albViewTitle').innerHTML = esc(name.toUpperCase())+' <span class="s">\u2726</span>';
+          document.getElementById('albViewTitle').innerHTML = esc(name.toUpperCase());
         }
         albModClose();
         showToast('Album renamed');

@@ -385,17 +385,125 @@
     if(h) h.textContent = FORMS[sec].title;
     if(p) p.textContent = FORMS[sec].sub;
     renderTags(sec);
+    dzSchReset();
+    dzDraftStrip(sec);
+    dzSchedStrip(sec);
+  }
+
+  /* ── Guide + tips copy, per section. Mirrors the artwork upload's
+     sidebar (Upload Guidelines + Tips), reworded for each kind. ── */
+  var GUIDE = {
+    resources: {
+      guide: [
+        ['📦','Package it cleanly','ZIP related files together and name folders clearly.'],
+        ['🖼','Show a real preview','The preview must depict the actual asset — no AI art.'],
+        ['🔖','Pick the right license','Be explicit about commercial vs personal use.'],
+        ['🛡','Yours to share','Only upload files you made or are licensed to distribute.']
+      ],
+      tips: ['Use a descriptive, searchable title','Show the asset in use in the preview','Tag the software and file type','Add a short how-to in the description']
+    },
+    blog: {
+      guide: [
+        ['✍️','Write for artists','Studio notes, tutorials and stories land best.'],
+        ['🖼','Add a cover','A strong cover image lifts clicks in the feed.'],
+        ['📏','Give it length','Posts need at least 40 characters — aim for a real read.'],
+        ['🛡','Keep it appropriate','No hateful, explicit or plagiarised content.']
+      ],
+      tips: ['Open with a hook in the first line','Break long posts into short paragraphs','Write an excerpt so the list reads well','Pick one clear category']
+    },
+    marketplace: {
+      guide: [
+        ['💾','Digital needs a file','A digital download must include the product file.'],
+        ['🖼','Preview sells','Show exactly what the buyer receives.'],
+        ['💲','Price fairly','Set 0 to list free; be clear on delivery time.'],
+        ['🛡','Deliver what you list','Misleading listings are removed.']
+      ],
+      tips: ['Lead with your strongest preview','Spell out what is included','State delivery days for commissions','Choose an accurate listing type']
+    },
+    jobs: {
+      guide: [
+        ['🧭','Be specific','A real title, scope and skill list draws better applicants.'],
+        ['📍','Location or remote','Add a country code, or list eligible countries.'],
+        ['🔗','A way to apply','Include an apply link or email — it is required.'],
+        ['🛡','Genuine roles only','No spam, MLM or pay-to-apply postings.']
+      ],
+      tips: ['Put must-have skills up top','Add a pay range to raise replies','Describe the team and workflow','Set a close date so it expires cleanly']
+    }
+  };
+
+  function dzGhostCard(){ return '<div class="dzPCard dzPGhost" aria-hidden="true"></div>'; }
+  function dzGhost4(){ return dzGhostCard()+dzGhostCard()+dzGhostCard()+dzGhostCard(); }
+
+  /* Section-scoped schedule picker markup. Only one section form is
+     mounted at a time, so fixed dzSched* ids are safe. Reuses every
+     .upSched* / .upCatDd class from the artwork picker. */
+  function dzSchedField(){
+    return ''+
+    '<div class="upField" id="dzSchedField">'+
+      '<label class="upLbl">Schedule <span class="upOpt">optional</span></label>'+
+      '<div class="upCatDd" id="dzSchedDd">'+
+        '<button type="button" class="upCatTrigger" id="dzSchedTrigger" onclick="dzSchToggle(event)">'+
+          '<span id="dzSchedLbl" class="upSchedPh">__/__/____&nbsp;&nbsp;__:__</span><span class="upChev">⌄</span>'+
+        '</button>'+
+        '<input type="hidden" id="dzSchedVal" value=""/>'+
+        '<div class="upCatPanel upSchedPanel" id="dzSchedPanel">'+
+          '<div class="upSchedNav">'+
+            '<button type="button" class="upSchedNavBtn" onclick="dzSchNav(-1,event)" aria-label="Previous month">‹</button>'+
+            '<span id="dzSchedMon">—</span>'+
+            '<button type="button" class="upSchedNavBtn" onclick="dzSchNav(1,event)" aria-label="Next month">›</button>'+
+          '</div>'+
+          '<div class="upSchedDows"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>'+
+          '<div class="upSchedGrid" id="dzSchedGrid"></div>'+
+          '<div class="upSchedTime"><span class="upSchedTimeLbl">Time</span>'+
+            '<select class="upSchedSel" id="dzSchedH" onchange="dzSchApply()" aria-label="Hour"></select>'+
+            '<span class="upSchedColon">:</span>'+
+            '<select class="upSchedSel" id="dzSchedM" onchange="dzSchApply()" aria-label="Minute"></select>'+
+          '</div>'+
+          '<div class="upSchedActs">'+
+            '<button type="button" class="upBtnSec" onclick="dzSchClear(event)">Clear</button>'+
+            '<button type="button" class="upBtnPri" onclick="dzSchDone(event)">Done</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="upSchedHint" id="dzSchedHint">Leave empty to publish immediately.</div>'+
+    '</div>';
   }
 
   function buildForm(sec){
-    var f = FORMS[sec], out = ['<div class="upMain">'];
-    f.fields.forEach(function(fd){ out.push(field(sec, fd)); });
-    out.push('<div class="upActions" style="display:flex;gap:.6rem;margin-top:1.4rem">'+
-      '<button type="button" class="upBtnPri upBtnPri" id="dzSubmit-'+sec+'" onclick="dzSubmit(\''+sec+'\')">Publish ✦</button>'+
-      '<button type="button" class="upBtnSec" onclick="dzResetForm(\''+sec+'\')">Reset</button></div>');
-    out.push('<p class="dzHint" style="margin-top:.9rem">Posts are reviewed before they appear publicly.</p>');
-    out.push('</div>');
-    return out.join('');
+    var f = FORMS[sec];
+    var fields = f.fields.map(function(fd){ return field(sec, fd); }).join('');
+    var g = GUIDE[sec] || {guide:[], tips:[]};
+    var guideLis = g.guide.map(function(x){
+      return '<li><span class="upGIco">'+x[0]+'</span><div><strong>'+esc(x[1])+'</strong>'+esc(x[2])+'</div></li>';
+    }).join('');
+    var tipLis = g.tips.map(function(t){ return '<li>'+esc(t)+'</li>'; }).join('');
+
+    return ''+
+    '<div class="dzUpWrap">'+
+      '<div class="dzUpForm"><div class="upMain">'+
+        fields +
+        dzSchedField() +
+        '<div class="upActions" style="display:flex;gap:.6rem;margin-top:1.4rem">'+
+          '<button type="button" class="upBtnPri" id="dzSubmit-'+sec+'" onclick="dzSubmit(\''+sec+'\')">Publish</button>'+
+          '<button type="button" class="upBtnSec" id="dzDraftBtn-'+sec+'" onclick="dzSaveDraft(\''+sec+'\')">💾 Save Draft</button>'+
+        '</div>'+
+        '<p class="dzHint" style="margin-top:.9rem">Posts are reviewed before they appear publicly.</p>'+
+      '</div></div>'+
+      '<aside class="dzUpSide">'+
+        '<div class="upSideCard">'+
+          '<div class="upDraftTitle">SCHEDULED</div>'+
+          '<p class="upDraftNote">Publishes automatically at the set time</p>'+
+          '<div class="dzPRow" id="dzSchedRow-'+sec+'">'+dzGhost4()+'</div>'+
+        '</div>'+
+        '<div class="upSideCard">'+
+          '<div class="upDraftTitle">SAVED DRAFTS</div>'+
+          '<p class="upDraftNote">Saved on this device · auto-deleted after 7 days</p>'+
+          '<div class="dzPRow" id="dzDraftRow-'+sec+'">'+dzGhost4()+'</div>'+
+        '</div>'+
+        '<div class="upSideCard"><h3>Upload Guidelines</h3><ul class="upGuideList">'+guideLis+'</ul></div>'+
+        '<div class="upSideCard"><h3>Tips for better visibility</h3><ul class="upTipList">'+tipLis+'</ul></div>'+
+      '</aside>'+
+    '</div>';
   }
 
   function field(sec, fd){
@@ -487,6 +595,258 @@
     var box = document.getElementById('upSecForms');
     if(box) box.innerHTML = buildForm(sec);
     renderTags(sec);
+    dzSchReset();
+    dzDraftStrip(sec);
+    dzSchedStrip(sec);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SCHEDULE + DRAFTS for section posts.
+     · Schedule → server-side, mirrors artwork scheduled_uploads:
+       the row is built + files uploaded now, then parked in
+       public.scheduled_sections; a five-minute pg_cron (publish_due_
+       scheduled_sections) inserts it into the real table at the set
+       time, so it goes live even if the device is off.
+     · Drafts → device-local IndexedDB (dzsecdrafts), same choice the
+       artwork drafts make. Text + selections + tags only; files are
+       re-attached on resume. Auto-purged 7 days after saving.
+     ═══════════════════════════════════════════════════════════════ */
+  var DZ_SCH_MIN = 5 * 60 * 1000;   /* min 5-minute lead, matches artwork */
+  var dzSch = { y:null, m:null, d:null, vy:null, vm:null };
+
+  function dzSchPad(n){ return (n<10?'0':'')+n; }
+  function dzSchToggle(e){
+    if(e) e.stopPropagation();
+    var dd = document.getElementById('dzSchedDd'); if(!dd) return;
+    var open = dd.classList.toggle('open');
+    if(open){
+      if(dzSch.vy===null){ var n=new Date(); dzSch.vy=n.getFullYear(); dzSch.vm=n.getMonth(); }
+      dzSchBuildTime(); dzSchRender();
+    }
+  }
+  function dzSchClose(){ var dd=document.getElementById('dzSchedDd'); if(dd) dd.classList.remove('open'); }
+  document.addEventListener('click', function(ev){
+    var dd = document.getElementById('dzSchedDd');
+    if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) dzSchClose();
+  });
+  function dzSchBuildTime(){
+    var hs=document.getElementById('dzSchedH'), ms=document.getElementById('dzSchedM');
+    if(!hs || hs.options.length) return;
+    var i,o;
+    for(i=0;i<24;i++){ o=document.createElement('option'); o.value=i; o.textContent=dzSchPad(i); hs.appendChild(o); }
+    for(i=0;i<60;i+=5){ o=document.createElement('option'); o.value=i; o.textContent=dzSchPad(i); ms.appendChild(o); }
+    var t=new Date(Date.now()+60*60*1000);
+    hs.value=t.getHours(); ms.value=Math.floor(t.getMinutes()/5)*5;
+  }
+  function dzSchNav(delta,e){
+    if(e) e.stopPropagation();
+    dzSch.vm += delta;
+    if(dzSch.vm<0){ dzSch.vm=11; dzSch.vy--; } else if(dzSch.vm>11){ dzSch.vm=0; dzSch.vy++; }
+    dzSchRender();
+  }
+  function dzSchRender(){
+    var grid=document.getElementById('dzSchedGrid'), mon=document.getElementById('dzSchedMon');
+    if(!grid) return;
+    var y=dzSch.vy, m=dzSch.vm;
+    mon.textContent=new Date(y,m,1).toLocaleString([], {month:'long', year:'numeric'});
+    var first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate(), now=new Date();
+    var todayKey=now.getFullYear()+'-'+now.getMonth()+'-'+now.getDate(), html='';
+    for(var p=0;p<first;p++) html+='<span class="upSchedDay pad"></span>';
+    for(var d=1; d<=days; d++){
+      var end=new Date(y,m,d,23,59,59), past=end.getTime()<Date.now(), cls='upSchedDay';
+      if(todayKey===y+'-'+m+'-'+d) cls+=' today';
+      if(dzSch.y===y && dzSch.m===m && dzSch.d===d) cls+=' sel';
+      html+='<button type="button" class="'+cls+'"'+(past?' disabled':'')+' onclick="dzSchPick('+y+','+m+','+d+',event)">'+d+'</button>';
+    }
+    grid.innerHTML=html;
+  }
+  function dzSchPick(y,m,d,e){ if(e) e.stopPropagation(); dzSch.y=y; dzSch.m=m; dzSch.d=d; dzSchRender(); dzSchApply(); }
+  function dzSchApply(){
+    if(dzSch.y===null) return;
+    var hs=document.getElementById('dzSchedH'), ms=document.getElementById('dzSchedM');
+    var h=+hs.value||0, mi=+ms.value||0;
+    var el=document.getElementById('dzSchedVal');
+    if(el) el.value=dzSch.y+'-'+dzSchPad(dzSch.m+1)+'-'+dzSchPad(dzSch.d)+'T'+dzSchPad(h)+':'+dzSchPad(mi);
+    dzSchHint();
+  }
+  function dzSchClear(e){
+    if(e) e.stopPropagation();
+    dzSch.y=dzSch.m=dzSch.d=null;
+    var el=document.getElementById('dzSchedVal'); if(el) el.value='';
+    dzSchRender(); dzSchHint(); dzSchClose();
+  }
+  function dzSchDone(e){ if(e) e.stopPropagation(); dzSchClose(); }
+  function dzSchReset(){
+    dzSch.y=dzSch.m=dzSch.d=null;
+    var n=new Date(); dzSch.vy=n.getFullYear(); dzSch.vm=n.getMonth();
+    var el=document.getElementById('dzSchedVal'); if(el) el.value='';
+    dzSchClose(); dzSchHint();
+  }
+  function dzFmtWhen(iso){
+    var dt=new Date(iso);
+    return dt.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  }
+  function dzSchHint(){
+    var el=document.getElementById('dzSchedVal'), hint=document.getElementById('dzSchedHint'), lbl=document.getElementById('dzSchedLbl');
+    if(!el||!hint) return;
+    if(lbl){
+      if(el.value){ lbl.textContent=dzFmtWhen(el.value); lbl.classList.remove('upSchedPh'); }
+      else { lbl.innerHTML='__/__/____&nbsp;&nbsp;__:__'; lbl.classList.add('upSchedPh'); }
+    }
+    if(!el.value){ hint.textContent='Leave empty to publish immediately.'; hint.classList.remove('bad'); return; }
+    var t=new Date(el.value).getTime();
+    if(!isFinite(t) || t < Date.now()+DZ_SCH_MIN){ hint.textContent='Pick a time at least 5 minutes from now.'; hint.classList.add('bad'); }
+    else { hint.textContent='Publishes '+dzFmtWhen(el.value)+' · verified now, published at the set time.'; hint.classList.remove('bad'); }
+  }
+  /* '' when empty/invalid → dzSubmit treats that as publish now. */
+  function dzSchPicked(){
+    var el=document.getElementById('dzSchedVal');
+    if(!el||!el.value) return '';
+    var t=new Date(el.value).getTime();
+    if(!isFinite(t) || t < Date.now()+DZ_SCH_MIN) return '';
+    return el.value;
+  }
+
+  /* ── device-local draft store (IndexedDB) ── */
+  function dzdbOpen(){
+    return new Promise(function(res,rej){
+      if(!window.indexedDB){ rej(new Error('no idb')); return; }
+      var q=indexedDB.open('dzsecdrafts',1);
+      q.onupgradeneeded=function(){ if(!q.result.objectStoreNames.contains('d')) q.result.createObjectStore('d',{keyPath:'id'}); };
+      q.onsuccess=function(){ res(q.result); };
+      q.onerror=function(){ rej(q.error); };
+    });
+  }
+  function dzdbReq(mode, run){
+    return dzdbOpen().then(function(db){
+      return new Promise(function(res,rej){
+        var tx=db.transaction('d',mode), stx=tx.objectStore('d'), rq=run(stx);
+        tx.oncomplete=function(){ res(rq?rq.result:undefined); };
+        tx.onerror=function(){ rej(tx.error); };
+      });
+    });
+  }
+  function dzdbAll(){ return dzdbReq('readonly', function(s){ return s.getAll(); }); }
+  function dzdbGet(id){ return dzdbReq('readonly', function(s){ return s.get(id); }); }
+  function dzdbPut(rec){ return dzdbReq('readwrite', function(s){ return s.put(rec); }); }
+  function dzdbDel(id){ return dzdbReq('readwrite', function(s){ s.delete(id); return null; }); }
+
+  function dzSaveDraft(sec){
+    var s=st(sec), data={};
+    FORMS[sec].fields.forEach(function(fd){
+      if(fd.t==='tags'){ data.__tags=(s.tags||[]).slice(); return; }
+      if(fd.t==='file'||fd.t==='image') return;   /* blobs not persisted */
+      var el=document.getElementById('dz_'+sec+'_'+fd.k);
+      if(!el) return;
+      data[fd.k]= el.type==='checkbox' ? el.checked : el.value;
+    });
+    var when=dzSchPicked(); if(when) data.__sched=when;
+    var title=String(data.title||'').trim();
+    if(!title && !String(data.description||data.body||'').trim()){ showToast('Nothing to save yet'); return; }
+    var rec={ id:'d_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+              sec:sec, title:title, data:data, savedAt:Date.now() };
+    dzdbPut(rec).then(function(){ showToast('Draft saved'); dzDraftStrip(sec); })
+                .catch(function(){ showToast('Could not save draft on this device'); });
+  }
+  function dzDeleteDraft(id){ dzdbDel(id).then(function(){ dzDraftStrip(upSec); }); }
+  function dzResumeDraft(id){
+    dzdbGet(id).then(function(d){
+      if(!d) return;
+      upSwitchSection(d.sec);
+      setTimeout(function(){
+        var s=st(d.sec); s.tags=(d.data.__tags||[]).slice();
+        FORMS[d.sec].fields.forEach(function(fd){
+          if(fd.t==='tags'||fd.t==='file'||fd.t==='image') return;
+          if(!(fd.k in d.data)) return;
+          var el=document.getElementById('dz_'+d.sec+'_'+fd.k);
+          if(!el) return;
+          if(el.type==='checkbox') el.checked=!!d.data[fd.k]; else el.value=d.data[fd.k];
+        });
+        renderTags(d.sec);
+        showToast('Draft loaded — re-attach any files, then publish');
+      }, 60);
+    });
+  }
+
+  function dzExcerpt(data){
+    var v=data.description||data.body||data.excerpt||data.company||'';
+    return String(v).replace(/\s+/g,' ').trim().slice(0,120);
+  }
+  function dzWhenAgo(ts){
+    var s=Math.floor((Date.now()-ts)/1000);
+    if(s<60) return 'just now';
+    var m=Math.floor(s/60); if(m<60) return m+'m ago';
+    var h=Math.floor(m/60); if(h<24) return h+'h ago';
+    return Math.floor(h/24)+'d ago';
+  }
+  function dzLeft(iso){
+    var t=new Date(iso).getTime()-Date.now();
+    if(t<=0) return 'publishing…';
+    var m=Math.floor(t/60000); if(m<60) return 'in '+m+'m';
+    var h=Math.floor(m/60); if(h<24) return 'in '+h+'h';
+    return 'in '+Math.floor(h/24)+'d';
+  }
+  function dzDraftCard(d){
+    var ex=dzExcerpt(d.data||{});
+    var sched=d.data && d.data.__sched;
+    return '<div class="dzPCard" onclick="dzResumeDraft(\''+d.id+'\')" role="button" tabindex="0">'+
+      '<div class="dzPTop"><span class="dzPBadge draft">Draft</span>'+
+        '<button class="dzPDel" onclick="event.stopPropagation();dzDeleteDraft(\''+d.id+'\')" aria-label="Delete draft">✕</button></div>'+
+      '<div class="dzPTitle">'+esc(d.title||'Untitled')+'</div>'+
+      (ex ? '<div class="dzPExc">'+esc(ex)+'</div>' : '')+
+      '<div class="dzPMeta"><span class="dzPKind">'+esc(SEC[d.sec]?SEC[d.sec].noun:d.sec)+'</span>'+
+        '<span>'+(sched ? '⏱ '+dzFmtWhen(sched) : dzWhenAgo(d.savedAt))+'</span></div>'+
+    '</div>';
+  }
+  function dzSchedCard(sec, r){
+    var t=r.payload||{}, err=r.publish_error;
+    return '<div class="dzPCard dzPSched">'+
+      '<div class="dzPTop"><span class="dzPBadge '+(err?'err':'sched')+'">'+(err?'Failed':'Scheduled')+'</span>'+
+        '<button class="dzPDel" onclick="dzCancelSched(\''+r.id+'\',\''+sec+'\')" aria-label="Cancel schedule">✕</button></div>'+
+      '<div class="dzPTitle">'+esc(t.title||'Untitled')+'</div>'+
+      '<div class="dzPMeta"><span class="dzPKind">'+esc(SEC[sec]?SEC[sec].noun:sec)+'</span>'+
+        '<span>'+(err ? esc(err) : dzLeft(r.publish_at)+' · '+dzFmtWhen(r.publish_at))+'</span></div>'+
+    '</div>';
+  }
+  function dzDraftStrip(sec){
+    var row=document.getElementById('dzDraftRow-'+sec); if(!row) return;
+    dzdbAll().then(function(all){
+      all=(all||[]).filter(function(d){ return d.sec===sec; });
+      var cutoff=Date.now()-7*864e5, keep=[];
+      all.forEach(function(d){ if(d.savedAt<cutoff) dzdbDel(d.id); else keep.push(d); });
+      keep.sort(function(a,b){ return b.savedAt-a.savedAt; });
+      var html=keep.map(dzDraftCard).join('');
+      for(var i=keep.length;i<4;i++) html+=dzGhostCard();
+      row.innerHTML=html;
+    }).catch(function(){ /* leave ghosts */ });
+  }
+  async function dzSchedStrip(sec){
+    var row=document.getElementById('dzSchedRow-'+sec); if(!row) return;
+    if(!sb || !window.currentUser){ row.innerHTML=dzGhost4(); return; }
+    try{
+      var res=await sb.from('scheduled_sections')
+        .select('id,payload,publish_at,publish_error')
+        .eq('user_id', currentUser.id).eq('section', sec)
+        .order('publish_at', {ascending:true});
+      var rows=(res && res.data) || [];
+      var html=rows.map(function(r){ return dzSchedCard(sec, r); }).join('');
+      for(var i=rows.length;i<4;i++) html+=dzGhostCard();
+      row.innerHTML=html;
+    }catch(e){ row.innerHTML=dzGhost4(); }
+  }
+  async function dzCancelSched(id, sec){
+    if(!sb) return;
+    try{
+      /* best-effort S3 cleanup of files parked for this schedule */
+      var got=await sb.from('scheduled_sections').select('storage_paths').eq('id', id).single();
+      var paths=(got && got.data && got.data.storage_paths) || [];
+      await sb.from('scheduled_sections').delete().eq('id', id);
+      if(Array.isArray(paths) && paths.length && typeof s3Delete==='function'){
+        paths.forEach(function(p){ try{ s3Delete(BUCKET, p); }catch(e){} });
+      }
+      showToast('Schedule cancelled');
+      dzSchedStrip(sec);
+    }catch(e){ showToast('Could not cancel'); }
   }
 
   /* ── submit ──────────────────────────────────────────────────── */
@@ -505,7 +865,7 @@
     recvLabel:'File & preview received',
     reset:function(t){
       this.title=t||'Upload'; this.safety='run'; this.safetySub='';
-      this.transfer=''; this.publish=''; this.failReason=null;
+      this.transfer=''; this.publish=''; this.publishSub=''; this.failReason=null;
     },
     open:function(t, recv){
       this.reset(t);
@@ -539,12 +899,14 @@
       html+=trk('pass', this.recvLabel || 'File & preview received', '', false);
       html+=trk(this.safety,'Content safety check',this.safetySub,false);
       html+=trk(this.transfer,'Secure transfer','',false);
-      html+=trk(this.publish,'Publish', this.publish==='pass' ? 'It\u2019s live \u2726' : '', true);
+      var pubSub = (this.publish==='pass') ? (this.publishSub || 'It\u2019s live') : '';
+      var sched  = /^Scheduled/.test(this.publishSub || '');
+      html+=trk(this.publish,'Publish', pubSub, true);
       if(failed){
         html+='<div class="upqFin fail">Verification stopped \u2014 nothing was published</div>';
         html+='<div class="upqFailNote">Any transferred file has been removed. Fix the issue above and publish again whenever you\u2019re ready.</div>';
       } else if(this.publish==='pass'){
-        html+='<div class="upqFin ok">All checks passed \u2014 it\u2019s live \u2726</div>';
+        html+='<div class="upqFin ok">'+(sched ? 'All checks passed \u2014 '+esc(this.publishSub) : 'All checks passed \u2014 it\u2019s live')+'</div>';
       } else {
         html+='<div class="upqFin busy">Reviewing your upload now\u2026</div>';
       }
@@ -718,19 +1080,41 @@
         row.valid_through = val(sec,'valid_through') || null;
       }
 
+      /* ── SCHEDULE branch ──
+         Files are already in S3 and (where applicable) moderation has
+         passed. Instead of inserting into the live table, park the
+         fully-built row as jsonb in scheduled_sections; the cron
+         (publish_due_scheduled_sections) inserts it at publish_at. */
+      var when = dzSchPicked();
+      if(when){
+        if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
+        var payload = {}; for(var pk in row){ if(pk!=='status') payload[pk]=row[pk]; }
+        var paths = [];
+        ['file_storage_path','preview_storage_path','cover_storage_path'].forEach(function(k){ if(row[k]) paths.push(row[k]); });
+        var sres = await sb.from('scheduled_sections').insert({
+          user_id: currentUser.id, section: sec, payload: payload,
+          storage_paths: paths, publish_at: new Date(when).toISOString()
+        }).select('id').single();
+        if(sres.error) throw sres.error;
+        if(moderated){ dzV.step('publish','pass','Scheduled for '+dzFmtWhen(when)); setTimeout(function(){ dzV.close(); }, 1400); }
+        showToast('Scheduled for '+dzFmtWhen(when));
+        dzResetForm(sec);
+        return;
+      }
+
       if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
       var res = await sb.from(SEC[sec].table).insert(row).select('id').single();
       if(res.error) throw res.error;
 
       if(moderated){ dzV.step('publish','pass'); setTimeout(function(){ dzV.close(); }, 1400); }
-      showToast('Published ✦');
+      showToast('Published');
       dzResetForm(sec);
       dzLoaded[sec] = false;   /* next visit re-queries */
     }catch(err){
       if(moderated){ dzV.fail((err && err.message) ? err.message : 'Could not publish'); }
       else { showToast((err && err.message) ? err.message : 'Could not publish'); }
     }finally{
-      if(btn){ btn.disabled = false; btn.textContent = 'Publish ✦'; }
+      if(btn){ btn.disabled = false; btn.textContent = 'Publish'; }
     }
   }
 
@@ -761,6 +1145,16 @@
   window.dzTagKey        = dzTagKey;
   window.dzTagDel        = dzTagDel;
   window.dzPick          = dzPick;
+  window.dzSaveDraft     = dzSaveDraft;
+  window.dzResumeDraft   = dzResumeDraft;
+  window.dzDeleteDraft   = dzDeleteDraft;
+  window.dzCancelSched   = dzCancelSched;
+  window.dzSchToggle     = dzSchToggle;
+  window.dzSchNav        = dzSchNav;
+  window.dzSchPick       = dzSchPick;
+  window.dzSchApply      = dzSchApply;
+  window.dzSchClear      = dzSchClear;
+  window.dzSchDone       = dzSchDone;
   /* The detail overlay (#dzView) navigates the same rows the tab is
      showing and reuses these formatters — exposed read-only. */
   window.dzGetRows = function(sec){ return dzCache[sec] || []; };

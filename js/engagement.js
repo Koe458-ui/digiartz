@@ -267,7 +267,7 @@
     bmMode = mode === 'like' ? 'like' : 'bm';
     var like = bmMode === 'like';
     var t = $('bmPageTitle');
-    if (t) t.innerHTML = (like ? 'LIKES' : 'BOOKMARKS') + ' <span class="s">✦</span>';
+    if (t) t.innerHTML = like ? 'LIKES' : 'BOOKMARKS';
     var et = $('bmEmptyTitle');
     if (et) et.textContent = like ? 'NO LIKES YET' : 'NO BOOKMARKS YET';
     var eh = $('bmEmptyHint');

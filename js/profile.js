@@ -121,8 +121,58 @@
     showToast('Could not load your profile — please try again');
   }
 
+  /* #profilePage sits at z-index 500 and EARLY in the DOM, so every
+     full-page overlay it can be launched from — the Full-Gallery (#fg,
+     also 500 but later in the DOM, so it paints on top), the Upload page
+     (#pfUpMod, 600), Community (500, later), the section detail view
+     (#dzView, 1300) and the artwork lightbox (#artModal) — covers the
+     profile if it stays open. That's why tapping an artist from the
+     gallery lightbox, or opening a profile from the upload page, showed
+     nothing: the profile DID open, just underneath the overlay that
+     launched it. Closing them here — the single choke-point every
+     profile-open funnels through (nav, author rows, comments, DMs,
+     ranking, deep links) — fixes every entry point at once. Each close is
+     guarded and is a no-op when its overlay isn't open. */
+  function pfCloseCompetingOverlays(){
+    /* Remember the browse overlay the profile is being opened on top of —
+       the Full-Gallery (#fg) or the Community page — so backing out of the
+       profile returns there instead of the bare home page. Nav-tab opens
+       never reach here with either still open (bnGoProfile() closes
+       everything via bnCloseAllSections() first), so only contextual opens
+       arm a return. */
+    try{
+      var _fg = document.getElementById('fg');
+      var _cm = document.getElementById('communityPage');
+      var _rk = document.getElementById('rankPage');
+      if(_fg && _fg.classList.contains('open')) window.pfReturnOverlay = 'fg';
+      else if(_cm && _cm.classList.contains('open')) window.pfReturnOverlay = 'communityPage';
+      else if(_rk && _rk.classList.contains('open')) window.pfReturnOverlay = 'rankPage';
+      else {
+        /* No browse overlay underneath — but if the profile was opened from
+           an artwork's own viewer (e.g. tapping the artist on the home page,
+           where there's no #fg), remember that artwork so back reopens it
+           instead of the home page. The lightbox reverts its /artwork URL on
+           close, which is why a plain history-back lands on home. */
+        var _am = document.getElementById('artModal');
+        if(_am && _am.classList.contains('open') && typeof avCurrentArt!=='undefined' && avCurrentArt && avCurrentArt.id){
+          window.pfReturnOverlay = 'artwork';
+          window.pfReturnArtId = avCurrentArt.id;
+        } else {
+          window.pfReturnOverlay = null;
+        }
+      }
+    }catch(e){ window.pfReturnOverlay = null; }
+    try{ if(typeof closeLB==='function') closeLB(); }catch(e){}
+    try{ if(typeof closeFG==='function') closeFG(); }catch(e){}
+    try{ if(typeof closePfUpload==='function') closePfUpload(); }catch(e){}
+    try{ if(typeof closeCommunityPage==='function') closeCommunityPage(); }catch(e){}
+    try{ if(typeof window.closeRankPage==='function') window.closeRankPage(); }catch(e){}
+    try{ if(typeof window.dzCloseView==='function') window.dzCloseView(); }catch(e){}
+  }
+
   async function openProfileByUsername(username, pushUrl){
     if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
+    pfCloseCompetingOverlays();
     var panel = document.getElementById('profilePage');
     panel.classList.add('open');
     document.body.style.overflow='hidden';
@@ -258,7 +308,7 @@
       }
   }
 
-  function closeProfilePage(revertUrl){
+  function closeProfilePage(revertUrl, restore){
     var panel = document.getElementById('profilePage');
     if(!panel.classList.contains('open')) return;
     panel.classList.remove('open');
@@ -269,6 +319,40 @@
     if(nav) nav.style.display = '';
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
       try{ history.pushState({},'', '/'); }catch(e){}
+    }
+    /* If this profile was opened on top of a browse overlay (Full-Gallery
+       or Community) and the user is backing out of it (restore===true — the
+       browser/system back button), return to that overlay instead of
+       dropping to the home page. Every other close path (Escape, switching
+       nav tabs, sign-out, load error) leaves restore falsy and just clears
+       the flag. */
+    var ret = window.pfReturnOverlay; window.pfReturnOverlay = null;
+    if(restore===true){
+      if(ret==='fg'){
+        var fg = document.getElementById('fg');
+        if(fg && !fg.classList.contains('open')){
+          fg.classList.add('open');
+          document.body.style.overflow='hidden';
+          if(typeof bnSetActive==='function') bnSetActive('bnGallery');
+        }
+      } else if(ret==='communityPage'){
+        /* Community can't just re-add .open — closeCommunityPage() stopped
+           its live poll and cleared the active channel — so re-enter through
+           the real entry point, which lands cleanly on the channel grid. */
+        if(typeof openCommunityHome==='function'){
+          openCommunityHome();
+          if(typeof bnSetActive==='function') bnSetActive('bnCommunity');
+        }
+      } else if(ret==='rankPage'){
+        /* Re-enter the leaderboard on the same board the user was viewing —
+           openRankPage() with no key falls back to the remembered board. */
+        if(typeof window.openRankPage==='function'){ window.openRankPage(); }
+      } else if(ret==='artwork'){
+        /* Reopen the artwork viewer the profile was launched from. false =
+           don't re-push a /artwork URL, matching the other restores. */
+        var aid = window.pfReturnArtId; window.pfReturnArtId = null;
+        if(aid && typeof openArtworkById==='function'){ openArtworkById(String(aid), false); }
+      }
     }
   }
 

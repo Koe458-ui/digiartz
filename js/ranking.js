@@ -441,7 +441,8 @@
         rows.forEach(function (row) {
           list.appendChild(rowEl(b, row, uid, function (rr) {
             if (!rr.username || typeof openProfileByUsername !== 'function') return;
-            closeRankPage();
+            /* leaderboard is closed + remembered inside openProfileByUsername
+               so backing out of the profile returns here */
             openProfileByUsername(rr.username, true);
           }));
         });
@@ -490,7 +491,7 @@
     window.openRankPage = function (boardKey) {
       var page = document.getElementById('rankPage');
       if (!page) return;
-      pg.board = boardKey || 'level';
+      pg.board = boardKey || pg.board || 'level';
 
       if (!pg.wired) {
         pg.wired = true;

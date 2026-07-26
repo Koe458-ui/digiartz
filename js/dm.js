@@ -316,7 +316,8 @@
         letter: (p.username || '?').charAt(0).toUpperCase(),
         tap   : function () {
           if (!p.username) return;
-          if (typeof closeCommunityPage === 'function') closeCommunityPage();
+          /* openProfileByUsername closes the community/DM overlay AND
+             remembers it, so back returns to community. */
           if (typeof openProfileByUsername === 'function') openProfileByUsername(p.username, true);
         }
       });

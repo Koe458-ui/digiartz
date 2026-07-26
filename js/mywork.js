@@ -682,7 +682,9 @@ function hideCommentThumbnail(){
     /* Profile is available to everyone. */
     if(uname) add('View profile', function(){
       cmCloseMod('cmMemMod'); cmCloseMod('cmManageMod');
-      closeCommunityPage(); openProfileByUsername(uname, true);
+      /* community is closed + remembered inside openProfileByUsername so
+         backing out of the profile returns here */
+      openProfileByUsername(uname, true);
     });
 
     var targetRank = CM_RANK[m.role] || 1;
@@ -838,8 +840,8 @@ function hideCommentThumbnail(){
     if(!cpuUser || !cpuUser.username) return;
     var uname = cpuUser.username;
     cpuClose();
-    /* Leave the community overlay so the profile isn't stranded behind it. */
-    if(typeof closeCommunityPage === 'function') closeCommunityPage();
+    /* openProfileByUsername closes the community overlay AND remembers it,
+       so backing out of the profile returns to community. */
     openProfileByUsername(uname, true);
   }
 

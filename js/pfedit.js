@@ -233,10 +233,17 @@
   }
   function bnGoProfile(e){
     if(e) e.stopPropagation();
-    closeFG();
-    closeCommunityPage();
-    closeSubscription();
-    if(currentUser){ closeAuthMod(); openOwnProfile(); } else { closeProfilePage(); openAuthMod(); }
+    /* Route through bnCloseAllSections() like every other nav tab. The
+       old hand-rolled list here closed FG / Community / Subscription /
+       Auth but MISSED the Upload page (#pfUpMod) — and My Work /
+       Notifications / Admin. So tapping Profile while the Upload page was
+       open left #pfUpMod (z:600) on screen and opened #profilePage (z:500)
+       behind it: the profile DID open, it was just hidden under the upload
+       page, which looked like nothing happened. bnCloseAllSections()
+       already closes the profile page + auth modal too, so re-opening the
+       right one below is a clean close -> open. */
+    bnCloseAllSections();
+    if(currentUser){ openOwnProfile(); } else { openAuthMod(); }
     bnSetActive('bnProfile');
   }
   /* Default state on load */

@@ -756,7 +756,7 @@
     } else {
       closeLB();
       resetArtworkSEO();
-      if(document.getElementById('profilePage').classList.contains('open')) closeProfilePage(false);
+      if(document.getElementById('profilePage').classList.contains('open')) closeProfilePage(false, true);
       closeAuthMod(false);
     }
   });

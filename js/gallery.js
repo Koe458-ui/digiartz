@@ -114,6 +114,12 @@
   var amCloseTimer = null;
   var avNavList = [];
   var avNavIndex = -1;
+  /* True when the lightbox was opened while the Full-Gallery overlay (#fg)
+     was showing. A detour through a profile closes #fg (it would otherwise
+     cover the profile), so we remember this to re-reveal the gallery behind
+     the image on the way back — a further back then lands on the grid where
+     the image was clicked, instead of jumping straight to home. */
+  var avLbFromGallery = false;
   var avZoomLevel = 1, avPanX = 0, avPanY = 0;
   var avCurrentArt = null;
   /* ── Multi-image artworks ──
@@ -506,6 +512,8 @@
     }
     avCurrentArt = art;
     var modal=document.getElementById('artModal');
+    var _fgAtOpen = document.getElementById('fg');
+    avLbFromGallery = !!(_fgAtOpen && _fgAtOpen.classList.contains('open'));
     if(amCloseTimer){clearTimeout(amCloseTimer);amCloseTimer=null;}
     if(modal) modal.classList.remove('closing');
     avResetZoom();
@@ -755,8 +763,18 @@
     if(m){
       /* Returning to an artwork URL while a profile opened from it is up —
          close the profile first so the image shows on a SINGLE back, then
-         reopen the viewer. */
+         reopen the viewer. If the image was launched from the gallery,
+         re-reveal #fg behind it too (the profile step had closed it) so a
+         further back returns to the grid where it was clicked, not home. */
+      var _fromGal = avLbFromGallery;
       if(document.getElementById('profilePage').classList.contains('open')) closeProfilePage(false);
+      if(_fromGal){
+        var _fgBack = document.getElementById('fg');
+        if(_fgBack && !_fgBack.classList.contains('open')){
+          _fgBack.classList.add('open');
+          if(typeof bnSetActive==='function') bnSetActive('bnGallery');
+        }
+      }
       openArtworkById(m[1], false);
     } else if(pm){
       openProfileByUsername(decodeURIComponent(pm[1]), false);

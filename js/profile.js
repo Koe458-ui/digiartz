@@ -352,6 +352,14 @@
            us on the same event; deferring lets it run first (finding dzView
            closed, doing nothing) so our reveal sticks. */
         setTimeout(function(){
+          /* Re-reveal the gallery behind the detail too, so a further back
+             returns to the section grid where the item was tapped (the
+             profile step had closed #fg) rather than jumping home. */
+          var fg = document.getElementById('fg');
+          if(fg && !fg.classList.contains('open')){
+            fg.classList.add('open');
+            if(typeof bnSetActive==='function') bnSetActive('bnGallery');
+          }
           var dz = document.getElementById('dzView');
           if(dz && !dz.classList.contains('open')){
             dz.classList.add('open');

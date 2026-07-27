@@ -284,13 +284,13 @@
       || (pf.profile && pf.profile.id===uid ? pf.profile.username : null)
       || (currentUser && currentUser.id===uid && currentUser.user_metadata ? currentUser.user_metadata.username : null)
       || null;
-    if(uname){ closeLB(); openProfileByUsername(uname); return; }
+    if(uname){ closeLB(true); openProfileByUsername(uname); return; }
     if(!sb){ if(typeof showToast==='function') showToast('Can\u2019t open profile \u2014 try again'); return; }
     sb.from('profiles').select('username').eq('id',uid).single().then(function(res){
       var u = res && res.data && res.data.username;
       if(!u){ if(typeof showToast==='function') showToast('Profile not found'); return; }
       avAuthorProfileCache[uid] = avAuthorProfileCache[uid] || { username:u, avatar_url:null };
-      closeLB();
+      closeLB(true);
       openProfileByUsername(u);
     }).catch(function(){ if(typeof showToast==='function') showToast('Couldn\u2019t open profile'); });
   }
@@ -615,7 +615,7 @@
       updateArtworkSEO({id:id,name:name,description:desc,category:cat,image_url:src});
     }
   }
-  function closeLB(){
+  function closeLB(keepUrl){
     var modal=document.getElementById('artModal');
     if(!modal || !modal.classList.contains('open'))return;
     modal.classList.add('closing');
@@ -630,8 +630,13 @@
       if(imgEl){imgEl.src='';imgEl.alt='';}
       avCurrentArt=null;
     },230);
-    /* Revert address bar + SEO meta when leaving an artwork URL */
-    if(/^\/artwork\//.test(window.location.pathname)){
+    /* Revert address bar + SEO meta when leaving an artwork URL — UNLESS
+       keepUrl is set. keepUrl is passed when we hand off to the profile
+       page: we KEEP /artwork/{id} in history so a single back returns to
+       this exact artwork (via the popstate /artwork branch), instead of
+       leaving a spurious '/' entry that forced a double-back to reach the
+       image. */
+    if(!keepUrl && /^\/artwork\//.test(window.location.pathname)){
       try{ history.pushState({},'', '/'); }catch(e){}
       resetArtworkSEO();
     }
@@ -748,6 +753,10 @@
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
     if(m){
+      /* Returning to an artwork URL while a profile opened from it is up —
+         close the profile first so the image shows on a SINGLE back, then
+         reopen the viewer. */
+      if(document.getElementById('profilePage').classList.contains('open')) closeProfilePage(false);
       openArtworkById(m[1], false);
     } else if(pm){
       openProfileByUsername(decodeURIComponent(pm[1]), false);

@@ -1382,11 +1382,11 @@
     el.style.cursor = 'pointer';
     el.onclick = function(){
       var cp = profCache[uid];
-      if(cp && cp.username){ dzCloseView(); openProfileByUsername(cp.username); return; }
+      if(cp && cp.username){ openProfileByUsername(cp.username); return; }
       sb.from('profiles').select('username').eq('id',uid).single().then(function(r){
         var u = r && r.data && r.data.username;
         if(!u){ if(typeof showToast==='function') showToast('Profile not found'); return; }
-        dzCloseView(); openProfileByUsername(u);
+        openProfileByUsername(u);
       }).catch(function(){ if(typeof showToast==='function') showToast('Couldn\u2019t open profile'); });
     };
     var p = profCache[uid];
@@ -1403,11 +1403,11 @@
     el.style.cursor = 'pointer';
     el.onclick = function(){
       var cp = profCache[uid];
-      if(cp && cp.username){ dzCloseView(); openProfileByUsername(cp.username); return; }
+      if(cp && cp.username){ openProfileByUsername(cp.username); return; }
       sb.from('profiles').select('username').eq('id',uid).single().then(function(r){
         var u = r && r.data && r.data.username;
         if(!u){ if(typeof showToast==='function') showToast('Profile not found'); return; }
-        dzCloseView(); openProfileByUsername(u);
+        openProfileByUsername(u);
       }).catch(function(){ if(typeof showToast==='function') showToast('Couldn\u2019t open profile'); });
     };
     if(!p) return;
@@ -1559,6 +1559,16 @@
     document.body.style.overflow = '';
     curExt = null;
     if(pushed){ pushed = false; try{ history.back(); }catch(e){} }
+  };
+  /* Hide the detail view WITHOUT touching history — used when handing off to
+     the profile page. The profile pushes its own history entry, so the back
+     button is governed cleanly; the planted dzv entry and cur/curExt state
+     stay intact, so a single back lands here and the profile restore just
+     re-reveals this exact view (no racing history.back, no double-back). */
+  window.dzCloseViewSilent = function(){
+    var v = document.getElementById('dzView');
+    if(v) v.classList.remove('open');
+    document.body.style.overflow = '';
   };
   document.addEventListener('keydown', function(e){
     var v = document.getElementById('dzView');

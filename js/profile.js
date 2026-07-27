@@ -141,33 +141,29 @@
        everything via bnCloseAllSections() first), so only contextual opens
        arm a return. */
     try{
+      var _dz = document.getElementById('dzView');
       var _fg = document.getElementById('fg');
       var _cm = document.getElementById('communityPage');
       var _rk = document.getElementById('rankPage');
-      if(_fg && _fg.classList.contains('open')) window.pfReturnOverlay = 'fg';
+      if(_dz && _dz.classList.contains('open')) window.pfReturnOverlay = 'dzView';
+      else if(_fg && _fg.classList.contains('open')) window.pfReturnOverlay = 'fg';
       else if(_cm && _cm.classList.contains('open')) window.pfReturnOverlay = 'communityPage';
       else if(_rk && _rk.classList.contains('open')) window.pfReturnOverlay = 'rankPage';
-      else {
-        /* No browse overlay underneath — but if the profile was opened from
-           an artwork's own viewer (e.g. tapping the artist on the home page,
-           where there's no #fg), remember that artwork so back reopens it
-           instead of the home page. The lightbox reverts its /artwork URL on
-           close, which is why a plain history-back lands on home. */
-        var _am = document.getElementById('artModal');
-        if(_am && _am.classList.contains('open') && typeof avCurrentArt!=='undefined' && avCurrentArt && avCurrentArt.id){
-          window.pfReturnOverlay = 'artwork';
-          window.pfReturnArtId = avCurrentArt.id;
-        } else {
-          window.pfReturnOverlay = null;
-        }
-      }
+      else window.pfReturnOverlay = null;
+      /* Artworks aren't recorded here: they carry a real /artwork/{id} URL,
+         so a single history-back returns to the viewer via the popstate
+         /artwork branch (see gallery.js). We keep that URL by closing the
+         lightbox with keepUrl=true just below. */
     }catch(e){ window.pfReturnOverlay = null; }
-    try{ if(typeof closeLB==='function') closeLB(); }catch(e){}
+    try{ if(typeof closeLB==='function') closeLB(true); }catch(e){}
     try{ if(typeof closeFG==='function') closeFG(); }catch(e){}
     try{ if(typeof closePfUpload==='function') closePfUpload(); }catch(e){}
     try{ if(typeof closeCommunityPage==='function') closeCommunityPage(); }catch(e){}
     try{ if(typeof window.closeRankPage==='function') window.closeRankPage(); }catch(e){}
-    try{ if(typeof window.dzCloseView==='function') window.dzCloseView(); }catch(e){}
+    /* Silent close (no racing history.back) so the profile's own history
+       entry governs the back button; the planted dzv entry stays, so one
+       back lands on it and the restore below re-reveals the detail. */
+    try{ if(typeof window.dzCloseViewSilent==='function') window.dzCloseViewSilent(); else if(typeof window.dzCloseView==='function') window.dzCloseView(); }catch(e){}
   }
 
   async function openProfileByUsername(username, pushUrl){
@@ -347,11 +343,21 @@
         /* Re-enter the leaderboard on the same board the user was viewing —
            openRankPage() with no key falls back to the remembered board. */
         if(typeof window.openRankPage==='function'){ window.openRankPage(); }
-      } else if(ret==='artwork'){
-        /* Reopen the artwork viewer the profile was launched from. false =
-           don't re-push a /artwork URL, matching the other restores. */
-        var aid = window.pfReturnArtId; window.pfReturnArtId = null;
-        if(aid && typeof openArtworkById==='function'){ openArtworkById(String(aid), false); }
+      } else if(ret==='dzView'){
+        /* Re-reveal the section detail view exactly as it was — content and
+           scroll intact; dzCloseViewSilent only hid it. Deferred one tick:
+           this restore fires from the popstate handler, and sections.js has
+           its OWN popstate listener that closes #dzView whenever it sees it
+           open. Running synchronously here, that second listener would undo
+           us on the same event; deferring lets it run first (finding dzView
+           closed, doing nothing) so our reveal sticks. */
+        setTimeout(function(){
+          var dz = document.getElementById('dzView');
+          if(dz && !dz.classList.contains('open')){
+            dz.classList.add('open');
+            document.body.style.overflow='hidden';
+          }
+        }, 0);
       }
     }
   }

@@ -1362,6 +1362,33 @@ body{background:var(--bg);}
   max-width: 100%;
 }
 
+/* ── Chat-thread additions ──
+   Right-aligned "you" bubble + spent-menu fade so Zeo reads like a
+   real back-and-forth: your taps echo on the right, old menus dim. */
+.zeoMsg.zeoMsgUser {
+  align-items: flex-end;
+}
+.zeoMsg.zeoMsgUser .zeoMsgBubble {
+  background: rgba(99,179,237,.20);
+  border: 1px solid rgba(99,179,237,.42);
+  border-radius: 14px 14px 4px 14px;
+  color: #eaf5ff;
+  max-width: 85%;
+}
+/* One step's controls (options/categories + its Back button). */
+.zeoStepControls {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+/* A menu the visitor has already moved past — dimmed and inert. */
+.zeoStepControls.zeoLocked {
+  opacity: .4;
+  filter: saturate(.6);
+  pointer-events: none;
+  transition: opacity .25s ease, filter .25s ease;
+}
+
 /* Option buttons */
 .zeoOptions {
   display: flex;

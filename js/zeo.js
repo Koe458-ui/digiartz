@@ -11,7 +11,6 @@
   var data      = window.ZEO_DATA;
 
   var isOpen      = false;
-  var currentScreen = 'welcome'; // 'welcome' | 'helpCenter' | categoryId
   var bubbleTimer = null;
   var bubblePaused = false;
   var lastBubbleIdx = -1;
@@ -123,7 +122,7 @@
     page.classList.add('open');
     document.body.style.overflow = 'hidden';
     btn.setAttribute('aria-expanded', 'true');
-    renderScreen('welcome');
+    startWelcome();
   }
 
   function closeChat() {
@@ -154,43 +153,95 @@
     if (e.key === 'Escape' && isOpen) closeChat();
   });
 
-  /* RENDER ENGINE Reads from ZEO_DATA and builds HTML dynamically. */
+  /* ─────────────────────────────────────────────────────────────
+     CHAT-THREAD ENGINE
 
-  function makeMsg(text) {
-    var msg  = document.createElement('div');
+     Unlike the old one-screen renderer (which wiped the panel on
+     every step), this keeps a running transcript, exactly like a
+     normal support chat:
+
+       • the option you tap echoes back on the RIGHT as your own
+         message,
+       • Zeo replies underneath on the LEFT,
+       • the menu you just used locks so old buttons can't be
+         re-clicked and the thread reads straight down,
+       • every step carries a Back button that rewinds the whole
+         conversation to the first greeting.
+  ───────────────────────────────────────────────────────────── */
+
+  /* The latest still-clickable controls block. When the user makes a
+     choice we freeze it before echoing + replying, so the transcript
+     never leaves a live duplicate menu behind. */
+  var activeControls = null;
+
+  function scrollDown() {
+    requestAnimationFrame(function() { body.scrollTop = body.scrollHeight; });
+  }
+
+  function lockActiveControls() {
+    if (!activeControls) return;
+    activeControls.classList.add('zeoLocked');
+    var btns = activeControls.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
+    activeControls = null;
+  }
+
+  /* ── Bubble builders ── */
+  function botSay(text) {
+    var msg = document.createElement('div');
     msg.className = 'zeoMsg';
     var bub = document.createElement('div');
     bub.className = 'zeoMsgBubble';
     bub.textContent = text;
     msg.appendChild(bub);
+    body.appendChild(msg);
+    scrollDown();
     return msg;
   }
 
-  function makeOptions(items, onClick) {
+  /* Right-aligned "you" bubble — the tap the visitor just made,
+     mirrored back so the exchange reads like a real conversation. */
+  function userSay(text) {
+    var msg = document.createElement('div');
+    msg.className = 'zeoMsg zeoMsgUser';
+    var bub = document.createElement('div');
+    bub.className = 'zeoMsgBubble';
+    bub.textContent = text;
+    msg.appendChild(bub);
+    body.appendChild(msg);
+    scrollDown();
+    return msg;
+  }
+
+  /* ── Controls builders (appended INTO a step container) ── */
+  function addOptions(container, items, onPick) {
     var wrap = document.createElement('div');
     wrap.className = 'zeoOptions';
     items.forEach(function(item) {
-      var btn = document.createElement('button');
-      btn.className = 'zeoOption';
-      btn.textContent = item.label;
-      btn.addEventListener('click', function() { onClick(item); });
-      wrap.appendChild(btn);
+      var b = document.createElement('button');
+      b.className = 'zeoOption';
+      b.textContent = item.label;
+      b.addEventListener('click', function() {
+        if (b.disabled) return;
+        lockActiveControls();   /* freeze this menu */
+        userSay(item.label);    /* echo the tap on the right */
+        onPick(item);           /* Zeo replies below */
+      });
+      wrap.appendChild(b);
     });
-    return wrap;
+    container.appendChild(wrap);
   }
 
-  function makeCategories(categories, onClick) {
-    var wrap = document.createElement('div');
-    wrap.className = 'zeoCategories';
-
+  function addCategories(container, categories, onPick) {
     if (!categories || categories.length === 0) {
       var placeholder = document.createElement('div');
       placeholder.className = 'zeoComingSoon';
       placeholder.innerHTML = '<span>🛠️</span>Categories coming soon.<br>Check back later for help topics.';
-      wrap.appendChild(placeholder);
-      return wrap;
+      container.appendChild(placeholder);
+      return;
     }
-
+    var wrap = document.createElement('div');
+    wrap.className = 'zeoCategories';
     categories.forEach(function(cat) {
       var card = document.createElement('button');
       card.className = 'zeoCatCard';
@@ -200,84 +251,108 @@
           '<span class="zeoCatLabel">' + cat.label + '</span>' +
           (cat.description ? '<span class="zeoCatDesc">' + cat.description + '</span>' : '') +
         '</span>';
-      card.addEventListener('click', function() { onClick(cat); });
+      card.addEventListener('click', function() {
+        if (card.disabled) return;
+        lockActiveControls();
+        userSay(cat.label);
+        onPick(cat);
+      });
       wrap.appendChild(card);
     });
-
-    return wrap;
+    container.appendChild(wrap);
   }
 
-  function makeBack(onClick) {
+  /* Back rewinds the entire thread to the very first greeting. */
+  function addBack(container) {
     var b = document.createElement('button');
     b.className = 'zeoBackBtn';
-    b.innerHTML = '← Back';
-    b.addEventListener('click', onClick);
-    return b;
+    b.innerHTML = '← Back to start';
+    b.addEventListener('click', function() {
+      if (b.disabled) return;
+      startWelcome();
+    });
+    container.appendChild(b);
   }
 
-  function renderScreen(screenId) {
-    currentScreen = screenId;
+  function newControls() {
+    var c = document.createElement('div');
+    c.className = 'zeoStepControls';
+    return c;
+  }
 
-    /* Clear */
+  /* Commit a freshly built controls block and make it the live one. */
+  function commit(controls) {
+    body.appendChild(controls);
+    activeControls = controls;
+    scrollDown();
+  }
+
+  /* ── Flow steps ── */
+
+  /* SCREEN 1 — the beginning. Wipes the transcript and greets. */
+  function startWelcome() {
     while (body.firstChild) body.removeChild(body.firstChild);
+    activeControls = null;
 
-    if (screenId === 'welcome') {
-      body.appendChild(makeMsg(data.welcomeMessage));
-      body.appendChild(makeOptions(data.welcomeOptions, function(item) {
-        renderScreen(item.id);
-      }));
+    botSay(data.welcomeMessage);
+    var c = newControls();
+    addOptions(c, data.welcomeOptions, routeWelcome);
+    commit(c);
+  }
+
+  function routeWelcome(item) {
+    if (item.id === 'helpCenter') { goHelpCenter(); }
+    else if (item.id && item.id.indexOf('cat_') === 0) { goCategory(item.id.slice(4)); }
+    else { goHelpCenter(); }
+  }
+
+  /* SCREEN 2 — topic menu. */
+  function goHelpCenter() {
+    botSay(data.helpCenterMessage);
+    var c = newControls();
+    addCategories(c, data.categories, function(cat) { goCategory(cat.id); });
+    addBack(c);
+    commit(c);
+  }
+
+  /* SCREEN 3 — a topic's list of problems. The topic name was already
+     echoed as the user's own bubble, so Zeo replies with just the
+     prompt (no redundant heading) and lists the problems. */
+  function goCategory(catId) {
+    var cat   = (data.categories || []).find(function(c) { return c.id === catId; });
+    var resps = (data.responses || {})[catId] || [];
+
+    if (cat && cat.prompt)      botSay(cat.prompt);
+    else if (cat)               botSay('Here are the options for ' + cat.label + ':');
+
+    var c = newControls();
+    if (resps.length === 0) {
+      var placeholder = document.createElement('div');
+      placeholder.className = 'zeoComingSoon';
+      placeholder.innerHTML = '<span>💬</span>Answers for this category<br>are coming soon.';
+      c.appendChild(placeholder);
+    } else {
+      addOptions(c, resps.map(function(r) {
+        return { id: r.question, label: r.question, answer: r.answer, question: r.question };
+      }), function(item) {
+        goAnswer(catId, item.question);
+      });
     }
-    else if (screenId === 'helpCenter') {
-      body.appendChild(makeMsg(data.helpCenterMessage));
-      body.appendChild(makeCategories(data.categories, function(cat) {
-        renderScreen('cat_' + cat.id);
-      }));
-      body.appendChild(makeBack(function() { renderScreen('welcome'); }));
-    }
-    else if (screenId.indexOf('cat_') === 0) {
-      var catId = screenId.slice(4);
-      var cat   = (data.categories || []).find(function(c) { return c.id === catId; });
-      var resps = (data.responses || {})[catId] || [];
+    addBack(c);
+    commit(c);
+  }
 
-      if (cat) {
-        body.appendChild(makeMsg(cat.icon + ' ' + cat.label));
-        /* "What are you facing?" style prompt, defined per topic in the data. */
-        if (cat.prompt) body.appendChild(makeMsg(cat.prompt));
-      }
+  /* SCREEN 4 — the answer. The question was echoed as the user's
+     bubble on tap, so Zeo just replies with the walkthrough. */
+  function goAnswer(catId, question) {
+    var resps = (data.responses || {})[catId] || [];
+    var resp  = resps.find(function(r) { return r.question === question; });
 
-      if (resps.length === 0) {
-        var placeholder = document.createElement('div');
-        placeholder.className = 'zeoComingSoon';
-        placeholder.innerHTML = '<span>💬</span>Answers for this category<br>are coming soon.';
-        body.appendChild(placeholder);
-      } else {
-        body.appendChild(makeOptions(resps.map(function(r) {
-          return { id: r.question, label: r.question, answer: r.answer };
-        }), function(item) {
-          renderScreen('answer_' + catId + '_' + item.id);
-        }));
-      }
+    if (resp) botSay(resp.answer);
 
-      body.appendChild(makeBack(function() { renderScreen('helpCenter'); }));
-    }
-    else if (screenId.indexOf('answer_') === 0) {
-      /* screenId: answer_catId_question */
-      var rest  = screenId.slice(7); // catId_question
-      var under = rest.indexOf('_');
-      var catId2 = rest.slice(0, under);
-      var qText  = rest.slice(under + 1);
-      var resps2 = (data.responses || {})[catId2] || [];
-      var resp   = resps2.find(function(r) { return r.question === qText; });
-
-      body.appendChild(makeMsg('💬 ' + qText));
-      if (resp) {
-        body.appendChild(makeMsg(resp.answer));
-      }
-      body.appendChild(makeBack(function() { renderScreen('cat_' + catId2); }));
-    }
-
-    /* Scroll to bottom */
-    body.scrollTop = body.scrollHeight;
+    var c = newControls();
+    addBack(c);
+    commit(c);
   }
 
   /* Exposed so the hero-only-widgets script can silence the

@@ -1441,6 +1441,10 @@ body{background:var(--bg);}
   border-color: rgba(99,179,237,.38);
   transform: translateX(3px);
 }
+/* The label + description sit in a text column beside the icon —
+   stacked, left-aligned. Without display:block they collapse onto
+   one line and inherit centering, which reads as ragged text. */
+.zeoCatCard > span:last-child { min-width: 0; text-align: left; }
 .zeoCatIcon {
   font-size: 1.15rem;
   flex-shrink: 0;
@@ -1448,6 +1452,8 @@ body{background:var(--bg);}
   text-align: center;
 }
 .zeoCatLabel {
+  display: block;
+  text-align: left;
   font-size: .84rem;
   font-weight: 600;
   color: #c6e4f8;
@@ -1455,6 +1461,8 @@ body{background:var(--bg);}
   line-height: 1.2;
 }
 .zeoCatDesc {
+  display: block;
+  text-align: left;
   font-size: .74rem;
   color: rgba(144,205,244,.55);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

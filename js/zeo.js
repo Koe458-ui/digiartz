@@ -165,21 +165,15 @@
        • Zeo replies underneath on the LEFT,
        • the menu you just used locks so old buttons can't be
          re-clicked and the thread reads straight down,
-       • every step carries a Back button that rewinds ONE level —
-         it undoes your last choice, drops that reply, and hands the
-         previous menu back to you, live again.
+       • Back behaves like any other choice — it echoes "Back" on
+         the right and the PREVIOUS menu arrives fresh at the bottom.
+         Nothing is ever removed; the thread only grows downward.
   ───────────────────────────────────────────────────────────── */
 
   /* The latest still-clickable controls block. When the user makes a
      choice we freeze it before echoing + replying, so the transcript
      never leaves a live duplicate menu behind. */
   var activeControls = null;
-
-  /* One frame per forward step, so Back can peel the last one off.
-     Each frame remembers where this step's DOM began (so we can strip
-     exactly what it added) and which menu was live before it (so we
-     can wake that menu back up). */
-  var navStack = [];
 
   function scrollDown() {
     requestAnimationFrame(function() { body.scrollTop = body.scrollHeight; });
@@ -193,32 +187,13 @@
     activeControls = null;
   }
 
-  /* Move one step forward: freeze the current menu, remember it and
-     where the thread stands, echo the tap, then let Zeo reply. */
+  /* Every tap works the same way — freeze the current menu, echo the
+     tap on the right, then let Zeo append the next screen below. Back
+     is just another tap whose "next screen" is the previous one. */
   function advance(label, proceed) {
-    var prev = activeControls;
     lockActiveControls();
-    navStack.push({ start: body.children.length, prev: prev });
     userSay(label);
     proceed();
-  }
-
-  /* Step back one level: strip everything the current step added and
-     hand the previous menu back, clickable again. At the welcome
-     screen there's nothing to undo, so it's a no-op. */
-  function goBackOneStep() {
-    if (!navStack.length) return;
-    var frame = navStack.pop();
-    while (body.children.length > frame.start) body.removeChild(body.lastChild);
-    if (frame.prev) {
-      frame.prev.classList.remove('zeoLocked');
-      var btns = frame.prev.querySelectorAll('button');
-      for (var i = 0; i < btns.length; i++) btns[i].disabled = false;
-      activeControls = frame.prev;
-    } else {
-      activeControls = null;
-    }
-    scrollDown();
   }
 
   /* ── Bubble builders ── */
@@ -293,14 +268,15 @@
     container.appendChild(wrap);
   }
 
-  /* Back steps up one level — to the menu you were just on. */
-  function addBack(container) {
+  /* Back is a tap like any other: it echoes "Back" and appends the
+     PREVIOUS screen fresh below. parentFn renders that screen. */
+  function addBack(container, parentFn) {
     var b = document.createElement('button');
     b.className = 'zeoBackBtn';
     b.innerHTML = '← Back';
     b.addEventListener('click', function() {
       if (b.disabled) return;
-      goBackOneStep();
+      advance('Back', parentFn);
     });
     container.appendChild(b);
   }
@@ -321,15 +297,20 @@
   /* ── Flow steps ── */
 
   /* SCREEN 1 — the beginning. Wipes the transcript and greets. */
+  /* Fresh entry point — wipes the thread, then greets. Used on open. */
   function startWelcome() {
     while (body.firstChild) body.removeChild(body.firstChild);
     activeControls = null;
-    navStack = [];
+    renderWelcome();
+  }
 
+  /* SCREEN 1 — greeting + top options. Appends (no wipe), so it can
+     also be re-shown when Back is tapped from the topic menu. */
+  function renderWelcome() {
     botSay(data.welcomeMessage);
     var c = newControls();
     addOptions(c, data.welcomeOptions, routeWelcome);
-    commit(c);
+    commit(c);   /* welcome is the top — no Back button */
   }
 
   function routeWelcome(item) {
@@ -343,7 +324,7 @@
     botSay(data.helpCenterMessage);
     var c = newControls();
     addCategories(c, data.categories, function(cat) { goCategory(cat.id); });
-    addBack(c);
+    addBack(c, renderWelcome);
     commit(c);
   }
 
@@ -370,7 +351,7 @@
         goAnswer(catId, item.question);
       });
     }
-    addBack(c);
+    addBack(c, goHelpCenter);
     commit(c);
   }
 
@@ -383,7 +364,7 @@
     if (resp) botSay(resp.answer);
 
     var c = newControls();
-    addBack(c);
+    addBack(c, function() { goCategory(catId); });
     commit(c);
   }
 

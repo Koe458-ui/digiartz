@@ -397,7 +397,88 @@
     .dzRowFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;}
     .dzSel{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.85rem;padding:.6rem .7rem;outline:none;}
     .dzSel:focus{border-color:var(--pg);}
-    .dzFileName{font-family:var(--fm);font-size:.7rem;color:var(--ps);margin-top:.4rem;word-break:break-all;}
+    /* ── Section upload · file / image picker ──────────────────────
+       Replaces the browser's bare "Choose file" control on the
+       Resources / Blog / Marketplace forms. Same anatomy as the
+       artwork dropzone (.upDz in css/upload.css) — dashed target,
+       one clear action, the chosen file shown back — wearing the
+       section's own gradient icon so the upload page and the gallery
+       rail read as one system. Deliberately roomy: this is the first
+       thing on the form and it should feel like a place to drop
+       something, not a squeezed-in input. */
+    .dzFileField{margin-bottom:1.75rem;}
+    .dzFileZone{
+      position:relative;border-radius:16px;
+      border:1.5px dashed color-mix(in srgb,var(--pg) 36%,transparent);
+      background:color-mix(in srgb,var(--pg) 4%,transparent);
+      padding:2.35rem 1.6rem;
+      transition:border-color .2s ease,background .2s ease,box-shadow .2s ease;
+    }
+    .dzFileZone.over,.dzFileZone:focus-within{
+      border-color:var(--pg);
+      background:color-mix(in srgb,var(--pg) 9%,transparent);
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--pg) 16%,transparent);
+    }
+    @media(hover:hover){
+      .dzFileZone:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}
+    }
+    /* The real input covers the card, so click, keyboard and drop all
+       land on it — the visible copy underneath is inert. */
+    .dzFileIn{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;}
+    .dzFileEmpty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.55rem;pointer-events:none;}
+    .dzFileZone .fgSecIco{width:54px;height:54px;border-radius:16px;margin-bottom:.45rem;}
+    .dzFileZone .fgSecIco svg{width:26px;height:26px;}
+    .dzFileTitle{font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);}
+    .dzFileSub{font-size:.8rem;color:var(--txd);}
+    .dzFileBtn{
+      margin-top:.6rem;padding:.62rem 1.4rem;border-radius:10px;
+      background:linear-gradient(135deg,var(--pg),var(--pgd,var(--pg)));
+      color:var(--text-on-accent);font-family:var(--fd);font-size:.82rem;font-weight:700;
+      box-shadow:0 4px 14px color-mix(in srgb,var(--pg) 28%,transparent);
+    }
+    .dzFileTypes{margin-top:.5rem;font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--txd);}
+
+    /* Picked state — the dashes give way to a solid card holding the
+       thumbnail, the name and the two actions. */
+    .dzFilePicked{display:none;align-items:center;gap:1rem;}
+    .dzFileZone.dzHasFile{
+      border-style:solid;border-color:var(--bdrh,var(--bdr));
+      background:var(--sur);padding:1.1rem 1.15rem;box-shadow:none;
+    }
+    .dzFileZone.dzHasFile .dzFileEmpty{display:none;}
+    .dzFileZone.dzHasFile .dzFilePicked{display:flex;}
+    .dzFileThumb{
+      width:66px;height:66px;flex-shrink:0;border-radius:12px;overflow:hidden;
+      background:var(--sur2);border:1px solid var(--bdr);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .dzFileThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .dzFileThumbExt{font-family:var(--fm);font-size:.66rem;font-weight:700;letter-spacing:.1em;color:var(--ps);}
+    .dzFileMeta{flex:1;min-width:0;}
+    .dzFileNm{font-size:.9rem;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .dzFileSz{margin-top:.3rem;font-family:var(--fm);font-size:.64rem;letter-spacing:.08em;color:var(--txd);}
+    /* Above the overlaying input, or Remove would only re-open the
+       file picker. */
+    .dzFileActs{display:flex;gap:.45rem;flex-shrink:0;position:relative;z-index:2;}
+    .dzFileAct{
+      border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
+      border-radius:9px;padding:.45rem .8rem;cursor:pointer;
+      font-family:var(--fm);font-size:.62rem;font-weight:700;letter-spacing:.1em;
+      transition:border-color .2s,color .2s,background .2s;
+    }
+    @media(hover:hover){.dzFileAct:hover{border-color:var(--pg);color:var(--ps);}}
+    .dzFileActRm{color:var(--txd);}
+    @media(hover:hover){.dzFileActRm:hover{border-color:var(--danger-strong,#D63A3F);color:var(--danger-strong,#D63A3F);}}
+    @media(max-width:560px){
+      .dzFileZone{padding:1.9rem 1.1rem;}
+      .dzFileZone.dzHasFile{padding:1rem;}
+      .dzFilePicked{flex-wrap:wrap;}
+      .dzFileActs{width:100%;}
+      .dzFileAct{flex:1;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .dzFileZone{transition:none;}
+    }
 
     /* One panel visible at a time. display:none rather than an offset
        so hidden panels cost no layout and can't be tabbed into. */

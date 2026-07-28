@@ -334,22 +334,44 @@
       ]}
   };
 
-  /* Per-section scratch state: picked files and tag chips. */
+  /* Per-section scratch state: picked files, their preview object
+     URLs (revoked on replace / reset) and tag chips. */
   var S = {};
-  function st(sec){ return (S[sec] = S[sec] || {tags:[], files:{}}); }
+  function st(sec){
+    var s = (S[sec] = S[sec] || {tags:[], files:{}, urls:{}});
+    if(!s.urls) s.urls = {};
+    return s;
+  }
 
   var ORDER = ['artwork','resources','blog','marketplace','jobs'];
   var TAB_LABEL = {artwork:'Artwork', resources:'Resources', blog:'Blog', marketplace:'Marketplace', jobs:'Jobs'};
   var TAB_ICO   = {artwork:'artworks', resources:'resources', blog:'blog', marketplace:'marketplace', jobs:'jobs'};
   var upSec = 'artwork';
 
+  /* The same glyphs the gallery rail and the upload tabs carry, so a
+     Blog dropzone shows the Blog mark and a Marketplace dropzone the
+     Marketplace one — one icon per section across the whole site.
+     Kept as literals rather than read out of the tab markup: the
+     forms are built before the gallery rail is guaranteed to exist. */
+  var SEC_SVG = {
+    artworks:    '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>',
+    resources:   '<path d="M12 7c-1.8-1.3-4-2-6.5-2H3v13h2.5c2.5 0 4.7.7 6.5 2 1.8-1.3 4-2 6.5-2H21V5h-2.5C16 5 13.8 5.7 12 7z"/><path d="M12 7v13"/>',
+    blog:        '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    marketplace: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+    jobs:        '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'
+  };
+  function secIco(sec, cls){
+    var k = TAB_ICO[sec] || 'artworks';
+    return '<span class="fgSecIco fgSecIco--'+k+(cls ? ' '+cls : '')+'" aria-hidden="true">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" '+
+      'stroke-linejoin="round">'+SEC_SVG[k]+'</svg></span>';
+  }
+
   function buildTabs(){
     var host = document.getElementById('upSecTabs');
     if(!host || host.childNodes.length) return;
     host.innerHTML = ORDER.map(function(s){
-      var ico = '<span class="fgSecIco fgSecIco--'+TAB_ICO[s]+'" aria-hidden="true">'+
-        (document.querySelector('.fgSecIco--'+TAB_ICO[s]+' svg') ?
-          document.querySelector('.fgSecIco--'+TAB_ICO[s]+' svg').outerHTML : '')+'</span>';
+      var ico = secIco(s);
       return '<button class="upSecBtn'+(s==='artwork'?' active':'')+'" id="upSecBtn-'+s+
         '" role="tab" aria-selected="'+(s==='artwork')+'" onclick="upSwitchSection(\''+s+'\')">'+
         ico+'<span>'+TAB_LABEL[s]+'</span></button>';
@@ -385,6 +407,7 @@
     if(h) h.textContent = FORMS[sec].title;
     if(p) p.textContent = FORMS[sec].sub;
     renderTags(sec);
+    dzPaintFiles(sec);
     dzSchReset();
     dzDraftStrip(sec);
     dzSchedStrip(sec);
@@ -560,11 +583,33 @@
         '<input class="upTagInput" id="'+id+'" maxlength="20" placeholder="Add up to 10 tags…" '+
         'onkeydown="dzTagKey(event,\''+sec+'\')"></div>'+hint+'</div>';
     } else if(fd.t === 'file' || fd.t === 'image'){
-      var acc = fd.accept ? fd.accept : (fd.t === 'image' ? 'image/*' : '');
-      return '<div class="upField">'+lbl+
-        '<input class="upIn" id="'+id+'" type="file" accept="'+esc(acc)+'" '+
-        'onchange="dzPick(\''+sec+'\',\''+fd.k+'\',this)">'+
-        '<div class="dzFileName" id="'+id+'_nm"></div>'+hint+'</div>';
+      /* Dropzone instead of the browser's bare "Choose file" control —
+         the same component the artwork page uses (drag target, one
+         clear action, the picked file shown back), wearing this
+         section's icon. The <input> stays a real file input covering
+         the card, so click / keyboard / drop all reach it. */
+      var acc   = fd.accept ? fd.accept : (fd.t === 'image' ? 'image/*' : '');
+      var isImg = fd.t === 'image';
+      var args  = '\''+sec+'\',\''+fd.k+'\'';
+      return '<div class="upField dzFileField">'+lbl+
+        '<div class="dzFileZone" id="'+id+'_z"'+
+          ' ondragenter="dzDragOn(event,\''+id+'\')" ondragover="dzDragOn(event,\''+id+'\')"'+
+          ' ondragleave="dzDragOff(event,\''+id+'\')" ondrop="dzDropFile(event,'+args+')">'+
+          '<input class="dzFileIn" id="'+id+'" type="file" accept="'+esc(acc)+'"'+
+            ' aria-label="'+esc(fd.label)+'"'+
+            ' onclick="if(typeof pfGuestGate===\'function\'&&pfGuestGate(event))return;"'+
+            ' onchange="dzPick('+args+',this)">'+
+          '<div class="dzFileEmpty">'+
+            secIco(sec, 'dzFileIco')+
+            '<div class="dzFileCopy">'+
+              '<div class="dzFileTitle">Drag &amp; drop your '+(isImg ? 'image' : 'file')+' here</div>'+
+              '<div class="dzFileSub">or browse from your device</div>'+
+            '</div>'+
+            '<span class="dzFileBtn">'+(isImg ? 'Select image' : 'Select file')+'</span>'+
+            '<div class="dzFileTypes">'+esc(acceptLabel(acc, isImg))+'</div>'+
+          '</div>'+
+          '<div class="dzFilePicked" id="'+id+'_pk"></div>'+
+        '</div>'+hint+'</div>';
     }
     return '<div class="upField">'+lbl+body+hint+'</div>';
   }
@@ -593,13 +638,115 @@
   function dzTagDel(sec, i){ st(sec).tags.splice(i,1); renderTags(sec); }
 
   /* ── file picking ────────────────────────────────────────────── */
+  /* "image/*,.psd,.zip" → "JPG · PNG · WEBP · GIF" / "PSD · ZIP" —
+     a readable line under the button, capped so a resource field's
+     dozen extensions don't become a paragraph. */
+  function acceptLabel(acc, isImg){
+    var parts = String(acc||'').split(',').map(function(p){ return p.trim(); }).filter(Boolean);
+    var out = [], seen = {};
+    parts.forEach(function(p){
+      if(p === 'image/*'){ ['JPG','PNG','WEBP','GIF'].forEach(function(x){ if(!seen[x]){ seen[x]=1; out.push(x); } }); return; }
+      var x = p.replace(/^\./,'').replace(/^image\//,'').toUpperCase();
+      if(x === 'JPEG') x = 'JPG';
+      if(x && !seen[x]){ seen[x] = 1; out.push(x); }
+    });
+    if(!out.length) return isImg ? 'JPG · PNG · WEBP · GIF' : 'Any file type';
+    if(out.length > 7) return out.slice(0,7).join(' · ') + ' and more';
+    return out.join(' · ');
+  }
+
+  function ext(name){
+    var m = /\.([a-z0-9]{1,8})$/i.exec(String(name||''));
+    return m ? m[1].toUpperCase() : 'FILE';
+  }
+
+  /* Paints the zone's picked state: a thumbnail for images, the
+     extension for everything else, plus name, size and the two
+     actions. Empty file → back to the drop copy. */
+  function dzRenderFile(sec, key){
+    var id  = 'dz_'+sec+'_'+key,
+        z   = document.getElementById(id+'_z'),
+        box = document.getElementById(id+'_pk'),
+        s   = st(sec), f = s.files[key];
+    if(!z || !box) return;
+    if(!f){
+      z.classList.remove('dzHasFile');
+      box.innerHTML = '';
+      return;
+    }
+    var url = s.urls[key];
+    var thumb = (url && /^image\//.test(f.type||''))
+      ? '<span class="dzFileThumb"><img src="'+url+'" alt=""></span>'
+      : '<span class="dzFileThumb dzFileThumbExt">'+esc(ext(f.name))+'</span>';
+    z.classList.add('dzHasFile');
+    box.innerHTML =
+      thumb+
+      '<div class="dzFileMeta">'+
+        '<div class="dzFileNm">'+esc(f.name)+'</div>'+
+        '<div class="dzFileSz">'+esc(bytes(f.size) || '—')+' · Ready to publish</div>'+
+      '</div>'+
+      '<div class="dzFileActs">'+
+        '<button type="button" class="dzFileAct" onclick="dzFileReplace(event,\''+sec+'\',\''+key+'\')">Replace</button>'+
+        '<button type="button" class="dzFileAct dzFileActRm" onclick="dzFileClear(event,\''+sec+'\',\''+key+'\')">Remove</button>'+
+      '</div>';
+  }
+
+  /* One place that swaps the held file, so the object URL of the
+     outgoing preview is always revoked. */
+  function dzSetFile(sec, key, f){
+    var s = st(sec);
+    if(s.urls[key]){ try{ URL.revokeObjectURL(s.urls[key]); }catch(e){} s.urls[key] = null; }
+    s.files[key] = f || null;
+    if(f && /^image\//.test(f.type||'')){
+      try{ s.urls[key] = URL.createObjectURL(f); }catch(e){ s.urls[key] = null; }
+    }
+    dzRenderFile(sec, key);
+  }
+
   function dzPick(sec, key, input){
     if(typeof pfGuestGate === 'function' && pfGuestGate({preventDefault:function(){},stopPropagation:function(){}})) return;
-    var f = input.files && input.files[0];
-    var nm = document.getElementById('dz_'+sec+'_'+key+'_nm');
-    if(!f){ st(sec).files[key] = null; if(nm) nm.textContent = ''; return; }
-    st(sec).files[key] = f;
-    if(nm) nm.textContent = f.name + ' · ' + bytes(f.size);
+    dzSetFile(sec, key, input.files && input.files[0]);
+  }
+
+  function dzFileReplace(e, sec, key){
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    var el = document.getElementById('dz_'+sec+'_'+key);
+    if(el) el.click();
+  }
+
+  function dzFileClear(e, sec, key){
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    var el = document.getElementById('dz_'+sec+'_'+key);
+    if(el) el.value = '';
+    dzSetFile(sec, key, null);
+  }
+
+  /* ── drag & drop ─────────────────────────────────────────────── */
+  function dzDragOn(e, id){
+    if(e) e.preventDefault();
+    var z = document.getElementById(id+'_z');
+    if(z) z.classList.add('over');
+  }
+  function dzDragOff(e, id){
+    if(e) e.preventDefault();
+    var z = document.getElementById(id+'_z');
+    if(z) z.classList.remove('over');
+  }
+  function dzDropFile(e, sec, key){
+    if(e) e.preventDefault();
+    dzDragOff(e, 'dz_'+sec+'_'+key);
+    if(typeof pfGuestGate === 'function' && pfGuestGate({preventDefault:function(){},stopPropagation:function(){}})) return;
+    var f = e && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if(!f) return;
+    /* An image field takes images only — dropping a ZIP on the
+       preview slot is a mistake, not an instruction. */
+    var el = document.getElementById('dz_'+sec+'_'+key);
+    var acc = el ? String(el.getAttribute('accept')||'') : '';
+    if(acc.indexOf('image/') === 0 && !/^image\//.test(f.type||'')){
+      showToast('That field takes an image');
+      return;
+    }
+    dzSetFile(sec, key, f);
   }
 
   function val(sec, k){
@@ -609,8 +756,21 @@
     return String(el.value||'').trim();
   }
 
+  /* Re-draws every file field from the held state — the form is
+     rebuilt by innerHTML on each tab switch, so the picked cards have
+     to be painted back or a chosen file would look unchosen. */
+  function dzPaintFiles(sec){
+    (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
+      if(fd.t === 'file' || fd.t === 'image') dzRenderFile(sec, fd.k);
+    });
+  }
+
   function dzResetForm(sec){
-    S[sec] = {tags:[], files:{}};
+    var old = S[sec];
+    if(old && old.urls) Object.keys(old.urls).forEach(function(k){
+      if(old.urls[k]){ try{ URL.revokeObjectURL(old.urls[k]); }catch(e){} }
+    });
+    S[sec] = {tags:[], files:{}, urls:{}};
     var box = document.getElementById('upSecForms');
     if(box) box.innerHTML = buildForm(sec);
     renderTags(sec);
@@ -1184,6 +1344,11 @@
   window.dzTagKey        = dzTagKey;
   window.dzTagDel        = dzTagDel;
   window.dzPick          = dzPick;
+  window.dzFileReplace   = dzFileReplace;
+  window.dzFileClear     = dzFileClear;
+  window.dzDragOn        = dzDragOn;
+  window.dzDragOff       = dzDragOff;
+  window.dzDropFile      = dzDropFile;
   window.dzSaveDraft     = dzSaveDraft;
   window.dzResumeDraft   = dzResumeDraft;
   window.dzDeleteDraft   = dzDeleteDraft;

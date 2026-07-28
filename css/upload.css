@@ -6,8 +6,10 @@
     .upPopBox{background:var(--sur);border:1px solid rgba(var(--pg-rgb),.28);border-radius:16px;width:100%;max-width:960px;max-height:min(90vh,780px);max-height:min(90dvh,780px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);}
     .upPopX{background:rgba(var(--pg-rgb),.06);border:1px solid rgba(var(--pg-rgb),.1);color:rgb(var(--tx2-rgb));width:32px;height:32px;border-radius:8px;cursor:pointer;flex-shrink:0;font-size:.85rem;line-height:1;transition:background .2s,color .2s;}
     .upPopX:hover{background:rgba(var(--pg-rgb),.2);color:var(--tx);}
+    /* SINGLE COLUMN at every width — form first, sidebar stacked
+       under it. The old ≥860px "form | sidebar" split is gone on
+       purpose: the page reads as one continuous flow now. */
     .upPopBody{overflow-y:auto;padding:1.3rem;display:grid;grid-template-columns:1fr;gap:1.3rem;}
-    @media(min-width:860px){.upPopBody{grid-template-columns:1.7fr 1fr;align-items:start;}}
     /* Form actions — inline at the end of the fields column (no
        footer bar, no Cancel: the page header's ← is the exit).
        Upload takes the remaining width so it reads as primary;
@@ -53,23 +55,24 @@
       display:block;
     }
     /* Body — .subPgBdy metrics without the class (see HTML comment):
-       1400px cap keeps ultrawide from stretching edge-to-edge, the
-       padding ladder matches the other pages' breakpoints, and the
-       bottom padding clears the floating nav. */
-    #pfUpMod .upPgBdy{padding:3.5rem 2.5rem 7.5rem;max-width:1400px;margin:0 auto;box-sizing:border-box;}
+       the padding ladder matches the other pages' breakpoints, and
+       the bottom padding clears the floating nav. The page is a
+       SINGLE column now, so the cap is 900px (not the usual 1400px)
+       — a lone form column stretched across an ultrawide screen
+       gives unreadably long inputs. */
+    #pfUpMod .upPgBdy{padding:3.5rem 2.5rem 7.5rem;max-width:900px;margin:0 auto;box-sizing:border-box;}
     @media(max-width:1200px){#pfUpMod .upPgBdy{padding:3rem 2rem 7rem;}}
     @media(max-width:900px){#pfUpMod .upPgBdy{padding:2.5rem 1.8rem 7rem;}}
     @media(max-width:640px){#pfUpMod .upPgBdy{padding:2rem 1.2rem 6.5rem;}}
     @media(max-width:420px){#pfUpMod .upPgBdy{padding:1.8rem 1rem 6rem;}}
     #pfUpMod .upPopBody{overflow:visible;padding:0;}
-    /* Column plan — mobile: everything stacks. ≥860px: form + tips
-       sidebar (base .upPopBody rule). ≥1280px: the form gets more
-       of the width. ≥1100px: the form itself splits into media |
-       fields so big desktops fill horizontally instead of piling
-       one narrow column. */
-    @media(min-width:1280px){#pfUpMod .upPopBody{grid-template-columns:2.4fr 1fr;gap:2rem;}}
-    #pfUpMod .upMain{display:grid;grid-template-columns:1fr;gap:0 1.6rem;align-items:start;}
-    @media(min-width:1100px){#pfUpMod .upMain{grid-template-columns:1fr 1.15fr;}}
+    /* Column plan — ONE column, every screen size. Desktop used to
+       show three side-by-side columns (media | fields | sidebar);
+       now media, fields and the sidebar cards all sit in a single
+       stack, so the page reads top-to-bottom the same way on phone
+       and desktop. The .upPgBdy cap above keeps that single column
+       a readable width instead of stretching to 1400px. */
+    #pfUpMod .upMain{display:grid;grid-template-columns:1fr;gap:0;align-items:start;}
     /* ── Drafts — sidebar card sitting above Upload Guidelines.
        The rail scrolls horizontally so it stays tidy inside the
        narrow sidebar column, and wraps to a 2-up grid on mobile
@@ -160,8 +163,12 @@
       min-width:0;max-width:100%;
       padding-bottom:.45rem;scrollbar-width:thin;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
     }
-    @media(min-width:641px){.upDraftRow{--slots:3;}}   /* tablet / small desktop */
-    @media(min-width:1280px){.upDraftRow{--slots:4;}}  /* desktop */
+    /* The rail is now as wide as the form column (single-column
+       page), so 4 slots — the number both pages pad their strips to
+       — fit well before 1280px. Never more than 4, or the rail ends
+       in dead space whenever the strips are full. */
+    @media(min-width:641px){.upDraftRow{--slots:3;}}   /* tablet */
+    @media(min-width:860px){.upDraftRow{--slots:4;}}   /* desktop */
     /* Flex/grid children default to min-width:auto, which is what let
        the fixed-width rail blow out the layout. Pin them to 0 so only
        the rail itself scrolls — never the page. */
@@ -181,10 +188,9 @@
     /* Delete moved to the top-LEFT so the red mark owns the right */
     .upDraftX{position:absolute;top:5px;left:5px;z-index:2;width:22px;height:22px;border-radius:6px;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:.7rem;line-height:1;cursor:pointer;transition:background .2s;}
     .upDraftX:hover{background:var(--danger-strong,#D63A3F);}
-    @media(min-width:860px){
-      /* Sidebar cards track the sticky header on tall desktop pages */
-      #pfUpMod .upSide{position:sticky;top:calc(3.4rem + 1rem);} /* clears .pfPageHdr */
-    }
+    /* The guidance cards stack under the form (single column), so
+       they scroll with it — sticky would pin them over the form. */
+    #pfUpMod .upSide{display:flex;flex-direction:column;gap:1.3rem;}
 
     .upDz{border:2px dashed rgba(var(--pg-rgb),.35);border-radius:12px;padding:2rem 1.1rem;text-align:center;cursor:pointer;position:relative;transition:border-color .25s,background .25s;background:rgba(var(--pg-rgb),.035);margin-bottom:1rem;}
     .upDz.over,.upDz:hover{border-color:var(--pg);background:rgba(var(--pg-rgb),.08);}

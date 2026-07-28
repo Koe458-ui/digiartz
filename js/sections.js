@@ -431,8 +431,22 @@
     }
   };
 
-  function dzGhostCard(){ return '<div class="dzPCard dzPGhost" aria-hidden="true"></div>'; }
+  /* Ghost slots — identical to the artwork rail's (js/drafts.js
+     updrGhost / uschGhost) so the two pages' strips are the same
+     component: ✦ + a red "7d" for drafts, ⏱ + a violet "--" for
+     scheduled. */
+  function dzGhostCard(){
+    return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
+      '<span class="upDraftGhostIn">✦</span>'+
+      '<span class="upDraftExp">7d</span></div>';
+  }
+  function dzSchedGhostCard(){
+    return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
+      '<span class="upDraftGhostIn">⏱</span>'+
+      '<span class="upDraftExp upSchedMark">--</span></div>';
+  }
   function dzGhost4(){ return dzGhostCard()+dzGhostCard()+dzGhostCard()+dzGhostCard(); }
+  function dzSchedGhost4(){ return dzSchedGhostCard()+dzSchedGhostCard()+dzSchedGhostCard()+dzSchedGhostCard(); }
 
   /* Section-scoped schedule picker markup. Only one section form is
      mounted at a time, so fixed dzSched* ids are safe. Reuses every
@@ -489,16 +503,18 @@
         '</div>'+
         '<p class="dzHint" style="margin-top:.9rem">Posts are reviewed before they appear publicly.</p>'+
       '</div></div>'+
+      /* Same two cards, same order, same copy as the artwork page's
+         sidebar (index.html #upSchedSec / #upDraftSec). */
       '<aside class="dzUpSide">'+
         '<div class="upSideCard">'+
           '<div class="upDraftTitle">SCHEDULED</div>'+
           '<p class="upDraftNote">Publishes automatically at the set time</p>'+
-          '<div class="dzPRow" id="dzSchedRow-'+sec+'">'+dzGhost4()+'</div>'+
+          '<div class="upDraftRow" id="dzSchedRow-'+sec+'">'+dzSchedGhost4()+'</div>'+
         '</div>'+
         '<div class="upSideCard">'+
           '<div class="upDraftTitle">SAVED DRAFTS</div>'+
           '<p class="upDraftNote">Saved on this device · auto-deleted after 7 days</p>'+
-          '<div class="dzPRow" id="dzDraftRow-'+sec+'">'+dzGhost4()+'</div>'+
+          '<div class="upDraftRow" id="dzDraftRow-'+sec+'">'+dzGhost4()+'</div>'+
         '</div>'+
         '<div class="upSideCard"><h3>Upload Guidelines</h3><ul class="upGuideList">'+guideLis+'</ul></div>'+
         '<div class="upSideCard"><h3>Tips for better visibility</h3><ul class="upTipList">'+tipLis+'</ul></div>'+
@@ -779,33 +795,53 @@
     var h=Math.floor(m/60); if(h<24) return h+'h ago';
     return Math.floor(h/24)+'d ago';
   }
-  function dzLeft(iso){
-    var t=new Date(iso).getTime()-Date.now();
-    if(t<=0) return 'publishing…';
-    var m=Math.floor(t/60000); if(m<60) return 'in '+m+'m';
-    var h=Math.floor(m/60); if(h<24) return 'in '+h+'h';
-    return 'in '+Math.floor(h/24)+'d';
+  /* Whole days left before the 7-day auto-delete — the same red
+     corner mark the artwork drafts carry. */
+  function dzDaysLeft(savedAt){
+    return Math.max(1, Math.ceil((savedAt + 7*864e5 - Date.now())/864e5));
   }
+  /* Short countdown for the scheduled tile's corner mark, matching
+     uschLeft() in js/drafts.js: 45m / 6h / 3d. */
+  function dzMark(iso){
+    var t=new Date(iso).getTime()-Date.now();
+    if(t<=0) return 'now';
+    var m=Math.round(t/60000); if(m<60) return m+'m';
+    var h=Math.round(m/60);    if(h<24) return h+'h';
+    return Math.round(h/24)+'d';
+  }
+  /* Both cards use the artwork rail's tile shell (.upDraftCard, with
+     the top-left ✕ and the corner mark). Section posts have no
+     thumbnail, so .dzPIn fills the square with text instead. */
   function dzDraftCard(d){
     var ex=dzExcerpt(d.data||{});
     var sched=d.data && d.data.__sched;
-    return '<div class="dzPCard" onclick="dzResumeDraft(\''+d.id+'\')" role="button" tabindex="0">'+
-      '<div class="dzPTop"><span class="dzPBadge draft">Draft</span>'+
-        '<button class="dzPDel" onclick="event.stopPropagation();dzDeleteDraft(\''+d.id+'\')" aria-label="Delete draft">✕</button></div>'+
-      '<div class="dzPTitle">'+esc(d.title||'Untitled')+'</div>'+
-      (ex ? '<div class="dzPExc">'+esc(ex)+'</div>' : '')+
-      '<div class="dzPMeta"><span class="dzPKind">'+esc(SEC[d.sec]?SEC[d.sec].noun:d.sec)+'</span>'+
-        '<span>'+(sched ? '⏱ '+dzFmtWhen(sched) : dzWhenAgo(d.savedAt))+'</span></div>'+
+    var title=d.title||'Untitled';
+    return '<div class="upDraftCard dzPCard" onclick="dzResumeDraft(\''+d.id+'\')" role="button" tabindex="0" '+
+        'title="'+esc(title)+'" aria-label="Resume draft: '+esc(title)+'">'+
+      '<button type="button" class="upDraftX" onclick="event.stopPropagation();dzDeleteDraft(\''+d.id+'\')" aria-label="Delete draft">✕</button>'+
+      '<span class="upDraftExp">'+dzDaysLeft(d.savedAt)+'d</span>'+
+      '<div class="dzPIn">'+
+        '<div class="dzPTitle">'+esc(title)+'</div>'+
+        (ex ? '<div class="dzPExc">'+esc(ex)+'</div>' : '')+
+        '<div class="dzPMeta"><span class="dzPKind">'+esc(SEC[d.sec]?SEC[d.sec].noun:d.sec)+'</span>'+
+          '<span>'+(sched ? '⏱ '+esc(dzFmtWhen(sched)) : dzWhenAgo(d.savedAt))+'</span></div>'+
+      '</div>'+
     '</div>';
   }
   function dzSchedCard(sec, r){
     var t=r.payload||{}, err=r.publish_error;
-    return '<div class="dzPCard dzPSched">'+
-      '<div class="dzPTop"><span class="dzPBadge '+(err?'err':'sched')+'">'+(err?'Failed':'Scheduled')+'</span>'+
-        '<button class="dzPDel" onclick="dzCancelSched(\''+r.id+'\',\''+sec+'\')" aria-label="Cancel schedule">✕</button></div>'+
-      '<div class="dzPTitle">'+esc(t.title||'Untitled')+'</div>'+
-      '<div class="dzPMeta"><span class="dzPKind">'+esc(SEC[sec]?SEC[sec].noun:sec)+'</span>'+
-        '<span>'+(err ? esc(err) : dzLeft(r.publish_at)+' · '+dzFmtWhen(r.publish_at))+'</span></div>'+
+    var title=t.title||'Untitled';
+    var tip=title+' · '+(err ? err : dzFmtWhen(r.publish_at));
+    return '<div class="upDraftCard dzPCard dzPSched'+(err?' upSchedBad':'')+'" '+
+        'title="'+esc(tip)+'" aria-label="'+(err?'Failed: ':'Scheduled: ')+esc(title)+'">'+
+      '<button type="button" class="upDraftX" onclick="dzCancelSched(\''+r.id+'\',\''+sec+'\')" aria-label="'+(err?'Dismiss':'Cancel schedule')+'">✕</button>'+
+      '<span class="upDraftExp'+(err?'':' upSchedMark')+'">'+(err?'!':dzMark(r.publish_at))+'</span>'+
+      '<div class="dzPIn">'+
+        '<div class="dzPTitle">'+esc(title)+'</div>'+
+        '<div class="dzPMeta"><span class="dzPKind">'+esc(SEC[sec]?SEC[sec].noun:sec)+'</span>'+
+          (err ? '<span class="dzPErr">'+esc(err)+'</span>'
+               : '<span>'+esc(dzFmtWhen(r.publish_at))+'</span>')+'</div>'+
+      '</div>'+
     '</div>';
   }
   function dzDraftStrip(sec){
@@ -822,7 +858,7 @@
   }
   async function dzSchedStrip(sec){
     var row=document.getElementById('dzSchedRow-'+sec); if(!row) return;
-    if(!sb || !window.currentUser){ row.innerHTML=dzGhost4(); return; }
+    if(!sb || !window.currentUser){ row.innerHTML=dzSchedGhost4(); return; }
     try{
       var res=await sb.from('scheduled_sections')
         .select('id,payload,publish_at,publish_error')
@@ -830,9 +866,9 @@
         .order('publish_at', {ascending:true});
       var rows=(res && res.data) || [];
       var html=rows.map(function(r){ return dzSchedCard(sec, r); }).join('');
-      for(var i=rows.length;i<4;i++) html+=dzGhostCard();
+      for(var i=rows.length;i<4;i++) html+=dzSchedGhostCard();
       row.innerHTML=html;
-    }catch(e){ row.innerHTML=dzGhost4(); }
+    }catch(e){ row.innerHTML=dzSchedGhost4(); }
   }
   async function dzCancelSched(id, sec){
     if(!sb) return;

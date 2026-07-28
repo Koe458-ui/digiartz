@@ -10,14 +10,14 @@
        (switcher UI, live system tracking) lives next to #themePage. -->
   <script>
   (function(){
-    var K='koeTheme',V={dark:1,graydark:1,darkviolet:1,light:1,system:1},p=null;
+    var K='koeTheme',V={dark:1,graydark:1,light:1,system:1},p=null;
     try{p=localStorage.getItem(K);}catch(e){}
-    if(!V[p])p='dark'; /* default theme — set to 'darkviolet' to restore the legacy first-load look */
+    if(!V[p])p='dark'; /* default theme */
     var l=(p==='system')?((window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'):p;
     var r=document.documentElement;
     r.setAttribute('data-theme-pref',p);
     r.setAttribute('data-theme',l);
-    var C={darkviolet:'#08080D',dark:'#0A0A0E',graydark:'#131317',light:'#F6F6F9'};
+    var C={dark:'#0A0A0E',graydark:'#131317',light:'#F6F6F9'};
     var m=document.querySelector('meta[name="theme-color"]');
     if(m)m.setAttribute('content',C[l]||C.dark);
     var s=document.querySelector('meta[name="color-scheme"]');
@@ -870,7 +870,7 @@
        Opened from the profile ⋮ menu (openMyWorkPage). Lets the
        signed-in owner edit or delete their OWN artworks + comics
        — never anyone else's. Reuses the #admPage sliding-panel/
-       dark-violet/.admCard visual language with Edit/Delete actions.
+       dark/.admCard visual language with Edit/Delete actions.
        ├─ Tabs (.pfTabs) — Artwork / Comic
        │   ├─ Artwork → #mwArtGrid  (mwRenderArt)
        ========================================================= -->
@@ -969,7 +969,7 @@
           strip + the exact reason + "nothing was published /
           any transferred file was removed" note.
        Card + head reuse .legalModal/.lmHead so every theme
-       (Dark Violet / Dark / Gray Dark / Light / System) styles
+       (Dark / Gray Dark / Light / System) styles
        it natively. Body content injected by upqRenderModal().
        ========================================================= -->
   <div id="upqBackdrop" role="dialog" aria-modal="true" aria-label="Upload status" onclick="if(event.target===this)upqCloseModal()">
@@ -2456,7 +2456,7 @@
 
   <!-- =========================================================
        ARTWORK VIEWER MODAL — two-pane layout (image + detail
-       sidebar), styled to match the hero/community dark-violet
+       sidebar), styled to match the hero/community dark
        palette. Box itself (.avBox) is a fixed size; only the
        sidebar (.avSideScroll) scrolls, and the image can be
        zoomed/panned in place without the box ever resizing.
@@ -3127,25 +3127,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
         <span class="thmMeta">
           <span class="thmName">Gray Dark</span>
           <span class="thmDesc">A softer dark gray theme for a balanced look.</span>
-        </span>
-      </button>
-      <button class="thmCard" data-theme="darkviolet" role="radio" aria-checked="false" type="button">
-        <span class="thmCheck" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7-8"/></svg></span>
-        <span class="thmPrev" aria-hidden="true">
-          <span class="thmPrevTop"><span class="thmPrevLogo"></span></span>
-          <span class="thmPrevBody">
-            <span class="thmPrevSide"><span class="thmLn"></span><span class="thmLn thmLn--s"></span><span class="thmLn thmLn--ac"></span><span class="thmLn thmLn--s"></span></span>
-            <span class="thmPrevMain">
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-            </span>
-          </span>
-        </span>
-        <span class="thmMeta">
-          <span class="thmName">Dark Violet</span>
-          <span class="thmDesc">A creative violet theme with a modern touch.</span>
         </span>
       </button>
       <button class="thmCard" data-theme="light" role="radio" aria-checked="false" type="button">

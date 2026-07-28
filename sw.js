@@ -26,6 +26,10 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v58 — upload page side margin 8% → 10%. Laptop and up (PC, desktop,
+       ultrawide, TV) now leave 10% of the viewport empty on each side
+       of the single column. css/upload.css only.
+
    v57 — upload page is one column. The upload page rendered as three
        side-by-side columns on desktop (media | fields | sidebar) and
        paired Category with Tags; everything now stacks one item per
@@ -321,7 +325,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v57';
+const CACHE_VERSION = 'v58';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

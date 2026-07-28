@@ -1,4 +1,4 @@
-/* ── panels.css · ads panel, dark-violet overrides, subscription page ── */
+/* ── panels.css · ads panel, dark-theme overrides, subscription page ── */
 /* AD SHIMMER KEYFRAME Shared by .apCard (Sponsor Panel) */
 @keyframes adShimmer {
   0%   { background-position:  200% 0; }
@@ -275,7 +275,7 @@
   text-transform: uppercase;
 }
 
-/* Dark violet theme — element-specific overrides beyond token scope */
+/* Dark theme — element-specific overrides beyond token scope */
 body{background:var(--bg);}
 
 /* Neon glow + shadow treatment outside the hero */
@@ -295,7 +295,7 @@ body{background:var(--bg);}
 #artModal::before{background:color-mix(in srgb,var(--bg) 85%,transparent)!important;}
 .gOv{background:color-mix(in srgb,var(--bg) 65%,transparent)!important;}
 
-/* Cards / containers get a dark violet surface with a soft border */
+/* Cards / containers get a dark surface with a soft border */
 .gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{
   background:var(--sur);border-color:var(--bdr);
 }
@@ -1485,11 +1485,11 @@ body{background:var(--bg);}
 
 
 /* ══════════════════════════════════════════════════════════════
-   DARK VIOLET FIX — remaining white-theme leftovers
+   DARK THEME FIX — remaining white-theme leftovers
    Covers: Legal modal (Privacy/Terms/Cookie/Refund policy),
    the .mBtn.sec buttons.
    These sit outside #fg's scope so they never picked up the
-   dark-violet tokens — they were still using the old white
+   dark-theme tokens — they were still using the old white
    :root defaults. Re-declaring the tokens locally (same pattern
    as #fg) makes every child that already styles
    itself with var(--bg)/var(--sur)/var(--tx)/etc. repaint dark.

@@ -2,7 +2,7 @@
 
 
     /* ══ Design tokens ══════════════════════════════════════
-       :root  = Dark Violet — the site's original theme, kept
+       :root  = base palette — the site's original dark tokens, kept
                 byte-for-byte identical in appearance.
        html[data-theme="dark"|"graydark"|"light"] re-map the same
        tokens; "system" resolves to dark/light in the boot script

@@ -62,7 +62,7 @@
 .avCmBar{display:flex;gap:.5rem;align-items:center;}
 .avCmIn{flex:1;min-width:0;height:42px;border-radius:999px;border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);padding:0 1rem;font-size:.88rem;outline:none;}
 .avCmIn:focus{border-color:var(--pg);}
-.avCmSend{width:42px;height:42px;border-radius:50%;border:0;background:var(--pg);color:#fff;font-size:1rem;cursor:pointer;flex-shrink:0;}
+.avCmSend{width:42px;height:42px;border-radius:50%;border:0;background:var(--pg);color:var(--text-on-accent);font-size:1rem;cursor:pointer;flex-shrink:0;}
 .avActWide{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;min-height:46px;border-radius:10px;border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.12em;cursor:pointer;text-decoration:none;box-sizing:border-box;}
 .avActWide:hover{border-color:var(--pg);color:var(--ps);}
 

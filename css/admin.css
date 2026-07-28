@@ -3,7 +3,7 @@
        ADMIN PANEL PAGE (#admPage)
        Dev-only panel: hero slides editor + broadcast notifications
        + open reports. Nothing else. Same sliding full-page /
-       dark-violet language as #profilePage; reuses .subPgHdr /
+       dark UI language as #profilePage; reuses .subPgHdr /
        .subPgTitle / .subPgX / .pfTabs / .pfTab / .pfPanel /
        .pfGrid / .pfGridArt / .pfEmpty as-is.
        ========================================================= */
@@ -105,7 +105,7 @@
        EDIT MY WORK PAGE (#pfMyWorkPage)
        Opened from the profile ⋮ menu — lets the signed-in owner
        edit/delete their OWN artworks + comics, any status. Reuses
-       the exact same sliding full-page / dark-violet language and
+       the exact same sliding full-page / dark UI language and
        card shell as #admPage (.subPgHdr/.pfTabs/.pfPanel/.admBdy/
        .admCard) with Edit/Delete actions. ── */
     #pfMyWorkPage{
@@ -138,7 +138,7 @@
        Opened by tapping the bell (#hNotifBtn). Read-only feed —
        admin broadcasts (notifications.user_id IS NULL) plus any
        personal notices addressed to the signed-in user.
-       Same sliding full-page / dark-violet language as #admPage.
+       Same sliding full-page / dark UI language as #admPage.
        No edit or delete control exists anywhere on this page —
        the notifications table is never written to by a normal
        user; only per-user read-state (notification_reads) is.

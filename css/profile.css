@@ -14,7 +14,7 @@
     /* Dark, banner-led theme — scoped to the profile page only,
        the rest of the site stays on the white theme. */
     /* Albums are a profile feature reached from the profile page and
-       from Settings, so they inherit the same dark-violet palette
+       from Settings, so they inherit the same dark palette
        rather than the plain page tokens used by Bookmarks / Friends. */
     #profilePage,#profilePage *,#setPage,#setPage *,
     #albPage,#albPage *,#albViewPage,#albViewPage *{

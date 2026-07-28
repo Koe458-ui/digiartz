@@ -325,14 +325,19 @@
   font-family:var(--fb);font-size:clamp(.85rem,2.4vw,1rem);
   color:var(--txd);margin-top:.55rem;
 }
-/* ── Card grid — fluid, wraps 5→3→2→1, never overflows at 320px ── */
+/* ── Card grid — fluid, wraps 4→2→1, never overflows at 320px ── */
 .thmGrid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(min(100%,196px),1fr));
   gap:clamp(.8rem,1.6vw,1.15rem);
 }
-/* Keep the row from stretching to comic widths on ultra-wide */
-@media(min-width:1500px){.thmGrid{grid-template-columns:repeat(5,1fr);}}
+/* Desktop and up (desktop / laptop / TV / ultra-wide): all four themes
+   in a single full-width row, with 8% empty breathing room on each side.
+   Below 1024px the fluid auto-fit above still wraps 4→2→1 for tablet/phone. */
+@media(min-width:1024px){
+  .thmBdy{max-width:none;padding-left:8%;padding-right:8%;}
+  .thmGrid{grid-template-columns:repeat(4,1fr);}
+}
 .thmCard{
   position:relative;display:flex;flex-direction:column;gap:0;
   text-align:left;cursor:pointer;
@@ -376,7 +381,6 @@
      theme regardless of which theme is currently active). ── */
 .thmCard[data-theme="dark"]      {--p-bg:#0A0A0E;--p-sur:#1A1A21;--p-ln:#2C2C36;--p-ac:#F5F5F7;}
 .thmCard[data-theme="graydark"]  {--p-bg:#17171C;--p-sur:#23232B;--p-ln:#34343E;--p-ac:#F4F4F6;}
-.thmCard[data-theme="darkviolet"]{--p-bg:#0B0A14;--p-sur:rgb(25,25,39);--p-ln:#2E2E46;--p-ac:#8B5CF6;}
 .thmCard[data-theme="light"]     {--p-bg:#FFFFFF;--p-sur:#EDECF3;--p-ln:#DCDAE8;--p-ac:#17151F;}
 .thmCard[data-theme="system"]    {--p-bg:#0A0A0E;--p-sur:#1A1A21;--p-ln:#2C2C36;--p-ac:#F5F5F7;
                                   --p-bg2:#FFFFFF;--p-sur2:#EDECF3;--p-ln2:#DCDAE8;}

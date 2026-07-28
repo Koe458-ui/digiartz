@@ -35,7 +35,7 @@
     }
     #pfUpMod::before{display:none;}
     #pfUpMod.open{visibility:visible;pointer-events:auto;transform:translateX(0);transition-delay:0s,0s;}
-    /* Same dark-violet scoping as #profilePage / #admPage — this is
+    /* Same dark scoping as #profilePage / #admPage — this is
        what makes the page "one of the nav pages" rather than a
        restyled popup. Crop modals are DOM siblings, so they keep
        their own styling. */
@@ -120,7 +120,7 @@
     .upSchedDay{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:7px;background:none;color:var(--tx);font-size:.74rem;cursor:pointer;font-family:var(--fb);transition:background .15s,border-color .15s;}
     .upSchedDay:hover:not(:disabled){background:rgba(var(--pg-rgb),.14);}
     .upSchedDay:disabled{color:rgba(var(--tx2-rgb),.22);cursor:default;}
-    .upSchedDay.sel{background:var(--pg);color:#fff;border-color:var(--pg);}
+    .upSchedDay.sel{background:var(--pg);color:var(--text-on-accent);border-color:var(--pg);}
     .upSchedDay.today:not(.sel){border-color:rgba(var(--pg-rgb),.45);}
     .upSchedDay.pad{visibility:hidden;}
     .upSchedTime{display:flex;align-items:center;gap:.4rem;margin-top:.6rem;padding-top:.6rem;border-top:1px solid rgba(var(--pg-rgb),.1);}
@@ -302,8 +302,8 @@
        CHECKING → UPLOADING → ALMOST DONE → LIVE in the
        background — the upload popup closes immediately, so a
        second piece can be queued while the first is still
-       verifying. Every colour is a theme token, so all five
-       theme prefs (Dark Violet / Dark / Gray Dark / Light /
+       verifying. Every colour is a theme token, so all four
+       theme prefs (Dark / Gray Dark / Light /
        System) render it natively with zero extra rules.
        ========================================================= */
     .upqCard{position:relative;border-radius:12px;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);cursor:pointer;isolation:isolate;}

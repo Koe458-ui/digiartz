@@ -26,6 +26,14 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v60 — artwork dropzone matches the new picker. The artwork upload's
+       drop target now uses the same anatomy as the section forms: the
+       Artworks gradient mark instead of the ⬆ emoji tile, a "Select
+       image" action in place of "📁 Choose Files", the accepted
+       formats as a spaced caption, and the roomier padding. The extra
+       pages zone follows, keeping its per-mode emoji (📖 / 🖼).
+       Changed: index.html, css/upload.css.
+
    v59 — section upload file picker. The Resources / Blog / Marketplace
        forms used the browser's bare "Choose file" control; each file
        field is now a dropzone matching the artwork page — drag & drop,
@@ -336,7 +344,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v59';
+const CACHE_VERSION = 'v60';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

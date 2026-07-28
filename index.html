@@ -1050,11 +1050,14 @@
       <div class="upMediaCol">
       <div class="upDz" id="pfDz">
        <input accept="image/*" id="pfUpF" onclick="if(pfGuestGate(event))return;" onchange="handlePfFile(event)" type="file"/>
-       <div class="upDzIco">⬆</div>
+       <!-- The Artworks mark, the same gradient icon the gallery rail
+            and the upload tabs carry — every section's dropzone wears
+            its own, so the picker names the thing being posted. -->
+       <span class="fgSecIco fgSecIco--artworks" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span>
        <div class="upDzTitle" id="pfDzTxt">Drag &amp; drop your artwork here</div>
-       <div class="upDzSub">or click to browse files</div>
-       <div class="upDzHint">JPG, PNG, WEBP, GIF up to 20MB</div>
-       <button type="button" class="upDzBtn" tabindex="-1">📁 Choose Files</button>
+       <div class="upDzSub">or browse from your device</div>
+       <button type="button" class="upDzBtn" tabindex="-1">Select image</button>
+       <div class="upDzHint">JPG · PNG · WEBP · GIF · up to 20MB</div>
       </div>
       <div class="upPrevWrap" id="pfUpPrevWrap"><img alt="preview" class="upPrev" id="pfUpPrev"/></div>
       <!-- Re-opens the focal-point picker for the ALREADY-chosen

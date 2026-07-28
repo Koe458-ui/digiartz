@@ -26,6 +26,17 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v59 — section upload file picker. The Resources / Blog / Marketplace
+       forms used the browser's bare "Choose file" control; each file
+       field is now a dropzone matching the artwork page — drag & drop,
+       a Select image / Select file action, the accepted formats, and
+       the picked file shown back with a thumbnail (or its extension),
+       size, Replace and Remove. The tile carries that section's own
+       gradient icon, the same mark the gallery rail and upload tabs
+       use. Roomier padding and field spacing throughout the picker.
+       Changed: js/sections.js, css/hero.css. Both already ship in the
+       shell, so this bump is what gets them to existing clients.
+
    v58 — upload page side margin 8% → 10%. Laptop and up (PC, desktop,
        ultrawide, TV) now leave 10% of the viewport empty on each side
        of the single column. css/upload.css only.
@@ -325,7 +336,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v58';
+const CACHE_VERSION = 'v59';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

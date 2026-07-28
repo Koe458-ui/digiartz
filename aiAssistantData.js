@@ -56,7 +56,13 @@ window.ZEO_DATA = {
     { id: "account",   icon: "🔑", label: "Account & Login",        description: "Sign up, log in, passwords, sign-out.",      prompt: "What's happening with your account?" },
     { id: "profile",   icon: "👤", label: "Profile & Customizing",  description: "Avatar, banner, bio, links, username.",      prompt: "What do you want to change on your profile?" },
     { id: "upload",    icon: "🎨", label: "Uploading Art",          description: "Post art, checks, multi-image, tags.",     prompt: "What do you need help with for your artwork?" },
+    { id: "moderation",icon: "✅", label: "Upload Checks & Rejections", description: "Why a piece failed the check and how to fix it.", prompt: "What did the checker say about your upload?" },
     { id: "gallery",   icon: "🖼️", label: "Viewing & Interacting",  description: "Download, share, like, comment, report.",    prompt: "What would you like to do with an artwork?" },
+    { id: "resources", icon: "🧰", label: "Resources",              description: "Brushes, textures, fonts, 3D, templates.",     prompt: "What do you need help with in Resources?" },
+    { id: "blog",      icon: "📝", label: "Blog",                   description: "Write and read community posts.",             prompt: "What would you like to do on the Blog?" },
+    { id: "marketplace",icon:"🛍️", label: "Marketplace",            description: "Buy and sell downloads, commissions, services.", prompt: "What do you need help with in the Marketplace?" },
+    { id: "jobs",      icon: "💼", label: "Jobs",                   description: "Post a role or apply to one.",                prompt: "Are you hiring, or looking for work?" },
+    { id: "cart",      icon: "🛒", label: "Cart & Orders",          description: "Purchases, downloads and licenses.",          prompt: "What do you need from your Cart?" },
     { id: "community", icon: "💬", label: "Community & Chat",       description: "Communities, comments, and messages.",       prompt: "Which part of the community do you need help with?" },
     { id: "billing",   icon: "💎", label: "Subscriptions & Refunds",description: "Plans, payments, refunds, cancelling.",      prompt: "What are you facing with billing or your plan?" },
     { id: "policies",  icon: "⚖️", label: "Policies & Legal",       description: "Privacy, Terms, Cookies, Refund policy.",     prompt: "Which policy would you like a quick summary of?" },
@@ -395,6 +401,72 @@ A failed upload never leaves a half-published piece — storage is cleaned up au
       }
     ],
 
+    /* ── UPLOAD CHECKS & REJECTIONS ─────────── */
+    moderation: [
+      {
+        question: "Why was my upload rejected?",
+        answer:
+`Every image is auto-checked the moment you upload — that's your artwork, the cover on a Blog post, and the preview on a Resource or Marketplace listing.
+
+1. If something's off, the card tells you the exact reason (like "AI-generated preview" or "screenshot detected")
+2. Nothing gets published on a failed check — no half-posted piece is ever left behind
+3. Any file already transferred is wiped from storage automatically
+4. Fix what it flagged and upload again — there's no penalty for a rejected attempt
+
+Pick the message you saw from this topic and I'll explain it.`
+      },
+      {
+        question: "It says my image looks AI-generated",
+        answer:
+`This one depends on where you're posting:
+
+• In Artworks, AI art is welcome — there's a dedicated AI Art category, so AI-generated or AI-assisted pieces are accepted.
+• In Resources and the Marketplace, the preview has to be a real preview of the actual asset. A 3D render from Blender, Maya, Cinema4D or ZBrush counts as real — an AI-generated image does not.
+
+So if a resource or product preview was turned away as AI-generated, swap in a genuine photo or render of the asset and upload again.`
+      },
+      {
+        question: "It says photo, selfie, screenshot or document",
+        answer:
+`Artworks accepts original art only — not camera photos or captures. These get turned away:
+
+• Photos — selfies, people, pets, food, products, vehicles, buildings, landscapes, cities, streets
+• Screenshots — chat, game, app, social, or screen recordings
+• Documents — IDs, passports, licences, bank / medical / school / legal papers, receipts, bills, invoices, payslips
+• QR codes or barcodes as the main subject
+
+A painting or render OF a landscape is fine — a photograph of one isn't. Upload the artwork itself and you're set.`
+      },
+      {
+        question: "It says adult, gore or prohibited content",
+        answer:
+`Here's how the rating works:
+
+• SAFE and MATURE are both allowed — that includes artistic nudity and suggestive or swimsuit art
+• ADULT (explicit sexual content) is rejected
+• A short always-blocked list — child sexual content, bestiality, extreme gore, extremist or illegal content — is refused no matter what
+
+If a SAFE or MATURE piece got flagged by mistake, that's a rare miss — try again, and if it still won't pass, reach out at [your contact email].`
+      },
+      {
+        question: "Is fan art allowed?",
+        answer:
+`Yes. Hand-drawn, painted or digitally made art of existing anime, game, movie or cartoon characters is accepted.
+
+The only thing rejected is a direct repost of official media — unedited anime or game screencaps, official posters or movie stills, or scanned published manga pages. Make it your own and it's welcome here.`
+      },
+      {
+        question: "The check keeps failing or errored",
+        answer:
+`If you're getting an error instead of a specific reason:
+
+1. It's built to fail safe — when the checker can't get a clear answer it stops the upload rather than guess, so just try again
+2. Give it a moment if you've posted several pieces quickly (there's a short rate limit)
+3. If your merit has dropped below 80, uploads pause until it recovers (+2 a day)
+4. Still stuck after a retry? Email [your contact email] with the file details`
+      }
+    ],
+
     /* ── GALLERY / INTERACTIONS ────────────── */
     gallery: [
       {
@@ -452,6 +524,191 @@ Keep it kind and constructive — that's what the community is about.`
 3. Tell us what's wrong and submit
 
 Our team reviews reports and takes action when needed. For urgent issues, also email [your contact email].`
+      }
+    ],
+
+    /* ── RESOURCES ─────────────────────────── */
+    resources: [
+      {
+        question: "What are Resources?",
+        answer:
+`Resources are downloadable assets other creators can grab and use — brushes, brush packs, textures, patterns, seamless tiles, fonts, templates, UI kits, 3D models, icons, presets and more.
+
+Open the Resources tab in the gallery to browse them, and tap any card to see it in full.`
+      },
+      {
+        question: "How do I share a resource?",
+        answer:
+`1. Tap ➕ Upload and choose Resources
+2. Attach the resource file — ZIP, RAR, 7z, PSD, ABR, brushset, Procreate, CLIP, fonts, PDF or 3D (OBJ/FBX/BLEND), up to 200MB
+3. Add the required preview image so people can see what it is (this gets auto-checked)
+4. Fill in a title, description, category, licence and what you made it with
+5. Add tags and post
+
+The preview must show the actual asset — if it's turned away, see "Upload Checks & Rejections".`
+      },
+      {
+        question: "How do I download a resource?",
+        answer:
+`1. Tap a resource to open it
+2. Hit ⬇ Download file
+3. It opens in a new tab and saves to your device
+
+Free resources download straight away.`
+      },
+      {
+        question: "What file types can I upload?",
+        answer:
+`For the resource file: ZIP, RAR, 7z, PSD, ABR, brushset, Procreate, CLIP, TTF/OTF/WOFF2 fonts, PDF, and 3D formats (OBJ, FBX, BLEND) — up to 200MB.
+
+The preview image is separate: JPG, PNG, WEBP or GIF, up to 25MB.`
+      }
+    ],
+
+    /* ── BLOG ──────────────────────────────── */
+    blog: [
+      {
+        question: "What is the Blog?",
+        answer:
+`The Blog is where the community writes — stories, tips, studio notes, guides and updates.
+
+Open the Blog tab to read posts, and tap any one to read it in full and leave a comment.`
+      },
+      {
+        question: "How do I write a post?",
+        answer:
+`1. Tap ➕ Upload and choose Blog
+2. Add a title, and an optional cover image
+3. Write your post (at least 40 characters) and, if you like, a one-line excerpt for the list
+4. Pick a category, add tags, and publish
+
+Posts go live right away. A cover image, if you add one, is checked the same way artwork is.`
+      },
+      {
+        question: "Do I need an image for a post?",
+        answer:
+`No — the cover image is optional, so a post can be pure writing. If you do add one, it follows the normal artwork image rules.`
+      },
+      {
+        question: "How do I comment on a post?",
+        answer:
+`Open the post, scroll to the comments, then type and send. You'll need to be logged in. Keep it kind and constructive — same as everywhere on DigiArtz.`
+      }
+    ],
+
+    /* ── MARKETPLACE ───────────────────────── */
+    marketplace: [
+      {
+        question: "What is the Marketplace?",
+        answer:
+`The Marketplace is where creators sell. There are three kinds of listing:
+
+• Digital download — a file the buyer gets instantly after paying
+• Commission slot — you take on a custom piece
+• Service — any creative service you offer
+
+Open the Marketplace tab to browse everything on offer.`
+      },
+      {
+        question: "How do I buy something?",
+        answer:
+`1. Open the listing
+2. Free items — tap Download and it's yours right away
+3. Paid items — tap Buy and complete the secure checkout; the download starts the moment payment clears
+4. Commissions and services have no file — paying places the order, and the seller takes it from there
+
+Already bought it? Opening it again just re-downloads — you're never charged twice.`
+      },
+      {
+        question: "How do I sell or list a product?",
+        answer:
+`1. Tap ➕ Upload and choose Marketplace
+2. Pick the listing type — digital download, commission or service
+3. For a digital download, attach the file (up to 200MB); every listing needs a preview image
+4. Set a title, description, category, price and currency (USD, EUR, GBP, INR or JPY) — leave the price at 0 to list it free
+5. Choose a licence, add tags, and post
+
+The preview is auto-checked, so make sure it shows the real product.`
+      },
+      {
+        question: "How do payments work?",
+        answer:
+`Checkout runs through our payment partner. Your payment is verified before anything unlocks, and digital files release automatically once it clears.
+
+If a charge went through but the item didn't unlock, email [your contact email] with the details and we'll sort it out.`
+      },
+      {
+        question: "How do refunds work?",
+        answer:
+`Digital purchases are generally final — see Policies → Refund Policy for the full terms.
+
+If something genuinely went wrong — a double charge, or a file that never delivered — contact [your contact email] with your transaction details and we'll review it.`
+      }
+    ],
+
+    /* ── JOBS ──────────────────────────────── */
+    jobs: [
+      {
+        question: "What is the Jobs board?",
+        answer:
+`The Jobs tab is where studios and creators post paid work — freelance, full-time, part-time, remote, internships, contests and collabs — and where artists find it.
+
+Tap any listing to see the full role, requirements and pay.`
+      },
+      {
+        question: "How do I apply to a job?",
+        answer:
+`1. Open the listing to read the role, requirements and pay
+2. Use the apply link or apply email shown on it
+3. Follow that studio's own steps from there
+
+Every genuine posting has a way to apply — a link or an email — so you always know where to send your work.`
+      },
+      {
+        question: "How do I post a job?",
+        answer:
+`1. Tap ➕ Upload and choose Jobs
+2. Add the title, company, and a description (at least 80 characters)
+3. Set the category, employment type, and location — or tick remote and list the eligible countries
+4. Add the pay range (optional) and a closing date
+5. Give a way to apply — an apply link or an email is required — then post
+
+No image needed. Postings past their closing date hide themselves automatically.`
+      },
+      {
+        question: "Is there a fee to post a job?",
+        answer:
+`Posting a role is part of the normal upload flow — no image, no checkout. Just fill in the form and publish.
+
+Spam, MLM and pay-to-apply postings aren't allowed and get removed.`
+      }
+    ],
+
+    /* ── CART & ORDERS ─────────────────────── */
+    cart: [
+      {
+        question: "Where is my Cart?",
+        answer:
+`The Cart tab sits at the end of the gallery's section row — swipe right past Jobs to reach it. It's your place for orders, downloads and licences from the Marketplace.`
+      },
+      {
+        question: "How does the Cart work?",
+        answer:
+`DigiArtz keeps buying quick — there's no multi-item basket to fill. You buy a listing and it's yours immediately: free items download on tap, paid ones the moment checkout clears.
+
+Your Cart tab is where those purchases, downloads and licences gather.`
+      },
+      {
+        question: "Where are my purchases and downloads?",
+        answer:
+`Open a Marketplace item you've bought and it re-downloads at no charge — your ownership is remembered.
+
+The Cart tab brings orders, downloads and licences into one spot. Some of it is still rolling out, so if something isn't showing yet, your purchase is safe and you can always re-download from the listing.`
+      },
+      {
+        question: "Can I save something for later?",
+        answer:
+`To keep a piece handy, tap Bookmark on any artwork or listing — it lands in your saved collection. A dedicated "Saved for Later" list is on the way to the Cart tab.`
       }
     ],
 

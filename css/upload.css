@@ -54,13 +54,14 @@
       display:block;
     }
     /* Body — .subPgBdy metrics without the class (see HTML comment):
-       the padding ladder matches the other pages' breakpoints, and
-       the bottom padding clears the floating nav. The page is a
-       SINGLE column now, so the cap is 900px (not the usual 1400px)
-       — a lone form column stretched across an ultrawide screen
-       gives unreadably long inputs. */
-    #pfUpMod .upPgBdy{padding:3.5rem 2.5rem 7.5rem;max-width:900px;margin:0 auto;box-sizing:border-box;}
-    @media(max-width:1200px){#pfUpMod .upPgBdy{padding:3rem 2rem 7rem;}}
+       the bottom padding clears the floating nav.
+       NO width cap on this page. Big screens (PC, ultrawide, TV) get
+       an 8% empty margin down each side instead, so the single column
+       simply grows with the screen rather than stopping at a fixed
+       width. Below 900px the side gap goes back to the fixed rem
+       ladder every other page uses — 8% of a phone is a few pixels. */
+    #pfUpMod .upPgBdy{padding:3.5rem 8% 7.5rem;max-width:none;margin:0 auto;box-sizing:border-box;}
+    @media(max-width:1200px){#pfUpMod .upPgBdy{padding:3rem 8% 7rem;}}
     @media(max-width:900px){#pfUpMod .upPgBdy{padding:2.5rem 1.8rem 7rem;}}
     @media(max-width:640px){#pfUpMod .upPgBdy{padding:2rem 1.2rem 6.5rem;}}
     @media(max-width:420px){#pfUpMod .upPgBdy{padding:1.8rem 1rem 6rem;}}

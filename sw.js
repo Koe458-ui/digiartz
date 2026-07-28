@@ -26,6 +26,22 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v57 — upload page is one column. The upload page rendered as three
+       side-by-side columns on desktop (media | fields | sidebar) and
+       paired Category with Tags; everything now stacks one item per
+       line at every width, including the action buttons. No width cap
+       on the page any more — big screens get an 8% empty margin down
+       each side instead, so the column grows with the screen. The
+       section forms (Resources, Blog, Marketplace, Jobs) lose their
+       form-plus-sidebar split the same way, and their SCHEDULED /
+       SAVED DRAFTS strips are now the artwork rail itself: the same
+       scrolling .upDraftRow of square .upDraftCard tiles with the
+       top-left ✕ and the corner expiry / countdown mark, only filled
+       with text instead of a thumbnail (a section draft has no image).
+       Changed: css/upload.css, css/overrides.css, js/sections.js.
+       This bump is what gets the new CSS to clients that already have
+       the old stylesheets in the shell cache.
+
    v39 — section schedule + drafts. The section forms (Resources, Blog,
        Marketplace, Jobs) now match the artwork upload: a two-column
        layout with a sidebar (SCHEDULED strip, SAVED DRAFTS strip,
@@ -305,7 +321,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v56';
+const CACHE_VERSION = 'v57';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

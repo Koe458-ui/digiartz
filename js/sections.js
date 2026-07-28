@@ -497,9 +497,12 @@
       '<div class="dzUpForm"><div class="upMain">'+
         fields +
         dzSchedField() +
-        '<div class="upActions" style="display:flex;gap:.6rem;margin-top:1.4rem">'+
-          '<button type="button" class="upBtnPri" id="dzSubmit-'+sec+'" onclick="dzSubmit(\''+sec+'\')">Publish</button>'+
+        /* Save Draft before Publish in source order: .upActions is
+           column-reverse, so Publish ends up on top — same order the
+           artwork form's buttons come out in. */
+        '<div class="upActions">'+
           '<button type="button" class="upBtnSec" id="dzDraftBtn-'+sec+'" onclick="dzSaveDraft(\''+sec+'\')">💾 Save Draft</button>'+
+          '<button type="button" class="upBtnPri" id="dzSubmit-'+sec+'" onclick="dzSubmit(\''+sec+'\')">Publish</button>'+
         '</div>'+
         '<p class="dzHint" style="margin-top:.9rem">Posts are reviewed before they appear publicly.</p>'+
       '</div></div>'+

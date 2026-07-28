@@ -165,14 +165,21 @@
        • Zeo replies underneath on the LEFT,
        • the menu you just used locks so old buttons can't be
          re-clicked and the thread reads straight down,
-       • every step carries a Back button that rewinds the whole
-         conversation to the first greeting.
+       • every step carries a Back button that rewinds ONE level —
+         it undoes your last choice, drops that reply, and hands the
+         previous menu back to you, live again.
   ───────────────────────────────────────────────────────────── */
 
   /* The latest still-clickable controls block. When the user makes a
      choice we freeze it before echoing + replying, so the transcript
      never leaves a live duplicate menu behind. */
   var activeControls = null;
+
+  /* One frame per forward step, so Back can peel the last one off.
+     Each frame remembers where this step's DOM began (so we can strip
+     exactly what it added) and which menu was live before it (so we
+     can wake that menu back up). */
+  var navStack = [];
 
   function scrollDown() {
     requestAnimationFrame(function() { body.scrollTop = body.scrollHeight; });
@@ -184,6 +191,34 @@
     var btns = activeControls.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
     activeControls = null;
+  }
+
+  /* Move one step forward: freeze the current menu, remember it and
+     where the thread stands, echo the tap, then let Zeo reply. */
+  function advance(label, proceed) {
+    var prev = activeControls;
+    lockActiveControls();
+    navStack.push({ start: body.children.length, prev: prev });
+    userSay(label);
+    proceed();
+  }
+
+  /* Step back one level: strip everything the current step added and
+     hand the previous menu back, clickable again. At the welcome
+     screen there's nothing to undo, so it's a no-op. */
+  function goBackOneStep() {
+    if (!navStack.length) return;
+    var frame = navStack.pop();
+    while (body.children.length > frame.start) body.removeChild(body.lastChild);
+    if (frame.prev) {
+      frame.prev.classList.remove('zeoLocked');
+      var btns = frame.prev.querySelectorAll('button');
+      for (var i = 0; i < btns.length; i++) btns[i].disabled = false;
+      activeControls = frame.prev;
+    } else {
+      activeControls = null;
+    }
+    scrollDown();
   }
 
   /* ── Bubble builders ── */
@@ -223,9 +258,7 @@
       b.textContent = item.label;
       b.addEventListener('click', function() {
         if (b.disabled) return;
-        lockActiveControls();   /* freeze this menu */
-        userSay(item.label);    /* echo the tap on the right */
-        onPick(item);           /* Zeo replies below */
+        advance(item.label, function() { onPick(item); });
       });
       wrap.appendChild(b);
     });
@@ -253,23 +286,21 @@
         '</span>';
       card.addEventListener('click', function() {
         if (card.disabled) return;
-        lockActiveControls();
-        userSay(cat.label);
-        onPick(cat);
+        advance(cat.label, function() { onPick(cat); });
       });
       wrap.appendChild(card);
     });
     container.appendChild(wrap);
   }
 
-  /* Back rewinds the entire thread to the very first greeting. */
+  /* Back steps up one level — to the menu you were just on. */
   function addBack(container) {
     var b = document.createElement('button');
     b.className = 'zeoBackBtn';
-    b.innerHTML = '← Back to start';
+    b.innerHTML = '← Back';
     b.addEventListener('click', function() {
       if (b.disabled) return;
-      startWelcome();
+      goBackOneStep();
     });
     container.appendChild(b);
   }
@@ -293,6 +324,7 @@
   function startWelcome() {
     while (body.firstChild) body.removeChild(body.firstChild);
     activeControls = null;
+    navStack = [];
 
     botSay(data.welcomeMessage);
     var c = newControls();

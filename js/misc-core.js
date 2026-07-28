@@ -167,7 +167,6 @@
     rank.appendChild(nums);
     var nxt = el('div', 'xpNext');
     if (next != null) {
-      nxt.appendChild(document.createTextNode(''));
       var b = el('b', null, String(next - xp) + ' XP');
       nxt.appendChild(b);
       nxt.appendChild(document.createTextNode(' UNTIL LEVEL ' + (level + 1)));

@@ -469,7 +469,10 @@ async function cacheFirst(request, cacheName) {
     const res = await fetch(request);
     if (res && (res.type === 'opaque' || res.ok)) {
       await cache.put(request, res.clone());
-      trim(cacheName);                     /* fire-and-forget */
+      /* fire-and-forget, but never as a floating rejection: a failed
+         eviction must not surface as an unhandled promise rejection
+         inside the worker. */
+      trim(cacheName).catch(() => {});
     }
     return res;
   } catch (err) {

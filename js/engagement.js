@@ -190,8 +190,13 @@
     empty.style.display = 'none';
     if (!db() || !me()) { grid.innerHTML = ''; empty.style.display = ''; return; }
     try {
+      /* Same reasoning as FIX(A4) in loadSets(): filter by user_id
+         explicitly instead of leaning on the RLS select-own policy, so
+         this page can never paint someone else's saves as yours and the
+         200-row cap stays scoped to this user. */
       var b = await db().from(bmMode === 'like' ? 'artwork_likes' : 'artwork_bookmarks')
         .select('artwork_id,created_at')
+        .eq('user_id', me().id)
         .order('created_at', { ascending: false })
         .limit(200);
       if (b.error) throw b.error;

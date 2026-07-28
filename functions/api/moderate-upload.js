@@ -283,14 +283,13 @@ export async function onRequestPost(context) {
 
     // ---- Combine: ALL must pass; worst rating wins ----
     let allowed = true;
-    let code = 'ARTWORK_OK';
+    // Default approved code differs per mode.
+    let code = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
     let reason = 'Approved.';
     let rating = 'SAFE';
     let failIndex = -1;
     const audit = [];
 
-    // Default worst-case code differs per mode.
-    code = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
     for (let i = 0; i < verdicts.length; i++) {
       const v = verdicts[i];
       // Resources: must be a SAFE, non-AI, good-quality resource preview.

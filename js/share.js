@@ -199,7 +199,7 @@ function qrMake (text) {
     }
     return readMode ? out : i2;
   }
-  var placed = placeData(allCw, false);
+  placeData(allCw, false);
 
   /* ── masking + penalty ── */
   var MASKS = [

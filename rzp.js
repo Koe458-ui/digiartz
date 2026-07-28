@@ -199,24 +199,35 @@ export async function onRequestPost({ env, request }) {
       const notes = order.notes || {};
       if (notes.user_id !== user.id) return json({ error: 'Order does not belong to you' }, 403);
 
-      await sbService(env, '/payments?rzp_order_id=eq.' + orderId, {
+      /* A Razorpay signature never expires, so the same
+         (orderId, paymentId, signature) triple can be replayed at any
+         time. Fulfilling on every call meant one subscription payment
+         could be re-verified a month later for another SUB_DAYS.
+         Filtering the PATCH on status=eq.created makes it an atomic
+         compare-and-set: the first verify flips the ledger row and gets
+         it back, a replay matches nothing and fulfills nothing. */
+      const paidRows = await sbService(env,
+        '/payments?rzp_order_id=eq.' + orderId + '&status=eq.created', {
         method: 'PATCH',
         body: JSON.stringify({
           status: 'paid', rzp_payment_id: String(paymentId),
           paid_at: new Date().toISOString(),
         }),
       });
+      const firstVerify = Array.isArray(paidRows) && paidRows.length > 0;
 
       let tier = null;
       if (notes.kind === 'subscription') {
         const plan = PLANS[notes.plan];
         if (plan && plan.tier) {
           tier = plan.tier;
-          const exp = new Date(Date.now() + SUB_DAYS * 86400000).toISOString();
-          await sbService(env, '/profiles?id=eq.' + user.id, {
-            method: 'PATCH',
-            body: JSON.stringify({ subscription_tier: tier, subscription_expires_at: exp }),
-          });
+          if (firstVerify) {
+            const exp = new Date(Date.now() + SUB_DAYS * 86400000).toISOString();
+            await sbService(env, '/profiles?id=eq.' + user.id, {
+              method: 'PATCH',
+              body: JSON.stringify({ subscription_tier: tier, subscription_expires_at: exp }),
+            });
+          }
         }
       }
       return json({ ok: true, kind: notes.kind, tier });

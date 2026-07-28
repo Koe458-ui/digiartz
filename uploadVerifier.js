@@ -61,7 +61,10 @@
     return new Promise(function (res, rej) {
       var img = new Image();
       var url = URL.createObjectURL(file);
-      img.onload = function () { res(img); };
+      /* The blob URL has to be revoked on BOTH paths — the success path
+         used to leak it, so every upload on a browser without
+         createImageBitmap pinned its file in memory for the session. */
+      img.onload = function () { URL.revokeObjectURL(url); res(img); };
       img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('Could not read image')); };
       img.src = url;
     });

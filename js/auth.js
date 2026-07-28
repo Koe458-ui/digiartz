@@ -256,15 +256,50 @@
      row is seeded server-side by the on-signup trigger (see SQL) and
      self-healed by pfEnsureOwnProfile() as a fallback. */
   var OAUTH_LABELS = { google:'Google', discord:'Discord', apple:'Apple' };
+
+  /* Apple-unavailable notice. We build our own themed dialog instead of
+     window.alert(): DigiArtz runs as a standalone PWA, and browsers
+     suppress native alert()/confirm() in standalone mode, so a plain
+     alert silently does nothing on installed devices. Inline styles read
+     the live theme tokens, so it looks right in Dark / Gray / Light and
+     needs no CSS-file changes. */
+  function showAppleUnavailable(){
+    if (document.getElementById('appleNaDlg')) return;
+    var ov = document.createElement('div');
+    ov.id = 'appleNaDlg';
+    ov.setAttribute('role','dialog');
+    ov.setAttribute('aria-modal','true');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:4000;display:flex;'
+      + 'align-items:center;justify-content:center;padding:1.5rem;'
+      + 'background:rgba(0,0,0,.55);backdrop-filter:blur(4px);'
+      + '-webkit-backdrop-filter:blur(4px);';
+    var box = document.createElement('div');
+    box.style.cssText = 'max-width:340px;width:100%;'
+      + 'background:var(--sur,#16161c);color:var(--tx,#fff);'
+      + 'border:1px solid var(--bdr,#2c2c36);border-radius:16px;'
+      + 'padding:1.4rem 1.3rem 1.15rem;box-shadow:0 20px 60px rgba(0,0,0,.5);'
+      + 'font-family:var(--fb,sans-serif);text-align:center;';
+    box.innerHTML =
+      '<div style="font-size:.96rem;line-height:1.5;margin-bottom:1.15rem;">'
+      + 'Apple sign-in isn\u2019t available at the moment. You can still '
+      + 'continue with Google or Discord.</div>'
+      + '<button type="button" id="appleNaOk" style="border:0;cursor:pointer;'
+      + 'background:var(--pg,#8B5CF6);color:var(--text-on-accent,#fff);'
+      + 'font-family:var(--fm,inherit);font-weight:700;letter-spacing:.06em;'
+      + 'padding:.62rem 1.7rem;border-radius:10px;font-size:.85rem;">OK</button>';
+    ov.appendChild(box);
+    function close(){ if (ov.parentNode) ov.parentNode.removeChild(ov); }
+    ov.addEventListener('click', function(e){ if (e.target === ov) close(); });
+    document.body.appendChild(ov);
+    var ok = document.getElementById('appleNaOk');
+    if (ok){ ok.addEventListener('click', close); ok.focus(); }
+  }
+
   async function doOAuth(provider, btnEl) {
     /* Apple sign-in isn't wired up yet (it needs a paid Apple Developer
-       account). Until that's set up, don't bounce people to a provider
-       that will just error out — tell them plainly and point them at the
-       methods that do work. */
-    if (provider === 'apple') {
-      alert('Apple sign-in isn\u2019t available at the moment. You can still continue with Google or Discord.');
-      return;
-    }
+       account). Until then, don't bounce people to a provider that will
+       just error out — tell them plainly and point them at what works. */
+    if (provider === 'apple') { showAppleUnavailable(); return; }
     if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
     var label = OAUTH_LABELS[provider] || provider;
     var err = document.getElementById('authErr');

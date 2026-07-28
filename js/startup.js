@@ -179,6 +179,10 @@
     img.draggable = false;
 
     wrap.appendChild(img);
+    /* Hover reveal — same scrim + artist chip the .gItem grids use.
+       It goes inside .awImgWrap so the wipe is clipped to the square
+       artwork rather than the whole card. */
+    if(typeof dzBuildHoverReveal === 'function') wrap.appendChild(dzBuildHoverReveal(item.user_id));
 
     var meta = document.createElement('div');
     meta.className = 'awMeta';

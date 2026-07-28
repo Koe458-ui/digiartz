@@ -648,6 +648,28 @@
   var _dzArtistFlight = {};   /* uid → true while its query is in flight */
   var _dzArtistTimer  = null;
 
+  /* The scrim + empty chip, as DOM rather than markup — the front-page
+     grid builds its cards with createElement (buildAwCard), so it can't
+     reuse itemHTML's string. Same classes either way, so one stylesheet
+     and one resolver cover both. */
+  function dzBuildHoverReveal(uid){
+    var frag = document.createDocumentFragment();
+    var ov = document.createElement('div');
+    ov.className = 'gOv';
+    ov.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+    frag.appendChild(ov);
+    if(uid){
+      var chip = document.createElement('div');
+      chip.className = 'gArtist';
+      chip.setAttribute('data-uid', String(uid));
+      chip.setAttribute('aria-hidden', 'true');
+      chip.innerHTML = '<div class="gArtistAv"><span class="gArtistLtr"></span></div>' +
+                       '<div class="gArtistName"></div><div class="gArtistHandle"></div>';
+      frag.appendChild(chip);
+    }
+    return frag;
+  }
+
   function dzPaintArtistChip(el, p){
     var name = (p && (p.display_name || p.username)) || 'Artist';
     var av  = el.querySelector('.gArtistAv');
@@ -721,7 +743,7 @@
   document.addEventListener('pointerover', function(e){
     var t = e.target;
     if(!t || !t.closest) return;
-    var card = t.closest('.gItem');
+    var card = t.closest('.gItem,.awCard');
     if(!card) return;
     var chip = card.querySelector('.gArtist');
     if(!chip || chip.dataset.painted === '1') return;

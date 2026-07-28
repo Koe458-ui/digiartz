@@ -118,14 +118,21 @@
        pinned to the card while only the edge travels. The chip is a
        SIBLING of the scrim, not a child — inside it the same
        clip-path would cut the text off mid-fade. */
-    .gOv{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;clip-path:inset(0 0 0 100%);transition:clip-path .42s cubic-bezier(.22,1,.36,1);}
-    .gItem:hover .gOv,.gItem:focus-within .gOv{clip-path:inset(0 0 0 0);}
+       Both artwork card types share this: .gItem (full gallery, search,
+       profile grids) and .awCard (the front-page Artworks grid), whose
+       scrim lives inside .awImgWrap — the square image area — rather
+       than on the card itself. */
+    .awImgWrap{position:relative;}
+    .gOv{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;clip-path:inset(0 0 0 100%);transition:clip-path .42s cubic-bezier(.22,1,.36,1);z-index:2;}
+    .gItem:hover .gOv,.gItem:focus-within .gOv,
+    .awCard:hover .gOv,.awCard:focus-within .gOv,.awCard:focus-visible .gOv{clip-path:inset(0 0 0 0);}
     .gOv svg{width:36px;height:36px;color:var(--ps);}
     /* Pre-clip-path browsers get the old plain fade rather than a
        scrim stuck permanently open. */
     @supports not (clip-path:inset(0 0 0 0)){
       .gOv{opacity:0;transition:opacity .3s;}
-      .gItem:hover .gOv,.gItem:focus-within .gOv{opacity:1;}
+      .gItem:hover .gOv,.gItem:focus-within .gOv,
+      .awCard:hover .gOv,.awCard:focus-within .gOv,.awCard:focus-visible .gOv{opacity:1;}
     }
 
     /* Exactly the bottom-right quarter of the card: half the width,
@@ -149,37 +156,45 @@
     }
     .gItem:hover .gArtistAv,.gItem:focus-within .gArtistAv,
     .gItem:hover .gArtistName,.gItem:focus-within .gArtistName,
-    .gItem:hover .gArtistHandle,.gItem:focus-within .gArtistHandle{opacity:1;transform:none;}
-    .gItem:hover .gArtistAv,.gItem:focus-within .gArtistAv{transition-delay:.30s;}
-    .gItem:hover .gArtistName,.gItem:focus-within .gArtistName{transition-delay:.38s;}
-    .gItem:hover .gArtistHandle,.gItem:focus-within .gArtistHandle{transition-delay:.45s;}
+    .gItem:hover .gArtistHandle,.gItem:focus-within .gArtistHandle,
+    .awCard:hover .gArtistAv,.awCard:focus-within .gArtistAv,.awCard:focus-visible .gArtistAv,
+    .awCard:hover .gArtistName,.awCard:focus-within .gArtistName,.awCard:focus-visible .gArtistName,
+    .awCard:hover .gArtistHandle,.awCard:focus-within .gArtistHandle,.awCard:focus-visible .gArtistHandle{opacity:1;transform:none;}
+    .gItem:hover .gArtistAv,.gItem:focus-within .gArtistAv,
+    .awCard:hover .gArtistAv,.awCard:focus-within .gArtistAv,.awCard:focus-visible .gArtistAv{transition-delay:.30s;}
+    .gItem:hover .gArtistName,.gItem:focus-within .gArtistName,
+    .awCard:hover .gArtistName,.awCard:focus-within .gArtistName,.awCard:focus-visible .gArtistName{transition-delay:.38s;}
+    .gItem:hover .gArtistHandle,.gItem:focus-within .gArtistHandle,
+    .awCard:hover .gArtistHandle,.awCard:focus-within .gArtistHandle,.awCard:focus-visible .gArtistHandle{transition-delay:.45s;}
     .gArtistAv{
-      width:clamp(22px,24%,38px);aspect-ratio:1;flex:0 0 auto;
+      width:clamp(30px,32%,54px);aspect-ratio:1;flex:0 0 auto;
       border-radius:50%;overflow:hidden;
       background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.38);
       display:flex;align-items:center;justify-content:center;
-      font-family:var(--fm);font-size:.6rem;line-height:1;color:#fff;
+      font-family:var(--fm);font-size:.9rem;line-height:1;color:#fff;
     }
-    /* .gItem img rules target every descendant image, so the avatar
-       needs its own sizing back — and must sit out the card's
-       zoom-on-hover. */
+    /* .gItem img / .awImgWrap img rules target every descendant image,
+       so the avatar needs its own sizing back — and must sit out the
+       card's zoom-on-hover. */
     .gArtistAv img{width:100%;height:100%;aspect-ratio:1;object-fit:cover;display:block;}
-    .gItem:hover .gArtistAv img{transform:none;}
+    .gItem:hover .gArtistAv img,.awCard:hover .gArtistAv img{transform:none;}
     .gArtistName,.gArtistHandle{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .gArtistName{
       font-family:var(--fd);font-weight:700;
-      font-size:clamp(.62rem,1.05vw,.82rem);color:#fff;
+      font-size:clamp(.82rem,1.5vw,1.08rem);color:#fff;
       text-shadow:0 1px 4px rgba(0,0,0,.55);
     }
     .gArtistHandle{
-      font-family:var(--fm);font-size:clamp(.54rem,.85vw,.68rem);
+      font-family:var(--fm);font-size:clamp(.68rem,1.15vw,.88rem);
       letter-spacing:.04em;color:rgba(255,255,255,.72);
     }
     @media(prefers-reduced-motion:reduce){
       .gOv{transition:none;}
       .gArtistAv,.gArtistName,.gArtistHandle{transform:none;transition:opacity .2s;}
       .gItem:hover .gArtistAv,.gItem:hover .gArtistName,.gItem:hover .gArtistHandle,
-      .gItem:focus-within .gArtistAv,.gItem:focus-within .gArtistName,.gItem:focus-within .gArtistHandle{transition-delay:0s;}
+      .gItem:focus-within .gArtistAv,.gItem:focus-within .gArtistName,.gItem:focus-within .gArtistHandle,
+      .awCard:hover .gArtistAv,.awCard:hover .gArtistName,.awCard:hover .gArtistHandle,
+      .awCard:focus-within .gArtistAv,.awCard:focus-within .gArtistName,.awCard:focus-within .gArtistHandle{transition-delay:0s;}
     }
     .cBadgeWrap{display:none;}
     .cBadge{background:var(--sur2);border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}

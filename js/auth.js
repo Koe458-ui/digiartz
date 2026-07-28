@@ -257,6 +257,14 @@
      self-healed by pfEnsureOwnProfile() as a fallback. */
   var OAUTH_LABELS = { google:'Google', discord:'Discord', apple:'Apple' };
   async function doOAuth(provider, btnEl) {
+    /* Apple sign-in isn't wired up yet (it needs a paid Apple Developer
+       account). Until that's set up, don't bounce people to a provider
+       that will just error out — tell them plainly and point them at the
+       methods that do work. */
+    if (provider === 'apple') {
+      alert('Apple sign-in isn\u2019t available at the moment. You can still continue with Google or Discord.');
+      return;
+    }
     if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
     var label = OAUTH_LABELS[provider] || provider;
     var err = document.getElementById('authErr');

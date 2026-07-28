@@ -7,8 +7,8 @@
   'use strict';
 
   var KEY   = 'koeTheme';
-  var VALID = { dark:1, graydark:1, darkviolet:1, light:1, system:1 };
-  var META  = { darkviolet:'#08080D', dark:'#0A0A0E', graydark:'#131317', light:'#F6F6F9' };
+  var VALID = { dark:1, graydark:1, light:1, system:1 };
+  var META  = { dark:'#0A0A0E', graydark:'#131317', light:'#F6F6F9' };
   var mq    = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
   var page  = document.getElementById('themePage');
   var cards = Array.prototype.slice.call(document.querySelectorAll('.thmCard'));

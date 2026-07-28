@@ -293,7 +293,9 @@ body{background:var(--bg);}
 .cpBar{border-top:1px solid var(--bdr);}
 #legalBackdrop::before{background:color-mix(in srgb,var(--bg) 75%,transparent)!important;}
 #artModal::before{background:color-mix(in srgb,var(--bg) 85%,transparent)!important;}
-.gOv{background:color-mix(in srgb,var(--bg) 65%,transparent)!important;}
+/* Card hover scrim is a fixed 70% black in every theme (see hero.css)
+   — no longer a tint of the page background. */
+.gOv{background:rgba(0,0,0,.7)!important;}
 
 /* Cards / containers get a dark surface with a soft border */
 .gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{

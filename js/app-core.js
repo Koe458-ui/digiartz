@@ -611,16 +611,122 @@
     if(typeof pgs==='string'){ try{ pgs=JSON.parse(pgs); }catch(e){ pgs=null; } }
     const extraCount=Array.isArray(pgs)?pgs.length:0;
     const multiBadge=extraCount?`<span class="gMulti" aria-label="${extraCount+1} images">⧉ ${extraCount+1}</span>`:'';
+    /* Artist chip — revealed by the hover scrim, filled in lazily by
+       dzResolveArtist (artwork rows carry only user_id). Rendered empty
+       so a card with no resolvable profile simply shows nothing rather
+       than a placeholder that never resolves. */
+    const artistChip=img.user_id?`<div class="gArtist" data-uid="${esc(String(img.user_id))}" aria-hidden="true">
+          <div class="gArtistAv"><span class="gArtistLtr"></span></div>
+          <div class="gArtistName"></div>
+          <div class="gArtistHandle"></div>
+        </div>`:'';
     /* Wrap item in a crawlable <a href="/artwork/{id}"> — JS intercepts clicks for modal UX */
     return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
         <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>${multiBadge}
         <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+        ${artistChip}
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
       </a>
     </div>`;
   }
+
+  /* ── Card artist chips — lazy, hover-driven profile resolve ──────
+     `artworks` rows carry a user_id and nothing else about the author,
+     and a grid can hold hundreds of cards, so profiles are fetched the
+     first time a card is actually hovered rather than up front. Every
+     uid asked for inside the same 60ms window is folded into a single
+     `.in()` query, and each resolved profile is cached by id for the
+     rest of the session — so sweeping the mouse across a grid costs
+     one round-trip per burst, and re-hovering costs nothing.
+     A uid that comes back with no row caches as null so we never ask
+     for it again; a failed *request* clears nothing, leaving the next
+     hover free to retry. */
+  var dzArtistCache   = {};   /* uid → profile row | null (known-missing) */
+  var _dzArtistWanted = {};   /* uid → true, queued for the next flush   */
+  var _dzArtistFlight = {};   /* uid → true while its query is in flight */
+  var _dzArtistTimer  = null;
+
+  function dzPaintArtistChip(el, p){
+    var name = (p && (p.display_name || p.username)) || 'Artist';
+    var av  = el.querySelector('.gArtistAv');
+    var ltr = el.querySelector('.gArtistLtr');
+    var nm  = el.querySelector('.gArtistName');
+    var hd  = el.querySelector('.gArtistHandle');
+    if(nm) nm.textContent = name;
+    if(hd) hd.textContent = p && p.username ? '@' + p.username : '';
+    if(av){
+      if(p && p.avatar_url){
+        var im = av.querySelector('img');
+        if(!im){
+          im = document.createElement('img');
+          im.alt = ''; im.loading = 'lazy'; im.decoding = 'async';
+          av.appendChild(im);
+        }
+        im.src = getThumbnailUrl(p.avatar_url);
+        if(ltr) ltr.style.display = 'none';
+      } else if(ltr){
+        ltr.textContent = name.charAt(0).toUpperCase();
+        ltr.style.display = '';
+      }
+    }
+    el.dataset.painted = '1';
+  }
+
+  /* Paint every card by this author at once — the same artist often
+     holds several tiles in one grid, and re-renders mint new nodes. */
+  function dzPaintArtistChips(uid){
+    var p = dzArtistCache[uid];
+    if(p === undefined) return;
+    var sel = (window.CSS && CSS.escape) ? CSS.escape(uid) : String(uid).replace(/["\\]/g,'\\$&');
+    var els = document.querySelectorAll('.gArtist[data-uid="' + sel + '"]');
+    for(var i=0;i<els.length;i++){
+      if(els[i].dataset.painted !== '1') dzPaintArtistChip(els[i], p);
+    }
+  }
+
+  function dzFlushArtists(){
+    _dzArtistTimer = null;
+    var ids = Object.keys(_dzArtistWanted).filter(function(u){
+      return dzArtistCache[u] === undefined && !_dzArtistFlight[u];
+    });
+    _dzArtistWanted = {};
+    if(!ids.length || !sb) return;
+    ids.forEach(function(u){ _dzArtistFlight[u] = true; });
+    sb.from('profiles').select('id,username,display_name,avatar_url').in('id', ids)
+      .then(function(res){
+        var rows = (res && res.data) || [];
+        rows.forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });
+        ids.forEach(function(u){
+          if(dzArtistCache[u] === undefined) dzArtistCache[u] = null;
+          delete _dzArtistFlight[u];
+          dzPaintArtistChips(u);
+        });
+      })
+      .catch(function(){
+        ids.forEach(function(u){ delete _dzArtistFlight[u]; });
+      });
+  }
+
+  function dzResolveArtist(uid){
+    if(!uid) return;
+    if(dzArtistCache[uid] !== undefined){ dzPaintArtistChips(uid); return; }
+    _dzArtistWanted[uid] = true;
+    if(!_dzArtistTimer) _dzArtistTimer = setTimeout(dzFlushArtists, 60);
+  }
+
+  /* Delegated so it covers every artwork grid — home, full gallery,
+     profiles, albums — including batches appended after first paint. */
+  document.addEventListener('pointerover', function(e){
+    var t = e.target;
+    if(!t || !t.closest) return;
+    var card = t.closest('.gItem');
+    if(!card) return;
+    var chip = card.querySelector('.gArtist');
+    if(!chip || chip.dataset.painted === '1') return;
+    dzResolveArtist(chip.getAttribute('data-uid'));
+  }, {passive:true});
 
 
   /* ── Shared sort utility — TRENDING first (replaces most-liked) ──

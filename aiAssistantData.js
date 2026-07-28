@@ -20,7 +20,7 @@
  *                    (line breaks are preserved in the chat bubble)
  *   • Speech bubble→ leave `speechBubbles` empty [] to keep it OFF
  *
- *  NOTE: replace every [your contact email] below with your real
+ *  NOTE: replace every DigiArtzsupport@gmail.com below with your real
  *  support address before publishing.
  * ═══════════════════════════════════════════════════════════════
  */
@@ -220,7 +220,7 @@ If a button says it isn't enabled yet, try email sign-in for now.`
 
 1. Double-check the email is spelled correctly
 2. Make sure Caps Lock is off
-3. If you still can't get in, contact us at [your contact email] from your registered email so we can help you reset it
+3. If you still can't get in, contact us at DigiArtzsupport@gmail.com from your registered email so we can help you reset it
 
 Tip: if you originally joined with Google/Discord/Apple, use that same button instead of a password.`
       },
@@ -244,7 +244,7 @@ You'll stay logged out until you sign in again.`
 2. Check your internet connection
 3. Close and reopen the app/tab, then try again
 4. If you used a social button before, use the same one now
-5. Still stuck? Email [your contact email] with the username you're trying to reach
+5. Still stuck? Email DigiArtzsupport@gmail.com with the username you're trying to reach
 
 I won't ask for your password — never share it with anyone.`
       }
@@ -395,7 +395,7 @@ Edits save instantly; deleting also removes the image file from storage.`
 2. Otherwise check your internet connection
 3. Make sure the file is an image and not too large
 4. Confirm you're logged in, reload, and try once more
-5. Still failing? Contact [your contact email] with the file details
+5. Still failing? Contact DigiArtzsupport@gmail.com with the file details
 
 A failed upload never leaves a half-published piece — storage is cleaned up automatically.`
       }
@@ -446,7 +446,7 @@ A painting or render OF a landscape is fine — a photograph of one isn't. Uploa
 • ADULT (explicit sexual content) is rejected
 • A short always-blocked list — child sexual content, bestiality, extreme gore, extremist or illegal content — is refused no matter what
 
-If a SAFE or MATURE piece got flagged by mistake, that's a rare miss — try again, and if it still won't pass, reach out at [your contact email].`
+If a SAFE or MATURE piece got flagged by mistake, that's a rare miss — try again, and if it still won't pass, reach out at DigiArtzsupport@gmail.com.`
       },
       {
         question: "Is fan art allowed?",
@@ -463,7 +463,7 @@ The only thing rejected is a direct repost of official media — unedited anime 
 1. It's built to fail safe — when the checker can't get a clear answer it stops the upload rather than guess, so just try again
 2. Give it a moment if you've posted several pieces quickly (there's a short rate limit)
 3. If your merit has dropped below 80, uploads pause until it recovers (+2 a day)
-4. Still stuck after a retry? Email [your contact email] with the file details`
+4. Still stuck after a retry? Email DigiArtzsupport@gmail.com with the file details`
       }
     ],
 
@@ -523,7 +523,7 @@ Keep it kind and constructive — that's what the community is about.`
 2. Tap the Report button
 3. Tell us what's wrong and submit
 
-Our team reviews reports and takes action when needed. For urgent issues, also email [your contact email].`
+Our team reviews reports and takes action when needed. For urgent issues, also email DigiArtzsupport@gmail.com.`
       }
     ],
 
@@ -635,14 +635,14 @@ The preview is auto-checked, so make sure it shows the real product.`
         answer:
 `Checkout runs through our payment partner. Your payment is verified before anything unlocks, and digital files release automatically once it clears.
 
-If a charge went through but the item didn't unlock, email [your contact email] with the details and we'll sort it out.`
+If a charge went through but the item didn't unlock, email DigiArtzsupport@gmail.com with the details and we'll sort it out.`
       },
       {
         question: "How do refunds work?",
         answer:
 `Digital purchases are generally final — see Policies → Refund Policy for the full terms.
 
-If something genuinely went wrong — a double charge, or a file that never delivered — contact [your contact email] with your transaction details and we'll review it.`
+If something genuinely went wrong — a double charge, or a file that never delivered — contact DigiArtzsupport@gmail.com with your transaction details and we'll review it.`
       }
     ],
 
@@ -804,7 +804,7 @@ Once done, your perks and badge activate on your account.`
 If you think your case is an exception (for example a billing error):
 
 1. Gather your payment details / transaction ID
-2. Email [your contact email] explaining what happened
+2. Email DigiArtzsupport@gmail.com explaining what happened
 3. We'll review and help where appropriate
 
 See Policies → Refund Policy for the full terms.`
@@ -816,7 +816,7 @@ See Policies → Refund Policy for the full terms.`
 
 1. Check your bank statement for the duplicate charge
 2. Note both transaction IDs and dates
-3. Email [your contact email] with those details
+3. Email DigiArtzsupport@gmail.com with those details
 4. We'll investigate the double charge and refund the extra amount if it was on our side
 
 We can't refund issues caused by your bank or a user-side error, but we'll always review.`
@@ -830,7 +830,7 @@ We can't refund issues caused by your bank or a user-side error, but we'll alway
 2. Find your subscription details
 3. Choose to cancel or turn off renewal
 
-If you can't find the option, email [your contact email] before your next billing date and we'll assist.`
+If you can't find the option, email DigiArtzsupport@gmail.com before your next billing date and we'll assist.`
       }
     ],
 
@@ -894,7 +894,7 @@ Full text: footer → Refund Policy.`
 • We don't sell your personal info in the ordinary sense
 • You can request access to or deletion of your data
 
-For details and requests, see the Privacy Policy or email [your contact email].`
+For details and requests, see the Privacy Policy or email DigiArtzsupport@gmail.com.`
       }
     ],
 
@@ -909,7 +909,7 @@ For details and requests, see the Privacy Policy or email [your contact email].`
 2. Tap Report
 3. Describe the problem and submit
 
-We review every report. For anything urgent, also email [your contact email].`
+We review every report. For anything urgent, also email DigiArtzsupport@gmail.com.`
       },
       {
         question: "How do I report a user?",
@@ -917,7 +917,7 @@ We review every report. For anything urgent, also email [your contact email].`
 `If someone is behaving badly:
 
 1. Note their username and what happened (screenshots help)
-2. Email [your contact email] with the details
+2. Email DigiArtzsupport@gmail.com with the details
 3. Our team will review and act per the community rules
 
 We take harassment and abuse seriously.`
@@ -929,7 +929,7 @@ We take harassment and abuse seriously.`
 
 1. Don't engage further with the person
 2. Save evidence (screenshots, usernames, dates)
-3. Report it to [your contact email] right away
+3. Report it to DigiArtzsupport@gmail.com right away
 
 If you're ever in immediate danger offline, contact your local emergency services.`
       },
@@ -940,7 +940,7 @@ If you're ever in immediate danger offline, contact your local emergency service
 
 1. Find the specific artwork on DigiArtz
 2. Gather proof that the original is yours
-3. Send a notice to [your contact email] with links and proof
+3. Send a notice to DigiArtzsupport@gmail.com with links and proof
 
 We may remove infringing content and act on repeat offenders.`
       },
@@ -951,7 +951,7 @@ We may remove infringing content and act on repeat offenders.`
 
 1. If you can still log in, change your password immediately
 2. Log out of other devices where possible
-3. Email [your contact email] from your registered email so we can help lock it down
+3. Email DigiArtzsupport@gmail.com from your registered email so we can help lock it down
 
 Never share your password — DigiArtz staff and I will never ask for it.`
       }
@@ -970,7 +970,7 @@ Never share your password — DigiArtz staff and I will never ask for it.`
 4. Try another browser or device
 5. If it's still down, wait a bit and retry
 
-If it persists, let us know at [your contact email].`
+If it persists, let us know at DigiArtzsupport@gmail.com.`
       },
       {
         question: "Images won't load",
@@ -982,7 +982,7 @@ If it persists, let us know at [your contact email].`
 3. Disable any ad/content blockers for this site
 4. Try a different browser
 
-Still blank? Tell us at [your contact email] what device and browser you're on.`
+Still blank? Tell us at DigiArtzsupport@gmail.com what device and browser you're on.`
       },
       {
         question: "I see a flash or flicker on load",
@@ -991,7 +991,7 @@ Still blank? Tell us at [your contact email] what device and browser you're on.`
 
 1. Fully refresh the page
 2. Make sure you're on the latest version (clear cache)
-3. If it keeps happening, note your device + browser and email [your contact email]
+3. If it keeps happening, note your device + browser and email DigiArtzsupport@gmail.com
 
 This helps us track down display quirks.`
       },
@@ -1004,7 +1004,7 @@ This helps us track down display quirks.`
 2. Check your connection
 3. For uploads, keep the tab open until the blurred card shows LIVE ✓
 4. Reload and check if the change actually applied
-5. Try once more, then contact [your contact email] if it repeats`
+5. Try once more, then contact DigiArtzsupport@gmail.com if it repeats`
       },
       {
         question: "Something looks broken",
@@ -1013,7 +1013,7 @@ This helps us track down display quirks.`
 
 1. Take a screenshot of the problem
 2. Note your device, browser and what you were doing
-3. Send it to [your contact email]
+3. Send it to DigiArtzsupport@gmail.com
 
 Details like these help us fix it fast.`
       }
@@ -1026,7 +1026,7 @@ Details like these help us fix it fast.`
         answer:
 `You can reach the DigiArtz team by email:
 
-1. Write to [your contact email]
+1. Write to DigiArtzsupport@gmail.com
 2. Include your username and a clear description
 3. Attach screenshots if it helps
 
@@ -1040,14 +1040,14 @@ We'll get back to you as soon as we can.`
 1. Note what happened and how to trigger it
 2. Add your device + browser
 3. Attach a screenshot if you can
-4. Send it to [your contact email]`
+4. Send it to DigiArtzsupport@gmail.com`
       },
       {
         question: "Business or collab inquiry",
         answer:
 `For collaborations, commissions or business:
 
-1. Email [your contact email]
+1. Email DigiArtzsupport@gmail.com
 2. Tell us who you are and what you have in mind
 3. Include any relevant links or references
 

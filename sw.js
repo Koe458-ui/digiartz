@@ -305,7 +305,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v55';
+const CACHE_VERSION = 'v56';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

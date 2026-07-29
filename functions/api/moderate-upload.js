@@ -320,9 +320,9 @@ export async function onRequestPost(context) {
     }).catch(() => {}));
 
     // signed approval ticket
-    let token = null;
+    let modToken = null;
     if (allowed && env.MOD_SIGNING_SECRET) {
-      try { token = await signApproval(env.MOD_SIGNING_SECRET, user.id); } catch { token = null; }
+      try { modToken = await signApproval(env.MOD_SIGNING_SECRET, user.id); } catch { modToken = null; }
     }
 
     return json({
@@ -331,7 +331,7 @@ export async function onRequestPost(context) {
       code,            // admin-facing reason code, e.g. 'SELFIE'
       failIndex,       // which image failed (-1 when approved)
       reason,          // canonical user-facing message
-      token,           // server-signed approval, verified DB-side (may be null)
+      token: modToken, // server-signed approval, verified DB-side (may be null)
       audit: {
         model: env.GEMINI_MODEL || 'gemini-flash-latest',
         checked_at: new Date().toISOString(),

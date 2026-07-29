@@ -4,14 +4,19 @@
    bump CACHE_VERSION to refill every client
 
    changelog
-   v65 — homepage quick links. A row of seven icon + title + description
-       shortcuts (Artworks, Resources, Blog, Marketplace, Jobs,
-       Community, Cart) now sits between the hero pitch and the search
-       bar. It is a snap scroller whose slot count follows the device —
-       1 on mobile, 2 large mobile, 3 tablet, 4 desktop, 6 large desktop,
-       and 6 on ultrawide with the row capped and centred rather than
-       stretched — with a thin line under it tracking scroll position.
-       Changed: index.html, css/hero.css, js/sections.js.
+   v65 — homepage quick links. A row of ten icon + title + description
+       shortcuts now sits between the hero pitch and the search bar,
+       ordered browse first (Artworks, Marketplace, Resources, Blog,
+       Jobs), then take part (Community, Upload), then account
+       (Subscription, Level, Cart). It is a snap scroller whose slot
+       count follows the device and never leaves 2–6: 2 on mobile,
+       3 large mobile, 4 tablet, 5 desktop, 6 large desktop, and 6 on
+       ultrawide with the row capped and centred rather than stretched.
+       Icons sit in a fixed box and descriptions reserve two lines, so
+       titles and card heights line up whatever the copy does. A thin
+       line under the row tracks scroll position and hides itself when
+       nothing overflows. Changed: index.html, css/hero.css,
+       js/sections.js.
 
    v64 — homepage feed is pure trending. renderAwGrid ran the trending
        sort and then tgPrioritize() pulled every artwork matching a

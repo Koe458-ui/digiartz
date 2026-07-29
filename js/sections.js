@@ -1775,12 +1775,16 @@
   if(window.ResizeObserver) new ResizeObserver(sync).observe(rail);
   sync();
 
-  // community lives outside the gallery overlay
+  // four destinations sit outside the gallery overlay
+  var OWN = {
+    community:    function(){ if(typeof bnGoCommunity === 'function') bnGoCommunity(); },
+    upload:       function(){ if(typeof openPfUpload === 'function') openPfUpload(); },
+    subscription: function(){ if(typeof openSubscription === 'function') openSubscription(); },
+    level:        function(){ if(typeof openRankPage === 'function') openRankPage('level'); }
+  };
+
   window.qlGo = function(id){
-    if(id === 'community'){
-      if(typeof bnGoCommunity === 'function') bnGoCommunity();
-      return;
-    }
+    if(OWN[id]){ OWN[id](); return; }
     if(typeof openFG === 'function'){
       openFG();
       if(typeof fgSwitchSection === 'function') fgSwitchSection(id);

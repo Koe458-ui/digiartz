@@ -1779,15 +1779,19 @@
   var OWN = {
     community:    function(){ if(typeof bnGoCommunity === 'function') bnGoCommunity(); },
     upload:       function(){ if(typeof bnGoUpload === 'function') bnGoUpload(); },
+    // the page Settings opens under Subscription
     subscription: function(){ if(typeof openSubscription === 'function') openSubscription(); },
-    level:        function(){ if(typeof openRankPage === 'function') openRankPage('level'); },
+    // Artist Progress, the profile's own level page. It reads whichever
+    // profile was last opened, so clear that or a quick link would show
+    // the level of the last artist you looked at instead of your own.
+    level:        function(){
+      if(window.pf) window.pf.profile = null;
+      if(typeof openXpPage === 'function') openXpPage();
+    },
+    // the page Settings opens under Theme
     theme:        function(){ if(typeof openThemePage === 'function') openThemePage(); },
-    // the live boards are already on this page
-    ranking:      function(){
-      if(typeof bnSetActive === 'function') bnSetActive('bnHome');
-      var el = document.getElementById('rankSec');
-      if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
-    }
+    // the full boards behind the hero page's ranking strip
+    ranking:      function(){ if(typeof openRankPage === 'function') openRankPage(); }
   };
 
   // sections that live inside the gallery overlay
@@ -1796,13 +1800,14 @@
   };
 
   // whatever is open has to go first. bnCloseAllSections is the bottom
-  // nav's own sweep but it predates the ranking and theme pages, so
-  // those two are closed here as well — the rank page hides the bottom
-  // bar while it is up, and left open it takes the bar with it.
+  // nav's own sweep but it predates the ranking, theme and progress
+  // pages, so those are closed here as well — each hides the bottom bar
+  // while it is up, and left open it takes the bar with it.
   function shut(){
     if(typeof bnCloseAllSections === 'function') bnCloseAllSections();
     if(typeof closeRankPage === 'function') closeRankPage();
     if(typeof closeThemePage === 'function') closeThemePage();
+    if(typeof closeXpPage === 'function') closeXpPage();
   }
 
   window.qlGo = function(id){

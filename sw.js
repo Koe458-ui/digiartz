@@ -4,6 +4,19 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v68 — three quick links repointed at the page each one actually
+       belongs to. Level was opening the ranking board of the same name;
+       it now opens Artist Progress, the profile's own level page, and
+       clears the last-viewed profile first — that page targets whoever
+       you looked at most recently, so without the reset a quick link
+       would show someone else's level. Ranking takes over the full
+       boards, the page the hero strip's VIEW FULL RANKING leads to,
+       instead of scrolling down to that strip. Subscription and Theme
+       already opened the same pages Settings does and are unchanged.
+       closeXpPage joins the sweep, since Artist Progress hides the
+       bottom bar while it is up and bnCloseAllSections does not know it.
+       Changed: index.html, js/sections.js.
+
    v67 — quick links land in the right place. Tapping one opened the
        right thing but not where it belongs: Cart showed the cart panel
        with the section tab strip still scrolled to Artworks, so its own
@@ -403,7 +416,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v67';
+const CACHE_VERSION = 'v68';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -471,7 +484,7 @@ const SHELL_URLS = [
   '/js/zeo.js',
   '/js/theme.js',
   '/js/engagement.js',
-  '/js/sections.js?v=66'
+  '/js/sections.js?v=68'
 ];
 
 // hosts

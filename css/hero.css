@@ -1,0 +1,845 @@
+/* ── hero.css · hero pitch ── */
+    /* =========================================================
+       HERO PITCH
+       ========================================================= */
+    #heroPitch{
+      position:relative;
+      background:var(--bg);
+      /* Same clearance the slide strip used, so the first thing on
+         the page still sits correctly under the floating top bar. */
+      padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) clamp(1rem,4vw,2rem) clamp(2.2rem,5vw,3.4rem);
+    }
+    .hpInner{max-width:760px;margin:0 auto;}
+
+    /* ── Segmented toggle ── */
+    .hpTabs{
+      display:flex;gap:.25rem;padding:.3rem;margin:0 0 clamp(1.4rem,3.5vw,2rem);
+      background:var(--sur);border:1px solid var(--bdr);border-radius:999px;
+      width:max-content;max-width:100%;
+      overflow-x:auto;overscroll-behavior-x:contain;
+      scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
+    }
+    .hpTabs::-webkit-scrollbar{display:none;}
+    .hpTab{
+      flex-shrink:0;border:0;cursor:pointer;border-radius:999px;
+      padding:.55rem 1.15rem;
+      font-family:var(--fd);font-size:.86rem;font-weight:700;letter-spacing:.01em;
+      background:none;color:var(--txd);white-space:nowrap;
+      transition:color .2s,background .2s;
+    }
+    @media(hover:hover){.hpTab:hover{color:var(--tx);}}
+    .hpTab[aria-selected="true"]{background:var(--pg);color:var(--text-on-accent);}
+    .hpTab:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
+
+    /* ── Headline ── */
+    .hpHead{
+      margin:0 0 clamp(1.1rem,2.6vw,1.5rem);
+      font-family:var(--fd);font-weight:800;
+      font-size:clamp(1.85rem,5.6vw,3.1rem);
+      line-height:1.1;letter-spacing:-.02em;color:var(--tx);
+      text-wrap:balance;
+    }
+    /* The one coloured phrase per tab — the brief's "make it pop".
+       Brand red (the "Artz" in the logo), themed via --brand-red so
+       light mode gets the deeper cut that survives a white page. */
+    .hpHead em{font-style:normal;color:var(--brand-red);}
+
+    /* ── Checklist ── */
+    .hpList{list-style:none;margin:0 0 clamp(1.5rem,3.5vw,2rem);padding:0;display:flex;flex-direction:column;gap:.7rem;}
+    .hpList li{display:flex;align-items:flex-start;gap:.65rem;font-family:var(--fb);font-size:clamp(.9rem,2.2vw,1rem);line-height:1.45;color:var(--txd);}
+    .hpTick{
+      flex-shrink:0;width:20px;height:20px;margin-top:.08rem;border-radius:50%;
+      background:color-mix(in srgb,var(--pg) 18%,transparent);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .hpTick svg{width:11px;height:11px;stroke:var(--pg);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+
+    /* ── CTA ── */
+    .hpCta{
+      display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;
+      border:0;border-radius:999px;padding:.9rem 1.7rem;
+      background:var(--pg);color:var(--text-on-accent);
+      font-family:var(--fd);font-size:.95rem;font-weight:700;
+      box-shadow:0 8px 22px color-mix(in srgb,var(--pg) 32%,transparent);
+      transition:filter .2s;
+    }
+    @media(hover:hover){.hpCta:hover{filter:brightness(1.08);}}
+    .hpCta:focus-visible{outline:2px solid var(--pb);outline-offset:3px;}
+
+    /* ── Rise-in removed ──
+       The panel used to fade in and shift up 14px on every tab
+       change, with the three checklist rows staggered in behind
+       the headline. Tabs swap instantly now. paintPanel() in
+       js/sections.js still adds .hpIn — it just has nothing
+       hanging off it any more, so leaving it there is harmless. */
+    .hpPanel.hpIn > *,
+    .hpPanel.hpIn > .hpList li{animation:none;opacity:1;transform:none;}
+    @media(prefers-reduced-motion:reduce){
+      .hpCta,.hpTab{transition:none;}
+    }
+    @media(max-width:480px){
+      .hpTabs{width:auto;}
+      .hpTab{padding:.5rem .95rem;font-size:.82rem;}
+    }
+
+    /* Visually hidden — accessible to screen readers, invisible on screen */
+    .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+    /* SETUP BANNER */
+    #sBanner{background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);padding:1rem 1.5rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.12em;color:var(--ps);line-height:1.8;display:none;}
+    #sBanner.show{display:block;}
+    #sBanner a{color:var(--pb);}
+
+/* Legacy hero class stubs — kept for JS safety, visual output handled in § 8 above */
+.sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
+.secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
+.secT .s{color:var(--pg);font-size:.5em;}
+.secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
+.upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
+.upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
+
+    /* ── ArtStation-style card: full-bleed image cropped to a uniform
+       aspect ratio so cards sit in a standard row-major grid (correct
+       newest→oldest reading order) with the title overlaid via bottom
+       scrim ── */
+    .gItem{position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;line-height:0;}
+    .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
+    .gItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
+    .gItem img{width:100%;aspect-ratio:1;display:block;height:auto;object-fit:cover;transition:transform .4s;}
+    /* imgShimmer keyframe is shared by .awImgWrap.awLoading, .igSkelCard
+       and the .gItem image skeleton */
+    @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .gItem:hover img{transform:scale(1.04);}
+    .gNm{display:none;}
+    /* ── Hover reveal, in two beats ──────────────────────────────
+       1. a 70%-black scrim wipes across the card, right → left
+       2. the artist chip fades up in the bottom-right quarter
+       The scrim is clipped rather than slid in, so its colour stays
+       pinned to the card while only the edge travels. The chip is a
+       SIBLING of the scrim, not a child — inside it the same
+       clip-path would cut the text off mid-fade. */
+       Both artwork card types share this: .gItem (full gallery, search,
+       profile grids) and .awCard (the front-page Artworks grid), whose
+       scrim lives inside .awImgWrap — the square image area — rather
+       than on the card itself. */
+    .awImgWrap{position:relative;}
+    .gOv{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;clip-path:inset(0 0 0 100%);transition:clip-path .42s cubic-bezier(.22,1,.36,1);z-index:2;}
+    .gItem:hover .gOv,.gItem:focus-within .gOv,
+    .awCard:hover .gOv,.awCard:focus-within .gOv,.awCard:focus-visible .gOv{clip-path:inset(0 0 0 0);}
+    .gOv svg{width:36px;height:36px;color:var(--ps);}
+    /* Pre-clip-path browsers get the old plain fade rather than a
+       scrim stuck permanently open. */
+    @supports not (clip-path:inset(0 0 0 0)){
+      .gOv{opacity:0;transition:opacity .3s;}
+      .gItem:hover .gOv,.gItem:focus-within .gOv,
+      .awCard:hover .gOv,.awCard:focus-within .gOv,.awCard:focus-visible .gOv{opacity:1;}
+    }
+
+    /* Exactly the bottom-right quarter of the card: half the width,
+       half the height. Never a click target — the whole card is one
+       link to the artwork. */
+    .gArtist{
+      position:absolute;right:0;bottom:0;width:50%;height:50%;
+      box-sizing:border-box;
+      padding:0 clamp(.4rem,4%,.7rem) clamp(.4rem,4%,.7rem) 0;
+      display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;
+      gap:.2rem;z-index:3;
+      text-align:right;line-height:1.25;
+      overflow:hidden;pointer-events:none;
+    }
+    /* AOS-style fade-up, staggered, and held back until the wipe has
+       most of the way across. The delays live under :hover only, so
+       leaving the card fades everything straight back out. */
+    .gArtistAv,.gArtistName,.gArtistHandle{
+      opacity:0;transform:translateY(10px);
+      transition:opacity .45s cubic-bezier(.22,.61,.36,1),transform .45s cubic-bezier(.22,.61,.36,1);
+    }
+    .gItem:hover .gArtistAv,.gItem:focus-within .gArtistAv,
+    .gItem:hover .gArtistName,.gItem:focus-within .gArtistName,
+    .gItem:hover .gArtistHandle,.gItem:focus-within .gArtistHandle,
+    .awCard:hover .gArtistAv,.awCard:focus-within .gArtistAv,.awCard:focus-visible .gArtistAv,
+    .awCard:hover .gArtistName,.awCard:focus-within .gArtistName,.awCard:focus-visible .gArtistName,
+    .awCard:hover .gArtistHandle,.awCard:focus-within .gArtistHandle,.awCard:focus-visible .gArtistHandle{opacity:1;transform:none;}
+    .gItem:hover .gArtistAv,.gItem:focus-within .gArtistAv,
+    .awCard:hover .gArtistAv,.awCard:focus-within .gArtistAv,.awCard:focus-visible .gArtistAv{transition-delay:.30s;}
+    .gItem:hover .gArtistName,.gItem:focus-within .gArtistName,
+    .awCard:hover .gArtistName,.awCard:focus-within .gArtistName,.awCard:focus-visible .gArtistName{transition-delay:.38s;}
+    .gItem:hover .gArtistHandle,.gItem:focus-within .gArtistHandle,
+    .awCard:hover .gArtistHandle,.awCard:focus-within .gArtistHandle,.awCard:focus-visible .gArtistHandle{transition-delay:.45s;}
+    .gArtistAv{
+      width:clamp(30px,32%,54px);aspect-ratio:1;flex:0 0 auto;
+      border-radius:50%;overflow:hidden;
+      background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.38);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fm);font-size:.9rem;line-height:1;color:#fff;
+    }
+    /* .gItem img / .awImgWrap img rules target every descendant image,
+       so the avatar needs its own sizing back — and must sit out the
+       card's zoom-on-hover. */
+    .gArtistAv img{width:100%;height:100%;aspect-ratio:1;object-fit:cover;display:block;}
+    .gItem:hover .gArtistAv img,.awCard:hover .gArtistAv img{transform:none;}
+    .gArtistName,.gArtistHandle{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .gArtistName{
+      font-family:var(--fd);font-weight:700;
+      font-size:clamp(.82rem,1.5vw,1.08rem);color:#fff;
+      text-shadow:0 1px 4px rgba(0,0,0,.55);
+    }
+    .gArtistHandle{
+      font-family:var(--fm);font-size:clamp(.68rem,1.15vw,.88rem);
+      letter-spacing:.04em;color:rgba(255,255,255,.72);
+    }
+    @media(prefers-reduced-motion:reduce){
+      .gOv{transition:none;}
+      .gArtistAv,.gArtistName,.gArtistHandle{transform:none;transition:opacity .2s;}
+      .gItem:hover .gArtistAv,.gItem:hover .gArtistName,.gItem:hover .gArtistHandle,
+      .gItem:focus-within .gArtistAv,.gItem:focus-within .gArtistName,.gItem:focus-within .gArtistHandle,
+      .awCard:hover .gArtistAv,.awCard:hover .gArtistName,.awCard:hover .gArtistHandle,
+      .awCard:focus-within .gArtistAv,.awCard:focus-within .gArtistName,.awCard:focus-within .gArtistHandle{transition-delay:0s;}
+    }
+    .cBadgeWrap{display:none;}
+    .cBadge{background:var(--sur2);border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
+    .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,var(--bg));border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
+    /* Multi-image marker — top-right of a gallery card, opposite the
+       category badge. Purely informational, never a click target. */
+    .gMulti{
+      position:absolute;top:.4rem;right:.4rem;z-index:2;
+      display:inline-flex;align-items:center;gap:.2rem;
+      background:rgba(20,20,30,.72);
+      border:1px solid rgba(var(--pg-rgb),.18);
+      border-radius:6px;
+      padding:.18rem .38rem;
+      font-family:var(--fm);font-size:.58rem;letter-spacing:.04em;
+      color:#fff;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      pointer-events:none;
+    }
+
+
+    /* ── Full gallery overlay — slide-in panel ──
+       Locally re-declares the shared design tokens (same values as
+       #communityPage) so every child that already styles itself with
+       var(--bg)/var(--sur)/var(--tx)/var(--pg)/etc. repaints to match
+       the Community page automatically. Artwork cards (.gItem) and
+       the image grid itself are intentionally left alone below. */
+    #fg{
+      position:fixed;inset:0;z-index:500;overflow-y:auto;
+      transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+      --bg:inherit;--sur:inherit;--sur2:inherit;
+      --bdr:inherit;--bdrh:inherit;
+      --tx:inherit;--txd:inherit;
+      --pg:inherit;--pb:inherit;--ps:inherit;
+      --pdim:inherit;
+      background:var(--bg);color:var(--tx);
+    }
+    #fg.open{transform:translateX(0);}
+    /* ── Title + subtitle — sits above the sticky search/filter bar,
+       scrolls away with the rest of the page ── */
+    /* Gallery / Comic overlay heading — mirrors the Community page title
+       (.cmHdrTitle): centred, gradient-coloured with a soft glow and a ✦
+       accent, plus a divider line beneath. Every colour uses theme
+       variables, so it adapts to every theme exactly like the Community
+       header does. */
+    /* ── Title bar — now matches the Community header (.cmHdr):
+       sticky at the top, frosted-blur surface, all-caps gradient
+       title. The search/filter bar (.fgHdr) sticks directly below
+       it (top offset = this bar's fixed 3.4rem height). ── */
+    .fgIntro{
+      position:sticky;top:0;z-index:11;
+      margin:0;
+      height:3.4rem;
+      padding:0 1.5rem;
+      display:flex;align-items:center;justify-content:center;
+      text-align:center;
+      border-bottom:1px solid var(--bdr);
+      isolation:isolate;
+    }
+    /* background + blur split onto ::before, same decoupling as .cmHdr */
+    .fgIntro::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .fgTitle{
+      display:inline-flex;align-items:center;gap:.45rem;margin:0;
+      font-family:var(--fd);
+      font-size:1.15rem;
+      font-weight:800;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
+    }
+    .fgTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);}
+    /* narrow screens: same tracking reduction as .cmHdrTitle */
+    @media(max-width:480px){
+      .fgTitle{font-size:1.02rem;letter-spacing:.08em;}
+    }
+    .fgHdr{position:sticky;top:3.4rem;z-index:10;border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;isolation:isolate;}
+    /* FIX: background + blur split onto ::before, same decoupling as
+       #bnNav — sticky elements have the same fixed-during-scroll
+       repaint issue while they're pinned. */
+    .fgHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .fgQ{flex:1;min-width:140px;max-width:280px;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.1em;padding:.55rem .9rem;outline:none;transition:border-color .25s;border-radius:6px;}
+    .fgQ:focus{border-color:var(--pg);}
+    .fgQ::placeholder{color:var(--txd);}
+
+    .fgFil{display:flex;align-items:center;flex-shrink:0;}
+    .fgFltBtn{flex-shrink:0;width:42px;height:42px;background:color-mix(in srgb,var(--tc) 8%,transparent);border:1px solid var(--bdrh);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .25s,color .25s,background .25s,box-shadow .25s;position:relative;border-radius:6px;}
+    .fgFltBtn svg{width:18px;height:18px;pointer-events:none;}
+    .fgFltBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
+    .fgFltBtn.active{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
+    .fgFltBtn.active::after{content:'';position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);}
+
+    /* ── FILTER PANEL OVERLAY ── */
+    /* ── SECTION TABS ─────────────────────────────────────────
+       The gallery is no longer artwork-only, so a tab rail sits
+       between the frosted title bar and the content. It takes the
+       sticky offset the old .fgHdr search row used to hold (3.4rem =
+       the .fgIntro height). Six labels never wrap: the rail scrolls
+       sideways so a phone simply swipes to reach Cart. */
+    .fgSecBar{
+      position:sticky;top:3.4rem;z-index:10;
+      border-bottom:1px solid var(--bdr);
+      padding:.5rem clamp(.7rem,2vw,2rem) 0;
+      isolation:isolate;
+    }
+    /* background + blur split onto ::before, same decoupling as .fgIntro */
+    .fgSecBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .fgSecTabs{
+      display:flex;flex-wrap:nowrap;align-items:flex-end;gap:0 1.5rem;
+      overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+      scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
+    }
+    .fgSecTabs::-webkit-scrollbar{display:none;}
+    .fgSecBtn{
+      display:flex;align-items:center;gap:.45rem;
+      font-family:var(--fd);font-size:.95rem;font-weight:700;letter-spacing:.05em;
+      background:none;border:0;border-bottom:2px solid transparent;
+      padding:.65rem 0 .7rem;margin:0;cursor:pointer;
+      color:var(--txd);white-space:nowrap;flex-shrink:0;
+      transition:color .25s,border-color .25s;
+    }
+    .fgSecBtn:hover{color:var(--tx);}
+    .fgSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
+    /* ── Section icon chips ───────────────────────────────────
+       DELIBERATELY hard-coded hex, not theme tokens: these are
+       section identity, the same way an app icon doesn't restyle
+       itself per wallpaper. dark / graydark / light
+       all render them identically. The white glyph is pinned in the
+       markup AND here so nothing can repaint it either. */
+    .fgSecIco{
+      width:24px;height:24px;border-radius:7px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;
+      transition:transform .25s ease,box-shadow .25s ease;
+    }
+    .fgSecIco svg{width:14px;height:14px;display:block;stroke:#fff;}
+    /* Inactive chips sit back a touch so the active tab still reads
+       as selected — colour is untouched, only presence. */
+    .fgSecBtn:not(.active) .fgSecIco{opacity:.72;}
+    .fgSecBtn:hover .fgSecIco{opacity:1;}
+    .fgSecBtn.active .fgSecIco{transform:translateY(-1px);}
+    .fgSecIco--artworks{background:linear-gradient(135deg,#A78BFA,#7C3AED);box-shadow:0 2px 8px rgba(124,58,237,.32);}
+    .fgSecIco--resources{background:linear-gradient(135deg,#4ADE80,#16A34A);box-shadow:0 2px 8px rgba(22,163,74,.32);}
+    .fgSecIco--blog{background:linear-gradient(135deg,#818CF8,#4F46E5);box-shadow:0 2px 8px rgba(79,70,229,.32);}
+    .fgSecIco--marketplace{background:linear-gradient(135deg,#FB923C,#EA580C);box-shadow:0 2px 8px rgba(234,88,12,.32);}
+    .fgSecIco--jobs{background:linear-gradient(135deg,#38BDF8,#0891B2);box-shadow:0 2px 8px rgba(8,145,178,.32);}
+    .fgSecIco--cart{background:linear-gradient(135deg,#F472B6,#DB2777);box-shadow:0 2px 8px rgba(219,39,119,.32);}
+    @media(max-width:480px){
+      .fgSecBar{padding:.4rem 1rem 0;}
+      .fgSecTabs{gap:0 1.15rem;}
+      .fgSecBtn{font-size:.86rem;gap:.4rem;padding:.7rem 0 .75rem;}
+      .fgSecIco{width:22px;height:22px;border-radius:6px;}
+      .fgSecIco svg{width:13px;height:13px;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .fgSecIco{transition:none;}
+      .fgSecBtn.active .fgSecIco{transform:none;}
+    }
+    /* ── Section content: cards + list rows ─────────────────────
+       Resources / Marketplace are visual (preview tile on top);
+       Blog / Jobs are text-led rows. Both reuse the theme tokens so
+       every skin picks them up for free. */
+    .dzGrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));}
+    .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s;}
+    @media(hover:hover){.dzCard:hover{border-color:var(--pg);transform:translateY(-2px);}}
+    .dzThumb{position:relative;aspect-ratio:4/3;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    .dzThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .dzExt{font-family:var(--fm);font-size:.9rem;letter-spacing:.14em;color:var(--txd);}
+    .dzBadge{position:absolute;top:.5rem;right:.5rem;background:color-mix(in srgb,var(--bg) 78%,transparent);border:1px solid var(--bdr);border-radius:999px;padding:.2rem .55rem;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);}
+    .dzBody{padding:.7rem .8rem .85rem;display:flex;flex-direction:column;gap:.3rem;}
+    .dzName{font-size:.88rem;font-weight:600;color:var(--tx);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .dzMeta{font-family:var(--fm);font-size:.63rem;letter-spacing:.08em;color:var(--txd);display:flex;flex-wrap:wrap;gap:.15rem .55rem;}
+    .dzPrice{font-size:.85rem;font-weight:700;color:var(--ps);}
+    .dzRow{display:flex;gap:.85rem;align-items:flex-start;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:.9rem 1rem;cursor:pointer;transition:border-color .2s;}
+    @media(hover:hover){.dzRow:hover{border-color:var(--pg);}}
+    .dzRowIco{width:44px;height:44px;border-radius:10px;flex-shrink:0;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--fd);font-weight:700;color:var(--txd);}
+    .dzRowIco img{width:100%;height:100%;object-fit:cover;}
+    .dzList{display:flex;flex-direction:column;gap:.7rem;}
+    .dzChipRow{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem;}
+    .dzChip{font-family:var(--fm);font-size:.58rem;letter-spacing:.09em;color:var(--txd);border:1px solid var(--bdr);border-radius:999px;padding:.15rem .5rem;}
+    .dzEmpty{text-align:center;padding:3.5rem 1.5rem;color:var(--txd);font-family:var(--fm);font-size:.75rem;letter-spacing:.16em;}
+    .dzBusy{text-align:center;padding:2.5rem;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.2em;}
+    .dzBuy{margin-top:.6rem;padding:.5rem .8rem;border:0;border-radius:9px;background:var(--pg);color:var(--text-on-accent);font-family:var(--fm);font-size:.62rem;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:filter .15s,transform .15s;}
+    .dzBuy:active{transform:scale(.97);}
+    @media(hover:hover){.dzBuy:hover{filter:brightness(1.12);}}
+    .dzBuy--free{background:var(--sur2);color:var(--tx);border:1px solid var(--bdr);}
+
+    /* ── Upload page section tabs — same shape as the gallery rail so
+       the two read as one system. */
+    .upSecTabs{display:flex;gap:0 1.3rem;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;border-bottom:1px solid var(--bdr);margin:0 0 1.4rem;}
+    .upSecTabs::-webkit-scrollbar{display:none;}
+    .upSecBtn{display:flex;align-items:center;gap:.4rem;background:none;border:0;border-bottom:2px solid transparent;padding:.6rem 0 .65rem;font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--txd);white-space:nowrap;flex-shrink:0;cursor:pointer;transition:color .2s,border-color .2s;}
+    .upSecBtn:hover{color:var(--tx);}
+    .upSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
+    .upSecBtn .fgSecIco{width:20px;height:20px;border-radius:6px;}
+    .upSecBtn .fgSecIco svg{width:12px;height:12px;}
+    .dzHint{font-size:.72rem;color:var(--txd);margin-top:.3rem;line-height:1.5;}
+    .dzRowFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;}
+    .dzSel{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.85rem;padding:.6rem .7rem;outline:none;}
+    .dzSel:focus{border-color:var(--pg);}
+    /* ── Section upload · file / image picker ──────────────────────
+       Replaces the browser's bare "Choose file" control on the
+       Resources / Blog / Marketplace forms. Same anatomy as the
+       artwork dropzone (.upDz in css/upload.css) — dashed target,
+       one clear action, the chosen file shown back — wearing the
+       section's own gradient icon so the upload page and the gallery
+       rail read as one system. Deliberately roomy: this is the first
+       thing on the form and it should feel like a place to drop
+       something, not a squeezed-in input. */
+    .dzFileField{margin-bottom:1.75rem;}
+    .dzFileZone{
+      position:relative;border-radius:16px;
+      border:1.5px dashed color-mix(in srgb,var(--pg) 36%,transparent);
+      background:color-mix(in srgb,var(--pg) 4%,transparent);
+      padding:2.35rem 1.6rem;
+      transition:border-color .2s ease,background .2s ease,box-shadow .2s ease;
+    }
+    .dzFileZone.over,.dzFileZone:focus-within{
+      border-color:var(--pg);
+      background:color-mix(in srgb,var(--pg) 9%,transparent);
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--pg) 16%,transparent);
+    }
+    @media(hover:hover){
+      .dzFileZone:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}
+    }
+    /* The real input covers the card, so click, keyboard and drop all
+       land on it — the visible copy underneath is inert. */
+    .dzFileIn{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;}
+    .dzFileEmpty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.55rem;pointer-events:none;}
+    .dzFileZone .fgSecIco{width:54px;height:54px;border-radius:16px;margin-bottom:.45rem;}
+    .dzFileZone .fgSecIco svg{width:26px;height:26px;}
+    .dzFileTitle{font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);}
+    .dzFileSub{font-size:.8rem;color:var(--txd);}
+    .dzFileBtn{
+      margin-top:.6rem;padding:.62rem 1.4rem;border-radius:10px;
+      background:linear-gradient(135deg,var(--pg),var(--pgd,var(--pg)));
+      color:var(--text-on-accent);font-family:var(--fd);font-size:.82rem;font-weight:700;
+      box-shadow:0 4px 14px color-mix(in srgb,var(--pg) 28%,transparent);
+    }
+    .dzFileTypes{margin-top:.5rem;font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--txd);}
+
+    /* Picked state — the dashes give way to a solid card holding the
+       thumbnail, the name and the two actions. */
+    .dzFilePicked{display:none;align-items:center;gap:1rem;}
+    .dzFileZone.dzHasFile{
+      border-style:solid;border-color:var(--bdrh,var(--bdr));
+      background:var(--sur);padding:1.1rem 1.15rem;box-shadow:none;
+    }
+    .dzFileZone.dzHasFile .dzFileEmpty{display:none;}
+    .dzFileZone.dzHasFile .dzFilePicked{display:flex;}
+    .dzFileThumb{
+      width:66px;height:66px;flex-shrink:0;border-radius:12px;overflow:hidden;
+      background:var(--sur2);border:1px solid var(--bdr);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .dzFileThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .dzFileThumbExt{font-family:var(--fm);font-size:.66rem;font-weight:700;letter-spacing:.1em;color:var(--ps);}
+    .dzFileMeta{flex:1;min-width:0;}
+    .dzFileNm{font-size:.9rem;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .dzFileSz{margin-top:.3rem;font-family:var(--fm);font-size:.64rem;letter-spacing:.08em;color:var(--txd);}
+    /* Above the overlaying input, or Remove would only re-open the
+       file picker. */
+    .dzFileActs{display:flex;gap:.45rem;flex-shrink:0;position:relative;z-index:2;}
+    .dzFileAct{
+      border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
+      border-radius:9px;padding:.45rem .8rem;cursor:pointer;
+      font-family:var(--fm);font-size:.62rem;font-weight:700;letter-spacing:.1em;
+      transition:border-color .2s,color .2s,background .2s;
+    }
+    @media(hover:hover){.dzFileAct:hover{border-color:var(--pg);color:var(--ps);}}
+    .dzFileActRm{color:var(--txd);}
+    @media(hover:hover){.dzFileActRm:hover{border-color:var(--danger-strong,#D63A3F);color:var(--danger-strong,#D63A3F);}}
+    @media(max-width:560px){
+      .dzFileZone{padding:1.9rem 1.1rem;}
+      .dzFileZone.dzHasFile{padding:1rem;}
+      .dzFilePicked{flex-wrap:wrap;}
+      .dzFileActs{width:100%;}
+      .dzFileAct{flex:1;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .dzFileZone{transition:none;}
+    }
+
+    /* One panel visible at a time. display:none rather than an offset
+       so hidden panels cost no layout and can't be tabbed into. */
+    .fgSec{display:none;}
+    .fgSec.active{display:block;}
+
+    #fgFltOvr{position:fixed;inset:0;z-index:1050;opacity:0;pointer-events:none;transition:opacity .3s ease;isolation:isolate;}
+    /* FIX: background + blur moved to ::before, same decoupling as
+       #bnNav — stops the fixed full-viewport scrim from flashing
+       if the user scrolls behind it while it's open. */
+    #fgFltOvr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 55%,transparent);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:-1;}
+    #fgFltOvr.open{opacity:1;pointer-events:auto;}
+
+    /* ── FILTER PANEL ── — sits outside #fg in the DOM (sibling, not
+       child), so it needs the same token re-declaration as #fg above
+       to match the Community page theme. */
+    #fgFltPanel{
+      --bg:inherit;--sur:inherit;--sur2:inherit;
+      --bdr:inherit;--bdrh:inherit;
+      --tx:inherit;--txd:inherit;
+      --pg:inherit;--pb:inherit;--ps:inherit;
+      --pdim:inherit;
+      position:fixed;bottom:0;left:0;right:0;z-index:1051;
+      background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%);
+      border-top:1px solid var(--bdrh);
+      border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);
+      box-shadow:0 -8px 40px rgba(5,3,8,.75),inset 0 1px 0 color-mix(in srgb,var(--tc) 14%,transparent);
+      border-radius:6px 6px 0 0;
+      max-height:88vh;overflow-y:auto;
+      transform:translateY(100%);
+      transition:transform .4s cubic-bezier(.22,1,.36,1);
+    }
+    #fgFltPanel.open{transform:translateY(0);}
+    @media(min-width:641px){
+      #fgFltPanel{
+        bottom:auto;top:64px;right:1.4rem;left:auto;
+        border-radius:6px;border:1px solid var(--bdrh);
+        max-width:300px;max-height:calc(100vh - 80px);
+        transform:translateY(-8px) scale(.97);
+        opacity:0;
+        pointer-events:none;
+        transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .3s ease;
+      }
+      #fgFltPanel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:auto;}
+      #fgFltOvr::before{backdrop-filter:none;background:transparent;}
+    }
+
+    /* Panel header */
+    .fltPBdy{overflow-y:auto;}
+    .fltPH{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem .9rem;border-bottom:1px solid var(--bdr);}
+    .fltPH h3{font-family:var(--fd);font-size:.92rem;font-weight:700;letter-spacing:.2em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
+    .fltPH h3 .s{color:var(--pg);font-size:.6em;}
+    .fltPX{background:none;border:none;cursor:pointer;color:var(--txd);font-size:1rem;line-height:1;transition:color .2s,transform .2s;padding:.25rem;}
+    .fltPX:hover{color:var(--pg);transform:rotate(90deg);}
+
+    /* Section */
+    .fltSec{padding:.9rem 1.4rem .7rem;}
+    .fltSecLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.3em;color:var(--txd);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;}
+    .fltSecLbl::after{content:'';flex:1;height:1px;background:var(--bdr);}
+
+    /* Radio list options */
+    .fltOpts{display:flex;flex-direction:column;gap:0;}
+    .fltOpt{display:flex;align-items:center;gap:.6rem;padding:.5rem .35rem;cursor:pointer;border-radius:6px;transition:background .2s;user-select:none;}
+    /* Option icon — sits between the radio dot and the label and
+       tracks the label's colour, so a checked row lights both at once.
+       Theme tokens on purpose: unlike the section chips (fixed brand
+       colours), these are list chrome and belong to the active theme. */
+    .fltIco{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:17px;height:17px;color:var(--txd);transition:color .2s;}
+    .fltIco svg{width:17px;height:17px;display:block;}
+    .fltOpt input[type=radio]:checked ~ .fltIco{color:var(--ps);}
+    .fltOpt:hover .fltIco{color:var(--tx);}
+    .fltOpt:hover{background:color-mix(in srgb,var(--tc) 6%,transparent);}
+    .fltOpt input[type=radio]{display:none;}
+    .fltDot{width:15px;height:15px;border:1.5px solid var(--bdrh);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:border-color .2s,box-shadow .2s;}
+    .fltDot::after{content:'';width:6px;height:6px;background:var(--pg);border-radius:50%;opacity:0;transform:scale(0);transition:opacity .2s,transform .2s;box-shadow:0 0 5px var(--pg);}
+    .fltOpt input[type=radio]:checked + .fltDot{border-color:var(--pg);box-shadow:0 0 8px color-mix(in srgb,var(--tc) 40%,transparent);}
+    .fltOpt input[type=radio]:checked + .fltDot::after{opacity:1;transform:scale(1);}
+    .fltOpt input[type=radio]:checked ~ .fltLbl{color:var(--ps);}
+    .fltLbl{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--txd);transition:color .2s;}
+
+    /* Grid options — horizontal row */
+    .fltOptsH{display:flex;flex-direction:row;gap:.5rem;}
+    .fltOptH{flex:1;display:flex;flex-direction:column;align-items:center;gap:.45rem;padding:.65rem .3rem;cursor:pointer;border:1px solid var(--bdr);background:color-mix(in srgb,var(--tc) 4%,transparent);border-radius:6px;transition:border-color .2s,background .2s,box-shadow .2s;user-select:none;}
+    .fltOptH:hover{border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 8%,transparent);}
+    .fltOptH input[type=radio]{display:none;}
+    .fltOptH:has(input[type=radio]:checked){border-color:var(--pg);background:var(--pdim);box-shadow:0 0 14px color-mix(in srgb,var(--tc) 28%,transparent);}
+    .fltOptH:has(input[type=radio]:checked) .fltGridIco{color:var(--ps);}
+    .fltOptH:has(input[type=radio]:checked) .fltLbl{color:var(--ps);}
+    .fltGridIco{color:var(--txd);display:flex;gap:2px;transition:color .2s;}
+    .fltGridIco span{display:block;width:7px;height:7px;border:1px solid currentColor;border-radius:1px;opacity:.8;}
+
+    /* Separator */
+    .fltSep{height:1px;background:linear-gradient(to right,transparent,var(--bdr),transparent);margin:0 1rem;}
+
+    /* Done button */
+    .fltDone{display:block;width:calc(100% - 2.8rem);margin:1rem 1.4rem 1.5rem;padding:.9rem 1rem;background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.3em;cursor:pointer;transition:background .3s,box-shadow .3s,transform .3s;text-align:center;border-radius:6px;}
+    .fltDone:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 26px color-mix(in srgb,var(--tc) 42%,transparent),inset 0 0 20px color-mix(in srgb,var(--tc) 8%,transparent);transform:translateY(-1px);}
+    .fltDone:active{transform:translateY(0) scale(.98);}
+
+    /* ── Infinite scroll — shared pieces ──
+       .igSentinel: invisible trip-wire observed by an
+       IntersectionObserver; when it scrolls near the viewport the
+       next batch is appended (replaces every Load More button).
+       Batch sizes follow the column layout: 4-col 16→8, 3-col
+       12→6, 2-col 10→4. grid-column:1/-1 lets the sentinel live
+       INSIDE a grid (spanning the full row) or after it alike. */
+    .igSentinel{
+      width:100%;
+      height:2px;
+      grid-column:1/-1;
+      pointer-events:none;
+    }
+    /* Skeleton tile — shown while a server-backed grid (profile
+       gallery) is fetching its next batch; in-memory grids append
+       instantly so they never need these. Same square footprint
+       as a real card so the grid doesn't jump when tiles swap
+       for artwork. */
+    .igSkelCard{
+      aspect-ratio:1;
+      border-radius:6px;
+      background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
+      background-size:200% 100%;
+      animation:imgShimmer 1.4s infinite;
+    }
+    /* Gallery-card image skeleton — shimmer sits on the <img>
+       element's own background, visible until pixels arrive
+       (aspect-ratio:1 already reserves the space, so nothing
+       shifts). Cleared on load/error via .imgDone, which matters
+       for transparent PNGs — left on, the shimmer would show
+       through them forever. */
+    .gItem img:not(.imgDone){
+      background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
+      background-size:200% 100%;
+      animation:imgShimmer 1.4s infinite;
+    }
+
+    /* Chat load-older spinner — shared by the community feed and DMs.
+       Collapses to zero height when idle so, sitting at the TOP of the
+       thread, it never leaves a gap above the first message; expands
+       while loading older messages. */
+    .cpRefreshWrap{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      max-height:0;
+      padding:0;
+      overflow:hidden;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .3s ease,max-height .3s ease,padding .3s ease;
+    }
+    .cpRefreshWrap.visible{
+      max-height:60px;
+      padding:1.2rem 0 .5rem;
+      opacity:1;
+    }
+    .cpRefreshSpinner{
+      width:22px;height:22px;
+      border:2px solid color-mix(in srgb,var(--tc) 25%,transparent);
+      border-top-color:var(--pg);
+      border-radius:50%;
+      animation:cpSpin .9s linear infinite;
+    }
+    @keyframes cpSpin{to{transform:rotate(360deg);}}
+
+    .fgBdy{padding:1.5rem;}
+    .fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;}
+    /* ── Grid via CSS Grid — same fixed-size square-box auto-fill
+       system as the homepage Artworks grid (.awGrid), so boxes and
+       gaps are pixel-identical on every device. Reading order flows
+       left-to-right, top-to-bottom (row-major), matching newest→oldest
+       sort order. ── */
+    .fgGrid{
+      display:grid;
+/* ── Unified responsive columns ──
+         2 columns on phones · 3 on tablets & phone "desktop site"
+         mode (~700-1279px) · 4 on real desktops (1280px+). Columns
+         are 1fr, so on larger/ultrawide screens the cards simply
+         grow to fill — no extra columns, boxes auto-adjust. ── */
+      grid-template-columns:repeat(2,1fr);
+      gap:.3rem;
+      /* Extra bottom clearance — same 84px pattern used by .awGrid
+         — so the last row of images never sits underneath
+         the floating #bnNav pill, which stays visible over this
+         full-page overlay. */
+      padding-bottom:calc(1rem + 84px);
+    }
+    @media(min-width:700px){ .fgGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
+    @media(min-width:1280px){ .fgGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
+    /* Gallery overlay responsive rules (also part of § 9b) */
+    @media(max-width:640px){
+      .fgHdr{padding:.8rem 1rem}
+    }
+
+    #artModal{
+      position:fixed;inset:0;z-index:1100;
+      display:flex;align-items:center;justify-content:center;
+      padding:2rem;
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+      transition:opacity .32s cubic-bezier(.22,1,.36,1),visibility .32s;
+      isolation:isolate;
+    }
+    /* FIX: background + blur split onto ::before (position:absolute
+       takes it out of the flex flow so the image card still
+       centers normally) — same decoupling as #bnNav, stops the
+       flash if the page scrolls behind this while it's open. */
+    #artModal::before{
+      content:'';position:absolute;inset:0;
+      background:rgba(8,8,10,.5);
+      backdrop-filter:blur(10px) saturate(120%);
+      -webkit-backdrop-filter:blur(10px) saturate(120%);
+      z-index:-1;
+    }
+    #artModal.open{
+      opacity:1;
+      visibility:visible;
+      pointer-events:auto;
+    }
+    /* Closing state plays a faster, slightly different curve so the
+       fade-out doesn't feel like a mirrored fade-in. */
+    #artModal.closing{
+      opacity:0;
+      transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;
+    }
+    /* ── Single glass container ──
+       width clamps to 900–1100px on desktop, scales fluidly on
+       tablet, and goes near-full-width with safe gutters on mobile. */
+    .amCard{
+      position:relative;
+      width:min(1100px,94vw);
+      max-width:1100px;
+      min-width:min(900px,94vw);
+      max-height:90vh;
+      display:flex;
+      flex-direction:column;
+      background:linear-gradient(160deg,color-mix(in srgb,var(--sur) 78%,transparent) 0%,color-mix(in srgb,var(--sur2) 72%,transparent) 100%);
+      border:1px solid color-mix(in srgb,var(--bdr) 80%,white 10%);
+      border-radius:28px;
+      overflow:hidden;
+      backdrop-filter:blur(28px) saturate(160%);
+      -webkit-backdrop-filter:blur(28px) saturate(160%);
+      box-shadow:0 40px 100px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.22),inset 0 1px 0 color-mix(in srgb,white 18%,transparent);
+      transform:scale(.92) translateY(10px);
+      opacity:0;
+      transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
+    }
+    /* ── Image: the main focus, always given the most space ── */
+    .amImgWrap{
+      position:relative;
+      width:100%;
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:color-mix(in srgb,var(--bg) 90%,black 6%);
+      overflow:hidden;
+    }
+    .amImgWrap img{
+      max-width:100%;
+      max-height:66vh;
+      width:auto;
+      height:auto;
+      object-fit:contain;
+      display:block;
+    }
+    .amImgWrap.loading::after{
+      content:'';
+      position:absolute;inset:0;
+      background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--tc) 8%,transparent) 50%,transparent 70%);
+      background-size:200% 100%;
+      animation:amShimmer 1.3s ease-in-out infinite;
+    }
+    @keyframes amShimmer{0%{background-position:140% 0;}100%{background-position:-40% 0;}}
+    /* ── Stacked info block, all inside the same container ── */
+    .amInfo{
+      flex:0 0 auto;
+      padding:1.8rem clamp(1.5rem,4vw,2.8rem) clamp(1.6rem,4vw,2.4rem);
+      display:flex;
+      flex-direction:column;
+      gap:1.1rem;
+      border-top:1px solid color-mix(in srgb,var(--bdr) 80%,white 8%);
+      max-height:34vh;
+      overflow-y:auto;
+    }
+    .amDiv{
+      width:100%;
+      height:1px;
+      background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--bdr) 90%,white 10%) 18%,color-mix(in srgb,var(--bdr) 90%,white 10%) 82%,transparent);
+      flex:0 0 auto;
+    }
+    .amName{
+      font-family:var(--fd);
+      font-size:clamp(1.2rem,2.4vw,1.55rem);
+      font-weight:700;
+      letter-spacing:.02em;
+      color:var(--tx);
+      line-height:1.3;
+      word-break:break-word;
+    }
+    .amDesc{
+      font-family:var(--fb);
+      font-size:.92rem;
+      line-height:1.65;
+      color:var(--txd);
+      word-break:break-word;
+    }
+    .amDesc:empty,.amDesc[hidden]{display:none;}
+    /* ── Close button ── */
+    .amX{
+      position:absolute;
+      top:1.1rem;right:1.1rem;
+      width:2.4rem;height:2.4rem;
+      display:flex;align-items:center;justify-content:center;
+      background:color-mix(in srgb,var(--bg) 45%,transparent);
+      border:1px solid color-mix(in srgb,var(--bdr) 80%,white 10%);
+      border-radius:50%;
+      color:var(--tx);
+      font-size:1.05rem;
+      line-height:1;
+      cursor:pointer;
+      z-index:5;
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      transition:color .2s,border-color .2s,background .2s,transform .15s;
+    }
+    .amX:hover{color:var(--pg);border-color:var(--bdrh);transform:scale(1.06);}
+    .amX:active{transform:scale(.94);}
+
+    /* ── Tablet ── */
+    
+    /* RESPONSIVE CSS — TABLET RULES */
+
+    @media(max-width:1024px){
+      .amCard{width:min(92vw,860px);min-width:0;border-radius:22px;}
+      .amImgWrap img{max-height:58vh;}
+    }
+    /* ── Mobile: near-full width, comfortable touch spacing, no
+         horizontal scroll anywhere in the modal ── */
+    @media(max-width:640px){
+      #artModal{padding:.6rem;}
+      .amCard{
+        width:100%;
+        min-width:0;
+        max-height:96vh;
+        border-radius:18px;
+      }
+      .amImgWrap img{max-height:48vh;}
+      .amInfo{
+        padding:1.3rem 1.2rem 1.4rem;
+        gap:.9rem;
+        max-height:40vh;
+      }
+      .amName{font-size:1.08rem;}
+      .amDesc{font-size:.88rem;}
+      .amX{top:.7rem;right:.7rem;width:2.2rem;height:2.2rem;font-size:.95rem;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      #artModal,#artModal .amCard,#artModal .avBox{transition:opacity .15s linear;}
+      .amCard,.avBox{transform:none!important;}
+    }
+

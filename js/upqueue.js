@@ -233,7 +233,8 @@
           /* Carried across the wait; publish_due_scheduled_uploads()
              re-attaches them once the artwork row exists. */
           album_ids: (job.albums && job.albums.length) ? job.albums : null,
-          content_rating:mod.rating, is_mature:mod.rating==='MATURE', ai_moderation:mod.audit
+          content_rating:mod.rating, is_mature:mod.rating==='MATURE', ai_moderation:mod.audit,
+          mod_token:mod.token||null
         });
         if(se) throw se;
         job.stage='done'; upqSync();
@@ -241,7 +242,7 @@
         uschLoad();          /* new card appears in the SCHEDULED rail */
         return;
       }
-      const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,thumb_zoom:job.thumbFocus.z||1,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved',content_rating:mod.rating,is_mature:mod.rating==='MATURE',ai_moderation:mod.audit}).select();
+      const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,thumb_zoom:job.thumbFocus.z||1,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved',content_rating:mod.rating,is_mature:mod.rating==='MATURE',ai_moderation:mod.audit,mod_token:mod.token||null}).select();
       if(de) throw de;
 
       /* Album membership, if any was picked on the form. Runs AFTER the

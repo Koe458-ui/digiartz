@@ -355,12 +355,24 @@ export async function onRequestPost(context) {
       })
     }).catch(() => {}));
 
+    // Signed approval ticket. Only minted when the upload PASSED and a
+    // signing secret is configured. The database moderation-gate trigger
+    // (see the security branch's activation SQL) verifies this HMAC before
+    // it will let a client insert land as status='approved', so a caller
+    // that skips this endpoint cannot self-approve. No MOD_SIGNING_SECRET
+    // set => no token => the gate stays inert and the flow is unchanged.
+    let token = null;
+    if (allowed && env.MOD_SIGNING_SECRET) {
+      try { token = await signApproval(env.MOD_SIGNING_SECRET, user.id); } catch { token = null; }
+    }
+
     return json({
       allowed,
       rating,
       code,            // admin-facing reason code, e.g. 'SELFIE'
       failIndex,       // which image failed (-1 when approved)
       reason,          // canonical user-facing message
+      token,           // server-signed approval, verified DB-side (may be null)
       audit: {
         model: env.GEMINI_MODEL || 'gemini-flash-latest',
         checked_at: new Date().toISOString(),
@@ -470,6 +482,26 @@ async function moderateWithGemini(env, b64, mimeType, cfg) {
   } catch {
     return { ok: false, reason: 'Moderation check failed — try again.' };
   }
+}
+
+// ------------------------------------------------------------
+// Mint a short-lived, single-use HMAC approval ticket bound to this
+// user. Format: "<exp>.<jti>.<hexsig>" where
+//   sig = HMAC_SHA256(secret, "<uid>.<exp>.<jti>")
+// The DB trigger recomputes the same HMAC (pgcrypto) with auth.uid(),
+// checks it is unexpired and the jti unused, then consumes it — so one
+// passed moderation authorizes exactly one approved insert.
+async function signApproval(secret, uid) {
+  const exp = Math.floor(Date.now() / 1000) + 600;   // valid 10 minutes
+  const jti = crypto.randomUUID();
+  const msg = `${uid}.${exp}.${jti}`;
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg));
+  const sig = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, '0')).join('');
+  return `${exp}.${jti}.${sig}`;
 }
 
 // ------------------------------------------------------------

@@ -26,6 +26,12 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v61 — security hardening. The artwork upload now forwards a server-
+       signed moderation approval token (mod_token) on both the direct
+       and scheduled publish paths, so the DB-side moderation gate can
+       verify a real moderation pass before an insert is trusted as
+       approved. Changed: js/upqueue.js.
+
    v60 — artwork dropzone matches the new picker. The artwork upload's
        drop target now uses the same anatomy as the section forms: the
        Artworks gradient mark instead of the ⬆ emoji tile, a "Select
@@ -344,7 +350,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v60';
+const CACHE_VERSION = 'v61';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

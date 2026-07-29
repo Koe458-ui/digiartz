@@ -1,5 +1,4 @@
 // feed search
-  // feed search
   var awQ = '', awQTimer = null, fgQTimer = null;
 
   var awArtists = null, awArtistsBusy = false;
@@ -87,8 +86,7 @@
     var empty = document.getElementById('awEmpty');
     if(!grid) return;
 
-    // trending order, hidden dropped
-    // keep active query
+    // trending order, hidden dropped, query kept
     var src = awSearchFilter(filterHidden((list||[]).slice()));
     awRList = sortByTrending(src);
     // keep scroll depth

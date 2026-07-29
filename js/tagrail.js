@@ -1,5 +1,4 @@
 // tag rail and preferences
-  // tag rail and preferences
   var tgAll = [];
   var tgPrefs = new Set();
   var tgShown = [];

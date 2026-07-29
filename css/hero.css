@@ -767,9 +767,11 @@
       /* two reserved lines keep the row on one grid however the copy wraps */
       min-height:calc(2 * 1.35em);
     }
-    /* the icon hues are picked against near-black, so darken them on the
-       light theme — at full strength lime and cyan wash out on #F6F6F9 */
-    html[data-theme="light"] .qlIco{color:color-mix(in srgb,var(--qlC) 62%,#000);}
+    /* the icon hues are picked against near-black, so the light theme uses
+       its own darker cut per item — at full strength lime and cyan wash out
+       on #F6F6F9. Spelled out as --qlL rather than mixed at run time so it
+       works on browsers without color-mix() too. */
+    html[data-theme="light"] .qlIco{color:var(--qlL,var(--qlC));}
     html[data-theme="light"] .qlDesc{color:rgba(var(--tx2-rgb),.84);}
     @media(hover:hover){
       .qlItem:hover{background:var(--sur);transform:translateY(-2px);}
@@ -782,7 +784,7 @@
       position:relative;height:3px;margin-top:.8rem;
       border-radius:999px;overflow:hidden;
       /* tied to the text colour so the track stays visible on every theme */
-      background:color-mix(in srgb,var(--tx) 15%,transparent);
+      background:rgba(var(--tx2-rgb),.22);
     }
     .qlBar.qlHide{visibility:hidden;}
     .qlBarFill{

@@ -4,6 +4,28 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v66 — the quick links rendered unstyled on a first load after v65 on
+       some browsers: giant SVGs, title and description running together
+       on one line, grey default button chrome. Nothing wrong with the
+       CSS — the page was being served the previous hero.css. Navigations
+       are network-first, so index.html is always fresh, but same-origin
+       assets are stale-while-revalidate, which hands back the cached copy
+       and only then refetches. New markup therefore paints against last
+       release's stylesheet, and the fix does not land until a second
+       reload. Every asset in index.html was pinned at ?v=1 and had never
+       been bumped, so the URL never changed and the cache entry never
+       missed. hero.css and sections.js now carry ?v=65, which is a cache
+       key the old shell cannot hold, so the very first load after a
+       deploy gets the matching pair. SHELL_URLS carries the same two
+       query strings so the precache still covers what the page asks for
+       (the other entries there are still unversioned, matching their
+       tags). Bump the ?v= on any shell file you change from here on.
+       Also drops color-mix() out of the quick links: the light theme now
+       carries a spelled-out --qlL per item and the progress track uses
+       rgba(), so browsers older than Chromium 111 / Safari 16.2 get the
+       same result instead of a washed-out or invisible one.
+       Changed: index.html, css/hero.css, sw.js.
+
    v65 — homepage quick links. A row of twelve icon + title +
        description shortcuts now sits between the hero pitch and the
        search bar, split into two halves of six: browse (Artworks,
@@ -365,7 +387,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v65';
+const CACHE_VERSION = 'v66';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -390,7 +412,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css',
-  '/css/hero.css',
+  '/css/hero.css?v=65',
   '/css/viewer.css',
   '/css/community.css',
   '/css/connect.css',
@@ -433,7 +455,7 @@ const SHELL_URLS = [
   '/js/zeo.js',
   '/js/theme.js',
   '/js/engagement.js',
-  '/js/sections.js'
+  '/js/sections.js?v=65'
 ];
 
 // hosts

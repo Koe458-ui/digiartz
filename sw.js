@@ -4,6 +4,18 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v64 — homepage feed is pure trending. renderAwGrid ran the trending
+       sort and then tgPrioritize() pulled every artwork matching a
+       saved tag preference to the front, so the homepage order did not
+       match the gallery's. The call is gone; both now use the same
+       sortByTrending. tgPrioritize and tgAfterChange were its only
+       users and are removed with it. Changed: js/search.js,
+       js/tagrail.js.
+
+   v63 — comments across the codebase reduced to short keyword labels,
+       site description rewritten in plain wording, and the U+2726
+       sparkle dropped where it was punctuation in toasts and buttons.
+
    v62 — homepage: the chip rail and the Artworks/Latest/category tab
        strip are gone. The search bar is now the last thing above the
        feed, so artwork starts immediately under it on every device.
@@ -335,7 +347,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v63';
+const CACHE_VERSION = 'v64';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

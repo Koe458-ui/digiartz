@@ -90,7 +90,7 @@
     // trending order, hidden dropped
     // keep active query
     var src = awSearchFilter(filterHidden((list||[]).slice()));
-    awRList = tgPrioritize(sortByTrending(src));
+    awRList = sortByTrending(src);
     // keep scroll depth
     var keep = awRShown;
     awRShown = 0;

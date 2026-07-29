@@ -79,7 +79,6 @@
     })();
     tgFill();
     tgRenderRail();
-    if(tgPrefs.size) tgAfterChange();
   }
   function tgFallbackVocab(){
     if(typeof SITE_CATEGORIES === 'undefined' || !Array.isArray(SITE_CATEGORIES)) return [];
@@ -326,27 +325,7 @@
     requestAnimationFrame(function(){
       tgFill();
       tgRenderRail(true);
-      tgAfterChange();
     });
-  }
-  function tgPrioritize(list){
-    if(!tgPrefs.size || !Array.isArray(list) || list.length < 2) return list;
-    var hit = [], rest = [];
-    for(var i=0; i<list.length; i++){
-      var a = list[i], toks = [], m = false;
-      if(Array.isArray(a.tags)) toks = toks.concat(a.tags);
-      toks = toks.concat(catList(a.category));
-      for(var j=0; j<toks.length; j++){
-        if(tgPrefs.has(String(toks[j]).trim().toLowerCase())){ m = true; break; }
-      }
-      (m ? hit : rest).push(a);
-    }
-    return hit.concat(rest);
-  }
-  function tgAfterChange(){
-    try{
-      if(typeof awArtworksCache !== 'undefined') renderAwGrid(awArtworksCache);
-    }catch(e){}
   }
 
   function tgModOpen(){
@@ -390,7 +369,6 @@
     if(tick) tick.textContent = on ? '\u2713' : '';
     var tw = tgTwins(tag);
     for(var t2 = 0; t2 < tw.length; t2++) tgMark(tw[t2], on);
-    requestAnimationFrame(function(){ tgAfterChange(); });
   }
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;

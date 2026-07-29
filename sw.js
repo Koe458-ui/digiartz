@@ -4,12 +4,13 @@
    bump CACHE_VERSION to refill every client
 
    changelog
-   v65 — homepage quick links. A row of ten icon + title + description
-       shortcuts now sits between the hero pitch and the search bar,
-       ordered browse first (Artworks, Marketplace, Resources, Blog,
-       Jobs), then take part (Community, Upload), then account
-       (Subscription, Level, Cart). It is a snap scroller whose slot
-       count follows the device and never leaves 2–6: 2 on mobile,
+   v65 — homepage quick links. A row of twelve icon + title +
+       description shortcuts now sits between the hero pitch and the
+       search bar, split into two halves of six: browse (Artworks,
+       Marketplace, Resources, Blog, Jobs, Community) then yours
+       (Upload, Ranking, Level, Subscription, Cart, Theme), so a large
+       desktop shows one whole half per screen. It is a snap scroller
+       whose slot count follows the device and never leaves 2–6: 2 mobile,
        3 large mobile, 4 tablet, 5 desktop, 6 large desktop, and 6 on
        ultrawide with the row capped and centred rather than stretched.
        Icons sit in a fixed box and descriptions reserve two lines, so

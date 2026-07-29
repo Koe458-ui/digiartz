@@ -1775,12 +1775,18 @@
   if(window.ResizeObserver) new ResizeObserver(sync).observe(rail);
   sync();
 
-  // four destinations sit outside the gallery overlay
+  // everything that is not a gallery section
   var OWN = {
     community:    function(){ if(typeof bnGoCommunity === 'function') bnGoCommunity(); },
     upload:       function(){ if(typeof openPfUpload === 'function') openPfUpload(); },
     subscription: function(){ if(typeof openSubscription === 'function') openSubscription(); },
-    level:        function(){ if(typeof openRankPage === 'function') openRankPage('level'); }
+    level:        function(){ if(typeof openRankPage === 'function') openRankPage('level'); },
+    theme:        function(){ if(typeof openThemePage === 'function') openThemePage(); },
+    // the live boards are already on this page
+    ranking:      function(){
+      var el = document.getElementById('rankSec');
+      if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
   };
 
   window.qlGo = function(id){

@@ -4,6 +4,22 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v67 — quick links land in the right place. Tapping one opened the
+       right thing but not where it belongs: Cart showed the cart panel
+       with the section tab strip still scrolled to Artworks, so its own
+       tab sat off-screen and there was no sign of which section you
+       were in, and the bottom bar still lit Home. qlGo called openFG()
+       and the bare open* functions, which are the raw openers —
+       bnGoGallery / bnGoUpload are the real entries and additionally
+       close whatever else is open, reset the category filter and set
+       the nav highlight. Community was already routed through
+       bnGoCommunity, which is why it alone behaved. Every destination
+       now goes through the same door, and Subscription, Level, Theme
+       and Ranking close open overlays first. fgSwitchSection also
+       scrolls the active tab into view, so arriving from a quick link
+       or the hero CTA shows where you are.
+       Changed: index.html, js/sections.js, js/gallery.js.
+
    v66 — the quick links rendered unstyled on a first load after v65 on
        some browsers: giant SVGs, title and description running together
        on one line, grey default button chrome. Nothing wrong with the
@@ -387,7 +403,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v66';
+const CACHE_VERSION = 'v67';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -438,7 +454,7 @@ const SHELL_URLS = [
   '/js/share.js',
   '/js/misc-core.js',
   '/js/app-core.js',
-  '/js/gallery.js',
+  '/js/gallery.js?v=66',
   '/js/auth.js',
   '/js/profile.js',
   '/js/albums.js',
@@ -455,7 +471,7 @@ const SHELL_URLS = [
   '/js/zeo.js',
   '/js/theme.js',
   '/js/engagement.js',
-  '/js/sections.js?v=65'
+  '/js/sections.js?v=66'
 ];
 
 // hosts

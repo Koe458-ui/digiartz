@@ -1778,22 +1778,44 @@
   // everything that is not a gallery section
   var OWN = {
     community:    function(){ if(typeof bnGoCommunity === 'function') bnGoCommunity(); },
-    upload:       function(){ if(typeof openPfUpload === 'function') openPfUpload(); },
+    upload:       function(){ if(typeof bnGoUpload === 'function') bnGoUpload(); },
     subscription: function(){ if(typeof openSubscription === 'function') openSubscription(); },
     level:        function(){ if(typeof openRankPage === 'function') openRankPage('level'); },
     theme:        function(){ if(typeof openThemePage === 'function') openThemePage(); },
     // the live boards are already on this page
     ranking:      function(){
+      if(typeof bnSetActive === 'function') bnSetActive('bnHome');
       var el = document.getElementById('rankSec');
       if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
     }
   };
 
+  // sections that live inside the gallery overlay
+  var GALLERY = {
+    artworks:1, marketplace:1, resources:1, blog:1, jobs:1, cart:1
+  };
+
+  // whatever is open has to go first. bnCloseAllSections is the bottom
+  // nav's own sweep but it predates the ranking and theme pages, so
+  // those two are closed here as well — the rank page hides the bottom
+  // bar while it is up, and left open it takes the bar with it.
+  function shut(){
+    if(typeof bnCloseAllSections === 'function') bnCloseAllSections();
+    if(typeof closeRankPage === 'function') closeRankPage();
+    if(typeof closeThemePage === 'function') closeThemePage();
+  }
+
   window.qlGo = function(id){
-    if(OWN[id]){ OWN[id](); return; }
-    if(typeof openFG === 'function'){
-      openFG();
+    shut();
+    if(GALLERY[id]){
+      // bnGoGallery is the real entry: closes the rest, resets the
+      // category filter and lights up the Gallery tab. openFG alone
+      // opened the overlay with the app still thinking it was Home.
+      if(typeof bnGoGallery === 'function') bnGoGallery();
+      else if(typeof openFG === 'function') openFG();
       if(typeof fgSwitchSection === 'function') fgSwitchSection(id);
+      return;
     }
+    if(OWN[id]) OWN[id]();
   };
 })();

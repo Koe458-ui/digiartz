@@ -24,6 +24,15 @@
     }
     fgSection=id;
     var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
+    // the tab strip scrolls, so a section opened from somewhere else
+    // (a quick link, the hero CTA) would land with its tab off-screen
+    var rail=document.getElementById('fgSecTabs');
+    var tab=document.getElementById('fgSecBtn-'+id);
+    if(rail && tab){
+      var want=tab.offsetLeft-(rail.clientWidth-tab.offsetWidth)/2;
+      var max=rail.scrollWidth-rail.clientWidth;
+      rail.scrollLeft=Math.max(0,Math.min(want,max));
+    }
     // rail measures while visible
     if(id==='artworks' && typeof tgRenderRail==='function'){ try{ tgRenderRail(false); }catch(e){} }
     // load section on first visit

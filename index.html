@@ -281,20 +281,15 @@
        ARTWORKS SECTION
        Displays the 200 most recent artworks in a responsive ArtStation-
        style masonry grid (full-bleed image, overlaid title/gradient).
-       ├─ Section Header (.awHdr) — Artworks / category tabs
+       ├─ Search bar (.tgBlock) — filters the grid as you type
        ├─ Grid (.awGrid #awGrid)
        │   └─ Cards (.awCard) — injected by renderAwGrid() in
        │       column-sized batches via infinite scroll
        └─ Empty State (.awEmpty #awEmpty)
        ========================================================= -->
   <section id="artworks">
-    <!-- ── TAG BLOCK — a search bar over TWO chip rows. The rows live
-         inside ONE horizontal scroller, so a swipe slides both
-         together as a single block; the bar sits outside it and stays
-         put. Both rows run flush left and are packed to finish at the
-         same x (tgLayoutRail), so the right edge stays clean.
-         Ticking a tag rotates a fresh one into its slot; once every
-         tag is ticked, rotation pauses and chips stay ticked. ── -->
+    <!-- ── SEARCH BLOCK — just the bar. It filters #awGrid as you type,
+         so the grid starts immediately underneath it. ── -->
     <div class="tgBlock">
       <div class="tgSearch" id="awSearchInWrap">
         <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="24" height="24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -303,24 +298,6 @@
                aria-label="Search artworks" oninput="awSearchInput(this.value)">
         <button type="button" class="tgSearchClear" onclick="awSearchClear()" aria-label="Clear search">✕</button>
         <span class="tgSearchKbd" aria-hidden="true"><kbd class="tgKbdMod">⌘</kbd><kbd>K</kbd></span>
-      </div>
-      <div class="tgRail" id="tgRail" role="group" aria-label="Tag preferences">
-        <div class="tgScroll">
-          <div class="tgRowIn"></div>
-          <div class="tgRowIn"></div>
-        </div>
-      </div>
-    </div>
-    <!-- ── Section Header — tab switcher replaces the old title/subtitle ── -->
-    <div class="awHdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-      <div class="awTabs" id="awTabs" role="tablist" aria-label="Browse Artworks by category or Comic Arts">
-        <button class="awTabBtn active" id="awTabArt" role="tab" aria-selected="true" onclick="awSwitchTab('artworks')">Artworks</button>
-        <!-- "Latest" is NOT a category — it's a view of the newest posts, so it
-             lives here statically (before buildCategoryUI() injects the category
-             tabs) and is deliberately absent from the gallery's Category filter. -->
-        <button class="awTabBtn" id="awTabLatest" role="tab" aria-selected="false" onclick="awSwitchTab('latest')">Latest</button>
-        <!-- Category tabs injected by buildCategoryUI(), before the indicator. -->
-        <span class="awTabIndicator" id="awTabIndicator" aria-hidden="true"></span>
       </div>
     </div>
     <div class="awGrid" id="awGrid">
@@ -1440,12 +1417,14 @@
 
    <!-- ══ ARTWORKS ══ the live section: search + tag rail + grid ══ -->
    <div class="fgSec active" id="fgSec-artworks" role="tabpanel" aria-labelledby="fgSecBtn-artworks">
-    <!-- ── TAG RAIL (gallery copy) ── same component and same shared
-         state as the home rail: both carry class .tgRail,
-         tgRenderRail() paints every one it finds, and tgToggle() ticks
-         the matching chip in BOTH, so the two stay identical without
-         either owning the state. Artwork tags, so it lives inside the
-         Artworks section rather than above all six. -->
+    <!-- ── TAG RAIL ── the only rail on the site: a search bar over two
+         chip rows inside ONE horizontal scroller, so a swipe slides both
+         rows together while the bar stays put. Both rows run flush left
+         and are packed to finish at the same x (tgLayoutRail), so the
+         right edge stays clean. Ticking a tag moves matching artwork to
+         the front of every feed (tgPrioritize) — it never filters.
+         Artwork tags, so it lives inside the Artworks section rather
+         than above all six. -->
     <div class="tgBlock">
      <div class="tgSearch" id="fgSearchInWrap">
       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>

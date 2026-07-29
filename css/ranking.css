@@ -512,78 +512,16 @@
     }
 
     #artworks{
-      /* padding-top is 0 so it can't stack on .tgRail's top margin — the
-         rail is the first child and owns the spacing on BOTH its sides. */
+      /* padding-top is 0 so it can't stack on .tgBlock's top margin —
+         the search block is the first child and owns the spacing on
+         BOTH its sides. */
       padding:0 0 4rem;
     }
-    .awHdr{
-      width:100%;
-      margin:0 auto;
-      padding:0 clamp(.7rem,2vw,2rem);
-      box-sizing:border-box;
-    }
-    /* ── Artworks / category tab switcher — replaces the old
-       title + subtitle heading ── */
-    .awTabs{
-      display:flex;
-      flex-wrap:nowrap;
-      align-items:flex-end;
-      gap:.6rem 1.6rem;
-      position:relative;
-      overflow-x:auto;
-      overflow-y:hidden;
-      scrollbar-width:none;
-      -ms-overflow-style:none;
-      -webkit-overflow-scrolling:touch;
-    }
-    .awTabs::-webkit-scrollbar{display:none;}
-    .awTabBtn{
-      font-family:var(--fd);
-      font-size:clamp(1.4rem,3.2vw,2rem);
-      font-weight:800;
-      letter-spacing:-.01em;
-      background:none;
-      border:none;
-      padding:0 0 .3rem;
-      cursor:pointer;
-      color:var(--txd);
-      border-bottom:2px solid transparent;
-      transition:color .25s,border-color .25s;
-      flex-shrink:0;
-      white-space:nowrap;
-      opacity:0;
-      transform:translateY(20px);
-      animation:awTabIn .7s cubic-bezier(.22,1,.36,1) forwards;
-    }
-    .awTabBtn:nth-of-type(1){animation-delay:.05s;}
-    .awTabBtn:nth-of-type(2){animation-delay:.13s;}
-    .awTabBtn:nth-of-type(3){animation-delay:.21s;}
-    .awTabBtn:nth-of-type(4){animation-delay:.29s;}
-    .awTabBtn:nth-of-type(5){animation-delay:.37s;}
-    @keyframes awTabIn{
-      to{opacity:1;transform:translateY(0);}
-    }
-    @media (prefers-reduced-motion: reduce){
-      .awTabBtn{opacity:1;transform:none;animation:none;}
-    }
-    .awTabBtn:hover{color:var(--tx);}
-    .awTabBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
-    /* ── Sliding underline — a single element that glides between
-       tabs instead of the line just appearing under whichever one
-       is active. JS keeps its left/width synced to the active tab. ── */
-    .awTabIndicator{
-      position:absolute;
-      bottom:0;
-      height:2px;
-      background:var(--pg);
-      border-radius:1px;
-      transition:left .32s cubic-bezier(.22,1,.36,1),width .32s cubic-bezier(.22,1,.36,1);
-      pointer-events:none;
-    }
-    @media(max-width:560px){
-      .awTabBtn{font-size:1.15rem;}
-      .awTabs{gap:.5rem 1.1rem;}
-    }
+    /* The home block carries no chip rail, so the bar is its last child:
+       drop the gap that used to sit under the bar, and let the grid sit
+       close under it — artwork starts straight after the search bar. */
+    #artworks > .tgBlock > .tgSearch{margin-bottom:0;}
+    #artworks > .awGrid{margin-top:1.25rem;}
     /* ── ArtStation-style grid — standard CSS Grid so cards flow
        left-to-right, top-to-bottom (row-major), matching newest→oldest
        sort order, on every device. Column count only changes per

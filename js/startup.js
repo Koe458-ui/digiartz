@@ -60,90 +60,11 @@
     });
   }
 
-  /* ── Artworks / category tab state ──
-     awTab: which dataset is currently shown in #awGrid.
-     awArtworksCache: last data the fetch delivered,
-     so switching tabs re-renders instantly with no extra fetch. */
-  var awTab = 'artworks';
+  /* ── Home feed state ──
+     awArtworksCache: last data the fetch delivered. #awGrid shows one
+     view — every approved artwork, trending order — so this is the
+     whole dataset the grid ever renders. */
   var awArtworksCache = [];
-
-  /* Category tabs pull straight from awArtworksCache, filtered by
-     whichever category name the artwork was tagged with (comma-
-     separated categories are matched against, same as the gallery
-     filter elsewhere on the site). */
-  /* Tab keys are now the category slugs themselves, so these maps are
-     derived from SITE_CATEGORIES rather than hand-maintained. The two
-     the non-category 'artworks' tab keeps its fixed id. */
-  var AW_CATEGORY_TABS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]=c.slug; return m; },{});
-  var AW_TAB_BTN_IDS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]='awTab_'+c.slug; return m; },{
-    artworks: 'awTabArt',
-    latest:   'awTabLatest'
-  });
-
-  function awCategoryList(catName){
-    return awArtworksCache.filter(function(item){
-      return catList(item.category).map(function(c){ return c.toLowerCase(); }).indexOf(catName.toLowerCase()) !== -1;
-    });
-  }
-
-  function awListForTab(tab){
-    if(tab === 'artworks') return awArtworksCache;
-    /* 'latest' is a view, not a category — it spans every category and is
-       ordered newest-first (renderAwGrid skips the most-liked sort for it). */
-    if(tab === 'latest')   return awArtworksCache;
-    return awCategoryList(AW_CATEGORY_TABS[tab] || tab);
-  }
-
-  /* Slide the underline to sit under whichever button is active,
-     instead of it just popping into place. */
-  function awUpdateIndicator(activeBtn){
-    var ind = document.getElementById('awTabIndicator');
-    if(!ind || !activeBtn) return;
-    ind.style.left  = activeBtn.offsetLeft + 'px';
-    ind.style.width = activeBtn.offsetWidth + 'px';
-  }
-
-  function awSwitchTab(tab){
-    if(awTab === tab) return;
-    awTab = tab;
-    var activeBtn = null;
-    Object.keys(AW_TAB_BTN_IDS).forEach(function(key){
-      var btn = document.getElementById(AW_TAB_BTN_IDS[key]);
-      if(!btn) return;
-      var isActive = key === tab;
-      btn.classList.toggle('active', isActive);
-      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
-      if(isActive) activeBtn = btn;
-    });
-    awUpdateIndicator(activeBtn);
-    if(activeBtn) activeBtn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
-    renderAwGrid(awListForTab(tab), tab);
-  }
-
-  /* Position the indicator under the default active tab once layout
-     has settled (fonts etc.), and keep it aligned on resize. */
-  function awInitIndicator(){
-    awUpdateIndicator(document.getElementById(AW_TAB_BTN_IDS[awTab]));
-  }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', awInitIndicator);
-  }else{
-    awInitIndicator();
-  }
-  window.addEventListener('resize', awInitIndicator);
-  /* FIX: webfonts (Sora/Inter) load after DOMContentLoaded and reflow the tab
-     widths — without this the underline sat misaligned until the
-     first window resize. */
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(awInitIndicator); }
-  /* #artworks uses content-visibility:auto — while skipped, its tab
-     rects measure 0×0, so re-run the indicator when rendering starts.
-     (Event only fires in browsers that support content-visibility.) */
-  var awSec = document.getElementById('artworks');
-  if(awSec && 'oncontentvisibilityautostatechange' in awSec){
-    awSec.addEventListener('contentvisibilityautostatechange', function(e){
-      if(!e.skipped) awInitIndicator();
-    });
-  }
 
   /* Build one .awCard for an artwork — ArtStation-style masonry card. */
   function buildAwCard(item){
@@ -207,15 +128,13 @@
     return card;
   }
 
-  /* Render whichever dataset is passed into #awGrid — used for both
-     tabs, only actually painting if that tab is the active one. */
   /* ── Batched render state for the main-page grid ──
-     awRList: full sorted list for the active tab; awRShown: how many
-     cards are in the DOM. The old flat slice(0,200) painted up to
-     200 cards in one go — now the first column-sized batch paints
-     immediately and the rest streams in on scroll (no cap needed:
-     batching IS the perf guard). Appended cards paint straight
-     away — the scroll-reveal that used to restamp and re-animate
-     every appended batch is gone. */
-  var awRList = [], awRShown = 0, awRType = null, awSent = null;
+     awRList: full sorted list; awRShown: how many cards are in the
+     DOM. The old flat slice(0,200) painted up to 200 cards in one go
+     — now the first column-sized batch paints immediately and the
+     rest streams in on scroll (no cap needed: batching IS the perf
+     guard). Appended cards paint straight away — the scroll-reveal
+     that used to restamp and re-animate every appended batch is
+     gone. */
+  var awRList = [], awRShown = 0, awSent = null;
 

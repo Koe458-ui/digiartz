@@ -152,10 +152,10 @@
   /* ═══════════════════════════════════════════════════════════════
      SITE_CATEGORIES — the single source of truth for categories.
      ───────────────────────────────────────────────────────────────
-     Order here is the order everywhere: the homepage tab strip
-     (.awTabs), the gallery filter panel, and both upload pickers are
-     all generated from this array. To add/remove/reorder a category,
-     edit this list and nothing else.
+     Order here is the order everywhere: the gallery filter panel, the
+     tag rail's vocabulary and both upload pickers are all generated
+     from this array. To add/remove/reorder a category, edit this list
+     and nothing else.
 
        slug  → what's written to artworks.category (NEVER change an
                existing slug: live rows reference it)
@@ -407,7 +407,6 @@
   /* Paints every category-driven UI from SITE_CATEGORIES:
        1. #fltCatOpts    — gallery filter radios (after "ALL CATEGORIES")
        2. #pfUpCatPanel  — universal upload checkboxes
-       4. #awTabs        — homepage tab strip (before the indicator)
      Runs once on DOMContentLoaded. Element ids are built with
      getElementById-safe names, so slugs starting with a digit
      ('3d-art') are fine — they're never used as CSS selectors. */
@@ -429,20 +428,10 @@
                (c.slug==='others'?' checked':'')+' onchange="updatePfCatDisplay()"/> '+esc(c.label)+'</label>';
       }).join('');
     }
-    /* 4. Homepage tab strip — inserted after the "Artworks" tab and
-          before the sliding indicator, which must stay the last child. */
-    var awInd = document.getElementById('awTabIndicator');
-    if(awInd){
-      awInd.insertAdjacentHTML('beforebegin', SITE_CATEGORIES.map(function(c){
-        return '<button class="awTabBtn" id="awTab_'+esc(c.slug)+'" role="tab" aria-selected="false"'+
-               ' onclick="awSwitchTab(\''+esc(c.slug)+'\')">'+esc(c.label)+'</button>';
-      }).join(''));
-    }
   }
   /* Every container above is parsed earlier in the document than this
      script, so paint synchronously rather than waiting for
-     DOMContentLoaded — the tab-strip indicator is measured by a later
-     DOMContentLoaded handler and must find the tabs already in place. */
+     DOMContentLoaded. */
   buildCategoryUI();
   function restoreScroll(){
     /* FIX: list now includes every overlay that locks body scroll —
@@ -785,19 +774,6 @@
     });
   }
 
-  /* ── Shared sort utility — newest first, id as tie-breaker.
-     Used by the "Latest" tab / "Latest" gallery sort, which deliberately
-     bypass the most-liked default so brand-new posts stay discoverable. ── */
-  function sortByNewest(arr){
-    return arr.sort(function(a,b){
-      var tA=a.created_at?new Date(a.created_at).getTime():0;
-      var tB=b.created_at?new Date(b.created_at).getTime():0;
-      if(tB!==tA)return tB-tA;
-      var iA=String(a.id||''), iB=String(b.id||'');
-      return iA<iB?1:(iA>iB?-1:0);
-    });
-  }
-
   function renderHome(){
     /* Sort by TRENDING before rendering (was most-liked-first). The gallery
        carousels below read from this same `images` array, so every category
@@ -960,7 +936,7 @@
         if(diff!==0)return diff;
         /* FIX(A2): ids are uuids — parseInt always gave 0, so the tie-breaker
            never fired and equal-timestamp items shuffled between renders.
-           Compare as strings, mirroring sortByNewest/sortByTrending. */
+           Compare as strings, mirroring sortByTrending. */
         var iA=String(a.id||''), iB=String(b.id||'');
         if(iA===iB) return 0;
         var asc = iA<iB ? -1 : 1;

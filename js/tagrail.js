@@ -2,7 +2,7 @@
   /* ═══════════════════════════════════════════════════════════════
      TAG RAIL + PREFERENCES (tg)
      ├─ tgLoad()        — top vocabulary + this user's picks
-     ├─ tgRenderRail()  — the chip rows between #hero and .awTabs
+     ├─ tgRenderRail()  — the chip rows in the Full Gallery overlay
      ├─ tgToggle()      — tick from the rail (rotates a fresh tag in)
      ├─ tgModOpen()     — the tag grid, opened by the search bar
      │                    above the rows (or ⌘K / Ctrl K)
@@ -194,11 +194,10 @@
     return (p && p.classList && p.classList.contains('tgBlock')) ? p : rail;
   }
 
-  /* Paints EVERY rail on the page. There are two — the home one under
-     the hero and the gallery one that replaced the featured strip — and
-     they share all state, so a tick in either shows up in both. Each is
-     measured and packed independently because their containers can be
-     different widths. */
+  /* Paints EVERY rail on the page. There's one today — the gallery rail
+     that replaced the featured strip — but the loop is kept because the
+     rails share all state and are measured and packed independently,
+     so a second one anywhere just works. */
   function tgRenderRail(animate){
     var rails = document.querySelectorAll('.tgRail');
     for(var i = 0; i < rails.length; i++) tgLayoutRail(rails[i], animate);
@@ -484,9 +483,8 @@
     clearTimeout(tgRzTimer);
     tgRzTimer = setTimeout(function(){ tgRenderRail(true); }, 150);
   });
-  /* Every chip carrying this tag, across every rail. The home and
-     gallery rails each render their own copy, so a tick has to be
-     applied to both or they drift apart. */
+  /* Every chip carrying this tag, across every rail — a tick has to be
+     applied to all of them or they drift apart. */
   function tgTwins(tag){
     /* Matched in JS rather than via an attribute selector: building one
        needs CSS.escape, and when that's missing the whole lookup throws
@@ -544,9 +542,7 @@
   }
   function tgAfterChange(){
     try{
-      if(typeof awTab !== 'undefined' && typeof awListForTab === 'function'){
-        renderAwGrid(awListForTab(awTab), awTab);
-      }
+      if(typeof awArtworksCache !== 'undefined') renderAwGrid(awArtworksCache);
     }catch(e){}
   }
 

@@ -938,8 +938,8 @@ html.thmFade #themePage{
    max-content wide, so the rows define the scroll extent. */
 .tgBlock{
   /* Top and bottom driven by ONE value so they can't drift apart —
-     this is what keeps the gap above the rail equal to the gap below
-     it, down to the tabs. */
+     this is what keeps the gap above the block equal to the gap below
+     it, down to whatever the block sits on. */
   --tgPad:1.25rem;
   --tgInset:clamp(.7rem,2vw,2rem);
   margin:var(--tgPad) 0;

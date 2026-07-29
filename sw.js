@@ -26,6 +26,13 @@
 
    Bump CACHE_VERSION to force every client to drop and refill.
 
+   v62 — homepage: the chip rail and the Artworks/Latest/category tab
+       strip are gone. The search bar is now the last thing above the
+       feed, so artwork starts immediately under it on every device.
+       The tag rail survives in the Full Gallery overlay only.
+       index.html changed substantially — every client must drop the
+       old shell.
+
    v61 — security hardening. The artwork upload now forwards a server-
        signed moderation approval token (mod_token) on both the direct
        and scheduled publish paths, so the DB-side moderation gate can
@@ -350,7 +357,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const CACHE_VERSION = 'v61';
+const CACHE_VERSION = 'v62';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

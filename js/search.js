@@ -1,9 +1,9 @@
 /* ── search.js · feed search ── */
   /* ═══════════════════════════════════════════════════════════════
      FEED SEARCH (aw / fg)
-     The bar above the chip rows is a real input, not a button: it
-     filters the grid below as you type, so there is no results screen
-     to open and no way to get stranded on one.
+     The bar is a real input, not a button: it filters the grid below
+     as you type, so there is no results screen to open and no way to
+     get stranded on one.
 
      Two bars, two grids, one behaviour:
        #awSearchIn  → the home feed  (#awGrid, via renderAwGrid)
@@ -66,9 +66,7 @@
 
   function awSearchRender(){
     try{
-      if(typeof awTab !== 'undefined' && typeof awListForTab === 'function'){
-        renderAwGrid(awListForTab(awTab), awTab);
-      }
+      if(typeof awArtworksCache !== 'undefined') renderAwGrid(awArtworksCache);
     }catch(e){}
   }
   /* Shared by both bars: the clear button only exists while there's
@@ -110,27 +108,23 @@
     fgSearchInput('');
   }
 
-  function renderAwGrid(list, type){
+  function renderAwGrid(list){
     var grid  = document.getElementById('awGrid');
     var empty = document.getElementById('awEmpty');
     if(!grid) return;
 
-    /* Every tab is TRENDING (per-category mini-ranking), EXCEPT "Latest",
-       which is the one view that stays newest-first (that's its whole purpose).
-       Hidden artworks are dropped first (per-user "hide from my feed"). */
+    /* The grid is TRENDING order with preferred tags pushed to the
+       front. Hidden artworks are dropped first (per-user "hide from my
+       feed"). */
     /* Applied here rather than at the call site so every path that
-       repaints the grid — tab switch, tag tick, upload, like —
-       keeps the active query instead of silently dropping it. */
+       repaints the grid — tag tick, upload, like — keeps the active
+       query instead of silently dropping it. */
     var src = awSearchFilter(filterHidden((list||[]).slice()));
-    /* "Latest" stays strictly newest-first — that's its whole purpose,
-       so preferences deliberately don't reorder it. Every other tab
-       gets preferred tags pushed to the front of the trending order. */
-    awRList = (type === 'latest' ? sortByNewest(src) : tgPrioritize(sortByTrending(src)));
-    /* Same-tab re-render (rebuildGalCarousels after a like/edit/
-       upload) keeps however many cards were already showing so the
-       user's scroll depth survives; switching tabs starts fresh. */
-    var keep = (type === awRType) ? awRShown : 0;
-    awRType = type;
+    awRList = tgPrioritize(sortByTrending(src));
+    /* A re-render (rebuildGalCarousels after a like/edit/upload) keeps
+       however many cards were already showing, so the user's scroll
+       depth survives. */
+    var keep = awRShown;
     awRShown = 0;
     if(awSent){ awSent.destroy(); awSent = null; }
     grid.innerHTML = '';
@@ -139,9 +133,7 @@
       if(empty){
         empty.textContent = awQ
           ? ('NO MATCHES FOR \u201C' + awQ.toUpperCase() + '\u201D')
-          : ((type && type !== 'artworks' && type !== 'latest')
-              ? ('NO ' + catLabel(type).toUpperCase() + ' ART YET')
-              : 'NO ARTWORK YET');
+          : 'NO ARTWORK YET';
         empty.style.display = 'block';
       }
       return;
@@ -178,10 +170,10 @@
     }
   }
 
-  /* Artworks tab — called by renderHome() whenever `images` changes */
+  /* Home feed — called by renderHome() whenever `images` changes */
   window.rebuildGalCarousels = function(artworks){
     awArtworksCache = artworks || [];
-    renderAwGrid(awListForTab(awTab), awTab);
+    renderAwGrid(awArtworksCache);
   };
 
   /* Populate with empty list on first paint — rebuilt after DB loads */

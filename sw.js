@@ -16,8 +16,11 @@
        Icons sit in a fixed box and descriptions reserve two lines, so
        titles and card heights line up whatever the copy does. A thin
        line under the row tracks scroll position and hides itself when
-       nothing overflows. Changed: index.html, css/hero.css,
-       js/sections.js.
+       nothing overflows. The icon hues are picked against near-black,
+       so the light theme darkens them and the progress track is tied
+       to the text colour — otherwise lime and cyan sat near 1.4:1 on
+       #F6F6F9. Every theme now clears 4.5:1 on text and 3:1 on icons.
+       Changed: index.html, css/hero.css, js/sections.js.
 
    v64 — homepage feed is pure trending. renderAwGrid ran the trending
        sort and then tgPrioritize() pulled every artwork matching a

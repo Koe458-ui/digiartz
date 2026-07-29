@@ -1,5 +1,4 @@
-/* ── zeo.js · zeo widget engine ── */
-/* Zeo widget engine — reads content from window.ZEO_DATA */
+// zeo widget engine
 (function () {
   'use strict';
 
@@ -15,12 +14,9 @@
   var bubblePaused = false;
   var lastBubbleIdx = -1;
 
-  /* Zeo has one fixed spawn point — left of the notification button,
-     set entirely in CSS (#zeoBtn). No drag, no saved position, no
-     return-home glide: it lives here the same way the notification
-     icon does. */
+  // fixed spawn point
 
-  /* Clicking bubble dismisses it and resets the cycle */
+  // click bubble dismisses
   bubble.addEventListener('click', function() {
     clearTimeout(bubbleTimer);
     bubbleTimer = null;
@@ -33,12 +29,12 @@
     }
   });
 
-  /* Tapping the bot opens the full-page assistant */
+  // click bot opens panel
   btn.addEventListener('click', function() {
     toggleChat();
   });
 
-  /* SPEECH BUBBLE CYCLE */
+  // speech bubble cycle
   var BUBBLE_VISIBLE_MS = 3000;
   var BUBBLE_WAIT_MS    = 6000;
   var BUBBLE_IN_MS      = 300;
@@ -62,7 +58,7 @@
     bubble.classList.remove('zbHiding');
     bubble.classList.add('zbVisible');
 
-    /* After visible duration, hide */
+    // hide after delay
     bubbleTimer = setTimeout(function() {
       hideBubble();
     }, BUBBLE_VISIBLE_MS + BUBBLE_IN_MS);
@@ -73,7 +69,7 @@
     bubble.classList.add('zbHiding');
 
     bubbleTimer = setTimeout(function() {
-      /* Guard: stay hidden if paused during animation */
+      // stay hidden if paused
       bubble.classList.remove('zbHiding');
       bubble.textContent = '';
       if (!bubblePaused) {
@@ -84,14 +80,14 @@
 
   function pauseBubble() {
     bubblePaused = true;
-    /* Cancel every pending timer immediately */
+    // cancel timers
     clearTimeout(bubbleTimer);
     bubbleTimer = null;
-    /* Snap invisible — no animation, no residual async callbacks */
+    // snap invisible
     bubble.classList.remove('zbVisible', 'zbHiding');
     bubble.style.opacity = '0';
     bubble.textContent = '';
-    /* Re-enable CSS-controlled opacity on next frame */
+    // restore opacity next frame
     requestAnimationFrame(function() {
       bubble.style.opacity = '';
     });
@@ -102,10 +98,10 @@
     bubbleTimer = setTimeout(showBubble, BUBBLE_WAIT_MS);
   }
 
-  /* Start the cycle after a short delay */
+  // start cycle
   setTimeout(showBubble, 1800);
 
-  /* ── Section trigger — call this whenever a major section opens ── */
+  // section trigger
   var sectionTriggerTimer = null;
   window.zeoSectionTrigger = function() {
     if (isOpen || bubblePaused) return;
@@ -115,7 +111,7 @@
     }, 2000);
   };
 
-  /* FULL PAGE OPEN / CLOSE */
+  // open and close panel
   function openChat() {
     isOpen = true;
     pauseBubble();
@@ -128,11 +124,7 @@
   function closeChat() {
     isOpen = false;
     page.classList.remove('open');
-    /* FIX: Zeo can be opened on top of another locked panel (the
-       Community Friends list opens it via cmOpenZeo) — a blind
-       overflow reset here unlocked background scroll behind that
-       still-open panel. restoreScroll() only unlocks when nothing
-       else is open. */
+    // restore scroll
     if (typeof restoreScroll === 'function') restoreScroll();
     else document.body.style.overflow = '';
     btn.setAttribute('aria-expanded', 'false');
@@ -148,31 +140,14 @@
     closeChat();
   });
 
-  /* ESC key closes panel */
+  // escape closes
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && isOpen) closeChat();
   });
 
-  /* ─────────────────────────────────────────────────────────────
-     CHAT-THREAD ENGINE
+  // chat thread engine
 
-     Unlike the old one-screen renderer (which wiped the panel on
-     every step), this keeps a running transcript, exactly like a
-     normal support chat:
-
-       • the option you tap echoes back on the RIGHT as your own
-         message,
-       • Zeo replies underneath on the LEFT,
-       • the menu you just used locks so old buttons can't be
-         re-clicked and the thread reads straight down,
-       • Back behaves like any other choice — it echoes "Back" on
-         the right and the PREVIOUS menu arrives fresh at the bottom.
-         Nothing is ever removed; the thread only grows downward.
-  ───────────────────────────────────────────────────────────── */
-
-  /* The latest still-clickable controls block. When the user makes a
-     choice we freeze it before echoing + replying, so the transcript
-     never leaves a live duplicate menu behind. */
+  // active controls block
   var activeControls = null;
 
   function scrollDown() {
@@ -187,16 +162,14 @@
     activeControls = null;
   }
 
-  /* Every tap works the same way — freeze the current menu, echo the
-     tap on the right, then let Zeo append the next screen below. Back
-     is just another tap whose "next screen" is the previous one. */
+  // freeze menu, echo, reply
   function advance(label, proceed) {
     lockActiveControls();
     userSay(label);
     proceed();
   }
 
-  /* ── Bubble builders ── */
+  // bubble builders
   function botSay(text) {
     var msg = document.createElement('div');
     msg.className = 'zeoMsg';
@@ -209,8 +182,7 @@
     return msg;
   }
 
-  /* Right-aligned "you" bubble — the tap the visitor just made,
-     mirrored back so the exchange reads like a real conversation. */
+  // user bubble
   function userSay(text) {
     var msg = document.createElement('div');
     msg.className = 'zeoMsg zeoMsgUser';
@@ -223,7 +195,7 @@
     return msg;
   }
 
-  /* ── Controls builders (appended INTO a step container) ── */
+  // controls builders
   function addOptions(container, items, onPick) {
     var wrap = document.createElement('div');
     wrap.className = 'zeoOptions';
@@ -268,8 +240,7 @@
     container.appendChild(wrap);
   }
 
-  /* Back is a tap like any other: it echoes "Back" and appends the
-     PREVIOUS screen fresh below. parentFn renders that screen. */
+  // back button
   function addBack(container, parentFn) {
     var b = document.createElement('button');
     b.className = 'zeoBackBtn';
@@ -287,30 +258,28 @@
     return c;
   }
 
-  /* Commit a freshly built controls block and make it the live one. */
+  // commit controls
   function commit(controls) {
     body.appendChild(controls);
     activeControls = controls;
     scrollDown();
   }
 
-  /* ── Flow steps ── */
+  // flow steps
 
-  /* SCREEN 1 — the beginning. Wipes the transcript and greets. */
-  /* Fresh entry point — wipes the thread, then greets. Used on open. */
+  // screen 1, wipes thread
   function startWelcome() {
     while (body.firstChild) body.removeChild(body.firstChild);
     activeControls = null;
     renderWelcome();
   }
 
-  /* SCREEN 1 — greeting + top options. Appends (no wipe), so it can
-     also be re-shown when Back is tapped from the topic menu. */
+  // screen 1 welcome
   function renderWelcome() {
     botSay(data.welcomeMessage);
     var c = newControls();
     addOptions(c, data.welcomeOptions, routeWelcome);
-    commit(c);   /* welcome is the top — no Back button */
+    commit(c);   // no back on welcome
   }
 
   function routeWelcome(item) {
@@ -319,7 +288,7 @@
     else { goHelpCenter(); }
   }
 
-  /* SCREEN 2 — topic menu. */
+  // screen 2 topics
   function goHelpCenter() {
     botSay(data.helpCenterMessage);
     var c = newControls();
@@ -328,9 +297,7 @@
     commit(c);
   }
 
-  /* SCREEN 3 — a topic's list of problems. The topic name was already
-     echoed as the user's own bubble, so Zeo replies with just the
-     prompt (no redundant heading) and lists the problems. */
+  // screen 3 problems
   function goCategory(catId) {
     var cat   = (data.categories || []).find(function(c) { return c.id === catId; });
     var resps = (data.responses || {})[catId] || [];
@@ -355,8 +322,7 @@
     commit(c);
   }
 
-  /* SCREEN 4 — the answer. The question was echoed as the user's
-     bubble on tap, so Zeo just replies with the walkthrough. */
+  // screen 4 answer
   function goAnswer(catId, question) {
     var resps = (data.responses || {})[catId] || [];
     var resp  = resps.find(function(r) { return r.question === question; });
@@ -368,11 +334,7 @@
     commit(c);
   }
 
-  /* Exposed so the hero-only-widgets script can silence the
-     speech-bubble cycle whenever the bot button itself is
-     hidden (off the hero section, or an overlay page is open) —
-     otherwise the bubble, being independently fixed-position,
-     would keep popping up on its own timer regardless. */
+  // pause bubble hook
   window.zeoPauseBubble  = pauseBubble;
   window.zeoResumeBubble = resumeBubble;
 

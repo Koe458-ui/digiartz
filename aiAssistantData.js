@@ -1,55 +1,20 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- *  DigiArtz — AI Assistant ("Zeo") Data File
- *  aiAssistantData.js
- *
- *  This is the ONLY file you edit to change what Zeo knows.
- *  The chatbot engine in index.html reads window.ZEO_DATA and
- *  renders every screen dynamically — no engine changes needed.
- *
- *  FLOW (all built from the data below):
- *    Welcome  →  "Need Help?"  →  pick a TOPIC (categories)
- *             →  pick the PROBLEM you're facing (responses)
- *             →  Zeo walks you through it step by step (answer)
- *
- *  HOW TO EDIT
- *   • Add a topic  → push an object into `categories`
- *   • Add a Q&A    → add { question, answer } under responses[topicId]
- *   • `prompt`     → the "What are you facing?" line for that topic
- *   • Steps        → put each step on its own line inside the answer
- *                    (line breaks are preserved in the chat bubble)
- *   • Speech bubble→ leave `speechBubbles` empty [] to keep it OFF
- *
- *  NOTE: replace every DigiArtzsupport@gmail.com below with your real
- *  support address before publishing.
- * ═══════════════════════════════════════════════════════════════
- */
+// zeo assistant content
 
 window.ZEO_DATA = {
 
-  /* ─────────────────────────────────────────────
-     SCREEN 1 — Welcome (shown on open)
-  ───────────────────────────────────────────── */
+  // screen 1, welcome
   welcomeMessage: "Hi, I'm Zeo — your DigiArtz assistant. Tell me what you need and I'll walk you through it one step at a time. Pick an option to begin.",
 
-  /* Buttons under the welcome message.
-     id "helpCenter" opens the topic menu.
-     An id starting with "cat_" jumps straight into that topic. */
+  // welcome buttons
   welcomeOptions: [
     { id: "helpCenter",  label: "🧭 Get Help" },
     { id: "cat_contact", label: "✉️ Contact a Human" }
   ],
 
-  /* ─────────────────────────────────────────────
-     SCREEN 2 — Help Center (topic menu)
-  ───────────────────────────────────────────── */
+  // screen 2, topic menu
   helpCenterMessage: "What do you need help with? Choose a topic and I'll ask a couple of quick questions to get you to the right answer.",
 
-  /* ─────────────────────────────────────────────
-     TOPICS  (each: { id, icon, label, description, prompt })
-     `prompt` is the "What are you facing?" line shown once the
-     topic is opened, right above the list of problems.
-  ───────────────────────────────────────────── */
+  // topics
   categories: [
     { id: "about",     icon: "💠", label: "About DigiArtz",        description: "What this place is and who made it.",       prompt: "What would you like to know about DigiArtz?" },
     { id: "navigation",icon: "🧭", label: "Getting Around",         description: "Find your way and reach any section.",       prompt: "What are you trying to find or reach?" },
@@ -71,21 +36,17 @@ window.ZEO_DATA = {
     { id: "contact",   icon: "✉️", label: "Contact a Human",        description: "Reach the DigiArtz team directly.",          prompt: "How would you like to reach us?" }
   ],
 
-  /* ─────────────────────────────────────────────
-     RESPONSES — keyed by topic id.
-     Each: { question, answer }.  Keep answers as short,
-     numbered steps rather than long paragraphs.
-  ───────────────────────────────────────────── */
+  // responses by topic id
   responses: {
 
-    /* ── ABOUT ─────────────────────────────── */
+    // about
     about: [
       {
         question: "What is DigiArtz?",
         answer:
-`DigiArtz is a curated platform for digital artists — showcase exceptional artwork, build a professional portfolio, and connect with a global creative community.
+`DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists.
 
-• Browse original art — characters, cars, landscapes and more
+• Browse art — characters, cars, landscapes and more
 • Create a free account to post your own work
 • Like, comment, and message other artists
 • Follow the motto: "Art Has No Limits"
@@ -95,9 +56,9 @@ Head to the Home tab any time to start exploring.`
       {
         question: "Who created DigiArtz?",
         answer:
-`DigiArtz is built and run by the DigiArtz team — artists and builders who design, develop and curate the platform.
+`DigiArtz is built and run by the DigiArtz team.
 
-It exists for the community: a place where digital artists everywhere can showcase their work and get the recognition their talent deserves.`
+It is a place for digital artists anywhere to put their work up and have people see it.`
       },
       {
         question: "Is it free to use?",
@@ -125,7 +86,7 @@ Pick any of those topics from the menu and I'll guide you.`
       }
     ],
 
-    /* ── NAVIGATION ────────────────────────── */
+    // navigation
     navigation: [
       {
         question: "What are the bottom bar buttons?",
@@ -176,7 +137,7 @@ Your choice is saved on this device and stays next time you visit.`
       }
     ],
 
-    /* ── ACCOUNT & LOGIN ───────────────────── */
+    // account and login
     account: [
       {
         question: "How do I sign up?",
@@ -250,7 +211,7 @@ I won't ask for your password — never share it with anyone.`
       }
     ],
 
-    /* ── PROFILE ───────────────────────────── */
+    // profile
     profile: [
       {
         question: "How do I edit my profile?",
@@ -313,7 +274,7 @@ If a name is taken, try a small variation. Your username is how others find and 
       }
     ],
 
-    /* ── UPLOADING ART ─────────────────────── */
+    // uploading art
     upload: [
       {
         question: "How do I upload artwork?",
@@ -401,7 +362,7 @@ A failed upload never leaves a half-published piece — storage is cleaned up au
       }
     ],
 
-    /* ── UPLOAD CHECKS & REJECTIONS ─────────── */
+    // upload checks
     moderation: [
       {
         question: "Why was my upload rejected?",
@@ -467,7 +428,7 @@ The only thing rejected is a direct repost of official media — unedited anime 
       }
     ],
 
-    /* ── GALLERY / INTERACTIONS ────────────── */
+    // gallery
     gallery: [
       {
         question: "How do I download an artwork?",
@@ -527,7 +488,7 @@ Our team reviews reports and takes action when needed. For urgent issues, also e
       }
     ],
 
-    /* ── RESOURCES ─────────────────────────── */
+    // resources
     resources: [
       {
         question: "What are Resources?",
@@ -565,7 +526,7 @@ The preview image is separate: JPG, PNG, WEBP or GIF, up to 25MB.`
       }
     ],
 
-    /* ── BLOG ──────────────────────────────── */
+    // blog
     blog: [
       {
         question: "What is the Blog?",
@@ -596,7 +557,7 @@ Posts go live right away. A cover image, if you add one, is checked the same way
       }
     ],
 
-    /* ── MARKETPLACE ───────────────────────── */
+    // marketplace
     marketplace: [
       {
         question: "What is the Marketplace?",
@@ -646,7 +607,7 @@ If something genuinely went wrong — a double charge, or a file that never deli
       }
     ],
 
-    /* ── JOBS ──────────────────────────────── */
+    // jobs
     jobs: [
       {
         question: "What is the Jobs board?",
@@ -684,7 +645,7 @@ Spam, MLM and pay-to-apply postings aren't allowed and get removed.`
       }
     ],
 
-    /* ── CART & ORDERS ─────────────────────── */
+    // cart and orders
     cart: [
       {
         question: "Where is my Cart?",
@@ -712,7 +673,7 @@ The Cart tab brings orders, downloads and licences into one spot. Some of it is 
       }
     ],
 
-    /* ── COMMUNITY & CHAT ──────────────────── */
+    // community and chat
     community: [
       {
         question: "How do communities work?",
@@ -772,7 +733,7 @@ Pick a topic and I'll take it from there.`
       }
     ],
 
-    /* ── SUBSCRIPTIONS & REFUNDS ───────────── */
+    // subscriptions and refunds
     billing: [
       {
         question: "What subscription tiers are there?",
@@ -834,7 +795,7 @@ If you can't find the option, email DigiArtzsupport@gmail.com before your next b
       }
     ],
 
-    /* ── POLICIES ──────────────────────────── */
+    // policies
     policies: [
       {
         question: "Privacy Policy (summary)",
@@ -898,7 +859,7 @@ For details and requests, see the Privacy Policy or email DigiArtzsupport@gmail.
       }
     ],
 
-    /* ── SAFETY & REPORTING ────────────────── */
+    // safety and reporting
     safety: [
       {
         question: "How do I report an artwork?",
@@ -957,7 +918,7 @@ Never share your password — DigiArtz staff and I will never ask for it.`
       }
     ],
 
-    /* ── TECHNICAL ─────────────────────────── */
+    // technical
     trouble: [
       {
         question: "The site won't load",
@@ -1019,7 +980,7 @@ Details like these help us fix it fast.`
       }
     ],
 
-    /* ── CONTACT ───────────────────────────── */
+    // contact
     contact: [
       {
         question: "Email support",
@@ -1057,12 +1018,7 @@ The DigiArtz team reviews every message.`
 
   },
 
-  /* ─────────────────────────────────────────────
-     SPEECH BUBBLE
-     Kept empty on purpose so the floating pop-up
-     message next to Zeo's button stays OFF.
-     (Add strings here again if you ever want it back.)
-  ───────────────────────────────────────────── */
+  // speech bubble, kept off
   speechBubbles: []
 
 };

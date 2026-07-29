@@ -1,19 +1,4 @@
-/* ── community.js · community header modes ── */
-    /* ── Community header modes ───────────────────────────────────
-       ONE header bar, two faces:
-         cmHdrHomeMode()  → centred "COMMUNITY ✦" (the grid)
-         cmHdrChatMode(o) → "←  (avatar)  Name / subtitle" banner
-       Both are global because two separate modules drive them: the
-       DM module (openThread/closeThread) and the community module
-       (cmOpenCommunity/cmCloseChat).
-
-       o = { name, sub, subDot, avatar, letter, emoji, grad, tap }
-         avatar → image URL (thumbnailed if getThumbnailUrl exists)
-         emoji  → fallback glyph (built-in channels keep their chip)
-         letter → fallback initial when there's no avatar/emoji
-         grad   → CSS background for the avatar chip
-         subDot → prepend a green presence dot to the subtitle
-         tap    → fn to run when the avatar/name is tapped (or null) */
+// community header modes
     (function () {
       'use strict';
       function $ (id) { return document.getElementById(id); }
@@ -28,7 +13,7 @@
           if (o.avatar) {
             img.src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(o.avatar) : o.avatar;
             img.style.display = 'block'; txt.style.display = 'none';
-            /* a dead/expired avatar URL falls back to the initial */
+            // fallback to initial
             img.onerror = function () {
               img.style.display = 'none'; txt.style.display = '';
               txt.textContent = o.emoji || o.letter || '?';

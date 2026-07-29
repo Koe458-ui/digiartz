@@ -1,11 +1,4 @@
-/* ── badwords-review.js · held back on purpose ──
-   67 entries that exist in the source list but are NOT active here.
-   Every one collides with ordinary writing on an art site — fan art,
-   figure study, "I am", "I got", Sega, a trio, hard, Peter.
-
-   Nothing in this file is filtering. Uncomment a line to switch it on,
-   and load this file after the two list files.
-   ───────────────────────────────────────────────────── */
+// held back word list
 
 window.DZ_WORDLIST = window.DZ_WORDLIST || { words: [] };
 
@@ -79,4 +72,4 @@ window.DZ_WORDLIST = window.DZ_WORDLIST || { words: [] };
 //   'xx',            // en,ja    too short — 2 letters
 // ]);
 
-/* Dropped entirely, not restorable here: '13.', '🖕' */
+// dropped, not restorable: '13.', '🖕'

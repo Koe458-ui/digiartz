@@ -1,32 +1,18 @@
-/* ── upload.css · upload popup ── */
+/* upload popup */
     .upPop{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:.9rem;opacity:0;pointer-events:none;transition:opacity .25s ease;isolation:isolate;}
-    /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+    /* blur layer */
     .upPop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:-1;}
     .upPop.open{opacity:1;pointer-events:auto;}
     .upPopBox{background:var(--sur);border:1px solid rgba(var(--pg-rgb),.28);border-radius:16px;width:100%;max-width:960px;max-height:min(90vh,780px);max-height:min(90dvh,780px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);}
     .upPopX{background:rgba(var(--pg-rgb),.06);border:1px solid rgba(var(--pg-rgb),.1);color:rgb(var(--tx2-rgb));width:32px;height:32px;border-radius:8px;cursor:pointer;flex-shrink:0;font-size:.85rem;line-height:1;transition:background .2s,color .2s;}
     .upPopX:hover{background:rgba(var(--pg-rgb),.2);color:var(--tx);}
-    /* SINGLE COLUMN at every width — form first, sidebar stacked
-       under it. The old ≥860px "form | sidebar" split is gone on
-       purpose: the page reads as one continuous flow now. */
+    /* single column */
     .upPopBody{overflow-y:auto;padding:1.3rem;display:grid;grid-template-columns:1fr;gap:1.3rem;}
-    /* Form actions — inline at the end of the fields column (no
-       footer bar, no Cancel: the page header's ← is the exit).
-       One button per line on every device, like every other row on
-       the page. Source order is [Back] [Save Draft] [Upload], so
-       column-reverse puts the primary action on top everywhere. */
+    /* form actions */
     .upActions{display:flex;flex-direction:column-reverse;gap:.7rem;margin-top:1.7rem;padding-top:1.3rem;border-top:1px solid rgba(var(--pg-rgb),.08);}
     .upActions button{width:100%;}
 
-    /* ── UPLOAD PAGE MODE ──
-       #pfUpMod is no longer a centered popup — it's a full slide-in
-       page, same panel language as #profilePage / #communityPage
-       (nav ➕ is now a destination, not a layered action). The crop
-       popups keep the plain .upPop modal styling and still layer ON
-       TOP of this page (their z:20000 > 600). Edit Artwork
-       (mwEditArt) reuses this same page and slides over My Work
-       (z:520), with #bnNav (z:1000) staying visible like every
-       other page. */
+    /* upload page mode */
     #pfUpMod{
       z-index:600;display:block;padding:0;opacity:1;
       background:var(--bg);overflow-y:auto;
@@ -36,10 +22,7 @@
     }
     #pfUpMod::before{display:none;}
     #pfUpMod.open{visibility:visible;pointer-events:auto;transform:translateX(0);transition-delay:0s,0s;}
-    /* Same dark scoping as #profilePage / #admPage — this is
-       what makes the page "one of the nav pages" rather than a
-       restyled popup. Crop modals are DOM siblings, so they keep
-       their own styling. */
+    /* dark scoping */
     #pfUpMod,#pfUpMod *{
       --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
       --tx:var(--vtx);--txd:var(--vtxd);
@@ -53,49 +36,28 @@
       max-width:none;margin:0;max-height:none;min-height:100%;overflow:visible;
       display:block;
     }
-    /* Body — .subPgBdy metrics without the class (see HTML comment):
-       the bottom padding clears the floating nav.
-       NO width cap on this page. Laptops and up (PC, desktop,
-       ultrawide, TV) get a 10% empty margin down each side instead,
-       so the single column simply grows with the screen rather than
-       stopping at a fixed width. Below 900px the side gap goes back
-       to the fixed rem ladder every other page uses — 10% of a phone
-       is a few pixels. */
+    /* body padding */
     #pfUpMod .upPgBdy{padding:3.5rem 10% 7.5rem;max-width:none;margin:0 auto;box-sizing:border-box;}
     @media(max-width:1200px){#pfUpMod .upPgBdy{padding:3rem 10% 7rem;}}
     @media(max-width:900px){#pfUpMod .upPgBdy{padding:2.5rem 1.8rem 7rem;}}
     @media(max-width:640px){#pfUpMod .upPgBdy{padding:2rem 1.2rem 6.5rem;}}
     @media(max-width:420px){#pfUpMod .upPgBdy{padding:1.8rem 1rem 6rem;}}
     #pfUpMod .upPopBody{overflow:visible;padding:0;}
-    /* Column plan — ONE column, every screen size. Desktop used to
-       show three side-by-side columns (media | fields | sidebar);
-       now media, fields and the sidebar cards all sit in a single
-       stack, so the page reads top-to-bottom the same way on phone
-       and desktop. The .upPgBdy cap above keeps that single column
-       a readable width instead of stretching to 1400px. */
+    /* one column layout */
     #pfUpMod .upMain{display:grid;grid-template-columns:1fr;gap:0;align-items:start;}
-    /* ── Drafts — sidebar card sitting above Upload Guidelines.
-       The rail scrolls horizontally so it stays tidy inside the
-       narrow sidebar column, and wraps to a 2-up grid on mobile
-       where the sidebar spans full width. ── */
+    /* drafts rail */
     .upOpt{font-size:.6rem;font-weight:600;color:rgba(var(--tx2-rgb),.45);text-transform:uppercase;letter-spacing:.12em;margin-left:.35rem;}
     .upSchedHint{font-size:.68rem;color:rgba(var(--tx2-rgb),.5);margin-top:.35rem;}
     .upSchedHint.bad{color:var(--danger);}
-    /* ── Schedule input ──
-       A native datetime-local otherwise renders with the browser's
-       own light chrome. These rules pull it into the site's input
-       language (.upIn) and, crucially, inherit `color-scheme` from
-       the active theme rather than hardcoding dark — so the picker
-       panel itself is light on the light theme and dark on the dark
-       ones. No literal colours here: everything is a theme token. */
-    /* ── Draft / scheduled preview modal ── */
-    .upPv{z-index:20010;}  /* above the upload page (600) */
+    /* schedule input */
+    /* draft preview modal */
+    .upPv{z-index:20010;}
     .upPvHead{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem 1.1rem;border-bottom:1px solid rgba(var(--pg-rgb),.08);flex-shrink:0;}
     .upPvKind{font-family:var(--fm);font-size:.62rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--txd);}
     .upPvBody{overflow-y:auto;padding:1.1rem;display:grid;grid-template-columns:1fr;gap:1.1rem;}
     @media(min-width:760px){.upPvBody{grid-template-columns:1.1fr 1fr;align-items:start;}}
     .upPvImgWrap{background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.1);border-radius:12px;overflow:hidden;line-height:0;}
-    /* Full image, uncropped — the thumbnail framing is only for grids */
+    /* full image */
     .upPvImgWrap img{width:100%;max-height:60vh;object-fit:contain;display:block;}
     .upPvRow{margin-bottom:.9rem;}
     .upPvRow:last-child{margin-bottom:0;}
@@ -108,9 +70,7 @@
     .upPvWhen b{color:var(--pg);}
     .upPvWhen.bad{color:var(--danger);}
     @media(max-width:519px){.upPvFoot button{width:100%;}.upPvWhen{width:100%;margin:0 0 .2rem;}}
-    /* Custom schedule picker — every part is a theme token, so it
-       renders correctly on all five themes (the native panel could
-       only ever follow color-scheme). */
+    /* schedule picker */
     #pfUpSchedTrigger{font-family:var(--fm);letter-spacing:.04em;}
     .upSchedPh{color:rgba(var(--tx2-rgb),.42);}
     .upSchedPanel{max-height:min(70vh,460px);overflow-y:auto;padding:.7rem;}
@@ -134,72 +94,49 @@
     .upSchedActs{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.6rem;}
     .upSchedActs button{padding:.45rem .9rem;font-size:.74rem;}
 
-    /* Scheduled cards reuse the draft card shell; the corner mark is
-       violet (time until publish) instead of the drafts' red expiry. */
+    /* scheduled card mark */
     .upSchedMark{background:var(--pg)!important;}
     .upSchedBad{border-color:var(--danger-bd,rgba(214,58,63,.55));}
     .upSchedBad img{opacity:.45;filter:grayscale(.5);}
-    /* Deliberately smaller than the .upSideCard h3 headings — this
-       is a micro-label in the site's mono-caps page language, not a
-       card title competing with "Upload Guidelines". */
+    /* micro label */
     .upDraftTitle{font-family:var(--fm);font-weight:600;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--txd);}
     .upDraftTitle .s{color:var(--pg);}
     .upDraftNote{font-size:.62rem;color:rgba(var(--tx2-rgb),.45);line-height:1.35;margin:.3rem 0 .7rem;}
-    /* Ghost slots — keep the rail filled when there's nothing saved
-       yet, so the card never collapses to an empty box. Same box
-       metrics as a real card; inert (no hover lift, no pointer). */
+    /* ghost slots */
     .upDraftGhost{cursor:default;background:rgba(var(--pg-rgb),.02);border-style:dashed;border-color:rgba(var(--pg-rgb),.14);}
     .upDraftGhost:hover{transform:none;border-color:rgba(var(--pg-rgb),.14);}
     .upDraftGhostIn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:rgba(var(--pg-rgb),.28);}
     .upDraftGhost .upDraftExp{background:rgba(214,58,63,.45);}
-    /* Always a left-to-right rail (no mobile grid) — swiping the
-       strip is the interaction on every screen size. */
+    /* draft rail */
     .upDraftRow{
-      --slots:2;            /* visible cards — mobile default */
+      --slots:2;
       --gap:.6rem;
       display:flex;gap:var(--gap);
       overflow-x:auto;overflow-y:hidden;
-      /* min-width:0 + max-width:100% keep this rail from pushing the
-         sidebar (and therefore the page) wider than the viewport */
+      /* keep rail inside viewport */
       min-width:0;max-width:100%;
       padding-bottom:.45rem;scrollbar-width:thin;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
     }
-    /* The rail is now as wide as the form column (single-column
-       page), so 4 slots — the number both pages pad their strips to
-       — fit well before 1280px. Never more than 4, or the rail ends
-       in dead space whenever the strips are full. */
+    /* slot count */
     @media(min-width:641px){.upDraftRow{--slots:3;}}   /* tablet */
     @media(min-width:860px){.upDraftRow{--slots:4;}}   /* desktop */
-    /* Flex/grid children default to min-width:auto, which is what let
-       the fixed-width rail blow out the layout. Pin them to 0 so only
-       the rail itself scrolls — never the page. */
+    /* stop rail overflow */
     #pfUpMod{overflow-x:hidden;}
     #pfUpMod .upPopBody>*,#pfUpMod .upMain>*,#pfUpMod .upSide>*{min-width:0;}
-    /* Same square tile as an artwork card (.awCard/.awImgWrap):
-       aspect-ratio 1, image cover, no meta strip — the only
-       adornments are the red expiry badge and the delete button. */
-    /* Exactly --slots cards fill the rail's visible width; anything
-       beyond that scrolls horizontally inside the rail only. */
+    /* square tile */
+    /* slot width */
     .upDraftCard{position:relative;flex:0 0 calc((100% - (var(--slots) - 1) * var(--gap)) / var(--slots));aspect-ratio:1;cursor:pointer;background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.14);border-radius:10px;overflow:hidden;transition:border-color .2s,transform .2s;scroll-snap-align:start;}
     .upDraftCard>img{width:100%;height:100%;object-fit:cover;display:block;}
     .upDraftCard:hover{border-color:var(--pg);transform:translateY(-2px);}
-    /* Red expiry mark — top-right, days remaining before the 7-day
-       auto-delete. Ghost slots show the full 7d. */
+    /* expiry mark */
     .upDraftExp{position:absolute;top:5px;right:5px;z-index:2;background:var(--danger-strong,#D63A3F);color:#fff;font-family:var(--fm);font-size:.56rem;font-weight:700;letter-spacing:.02em;line-height:1;padding:.22rem .34rem;border-radius:5px;box-shadow:0 1px 5px rgba(0,0,0,.4);}
-    /* Delete moved to the top-LEFT so the red mark owns the right */
+    /* delete button */
     .upDraftX{position:absolute;top:5px;left:5px;z-index:2;width:22px;height:22px;border-radius:6px;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:.7rem;line-height:1;cursor:pointer;transition:background .2s;}
     .upDraftX:hover{background:var(--danger-strong,#D63A3F);}
-    /* The guidance cards stack under the form (single column), so
-       they scroll with it — sticky would pin them over the form. */
+    /* guidance cards */
     #pfUpMod .upSide{display:flex;flex-direction:column;gap:1.3rem;}
 
-    /* ── Artwork dropzone ──────────────────────────────────────────
-       Same component as the section forms' picker (.dzFileZone in
-       css/hero.css): dashed target, the section's gradient mark, one
-       clear action, the accepted formats underneath. A flex column
-       with a gap rather than per-child margins, so the spacing is set
-       in one place. The picked state isn't here — choosing an image
-       hides the zone and shows #pfUpPrevWrap instead. */
+    /* artwork dropzone */
     .upDz{
       position:relative;display:flex;flex-direction:column;align-items:center;gap:.55rem;
       border:1.5px dashed color-mix(in srgb,var(--pg) 36%,transparent);border-radius:16px;
@@ -218,8 +155,7 @@
     .upDz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:1;}
     .upDz .fgSecIco{width:54px;height:54px;border-radius:16px;margin-bottom:.45rem;}
     .upDz .fgSecIco svg{width:26px;height:26px;}
-    /* Extra-pages zone keeps an emoji tile — openPfUpload() swaps the
-       glyph per mode (📖 comic pages / 🖼 extra images). */
+    /* dropzone icon */
     .upDzIco{width:48px;height:48px;margin:0 auto .3rem;border-radius:14px;background:rgba(var(--pg-rgb),.16);display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:var(--pb);}
     .upDzTitle{font-family:var(--fd);font-weight:700;color:var(--tx);font-size:.95rem;}
     .upDzSub{color:var(--txd);font-size:.8rem;}
@@ -239,12 +175,10 @@
       .upDz{transition:none;}
     }
     .upPopBody .upPrev{width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid rgba(var(--pg-rgb),.08);margin-bottom:1rem;}
-    /* Zoomed previews need a clipping frame — transform:scale on a
-       bare <img> would bleed over the form. The wrap takes over the
-       radius/border/margin; the img inside is always block. */
+    /* preview clip frame */
     .upPrevWrap{display:none;overflow:hidden;border-radius:10px;border:1px solid rgba(var(--pg-rgb),.08);margin-bottom:1rem;line-height:0;}
     .upPrevWrap .upPrev{display:block;width:100%;max-height:160px;object-fit:cover;margin:0;border:0;border-radius:0;}
-    /* Adjust Thumbnail — pulled up against the preview it belongs to */
+    /* adjust thumbnail */
     .upThumbEditBtn{display:block;width:100%;margin:-.45rem 0 1rem;}
     .upPagesPreview{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;}
     .upPagesPreview img{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid rgba(var(--pg-rgb),.1);}
@@ -261,8 +195,7 @@
     .upArea{resize:vertical;min-height:4.5rem;line-height:1.5;padding-right:.85rem;}
     .upInWrapArea .upCount{top:auto;bottom:.5rem;}
     .upCount{position:absolute;right:.75rem;top:.72rem;font-size:.68rem;color:rgba(var(--tx2-rgb),.4);pointer-events:none;}
-    /* One field per line on every device — Category and Tags used to
-       pair up at ≥600px, the last side-by-side pair left on the page. */
+    /* one field per line */
     .upRow2{display:grid;grid-template-columns:1fr;gap:1rem;}
 
     .upCatDd{position:relative;}
@@ -272,9 +205,7 @@
     .upCatDd.open .upChev{transform:rotate(180deg);}
     .upCatPanel{position:absolute;top:calc(100% + .4rem);left:0;right:0;background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.3);border-radius:8px;padding:.5rem;display:none;flex-direction:column;gap:.15rem;z-index:5;box-shadow:0 10px 26px rgba(0,0,0,.45);max-height:210px;overflow-y:auto;}
     .upCatDd.open .upCatPanel{display:flex;}
-    /* ── Category picker with search — the wrap pins the search bar
-       at the top while only the list below it scrolls. Taller than
-       the plain panel since it now holds all 51 categories. ── */
+    /* category picker */
     #pfUpCatPanelWrap{overflow:hidden;padding:0;gap:0;max-height:min(300px,46vh);}
     .upCatSearchWrap{
       position:relative;flex-shrink:0;
@@ -337,34 +268,20 @@
       .upPopBody{padding:1rem;}
     }
 
-    /* =========================================================
-       BACKGROUND UPLOAD QUEUE (upq*) — the blurred "processing"
-       cards + the tap-for-status / check-failed modal.
-
-       Cards render at the top of the uploader's OWN grids
-       (profile gallery + My Work) while the piece moves through
-       CHECKING → UPLOADING → ALMOST DONE → LIVE in the
-       background — the upload popup closes immediately, so a
-       second piece can be queued while the first is still
-       verifying. Every colour is a theme token, so all four
-       theme prefs (Dark / Gray Dark / Light /
-       System) render it natively with zero extra rules.
-       ========================================================= */
+    /* background upload queue */
     .upqCard{position:relative;border-radius:12px;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);cursor:pointer;isolation:isolate;}
     .upqImgWrap{position:relative;width:100%;aspect-ratio:1;overflow:hidden;background:var(--sur2);}
     .upqImg{width:100%;height:100%;object-fit:cover;
       filter:blur(16px) saturate(.85) brightness(.82);
-      transform:scale(1.12); /* hides the soft blurred edge */
+      transform:scale(1.12);
     }
-    /* Dark scrim so the white status text stays readable over any art,
-       in every theme — the scrim is on the IMAGE, not the page. */
+    /* dark scrim */
     .upqOvl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.55rem;background:rgba(8,8,13,.38);text-align:center;padding:.8rem;}
     .upqSpin{width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.22);border-top-color:#FFFFFF;animation:upqSpin .9s linear infinite;}
     @keyframes upqSpin{to{transform:rotate(360deg);}}
     .upqStage{font-family:var(--fm);font-size:.68rem;font-weight:700;letter-spacing:.22em;color:#FFFFFF;text-transform:uppercase;text-shadow:0 1px 6px rgba(0,0,0,.55);}
     .upqSub{font-size:.7rem;color:rgba(255,255,255,.78);line-height:1.35;text-shadow:0 1px 5px rgba(0,0,0,.5);max-width:92%;}
-    /* LIVE flash — spinner swaps for a green check, card fades itself out
-       (the real, unblurred row replaces it on the next repaint). */
+    /* live flash */
     .upqCard.upqLive .upqSpin{display:none;}
     .upqCard.upqLive .upqOvl{background:rgba(8,8,13,.28);}
     .upqCheck{display:none;width:34px;height:34px;border-radius:50%;background:#22C55E;color:#fff;font-size:1.05rem;line-height:34px;font-weight:800;box-shadow:0 0 18px rgba(34,197,94,.55);}
@@ -372,18 +289,14 @@
     @keyframes upqPop{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
     @media(prefers-reduced-motion:reduce){.upqSpin{animation-duration:2.2s;}.upqCard.upqLive .upqCheck{animation:none;}}
 
-    /* ── Status / check-failed modal — same skeleton + tokens as the
-       legal modal (.legalModal / .lmHead / .lmBody), so it inherits
-       every theme automatically. Opened by tapping a processing card,
-       or auto-opened when a check fails. ── */
+    /* status modal */
     #upqBackdrop{position:fixed;inset:0;z-index:20120;display:flex;align-items:center;justify-content:center;padding:1.2rem;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .3s ease,visibility 0s linear .3s;isolation:isolate;}
     #upqBackdrop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 75%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:-1;}
     #upqBackdrop.open{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s;}
     #upqBackdrop .legalModal{max-width:440px;}
     #upqBackdrop.open .legalModal{transform:translateY(0) scale(1);opacity:1;}
     .upqMBody{padding:1.4rem 1.6rem 1.7rem;background:var(--sur2);overflow-y:auto;}
-    /* \u2500\u2500 Verification tracker \u2014 vertical stepper \u2500\u2500
-       green = passed \u00b7 amber = checking \u00b7 gray = pending \u00b7 red = failed */
+    /* verification tracker */
     .upqTrk{display:flex;gap:.85rem;align-items:flex-start;}
     .upqTrkRail{display:flex;flex-direction:column;align-items:center;flex-shrink:0;align-self:stretch;}
     .upqTrkIco{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;border:2px solid var(--bdr);color:#fff;background:var(--sur);position:relative;}
@@ -409,7 +322,7 @@
     .upqFin.busy{color:#F59E0B;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);}
     .upqFin.ok{color:#22C55E;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);}
     .upqFin.fail{color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-bd);}
-    /* fail header strip inside the body */
+    /* fail header */
     .upqFailBox{display:flex;gap:.8rem;align-items:flex-start;background:var(--danger-bg);border:1px solid var(--danger-bd);border-radius:10px;padding:.9rem 1rem;margin-bottom:1.1rem;}
     .upqFailIco{width:34px;height:34px;border-radius:50%;background:var(--danger-strong);color:#fff;font-weight:800;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .upqFailTitle{font-size:.92rem;font-weight:800;color:var(--tx);}
@@ -419,15 +332,9 @@
     .upqOkBtn{padding:.6rem 1.6rem;border-radius:8px;border:1px solid var(--pg);background:var(--pdim);color:var(--ps);font-family:var(--fm);font-size:.78rem;letter-spacing:.14em;cursor:pointer;transition:background .2s;}
     .upqOkBtn:hover{background:color-mix(in srgb,var(--tc) 22%,transparent);}
 
-    /* ── Square thumbnail cropper (shown right after picking a file,
-       before the rest of the upload form) ──
-       .cropStage is a fixed square viewport; the source image sits
-       inside it oversized and is dragged/zoomed by the user, then
-       canvas-rendered into a 640×640 JPEG at confirm time. The full
-       original file is untouched and still uploaded separately as
-       the main/full-view image. */
+    /* thumbnail cropper */
     .cropPop{position:fixed;inset:0;z-index:20050;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity .25s ease;isolation:isolate;}
-    /* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+    /* blur layer */
     .cropPop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:-1;}
     .cropPop.open{opacity:1;pointer-events:auto;}
     .cropBox{background:var(--sur);border:1px solid rgba(var(--pg-rgb),.28);border-radius:16px;width:100%;max-width:420px;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);overflow:hidden;}
@@ -444,21 +351,12 @@
     .cropStage img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;}
     .cropGrid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(var(--pg-rgb),.35) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--pg-rgb),.35) 1px,transparent 1px);background-size:33.33% 33.33%;}
     .cropFoot{padding:1rem 1.3rem;border-top:1px solid rgba(var(--pg-rgb),.08);display:flex;justify-content:flex-end;gap:.7rem;}
-    /* Thumbnail zoom controls (upload crop only — avatar/banner
-       crop keeps its own plain stage) */
+    /* zoom controls */
     .cropZoomRow{display:flex;align-items:center;gap:.6rem;width:min(320px,100%);}
     .cropZoomBtn{width:30px;height:30px;flex-shrink:0;border-radius:8px;border:1px solid rgba(var(--pg-rgb),.15);background:rgba(var(--pg-rgb),.06);color:var(--tx);font-size:1rem;line-height:1;cursor:pointer;transition:background .2s;}
     .cropZoomBtn:hover{background:rgba(var(--pg-rgb),.16);}
     .cropZoom{flex:1;accent-color:var(--pg);cursor:pointer;min-width:0;}
 
-    /* ── Avatar / Banner focal-point cropper ──
-       Same drag-to-reposition language as .cropStage above, but this
-       one's stage aspect-ratio switches between 1:1 (avatar) and a
-       wide banner ratio depending on which is being edited, via the
-       .cropStage--banner modifier. Unlike the gallery thumbnail
-       picker (which only stores a focal point), this one actually
-       renders the crop to a fixed-size canvas on confirm — see
-       confirmPfAvBCrop() — since avatar/banner are singular,
-       replace-on-reupload assets rather than reused thumbnails. */
+    /* avatar and banner cropper */
     .cropStage--banner{aspect-ratio:16/5;width:min(420px,100%);}
     @media(max-width:480px){.cropStage--banner{aspect-ratio:3/1;}}

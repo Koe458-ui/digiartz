@@ -1,37 +1,6 @@
-/* ═══════════════════════════════════════════════════════════════════
-   Cloudflare Pages Function — POST /api/rzp
-   Razorpay checkout backend for subscriptions and marketplace buys.
+// razorpay checkout backend
 
-   The browser NEVER sees the Razorpay key secret and NEVER decides a
-   price. It sends an action; this function authenticates the caller
-   against Supabase, creates the order at the server-decided amount,
-   and later verifies the payment signature before anything is
-   fulfilled. Fulfillment writes go through the Supabase SERVICE role
-   (payments has no client write policies; subscription_tier is
-   trigger-protected against every role except service_role).
-
-   Actions:
-     sub-order     {plan, amount?}        → create a subscription order
-     market-order  {itemId}               → create a marketplace order
-     verify        {orderId, paymentId, signature}
-                                          → HMAC check + fulfill
-
-   REQUIRES, in Pages → Settings → Environment variables
-   (Production AND Preview):
-     SB_URL                already set (middleware uses it)
-     SB_KEY                already set (anon/publishable key)
-     SB_SERVICE_KEY        NEW — Supabase service_role key
-     RAZORPAY_KEY_ID       NEW — from the Razorpay dashboard
-     RAZORPAY_KEY_SECRET   NEW — from the Razorpay dashboard
-
-   NOTE ON RECURRENCE: these are one-time payments that grant 31 days
-   (Razorpay auto-recurring subscriptions need dashboard-created plan
-   entities + mandates — a later upgrade). subscription_expires_at is
-   stamped on profiles; expiry enforcement is a read-side concern.
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* Server-side price list — the client's plan string selects a row
-   here, nothing more. Amounts are in the currency's smallest unit. */
+// server side price list
 const SUB_CURRENCY = 'USD';
 const PLANS = {
   lite:    { amount: 100,  tier: 'lite',    label: 'Lite — 1 month'    },
@@ -39,13 +8,11 @@ const PLANS = {
   max:     { amount: 1000, tier: 'max',     label: 'Max — 1 month'     },
   support: { amount: null, tier: null,      label: 'Support DigiArtz'  },
 };
-const SUPPORT_MIN = 50;        /* $0.50  */
-const SUPPORT_MAX = 1000000;   /* $10,000 */
+const SUPPORT_MIN = 50;        // fifty cents
+const SUPPORT_MAX = 1000000;   // ten thousand dollars
 const SUB_DAYS    = 31;
 
-/* Razorpay wants the smallest currency unit. price_cents stores
-   price*100 for every currency, which is wrong for zero-decimal
-   currencies (¥500 stored as 50000 would charge ¥50,000). */
+// smallest currency unit
 const ZERO_DECIMAL = new Set(['JPY']);
 const toRzpAmount = (cents, cur) =>
   ZERO_DECIMAL.has(cur) ? Math.round(cents / 100) : cents;
@@ -53,7 +20,7 @@ const toRzpAmount = (cents, cur) =>
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
 
-/* ── Razorpay REST ──────────────────────────────────────────────── */
+// razorpay rest
 async function rzp(env, path, init = {}) {
   const res = await fetch('https://api.razorpay.com' + path, {
     ...init,
@@ -67,7 +34,7 @@ async function rzp(env, path, init = {}) {
   return body;
 }
 
-/* ── Supabase: who is calling / service-role REST ──────────────── */
+// supabase caller and service role
 async function sbUser(env, request) {
   const bearer = request.headers.get('authorization') || '';
   if (!bearer.startsWith('Bearer ')) return null;
@@ -95,7 +62,7 @@ async function sbService(env, path, init = {}) {
   return body;
 }
 
-/* ── HMAC-SHA256 signature check (constant-time compare) ───────── */
+// signature check
 async function validSignature(env, orderId, paymentId, signature) {
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(env.RAZORPAY_KEY_SECRET),
@@ -110,7 +77,7 @@ async function validSignature(env, orderId, paymentId, signature) {
   return crypto.subtle.timingSafeEqual(a, b);
 }
 
-/* ── shared: create order + ledger row, return checkout payload ── */
+// create order and ledger row
 async function makeOrder(env, user, { amount, currency, kind, plan, itemId, label }) {
   const order = await rzp(env, '/v1/orders', {
     method: 'POST',
@@ -130,7 +97,7 @@ async function makeOrder(env, user, { amount, currency, kind, plan, itemId, labe
   return json({ orderId: order.id, keyId: env.RAZORPAY_KEY_ID, amount, currency, label });
 }
 
-/* ── entry point ───────────────────────────────────────────────── */
+// entry point
 export async function onRequestPost({ env, request }) {
   for (const k of ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'SB_SERVICE_KEY', 'SB_URL', 'SB_KEY'])
     if (!env[k]) return json({ error: 'Payment service not configured (' + k + ' missing)' }, 500);
@@ -142,12 +109,12 @@ export async function onRequestPost({ env, request }) {
   try { body = await request.json(); } catch { return json({ error: 'Bad request' }, 400); }
 
   try {
-    /* ── subscriptions ── */
+    // subscriptions
     if (body.action === 'sub-order') {
       const plan = PLANS[String(body.plan || '')];
       if (!plan) return json({ error: 'Unknown plan' }, 400);
       let amount = plan.amount;
-      if (amount === null) {                       /* Support — any amount */
+      if (amount === null) {                       // support, any amount
         amount = Math.round(Number(body.amount));
         if (!Number.isFinite(amount) || amount < SUPPORT_MIN || amount > SUPPORT_MAX)
           return json({ error: 'Amount must be between $0.50 and $10,000' }, 400);
@@ -158,7 +125,7 @@ export async function onRequestPost({ env, request }) {
       });
     }
 
-    /* ── marketplace ── */
+    // marketplace
     if (body.action === 'market-order') {
       const itemId = String(body.itemId || '');
       if (!/^[0-9a-f-]{36}$/.test(itemId)) return json({ error: 'Bad item id' }, 400);
@@ -171,7 +138,7 @@ export async function onRequestPost({ env, request }) {
       if (item.user_id === user.id) return json({ error: 'This is your own listing' }, 400);
       if (!(item.price_cents > 0)) return json({ error: 'This item is free — just download it' }, 400);
 
-      /* already bought → skip checkout, client goes straight to download */
+      // already bought, skip checkout
       const paid = await sbService(env,
         '/payments?item_id=eq.' + itemId + '&user_id=eq.' + user.id +
         '&status=eq.paid&select=id&limit=1');
@@ -185,27 +152,20 @@ export async function onRequestPost({ env, request }) {
       });
     }
 
-    /* ── verify + fulfill ── */
+    // verify and fulfill
     if (body.action === 'verify') {
       const { orderId, paymentId, signature } = body;
       if (!orderId || !paymentId) return json({ error: 'Bad request' }, 400);
       if (!(await validSignature(env, orderId, paymentId, signature)))
         return json({ error: 'Payment verification failed' }, 400);
 
-      /* Signature proves Razorpay issued this pair; the order itself
-         is the source of truth for what was bought and by whom. */
+      // order is the source of truth
       const order = await rzp(env, '/v1/orders/' + orderId);
       if (order.status !== 'paid') return json({ error: 'Payment not completed yet' }, 400);
       const notes = order.notes || {};
       if (notes.user_id !== user.id) return json({ error: 'Order does not belong to you' }, 403);
 
-      /* A Razorpay signature never expires, so the same
-         (orderId, paymentId, signature) triple can be replayed at any
-         time. Fulfilling on every call meant one subscription payment
-         could be re-verified a month later for another SUB_DAYS.
-         Filtering the PATCH on status=eq.created makes it an atomic
-         compare-and-set: the first verify flips the ledger row and gets
-         it back, a replay matches nothing and fulfills nothing. */
+      // block replayed signatures
       const paidRows = await sbService(env,
         '/payments?rzp_order_id=eq.' + orderId + '&status=eq.created', {
         method: 'PATCH',

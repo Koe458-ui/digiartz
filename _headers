@@ -1,18 +1,5 @@
-# ─────────────────────────────────────────────────────────────
-# Security headers — applied to every response.
-#
-# These are defense-in-depth headers that do NOT restrict which
-# scripts/styles/images may load, so AdSense, Google Tag Manager,
-# Razorpay checkout, Supabase and the CloudFront CDNs keep working
-# untouched. They close clickjacking, MIME-sniffing, mixed-content
-# downgrade, referrer-leak and <base>/plugin injection vectors.
-#
-# A strict script-src Content-Security-Policy is intentionally NOT
-# set here: with AdSense + GTM + Razorpay it would break third-party
-# scripts (and ad revenue), and a broken CSP is worse than none.
-# The CSP below only sets the directives that are safe alongside
-# third-party scripts.
-# ─────────────────────────────────────────────────────────────
+# security headers, every response
+# no strict script-src: breaks adsense, gtm, razorpay
 /*
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff

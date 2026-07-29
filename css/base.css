@@ -1,23 +1,11 @@
-/* ── base.css · tokens, reset, intro loader, bottom nav ── */
+/* base tokens, reset, nav */
 
 
-    /* ══ Design tokens ══════════════════════════════════════
-       :root  = base palette — the site's original dark tokens, kept
-                byte-for-byte identical in appearance.
-       html[data-theme="dark"|"graydark"|"light"] re-map the same
-       tokens; "system" resolves to dark/light in the boot script
-       (see <head>) and the theme engine (near #themePage).
-       ├─ base tokens  — main content surfaces + violet accent
-       ├─ --v* tokens  — muted "graphite" layer (hero / profile /
-       │                 admin / notifications / auth pages, which
-       │                 previously hardcoded these per-scope)
-       └─ --f* tokens  — footer "floor" layer (deepest band)
-       Hexes are uppercase on purpose: lowercase literals were
-       mass-migrated to var() refs, uppercase marks definitions. */
+    /* design tokens */
     :root{
       color-scheme: dark;
       --tc:#8A8F98;
-      --bg:#08080D; --sur:#131320; --sur2:#191927; /* all-digit hexes: sweep-tools must skip token definition lines */
+      --bg:#08080D; --sur:#131320; --sur2:#191927;
       --bdr:#26263A; --bdrh:#3A3A56;
       --tx:#F5F4FB; --tx2-rgb:214,212,232; --txd:rgba(var(--tx2-rgb),.62);
       --pg:#8B5CF6; --pb:#B9A3FB; --ps:#C9B8FD; --pgd:#7C3AED;
@@ -29,25 +17,15 @@
       --vpg:#8A8F98; --vpb:#B8BCC2; --vps:#CFD2D6;
       --fbg:#040406; --fsur:#0B0B13; --fsur2:#101018;
       --fbdr:#1C1C2C; --fbdrh:#2C2C44;
-      /* fonts — two families only: Sora (display) + Inter (UI/body).
-         --fm keeps its name (96 call sites) but its role is now
-         "UI label / eyebrow" rendered in Inter; the mono-era
-         tracking on those labels reads as a deliberate style. */
+      /* fonts */
       --fd:'Sora','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       --fb:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
       --fm:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-      --text-on-accent:#FFFFFF; /* other semantic text tokens: see the *-level alias rule below */
+      --text-on-accent:#FFFFFF;
 
-      /* ── Semantic status + role colours ──────────────────────────
-         Body-level overlays (report modal, community modals, mini profile
-         card) render under the GLOBAL theme, so they can't use the bright
-         hexes the dark-scoped panels rely on — those wash out on Light.
-         These tokens carry a dark-theme default and are re-mapped for
-         Light below, so every theme keeps readable contrast. */
+      /* status and role colors */
       --danger:#fca5a5;
-      /* Brand red — the "Artz" in the logo lockup. Owned by a token so
-         the hero highlight and any future red accents stay in step
-         with the badge instead of scattering hexes. */
+      /* brand red */
       --brand-red:#EF4444;
       --danger-strong:#dc2626;
       --danger-bg:rgba(220,38,38,.14);
@@ -58,34 +36,18 @@
       --role-srmod:#60a5fa;  --role-srmod-bd:rgba(96,165,250,.45);
       --role-jrmod:#34d399;  --role-jrmod-bd:rgba(52,211,153,.45);
 
-      /* ── Milestone colour system ─────────────────────────────────
-         One colour per rank, used flat (no gradient / glow / shadow)
-         for BOTH the artist's display name and their milestone ribbon,
-         so the two always match — that match IS the system.
-
-           --msN        the tier's identity colour. Fills the ribbon and
-                        the milestone badge, and colours the name on the
-                        dark themes, where every tier clears 5.2:1.
-           --msN-name   the NAME colour only. Identical to --msN on dark;
-                        re-mapped below on Light, where the raw hues sit
-                        at 1.5–4.2:1 on white and are unreadable. Same
-                        hue, dropped in lightness until it clears 4.5:1,
-                        so a Legend still reads as gold — just a gold
-                        that survives a white background.
-           --ms-ink     text ON a filled badge. See the note in the Light
-                        block for why this is near-black and not white. */
-      --ms1:#BFC5D2;  --ms1-name:#BFC5D2;   /* LVL 5   New Artist      */
-      --ms2:#22C55E;  --ms2-name:#22C55E;   /* LVL 10  Sketch Explorer */
-      --ms3:#3B82F6;  --ms3-name:#3B82F6;   /* LVL 20  Creative Soul   */
-      --ms4:#8B5CF6;  --ms4-name:#8B5CF6;   /* LVL 35  Gallery Artist  */
-      --ms5:#F59E0B;  --ms5-name:#F59E0B;   /* LVL 50  Community Star  */
-      --ms6:#EF4444;  --ms6-name:#EF4444;   /* LVL 70  Master Creator  */
-      --ms7:#06B6D4;  --ms7-name:#06B6D4;   /* LVL 85  Elite Artist    */
-      --ms8:#FACC15;  --ms8-name:#FACC15;   /* LVL 100 DigiArtz Legend */
+      /* milestone colors */
+      --ms1:#BFC5D2;  --ms1-name:#BFC5D2;   /* lvl 5 new artist */
+      --ms2:#22C55E;  --ms2-name:#22C55E;   /* lvl 10 sketch explorer */
+      --ms3:#3B82F6;  --ms3-name:#3B82F6;   /* lvl 20 creative soul */
+      --ms4:#8B5CF6;  --ms4-name:#8B5CF6;   /* lvl 35 gallery artist */
+      --ms5:#F59E0B;  --ms5-name:#F59E0B;   /* lvl 50 community star */
+      --ms6:#EF4444;  --ms6-name:#EF4444;   /* lvl 70 master creator */
+      --ms7:#06B6D4;  --ms7-name:#06B6D4;   /* lvl 85 elite artist */
+      --ms8:#FACC15;  --ms8-name:#FACC15;   /* lvl 100 digiartz legend */
       --ms-ink:#0B0B12;
     }
-    /* ── Dark (default) — neutral near-black, monochrome WHITE accent
-       (no violet: accent tokens re-mapped to white/off-white). ── */
+    /* dark theme */
     html[data-theme="dark"]{
       --tc:#8B8E96;
       --brand-red:#EF4444;
@@ -101,8 +63,7 @@
       --fbg:#040406; --fsur:#0B0B10; --fsur2:#101016;
       --fbdr:#1C1C26; --fbdrh:#2C2C3A;
     }
-    /* ── Gray Dark — softer graphite, monochrome WHITE accent
-       (no violet: accent tokens re-mapped to white/off-white). ── */
+    /* gray dark theme */
     html[data-theme="graydark"]{
       --tc:#94979F;
       --brand-red:#EF4444;
@@ -118,8 +79,7 @@
       --fbg:#0B0B0F; --fsur:#14141A; --fsur2:#1A1A21;
       --fbdr:#26262F; --fbdrh:#383844;
     }
-    /* ── Light — clean + bright, monochrome BLACK accent
-       (no violet: accent tokens re-mapped to near-black). ── */
+    /* light theme */
     html[data-theme="light"]{
       color-scheme:light;
       --tc:#6E6C80;
@@ -137,11 +97,9 @@
       --fbg:#E9E8F0; --fsur:#F4F3F8; --fsur2:#EEEDF4;
       --fbdr:#D8D7E4; --fbdrh:#C2C0D4;
 
-      /* Status + role colours darkened for contrast on white surfaces —
-         the dark-theme pastels (#fca5a5, #fbbf24, #34d399…) are close to
-         unreadable here. */
+      /* status and role colors */
       --danger:#B3261E;
-      --brand-red:#DC2626; /* logo red as-is — plenty of contrast on white */
+      --brand-red:#DC2626;
       --danger-strong:#B3261E;
       --danger-bg:rgba(179,38,30,.08);
       --danger-bg-hover:rgba(179,38,30,.14);
@@ -151,42 +109,23 @@
       --role-srmod:#1D4ED8;  --role-srmod-bd:rgba(29,78,216,.38);
       --role-jrmod:#046B4E;  --role-jrmod-bd:rgba(4,107,78,.38);
 
-      /* Milestone NAME colours darkened for white surfaces. The ribbon
-         fills (--ms1..--ms8) are deliberately NOT re-mapped — a filled
-         chip carries its own background, so the brand colour stays exact
-         in every theme. Only text sitting directly on the page changes.
-         Measured on #FFFFFF: raw hues score 1.53:1 (Legend Gold) to
-         4.23:1 (Royal Purple); these all clear 4.50:1 (WCAG AA). */
-      --ms1-name:#687695;   /* Soft Gray     4.55:1 */
-      --ms2-name:#178841;   /* Emerald       4.53:1 */
-      --ms3-name:#1E6FF5;   /* Sapphire      4.52:1 */
-      --ms4-name:#8655F6;   /* Royal Purple  4.52:1 */
-      --ms5-name:#A56A07;   /* Amber Gold    4.50:1 */
-      --ms6-name:#EB1515;   /* Crimson       4.52:1 */
-      --ms7-name:#048196;   /* Cyan          4.58:1 */
-      --ms8-name:#8F7303;   /* Legend Gold   4.54:1 */
+      /* milestone name colors */
+      --ms1-name:#687695;   /* soft gray */
+      --ms2-name:#178841;   /* emerald */
+      --ms3-name:#1E6FF5;   /* sapphire */
+      --ms4-name:#8655F6;   /* royal purple */
+      --ms5-name:#A56A07;   /* amber gold */
+      --ms6-name:#EB1515;   /* crimson */
+      --ms7-name:#048196;   /* cyan */
+      --ms8-name:#8F7303;   /* legend gold */
     }
-    /* ── Semantic text tokens ─────────────────────────────────
-       Declared on * (not :root) deliberately: a custom property
-       declared only on :root bakes in :root's values — descendants
-       inherit the COMPUTED alias, so scoped re-declarations of
-       --tx/--pb (profile graphite layer, footer floor) would be
-       ignored. Declaring per-element makes each alias re-resolve
-       against the tokens the element actually inherits, so these
-       are theme-aware AND scope-aware. Trade-off: setting e.g.
-       --text-primary directly on a container will not inherit —
-       set the underlying token (--tx) instead. ── */
+    /* semantic text tokens */
     *{
       --text-primary:var(--tx);   --text-secondary:var(--txd);
       --text-muted:var(--tc);     --heading-color:var(--tx);
       --link-color:var(--pb);     --border-color:var(--bdr);
     }
-    /* ── Rendering perf: below-fold sections skip style/layout/paint
-       until scrolled near. contain-intrinsic-size's `auto` keyword
-       remembers the real size after first render, so the scrollbar
-       never jumps. #connect is deliberately NOT listed — it contains
-       position:fixed modals whose containing block paint containment
-       would hijack. ── */
+    /* below fold render perf */
     #artworks,#subOverview,footer.siteFooter{
       content-visibility:auto;
     }
@@ -194,8 +133,7 @@
     #subOverview{contain-intrinsic-size:auto 700px;}
     footer.siteFooter{contain-intrinsic-size:auto 480px;}
 
-    /* ══ Typography base — applies in every theme; classed styles
-       keep precedence, this layer only sets sane defaults. ══ */
+    /* typography base */
     body{line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
     h1,h2,h3,h4,h5,h6{color:var(--heading-color);line-height:1.15;}
     h1{font-weight:800;letter-spacing:-.02em;}
@@ -208,12 +146,8 @@
     html{scroll-behavior:smooth;background:var(--vbg);}
     body{background:var(--bg);color:var(--tx);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
 
-    /* INTRO — dark/violet theme, matching the Community page
-       (--cmBg var(--bg), --cmAccent var(--pg), --cmAccentSoft var(--pb)) */
-    /* Loading veil — transparent but input-opaque. The site paints in
-       behind it while pointer-events:auto swallows every interaction;
-       a faint tint keeps the spinner readable on any content without
-       hiding the page loading underneath. Short .3s fade on reveal. */
+    /* intro */
+    /* loading veil */
     #intro{position:fixed;inset:0;z-index:9999;background:color-mix(in srgb,var(--bg) 28%,transparent);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;opacity:1;transition:opacity .3s ease;pointer-events:auto;}
     #intro.iHide{opacity:0;pointer-events:none;}
     #intro.iGone{visibility:hidden;}
@@ -223,19 +157,7 @@
     @media(prefers-reduced-motion:reduce){.iSpin{animation-duration:1.6s;}}
 
 
-    /* =========================================================
-       FLOATING BOTTOM NAVIGATION
-       ├─ Bar (#bnNav) — near-full-width pill, icon-only
-       │   └─ Items (.bnItem) × 5 — circular icon buttons,
-       │       Home / Gallery / Comic / Community / Profile,
-       │       evenly spaced with justify-content:space-between
-       │   z-index sits above every full-page panel (gallery,
-       │   comments, comic, subscription) so the bar
-       │   stays visible/usable across the whole site, not just
-       │   the hero section.
-       (AI Assistant button #zeoBtn now lives up top, left of the
-        notification icon — see .fpFloat widgets in the hero)
-       ========================================================= */
+    /* bottom nav */
     #bnNav{
       position:fixed;
       left:16px;right:16px;bottom:1.1rem;
@@ -248,23 +170,12 @@
       border:1px solid rgba(var(--pg-rgb),.22);
       box-shadow:0 10px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(var(--pg-rgb),.08);
       isolation:isolate;
-      /* FIX: promote to its own GPU layer up front (translateZ(0))
-         instead of letting the browser create one reactively mid-
-         scroll — pairs with the ::before blur decoupling below to
-         remove the last residual flicker on iOS Safari. */
+      /* gpu layer */
       transform:translateZ(0);
       -webkit-transform:translateZ(0);
       will-change:transform;
     }
-    /* FIX: background + blur moved off #bnNav itself and onto this
-       ::before layer. WebKit's compositor flashes white on fast
-       scroll when a position:fixed element ALSO carries
-       backdrop-filter, because it has to re-snapshot the blur
-       source for the SAME layer it's repositioning every frame.
-       Putting the blur on a separate absolutely-positioned layer
-       behind the content decouples "track the viewport" from
-       "sample + blur the backdrop", which stops the flash. Visual
-       result is pixel-identical. */
+    /* blur layer */
     #bnNav::before{
       content:'';
       position:absolute;
@@ -299,8 +210,7 @@
       background:var(--pg);
       box-shadow:0 0 6px var(--pg);
     }
-    /* Profile item hosts the existing login/avatar swap buttons,
-       sized to match the other icons exactly, still circular */
+    /* profile item */
     .bnItem.bnProfile{padding:0;}
     .bnItem .nLoginBtn,
     .bnItem .nAvatarBtn{
@@ -309,8 +219,7 @@
     .bnItem .nLoginBtn svg{width:24px;height:24px;stroke-width:1.8;}
     .bnItem .nAvLetter{font-size:1.05rem;}
 
-    /* Text labels removed — icon-only nav; .bnLabel spans are kept
-       in markup for screen-reader / SEO continuity but hidden visually */
+    /* hidden labels */
     .bnLabel{
       position:absolute;width:1px;height:1px;padding:0;margin:-1px;
       overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
@@ -332,15 +241,7 @@
       background: var(--bg);
     }
 
-    /* ── Front-page floating widgets — brand badge + notification
-       button. Fixed like the bottom nav, but only shown while the
-       hero/main section is in view and no full-page overlay panel
-       (login, subscription, comic arts, etc.) is open — see the
-       hero-only-widgets script near the end of the file for the
-       show/hide logic (adds/removes the .heroOut class below).
-       Sizing uses clamp() throughout instead of a single breakpoint
-       so both widgets scale smoothly across phones, tablets, and
-       desktops rather than snapping at one fixed width. ── */
+    /* floating widgets */
     .fpFloat {
       position: fixed;
       top: clamp(1rem, 2.6vw, 2rem);
@@ -353,16 +254,12 @@
       box-shadow: 0 10px 32px rgba(5,3,8,.35), inset 0 1px 0 color-mix(in srgb,var(--vpg) 15%,transparent);
       color: var(--vtx);
       isolation: isolate;
-      /* FIX: promote to its own GPU layer up front, same reasoning
-         as #bnNav below. */
+      /* gpu layer */
       transform: translateZ(0);
       -webkit-transform: translateZ(0);
       will-change: transform;
     }
-    /* FIX: same decoupling as #bnNav — blur lives on its own layer
-       behind the content instead of on the fixed element itself,
-       so WebKit isn't re-snapshotting the backdrop for a layer
-       it's simultaneously repositioning every scroll frame. */
+    /* blur layer */
     .fpFloat::before {
       content: '';
       position: absolute;
@@ -371,9 +268,7 @@
       background: linear-gradient(160deg,color-mix(in srgb,var(--vpg) 50%,transparent) 0%,color-mix(in srgb,var(--vpg) 30%,transparent) 100%);
       z-index: -1;
     }
-    /* Hidden once the hero section has scrolled out of view — these
-       widgets (brand badge, notification button, and #zeoBtn below)
-       belong to the main/hero page only, not every section. */
+    /* hide on scroll out */
     .fpFloat.heroOut,
     #zeoBtn.heroOut {
       opacity: 0;
@@ -381,7 +276,7 @@
       pointer-events: none;
     }
 
-    /* ── Brand badge — top-left ── */
+    /* brand badge */
     .hBadge {
       left: clamp(1rem, 2.6vw, 2rem);
       width: clamp(112px, 24vw, 156px);
@@ -394,12 +289,10 @@
     }
     .hBadge .hBadgeD { color: #0a0a0a; }
     .hBadge .hBadgeA { color: var(--brand-red); }
-    /* Less see-through than the shared .fpFloat::before default —
-       flat 70%-opaque fill (only ~30% transparent) so the brand
-       pill reads as solidly as the notification button next to it. */
+    /* badge fill */
     .hBadge::before { background: color-mix(in srgb,var(--vpg) 70%,transparent); }
 
-    /* ── Notification button — top-right, plain circle ── */
+    /* notification button */
     .hNotifBtn {
       right: clamp(1rem, 2.6vw, 2rem);
       width: clamp(42px, 8vw, 54px);
@@ -411,7 +304,7 @@
     .hNotifBtn:hover { background: linear-gradient(160deg,color-mix(in srgb,var(--vpg) 50%,transparent) 0%,color-mix(in srgb,var(--vpg) 30%,transparent) 100%); }
     .hNotifBtn:active { transform: scale(.95); }
     .hNotifBtn:focus-visible { outline: 2px solid var(--pg); outline-offset: 2px; }
-    /* Unread dot — hidden until an admin notification actually exists */
+    /* unread dot */
     .hNotifDot {
       position: absolute;
       top: 6px; right: 6px;

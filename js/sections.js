@@ -1,4 +1,4 @@
-/* ── sections.js · resources · blog · marketplace · jobs, razorpay, dzView, hero pitch ── */
+// sections, razorpay, detail view, hero
 (function () {
   'use strict';
 
@@ -15,9 +15,7 @@
     widgets.forEach(function (el) {
       el.classList.toggle('heroOut', out);
     });
-    /* The bot's speech bubble is a separately fixed-position element
-       driven by its own timer, independent of the button — muting
-       it here stops it from popping up while the button is hidden. */
+    // mute the bubble too
     if (out !== wasOut) {
       wasOut = out;
       if (out) {
@@ -28,9 +26,7 @@
     }
   }
 
-  /* ── Full-page overlay panels — hide widgets whenever any of
-     these slide-in pages is open, since they otherwise float
-     above the panel's lower z-index. ── */
+  // overlay panels hide the widgets
   var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
@@ -50,27 +46,11 @@
   }
 })();
 
-/* ═══════════════════════════════════════════════════════════════════
-   SECTION CONTENT — Resources / Blog / Marketplace / Jobs
-   Four Supabase tables behind the four gallery tabs, plus the upload
-   forms that feed them.
-
-   Where the bytes live:
-     Resources    → S3 (file + preview), row in `resources`
-     Blog         → Supabase only; the optional cover reuses the
-                    existing image path
-     Marketplace  → S3 (file + preview) + Supabase row w/ pricing
-     Jobs         → Supabase only, no upload at all
-
-   Forms are generated from ONE field spec rather than four
-   hand-written HTML blocks: the sections share ~70% of their fields
-   (title, description, category, tags), and four copies would drift
-   the moment one of them changed.
-   ═══════════════════════════════════════════════════════════════════ */
+// section content
 (function(){
   'use strict';
 
-  /* Rows are cached per section so switching tabs doesn't re-query. */
+  // cache rows per section
   var dzCache = {}, dzBusy = {}, dzLoaded = {};
 
   var SEC = {
@@ -84,10 +64,7 @@
     },
     marketplace: {
       table:'marketplace_items', kind:'grid', noun:'item',
-      /* file_url is deliberately absent: the column is revoked from
-         anon/authenticated (selecting it errors the whole query) and
-         the paid file is only reachable through the
-         dz_market_download() RPC after an entitlement check. */
+      // file url is revoked for clients
       select:'id,user_id,title,description,category,tags,item_type,price_cents,currency,file_ext,file_size,preview_url,license,delivery_days,created_at'
     },
     jobs: {
@@ -96,7 +73,7 @@
     }
   };
 
-  /* ── small formatters ───────────────────────────────────────── */
+  // formatters
   function bytes(n){
     n = Number(n)||0;
     if(n <= 0) return '';
@@ -125,7 +102,7 @@
     return slug;
   }
 
-  /* ── load ────────────────────────────────────────────────────── */
+  // load
   function dzSecEnter(sec){
     if(!SEC[sec] || dzLoaded[sec] || dzBusy[sec]) { dzSecRender(sec); return; }
     dzSecLoad(sec);
@@ -133,10 +110,7 @@
   function dzSecLoad(sec){
     var cfg = SEC[sec], host = document.getElementById('fgSecC-'+sec);
     if(!cfg || !host) return;
-    /* `sb` is a top-level `let` in the main script block — it lives in
-       the global lexical environment, NOT on window, so `window.sb` is
-       always undefined. Bare `sb` resolves correctly (null if config
-       is missing, the client otherwise). */
+    // sb is lexical, not on window
     if(!sb){ host.innerHTML = '<div class="dzEmpty">BACKEND NOT CONFIGURED</div>'; return; }
     dzBusy[sec] = true;
     host.innerHTML = '<div class="dzBusy">LOADING…</div>';
@@ -152,7 +126,7 @@
       });
   }
 
-  /* ── filter + paint ──────────────────────────────────────────── */
+  // filter and paint
   function matches(row, q){
     if(!q) return true;
     var hay = [row.title, row.description, row.excerpt, row.company]
@@ -194,8 +168,7 @@
       var thumb = r.preview_url
         ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.preview_url))+'" alt="'+esc(r.title)+'">'
         : '<span class="dzExt">'+esc((r.file_ext||'FILE').toUpperCase())+'</span>';
-      /* Card click opens the full detail view; the file download
-         moved inside it (with the comments and report options). */
+      // card opens the detail view
       return '<div class="dzCard" onclick="dzOpenView(\'resources\',\''+id+'\')">'+
         '<div class="dzThumb">'+thumb+'<span class="dzBadge">'+esc((r.file_ext||'').toUpperCase())+'</span></div>'+
         '<div class="dzBody"><div class="dzName">'+esc(r.title)+'</div>'+
@@ -207,11 +180,7 @@
       var mt = r.preview_url
         ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.preview_url))+'" alt="'+esc(r.title)+'">'
         : '<span class="dzExt">'+esc((r.item_type||'ITEM').toUpperCase())+'</span>';
-      /* file_url never reaches the client — the button routes through
-         the Razorpay checkout (paid) or the entitlement RPC (free /
-         already purchased). hasFile tells the post-payment handler
-         whether a download should follow, since commissions and
-         services legitimately have no file. */
+      // file url never reaches the client
       var hasFile = r.file_ext ? 1 : 0;
       var priced  = (r.price_cents||0) > 0;
       var buyBtn  = priced
@@ -236,7 +205,7 @@
         '<span>'+esc(String(r.read_minutes||1))+' min read</span></div>'+
         '<div class="dzHint">'+esc(ex)+'</div>'+chips(r)+'</div></div>';
     }
-    /* jobs */
+    // jobs
     var where = r.is_remote ? 'Remote'
       : [r.location_city, r.location_country].filter(Boolean).join(', ');
     var pay = (r.salary_min || r.salary_max)
@@ -254,12 +223,7 @@
       '<span>'+esc(ago(r.created_at))+'</span></div>'+chips(r)+'</div></div>';
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-     UPLOAD FORMS
-     One spec per section. `type` drives both the rendered control and
-     how dzSubmit() reads it back, so adding a field is a one-line
-     change instead of edits in three places.
-     ═══════════════════════════════════════════════════════════════ */
+  // upload forms
   var LICENSE_RES = [['personal','Personal use only'],['commercial','Commercial use OK'],
                      ['cc0','CC0 — public domain'],['cc-by','CC BY — credit required'],['custom','Custom terms']];
   var LICENSE_MKT = [['standard','Standard'],['extended','Extended'],['exclusive','Exclusive'],['custom','Custom']];
@@ -334,8 +298,7 @@
       ]}
   };
 
-  /* Per-section scratch state: picked files, their preview object
-     URLs (revoked on replace / reset) and tag chips. */
+  // per section scratch state
   var S = {};
   function st(sec){
     var s = (S[sec] = S[sec] || {tags:[], files:{}, urls:{}});
@@ -348,11 +311,7 @@
   var TAB_ICO   = {artwork:'artworks', resources:'resources', blog:'blog', marketplace:'marketplace', jobs:'jobs'};
   var upSec = 'artwork';
 
-  /* The same glyphs the gallery rail and the upload tabs carry, so a
-     Blog dropzone shows the Blog mark and a Marketplace dropzone the
-     Marketplace one — one icon per section across the whole site.
-     Kept as literals rather than read out of the tab markup: the
-     forms are built before the gallery rail is guaranteed to exist. */
+  // one icon per section
   var SEC_SVG = {
     artworks:    '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>',
     resources:   '<path d="M12 7c-1.8-1.3-4-2-6.5-2H3v13h2.5c2.5 0 4.7.7 6.5 2 1.8-1.3 4-2 6.5-2H21V5h-2.5C16 5 13.8 5.7 12 7z"/><path d="M12 7v13"/>',
@@ -379,7 +338,7 @@
   }
 
   function upSwitchSection(sec, silent){
-    buildTabs();               /* idempotent — safe to call every time */
+    buildTabs();               // idempotent
     upSec = sec;
     var btns = document.querySelectorAll('#upSecTabs .upSecBtn');
     for(var i=0;i<btns.length;i++){
@@ -394,8 +353,7 @@
     if(sec === 'artwork'){
       if(art) art.style.display = '';
       if(box){ box.style.display = 'none'; }
-      /* silent = the caller already labelled the page (edit mode says
-         "Edit Artwork"); only restore which panel is showing. */
+      // restore the visible panel
       if(!silent){
         if(h) h.textContent = 'Upload Artwork';
         if(p) p.textContent = 'Share your creativity with artists around the world.';
@@ -413,8 +371,7 @@
     dzSchedStrip(sec);
   }
 
-  /* ── Guide + tips copy, per section. Mirrors the artwork upload's
-     sidebar (Upload Guidelines + Tips), reworded for each kind. ── */
+  // guide and tips copy
   var GUIDE = {
     resources: {
       guide: [
@@ -454,10 +411,7 @@
     }
   };
 
-  /* Ghost slots — identical to the artwork rail's (js/drafts.js
-     updrGhost / uschGhost) so the two pages' strips are the same
-     component: ✦ + a red "7d" for drafts, ⏱ + a violet "--" for
-     scheduled. */
+  // ghost slots
   function dzGhostCard(){
     return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
       '<span class="upDraftGhostIn">✦</span>'+
@@ -471,9 +425,7 @@
   function dzGhost4(){ return dzGhostCard()+dzGhostCard()+dzGhostCard()+dzGhostCard(); }
   function dzSchedGhost4(){ return dzSchedGhostCard()+dzSchedGhostCard()+dzSchedGhostCard()+dzSchedGhostCard(); }
 
-  /* Section-scoped schedule picker markup. Only one section form is
-     mounted at a time, so fixed dzSched* ids are safe. Reuses every
-     .upSched* / .upCatDd class from the artwork picker. */
+  // schedule picker markup
   function dzSchedField(){
     return ''+
     '<div class="upField" id="dzSchedField">'+
@@ -520,17 +472,14 @@
       '<div class="dzUpForm"><div class="upMain">'+
         fields +
         dzSchedField() +
-        /* Save Draft before Publish in source order: .upActions is
-           column-reverse, so Publish ends up on top — same order the
-           artwork form's buttons come out in. */
+        // save draft before publish
         '<div class="upActions">'+
           '<button type="button" class="upBtnSec" id="dzDraftBtn-'+sec+'" onclick="dzSaveDraft(\''+sec+'\')">💾 Save Draft</button>'+
           '<button type="button" class="upBtnPri" id="dzSubmit-'+sec+'" onclick="dzSubmit(\''+sec+'\')">Publish</button>'+
         '</div>'+
         '<p class="dzHint" style="margin-top:.9rem">Posts are reviewed before they appear publicly.</p>'+
       '</div></div>'+
-      /* Same two cards, same order, same copy as the artwork page's
-         sidebar (index.html #upSchedSec / #upDraftSec). */
+      // same sidebar as artwork page
       '<aside class="dzUpSide">'+
         '<div class="upSideCard">'+
           '<div class="upDraftTitle">SCHEDULED</div>'+
@@ -583,11 +532,7 @@
         '<input class="upTagInput" id="'+id+'" maxlength="20" placeholder="Add up to 10 tags…" '+
         'onkeydown="dzTagKey(event,\''+sec+'\')"></div>'+hint+'</div>';
     } else if(fd.t === 'file' || fd.t === 'image'){
-      /* Dropzone instead of the browser's bare "Choose file" control —
-         the same component the artwork page uses (drag target, one
-         clear action, the picked file shown back), wearing this
-         section's icon. The <input> stays a real file input covering
-         the card, so click / keyboard / drop all reach it. */
+      // dropzone instead of file input
       var acc   = fd.accept ? fd.accept : (fd.t === 'image' ? 'image/*' : '');
       var isImg = fd.t === 'image';
       var args  = '\''+sec+'\',\''+fd.k+'\'';
@@ -614,7 +559,7 @@
     return '<div class="upField">'+lbl+body+hint+'</div>';
   }
 
-  /* ── tags ────────────────────────────────────────────────────── */
+  // tags
   function renderTags(sec){
     var host = document.getElementById('dzTags-'+sec);
     if(!host) return;
@@ -637,10 +582,8 @@
   }
   function dzTagDel(sec, i){ st(sec).tags.splice(i,1); renderTags(sec); }
 
-  /* ── file picking ────────────────────────────────────────────── */
-  /* "image/*,.psd,.zip" → "JPG · PNG · WEBP · GIF" / "PSD · ZIP" —
-     a readable line under the button, capped so a resource field's
-     dozen extensions don't become a paragraph. */
+  // file picking
+  // accept list to a readable line
   function acceptLabel(acc, isImg){
     var parts = String(acc||'').split(',').map(function(p){ return p.trim(); }).filter(Boolean);
     var out = [], seen = {};
@@ -660,9 +603,7 @@
     return m ? m[1].toUpperCase() : 'FILE';
   }
 
-  /* Paints the zone's picked state: a thumbnail for images, the
-     extension for everything else, plus name, size and the two
-     actions. Empty file → back to the drop copy. */
+  // paint the picked state
   function dzRenderFile(sec, key){
     var id  = 'dz_'+sec+'_'+key,
         z   = document.getElementById(id+'_z'),
@@ -691,8 +632,7 @@
       '</div>';
   }
 
-  /* One place that swaps the held file, so the object URL of the
-     outgoing preview is always revoked. */
+  // swap the held file
   function dzSetFile(sec, key, f){
     var s = st(sec);
     if(s.urls[key]){ try{ URL.revokeObjectURL(s.urls[key]); }catch(e){} s.urls[key] = null; }
@@ -721,7 +661,7 @@
     dzSetFile(sec, key, null);
   }
 
-  /* ── drag & drop ─────────────────────────────────────────────── */
+  // drag and drop
   function dzDragOn(e, id){
     if(e) e.preventDefault();
     var z = document.getElementById(id+'_z');
@@ -738,8 +678,7 @@
     if(typeof pfGuestGate === 'function' && pfGuestGate({preventDefault:function(){},stopPropagation:function(){}})) return;
     var f = e && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
     if(!f) return;
-    /* An image field takes images only — dropping a ZIP on the
-       preview slot is a mistake, not an instruction. */
+    // image fields take images only
     var el = document.getElementById('dz_'+sec+'_'+key);
     var acc = el ? String(el.getAttribute('accept')||'') : '';
     if(acc.indexOf('image/') === 0 && !/^image\//.test(f.type||'')){
@@ -756,9 +695,7 @@
     return String(el.value||'').trim();
   }
 
-  /* Re-draws every file field from the held state — the form is
-     rebuilt by innerHTML on each tab switch, so the picked cards have
-     to be painted back or a chosen file would look unchosen. */
+  // repaint file fields
   function dzPaintFiles(sec){
     (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
       if(fd.t === 'file' || fd.t === 'image') dzRenderFile(sec, fd.k);
@@ -779,18 +716,8 @@
     dzSchedStrip(sec);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-     SCHEDULE + DRAFTS for section posts.
-     · Schedule → server-side, mirrors artwork scheduled_uploads:
-       the row is built + files uploaded now, then parked in
-       public.scheduled_sections; a five-minute pg_cron (publish_due_
-       scheduled_sections) inserts it into the real table at the set
-       time, so it goes live even if the device is off.
-     · Drafts → device-local IndexedDB (dzsecdrafts), same choice the
-       artwork drafts make. Text + selections + tags only; files are
-       re-attached on resume. Auto-purged 7 days after saving.
-     ═══════════════════════════════════════════════════════════════ */
-  var DZ_SCH_MIN = 5 * 60 * 1000;   /* min 5-minute lead, matches artwork */
+  // schedule and drafts
+  var DZ_SCH_MIN = 5 * 60 * 1000;   // five minute lead
   var dzSch = { y:null, m:null, d:null, vy:null, vm:null };
 
   function dzSchPad(n){ return (n<10?'0':'')+n; }
@@ -877,7 +804,7 @@
     if(!isFinite(t) || t < Date.now()+DZ_SCH_MIN){ hint.textContent='Pick a time at least 5 minutes from now.'; hint.classList.add('bad'); }
     else { hint.textContent='Publishes '+dzFmtWhen(el.value)+' · verified now, published at the set time.'; hint.classList.remove('bad'); }
   }
-  /* '' when empty/invalid → dzSubmit treats that as publish now. */
+  // empty means publish now
   function dzSchPicked(){
     var el=document.getElementById('dzSchedVal');
     if(!el||!el.value) return '';
@@ -886,7 +813,7 @@
     return el.value;
   }
 
-  /* ── device-local draft store (IndexedDB) ── */
+  // local draft store
   function dzdbOpen(){
     return new Promise(function(res,rej){
       if(!window.indexedDB){ rej(new Error('no idb')); return; }
@@ -914,7 +841,7 @@
     var s=st(sec), data={};
     FORMS[sec].fields.forEach(function(fd){
       if(fd.t==='tags'){ data.__tags=(s.tags||[]).slice(); return; }
-      if(fd.t==='file'||fd.t==='image') return;   /* blobs not persisted */
+      if(fd.t==='file'||fd.t==='image') return;   // blobs not persisted
       var el=document.getElementById('dz_'+sec+'_'+fd.k);
       if(!el) return;
       data[fd.k]= el.type==='checkbox' ? el.checked : el.value;
@@ -958,13 +885,11 @@
     var h=Math.floor(m/60); if(h<24) return h+'h ago';
     return Math.floor(h/24)+'d ago';
   }
-  /* Whole days left before the 7-day auto-delete — the same red
-     corner mark the artwork drafts carry. */
+  // days before auto delete
   function dzDaysLeft(savedAt){
     return Math.max(1, Math.ceil((savedAt + 7*864e5 - Date.now())/864e5));
   }
-  /* Short countdown for the scheduled tile's corner mark, matching
-     uschLeft() in js/drafts.js: 45m / 6h / 3d. */
+  // countdown for corner mark
   function dzMark(iso){
     var t=new Date(iso).getTime()-Date.now();
     if(t<=0) return 'now';
@@ -972,9 +897,7 @@
     var h=Math.round(m/60);    if(h<24) return h+'h';
     return Math.round(h/24)+'d';
   }
-  /* Both cards use the artwork rail's tile shell (.upDraftCard, with
-     the top-left ✕ and the corner mark). Section posts have no
-     thumbnail, so .dzPIn fills the square with text instead. */
+  // tile shell, text fills the square
   function dzDraftCard(d){
     var ex=dzExcerpt(d.data||{});
     var sched=d.data && d.data.__sched;
@@ -1036,7 +959,7 @@
   async function dzCancelSched(id, sec){
     if(!sb) return;
     try{
-      /* best-effort S3 cleanup of files parked for this schedule */
+      // clean up parked files
       var got=await sb.from('scheduled_sections').select('storage_paths').eq('id', id).single();
       var paths=(got && got.data && got.data.storage_paths) || [];
       await sb.from('scheduled_sections').delete().eq('id', id);
@@ -1048,17 +971,8 @@
     }catch(e){ showToast('Could not cancel'); }
   }
 
-  /* ── submit ──────────────────────────────────────────────────── */
-  /* ═══════════════════════════════════════════════════════════════
-     RESOURCE / MARKETPLACE VERIFICATION TRACKER
-     Reuses the SAME modal box (#upqBackdrop) and the SAME row
-     component (upqTrackRow) the artwork queue paints, so the
-     experience is identical to an artwork upload — only the rows are
-     section-appropriate. Only these two sections are gated; Blog and
-     Jobs publish as before (no image to moderate). The check runs on
-     the PREVIEW image before a single byte reaches S3, and fails
-     closed: a rejection means nothing was uploaded.
-     ═══════════════════════════════════════════════════════════════ */
+  // submit
+  // verification tracker
   var dzV = {
     title:'', safety:'', safetySub:'', transfer:'', publish:'', failReason:null,
     recvLabel:'File & preview received',
@@ -1120,14 +1034,10 @@
       return;
     }
     var btn = document.getElementById('dzSubmit-'+sec);
-    /* No moderation queue for these sections — rows insert as
-       'approved' (same as artworks) and are live the moment the
-       insert lands. The eq('status','approved') read filter stays,
-       so a status column edit can still unpublish a row later. */
+    // rows insert as approved
     var s = st(sec), row = {user_id: currentUser.id, tags: s.tags, status:'approved'};
 
-    /* Required fields come straight off the spec so the form and the
-       check can't disagree. */
+    // required fields from the spec
     var miss = FORMS[sec].fields.filter(function(fd){
       if(!fd.req) return false;
       if(fd.t === 'file' || fd.t === 'image') return !s.files[fd.k];
@@ -1136,29 +1046,18 @@
     if(miss.length){ showToast('Missing: ' + miss[0].label); return; }
 
     if(btn){ btn.disabled = true; btn.textContent = 'Publishing…'; }
-    /* Which sections get the Gemini image gate, and how:
-         resources / marketplace → the REQUIRED preview, resource mode
-         blog                    → the cover image IF present, ARTWORK
-                                    mode (same rules as an artwork post)
-       "Only image": text is never sent — just the one image. Blog is
-       gated only when it actually has a cover. ── */
+    // which sections get the image gate
     var modImg = null, modMode = null, modRecv = 'File & preview received';
     if(sec === 'resources'){   modImg = st(sec).files.preview; modMode = 'resource'; }
     else if(sec === 'marketplace'){ modImg = st(sec).files.preview; modMode = 'marketplace'; }
     else if(sec === 'blog'){   modImg = st(sec).files.cover;   modMode = 'artwork'; modRecv = 'Cover image received'; }
     var moderated = !!modImg;
     try{
-      /* ── IMAGE MODERATION ──
-         Gemini reads only the image (preview / cover), never the file
-         bytes or the post text. Runs before S3 so a rejection leaves
-         nothing behind. ── */
+      // image moderation
       if(moderated){
         dzV.open(val(sec,'title') || SEC[sec].noun, modRecv);
 
-        /* Reliable AI-metadata scan first — catches images exported
-           straight from an AI tool. Same gate artwork uploads use.
-           Metadata only; a scan error alone never blocks (a real 3D
-           render or hand-made piece has no such markers). */
+        // ai metadata scan first
         if(window.UploadVerifier && typeof UploadVerifier.scanAIMeta === 'function'){
           var aiHits = [];
           try{ aiHits = (await UploadVerifier.scanAIMeta(modImg)) || []; }catch(e){ aiHits = []; }
@@ -1171,10 +1070,7 @@
           }
         }
 
-        /* Gemini image check — same endpoint as artworks. Resources /
-           marketplace use resource mode; blog uses artwork mode, so a
-           blog cover follows the exact artwork rules. Fails closed:
-           no verdict → no upload. */
+        // gemini image check
         var mFd = new FormData();
         mFd.append('files', modImg);
         mFd.append('mode', modMode);
@@ -1201,8 +1097,7 @@
       var stamp = Date.now();
       var base  = safeSlug(val(sec,'title') || sec, 60) || sec;
 
-      /* S3 first: a row pointing at a file that failed to upload is
-         worse than no row at all. */
+      // s3 first, then the row
       async function put(key, prefix){
         var f = s.files[key]; if(!f) return null;
         var ext = safeSlug((f.name.split('.').pop()||'bin'), 10);
@@ -1255,8 +1150,7 @@
         var cc = val(sec,'location_country').toUpperCase();
         var url = val(sec,'apply_url'), mail = val(sec,'apply_email');
 
-        /* These mirror the table's CHECK constraints. Catching them
-           here turns a raw Postgres error into a readable sentence. */
+        // mirror the table constraints
         if(!url && !mail) throw new Error('Add an apply link or an email');
         if(remote && !countries.length) throw new Error('A remote role needs at least one eligible country');
         if(!remote && cc.length !== 2) throw new Error('Add a two-letter country code');
@@ -1279,11 +1173,7 @@
         row.valid_through = val(sec,'valid_through') || null;
       }
 
-      /* ── SCHEDULE branch ──
-         Files are already in S3 and (where applicable) moderation has
-         passed. Instead of inserting into the live table, park the
-         fully-built row as jsonb in scheduled_sections; the cron
-         (publish_due_scheduled_sections) inserts it at publish_at. */
+      // schedule branch
       var when = dzSchPicked();
       if(when){
         if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
@@ -1308,7 +1198,7 @@
       if(moderated){ dzV.step('publish','pass'); setTimeout(function(){ dzV.close(); }, 1400); }
       showToast('Published');
       dzResetForm(sec);
-      dzLoaded[sec] = false;   /* next visit re-queries */
+      dzLoaded[sec] = false;   // next visit re queries
     }catch(err){
       if(moderated){ dzV.fail((err && err.message) ? err.message : 'Could not publish'); }
       else { showToast((err && err.message) ? err.message : 'Could not publish'); }
@@ -1317,15 +1207,11 @@
     }
   }
 
-  /* This script is the last thing in <body>, so every element it
-     touches is already parsed — no need to wait for DOMContentLoaded.
-     The listener stays only as a fallback if the block is ever moved. */
+  // runs last in body
   buildTabs();
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildTabs);
 
-  /* Re-opening Upload (or entering edit mode) must never land on a
-     hidden artwork form because the user last picked "Blog". Wrapped
-     rather than edited so the original function is untouched. */
+  // never land on a hidden form
   (function(){
     var orig = window.openPfUpload;
     if(typeof orig !== 'function') return;
@@ -1359,20 +1245,12 @@
   window.dzSchApply      = dzSchApply;
   window.dzSchClear      = dzSchClear;
   window.dzSchDone       = dzSchDone;
-  /* The detail overlay (#dzView) navigates the same rows the tab is
-     showing and reuses these formatters — exposed read-only. */
+  // expose rows to the detail view
   window.dzGetRows = function(sec){ return dzCache[sec] || []; };
   window.dzHelpers = { money:money, bytes:bytes, ago:ago };
 })();
 
-/* ═══════════════════════════════════════════════════════════════════
-   RAZORPAY CHECKOUT — subscriptions + marketplace
-   Server half lives in functions/api/rzp.js (Cloudflare Pages
-   Function at /api/rzp). Prices are decided there, never here — this
-   module only opens the Razorpay modal and reports the result back
-   for signature verification. checkout.js is loaded lazily on the
-   first pay press so visitors who never buy never fetch it.
-   ═══════════════════════════════════════════════════════════════════ */
+// razorpay checkout
 (function(){
   'use strict';
 
@@ -1431,10 +1309,7 @@
     });
   }
 
-  /* ── subscriptions ─────────────────────────────────────────────
-     One-time payment granting 31 days; the server stamps
-     profiles.subscription_tier + subscription_expires_at after the
-     signature verifies. */
+  // subscriptions
   window.dzSubBuy = function(plan){
     if(gate()) return;
     var amount = null;
@@ -1447,16 +1322,13 @@
     api({action:'sub-order', plan:plan, amount:amount})
       .then(function(o){
         return openCheckout(o, function(r){
-          showToast(r.tier ? 'Subscription active \u2726' : 'Thank you for the support \u2726');
+          showToast(r.tier ? 'Subscription active' : 'Thank you for the support');
         });
       })
       .catch(function(e){ showToast(e.message || 'Could not start checkout'); });
   };
 
-  /* ── marketplace ───────────────────────────────────────────────
-     Free (or already-owned) files come straight from the
-     entitlement RPC; paid ones go through checkout first. hasFile=0
-     for commissions/services, where paying is the whole product. */
+  // marketplace
   window.dzMarketGet = function(id){
     if(gate()) return;
     sb.rpc('dz_market_download', {p_item:id}).then(function(res){
@@ -1469,13 +1341,13 @@
     if(gate()) return;
     api({action:'market-order', itemId:id})
       .then(function(o){
-        if(o.owned){                      /* bought before — just download */
+        if(o.owned){                      // bought before, just download
           if(hasFile) window.dzMarketGet(id);
-          else showToast('Already purchased \u2726');
+          else showToast('Already purchased');
           return;
         }
         return openCheckout(o, function(){
-          showToast('Purchased \u2726');
+          showToast('Purchased');
           if(hasFile) window.dzMarketGet(id);
         });
       })
@@ -1483,29 +1355,19 @@
   };
 })();
 
-/* ═══════════════════════════════════════════════════════════════════
-   DETAIL VIEW (#dzView) + shared per-item comments (dzCm*)
-   One overlay serves Resources / Blog / Marketplace / Jobs. It walks
-   window.dzGetRows(sec) — the exact rows the section tab is showing —
-   so Previous/Next steps through what the user was just browsing.
-   Every navigation rebuilds the body SYNCHRONOUSLY from the cached
-   row (no stale frame), then async work (author profile, comments)
-   fills in. Comments live in item_comments (username stamped by a
-   DB trigger); reports in item_reports. Jobs: details + report only.
-   The artwork viewer shares dzCmLoad/dzCmPost for its own thread.
-   ═══════════════════════════════════════════════════════════════════ */
+// detail view and comments
 (function(){
   'use strict';
   var KIND = { resources:'resource', blog:'blog', marketplace:'marketplace', jobs:'job' };
   var cur = { sec:null, idx:-1 };
-  var curExt = null;   /* when set, render() shows this one row (profile tabs) */
+  var curExt = null;   // single row mode
   var profCache = {};
 
   function H(){ return window.dzHelpers || { money:function(){return '';}, bytes:function(){return '';}, ago:function(){return '';} }; }
   function esc2(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function rows(){ return (typeof window.dzGetRows==='function' ? window.dzGetRows(cur.sec) : []) || []; }
 
-  /* ── comments (shared with the artwork viewer) ─────────────── */
+  // comments
   window.dzCmLoad = async function(kind, id, listId){
     var host = document.getElementById(listId);
     if(!host || !id || !sb) return;
@@ -1515,7 +1377,7 @@
         .select('id,user_id,username,body,created_at')
         .eq('kind',kind).eq('subject_id',id)
         .order('created_at',{ascending:true}).limit(200);
-      if(host.dataset.cmToken !== token) return;   /* user already navigated on */
+      if(host.dataset.cmToken !== token) return;   // user navigated on
       var list = (res && res.data) || [];
       if(!list.length){ host.innerHTML = '<div class="avCmEmpty">NO COMMENTS YET \u2014 BE THE FIRST</div>'; return; }
       host.innerHTML = list.map(function(c){
@@ -1558,7 +1420,7 @@
     }catch(e){ showToast('Could not delete'); }
   };
 
-  /* ── report (all four kinds + jobs) ────────────────────────── */
+  // report
   window.dzReportItem = function(kind, id){
     if(!window.currentUser){
       if(typeof pfGuestGate==='function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
@@ -1569,20 +1431,14 @@
     reason = String(reason).trim();
     if(reason.length < 3){ showToast('Add a short reason'); return; }
     sb.from('item_reports').insert({ kind:kind, subject_id:id, reporter_id:currentUser.id, reason:reason.slice(0,500) })
-      .then(function(res){ showToast(res.error ? 'Could not send the report' : 'Report sent \u2726'); });
+      .then(function(res){ showToast(res.error ? 'Could not send the report' : 'Report sent'); });
   };
 
-  /* ── author row (async fill) ───────────────────────────────── */
+  // author row
   async function fillAuthor(uid, elId){
     var el = document.getElementById(elId);
     if(!el || !uid || !sb) return;
-    /* Wire the click FIRST — before any await — and resolve the username
-       at click time. Previously the handler was attached only after the
-       profile fetch resolved, so a click during the fetch (or a failed
-       fetch) left the row inert with no feedback, the same dead-click the
-       artwork viewer had. Now the row is always actionable: it opens from
-       the cached profile if we have it, otherwise looks the username up on
-       demand. */
+    // wire the click first
     el.style.cursor = 'pointer';
     el.onclick = function(){
       var cp = profCache[uid];
@@ -1600,10 +1456,9 @@
         p = profCache[uid] = (res && res.data) || null;
       }catch(e){ p = null; }
     }
-    el = document.getElementById(elId);            /* may have re-rendered */
+    el = document.getElementById(elId);            // may have re rendered
     if(!el){ return; }
-    /* Element survived — but if it was replaced by a re-render, the click
-       we wired above is gone with the old node, so re-arm it here too. */
+    // re arm after a re render
     el.style.cursor = 'pointer';
     el.onclick = function(){
       var cp = profCache[uid];
@@ -1638,7 +1493,7 @@
       '</div></div>';
   }
 
-  /* ── per-kind renderers ────────────────────────────────────── */
+  // renderers
   function render(){
     var host = document.getElementById('dzvBody');
     var r = curExt || rows()[cur.idx];
@@ -1679,8 +1534,7 @@
       var priced = (r.price_cents||0) > 0, hasFile = r.file_ext ? 1 : 0;
       html = img(r.preview_url, r.title) +
         '<div class="dzvCol">'+
-        /* Buy sits directly under the media, before everything else —
-           it is the primary action of this page. */
+        // buy sits under the media
         '<div class="dzvBuyCard"><div class="dzvPrice">'+esc2(h.money(r.price_cents, r.currency))+'</div>'+
         (priced
           ? '<button class="dzBuy" onclick="dzMarketBuy(\''+id+'\','+hasFile+')">Buy now</button>'
@@ -1696,7 +1550,7 @@
         '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
         '</div>';
     }
-    else { /* jobs — details only, report only */
+    else { // jobs, details and report
       var where = r.is_remote ? 'Remote' : [r.location_city, r.location_country].filter(Boolean).join(', ');
       html = '<div class="dzvCol">'+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
@@ -1717,7 +1571,7 @@
     if(pb) pb.style.visibility = multi ? 'visible' : 'hidden';
     if(nb) nb.style.visibility = multi ? 'visible' : 'hidden';
 
-    /* async fills — token-guarded comments, cached profiles */
+    // async fills
     if(r.user_id) fillAuthor(r.user_id, 'dzvAuthor');
     if(sec !== 'jobs') window.dzCmLoad(kind, String(r.id), 'dzvCmList');
   }
@@ -1733,8 +1587,7 @@
     var v = document.getElementById('dzView');
     if(v) v.classList.add('open');
     document.body.style.overflow = 'hidden';
-    /* No ✕ in the top bar — the browser back button/gesture is the
-       close control, so opening plants a history entry to consume. */
+    // back button closes
     if(!pushed){ try{ history.pushState({dzv:1},''); pushed = true; }catch(e){} }
   };
   window.dzOpenRow = function(sec, row){
@@ -1755,7 +1608,7 @@
     var n = rows().length;
     if(!n) return;
     cur.idx = (cur.idx + dir + n) % n;
-    render();                                       /* synchronous — no stale frame */
+    render();                                       // synchronous, no stale frame
   };
   window.dzCloseView = function(){
     var v = document.getElementById('dzView');
@@ -1764,11 +1617,7 @@
     curExt = null;
     if(pushed){ pushed = false; try{ history.back(); }catch(e){} }
   };
-  /* Hide the detail view WITHOUT touching history — used when handing off to
-     the profile page. The profile pushes its own history entry, so the back
-     button is governed cleanly; the planted dzv entry and cur/curExt state
-     stay intact, so a single back lands here and the profile restore just
-     re-reveals this exact view (no racing history.back, no double-back). */
+  // hide without touching history
   window.dzCloseViewSilent = function(){
     var v = document.getElementById('dzView');
     if(v) v.classList.remove('open');
@@ -1783,18 +1632,11 @@
   });
 })();
 
-/* ═══════════════════════════════════════════════════════════════════
-   HERO PITCH — Explore / Learn / Buy / Sell
-   One screen that answers four different reasons for arriving. The
-   toggle swaps headline, checklist and CTA in place; nothing
-   navigates until the CTA is pressed, and each CTA opens the surface
-   that actually delivers on the sentence above it.
-   ═══════════════════════════════════════════════════════════════════ */
+// hero pitch
 (function(){
   'use strict';
 
-  /* `em` marks the one phrase per headline that takes the brand
-     colour — kept in the data so copy and emphasis travel together. */
+  // em marks the accent phrase
   var TABS = [
     { id:'explore', label:'Explore',
       lead:'Discover the world\u2019s best', em:'Digital Art',
@@ -1828,9 +1670,7 @@
 
   function esc2(s){ return (typeof esc === 'function') ? esc(s) : String(s); }
 
-  /* Explore / Learn / Buy open the gallery on the matching section;
-     Sell goes to the upload page with the Marketplace form already
-     chosen, because "become a seller" means "list something". */
+  // where each tab goes
   function go(to){
     if(to === 'sell'){
       if(typeof openPfUpload === 'function'){
@@ -1865,9 +1705,7 @@
         return '<li>'+TICK+'<span>'+esc2(x)+'</span></li>'; }).join('') +'</ul>'+
       '<button class="hpCta" type="button" onclick="hpGo()">'+esc2(t.cta)+'</button>';
     p.setAttribute('aria-labelledby', 'hpTab-'+t.id);
-    /* Restart the animation: drop the class, force a reflow so the
-       browser can't batch the two writes into no change at all, then
-       re-add it. */
+    // restart the animation
     p.classList.remove('hpIn');
     void p.offsetWidth;
     p.classList.add('hpIn');
@@ -1888,8 +1726,7 @@
   }
   function hpGo(){ go(TABS[cur].to); }
 
-  /* Arrow keys move between tabs, which is what a tablist is expected
-     to do once it claims the role. */
+  // arrow keys move tabs
   var tabsEl = document.getElementById('hpTabs');
   if(tabsEl){
     tabsEl.addEventListener('keydown', function(e){

@@ -1,17 +1,5 @@
-/* ── misc-core.js · milestone colours + offline cache ── */
-/* ── Milestone colour system (DZ_MS) ──────────────────────────
-   The single source of truth for "what colour is this artist?".
-   Anywhere a level is known, one call paints it — name and ribbon
-   pull the SAME token, so they can never drift apart.
-
-     DZ_MS.tierFor(level)          -> tier object, or null below LVL 5
-     DZ_MS.paintName(el, level)    -> tints a display name
-     DZ_MS.paintRibbon(el, level)  -> fills a .msRibbon chip
-     DZ_MS.fill(t) / DZ_MS.ink(t)  -> raw css values, for custom surfaces
-
-   Colours live in CSS (--ms1..--ms8), never here — that keeps the
-   light-theme remap working and means a palette change is a one-line
-   token edit, not a JS edit. */
+// milestone colors, offline cache
+// milestone colors
 (function () {
   'use strict';
   var TIERS = [
@@ -25,16 +13,14 @@
     { lvl: 100, name: 'DigiArtz Legend', v: '--ms8' }
   ];
 
-  /* Highest tier the level has reached. Below LVL 5 there is no tier —
-     an unranked artist keeps the default name colour and shows no chip,
-     which is what makes the first ribbon feel earned. */
+  // highest tier reached
   function tierFor (level) {
     var lv = Number(level) || 0, t = null;
     for (var i = 0; i < TIERS.length; i++) { if (lv >= TIERS[i].lvl) t = TIERS[i]; }
     return t;
   }
-  function fill (t) { return t ? 'var(' + t.v + ')' : ''; }        /* chip background */
-  function nameC (t) { return t ? 'var(' + t.v + '-name)' : ''; }  /* text on the page */
+  function fill (t) { return t ? 'var(' + t.v + ')' : ''; }        // chip background
+  function nameC (t) { return t ? 'var(' + t.v + '-name)' : ''; }  // text on the page
 
   function paintName (el, level) {
     if (!el) return;
@@ -69,12 +55,7 @@
   };
 })();
 
-/* ── Artist Progress ──────────────────────────────────────────
-   XP / level / milestones / leaderboard. XP is derived server-side
-   by get_artist_progress() / get_xp_leaderboard() (uploads x10,
-   likes x2, bookmarks x2, comments x1) — nothing stored, nothing
-   to tamper with. The level curve below is the site's exact 100-level
-   table and matches public.xp_to_level() in the database. */
+// artist progress
 (function () {
   'use strict';
   var XP_TOTALS = [0,8,16,24,32,41,50,59,68,78,88,98,108,119,130,141,152,164,176,188,
@@ -120,14 +101,14 @@
     comment:  '<path d="M21 12a8 8 0 0 1-8 8H4l1.6-3.2A8 8 0 1 1 21 12Z"/>'
   };
 
-  /* ── data + render ── */
+  // data and render
   function client () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
 
   window.xpLoadInto = async function (wrapId, targetId, opts) {
     opts = opts || {};
     var wrap = document.getElementById(wrapId);
     if (!wrap) return;
-    if (!targetId) { wrap.innerHTML = ''; wrap.appendChild(el('div', 'xpNote', 'SIGN IN TO SEE YOUR PROGRESS \u2726')); return; }
+    if (!targetId) { wrap.innerHTML = ''; wrap.appendChild(el('div', 'xpNote', 'SIGN IN TO SEE YOUR PROGRESS')); return; }
     var c = client();
     if (!c) { wrap.innerHTML = ''; wrap.appendChild(el('div', 'xpNote', 'PROGRESS UNAVAILABLE \u2014 TRY AGAIN')); return; }
     wrap.innerHTML = '';
@@ -151,7 +132,7 @@
     var xp = Number(p.xp) || 0;
     var level = Number(p.level) || levelOf(xp);
 
-    /* rank card */
+    // rank card
     var rank = el('div', 'xpCard xpRank');
     rank.appendChild(el('div', 'xpRankLvl', 'LEVEL ' + level));
     rank.appendChild(el('div', 'xpRankTitle', rankTitle(level)));
@@ -171,15 +152,15 @@
       nxt.appendChild(b);
       nxt.appendChild(document.createTextNode(' UNTIL LEVEL ' + (level + 1)));
     } else {
-      nxt.textContent = 'MAX LEVEL REACHED \u2726';
+      nxt.textContent = 'MAX LEVEL REACHED';
     }
     rank.appendChild(nxt);
     wrap.appendChild(rank);
-    /* animate the fill after layout */
+    // animate fill
     var pct = next != null ? Math.max(0, Math.min(100, (xp - cur) * 100 / (next - cur))) : 100;
     requestAnimationFrame(function () { requestAnimationFrame(function () { fill.style.width = pct + '%'; }); });
 
-    /* how to earn */
+    // how to earn
     var earn = el('div', 'xpCard');
     earn.appendChild(el('div', 'xpCardLbl', 'HOW TO EARN XP'));
     var eg = el('div', 'xpGrid2');
@@ -196,7 +177,7 @@
     earn.appendChild(eg);
     wrap.appendChild(earn);
 
-    /* stats */
+    // stats
     var stats = el('div', 'xpCard');
     stats.appendChild(el('div', 'xpCardLbl', 'COMMUNITY ACTIVITY'));
     var sg = el('div', 'xpGrid2');
@@ -210,17 +191,14 @@
     stats.appendChild(sg);
     wrap.appendChild(stats);
 
-    /* milestones */
+    // milestones
     var mile = el('div', 'xpCard');
     mile.appendChild(el('div', 'xpCardLbl', 'ARTIST MILESTONES'));
     var curTitle = rankTitle(level);
     RANKS.forEach(function (r) {
       var done = level >= r.lvl;
       var row = el('div', 'xpMile' + (done ? ' done' : '') + (done && r.name === curTitle ? ' cur' : ''));
-      /* Each row carries its OWN tier colour — the list doubles as the
-         palette key, so an artist can see exactly which colour they are
-         climbing toward. Locked rows stay neutral: the colour is the
-         reward. */
+      // tier color per row
       var t = window.DZ_MS && DZ_MS.tierFor(r.lvl);
       if (t && done) {
         row.style.setProperty('--ms-c', DZ_MS.fill(t));
@@ -233,7 +211,7 @@
     });
     wrap.appendChild(mile);
 
-    /* leaderboard */
+    // leaderboard
     if (lb) {
       var board = el('div', 'xpCard');
       board.appendChild(el('div', 'xpCardLbl', 'COMMUNITY LEADERBOARD'));
@@ -261,7 +239,7 @@
     }
   }
 
-  /* ── sliding page (profile hamburger) ── */
+  // sliding page
   var xpLastFocus = null;
   window.openXpPage = function () {
     var pg = document.getElementById('xpPage');
@@ -271,7 +249,7 @@
     var nav = document.getElementById('bnNav');
     if (nav) nav.style.display = 'none';
     document.body.style.overflow = 'hidden';
-    /* show the profile currently being viewed; fall back to self */
+    // viewed profile, else self
     var target = (window.pf && window.pf.profile && window.pf.profile.id) ||
                  (typeof currentUser !== 'undefined' && currentUser && currentUser.id) || null;
     window.xpLoadInto('xpPageWrap', target, { leaderboard: true });
@@ -293,26 +271,20 @@
   });
 })();
 
-/* ── Offline cache layer ──────────────────────────────────────
-   Registers /sw.js (app shell + top-50 thumbnails + last-50
-   viewed artworks + fonts, all cached on-device) and surfaces
-   connectivity changes. Data snapshots are saved by the loaders
-   above via dzcSet(); together they make the site browsable with
-   no internet: gallery, community messages, friends, your
-   profile and the conversation list all render from cache. */
+// offline cache
 (function () {
   'use strict';
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/sw.js').catch(function () {
-        /* registration is best-effort — the site works without it */
+        // best effort registration
       });
     });
   }
   window.addEventListener('offline', function () {
-    if (typeof showToast === 'function') showToast('You\u2019re offline \u2014 showing saved copies \u2726');
+    if (typeof showToast === 'function') showToast('You\u2019re offline \u2014 showing saved copies');
   });
   window.addEventListener('online', function () {
-    if (typeof showToast === 'function') showToast('Back online \u2726');
+    if (typeof showToast === 'function') showToast('Back online');
   });
 })();

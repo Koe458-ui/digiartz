@@ -1,8 +1,4 @@
-/* ── theme.js · theme engine ── */
-/* ── Theme engine ─────────────────────────────────────────
-   Pairs with the pre-paint boot script in <head>. Owns the
-   switcher UI, persistence, live prefers-color-scheme
-   tracking, page open/close, and keyboard interaction. */
+// theme engine
 (function () {
   'use strict';
 
@@ -25,9 +21,7 @@
     return (mq && mq.matches) ? 'light' : 'dark';
   }
 
-  /* Swap every token set at once — one attribute write, so the
-     whole app repaints in a single style pass (no reload, no CLS:
-     nothing changes size, only colors). */
+  // swap tokens at once
   function paint (pref) {
     var t = resolve(pref), root = document.documentElement;
     root.setAttribute('data-theme-pref', pref);
@@ -39,9 +33,7 @@
     syncCards(pref);
   }
 
-  /* Smooth cross-browser fade: add html.thmFade in the same style
-     pass as the token swap, so every color transition eases; the
-     class is removed once the longest transition (.35s) is done. */
+  // fade during swap
   var fadeTimer = null;
   function fade () {
     var root = document.documentElement;
@@ -59,7 +51,7 @@
     paint(pref);
   }
 
-  /* Roving tabindex — the checked card is the group's tab stop. */
+  // roving tabindex
   function syncCards (pref) {
     cards.forEach(function (c) {
       var on = c.getAttribute('data-theme') === pref;
@@ -83,7 +75,7 @@
     });
   });
 
-  /* Follow the OS while "System" is selected. */
+  // follow os theme
   if (mq) {
     var onMq = function () {
       if (savedPref() !== 'system') return;
@@ -93,10 +85,10 @@
       paint('system');
     };
     if (mq.addEventListener) mq.addEventListener('change', onMq);
-    else if (mq.addListener) mq.addListener(onMq); /* older Safari */
+    else if (mq.addListener) mq.addListener(onMq); // older safari
   }
 
-  /* ── Page open/close — same pattern as the Notifications page ── */
+  // page open and close
   function openThemePage () {
     if (!page) return;
     lastFocus = document.activeElement;
@@ -128,6 +120,6 @@
   window.openThemePage  = openThemePage;
   window.closeThemePage = closeThemePage;
 
-  /* Boot script already painted pre-render; sync card state now. */
+  // sync cards on boot
   syncCards(savedPref());
 })();

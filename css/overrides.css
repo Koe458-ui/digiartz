@@ -1,22 +1,8 @@
-/* ── overrides.css · detail-view restructure + desktop polish — keep this stylesheet last ── */
-/* ═══════════════════════════════════════════════════════════════════
-   DETAIL VIEWS — artwork viewer restructure + #dzView overlay.
-   Late in <body> on purpose: these override the viewer's original
-   two-pane layout with the full-page, top-to-bottom reading order
-   (top nav → images → author → details → comments → actions).
-   ═══════════════════════════════════════════════════════════════════ */
+/* detail view + desktop polish, keep last */
+/* detail views */
 
-/* ── Artwork viewer: full-page, NO boxes ──
-   The image sits directly on the page: no black stage, no viewport
-   frame, no zoom bar, no counter. Top bar is two plain-text words —
-   Previous left, Next right — over a hairline divider. Closing is the
-   browser back button (popstate → closeLB) or Escape. */
-/* Truly full page on EVERY device — desktop, tablet, ultrawide,
-   desktop-mode mobile. The backdrop's 2rem/.7rem/.5rem padding and
-   the .avBox card (min(1400px,94vw) × min(860px,90vh), 20px radius,
-   border, shadow) are all zeroed here; the ≤900px rule that capped
-   the image pane at 44% height is also beaten (later cascade +
-   higher specificity). */
+/* artwork viewer full page */
+/* full page on all devices */
 #artModal{padding:0;}
 #artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;border:0;box-shadow:none;background:var(--bg);}
 #artModal .avBody{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
@@ -24,29 +10,25 @@
 #artModal .avImgStage{position:static;height:auto;min-height:0;max-height:none;background:transparent;display:block;}
 #artModal .avImgViewport{position:static;height:auto;min-height:0;display:block;background:transparent;border:0;
   padding:1rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;text-align:center;}
-/* Fit the first screen: the image scales to whatever remains of the
-   viewport under the top bar (100dvh − bar − padding), so the FULL
-   image is visible without scrolling on any screen size — small
-   devices simply get a smaller image. Width stays centered with the
-   side space and the 1100px cap. */
+/* fit first screen */
 #artModal #lbImg{position:static;width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;transform:none!important;cursor:default;}
 #artModal .avSide{width:100%;max-width:860px;margin:0 auto;border-left:0;flex:0 0 auto;background:transparent;}
 #artModal .avSideScroll{height:auto;max-height:none;overflow:visible;padding-bottom:6rem;}
-/* top bars: text-only nav over a divider line */
+/* top bars */
 #artModal .avTopBar,.dzvTop{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.1rem;border-bottom:1px solid var(--bdr);background:var(--bg);}
 .avNavTxt{background:none;border:0;padding:.35rem .2rem;margin:0;cursor:pointer;
   color:var(--tx);font-family:var(--fb);font-size:16px;font-weight:600;letter-spacing:.01em;}
 .avNavTxt:hover{color:var(--ps);}
 .avNavTxt:active{opacity:.7;}
-/* stacked images 2..n — same centered treatment as image 1 */
+/* stacked images */
 .avImgStack{display:flex;flex-direction:column;gap:.7rem;background:transparent;
   padding:.7rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;}
 .avImgStack{text-align:center;}
 .avImgStack img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
-/* no stale pixels while a new image loads */
+/* hide while loading */
 .avImgViewport.loading img{opacity:0;}
 
-/* ── shared comments + wide actions ── */
+/* comments and actions */
 .avCmBlock{display:flex;flex-direction:column;gap:.6rem;}
 .avCmList{display:flex;flex-direction:column;gap:.65rem;max-height:340px;overflow-y:auto;padding-right:.2rem;}
 .avCmEmpty{font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;color:var(--txd);padding:.9rem 0;text-align:center;}
@@ -66,7 +48,7 @@
 .avActWide{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;min-height:46px;border-radius:10px;border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.12em;cursor:pointer;text-decoration:none;box-sizing:border-box;}
 .avActWide:hover{border-color:var(--pg);color:var(--ps);}
 
-/* ── #dzView overlay ── */
+/* dzview overlay */
 #dzView{position:fixed;inset:0;z-index:1300;background:var(--bg);display:none;flex-direction:column;}
 #dzView.open{display:flex;}
 .dzvTop{flex-shrink:0;}
@@ -94,31 +76,10 @@
 .dzvBuyCard{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid var(--pg);border-radius:14px;padding:.9rem 1.1rem;background:color-mix(in srgb,var(--pg) 8%,var(--sur));}
 .dzvPrice{font-family:var(--fd);font-size:1.5rem;font-weight:800;color:var(--tx);}
 .dzvBuyCard .dzBuy{margin-top:0;min-height:46px;padding:12px 22px;font-size:14px;border-radius:10px;}
-/* ═══════════════════════════════════════════════════════════════════
-   DESKTOP POLISH (≥1280px)
-   The site is mobile-first and its desktop story was "same layout,
-   bigger" — tiny gaps, 4 loose columns, 11px mono labels and small
-   hit targets. This layer upgrades desktop only; nothing below
-   1280px changes. It sits at the very end of <body> on purpose:
-   last-in-cascade, so equal-specificity rules here always win over
-   the mobile-first declarations above.
-
-   Spec:
-   · Grids capped at 1680px and centered; 20px gap on small laptops,
-     22px at 1440+, 24px at 1920+ (more air, still 5 columns — six
-     squares of 300px+ text-less cards read worse, not better).
-   · 1280–1439px (small laptop / 1366 class): 4 columns.
-     1440px+: 5 columns everywhere (.awGrid home, .fgGrid full
-     gallery, .pfGridArt profile/likes/bookmarks, .dzGrid
-     resources/marketplace). Cards stay exact 1:1 via the existing
-     .awImgWrap aspect-ratio.
-   · Text: card titles 15px, meta/tags 12.5px, body copy 15px+/1.55.
-   · Buttons: primary actions ≥44px tall, 14px labels, 12/18 padding,
-     10px radius.
-   ═══════════════════════════════════════════════════════════════════ */
+/* desktop polish */
 @media (min-width:1280px){
 
-  /* ── Grid container + columns (small laptop: 4-up) ── */
+  /* grid columns */
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
     max-width:1680px;
     margin-left:auto; margin-right:auto;
@@ -128,7 +89,7 @@
   }
   .dzList{ max-width:1080px; margin-left:auto; margin-right:auto; gap:.9rem; }
 
-  /* ── Text — readable sizes for a normal viewing distance ── */
+  /* text sizes */
   .dzName{ font-size:15px; line-height:1.4; }
   .dzMeta{ font-size:12.5px; letter-spacing:.06em; gap:.2rem .7rem; }
   .dzChip{ font-size:12px; letter-spacing:.07em; padding:.22rem .6rem; }
@@ -145,7 +106,7 @@
   .upField label{ font-size:13px; }
   .upIn, .upField textarea, .upField select{ font-size:15px; }
 
-  /* ── Buttons — proper desktop hit targets ── */
+  /* button hit targets */
   .upBtn, .upBtnPri, .dzBuy, .subBtn, .hpCta, .subModalClose{
     min-height:46px;
     font-size:14px;
@@ -158,7 +119,7 @@
   .upBtn{ letter-spacing:.14em; font-size:13px; }
 }
 
-/* ── Normal desktop (1440px+): 5 columns, slightly wider gap ── */
+/* desktop 1440 */
 @media (min-width:1440px){
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
     grid-template-columns:repeat(5,1fr);
@@ -166,45 +127,24 @@
   }
 }
 
-/* ── Ultrawide (1920px+): keep 5 columns, add breathing room ── */
+/* ultrawide 1920 */
 @media (min-width:1920px){
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{ gap:24px; }
                      }
 
-/* ══════════════════════════════════════════════════════════════
-   § TITLE COLOUR
-   The four-pointed star that used to sit after every heading was
-   the only thing putting accent colour into a title, so pulling it
-   left the whole app monochrome. The colour moves onto the words
-   themselves instead — same accent, no ornament.
+/* title color */
 
-   var(--pg) is the theme accent, not a hard-coded purple: it is
-   #8B5CF6 on the default dark theme, near-black on Light and
-   near-white on the mono themes, so this follows the theme picker
-   instead of fighting it.
-
-   Two titles are deliberately NOT in this list. .fgTitle (Gallery)
-   and .cmHdrTitle (Profile / Upload / Community) already run a
-   tx→pb→pg gradient with a glow. They stay the top tier; the flat
-   accent below is the second tier — page and panel headers.
-
-   Loads last, so these win over the base rules in panels.css,
-   viewer.css, widgets.css etc. on equal specificity. Delete this
-   whole block to go back.
-   ══════════════════════════════════════════════════════════════ */
-
-/* Home-page section headings — RANKING, SUBSCRIPTION */
+/* home section headings */
 .secT{ color:var(--pg); }
 
-/* Sub-page headers — Subscription, Settings, Albums, Bookmarks,
-   Friends, Ranking, Admin, Theme, Account, Notifications, Edit My Work */
+/* sub page headers */
 .subPgTitle{ color:var(--pg); }
 
-/* Subscription page headline + FAQ */
+/* subscription headline */
 .subPgHeadline h2{ color:var(--pg); }
 .faqTitle{ color:var(--pg); }
 
-/* Panels + modals */
+/* panels and modals */
 .apTitle,
 .apDescTitle,
 .spTitle,
@@ -214,38 +154,19 @@
 .pfShareTitle,
 .fltPH h3{ color:var(--pg); }
 
-/* Section labels inside pages */
+/* section labels */
 .upDraftTitle,
 .dmConvoHead{ color:var(--pg); }
 
-/* LET'S CONNECT divider */
+/* connect divider */
 .cLbl{ color:var(--pg); }
 
-/* Artist Progress rank title — was the lighter --pb, matched up */
+/* rank title */
 .xpRankTitle{ color:var(--pg); }
 
-/* ══════════════════════════════════════════════════════════════
-   § UPLOAD SELECTS + CALENDAR
-   The artwork upload's controls are all custom-skinned — the .upIn
-   box plus a ⌄ chevron. But the section forms (Resources / Blog /
-   Marketplace / Jobs, built in js/sections.js) drop native <select
-   class="dzSel"> boxes, and the schedule row's hour/minute use
-   native <select class="upSchedSel">. Both render as raw Chrome
-   selects — grey, system font, wrong arrow — next to the styled
-   fields around them.
+/* upload selects and calendar */
 
-   These rules give them the exact treatment select.upIn already
-   uses in upload.css: kill the native appearance, drop in the same
-   SVG chevron, and paint the option list with theme tokens. The
-   result is pixel-identical to the artwork upload. Chevron colour
-   %23c9c7db is the same literal the shipping select.upIn uses, kept
-   so the two match; everything else is a theme token.
-
-   Loads last, so this beats the plain .dzSel base in hero.css on
-   equal specificity. Delete this block to revert.
-   ══════════════════════════════════════════════════════════════ */
-
-/* Section-form selects — match the .upIn box exactly */
+/* section form selects */
 .dzSel{
   width:100%;
   background:rgba(var(--pg-rgb),.045);
@@ -268,8 +189,7 @@
 .dzSel option{background:var(--sur2);color:var(--tx);}
 .dzSel option:disabled{color:color-mix(in srgb,var(--tx) 40%,transparent);}
 
-/* Schedule hour / minute — same skin, compact so the ⌄ fits the
-   smaller box without crowding the digits */
+/* schedule hour minute */
 .upSchedSel{
   appearance:none;-webkit-appearance:none;-moz-appearance:none;
   padding:.32rem 1.35rem .32rem .5rem;
@@ -282,10 +202,7 @@
 .upSchedSel:focus{outline:none;border-color:var(--pg);}
 .upSchedSel option{background:var(--sur2);color:var(--tx);}
 
-/* Native date field ("Closes on" in Jobs). The box is already .upIn,
-   so only the calendar glyph needs help: dim by default, full on
-   hover/focus. The popup panel itself follows color-scheme, which
-   base.css already flips per theme, so it needs nothing here. */
+/* date field icon */
 input[type=date].upIn::-webkit-calendar-picker-indicator{
   opacity:.55;
   cursor:pointer;
@@ -294,36 +211,20 @@ input[type=date].upIn::-webkit-calendar-picker-indicator{
 input[type=date].upIn:hover::-webkit-calendar-picker-indicator,
 input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 
-/* ══════════════════════════════════════════════════════════════
-   § SECTION UPLOAD — schedule, drafts, guide/tips sidebar
-   The artwork upload is a form column + a sidebar (scheduled strip,
-   drafts strip, guidelines, tips). The section forms (Resources /
-   Blog / Marketplace / Jobs) now use the same shape, built in
-   js/sections.js. Both are a SINGLE column now (form, then the
-   sidebar cards under it), matching the artwork page.
-
-   The two strips are the artwork rail itself — same .upSideCard
-   shell, same .upDraftRow scrolling rail, same square .upDraftCard
-   tiles with the corner expiry / countdown mark and the top-left ✕.
-   Only the tile's INSIDE differs: a section draft has no image to
-   show (files are re-attached on resume), so the square is filled
-   with the title, a short excerpt and a meta line instead of a
-   thumbnail. Reuses .upSideCard / .upGuideList / .upTipList as-is.
-   ══════════════════════════════════════════════════════════════ */
+/* section upload sidebar */
 .dzUpWrap{ display:grid; grid-template-columns:1fr; gap:1.5rem; align-items:start; }
 .dzUpForm{ min-width:0; }
 .dzUpSide{ display:flex; flex-direction:column; gap:1.3rem; min-width:0; }
 .dzUpWrap>*{ min-width:0; }
 
-/* Text tile inside the artwork card shell (.upDraftCard supplies the
-   square box, border, hover lift and rail sizing). */
+/* text tile */
 .dzPCard{ background:rgba(var(--pg-rgb),.045); }
 .dzPSched{ cursor:default; }
 .dzPSched:hover{ transform:none; }
 .dzPIn{
   position:absolute; inset:0; overflow:hidden; text-align:left;
   display:flex; flex-direction:column; gap:.3rem;
-  /* top padding clears the ✕ and the corner mark */
+  /* clear close mark */
   padding:1.9rem .6rem .6rem;
 }
 
@@ -341,6 +242,5 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 }
 .dzPKind{ font-family:var(--fm); letter-spacing:.05em; text-transform:capitalize; color:var(--pg); }
 .dzPMeta span:last-child{ text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-/* Failed schedule — the reason replaces the countdown, so let it wrap
-   onto a second line rather than truncating to nothing useful. */
+/* failed schedule */
 .dzPMeta span.dzPErr{ color:var(--danger); white-space:normal; line-height:1.3; }

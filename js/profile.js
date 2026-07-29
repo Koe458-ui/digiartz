@@ -1,40 +1,21 @@
-/* ── profile.js · profile page ── */
-  /* =========================================================
-     USER PROFILE PAGE
-     ├─ openProfileByUsername / openOwnProfile / closeProfilePage
-     ├─ pfSwitchTab — Gallery / Comic / About
-     ├─ pfLoadMoreGallery — paginated (range()) with column-aware
-     │   batches, appended automatically by an infinite-scroll
-     │   sentinel (no Load More button)
-     ├─ pfUpMod — shared upload modal for art + comic (own
-     │   user_id only; never exposes edit/delete to the owner)
-     ├─ Admin (isDev) sees Edit/Delete on every card regardless
-     │   of whose profile is being viewed
-     ========================================================= */
+// profile page
   var pf = {
-    profile: null,        // profiles row currently being viewed
+    profile: null,        // profiles row being viewed
     isOwner: false,
     tab: 'gallery',
     galleryRows: [], galleryDone: false, galleryBusy: false,
     upFile: null,
-    upThumbFocus: null,    // {x,y} percentages set by confirmPfCrop()
+    upThumbFocus: null,    // crop position percent
     upPageFiles: [],
-    upAlbums: [],          // album ids ticked on the upload page (optional)
-    albums: [], albumsLoaded: false   // ALBUMS tab strip for the viewed profile
+    upAlbums: [],          // album ids from upload
+    albums: [], albumsLoaded: false   // albums strip
   };
 
-  /* ── Profile avatar/banner preload ──
-     pfMediaCache remembers the last-known avatar_url/banner_url per
-     username so a repeat visit to a profile can start loading those
-     images the instant the panel opens — in parallel with the slide-in
-     transition — instead of waiting on the profile row fetch first.
-     pfPreloadImage() just primes the browser's HTTP cache; the actual
-     <img> tags still get their src set as normal once data arrives. */
+  // avatar and banner preload
   var pfMediaCache = {};
-  /* username(lower) -> profiles row. Powers the instant repaint above; kept
-     fresh by every successful fetch and invalidated on profile edits. */
+  // row cache by username
   var pfRowCache = {};
-  var pfOpenSeq = 0;   /* guards against a stale profile fetch painting over a newer one */
+  var pfOpenSeq = 0;   // guards stale fetch
   function pfPreloadImage(url){
     if(!url) return;
     var img = new Image();
@@ -48,29 +29,18 @@
     }catch(e){ return ''; }
   }
 
-  /* Every column the profile page needs — shared by the normal fetch
-     in openProfileByUsername and the self-heal below so both paths
-     always return an identically-shaped row. */
+  // profile columns
   var PF_PROFILE_COLS = 'id,username,display_name,bio,role,created_at,username_changed_at,cred_received_count,merit,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
 
-  /* ── Self-heal: guarantee the signed-in user has a profiles row ──
-     Accounts created before the on-signup trigger existed have a
-     username in auth user_metadata but NO row in public.profiles,
-     which made every "view my profile" attempt fail with
-     "Profile not found" (and, since pf.isOwner never got set,
-     blocked all uploads too). This checks for the row by id and
-     creates it from session metadata if it's missing.
-     Returns the full profiles row, or null if it truly can't
-     be read/created (e.g. missing RLS insert policy). */
+  // self heal missing row
   async function pfEnsureOwnProfile(){
     if(!sb || !currentUser) return null;
     try{
-      /* maybeSingle(): 0 rows is expected here, not an error */
+      // zero rows is expected
       const{data:existing,error:se}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('id',currentUser.id).maybeSingle();
       if(se) throw se;
       if(existing){ dzcSet('ownProfile', existing); return existing; }
-      /* No row — build a username from the session, matching the same
-         charset/length rules savePfEditProfile() enforces. */
+      // build username from session
       var base = (currentUser.user_metadata && currentUser.user_metadata.username) ||
                  (currentUser.email ? currentUser.email.split('@')[0] : '') || 'user';
       base = base.replace(/[^a-zA-Z0-9_.]/g,'').slice(0,30) || 'user';
@@ -78,7 +48,7 @@
       for(var attempt=0; attempt<3; attempt++){
         const{data:ins,error:ie}=await sb.from('profiles').insert({id:currentUser.id,username:uname}).select(PF_PROFILE_COLS).single();
         if(!ie && ins){
-          /* Keep the auth-side copy in sync (non-fatal if it fails) */
+          // sync auth copy
           if(uname !== (currentUser.user_metadata && currentUser.user_metadata.username)){
             try{ await sb.auth.updateUser({data:{username:uname}}); }catch(e){}
           }
@@ -86,8 +56,7 @@
         }
         var msg = (ie && ie.message) || '';
         if(/duplicate|unique|23505/i.test(msg)){
-          /* Conflict on id → a row appeared concurrently, re-read it.
-             Conflict on username → someone else owns it, add a suffix. */
+          // handle id or name conflict
           const{data:again}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('id',currentUser.id).maybeSingle();
           if(again) return again;
           uname = base.slice(0,24)+'_'+Math.random().toString(36).slice(2,6);
@@ -98,9 +67,9 @@
       }
     }catch(e){
       console.error('pfEnsureOwnProfile: '+(e.message||e));
-      /* offline → the saved copy still opens your profile */
+      // offline cached profile
       var cachedProf = dzcGet('ownProfile');
-      if(cachedProf){ showToast('Offline \u2014 showing saved profile \u2726'); return cachedProf; }
+      if(cachedProf){ showToast('Offline \u2014 showing saved profile'); return cachedProf; }
     }
     return null;
   }
@@ -108,12 +77,7 @@
   async function openOwnProfile(){
     if(!currentUser){ showToast('Sign in to view your profile'); openAuthMod(); return; }
     if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
-    /* The signed-in session already carries the username (set at
-       login/signup) — use it directly so the panel opens instantly,
-       same as Gallery/Comic. If the profiles row turns out to be
-       missing, openProfileByUsername self-heals it via
-       pfEnsureOwnProfile(). Only hit the DB here as a rare fallback
-       if the username is somehow missing from the session too. */
+    // username from session
     var uname = currentUser.user_metadata && currentUser.user_metadata.username;
     if(uname){ openProfileByUsername(uname); return; }
     var row = await pfEnsureOwnProfile();
@@ -121,25 +85,9 @@
     showToast('Could not load your profile — please try again');
   }
 
-  /* #profilePage sits at z-index 500 and EARLY in the DOM, so every
-     full-page overlay it can be launched from — the Full-Gallery (#fg,
-     also 500 but later in the DOM, so it paints on top), the Upload page
-     (#pfUpMod, 600), Community (500, later), the section detail view
-     (#dzView, 1300) and the artwork lightbox (#artModal) — covers the
-     profile if it stays open. That's why tapping an artist from the
-     gallery lightbox, or opening a profile from the upload page, showed
-     nothing: the profile DID open, just underneath the overlay that
-     launched it. Closing them here — the single choke-point every
-     profile-open funnels through (nav, author rows, comments, DMs,
-     ranking, deep links) — fixes every entry point at once. Each close is
-     guarded and is a no-op when its overlay isn't open. */
+  // close competing overlays
   function pfCloseCompetingOverlays(){
-    /* Remember the browse overlay the profile is being opened on top of —
-       the Full-Gallery (#fg) or the Community page — so backing out of the
-       profile returns there instead of the bare home page. Nav-tab opens
-       never reach here with either still open (bnGoProfile() closes
-       everything via bnCloseAllSections() first), so only contextual opens
-       arm a return. */
+    // remember overlay to return to
     try{
       var _dz = document.getElementById('dzView');
       var _fg = document.getElementById('fg');
@@ -150,19 +98,14 @@
       else if(_cm && _cm.classList.contains('open')) window.pfReturnOverlay = 'communityPage';
       else if(_rk && _rk.classList.contains('open')) window.pfReturnOverlay = 'rankPage';
       else window.pfReturnOverlay = null;
-      /* Artworks aren't recorded here: they carry a real /artwork/{id} URL,
-         so a single history-back returns to the viewer via the popstate
-         /artwork branch (see gallery.js). We keep that URL by closing the
-         lightbox with keepUrl=true just below. */
+      // artworks keep their own url
     }catch(e){ window.pfReturnOverlay = null; }
     try{ if(typeof closeLB==='function') closeLB(true); }catch(e){}
     try{ if(typeof closeFG==='function') closeFG(); }catch(e){}
     try{ if(typeof closePfUpload==='function') closePfUpload(); }catch(e){}
     try{ if(typeof closeCommunityPage==='function') closeCommunityPage(); }catch(e){}
     try{ if(typeof window.closeRankPage==='function') window.closeRankPage(); }catch(e){}
-    /* Silent close (no racing history.back) so the profile's own history
-       entry governs the back button; the planted dzv entry stays, so one
-       back lands on it and the restore below re-reveals the detail. */
+    // silent close keeps history
     try{ if(typeof window.dzCloseViewSilent==='function') window.dzCloseViewSilent(); else if(typeof window.dzCloseView==='function') window.dzCloseView(); }catch(e){}
   }
 
@@ -172,12 +115,7 @@
     var panel = document.getElementById('profilePage');
     panel.classList.add('open');
     document.body.style.overflow='hidden';
-    /* Preload avatar/banner right as the panel starts its slide-in
-       transition — using any URL we already know (a cached URL from
-       a previous visit to this profile, or the signed-in user's own
-       cached avatar) so the image bytes are downloading in parallel
-       with the animation + profile-row fetch below, instead of only
-       starting once that fetch resolves. */
+    // preload media on slide in
     var mediaCached = pfMediaCache[username];
     if(mediaCached){
       pfPreloadImage(getThumbnailUrl(mediaCached.avatar_url));
@@ -190,29 +128,22 @@
     pf.likeLoaded=false; pf.bmLoaded=false;
     pf.resLoaded=false; pf.mktLoaded=false; pf.blogLoaded=false; pf.resRows=[]; pf.mktRows=[]; pf.blogRows=[];
     pf.savedRows={like:[],bookmark:[]}; pf.savedShown={like:0,bookmark:0};
-    /* Albums are per-profile too — drop the previous artist's strip so a
-       fast re-open can never paint their collections under a new name. */
+    // reset albums per profile
     pf.albumsLoaded=false; pf.albums=[]; pf.albumSaved={like:[],bookmark:[]};
     var _pgs=document.getElementById('pfGallerySentinel'); if(_pgs) _pgs.style.display='none';
     var _pls=document.getElementById('pfLikeSentinel'); if(_pls) _pls.style.display='none';
     var _pbs=document.getElementById('pfBookmarkSentinel'); if(_pbs) _pbs.style.display='none';
-    /* Bumped on every open; a fetch that finishes after a newer open is stale. */
+    // stale fetch guard
     var mySeq = ++pfOpenSeq;
 
-    /* ── Stale-while-revalidate ──────────────────────────────────
-       Re-opening a profile used to blank everything to "Loading…" and wait
-       on the network before painting a single pixel — so you watched an
-       empty skeleton every time, even for a profile you'd just viewed.
-       If we already have the row, paint it NOW and refresh underneath. */
+    // stale while revalidate
     var cachedRow = pfRowCache[String(username).toLowerCase()];
     if(cachedRow){
       pfSwitchTab('gallery');
       pfPaintProfile(cachedRow, cachedRow.username, pushUrl);
     } else {
-      /* First visit — show the skeleton (nothing better to show). */
-      /* Like / Bookmark tabs were removed — saved artwork is private
-         now and reachable only through your own Albums. These nodes
-         may not exist, so every reset is guarded. */
+      // first visit, show skeleton
+      // like and bookmark tabs removed
       var _lg=document.getElementById('pfLikeGrid');     if(_lg) _lg.innerHTML='';
       var _bg=document.getElementById('pfBookmarkGrid'); if(_bg) _bg.innerHTML='';
       var _le=document.getElementById('pfLikeEmpty');    if(_le) _le.style.display='none';
@@ -228,8 +159,7 @@
       var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.style.display='none';
       var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.style.display='none';
       var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
-      /* Drop the previous artist's milestone colour immediately — otherwise
-         their tint sits on the new name for as long as the fetch takes. */
+      // clear previous tint
       if(window.DZ_MS){
         DZ_MS.paintName(document.getElementById('pfUsername'), 0);
         DZ_MS.paintRibbon(document.getElementById('pfMsRibbon'), 0);
@@ -238,48 +168,35 @@
       pfSwitchTab('gallery');
     }
     try{
-      /* maybeSingle(): a missing row shouldn't surface as an error —
-         we want to distinguish "not found" from a real query failure. */
+      // missing row is not an error
       let{data,error}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('username',username).maybeSingle();
       if(error) throw error;
       if(!data && currentUser){
-        /* Row missing — if this is the signed-in user's own username
-           (their session metadata says so), their profiles row was
-           never created at signup. Create it now and carry on instead
-           of dead-ending on "Profile not found". Case-insensitive so
-           a stale-cased metadata copy still matches. */
+        // create own row if missing
         var metaName = currentUser.user_metadata && currentUser.user_metadata.username;
         if(metaName && metaName.toLowerCase() === String(username).toLowerCase()){
           data = await pfEnsureOwnProfile();
         }
       }
       if(!data){ showToast('Profile not found'); closeProfilePage(); return; }
-      /* A slower fetch for a PREVIOUS profile must not overwrite the one the
-         user has since opened — bail if another open superseded this call. */
+      // bail if superseded
       if(mySeq !== pfOpenSeq) return;
-      /* The row is canonical — the username arg may differ in case or
-         have been suffixed by the self-heal, so use the DB value from
-         here on (cache key, URL, rendering). */
+      // use db username
       username = data.username;
-      pfRowCache[String(username).toLowerCase()] = data;   /* warm for next open */
+      pfRowCache[String(username).toLowerCase()] = data;   // warm for next open
       pfPaintProfile(data, username, pushUrl);
     }catch(e){
       console.error('Error: '+e.message);
-      /* Only bail out if there's nothing on screen. When we already painted a
-         cached row, a failed refresh (offline, flaky network) should leave the
-         cached profile visible rather than slamming the page shut. */
+      // keep cached row on failure
       if(!cachedRow && mySeq === pfOpenSeq) closeProfilePage();
     }
   }
 
-  /* Paints a profile row into the page. Split out of openProfileByUsername so
-     a CACHED row can be painted instantly on re-open (stale-while-revalidate)
-     instead of showing "Loading…" and an empty skeleton on every single visit. */
+  // paint profile row
   function pfPaintProfile(data, username, pushUrl){
       pf.profile = data;
       pf.isOwner = !!(currentUser && currentUser.id === data.id);
-      /* Cache for next time + preload immediately in case these
-         URLs weren't already covered by the head-start above. */
+      // cache and preload
       pfMediaCache[username] = { avatar_url: data.avatar_url||null, banner_url: data.banner_url||null };
       pfPreloadImage(getThumbnailUrl(data.avatar_url));
       pfPreloadImage(getViewUrl(data.banner_url));
@@ -290,8 +207,8 @@
       document.getElementById('pfEditAvatarLetter').textContent = (pfVisibleName||'?').charAt(0).toUpperCase();
       pfRenderAvatarBanner();
       document.getElementById('pfJoined').textContent = data.created_at ? ('JOINED '+pfFormatDate(data.created_at).toUpperCase()) : '';
-      var _pfUpWrap = document.getElementById('pfUploadWrap'); if(_pfUpWrap) _pfUpWrap.style.display = 'none'; /* upload moved to nav ➕ */
-      /* (pencil + ⋮ menu removed — owner's EDIT/SETTINGS live in the action row) */
+      var _pfUpWrap = document.getElementById('pfUploadWrap'); if(_pfUpWrap) _pfUpWrap.style.display = 'none'; // upload moved to nav
+      // edit lives in action row
       pfRenderBio();
       pfRenderHeadBio();
       pfRenderConnect();
@@ -316,12 +233,7 @@
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
       try{ history.pushState({},'', '/'); }catch(e){}
     }
-    /* If this profile was opened on top of a browse overlay (Full-Gallery
-       or Community) and the user is backing out of it (restore===true — the
-       browser/system back button), return to that overlay instead of
-       dropping to the home page. Every other close path (Escape, switching
-       nav tabs, sign-out, load error) leaves restore falsy and just clears
-       the flag. */
+    // back returns to overlay
     var ret = window.pfReturnOverlay; window.pfReturnOverlay = null;
     if(restore===true){
       if(ret==='fg'){
@@ -332,29 +244,18 @@
           if(typeof bnSetActive==='function') bnSetActive('bnGallery');
         }
       } else if(ret==='communityPage'){
-        /* Community can't just re-add .open — closeCommunityPage() stopped
-           its live poll and cleared the active channel — so re-enter through
-           the real entry point, which lands cleanly on the channel grid. */
+        // re enter community properly
         if(typeof openCommunityHome==='function'){
           openCommunityHome();
           if(typeof bnSetActive==='function') bnSetActive('bnCommunity');
         }
       } else if(ret==='rankPage'){
-        /* Re-enter the leaderboard on the same board the user was viewing —
-           openRankPage() with no key falls back to the remembered board. */
+        // re open same board
         if(typeof window.openRankPage==='function'){ window.openRankPage(); }
       } else if(ret==='dzView'){
-        /* Re-reveal the section detail view exactly as it was — content and
-           scroll intact; dzCloseViewSilent only hid it. Deferred one tick:
-           this restore fires from the popstate handler, and sections.js has
-           its OWN popstate listener that closes #dzView whenever it sees it
-           open. Running synchronously here, that second listener would undo
-           us on the same event; deferring lets it run first (finding dzView
-           closed, doing nothing) so our reveal sticks. */
+        // re reveal detail view
         setTimeout(function(){
-          /* Re-reveal the gallery behind the detail too, so a further back
-             returns to the section grid where the item was tapped (the
-             profile step had closed #fg) rather than jumping home. */
+          // re reveal gallery behind
           var fg = document.getElementById('fg');
           if(fg && !fg.classList.contains('open')){
             fg.classList.add('open');
@@ -376,7 +277,7 @@
       document.getElementById('pfTab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
       document.getElementById('pfPanel'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
     });
-    /* on-demand tabs (data fetched once per profile) */
+    // on demand tabs
     if(tab==='progress' && typeof xpLoadInto==='function' && pf.profile){
       xpLoadInto('pfXpWrap', pf.profile.id, { leaderboard:true });
     }
@@ -386,13 +287,7 @@
     if(tab==='marketplace') pfLoadMarket();
   }
 
-  /* ── RESOURCES / MARKETPLACE tabs — this artist's own uploads ──
-     Cards reuse the section styling (dzCard/dzThumb/…). Tapping one
-     opens the SAME detail overlay the Resources/Marketplace sections
-     use, via dzOpenRow() with the row object (these rows aren't in the
-     section browse cache, so dzOpenView's id lookup wouldn't find
-     them). Read-only on every profile; RLS already limits it to
-     approved rows. ── */
+  // resources and marketplace tabs
   function pfDzCard(sec){
     return function(r){
       var id = esc(String(r.id));
@@ -454,8 +349,7 @@
     if(empty) empty.style.display='none';
     grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
     try{
-      /* file_url is deliberately NOT selected — the column is revoked
-         for anon/authenticated and would error the whole query. */
+      // file url not selected
       const{data,error}=await sb.from('marketplace_items')
         .select('id,user_id,title,description,category,tags,item_type,price_cents,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
         .eq('user_id', pf.profile.id).eq('status','approved')
@@ -471,8 +365,7 @@
     }
   }
 
-  /* Blog is a LIST (dzRow), not a grid — mirror the section markup so
-     styling matches, and open the same detail overlay via dzOpenRow. */
+  // blog rows, not grid
   function pfBlogRow(r){
     var id = esc(String(r.id));
     var H  = window.dzHelpers || { ago:function(){return '';} };
@@ -509,30 +402,9 @@
     }
   }
 
-  /* ── LIKE / BOOKMARK tabs — read-only grids for any profile ── */
-  /* ── thumbStyle — ONE inline-style builder for every thumbnail
-     renderer (home feed, gallery masonry, profile grids, saved
-     grids, My Work, upload queue, previews). Zoom keeps the same
-     "small numbers only" model as the focal point: no second image
-     file is ever generated — transform:scale about the focal
-     origin re-crops live in CSS, and object-position % still maps
-     linearly across the pan range under that transform. z is
-     clamped to 1–2 (200% shows 1/4 of the image area). At z=1 the
-     output is byte-identical to the old object-position-only
-     markup, so existing rows render exactly as before. ── */
-  /* ── CONTRACT ─────────────────────────────────────────────────────
-     When thumb_zoom > 1 this returns a transform:scale(). A transform
-     PAINTS outside the element's layout box, so the box staying square
-     is not enough on its own.
-
-     Every <img> this style is applied to MUST sit inside a wrapper that
-     is square and overflow:hidden — .awImgWrap, .upqImgWrap,
-     .admCardThumb, .upDraftCard and .upPrevWrap all do this. Applying
-     it to an image whose nearest clip is the whole card lets a zoomed
-     thumbnail bleed down over the card's title and buttons, which is
-     exactly the bug .admCardThumb was added to close.
-
-     New thumbnail surface? Give it a wrapper first. ── */
+  // like and bookmark tabs
+  // thumbstyle builder
+  // contract
   function thumbStyle(x, y, z){
     var tx = (x!=null && isFinite(+x)) ? +x : 50;
     var ty = (y!=null && isFinite(+y)) ? +y : 50;
@@ -548,8 +420,7 @@
     '</div>';
   }
   async function pfSavedOpen(id){
-    /* not necessarily in the home feed or this profile's gallery —
-       fall back to fetching the single (approved-only via RLS) row */
+    // fetch single row fallback
     if(openArtworkById(id,false)) return;
     try{
       const{data}=await sb.from('artworks').select('*').eq('id',id).maybeSingle();
@@ -567,9 +438,7 @@
       pfSavedAppend(kind);
     }, el);
   }
-  /* Rows arrive in one RPC (they're capped at 100), but they RENDER
-     in column-sized batches through the same sentinel pattern as
-     every other grid — first batch instantly, the rest on scroll. */
+  // render in batches
   function pfSavedAppend(kind){
     if(!pf.savedRows) return;
     var rows  = pf.savedRows[kind]||[];
@@ -593,7 +462,7 @@
     var grid  = document.getElementById(like?'pfLikeGrid':'pfBookmarkGrid');
     var empty = document.getElementById(like?'pfLikeEmpty':'pfBookmarkEmpty');
     var flag  = like?'likeLoaded':'bmLoaded';
-    if(pf[flag]) return; /* already fetched for this profile */
+    if(pf[flag]) return; // already fetched
     empty.style.display='none';
     grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
     try{

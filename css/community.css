@@ -1,10 +1,10 @@
-/* ── community.css · community tabs + community page theme ── */
-    /* ================= COMMUNITY / FRIENDS TAB CONTENT ================= */
+/* community tabs and theme */
+    /* community and friends tab */
     .cmView{flex:1;min-height:0;flex-direction:column;}
     .cmScroll{flex:1;min-height:0;overflow-y:auto;padding:1.4rem 1.5rem 100px;}
     @media(max-width:640px){.cmScroll{padding:1.1rem 1.1rem 100px;}}
 
-    /* Hero banner */
+    /* hero banner */
     .cmBanner{
       background:linear-gradient(160deg,var(--sur2) 0%,color-mix(in srgb,var(--tc) 6%,var(--sur2)) 100%);
       border:1px solid var(--bdr);
@@ -20,7 +20,7 @@
     .cmStatNum{font-family:var(--fd);font-size:1.15rem;font-weight:700;color:var(--tx);display:block;line-height:1.2;}
     .cmStatLbl{font-family:var(--fm);font-size:.66rem;letter-spacing:.1em;color:var(--txd);}
 
-    /* Section head */
+    /* section head */
     .cmSectionHead{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem;}
     .cmSectionHead h3{font-family:var(--fd);font-size:1.3rem;font-weight:700;color:var(--tx);}
     .cmSectionHead p{font-family:var(--fb);font-size:.82rem;color:var(--txd);margin-top:.3rem;}
@@ -38,11 +38,11 @@
     .cmCreateBtn:hover{background:color-mix(in srgb,var(--tc) 24%,transparent);box-shadow:0 0 16px color-mix(in srgb,var(--tc) 25%,transparent);}
     .cmCreateBtn:active{transform:scale(.97);}
 
-    /* ── Create / Join buttons pair ── */
+    /* create and join buttons */
     .cmHeadBtns{display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap;}
     .cmJoinBtn{background:none;border-color:var(--bdrh);color:var(--tx);}
 
-    /* ── Community modals (create / join / manage / member actions) ── */
+    /* community modals */
     .cmMod{
       position:fixed;inset:0;z-index:4300;display:none;
       align-items:center;justify-content:center;padding:1rem;
@@ -113,34 +113,25 @@
     .cmActItem--danger{color:var(--danger);}
     .cmActItem--danger:hover{background:var(--danger-bg-hover);}
 
-    /* ══ DEVICE OPTIMIZATION ═══════════════════════════════════════
-       Applies to the overlays added recently (report modal, community
-       create/join/manage, member actions, mini profile card). */
+    /* device optimization */
 
-    /* iOS Safari ZOOMS the whole page when a focused input has a computed
-       font-size below 16px — every field below was ~13–14px, so tapping any
-       of them punted the layout out of alignment and left it zoomed. Pinning
-       16px on coarse pointers stops that without changing desktop sizing. */
+    /* ios zoom fix */
     @media (pointer:coarse){
       .cmInput,.cmArea,.rptArea{font-size:16px;}
     }
 
-    /* Modals must clear the notch and the home indicator, and never sit
-       under the on-screen keyboard. */
+    /* modal safe area */
     .cmMod,#rptMod,#cpuMod{
       padding:calc(1rem + env(safe-area-inset-top)) 1rem
               calc(1rem + env(safe-area-inset-bottom)) 1rem;
     }
 
     @media(max-width:520px){
-      /* Full-width cards with room to breathe; taller scroll area since the
-         keyboard eats the bottom half on phones. */
+      /* full width cards */
       .cmModCard,.rptCard{max-width:100%;max-height:86dvh;padding:1.1rem;border-radius:14px;}
       .cpuCard{max-width:100%;}
 
-      /* Create + Join stay side-by-side but share the row and stay INSIDE
-         the CTA card — .cmCreateBtn is nowrap + flex-shrink:0 by default,
-         which pushed them past the card's edge on narrow screens. */
+      /* create and join row */
       .cmHeadBtns{width:100%;gap:.5rem;}
       .cmHeadBtns .cmCreateBtn{
         flex:1 1 0;min-width:0;padding:.8rem .6rem;
@@ -149,20 +140,19 @@
       .cmFooterCta{padding:1.1rem 1rem;}
       .cmFooterCta > div:first-child{flex:1 1 100%;}
 
-      /* Comfortable tap targets (>=44px) on rows and action items. */
+      /* tap targets */
       .cmActItem{padding:.95rem .8rem;}
       .cmMemRow{padding:.75rem .2rem;}
       .cmModBtn,.rptBtn{padding:.75rem 1.1rem;}
 
-      /* Long names shouldn't shove the role badge off-screen. */
+      /* member name */
       .cmMemName{font-size:.85rem;}
       .cmMemRole{font-size:.55rem;padding:.18rem .42rem;}
 
-      /* 5 stats + separators overflow a 360px screen — tighten and let it
-         wrap onto two tidy lines instead of clipping. */
+      /* stats row wrap */
       .pfStatsRow{gap:.4rem;font-size:.68rem;}
 
-      /* Action buttons share the row evenly rather than overflowing. */
+      /* action buttons row */
       .pfActionRow{width:100%;}
       .pfActBtn{flex:1 1 auto;min-width:44%;padding:.65rem .8rem;}
     }
@@ -172,19 +162,15 @@
       .cmModCard,.rptCard{padding:.95rem;}
     }
 
-    /* Generic small pill badge — used for the Zeo "AI" badge in the
-       Friends list and the "Official" tag on the DigiArtz community row. */
+    /* pill badge */
     .cmBadge{
       font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;
       color:var(--ps);background:var(--pdim);
       border:1px solid var(--pg);border-radius:999px;
       padding:.18rem .55rem;flex-shrink:0;
     }
-    /* Community cards grid — back to the original text-card layout
-       (title + description + member meta), now with an improved
-       cover-image strip up top instead of plain gradient-only fill. */
-    /* Community cards now stack as a vertical list of horizontal rows,
-       mirroring the Friends list (.cmFriendList) below. */
+    /* community cards */
+    /* card list layout */
     .cmGrid{display:flex;flex-direction:column;gap:.7rem;}
     .cmCard{
       background:var(--sur);
@@ -197,10 +183,7 @@
     }
     .cmCard:hover{border-color:var(--bdrh);}
     .cmCard:active{transform:scale(.99);}
-    /* ── Icon chip — mirrors .cmFriendAvatar (circular, 46px) but keeps
-       each community's own gradient so it retains its colour identity.
-       The old full-width cover strip is gone; the icon now sits inline
-       to the left of the text, exactly like a Friends-list avatar. ── */
+    /* icon chip */
     .cmCardIcon{
       width:46px;height:46px;border-radius:50%;flex-shrink:0;
       display:flex;align-items:center;justify-content:center;
@@ -214,50 +197,31 @@
 
 
 
-    /* Footer CTA */
+    /* footer cta */
     .cmFooterCta{
       display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
       margin-top:1.6rem;padding:1.3rem 1.5rem;
       background:var(--sur2);border:1px solid var(--bdr);border-radius:12px;
     }
-    /* The text block must be allowed to shrink, or its min-content width
-       pushes the buttons past the card's right edge. */
+    /* text block shrink */
     .cmFooterCta > div:first-child{flex:1 1 240px;min-width:0;}
     .cmFooterCta .cmHeadBtns{flex:0 0 auto;max-width:100%;}
     .cmFooterCta strong{font-family:var(--fb);font-size:.95rem;color:var(--tx);display:block;}
     .cmFooterCta p{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-top:.2rem;}
 
-    /* Art Talk chat view (reuses .cpBody/.cpEmpty/.cpComment styles) */
+    /* art talk chat */
     .cmChat{display:none;flex-direction:column;flex:1;min-height:0;}
 
-    /* ── Grid ⇄ chat/DM view transition ───────────────────────────
-       Opening a community room (#cmChatView) or a friend DM
-       (#dmChatView) used to swap the grid → chat instantly — a hard
-       display flip that felt jarring. These one-shot entrance
-       animations slide the incoming view in and fade the composer
-       bar up, matching the "page slides in" feel used elsewhere.
-
-       Perf: only `transform` + `opacity` are animated, so every frame
-       stays on the compositor (no layout/paint) and runs smoothly on
-       low-end phones. No JS wiring is needed — flipping the element
-       from display:none back to a visible display value re-triggers
-       the animation on its own, so it fires on every open. Skipped
-       entirely for users who prefer reduced motion. */
+    /* grid to chat transition */
     @media(prefers-reduced-motion:no-preference){
-      /* FIX(B2): fill-mode was `both`, which retained the final keyframe's
-         transform:translate3d(0,0,0) FOREVER — a permanent containing block +
-         stacking context that would silently re-anchor any future
-         position:fixed child of these views. `backwards` keeps the identical
-         visual (from-frame applied at start; natural styles restored at end,
-         which equal the to-frame) without leaving any transform behind. */
+      /* chat view entrance */
       #cmChatView,#dmChatView{
         animation:cmChatSlideIn .3s cubic-bezier(.22,1,.36,1) backwards;
       }
       #cmGridScroll{
         animation:cmGridSlideIn .3s cubic-bezier(.22,1,.36,1) backwards;
       }
-      /* Fixed community composer — opacity only (never transform) so it
-         can't fight the keyboard-lift transform on .cpBar.kbLift. */
+      /* composer fade */
       #cpBar{animation:cmBarFadeIn .28s ease backwards;}
 
       @keyframes cmChatSlideIn{
@@ -282,7 +246,7 @@
     .cmBack:hover{border-color:var(--pg);background:var(--pdim);}
     .cmBack svg{width:16px;height:16px;}
 
-    /* Friends tab — empty state (mirrors .cpEmpty) */
+    /* friends empty state */
     .cmEmpty{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:.7rem;padding:3.5rem 2rem;text-align:center;
@@ -297,18 +261,7 @@
       .cmStats{gap:1.3rem;}
     }
 
-    /* =========================================================
-       FRONT PAGE — DARK / VIOLET THEME (matches Community page)
-       Scoped to the sections that make up the front page below
-       the hero (#hero is already dark/full-bleed on its own):
-       #artworks, #subOverview, #connect, footer.siteFooter.
-       Re-declaring the shared design tokens locally on each of
-       these section roots means every element inside that already
-       styles itself with var(--bg)/var(--sur)/var(--tx)/etc.
-       repaints automatically — the rest of the site (gallery,
-       profile pages, login, modals) keeps the original light
-       tokens untouched.
-       ========================================================= */
+    /* front page theme */
     #artworks, #subOverview, #connect, footer.siteFooter{
       --bg:inherit;--sur:inherit;--sur2:inherit;
       --bdr:inherit;--bdrh:inherit;
@@ -319,20 +272,13 @@
       color:var(--tx);
     }
 
-    /* ── subOverview tier-badge pastel fills → dark-safe tints ── */
+    /* tier badge tints */
     #subOverview .subOvPlanBadge--lite    { color:#93c5fd; border-color:#3b5c8a; background:rgba(59,130,246,.14); }
     #subOverview .subOvPlanBadge--premium { color:#C4B5FD; border-color:#5b4a8a; background:rgba(139,92,246,.16); }
     #subOverview .subOvPlanBadge--max     { color:#fcd34d; border-color:#8a6a2a; background:rgba(234,179,8,.14); }
     #subOverview .subOvPlanBadge--dev     { color:#fca5a5; border-color:#8a3a3a; background:rgba(220,38,38,.14); }
 
-    /* =========================================================
-       COMMUNITY PAGE — DARK / VIOLET THEME
-       Scoped entirely to #communityPage via local CSS variables
-       so the rest of the (light) site is untouched. Selectors are
-       written as "#communityPage .xyz" so they win specificity
-       over the site-wide white-theme overrides further below,
-       regardless of source order.
-       ========================================================= */
+    /* community page theme */
     #communityPage{
       --cmBg:var(--bg);
       --cmSur:var(--sur);
@@ -392,7 +338,7 @@
     #communityPage .cmEmpty{border-color:var(--cmBdr);color:var(--cmTxd);}
     #communityPage .cmEmpty .cmEmptyIco{color:var(--cmAccentSoft);}
 
-    /* Friends list — default "Zeo" AI bot entry */
+    /* friends list, zeo bot */
     .cmFriendList{display:flex;flex-direction:column;gap:.7rem;margin-bottom:1.6rem;}
     .cmFriendItem{
       display:flex;align-items:center;gap:.9rem;
@@ -414,14 +360,12 @@
     #communityPage .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
     #communityPage .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
     #communityPage .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
-    /* Zeo's avatar keeps a fixed dark-blue chip so the white bird logo
-       stays visible in every theme — the dim accent above goes pale in
-       light mode. Matches the Zeo button + chat-header blue. */
+    /* zeo avatar chip */
     #communityPage .cmFriendAvatar.zeoChip{background:linear-gradient(135deg,#1a2a4a,#2a4080);border-color:rgba(99,179,237,.3);}
     #communityPage .cmFriendName{color:var(--cmTx);}
     #communityPage .cmFriendStatus{color:var(--cmTxd);}
 
-    /* Art Talk chat — reuses .cpHdr/.cpBody/.cpComment/.cpBar markup */
+    /* art talk chat */
     #communityPage .cpHdr::before{background:var(--cmBg)!important;}
     #communityPage .cpHdr{border-bottom:1px solid var(--cmBdr);}
     #communityPage .cpTitle{color:var(--cmTx);}
@@ -451,9 +395,7 @@
     #communityPage .cpBar::before{background:var(--cmSur)!important;}
     #communityPage .cpBar{border-top:1px solid var(--cmBdr);}
     #communityPage .cpBarAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
-    /* Match the Friends (DM) composer: drop the avatar chip so the community
-       chat box is a clean [ input + Send ] like WhatsApp. Delete this one
-       line to bring the avatar back. */
+    /* hide composer avatar */
     #communityPage .cpBarAvatar{display:none;}
     #communityPage .cpBarInput{background:var(--cmSur2)!important;color:var(--cmTx)!important;border:1px solid var(--cmBdr)!important;}
     #communityPage .cpBarInput::placeholder{color:var(--cmTxd);}
@@ -462,7 +404,7 @@
     #communityPage .cpSelectedImage img,#communityPage .cpThumbPreview{border:1px solid var(--cmBdr);background:var(--cmSur);}
     #communityPage .cpThumbClose{background:var(--cmSur2);border:1px solid var(--cmBdrh);color:var(--cmTx);}
 
-    /* RESPONSIVE CSS — SMALL DEVICE RULES */
+    /* small devices */
 
     @media(max-width:480px){
       .cpBarSend{width:40px;height:40px;padding:0;}
@@ -470,7 +412,7 @@
       .cpBar{padding:.6rem .9rem;gap:.55rem;}
     }
 
-    /* CONNECT */
+    /* connect */
     #connect{padding:4rem 2rem;text-align:center;max-width:1200px;margin:0 auto;}
     .cDiv{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:2.5rem;}
     .cDiv::before,.cDiv::after{content:'';flex:1;max-width:200px;height:1px;background:var(--bdr);}

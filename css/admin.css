@@ -1,12 +1,5 @@
-/* ── admin.css · admin panel, edit my work, notifications ── */
-    /* =========================================================
-       ADMIN PANEL PAGE (#admPage)
-       Dev-only panel: hero slides editor + broadcast notifications
-       + open reports. Nothing else. Same sliding full-page /
-       dark UI language as #profilePage; reuses .subPgHdr /
-       .subPgTitle / .subPgX / .pfTabs / .pfTab / .pfPanel /
-       .pfGrid / .pfGridArt / .pfEmpty as-is.
-       ========================================================= */
+/* admin panel, edit my work, notifications */
+    /* admin panel page */
     #admPage{
       position:fixed;inset:0;z-index:520;background:var(--bg);
       overflow-y:auto;transform:translateX(100%);
@@ -26,7 +19,7 @@
     @media(max-width:480px){.admBdy{padding:1.2rem 1.2rem 6rem;}}
 
 
-    /* ── Tabs (Artwork / Comic Arts / Notifications) ── */
+    /* tabs */
     #admPage .pfTabs{padding:0;border-bottom:1px solid var(--bdr);position:static;margin-bottom:.4rem;}
     #admPage .pfTabs::before{display:none;}
     #admPage .pfTab{position:relative;}
@@ -38,26 +31,14 @@
     }
     #admPage .pfPanel{padding:1.4rem 0 0;}
 
-    /* ── Review cards — reuse .pfGrid/.pfGridArt, add a caption strip ── */
+    /* review cards */
     .admCard{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;}
-    /* ── Thumbnail box ──
-       This wrapper is NOT decorative — it is the clip that keeps a
-       zoomed thumbnail inside its square. thumbStyle() emits
-       transform:scale() for thumb_zoom, and a transform PAINTS outside
-       the element's layout box even though the box itself stays square.
-       With no wrapper the nearest clip was .admCard, so a 2x thumbnail
-       spilled straight down over the title, the date and the
-       Edit/Delete row — the card read as one tall blurry image with no
-       controls, and the taller the grid row, the further it bled.
-       The image is absolutely positioned inside it, so nothing about
-       the file can change the box either: not its aspect ratio, not a
-       failed load, not a missing intrinsic size. The square is owned by
-       the wrapper and by nothing else. */
+    /* thumbnail box */
     .admCardThumb{
       position:relative;width:100%;aspect-ratio:1/1;
       overflow:hidden;background:var(--sur2);
     }
-    /* Same square from width alone, for engines without aspect-ratio. */
+    /* square fallback */
     @supports not (aspect-ratio:1/1){
       .admCardThumb{height:0;padding-top:100%;}
     }
@@ -75,10 +56,7 @@
     }
     .admEmptyIcon{font-size:1.6rem;display:block;margin-bottom:.6rem;opacity:.6;}
 
-    /* ── Admin broadcast composer (inside #admPanelNoti) ──
-       Sends a notification with user_id:null — visible to every
-       user (see notifications RLS select policy). Nothing here
-       edits a notification once sent; only new rows are inserted. */
+    /* broadcast composer */
     .admNotiLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--tx);margin-bottom:.6rem;}
     .admNotiCompose{background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;padding:1rem;margin-bottom:1.6rem;}
     .admNotiInput,.admNotiTextarea{
@@ -101,13 +79,7 @@
     .admNotiSentMsg{font-family:var(--fb);font-size:.76rem;color:var(--txd);margin-top:.2rem;}
     .admNotiSentTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.06em;color:var(--txd);opacity:.65;margin-top:.35rem;}
 
-    /* =========================================================
-       EDIT MY WORK PAGE (#pfMyWorkPage)
-       Opened from the profile ⋮ menu — lets the signed-in owner
-       edit/delete their OWN artworks + comics, any status. Reuses
-       the exact same sliding full-page / dark UI language and
-       card shell as #admPage (.subPgHdr/.pfTabs/.pfPanel/.admBdy/
-       .admCard) with Edit/Delete actions. ── */
+    /* edit my work page */
     #pfMyWorkPage{
       position:fixed;inset:0;z-index:520;background:var(--bg);
       overflow-y:auto;transform:translateX(100%);
@@ -133,16 +105,7 @@
     .mwDeleteBtn:hover{background:rgba(220,38,38,.15);}
 
 
-    /* =========================================================
-       NOTIFICATIONS PAGE (#notifPage)
-       Opened by tapping the bell (#hNotifBtn). Read-only feed —
-       admin broadcasts (notifications.user_id IS NULL) plus any
-       personal notices addressed to the signed-in user.
-       Same sliding full-page / dark UI language as #admPage.
-       No edit or delete control exists anywhere on this page —
-       the notifications table is never written to by a normal
-       user; only per-user read-state (notification_reads) is.
-       ========================================================= */
+    /* notifications page */
     #notifPage{
       position:fixed;inset:0;z-index:525;background:var(--bg);
       overflow-y:auto;transform:translateX(100%);

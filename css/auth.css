@@ -1,13 +1,5 @@
-/* ── auth.css · login / signup ── */
-    /* =========================================================
-       LOGIN / SIGNUP PAGE (#authMod)
-       Full-screen sliding panel with its own self-contained dark
-       theme (independent of the site's white default, same idea
-       as #hero scoping its own palette). Redesigned to match the
-       DigiArtz welcome/login mockup: brand block, feature strip,
-       Welcome Back form, social row (Google/Discord/Apple —
-       currently show a "coming soon" toast), and a safety footer.
-       ========================================================= */
+/* login and signup */
+    /* login signup page */
     #authMod{
       position:fixed;inset:0;z-index:500;background:var(--vbg);
       overflow-y:auto;transform:translateX(100%);
@@ -82,7 +74,7 @@
       .laSocialBtn{ flex:1 1 calc(50% - .35rem); }
     }
 
-    /* ── Small phones: tighten the grid gutters a touch ── */
+    /* small phones */
     @media(max-width:480px){
       .awGrid{
         gap:.3rem;
@@ -90,7 +82,7 @@
       }
     }
 
-/* IMAGE LINKED COMMENTS PATCH */
+/* image linked comments */
 .cpSelectedImage{
 display:none;
 align-items:flex-start;

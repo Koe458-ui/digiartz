@@ -1,35 +1,13 @@
-/* ── ranking.js · ranking boards ── */
-  /* ── Ranking boards ───────────────────────────────────────────
-     Four independent boards, one card each. Every card owns its
-     own paging cursor + scroll listener, so scrolling one board to
-     the end never touches the others.
-
-     Server side (SECURITY DEFINER, search_path pinned):
-       get_rank_board(board, lim, off) -> rnk, uid, username,
-                                          avatar_url, score, lvl, total
-       get_rank_me(board)              -> rnk, score, lvl, total
-     Scores are derived, never stored: LEVEL = the same XP formula as
-     get_artist_progress(); CRED = profiles.cred_received_count;
-     LIKES / BOOKMARKS = totals RECEIVED across the artist's approved
-     artworks. Ties share a rank (two #1s, then #3) — rank() does that.
-
-     Live update: a 45s tick, but only while the section is actually
-     on screen (IntersectionObserver) and the tab is visible, so an
-     idle page makes zero requests. A repaint only happens when the
-     data signature really changed, and a board the user has scrolled
-     into is left alone until they scroll back to the top — nothing
-     ever yanks under their thumb. */
+// ranking boards
   (function () {
     'use strict';
 
-    var TICK_MS = 45000;    /* live refresh cadence */
-    var TOP = 10;           /* the box shows the TOP 10 only — everything else
-                               lives on the full ranking page (openRankPage) */
-    var PG_PAGE = 50;       /* full page: rows per fetch (server caps lim at 50) */
-    var NEAR_END = 240;     /* px from the bottom that triggers the next page */
+    var TICK_MS = 45000;    // refresh cadence
+    var TOP = 10;           // box shows top 10
+    var PG_PAGE = 50;       // rows per fetch
+    var NEAR_END = 240;     // scroll trigger distance
 
-    /* The right-hand value on every row reads like the Artist Progress
-       leaderboard's "LEVEL 23" — the board's own word, then the number. */
+    // row value label
     var BOARDS = [
       { key:'level',     name:'LEVEL',     word:'LEVEL' },
       { key:'cred',      name:'CRED',      word:'CRED' },
@@ -37,7 +15,7 @@
       { key:'bookmarks', name:'BOOKMARKS', word:'SAVES' }
     ];
 
-    var state = {};   /* key -> { rows, total, busy, sig, listEl, mineEl, headEl, allEl } */
+    var state = {};   // board state
     var timer = null, seen = false, started = false;
 
     function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
@@ -59,17 +37,16 @@
         : (b.word + ' ' + num(row.score));
     }
 
-    /* ── card shell ── */
+    // card shell
     function buildCards () {
       var grid = document.getElementById('rkGrid');
       if (!grid) return false;
       grid.innerHTML = '';
       BOARDS.forEach(function (b) {
-        /* .xpCard = the exact card the Artist Progress leaderboard uses.
-           .rkCard only adds the strip sizing/snap on top of it. */
+        // reuse xpcard
         var card = el('article', 'rkCard rkCard--' + b.key + ' xpCard');
 
-        /* the clear heading: board name + how many artists are ranked */
+        // heading, name and count
         var head = el('div', 'rkHead');
         head.appendChild(el('div', 'rkHeadT', b.name + ' LEADERBOARD'));
         head.appendChild(el('div', 'rkHeadN', 'TOP 10'));
@@ -98,15 +75,10 @@
       return true;
     }
 
-    /* ── Carousel: ONE board per slide, on every device ───────────
-       The track is a plain CSS snap-scroller, so a swipe is a native
-       swipe — no drag JS, no jank. This only mirrors the scroll
-       position into the dots/arrows, and drives the track on click. */
+    // carousel, one board per slide
     var track, dotsWrap, prevBtn, nextBtn, cur = 0;
 
-    /* A card is no longer one track wide (they're separate boxes with a
-       gap and a peek), so slide/sync work off each card's real position
-       inside the track rather than index × viewport width. */
+    // slide by card position
     function cardAt (i) { return (track && track.children[i]) ? track.children[i] : null; }
     function centreOf (c) { return c.offsetLeft + c.clientWidth / 2; }
 
@@ -119,7 +91,7 @@
     }
     function syncNav () {
       if (!track) return;
-      /* whichever card sits nearest the middle of the strip is "current" */
+      // nearest card is current
       var mid = track.scrollLeft + track.clientWidth / 2, best = 0, bd = Infinity;
       for (var i = 0; i < BOARDS.length; i++) {
         var c = cardAt(i);
@@ -165,9 +137,7 @@
         if (raf) return;
         raf = requestAnimationFrame(function () { raf = null; syncNav(); });
       }, { passive: true });
-      /* a rotate/resize changes the card width — re-anchor on the board the
-         user was actually looking at, don't drift mid-way. Above 1000px the
-         track is a grid (no scrolling), so this settles harmlessly at 0. */
+      // re anchor on resize
       window.addEventListener('resize', function () {
         var c = cardAt(cur);
         if (c) track.scrollLeft = centreOf(c) - track.clientWidth / 2;
@@ -176,7 +146,7 @@
       syncNav();
     }
 
-    /* ── fetch the TOP 10 for a box (one call, no paging) ── */
+    // fetch top 10
     async function loadTop (b) {
       var s = state[b.key], c = db();
       if (!s || s.busy) return;
@@ -201,14 +171,7 @@
       s.listEl.appendChild(el('div', 'xpNote', msg));
     }
 
-    /* ── one ranking row — the SAME .xpLbRow the Artist Progress
-       leaderboard paints: 1ST/2ND/3RD medal (then #4…), 30px avatar,
-       tier-painted name via DZ_MS, value on the right, .self highlight
-       for you. Shared by the boxes and the full page.
-
-       onTap decides what a row does: in a BOX it opens the full ranking
-       page (tapping any rank goes to the dedicated page); on the PAGE it
-       opens that artist's profile. */
+    // one ranking row
     var MEDAL = ['1ST', '2ND', '3RD'];
 
     function rowEl (b, r, uid, onTap) {
@@ -216,7 +179,7 @@
       row.setAttribute('role', 'button');
       row.setAttribute('tabindex', '0');
 
-      /* real rank, not the array index — ties genuinely share a place */
+      // real rank, ties share place
       var pos = Number(r.rnk) || 0;
       row.appendChild(el('div',
         'xpLbRank' + (pos >= 1 && pos <= 3 ? ' m' + pos : ''),
@@ -236,7 +199,7 @@
       row.appendChild(ava);
 
       var nameEl = el('div', 'xpLbName', r.username || 'Artist');
-      /* same tier tint the rest of the site gives a display name */
+      // tier tint on name
       if (window.DZ_MS) DZ_MS.paintName(nameEl, Number(r.lvl) || 0);
       row.appendChild(nameEl);
 
@@ -249,8 +212,7 @@
       return row;
     }
 
-    /* ── paint a box: the heading, TOP 10 rows, then YOUR RANK + VIEW ALL.
-       Signature-guarded, so the 45s tick never repaints when nothing moved. */
+    // paint a box
     function render (b) {
       var s = state[b.key];
       var uid = me() ? me().id : null;
@@ -259,11 +221,11 @@
       if (sig === s.sig) return;
       s.sig = sig;
 
-      /* heading count: "6 ARTISTS" once we know, "TOP 10" until then */
+      // heading count
       var n = s.headEl && s.headEl.querySelector('.rkHeadN');
       if (n) n.textContent = s.total ? (num(s.total) + (s.total === 1 ? ' ARTIST' : ' ARTISTS')) : 'TOP 10';
 
-      /* the button says how many are hidden behind it */
+      // hidden count on button
       if (s.allEl) {
         s.allEl.textContent = (s.total > s.rows.length)
           ? ('VIEW ALL ' + num(s.total) + ' \u2192')
@@ -283,7 +245,7 @@
       });
     }
 
-    /* ── the pinned "your rank" footer ── */
+    // your rank footer
     async function loadMine (b) {
       var s = state[b.key], c = db(), u = me();
       if (!s) return;
@@ -301,7 +263,7 @@
       if (!c) { f.appendChild(el('span', 'rkMineLbl', 'Your rank')); return; }
 
       f.appendChild(el('span', 'rkMineLbl', 'Your rank'));
-      /* signed in → the footer is a shortcut into the full ranking page */
+      // footer opens full page
       f.classList.add('tap');
       f.onclick = function () { openRankPage(b.key); };
       try {
@@ -309,7 +271,7 @@
         if (r.error) throw r.error;
         var d = (r.data && r.data[0]) || null;
         if (!d) {
-          /* logged in but nothing scored on this board yet */
+          // unranked
           var un = el('span', 'rkMinePos', 'UNRANKED');
           f.appendChild(un);
           return;
@@ -321,15 +283,13 @@
       }
     }
 
-    /* ── refresh one board ── */
+    // refresh one board
     function reload (b) {
       loadTop(b);
       loadMine(b);
     }
 
-    /* A tick refreshes every board. The box no longer scrolls (it's a fixed
-       top 10), so there's nothing to yank under the user — and render() is
-       signature-guarded, so an unchanged board doesn't even repaint. */
+    // refresh every board
     function tick () {
       if (document.visibilityState !== 'visible' || !seen) return;
       BOARDS.forEach(reload);
@@ -347,8 +307,7 @@
       if (!buildCards()) return;
       buildNav();
       var sec = document.getElementById('rankSec');
-      /* Only wake up once the section is actually scrolled into view —
-         the home page shouldn't fire four RPCs above the fold. */
+      // wake on scroll into view
       if (sec && 'IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entries) {
           entries.forEach(function (en) {
@@ -360,24 +319,13 @@
       } else {
         seen = true; start();
       }
-      /* coming back to the tab after a while → refresh immediately */
+      // refresh on tab focus
       document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible' && started) tick();
       });
     });
 
-    /* ═══════════════════════════════════════════════════════════
-       FULL RANKING PAGE (#rankPage)
-       A dedicated page — same overlay pattern as Notifications /
-       Admin Panel: slides in from the right, its own header with a
-       ← close button, and it takes the bottom nav out of the way.
-
-       Tapping ANY rank in a box lands here. It lists EVERY ranked
-       artist, not just the top 10, paging 50 at a time until the
-       real end. Board tabs across the top switch between the four
-       boards without leaving the page, and YOUR rank sits in a
-       banner above the list. A row here opens that artist's profile.
-       ═══════════════════════════════════════════════════════════ */
+    // full ranking page
     var pg = { board: 'level', rows: [], off: 0, total: 0, done: false, busy: false, wired: false };
 
     function pgBoard () {
@@ -419,7 +367,7 @@
       pgLoad();
     }
 
-    /* everyone, 50 at a time, until the true end */
+    // page in fifty at a time
     async function pgLoad () {
       var c = db(), b = pgBoard();
       if (pg.busy || pg.done) return;
@@ -431,7 +379,7 @@
         var r = await c.rpc('get_rank_board', { board: b.key, lim: PG_PAGE, off: pg.off });
         if (r.error) throw r.error;
         var rows = r.data || [];
-        if (!pg.off) list.innerHTML = '';               /* clear the skeletons */
+        if (!pg.off) list.innerHTML = '';               // clear skeletons
         if (rows.length) pg.total = Number(rows[0].total) || pg.total;
         pg.rows = pg.rows.concat(rows);
         pg.off += rows.length;
@@ -441,8 +389,7 @@
         rows.forEach(function (row) {
           list.appendChild(rowEl(b, row, uid, function (rr) {
             if (!rr.username || typeof openProfileByUsername !== 'function') return;
-            /* leaderboard is closed + remembered inside openProfileByUsername
-               so backing out of the profile returns here */
+            // remember for back out
             openProfileByUsername(rr.username, true);
           }));
         });
@@ -495,7 +442,7 @@
 
       if (!pg.wired) {
         pg.wired = true;
-        /* the PAGE is the scroller — page in more rows as it nears the end */
+        // page scroll loads more
         page.addEventListener('scroll', function () {
           if (pg.busy || pg.done) return;
           if (page.scrollHeight - page.scrollTop - page.clientHeight < NEAR_END) pgLoad();
@@ -522,15 +469,14 @@
       else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
     };
 
-    /* Esc closes it, same as the other overlays */
+    // escape closes
     document.addEventListener('keydown', function (ev) {
       if (ev.key !== 'Escape') return;
       var page = document.getElementById('rankPage');
       if (page && page.classList.contains('open')) closeRankPage();
     });
 
-    /* Signing in/out changes the "you" highlight and the footer, so let the
-       auth code nudge us. Safe to call any time; a no-op before start(). */
+    // refresh on auth change
     window.rkRefresh = function () {
       if (started) BOARDS.forEach(reload);
       var page = document.getElementById('rankPage');

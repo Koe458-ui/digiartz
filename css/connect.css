@@ -1,6 +1,6 @@
-/* ── connect.css · social connect + front-page sections ── */
-    /* === Social Media Connect Here === */
-    /* Desktop: all 4 in one row */
+/* social connect, footer */
+    /* social connect */
+    /* desktop row */
     .sGrid{
       display:flex;
       flex-direction:row;
@@ -45,7 +45,7 @@
     .sCard:hover svg{transform:scale(1.15);}
     .sCard .sCardLbl{line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-    /* Mobile: 2×2 grid */
+    /* mobile grid */
     @media(max-width:640px){
       .sGrid{
         display:grid;
@@ -64,12 +64,7 @@
 
 
 
-    /* ── Outer shell — darker than the rest of the dark/violet
-       theme, since a footer should read as the "floor" of the
-       page. Locally overrides the shared --bg/--sur tokens (set
-       by the theme-scoping block above) to a deeper near-black,
-       so every child element that already styles itself with
-       var(--bg)/var(--sur)/var(--tx)/etc. repaints automatically. ── */
+    /* footer shell */
     footer.siteFooter {
       --bg: var(--fbg);
       --sur: var(--fsur);
@@ -83,7 +78,7 @@
       display: block;
     }
 
-    /* ── Main content band ── */
+    /* main band */
     .ftMain {
       max-width: 1200px;
       margin: 0 auto;
@@ -93,7 +88,7 @@
       gap: 5rem;
     }
 
-    /* ── Brand column ── */
+    /* brand column */
     .ftBrand {
       flex-shrink: 0;
       display: flex;
@@ -134,7 +129,7 @@
       max-width: 230px;
     }
 
-    /* ── Column group ── */
+    /* column group */
     .ftCols {
       flex: 1;
       display: flex;
@@ -143,7 +138,7 @@
       min-width: 0;
     }
 
-    /* ── Individual column ── */
+    /* single column */
     .ftCol {
       display: flex;
       flex-direction: column;
@@ -170,9 +165,7 @@
       gap: .1rem;
     }
 
-    /* ── Link / button base — every clickable link in the footer
-       follows the same dark/violet theme tokens as the rest of
-       the page. ── */
+    /* footer link base */
     .ftColLink {
       display: inline-flex;
       align-items: center;
@@ -213,7 +206,7 @@
       outline-offset: 2px;
       border-radius: 3px;
     }
-    /* Small arrow indicator for mailto links */
+    /* mail arrow */
     .ftColLink--mail::before {
       content: '→';
       font-family: var(--fb);
@@ -229,13 +222,11 @@
       transform: translateX(0);
     }
 
-    /* ── Bottom copyright band ── */
+    /* copyright band */
     .ftBase {
       border-top: 1px solid var(--bdr);
       padding: 2rem 3rem;
-      /* Extra bottom clearance so the fixed floating bottom nav
-         bar never covers the copyright/legal line — the page
-         scrolls a little further than the footer's own content. */
+      /* clearance for bottom nav */
       padding-bottom: calc(2rem + 5.5rem);
       max-width: 1200px;
       margin: 0 auto;
@@ -272,7 +263,7 @@
       max-width: 480px;
     }
 
-    /* ── Responsive: Tablet ── */
+    /* tablet */
     @media (max-width: 1024px) {
       .ftMain { padding: 3.5rem 2.5rem 3rem; gap: 3.5rem; }
       .ftCols { gap: 2.5rem; }
@@ -308,7 +299,7 @@
       }
     }
 
-    /* ── Responsive: Mobile ── */
+    /* mobile */
     @media (max-width: 640px) {
       .ftMain {
         padding: 2.5rem 1.4rem 2rem;
@@ -339,7 +330,7 @@
       .ftColLink, .ftColLink::after, .ftColLink--mail::before { transition: none; }
     }
 
-    /* ── Legal overlay ── */
+    /* legal overlay */
     #legalBackdrop{
       position:fixed;inset:0;z-index:2000;
       display:flex;align-items:center;justify-content:center;
@@ -348,10 +339,7 @@
       transition:opacity .3s ease,visibility 0s linear .3s;
       isolation:isolate;
     }
-    /* FIX: background + blur split onto ::before (position:absolute
-       takes it out of the flex flow so .legalModal still centers
-       normally) — same decoupling as #bnNav, stops the flash if the
-       page scrolls behind this while it's open. */
+    /* blur layer */
     #legalBackdrop::before{
       content:'';position:absolute;inset:0;
       background:color-mix(in srgb,var(--bg) 75%,transparent);
@@ -452,19 +440,14 @@
       .lmBody{padding:1.2rem 1.2rem 1.6rem;}
     }
 
-    /* ── Legacy modal remnants — only the pieces still in use ──
-       .mBtn/.mBtn.sec: PREV/NEXT buttons inside the injected comic
-       viewer. .upPrev: preview <img> in both
-       upload popups. The rest of the old .mOvr/.modal component
-       (.mIn/.mX/.mErr/.dz*) was superseded by .upPop/.laBody and
-       has been removed. ── */
+    /* legacy modal bits */
     .mBtn{width:100%;padding:.8rem 1rem;background:var(--pdim);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;cursor:pointer;transition:background .3s,box-shadow .3s;margin-bottom:.6rem;border-radius:6px;}
     .mBtn:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 20px color-mix(in srgb,var(--tc) 20%,transparent);}
     .mBtn.sec{background:transparent;border-color:var(--bdr);color:var(--txd);}
     .mBtn.sec:hover{border-color:var(--txd);background:var(--sur2);}
     .upPrev{width:100%;max-height:150px;object-fit:cover;margin-bottom:.8rem;display:none;}
 
-    
+
 
 
     .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:20100;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:normal;max-width:min(560px,calc(100vw - 2rem));width:max-content;text-align:center;line-height:1.5;border-radius:6px;}

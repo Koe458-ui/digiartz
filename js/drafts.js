@@ -1,27 +1,8 @@
-/* ── drafts.js · upload drafts + scheduled uploads ── */
-  /* =========================================================
-     UPLOAD DRAFTS (updr) — device-local IndexedDB
-     ├─ updrSave()        — snapshot the current form (image blob,
-     │                      extra pages, fields, thumb focus+zoom)
-     ├─ updrLoadStrip()   — purge expired (>7 days) then render
-     ├─ updrResume(id)    — load a draft back into the form
-     ├─ updrRemove(id,e)  — delete one draft
-     └─ published drafts delete themselves (doPfUp → updrActiveId)
-
-     Deliberately CLIENT-side: draft images never hit S3/Supabase,
-     so they cost nothing, need no cleanup cron, and a resumed
-     draft's File goes through the full upqRun verification exactly
-     like a fresh pick. Trade-off: drafts live on this device only
-     (stated in the strip's note). Blobs/Files structured-clone
-     into IndexedDB natively. Capped at 12 drafts.
-     ========================================================= */
-  /* Ghost slots rendered = the DESKTOP slot count (4). CSS sizes the
-     cards per breakpoint, so on mobile the extra ghosts simply sit
-     off to the right of the rail — the visible count is 2/3/4 by
-     viewport, and the rail is never short. */
+// upload drafts and scheduled uploads
+  // ghost slot count
   var UPDR_TTL = 7*24*60*60*1000, UPDR_MAX = 12, UPDR_SLOTS = 4;
-  var updrActiveId = null;   // draft currently loaded in the form
-  var updrUrls = [];         // object URLs to revoke on re-render
+  var updrActiveId = null;   // draft loaded in the form
+  var updrUrls = [];         // object urls to revoke
   function updrDb(){
     return new Promise(function(res, rej){
       var rq = indexedDB.open('digiartz-drafts', 1);
@@ -43,8 +24,8 @@
   function updrAll(){ return updrTx('readonly', function(st){ return st.getAll(); }); }
   function updrDel(id){ return updrTx('readwrite', function(st){ st.delete(id); }); }
   async function updrSave(){
-    if(pfGuestGate()) return;                       /* drafts are per-account-holder too */
-    if(document.getElementById('pfUpEditId').value) return; /* no drafts of published pieces */
+    if(pfGuestGate()) return;                       // drafts per account
+    if(document.getElementById('pfUpEditId').value) return; // no drafts of published pieces
     if(!pf.upFile){ showToast('Pick an image first'); return; }
     try{
       var all = await updrAll();
@@ -63,23 +44,12 @@
       };
       await updrTx('readwrite', function(st){ st.put(rec); });
       updrActiveId = null;
-      showToast('Saved to drafts \u2726 kept for 7 days');
-      openPfUpload(); /* fresh form + re-rendered strip */
+      showToast('Saved to drafts, kept for 7 days');
+      openPfUpload(); // fresh form and strip
     }catch(e){ console.error('draft save: '+(e&&e.message)); showToast('Could not save draft on this device'); }
   }
-  /* =========================================================
-     DRAFT / SCHEDULED PREVIEW (upPv)
-     One modal serving both rails. Intentionally carries none of the
-     artwork lightbox's social layer (artist identity, report, like,
-     bookmark, download, comments) — this is the artist looking at
-     their own unpublished piece, so it shows the image plus the
-     exact fields they filled in, and one closing action:
-       · draft     → "Upload Now" button (plus Edit, so a draft is
-                     still editable now that a tap opens preview
-                     instead of loading it into the form)
-       · scheduled → a countdown line, no action
-     ========================================================= */
-  var upPvUrl = null;   // object URL to revoke on close
+  // draft and scheduled preview
+  var upPvUrl = null;   // object url to revoke
   function upPvRow(label, val){
     if(val===null || val===undefined || val==='') return '';
     return '<div class="upPvRow"><div class="upPvLbl">'+esc(label)+'</div><div class="upPvVal">'+esc(String(val))+'</div></div>';
@@ -94,7 +64,7 @@
     document.getElementById('upPvMod').classList.remove('open');
     if(upPvUrl){ try{ URL.revokeObjectURL(upPvUrl); }catch(_){} upPvUrl = null; }
   }
-  /* d = {kind,label,src,name,desc,tags[],cats[],software,pages,footHtml} */
+  // preview payload shape
   function upPvOpen(d){
     document.getElementById('upPvKind').textContent = d.label || '';
     var img = document.getElementById('upPvImg');
@@ -110,7 +80,7 @@
     document.getElementById('upPvFoot').innerHTML = d.footHtml || '';
     document.getElementById('upPvMod').classList.add('open');
   }
-  /* ── Draft preview ── */
+  // draft preview
   async function updrPreview(id){
     try{
       var rec = await updrTx('readonly', function(st){ return st.get(id); });
@@ -128,15 +98,14 @@
       });
     }catch(e){ showToast('Could not open that draft'); }
   }
-  /* Load the draft into the form, then run the normal upload path —
-     so it gets the identical verification pipeline as any upload. */
+  // load draft, then normal upload
   async function updrPublishNow(id){
     upPvClose();
     await updrResume(id);
-    /* let the pages handler finish painting previews before submit */
+    // wait for page previews
     setTimeout(function(){ doPfUp(); }, 350);
   }
-  /* ── Scheduled preview ── */
+  // scheduled preview
   async function uschPreview(id){
     try{
       var res = await sb.from('scheduled_uploads')
@@ -160,34 +129,17 @@
     }catch(e){ showToast('Could not open that schedule'); }
   }
 
-  /* =========================================================
-     SCHEDULED UPLOADS (usch) — server-side (public.scheduled_uploads)
-     ├─ uschPicked()  — the chosen instant as ISO, or '' for "now"
-     ├─ uschLoad()    — render the SCHEDULED rail
-     └─ uschCancel()  — drop a pending schedule (+ its S3 object)
-
-     Unlike drafts (device-local), these live in Supabase so the
-     schedule survives a device change and, crucially, publishes
-     without the artist being online: pg_cron runs
-     publish_due_scheduled_uploads() every 5 minutes, which moves
-     due rows into artworks. Nothing else in the app needs to know
-     scheduling exists — artworks only ever holds live rows.
-     ========================================================= */
-  var USCH_MIN_LEAD = 5*60*1000; /* must be at least 5 min out */
-  /* ── Custom schedule picker ──
-     A native datetime-local hands the panel to the browser, which
-     can't be themed. This builds the same control out of the site's
-     own dropdown parts. #pfUpSched (hidden input) still holds a
-     "YYYY-MM-DDTHH:MM" local string, so uschPicked() and everything
-     downstream is unchanged. ── */
-  var pfSched = { y:null, m:null, d:null, vy:0, vm:0 };  /* picked + viewed month */
+  // scheduled uploads
+  var USCH_MIN_LEAD = 5*60*1000; // at least 5 min out
+  // custom schedule picker
+  var pfSched = { y:null, m:null, d:null, vy:0, vm:0 };  // picked and viewed month
   function pfSchedPad(n){ return (n<10?'0':'')+n; }
   function pfSchedToggle(e){
     if(e){ e.stopPropagation(); }
     var dd = document.getElementById('pfUpSchedDd');
     var open = dd.classList.toggle('open');
     if(open){
-      closePfCatDd();                       /* never two panels at once */
+      closePfCatDd();                       // one panel at a time
       if(pfSched.y===null){
         var n = new Date();
         pfSched.vy = n.getFullYear(); pfSched.vm = n.getMonth();
@@ -200,18 +152,18 @@
     var dd = document.getElementById('pfUpSchedDd');
     if(dd) dd.classList.remove('open');
   }
-  /* Outside-click close, matching the other dropdowns' behaviour */
+  // outside click closes
   document.addEventListener('click', function(ev){
     var dd = document.getElementById('pfUpSchedDd');
     if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) pfSchedClose();
   });
   function pfSchedBuildTime(){
     var hs = document.getElementById('pfUpSchedH'), ms = document.getElementById('pfUpSchedM');
-    if(!hs || hs.options.length) return;    /* build once */
+    if(!hs || hs.options.length) return;    // build once
     var i, o;
     for(i=0;i<24;i++){ o=document.createElement('option'); o.value=i; o.textContent=pfSchedPad(i); hs.appendChild(o); }
     for(i=0;i<60;i+=5){ o=document.createElement('option'); o.value=i; o.textContent=pfSchedPad(i); ms.appendChild(o); }
-    /* default to roughly an hour out, snapped to 5 min */
+    // default an hour out
     var t = new Date(Date.now()+60*60*1000);
     hs.value = t.getHours(); ms.value = Math.floor(t.getMinutes()/5)*5;
   }
@@ -235,7 +187,7 @@
     var html = '';
     for(var p=0;p<first;p++) html += '<span class="upSchedDay pad"></span>';
     for(var d=1; d<=days; d++){
-      /* a day is pickable only if it can still hold a future time */
+      // day needs a future time
       var end = new Date(y, m, d, 23, 59, 59);
       var past = end.getTime() < Date.now();
       var cls = 'upSchedDay';
@@ -252,7 +204,7 @@
     pfSchedRender();
     pfSchedApply();
   }
-  /* Writes the hidden input + trigger label from the current state */
+  // write hidden input and label
   function pfSchedApply(){
     if(pfSched.y===null) return;
     var hs = document.getElementById('pfUpSchedH'), ms = document.getElementById('pfUpSchedM');
@@ -273,7 +225,7 @@
     if(e){ e.stopPropagation(); }
     pfSchedClose();
   }
-  /* Resets the control (called by openPfUpload) */
+  // reset the control
   function pfSchedReset(){
     pfSched.y = pfSched.m = pfSched.d = null;
     var n = new Date();
@@ -286,7 +238,7 @@
     var el = document.getElementById('pfUpSched');
     var hint = document.getElementById('pfUpSchedHint');
     if(!el || !hint) return;
-    /* trigger label doubles as the __/__/____ __:__ mask when empty */
+    // empty label is the mask
     var lbl = document.getElementById('pfUpSchedLbl');
     if(lbl){
       if(el.value){
@@ -305,8 +257,7 @@
       hint.textContent = 'Publishes ' + uschFmt(new Date(t).toISOString()) + ' \u00B7 verified now, re-checked at publish.'; hint.classList.remove('bad');
     }
   }
-  /* '' when empty or invalid — doPfUp treats that as "publish now",
-     and pfSchedHint has already flagged an invalid time to the user. */
+  // empty means publish now
   function uschPicked(){
     var el = document.getElementById('pfUpSched');
     if(!el || !el.value) return '';
@@ -318,7 +269,7 @@
     var d = new Date(iso);
     return d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
   }
-  /* Compact countdown for the corner mark: 6d / 5h / 20m */
+  // countdown for corner mark
   function uschLeft(iso){
     var ms = new Date(iso).getTime() - Date.now();
     if(ms <= 0) return 'due';
@@ -338,23 +289,20 @@
     var row = document.getElementById('upSchedRow');
     if(!sec || !row) return;
     var edEl = document.getElementById('pfUpEditId');
-    if(edEl && edEl.value) return;   /* edit mode hides this card */
+    if(edEl && edEl.value) return;   // edit mode hides this card
     sec.style.display = '';
     var list = [];
     if(currentUser && typeof sb!=='undefined'){
       try{
         var res = await sb.from('scheduled_uploads')
           .select('id,name,publish_at,image_url,storage_path,thumb_x,thumb_y,thumb_zoom,publish_error')
-          /* preview pulls its own full row on open — the rail only
-             needs what it renders */
+          // preview fetches its own row
           .eq('user_id', currentUser.id).order('publish_at', {ascending:true}).limit(24);
         list = (res && res.data) ? res.data : [];
       }catch(e){ list = []; }
     }
     row.innerHTML = list.map(function(r){
-      /* A row that failed its publish-time gate keeps its card, but
-         marked red with the reason — so a piece never fails silently
-         (the artist also gets a notification). */
+      // failed publish keeps the card
       var bad = !!r.publish_error;
       var tip = esc(r.name||'Untitled') + ' \u00B7 ' + (bad ? esc(r.publish_error) : esc(uschFmt(r.publish_at)));
       return '<div class="upDraftCard'+(bad?' upSchedBad':'')+'" onclick="uschPreview(\''+esc(String(r.id))+'\')" role="button" tabindex="0" title="'+tip+'" aria-label="'+(bad?'Failed: ':'Scheduled: ')+esc(r.name||'Untitled')+'">'+
@@ -367,8 +315,7 @@
   async function uschCancel(id, e){
     if(e){ e.stopPropagation(); }
     try{
-      /* Read the storage path first so the orphaned S3 object goes
-         with the row — cancelling should not leave paid storage. */
+      // delete the s3 object too
       var got = await sb.from('scheduled_uploads').select('storage_path').eq('id', id).single();
       var del = await sb.from('scheduled_uploads').delete().eq('id', id);
       if(del && del.error) throw del.error;
@@ -380,8 +327,7 @@
     }catch(err){ showToast('Could not cancel that schedule'); }
   }
 
-  /* One ghost slot — an inert placeholder with a real card's box
-     metrics, used to keep the rail filled. */
+  // ghost slot
   function updrGhost(){
     return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
       '<span class="upDraftGhostIn">\u2726</span>'+
@@ -391,20 +337,16 @@
     var sec = document.getElementById('upDraftSec');
     var row = document.getElementById('upDraftRow');
     if(!sec || !row) return;
-    /* Edit mode hides this card outright — and because this runs
-       async, it could otherwise re-show it after mwEditArt() hid
-       it. Bail before touching display. */
+    // bail in edit mode
     var edEl = document.getElementById('pfUpEditId');
     if(edEl && edEl.value){ return; }
-    /* The card now ALWAYS shows: ghosts fill the space when there's
-       nothing saved (or nothing readable — guests, private mode, no
-       IndexedDB), so it never collapses to a blank box. */
+    // card always shows
     sec.style.display = '';
     var list = [];
     if(currentUser && window.indexedDB){
       try{
         list = (await updrAll()) || [];
-        /* 1-week auto-delete — purge anything past its TTL */
+        // purge past ttl
         var now = Date.now(), dead = list.filter(function(r){ return (now - r.created) > UPDR_TTL; });
         for(var i=0;i<dead.length;i++){ await updrDel(dead[i].id); }
         if(dead.length) list = list.filter(function(r){ return (now - r.created) <= UPDR_TTL; });
@@ -415,8 +357,7 @@
     row.innerHTML = list.map(function(r){
       var daysLeft = Math.max(1, Math.ceil((r.created + UPDR_TTL - Date.now())/(24*60*60*1000)));
       var u = URL.createObjectURL(r.file); updrUrls.push(u);
-      /* title lives in the tooltip now — the tile itself stays a
-         clean square like an artwork card */
+      // title lives in the tooltip
       return '<div class="upDraftCard" onclick="updrPreview(\''+r.id+'\')" role="button" tabindex="0" title="'+esc(r.name||'Untitled draft')+'" aria-label="Preview draft: '+esc(r.name||'Untitled draft')+'">'+
         '<img src="'+u+'" alt="" style="'+thumbStyle(r.thumb&&r.thumb.x, r.thumb&&r.thumb.y, r.thumb&&r.thumb.z)+'">'+
         '<button type="button" class="upDraftX" onclick="updrRemove(\''+r.id+'\',event)" aria-label="Delete draft">✕</button>'+
@@ -428,7 +369,7 @@
     try{
       var rec = await updrTx('readonly', function(st){ return st.get(id); });
       if(!rec){ showToast('Draft not found'); updrLoadStrip(); return; }
-      openPfUpload(); /* clean slate first (also re-renders the strip) */
+      openPfUpload(); // clean slate first
       updrActiveId = rec.id;
       pf.upFile = new File([rec.file], rec.fname, {type:rec.ftype});
       pf.upThumbFocus = rec.thumb || {x:50,y:50,z:1};
@@ -439,19 +380,18 @@
       pfSetTagsFromArray((rec.tags||'').split(',').map(function(t){return t.trim();}).filter(Boolean));
       pfSetCats(rec.cats&&rec.cats.length?rec.cats:['others']);
       if(typeof pfSetSoftware==='function') pfSetSoftware(rec.software||'');
-      /* preview straight from the blob — no FileReader round-trip */
+      // preview from the blob
       var u = URL.createObjectURL(pf.upFile); updrUrls.push(u);
       var p = document.getElementById('pfUpPrev');
       p.src = u;
       p.style.cssText = thumbStyle(pf.upThumbFocus.x, pf.upThumbFocus.y, pf.upThumbFocus.z);
       document.getElementById('pfUpPrevWrap').style.display = 'block';
       document.getElementById('pfUpThumbBtn').style.display = '';
-      /* extra pages replay through the normal handler so previews +
-         pf.upPageFiles stay in sync with the real pick path */
+      // replay pages through handler
       if(rec.pages && rec.pages.length){
         handlePfPagesFile({target:{files:rec.pages.map(function(b,i){ return new File([b], 'page'+(i+1)+'.png', {type:b.type||'image/png'}); })}});
       }
-      showToast('Draft loaded \u2726 finish it up');
+      showToast('Draft loaded, finish it up');
     }catch(e){ console.error('draft resume: '+(e&&e.message)); showToast('Could not load that draft'); }
   }
   async function updrRemove(id, e){
@@ -464,21 +404,17 @@
     }catch(err){ showToast('Could not delete draft'); }
   }
 
-  var pfCropPending = null; // the File waiting to become pf.upFile once confirmed
+  var pfCropPending = null; // file waiting to become upfile
   var pfCrop = { natW:0, natH:0, stage:280, x:50, y:50, z:1, axis:null, dragging:false, sx:0, sy:0, ox:50, oy:50 };
   function openPfCrop(file, dataUrl, seed){
-    /* seed ({x,y}) — passed by reopenPfCrop() so "Adjust Thumbnail"
-       starts from the CURRENT focal point instead of resetting to
-       center. First-time picks pass no seed and start at 50/50. */
+    // seed from current focal point
     pfCropPending = file;
     var img = document.getElementById('pfCropImg');
     var ready = function(){
       var stageEl = document.getElementById('pfCropStage');
       pfCrop.stage = stageEl.getBoundingClientRect().width || 280;
       pfCrop.natW = img.naturalWidth; pfCrop.natH = img.naturalHeight;
-      /* object-fit:cover only ever overflows on one axis (the longer
-         one relative to the square box), so only that axis is
-         draggable — matches how the CSS crop actually behaves. */
+      // only the long axis drags
       pfCrop.axis = (pfCrop.natW/pfCrop.natH) > 1 ? 'x' : (pfCrop.natW/pfCrop.natH) < 1 ? 'y' : null;
       pfCrop.x = (seed && isFinite(+seed.x)) ? Math.max(0,Math.min(100,+seed.x)) : 50;
       pfCrop.y = (seed && isFinite(+seed.y)) ? Math.max(0,Math.min(100,+seed.y)) : 50;
@@ -490,16 +426,10 @@
     };
     img.onload = ready;
     img.src = dataUrl;
-    /* Re-opening with the SAME dataURL (Adjust Thumbnail) doesn't
-       re-fire load in every browser — run directly if it's already
-       decoded. Worst case ready() runs twice; it's idempotent. */
+    // run directly if decoded
     if(img.complete && img.naturalWidth) ready();
   }
-  /* ── Adjust Thumbnail — reopen the picker for the piece already
-     in the form, seeded with the current focal point AND zoom. The
-     preview src IS the original dataURL from the first pass, so no
-     FileReader round-trip is needed. Cancel in the picker keeps the
-     existing focal point + zoom untouched. ── */
+  // adjust thumbnail
   function reopenPfCrop(){
     var prev = document.getElementById('pfUpPrev');
     if(!pf.upFile || !prev.src){ showToast('Choose an image first'); return; }
@@ -508,9 +438,7 @@
   function pfCropRender(){
     var img = document.getElementById('pfCropImg');
     img.style.objectPosition = pfCrop.x+'% '+pfCrop.y+'%';
-    /* Scale about the focal point so the framed area stays anchored
-       while zooming — the exact CSS the site's thumbnails render
-       with (thumbStyle), so this preview IS the final crop. */
+    // scale about the focal point
     img.style.transform = pfCrop.z>1 ? 'scale('+pfCrop.z+')' : '';
     img.style.transformOrigin = pfCrop.z>1 ? (pfCrop.x+'% '+pfCrop.y+'%') : '';
   }
@@ -528,16 +456,13 @@
   (function initPfCropDrag(){
     var stageEl = null;
     function down(e){
-      if(!pfCrop.axis && pfCrop.z<=1) return; // nothing to drag at 1× — image already matches the square
+      if(!pfCrop.axis && pfCrop.z<=1) return; // nothing to drag at 1x
       stageEl = document.getElementById('pfCropStage');
       pfCrop.dragging = true; stageEl.classList.add('dragging');
       var p = e.touches ? e.touches[0] : e;
       pfCrop.sx = p.clientX; pfCrop.sy = p.clientY;
       pfCrop.ox = pfCrop.x; pfCrop.oy = pfCrop.y;
-      /* FIX: move/up listeners attach only for the drag's duration.
-         Registered permanently, the non-passive touchmove forced the
-         browser to wait on this handler for EVERY touch scroll on the
-         whole site — measurable scroll jank on mobile. */
+      // drag scoped listeners
       document.addEventListener('mousemove', move);
       document.addEventListener('touchmove', move, {passive:false});
       document.addEventListener('mouseup', up);
@@ -547,21 +472,13 @@
     function move(e){
       if(!pfCrop.dragging) return;
       var p = e.touches ? e.touches[0] : e;
-      /* Convert a screen-pixel drag into object-position % changes.
-         At stage size S and zoom Z, the drawn image spans S*ratio*Z
-         px per axis (ratio≥1 only on the long axis) against an S px
-         window, so the pan range is S*(ratio*Z − 1). At Z=1 this
-         collapses to the old single-axis long-side-only behavior;
-         at Z>1 BOTH axes overflow and become draggable. Because the
-         scale origin tracks the same focal %, object-position maps
-         LINEARLY across the whole range even under the transform —
-         so one % pair still describes the crop exactly. */
+      // pixels to object position
       var rx = pfCrop.natW>=pfCrop.natH ? pfCrop.natW/pfCrop.natH : 1;
       var ry = pfCrop.natH>pfCrop.natW ? pfCrop.natH/pfCrop.natW : 1;
       var oxPx = pfCrop.stage*(rx*pfCrop.z-1);
       var oyPx = pfCrop.stage*(ry*pfCrop.z-1);
       if(oxPx<=0 && oyPx<=0) return;
-      /* dragging right/down reveals the left/top side */
+      // drag right reveals left
       if(oxPx>0) pfCrop.x = Math.max(0, Math.min(100, pfCrop.ox - ((p.clientX-pfCrop.sx)/oxPx)*100));
       if(oyPx>0) pfCrop.y = Math.max(0, Math.min(100, pfCrop.oy - ((p.clientY-pfCrop.sy)/oyPx)*100));
       pfCropRender();
@@ -594,16 +511,14 @@
     p.style.cssText = thumbStyle(pfCrop.x, pfCrop.y, pfCrop.z);
     var pw = document.getElementById('pfUpPrevWrap');
     if(pw) pw.style.display = 'block';
-    /* A confirmed thumbnail can always be redone before uploading.
-       This path only runs in NEW-upload mode (edit mode hides the
-       dropzone entirely), so no edit-mode guard is needed here. */
+    // redo thumbnail before upload
     var tb = document.getElementById('pfUpThumbBtn');
     if(tb) tb.style.display = '';
     document.getElementById('pfCropMod').classList.remove('open');
     pfCropPending = null;
   }
   function handlePfPagesFile(e){
-    if(pfGuestGate(e)) return; /* drop path bypasses the input's click gate */
+    if(pfGuestGate(e)) return; // drop bypasses click gate
     var files = Array.from(e.target.files||[]);
     pf.upPageFiles = pf.upPageFiles.concat(files);
     var wrap = document.getElementById('pfPagesPreview');
@@ -625,13 +540,10 @@
   }
 
   async function doPfUp(){
-    if(pfGuestGate()) return; /* guest submit → login, back here after */
+    if(pfGuestGate()) return; // guest submit goes to login
     var editIdEl = document.getElementById('pfUpEditId');
     var editId = editIdEl ? editIdEl.value : '';
-    /* Universal upload — any signed-in user, from anywhere (nav ➕, home,
-       or while viewing someone else's profile). Rows always insert with
-       user_id: currentUser.id, and edits are ownership-checked by mwEditArt
-       plus the "own rows only" RLS update policy. No pf.isOwner gate. */
+    // universal upload
     var nm = document.getElementById('pfUpNm').value.trim();
     var desc = document.getElementById('pfUpDesc').value.trim();
     var software = document.getElementById('pfUpSoftware').value;
@@ -644,41 +556,27 @@
     try{
       {
         if(editId){
-          /* Edit reaches here from either the owner's profile-page
-             upload menu, or the Edit My Work page (mwEditArt) —
-             both are ownership-gated before this point. */
+          // edit is ownership gated
           btn.textContent='SAVING…';
           var editCats = pf.upCats.length ? pf.upCats : ['others'];
           const{error}=await sb.from('artworks').update({name:nm,description:desc||null,tags:tags,category:editCats,software:software||null}).eq('id',editId);
           if(error) throw error;
-          /* Every in-memory copy of the row must be patched, or the DB and the
-             screen disagree until a hard refresh. `images` also needs category +
-             software — without them the gallery's category filter keeps sorting
-             the piece under its OLD category. */
+          // patch every in memory copy
           var idx = images.findIndex(function(i){return String(i.id)===String(editId);});
           if(idx!==-1){ images[idx].name=nm; images[idx].description=desc||null; images[idx].tags=tags; images[idx].category=editCats; images[idx].software=software||null; }
           var mwIdx = mw.art.findIndex(function(i){return String(i.id)===String(editId);});
           if(mwIdx!==-1){ mw.art[mwIdx].name=nm; mw.art[mwIdx].description=desc||null; mw.art[mwIdx].tags=tags; mw.art[mwIdx].category=editCats; mw.art[mwIdx].software=software||null; }
-          /* pfRenderGallery() paints from pf.galleryRows — patch that row too,
-             otherwise the repaint below just re-draws the pre-edit data. */
+          // patch gallery rows too
           var pgIdx = Array.isArray(pf.galleryRows) ? pf.galleryRows.findIndex(function(i){return String(i.id)===String(editId);}) : -1;
           if(pgIdx!==-1){ pf.galleryRows[pgIdx].name=nm; pf.galleryRows[pgIdx].description=desc||null; pf.galleryRows[pgIdx].tags=tags; pf.galleryRows[pgIdx].category=editCats; pf.galleryRows[pgIdx].software=software||null; }
           pfRenderGallery();
           if(typeof mwRenderArt==='function') mwRenderArt();
           if(typeof renderHome==='function') renderHome();
-          closePfUpload(); showToast('Artwork updated ✦');
+          closePfUpload(); showToast('Artwork updated');
         } else {
-          /* ── Background pipeline — the popup closes IMMEDIATELY and
-             the piece runs CHECKING → UPLOADING → ALMOST DONE → LIVE
-             as a blurred card at the top of the uploader's own grids
-             (profile gallery + My Work), so another piece can be
-             queued while this one is still verifying. Everything the
-             pipeline needs is snapshotted NOW — closePfUpload() wipes
-             pf.upFile / pf.upPageFiles the moment it runs. The S3
-             upload, DB insert and check-failure handling all live in
-             upqRun() below. */
+          // background pipeline
           var prevEl = document.getElementById('pfUpPrev');
-          /* Read the schedule BEFORE anything resets the form */
+          // read schedule before reset
           var _schedAt = uschPicked();
           upqStart({
             name: nm, desc: desc, tags: tags, software: software,
@@ -687,44 +585,30 @@
             pageFiles: (pf.upPageFiles || []).slice(),
             thumbFocus: pf.upThumbFocus ? { x: pf.upThumbFocus.x, y: pf.upThumbFocus.y, z: pf.upThumbFocus.z || 1 } : { x: 50, y: 50, z: 1 },
             preview: (prevEl && prevEl.src) ? prevEl.src : '',
-            /* Optional album ids — snapshotted NOW because
-               pfUpResetSession() clears pf.upAlbums moments later. */
+            // snapshot album ids
             albums: (pf.upAlbums || []).slice(),
-            /* ISO instant or '' — set means the row goes to
-               scheduled_uploads instead of artworks (see upqRun). */
+            // set means scheduled
             publishAt: _schedAt
           });
-          /* A resumed draft that just queued is done being a draft */
+          // resumed draft is done
           if(updrActiveId){ updrDel(updrActiveId); updrActiveId = null; }
-          /* Scheduled pieces never appear on the profile yet, so the
-             profile redirect would land on nothing. Stay on a fresh
-             upload page instead — the SCHEDULED rail picks the new
-             card up as soon as the row lands. openPfUpload() runs
-             pfUpResetSession(), so the form is already clean and the
-             artist can queue the next piece immediately. */
+          // scheduled stays on upload page
           if(_schedAt){
             openPfUpload();
-            showToast('Scheduled \u2726 publishes ' + uschFmt(_schedAt));
+            showToast('Scheduled, publishes ' + uschFmt(_schedAt));
             return;
           }
-          /* Normal upload: the job now owns its own copies of the
-             files, so clear the form right away — returning to
-             Upload (or uploading again) always starts fresh. */
+          // clear form right away
           pfUpResetSession();
           closePfUpload();
-          /* Redirect straight to the uploader's OWN profile — the
-             blurred verification card (CHECKING → UPLOADING →
-             ALMOST DONE → LIVE) leads their gallery grid there via
-             upqOwnQueueHTML(), so they watch verification start
-             immediately. Fire-and-forget: the queue job runs in
-             parallel regardless. */
+          // redirect to own profile
           openOwnProfile();
           if(typeof bnSetActive==='function') bnSetActive('bnProfile');
-          showToast('Verifying your artwork \u2726 watch it on your profile');
+          showToast('Verifying your artwork, watch it on your profile');
         }
       }
     }catch(err){ console.error('Error: '+err.message);
-      /* Merit gate (<80) surfaces as a raw RLS error — explain it. */
+      // merit gate error
       if(window.meritDenied && window.meritDenied(err, 'upload')) return;
       showToast(safeErr(err, 'Upload failed \u2014 try again')); }
     finally{ btn.disabled=false; btn.textContent = editId ? '📤 Save Changes' : '📤 Upload Artwork'; }

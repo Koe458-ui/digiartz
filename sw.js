@@ -1,31 +1,9 @@
-/* ═══════════════════════════════════════════════════════════════════
-   DigiArtz service worker — offline cache layer.
+/* service worker, offline cache
+   caches: shell, thumbs, lightbox images, fonts
+   supabase, analytics and ads are never cached
+   bump CACHE_VERSION to refill every client
 
-   Registered by index.html:
-     navigator.serviceWorker.register('/sw.js')
-
-   Works with the localStorage data snapshots (dzcSet/dzcGet) in
-   index.html: those cache the JSON (artworks, messages, friends,
-   convos); this file caches the FILES (app shell, fonts, images) so
-   the site actually opens and renders with no network at all.
-
-   Four caches, each bounded:
-
-     dz-shell-v1  index.html + config.js + the two JS modules + icons
-                  (stale-while-revalidate; also the offline fallback
-                  for deep links like /artwork/123 and /profile/koe)
-     dz-thumb-v1  300px grid thumbnails    — cap 60
-                  (warmed on launch by dzcPrefetchThumbs(), which
-                  issues plain no-cors fetches we intercept here)
-     dz-view-v1   1000px lightbox images   — cap 50
-                  (cached the moment an artwork is opened)
-     dz-font-v1   Google Fonts CSS + WOFF2 — cap 20
-
-   Never cached: Supabase REST/Realtime (always live; offline reads
-   come from the localStorage snapshots), analytics, and ads.
-
-   Bump CACHE_VERSION to force every client to drop and refill.
-
+   changelog
    v62 — homepage: the chip rail and the Artworks/Latest/category tab
        strip are gone. The search bar is now the last thing above the
        feed, so artwork starts immediately under it on every device.
@@ -354,22 +332,20 @@
    server-side Scheduled uploads, draft/schedule preview modal and
    the custom themed date picker. index.html changed substantially,
    so every client must drop the old shell.
-   ═══════════════════════════════════════════════════════════════════ */
+*/
 'use strict';
 
-const CACHE_VERSION = 'v62';
+const CACHE_VERSION = 'v63';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
 const FONT  = `dz-font-${CACHE_VERSION}`;
 const KEEP  = [SHELL, THUMB, VIEW, FONT];
 
-/* Cap each image cache so a heavy browsing session can't fill the
-   origin's storage quota and get the whole bucket evicted. */
+// cap each image cache
 const LIMITS = { [THUMB]: 60, [VIEW]: 50, [FONT]: 20 };
 
-/* Precached on install. Kept deliberately small — everything else is
-   cached lazily as it's actually requested. */
+// precached shell
 const SHELL_URLS = [
   '/',
   '/index.html',
@@ -382,7 +358,7 @@ const SHELL_URLS = [
   '/apple-touch-icon.png',
   '/icon-192.png',
 
-  /* Split stylesheets — see the <link> block in index.html <head> */
+  // stylesheets
   '/css/base.css',
   '/css/hero.css',
   '/css/viewer.css',
@@ -397,12 +373,12 @@ const SHELL_URLS = [
   '/css/widgets.css',
   '/css/overrides.css',
 
-  /* Word list must be cached alongside the engine that reads it */
+  // word list goes with the engine
   '/js/badwords-list-a.js',
   '/js/badwords-list-b.js',
   '/js/badwords.js',
 
-  /* Split scripts — see the <script src> tags through index.html */
+  // scripts
   '/js/ranking.js',
   '/js/community.js',
   '/js/dm.js',
@@ -430,26 +406,17 @@ const SHELL_URLS = [
   '/js/sections.js'
 ];
 
-/* Hosts. DIT = the resize distribution (thumbnails + lightbox).
-   ORIGIN_CDN = the untouched originals, used by Download — we do NOT
-   cache those; they're large and only fetched on an explicit save. */
+// hosts
 const DIT_HOST     = 'd1l8dn7jegdgem.cloudfront.net';
 const SUPABASE_RE  = /\.supabase\.co$/;
 const FONT_RE      = /^fonts\.(googleapis|gstatic)\.com$/;
 const BYPASS_RE    = /(googletagmanager|google-analytics|googlesyndication|doubleclick|cloudflareinsights)\./;
 
-/* index.html builds these via imgResize(url, W, Q):
-     thumbnail → /fit-in/300x0/filters:format(webp):quality(55)/<key>
-     lightbox  → /fit-in/1000x0/filters:format(webp):quality(68)/<key>
-   Match on the width segment so a future quality tweak doesn't
-   silently stop the caching. */
+// match the resize widths
 const THUMB_PATH_RE = /\/fit-in\/300x0\//;
 const VIEW_PATH_RE  = /\/fit-in\/1000x0\//;
 
-/* ── install ── precache the shell, then take over immediately ──────
-   addAll() is atomic: one 404 aborts the whole install. config.js is
-   gitignored and only exists on the deployment, so cache entries
-   individually and tolerate misses rather than bricking the SW. */
+// install, precache the shell
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(SHELL);
@@ -460,7 +427,7 @@ self.addEventListener('install', (event) => {
   })());
 });
 
-/* ── activate ── drop stale versions, claim open tabs ─────────────── */
+// activate, drop stale versions
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const names = await caches.keys();
@@ -472,9 +439,7 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
-/* Trim a cache to its cap, oldest-first. Cache.keys() returns entries
-   in insertion order, so the head of the list is the least recently
-   ADDED (not used) — good enough, and it costs no bookkeeping. */
+// trim to cap, oldest first
 async function trim(cacheName) {
   const limit = LIMITS[cacheName];
   if (!limit) return;
@@ -484,15 +449,7 @@ async function trim(cacheName) {
   await Promise.all(keys.slice(0, keys.length - limit).map((k) => cache.delete(k)));
 }
 
-/* Cache-first, for immutable-ish assets (images, fonts).
-
-   NOTE ON OPAQUE RESPONSES: dzcPrefetchThumbs() fetches thumbnails
-   with { mode:'no-cors' }, so the response is opaque — status 0, body
-   unreadable. That's fine: the Cache API stores opaque responses and
-   replays them into <img> tags perfectly. We must NOT test res.ok
-   here, because an opaque response always reports ok:false. Test for
-   a real error status instead. (Opaques do bloat quota via padding,
-   which is exactly why every image cache above is capped.) */
+// cache first
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request);
@@ -501,9 +458,7 @@ async function cacheFirst(request, cacheName) {
     const res = await fetch(request);
     if (res && (res.type === 'opaque' || res.ok)) {
       await cache.put(request, res.clone());
-      /* fire-and-forget, but never as a floating rejection: a failed
-         eviction must not surface as an unhandled promise rejection
-         inside the worker. */
+      // fire and forget eviction
       trim(cacheName).catch(() => {});
     }
     return res;
@@ -514,8 +469,7 @@ async function cacheFirst(request, cacheName) {
   }
 }
 
-/* Stale-while-revalidate, for the shell: paint instantly from cache,
-   refresh in the background so the next load has the new build. */
+// stale while revalidate
 async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request);
@@ -531,21 +485,17 @@ async function staleWhileRevalidate(request, cacheName) {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
-  /* Only GET. POST/PATCH (uploads, likes, messages) must always hit
-     the network — never serve those from a cache. */
+  // get only
   if (req.method !== 'GET') return;
 
   let url;
   try { url = new URL(req.url); } catch { return; }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return;
 
-  /* Live data + telemetry: stay out of the way entirely. */
+  // skip live data
   if (SUPABASE_RE.test(url.hostname) || BYPASS_RE.test(url.hostname)) return;
 
-  /* Navigations (including deep links /artwork/123, /profile/koe —
-     which Cloudflare rewrites to index.html). Network-first so a fresh
-     build is picked up straight away; fall back to the cached shell so
-     the app still boots with no connection. */
+  // navigations, network first
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       try {
@@ -561,33 +511,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  /* Resized artwork images off the DIT distribution. */
+  // resized images
   if (url.hostname === DIT_HOST) {
     if (THUMB_PATH_RE.test(url.pathname)) {
-      event.respondWith(cacheFirst(req, THUMB));   /* top-50 grid thumbs */
+      event.respondWith(cacheFirst(req, THUMB));   // grid thumbs
       return;
     }
     if (VIEW_PATH_RE.test(url.pathname)) {
-      event.respondWith(cacheFirst(req, VIEW));    /* last-50 opened artworks */
+      event.respondWith(cacheFirst(req, VIEW));    // opened artworks
       return;
     }
-    return;   /* any other size → straight to network, uncached */
+    return;   // other sizes, no cache
   }
 
-  /* Google Fonts — the stylesheet and the WOFF2 files it points at. */
+  // google fonts
   if (FONT_RE.test(url.hostname)) {
     event.respondWith(cacheFirst(req, FONT));
     return;
   }
 
-  /* Our own static assets: config.js, the JS modules, icons, manifest. */
+  // own static assets
   if (url.origin === self.location.origin) {
     event.respondWith(staleWhileRevalidate(req, SHELL));
   }
 });
 
-/* Lets a future build force an update without a hard reload:
-     navigator.serviceWorker.controller.postMessage({ type:'SKIP_WAITING' }) */
+// skip waiting message
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });

@@ -1,36 +1,14 @@
-// ============================================================
-// DigiArtz — AI Moderation Gate (moderation ONLY)
-// Path in repo:  functions/api/moderate-upload.js
-//
-// Checks images with Gemini Vision BEFORE the existing upload flow
-// runs. Does NOT touch S3 or Supabase — the existing s3Upload()
-// presigned flow and client-side insert in doPfUp() stay as-is.
-//
-// Request:  POST multipart/form-data
-//   Authorization: Bearer <supabase access token>
-//   files: 1–6 images (cover first, then extra pages)
-//
-// Response: { allowed, rating, reason, audit }
-//   allowed  true only if EVERY image is approved artwork
-//   rating   worst rating across images: 'SAFE' | 'MATURE'
-//   audit    compact per-image verdicts for the ai_moderation column
-//
-// Env vars (Pages -> Settings -> Environment variables):
-//   GEMINI_API_KEY
-//   SUPABASE_URL          https://tmqzqlrpjpydiftlrzmj.supabase.co
-//   SUPABASE_ANON_KEY
-// Optional:
-//   GEMINI_MODEL          default "gemini-flash-latest" (pin e.g. "gemini-3.5-flash" if desired)
-// ============================================================
+// ai moderation gate
+// response: allowed, rating, reason, audit
+// env: GEMINI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY
+// optional: GEMINI_MODEL
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 6;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MIN_CONFIDENCE = 0.6;
 
-// Category codes Gemini may return. User-facing text NEVER comes from the
-// model — it is looked up in MESSAGES below, so wording stays professional
-// and internal checks are never leaked.
+// category codes
 const CATEGORIES = [
   'ARTWORK_OK','SELFIE','MIRROR_SELFIE','FAMILY_PHOTO','GROUP_PHOTO','COUPLE_PHOTO',
   'BABY_PHOTO','PET_PHOTO','CASUAL_PHOTO','TRAVEL_PHOTO','FOOD_PHOTO','DRINK_PHOTO',
@@ -99,16 +77,7 @@ const MESSAGES = {
   UNCLEAR:           'We could not confirm this image as original artwork. Please upload a clearer artwork image.'
 };
 
-// ============================================================
-// RESOURCE / MARKETPLACE MODE (mode=resource | mode=marketplace)
-// The downloadable file itself (a .abr brush, .zip template, .blend
-// model, font, etc.) is NOT an image, so Gemini can't read it. What
-// gets judged is the PREVIEW image the uploader attaches — the same
-// picture that ends up on the card. A separate prompt + code set is
-// used because a resource preview legitimately shows things the
-// artwork moderator rejects: website/UI mockups, code screenshots,
-// 3D renders, product mockups.
-// ============================================================
+// resource mode judges the preview
 const RESOURCE_CATEGORIES = [
   'RESOURCE_OK','AI_GENERATED','PERSON_PHOTO','NSFW_CONTENT','GORE_CONTENT',
   'TEXT_ONLY','SCREENSHOT','DOCUMENT','SPAM_IMAGE','BLANK_IMAGE','LOW_QUALITY',
@@ -225,8 +194,7 @@ Decision Rules
 
 Return your verdict as JSON with fields: allow, artwork, rating, quality, category (one code from the list), reason (short internal note), confidence (0 to 1).`;
 
-// These two are PUBLIC values (they already ship in config.js on the site),
-// so hardcoding them here is safe. Env vars still override if ever needed.
+// public values, env can override
 const SB_URL_FALLBACK = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
 const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
 
@@ -235,13 +203,12 @@ export async function onRequestPost(context) {
   const SB_URL = env.SUPABASE_URL || SB_URL_FALLBACK;
   const SB_ANON = env.SUPABASE_ANON_KEY || SB_ANON_FALLBACK;
   try {
-    // The ONE truly secret variable — fail loudly if it never got set,
-    // instead of masking the problem as an image rejection.
+    // fail loudly if the secret is missing
     if (!env.GEMINI_API_KEY) {
       return json({ error: 'Server not configured: GEMINI_API_KEY missing in Cloudflare environment variables.' }, 500);
     }
 
-    // ---- Auth: verify the Supabase JWT ----
+    // auth, verify the jwt
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
     if (!token) return json({ error: 'Not signed in.' }, 401);
 
@@ -252,7 +219,7 @@ export async function onRequestPost(context) {
     const user = await userRes.json();
     if (!user.id) return json({ error: 'Invalid session.' }, 401);
 
-    // ---- Collect files ----
+    // collect files
     const form = await request.formData();
     const files = form.getAll('files').filter(f => f instanceof File);
     if (files.length === 0) return json({ error: 'No images received.' }, 400);
@@ -264,10 +231,8 @@ export async function onRequestPost(context) {
       if (f.size > MAX_BYTES) return json({ error: 'Each image must be under 10 MB.' }, 400);
     }
 
-    // ---- Pick the moderator: artwork (default) or resource preview ----
-    // `mode` is an optional form field. Absent  -> artwork, so the
-    // existing artwork upload flow is completely unchanged. resource
-    // and marketplace share the resource preview moderator.
+    // pick the moderator
+    // absent means artwork
     const modeRaw = String(form.get('mode') || 'artwork').toLowerCase();
     const isResource = (modeRaw === 'resource' || modeRaw === 'marketplace');
     const cfg = isResource
@@ -275,15 +240,15 @@ export async function onRequestPost(context) {
       : { resource: false, prompt: MODERATION_PROMPT,  categories: CATEGORIES };
     const MSG = isResource ? RESOURCE_MESSAGES : MESSAGES;
 
-    // ---- Moderate every image (parallel Gemini calls) ----
+    // moderate every image
     const verdicts = await Promise.all(files.map(async f => {
       const b64 = toBase64(await f.arrayBuffer());
       return moderateWithGemini(env, b64, f.type, cfg);
     }));
 
-    // ---- Combine: ALL must pass; worst rating wins ----
+    // combine, worst rating wins
     let allowed = true;
-    // Default approved code differs per mode.
+    // approved code per mode
     let code = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
     let reason = 'Approved.';
     let rating = 'SAFE';
@@ -292,8 +257,8 @@ export async function onRequestPost(context) {
 
     for (let i = 0; i < verdicts.length; i++) {
       const v = verdicts[i];
-      // Resources: must be a SAFE, non-AI, good-quality resource preview.
-      // Artwork: SAFE or MATURE artwork, good quality (unchanged).
+      // resources must be safe, non ai
+      // artwork may be safe or mature
       const pass = isResource
         ? ( v.ok && v.allow === true && v.resource === true &&
             v.ai_generated !== true && v.quality === 'GOOD' &&
@@ -307,7 +272,7 @@ export async function onRequestPost(context) {
       if (!pass && allowed) {
         allowed = false;
         failIndex = i;
-        // Canonical, professional message — never the model's own wording.
+        // canonical message, not the model's
         const okCode = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
         code = (v.ok && v.category && v.category !== okCode) ? v.category : 'UNCLEAR';
         if (isResource) {
@@ -335,8 +300,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Fire-and-forget decision log — approvals AND rejections — so no
-    // verdict is ever invisible. Uses the user's own token (RLS insert-own).
+    // log every decision
     context.waitUntil(fetch(`${SB_URL}/rest/v1/moderation_logs`, {
       method: 'POST',
       headers: {
@@ -355,12 +319,7 @@ export async function onRequestPost(context) {
       })
     }).catch(() => {}));
 
-    // Signed approval ticket. Only minted when the upload PASSED and a
-    // signing secret is configured. The database moderation-gate trigger
-    // (see the security branch's activation SQL) verifies this HMAC before
-    // it will let a client insert land as status='approved', so a caller
-    // that skips this endpoint cannot self-approve. No MOD_SIGNING_SECRET
-    // set => no token => the gate stays inert and the flow is unchanged.
+    // signed approval ticket
     let token = null;
     if (allowed && env.MOD_SIGNING_SECRET) {
       try { token = await signApproval(env.MOD_SIGNING_SECRET, user.id); } catch { token = null; }
@@ -385,17 +344,13 @@ export async function onRequestPost(context) {
   }
 }
 
-// ------------------------------------------------------------
-// Gemini Vision — structured JSON verdict, fail closed
-// ------------------------------------------------------------
+// gemini vision, fail closed
 async function moderateWithGemini(env, b64, mimeType, cfg) {
   cfg = cfg || { resource: false, prompt: MODERATION_PROMPT, categories: CATEGORIES };
   const model = env.GEMINI_MODEL || 'gemini-flash-latest';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
 
-  // Schema shape depends on the mode. Artwork keeps its exact original
-  // fields; resource swaps `artwork` for `resource` and adds the
-  // `ai_generated` flag the resource rules key off.
+  // schema depends on the mode
   const props = cfg.resource
     ? {
         allow: { type: 'BOOLEAN' },
@@ -432,10 +387,7 @@ async function moderateWithGemini(env, b64, mimeType, cfg) {
       responseMimeType: 'application/json',
       responseSchema: { type: 'OBJECT', properties: props, required: required }
     },
-    // The moderator must SEE and CLASSIFY mature art rather than have
-    // Gemini's default filter silently refuse. Illegal content is still
-    // hard-blocked at the API level regardless — surfaces as a blocked
-    // response below, which is treated as reject (fail closed).
+    // classify mature art, do not refuse
     safetySettings: [
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
@@ -484,13 +436,8 @@ async function moderateWithGemini(env, b64, mimeType, cfg) {
   }
 }
 
-// ------------------------------------------------------------
-// Mint a short-lived, single-use HMAC approval ticket bound to this
-// user. Format: "<exp>.<jti>.<hexsig>" where
-//   sig = HMAC_SHA256(secret, "<uid>.<exp>.<jti>")
-// The DB trigger recomputes the same HMAC (pgcrypto) with auth.uid(),
-// checks it is unexpired and the jti unused, then consumes it — so one
-// passed moderation authorizes exactly one approved insert.
+// mint a single use ticket
+// format: exp.jti.hexsig
 async function signApproval(secret, uid) {
   const exp = Math.floor(Date.now() / 1000) + 600;   // valid 10 minutes
   const jti = crypto.randomUUID();
@@ -504,7 +451,6 @@ async function signApproval(secret, uid) {
   return `${exp}.${jti}.${sig}`;
 }
 
-// ------------------------------------------------------------
 function toBase64(buf) {
   const bytes = new Uint8Array(buf);
   let bin = '';

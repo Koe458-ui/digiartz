@@ -1,28 +1,19 @@
-/* ── auth.js · login / signup / notifications ── */
-  /* Auth — email+password via Supabase; session persists via localStorage */
+// login, signup, notifications
 
-  /* ── State ── */
-  var currentUser = null; /* null = logged out, object = logged in */
-  var currentUserAvatarUrl = null; /* logged-in user's photo, kept in sync with
-       profiles.avatar_url — feeds every avatar chip app-wide (nav, comment
-       bar, subscription card). Set on login/role-check and refreshed the
-       instant a new photo is uploaded via doPfAvBUpload(). */
-  var authMode = 'login'; /* 'login' | 'signup' */
+  // state
+  var currentUser = null; // null when logged out
+  var currentUserAvatarUrl = null; // user photo, kept in sync
+  var authMode = 'login'; // login or signup
 
-  /* Avatar helpers — shared by navbar, profile page, and comment bar */
+  // avatar helpers
 
-  /* ── Paint a single avatar chip: real photo if we have a URL, else the
-     letter fallback. Every avatar chip in the app (nav, comment bar,
-     subscription card, artwork-viewer author row) follows this same
-     img-or-letter pattern so a new upload only has to update one URL. ── */
+  // paint one avatar chip
   function paintAvatarChip(imgId, txtId, url, letter){
     var img = document.getElementById(imgId);
     var txt = document.getElementById(txtId);
     if(!img || !txt) return;
     if(url){
-      /* Avatar chips are tiny (≤36px) — serve the small resized WebP
-         instead of the full original. imgResize is idempotent, so a
-         caller that already passed a resized URL is left untouched. */
+      // use small resized image
       img.src = getThumbnailUrl(url);
       img.style.display = 'block';
       txt.style.display = 'none';
@@ -34,15 +25,15 @@
     }
   }
 
-  /* ── Sync the navbar: swap face icon ↔ avatar button ── */
+  // sync navbar button
   function syncAuthBtn() {
     var loginBtn  = document.getElementById('navLoginBtn');
     var avatarBtn = document.getElementById('navAvatarBtn');
     var letterEl  = document.getElementById('navAvatarLetter');
 
     if (currentUser) {
-      /* Logged in: hide face icon, show avatar */
-      var letter = cpGetAvatarLetter(); /* reuse existing helper */
+      // logged in
+      var letter = cpGetAvatarLetter(); // reuse existing helper
       paintAvatarChip('navAvatarImg', 'navAvatarLetter', currentUserAvatarUrl, letter);
       if (loginBtn)  loginBtn.style.display  = 'none';
       if (avatarBtn) {
@@ -50,17 +41,17 @@
         avatarBtn.title = 'Profile — ' + cpGetDisplayName();
       }
     } else {
-      /* Logged out: show face icon, hide avatar */
+      // logged out
       if (loginBtn)  loginBtn.style.display  = '';
       if (avatarBtn) avatarBtn.style.display  = 'none';
     }
 
-    /* Also sync the subscription overview card and comment bar avatar */
+    // sync card and comment bar
     syncSubOverviewCard();
     cpSyncAvatar();
   }
 
-  /* ── Sync the Subscription Overview profile card ── */
+  // sync subscription card
   function syncSubOverviewCard() {
     var avatarEl   = document.getElementById('subOvAvatarLetter');
     var nameEl     = document.getElementById('subOvUsernameLabel');
@@ -68,7 +59,7 @@
     var profileCard = document.getElementById('subOvProfileCard');
     if (!avatarEl || !nameEl || !badgeEl) return;
 
-    /* Helper: remove all profile-tier border classes then add the right one */
+    // set tier border class
     function setProfileTier(tier) {
       if (!profileCard) return;
       profileCard.classList.remove(
@@ -81,7 +72,7 @@
       if (tier === 'premium') profileCard.classList.add('subOvCard--profile-premium');
       if (tier === 'max')     profileCard.classList.add('subOvCard--profile-max');
       if (tier === 'dev')     profileCard.classList.add('subOvCard--profile-dev');
-      /* guest / null: no tier class → default grey border */
+      // guest gets default border
     }
 
     if (currentUser) {
@@ -90,21 +81,20 @@
       paintAvatarChip('subOvAvatarImg', 'subOvAvatarTxt', currentUserAvatarUrl, letter);
       nameEl.textContent   = name;
 
-      /* Determine badge label and tier class — userPlan may not be set yet
-         (checkUserRole is async) so fall back to 'guest' if null. */
+      // badge label and tier
       var plan   = (typeof userPlan === 'string') ? userPlan : 'guest';
-      /* Dev role gets its own red tier */
+      // dev tier
       if (typeof isDev !== 'undefined' && isDev) plan = 'dev';
       var labels = { guest:'FREE', lite:'LITE', premium:'PREMIUM', max:'MAX', dev:'DEV' };
       var label  = labels[plan] || 'FREE';
       badgeEl.textContent = label;
 
-      /* Sync badge pill class */
+      // badge class
       badgeEl.className = 'subOvPlanBadge subOvPlanBadge--' + (labels[plan] ? plan : 'guest');
-      /* Sync profile card border colour */
+      // card border
       setProfileTier(plan);
     } else {
-      /* Logged out: reset to default */
+      // logged out, reset
       paintAvatarChip('subOvAvatarImg', 'subOvAvatarTxt', null, '?');
       nameEl.textContent   = 'Profile';
       badgeEl.textContent  = 'FREE';
@@ -113,7 +103,7 @@
     }
   }
 
-  /* SETTINGS PAGE (full page — replaced the old ⋮ drawer) */
+  // settings page
 
   var setLastFocus = null;
 
@@ -123,7 +113,7 @@
     setLastFocus = document.activeElement;
     pg.classList.add('open');
     document.body.style.overflow = 'hidden';
-    pfMenuRefreshCounts(); /* fire-and-forget; badges fill in as data lands */
+    pfMenuRefreshCounts(); // fire and forget
   }
 
   function closeSettingsPage() {
@@ -134,8 +124,7 @@
     setLastFocus = null;
   }
 
-  /* Likes / Bookmarks / Friends counts. Errors leave the badge blank
-     (CSS hides empty badges) — the page never blocks on this. */
+  // likes, bookmarks, friends counts
   async function pfMenuRefreshCounts() {
     var L = document.getElementById('pfMenuLikeCount'),
         B = document.getElementById('pfMenuBmCount'),
@@ -158,7 +147,7 @@
     }
   }
 
-  /* Logout — runs the existing signOut flow, then closes the settings page */
+  // logout
   function pfMenuLogout() {
     closeSettingsPage();
     if (sb) {
@@ -168,18 +157,16 @@
     }
   }
 
-  /* ── Upload dropdown ── */
+  // upload dropdown
   var _pfUpMenuOpen = false;
 
-  /* Profile upload dropdown removed — stubs kept because the global
-     Escape/outside-click handlers still call closePfUploadMenu(). */
+  // stubs kept for handlers
   function openPfUploadMenu() {}
   function closePfUploadMenu() {}
   function togglePfUploadMenu() {}
 
 
-  /* Close the upload dropdown on outside click.
-     (The ⋮ profile-menu branch was removed with the drawer.) */
+  // close on outside click
   document.addEventListener('click', function(e) {
     if (_pfUpMenuOpen) {
       var umenu = document.getElementById('pfUploadMenu');
@@ -196,14 +183,14 @@
     err.textContent = ''; err.classList.remove('show');
     var msg = document.getElementById('authMsg');
     if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
-    /* Always open in login mode */
+    // always open in login mode
     switchAuthMode('login');
     document.getElementById('authMod').classList.add('open');
     document.body.style.overflow = 'hidden';
     if (window.location.pathname !== '/login') {
       try{ history.pushState({},'', '/login'); }catch(e){}
     }
-    /* Focus email on login (username field is hidden), focus username on signup */
+    // focus first field
     setTimeout(function(){
       var mode = authMode;
       var focusId = (mode === 'signup') ? 'authUser' : 'authEmail';
@@ -221,7 +208,7 @@
     }
   }
 
-  /* ── Perform login ── */
+  // login
   async function doAuth() {
     if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
     var email = document.getElementById('authEmail').value.trim();
@@ -238,7 +225,7 @@
     try {
       var result = await sb.auth.signInWithPassword({ email: email, password: pass });
       if (result.error) throw result.error;
-      /* onAuthStateChange fires automatically — it will close the modal & sync the button */
+      // auth listener closes the modal
     } catch (e) {
       err.textContent = e.message || 'Login failed. Check your credentials.';
       err.classList.add('show');
@@ -247,22 +234,10 @@
     }
   }
 
-  /* ── OAuth sign-in (Google / Discord / Apple) ──
-     signInWithOAuth redirects the browser to the provider; on return
-     the Supabase client exchanges the code automatically and
-     onAuthStateChange('SIGNED_IN') fires — which already closes the
-     modal, syncs the nav button and runs checkUserRole(), exactly like
-     password login. No username is set for OAuth users; their profiles
-     row is seeded server-side by the on-signup trigger (see SQL) and
-     self-healed by pfEnsureOwnProfile() as a fallback. */
+  // oauth sign in
   var OAUTH_LABELS = { google:'Google', discord:'Discord', apple:'Apple' };
 
-  /* Apple-unavailable notice. We build our own themed dialog instead of
-     window.alert(): DigiArtz runs as a standalone PWA, and browsers
-     suppress native alert()/confirm() in standalone mode, so a plain
-     alert silently does nothing on installed devices. Inline styles read
-     the live theme tokens, so it looks right in Dark / Gray / Light and
-     needs no CSS-file changes. */
+  // apple unavailable notice
   function showAppleUnavailable(){
     if (document.getElementById('appleNaDlg')) return;
     var ov = document.createElement('div');
@@ -296,35 +271,31 @@
   }
 
   async function doOAuth(provider, btnEl) {
-    /* Apple sign-in isn't wired up yet (it needs a paid Apple Developer
-       account). Until then, don't bounce people to a provider that will
-       just error out — tell them plainly and point them at what works. */
+    // apple not wired up
     if (provider === 'apple') { showAppleUnavailable(); return; }
     if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
     var label = OAUTH_LABELS[provider] || provider;
     var err = document.getElementById('authErr');
     err.textContent = ''; err.classList.remove('show');
 
-    /* Lock the whole social row while we hand off to the provider */
+    // lock the social row
     var row = document.querySelector('.laSocial');
     var btns = row ? row.querySelectorAll('.laSocialBtn') : [];
     Array.prototype.forEach.call(btns, function(b){ b.disabled = true; });
 
     try {
       var opts = { redirectTo: window.location.origin };
-      /* Let Google users pick which account to use rather than silently
-         reusing whichever one the browser is already signed into. */
+      // let google pick account
       if (provider === 'google') opts.queryParams = { prompt: 'select_account' };
 
       var result = await sb.auth.signInWithOAuth({ provider: provider, options: opts });
       if (result.error) throw result.error;
-      /* Success → browser is now navigating away to the provider. */
+      // navigating to provider
     } catch (e) {
       Array.prototype.forEach.call(btns, function(b){ b.disabled = false; });
       var raw = (e && e.message || '').toLowerCase();
       if (raw.includes('provider is not enabled') || raw.includes('unsupported provider')) {
-        /* Was a dev instruction naming the backend console — useless and
-           confusing to the person actually trying to sign in. */
+        // plain user facing error
         err.textContent = label + ' sign-in isn\u2019t available right now. Try another method.';
       } else {
         err.textContent = (e && e.message) ? (label + ' sign-in failed: ' + e.message)
@@ -334,7 +305,7 @@
     }
   }
 
-  /* ── Toggle between login and signup views ── */
+  // toggle login and signup
   function switchAuthMode(mode) {
     authMode = mode;
     var title      = document.getElementById('authTitle');
@@ -347,7 +318,7 @@
     var userWrap   = document.getElementById('authUserWrap');
     var passField  = document.getElementById('authPass');
 
-    /* Reset error / success state */
+    // reset error state
     err.textContent = ''; err.classList.remove('show');
     msg.style.display = 'none'; msg.textContent = '';
 
@@ -360,10 +331,10 @@
       leadText.textContent = 'Already have an account?';
       toggleBtn.textContent = 'Log in';
       toggleBtn.onclick = function(){ switchAuthMode('login'); };
-      /* Show the username field in signup mode */
+      // show username on signup
       if (userWrap) userWrap.style.display = '';
       passField.setAttribute('autocomplete', 'new-password');
-      /* Focus username field when switching to signup */
+      // focus username
       setTimeout(function(){ var u = document.getElementById('authUser'); if (u) u.focus(); }, 60);
     } else {
       title.textContent = 'Welcome Back';
@@ -374,13 +345,13 @@
       leadText.textContent = "Don't have an account?";
       toggleBtn.textContent = 'Sign up';
       toggleBtn.onclick = function(){ switchAuthMode('signup'); };
-      /* Hide username field on login — not needed */
+      // hide username on login
       if (userWrap) userWrap.style.display = 'none';
       passField.setAttribute('autocomplete', 'current-password');
     }
   }
 
-  /* ── Show/hide password text in the login form ── */
+  // password visibility toggle
   var AUTH_EYE_OPEN = '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>';
   var AUTH_EYE_OFF  = '<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.86 13.86 0 0 0 1 11s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
   function toggleAuthPassVis() {
@@ -392,7 +363,7 @@
     if (icon) icon.innerHTML = showing ? AUTH_EYE_OFF : AUTH_EYE_OPEN;
   }
 
-  /* ── Perform signup ── */
+  // signup
   async function doSignUp() {
     if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
 
@@ -405,13 +376,13 @@
     err.textContent = ''; err.classList.remove('show');
     msg.style.display = 'none'; msg.textContent = '';
 
-    /* ── Validate username ── */
+    // validate username
     if (!username) {
       err.textContent = 'Please enter a username.';
       err.classList.add('show'); return;
     }
 
-    /* ── Validate email ── */
+    // validate email
     if (!email) {
       err.textContent = 'Please enter your email address.';
       err.classList.add('show'); return;
@@ -422,7 +393,7 @@
       err.classList.add('show'); return;
     }
 
-    /* ── Validate password (min 6 chars) ── */
+    // validate password
     if (!pass) {
       err.textContent = 'Please enter a password.';
       err.classList.add('show'); return;
@@ -442,28 +413,26 @@
       var session = result.data && result.data.session;
 
       if (session) {
-        /* ── Email confirmation DISABLED: user is signed in immediately ──
-           onAuthStateChange('SIGNED_IN') fires → closes modal, syncs UI, shows toast.
-           No extra work needed here. */
-        showToast('Account created ✦ Welcome!');
-        /* modal will close via onAuthStateChange */
+        // email confirm off, signed in
+        showToast('Account created. Welcome!');
+        // modal closes on auth change
       } else {
-        /* ── Email confirmation ENABLED: show check-your-email notice ── */
+        // email confirm on, show notice
         document.getElementById('authEmail').value = '';
         document.getElementById('authPass').value  = '';
-        msg.textContent = '✦ Check your email to confirm your account.';
+        msg.textContent = 'Check your email to confirm your account.';
         msg.style.display = 'block';
         btn.textContent = 'Create Account'; btn.disabled = false;
-        /* Auto-close modal after 5 s */
+        // auto close after 5s
         setTimeout(function(){
           if (document.getElementById('authMod').classList.contains('open')) {
             closeAuthMod();
           }
         }, 5000);
-        return; /* keep modal open to show message */
+        return; // keep modal open
       }
     } catch (e) {
-      /* ── Map Supabase error messages to user-friendly copy ── */
+      // friendly error copy
       var raw = (e.message || '').toLowerCase();
       var friendly;
       if (raw.includes('already registered') || raw.includes('already in use') || raw.includes('user already')) {
@@ -482,26 +451,16 @@
       err.textContent = friendly;
       err.classList.add('show');
     } finally {
-      /* Only reset button text if we didn't return early (email-confirm path) */
+      // reset button text
       if (btn.disabled) {
         btn.textContent = 'Create Account'; btn.disabled = false;
       }
     }
   }
 
-  /* ── Role check ──
-     isDev reflects DB truth (profiles.role === 'dev') and controls whether
-     the Admin Panel button exists in the DOM at all. The panel only holds
-     hero slides, broadcast notifications and reports — devs have NO other
-     powers anywhere on the site. Enforced server-side via RLS. */
+  // role check
   let isDev = false;
-  /* userPlan: null = not logged in (guest/no session).
-     Values mirror profiles.subscription_tier:
-       'guest'        = logged in, no paid plan (DB default)
-       'lite'         = Premium Lite subscriber
-       'premium'      = Premium subscriber
-       'max'          = Max subscriber
-     'dev' role bypasses all checks via isDev. */
+  // user plan
   let userPlan = null;
   async function checkUserRole(){
     if(!sb || !currentUser){ isDev=false; userPlan=null; currentUserAvatarUrl=null; syncAdmBtn(); return; }
@@ -513,14 +472,12 @@
       currentUserAvatarUrl = (data && data.avatar_url) ? data.avatar_url : null;
     }catch(e){ console.error(e); isDev=false; userPlan='guest'; }
     syncAdmBtn();
-    syncAuthBtn(); /* repaints nav avatar + subscription card + comment bar with the fetched photo */
+    syncAuthBtn(); // repaint avatar chips
     notifRefreshBadge();
-    /* Universal upload queued before login → open it now */
+    // queued upload after login
     if(currentUser && sessionStorage.getItem('pendPfUp')==='1'){
       sessionStorage.removeItem('pendPfUp');
-      /* Upload is a full page now — open it as a destination
-         (close everything else + take the ➕ tab highlight),
-         exactly like tapping nav ➕ while signed in. */
+      // open upload as a page
       setTimeout(function(){
         if(typeof bnCloseAllSections==='function') bnCloseAllSections();
         openPfUpload();
@@ -529,48 +486,32 @@
     }
   }
 
-  /* ── Listen for auth state changes (login / logout / refresh) ── */
+  // auth state changes
   if (sb) {
     sb.auth.onAuthStateChange(function(event, session) {
       currentUser = session ? session.user : null;
       syncAuthBtn();
-      /* Wipe the stale-while-revalidate caches on any auth change — otherwise
-         a signed-out (or newly signed-in) user could be shown the previous
-         account's cached profile, community list or chat messages. */
+      // wipe caches on auth change
       pfRowCache = {}; cmMineRows = []; cpMsgCache = {}; cmMineCache = {};
-      /* Ranking boards: the "you" row highlight and the pinned Your-rank
-         footer both follow the session, so repaint them on any auth change. */
+      // repaint ranking boards
       try{ if (typeof window.rkRefresh === 'function') window.rkRefresh(); }catch(e){}
-      /* Hide-list follows the session: load on sign-in/restore, clear on
-         sign-out, then repaint so the feed reflects it immediately. */
+      // reload hide list
       loadHiddenArtworks().then(function(){
         try{ renderHome(); }catch(e){}
         try{ renderFG(); }catch(e){}
       });
-      /* Tag preferences follow the session: the signed-in user's DB
-         copy replaces whatever was in localStorage, and signing out
-         falls back to the local mirror. */
+      // reload tag preferences
       try{ if(typeof tgLoad === 'function') tgLoad(true); }catch(e){}
       if (event === 'SIGNED_IN') {
         closeAuthMod();
         checkUserRole();
-        /* Greet by username only — never expose email.
-           FIX: showToast used to fire in the same tick as closeAuthMod(),
-           so the welcome toast animated in WHILE #authMod was still mid
-           way through its .45s slide-close transition. Delaying it past
-           that transition means the toast now appears only after the
-           login panel has fully closed, instead of during its animation.
-           FIX 2: on a page-load session restore this event fires while the
-           #intro loading screen is still animating, so the greeting used to
-           flash behind/over it. afterIntro() holds the toast until the intro
-           has fully faded out; on a manual login (intro long gone) it runs
-           immediately, so that path is unchanged. */
+        // greet by username
         var greetName = (currentUser && currentUser.user_metadata && currentUser.user_metadata.username)
           ? currentUser.user_metadata.username
           : '';
         afterIntro(function(){
           setTimeout(function(){
-            showToast(greetName ? ('Welcome, ' + greetName + ' ✦') : 'Signed in ✦');
+            showToast(greetName ? ('Welcome, ' + greetName) : 'Signed in');
           }, 460);
         });
       }
@@ -578,11 +519,9 @@
         currentUserAvatarUrl = null;
         syncAuthBtn();
         isDev=false; userPlan=null; syncAdmBtn();
-        syncSubOverviewCard(); /* reset profile card to guest state */
-        notifRefreshBadge(); /* clears the dot — guests have no read-state to track */
-        /* FIX: signing out from the profile ⋮ menu used to leave the
-           now-stale profile page open, still painted with owner-only
-           controls. Close it and the owner-only pages outright. */
+        syncSubOverviewCard(); // reset card to guest
+        notifRefreshBadge(); // clear unread dot
+        // close owner only pages
         closeProfilePage();
         closeMyWorkPage();
         closeAdmPage();
@@ -590,7 +529,7 @@
     });
 
 
-    /* Restore session on page load (keeps user logged in after refresh) */
+    // restore session on load
     sb.auth.getSession().then(function(res) {
       if (res.data && res.data.session) {
         currentUser = res.data.session.user;
@@ -601,22 +540,9 @@
   }
 
 
-  /* ── NOTIFICATIONS ──
-     Two sources feed the same #notifPage list:
-       1) Admin broadcasts — notifications.user_id IS NULL, sent
-          from the admin panel (admSendBroadcast) and visible to
-          every visitor, signed in or not.
-       2) Personal notices — notifications.user_id = the owner's
-          id (e.g. legacy review notices; nothing sends these
-          automatically anymore).
-     The notifications table itself is read-only from the app —
-     there is no update/delete anywhere in this UI, matching the
-     "no one can edit a notification" requirement. Per-user read
-     state lives in a separate notification_reads table so the
-     notifications rows never need to be touched to mark them
-     read. */
-  var notifList = [];       /* rows currently loaded, newest first */
-  var notifReadIds = {};    /* {notification_id: true} for the current user */
+  // notifications
+  var notifList = [];       // loaded rows, newest first
+  var notifReadIds = {};    // read state per user
 
   function openNotifications(){
     var el = document.getElementById('notifPage');
@@ -644,8 +570,7 @@
     return '🔔';
   }
 
-  /* Lightweight "2h ago" style relative time, falls back to a
-     plain date once it's more than a week old. */
+  // relative time
   function notifRelTime(iso){
     var d = new Date(iso), diff = Math.max(0, (Date.now()-d.getTime())/1000);
     if(diff < 60) return 'Just now';
@@ -693,9 +618,7 @@
     }).join('');
   }
 
-  /* Marks every currently-loaded notification as read for the
-     signed-in user. Writes only to notification_reads — never
-     touches the notifications rows themselves. */
+  // mark visible as read
   async function notifMarkAllVisibleRead(){
     if(!sb || !currentUser){ notifRefreshBadge(); return; }
     var unread = notifList.filter(function(n){ return !notifReadIds[n.id]; });
@@ -706,13 +629,11 @@
       if(error) throw error;
       unread.forEach(function(n){ notifReadIds[n.id]=true; });
       notifRender();
-    }catch(e){ /* non-critical — badge just stays on until next successful load */ }
+    }catch(e){ /* non critical */ }
     notifRefreshBadge();
   }
 
-  /* Bell unread-dot (.hasUnread → .hNotifDot, already in the CSS).
-     Guests have no read-state to compare against, so the dot only
-     ever lights up for signed-in users. */
+  // unread dot
   async function notifRefreshBadge(){
     var btn = document.getElementById('hNotifBtn');
     if(!btn) return;
@@ -725,10 +646,10 @@
       var readSet = {}; (reads||[]).forEach(function(r){ readSet[r.notification_id]=true; });
       var hasUnread = (all||[]).some(function(n){ return !readSet[n.id]; });
       btn.classList.toggle('hasUnread', hasUnread);
-    }catch(e){ /* silent — badge just won't update this cycle */ }
+    }catch(e){ /* silent failure */ }
   }
 
-  /* ── Admin broadcast composer (inside #admPanelNoti) ── */
+  // broadcast composer
   async function admSendBroadcast(){
     if(!isDev) return;
     var titleEl = document.getElementById('admNotiTitle'), msgEl = document.getElementById('admNotiMsg');
@@ -740,7 +661,7 @@
       const{error} = await sb.from('notifications').insert({user_id:null, type:'admin', title:title, message:msg});
       if(error) throw error;
       titleEl.value=''; msgEl.value='';
-      showToast('Notification sent to all users ✦');
+      showToast('Notification sent to all users');
       admLoadNotifSent();
     }catch(e){ console.error('Error: '+e.message); }
     if(btn) btn.disabled = false;
@@ -764,8 +685,5 @@
     }catch(e){ console.error('Error loading sent notifications: '+e.message); }
   }
 
-/* Admin upload/edit/delete removed — uploading is one universal
-     flow for every signed-in user (nav ➕ → #pfUpMod), and artwork
-     can only ever be edited/deleted by its owner (#pfMyWorkPage,
-     enforced by "own rows only" RLS on the DB side). */
+// admin upload removed
 

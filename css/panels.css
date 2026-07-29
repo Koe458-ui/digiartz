@@ -1,13 +1,13 @@
-/* ── panels.css · ads panel, dark-theme overrides, subscription page ── */
-/* AD SHIMMER KEYFRAME Shared by .apCard (Sponsor Panel) */
+/* ads panel, dark overrides, subscription */
+/* ad shimmer keyframe */
 @keyframes adShimmer {
   0%   { background-position:  200% 0; }
   100% { background-position: -200% 0; }
 }
 
-/* ADS PANEL — full-page overlay, horizontal scroll */
+/* ads panel */
 
-/* Full-page panel — same slide-in pattern as #fg */
+/* full page panel */
 #adsPanel {
   position: fixed;
   inset: 0;
@@ -19,7 +19,7 @@
 }
 #adsPanel.open { transform: translateX(0); }
 
-/* Sticky header */
+/* sticky header */
 .apHdr {
   position: sticky;
   top: 0;
@@ -31,7 +31,7 @@
   gap: .8rem;
   isolation: isolate;
 }
-/* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+/* blur layer */
 .apHdr::before {
   content: '';
   position: absolute;
@@ -65,7 +65,7 @@
 }
 .apTitle .s { color: var(--pg); font-size: .6em; }
 
-/* Body */
+/* body */
 .apBody {
   padding: 2rem 1.5rem 3rem;
   display: flex;
@@ -73,7 +73,7 @@
   gap: 2rem;
 }
 
-/* Intro label */
+/* intro label */
 .apIntro {
   font-family: var(--fm);
   font-size: .72rem;
@@ -83,19 +83,19 @@
   padding: .5rem 0 0;
 }
 
-/* Horizontal scroll track wrapper */
+/* scroll track wrapper */
 .apTrackWrap {
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;           /* Firefox */
+  scrollbar-width: none;           /* firefox */
   cursor: grab;
 }
 .apTrackWrap:active { cursor: grabbing; }
 .apTrackWrap::-webkit-scrollbar { display: none; }
 
-/* The flex row of cards */
+/* card row */
 .apTrack {
   display: flex;
   gap: 1rem;
@@ -103,10 +103,10 @@
   width: max-content;
 }
 
-/* Individual square ad card */
+/* ad card */
 .apCard {
   flex: 0 0 auto;
-  width: min(80vw, 480px);         /* grows up to 480px on desktop */
+  width: min(80vw, 480px);
   aspect-ratio: 1 / 1;
   background: color-mix(in srgb, var(--tc) 5%, var(--sur));
   border: 1px solid var(--bdr);
@@ -128,7 +128,7 @@
   box-shadow: 0 8px 32px rgba(5,3,8,.7), 0 0 20px color-mix(in srgb,var(--tc) 15%,transparent);
 }
 
-/* Card label */
+/* card label */
 .apCardLbl {
   font-family: var(--fm);
   font-size: .62rem;
@@ -141,7 +141,7 @@
   flex-shrink: 0;
 }
 
-/* AdSense ins fills remaining space */
+/* adsense slot */
 .apCard ins.adsbygoogle {
   display: block;
   flex: 1;
@@ -149,7 +149,7 @@
   height: 100% !important;
 }
 
-/* Shimmer while loading */
+/* loading shimmer */
 .apCard::before {
   content: '';
   position: absolute;
@@ -165,7 +165,7 @@
   pointer-events: none;
   border-radius: inherit;
 }
-/* Scroll hint dots */
+/* scroll dots */
 .apDots {
   display: flex;
   justify-content: center;
@@ -185,7 +185,7 @@
   box-shadow: 0 0 6px var(--pg);
 }
 
-/* Scroll hint arrow on first load */
+/* scroll hint arrow */
 .apHint {
   font-family: var(--fm);
   font-size: .68rem;
@@ -198,7 +198,6 @@
   gap: .5rem;
   opacity: .6;
   animation: apHintFade 3s ease forwards 1s;
-  /* pointer-events applied statically so it isn't blocked by animation timing */
   pointer-events: none;
 }
 @keyframes apHintFade {
@@ -206,7 +205,7 @@
   100%{ opacity: 0; }
 }
 
-/* ── Sponsor description (styled like About section) ── */
+/* sponsor description */
 .apDesc {
   border-left: 2px solid var(--bdr);
   padding-left: 2rem;
@@ -247,13 +246,13 @@
 }
 
 
-/* ── Placeholder body — centred empty-state layout ── */
+/* placeholder body */
 .pgPlaceholder {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 60px); /* viewport minus header */
+  min-height: calc(100vh - 60px);
   padding: 3rem 2rem;
   text-align: center;
   gap: 1rem;
@@ -275,17 +274,17 @@
   text-transform: uppercase;
 }
 
-/* Dark theme — element-specific overrides beyond token scope */
+/* dark theme overrides */
 body{background:var(--bg);}
 
-/* Neon glow + shadow treatment outside the hero */
+/* glow and shadow */
 .gItem,.adCard,.apCard,.modal,.legalModal,#fgFltPanel,.amCard{
   box-shadow:0 1px 3px rgba(5,3,8,.3),0 4px 14px rgba(5,3,8,.35)!important;
 }
 .gItem:hover{box-shadow:0 6px 20px rgba(5,3,8,.4)!important;}
 .fltDone:hover,.mBtn:hover,.sCard:hover,.cpBarSend:hover,.upBtn:hover,.fgFltBtn:hover,.fgFltBtn.active,.fltOptH:has(input:checked){box-shadow:none!important;}
 
-/* Overlay / scrim backgrounds used by non-hero panels */
+/* overlay scrims */
 #fgFltOvr::before{background:color-mix(in srgb,var(--bg) 55%,transparent)!important;}
 .fgHdr::before,.cpHdr::before,.apHdr::before,.subPgHdr::before{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;}
 .fgHdr,.cpHdr,.apHdr,.subPgHdr{border-bottom:1px solid var(--bdr);}
@@ -293,21 +292,17 @@ body{background:var(--bg);}
 .cpBar{border-top:1px solid var(--bdr);}
 #legalBackdrop::before{background:color-mix(in srgb,var(--bg) 75%,transparent)!important;}
 #artModal::before{background:color-mix(in srgb,var(--bg) 85%,transparent)!important;}
-/* Card hover scrim is a fixed 70% black in every theme (see hero.css)
-   — no longer a tint of the page background. */
+/* card hover scrim */
 .gOv{background:rgba(0,0,0,.7)!important;}
 
-/* Cards / containers get a dark surface with a soft border */
+/* cards and containers */
 .gItem,.modal,.legalModal,.adCard,.apCard,#fgFltPanel,.fltOptH{
   background:var(--sur);border-color:var(--bdr);
 }
 .awCard{background:var(--sur);border-color:var(--bdr);}
 #artworks .awCard{background:var(--sur);}
 
-/* Full Gallery chrome — re-applies the Community-matched dark tokens
-   on top of the base defaults above. Only the search/filter
-   surfaces + header are touched here; .gItem (the artwork cards) is
-   deliberately left out of this list. */
+/* gallery chrome */
 #fg .fgHdr::before{background:var(--bg)!important;}
 #fg .fgHdr{border-bottom:1px solid var(--bdr);}
 #fg .fgIntro::before{background:var(--bg)!important;}
@@ -315,17 +310,15 @@ body{background:var(--bg);}
 #fgFltPanel{background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%)!important;border-color:var(--bdr)!important;}
 #fgFltPanel .fltOptH{background:color-mix(in srgb,var(--tc) 4%,transparent)!important;border-color:var(--bdr)!important;}
 
-/* Inputs / fields */
+/* inputs */
 .fgQ,.cpBarInput{background:var(--sur2)!important;color:var(--tx);border-color:var(--bdr)!important;}
 #fg .fgQ{background:var(--sur2)!important;color:var(--tx)!important;border-color:var(--bdr)!important;}
 
-/* Bottom nav — login/avatar chips match the dark/violet nav bar */
+/* nav chips */
 .nLoginBtn,.nAvatarBtn{background:rgba(var(--pg-rgb),.14)!important;}
 
 
-/* ── Re-pin the HERO and elements layered over it to their
-   original dark presentation, but with the accent forced neutral
-   so the title/sparkle never resolve to purple ── */
+/* hero layer */
 #hero,#hero *{
   --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
   --tx:var(--vtx);--txd:var(--vtxd);
@@ -334,8 +327,7 @@ body{background:var(--bg);}
   --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
   --pdim:color-mix(in srgb,var(--tc) 12%,transparent);
 }
-/* #intro now matches the Community dark/violet theme — see the
-   base #intro rule near the top of the stylesheet. */
+/* login button */
 
 .nLoginBtn{
   background:rgba(var(--pg-rgb),.14);
@@ -352,7 +344,7 @@ body{background:var(--bg);}
 .nLoginBtn:hover{color:var(--tx);border-color:rgba(var(--pg-rgb),.4);background:rgba(var(--pg-rgb),.24);}
 
 .nAvatarBtn{
-  /* Identical glass-box to .nLoginBtn */
+  /* glass box */
   background:rgba(var(--pg-rgb),.14);
   border:1px solid rgba(var(--pg-rgb),.3);
   width:34px;height:34px;border-radius:50%;
@@ -361,14 +353,12 @@ body{background:var(--bg);}
   box-shadow:0 2px 8px rgba(0,0,0,.35),0 0 0 2px rgba(var(--pg-rgb),.14);
   transition:border-color .25s,background .25s,box-shadow .25s;
   flex-shrink:0;
-  /* Avatar glow ring — same accent as comment avatars */
+  /* avatar ring */
   outline:none;
   position:relative;
   overflow:hidden;
 }
-/* Real profile photo, when set — same img-or-letter pattern used by
-   every avatar chip app-wide (nav, comment bar, subscription card,
-   artwork-viewer author row). */
+/* avatar photo */
 .nAvatarBtn img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
 .nAvatarBtn:hover{
   border-color:rgba(var(--pg-rgb),.45);
@@ -379,7 +369,7 @@ body{background:var(--bg);}
   outline:2px solid var(--pg);
   outline-offset:2px;
 }
-/* The letter inside — matches .cpAvatar typography exactly */
+/* avatar letter */
 .nAvatarBtn .nAvLetter{
   font-family:var(--fd);
   font-size:.82rem;
@@ -391,9 +381,9 @@ body{background:var(--bg);}
 }
 
 
-/* Subscription page overlay — same pattern as #fg, #communityPage */
+/* subscription page */
 
-/* ── Keyframes ── */
+/* keyframes */
 @keyframes subBorderSpin {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
@@ -420,7 +410,7 @@ body{background:var(--bg);}
   to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
 }
 
-/* ── Overlay panel ── */
+/* overlay panel */
 #subPage {
   position: fixed;
   inset: 0;
@@ -432,7 +422,7 @@ body{background:var(--bg);}
 }
 #subPage.open { transform: translateX(0); }
 
-/* ── Header bar — same language as .fgHdr / .cpHdr ── */
+/* header bar */
 .subPgHdr {
   position: sticky;
   top: 0;
@@ -444,7 +434,7 @@ body{background:var(--bg);}
   gap: 1rem;
   isolation: isolate;
 }
-/* FIX: background + blur split onto ::before, same decoupling as #bnNav */
+/* blur layer */
 .subPgHdr::before {
   content: '';
   position: absolute;
@@ -477,9 +467,7 @@ body{background:var(--bg);}
 }
 .subPgTitle .s { color: var(--pg); }
 
-/* ── Scrollable body
-   Generous side padding on large screens keeps content
-   from stretching edge-to-edge on ultrawide displays.      ── */
+/* scrollable body */
 .subPgBdy {
   padding: 3.5rem 2.5rem 6rem;
   max-width: 1400px;
@@ -487,7 +475,7 @@ body{background:var(--bg);}
   box-sizing: border-box;
 }
 
-/* ── Page headline ── */
+/* page headline */
 .subPgHeadline {
   text-align: center;
   margin-bottom: 3rem;
@@ -510,11 +498,7 @@ body{background:var(--bg);}
   text-transform: uppercase;
 }
 
-/* ── Card grid
-   Desktop (≥1200px)  : 4 equal columns, generous gap
-   Laptop  (900–1199px): 4 columns, slightly tighter gap
-   Tablet  (600–899px) : 2 columns, cards taller/richer
-   Mobile  (<600px)    : 1 column, full-width cards           ── */
+/* card grid */
 .subGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -522,21 +506,21 @@ body{background:var(--bg);}
   margin-left: auto;
   margin-right: auto;
   gap: 1.5rem;
-  align-items: start; /* cards don't stretch to same height per row */
+  align-items: start;
 }
-/* Short line under the plan name — replaces the old long copy. */
+/* tagline */
 .subTagline {
   font-size: .78rem;
   color: var(--txd);
   margin: .2rem 0 .35rem;
 }
-/* Premium sits center and reads as the default choice. */
+/* featured card */
 .subCard--featured { box-shadow: 0 14px 44px rgba(124,58,237,.28); }
 @media (min-width: 900px) {
   .subCard--featured { transform: scale(1.045); z-index: 1; }
 }
 
-/* ── Card shell ── */
+/* card shell */
 .subCard {
   position: relative;
   border-radius: 16px;
@@ -550,7 +534,7 @@ body{background:var(--bg);}
               border-color .28s ease;
   animation: subCardIn .5s ease both;
   box-shadow: 0 1px 3px rgba(5,3,8,.3), 0 4px 18px rgba(5,3,8,.35);
-  /* Ensure all cards in a row reach the same height */
+  /* equal height */
   height: 100%;
 }
 .subCard:hover {
@@ -558,7 +542,7 @@ body{background:var(--bg);}
   box-shadow: 0 8px 32px rgba(20,20,30,.12);
 }
 
-/* Animated colour accent top bar */
+/* accent top bar */
 .subCard::before {
   content: '';
   display: block;
@@ -573,17 +557,17 @@ body{background:var(--bg);}
 .subCard--gold::before   { background: linear-gradient(90deg,#eab308,#f97316,#eab308); background-size:300% 100%; }
 .subCard--green::before  { background: linear-gradient(90deg,#22c55e,#10b981,#22c55e); background-size:300% 100%; }
 
-/* Glow on featured plans */
+/* featured glow */
 .subCard--purple { animation: subCardIn .5s ease both, subGlowPurple 3.5s ease-in-out 1s infinite; }
 .subCard--gold   { animation: subCardIn .5s ease both, subGlowGold   3.5s ease-in-out 1.2s infinite; }
 
-/* Stagger-in delays */
+/* stagger delays */
 .subCard:nth-child(1) { animation-delay: .06s; }
 .subCard:nth-child(2) { animation-delay: .14s; }
 .subCard:nth-child(3) { animation-delay: .22s; }
 .subCard:nth-child(4) { animation-delay: .30s; }
 
-/* ── Card inner padding ── */
+/* card inner */
 .subCardInner {
   padding: 2rem 1.8rem 1.8rem;
   display: flex;
@@ -593,7 +577,7 @@ body{background:var(--bg);}
   box-sizing: border-box;
 }
 
-/* ── Badge ── */
+/* badge */
 .subBadge {
   display: inline-block;
   font-family: var(--fm);
@@ -618,7 +602,7 @@ body{background:var(--bg);}
   color: #b45309;
 }
 
-/* ── Plan name ── */
+/* plan name */
 .subPlanName {
   font-family: var(--fm);
   font-size: .65rem;
@@ -632,7 +616,7 @@ body{background:var(--bg);}
 .subCard--gold   .subPlanName { color: #b45309; }
 .subCard--green  .subPlanName { color: #15803d; }
 
-/* ── Price ── */
+/* price */
 .subPrice {
   font-family: var(--fd);
   font-size: clamp(2rem, 2.8vw, 2.8rem);
@@ -651,7 +635,7 @@ body{background:var(--bg);}
   margin-bottom: 1.5rem;
 }
 
-/* ── Divider ── */
+/* divider */
 .subCardDiv {
   height: 1px;
   background: var(--bdr);
@@ -659,7 +643,7 @@ body{background:var(--bg);}
   flex-shrink: 0;
 }
 
-/* ── Feature list ── */
+/* feature list */
 .subFeatures {
   list-style: none;
   padding: 0;
@@ -667,7 +651,7 @@ body{background:var(--bg);}
   display: flex;
   flex-direction: column;
   gap: .6rem;
-  flex: 1; /* pushes button to bottom of card */
+  flex: 1;
 }
 .subFeatures li {
   display: flex;
@@ -690,7 +674,7 @@ body{background:var(--bg);}
 .subCard--gold   .subFeatures li::before { color: #eab308; }
 .subCard--green  .subFeatures li::before { color: #22c55e; }
 
-/* ── CTA button — always pinned to card bottom via flex ── */
+/* cta button */
 .subBtn {
   width: 100%;
   padding: .82rem 1rem;
@@ -719,17 +703,15 @@ body{background:var(--bg);}
 .subBtn--gold:hover   { box-shadow:0 5px 22px rgba(234,179,8,.40); }
 .subBtn--green:hover  { box-shadow:0 5px 22px rgba(34,197,94,.38); }
 
-/* SUBSCRIPTION RESPONSIVE RULES */
 
-/* Laptop — slight padding reduction, gap tightens */
+/* laptop */
 @media (max-width: 1199px) {
   .subPgBdy    { padding: 3rem 2rem 5rem; }
   .subGrid     { gap: 1.2rem; }
   .subCardInner{ padding: 1.8rem 1.5rem 1.6rem; }
 }
 
-/* Tablet landscape (900px) — with three cards a 2-column grid strands
-   one card alone on the second row, so stack them instead. */
+/* tablet landscape */
 @media (max-width: 899px) {
   .subGrid {
     grid-template-columns: 1fr;
@@ -742,7 +724,7 @@ body{background:var(--bg);}
   .subPrice  { font-size: clamp(2rem, 4vw, 2.6rem); }
 }
 
-/* Tablet portrait (700px) — still 2 columns, tighter padding */
+/* tablet portrait */
 @media (max-width: 699px) {
   .subGrid {
     max-width: 100%;
@@ -752,7 +734,7 @@ body{background:var(--bg);}
   .subPgBdy     { padding: 2rem 1.2rem 5rem; }
 }
 
-/* Mobile (520px) — single column, full bleed */
+/* mobile */
 @media (max-width: 519px) {
   .subGrid          { grid-template-columns: 1fr; gap: .85rem; }
   .subPgBdy         { padding: 1.8rem 1rem 4rem; }
@@ -762,7 +744,7 @@ body{background:var(--bg);}
   .subModalCard     { padding: 1.8rem 1.3rem 1.4rem; }
 }
 
-/* ── "Coming Soon" modal ── */
+/* coming soon modal */
 #subModal {
   position: fixed;
   inset: 0;
@@ -772,9 +754,7 @@ body{background:var(--bg);}
   transition: opacity .22s ease, visibility .22s ease;
   isolation: isolate;
 }
-/* FIX: background + blur split onto ::before, same decoupling as
-   #bnNav — stops the flash if the page scrolls behind this while
-   it's open. */
+/* blur layer */
 #subModal::before {
   content: '';
   position: absolute;
@@ -839,14 +819,14 @@ body{background:var(--bg);}
 .subModalClose:focus-visible { outline: 2px solid var(--pg); outline-offset: 3px; }
 
 
-/* ── Outer wrapper ── */
+/* faq wrapper */
 .faqSection {
   padding: 4rem 0 3rem;
   max-width: 860px;
   margin: 0 auto;
 }
 
-/* ── Section header ── */
+/* section header */
 .faqHdr {
   text-align: center;
   margin-bottom: 3.5rem;
@@ -876,7 +856,7 @@ body{background:var(--bg);}
   margin: 0 auto;
 }
 
-/* ── Top divider above first category ── */
+/* top divider */
 .faqSection .faqTopDiv {
   width: 100%;
   height: 1px;
@@ -884,7 +864,7 @@ body{background:var(--bg);}
   margin-bottom: 2.5rem;
 }
 
-/* ── Category group ── */
+/* category group */
 .faqCategory {
   margin-bottom: 2.8rem;
 }
@@ -892,7 +872,7 @@ body{background:var(--bg);}
   margin-bottom: 0;
 }
 
-/* ── Category heading label ── */
+/* category label */
 .faqCatLabel {
   display: flex;
   align-items: center;
@@ -916,7 +896,7 @@ body{background:var(--bg);}
   opacity: .7;
 }
 
-/* ── Accordion item ── */
+/* accordion item */
 .faqItem {
   border: 1px solid var(--bdr);
   border-radius: 8px;
@@ -937,7 +917,7 @@ body{background:var(--bg);}
   box-shadow: 0 2px 16px rgba(20,20,30,.08);
 }
 
-/* ── Question trigger button ── */
+/* question button */
 .faqQ {
   width: 100%;
   display: flex;
@@ -964,7 +944,7 @@ body{background:var(--bg);}
   background: color-mix(in srgb, var(--tc) 3%, transparent);
 }
 
-/* Question text */
+/* question text */
 .faqQTxt {
   font-family: var(--fb);
   font-size: .92rem;
@@ -977,7 +957,7 @@ body{background:var(--bg);}
   color: var(--ps);
 }
 
-/* +/× icon */
+/* toggle icon */
 .faqIcon {
   flex-shrink: 0;
   width: 22px;
@@ -1005,17 +985,17 @@ body{background:var(--bg);}
   color: var(--ps);
 }
 
-/* ── Answer panel — height animated via max-height ── */
+/* answer panel */
 .faqA {
   max-height: 0;
   overflow: hidden;
   transition: max-height .38s cubic-bezier(.22,1,.36,1);
 }
 .faqItem.faq--open .faqA {
-  max-height: 400px; /* large enough for any answer */
+  max-height: 400px;
 }
 
-/* Answer body */
+/* answer body */
 .faqATxt {
   font-family: var(--fb);
   font-size: .89rem;
@@ -1026,7 +1006,7 @@ body{background:var(--bg);}
   padding-top: .85rem;
 }
 
-/* ── Between-category divider ── */
+/* category divider */
 .faqCatDiv {
   width: 100%;
   height: 1px;
@@ -1034,7 +1014,7 @@ body{background:var(--bg);}
   margin: 2.8rem 0;
 }
 
-/* FAQ RESPONSIVE RULES */
+/* faq responsive */
 @media (max-width: 699px) {
   .faqSection { padding: 3rem 0 2rem; }
   .faqHdr     { margin-bottom: 2.5rem; }
@@ -1061,7 +1041,7 @@ body{background:var(--bg);}
 
 
 
-/* ── Keyframes ── */
+/* keyframes */
 @keyframes zeoBubbleIn {
   0%   { opacity: 0; transform: translateY(-8px) scale(.95); }
   60%  { opacity: 1; transform: translateY(2px) scale(1.01); }
@@ -1080,10 +1060,7 @@ body{background:var(--bg);}
   100% { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Fixed spawn point — sits directly to the left of the
-   notification button, top row, same dimensions as .hNotifBtn.
-   No drag, no localStorage position, no return-home glide, no
-   idle animation — static, exactly like the notification icon. ── */
+/* zeo button */
 #zeoBtn {
   position: fixed;
   top: clamp(1rem, 2.6vw, 2rem);
@@ -1102,28 +1079,23 @@ body{background:var(--bg);}
   justify-content: center;
   color: #90cdf4;
   font-size: 1.25rem;
-  overflow: hidden; /* clips avatar image to circle */
+  overflow: hidden;
   padding: 0;
   transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, opacity .25s ease;
   user-select: none;
   isolation: isolate;
-  /* FIX: promote to its own GPU layer up front, same reasoning as
-     #bnNav / .fpFloat. */
+  /* gpu layer */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   will-change: transform;
 }
-/* FIX: background + blur split onto ::before, same decoupling as
-   #bnNav / .fpFloat, so the fixed positioning layer isn't also
-   the layer WebKit has to re-snapshot the blur for every scroll
-   frame. Avatar <img> (normal in-flow child) still paints above
-   this negative-z-index layer, so it's visually unchanged. */
+/* blur layer */
 #zeoBtn::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  /* Background shows while avatar image loads or as fallback */
+  /* fallback background */
   background: linear-gradient(135deg, rgba(20,30,55,.95) 0%, rgba(15,22,44,.98) 100%);
   transition: background .3s ease;
   z-index: -1;
@@ -1135,8 +1107,7 @@ body{background:var(--bg);}
   transform: scale(.95) translateZ(0);
 }
 
-/* Tooltip on hover — sits below the button since the button now
-   lives at the top of the screen (above would clip off-viewport) ── */
+/* tooltip */
 #zeoBtn .zeoTooltip {
   position: absolute;
   top: calc(100% + 10px);
@@ -1163,14 +1134,14 @@ body{background:var(--bg);}
 }
 
 
-/* ── Bot avatar image ── */
+/* bot avatar */
 .zeoBtnAvatar {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
   display: block;
-  /* Crisp rendering on all DPR screens */
+  /* crisp rendering */
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   pointer-events: none;
@@ -1178,8 +1149,7 @@ body{background:var(--bg);}
   -webkit-user-drag: none;
 }
 
-/* ── Speech bubble — sits below the bot's fixed spawn point,
-   tail points up at him so it reads as him speaking downward ── */
+/* speech bubble */
 .zeoBubble {
   position: fixed;
   top: calc(clamp(1rem, 2.6vw, 2rem) + clamp(42px, 8vw, 54px) + 12px);
@@ -1197,15 +1167,12 @@ body{background:var(--bg);}
   pointer-events: auto;
   cursor: pointer;
   box-shadow: 0 0 18px rgba(99,179,237,.22), 0 8px 28px rgba(0,0,0,.22);
-  /* State: hidden by default */
+  /* hidden by default */
   opacity: 0;
   transform: translateY(0) scale(.95);
   isolation: isolate;
 }
-/* FIX: background + blur split onto ::before, same decoupling as
-   #bnNav — a fixed element that pops up mid-scroll is exactly the
-   case that flashes without this. Sits behind both the text content
-   and the ::after tail. */
+/* blur layer */
 .zeoBubble::before {
   content: '';
   position: absolute;
@@ -1223,7 +1190,7 @@ body{background:var(--bg);}
 .zeoBubble.zbHiding {
   animation: zeoBubbleOut .28s ease-in-out forwards;
 }
-/* Tail — points up toward the bot sitting above the bubble */
+/* bubble tail */
 .zeoBubble::after {
   content: '';
   position: absolute;
@@ -1237,10 +1204,7 @@ body{background:var(--bg);}
   filter: drop-shadow(0 -2px 3px rgba(99,179,237,.18));
 }
 
-/* ── Full-page AI Assistant panel — same slide-in convention as
-   the rest of the site's full pages (#fg, #profilePage, #communityPage):
-   fixed, covers the whole viewport, slides in from the right via a
-   plain .open class toggle rather than a floating popup. ── */
+/* ai assistant page */
 #zeoPage {
   position: fixed;
   inset: 0;
@@ -1256,7 +1220,7 @@ body{background:var(--bg);}
   transform: translateX(0);
 }
 
-/* Panel header */
+/* panel header */
 .zeoChatHeader {
   display: flex;
   align-items: center;
@@ -1329,7 +1293,7 @@ body{background:var(--bg);}
   border-color: rgba(99,179,237,.3);
 }
 
-/* Body / messages */
+/* messages body */
 .zeoChatBody {
   flex: 1;
   overflow-y: auto;
@@ -1344,7 +1308,7 @@ body{background:var(--bg);}
 .zeoChatBody::-webkit-scrollbar-track { background: transparent; }
 .zeoChatBody::-webkit-scrollbar-thumb { background: rgba(99,179,237,.25); border-radius: 4px; }
 
-/* Message bubble */
+/* message bubble */
 .zeoMsg {
   display: flex;
   flex-direction: column;
@@ -1364,9 +1328,7 @@ body{background:var(--bg);}
   max-width: 100%;
 }
 
-/* ── Chat-thread additions ──
-   Right-aligned "you" bubble + spent-menu fade so Zeo reads like a
-   real back-and-forth: your taps echo on the right, old menus dim. */
+/* chat thread */
 .zeoMsg.zeoMsgUser {
   align-items: flex-end;
 }
@@ -1377,13 +1339,13 @@ body{background:var(--bg);}
   color: #eaf5ff;
   max-width: 85%;
 }
-/* One step's controls (options/categories + its Back button). */
+/* step controls */
 .zeoStepControls {
   display: flex;
   flex-direction: column;
   gap: .5rem;
 }
-/* A menu the visitor has already moved past — dimmed and inert. */
+/* spent menu */
 .zeoStepControls.zeoLocked {
   opacity: .4;
   filter: saturate(.6);
@@ -1391,7 +1353,7 @@ body{background:var(--bg);}
   transition: opacity .25s ease, filter .25s ease;
 }
 
-/* Option buttons */
+/* option buttons */
 .zeoOptions {
   display: flex;
   flex-direction: column;
@@ -1420,7 +1382,7 @@ body{background:var(--bg);}
   transform: translateX(3px) scale(.98);
 }
 
-/* Category grid */
+/* category grid */
 .zeoCategories {
   display: flex;
   flex-direction: column;
@@ -1443,9 +1405,7 @@ body{background:var(--bg);}
   border-color: rgba(99,179,237,.38);
   transform: translateX(3px);
 }
-/* The label + description sit in a text column beside the icon —
-   stacked, left-aligned. Without display:block they collapse onto
-   one line and inherit centering, which reads as ragged text. */
+/* text column */
 .zeoCatCard > span:last-child { min-width: 0; text-align: left; }
 .zeoCatIcon {
   font-size: 1.15rem;
@@ -1471,7 +1431,7 @@ body{background:var(--bg);}
   margin-top: .12rem;
 }
 
-/* Coming soon placeholder */
+/* coming soon placeholder */
 .zeoComingSoon {
   text-align: center;
   padding: 1.5rem .5rem;
@@ -1489,7 +1449,7 @@ body{background:var(--bg);}
   opacity: .6;
 }
 
-/* Back button */
+/* back button */
 .zeoBackBtn {
   background: rgba(var(--pg-rgb),.05);
   border: 1px solid rgba(var(--pg-rgb),.1);
@@ -1511,7 +1471,7 @@ body{background:var(--bg);}
   color: #c6e4f8;
 }
 
-/* Mobile adjustments */
+/* mobile */
 @media (max-width: 480px) {
   .zeoBubble {
     font-size: .78rem;
@@ -1521,16 +1481,7 @@ body{background:var(--bg);}
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   DARK THEME FIX — remaining white-theme leftovers
-   Covers: Legal modal (Privacy/Terms/Cookie/Refund policy),
-   the .mBtn.sec buttons.
-   These sit outside #fg's scope so they never picked up the
-   dark-theme tokens — they were still using the old white
-   :root defaults. Re-declaring the tokens locally (same pattern
-   as #fg) makes every child that already styles
-   itself with var(--bg)/var(--sur)/var(--tx)/etc. repaint dark.
-   ══════════════════════════════════════════════════════════════ */
+/* legal modal dark fix */
 #legalBackdrop{
   --bg:inherit;--sur:inherit;--sur2:inherit;
   --bdr:inherit;--bdrh:inherit;
@@ -1556,7 +1507,7 @@ body{background:var(--bg);}
 .lmDate{color:var(--ps)!important;background:rgba(var(--pg-rgb),.1)!important;border-color:var(--bdr)!important;}
 .mBtn.sec{color:var(--txd)!important;border-color:var(--bdr)!important;}
 
-/* ── "Coming Soon" subscription popup — was hardcoded white ── */
+/* coming soon popup */
 .subModalCard{
   background:var(--sur)!important;
   border-color:var(--bdr)!important;
@@ -1565,7 +1516,7 @@ body{background:var(--bg);}
 .subModalTitle{color:var(--tx)!important;}
 .subModalMsg{color:rgba(var(--tx2-rgb),.62)!important;}
 
-/* ── Cookie consent banner — was hardcoded white ── */
+/* cookie banner */
 #cookieBanner{
   background:var(--sur)!important;
   border-color:var(--bdrh)!important;
@@ -1585,17 +1536,7 @@ body{background:var(--bg);}
 .ckReject{background:transparent!important;border-color:var(--bdr)!important;color:rgba(var(--tx2-rgb),.62)!important;}
 .ckReject:hover{background:rgba(var(--pg-rgb),.06)!important;border-color:var(--bdrh)!important;color:var(--ps)!important;}
 
-/* ══════════════════════════════════════════════════════════════
-   HIDDEN-PANEL VISIBILITY FIX (a11y + paint performance)
-   Every slide-in page was parked off-screen with translateX(100%)
-   only — still focusable by keyboard Tab, still exposed to screen
-   readers (several are aria-modal dialogs), and still composited
-   by the browser on every frame. Toggling `visibility` with a
-   delay equal to each panel's slide duration removes closed
-   panels from the a11y tree, tab order, and the paint pipeline
-   while keeping the open/close animations pixel-identical —
-   the exact pattern #artModal already uses.
-   ══════════════════════════════════════════════════════════════ */
+/* hidden panel visibility */
 #fg,#communityPage,#adsPanel,#subPage,#profilePage,#admPage,#notifPage,#pfMyWorkPage,#authMod{
   visibility:hidden;
   transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s linear .45s;

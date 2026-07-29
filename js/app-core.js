@@ -1,40 +1,21 @@
-/* ── app-core.js · supabase + S3 helpers, loaders, categories, infinite scroll ── */
+// supabase and s3 helpers, loaders
 
-  // config.js must define window.KOE_CONFIG = { SB_URL, SB_KEY }
+  // config.js defines window.KOE_CONFIG
   const SB_URL = (window.KOE_CONFIG && window.KOE_CONFIG.SB_URL) || '';
   const SB_KEY = (window.KOE_CONFIG && window.KOE_CONFIG.SB_KEY) || '';
 
-  // Admin role derived from profiles.role in Supabase, enforced via RLS
+  // admin role from profiles.role
   const BUCKET   = 'koe-media';
   const S3_FN_URL = (window.KOE_CONFIG && window.KOE_CONFIG.S3_FN_URL) || '';
 
-  /* ── S3 upload/delete — replaces sb.storage.from(...).upload/remove.
-     Images now live in AWS S3 (via CloudFront); Supabase Storage is
-     no longer used for new uploads. Both helpers throw on failure
-     with a `.message`, matching the shape every call site's existing
-     `catch(err){ ...err.message }` already expects — so none of
-     that error handling needed to change.
-
-     `bucket` keeps meaning what it always meant at each call site
-     (BUCKET) — here it's used as the S3 key prefix (koe-media/...)
-     instead of a Supabase bucket name, matching what the s3-sign
-     edge function expects. */
-  /* ── S3 key sanitizer ──
-     FIX ("bad path" upload error): artwork titles were dropped straight
-     into the S3 key with only whitespace replaced (nm.replace(/\s+/g,'_')).
-     A title containing '/', '#', '?', '%', '&', '\', or certain unicode/
-     emoji produces an invalid or dangerous key — '/' silently creates
-     extra "folders", and '#'/'?'/'%' break URL parsing — which the
-     s3-sign edge function (correctly) rejects as a bad path.
-     safeSlug() strips everything down to a plain, S3-safe token so any
-     title can be uploaded. The file extension goes through the same
-     sanitizer as a second layer of defense. */
+  // s3 upload and delete
+  // s3 key sanitizer
   function safeSlug(str, maxLen){
     var s = String(str || '')
-      .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')  /* fold accents (é→e) */
-      .replace(/[^a-zA-Z0-9]+/g, '_')                    /* anything not alnum → _ */
-      .replace(/_+/g, '_')                               /* collapse repeats */
-      .replace(/^_+|_+$/g, '');                          /* trim edges */
+      .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')  // fold accents
+      .replace(/[^a-zA-Z0-9]+/g, '_')                    // non alnum to underscore
+      .replace(/_+/g, '_')                               // collapse repeats
+      .replace(/^_+|_+$/g, '');                          // trim edges
     if(!s) s = 'untitled';
     return s.slice(0, maxLen || 60);
   }
@@ -48,9 +29,7 @@
     if(!S3_FN_URL) throw new Error('Storage endpoint not configured (S3_FN_URL missing in config.js)');
     const auth = await s3AuthHeader();
     const key = bucket+'/'+path;
-    /* Step 1 — ask the s3-sign edge function for a presigned PUT URL.
-       A network-level failure here means the endpoint itself is
-       unreachable (bad S3_FN_URL, function not deployed, or its CORS). */
+    // step 1, presigned put url
     let signRes;
     try{
       signRes = await fetch(S3_FN_URL, {
@@ -64,9 +43,7 @@
     const signJson = await signRes.json().catch(function(){return{};});
     if(!signRes.ok) throw new Error(signJson.error || ('Upload authorization failed ('+signRes.status+')'));
     if(!signJson.uploadUrl) throw new Error('Upload service returned no uploadUrl');
-    /* Step 2 — PUT the file to S3. A network-level failure here is
-       almost always the S3 bucket's CORS policy not allowing PUT
-       from this origin (the browser blocks it before any bytes move). */
+    // step 2, put to s3
     let putRes;
     try{
       putRes = await fetch(signJson.uploadUrl, {method:'PUT', headers:{'content-type':file.type}, body:file});
@@ -90,7 +67,7 @@
   }
 
 
-  /* SEO defaults read from <head> so resetArtworkSEO() stays in sync */
+  // seo defaults from head
   var SITE_DEFAULT_TITLE = document.title;
   var SITE_DEFAULT_DESC  = (document.querySelector('meta[name="description"]')||{}).content || '';
   var SITE_DEFAULT_IMAGE = (document.querySelector('meta[property="og:image"]')||{}).content || '';
@@ -99,10 +76,7 @@
   if (SB_URL && SB_KEY) {
     sb = supabase.createClient(SB_URL , SB_KEY )
   } else {
-    /* User-facing copy only. This used to print the whole dev setup guide
-       ("create a config.js ... Get a free Supabase project"), which named
-       our backend, leaked the config shape, and meant nothing to a visitor.
-       The real cause is logged for us; the visitor just sees a plain notice. */
+    // user facing message only
     console.error('KOE_CONFIG missing SB_URL/SB_KEY \u2014 backend client not created.');
     var _sb = document.getElementById('sBanner');
     if(_sb){
@@ -116,11 +90,7 @@
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
-  /* Only ever show the user a message WE wrote. Raw backend errors leak schema
-     details ("new row violates row-level security policy for table \"comments\"",
-     "duplicate key value violates unique constraint ...") and tell a visitor
-     nothing useful. Anything that smells internal is logged and swapped for the
-     caller's plain-English fallback. */
+  // never show raw backend errors
   function safeErr(e, fallback){
     var m = (e && e.message) ? String(e.message) : '';
     var internal = /row-level security|violates|constraint|relation |column |permission denied|JWT|supabase|postgres|duplicate key|null value|schema cache|Failed to fetch|NetworkError|\b(42501|23505|23503)\b|PGRST/i;
@@ -130,17 +100,10 @@
     }
     return m;
   }
-  /* Normalizes the `category` column into a clean array of lowercase-
-     trimmed strings, whether it comes back from Supabase as a real
-     text[] array (current schema) or a legacy comma-joined string
-     (pre-migration rows) — every read of art.category should go
-     through this instead of calling .split(',') directly. */
-  /* Slugs kept out of the UI. The rows keep their value — this only
-     stops it being shown, offered as a filter, or title-cased into a
-     stray chip. Empty this list to bring one back. */
+  // normalize category column
+  // slugs hidden from the ui
   var CAT_HIDDEN = { 'ai-art':1 };
-  /* Shared so other modules (the tag rail especially) test the SAME
-     list instead of keeping their own copy that drifts out of sync. */
+  // shared hidden check
   function catHidden(slug){ return !!CAT_HIDDEN[String(slug||'').trim()]; }
   function catList(val){
     var out = Array.isArray(val)
@@ -149,35 +112,8 @@
     return out.filter(function(c){ return c && !CAT_HIDDEN[c]; });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-     SITE_CATEGORIES — the single source of truth for categories.
-     ───────────────────────────────────────────────────────────────
-     Order here is the order everywhere: the gallery filter panel, the
-     tag rail's vocabulary and both upload pickers are all generated
-     from this array. To add/remove/reorder a category, edit this list
-     and nothing else.
-
-       slug  → what's written to artworks.category (NEVER change an
-               existing slug: live rows reference it)
-       label → what the user sees
-
-     Two deliberate quirks:
-     • 'landscapes' keeps its legacy plural slug (labelled "Landscape")
-       so the artworks already tagged with it aren't orphaned.
-     • 'others' isn't in the design list but stays last — it's the
-       fallback the upload code writes when nothing is picked. ── */
-  /* ═══════════════════════════════════════════════════════════════
-     FILTER OPTION ICONS
-     A shared glyph table plus a slug → glyph map, so every filter row
-     (artwork categories, sort, and the five section lists) gets a
-     leading icon from ONE source instead of markup repeating SVG.
-     Glyphs are reused deliberately — three vehicle categories reading
-     as three near-identical trucks would be noise, so related slugs
-     share. Anything unmapped falls back to 'dots' rather than
-     rendering a hole.
-     Strokes use currentColor: .fltIco owns the colour, which follows
-     the row's selected state.
-     ═══════════════════════════════════════════════════════════════ */
+  // site categories
+  // filter option icons
   var FLT_GLYPH = {
     'anchor'   :'<circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21"/><path d="M7.5 11h9"/><path d="M4 15a8 8 0 0 0 16 0"/>',
     'archive'  :'<rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M5 8.5v10a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-10"/><path d="M10 12.5h4"/>',
@@ -395,8 +331,7 @@
     {slug:'others',          label:'Others'}
   ];
   var CAT_SLUGS = SITE_CATEGORIES.map(function(c){ return c.slug; });
-  /* slug → label, for rendering a stored category back to the user.
-     Unknown slugs (from older rows) fall back to a title-cased slug. */
+  // slug to label
   var CAT_LABELS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]=c.label; return m; },{});
   function catLabel(slug){
     if(!slug) return '';
@@ -404,14 +339,9 @@
     return String(slug).replace(/-/g,' ').replace(/\b\w/g,function(ch){ return ch.toUpperCase(); });
   }
 
-  /* Paints every category-driven UI from SITE_CATEGORIES:
-       1. #fltCatOpts    — gallery filter radios (after "ALL CATEGORIES")
-       2. #pfUpCatPanel  — universal upload checkboxes
-     Runs once on DOMContentLoaded. Element ids are built with
-     getElementById-safe names, so slugs starting with a digit
-     ('3d-art') are fine — they're never used as CSS selectors. */
+  // paint category driven ui
   function buildCategoryUI(){
-    /* 1. Filter panel radios */
+    // 1. filter radios
     var fo = document.getElementById('fltCatOpts');
     if(fo){
       fo.insertAdjacentHTML('beforeend', SITE_CATEGORIES.map(function(c){
@@ -420,7 +350,7 @@
                '<span class="fltLbl">'+esc(c.label.toUpperCase())+'</span></label>';
       }).join(''));
     }
-    /* 2. Profile upload checkboxes — 'others' is the default check */
+    // 2. upload checkboxes
     var pp = document.getElementById('pfUpCatPanel');
     if(pp){
       pp.innerHTML = SITE_CATEGORIES.map(function(c){
@@ -429,27 +359,11 @@
       }).join('');
     }
   }
-  /* Every container above is parsed earlier in the document than this
-     script, so paint synchronously rather than waiting for
-     DOMContentLoaded. */
+  // paint synchronously
   buildCategoryUI();
   function restoreScroll(){
-    /* FIX: list now includes every overlay that locks body scroll —
-       notifPage, admPage and zeoPage were
-       missing, so closing any other panel while one of them was open
-       silently re-enabled background scrolling behind it.
-       FIX 2: frdPage (Friends) and bmPage (Bookmarks/Likes) also lock
-       scroll and were missing from this list.
-       FIX 3: rankPage (full ranking) locks scroll too — without it,
-       closing any other panel while the ranking page was open would
-       silently re-enable scrolling of the home page behind it.
-       FIX 4: pfUpMod is a full PAGE now (nav ➕ destination) and
-       locks scroll in openPfUpload() — it must sit in this list or
-       closing any other panel while the upload page is open would
-       re-enable background scrolling behind it. */
-    /* FIX 5: albPage (Settings ▸ Albums) and albViewPage (one album's
-       contents) both lock scroll — without them, closing any other
-       panel while an album is open would re-enable scrolling behind it. */
+    // every overlay that locks scroll
+    // album pages lock too
     var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
@@ -458,26 +372,14 @@
     if(!anyOpen){ document.body.style.overflow=''; document.documentElement.style.overflow=''; }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-     MERGED ARTWORKS TABLE
-     ───────────────────────────────────────────────────────────────
-     Everything lives in `artworks`. Rows carry kind='art'; the legacy
-     kind='comic' rows left over from the retired ComicArts feature are
-     filtered out of every query below, so they stay dormant in the DB
-     rather than surfacing as broken cards. An artwork with several
-     images keeps them in `pages` (see avBuildStrip). ── */
+  // merged artworks table
   var ART_KIND_ART = 'art';
 
-  /* ══ Offline data snapshots ═══════════════════════════════
-     localStorage copies (≈50 items per section) saved on every
-     successful load and served back when the network is gone, so
-     the site stays browsable offline. Image files themselves are
-     cached by /sw.js (top-50 thumbnails prefetched on launch,
-     last-50 clicked artworks cached on view). */
+  // offline data snapshots
   var DZC_PREFIX = 'dzc1:';
   function dzcSet(key, val){
     try{ localStorage.setItem(DZC_PREFIX+key, JSON.stringify({t:Date.now(), v:val})); }
-    catch(e){ /* quota — offline copies are best-effort */ }
+    catch(e){ /* quota, best effort */ }
   }
   function dzcGet(key){
     try{
@@ -485,9 +387,7 @@
       return (r && r.v) || null;
     }catch(e){ return null; }
   }
-  /* Warm the top-50 grid thumbnails through the service worker at
-     idle priority — one at a time so it never competes with the
-     page's own image loads. */
+  // warm thumbs at idle
   function dzcPrefetchThumbs(list){
     if(!('serviceWorker' in navigator)) return;
     var urls = (list||[]).slice(0,50)
@@ -507,13 +407,11 @@
   async function loadDB(){
     if(!sb)return;
     try{
-      /* Public-facing load — the status:'approved' filter is kept
-         as a defensive guard even though every upload now inserts
-         as 'approved' directly. */
+      // public load, approved only
       const{data:imgs}=await sb.from('artworks').select('*').eq('status','approved').eq('kind',ART_KIND_ART).order('created_at',{ascending:false});
       images=imgs||[];
       if(images.length){
-        /* offline snapshot: top 50, trimmed to the fields renderers use */
+        // offline snapshot, top 50
         dzcSet('artworks', images.slice(0,50).map(function(a){
           return { id:a.id, name:a.name, image_url:a.image_url,
                    thumb_x:a.thumb_x, thumb_y:a.thumb_y, thumb_zoom:a.thumb_zoom,
@@ -522,33 +420,19 @@
                    user_id:a.user_id||null, description:a.description||null,
                    software:a.software||null, pages:a.pages||null };
         }));
-        dzcPrefetchThumbs(images); /* warm top-50 thumbs into sw.js cache */
+        dzcPrefetchThumbs(images); // warm top 50 thumbs
       }
     }catch(e){
       console.error(e);
-      /* offline → serve the saved copy so the gallery still shows */
+      // offline, serve saved copy
       var cached = dzcGet('artworks');
       if(cached && cached.length && !images.length){
         images = cached;
-        showToast('Offline \u2014 showing saved artworks \u2726');
+        showToast('Offline \u2014 showing saved artworks');
       }
     }
   }
 
-  /* ── Responsive image sizing (AWS Dynamic Image Transformation) ──────
-     Full-size originals live in S3 behind CloudFront. A second CloudFront
-     distribution — the "Dynamic Image Transformation for CloudFront"
-     solution — resizes and re-encodes on the fly via Thumbor-style URLs:
-
-       https://<DIT_HOST>/fit-in/<W>x0/filters:format(webp):quality(<Q>)/<key>
-
-     where <key> is the object path in the source bucket (e.g.
-     koe-media/artworks/<id>/<file>.png). We serve a small WebP for grid
-     thumbnails and a medium WebP in the viewer; Download always uses the
-     untouched original (its stored URL, which we never rewrite).
-
-     DIT_HOST is your image-resizer distribution. Override it in config.js
-     with window.KOE_CONFIG.DIT_HOST if it ever changes. */
   var DIT_HOST = (window.KOE_CONFIG && window.KOE_CONFIG.DIT_HOST) || 'https://d1l8dn7jegdgem.cloudfront.net';
   var DIT_HOSTNAME = '';
   try{ DIT_HOSTNAME = new URL(DIT_HOST).hostname; }catch(e){}
@@ -556,21 +440,15 @@
   function imgResize(url, width, quality){
     if(!url || typeof url !== 'string') return url;
     var u;
-    try{ u = new URL(url); }catch(e){ return url; }        /* data:/blob:/relative → leave alone */
-    if(DIT_HOSTNAME && u.hostname === DIT_HOSTNAME) return url; /* already a resizer URL */
-    /* Supabase Storage objects can't be read by DIT (which reads from the
-       S3 source bucket), so leave those old URLs untouched. */
+    try{ u = new URL(url); }catch(e){ return url; }
+    if(DIT_HOSTNAME && u.hostname === DIT_HOSTNAME) return url;
     if(u.hostname.endsWith('.supabase.co')) return url;
-    var key = u.pathname.replace(/^\/+/, '');              /* S3 object key */
+    var key = u.pathname.replace(/^\/+/, '');
     if(!key) return url;
     return DIT_HOST.replace(/\/$/,'') + '/fit-in/' + width + 'x0/filters:format(webp):quality(' + quality + ')/' + key;
   }
-  /* Grid thumbnail — small + low quality to minimise egress cost. */
   function getThumbnailUrl(url){ return imgResize(url, 300, 55); }
-  /* Lightbox viewing size — modest + low quality (full original is on Download). */
   function getViewUrl(url){ return imgResize(url, 1000, 68); }
-  /* Download = the untouched original. Stored URLs are already originals,
-     so just return them (strip any stray query string as a safeguard). */
   function getFullUrl(url){
     if(!url || typeof url !== 'string') return url;
     try{ var u = new URL(url); u.search=''; return u.toString(); }
@@ -578,38 +456,23 @@
   }
 
   function itemHTML(img){
-    /* FIX(A1): resize FIRST, escape AFTER. esc() ran before getThumbnailUrl,
-       so a source URL containing & or quotes got HTML-entity-mangled inside
-       the CloudFront resize path → broken thumbnail. esc() is for embedding
-       the finished URL in the attribute, matching every other card builder. */
     const thumbSrc=esc(getThumbnailUrl(img.image_url||''));
-    /* thumbStyle handles the null/NaN fallbacks AND the optional
-       thumb_zoom transform in one place — same markup as every
-       other thumbnail surface. */
     const thumbPos=thumbStyle(img.thumb_x, img.thumb_y, img.thumb_zoom);
     const fullSrc=esc(img.image_url);
     const cats=catList(img.category).length?catList(img.category):['others'];
     const extraCats=cats.slice(1);
     const moreBadge=extraCats.length?`<span class="cBadgeMore" tabindex="0" role="text" aria-label="Also tagged: ${esc(extraCats.join(', '))}" title="${esc(extraCats.join(', '))}">+${extraCats.length}</span>`:'';
     const idStr=esc(String(img.id));
-    /* alt text falls back to artwork title for image search */
     const altText=esc(img.name||'Untitled artwork');
-    /* Multi-image marker — mirrors the stacked-frames convention so the
-       grid hints that there's more than one image behind this card. */
     let pgs=img.pages;
     if(typeof pgs==='string'){ try{ pgs=JSON.parse(pgs); }catch(e){ pgs=null; } }
     const extraCount=Array.isArray(pgs)?pgs.length:0;
     const multiBadge=extraCount?`<span class="gMulti" aria-label="${extraCount+1} images">⧉ ${extraCount+1}</span>`:'';
-    /* Artist chip — revealed by the hover scrim, filled in lazily by
-       dzResolveArtist (artwork rows carry only user_id). Rendered empty
-       so a card with no resolvable profile simply shows nothing rather
-       than a placeholder that never resolves. */
     const artistChip=img.user_id?`<div class="gArtist" data-uid="${esc(String(img.user_id))}" aria-hidden="true">
           <div class="gArtistAv"><span class="gArtistLtr"></span></div>
           <div class="gArtistName"></div>
           <div class="gArtistHandle"></div>
         </div>`:'';
-    /* Wrap item in a crawlable <a href="/artwork/{id}"> — JS intercepts clicks for modal UX */
     return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
         <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>${multiBadge}
@@ -621,26 +484,11 @@
     </div>`;
   }
 
-  /* ── Card artist chips — lazy, hover-driven profile resolve ──────
-     `artworks` rows carry a user_id and nothing else about the author,
-     and a grid can hold hundreds of cards, so profiles are fetched the
-     first time a card is actually hovered rather than up front. Every
-     uid asked for inside the same 60ms window is folded into a single
-     `.in()` query, and each resolved profile is cached by id for the
-     rest of the session — so sweeping the mouse across a grid costs
-     one round-trip per burst, and re-hovering costs nothing.
-     A uid that comes back with no row caches as null so we never ask
-     for it again; a failed *request* clears nothing, leaving the next
-     hover free to retry. */
-  var dzArtistCache   = {};   /* uid → profile row | null (known-missing) */
-  var _dzArtistWanted = {};   /* uid → true, queued for the next flush   */
-  var _dzArtistFlight = {};   /* uid → true while its query is in flight */
+  var dzArtistCache   = {};
+  var _dzArtistWanted = {};
+  var _dzArtistFlight = {};
   var _dzArtistTimer  = null;
 
-  /* The scrim + empty chip, as DOM rather than markup — the front-page
-     grid builds its cards with createElement (buildAwCard), so it can't
-     reuse itemHTML's string. Same classes either way, so one stylesheet
-     and one resolver cover both. */
   function dzBuildHoverReveal(uid){
     var frag = document.createDocumentFragment();
     var ov = document.createElement('div');
@@ -685,8 +533,6 @@
     el.dataset.painted = '1';
   }
 
-  /* Paint every card by this author at once — the same artist often
-     holds several tiles in one grid, and re-renders mint new nodes. */
   function dzPaintArtistChips(uid){
     var p = dzArtistCache[uid];
     if(p === undefined) return;
@@ -727,8 +573,6 @@
     if(!_dzArtistTimer) _dzArtistTimer = setTimeout(dzFlushArtists, 60);
   }
 
-  /* Delegated so it covers every artwork grid — home, full gallery,
-     profiles, albums — including batches appended after first paint. */
   document.addEventListener('pointerover', function(e){
     var t = e.target;
     if(!t || !t.closest) return;
@@ -740,24 +584,12 @@
   }, {passive:true});
 
 
-  /* ── Shared sort utility — TRENDING first (replaces most-liked) ──
-     Score  = (views × 1) + (bookmarks × 8) + (downloads × 6)
-     Final  = Score / (age_in_hours + 2) ^ 1.35
-     view_count / bookmark_count / download_count are denormalized,
-     trigger-guarded counters on `artworks`, so the client just reads them.
-     The age-decay divisor means a fresh post with strong engagement can
-     outrank an old post with a huge raw view total — and stale posts sink
-     unless people keep engaging. `now` is passed in (snapshotted once per
-     sort) so the comparator stays internally consistent mid-sort.
-     Ties fall back to newest, then id, so ordering is always deterministic
-     (ids are uuids, so they're compared as strings, not parseInt'd). */
   function trendingScore(a, now){
     var v=parseInt(a.view_count,10)||0,
         b=parseInt(a.bookmark_count,10)||0,
         d=parseInt(a.download_count,10)||0;
     var base=(v*1)+(b*8)+(d*6);
     var t=a.created_at?new Date(a.created_at).getTime():0;
-    /* Missing timestamp → treat as a year old so it can't fake-trend */
     var ageH=t?Math.max(0,(now-t)/3600000):(365*24);
     return base/Math.pow(ageH+2,1.35);
   }
@@ -775,26 +607,12 @@
   }
 
   function renderHome(){
-    /* Sort by TRENDING before rendering (was most-liked-first). The gallery
-       carousels below read from this same `images` array, so every category
-       row inherits the same trending order — each category is then a
-       mini-ranking of trending posts inside that category only. */
     sortByTrending(images);
-    /* Rebuild all gallery carousels from current images array */
     if(window.rebuildGalCarousels) window.rebuildGalCarousels(images);
     const g=document.getElementById('homeGrid');
     if(g) g.innerHTML = images.map(itemHTML).join('');
   }
 
-  /* ── Column-aware batch sizes — shared by every artwork grid ──
-     The unified responsive grid is 2 columns on phones, 3 from
-     700px, 4 from 1280px (see .fgGrid/.awGrid/.pfGridArt CSS).
-     Batches follow the layout so every append lands as whole rows:
-       4-col → 16 first, then 8   (4 rows, then 2)
-       3-col → 12 first, then 6   (4 rows, then 2)
-       2-col → 10 first, then 4   (5 rows, then 2)
-     Sizes are read at call time, so rotating a tablet or resizing
-     the window simply changes the NEXT batch — nothing re-renders. */
   function gridCols(){
     var w = window.innerWidth || document.documentElement.clientWidth || 1280;
     return w >= 1280 ? 4 : (w >= 700 ? 3 : 2);
@@ -802,17 +620,6 @@
   function gridInitialBatch(){ var c = gridCols(); return c === 4 ? 16 : (c === 3 ? 12 : 10); }
   function gridStepBatch(){    var c = gridCols(); return c === 4 ?  8 : (c === 3 ?  6 :  4); }
 
-  /* ── Shared infinite-scroll sentinel ──
-     Wraps one IntersectionObserver around a trip-wire element; when
-     it comes within 700px of the viewport (or of `rootEl`, for
-     overlays that scroll themselves like #fg / #profilePage), onHit
-     appends the next batch. recheck() matters: after an append the
-     sentinel may STILL be inside the viewport, and an observer only
-     fires on threshold CROSSINGS — re-observing forces the spec's
-     initial delivery, so short content keeps filling until the
-     sentinel is genuinely pushed out of range. Fallback for
-     museum-piece browsers is a passive scroll listener doing the
-     same proximity test. */
   function makeGridSentinel(rootEl, onHit, existingEl){
     var sent = existingEl || document.createElement('div');
     if(!existingEl){
@@ -838,13 +645,10 @@
     }
     return {
       el: sent,
-      /* Force the observer to re-evaluate — call after every append. */
       recheck: function(){
         if(io){ io.unobserve(sent); io.observe(sent); }
         else if(fb){ fb(); }
       },
-      /* One-shot grids (fg / aw rebuild per render) destroy;
-         static sentinels (profile) just hide + recheck instead. */
       destroy: function(){
         if(io){ io.disconnect(); io = null; }
         if(fb){ (rootEl || window).removeEventListener('scroll', fb); fb = null; }
@@ -853,18 +657,10 @@
     };
   }
 
-  /* ── Gallery pagination state ──
-     fgList: the current filtered+sorted list backing the grid.
-     fgVisible: how many of those are in the DOM.
-     First batch renders immediately on open; scrolling appends the
-     rest automatically — no Load More button. */
   var fgVisible = 0;
   var fgList = [];
   var fgSent = null;
 
-  /* Merit gates are enforced by RLS, so a blocked action comes back as a
-     generic row-level-security error. Translate it into something the user
-     can actually act on, instead of a vague "failed". */
   window.MERIT_GATES = { upload:80, chat:60, like:40 };
   window.meritDenied = function(err, action){
     if(!err) return false;
@@ -877,11 +673,6 @@
     return true;
   };
 
-  /* ── Per-user hidden artworks ("Hide this artwork from my feed") ──
-     Backed by public.hidden_artworks (own-rows-only via RLS). Kept as an
-     in-memory Set so the render path stays synchronous. Loaded on session
-     restore and on sign-in; cleared on sign-out (a signed-out visitor has
-     no hide list, so nothing is filtered). */
   var hiddenArtworks = new Set();
 
   async function loadHiddenArtworks(){
@@ -891,16 +682,14 @@
       var r = await sb.from('hidden_artworks').select('artwork_id')
         .eq('user_id', currentUser.id).limit(2000);
       (r.data || []).forEach(function(row){ hiddenArtworks.add(String(row.artwork_id)); });
-    }catch(e){ /* offline → nothing hidden, fail open rather than blanking the feed */ }
+    }catch(e){  }
   }
 
-  /* Drop hidden artworks from any list about to be rendered. */
   function filterHidden(list){
     if(!hiddenArtworks.size) return list;
     return (list || []).filter(function(a){ return !hiddenArtworks.has(String(a.id)); });
   }
 
-  /* Called by the report modal after a successful hide. */
   window.markArtworkHidden = function(id){
     hiddenArtworks.add(String(id));
     try{ renderHome(); }catch(e){}
@@ -912,8 +701,6 @@
   }
 
   function _renderFGPage(){
-    /* The query lives on the in-bar field now — the .fgHdr row that
-       owned #fgQ was removed when the gallery gained section tabs. */
     const _fgIn=document.getElementById('fgSearchIn');
     const q=(_fgIn?_fgIn.value:'').toLowerCase().trim();
     const c=document.getElementById('fgC');
@@ -921,11 +708,6 @@
     if(filterCat!=='all')imgs=imgs.filter(i=>(catList(i.category).length?catList(i.category):['others']).includes(filterCat));
     if(q)imgs=imgs.filter(i=>(i.name||'').toLowerCase().includes(q));
 
-    /* ── Sort. 'trending' (default) = trending score high → low, applied to
-       every category alike (each category filter yields its own mini-ranking).
-       'new'/'old' remain available from the filter panel.
-       Guards against null timestamps; id tie-breaker keeps ordering
-       deterministic when two items share the same created_at. ── */
     if(filterSrt==='trending'){
       sortByTrending(imgs);
     } else {
@@ -934,9 +716,7 @@
         var tB=b.created_at?new Date(b.created_at).getTime():0;
         var diff=filterSrt==='new'?(tB-tA):(tA-tB);
         if(diff!==0)return diff;
-        /* FIX(A2): ids are uuids — parseInt always gave 0, so the tie-breaker
-           never fired and equal-timestamp items shuffled between renders.
-           Compare as strings, mirroring sortByTrending. */
+        // compare ids as strings
         var iA=String(a.id||''), iB=String(b.id||'');
         if(iA===iB) return 0;
         var asc = iA<iB ? -1 : 1;
@@ -944,35 +724,21 @@
       });
     }
 
-    /* Any prior sentinel belongs to a grid we're about to throw away */
     if(fgSent){ fgSent.destroy(); fgSent = null; }
     fgList = imgs;
 
     if(!imgs.length){c.innerHTML='<div class="fgEmp">NO ARTWORK FOUND</div>';_fgSyncFilterBtn();return;}
 
-    /* First batch paints immediately; the rest streams in as the
-       user scrolls (fgAppendBatch via the sentinel below).
-       IMPORTANT: fgVisible is PRESERVED across re-renders — renderFG
-       fires mid-session after likes/edits/deletes while the user may
-       be scrolled deep into the grid, and collapsing back to the
-       first batch would yank their scroll position. Only openFG /
-       applyFilters zero it for a genuine fresh start. */
     fgVisible = Math.min(Math.max(gridInitialBatch(), fgVisible||0), imgs.length);
     c.innerHTML = `<div class="fgGrid" id="fgGridEl">${imgs.slice(0, fgVisible).map(itemHTML).join('')}</div>`;
 
     if(fgVisible < imgs.length){
-      /* #fg is the scroll container (overflow-y:auto), so it is the
-         observer root — viewport intersection would never fire while
-         the overlay pans in from the right. */
       fgSent = makeGridSentinel(document.getElementById('fg'), fgAppendBatch);
       c.appendChild(fgSent.el);
     }
     _fgSyncFilterBtn();
   }
 
-  /* Append the next column-sized batch into the EXISTING grid —
-     never a full re-render, so already-decoded images don't flicker
-     and the scroll position never moves. */
   function fgAppendBatch(){
     var grid = document.getElementById('fgGridEl');
     if(!grid || fgVisible >= fgList.length) return;
@@ -985,7 +751,6 @@
       fgSent.recheck();
     }
   }
-  /* Keep the filter button's "active" dot in sync with current sort/category. */
   function _fgSyncFilterBtn(){
     const isFiltered=(filterCat!=='all'||filterSrt!=='trending');
     const btn=document.getElementById('fgFltBtn');
@@ -993,12 +758,10 @@
   }
 
   function openFilterPanel(){
-    /* Artworks mode — show the category/sort body, hide the generic one. */
     fgFltMode = 'artworks';
     var _t=document.getElementById('fltPTitle'); if(_t) _t.textContent='FILTERS';
     var _a=document.getElementById('fltArtBody'); if(_a) _a.style.display='';
     var _s=document.getElementById('fltSecBody'); if(_s) _s.style.display='none';
-    /* Sync radio buttons to current state before opening */
     var catR=document.querySelector('input[name="fltCat"][value="'+filterCat+'"]');
     if(catR)catR.checked=true;
     var srtR=document.querySelector('input[name="fltSrt"][value="'+filterSrt+'"]');
@@ -1011,22 +774,20 @@
     document.getElementById('fgFltPanel').classList.remove('open');
   }
   function applyFilters(){
-    /* One DONE button, two panels — hand off when a stub section owns
-       the panel, otherwise fall through to the artwork category/sort. */
     if(fgFltMode!=='artworks'){ applySecFilter(); return; }
     var catR=document.querySelector('input[name="fltCat"]:checked');
     var srtR=document.querySelector('input[name="fltSrt"]:checked');
     filterCat=catR?catR.value:'all';
     filterSrt=srtR?srtR.value:'trending';
-    fgVisible=0; /* filters changed — restart from the first batch */
+    fgVisible=0;
     closeFilterPanel();
     renderFG();
   }
   function openFG(){
     document.getElementById('fg').classList.add('open');
     document.body.style.overflow='hidden';
-    fgSwitchSection('artworks'); /* every open lands on Artworks */
-    fgVisible=0; /* fresh open — start from the first batch */
+    fgSwitchSection('artworks');
+    fgVisible=0;
     renderFG();
   }
 

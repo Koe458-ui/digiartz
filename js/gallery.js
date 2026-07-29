@@ -1,13 +1,5 @@
-/* ── gallery.js · gallery sections + artwork viewer + report flow ── */
-  /* ═══════════════════════════════════════════════════════════════
-     GALLERY SECTIONS
-     Artworks / Resources / Blog / Marketplace / Jobs / Cart.
-     Artworks is the live one (grid + category/sort filter). The other
-     five are shells: a search field and a filter whose options are
-     listed below, with nothing to search yet. They are here so the
-     navigation is real while the data lands behind it — each `opts`
-     list is the menu that section's filter offers.
-     ═══════════════════════════════════════════════════════════════ */
+// gallery sections, viewer, report
+  // gallery sections
   var FG_SECTIONS = {
     resources:   { label:'Resources',   opts:['Tutorials','Brushes','Textures','Fonts','PSD Files','3D Assets','References','Color Palettes','Mockups','Templates','Icons','Plugins'] },
     blog:        { label:'Blog',        opts:['News','Community','Artist Spotlights','Tips & Guides','Interviews','Reviews','Events','Challenges','Releases','Announcements'] },
@@ -15,10 +7,10 @@
     jobs:        { label:'Jobs',        opts:['Freelance','Full-Time','Part-Time','Remote','Internship','Contest','Hiring Artists','Collaboration'] },
     cart:        { label:'Cart',        opts:['Shopping Cart','Saved for Later','Checkout','Orders','Downloads','Licenses'] }
   };
-  var fgSection = 'artworks';           /* which tab is showing        */
-  var fgFltMode = 'artworks';           /* which body the panel serves */
-  var fgSecFilter = {};                 /* section id → chosen option  */
-  var fgSecQuery  = {};                 /* section id → typed query    */
+  var fgSection = 'artworks';           // active tab
+  var fgFltMode = 'artworks';           // panel owner
+  var fgSecFilter = {};                 // chosen option per section
+  var fgSecQuery  = {};                 // typed query per section
 
   function fgSwitchSection(id){
     if(!id) return;
@@ -32,23 +24,19 @@
     }
     fgSection=id;
     var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
-    /* The rail measures widths to pack its two rows, which it can only
-       do while its section is actually displayed. */
+    // rail measures while visible
     if(id==='artworks' && typeof tgRenderRail==='function'){ try{ tgRenderRail(false); }catch(e){} }
-    /* Sections load on first visit, not on page load — five extra
-       queries for tabs nobody opened would be wasted work. */
+    // load section on first visit
     if(id!=='artworks' && typeof dzSecEnter==='function') dzSecEnter(id);
   }
 
-  /* Stub sections have nothing to filter yet, so the query is simply
-     held. Wiring one up later means rendering into #fgSecC-<id> here. */
+  // stub sections hold the query
   var fgSecQTimer={};
   function fgSecSearchInput(id,v){
     fgSecQuery[id]=String(v||'');
     var w=document.getElementById(id+'SearchWrap');
     if(w) w.classList.toggle('tgHasQ', !!fgSecQuery[id].length);
-    /* Debounced for the same reason the artwork bar is: repainting
-       per keystroke makes typing feel like it's fighting back. */
+    // debounced input
     clearTimeout(fgSecQTimer[id]);
     fgSecQTimer[id]=setTimeout(function(){
       if(typeof dzSecRender==='function') dzSecRender(id);
@@ -60,7 +48,7 @@
     fgSecSearchInput(id,'');
   }
 
-  /* Builds the shared panel's body from FG_SECTIONS[id].opts. */
+  // build panel body
   function openSecFilter(id){
     var sec=FG_SECTIONS[id]; if(!sec) return;
     fgFltMode=id;
@@ -92,7 +80,7 @@
     if(typeof dzSecRender==='function') dzSecRender(id);
   }
 
-  /* Reachable from inline handlers regardless of how this block is scoped. */
+  // expose for inline handlers
   window.fgSwitchSection=fgSwitchSection;
   window.fgSecSearchInput=fgSecSearchInput;
   window.fgSecSearchClear=fgSecSearchClear;
@@ -101,37 +89,24 @@
   function closeFG(){
     document.getElementById('fg').classList.remove('open');
     restoreScroll();
-    /* Reset category filter to 'all' so next open is always clean */
+    // reset category filter
     filterCat = 'all';
     var catR = document.querySelector('input[name="fltCat"][value="all"]');
     if(catR) catR.checked = true;
   }
-  /* ── Artwork viewer: open/close ──
-     #artModal is the fixed, blurred backdrop. .avBox is the fixed-size
-     two-pane card inside it (image pane + scrollable detail sidebar).
-     Closing plays the .closing animation class for ~220ms before the
-     modal is fully hidden. */
+  // viewer open and close
   var amCloseTimer = null;
   var avNavList = [];
   var avNavIndex = -1;
-  /* True when the lightbox was opened while the Full-Gallery overlay (#fg)
-     was showing. A detour through a profile closes #fg (it would otherwise
-     cover the profile), so we remember this to re-reveal the gallery behind
-     the image on the way back — a further back then lands on the grid where
-     the image was clicked, instead of jumping straight to home. */
+  // opened from gallery overlay
   var avLbFromGallery = false;
   var avZoomLevel = 1, avPanX = 0, avPanY = 0;
   var avCurrentArt = null;
-  /* ── Multi-image artworks ──
-     avImages holds every image for the item currently open in the
-     lightbox: the cover (image_url) first, then any extras from
-     `pages`. avNav()'s prev/next arrows page between *artworks*;
-     these page between images *within* one artwork. */
+  // multi image artworks
   var avImages = [];
   var avImgIdx = 0;
 
-  /* Cover first, then extras, de-duplicated. Falls back to the raw src
-     when we have no row object (e.g. a card clicked before load). */
+  // cover first, then extras
   function avImageList(art, src){
     var list = [];
     if(art && art.image_url) list.push(art.image_url);
@@ -143,8 +118,7 @@
     }
     return list;
   }
-  /* Build the thumbnail strip. openLB has already painted image 0, so
-     this only sets state + chrome — it never re-loads the main image. */
+  // build thumb strip
   function avBuildStrip(art, src){
     avImages = avImageList(art, src);
     avImgIdx = 0;
@@ -158,10 +132,9 @@
       if(st0){ st0.hidden = true; st0.innerHTML = ''; }
       return;
     }
-    /* Stacked layout: image 1 stays in the zoomable viewport, images
-       2..n render full-width below it. The strip stays retired. */
+    // stacked layout
     strip.hidden = true; strip.innerHTML = '';
-    if(cnt){ cnt.hidden = true; }   /* counter box retired */
+    if(cnt){ cnt.hidden = true; }   // counter retired
     var stack = document.getElementById('avImgStack');
     if(stack){
       stack.hidden = false;
@@ -170,8 +143,7 @@
       }).join('');
     }
   }
-  /* Swap the main image. Download always follows the visible image, so
-     currentLightboxImageSrc is repointed at the untouched original. */
+  // swap main image
   function avShowImage(i){
     if(!avImages.length) return;
     avImgIdx = Math.max(0, Math.min(i, avImages.length - 1));
@@ -183,9 +155,7 @@
     avResetZoom();
     if(imgEl){
       imgEl.src = getViewUrl(url);
-      /* A browser-cached image can finish before (or without) firing onload,
-         which would leave the img stuck at opacity:0 behind the loading
-         state. If it's already decoded, drop the loading class now. */
+      // cached image may skip onload
       if(imgEl.complete && imgEl.naturalWidth && viewport) viewport.classList.remove('loading');
     }
     var strip = document.getElementById('avStrip');
@@ -194,7 +164,7 @@
         btn.classList.toggle('active', n === avImgIdx);
         btn.setAttribute('aria-selected', n === avImgIdx ? 'true' : 'false');
       });
-      /* With a lot of images the active thumb can sit off-screen. */
+      // scroll active thumb into view
       var activeThumb = strip.children[avImgIdx];
       if(activeThumb && activeThumb.scrollIntoView){
         activeThumb.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
@@ -216,11 +186,7 @@
   }
 
   function avRenderMeta(m){
-    /* Only include rows we actually have data for. A linked image with
-       no backing artwork record (e.g. opened from a comment) has no
-       category/medium/upload-date, so those rows are omitted entirely
-       rather than rendered as "—" clutter. Resolution is always shown
-       since it's read straight off the loaded image, not the record. */
+    // only rows with data
     var rows = [];
     if(m.hasArt){
       if(m.category) rows.push(['Category', avCap(m.category)]);
@@ -255,10 +221,7 @@
       nameEl.textContent = uname || 'Artist';
       handleEl.textContent = '@'+(uname||'artist');
     }
-    /* Own artwork: reuse the freshest copy rather than a possibly-stale
-       cache entry — pf.profile.avatar_url is kept current by
-       pfRenderAvatarBanner(), and currentUserAvatarUrl is equally fresh
-       for the signed-in viewer's own uploads. */
+    // use freshest own avatar
     if(pf.profile && pf.profile.id===uid){ avAuthorProfileCache[uid] = { username:pf.profile.username, avatar_url:pf.profile.avatar_url }; paint(pf.profile.username, pf.profile.avatar_url); return; }
     if(currentUser && currentUser.id===uid){ var _ownU=(currentUser.user_metadata && currentUser.user_metadata.username)||null; if(_ownU) avAuthorProfileCache[uid]={ username:_ownU, avatar_url:currentUserAvatarUrl||null }; paint(cpGetDisplayName(), currentUserAvatarUrl); return; }
     if(avAuthorProfileCache[uid]){ paint(avAuthorProfileCache[uid].username, avAuthorProfileCache[uid].avatar_url); return; }
@@ -276,15 +239,7 @@
   function avGoToAuthor(){
     if(!avCurrentArt || !avCurrentArt.user_id) return;
     var uid = avCurrentArt.user_id;
-    /* Resolve the author's *username* from whatever we already hold, in
-       order of freshness. The old version read only the cache and
-       pf.profile — but the cache is warmed lazily by the profiles fetch
-       in avRenderAuthor, and pf.profile is only set once you've opened a
-       profile page. So on your own gallery (own uploads short-circuit
-       without a username handy) or on a quick click before that fetch
-       lands, every synchronous source misses and the row did nothing at
-       all — no navigation, no feedback. Now, when they all miss, we look
-       the username up by id and then open, so the row always acts. */
+    // resolve author username
     var cached = avAuthorProfileCache[uid];
     var uname = (cached && cached.username)
       || (pf.profile && pf.profile.id===uid ? pf.profile.username : null)
@@ -323,9 +278,7 @@
     var art=avNavList[next];
     if(!art) return;
     var cats=catList(art.category).length?catList(art.category):['others'];
-    /* Pass the same list we're already navigating (avNavList) through so
-       stepping prev/next repeatedly stays within its source — e.g. a
-       profile's gallery — instead of falling back to the global feed. */
+    // keep prev next within list
     openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, avNavList);
   }
 
@@ -352,17 +305,10 @@
   }
   async function avDownload(){
     var img=document.getElementById('lbImg');
-    /* Download the untouched original — currentLightboxImageSrc holds the
-       pristine URL (the on-screen image is a resized WebP). getFullUrl
-       also strips any sizing params as a belt-and-braces guarantee. */
+    // download the original
     var fullSrc=getFullUrl(currentLightboxImageSrc || (img && img.src) || '');
     if(!fullSrc) return;
-    /* ── Tier gate ── the server decides the monthly quota and the
-       quality (guest 5 · lite 30 · premium 200 · max 1000; originals
-       for premium/max, 1600px for guest/lite; own artworks always
-       free + full). If the RPC itself errors the gate fails OPEN —
-       same philosophy as the upload verifier: an outage must never
-       brick a core feature. */
+    // tier gate
     var gate={allowed:true, full:true};
     var artId=avCurrentArt && avCurrentArt.id;
     if(artId && sb){
@@ -386,18 +332,13 @@
     }
     var href = gate.full ? fullSrc : imgResize(fullSrc, 1600, 82);
     var a=document.createElement('a');
-    /* FIX: `download` is ignored for cross-origin URLs (S3/CloudFront),
-       so the click used to navigate the whole app away to the raw image.
-       Opening in a new tab keeps the site intact and still lets the
-       browser save the file. */
+    // open in new tab
     a.href=href; a.download=''; a.target='_blank'; a.rel='noopener';
     document.body.appendChild(a); a.click(); a.remove();
     if(typeof gate.remaining==='number' && gate.remaining<=3){
       showToast(gate.remaining+' download'+(gate.remaining===1?'':'s')+' left this month');
     }
-    /* Count the download toward trending (server dedups per viewer per day).
-       Also bump the in-memory counter so a re-render reflects it without a
-       refetch — the guard trigger makes the DB the source of truth anyway. */
+    // count download for trending
     if(artId){
       try{ window.registerArtworkDownload(artId); }catch(e){}
       avCurrentArt.download_count = (parseInt(avCurrentArt.download_count,10)||0) + 1;
@@ -407,13 +348,10 @@
     var url=window.location.href;
     var title=(document.getElementById('lbNm')||{}).textContent||'Artwork';
     if(navigator.share){ navigator.share({title:title,url:url}).catch(function(){}); }
-    else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(function(){ showToast('Link copied ✦'); }); }
+    else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(function(){ showToast('Link copied'); }); }
     else { showToast('Share not supported'); }
   }
-  /* ── Report flow ──────────────────────────────────────────────
-     Was a stub that toasted "Report submitted" without recording
-     anything. Now writes to artwork_reports (dev-readable only) and
-     optionally blocks the creator / hides the artwork for the reporter. */
+  // report flow
   var rptArt = null, rptBusy = false;
 
   function avReport(){
@@ -421,7 +359,7 @@
     if(!avCurrentArt){ showToast('Nothing to report'); return; }
     rptArt = avCurrentArt;
     var m = document.getElementById('rptMod'); if(!m) return;
-    /* reset every field so a previous report never leaks into the next */
+    // reset fields
     var chosen = m.querySelector('input[name="rptReason"]:checked'); if(chosen) chosen.checked = false;
     document.getElementById('rptDetails').value = '';
     document.getElementById('rptBlock').checked = false;
@@ -452,14 +390,13 @@
         reason     : picked.value,
         details    : (document.getElementById('rptDetails').value.trim() || null)
       });
-      /* 23505 = already reported by this user (unique artwork+reporter) —
-         treat as success rather than scolding them for a double tap. */
+      // dup report counts as success
       if(ins.error && ins.error.code !== '23505') throw ins.error;
 
       if(document.getElementById('rptHide').checked){
         await sb.from('hidden_artworks')
           .insert({ user_id: currentUser.id, artwork_id: art.id });
-        /* remove it from the feed right away, no reload needed */
+        // hide from feed now
         if(window.markArtworkHidden) window.markArtworkHidden(art.id);
       }
       if(document.getElementById('rptBlock').checked && art.user_id && art.user_id !== currentUser.id){
@@ -468,7 +405,7 @@
         }
       }
       rptClose();
-      showToast('Report submitted — thank you ✦');
+      showToast('Report submitted — thank you');
     }catch(e){
       showToast('Couldn\u2019t submit report — try again');
     }finally{
@@ -477,7 +414,7 @@
   }
   function avCloseMoreMenu(){}
 
-  /* Drag-to-pan the image once zoomed in; double-click/tap toggles 2x zoom */
+  // drag to pan, double tap zoom
   (function(){
     var dragging=false,startX=0,startY=0,origX=0,origY=0;
     document.addEventListener('DOMContentLoaded', function(){
@@ -519,13 +456,7 @@
     avResetZoom();
     avCloseMoreMenu();
 
-    /* ── INSTANT RESET ── everything from the previous artwork is
-       cleared SYNCHRONOUSLY before any async work, so prev/next never
-       shows the old image, title, like state or comments for even a
-       frame. The like/bookmark buttons get an explicit data-id and an
-       immediate repaint — previously they resolved their id from the
-       URL and only repainted when new buttons entered the DOM, so
-       stepping through artworks left the old pressed state behind. */
+    // instant reset
     (function(){
       var btns=document.querySelectorAll('#artModal .engLike,#artModal .engBm');
       btns.forEach(function(b){ b.setAttribute('data-id', id?String(id):''); });
@@ -539,51 +470,39 @@
     var viewport=document.getElementById('avImgViewport');
     if(viewport) viewport.classList.add('loading');
     var imgEl=document.getElementById('lbImg');
-    /* FIX(A5): guard imgEl like its sibling viewport — without it, any
-       refactor that renames #lbImg turns every artwork open into a crash. */
+    // guard missing img
     if(imgEl){
-      /* Show the medium (~500 KB WebP) view; the untouched original is kept
-         in currentLightboxImageSrc for Download. */
-      imgEl.removeAttribute('src');   /* blank the old pixels instantly */
+      // show medium size
+      imgEl.removeAttribute('src');   // blank old pixels
       imgEl.src=getViewUrl(src);
-      /* SEO: the full-resolution image shown in the modal is the one
-         most likely to be the actual indexed/served image in Google
-         Image Search results, so it needs real alt text too — not
-         just the gallery thumbnail. */
+      // alt text for seo
       imgEl.alt=name||'Untitled artwork';
       imgEl.onload=function(){
         if(viewport) viewport.classList.remove('loading');
         avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
       };
       imgEl.onerror=function(){ if(viewport) viewport.classList.remove('loading'); };
-      /* Cached images may never fire onload — don't leave the img hidden. */
+      // cached image may skip onload
       if(imgEl.complete && imgEl.naturalWidth){
         if(viewport) viewport.classList.remove('loading');
         avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
       }
     }
 
-    /* Multi-image support — populates the thumbnail strip + counter, or
-       hides both when this artwork has a single image. */
+    // multi image support
     avBuildStrip(art, src);
 
     document.getElementById('lbNm').textContent=name||'';
 
-    /* Retired categories must not reappear here either: art.tags is
-       used raw (artist-typed tags aren't categories) and `cat` arrives
-       straight from the caller, so both get the hidden-slug filter
-       that catList() already applies to art.category. */
+    // filter hidden categories
     var tags = art ? ((art.tags && art.tags.length) ? art.tags : catList(art.category)) : (cat ? [cat] : []);
     if(typeof catHidden === 'function') tags = (tags||[]).filter(function(t){ return !catHidden(t); });
-    /* FIX(B1): renamed from `catLabel` — the old name shadowed the global
-       catLabel() helper for this whole function scope, so any future call to
-       catLabel(slug) inside openLB would crash with "not a function". */
+    // renamed to avoid shadowing
     var catLabelStr = (cat && !(typeof catHidden === 'function' && catHidden(cat))) ? cat : (tags[0]||'');
     var subType = document.getElementById('avSubType');
     if(subType) subType.textContent = catLabelStr ? avCap(catLabelStr)+' Artwork' : 'Digital Artwork';
 
-    /* Description: optional. Hides itself (and its divider) cleanly
-       when there's no description text for this artwork. */
+    // description optional
     var descEl=document.getElementById('lbDesc');
     var descBlock=document.getElementById('avDescBlock');
     var descDiv=document.getElementById('avDescDiv');
@@ -592,7 +511,7 @@
       else{ descEl.textContent=''; descBlock.hidden=true; descDiv.hidden=true; }
     }
 
-    /* Tags */
+    // tags
     var tagListEl=document.getElementById('avTagList');
     var tagsBlock=document.getElementById('avTagsBlock');
     var tagsDiv=document.getElementById('avTagsDiv');
@@ -615,7 +534,7 @@
       var closeBtn=document.querySelector('#artModal .avCloseBtn');
       if(closeBtn) closeBtn.focus();
     },50);
-    /* Update URL + SEO meta when an id is supplied */
+    // update url and meta
     if(id){
       if(pushUrl!==false && window.location.pathname!=='/artwork/'+id){
         try{ history.pushState({artId:id},'',  '/artwork/'+id); }catch(e){}
@@ -638,18 +557,13 @@
       if(imgEl){imgEl.src='';imgEl.alt='';}
       avCurrentArt=null;
     },230);
-    /* Revert address bar + SEO meta when leaving an artwork URL — UNLESS
-       keepUrl is set. keepUrl is passed when we hand off to the profile
-       page: we KEEP /artwork/{id} in history so a single back returns to
-       this exact artwork (via the popstate /artwork branch), instead of
-       leaving a spurious '/' entry that forced a double-back to reach the
-       image. */
+    // revert url and meta
     if(!keepUrl && /^\/artwork\//.test(window.location.pathname)){
       try{ history.pushState({},'', '/'); }catch(e){}
       resetArtworkSEO();
     }
   }
-  /* Click outside the card (on the backdrop itself) closes the modal */
+  // backdrop click closes
   (function(){
     var modal=document.getElementById('artModal');
     if(modal){
@@ -659,12 +573,10 @@
     }
   })();
 
-  /* Artwork URLs + SEO — gallery items use real <a href="/artwork/{id}"> so crawlers can
-     index them; handleArtClick() intercepts clicks to keep the modal UX for real users */
+  // artwork urls and seo
   function handleArtClick(e,id){
     if(e){
-      // Allow opening in a new tab/window via modifier-click or
-      // middle-click — don't hijack that into the modal.
+      // allow new tab on modifier click
       if(e.metaKey||e.ctrlKey||e.shiftKey||e.button===1) return true;
       e.preventDefault();
     }
@@ -674,8 +586,7 @@
     return false;
   }
 
-  /* Look up a full artwork record by id from the in-memory `images`
-     array (already loaded from Supabase by loadDB()). */
+  // find artwork by id
   function findArtworkById(id){
     if(!id) return null;
     var idS = String(id);
@@ -685,8 +596,7 @@
     return null;
   }
 
-  /* Open an artwork's dedicated URL directly (used on initial page
-     load when the user lands on /artwork/{id}, and by popstate). */
+  // open artwork by id
   function openArtworkById(id,pushUrl){
     var art = findArtworkById(id);
     if(!art) return false;
@@ -695,7 +605,7 @@
     return true;
   }
 
-  /* Update <head> meta for the open artwork; reset to site defaults on close */
+  // head meta per artwork
   var SITE_NAME = 'Digiartz';
   var SITE_URL  = 'https://digiartz.net';
   function setMeta(selector, attr, value){
@@ -721,7 +631,7 @@
     setMeta('meta[name="twitter:description"]','content',desc);
     setMeta('meta[name="twitter:image"]','content',art.image_url||'');
     setMeta('meta[name="twitter:card"]','content','summary_large_image');
-    /* Replace any existing per-artwork JSON-LD block */
+    // replace json ld block
     var ld = document.getElementById('ldArtwork');
     if(!ld){
       ld = document.createElement('script');
@@ -756,16 +666,12 @@
     if(ld) ld.remove();
   }
 
-  /* Keep modal + meta in sync with browser history */
+  // sync with history
   window.addEventListener('popstate', function(){
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
     if(m){
-      /* Returning to an artwork URL while a profile opened from it is up —
-         close the profile first so the image shows on a SINGLE back, then
-         reopen the viewer. If the image was launched from the gallery,
-         re-reveal #fg behind it too (the profile step had closed it) so a
-         further back returns to the grid where it was clicked, not home. */
+      // close profile, reopen viewer
       var _fromGal = avLbFromGallery;
       if(document.getElementById('profilePage').classList.contains('open')) closeProfilePage(false);
       if(_fromGal){

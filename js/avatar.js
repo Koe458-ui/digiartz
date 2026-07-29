@@ -1,26 +1,4 @@
-/* ── avatar.js · avatar / banner upload ── */
-  /* =========================================================
-     AVATAR / BANNER UPLOAD
-     ├─ pfRenderAvatarBanner() — paints pf.profile.avatar_url /
-     │   banner_url into #pfAvatarImg / #pfBannerImg, falling back
-     │   to the letter avatar / gradient banner when unset.
-     ├─ openPfAvatarPicker() / openPfBannerPicker() — owner-only,
-     │   gated by a 7-day cooldown read off
-     │   pf.profile.avatar_updated_at / banner_updated_at.
-     ├─ handlePfAvBFile → openPfAvBCrop — shared focal-point
-     │   cropper (square stage for avatar, wide stage for banner).
-     ├─ confirmPfAvBCrop() — actually renders the crop to a fixed-
-     │   size canvas (unlike the gallery thumb picker, which only
-     │   stores a focal point) and hands the JPEG blob to
-     │   doPfAvBUpload().
-     └─ doPfAvBUpload() — uploads the new file, deletes the
-         previous one from Storage, updates the profiles row +
-         pf.profile + the on-screen image, all in one go.
-
-     Requires these columns on `profiles` (nullable):
-       avatar_url text, avatar_storage_path text, avatar_updated_at timestamptz,
-       banner_url text, banner_storage_path text, banner_updated_at timestamptz
-     ========================================================= */
+// avatar and banner upload
   var PF_AVB_COOLDOWN_MS = 7*24*60*60*1000; // 1 week
   var PF_AVB_DIMS = { avatar:{w:480,h:480}, banner:{w:1600,h:500} };
 
@@ -48,7 +26,7 @@
     }
   }
 
-  /* Returns ms remaining before a re-upload is allowed (0 = allowed now). */
+  // cooldown left in ms
   function pfAvBCooldownLeft(updatedAt){
     if(!updatedAt) return 0;
     var elapsed = Date.now() - new Date(updatedAt).getTime();
@@ -117,8 +95,7 @@
       var p = e.touches ? e.touches[0] : e;
       pfAvBCrop.sx = p.clientX; pfAvBCrop.sy = p.clientY;
       pfAvBCrop.ox = pfAvBCrop.x; pfAvBCrop.oy = pfAvBCrop.y;
-      /* FIX: same drag-scoped listener wiring as initPfCropDrag —
-         no permanent non-passive document touchmove handler. */
+      // drag scoped listeners
       document.addEventListener('mousemove', move);
       document.addEventListener('touchmove', move, {passive:false});
       document.addEventListener('mouseup', up);
@@ -181,7 +158,7 @@
     btn.disabled = true; btn.textContent = 'SAVING…';
     canvas.toBlob(function(blob){
       doPfAvBUpload(kind, blob).finally(function(){
-        btn.disabled = false; btn.textContent = 'Use This ✦';
+        btn.disabled = false; btn.textContent = 'Use This';
         document.getElementById('pfAvBCropMod').classList.remove('open');
         pfAvBCropPending = null;
       });
@@ -196,15 +173,13 @@
       var path = kind+'s/'+currentUser.id+'/'+Date.now()+'.jpg';
       var publicUrl = await s3Upload(BUCKET,path,blob);
       var nowIso = new Date().toISOString();
-      var updates = {}; 
+      var updates = {};
       updates[kind+'_url'] = publicUrl;
       updates[kind+'_storage_path'] = path;
       updates[kind+'_updated_at'] = nowIso;
       var{error:de}=await sb.from('profiles').update(updates).eq('id',currentUser.id);
       if(de) throw de;
-      /* Old file is removed only after the new row commits successfully,
-         so a failed update never leaves the profile pointing at a file
-         that's already been deleted. */
+      // delete old file after commit
       if(oldPath) await s3Delete(BUCKET,oldPath);
       Object.assign(pf.profile, updates);
       pfRenderAvatarBanner();
@@ -212,14 +187,11 @@
         pfMediaCache[pf.profile.username] = { avatar_url: pf.profile.avatar_url||null, banner_url: pf.profile.banner_url||null };
       }
       if(kind==='avatar'){
-        /* Push the new photo to every other avatar chip app-wide — nav
-           bar, comment bar, subscription card — not just the profile page. */
+        // update avatar chips app wide
         currentUserAvatarUrl = publicUrl;
         avAuthorProfileCache[currentUser.id] = { username: pf.profile.username, avatar_url: publicUrl };
         syncAuthBtn();
-        /* Community chat resolves authors from a live map — update our own
-           entry and repaint so the new photo appears at once, rather than
-           waiting up to 5s for the next poll tick. */
+        // refresh chat author map
         if(typeof cpAuthors !== 'undefined' && cpAuthors){
           cpAuthors[String(currentUser.id)] = {
             name  : (pf.profile.display_name || pf.profile.username || 'User'),
@@ -228,9 +200,9 @@
           try{ if(typeof cpRender === 'function') cpRender(); }catch(e){}
         }
       }
-      showToast((kind==='banner'?'Banner':'Profile photo')+' updated ✦');
+      showToast((kind==='banner'?'Banner':'Profile photo')+' updated');
     }catch(err){ console.error('Error: '+err.message);
-      /* Merit gate (<80) surfaces as a raw RLS error — explain it. */
+      // merit gate error
       if(window.meritDenied && window.meritDenied(err, 'upload')) return;
       showToast(safeErr(err, 'Upload failed \u2014 try again')); }
     finally{

@@ -1,10 +1,10 @@
-/* ── effects.js · ripple, ads panel, legal modals, FAQ mount ── */
-  /* Global ripple — fixed layer, pointer-events:none; animation applied inline after reflow */
+// ripple, ads panel, legal modals, faq
+  // global ripple
   (function(){
     var host = document.getElementById('rippleHost');
-    var SIZE = 40;          /* 40px — small click-acknowledgment dot */
+    var SIZE = 40;          // 40px dot
     var HALF = SIZE / 2;
-    var DUR  = 250;         /* ms */
+    var DUR  = 250;         // ms
 
     function spawnRipple(cx, cy){
       var el = document.createElement('div');
@@ -15,7 +15,7 @@
       el.style.top          = (cy - HALF) + 'px';
       el.style.borderRadius = '50%';
       el.style.background   = 'rgba(var(--pg-rgb),0.9)';
-      el.style.filter       = 'blur(2px)';   /* soft edges */
+      el.style.filter       = 'blur(2px)';   // soft edges
       el.style.pointerEvents= 'none';
 
       host.appendChild(el);
@@ -27,18 +27,16 @@
       }, DUR + 60);
     }
 
-    /* FIX: on touch devices every tap fires touchstart AND a
-       synthesized click ~300ms later — two overlapping ripples per
-       tap. Remember the last touch and skip the click twin. */
+    // skip synthesized click twin
     var lastTouch = 0;
 
-    /* Mouse click — desktop, laptop, touchscreen laptop */
+    // mouse click
     document.addEventListener('click', function(e){
       if (Date.now() - lastTouch < 700) return;
       spawnRipple(e.clientX, e.clientY);
     }, {capture:true, passive:true});
 
-    /* Touch — mobile, tablet, touchscreen laptop */
+    // touch
     document.addEventListener('touchstart', function(e){
       lastTouch = Date.now();
       for(var i = 0; i < e.changedTouches.length; i++){
@@ -47,9 +45,8 @@
     }, {capture:true, passive:true});
 
   })();
-  /* ── END GLOBAL RIPPLE ───────────────────────────────────────── */
 
-/* IMAGE LINKED COMMENTS PATCH — UI helpers only; Supabase handled in main script */
+// image linked comments
 
 (function(){
   var panel  = document.getElementById('adsPanel');
@@ -58,7 +55,7 @@
   var cards  = document.querySelectorAll('#apTrack .apCard');
   var adsInit = false;
 
-  /* ── Open ── */
+  // open
   window.openAdsPanel = function(){
     closeMenu();
     panel.classList.add('open');
@@ -80,30 +77,30 @@
             try{ (adsbygoogle = window.adsbygoogle || []).push({}); }catch(e){}
           }, i * 150);
         });
-      }, 800); /* staggered push — avoids main-thread freeze */
+      }, 800); // staggered push
     }
   };
 
-  /* ── Close ── */
+  // close
   window.closeAdsPanel = function(){
     panel.classList.remove('open');
-    /* FIX: consistent lock accounting via restoreScroll() */
+    // restore scroll
     if (typeof restoreScroll === 'function') restoreScroll();
     else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
   };
 
-  /* ── Dot updater on scroll ── */
+  // dot updater on scroll
   function updateDots(){
     if(!wrap || !cards.length) return;
     var scrollLeft = wrap.scrollLeft;
-    var cardW = cards[0].offsetWidth + 16; /* width + gap */
+    var cardW = cards[0].offsetWidth + 16; // width + gap
     var idx = Math.round(scrollLeft / cardW);
     idx = Math.max(0, Math.min(idx, cards.length - 1));
     dots.forEach(function(d, i){ d.classList.toggle('active', i === idx); });
   }
   if(wrap) wrap.addEventListener('scroll', updateDots, {passive:true});
 
-  /* ── Dot click → scroll to card ── */
+  // dot click scrolls
   dots.forEach(function(dot){
     dot.addEventListener('click', function(){
       var idx = parseInt(dot.getAttribute('data-idx'), 10);
@@ -112,7 +109,7 @@
     });
   });
 
-  /* ── Mouse drag-to-scroll (desktop) ── */
+  // drag to scroll
   var isDragging = false, startX = 0, scrollStart = 0;
   if(wrap){
     wrap.addEventListener('mousedown', function(e){
@@ -132,7 +129,7 @@
     });
   }
 
-  /* ── Close on Escape ── */
+  // close on escape
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape' && panel.classList.contains('open')) closeAdsPanel();
   });
@@ -405,8 +402,7 @@
   var backdrop = document.getElementById('legalBackdrop');
   var titleEl  = document.getElementById('lmTitleText');
   var bodyEl   = document.getElementById('lmBody');
-  /* Local escaper — this script runs in its own IIFE, separate from
-     the main app scope's esc(), so it can't reach that one. */
+  // local escaper
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
   window.openLegal = function(type){
@@ -417,29 +413,24 @@
     bodyEl.scrollTop  = 0;
     backdrop.classList.add('open');
     document.body.style.overflow = 'hidden';
-    /* focus the close button for a11y */
+    // focus close button
     var closeBtn = backdrop.querySelector('.lmClose');
     if(closeBtn) setTimeout(function(){ closeBtn.focus(); }, 80);
   };
 
   window.closeLegal = function(){
     backdrop.classList.remove('open');
-    /* FIX: the legal backdrop is also reused by the verification-status
-       modal, which opens on top of My Work / Profile — a blind overflow
-       reset unlocked background scroll behind those still-open panels.
-       restoreScroll() only unlocks when nothing else is open. */
+    // restore scroll
     if (typeof restoreScroll === 'function') restoreScroll();
     else document.body.style.overflow = '';
   };
 
-  /* ── Verification-status modal — shown when a submitter taps their
-     own blurred, still-pending artwork. Reuses the legal modal's
-     backdrop/card/theme so it looks native to the rest of the site. ── */
+  // verification status modal
   window.handleBackdropClick = function(e){
     if(e.target === backdrop) closeLegal();
   };
 
-  /* Close on Escape */
+  // close on escape
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape' && backdrop.classList.contains('open')) closeLegal();
   });
@@ -448,15 +439,15 @@
 
 (function(){
 
-  /* ── Mount FAQ into the subscription page body ── */
+  // mount faq
   function mountFaq(){
     var faqEl  = document.getElementById('faqSection');
     var subBdy = document.querySelector('.subPgBdy');
     if(!faqEl || !subBdy){ return; }
-    /* Remove hidden attribute set during initial parse (FAQ is outside subPage) */
+    // unhide faq
     faqEl.removeAttribute('hidden');
     subBdy.appendChild(faqEl);
-    /* Reveal answer panels that were hidden so ARIA hidden attr is removed */
+    // unhide answer panels
     var panels = faqEl.querySelectorAll('.faqA[hidden]');
     panels.forEach(function(p){ p.removeAttribute('hidden'); });
   }
@@ -467,14 +458,14 @@
     mountFaq();
   }
 
-  /* ── Toggle accordion item ── */
+  // toggle accordion
   window.faqToggle = function(btn){
     var item   = btn.closest('.faqItem');
     var panel  = document.getElementById(btn.getAttribute('aria-controls'));
     var icon   = btn.querySelector('.faqIcon');
     var isOpen = item.classList.contains('faq--open');
 
-    /* Collapse all open items in the same section */
+    // collapse others
     var section = item.closest('.faqCategory');
     if(section){
       section.querySelectorAll('.faqItem.faq--open').forEach(function(openItem){
@@ -488,7 +479,7 @@
       });
     }
 
-    /* Toggle the clicked item */
+    // toggle clicked item
     if(isOpen){
       item.classList.remove('faq--open');
       btn.setAttribute('aria-expanded','false');
@@ -496,11 +487,11 @@
     } else {
       item.classList.add('faq--open');
       btn.setAttribute('aria-expanded','true');
-      if(icon) icon.textContent = '+'; /* stays + , CSS rotate handles × look */
+      if(icon) icon.textContent = '+'; // css rotates the plus
     }
   };
 
-  /* ── Keyboard navigation within a category ── */
+  // keyboard nav
   document.addEventListener('keydown', function(e){
     var btn = e.target;
     if(!btn || !btn.classList.contains('faqQ')) return;

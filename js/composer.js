@@ -1,9 +1,5 @@
-/* ── composer.js · emoji picker + keyboard lift ── */
-/* ── Emoji picker ─────────────────────────────────────────────
-   Shared by the community composer (#cpBarInput) and the DM bar
-   (#dmInput). One fixed-position panel, built lazily on first
-   open, anchored above whichever composer bar invoked it.
-   Inserts at the caret, respects maxlength, keeps input focus. */
+// emoji picker, keyboard lift
+// emoji picker
 (function () {
   'use strict';
   var CATS = [
@@ -104,21 +100,21 @@
     var s = inp.selectionStart != null ? inp.selectionStart : v.length;
     var e = inp.selectionEnd != null ? inp.selectionEnd : v.length;
     var next = v.slice(0, s) + ch + v.slice(e);
-    if (max && next.length > max) return; /* respect the input's maxlength */
+    if (max && next.length > max) return; // maxlength
     inp.value = next;
     var pos = s + ch.length;
     try { inp.setSelectionRange(pos, pos); } catch (err) {}
     inp.focus({ preventScroll: true });
-    /* let any listeners (e.g. draft counters) know the value changed */
+    // notify input listeners
     try { inp.dispatchEvent(new Event('input', { bubbles: true })); } catch (err) {}
   }
 
-  /* Close on outside tap, Escape, or viewport changes */
+  // close on outside tap
   document.addEventListener('click', function (e) {
     if (!panel || !panel.classList.contains('open')) return;
     if (panel.contains(e.target)) return;
     if (anchorBtn && (e.target === anchorBtn || anchorBtn.contains(e.target))) return;
-    /* clicking back into the target input keeps the panel open */
+    // keep open on target input
     var t = targetId ? document.getElementById(targetId) : null;
     if (t && e.target === t) return;
     close();
@@ -127,36 +123,23 @@
   window.addEventListener('resize', function () {
     if (panel && panel.classList.contains('open')) position();
   });
-  /* Follow the composer bar when the keyboard-lift module moves it */
+  // follow keyboard lift
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', function () {
       if (panel && panel.classList.contains('open')) setTimeout(position, 60);
     });
   }
-  /* Tapping emojis/tabs must not steal focus from the input (which
-     would close the mobile keyboard) — insert() refocuses anyway,
-     but this stops the close/reopen flicker. */
+  // keep focus on input
   document.addEventListener('mousedown', function (e) {
     if (panel && panel.contains(e.target)) e.preventDefault();
   });
 })();
 
-/* ── Keyboard lift ────────────────────────────────────────────
-   The composer bars (#cpBar fixed at the bottom, .dmBar at the
-   bottom of the DM view) sit under the on-screen keyboard on
-   iOS and on Android since Chrome 108 (keyboard resizes only
-   the *visual* viewport, never the layout). This module lifts
-   ONLY the focused composer: when an input inside .cpBar/.dmBar
-   gains focus, the bar is translated up by exactly the occluded
-   height reported by the VisualViewport API, and the matching
-   chat scrolls to its latest message. Everything is restored on
-   blur / keyboard dismissal. Browsers where the layout already
-   resizes (older Android, desktop) report zero occlusion, so
-   this is a natural no-op there — safe on all devices. */
+// keyboard lift
 (function () {
   'use strict';
   var vv = window.visualViewport;
-  if (!vv) return; /* pre-2019 browsers: keep default behavior */
+  if (!vv) return; // old browsers
 
   var activeBar = null;
 
@@ -175,7 +158,7 @@
       activeBar.style.transform = 'translateY(-' + kb + 'px)';
       activeBar.classList.add('kbLift');
       var b = chatBodyFor(activeBar);
-      if (b) b.scrollTop = b.scrollHeight; /* keep latest message visible */
+      if (b) b.scrollTop = b.scrollHeight; // keep latest message visible
     } else {
       activeBar.style.transform = '';
       activeBar.classList.remove('kbLift');
@@ -184,12 +167,12 @@
   function release (bar) {
     if (!bar) return;
     bar.style.transform = '';
-    bar.style.willChange = '';   /* FIX(B4): drop the compositor hint with the lift */
+    bar.style.willChange = '';   // drop compositor hint
     bar.classList.remove('kbLift');
     if (activeBar === bar) activeBar = null;
   }
 
-  /* Lift ONLY when the text box itself is tapped/focused */
+  // lift only on input focus
   document.addEventListener('focusin', function (e) {
     var t = e.target;
     if (!t || !t.matches || !t.matches('input, textarea')) return;
@@ -197,9 +180,9 @@
     if (!bar) return;
     if (activeBar && activeBar !== bar) release(activeBar);
     activeBar = bar;
-    bar.style.willChange = 'transform'; /* FIX(B4): hint only while the keyboard interaction is live */
+    bar.style.willChange = 'transform'; // compositor hint
     update();
-    /* iOS reports the new viewport a beat after focus */
+    // ios viewport delay
     setTimeout(update, 120);
     setTimeout(update, 350);
   });
@@ -207,8 +190,7 @@
   document.addEventListener('focusout', function (e) {
     var t = e.target;
     if (!t || !t.closest || !t.closest('.cpBar, .dmBar')) return;
-    /* Grace period: focus may bounce back instantly (emoji insert,
-       send-button mousedown guards) — only drop if it truly left. */
+    // focus bounce grace
     setTimeout(function () {
       var a = document.activeElement;
       if (a && a.closest && a.closest('.cpBar, .dmBar')) return;
@@ -216,9 +198,9 @@
     }, 80);
   });
 
-  /* Track keyboard show/hide/resize + viewport pans while lifted */
+  // track keyboard and resize
   vv.addEventListener('resize', update);
   vv.addEventListener('scroll', update);
-  /* Keyboard dismissed via system back/done without a blur event */
+  // keyboard dismissed
   window.addEventListener('orientationchange', function () { setTimeout(update, 250); });
 })();

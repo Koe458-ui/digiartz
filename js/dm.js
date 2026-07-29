@@ -1,22 +1,17 @@
-/* ── dm.js · direct messages ── */
-/* ── Direct messages module ─────────────────────────────── */
+// direct messages
 (function () {
   'use strict';
-  var LINK_RE = /(https?:\/\/|www\.|\S+\.(com|net|org|io|gg|xyz)\b)/i; /* mirror of the DB CHECK */
+  var LINK_RE = /(https?:\/\/|www\.|\S+\.(com|net|org|io|gg|xyz)\b)/i; // mirror of the db check
   var POLL_MS = 5000, MAX_LEN = 1000;
-  var dmPartner = null;     /* {id, username} while a thread is open */
+  var dmPartner = null;     // open thread partner
   var dmPoll = null, dmSending = false, searchTimer = null;
-  /* Message paging: newest 25 first, +25 each time the user scrolls to
-     the top. dmHasMore flags that older messages remain; dmLoadingOlder
-     pins the scroll position while a load-older fetch is in flight.
-     dmLastSig is a fingerprint of the last painted set so the 5s poll can
-     skip re-rendering when nothing changed (no flicker). */
+  // message paging
   var dmLimit = 25, DM_LOAD_STEP = 25, dmHasMore = false, dmLoadingOlder = false, dmLastSig = '';
 
   function $ (id) { return document.getElementById(id); }
   function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
   function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
-  function escq (s) { /* reuse-safe HTML escape (mirrors site esc()) */
+  function escq (s) { // html escape
     return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
                     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
@@ -29,13 +24,13 @@
     if (diff < 10080)return Math.floor(diff / 1440) + 'd';
     return d.toLocaleDateString();
   }
-  /* WhatsApp-style in-bubble clock time (e.g. "14:32" / "2:32 PM") */
+  // clock time in bubble
   function hhmm (iso) {
     if (!iso) return '';
     try { return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
     catch (e) { return ''; }
   }
-  /* WhatsApp-style date separator label: Today / Yesterday / 12 Jul 2026 */
+  // date separator label
   function dayChip (d) {
     var now = new Date(), y = new Date(); y.setDate(now.getDate() - 1);
     if (d.toDateString() === now.toDateString()) return 'TODAY';
@@ -44,10 +39,7 @@
     catch (e) { return d.toDateString().toUpperCase(); }
   }
 
-  /* ══ Friendships ══════════════════════════════════════════
-     One row per pair in public.friendships (RLS + a transition
-     trigger enforce everything server-side; the DM INSERT policy
-     requires status='accepted'). frMap: other-user-id → row. */
+  // friendships
   var frMap = {};
   async function loadFriendships () {
     frMap = {};
@@ -60,9 +52,9 @@
       (r.data || []).forEach(function (f) {
         frMap[f.requester_id === me().id ? f.addressee_id : f.requester_id] = f;
       });
-      if (typeof dzcSet === 'function') dzcSet('frMap', frMap); /* offline snapshot */
+      if (typeof dzcSet === 'function') dzcSet('frMap', frMap); // offline snapshot
     } catch (e) {
-      /* offline → restore the saved map so friend states still work */
+      // restore saved map offline
       if (!Object.keys(frMap).length && typeof dzcGet === 'function') {
         frMap = dzcGet('frMap') || {};
       }
@@ -79,7 +71,7 @@
     await loadFriendships();
     if ($('frdPage') && $('frdPage').classList.contains('open')) loadFriendsPage();
     if (dmPartner) dmApplyGate();
-    /* live-update any open search boxes */
+    // update open search boxes
     ['dmSearchInput', 'frdSearchInput'].forEach(function (id) {
       var i = $(id);
       if (i && i.value.trim().length >= 2) i.dispatchEvent(new Event('input'));
@@ -90,7 +82,7 @@
     try {
       var r = await db().from('friendships').insert({ requester_id: me().id, addressee_id: pid });
       if (r.error) throw r.error;
-      toast('Friend request sent ✦');
+      toast('Friend request sent');
     } catch (e) {
       toast(e && e.message && /duplicate|uniq/i.test(e.message) ? 'A request already exists' : 'Couldn\u2019t send the request');
     }
@@ -101,11 +93,11 @@
     try {
       var r = await db().from('friendships').update({ status: 'accepted' }).eq('id', f.id);
       if (r.error) throw r.error;
-      toast('You are now friends ✦');
+      toast('You are now friends');
     } catch (e) { toast('Couldn\u2019t accept — try again'); }
     await refreshAfterFrChange();
   }
-  /* delete row = cancel request / decline / unblock (back to strangers) */
+  // delete row cancels or unblocks
   async function frRemove (pid, okMsg) {
     var f = frMap[pid]; if (!f || !db()) return;
     try {
@@ -123,7 +115,7 @@
         var r = await db().from('friendships').update({ status: 'blocked' }).eq('id', f.id);
         if (r.error) throw r.error;
       } else {
-        /* blocking a stranger: create the pair row, then flip it */
+        // block a stranger
         var i = await db().from('friendships').insert({ requester_id: me().id, addressee_id: pid }).select().single();
         if (i.error) throw i.error;
         var u = await db().from('friendships').update({ status: 'blocked' }).eq('id', i.data.id);
@@ -133,7 +125,7 @@
     } catch (e) { toast('Couldn\u2019t block — try again'); }
     await refreshAfterFrChange();
   }
-  /* small action pill that never triggers the row's click */
+  // action pill
   function frBtnEl (label, cls, fn) {
     var b = document.createElement('button');
     b.className = 'frBtn' + (cls ? ' ' + cls : '');
@@ -142,7 +134,7 @@
     return b;
   }
 
-  /* ── Username search ── */
+  // username search
   function initSearch () {
     var inp = $('dmSearchInput'), box = $('dmResults');
     if (!inp || !box) return;
@@ -162,10 +154,10 @@
         .ilike('username', '%' + safe + '%')
         .limit(8);
       if (r.error) throw r.error;
-      await loadFriendships(); /* fresh states for the action buttons */
+      await loadFriendships(); // fresh button states
       var rows = (r.data || []).filter(function (p) {
         if (me() && p.id === me().id) return false;
-        return frState(p.id) !== 'blocked_me'; /* users who blocked me stay invisible */
+        return frState(p.id) !== 'blocked_me'; // hide users who blocked me
       });
       box.innerHTML = '';
       if (!rows.length) {
@@ -176,9 +168,7 @@
     } catch (e) { box.innerHTML = '<div class="dmSearchNote">SEARCH FAILED — TRY AGAIN</div>'; }
   }
 
-  /* One row — used for both search results and conversations.
-     Built with createElement so usernames can't break out of
-     attributes regardless of characters. */
+  // one row, search and convos
   function userRow (p, isSearch, preview, ts, onOpen) {
     var item = document.createElement('div');
     item.className = 'cmFriendItem';
@@ -208,7 +198,7 @@
     meta.appendChild(name); meta.appendChild(status);
     item.appendChild(av); item.appendChild(meta);
     if (isSearch) {
-      /* Friend-gated actions: only accepted friends get MESSAGE ✦ */
+      // friends only actions
       var acts = document.createElement('span');
       acts.className = 'frRowBtns';
       if (st === 'none')            acts.appendChild(frBtnEl('ADD FRIEND', '', function () { frSendReq(p.id); }));
@@ -217,7 +207,7 @@
       else if (st === 'blocked_by_me') acts.appendChild(frBtnEl('UNBLOCK', 'frBtn--ghost', function () { frRemove(p.id, 'Unblocked'); }));
       else if (st === 'friends') {
         var go = document.createElement('span');
-        go.className = 'dmGo'; go.textContent = 'MESSAGE ✦';
+        go.className = 'dmGo'; go.textContent = 'MESSAGE';
         acts.appendChild(go);
       }
       item.appendChild(acts);
@@ -234,9 +224,7 @@
     return item;
   }
 
-  /* ── Conversations (distinct partners from recent messages) ──
-     Partner derivation is shared: convo list, Friends page, and the
-     profile drawer's friends count all use fetchPartners(). */
+  // conversations
   async function fetchPartners () {
     if (!db() || !me()) return [];
     var uid = me().id;
@@ -255,7 +243,7 @@
     });
     return partners;
   }
-  /* Profile drawer count — counts ACCEPTED FRIENDS now, not DM partners */
+  // friend count for drawer
   window.__dmFetchPartners = async function () {
     await loadFriendships();
     return Object.keys(frMap)
@@ -281,10 +269,10 @@
         var prof = byId[pt.id] || { id: pt.id, username: 'Artist' };
         list.appendChild(userRow(prof, false, pt.preview, pt.ts));
       });
-      /* offline snapshot of the conversation list */
+      // offline snapshot
       if (typeof dzcSet === 'function') dzcSet('convos', { partners: partners, profiles: byId });
     } catch (e) {
-      /* offline → rebuild the list from the saved snapshot */
+      // rebuild from snapshot
       var snap = (typeof dzcGet === 'function') && dzcGet('convos');
       if (snap && snap.partners && snap.partners.length && list) {
         list.innerHTML = '';
@@ -295,11 +283,11 @@
           list.appendChild(userRow(prof, false, pt.preview, pt.ts));
         });
       }
-      /* otherwise leave list as-is; never crash */
+      // leave list as is
     }
   }
 
-  /* ── Thread ── */
+  // thread
   function openThread (p) {
     if (!db()) { toast('Backend not configured'); return; }
     if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
@@ -307,7 +295,7 @@
     var grid = $('cmGridScroll'), chat = $('dmChatView');
     if (grid) grid.style.display = 'none';
     if (chat) chat.style.display = 'flex';
-    /* Header becomes the DM banner: avatar + username, tappable → profile */
+    // header becomes dm banner
     if (typeof cmHdrChatMode === 'function') {
       cmHdrChatMode({
         name  : p.username || 'Artist',
@@ -316,8 +304,7 @@
         letter: (p.username || '?').charAt(0).toUpperCase(),
         tap   : function () {
           if (!p.username) return;
-          /* openProfileByUsername closes the community/DM overlay AND
-             remembers it, so back returns to community. */
+          // back returns to community
           if (typeof openProfileByUsername === 'function') openProfileByUsername(p.username, true);
         }
       });
@@ -326,9 +313,7 @@
     var res = $('dmResults');   if (res) res.innerHTML = '';
     var inp = $('dmSearchInput'); if (inp) inp.value = '';
     $('dmBody').innerHTML = '<div class="dmSearchNote">LOADING…</div>';
-    /* Friend gate: composer stays hidden until the friendship state
-       is known; dmApplyGate() then shows either the input bar
-       (friends) or the Add-Friend / request / blocked bar. */
+    // friend gate
     var gEl = $('dmGate'), bEl = document.querySelector('#dmChatView .dmBar');
     if (bEl) bEl.style.display = 'none';
     if (gEl) { gEl.style.display = 'flex'; gEl.innerHTML = '<div class="dmGateTxt">…</div>'; }
@@ -339,9 +324,7 @@
     dmPoll = setInterval(function () {
       if (document.visibilityState === 'visible') loadThread(false);
     }, POLL_MS);
-    /* FIX(A3): focus AFTER the 300ms entrance animation completes — the old
-       250ms delay opened the keyboard (and its kbLift transform) while the
-       view was still sliding in, causing a visible stutter on slower phones. */
+    // focus after entrance
     setTimeout(function () { var i = $('dmInput'); if (i) i.focus({ preventScroll: true }); }, 340);
   }
   function closeThread () {
@@ -357,25 +340,20 @@
     if (!dmPartner || !db() || !me()) return;
     var uid = me().id, pid = dmPartner.id;
     try {
-      /* Fetch the newest dmLimit messages (plus one probe row to learn
-         whether older history still exists), then flip to chronological
-         order for display. */
+      // fetch newest messages
       var r = await db().from('direct_messages')
         .select('id,sender_id,content,created_at')
         .or('and(sender_id.eq.' + uid + ',recipient_id.eq.' + pid + '),and(sender_id.eq.' + pid + ',recipient_id.eq.' + uid + ')')
         .order('created_at', { ascending: false })
         .limit(dmLimit + 1);
       if (r.error) throw r.error;
-      if (!dmPartner || dmPartner.id !== pid) return; /* stale response */
+      if (!dmPartner || dmPartner.id !== pid) return; // stale response
       var rows = r.data || [];
       dmHasMore = rows.length > dmLimit;
       if (dmHasMore) rows = rows.slice(0, dmLimit);
-      rows.reverse(); /* oldest → newest for top-to-bottom display */
+      rows.reverse(); // oldest first for display
 
-      /* Fingerprint the set about to be shown. On a background poll with
-         no change, bail before touching the DOM so the thread never
-         flickers. Opening the thread (scrollToEnd) or loading older
-         messages (dmLoadingOlder) always renders. */
+      // skip repaint if unchanged
       var sig = dmLimit + '|' + dmHasMore + '|' + rows.map(function (m) { return m.id; }).join(',');
       if (!scrollToEnd && !dmLoadingOlder && sig === dmLastSig) return;
       dmLastSig = sig;
@@ -384,10 +362,7 @@
       var atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
       var prevHeight = body.scrollHeight, prevTop = body.scrollTop;
 
-      /* WhatsApp-style render: date separator chips between days,
-         consecutive messages from the same sender within 5 minutes
-         grouped (tighter spacing, squared shared corner), and a
-         clock time floated into each bubble's last line. */
+      // day chips and grouping
       var msgHtml = '';
       var lastDayKey = '', lastSender = null, lastTs = 0;
       rows.forEach(function (m) {
@@ -397,7 +372,7 @@
         if (dayKey && dayKey !== lastDayKey) {
           msgHtml += '<div class="chatDay"><span>' + dayChip(d) + '</span></div>';
           lastDayKey = dayKey;
-          lastSender = null; /* new day always restarts the group */
+          lastSender = null; // new day restarts group
         }
         var ts = d ? d.getTime() : 0;
         var cont = lastSender === m.sender_id && ts && (ts - lastTs) < 300000;
@@ -408,29 +383,28 @@
                '</div>';
       });
 
-      /* Load-older spinner pinned to the TOP, shown only while more
-         history remains (reuses the community feed's .cpRefreshWrap). */
+      // load older spinner
       var loaderHtml = dmHasMore
         ? '<div class="cpRefreshWrap visible" id="dmRefreshWrap" aria-hidden="true"><div class="cpRefreshSpinner"></div></div>'
         : '';
 
       body.innerHTML = loaderHtml + (msgHtml ||
-        '<div class="dmSearchNote">SAY HI — THIS IS THE START OF YOUR CHAT ✦</div>');
+        '<div class="dmSearchNote">SAY HI — THIS IS THE START OF YOUR CHAT</div>');
 
       if (dmLoadingOlder) {
-        /* Older messages just prepended — keep the reading position. */
+        // keep reading position
         body.scrollTop = prevTop + (body.scrollHeight - prevHeight);
         dmLoadingOlder = false;
       } else if (scrollToEnd || atEnd) {
         body.scrollTop = body.scrollHeight;
       } else {
-        /* Background poll while reading history — don't yank the view. */
+        // background poll, keep view
         body.scrollTop = prevTop;
       }
     } catch (e) { dmLoadingOlder = false; /* keep last good render */ }
   }
 
-  /* Reveal the next 25 older messages when the user scrolls to the top. */
+  // reveal older on scroll top
   function dmMaybeLoadOlder () {
     if (dmLoadingOlder || !dmHasMore || !dmPartner) return;
     dmLoadingOlder = true;
@@ -438,7 +412,7 @@
     loadThread(false);
   }
 
-  /* Show the composer for friends, the gate bar for everyone else. */
+  // composer or gate bar
   function dmApplyGate () {
     var bar = document.querySelector('#dmChatView .dmBar'), gate = $('dmGate');
     if (!bar || !gate || !dmPartner) return;
@@ -475,7 +449,7 @@
     if (row.children.length) gate.appendChild(row);
   }
 
-  /* ── Send (validation mirrors the DB constraints) ── */
+  // send
   async function send () {
     var inp = $('dmInput'), btn = $('dmSendBtn');
     if (!inp || dmSending || !dmPartner) return;
@@ -483,9 +457,9 @@
     var text = inp.value.trim();
     if (!text) return;
     if (text.length > MAX_LEN) { toast('Message is too long (max 1000 characters)'); return; }
-    if (LINK_RE.test(text)) { toast('Links aren\'t allowed in messages ✦'); return; }
-    /* Friends-only — mirrors the dm_insert_friends_only RLS policy */
-    if (frState(dmPartner.id) !== 'friends') { dmApplyGate(); toast('You can only message friends ✦'); return; }
+    if (LINK_RE.test(text)) { toast('Links aren\'t allowed in messages'); return; }
+    // friends only
+    if (frState(dmPartner.id) !== 'friends') { dmApplyGate(); toast('You can only message friends'); return; }
     dmSending = true; if (btn) btn.disabled = true;
     try {
       var r = await db().from('direct_messages')
@@ -495,8 +469,8 @@
       await loadThread(true);
     } catch (e) {
       var m = (e && e.message) || '';
-      toast(/dm_no_links/.test(m) ? 'Links aren\'t allowed in messages ✦'
-          : /row-level security|policy/i.test(m) ? 'You can only message friends ✦'
+      toast(/dm_no_links/.test(m) ? 'Links aren\'t allowed in messages'
+          : /row-level security|policy/i.test(m) ? 'You can only message friends'
           : 'Message failed to send — try again');
       if (/row-level security|policy/i.test(m)) { loadFriendships().then(dmApplyGate); }
     } finally {
@@ -504,21 +478,16 @@
     }
   }
 
-  /* ── Friends page (#frdPage) — DM partners + user search ── */
+  // friends page
   var frdLastFocus = null, frdSearchTimer = null;
   function frdStartChat (p) {
     closeFriendsPage();
     var page = document.getElementById('communityPage');
     var wasOpen = !!(page && page.classList.contains('open'));
     if (typeof window.openCommunityHome === 'function') window.openCommunityHome();
-    /* Community page already on screen (e.g. from the Friends row inside it):
-       no page transition will run, open the thread straight away. */
+    // open thread right away
     if (wasOpen || !page) { openThread(p); return; }
-    /* Coming from elsewhere (profile MESSAGE button, etc.): the page slide-in
-       (.45s) and the thread's own slide-in used to run at the SAME time, so
-       the thread finished animating while still in transit and looked like an
-       instant pop. Wait for the page transition to land, THEN slide the
-       thread in — same page → grid → chat sequence the community uses. */
+    // wait for page transition
     var fired = false;
     function go(){ if (fired) return; fired = true; openThread(p); }
     page.addEventListener('transitionend', function h(e){
@@ -526,13 +495,10 @@
       page.removeEventListener('transitionend', h);
       go();
     });
-    setTimeout(go, 520);  /* fallback — never strand the tap if transitionend is missed */
+    setTimeout(go, 520);  // fallback if transitionend missed
   }
   async function loadFriendsPage () {
-    /* Four sections driven by public.friendships:
-       FRIEND REQUESTS (incoming, Accept/Decline) · REQUESTS SENT
-       (outgoing pending, Cancel) · YOUR FRIENDS (chat + Block) ·
-       BLOCKED (Unblock). */
+    // four friendship sections
     var list = $('frdList'), empty = $('frdEmptyState'),
         head = $('frdListHead'), cnt = $('frdCount'),
         reqHead = $('frdReqHead'), reqList = $('frdReqList'), reqCnt = $('frdReqCount'),
@@ -568,10 +534,9 @@
           .in('id', allIds);
         if (pr.error) throw pr.error;
         (pr.data || []).forEach(function (p) { byId[p.id] = p; });
-        if (typeof dzcSet === 'function') dzcSet('frProfiles', byId); /* offline snapshot */
+        if (typeof dzcSet === 'function') dzcSet('frProfiles', byId); // offline snapshot
       } catch (ppe) {
-        /* offline → cached usernames/avatars (frMap itself already
-           restored by loadFriendships) */
+        // cached profiles offline
         byId = (typeof dzcGet === 'function' && dzcGet('frProfiles')) || {};
       }
       function prof (pid) { return byId[pid] || { id: pid, username: 'Artist' }; }
@@ -592,9 +557,7 @@
         sentHead.style.display = '';
         if (sentCnt) sentCnt.textContent = sent.length;
         sent.forEach(function (pid) {
-          /* Outgoing pending — no chat until accepted. userRow falls back to
-             openThread when the handler is null, so pass an explicit no-op;
-             CANCEL deletes the friendship row (same frRemove as decline). */
+          // outgoing pending
           var row = userRow(prof(pid), false, 'Request pending…', null, function(){});
           var acts = document.createElement('span'); acts.className = 'frRowBtns';
           acts.appendChild(frBtnEl('CANCEL', 'frBtn--ghost', function () { frRemove(pid, 'Request cancelled'); }));
@@ -605,7 +568,7 @@
       if (friends.length) {
         head.style.display = '';
         friends.forEach(function (pid) {
-          var row = userRow(prof(pid), false, 'Friend ✦ tap to chat', null, frdStartChat);
+          var row = userRow(prof(pid), false, 'Friend, tap to chat', null, frdStartChat);
           var acts = document.createElement('span'); acts.className = 'frRowBtns';
           acts.appendChild(frBtnEl('BLOCK', 'frBtn--danger', function () {
             var u = prof(pid).username || 'this artist';
@@ -643,10 +606,7 @@
   function closeFriendsPage () {
     $('frdPage').classList.remove('open');
     var nav = $('bnNav'); if (nav) nav.style.display = '';
-    /* FIX: Friends opens on top of the Community page — a blind
-       overflow reset here unlocked background scroll behind the
-       still-open panel. restoreScroll() only unlocks when nothing
-       else is open (same pattern as Zeo's closeChat). */
+    // restore scroll
     if (typeof restoreScroll === 'function') restoreScroll();
     else document.body.style.overflow = '';
     if (frdLastFocus && frdLastFocus.focus) frdLastFocus.focus({ preventScroll: true });
@@ -655,9 +615,7 @@
     if (e.key === 'Escape' && $('frdPage') && $('frdPage').classList.contains('open')) closeFriendsPage();
   });
   window.openFriendsPage  = openFriendsPage;
-  /* Minimal bridge for the profile-page [ADD FRD]/[MESSAGE] button — the
-     profile script lives in another scope. Wraps the same primitives the
-     Friends page uses, so behavior stays identical everywhere. */
+  // bridge for profile buttons
   window.pfFriendBridge = {
     load:   loadFriendships,
     state:  frState,
@@ -669,11 +627,10 @@
   };
   window.closeFriendsPage = closeFriendsPage;
 
-  /* ── Wiring — decorate, never modify, existing functions ── */
+  // wiring
   document.addEventListener('DOMContentLoaded', function () {
     initSearch();
-    /* Friends-page search: same debounce/query as the community
-       search, results open a chat via frdStartChat. */
+    // friends page search
     var fInp = $('frdSearchInput'), fBox = $('frdResults');
     if (fInp && fBox) fInp.addEventListener('input', function () {
       clearTimeout(frdSearchTimer);
@@ -686,7 +643,7 @@
     if (inp) inp.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
-    /* Scroll to the top of a thread → reveal 25 older messages. */
+    // scroll top loads older
     var dmScrollT = null, dmBodyEl = $('dmBody');
     if (dmBodyEl) dmBodyEl.addEventListener('scroll', function () {
       if (dmBodyEl.scrollTop <= 40 && !dmLoadingOlder && dmHasMore) {
@@ -694,14 +651,13 @@
         dmScrollT = setTimeout(dmMaybeLoadOlder, 250);
       }
     }, { passive: true });
-    /* Back button: intercept while a DM thread is open, else fall
-       through to the original channel-chat close. */
+    // back button
     var orig = window.cmCloseChat;
     window.cmCloseChat = function () {
       if (dmPartner) { closeThread(); return; }
       if (typeof orig === 'function') orig.apply(this, arguments);
     };
-    /* Refresh conversations when the Community page opens. */
+    // refresh convos on open
     var origOpen = window.openCommunityHome;
     if (typeof origOpen === 'function') {
       window.openCommunityHome = function () {
@@ -710,8 +666,7 @@
         return out;
       };
     }
-    /* First load once auth resolves (site registers its own listener;
-       Supabase supports multiple). */
+    // first load after auth
     if (db() && db().auth && db().auth.onAuthStateChange) {
       db().auth.onAuthStateChange(function () { setTimeout(function () { loadFriendships(); refreshConvos(); }, 400); });
     }

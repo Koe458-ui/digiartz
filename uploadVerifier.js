@@ -1,46 +1,4 @@
-/* =====================================================================
-   uploadVerifier.js  —  DigiArtz automated upload gate
-   ---------------------------------------------------------------------
-   Exposes: window.UploadVerifier.verify(file, meta) -> Promise<result>
-
-   meta = {
-     sb:      Supabase client (required),
-     userId:  auth user id     (required),
-     kind:    'art' | 'comic',
-     pages:   [File, ...]       (comic page files, optional — AI-scanned),
-     onStep:  fn(stepId, state, detail)   // 'ratelimit'|'duplicate'|'ai',
-                                          // state 'run'|'pass'|'flag'|'block'
-   }
-
-   result = {
-     verdict: 'approve' | 'review' | 'block',
-     reason:  string,          // human-readable (shown to the user)
-     phash:   string | null,   // 16-hex perceptual fingerprint to store
-     checks:  [ {name, ...} ]  // per-check detail
-   }
-
-   verdict meaning (wired in index.html doPfUp):
-     approve -> insert status:'approved'  (goes live immediately)
-     review  -> insert status:'pending'   (falls back to #admPage review)
-     block   -> aborted before any S3 upload; nothing is stored
-
-   ---------------------------------------------------------------------
-   WHAT IS AND ISN'T REAL (be honest about this):
-   - Rate limit ....... REAL. Counts this user's rows in Supabase.
-   - Duplicate ........ REAL. Perceptual dHash compared against stored
-                        hashes. Exact match = block, near match = review.
-   - AI detection ..... PARTIAL, hard-coded, no API. Reads the file's
-                        embedded metadata for known generator signatures
-                        (Stable Diffusion / ComfyUI / NovelAI / Midjourney
-                        / DALL·E / Firefly / C2PA "AI" credentials, etc).
-                        Catches files uploaded straight from an AI tool.
-                        CANNOT catch a screenshotted / re-saved image whose
-                        metadata was stripped — no honest client-side code
-                        can. Those pass this check by design and rely on the
-                        community / manual review.  A future pixel-level
-                        model would go through _aiApiHook (left disabled —
-                        "no API" per project decision).
-   ===================================================================== */
+// upload gate: rate limit, duplicate, ai scan
 (function () {
   'use strict';
 
@@ -53,7 +11,7 @@
     aiApiEnabled:  false     // keep false — no external AI-detection API wired
   };
 
-  /* ---- perceptual hash (difference hash, 64-bit -> 16 hex chars) ------ */
+  // perceptual hash
   function fileToBitmap(file) {
     if (typeof createImageBitmap === 'function') {
       return createImageBitmap(file);
@@ -61,9 +19,7 @@
     return new Promise(function (res, rej) {
       var img = new Image();
       var url = URL.createObjectURL(file);
-      /* The blob URL has to be revoked on BOTH paths — the success path
-         used to leak it, so every upload on a browser without
-         createImageBitmap pinned its file in memory for the session. */
+      // revoke the blob url on both paths
       img.onload = function () { URL.revokeObjectURL(url); res(img); };
       img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('Could not read image')); };
       img.src = url;
@@ -83,7 +39,7 @@
     for (var i = 0; i < W * H; i++) {
       gray[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
     }
-    /* build 64 bits: each row compares adjacent pixels (8 comparisons x 8 rows) */
+    // build 64 bits
     var hex = '';
     var nibble = 0, bitCount = 0;
     for (var y = 0; y < H; y++) {
@@ -107,7 +63,7 @@
     return d;
   }
 
-  /* ---- AI-metadata scan (hard-coded signatures, no API) --------------- */
+  // ai metadata scan
   var STRONG_SIGS = [
     { k: 'negative prompt',        label: 'SD prompt params' },
     { k: 'denoising strength',     label: 'SD params' },
@@ -151,17 +107,7 @@
     catch (e) { return latin1(u8); }
   }
 
-  /* ---- FIX 1: compressed PNG text chunks -----------------------------
-     The old scan was a raw byte search over the file. That only ever
-     saw tEXt chunks, which store their payload as plain text. PNG also
-     allows zTXt (always zlib-deflated) and iTXt (optionally deflated),
-     and plenty of generators — plus any PNG that has been through an
-     optimiser like oxipng/pngcrush, which rewrites tEXt as zTXt — put
-     the exact same "Negative prompt / Steps / Sampler / CFG scale"
-     block in there. Deflated bytes look like noise, so a byte search
-     finds nothing and the image sails through as clean.
-
-     So: walk the chunk table properly and inflate what needs it. */
+  // compressed png text chunks
   async function inflate(u8) {
     if (typeof DecompressionStream !== 'function') return null;   // old browser: skip, never throw
     try {
@@ -188,14 +134,14 @@
       if (type === 'tEXt') {
         out += latin1(d) + '\n';
       } else if (type === 'zTXt') {
-        /* keyword \0 method(1) deflate(...) */
+        // ztxt layout
         var z = d.indexOf(0);
         if (z !== -1) {
           var inf = await inflate(d.subarray(z + 2));
           out += latin1(d.subarray(0, z)) + '\n' + (inf ? utf8(inf) : '') + '\n';
         }
       } else if (type === 'iTXt') {
-        /* keyword \0 flag(1) method(1) lang \0 transKeyword \0 payload */
+        // itxt layout
         var k = d.indexOf(0);
         if (k !== -1) {
           var flag = d[k + 1];
@@ -222,19 +168,12 @@
 
       var raw = latin1(head) + '\n' + latin1(tail);
 
-      /* FIX 1 — pull the real text out of every PNG text chunk,
-         inflating zTXt / compressed iTXt on the way. */
+      // read every png text chunk
       if (isPNG(buf)) {
         try { raw += '\n' + await pngTextChunks(buf); } catch (e) {}
       }
 
-      /* FIX 2 — UTF-16 metadata. EXIF UserComment (and anything written
-         by a Windows-side tool) is frequently UTF-16, i.e. the bytes read
-         as  N \0 e \0 g \0 a \0 …  — so indexOf('negative prompt') never
-         matched. Scanning a NUL-stripped copy alongside the raw one costs
-         nothing and catches it. Stripping NULs out of compressed pixel
-         data can't create a false hit: the signatures are long ASCII
-         phrases, not byte pairs. */
+      // utf 16 metadata
       var s = (raw + '\n' + raw.replace(/\u0000/g, '')).toLowerCase();
 
       var found = [];
@@ -247,7 +186,7 @@
     } catch (e) { return []; }
   }
 
-  /* ---- individual checks --------------------------------------------- */
+  // individual checks
   async function rateCheck(sb, userId) {
     var now = Date.now();
     var t10 = new Date(now - 10 * 60 * 1000).toISOString();
@@ -268,18 +207,14 @@
 
   async function dupCheck(sb, phash) {
     if (!phash) return { block: false, flag: false, detail: 'skipped' };
-    /* exact match — indexed, scales, unambiguous -> hard block */
+    // exact match, hard block
     var ex = await Promise.all([
       sb.from('artworks').select('id', { count: 'exact', head: true }).eq('phash', phash),
       sb.from('comics').select('id', { count: 'exact', head: true }).eq('phash', phash)
     ]);
     if (((ex[0].count || 0) + (ex[1].count || 0)) > 0)
       return { block: true, flag: false, detail: 'This exact image is already on DigiArtz.' };
-    /* near match — client-side Hamming over recent hashes -> review.
-       NOTE: bounded to the most-recent CONFIG.recentPull rows per table so
-       it never pulls the whole DB. Reposts almost always cluster in recent
-       uploads. A whole-table fuzzy match would need a Postgres bit-distance
-       function (future upgrade). */
+    // near match, review
     var rc = await Promise.all([
       sb.from('artworks').select('phash').not('phash', 'is', null)
         .order('created_at', { ascending: false }).limit(CONFIG.recentPull),
@@ -300,8 +235,7 @@
     return { block: false, flag: false, detail: 'no duplicates' };
   }
 
-  /* Future paid pixel-model detector plugs in here. Disabled by design.
-     Should resolve to { flag:Boolean, detail:String } when implemented. */
+  // paid detector hook, disabled
   var _aiApiHook = null; // TODO: wire an AI-image-detection API + set CONFIG.aiApiEnabled=true
 
   async function aiCheck(file, pages) {
@@ -315,14 +249,14 @@
       try {
         var api = await _aiApiHook(file);
         if (api && api.flag && hits.indexOf(api.detail || 'AI model') === -1) hits.push(api.detail || 'AI model');
-      } catch (e) { /* API failures never block an upload */ }
+      } catch (e) { /* api failures never block */ }
     }
     if (hits.length)
       return { flag: true, detail: 'AI markers in file metadata: ' + hits.slice(0, 3).join(', ') + (hits.length > 3 ? '…' : '') };
     return { flag: false, detail: 'no AI metadata' };
   }
 
-  /* ---- orchestrator --------------------------------------------------- */
+  // orchestrator
   function fire(onStep, id, state, detail) {
     if (typeof onStep === 'function') { try { onStep(id, state, detail); } catch (e) {} }
   }
@@ -334,14 +268,14 @@
     if (!file) throw new Error('No file to verify');
     var checks = [];
 
-    /* 1 — rate / spam */
+    // 1 rate limit
     fire(onStep, 'ratelimit', 'run');
     var rl = await rateCheck(meta.sb, meta.userId);
     checks.push({ name: 'ratelimit', result: rl });
     fire(onStep, 'ratelimit', rl.block ? 'block' : 'pass', rl.detail);
     if (rl.block) return { verdict: 'block', reason: rl.detail, phash: null, checks: checks };
 
-    /* 2 — perceptual duplicate */
+    // 2 duplicate
     fire(onStep, 'duplicate', 'run');
     var phash = null;
     try { phash = await computeDHash(file); } catch (e) { phash = null; }
@@ -350,7 +284,7 @@
     fire(onStep, 'duplicate', dup.block ? 'block' : (dup.flag ? 'flag' : 'pass'), dup.detail);
     if (dup.block) return { verdict: 'block', reason: dup.detail, phash: phash, checks: checks };
 
-    /* 3 — AI metadata */
+    // 3 ai metadata
     fire(onStep, 'ai', 'run');
     var ai = await aiCheck(file, meta.pages);
     checks.push({ name: 'ai', result: ai });

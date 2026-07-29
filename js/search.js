@@ -1,23 +1,7 @@
-/* ── search.js · feed search ── */
-  /* ═══════════════════════════════════════════════════════════════
-     FEED SEARCH (aw / fg)
-     The bar is a real input, not a button: it filters the grid below
-     as you type, so there is no results screen to open and no way to
-     get stranded on one.
-
-     Two bars, two grids, one behaviour:
-       #awSearchIn  → the home feed  (#awGrid, via renderAwGrid)
-       #fgSearchIn  → the gallery    (renderFG reads this field
-                      directly; the old #fgQ row is gone)
-     ═══════════════════════════════════════════════════════════════ */
+// feed search
+  // feed search
   var awQ = '', awQTimer = null, fgQTimer = null;
 
-  /* user_id → username, fetched once on the first keystroke and kept
-     for the session. Artwork rows come back as select('*') on
-     `artworks`, which carries user_id but no username, and joining a
-     profile onto every feed query to serve a search box nobody may
-     open would be the wrong trade. Failure is not fatal: search keeps
-     matching everything else and artists simply aren't part of it. */
   var awArtists = null, awArtistsBusy = false;
   function awLoadArtists(){
     if(awArtists || awArtistsBusy || !sb) return;
@@ -28,14 +12,10 @@
         if(rows[i] && rows[i].id) map[rows[i].id] = String(rows[i].username || '').toLowerCase();
       }
       awArtists = map; awArtistsBusy = false;
-      /* Landed mid-query — redo the match now artists are searchable. */
       if(awQ) awSearchRender();
     }, function(){ awArtists = {}; awArtistsBusy = false; });
   }
 
-  /* Matches the fields a row actually has: title, description, its own
-     tags, and its categories by slug AND by label, so typing "3D"
-     finds pieces stored under the "3d-art" slug. */
   function awSearchFilter(list){
     if(!awQ || !Array.isArray(list)) return list;
     var q = awQ, out = [];
@@ -69,8 +49,6 @@
       if(typeof awArtworksCache !== 'undefined') renderAwGrid(awArtworksCache);
     }catch(e){}
   }
-  /* Shared by both bars: the clear button only exists while there's
-     something to clear, and the ⌘K badge steps aside for it. */
   function awSearchChrome(wrapId, v){
     var w = document.getElementById(wrapId);
     if(w) w.classList.toggle('tgHasQ', !!String(v || '').length);
@@ -79,8 +57,6 @@
     awSearchChrome('awSearchInWrap', v);
     awLoadArtists();
     clearTimeout(awQTimer);
-    /* Debounced. Every keystroke rebuilds the grid, and running that
-       per character makes typing feel like it's fighting back. */
     awQTimer = setTimeout(function(){
       var next = String(v || '').trim().toLowerCase();
       if(next === awQ) return;
@@ -93,8 +69,6 @@
     if(el){ el.value = ''; el.focus(); }
     awSearchInput('');
   }
-  /* This IS the gallery's query field now — _renderFGPage() reads
-     #fgSearchIn directly, so there is nothing to mirror into. */
   function fgSearchInput(v){
     awSearchChrome('fgSearchInWrap', v);
     clearTimeout(fgQTimer);
@@ -113,17 +87,11 @@
     var empty = document.getElementById('awEmpty');
     if(!grid) return;
 
-    /* The grid is TRENDING order with preferred tags pushed to the
-       front. Hidden artworks are dropped first (per-user "hide from my
-       feed"). */
-    /* Applied here rather than at the call site so every path that
-       repaints the grid — tag tick, upload, like — keeps the active
-       query instead of silently dropping it. */
+    // trending order, hidden dropped
+    // keep active query
     var src = awSearchFilter(filterHidden((list||[]).slice()));
     awRList = tgPrioritize(sortByTrending(src));
-    /* A re-render (rebuildGalCarousels after a like/edit/upload) keeps
-       however many cards were already showing, so the user's scroll
-       depth survives. */
+    // keep scroll depth
     var keep = awRShown;
     awRShown = 0;
     if(awSent){ awSent.destroy(); awSent = null; }
@@ -142,17 +110,11 @@
 
     awAppendBatch(Math.max(gridInitialBatch(), keep));
     if(awRShown < awRList.length){
-      /* Main page scrolls the document, so the observer root is the
-         viewport (null). The sentinel lives INSIDE .awGrid spanning
-         the full row (grid-column:1/-1 in .igSentinel). */
       awSent = makeGridSentinel(null, function(){ awAppendBatch(); });
       grid.appendChild(awSent.el);
     }
   }
 
-  /* Append the next batch of cards before the sentinel.
-     `count` overrides the batch size (used for the initial paint /
-     scroll-depth restore); omitted, it's one column-sized step. */
   function awAppendBatch(count){
     var grid = document.getElementById('awGrid');
     if(!grid || awRShown >= awRList.length) return;
@@ -170,17 +132,15 @@
     }
   }
 
-  /* Home feed — called by renderHome() whenever `images` changes */
+  // home feed
   window.rebuildGalCarousels = function(artworks){
     awArtworksCache = artworks || [];
     renderAwGrid(awArtworksCache);
   };
 
-  /* Populate with empty list on first paint — rebuilt after DB loads */
   window.rebuildGalCarousels([]);
 
 
-  /* SUBSCRIPTION OVERLAY Mirrors the openAdsPanel / openCommunityHome patterns. */
   function openSubscription() {
     closeMenu();
     var el = document.getElementById('subPage');
@@ -198,7 +158,6 @@
     restoreScroll();
   }
 
-  /* ── Coming Soon modal ── */
   function openSubModal() {
     var m = document.getElementById('subModal');
     if (!m) return;

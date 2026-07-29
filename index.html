@@ -4,10 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="color-scheme" content="dark"/>
   <meta name="theme-color" content="#08080D"/>
-  <!-- ── Theme boot — runs before first paint so the saved theme
-       applies with zero flash. Pref lives in localStorage("koeTheme");
-       "system" resolves via prefers-color-scheme. The full engine
-       (switcher UI, live system tracking) lives next to #themePage. -->
+  <!-- theme boot -->
   <script>
   (function(){
     var K='koeTheme',V={dark:1,graydark:1,light:1,system:1},p=null;
@@ -24,17 +21,7 @@
     if(s)s.setAttribute('content',l==='light'?'light':'dark');
   })();
   </script>
-  <!-- ── Critical paint style — MUST stay above the font <link> and any
-       <script src>. The main stylesheet is ~5,000 lines further down and
-       the parser can't reach it until every blocking resource above it
-       resolves; until then the document has no background and the canvas
-       falls back to white. These four rules give the root element its
-       colour from the very first frame.
-
-       Note the shape: this declares the --vbg *token*, not `background`
-       directly. A rule like html[data-theme="dark"]{background:…} would
-       out-specify the main sheet's html{background:var(--vbg)} forever
-       and quietly break the runtime theme switcher. ── -->
+  <!-- critical paint style -->
   <style>
     html{background:var(--vbg,#050308);}
     html[data-theme="dark"]{--vbg:#060609;}
@@ -44,20 +31,17 @@
   <!-- Cloudflare Web Analytics -->
   <script data-cf-beacon='{"token": "aa4b7177387e4f689739a5fdf44cbffa"}' defer="" src="https://static.cloudflareinsights.com/beacon.min.js">
   </script>
-  <!-- End Cloudflare Web Analytics -->
-  <!-- Google AdSense -->
+  <!-- /cloudflare analytics -->
+  <!-- adsense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1351696642556147"
        crossorigin="anonymous"></script>
-  <!-- /Google AdSense -->
-  <!-- Google Analytics (GA4) -->
+  <!-- /adsense -->
+  <!-- analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-21DL9JWJ58"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    /* Consent Mode default — denied until the cookie banner records a
-       choice (ckAccept flips these to granted via gtag('consent','update')).
-       Must run BEFORE gtag('config') or the first pageview fires with
-       cookies regardless of the banner. */
+    // consent denied by default
     gtag('consent', 'default', {
       analytics_storage: 'denied',
       ad_storage: 'denied',
@@ -68,20 +52,15 @@
 
     gtag('config', 'G-21DL9JWJ58');
   </script>
-  <!-- End Google Analytics (GA4) -->
+  <!-- /analytics -->
   <meta content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual" name="viewport"/>
   <title>
    DigiArtz — The Digital Art Community
   </title>
-  <!-- SEO — site defaults; swapped per-artwork by updateArtworkSEO/resetArtworkSEO -->
-  <meta name="description" content="DigiArtz is a curated platform for digital artists to showcase exceptional artwork, build a professional portfolio, connect with a global creative community, and gain the recognition their talent deserves."/>
+  <!-- seo defaults -->
+  <meta name="description" content="DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists."/>
   <link rel="canonical" href="https://digiartz.net/"/>
   <meta name="robots" content="index, follow, max-image-preview:large"/>
-  <!-- Favicon / site icons — generated from the DigiArtz bird logo.
-       Light-mode tabs get the black line art; dark-mode tabs swap to a
-       white version via prefers-color-scheme so it never disappears on a
-       dark tab bar. favicon.ico stays first as the universal fallback for
-       browsers that ignore the media queries. -->
   <link rel="icon" href="/favicon.ico" sizes="any"/>
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" media="(prefers-color-scheme: light)"/>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" media="(prefers-color-scheme: light)"/>
@@ -91,11 +70,6 @@
   <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48-dark.png" media="(prefers-color-scheme: dark)"/>
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
   <link rel="manifest" href="/site.webmanifest"/>
-  <!-- Organization schema — tells Google which logo belongs to Digiartz
-       so it can show it beside the site name in search results
-       (separate mechanism from the favicon above; Google needs both
-       structured data AND enough site authority before it will
-       actually display this in results — it's not instant). -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -105,38 +79,24 @@
     "logo": "https://digiartz.net/icon-512.png"
   }
   </script>
-  <!-- Canonical ImageGallery block. THE id MATTERS: _middleware.js rewrites
-       this element in place at the edge (fresh artwork list), and injectGallerySEO()
-       looks it up by id to replace it client-side. Without the id, both of them
-       append NEW blocks instead and the page ends up with three competing
-       ImageGallery declarations. The static JSON below is the fallback that
-       crawlers see if Supabase is unreachable. -->
   <script type="application/ld+json" id="ldGallery">
-  {"@context": "https://schema.org", "@type": "ImageGallery", "name": "DigiArtz — Digital Art Gallery", "url": "https://digiartz.net/", "description": "Curated digital artwork by the DigiArtz community: anime character illustrations, fan art, landscapes, cars and original concepts.", "image": ["https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783627033934_Emilia_Re_Zero_Premium_Anime_Character_Illustration.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626754684_Jinhsi_Faithful_Official_Character_Recreation_Wuthering_Wave.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626666393_Encore_Wuthering_Waves_Official_Character_Illustration.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626242243_Nahida_Genshin_Impact_Ultra_Detailed_Official_Character_Illu.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626083032_Subaru_Natsuki_Re_Zero_Starting_Life_in_Another_World_Premiu.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625914239_Dyadia_Honor_of_Kings_Ultra_Detailed_Official_Character_Recr.png"], "hasPart": [{"@type": "ImageObject", "position": 1, "name": "Emilia | Re:Zero – Premium Anime Character Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783627033934_Emilia_Re_Zero_Premium_Anime_Character_Illustration.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783627033934_Emilia_Re_Zero_Premium_Anime_Character_Illustration.png", "url": "https://digiartz.net/artwork/f97af784-5fb2-4198-9e3d-535bdda2883c", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 2, "name": "Jinhsi – Faithful Official Character Recreation | Wuthering Waves Ultra-Detailed Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626754684_Jinhsi_Faithful_Official_Character_Recreation_Wuthering_Wave.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626754684_Jinhsi_Faithful_Official_Character_Recreation_Wuthering_Wave.png", "url": "https://digiartz.net/artwork/7b7c778e-0a5f-4757-a9fc-663546143447", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 3, "name": "Encore | Wuthering Waves – Official Character Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626666393_Encore_Wuthering_Waves_Official_Character_Illustration.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626666393_Encore_Wuthering_Waves_Official_Character_Illustration.png", "url": "https://digiartz.net/artwork/55018168-6916-4755-bd20-a6308a721636", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 4, "name": "Nahida – Genshin Impact | Ultra-Detailed Official Character Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626242243_Nahida_Genshin_Impact_Ultra_Detailed_Official_Character_Illu.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626242243_Nahida_Genshin_Impact_Ultra_Detailed_Official_Character_Illu.png", "url": "https://digiartz.net/artwork/96cbf52f-d056-43d9-a543-1b8fe6c564b9", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 5, "name": "Subaru Natsuki | Re:Zero – Starting Life in Another World | Premium Anime Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626083032_Subaru_Natsuki_Re_Zero_Starting_Life_in_Another_World_Premiu.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626083032_Subaru_Natsuki_Re_Zero_Starting_Life_in_Another_World_Premiu.png", "url": "https://digiartz.net/artwork/dc44c5cb-21d7-43f0-8602-08afe50178c7", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 6, "name": "Dyadia – Honor of Kings | Ultra-Detailed Official Character Recreation", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625914239_Dyadia_Honor_of_Kings_Ultra_Detailed_Official_Character_Recr.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625914239_Dyadia_Honor_of_Kings_Ultra_Detailed_Official_Character_Recr.png", "url": "https://digiartz.net/artwork/b137c531-661e-4c36-ad2a-556a95a82124", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 7, "name": "Yoimiya — Queen of the Summer Fireworks | Genshin Impact Fan Art", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625619482_Yoimiya_Queen_of_the_Summer_Fireworks_Genshin_Impact_Fan_Art.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625619482_Yoimiya_Queen_of_the_Summer_Fireworks_Genshin_Impact_Fan_Art.png", "url": "https://digiartz.net/artwork/64ab9a17-615c-4236-ba11-77d4bcc67dd1", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 8, "name": "Mitsuri Kanroji – Love Hashira | Ultra-Detailed Official Anime Recreation", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625294416_Mitsuri_Kanroji_Love_Hashira_Ultra_Detailed_Official_Anime_R.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625294416_Mitsuri_Kanroji_Love_Hashira_Ultra_Detailed_Official_Anime_R.png", "url": "https://digiartz.net/artwork/db96fb7b-139e-4c3a-9402-94e382cb77a0", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 9, "name": "Yae miko", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1783447397032_Yae_miko.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1783447397032_Yae_miko.png", "url": "https://digiartz.net/artwork/400b3e95-df19-432b-9546-b075dc57be72", "datePublished": "2026-07-07", "creator": {"@type": "Person", "name": "Koe_Official", "url": "https://digiartz.net/profile/Koe_Official"}}, {"@type": "ImageObject", "position": 10, "name": "Ethereal Violet", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet.jpg", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet.jpg", "url": "https://digiartz.net/artwork/7cd74497-cd51-446b-a084-afb6b04fa84c", "datePublished": "2026-07-03", "creator": {"@type": "Person", "name": "user_9f8c7d5a", "url": "https://digiartz.net/profile/user_9f8c7d5a"}}, {"@type": "ImageObject", "position": 11, "name": "Archer Queen", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1782822019716_Archer_Queen.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1782822019716_Archer_Queen.png", "url": "https://digiartz.net/artwork/42b36e1e-0bea-4bd6-a1d4-33615cddbd8d", "datePublished": "2026-06-30", "creator": {"@type": "Person", "name": "Koe_Official", "url": "https://digiartz.net/profile/Koe_Official"}}, {"@type": "ImageObject", "position": 12, "name": "Prushka", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781717079470_Prushka.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781717079470_Prushka.png", "url": "https://digiartz.net/artwork/87230979-277b-48e7-9190-dcd90f1c8956", "datePublished": "2026-06-17"}, {"@type": "ImageObject", "position": 13, "name": "Meili Portroute", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781630475302_Meili_Portroute.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781630475302_Meili_Portroute.png", "url": "https://digiartz.net/artwork/c1677e60-d791-4aee-a054-1c3b83914431", "datePublished": "2026-06-16"}, {"@type": "ImageObject", "position": 14, "name": "Junko Enoshima", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781459752137_Junko_Enoshima.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781459752137_Junko_Enoshima.png", "url": "https://digiartz.net/artwork/e7a15ef1-f043-4176-b260-919e5da88d29", "datePublished": "2026-06-14"}, {"@type": "ImageObject", "position": 15, "name": "Kyojuro Rengoku", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781282837085_Kyojuro_Rengoku.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781282837085_Kyojuro_Rengoku.png", "url": "https://digiartz.net/artwork/478488e3-0bcf-4b13-9fdd-e07ddaba2fd1", "datePublished": "2026-06-12"}, {"@type": "ImageObject", "position": 16, "name": "Fushi", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781195618071_Fushi.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781195618071_Fushi.png", "url": "https://digiartz.net/artwork/637c58b1-0b8d-4e59-a4b5-45d8b364b888", "datePublished": "2026-06-11"}, {"@type": "ImageObject", "position": 17, "name": "Makima", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781091495828_Makima.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781091495828_Makima.png", "url": "https://digiartz.net/artwork/40a29b41-36e1-4267-8f17-fd72a0a9fd92", "datePublished": "2026-06-10"}, {"@type": "ImageObject", "position": 18, "name": "Misa Amane", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781024008823_Misa_Amane.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781024008823_Misa_Amane.png", "url": "https://digiartz.net/artwork/afd0f86b-ee4b-40b4-b4c5-e5d61559a818", "datePublished": "2026-06-09"}, {"@type": "ImageObject", "position": 19, "name": "Lelouch vi Britannia", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780944274654_Lelouch_vi_Britannia.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780944274654_Lelouch_vi_Britannia.png", "url": "https://digiartz.net/artwork/a7f35adb-7f8c-4011-96b5-66a1c372d34a", "datePublished": "2026-06-08"}, {"@type": "ImageObject", "position": 20, "name": "Thorfinn Karlsefni", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780918474836_Thorfinn_Karlsefni.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780918474836_Thorfinn_Karlsefni.png", "url": "https://digiartz.net/artwork/aa976152-d904-4955-b83b-6b9e4a41717d", "datePublished": "2026-06-08"}, {"@type": "ImageObject", "position": 21, "name": "Natsuki Subaru", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780902931537_Natsuki_Subaru.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780902931537_Natsuki_Subaru.png", "url": "https://digiartz.net/artwork/641b7af6-922c-4726-b1b6-53fc53f92fcf", "datePublished": "2026-06-08"}, {"@type": "ImageObject", "position": 22, "name": "Crimson Horizon", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780836584964_Crimson_Horizon.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780836584964_Crimson_Horizon.png", "url": "https://digiartz.net/artwork/44576437-ac6e-4be5-882b-98273b7ec8d7", "datePublished": "2026-06-07"}, {"@type": "ImageObject", "position": 23, "name": "Reinhard van Astrea", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780766256380_Reinhard_van_Astrea.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780766256380_Reinhard_van_Astrea.png", "url": "https://digiartz.net/artwork/8a7f8e72-71ed-4d0a-8d44-712af28449b7", "datePublished": "2026-06-06"}, {"@type": "ImageObject", "position": 24, "name": "Subaru Natsuki", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780766222807_Subaru_Natsuki.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780766222807_Subaru_Natsuki.png", "url": "https://digiartz.net/artwork/12bc412e-1c62-4dec-a007-278d9f129a3e", "datePublished": "2026-06-06"}, {"@type": "ImageObject", "position": 25, "name": "Natsuki Subaru", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780674011083_Natsuki_Subaru.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780674011083_Natsuki_Subaru.png", "url": "https://digiartz.net/artwork/6b632969-253a-4510-9ec8-da2c4eee7f17", "datePublished": "2026-06-05"}, {"@type": "ImageObject", "position": 26, "name": "Mountain Field", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501989833_Mountain_Field.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501989833_Mountain_Field.png", "url": "https://digiartz.net/artwork/d5e258ad-ce58-44d1-a280-b05f0d349436", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 27, "name": "Kirigiri Execution", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501850798_Kirigiri_Execution.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501850798_Kirigiri_Execution.png", "url": "https://digiartz.net/artwork/7b77294f-a857-4795-9903-e7b4a7df24ff", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 28, "name": "Kaoruko Waguri", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501817488_Kaoruko_Waguri.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501817488_Kaoruko_Waguri.png", "url": "https://digiartz.net/artwork/219ef20a-ab00-4b7b-b9a0-961ec78954d6", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 29, "name": "Koenigsegg Jesko Absolute", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501758632_Koenigsegg_Jesko_Absolute.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501758632_Koenigsegg_Jesko_Absolute.png", "url": "https://digiartz.net/artwork/a8de271d-413a-476b-acca-5c31e89dcbc2", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 30, "name": "Cute Anime Girl", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501723126_Cute_Anime_Girl.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501723126_Cute_Anime_Girl.png", "url": "https://digiartz.net/artwork/ade6dc20-0b1c-4fa9-8a34-a6f897c8fcdd", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 31, "name": "Melissa Moretti", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501669939_Melissa_Moretti.jpg", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501669939_Melissa_Moretti.jpg", "url": "https://digiartz.net/artwork/cf63b47e-af6f-4875-b104-f0f7a431a56a", "datePublished": "2026-06-03"}]}
+  {"@context": "https://schema.org", "@type": "ImageGallery", "name": "DigiArtz — Digital Art Gallery", "url": "https://digiartz.net/", "description": "Digital art posted by the DigiArtz community: character illustrations, fan art, landscapes, cars and original work.", "image": ["https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783627033934_Emilia_Re_Zero_Premium_Anime_Character_Illustration.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626754684_Jinhsi_Faithful_Official_Character_Recreation_Wuthering_Wave.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626666393_Encore_Wuthering_Waves_Official_Character_Illustration.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626242243_Nahida_Genshin_Impact_Ultra_Detailed_Official_Character_Illu.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626083032_Subaru_Natsuki_Re_Zero_Starting_Life_in_Another_World_Premiu.png", "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625914239_Dyadia_Honor_of_Kings_Ultra_Detailed_Official_Character_Recr.png"], "hasPart": [{"@type": "ImageObject", "position": 1, "name": "Emilia | Re:Zero – Premium Anime Character Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783627033934_Emilia_Re_Zero_Premium_Anime_Character_Illustration.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783627033934_Emilia_Re_Zero_Premium_Anime_Character_Illustration.png", "url": "https://digiartz.net/artwork/f97af784-5fb2-4198-9e3d-535bdda2883c", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 2, "name": "Jinhsi – Faithful Official Character Recreation | Wuthering Waves Ultra-Detailed Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626754684_Jinhsi_Faithful_Official_Character_Recreation_Wuthering_Wave.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626754684_Jinhsi_Faithful_Official_Character_Recreation_Wuthering_Wave.png", "url": "https://digiartz.net/artwork/7b7c778e-0a5f-4757-a9fc-663546143447", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 3, "name": "Encore | Wuthering Waves – Official Character Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626666393_Encore_Wuthering_Waves_Official_Character_Illustration.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626666393_Encore_Wuthering_Waves_Official_Character_Illustration.png", "url": "https://digiartz.net/artwork/55018168-6916-4755-bd20-a6308a721636", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 4, "name": "Nahida – Genshin Impact | Ultra-Detailed Official Character Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626242243_Nahida_Genshin_Impact_Ultra_Detailed_Official_Character_Illu.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626242243_Nahida_Genshin_Impact_Ultra_Detailed_Official_Character_Illu.png", "url": "https://digiartz.net/artwork/96cbf52f-d056-43d9-a543-1b8fe6c564b9", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 5, "name": "Subaru Natsuki | Re:Zero – Starting Life in Another World | Premium Anime Illustration", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626083032_Subaru_Natsuki_Re_Zero_Starting_Life_in_Another_World_Premiu.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626083032_Subaru_Natsuki_Re_Zero_Starting_Life_in_Another_World_Premiu.png", "url": "https://digiartz.net/artwork/dc44c5cb-21d7-43f0-8602-08afe50178c7", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 6, "name": "Dyadia – Honor of Kings | Ultra-Detailed Official Character Recreation", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625914239_Dyadia_Honor_of_Kings_Ultra_Detailed_Official_Character_Recr.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625914239_Dyadia_Honor_of_Kings_Ultra_Detailed_Official_Character_Recr.png", "url": "https://digiartz.net/artwork/b137c531-661e-4c36-ad2a-556a95a82124", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 7, "name": "Yoimiya — Queen of the Summer Fireworks | Genshin Impact Fan Art", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625619482_Yoimiya_Queen_of_the_Summer_Fireworks_Genshin_Impact_Fan_Art.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625619482_Yoimiya_Queen_of_the_Summer_Fireworks_Genshin_Impact_Fan_Art.png", "url": "https://digiartz.net/artwork/64ab9a17-615c-4236-ba11-77d4bcc67dd1", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 8, "name": "Mitsuri Kanroji – Love Hashira | Ultra-Detailed Official Anime Recreation", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625294416_Mitsuri_Kanroji_Love_Hashira_Ultra_Detailed_Official_Anime_R.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783625294416_Mitsuri_Kanroji_Love_Hashira_Ultra_Detailed_Official_Anime_R.png", "url": "https://digiartz.net/artwork/db96fb7b-139e-4c3a-9402-94e382cb77a0", "datePublished": "2026-07-09", "creator": {"@type": "Person", "name": "mitsuri", "url": "https://digiartz.net/profile/mitsuri"}}, {"@type": "ImageObject", "position": 9, "name": "Yae miko", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1783447397032_Yae_miko.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1783447397032_Yae_miko.png", "url": "https://digiartz.net/artwork/400b3e95-df19-432b-9546-b075dc57be72", "datePublished": "2026-07-07", "creator": {"@type": "Person", "name": "Koe_Official", "url": "https://digiartz.net/profile/Koe_Official"}}, {"@type": "ImageObject", "position": 10, "name": "Ethereal Violet", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet.jpg", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet.jpg", "url": "https://digiartz.net/artwork/7cd74497-cd51-446b-a084-afb6b04fa84c", "datePublished": "2026-07-03", "creator": {"@type": "Person", "name": "user_9f8c7d5a", "url": "https://digiartz.net/profile/user_9f8c7d5a"}}, {"@type": "ImageObject", "position": 11, "name": "Archer Queen", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1782822019716_Archer_Queen.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1782822019716_Archer_Queen.png", "url": "https://digiartz.net/artwork/42b36e1e-0bea-4bd6-a1d4-33615cddbd8d", "datePublished": "2026-06-30", "creator": {"@type": "Person", "name": "Koe_Official", "url": "https://digiartz.net/profile/Koe_Official"}}, {"@type": "ImageObject", "position": 12, "name": "Prushka", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781717079470_Prushka.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781717079470_Prushka.png", "url": "https://digiartz.net/artwork/87230979-277b-48e7-9190-dcd90f1c8956", "datePublished": "2026-06-17"}, {"@type": "ImageObject", "position": 13, "name": "Meili Portroute", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781630475302_Meili_Portroute.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781630475302_Meili_Portroute.png", "url": "https://digiartz.net/artwork/c1677e60-d791-4aee-a054-1c3b83914431", "datePublished": "2026-06-16"}, {"@type": "ImageObject", "position": 14, "name": "Junko Enoshima", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781459752137_Junko_Enoshima.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781459752137_Junko_Enoshima.png", "url": "https://digiartz.net/artwork/e7a15ef1-f043-4176-b260-919e5da88d29", "datePublished": "2026-06-14"}, {"@type": "ImageObject", "position": 15, "name": "Kyojuro Rengoku", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781282837085_Kyojuro_Rengoku.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781282837085_Kyojuro_Rengoku.png", "url": "https://digiartz.net/artwork/478488e3-0bcf-4b13-9fdd-e07ddaba2fd1", "datePublished": "2026-06-12"}, {"@type": "ImageObject", "position": 16, "name": "Fushi", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781195618071_Fushi.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781195618071_Fushi.png", "url": "https://digiartz.net/artwork/637c58b1-0b8d-4e59-a4b5-45d8b364b888", "datePublished": "2026-06-11"}, {"@type": "ImageObject", "position": 17, "name": "Makima", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781091495828_Makima.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781091495828_Makima.png", "url": "https://digiartz.net/artwork/40a29b41-36e1-4267-8f17-fd72a0a9fd92", "datePublished": "2026-06-10"}, {"@type": "ImageObject", "position": 18, "name": "Misa Amane", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1781024008823_Misa_Amane.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1781024008823_Misa_Amane.png", "url": "https://digiartz.net/artwork/afd0f86b-ee4b-40b4-b4c5-e5d61559a818", "datePublished": "2026-06-09"}, {"@type": "ImageObject", "position": 19, "name": "Lelouch vi Britannia", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780944274654_Lelouch_vi_Britannia.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780944274654_Lelouch_vi_Britannia.png", "url": "https://digiartz.net/artwork/a7f35adb-7f8c-4011-96b5-66a1c372d34a", "datePublished": "2026-06-08"}, {"@type": "ImageObject", "position": 20, "name": "Thorfinn Karlsefni", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780918474836_Thorfinn_Karlsefni.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780918474836_Thorfinn_Karlsefni.png", "url": "https://digiartz.net/artwork/aa976152-d904-4955-b83b-6b9e4a41717d", "datePublished": "2026-06-08"}, {"@type": "ImageObject", "position": 21, "name": "Natsuki Subaru", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780902931537_Natsuki_Subaru.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780902931537_Natsuki_Subaru.png", "url": "https://digiartz.net/artwork/641b7af6-922c-4726-b1b6-53fc53f92fcf", "datePublished": "2026-06-08"}, {"@type": "ImageObject", "position": 22, "name": "Crimson Horizon", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780836584964_Crimson_Horizon.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780836584964_Crimson_Horizon.png", "url": "https://digiartz.net/artwork/44576437-ac6e-4be5-882b-98273b7ec8d7", "datePublished": "2026-06-07"}, {"@type": "ImageObject", "position": 23, "name": "Reinhard van Astrea", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780766256380_Reinhard_van_Astrea.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780766256380_Reinhard_van_Astrea.png", "url": "https://digiartz.net/artwork/8a7f8e72-71ed-4d0a-8d44-712af28449b7", "datePublished": "2026-06-06"}, {"@type": "ImageObject", "position": 24, "name": "Subaru Natsuki", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780766222807_Subaru_Natsuki.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780766222807_Subaru_Natsuki.png", "url": "https://digiartz.net/artwork/12bc412e-1c62-4dec-a007-278d9f129a3e", "datePublished": "2026-06-06"}, {"@type": "ImageObject", "position": 25, "name": "Natsuki Subaru", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780674011083_Natsuki_Subaru.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780674011083_Natsuki_Subaru.png", "url": "https://digiartz.net/artwork/6b632969-253a-4510-9ec8-da2c4eee7f17", "datePublished": "2026-06-05"}, {"@type": "ImageObject", "position": 26, "name": "Mountain Field", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501989833_Mountain_Field.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501989833_Mountain_Field.png", "url": "https://digiartz.net/artwork/d5e258ad-ce58-44d1-a280-b05f0d349436", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 27, "name": "Kirigiri Execution", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501850798_Kirigiri_Execution.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501850798_Kirigiri_Execution.png", "url": "https://digiartz.net/artwork/7b77294f-a857-4795-9903-e7b4a7df24ff", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 28, "name": "Kaoruko Waguri", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501817488_Kaoruko_Waguri.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501817488_Kaoruko_Waguri.png", "url": "https://digiartz.net/artwork/219ef20a-ab00-4b7b-b9a0-961ec78954d6", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 29, "name": "Koenigsegg Jesko Absolute", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501758632_Koenigsegg_Jesko_Absolute.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501758632_Koenigsegg_Jesko_Absolute.png", "url": "https://digiartz.net/artwork/a8de271d-413a-476b-acca-5c31e89dcbc2", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 30, "name": "Cute Anime Girl", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501723126_Cute_Anime_Girl.png", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501723126_Cute_Anime_Girl.png", "url": "https://digiartz.net/artwork/ade6dc20-0b1c-4fa9-8a34-a6f897c8fcdd", "datePublished": "2026-06-03"}, {"@type": "ImageObject", "position": 31, "name": "Melissa Moretti", "contentUrl": "https://dn8x0csx6ii8w.cloudfront.net/koe-media/artworks/1780501669939_Melissa_Moretti.jpg", "thumbnailUrl": "https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/1780501669939_Melissa_Moretti.jpg", "url": "https://digiartz.net/artwork/cf63b47e-af6f-4875-b104-f0f7a431a56a", "datePublished": "2026-06-03"}]}
   </script>
-  <!-- Open Graph -->
   <meta property="og:site_name" content="Digiartz"/>
   <meta property="og:type" content="website"/>
   <meta property="og:title" content="DigiArtz — The Digital Art Community"/>
-  <meta property="og:description" content="DigiArtz is a curated platform for digital artists to showcase exceptional artwork, build a professional portfolio, connect with a global creative community, and gain the recognition their talent deserves."/>
+  <meta property="og:description" content="DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists."/>
   <meta property="og:url" content="https://digiartz.net/"/>
   <meta property="og:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png"/>
   <meta property="og:image:alt" content="Digiartz — digital art showcase"/>
-  <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="DigiArtz — The Digital Art Community"/>
-  <meta name="twitter:description" content="DigiArtz is a curated platform for digital artists to showcase exceptional artwork, build a professional portfolio, connect with a global creative community, and gain the recognition their talent deserves."/>
+  <meta name="twitter:description" content="DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists."/>
   <meta name="twitter:image" content="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/backgrounds/file_00000000630071fa93ee249ab9f96f22.png"/>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-  <!-- Loaded without blocking the first paint: fetched as a preload, then
-       promoted to a stylesheet on load. The URL already carries
-       display=swap, so text paints in the fallback face and swaps in
-       Sora/Inter when they arrive — a font swap instead of a white screen. -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
-  <!-- Hero background/artwork feature fully removed -->
-  <!-- Site stylesheets — this order IS the cascade, overrides.css stays last -->
   <link rel="stylesheet" href="/css/base.css?v=1">
   <link rel="stylesheet" href="/css/hero.css?v=1">
   <link rel="stylesheet" href="/css/viewer.css?v=1">
@@ -153,39 +113,11 @@
  </head>
  <body>
 
-  <!-- =========================================================
-       INTRO / LOADING SCREEN
-       └─ Spinner (.iSpin) + LOADING text (.iTxt), centered
-       ========================================================= -->
-  <!-- Loading veil — deliberately minimal: a centered spinner and the
-       word LOADING, nothing else. The veil is TRANSPARENT (the site is
-       visible painting in behind it) but it still swallows every click
-       and scroll until reveal — see-through, not pass-through. It
-       drops the instant the tracked slices (DOM + fonts + image
-       callback) hit 100%; there is no minimum display time. -->
   <div id="intro" aria-label="Loading" role="status">
    <div class="iSpin" aria-hidden="true"></div>
    <div class="iTxt">LOADING</div>
   </div>
-  <!-- =========================================================
-       SUPABASE CONFIG BANNER
-       ========================================================= -->
-  <!-- Dev-only config banner. Kept EMPTY in the raw HTML on purpose:
-       text scrapers read hidden elements, so the old inline warning
-       made crawlers/AI tools report "Supabase not configured" even
-       though real visitors never saw it. The message is injected by
-       JS only in the genuine missing-config case. -->
   <div id="sBanner"></div>
-  <!-- =========================================================
-       FLOATING BOTTOM NAVIGATION
-       ├─ Bar (#bnNav)
-       │   ├─ Home     → scrolls to hero / closes open panels
-       │   ├─ Gallery  → ddOpenGallery()
-       │   ├─ Community → ddOpenCommunity()
-       │   └─ Profile  → login face icon ↔ avatar (existing buttons,
-       │                 relocated unchanged so all auth/admin JS
-       │                 keeps working without modification)
-       ========================================================= -->
   <nav id="bnNav" aria-label="Primary navigation">
    <button class="bnItem" id="bnHome" onclick="bnGoHome()" title="Home" aria-label="Home">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h4.5v-6h2v6H17.5a1 1 0 0 0 1-1v-9"/></svg>
@@ -204,15 +136,12 @@
     <span class="bnLabel">Community</span>
    </button>
    <div class="bnItem bnProfile" id="bnProfile">
-    <!-- LOGGED-OUT: generic face icon, redrawn to match the
-         outline/stroke style of the other nav icons exactly -->
     <button class="nLoginBtn" id="navLoginBtn" onclick="bnGoProfile(event)" title="Login" aria-label="Login">
      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
       <circle cx="12" cy="8" r="3.5"/>
       <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7"/>
      </svg>
     </button>
-    <!-- LOGGED-IN: circular avatar with first letter (replaces login btn) -->
     <button class="nAvatarBtn" id="navAvatarBtn"
       onclick="bnGoProfile(event)"
       title="Profile"
@@ -226,25 +155,12 @@
    </div>
   </nav>
 
-  <!-- =========================================================
-       HERO SECTION — stripped down to just the persistent
-       floating widgets (brand badge + notification button).
-       All hero background art, headline text, CTA, scroll
-       indicator, and admin background-change controls removed.
-       ========================================================= -->
   <section id="hero">
 
-    <!-- ── Page h1 — visually hidden (the hero is intentionally
-         text-free), present for SEO / heading outline / screen
-         readers. The visible h2s below it nest correctly. ── -->
     <h1 class="srOnly">DigiArtz — The Digital Art Community · Art Has No Limits</h1>
 
-    <!-- ── Brand badge — floating pill, present across the whole
-         front page (not just hero), top-left ── -->
     <div class="hBadge fpFloat" aria-hidden="true"><span class="hBadgeD">Digi</span><span class="hBadgeA">Artz</span></div>
 
-    <!-- ── Notification button — floating icon, present across the
-         whole front page, top-right ── -->
     <button class="hNotifBtn fpFloat" id="hNotifBtn" onclick="openNotifications()" title="Notifications" aria-label="Notifications">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
         <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -255,41 +171,19 @@
 
   </section>
 
-  <!-- =========================================================
-       HERO PITCH — segmented Explore / Learn / Buy / Sell.
-       Sits directly below the floating top bar, in the slot the
-       slide strip used to hold. Four audiences, one screen: the
-       toggle swaps headline, checklist and CTA in place, no
-       navigation, no reload. Each CTA lands on the real surface
-       that answers it, so the pitch and the product agree.
-       Copy and structure follow the brief exactly.
-       ========================================================= -->
   <section id="heroPitch" aria-label="What DigiArtz offers">
     <div class="hpInner">
-      <!-- Scrolls sideways under ~420px rather than wrapping to two
-           rows or shrinking the labels to unreadable. -->
       <div class="hpTabs" id="hpTabs" role="tablist" aria-label="Choose what you came for"></div>
       <div class="hpPanel" id="hpPanel" role="tabpanel" aria-live="polite"></div>
     </div>
   </section>
 
 
-  <!-- ── Hidden Data Grid (source for Full Gallery overlay) ── -->
   <div id="homeGrid" style="display:none;"></div>
 
-  <!-- =========================================================
-       ARTWORKS SECTION
-       Displays the 200 most recent artworks in a responsive ArtStation-
-       style masonry grid (full-bleed image, overlaid title/gradient).
-       ├─ Search bar (.tgBlock) — filters the grid as you type
-       ├─ Grid (.awGrid #awGrid)
-       │   └─ Cards (.awCard) — injected by renderAwGrid() in
-       │       column-sized batches via infinite scroll
-       └─ Empty State (.awEmpty #awEmpty)
-       ========================================================= -->
+  <!-- artworks section -->
   <section id="artworks">
-    <!-- ── SEARCH BLOCK — just the bar. It filters #awGrid as you type,
-         so the grid starts immediately underneath it. ── -->
+    <!-- search block -->
     <div class="tgBlock">
       <div class="tgSearch" id="awSearchInWrap">
         <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="24" height="24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -301,14 +195,6 @@
       </div>
     </div>
     <div class="awGrid" id="awGrid">
-      <!-- ═══ CRAWL SNAPSHOT (prerendered) ═══════════════════════
-           Static copy of the approved gallery so search engines,
-           AI crawlers and non-JS fetchers see real artwork instead
-           of an empty shell. renderAwGrid() replaces this with the
-           live Supabase feed the moment JS runs (grid.innerHTML=''),
-           so browsers never show stale data. Regenerate when the
-           gallery changes a lot (ask Claude: 'refresh the crawl
-           snapshot'). Generated 2026-07-10 · 31 artworks. ═══ -->
       <a class="awCard" href="/artwork/f97af784-5fb2-4198-9e3d-535bdda2883c"><div class="awImgWrap"><img loading="lazy" decoding="async" src="https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783627033934_Emilia_Re_Zero_Premium_Anime_Character_Illustration.png" alt="Emilia | Re:Zero – Premium Anime Character Illustration — digital artwork on DigiArtz"></div></a>
       <a class="awCard" href="/artwork/7b7c778e-0a5f-4757-a9fc-663546143447"><div class="awImgWrap"><img loading="lazy" decoding="async" src="https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626754684_Jinhsi_Faithful_Official_Character_Recreation_Wuthering_Wave.png" alt="Jinhsi – Faithful Official Character Recreation | Wuthering Waves Ultra-Detailed Illustration — digital artwork on DigiArtz"></div></a>
       <a class="awCard" href="/artwork/55018168-6916-4755-bd20-a6308a721636"><div class="awImgWrap"><img loading="lazy" decoding="async" src="https://d1l8dn7jegdgem.cloudfront.net/fit-in/300x0/filters:format(webp):quality(55)/koe-media/artworks/f52fb82c-8d38-4745-b55b-f293fed9593a/1783626666393_Encore_Wuthering_Waves_Official_Character_Illustration.png" alt="Encore | Wuthering Waves – Official Character Illustration — digital artwork on DigiArtz"></div></a>
@@ -343,41 +229,7 @@
     </div>
     <div class="awEmpty" id="awEmpty" style="display:none;">NO ARTWORK YET</div>
   </section>
-  <!-- ARTWORKS SECTION END -->
 
-  <!-- =========================================================
-       SUBSCRIPTION OVERVIEW SECTION
-       Positioned between the Artworks section and the About
-       section. Shows: user profile card (with current plan
-       badge), then Lite / Premium / Max plan preview cards with
-       arrow buttons that open the Subscription page overlay.
-       ├─ Section Header (.subOvHdr)
-       ├─ 4-card grid (.subOvGrid)
-       │   ├─ Profile Card (#subOvProfileCard)
-       │   │   ├─ Avatar (.subOvAvatar #subOvAvatarLetter)
-       │   │   ├─ Username (.subOvUsername #subOvUsernameLabel)
-       │   │   └─ Plan Badge (.subOvPlanBadge #subOvBadge)
-       │   ├─ Lite Plan Card
-       │   ├─ Premium Plan Card
-       │   └─ Max Plan Card
-       ========================================================= -->
-  <!-- =========================================================
-       RANKING SECTION
-       Four live leaderboards — LEVEL · CRED · LIKES · BOOKMARKS —
-       sitting directly above SUBSCRIPTION.
-       ├─ Section header (.rkHdr) — reuses the .fsHdr/.secT pattern
-       ├─ .rkWrap
-       │   ├─ .rkNav ×2 — arrows (pointer devices, ≥760px)
-       │   └─ .rkTrack (#rkGrid) → 4 × .rkCard, built by the module
-       │        ├─ header  : icon + board name
-       │        ├─ .rkList : the ranking itself — its OWN vertical
-       │        │            scroll, paged 20 at a time to the real end
-       │        └─ .rkMine : YOUR rank, pinned at the bottom of the box
-       └─ .rkDots — which board you're on
-       ONE board per slide on every device, full-bleed edge to edge
-       like the hero slide: swipe on touch, arrows/dots on desktop.
-       Data: get_rank_board() / get_rank_me() — auto-refreshes.
-       ========================================================= -->
   <section id="rankSec" aria-labelledby="rkTitle">
     <div class="rkHdr fsHdr">
       <div class="secT" id="rkTitle">RANKING</div>
@@ -397,17 +249,6 @@
 
   <script src="/js/ranking.js?v=1"></script>
 
-  <!-- =========================================================
-       FULL RANKING PAGE — opened by tapping any rank in a board
-       box (openRankPage). Same overlay pattern as #notifPage:
-       slides in from the right, ← closes it.
-       ├─ .subPgHdr — title + ← close button
-       └─ .rkPgBdy
-           ├─ #rkPgTabs — LEVEL / CRED / LIKES / BOOKMARKS
-           ├─ #rkPgMine — YOUR rank on the active board
-           ├─ #rkPgList — EVERY ranked artist, paged 50 at a time
-           └─ #rkPgEnd  — end-of-list marker
-       ========================================================= -->
   <div id="rankPage" role="dialog" aria-modal="true" aria-label="Full ranking">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeRankPage()" aria-label="Close ranking">←</button>
@@ -423,31 +264,24 @@
 
   <section id="subOverview" aria-labelledby="subOvTitle">
 
-    <!-- ── Section header ── -->
     <div class="subOvHdr fsHdr">
       <div class="secT" id="subOvTitle">SUBSCRIPTION</div>
       <div class="secSub">CHOOSE YOUR PLAN</div>
     </div>
 
-    <!-- ── 4-card grid ── -->
     <div class="subOvGrid">
 
-      <!-- ── CARD 1: User Profile ── -->
       <div class="subOvCard subOvCard--profile" id="subOvProfileCard">
         <div class="subOvCardInner">
-          <!-- Avatar -->
           <div class="subOvAvatar" id="subOvAvatarLetter" aria-hidden="true">
             <img id="subOvAvatarImg" alt="" style="display:none;">
             <span id="subOvAvatarTxt">?</span>
           </div>
-          <!-- Username -->
           <div class="subOvUsername" id="subOvUsernameLabel">Profile</div>
-          <!-- Current plan badge -->
           <div class="subOvPlanBadge subOvPlanBadge--guest" id="subOvBadge" aria-label="Current plan">FREE</div>
         </div>
       </div>
 
-      <!-- ── CARD 2: Lite Plan ── -->
       <div class="subOvCard subOvCard--lite">
         <div class="subOvCardInner">
           <div class="subOvPlanName">Lite</div>
@@ -466,7 +300,6 @@
         </div>
       </div>
 
-      <!-- ── CARD 3: Premium Plan ── -->
       <div class="subOvCard subOvCard--premium">
         <div class="subOvCardInner">
           <div class="subOvPlanName">Premium</div>
@@ -485,7 +318,6 @@
         </div>
       </div>
 
-      <!-- ── CARD 4: Max Plan ── -->
       <div class="subOvCard subOvCard--max">
         <div class="subOvCardInner">
           <div class="subOvPlanName">Max</div>
@@ -505,19 +337,9 @@
       </div>
 
     </div>
-    <!-- ── End .subOvGrid ── -->
 
   </section>
 
-  <!-- =========================================================
-       CONNECT SECTION
-       ├─ Section Label (.cDiv .cLbl)
-       └─ Social Grid (#socGrid)
-           ├─ X (.sCard)
-           ├─ Instagram (.sCard)
-           ├─ Website (.sCard)
-           └─ Email (.sCard)
-       ========================================================= -->
   <section id="connect">
    <div class="cDiv">
     <div class="cLbl">
@@ -525,68 +347,38 @@
     </div>
    </div>
 
-   <!-- === Social Media Connect Here === -->
    <div class="sGrid" id="socGrid">
 
-    <!-- X URL here -->
     <a class="sCard" href="https://x.com/DigiArtzHQ" target="_blank" rel="noopener" aria-label="X">
      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="24" height="24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
      <span class="sCardLbl">X</span>
     </a>
 
-    <!-- Instagram URL here -->
     <a class="sCard" href="https://www.instagram.com/duttaanish458?igsh=MXVieThibGVxYndmcQ==" target="_blank" rel="noopener" aria-label="Instagram">
      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
      <span class="sCardLbl">INSTAGRAM</span>
     </a>
 
-    <!-- Website URL here -->
     <a class="sCard" href="https://digiartz.net" target="_blank" rel="noopener" aria-label="Website">
      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
      <span class="sCardLbl">WEBSITE</span>
     </a>
 
-    <!-- Email link here -->
     <a class="sCard" href="mailto:DigiArtzsupport@gmail.com" aria-label="Email">
      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
      <span class="sCardLbl">EMAIL</span>
     </a>
 
    </div>
-   <!-- === End Social Media Connect Here === -->
 
   </section>
 
-  <!-- =========================================================
-       FOOTER — Premium multi-column layout
-       ├─ footer.siteFooter
-       │   ├─ .ftMain  — brand col + two link-list cols
-       │   │   ├─ .ftBrand  — wordmark, tagline, description
-       │   │   └─ .ftCols   — Legal column + Support column
-       │   └─ .ftBase  — bottom copyright band
-       ========================================================= -->
-  <!-- =========================================================
-       USER PROFILE PAGE (#profilePage)
-       ├─ Banner (.pfBanner) — dark gradient banner, overlapping
-       │   avatar (.pfAvatarWrap). The ⋮ menu button and its drawer
-       │   were removed — Subscription / Admin Panel / Log Out etc.
-       │   now live in the full-page #setPage, opened by SETTINGS.
-       ├─ Head (.pfHead) — name, @handle, bio, stats, actions
-       ├─ Tabs (.pfTabs) — Artwork / About, with the
-       │   Upload dropdown (.pfUploadWrap, owner-only) on the right
-       └─ Panels (.pfPanel)
-           ├─ Gallery  → #pfGalleryGrid (infinite scroll)
-           └─ About    → stats + bio (owner-editable)
-       ========================================================= -->
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
-    <!-- ── Fixed page header — same all-caps title bar as Community ── -->
     <div class="pfPageHdr">
       <div class="cmHdrTitle"><span>PROFILE</span></div>
     </div>
     <div class="pfBanner" id="pfBanner">
       <img alt="" id="pfBannerImg">
-      <!-- (edit pencil + ⋮ menu removed — Edit and Settings now live in the
-           action row below the joined date; Settings opens the full page.) -->
       <div class="pfAvatarWrap">
         <div class="pfAvatar" id="pfAvatar"><img alt="" id="pfAvatarImg"><span id="pfAvatarLetter">?</span></div>
       </div>
@@ -611,8 +403,6 @@
             <span class="pfStat" id="pfHeadStatCred">⭐ 0</span>
           </div>
           <div class="pfJoined" id="pfJoined"></div>
-          <!-- Action row sits BELOW the joined date.
-               Others' profiles: [ADD FRD] [CRED] · Own profile: [EDIT] [SETTINGS] -->
           <div class="pfActionRow" id="pfActionRow" style="display:none;">
             <button class="pfActBtn" id="pfBtnFriend" onclick="pfFriendBtnTap()">ADD FRD</button>
             <button class="pfActBtn" id="pfBtnCred" onclick="pfCredToggle()">CRED</button>
@@ -633,63 +423,39 @@
           <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" onclick="pfSwitchTab('about')">ABOUT</button>
           <button class="pfTab" onclick="openPfShare()" aria-label="Share this profile">SHARE</button>
         </div>
-        <!-- Profile UPLOAD dropdown removed — uploading now lives solely
-             behind the nav-bar ➕ button (universal, login-only). -->
       </div>
 
-      <!-- GALLERY -->
       <div class="pfPanel active" id="pfPanelGallery">
         <div class="pfGrid pfGridArt" id="pfGalleryGrid"></div>
         <div class="pfEmpty" id="pfGalleryEmpty" style="display:none;">No artwork uploaded yet.</div>
-        <!-- Infinite-scroll trip-wire — replaces the Load More button.
-             Observed against #profilePage (the scroll container);
-             hidden once every row has been fetched. -->
         <div class="igSentinel" id="pfGallerySentinel" aria-hidden="true" style="display:none;"></div>
       </div>
 
-      <!-- RESOURCES — this artist's uploaded resources. Cards + detail
-           overlay are shared with the Resources section (js/sections.js). -->
       <div class="pfPanel" id="pfPanelResources">
         <div class="dzGrid" id="pfResGrid"></div>
         <div class="pfEmpty" id="pfResEmpty" style="display:none;">No resources uploaded yet.</div>
       </div>
 
-      <!-- BLOG — this artist's posts (list). -->
       <div class="pfPanel" id="pfPanelBlog">
         <div class="dzList" id="pfBlogList"></div>
         <div class="pfEmpty" id="pfBlogEmpty" style="display:none;">No blog posts yet.</div>
       </div>
 
-      <!-- MARKETPLACE — this artist's listings. -->
       <div class="pfPanel" id="pfPanelMarketplace">
         <div class="dzGrid" id="pfMktGrid"></div>
         <div class="pfEmpty" id="pfMktEmpty" style="display:none;">No marketplace listings yet.</div>
       </div>
 
-      <!-- ALBUMS — the artist's own collections. LIKES and BOOKMARKS
-           are pinned first as VIRTUAL albums (no albums row exists for
-           them; they read the artwork_likes / artwork_bookmarks data
-           the LIKE and BOOKMARK tabs already use), followed by every
-           album the artist created. Tapping a card opens #albViewPage. -->
       <div class="pfPanel" id="pfPanelAlbum">
         <div class="albGrid" id="pfAlbumGrid"></div>
         <div class="pfEmpty" id="pfAlbumEmpty" style="display:none;">No albums yet.</div>
       </div>
 
-      <!-- LIKE / BOOKMARK tabs were removed: what an artist likes or
-           bookmarks is private. They now surface only as the two
-           virtual albums on your OWN Albums tab, and reach other
-           people only if you switch them to public from the album's
-           3-dot menu (profiles.likes_public / bookmarks_public, which
-           the viewer RPCs check). -->
 
-      <!-- PROGRESS (LEVEL tab) — XP / level / milestones for the viewed
-           artist. Rendered by the Artist Progress module (xpRenderInto). -->
       <div class="pfPanel" id="pfPanelProgress">
         <div class="xpWrap" id="pfXpWrap"></div>
       </div>
 
-      <!-- ABOUT -->
       <div class="pfPanel" id="pfPanelAbout">
         <div class="pfStats">
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatArt">0</div><div class="pfStatLbl">ARTWORKS</div></div>
@@ -697,7 +463,6 @@
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatLikes">—</div><div class="pfStatLbl">TOTAL LIKES</div></div>
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatLevelCard">—</div><div class="pfStatLbl">LEVEL</div></div>
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatCredCard">—</div><div class="pfStatLbl">CRED</div></div>
-          <!-- MERIT: placeholder stat — definition/earning rules to follow -->
           <div class="pfStatCard"><div class="pfStatNum" id="pfStatMerit">0</div><div class="pfStatLbl">MERIT</div></div>
         </div>
         <div class="pfBioWrap">
@@ -712,15 +477,6 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       EDIT PROFILE PAGE (#pfEditPage)
-       Opened via the pencil icon on the profile banner (left of
-       the ⋮ menu), owner-only. Slides in as a layer above
-       #profilePage. Banner/avatar photo buttons call the existing
-       openPfBannerPicker() / openPfAvatarPicker() (cooldown +
-       cropper flow already built); username + bio are saved
-       together via savePfEditProfile().
-       ========================================================= -->
   <div id="pfEditPage" role="dialog" aria-modal="true" aria-label="Edit profile">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closePfEditPage()" aria-label="Close edit profile">←</button>
@@ -800,13 +556,6 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       ADMIN PANEL (#admPage)
-       Dev-only panel, opened via the "Admin Panel" item in the
-       profile ⋮ menu (smHandleAdm). Exactly three capabilities:
-       ├─ Notifications — broadcast composer (#admPanelNoti)
-       └─ Reports — open user reports (#admPanelRpt)
-       ========================================================= -->
   <div id="admPage" role="dialog" aria-modal="true" aria-label="Admin panel">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeAdmPage()" aria-label="Close admin panel">←</button>
@@ -821,13 +570,11 @@
         </div>
       </div>
 
-      <!-- REPORTS — open user reports, newest first (dev-only via RLS) -->
       <div class="pfPanel" id="admPanelRpt">
         <div class="pfGrid" id="admRptList"></div>
         <div class="pfEmpty" id="admRptEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>No open reports.</div>
       </div>
 
-      <!-- NOTIFICATIONS — broadcast composer -->
       <div class="pfPanel active" id="admPanelNoti">
         <div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>
         <div class="admNotiCompose">
@@ -842,15 +589,6 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       EDIT MY WORK PAGE (#pfMyWorkPage)
-       Opened from the profile ⋮ menu (openMyWorkPage). Lets the
-       signed-in owner edit or delete their OWN artworks + comics
-       — never anyone else's. Reuses the #admPage sliding-panel/
-       dark/.admCard visual language with Edit/Delete actions.
-       ├─ Tabs (.pfTabs) — Artwork / Comic
-       │   ├─ Artwork → #mwArtGrid  (mwRenderArt)
-       ========================================================= -->
   <div id="pfMyWorkPage" role="dialog" aria-modal="true" aria-label="Edit my work">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeMyWorkPage()" aria-label="Close edit my work">←</button>
@@ -863,7 +601,6 @@
         </div>
       </div>
 
-      <!-- ARTWORK -->
       <div class="pfPanel active" id="mwPanelArt">
         <div class="pfGrid pfGridArt" id="mwArtGrid"></div>
         <div class="pfEmpty" id="mwArtEmpty" style="display:none;">You haven't uploaded any artwork yet.</div>
@@ -873,15 +610,6 @@
   </div>
 
 
-  <!-- =========================================================
-       NOTIFICATIONS PAGE (#notifPage)
-       Opened via the bell button (#hNotifBtn → openNotifications()).
-       Read-only feed: admin broadcasts (user_id NULL) + any
-       personal notices addressed to the signed-in user. Nothing
-       on this page can be edited or deleted — see notifications
-       RLS (insert restricted to devs, no update/delete policy at
-       all) and notification_reads (per-user read-state only).
-       ========================================================= -->
   <div id="notifPage" role="dialog" aria-modal="true" aria-label="Notifications">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeNotifPage()" aria-label="Close notifications">←</button>
@@ -893,23 +621,6 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       UPLOAD PAGE — opened via openPfUpload() (nav ➕ destination).
-       #pfUpMod keeps the .upPop markup but is restyled into a full
-       slide-in page (see UPLOAD PAGE MODE CSS). After a successful
-       upload the user is redirected to their OWN profile, where the
-       verification card (CHECKING → UPLOADING → ALMOST DONE → LIVE)
-       leads their gallery grid.
-       Always inserts with user_id = the signed-in user's own id
-       (enforced by RLS too). No visibility control by design —
-       everything uploaded here is public, same as the gallery.
-       Fixed-size popup card; only the body between the sticky
-       header and sticky footer scrolls. z-index is intentionally
-       far above the bottom nav (#bnNav, 1000), the top-row widgets
-       (.fpFloat/#zeoBtn, 1001) and every other overlay (max 9500)
-       so it always renders on top, on any device.
-       ========================================================= -->
-  <!-- Upload popup styles: css/upload.css -->
   <div class="cropPop" id="pfCropMod">
    <div class="cropBox" onclick="event.stopPropagation()">
     <div class="cropHead">
@@ -921,10 +632,6 @@
         <img alt="" id="pfCropImg"/>
         <div class="cropGrid"></div>
       </div>
-      <!-- Zoom — 100–200%. 200% shows exactly 1/4 of the image
-           area, a professional cap: any tighter and square thumbs
-           start visibly upscaling. At >100% BOTH axes become
-           draggable in the stage above. -->
       <div class="cropZoomRow">
         <button type="button" class="cropZoomBtn" onclick="pfCropNudgeZoom(-10)" aria-label="Zoom out">−</button>
         <input type="range" class="cropZoom" id="pfCropZoom" min="100" max="200" step="1" value="100" oninput="pfCropSetZoom(this.value)" aria-label="Thumbnail zoom"/>
@@ -933,22 +640,11 @@
     </div>
     <div class="cropFoot">
       <button class="upBtnSec" onclick="cancelPfCrop()">Cancel</button>
-      <button class="upBtnPri" onclick="confirmPfCrop()">Use This ✦</button>
+      <button class="upBtnPri" onclick="confirmPfCrop()">Use This</button>
     </div>
    </div>
   </div>
 
-  <!-- =========================================================
-       UPLOAD-QUEUE STATUS MODAL (#upqBackdrop)
-       ├─ Tapping a blurred processing card opens it in STATUS
-       │  mode — a live checklist of the pipeline steps.
-       └─ A failed check auto-opens it in FAILED mode — danger
-          strip + the exact reason + "nothing was published /
-          any transferred file was removed" note.
-       Card + head reuse .legalModal/.lmHead so every theme
-       (Dark / Gray Dark / Light / System) styles
-       it natively. Body content injected by upqRenderModal().
-       ========================================================= -->
   <div id="upqBackdrop" role="dialog" aria-modal="true" aria-label="Upload status" onclick="if(event.target===this)upqCloseModal()">
     <div class="legalModal">
       <div class="lmHead">
@@ -960,15 +656,6 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       AVATAR / BANNER UPLOAD — hidden file inputs + shared focal-
-       point crop modal (#pfAvBCropMod). Triggers are intentionally
-       NOT wired up anywhere yet — call openPfAvatarPicker() /
-       openPfBannerPicker() from wherever the edit affordance ends
-       up living. Both enforce a 7-day re-upload cooldown per field
-       (profiles.avatar_updated_at / banner_updated_at) and delete
-       the previous Storage file automatically on re-upload.
-       ========================================================= -->
   <input type="file" id="pfAvatarFileInput" accept="image/*" style="display:none" onchange="handlePfAvBFile(event,'avatar')">
   <input type="file" id="pfBannerFileInput" accept="image/*" style="display:none" onchange="handlePfAvBFile(event,'banner')">
   <div class="cropPop" id="pfAvBCropMod">
@@ -985,51 +672,29 @@
     </div>
     <div class="cropFoot">
       <button class="upBtnSec" onclick="cancelPfAvBCrop()">Cancel</button>
-      <button class="upBtnPri" id="pfAvBCropBtn" onclick="confirmPfAvBCrop()">Use This ✦</button>
+      <button class="upBtnPri" id="pfAvBCropBtn" onclick="confirmPfAvBCrop()">Use This</button>
     </div>
    </div>
   </div>
 
   <div class="upPop" id="pfUpMod">
    <div class="upPopBox">
-    <!-- Same page furniture as Profile / Community: the .pfPageHdr
-         bar with the centred gradient .cmHdrTitle (NOT the .subPgHdr
-         sub-page pattern used by Rank / Admin / My Work), then the
-         .subPgHeadline. pfUpTitle / pfUpSubtitle keep their ids —
-         openPfUpload() and mwEditArt() re-label them per mode, and
-         pfUpNavTitle mirrors the mode in the sticky header. -->
     <div class="pfPageHdr">
       <div class="cmHdrTitle"><span id="pfUpNavTitle">UPLOAD</span></div>
     </div>
-    <!-- .upPgBdy mirrors .subPgBdy's metrics (1400px cap + the same
-         responsive padding ladder) but is deliberately a DIFFERENT
-         class: mountFaq() does querySelector('.subPgBdy') and this
-         page sits EARLIER in the DOM than #subPage — reusing the
-         literal class would hijack the FAQ mount. -->
     <div class="upPgBdy">
     <div class="subPgHeadline">
       <h2 id="pfUpTitle">Upload Artwork</h2>
       <p id="pfUpSubtitle">Share your creativity with artists around the world.</p>
     </div>
-    <!-- ── What are you posting? ── mirrors the gallery's section rail
-         (same chips, same order) so the two halves of the site agree.
-         Artwork keeps the original .upPopBody form untouched; the other
-         four are built by dzBuildUploadForm() into #upSecForms.
-         Cart is absent by design — nothing is posted to a cart. -->
     <div class="upSecTabs" id="upSecTabs" role="tablist" aria-label="What are you posting"></div>
     <div id="upSecForms" style="display:none;"></div>
     <div class="upPopBody">
      <div class="upMain">
       <input id="pfUpEditId" type="hidden" value=""/>
-      <!-- Two internal columns ≥1100px: media (dropzone / preview /
-           extra pages) left, text fields right — so wide desktops
-           fill the page instead of scrolling one long column. -->
       <div class="upMediaCol">
       <div class="upDz" id="pfDz">
        <input accept="image/*" id="pfUpF" onclick="if(pfGuestGate(event))return;" onchange="handlePfFile(event)" type="file"/>
-       <!-- The Artworks mark, the same gradient icon the gallery rail
-            and the upload tabs carry — every section's dropzone wears
-            its own, so the picker names the thing being posted. -->
        <span class="fgSecIco fgSecIco--artworks" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span>
        <div class="upDzTitle" id="pfDzTxt">Drag &amp; drop your artwork here</div>
        <div class="upDzSub">or browse from your device</div>
@@ -1037,15 +702,8 @@
        <div class="upDzHint">JPG · PNG · WEBP · GIF · up to 20MB</div>
       </div>
       <div class="upPrevWrap" id="pfUpPrevWrap"><img alt="preview" class="upPrev" id="pfUpPrev"/></div>
-      <!-- Re-opens the focal-point picker for the ALREADY-chosen
-           image, seeded with the current focus — so a user who
-           rushed through (or forgot) the thumbnail step can redo it
-           any time BEFORE uploading. Hidden in edit mode: thumb_x/y
-           of published pieces aren't editable from this form. -->
       <button type="button" class="upBtnSec upThumbEditBtn" id="pfUpThumbBtn" style="display:none;" onclick="reopenPfCrop()">🖼 Adjust Thumbnail</button>
 
-      <!-- Additional images — comic pages, or extra images on an artwork.
-           Copy is re-labelled per mode by openPfUpload(). -->
       <div id="pfComicPagesWrap" style="display:none;">
         <div class="upDz upDzSm" id="pfDzPages">
          <input accept="image/*" id="pfUpPages" multiple="" onclick="if(pfGuestGate(event))return;" onchange="handlePfPagesFile(event)" type="file"/>
@@ -1055,7 +713,7 @@
         </div>
         <div id="pfPagesPreview" class="upPagesPreview"></div>
       </div>
-      </div><!-- /.upMediaCol -->
+      </div>
 
       <div class="upFieldsCol">
       <div class="upField">
@@ -1082,15 +740,11 @@
               <span id="pfUpCatTriggerLbl">Others</span><span class="upChev">⌄</span>
             </button>
             <div class="upCatPanel" id="pfUpCatPanelWrap">
-              <!-- Search sits OUTSIDE #pfUpCatPanel so buildCategoryUI()'s
-                   innerHTML rebuilds never wipe it. No autofocus — the
-                   keyboard only opens when the field itself is tapped. -->
               <div class="upCatSearchWrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="24" height="24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
                 <input type="text" class="upCatSearch" id="pfUpCatSearch" placeholder="Search categories…" autocomplete="off" oninput="pfFilterCats(this.value)" onclick="event.stopPropagation()"/>
               </div>
               <div class="upCatList" id="pfUpCatPanel">
-                <!-- Options injected by buildCategoryUI() from SITE_CATEGORIES -->
               </div>
               <div class="upCatNoMatch" id="pfUpCatNoMatch" style="display:none;">No matching category</div>
             </div>
@@ -1129,11 +783,6 @@
         <input type="hidden" id="pfUpSoftware" value=""/>
       </div>
 
-      <!-- ── ALBUMS (optional) ── multi-select of the artist's own
-           albums. Same .upCatDd trigger/panel parts as Category, with
-           a create row pinned to the bottom of the panel so a new
-           album can be made without leaving the form. Options are
-           injected by albUpRender(); hidden entirely in edit mode. -->
       <div class="upField" id="pfUpAlbumField">
         <label class="upLbl">Add to Album <span class="upOpt">optional</span></label>
         <div class="upCatDd" id="pfUpAlbumDd">
@@ -1141,26 +790,13 @@
             <span id="pfUpAlbumTriggerLbl">None</span><span class="upChev">⌄</span>
           </button>
           <div class="upCatPanel" id="pfUpAlbumPanel">
-            <!-- Options injected by albUpRender() -->
           </div>
         </div>
         <div class="upSchedHint">Pick as many as you like — or none.</div>
       </div>
 
-      <!-- ── SCHEDULE (optional) ── leave empty to publish now.
-           When set, the piece is still verified + uploaded straight
-           away; only the public row is held back until the chosen
-           time by a server cron job, so it goes live even if the
-           artist is offline. -->
       <div class="upField" id="pfUpSchedField">
         <label class="upLbl" for="pfUpSched">Schedule <span class="upOpt">optional</span></label>
-        <!-- Custom picker. A native datetime-local opens the BROWSER's
-             own panel, which can't be themed at all (color-scheme is
-             the only lever), so the control is built from the same
-             .upCatDd trigger/panel parts as Category and Software.
-             #pfUpSched stays an <input> so uschPicked()/pfSchedHint()
-             read .value exactly as before — it just holds a
-             "YYYY-MM-DDTHH:MM" string this code writes. -->
         <div class="upCatDd" id="pfUpSchedDd">
           <button type="button" class="upCatTrigger" id="pfUpSchedTrigger" onclick="pfSchedToggle(event)">
             <span id="pfUpSchedLbl" class="upSchedPh">__/__/____&nbsp;&nbsp;__:__</span><span class="upChev">⌄</span>
@@ -1189,35 +825,15 @@
         <div class="upSchedHint" id="pfUpSchedHint">Leave empty to publish immediately.</div>
       </div>
 
-      <!-- ── ACTIONS ── end of the form column: directly under
-           Software Used and above the sidebar guidelines (the
-           sidebar stacks right after this column on mobile).
-           Cancel was removed — this is a full page now, so the ←
-           in the page header is the way out. -->
       <div class="upActions">
-        <!-- Edit mode only: this page opens OVER My Work, and the nav
-             would close both, so edit keeps an explicit way back. -->
         <button class="upBtnSec" id="pfUpBackBtn" style="display:none;" onclick="closePfUpload()">← Back</button>
         <button class="upBtnSec" id="pfDraftBtn" onclick="updrSave()">💾 Save Draft</button>
         <button class="upBtnPri" id="pfUpBtn" onclick="doPfUp()">📤 Upload Artwork</button>
       </div>
-      </div><!-- /.upFieldsCol -->
+      </div>
      </div>
 
      <div class="upSide">
-       <!-- ── DRAFTS ── first card in the sidebar, directly above
-            Upload Guidelines (so it reads above the guide at every
-            breakpoint — the sidebar stacks in source order on
-            mobile). Device-local (IndexedDB): draft images cost
-            zero storage and need no server cleanup job. Auto-purged
-            7 days after saving, checked on every page open and
-            every save. Hidden when empty and in edit mode. Tapping
-            a card loads it back into the form; resumed drafts run
-            through the normal verification pipeline on upload,
-            exactly like a fresh pick. -->
-       <!-- ── SCHEDULED ── same rail UI as drafts, sitting above it.
-            Backed by public.scheduled_uploads (server-side), so the
-            list is per-account and survives device changes. -->
        <div class="upSideCard" id="upSchedSec">
          <div class="upDraftTitle">SCHEDULED</div>
          <p class="upDraftNote">Publishes automatically at the set time</p>
@@ -1226,9 +842,6 @@
        <div class="upSideCard" id="upDraftSec">
          <div class="upDraftTitle">SAVED DRAFTS</div>
          <p class="upDraftNote">Saved on this device · auto-deleted after 7 days</p>
-         <!-- Pre-filled with ghost slots so the card is never blank
-              on first paint; updrLoadStrip() swaps in real drafts
-              (and pads back up to UPDR_SLOTS with these). -->
          <div class="upDraftRow" id="upDraftRow"><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div></div>
        </div>
        <div class="upSideCard">
@@ -1252,18 +865,10 @@
      </div>
     </div>
 
-    </div><!-- /.upPgBdy -->
+    </div>
    </div>
   </div>
 
-  <!-- ── DRAFT / SCHEDULED PREVIEW ──
-       Reuses the .upPop shell but deliberately carries NONE of the
-       artwork lightbox's social furniture: no artist name or avatar,
-       no report, no like / bookmark / download / share / comments.
-       It's the artist previewing their own unpublished work, so it
-       shows the image plus exactly what they typed during upload,
-       and ends with the one action that makes sense for its kind —
-       a button for drafts, a countdown line for scheduled. -->
   <div class="upPop upPv" id="upPvMod" role="dialog" aria-modal="true" aria-label="Preview">
    <div class="upPopBox">
     <div class="upPvHead">
@@ -1280,10 +885,8 @@
 
   <footer class="siteFooter" role="contentinfo">
 
-    <!-- ── Main content ── -->
     <div class="ftMain">
 
-      <!-- Brand column -->
       <div class="ftBrand">
         <div class="ftBrandName">DIGI<span class="ftBrandAccent">ARTZ</span></div>
         <div class="ftBrandDivider" aria-hidden="true"></div>
@@ -1291,50 +894,39 @@
         <p class="ftBrandDesc">DigiArtz — the digital art community. Character illustrations, landscapes, vehicles, and creative artwork from artists worldwide.</p>
       </div>
 
-      <!-- Link columns -->
       <div class="ftCols">
 
-        <!-- Legal column -->
         <div class="ftCol">
           <div class="ftColHead">Legal</div>
           <ul class="ftColList">
             <li>
-              <!-- Placeholder: connect real /privacy page here -->
               <button class="ftColLink" onclick="openLegal('privacy')" aria-label="Privacy Policy">Privacy Policy</button>
             </li>
             <li>
-              <!-- Placeholder: connect real /terms page here -->
               <button class="ftColLink" onclick="openLegal('terms')" aria-label="Terms of Service">Terms of Service</button>
             </li>
             <li>
-              <!-- Placeholder: connect real /refund-policy page here -->
               <button class="ftColLink" aria-label="Refund Policy" onclick="openLegal('refund')">Refund Policy</button>
             </li>
             <li>
-              <!-- Placeholder: connect real /cookie-policy page here -->
               <button class="ftColLink" aria-label="Cookie Policy" onclick="openLegal('cookie')">Cookie Policy</button>
             </li>
           </ul>
         </div>
 
-        <!-- Support column -->
         <div class="ftCol">
           <div class="ftColHead">Support</div>
           <ul class="ftColList">
             <li>
-              <!-- Placeholder: connect real FAQ page here (openSubscription opens FAQ in sub panel) -->
               <button class="ftColLink" onclick="openSubscription()" aria-label="FAQ">FAQ</button>
             </li>
             <li>
-              <!-- Help Center → support email -->
               <a class="ftColLink ftColLink--mail" href="mailto:DigiArtzsupport@gmail.com" aria-label="Help Center">Help Center</a>
             </li>
             <li>
-              <!-- Contact Us → support email -->
               <a class="ftColLink ftColLink--mail" href="mailto:DigiArtzsupport@gmail.com" aria-label="Contact Us">Contact Us</a>
             </li>
             <li>
-              <!-- Report an Issue → support email -->
               <a class="ftColLink ftColLink--mail" href="mailto:DigiArtzsupport@gmail.com" aria-label="Report an Issue">Report an Issue</a>
             </li>
             <li>
@@ -1344,12 +936,9 @@
         </div>
 
       </div>
-      <!-- ── End .ftCols ── -->
 
     </div>
-    <!-- ── End .ftMain ── -->
 
-    <!-- ── Bottom copyright band ── -->
     <div class="ftBase">
       <div class="ftBaseLogo">DIGIARTZ</div>
       <div class="ftBaseCopy">© 2026 DigiArtz. All rights reserved.</div>
@@ -1358,15 +947,6 @@
 
   </footer>
 
-  <!-- =========================================================
-       LEGAL MODAL
-       ├─ Backdrop (#legalBackdrop) — click outside to close
-       └─ Modal Card (.legalModal)
-           ├─ Header (.lmHead)
-           │   ├─ Title (#lmTitleText)
-           │   └─ Close Button (.lmClose)
-           └─ Body (#lmBody) — content injected by openLegal(type)
-       ========================================================= -->
   <div id="legalBackdrop" role="dialog" aria-modal="true" aria-labelledby="lmTitleText" onclick="handleBackdropClick(event)">
     <div class="legalModal">
       <div class="lmHead">
@@ -1376,34 +956,10 @@
       <div class="lmBody" id="lmBody"></div>
     </div>
   </div>
-  <!-- =========================================================
-       FULL GALLERY OVERLAY
-       ├─ Header Bar (.fgHdr) — no close button, tab-switched via
-       │   the bottom nav (Instagram/YouTube style)
-       │   ├─ Search Input (#fgQ)
-       │   └─ Filter Button (.fgFltBtn)
-       ├─ Content Body (.fgBdy #fgC) — grid rendered by renderFG()
-       ├─ Filter Panel Overlay (#fgFltOvr) — backdrop blur
-       └─ Filter Panel (#fgFltPanel)
-           ├─ Category (.fltSec)
-           ├─ Sort (.fltSec)
-           ├─ Grid Size (.fltSec)
-           └─ Done Button (.fltDone)
-       ========================================================= -->
   <div id="fg" role="dialog" aria-modal="true" aria-label="Full Gallery">
-   <!-- ── Intro — "Gallery" title (styled like the Community heading).
-        The section tabs below it stay sticky. ── -->
    <div class="fgIntro">
     <h2 class="fgTitle">Gallery</h2>
    </div>
-   <!-- ── SECTION TABS ──────────────────────────────────────────
-        The gallery used to BE the artwork list; now artwork is one of
-        six top-level sections. Each section owns its own search field,
-        and the filter rides at the TAIL of that field — the separate
-        .fgHdr row that used to hold #fgQ + the filter button is gone,
-        so there is exactly one search bar on screen at any time.
-        Artworks is the only section wired to data today. The other
-        five are deliberate stubs: tab + search bar, empty body. ── -->
    <div class="fgSecBar">
     <div class="fgSecTabs" id="fgSecTabs" role="tablist" aria-label="Gallery sections">
      <button class="fgSecBtn active" id="fgSecBtn-artworks" role="tab" aria-selected="true" aria-controls="fgSec-artworks" onclick="fgSwitchSection('artworks')"><span class="fgSecIco fgSecIco--artworks" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span><span class="fgSecTxt">Artworks</span></button>
@@ -1415,16 +971,8 @@
     </div>
    </div>
 
-   <!-- ══ ARTWORKS ══ the live section: search + tag rail + grid ══ -->
    <div class="fgSec active" id="fgSec-artworks" role="tabpanel" aria-labelledby="fgSecBtn-artworks">
-    <!-- ── TAG RAIL ── the only rail on the site: a search bar over two
-         chip rows inside ONE horizontal scroller, so a swipe slides both
-         rows together while the bar stays put. Both rows run flush left
-         and are packed to finish at the same x (tgLayoutRail), so the
-         right edge stays clean. Ticking a tag moves matching artwork to
-         the front of every feed (tgPrioritize) — it never filters.
-         Artwork tags, so it lives inside the Artworks section rather
-         than above all six. -->
+    <!-- tag rail -->
     <div class="tgBlock">
      <div class="tgSearch" id="fgSearchInWrap">
       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -1451,7 +999,6 @@
     </div>
    </div>
 
-   <!-- ══ RESOURCES ══ stub: tab + search bar, empty body until it has data ══ -->
    <div class="fgSec" id="fgSec-resources" role="tabpanel" aria-labelledby="fgSecBtn-resources">
     <div class="tgBlock">
      <div class="tgSearch" id="resourcesSearchWrap">
@@ -1469,7 +1016,6 @@
     <div class="fgBdy"><div id="fgSecC-resources"></div></div>
    </div>
 
-   <!-- ══ BLOG ══ stub: tab + search bar, empty body until it has data ══ -->
    <div class="fgSec" id="fgSec-blog" role="tabpanel" aria-labelledby="fgSecBtn-blog">
     <div class="tgBlock">
      <div class="tgSearch" id="blogSearchWrap">
@@ -1487,7 +1033,6 @@
     <div class="fgBdy"><div id="fgSecC-blog"></div></div>
    </div>
 
-   <!-- ══ MARKETPLACE ══ stub: tab + search bar, empty body until it has data ══ -->
    <div class="fgSec" id="fgSec-marketplace" role="tabpanel" aria-labelledby="fgSecBtn-marketplace">
     <div class="tgBlock">
      <div class="tgSearch" id="marketplaceSearchWrap">
@@ -1505,7 +1050,6 @@
     <div class="fgBdy"><div id="fgSecC-marketplace"></div></div>
    </div>
 
-   <!-- ══ JOBS ══ stub: tab + search bar, empty body until it has data ══ -->
    <div class="fgSec" id="fgSec-jobs" role="tabpanel" aria-labelledby="fgSecBtn-jobs">
     <div class="tgBlock">
      <div class="tgSearch" id="jobsSearchWrap">
@@ -1523,7 +1067,6 @@
     <div class="fgBdy"><div id="fgSecC-jobs"></div></div>
    </div>
 
-   <!-- ══ CART ══ stub: tab + search bar, empty body until it has data ══ -->
    <div class="fgSec" id="fgSec-cart" role="tabpanel" aria-labelledby="fgSecBtn-cart">
     <div class="tgBlock">
      <div class="tgSearch" id="cartSearchWrap">
@@ -1541,84 +1084,41 @@
     <div class="fgBdy"><div id="fgSecC-cart"></div></div>
    </div>
   </div>
-  <!-- FILTER PANEL OVERLAY -->
   <div id="fgFltOvr" onclick="closeFilterPanel()"></div>
-  <!-- FILTER PANEL -->
   <div id="fgFltPanel" role="dialog" aria-label="Filter options">
    <div class="fltPH">
     <h3><span id="fltPTitle">FILTERS</span></h3>
     <button class="fltPX" onclick="closeFilterPanel()" aria-label="Close filters">✕</button>
    </div>
    <div class="fltPBdy">
-    <!-- ── ARTWORKS body — category + sort. One panel serves all six
-         sections: this block shows for Artworks, #fltSecBody is built
-         on the fly for the other five. ── -->
     <div id="fltArtBody">
-    <!-- CATEGORY -->
     <div class="fltSec">
      <div class="fltSecLbl">CATEGORY</div>
      <div class="fltOpts" id="fltCatOpts">
       <label class="fltOpt"><input type="radio" name="fltCat" value="all" checked><div class="fltDot"></div><span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg></span><span class="fltLbl">ALL CATEGORIES</span></label>
-      <!-- Remaining options injected by buildCategoryUI() from SITE_CATEGORIES -->
      </div>
     </div>
     <div class="fltSep"></div>
-    <!-- SORT -->
     <div class="fltSec">
      <div class="fltSecLbl">SORT</div>
      <div class="fltOpts" id="fltSrtOpts">
       <label class="fltOpt"><input type="radio" name="fltSrt" value="trending" checked><div class="fltDot"></div><span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M21 20H3"/></svg></span><span class="fltLbl">TRENDING</span></label>
-      <!-- "Latest" is a sort, not a category — deliberately kept out of the
-           CATEGORY section above. Value stays 'new' so the sort path is shared. -->
       <label class="fltOpt"><input type="radio" name="fltSrt" value="new"><div class="fltDot"></div><span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="fltLbl">LATEST</span></label>
       <label class="fltOpt"><input type="radio" name="fltSrt" value="old"><div class="fltDot"></div><span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M5 8.5v10a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-10"/><path d="M10 12.5h4"/></svg></span><span class="fltLbl">OLDEST</span></label>
      </div>
     </div>
     <div class="fltSep"></div>
     </div>
-    <!-- ── SECTION body — radios injected by openSecFilter() from
-         FG_SECTIONS. Empty (and hidden) while Artworks is open. ── -->
     <div id="fltSecBody" style="display:none;"></div>
-    <!-- DONE -->
-    <button class="fltDone" onclick="applyFilters()">DONE ✦</button>
+    <button class="fltDone" onclick="applyFilters()">DONE</button>
    </div>
   </div>
-  <!-- =========================================================
-       COMMUNITY PAGE — now a single continuous page (no tabs).
-       ├─ Header (.cmHdr) — static title
-       ├─ Grid view (#cmGridScroll)
-       │   ├─ Hero banner
-       │   ├─ Explore Communities — #cmGrid, a vertical list of
-       │   │   horizontal rows (cmOpenCommunity()) styled to match the
-       │   │   Friends list items (icon chip + title + description). Only
-       │   │   "Art Talk" is wired to Supabase today; the other 5
-       │   │   are placeholders until their tables/policies exist.
-       │   └─ Friends — sits directly below Community on the same
-       │       scroll, no separate tab/page anymore.
-       └─ Chat view (#cmChatView) — the "Art Talk" room, reusing
-           the original Comments feed markup unchanged:
-           ├─ Header + back button (cmCloseChat())
-           ├─ Comments List (#cpBody) → Empty State (#cpEmpty)
-           └─ Composer Bar (#cpBar) — fixed at bottom
-               ├─ Selected Image Preview (#cpSelectedImage)
-               ├─ Avatar (.cpBarAvatar)
-               ├─ Text Input (#cpBarInput)
-               └─ Send Button (#cpBarSend)
-
-       No "Join" buttons anywhere: tapping a card auto-joins a
-       logged-in user, or opens the login page (openAuthMod()) for
-       a guest — see cmOpenCommunity() in the script.
-       ========================================================= -->
   <div id="communityPage">
-    <!-- Header -->
     <div class="cmHdr" id="cmHdr">
       <button class="cmHdrBack" id="cmHdrBack" onclick="cmCloseChat()" title="Back" aria-label="Back">
-        <!-- ← proper left arrow (shaft + head), not a bare chevron -->
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       </button>
-      <!-- Grid title (centred) — shown on the Community/Friends scroll -->
       <div class="cmHdrTitle"><span id="cmHdrTitleTxt">COMMUNITY</span></div>
-      <!-- Chat banner (left-aligned) — shown while a channel or DM is open -->
       <div class="cmHdrChat" id="cmHdrChat">
         <div class="cmHdrTap" id="cmHdrTap">
           <div class="cmHdrAv" id="cmHdrAv">
@@ -1636,7 +1136,6 @@
 
     <div class="cmView" id="cmViewCommunity" style="display:flex;">
 
-      <!-- Grid view -->
       <div class="cmScroll" id="cmGridScroll">
         <div class="cmBanner">
           <div class="cmBannerTitle">Connect. Share. Grow Together.</div>
@@ -1654,12 +1153,8 @@
             <h3>Explore Communities</h3>
             <p>Find the perfect community to connect and share.</p>
           </div>
-          <!-- Create/Join live only in the footer CTA below (were duplicated here) -->
         </div>
 
-        <!-- Cards: circular icon chip on the left (keeps each community's
-             gradient) with the title + description to the right — same row
-             layout as the Friends list items below. -->
         <div class="cmGrid">
           <div class="cmCard" onclick="cmOpenCommunity('official')">
             <div class="cmCardIcon" style="background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 55%,#a855f7 100%);">🎨</div>
@@ -1705,7 +1200,6 @@
           </div>
         </div>
 
-        <!-- Communities this user created or joined -->
         <div id="cmMineWrap" style="display:none;">
           <div class="cmSectionHead" style="margin-top:2.2rem;">
             <div>
@@ -1727,7 +1221,6 @@
           </div>
         </div>
 
-        <!-- ============== FRIENDS — same page, below Community ============== -->
         <div class="cmSectionHead" style="margin-top:2.4rem;">
           <div>
             <h3>Friends</h3>
@@ -1735,8 +1228,6 @@
           </div>
         </div>
 
-        <!-- Default friend: Zeo, the AI assistant — always present,
-             opens the existing #zeoPage assistant via cmOpenZeo() -->
         <div class="cmFriendList">
           <div class="cmFriendItem" onclick="cmOpenZeo()">
             <div class="cmFriendAvatar zeoChip">
@@ -1752,7 +1243,6 @@
           </div>
         </div>
 
-        <!-- DM: find people + start conversations -->
         <div class="dmSearchWrap">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input class="dmSearchInput" id="dmSearchInput" type="text"
@@ -1769,25 +1259,9 @@
         </div>
       </div>
 
-<!-- =========================================================
-     DIRECT MESSAGES (Friends → find users + 1:1 text chat)
-     ├─ Search profiles by username (debounced ilike)
-     ├─ Conversations = distinct partners from direct_messages
-     ├─ Thread view reuses the community chat shell: same header,
-     │   same back button (window.cmCloseChat is decorated — the
-     │   wrapper handles DM state and falls through to the original)
-     ├─ Text only: links blocked client-side AND by a DB CHECK
-     │   constraint (see dm_setup.sql); content always esc()'d
-     ├─ Polling (5s, only while open + tab visible) — matches the
-     │   codebase's existing pattern; no realtime dependency
-     └─ Hard guards: no supabase config / signed-out → graceful
-     ========================================================= -->
-  <!-- Friends search styles: css/widgets.css -->
 
 <div class="cmChat" id="dmChatView">
   <div class="cpBody" id="dmBody"></div>
-  <!-- Friend gate — replaces the composer until the two users are
-       friends: Add Friend / request states / blocked notice. -->
   <div class="dmGate" id="dmGate" style="display:none;"></div>
   <div class="dmBar">
     <button class="cpEmojiBtn" id="dmEmojiBtn" type="button" title="Emoji" aria-label="Insert emoji" aria-haspopup="true" aria-expanded="false" onclick="toggleEmojiPanel(this,'dmInput')">
@@ -1805,36 +1279,27 @@
 
   <script src="/js/composer.js?v=1"></script>
 
-  <!-- Keyboard lift: js/composer.js -->
 
   <script src="/js/share.js?v=1"></script>
 
   <script src="/js/misc-core.js?v=1"></script>
 
-  <!-- Offline cache: js/misc-core.js -->
 
 
-      <!-- Chat view — "Art Talk" room (the original Comments feed) -->
       <div class="cmChat" id="cmChatView">
-        <!-- Comments list -->
         <div class="cpBody" id="cpBody">
-          <!-- Load-older spinner — sits at the TOP; appears when the user
-               scrolls up to reveal older messages (25 at a time). -->
           <div class="cpRefreshWrap" id="cpRefreshWrap" aria-hidden="true">
             <div class="cpRefreshSpinner"></div>
           </div>
-          <!-- Placeholder — no comments yet -->
           <div class="cpEmpty" id="cpEmpty">
             <div class="cpEIco">◎</div>
             <div>NO COMMENTS YET</div>
             <div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>
           </div>
-          <!-- Dynamically added comments are appended below the loader -->
         </div>
       </div>
     </div>
 
-    <!-- Fixed comment composer bar (shown only when a postable channel is open) -->
     <div class="cpBar" id="cpBar">
       <div class="cpComposerWrap">
         <div class="cpSelectedImage" id="cpSelectedImage" style="display:none;border-bottom:1px solid var(--bdr);padding:0 0 6px 0;margin:0;">
@@ -1862,25 +1327,12 @@
       </div>
     </div>
 
-    <!-- Locked notice — shown instead of the composer in read-only
-         channels (currently just DigiArtz Official) for non-dev users -->
     <div class="cpLockNote" id="cpLockNote">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
       <span>Only DigiArtz can post here — everyone else can view</span>
     </div>
   </div>
 
-  <!-- =========================================================
-       SHOWCASE ARTWORK/COMIC PICKER
-       Opened by the + button in the Showcase channel's composer.
-       Lists only the current user's OWN already-posted artworks
-       and comics (pulled from the site-wide `images`/`comics`
-       arrays, filtered to user_id === currentUser.id) — never the
-       full gallery. Tapping a tile attaches it via the same
-       #cpSelectedImage thumbnail the artwork-lightbox "comment
-       with image" flow already uses, so cpSaveComment needs no
-       changes to pick it up.
-       ========================================================= -->
   <div id="showcasePicker">
     <div class="spHdr">
       <div class="spTitle">SELECT ARTWORK TO SHOWCASE</div>
@@ -1896,48 +1348,22 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       SUBSCRIPTION PAGE OVERLAY
-       Pattern: same as #fg (Full Gallery) and #communityPage.
-       Opens via openSubscription(), closes via closeSubscription().
-       ├─ Header Bar (.subPgHdr)
-       │   ├─ Back Button (.subPgX)
-       │   └─ Title (.subPgTitle)
-       └─ Body (.subPgBdy)
-           ├─ Headline (.subPgHeadline)
-           └─ Card Grid (.subGrid)
-               ├─ Plan 1 — Premium Lite   (.subCard--blue)
-               ├─ Plan 2 — Premium        (.subCard--purple)
-               ├─ Plan 3 — MAX            (.subCard--gold)
-               └─ Plan 4 — Support        (.subCard--green)
-       ========================================================= -->
   <div id="subPage" role="dialog" aria-modal="true" aria-label="Subscription plans">
 
-   <!-- ── Header ── -->
    <div class="subPgHdr">
     <button class="subPgX" onclick="closeSubscription()" aria-label="Close subscription">←</button>
     <div class="subPgTitle">SUBSCRIPTION</div>
    </div>
 
-   <!-- ── Body ── -->
    <div class="subPgBdy">
 
-    <!-- Page headline -->
     <div class="subPgHeadline">
      <h2>Choose Your Plan</h2>
      <p>Support the project and unlock exclusive benefits</p>
     </div>
 
-    <!-- Card grid — three plans, Premium centered + featured.
-         Prices shown here are display only: the server-side PLANS
-         map in functions/api/rzp.js is the priced source of truth,
-         and the tier's actual powers (monthly download quota +
-         full-quality originals) are enforced by dz_request_download()
-         in Supabase. One payment = 31 days; an expired tier reads as
-         guest immediately and is downgraded by the nightly cron. -->
     <div class="subGrid">
 
-     <!-- Plan 1: Lite (Blue) -->
      <div class="subCard subCard--blue">
       <div class="subCardInner">
        <div class="subPlanName">Lite</div>
@@ -1955,7 +1381,6 @@
       </div>
      </div>
 
-     <!-- Plan 2: Premium (Purple) — center, featured -->
      <div class="subCard subCard--purple subCard--featured">
       <div class="subCardInner">
        <div class="subBadge subBadge--purple">&#9733; Most Popular</div>
@@ -1975,7 +1400,6 @@
       </div>
      </div>
 
-     <!-- Plan 3: Max (Gold) -->
      <div class="subCard subCard--gold">
       <div class="subCardInner">
        <div class="subBadge subBadge--gold">&#9889; Best Value</div>
@@ -1996,35 +1420,16 @@
      </div>
 
     </div>
-    <!-- ── End .subGrid ── -->
 
    </div>
-   <!-- ── End .subPgBdy ── -->
 
   </div>
 
-  <!-- =========================================================
-       FAQ SECTION
-       Positioned inside the Subscription page body, directly
-       below the plan cards grid (.subGrid).
-       ├─ .faqSection        — constrained max-width wrapper
-       ├─ .faqHdr            — title + subtitle block
-       ├─ .faqCategory (×4)  — Billing · Account · Support · Trust
-       │   ├─ .faqCatLabel   — labelled rule-line heading
-       │   └─ .faqItem (×N)  — accordion row (button + answer)
-       JS: inline <script> at bottom of this block powers the
-       accordion — single-open, ARIA, keyboard navigation.
-       ========================================================= -->
 
-  <!-- ── FAQ is appended inside #subPage via JS on DOMContentLoaded ──
-       (It lives here in the DOM and is moved into .subPgBdy by the
-        script below so it renders correctly inside the slide-in panel.) -->
   <div id="faqSection" class="faqSection" aria-label="Frequently Asked Questions">
 
-    <!-- Divider between plan cards and FAQ -->
     <div class="faqCatDiv" aria-hidden="true"></div>
 
-    <!-- ── Section Header ── -->
     <header class="faqHdr">
       <h2 class="faqTitle">Frequently Asked Questions</h2>
       <p class="faqSubtitle">Find answers to common questions about subscriptions, billing, account access, support, and security.</p>
@@ -2032,13 +1437,11 @@
 
     <div class="faqTopDiv" aria-hidden="true"></div>
 
-    <!-- CATEGORY 1 — BILLING & PAYMENTS -->
     <section class="faqCategory" aria-labelledby="faqCat1">
       <div class="faqCatLabel" id="faqCat1">
         <span class="faqCatIco" aria-hidden="true">◈</span>Billing &amp; Payments
       </div>
 
-      <!-- Q1 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2054,7 +1457,6 @@
         </div>
       </div>
 
-      <!-- Q2 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2070,7 +1472,6 @@
         </div>
       </div>
 
-      <!-- Q3 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2086,7 +1487,6 @@
         </div>
       </div>
 
-      <!-- Q4 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2102,7 +1502,6 @@
         </div>
       </div>
 
-      <!-- Q5 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2118,7 +1517,6 @@
         </div>
       </div>
 
-      <!-- Q6 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2137,13 +1535,11 @@
 
     <div class="faqCatDiv" aria-hidden="true"></div>
 
-    <!-- CATEGORY 2 — ACCOUNT & ACCESS -->
     <section class="faqCategory" aria-labelledby="faqCat2">
       <div class="faqCatLabel" id="faqCat2">
         <span class="faqCatIco" aria-hidden="true">◎</span>Account &amp; Access
       </div>
 
-      <!-- Q1 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2159,7 +1555,6 @@
         </div>
       </div>
 
-      <!-- Q2 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2175,7 +1570,6 @@
         </div>
       </div>
 
-      <!-- Q3 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2191,7 +1585,6 @@
         </div>
       </div>
 
-      <!-- Q4 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2207,7 +1600,6 @@
         </div>
       </div>
 
-      <!-- Q5 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2226,13 +1618,11 @@
 
     <div class="faqCatDiv" aria-hidden="true"></div>
 
-    <!-- CATEGORY 3 — SUPPORT -->
     <section class="faqCategory" aria-labelledby="faqCat3">
       <div class="faqCatLabel" id="faqCat3">
         <span class="faqCatIco" aria-hidden="true">✦</span>Support
       </div>
 
-      <!-- Q1 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2248,7 +1638,6 @@
         </div>
       </div>
 
-      <!-- Q2 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2264,7 +1653,6 @@
         </div>
       </div>
 
-      <!-- Q3 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2283,13 +1671,11 @@
 
     <div class="faqCatDiv" aria-hidden="true"></div>
 
-    <!-- CATEGORY 4 — TRUST & SECURITY -->
     <section class="faqCategory" aria-labelledby="faqCat4">
       <div class="faqCatLabel" id="faqCat4">
         <span class="faqCatIco" aria-hidden="true">◉</span>Trust &amp; Security
       </div>
 
-      <!-- Q1 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2305,7 +1691,6 @@
         </div>
       </div>
 
-      <!-- Q2 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2321,7 +1706,6 @@
         </div>
       </div>
 
-      <!-- Q3 -->
       <div class="faqItem" role="listitem">
         <button
           class="faqQ"
@@ -2340,11 +1724,6 @@
 
   </div>
 
-  <!-- =========================================================
-       SUBSCRIPTION COMING SOON MODAL
-       ├─ #subModal  — scrim overlay (click outside to close)
-       └─ .subModalCard — white card centered via position:fixed
-       ========================================================= -->
   <div id="subModal" role="dialog" aria-modal="true" aria-labelledby="subModalTitle" onclick="handleSubModalBackdrop(event)">
    <div class="subModalCard">
     <span class="subModalIcon" aria-hidden="true">🚀</span>
@@ -2354,20 +1733,6 @@
    </div>
   </div>
 
-  <!-- =========================================================
-       ADS / SPONSOR PANEL
-       ├─ Header Bar (.apHdr)
-       │   ├─ Back Button (.apX)
-       │   └─ Title (.apTitle)
-       └─ Body (.apBody)
-           ├─ Intro Label (.apIntro) + Hint (.apHint)
-           ├─ Ad Cards Track (#apTrackWrap > #apTrack)
-           │   ├─ Ad Card 1 (.apCard)
-           │   ├─ Ad Card 2 (.apCard)
-           │   └─ Ad Card 3 (.apCard)
-           ├─ Scroll Dots (#apDots)
-           └─ Description Block (.apDesc)
-       ========================================================= -->
   <div id="adsPanel">
     <div class="apHdr">
       <button class="apX" onclick="closeAdsPanel()" aria-label="Close">←</button>
@@ -2377,11 +1742,9 @@
       <div class="apIntro">SWIPE TO BROWSE ADS</div>
       <div class="apHint">← SCROLL →</div>
 
-      <!-- ── Ad Cards Track ── -->
       <div class="apTrackWrap" id="apTrackWrap">
         <div class="apTrack" id="apTrack">
 
-          <!-- ── Ad Card 1 ── -->
           <div class="apCard">
             <div class="apCardLbl">AD · 01</div>
             <ins class="adsbygoogle"
@@ -2392,7 +1755,6 @@
                  data-full-width-responsive="true"></ins>
           </div>
 
-          <!-- ── Ad Card 2 ── -->
           <div class="apCard">
             <div class="apCardLbl">AD · 02</div>
             <ins class="adsbygoogle"
@@ -2403,7 +1765,6 @@
                  data-full-width-responsive="true"></ins>
           </div>
 
-          <!-- ── Ad Card 3 ── -->
           <div class="apCard">
             <div class="apCardLbl">AD · 03</div>
             <ins class="adsbygoogle"
@@ -2414,17 +1775,15 @@
                  data-full-width-responsive="true"></ins>
           </div>
 
-        </div><!-- /apTrack -->
-      </div><!-- /apTrackWrap -->
+        </div>
+      </div>
 
-      <!-- ── Scroll Position Dots ── -->
       <div class="apDots" id="apDots">
         <div class="apDot active" data-idx="0"></div>
         <div class="apDot" data-idx="1"></div>
         <div class="apDot" data-idx="2"></div>
       </div>
 
-      <!-- ── Description Block ── -->
       <div class="apDesc">
         <div class="apDescTitle">SPONSOR</div>
         <div class="apDescSub">SUPPORTING DIGIARTZ</div>
@@ -2433,35 +1792,9 @@
         </p>
       </div>
 
-    </div><!-- /apBody -->
+    </div>
   </div>
 
-  <!-- =========================================================
-       ARTWORK VIEWER MODAL — two-pane layout (image + detail
-       sidebar), styled to match the hero/community dark
-       palette. Box itself (.avBox) is a fixed size; only the
-       sidebar (.avSideScroll) scrolls, and the image can be
-       zoomed/panned in place without the box ever resizing.
-       ├─ Backdrop (#artModal)
-       └─ Box (.avBox)
-           ├─ Top bar (.avTopBar) — Close / Share / More
-           └─ Body (.avBody)
-               ├─ Image pane (.avImgPane)
-               │   ├─ Prev/Next (.avNavBtn)
-               │   ├─ Image (#lbImg)
-               │   └─ Zoom bar (.avZoomBar) — zoom/fullscreen/download
-               └─ Sidebar (.avSide → .avSideScroll)
-                   ├─ Author (#avAuthorRow)
-                   ├─ Title (#lbNm) + type (#avSubType)
-                   ├─ Meta rows (#avMetaList)
-                   ├─ Description (#lbDesc)
-                   ├─ Tags (#avTagList)
-                   └─ Report button
-       ========================================================= -->
-  <!-- ── Report modal — filed against the artwork currently open in the
-       viewer. Reasons map to the artwork_reports.reason CHECK constraint. -->
-  <!-- ── Mini profile card — opens when you tap another user's avatar or
-       name in community chat. Identity comes from the live cpAuthors map. -->
   <div id="cpuMod" role="dialog" aria-modal="true" aria-label="User" onclick="if(event.target===this)cpuClose()">
     <div class="cpuCard">
       <div class="cpuRow">
@@ -2476,7 +1809,6 @@
     </div>
   </div>
 
-  <!-- ═══ USER COMMUNITIES — create / join / manage / member actions ═══ -->
 
   <div class="cmMod" id="cmCreateMod" onclick="if(event.target===this)cmCloseMod('cmCreateMod')">
     <div class="cmModCard">
@@ -2508,7 +1840,6 @@
     </div>
   </div>
 
-  <!-- Owner settings + member management -->
   <div class="cmMod" id="cmManageMod" onclick="if(event.target===this)cmCloseMod('cmManageMod')">
     <div class="cmModCard">
       <div class="cmModTitle" id="cmManageTitle">Manage Community</div>
@@ -2541,7 +1872,6 @@
     </div>
   </div>
 
-  <!-- Staff actions on a tapped member -->
   <div class="cmMod" id="cmMemMod" onclick="if(event.target===this)cmCloseMod('cmMemMod')">
     <div class="cmModCard" style="max-width:340px;">
       <div class="cmModTitle" id="cmMemModName">Member</div>
@@ -2584,16 +1914,6 @@
     </div>
   </div>
 
-  <!-- =========================================================
-       SECTION DETAIL VIEW (#dzView)
-       Full-page overlay for Resources / Blog / Marketplace / Jobs —
-       the same reading order the artwork viewer now uses:
-       top bar (Close · ‹ Previous · Next ›) → media → [marketplace:
-       price + Buy] → author row → title/details → body → comments
-       (not for jobs) → Download / Report. Content is rendered per
-       kind by the dzView module; navigation walks the same rows the
-       section tab is currently showing (window.dzGetRows).
-       ========================================================= -->
   <div id="dzView" role="dialog" aria-modal="true" aria-label="Detail view">
    <div class="dzvTop">
     <button class="avNavTxt" id="dzvPrev" onclick="dzViewNav(-1)" aria-label="Previous">Previous</button>
@@ -2604,29 +1924,18 @@
 
   <div id="artModal" role="dialog" aria-modal="true" aria-label="Artwork viewer" data-state="closed">
    <div class="avBox" onclick="event.stopPropagation()">
-    <!-- Top bar: ONLY Previous (left) and Next (right), plain text,
-         no boxes. Closing = browser back (popstate → closeLB) or
-         Escape; Download/Report sit in the body below. -->
     <div class="avTopBar">
      <button class="avNavTxt" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous">Previous</button>
      <button class="avNavTxt" id="avNextBtn" onclick="avNav(1)" aria-label="Next">Next</button>
     </div>
     <div class="avBody">
      <div class="avImgPane">
-      <!-- Stage — the big image plus its floating chrome (prev/next
-           artwork arrows, zoom bar). Positioned ancestor for all of it,
-           so nothing centres against the thumbnail strip below. -->
       <div class="avImgStage">
        <div class="avImgViewport" id="avImgViewport">
         <img alt="" id="lbImg" draggable="false"/>
         <div class="avImgCount" id="avImgCount" hidden></div>
        </div>
       </div>
-      <!-- Image stack — images 2..n of a multi-image artwork, shown
-           full-width under the main stage so the whole set reads
-           top-to-bottom (Image 1 stays in the zoomable viewport).
-           The old thumbnail strip is retired but its element remains
-           for any stale references; it is never unhidden. -->
       <div class="avImgStack" id="avImgStack" hidden></div>
       <div class="avStrip" id="avStrip" hidden role="tablist" aria-label="Images in this artwork"></div>
      </div>
@@ -2665,7 +1974,6 @@
         <div class="avTagList" id="avTagList"></div>
        </div>
        <div class="avDiv"></div>
-       <!-- Per-artwork comments (item_comments, kind='artwork') -->
        <div class="avCmBlock">
         <div class="avBlockH">Comments</div>
         <div class="avCmList" id="avCmList"></div>
@@ -2684,44 +1992,20 @@
     </div>
    </div>
   </div>
-  <!-- =========================================================
-       AUTHENTICATION PAGE (#authMod) — full-screen sliding panel,
-       same slide-in language as #profilePage / #subPage,
-       reachable at /login. Self-contained dark
-       theme (own palette, independent of the site's white
-       default). No back-arrow — the bottom nav bar is the only
-       way in/out, closing via bnGoProfile()/closeAuthMod().
-       ├─ Header Bar (.subPgHdr) — title only
-       └─ Body (.laBody)
-           ├─ Login/Signup toggle link (#authLeadText / #authToggleBtn)
-           ├─ Brand block (logo, tagline)
-           ├─ Feature strip (Share/Connect/Grow)
-           ├─ Heading (#authTitle) + Subtitle (#authSubtitle)
-           ├─ Error Message (#authErr) / Success Message (#authMsg)
-           ├─ Username Field wrap (#authUserWrap)  [signup mode only]
-           ├─ Email Field (#authEmail)
-           ├─ Password Field (#authPass) + show/hide toggle (#authEyeIcon)
-           ├─ Remember me (#authRemember) + Forgot password
-           ├─ Primary Action Button (#authBtn)
-           └─ Social row (Google/Discord/Apple — Supabase OAuth via doOAuth())
-       ========================================================= -->
   <div id="authMod" role="dialog" aria-modal="true" aria-label="Login">
     <div class="subPgHdr">
       <div class="subPgTitle">ACCOUNT <span class="s">◉</span></div>
     </div>
     <div class="laBody">
 
-      <!-- ── Login/Signup switch — top link ── -->
       <p class="laTopLink"><span id="authLeadText">Don't have an account?</span><button id="authToggleBtn" onclick="switchAuthMode('signup')" type="button">Sign up</button></p>
 
-      <!-- ── Brand block ── -->
       <div class="laBrand">
         <div class="laEyebrow">Welcome to</div>
         <div class="laLogo">Digi<span>Artz</span></div>
         <p class="laTag">A creative community for artists<br>to share, inspire, and grow together.</p>
       </div>
 
-      <!-- ── Feature strip ── -->
       <div class="laFeatures">
         <div class="laFeat">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2Z"/></svg>
@@ -2739,14 +2023,12 @@
 
       <div class="laDivider"></div>
 
-      <!-- ── Form heading ── -->
       <h2 class="laHead" id="authTitle">Welcome Back</h2>
       <p class="laSub" id="authSubtitle">Sign in to continue to your account.</p>
 
       <div class="laErr" id="authErr"></div>
       <div class="laMsg" id="authMsg"></div>
 
-      <!-- Username — signup mode only -->
       <div class="laFieldWrap" id="authUserWrap" style="display:none;">
         <label class="laLabel" for="authUser">Username</label>
         <div class="laInputBox">
@@ -2755,7 +2037,6 @@
         </div>
       </div>
 
-      <!-- Email -->
       <div class="laFieldWrap">
         <label class="laLabel" for="authEmail">Email</label>
         <div class="laInputBox">
@@ -2764,7 +2045,6 @@
         </div>
       </div>
 
-      <!-- Password -->
       <div class="laFieldWrap">
         <label class="laLabel" for="authPass">Password</label>
         <div class="laInputBox">
@@ -2779,17 +2059,13 @@
 
       <div class="laRow">
         <label class="laCheck"><input type="checkbox" id="authRemember"/> Remember me</label>
-        <button type="button" class="laForgot" onclick="showToast('Password reset — coming soon ✦')">Forgot password?</button>
+        <button type="button" class="laForgot" onclick="showToast('Password reset — coming soon')">Forgot password?</button>
       </div>
 
-      <!-- Primary action button — label + handler change per mode -->
       <button class="laSubmit" id="authBtn" onclick="doAuth()">Log In</button>
 
       <div class="laOrDiv">or continue with</div>
 
-      <!-- Social sign-in — Supabase OAuth (google/discord/apple). Enable each
-           provider in Supabase → Authentication → Providers, and add this
-           site's URL under Authentication → URL Configuration → Redirect URLs. -->
       <div class="laSocial">
         <button type="button" class="laSocialBtn" onclick="doOAuth('google', this)" aria-label="Continue with Google">
           <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 6.1 29.5 4 24 4c-7.6 0-14.1 4.3-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.1-2 13.7-5.4l-6.3-5.3C29.4 34.9 26.8 36 24 36c-5.3 0-9.7-3.6-11.3-8.4l-6.5 5C9.8 39.6 16.4 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.3 5.3C40.9 36.6 44 30.9 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
@@ -2813,10 +2089,6 @@
     </div>
   </div>
 
-  <!-- ═══ SETTINGS — full page, opened by the SETTINGS button on your own
-       profile. Replaces the old ⋮ hamburger drawer (pfMenu/pfMenuScrim),
-       which has been removed; item ids are kept so the existing count and
-       dev-only-admin logic keeps working unchanged. ═══ -->
   <div id="setPage" role="dialog" aria-modal="true" aria-label="Settings">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeSettingsPage()" aria-label="Close settings">←</button>
@@ -2839,9 +2111,6 @@
     </div>
   </div>
 
-  <!-- ═══ ARTIST PROGRESS — XP, level, milestones, leaderboard.
-       Same sliding full-page shell as #bmPage; content rendered by
-       the Artist Progress module below. ═══ -->
   <div id="xpPage" role="dialog" aria-modal="true" aria-label="Artist progress">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeXpPage()" aria-label="Close progress">←</button>
@@ -2852,10 +2121,6 @@
     </div>
   </div>
 
-  <!-- ═══ SHARE PROFILE — QR code + circular Copy / Share actions.
-       The QR is generated fully offline by the module below (byte
-       mode, ECC level M, versions 1-10 picked automatically) — no
-       third-party QR service, so profiles stay private. ═══ -->
   <div class="upPop" id="pfShareMod" role="dialog" aria-modal="true" aria-label="Share profile">
     <div class="upPopBox pfShareBox">
       <button class="upPopX" onclick="closePfShare()" aria-label="Close">✕</button>
@@ -2882,43 +2147,14 @@
     </div>
   </div>
 
-  <!-- ── Toast Notification ── -->
   <div class="toast" id="toast">
   </div>
-  <!-- Supabase credentials + S3 upload endpoint loaded from
-       config.js (gitignored) — see config.example.js for the
-       template. window.KOE_CONFIG now also carries S3_FN_URL,
-       the deployed s3-sign edge function's endpoint. -->
-  <!-- Moved out of <head>: this is parser-blocking (no defer/async), and up
-       there it stalled the parser before it could reach the stylesheet or
-       #intro, leaving a white canvas for a whole network round-trip. Down
-       here the intro is already painted. It must still load before the
-       inline script below, which calls supabase.createClient() at top level. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Profanity / link mask. Order is load-bearing: the two list files
-       only populate window.DZ_WORDLIST, and badwords.js reads that list
-       when it builds its dictionary, so the engine must come last. It
-       also wraps supabase.createClient(), which is why it sits above
-       js/app-core.js — that's the file that actually calls createClient. -->
   <script src="/js/badwords-list-a.js?v=1"></script>
   <script src="/js/badwords-list-b.js?v=1"></script>
   <script src="/js/badwords.js?v=1"></script>
-  <!-- ROOT-ABSOLUTE paths (leading "/") are required, not optional.
-       The app pushes deep URLs (/profile/<name>, /artwork/<id>). With a
-       relative src, a browser sitting on /profile/artist resolves "config.js"
-       against /profile/ and requests /profile/config.js -> 404. KOE_CONFIG
-       then never defines SB_URL/SB_KEY, so createClient() is skipped and the
-       "Supabase not configured" banner fires. That's why opening a shared
-       profile/artwork link — or reloading (e.g. toggling mobile<->desktop)
-       while already on a deep URL — broke, while the homepage worked. -->
   <script src="/config.js"></script>
-  <!-- Upload gate — rate limit / duplicate dHash / AI-metadata scan.
-       Loaded here (not lazily) so UploadVerifier is ready the moment
-       the first upload is queued. If this file ever fails to load the
-       queue engine fails OPEN (skips the check) rather than bricking
-       uploads — see upqRun(). -->
   <script src="/uploadVerifier.js"></script>
-  <!-- Main app — one shared scope across these 13 files, load order matters -->
   <script src="/js/app-core.js?v=1"></script>
   <script src="/js/gallery.js?v=1"></script>
   <script src="/js/auth.js?v=1"></script>
@@ -2932,24 +2168,14 @@
   <script src="/js/startup.js?v=1"></script>
   <script src="/js/tagrail.js?v=1"></script>
   <script src="/js/search.js?v=1"></script>
- <!-- Global ripple effect -->
-  <!-- Ripple styles: css/widgets.css -->
 
  <div id="rippleHost"></div>
 
   <script src="/js/effects.js?v=1"></script>
-  <!-- Image-linked comments patch: js/effects.js -->
-<!-- ADS PANEL — open / close / drag-scroll / dot indicator -->
-  <!-- Ads panel: js/effects.js -->
 
-<!-- LEGAL MODAL JS (Privacy Policy · Terms & Conditions · Cookie Policy · Refund Policy) -->
-  <!-- Legal modals: js/effects.js -->
 
-  <!-- FAQ mount: js/effects.js -->
 
-  <!-- Section scope: js/effects.js -->
 
-  <!-- Cookie banner styles: css/widgets.css -->
 
 <div
   id="cookieBanner"
@@ -2984,14 +2210,8 @@
 
   <script src="/js/cookie.js?v=1"></script>
 
-<!-- ── AI Assistant Data ──────────────────────────────── -->
-<!-- Zeo's content now lives in aiAssistantData.js — commit that file next
-     to index.html. It's loaded synchronously here so window.ZEO_DATA is
-     ready before the widget engine runs further down. -->
 <script src="/aiAssistantData.js"></script>
 <script>
-/* Safety net: if aiAssistantData.js ever fails to load, Zeo still opens
-   with a minimal menu instead of throwing. */
 window.ZEO_DATA = window.ZEO_DATA || {
   welcomeMessage: "Hi, I'm Zeo. Tap below to get help.",
   welcomeOptions: [{ id: "helpCenter", label: "Get Help" }],
@@ -3000,11 +2220,8 @@ window.ZEO_DATA = window.ZEO_DATA || {
 };
 </script>
 
-<!-- ── AI Assistant HTML ───────────────────────────────── -->
 
-<!-- Floating bot button -->
 <button id="zeoBtn" aria-label="Open Zeo Bot" title="Zeo Bot">
-  <!-- Avatar image — falls back to SVG bot icon if load fails -->
   <img
     id="zeoBtnImg"
     class="zeoBtnAvatar"
@@ -3014,7 +2231,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
     draggable="false"
     onerror="this.style.display='none';document.getElementById('zeoBtnFallback').style.display='flex';"
   />
-  <!-- Fallback SVG (hidden unless image fails) -->
   <svg id="zeoBtnFallback" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
     <rect x="3" y="11" width="18" height="10" rx="3"/>
     <path d="M12 3a2 2 0 0 1 2 2v2H10V5a2 2 0 0 1 2-2z"/>
@@ -3022,15 +2238,11 @@ window.ZEO_DATA = window.ZEO_DATA || {
     <circle cx="15" cy="16" r="1" fill="currentColor" stroke="none"/>
     <path d="M8 11V9M16 11V9"/>
   </svg>
-  <!-- Tooltip -->
   <span class="zeoTooltip">Need Help?</span>
 </button>
 
-<!-- Speech bubble (fixed position via CSS, text set by JS) -->
 <div class="zeoBubble" id="zeoBubble" aria-hidden="true" role="status"></div>
 
-<!-- AI Assistant — full page (opens on tap, slides in like the
-     rest of the site's full pages instead of a small popup) -->
 <div id="zeoPage" role="dialog" aria-label="Zeo Bot" aria-modal="true">
   <div class="zeoChatHeader">
     <div class="zeoChatHeaderAvatar" aria-hidden="true"><img src="/zeo-avatar.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.remove();this.parentElement.textContent='🤖';"/></div>
@@ -3043,24 +2255,8 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <div class="zeoChatBody" id="zeoChatBody" aria-live="polite"></div>
 </div>
 
-<!-- ── AI Assistant JS ────────────────────────────────── -->
   <script src="/js/zeo.js?v=1"></script>
 
-<!-- =========================================================
-     THEME PAGE (#themePage) — "Choose Your Theme"
-     ├─ Opened from Profile → ⋮ menu → Theme
-     ├─ Full-page slide-in overlay, same language as #notifPage
-     │   (.subPgHdr / .subPgX / .subPgTitle reused)
-     ├─ Cards are a keyboard radiogroup: ←/→/↑/↓ move + select,
-     │   Home/End jump, Esc closes, roving tabindex
-     ├─ Each card carries its own fixed --p-* preview palette so
-     │   previews always depict their theme, not the active one
-     └─ Engine: applies html[data-theme], persists to
-         localStorage("koeTheme"), tracks prefers-color-scheme
-         while "System" is chosen, updates the theme-color meta,
-         and crossfades via View Transitions where supported
-     ========================================================= -->
-  <!-- Theme page styles: css/widgets.css -->
 
 <div id="themePage" role="dialog" aria-modal="true" aria-label="Choose your theme">
   <div class="subPgHdr">
@@ -3163,29 +2359,8 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/theme.js?v=1"></script>
 
 
-<!-- =========================================================
-     ENGAGEMENT (views • likes • bookmarks)
-     ├─ Views: history.pushState is wrapped — every path that
-     │   opens an artwork (/artwork/{id}) funnels through it, so
-     │   gallery clicks, prev/next and deep links all register.
-     │   Client cooldown (6h, localStorage) + server dedup
-     │   (1/viewer/artwork/day via SECURITY DEFINER RPC).
-     ├─ Likes/bookmarks: optimistic toggles, PK-deduped in the DB,
-     │   RLS-scoped reads. Like counts are never shown (product
-     │   rule) — they surface only as profile totals via RPC.
-     ├─ Bookmarks page: overlay reusing the site's page pattern.
-     ├─ Profile totals: observer on #pfUsername → works for own
-     │   AND public profiles without touching closure internals.
-     └─ Hard guards: no supabase / signed-out → graceful, no crash.
-     ========================================================= -->
-  <!-- Engagement button styles: css/widgets.css -->
 
-<!-- ═══ FEATURED SLIDE DETAIL — opened by tapping a slide in the
-     home strip. Image, title, full description and date. The strip
-     itself carries only the title now. ═══ -->
 
-<!-- ═══ SEARCH TAG — the full vocabulary as a tickable grid.
-     Opened by the pinned "Search tag" chip in the rail. ═══ -->
 <div class="upPop" id="tgMod" role="dialog" aria-modal="true" aria-label="Search tags">
   <div class="upPopBox tgModBox">
     <div class="tgModHead">
@@ -3202,9 +2377,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- ═══ SETTINGS ▸ ALBUMS — the manager. Same strip as the profile
-     ALBUMS tab (Likes + Bookmarks pinned first, then real albums),
-     led by a create tile. Tapping any card opens #albViewPage. ═══ -->
 <div id="albPage" role="dialog" aria-modal="true" aria-label="Albums">
   <div class="subPgHdr">
     <button class="subPgX" onclick="albClosePage()" aria-label="Close albums">←</button>
@@ -3216,9 +2388,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- ═══ ONE ALBUM'S CONTENTS — shared by the profile tab and the
-     manager. The owner gets Rename / Delete plus a per-card remove;
-     visitors get a read-only grid. ═══ -->
 <div id="albViewPage" role="dialog" aria-modal="true" aria-label="Album">
   <div class="subPgHdr">
     <button class="subPgX" onclick="albCloseView()" aria-label="Close album">←</button>
@@ -3237,7 +2406,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- ═══ Create / rename album ═══ -->
 <div class="upPop" id="albMod" role="dialog" aria-modal="true" aria-label="Album name">
   <div class="upPopBox albModBox">
     <h3 class="albModTitle" id="albModTitle">NEW ALBUM</h3>
@@ -3266,7 +2434,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- ── Friends page — DM partners + community-style user search ── -->
 <div id="frdPage" role="dialog" aria-modal="true" aria-label="Friends">
   <div class="subPgHdr">
     <button class="subPgX" onclick="closeFriendsPage()" aria-label="Close friends">←</button>
@@ -3280,7 +2447,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
     <div id="frdResults"></div>
     <div class="frdSection" id="frdReqHead" style="display:none;">FRIEND REQUESTS · <span id="frdReqCount">0</span></div>
     <div class="cmFriendList" id="frdReqList"></div>
-    <!-- Outgoing pending requests — cancellable until the other artist accepts -->
     <div class="frdSection" id="frdSentHead" style="display:none;">REQUESTS SENT · <span id="frdSentCount">0</span></div>
     <div class="cmFriendList" id="frdSentList"></div>
     <div class="frdSection" id="frdListHead" style="display:none;">YOUR FRIENDS · <span id="frdCount">0</span></div>
@@ -3298,29 +2464,12 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=1"></script>
 
 
-<!-- ── Front-page floating widgets ─────────────────────────
-     The brand badge, notification button, and Zeo AI button
-     are fixed-position with a high z-index, so without this
-     they'd stay pinned on screen through every full-page
-     overlay panel that slides in (Comic Arts, Profile, Full
-     Gallery, Comments, Subscription plans, Ads) — those panels
-     sit at z-index 500, below the widgets' z-index 1001, so
-     the widgets used to float on top of them too.
-     They stay visible for the whole home page (hero through
-     the footer at the bottom) and are hidden only while an
-     overlay panel is open. ── -->
   <script src="/js/sections.js?v=1"></script>
 
-  <!-- Section content: js/sections.js -->
-
-  <!-- Razorpay checkout: js/sections.js -->
-  <!-- Detail view: js/sections.js -->
 
 
-  <!-- Hero pitch: js/sections.js -->
 
-  <!-- Detail-view styles: css/overrides.css -->
 
-  <!-- Desktop polish: css/overrides.css -->
+
 </body>
 </html>

@@ -1,33 +1,4 @@
-/* ── upqueue.js · background upload queue ── */
-  /* =========================================================
-     BACKGROUND UPLOAD QUEUE (upq)
-     ├─ upqStart(snap)        — queue a piece; runs immediately
-     ├─ upqRun(job)           — CHECKING → UPLOADING → ALMOST
-     │                          DONE → LIVE, or FAILED
-     ├─ upqOwnQueueHTML()     — blurred cards prepended into the
-     │                          uploader's OWN grids by
-     │                          pfRenderGallery() + mwRenderArt()
-     ├─ upqOpenModal(id)      — tap a card → live step checklist;
-     │                          auto-opened on a failed check
-     └─ upqSync()             — repaint every queue surface
-
-     Rules:
-     · CHECKING runs BEFORE any byte leaves the device, so a
-       failed check normally has nothing to clean up. If a later
-       stage fails (transfer / publish), every S3 key already
-       written is deleted — nothing orphaned in the datacenter.
-     · Verifier verdicts: only 'approve' publishes. 'review'
-       (near-duplicate / AI metadata markers) and 'block' both
-       stop the piece and show the reason. Soften by allowing
-       'review' through in the verdict test inside upqRun().
-     · If uploadVerifier.js ever fails to load, the check is
-       SKIPPED (fail-open) so uploads never brick on a CDN
-       hiccup.
-     · Jobs run in parallel and are pure client-side state —
-       no DB row exists until ALMOST DONE, so an abandoned tab
-       leaves nothing behind (at worst an S3 file whose insert
-       never ran; the same exposure the old inline flow had).
-     ========================================================= */
+// background upload queue
   var upq = { jobs: [], seq: 0, modalJob: null, modalSnap: null };
 
   var UPQ_STAGE_LABEL = { checking:'VERIFYING', uploading:'UPLOADING', finalizing:'ALMOST DONE', live:'LIVE', failed:'FAILED' };
@@ -40,11 +11,7 @@
       software: snap.software, file: snap.file, pageFiles: snap.pageFiles,
       thumbFocus: snap.thumbFocus, preview: snap.preview,
       albums: (snap.albums || []).slice(),
-      /* FIX: this was never copied off the snapshot, so job.publishAt
-         was always undefined and upqRun's SCHEDULED branch could never
-         fire — every "scheduled" piece was inserted straight into
-         `artworks` and went live immediately, despite the toast saying
-         otherwise. Carrying it through makes scheduling real. */
+      // copy publish time from snapshot
       publishAt: snap.publishAt || '',
       upDone: 0, upTotal: 1 + snap.pageFiles.length,
       steps: { ratelimit:{state:'',detail:''}, duplicate:{state:'',detail:''}, ai:{state:'',detail:''}, moderation:{state:'',detail:''} },
@@ -66,8 +33,7 @@
     upqSync();
   }
 
-  /* Repaints every surface that can show queue cards. Both render fns
-     no-op safely when their page isn't the one on screen. */
+  // repaint queue surfaces
   function upqSync(){
     if(currentUser && pf.profile && String(pf.profile.id)===String(currentUser.id) && Array.isArray(pf.galleryRows)){
       pfRenderGallery();
@@ -78,9 +44,7 @@
     upqRenderModal();
   }
 
-  /* Blurred processing cards — newest first, prepended before the real
-     rows. Only ever rendered into the uploader's own grids (the callers
-     enforce ownership). */
+  // blurred processing cards
   function upqOwnQueueHTML(){
     if(!currentUser || !upq.jobs.length) return '';
     return upq.jobs.map(function(j){
@@ -104,7 +68,7 @@
 
   async function upqRun(job){
     try{
-      /* ── 1 · CHECKING — before a single byte leaves the device ── */
+      // 1 checking
       job.stage='checking'; upqSync();
       var phash = null;
       if(window.UploadVerifier && typeof UploadVerifier.verify==='function'){
@@ -112,8 +76,7 @@
           sb: sb, userId: currentUser.id, kind: 'art', pages: job.pageFiles,
           onStep: function(stepId, state, detail){
             if(job.steps[stepId]){ job.steps[stepId].state=state; job.steps[stepId].detail=detail||''; }
-            /* Live sub-status on the blurred card while each check runs —
-               reads like a professional pipeline instead of a generic wait. */
+            // live sub status
             if(state==='run'){
               job.checkHint = { ratelimit:'Running spam check',
                                 duplicate:'Scanning for duplicates',
@@ -135,14 +98,7 @@
         ['ratelimit','duplicate','ai'].forEach(function(k){ job.steps[k].state='pass'; job.steps[k].detail='skipped'; });
       }
 
-      /* ── 1b · GEMINI ARTWORK MODERATION — the server-side gate.
-         Every image (cover + extra pages) is judged by Gemini Vision
-         via /api/moderate-upload: artwork-or-not, SAFE/MATURE/ADULT,
-         and quality — all in one request per image, BEFORE any byte
-         reaches S3. Fails closed: no verdict means no upload. The
-         canonical rejection message lands in the CHECK FAILED popup;
-         dev accounts additionally see the reason code (e.g. SELFIE)
-         in the step row. */
+      // 1b gemini moderation
       job.steps.moderation.state='run';
       job.mod.artwork='run'; job.mod.safety=''; job.mod.quality='';
       job.checkHint='Confirming it\u2019s artwork'; upqSync();
@@ -167,7 +123,7 @@
         var devCode = (typeof isDev!=='undefined' && isDev && mod.code)
           ? ('Code: '+mod.code + (mod.failIndex>0 ? ' \u00b7 image '+(mod.failIndex+1) : '')) : '';
         job.steps.moderation.detail = devCode;
-        /* Land the red \u2715 on the review row that actually failed. */
+        // mark the failed row
         if(mod.code==='BLANK_IMAGE' || mod.code==='LOW_QUALITY'){
           job.mod.artwork='pass'; job.mod.artworkSub='Original artwork confirmed';
           job.mod.safety='pass';  job.mod.safetySub='Safe for all audiences';
@@ -186,15 +142,10 @@
       job.mod.artwork='pass'; job.mod.artworkSub='Original artwork confirmed';
       job.mod.safety='pass';  job.mod.safetySub = mod.rating==='MATURE' ? 'Approved \u00b7 18+ content' : 'Safe for all audiences';
       job.mod.quality='pass'; job.mod.qualitySub='Quality acceptable';
-      /* Verification done \u2014 if the tracker is open, close it so it never
-         overlaps the transfer/LIVE flow. Failures never reach this line;
-         the VERIFICATION FAILED popup auto-opens from the catch instead. */
+      // close tracker when done
       if(upq.modalJob===job.id){ upqCloseModal(); } else { upqRenderModal(); }
 
-      /* ── 2 · UPLOADING — cover first, then the extra images.
-         Every key carries a per-job fragment: jobs run in PARALLEL
-         now, so two pieces landing in the same millisecond must not
-         mint the same Date.now()-based key and overwrite each other. */
+      // 2 uploading
       job.stage='uploading'; job.upDone=0; upqSync();
       var uniq = Date.now()+'_'+job.id.split('_')[1];
       var ext = safeSlug(job.file.name.split('.').pop(), 8) || 'jpg';
@@ -213,15 +164,9 @@
         job.upDone = 1+ai+1; upqSync();
       }
 
-      /* ── 3 · ALMOST DONE — the DB row (RLS merit gate fires here) ── */
+      // 3 almost done
       job.stage='finalizing'; upqSync();
-      /* ── SCHEDULED BRANCH ──
-         Same verification and S3 upload as a normal post; only the
-         destination differs. The row waits in scheduled_uploads and
-         a pg_cron job (publish_due_scheduled_uploads, every 5 min)
-         moves it into artworks at publish_at — so it goes live even
-         with the artist offline, and no feed/profile/search query
-         needs to know scheduling exists. */
+      // scheduled branch
       if(job.publishAt){
         const{error:se}=await sb.from('scheduled_uploads').insert({
           user_id:currentUser.id, publish_at:job.publishAt,
@@ -230,32 +175,25 @@
           thumb_x:job.thumbFocus.x, thumb_y:job.thumbFocus.y, thumb_zoom:job.thumbFocus.z||1,
           pages:artPageUrls.length?artPageUrls:null, kind:ART_KIND_ART,
           software:job.software||null, phash:phash,
-          /* Carried across the wait; publish_due_scheduled_uploads()
-             re-attaches them once the artwork row exists. */
+          // reattach albums later
           album_ids: (job.albums && job.albums.length) ? job.albums : null,
           content_rating:mod.rating, is_mature:mod.rating==='MATURE', ai_moderation:mod.audit,
           mod_token:mod.token||null
         });
         if(se) throw se;
         job.stage='done'; upqSync();
-        upqRemove(job.id);   /* clears the blurred queue card */
-        uschLoad();          /* new card appears in the SCHEDULED rail */
+        upqRemove(job.id);   // clears the queue card
+        uschLoad();          // new scheduled card
         return;
       }
       const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,thumb_zoom:job.thumbFocus.z||1,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved',content_rating:mod.rating,is_mature:mod.rating==='MATURE',ai_moderation:mod.audit,mod_token:mod.token||null}).select();
       if(de) throw de;
 
-      /* Album membership, if any was picked on the form. Runs AFTER the
-         artwork row lands (album_items needs a real artwork_id) and is
-         deliberately non-fatal — the piece is already published, so a
-         failure here must not roll the upload back. */
+      // album membership
       var _newRow = rows && rows[0];
       if(_newRow && job.albums && job.albums.length) await albAttach(_newRow.id, job.albums);
 
-      /* ── 4 · LIVE — flash the ✓ on the blurred card first; the real
-         row is spliced in ONLY when the card is removed, so the piece
-         never shows twice (blurred LIVE card + real card) during the
-         1.6s flash. One repaint swaps blur → real. ── */
+      // 4 live
       job.stage='live';
       upqSync();
       var row = rows && rows[0];
@@ -272,13 +210,11 @@
           if(typeof renderHome==='function') renderHome();
           var _fgEl=document.getElementById('fg'); if(_fgEl && _fgEl.classList.contains('open') && typeof renderFG==='function') renderFG();
         }
-        upqRemove(job.id); /* repaints the grids: blur card out, real card in */
+        upqRemove(job.id); // blur card out, real card in
       }, 1600);
-      showToast('\u201C'+(job.name||'Artwork')+'\u201D is live \u2726');
+      showToast('\u201C'+(job.name||'Artwork')+'\u201D is live');
     }catch(err){
-      /* ── FAILED — wipe anything already in the datacenter, then the
-         themed popup with the exact reason. On a check failure nothing
-         was ever transferred, so the loop is a no-op. ── */
+      // failed, wipe uploads
       for(var d=0; d<job.uploadedPaths.length; d++){
         try{ await s3Delete(BUCKET, job.uploadedPaths[d]); }
         catch(e){ console.error('upq cleanup:', e.message); }
@@ -292,17 +228,16 @@
         job.failReason = safeErr(err, 'Upload failed \u2014 please try again');
       }
       console.error('upq failed:', err && err.message);
-      upqOpenModal(job.id); /* auto-open the CHECK FAILED popup */
+      upqOpenModal(job.id); // open check failed popup
     }
   }
 
-  /* ── Status / failed modal ── */
+  // status modal
   function upqOpenModal(id){
     var j = upqFind(id);
     if(!j) return;
     if(j.stage==='failed'){
-      /* Detach: the card leaves the grid immediately; the modal keeps
-         its own snapshot so the reason survives the removal. */
+      // detach, keep snapshot
       upq.modalSnap = j; upq.modalJob = null;
       var i = upq.jobs.indexOf(j); if(i!==-1) upq.jobs.splice(i,1);
       upqSync();
@@ -318,8 +253,7 @@
     if(bd) bd.classList.remove('open');
   }
 
-  /* Premium vertical verification tracker \u2014 rail + node + connector,
-     right-aligned state pill (Pending / Checking\u2026 / Passed / Failed). */
+  // verification tracker row
   function upqTrackRow(state, name, sub, last){
     var cls = state==='run' ? 'run' : (state==='pass' ? 'pass' : (state==='flag'||state==='block'||state==='fail') ? 'fail' : 'pend');
     var ico = cls==='pass' ? '\u2713' : cls==='fail' ? '\u2715' : '';
@@ -356,8 +290,7 @@
         '<div class="upqFailReason">'+esc(j.failReason||'The artwork did not pass verification.')+'</div></div>'+
       '</div>';
     }
-    /* Every row is a check that genuinely runs \u2014 the three review rows
-       are live signals from inside the single AI verdict. */
+    // check rows
     var rows = [
       ['pass', 'Upload received', ''],
       ['pass', 'File integrity & format', ''],
@@ -368,7 +301,7 @@
       [m.safety, 'Content safety check', m.safetySub],
       [m.quality, 'Quality & watermark check', m.qualitySub],
       [transferState, 'Secure transfer', transferSub],
-      [publishState, 'Publish', j.stage==='live' ? 'Your artwork is live \u2726' : '']
+      [publishState, 'Publish', j.stage==='live' ? 'Your artwork is live' : '']
     ];
     for(var ri=0; ri<rows.length; ri++){
       html += upqTrackRow(rows[ri][0], rows[ri][1], rows[ri][2], ri===rows.length-1);
@@ -377,7 +310,7 @@
       html += '<div class="upqFin fail">Verification stopped \u2014 nothing was published</div>';
       html += '<div class="upqFailNote">Any transferred file has been removed from storage. Fix the issue above and upload again whenever you\u2019re ready.</div>';
     } else if(j.stage==='live'){
-      html += '<div class="upqFin ok">All checks passed \u2014 your artwork is live \u2726</div>';
+      html += '<div class="upqFin ok">All checks passed \u2014 your artwork is live</div>';
     } else {
       html += '<div class="upqFin busy">Your artwork is being reviewed now\u2026</div>';
     }

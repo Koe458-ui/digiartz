@@ -1,17 +1,14 @@
-/* ── hero.css · hero pitch ── */
-    /* =========================================================
-       HERO PITCH
-       ========================================================= */
+/* hero */
+    /* hero pitch */
     #heroPitch{
       position:relative;
       background:var(--bg);
-      /* Same clearance the slide strip used, so the first thing on
-         the page still sits correctly under the floating top bar. */
+      /* top bar clearance */
       padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) clamp(1rem,4vw,2rem) clamp(2.2rem,5vw,3.4rem);
     }
     .hpInner{max-width:760px;margin:0 auto;}
 
-    /* ── Segmented toggle ── */
+    /* segmented toggle */
     .hpTabs{
       display:flex;gap:.25rem;padding:.3rem;margin:0 0 clamp(1.4rem,3.5vw,2rem);
       background:var(--sur);border:1px solid var(--bdr);border-radius:999px;
@@ -31,7 +28,7 @@
     .hpTab[aria-selected="true"]{background:var(--pg);color:var(--text-on-accent);}
     .hpTab:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
 
-    /* ── Headline ── */
+    /* headline */
     .hpHead{
       margin:0 0 clamp(1.1rem,2.6vw,1.5rem);
       font-family:var(--fd);font-weight:800;
@@ -39,12 +36,10 @@
       line-height:1.1;letter-spacing:-.02em;color:var(--tx);
       text-wrap:balance;
     }
-    /* The one coloured phrase per tab — the brief's "make it pop".
-       Brand red (the "Artz" in the logo), themed via --brand-red so
-       light mode gets the deeper cut that survives a white page. */
+    /* accent phrase */
     .hpHead em{font-style:normal;color:var(--brand-red);}
 
-    /* ── Checklist ── */
+    /* checklist */
     .hpList{list-style:none;margin:0 0 clamp(1.5rem,3.5vw,2rem);padding:0;display:flex;flex-direction:column;gap:.7rem;}
     .hpList li{display:flex;align-items:flex-start;gap:.65rem;font-family:var(--fb);font-size:clamp(.9rem,2.2vw,1rem);line-height:1.45;color:var(--txd);}
     .hpTick{
@@ -54,7 +49,7 @@
     }
     .hpTick svg{width:11px;height:11px;stroke:var(--pg);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
 
-    /* ── CTA ── */
+    /* cta */
     .hpCta{
       display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;
       border:0;border-radius:999px;padding:.9rem 1.7rem;
@@ -66,12 +61,7 @@
     @media(hover:hover){.hpCta:hover{filter:brightness(1.08);}}
     .hpCta:focus-visible{outline:2px solid var(--pb);outline-offset:3px;}
 
-    /* ── Rise-in removed ──
-       The panel used to fade in and shift up 14px on every tab
-       change, with the three checklist rows staggered in behind
-       the headline. Tabs swap instantly now. paintPanel() in
-       js/sections.js still adds .hpIn — it just has nothing
-       hanging off it any more, so leaving it there is harmless. */
+    /* rise in removed */
     .hpPanel.hpIn > *,
     .hpPanel.hpIn > .hpList li{animation:none;opacity:1;transform:none;}
     @media(prefers-reduced-motion:reduce){
@@ -82,15 +72,15 @@
       .hpTab{padding:.5rem .95rem;font-size:.82rem;}
     }
 
-    /* Visually hidden — accessible to screen readers, invisible on screen */
+    /* screen reader only */
     .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
-    /* SETUP BANNER */
+    /* setup banner */
     #sBanner{background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);padding:1rem 1.5rem;text-align:center;font-family:var(--fm);font-size:.76rem;letter-spacing:.12em;color:var(--ps);line-height:1.8;display:none;}
     #sBanner.show{display:block;}
     #sBanner a{color:var(--pb);}
 
-/* Legacy hero class stubs — kept for JS safety, visual output handled in § 8 above */
+/* legacy hero stubs */
 .sec{padding:5rem 2rem;max-width:1200px;margin:0 auto;}
 .secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
 .secT .s{color:var(--pg);font-size:.5em;}
@@ -98,46 +88,29 @@
 .upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
 .upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
 
-    /* ── ArtStation-style card: full-bleed image cropped to a uniform
-       aspect ratio so cards sit in a standard row-major grid (correct
-       newest→oldest reading order) with the title overlaid via bottom
-       scrim ── */
+    /* gallery card */
     .gItem{position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;line-height:0;}
     .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
     .gItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
     .gItem img{width:100%;aspect-ratio:1;display:block;height:auto;object-fit:cover;transition:transform .4s;}
-    /* imgShimmer keyframe is shared by .awImgWrap.awLoading, .igSkelCard
-       and the .gItem image skeleton */
+    /* shimmer keyframe */
     @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
     .gItem:hover img{transform:scale(1.04);}
     .gNm{display:none;}
-    /* ── Hover reveal, in two beats ──────────────────────────────
-       1. a 70%-black scrim wipes across the card, right → left
-       2. the artist chip fades up in the bottom-right quarter
-       The scrim is clipped rather than slid in, so its colour stays
-       pinned to the card while only the edge travels. The chip is a
-       SIBLING of the scrim, not a child — inside it the same
-       clip-path would cut the text off mid-fade. */
-       Both artwork card types share this: .gItem (full gallery, search,
-       profile grids) and .awCard (the front-page Artworks grid), whose
-       scrim lives inside .awImgWrap — the square image area — rather
-       than on the card itself. */
+    /* hover reveal */
     .awImgWrap{position:relative;}
     .gOv{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;clip-path:inset(0 0 0 100%);transition:clip-path .42s cubic-bezier(.22,1,.36,1);z-index:2;}
     .gItem:hover .gOv,.gItem:focus-within .gOv,
     .awCard:hover .gOv,.awCard:focus-within .gOv,.awCard:focus-visible .gOv{clip-path:inset(0 0 0 0);}
     .gOv svg{width:36px;height:36px;color:var(--ps);}
-    /* Pre-clip-path browsers get the old plain fade rather than a
-       scrim stuck permanently open. */
+    /* no clip path fallback */
     @supports not (clip-path:inset(0 0 0 0)){
       .gOv{opacity:0;transition:opacity .3s;}
       .gItem:hover .gOv,.gItem:focus-within .gOv,
       .awCard:hover .gOv,.awCard:focus-within .gOv,.awCard:focus-visible .gOv{opacity:1;}
     }
 
-    /* Exactly the bottom-right quarter of the card: half the width,
-       half the height. Never a click target — the whole card is one
-       link to the artwork. */
+    /* artist chip */
     .gArtist{
       position:absolute;right:0;bottom:0;width:50%;height:50%;
       box-sizing:border-box;
@@ -147,9 +120,7 @@
       text-align:right;line-height:1.25;
       overflow:hidden;pointer-events:none;
     }
-    /* AOS-style fade-up, staggered, and held back until the wipe has
-       most of the way across. The delays live under :hover only, so
-       leaving the card fades everything straight back out. */
+    /* chip fade up */
     .gArtistAv,.gArtistName,.gArtistHandle{
       opacity:0;transform:translateY(10px);
       transition:opacity .45s cubic-bezier(.22,.61,.36,1),transform .45s cubic-bezier(.22,.61,.36,1);
@@ -173,9 +144,7 @@
       display:flex;align-items:center;justify-content:center;
       font-family:var(--fm);font-size:.9rem;line-height:1;color:#fff;
     }
-    /* .gItem img / .awImgWrap img rules target every descendant image,
-       so the avatar needs its own sizing back — and must sit out the
-       card's zoom-on-hover. */
+    /* artist avatar */
     .gArtistAv img{width:100%;height:100%;aspect-ratio:1;object-fit:cover;display:block;}
     .gItem:hover .gArtistAv img,.awCard:hover .gArtistAv img{transform:none;}
     .gArtistName,.gArtistHandle{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -199,8 +168,7 @@
     .cBadgeWrap{display:none;}
     .cBadge{background:var(--sur2);border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
     .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,var(--bg));border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
-    /* Multi-image marker — top-right of a gallery card, opposite the
-       category badge. Purely informational, never a click target. */
+    /* multi image marker */
     .gMulti{
       position:absolute;top:.4rem;right:.4rem;z-index:2;
       display:inline-flex;align-items:center;gap:.2rem;
@@ -215,12 +183,7 @@
     }
 
 
-    /* ── Full gallery overlay — slide-in panel ──
-       Locally re-declares the shared design tokens (same values as
-       #communityPage) so every child that already styles itself with
-       var(--bg)/var(--sur)/var(--tx)/var(--pg)/etc. repaints to match
-       the Community page automatically. Artwork cards (.gItem) and
-       the image grid itself are intentionally left alone below. */
+    /* gallery overlay panel */
     #fg{
       position:fixed;inset:0;z-index:500;overflow-y:auto;
       transform:translateX(100%);
@@ -233,17 +196,7 @@
       background:var(--bg);color:var(--tx);
     }
     #fg.open{transform:translateX(0);}
-    /* ── Title + subtitle — sits above the sticky search/filter bar,
-       scrolls away with the rest of the page ── */
-    /* Gallery / Comic overlay heading — mirrors the Community page title
-       (.cmHdrTitle): centred, gradient-coloured with a soft glow and a ✦
-       accent, plus a divider line beneath. Every colour uses theme
-       variables, so it adapts to every theme exactly like the Community
-       header does. */
-    /* ── Title bar — now matches the Community header (.cmHdr):
-       sticky at the top, frosted-blur surface, all-caps gradient
-       title. The search/filter bar (.fgHdr) sticks directly below
-       it (top offset = this bar's fixed 3.4rem height). ── */
+    /* overlay title bar */
     .fgIntro{
       position:sticky;top:0;z-index:11;
       margin:0;
@@ -254,7 +207,7 @@
       border-bottom:1px solid var(--bdr);
       isolation:isolate;
     }
-    /* background + blur split onto ::before, same decoupling as .cmHdr */
+    /* blur layer */
     .fgIntro::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
     .fgTitle{
       display:inline-flex;align-items:center;gap:.45rem;margin:0;
@@ -269,14 +222,12 @@
       text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
     }
     .fgTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);}
-    /* narrow screens: same tracking reduction as .cmHdrTitle */
+    /* narrow screens */
     @media(max-width:480px){
       .fgTitle{font-size:1.02rem;letter-spacing:.08em;}
     }
     .fgHdr{position:sticky;top:3.4rem;z-index:10;border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;isolation:isolate;}
-    /* FIX: background + blur split onto ::before, same decoupling as
-       #bnNav — sticky elements have the same fixed-during-scroll
-       repaint issue while they're pinned. */
+    /* blur layer */
     .fgHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
     .fgQ{flex:1;min-width:140px;max-width:280px;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.1em;padding:.55rem .9rem;outline:none;transition:border-color .25s;border-radius:6px;}
     .fgQ:focus{border-color:var(--pg);}
@@ -289,20 +240,14 @@
     .fgFltBtn.active{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
     .fgFltBtn.active::after{content:'';position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);}
 
-    /* ── FILTER PANEL OVERLAY ── */
-    /* ── SECTION TABS ─────────────────────────────────────────
-       The gallery is no longer artwork-only, so a tab rail sits
-       between the frosted title bar and the content. It takes the
-       sticky offset the old .fgHdr search row used to hold (3.4rem =
-       the .fgIntro height). Six labels never wrap: the rail scrolls
-       sideways so a phone simply swipes to reach Cart. */
+    /* section tabs */
     .fgSecBar{
       position:sticky;top:3.4rem;z-index:10;
       border-bottom:1px solid var(--bdr);
       padding:.5rem clamp(.7rem,2vw,2rem) 0;
       isolation:isolate;
     }
-    /* background + blur split onto ::before, same decoupling as .fgIntro */
+    /* blur layer */
     .fgSecBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
     .fgSecTabs{
       display:flex;flex-wrap:nowrap;align-items:flex-end;gap:0 1.5rem;
@@ -320,12 +265,7 @@
     }
     .fgSecBtn:hover{color:var(--tx);}
     .fgSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
-    /* ── Section icon chips ───────────────────────────────────
-       DELIBERATELY hard-coded hex, not theme tokens: these are
-       section identity, the same way an app icon doesn't restyle
-       itself per wallpaper. dark / graydark / light
-       all render them identically. The white glyph is pinned in the
-       markup AND here so nothing can repaint it either. */
+    /* section icon chips */
     .fgSecIco{
       width:24px;height:24px;border-radius:7px;flex-shrink:0;
       display:flex;align-items:center;justify-content:center;
@@ -333,8 +273,7 @@
       transition:transform .25s ease,box-shadow .25s ease;
     }
     .fgSecIco svg{width:14px;height:14px;display:block;stroke:#fff;}
-    /* Inactive chips sit back a touch so the active tab still reads
-       as selected — colour is untouched, only presence. */
+    /* inactive chip */
     .fgSecBtn:not(.active) .fgSecIco{opacity:.72;}
     .fgSecBtn:hover .fgSecIco{opacity:1;}
     .fgSecBtn.active .fgSecIco{transform:translateY(-1px);}
@@ -355,10 +294,7 @@
       .fgSecIco{transition:none;}
       .fgSecBtn.active .fgSecIco{transform:none;}
     }
-    /* ── Section content: cards + list rows ─────────────────────
-       Resources / Marketplace are visual (preview tile on top);
-       Blog / Jobs are text-led rows. Both reuse the theme tokens so
-       every skin picks them up for free. */
+    /* section content */
     .dzGrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));}
     .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s;}
     @media(hover:hover){.dzCard:hover{border-color:var(--pg);transform:translateY(-2px);}}
@@ -384,8 +320,7 @@
     @media(hover:hover){.dzBuy:hover{filter:brightness(1.12);}}
     .dzBuy--free{background:var(--sur2);color:var(--tx);border:1px solid var(--bdr);}
 
-    /* ── Upload page section tabs — same shape as the gallery rail so
-       the two read as one system. */
+    /* upload section tabs */
     .upSecTabs{display:flex;gap:0 1.3rem;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;border-bottom:1px solid var(--bdr);margin:0 0 1.4rem;}
     .upSecTabs::-webkit-scrollbar{display:none;}
     .upSecBtn{display:flex;align-items:center;gap:.4rem;background:none;border:0;border-bottom:2px solid transparent;padding:.6rem 0 .65rem;font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--txd);white-space:nowrap;flex-shrink:0;cursor:pointer;transition:color .2s,border-color .2s;}
@@ -397,15 +332,7 @@
     .dzRowFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;}
     .dzSel{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.85rem;padding:.6rem .7rem;outline:none;}
     .dzSel:focus{border-color:var(--pg);}
-    /* ── Section upload · file / image picker ──────────────────────
-       Replaces the browser's bare "Choose file" control on the
-       Resources / Blog / Marketplace forms. Same anatomy as the
-       artwork dropzone (.upDz in css/upload.css) — dashed target,
-       one clear action, the chosen file shown back — wearing the
-       section's own gradient icon so the upload page and the gallery
-       rail read as one system. Deliberately roomy: this is the first
-       thing on the form and it should feel like a place to drop
-       something, not a squeezed-in input. */
+    /* file picker */
     .dzFileField{margin-bottom:1.75rem;}
     .dzFileZone{
       position:relative;border-radius:16px;
@@ -422,8 +349,7 @@
     @media(hover:hover){
       .dzFileZone:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}
     }
-    /* The real input covers the card, so click, keyboard and drop all
-       land on it — the visible copy underneath is inert. */
+    /* hidden file input */
     .dzFileIn{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;}
     .dzFileEmpty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.55rem;pointer-events:none;}
     .dzFileZone .fgSecIco{width:54px;height:54px;border-radius:16px;margin-bottom:.45rem;}
@@ -438,8 +364,7 @@
     }
     .dzFileTypes{margin-top:.5rem;font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--txd);}
 
-    /* Picked state — the dashes give way to a solid card holding the
-       thumbnail, the name and the two actions. */
+    /* picked state */
     .dzFilePicked{display:none;align-items:center;gap:1rem;}
     .dzFileZone.dzHasFile{
       border-style:solid;border-color:var(--bdrh,var(--bdr));
@@ -457,8 +382,7 @@
     .dzFileMeta{flex:1;min-width:0;}
     .dzFileNm{font-size:.9rem;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .dzFileSz{margin-top:.3rem;font-family:var(--fm);font-size:.64rem;letter-spacing:.08em;color:var(--txd);}
-    /* Above the overlaying input, or Remove would only re-open the
-       file picker. */
+    /* file actions */
     .dzFileActs{display:flex;gap:.45rem;flex-shrink:0;position:relative;z-index:2;}
     .dzFileAct{
       border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
@@ -480,21 +404,16 @@
       .dzFileZone{transition:none;}
     }
 
-    /* One panel visible at a time. display:none rather than an offset
-       so hidden panels cost no layout and can't be tabbed into. */
+    /* one panel at a time */
     .fgSec{display:none;}
     .fgSec.active{display:block;}
 
     #fgFltOvr{position:fixed;inset:0;z-index:1050;opacity:0;pointer-events:none;transition:opacity .3s ease;isolation:isolate;}
-    /* FIX: background + blur moved to ::before, same decoupling as
-       #bnNav — stops the fixed full-viewport scrim from flashing
-       if the user scrolls behind it while it's open. */
+    /* blur layer */
     #fgFltOvr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 55%,transparent);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:-1;}
     #fgFltOvr.open{opacity:1;pointer-events:auto;}
 
-    /* ── FILTER PANEL ── — sits outside #fg in the DOM (sibling, not
-       child), so it needs the same token re-declaration as #fg above
-       to match the Community page theme. */
+    /* filter panel */
     #fgFltPanel{
       --bg:inherit;--sur:inherit;--sur2:inherit;
       --bdr:inherit;--bdrh:inherit;
@@ -526,7 +445,7 @@
       #fgFltOvr::before{backdrop-filter:none;background:transparent;}
     }
 
-    /* Panel header */
+    /* panel body */
     .fltPBdy{overflow-y:auto;}
     .fltPH{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem .9rem;border-bottom:1px solid var(--bdr);}
     .fltPH h3{font-family:var(--fd);font-size:.92rem;font-weight:700;letter-spacing:.2em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
@@ -534,18 +453,15 @@
     .fltPX{background:none;border:none;cursor:pointer;color:var(--txd);font-size:1rem;line-height:1;transition:color .2s,transform .2s;padding:.25rem;}
     .fltPX:hover{color:var(--pg);transform:rotate(90deg);}
 
-    /* Section */
+    /* section */
     .fltSec{padding:.9rem 1.4rem .7rem;}
     .fltSecLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.3em;color:var(--txd);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;}
     .fltSecLbl::after{content:'';flex:1;height:1px;background:var(--bdr);}
 
-    /* Radio list options */
+    /* radio options */
     .fltOpts{display:flex;flex-direction:column;gap:0;}
     .fltOpt{display:flex;align-items:center;gap:.6rem;padding:.5rem .35rem;cursor:pointer;border-radius:6px;transition:background .2s;user-select:none;}
-    /* Option icon — sits between the radio dot and the label and
-       tracks the label's colour, so a checked row lights both at once.
-       Theme tokens on purpose: unlike the section chips (fixed brand
-       colours), these are list chrome and belong to the active theme. */
+    /* option icon */
     .fltIco{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:17px;height:17px;color:var(--txd);transition:color .2s;}
     .fltIco svg{width:17px;height:17px;display:block;}
     .fltOpt input[type=radio]:checked ~ .fltIco{color:var(--ps);}
@@ -559,7 +475,7 @@
     .fltOpt input[type=radio]:checked ~ .fltLbl{color:var(--ps);}
     .fltLbl{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--txd);transition:color .2s;}
 
-    /* Grid options — horizontal row */
+    /* grid options row */
     .fltOptsH{display:flex;flex-direction:row;gap:.5rem;}
     .fltOptH{flex:1;display:flex;flex-direction:column;align-items:center;gap:.45rem;padding:.65rem .3rem;cursor:pointer;border:1px solid var(--bdr);background:color-mix(in srgb,var(--tc) 4%,transparent);border-radius:6px;transition:border-color .2s,background .2s,box-shadow .2s;user-select:none;}
     .fltOptH:hover{border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 8%,transparent);}
@@ -570,32 +486,22 @@
     .fltGridIco{color:var(--txd);display:flex;gap:2px;transition:color .2s;}
     .fltGridIco span{display:block;width:7px;height:7px;border:1px solid currentColor;border-radius:1px;opacity:.8;}
 
-    /* Separator */
+    /* separator */
     .fltSep{height:1px;background:linear-gradient(to right,transparent,var(--bdr),transparent);margin:0 1rem;}
 
-    /* Done button */
+    /* done button */
     .fltDone{display:block;width:calc(100% - 2.8rem);margin:1rem 1.4rem 1.5rem;padding:.9rem 1rem;background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.8rem;letter-spacing:.3em;cursor:pointer;transition:background .3s,box-shadow .3s,transform .3s;text-align:center;border-radius:6px;}
     .fltDone:hover{background:color-mix(in srgb,var(--tc) 25%,transparent);box-shadow:0 0 26px color-mix(in srgb,var(--tc) 42%,transparent),inset 0 0 20px color-mix(in srgb,var(--tc) 8%,transparent);transform:translateY(-1px);}
     .fltDone:active{transform:translateY(0) scale(.98);}
 
-    /* ── Infinite scroll — shared pieces ──
-       .igSentinel: invisible trip-wire observed by an
-       IntersectionObserver; when it scrolls near the viewport the
-       next batch is appended (replaces every Load More button).
-       Batch sizes follow the column layout: 4-col 16→8, 3-col
-       12→6, 2-col 10→4. grid-column:1/-1 lets the sentinel live
-       INSIDE a grid (spanning the full row) or after it alike. */
+    /* infinite scroll */
     .igSentinel{
       width:100%;
       height:2px;
       grid-column:1/-1;
       pointer-events:none;
     }
-    /* Skeleton tile — shown while a server-backed grid (profile
-       gallery) is fetching its next batch; in-memory grids append
-       instantly so they never need these. Same square footprint
-       as a real card so the grid doesn't jump when tiles swap
-       for artwork. */
+    /* skeleton tile */
     .igSkelCard{
       aspect-ratio:1;
       border-radius:6px;
@@ -603,22 +509,14 @@
       background-size:200% 100%;
       animation:imgShimmer 1.4s infinite;
     }
-    /* Gallery-card image skeleton — shimmer sits on the <img>
-       element's own background, visible until pixels arrive
-       (aspect-ratio:1 already reserves the space, so nothing
-       shifts). Cleared on load/error via .imgDone, which matters
-       for transparent PNGs — left on, the shimmer would show
-       through them forever. */
+    /* image skeleton */
     .gItem img:not(.imgDone){
       background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
       background-size:200% 100%;
       animation:imgShimmer 1.4s infinite;
     }
 
-    /* Chat load-older spinner — shared by the community feed and DMs.
-       Collapses to zero height when idle so, sitting at the TOP of the
-       thread, it never leaves a gap above the first message; expands
-       while loading older messages. */
+    /* chat load older spinner */
     .cpRefreshWrap{
       display:flex;
       justify-content:center;
@@ -646,29 +544,18 @@
 
     .fgBdy{padding:1.5rem;}
     .fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;}
-    /* ── Grid via CSS Grid — same fixed-size square-box auto-fill
-       system as the homepage Artworks grid (.awGrid), so boxes and
-       gaps are pixel-identical on every device. Reading order flows
-       left-to-right, top-to-bottom (row-major), matching newest→oldest
-       sort order. ── */
+    /* gallery grid */
     .fgGrid{
       display:grid;
-/* ── Unified responsive columns ──
-         2 columns on phones · 3 on tablets & phone "desktop site"
-         mode (~700-1279px) · 4 on real desktops (1280px+). Columns
-         are 1fr, so on larger/ultrawide screens the cards simply
-         grow to fill — no extra columns, boxes auto-adjust. ── */
+/* responsive columns */
       grid-template-columns:repeat(2,1fr);
       gap:.3rem;
-      /* Extra bottom clearance — same 84px pattern used by .awGrid
-         — so the last row of images never sits underneath
-         the floating #bnNav pill, which stays visible over this
-         full-page overlay. */
+      /* bottom nav clearance */
       padding-bottom:calc(1rem + 84px);
     }
     @media(min-width:700px){ .fgGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
     @media(min-width:1280px){ .fgGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
-    /* Gallery overlay responsive rules (also part of § 9b) */
+    /* gallery overlay responsive */
     @media(max-width:640px){
       .fgHdr{padding:.8rem 1rem}
     }
@@ -683,10 +570,7 @@
       transition:opacity .32s cubic-bezier(.22,1,.36,1),visibility .32s;
       isolation:isolate;
     }
-    /* FIX: background + blur split onto ::before (position:absolute
-       takes it out of the flex flow so the image card still
-       centers normally) — same decoupling as #bnNav, stops the
-       flash if the page scrolls behind this while it's open. */
+    /* blur layer */
     #artModal::before{
       content:'';position:absolute;inset:0;
       background:rgba(8,8,10,.5);
@@ -699,15 +583,12 @@
       visibility:visible;
       pointer-events:auto;
     }
-    /* Closing state plays a faster, slightly different curve so the
-       fade-out doesn't feel like a mirrored fade-in. */
+    /* closing state */
     #artModal.closing{
       opacity:0;
       transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;
     }
-    /* ── Single glass container ──
-       width clamps to 900–1100px on desktop, scales fluidly on
-       tablet, and goes near-full-width with safe gutters on mobile. */
+    /* glass container */
     .amCard{
       position:relative;
       width:min(1100px,94vw);
@@ -727,7 +608,7 @@
       opacity:0;
       transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
     }
-    /* ── Image: the main focus, always given the most space ── */
+    /* image */
     .amImgWrap{
       position:relative;
       width:100%;
@@ -755,7 +636,7 @@
       animation:amShimmer 1.3s ease-in-out infinite;
     }
     @keyframes amShimmer{0%{background-position:140% 0;}100%{background-position:-40% 0;}}
-    /* ── Stacked info block, all inside the same container ── */
+    /* info block */
     .amInfo{
       flex:0 0 auto;
       padding:1.8rem clamp(1.5rem,4vw,2.8rem) clamp(1.6rem,4vw,2.4rem);
@@ -789,7 +670,7 @@
       word-break:break-word;
     }
     .amDesc:empty,.amDesc[hidden]{display:none;}
-    /* ── Close button ── */
+    /* close button */
     .amX{
       position:absolute;
       top:1.1rem;right:1.1rem;
@@ -810,16 +691,14 @@
     .amX:hover{color:var(--pg);border-color:var(--bdrh);transform:scale(1.06);}
     .amX:active{transform:scale(.94);}
 
-    /* ── Tablet ── */
-    
-    /* RESPONSIVE CSS — TABLET RULES */
+
+    /* tablet */
 
     @media(max-width:1024px){
       .amCard{width:min(92vw,860px);min-width:0;border-radius:22px;}
       .amImgWrap img{max-height:58vh;}
     }
-    /* ── Mobile: near-full width, comfortable touch spacing, no
-         horizontal scroll anywhere in the modal ── */
+    /* mobile */
     @media(max-width:640px){
       #artModal{padding:.6rem;}
       .amCard{

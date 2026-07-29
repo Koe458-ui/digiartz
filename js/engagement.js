@@ -1,11 +1,10 @@
-/* ── engagement.js · likes / bookmarks / views ── */
-/* ── Engagement module ──────────────────────────────────── */
+// likes, bookmarks, views
 (function () {
   'use strict';
   var VIEW_COOLDOWN = 6 * 3600 * 1000, SEEN_KEY = 'koeViewSeen', VKEY = 'koeViewerKey';
   var liked = new Set(), marked = new Set(), setsReady = false;
-  var busy = {};            /* per-artwork in-flight lock for toggles   */
-  var profileIdCache = {};  /* username → user id                       */
+  var busy = {};            // in flight lock
+  var profileIdCache = {};  // username to user id
   var paintTimer = null;
 
 
@@ -14,7 +13,7 @@
   function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
   function toast (m) { if (typeof showToast === 'function') showToast(m); }
 
-  /* ══ VIEWS ══════════════════════════════════════════════ */
+  // views
   function viewerKey () {
     var k = null;
     try { k = localStorage.getItem(VKEY); } catch (e) {}
@@ -31,33 +30,26 @@
   function registerView (id) {
     if (!id || !db()) return;
     var now = Date.now(), map = seenMap();
-    if (map[id] && now - map[id] < VIEW_COOLDOWN) return;   /* client cooldown */
+    if (map[id] && now - map[id] < VIEW_COOLDOWN) return;   // client cooldown
     map[id] = now;
-    for (var k in map) if (now - map[k] > 2 * VIEW_COOLDOWN * 4) delete map[k]; /* prune */
+    for (var k in map) if (now - map[k] > 2 * VIEW_COOLDOWN * 4) delete map[k]; // prune
     try { localStorage.setItem(SEEN_KEY, JSON.stringify(map)); } catch (e) {}
     db().rpc('register_artwork_view', { p_artwork: id, p_anon_key: viewerKey() })
-      .then(function () {}, function () {});               /* fire-and-forget */
+      .then(function () {}, function () {});               // fire-and-forget
   }
-  /* ── Download tracking (feeds the trending score, ×6 weight) ──
-     Lives here because this closure already owns db() + viewerKey().
-     Server-side dedup: one count per viewer per artwork per day
-     (artwork_download_dedup), same anti-abuse shape as views — so
-     spam-clicking Download can't inflate an artwork's trending rank. */
+  // download tracking
   window.registerArtworkDownload = function (id) {
     if (!id || !db()) return;
     db().rpc('register_artwork_download', { p_artwork: id, p_anon_key: viewerKey() })
-      .then(function () {}, function () {});               /* fire-and-forget */
+      .then(function () {}, function () {});               // fire-and-forget
   };
-  /* The download quota gate (avDownload → dz_request_download) needs
-     the same anonymous identity the trending dedup uses, so one
-     visitor is one viewer in both systems. */
+  // shared viewer key
   window.dzViewerKey = viewerKey;
   function idFromPath (path) {
     var m = /^\/artwork\/([^/]+)$/.exec(path || '');
     return m ? decodeURIComponent(m[1]) : null;
   }
-  /* One funnel for every open path: gallery clicks, prev/next
-     navigation and SPA routing all push /artwork/{id}. */
+  // route every open path
   var origPush = history.pushState.bind(history);
   history.pushState = function (state, title, url) {
     var out = origPush(state, title, url);
@@ -67,13 +59,7 @@
     } catch (e) {}
     return out;
   };
-  /* Deep links load with the URL already set — no pushState fires.
-     FIX(B5): the old fixed 1200ms delay raced auth restore — on a slow
-     connection the session wasn't back yet, so the view registered under
-     the anon dedup key instead of the user (occasional double count).
-     Now we wait for getSession() to settle (it resolves once the client
-     has restored the stored session), with a hard 4s fallback so a hung
-     auth call can never swallow the view entirely. */
+  // deep link view
   document.addEventListener('DOMContentLoaded', function () {
     var id = idFromPath(location.pathname);
     if (!id) return;
@@ -82,21 +68,17 @@
     var c = db();
     if (c && c.auth && typeof c.auth.getSession === 'function') {
       try { c.auth.getSession().then(go, go); } catch (e) { setTimeout(go, 1200); }
-      setTimeout(go, 4000); /* fallback: never lose the view */
+      setTimeout(go, 4000); // fallback
     } else {
       setTimeout(go, 1200);
     }
   });
 
-  /* ══ LIKE / BOOKMARK state ══════════════════════════════ */
+  // like and bookmark state
   async function loadSets () {
     if (!db() || !me()) { liked.clear(); marked.clear(); setsReady = true; paintSoon(); return; }
     try {
-      /* FIX(A4): filter by user_id explicitly. Correctness previously relied
-         entirely on the likes_select_own RLS policy — if that policy is ever
-         loosened (e.g. public like feeds), this would silently paint OTHER
-         people's likes as yours. The explicit filter also keeps the 3000-row
-         cap scoped to this user's rows only. */
+      // filter by user id
       var uid = me().id;
       var l = await db().from('artwork_likes').select('artwork_id').eq('user_id', uid).limit(3000);
       var b = await db().from('artwork_bookmarks').select('artwork_id').eq('user_id', uid).limit(3000);
@@ -115,16 +97,9 @@
     });
   }
   function paintSoon () { clearTimeout(paintTimer); paintTimer = setTimeout(paintAll, 200); }
-  /* The artwork viewer repaints synchronously on prev/next so the old
-     pressed state can never linger — see openLB's INSTANT RESET. */
+  // repaint on prev next
   window.dzRepaintEng = paintAll;
-  /* Cards render asynchronously after data loads — repaint states
-     whenever new engagement buttons enter the DOM.
-     FIX(B3): previously ANY DOM insertion anywhere (every 5s chat poll
-     repaint, every toast) scheduled a whole-document querySelectorAll.
-     Now we only schedule a repaint when an added subtree actually
-     contains an engagement button — checking the small added node is
-     far cheaper than rescanning the full document each time. */
+  // repaint new buttons
   function hasEngBtn(node){
     if (node.nodeType !== 1) return false;
     if (node.matches && node.matches('.engLike,.engBm')) return true;
@@ -155,20 +130,20 @@
       var r = on
         ? await db().from(table).insert({ artwork_id: id, user_id: me().id })
         : await db().from(table).delete().match({ artwork_id: id, user_id: me().id });
-      if (r.error && !(on && r.error.code === '23505')) throw r.error; /* 23505 dup = already in desired state */
-      if (kind === 'bm') toast(on ? 'Saved to bookmarks ✦' : 'Removed from bookmarks');
+      if (r.error && !(on && r.error.code === '23505')) throw r.error; // dup means already set
+      if (kind === 'bm') toast(on ? 'Saved to bookmarks' : 'Removed from bookmarks');
       if (kind === 'like') refreshProfileStatsIfOpen();
       if (!on) removeBmCard(id, kind);
     } catch (e) {
-      on ? set.delete(id) : set.add(id);  /* revert */
+      on ? set.delete(id) : set.add(id);  // revert
       paintAll();
-      /* Merit gate (<=40) arrives as a raw RLS error — explain it. */
+      // merit gate error
       if (window.meritDenied && window.meritDenied(e, 'like')) { busy[key] = false; return; }
       toast('Action failed — try again');
     } finally { busy[key] = false; }
   }
 
-  /* One delegated listener covers cards, lightbox and bookmarks page. */
+  // one delegated listener
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('.engLike,.engBm,.bmRemove');
     if (!b) return;
@@ -179,10 +154,9 @@
     toggle(b.classList.contains('engLike') ? 'like' : 'bm', String(id), b);
   }, true);
 
-  /* ══ BOOKMARKS PAGE ═════════════════════════════════════ */
+  // bookmarks page
   var bmLastFocus = null;
-  /* The page serves two modes off one shell: 'bm' (bookmarks)
-     and 'like' (liked artworks). */
+  // two modes, one shell
   var bmMode = 'bm';
   async function loadBookmarksPage () {
     var grid = $('bmGrid'), empty = $('bmEmptyState');
@@ -190,10 +164,7 @@
     empty.style.display = 'none';
     if (!db() || !me()) { grid.innerHTML = ''; empty.style.display = ''; return; }
     try {
-      /* Same reasoning as FIX(A4) in loadSets(): filter by user_id
-         explicitly instead of leaning on the RLS select-own policy, so
-         this page can never paint someone else's saves as yours and the
-         200-row cap stays scoped to this user. */
+      // filter by user id
       var b = await db().from(bmMode === 'like' ? 'artwork_likes' : 'artwork_bookmarks')
         .select('artwork_id,created_at')
         .eq('user_id', me().id)
@@ -211,7 +182,7 @@
       grid.innerHTML = '';
       ids.forEach(function (rawId) {
         var art = byId[String(rawId)];
-        if (!art) return;                       /* artwork was deleted */
+        if (!art) return;                       // artwork was deleted
         grid.appendChild(bmCard(art));
       });
       if (!grid.children.length) empty.style.display = '';
@@ -227,8 +198,7 @@
     link.href = '/artwork/' + encodeURIComponent(id);
     link.style.cssText = 'display:block;color:inherit;text-decoration:none;';
     link.addEventListener('click', function (ev) {
-      /* Prefer the in-page modal when the artwork is in the loaded
-         gallery; otherwise fall through to real navigation. */
+      // modal if loaded, else navigate
       if (typeof window.handleArtClick === 'function' &&
           document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
         closeBookmarksPage();
@@ -237,11 +207,7 @@
     });
     var img = document.createElement('img');
     img.className = 'bmThumb'; img.loading = 'lazy'; img.decoding = 'async';
-    /* FIX: this grid used the raw full-size original (art.image_url), so
-       Likes/Bookmarks thumbnails loaded uncapped while every other grid
-       serves a small resized WebP. Route through the shared thumbnail
-       helper (300px @ q55) — guarded with typeof since this Engagement
-       module is a separate IIFE scope (mirrors the avatar-thumb call). */
+    // use thumbnail url
     img.src = (typeof getThumbnailUrl === 'function')
       ? getThumbnailUrl(art.image_url || '')
       : (art.image_url || '');
@@ -291,9 +257,7 @@
   function closeBookmarksPage () {
     var page = $('bmPage'); page.classList.remove('open');
     var nav = $('bnNav'); if (nav) nav.style.display = '';
-    /* FIX: Bookmarks/Likes opens on top of the Profile page — a blind
-       overflow reset unlocked background scroll behind it.
-       restoreScroll() only unlocks when nothing else is open. */
+    // restore scroll
     if (typeof restoreScroll === 'function') restoreScroll();
     else document.body.style.overflow = '';
     if (bmLastFocus && bmLastFocus.focus) bmLastFocus.focus({ preventScroll: true });
@@ -305,7 +269,7 @@
   window.openLikesPage      = openLikesPage;
   window.closeBookmarksPage = closeBookmarksPage;
 
-  /* ══ PROFILE TOTALS (Total Views / Total Likes) ═════════ */
+  // profile totals
   async function refreshStatsFor (username) {
     var vEl = $('pfStatViews'), lEl = $('pfStatLikes');
     if (!vEl || !lEl || !db() || !username || username === '—' || /^Loading/.test(username)) return;
@@ -332,8 +296,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     var un = $('pfUsername');
     if (un) {
-      /* fires for own AND public profiles — the site writes the
-         displayed username here on every profile load */
+      // watch username changes
       new MutationObserver(function () {
         refreshStatsFor(un.textContent.trim());
       }).observe(un, { childList: true, characterData: true, subtree: true });

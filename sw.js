@@ -4,6 +4,19 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v69 — the precache was covering URLs nobody asks for. Every tag in
+       index.html carries a query string (/css/base.css?v=1) while
+       SHELL_URLS listed the bare path (/css/base.css), and cache.match
+       keys on the full URL including the search, so 38 of the 41 shell
+       assets were precached under a name the page never requests. They
+       missed on every first load and only got cached once a network
+       fetch had already succeeded — which is the one thing precaching
+       exists to avoid, and it left a freshly installed client with no
+       usable CSS or JS if it went offline before a full load. The list
+       now mirrors the tags exactly. When you change a shell file, bump
+       its ?v= in both index.html and here — they have to move together.
+       Changed: sw.js.
+
    v68 — three quick links repointed at the page each one actually
        belongs to. Level was opening the ranking board of the same name;
        it now opens Artist Progress, the profile's own level page, and
@@ -416,7 +429,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v68';
+const CACHE_VERSION = 'v69';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -440,50 +453,50 @@ const SHELL_URLS = [
   '/icon-192.png',
 
   // stylesheets
-  '/css/base.css',
+  '/css/base.css?v=1',
   '/css/hero.css?v=65',
-  '/css/viewer.css',
-  '/css/community.css',
-  '/css/connect.css',
-  '/css/ranking.css',
-  '/css/profile.css',
-  '/css/admin.css',
-  '/css/auth.css',
-  '/css/panels.css',
-  '/css/upload.css',
-  '/css/widgets.css',
-  '/css/overrides.css',
+  '/css/viewer.css?v=1',
+  '/css/community.css?v=1',
+  '/css/connect.css?v=1',
+  '/css/ranking.css?v=1',
+  '/css/profile.css?v=1',
+  '/css/admin.css?v=1',
+  '/css/auth.css?v=1',
+  '/css/panels.css?v=1',
+  '/css/upload.css?v=1',
+  '/css/widgets.css?v=1',
+  '/css/overrides.css?v=1',
 
   // word list goes with the engine
-  '/js/badwords-list-a.js',
-  '/js/badwords-list-b.js',
-  '/js/badwords.js',
+  '/js/badwords-list-a.js?v=1',
+  '/js/badwords-list-b.js?v=1',
+  '/js/badwords.js?v=1',
 
   // scripts
-  '/js/ranking.js',
-  '/js/community.js',
-  '/js/dm.js',
-  '/js/composer.js',
-  '/js/share.js',
-  '/js/misc-core.js',
-  '/js/app-core.js',
+  '/js/ranking.js?v=1',
+  '/js/community.js?v=1',
+  '/js/dm.js?v=1',
+  '/js/composer.js?v=1',
+  '/js/share.js?v=1',
+  '/js/misc-core.js?v=1',
+  '/js/app-core.js?v=1',
   '/js/gallery.js?v=66',
-  '/js/auth.js',
-  '/js/profile.js',
-  '/js/albums.js',
-  '/js/drafts.js',
-  '/js/upqueue.js',
-  '/js/avatar.js',
-  '/js/pfedit.js',
-  '/js/mywork.js',
-  '/js/startup.js',
-  '/js/tagrail.js',
-  '/js/search.js',
-  '/js/effects.js',
-  '/js/cookie.js',
-  '/js/zeo.js',
-  '/js/theme.js',
-  '/js/engagement.js',
+  '/js/auth.js?v=1',
+  '/js/profile.js?v=1',
+  '/js/albums.js?v=1',
+  '/js/drafts.js?v=1',
+  '/js/upqueue.js?v=1',
+  '/js/avatar.js?v=1',
+  '/js/pfedit.js?v=1',
+  '/js/mywork.js?v=1',
+  '/js/startup.js?v=1',
+  '/js/tagrail.js?v=1',
+  '/js/search.js?v=1',
+  '/js/effects.js?v=1',
+  '/js/cookie.js?v=1',
+  '/js/zeo.js?v=1',
+  '/js/theme.js?v=1',
+  '/js/engagement.js?v=1',
   '/js/sections.js?v=68'
 ];
 

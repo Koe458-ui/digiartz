@@ -1743,3 +1743,47 @@
   window.hpSelect = hpSelect;
   window.hpGo     = hpGo;
 })();
+
+// quick links rail
+(function(){
+  'use strict';
+
+  var rail = document.getElementById('qlRail');
+  var bar  = document.getElementById('qlBar');
+  var fill = document.getElementById('qlBarFill');
+  if(!rail || !bar || !fill) return;
+
+  var queued = false;
+
+  // fill width = share of the rail on screen, offset = how far along it is
+  function paint(){
+    queued = false;
+    var total = rail.scrollWidth, seen = rail.clientWidth;
+    if(!total || total - seen <= 1){ bar.classList.add('qlHide'); return; }
+    bar.classList.remove('qlHide');
+    fill.style.width = (seen / total * 100) + '%';
+    fill.style.left  = (rail.scrollLeft / total * 100) + '%';
+  }
+  function sync(){
+    if(queued) return;
+    queued = true;
+    requestAnimationFrame(paint);
+  }
+
+  rail.addEventListener('scroll', sync, { passive:true });
+  window.addEventListener('resize', sync);
+  if(window.ResizeObserver) new ResizeObserver(sync).observe(rail);
+  sync();
+
+  // community lives outside the gallery overlay
+  window.qlGo = function(id){
+    if(id === 'community'){
+      if(typeof bnGoCommunity === 'function') bnGoCommunity();
+      return;
+    }
+    if(typeof openFG === 'function'){
+      openFG();
+      if(typeof fgSwitchSection === 'function') fgSwitchSection(id);
+    }
+  };
+})();

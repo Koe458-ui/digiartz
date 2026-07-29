@@ -4,6 +4,15 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v65 — homepage quick links. A row of seven icon + title + description
+       shortcuts (Artworks, Resources, Blog, Marketplace, Jobs,
+       Community, Cart) now sits between the hero pitch and the search
+       bar. It is a snap scroller whose slot count follows the device —
+       1 on mobile, 2 large mobile, 3 tablet, 4 desktop, 6 large desktop,
+       and 6 on ultrawide with the row capped and centred rather than
+       stretched — with a thin line under it tracking scroll position.
+       Changed: index.html, css/hero.css, js/sections.js.
+
    v64 — homepage feed is pure trending. renderAwGrid ran the trending
        sort and then tgPrioritize() pulled every artwork matching a
        saved tag preference to the front, so the homepage order did not
@@ -347,7 +356,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v64';
+const CACHE_VERSION = 'v65';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

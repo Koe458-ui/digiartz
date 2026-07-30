@@ -13,10 +13,18 @@
        nothing new is cached. js/protect.js joins the shell: it kills the
        long-press / right-click image menu, image dragging and the save
        page shortcut, and base.css carries the matching -webkit-touch-
-       callout rules. base.css, viewer.css and gallery.js all changed,
-       so their ?v= moved with them.
+       callout rules.
+       The subscription page states the numbers instead of hinting at
+       them: a Free 5 / Lite 10 / Premium 15 / Max 20 per-day strip above
+       the plan cards, the reset time and the resolution difference in
+       writing, and each card's first bullet is its own daily count. The
+       old copy said "download limited assets" and "more downloads per
+       month", which was both vague and, after this change, wrong.
+       base.css, viewer.css, panels.css and gallery.js all changed, so
+       their ?v= moved with them.
        Changed: index.html, js/gallery.js, js/protect.js (new),
-       css/base.css, css/viewer.css, functions/api/download.js (new).
+       css/base.css, css/viewer.css, css/panels.css,
+       functions/api/download.js (new).
 
    v69 — the precache was covering URLs nobody asks for. Every tag in
        index.html carries a query string (/css/base.css?v=1) while
@@ -476,7 +484,7 @@ const SHELL_URLS = [
   '/css/profile.css?v=1',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
-  '/css/panels.css?v=1',
+  '/css/panels.css?v=2',
   '/css/upload.css?v=1',
   '/css/widgets.css?v=1',
   '/css/overrides.css?v=1',

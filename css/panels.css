@@ -498,6 +498,80 @@ body{background:var(--bg);}
   text-transform: uppercase;
 }
 
+/* download allowance strip, sits above the plan cards */
+.subQuota {
+  max-width: 1040px;
+  margin: 0 auto 2.6rem;
+  padding: 1.4rem 1.5rem 1.2rem;
+  border: 1px solid var(--bdr);
+  border-radius: 14px;
+  background: var(--sur);
+}
+.subQuotaTitle {
+  font-family: var(--fm);
+  font-size: .68rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--txd);
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.subQuotaRow {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .8rem;
+}
+.subQuotaCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .1rem;
+  padding: .85rem .5rem;
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  background: var(--sur2);
+}
+.subQuotaPlan {
+  font-family: var(--fm);
+  font-size: .64rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--txd);
+}
+.subQuotaNum {
+  font-family: var(--fd);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--tx);
+}
+.subQuotaUnit {
+  font-family: var(--fb, sans-serif);
+  font-size: .72rem;
+  color: var(--txd);
+}
+/* one accent per plan, matching the cards below. the border carries it, not the
+   number: gold on the light theme's near-white surface misses 4.5:1 as text */
+.subQuotaCell--lite    { border-color: rgba(59,130,246,.35); }
+.subQuotaCell--premium { border-color: rgba(168,85,247,.35); }
+.subQuotaCell--max     { border-color: rgba(234,179,8,.35); }
+.subQuotaNote {
+  font-family: var(--fb, sans-serif);
+  font-size: .76rem;
+  line-height: 1.55;
+  color: var(--txd);
+  text-align: center;
+  margin: 1rem 0 0;
+}
+@media (max-width: 519px) {
+  .subQuota      { padding: 1.2rem 1rem 1rem; margin-bottom: 2rem; }
+  .subQuotaRow   { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+  .subQuotaNote  { font-size: .72rem; text-align: left; }
+}
+
 /* card grid */
 .subGrid {
   display: grid;

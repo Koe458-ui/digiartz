@@ -433,13 +433,31 @@ The only thing rejected is a direct repost of official media — unedited anime 
       {
         question: "How do I download an artwork?",
         answer:
-`To save a piece (when the artist allows it):
+`To save a piece:
 
-1. Tap the artwork to open the full-size viewer
-2. Tap the Download button
-3. The image saves to your device
+1. Sign in — downloads need an account
+2. Tap the artwork to open the full-size viewer
+3. Tap the Download button
+4. The image saves to your device
 
-If there's no Download button, that artist hasn't enabled downloads.`
+The Download button is the only way to save artwork, and every download
+counts against your daily limit. The viewer shows how many you have left.`
+      },
+      {
+        question: "How many downloads do I get?",
+        answer:
+`Downloads are capped per day, and the cap depends on your plan:
+
+• Free — 5 per day
+• Lite — 10 per day
+• Premium — 15 per day
+• Max — 20 per day
+
+Your allowance resets every day at midnight UTC, and downloading your own
+artwork never counts against it. Premium and Max get the original file;
+Free and Lite get a high-quality 1600px copy.
+
+Run out and you can wait for the reset or upgrade from the Subscription page.`
       },
       {
         question: "How do I share an artwork?",
@@ -738,11 +756,16 @@ Pick a topic and I'll take it from there.`
       {
         question: "What subscription tiers are there?",
         answer:
-`DigiArtz offers a few membership tiers:
+`Three paid tiers sit above the free account, and each one raises your daily
+download limit:
 
-1. Open the Subscriptions overview on the site
-2. Compare the tiers and their perks
-3. Higher tiers unlock extra benefits and a badge
+• Free — 5 downloads a day
+• Lite ($1/mo) — 10 a day, plus high-quality exports
+• Premium ($5/mo) — 15 a day at full resolution, custom artwork requests, early access
+• Max ($10/mo) — 20 a day, 5 custom artworks, custom website build, priority support
+
+Higher tiers also carry a badge on your profile. Open the Subscription page
+to compare them side by side.
 
 Browsing and posting stay free — subscriptions are optional.`
       },

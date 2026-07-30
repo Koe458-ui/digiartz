@@ -27,6 +27,22 @@ export async function onRequestGet(context) {
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c])
     );
 
+  // Google is pointed at the resized derivative, never at the stored original.
+  // The origin bucket is meant to stop being publicly readable, and an
+  // <image:loc> that 403s would drop these out of image search. Mirrors
+  // ogImage() in functions/_middleware.js.
+  const DIT = (env.DIT_HOST || 'https://d1l8dn7jegdgem.cloudfront.net').replace(/\/$/, '');
+  const crawlImage = (url) => {
+    if (!url || typeof url !== 'string') return '';
+    let u, ditHost;
+    try { u = new URL(url); ditHost = new URL(DIT).hostname; } catch { return ''; }
+    if (u.hostname === ditHost) return url;
+    if (u.hostname.endsWith('.supabase.co')) return url;
+    const key = u.pathname.replace(/^\/+/, '');
+    if (!key) return '';
+    return `${DIT}/fit-in/1200x0/filters:format(jpeg):quality(80)/${key}`;
+  };
+
   const sbGet = async (path) => {
     if (!SUPABASE_ANON_KEY) return [];
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -61,7 +77,7 @@ export async function onRequestGet(context) {
       const lastmod = a.created_at ? new Date(a.created_at).toISOString().slice(0, 10) : '';
       // escape, do not delete
       const title = xesc(a.name);
-      const imageUrl = xesc(a.image_url);
+      const imageUrl = xesc(crawlImage(a.image_url));
 
       return `  <url>
     <loc>${SITE_URL}/artwork/${xesc(a.id)}</loc>${lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : ''}

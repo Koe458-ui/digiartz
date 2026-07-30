@@ -772,12 +772,17 @@
     setMeta('link[rel="canonical"]','href',url);
     setMeta('meta[property="og:title"]','content',title);
     setMeta('meta[property="og:description"]','content',desc);
-    setMeta('meta[property="og:image"]','content',art.image_url||'');
+    // the resized derivative, never the stored original: the origin bucket is
+    // not meant to stay publicly readable, and a preview that 403s is worse
+    // than no preview. the edge middleware sets the same thing for scrapers,
+    // which never run this code
+    var ogImg = art.image_url ? imgResize(art.image_url, 1200, 80) : '';
+    setMeta('meta[property="og:image"]','content',ogImg);
     setMeta('meta[property="og:url"]','content',url);
     setMeta('meta[property="og:type"]','content','article');
     setMeta('meta[name="twitter:title"]','content',title);
     setMeta('meta[name="twitter:description"]','content',desc);
-    setMeta('meta[name="twitter:image"]','content',art.image_url||'');
+    setMeta('meta[name="twitter:image"]','content',ogImg);
     setMeta('meta[name="twitter:card"]','content','summary_large_image');
     // replace json ld block
     var ld = document.getElementById('ldArtwork');
@@ -790,7 +795,7 @@
     ld.textContent = JSON.stringify({
       '@context':'https://schema.org',
       '@type':'ImageObject',
-      'contentUrl':art.image_url||'',
+      'contentUrl':ogImg,
       'name':art.name||'Untitled artwork',
       'description':desc,
       'url':url,

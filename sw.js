@@ -27,9 +27,22 @@
        locally before it spends a Supabase roundtrip. Attempts are capped at
        30 a minute per account and 60 per IP, so a script cannot run the bill
        up on refusals after the daily quota is gone.
-       Changed: index.html, js/gallery.js, js/protect.js (new),
+       Bytes no longer come from a public url at all. /api/download asks
+       smart-function for a source, and that function mints a short-lived
+       presigned S3 GET only after the quota has been spent — the gate sits
+       beside the AWS credentials, so a signed url cannot exist without a
+       download having been charged. Paid tiers get the original that way;
+       free tiers get the public resized derivative the image CDN already
+       serves for display. This is what lets the origin bucket stop being
+       world-readable, so the three remaining places that pointed at the
+       stored original now point at the resized copy instead: the sitemap's
+       <image:loc>, the client og:image / twitter:image / JSON-LD, and the
+       My Work edit-form thumbnail. Display, thumbnails and avatars already
+       went through the resizer and are untouched.
+       Changed: index.html, js/gallery.js, js/mywork.js, js/protect.js (new),
        css/base.css, css/viewer.css, css/panels.css,
-       functions/api/download.js (new),
+       functions/api/download.js (new), functions/sitemap.xml.js,
+       supabase/functions/smart-function/ (new, mirror of the deployed v16),
        security/daily-download-quota.sql (new, record only).
 
    v69 — the precache was covering URLs nobody asks for. Every tag in
@@ -517,7 +530,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=1',
   '/js/avatar.js?v=1',
   '/js/pfedit.js?v=1',
-  '/js/mywork.js?v=1',
+  '/js/mywork.js?v=2',
   '/js/startup.js?v=1',
   '/js/tagrail.js?v=1',
   '/js/search.js?v=1',

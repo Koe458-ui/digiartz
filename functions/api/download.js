@@ -1,8 +1,10 @@
 // artwork download gate
-// the only endpoint that hands out artwork bytes. it charges the caller's daily
-// quota through dz_request_download before a single byte moves, then streams the
-// file back from our own origin as an attachment, so the raw CDN url never has
-// to reach the browser and the file cannot be pulled without a signed-in session.
+// the only endpoint that hands out artwork bytes. it asks the smart-function
+// edge function for a source url, which that function only mints after
+// dz_request_download has granted a unit of the caller's daily quota, then
+// streams the bytes back from our own origin as an attachment. the browser
+// never receives a url of its own, so a file cannot be pulled without a
+// signed-in session and cannot be pulled at all once the quota is spent.
 //
 // POST /api/download  { artwork: "<uuid>" }   Authorization: Bearer <supabase jwt>
 //   200 -> the file, Content-Disposition: attachment
@@ -17,11 +19,11 @@
 //   1. same-origin  (headers only)
 //   2. json body    (headers only)
 //   3. jwt shape and expiry, decoded locally, no network
-//   4. burst limit + daily quota, one rpc
-//   5. jwt signature verified
-//   6. the file itself
+//   4. burst limit + daily quota + presign, one call to smart-function
+//   5. the file itself
 //
 // env: SB_URL, SB_KEY (falls back to SUPABASE_URL / SUPABASE_ANON_KEY),
+//      S3_FN_URL (defaults to SB_URL/functions/v1/smart-function),
 //      DIT_HOST, ALLOWED_ORIGINS (comma separated extra hosts)
 
 const SB_URL_FALLBACK  = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
@@ -39,6 +41,7 @@ export async function onRequestPost(context) {
   const SB_URL  = env.SB_URL  || env.SUPABASE_URL      || SB_URL_FALLBACK;
   const SB_KEY  = env.SB_KEY  || env.SUPABASE_ANON_KEY || SB_ANON_FALLBACK;
   const DIT     = env.DIT_HOST || DIT_FALLBACK;
+  const FN_URL  = env.S3_FN_URL || `${SB_URL.replace(/\/$/, '')}/functions/v1/smart-function`;
 
   try {
     // the button on our own page is the only caller. a cross-origin POST with
@@ -62,16 +65,18 @@ export async function onRequestPost(context) {
 
     // reject junk and expired tokens without paying for a roundtrip. this reads
     // the payload without verifying the signature, which is fine here: it only
-    // ever refuses, and step 5 does the real check before any bytes are served
+    // ever refuses, and smart-function verifies the token for real on the call
+    // below, before anything is signed or served
     const claims = peekJwt(token);
     if (!claims || !claims.sub || (claims.exp && claims.exp * 1000 <= Date.now())) {
       return json({ reason: 'auth', error: 'Session expired — sign in again.' }, 401);
     }
 
-    // charge the burst limit and the daily quota. the rpc runs as the caller,
-    // so it counts against their own tier. the ip is a hint for the second
-    // bucket, taken from Cloudflare rather than the request body
-    const gateRes = await fetch(`${SB_URL}/rest/v1/rpc/dz_request_download`, {
+    // one call does the burst limit, the daily quota and the presign. it runs
+    // as the caller, so the quota counts against their own tier, and it holds
+    // the AWS credentials so nothing here has to. the ip is a hint for the
+    // second limiter bucket, taken from Cloudflare rather than the request body
+    const gateRes = await fetch(FN_URL, {
       method: 'POST',
       headers: {
         apikey: SB_KEY,
@@ -79,59 +84,55 @@ export async function onRequestPost(context) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        p_artwork: artwork,
-        p_ip: request.headers.get('CF-Connecting-IP') || null
+        action: 'download',
+        artwork,
+        ip: request.headers.get('CF-Connecting-IP') || null
       })
     });
-    // an unverifiable jwt fails here too, before anything is served
-    if (gateRes.status === 401 || gateRes.status === 403) {
-      return json({ reason: 'auth', error: 'Session expired — sign in again.' }, 401);
-    }
-    if (!gateRes.ok) return json({ error: 'Could not check your download quota.' }, 502);
-    const gate = await gateRes.json();
 
-    if (!gate || !gate.allowed) {
-      const reason = (gate && gate.reason) || 'denied';
-      if (reason === 'rate') {
+    let out = {};
+    try { out = await gateRes.json(); } catch { out = {}; }
+
+    if (!gateRes.ok) {
+      const reason = out.reason || 'denied';
+      if (gateRes.status === 429 && reason === 'rate') {
         return json({ reason: 'rate', error: 'Too many download requests — wait a moment.' },
-                    429, { 'Retry-After': String(gate.retry_after || 60) });
+                    429, { 'Retry-After': String(out.retry_after || 60) });
       }
-      if (reason === 'limit') {
+      if (gateRes.status === 429) {
         return json({
           reason: 'limit',
-          tier: gate.tier, limit: gate.limit, used: gate.used,
-          remaining: 0, resets_at: gate.resets_at,
+          tier: out.tier, limit: out.limit, used: out.used,
+          remaining: 0, resets_at: out.resets_at,
           error: 'Daily download quota reached.'
         }, 429);
       }
-      if (reason === 'auth')      return json({ reason, error: 'Sign in to download.' }, 401);
-      if (reason === 'not_found') return json({ reason, error: 'Artwork not found.' }, 404);
-      return json({ reason, error: 'Download not allowed.' }, 403);
+      if (gateRes.status === 401) return json({ reason: 'auth', error: 'Sign in to download.' }, 401);
+      if (gateRes.status === 404) return json({ reason: 'not_found', error: 'Artwork not found.' }, 404);
+      if (gateRes.status === 403) return json({ reason, error: 'Download not allowed.' }, 403);
+      return json({ error: 'Could not check your download quota.' }, 502);
     }
 
-    // the source url comes from the row, never from the request, so this cannot
-    // be driven as an open proxy
-    const rowRes = await fetch(
-      `${SB_URL}/rest/v1/artworks?select=name,image_url&id=eq.${artwork}&limit=1`,
-      { headers: { apikey: SB_KEY, Authorization: `Bearer ${token}` } }
-    );
-    if (!rowRes.ok) return json({ error: 'Could not load the artwork.' }, 502);
-    const rows = await rowRes.json();
-    const row = Array.isArray(rows) ? rows[0] : null;
-    if (!row || !row.image_url) return json({ reason: 'not_found', error: 'Artwork not found.' }, 404);
+    const gate = out.gate || {};
+    // paid tiers arrive as a presigned S3 GET; free tiers get the public
+    // downscaled derivative, which the image CDN already serves for display
+    const signed = typeof out.url === 'string' && out.url ? out.url : '';
+    const src = signed || resize(out.imageUrl, PREVIEW_WIDTH, PREVIEW_QUALITY, DIT);
+    if (!src || !allowedHost(src, DIT, SB_URL)) {
+      return json({ error: 'Artwork source is not downloadable.' }, 502);
+    }
 
-    const src = gate.full ? row.image_url
-                          : resize(row.image_url, PREVIEW_WIDTH, PREVIEW_QUALITY, DIT);
-    if (!allowedHost(src, DIT, SB_URL)) return json({ error: 'Artwork source is not downloadable.' }, 502);
-
-    const fileRes = await fetch(src, { cf: { cacheEverything: true, cacheTtl: 3600 } });
+    // a presigned url is unique per request, so caching it would only ever miss
+    const fileRes = signed
+      ? await fetch(src)
+      : await fetch(src, { cf: { cacheEverything: true, cacheTtl: 3600 } });
     if (!fileRes.ok || !fileRes.body) return json({ error: 'The file could not be fetched.' }, 502);
 
     const type = fileRes.headers.get('content-type') || 'application/octet-stream';
     const headers = new Headers({
       'Content-Type': type,
-      'Content-Disposition': `attachment; filename="${asciiName(row.name, src, type)}"; ` +
-                             `filename*=UTF-8''${encodeURIComponent(niceName(row.name, src, type))}`,
+      'Content-Disposition': `attachment; filename="${asciiName(out.name, src, type)}"; ` +
+                             `filename*=UTF-8''${encodeURIComponent(niceName(out.name, src, type))}`,
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',
       'X-Dz-Remaining': String(gate.remaining ?? ''),
@@ -201,14 +202,20 @@ function resize(url, width, quality, dit) {
   return `${dit.replace(/\/$/, '')}/fit-in/${width}x0/filters:format(webp):quality(${quality})/${key}`;
 }
 
-// only our own media hosts may be fetched
+// only our own media hosts may be fetched. the url always comes from
+// smart-function rather than the request, so this is a backstop against a
+// poisoned artworks row, not a trust boundary
+const S3_HOST_RE = /\.s3(\.[a-z0-9-]+)?\.amazonaws\.com$/;
+
 function allowedHost(url, dit, sbUrl) {
   let u;
   try { u = new URL(url); } catch { return false; }
   if (u.protocol !== 'https:') return false;
   try { if (u.hostname === new URL(dit).hostname) return true; } catch { /* keep checking */ }
   try { if (u.hostname === new URL(sbUrl).hostname) return true; } catch { /* keep checking */ }
-  return u.hostname.endsWith('.cloudfront.net') || u.hostname.endsWith('.supabase.co');
+  return u.hostname.endsWith('.cloudfront.net')
+      || u.hostname.endsWith('.supabase.co')
+      || S3_HOST_RE.test(u.hostname);
 }
 
 function extFor(src, type) {

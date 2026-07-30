@@ -81,7 +81,9 @@
     closePfCatDd();
     document.getElementById('pfDz').style.display='none';
     var prev = document.getElementById('pfUpPrev');
-    prev.src = art.image_url||'';
+    // the resized copy, not the stored original: the origin bucket is not meant
+    // to stay publicly readable, and this is only an edit-form thumbnail
+    prev.src = art.image_url ? getViewUrl(art.image_url) : '';
     prev.style.cssText = thumbStyle(art.thumb_x, art.thumb_y, art.thumb_zoom);
     var prevWrap = document.getElementById('pfUpPrevWrap');
     if(prevWrap) prevWrap.style.display = art.image_url ? 'block' : 'none';

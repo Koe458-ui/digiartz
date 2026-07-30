@@ -151,9 +151,45 @@ using (
 -- koe-originals, koe-media (original plus all three derivatives) and S3, every
 -- one idempotent.
 --
--- ============================================================ phases 6-7
--- Not yet applied:
---   6. run the copier with --copy --commit to move objects and backfill urls.
---   7. verify, then decommission: delete the S3 bucket, disable and delete both
---      CloudFront distributions, drop the AWS secrets and the aws4fetch import
---      from the edge function.
+-- ============================================================ phase 6 (landed)
+-- Objects copied and url columns backfilled. The copy did NOT run from
+-- scripts/migrate-storage.mjs: the operator's environment could reach neither
+-- CloudFront nor Supabase over HTTP, so an equivalent one-shot edge function
+-- ("storage-copy") did the same work from inside Supabase, which can reach
+-- CloudFront. Same sources, same widths and qualities, same layout, so the
+-- bytes are what the resizer was already serving. That function has since been
+-- reduced to an inert 410 stub and should be deleted from the dashboard.
+--
+-- Result: 30 items -> 120 objects. 30 originals in koe-originals (25 MB), 90
+-- derivatives in koe-media (6.3 MB), 24 artworks + 4 profiles rewritten, zero
+-- CloudFront references left in the database. Originals confirmed to return
+-- 400 on a public read, so making them private actually took effect.
+--
+-- Old column values are snapshotted in public.storage_migration_backup (60
+-- rows, service-role only). Keep it until the decommission is signed off; it
+-- is the only way back if a url turns out wrong while S3 is still alive.
+--
+-- ============================================================ phase 7 (todo)
+-- Verify, then decommission: delete the S3 bucket, disable and delete both
+-- CloudFront distributions, drop the AWS secrets and the aws4fetch import from
+-- the edge function.
+--
+-- BLOCKER, fix before the bucket goes away. Twenty of the twenty-four artworks
+-- predate the <prefix>/<uid>/<file> convention and are stored flat, as
+-- artworks/<file>. Every koe-media and koe-originals policy tests
+-- foldername(name)[2] = auth.uid(), and for a two-segment path that expression
+-- is NULL, so it can never match:
+--
+--   select (storage.foldername('artworks/1781717079470_Prushka.png'))[2];  -- null
+--
+-- Downloads are unaffected — the edge function signs those with the service
+-- role, which bypasses RLS. Deletes are NOT: smart-function removes storage
+-- objects with the CALLER's client, so for these twenty rows the Supabase
+-- delete fails and only the S3 delete succeeds. That is invisible today
+-- because the S3 leg still returns ok. Once the bucket is gone, deleting any
+-- of these artworks will fail outright.
+--
+-- Two ways out, either is fine, but one of them has to happen before phase 7:
+--   a. move the objects under artworks/<uid>/ and update storage_path, or
+--   b. widen the policies to also allow the owner via the artworks row rather
+--      than via the path shape alone.

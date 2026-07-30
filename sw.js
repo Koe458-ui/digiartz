@@ -19,10 +19,17 @@
        invisible at that physical size.
        SB_THUMB_RE now covers t600 so the new size caches beside t300
        rather than falling through to the network every time.
-       t600 exists only for images uploaded since, and a srcset candidate
-       that 404s fails the image instead of falling back, so every path
-       that can emit one is gated on T600_READY (config.js for the client,
-       Pages env for the worker) until security/backfill-t600.mjs has run.
+       t600 did not exist for anything uploaded before it was added, and a
+       srcset candidate that 404s fails the image rather than falling back
+       to another entry, so every path that can emit one is gated on
+       T600_READY — config.js for the client, Pages env for the worker,
+       and they have to be set together or the server-rendered homepage
+       cards disagree with the client that hydrates over them.
+       The backfill itself is DONE: all 30 existing images have a t600, 0
+       missing and 0 orphaned. It ran inside Supabase rather than through
+       security/backfill-t600.mjs, because no Node was available — see
+       supabase/functions/backfill-t600/index.ts. So the flag is now the
+       only thing standing between this code and the responsive sizes.
        Changed: js/app-core.js, js/profile.js, js/albums.js, js/mywork.js,
        js/sections.js, js/startup.js, sw.js, functions/_middleware.js,
        _middleware.js, functions/api/download.js,

@@ -39,9 +39,17 @@
        <image:loc>, the client og:image / twitter:image / JSON-LD, and the
        My Work edit-form thumbnail. Display, thumbnails and avatars already
        went through the resizer and are untouched.
-       Changed: index.html, js/gallery.js, js/mywork.js, js/protect.js (new),
-       css/base.css, css/viewer.css, css/panels.css,
+       A second sweep caught the rest of the readers of the stored original,
+       all of them crawler-facing: the JSON-LD contentUrl the edge middleware
+       writes for the gallery and for each artwork, 37 hardcoded URLs in the
+       static ldGallery block in index.html, and the blog cover download link.
+       All now resolve through the resizer, so locking the origin bucket
+       cannot cost image-search indexing. Nothing in the repo references the
+       origin host any more.
+       Changed: index.html, js/gallery.js, js/mywork.js, js/sections.js,
+       js/protect.js (new), css/base.css, css/viewer.css, css/panels.css,
        functions/api/download.js (new), functions/sitemap.xml.js,
+       functions/_middleware.js, _middleware.js,
        supabase/functions/smart-function/ (new, mirror of the deployed v16),
        security/daily-download-quota.sql (new, record only).
 
@@ -539,7 +547,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
-  '/js/sections.js?v=68'
+  '/js/sections.js?v=69'
 ];
 
 // hosts

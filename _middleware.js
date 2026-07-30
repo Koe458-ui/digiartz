@@ -20,6 +20,10 @@ function resize(url, width, quality, format) {
 const thumb = (url) => resize(url, 300, 55, 'webp');
 // jpeg for social scrapers
 const ogImage = (url) => resize(url, 1200, 80, 'jpeg');
+// schema.org contentUrl. Never the stored original: the origin bucket is not
+// publicly readable, and a contentUrl that 403s drops the image out of Google
+// Images. The largest derivative the resizer serves is the honest answer.
+const fullImage = (url) => resize(url, 1600, 85, 'jpeg');
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -133,7 +137,7 @@ function artworkMeta(row, artist) {
     '@type': 'ImageObject',
     name,
     description: desc,
-    contentUrl: row.image_url,
+    contentUrl: fullImage(row.image_url),
     thumbnailUrl: thumb(row.image_url),
     url,
     datePublished: (row.created_at || '').slice(0, 10),
@@ -260,7 +264,7 @@ export async function onRequest(context) {
       name: 'DigiArtz — Digital Art Gallery', url: `${SITE}/`,
       hasPart: arts.map((a, i) => ({
         '@type': 'ImageObject', position: i + 1, name: a.name,
-        contentUrl: a.image_url, thumbnailUrl: thumb(a.image_url),
+        contentUrl: fullImage(a.image_url), thumbnailUrl: thumb(a.image_url),
         url: `${SITE}/artwork/${a.id}`,
         datePublished: (a.created_at || '').slice(0, 10)
       }))

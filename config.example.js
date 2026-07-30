@@ -1,14 +1,35 @@
-// TEMPLATE ONLY — the site never loads this file.
+// REFERENCE ONLY — the site never loads this file, and on Cloudflare Pages
+// nobody edits config.js by hand either. It is GENERATED at deploy time by the
+// Pages build command, from environment variables:
 //
-// index.html loads /config.js. Editing THIS file changes nothing that runs:
-// copy it to config.js and edit that. config.js is gitignored, which is why
-// it is not in this repo and cannot be committed here.
+//   [ "$T600_READY" = "true" ] && T6=true || T6=false; \
+//   FN="${S3_FN_URL:-$SB_URL/functions/v1/smart-function}"; \
+//   echo "window.KOE_CONFIG = { SB_URL: '$SB_URL', SB_KEY: '$SB_KEY', \
+//   S3_FN_URL: '$FN', T600_READY: $T6 };" > config.js
 //
-// The values below are this project's real ones, so the file can be copied
-// across verbatim. The publishable key is designed to be public — it already
-// ships in every page load and is committed in functions/api/download.js —
-// so nothing here is a secret. The service_role key must NEVER appear in this
-// file; it bypasses every RLS policy and this file is served to browsers.
+// So adding a key here does nothing until the build command emits it. This
+// file exists to record what the generated shape should look like.
+//
+// WHAT GOES IN HERE vs WHAT STAYS SERVER-SIDE
+// Everything below is public: config.js is served to every visitor, so
+// treat it as readable by anyone. The publishable key is designed for that
+// and already ships in every page load.
+//
+// These must NEVER be emitted into config.js. They are read by the Pages
+// FUNCTIONS at runtime (functions/api/*), which see env vars directly and
+// never expose them to the browser:
+//
+//   GEMINI_API_KEY       upload moderation, functions/api/moderate-upload.js
+//   GEMINI_MODEL         optional override for the above
+//   MOD_SIGNING_SECRET   signs moderation approvals; a leak lets anyone forge one
+//   SUPABASE_SERVICE_ROLE_KEY   bypasses every RLS policy
+//
+// Setting any of those as a Pages environment variable is correct and safe.
+// Echoing them into config.js publishes them to the world.
+//
+// T600_READY is the one name that belongs in both places: the build command
+// copies it into config.js for the browser, and functions/_middleware.js reads
+// the same Pages variable directly for the server-rendered homepage cards.
 
 window.KOE_CONFIG = {
   SB_URL: 'https://tmqzqlrpjpydiftlrzmj.supabase.co',

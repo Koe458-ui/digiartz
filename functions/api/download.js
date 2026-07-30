@@ -7,9 +7,22 @@
 // POST /api/download  { artwork: "<uuid>" }   Authorization: Bearer <supabase jwt>
 //   200 -> the file, Content-Disposition: attachment
 //   401 -> not signed in
+//   403 -> request did not come from our own pages
 //   404 -> artwork not visible to this user
-//   429 -> daily quota spent, body carries { reason:'limit', limit, tier, resets_at }
-// env: SB_URL, SB_KEY (falls back to SUPABASE_URL / SUPABASE_ANON_KEY), DIT_HOST
+//   429 -> daily quota spent  { reason:'limit', limit, tier, resets_at }
+//          or too many attempts { reason:'rate' }, Retry-After set
+//
+// checks run cheapest first, so an abusive request is refused before it can
+// cost a Supabase roundtrip:
+//   1. same-origin  (headers only)
+//   2. json body    (headers only)
+//   3. jwt shape and expiry, decoded locally, no network
+//   4. burst limit + daily quota, one rpc
+//   5. jwt signature verified
+//   6. the file itself
+//
+// env: SB_URL, SB_KEY (falls back to SUPABASE_URL / SUPABASE_ANON_KEY),
+//      DIT_HOST, ALLOWED_ORIGINS (comma separated extra hosts)
 
 const SB_URL_FALLBACK  = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
 const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
@@ -28,6 +41,15 @@ export async function onRequestPost(context) {
   const DIT     = env.DIT_HOST || DIT_FALLBACK;
 
   try {
+    // the button on our own page is the only caller. a cross-origin POST with
+    // Content-Type: application/json already needs a preflight we never answer,
+    // so this mainly turns away scripts and third-party embeds. spoofable with
+    // a hand-set header — it is a speed bump on the cheapest possible path,
+    // not an authentication step
+    if (!sameOrigin(request, env)) {
+      return json({ error: 'Downloads must come from the DigiArtz site.' }, 403);
+    }
+
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
     if (!token) return json({ reason: 'auth', error: 'Sign in to download.' }, 401);
 
@@ -38,16 +60,17 @@ export async function onRequestPost(context) {
       return json({ error: 'Bad request.' }, 400);
     }
 
-    // the jwt has to be real before it can spend quota
-    const userRes = await fetch(`${SB_URL}/auth/v1/user`, {
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${token}` }
-    });
-    if (!userRes.ok) return json({ reason: 'auth', error: 'Session expired — sign in again.' }, 401);
-    const user = await userRes.json();
-    if (!user || !user.id) return json({ reason: 'auth', error: 'Invalid session.' }, 401);
+    // reject junk and expired tokens without paying for a roundtrip. this reads
+    // the payload without verifying the signature, which is fine here: it only
+    // ever refuses, and step 5 does the real check before any bytes are served
+    const claims = peekJwt(token);
+    if (!claims || !claims.sub || (claims.exp && claims.exp * 1000 <= Date.now())) {
+      return json({ reason: 'auth', error: 'Session expired — sign in again.' }, 401);
+    }
 
-    // charge the daily quota. the rpc runs as the caller, so it counts against
-    // their own tier and refuses once the cap for today is spent
+    // charge the burst limit and the daily quota. the rpc runs as the caller,
+    // so it counts against their own tier. the ip is a hint for the second
+    // bucket, taken from Cloudflare rather than the request body
     const gateRes = await fetch(`${SB_URL}/rest/v1/rpc/dz_request_download`, {
       method: 'POST',
       headers: {
@@ -55,13 +78,24 @@ export async function onRequestPost(context) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ p_artwork: artwork })
+      body: JSON.stringify({
+        p_artwork: artwork,
+        p_ip: request.headers.get('CF-Connecting-IP') || null
+      })
     });
+    // an unverifiable jwt fails here too, before anything is served
+    if (gateRes.status === 401 || gateRes.status === 403) {
+      return json({ reason: 'auth', error: 'Session expired — sign in again.' }, 401);
+    }
     if (!gateRes.ok) return json({ error: 'Could not check your download quota.' }, 502);
     const gate = await gateRes.json();
 
     if (!gate || !gate.allowed) {
       const reason = (gate && gate.reason) || 'denied';
+      if (reason === 'rate') {
+        return json({ reason: 'rate', error: 'Too many download requests — wait a moment.' },
+                    429, { 'Retry-After': String(gate.retry_after || 60) });
+      }
       if (reason === 'limit') {
         return json({
           reason: 'limit',
@@ -114,6 +148,47 @@ export async function onRequestPost(context) {
   }
 }
 
+// the request has to have come from a page we serve.
+// Sec-Fetch-Site is the primary signal: browsers set it themselves and page
+// script cannot override it, so a fetch() from another site cannot claim
+// same-origin. Origin and Referer are the fallback for anything that omits it.
+function sameOrigin(request, env) {
+  const h = request.headers;
+  let host = '';
+  try { host = new URL(request.url).host; } catch { return false; }
+
+  const allowed = new Set([host]);
+  for (const extra of String(env.ALLOWED_ORIGINS || '').split(',')) {
+    const v = extra.trim();
+    if (!v) continue;
+    try { allowed.add(new URL(v.includes('://') ? v : 'https://' + v).host); }
+    catch { allowed.add(v); }
+  }
+
+  const site = h.get('Sec-Fetch-Site');
+  if (site) return site === 'same-origin';
+
+  for (const name of ['Origin', 'Referer']) {
+    const raw = h.get(name);
+    if (!raw) continue;
+    try { return allowed.has(new URL(raw).host); } catch { return false; }
+  }
+  // no browser signal at all — a scripted client
+  return false;
+}
+
+// reads a jwt payload without verifying it. only ever used to refuse early;
+// PostgREST does the real signature check on the calls that follow
+function peekJwt(token) {
+  const parts = String(token).split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    return JSON.parse(atob(pad));
+  } catch { return null; }
+}
+
 // mirrors imgresize in js/app-core.js
 function resize(url, width, quality, dit) {
   if (!url || typeof url !== 'string') return url;
@@ -155,9 +230,13 @@ function asciiName(name, src, type) {
   return niceName(name, src, type).replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
 }
 
-function json(obj, status) {
+function json(obj, status, extra) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+      ...(extra || {})
+    }
   });
 }

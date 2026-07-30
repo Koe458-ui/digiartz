@@ -381,6 +381,11 @@
         if(res.status===429 && info.reason==='limit'){
           avPaintQuota({signed_in:true, remaining:0, limit:info.limit});
           dzQuotaOpen(info);
+        }else if(res.status===429){
+          // burst limit, not the daily cap — no upsell, just slow down
+          showToast('Too many download requests — wait a moment');
+        }else if(res.status===403 && info.reason!=='limit'){
+          showToast(info.error || 'Download blocked');
         }else if(res.status===401){
           showToast('Sign in to download');
           if(typeof openAuthMod==='function') openAuthMod();

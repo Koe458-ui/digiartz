@@ -22,9 +22,15 @@
        month", which was both vague and, after this change, wrong.
        base.css, viewer.css, panels.css and gallery.js all changed, so
        their ?v= moved with them.
+       /api/download only answers requests that carry a same-origin browser
+       signal, and it refuses expired or malformed tokens by reading the JWT
+       locally before it spends a Supabase roundtrip. Attempts are capped at
+       30 a minute per account and 60 per IP, so a script cannot run the bill
+       up on refusals after the daily quota is gone.
        Changed: index.html, js/gallery.js, js/protect.js (new),
        css/base.css, css/viewer.css, css/panels.css,
-       functions/api/download.js (new).
+       functions/api/download.js (new),
+       security/daily-download-quota.sql (new, record only).
 
    v69 — the precache was covering URLs nobody asks for. Every tag in
        index.html carries a query string (/css/base.css?v=1) while

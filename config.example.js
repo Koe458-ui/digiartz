@@ -1,11 +1,20 @@
 // REFERENCE ONLY — the site never loads this file, and on Cloudflare Pages
 // nobody edits config.js by hand either. It is GENERATED at deploy time by the
-// Pages build command, from environment variables:
+// Pages build command, from environment variables.
 //
-//   [ "$T600_READY" = "true" ] && T6=true || T6=false; \
-//   FN="${S3_FN_URL:-$SB_URL/functions/v1/smart-function}"; \
-//   echo "window.KOE_CONFIG = { SB_URL: '$SB_URL', SB_KEY: '$SB_KEY', \
-//   S3_FN_URL: '$FN', T600_READY: $T6 };" > config.js
+// PASTE IT AS ONE LINE. The Pages build command field is a single-line input:
+// it keeps backslashes and drops the newlines around them, so a command split
+// with trailing "\" arrives as "; \ FN=..." and the shell reads the backslash
+// as escaping the space rather than a line break. The next token is then a
+// command whose name literally starts with a space, and the build dies with
+//
+//   /bin/sh: 1:  FN=https://...: not found
+//   Failed: build command exited with code: 1
+//
+// leaving config.js unwritten and the whole deploy failed. Note the two spaces
+// after "1:" — that is the giveaway. Copy the line below with no backslashes:
+//
+// [ "$T600_READY" = "true" ] && T6=true || T6=false; FN="${S3_FN_URL:-$SB_URL/functions/v1/smart-function}"; echo "window.KOE_CONFIG = { SB_URL: '$SB_URL', SB_KEY: '$SB_KEY', S3_FN_URL: '$FN', T600_READY: $T6 };" > config.js
 //
 // So adding a key here does nothing until the build command emits it. This
 // file exists to record what the generated shape should look like.

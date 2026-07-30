@@ -454,8 +454,8 @@ counts against your daily limit. The viewer shows how many you have left.`
 • Max — 20 per day
 
 Your allowance resets every day at midnight UTC, and downloading your own
-artwork never counts against it. Lite, Premium and Max get the original file;
-Free gets a high-quality 1600px copy.
+artwork never counts against it. Premium and Max get the original file;
+Free and Lite get a high-quality 1600px copy.
 
 Run out and you can wait for the reset or upgrade from the Subscription page.`
       },
@@ -760,7 +760,7 @@ Pick a topic and I'll take it from there.`
 download limit:
 
 • Free — 5 downloads a day
-• Lite ($1/mo) — 10 a day at full resolution
+• Lite ($1/mo) — 10 a day at high-quality 1600px
 • Premium ($5/mo) — 15 a day at full resolution, custom artwork requests, early access
 • Max ($10/mo) — 20 a day, 5 custom artworks, custom website build, priority support
 

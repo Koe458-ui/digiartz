@@ -206,10 +206,17 @@ using (
 -- The homepage feed is prerendered, so it will drift again — worth regenerating
 -- from the database rather than hand-editing next time.
 --
+-- public.storage_migration_backup has been dropped. It held the 90 url columns
+-- this migration rewrote. Before dropping it, all 24 artwork urls were confirmed
+-- to rebuild exactly from surviving data, since every pre-migration url was
+--
+--   https://dn8x0csx6ii8w.cloudfront.net/koe-media/<storage_path>
+--
+-- and storage_path is untouched by the migration. That reconstruction is moot
+-- once the bucket and distributions are gone, as there would be nothing at the
+-- other end of those urls.
+--
 -- Left in place deliberately:
---   public.storage_migration_backup   90 rows, every url column this migration
---                                     rewrote. Drop it once the teardown is
---                                     signed off; until then it is the way back.
 --   artwork_image / profile_image / profile_banner_image
 --                                     dormant tables, no reader anywhere. Their
 --                                     `url` was repointed at Supabase; their

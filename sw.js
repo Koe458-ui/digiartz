@@ -29,6 +29,16 @@
        supabase/functions/smart-function/index.ts,
        security/backfill-t600.mjs (new), config.example.js.
 
+       Also in v75, unrelated to the above: Lite now downloads the
+       untouched original like the tiers above it. It was the one paying
+       tier that did not — it bought a higher daily count and still got
+       the same 1600px derivative a free account gets. The gate is a
+       single flag in dz_request_download, already applied to the
+       database; the shell files change because index.html and
+       aiAssistantData.js both stated the old rule in writing, and they
+       precache with no ?v= of their own. Daily limits are untouched:
+       Lite stays at 10.
+
    v74 — every upload button now records itself in its own table.
        Eight media tables existed but nothing read or wrote them, so they
        sat empty while the app kept using the flat columns. Uploads now

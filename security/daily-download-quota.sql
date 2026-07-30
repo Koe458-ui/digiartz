@@ -152,7 +152,12 @@ begin
   v_key   := 'u:' || v_uid::text;
   v_tier  := coalesce(public.dz_effective_tier(v_uid), 'guest');
   v_limit := public.dz_download_limit(v_tier);
-  v_full  := v_tier in ('premium', 'max', 'dev');
+  -- every paying tier gets the original; only guest/free take the derivative.
+  -- Lite used to be excluded, which made it the one tier that paid without
+  -- getting full resolution: it bought a higher count and the same file a free
+  -- account already had. dz_effective_tier collapses a lapsed subscription to
+  -- 'guest', so an expired Lite loses full resolution with the higher count.
+  v_full  := v_tier in ('lite', 'premium', 'max', 'dev');
 
   -- serialise per viewer so parallel clicks cannot both slip past the check
   perform pg_advisory_xact_lock(hashtext(v_key));

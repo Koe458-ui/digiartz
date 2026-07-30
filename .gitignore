@@ -7,3 +7,4 @@ config.js
 node_modules/
 package.json
 package-lock.json
+T600_READY: true

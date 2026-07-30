@@ -24,13 +24,18 @@ const t600 = (url) => (SB_SIZE_RE.test(url || '') ? url.replace(SB_SIZE_RE, '__t
 // js/app-core.js, minus the device-pixel-ratio cap: there is no DPR to read at
 // the edge, so the browser applies its own and picks from what it is offered.
 //
-// Gated on T600_READY for the same reason as the client — t600 exists only for
-// images uploaded after the tier was added, and a srcset candidate that 404s
-// breaks the image rather than falling back. Unset, this emits exactly the
-// single-src markup it always did.
+// Gated on T600_READY for the same reason as the client — a srcset candidate
+// that 404s breaks the image rather than falling back. Unset, this emits
+// exactly the single-src markup it always did.
+//
+// Pages environment variables arrive as STRINGS, so a bare truthiness test
+// would read "false" and "0" as ON — which is precisely how someone disabling
+// this would write it. Only the affirmative spellings count.
+const flagOn = (v) => /^(1|true|yes|on)$/i.test(String(v ?? '').trim());
+
 function thumbAttrs(url, env) {
   const src = `src="${esc(thumb(url))}"`;
-  if (!env || !env.T600_READY || !SB_SIZE_RE.test(url || '')) return src;
+  if (!env || !flagOn(env.T600_READY) || !SB_SIZE_RE.test(url || '')) return src;
   const set = `${esc(thumb(url))} 300w, ${esc(t600(url))} 600w, ${esc(resize(url, 1000))} 1000w`;
   return `${src} srcset="${set}" ` +
          `sizes="(min-width:1280px) 25vw, (min-width:700px) 33.33vw, 50vw"`;

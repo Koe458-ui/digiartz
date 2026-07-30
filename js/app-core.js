@@ -656,7 +656,13 @@
   // is not survivable: the browser does not fall back to another entry in the
   // list, it just fails the image. Left unset, every path below behaves exactly
   // as it did before t600 existed.
-  var T600_READY = !!(window.KOE_CONFIG && window.KOE_CONFIG.T600_READY);
+  // Accept a real boolean or the string spellings of one. A bare !! would read
+  // the string "false" as ON, which is exactly how someone turning this back
+  // off would write it.
+  function dzFlagOn(v){
+    return v === true || /^(1|true|yes|on)$/i.test(String(v == null ? '' : v).trim());
+  }
+  var T600_READY = dzFlagOn(window.KOE_CONFIG && window.KOE_CONFIG.T600_READY);
 
   function sbSwapSize(url, suffix){
     return SB_SIZE_RE.test(url) ? url.replace(SB_SIZE_RE, suffix) : url;

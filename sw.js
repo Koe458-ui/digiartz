@@ -4,6 +4,19 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v74 — every upload button now records itself in its own table.
+       Eight media tables existed but nothing read or wrote them, so they
+       sat empty while the app kept using the flat columns. Uploads now
+       dual-write: the flat column stays the source of truth for display,
+       and a row goes into the table that belongs to that button —
+       artwork_image / artwork_file, resources_image / resources_file,
+       marketplace_image / marketplace_file (new, the set was missing it),
+       blog_image, profile_image, profile_banner_image.
+       Writes are fail-soft on purpose. The publish has already happened
+       by the time these run, so a bookkeeping error is logged, never
+       thrown. Changed: js/app-core.js, js/upqueue.js, js/avatar.js,
+       js/sections.js.
+
    v73 — storage migration finished, so the CloudFront half comes out.
        The resizer host and its /fit-in/<w>x0/ cache rules are gone;
        every image is a Supabase Storage object now, and SB_THUMB_RE /
@@ -520,7 +533,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v73';
+const CACHE_VERSION = 'v74';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -570,15 +583,15 @@ const SHELL_URLS = [
   '/js/composer.js?v=1',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
-  '/js/app-core.js?v=3',
+  '/js/app-core.js?v=4',
   '/js/protect.js?v=1',
   '/js/gallery.js?v=67',
   '/js/auth.js?v=1',
   '/js/profile.js?v=1',
   '/js/albums.js?v=1',
   '/js/drafts.js?v=1',
-  '/js/upqueue.js?v=1',
-  '/js/avatar.js?v=1',
+  '/js/upqueue.js?v=2',
+  '/js/avatar.js?v=2',
   '/js/pfedit.js?v=1',
   '/js/mywork.js?v=2',
   '/js/startup.js?v=1',
@@ -589,7 +602,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
-  '/js/sections.js?v=69'
+  '/js/sections.js?v=70'
 ];
 
 // hosts

@@ -1106,6 +1106,10 @@
         return {url:url, path:path, name:f.name, ext:ext, size:f.size};
       }
 
+      // media bookkeeping, queued here and flushed once the row exists, since
+      // every one of these tables is keyed on the parent id
+      var pendingMedia = [];
+
       if(sec === 'resources'){
         var rf = await put('file','resources'), rp = await put('preview','resources');
         row.title = val(sec,'title'); row.description = val(sec,'description');
@@ -1114,6 +1118,8 @@
         row.file_url = rf.url; row.file_storage_path = rf.path;
         row.file_name = rf.name; row.file_ext = rf.ext; row.file_size = rf.size;
         if(rp){ row.preview_url = rp.url; row.preview_storage_path = rp.path; }
+        pendingMedia.push({ fileKind:'resourceFile', url:rf.url, path:rf.path, file:s.files.file });
+        if(rp) pendingMedia.push({ imageKind:'resourceImage', url:rp.url, path:rp.path, file:s.files.preview });
       }
 
       else if(sec === 'blog'){
@@ -1126,6 +1132,7 @@
         row.slug = slugify(val(sec,'title')).slice(0,80) + '-' + String(stamp).slice(-6);
         row.read_minutes = Math.max(1, Math.round(body.split(/\s+/).length / 200));
         if(bc){ row.cover_url = bc.url; row.cover_storage_path = bc.path; }
+        if(bc) pendingMedia.push({ imageKind:'blogImage', url:bc.url, path:bc.path, file:s.files.cover });
       }
 
       else if(sec === 'marketplace'){
@@ -1141,6 +1148,8 @@
         if(mf){ row.file_url = mf.url; row.file_storage_path = mf.path;
                 row.file_name = mf.name; row.file_ext = mf.ext; row.file_size = mf.size; }
         if(mp){ row.preview_url = mp.url; row.preview_storage_path = mp.path; }
+        if(mf) pendingMedia.push({ fileKind:'marketFile', url:mf.url, path:mf.path, file:s.files.file });
+        if(mp) pendingMedia.push({ imageKind:'marketImage', url:mp.url, path:mp.path, file:s.files.preview });
       }
 
       else if(sec === 'jobs'){
@@ -1194,6 +1203,14 @@
       if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
       var res = await sb.from(SEC[sec].table).insert(row).select('id').single();
       if(res.error) throw res.error;
+
+      // the row exists, so its media rows can be attached to it now
+      if(res.data && res.data.id){
+        for(var pmi=0; pmi<pendingMedia.length; pmi++){
+          pendingMedia[pmi].parentId = res.data.id;
+          await dzRecordUpload(pendingMedia[pmi]);
+        }
+      }
 
       if(moderated){ dzV.step('publish','pass'); setTimeout(function(){ dzV.close(); }, 1400); }
       showToast('Published');

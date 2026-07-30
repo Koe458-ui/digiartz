@@ -149,6 +149,113 @@
     if(!res.ok || j.ok===false) throw new Error(j.error || 'Delete failed');
   }
 
+  // ── media bookkeeping ────────────────────────────────────────────────────
+  // Every upload button gets its own table. The site still reads the flat
+  // columns (artworks.image_url, profiles.avatar_url, resources.file_url …);
+  // these rows are the structured record beside them, so nothing here may ever
+  // fail a publish that has already succeeded. Every call is fail-soft.
+  //
+  // parent   the owning row's id column, null for the two profile tables which
+  //          are keyed on the user and therefore upserted instead of inserted
+  // url      true for the image tables, which also carry width/height. The file
+  //          tables carry original_filename instead and have no url: what they
+  //          point at is not public.
+  var DZ_MEDIA = {
+    artworkImage : { table:'artwork_image',        parent:'artwork_id',  url:true  },
+    artworkFile  : { table:'artwork_file',         parent:'artwork_id',  url:false },
+    resourceImage: { table:'resources_image',      parent:'resource_id', url:true  },
+    resourceFile : { table:'resources_file',       parent:'resource_id', url:false },
+    marketImage  : { table:'marketplace_image',    parent:'item_id',     url:true  },
+    marketFile   : { table:'marketplace_file',     parent:'item_id',     url:false },
+    blogImage    : { table:'blog_image',           parent:'post_id',     url:true  },
+    avatar       : { table:'profile_image',        parent:null,          url:true, onConflict:'user_id' },
+    banner       : { table:'profile_banner_image', parent:null,          url:true, onConflict:'user_id' }
+  };
+
+  // Where an upload actually landed, worked out from the url s3Upload handed
+  // back rather than guessed from the filename. An image becomes four objects
+  // (the untouched original in koe-originals, three sizes in koe-media);
+  // anything else becomes one public object. The __f1600 suffix is the tell.
+  function dzUploadTargets(uploadedUrl, uploadPath){
+    var isImg = /__f1600\.webp$/.test(uploadedUrl || '');
+    var base  = String(uploadPath || '').replace(/\.[a-z0-9]+$/i, '');
+    return isImg
+      ? { image: { bucket:'koe-media',     path: base + '__f1600.webp', url: uploadedUrl },
+          file:  { bucket:'koe-originals', path: uploadPath } }
+      : { image: null,
+          file:  { bucket:'koe-media',     path: uploadPath, url: uploadedUrl } };
+  }
+
+  // best effort, never throws: dimensions are nice to have, not worth a failure
+  async function dzImgDims(blob){
+    try{
+      if(!blob || !/^image\//.test(blob.type || '')) return {};
+      var bmp = await createImageBitmap(blob);
+      var d = { width: bmp.width, height: bmp.height };
+      if(bmp.close) try{ bmp.close(); }catch(e){}
+      return d;
+    }catch(e){ return {}; }
+  }
+
+  async function dzRecordMedia(kind, opts){
+    try{
+      var spec = DZ_MEDIA[kind];
+      if(!spec || !sb || !currentUser || !opts || !opts.path) return false;
+      if(spec.parent && !opts.parentId) return false;
+
+      var row = {
+        user_id: currentUser.id,
+        storage_bucket: opts.bucket || 'koe-media',
+        storage_path: opts.path,
+        mime: (opts.file && opts.file.type) || opts.mime || null,
+        bytes: (opts.file && typeof opts.file.size === 'number') ? opts.file.size
+             : (typeof opts.bytes === 'number' ? opts.bytes : null)
+      };
+      if(spec.parent) row[spec.parent] = opts.parentId;
+
+      // position exists on every table except the two profile ones
+      if(spec.parent) row.position = opts.position || 0;
+
+      if(spec.url){
+        row.url = opts.url || null;
+        var d = await dzImgDims(opts.file);
+        if(d.width)  row.width  = d.width;
+        if(d.height) row.height = d.height;
+      } else if(opts.file && opts.file.name){
+        row.original_filename = String(opts.file.name).slice(0, 260);
+      }
+
+      var res = spec.onConflict
+        ? await sb.from(spec.table).upsert(row, { onConflict: spec.onConflict })
+        : await sb.from(spec.table).insert(row);
+      if(res && res.error) throw res.error;
+      return true;
+    }catch(e){
+      // bookkeeping must not sink a publish that already worked
+      console.warn('media record failed (' + kind + '):', (e && e.message) || e);
+      return false;
+    }
+  }
+
+  // Record one uploaded asset into both halves it can occupy: the public image
+  // table and the private file table. imageKind/fileKind may each be null when
+  // that half does not apply to this upload button.
+  async function dzRecordUpload(o){
+    var t = dzUploadTargets(o.url, o.path);
+    if(o.imageKind && t.image){
+      await dzRecordMedia(o.imageKind, {
+        parentId: o.parentId, bucket: t.image.bucket, path: t.image.path,
+        url: t.image.url, file: o.file, position: o.position || 0
+      });
+    }
+    if(o.fileKind && t.file){
+      await dzRecordMedia(o.fileKind, {
+        parentId: o.parentId, bucket: t.file.bucket, path: t.file.path,
+        file: o.file, position: o.position || 0
+      });
+    }
+  }
+
 
   // seo defaults from head
   var SITE_DEFAULT_TITLE = document.title;

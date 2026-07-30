@@ -193,6 +193,23 @@
       var _newRow = rows && rows[0];
       if(_newRow && job.albums && job.albums.length) await albAttach(_newRow.id, job.albums);
 
+      // media bookkeeping: cover at position 0, extra pages after it. Each one
+      // lands in artwork_image (the public derivative) and artwork_file (the
+      // untouched original). Fail-soft by design — the artwork is already live.
+      if(_newRow){
+        await dzRecordUpload({
+          imageKind:'artworkImage', fileKind:'artworkFile', parentId:_newRow.id,
+          url:publicUrl, path:path, file:job.file, position:0
+        });
+        for(var mi=0; mi<job.pageFiles.length; mi++){
+          await dzRecordUpload({
+            imageKind:'artworkImage', fileKind:'artworkFile', parentId:_newRow.id,
+            url:artPageUrls[mi], path:job.uploadedPaths[mi+1],
+            file:job.pageFiles[mi], position:mi+1
+          });
+        }
+      }
+
       // 4 live
       job.stage='live';
       upqSync();

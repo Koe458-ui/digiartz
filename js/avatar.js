@@ -179,6 +179,15 @@
       updates[kind+'_updated_at'] = nowIso;
       var{error:de}=await sb.from('profiles').update(updates).eq('id',currentUser.id);
       if(de) throw de;
+
+      // media bookkeeping. profile_image and profile_banner_image are unique on
+      // user_id and so are upserted: one row per person, replaced on re-crop,
+      // rather than a pile of rows for every avatar they have ever had.
+      await dzRecordUpload({
+        imageKind: (kind==='banner' ? 'banner' : 'avatar'),
+        fileKind: null, url: publicUrl, path: path, file: blob
+      });
+
       // delete old file after commit
       if(oldPath) await s3Delete(BUCKET,oldPath);
       Object.assign(pf.profile, updates);

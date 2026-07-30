@@ -279,6 +279,55 @@
     .rptBtn--go{border-color:var(--danger-bd);background:var(--danger-bg);color:var(--danger);}
     .rptBtn--go:hover{background:var(--danger-bg-hover);}
     .rptBtn:disabled{opacity:.55;cursor:default;}
+
+    .avDlNote{
+      font-family:var(--fm);font-size:.64rem;letter-spacing:.08em;
+      color:var(--txd);text-align:center;margin:-.35rem 0 .1rem;
+    }
+    .avDlNote--out{color:var(--danger);}
+
+    /* daily download quota modal */
+    #dlQuotaMod{
+      position:fixed;inset:0;z-index:5000;display:none;
+      align-items:center;justify-content:center;padding:1rem;
+      background:rgba(0,0,0,.72);backdrop-filter:blur(4px);
+    }
+    #dlQuotaMod.open{display:flex;}
+    .dlqCard{
+      width:100%;max-width:400px;
+      background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
+      padding:1.6rem 1.4rem 1.3rem;text-align:center;
+    }
+    .dlqIcon{
+      width:3rem;height:3rem;margin:0 auto .9rem;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.35rem;color:var(--pg);
+      background:rgba(var(--pg-rgb),.1);border:1px solid rgba(var(--pg-rgb),.28);
+    }
+    .dlqTitle{font-family:var(--fd);font-size:1.08rem;font-weight:700;color:var(--tx);margin-bottom:.5rem;}
+    .dlqSub{font-family:var(--fb);font-size:.85rem;line-height:1.55;color:var(--txd);margin:0 0 .9rem;}
+    .dlqMeta{
+      font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;
+      color:var(--txd);opacity:.85;margin-bottom:1.3rem;min-height:.8rem;
+    }
+    .dlqActions{display:flex;gap:.7rem;}
+    .dlqBtn{
+      flex:1;font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;
+      padding:.75rem .8rem;border-radius:8px;cursor:pointer;
+      border:1px solid var(--bdr);background:none;color:var(--tx);
+      transition:border-color .2s,background .2s,color .2s;
+    }
+    .dlqBtn:hover{border-color:var(--pg);}
+    .dlqBtn--go{
+      border-color:rgba(var(--pg-rgb),.5);
+      background:rgba(var(--pg-rgb),.12);color:var(--pg);font-weight:600;
+    }
+    .dlqBtn--go:hover{background:rgba(var(--pg-rgb),.2);}
+    .avActWide[aria-busy="true"]{opacity:.6;cursor:default;}
+    .avActWide:disabled{opacity:.6;cursor:default;}
+    @media(max-width:420px){
+      .dlqActions{flex-direction:column-reverse;}
+    }
     @media(max-width:900px){
       #artModal{padding:.7rem;}
       .avBox{width:100%;height:96vh;height:96dvh;border-radius:16px;}

@@ -317,3 +317,18 @@
     .hNotifBtn.hasUnread .hNotifDot { display: block; }
 
 
+
+    /* image protection
+       the download button is the only way to save artwork, so the browser's
+       own long press / right click / drag shortcuts are shut off on media */
+    img, picture, canvas, video {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      user-drag: none;
+    }
+    /* printing the page is another way to lift the pixels out */
+    @media print {
+      img, picture, canvas, video { visibility: hidden !important; }
+    }

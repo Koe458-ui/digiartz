@@ -4,6 +4,20 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v70 — artwork downloads are metered per day and no longer reachable
+       any way except the Download button. The button now posts to
+       /api/download, which spends a quota unit through
+       dz_request_download and streams the file back from our own
+       origin as an attachment, so the raw CDN url never reaches the
+       browser. /api/* is POST-only here and the SW ignores non-GET, so
+       nothing new is cached. js/protect.js joins the shell: it kills the
+       long-press / right-click image menu, image dragging and the save
+       page shortcut, and base.css carries the matching -webkit-touch-
+       callout rules. base.css, viewer.css and gallery.js all changed,
+       so their ?v= moved with them.
+       Changed: index.html, js/gallery.js, js/protect.js (new),
+       css/base.css, css/viewer.css, functions/api/download.js (new).
+
    v69 — the precache was covering URLs nobody asks for. Every tag in
        index.html carries a query string (/css/base.css?v=1) while
        SHELL_URLS listed the bare path (/css/base.css), and cache.match
@@ -429,7 +443,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v69';
+const CACHE_VERSION = 'v70';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -453,9 +467,9 @@ const SHELL_URLS = [
   '/icon-192.png',
 
   // stylesheets
-  '/css/base.css?v=1',
+  '/css/base.css?v=2',
   '/css/hero.css?v=65',
-  '/css/viewer.css?v=1',
+  '/css/viewer.css?v=2',
   '/css/community.css?v=1',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=1',
@@ -480,7 +494,8 @@ const SHELL_URLS = [
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
   '/js/app-core.js?v=1',
-  '/js/gallery.js?v=66',
+  '/js/protect.js?v=1',
+  '/js/gallery.js?v=67',
   '/js/auth.js?v=1',
   '/js/profile.js?v=1',
   '/js/albums.js?v=1',

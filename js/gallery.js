@@ -312,47 +312,180 @@
     if(!document.fullscreenElement){ if(box.requestFullscreen) box.requestFullscreen(); }
     else { if(document.exitFullscreen) document.exitFullscreen(); }
   }
+  // the download button is the only way out of the site with a file, so every
+  // click has to clear the server side daily quota first
+  var avDlBusy=false;
+
+  // keep the extension the server settled on, but title the file with the
+  // artwork name as it reads in the viewer
+  function avDlFileName(serverName, name){
+    var m=/\.([a-z0-9]{2,4})$/i.exec(serverName||'');
+    var ext=m ? m[1].toLowerCase() : 'jpg';
+    var base=String(name||'').replace(/[^\w\-. ]+/g,'').trim().replace(/\s+/g,'-').slice(0,60);
+    if(!base) return serverName || ('artwork.'+ext);
+    return base+'.'+ext;
+  }
+
+  // hand the browser a blob from our own origin, so the raw file url is never
+  // navigated to and never lands in the tab history
+  function avDlSaveBlob(blob, fileName){
+    var obj=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=obj; a.download=fileName; a.rel='noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(obj); }, 60000);
+  }
+
   async function avDownload(){
-    var img=document.getElementById('lbImg');
-    // download the original
-    var fullSrc=getFullUrl(currentLightboxImageSrc || (img && img.src) || '');
-    if(!fullSrc) return;
-    // tier gate
-    var gate={allowed:true, full:true};
+    if(avDlBusy) return;
     var artId=avCurrentArt && avCurrentArt.id;
-    if(artId && sb){
-      try{
-        var gres=await sb.rpc('dz_request_download', {
-          p_artwork: artId,
-          p_anon_key: (typeof window.dzViewerKey==='function' ? window.dzViewerKey() : null)
-        });
-        if(!gres.error && gres.data) gate=gres.data;
-      }catch(e){}
-    }
-    if(!gate.allowed){
-      if(gate.reason==='limit'){
-        showToast('Monthly download limit reached \u2014 upgrade for more');
-        if(typeof openSubscription==='function') openSubscription();
-      }else{
-        showToast('Sign in to download');
-        if(typeof openAuthMod==='function') openAuthMod();
-      }
+    if(!artId){ showToast('Nothing to download'); return; }
+    if(!sb){ showToast('Downloads are unavailable right now'); return; }
+    if(!currentUser){
+      showToast('Sign in to download');
+      if(typeof openAuthMod==='function') openAuthMod();
       return;
     }
-    var href = gate.full ? fullSrc : imgResize(fullSrc, 1600, 82);
-    var a=document.createElement('a');
-    // open in new tab
-    a.href=href; a.download=''; a.target='_blank'; a.rel='noopener';
-    document.body.appendChild(a); a.click(); a.remove();
-    if(typeof gate.remaining==='number' && gate.remaining<=3){
-      showToast(gate.remaining+' download'+(gate.remaining===1?'':'s')+' left this month');
-    }
-    // count download for trending
-    if(artId){
+
+    var btns=document.querySelectorAll('#artModal .avDlBtn');
+    avDlBusy=true;
+    btns.forEach(function(b){ b.disabled=true; b.setAttribute('aria-busy','true'); });
+    try{
+      var token='';
+      try{
+        var sess=await sb.auth.getSession();
+        token=(sess && sess.data && sess.data.session && sess.data.session.access_token) || '';
+      }catch(e){}
+      if(!token){
+        showToast('Sign in to download');
+        if(typeof openAuthMod==='function') openAuthMod();
+        return;
+      }
+
+      // /api/download charges the daily quota before it streams anything back
+      var res;
+      try{
+        res=await fetch('/api/download', {
+          method:'POST',
+          headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+          body:JSON.stringify({ artwork:String(artId) })
+        });
+      }catch(e){
+        showToast('Download failed \u2014 check your connection');
+        return;
+      }
+
+      if(!res.ok){
+        var info={};
+        try{ info=await res.json(); }catch(e){}
+        if(res.status===429 && info.reason==='limit'){
+          avPaintQuota({signed_in:true, remaining:0, limit:info.limit});
+          dzQuotaOpen(info);
+        }else if(res.status===401){
+          showToast('Sign in to download');
+          if(typeof openAuthMod==='function') openAuthMod();
+        }else if(res.status===404){
+          showToast('This artwork is no longer available');
+        }else{
+          showToast(info.error || 'Download failed \u2014 try again');
+        }
+        return;
+      }
+
+      var blob=await res.blob();
+      var name=(document.getElementById('lbNm')||{}).textContent || (avCurrentArt && avCurrentArt.name);
+      avDlSaveBlob(blob, avDlFileName(dispName(res), name));
+
+      var left=parseInt(res.headers.get('X-Dz-Remaining'),10);
+      var cap =parseInt(res.headers.get('X-Dz-Limit'),10);
+      if(!isNaN(left)){
+        if(!isNaN(cap)) avPaintQuota({signed_in:true, remaining:left, limit:cap});
+        showToast(left>0
+          ? left+' download'+(left===1?'':'s')+' left today'
+          : 'That was your last download for today');
+      }
+      // count download for trending
       try{ window.registerArtworkDownload(artId); }catch(e){}
-      avCurrentArt.download_count = (parseInt(avCurrentArt.download_count,10)||0) + 1;
+      if(avCurrentArt) avCurrentArt.download_count = (parseInt(avCurrentArt.download_count,10)||0) + 1;
+    }finally{
+      avDlBusy=false;
+      btns.forEach(function(b){ b.disabled=false; b.removeAttribute('aria-busy'); });
     }
   }
+
+  // the server already picked the extension, reuse it
+  function dispName(res){
+    var cd=res.headers.get('Content-Disposition') || '';
+    var m=/filename="([^"]+)"/.exec(cd);
+    return m ? m[1] : '';
+  }
+
+  // "3 of 5 downloads left today" under the button, so the cap is visible
+  // before someone runs into it
+  function avPaintQuota(q){
+    var note=document.getElementById('avDlNote');
+    if(!note) return;
+    if(!q || !q.signed_in || typeof q.remaining!=='number'){ note.hidden=true; note.textContent=''; return; }
+    note.textContent=q.remaining+' of '+q.limit+' download'+(q.limit===1?'':'s')+' left today';
+    note.classList.toggle('avDlNote--out', q.remaining<=0);
+    note.hidden=false;
+  }
+  function avLoadQuota(){
+    if(!sb || !currentUser){ avPaintQuota(null); return; }
+    sb.rpc('dz_download_quota').then(function(res){
+      if(!res.error) avPaintQuota(res.data);
+    }, function(){});
+  }
+
+  // daily quota modal
+  function dzQuotaOpen(gate){
+    var m=document.getElementById('dlQuotaMod');
+    if(!m){
+      showToast('Daily download limit reached \u2014 upgrade for more');
+      if(typeof openSubscription==='function') openSubscription();
+      return;
+    }
+    var lim=gate && typeof gate.limit==='number' ? gate.limit : null;
+    var sub=document.getElementById('dlQuotaSub');
+    if(sub){
+      sub.textContent='You have used '+(lim!==null?'all '+lim+' of your':'all of your')+
+                      ' downloads for today. To continue downloading more, you need to buy a subscription.';
+    }
+    var meta=document.getElementById('dlQuotaMeta');
+    if(meta){
+      var bits=[];
+      if(gate && gate.tier) bits.push((gate.tier==='guest'?'Free':avCap(gate.tier))+' plan');
+      if(lim!==null) bits.push(lim+' downloads / day');
+      if(gate && gate.resets_at){
+        var d=new Date(gate.resets_at);
+        if(!isNaN(d)) bits.push('Resets '+d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}));
+      }
+      meta.textContent=bits.join('  \u00b7  ');
+    }
+    m.classList.add('open');
+    setTimeout(function(){
+      var b=m.querySelector('.dlqBtn--go');
+      if(b) b.focus();
+    },40);
+  }
+  function dzQuotaClose(){
+    var m=document.getElementById('dlQuotaMod');
+    if(m) m.classList.remove('open');
+  }
+  function dzQuotaBuy(){
+    dzQuotaClose();
+    closeLB();
+    if(typeof openSubscription==='function') openSubscription();
+  }
+  window.dzQuotaOpen=dzQuotaOpen;
+  window.dzQuotaClose=dzQuotaClose;
+  window.dzQuotaBuy=dzQuotaBuy;
+  // escape closes the quota modal only, the viewer behind it stays open
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape') return;
+    var m=document.getElementById('dlQuotaMod');
+    if(m && m.classList.contains('open')){ dzQuotaClose(); e.stopPropagation(); }
+  },true);
   function avShare(){
     var url=window.location.href;
     var title=(document.getElementById('lbNm')||{}).textContent||'Artwork';
@@ -533,6 +666,7 @@
 
     avRenderMeta({ category:catLabelStr, software: art?art.software:null, createdAt: art?art.created_at:null, hasArt: !!art });
     avRenderAuthor(art);
+    avPaintQuota(null); avLoadQuota();
     avSetupNav(id, navSource);
     if(id && typeof window.dzCmLoad==='function') window.dzCmLoad('artwork', String(id), 'avCmList');
 

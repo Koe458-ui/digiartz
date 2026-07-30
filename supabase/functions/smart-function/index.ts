@@ -58,6 +58,17 @@
 // download and delete are dual-mode for the length of the migration:
 // they handle objects that are already in Supabase and objects still in
 // S3, so rows can be moved in batches without a cutover.
+//
+// v18 — delete removes with the service role instead of the caller's
+// client. The ownership test above it was always the real gate; RLS
+// underneath was not a second line of defence but a broken one. No
+// koe-media policy matches artworks/* except one pinned to a single dev
+// email, and koe-originals tests foldername(name)[2] = auth.uid(), which
+// is NULL for the twenty pre-convention artworks stored flat as
+// artworks/<file>. Since remove() on a blocked object returns an empty
+// list and no error, deletes reported success while the bytes stayed —
+// hidden only by the S3 leg doing the real work. The response now counts
+// what actually went rather than trusting a missing error.
 // ═══════════════════════════════════════════════════════════════
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { AwsClient } from "npm:aws4fetch@1.0.20";
@@ -344,18 +355,36 @@ Deno.serve(async (req) => {
       || await owns("blog_posts", "cover_storage_path");
     if (!allowed) return json({ error: "not your object" }, 403);
 
+    // The ownership test above is the gate: it checks the caller against every
+    // column that can own an object. The removal itself runs with the SERVICE
+    // ROLE, the same shape "download" already uses after its quota gate.
+    //
+    // It cannot run as the caller. koe-media has no delete policy that matches
+    // artworks/* apart from one pinned to a single dev email, and every
+    // koe-originals policy tests foldername(name)[2] = auth.uid(), which is
+    // NULL for the twenty pre-convention artworks stored flat as
+    // artworks/<file>. Worse, remove() on an object RLS will not surrender
+    // returns an empty list and NO error, so the previous version reported
+    // success while the bytes stayed put. That was survivable only because the
+    // S3 leg did the real deleting; with the bucket gone it becomes silent
+    // retention of art a user asked to have removed.
+    const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!svcKey) return json({ error: "storage remover not configured" }, 500);
+    const svc = createClient(Deno.env.get("SUPABASE_URL")!, svcKey);
+
     // Dual-mode for the length of the migration. The caller only knows a path,
     // not which host holds it, so remove it from everywhere it could be:
     // Supabase (original plus the three derivatives) and S3. Every one of these
     // is idempotent, so hitting a home that never had the object is harmless.
     const base = stripExt(objKey);
-    const results: Record<string, boolean> = {};
+    const results: Record<string, unknown> = {};
     try {
-      const { error: e1 } = await supa.storage.from(PRIVATE_BUCKET).remove([objKey]);
-      results.original = !e1;
-      const { error: e2 } = await supa.storage.from(PUBLIC_BUCKET)
+      // count what actually went, rather than trusting the absence of an error
+      const { data: d1 } = await svc.storage.from(PRIVATE_BUCKET).remove([objKey]);
+      results.original = (d1 ?? []).length;
+      const { data: d2 } = await svc.storage.from(PUBLIC_BUCKET)
         .remove([objKey, ...DERIVATIVES.map((d) => base + d.suffix)]);
-      results.derivatives = !e2;
+      results.derivatives = (d2 ?? []).length;
     } catch { /* fall through to S3 */ }
 
     let s3ok = false;
@@ -366,7 +395,8 @@ Deno.serve(async (req) => {
     results.s3 = s3ok;
 
     // ok if it is gone from anywhere it plausibly lived
-    return json({ ok: results.original || results.derivatives || s3ok, results });
+    const removed = Number(results.original ?? 0) + Number(results.derivatives ?? 0);
+    return json({ ok: removed > 0 || s3ok, results });
   }
 
   return json({ error: "unknown action" }, 400);

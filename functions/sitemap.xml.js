@@ -27,24 +27,17 @@ export async function onRequestGet(context) {
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c])
     );
 
-  // Google is pointed at the resized derivative, never at the stored original.
-  // The origin bucket is meant to stop being publicly readable, and an
-  // <image:loc> that 403s would drop these out of image search. Mirrors
-  // ogImage() in functions/_middleware.js.
-  const DIT = (env.DIT_HOST || 'https://d1l8dn7jegdgem.cloudfront.net').replace(/\/$/, '');
-  // Supabase rows already point at a pre-generated size (__f1600), which is the
-  // largest public derivative and exactly what a crawler should index.
-  // CloudFront rows resize on the fly. Both handled so the sitemap stays valid
-  // through the storage migration.
+  // Google is pointed at the public derivative, never at the stored original:
+  // koe-originals is private, and an <image:loc> that 403s would drop these out
+  // of image search. Stored urls already point at __f1600, the largest public
+  // derivative and exactly what a crawler should index, so they are indexed
+  // as-is. Anything that is not a Supabase Storage url is skipped rather than
+  // guessed at — there is no resizer left to route it through.
   const crawlImage = (url) => {
     if (!url || typeof url !== 'string') return '';
-    let u, ditHost;
-    try { u = new URL(url); ditHost = new URL(DIT).hostname; } catch { return ''; }
-    if (u.hostname.endsWith('.supabase.co')) return url;
-    if (u.hostname === ditHost) return url;
-    const key = u.pathname.replace(/^\/+/, '');
-    if (!key) return '';
-    return `${DIT}/fit-in/1200x0/filters:format(jpeg):quality(80)/${key}`;
+    let u;
+    try { u = new URL(url); } catch { return ''; }
+    return u.hostname.endsWith('.supabase.co') ? url : '';
   };
 
   const sbGet = async (path) => {

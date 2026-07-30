@@ -169,27 +169,48 @@ using (
 -- rows, service-role only). Keep it until the decommission is signed off; it
 -- is the only way back if a url turns out wrong while S3 is still alive.
 --
--- ============================================================ phase 7 (todo)
--- Verify, then decommission: delete the S3 bucket, disable and delete both
--- CloudFront distributions, drop the AWS secrets and the aws4fetch import from
--- the edge function.
+-- ============================================================ phase 7 (code
+-- done, AWS teardown outstanding)
 --
--- BLOCKER, fix before the bucket goes away. Twenty of the twenty-four artworks
--- predate the <prefix>/<uid>/<file> convention and are stored flat, as
--- artworks/<file>. Every koe-media and koe-originals policy tests
--- foldername(name)[2] = auth.uid(), and for a two-segment path that expression
--- is NULL, so it can never match:
+-- Every reference to S3 and CloudFront is out of the code and the database.
+-- smart-function v18 dropped aws4fetch, the five AWS secrets and both dual-mode
+-- branches; the service worker dropped the resizer host and its /fit-in/ cache
+-- rules (cache bumped to v73 so stale clients refill); the edge middleware, the
+-- sitemap, the download worker and imgResize all pick a size by suffix swap and
+-- no longer know a second host exists. scripts/migrate-storage.mjs is deleted:
+-- it read from CloudFront, so it cannot work again and would only mislead.
 --
---   select (storage.foldername('artworks/1781717079470_Prushka.png'))[2];  -- null
+-- What is left is not code, and cannot be done from here — it needs the AWS
+-- console: delete the S3 bucket, disable then delete both CloudFront
+-- distributions, and remove AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY /
+-- AWS_REGION / S3_BUCKET / CLOUDFRONT_URL from the edge function's secrets.
+-- v18 no longer reads them, so pulling them cannot break a boot.
 --
--- Downloads are unaffected — the edge function signs those with the service
--- role, which bypasses RLS. Deletes are NOT: smart-function removes storage
--- objects with the CALLER's client, so for these twenty rows the Supabase
--- delete fails and only the S3 delete succeeds. That is invisible today
--- because the S3 leg still returns ok. Once the bucket is gone, deleting any
--- of these artworks will fail outright.
+-- The delete blocker is fixed, and it was worse than first described. It was not
+-- only the twenty flat artworks/<file> paths whose foldername(name)[2] is NULL:
+-- koe-media has NO delete policy matching artworks/* at all except one pinned to
+-- a single dev email, so no ordinary user could remove their own derivatives
+-- either. And remove() on an object RLS will not surrender returns an empty list
+-- with no error, so both failures read as success. Only the S3 leg was really
+-- deleting. v18 removes with the service role after the ownership test that was
+-- always the actual gate, and counts what went rather than trusting a missing
+-- error. Restating six tables' worth of ownership as storage policies, and
+-- keeping them in step forever, was the alternative.
 --
--- Two ways out, either is fine, but one of them has to happen before phase 7:
---   a. move the objects under artworks/<uid>/ and update storage_path, or
---   b. widen the policies to also allow the owner via the artworks row rather
---      than via the path shape alone.
+-- Stale prerender, found while clearing index.html. Nine of the thirty-one
+-- artworks baked into the homepage no longer exist in the database. Their
+-- objects were therefore never migrated, and their urls were live only because
+-- CloudFront still served the old bytes. They are removed from the cards, from
+-- schema.org hasPart (renumbered, image[] rebuilt) rather than re-uploaded:
+-- these are deletions, and undoing them silently is not a migration's business.
+-- The homepage feed is prerendered, so it will drift again — worth regenerating
+-- from the database rather than hand-editing next time.
+--
+-- Left in place deliberately:
+--   public.storage_migration_backup   90 rows, every url column this migration
+--                                     rewrote. Drop it once the teardown is
+--                                     signed off; until then it is the way back.
+--   artwork_image / profile_image / profile_banner_image
+--                                     dormant tables, no reader anywhere. Their
+--                                     `url` was repointed at Supabase; their
+--                                     storage_path is still NULL, as found.

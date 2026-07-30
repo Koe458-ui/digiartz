@@ -3,7 +3,7 @@
 Summary of the security review and the changes made.
 
 ## Verdict
-No exposed secrets, no leaked AWS/Razorpay keys, payments are server-verified,
+No exposed secrets, no leaked Razorpay keys, payments are server-verified,
 Row-Level Security is on for every table, and no user can promote themselves to
 admin. The site was already **above average**. These changes close the
 remaining gaps.
@@ -14,15 +14,17 @@ remaining gaps.
 |---|-----|-------|--------|
 | 1 | Security headers (clickjacking, HSTS, nosniff, referrer, base-uri, plugin block) — no CSP that would break AdSense/Razorpay | `_headers` | ✅ in branch, live on deploy |
 | 2 | Pinned search_path on `community_channel_id` | Supabase | ✅ live now |
-| 3 | Fail-open per-user upload rate limit (AWS-bill abuse guard) | `smart-function` edge fn + `upload_events` table | ✅ live now |
+| 3 | Fail-open per-user upload rate limit (storage-bill abuse guard) | `smart-function` edge fn + `upload_events` table | ✅ live now |
 | 4 | Moderation-gate plumbing: server-signed approval token issued + forwarded | `moderate-upload.js`, `upqueue.js`, `mod_token` columns | ✅ in branch (inert until activated) |
 
 ## What YOU need to do
 
-### 🔴 1. AWS budget alarm (do today — this is your bill protection)
-AWS Console → **Billing → Budgets → Create budget** → set a monthly amount
-(e.g. $5) with an **email alert**. Your AWS key is NOT exposed anywhere, but a
-budget alarm means no cost can ever surprise you.
+### 🔴 1. Storage spend alarm (do today — this is your bill protection)
+Media now lives in Supabase Storage, so the bill to watch is Supabase's, not
+AWS's. Supabase Dashboard → **Organization → Billing → Usage / spend cap** →
+keep the spend cap on so a traffic spike cannot run past the Free tier's
+included egress. Egress is the metered part: the service worker caches the two
+sizes the grid and lightbox actually request, which is what keeps it small.
 
 ### 🟠 2. Turn on leaked-password protection (30 seconds)
 Supabase Dashboard → **Authentication → Policies / Passwords** →

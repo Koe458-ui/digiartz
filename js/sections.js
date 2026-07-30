@@ -1528,7 +1528,7 @@
         cmBlock(kind, id)+
         // the resized copy: the origin bucket is not publicly readable, so a
         // link to the stored original would 403
-        (r.cover_url ? '<a class="avActWide" href="'+esc2(imgResize(r.cover_url, 1600, 85))+'" target="_blank" rel="noopener" download>\u2b07 Download cover</a>' : '')+
+        (r.cover_url ? '<a class="avActWide" href="'+esc2(imgResize(r.cover_url, 1600))+'" target="_blank" rel="noopener" download>\u2b07 Download cover</a>' : '')+
         '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
         '</div>';
     }

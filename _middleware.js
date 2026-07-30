@@ -1,38 +1,28 @@
 // pages middleware, seo at the edge
 
 const SITE = 'https://digiartz.net';
-const DIT  = 'https://d1l8dn7jegdgem.cloudfront.net';
-const DIT_HOST = new URL(DIT).hostname;
 const CACHE_SECONDS = 300;   // homepage feed, held at the edge
 const ROW_CACHE_SECONDS = 60;   // single artwork/profile rows
 
-// mirrors imgResize in js/app-core.js, including the storage dual read:
-// CloudFront rows resize on the fly, Supabase rows pick a pre-generated size by
-// filename suffix (__t300 / __v1000 / __f1600). Both hosts work at once so
-// crawlers get a valid image whether or not a row has been migrated.
+// mirrors imgResize in js/app-core.js. Every image is a Supabase Storage
+// object now and each size is its own object, identified by a filename suffix
+// (__t300 / __v1000 / __f1600), so picking a size is a suffix swap rather than
+// an on-the-fly resize. A url carrying no suffix is handed back untouched:
+// there is nothing to swap, and no resizer left to ask.
 const SB_SIZE_RE = /__(?:t300|v1000|f1600)\.webp$/;
 
-function resize(url, width, quality, format) {
+function resize(url, width) {
   if (!url || typeof url !== 'string') return url;
-  let u;
-  try { u = new URL(url); } catch { return url; }
-  if (u.hostname.endsWith('.supabase.co')) {
-    if (!SB_SIZE_RE.test(url)) return url;
-    const suffix = width <= 300 ? '__t300.webp' : width <= 1000 ? '__v1000.webp' : '__f1600.webp';
-    return url.replace(SB_SIZE_RE, suffix);
-  }
-  if (u.hostname === DIT_HOST) return url;
-  const key = u.pathname.replace(/^\/+/, '');
-  if (!key) return url;
-  return `${DIT}/fit-in/${width}x0/filters:format(${format}):quality(${quality})/${key}`;
+  if (!SB_SIZE_RE.test(url)) return url;
+  const suffix = width <= 300 ? '__t300.webp' : width <= 1000 ? '__v1000.webp' : '__f1600.webp';
+  return url.replace(SB_SIZE_RE, suffix);
 }
-const thumb = (url) => resize(url, 300, 55, 'webp');
-// jpeg for social scrapers
-const ogImage = (url) => resize(url, 1200, 80, 'jpeg');
-// schema.org contentUrl. Never the stored original: the origin bucket is not
-// publicly readable, and a contentUrl that 403s drops the image out of Google
-// Images. The largest derivative the resizer serves is the honest answer.
-const fullImage = (url) => resize(url, 1600, 85, 'jpeg');
+const thumb = (url) => resize(url, 300);
+const ogImage = (url) => resize(url, 1200);
+// schema.org contentUrl. Never the stored original: koe-originals is private,
+// and a contentUrl that 403s drops the image out of Google Images. The largest
+// public derivative is the honest answer.
+const fullImage = (url) => resize(url, 1600);
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

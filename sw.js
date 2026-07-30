@@ -4,6 +4,17 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v73 — storage migration finished, so the CloudFront half comes out.
+       The resizer host and its /fit-in/<w>x0/ cache rules are gone;
+       every image is a Supabase Storage object now, and SB_THUMB_RE /
+       SB_VIEW_RE already cache the two sizes that matter, so no
+       caching is lost with them.
+       The version bump matters more than usual here. A client holding
+       the pre-migration bundle would keep asking smart-function for an
+       S3 presigned PUT that it no longer returns, and would keep
+       requesting CloudFront urls that are about to stop resolving.
+       Refilling every cache is what retires those clients.
+
    v71 — storage migration, phases 1-3. Media is moving off S3 +
        CloudFront onto Supabase Storage, in stages, with both hosts
        serving at once so nothing breaks mid-move.
@@ -509,7 +520,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v72';
+const CACHE_VERSION = 'v73';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -582,14 +593,9 @@ const SHELL_URLS = [
 ];
 
 // hosts
-const DIT_HOST     = 'd1l8dn7jegdgem.cloudfront.net';
 const SUPABASE_RE  = /\.supabase\.co$/;
 const FONT_RE      = /^fonts\.(googleapis|gstatic)\.com$/;
 const BYPASS_RE    = /(googletagmanager|google-analytics|googlesyndication|doubleclick|cloudflareinsights)\./;
-
-// match the resize widths
-const THUMB_PATH_RE = /\/fit-in\/300x0\//;
-const VIEW_PATH_RE  = /\/fit-in\/1000x0\//;
 
 // Supabase Storage public objects. Migrated images live here, and each size is
 // a separate object identified by a filename suffix rather than a resize path.
@@ -701,19 +707,6 @@ self.addEventListener('fetch', (event) => {
       }
     })());
     return;
-  }
-
-  // resized images
-  if (url.hostname === DIT_HOST) {
-    if (THUMB_PATH_RE.test(url.pathname)) {
-      event.respondWith(cacheFirst(req, THUMB));   // grid thumbs
-      return;
-    }
-    if (VIEW_PATH_RE.test(url.pathname)) {
-      event.respondWith(cacheFirst(req, VIEW));    // opened artworks
-      return;
-    }
-    return;   // other sizes, no cache
   }
 
   // google fonts

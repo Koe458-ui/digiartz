@@ -1,8 +1,11 @@
 // ═══════════════════════════════════════════════════════════════
 // DigiArtz — Supabase Edge Function: "s3-sign"
-// Secure bridge between the static site and storage. The browser NEVER
-// holds AWS credentials; it asks this function (with the user's
-// Supabase JWT) for a signed upload target, or for a delete.
+// Secure bridge between the static site and storage. The browser
+// never gets to write anywhere on its own; it asks this function
+// (with the user's Supabase JWT) for a signed upload target, a
+// signed download, or a delete.
+//
+// The name is historical. Nothing here talks to S3 any more.
 //
 // v13 — asset uploads. Images keep the original rules unchanged
 // (25MB, strict image/* allowlist). Two new key prefixes carry the
@@ -16,7 +19,7 @@
 // hero-slides/ prefix and its admin gate are gone with them. Only
 // koe-media/ keys are signable now.
 //
-// v15 — per-user upload rate limit (AWS-bill abuse guard). A signed
+// v15 — per-user upload rate limit (bill abuse guard). A signed
 // PUT URL is cheap to mint but each one can push bytes into storage, so
 // a scripted account could otherwise inflate storage/egress cost. The
 // limit is FAIL-OPEN: any error in the ledger lets the upload through
@@ -27,23 +30,23 @@
 // v16 — "download" action, so the bucket can stop being public.
 // It mints a short-lived signed GET for an artwork's ORIGINAL, and
 // it charges the caller's daily quota through dz_request_download
-// before doing so. The gate lives here, beside the credentials, which
-// is the whole point: a signed GET cannot come into existence
-// without a download having been spent, so calling this function
-// directly buys nothing that the Download button does not. Unlike
-// upload/delete it takes an artwork ID rather than a key, so no
-// caller can aim it at an arbitrary object. FAIL-CLOSED, unlike the
-// upload limiter: if the quota cannot be checked, nothing is signed.
+// before doing so. The gate lives here, which is the whole point: a
+// signed GET cannot come into existence without a download having
+// been spent, so calling this function directly buys nothing that the
+// Download button does not. Unlike upload/delete it takes an artwork
+// ID rather than a key, so no caller can aim it at an arbitrary
+// object. FAIL-CLOSED, unlike the upload limiter: if the quota cannot
+// be checked, nothing is signed.
 //
-// v17 — storage migration. Media moves to Supabase Storage, and this
-// function keeps its job of being the only thing that authorises a
-// write. Uploads now get SUPABASE signed upload URLs instead of an S3
-// presigned PUT: the point is that every check below — mime allowlist,
-// size ceilings, extension allowlist, per-user flood limit — stays on
-// the server. Letting the browser talk to Supabase Storage directly
-// would have thrown all of it away and left only what RLS can express.
+// v17 — storage migration. Media moved to Supabase Storage, and this
+// function kept its job of being the only thing that authorises a
+// write. Uploads get SUPABASE signed upload URLs: the point is that
+// every check below — mime allowlist, size ceilings, extension
+// allowlist, per-user flood limit — stays on the server. Letting the
+// browser talk to Supabase Storage directly would have thrown all of
+// it away and left only what RLS can express.
 //
-// An image now yields FOUR signed targets, because sizes are generated
+// An image yields FOUR signed targets, because sizes are generated
 // once at upload rather than resized per request (Supabase image
 // transformations are paid-plan only):
 //   original -> koe-originals  (private)
@@ -52,12 +55,8 @@
 // changing that would silently alter the security model of a feature
 // rather than migrating it.
 //
-// The signing client is the CALLER's, not the service role, so the
-// storage RLS policies still apply on top of these checks.
-//
-// download and delete are dual-mode for the length of the migration:
-// they handle objects that are already in Supabase and objects still in
-// S3, so rows can be moved in batches without a cutover.
+// The upload signing client is the CALLER's, not the service role, so
+// the storage RLS policies still apply on top of these checks.
 //
 // v18 — delete removes with the service role instead of the caller's
 // client. The ownership test above it was always the real gate; RLS
@@ -69,15 +68,16 @@
 // list and no error, deletes reported success while the bytes stayed —
 // hidden only by the S3 leg doing the real work. The response now counts
 // what actually went rather than trusting a missing error.
+//
+// v18 also completes the migration: aws4fetch, the five AWS secrets and
+// every dual-mode S3 branch are gone. They were reachable only for a row
+// whose url still pointed at CloudFront, and there are none left. Note
+// that upload no longer returns the legacy uploadUrl/publicUrl pair, so a
+// browser running pre-migration JS out of its service worker cache will
+// fail its next upload until the worker updates. That path was going to
+// break regardless, because it uploaded to a bucket that is being deleted.
 // ═══════════════════════════════════════════════════════════════
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { AwsClient } from "npm:aws4fetch@1.0.20";
-
-const AWS_KEY    = Deno.env.get("AWS_ACCESS_KEY_ID")!;
-const AWS_SECRET = Deno.env.get("AWS_SECRET_ACCESS_KEY")!;
-const REGION     = Deno.env.get("AWS_REGION")!;
-const BUCKET     = Deno.env.get("S3_BUCKET")!;
-const CDN        = (Deno.env.get("CLOUDFRONT_URL") || "").replace(/\/$/, "");
 
 const MAX_IMG_BYTES   = 25 * 1024 * 1024;    // unchanged
 const MAX_ASSET_BYTES = 200 * 1024 * 1024;   // downloadable files
@@ -130,9 +130,6 @@ const ASSET_EXT = new Set([
   "mp4","webm","mov",
 ]);
 
-const aws = new AwsClient({ accessKeyId: AWS_KEY, secretAccessKey: AWS_SECRET, region: REGION, service: "s3" });
-const s3Host = `${BUCKET}.s3.${REGION}.amazonaws.com`;
-
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, content-type",
@@ -142,6 +139,15 @@ const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...cors, "content-type": "application/json" } });
 
 const extOf = (p: string) => (p.split(".").pop() || "").toLowerCase();
+
+// The service role is needed twice: to sign a download of somebody else's
+// original, and to remove objects after the ownership gate. Both are reached
+// only after a check that has already passed, never on the caller's say-so.
+function serviceClient() {
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!key) return null;
+  return createClient(Deno.env.get("SUPABASE_URL")!, key);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -194,37 +200,24 @@ Deno.serve(async (req) => {
     // at the public resized derivative, which is already served for display, so
     // keeping originals private costs them nothing and exposes nothing new.
     let url: string | null = null;
-    const migrated = /\.supabase\.co\//.test(row.image_url);
 
     if (gate.full) {
-      if (migrated) {
-        // Signed with the SERVICE ROLE on purpose: serving somebody else's
-        // artwork has to bypass the owner-only select policy on koe-originals,
-        // and it is only reached after the quota check above has passed.
-        const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-        if (!svcKey) return json({ error: "storage signer not configured" }, 500);
-        // storage_path is already stored without the bucket prefix
-        const objPath = String(row.storage_path || "");
-        if (!objPath || objPath.startsWith("/") || objPath.includes("..")) {
-          return json({ error: "unsupported source" }, 502);
-        }
-        const svc = createClient(Deno.env.get("SUPABASE_URL")!, svcKey);
-        const { data: sig, error: sigErr } =
-          await svc.storage.from(PRIVATE_BUCKET).createSignedUrl(objPath, DOWNLOAD_URL_TTL);
-        if (sigErr || !sig?.signedUrl) return json({ error: "could not sign the file" }, 502);
-        url = sig.signedUrl.startsWith("http")
-          ? sig.signedUrl
-          : `${Deno.env.get("SUPABASE_URL")}${sig.signedUrl}`;
-      } else {
-        // legacy: still in S3 behind CloudFront
-        let key = "";
-        try { key = new URL(row.image_url).pathname.replace(/^\/+/, ""); } catch { key = ""; }
-        if (!/^koe-media\//.test(key)) return json({ error: "unsupported source" }, 502);
-        const u = new URL(`https://${s3Host}/${key}`);
-        u.searchParams.set("X-Amz-Expires", String(DOWNLOAD_URL_TTL));
-        const signed = await aws.sign(new Request(u, { method: "GET" }), { aws: { signQuery: true } });
-        url = signed.url;
+      // Signed with the SERVICE ROLE on purpose: serving somebody else's
+      // artwork has to bypass the owner-only select policy on koe-originals,
+      // and it is only reached after the quota check above has passed.
+      const svc = serviceClient();
+      if (!svc) return json({ error: "storage signer not configured" }, 500);
+      // storage_path is already stored without the bucket prefix
+      const objPath = String(row.storage_path || "");
+      if (!objPath || objPath.startsWith("/") || objPath.includes("..")) {
+        return json({ error: "unsupported source" }, 502);
       }
+      const { data: sig, error: sigErr } =
+        await svc.storage.from(PRIVATE_BUCKET).createSignedUrl(objPath, DOWNLOAD_URL_TTL);
+      if (sigErr || !sig?.signedUrl) return json({ error: "could not sign the file" }, 502);
+      url = sig.signedUrl.startsWith("http")
+        ? sig.signedUrl
+        : `${Deno.env.get("SUPABASE_URL")}${sig.signedUrl}`;
     }
     return json({ gate, name: row.name || "", imageUrl: row.image_url, url });
   }
@@ -236,12 +229,12 @@ Deno.serve(async (req) => {
   if (!/^koe-media\//.test(path))
     return json({ error: "unknown prefix" }, 400);
 
-  // The caller sends an S3 KEY, which carries the bucket name as its first
-  // segment (koe-media/artworks/<uid>/file.png). In Supabase the bucket is
-  // named separately, so the object path is that key minus the prefix. This is
-  // not cosmetic: koe-media's policies test foldername(name)[2] = auth.uid(),
-  // and leaving the prefix on would put 'artworks' in position 2 and make RLS
-  // reject every upload. S3 keeps the prefixed form; Supabase uses objKey.
+  // The caller sends a KEY whose first segment is the bucket name
+  // (koe-media/artworks/<uid>/file.png). In Supabase the bucket is named
+  // separately, so the object path is that key minus the prefix. This is not
+  // cosmetic: koe-media's policies test foldername(name)[2] = auth.uid(), and
+  // leaving the prefix on would put 'artworks' in position 2 and make RLS
+  // reject every upload.
   const objKey = path.replace(/^koe-media\//, "");
 
   if (body.action === "upload") {
@@ -307,31 +300,13 @@ Deno.serve(async (req) => {
       return json({ error: String((e as Error).message || e) }, 500);
     }
 
-    // Backward compatible on purpose. The service worker caches the site's JS,
-    // so for a while after this deploys some browsers are still running the
-    // client that expects an S3 presigned PUT. Both shapes are returned, and
-    // each is internally consistent: an old client PUTs to uploadUrl and stores
-    // publicUrl, both S3/CloudFront; a new client uses targets and stores
-    // supabasePublicUrl. Neither can end up with a url that points at bytes
-    // that were never written. The S3 pair goes away in phase 7.
-    const legacy = new URL(`https://${s3Host}/${path}`);
-    legacy.searchParams.set("X-Amz-Expires", "300");
-    const legacySigned = await aws.sign(
-      new Request(legacy, { method: "PUT", headers: { "content-type": ct } }),
-      { aws: { signQuery: true } },
-    );
-
     return json({
       storage: "supabase",
       key: path,
-      // new client
       targets,
       // the f1600 derivative is the canonical stored url for an image: directly
       // usable for og:image, and the other sizes are a suffix swap away
       supabasePublicUrl: isImage ? sbPublicUrl(stripExt(objKey) + "__f1600.webp") : sbPublicUrl(objKey),
-      // legacy client, still S3
-      uploadUrl: legacySigned.url,
-      publicUrl: `${CDN}/${path}`,
     });
   }
 
@@ -357,46 +332,32 @@ Deno.serve(async (req) => {
 
     // The ownership test above is the gate: it checks the caller against every
     // column that can own an object. The removal itself runs with the SERVICE
-    // ROLE, the same shape "download" already uses after its quota gate.
+    // ROLE, the same shape "download" uses after its quota gate.
     //
     // It cannot run as the caller. koe-media has no delete policy that matches
     // artworks/* apart from one pinned to a single dev email, and every
     // koe-originals policy tests foldername(name)[2] = auth.uid(), which is
     // NULL for the twenty pre-convention artworks stored flat as
     // artworks/<file>. Worse, remove() on an object RLS will not surrender
-    // returns an empty list and NO error, so the previous version reported
-    // success while the bytes stayed put. That was survivable only because the
-    // S3 leg did the real deleting; with the bucket gone it becomes silent
-    // retention of art a user asked to have removed.
-    const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!svcKey) return json({ error: "storage remover not configured" }, 500);
-    const svc = createClient(Deno.env.get("SUPABASE_URL")!, svcKey);
+    // returns an empty list and NO error, so this used to report success while
+    // the bytes stayed put, hidden by the S3 leg doing the real deleting.
+    const svc = serviceClient();
+    if (!svc) return json({ error: "storage remover not configured" }, 500);
 
-    // Dual-mode for the length of the migration. The caller only knows a path,
-    // not which host holds it, so remove it from everywhere it could be:
-    // Supabase (original plus the three derivatives) and S3. Every one of these
-    // is idempotent, so hitting a home that never had the object is harmless.
+    // An image lives as an original plus three derivatives, and a non-image as
+    // a single public object. Ask for all of them: remove() is idempotent, so
+    // naming a path that was never there is harmless.
     const base = stripExt(objKey);
     const results: Record<string, unknown> = {};
-    try {
-      // count what actually went, rather than trusting the absence of an error
-      const { data: d1 } = await svc.storage.from(PRIVATE_BUCKET).remove([objKey]);
-      results.original = (d1 ?? []).length;
-      const { data: d2 } = await svc.storage.from(PUBLIC_BUCKET)
-        .remove([objKey, ...DERIVATIVES.map((d) => base + d.suffix)]);
-      results.derivatives = (d2 ?? []).length;
-    } catch { /* fall through to S3 */ }
+    // count what actually went, rather than trusting the absence of an error
+    const { data: d1 } = await svc.storage.from(PRIVATE_BUCKET).remove([objKey]);
+    results.original = (d1 ?? []).length;
+    const { data: d2 } = await svc.storage.from(PUBLIC_BUCKET)
+      .remove([objKey, ...DERIVATIVES.map((d) => base + d.suffix)]);
+    results.derivatives = (d2 ?? []).length;
 
-    let s3ok = false;
-    try {
-      const del = await aws.fetch(`https://${s3Host}/${path}`, { method: "DELETE" });
-      s3ok = del.ok;
-    } catch { /* the object may simply never have been in S3 */ }
-    results.s3 = s3ok;
-
-    // ok if it is gone from anywhere it plausibly lived
-    const removed = Number(results.original ?? 0) + Number(results.derivatives ?? 0);
-    return json({ ok: removed > 0 || s3ok, results });
+    const removed = Number(results.original) + Number(results.derivatives);
+    return json({ ok: removed > 0, results });
   }
 
   return json({ error: "unknown action" }, 400);

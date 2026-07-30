@@ -12,9 +12,8 @@ https://digiartz.net
 
 ## 🛠 Built With
 - HTML / CSS / JavaScript (single-file)
-- Supabase (database)
+- Supabase (database and storage)
 - Cloudflare Pages (hosting)
-- AWS S3 (storage)
 
 
 ## 👥 Team

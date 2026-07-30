@@ -776,7 +776,7 @@
     // not meant to stay publicly readable, and a preview that 403s is worse
     // than no preview. the edge middleware sets the same thing for scrapers,
     // which never run this code
-    var ogImg = art.image_url ? imgResize(art.image_url, 1200, 80) : '';
+    var ogImg = art.image_url ? imgResize(art.image_url, 1200) : '';
     setMeta('meta[property="og:image"]','content',ogImg);
     setMeta('meta[property="og:url"]','content',url);
     setMeta('meta[property="og:type"]','content','article');

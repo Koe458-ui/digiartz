@@ -24,23 +24,22 @@
 //
 // env: SB_URL, SB_KEY (falls back to SUPABASE_URL / SUPABASE_ANON_KEY),
 //      S3_FN_URL (defaults to SB_URL/functions/v1/smart-function),
-//      DIT_HOST, ALLOWED_ORIGINS (comma separated extra hosts)
+//      ALLOWED_ORIGINS (comma separated extra hosts)
 
 const SB_URL_FALLBACK  = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
 const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
-const DIT_FALLBACK     = 'https://d1l8dn7jegdgem.cloudfront.net';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// free tiers get a 1600px copy, paid tiers get the original
-const PREVIEW_WIDTH   = 1600;
-const PREVIEW_QUALITY = 82;
+// Free tiers get the public 1600px derivative, paid tiers get the original.
+// Each size is its own Supabase Storage object, named by suffix, so choosing
+// one is a suffix swap rather than a resize request.
+const SB_SIZE_RE = /__(?:t300|v1000|f1600)\.webp$/;
 
 export async function onRequestPost(context) {
   const { request, env } = context;
   const SB_URL  = env.SB_URL  || env.SUPABASE_URL      || SB_URL_FALLBACK;
   const SB_KEY  = env.SB_KEY  || env.SUPABASE_ANON_KEY || SB_ANON_FALLBACK;
-  const DIT     = env.DIT_HOST || DIT_FALLBACK;
   const FN_URL  = env.S3_FN_URL || `${SB_URL.replace(/\/$/, '')}/functions/v1/smart-function`;
 
   try {
@@ -117,8 +116,8 @@ export async function onRequestPost(context) {
     // paid tiers arrive as a presigned S3 GET; free tiers get the public
     // downscaled derivative, which the image CDN already serves for display
     const signed = typeof out.url === 'string' && out.url ? out.url : '';
-    const src = signed || resize(out.imageUrl, PREVIEW_WIDTH, PREVIEW_QUALITY, DIT);
-    if (!src || !allowedHost(src, DIT, SB_URL)) {
+    const src = signed || previewUrl(out.imageUrl);
+    if (!src || !allowedHost(src, SB_URL)) {
       return json({ error: 'Artwork source is not downloadable.' }, 502);
     }
 
@@ -190,32 +189,21 @@ function peekJwt(token) {
   } catch { return null; }
 }
 
-// mirrors imgresize in js/app-core.js
-function resize(url, width, quality, dit) {
+// mirrors imgResize in js/app-core.js: the largest public derivative
+function previewUrl(url) {
   if (!url || typeof url !== 'string') return url;
-  let u, ditHost;
-  try { u = new URL(url); ditHost = new URL(dit).hostname; } catch { return url; }
-  if (u.hostname === ditHost) return url;
-  if (u.hostname.endsWith('.supabase.co')) return url;
-  const key = u.pathname.replace(/^\/+/, '');
-  if (!key) return url;
-  return `${dit.replace(/\/$/, '')}/fit-in/${width}x0/filters:format(webp):quality(${quality})/${key}`;
+  return SB_SIZE_RE.test(url) ? url.replace(SB_SIZE_RE, '__f1600.webp') : url;
 }
 
-// only our own media hosts may be fetched. the url always comes from
+// only our own media host may be fetched. the url always comes from
 // smart-function rather than the request, so this is a backstop against a
 // poisoned artworks row, not a trust boundary
-const S3_HOST_RE = /\.s3(\.[a-z0-9-]+)?\.amazonaws\.com$/;
-
-function allowedHost(url, dit, sbUrl) {
+function allowedHost(url, sbUrl) {
   let u;
   try { u = new URL(url); } catch { return false; }
   if (u.protocol !== 'https:') return false;
-  try { if (u.hostname === new URL(dit).hostname) return true; } catch { /* keep checking */ }
   try { if (u.hostname === new URL(sbUrl).hostname) return true; } catch { /* keep checking */ }
-  return u.hostname.endsWith('.cloudfront.net')
-      || u.hostname.endsWith('.supabase.co')
-      || S3_HOST_RE.test(u.hostname);
+  return u.hostname.endsWith('.supabase.co');
 }
 
 function extFor(src, type) {

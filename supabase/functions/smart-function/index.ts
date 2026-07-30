@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 // DigiArtz — Supabase Edge Function: "s3-sign"
-// Secure bridge between the static site and S3. The browser NEVER
+// Secure bridge between the static site and storage. The browser NEVER
 // holds AWS credentials; it asks this function (with the user's
-// Supabase JWT) for a presigned PUT URL, or for a delete.
+// Supabase JWT) for a signed upload target, or for a delete.
 //
 // v13 — asset uploads. Images keep the original rules unchanged
 // (25MB, strict image/* allowlist). Two new key prefixes carry the
@@ -17,18 +17,18 @@
 // koe-media/ keys are signable now.
 //
 // v15 — per-user upload rate limit (AWS-bill abuse guard). A signed
-// PUT URL is cheap to mint but each one can push bytes into S3, so a
-// scripted account could otherwise inflate storage/egress cost. The
+// PUT URL is cheap to mint but each one can push bytes into storage, so
+// a scripted account could otherwise inflate storage/egress cost. The
 // limit is FAIL-OPEN: any error in the ledger lets the upload through
 // (a real artist is never blocked by a hiccup); the only new hard
 // outcome is a 429 when one account mints far more upload URLs than
 // any human workflow needs. Counts live in public.upload_events.
 //
-// v16 — "download" action, so the S3 bucket can stop being public.
-// It mints a short-lived presigned GET for an artwork's ORIGINAL, and
+// v16 — "download" action, so the bucket can stop being public.
+// It mints a short-lived signed GET for an artwork's ORIGINAL, and
 // it charges the caller's daily quota through dz_request_download
 // before doing so. The gate lives here, beside the credentials, which
-// is the whole point: a presigned GET cannot come into existence
+// is the whole point: a signed GET cannot come into existence
 // without a download having been spent, so calling this function
 // directly buys nothing that the Download button does not. Unlike
 // upload/delete it takes an artwork ID rather than a key, so no
@@ -77,7 +77,7 @@ const IMG_TYPES = /^image\/(png|jpe?g|webp|gif|avif)$/;
 const RATE_10MIN = 40;
 const RATE_24H   = 400;
 
-// A presigned GET only has to survive the hop to our own worker.
+// A signed GET only has to survive the hop to our own worker.
 const DOWNLOAD_URL_TTL = 120;
 
 // Supabase Storage buckets. koe-media keeps its eleven pre-existing
@@ -250,7 +250,7 @@ Deno.serve(async (req) => {
         return json({ error: "file too large" }, 400);
     }
 
-    // ── Per-user rate limit (AWS-bill abuse guard). FAIL-OPEN: any
+    // ── Per-user rate limit (bill abuse guard). FAIL-OPEN: any
     //    error here lets the upload proceed, so a ledger hiccup never
     //    blocks a real artist. Only a genuine flood earns a 429.
     try {

@@ -117,15 +117,42 @@ using (
 -- The service worker also stopped skipping Supabase hosts for storage objects —
 -- uncached thumbnails against metered egress was the worst case available.
 --
--- ============================================================ phases 4-7
+-- ============================================================ phase 4 (landed)
+-- Uploads go to Supabase Storage. smart-function v17 mints SUPABASE signed
+-- upload URLs instead of an S3 presigned PUT, and keeps every check it already
+-- had: mime allowlist, 25MB/200MB ceilings, asset extension allowlist, per-user
+-- flood limit. Uploading straight from the browser would have discarded all of
+-- that and left only what RLS can express, which is why the function stays in
+-- the path rather than being removed.
+--
+-- An image yields four signed targets (original -> koe-originals, three sizes
+-- -> koe-media). The browser generates the sizes in a canvas before uploading.
+-- Signing uses the CALLER's client, so storage RLS applies on top of the checks.
+--
+-- The response carries BOTH shapes — targets/supabasePublicUrl for the new
+-- client, uploadUrl/publicUrl for the old one — because the service worker
+-- caches the site's JS and some browsers run the previous client for a while
+-- after a deploy. Each pair is internally consistent, so no client can store a
+-- url pointing at bytes that were never written. The S3 pair goes in phase 7.
+--
+-- NOTE the object path. The client sends an S3 KEY, which carries the bucket
+-- name as its first segment (koe-media/artworks/<uid>/file.png). Supabase names
+-- the bucket separately, so the object path is that key minus the prefix. Not
+-- cosmetic: with the prefix left on, foldername(name)[2] is 'artworks' rather
+-- than the uid and RLS rejects EVERY upload. objKey holds the stripped form.
+--
+-- ============================================================ phase 5 (landed)
+-- The download gate is dual-mode. For a migrated row it signs the original out
+-- of koe-originals with createSignedUrl, using the SERVICE ROLE so that serving
+-- somebody else's artwork can bypass the owner-only select policy — reached
+-- only after dz_request_download has granted a unit of quota. For a row still
+-- on CloudFront it presigns S3 exactly as before. Delete is dual-mode too: the
+-- caller knows only a path, not which host holds it, so it removes from
+-- koe-originals, koe-media (original plus all three derivatives) and S3, every
+-- one idempotent.
+--
+-- ============================================================ phases 6-7
 -- Not yet applied:
---   4. switch uploads to Supabase Storage. Uploads go direct from the browser
---      via RLS, so the edge function is no longer needed to sign them; the
---      client generates the three derivatives with canvas and writes the
---      original to koe-originals plus three sizes to koe-media.
---   5. switch the download gate: replace the presigned S3 GET in
---      smart-function with createSignedUrl on koe-originals, service role,
---      still only after dz_request_download grants a unit.
 --   6. run the copier with --copy --commit to move objects and backfill urls.
 --   7. verify, then decommission: delete the S3 bucket, disable and delete both
 --      CloudFront distributions, drop the AWS secrets and the aws4fetch import

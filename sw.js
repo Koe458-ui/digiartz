@@ -4,6 +4,29 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v76 — the site's own wording is no longer copyable. Headings, button
+       labels, nav, hints and stat labels could all be long-pressed on a
+       phone or drag-selected on a desktop, which put the whole interface
+       one gesture away from being lifted wholesale. css/select.css (new)
+       turns selection off at the root and opts back in, by selector, only
+       the text a person actually typed: artwork title and description,
+       usernames and handles, bios, comments, album names, direct
+       messages, community posts, and the blog / jobs / resources /
+       marketplace bodies. Every form field stays selectable, so nothing
+       about typing, editing or the copy-link buttons changes.
+       CSS alone stops the gesture but not the shortcut, so js/protect.js
+       also guards the copy and cut events: it walks the text nodes a
+       selection actually covers and refuses the clipboard if any of them
+       is unselectable. That closes select-all-then-copy and
+       find-in-page-then-copy, which reach the clipboard without ever
+       showing a selection. It asks the computed user-select value rather
+       than keeping a second list, so css/select.css stays the only place
+       the policy is written down.
+       Not covered, because no page script can: view-source, devtools and
+       reader mode. Those need the wording gone from the HTML, not
+       guarded in it.
+       Changed: css/select.css (new), js/protect.js, index.html, sw.js.
+
    v75 — grid thumbnails go responsive. t300 was the only grid size and
        the grid is not 300px wide on a desktop: .fgGrid runs four columns
        across the full viewport with no cap, so a 1920px screen laid each
@@ -575,7 +598,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v75';
+const CACHE_VERSION = 'v76';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -612,6 +635,7 @@ const SHELL_URLS = [
   '/css/upload.css?v=1',
   '/css/widgets.css?v=1',
   '/css/overrides.css?v=1',
+  '/css/select.css?v=1',
 
   // word list goes with the engine
   '/js/badwords-list-a.js?v=1',
@@ -626,7 +650,7 @@ const SHELL_URLS = [
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
   '/js/app-core.js?v=5',
-  '/js/protect.js?v=1',
+  '/js/protect.js?v=2',
   '/js/gallery.js?v=67',
   '/js/auth.js?v=1',
   '/js/profile.js?v=2',

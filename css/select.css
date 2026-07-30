@@ -1,0 +1,83 @@
+/* text protection
+   the site's own wording — headings, button labels, nav, hints, stat labels —
+   is not selectable, so a long press or a drag has nothing to grab and the
+   browser never offers "Copy". text that a person typed is opted back in
+   below and stays fully selectable.
+
+   this file is the single source of truth for that policy: js/protect.js
+   reads the computed user-select value rather than keeping its own list, so
+   adding a selector here is enough to make a region copyable again. */
+
+html, body {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* ---------------------------------------------------------------------
+   selectable: text people wrote themselves
+   --------------------------------------------------------------------- */
+
+/* anything typed into a field, and an escape hatch for future markup */
+input, textarea, select, option,
+[contenteditable=""], [contenteditable="true"],
+[data-selectable], [data-selectable] *,
+
+/* artwork viewer — title, description, artist, tags, comments */
+#lbNm, #lbDesc, #avAuthorName, #avAuthorHandle,
+.avTagChip, .avCmName, .avCmBody,
+
+/* profile — username, handle, bio, own artwork titles and tags */
+#pfUsername, #pfHandle, #pfHeadBio, #pfBioText,
+.pfCardTitle, .pfTagChip,
+
+/* albums and ranking */
+.albName, .xpLbName,
+
+/* community posts and direct messages */
+.cpBubbleName, .cpBubbleText, .cpCommentUser, .cpShowcaseText,
+.dmMsg,
+
+/* resources, blog, marketplace and jobs — list rows and the open view */
+.dzName, .dzRow .dzHint, .dzChip, .dzFileNm,
+.dzvTitle, .dzvDesc, .dzvExcerpt, .dzvArticle,
+.dzvAuthName, .dzvAuthHandle, .dzvFileName,
+.dzPTitle, .dzPExc,
+
+/* own drafts, upload preview and queue */
+.upDraftTitle, .upPvVal, .upqTrkName,
+
+/* admin review, where the point is reading what someone submitted */
+.admCardTitle, .admCardBody {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* descendants of a selectable block (links inside an article, the <br> runs
+   in a job description) come along with it */
+#lbDesc *, .avCmBody *, #pfHeadBio *, #pfBioText *,
+.cpBubbleText *, .cpShowcaseText *, .dmMsg *,
+.dzvDesc *, .dzvExcerpt *, .dzvArticle *, .admCardBody * {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* media stays locked even inside a selectable block. the descendant rules
+   above outrank a bare type selector, so this one wins on weight instead of
+   on a specificity race that a future selector could quietly lose */
+img, picture, canvas, video, svg {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+}

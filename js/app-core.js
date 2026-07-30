@@ -35,7 +35,15 @@
       signRes = await fetch(S3_FN_URL, {
         method:'POST',
         headers:{'content-type':'application/json', 'authorization':auth},
-        body: JSON.stringify({action:'upload', path:key, contentType:file.type, size:file.size})
+        // derivatives tells the signer which sizes this build knows how to
+        // produce. Without it the signer assumes the pre-t600 set, because a
+        // target we cannot derive for is worse than a missing one: the loop in
+        // sbUploadTargets falls through to `body = file` on an unrecognised
+        // role and would PUT the untouched original under a thumbnail's name.
+        body: JSON.stringify({
+          action:'upload', path:key, contentType:file.type, size:file.size,
+          derivatives: Object.keys(DERIVE_SPEC)
+        })
       });
     }catch(e){
       throw new Error('Could not reach the upload service — check S3_FN_URL and the edge function\u2019s CORS');

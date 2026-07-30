@@ -76,6 +76,22 @@
 // browser running pre-migration JS out of its service worker cache will
 // fail its next upload until the worker updates. That path was going to
 // break regardless, because it uploaded to a bucket that is being deleted.
+//
+// v19 — a fourth derivative, t600. t300 was the only grid size and the
+// grid is not 300px wide on a desktop, so cards were being served an
+// upscaled thumbnail. The new size is negotiated rather than assumed:
+// the caller sends the roles it can encode and gets signed targets for
+// those only.
+//
+// That negotiation is the whole point of the version. The client derives
+// the bytes for each target, and sbUploadTargets falls through to
+// `body = file` for a role it does not recognise — so handing a t600
+// target to a build that predates t600 would upload the untouched
+// original, up to 25MB, under a thumbnail's name, with nothing
+// downstream to catch it. A caller that says nothing gets exactly the
+// three sizes v17 gave it, which makes this function safe to deploy
+// before, after, or independently of the site, and safe against clients
+// still running old JS out of a service worker cache.
 // ═══════════════════════════════════════════════════════════════
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -110,6 +126,15 @@ const DERIVATIVES = [
   { role: "v1000", suffix: "__v1000.webp" },
   { role: "f1600", suffix: "__f1600.webp" },
 ];
+
+// What a client that does not say gets. Signing a target the caller cannot
+// derive for is not a harmless extra: sbUploadTargets falls through to
+// `body = file` on a role it does not recognise, so a pre-t600 build handed a
+// t600 target would PUT the untouched original — up to 25MB — under a
+// thumbnail's name, and nothing downstream would notice. Deploy order between
+// this function and the site therefore has to stop mattering, in both
+// directions: old client, new function -> three targets, exactly as before.
+const LEGACY_ROLES = ["t300", "v1000", "f1600"];
 
 const stripExt   = (p: string) => p.replace(/\.[a-z0-9]+$/i, "");
 const sbPublicUrl = (path: string) =>
@@ -292,9 +317,20 @@ Deno.serve(async (req) => {
       if (isImage) {
         // the untouched original goes somewhere the public cannot reach
         await sign(PRIVATE_BUCKET, objKey, "original");
-        // display sizes, produced by the browser before it uploads
+        // display sizes, produced by the browser before it uploads. Only the
+        // ones this caller said it can encode: an unasked-for target is a
+        // corrupt object waiting to happen, not a spare.
+        const asked = Array.isArray(body.derivatives)
+          ? body.derivatives.filter((r: unknown) => typeof r === "string")
+          : LEGACY_ROLES;
+        const wanted = DERIVATIVES.filter((d) => asked.includes(d.role));
+        // f1600 is not optional: it is the url this call hands back as the
+        // canonical one for the row, so omitting it would return a link to an
+        // object nothing was ever signed to write.
+        if (!wanted.some((d) => d.role === "f1600"))
+          return json({ error: "f1600 is required" }, 400);
         const base = stripExt(objKey);
-        for (const d of DERIVATIVES) await sign(PUBLIC_BUCKET, base + d.suffix, d.role);
+        for (const d of wanted) await sign(PUBLIC_BUCKET, base + d.suffix, d.role);
       } else {
         // a downloadable asset, not an image: single public object, exactly
         // where it lived before. Gating these is separate work, not a silent

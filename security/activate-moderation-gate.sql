@@ -1,96 +1,92 @@
--- moderation gate activation
--- approved insert needs a server-minted ticket, else pending
+-- Moderation gate — INSTALLED AND INERT. One statement away from enforcing.
 --
--- run only after both:
---   1. moderate-upload.js and upqueue.js are live in production
---   2. MOD_SIGNING_SECRET is set in cloudflare pages and redeployed
---   then paste the same secret below and run in the supabase sql editor
+-- The schema, the trigger function and the trigger are already applied to the
+-- live project (migration: install_artwork_moderation_gate_inert). The secret
+-- row exists but is EMPTY, and an empty secret makes the trigger return
+-- immediately, so behaviour today is exactly what it was before.
 --
--- roll back:
---   drop trigger if exists trg_artwork_mod_gate on public.artworks;
+-- ============================================================ what it closes
+-- The insert policy on artworks is:
+--
+--   artworks_insert_own  INSERT  CHECK (auth.uid() = user_id AND current_merit() >= 80)
+--
+-- There is no constraint on `status`. So any signed-in account with merit >= 80
+-- can POST straight to PostgREST with status='approved' and never call
+-- /api/moderate-upload. The client writes mod_token, but until this gate is
+-- live nothing verifies it. The AI check is a UX gate, not a security one.
+--
+-- ============================================================ how it works
+-- /api/moderate-upload mints a single-use ticket after an image passes:
+--
+--   msg    = "<uid>.<exp>.<jti>"
+--   sig    = HMAC-SHA256(msg, MOD_SIGNING_SECRET), lowercase hex
+--   token  = "<exp>.<jti>.<sig>"            (valid 10 minutes)
+--
+-- The trigger recomputes that HMAC with the secret stored below and compares.
+-- Verified empirically, not just by reading: a token minted with Node's crypto
+-- and the signature recomputed by Postgres agree byte for byte.
+--
+-- Insert outcomes, all confirmed against a non-dev account:
+--
+--   no token          -> status forced to 'pending'   <-- the bypass, closed
+--   valid ticket      -> stays 'approved'
+--   ticket replayed   -> 'pending'  (jti primary key)
+--   expired ticket    -> 'pending'
+--   tampered sig      -> 'pending'
+--   malformed token   -> 'pending'
+--   status='pending'  -> untouched, needs no ticket
+--
+-- Paths that stay trusted, by design:
+--   auth.uid() IS NULL   server / service-role context. This is what lets the
+--                        pg_cron job publish_due_scheduled_uploads keep
+--                        publishing scheduled artwork every 5 minutes.
+--   public.is_dev()      staff accounts skip the ticket.
+--
+-- ============================================================ ACTIVATION
+-- ORDER MATTERS. Setting the secret here first would mean the Worker mints no
+-- ticket, every insert fails the check, and every upload silently lands in
+-- 'pending'. So:
+--
+--   1. Cloudflare Pages -> Settings -> Environment variables -> Production
+--      add  MOD_SIGNING_SECRET  = <the secret>
+--   2. Redeploy the site, so the Worker picks the variable up.
+--   3. Upload one artwork through the site and confirm it publishes normally.
+--   4. Only then run the statement below, with the SAME value.
+--
+-- update private.mod_config
+--    set secret = '<the same secret as MOD_SIGNING_SECRET>'
+--  where id = true;
+--
+-- The secret is deliberately not written in this file. It is a credential; it
+-- belongs in the Cloudflare dashboard and the database, not in git.
+--
+-- ============================================================ verify
+-- select case when secret = '' then 'inert' else 'enforcing' end
+--   from private.mod_config where id = true;
+--
+-- select tgname from pg_trigger
+--  where tgrelid = 'public.artworks'::regclass and not tgisinternal;
+--
+-- After a few real uploads, tickets should be accumulating:
+-- select count(*) from private.used_mod_tokens;
+--
+-- ============================================================ roll back
+-- Make it inert again without dropping anything:
 --   update private.mod_config set secret = '' where id = true;
-
-create schema if not exists private;
-create extension if not exists pgcrypto with schema extensions;
-
--- secret row, matches MOD_SIGNING_SECRET
-create table if not exists private.mod_config (
-  id     boolean primary key default true,
-  secret text not null,
-  constraint mod_config_singleton check (id)
-);
-
--- paste the cloudflare secret here
-insert into private.mod_config (id, secret)
-values (true, '__PASTE_YOUR_SECRET_HERE__')
-on conflict (id) do update set secret = excluded.secret;
-
--- consumed tickets, one pass one insert
-create table if not exists private.used_mod_tokens (
-  jti     text primary key,
-  user_id uuid,
-  used_at timestamptz not null default now()
-);
-
--- the gate
-create or replace function public.dz_artwork_mod_gate()
-returns trigger
-language plpgsql
-security definer
-set search_path = 'extensions, public'
-as $$
-declare
-  v_secret text;
-  v_uid    uuid := auth.uid();
-  parts    text[];
-  v_exp    bigint;
-  v_jti    text;
-  v_sig    text;
-  v_calc   text;
-begin
-  -- only gate approved inserts
-  if NEW.status is distinct from 'approved' then return NEW; end if;
-
-  -- no jwt means server context, trusted
-  if v_uid is null then return NEW; end if;
-
-  -- inert until a secret is set
-  select secret into v_secret from private.mod_config where id = true;
-  if v_secret is null or v_secret = '' then return NEW; end if;
-
-  -- devs are trusted
-  if public.is_dev() then NEW.mod_token := null; return NEW; end if;
-
-  -- ticket format: exp.jti.hexsig
-  parts := string_to_array(coalesce(NEW.mod_token, ''), '.');
-  if array_length(parts, 1) is distinct from 3 then
-    NEW.status := 'pending'; NEW.mod_token := null; return NEW;
-  end if;
-
-  v_exp  := (parts[1])::bigint;
-  v_jti  := parts[2];
-  v_sig  := parts[3];
-  v_calc := encode(hmac(v_uid::text || '.' || parts[1] || '.' || v_jti, v_secret, 'sha256'), 'hex');
-
-  if v_sig = v_calc and v_exp > extract(epoch from now())::bigint then
-    begin
-      -- first use wins, replay hits the key
-      insert into private.used_mod_tokens (jti, user_id) values (v_jti, v_uid);
-      NEW.mod_token := null;
-      return NEW;                              -- valid, allow approved
-    exception when unique_violation then
-      NEW.status := 'pending'; NEW.mod_token := null; return NEW;
-    end;
-  end if;
-
-  -- invalid or expired, send to review
-  NEW.status := 'pending'; NEW.mod_token := null; return NEW;
-end;
-$$;
-
-drop trigger if exists trg_artwork_mod_gate on public.artworks;
-create trigger trg_artwork_mod_gate
-  before insert on public.artworks
-  for each row execute function public.dz_artwork_mod_gate();
-
--- check: select tgname from pg_trigger where tgrelid = 'public.artworks'::regclass;
+--
+-- Remove it entirely:
+--   drop trigger if exists trg_artwork_mod_gate on public.artworks;
+--   drop function if exists public.dz_artwork_mod_gate();
+--   drop table if exists private.used_mod_tokens;
+--   drop table if exists private.mod_config;
+--
+-- ============================================================ still open
+-- This gate covers public.artworks only. Resources, marketplace items, blog
+-- posts and comics are inserted from js/sections.js against their own tables
+-- and have no equivalent ticket check. /api/moderate-upload already has a
+-- RESOURCE_PROMPT path, so the moderation exists; the enforcement does not.
+--
+-- Text moderation is also client-side only. js/badwords.js wraps
+-- supabase.createClient and scrubs insert/upsert/update payloads for artworks,
+-- comments, DMs, profiles and more. It is a display filter: the same direct
+-- PostgREST call that this gate now blocks would also skip the scrubbing.

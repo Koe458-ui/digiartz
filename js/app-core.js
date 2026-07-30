@@ -100,11 +100,19 @@
     return blob;
   }
 
-  // The three sizes imgResize() can ask for. Widths match its thresholds, and
-  // the qualities are the ones the retired resizer used, so images uploaded now
+  // The sizes imgResize() can ask for. Widths match its thresholds, and the
+  // qualities are the ones the retired resizer used, so images uploaded now
   // look like the ones migrated out of it.
+  //
+  // t600 is the odd one out: it was added after the migration because t300 was
+  // the only grid size and the grid is not 300px wide on a desktop. .fgGrid
+  // runs four columns across the full viewport, so a 1920px screen lays each
+  // cell out at ~480 CSS px and the 300px file was being upscaled 1.6x — worse
+  // on a high-DPI panel. Its quality is a shade below t300's because artefacts
+  // are less visible the more pixels you spread them over.
   var DERIVE_SPEC = {
     t300:  { width: 300,  quality: 0.55 },
+    t600:  { width: 600,  quality: 0.52 },
     v1000: { width: 1000, quality: 0.68 },
     f1600: { width: 1600, quality: 0.82 }
   };
@@ -626,13 +634,21 @@
   // Sizes are generated once at upload and live beside each other in
   // koe-media, distinguished by a filename suffix:
   //
-  //     <base>__t300.webp   __v1000.webp   __f1600.webp
+  //     <base>__t300.webp   __t600.webp   __v1000.webp   __f1600.webp
   //
   // The stored url is always the __f1600 one, so picking another size is a
   // suffix swap. Supabase image transformations are a paid-plan feature and are
   // deliberately not relied on. A url with no suffix to swap comes back
   // untouched: there is no resizer to fall back to any more.
-  var SB_SIZE_RE = /__(?:t300|v1000|f1600)\.webp$/;
+  var SB_SIZE_RE = /__(?:t300|t600|v1000|f1600)\.webp$/;
+
+  // t600 arrived after the migration, so it exists only for images uploaded
+  // since. Everything that can emit a t600 url is gated on this until the
+  // backfill has run and config.js sets it, because a MISSING srcset candidate
+  // is not survivable: the browser does not fall back to another entry in the
+  // list, it just fails the image. Left unset, every path below behaves exactly
+  // as it did before t600 existed.
+  var T600_READY = !!(window.KOE_CONFIG && window.KOE_CONFIG.T600_READY);
 
   function sbSwapSize(url, suffix){
     return SB_SIZE_RE.test(url) ? url.replace(SB_SIZE_RE, suffix) : url;
@@ -643,11 +659,68 @@
   function imgResize(url, width){
     if(!url || typeof url !== 'string') return url;
     if(width <= 300)  return sbSwapSize(url, '__t300.webp');
+    if(width <= 600 && T600_READY) return sbSwapSize(url, '__t600.webp');
     if(width <= 1000) return sbSwapSize(url, '__v1000.webp');
     return sbSwapSize(url, '__f1600.webp');
   }
   function getThumbnailUrl(url){ return imgResize(url, 300); }
   function getViewUrl(url){ return imgResize(url, 1000); }
+
+  // ── responsive grid thumbnails ───────────────────────────────────────────
+  // One fixed file cannot serve every screen. A grid cell is ~195 CSS px on a
+  // phone and ~480 on a 1080p desktop, so srcset hands the browser the list of
+  // sizes that exist and lets it pick: it computes (sizes value x DPR) and
+  // takes the smallest candidate at or above that.
+  //
+  // f1600 is deliberately NOT a candidate. It is the download size; letting a
+  // 4K screen pull 138KB per cell for a grid would cost more egress than the
+  // blur it fixes is worth.
+  var DZ_SRCSET_WIDTHS = [300, 600, 1000];
+
+  // Effective DPR is capped at 2. Left uncapped, a DPR-3 phone with a ~215 CSS
+  // px cell asks for 645px and pulls v1000 (~60KB) instead of t600 (~28KB) —
+  // double the bytes on the connection least able to afford them, for a
+  // difference no eye resolves at that physical size. sizes is scaled down by
+  // cap/DPR so the browser's own multiply lands back on the capped figure.
+  var DZ_DPR_CAP = 2;
+  function dzDprScale(){
+    var dpr = window.devicePixelRatio || 1;
+    return dpr > DZ_DPR_CAP ? (DZ_DPR_CAP / dpr) : 1;
+  }
+
+  // Mirrors the artwork grids in css: 4 columns at >=1280px, 3 at >=700px,
+  // 2 below. If those breakpoints move, these move with them or the browser
+  // picks against a layout that is not there any more.
+  function dzGridSizes(){
+    var s = dzDprScale();
+    var f = function(vw){ return +(vw * s).toFixed(2); };
+    return '(min-width:1280px) ' + f(25) + 'vw, (min-width:700px) ' + f(33.33) + 'vw, ' + f(50) + 'vw';
+  }
+
+  function dzSrcset(url){
+    if(!T600_READY || !url || !SB_SIZE_RE.test(url)) return '';
+    return DZ_SRCSET_WIDTHS.map(function(w){
+      return sbSwapSize(url, '__' + (w === 1000 ? 'v1000' : 't' + w) + '.webp') + ' ' + w + 'w';
+    }).join(', ');
+  }
+
+  // The src/srcset/sizes attribute triplet for a grid thumbnail, ready to drop
+  // into a template string. src stays t300 on its own so anything that ignores
+  // srcset behaves exactly as it did before.
+  function dzThumbAttrs(url){
+    var attrs = 'src="' + esc(getThumbnailUrl(url || '')) + '"';
+    var ss = dzSrcset(url || '');
+    if(ss) attrs += ' srcset="' + esc(ss) + '" sizes="' + esc(dzGridSizes()) + '"';
+    return attrs;
+  }
+
+  // Same choice for an <img> built through the DOM rather than a template.
+  function dzApplyThumb(im, url){
+    if(!im) return;
+    var ss = dzSrcset(url || '');
+    if(ss){ im.srcset = ss; im.sizes = dzGridSizes(); }
+    im.src = getThumbnailUrl(url || '');
+  }
   // largest thing safe to hand out publicly. never the private original: on
   // Supabase that lives in koe-originals and is only reachable through a signed
   // url minted after the quota check.
@@ -657,7 +730,7 @@
   }
 
   function itemHTML(img){
-    const thumbSrc=esc(getThumbnailUrl(img.image_url||''));
+    const thumbAttrs=dzThumbAttrs(img.image_url||'');
     const thumbPos=thumbStyle(img.thumb_x, img.thumb_y, img.thumb_zoom);
     const fullSrc=esc(img.image_url);
     const cats=catList(img.category).length?catList(img.category):['others'];
@@ -677,7 +750,7 @@
     return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
         <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>${multiBadge}
-        <img src="${thumbSrc}" alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
+        <img ${thumbAttrs} alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
         <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
         ${artistChip}
         <div class="gNm" itemprop="name">${esc(img.name)}</div>

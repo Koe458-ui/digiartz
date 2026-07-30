@@ -68,7 +68,9 @@
     var img = document.createElement('img');
     img.onload  = function(){ wrap.classList.remove('awLoading'); };
     img.onerror = function(){ wrap.classList.remove('awLoading'); };
-    img.src = getThumbnailUrl(fullSrc);
+    // srcset before src: the browser resolves the candidate list at the moment
+    // src is assigned, so setting it the other way round can fetch t300 first
+    dzApplyThumb(img, fullSrc);
     img.style.cssText = thumbStyle(item.thumb_x, item.thumb_y, item.thumb_zoom);
     img.alt = name;
     img.loading = 'lazy';

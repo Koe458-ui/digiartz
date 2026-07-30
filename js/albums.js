@@ -566,7 +566,7 @@
     var tags = (a.tags && a.tags.length) ? a.tags : catList(a.category);
     // read only showcase
     return '<div class="awCard" onclick="pfOpenArtwork(\''+esc(String(a.id))+'\')">'+
-      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'">'+
+      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" '+dzThumbAttrs(a.image_url)+' alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'">'+
       '</div>'+
       '<div class="pfCardMeta">'+
         '<div class="pfCardTitle">'+esc(a.name||'Untitled')+'</div>'+

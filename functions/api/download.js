@@ -34,7 +34,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // Free tiers get the public 1600px derivative, paid tiers get the original.
 // Each size is its own Supabase Storage object, named by suffix, so choosing
 // one is a suffix swap rather than a resize request.
-const SB_SIZE_RE = /__(?:t300|v1000|f1600)\.webp$/;
+const SB_SIZE_RE = /__(?:t300|t600|v1000|f1600)\.webp$/;
 
 export async function onRequestPost(context) {
   const { request, env } = context;

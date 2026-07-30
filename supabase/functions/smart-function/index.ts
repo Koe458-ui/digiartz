@@ -100,8 +100,13 @@ const PRIVATE_BUCKET = "koe-originals";
 // The size lives in the filename, never a path prefix: koe-media's policies
 // test foldername(name)[2] = auth.uid(), and a prefix would shift the owner to
 // position 3 and break every one of them.
+// v19 adds t600: t300 was the only grid size, and the grid is not 300px wide on
+// a desktop, so every card above ~300 CSS px was being upscaled. Adding a role
+// here is half the contract — js/app-core.js DERIVE_SPEC must carry the matching
+// width/quality or the browser will have nothing to PUT at the signed target.
 const DERIVATIVES = [
   { role: "t300",  suffix: "__t300.webp" },
+  { role: "t600",  suffix: "__t600.webp" },
   { role: "v1000", suffix: "__v1000.webp" },
   { role: "f1600", suffix: "__f1600.webp" },
 ];

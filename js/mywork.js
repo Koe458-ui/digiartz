@@ -28,11 +28,11 @@
   }
   function mwCardHTML(row){
     var idStr = esc(String(row.id));
-    var img = esc(getThumbnailUrl(row.image_url));
+    var img = dzThumbAttrs(row.image_url);
     var title = esc(row.name||'Untitled');
     return '<div class="admCard" data-id="'+idStr+'">'+
       '<div class="admCardThumb">'+
-        '<img class="admCardImg" src="'+img+'" alt="'+title+'" loading="lazy" style="'+thumbStyle(row.thumb_x, row.thumb_y, row.thumb_zoom)+'">'+
+        '<img class="admCardImg" '+img+' alt="'+title+'" loading="lazy" style="'+thumbStyle(row.thumb_x, row.thumb_y, row.thumb_zoom)+'">'+
       '</div>'+
       '<div class="admCardBody">'+
         '<div class="admCardTitle">'+title+'</div>'+

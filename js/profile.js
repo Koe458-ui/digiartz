@@ -416,7 +416,7 @@
 
   function pfSavedCardHTML(a){
     return '<div class="awCard" onclick="pfSavedOpen(\''+esc(String(a.id))+'\')">'+
-      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" src="'+esc(getThumbnailUrl(a.image_url))+'" alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'"></div>'+
+      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" '+dzThumbAttrs(a.image_url)+' alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'"></div>'+
     '</div>';
   }
   async function pfSavedOpen(id){

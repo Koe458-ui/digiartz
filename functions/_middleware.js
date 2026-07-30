@@ -6,10 +6,10 @@ const ROW_CACHE_SECONDS = 60;   // single artwork/profile rows
 
 // mirrors imgResize in js/app-core.js. Every image is a Supabase Storage
 // object now and each size is its own object, identified by a filename suffix
-// (__t300 / __v1000 / __f1600), so picking a size is a suffix swap rather than
-// an on-the-fly resize. A url carrying no suffix is handed back untouched:
-// there is nothing to swap, and no resizer left to ask.
-const SB_SIZE_RE = /__(?:t300|v1000|f1600)\.webp$/;
+// (__t300 / __t600 / __v1000 / __f1600), so picking a size is a suffix swap
+// rather than an on-the-fly resize. A url carrying no suffix is handed back
+// untouched: there is nothing to swap, and no resizer left to ask.
+const SB_SIZE_RE = /__(?:t300|t600|v1000|f1600)\.webp$/;
 
 function resize(url, width) {
   if (!url || typeof url !== 'string') return url;
@@ -18,6 +18,23 @@ function resize(url, width) {
   return url.replace(SB_SIZE_RE, suffix);
 }
 const thumb = (url) => resize(url, 300);
+const t600 = (url) => (SB_SIZE_RE.test(url || '') ? url.replace(SB_SIZE_RE, '__t600.webp') : url);
+
+// srcset for the homepage cards this worker renders. Mirrors dzThumbAttrs in
+// js/app-core.js, minus the device-pixel-ratio cap: there is no DPR to read at
+// the edge, so the browser applies its own and picks from what it is offered.
+//
+// Gated on T600_READY for the same reason as the client — t600 exists only for
+// images uploaded after the tier was added, and a srcset candidate that 404s
+// breaks the image rather than falling back. Unset, this emits exactly the
+// single-src markup it always did.
+function thumbAttrs(url, env) {
+  const src = `src="${esc(thumb(url))}"`;
+  if (!env || !env.T600_READY || !SB_SIZE_RE.test(url || '')) return src;
+  const set = `${esc(thumb(url))} 300w, ${esc(t600(url))} 600w, ${esc(resize(url, 1000))} 1000w`;
+  return `${src} srcset="${set}" ` +
+         `sizes="(min-width:1280px) 25vw, (min-width:700px) 33.33vw, 50vw"`;
+}
 const ogImage = (url) => resize(url, 1200);
 // schema.org contentUrl. Never the stored original: koe-originals is private,
 // and a contentUrl that 403s drops the image out of Google Images. The largest
@@ -254,7 +271,7 @@ export async function onRequest(context) {
   if (arts.length) {
     const cards = arts.map((a) =>
       `<a class="awCard" href="/artwork/${esc(a.id)}"><div class="awImgWrap">` +
-      `<img loading="lazy" decoding="async" src="${esc(thumb(a.image_url))}" ` +
+      `<img loading="lazy" decoding="async" ${thumbAttrs(a.image_url, env)} ` +
       `alt="${esc(a.name)} — digital artwork on DigiArtz"></div></a>`
     ).join('');
 

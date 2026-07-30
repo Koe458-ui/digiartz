@@ -166,7 +166,7 @@
     var id = esc(r.id);
     if(sec === 'resources'){
       var thumb = r.preview_url
-        ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.preview_url))+'" alt="'+esc(r.title)+'">'
+        ? '<img loading="lazy" decoding="async" '+dzThumbAttrs(r.preview_url)+' alt="'+esc(r.title)+'">'
         : '<span class="dzExt">'+esc((r.file_ext||'FILE').toUpperCase())+'</span>';
       // card opens the detail view
       return '<div class="dzCard" onclick="dzOpenView(\'resources\',\''+id+'\')">'+
@@ -178,7 +178,7 @@
     }
     if(sec === 'marketplace'){
       var mt = r.preview_url
-        ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(r.preview_url))+'" alt="'+esc(r.title)+'">'
+        ? '<img loading="lazy" decoding="async" '+dzThumbAttrs(r.preview_url)+' alt="'+esc(r.title)+'">'
         : '<span class="dzExt">'+esc((r.item_type||'ITEM').toUpperCase())+'</span>';
       // file url never reaches the client
       var hasFile = r.file_ext ? 1 : 0;

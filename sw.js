@@ -616,7 +616,7 @@ const BYPASS_RE    = /(googletagmanager|google-analytics|googlesyndication|doubl
 // grid is the most expensive thing the site can do. Everything else on the
 // Supabase host (rest, auth, realtime) stays uncached.
 const SB_OBJECT_RE = /^\/storage\/v1\/object\/public\//;
-const SB_THUMB_RE  = /__t300\.webp$/;
+const SB_THUMB_RE  = /__(?:t300|t600)\.webp$/;
 const SB_VIEW_RE   = /__v1000\.webp$/;
 
 // install, precache the shell

@@ -4,6 +4,31 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v75 — grid thumbnails go responsive. t300 was the only grid size and
+       the grid is not 300px wide on a desktop: .fgGrid runs four columns
+       across the full viewport with no cap, so a 1920px screen laid each
+       cell out at ~480 CSS px and upscaled the 300px file 1.6x, or 3.2x
+       on a high-DPI panel. A new t600 (600px, q0.52) joins the set and
+       the artwork grids now emit a srcset of 300/600/1000 with a sizes
+       string matching the 2/3/4-column breakpoints, so the browser picks
+       per screen. f1600 is kept out of the candidate list — it is the
+       download size, and a 4K screen pulling it per cell would cost more
+       egress than the blur it fixes is worth.
+       Effective DPR is capped at 2: uncapped, a DPR-3 phone asks for
+       645px and takes v1000 (~60KB) over t600 (~28KB) for a difference
+       invisible at that physical size.
+       SB_THUMB_RE now covers t600 so the new size caches beside t300
+       rather than falling through to the network every time.
+       t600 exists only for images uploaded since, and a srcset candidate
+       that 404s fails the image instead of falling back, so every path
+       that can emit one is gated on T600_READY (config.js for the client,
+       Pages env for the worker) until security/backfill-t600.mjs has run.
+       Changed: js/app-core.js, js/profile.js, js/albums.js, js/mywork.js,
+       js/sections.js, js/startup.js, sw.js, functions/_middleware.js,
+       _middleware.js, functions/api/download.js,
+       supabase/functions/smart-function/index.ts,
+       security/backfill-t600.mjs (new), config.example.js.
+
    v74 — every upload button now records itself in its own table.
        Eight media tables existed but nothing read or wrote them, so they
        sat empty while the app kept using the flat columns. Uploads now
@@ -533,7 +558,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v74';
+const CACHE_VERSION = 'v75';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -583,18 +608,18 @@ const SHELL_URLS = [
   '/js/composer.js?v=1',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
-  '/js/app-core.js?v=4',
+  '/js/app-core.js?v=5',
   '/js/protect.js?v=1',
   '/js/gallery.js?v=67',
   '/js/auth.js?v=1',
-  '/js/profile.js?v=1',
-  '/js/albums.js?v=1',
+  '/js/profile.js?v=2',
+  '/js/albums.js?v=2',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=1',
-  '/js/mywork.js?v=2',
-  '/js/startup.js?v=1',
+  '/js/mywork.js?v=3',
+  '/js/startup.js?v=2',
   '/js/tagrail.js?v=1',
   '/js/search.js?v=1',
   '/js/effects.js?v=1',
@@ -602,7 +627,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
-  '/js/sections.js?v=70'
+  '/js/sections.js?v=71'
 ];
 
 // hosts

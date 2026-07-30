@@ -6,13 +6,22 @@ const DIT_HOST = new URL(DIT).hostname;
 const CACHE_SECONDS = 300;   // homepage feed, held at the edge
 const ROW_CACHE_SECONDS = 60;   // single artwork/profile rows
 
-// mirrors imgresize in index.html
+// mirrors imgResize in js/app-core.js, including the storage dual read:
+// CloudFront rows resize on the fly, Supabase rows pick a pre-generated size by
+// filename suffix (__t300 / __v1000 / __f1600). Both hosts work at once so
+// crawlers get a valid image whether or not a row has been migrated.
+const SB_SIZE_RE = /__(?:t300|v1000|f1600)\.webp$/;
+
 function resize(url, width, quality, format) {
   if (!url || typeof url !== 'string') return url;
   let u;
   try { u = new URL(url); } catch { return url; }
+  if (u.hostname.endsWith('.supabase.co')) {
+    if (!SB_SIZE_RE.test(url)) return url;
+    const suffix = width <= 300 ? '__t300.webp' : width <= 1000 ? '__v1000.webp' : '__f1600.webp';
+    return url.replace(SB_SIZE_RE, suffix);
+  }
   if (u.hostname === DIT_HOST) return url;
-  if (u.hostname.endsWith('.supabase.co')) return url;
   const key = u.pathname.replace(/^\/+/, '');
   if (!key) return url;
   return `${DIT}/fit-in/${width}x0/filters:format(${format}):quality(${quality})/${key}`;

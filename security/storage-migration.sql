@@ -81,15 +81,52 @@ using (
   and ((storage.foldername(name))[2] = (auth.uid())::text or public.is_dev())
 );
 
--- ============================================================ phases 2-7
--- Not yet applied. See the migration plan:
---   2. copy the 24 artworks + 4 avatars across, originals -> koe-originals,
---      derivatives -> koe-media. Must run while the CloudFront URLs are still
---      public, since the copier reads from them.
---   3. dual-read helpers: resolve a stored URL on either host, so display keeps
---      working with a mix of migrated and unmigrated rows.
---   4. switch uploads to Supabase Storage, writing both bucket copies.
---   5. switch the download gate to a Supabase signed URL.
---   6. backfill the URL columns on artworks / profiles / resources /
---      marketplace_items / blog_posts / comics.
---   7. verify, then decommission the S3 bucket and both distributions.
+-- ============================================================ phase 2 (code
+-- landed, not yet run) scripts/migrate-storage.mjs copies the objects across.
+-- Runs from a developer machine with the service-role key. Reads from the
+-- CloudFront urls, so it MUST run before either distribution is disabled.
+-- Three modes: plan (default, writes nothing), --copy (objects only),
+-- --copy --commit (also rewrites the url columns).
+--
+-- Sizes are generated ONCE at upload rather than resized per request, because
+-- Supabase image transformations are a paid-plan feature and this has to work
+-- on Free. Each size is its own object:
+--
+--   koe-originals  artworks/<uid>/<base>.<ext>        untouched original
+--   koe-media      artworks/<uid>/<base>__t300.webp   grid thumbnail
+--   koe-media      artworks/<uid>/<base>__v1000.webp  lightbox
+--   koe-media      artworks/<uid>/<base>__f1600.webp  free download, og:image
+--
+-- The size lives in the FILENAME, never a path prefix: koe-media's existing
+-- policies test foldername(name)[2] = auth.uid(), and a prefix like
+-- t300/artworks/<uid>/... would shift the owner to position 3 and break every
+-- one of them. Keeping <prefix>/<uid>/<file> is why no existing policy changed.
+--
+-- Column meaning after migration:
+--   image_url     public url of the __f1600 derivative. Directly usable, and
+--                 the other sizes are a suffix swap away.
+--   storage_path  path of the ORIGINAL in koe-originals. What the download gate
+--                 signs and what deletes remove.
+--
+-- ============================================================ phase 3 (landed)
+-- Dual read. imgResize in js/app-core.js, resize() in the edge middleware and
+-- crawlImage() in the sitemap all accept either host: a CloudFront url resizes
+-- on the fly, a Supabase url swaps the size suffix. Display is therefore
+-- correct with any mix of migrated and unmigrated rows, which is what makes the
+-- copy safe to run incrementally.
+-- The service worker also stopped skipping Supabase hosts for storage objects —
+-- uncached thumbnails against metered egress was the worst case available.
+--
+-- ============================================================ phases 4-7
+-- Not yet applied:
+--   4. switch uploads to Supabase Storage. Uploads go direct from the browser
+--      via RLS, so the edge function is no longer needed to sign them; the
+--      client generates the three derivatives with canvas and writes the
+--      original to koe-originals plus three sizes to koe-media.
+--   5. switch the download gate: replace the presigned S3 GET in
+--      smart-function with createSignedUrl on koe-originals, service role,
+--      still only after dz_request_download grants a unit.
+--   6. run the copier with --copy --commit to move objects and backfill urls.
+--   7. verify, then decommission: delete the S3 bucket, disable and delete both
+--      CloudFront distributions, drop the AWS secrets and the aws4fetch import
+--      from the edge function.

@@ -437,21 +437,53 @@
   var DIT_HOSTNAME = '';
   try{ DIT_HOSTNAME = new URL(DIT_HOST).hostname; }catch(e){}
 
+  // Storage migration, dual read. A stored url is on one of two hosts and each
+  // resizes differently, so every size request goes through here:
+  //
+  //   CloudFront  legacy. The resizer distribution builds the size on the fly
+  //               from the original: /fit-in/<w>x0/filters:.../<key>
+  //   Supabase    migrated. Sizes were generated once at upload and live beside
+  //               each other, distinguished by a filename suffix:
+  //                 <base>__t300.webp  __v1000.webp  __f1600.webp
+  //               The stored url is always the __f1600 one, so picking another
+  //               size is a suffix swap. Supabase image transformations are a
+  //               paid-plan feature and are deliberately not relied on.
+  //
+  // Both hosts work at once, so display is correct whether or not a given row
+  // has been migrated yet.
+  var SB_SIZE_RE = /__(?:t300|v1000|f1600)\.webp$/;
+
+  function sbSwapSize(url, suffix){
+    return SB_SIZE_RE.test(url) ? url.replace(SB_SIZE_RE, suffix) : url;
+  }
+
   function imgResize(url, width, quality){
     if(!url || typeof url !== 'string') return url;
     var u;
     try{ u = new URL(url); }catch(e){ return url; }
+    if(u.hostname.endsWith('.supabase.co')){
+      // nearest generated size at or above what was asked for
+      if(width <= 300)  return sbSwapSize(url, '__t300.webp');
+      if(width <= 1000) return sbSwapSize(url, '__v1000.webp');
+      return sbSwapSize(url, '__f1600.webp');
+    }
     if(DIT_HOSTNAME && u.hostname === DIT_HOSTNAME) return url;
-    if(u.hostname.endsWith('.supabase.co')) return url;
     var key = u.pathname.replace(/^\/+/, '');
     if(!key) return url;
     return DIT_HOST.replace(/\/$/,'') + '/fit-in/' + width + 'x0/filters:format(webp):quality(' + quality + ')/' + key;
   }
   function getThumbnailUrl(url){ return imgResize(url, 300, 55); }
   function getViewUrl(url){ return imgResize(url, 1000, 68); }
+  // largest thing safe to hand out publicly. never the private original: on
+  // Supabase that lives in koe-originals and is only reachable through a signed
+  // url minted after the quota check.
   function getFullUrl(url){
     if(!url || typeof url !== 'string') return url;
-    try{ var u = new URL(url); u.search=''; return u.toString(); }
+    try{
+      var u = new URL(url);
+      if(u.hostname.endsWith('.supabase.co')) return sbSwapSize(url, '__f1600.webp');
+      u.search=''; return u.toString();
+    }
     catch(e){ return url; }
   }
 

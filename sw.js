@@ -4,6 +4,37 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v71 — storage migration, phases 1-3. Media is moving off S3 +
+       CloudFront onto Supabase Storage, in stages, with both hosts
+       serving at once so nothing breaks mid-move.
+       Two buckets: koe-media stays public and unchanged for display
+       derivatives, avatars and banners (all eleven of its existing
+       policies intact); a new private koe-originals holds artwork
+       originals and paid asset files, reachable only through a signed
+       url minted after the daily quota is spent.
+       Sizes are now generated once at upload rather than resized on the
+       fly, because Supabase image transformations are a paid-plan
+       feature and this must work on Free. Each size is its own object,
+       distinguished by a filename suffix — __t300 / __v1000 / __f1600 —
+       and the size sits in the filename rather than a path prefix so
+       koe-media's foldername[2] = auth.uid() policies keep working.
+       imgResize, the edge middleware and the sitemap all dual-read: a
+       CloudFront url still resizes on the fly, a Supabase url swaps the
+       suffix. Correct whether or not a given row has been migrated.
+       The SW previously skipped every Supabase host, which after the
+       move would have meant zero caching for images and the largest
+       possible metered egress. Public storage objects are now cached by
+       size, thumbs and lightbox views, while rest/auth/realtime stay
+       uncached as before.
+       scripts/migrate-storage.mjs copies the objects across, pulling
+       each derivative from the resizer distribution being retired so
+       nothing is re-encoded. Must run before that distribution is
+       disabled.
+       Changed: js/app-core.js, sw.js, functions/_middleware.js,
+       _middleware.js, functions/sitemap.xml.js,
+       scripts/migrate-storage.mjs (new),
+       security/storage-migration.sql.
+
    v70 — artwork downloads are metered per day and no longer reachable
        any way except the Download button. The button now posts to
        /api/download, which spends a quota unit through
@@ -478,7 +509,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v70';
+const CACHE_VERSION = 'v71';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -528,7 +559,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=1',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
-  '/js/app-core.js?v=1',
+  '/js/app-core.js?v=2',
   '/js/protect.js?v=1',
   '/js/gallery.js?v=67',
   '/js/auth.js?v=1',
@@ -559,6 +590,15 @@ const BYPASS_RE    = /(googletagmanager|google-analytics|googlesyndication|doubl
 // match the resize widths
 const THUMB_PATH_RE = /\/fit-in\/300x0\//;
 const VIEW_PATH_RE  = /\/fit-in\/1000x0\//;
+
+// Supabase Storage public objects. Migrated images live here, and each size is
+// a separate object identified by a filename suffix rather than a resize path.
+// These MUST be cached: Supabase egress is metered, so an uncached thumbnail
+// grid is the most expensive thing the site can do. Everything else on the
+// Supabase host (rest, auth, realtime) stays uncached.
+const SB_OBJECT_RE = /^\/storage\/v1\/object\/public\//;
+const SB_THUMB_RE  = /__t300\.webp$/;
+const SB_VIEW_RE   = /__v1000\.webp$/;
 
 // install, precache the shell
 self.addEventListener('install', (event) => {
@@ -635,6 +675,14 @@ self.addEventListener('fetch', (event) => {
   let url;
   try { url = new URL(req.url); } catch { return; }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return;
+
+  // migrated images, cached by size. checked before the Supabase skip below,
+  // which is there for rest/auth/realtime and would otherwise cover these too
+  if (SUPABASE_RE.test(url.hostname) && SB_OBJECT_RE.test(url.pathname)) {
+    if (SB_THUMB_RE.test(url.pathname)) { event.respondWith(cacheFirst(req, THUMB)); return; }
+    if (SB_VIEW_RE.test(url.pathname))  { event.respondWith(cacheFirst(req, VIEW));  return; }
+    return;   // other sizes, no cache
+  }
 
   // skip live data
   if (SUPABASE_RE.test(url.hostname) || BYPASS_RE.test(url.hostname)) return;

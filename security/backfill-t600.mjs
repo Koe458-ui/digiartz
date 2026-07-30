@@ -2,6 +2,15 @@
 // Backfill the __t600.webp derivative for images uploaded before the size
 // existed.
 //
+// STATUS: the 2026-07-30 backfill was NOT run with this script. There was no
+// Node available, so it ran inside Supabase instead — see
+// supabase/functions/backfill-t600/index.ts, which sources from the existing
+// f1600 rather than the original because an edge worker cannot hold a
+// full-size decode in memory. All 30 images were covered, 0 failed.
+// This script is still the better tool when Node IS available: it works from
+// the untouched originals, so it avoids the extra lossy generation. Keep it
+// for the next batch of images that predates a new size.
+//
 // WHY THIS EXISTS
 // Derivatives are generated in the browser at upload time (Supabase image
 // transformations are a paid-plan feature), so adding a size to DERIVE_SPEC

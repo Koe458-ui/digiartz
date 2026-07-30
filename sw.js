@@ -509,7 +509,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v71';
+const CACHE_VERSION = 'v72';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -559,7 +559,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=1',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
-  '/js/app-core.js?v=2',
+  '/js/app-core.js?v=3',
   '/js/protect.js?v=1',
   '/js/gallery.js?v=67',
   '/js/auth.js?v=1',

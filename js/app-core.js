@@ -42,6 +42,15 @@
     }
     const signJson = await signRes.json().catch(function(){return{};});
     if(!signRes.ok) throw new Error(signJson.error || ('Upload authorization failed ('+signRes.status+')'));
+
+    // Supabase Storage when the signer offers it, S3 when it does not. The
+    // signer returns both shapes during the migration, so this works against
+    // either version of it and there is no deploy-order trap.
+    if(Array.isArray(signJson.targets) && signJson.targets.length){
+      await sbUploadTargets(signJson.targets, file);
+      return signJson.supabasePublicUrl || signJson.publicUrl;
+    }
+
     if(!signJson.uploadUrl) throw new Error('Upload service returned no uploadUrl');
     // step 2, put to s3
     let putRes;
@@ -52,6 +61,79 @@
     }
     if(!putRes.ok) throw new Error('Upload failed ('+putRes.status+') — presigned URL rejected by S3');
     return signJson.publicUrl;
+  }
+
+  // Downscale in the browser. Sizes are generated once here rather than resized
+  // per request, because Supabase image transformations are a paid-plan feature
+  // and this has to work without one. Never upscales: a small source is just
+  // re-encoded at its own width, which keeps the filename contract intact so
+  // every size a caller asks for actually exists.
+  async function imgDerive(file, maxWidth, quality){
+    var bmp;
+    try{
+      bmp = await createImageBitmap(file);
+    }catch(e){
+      bmp = await new Promise(function(res, rej){
+        var url = URL.createObjectURL(file), im = new Image();
+        im.onload  = function(){ URL.revokeObjectURL(url); res(im); };
+        im.onerror = function(){ URL.revokeObjectURL(url); rej(new Error('Could not decode image')); };
+        im.src = url;
+      });
+    }
+    var sw = bmp.width || bmp.naturalWidth, sh = bmp.height || bmp.naturalHeight;
+    if(!sw || !sh) throw new Error('Could not read image size');
+    var scale = Math.min(1, maxWidth / sw);
+    var w = Math.max(1, Math.round(sw * scale)), h = Math.max(1, Math.round(sh * scale));
+    var cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    var cx = cv.getContext('2d');
+    cx.imageSmoothingEnabled = true;
+    cx.imageSmoothingQuality = 'high';
+    cx.drawImage(bmp, 0, 0, w, h);
+    if(bmp.close) try{ bmp.close(); }catch(e){}
+    var blob = await new Promise(function(res){ cv.toBlob(res, 'image/webp', quality); });
+    // a browser that cannot encode webp hands back null or another type
+    if(!blob || blob.type !== 'image/webp'){
+      blob = await new Promise(function(res){ cv.toBlob(res, 'image/jpeg', quality); });
+    }
+    if(!blob) throw new Error('Could not encode image');
+    return blob;
+  }
+
+  // widths and qualities match the imgResize() call sites, so a migrated image
+  // looks the same as the CloudFront resizer produced
+  var DERIVE_SPEC = {
+    t300:  { width: 300,  quality: 0.55 },
+    v1000: { width: 1000, quality: 0.68 },
+    f1600: { width: 1600, quality: 0.82 }
+  };
+
+  // PUT each signed target. The original goes up untouched; every other target
+  // is a derivative generated here first.
+  async function sbUploadTargets(targets, file){
+    for(var i=0;i<targets.length;i++){
+      var t = targets[i];
+      var body = file, type = file.type;
+      if(t.role && DERIVE_SPEC[t.role]){
+        var spec = DERIVE_SPEC[t.role];
+        body = await imgDerive(file, spec.width, spec.quality);
+        type = body.type || 'image/webp';
+      }
+      var res;
+      try{
+        res = await fetch(t.signedUrl, {
+          method: 'PUT',
+          headers: { 'content-type': type, 'x-upsert': 'true' },
+          body: body
+        });
+      }catch(e){
+        throw new Error('Upload blocked by storage, check the bucket CORS policy');
+      }
+      if(!res.ok){
+        var detail = await res.text().catch(function(){ return ''; });
+        throw new Error('Upload failed ('+res.status+') on '+(t.role||'file')+(detail?': '+detail.slice(0,120):''));
+      }
+    }
   }
   async function s3Delete(bucket, path){
     if(!path) return;

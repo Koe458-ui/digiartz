@@ -192,13 +192,14 @@ Deno.serve(async (req) => {
         // and it is only reached after the quota check above has passed.
         const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
         if (!svcKey) return json({ error: "storage signer not configured" }, 500);
-        const path = String(row.storage_path || "");
-        if (!path || path.startsWith("/") || path.includes("..")) {
+        // storage_path is already stored without the bucket prefix
+        const objPath = String(row.storage_path || "");
+        if (!objPath || objPath.startsWith("/") || objPath.includes("..")) {
           return json({ error: "unsupported source" }, 502);
         }
         const svc = createClient(Deno.env.get("SUPABASE_URL")!, svcKey);
         const { data: sig, error: sigErr } =
-          await svc.storage.from(PRIVATE_BUCKET).createSignedUrl(path, DOWNLOAD_URL_TTL);
+          await svc.storage.from(PRIVATE_BUCKET).createSignedUrl(objPath, DOWNLOAD_URL_TTL);
         if (sigErr || !sig?.signedUrl) return json({ error: "could not sign the file" }, 502);
         url = sig.signedUrl.startsWith("http")
           ? sig.signedUrl
@@ -223,6 +224,14 @@ Deno.serve(async (req) => {
     return json({ error: "bad path" }, 400);
   if (!/^koe-media\//.test(path))
     return json({ error: "unknown prefix" }, 400);
+
+  // The caller sends an S3 KEY, which carries the bucket name as its first
+  // segment (koe-media/artworks/<uid>/file.png). In Supabase the bucket is
+  // named separately, so the object path is that key minus the prefix. This is
+  // not cosmetic: koe-media's policies test foldername(name)[2] = auth.uid(),
+  // and leaving the prefix on would put 'artworks' in position 2 and make RLS
+  // reject every upload. S3 keeps the prefixed form; Supabase uses objKey.
+  const objKey = path.replace(/^koe-media\//, "");
 
   if (body.action === "upload") {
     const ct    = String(body.contentType || "");
@@ -273,15 +282,15 @@ Deno.serve(async (req) => {
     try {
       if (isImage) {
         // the untouched original goes somewhere the public cannot reach
-        await sign(PRIVATE_BUCKET, path, "original");
+        await sign(PRIVATE_BUCKET, objKey, "original");
         // display sizes, produced by the browser before it uploads
-        const base = stripExt(path);
+        const base = stripExt(objKey);
         for (const d of DERIVATIVES) await sign(PUBLIC_BUCKET, base + d.suffix, d.role);
       } else {
         // a downloadable asset, not an image: single public object, exactly
         // where it lived before. Gating these is separate work, not a silent
         // side effect of moving hosts.
-        await sign(PUBLIC_BUCKET, path, "file");
+        await sign(PUBLIC_BUCKET, objKey, "file");
       }
     } catch (e) {
       return json({ error: String((e as Error).message || e) }, 500);
@@ -308,7 +317,7 @@ Deno.serve(async (req) => {
       targets,
       // the f1600 derivative is the canonical stored url for an image: directly
       // usable for og:image, and the other sizes are a suffix swap away
-      supabasePublicUrl: isImage ? sbPublicUrl(stripExt(path) + "__f1600.webp") : sbPublicUrl(path),
+      supabasePublicUrl: isImage ? sbPublicUrl(stripExt(objKey) + "__f1600.webp") : sbPublicUrl(objKey),
       // legacy client, still S3
       uploadUrl: legacySigned.url,
       publicUrl: `${CDN}/${path}`,
@@ -339,13 +348,13 @@ Deno.serve(async (req) => {
     // not which host holds it, so remove it from everywhere it could be:
     // Supabase (original plus the three derivatives) and S3. Every one of these
     // is idempotent, so hitting a home that never had the object is harmless.
-    const base = stripExt(path);
+    const base = stripExt(objKey);
     const results: Record<string, boolean> = {};
     try {
-      const { error: e1 } = await supa.storage.from(PRIVATE_BUCKET).remove([path]);
+      const { error: e1 } = await supa.storage.from(PRIVATE_BUCKET).remove([objKey]);
       results.original = !e1;
       const { error: e2 } = await supa.storage.from(PUBLIC_BUCKET)
-        .remove([path, ...DERIVATIVES.map((d) => base + d.suffix)]);
+        .remove([objKey, ...DERIVATIVES.map((d) => base + d.suffix)]);
       results.derivatives = !e2;
     } catch { /* fall through to S3 */ }
 

@@ -1063,7 +1063,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v90';
+const CACHE_VERSION = 'v91';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1133,7 +1133,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
-  '/js/sections.js?v=73',
+  '/js/sections.js?v=74',
   '/js/navprogress.js?v=5'
 ];
 

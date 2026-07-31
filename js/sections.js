@@ -27,7 +27,10 @@
   }
 
   // overlay panels hide the widgets
-  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
+  // pfEditPage was missing here while every other full-screen panel was
+  // listed, so the floating widgets stayed on top of profile settings. Barely
+  // visible while that panel was short; obvious once it grew a wallet.
+  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);

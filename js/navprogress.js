@@ -52,7 +52,6 @@
     ring.bar.setAttribute('cx', String(w / 2));
     ring.bar.setAttribute('cy', String(h / 2));
     ring.bar.setAttribute('r', String(r));
-    ring.bar.style.strokeDasharray = ring.circ.toFixed(2);
   }
 
   function build () {
@@ -72,6 +71,8 @@
       size(id);
       paint(id, 0);
     });
+    // the css dot steps aside only once the line is really there to draw it
+    if (rings.bnHome) nav.classList.add('bnMarks');
   }
 
   // ---- measuring ----------------------------------------------------
@@ -135,11 +136,14 @@
 
   // ---- painting -----------------------------------------------------
 
+  // the line is one dash with round caps, and it never drops below a
+  // hairline — at zero that cap is the dot, drawn in the dot's own place
   function paint (id, p) {
     var ring = rings[id];
     if (!ring) return;
     if (!ring.circ) { size(id); if (!ring.circ) return; }
-    ring.bar.style.strokeDashoffset = (ring.circ * (1 - p)).toFixed(2);
+    var len = Math.max(0.01, ring.circ * p);
+    ring.bar.style.strokeDasharray = len.toFixed(2) + ' ' + (ring.circ - len).toFixed(2);
   }
 
   function tick (now) {

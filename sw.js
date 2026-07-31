@@ -7,17 +7,18 @@
    v79 — the dot under the active nav item stretches into a scroll line.
        The dot said which section you were in and nothing else; the line
        says that and how far down it you are. Nothing else about the nav
-       moves: same dot, same place, same 4px width, no track ring behind
-       it, icons untouched. The line is drawn at half the dot's opacity
-       and carries no glow of its own, because a stroke that long throws
-       far more light than a 4px dot does and would otherwise take the
-       nav over; the dot stays the brightest point and the line trails
-       off it. At zero it is the dot you already had, and it is drawn as
-       the dot's own continuation — an arc on a
-       circle through the dot's centre, starting there and running
-       clockwise around the icon, so it reads left to right across the
-       top and closes back onto the dot at the end. If the script never
-       lands the dot simply stays a dot.
+       moves: same place, same 4px width, no track ring behind it, icons
+       untouched. Dot and line are one stroke — an arc on a circle through
+       the dot's own centre, dashed to the reading, with round caps, so at
+       zero the cap alone is the dot and there is no second element that
+       could sit at a different brightness. It grows clockwise from there
+       around the icon, reading left to right across the top, and closes
+       back onto its own start. The stroke is half the source colour and
+       carries no glow, since a line that long throws far more light than
+       a 4px dot did and would otherwise take the nav over. The css dot
+       stays in the sheet as the fallback and is hidden only under
+       #bnNav.bnMarks, which the script adds once the line exists, so a
+       client that never gets the script keeps the dot it had.
        The reading is scrollTop / (scrollHeight - clientHeight) on the box
        that section actually scrolls — the document for home, #fg,
        #pfUpMod and #profilePage on the panel itself, .cmScroll inside

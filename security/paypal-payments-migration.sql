@@ -49,3 +49,18 @@ create unique index if not exists payments_pp_order_id_key
 -- authenticated keeps it, and so does service_role — that is the role the
 -- checkout backends read prices with when they build an order.
 revoke select (price_cents) on public.marketplace_items from anon;
+
+-- ---------------------------------------------------------------------------
+-- Marketplace split, seller balances and payouts. Applied to the live project.
+-- See the migration named marketplace_earnings_and_payouts for the full text:
+-- marketplace_earnings (one row per sale, gross/fee/net + a hold window),
+-- payout_methods (where a seller wants the money sent), payout_requests, and
+-- dz_seller_balance() for the one honest answer about what may be withdrawn.
+--
+-- RLS on all three is select-own only. There are no insert or update policies
+-- at all: every write goes through a Pages Function on the service role, so a
+-- client cannot mint its own earnings or approve its own payout.
+--
+-- A payment can also come back now, so 'refunded' joined the status check on
+-- payments — a row that lost its money must not keep reading as paid, since
+-- dz_market_download and the subscription check both key off that word.

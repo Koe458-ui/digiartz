@@ -77,6 +77,36 @@ async function validSignature(env, orderId, paymentId, signature) {
   return crypto.subtle.timingSafeEqual(a, b);
 }
 
+// A marketplace sale owes the seller their share. Mirrors the same split the
+// other checkout applies — the ledger must read the same whichever provider
+// took the money. The seller's half is a claim, not a wallet: the cash stays in
+// our provider account until a payout sends it, after a hold window so a
+// chargeback lands while it is still ours to reclaim.
+const FEE_BPS   = 1500;   // 15%
+const HOLD_DAYS = 7;
+
+async function recordEarning(env, row) {
+  if (row.kind !== 'marketplace' || !row.item_id) return;
+  const items = await sbService(env,
+    '/marketplace_items?id=eq.' + row.item_id + '&select=user_id&limit=1');
+  const sellerId = items && items[0] && items[0].user_id;
+  if (!sellerId || sellerId === row.user_id) return;
+
+  const gross = Number(row.amount) || 0;
+  const fee   = Math.round((gross * FEE_BPS) / 10000);
+  await sbService(env, '/marketplace_earnings', {
+    method: 'POST',
+    headers: { prefer: 'return=representation,resolution=ignore-duplicates' },
+    body: JSON.stringify({
+      payment_id: row.id, item_id: row.item_id,
+      seller_id: sellerId, buyer_id: row.user_id,
+      gross_amount: gross, fee_amount: fee, net_amount: gross - fee,
+      fee_bps: FEE_BPS, currency: row.currency, status: 'available',
+      available_at: new Date(Date.now() + HOLD_DAYS * 86400000).toISOString(),
+    }),
+  }).catch(() => {});
+}
+
 // create order and ledger row
 async function makeOrder(env, user, { amount, currency, kind, plan, itemId, label }) {
   const order = await rzp(env, '/v1/orders', {
@@ -185,7 +215,8 @@ export async function onRequestPost({ env, request }) {
 
       // block replayed signatures
       const paidRows = await sbService(env,
-        '/payments?rzp_order_id=eq.' + orderId + '&status=eq.created', {
+        '/payments?rzp_order_id=eq.' + orderId + '&status=eq.created' +
+        '&select=id,user_id,kind,item_id,amount,currency', {
         method: 'PATCH',
         body: JSON.stringify({
           status: 'paid', rzp_payment_id: String(paymentId),
@@ -193,6 +224,7 @@ export async function onRequestPost({ env, request }) {
         }),
       });
       const firstVerify = Array.isArray(paidRows) && paidRows.length > 0;
+      if (firstVerify) await recordEarning(env, paidRows[0]);
 
       let tier = null;
       if (notes.kind === 'subscription') {

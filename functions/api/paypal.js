@@ -138,6 +138,37 @@ async function sbService(env, path, init = {}) {
   return body;
 }
 
+// A marketplace sale owes the seller their share. The platform's cut is taken
+// here, at settlement, and recorded on the row so a later change to the rate
+// never restates an old sale. The seller's half is a claim, not a wallet — the
+// cash stays in our provider account until a payout sends it, and it waits out
+// a hold window first so a chargeback lands while it is still ours to reclaim.
+const FEE_BPS   = 1500;   // 15%
+const HOLD_DAYS = 7;
+
+async function recordEarning(env, row) {
+  if (row.kind !== 'marketplace' || !row.item_id) return;
+  const items = await sbService(env,
+    '/marketplace_items?id=eq.' + row.item_id + '&select=user_id&limit=1');
+  const sellerId = items && items[0] && items[0].user_id;
+  if (!sellerId || sellerId === row.user_id) return;
+
+  const gross = Number(row.amount) || 0;
+  const fee   = Math.round((gross * FEE_BPS) / 10000);
+  // one earning per payment; a replay hits the unique constraint and stops
+  await sbService(env, '/marketplace_earnings', {
+    method: 'POST',
+    headers: { prefer: 'return=representation,resolution=ignore-duplicates' },
+    body: JSON.stringify({
+      payment_id: row.id, item_id: row.item_id,
+      seller_id: sellerId, buyer_id: row.user_id,
+      gross_amount: gross, fee_amount: fee, net_amount: gross - fee,
+      fee_bps: FEE_BPS, currency: row.currency, status: 'available',
+      available_at: new Date(Date.now() + HOLD_DAYS * 86400000).toISOString(),
+    }),
+  }).catch(() => {});
+}
+
 // create order and ledger row
 async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label }) {
   const order = await pp(env, '/v2/checkout/orders', {
@@ -306,6 +337,10 @@ export async function onRequestPost({ env, request }) {
         }),
       });
       const firstCapture = Array.isArray(paidRows) && paidRows.length > 0;
+
+      // Recorded regardless of who got here first — the webhook may already
+      // have settled the row, and the earning is idempotent either way.
+      await recordEarning(env, row);
 
       let tier = null;
       if (row.kind === 'subscription') {

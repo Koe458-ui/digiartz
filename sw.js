@@ -23,7 +23,22 @@
        show the white-background bird instead of the white-on-transparent
        one. The -dark and 16/32/48 PNGs stay on disk, unreferenced.
        Precache drops /favicon-32x32.png, which the page no longer
-       requests. Changed: index.html, favicon.ico, sw.js.
+       requests, and the six now-unreferenced 16/32/48 light and -dark
+       PNGs are deleted.
+       Two Pages Functions were also sitting at the repo root, where the
+       root is the deploy output and nothing outside functions/ is
+       compiled — _headers and _redirects are read by Pages, but a stray
+       .js is just a static asset. _middleware.js was a byte-identical
+       copy of functions/_middleware.js, kept in sync by hand, and is
+       gone. rzp.js is the Razorpay backend js/sections.js POSTs to at
+       /api/rzp; there was no functions/api/rzp.js, so that endpoint
+       404'd and every subscription, marketplace purchase and support
+       payment failed, while the file itself was downloadable at
+       /rzp.js. It moves to functions/api/rzp.js unchanged — it holds no
+       hardcoded secrets, reading RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
+       and SB_SERVICE_KEY from env, all of which must be bound to the
+       Pages project for the endpoint to answer.
+       Changed: index.html, favicon.ico, sw.js; rzp.js moved.
 
    v85 — the log lines ran off the side of a phone. A grid column written
        as 1fr is minmax(auto,1fr), and that auto floor is the widest the

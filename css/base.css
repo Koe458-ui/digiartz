@@ -201,8 +201,13 @@
     .bnItem.bnActive{color:var(--pb);background:rgba(var(--pg-rgb),.18);}
     .bnItem.bnActive svg{transform:translateY(-1px) scale(1.08);}
     /* one value for the dot and the line it grows into, so they never
-       read as two different lights */
+       read as two different lights. each theme carries its own alpha: the
+       mark is near-white over near-black on the dark themes and near-black
+       over white on the light one, and matching those by eye means the
+       light theme needs a little more of its colour to weigh the same */
     .bnItem{--bnMark:rgba(var(--pg-rgb),.5);}
+    html[data-theme="graydark"] .bnItem{--bnMark:rgba(var(--pg-rgb),.53);}
+    html[data-theme="light"] .bnItem{--bnMark:rgba(var(--pg-rgb),.57);}
     /* once the line is up it draws the dot itself, as its own start cap —
        one stroke, so the two can never stack into a brighter spot */
     #bnNav.bnMarks .bnItem.bnActive::after{display:none;}

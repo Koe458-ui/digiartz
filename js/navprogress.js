@@ -240,6 +240,7 @@
     if (!box || box.scrollTop <= 0) return;
     stopGlide();
     dropPending();
+    if (mqReduce && mqReduce.matches) { setScroll(box, 0); return; }
     var from = box.scrollTop, t0 = 0;
     var dur = Math.min(760, 260 + from * 0.22);   // a longer way up takes longer
     glide = requestAnimationFrame(function step (now) {

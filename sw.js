@@ -4,6 +4,23 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v81 — the nav mark is tuned per theme, and the glide respects a reader
+       who asked for less motion. One alpha for all three themes does not
+       land the same way in all three: the mark is near-white over
+       near-black on dark and graydark and near-black over white on light,
+       and measured against the pill it sits on, .5 gave 3.89 on dark,
+       3.62 on graydark and 3.10 on light — the light theme visibly the
+       faintest of the three. --bnMark now carries .5, .53 and .57, which
+       reads as 3.89 / 3.85 / 3.75: the same weight in each theme rather
+       than the same number in the stylesheet. Contrast was sampled off
+       rendered pixels, not computed from the tokens, since the pill is
+       itself translucent over a translucent nav.
+       Tapping the section you are in still goes to the top under
+       prefers-reduced-motion, but arrives there rather than travelling —
+       the glide was the one thing this file animates that a reader cannot
+       opt out of by scrolling, since it is the response to their own tap.
+       Changed: index.html, css/base.css, js/navprogress.js.
+
    v80 — every section keeps its place, and the nav is what gives it up.
        Leaving a section and coming back put you at the top of it: home
        because bnGoHome scrolled there on every tap, gallery because
@@ -725,7 +742,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v80';
+const CACHE_VERSION = 'v81';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -749,7 +766,7 @@ const SHELL_URLS = [
   '/icon-192.png',
 
   // stylesheets
-  '/css/base.css?v=3',
+  '/css/base.css?v=4',
   '/css/hero.css?v=65',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
@@ -796,7 +813,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
   '/js/sections.js?v=71',
-  '/js/navprogress.js?v=2'
+  '/js/navprogress.js?v=3'
 ];
 
 // hosts

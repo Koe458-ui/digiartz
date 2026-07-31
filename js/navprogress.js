@@ -25,6 +25,8 @@
   var IDS = ['bnHome', 'bnGallery', 'bnUpload', 'bnCommunity', 'bnProfile'];
 
   var DOT   = 7;                  // px from an item's edge to the dot's centre
+  var WIDE  = 4;                  // px the line is drawn at, matching the dot
+  var HALO  = 2;                  // px of glow ring the avatar carries outside itself
   var GAIN  = 8.2;                // ease rate going forward, per second
   var LOSS  = 4.2;                // ease rate coming back, deliberately softer
   var RANGE = 8;                  // px of overflow before a box counts as scrollable
@@ -48,14 +50,30 @@
 
   var NS = 'http://www.w3.org/2000/svg';
 
+  // the profile item is an avatar, not a line icon: it fills most of its
+  // circle, and a line cut to the dot's radius would run straight across
+  // its edge. measured, so it tracks the avatar at either nav size
+  function clears (item) {
+    var kids = item.querySelectorAll('.nAvatarBtn, .nLoginBtn');
+    for (var i = 0; i < kids.length; i++) {
+      if (kids[i].offsetWidth) return kids[i].offsetWidth / 2 + HALO + WIDE / 2;
+    }
+    return 0;
+  }
+
   // the viewBox is the item's own pixel box, so the line lands on the dot
   // at whatever size the nav is drawn — 58px, 52px on phones
   function size (id) {
     var ring = rings[id];
     if (!ring) return;
-    var w = ring.svg.parentNode.clientWidth, h = ring.svg.parentNode.clientHeight;
+    var item = ring.svg.parentNode;
+    var w = item.clientWidth, h = item.clientHeight;
     if (!w || !h || (w === ring.w && h === ring.h)) return;
-    var r = Math.min(w, h) / 2 - DOT;
+    var half = Math.min(w, h) / 2;
+    var r = half - DOT;
+    // ride outside the avatar rather than through it, but never off the item
+    var out = clears(item);
+    if (out > r) r = Math.min(out, half - WIDE / 2);
     ring.w = w; ring.h = h;
     ring.circ = 2 * Math.PI * r;
     ring.svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);

@@ -4,6 +4,25 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v83 — the profile line rides around the avatar instead of across it.
+       Four of the five nav items hold a line icon in the middle of a 58px
+       circle, so a line cut to the dot's radius has clear space to run
+       through. The fifth is an avatar filling 42px of that same circle,
+       with a 2px glow ring outside it, and the line was landing straight
+       on its edge — two circles of nearly the same radius, one drawn over
+       the other.
+       The radius is now measured off whichever of .nAvatarBtn or
+       .nLoginBtn is actually showing, plus its glow and half the line's
+       own width, and clamped to stay inside the item: 25 against a 42px
+       avatar, 23 against the 38px one under 640px, where the other four
+       stay at 22 and 19. The line comes out tangent to the avatar's outer
+       glow — tracing its edge, touching neither it nor the item's rim.
+       This does put the profile mark a few px higher up its circle than
+       the other four sit on theirs, which is invisible in practice: only
+       the active item carries a mark, so no two are ever on screen at
+       once.
+       Changed: index.html, js/navprogress.js.
+
    v82 — the gallery cut to the top instead of riding there. Tapping the
        icon of the section you are in glides home and community up over
        about half a second; the gallery arrived instantly, and upload,
@@ -762,7 +781,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v82';
+const CACHE_VERSION = 'v83';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -833,7 +852,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
   '/js/sections.js?v=71',
-  '/js/navprogress.js?v=4'
+  '/js/navprogress.js?v=5'
 ];
 
 // hosts

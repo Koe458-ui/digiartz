@@ -20,6 +20,10 @@ remaining gaps.
 | 6 | Everything about money moved behind a session check — module, provider names, plan prices, buy controls, endpoint paths | `functions/api/store.js` | ✅ in branch |
 | 7 | `marketplace_items.price_cents` revoked from `anon` at the column level | Supabase | ✅ live now |
 | 8 | `/api/*` never cached: explicit service-worker bypass + `no-store` in `_headers` | `sw.js`, `_headers` | ✅ in branch |
+| 10 | `profiles.email` was world-readable — revoked (table grant dropped, columns re-granted by name) | Supabase | ✅ live now |
+| 11 | Members could self-grant `subscription_tier`/`role` — UPDATE now column-scoped | Supabase | ✅ live now |
+| 12 | Immutable hash-chained ledger + reconciliation gate before every withdrawal | `ledger_entries`, `dz_reconcile` | ✅ live now |
+| 13 | `publish_due_scheduled_sections` and trigger functions no longer callable over REST | Supabase | ✅ live now |
 | 9 | `security/` no longer served — the repo root is the deploy output, so every `.sql` here was downloadable | `functions/security/[[path]].js` | ✅ in branch |
 
 ## What YOU need to do

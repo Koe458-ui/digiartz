@@ -102,3 +102,38 @@ grant update (
   banner_url, banner_storage_path, banner_updated_at,
   likes_public, bookmarks_public
 ) on public.profiles to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Functions that were reachable over /rest/v1/rpc/ and should not have been.
+--
+-- Supabase grants EXECUTE on public functions to anon and authenticated by
+-- default. Correct for the ones that ARE the API; wrong for these.
+--
+--   publish_due_scheduled_sections()  the scheduler's job. Exposed, a stranger
+--     could POST it repeatedly and force every queued post, artwork, listing
+--     and blog entry to publish ahead of time. Nothing in the app calls it.
+--
+--   albums_cap_guard, user_tag_prefs_cap_guard, dz_fill_comment_username,
+--   dz_artwork_mod_gate  are TRIGGER functions. They fire on a row change and
+--     never need EXECUTE granted to a caller — the trigger machinery invokes
+--     them. Being SECURITY DEFINER, leaving them callable handed out an
+--     owner-privileged entry point for nothing. Verified after revoking that
+--     both triggers still fire and still do their work.
+--
+--   is_dev(), dz_is_privileged()  answer "are you special?" and are used
+--     inside policies, where they run as part of the policy, not as an RPC.
+revoke all on function public.publish_due_scheduled_sections() from public, anon, authenticated;
+revoke all on function public.albums_cap_guard()         from public, anon, authenticated;
+revoke all on function public.user_tag_prefs_cap_guard() from public, anon, authenticated;
+revoke all on function public.dz_fill_comment_username() from public, anon, authenticated;
+revoke all on function public.dz_artwork_mod_gate()      from public, anon, authenticated;
+revoke all on function public.is_dev()                   from public, anon;
+revoke all on function public.dz_is_privileged()         from public, anon;
+
+-- RLS audit result, recorded because "turn it on everywhere" was already true:
+-- every table in public has RLS enabled. Four carry no policy at all
+-- (artwork_download_dedup, artwork_view_dedup, download_events, rate_hits),
+-- which is the MOST closed state — nothing reaches them except the
+-- SECURITY DEFINER functions that own their logic. The one view,
+-- wallet_history, is security_invoker, so it inherits the row policies of its
+-- base tables instead of running as owner and seeing past them.

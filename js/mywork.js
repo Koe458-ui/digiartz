@@ -252,10 +252,9 @@ function hideCommentThumbnail(){
     var lockNote = document.getElementById('cpLockNote');
     if(bar) bar.style.display = canPost ? 'flex' : 'none';
     if(lockNote) lockNote.style.display = canPost ? 'none' : 'flex';
-    // hide bottom nav in a channel
-    var nav = document.getElementById('bnNav');
-    if(nav) nav.style.display = 'none';
 
+    // the bottom nav is left alone — the panel outranks it and slides
+    // over it, so it is covered rather than switched off ahead of time
     // grid stays mounted behind, the chat panel slides in over it
     var dmChat = document.getElementById('dmChatView');
     var chat = document.getElementById('cmChatView');
@@ -298,9 +297,7 @@ function hideCommentThumbnail(){
     if(typeof cmHdrHomeMode === 'function') cmHdrHomeMode();
     // clear active channel
     cpCurrentChannel = null;
-    // restore bottom nav
-    var nav = document.getElementById('bnNav');
-    if(nav) nav.style.display = '';
+    // the nav is uncovered by the slide itself, nothing to restore
   }
 
   // user made communities

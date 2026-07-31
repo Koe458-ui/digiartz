@@ -314,15 +314,23 @@
         }
       });
     }
-    var nav = $('bnNav');       if (nav) nav.style.display = 'none';
+    // the bottom nav is left alone — the panel outranks it and covers it
     var res = $('dmResults');   if (res) res.innerHTML = '';
     var inp = $('dmSearchInput'); if (inp) inp.value = '';
     $('dmBody').innerHTML = '<div class="dmSearchNote">LOADING…</div>';
-    // friend gate
+    // friend gate. Paint it from the cached friend map first, so the
+    // composer rides in with the panel instead of appearing a round-trip
+    // later; the refresh below corrects it if the cache was wrong. Only
+    // the placeholder shows for someone we have never loaded — guessing
+    // there would flash the wrong bar
     var gEl = $('dmGate'), bEl = document.querySelector('#dmChatView .dmBar');
-    if (bEl) bEl.style.display = 'none';
-    if (gEl) { gEl.style.display = 'flex'; gEl.innerHTML = '<div class="dmGateTxt">…</div>'; }
-    loadFriendships().then(dmApplyGate);
+    if (frMap[p.id]) {
+      dmApplyGate(true); // no focus yet, the panel is still sliding
+    } else {
+      if (bEl) bEl.style.display = 'none';
+      if (gEl) { gEl.style.display = 'flex'; gEl.innerHTML = '<div class="dmGateTxt">…</div>'; }
+    }
+    loadFriendships().then(function () { dmApplyGate(); });
     dmLimit = 25; dmHasMore = false; dmLoadingOlder = false; dmLastSig = '';
     loadThread(true);
     clearInterval(dmPoll);
@@ -338,7 +346,7 @@
     // contents stay put while the panel slides out, each open sets them again
     if (typeof cmChatPanelClose === 'function') cmChatPanelClose();
     if (typeof cmHdrHomeMode === 'function') cmHdrHomeMode();
-    var nav = $('bnNav');       if (nav) nav.style.display = '';
+    // the nav is uncovered by the slide itself, nothing to restore
     refreshConvos();
   }
   async function loadThread (scrollToEnd) {
@@ -417,15 +425,18 @@
     loadThread(false);
   }
 
-  // composer or gate bar
-  function dmApplyGate () {
+  // composer or gate bar. skipFocus is for the open-time paint, where the
+  // panel is mid-slide and openThread already schedules the focus
+  function dmApplyGate (skipFocus) {
     var bar = document.querySelector('#dmChatView .dmBar'), gate = $('dmGate');
     if (!bar || !gate || !dmPartner) return;
     var st = frState(dmPartner.id);
     if (st === 'friends') {
       gate.style.display = 'none';
       bar.style.display = 'flex';
-      var i = $('dmInput'); if (i) setTimeout(function () { i.focus({ preventScroll: true }); }, 60);
+      if (!skipFocus) {
+        var i = $('dmInput'); if (i) setTimeout(function () { i.focus({ preventScroll: true }); }, 60);
+      }
       return;
     }
     bar.style.display = 'none';

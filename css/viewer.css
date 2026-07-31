@@ -353,7 +353,6 @@
   position:fixed;inset:0;z-index:500;
   background:var(--bg);
   display:flex;flex-direction:column;
-  overflow:hidden; /* keeps the off-screen chat panel from bleeding out */
   transform:translateX(100%);
   transition:transform .45s cubic-bezier(.22,1,.36,1);
 }
@@ -459,12 +458,12 @@
     .cmHdrTap.on{cursor:pointer;}
     .cmHdrTap.on:active{background:var(--pdim);}
     /* community page tokens */
-    #communityPage .cmHdrName{color:var(--cmTx);}
-    #communityPage .cmHdrSub{color:var(--cmTxd);}
-    #communityPage .cmHdrAv{border:1px solid var(--cmBdrh);}
-    #communityPage .cmHdr.chat .cmHdrBack{color:var(--cmTx);}
-    #communityPage .cmHdr.chat .cmHdrBack:hover{background:var(--cmAccentDim);}
-    #communityPage .cmHdrTap.on:active{background:var(--cmAccentDim);}
+    #communityPage .cmHdrName,#cmChatPanel .cmHdrName{color:var(--cmTx);}
+    #communityPage .cmHdrSub,#cmChatPanel .cmHdrSub{color:var(--cmTxd);}
+    #communityPage .cmHdrAv,#cmChatPanel .cmHdrAv{border:1px solid var(--cmBdrh);}
+    #communityPage .cmHdr.chat .cmHdrBack,#cmChatPanel .cmHdr.chat .cmHdrBack{color:var(--cmTx);}
+    #communityPage .cmHdr.chat .cmHdrBack:hover,#cmChatPanel .cmHdr.chat .cmHdrBack:hover{background:var(--cmAccentDim);}
+    #communityPage .cmHdrTap.on:active,#cmChatPanel .cmHdrTap.on:active{background:var(--cmAccentDim);}
     @media(max-width:480px){
       .cmHdr.chat{padding:.6rem .8rem;}
       .cmHdrAv{width:36px;height:36px;font-size:.92rem;}

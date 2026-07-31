@@ -212,20 +212,22 @@
     /* art talk chat */
     .cmChat{display:none;flex-direction:column;flex:1;min-height:0;}
 
-    /* chat panel — slides in over the grid like the other sections do,
-       and keeps the community page mounted underneath */
+    /* chat panel — built like #zeoPage: a fixed sheet over the whole
+       viewport, above the bottom nav so the nav is covered by the slide
+       rather than switched off ahead of it, same .4s curve */
     #cmChatPanel{
-      position:absolute;inset:0;z-index:20;
+      position:fixed;inset:0;z-index:1500;
       display:flex;flex-direction:column;
       background:var(--cmBg,var(--bg));
+      overflow:hidden;
       transform:translateX(100%);
       visibility:hidden;
-      transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s linear .45s;
+      transition:transform .4s cubic-bezier(.22,1,.36,1),visibility 0s linear .4s;
     }
     #cmChatPanel.open{
       transform:translateX(0);
       visibility:visible;
-      transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s;
+      transition:transform .4s cubic-bezier(.22,1,.36,1),visibility 0s;
     }
     /* the whole section is leaving — drop the chat without a slide */
     #cmChatPanel.noAnim{transition:none;}
@@ -274,7 +276,7 @@
     #subOverview .subOvPlanBadge--dev     { color:#fca5a5; border-color:#8a3a3a; background:rgba(220,38,38,.14); }
 
     /* community page theme */
-    #communityPage{
+    #communityPage,#cmChatPanel{
       --cmBg:var(--bg);
       --cmSur:var(--sur);
       --cmSur2:var(--sur2);
@@ -288,50 +290,50 @@
       --cmOnline:#2ecf7e;
       background:var(--cmBg);
     }
-    #communityPage .cmHdr{
+    #communityPage .cmHdr,#cmChatPanel .cmHdr{
       border-bottom:1px solid var(--cmBdr);
     }
-    #communityPage .cmHdr::before{background:var(--cmBg)!important;}
-    #communityPage .cmTab{color:var(--cmTxd);}
-    #communityPage .cmTab.active{color:var(--cmTx);border-color:var(--cmAccent);}
-    #communityPage .cmTab:hover{color:var(--cmTx);}
+    #communityPage .cmHdr::before,#cmChatPanel .cmHdr::before{background:var(--cmBg)!important;}
+    #communityPage .cmTab,#cmChatPanel .cmTab{color:var(--cmTxd);}
+    #communityPage .cmTab.active,#cmChatPanel .cmTab.active{color:var(--cmTx);border-color:var(--cmAccent);}
+    #communityPage .cmTab:hover,#cmChatPanel .cmTab:hover{color:var(--cmTx);}
 
-    #communityPage .cmBanner{
+    #communityPage .cmBanner,#cmChatPanel .cmBanner{
       background:linear-gradient(150deg,color-mix(in srgb,var(--pg) 10%,var(--vsur2)) 0%,var(--vsur) 100%);
       border:1px solid color-mix(in srgb,var(--pg) 22%,var(--bdr));
     }
-    #communityPage .cmBannerTitle{color:var(--vtx);}
-    #communityPage .cmBannerSub{color:rgba(var(--vtx2-rgb),.72);}
-    #communityPage .cmStat svg{color:rgba(var(--vtx2-rgb),.9);}
-    #communityPage .cmStatNum{color:var(--vtx);}
-    #communityPage .cmStatLbl{color:rgba(var(--vtx2-rgb),.55);}
+    #communityPage .cmBannerTitle,#cmChatPanel .cmBannerTitle{color:var(--vtx);}
+    #communityPage .cmBannerSub,#cmChatPanel .cmBannerSub{color:rgba(var(--vtx2-rgb),.72);}
+    #communityPage .cmStat svg,#cmChatPanel .cmStat svg{color:rgba(var(--vtx2-rgb),.9);}
+    #communityPage .cmStatNum,#cmChatPanel .cmStatNum{color:var(--vtx);}
+    #communityPage .cmStatLbl,#cmChatPanel .cmStatLbl{color:rgba(var(--vtx2-rgb),.55);}
 
-    #communityPage .cmSectionHead h3{color:var(--cmTx);}
-    #communityPage .cmSectionHead p{color:var(--cmTxd);}
-    #communityPage .cmCreateBtn{
+    #communityPage .cmSectionHead h3,#cmChatPanel .cmSectionHead h3{color:var(--cmTx);}
+    #communityPage .cmSectionHead p,#cmChatPanel .cmSectionHead p{color:var(--cmTxd);}
+    #communityPage .cmCreateBtn,#cmChatPanel .cmCreateBtn{
       background:var(--cmAccentDim);
       border:1px solid var(--cmAccent);
       color:var(--cmAccentSoft);
     }
-    #communityPage .cmCreateBtn:hover{
+    #communityPage .cmCreateBtn:hover,#cmChatPanel .cmCreateBtn:hover{
       background:color-mix(in srgb,var(--cmAccent) 28%,transparent);
       box-shadow:0 0 18px rgba(var(--pg-rgb),.35);
     }
 
-    #communityPage .cmCard{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cmCard:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
-    #communityPage .cmCard .cmCardIcon{border:1px solid var(--cmBdrh);}
-    #communityPage .cmCard .cmCardName{color:var(--cmTx);}
-    #communityPage .cmCard p{color:var(--cmTxd);}
-    #communityPage .cmBadge{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
-    #communityPage .cmDot{background:var(--cmOnline);box-shadow:0 0 6px var(--cmOnline);}
+    #communityPage .cmCard,#cmChatPanel .cmCard{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cmCard:hover,#cmChatPanel .cmCard:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
+    #communityPage .cmCard .cmCardIcon,#cmChatPanel .cmCard .cmCardIcon{border:1px solid var(--cmBdrh);}
+    #communityPage .cmCard .cmCardName,#cmChatPanel .cmCard .cmCardName{color:var(--cmTx);}
+    #communityPage .cmCard p,#cmChatPanel .cmCard p{color:var(--cmTxd);}
+    #communityPage .cmBadge,#cmChatPanel .cmBadge{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
+    #communityPage .cmDot,#cmChatPanel .cmDot{background:var(--cmOnline);box-shadow:0 0 6px var(--cmOnline);}
 
-    #communityPage .cmFooterCta{background:var(--cmSur2);border:1px solid var(--cmBdr);}
-    #communityPage .cmFooterCta strong{color:var(--cmTx);}
-    #communityPage .cmFooterCta p{color:var(--cmTxd);}
+    #communityPage .cmFooterCta,#cmChatPanel .cmFooterCta{background:var(--cmSur2);border:1px solid var(--cmBdr);}
+    #communityPage .cmFooterCta strong,#cmChatPanel .cmFooterCta strong{color:var(--cmTx);}
+    #communityPage .cmFooterCta p,#cmChatPanel .cmFooterCta p{color:var(--cmTxd);}
 
-    #communityPage .cmEmpty{border-color:var(--cmBdr);color:var(--cmTxd);}
-    #communityPage .cmEmpty .cmEmptyIco{color:var(--cmAccentSoft);}
+    #communityPage .cmEmpty,#cmChatPanel .cmEmpty{border-color:var(--cmBdr);color:var(--cmTxd);}
+    #communityPage .cmEmpty .cmEmptyIco,#cmChatPanel .cmEmpty .cmEmptyIco{color:var(--cmAccentSoft);}
 
     /* friends list, zeo bot */
     .cmFriendList{display:flex;flex-direction:column;gap:.7rem;margin-bottom:1.6rem;}
@@ -352,52 +354,52 @@
     .cmFriendName{font-family:var(--fb);font-size:.98rem;font-weight:700;display:flex;align-items:center;gap:.5rem;}
     .cmFriendStatus{font-family:var(--fm);font-size:.68rem;letter-spacing:.04em;display:flex;align-items:center;gap:.4rem;margin-top:.25rem;}
 
-    #communityPage .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
-    #communityPage .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
+    #communityPage .cmFriendItem,#cmChatPanel .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cmFriendItem:hover,#cmChatPanel .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
+    #communityPage .cmFriendAvatar,#cmChatPanel .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
     /* zeo avatar chip */
-    #communityPage .cmFriendAvatar.zeoChip{background:linear-gradient(135deg,#1a2a4a,#2a4080);border-color:rgba(99,179,237,.3);}
-    #communityPage .cmFriendName{color:var(--cmTx);}
-    #communityPage .cmFriendStatus{color:var(--cmTxd);}
+    #communityPage .cmFriendAvatar.zeoChip,#cmChatPanel .cmFriendAvatar.zeoChip{background:linear-gradient(135deg,#1a2a4a,#2a4080);border-color:rgba(99,179,237,.3);}
+    #communityPage .cmFriendName,#cmChatPanel .cmFriendName{color:var(--cmTx);}
+    #communityPage .cmFriendStatus,#cmChatPanel .cmFriendStatus{color:var(--cmTxd);}
 
     /* art talk chat */
-    #communityPage .cpHdr::before{background:var(--cmBg)!important;}
-    #communityPage .cpHdr{border-bottom:1px solid var(--cmBdr);}
-    #communityPage .cpTitle{color:var(--cmTx);}
-    #communityPage .cpTitle .s{color:var(--cmAccentSoft);}
-    #communityPage .cmBack{border:1px solid var(--cmBdr);color:var(--cmTx);}
-    #communityPage .cmBack:hover{border-color:var(--cmAccent);background:var(--cmAccentDim);}
-    #communityPage .cpEmpty{color:var(--cmTxd);}
-    #communityPage .cpEmpty .cpEIco{color:var(--cmAccentSoft);}
-    #communityPage .cpComment{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cpComment:hover{border-color:var(--cmBdrh);background:var(--cmSur2);}
-    #communityPage .cpAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
-    #communityPage .cpAvatar::after{border-color:var(--cmSur);}
-    #communityPage .cpCommentUser{color:var(--cmAccentSoft);}
-    #communityPage .cpCommentText{color:var(--cmTx);}
-    #communityPage .cpCommentTime{color:var(--cmTxd);}
-    #communityPage .cpSubtitle{color:var(--cmTxd);}
-    #communityPage .cpLockNote::before{background:var(--cmBg)!important;}
-    #communityPage .cpLockNote{border-top:1px solid var(--cmBdr);color:var(--cmTxd);}
-    #communityPage .cpLockNote svg{color:var(--cmAccentSoft);}
-    #communityPage .cpAttachBtn{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
-    #communityPage .cpAttachBtn:hover{background:color-mix(in srgb,var(--cmAccent) 30%,transparent)!important;}
-    #communityPage .cpShowcase{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cpShowcaseText{color:var(--cmTx);}
-    #communityPage .cpPhoto{border:1px solid var(--cmBdr);}
-    #communityPage .cpRefreshSpinner{border-color:color-mix(in srgb,var(--cmAccent) 25%,transparent);border-top-color:var(--cmAccent);}
+    #communityPage .cpHdr::before,#cmChatPanel .cpHdr::before{background:var(--cmBg)!important;}
+    #communityPage .cpHdr,#cmChatPanel .cpHdr{border-bottom:1px solid var(--cmBdr);}
+    #communityPage .cpTitle,#cmChatPanel .cpTitle{color:var(--cmTx);}
+    #communityPage .cpTitle .s,#cmChatPanel .cpTitle .s{color:var(--cmAccentSoft);}
+    #communityPage .cmBack,#cmChatPanel .cmBack{border:1px solid var(--cmBdr);color:var(--cmTx);}
+    #communityPage .cmBack:hover,#cmChatPanel .cmBack:hover{border-color:var(--cmAccent);background:var(--cmAccentDim);}
+    #communityPage .cpEmpty,#cmChatPanel .cpEmpty{color:var(--cmTxd);}
+    #communityPage .cpEmpty .cpEIco,#cmChatPanel .cpEmpty .cpEIco{color:var(--cmAccentSoft);}
+    #communityPage .cpComment,#cmChatPanel .cpComment{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cpComment:hover,#cmChatPanel .cpComment:hover{border-color:var(--cmBdrh);background:var(--cmSur2);}
+    #communityPage .cpAvatar,#cmChatPanel .cpAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
+    #communityPage .cpAvatar::after,#cmChatPanel .cpAvatar::after{border-color:var(--cmSur);}
+    #communityPage .cpCommentUser,#cmChatPanel .cpCommentUser{color:var(--cmAccentSoft);}
+    #communityPage .cpCommentText,#cmChatPanel .cpCommentText{color:var(--cmTx);}
+    #communityPage .cpCommentTime,#cmChatPanel .cpCommentTime{color:var(--cmTxd);}
+    #communityPage .cpSubtitle,#cmChatPanel .cpSubtitle{color:var(--cmTxd);}
+    #communityPage .cpLockNote::before,#cmChatPanel .cpLockNote::before{background:var(--cmBg)!important;}
+    #communityPage .cpLockNote,#cmChatPanel .cpLockNote{border-top:1px solid var(--cmBdr);color:var(--cmTxd);}
+    #communityPage .cpLockNote svg,#cmChatPanel .cpLockNote svg{color:var(--cmAccentSoft);}
+    #communityPage .cpAttachBtn,#cmChatPanel .cpAttachBtn{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
+    #communityPage .cpAttachBtn:hover,#cmChatPanel .cpAttachBtn:hover{background:color-mix(in srgb,var(--cmAccent) 30%,transparent)!important;}
+    #communityPage .cpShowcase,#cmChatPanel .cpShowcase{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cpShowcaseText,#cmChatPanel .cpShowcaseText{color:var(--cmTx);}
+    #communityPage .cpPhoto,#cmChatPanel .cpPhoto{border:1px solid var(--cmBdr);}
+    #communityPage .cpRefreshSpinner,#cmChatPanel .cpRefreshSpinner{border-color:color-mix(in srgb,var(--cmAccent) 25%,transparent);border-top-color:var(--cmAccent);}
 
-    #communityPage .cpBar::before{background:var(--cmSur)!important;}
-    #communityPage .cpBar{border-top:1px solid var(--cmBdr);}
-    #communityPage .cpBarAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
+    #communityPage .cpBar::before,#cmChatPanel .cpBar::before{background:var(--cmSur)!important;}
+    #communityPage .cpBar,#cmChatPanel .cpBar{border-top:1px solid var(--cmBdr);}
+    #communityPage .cpBarAvatar,#cmChatPanel .cpBarAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
     /* hide composer avatar */
-    #communityPage .cpBarAvatar{display:none;}
-    #communityPage .cpBarInput{background:var(--cmSur2)!important;color:var(--cmTx)!important;border:1px solid var(--cmBdr)!important;}
-    #communityPage .cpBarInput::placeholder{color:var(--cmTxd);}
-    #communityPage .cpBarSend{background:var(--cmAccent);border:none;color:var(--text-on-accent);}
-    #communityPage .cpBarSend:hover{filter:brightness(1.08);box-shadow:0 3px 14px rgba(var(--pg-rgb),.4)!important;}
-    #communityPage .cpSelectedImage img,#communityPage .cpThumbPreview{border:1px solid var(--cmBdr);background:var(--cmSur);}
-    #communityPage .cpThumbClose{background:var(--cmSur2);border:1px solid var(--cmBdrh);color:var(--cmTx);}
+    #communityPage .cpBarAvatar,#cmChatPanel .cpBarAvatar{display:none;}
+    #communityPage .cpBarInput,#cmChatPanel .cpBarInput{background:var(--cmSur2)!important;color:var(--cmTx)!important;border:1px solid var(--cmBdr)!important;}
+    #communityPage .cpBarInput::placeholder,#cmChatPanel .cpBarInput::placeholder{color:var(--cmTxd);}
+    #communityPage .cpBarSend,#cmChatPanel .cpBarSend{background:var(--cmAccent);border:none;color:var(--text-on-accent);}
+    #communityPage .cpBarSend:hover,#cmChatPanel .cpBarSend:hover{filter:brightness(1.08);box-shadow:0 3px 14px rgba(var(--pg-rgb),.4)!important;}
+    #communityPage .cpSelectedImage img,#communityPage .cpThumbPreview,#cmChatPanel .cpSelectedImage img,#cmChatPanel .cpThumbPreview{border:1px solid var(--cmBdr);background:var(--cmSur);}
+    #communityPage .cpThumbClose,#cmChatPanel .cpThumbClose{background:var(--cmSur2);border:1px solid var(--cmBdrh);color:var(--cmTx);}
 
     /* small devices */
 

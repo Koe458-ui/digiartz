@@ -4,6 +4,39 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v78 — the chat panel is rebuilt to match #zeoPage exactly, because v77
+       only looked like the rest of the site and did not move like it.
+       Two things gave it away. The panel sat inside #communityPage, which
+       carries z-index 500 and a transform, so it was sealed into that
+       stacking context and could never paint over #bnNav at 1000. The
+       nav therefore had to be switched off by hand before the slide and
+       switched back on after it — a cut at each end, against a .45s
+       animation, which reads as the nav taking a moment to go.
+       Zeo has none of that: it is a body-level fixed sheet at z-index
+       9500 and never touches the nav at all, it simply covers it. So
+       #cmChatPanel moves out to body level at z-index 1500 — over the
+       nav, under the emoji picker at 2100, the showcase picker at 2200
+       and the modals at 4300 — and both nav lines are deleted. The nav is
+       now covered by the slide on the way in and uncovered by it on the
+       way out, progressively, with nothing to time against it.
+       Timing matches Zeo's to the millisecond: .4s cubic-bezier(.22,1,
+       .36,1) with visibility 0s linear .4s, down from .45s.
+       Leaving #communityPage costs the panel its descendant selectors, so
+       every #communityPage-scoped rule gains a #cmChatPanel twin, the
+       --cm* token block included. Grid-only selectors are carried along
+       for consistency and simply never match inside the panel.
+       The other half of this is the DM composer, which really did arrive
+       a second late and was not a transition at all: openThread hid the
+       bar and left it hidden until loadFriendships() came back from the
+       network, so the friend gate cost a round-trip before the composer
+       could exist. It now paints from the cached frMap on the way in and
+       the refresh corrects it, so the bar rides in with the panel.
+       Someone never loaded still gets the placeholder — guessing there
+       would flash the wrong bar — and the send stays server-gated by RLS
+       either way, so an optimistic composer cannot post to a stranger.
+       Changed: index.html, css/community.css, css/viewer.css, js/dm.js,
+       js/mywork.js, sw.js.
+
    v77 — community chats open as a panel that slides in from the right,
        the way profile, gallery and community itself already arrive.
        Tapping a community, group or DM used to swap two divs in place —
@@ -633,7 +666,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v77';
+const CACHE_VERSION = 'v78';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -659,8 +692,8 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=2',
   '/css/hero.css?v=65',
-  '/css/viewer.css?v=3',
-  '/css/community.css?v=2',
+  '/css/viewer.css?v=4',
+  '/css/community.css?v=3',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=1',
   '/css/profile.css?v=1',
@@ -680,7 +713,7 @@ const SHELL_URLS = [
   // scripts
   '/js/ranking.js?v=1',
   '/js/community.js?v=2',
-  '/js/dm.js?v=2',
+  '/js/dm.js?v=3',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
@@ -694,7 +727,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=1',
-  '/js/mywork.js?v=4',
+  '/js/mywork.js?v=5',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=1',
   '/js/search.js?v=1',

@@ -61,13 +61,12 @@
   <meta name="description" content="DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists."/>
   <link rel="canonical" href="https://digiartz.net/"/>
   <meta name="robots" content="index, follow, max-image-preview:large"/>
-  <link rel="icon" href="/favicon.ico" sizes="any"/>
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" media="(prefers-color-scheme: light)"/>
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" media="(prefers-color-scheme: light)"/>
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" media="(prefers-color-scheme: light)"/>
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-dark.png" media="(prefers-color-scheme: dark)"/>
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-dark.png" media="(prefers-color-scheme: dark)"/>
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48-dark.png" media="(prefers-color-scheme: dark)"/>
+  <!-- Google Search reads only these link tags — never the web manifest — picks a
+       single icon per hostname, and ignores the media attribute. The whole set is
+       therefore media-free and every entry clears 48px, so there is no declaration
+       here that resolves to a small or theme-conditional icon. -->
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64 128x128"/>
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"/>
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
   <link rel="manifest" href="/site.webmanifest"/>
   <script type="application/ld+json">

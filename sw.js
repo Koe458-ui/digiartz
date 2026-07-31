@@ -4,6 +4,27 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v86 — the favicon Google could never use. Two things kept it out of the
+       search result. Every icon the page declared topped out at 48px —
+       the .ico held 16/32/48 and the six PNGs were 16/32/48 — where
+       Google wants a square larger than 48; the 192 and 512 icons that
+       would have qualified were only ever named in site.webmanifest,
+       which Google does not read when choosing a favicon. And all six
+       PNGs were declared behind media="(prefers-color-scheme: …)", which
+       Google ignores — it takes one icon per hostname and does not
+       evaluate media — so the six collapsed into a set it had to guess
+       at, leaving the 48px .ico as the only unambiguous candidate.
+       favicon.ico is rebuilt from icon-512.png at 16/32/48/64/128, so the
+       .ico clears the floor on its own, and icon-192.png is now declared
+       as a plain rel="icon". Nothing in the set is theme-conditional or
+       under 48px any more, so whichever Google picks is a valid answer.
+       The trade is the dark-mode tab icon v27 added: with the media
+       queries gone, browsers take the largest match and dark-mode tabs
+       show the white-background bird instead of the white-on-transparent
+       one. The -dark and 16/32/48 PNGs stay on disk, unreferenced.
+       Precache drops /favicon-32x32.png, which the page no longer
+       requests. Changed: index.html, favicon.ico, sw.js.
+
    v85 — the log lines ran off the side of a phone. A grid column written
        as 1fr is minmax(auto,1fr), and that auto floor is the widest the
        row's own content wants to be — so one long title pushed the track
@@ -876,7 +897,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v85';
+const CACHE_VERSION = 'v86';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -895,7 +916,6 @@ const SHELL_URLS = [
   '/aiAssistantData.js',
   '/site.webmanifest',
   '/favicon.ico',
-  '/favicon-32x32.png',
   '/apple-touch-icon.png',
   '/icon-192.png',
 

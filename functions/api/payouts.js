@@ -18,7 +18,7 @@
 // correct resting place: reviewed, owed, not yet sent. Everything up to that
 // point works without the approval.
 
-const MIN_PAYOUT = 1000;   // ten dollars, in minor units — below this the fees eat it
+const MIN_PAYOUT = 500;   // five dollars, in minor units — below this the fees eat it
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
@@ -149,6 +149,59 @@ async function underLimit(env, bucket, limit, seconds) {
 }
 
 // ---------------------------------------------------------------------------
+// TDS under section 194-O.
+//
+// The obligation is the platform's, not the seller's: an e-commerce operator
+// facilitating a sale by a resident participant withholds from the GROSS sale
+// value at credit or payment, whichever is earlier. So it is computed here,
+// against the gross of the sales a payout settles, not against the payout.
+//
+//   0.1%  the rate since 1 October 2024
+//   5%    where no PAN has been furnished (section 206AA)
+//   nil   an individual or HUF at or under Rs 5,00,000 of gross sales in the
+//         financial year who has furnished a PAN, which is most sellers
+//   nil   a seller resident anywhere other than India
+const TDS_BPS      = 10;         // 0.1%
+const TDS_NO_PAN   = 500;        // 5%
+const TDS_FLOOR_IN = 50000000;   // Rs 5,00,000 in paise
+
+async function tdsFor(env, userId, grossBasis) {
+  const rows = await sbService(env,
+    '/seller_tax?user_id=eq.' + userId + '&select=country,pan,is_individual&limit=1');
+  const t = rows && rows[0];
+
+  // No declaration on file is treated as Indian residence without a PAN. That
+  // is the cautious reading: under-withholding is the platform's liability,
+  // over-withholding is the seller's to reclaim in their return.
+  const country = (t && t.country) || 'IN';
+  if (country !== 'IN') return { bps: 0, amount: 0 };
+
+  const pan = t && t.pan;
+  if (!pan) return { bps: TDS_NO_PAN, amount: Math.round(grossBasis * TDS_NO_PAN / 10000) };
+
+  if (t && t.is_individual) {
+    const fy = await sbRpcService(env, 'dz_fy_gross', { p_user: userId });
+    if (Number(fy) <= TDS_FLOOR_IN) return { bps: 0, amount: 0 };
+  }
+  return { bps: TDS_BPS, amount: Math.round(grossBasis * TDS_BPS / 10000) };
+}
+
+// service-role RPC, for functions a member may not call directly
+async function sbRpcService(env, fn, args = {}) {
+  const res = await fetch(env.SB_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: {
+      apikey: env.SB_SERVICE_KEY,
+      authorization: 'Bearer ' + env.SB_SERVICE_KEY,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) return 0;
+  return res.json().catch(() => 0);
+}
+
+// ---------------------------------------------------------------------------
 // What this seller may actually withdraw, computed from the ledger rather than
 // trusted from the caller. Mirrors dz_seller_balance(), but on the service role
 // so it can be relied on for a write.
@@ -205,6 +258,8 @@ export async function onRequestPost({ env, request }) {
           '&order=is_default.desc,created_at.asc' +
           '&select=id,provider,kind,label,paypal_email,upi_vpa,holder_name,bank_name,bank_last4,bank_ifsc,is_default,verified'),
       ]);
+      const tax = await sbService(env,
+        '/seller_tax?user_id=eq.' + user.id + '&select=country,pan,is_individual&limit=1');
       const payouts = await sbService(env,
         '/payout_requests?user_id=eq.' + user.id +
         '&order=requested_at.desc&limit=50' +
@@ -216,6 +271,8 @@ export async function onRequestPost({ env, request }) {
         history: history || [],
         methods: methods || [],
         payouts: payouts || [],
+        tax: (tax && tax[0]) || null,
+        minPayout: MIN_PAYOUT,
         withdrawable: await withdrawable(env, user.id),
       });
     }
@@ -275,6 +332,25 @@ export async function onRequestPost({ env, request }) {
       return json({ ok: true, method: made && made[0] });
     }
 
+    // ---- tax residence and PAN -------------------------------------------
+    if (body.action === 'tax') {
+      const country = String(body.country || 'IN').toUpperCase();
+      if (!/^[A-Z]{2}$/.test(country)) return json({ error: 'Pick a country' }, 400);
+      const pan = String(body.pan || '').trim().toUpperCase();
+      if (country === 'IN' && pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan))
+        return json({ error: 'That does not look like a PAN' }, 400);
+      await sbService(env, '/seller_tax', {
+        method: 'POST',
+        headers: { prefer: 'return=representation,resolution=merge-duplicates' },
+        body: JSON.stringify({
+          user_id: user.id, country, pan: pan || null,
+          is_individual: body.isIndividual !== false,
+          updated_at: new Date().toISOString(),
+        }),
+      });
+      return json({ ok: true });
+    }
+
     if (body.action === 'method-remove') {
       const id = String(body.id || '');
       if (!/^[0-9a-f-]{36}$/.test(id)) return json({ error: 'Bad id' }, 400);
@@ -330,14 +406,34 @@ export async function onRequestPost({ env, request }) {
       if (amount < MIN_PAYOUT)
         return json({ error: 'Minimum payout is ' + toValue(MIN_PAYOUT, currency) + ' ' + currency }, 400);
 
+      // Gross basis: the sale value behind the share being withdrawn. Walked
+      // from the actual earnings rather than derived from the fee rate, since
+      // the rate is recorded per sale and older rows may carry a different one.
+      const covering = await sbService(env,
+        '/marketplace_earnings?seller_id=eq.' + user.id +
+        '&status=eq.available&currency=eq.' + currency +
+        '&select=gross_amount,net_amount&order=created_at.asc');
+      let left = amount, grossBasis = 0;
+      for (const e of covering || []) {
+        if (left <= 0) break;
+        grossBasis += Number(e.gross_amount || 0);
+        left -= Number(e.net_amount || 0);
+      }
+
+      const tds = await tdsFor(env, user.id, grossBasis);
+      const net = amount - tds.amount;
+      if (net <= 0) return json({ error: 'Nothing would be left after tax withholding' }, 400);
+
       const rows = await sbService(env, '/payout_requests', {
         method: 'POST',
         body: JSON.stringify({
           user_id: user.id, amount, currency,
           method: 'paypal', destination: dest, status: 'requested',
+          gross_basis: grossBasis, tds_bps: tds.bps,
+          tds_amount: tds.amount, net_amount: net,
         }),
       });
-      return json({ ok: true, request: rows && rows[0] });
+      return json({ ok: true, request: rows && rows[0], tds: tds.amount, net: net });
     }
 
     // ---- seller: change their mind ---------------------------------------
@@ -435,7 +531,9 @@ export async function onRequestPost({ env, request }) {
             items: [{
               recipient_type: 'EMAIL',
               receiver: req.destination,
-              amount: { value: toValue(req.amount, req.currency), currency: req.currency },
+              // what leaves is the request minus anything withheld
+              amount: { value: toValue(req.net_amount != null ? req.net_amount : req.amount,
+                                       req.currency), currency: req.currency },
               note: 'DigiArtz marketplace earnings',
               sender_item_id: req.id,
             }],

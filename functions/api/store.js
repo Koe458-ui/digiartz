@@ -548,14 +548,18 @@ const MODULE = `
     // Themed, in the sheet — never a browser prompt.
     host.querySelector('.dzWlReq').addEventListener('click', function(){
       var max = s.withdrawable || 0;
+      var min = d.minPayout || 500;
       openSheet('Request payout');
       sheet.body.innerHTML =
         '<div class="dzBkForm">' +
           '<label class="dzBkLbl">Amount in USD</label>' +
           '<input class="dzBkIn" id="dzWlAmt" type="text" inputmode="decimal" placeholder="' +
             esc((max / 100).toFixed(2)) + '">' +
-          '<p class="dzBkNote">You can withdraw up to ' + esc(usd(max)) +
-            '. Paid to your default method.</p>' +
+          '<p class="dzBkNote">Minimum ' + esc(usd(min)) + '. You can withdraw up to ' +
+            esc(usd(max)) + '. Paid to your default method.' +
+            ((d.tax && d.tax.country === 'IN') || !d.tax
+              ? ' Tax may be withheld at source under section 194-O; the exact amount is shown once you request.'
+              : '') + '</p>' +
           '<div class="dzWlMsg" hidden></div>' +
           '<button type="button" class="dzWlReq" id="dzWlGo">Request</button>' +
         '</div>';
@@ -568,7 +572,13 @@ const MODULE = `
         }
         m2.textContent = 'Sending…'; m2.hidden = false; m2.classList.remove('dzWlMsg--bad');
         pay('request', {amount:v, currency:'USD'})
-          .then(function(){ closeSheet(); toast('Payout requested'); loadWallet(true); },
+          .then(function(r){
+                  closeSheet();
+                  toast(r && r.tds
+                    ? 'Payout requested · ' + money(r.tds, 'USD') + ' withheld as tax'
+                    : 'Payout requested');
+                  loadWallet(true);
+                },
                 function(e){
                   m2.textContent = e.message || 'Could not request that';
                   m2.classList.add('dzWlMsg--bad');
@@ -592,6 +602,22 @@ const MODULE = `
         '<p class="dzBkNote">Card numbers are never asked for or stored here. ' +
         'Cards are handled inside the provider’s own checkout, which is the only ' +
         'place they belong.</p>' +
+
+        '<div class="dzBkHead">Tax details</div>' +
+        '<div class="dzBkForm">' +
+          '<label class="dzBkLbl">Country of tax residence</label>' +
+          '<input class="dzBkIn" id="dzTxC" type="text" maxlength="2" placeholder="IN" value="' +
+            esc((d.tax && d.tax.country) || 'IN') + '">' +
+          '<label class="dzBkLbl">PAN (India only)</label>' +
+          '<input class="dzBkIn" id="dzTxP" type="text" maxlength="10" placeholder="ABCDE1234F" value="' +
+            esc((d.tax && d.tax.pan) || '') + '">' +
+          '<p class="dzBkNote">Indian sellers: we are required to deduct tax at source ' +
+          'on marketplace sales under section 194-O. With a PAN on file the rate is 0.1%, ' +
+          'and individuals stay exempt below ₹5,00,000 of sales in the financial year. ' +
+          'Without a PAN the rate is 5%. Sellers outside India have nothing withheld.</p>' +
+          '<div class="dzWlMsg" hidden></div>' +
+          '<button type="button" class="dzWlReq" id="dzTxSave">Save tax details</button>' +
+        '</div>' +
       '</div>';
 
     Array.prototype.forEach.call(host.querySelectorAll('[data-add]'), function(b){
@@ -608,6 +634,19 @@ const MODULE = `
         pay('method-remove', {id:b.getAttribute('data-rm')})
           .then(function(){ toast('Removed'); loadWallet(true); }, function(e){ toast(e.message); });
       });
+    });
+
+    var tm = host.querySelector('.dzBkForm .dzWlMsg');
+    host.querySelector('#dzTxSave').addEventListener('click', function(){
+      tm.textContent = 'Saving…'; tm.hidden = false; tm.classList.remove('dzWlMsg--bad');
+      pay('tax', {
+        country: host.querySelector('#dzTxC').value,
+        pan:     host.querySelector('#dzTxP').value
+      }).then(function(){ tm.textContent = 'Saved.'; loadWallet(true); },
+              function(e){
+                tm.textContent = e.message || 'Could not save that';
+                tm.classList.add('dzWlMsg--bad');
+              });
     });
   }
 

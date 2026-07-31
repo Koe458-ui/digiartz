@@ -214,7 +214,7 @@
 <li>Withdraw consent where processing is based on consent</li>
 <li>Opt out of marketing or certain ad personalization</li>
 </ul>
-<p>To make a privacy request, contact us at [your contact email].</p>
+<p>To make a privacy request, contact us at DigiArtzsupport@gmail.com.</p>
 <p>If you are located in the EEA, UK, or other regions with similar laws, you may also have additional rights under local law.</p>
 <h3>8. Data Retention</h3>
 <p>We keep personal information only as long as needed for the purposes described in this policy, including account management, legal compliance, dispute resolution, security, and platform operations.</p>
@@ -232,7 +232,7 @@
 <p>We may update this Privacy Policy from time to time. When we do, we will post the updated version on this page and revise the effective date above.</p>
 <h3>14. Contact Us</h3>
 <p>If you have any questions or requests about this Privacy Policy, contact us at:</p>
-<p>Email: [your contact email]<br>Website: digiartz.net</p>
+<p>Email: DigiArtzsupport@gmail.com<br>Website: digiartz.net</p>
 <span class="lmDate">EFFECTIVE DATE: 6 JULY 2026</span>`
     },
     terms: {
@@ -264,7 +264,7 @@
 <p>You are responsible for making sure you have the rights to post any artwork, images, text, music, fonts, or other material you upload.</p>
 <h3>4. Copyright and Intellectual Property</h3>
 <p>Do not upload content that violates someone else's copyright, trademark, privacy, or other rights.</p>
-<p>If you believe content on DigiArtz infringes your rights, contact us with a proper notice at [your contact email] and include enough details for us to review the claim.</p>
+<p>If you believe content on DigiArtz infringes your rights, contact us with a proper notice at DigiArtzsupport@gmail.com and include enough details for us to review the claim.</p>
 <p>We may remove content, limit access, or disable accounts if we believe infringement or repeat infringement has occurred.</p>
 <h3>5. Community Rules</h3>
 <p>You agree not to use DigiArtz to:</p>
@@ -319,7 +319,7 @@
 <p>These Terms will be governed by the laws of [your country/state], unless local law requires otherwise.</p>
 <h3>16. Contact</h3>
 <p>Questions about these Terms can be sent to:</p>
-<p>Email: [your contact email]<br>Website: digiartz.net</p>
+<p>Email: DigiArtzsupport@gmail.com<br>Website: digiartz.net</p>
 <span class="lmDate">EFFECTIVE DATE: 6 JULY 2026</span>`
     },
     cookie: {
@@ -386,7 +386,7 @@
 <p>We may update this Cookie Policy from time to time. Changes will appear on this page with a revised effective date.</p>
 <h3>7. Contact</h3>
 <p>Questions about this Cookie Policy can be sent to:</p>
-<p>Email: [your contact email]<br>Website: digiartz.net</p>
+<p>Email: DigiArtzsupport@gmail.com<br>Website: digiartz.net</p>
 <span class="lmDate">EFFECTIVE DATE: 6 JULY 2026</span>`
     },
     refund: {
@@ -417,7 +417,7 @@
         '<p>Earnings become available for withdrawal <strong>7 days</strong> after the sale. This period exists so that a refund, dispute or chargeback can be resolved before money leaves the platform. Earnings from a sale that is later reversed are cancelled, whether or not the clearing period has passed.</p>' +
 
         '<h3>5. Payouts</h3>' +
-        '<p>You may request a payout of your available balance to a payout method you have added. A minimum applies. Requests are reviewed before being sent, and DigiArtz may hold or decline a payout where a sale is disputed, where a request appears fraudulent, or where required by law. Payment provider fees and any currency conversion are applied by the provider.</p>' +
+        '<p>You may request a payout of your available balance to a payout method you have added. The minimum payout is US$5. Requests are reviewed before being sent, and DigiArtz may hold or decline a payout where a sale is disputed, where a request appears fraudulent, or where required by law. Payment provider fees and any currency conversion are applied by the provider.</p>' +
 
         '<h3>6. Negative balances and reversals</h3>' +
         '<p>If a sale is reversed after the related earnings have already been paid out to you, the amount becomes a debt owed to DigiArtz. It may be recovered from your future earnings, or requested from you directly.</p>' +
@@ -425,8 +425,10 @@
         '<h3>7. Payout details and identity</h3>' +
         '<p>You are responsible for the accuracy of the payout details you provide. DigiArtz cannot recover money sent to a payment address you entered incorrectly. We may require identity or tax information before sending a payout where the law or our payment providers require it.</p>' +
 
-        '<h3>8. Taxes</h3>' +
-        '<p>You are responsible for your own taxes on your earnings. DigiArtz does not provide tax advice. Where the law requires us to withhold or report amounts in connection with your sales, we will do so.</p>' +
+        '<h3>8. Taxes and withholding</h3>' +
+        '<p>You are responsible for your own taxes on your earnings. DigiArtz does not provide tax advice.</p>' +
+        '<p>Where you are resident in India, we are required by section 194-O of the Income-tax Act to deduct tax at source on the gross value of your sales through the marketplace, and we deduct it from your payout. With a PAN on file the rate is 0.1%. Individuals and HUFs whose gross sales through DigiArtz stay at or under \u20b95,00,000 in a financial year, and who have furnished a PAN, are exempt. Where no PAN has been furnished, section 206AA applies a rate of 5%. Sellers resident outside India are not covered by this and nothing is withheld.</p>' +
+        '<p>Keeping your tax residence and PAN accurate in your profile settings is your responsibility. Where no declaration is on file we withhold at the higher rate, which you may reclaim through your own return.</p>' +
 
         '<h3>9. Prohibited listings</h3>' +
         '<p>You may not list work you do not hold the rights to, work that infringes another person\u2019s rights, or anything prohibited by our Terms &amp; Conditions. Listings are subject to review and may be removed. We may withhold earnings from a sale of an infringing item.</p>' +
@@ -436,7 +438,7 @@
 
         '<h3>11. Contact</h3>' +
         '<p>Questions about these terms can be sent to:</p>' +
-        '<p>Email: [your contact email]<br>Website: digiartz.net</p>' +
+        '<p>Email: DigiArtzsupport@gmail.com<br>Website: digiartz.net</p>' +
         '<span class="lmDate">EFFECTIVE DATE: JULY 2026</span>'
     }
   };

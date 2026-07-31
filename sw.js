@@ -4,6 +4,27 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v89 — withholding, a support address, and a five dollar floor. Every
+       policy carried a [your contact email] placeholder where a contact
+       address belongs; both payment providers check for a reachable one
+       during merchant review, so all six now name the support account.
+       Indian sellers: section 194-O makes the PLATFORM, not the seller,
+       responsible for deducting tax at source on the gross value of a
+       marketplace sale. It is computed against the sales a payout
+       settles — walked from the earnings rows rather than derived from
+       the fee rate, since the rate is recorded per sale and older rows
+       may carry a different one — and taken off what leaves. 0.1% with a
+       PAN on file, nil for an individual under five lakh of sales in the
+       financial year, 5% with no PAN under 206AA, nothing at all for a
+       seller resident elsewhere. No declaration on file is treated as
+       Indian residence without a PAN: under-withholding is the platform's
+       liability, over-withholding is the seller's to reclaim. Profile
+       settings takes the country and PAN, the seller terms say all of it
+       plainly, and the payout sheet says what was withheld.
+       The withdrawal minimum is five dollars.
+       Changed: index.html, sw.js, css/hero.css, js/effects.js, and the
+       payout backend under functions/.
+
    v88 — a wallet, and the terms that had to come with it. Profile settings
        gains two sections: what a member has earned and where they want it
        sent. The header totals in USD from a stored rate table rather than
@@ -1002,7 +1023,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v88';
+const CACHE_VERSION = 'v89';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1026,7 +1047,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=69',
+  '/css/hero.css?v=70',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
@@ -1067,7 +1088,7 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=2',
   '/js/search.js?v=2',
   '/js/feed.js?v=2',
-  '/js/effects.js?v=2',
+  '/js/effects.js?v=3',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=1',

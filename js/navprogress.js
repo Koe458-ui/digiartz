@@ -235,13 +235,19 @@
   // tapping the section you are already in rides back up to the top
   function stopGlide () { if (glide) { cancelAnimationFrame(glide); glide = 0; } }
 
-  function toTop () {
+  function toTop (start) {
+    if ((scroller && !scroller.isConnected) || (root && !root.isConnected)) relink();
     var box = boxOf();
-    if (!box || box.scrollTop <= 0) return;
+    if (!box) return;
+    // a section that rebuilt itself on the way in is already sitting at the
+    // top, so the ride starts from where the tap found it, not from there
+    var from = Math.max(box.scrollTop, Math.min(start || 0, room(box)));
+    if (from <= 0) return;
     stopGlide();
     dropPending();
     if (mqReduce && mqReduce.matches) { setScroll(box, 0); return; }
-    var from = box.scrollTop, t0 = 0;
+    if (box.scrollTop < from - 1) setScroll(box, from);   // before the frame paints
+    var t0 = 0;
     var dur = Math.min(760, 260 + from * 0.22);   // a longer way up takes longer
     glide = requestAnimationFrame(function step (now) {
       if (!t0) t0 = now;
@@ -345,9 +351,14 @@
       el = el.parentNode;
     }
     if (!item || !rings[item.id]) return;
-    // the section you are already in is the one the tap sends to the top;
-    // the handler behind this tap may rebuild it first, so let that land
-    if (item.id === activeId) requestAnimationFrame(toTop);
+    if (item.id !== activeId) return;
+    // the section you are already in is the one the tap sends to the top.
+    // the handler behind this tap runs first and may rebuild the section
+    // from scratch — gallery does — which drops it to the top before the
+    // ride can start, so the offset is taken here, while it still stands
+    var box = boxOf();
+    var from = box ? box.scrollTop : 0;
+    requestAnimationFrame(function () { toTop(from); });
   }
 
   build();

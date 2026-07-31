@@ -4,6 +4,26 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v82 — the gallery cut to the top instead of riding there. Tapping the
+       icon of the section you are in glides home and community up over
+       about half a second; the gallery arrived instantly, and upload,
+       profile and community-after-a-rebuild had the same flaw waiting.
+       The cause is that the handler behind the tap runs first, and a
+       section that rebuilds itself on the way in — openFG replaces the
+       whole grid — is already sitting at the top by the time the glide
+       gets its turn on the next frame. It read scrollTop 0, had nothing
+       to travel, and returned. The offset is now taken in the nav's own
+       capture-phase listener, before that handler runs and while the
+       section still stands where the tap found it, and the glide puts it
+       back before the frame paints and rides down from there. Nothing
+       flashes, because the restore and the first step happen inside the
+       same frame the rebuild did.
+       Traced frame by frame at 1200px: hero, gallery and community now
+       run the identical curve — 1200, 798, 437, 205, 75, 16, 1, 0 — and
+       a touch part way through still stops all of them dead, verified
+       in-page so the reading and the touch cannot drift apart.
+       Changed: index.html, js/navprogress.js.
+
    v81 — the nav mark is tuned per theme, and the glide respects a reader
        who asked for less motion. One alpha for all three themes does not
        land the same way in all three: the mark is near-white over
@@ -742,7 +762,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v81';
+const CACHE_VERSION = 'v82';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -813,7 +833,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
   '/js/sections.js?v=71',
-  '/js/navprogress.js?v=3'
+  '/js/navprogress.js?v=4'
 ];
 
 // hosts

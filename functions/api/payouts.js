@@ -122,6 +122,20 @@ async function sbService(env, path, init = {}) {
   return body;
 }
 
+async function ledgerAppend(env, args) {
+  try {
+    await fetch(env.SB_URL + '/rest/v1/rpc/dz_ledger_append', {
+      method: 'POST',
+      headers: {
+        apikey: env.SB_SERVICE_KEY,
+        authorization: 'Bearer ' + env.SB_SERVICE_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(args),
+    });
+  } catch { /* the payout already went; never fail on the audit write */ }
+}
+
 async function isAdmin(env, userId) {
   const rows = await sbService(env, '/profiles?id=eq.' + userId + '&select=role&limit=1');
   return !!(rows && rows[0] && rows[0].role === 'admin');
@@ -146,6 +160,57 @@ async function underLimit(env, bucket, limit, seconds) {
     if (!res.ok) return true;
     return (await res.json()) !== false;
   } catch { return true; }
+}
+
+// ---------------------------------------------------------------------------
+// The gate. Nothing leaves without the two records agreeing.
+//
+// The wallet's figure is derived from the operational tables. The ledger's is
+// derived from an append-only record written at settlement from the provider's
+// own numbers. If a bug inflates one — the sixteen dollars that reads as a
+// hundred and nine — the other does not move with it, the two disagree, and
+// the withdrawal is refused rather than paid.
+//
+// Fails CLOSED, unlike the rate limiter. A limiter that breaks should not stop
+// a customer; a reconciliation check that breaks must not let money out.
+async function reconciled(env, userId, currency) {
+  let rows;
+  try {
+    const res = await fetch(env.SB_URL + '/rest/v1/rpc/dz_reconcile', {
+      method: 'POST',
+      headers: {
+        apikey: env.SB_SERVICE_KEY,
+        authorization: 'Bearer ' + env.SB_SERVICE_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ p_user: userId }),
+    });
+    if (!res.ok) return { ok: false, reason: 'check unavailable' };
+    rows = await res.json();
+  } catch {
+    return { ok: false, reason: 'check unavailable' };
+  }
+
+  const row = (rows || []).find((r) => r.currency === currency);
+  // No ledger and no earnings in this currency is not a mismatch, it is an
+  // empty balance — the amount check upstream already refuses that.
+  if (!row) return { ok: true };
+  if (row.agrees) return { ok: true };
+
+  // Record it so support has something to look at, and so a member cannot
+  // simply retry until a race lets it through.
+  await sbService(env, '/reconciliation_flags', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: userId, currency,
+      operational: row.operational, ledger: row.ledger,
+      discrepancy: row.discrepancy, kind: 'balance_mismatch',
+      detail: 'Withdrawal blocked: wallet says ' + row.operational +
+              ', ledger says ' + row.ledger + ' (' + currency + ', minor units)',
+    }),
+  }).catch(() => {});
+
+  return { ok: false, reason: 'mismatch', row };
 }
 
 // ---------------------------------------------------------------------------
@@ -258,6 +323,9 @@ export async function onRequestPost({ env, request }) {
           '&order=is_default.desc,created_at.asc' +
           '&select=id,provider,kind,label,paypal_email,upi_vpa,holder_name,bank_name,bank_last4,bank_ifsc,is_default,verified'),
       ]);
+      const flags = await sbService(env,
+        '/reconciliation_flags?user_id=eq.' + user.id + '&status=eq.open' +
+        '&select=id,currency,discrepancy,created_at&limit=5');
       const tax = await sbService(env,
         '/seller_tax?user_id=eq.' + user.id + '&select=country,pan,is_individual&limit=1');
       const payouts = await sbService(env,
@@ -272,6 +340,7 @@ export async function onRequestPost({ env, request }) {
         methods: methods || [],
         payouts: payouts || [],
         tax: (tax && tax[0]) || null,
+        flags: flags || [],
         minPayout: MIN_PAYOUT,
         withdrawable: await withdrawable(env, user.id),
       });
@@ -390,6 +459,13 @@ export async function onRequestPost({ env, request }) {
 
       // paid to the default instrument, snapshotted onto the request so a
       // later edit cannot rewrite where past money went
+      // an unresolved flag freezes withdrawals until a human clears it
+      const flags = await sbService(env,
+        '/reconciliation_flags?user_id=eq.' + user.id +
+        '&status=eq.open&select=id&limit=1');
+      if (flags && flags.length)
+        return json({ error: 'Withdrawals are paused on this account while a balance check is reviewed. Please contact support.', flagged: true }, 409);
+
       const methods = await sbService(env,
         '/payout_methods?user_id=eq.' + user.id + '&is_default=is.true' +
         '&select=kind,paypal_email,upi_vpa,bank_last4&limit=1');
@@ -399,6 +475,17 @@ export async function onRequestPost({ env, request }) {
       if (!dest) return json({ error: 'Add a payout method before requesting a payout' }, 400);
       if (m.kind !== 'paypal_email')
         return json({ error: 'Only PayPal payouts can be sent automatically right now' }, 400);
+
+      // Before anything else: do the two records agree?
+      const rec = await reconciled(env, user.id, currency);
+      if (!rec.ok) {
+        return json({
+          error: rec.reason === 'mismatch'
+            ? 'Your balance could not be verified. Withdrawals are paused on this account as a precaution — please contact support.'
+            : 'Balance verification is unavailable right now. Please try again shortly.',
+          flagged: rec.reason === 'mismatch',
+        }, 409);
+      }
 
       const avail = (await withdrawable(env, user.id))[currency] || 0;
       if (amount > avail)
@@ -549,14 +636,29 @@ export async function onRequestPost({ env, request }) {
           '/marketplace_earnings?seller_id=eq.' + req.user_id +
           '&status=eq.available&currency=eq.' + req.currency +
           '&select=id,net_amount&order=created_at.asc');
-        let left = Number(req.amount);
+        let left = Number(req.amount), retired = 0;
         for (const e of earned || []) {
           if (left <= 0) break;
           await sbService(env, '/marketplace_earnings?id=eq.' + e.id, {
             method: 'PATCH', body: JSON.stringify({ status: 'paid_out' }),
           });
+          retired += Number(e.net_amount || 0);
           left -= Number(e.net_amount || 0);
         }
+
+        // Booked against what was actually RETIRED, not what was requested.
+        // Retirement walks whole earnings, so the last one usually overshoots;
+        // booking the request would leave a few cents of permanent
+        // disagreement and flag an honest seller forever.
+        await ledgerAppend(env, {
+          p_user: req.user_id, p_type: 'payout_debit', p_direction: 'debit',
+          p_amount: retired, p_currency: req.currency,
+          p_source: 'paypal', p_provider_txn: bid,
+          p_provider_amount: req.net_amount != null ? req.net_amount : req.amount,
+          p_provider_currency: req.currency,
+          p_ref_table: 'payout_requests', p_ref_id: req.id,
+          p_note: req.tds_amount ? 'net of tax withheld' : null,
+        });
 
         // A batch PayPal accepted is not money that arrived — the item can
         // still fail, be blocked, or go unclaimed. With a webhook bound, the

@@ -502,8 +502,24 @@ const MODULE = `
     var s = d.summary || {};
     var paid = (d.payouts || []).filter(function(p){ return p.status === 'paid'; });
 
+    // A blocked balance is the first thing the member sees, and the request
+    // button goes with it — there is no point offering an action the server
+    // will refuse.
+    var flagged = (d.flags || []).length > 0;
+
     host.innerHTML =
       '<div class="dzWl">' +
+        (flagged
+          ? '<div class="dzWlFlag">' +
+              '<div class="dzWlFlagTop">‼️ Balance check failed</div>' +
+              '<p>Your wallet total and our independent transaction record do not ' +
+              'agree, so withdrawals are paused on this account as a precaution. ' +
+              'Nothing has been lost — your earnings are intact and this is a ' +
+              'safeguard, not a deduction.</p>' +
+              '<a class="dzWlFlagBtn" href="mailto:DigiArtzsupport@gmail.com' +
+                '?subject=Balance%20check%20failed">Contact support</a>' +
+            '</div>'
+          : '') +
         '<div class="dzWlHead">' +
           '<div class="dzWlBalLbl">Wallet balance</div>' +
           '<div class="dzWlBal">' + esc(usd(s.withdrawable || 0)) + '</div>' +
@@ -530,7 +546,8 @@ const MODULE = `
           : '') +
 
         '<button type="button" class="dzWlReq" ' +
-          ((s.withdrawable || 0) > 0 ? '' : 'disabled') + '>Request payout</button>' +
+          (!flagged && (s.withdrawable || 0) > 0 ? '' : 'disabled') + '>' +
+          (flagged ? 'Withdrawals paused' : 'Request payout') + '</button>' +
         '<div class="dzWlMsg" hidden></div>' +
 
         '<div class="dzWlSect">Activity</div>' +
@@ -582,6 +599,8 @@ const MODULE = `
                 function(e){
                   m2.textContent = e.message || 'Could not request that';
                   m2.classList.add('dzWlMsg--bad');
+                  // a freshly-raised flag should show on the wallet at once
+                  if(/paused|verified/i.test(e.message || '')) loadWallet(true);
                 });
       });
     });

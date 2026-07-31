@@ -146,7 +146,26 @@ async function sbService(env, path, init = {}) {
 const FEE_BPS   = 1500;   // 15%
 const HOLD_DAYS = 7;
 
-async function recordEarning(env, row) {
+// Independent record of the same movement, taken from what the PROVIDER
+// reported rather than from our own arithmetic — that is the whole point of
+// it. Appended, never updated: the table refuses UPDATE and DELETE to every
+// role. If our maths drifts, this does not drift with it, and the mismatch is
+// what stops a withdrawal.
+async function ledger(env, args) {
+  try {
+    await fetch(env.SB_URL + '/rest/v1/rpc/dz_ledger_append', {
+      method: 'POST',
+      headers: {
+        apikey: env.SB_SERVICE_KEY,
+        authorization: 'Bearer ' + env.SB_SERVICE_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(args),
+    });
+  } catch { /* never block a settlement on the audit write */ }
+}
+
+async function recordEarning(env, row, prov) {
   if (row.kind !== 'marketplace' || !row.item_id) return;
   const items = await sbService(env,
     '/marketplace_items?id=eq.' + row.item_id + '&select=user_id&limit=1');
@@ -167,6 +186,16 @@ async function recordEarning(env, row) {
       available_at: new Date(Date.now() + HOLD_DAYS * 86400000).toISOString(),
     }),
   }).catch(() => {});
+
+  await ledger(env, {
+    p_user: sellerId, p_type: 'sale_credit', p_direction: 'credit',
+    p_amount: gross - fee, p_currency: row.currency,
+    p_source: 'paypal',
+    p_provider_txn: (prov && prov.txn) || null,
+    p_provider_amount: (prov && prov.amount) || null,
+    p_provider_currency: (prov && prov.currency) || row.currency,
+    p_ref_table: 'payments', p_ref_id: row.id,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -365,7 +394,11 @@ export async function onRequestPost({ env, request }) {
 
       // Recorded regardless of who got here first — the webhook may already
       // have settled the row, and the earning is idempotent either way.
-      await recordEarning(env, row);
+      await recordEarning(env, row, {
+        txn: capture.id,
+        amount: Math.round(parseFloat(paidAmount.value) * 100),
+        currency: paidAmount.currency_code,
+      });
 
       let tier = null;
       if (row.kind === 'subscription') {

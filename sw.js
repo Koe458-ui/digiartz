@@ -4,6 +4,46 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v90 — a second, independent record of every movement, and nothing
+       leaves without the two agreeing. The wallet's total is derived
+       from the operational tables; a bug there is a bug in the only
+       number that exists, and sixteen dollars reading as a hundred and
+       nine is sixteen dollars paid out as a hundred and nine.
+       Two copies of the same table would not have fixed that — written
+       by the same code from the same figures, the bug writes the wrong
+       number to both, they agree, and the check passes. So the second
+       record is independent in two ways that matter. Its SOURCE is what
+       the provider itself reported, its own transaction id and its own
+       amount, taken live at settlement rather than from our arithmetic.
+       Its STORAGE is append-only: update and delete are refused by a
+       trigger and withheld at the grant level from every role, the
+       service role the backends run as included. History cannot be
+       rewritten by anyone.
+       Each entry also hashes the one before it, so a row edited in place
+       breaks the chain from that point and the break is findable. A
+       plain duplicate has no such property; it can be quietly corrected
+       to match.
+       The two are compared per currency in minor units, never in USD, so
+       an exchange-rate change cannot manufacture a disagreement. A
+       withdrawal reconciles first and is refused if they differ, the
+       member is shown a red mark and a way to reach support, and the
+       account stays frozen until a human clears the flag. This check
+       fails CLOSED, the opposite of the rate limiter: a broken limiter
+       must not stop a customer, a broken balance check must not let
+       money out.
+       Verified end to end against a real sale. Healthy: both sides
+       1700. Corrupted so the wallet claimed 10900 while the record held
+       1700: caught, discrepancy 9200, refused. Three other constraints
+       turned out to catch cruder corruptions before reconciliation was
+       even reached. The ledger refused every attempt to edit or delete
+       it, chain intact throughout.
+       The debit booked at payout is the total actually retired, not the
+       amount requested — retirement walks whole earnings and the last
+       one overshoots, so booking the request would leave a permanent few
+       cents of disagreement and flag an honest seller forever.
+       Changed: index.html, sw.js, css/hero.css, and the money backends
+       under functions/.
+
    v89 — withholding, a support address, and a five dollar floor. Every
        policy carried a [your contact email] placeholder where a contact
        address belongs; both payment providers check for a reachable one
@@ -1023,7 +1063,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v89';
+const CACHE_VERSION = 'v90';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1047,7 +1087,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=70',
+  '/css/hero.css?v=71',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',

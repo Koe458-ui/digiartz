@@ -1290,3 +1290,17 @@
     }
     .dzBkIn:focus{outline:none;border-color:var(--pg);}
     .dzBkNote{margin:.5rem 0 0;font-size:.7rem;line-height:1.5;color:var(--txd);}
+
+    /* ---- reconciliation flag --------------------------------------------
+       Shown when the wallet total and the independent ledger disagree. */
+    .dzWlFlag{
+      margin-bottom:.8rem;padding:.9rem 1rem;border:1px solid #ef4444;border-radius:12px;
+      background:color-mix(in srgb,#ef4444 12%,transparent);
+    }
+    .dzWlFlagTop{font-size:.9rem;font-weight:700;color:#ef4444;}
+    .dzWlFlag p{margin:.4rem 0 .7rem;font-size:.78rem;line-height:1.55;color:var(--tx);}
+    .dzWlFlagBtn{
+      display:inline-block;padding:.5rem .9rem;border-radius:9px;background:#ef4444;
+      color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.06em;
+      text-transform:uppercase;text-decoration:none;
+    }

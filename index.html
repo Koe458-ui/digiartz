@@ -98,11 +98,11 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
-  <link rel="stylesheet" href="/css/hero.css?v=65">
+  <link rel="stylesheet" href="/css/hero.css?v=66">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=3">
   <link rel="stylesheet" href="/css/connect.css?v=1">
-  <link rel="stylesheet" href="/css/ranking.css?v=1">
+  <link rel="stylesheet" href="/css/ranking.css?v=2">
   <link rel="stylesheet" href="/css/profile.css?v=1">
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
@@ -249,22 +249,94 @@
     </div>
   </section>
 
-  <div id="homeGrid" style="display:none;"></div>
-
   <!-- artworks section -->
   <section id="artworks">
-    <!-- search block -->
-    <div class="tgBlock">
-      <div class="tgSearch" id="awSearchInWrap">
-        <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="24" height="24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input type="search" class="tgSearchIn" id="awSearchIn" placeholder="Search artworks, artists or tags..."
-               autocomplete="off" autocapitalize="off" spellcheck="false"
-               aria-label="Search artworks" oninput="awSearchInput(this.value)">
-        <button type="button" class="tgSearchClear" onclick="awSearchClear()" aria-label="Clear search">✕</button>
-        <span class="tgSearchKbd" aria-hidden="true"><kbd class="tgKbdMod">⌘</kbd><kbd>K</kbd></span>
-      </div>
+    <!-- feed boards -->
+    <div class="ftRail" id="ftRail" role="tablist" aria-label="Feed boards">
+      <button type="button" class="ftTab on" id="ftTab-trending" role="tab" aria-selected="true" aria-controls="awGrid" data-feed="trending"
+              style="--ftA:#F97316;--ftB:#EF4444;--ftAL:#C2410C;--ftBL:#B91C1C">
+        <span class="ftIco" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><linearGradient id="ftgTrending" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
+            <linearGradient id="ftgTrendCore" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#F97316"/></linearGradient>
+            <path fill="url(#ftgTrending)" d="M12 1.8c1.6 3.4.6 5.5-1 7.4-1.8 2.1-4.4 3.4-4.4 6a5.9 5.9 0 0 0 11.8 0c0-2.6-1.4-4.3-2.8-5.8-.3 1-.9 1.7-1.7 2.1 1.1-3.3-.5-7.2-1.9-9.7Z"/>
+            <path fill="url(#ftgTrendCore)" d="M12 12.6c.9 1.6.2 2.7-.4 3.5-.5.6-.9 1.1-.9 2a2.5 2.5 0 0 0 5 0c0-1.3-.9-2.1-1.7-2.9-.3.5-.7.8-1.1.9.4-1.2-.3-2.6-.9-3.5Z"/>
+          </svg>
+        </span>
+        <span class="ftLbl">Trending</span>
+      </button>
+      <button type="button" class="ftTab" id="ftTab-new" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="new"
+              style="--ftA:#C4B5FD;--ftB:#7C3AED;--ftAL:#7C3AED;--ftBL:#5B21B6">
+        <span class="ftIco" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><linearGradient id="ftgNew" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
+            <g fill="url(#ftgNew)">
+              <path d="M14.6 4.6c.8 3.9 1.7 4.8 5.6 5.6-3.9.8-4.8 1.7-5.6 5.6-.8-3.9-1.7-4.8-5.6-5.6 3.9-.8 4.8-1.7 5.6-5.6Z"/>
+              <path d="M7.4 3.7c.4 1.9.8 2.3 2.7 2.7-1.9.4-2.3.8-2.7 2.7-.4-1.9-.8-2.3-2.7-2.7 1.9-.4 2.3-.8 2.7-2.7Z"/>
+              <path d="M6.6 13.4c.4 2 .9 2.5 2.9 2.9-2 .4-2.5.9-2.9 2.9-.4-2-.9-2.5-2.9-2.9 2-.4 2.5-.9 2.9-2.9Z"/>
+            </g>
+          </svg>
+        </span>
+        <span class="ftLbl">New arrival</span>
+      </button>
+      <button type="button" class="ftTab" id="ftTab-weekly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="weekly"
+              style="--ftA:#FB7185;--ftB:#E11D48;--ftAL:#BE123C;--ftBL:#9F1239">
+        <span class="ftIco" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><linearGradient id="ftgWeekly" x1="0" y1="1" x2="1" y2="0"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
+            <g stroke="url(#ftgWeekly)">
+              <path d="M3 16.6 8.6 10.4 12.1 13.4 20 5.2"/>
+              <path d="M15.2 4.9H20.4V10"/>
+              <path d="M5.6 20.4v-2.2M10 20.4v-4M14.4 20.4v-5.6M18.8 20.4v-7.4"/>
+            </g>
+          </svg>
+        </span>
+        <span class="ftLbl">Weekly hits</span>
+      </button>
+      <button type="button" class="ftTab" id="ftTab-monthly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="monthly"
+              style="--ftA:#38BDF8;--ftB:#2563EB;--ftAL:#0369A1;--ftBL:#1D4ED8">
+        <span class="ftIco" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><linearGradient id="ftgMonthly" x1="1" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
+            <g fill="none" stroke="url(#ftgMonthly)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2.8" y="4.4" width="16.4" height="14.8" rx="2.2"/>
+              <path d="M7.2 2.4v4M14.8 2.4v4M2.8 9.4h16.4"/>
+            </g>
+            <g fill="url(#ftgMonthly)">
+              <rect x="5.4" y="11.7" width="2.5" height="2.5" rx=".7"/>
+              <rect x="9.8" y="11.7" width="2.5" height="2.5" rx=".7"/>
+              <rect x="14.2" y="11.7" width="2.5" height="2.5" rx=".7"/>
+              <rect x="5.4" y="15.4" width="2.5" height="2.5" rx=".7"/>
+              <!-- the star sits over the calendar's own corner, as in the mark -->
+              <path d="M16.9 13.1l1.5 3.1 3.4.5-2.5 2.4.6 3.4-3-1.6-3 1.6.6-3.4-2.5-2.4 3.4-.5z"/>
+            </g>
+          </svg>
+        </span>
+        <span class="ftLbl">Monthly hits</span>
+      </button>
+      <button type="button" class="ftTab" id="ftTab-artists" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="artists"
+              style="--ftA:#5EEAD4;--ftB:#0D9488;--ftAL:#0F766E;--ftBL:#115E59">
+        <span class="ftIco" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><linearGradient id="ftgArtists" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
+            <g stroke="url(#ftgArtists)">
+              <circle cx="12" cy="7.4" r="4.4"/>
+              <path d="M4.4 20.6v-.7a7.6 7.6 0 0 1 15.2 0v.7"/>
+            </g>
+          </svg>
+        </span>
+        <span class="ftLbl">Artists</span>
+      </button>
+      <button type="button" class="ftTab" id="ftTab-logs" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="logs"
+              style="--ftA:#FCD34D;--ftB:#F59E0B;--ftAL:#B45309;--ftBL:#92400E">
+        <span class="ftIco" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><linearGradient id="ftgLogs" x1="0" y1="1" x2="1" y2="0"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
+            <g stroke="url(#ftgLogs)">
+              <path d="M6.3 6.1a8.6 8.6 0 1 0 2.4-1.5"/>
+              <path d="M6.3 6.1 5.5 2.4M6.3 6.1 9.9 5"/>
+              <path d="M12.4 7.6v4.9l3.6 2.2"/>
+            </g>
+          </svg>
+        </span>
+        <span class="ftLbl">Logs</span>
+      </button>
     </div>
-    <div class="awGrid" id="awGrid">
+    <div class="awGrid" id="awGrid" role="tabpanel" aria-labelledby="ftTab-trending">
       <a class="awCard" href="/artwork/7cd74497-cd51-446b-a084-afb6b04fa84c"><div class="awImgWrap"><img loading="lazy" decoding="async" src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet__t300.webp" alt="Ethereal Violet — digital artwork on DigiArtz"></div></a>
       <a class="awCard" href="/artwork/42b36e1e-0bea-4bd6-a1d4-33615cddbd8d"><div class="awImgWrap"><img loading="lazy" decoding="async" src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1782822019716_Archer_Queen__t300.webp" alt="Archer Queen — digital artwork on DigiArtz"></div></a>
       <a class="awCard" href="/artwork/87230979-277b-48e7-9190-dcd90f1c8956"><div class="awImgWrap"><img loading="lazy" decoding="async" src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781717079470_Prushka__t300.webp" alt="Prushka — digital artwork on DigiArtz"></div></a>
@@ -2262,7 +2334,7 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=6"></script>
+  <script src="/js/app-core.js?v=7"></script>
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=67"></script>
   <script src="/js/auth.js?v=1"></script>
@@ -2274,8 +2346,9 @@
   <script src="/js/pfedit.js?v=2"></script>
   <script src="/js/mywork.js?v=5"></script>
   <script src="/js/startup.js?v=2"></script>
-  <script src="/js/tagrail.js?v=1"></script>
-  <script src="/js/search.js?v=1"></script>
+  <script src="/js/tagrail.js?v=2"></script>
+  <script src="/js/search.js?v=2"></script>
+  <script src="/js/feed.js?v=1"></script>
 
  <div id="rippleHost"></div>
 

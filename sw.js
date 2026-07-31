@@ -4,6 +4,41 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v84 — the hero page's search bar is now a rail of boards. The bar was one
+       input over a grid that was always the same trending order; in its
+       place sit six tabs — Trending, New arrival, Weekly hits, Monthly
+       hits, Artists, Logs — in one scrolling line, no scrollbar and no
+       progress track under it. Switching costs no request: every board
+       reorders the artworks already loaded, and each is capped at 200.
+       Trending is unchanged, and New arrival is the newest-first order the
+       gallery already had. The two new boards score on the same points a
+       view is 1, a bookmark 8, a download 6 — and differ only in how those
+       points fade. Weekly counts age in whole weeks, so everything
+       uploaded inside the current week divides by the same number and the
+       board is a straight points race for seven days, dropping a step each
+       week after. Monthly counts age in whole months and halves: 30 days
+       on, an artwork's points are worth half of what they were here.
+       Artists reads the trending order back as the people behind it — the
+       first card is whoever made the first thumbnail, one card per artist
+       — as a square holding their picture, name, @username and a view
+       profile that opens their page. Behind it sits their own banner at
+       60%: the banner is drawn desktop-wide, so a square card shows the
+       middle of it and nothing else, asked for at the 600 size since only
+       that middle third survives the crop. The lower half fades into the
+       card's surface, because a banner is somebody's artwork and can be
+       bright exactly where the name goes. Logs is the next step, and says
+       so.
+       Every board fills the same way the grid already did — a first
+       screenful, then more as you reach them, never 200 at once — and the
+       artist cards fetch their profiles per batch, not per board.
+       None of this touches the gallery, which keeps its own filters and
+       its own search; ⌘K now belongs to it alone. Removed with the bar:
+       the feed's search filter and the profile lookup that backed it. Also
+       gone is #homeGrid, a display:none div that every render rebuilt out
+       of every artwork on the site and nothing ever read.
+       Changed: index.html, css/hero.css, css/ranking.css, js/app-core.js,
+       js/search.js, js/tagrail.js, and js/feed.js, which is new.
+
    v83 — the profile line rides around the avatar instead of across it.
        Four of the five nav items hold a line icon in the middle of a 58px
        circle, so a line cut to the dot's radius has clear space to run
@@ -781,7 +816,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v83';
+const CACHE_VERSION = 'v84';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -806,11 +841,11 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=65',
+  '/css/hero.css?v=66',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
-  '/css/ranking.css?v=1',
+  '/css/ranking.css?v=2',
   '/css/profile.css?v=1',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
@@ -832,7 +867,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
-  '/js/app-core.js?v=6',
+  '/js/app-core.js?v=7',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=67',
   '/js/auth.js?v=1',
@@ -844,8 +879,9 @@ const SHELL_URLS = [
   '/js/pfedit.js?v=2',
   '/js/mywork.js?v=5',
   '/js/startup.js?v=2',
-  '/js/tagrail.js?v=1',
-  '/js/search.js?v=1',
+  '/js/tagrail.js?v=2',
+  '/js/search.js?v=2',
+  '/js/feed.js?v=1',
   '/js/effects.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',

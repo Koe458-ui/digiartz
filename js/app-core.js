@@ -839,7 +839,9 @@
     _dzArtistWanted = {};
     if(!ids.length || !sb) return;
     ids.forEach(function(u){ _dzArtistFlight[u] = true; });
-    sb.from('profiles').select('id,username,display_name,avatar_url').in('id', ids)
+    // banner_url rides along for the artist board's card background — one
+    // column, and it keeps every reader of this cache seeing the same shape
+    sb.from('profiles').select('id,username,display_name,avatar_url,banner_url').in('id', ids)
       .then(function(res){
         var rows = (res && res.data) || [];
         rows.forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });
@@ -872,33 +874,66 @@
   }, {passive:true});
 
 
-  function trendingScore(a, now){
+  // What an artwork has earned, before any decay: a view is worth 1, a
+  // bookmark 8, a download 6. Every board below scores on these same points
+  // and differs only in how fast they fade.
+  function artPoints(a){
     var v=parseInt(a.view_count,10)||0,
         b=parseInt(a.bookmark_count,10)||0,
         d=parseInt(a.download_count,10)||0;
-    var base=(v*1)+(b*8)+(d*6);
-    var t=a.created_at?new Date(a.created_at).getTime():0;
-    var ageH=t?Math.max(0,(now-t)/3600000):(365*24);
-    return base/Math.pow(ageH+2,1.35);
+    return (v*1)+(b*8)+(d*6);
   }
-  function sortByTrending(arr){
+  // Hours since upload. An artwork with no date is treated as a year old, so
+  // it sinks rather than floats.
+  function artAgeH(a, now){
+    var t=a.created_at?new Date(a.created_at).getTime():0;
+    return t?Math.max(0,(now-t)/3600000):(365*24);
+  }
+
+  // Trending fades by the hour: today's uploads move constantly.
+  function trendingScore(a, now){
+    return artPoints(a)/Math.pow(artAgeH(a,now)+2,1.35);
+  }
+  // Weekly hits fade by the week. Age is counted in whole weeks, so
+  // everything uploaded inside the current week is divided by the same
+  // number and the board is a straight points race for seven days; come the
+  // next week that week's entries drop a step and the one after that drops
+  // another.
+  function weeklyScore(a, now){
+    var weeks=Math.floor(artAgeH(a,now)/168);
+    return artPoints(a)/Math.pow(weeks+2,1.35);
+  }
+  // Monthly hits fade by the month, and harder: each 30 days past upload
+  // halves what an artwork's points are worth here.
+  function monthlyScore(a, now){
+    var months=Math.floor(artAgeH(a,now)/720);
+    return artPoints(a)/Math.pow(2,months);
+  }
+
+  // Newest first, then id, so the order never shuffles between renders.
+  function artTieBreak(a, b){
+    var tA=a.created_at?new Date(a.created_at).getTime():0;
+    var tB=b.created_at?new Date(b.created_at).getTime():0;
+    if(tB!==tA) return tB-tA;
+    var iA=String(a.id||''), iB=String(b.id||'');
+    return iA<iB?1:(iA>iB?-1:0);
+  }
+  function sortByScore(arr, score){
     var now=Date.now();
     return arr.sort(function(a,b){
-      var sA=trendingScore(a,now), sB=trendingScore(b,now);
+      var sA=score(a,now), sB=score(b,now);
       if(sB!==sA) return sB-sA;
-      var tA=a.created_at?new Date(a.created_at).getTime():0;
-      var tB=b.created_at?new Date(b.created_at).getTime():0;
-      if(tB!==tA) return tB-tA;
-      var iA=String(a.id||''), iB=String(b.id||'');
-      return iA<iB?1:(iA>iB?-1:0);
+      return artTieBreak(a,b);
     });
   }
+  function sortByTrending(arr){ return sortByScore(arr, trendingScore); }
+  function sortByWeekly(arr){   return sortByScore(arr, weeklyScore);   }
+  function sortByMonthly(arr){  return sortByScore(arr, monthlyScore);  }
+  function sortByNewest(arr){   return arr.sort(artTieBreak);           }
 
   function renderHome(){
     sortByTrending(images);
     if(window.rebuildGalCarousels) window.rebuildGalCarousels(images);
-    const g=document.getElementById('homeGrid');
-    if(g) g.innerHTML = images.map(itemHTML).join('');
   }
 
   function gridCols(){

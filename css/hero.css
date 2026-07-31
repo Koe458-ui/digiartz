@@ -813,3 +813,125 @@
       .qlBarFill{transition:none;}
       .qlRail{scroll-behavior:auto;}
     }
+
+
+    /* feed board rail — stands where the hero page's search bar used to */
+    #artworks .ftRail{
+      /* the grid's own inset, so a tab lines up with the thumbnails under it */
+      --ftInset:clamp(.7rem,2vw,2rem);
+      position:relative;              /* offsetParent for the reveal scroll */
+      display:flex;gap:.55rem;
+      margin:1.25rem 0 0;
+      padding:.2rem var(--ftInset);
+      overflow-x:auto;overflow-y:hidden;
+      overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
+      /* one line, and nothing under it: no scrollbar, no progress track */
+      scrollbar-width:none;-ms-overflow-style:none;
+      scroll-snap-type:x proximity;
+    }
+    #artworks .ftRail::-webkit-scrollbar{display:none;}
+    .ftTab{
+      /* the icon gradients are picked against near-black; the light theme
+         swaps in its own darker pair, spelled out per tab rather than mixed
+         at run time so it works without color-mix() too */
+      --ftS1:var(--ftA);--ftS2:var(--ftB);
+      flex:0 0 auto;scroll-snap-align:center;
+      display:inline-flex;align-items:center;gap:.55rem;
+      padding:.7rem 1rem;box-sizing:border-box;
+      border:1px solid var(--bdr);border-radius:14px;
+      background:var(--sur);color:var(--txd);cursor:pointer;
+      font-family:var(--fb);font-size:.86rem;font-weight:600;letter-spacing:-.01em;
+      white-space:nowrap;-webkit-tap-highlight-color:transparent;
+      transition:border-color .2s,background .2s,color .2s,transform .2s;
+    }
+    html[data-theme="light"] .ftTab{--ftS1:var(--ftAL);--ftS2:var(--ftBL);}
+    .ftIco{display:flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;}
+    .ftIco svg{width:100%;height:100%;display:block;}
+    .ftTab.on{border-color:var(--pg);background:var(--pdim);color:var(--tx);}
+    @media(hover:hover){
+      .ftTab:hover{border-color:var(--bdrh);color:var(--tx);}
+      .ftTab.on:hover{border-color:var(--pg);}
+    }
+    .ftTab:active{transform:scale(.97);}
+    .ftTab:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+
+    /* artist card — the thumbnail's square, holding a person instead */
+    .atCard{cursor:default;}
+    .atCard.atReady:not(.atDead){cursor:pointer;}
+    .atBody{
+      position:relative;
+      width:100%;aspect-ratio:1;box-sizing:border-box;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:.35rem;padding:clamp(.6rem,5%,1.1rem);text-align:center;
+    }
+    /* the artist's own banner behind the card. It is drawn desktop-wide, so
+       cover on a square box shows the middle of it and nothing else */
+    .atBg{
+      position:absolute;inset:0;z-index:0;
+      background-position:center;background-size:cover;background-repeat:no-repeat;
+      opacity:.6;
+    }
+    /* held off the name: a banner is somebody's artwork and can be bright
+       anywhere, so the lower half fades into the card's own surface */
+    .atCard.atHasBg .atBody::after{
+      content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+      background:linear-gradient(180deg,
+        color-mix(in srgb,var(--sur) 30%,transparent) 0%,
+        color-mix(in srgb,var(--sur) 78%,transparent) 58%,
+        var(--sur) 100%);
+    }
+    .atAv,.atName,.atUser,.atGo{position:relative;z-index:2;}
+    .atAv{
+      width:clamp(44px,36%,84px);aspect-ratio:1;flex:0 0 auto;
+      border-radius:50%;overflow:hidden;
+      background:var(--sur2);border:1px solid var(--bdr);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fm);font-size:clamp(1rem,4.5%,1.5rem);line-height:1;color:var(--tx);
+    }
+    .atAv img{width:100%;height:100%;object-fit:cover;display:block;}
+    .atName,.atUser{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .atName{
+      margin-top:.5rem;
+      font-family:var(--fd);font-weight:700;
+      font-size:clamp(.82rem,2.6vw,1rem);color:var(--tx);line-height:1.25;
+    }
+    .atUser{
+      font-family:var(--fm);font-size:clamp(.66rem,2.1vw,.78rem);
+      letter-spacing:.04em;color:var(--txd);
+    }
+    .atGo{
+      margin-top:.45rem;
+      display:inline-flex;align-items:center;
+      padding:.35rem .75rem;border-radius:999px;
+      border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;
+      transition:border-color .2s,background .2s;
+    }
+    @media(hover:hover){
+      .atCard.atReady:not(.atDead):hover .atGo{border-color:var(--pg);background:var(--pdim);}
+    }
+    .atCard:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    /* nobody to open — the card stays a face */
+    .atCard.atDead .atGo{opacity:.4;}
+    /* waiting on the profile: shimmer the avatar, hold the lines' place */
+    .atCard:not(.atReady) .atAv{
+      background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
+      background-size:200% 100%;
+      animation:imgShimmer 1.4s infinite;
+    }
+    .atCard:not(.atReady) .atName{width:54%;height:.8em;border-radius:4px;background:var(--sur2);}
+    .atCard:not(.atReady) .atUser{width:36%;height:.7em;border-radius:4px;background:var(--sur2);}
+    .atCard:not(.atReady) .atGo{opacity:.35;}
+
+    @media(max-width:600px){
+      .ftTab{font-size:.8rem;padding:.6rem .85rem;gap:.45rem;border-radius:12px;}
+      .ftIco{width:23px;height:23px;}
+      #artworks .ftRail{gap:.45rem;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .ftTab{transition:none;}
+      .ftTab:active{transform:none;}
+      #artworks .ftRail{scroll-behavior:auto;}
+      .atCard:not(.atReady) .atAv{animation:none;}
+      .atGo{transition:none;}
+    }

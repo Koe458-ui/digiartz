@@ -379,9 +379,11 @@
     if(!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
     var t = e.target;
     if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    // the hero page has no search box of its own any more — the shortcut
+    // belongs to the gallery, and only while it is open
     var fg = document.getElementById('fg');
-    var el = document.getElementById(
-      (fg && fg.classList.contains('open')) ? 'fgSearchIn' : 'awSearchIn');
+    if(!fg || !fg.classList.contains('open')) return;
+    var el = document.getElementById('fgSearchIn');
     if(!el) return;
     e.preventDefault();
     el.focus();

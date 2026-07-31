@@ -440,11 +440,10 @@
     }
 
     #artworks{
-      /* search block owns the spacing */
+      /* the board rail owns the spacing */
       padding:0 0 4rem;
     }
-    /* grid sits close under the bar */
-    #artworks > .tgBlock > .tgSearch{margin-bottom:0;}
+    /* grid sits close under the rail */
     #artworks > .awGrid{margin-top:1.25rem;}
     .awGrid{
       width:100%;

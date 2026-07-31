@@ -36,7 +36,12 @@
        one tall — the narrowest grid is two across, so it is a full row on
        a phone and half a row on a desktop, and never breaks the grid. It
        carries the eyebrow, their @name, their bio and a view profile, with
-       the winning artwork itself as the picture. That artwork is promoted
+       the winning artwork itself as the picture. The bio is cut to two
+       sentences and an ellipsis — a profile bio runs as long as its owner
+       likes, and the cut lands where the writing already breaks rather
+       than mid-word. Its picture carries its own sizes: the banner is two
+       cells wide and the picture covers 60% of that, so the grid's own
+       sizes would have fetched the 300 for a box that wants the 600. That artwork is promoted
        out of the grid rather than repeated above it: the piece that won
        the board is the picture on the banner, and showing it twice, one
        directly above the other, reads as a bug. First place plus the 199
@@ -57,6 +62,12 @@
        screenful, then more as you reach them, never 200 at once — and the
        artist cards and log lines fetch their faces per batch, in one
        query, skipping anyone already held.
+       The house rules hold across all of it: nothing new is selectable,
+       copyable or draggable — css/select.css is still the only list and
+       none of this asks to be on it — every picture is a generated webp
+       size rather than a full-size file, every one of them is lazy, and
+       switching boards rises in over a quarter of a second instead of
+       cutting, for anyone who has not asked for less motion.
        None of this touches the gallery, which keeps its own filters and
        its own search; ⌘K now belongs to it alone. Removed with the bar:
        the feed's search filter and the profile lookup that backed it. Also

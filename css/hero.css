@@ -928,6 +928,16 @@
     .atCard:not(.atReady) .atUser{width:36%;height:.7em;border-radius:4px;background:var(--sur2);}
     .atCard:not(.atReady) .atGo{opacity:.35;}
 
+    /* switching boards: the new grid rises in rather than cutting */
+    @keyframes awSwapIn{
+      from{opacity:0;transform:translateY(8px);}
+      to{opacity:1;transform:none;}
+    }
+    .awGrid.awSwap{animation:awSwapIn .26s cubic-bezier(.22,1,.36,1);}
+    @media(prefers-reduced-motion:reduce){
+      .awGrid.awSwap{animation:none;}
+    }
+
     /* featured artist — first place on a scored board, two cells wide and
        one tall. The narrowest grid is two across, so it is a full row on a
        phone and half a row on a desktop, and never breaks the grid. */

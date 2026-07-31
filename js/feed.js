@@ -106,6 +106,7 @@
         if(!im){
           im = document.createElement('img');
           im.alt = ''; im.loading = 'lazy'; im.decoding = 'async';
+          im.draggable = false;
           av.appendChild(im);
         }
         im.src = getThumbnailUrl(p.avatar_url);
@@ -142,6 +143,14 @@
   // it is a full row on a phone and half a row on a desktop.
   var FEATURED_BOARDS = { trending:1, weekly:1, monthly:1 };
 
+  // 60% of a two-cell banner, at each of the grid's own column counts, scaled
+  // for the screen's pixel ratio the same way dzGridSizes does
+  function fbSizes(){
+    var s = typeof dzDprScale === 'function' ? dzDprScale() : 1;
+    var f = function(vw){ return +(vw * s).toFixed(2); };
+    return '(min-width:1280px) ' + f(30) + 'vw, (min-width:700px) ' + f(40) + 'vw, ' + f(60) + 'vw';
+  }
+
   function buildFeatured(a){
     var box = document.createElement('div');
     box.className = 'fbBox';
@@ -161,8 +170,13 @@
       '</div>';
 
     var img = box.querySelector('.fbArt img');
-    // the picture fills about half the banner, so it is fed at grid size
     dzApplyThumb(img, a.image_url || '');
+    // the banner is two cells wide and its picture covers 60% of that, so it
+    // is wider than a grid thumbnail and needs its own sizes or the browser
+    // picks the 300 for a box that wants the 600
+    if(img.srcset) img.sizes = fbSizes();
+    img.loading = 'lazy';
+    img.draggable = false;
     img.style.cssText = thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom);
     box.querySelector('.fbArt').onclick = function(){
       if(typeof openLB === 'function'){
@@ -176,6 +190,23 @@
     return box;
   }
 
+  // Two sentences of a bio, then an ellipsis. A profile bio can run for a
+  // paragraph and the banner has room for a line of it, so the cut is made
+  // where the writing already breaks rather than mid-word. A bio with no
+  // second full stop is left alone — the line clamp still holds it.
+  function fbTrimBio(text){
+    var s = String(text || '').replace(/\s+/g, ' ').trim();
+    if(!s) return '';
+    var re = /[.!?]+(?=\s|$)/g, hits = 0, end = -1, m;
+    while((m = re.exec(s)) !== null){
+      if(++hits < 2) continue;
+      end = m.index + m[0].length;
+      break;
+    }
+    if(end < 0 || end >= s.length) return s;
+    return s.slice(0, end) + ' …';
+  }
+
   function paintFeatured(box, p){
     var name = (p && (p.display_name || p.username)) || 'Artist';
     var user = p && p.username ? String(p.username) : '';
@@ -185,7 +216,7 @@
 
     if(nm) nm.textContent = user ? '@' + user : name;
     if(bio){
-      var line = (p && p.bio ? String(p.bio) : '').trim();
+      var line = fbTrimBio(p && p.bio);
       bio.textContent = line;
       bio.style.display = line ? '' : 'none';
     }
@@ -353,6 +384,7 @@
         if(!im){
           im = document.createElement('img');
           im.alt = ''; im.loading = 'lazy'; im.decoding = 'async';
+          im.draggable = false;
           av.appendChild(im);
         }
         im.src = getThumbnailUrl(p.avatar_url);
@@ -490,6 +522,14 @@
     if(grid) grid.setAttribute('aria-labelledby', picked.id);
     ftReveal(picked);
     renderAwGrid(awArtworksCache, true);
+    // the swap is a cut otherwise: one board's grid replaced by another's
+    // between two frames. Restarted by hand because re-adding a class the
+    // element already carries does not replay the animation.
+    if(grid){
+      grid.classList.remove('awSwap');
+      void grid.offsetWidth;
+      grid.classList.add('awSwap');
+    }
   }
 
   // A board picked at the far end of the rail pulls itself into the middle,

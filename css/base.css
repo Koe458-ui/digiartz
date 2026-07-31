@@ -210,6 +210,28 @@
       background:var(--pg);
       box-shadow:0 0 6px var(--pg);
     }
+    /* the active dot stretches into a scroll line: same width, softer glow,
+       starting where the dot sits and running clockwise around the icon */
+    .bnItem .bnRing{
+      position:absolute;
+      inset:0;
+      width:100%;height:100%;
+      pointer-events:none;
+      overflow:visible;
+      opacity:0;
+      transform:rotate(90deg);
+      transition:opacity .2s ease;
+    }
+    /* the active item nudges and scales its icon — the line must not follow */
+    .bnItem.bnActive .bnRing{opacity:1;transform:rotate(90deg);}
+    .bnRingBar{
+      fill:none;
+      /* a long line carries far more light than a 4px dot, so it is dimmed
+         to sit under it: the dot stays the bright head, the line trails */
+      stroke:rgba(var(--pg-rgb),.5);
+      stroke-width:4;
+      stroke-linecap:round;
+    }
     /* profile item */
     .bnItem.bnProfile{padding:0;}
     .bnItem .nLoginBtn,

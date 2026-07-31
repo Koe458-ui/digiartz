@@ -4,6 +4,39 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v79 — the dot under the active nav item stretches into a scroll line.
+       The dot said which section you were in and nothing else; the line
+       says that and how far down it you are. Nothing else about the nav
+       moves: same dot, same place, same 4px width, no track ring behind
+       it, icons untouched. The line is drawn at half the dot's opacity
+       and carries no glow of its own, because a stroke that long throws
+       far more light than a 4px dot does and would otherwise take the
+       nav over; the dot stays the brightest point and the line trails
+       off it. At zero it is the dot you already had, and it is drawn as
+       the dot's own continuation — an arc on a
+       circle through the dot's centre, starting there and running
+       clockwise around the icon, so it reads left to right across the
+       top and closes back onto the dot at the end. If the script never
+       lands the dot simply stays a dot.
+       The reading is scrollTop / (scrollHeight - clientHeight) on the box
+       that section actually scrolls — the document for home, #fg,
+       #pfUpMod and #profilePage on the panel itself, .cmScroll inside
+       #communityPage — resolved by hunting for the scrollable box and
+       then confirmed by whatever element the section's scroll events
+       really come from. The arc's radius comes off the item's own pixel
+       box each time it is sized, since the nav is 58px wide and 52px
+       under 640px while the dot stays 5px off the bottom in both.
+       Nothing here snaps. The line eases toward the reading each frame at
+       8.2/s going forward and 4.2/s coming back, so scrolling up drains
+       it more gently than scrolling down fills it. That asymmetry is the
+       point on the two lazy sections: gallery and hero grow while you
+       read them, every new batch of thumbnails makes the denominator
+       bigger and the reading smaller, and the line gives progress back
+       over the same soft curve instead of stuttering backwards. A 380ms
+       poll catches that growth, since content landing fires no scroll
+       event. The rAF loop only runs while the line is still moving.
+       Changed: index.html, css/base.css, js/navprogress.js (new).
+
    v78 — community chats open as a panel that slides in from the right,
        the way profile, gallery and community itself already arrive
        (supersedes v77, which covered the same work mid-flight).
@@ -657,7 +690,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v78';
+const CACHE_VERSION = 'v79';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -681,7 +714,7 @@ const SHELL_URLS = [
   '/icon-192.png',
 
   // stylesheets
-  '/css/base.css?v=2',
+  '/css/base.css?v=3',
   '/css/hero.css?v=65',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
@@ -727,7 +760,8 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
-  '/js/sections.js?v=71'
+  '/js/sections.js?v=71',
+  '/js/navprogress.js?v=1'
 ];
 
 // hosts

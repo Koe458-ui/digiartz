@@ -1264,6 +1264,8 @@
   window.dzSchDone       = dzSchDone;
   // expose rows to the detail view
   window.dzGetRows = function(sec){ return dzCache[sec] || []; };
+  // the hero page's log lines name the same categories these cards do
+  window.dzSecLabel = labelOf;
   window.dzHelpers = { money:money, bytes:bytes, ago:ago };
 })();
 

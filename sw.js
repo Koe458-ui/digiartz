@@ -30,18 +30,30 @@
        middle of it and nothing else, asked for at the 600 size since only
        that middle third survives the crop. The lower half fades into the
        card's surface, because a banner is somebody's artwork and can be
-       bright exactly where the name goes. Logs is the next step, and says
-       so.
+       bright exactly where the name goes.
+       Logs is who uploaded what, newest first, across all four things a
+       member can publish — artwork, marketplace, blog, resource. A line
+       carries the uploader's face and @name, what they uploaded and the
+       date, then its title and its category, as a long rectangle: one
+       column on a phone, two on a desktop, three past 1600px. The
+       artworks are already in hand from the home load, so this costs
+       three queries of five columns each, once per session. Opening a
+       line opens the thing itself — an artwork in the lightbox, the other
+       three in their own section's view, which is always reachable: the
+       newest 200 of everything is a subset of the newest 200 of each
+       kind, so anything the log shows, its section has too.
        Every board fills the same way the grid already did — a first
        screenful, then more as you reach them, never 200 at once — and the
-       artist cards fetch their profiles per batch, not per board.
+       artist cards and log lines fetch their faces per batch, in one
+       query, skipping anyone already held.
        None of this touches the gallery, which keeps its own filters and
        its own search; ⌘K now belongs to it alone. Removed with the bar:
        the feed's search filter and the profile lookup that backed it. Also
        gone is #homeGrid, a display:none div that every render rebuilt out
        of every artwork on the site and nothing ever read.
        Changed: index.html, css/hero.css, css/ranking.css, js/app-core.js,
-       js/search.js, js/tagrail.js, and js/feed.js, which is new.
+       js/search.js, js/tagrail.js, js/sections.js, and js/feed.js, which
+       is new.
 
    v83 — the profile line rides around the avatar instead of across it.
        Four of the five nav items hold a line icon in the middle of a 58px
@@ -891,7 +903,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
-  '/js/sections.js?v=71',
+  '/js/sections.js?v=72',
   '/js/navprogress.js?v=5'
 ];
 

@@ -4,69 +4,60 @@
    bump CACHE_VERSION to refill every client
 
    changelog
-   v78 — the chat panel is rebuilt to match #zeoPage exactly, because v77
-       only looked like the rest of the site and did not move like it.
-       Two things gave it away. The panel sat inside #communityPage, which
-       carries z-index 500 and a transform, so it was sealed into that
-       stacking context and could never paint over #bnNav at 1000. The
-       nav therefore had to be switched off by hand before the slide and
-       switched back on after it — a cut at each end, against a .45s
-       animation, which reads as the nav taking a moment to go.
-       Zeo has none of that: it is a body-level fixed sheet at z-index
-       9500 and never touches the nav at all, it simply covers it. So
-       #cmChatPanel moves out to body level at z-index 1500 — over the
-       nav, under the emoji picker at 2100, the showcase picker at 2200
-       and the modals at 4300 — and both nav lines are deleted. The nav is
-       now covered by the slide on the way in and uncovered by it on the
-       way out, progressively, with nothing to time against it.
-       Timing matches Zeo's to the millisecond: .4s cubic-bezier(.22,1,
-       .36,1) with visibility 0s linear .4s, down from .45s.
-       Leaving #communityPage costs the panel its descendant selectors, so
-       every #communityPage-scoped rule gains a #cmChatPanel twin, the
-       --cm* token block included. Grid-only selectors are carried along
-       for consistency and simply never match inside the panel.
-       The other half of this is the DM composer, which really did arrive
-       a second late and was not a transition at all: openThread hid the
-       bar and left it hidden until loadFriendships() came back from the
-       network, so the friend gate cost a round-trip before the composer
-       could exist. It now paints from the cached frMap on the way in and
-       the refresh corrects it, so the bar rides in with the panel.
-       Someone never loaded still gets the placeholder — guessing there
-       would flash the wrong bar — and the send stays server-gated by RLS
-       either way, so an optimistic composer cannot post to a stranger.
-       Changed: index.html, css/community.css, css/viewer.css, js/dm.js,
-       js/mywork.js, sw.js.
-
-   v77 — community chats open as a panel that slides in from the right,
-       the way profile, gallery and community itself already arrive.
+   v78 — community chats open as a panel that slides in from the right,
+       the way profile, gallery and community itself already arrive
+       (supersedes v77, which covered the same work mid-flight).
        Tapping a community, group or DM used to swap two divs in place —
        the grid to display:none, the chat into its slot, a 26px nudge as
        the only transition — so the one destination people open dozens of
        times a day was the one that did not move like the rest.
-       The chat now lives in #cmChatPanel inside #communityPage, carrying
-       its own header, both chat views and the composer, so everything it
-       needs travels with the slide. The community page stays mounted
-       underneath, because you are still in that section, and the grid
-       keeps its scroll position for the same reason. The header had to
-       split: one element cannot be both the COMMUNITY title and the chat
-       banner while both are on screen, so the grid keeps the title and
-       the banner moved into the panel. cmHdrHomeMode therefore no longer
-       repaints it — it drops the tap handler and leaves the banner
-       intact while it slides away.
+       #cmChatPanel is built like #zeoPage, because that is the panel on
+       this site that already gets it right: a body-level fixed sheet
+       carrying its own header, both chat views and the composer, so
+       everything the chat needs travels with the slide. Same curve, .4s
+       cubic-bezier(.22,1,.36,1) with visibility 0s linear .4s.
+       Body-level is the part that matters. Inside #communityPage the
+       panel would sit under z-index 500 and a transform, sealed into that
+       stacking context and unable to paint over #bnNav at 1000 — which
+       is why a first pass had to switch the nav off before the slide and
+       back on after, a cut at each end that reads as the nav taking a
+       moment to go. Zeo never touches the nav; it covers it. At z-index
+       1500 — over the nav, under the emoji picker at 2100, the showcase
+       picker at 2200 and the modals at 4300 — so does this, so the nav is
+       covered going in and uncovered coming out, progressively, with
+       nothing left to time against it.
+       The community page stays open underneath, because you are still in
+       that section, and the grid keeps its scroll position for the same
+       reason. Being outside #communityPage costs the panel that id's
+       descendant selectors, so every rule scoped to it gains a
+       #cmChatPanel twin, the --cm* token block included; grid-only
+       selectors come along for consistency and never match inside the
+       panel. The header split for the same reason one element cannot be
+       in two places: the grid keeps the COMMUNITY title, the chat banner
+       moved into the panel, and cmHdrHomeMode no longer repaints it — it
+       drops the tap handler and leaves the banner intact on the way out.
        Leaving the section is not a slide: cmChatPanelReset commits the
        closed state with transitions suppressed, so the chat never
        animates out across a page that is animating in.
-       The composer also sat 84px off the bottom, holding room for a nav
-       bar that is hidden inside a channel. Focusing the input dropped
-       that padding and translated the bar, changing its height and
+       The composer had two separate delays, neither of them a
+       transition. It sat 84px off the bottom holding room for a nav bar
+       that is hidden inside a channel, and focusing the input dropped
+       that padding while translating the bar, changing its height and
        position at once — the bounce on tap, and the gap left behind when
-       a stale transform outlived the keyboard. As a child of the panel
-       the bar sits at the foot on its own, and the keyboard is handled
-       by padding the panel: the column shortens, the bar keeps its size,
-       and the panel goes on painting behind the keyboard.
+       a stale transform outlived the keyboard. As a child of the panel it
+       sits at the foot on its own, and the keyboard is handled by padding
+       the panel: the column shortens, the bar keeps its size, and the
+       panel goes on painting behind the keyboard.
+       The second delay was a real second. openThread hid the DM bar and
+       left it hidden until loadFriendships() returned, so the friend gate
+       cost a network round-trip before the composer could exist. It now
+       paints from the cached frMap on the way in and the refresh corrects
+       it. Someone never loaded still gets the placeholder, since guessing
+       there would flash the wrong bar, and sends stay server-gated by RLS
+       either way, so an optimistic composer cannot post to a stranger.
        Six shell files changed, so their ?v= moved with them, here and in
-       index.html together. index.html itself carries no ?v= and rides
-       CACHE_VERSION — which matters more than usual, since the new
+       index.html together. index.html carries no ?v= of its own and rides
+       CACHE_VERSION — which matters more than usual here, since the new
        markup against v76's stylesheets is a broken community page rather
        than a cosmetic difference.
        Changed: index.html, css/community.css, css/viewer.css,

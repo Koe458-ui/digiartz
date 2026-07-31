@@ -180,13 +180,17 @@ function hideCommentThumbnail(){
     page.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-    cmCloseChat(); // always land on the grid
+    // land on the grid without the chat sliding out over it
+    if(typeof cmChatPanelReset === 'function') cmChatPanelReset();
+    cmCloseChat();
     cmLoadMine();  // refresh own communities
   }
 
   function closeCommunityPage(){
     clearInterval(cpPoll); cpPoll = null; // stop the poll
     document.getElementById('communityPage').classList.remove('open');
+    // the section is leaving, so drop the chat panel with it
+    if(typeof cmChatPanelReset === 'function') cmChatPanelReset();
     document.getElementById('cpBar').style.display = 'none';
     var lockNote = document.getElementById('cpLockNote');
     if(lockNote) lockNote.style.display = 'none';
@@ -241,10 +245,23 @@ function hideCommentThumbnail(){
       });
     }
 
-    var grid = document.getElementById('cmGridScroll');
+    // read only channels — settled before the slide so the foot of the
+    // panel doesn't change once it is on screen
+    var canPost = !chan.readOnly || isDev;
+    var bar = document.getElementById('cpBar');
+    var lockNote = document.getElementById('cpLockNote');
+    if(bar) bar.style.display = canPost ? 'flex' : 'none';
+    if(lockNote) lockNote.style.display = canPost ? 'none' : 'flex';
+    // hide bottom nav in a channel
+    var nav = document.getElementById('bnNav');
+    if(nav) nav.style.display = 'none';
+
+    // grid stays mounted behind, the chat panel slides in over it
+    var dmChat = document.getElementById('dmChatView');
     var chat = document.getElementById('cmChatView');
-    if(grid) grid.style.display = 'none';
+    if(dmChat) dmChat.style.display = 'none';
     if(chat) chat.style.display = 'flex';
+    if(typeof cmChatPanelOpen === 'function') cmChatPanelOpen();
     // reset offset
     cpOffset = 0;
     cpLastSig = ''; // force a paint
@@ -256,21 +273,12 @@ function hideCommentThumbnail(){
     // bail if the user moved on
     if(cpCurrentChannel !== id) return;
 
-    // read only channels
-    var canPost = !chan.readOnly || isDev;
-    var bar = document.getElementById('cpBar');
-    var lockNote = document.getElementById('cpLockNote');
-    if(bar) bar.style.display = canPost ? 'flex' : 'none';
-    if(lockNote) lockNote.style.display = canPost ? 'none' : 'flex';
     cpSyncAvatar();
     var thumb=document.getElementById('cpSelectedImage');
     var thumbImg=document.getElementById('cpSelectedImageImg');
     // open with an empty composer
     if(thumb) thumb.style.display = 'none';
     if(thumbImg) thumbImg.src = '';
-    // hide bottom nav in a channel
-    var nav = document.getElementById('bnNav');
-    if(nav) nav.style.display = 'none';
 
     // live update poll
     clearInterval(cpPoll);
@@ -284,17 +292,9 @@ function hideCommentThumbnail(){
   // back to the grid
   function cmCloseChat(){
     clearInterval(cpPoll); cpPoll = null; // stop the poll
-    var grid = document.getElementById('cmGridScroll');
-    var chat = document.getElementById('cmChatView');
-    if(chat) chat.style.display = 'none';
-    if(grid) grid.style.display = 'block';
-    var bar = document.getElementById('cpBar');
-    if(bar) bar.style.display = 'none';
-    var lockNote = document.getElementById('cpLockNote');
-    if(lockNote) lockNote.style.display = 'none';
-    var attachBtn = document.getElementById('cpAttachBtn');
-    if(attachBtn) attachBtn.style.display = 'none';
-    // restore grid header
+    // slide the panel away — its contents stay as they are so nothing
+    // flickers on the way out, each open sets them again
+    if(typeof cmChatPanelClose === 'function') cmChatPanelClose();
     if(typeof cmHdrHomeMode === 'function') cmHdrHomeMode();
     // clear active channel
     cpCurrentChannel = null;

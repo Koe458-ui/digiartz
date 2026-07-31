@@ -1175,23 +1175,8 @@
    </div>
   </div>
   <div id="communityPage">
-    <div class="cmHdr" id="cmHdr">
-      <button class="cmHdrBack" id="cmHdrBack" onclick="cmCloseChat()" title="Back" aria-label="Back">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-      </button>
+    <div class="cmHdr" id="cmHomeHdr">
       <div class="cmHdrTitle"><span id="cmHdrTitleTxt">COMMUNITY</span></div>
-      <div class="cmHdrChat" id="cmHdrChat">
-        <div class="cmHdrTap" id="cmHdrTap">
-          <div class="cmHdrAv" id="cmHdrAv">
-            <img id="cmHdrAvImg" alt="" style="display:none;">
-            <span id="cmHdrAvTxt">?</span>
-          </div>
-          <div class="cmHdrInfo">
-            <div class="cmHdrName" id="cmHdrName">Chat</div>
-            <div class="cmHdrSub" id="cmHdrSub"></div>
-          </div>
-        </div>
-      </div>
     </div>
   <script src="/js/community.js?v=1"></script>
 
@@ -1319,7 +1304,26 @@
           <div class="cmEmptySub">Search a username above to find artists and start a chat.</div>
         </div>
       </div>
+    </div>
 
+    <div id="cmChatPanel">
+      <div class="cmHdr chat" id="cmHdr">
+        <button class="cmHdrBack show" id="cmHdrBack" onclick="cmCloseChat()" title="Back" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <div class="cmHdrChat" id="cmHdrChat">
+          <div class="cmHdrTap" id="cmHdrTap">
+            <div class="cmHdrAv" id="cmHdrAv">
+              <img id="cmHdrAvImg" alt="" style="display:none;">
+              <span id="cmHdrAvTxt">?</span>
+            </div>
+            <div class="cmHdrInfo">
+              <div class="cmHdrName" id="cmHdrName">Chat</div>
+              <div class="cmHdrSub" id="cmHdrSub"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
 <div class="cmChat" id="dmChatView">
   <div class="cpBody" id="dmBody"></div>
@@ -1359,7 +1363,6 @@
           </div>
         </div>
       </div>
-    </div>
 
     <div class="cpBar" id="cpBar">
       <div class="cpComposerWrap">
@@ -1391,6 +1394,7 @@
     <div class="cpLockNote" id="cpLockNote">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
       <span>Only DigiArtz can post here — everyone else can view</span>
+    </div>
     </div>
   </div>
 

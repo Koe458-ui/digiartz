@@ -292,9 +292,14 @@
     if (!db()) { toast('Backend not configured'); return; }
     if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
     dmPartner = p;
-    var grid = $('cmGridScroll'), chat = $('dmChatView');
-    if (grid) grid.style.display = 'none';
+    // grid stays mounted behind, the chat panel slides in over it
+    var chat = $('dmChatView'), cmChat = $('cmChatView');
+    if (cmChat) cmChat.style.display = 'none';
     if (chat) chat.style.display = 'flex';
+    // the dm thread carries its own bar
+    var cpBarEl = $('cpBar');   if (cpBarEl) cpBarEl.style.display = 'none';
+    var lockEl  = $('cpLockNote'); if (lockEl) lockEl.style.display = 'none';
+    if (typeof cmChatPanelOpen === 'function') cmChatPanelOpen();
     // header becomes dm banner
     if (typeof cmHdrChatMode === 'function') {
       cmHdrChatMode({
@@ -330,8 +335,8 @@
   function closeThread () {
     dmPartner = null;
     clearInterval(dmPoll); dmPoll = null;
-    var chat = $('dmChatView'); if (chat) chat.style.display = 'none';
-    var grid = $('cmGridScroll'); if (grid) grid.style.display = 'block';
+    // contents stay put while the panel slides out, each open sets them again
+    if (typeof cmChatPanelClose === 'function') cmChatPanelClose();
     if (typeof cmHdrHomeMode === 'function') cmHdrHomeMode();
     var nav = $('bnNav');       if (nav) nav.style.display = '';
     refreshConvos();

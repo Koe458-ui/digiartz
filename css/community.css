@@ -212,30 +212,25 @@
     /* art talk chat */
     .cmChat{display:none;flex-direction:column;flex:1;min-height:0;}
 
-    /* grid to chat transition */
-    @media(prefers-reduced-motion:no-preference){
-      /* chat view entrance */
-      #cmChatView,#dmChatView{
-        animation:cmChatSlideIn .3s cubic-bezier(.22,1,.36,1) backwards;
-      }
-      #cmGridScroll{
-        animation:cmGridSlideIn .3s cubic-bezier(.22,1,.36,1) backwards;
-      }
-      /* composer fade */
-      #cpBar{animation:cmBarFadeIn .28s ease backwards;}
-
-      @keyframes cmChatSlideIn{
-        from{opacity:0;transform:translate3d(26px,0,0);}
-        to{opacity:1;transform:translate3d(0,0,0);}
-      }
-      @keyframes cmGridSlideIn{
-        from{opacity:0;transform:translate3d(-22px,0,0);}
-        to{opacity:1;transform:translate3d(0,0,0);}
-      }
-      @keyframes cmBarFadeIn{
-        from{opacity:0;}
-        to{opacity:1;}
-      }
+    /* chat panel — slides in over the grid like the other sections do,
+       and keeps the community page mounted underneath */
+    #cmChatPanel{
+      position:absolute;inset:0;z-index:20;
+      display:flex;flex-direction:column;
+      background:var(--cmBg,var(--bg));
+      transform:translateX(100%);
+      visibility:hidden;
+      transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s linear .45s;
+    }
+    #cmChatPanel.open{
+      transform:translateX(0);
+      visibility:visible;
+      transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s;
+    }
+    /* the whole section is leaving — drop the chat without a slide */
+    #cmChatPanel.noAnim{transition:none;}
+    @media(prefers-reduced-motion:reduce){
+      #cmChatPanel,#cmChatPanel.open{transition:none;}
     }
     .cmBack{
       background:none;border:1px solid var(--bdr);border-radius:8px;

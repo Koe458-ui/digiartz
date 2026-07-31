@@ -151,14 +151,29 @@
     return bar.id === 'cpBar' ? document.getElementById('cpBody')
                               : document.getElementById('dmBody');
   }
+  function panelFor (bar) {
+    return bar && bar.closest ? bar.closest('#cmChatPanel') : null;
+  }
   function update () {
     if (!activeBar) return;
     var kb = occlusion();
+    var panel = panelFor(activeBar);
+    // inside the chat panel: inset the column so the bar lands on the
+    // keyboard without resizing itself. Padding rather than a shorter
+    // panel, so the panel keeps painting behind the keyboard
+    if (panel) {
+      panel.style.paddingBottom = kb > 0 ? kb + 'px' : '';
+      if (kb > 0) {
+        var pb = chatBodyFor(activeBar);
+        if (pb) pb.scrollTop = pb.scrollHeight; // keep latest message visible
+      }
+      return;
+    }
     if (kb > 0) {
       activeBar.style.transform = 'translateY(-' + kb + 'px)';
       activeBar.classList.add('kbLift');
       var b = chatBodyFor(activeBar);
-      if (b) b.scrollTop = b.scrollHeight; // keep latest message visible
+      if (b) b.scrollTop = b.scrollHeight;
     } else {
       activeBar.style.transform = '';
       activeBar.classList.remove('kbLift');
@@ -166,6 +181,8 @@
   }
   function release (bar) {
     if (!bar) return;
+    var panel = panelFor(bar);
+    if (panel) panel.style.paddingBottom = '';
     bar.style.transform = '';
     bar.style.willChange = '';   // drop compositor hint
     bar.classList.remove('kbLift');
@@ -180,7 +197,7 @@
     if (!bar) return;
     if (activeBar && activeBar !== bar) release(activeBar);
     activeBar = bar;
-    bar.style.willChange = 'transform'; // compositor hint
+    if (!panelFor(bar)) bar.style.willChange = 'transform'; // compositor hint
     update();
     // ios viewport delay
     setTimeout(update, 120);

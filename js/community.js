@@ -2,6 +2,28 @@
     (function () {
       'use strict';
       function $ (id) { return document.getElementById(id); }
+
+      // the chat panel slides in over the community page, which stays mounted
+      window.cmChatPanelOpen = function () {
+        var p = $('cmChatPanel'); if (!p) return;
+        p.style.paddingBottom = '';
+        p.classList.add('open');
+      };
+      window.cmChatPanelClose = function () {
+        var p = $('cmChatPanel'); if (!p) return;
+        p.classList.remove('open');
+        p.style.paddingBottom = ''; // drop any keyboard offset
+      };
+      // the whole section is leaving, so skip the slide
+      window.cmChatPanelReset = function () {
+        var p = $('cmChatPanel'); if (!p) return;
+        p.classList.add('noAnim');
+        p.classList.remove('open');
+        p.style.paddingBottom = '';
+        void p.offsetWidth;          // commit the closed state untransitioned
+        p.classList.remove('noAnim'); // next open slides again
+      };
+
       window.cmHdrChatMode = function (o) {
         o = o || {};
         var hdr = $('cmHdr'); if (!hdr) return;
@@ -39,11 +61,15 @@
         hdr.classList.add('chat');
         var back = $('cmHdrBack'); if (back) back.classList.add('show');
       };
+      // the header lives in the chat panel, so leave its look alone while it
+      // slides out — only the handlers need clearing
       window.cmHdrHomeMode = function () {
-        var hdr = $('cmHdr'); if (hdr) hdr.classList.remove('chat');
-        var t = $('cmHdrTitleTxt'); if (t) t.textContent = 'COMMUNITY';
-        var back = $('cmHdrBack'); if (back) back.classList.remove('show');
         var tap = $('cmHdrTap');
-        if (tap) { tap.onclick = null; tap.classList.remove('on'); }
+        if (tap) {
+          tap.onclick = null;
+          tap.classList.remove('on');
+          tap.removeAttribute('role');
+          tap.removeAttribute('tabindex');
+        }
       };
     })();

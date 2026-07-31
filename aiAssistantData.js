@@ -760,12 +760,12 @@ Pick a topic and I'll take it from there.`
 download limit:
 
 • Free — 5 downloads a day
-• Lite ($1/mo) — 10 a day at high-quality 1600px
-• Premium ($5/mo) — 15 a day at full resolution, custom artwork requests, early access
-• Max ($10/mo) — 20 a day, 5 custom artworks, custom website build, priority support
+• Lite — 10 a day at high-quality 1600px
+• Premium — 15 a day at full resolution, custom artwork requests, early access
+• Max — 20 a day, 5 custom artworks, custom website build, priority support
 
-Higher tiers also carry a badge on your profile. Open the Subscription page
-to compare them side by side.
+Higher tiers also carry a badge on your profile. Sign in and open the
+Subscription page to see what each one costs and compare them side by side.
 
 Browsing and posting stay free — subscriptions are optional.`
       },

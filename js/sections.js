@@ -1,4 +1,4 @@
-// sections, razorpay, detail view, hero
+// sections, detail view, hero
 (function () {
   'use strict';
 
@@ -64,8 +64,11 @@
     },
     marketplace: {
       table:'marketplace_items', kind:'grid', noun:'item',
-      // file url is revoked for clients
-      select:'id,user_id,title,description,category,tags,item_type,price_cents,currency,file_ext,file_size,preview_url,license,delivery_days,created_at'
+      // file url is revoked for clients, and so is price_cents for anon — the
+      // grant is column level, so asking for it while signed out fails the
+      // whole query rather than returning null. selectFor adds it back once
+      // there is a session.
+      select:'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at'
     },
     jobs: {
       table:'jobs', kind:'list', noun:'job',
@@ -95,6 +98,19 @@
       return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD'}).format(cents/100);
     }catch(e){ return ((cents/100).toFixed(2)) + ' ' + (cur||'USD'); }
   }
+  // An empty hole where a price and a buy control belong. This file is public,
+  // so it writes neither — it writes the hole and the row's own figures, and
+  // the signed-in module fills it. A guest never has price_cents to begin
+  // with (the column is revoked for anon), so the hole stays empty and the
+  // markup says nothing.
+  function slot(r, id, hasFile, view){
+    if(!window.currentUser) return '';
+    return '<div class="dzSlot" data-i="'+id+'" data-p="'+(Number(r.price_cents)||0)+
+           '" data-c="'+esc(r.currency||'USD')+'" data-f="'+(hasFile?1:0)+
+           '" data-v="'+view+'"></div>';
+  }
+  window.dzSlot = slot;
+
   function slugify(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
   function labelOf(sec, slug){
     var o = (window.FG_SECTIONS && FG_SECTIONS[sec] && FG_SECTIONS[sec].opts) || [];
@@ -107,6 +123,16 @@
     if(!SEC[sec] || dzLoaded[sec] || dzBusy[sec]) { dzSecRender(sec); return; }
     dzSecLoad(sec);
   }
+  // The one column a signed-out visitor may not read. Asked for anyway it
+  // fails the request outright, so it is only ever in the select list when
+  // there is a session to justify it.
+  function selectFor(sec){
+    var s = SEC[sec].select;
+    if(sec === 'marketplace' && window.currentUser) s += ',price_cents';
+    return s;
+  }
+  window.dzSelectFor = selectFor;
+
   function dzSecLoad(sec){
     var cfg = SEC[sec], host = document.getElementById('fgSecC-'+sec);
     if(!cfg || !host) return;
@@ -114,7 +140,7 @@
     if(!sb){ host.innerHTML = '<div class="dzEmpty">BACKEND NOT CONFIGURED</div>'; return; }
     dzBusy[sec] = true;
     host.innerHTML = '<div class="dzBusy">LOADING…</div>';
-    sb.from(cfg.table).select(cfg.select)
+    sb.from(cfg.table).select(selectFor(sec))
       .eq('status','approved').order('created_at',{ascending:false}).limit(200)
       .then(function(res){
         dzBusy[sec] = false; dzLoaded[sec] = true;
@@ -153,6 +179,7 @@
     }
     var wrap = SEC[sec].kind === 'grid' ? 'dzGrid' : 'dzList';
     host.innerHTML = '<div class="'+wrap+'">' + rows.map(function(r){ return card(sec, r); }).join('') + '</div>';
+    if(typeof window.dzExtras === 'function') window.dzExtras();   // fills the slots above
   }
 
   function chips(r){
@@ -182,17 +209,12 @@
         : '<span class="dzExt">'+esc((r.item_type||'ITEM').toUpperCase())+'</span>';
       // file url never reaches the client
       var hasFile = r.file_ext ? 1 : 0;
-      var priced  = (r.price_cents||0) > 0;
-      var buyBtn  = priced
-        ? '<button class="dzBuy" onclick="event.stopPropagation();dzMarketBuy(\''+id+'\','+hasFile+')">Buy \u00b7 '+esc(money(r.price_cents, r.currency))+'</button>'
-        : (hasFile ? '<button class="dzBuy dzBuy--free" onclick="event.stopPropagation();dzMarketGet(\''+id+'\')">Download \u00b7 Free</button>' : '');
       return '<div class="dzCard" data-id="'+id+'" onclick="dzOpenView(\'marketplace\',\''+id+'\')">'+
         '<div class="dzThumb">'+mt+'<span class="dzBadge">'+esc((r.item_type||'').toUpperCase())+'</span></div>'+
         '<div class="dzBody"><div class="dzName">'+esc(r.title)+'</div>'+
-        '<div class="dzPrice">'+esc(money(r.price_cents, r.currency))+'</div>'+
         '<div class="dzMeta"><span>'+esc(r.license||'')+'</span>'+
         (r.delivery_days ? '<span>'+esc(String(r.delivery_days))+'d delivery</span>' : '')+
-        '</div>'+chips(r)+buyBtn+'</div></div>';
+        '</div>'+chips(r)+slot(r, id, hasFile, 'card')+'</div></div>';
     }
     if(sec === 'blog'){
       var ico = r.cover_url
@@ -1264,113 +1286,105 @@
   window.dzSchDone       = dzSchDone;
   // expose rows to the detail view
   window.dzGetRows = function(sec){ return dzCache[sec] || []; };
+  // Signing in or out changes which columns the rows may even carry, so a
+  // cached page from the other state is stale in a way a re-render cannot fix.
+  // Drop it and let the section load again on next view.
+  window.dzSecReset = function(sec){
+    if(sec){ delete dzCache[sec]; dzLoaded[sec] = false; dzBusy[sec] = false; }
+    var host = sec && document.getElementById('fgSecC-'+sec);
+    if(host && host.children.length) dzSecLoad(sec);
+  };
   // the hero page's log lines name the same categories these cards do
   window.dzSecLabel = labelOf;
   window.dzHelpers = { money:money, bytes:bytes, ago:ago };
 })();
 
-// razorpay checkout
+// signed-in extras
+//
+// Everything this site does with money lives behind /api/store, which only
+// answers a request carrying a valid session and is served no-store. That is
+// deliberate: this file is a static asset, cached by the service worker and
+// readable by anyone, so nothing about prices, providers or checkout is
+// written here. A signed-out visitor loads this bundle and finds no trace of
+// it — no provider name, no amount, no endpoint.
+//
+// The module fills in what the markup leaves blank: the empty container on the
+// subscription page, and the .dzSlot placeholders the renderers below emit
+// wherever a price or a buy control belongs. Until it lands there is simply
+// nothing there.
 (function(){
   'use strict';
 
-  var loadP = null;
-  function loadRzp(){
-    if(window.Razorpay) return Promise.resolve();
-    if(loadP) return loadP;
-    loadP = new Promise(function(res, rej){
+  var done = false, inflight = null;
+
+  function inject(code){
+    var url = URL.createObjectURL(new Blob([code], {type:'text/javascript'}));
+    return new Promise(function(res, rej){
       var s = document.createElement('script');
-      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      s.async = true;
-      s.onload = res;
-      s.onerror = function(){ loadP = null; rej(new Error('Could not load the payment window')); };
+      s.src = url;
+      s.onload = function(){ URL.revokeObjectURL(url); res(true); };
+      s.onerror = function(){ URL.revokeObjectURL(url); rej(new Error('load failed')); };
       document.head.appendChild(s);
     });
-    return loadP;
   }
 
-  async function api(body){
-    var{data:{session}} = await sb.auth.getSession();
-    if(!session) throw new Error('Sign in required');
-    var res = await fetch('/api/rzp', {
-      method:'POST',
-      headers:{'content-type':'application/json', 'authorization':'Bearer '+session.access_token},
-      body: JSON.stringify(body)
+  function load(){
+    if(done) return Promise.resolve(true);
+    if(inflight) return inflight;
+    inflight = (async function(){
+      if(!sb) return false;
+      var s = await sb.auth.getSession();
+      var session = s && s.data && s.data.session;
+      if(!session) return false;
+      var res = await fetch('/api/store', {
+        headers:{ authorization:'Bearer '+session.access_token },
+        cache:'no-store'
+      });
+      if(!res.ok) return false;
+      await inject(await res.text());
+      done = true;
+      return true;
+    })().catch(function(){ return false; })
+       .then(function(ok){ if(!ok) inflight = null; return ok; });
+    return inflight;
+  }
+
+  // Called after any render that could have produced a slot. Loads the module
+  // on first need, then hands it the page.
+  window.dzExtras = function(){
+    return load().then(function(ok){
+      if(ok && typeof window.dzFill === 'function') window.dzFill();
+      return ok;
     });
-    var j = await res.json().catch(function(){return{};});
-    if(!res.ok) throw new Error(j.error || 'Payment service error');
-    return j;
-  }
-
-  function gate(){
-    if(currentUser) return false;
-    if(typeof pfGuestGate === 'function')
-      pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
-    return true;
-  }
-
-  function openCheckout(order, onPaid){
-    return loadRzp().then(function(){
-      new Razorpay({
-        key: order.keyId,
-        order_id: order.orderId,
-        amount: order.amount,
-        currency: order.currency,
-        name: 'DigiArtz',
-        description: order.label || '',
-        theme: { color: '#7C3AED' },
-        handler: function(r){
-          api({action:'verify', orderId:r.razorpay_order_id,
-               paymentId:r.razorpay_payment_id, signature:r.razorpay_signature})
-            .then(onPaid, function(e){ showToast(e.message || 'Could not verify the payment'); });
-        },
-        modal: { ondismiss: function(){ showToast('Payment cancelled'); } }
-      }).open();
-    });
-  }
-
-  // subscriptions
-  window.dzSubBuy = function(plan){
-    if(gate()) return;
-    var amount = null;
-    if(plan === 'support'){
-      var v = prompt('Support amount in USD (minimum $0.50):', '5');
-      if(v === null) return;
-      amount = Math.round(parseFloat(v) * 100);
-      if(!Number.isFinite(amount) || amount < 50){ showToast('Minimum is $0.50'); return; }
-    }
-    api({action:'sub-order', plan:plan, amount:amount})
-      .then(function(o){
-        return openCheckout(o, function(r){
-          showToast(r.tier ? 'Subscription active' : 'Thank you for the support');
-        });
-      })
-      .catch(function(e){ showToast(e.message || 'Could not start checkout'); });
   };
 
-  // marketplace
+  // A guest has nothing to fill, so nothing is fetched until there is a
+  // session — and again the moment one appears.
+  if(sb && sb.auth){
+    window.dzExtras();
+    sb.auth.onAuthStateChange(function(_ev, session){
+      // The marketplace rows differ by session — a guest is not served
+      // price_cents at all — so a page rendered in the other state has to be
+      // thrown away rather than patched.
+      if(typeof window.dzSecReset === 'function') window.dzSecReset('marketplace');
+      if(session) window.dzExtras();
+      else { done = false; inflight = null; }
+    });
+  }
+
+  // Not a payment path — the download itself is authorised in the database by
+  // dz_market_download, which decides on ownership. Kept here because the
+  // detail view calls it for free listings too.
   window.dzMarketGet = function(id){
-    if(gate()) return;
+    if(!window.currentUser){
+      if(typeof pfGuestGate === 'function')
+        pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+      return;
+    }
     sb.rpc('dz_market_download', {p_item:id}).then(function(res){
       if(res.error){ showToast(res.error.message || 'Could not fetch the file'); return; }
       if(res.data) window.open(res.data, '_blank', 'noopener');
     });
-  };
-
-  window.dzMarketBuy = function(id, hasFile){
-    if(gate()) return;
-    api({action:'market-order', itemId:id})
-      .then(function(o){
-        if(o.owned){                      // bought before, just download
-          if(hasFile) window.dzMarketGet(id);
-          else showToast('Already purchased');
-          return;
-        }
-        return openCheckout(o, function(){
-          showToast('Purchased');
-          if(hasFile) window.dzMarketGet(id);
-        });
-      })
-      .catch(function(e){ showToast(e.message || 'Could not start checkout'); });
   };
 })();
 
@@ -1552,15 +1566,11 @@
         '</div>';
     }
     else if(sec === 'marketplace'){
-      var priced = (r.price_cents||0) > 0, hasFile = r.file_ext ? 1 : 0;
+      var hasFile = r.file_ext ? 1 : 0;
       html = img(r.preview_url, r.title) +
         '<div class="dzvCol">'+
-        // buy sits under the media
-        '<div class="dzvBuyCard"><div class="dzvPrice">'+esc2(h.money(r.price_cents, r.currency))+'</div>'+
-        (priced
-          ? '<button class="dzBuy" onclick="dzMarketBuy(\''+id+'\','+hasFile+')">Buy now</button>'
-          : (hasFile ? '<button class="dzBuy dzBuy--free" onclick="dzMarketGet(\''+id+'\')">Download \u00b7 Free</button>' : ''))+
-        '</div>'+
+        // the slot sits under the media, and stays empty for a guest
+        (window.dzSlot ? window.dzSlot(r, id, hasFile, 'view') : '')+
         '<div class="dzvAuthor" id="dzvAuthor"></div>'+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
         (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
@@ -1586,6 +1596,7 @@
         '</div>';
     }
     host.innerHTML = html;
+    if(typeof window.dzExtras === 'function') window.dzExtras();   // fills the slot above
 
     var multi = !curExt && rows().length > 1;
     var pb=document.getElementById('dzvPrev'), nb=document.getElementById('dzvNext');

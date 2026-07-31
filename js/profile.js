@@ -303,11 +303,11 @@
           '<span>'+esc(String(r.download_count||0))+' downloads</span>'+
           '<span>'+esc(r.license||'')+'</span></div></div></div>';
       }
-      var priced = (r.price_cents||0) > 0;
+      // price and buy live in the slot, which only the signed-in module fills
       return '<div class="dzCard" onclick="pfDzOpen(\'marketplace\',\''+id+'\')">'+
         '<div class="dzThumb">'+thumb+'<span class="dzBadge">'+esc((r.item_type||'').toUpperCase())+'</span></div>'+
         '<div class="dzBody"><div class="dzName">'+esc(r.title||'')+'</div>'+
-        '<div class="dzPrice">'+esc(H.money(r.price_cents, r.currency))+'</div>'+
+        (typeof window.dzSlot === 'function' ? window.dzSlot(r, id, r.file_ext?1:0, 'card') : '')+
         '<div class="dzMeta"><span>'+esc(r.license||'')+'</span>'+
         (r.delivery_days ? '<span>'+esc(String(r.delivery_days))+'d delivery</span>' : '')+
         '</div></div></div>';
@@ -351,13 +351,16 @@
     try{
       // file url not selected
       const{data,error}=await sb.from('marketplace_items')
-        .select('id,user_id,title,description,category,tags,item_type,price_cents,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
+        .select(typeof window.dzSelectFor === 'function'
+          ? window.dzSelectFor('marketplace')
+          : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
         .eq('user_id', pf.profile.id).eq('status','approved')
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
       var rows = data||[];
       pf.mktLoaded=true; pf.mktRows=rows;
       grid.innerHTML = rows.map(pfDzCard('marketplace')).join('');
+      if(typeof window.dzExtras === 'function') window.dzExtras();
       if(empty) empty.style.display = rows.length ? 'none' : '';
     }catch(e){
       grid.innerHTML=''; if(empty) empty.style.display='';

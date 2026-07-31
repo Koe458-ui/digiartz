@@ -10,3 +10,12 @@
 
 /sw.js
   Cache-Control: no-cache
+
+# Pages Functions answer per caller, behind a session check. Nothing here may
+# be held by a browser cache, a shared cache or a crawler — a stored copy is a
+# signed-in answer waiting to be handed to whoever asks next. The functions set
+# these themselves; this is the second lock.
+/api/*
+  Cache-Control: no-store, private, max-age=0
+  X-Robots-Tag: noindex, nofollow
+  Vary: Authorization

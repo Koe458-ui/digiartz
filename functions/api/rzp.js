@@ -91,10 +91,28 @@ async function makeOrder(env, user, { amount, currency, kind, plan, itemId, labe
     method: 'POST',
     body: JSON.stringify({
       user_id: user.id, kind, plan: plan || null, item_id: itemId || null,
-      amount, currency, rzp_order_id: order.id, status: 'created',
+      amount, currency, provider: 'razorpay',
+      rzp_order_id: order.id, status: 'created',
     }),
   });
   return json({ orderId: order.id, keyId: env.RAZORPAY_KEY_ID, amount, currency, label });
+}
+
+// availability probe
+//
+// PayPal now sits beside this endpoint, and the browser asks both who can take
+// money before it draws a chooser — a provider with no credentials bound is
+// simply not offered.
+//
+// Signed in only, and it answers with a bare boolean. Whether this site takes
+// Razorpay is not something an anonymous scraper gets told, and the key id is
+// not handed out here at all — it comes back with an order, which is already
+// behind the same sign-in, so nothing about payments is reachable in public.
+export async function onRequestGet({ env, request }) {
+  if (!(await sbUser(env, request))) return json({ error: 'Sign in required' }, 401);
+  const ready = !!(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET &&
+                   env.SB_URL && env.SB_KEY && env.SB_SERVICE_KEY);
+  return json({ enabled: ready });
 }
 
 // entry point

@@ -97,7 +97,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
-  <link rel="stylesheet" href="/css/hero.css?v=67">
+  <link rel="stylesheet" href="/css/hero.css?v=68">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=3">
   <link rel="stylesheet" href="/css/connect.css?v=1">
@@ -1493,96 +1493,19 @@
 
    <div class="subPgBdy">
 
-    <div class="subPgHeadline">
-     <h2>Choose Your Plan</h2>
-     <p>Support the project and unlock exclusive benefits</p>
-    </div>
+    <!-- Deliberately empty.
 
-    <div class="subQuota" role="group" aria-labelledby="subQuotaTitle">
-     <div class="subQuotaTitle" id="subQuotaTitle">Daily download limit</div>
-     <ul class="subQuotaRow">
-      <li class="subQuotaCell subQuotaCell--free">
-       <span class="subQuotaPlan">Free</span>
-       <span class="subQuotaNum">5</span>
-       <span class="subQuotaUnit">per day</span>
-      </li>
-      <li class="subQuotaCell subQuotaCell--lite">
-       <span class="subQuotaPlan">Lite</span>
-       <span class="subQuotaNum">10</span>
-       <span class="subQuotaUnit">per day</span>
-      </li>
-      <li class="subQuotaCell subQuotaCell--premium">
-       <span class="subQuotaPlan">Premium</span>
-       <span class="subQuotaNum">15</span>
-       <span class="subQuotaUnit">per day</span>
-      </li>
-      <li class="subQuotaCell subQuotaCell--max">
-       <span class="subQuotaPlan">Max</span>
-       <span class="subQuotaNum">20</span>
-       <span class="subQuotaUnit">per day</span>
-      </li>
-     </ul>
-     <p class="subQuotaNote">Your allowance resets every day at midnight UTC. Downloading your own artwork never counts against it. Premium and Max download the original file; Free and Lite get a high-quality 1600px copy.</p>
-    </div>
-
-    <div class="subGrid">
-
-     <div class="subCard subCard--blue">
-      <div class="subCardInner">
-       <div class="subPlanName">Lite</div>
-       <div class="subTagline">For casual users</div>
-       <div class="subPrice">$1</div>
-       <div class="subPricePer">per month</div>
-       <div class="subCardDiv"></div>
-       <ul class="subFeatures">
-        <li>10 downloads per day &mdash; double the free limit</li>
-        <li>Browse premium content previews</li>
-        <li>High-quality 1600px downloads &mdash; originals need Premium</li>
-        <li>Good for trying the platform</li>
-       </ul>
-       <button class="subBtn subBtn--blue" onclick="dzSubBuy('lite')" aria-label="Start Lite">Start Lite</button>
-      </div>
+         Nothing about plans, prices or checkout is written into this page.
+         The markup that belongs here is served by /api/store, which turns
+         away any request that does not carry a session, and is sent
+         no-store so it never lands in a cache. A signed-out visitor, a
+         crawler, the service worker precache and anyone reading source all
+         get the container below and the one line inside it. -->
+    <div id="subPgGate">
+     <div class="subPgGateNote">
+      <p>Sign in to view this section.</p>
+      <button class="subBtn subBtn--purple" type="button" onclick="pfGuestGate(event)">Sign in</button>
      </div>
-
-     <div class="subCard subCard--purple subCard--featured">
-      <div class="subCardInner">
-       <div class="subBadge subBadge--purple">&#9733; Most Popular</div>
-       <div class="subPlanName">Premium</div>
-       <div class="subTagline">For active creators</div>
-       <div class="subPrice">$5</div>
-       <div class="subPricePer">per month</div>
-       <div class="subCardDiv"></div>
-       <ul class="subFeatures">
-        <li>15 downloads per day &mdash; triple the free limit</li>
-        <li>Full-resolution original files</li>
-        <li>Full access to premium artworks</li>
-        <li>Premium resources &amp; blog extras</li>
-        <li>Better support</li>
-       </ul>
-       <button class="subBtn subBtn--purple" onclick="dzSubBuy('premium')" aria-label="Go Premium">Go Premium</button>
-      </div>
-     </div>
-
-     <div class="subCard subCard--gold">
-      <div class="subCardInner">
-       <div class="subBadge subBadge--gold">&#9889; Best Value</div>
-       <div class="subPlanName">Max</div>
-       <div class="subTagline">For power users and serious buyers</div>
-       <div class="subPrice">$10</div>
-       <div class="subPricePer">per month</div>
-       <div class="subCardDiv"></div>
-       <ul class="subFeatures">
-        <li>20 downloads per day &mdash; the highest limit</li>
-        <li>Everything in Premium</li>
-        <li>Full-resolution original files</li>
-        <li>Exclusive artworks and resources</li>
-        <li>Early access to new features</li>
-        <li>Priority support</li>
-       </ul>
-       <button class="subBtn subBtn--gold" onclick="dzSubBuy('max')" aria-label="Get Max">Get Max</button>
-      </div>
-     </div>
-
     </div>
 
    </div>
@@ -2337,7 +2260,7 @@
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=67"></script>
   <script src="/js/auth.js?v=1"></script>
-  <script src="/js/profile.js?v=2"></script>
+  <script src="/js/profile.js?v=3"></script>
   <script src="/js/albums.js?v=2"></script>
   <script src="/js/drafts.js?v=1"></script>
   <script src="/js/upqueue.js?v=2"></script>
@@ -2644,7 +2567,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=1"></script>
 
 
-  <script src="/js/sections.js?v=72"></script>
+  <script src="/js/sections.js?v=73"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

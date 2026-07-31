@@ -4,6 +4,58 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v87 — a second checkout, and a gate in front of both. The site had one
+       provider, whose account is not activated yet, so a second one now
+       sits beside it: a new backend under functions/, answering the same
+       three questions the first one does — order a plan, order a listing,
+       settle one — and writing the same ledger table. That table grew a
+       provider column and a second pair of id columns, and the first
+       provider's order id stopped being NOT NULL, since a row from the
+       other one has none. A check constraint keeps a row from claiming
+       one provider while holding the other's ids, and the new id column
+       is unique, which is the same replay guard the first one has: a
+       settlement that arrives twice only finds an open row once, so a
+       subscription is never extended twice for one transaction.
+       Which one a buyer gets is not decided in this repo. Both backends
+       are asked, at request time, whether their credentials are bound to
+       the Pages project; one live and the buyer goes straight into it,
+       two and a sheet asks first. That is what lets the new one carry the
+       site alone today and the older one appear later with no code
+       change.
+       The larger half of this release is that none of the above is
+       readable by anyone who is not signed in. Everything to do with
+       money — the module that runs it, the names involved, the plan grid,
+       the amounts, the buy controls, the endpoint paths — moved out of
+       the static bundle into a Pages Function that answers only a request
+       carrying a valid session, and is served no-store. index.html holds
+       an empty container where the plan grid was; the renderers emit an
+       empty slot where an amount and a button belong; this file and the
+       assistant corpus no longer name a provider or a figure anywhere,
+       changelog included, which is why the entries below read the way
+       they do. The API was closed behind the same line: the listing
+       table's amount column is revoked from anon at the column level, so
+       a signed-out visitor cannot read one off the endpoint either —
+       which is why the select list only asks for it when there is a
+       session, a column-level denial failing the whole query rather than
+       returning null. Signing in or out drops that section's cache, since
+       rows fetched in the other state are the wrong shape.
+       That gate leans on this file behaving. /api/* was never cached
+       before by accident — every endpoint took POST, and the fetch
+       handler ignores non-GET — but the new one answers GET with
+       per-caller content, and caching it would serve a signed-in answer
+       to whoever asked next. /api/* is now an explicit bypass, and
+       _headers carries no-store for the same paths as a second lock.
+       Worth stating plainly rather than implying: once a signed-in buyer
+       opens the sheet, that module is running in their browser and the
+       provider's public identifier is in the script url it loads. Those
+       identifiers are designed for exactly that and are worthless without
+       the secrets, which never leave the Worker. The gate is against
+       everyone up to that point, which is every visitor without an
+       account.
+       Changed: index.html, sw.js, _headers, css/hero.css, js/sections.js,
+       js/profile.js, aiAssistantData.js, and one existing backend under
+       functions/; two more under functions/ are new.
+
    v86 — the favicon Google could never use. Two things kept it out of the
        search result. Every icon the page declared topped out at 48px —
        the .ico held 16/32/48 and the six PNGs were 16/32/48 — where
@@ -30,14 +82,13 @@
        compiled — _headers and _redirects are read by Pages, but a stray
        .js is just a static asset. _middleware.js was a byte-identical
        copy of functions/_middleware.js, kept in sync by hand, and is
-       gone. rzp.js is the Razorpay backend js/sections.js POSTs to at
-       /api/rzp; there was no functions/api/rzp.js, so that endpoint
-       404'd and every subscription, marketplace purchase and support
-       payment failed, while the file itself was downloadable at
-       /rzp.js. It moves to functions/api/rzp.js unchanged — it holds no
-       hardcoded secrets, reading RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
-       and SB_SERVICE_KEY from env, all of which must be bound to the
-       Pages project for the endpoint to answer.
+       gone. The other was a backend that belongs under functions/: it
+       had never been routed, so the endpoint 404'd and everything that
+       depended on it failed, while the file itself was downloadable at
+       the repo root. It moves under functions/api/ unchanged — it holds
+       no hardcoded secrets, reading everything it needs from env, all of
+       which must be bound to the Pages project for the endpoint to
+       answer.
        Changed: index.html, favicon.ico, sw.js; rzp.js moved.
 
    v85 — the log lines ran off the side of a phone. A grid column written
@@ -377,7 +428,7 @@
        says plainly which tiers get the untouched original. The rule is
        unchanged — Premium, Max and dev take the original, Free and Lite
        take the public 1600px derivative — but Lite advertised only
-       "high-quality exports", which read as though the $1 tier bought a
+       "high-quality exports", which read as though the entry tier bought a
        better file rather than a bigger allowance. Lite's card and the
        plan overview now name the 1600px size and say originals need
        Premium. index.html and aiAssistantData.js precache with no ?v= of
@@ -819,14 +870,15 @@
        copy, 12.5px meta, all primary buttons ≥46px tall with 14px
        labels. Mobile untouched.
 
-   v18 — Razorpay payments + subscription revamp. Three-card plan
-       grid ($1/$5/$10, Premium featured), checkout for plans and
-       marketplace items via the /api/rzp Pages Function, buy/download
+   v18 — checkout + subscription revamp. Three-card plan
+       grid (Premium featured), checkout for plans and
+       marketplace items via a Pages Function, buy/download
        buttons on marketplace cards, and the download button now asks
        dz_request_download() for tier quota + quality before opening
-       the file. /api/* and checkout.razorpay.com are runtime-only and
-       never cached: /api/rzp is a POST endpoint (SW ignores non-GET),
-       and checkout.js is cross-origin, outside the cached hosts below.
+       the file. /api/* and the provider's own script host are
+       runtime-only and never cached: the endpoint took POST (which the
+       SW ignores), and the provider script is cross-origin, outside the
+       cached hosts below.
 
    v17 — gallery becomes six sections; hero slides removed.
      - Gallery: Artworks / Resources / Blog / Marketplace / Jobs /
@@ -912,7 +964,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v86';
+const CACHE_VERSION = 'v87';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -936,7 +988,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=67',
+  '/css/hero.css?v=68',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
@@ -966,7 +1018,7 @@ const SHELL_URLS = [
   '/js/protect.js?v=2',
   '/js/gallery.js?v=67',
   '/js/auth.js?v=1',
-  '/js/profile.js?v=2',
+  '/js/profile.js?v=3',
   '/js/albums.js?v=2',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',
@@ -982,11 +1034,12 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
-  '/js/sections.js?v=72',
+  '/js/sections.js?v=73',
   '/js/navprogress.js?v=5'
 ];
 
 // hosts
+const API_RE       = /^\/api\//;
 const SUPABASE_RE  = /\.supabase\.co$/;
 const FONT_RE      = /^fonts\.(googleapis|gstatic)\.com$/;
 const BYPASS_RE    = /(googletagmanager|google-analytics|googlesyndication|doubleclick|cloudflareinsights)\./;
@@ -1086,6 +1139,13 @@ self.addEventListener('fetch', (event) => {
 
   // skip live data
   if (SUPABASE_RE.test(url.hostname) || BYPASS_RE.test(url.hostname)) return;
+
+  // Pages Functions, never cached. This used to be covered by accident — every
+  // endpoint took POST and the handler above ignores non-GET — but one of them
+  // now answers GET with per-caller content behind a session check. Caching it
+  // would hand a signed-in answer to whoever asked next, and a signed-out 401
+  // to someone who has since signed in. Straight to the network, always.
+  if (url.origin === self.location.origin && API_RE.test(url.pathname)) return;
 
   // navigations, network first
   if (req.mode === 'navigate') {

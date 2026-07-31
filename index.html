@@ -97,7 +97,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
-  <link rel="stylesheet" href="/css/hero.css?v=71">
+  <link rel="stylesheet" href="/css/hero.css?v=72">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=3">
   <link rel="stylesheet" href="/css/connect.css?v=1">
@@ -684,13 +684,6 @@
           <input class="pfEditInput" id="pfConnect_pinterest" placeholder="Add Pinterest link here" autocomplete="off">
         </div>
       </div>
-      <!-- Wallet and payout methods. Deliberately empty, like the plan grid:
-           the markup, the figures and the endpoint all come from /api/store,
-           which answers no request without a session. A signed-out visitor
-           reading this page finds two empty divs. -->
-      <div class="pfEditField" id="pfWalletGate"></div>
-      <div class="pfEditField" id="pfBankGate"></div>
-
       <button class="pfEditSaveBtn" id="pfEditSaveBtn" onclick="savePfEditProfile()">SAVE CHANGES</button>
     </div>
   </div>
@@ -1427,7 +1420,7 @@
 
   <script src="/js/share.js?v=1"></script>
 
-  <script src="/js/misc-core.js?v=1"></script>
+  <script src="/js/misc-core.js?v=2"></script>
 
 
 
@@ -2206,6 +2199,8 @@
     <div class="bmBdy">
       <div class="setList">
         <button class="pfMenuItem" onclick="closeSettingsPage();openSubscription()">Subscription</button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();openWalletPage()">Wallet</button>
+        <button class="pfMenuItem" onclick="closeSettingsPage();openBankPage()">Payout Methods</button>
         <button class="pfMenuItem" onclick="closeSettingsPage();openMyWorkPage()">Edit My Work</button>
         <button class="pfMenuItem" onclick="closeSettingsPage();albOpenPage()">Albums</button>
         <button class="pfMenuItem" onclick="closeSettingsPage();openLikesPage()">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
@@ -2218,6 +2213,26 @@
         <button class="pfMenuItem pfMenuItem--danger" onclick="pfMenuLogout()">Log Out</button>
       </div>
     </div>
+  </div>
+
+  <!-- Wallet and payout methods. Both deliberately empty: the markup, the
+       figures and the endpoint all come from /api/store, which answers no
+       request without a session. A signed-out visitor reading this page finds
+       two empty containers and nothing else. -->
+  <div id="walletPage" role="dialog" aria-modal="true" aria-label="Wallet">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeWalletPage()" aria-label="Close wallet">&#8592;</button>
+      <div class="subPgTitle">WALLET</div>
+    </div>
+    <div class="bmBdy"><div class="dzPanelWrap" id="pfWalletGate"></div></div>
+  </div>
+
+  <div id="bankPage" role="dialog" aria-modal="true" aria-label="Payout methods">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeBankPage()" aria-label="Close payout methods">&#8592;</button>
+      <div class="subPgTitle">PAYOUT METHODS</div>
+    </div>
+    <div class="bmBdy"><div class="dzPanelWrap" id="pfBankGate"></div></div>
   </div>
 
   <div id="xpPage" role="dialog" aria-modal="true" aria-label="Artist progress">
@@ -2575,7 +2590,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=1"></script>
 
 
-  <script src="/js/sections.js?v=74"></script>
+  <script src="/js/sections.js?v=75"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

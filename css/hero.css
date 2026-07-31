@@ -1304,3 +1304,16 @@
       color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.06em;
       text-transform:uppercase;text-decoration:none;
     }
+
+    /* Wallet and payout methods pages, opened from the Settings menu. Same
+       slide-in as #setPage so they behave like every other sub-page there. */
+    #walletPage,#bankPage{
+      position:fixed;inset:0;z-index:547;background:var(--bg);color:var(--tx);
+      overflow-y:auto;transform:translateX(100%);
+      transition:transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #walletPage.open,#bankPage.open{transform:translateX(0);}
+    .dzPanelWrap{max-width:640px;margin:0 auto;padding:.4rem .9rem 2.5rem;}
+    @media(prefers-reduced-motion:reduce){
+      #walletPage,#bankPage{transition:none;}
+    }

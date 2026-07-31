@@ -12,12 +12,22 @@
 // PayPal issues the webhook id once the URL is registered, which is why this
 // has to exist before PAYPAL_WEBHOOK_ID can be bound.
 //
-// Events it acts on:
+// Subscribing to every event is fine — anything not listed below is verified
+// and then ignored. The only cost is a verification round-trip for noise.
+//
+// Money coming IN:
 //   CHECKOUT.ORDER.APPROVED    buyer approved but the browser never came back
 //   PAYMENT.CAPTURE.COMPLETED  the settlement of record
 //   PAYMENT.CAPTURE.REFUNDED   money returned
 //   PAYMENT.CAPTURE.REVERSED   chargeback or reversal
 //   PAYMENT.CAPTURE.DENIED     never settled
+//
+// Money going OUT — these are not optional if payouts are used. A batch PayPal
+// accepts is not money that arrived, and without them a payout that failed,
+// was blocked or was never claimed would sit reading as paid forever:
+//   PAYMENTS.PAYOUTS-ITEM.SUCCEEDED   it actually landed
+//   PAYMENTS.PAYOUTS-ITEM.UNCLAIMED   sent, recipient has not accepted yet
+//   PAYMENTS.PAYOUTS-ITEM.FAILED / .BLOCKED / .RETURNED / .DENIED / .REFUNDED
 
 const SUB_DAYS   = 31;
 const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
@@ -226,6 +236,11 @@ export async function onRequestPost({ env, request }) {
   const orderId  = related.order_id || (type.startsWith('CHECKOUT.ORDER.') ? resource.id : '');
 
   try {
+    // Payout events are about money going OUT and name no order, so they are
+    // routed before the order-id guard below.
+    if (type.startsWith('PAYMENTS.PAYOUTS-ITEM.'))
+      return json({ ok: true, result: await payoutItem(env, type, resource) });
+
     if (!orderId) return json({ ok: true, skipped: 'no order id' });
 
     if (type === 'CHECKOUT.ORDER.APPROVED') {
@@ -266,7 +281,71 @@ export async function onRequestPost({ env, request }) {
     return json({ ok: true, skipped: type });
   } catch (err) {
     // A 500 tells PayPal to retry, which is what we want for a transient
-    // database failure — the handlers above are all idempotent.
+    // database failure — every handler above is idempotent.
     return json({ error: (err && err.message) || 'handler failed' }, 500);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Payout items settle asynchronously.
+//
+// /v1/payments/payouts accepting a batch is NOT the money arriving. The item
+// can still fail afterwards — a bad address, a blocked or returned item, or
+// one the recipient never claims. These events are the only honest signal, so
+// a payout stays 'processing' until one of them says otherwise.
+async function payoutItem(env, type, resource) {
+  // sender_item_id is the payout_requests row id, set when the batch was sent
+  const id = String((resource && resource.sender_item_id) || '');
+  if (!/^[0-9a-f-]{36}$/.test(id)) return 'no request id';
+
+  const rows = await sbService(env,
+    '/payout_requests?id=eq.' + id + '&select=id,user_id,amount,currency,status&limit=1');
+  const req = rows && rows[0];
+  if (!req) return 'no such request';
+
+  if (type === 'PAYMENTS.PAYOUTS-ITEM.SUCCEEDED') {
+    await sbService(env, '/payout_requests?id=eq.' + id + '&status=eq.processing', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        status: 'paid',
+        paid_at: new Date().toISOString(),
+        provider_item_id: String((resource && resource.payout_item_id) || ''),
+      }),
+    });
+    return 'paid';
+  }
+
+  // Unclaimed is not a failure yet — PayPal holds it for the recipient and
+  // returns it after 30 days if they never accept. Leave it processing and
+  // say so, rather than paying it twice or writing it off early.
+  if (type === 'PAYMENTS.PAYOUTS-ITEM.UNCLAIMED') {
+    await sbService(env, '/payout_requests?id=eq.' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ review_note: 'Sent, waiting for the recipient to claim it' }),
+    }).catch(() => {});
+    return 'unclaimed';
+  }
+
+  // Everything else means the money did not go. Put the request back where an
+  // admin can act on it and hand the seller their earnings back, so the
+  // balance stops under-reporting what they are owed.
+  const note = {
+    'PAYMENTS.PAYOUTS-ITEM.FAILED':   'PayPal could not send this item',
+    'PAYMENTS.PAYOUTS-ITEM.BLOCKED':  'PayPal blocked this item',
+    'PAYMENTS.PAYOUTS-ITEM.RETURNED': 'Unclaimed and returned by PayPal',
+    'PAYMENTS.PAYOUTS-ITEM.DENIED':   'PayPal denied this item',
+    'PAYMENTS.PAYOUTS-ITEM.REFUNDED': 'This payout was refunded back to us',
+  }[type] || 'This payout did not complete';
+
+  await sbService(env, '/payout_requests?id=eq.' + id + '&status=in.(processing,paid)', {
+    method: 'PATCH',
+    body: JSON.stringify({ status: 'approved', review_note: note, paid_at: null }),
+  });
+  // hand back exactly what this payout retired
+  await sbService(env,
+    '/marketplace_earnings?seller_id=eq.' + req.user_id +
+    '&currency=eq.' + req.currency + '&status=eq.paid_out', {
+    method: 'PATCH', body: JSON.stringify({ status: 'available' }),
+  }).catch(() => {});
+  return 'returned to approved';
 }

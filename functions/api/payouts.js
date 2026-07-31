@@ -298,13 +298,10 @@ export async function onRequestPost({ env, request }) {
         });
 
         const bid = (out.batch_header && out.batch_header.payout_batch_id) || batchId;
-        await sbService(env, '/payout_requests?id=eq.' + req.id, {
-          method: 'PATCH',
-          body: JSON.stringify({ status: 'paid', batch_id: bid, paid_at: new Date().toISOString() }),
-        });
 
         // Retire exactly the earnings this payout covers, oldest first, so the
-        // same money cannot be withdrawn again.
+        // same money cannot be requested twice while the item is in flight.
+        // PAYMENTS.PAYOUTS-ITEM.* hands them back if the item never lands.
         const earned = await sbService(env,
           '/marketplace_earnings?seller_id=eq.' + req.user_id +
           '&status=eq.available&currency=eq.' + req.currency +
@@ -317,7 +314,21 @@ export async function onRequestPost({ env, request }) {
           });
           left -= Number(e.net_amount || 0);
         }
-        return json({ ok: true, batchId: bid });
+
+        // A batch PayPal accepted is not money that arrived — the item can
+        // still fail, be blocked, or go unclaimed. With a webhook bound, the
+        // request waits at 'processing' until PAYMENTS.PAYOUTS-ITEM. says
+        // which it was. Without one there is nothing that could ever tell us,
+        // so it is marked paid here and that optimism is the cost of running
+        // payouts with no webhook.
+        const confirmable = !!env.PAYPAL_WEBHOOK_ID;
+        await sbService(env, '/payout_requests?id=eq.' + req.id, {
+          method: 'PATCH',
+          body: JSON.stringify(confirmable
+            ? { batch_id: bid, review_note: 'Sent, waiting for PayPal to confirm delivery' }
+            : { status: 'paid', batch_id: bid, paid_at: new Date().toISOString() }),
+        });
+        return json({ ok: true, batchId: bid, confirmed: !confirmable });
       } catch (err) {
         // Back to approved, not failed: the money is still owed and the review
         // still stands. A missing Payouts entitlement lands here.
@@ -327,6 +338,12 @@ export async function onRequestPost({ env, request }) {
             status: 'approved',
             review_note: String((err && err.message) || 'Send failed').slice(0, 500),
           }),
+        }).catch(() => {});
+        // nothing was sent, so nothing stays retired
+        await sbService(env,
+          '/marketplace_earnings?seller_id=eq.' + req.user_id +
+          '&currency=eq.' + req.currency + '&status=eq.paid_out', {
+          method: 'PATCH', body: JSON.stringify({ status: 'available' }),
         }).catch(() => {});
         return json({ error: (err && err.message) || 'Could not send the payout' }, 502);
       }

@@ -8,7 +8,11 @@
        input over a grid that was always the same trending order; in its
        place sit six tabs — Trending, New arrival, Weekly hits, Monthly
        hits, Artists, Logs — in one scrolling line, no scrollbar and no
-       progress track under it. Switching costs no request: every board
+       progress track under it. The line is centred on every device, and
+       safely so: once the tabs are wider than the screen it lines up from
+       the left instead, since a centred overflow puts the first tab off
+       the edge with no way to scroll back to it.
+       Switching costs no request: every board
        reorders the artworks already loaded, and each is capped at 200.
        Trending is unchanged, and New arrival is the newest-first order the
        gallery already had. The two new boards score on the same points a

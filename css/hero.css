@@ -821,6 +821,11 @@
       --ftInset:clamp(.7rem,2vw,2rem);
       position:relative;              /* offsetParent for the reveal scroll */
       display:flex;gap:.55rem;
+      /* centred at every width. safe keeps the scroll honest: once the tabs
+         are wider than the screen it falls back to start, so the first one
+         cannot end up off the left edge with no way to scroll back to it */
+      justify-content:center;
+      justify-content:safe center;
       margin:1.25rem 0 0;
       padding:.2rem var(--ftInset);
       overflow-x:auto;overflow-y:hidden;

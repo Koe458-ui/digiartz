@@ -175,7 +175,7 @@ const MODULE = `
       var s = document.createElement('script');
       s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) +
               '&currency=' + encodeURIComponent(currency) +
-              '&intent=capture&components=buttons&disable-funding=paylater';
+              '&intent=capture&components=buttons&disable-funding=venmo,paylater';
       s.setAttribute('data-namespace', ns);
       s.async = true;
       s.onload = function(){

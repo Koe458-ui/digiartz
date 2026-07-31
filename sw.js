@@ -4,6 +4,41 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v77 — community chats open as a panel that slides in from the right,
+       the way profile, gallery and community itself already arrive.
+       Tapping a community, group or DM used to swap two divs in place —
+       the grid to display:none, the chat into its slot, a 26px nudge as
+       the only transition — so the one destination people open dozens of
+       times a day was the one that did not move like the rest.
+       The chat now lives in #cmChatPanel inside #communityPage, carrying
+       its own header, both chat views and the composer, so everything it
+       needs travels with the slide. The community page stays mounted
+       underneath, because you are still in that section, and the grid
+       keeps its scroll position for the same reason. The header had to
+       split: one element cannot be both the COMMUNITY title and the chat
+       banner while both are on screen, so the grid keeps the title and
+       the banner moved into the panel. cmHdrHomeMode therefore no longer
+       repaints it — it drops the tap handler and leaves the banner
+       intact while it slides away.
+       Leaving the section is not a slide: cmChatPanelReset commits the
+       closed state with transitions suppressed, so the chat never
+       animates out across a page that is animating in.
+       The composer also sat 84px off the bottom, holding room for a nav
+       bar that is hidden inside a channel. Focusing the input dropped
+       that padding and translated the bar, changing its height and
+       position at once — the bounce on tap, and the gap left behind when
+       a stale transform outlived the keyboard. As a child of the panel
+       the bar sits at the foot on its own, and the keyboard is handled
+       by padding the panel: the column shortens, the bar keeps its size,
+       and the panel goes on painting behind the keyboard.
+       Six shell files changed, so their ?v= moved with them, here and in
+       index.html together. index.html itself carries no ?v= and rides
+       CACHE_VERSION — which matters more than usual, since the new
+       markup against v76's stylesheets is a broken community page rather
+       than a cosmetic difference.
+       Changed: index.html, css/community.css, css/viewer.css,
+       js/community.js, js/composer.js, js/dm.js, js/mywork.js, sw.js.
+
    v76 — the site's own wording is no longer copyable. Headings, button
        labels, nav, hints and stat labels could all be long-pressed on a
        phone or drag-selected on a desktop, which put the whole interface
@@ -598,7 +633,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v76';
+const CACHE_VERSION = 'v77';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -624,8 +659,8 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=2',
   '/css/hero.css?v=65',
-  '/css/viewer.css?v=2',
-  '/css/community.css?v=1',
+  '/css/viewer.css?v=3',
+  '/css/community.css?v=2',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=1',
   '/css/profile.css?v=1',
@@ -644,9 +679,9 @@ const SHELL_URLS = [
 
   // scripts
   '/js/ranking.js?v=1',
-  '/js/community.js?v=1',
-  '/js/dm.js?v=1',
-  '/js/composer.js?v=1',
+  '/js/community.js?v=2',
+  '/js/dm.js?v=2',
+  '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
   '/js/app-core.js?v=5',
@@ -659,7 +694,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=1',
-  '/js/mywork.js?v=3',
+  '/js/mywork.js?v=4',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=1',
   '/js/search.js?v=1',

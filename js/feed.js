@@ -359,7 +359,12 @@
       '</span>';
 
     row.setAttribute('aria-label', 'Open ' + (e.title || 'this upload'));
-    row.onclick = function(){ logOpen(e); };
+    // the chips are labels, not controls — a tap on one names the kind and
+    // the category and does nothing else, so it does not open the upload
+    row.onclick = function(ev){
+      if(ev.target && ev.target.closest && ev.target.closest('.lgMeta')) return;
+      logOpen(e);
+    };
     row.onkeydown = function(ev){
       if(ev.key !== 'Enter' && ev.key !== ' ') return;
       ev.preventDefault();

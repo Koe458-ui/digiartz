@@ -894,8 +894,12 @@
       font-family:var(--fm);font-size:clamp(1rem,4.5%,1.5rem);line-height:1;color:var(--tx);
     }
     .atAv img{width:100%;height:100%;object-fit:cover;display:block;}
-    .atName,.atUser{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .atUser{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    /* a display name can be longer than the card is wide, so it takes a
+       second line rather than losing its second half */
     .atName{
+      max-width:100%;overflow:hidden;overflow-wrap:anywhere;
+      display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
       margin-top:.5rem;
       font-family:var(--fd);font-weight:700;
       font-size:clamp(.82rem,2.6vw,1rem);color:var(--tx);line-height:1.25;
@@ -968,8 +972,16 @@
     .fbArt:focus-visible{outline:2px solid var(--pg);outline-offset:-3px;}
     .fbInfo{
       position:relative;z-index:2;height:100%;max-width:64%;
+      min-width:0;
       box-sizing:border-box;padding:clamp(.7rem,4.5%,1.5rem);
       display:flex;flex-direction:column;justify-content:center;gap:.2rem;
+    }
+    /* a narrow phone gives the words too little room at 64%: the bio lost
+       its second line and the name its second half. The picture gives some
+       back rather than the text going unreadable. */
+    @media(max-width:420px){
+      .fbInfo{max-width:74%;}
+      .fbArt{left:50%;}
     }
     .fbEyebrow{
       font-family:var(--fm);font-size:clamp(.54rem,1.5vw,.64rem);
@@ -979,7 +991,8 @@
     .fbName{
       font-family:var(--fd);font-weight:800;letter-spacing:-.01em;
       font-size:clamp(1rem,3.6vw,1.6rem);color:var(--tx);line-height:1.2;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      max-width:100%;overflow:hidden;overflow-wrap:anywhere;
+      display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;
       margin-top:.15rem;
     }
     .fbBio{
@@ -1015,17 +1028,23 @@
       .fbGo{transition:none;}
     }
 
-    /* logs — one long line per upload, not a thumbnail grid */
+    /* logs — one long line per upload, not a thumbnail grid.
+       minmax(0,1fr), never a bare 1fr: a bare one is minmax(auto,1fr), whose
+       auto floor is the row's own content width, and one long title then
+       pushes the whole track wider than the screen and hangs the line off
+       the right edge. The square grids never showed this because a picture
+       has no text to measure. */
     .awGrid.awGrid--logs{
-      grid-template-columns:1fr;
+      grid-template-columns:minmax(0,1fr);
       gap:.5rem;
     }
     /* one column on a phone, two on a desktop, three once there is room
        for a third without squeezing the line into a chip */
-    @media(min-width:900px){  .awGrid.awGrid--logs{grid-template-columns:repeat(2,1fr);gap:.6rem;} }
-    @media(min-width:1600px){ .awGrid.awGrid--logs{grid-template-columns:repeat(3,1fr);} }
+    @media(min-width:900px){  .awGrid.awGrid--logs{grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;} }
+    @media(min-width:1600px){ .awGrid.awGrid--logs{grid-template-columns:repeat(3,minmax(0,1fr));} }
     .lgRow{
       display:flex;align-items:center;gap:.75rem;
+      min-width:0;                      /* shrink with the track, never past it */
       padding:.7rem .85rem;box-sizing:border-box;
       background:var(--sur);border:1px solid var(--bdr);border-radius:12px;
       cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;
@@ -1045,18 +1064,29 @@
     }
     .lgAv img{width:100%;height:100%;object-fit:cover;display:block;}
     .lgBody{min-width:0;flex:1;display:flex;flex-direction:column;gap:.12rem;}
-    .lgLine,.lgName{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    /* the sentence and the title wrap rather than truncate — a phone is
+       where the longest names meet the narrowest row, and a line cut at
+       "uploaded a marketpl…" tells the reader nothing. Two lines each is
+       the ceiling, and a word longer than the row breaks instead of
+       pushing it. */
+    .lgLine,.lgName{
+      max-width:100%;overflow:hidden;overflow-wrap:anywhere;
+      display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+    }
     .lgLine{font-family:var(--fb);font-size:.76rem;color:var(--txd);line-height:1.35;}
     .lgUser{font-weight:700;color:var(--tx);}
     .lgName{
       font-family:var(--fd);font-weight:700;font-size:.92rem;
       color:var(--tx);line-height:1.3;
     }
-    .lgMeta{display:flex;align-items:center;gap:.35rem;margin-top:.2rem;min-width:0;}
+    .lgMeta{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem;margin-top:.2rem;min-width:0;}
+    /* labels, not controls: they name the kind and the category and there is
+       nothing behind them to open */
     .lgTag,.lgCat{
       font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
       padding:.22rem .45rem;border-radius:999px;white-space:nowrap;
-      overflow:hidden;text-overflow:ellipsis;
+      overflow:hidden;text-overflow:ellipsis;max-width:100%;
+      cursor:default;
     }
     /* the kind is the loud one; the category rides beside it, quieter */
     .lgTag{background:var(--pdim);border:1px solid var(--bdr);color:var(--tx);flex:0 0 auto;}
@@ -1073,6 +1103,11 @@
       #artworks .ftRail{gap:.45rem;}
       .lgAv{width:34px;height:34px;}
       .lgName{font-size:.86rem;}
+    }
+    /* the narrowest phones fit fewer words per line, so a long title gets a
+       third one rather than losing its end */
+    @media(max-width:380px){
+      .lgName{-webkit-line-clamp:3;}
     }
     @media(prefers-reduced-motion:reduce){
       .lgRow{transition:none;}

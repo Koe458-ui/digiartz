@@ -4,6 +4,28 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v85 — the log lines ran off the side of a phone. A grid column written
+       as 1fr is minmax(auto,1fr), and that auto floor is the widest the
+       row's own content wants to be — so one long title pushed the track
+       past the viewport and the line was cut at the screen edge, border
+       and all. Measured at 360px: a row 426px wide in a 360px window. The
+       square boards never showed it because a picture has no text to
+       measure. The three log grids are minmax(0,1fr) now, and the row
+       carries min-width:0 behind it.
+       With the row no longer able to grow, the words inside it wrap
+       instead of truncating: the sentence and the title each take up to
+       two lines, three for the title under 380px, and a word longer than
+       the row breaks rather than pushing it. The chips wrap too. Same
+       treatment for the artist card's display name, which lost its second
+       half at 320px, and the banner gives its text 74% of the width under
+       420px, where 64% left the bio a line short.
+       The log chips are labels, not controls — a tap on one names the
+       kind and the category and no longer opens the upload.
+       Audited at 320, 360, 390, 430, 540, 700, 900, 1280, 1600 and 1920
+       across every board: nothing overflows its grid, its card or the
+       page.
+       Changed: index.html, css/hero.css, js/feed.js.
+
    v84 — the hero page's search bar is now a rail of boards. The bar was one
        input over a grid that was always the same trending order; in its
        place sit six tabs — Trending, New arrival, Weekly hits, Monthly
@@ -854,7 +876,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v84';
+const CACHE_VERSION = 'v85';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -879,7 +901,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=66',
+  '/css/hero.css?v=67',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
@@ -919,7 +941,7 @@ const SHELL_URLS = [
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=2',
   '/js/search.js?v=2',
-  '/js/feed.js?v=1',
+  '/js/feed.js?v=2',
   '/js/effects.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',

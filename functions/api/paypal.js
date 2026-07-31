@@ -169,6 +169,27 @@ async function recordEarning(env, row) {
   }).catch(() => {});
 }
 
+// ---------------------------------------------------------------------------
+// Rate limit. Cloudflare stops the floods; this stops the cheap targeted abuse
+// it has no reason to block — walking item ids through checkout, opening
+// orders to spam the ledger, hammering a payout race. Fails OPEN: if the
+// limiter itself is broken, a paying customer still gets served.
+async function underLimit(env, bucket, limit, seconds) {
+  try {
+    const res = await fetch(env.SB_URL + '/rest/v1/rpc/dz_rate_take', {
+      method: 'POST',
+      headers: {
+        apikey: env.SB_SERVICE_KEY,
+        authorization: 'Bearer ' + env.SB_SERVICE_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ p_bucket: bucket, p_limit: limit, p_seconds: seconds }),
+    });
+    if (!res.ok) return true;
+    return (await res.json()) !== false;
+  } catch { return true; }
+}
+
 // create order and ledger row
 async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label }) {
   const order = await pp(env, '/v2/checkout/orders', {
@@ -234,6 +255,10 @@ export async function onRequestPost({ env, request }) {
 
   const user = await sbUser(env, request);
   if (!user) return json({ error: 'Sign in required' }, 401);
+
+  // thirty checkout calls a minute is far past any real buyer
+  if (!(await underLimit(env, 'pp:' + user.id, 30, 60)))
+    return json({ error: 'Too many attempts — wait a moment' }, 429);
 
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Bad request' }, 400); }

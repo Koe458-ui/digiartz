@@ -193,7 +193,10 @@ const MODULE = `
     var s = await sb.auth.getSession();
     var session = s && s.data && s.data.session;
     if(!session) throw new Error('Sign in required');
-    var res = await fetch(prov === 'paypal' ? '/api/paypal' : '/api/rzp', {
+    var url = prov === 'paypal' ? '/api/paypal'
+            : prov === 'payouts' ? '/api/payouts'
+            : '/api/rzp';
+    var res = await fetch(url, {
       method:'POST',
       headers:{'content-type':'application/json', 'authorization':'Bearer '+session.access_token},
       body: JSON.stringify(body)
@@ -418,9 +421,243 @@ const MODULE = `
     });
   }
 
+  // ---- wallet and payout methods -----------------------------------------
+  // Both live in profile settings, both behind this module, so a signed-out
+  // visitor's page carries neither the markup nor the endpoint. Every figure
+  // shown here was computed server-side from the ledger — nothing below adds
+  // money up, it only formats what it was handed.
+  function pay(action, extra){
+    return api('payouts', Object.assign({action:action}, extra || {}));
+  }
+
+  function usd(minor){ return money(minor, 'USD'); }
+
+  function when(iso){
+    try{
+      return new Date(iso).toLocaleDateString(undefined,
+        {year:'numeric', month:'short', day:'numeric'});
+    }catch(e){ return ''; }
+  }
+
+  var STATUS_WORD = {
+    paid:'Success', created:'Pending', requested:'Requested', approved:'Approved',
+    processing:'Sending', failed:'Failed', refunded:'Refunded', rejected:'Rejected',
+    available:'Cleared', pending:'On hold', reversed:'Reversed', paid_out:'Paid out'
+  };
+
+  function row(h){
+    var sign = h.direction === 'purchase' ? '−' : h.direction === 'payout' ? '−' : '+';
+    var cls  = h.direction === 'sale' ? 'dzWlIn' : 'dzWlOut';
+    var who  = h.direction === 'purchase' ? 'You bought'
+             : h.direction === 'sale'     ? 'Someone bought'
+             : 'You withdrew';
+    return '<li class="dzWlRow">' +
+      '<div class="dzWlMain">' +
+        '<div class="dzWlTitle">' + esc(h.title || '') + '</div>' +
+        '<div class="dzWlSub">' + esc(who) + ' · ' + esc(when(h.happened_at)) +
+          (h.provider ? ' · ' + esc(h.provider) : '') + '</div>' +
+      '</div>' +
+      '<div class="dzWlRight">' +
+        '<div class="dzWlAmt ' + cls + '">' + sign + esc(money(h.amount, h.currency)) + '</div>' +
+        '<div class="dzWlSt dzWlSt--' + esc(h.status) + '">' +
+          esc(STATUS_WORD[h.status] || h.status) + '</div>' +
+      '</div></li>';
+  }
+
+  function methodLine(m){
+    var what = m.kind === 'paypal_email' ? 'PayPal · ' + esc(m.paypal_email)
+             : m.kind === 'upi'          ? 'UPI · ' + esc(m.upi_vpa)
+             : 'Bank · ' + esc(m.bank_name || 'Account') + ' ••••' + esc(m.bank_last4 || '');
+    return '<li class="dzBkRow' + (m.is_default ? ' dzBkRow--def' : '') + '">' +
+      '<div class="dzBkMain"><div class="dzBkWhat">' + what + '</div>' +
+      '<div class="dzBkSub">' + esc(m.label || '') +
+        (m.is_default ? '<span class="dzBkTag">Default</span>' : '') + '</div></div>' +
+      '<div class="dzBkActs">' +
+        (m.is_default ? '' : '<button type="button" class="dzBkBtn" data-def="' + esc(m.id) + '">Make default</button>') +
+        '<button type="button" class="dzBkBtn dzBkBtn--rm" data-rm="' + esc(m.id) + '">Remove</button>' +
+      '</div></li>';
+  }
+
+  var METHOD_FORMS = {
+    paypal_email:
+      '<label class="dzBkLbl">PayPal email</label>' +
+      '<input class="dzBkIn" data-f="paypalEmail" type="email" autocomplete="off" placeholder="you@example.com">',
+    upi:
+      '<label class="dzBkLbl">UPI ID</label>' +
+      '<input class="dzBkIn" data-f="upi" type="text" autocomplete="off" placeholder="name@bank">',
+    bank_account:
+      '<label class="dzBkLbl">Account holder name</label>' +
+      '<input class="dzBkIn" data-f="holderName" type="text" autocomplete="off" placeholder="As it appears on the account">' +
+      '<label class="dzBkLbl">Bank name</label>' +
+      '<input class="dzBkIn" data-f="bankName" type="text" autocomplete="off" placeholder="Bank">' +
+      '<label class="dzBkLbl">Account number</label>' +
+      '<input class="dzBkIn" data-f="accountNumber" type="text" inputmode="numeric" autocomplete="off" placeholder="Account number">' +
+      '<label class="dzBkLbl">IFSC</label>' +
+      '<input class="dzBkIn" data-f="ifsc" type="text" autocomplete="off" placeholder="ABCD0123456">' +
+      '<p class="dzBkNote">Only the last four digits are kept, so you can tell your ' +
+      'accounts apart. The full number is never stored.</p>'
+  };
+
+  function renderWallet(host, d){
+    var s = d.summary || {};
+    var paid = (d.payouts || []).filter(function(p){ return p.status === 'paid'; });
+
+    host.innerHTML =
+      '<div class="dzWl">' +
+        '<div class="dzWlHead">' +
+          '<div class="dzWlBalLbl">Wallet balance</div>' +
+          '<div class="dzWlBal">' + esc(usd(s.withdrawable || 0)) + '</div>' +
+          '<div class="dzWlBalSub">Shown in USD · earnings are converted at the stored rate</div>' +
+        '</div>' +
+
+        '<div class="dzWlGrid">' +
+          '<div class="dzWlCell"><span>Total sales</span><b>' + esc(usd(s.total_sales || 0)) + '</b></div>' +
+          '<div class="dzWlCell"><span>Available</span><b>' + esc(usd(s.available || 0)) + '</b></div>' +
+          '<div class="dzWlCell"><span>Pending</span><b>' + esc(usd(s.pending || 0)) + '</b></div>' +
+          '<div class="dzWlCell"><span>Artworks sold</span><b>' + esc(String(s.items_sold || 0)) + '</b></div>' +
+          '<div class="dzWlCell"><span>Commission paid</span><b>' + esc(usd(s.commission || 0)) + '</b></div>' +
+          '<div class="dzWlCell"><span>Withdrawn</span><b>' + esc(usd(s.paid_out || 0)) + '</b></div>' +
+        '</div>' +
+
+        (paid.length
+          ? '<div class="dzWlSect">Payout history</div><ul class="dzWlList">' +
+            paid.map(function(p){
+              return '<li class="dzWlRow"><div class="dzWlMain">' +
+                '<div class="dzWlTitle">' + esc(money(p.amount, p.currency)) + ' paid</div>' +
+                '<div class="dzWlSub">' + esc(when(p.paid_at)) + ' · ' + esc(p.destination || '') + '</div>' +
+                '</div></li>';
+            }).join('') + '</ul>'
+          : '') +
+
+        '<button type="button" class="dzWlReq" ' +
+          ((s.withdrawable || 0) > 0 ? '' : 'disabled') + '>Request payout</button>' +
+        '<div class="dzWlMsg" hidden></div>' +
+
+        '<div class="dzWlSect">Activity</div>' +
+        ((d.history || []).length
+          ? '<ul class="dzWlList">' + d.history.map(row).join('') + '</ul>'
+          : '<div class="dzWlEmpty">Nothing yet.</div>') +
+      '</div>';
+
+    var msg = host.querySelector('.dzWlMsg');
+    function say(t, bad){
+      msg.textContent = t; msg.hidden = !t;
+      msg.classList.toggle('dzWlMsg--bad', !!bad);
+    }
+
+    // Themed, in the sheet — never a browser prompt.
+    host.querySelector('.dzWlReq').addEventListener('click', function(){
+      var max = s.withdrawable || 0;
+      openSheet('Request payout');
+      sheet.body.innerHTML =
+        '<div class="dzBkForm">' +
+          '<label class="dzBkLbl">Amount in USD</label>' +
+          '<input class="dzBkIn" id="dzWlAmt" type="text" inputmode="decimal" placeholder="' +
+            esc((max / 100).toFixed(2)) + '">' +
+          '<p class="dzBkNote">You can withdraw up to ' + esc(usd(max)) +
+            '. Paid to your default method.</p>' +
+          '<div class="dzWlMsg" hidden></div>' +
+          '<button type="button" class="dzWlReq" id="dzWlGo">Request</button>' +
+        '</div>';
+      var m2 = sheet.body.querySelector('.dzWlMsg');
+      sheet.body.querySelector('#dzWlGo').addEventListener('click', function(){
+        var v = Math.round(parseFloat(sheet.body.querySelector('#dzWlAmt').value) * 100);
+        if(!Number.isFinite(v) || v <= 0){
+          m2.textContent = 'Enter an amount.'; m2.hidden = false;
+          m2.classList.add('dzWlMsg--bad'); return;
+        }
+        m2.textContent = 'Sending…'; m2.hidden = false; m2.classList.remove('dzWlMsg--bad');
+        pay('request', {amount:v, currency:'USD'})
+          .then(function(){ closeSheet(); toast('Payout requested'); loadWallet(true); },
+                function(e){
+                  m2.textContent = e.message || 'Could not request that';
+                  m2.classList.add('dzWlMsg--bad');
+                });
+      });
+    });
+  }
+
+  function renderBank(host, d){
+    host.innerHTML =
+      '<div class="dzBk">' +
+        '<div class="dzBkHead">Payout methods</div>' +
+        ((d.methods || []).length
+          ? '<ul class="dzBkList">' + d.methods.map(methodLine).join('') + '</ul>'
+          : '<div class="dzWlEmpty">No payout method yet.</div>') +
+        '<div class="dzBkPick">' +
+          '<button type="button" class="dzBkAdd" data-add="paypal_email">Add PayPal</button>' +
+          '<button type="button" class="dzBkAdd" data-add="upi">Add UPI</button>' +
+          '<button type="button" class="dzBkAdd" data-add="bank_account">Add bank account</button>' +
+        '</div>' +
+        '<p class="dzBkNote">Card numbers are never asked for or stored here. ' +
+        'Cards are handled inside the provider’s own checkout, which is the only ' +
+        'place they belong.</p>' +
+      '</div>';
+
+    Array.prototype.forEach.call(host.querySelectorAll('[data-add]'), function(b){
+      b.addEventListener('click', function(){ addMethod(b.getAttribute('data-add')); });
+    });
+    Array.prototype.forEach.call(host.querySelectorAll('[data-def]'), function(b){
+      b.addEventListener('click', function(){
+        pay('method-default', {id:b.getAttribute('data-def')})
+          .then(function(){ loadWallet(true); }, function(e){ toast(e.message); });
+      });
+    });
+    Array.prototype.forEach.call(host.querySelectorAll('[data-rm]'), function(b){
+      b.addEventListener('click', function(){
+        pay('method-remove', {id:b.getAttribute('data-rm')})
+          .then(function(){ toast('Removed'); loadWallet(true); }, function(e){ toast(e.message); });
+      });
+    });
+  }
+
+  function addMethod(kind){
+    openSheet('Add payout method');
+    sheet.body.innerHTML =
+      '<div class="dzBkForm">' + METHOD_FORMS[kind] +
+        '<label class="dzBkLbl">Label (optional)</label>' +
+        '<input class="dzBkIn" data-f="label" type="text" placeholder="e.g. Main account">' +
+        '<div class="dzWlMsg" hidden></div>' +
+        '<button type="button" class="dzWlReq" id="dzBkSave">Save</button>' +
+      '</div>';
+    var m = sheet.body.querySelector('.dzWlMsg');
+    sheet.body.querySelector('#dzBkSave').addEventListener('click', function(){
+      var payload = {kind:kind};
+      Array.prototype.forEach.call(sheet.body.querySelectorAll('[data-f]'), function(i){
+        payload[i.getAttribute('data-f')] = i.value;
+      });
+      m.textContent = 'Saving…'; m.hidden = false; m.classList.remove('dzWlMsg--bad');
+      pay('method-add', payload)
+        .then(function(){ closeSheet(); toast('Payout method added'); loadWallet(true); },
+              function(e){
+                m.textContent = e.message || 'Could not save that';
+                m.classList.add('dzWlMsg--bad');
+              });
+    });
+  }
+
+  // One fetch feeds both sections, so they can never disagree.
+  var walletP = null;
+  function loadWallet(force){
+    var wl = document.getElementById('pfWalletGate');
+    var bk = document.getElementById('pfBankGate');
+    if(!wl && !bk) return;
+    if(force) walletP = null;
+    if(!walletP) walletP = pay('overview');
+    walletP.then(function(d){
+      if(wl) renderWallet(wl, d);
+      if(bk) renderBank(bk, d);
+    }, function(e){
+      var msg = '<div class="dzWlEmpty">' + esc(e.message || 'Could not load') + '</div>';
+      if(wl) wl.innerHTML = msg;
+      if(bk) bk.innerHTML = msg;
+    });
+  }
+  window.dzWalletLoad = loadWallet;
+
   // The public bundle calls this after every render that could have produced a
   // slot, and once when this module lands.
-  window.dzFill = function(){ fillPlans(); fillSlots(); };
+  window.dzFill = function(){ fillPlans(); fillSlots(); loadWallet(false); };
   window.dzFill();
 })(__dzStore);
 `;

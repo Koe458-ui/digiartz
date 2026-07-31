@@ -97,7 +97,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
-  <link rel="stylesheet" href="/css/hero.css?v=68">
+  <link rel="stylesheet" href="/css/hero.css?v=69">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=3">
   <link rel="stylesheet" href="/css/connect.css?v=1">
@@ -684,6 +684,13 @@
           <input class="pfEditInput" id="pfConnect_pinterest" placeholder="Add Pinterest link here" autocomplete="off">
         </div>
       </div>
+      <!-- Wallet and payout methods. Deliberately empty, like the plan grid:
+           the markup, the figures and the endpoint all come from /api/store,
+           which answers no request without a session. A signed-out visitor
+           reading this page finds two empty divs. -->
+      <div class="pfEditField" id="pfWalletGate"></div>
+      <div class="pfEditField" id="pfBankGate"></div>
+
       <button class="pfEditSaveBtn" id="pfEditSaveBtn" onclick="savePfEditProfile()">SAVE CHANGES</button>
     </div>
   </div>
@@ -1039,6 +1046,7 @@
             </li>
             <li>
               <button class="ftColLink" aria-label="Refund Policy" onclick="openLegal('refund')">Refund Policy</button>
+              <button class="ftColLink" aria-label="Creator &amp; Seller Terms" onclick="openLegal('seller')">Creator &amp; Seller Terms</button>
             </li>
             <li>
               <button class="ftColLink" aria-label="Cookie Policy" onclick="openLegal('cookie')">Cookie Policy</button>
@@ -2274,7 +2282,7 @@
 
  <div id="rippleHost"></div>
 
-  <script src="/js/effects.js?v=1"></script>
+  <script src="/js/effects.js?v=2"></script>
 
 
 

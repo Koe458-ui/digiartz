@@ -395,7 +395,49 @@
         '<p>Due to the nature of our digital services and content, all purchases are final and non-refundable. Once a subscription, digital product, or service has been purchased, we are unable to provide refunds, exchanges, or cancellations.</p>' +
         '<p>Please review all details carefully before completing your purchase. If you experience a billing error, such as being charged multiple times for the same transaction, contact our support team and we will investigate the issue and provide assistance where appropriate.</p>' +
         '<p>By making a purchase on our website, you acknowledge and agree to this Refund Policy.</p>' +
-        '<span class="lmDate">LAST UPDATED: JUNE 2026</span>'
+        '<h3>Marketplace purchases</h3>' +
+        '<p>Marketplace items are sold by individual creators, not by DigiArtz. The same policy applies: digital items are delivered immediately and are final. Where a payment is reversed by the payment provider — a refund, a dispute, or a chargeback — the buyer\u2019s access to the item is withdrawn and the seller\u2019s earnings for that sale are reversed.</p>' +
+        '<span class="lmDate">LAST UPDATED: JULY 2026</span>'
+    },
+    seller: {
+      title: 'CREATOR &amp; SELLER TERMS',
+      html: '<h2>Creator &amp; Seller Terms</h2>' +
+        '<p>These terms apply to every member who lists an item for sale on the DigiArtz marketplace, in addition to our Terms &amp; Conditions. Listing an item means you accept them.</p>' +
+
+        '<h3>1. Your relationship with DigiArtz</h3>' +
+        '<p>You sell your own work directly to buyers. DigiArtz operates the marketplace and collects payment on your behalf; it is not the seller of your item and does not take ownership of it. You keep the rights to your work, and you are responsible for having the right to sell it.</p>' +
+
+        '<h3>2. Commission</h3>' +
+        '<p>DigiArtz retains a commission of <strong>15%</strong> of the sale price of each item. The remaining <strong>85%</strong> is credited to you as earnings. The commission rate applied to a sale is the rate in force at the time of that sale, and is recorded against it; a later change to the rate does not alter sales already made.</p>' +
+
+        '<h3>3. Earnings are a balance, not held funds</h3>' +
+        '<p>Your earnings are a record of what DigiArtz owes you. They are not money held in an account in your name, and they earn no interest. Funds remain in the platform\u2019s payment provider account until a payout is sent to you.</p>' +
+
+        '<h3>4. Clearing period</h3>' +
+        '<p>Earnings become available for withdrawal <strong>7 days</strong> after the sale. This period exists so that a refund, dispute or chargeback can be resolved before money leaves the platform. Earnings from a sale that is later reversed are cancelled, whether or not the clearing period has passed.</p>' +
+
+        '<h3>5. Payouts</h3>' +
+        '<p>You may request a payout of your available balance to a payout method you have added. A minimum applies. Requests are reviewed before being sent, and DigiArtz may hold or decline a payout where a sale is disputed, where a request appears fraudulent, or where required by law. Payment provider fees and any currency conversion are applied by the provider.</p>' +
+
+        '<h3>6. Negative balances and reversals</h3>' +
+        '<p>If a sale is reversed after the related earnings have already been paid out to you, the amount becomes a debt owed to DigiArtz. It may be recovered from your future earnings, or requested from you directly.</p>' +
+
+        '<h3>7. Payout details and identity</h3>' +
+        '<p>You are responsible for the accuracy of the payout details you provide. DigiArtz cannot recover money sent to a payment address you entered incorrectly. We may require identity or tax information before sending a payout where the law or our payment providers require it.</p>' +
+
+        '<h3>8. Taxes</h3>' +
+        '<p>You are responsible for your own taxes on your earnings. DigiArtz does not provide tax advice. Where the law requires us to withhold or report amounts in connection with your sales, we will do so.</p>' +
+
+        '<h3>9. Prohibited listings</h3>' +
+        '<p>You may not list work you do not hold the rights to, work that infringes another person\u2019s rights, or anything prohibited by our Terms &amp; Conditions. Listings are subject to review and may be removed. We may withhold earnings from a sale of an infringing item.</p>' +
+
+        '<h3>10. Suspension</h3>' +
+        '<p>We may suspend selling or payouts on an account where we reasonably suspect fraud, abuse of the marketplace, or a breach of these terms, while we investigate.</p>' +
+
+        '<h3>11. Contact</h3>' +
+        '<p>Questions about these terms can be sent to:</p>' +
+        '<p>Email: [your contact email]<br>Website: digiartz.net</p>' +
+        '<span class="lmDate">EFFECTIVE DATE: JULY 2026</span>'
     }
   };
 

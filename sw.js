@@ -4,6 +4,44 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v88 — a wallet, and the terms that had to come with it. Profile settings
+       gains two sections: what a member has earned and where they want it
+       sent. The header totals in USD from a stored rate table rather than
+       a live feed, because a balance that reads differently on every
+       refresh is worse than one honestly a day old. Totals are computed
+       in one database function, so the browser never adds money up — it
+       formats what it was handed. Below them sits one history: what the
+       member bought, what somebody bought from them, and what they
+       withdrew, as a union view that inherits the row policies rather
+       than working around them.
+       Payout methods are one row per instrument, so a PayPal address and
+       a UPI id can sit side by side. NOTHING RAW IS STORED. No card
+       number, no full account number, no CVV — a card number would put
+       this project in PCI scope and a leak of that table would be
+       unrecoverable. A bank row keeps the last four digits so its owner
+       can recognise it, the IFSC, and a provider token; the account
+       number is read, validated, and thrown away. A check constraint
+       enforces that shape rather than trusting whoever calls. Cards stay
+       where they belong, inside the provider's own checkout.
+       Every prompt here is themed and in the sheet. Nothing asks for
+       money through a browser dialog any more.
+       The legal half is not decoration. The platform now takes a
+       commission and holds other people's money, and there were no terms
+       saying so — no commission rate, no clearing period, no statement
+       that a balance is a record rather than funds held in the seller's
+       name, nothing about who owes what when a sale is reversed after a
+       payout. Creator & Seller Terms says all of it, and the refund
+       policy now covers marketplace items and reversals.
+       Hardening: the money endpoints take a per-member rate limit,
+       counted and tested in one atomic statement so two simultaneous
+       requests cannot both read as one under the cap. Cloudflare already
+       absorbs the floods; this is for the cheap targeted abuse it has no
+       reason to block — walking item ids through checkout, or hammering
+       a payout race. It fails open, because a broken limiter must not
+       stop a paying customer.
+       Changed: index.html, sw.js, css/hero.css, js/effects.js, and the
+       backends under functions/.
+
    v87 — a second checkout, and a gate in front of both. The site had one
        provider, whose account is not activated yet, so a second one now
        sits beside it: a new backend under functions/, answering the same
@@ -964,7 +1002,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v87';
+const CACHE_VERSION = 'v88';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -988,7 +1026,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=68',
+  '/css/hero.css?v=69',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
@@ -1029,7 +1067,7 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=2',
   '/js/search.js?v=2',
   '/js/feed.js?v=2',
-  '/js/effects.js?v=1',
+  '/js/effects.js?v=2',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=1',

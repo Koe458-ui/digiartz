@@ -79,6 +79,22 @@ async function pp(env, path, init = {}) {
   return body;
 }
 
+// RPC as the CALLER, not the service role — dz_wallet_summary reads auth.uid()
+// and must answer for whoever asked, never for everyone.
+async function sbRpc(env, request, fn, args = {}) {
+  const res = await fetch(env.SB_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: {
+      apikey: env.SB_KEY,
+      authorization: request.headers.get('authorization') || '',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) return null;
+  return res.json().catch(() => null);
+}
+
 async function sbUser(env, request) {
   const bearer = request.headers.get('authorization') || '';
   if (!bearer.startsWith('Bearer ')) return null;
@@ -109,6 +125,27 @@ async function sbService(env, path, init = {}) {
 async function isAdmin(env, userId) {
   const rows = await sbService(env, '/profiles?id=eq.' + userId + '&select=role&limit=1');
   return !!(rows && rows[0] && rows[0].role === 'admin');
+}
+
+// ---------------------------------------------------------------------------
+// Rate limit. Cloudflare stops the floods; this stops the cheap targeted abuse
+// it has no reason to block — walking item ids through checkout, opening
+// orders to spam the ledger, hammering a payout race. Fails OPEN: if the
+// limiter itself is broken, a paying customer still gets served.
+async function underLimit(env, bucket, limit, seconds) {
+  try {
+    const res = await fetch(env.SB_URL + '/rest/v1/rpc/dz_rate_take', {
+      method: 'POST',
+      headers: {
+        apikey: env.SB_SERVICE_KEY,
+        authorization: 'Bearer ' + env.SB_SERVICE_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ p_bucket: bucket, p_limit: limit, p_seconds: seconds }),
+    });
+    if (!res.ok) return true;
+    return (await res.json()) !== false;
+  } catch { return true; }
 }
 
 // ---------------------------------------------------------------------------
@@ -144,22 +181,123 @@ export async function onRequestPost({ env, request }) {
   const user = await sbUser(env, request);
   if (!user) return json({ error: 'Sign in required' }, 401);
 
+  // Tighter than checkout: reading the wallet is cheap, but requesting a
+  // payout or adding an instrument should never happen at speed, and a race
+  // between two payout requests is exactly what this shuts.
+  if (!(await underLimit(env, 'po:' + user.id, 20, 60)))
+    return json({ error: 'Too many attempts — wait a moment' }, 429);
+
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Bad request' }, 400); }
 
   try {
-    // ---- seller: where the money should go -------------------------------
-    if (body.action === 'method') {
-      const email = String(body.paypalEmail || '').trim();
-      if (!EMAIL_RE.test(email)) return json({ error: 'That does not look like an email address' }, 400);
-      await sbService(env, '/payout_methods', {
-        method: 'POST',
-        headers: { prefer: 'return=representation,resolution=merge-duplicates' },
-        body: JSON.stringify({
-          user_id: user.id, kind: 'paypal', paypal_email: email,
-          updated_at: new Date().toISOString(),
-        }),
+    // ---- wallet: everything the two profile sections read -----------------
+    // One call, so the wallet cannot show a balance from one moment and a
+    // history from another. Every figure is computed from the ledger here or
+    // in dz_wallet_summary(); nothing is totalled in the browser.
+    if (body.action === 'overview') {
+      const [summary, history, methods] = await Promise.all([
+        sbRpc(env, request, 'dz_wallet_summary'),
+        sbService(env, '/wallet_history?user_id=eq.' + user.id +
+          '&order=happened_at.desc&limit=100' +
+          '&select=id,direction,category,title,amount,currency,status,provider,transaction_id,happened_at'),
+        sbService(env, '/payout_methods?user_id=eq.' + user.id +
+          '&order=is_default.desc,created_at.asc' +
+          '&select=id,provider,kind,label,paypal_email,upi_vpa,holder_name,bank_name,bank_last4,bank_ifsc,is_default,verified'),
+      ]);
+      const payouts = await sbService(env,
+        '/payout_requests?user_id=eq.' + user.id +
+        '&order=requested_at.desc&limit=50' +
+        '&select=id,amount,currency,status,destination,review_note,requested_at,paid_at');
+
+      return json({
+        ok: true,
+        summary: summary || null,
+        history: history || [],
+        methods: methods || [],
+        payouts: payouts || [],
+        withdrawable: await withdrawable(env, user.id),
       });
+    }
+
+    // ---- bank details: add an instrument ---------------------------------
+    // Nothing raw is accepted. A card number or a full account number sent
+    // here is rejected rather than stored — see the note at the top of the
+    // migration for why that line is where it is.
+    if (body.action === 'method-add') {
+      const kind = String(body.kind || '');
+      const label = String(body.label || '').slice(0, 40) || null;
+      let row = { user_id: user.id, kind, label, is_default: false };
+
+      if (kind === 'paypal_email') {
+        const email = String(body.paypalEmail || '').trim();
+        if (!EMAIL_RE.test(email))
+          return json({ error: 'That does not look like an email address' }, 400);
+        row.provider = 'paypal';
+        row.paypal_email = email;
+
+      } else if (kind === 'upi') {
+        const vpa = String(body.upi || '').trim().toLowerCase();
+        if (!/^[a-z0-9.\-_]{2,64}@[a-z][a-z0-9.\-]{1,40}$/.test(vpa))
+          return json({ error: 'That does not look like a UPI ID' }, 400);
+        row.provider = 'razorpay';
+        row.upi_vpa = vpa;
+
+      } else if (kind === 'bank_account') {
+        const holder = String(body.holderName || '').trim().slice(0, 80);
+        const acct   = String(body.accountNumber || '').replace(/\s+/g, '');
+        const ifsc   = String(body.ifsc || '').trim().toUpperCase();
+        if (holder.length < 2) return json({ error: 'Account holder name is required' }, 400);
+        if (!/^[0-9]{6,20}$/.test(acct)) return json({ error: 'That does not look like an account number' }, 400);
+        if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc))
+          return json({ error: 'That does not look like an IFSC code' }, 400);
+        row.provider    = 'razorpay';
+        row.holder_name = holder;
+        row.bank_name   = String(body.bankName || '').trim().slice(0, 80) || null;
+        row.bank_ifsc   = ifsc || null;
+        // THE ACCOUNT NUMBER IS NOT STORED. Four digits for the seller to
+        // recognise the row by, and nothing that could be used to move money.
+        row.bank_last4  = acct.slice(-4);
+
+      } else {
+        return json({ error: 'Unknown payout method' }, 400);
+      }
+
+      const existing = await sbService(env,
+        '/payout_methods?user_id=eq.' + user.id + '&select=id&limit=6');
+      if (existing && existing.length >= 5)
+        return json({ error: 'You can keep up to five payout methods' }, 400);
+      row.is_default = !(existing && existing.length);   // first one wins by default
+
+      const made = await sbService(env, '/payout_methods', {
+        method: 'POST', body: JSON.stringify(row),
+      });
+      return json({ ok: true, method: made && made[0] });
+    }
+
+    if (body.action === 'method-remove') {
+      const id = String(body.id || '');
+      if (!/^[0-9a-f-]{36}$/.test(id)) return json({ error: 'Bad id' }, 400);
+      // not while money is on its way to it
+      const open = await sbService(env,
+        '/payout_requests?user_id=eq.' + user.id +
+        '&status=in.(requested,approved,processing)&select=id&limit=1');
+      if (open && open.length)
+        return json({ error: 'You have a payout in progress — wait for it to finish' }, 400);
+      await sbService(env, '/payout_methods?id=eq.' + id + '&user_id=eq.' + user.id,
+        { method: 'DELETE' });
+      return json({ ok: true });
+    }
+
+    if (body.action === 'method-default') {
+      const id = String(body.id || '');
+      if (!/^[0-9a-f-]{36}$/.test(id)) return json({ error: 'Bad id' }, 400);
+      // the partial unique index allows only one, so clear before setting
+      await sbService(env, '/payout_methods?user_id=eq.' + user.id + '&is_default=is.true',
+        { method: 'PATCH', body: JSON.stringify({ is_default: false }) });
+      const rows = await sbService(env, '/payout_methods?id=eq.' + id + '&user_id=eq.' + user.id,
+        { method: 'PATCH', body: JSON.stringify({ is_default: true }) });
+      if (!(Array.isArray(rows) && rows.length)) return json({ error: 'No such method' }, 404);
       return json({ ok: true });
     }
 
@@ -174,10 +312,17 @@ export async function onRequestPost({ env, request }) {
       const amount   = Math.round(Number(body.amount));
       if (!Number.isFinite(amount) || amount <= 0) return json({ error: 'Bad amount' }, 400);
 
+      // paid to the default instrument, snapshotted onto the request so a
+      // later edit cannot rewrite where past money went
       const methods = await sbService(env,
-        '/payout_methods?user_id=eq.' + user.id + '&select=paypal_email&limit=1');
-      const dest = methods && methods[0] && methods[0].paypal_email;
-      if (!dest) return json({ error: 'Add a PayPal email before requesting a payout' }, 400);
+        '/payout_methods?user_id=eq.' + user.id + '&is_default=is.true' +
+        '&select=kind,paypal_email,upi_vpa,bank_last4&limit=1');
+      const m = methods && methods[0];
+      const dest = m && (m.paypal_email || m.upi_vpa ||
+                         (m.bank_last4 ? 'bank ****' + m.bank_last4 : null));
+      if (!dest) return json({ error: 'Add a payout method before requesting a payout' }, 400);
+      if (m.kind !== 'paypal_email')
+        return json({ error: 'Only PayPal payouts can be sent automatically right now' }, 400);
 
       const avail = (await withdrawable(env, user.id))[currency] || 0;
       if (amount > avail)

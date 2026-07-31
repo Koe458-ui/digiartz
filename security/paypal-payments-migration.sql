@@ -64,3 +64,41 @@ revoke select (price_cents) on public.marketplace_items from anon;
 -- A payment can also come back now, so 'refunded' joined the status check on
 -- payments — a row that lost its money must not keep reading as paid, since
 -- dz_market_download and the subscription check both key off that word.
+
+-- ---------------------------------------------------------------------------
+-- Two live leaks found while auditing, both PRE-DATING the payments work.
+--
+-- 1. profiles.email was readable by anyone holding the publishable key, which
+--    ships in config.js and is public by design. Six members' addresses were
+--    one request away. The first attempt to fix it was a NO-OP and that is
+--    worth remembering: profiles carries a TABLE-level SELECT grant, and
+--    Postgres will not let a column-level REVOKE carve a hole in one. The
+--    table grant has to be dropped and the surviving columns re-granted by
+--    name, which also means a future column is unreadable until someone adds
+--    it deliberately.
+--
+-- 2. Any signed-in member could set their own profiles.subscription_tier and
+--    take the top plan for nothing. A row policy cannot see WHICH columns a
+--    statement writes, so the fix is again column-level: UPDATE is granted
+--    only on the fields a member genuinely edits. role, subscription_tier,
+--    subscription_expires_at, merit, cred_received_count, email and
+--    username_changed_at are now settable by service_role alone.
+--
+-- Both verified by attack, as the authenticated role with a forged jwt claim,
+-- before and after.
+revoke select on public.profiles from anon, authenticated;
+grant select (
+  id, role, created_at, subscription_tier, subscription_expires_at,
+  username, bio, avatar_url, avatar_storage_path, avatar_updated_at,
+  banner_url, banner_storage_path, banner_updated_at, social_links,
+  display_name, username_changed_at, cred_received_count,
+  merit, merit_updated_at, likes_public, bookmarks_public
+) on public.profiles to anon, authenticated;
+
+revoke update on public.profiles from anon, authenticated;
+grant update (
+  username, display_name, bio, social_links,
+  avatar_url, avatar_storage_path, avatar_updated_at,
+  banner_url, banner_storage_path, banner_updated_at,
+  likes_public, bookmarks_public
+) on public.profiles to authenticated;

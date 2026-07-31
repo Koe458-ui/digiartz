@@ -31,7 +31,19 @@
 //   GEMINI_API_KEY       upload moderation, functions/api/moderate-upload.js
 //   GEMINI_MODEL         optional override for the above
 //   MOD_SIGNING_SECRET   signs moderation approvals; a leak lets anyone forge one
-//   SUPABASE_SERVICE_ROLE_KEY   bypasses every RLS policy
+//   SUPABASE_SERVICE_ROLE_KEY   bypasses every RLS policy. The payment and
+//                               payout Functions also accept it spelled
+//                               SB_SERVICE_KEY — this project grew two naming
+//                               conventions and they read either, so bind
+//                               whichever, but bind ONE or every money
+//                               endpoint answers "not configured".
+//   PAYPAL_CLIENT_ID            public half of the PayPal REST credentials
+//   PAYPAL_CLIENT_SECRET        secret half; a leak lets anyone take payments
+//                               as us
+//   PAYPAL_WEBHOOK_ID           proves an incoming webhook is really PayPal.
+//                               Without it the webhook refuses everything.
+//   PAYPAL_ENV                  'sandbox' for testing, unset for live
+//   RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET   the other checkout, when activated
 //
 // Setting any of those as a Pages environment variable is correct and safe.
 // Echoing them into config.js publishes them to the world.

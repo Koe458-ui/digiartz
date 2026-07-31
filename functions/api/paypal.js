@@ -111,11 +111,24 @@ async function pp(env, path, init = {}) {
 }
 
 // supabase caller and service role, same as rzp.js
+// ---------------------------------------------------------------------------
+// Supabase environment names.
+//
+// This project uses two spellings. The older Functions read SUPABASE_URL /
+// SUPABASE_ANON_KEY; the newer ones read SB_URL / SB_KEY, and config.example.js
+// documents the service key as SUPABASE_SERVICE_ROLE_KEY while the code asks
+// for SB_SERVICE_KEY. Either is fine to bind — what is not fine is a deploy
+// that half-works because of which spelling someone picked, so both are
+// accepted here and the endpoint says exactly what is missing when neither is.
+const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
+const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
+const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
+
 async function sbUser(env, request) {
   const bearer = request.headers.get('authorization') || '';
   if (!bearer.startsWith('Bearer ')) return null;
-  const res = await fetch(env.SB_URL + '/auth/v1/user', {
-    headers: { apikey: env.SB_KEY, authorization: bearer },
+  const res = await fetch(sbUrl(env) + '/auth/v1/user', {
+    headers: { apikey: sbAnon(env), authorization: bearer },
   });
   if (!res.ok) return null;
   const u = await res.json().catch(() => null);
@@ -123,11 +136,11 @@ async function sbUser(env, request) {
 }
 
 async function sbService(env, path, init = {}) {
-  const res = await fetch(env.SB_URL + '/rest/v1' + path, {
+  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
     ...init,
     headers: {
-      apikey: env.SB_SERVICE_KEY,
-      authorization: 'Bearer ' + env.SB_SERVICE_KEY,
+      apikey: sbSvc(env),
+      authorization: 'Bearer ' + sbSvc(env),
       'content-type': 'application/json',
       prefer: 'return=representation',
       ...(init.headers || {}),
@@ -153,11 +166,11 @@ const HOLD_DAYS = 7;
 // what stops a withdrawal.
 async function ledger(env, args) {
   try {
-    await fetch(env.SB_URL + '/rest/v1/rpc/dz_ledger_append', {
+    await fetch(sbUrl(env) + '/rest/v1/rpc/dz_ledger_append', {
       method: 'POST',
       headers: {
-        apikey: env.SB_SERVICE_KEY,
-        authorization: 'Bearer ' + env.SB_SERVICE_KEY,
+        apikey: sbSvc(env),
+        authorization: 'Bearer ' + sbSvc(env),
         'content-type': 'application/json',
       },
       body: JSON.stringify(args),
@@ -205,11 +218,11 @@ async function recordEarning(env, row, prov) {
 // limiter itself is broken, a paying customer still gets served.
 async function underLimit(env, bucket, limit, seconds) {
   try {
-    const res = await fetch(env.SB_URL + '/rest/v1/rpc/dz_rate_take', {
+    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_rate_take', {
       method: 'POST',
       headers: {
-        apikey: env.SB_SERVICE_KEY,
-        authorization: 'Bearer ' + env.SB_SERVICE_KEY,
+        apikey: sbSvc(env),
+        authorization: 'Bearer ' + sbSvc(env),
         'content-type': 'application/json',
       },
       body: JSON.stringify({ p_bucket: bucket, p_limit: limit, p_seconds: seconds }),
@@ -273,14 +286,20 @@ async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label
 export async function onRequestGet({ env, request }) {
   if (!(await sbUser(env, request))) return json({ error: 'Sign in required' }, 401);
   const ready = !!(env.PAYPAL_CLIENT_ID && env.PAYPAL_CLIENT_SECRET &&
-                   env.SB_URL && env.SB_KEY && env.SB_SERVICE_KEY);
+                   sbUrl(env) && sbAnon(env) && sbSvc(env));
   return json({ enabled: ready });
 }
 
 // entry point
 export async function onRequestPost({ env, request }) {
-  for (const k of ['PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'SB_SERVICE_KEY', 'SB_URL', 'SB_KEY'])
-    if (!env[k]) return json({ error: 'PayPal is not configured (' + k + ' missing)' }, 500);
+  const missing = [
+    ['PAYPAL_CLIENT_ID', env.PAYPAL_CLIENT_ID],
+    ['PAYPAL_CLIENT_SECRET', env.PAYPAL_CLIENT_SECRET],
+    ['SB_URL or SUPABASE_URL', sbUrl(env)],
+    ['SB_KEY or SUPABASE_ANON_KEY', sbAnon(env)],
+    ['SB_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY', sbSvc(env)],
+  ].find(([, v]) => !v);
+  if (missing) return json({ error: 'PayPal is not configured (' + missing[0] + ' missing)' }, 500);
 
   const user = await sbUser(env, request);
   if (!user) return json({ error: 'Sign in required' }, 401);

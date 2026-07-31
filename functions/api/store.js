@@ -721,11 +721,24 @@ const MODULE = `
 `;
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Supabase environment names.
+//
+// This project uses two spellings. The older Functions read SUPABASE_URL /
+// SUPABASE_ANON_KEY; the newer ones read SB_URL / SB_KEY, and config.example.js
+// documents the service key as SUPABASE_SERVICE_ROLE_KEY while the code asks
+// for SB_SERVICE_KEY. Either is fine to bind — what is not fine is a deploy
+// that half-works because of which spelling someone picked, so both are
+// accepted here and the endpoint says exactly what is missing when neither is.
+const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
+const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
+const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
+
 async function sbUser(env, request) {
   const bearer = request.headers.get('authorization') || '';
   if (!bearer.startsWith('Bearer ')) return null;
-  const res = await fetch(env.SB_URL + '/auth/v1/user', {
-    headers: { apikey: env.SB_KEY, authorization: bearer },
+  const res = await fetch(sbUrl(env) + '/auth/v1/user', {
+    headers: { apikey: sbAnon(env), authorization: bearer },
   });
   if (!res.ok) return null;
   const u = await res.json().catch(() => null);
@@ -752,7 +765,7 @@ export async function onRequestGet({ env, request }) {
       },
     });
 
-  if (!env.SB_URL || !env.SB_KEY) return deny(503);
+  if (!sbUrl(env) || !sbAnon(env)) return deny(503);
   if (!(await sbUser(env, request))) return deny(401);
 
   const cfg = { providers: liveProviders(env), plansHtml: plansHtml() };

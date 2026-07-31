@@ -1,4 +1,4 @@
-// nav scroll progress
+// nav scroll progress and section memory
 (function () {
   'use strict';
 
@@ -7,6 +7,12 @@
   // and runs clockwise around the icon. sections load in as you go, so the
   // line eases toward the reading instead of snapping to it — fresh
   // thumbnails push it back down as gently as scrolling up does.
+
+  // each section also keeps its place. leaving one and coming back puts you
+  // where you were, and tapping the icon of the section you are already in
+  // is what takes you to the top — a glide you can stop by touching the
+  // page. the line follows either way, easing up to the restored spot from
+  // zero and back down as the glide runs.
 
   // where each item's content lives; an empty list means the page scrolls
   var ROOTS = {
@@ -34,6 +40,10 @@
   var scroller = null;            // box that actually scrolls, null = the document
   var target   = 0, shown = 0;
   var raf = 0, last = 0, timer = 0;
+  var saved   = {};               // id -> the offset that section was left at
+  var pending = '';               // section still waiting to be put back
+  var pendingUntil = 0, hurry = 0;
+  var glide = 0, wasLocked = false;
   var mqReduce = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
 
   var NS = 'http://www.w3.org/2000/svg';
@@ -168,6 +178,82 @@
     if (!raf) { last = 0; raf = requestAnimationFrame(tick); }
   }
 
+  // ---- memory -------------------------------------------------------
+
+  function boxOf () { return scroller || docBox(); }
+
+  // panels lock the page while they are up, and a locked page reports no
+  // room to scroll — so an offset is only worth keeping while there is some
+  function room (box) { return box ? (box.scrollHeight - box.clientHeight) : 0; }
+
+  function locked () {
+    return document.body.style.overflow === 'hidden' ||
+           document.documentElement.style.overflow === 'hidden';
+  }
+
+  function setScroll (box, y) {
+    // the page scrolls smoothly by stylesheet, which would fight every one
+    // of these; each step here is meant to land where it is put
+    try { box.scrollTo({ top: y, behavior: 'instant' }); }
+    catch (e) { box.scrollTop = y; }
+  }
+
+  function remember () {
+    if (!activeId || pending) return;
+    var box = boxOf();
+    if (room(box) <= RANGE) return;
+    saved[activeId] = box.scrollTop;
+  }
+
+  // sections rebuild their content on the way in, so the offset cannot be
+  // handed back until there is something to hand it back onto
+  function restoreLater (id) {
+    if (!saved[id] || saved[id] <= RANGE) return;
+    pending = id;
+    pendingUntil = Date.now() + 1500;
+    if (!hurry) hurry = setInterval(applyPending, 70);
+    applyPending();
+  }
+
+  function dropPending () {
+    pending = '';
+    if (hurry) { clearInterval(hurry); hurry = 0; }
+  }
+
+  function applyPending () {
+    if (!pending) { dropPending(); return; }
+    if (Date.now() > pendingUntil) { dropPending(); return; }
+    if (pending !== activeId) return;      // the section has yet to come up
+    var box = boxOf(), max = room(box);
+    if (max <= RANGE) return;              // nor has its content
+    var y = Math.min(saved[pending], max);
+    if (Math.abs(box.scrollTop - y) > 1) setScroll(box, y);
+    // short of the remembered spot means more is still rendering
+    if (y >= saved[pending] - 1) { dropPending(); measure(); }
+  }
+
+  // tapping the section you are already in rides back up to the top
+  function stopGlide () { if (glide) { cancelAnimationFrame(glide); glide = 0; } }
+
+  function toTop () {
+    var box = boxOf();
+    if (!box || box.scrollTop <= 0) return;
+    stopGlide();
+    dropPending();
+    var from = box.scrollTop, t0 = 0;
+    var dur = Math.min(760, 260 + from * 0.22);   // a longer way up takes longer
+    glide = requestAnimationFrame(function step (now) {
+      if (!t0) t0 = now;
+      var k = (now - t0) / dur;
+      if (k > 1) k = 1;
+      setScroll(box, from * (1 - (1 - Math.pow(1 - k, 3))));
+      glide = k < 1 ? requestAnimationFrame(step) : 0;
+    });
+  }
+
+  // any touch of your own outranks a glide or a restore in flight
+  function interrupt () { stopGlide(); dropPending(); }
+
   // ---- state --------------------------------------------------------
 
   function relink () {
@@ -179,6 +265,7 @@
     if (!activeId) return;
     if ((root && !root.isConnected) || (scroller && !scroller.isConnected)) relink();
     else if (!scroller && root) scroller = findScroller(root);
+    remember();
     var next = reading();
     if (Math.abs(next - target) < 0.0004) return;
     target = next;
@@ -187,14 +274,18 @@
 
   function setActive (id) {
     if (!id || id === activeId) return;
+    remember();                 // hold the place the section is being left at
+    stopGlide();
     activeId = id;
     relink();
-    // every other ring resets, so the next section starts its sweep at zero
+    // every other line resets, so the section comes back sweeping up from
+    // zero rather than appearing already part-drawn
     IDS.forEach(function (other) { if (other !== id) paint(other, 0); });
     shown = 0;
     paint(id, 0);
     target = reading();
     animate();
+    restoreLater(id);
   }
 
   function currentId () {
@@ -227,10 +318,35 @@
     measure();
   }
 
+  // a lock that ends with the page at the top threw the offset away rather
+  // than the reader doing it, so home gets put back where it was
+  function watchLock () {
+    var now = locked();
+    if (wasLocked && !now && activeId === 'bnHome' && docBox().scrollTop <= 1) restoreLater('bnHome');
+    wasLocked = now;
+  }
+
   function startPoll () {
     if (timer) return;
     // sections grow while you read them; polling catches the new height
-    timer = setInterval(function () { if (!document.hidden) measure(); }, POLL);
+    timer = setInterval(function () {
+      if (document.hidden) return;
+      watchLock();
+      applyPending();
+      measure();
+    }, POLL);
+  }
+
+  function onNavTap (e) {
+    var el = e.target, item = null;
+    while (el && el !== nav) {
+      if (el.classList && el.classList.contains('bnItem')) { item = el; break; }
+      el = el.parentNode;
+    }
+    if (!item || !rings[item.id]) return;
+    // the section you are already in is the one the tap sends to the top;
+    // the handler behind this tap may rebuild it first, so let that land
+    if (item.id === activeId) requestAnimationFrame(toTop);
   }
 
   build();
@@ -253,5 +369,15 @@
   addEventListener('orientationchange', reflow, { passive: true });
   addEventListener('pageshow', measure);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) measure(); });
+
+  nav.addEventListener('click', onNavTap, true);
+  ['wheel', 'touchstart', 'pointerdown', 'keydown'].forEach(function (ev) {
+    addEventListener(ev, interrupt, { capture: true, passive: true });
+  });
+
+  wasLocked = locked();
   startPoll();
+
+  // bnGoHome checks for this before scrolling home to the top itself
+  window.bnScrollMemory = { toTop: toTop, saved: saved };
 })();

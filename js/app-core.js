@@ -1075,7 +1075,11 @@
     document.getElementById('fg').classList.add('open');
     document.body.style.overflow='hidden';
     fgSwitchSection('artworks');
-    fgVisible=0;
+    // the grid comes back at roughly the size it was left at, so returning
+    // to the gallery can land back on the row you were reading. capped,
+    // because past this depth the thumbs have aged out of the image cache
+    // and rebuilding them all would cost a fresh fetch each
+    fgVisible=Math.min(fgVisible||0, gridInitialBatch()+gridStepBatch()*8);
     renderFG();
   }
 

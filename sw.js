@@ -4,6 +4,40 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v80 — every section keeps its place, and the nav is what gives it up.
+       Leaving a section and coming back put you at the top of it: home
+       because bnGoHome scrolled there on every tap, gallery because
+       openFG threw the rendered grid away and rebuilt it from the first
+       batch. Reading half of something, glancing at a profile and losing
+       the half you had read is the whole cost of that.
+       js/navprogress.js now records the offset of whichever section is
+       active — on every scroll and every 380ms poll, and only while the
+       box reports room to scroll, so the flat reading a locked page gives
+       while a panel is over it can never overwrite a real one. When a
+       section becomes active again the offset goes back, retried for
+       1500ms at 70ms intervals because sections rebuild their content on
+       the way in and there is nothing to scroll until they do, and
+       abandoned the moment it lands or you touch the page yourself.
+       Tapping the section you are already in is now what goes to the top,
+       as a glide this file drives frame by frame — 260ms plus a fifth of
+       the distance, eased out, capped at 760ms — so that a touch, wheel
+       or key can stop it half way and leave you where it stopped.
+       Programmatic scrolls go through scrollTo with behavior 'instant',
+       since html{scroll-behavior:smooth} would otherwise animate every
+       step of a glide that is already an animation.
+       bnGoHome keeps its own scroll to the top, behind a check for
+       window.bnScrollMemory, so a client that never gets the new script
+       still has a way up. openFG stops resetting fgVisible and instead
+       caps it at the initial batch plus eight steps: the grid returns at
+       about the size it was left at, which is what makes a gallery offset
+       mean anything, while past that depth the thumbs have aged out of a
+       60-entry cache and rebuilding them all would cost a fetch each.
+       The line follows from this for free. A section reactivating already
+       resets it to zero, so coming back sweeps up to the restored spot
+       from nothing rather than appearing part-drawn, and a glide to the
+       top drains it on the way up.
+       Changed: index.html, js/navprogress.js, js/pfedit.js, js/app-core.js.
+
    v79 — the dot under the active nav item stretches into a scroll line.
        The dot said which section you were in and nothing else; the line
        says that and how far down it you are. Nothing else about the nav
@@ -691,7 +725,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v79';
+const CACHE_VERSION = 'v80';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -742,7 +776,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=1',
-  '/js/app-core.js?v=5',
+  '/js/app-core.js?v=6',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=67',
   '/js/auth.js?v=1',
@@ -751,7 +785,7 @@ const SHELL_URLS = [
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=1',
+  '/js/pfedit.js?v=2',
   '/js/mywork.js?v=5',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=1',
@@ -762,7 +796,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=1',
   '/js/engagement.js?v=1',
   '/js/sections.js?v=71',
-  '/js/navprogress.js?v=1'
+  '/js/navprogress.js?v=2'
 ];
 
 // hosts

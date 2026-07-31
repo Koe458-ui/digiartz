@@ -168,9 +168,14 @@
 
   function bnGoHome(){
     bnCloseAllSections();
-    var hero = document.getElementById('hero');
-    if(hero) hero.scrollIntoView({behavior:'smooth', block:'start'});
-    else window.scrollTo({top:0, behavior:'smooth'});
+    // the nav keeps each section's place: coming back to home lands where
+    // you left it, and tapping home from home is what rides to the top.
+    // without that script this is still the only way up, so it stays
+    if(!window.bnScrollMemory){
+      var hero = document.getElementById('hero');
+      if(hero) hero.scrollIntoView({behavior:'smooth', block:'start'});
+      else window.scrollTo({top:0, behavior:'smooth'});
+    }
     bnSetActive('bnHome');
   }
   function bnGoGallery(){

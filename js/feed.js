@@ -45,7 +45,7 @@
   function feedFetchArtists(ids, done){
     var missing = ids.filter(function(u){ return dzArtistCache[u] === undefined; });
     if(!missing.length || !sb){ done(); return; }
-    sb.from('profiles').select('id,username,display_name,avatar_url,banner_url').in('id', missing)
+    sb.from('profiles').select('id,username,display_name,avatar_url,banner_url,bio').in('id', missing)
       .then(function(res){
         ((res && res.data) || []).forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });
         // a profile that came back empty is cached as missing, not retried
@@ -134,6 +134,68 @@
     }
   }
 
+  // The banner over the scored boards: whoever holds first place on the one
+  // being read. It is the top artwork promoted out of the grid rather than
+  // repeated above it — the piece that won the board is the picture on it,
+  // and showing it twice, one directly above the other, reads as a bug.
+  // Two cells wide and one tall, and since the narrowest grid is two across
+  // it is a full row on a phone and half a row on a desktop.
+  var FEATURED_BOARDS = { trending:1, weekly:1, monthly:1 };
+
+  function buildFeatured(a){
+    var box = document.createElement('div');
+    box.className = 'fbBox';
+    box.setAttribute('data-uid', String(a.user_id || ''));
+    box.innerHTML =
+      '<button type="button" class="fbArt" aria-label="View ' + esc(a.name || 'artwork') + '">' +
+        '<img alt="" decoding="async">' +
+      '</button>' +
+      '<div class="fbInfo">' +
+        '<span class="fbEyebrow">Featured artist</span>' +
+        '<span class="fbName"></span>' +
+        '<span class="fbBio"></span>' +
+        '<span class="fbGoWrap"><button type="button" class="fbGo">View profile' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+          'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<polyline points="9 18 15 12 9 6"/></svg></button></span>' +
+      '</div>';
+
+    var img = box.querySelector('.fbArt img');
+    // the picture fills about half the banner, so it is fed at grid size
+    dzApplyThumb(img, a.image_url || '');
+    img.style.cssText = thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom);
+    box.querySelector('.fbArt').onclick = function(){
+      if(typeof openLB === 'function'){
+        openLB(a.image_url || '', a.name || 'Untitled',
+               catList(a.category)[0] || 'others', a.description || '', a.id);
+      }
+    };
+
+    var p = dzArtistCache[a.user_id];
+    if(p !== undefined) paintFeatured(box, p);
+    return box;
+  }
+
+  function paintFeatured(box, p){
+    var name = (p && (p.display_name || p.username)) || 'Artist';
+    var user = p && p.username ? String(p.username) : '';
+    var nm  = box.querySelector('.fbName');
+    var bio = box.querySelector('.fbBio');
+    var go  = box.querySelector('.fbGo');
+
+    if(nm) nm.textContent = user ? '@' + user : name;
+    if(bio){
+      var line = (p && p.bio ? String(p.bio) : '').trim();
+      bio.textContent = line;
+      bio.style.display = line ? '' : 'none';
+    }
+    if(go){
+      if(user) go.onclick = function(){ openProfileByUsername(user, true); };
+      else go.disabled = true;
+    }
+    box.classList.add('fbReady');
+  }
+
   // Fill in whatever the batch just appended is still missing. Both the
   // artist cards and the log lines are keyed on the same uid, so one fetch
   // paints whichever of them the batch put on screen.
@@ -145,6 +207,8 @@
         var sel = (window.CSS && CSS.escape) ? CSS.escape(uid) : String(uid).replace(/["\\]/g, '\\$&');
         var card = grid.querySelector('.atCard[data-uid="' + sel + '"]');
         if(card && !card.classList.contains('atReady')) paintArtistCard(card, dzArtistCache[uid]);
+        var box = grid.querySelector('.fbBox[data-uid="' + sel + '"]:not(.fbReady)');
+        if(box) paintFeatured(box, dzArtistCache[uid]);
         var lines = grid.querySelectorAll('.lgRow[data-uid="' + sel + '"]:not(.lgReady)');
         for(var i = 0; i < lines.length; i++) paintLogRow(lines[i], dzArtistCache[uid]);
       });
@@ -331,12 +395,19 @@
     }
     grid.classList.toggle('awGrid--logs', feedTab === 'logs');
 
+    // first place comes out of the list and goes up as the banner
+    var featured = null;
+    if(FEATURED_BOARDS[feedTab] && awRList.length){
+      featured = awRList[0];
+      awRList = awRList.slice(1);
+    }
+
     var keep = reset ? 0 : awRShown;
     awRShown = 0;
     if(awSent){ awSent.destroy(); awSent = null; }
     grid.innerHTML = '';
 
-    if(!awRList.length){
+    if(!awRList.length && !featured){
       if(empty){
         empty.textContent = feedEmptyText();
         empty.style.display = 'block';
@@ -344,6 +415,13 @@
       return;
     }
     if(empty) empty.style.display = 'none';
+
+    if(featured){
+      grid.appendChild(buildFeatured(featured));
+      if(featured.user_id && dzArtistCache[featured.user_id] === undefined){
+        paintPeopleBatch([featured.user_id]);
+      }
+    }
 
     awAppendBatch(Math.max(gridInitialBatch(), keep));
     if(awRShown < awRList.length){

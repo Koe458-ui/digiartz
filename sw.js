@@ -31,6 +31,17 @@
        that middle third survives the crop. The lower half fades into the
        card's surface, because a banner is somebody's artwork and can be
        bright exactly where the name goes.
+       Over Trending, Weekly hits and Monthly hits sits the artist holding
+       first place on the board being read, as a banner two cells wide and
+       one tall — the narrowest grid is two across, so it is a full row on
+       a phone and half a row on a desktop, and never breaks the grid. It
+       carries the eyebrow, their @name, their bio and a view profile, with
+       the winning artwork itself as the picture. That artwork is promoted
+       out of the grid rather than repeated above it: the piece that won
+       the board is the picture on the banner, and showing it twice, one
+       directly above the other, reads as a bug. First place plus the 199
+       behind it is still 200. The picture opens the artwork, the button
+       opens the artist, and neither is nested inside the other.
        Logs is who uploaded what, newest first, across all four things a
        member can publish — artwork, marketplace, blog, resource. A line
        carries the uploader's face and @name, what they uploaded and the

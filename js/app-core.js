@@ -841,7 +841,7 @@
     ids.forEach(function(u){ _dzArtistFlight[u] = true; });
     // banner_url rides along for the artist board's card background — one
     // column, and it keeps every reader of this cache seeing the same shape
-    sb.from('profiles').select('id,username,display_name,avatar_url,banner_url').in('id', ids)
+    sb.from('profiles').select('id,username,display_name,avatar_url,banner_url,bio').in('id', ids)
       .then(function(res){
         var rows = (res && res.data) || [];
         rows.forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });

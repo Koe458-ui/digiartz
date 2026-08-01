@@ -613,7 +613,6 @@
     if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
     frdLastFocus = document.activeElement;
     $('frdPage').classList.add('open');
-    var nav = $('bnNav'); if (nav) nav.style.display = 'none';
     document.body.style.overflow = 'hidden';
     var inp = $('frdSearchInput'); if (inp) inp.value = '';
     var res = $('frdResults'); if (res) res.innerHTML = '';
@@ -621,7 +620,6 @@
   }
   function closeFriendsPage () {
     $('frdPage').classList.remove('open');
-    var nav = $('bnNav'); if (nav) nav.style.display = '';
     // restore scroll
     if (typeof restoreScroll === 'function') restoreScroll();
     else document.body.style.overflow = '';

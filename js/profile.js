@@ -228,8 +228,6 @@
     closePfUploadMenu();
     document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
-    var nav = document.getElementById('bnNav');
-    if(nav) nav.style.display = '';
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
       try{ history.pushState({},'', '/'); }catch(e){}
     }

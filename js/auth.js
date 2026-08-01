@@ -106,22 +106,70 @@
   // settings page
 
   var setLastFocus = null;
+  var setBackMo = null;      // watches the sub-page Settings handed off to
 
   function openSettingsPage() {
     var pg = document.getElementById('setPage');
     if (!pg) return;
-    setLastFocus = document.activeElement;
+    setDropBack();
+    // coming back from a sub-page, the menu still holds the button that
+    // opened it — what has focus now is a control on the page just closed
+    if (!setLastFocus || setLastFocus.isConnected === false) setLastFocus = document.activeElement;
     pg.classList.add('open');
     document.body.style.overflow = 'hidden';
     pfMenuRefreshCounts(); // fire and forget
   }
 
-  function closeSettingsPage() {
+  // keepBack is for setGo, which closes the menu only to put a page of its
+  // own in front of it. Every other caller — the back arrow, Escape, logging
+  // out — means the menu is done, and takes the pending return with it.
+  function closeSettingsPage(keepBack) {
     var pg = document.getElementById('setPage');
     if (pg) pg.classList.remove('open');
     restoreScroll();
+    // handing off to a sub-page: the menu is coming back, so it keeps both
+    // the pending return and the button to hand focus to when it really goes
+    if (keepBack === true) return;
+    setDropBack();
     if (setLastFocus && setLastFocus.focus) { try { setLastFocus.focus(); } catch (e) {} }
     setLastFocus = null;
+  }
+
+  // Settings is a menu, and the page each item opens is a step further in,
+  // not a step sideways: closing it belongs back at the menu. The items used
+  // to just close Settings outright, so the back arrow on the wallet — or on
+  // the subscription, or edit my work — dropped you onto the profile and the
+  // menu had to be opened again for the next item.
+  function setGo(open, id) {
+    closeSettingsPage(true);
+    if (typeof open === 'function') open();
+    setWatchBack(id);
+  }
+
+  function setWatchBack(id) {
+    setDropBack();
+    var el = id && document.getElementById(id);
+    if (!el || !el.classList.contains('open')) {
+      // nothing opened — a signed-out tap answers with a toast and stays
+      // where it is. The menu goes straight back rather than leaving you on
+      // the profile, and in the same frame, so it never appears to move.
+      openSettingsPage();
+      return;
+    }
+    if (!window.MutationObserver) return;
+    setBackMo = new MutationObserver(function () {
+      if (el.classList.contains('open')) return;
+      setDropBack();
+      // the menu sits over the profile; if that has gone too, the page was
+      // left by some other route and Settings has no business reappearing
+      var prof = document.getElementById('profilePage');
+      if (prof && prof.classList.contains('open')) openSettingsPage();
+    });
+    setBackMo.observe(el, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  function setDropBack() {
+    if (setBackMo) { setBackMo.disconnect(); setBackMo = null; }
   }
 
   // likes, bookmarks, friends counts
@@ -550,8 +598,6 @@
     el.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-    var nav = document.getElementById('bnNav');
-    if(nav) nav.style.display = 'none';
     notifLoad();
   }
 
@@ -559,8 +605,6 @@
     var el = document.getElementById('notifPage');
     if(!el) return;
     el.classList.remove('open');
-    var nav = document.getElementById('bnNav');
-    if(nav) nav.style.display = '';
     restoreScroll();
   }
 

@@ -379,7 +379,7 @@
     <div class="rkDots" id="rkDots" role="tablist" aria-label="Board"></div>
   </section>
 
-  <script src="/js/ranking.js?v=1"></script>
+  <script src="/js/ranking.js?v=2"></script>
 
   <div id="rankPage" role="dialog" aria-modal="true" aria-label="Full ranking">
     <div class="subPgHdr">
@@ -1413,14 +1413,14 @@
   </div>
 </div>
 
-  <script src="/js/dm.js?v=3"></script>
+  <script src="/js/dm.js?v=4"></script>
 
   <script src="/js/composer.js?v=2"></script>
 
 
   <script src="/js/share.js?v=1"></script>
 
-  <script src="/js/misc-core.js?v=2"></script>
+  <script src="/js/misc-core.js?v=3"></script>
 
 
 
@@ -2198,18 +2198,20 @@
     </div>
     <div class="bmBdy">
       <div class="setList">
-        <button class="pfMenuItem" onclick="closeSettingsPage();openSubscription()">Subscription</button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();openWalletPage()">Wallet</button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();openBankPage()">Payout Methods</button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();openMyWorkPage()">Edit My Work</button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();albOpenPage()">Albums</button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();openLikesPage()">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();openBookmarksPage()">Bookmarks <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();openFriendsPage()">Friends <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();openPfShare()">Share Profile</button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();openXpPage()">Artist Progress</button>
-        <button class="pfMenuItem" onclick="closeSettingsPage();openThemePage()">Theme</button>
-        <button class="pfMenuItem" id="smAdmBtn" onclick="closeSettingsPage();smHandleAdm()">Admin Panel</button>
+        <!-- setGo(open, id): closes the menu, opens the page, and puts you
+             back on the menu when that page closes -->
+        <button class="pfMenuItem" onclick="setGo(openSubscription,'subPage')">Subscription</button>
+        <button class="pfMenuItem" onclick="setGo(openWalletPage,'walletPage')">Wallet</button>
+        <button class="pfMenuItem" onclick="setGo(openBankPage,'bankPage')">Payout Methods</button>
+        <button class="pfMenuItem" onclick="setGo(openMyWorkPage,'pfMyWorkPage')">Edit My Work</button>
+        <button class="pfMenuItem" onclick="setGo(albOpenPage,'albPage')">Albums</button>
+        <button class="pfMenuItem" onclick="setGo(openLikesPage,'bmPage')">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
+        <button class="pfMenuItem" onclick="setGo(openBookmarksPage,'bmPage')">Bookmarks <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
+        <button class="pfMenuItem" onclick="setGo(openFriendsPage,'frdPage')">Friends <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
+        <button class="pfMenuItem" onclick="setGo(openPfShare,'pfShareMod')">Share Profile</button>
+        <button class="pfMenuItem" onclick="setGo(openXpPage,'xpPage')">Artist Progress</button>
+        <button class="pfMenuItem" onclick="setGo(openThemePage,'themePage')">Theme</button>
+        <button class="pfMenuItem" id="smAdmBtn" onclick="setGo(smHandleAdm,'admPage')">Admin Panel</button>
         <button class="pfMenuItem pfMenuItem--danger" onclick="pfMenuLogout()">Log Out</button>
       </div>
     </div>
@@ -2279,17 +2281,17 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=7"></script>
+  <script src="/js/app-core.js?v=8"></script>
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=67"></script>
-  <script src="/js/auth.js?v=1"></script>
-  <script src="/js/profile.js?v=3"></script>
-  <script src="/js/albums.js?v=2"></script>
+  <script src="/js/auth.js?v=2"></script>
+  <script src="/js/profile.js?v=4"></script>
+  <script src="/js/albums.js?v=3"></script>
   <script src="/js/drafts.js?v=1"></script>
   <script src="/js/upqueue.js?v=2"></script>
   <script src="/js/avatar.js?v=2"></script>
-  <script src="/js/pfedit.js?v=2"></script>
-  <script src="/js/mywork.js?v=5"></script>
+  <script src="/js/pfedit.js?v=3"></script>
+  <script src="/js/mywork.js?v=6"></script>
   <script src="/js/startup.js?v=2"></script>
   <script src="/js/tagrail.js?v=2"></script>
   <script src="/js/search.js?v=2"></script>
@@ -2482,7 +2484,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-  <script src="/js/theme.js?v=1"></script>
+  <script src="/js/theme.js?v=2"></script>
 
 
 
@@ -2587,7 +2589,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-  <script src="/js/engagement.js?v=1"></script>
+  <script src="/js/engagement.js?v=2"></script>
 
 
   <script src="/js/sections.js?v=75"></script>

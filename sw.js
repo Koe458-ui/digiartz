@@ -4,6 +4,40 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v93 — the bottom nav floated over Settings, and Settings forgot where
+       you had been. Two faults of the same panel, both new with the
+       Settings menu itself.
+       The nav sits at z-index 1000 and every sliding page sits below it,
+       so a page is only clear of the nav because it switched the nav off
+       on the way in and back on the way out. Nine panels carried their own
+       copy of that pair, two more carried only the half that puts it back,
+       and #setPage — along with the wallet, payout methods, subscription,
+       edit my work and admin pages it opens — carried neither. Every copy
+       is gone; one watcher in app-core.js reads which panels are open and
+       sets the nav from that. A panel joins by being named in NAV_OVER
+       rather than by remembering to write both halves, and the halves
+       can no longer drift apart — album detail closing back onto the
+       album manager used to restore the nav over a page still open.
+       The nav's own five destinations are deliberately absent: it stays
+       up over gallery, community, upload, login and profile, which is
+       where it marks the section you are in.
+       Second, Settings is a menu, and the page an item opens is a step
+       further in. Each item closed Settings outright, so the back arrow
+       on the wallet returned to the profile and the menu had to be
+       reopened for the next item. Items now go through setGo(), which
+       closes the menu, opens the page and brings the menu back when that
+       page closes. Back arrow, Escape and Log Out still leave Settings
+       for good, and a page that never opened — a signed-out tap answers
+       with a toast — puts the menu straight back instead. Nothing comes
+       back if the profile underneath was left by some other route.
+       Escape closes the wallet and payout methods too, which it never
+       did: they were the only sliding pages missing from that handler,
+       and the way out of Settings has to be the same from all of them.
+       Changed: index.html, js/app-core.js, js/auth.js, and the nav pair
+       dropped from js/albums.js, js/dm.js, js/engagement.js,
+       js/misc-core.js, js/mywork.js, js/pfedit.js, js/profile.js,
+       js/ranking.js, js/theme.js.
+
    v90 — a second, independent record of every movement, and nothing
        leaves without the two agreeing. The wallet's total is derived
        from the operational tables; a bug there is a bug in the only
@@ -1063,7 +1097,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v92';
+const CACHE_VERSION = 'v93';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1107,23 +1141,23 @@ const SHELL_URLS = [
   '/js/badwords.js?v=1',
 
   // scripts
-  '/js/ranking.js?v=1',
+  '/js/ranking.js?v=2',
   '/js/community.js?v=2',
-  '/js/dm.js?v=3',
+  '/js/dm.js?v=4',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
-  '/js/misc-core.js?v=2',
-  '/js/app-core.js?v=7',
+  '/js/misc-core.js?v=3',
+  '/js/app-core.js?v=8',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=67',
-  '/js/auth.js?v=1',
-  '/js/profile.js?v=3',
-  '/js/albums.js?v=2',
+  '/js/auth.js?v=2',
+  '/js/profile.js?v=4',
+  '/js/albums.js?v=3',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=2',
-  '/js/mywork.js?v=5',
+  '/js/pfedit.js?v=3',
+  '/js/mywork.js?v=6',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=2',
   '/js/search.js?v=2',
@@ -1131,8 +1165,8 @@ const SHELL_URLS = [
   '/js/effects.js?v=3',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
-  '/js/theme.js?v=1',
-  '/js/engagement.js?v=1',
+  '/js/theme.js?v=2',
+  '/js/engagement.js?v=2',
   '/js/sections.js?v=75',
   '/js/navprogress.js?v=5'
 ];

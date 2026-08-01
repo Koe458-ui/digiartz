@@ -26,15 +26,10 @@
     });
     document.getElementById('pfEditPage').classList.add('open');
     document.body.style.overflow='hidden';
-    // hide nav on overlay
-    var nav = document.getElementById('bnNav');
-    if(nav) nav.style.display = 'none';
   }
   function closePfEditPage(){
     document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
-    var nav = document.getElementById('bnNav');
-    if(nav) nav.style.display = '';
   }
   function pfUpdateEditBioCount(){
     var len = document.getElementById('pfEditBio').value.length;
@@ -136,7 +131,7 @@
 
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closePfUploadMenu();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
-    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();
+    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();closeWalletPage();closeBankPage();
   }});
 
   // bottom navigation

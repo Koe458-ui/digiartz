@@ -98,8 +98,6 @@
     prevOverflow.doc  = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-    var nav = document.getElementById('bnNav');
-    if (nav) nav.style.display = 'none';
     var sel = cards.filter(function (c) { return c.tabIndex === 0; })[0];
     if (sel) sel.focus({ preventScroll: true });
   }
@@ -108,8 +106,6 @@
     page.classList.remove('open');
     document.body.style.overflow = prevOverflow.body;
     document.documentElement.style.overflow = prevOverflow.doc;
-    var nav = document.getElementById('bnNav');
-    if (nav) nav.style.display = '';
     if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
     lastFocus = null;
   }

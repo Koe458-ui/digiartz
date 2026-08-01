@@ -578,6 +578,44 @@
     if(!anyOpen){ document.body.style.overflow=''; document.documentElement.style.overflow=''; }
   }
 
+  // The bottom nav belongs to the five sections it links to. Anything that
+  // slides in over one of them has to take it down, and that used to be each
+  // panel's own job: a hide on the way in, paired with a show on the way out.
+  // A panel written without the pair kept the nav floating over its own
+  // content — which is what happened to Settings and to every page Settings
+  // opens. One watcher owns it now: the panels say whether they are open and
+  // this decides what the nav does, so a new page inherits the behaviour
+  // by being listed here rather than by remembering to write both halves.
+  // Panels the nav itself leads to are absent on purpose — the nav stays up
+  // over the gallery, community, upload, login and profile pages, and marks
+  // which of them you are in.
+  var NAV_OVER=['setPage','walletPage','bankPage','subPage','pfEditPage','pfMyWorkPage',
+                'notifPage','admPage','bmPage','frdPage','xpPage','rankPage','themePage',
+                'albPage','albViewPage'];
+  function dzNavSync(){
+    var nav=document.getElementById('bnNav');
+    if(!nav) return;
+    var over=NAV_OVER.some(function(id){
+      var el=document.getElementById(id);
+      return !!el&&el.classList.contains('open');
+    });
+    nav.style.display=over?'none':'';
+  }
+  window.dzNavSync=dzNavSync;
+  function dzNavWatch(){
+    if(window.MutationObserver){
+      var mo=new MutationObserver(dzNavSync);
+      NAV_OVER.forEach(function(id){
+        var el=document.getElementById(id);
+        if(el) mo.observe(el,{attributes:true,attributeFilter:['class']});
+      });
+    }
+    dzNavSync();
+  }
+  // half these panels are written below this script in the page
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',dzNavWatch);
+  else dzNavWatch();
+
   // merged artworks table
   var ART_KIND_ART = 'art';
 

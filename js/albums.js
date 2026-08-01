@@ -144,13 +144,11 @@
   function albOpenPage(){
     if(!currentUser){ showToast('Sign in to manage albums'); if(typeof openAuthMod==='function') openAuthMod(); return; }
     document.getElementById('albPage').classList.add('open');
-    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = 'none';
     document.body.style.overflow = 'hidden';
     albLoadMine(false);
   }
   function albClosePage(){
     document.getElementById('albPage').classList.remove('open');
-    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = '';
     restoreScroll();
   }
 
@@ -168,7 +166,6 @@
     document.getElementById('albViewTitle').innerHTML = esc(String(a.name||'').toUpperCase());
     document.getElementById('albViewActs').style.display = owner ? '' : 'none';
     document.getElementById('albViewPage').classList.add('open');
-    var nav = document.getElementById('bnNav'); if(nav) nav.style.display = 'none';
     document.body.style.overflow = 'hidden';
     var grid = document.getElementById('albViewGrid'), empty = document.getElementById('albViewEmpty');
     empty.style.display = 'none';
@@ -216,8 +213,6 @@
   function albCloseView(){
     document.getElementById('albViewPage').classList.remove('open');
     albView = null;
-    var mgrOpen = document.getElementById('albPage').classList.contains('open');
-    var nav = document.getElementById('bnNav'); if(nav && !mgrOpen) nav.style.display = '';
     restoreScroll();
   }
   async function albRemoveItem(artId){

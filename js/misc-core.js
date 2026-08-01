@@ -246,8 +246,6 @@
     if (!pg) return;
     xpLastFocus = document.activeElement;
     pg.classList.add('open');
-    var nav = document.getElementById('bnNav');
-    if (nav) nav.style.display = 'none';
     document.body.style.overflow = 'hidden';
     // viewed profile, else self
     var target = (window.pf && window.pf.profile && window.pf.profile.id) ||
@@ -258,8 +256,6 @@
     var pg = document.getElementById('xpPage');
     if (!pg) return;
     pg.classList.remove('open');
-    var nav = document.getElementById('bnNav');
-    if (nav) nav.style.display = '';
     if (typeof restoreScroll === 'function') restoreScroll();
     else document.body.style.overflow = '';
     if (xpLastFocus && xpLastFocus.focus) xpLastFocus.focus({ preventScroll: true });

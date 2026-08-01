@@ -452,8 +452,6 @@
       page.classList.add('open');
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
-      var nav = document.getElementById('bnNav');
-      if (nav) nav.style.display = 'none';
 
       pgBuildTabs();
       pgReset();
@@ -463,8 +461,6 @@
       var page = document.getElementById('rankPage');
       if (!page) return;
       page.classList.remove('open');
-      var nav = document.getElementById('bnNav');
-      if (nav) nav.style.display = '';
       if (typeof restoreScroll === 'function') restoreScroll();
       else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
     };

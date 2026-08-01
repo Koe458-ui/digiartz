@@ -198,8 +198,6 @@ function hideCommentThumbnail(){
     cpCurrentChannel = null;
     // restore scroll
     restoreScroll();
-    var nav = document.getElementById('bnNav');
-    if(nav) nav.style.display = '';
   }
 
   // community card tap

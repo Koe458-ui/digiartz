@@ -112,8 +112,9 @@
     .pfShareCirc--pri:hover{filter:brightness(1.08);background:var(--pg);}
     @media (prefers-reduced-motion:reduce){
     }
-    #smAdmBtn{display:none;}
-    #smAdmBtn.devOnly{display:block;}
+    /* the admin entry used to be hidden here and shown by a .devOnly class.
+       It is built rather than hidden now — syncAdmBtn in js/gallery.js — so
+       there is nothing to hide, and it lays out like every other item */
     .pfAvatarWrap{
       position:absolute;left:50%;transform:translateX(-50%);bottom:-42px;z-index:2;
     }

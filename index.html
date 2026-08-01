@@ -102,7 +102,7 @@
   <link rel="stylesheet" href="/css/community.css?v=3">
   <link rel="stylesheet" href="/css/connect.css?v=1">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
-  <link rel="stylesheet" href="/css/profile.css?v=1">
+  <link rel="stylesheet" href="/css/profile.css?v=2">
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=2">
@@ -688,38 +688,12 @@
     </div>
   </div>
 
-  <div id="admPage" role="dialog" aria-modal="true" aria-label="Admin panel">
-    <div class="subPgHdr">
-      <button class="subPgX" onclick="closeAdmPage()" aria-label="Close admin panel">←</button>
-      <div class="subPgTitle">ADMIN PANEL</div>
-    </div>
-    <div class="admBdy">
-
-      <div class="pfTabs" role="tablist">
-        <div class="pfTabGroup">
-          <button class="pfTab active" id="admTabNoti" role="tab" aria-selected="true" onclick="admSwitchTab('noti')">NOTIFICATIONS</button>
-          <button class="pfTab" id="admTabRpt" role="tab" aria-selected="false" onclick="admSwitchTab('rpt')">REPORT<span class="admTabCount" id="admCountRpt" style="display:none;">0</span></button>
-        </div>
-      </div>
-
-      <div class="pfPanel" id="admPanelRpt">
-        <div class="pfGrid" id="admRptList"></div>
-        <div class="pfEmpty" id="admRptEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>No open reports.</div>
-      </div>
-
-      <div class="pfPanel active" id="admPanelNoti">
-        <div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>
-        <div class="admNotiCompose">
-          <input type="text" id="admNotiTitle" class="admNotiInput" placeholder="Title" maxlength="80">
-          <textarea id="admNotiMsg" class="admNotiTextarea" placeholder="Message" maxlength="500" rows="3"></textarea>
-          <button class="admNotiSendBtn" id="admNotiSendBtn" onclick="admSendBroadcast()">Send to All Users</button>
-        </div>
-        <div class="admNotiSentLbl">RECENTLY SENT</div>
-        <div class="pfEmpty" id="admNotiEmpty" style="display:none;"><span class="admEmptyIcon">🔔</span>No notifications sent yet.</div>
-        <div id="admNotiSentList" class="admNotiSentList"></div>
-      </div>
-    </div>
-  </div>
+  <!-- An empty shell on purpose. admBuild() in js/pfedit.js fills it the
+       first time an entitled account opens it, and no other page load
+       carries a word of what goes in here. The element itself stays put so
+       the panel watchers — the nav in js/app-core.js, the floating widgets
+       in js/sections.js — have something to watch from the start. -->
+  <div id="admPage"></div>
 
   <div id="pfMyWorkPage" role="dialog" aria-modal="true" aria-label="Edit my work">
     <div class="subPgHdr">
@@ -2211,7 +2185,8 @@
         <button class="pfMenuItem" onclick="setGo(openPfShare,'pfShareMod')">Share Profile</button>
         <button class="pfMenuItem" onclick="setGo(openXpPage,'xpPage')">Artist Progress</button>
         <button class="pfMenuItem" onclick="setGo(openThemePage,'themePage')">Theme</button>
-        <button class="pfMenuItem" id="smAdmBtn" onclick="setGo(smHandleAdm,'admPage')">Admin Panel</button>
+        <!-- syncAdmBtn in js/gallery.js adds one more item here, for the one
+             account type entitled to it. Nobody else's page carries it. -->
         <button class="pfMenuItem pfMenuItem--danger" onclick="pfMenuLogout()">Log Out</button>
       </div>
     </div>
@@ -2283,14 +2258,14 @@
   <script src="/uploadVerifier.js"></script>
   <script src="/js/app-core.js?v=8"></script>
   <script src="/js/protect.js?v=2"></script>
-  <script src="/js/gallery.js?v=67"></script>
+  <script src="/js/gallery.js?v=68"></script>
   <script src="/js/auth.js?v=2"></script>
   <script src="/js/profile.js?v=4"></script>
   <script src="/js/albums.js?v=3"></script>
   <script src="/js/drafts.js?v=1"></script>
   <script src="/js/upqueue.js?v=2"></script>
   <script src="/js/avatar.js?v=2"></script>
-  <script src="/js/pfedit.js?v=3"></script>
+  <script src="/js/pfedit.js?v=4"></script>
   <script src="/js/mywork.js?v=6"></script>
   <script src="/js/startup.js?v=2"></script>
   <script src="/js/tagrail.js?v=2"></script>

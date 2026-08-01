@@ -847,10 +847,24 @@
     }
   });
 
+  // The entry is built for a dev account and taken out again for anyone
+  // else. It used to be written into the settings list and hidden with a
+  // stylesheet, which is not hidden: it was in the page source of every
+  // visit, it answered a click, and it named a panel that nobody outside
+  // that account has any business knowing exists.
   function syncAdmBtn(){
     var b=document.getElementById('smAdmBtn');
-    if(!b) return;
-    b.classList.toggle('devOnly',isDev);
+    if(!isDev){ if(b && b.parentNode) b.parentNode.removeChild(b); return; }
+    var list=document.querySelector('#setPage .setList');
+    if(!list) return;
+    if(!b){
+      b=document.createElement('button');
+      b.id='smAdmBtn';
+      b.className='pfMenuItem';
+      b.onclick=function(){ setGo(smHandleAdm,'admPage'); };
+      // above Log Out, which stays last
+      list.insertBefore(b, list.querySelector('.pfMenuItem--danger'));
+    }
     b.textContent='⚙ ADMIN PANEL';
   }
 

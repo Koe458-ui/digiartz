@@ -4,6 +4,29 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v94 — the admin entry is built for the account that has it, not hidden
+       from everyone else. #smAdmBtn was written into the settings list on
+       every page load and held back by two lines of stylesheet. That is
+       not hidden. It was in the source of every visit, it answered a
+       click, and the click answered back — "sign in with a dev account to
+       access admin" to a signed-out visitor, "this account does not have
+       dev access" to everyone else — which told anyone who tripped it
+       that there was something there to get into. Both messages are gone;
+       an account that is not entitled to the panel now gets silence.
+       syncAdmBtn builds the entry when the role check comes back dev and
+       removes it when it does not, so an ordinary page carries no entry
+       at all. #admPage ships as an empty div and admBuild() writes the
+       inside of it on first open, so the panel's own words — the title,
+       the broadcast box, the reports tab — never reach a page that will
+       not use them. The element itself stays in the markup because the
+       nav watcher and the floating-widget watcher both pick their panels
+       up at load.
+       This is presentation, and it always was: the panel's power comes
+       from the role on the row in profiles, and every table it touches is
+       still policed by RLS. Nothing here is a permission change. It stops
+       advertising a door that was already locked.
+       Changed: index.html, css/profile.css, js/gallery.js, js/pfedit.js.
+
    v93 — the bottom nav floated over Settings, and Settings forgot where
        you had been. Two faults of the same panel, both new with the
        Settings menu itself.
@@ -1097,7 +1120,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v93';
+const CACHE_VERSION = 'v94';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1126,7 +1149,7 @@ const SHELL_URLS = [
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=1',
+  '/css/profile.css?v=2',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
@@ -1149,14 +1172,14 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=3',
   '/js/app-core.js?v=8',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=67',
+  '/js/gallery.js?v=68',
   '/js/auth.js?v=2',
   '/js/profile.js?v=4',
   '/js/albums.js?v=3',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=3',
+  '/js/pfedit.js?v=4',
   '/js/mywork.js?v=6',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=2',

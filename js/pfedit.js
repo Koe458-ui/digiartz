@@ -211,14 +211,12 @@
   }
   function ddOpenCommunity(){ openCommunityHome(); }
   // open admin panel
+  // The menu entry only exists on an entitled account, so this is the second
+  // check rather than the first — and it answers anyone else with nothing at
+  // all. It used to say "sign in with a dev account to access admin", which
+  // told every visitor who tripped it that there was something to sign in to.
   function smHandleAdm(){
-    if(!isDev){
-      // dev only fallback
-      closeMenu();
-      if(!currentUser){ showToast('Sign in with a dev account to access admin'); openAuthMod(); }
-      else { showToast('This account does not have dev access'); }
-      return;
-    }
+    if(!isDev) return;
     closeMenu();
     openAdmPage();
   }
@@ -226,9 +224,48 @@
   // admin panel page
   var admTab = 'noti';
 
+  // index.html carries an empty #admPage and this writes the inside of it,
+  // once, on first open. Nothing here reaches a page that never opens it.
+  function admBuild(el){
+    if(el.firstElementChild) return;
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-label', 'Admin panel');
+    el.innerHTML =
+      '<div class="subPgHdr">' +
+        '<button class="subPgX" onclick="closeAdmPage()" aria-label="Close admin panel">←</button>' +
+        '<div class="subPgTitle">ADMIN PANEL</div>' +
+      '</div>' +
+      '<div class="admBdy">' +
+        '<div class="pfTabs" role="tablist">' +
+          '<div class="pfTabGroup">' +
+            '<button class="pfTab active" id="admTabNoti" role="tab" aria-selected="true" onclick="admSwitchTab(\'noti\')">NOTIFICATIONS</button>' +
+            '<button class="pfTab" id="admTabRpt" role="tab" aria-selected="false" onclick="admSwitchTab(\'rpt\')">REPORT<span class="admTabCount" id="admCountRpt" style="display:none;">0</span></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pfPanel" id="admPanelRpt">' +
+          '<div class="pfGrid" id="admRptList"></div>' +
+          '<div class="pfEmpty" id="admRptEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>No open reports.</div>' +
+        '</div>' +
+        '<div class="pfPanel active" id="admPanelNoti">' +
+          '<div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>' +
+          '<div class="admNotiCompose">' +
+            '<input type="text" id="admNotiTitle" class="admNotiInput" placeholder="Title" maxlength="80">' +
+            '<textarea id="admNotiMsg" class="admNotiTextarea" placeholder="Message" maxlength="500" rows="3"></textarea>' +
+            '<button class="admNotiSendBtn" id="admNotiSendBtn" onclick="admSendBroadcast()">Send to All Users</button>' +
+          '</div>' +
+          '<div class="admNotiSentLbl">RECENTLY SENT</div>' +
+          '<div class="pfEmpty" id="admNotiEmpty" style="display:none;"><span class="admEmptyIcon">🔔</span>No notifications sent yet.</div>' +
+          '<div id="admNotiSentList" class="admNotiSentList"></div>' +
+        '</div>' +
+      '</div>';
+    admTab = 'noti';
+  }
+
   function openAdmPage(){
     var el = document.getElementById('admPage');
-    if(!el) return;
+    if(!el || !isDev) return;
+    admBuild(el);
     el.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';

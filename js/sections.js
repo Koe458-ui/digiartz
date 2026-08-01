@@ -1450,6 +1450,9 @@
   window.dzPick          = dzPick;
   window.dzFileReplace   = dzFileReplace;
   window.dzFileClear     = dzFileClear;
+  // the per-file Remove button on a multi-file field is an inline onclick, so
+  // it resolves against the global scope like every other handler here
+  window.dzFileDrop      = dzFileDrop;
   window.dzDragOn        = dzDragOn;
   window.dzDragOff       = dzDragOff;
   window.dzDropFile      = dzDropFile;

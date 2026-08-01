@@ -554,6 +554,31 @@ const MODULE = `
         ((d.history || []).length
           ? '<ul class="dzWlList">' + d.history.map(row).join('') + '</ul>'
           : '<div class="dzWlEmpty">Nothing yet.</div>') +
+
+        // House rules for the money side, kept at the foot of the wallet so
+        // they sit next to the balance and the payout button they describe.
+        '<div class="dzWlSect">Wallet guidelines</div>' +
+        '<ol class="dzWlGuide">' +
+          '<li>Minimum withdrawal amount is $5.</li>' +
+          '<li>DigiArtz will take a 10% platform charge and 5% GST (government tax). ' +
+            'The remaining 85% goes to the user. Max Subscription users will get 90% ' +
+            'of the commission, while DigiArtz will take 5% as the platform charge and ' +
+            '5% for GST and other taxes.</li>' +
+          '<li>Losing money due to scams will not be tolerated. If you send money ' +
+            'without our involvement, we cannot help with recovery.</li>' +
+          '<li>Losing all your wallet money due to a hacked account will also not be ' +
+            'tolerated. Please don’t share your email or password with anyone, and ' +
+            'activate MFA or 2FA.</li>' +
+          '<li>If any system bug or glitch from our side increases your wallet balance, ' +
+            'it does not mean that money belongs to you. Anyone who takes advantage of ' +
+            'bugs or glitches will get an IP ban from the server and may no longer be ' +
+            'able to log in.</li>' +
+          '<li>If you have any questions, email us at:' +
+            '<a class="dzWlGuideMail" href="mailto:DigiArtzsupport@gmail.com' +
+            '?subject=Wallet%20question" ' +
+            'aria-label="Email DigiArtz support at DigiArtzsupport@gmail.com">' +
+            '<span aria-hidden="true">✉</span>DigiArtzsupport@gmail.com</a></li>' +
+        '</ol>' +
       '</div>';
 
     var msg = host.querySelector('.dzWlMsg');

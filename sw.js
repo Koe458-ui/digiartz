@@ -4,6 +4,24 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v95 — the wallet says what the rules are, on the page where they apply.
+       The withdrawal minimum, the split we take, what happens to a
+       balance inflated by one of our own bugs and where to write with a
+       question were nowhere a member could read them; they now sit at
+       the foot of the wallet, under the balance and the payout button
+       they describe. Six numbered rules, rendered by the same signed-in
+       module as the rest of that page, so a signed-out visitor still
+       finds an empty container. The support address is a real mailto —
+       one tap opens the mail client with the subject filled in, rather
+       than asking anyone to copy an address out of a paragraph.
+       The list numbers itself with a CSS counter on a plain <ol>, so the
+       marker keeps its place against the border no matter how far a rule
+       wraps, and the rows are the same card the wallet uses everywhere
+       else. Long text breaks rather than pushing the page sideways, and
+       the narrow-screen rule tightens the padding so a rule still reads
+       as one column on a phone.
+       Changed: index.html, sw.js, css/hero.css, functions/api/store.js.
+
    v94 — the admin entry is built for the account that has it, not hidden
        from everyone else. #smAdmBtn was written into the settings list on
        every page load and held back by two lines of stylesheet. That is
@@ -1120,7 +1138,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v94';
+const CACHE_VERSION = 'v95';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1144,7 +1162,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=72',
+  '/css/hero.css?v=73',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',

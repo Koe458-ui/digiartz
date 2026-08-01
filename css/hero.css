@@ -1246,6 +1246,44 @@
     .dzWlMsg{margin-top:.55rem;font-size:.76rem;color:var(--txd);text-align:center;}
     .dzWlMsg--bad{color:#ef4444;}
 
+    /* ---- wallet guidelines ----------------------------------------------
+       Numbered house rules at the foot of the wallet. The counter lives on
+       the list so the numbers stay put no matter how a row wraps, and the
+       support address is a real mailto the member can tap. */
+    .dzWlGuide{
+      list-style:none;counter-reset:dzWlG;margin:0;padding:0;
+      display:flex;flex-direction:column;gap:.45rem;
+    }
+    .dzWlGuide li{
+      counter-increment:dzWlG;position:relative;min-width:0;
+      padding:.7rem .85rem .7rem 2.5rem;
+      border:1px solid var(--bdr);border-radius:11px;background:var(--sur2);
+      font-size:.78rem;line-height:1.6;color:var(--tx);
+      overflow-wrap:break-word;word-break:break-word;
+    }
+    .dzWlGuide li::before{
+      content:counter(dzWlG);position:absolute;left:.75rem;top:.72rem;
+      display:flex;align-items:center;justify-content:center;
+      width:1.3rem;height:1.3rem;border-radius:50%;
+      background:var(--pdim);color:var(--pg);
+      font-family:var(--fm);font-size:.62rem;font-weight:700;line-height:1;
+    }
+    .dzWlGuideMail{
+      display:flex;align-items:center;justify-content:center;gap:.4rem;
+      width:fit-content;max-width:100%;min-height:2.5rem;margin:.5rem 0 .1rem;
+      padding:.45rem .8rem;border:1px solid var(--pg);border-radius:10px;
+      background:var(--pdim);color:var(--pg);
+      font-size:.78rem;font-weight:700;text-decoration:none;
+      overflow-wrap:break-word;word-break:break-all;text-align:center;
+    }
+    @media(hover:hover){.dzWlGuideMail:hover{filter:brightness(1.12);}}
+    .dzWlGuideMail:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+
+    @media(max-width:420px){
+      .dzWlGuide li{padding:.65rem .7rem .65rem 2.3rem;font-size:.75rem;}
+      .dzWlGuide li::before{left:.6rem;}
+    }
+
     /* payout methods */
     .dzBkHead{
       margin:1.4rem 0 .5rem;font-family:var(--fm);font-size:.6rem;font-weight:700;

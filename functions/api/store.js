@@ -361,18 +361,35 @@ const MODULE = `
   window.dzMarketBuy = function(id, hasFile){
     start('Checkout', function(prov){
       return api(prov, {action:'market-order', itemId:id}).then(function(o){
-        if(o.owned){                      // bought before, just download
-          if(hasFile && typeof window.dzMarketGet === 'function') window.dzMarketGet(id);
-          else toast('Already purchased');
+        if(o.owned){                      // bought before, straight to the files
+          afterPurchase(id, hasFile, true);
           return null;
         }
         return o;
       });
     }, function(){
-      toast('Purchased');
-      if(hasFile && typeof window.dzMarketGet === 'function') window.dzMarketGet(id);
+      afterPurchase(id, hasFile, false);
     });
   };
+
+  // Where a sale ends. The payment has been verified by the provider and
+  // recorded by its backend before this runs, so the item is already unlocked
+  // by the time the buyer is shown it — nothing here grants anything.
+  //
+  // The buyer lands on My Purchases rather than back on the listing they were
+  // reading, because that page is the answer to the question they now have:
+  // where are my files, and where will they be tomorrow.
+  function afterPurchase(id, hasFile, wasAlreadyOwned){
+    toast(wasAlreadyOwned ? 'You already own this' : 'Purchased \\u2014 your files are unlocked');
+    ownedIds[id] = true;
+    repaintOwned();
+    if(typeof window.openPurchasesPage === 'function'){
+      window.openPurchasesPage();
+      loadPurchases(true);
+    } else if(hasFile && typeof window.dzMarketGet === 'function'){
+      window.dzMarketGet(id);
+    }
+  }
 
   // ---- filling the gaps the public bundle leaves --------------------------
   // js/sections.js and js/profile.js render an empty slot wherever a price or
@@ -389,36 +406,86 @@ const MODULE = `
     });
   }
 
+  // What this caller has already bought, as far as the last answer goes. It is
+  // a display hint and nothing more: the download itself is authorised in
+  // Postgres on every single request, so a stale or forged entry here buys
+  // exactly nothing.
+  var ownedIds = {};
+
+  function paintSlot(el){
+    var id      = el.getAttribute('data-i') || '';
+    var cents   = Number(el.getAttribute('data-p') || 0);
+    var cur     = el.getAttribute('data-c') || 'USD';
+    var hasFile = el.getAttribute('data-f') === '1';
+    var view    = el.getAttribute('data-v') === 'view';
+    var priced  = cents > 0;
+    var owned   = !!ownedIds[id];
+
+    var price = '<div class="' + (view ? 'dzvPrice' : 'dzPrice') + '">' +
+                (owned && priced ? 'Purchased' : esc(money(cents, cur))) + '</div>';
+    var btn;
+    if(owned && hasFile){
+      // The only state in which a download control exists at all. Everyone
+      // else — signed out, signed in, subscribed to anything — gets the price.
+      btn = '<button class="dzBuy dzBuy--own" type="button" data-act="get">' +
+              (view ? '\\u2b07 Download your files' : '\\u2b07 Download') + '</button>';
+    } else if(owned){
+      btn = '<div class="dzOwnNote">Purchased</div>';
+    } else if(priced){
+      btn = '<button class="dzBuy" type="button" data-act="buy">' +
+              (view ? 'Buy now' : 'Buy \\u00b7 ' + esc(money(cents, cur))) + '</button>';
+    } else {
+      btn = hasFile
+        ? '<button class="dzBuy dzBuy--free" type="button" data-act="get">Download \\u00b7 Free</button>'
+        : '';
+    }
+
+    el.innerHTML = view ? '<div class="dzvBuyCard">' + price + btn + '</div>' : price + btn;
+
+    Array.prototype.forEach.call(el.querySelectorAll('button'), function(b){
+      b.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(b.getAttribute('data-act') === 'buy') window.dzMarketBuy(id, hasFile ? 1 : 0);
+        else if(typeof window.dzMarketGet === 'function') window.dzMarketGet(id);
+      });
+    });
+
+    // the lock note the public bundle leaves on the detail view has nothing
+    // left to say once these files are this caller's
+    var lock = document.getElementById('dzvLock-' + id);
+    if(lock) lock.hidden = owned;
+  }
+
+  function repaintOwned(){
+    Array.prototype.forEach.call(document.querySelectorAll('.dzSlot[data-i]'), function(el){
+      if(el.dataset.dzFilled) paintSlot(el);
+    });
+  }
+
+  // One question for the whole page rather than one per card.
+  function askOwned(ids){
+    if(!ids.length || !window.sb || !sb.rpc) return;
+    sb.rpc('dz_market_owned', {p_items: ids}).then(function(res){
+      if(!res || res.error || !res.data) return;
+      var got = false;
+      (res.data || []).forEach(function(r){
+        var v = (r && typeof r === 'object') ? (r.dz_market_owned || r.id || '') : r;
+        if(v){ ownedIds[String(v)] = true; got = true; }
+      });
+      if(got) repaintOwned();
+    }, function(){ /* a slot that stays priced is the safe way to be wrong */ });
+  }
+
   function fillSlots(){
+    var fresh = [];
     Array.prototype.forEach.call(document.querySelectorAll('.dzSlot'), function(el){
       if(el.dataset.dzFilled) return;
       el.dataset.dzFilled = '1';
-      var id      = el.getAttribute('data-i') || '';
-      var cents   = Number(el.getAttribute('data-p') || 0);
-      var cur     = el.getAttribute('data-c') || 'USD';
-      var hasFile = el.getAttribute('data-f') === '1';
-      var view    = el.getAttribute('data-v') === 'view';
-      var priced  = cents > 0;
-
-      var price = '<div class="' + (view ? 'dzvPrice' : 'dzPrice') + '">' +
-                  esc(money(cents, cur)) + '</div>';
-      var btn = priced
-        ? '<button class="dzBuy" type="button" data-act="buy">' +
-            (view ? 'Buy now' : 'Buy \\u00b7 ' + esc(money(cents, cur))) + '</button>'
-        : (hasFile
-            ? '<button class="dzBuy dzBuy--free" type="button" data-act="get">Download \\u00b7 Free</button>'
-            : '');
-
-      el.innerHTML = view ? '<div class="dzvBuyCard">' + price + btn + '</div>' : price + btn;
-
-      Array.prototype.forEach.call(el.querySelectorAll('button'), function(b){
-        b.addEventListener('click', function(e){
-          e.stopPropagation();
-          if(b.getAttribute('data-act') === 'buy') window.dzMarketBuy(id, hasFile ? 1 : 0);
-          else if(typeof window.dzMarketGet === 'function') window.dzMarketGet(id);
-        });
-      });
+      paintSlot(el);
+      var id = el.getAttribute('data-i');
+      if(id && !ownedIds[id] && fresh.indexOf(id) === -1) fresh.push(id);
     });
+    askOwned(fresh);
   }
 
   // ---- wallet and payout methods -----------------------------------------
@@ -738,9 +805,156 @@ const MODULE = `
   }
   window.dzWalletLoad = loadWallet;
 
+  // ---- my purchases -------------------------------------------------------
+  // The buyer's side of the wallet: everything this account has paid for on the
+  // marketplace, with every file it came with, unlocked and at full quality,
+  // for as long as the account exists. A purchase is not a rental and not a
+  // plan benefit — there is no expiry to show and no tier that could take it
+  // away, which is why the note at the top says so rather than leaving anyone
+  // to wonder whether cancelling Max costs them their files.
+  //
+  // dz_my_purchases reads the payments this caller has standing at 'paid'. A
+  // refunded or reversed sale is not one of those, so it leaves this list at
+  // the same moment it stops unlocking the download — the two cannot drift.
+  function purchaseRow(p){
+    var title = esc(p.title || 'Marketplace item');
+    var thumb = p.preview_url
+      ? '<img class="dzPuThumb" loading="lazy" decoding="async" src="' +
+          esc(typeof getThumbnailUrl === 'function' ? getThumbnailUrl(p.preview_url) : p.preview_url) +
+          '" alt="">'
+      : '<span class="dzPuThumb dzPuThumbNo" aria-hidden="true">\\u25a6</span>';
+    var n = Number(p.file_count) || 0;
+    return '<li class="dzPuRow" data-item="' + esc(p.item_id || '') + '">' +
+      '<div class="dzPuTop">' +
+        thumb +
+        '<div class="dzPuMain">' +
+          '<div class="dzPuTitle">' + title + '</div>' +
+          '<div class="dzPuSub">' +
+            (p.seller_name ? 'by ' + esc(p.seller_name) + ' \\u00b7 ' : '') +
+            esc(money(p.amount, p.currency)) + ' \\u00b7 ' + esc(when(p.paid_at)) +
+          '</div>' +
+          '<div class="dzPuFiles">' +
+            (p.delisted
+              ? 'The seller has removed this listing \\u2014 its files are no longer available'
+              : n ? n + ' file' + (n === 1 ? '' : 's') + ' \\u00b7 full quality, no download limit'
+                  : 'No files attached to this listing') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      (!p.delisted && n
+        ? '<button type="button" class="dzPuBtn" data-get="' + esc(p.item_id) + '">' +
+            (n === 1 ? '\\u2b07 Download' : '\\u2b07 Show ' + n + ' files') + '</button>'
+        : '') +
+      '<div class="dzPuList" hidden></div>' +
+    '</li>';
+  }
+
+  function renderPurchases(host, rows){
+    if(!rows.length){
+      host.innerHTML =
+        '<div class="dzPuHead">My purchases</div>' +
+        '<div class="dzWlEmpty">Nothing bought yet. Anything you buy on the marketplace ' +
+        'lands here permanently, with every file unlocked.</div>';
+      return;
+    }
+    host.innerHTML =
+      '<div class="dzPuHead">My purchases</div>' +
+      '<p class="dzPuNote">Bought once, yours to keep. Every file is the seller\\u2019s ' +
+      'original at full quality, re-downloadable as often as you like, and no ' +
+      'subscription tier is involved either way.</p>' +
+      '<ul class="dzPuList--top">' + rows.map(purchaseRow).join('') + '</ul>';
+
+    Array.prototype.forEach.call(host.querySelectorAll('[data-get]'), function(b){
+      b.addEventListener('click', function(){ openFiles(b); });
+    });
+  }
+
+  // Expands one purchase into its files. Asked for on the tap rather than up
+  // front: a list of twenty purchases should not be twenty roundtrips.
+  function openFiles(btn){
+    var item = btn.getAttribute('data-get');
+    var box  = btn.parentNode.querySelector('.dzPuList');
+    if(!box) return;
+    if(!box.hidden){ box.hidden = true; return; }
+    if(box.dataset.loaded){ box.hidden = false; return; }
+
+    btn.disabled = true;
+    sb.rpc('dz_market_files', {p_item: item}).then(function(res){
+      btn.disabled = false;
+      if(!res || res.error){
+        toast((res && res.error && res.error.message) || 'Could not open your files');
+        return;
+      }
+      var files = res.data || [];
+      if(!files.length){ toast('This listing has no files attached'); return; }
+      // one file is not a list — hand it straight over
+      if(files.length === 1 && typeof window.dzMarketFetch === 'function'){
+        window.dzMarketFetch(item, files[0].file_id, files[0].name, btn);
+        return;
+      }
+      box.innerHTML = files.map(function(f){
+        return '<div class="dzPuFile">' +
+          '<span class="dzPuExt">' + esc(String(f.ext || 'file').toUpperCase()) + '</span>' +
+          '<div class="dzPuFileMeta">' +
+            '<div class="dzPuFileNm">' + esc(f.name) + '</div>' +
+            '<div class="dzPuFileSz">' + esc(bytesOf(f.bytes)) + '</div>' +
+          '</div>' +
+          '<button type="button" class="dzPuFileBtn" data-f="' + esc(f.file_id) + '" ' +
+            'data-n="' + esc(f.name) + '">Download</button>' +
+        '</div>';
+      }).join('');
+      box.dataset.loaded = '1';
+      box.hidden = false;
+      Array.prototype.forEach.call(box.querySelectorAll('[data-f]'), function(fb){
+        fb.addEventListener('click', function(){
+          if(typeof window.dzMarketFetch === 'function')
+            window.dzMarketFetch(item, fb.getAttribute('data-f'), fb.getAttribute('data-n'), fb);
+        });
+      });
+    }, function(){ btn.disabled = false; toast('Could not open your files'); });
+  }
+
+  function bytesOf(n){
+    n = Number(n) || 0;
+    if(n <= 0) return '\\u2014';
+    var u = ['B','KB','MB','GB'], i = 0;
+    while(n >= 1024 && i < u.length - 1){ n /= 1024; i++; }
+    return (n < 10 && i > 0 ? n.toFixed(1) : Math.round(n)) + ' ' + u[i];
+  }
+
+  var purchasesP = null;
+  function loadPurchases(force){
+    var host = document.getElementById('pfPurchaseGate');
+    if(!host || !window.sb || !sb.rpc) return;
+    if(force) purchasesP = null;
+    // Promise.resolve, not the builder itself: a PostgrestBuilder fires a fresh
+    // request every time something calls .then on it, so caching the builder
+    // would cache nothing and double the traffic instead.
+    if(!purchasesP) purchasesP = Promise.resolve(sb.rpc('dz_my_purchases'));
+    purchasesP.then(function(res){
+      if(!res || res.error){
+        host.innerHTML = '<div class="dzWlEmpty">' +
+          esc((res && res.error && res.error.message) || 'Could not load your purchases') + '</div>';
+        purchasesP = null;
+        return;
+      }
+      renderPurchases(host, res.data || []);
+      // the same answer tells the marketplace which cards to unlock
+      var changed = false;
+      (res.data || []).forEach(function(p){
+        if(p.item_id && !ownedIds[p.item_id]){ ownedIds[p.item_id] = true; changed = true; }
+      });
+      if(changed) repaintOwned();
+    }, function(){
+      host.innerHTML = '<div class="dzWlEmpty">Could not load your purchases</div>';
+      purchasesP = null;
+    });
+  }
+  window.dzPurchasesLoad = loadPurchases;
+
   // The public bundle calls this after every render that could have produced a
   // slot, and once when this module lands.
-  window.dzFill = function(){ fillPlans(); fillSlots(); loadWallet(false); };
+  window.dzFill = function(){ fillPlans(); fillSlots(); loadWallet(false); loadPurchases(false); };
   window.dzFill();
 })(__dzStore);
 `;

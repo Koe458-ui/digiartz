@@ -393,12 +393,52 @@
     @media(hover:hover){.dzFileAct:hover{border-color:var(--pg);color:var(--ps);}}
     .dzFileActRm{color:var(--txd);}
     @media(hover:hover){.dzFileActRm:hover{border-color:var(--danger-strong,#D63A3F);color:var(--danger-strong,#D63A3F);}}
+    /* ---- several files, one listing -------------------------------------
+       A marketplace listing sells whatever the buyer receives, which is rarely
+       one object. The picked state becomes a column of rows; everything in it
+       sits above .dzFileIn, whose invisible full-bleed input would otherwise
+       swallow the taps meant for Remove. */
+    .dzFileZone.dzHasFile .dzFileMulti{
+      display:flex;flex-direction:column;align-items:stretch;gap:.5rem;
+      width:100%;position:relative;z-index:2;
+    }
+    .dzFileRows{display:flex;flex-direction:column;gap:.4rem;}
+    .dzFileRow{
+      display:flex;align-items:center;gap:.7rem;min-width:0;
+      padding:.5rem .6rem;border:1px solid var(--bdr);border-radius:10px;background:var(--sur2);
+    }
+    /* the extension is the label here, so the chip sizes to the word rather
+       than cropping it — .brushset and .procreate are both longer than a
+       square 40px box can hold */
+    .dzFileRow .dzFileThumb{
+      width:auto;min-width:2.5rem;max-width:5.5rem;height:2.2rem;
+      padding:0 .45rem;border-radius:8px;
+    }
+    .dzFileRow .dzFileThumbExt{
+      font-size:.56rem;letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    /* a filename is worth reading in full when there are several of them */
+    .dzFileRow .dzFileNm{
+      font-size:.82rem;white-space:normal;overflow-wrap:break-word;word-break:break-word;
+    }
+    .dzFileRow .dzFileSz{margin-top:.15rem;}
+    .dzFileRow .dzFileAct{flex-shrink:0;}
+    .dzFileSum{
+      display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+      padding-top:.15rem;font-family:var(--fm);font-size:.62rem;letter-spacing:.06em;color:var(--txd);
+    }
+    .dzFileSum span{flex:1;min-width:10rem;}
+
     @media(max-width:560px){
       .dzFileZone{padding:1.9rem 1.1rem;}
       .dzFileZone.dzHasFile{padding:1rem;}
       .dzFilePicked{flex-wrap:wrap;}
       .dzFileActs{width:100%;}
       .dzFileAct{flex:1;}
+      .dzFileRow{flex-wrap:wrap;}
+      .dzFileRow .dzFileAct{flex:0 0 auto;}
+      .dzFileSum span{flex:1 0 100%;}
+      .dzFileSum .dzFileAct{flex:1 1 auto;}
     }
     @media(prefers-reduced-motion:reduce){
       .dzFileZone{transition:none;}
@@ -1343,15 +1383,120 @@
       text-transform:uppercase;text-decoration:none;
     }
 
-    /* Wallet and payout methods pages, opened from the Settings menu. Same
-       slide-in as #setPage so they behave like every other sub-page there. */
-    #walletPage,#bankPage{
+    /* ---- my purchases ---------------------------------------------------
+       The buyer's page, built by the signed-in module. Same card language as
+       the wallet next door, because they are two halves of one ledger. */
+    .dzPuHead{
+      margin:.6rem 0 .5rem;font-family:var(--fm);font-size:.6rem;font-weight:700;
+      letter-spacing:.16em;text-transform:uppercase;color:var(--txd);
+    }
+    .dzPuNote{margin:0 0 .9rem;font-size:.76rem;line-height:1.55;color:var(--txd);}
+    .dzPuList--top{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;}
+    .dzPuRow{
+      padding:.75rem .8rem;border:1px solid var(--bdr);border-radius:12px;
+      background:var(--sur2);min-width:0;
+    }
+    .dzPuTop{display:flex;align-items:flex-start;gap:.7rem;min-width:0;}
+    .dzPuThumb{
+      width:54px;height:54px;flex-shrink:0;border-radius:9px;object-fit:cover;
+      background:var(--sur);border:1px solid var(--bdr);
+    }
+    .dzPuThumbNo{
+      display:flex;align-items:center;justify-content:center;
+      color:var(--txd);font-size:1.1rem;
+    }
+    .dzPuMain{flex:1;min-width:0;}
+    .dzPuTitle{
+      font-size:.9rem;font-weight:600;color:var(--tx);line-height:1.35;
+      overflow-wrap:break-word;word-break:break-word;
+    }
+    .dzPuSub{margin-top:.15rem;font-size:.72rem;color:var(--txd);overflow-wrap:break-word;}
+    .dzPuFiles{margin-top:.25rem;font-size:.7rem;color:var(--txd);}
+    .dzPuBtn{
+      width:100%;margin-top:.65rem;min-height:2.5rem;padding:.55rem .9rem;
+      border:1px solid var(--pg);border-radius:10px;background:var(--pdim);
+      color:var(--pg);font-family:var(--fm);font-size:.68rem;font-weight:700;
+      letter-spacing:.1em;text-transform:uppercase;cursor:pointer;
+    }
+    .dzPuBtn:disabled{opacity:.5;cursor:progress;}
+    @media(hover:hover){.dzPuBtn:not(:disabled):hover{filter:brightness(1.12);}}
+
+    .dzPuList{margin-top:.5rem;display:flex;flex-direction:column;gap:.35rem;}
+    .dzPuList[hidden]{display:none;}
+    .dzPuFile{
+      display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+      padding:.5rem .6rem;border:1px solid var(--bdr);border-radius:9px;background:var(--sur);
+    }
+    .dzPuExt{
+      flex-shrink:0;padding:.2rem .45rem;border-radius:6px;background:var(--pdim);
+      color:var(--pg);font-family:var(--fm);font-size:.56rem;font-weight:700;letter-spacing:.08em;
+    }
+    .dzPuFileMeta{flex:1;min-width:0;}
+    .dzPuFileNm{font-size:.78rem;color:var(--tx);overflow-wrap:break-word;word-break:break-word;}
+    .dzPuFileSz{font-size:.66rem;color:var(--txd);}
+    .dzPuFileBtn{
+      flex-shrink:0;min-height:2.1rem;padding:.35rem .7rem;border:1px solid var(--bdr);
+      border-radius:8px;background:transparent;color:var(--tx);font-size:.7rem;cursor:pointer;
+    }
+    .dzPuFileBtn:disabled{opacity:.5;cursor:progress;}
+    @media(hover:hover){.dzPuFileBtn:not(:disabled):hover{border-color:var(--pg);color:var(--pg);}}
+
+    /* owned state on a marketplace card or detail view */
+    .dzBuy--own{background:var(--pdim);color:var(--pg);border:1px solid var(--pg);}
+    .dzOwnNote{
+      margin-top:.6rem;font-family:var(--fm);font-size:.6rem;font-weight:700;
+      letter-spacing:.12em;text-transform:uppercase;color:var(--pg);
+    }
+
+    /* the locked notice on a listing nobody in this session has bought */
+    .dzvLock{
+      display:flex;align-items:flex-start;gap:.7rem;margin:.9rem 0;
+      padding:.8rem .9rem;border:1px dashed var(--bdr);border-radius:12px;background:var(--sur2);
+    }
+    .dzvLock[hidden]{display:none;}
+    .dzvLockIco{font-size:1.05rem;line-height:1.2;flex-shrink:0;}
+    .dzvLock b{font-size:.82rem;color:var(--tx);}
+    .dzvLockSub{margin-top:.2rem;font-size:.74rem;line-height:1.55;color:var(--txd);}
+
+    /* the file picker a multi-file purchase opens */
+    .dzGetBox{max-width:520px;padding:1.1rem;gap:.2rem;}
+    .dzGetBox .upPopX{position:absolute;top:.7rem;right:.7rem;}
+    #dzGetPop .upPopBox{position:relative;overflow:auto;}
+    .dzGetTitle{
+      margin:0 2rem .2rem 0;font-family:var(--fm);font-size:.72rem;font-weight:700;
+      letter-spacing:.16em;color:var(--tx);
+    }
+    .dzGetSub{margin:0 0 .8rem;font-size:.74rem;color:var(--txd);}
+    .dzGetList{display:flex;flex-direction:column;gap:.4rem;}
+    .dzGetRow{
+      display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.55rem .65rem;
+      border:1px solid var(--bdr);border-radius:10px;background:var(--sur2);
+    }
+    .dzGetExt{
+      flex-shrink:0;padding:.2rem .45rem;border-radius:6px;background:var(--pdim);
+      color:var(--pg);font-family:var(--fm);font-size:.56rem;font-weight:700;letter-spacing:.08em;
+    }
+    .dzGetMeta{flex:1;min-width:0;}
+    .dzGetNm{font-size:.8rem;color:var(--tx);overflow-wrap:break-word;word-break:break-word;}
+    .dzGetSz{font-size:.66rem;color:var(--txd);}
+    .dzGetBtn{
+      flex-shrink:0;min-height:2.2rem;padding:.4rem .8rem;border:1px solid var(--pg);
+      border-radius:8px;background:var(--pdim);color:var(--pg);
+      font-size:.7rem;font-weight:700;cursor:pointer;
+    }
+    .dzGetBtn:disabled{opacity:.5;cursor:progress;}
+    @media(hover:hover){.dzGetBtn:not(:disabled):hover{filter:brightness(1.12);}}
+
+    /* Wallet, purchases and payout methods pages, opened from the Settings
+       menu. Same slide-in as #setPage so they behave like every other sub-page
+       there. */
+    #walletPage,#bankPage,#purchasePage{
       position:fixed;inset:0;z-index:547;background:var(--bg);color:var(--tx);
       overflow-y:auto;transform:translateX(100%);
       transition:transform .45s cubic-bezier(.22,1,.36,1);
     }
-    #walletPage.open,#bankPage.open{transform:translateX(0);}
+    #walletPage.open,#bankPage.open,#purchasePage.open{transform:translateX(0);}
     .dzPanelWrap{max-width:640px;margin:0 auto;padding:.4rem .9rem 2.5rem;}
     @media(prefers-reduced-motion:reduce){
-      #walletPage,#bankPage{transition:none;}
+      #walletPage,#bankPage,#purchasePage{transition:none;}
     }

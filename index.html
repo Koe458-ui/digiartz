@@ -97,7 +97,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
-  <link rel="stylesheet" href="/css/hero.css?v=73">
+  <link rel="stylesheet" href="/css/hero.css?v=74">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=3">
   <link rel="stylesheet" href="/css/connect.css?v=1">
@@ -1394,7 +1394,7 @@
 
   <script src="/js/share.js?v=1"></script>
 
-  <script src="/js/misc-core.js?v=3"></script>
+  <script src="/js/misc-core.js?v=4"></script>
 
 
 
@@ -2175,6 +2175,7 @@
         <!-- setGo(open, id): closes the menu, opens the page, and puts you
              back on the menu when that page closes -->
         <button class="pfMenuItem" onclick="setGo(openSubscription,'subPage')">Subscription</button>
+        <button class="pfMenuItem" onclick="setGo(openPurchasesPage,'purchasePage')">My Purchases</button>
         <button class="pfMenuItem" onclick="setGo(openWalletPage,'walletPage')">Wallet</button>
         <button class="pfMenuItem" onclick="setGo(openBankPage,'bankPage')">Payout Methods</button>
         <button class="pfMenuItem" onclick="setGo(openMyWorkPage,'pfMyWorkPage')">Edit My Work</button>
@@ -2202,6 +2203,17 @@
       <div class="subPgTitle">WALLET</div>
     </div>
     <div class="bmBdy"><div class="dzPanelWrap" id="pfWalletGate"></div></div>
+  </div>
+
+  <!-- Everything this account has bought on the marketplace. Empty for the same
+       reason the wallet is: the list, the files and the download all come from
+       /api/store, which answers nobody without a session. -->
+  <div id="purchasePage" role="dialog" aria-modal="true" aria-label="My purchases">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closePurchasesPage()" aria-label="Close purchases">&#8592;</button>
+      <div class="subPgTitle">MY PURCHASES</div>
+    </div>
+    <div class="bmBdy"><div class="dzPanelWrap" id="pfPurchaseGate"></div></div>
   </div>
 
   <div id="bankPage" role="dialog" aria-modal="true" aria-label="Payout methods">
@@ -2256,7 +2268,7 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=8"></script>
+  <script src="/js/app-core.js?v=9"></script>
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=68"></script>
   <script src="/js/auth.js?v=2"></script>
@@ -2265,7 +2277,7 @@
   <script src="/js/drafts.js?v=1"></script>
   <script src="/js/upqueue.js?v=2"></script>
   <script src="/js/avatar.js?v=2"></script>
-  <script src="/js/pfedit.js?v=4"></script>
+  <script src="/js/pfedit.js?v=5"></script>
   <script src="/js/mywork.js?v=6"></script>
   <script src="/js/startup.js?v=2"></script>
   <script src="/js/tagrail.js?v=2"></script>
@@ -2567,7 +2579,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=2"></script>
 
 
-  <script src="/js/sections.js?v=75"></script>
+  <script src="/js/sections.js?v=76"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

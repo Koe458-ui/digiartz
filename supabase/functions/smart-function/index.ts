@@ -92,6 +92,21 @@
 // three sizes v17 gave it, which makes this function safe to deploy
 // before, after, or independently of the site, and safe against clients
 // still running old JS out of a service worker cache.
+//
+// v20 — a non-image upload can ask to land in the private bucket, for
+// the one kind of file where a public url is the whole problem: a
+// marketplace product file is the thing being sold, so anyone holding
+// its url holds the goods. Passing visibility:"private" signs the
+// object into koe-originals and returns supabasePublicUrl:null, because
+// there is no url to return — the bytes come back only through
+// /api/market-download, which asks the database whether this caller has
+// paid before it signs anything.
+//
+// It is a flag, not a change of default: a caller that does not send it
+// gets the public object it got before, so this deploys independently of
+// the site and an older cached bundle keeps working. delete already
+// sweeps both buckets for the same key, so removing one of these needs
+// nothing new.
 // ═══════════════════════════════════════════════════════════════
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -305,6 +320,11 @@ Deno.serve(async (req) => {
     // Every check above has passed, so hand out signed upload targets.
     // Signed with the CALLER's client, so storage RLS applies on top.
     const isImage = IMG_TYPES.test(ct);
+    // A marketplace product file is the thing being sold, so it may not sit in
+    // a public bucket where the url alone is the whole of the security. The
+    // caller asks for this by name; anything that does not ask keeps the
+    // behaviour it had, which is what makes this safe to deploy on its own.
+    const isPrivate = body.visibility === "private" && !isImage;
     const targets: Array<Record<string, unknown>> = [];
 
     const sign = async (bucket: string, objPath: string, role: string) => {
@@ -331,10 +351,14 @@ Deno.serve(async (req) => {
           return json({ error: "f1600 is required" }, 400);
         const base = stripExt(objKey);
         for (const d of wanted) await sign(PUBLIC_BUCKET, base + d.suffix, d.role);
+      } else if (isPrivate) {
+        // Sold, not shared: one object in the private bucket and no public url
+        // to go with it. The only way back to these bytes is /api/market-
+        // download, which signs them for a buyer the database has confirmed.
+        await sign(PRIVATE_BUCKET, objKey, "file");
       } else {
         // a downloadable asset, not an image: single public object, exactly
-        // where it lived before. Gating these is separate work, not a silent
-        // side effect of moving hosts.
+        // where it lived before.
         await sign(PUBLIC_BUCKET, objKey, "file");
       }
     } catch (e) {
@@ -346,8 +370,14 @@ Deno.serve(async (req) => {
       key: path,
       targets,
       // the f1600 derivative is the canonical stored url for an image: directly
-      // usable for og:image, and the other sizes are a suffix swap away
-      supabasePublicUrl: isImage ? sbPublicUrl(stripExt(objKey) + "__f1600.webp") : sbPublicUrl(objKey),
+      // usable for og:image, and the other sizes are a suffix swap away. A
+      // private upload has no public url by design and says so with null rather
+      // than handing back a link that would 400.
+      supabasePublicUrl: isPrivate ? null
+        : isImage ? sbPublicUrl(stripExt(objKey) + "__f1600.webp")
+        : sbPublicUrl(objKey),
+      bucket: isPrivate ? PRIVATE_BUCKET : PUBLIC_BUCKET,
+      private: isPrivate,
     });
   }
 

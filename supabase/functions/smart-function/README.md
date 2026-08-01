@@ -21,6 +21,12 @@ Secrets it needs (set in the Supabase dashboard, not here):
 - `upload` — presigned S3 PUT. Images capped at 25MB with a content-type
   allowlist; resource/marketplace prefixes capped at 200MB with an extension
   allowlist. Per-user flood limit, fail-open.
+  Pass `visibility: "private"` on a non-image to sign it into `koe-originals`
+  instead of the public bucket; the response carries `supabasePublicUrl: null`
+  and `private: true`, because there is no url for an object nobody may read
+  without going through `/api/market-download`. Marketplace product files use
+  this. Omitting it keeps the public object every other caller gets, so the
+  function and the site can deploy in either order.
 - `delete` — ownership checked against every table that stores a storage path,
   then a direct S3 DELETE.
 - `download` — presigned S3 GET for an artwork's original, minted only after

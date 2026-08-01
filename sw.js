@@ -4,6 +4,51 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v96 — the marketplace sells files instead of pointing at them.
+       A listing used to be one product file uploaded to the public
+       bucket, with a Download button drawn for every visitor and refused
+       at the database. Both halves of that were wrong. The button
+       advertised a file to people who had not bought it and read as
+       broken when it said no, and the object behind it sat in koe-media,
+       where the url is the whole of the security — a link, once loose,
+       was the goods.
+       A listing now carries as many files as the buyer receives. They
+       upload to koe-originals through a new visibility:"private" flag on
+       the signer, which returns no public url because there is none, and
+       they come back only through /api/market-download: it asks Postgres
+       whether this caller has paid, signs the object for two minutes with
+       the service role, and streams the bytes. The browser never holds a
+       url of any kind, so a buyer cannot pass one on.
+       Ownership has one definition, dz_market_owns — seller, free
+       listing, or a payment for this item by this user standing at
+       'paid' — and the card, the detail view, My Purchases and the
+       download all ask it. It is derived from payments rather than
+       kept in a purchases table, so a refund or a chargeback withdraws
+       the download in the same instant it reverses the earning, with no
+       second copy of the truth to fall out of step.
+       There is no download control anywhere until that question comes
+       back yes. The listing shows the price and a lock note; the
+       signed-in module swaps in the download once it knows. Subscription
+       tiers are not consulted at any point on this path — no tier
+       unlocks a marketplace file and none is spent reading one, so a
+       purchase costs nothing to re-download for as long as the account
+       exists.
+       Settings gains My Purchases: everything bought, newest first, with
+       every file at full quality, surviving the seller delisting the item
+       (the title falls back to the label written on the payment at
+       checkout). A finished checkout lands there rather than back on the
+       listing, because that is where the buyer's next question is
+       answered.
+       The scheduler learned about the second write too: a listing queued
+       for Friday carries its files in scheduled_sections.sell_files and
+       gets them attached in the same pass that creates it, or fails and
+       takes the half-made listing back down.
+       Changed: index.html, sw.js, css/hero.css, js/sections.js,
+       js/app-core.js, js/misc-core.js, js/pfedit.js, functions/api/
+       store.js, functions/api/market-download.js (new), functions/api/
+       rzp.js, functions/api/paypal.js, supabase/functions/smart-function,
+       and three migrations under supabase/migrations.
+
    v95 — the wallet says what the rules are, on the page where they apply.
        The withdrawal minimum, the split we take, what happens to a
        balance inflated by one of our own bugs and where to write with a
@@ -1138,7 +1183,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v95';
+const CACHE_VERSION = 'v96';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1162,7 +1207,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=73',
+  '/css/hero.css?v=74',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
@@ -1187,8 +1232,8 @@ const SHELL_URLS = [
   '/js/dm.js?v=4',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
-  '/js/misc-core.js?v=3',
-  '/js/app-core.js?v=8',
+  '/js/misc-core.js?v=4',
+  '/js/app-core.js?v=9',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=68',
   '/js/auth.js?v=2',
@@ -1197,7 +1242,7 @@ const SHELL_URLS = [
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=4',
+  '/js/pfedit.js?v=5',
   '/js/mywork.js?v=6',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=2',
@@ -1208,7 +1253,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=2',
-  '/js/sections.js?v=75',
+  '/js/sections.js?v=76',
   '/js/navprogress.js?v=5'
 ];
 

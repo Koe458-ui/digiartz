@@ -185,6 +185,11 @@ async function makeOrder(env, user, { amount, currency, kind, plan, itemId, labe
     body: JSON.stringify({
       user_id: user.id, kind, plan: plan || null, item_id: itemId || null,
       amount, currency, provider: 'razorpay',
+      // What the buyer thought they were buying, kept on the payment itself.
+      // A seller who delists after the sale takes the listing row with them,
+      // and My Purchases falls back to this so the buyer's own history does not
+      // turn into a row of blanks.
+      order_label: label ? String(label).slice(0, 200) : null,
       rzp_order_id: order.id, status: 'created',
     }),
   });

@@ -30,7 +30,7 @@
   // pfEditPage was missing here while every other full-screen panel was
   // listed, so the floating widgets stayed on top of profile settings. Barely
   // visible while that panel was short; obvious once it grew a wallet.
-  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'walletPage', 'bankPage', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
+  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'walletPage', 'bankPage', 'purchasePage', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);
@@ -283,9 +283,10 @@
       fields:[
         {k:'item_type',t:'sel', label:'Listing type',
          options:[['digital','Digital download'],['commission','Commission slot'],['service','Service']]},
-        {k:'file',   t:'file',  label:'Product file',
+        {k:'files',  t:'files', label:'Files to sell',
          accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.pdf,.obj,.fbx,.blend',
-         hint:'Required for a digital download. Up to 200MB.'},
+         hint:'Required for a digital download — add every file the buyer receives, up to 200MB each. '+
+              'These are stored privately and stay locked until someone pays for the listing.'},
         {k:'preview',t:'image', label:'Preview image', req:true, accept:'image/jpeg,image/png,image/webp,image/gif', hint:'Required. Shown on the card and auto-checked. JPG/PNG/WEBP up to 25MB.'},
         {k:'title',  t:'text',  label:'Title', req:true, max:140, ph:'Name your listing…'},
         {k:'description',t:'area', label:'Description', max:3000, ph:'What the buyer receives…'},
@@ -580,6 +581,30 @@
           '</div>'+
           '<div class="dzFilePicked" id="'+id+'_pk"></div>'+
         '</div>'+hint+'</div>';
+    } else if(fd.t === 'files'){
+      // The same dropzone, holding a list instead of one file. A listing is
+      // whatever the buyer receives, and that is rarely a single object.
+      var macc  = fd.accept || '';
+      var margs = '\''+sec+'\',\''+fd.k+'\'';
+      return '<div class="upField dzFileField">'+lbl+
+        '<div class="dzFileZone dzFileZone--multi" id="'+id+'_z"'+
+          ' ondragenter="dzDragOn(event,\''+id+'\')" ondragover="dzDragOn(event,\''+id+'\')"'+
+          ' ondragleave="dzDragOff(event,\''+id+'\')" ondrop="dzDropFile(event,'+margs+')">'+
+          '<input class="dzFileIn" id="'+id+'" type="file" multiple accept="'+esc(macc)+'"'+
+            ' aria-label="'+esc(fd.label)+'"'+
+            ' onclick="if(typeof pfGuestGate===\'function\'&&pfGuestGate(event))return;"'+
+            ' onchange="dzPick('+margs+',this)">'+
+          '<div class="dzFileEmpty">'+
+            secIco(sec, 'dzFileIco')+
+            '<div class="dzFileCopy">'+
+              '<div class="dzFileTitle">Drag &amp; drop the files you are selling</div>'+
+              '<div class="dzFileSub">or browse from your device — you can add several</div>'+
+            '</div>'+
+            '<span class="dzFileBtn">Select files</span>'+
+            '<div class="dzFileTypes">'+esc(acceptLabel(macc, false))+'</div>'+
+          '</div>'+
+          '<div class="dzFilePicked dzFileMulti" id="'+id+'_pk"></div>'+
+        '</div>'+hint+'</div>';
     }
     return '<div class="upField">'+lbl+body+hint+'</div>';
   }
@@ -635,6 +660,7 @@
         box = document.getElementById(id+'_pk'),
         s   = st(sec), f = s.files[key];
     if(!z || !box) return;
+    if(Array.isArray(f)){ dzRenderFileList(sec, key, z, box, f); return; }
     if(!f){
       z.classList.remove('dzHasFile');
       box.innerHTML = '';
@@ -657,6 +683,40 @@
       '</div>';
   }
 
+  // the multi-file variant: a row per file, and the order shown is the order
+  // the buyer will see, which is why removing one does not renumber the rest
+  // until the list repaints
+  function dzRenderFileList(sec, key, z, box, list){
+    if(!list.length){
+      z.classList.remove('dzHasFile');
+      box.innerHTML = '';
+      return;
+    }
+    z.classList.add('dzHasFile');
+    var total = 0;
+    list.forEach(function(f){ total += (f && f.size) || 0; });
+    box.innerHTML =
+      '<div class="dzFileRows">' +
+        list.map(function(f, i){
+          return '<div class="dzFileRow">'+
+            '<span class="dzFileThumb dzFileThumbExt">'+esc(ext(f.name))+'</span>'+
+            '<div class="dzFileMeta">'+
+              '<div class="dzFileNm">'+esc(f.name)+'</div>'+
+              '<div class="dzFileSz">'+esc(bytes(f.size) || '—')+'</div>'+
+            '</div>'+
+            '<button type="button" class="dzFileAct dzFileActRm" '+
+              'onclick="dzFileDrop(event,\''+sec+'\',\''+key+'\','+i+')" '+
+              'aria-label="Remove '+esc(f.name)+'">Remove</button>'+
+          '</div>';
+        }).join('') +
+      '</div>'+
+      '<div class="dzFileSum">'+
+        '<span>'+list.length+' file'+(list.length === 1 ? '' : 's')+' · '+esc(bytes(total) || '—')+' · locked until purchased</span>'+
+        '<button type="button" class="dzFileAct" onclick="dzFileReplace(event,\''+sec+'\',\''+key+'\')">Add more</button>'+
+        '<button type="button" class="dzFileAct dzFileActRm" onclick="dzFileClear(event,\''+sec+'\',\''+key+'\')">Clear all</button>'+
+      '</div>';
+  }
+
   // swap the held file
   function dzSetFile(sec, key, f){
     var s = st(sec);
@@ -668,9 +728,44 @@
     dzRenderFile(sec, key);
   }
 
+  // add to the held list, keeping what was already there — picking again is how
+  // you add a second file, not how you replace the first
+  function dzAddFiles(sec, key, files){
+    var s = st(sec);
+    var have = Array.isArray(s.files[key]) ? s.files[key] : [];
+    var seen = {};
+    have.forEach(function(f){ seen[f.name + '|' + f.size] = 1; });
+    Array.prototype.forEach.call(files || [], function(f){
+      if(!f) return;
+      var k = f.name + '|' + f.size;
+      if(seen[k]) return;            // the same file picked twice is one file
+      seen[k] = 1;
+      have.push(f);
+    });
+    s.files[key] = have;
+    dzRenderFile(sec, key);
+  }
+
+  function dzFileDrop(e, sec, key, i){
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    var s = st(sec);
+    if(!Array.isArray(s.files[key])) return;
+    s.files[key].splice(i, 1);
+    var el = document.getElementById('dz_'+sec+'_'+key);
+    if(el) el.value = '';
+    dzRenderFile(sec, key);
+  }
+
+  function isMulti(sec, key){
+    var fds = FORMS[sec] ? FORMS[sec].fields : [];
+    for(var i=0;i<fds.length;i++){ if(fds[i].k === key) return fds[i].t === 'files'; }
+    return false;
+  }
+
   function dzPick(sec, key, input){
     if(typeof pfGuestGate === 'function' && pfGuestGate({preventDefault:function(){},stopPropagation:function(){}})) return;
-    dzSetFile(sec, key, input.files && input.files[0]);
+    if(isMulti(sec, key)) dzAddFiles(sec, key, input.files);
+    else dzSetFile(sec, key, input.files && input.files[0]);
   }
 
   function dzFileReplace(e, sec, key){
@@ -683,6 +778,11 @@
     if(e){ e.preventDefault(); e.stopPropagation(); }
     var el = document.getElementById('dz_'+sec+'_'+key);
     if(el) el.value = '';
+    if(isMulti(sec, key)){
+      st(sec).files[key] = [];
+      dzRenderFile(sec, key);
+      return;
+    }
     dzSetFile(sec, key, null);
   }
 
@@ -701,7 +801,12 @@
     if(e) e.preventDefault();
     dzDragOff(e, 'dz_'+sec+'_'+key);
     if(typeof pfGuestGate === 'function' && pfGuestGate({preventDefault:function(){},stopPropagation:function(){}})) return;
-    var f = e && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    var dropped = (e && e.dataTransfer && e.dataTransfer.files) || null;
+    if(isMulti(sec, key)){
+      if(dropped && dropped.length) dzAddFiles(sec, key, dropped);
+      return;
+    }
+    var f = dropped && dropped[0];
     if(!f) return;
     // image fields take images only
     var el = document.getElementById('dz_'+sec+'_'+key);
@@ -723,7 +828,7 @@
   // repaint file fields
   function dzPaintFiles(sec){
     (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
-      if(fd.t === 'file' || fd.t === 'image') dzRenderFile(sec, fd.k);
+      if(fd.t === 'file' || fd.t === 'image' || fd.t === 'files') dzRenderFile(sec, fd.k);
     });
   }
 
@@ -866,7 +971,7 @@
     var s=st(sec), data={};
     FORMS[sec].fields.forEach(function(fd){
       if(fd.t==='tags'){ data.__tags=(s.tags||[]).slice(); return; }
-      if(fd.t==='file'||fd.t==='image') return;   // blobs not persisted
+      if(fd.t==='file'||fd.t==='image'||fd.t==='files') return;   // blobs not persisted
       var el=document.getElementById('dz_'+sec+'_'+fd.k);
       if(!el) return;
       data[fd.k]= el.type==='checkbox' ? el.checked : el.value;
@@ -887,7 +992,7 @@
       setTimeout(function(){
         var s=st(d.sec); s.tags=(d.data.__tags||[]).slice();
         FORMS[d.sec].fields.forEach(function(fd){
-          if(fd.t==='tags'||fd.t==='file'||fd.t==='image') return;
+          if(fd.t==='tags'||fd.t==='file'||fd.t==='image'||fd.t==='files') return;
           if(!(fd.k in d.data)) return;
           var el=document.getElementById('dz_'+d.sec+'_'+fd.k);
           if(!el) return;
@@ -1065,6 +1170,7 @@
     // required fields from the spec
     var miss = FORMS[sec].fields.filter(function(fd){
       if(!fd.req) return false;
+      if(fd.t === 'files') return !(s.files[fd.k] || []).length;
       if(fd.t === 'file' || fd.t === 'image') return !s.files[fd.k];
       return !val(sec, fd.k);
     });
@@ -1131,9 +1237,35 @@
         return {url:url, path:path, name:f.name, ext:ext, size:f.size};
       }
 
+      // One named file, straight to the private bucket. Used for the files a
+      // marketplace listing sells: they come back with no url because there is
+      // none to come back with, and the index keeps two files of the same name
+      // from landing on the same object.
+      async function putPrivate(f, prefix, i){
+        var ext = safeSlug((f.name.split('.').pop()||'bin'), 10);
+        var path = prefix+'/'+currentUser.id+'/'+stamp+'_'+i+'_'+safeSlug(f.name.replace(/\.[^.]+$/,''), 40)+'.'+ext;
+        var opts = {private:true};
+        await s3Upload(BUCKET, path, f, opts);
+        // the bucket the signer used, not the one we asked for — the two agree
+        // once the signer knows the flag, and the row has to describe reality
+        // either way or the download endpoint signs against the wrong bucket
+        var landed = opts.landed || {};
+        return {
+          bucket: landed.bucket || 'koe-originals',
+          path: landed.path || path,
+          name: f.name, ext: ext, size: f.size, mime: f.type || null
+        };
+      }
+
       // media bookkeeping, queued here and flushed once the row exists, since
       // every one of these tables is keyed on the parent id
       var pendingMedia = [];
+      // The files a marketplace listing sells. These are queued separately and
+      // written strictly, because they are not bookkeeping — they are the
+      // product. dzRecordUpload is fail-soft by design, and a listing that
+      // publishes with its files silently missing is worse than one that
+      // refuses to publish.
+      var pendingSell = [];
 
       if(sec === 'resources'){
         var rf = await put('file','resources'), rp = await put('preview','resources');
@@ -1162,18 +1294,35 @@
 
       else if(sec === 'marketplace'){
         var type = val(sec,'item_type') || 'digital';
-        if(type === 'digital' && !s.files.file){ throw new Error('A digital download needs a file'); }
-        var mf = await put('file','market'), mp = await put('preview','market');
+        var sell = s.files.files || [];
+        if(type === 'digital' && !sell.length){ throw new Error('A digital download needs at least one file'); }
+        var mp = await put('preview','market');
+
+        // The goods. Every one of these goes to the private bucket, so the
+        // listing carries no url a stranger could follow — the row below keeps
+        // names and sizes for display and nothing that resolves to bytes.
+        for(var si = 0; si < sell.length; si++){
+          pendingSell.push(await putPrivate(sell[si], 'market', si));
+        }
+
         row.title = val(sec,'title'); row.description = val(sec,'description');
         row.category = [val(sec,'category')]; row.item_type = type;
         row.price_cents = Math.round(parseFloat(val(sec,'price')||'0') * 100) || 0;
         row.currency = val(sec,'currency') || 'USD';
         row.license = val(sec,'license') || 'standard';
         row.delivery_days = parseInt(val(sec,'delivery_days'),10) || null;
-        if(mf){ row.file_url = mf.url; row.file_storage_path = mf.path;
-                row.file_name = mf.name; row.file_ext = mf.ext; row.file_size = mf.size; }
+        if(pendingSell.length){
+          var totalBytes = 0;
+          pendingSell.forEach(function(x){ totalBytes += x.size || 0; });
+          // file_url stays null: there is no public url for these any more, and
+          // a row that carries one is a row that leaks. The path is kept so the
+          // storage delete gate can still recognise the object as this seller's.
+          row.file_storage_path = pendingSell[0].path;
+          row.file_name = pendingSell[0].name;
+          row.file_ext  = pendingSell[0].ext;
+          row.file_size = totalBytes;
+        }
         if(mp){ row.preview_url = mp.url; row.preview_storage_path = mp.path; }
-        if(mf) pendingMedia.push({ fileKind:'marketFile', url:mf.url, path:mf.path, file:s.files.file });
         if(mp) pendingMedia.push({ imageKind:'marketImage', url:mp.url, path:mp.path, file:s.files.preview });
       }
 
@@ -1214,9 +1363,15 @@
         var payload = {}; for(var pk in row){ if(pk!=='status') payload[pk]=row[pk]; }
         var paths = [];
         ['file_storage_path','preview_storage_path','cover_storage_path'].forEach(function(k){ if(row[k]) paths.push(row[k]); });
+        pendingSell.forEach(function(x){ paths.push(x.path); });
         var sres = await sb.from('scheduled_sections').insert({
           user_id: currentUser.id, section: sec, payload: payload,
-          storage_paths: paths, publish_at: new Date(when).toISOString()
+          storage_paths: paths, publish_at: new Date(when).toISOString(),
+          // the files the listing sells, attached by publish_due_scheduled_
+          // sections when the row it hangs them off finally exists
+          sell_files: pendingSell.length ? pendingSell.map(function(x){
+            return { bucket:x.bucket || 'koe-originals', path:x.path, name:x.name, mime:x.mime, bytes:x.size };
+          }) : null
         }).select('id').single();
         if(sres.error) throw sres.error;
         if(moderated){ dzV.step('publish','pass','Scheduled for '+dzFmtWhen(when)); setTimeout(function(){ dzV.close(); }, 1400); }
@@ -1228,6 +1383,27 @@
       if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
       var res = await sb.from(SEC[sec].table).insert(row).select('id').single();
       if(res.error) throw res.error;
+
+      // The files being sold, written before anything else and checked, unlike
+      // the bookkeeping below. If they cannot be attached the listing is taken
+      // straight back down: a live listing that charges for files it cannot
+      // deliver is the one outcome worth failing loudly for.
+      if(pendingSell.length && res.data && res.data.id){
+        var sellRows = pendingSell.map(function(x, i){
+          return {
+            user_id: currentUser.id, item_id: res.data.id,
+            storage_bucket: x.bucket || 'koe-originals', storage_path: x.path,
+            original_filename: String(x.name || 'file').slice(0, 260),
+            mime: x.mime || null, bytes: x.size || null, position: i
+          };
+        });
+        var fres = await sb.from('marketplace_file').insert(sellRows);
+        if(fres.error){
+          await sb.from('marketplace_items').delete().eq('id', res.data.id);
+          throw new Error('Could not attach your files — nothing was published. ' +
+                          (fres.error.message || ''));
+        }
+      }
 
       // the row exists, so its media rows can be attached to it now
       if(res.data && res.data.id){
@@ -1320,6 +1496,16 @@
 
   var done = false, inflight = null;
 
+  // this block is its own scope, so it carries its own copies rather than
+  // reaching for the ones the renderer above keeps to itself
+  function esc(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function bytes(n){
+    return (window.dzHelpers && window.dzHelpers.bytes) ? window.dzHelpers.bytes(n) : '';
+  }
+
   function inject(code){
     var url = URL.createObjectURL(new Blob([code], {type:'text/javascript'}));
     return new Promise(function(res, rej){
@@ -1375,20 +1561,128 @@
     });
   }
 
-  // Not a payment path — the download itself is authorised in the database by
-  // dz_market_download, which decides on ownership. Kept here because the
-  // detail view calls it for free listings too.
+  // Delivery. Not a payment path and not an authorisation path either: both
+  // questions are settled in the database, by dz_market_files and then by
+  // /api/market-download, which will not sign a byte for a caller Postgres has
+  // not confirmed as the buyer. Nothing decided here changes who may download —
+  // the worst this code can do is ask and be told no.
+  //
+  // No tier is consulted anywhere along the way. A marketplace file is owned,
+  // not licensed by a plan, so Free and Max reach the same bytes and neither
+  // spends a daily download doing it.
+  function dzMarketSave(blob, name){
+    var obj = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = obj; a.download = name || 'file'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(obj); }, 60000);
+  }
+
+  window.dzMarketFetch = async function(item, file, name, btn){
+    if(!sb || !window.currentUser){
+      if(typeof pfGuestGate === 'function')
+        pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+      return false;
+    }
+    if(btn){ btn.disabled = true; btn.setAttribute('aria-busy','true'); }
+    try{
+      var s = await sb.auth.getSession();
+      var session = s && s.data && s.data.session;
+      if(!session){ showToast('Sign in to download'); return false; }
+
+      var res = await fetch('/api/market-download', {
+        method:'POST',
+        headers:{ 'Authorization':'Bearer '+session.access_token, 'Content-Type':'application/json' },
+        body: JSON.stringify({ item:String(item), file:String(file || item) })
+      });
+      if(!res.ok){
+        var info = {};
+        try{ info = await res.json(); }catch(e){}
+        if(res.status === 402) showToast('Buy this item to download it');
+        else if(res.status === 401){
+          showToast('Sign in to download');
+          if(typeof openAuthMod === 'function') openAuthMod();
+        }
+        else showToast(info.error || 'Download failed — try again');
+        return false;
+      }
+      dzMarketSave(await res.blob(), name);
+      return true;
+    }catch(e){
+      showToast('Download failed — check your connection');
+      return false;
+    }finally{
+      if(btn){ btn.disabled = false; btn.removeAttribute('aria-busy'); }
+    }
+  };
+
+  // Asks what the caller owns. A listing they have not paid for answers with an
+  // exception rather than an empty list, and that is the message they see.
   window.dzMarketGet = function(id){
-    if(!window.currentUser){
+    if(!sb || !window.currentUser){
       if(typeof pfGuestGate === 'function')
         pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
       return;
     }
-    sb.rpc('dz_market_download', {p_item:id}).then(function(res){
-      if(res.error){ showToast(res.error.message || 'Could not fetch the file'); return; }
-      if(res.data) window.open(res.data, '_blank', 'noopener');
+    sb.rpc('dz_market_files', {p_item:id}).then(function(res){
+      if(res.error){
+        showToast(/purchase required/i.test(res.error.message || '')
+          ? 'Buy this item to unlock its files'
+          : (res.error.message || 'Could not open your files'));
+        return;
+      }
+      var files = res.data || [];
+      if(!files.length){ showToast('This listing has no files attached'); return; }
+      if(files.length === 1){
+        window.dzMarketFetch(id, files[0].file_id, files[0].name);
+        return;
+      }
+      dzMarketPick(id, files);
     });
   };
+
+  // More than one file means a choice, and a choice means a list rather than
+  // four downloads the browser starts at once.
+  function dzMarketPick(item, files){
+    var old = document.getElementById('dzGetPop');
+    if(old) old.remove();
+    var pop = document.createElement('div');
+    pop.className = 'upPop open';
+    pop.id = 'dzGetPop';
+    pop.setAttribute('role','dialog');
+    pop.setAttribute('aria-modal','true');
+    pop.setAttribute('aria-label','Your files');
+    var total = 0;
+    files.forEach(function(f){ total += Number(f.bytes) || 0; });
+    pop.innerHTML =
+      '<div class="upPopBox dzGetBox">'+
+        '<button class="upPopX" data-x="1" aria-label="Close">✕</button>'+
+        '<h3 class="dzGetTitle">YOUR FILES</h3>'+
+        '<p class="dzGetSub">'+files.length+' files · '+esc(bytes(total) || '—')+
+          ' · yours to re-download any time</p>'+
+        '<div class="dzGetList">'+
+          files.map(function(f, i){
+            return '<div class="dzGetRow">'+
+              '<span class="dzGetExt">'+esc(String(f.ext || 'file').toUpperCase())+'</span>'+
+              '<div class="dzGetMeta">'+
+                '<div class="dzGetNm">'+esc(f.name)+'</div>'+
+                '<div class="dzGetSz">'+esc(bytes(f.bytes) || '—')+'</div>'+
+              '</div>'+
+              '<button type="button" class="dzGetBtn" data-i="'+i+'">Download</button>'+
+            '</div>';
+          }).join('')+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(pop);
+
+    pop.addEventListener('click', function(e){
+      if(e.target === pop || e.target.getAttribute('data-x')){ pop.remove(); return; }
+      var b = e.target.closest ? e.target.closest('[data-i]') : null;
+      if(!b) return;
+      var f = files[Number(b.getAttribute('data-i'))];
+      if(f) window.dzMarketFetch(item, f.file_id, f.name, b);
+    });
+  }
 })();
 
 // detail view and comments
@@ -1579,8 +1873,18 @@
         (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
         metaRow([['Type', r.item_type],['License', r.license],
                  ['Delivery', r.delivery_days ? r.delivery_days+' days' : ''],['Listed', h.ago(r.created_at)]])+
+        // There is no download control here any more, for anyone. The old one
+        // was drawn for every visitor and refused at the database \u2014 which is
+        // safe but reads as a broken button, and it advertised a file to people
+        // who had not bought it. The buy-or-download control is the slot above,
+        // written by the signed-in module once it knows what this caller owns.
+        (hasFile ? '<div class="dzvLock" id="dzvLock-'+id+'">'+
+            '<span class="dzvLockIco" aria-hidden="true">\ud83d\udd12</span>'+
+            '<div><b>Files are locked</b><div class="dzvLockSub">They unlock for you as soon as '+
+            'the payment is confirmed, and stay in Settings \u2192 My Purchases to re-download '+
+            'any time. Subscription tiers do not unlock marketplace files.</div></div>'+
+          '</div>' : '')+
         cmBlock(kind, id)+
-        (hasFile ? '<button class="avActWide" onclick="dzMarketGet(\''+id+'\')">\u2b07 Download (owners)</button>' : '')+
         '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
         '</div>';
     }

@@ -292,6 +292,8 @@ function openWalletPage(){ dzOpenMoneyPage('walletPage'); }
 function closeWalletPage(){ dzCloseMoneyPage('walletPage'); }
 function openBankPage(){ dzOpenMoneyPage('bankPage'); }
 function closeBankPage(){ dzCloseMoneyPage('bankPage'); }
+function openPurchasesPage(){ dzOpenMoneyPage('purchasePage'); }
+function closePurchasesPage(){ dzCloseMoneyPage('purchasePage'); }
 
 function dzOpenMoneyPage(id){
   var pg = document.getElementById(id);
@@ -301,6 +303,9 @@ function dzOpenMoneyPage(id){
   // the module may not have landed yet on a cold open
   if(typeof window.dzExtras === 'function') window.dzExtras();
   else if(typeof window.dzWalletLoad === 'function') window.dzWalletLoad(true);
+  // a purchase made moments ago has to be on the list that opens next
+  if(id === 'purchasePage' && typeof window.dzPurchasesLoad === 'function')
+    window.dzPurchasesLoad(true);
 }
 function dzCloseMoneyPage(id){
   var pg = document.getElementById(id);
@@ -311,3 +316,5 @@ window.openWalletPage = openWalletPage;
 window.closeWalletPage = closeWalletPage;
 window.openBankPage = openBankPage;
 window.closeBankPage = closeBankPage;
+window.openPurchasesPage = openPurchasesPage;
+window.closePurchasesPage = closePurchasesPage;

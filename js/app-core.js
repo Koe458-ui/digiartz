@@ -25,10 +25,16 @@
     if(!session) throw new Error('Sign in required');
     return 'Bearer '+session.access_token;
   }
-  async function s3Upload(bucket, path, file){
+  // opts.private asks the signer for an object in the private bucket instead of
+  // the public one, and comes back with no url — the only file that wants this
+  // is a marketplace product file, whose whole value is that holding its url
+  // does not mean holding the goods. Non-images only; the signer ignores it
+  // otherwise, since an image already puts its original out of public reach.
+  async function s3Upload(bucket, path, file, opts){
     if(!S3_FN_URL) throw new Error('Storage endpoint not configured (S3_FN_URL missing in config.js)');
     const auth = await s3AuthHeader();
     const key = bucket+'/'+path;
+    const wantPrivate = !!(opts && opts.private);
     // step 1, presigned put url
     let signRes;
     try{
@@ -42,7 +48,8 @@
         // role and would PUT the untouched original under a thumbnail's name.
         body: JSON.stringify({
           action:'upload', path:key, contentType:file.type, size:file.size,
-          derivatives: Object.keys(DERIVE_SPEC)
+          derivatives: Object.keys(DERIVE_SPEC),
+          visibility: wantPrivate ? 'private' : 'public'
         })
       });
     }catch(e){
@@ -56,8 +63,28 @@
     // either version of it and there is no deploy-order trap.
     if(Array.isArray(signJson.targets) && signJson.targets.length){
       await sbUploadTargets(signJson.targets, file);
+      // Where it actually landed, reported by the signer rather than assumed
+      // here. This matters for a private upload: an older signer that has not
+      // learned the flag yet signs the public bucket and says so, and a caller
+      // that recorded its own guess instead would write a path pointing at a
+      // bucket the object is not in. Deploy order stays a non-event.
+      if(opts){
+        var landed = null;
+        for(var ti=0; ti<signJson.targets.length; ti++){
+          if(signJson.targets[ti].role === 'file' || signJson.targets[ti].role === 'original'){
+            landed = signJson.targets[ti]; break;
+          }
+        }
+        opts.landed = landed
+          ? { bucket: landed.bucket || BUCKET, path: landed.path || path }
+          : { bucket: BUCKET, path: path };
+      }
+      // a private upload has no public url to hand back, and saying so with
+      // null is the point — a caller that stores it stores nothing useful
+      if(wantPrivate) return signJson.private === false ? (signJson.supabasePublicUrl || null) : null;
       return signJson.supabasePublicUrl || signJson.publicUrl;
     }
+    if(wantPrivate) throw new Error('This upload service cannot store private files yet');
 
     if(!signJson.uploadUrl) throw new Error('Upload service returned no uploadUrl');
     // step 2, put to s3
@@ -192,9 +219,14 @@
   // back rather than guessed from the filename. An image becomes four objects
   // (the untouched original in koe-originals, three sizes in koe-media);
   // anything else becomes one public object. The __f1600 suffix is the tell.
-  function dzUploadTargets(uploadedUrl, uploadPath){
+  function dzUploadTargets(uploadedUrl, uploadPath, isPrivate){
     var isImg = /__f1600\.webp$/.test(uploadedUrl || '');
     var base  = String(uploadPath || '').replace(/\.[a-z0-9]+$/i, '');
+    // a private non-image landed in koe-originals and has no url at all, so
+    // there is no image half to record and no link to record beside it
+    if(isPrivate && !isImg){
+      return { image: null, file: { bucket:'koe-originals', path: uploadPath } };
+    }
     return isImg
       ? { image: { bucket:'koe-media',     path: base + '__f1600.webp', url: uploadedUrl },
           file:  { bucket:'koe-originals', path: uploadPath } }
@@ -257,7 +289,7 @@
   // table and the private file table. imageKind/fileKind may each be null when
   // that half does not apply to this upload button.
   async function dzRecordUpload(o){
-    var t = dzUploadTargets(o.url, o.path);
+    var t = dzUploadTargets(o.url, o.path, o.private);
     if(o.imageKind && t.image){
       await dzRecordMedia(o.imageKind, {
         parentId: o.parentId, bucket: t.image.bucket, path: t.image.path,
@@ -589,7 +621,7 @@
   // Panels the nav itself leads to are absent on purpose — the nav stays up
   // over the gallery, community, upload, login and profile pages, and marks
   // which of them you are in.
-  var NAV_OVER=['setPage','walletPage','bankPage','subPage','pfEditPage','pfMyWorkPage',
+  var NAV_OVER=['setPage','walletPage','bankPage','purchasePage','subPage','pfEditPage','pfMyWorkPage',
                 'notifPage','admPage','bmPage','frdPage','xpPage','rankPage','themePage',
                 'albPage','albViewPage'];
   function dzNavSync(){

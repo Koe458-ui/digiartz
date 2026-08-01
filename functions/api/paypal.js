@@ -3,7 +3,7 @@
 // Sits alongside functions/api/rzp.js and answers the same three questions
 // with the same shapes: make me a subscription order, make me a marketplace
 // order, and settle one. Both write the same public.payments ledger, tagged by
-// the provider column, so everything downstream — dz_market_download, the
+// the provider column, so everything downstream — dz_market_owns, the
 // subscription tier on profiles — reads one table and never learns which
 // checkout the money came through.
 //
@@ -262,6 +262,8 @@ async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label
     body: JSON.stringify({
       user_id: user.id, kind, plan: plan || null, item_id: itemId || null,
       amount: minor, currency, provider: 'paypal',
+      // the title as it stood at checkout, so a purchase outlives its listing
+      order_label: label ? String(label).slice(0, 200) : null,
       pp_order_id: order.id, status: 'created',
     }),
   });

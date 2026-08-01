@@ -131,7 +131,7 @@
 
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closePfUploadMenu();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
-    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();closeWalletPage();closeBankPage();
+    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();closeWalletPage();closeBankPage();closePurchasesPage();
   }});
 
   // bottom navigation

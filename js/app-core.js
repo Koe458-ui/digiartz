@@ -621,7 +621,7 @@
   // Panels the nav itself leads to are absent on purpose — the nav stays up
   // over the gallery, community, upload, login and profile pages, and marks
   // which of them you are in.
-  var NAV_OVER=['setPage','walletPage','bankPage','purchasePage','subPage','pfEditPage','pfMyWorkPage',
+  var NAV_OVER=['setPage','dzPanelHost','subPage','pfEditPage','pfMyWorkPage',
                 'notifPage','admPage','bmPage','frdPage','xpPage','rankPage','themePage',
                 'albPage','albViewPage'];
   function dzNavSync(){

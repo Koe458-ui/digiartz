@@ -4,6 +4,35 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v99 — the account pages leave the public page entirely, and the seller
+       terms catch up with what the code actually does.
+       index.html carried three Settings items and three page shells for
+       the money side of an account. Every figure had already been stripped
+       out of them, but the headings themselves still announced — to any
+       visitor, any crawler, anyone reading source — that members hold a
+       balance and that it gets paid out. None of that is in the page any
+       more. /api/store injects the three menu items and builds ONE panel
+       with three views, so a signed-out visitor's source has no wallet, no
+       payouts, no purchases, and no id or function name hinting at them.
+       Three shells that had to be kept in step became one; #walletPage,
+       #bankPage and #purchasePage are gone, along with the six open/close
+       functions and the two helpers in misc-core.js that drove them.
+       The Creator & Seller Terms were wrong after v98 and are rewritten:
+       the payment provider's fee is named as a deduction for the first
+       time, the flat 7-day clearing period is replaced by the providers'
+       real settlement windows, TDS is stated as withheld at the sale
+       rather than at payout, GST TCS is described, and the currency
+       promise — earned, held and paid in one currency, never converted —
+       is written down. They stay publicly readable: a seller has to be
+       able to read the terms before listing.
+       Dead code deleted rather than left to be puzzled over later: usd(),
+       an unused say() helper, and the .dzPayNote, .dzPayAmt, .dzPuHead,
+       .dzRowFields and .dzCoTone--green rules, none of which had matched
+       anything since the checkout page landed.
+       Changed: sw.js, index.html, css/hero.css, js/misc-core.js,
+       js/app-core.js, js/sections.js, js/auth.js, js/effects.js,
+       functions/api/store.js.
+
    v98 — the wallet stops promising money that is not there, and the seller's
        money stops being converted.
        Two faults, both about the same number. A sale credited the seller
@@ -1275,7 +1304,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v98';
+const CACHE_VERSION = 'v99';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

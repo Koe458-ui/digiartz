@@ -329,7 +329,6 @@
     .upSecBtn .fgSecIco{width:20px;height:20px;border-radius:6px;}
     .upSecBtn .fgSecIco svg{width:12px;height:12px;}
     .dzHint{font-size:.72rem;color:var(--txd);margin-top:.3rem;line-height:1.5;}
-    .dzRowFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;}
     .dzSel{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.85rem;padding:.6rem .7rem;outline:none;}
     .dzSel:focus{border-color:var(--pg);}
     /* file picker */
@@ -1187,11 +1186,6 @@
       margin:0 0 1rem;font-family:var(--fm);font-size:.66rem;font-weight:700;
       letter-spacing:.16em;text-transform:uppercase;color:var(--txd);
     }
-    .dzPayNote{padding:1.6rem .2rem;text-align:center;font-size:.86rem;color:var(--txd);}
-    .dzPayAmt{
-      margin-bottom:.9rem;padding-bottom:.9rem;border-bottom:1px solid var(--bdr);
-      font-size:.9rem;font-weight:600;color:var(--tx);
-    }
     .dzPayBtns{min-height:52px;}
 
     /* ---- provider chooser -----------------------------------------------
@@ -1392,7 +1386,6 @@
     .dzCoTone--blue  {--dzT:#3b82f6; --dzT2:#6366f1;}
     .dzCoTone--purple{--dzT:#a855f7; --dzT2:#ec4899;}
     .dzCoTone--gold  {--dzT:#eab308; --dzT2:#f97316;}
-    .dzCoTone--green {--dzT:#22c55e; --dzT2:#10b981;}
     .dzCoTone{position:relative;overflow:hidden;border-color:color-mix(in srgb,var(--dzT) 34%,transparent);}
     .dzCoTone::before{
       content:'';position:absolute;left:0;right:0;top:0;height:3px;
@@ -1648,10 +1641,6 @@
     /* ---- my purchases ---------------------------------------------------
        The buyer's page, built by the signed-in module. Same card language as
        the wallet next door, because they are two halves of one ledger. */
-    .dzPuHead{
-      margin:.6rem 0 .5rem;font-family:var(--fm);font-size:.6rem;font-weight:700;
-      letter-spacing:.16em;text-transform:uppercase;color:var(--txd);
-    }
     .dzPuNote{margin:0 0 .9rem;font-size:.76rem;line-height:1.55;color:var(--txd);}
     .dzPuList--top{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;}
     .dzPuRow{
@@ -1749,16 +1738,17 @@
     .dzGetBtn:disabled{opacity:.5;cursor:progress;}
     @media(hover:hover){.dzGetBtn:not(:disabled):hover{filter:brightness(1.12);}}
 
-    /* Wallet, purchases and payout methods pages, opened from the Settings
-       menu. Same slide-in as #setPage so they behave like every other sub-page
-       there. */
-    #walletPage,#bankPage,#purchasePage{
+    /* The account panel, opened from the Settings menu. One element, built by
+       the signed-in module, holding whichever of its three views was asked
+       for. Same slide-in as #setPage so it behaves like every other sub-page
+       there, and it matches nothing at all until the module creates it. */
+    #dzPanelHost{
       position:fixed;inset:0;z-index:547;background:var(--bg);color:var(--tx);
       overflow-y:auto;transform:translateX(100%);
       transition:transform .45s cubic-bezier(.22,1,.36,1);
     }
-    #walletPage.open,#bankPage.open,#purchasePage.open{transform:translateX(0);}
+    #dzPanelHost.open{transform:translateX(0);}
     .dzPanelWrap{max-width:640px;margin:0 auto;padding:.4rem .9rem 2.5rem;}
     @media(prefers-reduced-motion:reduce){
-      #walletPage,#bankPage,#purchasePage{transition:none;}
+      #dzPanelHost{transition:none;}
     }

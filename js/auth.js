@@ -137,9 +137,9 @@
 
   // Settings is a menu, and the page each item opens is a step further in,
   // not a step sideways: closing it belongs back at the menu. The items used
-  // to just close Settings outright, so the back arrow on the wallet — or on
-  // the subscription, or edit my work — dropped you onto the profile and the
-  // menu had to be opened again for the next item.
+  // to just close Settings outright, so the back arrow on any sub-page
+  // dropped you onto the profile and the menu had to be opened again for the
+  // next item.
   function setGo(open, id) {
     closeSettingsPage(true);
     if (typeof open === 'function') open();

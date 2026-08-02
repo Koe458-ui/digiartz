@@ -97,7 +97,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
-  <link rel="stylesheet" href="/css/hero.css?v=74">
+  <link rel="stylesheet" href="/css/hero.css?v=75">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=3">
   <link rel="stylesheet" href="/css/connect.css?v=1">
@@ -1394,7 +1394,7 @@
 
   <script src="/js/share.js?v=1"></script>
 
-  <script src="/js/misc-core.js?v=4"></script>
+  <script src="/js/misc-core.js?v=5"></script>
 
 
 
@@ -2175,9 +2175,13 @@
         <!-- setGo(open, id): closes the menu, opens the page, and puts you
              back on the menu when that page closes -->
         <button class="pfMenuItem" onclick="setGo(openSubscription,'subPage')">Subscription</button>
-        <button class="pfMenuItem" onclick="setGo(openPurchasesPage,'purchasePage')">My Purchases</button>
-        <button class="pfMenuItem" onclick="setGo(openWalletPage,'walletPage')">Wallet</button>
-        <button class="pfMenuItem" onclick="setGo(openBankPage,'bankPage')">Payout Methods</button>
+        <!-- Three more items belong here and are not written here. They name
+             what a member's account holds and how it is paid out, and this
+             file is a static asset that anyone can read. /api/store injects
+             them, and it answers no request without a session — so a
+             signed-out visitor's page source carries neither the items nor
+             the pages they open. -->
+        <div id="setListGate"></div>
         <button class="pfMenuItem" onclick="setGo(openMyWorkPage,'pfMyWorkPage')">Edit My Work</button>
         <button class="pfMenuItem" onclick="setGo(albOpenPage,'albPage')">Albums</button>
         <button class="pfMenuItem" onclick="setGo(openLikesPage,'bmPage')">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
@@ -2193,36 +2197,11 @@
     </div>
   </div>
 
-  <!-- Wallet and payout methods. Both deliberately empty: the markup, the
-       figures and the endpoint all come from /api/store, which answers no
-       request without a session. A signed-out visitor reading this page finds
-       two empty containers and nothing else. -->
-  <div id="walletPage" role="dialog" aria-modal="true" aria-label="Wallet">
-    <div class="subPgHdr">
-      <button class="subPgX" onclick="closeWalletPage()" aria-label="Close wallet">&#8592;</button>
-      <div class="subPgTitle">WALLET</div>
-    </div>
-    <div class="bmBdy"><div class="dzPanelWrap" id="pfWalletGate"></div></div>
-  </div>
-
-  <!-- Everything this account has bought on the marketplace. Empty for the same
-       reason the wallet is: the list, the files and the download all come from
-       /api/store, which answers nobody without a session. -->
-  <div id="purchasePage" role="dialog" aria-modal="true" aria-label="My purchases">
-    <div class="subPgHdr">
-      <button class="subPgX" onclick="closePurchasesPage()" aria-label="Close purchases">&#8592;</button>
-      <div class="subPgTitle">MY PURCHASES</div>
-    </div>
-    <div class="bmBdy"><div class="dzPanelWrap" id="pfPurchaseGate"></div></div>
-  </div>
-
-  <div id="bankPage" role="dialog" aria-modal="true" aria-label="Payout methods">
-    <div class="subPgHdr">
-      <button class="subPgX" onclick="closeBankPage()" aria-label="Close payout methods">&#8592;</button>
-      <div class="subPgTitle">PAYOUT METHODS</div>
-    </div>
-    <div class="bmBdy"><div class="dzPanelWrap" id="pfBankGate"></div></div>
-  </div>
+  <!-- Three account pages used to be written out here, each with its own
+       heading and its own empty container. Even empty, the headings said what
+       a member's account holds and how money leaves it, in a file served to
+       everyone. They are built by /api/store now, into one panel it creates
+       itself, and nothing about them survives in this page. -->
 
   <div id="xpPage" role="dialog" aria-modal="true" aria-label="Artist progress">
     <div class="subPgHdr">
@@ -2268,10 +2247,10 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=9"></script>
+  <script src="/js/app-core.js?v=10"></script>
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=68"></script>
-  <script src="/js/auth.js?v=2"></script>
+  <script src="/js/auth.js?v=3"></script>
   <script src="/js/profile.js?v=4"></script>
   <script src="/js/albums.js?v=3"></script>
   <script src="/js/drafts.js?v=1"></script>
@@ -2286,7 +2265,7 @@
 
  <div id="rippleHost"></div>
 
-  <script src="/js/effects.js?v=3"></script>
+  <script src="/js/effects.js?v=4"></script>
 
 
 
@@ -2579,7 +2558,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=2"></script>
 
 
-  <script src="/js/sections.js?v=76"></script>
+  <script src="/js/sections.js?v=77"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

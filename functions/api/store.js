@@ -765,9 +765,9 @@ const MODULE = `
     toast(wasAlreadyOwned ? 'You already own this' : 'Purchased \\u2014 your files are unlocked');
     ownedIds[id] = true;
     repaintOwned();
-    if(typeof window.openPurchasesPage === 'function'){
-      window.openPurchasesPage();
-      loadPurchases(true);
+    purchasesP = null;
+    if(document.getElementById('setListGate')){
+      openPanel('buy');
     } else if(hasFile && typeof window.dzMarketGet === 'function'){
       window.dzMarketGet(id);
     }
@@ -878,8 +878,6 @@ const MODULE = `
   function pay(action, extra){
     return api('payouts', Object.assign({action:action}, extra || {}));
   }
-
-  function usd(minor){ return money(minor, 'USD'); }
 
   function when(iso){
     try{
@@ -1105,12 +1103,6 @@ const MODULE = `
         '</ol>' +
       '</div>';
 
-    var msg = host.querySelector('.dzWlMsg');
-    function say(t, bad){
-      msg.textContent = t; msg.hidden = !t;
-      msg.classList.toggle('dzWlMsg--bad', !!bad);
-    }
-
     // Each balance has its own button, and the payout it opens is denominated
     // in that balance's currency from the label down to the request body. The
     // form no longer knows what a dollar is.
@@ -1171,13 +1163,13 @@ const MODULE = `
                 toast(r && r.tds
                   ? 'Payout requested \\u00b7 ' + money(r.tds, cur) + ' withheld as tax'
                   : 'Payout requested');
-                loadWallet(true);
+                refreshPanel();
               },
               function(e){
                 m2.textContent = e.message || 'Could not request that';
                 m2.classList.add('dzWlMsg--bad');
                 // a freshly-raised flag should show on the wallet at once
-                if(/paused|verified/i.test(e.message || '')) loadWallet(true);
+                if(/paused|verified/i.test(e.message || '')) refreshPanel();
               });
     });
   }
@@ -1185,7 +1177,6 @@ const MODULE = `
   function renderBank(host, d){
     host.innerHTML =
       '<div class="dzBk">' +
-        '<div class="dzBkHead">Payout methods</div>' +
         ((d.methods || []).length
           ? '<ul class="dzBkList">' + d.methods.map(methodLine).join('') + '</ul>'
           : '<div class="dzWlEmpty">No payout method yet.</div>') +
@@ -1221,13 +1212,13 @@ const MODULE = `
     Array.prototype.forEach.call(host.querySelectorAll('[data-def]'), function(b){
       b.addEventListener('click', function(){
         pay('method-default', {id:b.getAttribute('data-def')})
-          .then(function(){ loadWallet(true); }, function(e){ toast(e.message); });
+          .then(function(){ refreshPanel(); }, function(e){ toast(e.message); });
       });
     });
     Array.prototype.forEach.call(host.querySelectorAll('[data-rm]'), function(b){
       b.addEventListener('click', function(){
         pay('method-remove', {id:b.getAttribute('data-rm')})
-          .then(function(){ toast('Removed'); loadWallet(true); }, function(e){ toast(e.message); });
+          .then(function(){ toast('Removed'); refreshPanel(); }, function(e){ toast(e.message); });
       });
     });
 
@@ -1237,7 +1228,7 @@ const MODULE = `
       pay('tax', {
         country: host.querySelector('#dzTxC').value,
         pan:     host.querySelector('#dzTxP').value
-      }).then(function(){ tm.textContent = 'Saved.'; loadWallet(true); },
+      }).then(function(){ tm.textContent = 'Saved.'; refreshPanel(); },
               function(e){
                 tm.textContent = e.message || 'Could not save that';
                 tm.classList.add('dzWlMsg--bad');
@@ -1262,7 +1253,7 @@ const MODULE = `
       });
       m.textContent = 'Saving…'; m.hidden = false; m.classList.remove('dzWlMsg--bad');
       pay('method-add', payload)
-        .then(function(){ closeSheet(); toast('Payout method added'); loadWallet(true); },
+        .then(function(){ closeSheet(); toast('Payout method added'); refreshPanel(); },
               function(e){
                 m.textContent = e.message || 'Could not save that';
                 m.classList.add('dzWlMsg--bad');
@@ -1270,24 +1261,99 @@ const MODULE = `
     });
   }
 
-  // One fetch feeds both sections, so they can never disagree.
-  var walletP = null;
-  function loadWallet(force){
-    var wl = document.getElementById('pfWalletGate');
-    var bk = document.getElementById('pfBankGate');
-    if(!wl && !bk) return;
-    if(force) walletP = null;
-    if(!walletP) walletP = pay('overview');
-    walletP.then(function(d){
-      if(wl) renderWallet(wl, d);
-      if(bk) renderBank(bk, d);
-    }, function(e){
-      var msg = '<div class="dzWlEmpty">' + esc(e.message || 'Could not load') + '</div>';
-      if(wl) wl.innerHTML = msg;
-      if(bk) bk.innerHTML = msg;
+  // ---- the account panel --------------------------------------------------
+  // The three money pages, and the three Settings items that open them, are
+  // built here rather than written into index.html. That file is a static
+  // asset served to everyone, and even with every figure stripped out its
+  // headings still announced that members hold a balance and get paid out.
+  //
+  // One panel, three views, one neutral id. Simpler than three shells that had
+  // to be kept in step, and there is nothing in the public page to read.
+  var VIEWS = { bal: 'Balance', pay: 'Payout methods', buy: 'My purchases' };
+
+  function panelEl(){
+    var el = document.getElementById('dzPanelHost');
+    if(el) return el;
+    el = document.createElement('div');
+    el.id = 'dzPanelHost';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.innerHTML =
+      '<div class="subPgHdr">' +
+        '<button class="subPgX" type="button" aria-label="Back">\\u2190</button>' +
+        '<div class="subPgTitle"></div>' +
+      '</div>' +
+      '<div class="bmBdy"><div class="dzPanelWrap"></div></div>';
+    el.querySelector('.subPgX').addEventListener('click', closePanel);
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function closePanel(){
+    var el = document.getElementById('dzPanelHost');
+    if(el) el.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function openPanel(view){
+    var title = VIEWS[view];
+    if(!title) return;
+    var el = panelEl();
+    el.setAttribute('aria-label', title);
+    el.querySelector('.subPgTitle').textContent = title.toUpperCase();
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    el.dataset.view = view;
+    paintPanel(true);
+  }
+
+  function paintPanel(force){
+    var el = document.getElementById('dzPanelHost');
+    if(!el || !el.classList.contains('open')) return;
+    var host = el.querySelector('.dzPanelWrap');
+    var view = el.dataset.view;
+    if(view === 'buy') return loadPurchases(force, host);
+    loadWallet(force, host, view === 'pay' ? renderBank : renderWallet);
+  }
+
+  // The Settings items. Injected into the one empty slot index.html leaves,
+  // and wired through setGo so they behave exactly like the items written
+  // above them — the menu closes, the panel opens, and closing it puts the
+  // member back on the menu rather than on their profile.
+  function fillMenu(){
+    var host = document.getElementById('setListGate');
+    if(!host || host.dataset.dzFilled) return;
+    host.dataset.dzFilled = '1';
+    host.innerHTML = [['buy','My Purchases'], ['bal','Wallet'], ['pay','Payout Methods']]
+      .map(function(p){
+        return '<button class="pfMenuItem" type="button" data-v="' + esc(p[0]) + '">' +
+               esc(p[1]) + '</button>';
+      }).join('');
+    Array.prototype.forEach.call(host.querySelectorAll('[data-v]'), function(b){
+      b.addEventListener('click', function(){
+        var v = b.getAttribute('data-v');
+        if(typeof setGo === 'function') setGo(function(){ openPanel(v); }, 'dzPanelHost');
+        else openPanel(v);
+      });
     });
   }
-  window.dzWalletLoad = loadWallet;
+
+  // One fetch feeds every view, so two of them can never disagree.
+  var walletP = null;
+  function loadWallet(force, host, render){
+    if(!host) return;
+    if(force) walletP = null;
+    if(!walletP) walletP = pay('overview');
+    walletP.then(function(d){ render(host, d); },
+                 function(e){
+                   host.innerHTML = '<div class="dzWlEmpty">' +
+                     esc(e.message || 'Could not load') + '</div>';
+                   walletP = null;
+                 });
+  }
+  // repaint whatever view is open, after a payout or a method change.
+  // Local: nothing outside this module opens or refreshes the panel any more.
+  function refreshPanel(){ walletP = null; paintPanel(true); }
 
   // ---- my purchases -------------------------------------------------------
   // The buyer's side of the wallet: everything this account has paid for on the
@@ -1336,13 +1402,11 @@ const MODULE = `
   function renderPurchases(host, rows){
     if(!rows.length){
       host.innerHTML =
-        '<div class="dzPuHead">My purchases</div>' +
         '<div class="dzWlEmpty">Nothing bought yet. Anything you buy on the marketplace ' +
         'lands here permanently, with every file unlocked.</div>';
       return;
     }
     host.innerHTML =
-      '<div class="dzPuHead">My purchases</div>' +
       '<p class="dzPuNote">Bought once, yours to keep. Every file is the seller\\u2019s ' +
       'original at full quality, re-downloadable as often as you like, and no ' +
       'subscription tier is involved either way.</p>' +
@@ -1407,8 +1471,7 @@ const MODULE = `
   }
 
   var purchasesP = null;
-  function loadPurchases(force){
-    var host = document.getElementById('pfPurchaseGate');
+  function loadPurchases(force, host){
     if(!host || !window.sb || !sb.rpc) return;
     if(force) purchasesP = null;
     // Promise.resolve, not the builder itself: a PostgrestBuilder fires a fresh
@@ -1434,11 +1497,10 @@ const MODULE = `
       purchasesP = null;
     });
   }
-  window.dzPurchasesLoad = loadPurchases;
 
   // The public bundle calls this after every render that could have produced a
   // slot, and once when this module lands.
-  window.dzFill = function(){ fillPlans(); fillSlots(); loadWallet(false); loadPurchases(false); };
+  window.dzFill = function(){ fillPlans(); fillSlots(); fillMenu(); paintPanel(false); };
   window.dzFill();
 })(__dzStore);
 `;

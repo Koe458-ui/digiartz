@@ -29,6 +29,17 @@
        an unused say() helper, and the .dzPayNote, .dzPayAmt, .dzPuHead,
        .dzRowFields and .dzCoTone--green rules, none of which had matched
        anything since the checkout page landed.
+       Follow-up in the same release, no shell asset touched so nothing to
+       bump: the checkout chooser now asks what the ORDER'S CURRENCY can
+       actually be paid with. Razorpay offers UPI, net banking, wallets and
+       EMI on an INR order and on nothing else — a USD order gets
+       international cards — so listing UPI beside a dollar price was a
+       promise the checkout window then broke, after the buyer had already
+       chosen. PayPal is dropped from the chooser entirely for a currency
+       it cannot settle, INR above all, rather than being offered and then
+       refusing. And the hand-written 'method' list is no longer sent to
+       Razorpay at all: it could only ever subtract from what the account
+       has enabled, including methods it was never written to know about.
        The ?v= on every shell file this release touched is bumped in BOTH
        index.html and the precache list here. They key on the full url
        including the search, so a list that moves in one place and not the

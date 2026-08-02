@@ -190,13 +190,46 @@ const MODULE = `
     }).join('') + '</span>';
   }
 
+  // What Razorpay can actually offer depends on the ORDER'S CURRENCY, and the
+  // chooser must not promise otherwise.
+  //
+  // UPI, net banking, wallets and EMI are domestic rails: Razorpay offers them
+  // on an INR order and on nothing else. A USD order gets international cards
+  // and only international cards. Listing UPI beside a dollar price is a
+  // promise the checkout window then breaks, and the buyer is already
+  // committed by the time they find out.
+  var RZP_WAYS = {
+    INR:   ['Credit card', 'Debit card', 'UPI', 'Net banking', 'Wallets', 'EMI'],
+    other: ['Credit card', 'Debit card']
+  };
+  var RZP_MARKS = { INR: ['visa', 'mc', 'gpay', 'phonepe'], other: ['visa', 'mc'] };
+  var RZP_NOTE = {
+    INR:   'Pay by card, UPI, net banking or a wallet',
+    other: 'Pay by card \\u2014 UPI and net banking need an item priced in rupees'
+  };
+  function rzpKey(cur){ return cur === 'INR' ? 'INR' : 'other'; }
+
+  // What PayPal will settle. Mirrors the SUPPORTED set in functions/api/paypal.js,
+  // which refuses anything outside it — INR most notably, which is exactly the
+  // currency a seller pricing for an Indian audience will pick.
+  //
+  // A provider that cannot take this order is not drawn. It used to be offered
+  // and then refuse, which spends the buyer's decision before telling them.
+  var PP_CURRENCIES = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','SEK','NOK',
+    'DKK','PLN','CZK','HUF','NZD','SGD','HKD','MXN','BRL','ILS','PHP','THB','TWD'];
+
+  function canTake(id, cur){
+    if(id !== 'paypal') return true;
+    return PP_CURRENCIES.indexOf(cur) !== -1;
+  }
+
   var PROV = {
     rzp: {
       name: 'Razorpay',
       logo: svgOf(PATH_RZP),
-      note: 'Pay by card or anything else you use',
-      marks: ['visa', 'mc', 'gpay', 'phonepe'],
-      ways: ['Credit card', 'Debit card', 'UPI', 'Net banking', 'Wallets', 'EMI']
+      note: RZP_NOTE.other,
+      marks: RZP_MARKS.other,
+      ways: RZP_WAYS.other
     },
     paypal: {
       name: 'PayPal',
@@ -344,17 +377,14 @@ const MODULE = `
   }
 
   // ---- provider runs ------------------------------------------------------
-  // Razorpay is the one that takes cards, and it takes everything else too.
-  // The method list is spelled out rather than left to the default so the
-  // intent is readable here: a card — credit or debit — must always be an
-  // option on this side, because PayPal deliberately offers none. Razorpay
-  // shows the intersection of this list and what the account has activated,
-  // so naming a method that is not switched on yet costs nothing.
-  var RZP_METHODS = {
-    card: true, upi: true, netbanking: true, wallet: true,
-    emi: true, paylater: true
-  };
-
+  // No 'method' block is passed to Razorpay, and that is deliberate.
+  //
+  // It used to name every method explicitly, as documentation. It could only
+  // ever SUBTRACT: Razorpay shows what the account has enabled for the order's
+  // currency, and a hand-written list silently hides anything not on it — a
+  // method added to the account later, or one this list never knew about
+  // (cardless EMI, bank transfer, the pay-by-app options). Left off, the
+  // account settings decide, which is where that decision belongs.
   function runRzp(order, onPaid){
     gateNote('Opening ' + PROV.rzp.name + '\\u2026');
     return loadRzp().then(function(){
@@ -371,7 +401,6 @@ const MODULE = `
         currency: order.currency,
         name: 'DigiArtz',
         description: order.label || '',
-        method: RZP_METHODS,
         theme: { color: '#7C3AED' },
         handler: function(r){
           gateNote('Confirming your payment\\u2026');
@@ -534,9 +563,14 @@ const MODULE = `
   // other, never both. The "or" between them is not decoration: they take
   // different things, and a buyer choosing blind is how someone with only a
   // card ends up in PayPal with nothing to pay with.
-  function pickHtml(list){
+  function pickHtml(list, currency){
+    var k = rzpKey(currency);
     var opts = list.map(function(id){
       var p = PROV[id];
+      // Razorpay's offer is currency-dependent; PayPal's is not.
+      if(id === 'rzp')
+        p = { name: p.name, logo: p.logo,
+              note: RZP_NOTE[k], marks: RZP_MARKS[k], ways: RZP_WAYS[k] };
       return '<button class="dzPayOpt dzPayOpt--' + esc(id) + '" type="button" ' +
                'data-prov="' + esc(id) + '" aria-pressed="false">' +
                '<span class="dzPayOptTop">' +
@@ -590,7 +624,7 @@ const MODULE = `
             '<h2>Payment method</h2></div>' +
           '<div class="dzCoBox">' +
             '<div class="dzCoPickMsg" hidden></div>' +
-            pickHtml(list) +
+            pickHtml(list, spec.currency) +
           '</div>' +
         '</section>' +
 
@@ -628,8 +662,13 @@ const MODULE = `
   // ordered, and no ledger row written, until one has been picked.
   function start(spec, order, onPaid){
     if(gate()) return;
-    var list = C.providers || [];
-    if(!list.length){ toast('Checkout is not available right now'); return; }
+    var all  = C.providers || [];
+    var list = all.filter(function(id){ return canTake(id, spec.currency); });
+    if(!all.length){ toast('Checkout is not available right now'); return; }
+    if(!list.length){
+      toast('No checkout here takes ' + (spec.currency || 'that currency'));
+      return;
+    }
 
     openCo(spec, list);
 
@@ -674,6 +713,7 @@ const MODULE = `
       sub: 'One month \\u00b7 ' + p.tagline,
       price: p.price,
       priceLabel: 'Plan price',
+      currency: 'USD',            // plans are priced in dollars server-side
       icon: '\\u2605',
       // Lite is blue, Premium purple, Max gold on the plan page. Checkout
       // wears the same colour, so the buyer can see they are paying for the
@@ -690,6 +730,7 @@ const MODULE = `
       sub: 'A one-off contribution',
       price: money(amount, 'USD'),
       priceLabel: 'Amount',
+      currency: 'USD',
       icon: '\\u2665',
       gets: ['Keeps the servers and storage paid for',
              'No plan or tier attached \\u2014 this is a thank-you, not a purchase'],
@@ -729,6 +770,7 @@ const MODULE = `
                    : 'Marketplace listing',
       price: money(cents, cur),
       priceLabel: 'Item price',
+      currency: cur,
       thumb: prev && typeof getThumbnailUrl === 'function' ? getThumbnailUrl(prev) : prev,
       gets: hasFile
         ? ['Every file on this listing, at the seller\\u2019s original quality',

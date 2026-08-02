@@ -4,6 +4,34 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v100 — a member picks the currency they transact in, and the site stops
+       assuming dollars.
+       Twelve currencies — USD, INR, EUR, GBP, JPY, AUD, CAD, SGD, CHF,
+       HKD, NZD, SEK — as a fourth item in the account panel. The choice
+       sets what a subscription is CHARGED in, what a new listing is
+       priced in by default, and which balance the wallet shows first.
+       Subscriptions were hardcoded to USD, which is the reason Razorpay
+       never offered UPI: it offers UPI, net banking, wallets and EMI on
+       an INR order and on nothing else. A member on INR now gets a rupee
+       order and the whole domestic checkout with it.
+       Plan prices are a TABLE, not a conversion. public.subscription_prices
+       holds one row per plan per currency and public.support_limits a
+       floor and ceiling for the open-ended amount, both read on the
+       service role. Converting $5 at a stored rate would quote Rs 416.67;
+       these are local prices — Rs 99 / 449 / 899 against $1 / 5 / 10 —
+       and they are the platform's to set, not arithmetic's. Three files
+       priced subscriptions and each had its own copy of the list; there
+       is now one copy and none of them can disagree with it.
+       What the preference deliberately does NOT do is convert anybody
+       else's price. A listing belongs to its seller and is bought in the
+       seller's currency. Putting a rate in that path is what takes a
+       spread out of a seller's money and distorts the tax on it, which is
+       the whole thing v98 existed to remove.
+       Changed: sw.js, css/hero.css, js/sections.js, functions/api/
+       store.js, payouts.js, rzp.js, paypal.js, and a migration adding
+       profiles.currency, subscription_prices, support_limits and four
+       more fx rates.
+
    v99 — the account pages leave the public page entirely, and the seller
        terms catch up with what the code actually does.
        index.html carried three Settings items and three page shells for
@@ -1320,7 +1348,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v99';
+const CACHE_VERSION = 'v100';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1344,7 +1372,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=75',
+  '/css/hero.css?v=76',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
@@ -1390,7 +1418,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=2',
-  '/js/sections.js?v=77',
+  '/js/sections.js?v=78',
   '/js/navprogress.js?v=5'
 ];
 

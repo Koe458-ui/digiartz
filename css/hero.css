@@ -1506,6 +1506,32 @@
     .dzWlPendNet span{font-weight:600;color:var(--tx);}
     .dzWlPendNet b{font-size:.95rem;font-weight:800;color:var(--tx);}
 
+    /* ---- currency preference --------------------------------------------
+       A member's transacting currency. Injected by the signed-in module, so
+       these rules match nothing for anyone else. */
+    .dzCurNote{margin:0 0 1rem;font-size:.78rem;line-height:1.55;color:var(--txd);}
+    .dzCurList{list-style:none;margin:0;padding:0;display:grid;gap:.4rem;}
+    @media(min-width:520px){.dzCurList{grid-template-columns:1fr 1fr;}}
+    .dzCurOpt{
+      display:flex;align-items:center;gap:.6rem;width:100%;padding:.7rem .85rem;
+      border:1px solid var(--bdr);border-radius:11px;background:var(--sur2);
+      text-align:left;cursor:pointer;transition:border-color .15s;
+    }
+    @media(hover:hover){.dzCurOpt:hover{border-color:var(--pg);}}
+    .dzCurOpt--on{border-color:var(--pg);box-shadow:0 0 0 1px var(--pg) inset;}
+    .dzCurCode{
+      flex:0 0 auto;min-width:3ch;font-family:var(--fm);font-size:.78rem;
+      font-weight:800;letter-spacing:.06em;color:var(--tx);
+    }
+    .dzCurName{flex:1 1 auto;min-width:0;font-size:.78rem;color:var(--txd);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .dzCurTick{
+      flex:0 0 auto;width:18px;height:18px;border-radius:999px;display:grid;
+      place-items:center;font-size:.6rem;background:var(--pg);
+      color:var(--text-on-accent);opacity:0;transition:opacity .15s;
+    }
+    .dzCurOpt--on .dzCurTick{opacity:1;}
+
     .dzWlSect{
       margin:1.1rem 0 .5rem;font-family:var(--fm);font-size:.6rem;font-weight:700;
       letter-spacing:.16em;text-transform:uppercase;color:var(--txd);

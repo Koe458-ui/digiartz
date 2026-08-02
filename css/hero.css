@@ -1478,6 +1478,41 @@
     .dzWlCell span{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);}
     .dzWlCell b{font-size:1rem;color:var(--tx);}
 
+    /* one wallet card per currency — they stack, they never add up */
+    .dzWlCur + .dzWlCur{margin-top:1rem;}
+
+    /* ---- pending ---------------------------------------------------------
+       Deliberately NOT styled like the wallet. It is a different fact: the
+       whole sale, still with the provider, none of it withdrawable. A seller
+       who cannot tell these two apart at a glance will believe the larger
+       number is theirs. */
+    .dzWlPend{
+      padding:.9rem 1rem;border:1px dashed var(--bdr);border-radius:14px;
+      background:var(--sur2);
+    }
+    .dzWlPend + .dzWlPend{margin-top:.6rem;}
+    .dzWlPendTop{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;}
+    .dzWlPendLbl{
+      font-family:var(--fm);font-size:.6rem;font-weight:700;letter-spacing:.16em;
+      text-transform:uppercase;color:var(--txd);
+    }
+    .dzWlPendAmt{font-size:1.3rem;font-weight:800;color:var(--txd);}
+    .dzWlPendWhy{margin:.45rem 0 .7rem;font-size:.74rem;line-height:1.5;color:var(--txd);}
+    .dzWlPendList{
+      list-style:none;margin:0;padding:.65rem 0 0;border-top:1px solid var(--bdr);
+      display:flex;flex-direction:column;gap:.32rem;
+    }
+    .dzWlPendList li{
+      display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+      font-size:.76rem;color:var(--txd);
+    }
+    .dzWlPendList b{font-weight:600;color:var(--txd);}
+    .dzWlPendNet{
+      margin-top:.3rem;padding-top:.5rem;border-top:1px solid var(--bdr);
+    }
+    .dzWlPendNet span{font-weight:600;color:var(--tx);}
+    .dzWlPendNet b{font-size:.95rem;font-weight:800;color:var(--tx);}
+
     .dzWlSect{
       margin:1.1rem 0 .5rem;font-family:var(--fm);font-size:.6rem;font-weight:700;
       letter-spacing:.16em;text-transform:uppercase;color:var(--txd);

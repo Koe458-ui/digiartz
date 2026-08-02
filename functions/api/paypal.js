@@ -151,13 +151,11 @@ async function sbService(env, path, init = {}) {
   return body;
 }
 
-// A marketplace sale owes the seller their share. The platform's cut is taken
-// here, at settlement, and recorded on the row so a later change to the rate
-// never restates an old sale. The seller's half is a claim, not a wallet — the
-// cash stays in our provider account until a payout sends it, and it waits out
-// a hold window first so a chargeback lands while it is still ours to reclaim.
-const FEE_BPS   = 1500;   // 15%
-const HOLD_DAYS = 7;
+// The commission, the TDS, the GST TCS and the settlement date are worked out
+// by dz_earning_apply_deductions() in Postgres, from one config row, not here
+// and not in the three other files that also write earnings. What is sent from
+// this side is only what this side knows: what the buyer paid, and what PayPal
+// took out of it before it reached us.
 
 // Independent record of the same movement, taken from what the PROVIDER
 // reported rather than from our own arithmetic — that is the whole point of
@@ -185,30 +183,49 @@ async function recordEarning(env, row, prov) {
   const sellerId = items && items[0] && items[0].user_id;
   if (!sellerId || sellerId === row.user_id) return;
 
-  const gross = Number(row.amount) || 0;
-  const fee   = Math.round((gross * FEE_BPS) / 10000);
   // one earning per payment; a replay hits the unique constraint and stops
-  await sbService(env, '/marketplace_earnings', {
+  const made = await sbService(env, '/marketplace_earnings', {
     method: 'POST',
     headers: { prefer: 'return=representation,resolution=ignore-duplicates' },
     body: JSON.stringify({
       payment_id: row.id, item_id: row.item_id,
       seller_id: sellerId, buyer_id: row.user_id,
-      gross_amount: gross, fee_amount: fee, net_amount: gross - fee,
-      fee_bps: FEE_BPS, currency: row.currency, status: 'available',
-      available_at: new Date(Date.now() + HOLD_DAYS * 86400000).toISOString(),
+      gross_amount: Number(row.amount) || 0,
+      gateway_fee: (prov && prov.fee) || 0,
+      currency: row.currency,
+      provider: 'paypal',
+      status: 'available',
     }),
-  }).catch(() => {});
+  }).catch(() => null);
+
+  // Only a real insert reaches the ledger — this runs on the browser's capture
+  // AND on the webhook for the same sale, and an append-only record that got
+  // two credits for one payment would put the seller's own withdrawals into
+  // permanent reconciliation failure.
+  const earning = Array.isArray(made) && made[0];
+  if (!earning) return;
 
   await ledger(env, {
     p_user: sellerId, p_type: 'sale_credit', p_direction: 'credit',
-    p_amount: gross - fee, p_currency: row.currency,
+    p_amount: Number(earning.net_amount) || 0, p_currency: row.currency,
     p_source: 'paypal',
     p_provider_txn: (prov && prov.txn) || null,
     p_provider_amount: (prov && prov.amount) || null,
     p_provider_currency: (prov && prov.currency) || row.currency,
     p_ref_table: 'payments', p_ref_id: row.id,
   });
+}
+
+// What PayPal kept. Reported on the capture as seller_receivable_breakdown,
+// in the capture's own currency — if it ever comes back in a different one,
+// nothing is recorded rather than a number in the wrong denomination.
+function ppFee(capture, currency) {
+  const br = (capture && capture.seller_receivable_breakdown) || {};
+  const f  = br.paypal_fee;
+  if (!f || f.currency_code !== currency) return 0;
+  const v = parseFloat(f.value);
+  if (!Number.isFinite(v)) return 0;
+  return ZERO_DECIMAL.has(currency) ? Math.round(v) : Math.round(v * 100);
 }
 
 // ---------------------------------------------------------------------------
@@ -419,6 +436,7 @@ export async function onRequestPost({ env, request }) {
         txn: capture.id,
         amount: Math.round(parseFloat(paidAmount.value) * 100),
         currency: paidAmount.currency_code,
+        fee: ppFee(capture, row.currency),
       });
 
       let tier = null;

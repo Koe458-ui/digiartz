@@ -90,13 +90,16 @@ async function validSignature(env, orderId, paymentId, signature) {
   return crypto.subtle.timingSafeEqual(a, b);
 }
 
-// A marketplace sale owes the seller their share. Mirrors the same split the
-// other checkout applies — the ledger must read the same whichever provider
-// took the money. The seller's half is a claim, not a wallet: the cash stays in
-// our provider account until a payout sends it, after a hold window so a
-// chargeback lands while it is still ours to reclaim.
-const FEE_BPS   = 1500;   // 15%
-const HOLD_DAYS = 7;
+// A marketplace sale owes the seller a share, and this file no longer works
+// out what it is.
+//
+// The commission, the TDS, the GST TCS and the settlement date are all
+// computed by dz_earning_apply_deductions() in Postgres, from one config row,
+// at the moment the earning is written. Four checkout paths insert into that
+// table — this one, PayPal, and both webhooks — and having four copies of the
+// arithmetic was four chances for them to disagree about what a seller is
+// owed. What is sent from here is only what this side actually knows: what the
+// buyer paid, and what the gateway took out of it before it reached us.
 
 // Independent record of the same movement, taken from what the PROVIDER
 // reported rather than from our own arithmetic — that is the whole point of
@@ -124,23 +127,38 @@ async function recordEarning(env, row, prov) {
   const sellerId = items && items[0] && items[0].user_id;
   if (!sellerId || sellerId === row.user_id) return;
 
-  const gross = Number(row.amount) || 0;
-  const fee   = Math.round((gross * FEE_BPS) / 10000);
-  await sbService(env, '/marketplace_earnings', {
+  // One earning per payment. The unique constraint on payment_id is what makes
+  // this a no-op the second time — and the second time is normal, because the
+  // browser and the webhook both arrive at the same sale.
+  const made = await sbService(env, '/marketplace_earnings', {
     method: 'POST',
     headers: { prefer: 'return=representation,resolution=ignore-duplicates' },
     body: JSON.stringify({
       payment_id: row.id, item_id: row.item_id,
       seller_id: sellerId, buyer_id: row.user_id,
-      gross_amount: gross, fee_amount: fee, net_amount: gross - fee,
-      fee_bps: FEE_BPS, currency: row.currency, status: 'available',
-      available_at: new Date(Date.now() + HOLD_DAYS * 86400000).toISOString(),
+      gross_amount: Number(row.amount) || 0,
+      gateway_fee: (prov && prov.fee) || 0,
+      currency: row.currency,
+      provider: 'razorpay',
+      status: 'available',
     }),
-  }).catch(() => {});
+  }).catch(() => null);
+
+  // THE LEDGER APPEND ONLY HAPPENS ON A REAL INSERT.
+  //
+  // ledger_entries has no unique key and is append-only by design, so an
+  // append that ran twice could never be taken back. The earnings insert is
+  // idempotent; this is what makes the audit record idempotent with it.
+  // Appending on a replay would credit the seller twice in the ledger, the two
+  // records would then disagree, and dz_reconcile would freeze the withdrawal
+  // of an honest seller with no way to unfreeze it.
+  const earning = Array.isArray(made) && made[0];
+  if (!earning) return;
 
   await ledger(env, {
     p_user: sellerId, p_type: 'sale_credit', p_direction: 'credit',
-    p_amount: gross - fee, p_currency: row.currency,
+    // what the database worked out the seller is owed, not what we guessed
+    p_amount: Number(earning.net_amount) || 0, p_currency: row.currency,
     p_source: 'razorpay',
     p_provider_txn: (prov && prov.txn) || null,
     p_provider_amount: (prov && prov.amount) || null,
@@ -290,6 +308,17 @@ export async function onRequestPost({ env, request }) {
       const notes = order.notes || {};
       if (notes.user_id !== user.id) return json({ error: 'Order does not belong to you' }, 403);
 
+      // What Razorpay charged us for taking it. Their `fee` is the whole
+      // deduction including the GST on it, which is the figure that actually
+      // never arrives, so that is the one recorded. Asked for rather than
+      // estimated from a rate card — the rate varies by method, and a seller's
+      // share should not depend on our guess about which card they used.
+      let gwFee = 0;
+      try {
+        const pay = await rzp(env, '/v1/payments/' + encodeURIComponent(String(paymentId)));
+        if (pay && pay.currency === order.currency) gwFee = Number(pay.fee) || 0;
+      } catch { /* a fee we cannot read is recorded as zero, never as a guess */ }
+
       // block replayed signatures
       const paidRows = await sbService(env,
         '/payments?rzp_order_id=eq.' + orderId + '&status=eq.created' +
@@ -303,7 +332,7 @@ export async function onRequestPost({ env, request }) {
       const firstVerify = Array.isArray(paidRows) && paidRows.length > 0;
       if (firstVerify) await recordEarning(env, paidRows[0], {
         txn: String(paymentId), amount: order.amount_paid || order.amount,
-        currency: order.currency,
+        currency: order.currency, fee: gwFee,
       });
 
       let tier = null;

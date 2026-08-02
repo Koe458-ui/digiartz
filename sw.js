@@ -4,6 +4,48 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v98 — the wallet stops promising money that is not there, and the seller's
+       money stops being converted.
+       Two faults, both about the same number. A sale credited the seller
+       with gross-minus-commission after a flat seven days, and three
+       things were missing from that: the gateway's own fee, which
+       Razorpay and PayPal take before a rupee reaches us; TDS under
+       section 194-O, which the statute withholds at credit or payment
+       whichever is EARLIER, so taking it at payout time was late and was
+       taken a second time on a balance that already had it deducted; and
+       GST TCS under section 52, which was not collected at all. The seven
+       days were invented — the providers say when they settle, and it is
+       T+2 working days for Razorpay domestic, T+7 international, up to
+       five business days for PayPal.
+       And the wallet totalled every currency into USD while the payout
+       form asked for dollars, so a euro sale crossed a spread to be shown
+       and again to be paid, with the tax basis computed off the far side
+       of both. fx_rates.usd_rate is dropped: no query can route through
+       the dollar again.
+       Now: a sale lands in PENDING holding the whole gross, withdrawable
+       by nobody, with every deduction listed beside it and the date it
+       clears. When the provider's window elapses it becomes WALLET,
+       holding only what survived. The two are separate sections and are
+       never added together. Both are per currency, and a currency is
+       never converted — earned in euros, held in euros, paid in euros.
+       The one conversion left in the system is our own commission into
+       INR, once, at a rate frozen on the row, because that and the
+       subscriptions are the only money that reaches our bank.
+       Every deduction is computed in ONE place now — a Postgres trigger —
+       instead of in the four checkout paths that each had their own copy
+       of it. Those paths send facts and no arithmetic: what the buyer
+       paid and what the gateway took, read from the provider rather than
+       estimated from a rate card.
+       Also fixed while in here: recordEarning appended to the append-only
+       ledger on every replay, so a webhook arriving after the browser had
+       already settled the same sale credited it twice, the two records
+       then disagreed, and dz_reconcile froze an honest seller's
+       withdrawals with no way back. The append now happens only on a real
+       insert.
+       Changed: sw.js, css/hero.css, functions/api/store.js, payouts.js,
+       rzp.js, paypal.js, rzp-webhook.js, paypal-webhook.js, and
+       supabase/migrations/20260802_money_flow.sql (applied).
+
    v97 — checkout is a page, the two gateways are told apart, and Razorpay
        finally has a webhook.
        Buying used to open a small sheet that asked "Razorpay or PayPal?"
@@ -1233,7 +1275,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v97';
+const CACHE_VERSION = 'v98';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

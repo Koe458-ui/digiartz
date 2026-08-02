@@ -32,11 +32,21 @@
 const SUB_DAYS   = 31;
 const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
 
-// platform's cut of a marketplace sale, in basis points, and how long the
-// seller's half waits before it can be withdrawn. The window is there so a
-// chargeback lands while the money is still ours to claw back.
-const FEE_BPS   = 1500;   // 15%
-const HOLD_DAYS = 7;
+// The commission, the TDS, the GST TCS and the settlement date are worked out
+// by dz_earning_apply_deductions() in Postgres. This file reports what the
+// buyer paid and what PayPal took, and does no arithmetic on money.
+
+// smallest currency unit, for reading PayPal's decimal strings back
+const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD']);
+
+function ppFee(capture, currency) {
+  const br = (capture && capture.seller_receivable_breakdown) || {};
+  const f  = br.paypal_fee;
+  if (!f || f.currency_code !== currency) return 0;
+  const v = parseFloat(f.value);
+  if (!Number.isFinite(v)) return 0;
+  return ZERO_DECIMAL.has(currency) ? Math.round(v) : Math.round(v * 100);
+}
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
@@ -146,26 +156,27 @@ async function recordEarning(env, row, capture) {
   const sellerId = items && items[0] && items[0].user_id;
   if (!sellerId || sellerId === row.user_id) return;   // no seller, or self-purchase
 
-  const gross = Number(row.amount) || 0;
-  const fee   = Math.round((gross * FEE_BPS) / 10000);
-
   await sbService(env, '/marketplace_earnings', {
     method: 'POST',
     headers: { prefer: 'return=representation,resolution=ignore-duplicates' },
     body: JSON.stringify({
       payment_id: row.id, item_id: row.item_id,
       seller_id: sellerId, buyer_id: row.user_id,
-      gross_amount: gross, fee_amount: fee, net_amount: gross - fee,
-      fee_bps: FEE_BPS, currency: row.currency,
-      // held, then withdrawable — never released on the sale itself
+      gross_amount: Number(row.amount) || 0,
+      gateway_fee: ppFee(capture, row.currency),
+      currency: row.currency,
+      provider: 'paypal',
       status: 'available',
-      available_at: new Date(Date.now() + HOLD_DAYS * 86400000).toISOString(),
     }),
   }).catch(() => {});   // duplicate is the expected outcome on a replay
 }
 
 // settle a ledger row, once
-async function fulfil(env, orderId, captureId) {
+//
+// Takes the capture OBJECT rather than its id: the fee PayPal kept is on the
+// capture's seller_receivable_breakdown, and an id alone cannot report it.
+async function fulfil(env, orderId, capture) {
+  const captureId = (capture && capture.id) || '';
   const rows = await sbService(env,
     '/payments?pp_order_id=eq.' + encodeURIComponent(orderId) +
     '&select=id,user_id,kind,plan,item_id,amount,currency,status&limit=1');
@@ -176,7 +187,7 @@ async function fulfil(env, orderId, captureId) {
     method: 'PATCH',
     body: JSON.stringify({
       status: 'paid',
-      pp_capture_id: String(captureId || ''),
+      pp_capture_id: String(captureId),
       paid_at: new Date().toISOString(),
     }),
   });
@@ -184,7 +195,7 @@ async function fulfil(env, orderId, captureId) {
 
   // Earnings are recorded even on a replay: the browser capture may have
   // settled the row already without ever getting this far.
-  await recordEarning(env, row, captureId);
+  await recordEarning(env, row, capture);
 
   if (!first) return 'already settled';
 
@@ -276,11 +287,12 @@ export async function onRequestPost({ env, request }) {
       const unit = (captured.purchase_units && captured.purchase_units[0]) || {};
       const cap  = (unit.payments && unit.payments.captures && unit.payments.captures[0]) || {};
       if (captured.status !== 'COMPLETED') return json({ ok: true, skipped: 'not complete' });
-      return json({ ok: true, result: await fulfil(env, orderId, cap.id) });
+      return json({ ok: true, result: await fulfil(env, orderId, cap) });
     }
 
     if (type === 'PAYMENT.CAPTURE.COMPLETED')
-      return json({ ok: true, result: await fulfil(env, orderId, resource.id) });
+      // resource IS the capture on this event, breakdown and all
+      return json({ ok: true, result: await fulfil(env, orderId, resource) });
 
     if (type === 'PAYMENT.CAPTURE.REFUNDED')
       return json({ ok: true, result: await reverse(env, orderId, 'refunded') });

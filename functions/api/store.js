@@ -947,8 +947,76 @@ const MODULE = `
       'accounts apart. The full number is never stored.</p>'
   };
 
+  // The wallet has two halves and they are kept apart on purpose.
+  //
+  // PENDING holds the gross of sales that have not settled yet. It is the
+  // whole sale, before the gateway's fee, our commission and any tax, and NONE
+  // of it is withdrawable — the money is still with the gateway. Showing it
+  // inside the wallet balance is how a seller comes to believe a hundred-pound
+  // sale is a hundred pounds of theirs.
+  //
+  // WALLET holds only what has settled and survived every deduction. That is
+  // the number they can actually have, and it is the only number the payout
+  // button will accept.
+  //
+  // Per currency, both of them, with no total across currencies — producing
+  // one would need an exchange rate, and a seller's money is never converted.
+  function pendingCard(s){
+    var cur = s.currency;
+    var g   = s.pending_gross || 0;
+    if(!g) return '';
+    var rows = [
+      ['Gateway fee',        s.pending_gateway || 0],
+      ['DigiArtz commission', s.pending_fee || 0],
+      ['Tax withheld (194-O)', s.pending_tds || 0],
+      ['GST TCS collected',  s.pending_tcs || 0]
+    ].filter(function(r){ return r[1] > 0; });
+
+    return '<div class="dzWlPend">' +
+      '<div class="dzWlPendTop">' +
+        '<span class="dzWlPendLbl">Pending \\u00b7 ' + esc(cur) + '</span>' +
+        '<span class="dzWlPendAmt">' + esc(money(g, cur)) + '</span>' +
+      '</div>' +
+      '<p class="dzWlPendWhy">Sold, but still with the payment provider. None of ' +
+        'this can be withdrawn yet' +
+        (s.next_clears_at ? ' \\u2014 the first of it clears on ' + esc(when(s.next_clears_at)) : '') +
+        '.' + (s.settlement_note ? ' ' + esc(s.settlement_note) + '.' : '') + '</p>' +
+      '<ul class="dzWlPendList">' +
+        rows.map(function(r){
+          return '<li><span>' + esc(r[0]) + '</span><b>\\u2212 ' + esc(money(r[1], cur)) + '</b></li>';
+        }).join('') +
+        '<li class="dzWlPendNet"><span>Reaches your wallet</span><b>' +
+          esc(money(s.pending_net || 0, cur)) + '</b></li>' +
+      '</ul>' +
+    '</div>';
+  }
+
+  function balanceCard(s, d, flagged){
+    var cur  = s.currency;
+    var can  = !flagged && (s.withdrawable || 0) > 0;
+    return '<div class="dzWlCur">' +
+      '<div class="dzWlHead">' +
+        '<div class="dzWlBalLbl">Wallet \\u00b7 ' + esc(cur) + '</div>' +
+        '<div class="dzWlBal">' + esc(money(s.withdrawable || 0, cur)) + '</div>' +
+        '<div class="dzWlBalSub">Settled, after every deduction. Yours to withdraw ' +
+          'in ' + esc(cur) + ' \\u2014 nothing is converted at any point</div>' +
+      '</div>' +
+      '<button type="button" class="dzWlReq" data-cur="' + esc(cur) + '"' +
+        (can ? '' : ' disabled') + '>' +
+        (flagged ? 'Withdrawals paused' : 'Request ' + esc(cur) + ' payout') + '</button>' +
+      '<div class="dzWlGrid">' +
+        '<div class="dzWlCell"><span>Total sales</span><b>' + esc(money(s.total_sales || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Artworks sold</span><b>' + esc(String(s.items_sold || 0)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Gateway fees</span><b>' + esc(money(s.gateway_fees || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Commission paid</span><b>' + esc(money(s.commission || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Tax withheld</span><b>' + esc(money(s.tds_withheld || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Withdrawn</span><b>' + esc(money(s.paid_out || 0, cur)) + '</b></div>' +
+      '</div>' +
+    '</div>';
+  }
+
   function renderWallet(host, d){
-    var s = d.summary || {};
+    var rows = Array.isArray(d.summary) ? d.summary : [];
     var paid = (d.payouts || []).filter(function(p){ return p.status === 'paid'; });
 
     // A blocked balance is the first thing the member sees, and the request
@@ -969,20 +1037,22 @@ const MODULE = `
                 '?subject=Balance%20check%20failed">Contact support</a>' +
             '</div>'
           : '') +
-        '<div class="dzWlHead">' +
-          '<div class="dzWlBalLbl">Wallet balance</div>' +
-          '<div class="dzWlBal">' + esc(usd(s.withdrawable || 0)) + '</div>' +
-          '<div class="dzWlBalSub">Shown in USD · earnings are converted at the stored rate</div>' +
-        '</div>' +
 
-        '<div class="dzWlGrid">' +
-          '<div class="dzWlCell"><span>Total sales</span><b>' + esc(usd(s.total_sales || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Available</span><b>' + esc(usd(s.available || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Pending</span><b>' + esc(usd(s.pending || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Artworks sold</span><b>' + esc(String(s.items_sold || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Commission paid</span><b>' + esc(usd(s.commission || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Withdrawn</span><b>' + esc(usd(s.paid_out || 0)) + '</b></div>' +
-        '</div>' +
+        (rows.length
+          ? rows.map(function(s){ return balanceCard(s, d, flagged); }).join('')
+          : '<div class="dzWlHead">' +
+              '<div class="dzWlBalLbl">Wallet</div>' +
+              '<div class="dzWlBal">' + esc(money(0, 'USD')) + '</div>' +
+              '<div class="dzWlBalSub">Nothing sold yet. You are paid in whichever ' +
+                'currency you priced your listing in.</div>' +
+            '</div>') +
+        '<div class="dzWlMsg" hidden></div>' +
+
+        // Its own section, below the wallet and never added into it.
+        (rows.some(function(s){ return (s.pending_gross || 0) > 0; })
+          ? '<div class="dzWlSect">Pending \\u2014 not yet yours</div>' +
+            rows.map(pendingCard).join('')
+          : '') +
 
         (paid.length
           ? '<div class="dzWlSect">Payout history</div><ul class="dzWlList">' +
@@ -994,11 +1064,6 @@ const MODULE = `
             }).join('') + '</ul>'
           : '') +
 
-        '<button type="button" class="dzWlReq" ' +
-          (!flagged && (s.withdrawable || 0) > 0 ? '' : 'disabled') + '>' +
-          (flagged ? 'Withdrawals paused' : 'Request payout') + '</button>' +
-        '<div class="dzWlMsg" hidden></div>' +
-
         '<div class="dzWlSect">Activity</div>' +
         ((d.history || []).length
           ? '<ul class="dzWlList">' + d.history.map(row).join('') + '</ul>'
@@ -1008,7 +1073,17 @@ const MODULE = `
         // they sit next to the balance and the payout button they describe.
         '<div class="dzWlSect">Wallet guidelines</div>' +
         '<ol class="dzWlGuide">' +
-          '<li>Minimum withdrawal amount is $5.</li>' +
+          '<li>You are paid in the currency you priced your listing in. Your ' +
+            'earnings are never converted \\u2014 a sale in euros stays euros all ' +
+            'the way to your payout \\u2014 so no exchange spread is taken out of ' +
+            'them at any point.</li>' +
+          '<li>Each currency has its own withdrawal minimum, roughly five ' +
+            'dollars\\u2019 worth. The exact figure is shown on the payout form.</li>' +
+          '<li>A sale is Pending until the payment provider settles it \\u2014 ' +
+            'Razorpay takes two working days on a domestic sale and seven on an ' +
+            'international one, PayPal up to five business days. Pending shows ' +
+            'the whole sale and what will come out of it; the wallet shows only ' +
+            'what has cleared and is genuinely yours.</li>' +
           '<li>DigiArtz will take a 10% platform charge and 5% GST (government tax). ' +
             'The remaining 85% goes to the user. Max Subscription users will get 90% ' +
             'of the commission, while DigiArtz will take 5% as the platform charge and ' +
@@ -1036,47 +1111,74 @@ const MODULE = `
       msg.classList.toggle('dzWlMsg--bad', !!bad);
     }
 
-    // Themed, in the sheet — never a browser prompt.
-    host.querySelector('.dzWlReq').addEventListener('click', function(){
-      var max = s.withdrawable || 0;
-      var min = d.minPayout || 500;
-      openSheet('Request payout');
-      sheet.body.innerHTML =
-        '<div class="dzBkForm">' +
-          '<label class="dzBkLbl">Amount in USD</label>' +
-          '<input class="dzBkIn" id="dzWlAmt" type="text" inputmode="decimal" placeholder="' +
-            esc((max / 100).toFixed(2)) + '">' +
-          '<p class="dzBkNote">Minimum ' + esc(usd(min)) + '. You can withdraw up to ' +
-            esc(usd(max)) + '. Paid to your default method.' +
-            ((d.tax && d.tax.country === 'IN') || !d.tax
-              ? ' Tax may be withheld at source under section 194-O; the exact amount is shown once you request.'
-              : '') + '</p>' +
-          '<div class="dzWlMsg" hidden></div>' +
-          '<button type="button" class="dzWlReq" id="dzWlGo">Request</button>' +
-        '</div>';
-      var m2 = sheet.body.querySelector('.dzWlMsg');
-      sheet.body.querySelector('#dzWlGo').addEventListener('click', function(){
-        var v = Math.round(parseFloat(sheet.body.querySelector('#dzWlAmt').value) * 100);
-        if(!Number.isFinite(v) || v <= 0){
-          m2.textContent = 'Enter an amount.'; m2.hidden = false;
-          m2.classList.add('dzWlMsg--bad'); return;
-        }
-        m2.textContent = 'Sending…'; m2.hidden = false; m2.classList.remove('dzWlMsg--bad');
-        pay('request', {amount:v, currency:'USD'})
-          .then(function(r){
-                  closeSheet();
-                  toast(r && r.tds
-                    ? 'Payout requested · ' + money(r.tds, 'USD') + ' withheld as tax'
-                    : 'Payout requested');
-                  loadWallet(true);
-                },
-                function(e){
-                  m2.textContent = e.message || 'Could not request that';
-                  m2.classList.add('dzWlMsg--bad');
-                  // a freshly-raised flag should show on the wallet at once
-                  if(/paused|verified/i.test(e.message || '')) loadWallet(true);
-                });
+    // Each balance has its own button, and the payout it opens is denominated
+    // in that balance's currency from the label down to the request body. The
+    // form no longer knows what a dollar is.
+    Array.prototype.forEach.call(host.querySelectorAll('.dzWlReq[data-cur]'), function(btn){
+      btn.addEventListener('click', function(){
+        var cur = btn.getAttribute('data-cur');
+        var s   = null;
+        rows.forEach(function(r){ if(r.currency === cur) s = r; });
+        if(!s) return;
+        openPayoutForm(s, d);
       });
+    });
+  }
+
+  // Zero-decimal currencies quote whole units, so the amount a seller types is
+  // the amount, not hundredths of it. Same list the checkout backends use.
+  function minorOf(v, cur){
+    return ZERO_DEC[cur] ? Math.round(v) : Math.round(v * 100);
+  }
+  function majorOf(minor, cur){
+    return ZERO_DEC[cur] ? String(minor) : (minor / 100).toFixed(2);
+  }
+
+  function openPayoutForm(s, d){
+    var cur = s.currency;
+    var max = s.withdrawable || 0;
+    var min = (d.minPayouts && d.minPayouts[cur] != null)
+      ? d.minPayouts[cur] : (d.minDefault || 500);
+
+    openSheet('Request ' + cur + ' payout');
+    sheet.body.innerHTML =
+      '<div class="dzBkForm">' +
+        '<label class="dzBkLbl">Amount in ' + esc(cur) + '</label>' +
+        '<input class="dzBkIn" id="dzWlAmt" type="text" inputmode="decimal" placeholder="' +
+          esc(majorOf(max, cur)) + '">' +
+        '<p class="dzBkNote">Minimum ' + esc(money(min, cur)) + '. You can withdraw up to ' +
+          esc(money(max, cur)) + ', and it is sent in ' + esc(cur) +
+          ' \\u2014 not converted \\u2014 to your default method.' +
+          ((d.tax && d.tax.country === 'IN') || !d.tax
+            ? ' Tax may be withheld at source under section 194-O; it is withheld in ' +
+              esc(cur) + ' and the exact amount is shown once you request.'
+            : '') + '</p>' +
+        '<div class="dzWlMsg" hidden></div>' +
+        '<button type="button" class="dzWlReq" id="dzWlGo">Request</button>' +
+      '</div>';
+
+    var m2 = sheet.body.querySelector('.dzWlMsg');
+    sheet.body.querySelector('#dzWlGo').addEventListener('click', function(){
+      var v = minorOf(parseFloat(sheet.body.querySelector('#dzWlAmt').value), cur);
+      if(!Number.isFinite(v) || v <= 0){
+        m2.textContent = 'Enter an amount.'; m2.hidden = false;
+        m2.classList.add('dzWlMsg--bad'); return;
+      }
+      m2.textContent = 'Sending…'; m2.hidden = false; m2.classList.remove('dzWlMsg--bad');
+      pay('request', {amount:v, currency:cur})
+        .then(function(r){
+                closeSheet();
+                toast(r && r.tds
+                  ? 'Payout requested \\u00b7 ' + money(r.tds, cur) + ' withheld as tax'
+                  : 'Payout requested');
+                loadWallet(true);
+              },
+              function(e){
+                m2.textContent = e.message || 'Could not request that';
+                m2.classList.add('dzWlMsg--bad');
+                // a freshly-raised flag should show on the wallet at once
+                if(/paused|verified/i.test(e.message || '')) loadWallet(true);
+              });
     });
   }
 

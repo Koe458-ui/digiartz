@@ -42,12 +42,10 @@
 const SUB_DAYS = 31;
 const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
 
-// platform's cut of a marketplace sale, in basis points, and how long the
-// seller's half waits before it can be withdrawn. Same numbers as rzp.js and
-// paypal-webhook.js — the ledger must read the same whichever provider and
-// whichever path settled it.
-const FEE_BPS   = 1500;   // 15%
-const HOLD_DAYS = 7;
+// The commission, the TDS, the GST TCS and the settlement date are worked out
+// by dz_earning_apply_deductions() in Postgres, not here. This file reports
+// two facts and does no arithmetic on money: what the buyer paid, and what
+// Razorpay took out of it before it reached us.
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
@@ -134,26 +132,31 @@ async function recordEarning(env, row, prov) {
   const sellerId = items && items[0] && items[0].user_id;
   if (!sellerId || sellerId === row.user_id) return;   // no seller, or self-purchase
 
-  const gross = Number(row.amount) || 0;
-  const fee   = Math.round((gross * FEE_BPS) / 10000);
-
-  await sbService(env, '/marketplace_earnings', {
+  const made = await sbService(env, '/marketplace_earnings', {
     method: 'POST',
     headers: { prefer: 'return=representation,resolution=ignore-duplicates' },
     body: JSON.stringify({
       payment_id: row.id, item_id: row.item_id,
       seller_id: sellerId, buyer_id: row.user_id,
-      gross_amount: gross, fee_amount: fee, net_amount: gross - fee,
-      fee_bps: FEE_BPS, currency: row.currency,
-      // held, then withdrawable — never released on the sale itself
+      gross_amount: Number(row.amount) || 0,
+      gateway_fee: (prov && prov.fee) || 0,
+      currency: row.currency,
+      provider: 'razorpay',
       status: 'available',
-      available_at: new Date(Date.now() + HOLD_DAYS * 86400000).toISOString(),
     }),
-  }).catch(() => {});   // duplicate is the expected outcome on a replay
+  }).catch(() => null);   // duplicate is the expected outcome on a replay
+
+  // Only a real insert reaches the ledger. This path runs on every replayed
+  // webhook and on top of the browser's own verify call, and ledger_entries is
+  // append-only with no unique key — an append that ran twice could not be
+  // taken back, the two records would disagree, and dz_reconcile would freeze
+  // an honest seller's withdrawals permanently.
+  const earning = Array.isArray(made) && made[0];
+  if (!earning) return;
 
   await ledger(env, {
     p_user: sellerId, p_type: 'sale_credit', p_direction: 'credit',
-    p_amount: gross - fee, p_currency: row.currency,
+    p_amount: Number(earning.net_amount) || 0, p_currency: row.currency,
     p_source: 'razorpay',
     p_provider_txn: (prov && prov.txn) || null,
     p_provider_amount: (prov && prov.amount) || null,
@@ -204,6 +207,10 @@ async function fulfil(env, orderId, payment) {
     txn: (payment && payment.id) || null,
     amount: Number.isFinite(paid) ? paid : null,
     currency: cur || row.currency,
+    // Razorpay reports its own cut on the payment entity. `fee` is the whole
+    // deduction including the GST on it — the part that never arrives — so
+    // that is the figure recorded rather than any rate-card estimate.
+    fee: Number(payment && payment.fee) || 0,
   });
 
   if (!first) return 'already settled';

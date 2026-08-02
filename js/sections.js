@@ -29,8 +29,10 @@
   // overlay panels hide the widgets
   // pfEditPage was missing here while every other full-screen panel was
   // listed, so the floating widgets stayed on top of profile settings. Barely
-  // visible while that panel was short; obvious once it grew a wallet.
-  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'walletPage', 'bankPage', 'purchasePage', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
+  // visible while that panel was short; obvious once it grew a long one.
+  // dzPanelHost is created by the signed-in module and is simply absent for
+  // everyone else — overlayEls skips what it cannot find.
+  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'dzPanelHost', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);
@@ -106,10 +108,16 @@
   // the signed-in module fills it. A guest never has price_cents to begin
   // with (the column is revoked for anon), so the hole stays empty and the
   // markup says nothing.
+  //
+  // The title and preview ride along because the checkout page names what is
+  // being bought before any order exists, and asking the database again for a
+  // row the card is already showing would only make the buyer wait. Both are
+  // already public and already on screen — nothing new is disclosed here.
   function slot(r, id, hasFile, view){
     if(!window.currentUser) return '';
     return '<div class="dzSlot" data-i="'+id+'" data-p="'+(Number(r.price_cents)||0)+
            '" data-c="'+esc(r.currency||'USD')+'" data-f="'+(hasFile?1:0)+
+           '" data-t="'+esc(r.title||'')+'" data-th="'+esc(r.preview_url||'')+
            '" data-v="'+view+'"></div>';
   }
   window.dzSlot = slot;

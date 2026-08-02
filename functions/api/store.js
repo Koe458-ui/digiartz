@@ -121,9 +121,90 @@ const MODULE = `
 (function(C){
   'use strict';
 
+  // The two providers take DIFFERENT things, and the chooser has to say so
+  // before the buyer commits — someone who only has a card must not pick
+  // PayPal and find there is nothing there for them, and someone who wants to
+  // pay from a PayPal balance must not be sent to a card form.
+  //
+  //   Razorpay  every method the account has switched on: credit card, debit
+  //             card, UPI, net banking, wallets, EMI.
+  //   PayPal    the PayPal account itself, and nothing else. Card funding is
+  //             turned off in the SDK url below, so PayPal's guest
+  //             "Debit or Credit Card" button is not offered here at all.
+  //
+  // Each provider's card carries that provider's OWN logo and colours —
+  // Razorpay's blue chevron, PayPal's double-P on their navy and gold. The
+  // marks are inline SVG rather than a letter or a hosted image: a payment
+  // choice must not be waiting on someone else's CDN, and a broken image where
+  // the gateway's logo belongs is exactly the moment a buyer stops trusting
+  // the page. The colours are fixed hex, not theme variables, for the same
+  // reason — a Razorpay card that turns purple in one theme stops looking like
+  // Razorpay.
+  //
+  // Held as bare paths rather than finished SVG, because the same artwork is
+  // drawn twice: white on the provider's colour at the head of a card, and in
+  // the brand's own colour on a white chip in the accepted-methods strip.
+  var PATH_RZP =
+    'M22.436 0l-11.91 7.773-1.174 4.276 6.625-4.297L11.65 24h4.391l6.395-24z' +
+    'M14.26 10.098L3.389 17.166 1.564 24h9.008l3.688-13.902Z';
+  var PATH_PP =
+    'M7.016 19.198h-4.2a.562.562 0 0 1-.555-.65L5.093.584A.692.692 0 0 1 5.776 0h7.222' +
+    'c3.417 0 5.904 2.488 5.846 5.5-.006.25-.027.5-.066.747A6.794 6.794 0 0 1 12.071 12H8.743' +
+    'a.69.69 0 0 0-.682.583l-.325 2.056-.013.083-.692 4.39-.015.087zM19.79 6.142' +
+    'c-.01.087-.01.175-.023.261a7.76 7.76 0 0 1-7.695 6.598H9.007l-.283 1.795-.013.083' +
+    '-.692 4.39-.134.843-.014.088H6.86l-.497 3.15a.562.562 0 0 0 .555.65h3.612' +
+    'c.34 0 .63-.249.683-.585l.952-6.031a.692.692 0 0 1 .683-.584h2.126' +
+    'a6.793 6.793 0 0 0 6.707-5.752c.306-1.95-.466-3.744-1.89-4.906z';
+
+  function svgOf(path, fill){
+    return '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"' +
+      (fill ? ' style="fill:' + fill + '"' : '') + '><path d="' + path + '"/></svg>';
+  }
+
+  // What each provider actually takes, in the brands' own marks rather than in
+  // our words for them. A buyer recognises the Visa and Mastercard logos in a
+  // way no chip reading "Credit card" can manage.
+  //
+  // UPI and RuPay have no artwork we are able to carry offline, and an
+  // approximated logo would be worse than none — so UPI is shown by the apps
+  // that ride it, which is what a buyer opens anyway, and the exact wording
+  // stays in the chips underneath where nothing is left to a logo to imply.
+  var MARKS = {
+    visa: { name: 'Visa', hex: '#1A1F71',
+      path: 'M9.112 8.262L5.97 15.758H3.92L2.374 9.775c-.094-.368-.175-.503-.461-.658C1.447 8.864.677 8.627 0 8.479l.046-.217h3.3a.904.904 0 01.894.764l.817 4.338 2.018-5.102zm8.033 5.049c.008-1.979-2.736-2.088-2.717-2.972.006-.269.262-.555.822-.628a3.66 3.66 0 011.913.336l.34-1.59a5.207 5.207 0 00-1.814-.333c-1.917 0-3.266 1.02-3.278 2.479-.012 1.079.963 1.68 1.698 2.04.756.367 1.01.603 1.006.931-.005.504-.602.725-1.16.734-.975.015-1.54-.263-1.992-.473l-.351 1.642c.453.208 1.289.39 2.156.398 2.037 0 3.37-1.006 3.377-2.564m5.061 2.447H24l-1.565-7.496h-1.656a.883.883 0 00-.826.55l-2.909 6.946h2.036l.405-1.12h2.488zm-2.163-2.656l1.02-2.815.588 2.815zm-8.16-4.84l-1.603 7.496H8.34l1.605-7.496z' },
+    mc: { name: 'MasterCard', hex: '#EB001B',
+      path: 'M11.343 18.031c.058.049.12.098.181.146-1.177.783-2.59 1.238-4.107 1.238C3.32 19.416 0 16.096 0 12c0-4.095 3.32-7.416 7.416-7.416 1.518 0 2.931.456 4.105 1.238-.06.051-.12.098-.165.15C9.6 7.489 8.595 9.688 8.595 12c0 2.311 1.001 4.51 2.748 6.031zm5.241-13.447c-1.52 0-2.931.456-4.105 1.238.06.051.12.098.165.15C14.4 7.489 15.405 9.688 15.405 12c0 2.31-1.001 4.507-2.748 6.031-.058.049-.12.098-.181.146 1.177.783 2.588 1.238 4.107 1.238C20.68 19.416 24 16.096 24 12c0-4.094-3.32-7.416-7.416-7.416zM12 6.174c-.096.075-.189.15-.28.231C10.156 7.764 9.169 9.765 9.169 12c0 2.236.987 4.236 2.551 5.595.09.08.185.158.28.232.096-.074.189-.152.28-.232 1.563-1.359 2.551-3.359 2.551-5.595 0-2.235-.987-4.236-2.551-5.595-.09-.08-.184-.156-.28-.231z' },
+    gpay: { name: 'Google Pay', hex: '#4285F4',
+      path: 'M3.963 7.235A3.963 3.963 0 00.422 9.419a3.963 3.963 0 000 3.559 3.963 3.963 0 003.541 2.184c1.07 0 1.97-.352 2.627-.957.748-.69 1.18-1.71 1.18-2.916a4.722 4.722 0 00-.07-.806H3.964v1.526h2.14a1.835 1.835 0 01-.79 1.205c-.356.241-.814.379-1.35.379-1.034 0-1.911-.697-2.225-1.636a2.375 2.375 0 010-1.517c.314-.94 1.191-1.636 2.225-1.636a2.152 2.152 0 011.52.594l1.132-1.13a3.808 3.808 0 00-2.652-1.033zm6.501.55v6.9h.886V11.89h1.465c.603 0 1.11-.196 1.522-.588a1.911 1.911 0 00.635-1.464 1.92 1.92 0 00-.635-1.456 2.125 2.125 0 00-1.522-.598zm2.427.85a1.156 1.156 0 01.823.365 1.176 1.176 0 010 1.686 1.171 1.171 0 01-.877.357H11.35V8.635h1.487a1.156 1.156 0 01.054 0zm4.124 1.175c-.842 0-1.477.308-1.907.925l.781.491c.288-.417.68-.626 1.175-.626a1.255 1.255 0 01.856.323 1.009 1.009 0 01.366.785v.202c-.34-.193-.774-.289-1.3-.289-.617 0-1.11.145-1.479.434-.37.288-.554.677-.554 1.165a1.476 1.476 0 00.525 1.156c.35.308.785.463 1.305.463.61 0 1.098-.27 1.465-.81h.038v.655h.848v-2.909c0-.61-.19-1.09-.568-1.44-.38-.35-.896-.525-1.551-.525zm2.263.154l1.946 4.422-1.098 2.38h.915L24 9.963h-.965l-1.368 3.391h-.02l-1.406-3.39zm-2.146 2.368c.494 0 .88.11 1.156.33 0 .372-.147.696-.44.973a1.413 1.413 0 01-.997.414 1.081 1.081 0 01-.69-.232.708.708 0 01-.293-.578c0-.257.12-.47.363-.647.24-.173.54-.26.9-.26Z' },
+    phonepe: { name: 'PhonePe', hex: '#5F259F',
+      path: 'M10.206 9.941h2.949v4.692c-.402.201-.938.268-1.34.268-1.072 0-1.609-.536-1.609-1.743V9.941zm13.47 4.816c-1.523 6.449-7.985 10.442-14.433 8.919C2.794 22.154-1.199 15.691.324 9.243 1.847 2.794 8.309-1.199 14.757.324c6.449 1.523 10.442 7.985 8.919 14.433zm-6.231-5.888a.887.887 0 0 0-.871-.871h-1.609l-3.686-4.222c-.335-.402-.871-.536-1.407-.402l-1.274.401c-.201.067-.268.335-.134.469l4.021 3.82H6.386c-.201 0-.335.134-.335.335v.67c0 .469.402.871.871.871h.938v3.217c0 2.413 1.273 3.82 3.418 3.82.67 0 1.206-.067 1.877-.335v2.145c0 .603.469 1.072 1.072 1.072h.938a.432.432 0 0 0 .402-.402V9.874h1.542c.201 0 .335-.134.335-.335v-.67z' },
+    paypal: { name: 'PayPal', hex: '#003087', path: PATH_PP }
+  };
+
+  function marksHtml(ids){
+    if(!ids || !ids.length) return '';
+    return '<span class="dzPayMarks">' + ids.map(function(k){
+      var m = MARKS[k];
+      return '<span class="dzPayMark" title="' + esc(m.name) + '" role="img" ' +
+        'aria-label="' + esc(m.name) + '">' + svgOf(m.path, m.hex) + '</span>';
+    }).join('') + '</span>';
+  }
+
   var PROV = {
-    rzp:    { name:'Razorpay', note:'Card, UPI, net banking or wallet' },
-    paypal: { name:'PayPal',   note:'PayPal balance, or a card through PayPal' }
+    rzp: {
+      name: 'Razorpay',
+      logo: svgOf(PATH_RZP),
+      note: 'Pay by card or anything else you use',
+      marks: ['visa', 'mc', 'gpay', 'phonepe'],
+      ways: ['Credit card', 'Debit card', 'UPI', 'Net banking', 'Wallets', 'EMI']
+    },
+    paypal: {
+      name: 'PayPal',
+      logo: svgOf(PATH_PP),
+      note: 'Pay from your PayPal account \\u2014 cards are not accepted here',
+      marks: ['paypal'],
+      ways: ['PayPal balance', 'Bank linked to PayPal']
+    }
   };
 
   function esc(s){
@@ -162,6 +243,18 @@ const MODULE = `
     return rzpP;
   }
 
+  // PayPal is the PayPal account and nothing else here.
+  //
+  // Left alone, the SDK renders a second button — "Debit or Credit Card" —
+  // which takes a card through PayPal's guest checkout. That is not what this
+  // provider is for on this site: cards belong to Razorpay, which handles them
+  // properly alongside UPI and the rest. Every card-shaped and local funding
+  // source is switched off, so the sheet offers exactly one thing: sign in to
+  // PayPal and pay from the account.
+  var PP_OFF = ['card','credit','paylater','venmo','bancontact','blik','eps',
+    'giropay','ideal','mercadopago','mybank','p24','sepa','sofort','trustly',
+    'multibanco','satispay','wechatpay'].join(',');
+
   // The PayPal SDK fixes its currency in the script url, so a EUR listing and a
   // USD plan need two different loads. Each gets its own global through
   // data-namespace — without that the second script would quietly win and the
@@ -175,7 +268,7 @@ const MODULE = `
       var s = document.createElement('script');
       s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) +
               '&currency=' + encodeURIComponent(currency) +
-              '&intent=capture&components=buttons&disable-funding=venmo,paylater';
+              '&intent=capture&components=buttons&disable-funding=' + PP_OFF;
       s.setAttribute('data-namespace', ns);
       s.async = true;
       s.onload = function(){
@@ -215,8 +308,10 @@ const MODULE = `
   function toast(m){ if(typeof showToast === 'function') showToast(m); }
 
   // ---- the sheet ----------------------------------------------------------
-  // Doubles as the chooser and as the surface PayPal renders its buttons into,
-  // so the buyer never loses the page behind them.
+  // The small forms — request a payout, add a payout method. Buying is NOT one
+  // of these any more: a purchase gets the full checkout page further down,
+  // because a popup is the wrong shape for "here is exactly what you are
+  // paying for, and exactly what you get".
   var sheet = null;
   function closeSheet(){
     if(!sheet) return;
@@ -247,15 +342,28 @@ const MODULE = `
     sheet = { root:root, body:root.querySelector('.dzPayBody'), onKey:onKey };
     return sheet;
   }
-  function sheetNote(msg){
-    if(sheet) sheet.body.innerHTML = '<div class="dzPayNote">' + esc(msg) + '</div>';
-  }
 
   // ---- provider runs ------------------------------------------------------
+  // Razorpay is the one that takes cards, and it takes everything else too.
+  // The method list is spelled out rather than left to the default so the
+  // intent is readable here: a card — credit or debit — must always be an
+  // option on this side, because PayPal deliberately offers none. Razorpay
+  // shows the intersection of this list and what the account has activated,
+  // so naming a method that is not switched on yet costs nothing.
+  var RZP_METHODS = {
+    card: true, upi: true, netbanking: true, wallet: true,
+    emi: true, paylater: true
+  };
+
   function runRzp(order, onPaid){
-    sheetNote('Opening ' + PROV.rzp.name + '\\u2026');
+    gateNote('Opening ' + PROV.rzp.name + '\\u2026');
     return loadRzp().then(function(){
-      closeSheet();
+      if(!co) return;                       // buyer left while the sdk loaded
+      // The checkout page stays up UNDERNEATH Razorpay's own window. A buyer
+      // who dismisses it lands back on their order rather than on whatever
+      // page they started from, and can pick again without starting over.
+      gatePaying('rzp', order, 'Razorpay is open. Finish paying in its window \\u2014 ' +
+        'card, UPI, net banking or a wallet, whichever you prefer.');
       new Razorpay({
         key: order.keyId,
         order_id: order.orderId,
@@ -263,85 +371,332 @@ const MODULE = `
         currency: order.currency,
         name: 'DigiArtz',
         description: order.label || '',
+        method: RZP_METHODS,
         theme: { color: '#7C3AED' },
         handler: function(r){
+          gateNote('Confirming your payment\\u2026');
           api('rzp', {action:'verify', orderId:r.razorpay_order_id,
                paymentId:r.razorpay_payment_id, signature:r.razorpay_signature})
-            .then(onPaid, function(e){ toast(e.message || 'Could not verify the payment'); });
+            .then(function(x){ closeCo(); onPaid(x); },
+                  function(e){
+                    gateNote(e.message || 'Could not verify the payment');
+                    toast(e.message || 'Could not verify the payment');
+                  });
         },
-        modal: { ondismiss: function(){ toast('Payment cancelled'); } }
+        modal: { ondismiss: function(){
+          toast('Payment cancelled');
+          if(co) coRetry('Razorpay was closed before the payment went through.');
+        } }
       }).open();
     });
   }
 
-  // PayPal draws its own buttons, so the sheet stays up and hosts them. The
-  // order already exists server-side by this point — createOrder just names it,
-  // which is what keeps the amount out of the browser's hands.
+  // PayPal draws its own buttons, so they are rendered into the gateway step of
+  // the checkout page — the buyer keeps the order in front of them the whole
+  // time. The order already exists server-side by this point; createOrder just
+  // names it, which is what keeps the amount out of the browser's hands.
   function runPP(order, onPaid){
-    sheetNote('Loading ' + PROV.paypal.name + '\\u2026');
+    gateNote('Loading ' + PROV.paypal.name + '\\u2026');
     return loadPP(order.clientId, order.currency).then(function(pp){
-      if(!sheet) return;                    // buyer closed it while we loaded
-      sheet.body.innerHTML =
-        '<div class="dzPayAmt">' + esc(order.label || '') + ' \\u00b7 ' +
-          esc(orderMoney(order)) + '</div><div class="dzPayBtns"></div>';
-      var host = sheet.body.querySelector('.dzPayBtns');
+      if(!co) return;                       // buyer left while the sdk loaded
+      co.gate.innerHTML =
+        payingHtml('paypal', order) +
+        '<div class="dzCoGateNote">Sign in to PayPal to finish. Cards are not ' +
+          'accepted through PayPal here \\u2014 choose Razorpay above to pay by card.</div>' +
+        '<div class="dzPayBtns"></div>';
+      var host = co.gate.querySelector('.dzPayBtns');
       var settled = false;
 
       pp.Buttons({
-        style: { layout:'vertical', shape:'rect', height:44 },
+        style: { layout:'vertical', shape:'rect', height:48 },
         createOrder: function(){ return order.orderId; },
         onApprove: function(){
           settled = true;
-          sheetNote('Confirming your payment\\u2026');
+          gateNote('Confirming your payment\\u2026');
           return api('paypal', {action:'capture', orderId:order.orderId})
-            .then(function(r){ closeSheet(); onPaid(r); },
-                  function(e){ closeSheet(); toast(e.message || 'Could not verify the payment'); });
+            .then(function(r){ closeCo(); onPaid(r); },
+                  function(e){
+                    gateNote(e.message || 'Could not verify the payment');
+                    toast(e.message || 'Could not verify the payment');
+                  });
         },
-        onCancel: function(){ closeSheet(); toast('Payment cancelled'); },
-        onError:  function(){ if(!settled){ closeSheet(); toast('PayPal could not complete the payment'); } }
+        onCancel: function(){
+          toast('Payment cancelled');
+          coRetry('You closed the PayPal window before paying.');
+        },
+        onError: function(){
+          if(settled) return;
+          coRetry('PayPal could not complete the payment. You can try Razorpay instead.');
+        }
       }).render(host).catch(function(){
-        sheetNote('PayPal could not open here. Try the other option.');
+        coRetry('PayPal could not open here. Try Razorpay instead.');
       });
     });
   }
 
-  // ---- one flow, either provider -----------------------------------------
-  // The provider list was decided server-side, from which credentials are
-  // actually bound. One live provider and the buyer never sees a chooser; two
-  // and a sheet asks first. Nothing is ordered, and no ledger row written,
-  // until a provider has been picked.
-  function start(title, order, onPaid){
-    if(gate()) return;
-    var list = C.providers || [];
-    if(!list.length){ toast('Checkout is not available right now'); return; }
-    openSheet(title);
+  // ---- the checkout page --------------------------------------------------
+  // A purchase gets a whole page, not a popup. Top to bottom it answers the
+  // three questions in the order a buyer actually asks them:
+  //
+  //   1  What am I buying, and what do I get for it?
+  //   2  How am I paying — which of the two, and what does each one take?
+  //   3  The gateway itself, which only appears once a method is chosen.
+  //
+  // Nothing is ordered and no ledger row is written until step 2 is answered,
+  // so leaving from step 1 costs nothing and leaves no trace.
+  var co = null;
 
-    function pick(id){
-      sheetNote('Starting checkout\\u2026');
-      order(id)
-        .then(function(o){
-          if(!o){ closeSheet(); return; }           // handled by the caller
-          if(!sheet) return;                        // buyer closed it
-          return id === 'paypal' ? runPP(o, onPaid) : runRzp(o, onPaid);
-        })
-        .catch(function(e){ closeSheet(); toast(e.message || 'Could not start checkout'); });
-    }
+  function closeCo(){
+    if(!co) return;
+    document.removeEventListener('keydown', co.onKey, true);
+    if(co.root.parentNode) co.root.parentNode.removeChild(co.root);
+    document.documentElement.classList.remove('dzCoOpen');
+    co = null;
+  }
 
-    if(list.length === 1){ pick(list[0]); return; }
+  function gateNote(msg){
+    if(co) co.gate.innerHTML = '<div class="dzCoGateNote">' + esc(msg) + '</div>';
+  }
 
-    sheet.body.innerHTML =
-      '<div class="dzPayPick">' + list.map(function(id){
-        return '<button class="dzPayOpt" type="button" data-prov="' + esc(id) + '">' +
-                 '<span class="dzPayOptName">' + esc(PROV[id].name) + '</span>' +
-                 '<span class="dzPayOptNote">' + esc(PROV[id].note) + '</span>' +
-               '</button>';
-      }).join('') + '</div>';
-    Array.prototype.forEach.call(sheet.body.querySelectorAll('.dzPayOpt'), function(b){
-      b.addEventListener('click', function(){ pick(b.getAttribute('data-prov')); });
+  // Whose window is about to open, in their own logo and colours, so the
+  // gateway step names the provider the same way the chooser did.
+  function provHtml(id){
+    var p = PROV[id];
+    return '<div class="dzCoProv dzCoProv--' + esc(id) + '">' +
+      '<span class="dzPayLogo">' + p.logo + '</span>' +
+      '<span class="dzCoProvName">' + esc(p.name) + '</span></div>';
+  }
+
+  // The amount again, at the gateway, straight off the order the SERVER made —
+  // not off the figure step 1 quoted. If those two ever disagreed, this is
+  // where the buyer would see it before paying rather than after.
+  function payingHtml(id, order){
+    return provHtml(id) +
+      '<div class="dzCoPaying">' +
+        '<span class="dzCoPayingWhat">' + esc(order.label || 'Your order') + '</span>' +
+        '<span class="dzCoPayingAmt">' + esc(orderMoney(order)) + '</span>' +
+      '</div>';
+  }
+  function gatePaying(id, order, msg){
+    if(co) co.gate.innerHTML = payingHtml(id, order) +
+      '<div class="dzCoGateNote">' + esc(msg) + '</div>';
+  }
+
+  // Something went wrong, or the buyer backed out of a provider's window. The
+  // order still stands — it is the method that needs choosing again — so the
+  // page goes back to step 2 with the reason on it rather than collapsing.
+  function coRetry(why){
+    if(!co) return;
+    co.step3.hidden = true;
+    co.pickMsg.textContent = why || '';
+    co.pickMsg.hidden = !why;
+    coSelect(null);
+    co.how.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  function coSelect(id){
+    if(!co) return;
+    Array.prototype.forEach.call(co.root.querySelectorAll('.dzPayOpt'), function(b){
+      var on = b.getAttribute('data-prov') === id;
+      b.classList.toggle('dzPayOpt--on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
 
+  // What the buyer is paying for, drawn from what the page already knows —
+  // no extra round trip before the order even exists.
+  function itemHtml(s){
+    var thumb = s.thumb
+      ? '<img class="dzCoThumb" src="' + esc(s.thumb) + '" alt="" loading="lazy" decoding="async">'
+      : '<span class="dzCoThumb dzCoThumbNo" aria-hidden="true">' + esc(s.icon || '\\u25a6') + '</span>';
+    return '<div class="dzCoItem">' + thumb +
+        '<div class="dzCoItemMain">' +
+          '<div class="dzCoItemName">' + esc(s.name) + '</div>' +
+          (s.sub ? '<div class="dzCoItemSub">' + esc(s.sub) + '</div>' : '') +
+        '</div>' +
+        '<div class="dzCoItemPrice">' + esc(s.price) + '</div>' +
+      '</div>' +
+      (s.gets && s.gets.length
+        ? '<div class="dzCoGetsHead">What you get</div><ul class="dzCoGets">' +
+          s.gets.map(function(g){ return '<li>' + esc(g) + '</li>'; }).join('') + '</ul>'
+        : '') +
+      '<dl class="dzCoTot">' +
+        '<div class="dzCoTotRow"><dt>' + esc(s.priceLabel || 'Item price') + '</dt>' +
+          '<dd>' + esc(s.price) + '</dd></div>' +
+        '<div class="dzCoTotRow"><dt>Fees</dt><dd>None</dd></div>' +
+        '<div class="dzCoTotRow dzCoTotRow--sum"><dt>Total</dt>' +
+          '<dd>' + esc(s.price) + '</dd></div>' +
+      '</dl>' +
+      (s.note ? '<p class="dzCoItemNote">' + esc(s.note) + '</p>' : '');
+  }
+
+  // The two providers, side by side and clearly ALTERNATIVES — one or the
+  // other, never both. The "or" between them is not decoration: they take
+  // different things, and a buyer choosing blind is how someone with only a
+  // card ends up in PayPal with nothing to pay with.
+  function pickHtml(list){
+    var opts = list.map(function(id){
+      var p = PROV[id];
+      return '<button class="dzPayOpt dzPayOpt--' + esc(id) + '" type="button" ' +
+               'data-prov="' + esc(id) + '" aria-pressed="false">' +
+               '<span class="dzPayOptTop">' +
+                 // our own constant markup, not anything a row supplied
+                 '<span class="dzPayLogo">' + p.logo + '</span>' +
+                 '<span class="dzPayOptName">' + esc(p.name) + '</span>' +
+                 '<span class="dzPayOptTick" aria-hidden="true">\\u2713</span>' +
+               '</span>' +
+               '<span class="dzPayOptNote">' + esc(p.note) + '</span>' +
+               marksHtml(p.marks) +
+               '<span class="dzPayOptWays">' +
+                 p.ways.map(function(w){
+                   return '<span class="dzPayWay">' + esc(w) + '</span>';
+                 }).join('') +
+               '</span>' +
+             '</button>';
+    });
+    return '<div class="dzPayPick">' +
+      opts.join('<div class="dzPayOr"><span>or</span></div>') + '</div>';
+  }
+
+  function openCo(spec, list){
+    closeCo();
+    var root = document.createElement('div');
+    root.className = 'dzCo';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', 'Checkout');
+    root.innerHTML =
+      '<header class="dzCoBar">' +
+        '<button class="dzCoBack" type="button" aria-label="Leave checkout">\\u2190</button>' +
+        // the wordmark exactly as the site wears it everywhere else: Digi in
+        // the page's own text colour, Artz in the brand red
+        '<div class="dzCoBrand">Digi<span class="dzCoBrandA">Artz</span></div>' +
+        '<div class="dzCoLock"><span aria-hidden="true">\\ud83d\\udd12</span>Secure</div>' +
+      '</header>' +
+      '<div class="dzCoScroll"><div class="dzCoWrap">' +
+        '<h1 class="dzCoH1">' + esc(spec.title || 'Checkout') + '</h1>' +
+
+        '<section class="dzCoStep">' +
+          '<div class="dzCoStepHead"><span class="dzCoNum">1</span>' +
+            '<h2>What you\\u2019re buying</h2></div>' +
+          '<div class="dzCoBox' +
+            (spec.tone ? ' dzCoTone dzCoTone--' + esc(spec.tone) : '') + '">' +
+            itemHtml(spec) +
+          '</div>' +
+        '</section>' +
+
+        '<section class="dzCoStep" id="dzCoHow">' +
+          '<div class="dzCoStepHead"><span class="dzCoNum">2</span>' +
+            '<h2>Payment method</h2></div>' +
+          '<div class="dzCoBox">' +
+            '<div class="dzCoPickMsg" hidden></div>' +
+            pickHtml(list) +
+          '</div>' +
+        '</section>' +
+
+        '<section class="dzCoStep" id="dzCoGo" hidden>' +
+          '<div class="dzCoStepHead"><span class="dzCoNum">3</span>' +
+            '<h2>Payment gateway</h2></div>' +
+          '<div class="dzCoBox dzCoGate"></div>' +
+        '</section>' +
+
+        '<p class="dzCoFine">Your card, UPI or PayPal details are entered in the ' +
+          'provider\\u2019s own window and never reach DigiArtz. Questions about a ' +
+          'payment: DigiArtzsupport@gmail.com</p>' +
+      '</div></div>';
+
+    var onKey = function(e){ if(e.key === 'Escape'){ e.stopPropagation(); closeCo(); } };
+    root.querySelector('.dzCoBack').addEventListener('click', closeCo);
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(root);
+    document.documentElement.classList.add('dzCoOpen');
+
+    co = {
+      root: root,
+      onKey: onKey,
+      how: root.querySelector('#dzCoHow'),
+      step3: root.querySelector('#dzCoGo'),
+      gate: root.querySelector('.dzCoGate'),
+      pickMsg: root.querySelector('.dzCoPickMsg')
+    };
+    return co;
+  }
+
+  // ---- one flow, either provider -----------------------------------------
+  // The provider list was decided server-side, from which credentials are
+  // actually bound — a provider with nothing bound is never drawn. Nothing is
+  // ordered, and no ledger row written, until one has been picked.
+  function start(spec, order, onPaid){
+    if(gate()) return;
+    var list = C.providers || [];
+    if(!list.length){ toast('Checkout is not available right now'); return; }
+
+    openCo(spec, list);
+
+    function pick(id){
+      if(!co) return;
+      coSelect(id);
+      co.pickMsg.hidden = true;
+      co.step3.hidden = false;
+      gateNote('Getting your order ready\\u2026');
+      co.step3.scrollIntoView({behavior:'smooth', block:'center'});
+
+      order(id)
+        .then(function(o){
+          if(!o){ closeCo(); return; }              // handled by the caller
+          if(!co) return;                           // buyer left
+          return id === 'paypal' ? runPP(o, onPaid) : runRzp(o, onPaid);
+        })
+        .catch(function(e){
+          toast(e.message || 'Could not start checkout');
+          coRetry(e.message || 'Could not start checkout');
+        });
+    }
+
+    Array.prototype.forEach.call(co.root.querySelectorAll('.dzPayOpt'), function(b){
+      b.addEventListener('click', function(){ pick(b.getAttribute('data-prov')); });
+    });
+
+    // One provider bound and there is no choice to make — the step still shows
+    // what it takes, and the gateway opens straight away.
+    if(list.length === 1) pick(list[0]);
+  }
+
   // ---- entry points -------------------------------------------------------
+  // A plan's own card is the honest description of what the money buys, so the
+  // checkout page reuses it rather than inventing a shorter one.
+  function planSpec(id, amount){
+    var p = null;
+    (C.plans || []).forEach(function(x){ if(x.id === id) p = x; });
+    if(p) return {
+      title: 'Checkout',
+      name: p.name + ' membership',
+      sub: 'One month \\u00b7 ' + p.tagline,
+      price: p.price,
+      priceLabel: 'Plan price',
+      icon: '\\u2605',
+      // Lite is blue, Premium purple, Max gold on the plan page. Checkout
+      // wears the same colour, so the buyer can see they are paying for the
+      // card they tapped and not one next to it.
+      tone: p.tone,
+      gets: p.features,
+      note: 'A single charge for 31 days. Nothing recurring \\u2014 it does not ' +
+            'renew itself, and you keep anything you bought on the marketplace ' +
+            'whatever happens to your plan.'
+    };
+    return {
+      title: 'Support DigiArtz',
+      name: 'Support DigiArtz',
+      sub: 'A one-off contribution',
+      price: money(amount, 'USD'),
+      priceLabel: 'Amount',
+      icon: '\\u2665',
+      gets: ['Keeps the servers and storage paid for',
+             'No plan or tier attached \\u2014 this is a thank-you, not a purchase'],
+      note: 'Nothing is unlocked by this and nothing recurs.'
+    };
+  }
+
   window.dzSubBuy = function(plan){
     if(gate()) return;
     var amount = null;
@@ -351,15 +706,42 @@ const MODULE = `
       amount = Math.round(parseFloat(v) * 100);
       if(!Number.isFinite(amount) || amount < 50){ toast('Minimum is $0.50'); return; }
     }
-    start('Checkout', function(prov){
+    start(planSpec(plan, amount), function(prov){
       return api(prov, {action:'sub-order', plan:plan, amount:amount});
     }, function(r){
       toast(r.tier ? 'Subscription active' : 'Thank you for the support');
     });
   };
 
+  // The listing's own slot carries the title, preview and price the page is
+  // already showing, so the checkout page can name what is being bought
+  // without a round trip and without waiting.
+  function slotSpec(id, hasFile){
+    var el = document.querySelector('.dzSlot[data-i="' + id + '"]');
+    var title = (el && el.getAttribute('data-t')) || 'Marketplace item';
+    var prev  = (el && el.getAttribute('data-th')) || '';
+    var cents = Number((el && el.getAttribute('data-p')) || 0);
+    var cur   = (el && el.getAttribute('data-c')) || 'USD';
+    return {
+      title: 'Checkout',
+      name: title,
+      sub: hasFile ? 'Digital files \\u00b7 instant access once paid'
+                   : 'Marketplace listing',
+      price: money(cents, cur),
+      priceLabel: 'Item price',
+      thumb: prev && typeof getThumbnailUrl === 'function' ? getThumbnailUrl(prev) : prev,
+      gets: hasFile
+        ? ['Every file on this listing, at the seller\\u2019s original quality',
+           'Re-download as often as you like, no limit and no expiry',
+           'Yours permanently \\u2014 no subscription tier is involved']
+        : ['Access to this listing as the seller delivers it'],
+      note: 'Bought once, yours to keep. Your files appear under My Purchases ' +
+            'the moment the payment is confirmed.'
+    };
+  }
+
   window.dzMarketBuy = function(id, hasFile){
-    start('Checkout', function(prov){
+    start(slotSpec(id, hasFile), function(prov){
       return api(prov, {action:'market-order', itemId:id}).then(function(o){
         if(o.owned){                      // bought before, straight to the files
           afterPurchase(id, hasFile, true);
@@ -383,9 +765,9 @@ const MODULE = `
     toast(wasAlreadyOwned ? 'You already own this' : 'Purchased \\u2014 your files are unlocked');
     ownedIds[id] = true;
     repaintOwned();
-    if(typeof window.openPurchasesPage === 'function'){
-      window.openPurchasesPage();
-      loadPurchases(true);
+    purchasesP = null;
+    if(document.getElementById('setListGate')){
+      openPanel('buy');
     } else if(hasFile && typeof window.dzMarketGet === 'function'){
       window.dzMarketGet(id);
     }
@@ -497,8 +879,6 @@ const MODULE = `
     return api('payouts', Object.assign({action:action}, extra || {}));
   }
 
-  function usd(minor){ return money(minor, 'USD'); }
-
   function when(iso){
     try{
       return new Date(iso).toLocaleDateString(undefined,
@@ -565,8 +945,76 @@ const MODULE = `
       'accounts apart. The full number is never stored.</p>'
   };
 
+  // The wallet has two halves and they are kept apart on purpose.
+  //
+  // PENDING holds the gross of sales that have not settled yet. It is the
+  // whole sale, before the gateway's fee, our commission and any tax, and NONE
+  // of it is withdrawable — the money is still with the gateway. Showing it
+  // inside the wallet balance is how a seller comes to believe a hundred-pound
+  // sale is a hundred pounds of theirs.
+  //
+  // WALLET holds only what has settled and survived every deduction. That is
+  // the number they can actually have, and it is the only number the payout
+  // button will accept.
+  //
+  // Per currency, both of them, with no total across currencies — producing
+  // one would need an exchange rate, and a seller's money is never converted.
+  function pendingCard(s){
+    var cur = s.currency;
+    var g   = s.pending_gross || 0;
+    if(!g) return '';
+    var rows = [
+      ['Gateway fee',        s.pending_gateway || 0],
+      ['DigiArtz commission', s.pending_fee || 0],
+      ['Tax withheld (194-O)', s.pending_tds || 0],
+      ['GST TCS collected',  s.pending_tcs || 0]
+    ].filter(function(r){ return r[1] > 0; });
+
+    return '<div class="dzWlPend">' +
+      '<div class="dzWlPendTop">' +
+        '<span class="dzWlPendLbl">Pending \\u00b7 ' + esc(cur) + '</span>' +
+        '<span class="dzWlPendAmt">' + esc(money(g, cur)) + '</span>' +
+      '</div>' +
+      '<p class="dzWlPendWhy">Sold, but still with the payment provider. None of ' +
+        'this can be withdrawn yet' +
+        (s.next_clears_at ? ' \\u2014 the first of it clears on ' + esc(when(s.next_clears_at)) : '') +
+        '.' + (s.settlement_note ? ' ' + esc(s.settlement_note) + '.' : '') + '</p>' +
+      '<ul class="dzWlPendList">' +
+        rows.map(function(r){
+          return '<li><span>' + esc(r[0]) + '</span><b>\\u2212 ' + esc(money(r[1], cur)) + '</b></li>';
+        }).join('') +
+        '<li class="dzWlPendNet"><span>Reaches your wallet</span><b>' +
+          esc(money(s.pending_net || 0, cur)) + '</b></li>' +
+      '</ul>' +
+    '</div>';
+  }
+
+  function balanceCard(s, d, flagged){
+    var cur  = s.currency;
+    var can  = !flagged && (s.withdrawable || 0) > 0;
+    return '<div class="dzWlCur">' +
+      '<div class="dzWlHead">' +
+        '<div class="dzWlBalLbl">Wallet \\u00b7 ' + esc(cur) + '</div>' +
+        '<div class="dzWlBal">' + esc(money(s.withdrawable || 0, cur)) + '</div>' +
+        '<div class="dzWlBalSub">Settled, after every deduction. Yours to withdraw ' +
+          'in ' + esc(cur) + ' \\u2014 nothing is converted at any point</div>' +
+      '</div>' +
+      '<button type="button" class="dzWlReq" data-cur="' + esc(cur) + '"' +
+        (can ? '' : ' disabled') + '>' +
+        (flagged ? 'Withdrawals paused' : 'Request ' + esc(cur) + ' payout') + '</button>' +
+      '<div class="dzWlGrid">' +
+        '<div class="dzWlCell"><span>Total sales</span><b>' + esc(money(s.total_sales || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Artworks sold</span><b>' + esc(String(s.items_sold || 0)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Gateway fees</span><b>' + esc(money(s.gateway_fees || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Commission paid</span><b>' + esc(money(s.commission || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Tax withheld</span><b>' + esc(money(s.tds_withheld || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Withdrawn</span><b>' + esc(money(s.paid_out || 0, cur)) + '</b></div>' +
+      '</div>' +
+    '</div>';
+  }
+
   function renderWallet(host, d){
-    var s = d.summary || {};
+    var rows = Array.isArray(d.summary) ? d.summary : [];
     var paid = (d.payouts || []).filter(function(p){ return p.status === 'paid'; });
 
     // A blocked balance is the first thing the member sees, and the request
@@ -587,20 +1035,22 @@ const MODULE = `
                 '?subject=Balance%20check%20failed">Contact support</a>' +
             '</div>'
           : '') +
-        '<div class="dzWlHead">' +
-          '<div class="dzWlBalLbl">Wallet balance</div>' +
-          '<div class="dzWlBal">' + esc(usd(s.withdrawable || 0)) + '</div>' +
-          '<div class="dzWlBalSub">Shown in USD · earnings are converted at the stored rate</div>' +
-        '</div>' +
 
-        '<div class="dzWlGrid">' +
-          '<div class="dzWlCell"><span>Total sales</span><b>' + esc(usd(s.total_sales || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Available</span><b>' + esc(usd(s.available || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Pending</span><b>' + esc(usd(s.pending || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Artworks sold</span><b>' + esc(String(s.items_sold || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Commission paid</span><b>' + esc(usd(s.commission || 0)) + '</b></div>' +
-          '<div class="dzWlCell"><span>Withdrawn</span><b>' + esc(usd(s.paid_out || 0)) + '</b></div>' +
-        '</div>' +
+        (rows.length
+          ? rows.map(function(s){ return balanceCard(s, d, flagged); }).join('')
+          : '<div class="dzWlHead">' +
+              '<div class="dzWlBalLbl">Wallet</div>' +
+              '<div class="dzWlBal">' + esc(money(0, 'USD')) + '</div>' +
+              '<div class="dzWlBalSub">Nothing sold yet. You are paid in whichever ' +
+                'currency you priced your listing in.</div>' +
+            '</div>') +
+        '<div class="dzWlMsg" hidden></div>' +
+
+        // Its own section, below the wallet and never added into it.
+        (rows.some(function(s){ return (s.pending_gross || 0) > 0; })
+          ? '<div class="dzWlSect">Pending \\u2014 not yet yours</div>' +
+            rows.map(pendingCard).join('')
+          : '') +
 
         (paid.length
           ? '<div class="dzWlSect">Payout history</div><ul class="dzWlList">' +
@@ -612,11 +1062,6 @@ const MODULE = `
             }).join('') + '</ul>'
           : '') +
 
-        '<button type="button" class="dzWlReq" ' +
-          (!flagged && (s.withdrawable || 0) > 0 ? '' : 'disabled') + '>' +
-          (flagged ? 'Withdrawals paused' : 'Request payout') + '</button>' +
-        '<div class="dzWlMsg" hidden></div>' +
-
         '<div class="dzWlSect">Activity</div>' +
         ((d.history || []).length
           ? '<ul class="dzWlList">' + d.history.map(row).join('') + '</ul>'
@@ -626,7 +1071,17 @@ const MODULE = `
         // they sit next to the balance and the payout button they describe.
         '<div class="dzWlSect">Wallet guidelines</div>' +
         '<ol class="dzWlGuide">' +
-          '<li>Minimum withdrawal amount is $5.</li>' +
+          '<li>You are paid in the currency you priced your listing in. Your ' +
+            'earnings are never converted \\u2014 a sale in euros stays euros all ' +
+            'the way to your payout \\u2014 so no exchange spread is taken out of ' +
+            'them at any point.</li>' +
+          '<li>Each currency has its own withdrawal minimum, roughly five ' +
+            'dollars\\u2019 worth. The exact figure is shown on the payout form.</li>' +
+          '<li>A sale is Pending until the payment provider settles it \\u2014 ' +
+            'Razorpay takes two working days on a domestic sale and seven on an ' +
+            'international one, PayPal up to five business days. Pending shows ' +
+            'the whole sale and what will come out of it; the wallet shows only ' +
+            'what has cleared and is genuinely yours.</li>' +
           '<li>DigiArtz will take a 10% platform charge and 5% GST (government tax). ' +
             'The remaining 85% goes to the user. Max Subscription users will get 90% ' +
             'of the commission, while DigiArtz will take 5% as the platform charge and ' +
@@ -648,60 +1103,80 @@ const MODULE = `
         '</ol>' +
       '</div>';
 
-    var msg = host.querySelector('.dzWlMsg');
-    function say(t, bad){
-      msg.textContent = t; msg.hidden = !t;
-      msg.classList.toggle('dzWlMsg--bad', !!bad);
-    }
-
-    // Themed, in the sheet — never a browser prompt.
-    host.querySelector('.dzWlReq').addEventListener('click', function(){
-      var max = s.withdrawable || 0;
-      var min = d.minPayout || 500;
-      openSheet('Request payout');
-      sheet.body.innerHTML =
-        '<div class="dzBkForm">' +
-          '<label class="dzBkLbl">Amount in USD</label>' +
-          '<input class="dzBkIn" id="dzWlAmt" type="text" inputmode="decimal" placeholder="' +
-            esc((max / 100).toFixed(2)) + '">' +
-          '<p class="dzBkNote">Minimum ' + esc(usd(min)) + '. You can withdraw up to ' +
-            esc(usd(max)) + '. Paid to your default method.' +
-            ((d.tax && d.tax.country === 'IN') || !d.tax
-              ? ' Tax may be withheld at source under section 194-O; the exact amount is shown once you request.'
-              : '') + '</p>' +
-          '<div class="dzWlMsg" hidden></div>' +
-          '<button type="button" class="dzWlReq" id="dzWlGo">Request</button>' +
-        '</div>';
-      var m2 = sheet.body.querySelector('.dzWlMsg');
-      sheet.body.querySelector('#dzWlGo').addEventListener('click', function(){
-        var v = Math.round(parseFloat(sheet.body.querySelector('#dzWlAmt').value) * 100);
-        if(!Number.isFinite(v) || v <= 0){
-          m2.textContent = 'Enter an amount.'; m2.hidden = false;
-          m2.classList.add('dzWlMsg--bad'); return;
-        }
-        m2.textContent = 'Sending…'; m2.hidden = false; m2.classList.remove('dzWlMsg--bad');
-        pay('request', {amount:v, currency:'USD'})
-          .then(function(r){
-                  closeSheet();
-                  toast(r && r.tds
-                    ? 'Payout requested · ' + money(r.tds, 'USD') + ' withheld as tax'
-                    : 'Payout requested');
-                  loadWallet(true);
-                },
-                function(e){
-                  m2.textContent = e.message || 'Could not request that';
-                  m2.classList.add('dzWlMsg--bad');
-                  // a freshly-raised flag should show on the wallet at once
-                  if(/paused|verified/i.test(e.message || '')) loadWallet(true);
-                });
+    // Each balance has its own button, and the payout it opens is denominated
+    // in that balance's currency from the label down to the request body. The
+    // form no longer knows what a dollar is.
+    Array.prototype.forEach.call(host.querySelectorAll('.dzWlReq[data-cur]'), function(btn){
+      btn.addEventListener('click', function(){
+        var cur = btn.getAttribute('data-cur');
+        var s   = null;
+        rows.forEach(function(r){ if(r.currency === cur) s = r; });
+        if(!s) return;
+        openPayoutForm(s, d);
       });
+    });
+  }
+
+  // Zero-decimal currencies quote whole units, so the amount a seller types is
+  // the amount, not hundredths of it. Same list the checkout backends use.
+  function minorOf(v, cur){
+    return ZERO_DEC[cur] ? Math.round(v) : Math.round(v * 100);
+  }
+  function majorOf(minor, cur){
+    return ZERO_DEC[cur] ? String(minor) : (minor / 100).toFixed(2);
+  }
+
+  function openPayoutForm(s, d){
+    var cur = s.currency;
+    var max = s.withdrawable || 0;
+    var min = (d.minPayouts && d.minPayouts[cur] != null)
+      ? d.minPayouts[cur] : (d.minDefault || 500);
+
+    openSheet('Request ' + cur + ' payout');
+    sheet.body.innerHTML =
+      '<div class="dzBkForm">' +
+        '<label class="dzBkLbl">Amount in ' + esc(cur) + '</label>' +
+        '<input class="dzBkIn" id="dzWlAmt" type="text" inputmode="decimal" placeholder="' +
+          esc(majorOf(max, cur)) + '">' +
+        '<p class="dzBkNote">Minimum ' + esc(money(min, cur)) + '. You can withdraw up to ' +
+          esc(money(max, cur)) + ', and it is sent in ' + esc(cur) +
+          ' \\u2014 not converted \\u2014 to your default method.' +
+          ((d.tax && d.tax.country === 'IN') || !d.tax
+            ? ' Tax may be withheld at source under section 194-O; it is withheld in ' +
+              esc(cur) + ' and the exact amount is shown once you request.'
+            : '') + '</p>' +
+        '<div class="dzWlMsg" hidden></div>' +
+        '<button type="button" class="dzWlReq" id="dzWlGo">Request</button>' +
+      '</div>';
+
+    var m2 = sheet.body.querySelector('.dzWlMsg');
+    sheet.body.querySelector('#dzWlGo').addEventListener('click', function(){
+      var v = minorOf(parseFloat(sheet.body.querySelector('#dzWlAmt').value), cur);
+      if(!Number.isFinite(v) || v <= 0){
+        m2.textContent = 'Enter an amount.'; m2.hidden = false;
+        m2.classList.add('dzWlMsg--bad'); return;
+      }
+      m2.textContent = 'Sending…'; m2.hidden = false; m2.classList.remove('dzWlMsg--bad');
+      pay('request', {amount:v, currency:cur})
+        .then(function(r){
+                closeSheet();
+                toast(r && r.tds
+                  ? 'Payout requested \\u00b7 ' + money(r.tds, cur) + ' withheld as tax'
+                  : 'Payout requested');
+                refreshPanel();
+              },
+              function(e){
+                m2.textContent = e.message || 'Could not request that';
+                m2.classList.add('dzWlMsg--bad');
+                // a freshly-raised flag should show on the wallet at once
+                if(/paused|verified/i.test(e.message || '')) refreshPanel();
+              });
     });
   }
 
   function renderBank(host, d){
     host.innerHTML =
       '<div class="dzBk">' +
-        '<div class="dzBkHead">Payout methods</div>' +
         ((d.methods || []).length
           ? '<ul class="dzBkList">' + d.methods.map(methodLine).join('') + '</ul>'
           : '<div class="dzWlEmpty">No payout method yet.</div>') +
@@ -737,13 +1212,13 @@ const MODULE = `
     Array.prototype.forEach.call(host.querySelectorAll('[data-def]'), function(b){
       b.addEventListener('click', function(){
         pay('method-default', {id:b.getAttribute('data-def')})
-          .then(function(){ loadWallet(true); }, function(e){ toast(e.message); });
+          .then(function(){ refreshPanel(); }, function(e){ toast(e.message); });
       });
     });
     Array.prototype.forEach.call(host.querySelectorAll('[data-rm]'), function(b){
       b.addEventListener('click', function(){
         pay('method-remove', {id:b.getAttribute('data-rm')})
-          .then(function(){ toast('Removed'); loadWallet(true); }, function(e){ toast(e.message); });
+          .then(function(){ toast('Removed'); refreshPanel(); }, function(e){ toast(e.message); });
       });
     });
 
@@ -753,7 +1228,7 @@ const MODULE = `
       pay('tax', {
         country: host.querySelector('#dzTxC').value,
         pan:     host.querySelector('#dzTxP').value
-      }).then(function(){ tm.textContent = 'Saved.'; loadWallet(true); },
+      }).then(function(){ tm.textContent = 'Saved.'; refreshPanel(); },
               function(e){
                 tm.textContent = e.message || 'Could not save that';
                 tm.classList.add('dzWlMsg--bad');
@@ -778,7 +1253,7 @@ const MODULE = `
       });
       m.textContent = 'Saving…'; m.hidden = false; m.classList.remove('dzWlMsg--bad');
       pay('method-add', payload)
-        .then(function(){ closeSheet(); toast('Payout method added'); loadWallet(true); },
+        .then(function(){ closeSheet(); toast('Payout method added'); refreshPanel(); },
               function(e){
                 m.textContent = e.message || 'Could not save that';
                 m.classList.add('dzWlMsg--bad');
@@ -786,24 +1261,99 @@ const MODULE = `
     });
   }
 
-  // One fetch feeds both sections, so they can never disagree.
-  var walletP = null;
-  function loadWallet(force){
-    var wl = document.getElementById('pfWalletGate');
-    var bk = document.getElementById('pfBankGate');
-    if(!wl && !bk) return;
-    if(force) walletP = null;
-    if(!walletP) walletP = pay('overview');
-    walletP.then(function(d){
-      if(wl) renderWallet(wl, d);
-      if(bk) renderBank(bk, d);
-    }, function(e){
-      var msg = '<div class="dzWlEmpty">' + esc(e.message || 'Could not load') + '</div>';
-      if(wl) wl.innerHTML = msg;
-      if(bk) bk.innerHTML = msg;
+  // ---- the account panel --------------------------------------------------
+  // The three money pages, and the three Settings items that open them, are
+  // built here rather than written into index.html. That file is a static
+  // asset served to everyone, and even with every figure stripped out its
+  // headings still announced that members hold a balance and get paid out.
+  //
+  // One panel, three views, one neutral id. Simpler than three shells that had
+  // to be kept in step, and there is nothing in the public page to read.
+  var VIEWS = { bal: 'Balance', pay: 'Payout methods', buy: 'My purchases' };
+
+  function panelEl(){
+    var el = document.getElementById('dzPanelHost');
+    if(el) return el;
+    el = document.createElement('div');
+    el.id = 'dzPanelHost';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.innerHTML =
+      '<div class="subPgHdr">' +
+        '<button class="subPgX" type="button" aria-label="Back">\\u2190</button>' +
+        '<div class="subPgTitle"></div>' +
+      '</div>' +
+      '<div class="bmBdy"><div class="dzPanelWrap"></div></div>';
+    el.querySelector('.subPgX').addEventListener('click', closePanel);
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function closePanel(){
+    var el = document.getElementById('dzPanelHost');
+    if(el) el.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function openPanel(view){
+    var title = VIEWS[view];
+    if(!title) return;
+    var el = panelEl();
+    el.setAttribute('aria-label', title);
+    el.querySelector('.subPgTitle').textContent = title.toUpperCase();
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    el.dataset.view = view;
+    paintPanel(true);
+  }
+
+  function paintPanel(force){
+    var el = document.getElementById('dzPanelHost');
+    if(!el || !el.classList.contains('open')) return;
+    var host = el.querySelector('.dzPanelWrap');
+    var view = el.dataset.view;
+    if(view === 'buy') return loadPurchases(force, host);
+    loadWallet(force, host, view === 'pay' ? renderBank : renderWallet);
+  }
+
+  // The Settings items. Injected into the one empty slot index.html leaves,
+  // and wired through setGo so they behave exactly like the items written
+  // above them — the menu closes, the panel opens, and closing it puts the
+  // member back on the menu rather than on their profile.
+  function fillMenu(){
+    var host = document.getElementById('setListGate');
+    if(!host || host.dataset.dzFilled) return;
+    host.dataset.dzFilled = '1';
+    host.innerHTML = [['buy','My Purchases'], ['bal','Wallet'], ['pay','Payout Methods']]
+      .map(function(p){
+        return '<button class="pfMenuItem" type="button" data-v="' + esc(p[0]) + '">' +
+               esc(p[1]) + '</button>';
+      }).join('');
+    Array.prototype.forEach.call(host.querySelectorAll('[data-v]'), function(b){
+      b.addEventListener('click', function(){
+        var v = b.getAttribute('data-v');
+        if(typeof setGo === 'function') setGo(function(){ openPanel(v); }, 'dzPanelHost');
+        else openPanel(v);
+      });
     });
   }
-  window.dzWalletLoad = loadWallet;
+
+  // One fetch feeds every view, so two of them can never disagree.
+  var walletP = null;
+  function loadWallet(force, host, render){
+    if(!host) return;
+    if(force) walletP = null;
+    if(!walletP) walletP = pay('overview');
+    walletP.then(function(d){ render(host, d); },
+                 function(e){
+                   host.innerHTML = '<div class="dzWlEmpty">' +
+                     esc(e.message || 'Could not load') + '</div>';
+                   walletP = null;
+                 });
+  }
+  // repaint whatever view is open, after a payout or a method change.
+  // Local: nothing outside this module opens or refreshes the panel any more.
+  function refreshPanel(){ walletP = null; paintPanel(true); }
 
   // ---- my purchases -------------------------------------------------------
   // The buyer's side of the wallet: everything this account has paid for on the
@@ -852,13 +1402,11 @@ const MODULE = `
   function renderPurchases(host, rows){
     if(!rows.length){
       host.innerHTML =
-        '<div class="dzPuHead">My purchases</div>' +
         '<div class="dzWlEmpty">Nothing bought yet. Anything you buy on the marketplace ' +
         'lands here permanently, with every file unlocked.</div>';
       return;
     }
     host.innerHTML =
-      '<div class="dzPuHead">My purchases</div>' +
       '<p class="dzPuNote">Bought once, yours to keep. Every file is the seller\\u2019s ' +
       'original at full quality, re-downloadable as often as you like, and no ' +
       'subscription tier is involved either way.</p>' +
@@ -923,8 +1471,7 @@ const MODULE = `
   }
 
   var purchasesP = null;
-  function loadPurchases(force){
-    var host = document.getElementById('pfPurchaseGate');
+  function loadPurchases(force, host){
     if(!host || !window.sb || !sb.rpc) return;
     if(force) purchasesP = null;
     // Promise.resolve, not the builder itself: a PostgrestBuilder fires a fresh
@@ -950,11 +1497,10 @@ const MODULE = `
       purchasesP = null;
     });
   }
-  window.dzPurchasesLoad = loadPurchases;
 
   // The public bundle calls this after every render that could have produced a
   // slot, and once when this module lands.
-  window.dzFill = function(){ fillPlans(); fillSlots(); loadWallet(false); loadPurchases(false); };
+  window.dzFill = function(){ fillPlans(); fillSlots(); fillMenu(); paintPanel(false); };
   window.dzFill();
 })(__dzStore);
 `;
@@ -1007,7 +1553,17 @@ export async function onRequestGet({ env, request }) {
   if (!sbUrl(env) || !sbAnon(env)) return deny(503);
   if (!(await sbUser(env, request))) return deny(401);
 
-  const cfg = { providers: liveProviders(env), plansHtml: plansHtml() };
+  // plansHtml is the grid on the subscription page; plans is the same table in
+  // a shape the checkout page can read, so what a buyer is told they get at
+  // checkout is the plan's own wording rather than a second, drifting copy.
+  const cfg = {
+    providers: liveProviders(env),
+    plansHtml: plansHtml(),
+    plans: PLANS.map((p) => ({
+      id: p.id, name: p.name, price: p.price, tone: p.tone,
+      tagline: p.tagline, features: p.features,
+    })),
+  };
   const body = 'var __dzStore = ' + JSON.stringify(cfg) + ';\n' + MODULE;
 
   return new Response(body, {

@@ -407,17 +407,32 @@
         '<h3>1. Your relationship with DigiArtz</h3>' +
         '<p>You sell your own work directly to buyers. DigiArtz operates the marketplace and collects payment on your behalf; it is not the seller of your item and does not take ownership of it. You keep the rights to your work, and you are responsible for having the right to sell it.</p>' +
 
-        '<h3>2. Commission</h3>' +
-        '<p>DigiArtz retains a commission of <strong>15%</strong> of the sale price of each item. The remaining <strong>85%</strong> is credited to you as earnings. The commission rate applied to a sale is the rate in force at the time of that sale, and is recorded against it; a later change to the rate does not alter sales already made.</p>' +
+        '<h3>2. What comes out of a sale</h3>' +
+        '<p>Four things may be deducted from the price a buyer pays, in this order. Each one is recorded against the individual sale, so a later change to any of them does not alter sales already made.</p>' +
+        '<ul>' +
+          '<li><strong>The payment provider\u2019s fee.</strong> Razorpay or PayPal deducts this before the money reaches DigiArtz. The exact amount is set by the provider and depends on how the buyer chose to pay; we record what they actually charged, not an estimate.</li>' +
+          '<li><strong>DigiArtz commission, 15%</strong> of the sale price.</li>' +
+          '<li><strong>Tax deducted at source</strong> where section 194-O applies to you \u2014 see clause 8.</li>' +
+          '<li><strong>GST tax collected at source</strong> where section 52 applies \u2014 see clause 8.</li>' +
+        '</ul>' +
+        '<p>What remains is credited to you. Your wallet shows each of these deductions against each sale before it clears, so the figure you can withdraw is never a surprise.</p>' +
 
         '<h3>3. Earnings are a balance, not held funds</h3>' +
         '<p>Your earnings are a record of what DigiArtz owes you. They are not money held in an account in your name, and they earn no interest. Funds remain in the platform\u2019s payment provider account until a payout is sent to you.</p>' +
+        '<p>Your earnings are held in the currency the item was priced in and are paid out in that same currency. We do not convert them, and no exchange spread is applied to them at any point.</p>' +
 
-        '<h3>4. Clearing period</h3>' +
-        '<p>Earnings become available for withdrawal <strong>7 days</strong> after the sale. This period exists so that a refund, dispute or chargeback can be resolved before money leaves the platform. Earnings from a sale that is later reversed are cancelled, whether or not the clearing period has passed.</p>' +
+        '<h3>4. Pending and available</h3>' +
+        '<p>A sale is <strong>pending</strong> until the payment provider settles it to DigiArtz. Pending earnings cannot be withdrawn. The waiting period is the provider\u2019s own settlement window:</p>' +
+        '<ul>' +
+          '<li>Razorpay, domestic sales \u2014 two working days</li>' +
+          '<li>Razorpay, international sales \u2014 seven working days</li>' +
+          '<li>PayPal \u2014 up to five business days</li>' +
+        '</ul>' +
+        '<p>Once that window has passed the earnings become <strong>available</strong> and may be withdrawn. Earnings from a sale that is later refunded, reversed or lost at chargeback are cancelled, whether or not they had become available. Where a dispute is opened against a sale, the related earnings are held until it is resolved.</p>' +
 
         '<h3>5. Payouts</h3>' +
-        '<p>You may request a payout of your available balance to a payout method you have added. The minimum payout is US$5. Requests are reviewed before being sent, and DigiArtz may hold or decline a payout where a sale is disputed, where a request appears fraudulent, or where required by law. Payment provider fees and any currency conversion are applied by the provider.</p>' +
+        '<p>You may request a payout of your available balance to a payout method you have added. Each currency has its own minimum, of roughly five US dollars\u2019 worth; the exact figure is shown on the payout form. Payouts are sent in the currency you earned in, and a balance in a currency our payout provider cannot send is held \u2014 not converted \u2014 until a route for it is available.</p>' +
+        '<p>Requests are reviewed before being sent, and DigiArtz may hold or decline a payout where a sale is disputed, where a request appears fraudulent, or where required by law. The payment provider may charge its own fee for sending a payout.</p>' +
 
         '<h3>6. Negative balances and reversals</h3>' +
         '<p>If a sale is reversed after the related earnings have already been paid out to you, the amount becomes a debt owed to DigiArtz. It may be recovered from your future earnings, or requested from you directly.</p>' +
@@ -427,8 +442,9 @@
 
         '<h3>8. Taxes and withholding</h3>' +
         '<p>You are responsible for your own taxes on your earnings. DigiArtz does not provide tax advice.</p>' +
-        '<p>Where you are resident in India, we are required by section 194-O of the Income-tax Act to deduct tax at source on the gross value of your sales through the marketplace, and we deduct it from your payout. With a PAN on file the rate is 0.1%. Individuals and HUFs whose gross sales through DigiArtz stay at or under \u20b95,00,000 in a financial year, and who have furnished a PAN, are exempt. Where no PAN has been furnished, section 206AA applies a rate of 5%. Sellers resident outside India are not covered by this and nothing is withheld.</p>' +
-        '<p>Keeping your tax residence and PAN accurate in your profile settings is your responsibility. Where no declaration is on file we withhold at the higher rate, which you may reclaim through your own return.</p>' +
+        '<p><strong>Tax deducted at source (section 194-O).</strong> Where you are resident in India, we are required to deduct tax at source on the gross value of your sales through the marketplace. The statute requires this at credit or payment, whichever is earlier, so it is deducted <strong>when the sale is recorded</strong> \u2014 not when you withdraw. It is deducted in the currency of the sale and is never taken twice on the same sale. With a PAN on file the rate is 0.1%. Individuals and HUFs whose gross sales through DigiArtz stay at or under \u20b95,00,000 in a financial year, and who have furnished a PAN, are exempt. Where no PAN has been furnished, section 206AA applies a rate of 5%. Sellers resident outside India are not covered by this and nothing is withheld.</p>' +
+        '<p><strong>Tax collected at source (GST, section 52).</strong> Where DigiArtz is required to operate as an e-commerce operator under GST, tax is collected on the sales of sellers in India at the applicable rate and remitted to the government. Where this applies it is shown as a separate deduction against each sale. Where it does not apply, nothing is collected.</p>' +
+        '<p>Keeping your tax residence and PAN accurate in your profile settings is your responsibility. Where no declaration is on file we treat you as resident in India without a PAN and withhold at the higher rate, which you may reclaim through your own return.</p>' +
 
         '<h3>9. Prohibited listings</h3>' +
         '<p>You may not list work you do not hold the rights to, work that infringes another person\u2019s rights, or anything prohibited by our Terms &amp; Conditions. Listings are subject to review and may be removed. We may withhold earnings from a sale of an infringing item.</p>' +

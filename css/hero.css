@@ -329,7 +329,6 @@
     .upSecBtn .fgSecIco{width:20px;height:20px;border-radius:6px;}
     .upSecBtn .fgSecIco svg{width:12px;height:12px;}
     .dzHint{font-size:.72rem;color:var(--txd);margin-top:.3rem;line-height:1.5;}
-    .dzRowFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;}
     .dzSel{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.85rem;padding:.6rem .7rem;outline:none;}
     .dzSel:focus{border-color:var(--pg);}
     /* file picker */
@@ -1187,24 +1186,244 @@
       margin:0 0 1rem;font-family:var(--fm);font-size:.66rem;font-weight:700;
       letter-spacing:.16em;text-transform:uppercase;color:var(--txd);
     }
-    .dzPayNote{padding:1.6rem .2rem;text-align:center;font-size:.86rem;color:var(--txd);}
-    .dzPayAmt{
-      margin-bottom:.9rem;padding-bottom:.9rem;border-bottom:1px solid var(--bdr);
-      font-size:.9rem;font-weight:600;color:var(--tx);
-    }
     .dzPayBtns{min-height:52px;}
 
-    /* provider chooser, one row each */
-    .dzPayPick{display:flex;flex-direction:column;gap:.6rem;}
+    /* ---- provider chooser -----------------------------------------------
+       Two providers, one OR the other. They take different things — Razorpay
+       every card and UPI, PayPal the PayPal account and no card at all — so
+       they are drawn as separate cards with a real "or" between them rather
+       than a stack that reads as one list of vaguely similar buttons. */
+    .dzPayPick{display:flex;flex-direction:column;gap:.55rem;}
     .dzPayOpt{
-      display:flex;flex-direction:column;gap:.2rem;width:100%;padding:.85rem .95rem;
-      border:1px solid var(--bdr);border-radius:12px;background:var(--sur2);
-      text-align:left;cursor:pointer;transition:border-color .15s,transform .15s;
+      display:flex;flex-direction:column;gap:.4rem;width:100%;padding:.9rem 1rem;
+      border:1px solid var(--bdr);border-radius:14px;background:var(--sur2);
+      text-align:left;cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s;
     }
     .dzPayOpt:active{transform:scale(.99);}
-    @media(hover:hover){.dzPayOpt:hover{border-color:var(--pg);}}
-    .dzPayOptName{font-size:.92rem;font-weight:700;color:var(--tx);}
-    .dzPayOptNote{font-size:.74rem;color:var(--txd);}
+
+    /* ---- provider brand colours -----------------------------------------
+       These are Razorpay's blue and PayPal's navy-and-gold, written as fixed
+       hex rather than theme variables ON PURPOSE. The rest of this page
+       follows the site theme; a payment card must not, because a Razorpay
+       card that turns grey in one theme and purple in another stops looking
+       like Razorpay, which is the one thing it has to look like at the moment
+       a buyer decides where their money goes. Each card sets its own --dzB /
+       --dzB2 and everything inside it — logo tile, tick, chip borders, the
+       selected ring — reads from those, so the two never share a colour. */
+    .dzPayOpt--rzp,.dzCoProv--rzp{--dzB:#3395FF; --dzB2:#0B2E63;}
+    .dzPayOpt--paypal,.dzCoProv--paypal{--dzB:#009CDE; --dzB2:#003087;}
+    .dzPayOpt--rzp{
+      background:
+        linear-gradient(150deg, rgba(51,149,255,.16), rgba(51,149,255,.03) 62%),
+        var(--sur2);
+      border-color:rgba(51,149,255,.42);
+    }
+    /* PayPal is blue too, so its card leans on the other half of that brand —
+       the deep navy and the gold of their own button — or the two would read
+       as one provider in two boxes. */
+    .dzPayOpt--paypal{
+      background:
+        linear-gradient(150deg, rgba(0,48,135,.34), rgba(255,196,57,.13) 88%),
+        var(--sur2);
+      border-color:rgba(0,156,222,.48);
+    }
+    @media(hover:hover){.dzPayOpt:hover{border-color:var(--dzB, var(--pg));}}
+    .dzPayOpt--on{
+      border-color:var(--dzB, var(--pg));
+      box-shadow:0 0 0 1px var(--dzB, var(--pg)) inset, 0 8px 22px rgba(0,0,0,.16);
+    }
+
+    .dzPayOptTop{display:flex;align-items:center;gap:.55rem;}
+    /* the provider's own mark, inline so it cannot fail to load */
+    .dzPayLogo{
+      flex:0 0 auto;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+      background:linear-gradient(155deg, var(--dzB, var(--pg)), var(--dzB2, var(--pgd)));
+      color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.22);
+    }
+    .dzPayLogo svg{width:16px;height:16px;display:block;fill:currentColor;}
+    .dzPayOptName{font-size:.98rem;font-weight:700;color:var(--tx);}
+    .dzPayOptTick{
+      margin-left:auto;width:21px;height:21px;border-radius:999px;
+      display:grid;place-items:center;font-size:.66rem;
+      background:var(--dzB, var(--pg));color:#fff;opacity:0;transition:opacity .15s;
+    }
+    .dzPayOpt--on .dzPayOptTick{opacity:1;}
+    .dzPayOptNote{font-size:.78rem;line-height:1.45;color:var(--txd);}
+
+    /* Accepted-methods strip: each brand's own mark in its own colour, on a
+       white chip. White because that is the background every one of these
+       logos is drawn for, and because it then reads identically in every site
+       theme instead of a navy Visa vanishing into a dark card. */
+    .dzPayMarks{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem;margin-top:.1rem;}
+    .dzPayMark{
+      width:40px;height:26px;border-radius:5px;display:grid;place-items:center;
+      background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);
+    }
+    /* These marks are drawn inside a 24-unit square but most of them are wide
+       and short, so the box is filled rather than inset — a Visa wordmark that
+       only uses the middle third of its own viewBox is small enough already. */
+    .dzPayMark svg{width:24px;height:24px;display:block;}
+
+    .dzPayOptWays{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem;}
+    .dzPayWay{
+      padding:.2rem .45rem;border:1px solid var(--bdr);border-radius:6px;
+      background:var(--sur);font-family:var(--fm);font-size:.62rem;font-weight:600;
+      letter-spacing:.04em;color:var(--txd);white-space:nowrap;
+    }
+    .dzPayOpt--rzp .dzPayWay{border-color:rgba(51,149,255,.35);}
+    .dzPayOpt--paypal .dzPayWay{border-color:rgba(0,156,222,.35);}
+    /* the word that keeps the two apart */
+    .dzPayOr{
+      display:flex;align-items:center;gap:.7rem;margin:.15rem 0;
+      font-family:var(--fm);font-size:.6rem;font-weight:700;
+      letter-spacing:.2em;text-transform:uppercase;color:var(--txd);
+    }
+    .dzPayOr::before,.dzPayOr::after{content:'';flex:1;height:1px;background:var(--bdr);}
+
+    /* ---- the checkout page ----------------------------------------------
+       Buying gets a whole page, not a sheet. Top to bottom: whose site this
+       is, what is being bought, how it is being paid for, and only then the
+       provider's own window. Injected by the signed-in module, so none of
+       this matches anything for a signed-out visitor. */
+    html.dzCoOpen, html.dzCoOpen body{overflow:hidden;}
+    .dzCo{
+      position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;
+      background:var(--bg);animation:dzCoIn .18s ease-out;
+    }
+    @keyframes dzCoIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+    .dzCoBar{
+      flex:0 0 auto;display:flex;align-items:center;gap:.7rem;
+      padding:.65rem .9rem;border-bottom:1px solid var(--bdr);background:var(--sur);
+    }
+    .dzCoBack{
+      width:34px;height:34px;flex:0 0 auto;border:1px solid var(--bdr);border-radius:9px;
+      background:var(--sur2);color:var(--tx);font-size:1rem;line-height:1;cursor:pointer;
+    }
+    @media(hover:hover){.dzCoBack:hover{border-color:var(--bdrh);}}
+    /* the site wordmark, worn the same way here as on the hero badge */
+    .dzCoBrand{
+      font-family:var(--fd);font-size:1.08rem;font-weight:800;
+      letter-spacing:-.01em;color:var(--tx);
+    }
+    .dzCoBrandA{color:var(--brand-red);}
+    .dzCoLock{
+      margin-left:auto;display:flex;align-items:center;gap:.3rem;
+      font-family:var(--fm);font-size:.64rem;font-weight:600;
+      letter-spacing:.1em;text-transform:uppercase;color:var(--txd);
+    }
+
+    .dzCoScroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    .dzCoWrap{max-width:620px;margin:0 auto;padding:1.5rem 1rem 4rem;}
+    .dzCoH1{
+      margin:0 0 1.4rem;font-family:var(--fd);font-size:1.45rem;font-weight:800;
+      letter-spacing:-.02em;color:var(--tx);
+    }
+    .dzCoStep{margin-bottom:1.5rem;}
+    .dzCoStep[hidden]{display:none;}
+    .dzCoStepHead{display:flex;align-items:center;gap:.55rem;margin-bottom:.65rem;}
+    .dzCoNum{
+      flex:0 0 auto;width:23px;height:23px;border-radius:999px;display:grid;place-items:center;
+      background:var(--pg);color:var(--text-on-accent);
+      font-family:var(--fm);font-size:.7rem;font-weight:800;
+    }
+    .dzCoStepHead h2{margin:0;font-size:.92rem;font-weight:700;color:var(--tx);}
+    .dzCoBox{
+      padding:1rem;border:1px solid var(--bdr);border-radius:16px;background:var(--sur);
+    }
+
+    /* step 1 — what is being bought */
+    .dzCoItem{display:flex;align-items:center;gap:.8rem;}
+    .dzCoThumb{
+      flex:0 0 auto;width:56px;height:56px;border-radius:11px;object-fit:cover;
+      border:1px solid var(--bdr);background:var(--sur2);
+    }
+    .dzCoThumbNo{display:grid;place-items:center;font-size:1.2rem;color:var(--txd);}
+    .dzCoItemMain{min-width:0;flex:1 1 auto;}
+    .dzCoItemName{
+      font-size:.96rem;font-weight:700;color:var(--tx);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .dzCoItemSub{margin-top:.15rem;font-size:.75rem;color:var(--txd);}
+    .dzCoItemPrice{flex:0 0 auto;font-size:1rem;font-weight:800;color:var(--tx);}
+    .dzCoGetsHead{
+      margin:1rem 0 .45rem;font-family:var(--fm);font-size:.62rem;font-weight:700;
+      letter-spacing:.16em;text-transform:uppercase;color:var(--txd);
+    }
+    .dzCoGets{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.35rem;}
+    .dzCoGets li{
+      position:relative;padding-left:1.15rem;font-size:.8rem;line-height:1.45;color:var(--txd);
+    }
+    .dzCoGets li::before{
+      content:'\2713';position:absolute;left:0;top:0;font-size:.72rem;color:var(--pg);
+    }
+    .dzCoTot{margin:1rem 0 0;padding-top:.85rem;border-top:1px solid var(--bdr);}
+    .dzCoTotRow{
+      display:flex;align-items:baseline;justify-content:space-between;gap:1rem;padding:.22rem 0;
+    }
+    .dzCoTotRow dt{margin:0;font-size:.8rem;color:var(--txd);}
+    .dzCoTotRow dd{margin:0;font-size:.85rem;font-weight:600;color:var(--tx);}
+    .dzCoTotRow--sum{
+      margin-top:.4rem;padding-top:.55rem;border-top:1px solid var(--bdr);
+    }
+    .dzCoTotRow--sum dt{font-size:.86rem;font-weight:700;color:var(--tx);}
+    .dzCoTotRow--sum dd{font-size:1.1rem;font-weight:800;color:var(--tx);}
+    .dzCoItemNote{margin:.8rem 0 0;font-size:.74rem;line-height:1.5;color:var(--txd);}
+
+    /* step 2 — why the buyer is being sent back here */
+    .dzCoPickMsg{
+      margin-bottom:.75rem;padding:.6rem .7rem;border-radius:10px;
+      background:var(--sur2);border:1px solid var(--bdr);
+      font-size:.78rem;line-height:1.45;color:var(--txd);
+    }
+    .dzCoPickMsg[hidden]{display:none;}
+
+    /* ---- plan tones ------------------------------------------------------
+       Lite is blue, Premium purple, Max gold on the plan page. The checkout
+       summary wears the same colour so the buyer can see they are paying for
+       the card they tapped, not the one beside it. Same hexes as the plan
+       grid in panels.css. */
+    .dzCoTone--blue  {--dzT:#3b82f6; --dzT2:#6366f1;}
+    .dzCoTone--purple{--dzT:#a855f7; --dzT2:#ec4899;}
+    .dzCoTone--gold  {--dzT:#eab308; --dzT2:#f97316;}
+    .dzCoTone{position:relative;overflow:hidden;border-color:color-mix(in srgb,var(--dzT) 34%,transparent);}
+    .dzCoTone::before{
+      content:'';position:absolute;left:0;right:0;top:0;height:3px;
+      background:linear-gradient(90deg, var(--dzT), var(--dzT2), var(--dzT));
+    }
+    .dzCoTone .dzCoGets li::before{color:var(--dzT);}
+    .dzCoTone .dzCoThumb{
+      border-color:color-mix(in srgb,var(--dzT) 40%,transparent);
+      background:color-mix(in srgb,var(--dzT) 12%,transparent);
+      color:var(--dzT);
+    }
+    .dzCoTone .dzCoItemPrice{color:var(--dzT);}
+
+    /* step 3 — the gateway itself */
+    .dzCoProv{
+      display:flex;align-items:center;gap:.5rem;margin-bottom:.85rem;
+    }
+    .dzCoProvName{font-size:.92rem;font-weight:700;color:var(--tx);}
+    .dzCoPaying{
+      display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+      margin-bottom:.85rem;padding-bottom:.75rem;border-bottom:1px solid var(--bdr);
+    }
+    .dzCoPayingWhat{
+      min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      font-size:.85rem;font-weight:600;color:var(--tx);
+    }
+    .dzCoPayingAmt{flex:0 0 auto;font-size:1rem;font-weight:800;color:var(--tx);}
+    .dzCoGateNote{
+      padding:.4rem 0 .9rem;font-size:.8rem;line-height:1.5;color:var(--txd);
+    }
+    .dzCoFine{
+      margin:1.8rem 0 0;font-size:.72rem;line-height:1.6;color:var(--txd);text-align:center;
+    }
+
+    @media(min-width:700px){
+      .dzCoWrap{padding:2.2rem 1rem 5rem;}
+      .dzCoH1{font-size:1.7rem;}
+    }
 
     /* ---- gated placeholder ---------------------------------------------
        What a signed-out visitor sees where the plan grid would be. */
@@ -1221,6 +1440,7 @@
 
     @media(prefers-reduced-motion:reduce){
       .dzPay{animation:none;}
+      .dzCo{animation:none;}
       .dzPayOpt{transition:none;}
       .dzPayOpt:active{transform:none;}
     }
@@ -1250,6 +1470,41 @@
     }
     .dzWlCell span{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);}
     .dzWlCell b{font-size:1rem;color:var(--tx);}
+
+    /* one wallet card per currency — they stack, they never add up */
+    .dzWlCur + .dzWlCur{margin-top:1rem;}
+
+    /* ---- pending ---------------------------------------------------------
+       Deliberately NOT styled like the wallet. It is a different fact: the
+       whole sale, still with the provider, none of it withdrawable. A seller
+       who cannot tell these two apart at a glance will believe the larger
+       number is theirs. */
+    .dzWlPend{
+      padding:.9rem 1rem;border:1px dashed var(--bdr);border-radius:14px;
+      background:var(--sur2);
+    }
+    .dzWlPend + .dzWlPend{margin-top:.6rem;}
+    .dzWlPendTop{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;}
+    .dzWlPendLbl{
+      font-family:var(--fm);font-size:.6rem;font-weight:700;letter-spacing:.16em;
+      text-transform:uppercase;color:var(--txd);
+    }
+    .dzWlPendAmt{font-size:1.3rem;font-weight:800;color:var(--txd);}
+    .dzWlPendWhy{margin:.45rem 0 .7rem;font-size:.74rem;line-height:1.5;color:var(--txd);}
+    .dzWlPendList{
+      list-style:none;margin:0;padding:.65rem 0 0;border-top:1px solid var(--bdr);
+      display:flex;flex-direction:column;gap:.32rem;
+    }
+    .dzWlPendList li{
+      display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+      font-size:.76rem;color:var(--txd);
+    }
+    .dzWlPendList b{font-weight:600;color:var(--txd);}
+    .dzWlPendNet{
+      margin-top:.3rem;padding-top:.5rem;border-top:1px solid var(--bdr);
+    }
+    .dzWlPendNet span{font-weight:600;color:var(--tx);}
+    .dzWlPendNet b{font-size:.95rem;font-weight:800;color:var(--tx);}
 
     .dzWlSect{
       margin:1.1rem 0 .5rem;font-family:var(--fm);font-size:.6rem;font-weight:700;
@@ -1386,10 +1641,6 @@
     /* ---- my purchases ---------------------------------------------------
        The buyer's page, built by the signed-in module. Same card language as
        the wallet next door, because they are two halves of one ledger. */
-    .dzPuHead{
-      margin:.6rem 0 .5rem;font-family:var(--fm);font-size:.6rem;font-weight:700;
-      letter-spacing:.16em;text-transform:uppercase;color:var(--txd);
-    }
     .dzPuNote{margin:0 0 .9rem;font-size:.76rem;line-height:1.55;color:var(--txd);}
     .dzPuList--top{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;}
     .dzPuRow{
@@ -1487,16 +1738,17 @@
     .dzGetBtn:disabled{opacity:.5;cursor:progress;}
     @media(hover:hover){.dzGetBtn:not(:disabled):hover{filter:brightness(1.12);}}
 
-    /* Wallet, purchases and payout methods pages, opened from the Settings
-       menu. Same slide-in as #setPage so they behave like every other sub-page
-       there. */
-    #walletPage,#bankPage,#purchasePage{
+    /* The account panel, opened from the Settings menu. One element, built by
+       the signed-in module, holding whichever of its three views was asked
+       for. Same slide-in as #setPage so it behaves like every other sub-page
+       there, and it matches nothing at all until the module creates it. */
+    #dzPanelHost{
       position:fixed;inset:0;z-index:547;background:var(--bg);color:var(--tx);
       overflow-y:auto;transform:translateX(100%);
       transition:transform .45s cubic-bezier(.22,1,.36,1);
     }
-    #walletPage.open,#bankPage.open,#purchasePage.open{transform:translateX(0);}
+    #dzPanelHost.open{transform:translateX(0);}
     .dzPanelWrap{max-width:640px;margin:0 auto;padding:.4rem .9rem 2.5rem;}
     @media(prefers-reduced-motion:reduce){
-      #walletPage,#bankPage,#purchasePage{transition:none;}
+      #dzPanelHost{transition:none;}
     }

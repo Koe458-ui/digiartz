@@ -18,7 +18,17 @@
 // correct resting place: reviewed, owed, not yet sent. Everything up to that
 // point works without the approval.
 
-const MIN_PAYOUT = 500;   // five dollars, in minor units — below this the fees eat it
+// The minimum is per currency, and it is NOT one figure converted eight ways.
+// Converting a dollar minimum into the seller's currency would be the same
+// mistake the wallet used to make in the other direction — a rate moving would
+// silently move the floor. These are round numbers in each currency, roughly
+// five dollars' worth, chosen once.
+const MIN_PAYOUT = {
+  USD: 500, EUR: 500, GBP: 400, INR: 50000, JPY: 700,
+  AUD: 800, CAD: 700, SGD: 700,
+};
+const MIN_DEFAULT = 500;
+const minPayout = (cur) => MIN_PAYOUT[cur] != null ? MIN_PAYOUT[cur] : MIN_DEFAULT;
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
@@ -27,6 +37,13 @@ const apiBase = (env) =>
   String(env.PAYPAL_ENV || '').trim().toLowerCase() === 'sandbox'
     ? 'https://api-m.sandbox.paypal.com'
     : 'https://api-m.paypal.com';
+
+// What PayPal will actually send. A balance in anything else is not lost and
+// is not converted — it waits for a route, and the seller is told that rather
+// than being handed a dollar figure that cost them a spread.
+const PP_PAYOUT_CURRENCIES = new Set(['AUD', 'BRL', 'CAD', 'CZK', 'DKK', 'EUR',
+  'HKD', 'HUF', 'ILS', 'JPY', 'MYR', 'MXN', 'TWD', 'NZD', 'NOK', 'PHP', 'PLN',
+  'GBP', 'SGD', 'SEK', 'CHF', 'THB', 'USD']);
 
 const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD']);
 const toValue = (minor, cur) =>
@@ -227,62 +244,26 @@ async function reconciled(env, userId, currency) {
 }
 
 // ---------------------------------------------------------------------------
-// TDS under section 194-O.
+// TDS under section 194-O is NOT here any more.
 //
-// The obligation is the platform's, not the seller's: an e-commerce operator
-// facilitating a sale by a resident participant withholds from the GROSS sale
-// value at credit or payment, whichever is earlier. So it is computed here,
-// against the gross of the sales a payout settles, not against the payout.
+// The statute withholds at credit or payment, whichever is EARLIER, and the
+// credit is the sale — so it now happens in Postgres, in
+// dz_earning_apply_deductions(), at the moment the earning is written. The
+// rates live in platform_tax_config because they are set by statute and change
+// without notice: 0.1% since October 2024, 5% with no PAN under section 206AA,
+// nil for an individual or HUF under the Rs 5,00,000 floor who has furnished
+// one, nil for a seller resident outside India.
 //
-//   0.1%  the rate since 1 October 2024
-//   5%    where no PAN has been furnished (section 206AA)
-//   nil   an individual or HUF at or under Rs 5,00,000 of gross sales in the
-//         financial year who has furnished a PAN, which is most sellers
-//   nil   a seller resident anywhere other than India
-const TDS_BPS      = 10;         // 0.1%
-const TDS_NO_PAN   = 500;        // 5%
-const TDS_FLOOR_IN = 50000000;   // Rs 5,00,000 in paise
-
-async function tdsFor(env, userId, grossBasis) {
-  const rows = await sbService(env,
-    '/seller_tax?user_id=eq.' + userId + '&select=country,pan,is_individual&limit=1');
-  const t = rows && rows[0];
-
-  // No declaration on file is treated as Indian residence without a PAN. That
-  // is the cautious reading: under-withholding is the platform's liability,
-  // over-withholding is the seller's to reclaim in their return.
-  const country = (t && t.country) || 'IN';
-  if (country !== 'IN') return { bps: 0, amount: 0 };
-
-  const pan = t && t.pan;
-  if (!pan) return { bps: TDS_NO_PAN, amount: Math.round(grossBasis * TDS_NO_PAN / 10000) };
-
-  if (t && t.is_individual) {
-    const fy = await sbRpcService(env, 'dz_fy_gross', { p_user: userId });
-    if (Number(fy) <= TDS_FLOOR_IN) return { bps: 0, amount: 0 };
-  }
-  return { bps: TDS_BPS, amount: Math.round(grossBasis * TDS_BPS / 10000) };
-}
-
-// service-role RPC, for functions a member may not call directly
-async function sbRpcService(env, fn, args = {}) {
-  const res = await fetch(sbUrl(env) + '/rest/v1/rpc/' + fn, {
-    method: 'POST',
-    headers: {
-      apikey: sbSvc(env),
-      authorization: 'Bearer ' + sbSvc(env),
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(args),
-  });
-  if (!res.ok) return 0;
-  return res.json().catch(() => 0);
-}
+// This file used to compute all of that again at payout time. Two copies of a
+// tax calculation is one too many, and the second one ran on a balance the
+// first had already reduced.
 
 // ---------------------------------------------------------------------------
-// What this seller may actually withdraw, computed from the ledger rather than
-// trusted from the caller. Mirrors dz_seller_balance(), but on the service role
-// so it can be relied on for a write.
+// What this seller may actually withdraw, computed from the earnings rather
+// than trusted from the caller. dz_wallet_summary() answers the same question
+// for the browser as the CALLER; this answers it on the service role, which is
+// what a write may rely on. Both count only earnings whose settlement window
+// has elapsed, less anything a payout already has a claim on.
 async function withdrawable(env, userId) {
   const earnings = await sbService(env,
     '/marketplace_earnings?seller_id=eq.' + userId +
@@ -346,15 +327,20 @@ export async function onRequestPost({ env, request }) {
         '&order=requested_at.desc&limit=50' +
         '&select=id,amount,currency,status,destination,review_note,requested_at,paid_at');
 
+      // summary is a ROW PER CURRENCY now. There is no total across them and
+      // there is not meant to be one — adding a EUR balance to a USD balance
+      // requires a rate, and a rate is exactly what this system no longer
+      // applies to a seller's money.
       return json({
         ok: true,
-        summary: summary || null,
+        summary: Array.isArray(summary) ? summary : [],
         history: history || [],
         methods: methods || [],
         payouts: payouts || [],
         tax: (tax && tax[0]) || null,
         flags: flags || [],
-        minPayout: MIN_PAYOUT,
+        minPayouts: MIN_PAYOUT,
+        minDefault: MIN_DEFAULT,
         withdrawable: await withdrawable(env, user.id),
       });
     }
@@ -466,7 +452,12 @@ export async function onRequestPost({ env, request }) {
 
     // ---- seller: ask for a payout ----------------------------------------
     if (body.action === 'request') {
-      const currency = String(body.currency || 'USD').toUpperCase();
+      // The currency is the seller's, taken from the balance they are drawing
+      // on. It used to default to USD, which is how a EUR seller ended up
+      // asking for dollars they did not have — and, when the amount happened to
+      // clear, how their money crossed a spread on the way out.
+      const currency = String(body.currency || '').toUpperCase();
+      if (!/^[A-Z]{3}$/.test(currency)) return json({ error: 'Pick a currency to withdraw' }, 400);
       const amount   = Math.round(Number(body.amount));
       if (!Number.isFinite(amount) || amount <= 0) return json({ error: 'Bad amount' }, 400);
 
@@ -489,6 +480,16 @@ export async function onRequestPost({ env, request }) {
       if (m.kind !== 'paypal_email')
         return json({ error: 'Only PayPal payouts can be sent automatically right now' }, 400);
 
+      // Said here rather than discovered at send time, and said instead of
+      // quietly converting. A currency PayPal will not pay out in is a
+      // currency this seller cannot be paid in TODAY — the honest answer is to
+      // say so and leave the balance where it is, not to move it through a
+      // dollar and hand them the remainder.
+      if (!PP_PAYOUT_CURRENCIES.has(currency))
+        return json({ error: 'PayPal cannot pay out in ' + currency +
+          '. Your ' + currency + ' balance stays as it is — nothing is converted — ' +
+          'until a payout route for it is available. Contact support if you need it sooner.' }, 400);
+
       // Before anything else: do the two records agree?
       const rec = await reconciled(env, user.id, currency);
       if (!rec.ok) {
@@ -501,39 +502,49 @@ export async function onRequestPost({ env, request }) {
       }
 
       const avail = (await withdrawable(env, user.id))[currency] || 0;
+      if (!avail)
+        return json({ error: 'You have no ' + currency + ' balance to withdraw' }, 400);
       if (amount > avail)
         return json({ error: 'You can withdraw at most ' + toValue(avail, currency) + ' ' + currency }, 400);
-      if (amount < MIN_PAYOUT)
-        return json({ error: 'Minimum payout is ' + toValue(MIN_PAYOUT, currency) + ' ' + currency }, 400);
+      const min = minPayout(currency);
+      if (amount < min)
+        return json({ error: 'Minimum payout is ' + toValue(min, currency) + ' ' + currency }, 400);
 
-      // Gross basis: the sale value behind the share being withdrawn. Walked
-      // from the actual earnings rather than derived from the fee rate, since
-      // the rate is recorded per sale and older rows may carry a different one.
+      // TDS IS NOT COMPUTED HERE ANY MORE.
+      //
+      // Section 194-O withholds at credit or payment, whichever is EARLIER,
+      // and the credit is the sale. It is now withheld by
+      // dz_earning_apply_deductions() at the moment the earning is written, so
+      // the balance a seller is looking at is already net of it. Taking it
+      // again here would withhold twice on the same sale.
+      //
+      // The figures are still carried on the request, for the record — walked
+      // from the earnings this payout will actually retire, oldest first, the
+      // same order admin-send retires them in.
       const covering = await sbService(env,
         '/marketplace_earnings?seller_id=eq.' + user.id +
         '&status=eq.available&currency=eq.' + currency +
-        '&select=gross_amount,net_amount&order=created_at.asc');
-      let left = amount, grossBasis = 0;
+        '&select=gross_amount,net_amount,tds_amount&order=created_at.asc');
+      let left = amount, grossBasis = 0, tdsAlready = 0;
       for (const e of covering || []) {
         if (left <= 0) break;
         grossBasis += Number(e.gross_amount || 0);
+        tdsAlready += Number(e.tds_amount || 0);
         left -= Number(e.net_amount || 0);
       }
-
-      const tds = await tdsFor(env, user.id, grossBasis);
-      const net = amount - tds.amount;
-      if (net <= 0) return json({ error: 'Nothing would be left after tax withholding' }, 400);
 
       const rows = await sbService(env, '/payout_requests', {
         method: 'POST',
         body: JSON.stringify({
           user_id: user.id, amount, currency,
           method: 'paypal', destination: dest, status: 'requested',
-          gross_basis: grossBasis, tds_bps: tds.bps,
-          tds_amount: tds.amount, net_amount: net,
+          gross_basis: grossBasis,
+          // already withheld at the sale; nothing further comes off here
+          tds_amount: tdsAlready, tds_bps: 0, net_amount: amount,
         }),
       });
-      return json({ ok: true, request: rows && rows[0], tds: tds.amount, net: net });
+      return json({ ok: true, request: rows && rows[0], tds: 0, net: amount,
+                    tdsAlreadyWithheld: tdsAlready });
     }
 
     // ---- seller: change their mind ---------------------------------------

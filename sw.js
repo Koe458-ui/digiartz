@@ -4,6 +4,132 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v99 — the account pages leave the public page entirely, and the seller
+       terms catch up with what the code actually does.
+       index.html carried three Settings items and three page shells for
+       the money side of an account. Every figure had already been stripped
+       out of them, but the headings themselves still announced — to any
+       visitor, any crawler, anyone reading source — that members hold a
+       balance and that it gets paid out. None of that is in the page any
+       more. /api/store injects the three menu items and builds ONE panel
+       with three views, so a signed-out visitor's source has no wallet, no
+       payouts, no purchases, and no id or function name hinting at them.
+       Three shells that had to be kept in step became one; #walletPage,
+       #bankPage and #purchasePage are gone, along with the six open/close
+       functions and the two helpers in misc-core.js that drove them.
+       The Creator & Seller Terms were wrong after v98 and are rewritten:
+       the payment provider's fee is named as a deduction for the first
+       time, the flat 7-day clearing period is replaced by the providers'
+       real settlement windows, TDS is stated as withheld at the sale
+       rather than at payout, GST TCS is described, and the currency
+       promise — earned, held and paid in one currency, never converted —
+       is written down. They stay publicly readable: a seller has to be
+       able to read the terms before listing.
+       Dead code deleted rather than left to be puzzled over later: usd(),
+       an unused say() helper, and the .dzPayNote, .dzPayAmt, .dzPuHead,
+       .dzRowFields and .dzCoTone--green rules, none of which had matched
+       anything since the checkout page landed.
+       The ?v= on every shell file this release touched is bumped in BOTH
+       index.html and the precache list here. They key on the full url
+       including the search, so a list that moves in one place and not the
+       other precaches urls nobody asks for — the exact fault v69 was
+       written to fix, and easy to walk straight back into.
+       Changed: sw.js, index.html, css/hero.css, js/misc-core.js,
+       js/app-core.js, js/sections.js, js/auth.js, js/effects.js,
+       functions/api/store.js.
+
+   v98 — the wallet stops promising money that is not there, and the seller's
+       money stops being converted.
+       Two faults, both about the same number. A sale credited the seller
+       with gross-minus-commission after a flat seven days, and three
+       things were missing from that: the gateway's own fee, which
+       Razorpay and PayPal take before a rupee reaches us; TDS under
+       section 194-O, which the statute withholds at credit or payment
+       whichever is EARLIER, so taking it at payout time was late and was
+       taken a second time on a balance that already had it deducted; and
+       GST TCS under section 52, which was not collected at all. The seven
+       days were invented — the providers say when they settle, and it is
+       T+2 working days for Razorpay domestic, T+7 international, up to
+       five business days for PayPal.
+       And the wallet totalled every currency into USD while the payout
+       form asked for dollars, so a euro sale crossed a spread to be shown
+       and again to be paid, with the tax basis computed off the far side
+       of both. fx_rates.usd_rate is dropped: no query can route through
+       the dollar again.
+       Now: a sale lands in PENDING holding the whole gross, withdrawable
+       by nobody, with every deduction listed beside it and the date it
+       clears. When the provider's window elapses it becomes WALLET,
+       holding only what survived. The two are separate sections and are
+       never added together. Both are per currency, and a currency is
+       never converted — earned in euros, held in euros, paid in euros.
+       The one conversion left in the system is our own commission into
+       INR, once, at a rate frozen on the row, because that and the
+       subscriptions are the only money that reaches our bank.
+       Every deduction is computed in ONE place now — a Postgres trigger —
+       instead of in the four checkout paths that each had their own copy
+       of it. Those paths send facts and no arithmetic: what the buyer
+       paid and what the gateway took, read from the provider rather than
+       estimated from a rate card.
+       Also fixed while in here: recordEarning appended to the append-only
+       ledger on every replay, so a webhook arriving after the browser had
+       already settled the same sale credited it twice, the two records
+       then disagreed, and dz_reconcile froze an honest seller's
+       withdrawals with no way back. The append now happens only on a real
+       insert.
+       Changed: sw.js, css/hero.css, functions/api/store.js, payouts.js,
+       rzp.js, paypal.js, rzp-webhook.js, paypal-webhook.js, and
+       supabase/migrations/20260802_money_flow.sql (applied).
+
+   v97 — checkout is a page, the two gateways are told apart, and Razorpay
+       finally has a webhook.
+       Buying used to open a small sheet that asked "Razorpay or PayPal?"
+       and nothing else. A buyer tapping Buy saw no title, no total and no
+       statement of what they were about to receive, and the two options
+       sat in one stack reading as interchangeable — which they are not.
+       Buy now opens a full page: DigiArtz at the top, then what is being
+       bought with its price, what the money gets and the total, then the
+       payment method, then the gateway itself. Three numbered steps, and
+       the gateway one does not exist until a method is chosen — nothing
+       is ordered and no ledger row is written before that point, so
+       leaving from step one still costs nothing.
+       The two providers are now drawn as alternatives with a real "or"
+       between them, each in its own logo and its own colours — Razorpay's
+       blue, PayPal's navy and gold — written as fixed hex rather than
+       theme variables, because a Razorpay card that turns purple in one
+       theme stops looking like Razorpay. Both marks are inline SVG: a
+       payment choice must not wait on someone else's CDN. They differ in
+       what they take, and the page says so: Razorpay handles cards —
+       credit and debit — plus UPI, net banking, wallets and EMI; PayPal
+       is the PayPal account alone. Every card and local funding source is
+       switched off in the PayPal SDK url, so its guest "Debit or Credit
+       Card" button is not offered here at all. A buyer who backs out of
+       either window lands back on step two with the reason on it, order
+       intact.
+       The methods carry their own marks as well as their names: Visa and
+       Mastercard for the card line, Google Pay and PhonePe for UPI, each
+       in the brand's colour on a white chip, which is the background all
+       of them are drawn for and the only one that reads the same in every
+       site theme. UPI and RuPay have no artwork we can carry offline and
+       an approximation would be worse than none, so the apps that ride
+       UPI stand in for it and the exact wording stays in the chips
+       underneath, where nothing is left to a logo to imply.
+       The summary carries the plan's own colour too — Lite blue, Premium
+       purple, Max gold, the same hexes as the plan grid — so what is
+       being paid for is recognisably the card that was tapped. The bar
+       above it wears the site wordmark the way the hero badge does.
+       And the webhook. /api/rzp-webhook is the Razorpay half of what
+       PayPal has had all along: the settlement of record, for the buyer
+       whose tab closed between paying and the browser confirming it, and
+       the only way a refund or a chargeback days later is ever heard
+       about. Signed with RAZORPAY_WEBHOOK_SECRET over the RAW body,
+       fails closed with no secret bound, idempotent against the browser
+       having already verified the same payment, and it refuses to fulfil
+       on an amount that does not match the order. A partial refund does
+       not revoke a purchase; a lost dispute does, and an opened one
+       parks the seller's share rather than paying it out mid-argument.
+       Changed: sw.js, css/hero.css, js/sections.js, functions/api/
+       store.js, functions/api/rzp-webhook.js (new), config.example.js.
+
    v96 — the marketplace sells files instead of pointing at them.
        A listing used to be one product file uploaded to the public
        bucket, with a Download button drawn for every visitor and refused
@@ -1183,7 +1309,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v96';
+const CACHE_VERSION = 'v99';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1207,7 +1333,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=74',
+  '/css/hero.css?v=75',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
@@ -1232,11 +1358,11 @@ const SHELL_URLS = [
   '/js/dm.js?v=4',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
-  '/js/misc-core.js?v=4',
-  '/js/app-core.js?v=9',
+  '/js/misc-core.js?v=5',
+  '/js/app-core.js?v=10',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=68',
-  '/js/auth.js?v=2',
+  '/js/auth.js?v=3',
   '/js/profile.js?v=4',
   '/js/albums.js?v=3',
   '/js/drafts.js?v=1',
@@ -1248,12 +1374,12 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=2',
   '/js/search.js?v=2',
   '/js/feed.js?v=2',
-  '/js/effects.js?v=3',
+  '/js/effects.js?v=4',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=2',
-  '/js/sections.js?v=76',
+  '/js/sections.js?v=77',
   '/js/navprogress.js?v=5'
 ];
 

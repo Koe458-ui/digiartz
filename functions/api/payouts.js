@@ -259,9 +259,11 @@ async function reconciled(env, userId, currency) {
 // first had already reduced.
 
 // ---------------------------------------------------------------------------
-// What this seller may actually withdraw, computed from the ledger rather than
-// trusted from the caller. Mirrors dz_seller_balance(), but on the service role
-// so it can be relied on for a write.
+// What this seller may actually withdraw, computed from the earnings rather
+// than trusted from the caller. dz_wallet_summary() answers the same question
+// for the browser as the CALLER; this answers it on the service role, which is
+// what a write may rely on. Both count only earnings whose settlement window
+// has elapsed, less anything a payout already has a claim on.
 async function withdrawable(env, userId) {
   const earnings = await sbService(env,
     '/marketplace_earnings?seller_id=eq.' + userId +

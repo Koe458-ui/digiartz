@@ -29,6 +29,11 @@
        an unused say() helper, and the .dzPayNote, .dzPayAmt, .dzPuHead,
        .dzRowFields and .dzCoTone--green rules, none of which had matched
        anything since the checkout page landed.
+       The ?v= on every shell file this release touched is bumped in BOTH
+       index.html and the precache list here. They key on the full url
+       including the search, so a list that moves in one place and not the
+       other precaches urls nobody asks for — the exact fault v69 was
+       written to fix, and easy to walk straight back into.
        Changed: sw.js, index.html, css/hero.css, js/misc-core.js,
        js/app-core.js, js/sections.js, js/auth.js, js/effects.js,
        functions/api/store.js.
@@ -1328,7 +1333,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=74',
+  '/css/hero.css?v=75',
   '/css/viewer.css?v=4',
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
@@ -1353,11 +1358,11 @@ const SHELL_URLS = [
   '/js/dm.js?v=4',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
-  '/js/misc-core.js?v=4',
-  '/js/app-core.js?v=9',
+  '/js/misc-core.js?v=5',
+  '/js/app-core.js?v=10',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=68',
-  '/js/auth.js?v=2',
+  '/js/auth.js?v=3',
   '/js/profile.js?v=4',
   '/js/albums.js?v=3',
   '/js/drafts.js?v=1',
@@ -1369,12 +1374,12 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=2',
   '/js/search.js?v=2',
   '/js/feed.js?v=2',
-  '/js/effects.js?v=3',
+  '/js/effects.js?v=4',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=2',
-  '/js/sections.js?v=76',
+  '/js/sections.js?v=77',
   '/js/navprogress.js?v=5'
 ];
 

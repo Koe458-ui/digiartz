@@ -400,6 +400,27 @@ export async function onRequestPost({ env, request }) {
       return json({ ok: true, method: made && made[0] });
     }
 
+
+    // ---- which currency this member transacts in --------------------------
+    // Validated against the price table rather than a list in this file, so a
+    // currency can never be selected that the checkout cannot then price.
+    if (body.action === 'currency') {
+      const cur = String(body.currency || '').toUpperCase();
+      if (!/^[A-Z]{3}$/.test(cur)) return json({ error: 'Pick a currency' }, 400);
+
+      const priced = await sbService(env,
+        '/subscription_prices?currency=eq.' + cur + '&select=plan&limit=1');
+      if (!(priced && priced.length))
+        return json({ error: cur + ' is not one of the supported currencies' }, 400);
+
+      // Nothing already earned, owed or charged moves. This sets what happens
+      // NEXT; every existing balance stays in the currency it was earned in.
+      await sbService(env, '/profiles?id=eq.' + user.id, {
+        method: 'PATCH', body: JSON.stringify({ currency: cur }),
+      });
+      return json({ ok: true, currency: cur });
+    }
+
     // ---- tax residence and PAN -------------------------------------------
     if (body.action === 'tax') {
       const country = String(body.country || 'IN').toUpperCase();

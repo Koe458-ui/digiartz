@@ -122,6 +122,16 @@
   }
   window.dzSlot = slot;
 
+  // The twelve currencies a listing may be priced in. Same set the signed-in
+  // module offers as a transacting currency; the default follows whatever the
+  // member picked there, falling back to dollars for anyone who has not.
+  var DZ_CURRENCIES = [['USD','USD'],['INR','INR'],['EUR','EUR'],['GBP','GBP'],
+    ['JPY','JPY'],['AUD','AUD'],['CAD','CAD'],['SGD','SGD'],['CHF','CHF'],
+    ['HKD','HKD'],['NZD','NZD'],['SEK','SEK']];
+  function dzPrefCurrency(){
+    return (window.__dzStore && window.__dzStore.currency) || 'USD';
+  }
+
   function slugify(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
   function labelOf(sec, slug){
     var o = (window.FG_SECTIONS && FG_SECTIONS[sec] && FG_SECTIONS[sec].opts) || [];
@@ -300,7 +310,7 @@
         {k:'description',t:'area', label:'Description', max:3000, ph:'What the buyer receives…'},
         {k:'category',t:'cat',  label:'Category', req:true},
         {k:'price',  t:'num',   label:'Price', ph:'0.00', step:'0.01', hint:'Leave 0 to list it free.'},
-        {k:'currency',t:'sel',  label:'Currency', options:[['USD','USD'],['EUR','EUR'],['GBP','GBP'],['INR','INR'],['JPY','JPY']]},
+        {k:'currency',t:'sel',  label:'Currency', options:DZ_CURRENCIES, pref:1},
         {k:'license',t:'sel',   label:'License', options:LICENSE_MKT},
         {k:'delivery_days',t:'num', label:'Delivery (days)', ph:'e.g. 7', hint:'For commissions and services.'},
         {k:'tags',   t:'tags',  label:'Tags'}
@@ -322,7 +332,7 @@
          hint:'Comma separated. Required for a remote role.'},
         {k:'salary_min',t:'num', label:'Pay from', ph:'0', step:'0.01'},
         {k:'salary_max',t:'num', label:'Pay to', ph:'0', step:'0.01'},
-        {k:'salary_currency',t:'sel', label:'Currency', options:[['USD','USD'],['EUR','EUR'],['GBP','GBP'],['INR','INR'],['JPY','JPY']]},
+        {k:'salary_currency',t:'sel', label:'Currency', options:DZ_CURRENCIES, pref:1},
         {k:'salary_unit',t:'sel', label:'Per', options:[['','—'],['HOUR','Hour'],['DAY','Day'],['WEEK','Week'],['MONTH','Month'],['YEAR','Year']]},
         {k:'apply_url',t:'text', label:'Apply link', ph:'https://…'},
         {k:'apply_email',t:'text', label:'Apply email', ph:'jobs@studio.com',
@@ -550,8 +560,12 @@
       body = '<textarea class="upIn" id="'+id+'" rows="'+(fd.rows||4)+'" maxlength="'+(fd.max||2000)+
              '" placeholder="'+esc(fd.ph||'')+'"></textarea>';
     } else if(fd.t === 'sel'){
+      // A pref field opens on the member's own transacting currency rather
+      // than on whatever happens to be first in the list.
+      var want = fd.pref ? dzPrefCurrency() : null;
       body = '<select class="dzSel" id="'+id+'">'+ (fd.options||[]).map(function(o){
-        return '<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>'; }).join('') +'</select>';
+        return '<option value="'+esc(o[0])+'"'+(o[0]===want?' selected':'')+'>'+
+               esc(o[1])+'</option>'; }).join('') +'</select>';
     } else if(fd.t === 'chk'){
       return '<div class="upField"><label class="upCatOpt" style="padding:.5rem 0">'+
              '<input type="checkbox" id="'+id+'"> '+esc(fd.label)+'</label>'+hint+'</div>';
@@ -1316,7 +1330,7 @@
         row.title = val(sec,'title'); row.description = val(sec,'description');
         row.category = [val(sec,'category')]; row.item_type = type;
         row.price_cents = Math.round(parseFloat(val(sec,'price')||'0') * 100) || 0;
-        row.currency = val(sec,'currency') || 'USD';
+        row.currency = val(sec,'currency') || dzPrefCurrency();
         row.license = val(sec,'license') || 'standard';
         row.delivery_days = parseInt(val(sec,'delivery_days'),10) || null;
         if(pendingSell.length){

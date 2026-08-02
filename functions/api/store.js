@@ -18,10 +18,13 @@
 // never leave the Worker. The gate is against everyone up to that point.
 
 // ---------------------------------------------------------------------------
-// plans — the same table the two checkout backends price against
+// plans — what each one IS. What each one COSTS is not here: prices live in
+// public.subscription_prices, one row per plan per currency, and are read at
+// request time for the currency this member transacts in. A plan therefore has
+// no dollar figure written into it anywhere.
 const PLANS = [
   {
-    id: 'lite', name: 'Lite', price: '$1', tone: 'blue',
+    id: 'lite', name: 'Lite', tone: 'blue',
     tagline: 'For casual users', badge: null, featured: false,
     features: [
       '10 downloads per day — double the free limit',
@@ -32,7 +35,7 @@ const PLANS = [
     cta: 'Start Lite',
   },
   {
-    id: 'premium', name: 'Premium', price: '$5', tone: 'purple',
+    id: 'premium', name: 'Premium', tone: 'purple',
     tagline: 'For active creators', badge: '★ Most Popular', featured: true,
     features: [
       '15 downloads per day — triple the free limit',
@@ -44,7 +47,7 @@ const PLANS = [
     cta: 'Go Premium',
   },
   {
-    id: 'max', name: 'Max', price: '$10', tone: 'gold',
+    id: 'max', name: 'Max', tone: 'gold',
     tagline: 'For power users and serious buyers', badge: '⚡ Best Value',
     featured: false,
     features: [
@@ -59,6 +62,41 @@ const PLANS = [
   },
 ];
 
+
+// ---------------------------------------------------------------------------
+// The twelve currencies this site transacts in. Ordered as a member would
+// scan them, not alphabetically. Every one has an fx rate, three plan prices
+// and a support floor and ceiling — the migration checks that.
+const CURRENCIES = [
+  { code: 'USD', name: 'US dollar' },
+  { code: 'INR', name: 'Indian rupee' },
+  { code: 'EUR', name: 'Euro' },
+  { code: 'GBP', name: 'British pound' },
+  { code: 'JPY', name: 'Japanese yen' },
+  { code: 'AUD', name: 'Australian dollar' },
+  { code: 'CAD', name: 'Canadian dollar' },
+  { code: 'SGD', name: 'Singapore dollar' },
+  { code: 'CHF', name: 'Swiss franc' },
+  { code: 'HKD', name: 'Hong Kong dollar' },
+  { code: 'NZD', name: 'New Zealand dollar' },
+  { code: 'SEK', name: 'Swedish krona' },
+];
+const CURRENCY_CODES = new Set(CURRENCIES.map((c) => c.code));
+
+// JPY quotes whole units; the rest have minor units.
+const ZERO_DECIMAL_SRV = new Set(['JPY', 'HUF', 'TWD']);
+
+function fmtMoney(minor, cur) {
+  const major = ZERO_DECIMAL_SRV.has(cur) ? Number(minor) : Number(minor) / 100;
+  try {
+    return new Intl.NumberFormat('en', {
+      style: 'currency', currency: cur,
+      minimumFractionDigits: ZERO_DECIMAL_SRV.has(cur) ? 0 : (major % 1 ? 2 : 0),
+      maximumFractionDigits: ZERO_DECIMAL_SRV.has(cur) ? 0 : 2,
+    }).format(major);
+  } catch { return major + ' ' + cur; }
+}
+
 const QUOTA = [
   { plan: 'Free', num: '5', tone: 'free' },
   { plan: 'Lite', num: '10', tone: 'lite' },
@@ -69,7 +107,7 @@ const QUOTA = [
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-function plansHtml() {
+function plansHtml(priced) {
   const quota =
     '<div class="subQuota" role="group" aria-labelledby="subQuotaTitle">' +
       '<div class="subQuotaTitle" id="subQuotaTitle">Daily download limit</div>' +
@@ -88,7 +126,7 @@ function plansHtml() {
 
   const cards =
     '<div class="subGrid">' +
-    PLANS.map((p) =>
+    priced.map((p) =>
       '<div class="subCard subCard--' + p.tone + (p.featured ? ' subCard--featured' : '') + '">' +
         '<div class="subCardInner">' +
           (p.badge ? '<div class="subBadge subBadge--' + p.tone + '">' + esc(p.badge) + '</div>' : '') +
@@ -742,10 +780,15 @@ const MODULE = `
     if(gate()) return;
     var amount = null;
     if(plan === 'support'){
-      var v = prompt('Support amount in USD (minimum $0.50):', '5');
+      var cur = C.currency || 'USD';
+      var min = (C.support && C.support.min) || 50;
+      var v = prompt('Support amount in ' + cur +
+                     ' (minimum ' + money(min, cur) + '):', '');
       if(v === null) return;
-      amount = Math.round(parseFloat(v) * 100);
-      if(!Number.isFinite(amount) || amount < 50){ toast('Minimum is $0.50'); return; }
+      amount = minorOf(parseFloat(v), cur);
+      if(!Number.isFinite(amount) || amount < min){
+        toast('Minimum is ' + money(min, cur)); return;
+      }
     }
     start(planSpec(plan, amount), function(prov){
       return api(prov, {action:'sub-order', plan:plan, amount:amount});
@@ -1057,6 +1100,13 @@ const MODULE = `
 
   function renderWallet(host, d){
     var rows = Array.isArray(d.summary) ? d.summary : [];
+    // The member's own currency leads. The rest keep their order — they are
+    // separate balances, not a ranking, and none of them is converted into
+    // any other to decide which is bigger.
+    var pref = C.currency || 'USD';
+    rows = rows.slice().sort(function(a, b){
+      return (b.currency === pref) - (a.currency === pref);
+    });
     var paid = (d.payouts || []).filter(function(p){ return p.status === 'paid'; });
 
     // A blocked balance is the first thing the member sees, and the request
@@ -1311,7 +1361,8 @@ const MODULE = `
   //
   // One panel, three views, one neutral id. Simpler than three shells that had
   // to be kept in step, and there is nothing in the public page to read.
-  var VIEWS = { bal: 'Balance', pay: 'Payout methods', buy: 'My purchases' };
+  var VIEWS = { bal: 'Balance', pay: 'Payout methods', buy: 'My purchases',
+                cur: 'Currency' };
 
   function panelEl(){
     var el = document.getElementById('dzPanelHost');
@@ -1355,6 +1406,7 @@ const MODULE = `
     var host = el.querySelector('.dzPanelWrap');
     var view = el.dataset.view;
     if(view === 'buy') return loadPurchases(force, host);
+    if(view === 'cur') return renderCurrency(host);
     loadWallet(force, host, view === 'pay' ? renderBank : renderWallet);
   }
 
@@ -1366,7 +1418,8 @@ const MODULE = `
     var host = document.getElementById('setListGate');
     if(!host || host.dataset.dzFilled) return;
     host.dataset.dzFilled = '1';
-    host.innerHTML = [['buy','My Purchases'], ['bal','Wallet'], ['pay','Payout Methods']]
+    host.innerHTML = [['buy','My Purchases'], ['bal','Wallet'], ['pay','Payout Methods'],
+                      ['cur','Currency']]
       .map(function(p){
         return '<button class="pfMenuItem" type="button" data-v="' + esc(p[0]) + '">' +
                esc(p[1]) + '</button>';
@@ -1378,6 +1431,78 @@ const MODULE = `
         else openPanel(v);
       });
     });
+  }
+
+
+  // ---- currency ------------------------------------------------------------
+  // What this member transacts in: the currency their subscription is charged
+  // in, the one their own listings are priced in by default, and the one their
+  // balance is shown in first.
+  //
+  // It does NOT convert anyone else's price. A listing belongs to its seller
+  // and is paid in the seller's currency — putting a rate in that path is what
+  // takes a spread out of the seller's money and distorts the tax on it, and
+  // it is deliberately not done anywhere in this system.
+  function renderCurrency(host){
+    var cur  = C.currency || 'USD';
+    var list = C.currencies || [];
+    host.innerHTML =
+      '<div class="dzCur">' +
+        '<p class="dzCurNote">Your subscription is charged in this currency, and ' +
+          'anything you list is priced in it by default. Changing it does not ' +
+          'change what you already own, what you have already been charged, or ' +
+          'any balance you have already earned \u2014 money is never converted ' +
+          'between currencies here.</p>' +
+        '<ul class="dzCurList">' +
+          list.map(function(c){
+            var on = c.code === cur;
+            return '<li><button type="button" class="dzCurOpt' + (on ? ' dzCurOpt--on' : '') +
+              '" data-c="' + esc(c.code) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+              '<span class="dzCurCode">' + esc(c.code) + '</span>' +
+              '<span class="dzCurName">' + esc(c.name) + '</span>' +
+              '<span class="dzCurTick" aria-hidden="true">\u2713</span>' +
+            '</button></li>';
+          }).join('') +
+        '</ul>' +
+        '<div class="dzWlMsg" hidden></div>' +
+      '</div>';
+
+    var msg = host.querySelector('.dzWlMsg');
+    Array.prototype.forEach.call(host.querySelectorAll('.dzCurOpt'), function(b){
+      b.addEventListener('click', function(){
+        var code = b.getAttribute('data-c');
+        if(code === (C.currency || 'USD')) return;
+        msg.textContent = 'Saving\u2026'; msg.hidden = false;
+        msg.classList.remove('dzWlMsg--bad');
+        pay('currency', {currency: code})
+          .then(function(){
+                  C.currency = code;
+                  // Prices, the plan grid and the wallet were all built for the
+                  // old currency. Rather than patch them one by one and risk
+                  // one being missed, the module is fetched again.
+                  toast('Currency set to ' + code);
+                  reloadModule();
+                },
+                function(e){
+                  msg.textContent = e.message || 'Could not save that';
+                  msg.classList.add('dzWlMsg--bad');
+                });
+      });
+    });
+  }
+
+  // Re-fetch /api/store so every price on the page is rebuilt server-side in
+  // the new currency. Nothing is converted in the browser.
+  function reloadModule(){
+    closePanel();
+    var s = document.createElement('script');
+    s.src = '/api/store?t=' + Date.now();
+    s.onload = function(){
+      var host = document.getElementById('subPgGate');
+      if(host) host.dataset.dzFilled = '';   // let the new module repaint the grid
+      if(typeof window.dzFill === 'function') window.dzFill();
+    };
+    document.head.appendChild(s);
   }
 
   // One fetch feeds every view, so two of them can never disagree.
@@ -1593,15 +1718,58 @@ export async function onRequestGet({ env, request }) {
     });
 
   if (!sbUrl(env) || !sbAnon(env)) return deny(503);
-  if (!(await sbUser(env, request))) return deny(401);
+  const user = await sbUser(env, request);
+  if (!user) return deny(401);
+
+  // Everything below is priced in THIS member's currency, read from their
+  // profile and then from the price table — never converted from a dollar.
+  let currency = 'USD';
+  let prices = {};
+  let support = null;
+  try {
+    const me = await sbService(env, '/profiles?id=eq.' + user.id + '&select=currency&limit=1');
+    const c = me && me[0] && me[0].currency;
+    if (c && CURRENCY_CODES.has(c)) currency = c;
+
+    const rows = await sbService(env,
+      '/subscription_prices?currency=eq.' + currency + '&select=plan,amount');
+    (rows || []).forEach((r) => { prices[r.plan] = Number(r.amount); });
+
+    const lim = await sbService(env,
+      '/support_limits?currency=eq.' + currency + '&select=min_amount,max_amount&limit=1');
+    if (lim && lim[0]) support = { min: Number(lim[0].min_amount), max: Number(lim[0].max_amount) };
+  } catch { /* fall back to USD below rather than serve no checkout at all */ }
+
+  // A currency with no price row would render a blank plan grid, so it falls
+  // back to dollars rather than showing a plan nobody can buy.
+  if (!Object.keys(prices).length) {
+    currency = 'USD';
+    try {
+      const rows = await sbService(env, '/subscription_prices?currency=eq.USD&select=plan,amount');
+      (rows || []).forEach((r) => { prices[r.plan] = Number(r.amount); });
+      const lim = await sbService(env,
+        '/support_limits?currency=eq.USD&select=min_amount,max_amount&limit=1');
+      if (lim && lim[0]) support = { min: Number(lim[0].min_amount), max: Number(lim[0].max_amount) };
+    } catch { /* the grid simply will not render, which is the honest outcome */ }
+  }
+
+  const priced = PLANS
+    .filter((p) => prices[p.id] > 0)
+    .map((p) => Object.assign({}, p, {
+      price: fmtMoney(prices[p.id], currency),
+      amount: prices[p.id],
+    }));
 
   // plansHtml is the grid on the subscription page; plans is the same table in
   // a shape the checkout page can read, so what a buyer is told they get at
   // checkout is the plan's own wording rather than a second, drifting copy.
   const cfg = {
     providers: liveProviders(env),
-    plansHtml: plansHtml(),
-    plans: PLANS.map((p) => ({
+    currency,
+    currencies: CURRENCIES,
+    support,
+    plansHtml: plansHtml(priced),
+    plans: priced.map((p) => ({
       id: p.id, name: p.name, price: p.price, tone: p.tone,
       tagline: p.tagline, features: p.features,
     })),

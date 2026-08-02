@@ -14,17 +14,15 @@
 //                          else (or unset) means live
 // plus SB_URL, SB_KEY and SB_SERVICE_KEY, exactly as rzp.js reads them.
 
-// server side price list, mirrors rzp.js
-const SUB_CURRENCY = 'USD';
-const PLANS = {
-  lite:    { amount: 100,  tier: 'lite',    label: 'Lite — 1 month'    },
-  premium: { amount: 500,  tier: 'premium', label: 'Premium — 1 month' },
-  max:     { amount: 1000, tier: 'max',     label: 'Max — 1 month'     },
-  support: { amount: null, tier: null,      label: 'Support DigiArtz'  },
+// Plan prices are NOT here. They live in public.subscription_prices, one row
+// per plan per currency, read on the service role — see the note in rzp.js.
+// The browser names a plan and never a price or a currency.
+const TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
+const PLAN_LABEL = {
+  lite: 'Lite \u2014 1 month', premium: 'Premium \u2014 1 month',
+  max: 'Max \u2014 1 month',   support: 'Support DigiArtz',
 };
-const SUPPORT_MIN = 50;        // fifty cents
-const SUPPORT_MAX = 1000000;   // ten thousand dollars
-const SUB_DAYS    = 31;
+const SUB_DAYS = 31;
 
 // PayPal quotes amounts as decimal strings, and rejects a fractional part on a
 // currency that has none. These are the zero-decimal currencies PayPal lists.
@@ -249,6 +247,33 @@ async function underLimit(env, bucket, limit, seconds) {
   } catch { return true; }
 }
 
+
+// what this member transacts in, and what a plan costs there
+async function memberCurrency(env, userId) {
+  const rows = await sbService(env,
+    '/profiles?id=eq.' + userId + '&select=currency&limit=1');
+  const c = rows && rows[0] && rows[0].currency;
+  return /^[A-Z]{3}$/.test(String(c || '')) ? c : 'USD';
+}
+
+async function planPrice(env, plan, currency) {
+  const rows = await sbService(env,
+    '/subscription_prices?plan=eq.' + encodeURIComponent(plan) +
+    '&currency=eq.' + encodeURIComponent(currency) + '&select=amount&limit=1');
+  const a = rows && rows[0] && Number(rows[0].amount);
+  return Number.isFinite(a) && a > 0 ? a : null;
+}
+
+async function supportLimits(env, currency) {
+  const rows = await sbService(env,
+    '/support_limits?currency=eq.' + encodeURIComponent(currency) +
+    '&select=min_amount,max_amount&limit=1');
+  const r = rows && rows[0];
+  return r ? { min: Number(r.min_amount), max: Number(r.max_amount) } : null;
+}
+
+const showAmount = (minor, cur) => toValue(minor, cur) + ' ' + cur;
+
 // create order and ledger row
 async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label }) {
   const order = await pp(env, '/v2/checkout/orders', {
@@ -333,17 +358,31 @@ export async function onRequestPost({ env, request }) {
   try {
     // subscriptions
     if (body.action === 'sub-order') {
-      const plan = PLANS[String(body.plan || '')];
-      if (!plan) return json({ error: 'Unknown plan' }, 400);
-      let amount = plan.amount;
-      if (amount === null) {                       // support, any amount
+      const key = String(body.plan || '');
+      if (!(key in TIERS)) return json({ error: 'Unknown plan' }, 400);
+
+      const currency = await memberCurrency(env, user.id);
+      // A member transacting in a currency PayPal will not settle is sent to
+      // the other checkout rather than silently charged in dollars.
+      if (!SUPPORTED.has(currency))
+        return json({ error: 'PayPal cannot take ' + currency + ' \u2014 use the other checkout' }, 400);
+
+      let amount;
+      if (key === 'support') {
+        const lim = await supportLimits(env, currency);
+        if (!lim) return json({ error: 'Support is not available in ' + currency }, 400);
         amount = Math.round(Number(body.amount));
-        if (!Number.isFinite(amount) || amount < SUPPORT_MIN || amount > SUPPORT_MAX)
-          return json({ error: 'Amount must be between $0.50 and $10,000' }, 400);
+        if (!Number.isFinite(amount) || amount < lim.min || amount > lim.max)
+          return json({ error: 'Amount must be between ' + showAmount(lim.min, currency) +
+                               ' and ' + showAmount(lim.max, currency) }, 400);
+      } else {
+        amount = await planPrice(env, key, currency);
+        if (!amount) return json({ error: 'That plan is not priced in ' + currency }, 400);
       }
+
       return await makeOrder(env, user, {
-        minor: toMinor(amount, SUB_CURRENCY), currency: SUB_CURRENCY,
-        kind: 'subscription', plan: String(body.plan), label: plan.label,
+        minor: toMinor(amount, currency), currency,
+        kind: 'subscription', plan: key, label: PLAN_LABEL[key],
       });
     }
 
@@ -441,9 +480,9 @@ export async function onRequestPost({ env, request }) {
 
       let tier = null;
       if (row.kind === 'subscription') {
-        const plan = PLANS[row.plan];
-        if (plan && plan.tier) {
-          tier = plan.tier;
+        const t = TIERS[row.plan];
+        if (t) {
+          tier = t;
           if (firstCapture) {
             const exp = new Date(Date.now() + SUB_DAYS * 86400000).toISOString();
             await sbService(env, '/profiles?id=eq.' + user.id, {

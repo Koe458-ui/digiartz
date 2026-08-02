@@ -43,7 +43,15 @@
 //   PAYPAL_WEBHOOK_ID           proves an incoming webhook is really PayPal.
 //                               Without it the webhook refuses everything.
 //   PAYPAL_ENV                  'sandbox' for testing, unset for live
-//   RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET   the other checkout, when activated
+//   RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET   the other checkout
+//   RAZORPAY_WEBHOOK_SECRET     proves an incoming webhook is really Razorpay.
+//                               NOT the key secret above and not something
+//                               Razorpay hands you — you invent the string and
+//                               paste the same one into Dashboard -> Settings
+//                               -> Webhooks. Without it functions/api/
+//                               rzp-webhook.js refuses every event, which
+//                               means a buyer whose tab closed mid-payment is
+//                               never settled and a refund is never heard.
 //
 // Setting any of those as a Pages environment variable is correct and safe.
 // Echoing them into config.js publishes them to the world.

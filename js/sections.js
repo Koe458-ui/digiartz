@@ -106,10 +106,16 @@
   // the signed-in module fills it. A guest never has price_cents to begin
   // with (the column is revoked for anon), so the hole stays empty and the
   // markup says nothing.
+  //
+  // The title and preview ride along because the checkout page names what is
+  // being bought before any order exists, and asking the database again for a
+  // row the card is already showing would only make the buyer wait. Both are
+  // already public and already on screen — nothing new is disclosed here.
   function slot(r, id, hasFile, view){
     if(!window.currentUser) return '';
     return '<div class="dzSlot" data-i="'+id+'" data-p="'+(Number(r.price_cents)||0)+
            '" data-c="'+esc(r.currency||'USD')+'" data-f="'+(hasFile?1:0)+
+           '" data-t="'+esc(r.title||'')+'" data-th="'+esc(r.preview_url||'')+
            '" data-v="'+view+'"></div>';
   }
   window.dzSlot = slot;

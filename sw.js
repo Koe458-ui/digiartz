@@ -4,6 +4,48 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v97 — checkout is a page, the two gateways are told apart, and Razorpay
+       finally has a webhook.
+       Buying used to open a small sheet that asked "Razorpay or PayPal?"
+       and nothing else. A buyer tapping Buy saw no title, no total and no
+       statement of what they were about to receive, and the two options
+       sat in one stack reading as interchangeable — which they are not.
+       Buy now opens a full page: DigiArtz at the top, then what is being
+       bought with its price, what the money gets and the total, then the
+       payment method, then the gateway itself. Three numbered steps, and
+       the gateway one does not exist until a method is chosen — nothing
+       is ordered and no ledger row is written before that point, so
+       leaving from step one still costs nothing.
+       The two providers are now drawn as alternatives with a real "or"
+       between them, each in its own logo and its own colours — Razorpay's
+       blue, PayPal's navy and gold — written as fixed hex rather than
+       theme variables, because a Razorpay card that turns purple in one
+       theme stops looking like Razorpay. Both marks are inline SVG: a
+       payment choice must not wait on someone else's CDN. They differ in
+       what they take, and the page says so: Razorpay handles cards —
+       credit and debit — plus UPI, net banking, wallets and EMI; PayPal
+       is the PayPal account alone. Every card and local funding source is
+       switched off in the PayPal SDK url, so its guest "Debit or Credit
+       Card" button is not offered here at all. A buyer who backs out of
+       either window lands back on step two with the reason on it, order
+       intact.
+       The summary carries the plan's own colour too — Lite blue, Premium
+       purple, Max gold, the same hexes as the plan grid — so what is
+       being paid for is recognisably the card that was tapped. The bar
+       above it wears the site wordmark the way the hero badge does.
+       And the webhook. /api/rzp-webhook is the Razorpay half of what
+       PayPal has had all along: the settlement of record, for the buyer
+       whose tab closed between paying and the browser confirming it, and
+       the only way a refund or a chargeback days later is ever heard
+       about. Signed with RAZORPAY_WEBHOOK_SECRET over the RAW body,
+       fails closed with no secret bound, idempotent against the browser
+       having already verified the same payment, and it refuses to fulfil
+       on an amount that does not match the order. A partial refund does
+       not revoke a purchase; a lost dispute does, and an opened one
+       parks the seller's share rather than paying it out mid-argument.
+       Changed: sw.js, css/hero.css, js/sections.js, functions/api/
+       store.js, functions/api/rzp-webhook.js (new), config.example.js.
+
    v96 — the marketplace sells files instead of pointing at them.
        A listing used to be one product file uploaded to the public
        bucket, with a Download button drawn for every visitor and refused
@@ -1183,7 +1225,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v96';
+const CACHE_VERSION = 'v97';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

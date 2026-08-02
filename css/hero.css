@@ -1255,6 +1255,21 @@
     }
     .dzPayOpt--on .dzPayOptTick{opacity:1;}
     .dzPayOptNote{font-size:.78rem;line-height:1.45;color:var(--txd);}
+
+    /* Accepted-methods strip: each brand's own mark in its own colour, on a
+       white chip. White because that is the background every one of these
+       logos is drawn for, and because it then reads identically in every site
+       theme instead of a navy Visa vanishing into a dark card. */
+    .dzPayMarks{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem;margin-top:.1rem;}
+    .dzPayMark{
+      width:40px;height:26px;border-radius:5px;display:grid;place-items:center;
+      background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);
+    }
+    /* These marks are drawn inside a 24-unit square but most of them are wide
+       and short, so the box is filled rather than inset — a Visa wordmark that
+       only uses the middle third of its own viewBox is small enough already. */
+    .dzPayMark svg{width:24px;height:24px;display:block;}
+
     .dzPayOptWays{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem;}
     .dzPayWay{
       padding:.2rem .45rem;border:1px solid var(--bdr);border-radius:6px;

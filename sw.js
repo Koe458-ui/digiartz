@@ -29,6 +29,14 @@
        Card" button is not offered here at all. A buyer who backs out of
        either window lands back on step two with the reason on it, order
        intact.
+       The methods carry their own marks as well as their names: Visa and
+       Mastercard for the card line, Google Pay and PhonePe for UPI, each
+       in the brand's colour on a white chip, which is the background all
+       of them are drawn for and the only one that reads the same in every
+       site theme. UPI and RuPay have no artwork we can carry offline and
+       an approximation would be worse than none, so the apps that ride
+       UPI stand in for it and the exact wording stays in the chips
+       underneath, where nothing is left to a logo to imply.
        The summary carries the plan's own colour too — Lite blue, Premium
        purple, Max gold, the same hexes as the plan grid — so what is
        being paid for is recognisably the card that was tapped. The bar

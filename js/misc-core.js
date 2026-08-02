@@ -302,6 +302,8 @@ function dzOpenMoneyPage(id){
   if(!pg) return;
   pg.classList.add('open');
   document.body.style.overflow = 'hidden';
+  var nav = document.getElementById('bnNav');
+  if(nav) nav.style.display = 'none';
   // the module may not have landed yet on a cold open
   if(typeof window.dzExtras === 'function') window.dzExtras();
   else if(typeof window.dzWalletLoad === 'function') window.dzWalletLoad(true);
@@ -310,6 +312,8 @@ function dzCloseMoneyPage(id){
   var pg = document.getElementById(id);
   if(pg) pg.classList.remove('open');
   document.body.style.overflow = '';
+  var nav = document.getElementById('bnNav');
+  if(nav) nav.style.display = '';
 }
 window.openWalletPage = openWalletPage;
 window.closeWalletPage = closeWalletPage;

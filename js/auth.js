@@ -113,6 +113,9 @@
     setLastFocus = document.activeElement;
     pg.classList.add('open');
     document.body.style.overflow = 'hidden';
+    // hide nav on overlay, as every other full-screen panel does
+    var nav = document.getElementById('bnNav');
+    if (nav) nav.style.display = 'none';
     pfMenuRefreshCounts(); // fire and forget
   }
 
@@ -120,6 +123,8 @@
     var pg = document.getElementById('setPage');
     if (pg) pg.classList.remove('open');
     restoreScroll();
+    var nav = document.getElementById('bnNav');
+    if (nav) nav.style.display = '';
     if (setLastFocus && setLastFocus.focus) { try { setLastFocus.focus(); } catch (e) {} }
     setLastFocus = null;
   }

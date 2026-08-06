@@ -2255,7 +2255,13 @@
        member out on that one tap. It asks first now. -->
   <div class="upPop loConfirm" id="loConfirm" role="dialog" aria-modal="true" aria-labelledby="loConfirmTitle" aria-describedby="loConfirmMsg">
     <div class="loConfirmBox">
-      <div class="loConfirmIcon" aria-hidden="true">⚠️</div>
+      <!-- drawn rather than typed: an emoji is whichever colour the device's
+           font makes it, and this one has to be red -->
+      <svg class="loConfirmIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path class="loConfirmTri" d="M12 3.15c.62 0 1.19.33 1.5.87l7.35 12.73c.31.54.31 1.2 0 1.74-.31.54-.88.87-1.5.87H4.65c-.62 0-1.19-.33-1.5-.87a1.74 1.74 0 0 1 0-1.74L10.5 4.02c.31-.54.88-.87 1.5-.87Z"/>
+        <path class="loConfirmBang" d="M12 8.6v4.6"/>
+        <circle class="loConfirmDot" cx="12" cy="16.5" r="1.2"/>
+      </svg>
       <h3 class="loConfirmTitle" id="loConfirmTitle">Log out?</h3>
       <p class="loConfirmMsg" id="loConfirmMsg">Are you sure you want to log out of your account?</p>
       <div class="loConfirmBtns">

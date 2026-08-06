@@ -51,28 +51,138 @@
       transition:transform .45s cubic-bezier(.22,1,.36,1);
     }
     #setPage.open{transform:translateX(0);}
+    /* Settings is a stack of named groups. Phone first: one column, rows wide
+       enough to hit with a thumb. It widens with the screen and splits into
+       two columns once there is room for two without either going narrow. */
     .setList{
-      display:flex;flex-direction:column;gap:.15rem;
-      max-width:640px;margin:0 auto;padding:.4rem 0 2rem;
+      display:flex;flex-direction:column;gap:1.35rem;
+      max-width:640px;margin:0 auto;padding:1rem 1rem 4rem;
     }
-    .setList .pfMenuItem{font-size:.95rem;padding:1rem .9rem;}
     @media(prefers-reduced-motion:reduce){ #setPage{transition:none;} }
 
+    .setGrp{display:flex;flex-direction:column;gap:.55rem;}
+    .setGrpHd{
+      display:flex;align-items:center;gap:.55rem;margin:0;padding:0 .2rem;
+      font-family:var(--fd);font-size:1.05rem;font-weight:800;letter-spacing:.005em;
+      color:var(--tx);line-height:1.2;
+    }
+    .setGrpIcon{font-size:1.3em;line-height:1;flex:0 0 auto;}
+    .setGrpItems{display:flex;flex-direction:column;gap:.4rem;}
+    /* what /api/store and syncAdmBtn inject becomes a row of the group it sits
+       in, not one block wedged inside it */
+    #setListGate,#setAdmGate{display:contents;}
+
+    /* the row, not the words on it: the whole line is the button */
     .pfMenuItem{
-      font-family:var(--fb);font-size:.88rem;font-weight:500;letter-spacing:.02em;text-align:left;
-      padding:.85rem .8rem;border-radius:8px;border:none;background:none;
-      color:var(--ps);cursor:pointer;transition:background .18s,color .18s;
-      display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+      width:100%;box-sizing:border-box;min-height:52px;
+      font-family:var(--fb);font-size:.95rem;font-weight:500;letter-spacing:.01em;text-align:left;
+      padding:.85rem 1rem;border-radius:12px;
+      border:1px solid var(--bdr);background:var(--sur);
+      color:var(--tx);cursor:pointer;
+      display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+      transition:background .18s,color .18s,border-color .18s,transform .18s;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .pfMenuTxt{flex:1 1 auto;min-width:0;}
+    /* chevron — also drawn for the rows JS injects, which carry no markup */
+    .pfMenuItem::after{
+      content:'';flex:0 0 auto;width:7px;height:7px;margin-right:2px;
+      border-right:2px solid var(--txd);border-bottom:2px solid var(--txd);
+      transform:rotate(-45deg);
+      transition:border-color .18s,transform .18s;
     }
     .pfMenuCount{
       font-family:var(--fm);font-size:.68rem;letter-spacing:.05em;
-      color:var(--txd);min-width:1.2em;text-align:right;
+      color:var(--txd);min-width:1.2em;text-align:right;flex:0 0 auto;
     }
     .pfMenuCount:empty{display:none;}
-    .pfMenuItem:hover{background:var(--pdim);color:var(--tx);}
-    /* log out */
-    .pfMenuItem--danger{margin-top:auto;}
-    .pfMenuItem--danger:hover{background:rgba(220,38,38,.18);color:#fca5a5;}
+    .pfMenuItem:hover{background:var(--sur2);border-color:var(--bdrh);color:var(--tx);}
+    .pfMenuItem:hover::after{border-color:var(--pg);transform:rotate(-45deg) translate(1px,1px);}
+    .pfMenuItem:active{transform:scale(.99);}
+    .pfMenuItem:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    /* a device without a hover pointer should not keep a hover state stuck on */
+    @media(hover:none){
+      .pfMenuItem:hover{background:var(--sur);border-color:var(--bdr);}
+      .pfMenuItem:hover::after{border-color:var(--txd);transform:rotate(-45deg);}
+    }
+
+    /* named, but nothing behind it yet */
+    .pfMenuItem--soon{color:var(--txd);}
+    .pfMenuItem--soon::after{display:none;}
+    .pfMenuSoon{
+      font-family:var(--fm);font-size:.58rem;font-weight:700;letter-spacing:.12em;
+      color:var(--txd);border:1px solid var(--bdr);border-radius:999px;
+      padding:.15rem .45rem;flex:0 0 auto;
+    }
+
+    /* log out — no chevron: it does something, it does not go somewhere */
+    .pfMenuItem--danger{color:var(--danger);border-color:rgba(220,38,38,.28);}
+    .pfMenuItem--danger::after{display:none;}
+    .pfMenuItem--danger:hover{background:var(--danger-bg);border-color:var(--danger-bd);color:var(--danger);}
+
+    /* phone */
+    @media(max-width:480px){
+      .setList{gap:1.15rem;padding:.85rem .8rem 4.5rem;}
+      .setGrpHd{font-size:1rem;}
+      .pfMenuItem{font-size:.9rem;min-height:50px;padding:.8rem .9rem;border-radius:11px;}
+    }
+    /* tablet up: a little more air */
+    @media(min-width:640px){
+      .setList{max-width:720px;padding:1.4rem 1.25rem 4rem;}
+      .setGrpHd{font-size:1.12rem;}
+      .pfMenuItem{min-height:54px;}
+    }
+    /* desktop: one column, same as every other width. The list stays a single
+       thread to read down, centred, and only the measure grows. */
+    @media(min-width:1000px){
+      .setList{max-width:760px;padding:1.8rem 1.5rem 4rem;}
+    }
+
+    /* log out confirmation — .upPop gives the backdrop, blur and fade */
+    .loConfirm{z-index:20050;}
+    .loConfirmBox{
+      background:var(--sur);border:1px solid var(--bdr);border-radius:18px;
+      width:100%;max-width:360px;padding:1.6rem 1.4rem 1.3rem;
+      box-shadow:0 24px 70px rgba(0,0,0,.55);font-family:var(--fb);text-align:center;
+      transform:scale(.96);transition:transform .25s cubic-bezier(.22,1,.36,1);
+    }
+    .loConfirm.open .loConfirmBox{transform:scale(1);}
+    .loConfirmIcon{display:block;width:46px;height:46px;margin:0 auto .7rem;}
+    .loConfirmTri{fill:var(--brand-red);}
+    /* the mark is cut out of the triangle, so it stays legible on whichever
+       surface the theme puts behind it */
+    .loConfirmBang{stroke:var(--sur);stroke-width:2.1;stroke-linecap:round;}
+    .loConfirmDot{fill:var(--sur);}
+    .loConfirmTitle{
+      font-family:var(--fd);font-size:1.15rem;font-weight:800;color:var(--tx);
+      margin:0 0 .45rem;letter-spacing:.005em;
+    }
+    .loConfirmMsg{
+      font-size:.88rem;line-height:1.5;color:var(--txd);margin:0 0 1.35rem;
+    }
+    .loConfirmBtns{display:flex;gap:.6rem;}
+    .loConfirmBtn{
+      flex:1 1 0;min-width:0;min-height:46px;box-sizing:border-box;
+      font-family:var(--fb);font-size:.9rem;font-weight:600;letter-spacing:.01em;
+      padding:.75rem .8rem;border-radius:12px;cursor:pointer;
+      transition:background .18s,border-color .18s,color .18s,transform .18s;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .loConfirmBtn:active{transform:scale(.98);}
+    .loConfirmBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    .loConfirmBtn--no{background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);}
+    .loConfirmBtn--no:hover{background:var(--bdr);border-color:var(--bdrh);}
+    .loConfirmBtn--yes{background:var(--danger-bg);border:1px solid var(--danger-bd);color:var(--danger);}
+    .loConfirmBtn--yes:hover{background:var(--danger-bg-hover);border-color:var(--danger-strong);}
+    /* phone: stack, with the way out on top and under the thumb */
+    @media(max-width:380px){
+      .loConfirmBox{padding:1.4rem 1.1rem 1.15rem;}
+      .loConfirmBtns{flex-direction:column-reverse;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .loConfirmBox{transition:none;transform:none;}
+      .loConfirm.open .loConfirmBox{transform:none;}
+    }
     /* share profile sheet */
     .pfShareBox{max-width:340px;align-items:center;padding:1.6rem 1.4rem 1.5rem;position:relative;}
     .pfShareTitle{

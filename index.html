@@ -102,7 +102,7 @@
   <link rel="stylesheet" href="/css/community.css?v=3">
   <link rel="stylesheet" href="/css/connect.css?v=1">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
-  <link rel="stylesheet" href="/css/profile.css?v=2">
+  <link rel="stylesheet" href="/css/profile.css?v=3">
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=2">
@@ -2171,28 +2171,102 @@
       <div class="subPgTitle">SETTINGS</div>
     </div>
     <div class="bmBdy">
+      <!-- The same items as before, in named groups. Every item is still a
+           full-width button, so the whole row answers a tap — not just the
+           words on it. setGo(open, id): closes the menu, opens the page, and
+           puts you back on the menu when that page closes. -->
       <div class="setList">
-        <!-- setGo(open, id): closes the menu, opens the page, and puts you
-             back on the menu when that page closes -->
-        <button class="pfMenuItem" onclick="setGo(openSubscription,'subPage')">Subscription</button>
-        <!-- Three more items belong here and are not written here. They name
-             what a member's account holds and how it is paid out, and this
-             file is a static asset that anyone can read. /api/store injects
-             them, and it answers no request without a session — so a
-             signed-out visitor's page source carries neither the items nor
-             the pages they open. -->
-        <div id="setListGate"></div>
-        <button class="pfMenuItem" onclick="setGo(openMyWorkPage,'pfMyWorkPage')">Edit My Work</button>
-        <button class="pfMenuItem" onclick="setGo(albOpenPage,'albPage')">Albums</button>
-        <button class="pfMenuItem" onclick="setGo(openLikesPage,'bmPage')">Likes <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
-        <button class="pfMenuItem" onclick="setGo(openBookmarksPage,'bmPage')">Bookmarks <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
-        <button class="pfMenuItem" onclick="setGo(openFriendsPage,'frdPage')">Friends <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
-        <button class="pfMenuItem" onclick="setGo(openPfShare,'pfShareMod')">Share Profile</button>
-        <button class="pfMenuItem" onclick="setGo(openXpPage,'xpPage')">Artist Progress</button>
-        <button class="pfMenuItem" onclick="setGo(openThemePage,'themePage')">Theme</button>
-        <!-- syncAdmBtn in js/gallery.js adds one more item here, for the one
-             account type entitled to it. Nobody else's page carries it. -->
-        <button class="pfMenuItem pfMenuItem--danger" onclick="pfMenuLogout()">Log Out</button>
+
+        <section class="setGrp" aria-labelledby="setGrpPay">
+          <h3 class="setGrpHd" id="setGrpPay">
+            <span class="setGrpIcon" aria-hidden="true">💳</span>
+            <span class="setGrpTxt">Payments</span>
+          </h3>
+          <div class="setGrpItems">
+            <button class="pfMenuItem" onclick="setGo(openSubscription,'subPage')"><span class="pfMenuTxt">Subscription</span></button>
+            <!-- Three more items belong here and are not written here. They name
+                 what a member's account holds and how it is paid out, and this
+                 file is a static asset that anyone can read. /api/store injects
+                 them, and it answers no request without a session — so a
+                 signed-out visitor's page source carries neither the items nor
+                 the pages they open. The gate is display:contents, so what it
+                 injects lays out as rows of this group rather than one block
+                 inside it. -->
+            <div id="setListGate"></div>
+          </div>
+        </section>
+
+        <section class="setGrp" aria-labelledby="setGrpCon">
+          <h3 class="setGrpHd" id="setGrpCon">
+            <span class="setGrpIcon" aria-hidden="true">🎨</span>
+            <span class="setGrpTxt">Content</span>
+          </h3>
+          <div class="setGrpItems">
+            <button class="pfMenuItem" onclick="setGo(openMyWorkPage,'pfMyWorkPage')"><span class="pfMenuTxt">Edit My Work</span></button>
+            <button class="pfMenuItem" onclick="setGo(albOpenPage,'albPage')"><span class="pfMenuTxt">Albums</span></button>
+            <button class="pfMenuItem" onclick="setGo(openPfShare,'pfShareMod')"><span class="pfMenuTxt">Share Profile</span></button>
+          </div>
+        </section>
+
+        <section class="setGrp" aria-labelledby="setGrpAct">
+          <h3 class="setGrpHd" id="setGrpAct">
+            <span class="setGrpIcon" aria-hidden="true">📊</span>
+            <span class="setGrpTxt">Activity</span>
+          </h3>
+          <div class="setGrpItems">
+            <button class="pfMenuItem" onclick="setGo(openXpPage,'xpPage')"><span class="pfMenuTxt">Artist Progress</span></button>
+            <button class="pfMenuItem" onclick="setGo(openLikesPage,'bmPage')"><span class="pfMenuTxt">Likes</span> <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
+            <button class="pfMenuItem" onclick="setGo(openBookmarksPage,'bmPage')"><span class="pfMenuTxt">Bookmarks</span> <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
+            <button class="pfMenuItem" onclick="setGo(openFriendsPage,'frdPage')"><span class="pfMenuTxt">Friends</span> <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
+          </div>
+        </section>
+
+        <section class="setGrp" aria-labelledby="setGrpAcc">
+          <h3 class="setGrpHd" id="setGrpAcc">
+            <span class="setGrpIcon" aria-hidden="true">⚙️</span>
+            <span class="setGrpTxt">Account</span>
+          </h3>
+          <div class="setGrpItems">
+            <button class="pfMenuItem pfMenuItem--soon" onclick="showToast('Privacy &amp; Security — coming soon')"><span class="pfMenuTxt">Privacy &amp; Security</span> <span class="pfMenuSoon">SOON</span></button>
+            <button class="pfMenuItem pfMenuItem--soon" onclick="showToast('Notification settings — coming soon')"><span class="pfMenuTxt">Notifications</span> <span class="pfMenuSoon">SOON</span></button>
+            <button class="pfMenuItem" onclick="setGo(openThemePage,'themePage')"><span class="pfMenuTxt">Theme</span></button>
+            <!-- syncAdmBtn in js/gallery.js puts one more item here, for the one
+                 account type entitled to it. Nobody else's page carries it. -->
+            <div id="setAdmGate"></div>
+          </div>
+        </section>
+
+        <section class="setGrp" aria-labelledby="setGrpSup">
+          <h3 class="setGrpHd" id="setGrpSup">
+            <span class="setGrpIcon" aria-hidden="true">❓</span>
+            <span class="setGrpTxt">Support</span>
+          </h3>
+          <div class="setGrpItems">
+            <button class="pfMenuItem pfMenuItem--soon" onclick="showToast('Help &amp; Support — coming soon')"><span class="pfMenuTxt">Help &amp; Support</span> <span class="pfMenuSoon">SOON</span></button>
+            <button class="pfMenuItem pfMenuItem--danger" onclick="pfMenuLogout()"><span class="pfMenuTxt">Log Out</span></button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Log Out is the last row of the Settings list and used to sign the
+       member out on that one tap. It asks first now. -->
+  <div class="upPop loConfirm" id="loConfirm" role="dialog" aria-modal="true" aria-labelledby="loConfirmTitle" aria-describedby="loConfirmMsg">
+    <div class="loConfirmBox">
+      <!-- drawn rather than typed: an emoji is whichever colour the device's
+           font makes it, and this one has to be red -->
+      <svg class="loConfirmIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path class="loConfirmTri" d="M12 3.15c.62 0 1.19.33 1.5.87l7.35 12.73c.31.54.31 1.2 0 1.74-.31.54-.88.87-1.5.87H4.65c-.62 0-1.19-.33-1.5-.87a1.74 1.74 0 0 1 0-1.74L10.5 4.02c.31-.54.88-.87 1.5-.87Z"/>
+        <path class="loConfirmBang" d="M12 8.6v4.6"/>
+        <circle class="loConfirmDot" cx="12" cy="16.5" r="1.2"/>
+      </svg>
+      <h3 class="loConfirmTitle" id="loConfirmTitle">Log out?</h3>
+      <p class="loConfirmMsg" id="loConfirmMsg">Are you sure you want to log out of your account?</p>
+      <div class="loConfirmBtns">
+        <button type="button" class="loConfirmBtn loConfirmBtn--no" id="loConfirmNo" onclick="closeLogoutConfirm()">Cancel</button>
+        <button type="button" class="loConfirmBtn loConfirmBtn--yes" id="loConfirmYes" onclick="confirmLogout()">Yes, log out</button>
       </div>
     </div>
   </div>
@@ -2249,8 +2323,8 @@
   <script src="/uploadVerifier.js"></script>
   <script src="/js/app-core.js?v=10"></script>
   <script src="/js/protect.js?v=2"></script>
-  <script src="/js/gallery.js?v=68"></script>
-  <script src="/js/auth.js?v=3"></script>
+  <script src="/js/gallery.js?v=69"></script>
+  <script src="/js/auth.js?v=4"></script>
   <script src="/js/profile.js?v=4"></script>
   <script src="/js/albums.js?v=3"></script>
   <script src="/js/drafts.js?v=1"></script>

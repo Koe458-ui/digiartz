@@ -1,0 +1,17 @@
+-- dz_reconcile is SECURITY DEFINER and owned by postgres, takes an arbitrary
+-- p_user, and carried no authorization check of its own. Neither
+-- marketplace_earnings nor ledger_entries sets FORCE ROW LEVEL SECURITY, so
+-- running as the owner bypasses RLS: any signed-in user could call it with
+-- somebody else's id and read that seller's per-currency earnings, ledger
+-- balance, and whether their books reconcile.
+--
+-- Confirmed against the live database before the change -- as an ordinary
+-- authenticated user, a direct read of ledger_entries for another user returned
+-- 0 rows (RLS holding), while dz_reconcile() on that same user returned their
+-- row.
+--
+-- The body is left alone because nothing in the browser calls this. The only
+-- caller is reconciled() in functions/api/payouts.js, which authenticates with
+-- the service role key and keeps its own grant -- that is the payout gate, so
+-- it must keep working. The authenticated grant was simply never needed.
+revoke execute on function public.dz_reconcile(uuid) from authenticated;

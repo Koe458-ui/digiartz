@@ -855,15 +855,18 @@
   function syncAdmBtn(){
     var b=document.getElementById('smAdmBtn');
     if(!isDev){ if(b && b.parentNode) b.parentNode.removeChild(b); return; }
-    var list=document.querySelector('#setPage .setList');
+    // the Account group's empty slot; the flat list is the older shape, kept
+    // as a fallback so the entry still lands above Log Out either way
+    var gate=document.getElementById('setAdmGate');
+    var list=gate || document.querySelector('#setPage .setList');
     if(!list) return;
     if(!b){
       b=document.createElement('button');
       b.id='smAdmBtn';
       b.className='pfMenuItem';
       b.onclick=function(){ setGo(smHandleAdm,'admPage'); };
-      // above Log Out, which stays last
-      list.insertBefore(b, list.querySelector('.pfMenuItem--danger'));
+      if(gate) gate.appendChild(b);
+      else list.insertBefore(b, list.querySelector('.pfMenuItem--danger'));
     }
     b.textContent='⚙ ADMIN PANEL';
   }

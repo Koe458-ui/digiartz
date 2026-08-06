@@ -4,6 +4,34 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v102 — Settings is grouped under five headings instead of one long list.
+       Payments, Content, Activity, Account and Support, each with an
+       emoji and a heading set larger than the rows under it, so the eye
+       finds the group before it reads the items. The items are the same
+       items and open the same pages — this is layout only. Every row is
+       a full-width button with a chevron, so the whole line answers a
+       tap rather than the words on it, and the rows are 52px on a phone,
+       54px from tablet up, two columns of whole groups past 1000px.
+       Two slots are filled by script rather than by markup, and both
+       had to keep working: #setListGate, which /api/store fills with the
+       four items index.html deliberately does not name, and a new
+       #setAdmGate for the dev entry. Both are display:contents, so what
+       lands in them lays out as rows of its group rather than as one
+       block inside it. syncAdmBtn used to insert before the Log Out
+       button as a sibling, which the nesting would have broken; it
+       appends to the gate now, and still falls back to the flat list.
+       Privacy & Security, Notifications and Help & Support are named in
+       the Account and Support groups and marked SOON. They open nothing
+       — there is nothing behind them yet — and say so on a tap.
+       Log Out asks first. It is the last row of a list people scroll
+       through for everything else, and it used to sign the member out on
+       that one tap, with no way back except signing in again. It opens a
+       confirmation now — Cancel and "Yes, log out" — and Cancel is what
+       holds focus, what Escape does, and what a tap on the backdrop
+       does. The sign-out itself is untouched; it moved into doLogout()
+       and now runs only after the yes.
+       Changed: index.html, sw.js, css/profile.css, js/auth.js,
+       js/gallery.js.
    v101 — a section that has not loaded shows nothing, not the section
        before it.
        The account panel keeps all four of its views — Wallet, Payout
@@ -1371,7 +1399,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v101';
+const CACHE_VERSION = 'v102';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1400,7 +1428,7 @@ const SHELL_URLS = [
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=2',
+  '/css/profile.css?v=3',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
@@ -1423,8 +1451,8 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=10',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=68',
-  '/js/auth.js?v=3',
+  '/js/gallery.js?v=69',
+  '/js/auth.js?v=4',
   '/js/profile.js?v=4',
   '/js/albums.js?v=3',
   '/js/drafts.js?v=1',

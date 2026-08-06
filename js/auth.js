@@ -196,7 +196,38 @@
   }
 
   // logout
+  //
+  // The Log Out row asks before it acts. Signing out is one tap from the
+  // bottom of a list people scroll through for everything else, and it used
+  // to happen on that tap alone, with no way back except signing in again.
+  var loLastFocus = null;
+
   function pfMenuLogout() {
+    var m = document.getElementById('loConfirm');
+    // no dialog in the page — sign out rather than leave the row dead
+    if (!m) { doLogout(); return; }
+    loLastFocus = document.activeElement;
+    m.classList.add('open');
+    // Cancel takes focus, not the button that signs you out
+    var no = document.getElementById('loConfirmNo');
+    if (no) { try { no.focus(); } catch (e) {} }
+  }
+
+  function closeLogoutConfirm() {
+    var m = document.getElementById('loConfirm');
+    if (m) m.classList.remove('open');
+    if (loLastFocus && loLastFocus.focus && loLastFocus.isConnected !== false) {
+      try { loLastFocus.focus(); } catch (e) {}
+    }
+    loLastFocus = null;
+  }
+
+  function confirmLogout() {
+    closeLogoutConfirm();
+    doLogout();
+  }
+
+  function doLogout() {
     closeSettingsPage();
     if (sb) {
       sb.auth.signOut()
@@ -204,6 +235,19 @@
         .catch(function(e){ console.error('Error: ' + e.message); });
     }
   }
+
+  // Escape and a tap on the backdrop both mean cancel — the same two ways
+  // out every other sheet on the site answers to
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var m = document.getElementById('loConfirm');
+    if (m && m.classList.contains('open')) { e.stopPropagation(); closeLogoutConfirm(); }
+  }, true);
+
+  document.addEventListener('click', function (e) {
+    var m = document.getElementById('loConfirm');
+    if (m && m.classList.contains('open') && e.target === m) closeLogoutConfirm();
+  });
 
   // upload dropdown
   var _pfUpMenuOpen = false;

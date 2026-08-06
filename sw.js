@@ -4,6 +4,29 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v101 — a section that has not loaded shows nothing, not the section
+       before it.
+       The account panel keeps all four of its views — Wallet, Payout
+       Methods, My Purchases, Currency — in one host, and switching
+       between them left the last one's markup up until the next one's
+       fetch came back. On a slow connection the wallet's balance was
+       readable under the MY PURCHASES heading for as long as the round
+       trip took. The host is now emptied the moment the view changes,
+       and nothing is drawn in its place: a spinner or a LOADING line is
+       still something to read in a section it does not belong to.
+       Underneath that, both loaders closed over the host they were
+       handed, so a fetch settling after the member had already moved on
+       painted itself into whichever view was up by then — the same
+       wrong text arriving by the other route. Every paint now carries
+       the number it started with and drops what it fetched if the panel
+       has moved. The marketplace unlock that rides on the purchases
+       response still runs either way, since that is true whichever view
+       is showing.
+       Likes and Bookmarks share one grid the same way and had the same
+       two faults, including two requests that could land out of order
+       and put likes under BOOKMARKS. Same treatment, and the error line
+       now names the section it is actually in.
+       Changed: index.html, sw.js, js/engagement.js, functions/api/store.js.
    v100 — a member picks the currency they transact in, and the site stops
        assuming dollars.
        Twelve currencies — USD, INR, EUR, GBP, JPY, AUD, CAD, SGD, CHF,
@@ -1348,7 +1371,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v100';
+const CACHE_VERSION = 'v101';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1417,7 +1440,7 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/engagement.js?v=2',
+  '/js/engagement.js?v=3',
   '/js/sections.js?v=78',
   '/js/navprogress.js?v=5'
 ];

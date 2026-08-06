@@ -1409,14 +1409,42 @@ const MODULE = `
     paintPanel(true);
   }
 
+  // One host holds all four views, and switching between them used to leave
+  // the last one's markup up until the next one's fetch came back — so the
+  // wallet's balance sat there under the MY PURCHASES heading for as long as
+  // the round trip took, which on a slow connection is long enough to read.
+  // Two separate things caused that, and both are handled here.
+  //
+  // The host is emptied the moment the view changes, so a section that has not
+  // loaded yet shows nothing rather than the section before it. Nothing is put
+  // in its place on purpose: a spinner or a LOADING line is still something to
+  // read in a section it does not belong to.
+  //
+  // And every paint carries the number it started with. Both loaders below
+  // close over the host they were handed, so a wallet fetch that settles after
+  // the member has already moved to My Purchases would otherwise paint itself
+  // into it — the same wrong text, arriving by the other route. A paint whose
+  // number is no longer the current one drops what it fetched.
+  var paintSeq = 0;
+  function stale(seq){ return seq !== paintSeq; }
+
   function paintPanel(force){
     var el = document.getElementById('dzPanelHost');
     if(!el || !el.classList.contains('open')) return;
     var host = el.querySelector('.dzPanelWrap');
     var view = el.dataset.view;
-    if(view === 'buy') return loadPurchases(force, host);
+
+    // On a real view change only. refreshPanel repaints the view already up,
+    // after a payout or a method change, and blanking there would flash it.
+    if(host.dataset.shown !== view){
+      host.innerHTML = '';
+      host.dataset.shown = view;
+    }
+    var seq = ++paintSeq;
+
+    if(view === 'buy') return loadPurchases(force, host, seq);
     if(view === 'cur') return renderCurrency(host);
-    loadWallet(force, host, view === 'pay' ? renderBank : renderWallet);
+    loadWallet(force, host, view === 'pay' ? renderBank : renderWallet, seq);
   }
 
   // The Settings items. Injected into the one empty slot index.html leaves,
@@ -1587,15 +1615,17 @@ const MODULE = `
 
   // One fetch feeds every view, so two of them can never disagree.
   var walletP = null;
-  function loadWallet(force, host, render){
+  function loadWallet(force, host, render, seq){
     if(!host) return;
     if(force) walletP = null;
     if(!walletP) walletP = pay('overview');
-    walletP.then(function(d){ render(host, d); },
+    walletP.then(function(d){ if(stale(seq)) return; render(host, d); },
                  function(e){
+                   // dropped either way, so the next visit refetches
+                   walletP = null;
+                   if(stale(seq)) return;
                    host.innerHTML = '<div class="dzWlEmpty">' +
                      esc(e.message || 'Could not load') + '</div>';
-                   walletP = null;
                  });
   }
   // repaint whatever view is open, after a payout or a method change.
@@ -1718,7 +1748,7 @@ const MODULE = `
   }
 
   var purchasesP = null;
-  function loadPurchases(force, host){
+  function loadPurchases(force, host, seq){
     if(!host || !window.sb || !sb.rpc) return;
     if(force) purchasesP = null;
     // Promise.resolve, not the builder itself: a PostgrestBuilder fires a fresh
@@ -1727,21 +1757,25 @@ const MODULE = `
     if(!purchasesP) purchasesP = Promise.resolve(sb.rpc('dz_my_purchases'));
     purchasesP.then(function(res){
       if(!res || res.error){
+        purchasesP = null;
+        if(stale(seq)) return;
         host.innerHTML = '<div class="dzWlEmpty">' +
           esc((res && res.error && res.error.message) || 'Could not load your purchases') + '</div>';
-        purchasesP = null;
         return;
       }
-      renderPurchases(host, res.data || []);
-      // the same answer tells the marketplace which cards to unlock
+      if(!stale(seq)) renderPurchases(host, res.data || []);
+      // the same answer tells the marketplace which cards to unlock, and that
+      // is true whichever view is up by now — so it runs even when the paint
+      // above was dropped.
       var changed = false;
       (res.data || []).forEach(function(p){
         if(p.item_id && !ownedIds[p.item_id]){ ownedIds[p.item_id] = true; changed = true; }
       });
       if(changed) repaintOwned();
     }, function(){
-      host.innerHTML = '<div class="dzWlEmpty">Could not load your purchases</div>';
       purchasesP = null;
+      if(stale(seq)) return;
+      host.innerHTML = '<div class="dzWlEmpty">Could not load your purchases</div>';
     });
   }
 

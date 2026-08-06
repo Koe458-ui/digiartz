@@ -743,15 +743,24 @@ const MODULE = `
   // A plan's own card is the honest description of what the money buys, so the
   // checkout page reuses it rather than inventing a shorter one.
   function planSpec(id, amount){
+    // The member's own currency, which is what the plan was priced in. This
+    // used to say 'USD' with a note that plans are priced in dollars
+    // server-side; that stopped being true when prices moved into
+    // subscription_prices, one row per plan per currency. The string stayed,
+    // and it is what decides the accepted-methods strip and which providers
+    // are drawn — so an INR member was quoted a rupee price, told only cards
+    // were taken, and offered PayPal, which refuses INR. sub-order reads the
+    // same profile column, so this is the currency the order is created in.
+    var cur = C.currency || 'USD';
     var p = null;
     (C.plans || []).forEach(function(x){ if(x.id === id) p = x; });
     if(p) return {
       title: 'Checkout',
       name: p.name + ' membership',
       sub: 'One month \\u00b7 ' + p.tagline,
-      price: p.price,
+      price: p.price,             // already formatted in cur, server-side
       priceLabel: 'Plan price',
-      currency: 'USD',            // plans are priced in dollars server-side
+      currency: cur,
       icon: '\\u2605',
       // Lite is blue, Premium purple, Max gold on the plan page. Checkout
       // wears the same colour, so the buyer can see they are paying for the
@@ -766,9 +775,9 @@ const MODULE = `
       title: 'Support DigiArtz',
       name: 'Support DigiArtz',
       sub: 'A one-off contribution',
-      price: money(amount, 'USD'),
+      price: money(amount, cur),
       priceLabel: 'Amount',
-      currency: 'USD',
+      currency: cur,
       icon: '\\u2665',
       gets: ['Keeps the servers and storage paid for',
              'No plan or tier attached \\u2014 this is a thank-you, not a purchase'],
@@ -1400,14 +1409,42 @@ const MODULE = `
     paintPanel(true);
   }
 
+  // One host holds all four views, and switching between them used to leave
+  // the last one's markup up until the next one's fetch came back — so the
+  // wallet's balance sat there under the MY PURCHASES heading for as long as
+  // the round trip took, which on a slow connection is long enough to read.
+  // Two separate things caused that, and both are handled here.
+  //
+  // The host is emptied the moment the view changes, so a section that has not
+  // loaded yet shows nothing rather than the section before it. Nothing is put
+  // in its place on purpose: a spinner or a LOADING line is still something to
+  // read in a section it does not belong to.
+  //
+  // And every paint carries the number it started with. Both loaders below
+  // close over the host they were handed, so a wallet fetch that settles after
+  // the member has already moved to My Purchases would otherwise paint itself
+  // into it — the same wrong text, arriving by the other route. A paint whose
+  // number is no longer the current one drops what it fetched.
+  var paintSeq = 0;
+  function stale(seq){ return seq !== paintSeq; }
+
   function paintPanel(force){
     var el = document.getElementById('dzPanelHost');
     if(!el || !el.classList.contains('open')) return;
     var host = el.querySelector('.dzPanelWrap');
     var view = el.dataset.view;
-    if(view === 'buy') return loadPurchases(force, host);
+
+    // On a real view change only. refreshPanel repaints the view already up,
+    // after a payout or a method change, and blanking there would flash it.
+    if(host.dataset.shown !== view){
+      host.innerHTML = '';
+      host.dataset.shown = view;
+    }
+    var seq = ++paintSeq;
+
+    if(view === 'buy') return loadPurchases(force, host, seq);
     if(view === 'cur') return renderCurrency(host);
-    loadWallet(force, host, view === 'pay' ? renderBank : renderWallet);
+    loadWallet(force, host, view === 'pay' ? renderBank : renderWallet, seq);
   }
 
   // The Settings items. Injected into the one empty slot index.html leaves,
@@ -1474,16 +1511,25 @@ const MODULE = `
         if(code === (C.currency || 'USD')) return;
         msg.textContent = 'Saving\u2026'; msg.hidden = false;
         msg.classList.remove('dzWlMsg--bad');
+        // Up for the whole change, not just the save: the prices on the page
+        // behind this are the old currency's until the new module has
+        // repainted them, and a half-converted page is the one thing this
+        // must not show.
+        veil(true);
         pay('currency', {currency: code})
           .then(function(){
                   C.currency = code;
                   // Prices, the plan grid and the wallet were all built for the
                   // old currency. Rather than patch them one by one and risk
                   // one being missed, the module is fetched again.
-                  toast('Currency set to ' + code);
-                  reloadModule();
+                  reloadModule(function(ok){
+                    veil(false);
+                    toast(ok ? 'Currency set to ' + code
+                             : 'Currency saved \u2014 reload to see the new prices');
+                  });
                 },
                 function(e){
+                  veil(false);
                   msg.textContent = e.message || 'Could not save that';
                   msg.classList.add('dzWlMsg--bad');
                 });
@@ -1491,31 +1537,95 @@ const MODULE = `
     });
   }
 
+  // The page's own loading veil, borrowed rather than reinvented: #intro is
+  // already in the document with the spinner the site opens on, so a currency
+  // change wears the same animation the first paint does instead of a second
+  // one that would have to be kept looking like it.
+  //
+  // It covers at z-index 9999, over the account panel at 547, and swallows
+  // clicks while it is up — which is the point. Between the save and the
+  // repaint the page is showing rupee prices with a dollar module still bound
+  // to it, and nothing there should be clickable.
+  function veilEl(){
+    var el = document.getElementById('intro');
+    if(el) return el;
+    // No intro on this page — build the same thing so the veil still shows.
+    el = document.createElement('div');
+    el.id = 'intro';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-label', 'Loading');
+    el.className = 'iHide iGone';
+    el.innerHTML = '<div class="iSpin" aria-hidden="true"></div>' +
+                   '<div class="iTxt">LOADING</div>';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function veil(on){
+    var el = veilEl();
+    if(on){
+      el.classList.remove('iGone');   // visibility back before the fade
+      void el.offsetWidth;            // so removing iHide animates, not jumps
+      el.classList.remove('iHide');
+      return;
+    }
+    el.classList.add('iHide');
+    var done = false;
+    var gone = function(){
+      if(done) return;
+      done = true;
+      el.classList.add('iGone');
+    };
+    el.addEventListener('transitionend', function h(e){
+      if(e.propertyName !== 'opacity') return;
+      el.removeEventListener('transitionend', h);
+      gone();
+    });
+    setTimeout(gone, 450);            // transitionend can be missed
+  }
+
   // Re-fetch /api/store so every price on the page is rebuilt server-side in
   // the new currency. Nothing is converted in the browser.
-  function reloadModule(){
+  //
+  // done() runs once the new module has executed AND repainted — dzFill is
+  // synchronous, so by the time it returns every price on the page is the new
+  // currency's. That is the moment the veil can come down, and it is why the
+  // caller waits for this rather than for the script's load event alone. It is
+  // also called on a failed load, so the veil can never be left up.
+  function reloadModule(done){
     closePanel();
+    var fired = false;
+    var finish = function(ok){
+      if(fired) return;
+      fired = true;
+      if(typeof done === 'function') done(ok);
+    };
     var s = document.createElement('script');
     s.src = '/api/store?t=' + Date.now();
     s.onload = function(){
       var host = document.getElementById('subPgGate');
       if(host) host.dataset.dzFilled = '';   // let the new module repaint the grid
       if(typeof window.dzFill === 'function') window.dzFill();
+      finish(true);
     };
+    s.onerror = function(){ finish(false); };
     document.head.appendChild(s);
+    setTimeout(function(){ finish(false); }, 15000);
   }
 
   // One fetch feeds every view, so two of them can never disagree.
   var walletP = null;
-  function loadWallet(force, host, render){
+  function loadWallet(force, host, render, seq){
     if(!host) return;
     if(force) walletP = null;
     if(!walletP) walletP = pay('overview');
-    walletP.then(function(d){ render(host, d); },
+    walletP.then(function(d){ if(stale(seq)) return; render(host, d); },
                  function(e){
+                   // dropped either way, so the next visit refetches
+                   walletP = null;
+                   if(stale(seq)) return;
                    host.innerHTML = '<div class="dzWlEmpty">' +
                      esc(e.message || 'Could not load') + '</div>';
-                   walletP = null;
                  });
   }
   // repaint whatever view is open, after a payout or a method change.
@@ -1638,7 +1748,7 @@ const MODULE = `
   }
 
   var purchasesP = null;
-  function loadPurchases(force, host){
+  function loadPurchases(force, host, seq){
     if(!host || !window.sb || !sb.rpc) return;
     if(force) purchasesP = null;
     // Promise.resolve, not the builder itself: a PostgrestBuilder fires a fresh
@@ -1647,21 +1757,25 @@ const MODULE = `
     if(!purchasesP) purchasesP = Promise.resolve(sb.rpc('dz_my_purchases'));
     purchasesP.then(function(res){
       if(!res || res.error){
+        purchasesP = null;
+        if(stale(seq)) return;
         host.innerHTML = '<div class="dzWlEmpty">' +
           esc((res && res.error && res.error.message) || 'Could not load your purchases') + '</div>';
-        purchasesP = null;
         return;
       }
-      renderPurchases(host, res.data || []);
-      // the same answer tells the marketplace which cards to unlock
+      if(!stale(seq)) renderPurchases(host, res.data || []);
+      // the same answer tells the marketplace which cards to unlock, and that
+      // is true whichever view is up by now — so it runs even when the paint
+      // above was dropped.
       var changed = false;
       (res.data || []).forEach(function(p){
         if(p.item_id && !ownedIds[p.item_id]){ ownedIds[p.item_id] = true; changed = true; }
       });
       if(changed) repaintOwned();
     }, function(){
-      host.innerHTML = '<div class="dzWlEmpty">Could not load your purchases</div>';
       purchasesP = null;
+      if(stale(seq)) return;
+      host.innerHTML = '<div class="dzWlEmpty">Could not load your purchases</div>';
     });
   }
 

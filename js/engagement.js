@@ -158,25 +158,36 @@
   var bmLastFocus = null;
   // two modes, one shell
   var bmMode = 'bm';
+  // Likes and Bookmarks are two sections sharing one grid, so the same rule the
+  // wallet panel follows applies here: a section that has not loaded shows
+  // nothing, and a fetch that comes back after the member has switched does not
+  // get to paint. This used to say LOADING… under whichever title was up, and
+  // the two requests could land out of order and put likes under BOOKMARKS.
+  var bmSeq = 0;
   async function loadBookmarksPage () {
     var grid = $('bmGrid'), empty = $('bmEmptyState');
-    grid.innerHTML = '<div class="bmEmpty">LOADING…</div>';
+    var seq = ++bmSeq;
+    var mode = bmMode;
+    var live = function () { return seq === bmSeq && bmMode === mode; };
+    grid.innerHTML = '';
     empty.style.display = 'none';
-    if (!db() || !me()) { grid.innerHTML = ''; empty.style.display = ''; return; }
+    if (!db() || !me()) { empty.style.display = ''; return; }
     try {
       // filter by user id
-      var b = await db().from(bmMode === 'like' ? 'artwork_likes' : 'artwork_bookmarks')
+      var b = await db().from(mode === 'like' ? 'artwork_likes' : 'artwork_bookmarks')
         .select('artwork_id,created_at')
         .eq('user_id', me().id)
         .order('created_at', { ascending: false })
         .limit(200);
       if (b.error) throw b.error;
+      if (!live()) return;
       var ids = (b.data || []).map(function (r) { return r.artwork_id; });
       if (!ids.length) { grid.innerHTML = ''; empty.style.display = ''; return; }
       var a = await db().from('artworks')
         .select('id,name,image_url,category')
         .in('id', ids);
       if (a.error) throw a.error;
+      if (!live()) return;
       var byId = {};
       (a.data || []).forEach(function (art) { byId[String(art.id)] = art; });
       grid.innerHTML = '';
@@ -187,7 +198,9 @@
       });
       if (!grid.children.length) empty.style.display = '';
     } catch (e) {
-      grid.innerHTML = '<div class="bmEmpty">COULDN\u2019T LOAD BOOKMARKS — TRY AGAIN</div>';
+      if (!live()) return;
+      grid.innerHTML = '<div class="bmEmpty">COULDN\u2019T LOAD ' +
+        (mode === 'like' ? 'LIKES' : 'BOOKMARKS') + ' — TRY AGAIN</div>';
     }
   }
   function bmCard (art) {

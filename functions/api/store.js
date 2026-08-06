@@ -1686,6 +1686,24 @@ const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
 const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
 const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+// Service-role read. THIS WAS MISSING and every call to it threw a
+// ReferenceError that the try/catch around the pricing block then swallowed,
+// so the plan grid rendered empty and the currency stayed on its default —
+// the endpoint answering 200 the whole time.
+async function sbService(env, path, init = {}) {
+  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
+    ...init,
+    headers: {
+      apikey: sbSvc(env),
+      authorization: 'Bearer ' + sbSvc(env),
+      'content-type': 'application/json',
+      ...(init.headers || {}),
+    },
+  });
+  if (!res.ok) throw new Error('Database error (' + res.status + ')');
+  return res.json().catch(() => null);
+}
+
 async function sbUser(env, request) {
   const bearer = request.headers.get('authorization') || '';
   if (!bearer.startsWith('Bearer ')) return null;

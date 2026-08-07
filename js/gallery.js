@@ -12,7 +12,7 @@
   var fgSecFilter = {};                 // chosen option per section
   var fgSecQuery  = {};                 // typed query per section
   // reading order of the chip row, and the order the arrow keys walk
-  var FG_TABS = ['artworks','marketplace','blog','resources','cart','jobs'];
+  var FG_TABS = ['artworks','marketplace','blog','resources','jobs','cart'];
 
   function fgSwitchSection(id){
     if(!id) return;

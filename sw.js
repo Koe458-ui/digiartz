@@ -4,6 +4,15 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v119 — Marketplace reads Market, and Jobs comes before Cart.
+       The long word was the widest chip on the row and the one paying for
+       it was the search box beside it. Short, the row drops from 818 to 783
+       and stops scrolling from about 820 up rather than 1024.
+       Jobs and Cart swap. Cart is where a visit ends, so it goes last, and
+       the order is now the same in four places that have to agree: the chip
+       row, the search boxes stacked above it, the panels below it, and the
+       list the arrow keys walk.
+       Changed: index.html, js/gallery.js, sw.js.
    v118 — the chips are named, and coloured like the feed boards.
        Icon-only asked a lot of six drawings — a shopping bag for
        Marketplace and a cart for Cart sat three chips apart and said much
@@ -1724,7 +1733,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v118';
+const CACHE_VERSION = 'v119';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1780,7 +1789,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=16',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=73',
+  '/js/gallery.js?v=74',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
   '/js/albums.js?v=7',

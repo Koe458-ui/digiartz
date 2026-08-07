@@ -618,8 +618,10 @@
 /* responsive columns */
       grid-template-columns:repeat(2,1fr);
       gap:.3rem;
-      /* the same inset the home grid takes */
-      padding:0 clamp(.3rem,1vw,.6rem);
+      /* The profile's inset, which is also the bar's above it, so a thumbnail
+         starts under the mark. The home page's is a few pixels and reads as
+         hard against the wall on a phone. */
+      padding:0 var(--fgPad);
       /* bottom nav clearance */
       padding-bottom:calc(1rem + 84px);
     }

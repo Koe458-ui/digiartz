@@ -4,6 +4,13 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v123 — the artwork comes off the wall on a phone.
+       The grid took the home page's inset, which is a few pixels and reads
+       as hard against the edge on a phone. It takes the profile's now,
+       which is also the gallery bar's, so a thumbnail starts under the mark
+       at every width — 16px on a phone, 24 on a desktop, and out to the
+       centred grid's own edge past 1680.
+       Changed: css/hero.css, index.html, sw.js.
    v122 — the gallery gets a header, and search gets a page.
        A search box held a whole line across the top of the gallery whether
        or not anyone was searching, and each of the six sections carried its
@@ -1789,7 +1796,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v122';
+const CACHE_VERSION = 'v123';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1813,7 +1820,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=82',
+  '/css/hero.css?v=83',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',

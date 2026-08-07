@@ -136,7 +136,14 @@
     if(_pfs && _pfs.classList.contains('open')){ closePfSearch(); return; }
     closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
-    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();closeWalletPage();closeBankPage();closePurchasesPage();
+    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();
+    // Wallet, payout methods and purchases were three page shells with three
+    // close functions until they became one panel built by the signed-in
+    // module. This line still called all three by their old names, so it
+    // threw on the first and the two after it never ran either. The panel
+    // owns its own close; it is absent for a signed-out visitor, hence the
+    // guard.
+    if(typeof window.dzClosePanel === 'function') window.dzClosePanel();
   }});
 
   // bottom navigation

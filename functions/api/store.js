@@ -1394,8 +1394,15 @@ const MODULE = `
   function closePanel(){
     var el = document.getElementById('dzPanelHost');
     if(el) el.classList.remove('open');
-    document.body.style.overflow = '';
+    // hand the lock back the way every other overlay does, so closing this
+    // one on top of another does not unlock the page under both
+    if(typeof restoreScroll === 'function') restoreScroll();
+    else document.body.style.overflow = '';
   }
+  /* The page cannot reach this panel by name — it is built here, and the id
+     is deliberately neutral. Escape has to close it like any other overlay,
+     so the one handle it needs is published. */
+  window.dzClosePanel = closePanel;
 
   function openPanel(view){
     var title = VIEWS[view];

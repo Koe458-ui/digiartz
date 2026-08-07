@@ -4,6 +4,23 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v116 — Escape stopped part-way through closing overlays.
+       The handler in js/pfedit.js ended with closeWalletPage(),
+       closeBankPage() and closePurchasesPage(). None of the three has
+       existed since the wallet, payout methods and purchases shells became
+       one panel built by the signed-in module — that change updated the
+       overlay lists in sections.js and app-core.js but not this line. So
+       every Escape threw on the first name and never reached the other two.
+       Nothing after them was lost, because they were last, but the panel
+       that replaced all three had no way to be closed with Escape at all.
+       It closes now. The panel owns its own close and the page cannot reach
+       it by name, so store.js publishes the one handle, guarded because the
+       panel is simply absent for a signed-out visitor. That close also
+       hands the scroll lock back through restoreScroll() rather than
+       clearing body overflow itself, and dzPanelHost joins the list
+       restoreScroll checks — otherwise closing it over another open overlay
+       unlocked the page under both.
+       Changed: js/pfedit.js, js/app-core.js, functions/api/store.js, sw.js.
    v115 — Tags comes back, at the head of the chip row, and the picks now do
        what the picker always claimed.
        v114 took the tag rail out and the preferences with it. Tags is
@@ -1672,7 +1689,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v115';
+const CACHE_VERSION = 'v116';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1726,7 +1743,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=15',
+  '/js/app-core.js?v=16',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=71',
   '/js/auth.js?v=10',
@@ -1735,7 +1752,7 @@ const SHELL_URLS = [
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=3',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=6',
+  '/js/pfedit.js?v=7',
   '/js/mywork.js?v=7',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',

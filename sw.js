@@ -4,6 +4,30 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v110 — createClient is called inside a try, and a correction.
+       The number quoted in v108 and in its commit — roughly 36 of the 76
+       functions touching sb do not check it — was wrong. It came from a
+       line regex that called any function without a literal !sb
+       unguarded, and never looked at try/catch. Counted properly, by
+       matching braces and attributing each call to the function that
+       actually contains it: 71 functions touch sb, 37 check it first, 33
+       reach it only inside a try, and one — albFetchStrip — does neither,
+       and even that one is awaited inside a try by both of its callers.
+       Null sb was already safe everywhere. There was no sweep to do.
+       So what shipped is the piece that was actually missing. createClient
+       is called inside a try now, and both ways of having no backend — no
+       config, or a client that would not construct — go through one
+       dzNoBackend() that logs and raises the banner the site already had.
+       sb stays null, which the audit above says the rest of the code
+       knows how to be in. albFetchStrip gets an explicit guard, not
+       because it breaks today but because it is the only one relying on
+       every caller to be careful, and the next caller will not be.
+       Verified three ways of losing the client — the script never
+       arriving, createClient throwing, the global being undefined. All
+       three: sb null, images initialised, app-core run to its end, banner
+       shown, no errors on load and none while clicking through the
+       profile, albums, gallery, notifications and settings.
+       Changed: js/app-core.js, js/albums.js, index.html, sw.js.
    v109 — the auth handler did its bookkeeping behind a paint, and the
        paint threw on every first load.
        syncAuthBtn() ends by calling cpSyncAvatar(), which lives in
@@ -1559,7 +1583,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v109';
+const CACHE_VERSION = 'v110';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1613,12 +1637,12 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=12',
+  '/js/app-core.js?v=13',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=69',
   '/js/auth.js?v=8',
   '/js/profile.js?v=7',
-  '/js/albums.js?v=5',
+  '/js/albums.js?v=6',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',

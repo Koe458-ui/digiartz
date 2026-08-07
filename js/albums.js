@@ -54,6 +54,11 @@
 
   // build one strip in parallel
   async function albFetchStrip(userId){
+    // Both callers happen to await this inside a try, so a null client is
+    // already caught today. That is their carefulness, not this function's,
+    // and the third caller will not inherit it. An empty strip is the honest
+    // answer: no client, no albums to name.
+    if(!sb) return [];
     function soft(p){ return p.then(function(r){ return r && !r.error ? r : {data:[]}; },
                                     function(){ return {data:[]}; }); }
     function soft1(p){ return p.then(function(r){ return r && !r.error && r.data ? r : {data:{}}; },

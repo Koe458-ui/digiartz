@@ -311,16 +311,36 @@
   var SITE_DEFAULT_IMAGE = (document.querySelector('meta[property="og:image"]')||{}).content || '';
 
   let sb = null;
-  if (SB_URL && SB_KEY) {
-    sb = supabase.createClient(SB_URL , SB_KEY )
-  } else {
-    // user facing message only
-    console.error('KOE_CONFIG missing SB_URL/SB_KEY \u2014 backend client not created.');
+
+  // one way to say it, wherever the client failed to appear
+  function dzNoBackend(why){
+    console.error(why);
     var _sb = document.getElementById('sBanner');
     if(_sb){
       _sb.textContent = '\u26a0 Can\u2019t connect right now. Please refresh, or try again in a moment.';
       _sb.classList.add('show');
     }
+  }
+
+  if (SB_URL && SB_KEY) {
+    /* This line used to be called bare, and it is the first thing in the file
+       that depends on anything outside it. If the script defining
+       createClient had not arrived — or it threw for any other reason — the
+       throw landed here and took the rest of the file with it: the 62
+       function declarations below hoisted and kept answering clicks, while
+       the 20 let/const bindings under it, images and filterCat among them,
+       stayed in the temporal dead zone and threw on every access. A page
+       that renders, responds, and is dead underneath.
+       sb stays null instead. That is a state the rest of the code already
+       knows how to be in: of the 71 functions that touch it, 37 check it
+       first and the rest reach it only inside a try. */
+    try{
+      sb = supabase.createClient(SB_URL, SB_KEY);
+    }catch(e){
+      dzNoBackend('Backend client could not be created: ' + ((e && e.message) || e));
+    }
+  } else {
+    dzNoBackend('KOE_CONFIG missing SB_URL/SB_KEY \u2014 backend client not created.');
   }
 
   let images = [];

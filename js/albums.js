@@ -68,6 +68,8 @@
               .eq('id', userId).maybeSingle())
     ]);
     var flags = res[3].data || {};
+    // decided when the reply lands, not when the request left: signing out
+    // mid-flight must not leave a private Likes album marked as yours
     var owner = !!currentUser && String(currentUser.id) === String(userId);
     if(owner){
       var exp = flags.subscription_expires_at ? new Date(flags.subscription_expires_at) : null;
@@ -99,11 +101,11 @@
     if(pf.albumsLoaded){ albRenderProfileTab(); return; }
     empty.style.display = 'none';
     grid.innerHTML = '<div class="albLoading">Loading\u2026</div>';
-    var forId = pf.profile.id;
+    var forId = pf.profile.id, scope = dzScope();
     try{
       var strip = await albFetchStrip(forId);
-      // drop if another profile opened
-      if(!pf.profile || String(pf.profile.id) !== String(forId)) return;
+      // drop if another profile opened, or another account signed in
+      if(!dzScopeStill(scope) || !pf.profile || String(pf.profile.id) !== String(forId)) return;
       pf.albums = strip; pf.albumsLoaded = true;
       albRenderProfileTab();
     }catch(e){
@@ -124,16 +126,36 @@
 
   // albums manager page
   async function albLoadMine(force){
-    if(!currentUser) return;
+    if(!currentUser){ albResetMine(); return; }
     if(albMineLoaded && !force){ albRenderManager(); return; }
     var grid = document.getElementById('albGrid');
     if(grid && !albMine.length) grid.innerHTML = '<div class="albLoading">Loading\u2026</div>';
+    var scope = dzScope(), forId = String(currentUser.id);
     try{
-      albMine = await albFetchStrip(currentUser.id);
+      var strip = await albFetchStrip(forId);
+      // a different account signed in while this was in flight: these are
+      // somebody else's Likes and Bookmarks and they are not rendered here
+      if(!dzScopeStill(scope)) return;
+      albMine = strip;
       albMineLoaded = true;
       albRenderManager();
     }catch(e){
+      if(!dzScopeStill(scope)) return;
       if(grid) grid.innerHTML = '<div class="albLoading">Couldn\u2019t load \u2014 try again.</div>';
+    }
+  }
+
+  // Likes, Bookmarks and albums are one member's. When the session changes
+  // they are not this member's any more, so they are dropped rather than
+  // left on screen for whoever signs in next.
+  function albResetMine(){
+    albMine = []; albMineLoaded = false; albTier = 'guest';
+    var grid = document.getElementById('albGrid');
+    if(grid) grid.innerHTML = '';
+    if(albView && albView.src === 'me'){
+      albView = null;
+      var vp = document.getElementById('albViewPage');
+      if(vp) vp.classList.remove('open');
     }
   }
   function albRenderManager(){
@@ -519,19 +541,49 @@
       grid.querySelectorAll('[data-igskel]').forEach(function(t){ t.remove(); });
     }
   }
+  // ids already on the page, so a row can only ever be added once
+  function pfGalleryHas(id){
+    if(!pf.galleryIds) pf.galleryIds = Object.create(null);
+    return pf.galleryIds[String(id)] === true;
+  }
   async function pfLoadMoreGallery(){
     if(!pf.profile || pf.galleryDone || pf.galleryBusy) return;
     pf.galleryBusy = true;
     pfEnsureGallerySentinel();
-    var size = pf.galleryRows.length ? gridStepBatch() : gridInitialBatch();
-    var from = pf.galleryRows.length, to = from + size - 1;
+    // the window counts rows fetched, not rows kept: dropping a duplicate
+    // must not walk the offset backwards and re-fetch the same page forever
+    var seen = pf.galleryOffset || 0;
+    var size = seen ? gridStepBatch() : gridInitialBatch();
+    var from = seen, to = from + size - 1;
+    // what this page is being fetched for. Both can change while it is in
+    // flight — a different profile opened, a different account signed in —
+    // and a page that arrives for the wrong one is not appended to the wrong
+    // grid, it is dropped.
+    var scope = dzScope(), forId = String(pf.profile.id);
     pfGallerySkeleton(size);
     try{
-      const{data,error}=await sb.from('artworks').select('*').eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART).order('created_at',{ascending:false}).range(from,to);
+      // range() windows only line up if the sort is total. created_at is not:
+      // a queued upload writes several rows in the same instant, and rows
+      // that tie can come back in either order, which is how one artwork
+      // ended up in two pages. id breaks every tie the same way each time.
+      const{data,error}=await sb.from('artworks').select('*')
+        .eq('user_id',forId).eq('kind',ART_KIND_ART)
+        .order('created_at',{ascending:false}).order('id',{ascending:false})
+        .range(from,to);
       if(error) throw error;
-      var rows = data||[];
+      if(!dzScopeStill(scope) || !pf.profile || String(pf.profile.id) !== forId){
+        pf.galleryBusy = false;   // superseded, and its skeleton went with it
+        return;
+      }
+      var all = data||[];
+      pf.galleryOffset = seen + all.length;
+      if(all.length < size) pf.galleryDone = true;
+      // belt and braces: a tie the database broke differently, a retry, an
+      // overlapping window — whatever the cause, an id already on the page
+      // does not go on it twice
+      var rows = all.filter(function(a){ return !pfGalleryHas(a.id); });
+      rows.forEach(function(a){ pf.galleryIds[String(a.id)] = true; });
       pf.galleryRows = pf.galleryRows.concat(rows);
-      if(rows.length < size) pf.galleryDone = true;
       rows.forEach(function(a){
         // approved rows only
         if(a.status!=='approved') return;

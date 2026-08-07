@@ -4,6 +4,33 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v106 — an artwork appeared twice, and one member's saves appeared under
+       another member's name. Both were the same kind of mistake: the
+       client trusting something it had no right to trust.
+       The duplicates were the sort. The profile gallery is the one list
+       on the site paged by the server, .range(from,to), ordered by
+       created_at alone — and created_at is not unique. The upload queue
+       writes several rows in the same instant, and rows that tie can come
+       back in either order, so consecutive windows overlapped: some
+       artworks landed in two pages and others in none. Ordering by id as
+       well makes the sort total, so the windows tile exactly. The window
+       now counts rows fetched rather than rows kept, and every id is
+       remembered, so a row cannot be drawn twice whatever the server does.
+       The saves were caches outliving their session. onAuthStateChange
+       wiped pfRowCache and the community caches but not albMine,
+       albMineLoaded, albTier, pf.albums or pfMediaCache — so after a
+       second account signed in on the same tab, the albums page still
+       held the first one's Likes and Bookmarks. engagement.js was worse:
+       it waited 400ms before refetching, and on failure kept the previous
+       member's sets, painting their filled hearts indefinitely.
+       Rather than patch each call site, there is a scope stamp:
+       dzScope() in js/app-core.js returns the signed-in id and a counter
+       the session bump advances. A loader stamps what it is fetching for
+       before it awaits and checks the stamp before it paints, so a reply
+       that outlives its session is dropped instead of rendered. It guards
+       the profile gallery, both album loaders and the like/bookmark sets.
+       Changed: js/app-core.js, js/albums.js, js/auth.js, js/engagement.js,
+       js/profile.js, index.html, sw.js.
    v105 — the profile bar reads PROFILE on every profile.
        It set itself in caps like every other page title on the site, and
        it stopped putting the viewed member's @handle there. The bar names
@@ -1460,7 +1487,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v105';
+const CACHE_VERSION = 'v106';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1510,12 +1537,12 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=10',
+  '/js/app-core.js?v=11',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=69',
-  '/js/auth.js?v=5',
-  '/js/profile.js?v=6',
-  '/js/albums.js?v=4',
+  '/js/auth.js?v=6',
+  '/js/profile.js?v=7',
+  '/js/albums.js?v=5',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',
@@ -1529,7 +1556,7 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/engagement.js?v=3',
+  '/js/engagement.js?v=4',
   '/js/sections.js?v=78',
   '/js/navprogress.js?v=5'
 ];

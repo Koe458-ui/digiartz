@@ -1006,6 +1006,27 @@
     if(window.rebuildGalCarousels) window.rebuildGalCarousels(images);
   }
 
+  /* ---- scope guard -----------------------------------------------------
+     Every list on this site belongs to somebody: the signed-in member, or
+     the profile being looked at. A fetch is slow and a session is not, so
+     a reply can land after the thing it was asked for has already changed
+     — a different account signed in, a different profile opened — and
+     paint one member's rows under another member's name.
+
+     So a caller stamps the scope it is fetching for before it awaits, and
+     checks the stamp before it paints. If the stamp no longer matches, the
+     reply is stale by definition and is dropped rather than rendered. The
+     stamp carries the signed-in id, so nothing fetched for one account can
+     ever paint for another, whatever is sitting in a cache. */
+  var DZ_SCOPE_SEQ = 0;
+  function dzScope(){
+    var uid = (typeof currentUser !== 'undefined' && currentUser) ? String(currentUser.id) : 'guest';
+    return uid + '|' + DZ_SCOPE_SEQ;
+  }
+  // called when the session changes: every stamp taken before now is stale
+  function dzScopeBump(){ DZ_SCOPE_SEQ++; }
+  function dzScopeStill(token){ return token != null && token === dzScope(); }
+
   function gridCols(){
     var w = window.innerWidth || document.documentElement.clientWidth || 1280;
     return w >= 1280 ? 4 : (w >= 700 ? 3 : 2);

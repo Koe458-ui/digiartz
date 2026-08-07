@@ -74,17 +74,27 @@
     }
   });
 
-  // like and bookmark state
+  // Which artworks this member has liked and saved. It is one member's
+  // answer, so it is emptied the moment the session changes and only filled
+  // again by a reply fetched for whoever is signed in now.
+  function clearSets () { liked.clear(); marked.clear(); setsReady = false; paintSoon(); }
+
   async function loadSets () {
     if (!db() || !me()) { liked.clear(); marked.clear(); setsReady = true; paintSoon(); return; }
+    var uid = me().id;
     try {
       // filter by user id
-      var uid = me().id;
       var l = await db().from('artwork_likes').select('artwork_id').eq('user_id', uid).limit(3000);
       var b = await db().from('artwork_bookmarks').select('artwork_id').eq('user_id', uid).limit(3000);
+      // signed out, or signed in as somebody else, while this was in flight
+      if (!me() || String(me().id) !== String(uid)) return;
       liked  = new Set((l.data || []).map(function (r) { return String(r.artwork_id); }));
       marked = new Set((b.data || []).map(function (r) { return String(r.artwork_id); }));
-    } catch (e) { /* stay with last known */ }
+    } catch (e) {
+      // an empty heart is wrong for a beat. A filled one belonging to the
+      // last member who was signed in is wrong until they reload.
+      liked.clear(); marked.clear();
+    }
     setsReady = true;
     paintSoon();
   }
@@ -313,7 +323,13 @@
       }).observe(un, { childList: true, characterData: true, subtree: true });
     }
     if (db() && db().auth && db().auth.onAuthStateChange) {
-      db().auth.onAuthStateChange(function () { setTimeout(loadSets, 400); });
+      db().auth.onAuthStateChange(function () {
+        // empty now, refill when the new session's answer comes back — the
+        // gap used to paint the previous member's hearts for 400ms, and for
+        // good if the refetch then failed
+        clearSets();
+        setTimeout(loadSets, 400);
+      });
     } else {
       loadSets();
     }

@@ -565,8 +565,21 @@
     sb.auth.onAuthStateChange(function(event, session) {
       currentUser = session ? session.user : null;
       syncAuthBtn();
+      // Every stamp taken before this line was taken for the account that
+      // just went away. Bumping first means anything still in flight is
+      // already stale by the time it lands, whichever order it lands in.
+      dzScopeBump();
       // wipe caches on auth change
       pfRowCache = {}; cmMineRows = []; cpMsgCache = {}; cmMineCache = {};
+      // Likes, Bookmarks, albums and the profile media cache are one
+      // member's. They are not carried across a sign-in.
+      try{ albResetMine(); }catch(e){}
+      try{
+        pf.albums = []; pf.albumsLoaded = false;
+        pf.galleryRows = []; pf.galleryIds = Object.create(null);
+        pf.galleryOffset = 0; pf.galleryDone = false;
+        pfMediaCache = {};
+      }catch(e){}
       // repaint ranking boards
       try{ if (typeof window.rkRefresh === 'function') window.rkRefresh(); }catch(e){}
       // reload hide list

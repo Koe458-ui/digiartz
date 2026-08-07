@@ -125,6 +125,8 @@
       pfPreloadImage(getThumbnailUrl(currentUserAvatarUrl));
     }
     pf.profile=null; pf.galleryRows=[]; pf.galleryDone=false; pf.galleryBusy=false;
+    // the page window and the ids already on it belong to one profile
+    pf.galleryOffset=0; pf.galleryIds=Object.create(null);
     pf.resLoaded=false; pf.mktLoaded=false; pf.blogLoaded=false; pf.resRows=[]; pf.mktRows=[]; pf.blogRows=[];
     // reset albums per profile
     pf.albumsLoaded=false; pf.albums=[];

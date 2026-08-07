@@ -11,33 +11,69 @@
   var fgFltMode = 'artworks';           // panel owner
   var fgSecFilter = {};                 // chosen option per section
   var fgSecQuery  = {};                 // typed query per section
+  // reading order of the chip row, and the order the arrow keys walk
+  var FG_TABS = ['artworks','marketplace','blog','resources','jobs','cart'];
 
   function fgSwitchSection(id){
     if(!id) return;
     var secs=document.querySelectorAll('#fg .fgSec'), i;
     for(i=0;i<secs.length;i++) secs[i].classList.toggle('active', secs[i].id==='fgSec-'+id);
+    // each section keeps its own search box, and the one on show is the one
+    // belonging to the section under it
+    var blocks=document.querySelectorAll('#fg .fgSearchBlock');
+    for(i=0;i<blocks.length;i++){
+      blocks[i].classList.toggle('active', blocks[i].getAttribute('data-sec')===id);
+    }
     var btns=document.querySelectorAll('#fgSecTabs .fgSecBtn'), on;
     for(i=0;i<btns.length;i++){
       on = btns[i].id==='fgSecBtn-'+id;
       btns[i].classList.toggle('active', on);
       btns[i].setAttribute('aria-selected', on?'true':'false');
+      // a tab rail is one stop on the page, not six: Tab lands on the
+      // selected chip and the arrow keys move within
+      btns[i].tabIndex = on ? 0 : -1;
     }
     fgSection=id;
     var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
-    // the tab strip scrolls, so a section opened from somewhere else
-    // (a quick link, the hero CTA) would land with its tab off-screen
-    var rail=document.getElementById('fgSecTabs');
+    // One line at every width, which on a phone is wider than the screen, so
+    // a section opened from somewhere else — a quick link, the hero CTA —
+    // would land with its chip off the edge. Measured off the boxes rather
+    // than offsetLeft, which is relative to whatever happens to be positioned
+    // above the chip rather than to the scroller.
+    var rail=document.getElementById('fgSecRow');
     var tab=document.getElementById('fgSecBtn-'+id);
     if(rail && tab){
-      var want=tab.offsetLeft-(rail.clientWidth-tab.offsetWidth)/2;
+      var rr=rail.getBoundingClientRect(), tr=tab.getBoundingClientRect();
+      var want=rail.scrollLeft+(tr.left-rr.left)-(rr.width-tr.width)/2;
       var max=rail.scrollWidth-rail.clientWidth;
       rail.scrollLeft=Math.max(0,Math.min(want,max));
     }
-    // rail measures while visible
-    if(id==='artworks' && typeof tgRenderRail==='function'){ try{ tgRenderRail(false); }catch(e){} }
     // load section on first visit
     if(id!=='artworks' && typeof dzSecEnter==='function') dzSecEnter(id);
   }
+
+  /* Arrow keys along the chip row, Home and End to its ends — the tabs
+     pattern anything with role="tablist" answers to. Selection follows the
+     arrow: the panel is already in the page, so switching costs nothing. Up
+     and Down are left alone; the row is horizontal. */
+  function fgTabKey(e){
+    var i = FG_TABS.indexOf(fgSection);
+    if(i === -1) return;
+    var next;
+    if(e.key === 'ArrowRight')     next = (i + 1) % FG_TABS.length;
+    else if(e.key === 'ArrowLeft') next = (i - 1 + FG_TABS.length) % FG_TABS.length;
+    else if(e.key === 'Home')      next = 0;
+    else if(e.key === 'End')       next = FG_TABS.length - 1;
+    else return;
+    e.preventDefault();
+    fgSwitchSection(FG_TABS[next]);
+    var btn = document.getElementById('fgSecBtn-' + FG_TABS[next]);
+    if(btn) btn.focus();
+  }
+  (function(){
+    var tabs = document.getElementById('fgSecTabs');
+    if(tabs) tabs.addEventListener('keydown', fgTabKey);
+  })();
 
   // stub sections hold the query
   var fgSecQTimer={};

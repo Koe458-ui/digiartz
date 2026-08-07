@@ -622,7 +622,7 @@
   function restoreScroll(){
     // every overlay that locks scroll
     // album pages lock too
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod'];
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','dzPanelHost'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -1192,6 +1192,20 @@
         var asc = iA<iB ? -1 : 1;
         return filterSrt==='new' ? -asc : asc;
       });
+    }
+
+    /* Picked tags move matching artwork to the top, which is what the tag
+       picker has always said they do. Everything below keeps the order the
+       chosen sort just gave it — this lifts, it does not re-sort. */
+    var picked = (typeof tgPickedTags === 'function') ? tgPickedTags() : null;
+    if(picked && picked.size){
+      var lifted=[], rest=[];
+      for(var pi=0; pi<imgs.length; pi++){
+        var cats=catList(imgs[pi].category), hit=false;
+        for(var ci=0; ci<cats.length; ci++){ if(picked.has(cats[ci])){ hit=true; break; } }
+        (hit?lifted:rest).push(imgs[pi]);
+      }
+      imgs = lifted.concat(rest);
     }
 
     if(fgSent){ fgSent.destroy(); fgSent = null; }

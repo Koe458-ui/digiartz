@@ -89,6 +89,11 @@
   }
   .dzList{ max-width:1080px; margin-left:auto; margin-right:auto; gap:.9rem; }
 
+  /* The gallery bar is full bleed, so it cannot be capped the way the grid
+     under it is — it takes the inset the capped grid lands on instead, and
+     the search box starts over the first thumbnail. */
+  .fgTopBar{ --fgInset:max(24px,calc((100% - 1680px) / 2 + 24px)); }
+
   /* text sizes */
   .dzName{ font-size:15px; line-height:1.4; }
   .dzMeta{ font-size:12.5px; letter-spacing:.06em; gap:.2rem .7rem; }
@@ -97,7 +102,6 @@
   .dzExt{ font-size:15px; }
   .dzEmpty,.dzBusy{ font-size:13px; }
   .secSub{ font-size:13px; letter-spacing:.28em; }
-  .fgSecTxt{ font-size:13px; }
   .tgSearchIn{ font-size:15px; }
   .subTagline{ font-size:14px; }
   .subFeatures li{ font-size:15px; line-height:1.55; }

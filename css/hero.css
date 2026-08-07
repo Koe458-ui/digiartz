@@ -240,59 +240,96 @@
     .fgFltBtn.active{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
     .fgFltBtn.active::after{content:'';position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);}
 
-    /* section tabs */
-    .fgSecBar{
+    /* The gallery's control block — the open section's search box and the
+       section chips. Both hold --fgInset, so however the two land they share
+       one left edge. */
+    .fgTopBar{
+      --fgInset:clamp(.7rem,2vw,2rem);
       position:sticky;top:3.4rem;z-index:10;
+      display:flex;flex-wrap:wrap;align-items:center;
+      gap:.75rem 1rem;
+      padding:.75rem var(--fgInset);
       border-bottom:1px solid var(--bdr);
-      padding:.5rem clamp(.7rem,2vw,2rem) 0;
       isolation:isolate;
     }
     /* blur layer */
-    .fgSecBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
-    .fgSecTabs{
-      display:flex;flex-wrap:nowrap;align-items:flex-end;gap:0 1.5rem;
+    .fgTopBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+
+    /* The search asks for a comfortable line of its own and gives it up only
+       when the chips fit beside it. Below that width the basis reads 100% and
+       the row breaks — two lines, not a squeezed one. */
+    .fgSearchStack{flex:1 1 min(100%,26rem);min-width:0;}
+    .fgSearchBlock{display:none;}
+    .fgSearchBlock.active{display:block;}
+    /* the bar owns the inset now, not the block */
+    .fgTopBar .tgSearch{width:100%;margin:0;}
+
+    /* Named chips, so the row is as wide as its words: it fits a desktop line
+       whole and a phone's it cannot. One line either way — where there is not
+       room it scrolls sideways, the way the feed rail on the home page does.
+       Nothing wraps, so the tablist can stay a real element with Tags beside
+       it rather than inside it. */
+    .fgSecRow{
+      flex:0 1 auto;min-width:0;
+      display:flex;flex-wrap:nowrap;align-items:center;gap:.5rem;
+      padding:.15rem 0;
       overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
-      scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
+      -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+      scrollbar-width:none;-ms-overflow-style:none;
     }
-    .fgSecTabs::-webkit-scrollbar{display:none;}
+    .fgSecRow::-webkit-scrollbar{display:none;}
+    .fgSecTabs{
+      flex:0 0 auto;
+      display:flex;flex-wrap:nowrap;align-items:center;gap:.5rem;
+    }
+    /* Tags is a picker, not a panel, so it never takes the selected fill —
+       it carries the dot the filter button uses to say a pick is in force. */
+    .fgTagsBtn{position:relative;}
+    .fgTagsBtn.on{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
+    .fgTagsBtn.on::after{
+      content:'';position:absolute;top:6px;right:6px;
+      width:6px;height:6px;border-radius:50%;
+      background:var(--pg);box-shadow:0 0 6px var(--pg);
+    }
+    /* The feed board's chip, borrowed whole: same surface, same border, same
+       radius, same weight of word, and the icon carried in the entry's own
+       gradient. The two rails read as one family because they are drawn from
+       one recipe. */
     .fgSecBtn{
-      display:flex;align-items:center;gap:.45rem;
-      font-family:var(--fd);font-size:.95rem;font-weight:700;letter-spacing:.05em;
-      background:none;border:0;border-bottom:2px solid transparent;
-      padding:.65rem 0 .7rem;margin:0;cursor:pointer;
-      color:var(--txd);white-space:nowrap;flex-shrink:0;
-      transition:color .25s,border-color .25s;
+      /* the gradients are picked against near-black; the light theme swaps
+         in its own darker pair, spelled out per chip rather than mixed at
+         run time so it works without color-mix() too */
+      --fgS1:var(--fgA);--fgS2:var(--fgB);
+      flex:0 0 auto;scroll-snap-align:center;
+      display:inline-flex;align-items:center;gap:.55rem;
+      padding:.6rem .9rem;margin:0;box-sizing:border-box;
+      border-radius:14px;cursor:pointer;
+      background:var(--sur);border:1px solid var(--bdr);color:var(--txd);
+      font-family:var(--fb);font-size:.86rem;font-weight:600;letter-spacing:-.01em;
+      white-space:nowrap;-webkit-tap-highlight-color:transparent;
+      transition:background .2s,border-color .2s,color .2s,transform .2s;
     }
-    .fgSecBtn:hover{color:var(--tx);}
-    .fgSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
-    /* section icon chips */
-    .fgSecIco{
-      width:24px;height:24px;border-radius:7px;flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;
-      color:#fff;
-      transition:transform .25s ease,box-shadow .25s ease;
+    html[data-theme="light"] .fgSecBtn{--fgS1:var(--fgAL);--fgS2:var(--fgBL);}
+    @media(hover:hover){
+      .fgSecBtn:hover{border-color:var(--bdrh);color:var(--tx);}
+      .fgSecBtn.active:hover,.fgTagsBtn.on:hover{border-color:var(--pg);}
     }
-    .fgSecIco svg{width:14px;height:14px;display:block;stroke:#fff;}
-    /* inactive chip */
-    .fgSecBtn:not(.active) .fgSecIco{opacity:.72;}
-    .fgSecBtn:hover .fgSecIco{opacity:1;}
-    .fgSecBtn.active .fgSecIco{transform:translateY(-1px);}
-    .fgSecIco--artworks{background:linear-gradient(135deg,#A78BFA,#7C3AED);box-shadow:0 2px 8px rgba(124,58,237,.32);}
-    .fgSecIco--resources{background:linear-gradient(135deg,#4ADE80,#16A34A);box-shadow:0 2px 8px rgba(22,163,74,.32);}
-    .fgSecIco--blog{background:linear-gradient(135deg,#818CF8,#4F46E5);box-shadow:0 2px 8px rgba(79,70,229,.32);}
-    .fgSecIco--marketplace{background:linear-gradient(135deg,#FB923C,#EA580C);box-shadow:0 2px 8px rgba(234,88,12,.32);}
-    .fgSecIco--jobs{background:linear-gradient(135deg,#38BDF8,#0891B2);box-shadow:0 2px 8px rgba(8,145,178,.32);}
-    .fgSecIco--cart{background:linear-gradient(135deg,#F472B6,#DB2777);box-shadow:0 2px 8px rgba(219,39,119,.32);}
-    @media(max-width:480px){
-      .fgSecBar{padding:.4rem 1rem 0;}
-      .fgSecTabs{gap:0 1.15rem;}
-      .fgSecBtn{font-size:.86rem;gap:.4rem;padding:.7rem 0 .75rem;}
-      .fgSecIco{width:22px;height:22px;border-radius:6px;}
-      .fgSecIco svg{width:13px;height:13px;}
+    .fgSecBtn:active{transform:scale(.97);}
+    .fgSecBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    /* selected reads through the chip, not the icon — the icon keeps its own
+       colour so the row stays legible at a glance either way */
+    .fgSecBtn.active{border-color:var(--pg);background:var(--pdim);color:var(--tx);}
+    .fgSecIco{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;}
+    .fgSecIco svg{width:100%;height:100%;display:block;}
+    @media(max-width:600px){
+      .fgTopBar{--fgInset:1rem;gap:.65rem;padding:.65rem var(--fgInset);}
+      .fgSecRow,.fgSecTabs{gap:.4rem;}
+      .fgSecBtn{padding:.5rem .7rem;gap:.4rem;font-size:.8rem;border-radius:12px;}
+      .fgSecIco{width:20px;height:20px;}
     }
     @media(prefers-reduced-motion:reduce){
-      .fgSecIco{transition:none;}
-      .fgSecBtn.active .fgSecIco{transform:none;}
+      .fgSecBtn{transition:none;}
+      .fgSecBtn:active{transform:none;}
     }
     /* section content */
     .dzGrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));}
@@ -582,6 +619,10 @@
     @keyframes cpSpin{to{transform:rotate(360deg);}}
 
     .fgBdy{padding:1.5rem;}
+    /* The artwork grid runs to the edge here the same way it does on the home
+       page and the profile, so the body adds no inset of its own — the grid
+       carries it, and it is the home page's. */
+    .fgBdy--art{padding:1.5rem 0;}
     .fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;}
     /* gallery grid */
     .fgGrid{
@@ -589,6 +630,8 @@
 /* responsive columns */
       grid-template-columns:repeat(2,1fr);
       gap:.3rem;
+      /* the same inset the home grid takes */
+      padding:0 clamp(.3rem,1vw,.6rem);
       /* bottom nav clearance */
       padding-bottom:calc(1rem + 84px);
     }

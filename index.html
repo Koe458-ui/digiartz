@@ -99,17 +99,17 @@
   <link rel="stylesheet" href="/css/base.css?v=4">
   <link rel="stylesheet" href="/css/hero.css?v=76">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
-  <link rel="stylesheet" href="/css/community.css?v=3">
+  <link rel="stylesheet" href="/css/community.css?v=4">
   <link rel="stylesheet" href="/css/connect.css?v=1">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
-  <link rel="stylesheet" href="/css/profile.css?v=3">
+  <link rel="stylesheet" href="/css/profile.css?v=4">
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=2">
-  <link rel="stylesheet" href="/css/upload.css?v=1">
+  <link rel="stylesheet" href="/css/upload.css?v=2">
   <link rel="stylesheet" href="/css/widgets.css?v=1">
   <link rel="stylesheet" href="/css/overrides.css?v=1">
-  <link rel="stylesheet" href="/css/select.css?v=1">
+  <link rel="stylesheet" href="/css/select.css?v=2">
  </head>
  <body>
 
@@ -506,106 +506,243 @@
   </section>
 
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
-    <div class="pfPageHdr">
-      <div class="cmHdrTitle"><span>PROFILE</span></div>
-    </div>
+
+    <!-- The bar is the page's own chrome, not the site's: the brand mark is a
+         profile mark, and the word under it is Profile. Search, notifications
+         and the menu are yours, so they are only drawn on your own profile;
+         on anyone else's the bar carries a way back instead. -->
+    <header class="pfTopBar">
+      <div class="pfTopL">
+        <button class="pfTopBtn pfTopBack" id="pfTopBack" onclick="closeProfilePage()" aria-label="Go back" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
+        </button>
+        <span class="pfMark" id="pfTopMark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="32" height="32">
+            <defs>
+              <linearGradient id="pfMarkGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#38BDF8"/>
+                <stop offset=".5" stop-color="#3B82F6"/>
+                <stop offset="1" stop-color="#7C3AED"/>
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="10" fill="url(#pfMarkGrad)"/>
+            <circle cx="16" cy="12.6" r="4.5" fill="#fff"/>
+            <path d="M7.8 26.4c0-4.35 3.75-7.3 8.2-7.3s8.2 2.95 8.2 7.3z" fill="#fff"/>
+          </svg>
+        </span>
+        <span class="pfTopTitle" id="pfTopTitle">Profile</span>
+      </div>
+      <div class="pfTopR" id="pfTopActions">
+        <button class="pfTopBtn" id="pfTopSearchBtn" onclick="openPfSearch()" aria-label="Search this profile" aria-controls="pfSearchPage">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+        </button>
+        <button class="pfTopBtn" id="pfTopNotifBtn" onclick="openNotifications()" aria-label="Notifications" aria-controls="notifPage">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="pfTopDot" aria-hidden="true"></span>
+        </button>
+        <button class="pfTopBtn" id="pfTopMenuBtn" onclick="openSettingsPage()" aria-label="Open settings menu" aria-controls="setPage">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+        </button>
+      </div>
+    </header>
+
     <div class="pfBanner" id="pfBanner">
       <img alt="" id="pfBannerImg">
-      <div class="pfAvatarWrap">
-        <div class="pfAvatar" id="pfAvatar"><img alt="" id="pfAvatarImg"><span id="pfAvatarLetter">?</span></div>
-      </div>
     </div>
+
     <div class="pfBdy">
-      <div class="pfHead">
-        <div class="pfHeadInfo">
-          <div class="pfUsername" id="pfUsername">—</div>
-          <span class="pfWarnMark" id="pfWarnMark" title="This account has a low merit score" aria-label="Low merit warning">!</span>
-          <div class="pfHandle" id="pfHandle"></div>
-          <div class="msRibbon" id="pfMsRibbon" hidden></div>
-          <div class="pfHeadBio" id="pfHeadBio"></div>
-          <div class="pfStatsRow" id="pfStatsRow" style="display:none;">
-            <span class="pfStat" id="pfHeadStatLikes">❤️ 0</span>
-            <span class="pfStatDot">•</span>
-            <span class="pfStat" id="pfHeadStatBms">🔖 0</span>
-            <span class="pfStatDot">•</span>
-            <span class="pfStat" id="pfHeadStatViews">👁️ 0</span>
-            <span class="pfStatDot">•</span>
-            <span class="pfStat" id="pfHeadStatLevel">LV 1</span>
-            <span class="pfStatDot">•</span>
-            <span class="pfStat" id="pfHeadStatCred">⭐ 0</span>
+
+      <section class="pfId" aria-label="Artist identity">
+        <div class="pfIdTop">
+          <div class="pfIdWho">
+            <div class="pfAvatarWrap">
+              <div class="pfAvatar" id="pfAvatar"><img alt="" id="pfAvatarImg"><span id="pfAvatarLetter">?</span></div>
+            </div>
+            <div class="pfIdText">
+              <div class="pfNameRow">
+                <span class="pfUsername" id="pfUsername">—</span>
+                <span class="pfWarnMark" id="pfWarnMark" title="This account has a low merit score" aria-label="Low merit warning">!</span>
+              </div>
+              <div class="pfHandle" id="pfHandle"></div>
+              <div class="msRibbon" id="pfMsRibbon" hidden></div>
+            </div>
           </div>
-          <div class="pfJoined" id="pfJoined"></div>
-          <div class="pfActionRow" id="pfActionRow" style="display:none;">
-            <button class="pfActBtn" id="pfBtnFriend" onclick="pfFriendBtnTap()">ADD FRD</button>
-            <button class="pfActBtn" id="pfBtnCred" onclick="pfCredToggle()">CRED</button>
-            <button class="pfActBtn" id="pfBtnEdit" onclick="openPfEditPage()" style="display:none;">EDIT</button>
-            <button class="pfActBtn" id="pfBtnSettings" onclick="openSettingsPage()" style="display:none;">SETTINGS</button>
+          <div class="pfActionRow" id="pfActionRow" hidden>
+            <button class="pfActBtn pfActBtn--pri" id="pfBtnFriend" onclick="pfFriendBtnTap()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/><circle cx="10" cy="8" r="3.2"/><path d="M18 8v6"/><path d="M21 11h-6"/></svg>
+              <span class="pfActTxt">Add friend</span>
+            </button>
+            <button class="pfActBtn" id="pfBtnCred" onclick="pfCredToggle()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3.6 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 17l-5.25 2.75 1-5.85L3.5 9.75l5.9-.85Z"/></svg>
+              <span class="pfActTxt">Cred</span>
+            </button>
+            <button class="pfActBtn pfActBtn--pri" id="pfBtnEdit" onclick="openPfEditPage()" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10a2.4 2.4 0 0 0-3.4-3.4L4.6 16.6Z"/><path d="m13.6 7.4 3 3"/></svg>
+              <span class="pfActTxt">Edit profile</span>
+            </button>
+            <button class="pfActBtn" id="pfBtnShare" onclick="openPfShare()" aria-label="Share this profile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5.5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="18.5" r="2.6"/><path d="m8.3 10.8 7.4-4"/><path d="m8.3 13.2 7.4 4"/></svg>
+              <span class="pfActTxt">Share</span>
+            </button>
           </div>
+          <!-- ordered by flexbox, not by source: on a phone the bio reads
+               under the name and the buttons sit last, under the thumb; once
+               the row is wide enough the buttons move up beside the name -->
+          <div class="pfIdMeta">
+            <p class="pfHeadBio" id="pfHeadBio"></p>
+            <div class="pfJoined" id="pfJoined"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- One number per tile, the icon carries the meaning at a glance. Three
+           across on a phone, six across once the row has room for six. -->
+      <div class="pfTiles" id="pfStatsRow" hidden>
+        <div class="pfTile">
+          <span class="pfTileIco" style="--tileC:#22D3EE" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg></span>
+          <span class="pfTileNum" id="pfStatArt">0</span>
+          <span class="pfTileLbl">Artworks</span>
+        </div>
+        <div class="pfTile">
+          <span class="pfTileIco" style="--tileC:#F43F5E" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.3 4.8 13a4.6 4.6 0 1 1 6.5-6.5l.7.7.7-.7A4.6 4.6 0 1 1 19.2 13Z"/></svg></span>
+          <span class="pfTileNum" id="pfStatLikes">0</span>
+          <span class="pfTileLbl">Likes</span>
+        </div>
+        <div class="pfTile">
+          <span class="pfTileIco" style="--tileC:#38BDF8" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 12S5.8 5.5 12 5.5 21.8 12 21.8 12 18.2 18.5 12 18.5 2.2 12 2.2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          <span class="pfTileNum" id="pfStatViews">0</span>
+          <span class="pfTileLbl">Views</span>
+        </div>
+        <div class="pfTile">
+          <span class="pfTileIco" style="--tileC:#A78BFA" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h11V21L12 16.8 6.5 21Z"/></svg></span>
+          <span class="pfTileNum" id="pfStatSaves">0</span>
+          <span class="pfTileLbl">Saves</span>
+        </div>
+        <div class="pfTile">
+          <span class="pfTileIco" style="--tileC:#FBBF24" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 17l-5.25 2.75 1-5.85L3.5 9.75l5.9-.85Z"/></svg></span>
+          <span class="pfTileNum" id="pfStatCred">0</span>
+          <span class="pfTileLbl">Cred</span>
+        </div>
+        <div class="pfTile">
+          <span class="pfTileIco" style="--tileC:#34D399" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.2"/><path d="m8.4 13.4-1.6 7 5.2-2.7 5.2 2.7-1.6-7"/></svg></span>
+          <span class="pfTileNum" id="pfStatLevel">1</span>
+          <span class="pfTileLbl">Level</span>
         </div>
       </div>
 
-      <div class="pfTabs" role="tablist">
-        <div class="pfTabGroup">
-          <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" onclick="pfSwitchTab('gallery')">ARTWORK</button>
-          <button class="pfTab" id="pfTabResources" role="tab" aria-selected="false" onclick="pfSwitchTab('resources')">RESOURCES</button>
-          <button class="pfTab" id="pfTabBlog" role="tab" aria-selected="false" onclick="pfSwitchTab('blog')">BLOG</button>
-          <button class="pfTab" id="pfTabMarketplace" role="tab" aria-selected="false" onclick="pfSwitchTab('marketplace')">MARKETPLACE</button>
-          <button class="pfTab" id="pfTabAlbum" role="tab" aria-selected="false" onclick="pfSwitchTab('album')">ALBUMS</button>
-          <button class="pfTab" id="pfTabProgress" role="tab" aria-selected="false" onclick="pfSwitchTab('progress')">LEVEL</button>
-          <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" onclick="pfSwitchTab('about')">ABOUT</button>
-          <button class="pfTab" onclick="openPfShare()" aria-label="Share this profile">SHARE</button>
+      <nav class="pfTabs" role="tablist" aria-label="Profile sections">
+        <div class="pfTabGroup" id="pfTabGroup">
+          <button class="pfTab active" id="pfTabGallery" role="tab" aria-selected="true" aria-controls="pfPanelGallery" onclick="pfSwitchTab('gallery')">
+            <span class="pfTabIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg></span>
+            <span>Artwork</span>
+          </button>
+          <button class="pfTab" id="pfTabAlbum" role="tab" aria-selected="false" aria-controls="pfPanelAlbum" onclick="pfSwitchTab('album')">
+            <span class="pfTabIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5h7L8.4 6H3.8a.8.8 0 0 0-.8.8Z"/><rect x="3" y="8.5" width="18" height="11" rx="2"/></svg></span>
+            <span>Albums</span>
+          </button>
+          <button class="pfTab" id="pfTabResources" role="tab" aria-selected="false" aria-controls="pfPanelResources" onclick="pfSwitchTab('resources')">
+            <span class="pfTabIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c-1.8-1.3-4-2-6.5-2H3v13h2.5c2.5 0 4.7.7 6.5 2 1.8-1.3 4-2 6.5-2H21V5h-2.5C16 5 13.8 5.7 12 7Z"/><path d="M12 7v13"/></svg></span>
+            <span>Resources</span>
+          </button>
+          <button class="pfTab" id="pfTabBlog" role="tab" aria-selected="false" aria-controls="pfPanelBlog" onclick="pfSwitchTab('blog')">
+            <span class="pfTabIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/><path d="M9 12h6"/><path d="M9 16h4"/></svg></span>
+            <span>Blog</span>
+          </button>
+          <button class="pfTab" id="pfTabMarketplace" role="tab" aria-selected="false" aria-controls="pfPanelMarketplace" onclick="pfSwitchTab('marketplace')">
+            <span class="pfTabIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+            <span>Marketplace</span>
+          </button>
+          <button class="pfTab" id="pfTabProgress" role="tab" aria-selected="false" aria-controls="pfPanelProgress" onclick="pfSwitchTab('progress')">
+            <span class="pfTabIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17.5 9 11l4 4 8-8.5"/><path d="M16 6.5h5v5"/></svg></span>
+            <span>Level</span>
+          </button>
+          <button class="pfTab" id="pfTabAbout" role="tab" aria-selected="false" aria-controls="pfPanelAbout" onclick="pfSwitchTab('about')">
+            <span class="pfTabIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6h.01"/></svg></span>
+            <span>About</span>
+          </button>
         </div>
-      </div>
+      </nav>
 
-      <div class="pfPanel active" id="pfPanelGallery">
+      <div class="pfPanel active" id="pfPanelGallery" role="tabpanel" aria-labelledby="pfTabGallery">
         <div class="pfGrid pfGridArt" id="pfGalleryGrid"></div>
         <div class="pfEmpty" id="pfGalleryEmpty" style="display:none;">No artwork uploaded yet.</div>
         <div class="igSentinel" id="pfGallerySentinel" aria-hidden="true" style="display:none;"></div>
       </div>
 
-      <div class="pfPanel" id="pfPanelResources">
-        <div class="dzGrid" id="pfResGrid"></div>
-        <div class="pfEmpty" id="pfResEmpty" style="display:none;">No resources uploaded yet.</div>
-      </div>
-
-      <div class="pfPanel" id="pfPanelBlog">
-        <div class="dzList" id="pfBlogList"></div>
-        <div class="pfEmpty" id="pfBlogEmpty" style="display:none;">No blog posts yet.</div>
-      </div>
-
-      <div class="pfPanel" id="pfPanelMarketplace">
-        <div class="dzGrid" id="pfMktGrid"></div>
-        <div class="pfEmpty" id="pfMktEmpty" style="display:none;">No marketplace listings yet.</div>
-      </div>
-
-      <div class="pfPanel" id="pfPanelAlbum">
+      <div class="pfPanel" id="pfPanelAlbum" role="tabpanel" aria-labelledby="pfTabAlbum">
         <div class="albGrid" id="pfAlbumGrid"></div>
         <div class="pfEmpty" id="pfAlbumEmpty" style="display:none;">No albums yet.</div>
       </div>
 
+      <div class="pfPanel" id="pfPanelResources" role="tabpanel" aria-labelledby="pfTabResources">
+        <div class="dzGrid" id="pfResGrid"></div>
+        <div class="pfEmpty" id="pfResEmpty" style="display:none;">No resources uploaded yet.</div>
+      </div>
 
-      <div class="pfPanel" id="pfPanelProgress">
+      <div class="pfPanel" id="pfPanelBlog" role="tabpanel" aria-labelledby="pfTabBlog">
+        <div class="dzList" id="pfBlogList"></div>
+        <div class="pfEmpty" id="pfBlogEmpty" style="display:none;">No blog posts yet.</div>
+      </div>
+
+      <div class="pfPanel" id="pfPanelMarketplace" role="tabpanel" aria-labelledby="pfTabMarketplace">
+        <div class="dzGrid" id="pfMktGrid"></div>
+        <div class="pfEmpty" id="pfMktEmpty" style="display:none;">No marketplace listings yet.</div>
+      </div>
+
+      <div class="pfPanel" id="pfPanelProgress" role="tabpanel" aria-labelledby="pfTabProgress">
         <div class="xpWrap" id="pfXpWrap"></div>
       </div>
 
-      <div class="pfPanel" id="pfPanelAbout">
-        <div class="pfStats">
-          <div class="pfStatCard"><div class="pfStatNum" id="pfStatArt">0</div><div class="pfStatLbl">ARTWORKS</div></div>
-          <div class="pfStatCard"><div class="pfStatNum" id="pfStatViews">—</div><div class="pfStatLbl">TOTAL VIEWS</div></div>
-          <div class="pfStatCard"><div class="pfStatNum" id="pfStatLikes">—</div><div class="pfStatLbl">TOTAL LIKES</div></div>
-          <div class="pfStatCard"><div class="pfStatNum" id="pfStatLevelCard">—</div><div class="pfStatLbl">LEVEL</div></div>
-          <div class="pfStatCard"><div class="pfStatNum" id="pfStatCredCard">—</div><div class="pfStatLbl">CRED</div></div>
-          <div class="pfStatCard"><div class="pfStatNum" id="pfStatMerit">0</div><div class="pfStatLbl">MERIT</div></div>
-        </div>
-        <div class="pfBioWrap">
-          <div class="pfBioLbl">BIO</div>
-          <div class="pfBioText" id="pfBioText">Just a regular human who likes art and creativity.</div>
-        </div>
-        <div class="pfConnectWrap">
-          <div class="pfConnectLbl">CONNECT</div>
-          <div class="pfConnectList" id="pfConnectList"></div>
+      <!-- The tiles above already carry the counts, so About is what they do
+           not say: the bio in full, where to find them, and the merit score -->
+      <div class="pfPanel" id="pfPanelAbout" role="tabpanel" aria-labelledby="pfTabAbout">
+        <div class="pfAboutWrap">
+          <section class="pfCard">
+            <h3 class="pfCardLbl">Bio</h3>
+            <div class="pfBioText" id="pfBioText">Just a regular human who likes art and creativity.</div>
+          </section>
+          <section class="pfCard">
+            <h3 class="pfCardLbl">Connect</h3>
+            <div class="pfConnectList" id="pfConnectList"></div>
+          </section>
+          <section class="pfCard">
+            <h3 class="pfCardLbl">Standing</h3>
+            <div class="pfMeritRow">
+              <span class="pfMeritNum" id="pfStatMerit">100</span>
+              <span class="pfMeritLbl">Merit score</span>
+            </div>
+            <p class="pfMeritHint">Merit starts at 100 and falls when uploads break the rules. A low score limits what an account can post.</p>
+          </section>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Search inside one profile: this artist's artwork, blog posts, listings
+       and resources, and nothing else on the site -->
+  <div id="pfSearchPage" role="dialog" aria-modal="true" aria-label="Search this profile">
+    <div class="pfSrchHdr">
+      <button class="pfTopBtn" onclick="closePfSearch()" aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
+      </button>
+      <div class="tgSearch" id="pfSrchWrap">
+        <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" class="tgSearchIn" id="pfSrchIn" placeholder="Search this profile…"
+               autocomplete="off" autocapitalize="off" spellcheck="false"
+               aria-label="Search this profile" oninput="pfSearchInput(this.value)">
+        <button type="button" class="tgSearchClear" onclick="pfSearchClear()" aria-label="Clear search">✕</button>
+      </div>
+    </div>
+    <div class="pfSrchScopes" id="pfSrchScopes" role="tablist" aria-label="Limit search to a section">
+      <button class="pfSrchChip on" role="tab" aria-selected="true"  onclick="pfSearchScope('all')">All</button>
+      <button class="pfSrchChip"    role="tab" aria-selected="false" onclick="pfSearchScope('artwork')">Artwork</button>
+      <button class="pfSrchChip"    role="tab" aria-selected="false" onclick="pfSearchScope('blog')">Blog</button>
+      <button class="pfSrchChip"    role="tab" aria-selected="false" onclick="pfSearchScope('marketplace')">Marketplace</button>
+      <button class="pfSrchChip"    role="tab" aria-selected="false" onclick="pfSearchScope('resources')">Resources</button>
+    </div>
+    <div class="pfSrchBdy">
+      <div class="pfSrchNote" id="pfSrchNote">Type a name to search this profile.</div>
+      <div id="pfSrchRes" aria-live="polite"></div>
     </div>
   </div>
 
@@ -2324,13 +2461,13 @@
   <script src="/js/app-core.js?v=10"></script>
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=69"></script>
-  <script src="/js/auth.js?v=4"></script>
-  <script src="/js/profile.js?v=4"></script>
-  <script src="/js/albums.js?v=3"></script>
+  <script src="/js/auth.js?v=5"></script>
+  <script src="/js/profile.js?v=5"></script>
+  <script src="/js/albums.js?v=4"></script>
   <script src="/js/drafts.js?v=1"></script>
   <script src="/js/upqueue.js?v=2"></script>
   <script src="/js/avatar.js?v=2"></script>
-  <script src="/js/pfedit.js?v=5"></script>
+  <script src="/js/pfedit.js?v=6"></script>
   <script src="/js/mywork.js?v=6"></script>
   <script src="/js/startup.js?v=2"></script>
   <script src="/js/tagrail.js?v=2"></script>

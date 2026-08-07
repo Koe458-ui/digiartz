@@ -4,6 +4,41 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v103 — the profile page is rebuilt around a bar of its own.
+       The top of it used to be the word PROFILE centred in a strip. It
+       is now a bar: a profile mark on the left with the word Profile
+       beside it, and on the right search, notifications and the menu
+       that opens Settings. Those three act on your own account, so they
+       are only drawn on your own profile — someone else's carries a
+       back arrow and their @handle instead, which is also the first way
+       out that page has ever had. The bell carries the same unread mark
+       as the one on the home screen; notifRefreshBadge paints both.
+       Search is scoped to one profile. It queries that artist's
+       artwork, blog posts, listings and resources by name — nothing
+       else on the site — with an All/section chip row, results grouped
+       by section, and the results left standing behind whatever a row
+       opens, so closing an artwork lands back on the search.
+       Everything runs edge to edge. The body's 1100px cap is gone; the
+       artwork grid is the same shape as the grid on the home screen,
+       and past 1280 the identity block, the stat tiles and the tab rail
+       hold that grid's 1680px edge so a tile, a tab and a thumbnail all
+       start on one line.
+       The header stats were a row of emoji separated by dots and were
+       repeated again as cards in About. They are one row of six tiles
+       now — artworks, likes, views, saves, cred, level — one line at
+       every width, scrolling on a phone. Merit is not among them: it is
+       a moderation score, so it reads in About with the sentence that
+       explains it. About is Bio, Connect and Standing, with nothing the
+       tiles already say.
+       Removed with the old layout: the like and bookmark tab loaders,
+       which had no tabs left to fill; the upload dropdown stubs and
+       their outside-click listener, which watched a flag nothing set;
+       the artwork card's title, date and tag markup, which was built on
+       every card and hidden by three display:none rules; and the CSS
+       for all of it.
+       Changed: index.html, sw.js, css/profile.css, css/upload.css,
+       css/community.css, css/select.css, js/profile.js, js/albums.js,
+       js/auth.js, js/pfedit.js.
    v102 — Settings is grouped under five headings instead of one long list.
        Payments, Content, Activity, Account and Support, each with an
        emoji and a heading set larger than the rows under it, so the eye
@@ -1399,7 +1434,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v102';
+const CACHE_VERSION = 'v103';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1425,17 +1460,17 @@ const SHELL_URLS = [
   '/css/base.css?v=4',
   '/css/hero.css?v=76',
   '/css/viewer.css?v=4',
-  '/css/community.css?v=3',
+  '/css/community.css?v=4',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=3',
+  '/css/profile.css?v=4',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=1',
+  '/css/upload.css?v=2',
   '/css/widgets.css?v=1',
   '/css/overrides.css?v=1',
-  '/css/select.css?v=1',
+  '/css/select.css?v=2',
 
   // word list goes with the engine
   '/js/badwords-list-a.js?v=1',
@@ -1452,13 +1487,13 @@ const SHELL_URLS = [
   '/js/app-core.js?v=10',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=69',
-  '/js/auth.js?v=4',
-  '/js/profile.js?v=4',
-  '/js/albums.js?v=3',
+  '/js/auth.js?v=5',
+  '/js/profile.js?v=5',
+  '/js/albums.js?v=4',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=5',
+  '/js/pfedit.js?v=6',
   '/js/mywork.js?v=6',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=2',

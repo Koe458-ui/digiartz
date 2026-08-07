@@ -129,7 +129,12 @@
     finally{ btn.disabled=false; btn.textContent='SAVE CHANGES'; }
   }
 
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closePfUploadMenu();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){
+    // profile search sits on top of the profile: Escape leaves the search,
+    // not the profile under it
+    var _pfs=document.getElementById('pfSearchPage');
+    if(_pfs && _pfs.classList.contains('open')){ closePfSearch(); return; }
+    closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
     cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();closeWalletPage();closeBankPage();closePurchasesPage();
   }});
@@ -319,8 +324,7 @@
       empty.style.display='none';
       rows.forEach(function(rep){
         var card = document.createElement('div');
-        card.className = 'pfStatCard';
-        card.style.textAlign = 'left';
+        card.className = 'pfCard';
         var art = rep.artworks || {};
         // user input, use textcontent
         var h = document.createElement('div');

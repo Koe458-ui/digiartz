@@ -31,7 +31,6 @@ input, textarea, select, option,
 
 /* profile — username, handle, bio, own artwork titles and tags */
 #pfUsername, #pfHandle, #pfHeadBio, #pfBioText,
-.pfCardTitle, .pfTagChip,
 
 /* albums and ranking */
 .albName, .xpLbName,

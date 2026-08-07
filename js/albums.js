@@ -557,16 +557,11 @@
     document.getElementById('pfGalleryEmpty').style.display = (pf.galleryRows.length || qHtml) ? 'none' : '';
     pfGallerySentinelSync();
   }
+  // the card is the thumbnail — the title, date and tags belong to the
+  // artwork view, which is one tap away
   function pfGalleryCardHTML(a){
-    var tags = (a.tags && a.tags.length) ? a.tags : catList(a.category);
-    // read only showcase
     return '<div class="awCard" onclick="pfOpenArtwork(\''+esc(String(a.id))+'\')">'+
       '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" '+dzThumbAttrs(a.image_url)+' alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'">'+
-      '</div>'+
-      '<div class="pfCardMeta">'+
-        '<div class="pfCardTitle">'+esc(a.name||'Untitled')+'</div>'+
-        '<div class="pfCardDate">'+pfFormatDate(a.created_at)+'</div>'+
-        (tags.length ? '<div class="pfCardTags">'+tags.map(function(t){return '<span class="pfTagChip">'+esc(t)+'</span>';}).join('')+'</div>' : '')+
       '</div></div>';
   }
   function pfOpenArtwork(id){
@@ -606,24 +601,18 @@
     return String(n);
   }
 
-  // header stats row
-  // paint header and about cards
+  // one number per tile. Merit is not one of them \u2014 it is a moderation
+  // score, so it reads in About with the sentence that explains it
   function pfPaintStats(likes, views, bms, level, merit, cred){
     function set(id, val){ var e=document.getElementById(id); if(e) e.textContent = val; }
-    // header row
-    set('pfHeadStatLikes', '\u2764\uFE0F ' + pfFmtCount(likes));
-    set('pfHeadStatBms',   '\uD83D\uDD16 ' + pfFmtCount(bms));
-    set('pfHeadStatViews', '\uD83D\uDC41\uFE0F ' + pfFmtCount(views));
-    set('pfHeadStatLevel', 'LV ' + level);
-    set('pfHeadStatCred',  '\u2B50 ' + pfFmtCount(cred));
+    set('pfStatLikes', pfFmtCount(likes));
+    set('pfStatViews', pfFmtCount(views));
+    set('pfStatSaves', pfFmtCount(bms));
+    set('pfStatCred',  pfFmtCount(cred));
+    set('pfStatLevel', level);
+    set('pfStatMerit', merit);
     var row = document.getElementById('pfStatsRow');
-    if(row) row.style.display = '';
-    // about tab cards
-    set('pfStatViews',     pfFmtCount(views));
-    set('pfStatLikes',     pfFmtCount(likes));
-    set('pfStatLevelCard', level);
-    set('pfStatCredCard',  pfFmtCount(cred));
-    set('pfStatMerit',     merit);
+    if(row) row.hidden = false;
     // low merit mark
     var warn = document.getElementById('pfWarnMark');
     if(warn) warn.classList.toggle('on', merit <= 20);
@@ -669,18 +658,24 @@
   var pfCredTotal = 0;              // cred value in stats row
   var pfCredited = false, pfCredBusy = false, pfFrBusy = false;
 
+  // each action button is an icon and a label, so only the label is rewritten
+  function pfActLabel(btn, text){
+    var span = btn.querySelector('.pfActTxt');
+    if(span) span.textContent = text; else btn.textContent = text;
+    btn.setAttribute('aria-label', text);
+  }
   function pfPaintCredBtn(){
     var b = document.getElementById('pfBtnCred'); if(!b) return;
-    b.textContent = pfCredited ? 'CREDITED' : 'CRED';
+    pfActLabel(b, pfCredited ? 'Credited' : 'Cred');
     b.classList.toggle('on', pfCredited);
   }
   function pfPaintFriendBtn(state){
     var b = document.getElementById('pfBtnFriend'); if(!b) return;
-    var map = { none:'ADD FRD', sent:'REQ SENT', incoming:'ACCEPT', friends:'MESSAGE' };
-    if(state === 'blocked_by_me' || state === 'blocked'){ b.style.display='none'; return; }
-    b.style.display = '';
-    b.textContent = map[state] || 'ADD FRD';
-    b.classList.toggle('on', state === 'friends');
+    var map = { none:'Add friend', sent:'Requested', incoming:'Accept', friends:'Message' };
+    if(state === 'blocked_by_me' || state === 'blocked'){ b.hidden = true; return; }
+    b.hidden = false;
+    pfActLabel(b, map[state] || 'Add friend');
+    b.classList.toggle('pfActBtn--pri', state !== 'sent');
     b.dataset.frState = state || 'none';
   }
 
@@ -689,20 +684,17 @@
     if(!row || !pf.profile) return;
     var bF = document.getElementById('pfBtnFriend'),
         bC = document.getElementById('pfBtnCred'),
-        bE = document.getElementById('pfBtnEdit'),
-        bS = document.getElementById('pfBtnSettings');
-    row.style.display = '';
+        bE = document.getElementById('pfBtnEdit');
+    row.hidden = false;
     if(pf.isOwner){
-      // own profile buttons
-      if(bF) bF.style.display = 'none';
-      if(bC) bC.style.display = 'none';
-      if(bE) bE.style.display = '';
-      if(bS) bS.style.display = '';
+      // your own profile: edit and share. Settings live in the top bar menu
+      if(bF) bF.hidden = true;
+      if(bC) bC.hidden = true;
+      if(bE) bE.hidden = false;
       return;
     }
-    if(bE) bE.style.display = 'none';
-    if(bS) bS.style.display = 'none';
-    if(bC) bC.style.display = '';
+    if(bE) bE.hidden = true;
+    if(bC) bC.hidden = false;
     var forId = pf.profile.id;
     pfCredited = false; pfPaintCredBtn(); pfPaintFriendBtn('none');
     if(!currentUser) return;   // logged out defaults
@@ -724,15 +716,13 @@
     if(!pf.profile || pf.isOwner || pfCredBusy) return;
     if(!currentUser){ showToast('Sign in to cred artists'); openAuthMod(); return; }
     var forId = pf.profile.id;
-    var statEl = document.getElementById('pfHeadStatCred');
-    var cardEl = document.getElementById('pfStatCredCard');
+    var tileEl = document.getElementById('pfStatCred');
     pfCredBusy = true;
     // optimistic flip
     var was = pfCredited;
     pfCredited = !was; pfPaintCredBtn();
     pfCredTotal += pfCredited ? 100 : -100;
-    if(statEl) statEl.textContent = '\u2B50 ' + pfFmtCount(Math.max(pfCredTotal,0));
-    if(cardEl) cardEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
+    if(tileEl) tileEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
     try{
       if(was){
         var d = await sb.from('profile_creds').delete()
@@ -746,8 +736,7 @@
     }catch(e){
       pfCredited = was; pfPaintCredBtn();                        // roll back
       pfCredTotal += pfCredited ? 100 : -100;
-      if(statEl) statEl.textContent = '\u2B50 ' + pfFmtCount(Math.max(pfCredTotal,0));
-      if(cardEl) cardEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
+      if(tileEl) tileEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
       showToast('Couldn\u2019t update cred \u2014 try again');
     }finally{ pfCredBusy = false; }
   }

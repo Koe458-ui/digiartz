@@ -249,24 +249,6 @@
     if (m && m.classList.contains('open') && e.target === m) closeLogoutConfirm();
   });
 
-  // upload dropdown
-  var _pfUpMenuOpen = false;
-
-  // stubs kept for handlers
-  function openPfUploadMenu() {}
-  function closePfUploadMenu() {}
-  function togglePfUploadMenu() {}
-
-
-  // close on outside click
-  document.addEventListener('click', function(e) {
-    if (_pfUpMenuOpen) {
-      var umenu = document.getElementById('pfUploadMenu');
-      var utrig = document.querySelector('.pfUpTrigger');
-      if (umenu && !umenu.contains(e.target) && utrig && !utrig.contains(e.target)) closePfUploadMenu();
-    }
-  });
-
   function openAuthMod() {
     document.getElementById('authUser').value  = '';
     document.getElementById('authEmail').value = '';
@@ -721,11 +703,18 @@
     notifRefreshBadge();
   }
 
-  // unread dot
+  // unread dot — the home screen bell and the one in the profile bar carry
+  // the same mark, so it cannot say unread in one place and read in the other
+  function notifPaintBadges(on){
+    ['hNotifBtn','pfTopNotifBtn'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.classList.toggle('hasUnread', !!on);
+    });
+  }
   async function notifRefreshBadge(){
     var btn = document.getElementById('hNotifBtn');
     if(!btn) return;
-    if(!sb || !currentUser){ btn.classList.remove('hasUnread'); return; }
+    if(!sb || !currentUser){ notifPaintBadges(false); return; }
     try{
       const{data:all,error:e1} = await sb.from('notifications').select('id').limit(200);
       if(e1) throw e1;
@@ -733,7 +722,7 @@
       if(e2) throw e2;
       var readSet = {}; (reads||[]).forEach(function(r){ readSet[r.notification_id]=true; });
       var hasUnread = (all||[]).some(function(n){ return !readSet[n.id]; });
-      btn.classList.toggle('hasUnread', hasUnread);
+      notifPaintBadges(hasUnread);
     }catch(e){ /* silent failure */ }
   }
 

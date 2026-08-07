@@ -4,6 +4,20 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v104 — one margin for the whole profile page.
+       Edge to edge had been read literally: the tiles and the tab rail sat
+       on a 5px gutter, the text on a 12px one and the artwork grid on a
+       third, so five blocks started on five different lines and the
+       thumbnails ran into the glass on a phone. There is one inset now —
+       16px at 390, 24px from tablet up, and past 1280 it follows the
+       1680px cap the grid already had, bars included. The artwork grid
+       keeps the home grid's columns and gaps; only its margin changed.
+       Both rails came to rest scrolled by exactly their own padding:
+       scroll-snap-align:start snaps to the scrollport edge, which sits
+       inside the padding, so the first tile and the first tab pressed
+       against the edge whatever the margin said. scroll-padding-inline
+       moves the snapport in to where the content starts.
+       Changed: css/profile.css, sw.js, index.html.
    v103 — the profile page is rebuilt around a bar of its own.
        The top of it used to be the word PROFILE centred in a strip. It
        is now a bar: a profile mark on the left with the word Profile
@@ -1434,7 +1448,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v103';
+const CACHE_VERSION = 'v104';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1463,7 +1477,7 @@ const SHELL_URLS = [
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=4',
+  '/css/profile.css?v=5',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',

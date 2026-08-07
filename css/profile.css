@@ -1,15 +1,17 @@
 /* profile page */
 
-    /* The page runs wall to wall like the home grid does. Two insets do all
-       the spacing: --pfGut for anything that is a grid of media, --pfPad for
-       anything that is a line of text. Nothing is boxed into a centre column. */
+    /* One margin for the whole page. The bar, the name, the bio, the tiles,
+       the tabs and the thumbnails all start on the same line, and none of them
+       touch the glass. A phone gets the roomiest share of its width — 16px
+       at 390 — and it settles at 24px from tablet up, which is what every
+       other grid on the site uses. The artwork grid
+       keeps the home grid's columns and gaps — only its margin is this one. */
     #profilePage{
       position:fixed;inset:0;z-index:500;background:var(--bg);
       overflow-y:auto;overflow-x:hidden;transform:translateX(100%);
       transition:transform .45s cubic-bezier(.22,1,.36,1);
       --pfBlue:#2563EB;--pfBlueH:#1D4ED8;
-      --pfGut:clamp(.3rem,1vw,.6rem);
-      --pfPad:clamp(.9rem,3vw,1.6rem);
+      --pfPad:clamp(1rem,4.2vw,1.5rem);
       --pfBarH:3.5rem;
     }
     #profilePage.open{transform:translateX(0);}
@@ -214,10 +216,12 @@
     /* stat tiles — one line at every width. On a phone that line scrolls,
        with the fifth tile half in view so it reads as more to the right */
     .pfTiles{
-      display:flex;gap:.45rem;padding:0 var(--pfGut);margin:.35rem 0 1.1rem;
+      display:flex;gap:.45rem;padding:0 var(--pfPad);margin:.35rem 0 1.1rem;
       overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
       scrollbar-width:none;-ms-overflow-style:none;
-      scroll-snap-type:x proximity;
+      /* without this the first tile snaps to the scrollport edge, which is
+         inside the padding, and comes to rest against the glass */
+      scroll-snap-type:x proximity;scroll-padding-inline:var(--pfPad);
     }
     .pfTiles::-webkit-scrollbar{display:none;}
     .pfTiles[hidden]{display:none;}
@@ -254,10 +258,10 @@
       backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
     }
     .pfTabGroup{
-      display:flex;gap:.1rem;padding:0 var(--pfGut);
+      display:flex;gap:.1rem;padding:0 var(--pfPad);
       overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
       scrollbar-width:none;-ms-overflow-style:none;
-      scroll-snap-type:x proximity;
+      scroll-snap-type:x proximity;scroll-padding-inline:var(--pfPad);
     }
     .pfTabGroup::-webkit-scrollbar{display:none;}
     .pfTab{
@@ -282,13 +286,13 @@
     #profilePage .dzGrid,
     #profilePage .dzList,
     #profilePage .xpWrap{padding-left:var(--pfPad);padding-right:var(--pfPad);}
-    #profilePage .albGrid{margin-top:0;padding:0 var(--pfGut);}
+    #profilePage .albGrid{margin-top:0;padding:0 var(--pfPad);}
     #profilePage .xpWrap{max-width:760px;}
 
     /* artwork grid — the same shape as the grid on the home screen */
     .pfGrid{
       display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:.3rem;padding:0 var(--pfGut);
+      gap:.3rem;padding:0 var(--pfPad);
     }
     @media(min-width:700px){ .pfGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem;} }
     @media(min-width:1280px){ .pfGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem;} }
@@ -302,9 +306,14 @@
        tile, a tab and a thumbnail all start on one line. */
     @media(min-width:1280px){
       .pfId,.pfTiles,.pfTabGroup,.pfAboutWrap,
-      #profilePage .albGrid,#profilePage .dzList,#profilePage .xpWrap{
+      .pfGrid,#profilePage .albGrid,#profilePage .dzList,#profilePage .xpWrap{
         max-width:1680px;margin-left:auto;margin-right:auto;
         padding-left:24px;padding-right:24px;
+      }
+      /* the bars are full bleed, so they cannot be capped — they take the
+         inset the capped content lands on, and the title stays over the name */
+      .pfTopBar,.pfSrchHdr{
+        padding-inline:max(24px,calc((100% - 1680px) / 2 + 24px));
       }
     }
 
@@ -349,7 +358,7 @@
       position:fixed;inset:0;z-index:530;background:var(--bg);color:var(--tx);
       overflow-y:auto;overflow-x:hidden;transform:translateX(100%);
       transition:transform .38s cubic-bezier(.22,1,.36,1);
-      --pfPad:clamp(.9rem,3vw,1.6rem);
+      --pfPad:clamp(1rem,4.2vw,1.5rem);
     }
     #pfSearchPage.open{transform:translateX(0);}
     @media(prefers-reduced-motion:reduce){ #pfSearchPage{transition:none;} }

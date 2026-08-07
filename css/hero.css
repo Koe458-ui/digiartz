@@ -240,59 +240,77 @@
     .fgFltBtn.active{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
     .fgFltBtn.active::after{content:'';position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);}
 
-    /* section tabs */
-    .fgSecBar{
+    /* The gallery's control block — the open section's search box and the
+       section chips. Both hold --fgInset, so however the two land they share
+       one left edge. */
+    .fgTopBar{
+      --fgInset:clamp(.7rem,2vw,2rem);
       position:sticky;top:3.4rem;z-index:10;
+      display:flex;flex-wrap:wrap;align-items:center;
+      gap:.75rem 1rem;
+      padding:.75rem var(--fgInset);
       border-bottom:1px solid var(--bdr);
-      padding:.5rem clamp(.7rem,2vw,2rem) 0;
       isolation:isolate;
     }
     /* blur layer */
-    .fgSecBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+    .fgTopBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
+
+    /* The search asks for a comfortable line of its own and gives it up only
+       when the chips fit beside it. Below that width the basis reads 100% and
+       the row breaks — two lines, not a squeezed one. */
+    .fgSearchStack{flex:1 1 min(100%,26rem);min-width:0;}
+    .fgSearchBlock{display:none;}
+    .fgSearchBlock.active{display:block;}
+    /* the bar owns the inset now, not the block */
+    .fgTopBar .tgSearch{width:100%;margin:0;}
+
     .fgSecTabs{
-      display:flex;flex-wrap:nowrap;align-items:flex-end;gap:0 1.5rem;
+      flex:0 1 auto;min-width:0;
+      display:flex;flex-wrap:nowrap;align-items:center;gap:.6rem;
+      padding:.15rem 0;
       overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
       scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
     }
     .fgSecTabs::-webkit-scrollbar{display:none;}
+    /* Icon only, in a box wider than it is tall — the shape in the design,
+       and the height the chips it replaces already had. The name is in the
+       DOM for a screen reader and in the tooltip for everyone else, but it
+       is never drawn. */
     .fgSecBtn{
-      display:flex;align-items:center;gap:.45rem;
-      font-family:var(--fd);font-size:.95rem;font-weight:700;letter-spacing:.05em;
-      background:none;border:0;border-bottom:2px solid transparent;
-      padding:.65rem 0 .7rem;margin:0;cursor:pointer;
-      color:var(--txd);white-space:nowrap;flex-shrink:0;
-      transition:color .25s,border-color .25s;
-    }
-    .fgSecBtn:hover{color:var(--tx);}
-    .fgSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
-    /* section icon chips */
-    .fgSecIco{
-      width:24px;height:24px;border-radius:7px;flex-shrink:0;
+      flex:0 0 auto;
       display:flex;align-items:center;justify-content:center;
-      color:#fff;
-      transition:transform .25s ease,box-shadow .25s ease;
+      width:56px;height:46px;padding:0;margin:0;box-sizing:border-box;
+      border-radius:14px;cursor:pointer;
+      background:var(--sur);border:1px solid var(--bdr);color:var(--tx);
+      transition:background .22s,border-color .22s,color .22s,transform .22s;
     }
-    .fgSecIco svg{width:14px;height:14px;display:block;stroke:#fff;}
-    /* inactive chip */
-    .fgSecBtn:not(.active) .fgSecIco{opacity:.72;}
-    .fgSecBtn:hover .fgSecIco{opacity:1;}
-    .fgSecBtn.active .fgSecIco{transform:translateY(-1px);}
-    .fgSecIco--artworks{background:linear-gradient(135deg,#A78BFA,#7C3AED);box-shadow:0 2px 8px rgba(124,58,237,.32);}
-    .fgSecIco--resources{background:linear-gradient(135deg,#4ADE80,#16A34A);box-shadow:0 2px 8px rgba(22,163,74,.32);}
-    .fgSecIco--blog{background:linear-gradient(135deg,#818CF8,#4F46E5);box-shadow:0 2px 8px rgba(79,70,229,.32);}
-    .fgSecIco--marketplace{background:linear-gradient(135deg,#FB923C,#EA580C);box-shadow:0 2px 8px rgba(234,88,12,.32);}
-    .fgSecIco--jobs{background:linear-gradient(135deg,#38BDF8,#0891B2);box-shadow:0 2px 8px rgba(8,145,178,.32);}
-    .fgSecIco--cart{background:linear-gradient(135deg,#F472B6,#DB2777);box-shadow:0 2px 8px rgba(219,39,119,.32);}
-    @media(max-width:480px){
-      .fgSecBar{padding:.4rem 1rem 0;}
-      .fgSecTabs{gap:0 1.15rem;}
-      .fgSecBtn{font-size:.86rem;gap:.4rem;padding:.7rem 0 .75rem;}
-      .fgSecIco{width:22px;height:22px;border-radius:6px;}
-      .fgSecIco svg{width:13px;height:13px;}
+    @media(hover:hover){
+      .fgSecBtn:hover{border-color:var(--bdrh);transform:translateY(-1px);}
+      .fgSecBtn.active:hover{border-color:var(--pg);}
+    }
+    .fgSecBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    /* The fill is the whole signal — no lift under it. The row scrolls
+       sideways, which clips on the other axis, and a shadow reaching past
+       the chip would be cut into a hard edge below it. */
+    .fgSecBtn.active{
+      background:var(--pg);border-color:var(--pg);color:var(--text-on-accent,#fff);
+    }
+    .fgSecIco{display:flex;align-items:center;justify-content:center;}
+    .fgSecIco svg{width:22px;height:22px;display:block;}
+    /* read, never drawn */
+    .fgSecTxt{
+      position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+      overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;
+    }
+    @media(max-width:600px){
+      .fgTopBar{--fgInset:1rem;gap:.65rem;padding:.65rem var(--fgInset);}
+      .fgSecTabs{gap:.5rem;}
+      .fgSecBtn{width:48px;height:40px;border-radius:12px;}
+      .fgSecIco svg{width:20px;height:20px;}
     }
     @media(prefers-reduced-motion:reduce){
-      .fgSecIco{transition:none;}
-      .fgSecBtn.active .fgSecIco{transform:none;}
+      .fgSecBtn{transition:none;}
+      .fgSecBtn:hover{transform:none;}
     }
     /* section content */
     .dzGrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));}
@@ -582,6 +600,10 @@
     @keyframes cpSpin{to{transform:rotate(360deg);}}
 
     .fgBdy{padding:1.5rem;}
+    /* The artwork grid runs to the edge here the same way it does on the home
+       page and the profile, so the body adds no inset of its own — the grid
+       carries it, and it is the home page's. */
+    .fgBdy--art{padding:1.5rem 0;}
     .fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;}
     /* gallery grid */
     .fgGrid{
@@ -589,6 +611,8 @@
 /* responsive columns */
       grid-template-columns:repeat(2,1fr);
       gap:.3rem;
+      /* the same inset the home grid takes */
+      padding:0 clamp(.3rem,1vw,.6rem);
       /* bottom nav clearance */
       padding-bottom:calc(1rem + 84px);
     }

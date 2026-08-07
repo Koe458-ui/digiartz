@@ -610,8 +610,6 @@
           try{ renderFG(); }catch(e){}
         }, function(){ /* offline, keep what is on screen */ });
       }catch(e){ console.error('loadHiddenArtworks: '+(e.message||e)); }
-      // reload tag preferences
-      try{ if(typeof tgLoad === 'function') tgLoad(true); }catch(e){}
       if (event === 'SIGNED_IN') {
         closeAuthMod();
         checkUserRole();

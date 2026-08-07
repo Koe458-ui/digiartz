@@ -4,6 +4,28 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v114 — the gallery gets one control block, and the grid reaches the edge.
+       The section tabs were a text strip above the search box, and a rail
+       of tag chips sat under it. That is two rows of navigation for one
+       screen. The tabs are icon chips now and they sit below the search,
+       so the gallery reads search, sections, artwork. On a screen long
+       enough for both the two share a line; below that width the row
+       breaks and they stack, holding one inset so the edges line up.
+       The tag rail is gone with its preferences, its modal and
+       js/tagrail.js. The ⌘K shortcut and its Ctrl hint were the only parts
+       of that file worth keeping and have moved to js/search.js; the log's
+       one call into tgLabel now goes to catLabel, which it should always
+       have used. The saved rows in user_tag_prefs are left where they are.
+       The grid took a 1.5rem inset from .fgBdy while the home page and the
+       profile run their thumbnails to within a few pixels of the edge. It
+       takes the home page's inset now, so the same artwork sits the same
+       distance from the wall on all three.
+       The chip row answers the arrow keys, Home and End, and is one stop
+       in the tab order rather than six — the same treatment the profile
+       tabs got in v113.
+       Changed: index.html, css/hero.css, css/widgets.css,
+       css/overrides.css, js/gallery.js, js/search.js, js/feed.js,
+       js/auth.js, js/app-core.js, sw.js. Removed: js/tagrail.js.
    v113 — the profile tabs answer the arrow keys, and the search overlay
        keeps Tab inside it.
        The rail was seven separate stops in the tab order and had no
@@ -1632,7 +1654,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v113';
+const CACHE_VERSION = 'v114';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1656,7 +1678,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=76',
+  '/css/hero.css?v=77',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
@@ -1666,8 +1688,8 @@ const SHELL_URLS = [
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
   '/css/upload.css?v=2',
-  '/css/widgets.css?v=1',
-  '/css/overrides.css?v=1',
+  '/css/widgets.css?v=2',
+  '/css/overrides.css?v=2',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -1686,10 +1708,10 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=13',
+  '/js/app-core.js?v=14',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=69',
-  '/js/auth.js?v=8',
+  '/js/gallery.js?v=70',
+  '/js/auth.js?v=9',
   '/js/profile.js?v=9',
   '/js/albums.js?v=7',
   '/js/drafts.js?v=1',
@@ -1698,9 +1720,8 @@ const SHELL_URLS = [
   '/js/pfedit.js?v=6',
   '/js/mywork.js?v=7',
   '/js/startup.js?v=2',
-  '/js/tagrail.js?v=2',
-  '/js/search.js?v=2',
-  '/js/feed.js?v=2',
+  '/js/search.js?v=3',
+  '/js/feed.js?v=3',
   '/js/effects.js?v=4',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',

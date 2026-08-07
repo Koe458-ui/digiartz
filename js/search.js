@@ -18,6 +18,29 @@
     fgSearchInput('');
   }
 
+  // The hero page has no search box of its own any more — the shortcut
+  // belongs to the gallery, and only while it is open.
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'k' && e.key !== 'K') return;
+    if(!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
+    var t = e.target;
+    if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    var fg = document.getElementById('fg');
+    if(!fg || !fg.classList.contains('open')) return;
+    // whichever section is open owns the box the shortcut lands in
+    var el = fg.querySelector('.fgSearchBlock.active .tgSearchIn');
+    if(!el) return;
+    e.preventDefault();
+    el.focus();
+    el.select();
+  });
+  // the hint reads ⌘ in the markup, which is wrong everywhere but a Mac
+  (function(){
+    if(/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '')) return;
+    var els = document.querySelectorAll('.tgSearchKbd .tgKbdMod');
+    for(var i = 0; i < els.length; i++) els[i].textContent = 'Ctrl';
+  })();
+
 
   function openSubscription() {
     closeMenu();

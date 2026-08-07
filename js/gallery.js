@@ -35,18 +35,9 @@
     }
     fgSection=id;
     var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
-    // the chip row scrolls, so a section opened from somewhere else
-    // (a quick link, the hero CTA) would land with its chip off-screen.
-    // Measured off the boxes rather than offsetLeft, which is relative to
-    // whatever happens to be positioned above it rather than to the scroller.
-    var rail=document.getElementById('fgSecRow');
-    var tab=document.getElementById('fgSecBtn-'+id);
-    if(rail && tab){
-      var rr=rail.getBoundingClientRect(), tr=tab.getBoundingClientRect();
-      var want=rail.scrollLeft+(tr.left-rr.left)-(rr.width-tr.width)/2;
-      var max=rail.scrollWidth-rail.clientWidth;
-      rail.scrollLeft=Math.max(0,Math.min(want,max));
-    }
+    // The row holds every chip on one line at any width, so a section opened
+    // from somewhere else — a quick link, the hero CTA — cannot land with its
+    // chip off-screen. Nothing to scroll into view.
     // load section on first visit
     if(id!=='artworks' && typeof dzSecEnter==='function') dzSecEnter(id);
   }

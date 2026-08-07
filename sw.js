@@ -4,6 +4,23 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v117 — every chip on one line, at every width, and never a scroll.
+       The row scrolled sideways once the boxes stopped fitting, which on a
+       phone meant the last section sat off the edge with nothing to say so.
+       The seven boxes now take an equal share of whatever room there is and
+       shrink into it: 56px each where there is space, down to about 30px at
+       280px wide, one line throughout.
+       Two grids rather than one, because Tags leads the row but is not one
+       of the tabs and cannot live inside the tablist. Flattening the
+       tablist with display:contents would have made one grid of all seven —
+       and drops the tablist out of the accessibility tree, leaving six tabs
+       with no owner, which was checked rather than assumed. So the row lays
+       out seven equal columns, the tablist takes the last six, and repeats
+       those six inside itself. Six columns spanning six columns come out
+       the same width, so all seven match exactly.
+       The scroll-into-view in fgSwitchSection goes with the scrolling: no
+       chip can be off-screen for it to reach.
+       Changed: css/hero.css, js/gallery.js, index.html, sw.js.
    v116 — Escape stopped part-way through closing overlays.
        The handler in js/pfedit.js ended with closeWalletPage(),
        closeBankPage() and closePurchasesPage(). None of the three has
@@ -1689,7 +1706,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v116';
+const CACHE_VERSION = 'v117';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1713,7 +1730,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=78',
+  '/css/hero.css?v=79',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
@@ -1745,7 +1762,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=16',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=71',
+  '/js/gallery.js?v=72',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
   '/js/albums.js?v=7',

@@ -264,19 +264,31 @@
     /* the bar owns the inset now, not the block */
     .fgTopBar .tgSearch{width:100%;margin:0;}
 
-    /* The row scrolls, not the tablist inside it — Tags leads the row but is
-       not one of the tabs, so the two cannot be the same element. */
+    /* All seven boxes on one line at every width, and never a scroll: they
+       take an equal share of whatever room there is and shrink into it.
+
+       Two grids rather than one. Tags leads the row but is not one of the
+       tabs, so it cannot live inside the tablist — and the tablist cannot be
+       display:contents to flatten it into a single grid, because that drops
+       the tablist itself out of the accessibility tree and leaves six tabs
+       with no owner. So the row lays out seven equal columns, the tablist
+       takes the last six of them, and repeats the same six inside itself.
+       Six columns spanning six columns come out the same width, so all seven
+       boxes match exactly. */
     .fgSecRow{
-      flex:0 1 auto;min-width:0;
-      display:flex;flex-wrap:nowrap;align-items:center;gap:.6rem;
+      --fgChipGap:8px;
+      --fgChipMax:56px;
+      flex:0 1 auto;
+      /* the ideal row, or all the room there is — whichever is smaller */
+      width:min(100%, calc(var(--fgChipMax) * 7 + var(--fgChipGap) * 6));
+      display:grid;grid-template-columns:repeat(7,minmax(0,1fr));
+      gap:var(--fgChipGap);align-items:center;
       padding:.15rem 0;
-      overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
-      scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
     }
-    .fgSecRow::-webkit-scrollbar{display:none;}
     .fgSecTabs{
-      flex:0 0 auto;
-      display:flex;flex-wrap:nowrap;align-items:center;gap:.6rem;
+      grid-column:2 / -1;
+      display:grid;grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:var(--fgChipGap);align-items:center;
     }
     /* Tags is a picker, not a panel, so it never takes the selected fill —
        it carries the dot the filter button uses to say a pick is in force. */
@@ -292,9 +304,8 @@
        DOM for a screen reader and in the tooltip for everyone else, but it
        is never drawn. */
     .fgSecBtn{
-      flex:0 0 auto;
       display:flex;align-items:center;justify-content:center;
-      width:56px;height:46px;padding:0;margin:0;box-sizing:border-box;
+      width:100%;height:46px;padding:0;margin:0;box-sizing:border-box;
       border-radius:14px;cursor:pointer;
       background:var(--sur);border:1px solid var(--bdr);color:var(--tx);
       transition:background .22s,border-color .22s,color .22s,transform .22s;
@@ -319,8 +330,8 @@
     }
     @media(max-width:600px){
       .fgTopBar{--fgInset:1rem;gap:.65rem;padding:.65rem var(--fgInset);}
-      .fgSecRow,.fgSecTabs{gap:.5rem;}
-      .fgSecBtn{width:48px;height:40px;border-radius:12px;}
+      .fgSecRow{--fgChipGap:6px;--fgChipMax:48px;}
+      .fgSecBtn{height:40px;border-radius:12px;}
       .fgSecIco svg{width:20px;height:20px;}
     }
     @media(prefers-reduced-motion:reduce){

@@ -4,6 +4,10 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v112 — js/profile.js and js/engagement.js changed in v111 and their
+       query strings did not move with them, so a browser holding
+       profile.js?v=7 or engagement.js?v=4 would have kept serving the
+       versions without the fix. Bumped, and CACHE_VERSION with them.
    v111 — a second pass over the profile page, and two more found.
        The Likes and Views tiles had two writers and no winner.
        pfPaintStats sums the artwork rows it holds, which .limit(1000)
@@ -1612,7 +1616,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v111';
+const CACHE_VERSION = 'v112';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1670,7 +1674,7 @@ const SHELL_URLS = [
   '/js/protect.js?v=2',
   '/js/gallery.js?v=69',
   '/js/auth.js?v=8',
-  '/js/profile.js?v=7',
+  '/js/profile.js?v=8',
   '/js/albums.js?v=7',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=3',
@@ -1685,7 +1689,7 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/engagement.js?v=4',
+  '/js/engagement.js?v=5',
   '/js/sections.js?v=78',
   '/js/navprogress.js?v=5'
 ];

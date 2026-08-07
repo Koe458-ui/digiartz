@@ -4,6 +4,33 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v123 — the artwork comes off the wall on a phone.
+       The grid took the home page's inset, which is a few pixels and reads
+       as hard against the edge on a phone. It takes the profile's now,
+       which is also the gallery bar's, so a thumbnail starts under the mark
+       at every width — 16px on a phone, 24 on a desktop, and out to the
+       centred grid's own edge past 1680.
+       Changed: css/hero.css, index.html, sw.js.
+   v122 — the gallery gets a header, and search gets a page.
+       A search box held a whole line across the top of the gallery whether
+       or not anyone was searching, and each of the six sections carried its
+       own copy of it. All seven are gone. The bar is the profile's: the
+       page's own mark and name on the left, and on the right the three
+       controls that used to be scattered — search, filters, tags — in that
+       order.
+       Search is a page now, on the profile's pattern and its styles, but it
+       looks in the whole site rather than one member's work: every approved
+       artwork, and the listings, posts, resources and jobs beside them.
+       Artwork is answered from the list the gallery already holds rather
+       than by a query, so the results and the grid cannot disagree about
+       what exists and anything hidden stays hidden. Scope chips narrow it,
+       Tab is kept inside, and closing hands focus back.
+       Six filter buttons became one. It opens whichever panel belongs to
+       the section on show and wears the dot when that section is filtered.
+       Tags leaves the chip row for the bar, so the row is six sections,
+       one line, centred once there is room for it.
+       Changed: index.html, css/hero.css, css/profile.css, css/overrides.css,
+       js/search.js, js/gallery.js, js/app-core.js, sw.js.
    v121 — the bar rides up with the page, and switching a section is no
        longer a cut.
        The search box and the chips were pinned below the title and held a
@@ -1769,7 +1796,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v121';
+const CACHE_VERSION = 'v123';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1793,18 +1820,18 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=81',
+  '/css/hero.css?v=83',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=6',
+  '/css/profile.css?v=7',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
   '/css/upload.css?v=2',
   '/css/widgets.css?v=3',
-  '/css/overrides.css?v=3',
+  '/css/overrides.css?v=4',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -1823,9 +1850,9 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=16',
+  '/js/app-core.js?v=17',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=75',
+  '/js/gallery.js?v=76',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
   '/js/albums.js?v=7',
@@ -1836,7 +1863,7 @@ const SHELL_URLS = [
   '/js/mywork.js?v=7',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=3',
+  '/js/search.js?v=4',
   '/js/feed.js?v=3',
   '/js/effects.js?v=4',
   '/js/cookie.js?v=1',

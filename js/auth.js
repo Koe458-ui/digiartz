@@ -48,7 +48,12 @@
 
     // sync card and comment bar
     syncSubOverviewCard();
-    cpSyncAvatar();
+    // cpSyncAvatar is in js/mywork.js, seven script tags below this file, and
+    // the first auth event fires before that one is parsed. The chip it
+    // paints is on the community composer, which cpOpenChannel paints again
+    // when the bar is actually on screen — so there is nothing to catch up on
+    // here, only a throw to not do.
+    if (typeof cpSyncAvatar === 'function') cpSyncAvatar();
   }
 
   // sync subscription card
@@ -564,7 +569,15 @@
   if (sb) {
     sb.auth.onAuthStateChange(function(event, session) {
       currentUser = session ? session.user : null;
-      syncAuthBtn();
+
+      // Who the session belongs to, and what has to be forgotten because of
+      // it, is settled before anything is drawn. This used to run after
+      // syncAuthBtn(), which reaches into a file loaded further down the page
+      // and threw on the first event every time — taking the scope bump, all
+      // the cache wipes, the hidden-artwork list and the tag preferences down
+      // with it, because they were all sitting behind it in the same handler.
+      // Painting is allowed to fail. Deciding whose data this is, is not.
+
       // Every stamp taken before this line was taken for the account that
       // just went away. Bumping first means anything still in flight is
       // already stale by the time it lands, whichever order it lands in.
@@ -584,13 +597,19 @@
         pf.galleryOffset = 0; pf.galleryDone = false;
         pfMediaCache = {};
       }catch(e){}
+      // Now the painting. Every one of these reaches into a file that loads
+      // after this one, so each is on its own: one that fails takes nothing
+      // else with it.
+      try{ syncAuthBtn(); }catch(e){ console.error('syncAuthBtn: '+(e.message||e)); }
       // repaint ranking boards
       try{ if (typeof window.rkRefresh === 'function') window.rkRefresh(); }catch(e){}
       // reload hide list
-      loadHiddenArtworks().then(function(){
-        try{ renderHome(); }catch(e){}
-        try{ renderFG(); }catch(e){}
-      });
+      try{
+        loadHiddenArtworks().then(function(){
+          try{ renderHome(); }catch(e){}
+          try{ renderFG(); }catch(e){}
+        }, function(){ /* offline, keep what is on screen */ });
+      }catch(e){ console.error('loadHiddenArtworks: '+(e.message||e)); }
       // reload tag preferences
       try{ if(typeof tgLoad === 'function') tgLoad(true); }catch(e){}
       if (event === 'SIGNED_IN') {

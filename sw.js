@@ -4,6 +4,27 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v109 — the auth handler did its bookkeeping behind a paint, and the
+       paint threw on every first load.
+       syncAuthBtn() ends by calling cpSyncAvatar(), which lives in
+       js/mywork.js — seven script tags below js/auth.js — and the first
+       auth event fires before that file is parsed. So the call threw,
+       every visit. It was the second statement in the onAuthStateChange
+       handler, so everything after it was skipped: the scope bump, every
+       cache wipe, the read/unread marks, the localStorage purge, the
+       hidden-artwork list and the tag preferences. A missing avatar chip
+       was quietly cancelling the work that decides whose data is on
+       screen.
+       Two changes. The call is guarded — the chip it paints is on the
+       community composer, which cpOpenChannel paints again when that bar
+       is actually shown, so there was nothing to catch up on, only a
+       throw to not do. And the handler is reordered: identity and the
+       cache wipes are settled first, then everything that draws, each in
+       its own try. Painting is allowed to fail; deciding whose data this
+       is, is not.
+       Boot is clean now — no page errors at all, verified with the CDN
+       blocked and the vendored client serving.
+       Changed: js/auth.js, index.html, sw.js.
    v108 — the backend client is served from here instead of from a CDN.
        The shell is precached down to the thumbnails, so a repeat visit
        works with no network — except for one file, fetched from jsdelivr
@@ -1538,7 +1559,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v108';
+const CACHE_VERSION = 'v109';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1595,7 +1616,7 @@ const SHELL_URLS = [
   '/js/app-core.js?v=12',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=69',
-  '/js/auth.js?v=7',
+  '/js/auth.js?v=8',
   '/js/profile.js?v=7',
   '/js/albums.js?v=5',
   '/js/drafts.js?v=1',

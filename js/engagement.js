@@ -290,37 +290,64 @@
   window.openLikesPage      = openLikesPage;
   window.closeBookmarksPage = closeBookmarksPage;
 
-  // profile totals
-  async function refreshStatsFor (username) {
+  /* Profile totals. These two tiles have two writers — pfPaintStats, which
+     sums the artwork rows it has in hand, and this, which asks the database
+     for the real totals. This one is the better answer, so it lands second
+     and wins. It has to agree with the other on format, and it must not
+     blank the tiles on its way: it used to write an em dash before fetching,
+     so every failure left a dash sitting where a number had been.
+
+     It also has to be handed the handle. It looks the member up by username
+     and was being given #pfUsername, which is the display name whenever one
+     is set. Anybody with a display name was looked up under a name no row
+     has, the lookup came back empty, and the dashes it had just written
+     stayed there for good. */
+  function statFmt (n) {
+    return (typeof pfFmtCount === 'function')
+      ? pfFmtCount(n) : Number(n || 0).toLocaleString();
+  }
+  async function refreshStatsFor (handle) {
     var vEl = $('pfStatViews'), lEl = $('pfStatLikes');
-    if (!vEl || !lEl || !db() || !username || username === '—' || /^Loading/.test(username)) return;
-    vEl.textContent = '—'; lEl.textContent = '—';
+    if (!vEl || !lEl || !db()) return;
+    handle = String(handle || '').replace(/^@/, '').trim();
+    if (!handle || handle === '—' || /^Loading/.test(handle)) return;
     try {
-      var uid = profileIdCache[username];
+      // the open profile already knows its own id, so no lookup is needed
+      var uid = (window.pf && pf.profile && pf.profile.username &&
+                 String(pf.profile.username).toLowerCase() === handle.toLowerCase())
+                  ? pf.profile.id : profileIdCache[handle];
       if (!uid) {
-        var p = await db().from('profiles').select('id').eq('username', username).single();
-        if (p.error || !p.data) return;
-        uid = profileIdCache[username] = p.data.id;
+        var p = await db().from('profiles').select('id').eq('username', handle).maybeSingle();
+        if (p.error || !p.data) return;   // leave whatever is on screen
+        uid = profileIdCache[handle] = p.data.id;
       }
       var r = await db().rpc('get_profile_engagement', { p_user: uid });
       if (r.error) throw r.error;
       var row = Array.isArray(r.data) ? r.data[0] : r.data;
       if (!row) return;
-      vEl.textContent = Number(row.total_views  || 0).toLocaleString();
-      lEl.textContent = Number(row.total_likes || 0).toLocaleString();
-    } catch (e) { /* leave dashes */ }
+      // the profile may have been swapped while this was in flight
+      if (window.pf && pf.profile && String(pf.profile.id) !== String(uid)) return;
+      vEl.textContent = statFmt(row.total_views);
+      lEl.textContent = statFmt(row.total_likes);
+      // These came from the database's own totals, so they beat the estimate
+      // pfPaintStats makes by summing the artwork rows it happens to hold.
+      // Marked per profile, so the claim does not carry to the next one.
+      vEl.dataset.total = String(uid);
+      lEl.dataset.total = String(uid);
+    } catch (e) { /* leave the numbers that are already there */ }
   }
   function refreshProfileStatsIfOpen () {
-    var page = $('profilePage'), un = $('pfUsername');
-    if (page && page.classList.contains('open') && un) refreshStatsFor(un.textContent.trim());
+    var page = $('profilePage'), h = $('pfHandle');
+    if (page && page.classList.contains('open') && h) refreshStatsFor(h.textContent);
   }
   document.addEventListener('DOMContentLoaded', function () {
-    var un = $('pfUsername');
-    if (un) {
-      // watch username changes
+    // the handle, not the display name: it is what the row is keyed by, and
+    // it changes at the same moment for every profile that opens
+    var h = $('pfHandle');
+    if (h) {
       new MutationObserver(function () {
-        refreshStatsFor(un.textContent.trim());
-      }).observe(un, { childList: true, characterData: true, subtree: true });
+        refreshStatsFor(h.textContent);
+      }).observe(h, { childList: true, characterData: true, subtree: true });
     }
     if (db() && db().auth && db().auth.onAuthStateChange) {
       db().auth.onAuthStateChange(function () {

@@ -127,6 +127,10 @@
     pf.profile=null; pf.galleryRows=[]; pf.galleryDone=false; pf.galleryBusy=false;
     // the page window and the ids already on it belong to one profile
     pf.galleryOffset=0; pf.galleryIds=Object.create(null);
+    // and so does any claim on the totals tiles
+    ['pfStatLikes','pfStatViews'].forEach(function(id){
+      var e=document.getElementById(id); if(e) delete e.dataset.total;
+    });
     pf.resLoaded=false; pf.mktLoaded=false; pf.blogLoaded=false; pf.resRows=[]; pf.mktRows=[]; pf.blogRows=[];
     // reset albums per profile
     pf.albumsLoaded=false; pf.albums=[];

@@ -115,6 +115,8 @@
       if(document.getElementById('fg').classList.contains('open')) renderFG();
       if(pf.profile && currentUser && pf.profile.id===currentUser.id){
         pf.galleryRows = pf.galleryRows.filter(function(r){ return String(r.id)!==String(id); });
+        // the paging index has to lose it too, or the next page steps over a row
+        if(typeof pfGalleryForget==='function') pfGalleryForget(id);
         pfRenderGallery();
       }
       injectGallerySEO();

@@ -546,10 +546,32 @@
       grid.querySelectorAll('[data-igskel]').forEach(function(t){ t.remove(); });
     }
   }
-  // ids already on the page, so a row can only ever be added once
+  /* The gallery is paged by offset, and two things move rows in and out of it
+     without asking the server: an upload puts a new row on top, and a delete
+     takes one out. Both shift every window after them by one, so the index of
+     what has been drawn and the count of what has been fetched have to move
+     with them — otherwise the next page either repeats a row or steps over
+     one. These three are the only things that touch either. */
   function pfGalleryHas(id){
     if(!pf.galleryIds) pf.galleryIds = Object.create(null);
     return pf.galleryIds[String(id)] === true;
+  }
+  // a row that arrived without being fetched: an upload landing on your own
+  // profile. It occupies a place in the server's order, so the window starts
+  // one later than it otherwise would.
+  function pfGalleryAdopt(id){
+    if(!pf.galleryIds) pf.galleryIds = Object.create(null);
+    if(pf.galleryIds[String(id)] === true) return;
+    pf.galleryIds[String(id)] = true;
+    pf.galleryOffset = (pf.galleryOffset || 0) + 1;
+  }
+  // and a row that has gone. Forgetting the id matters as much as the count:
+  // if it were left behind, the same artwork could never be drawn again.
+  function pfGalleryForget(id){
+    if(!pf.galleryIds) pf.galleryIds = Object.create(null);
+    if(pf.galleryIds[String(id)] !== true) return;
+    delete pf.galleryIds[String(id)];
+    pf.galleryOffset = Math.max(0, (pf.galleryOffset || 0) - 1);
   }
   async function pfLoadMoreGallery(){
     if(!pf.profile || pf.galleryDone || pf.galleryBusy) return;
@@ -662,8 +684,18 @@
   // score, so it reads in About with the sentence that explains it
   function pfPaintStats(likes, views, bms, level, merit, cred){
     function set(id, val){ var e=document.getElementById(id); if(e) e.textContent = val; }
-    set('pfStatLikes', pfFmtCount(likes));
-    set('pfStatViews', pfFmtCount(views));
+    // Likes and views are summed here from the artwork rows in hand, which is
+    // capped and therefore an estimate. get_profile_engagement returns the
+    // real totals and stamps the tile when it lands. Whichever of the two
+    // arrives first, the database's answer is the one left standing.
+    function setTotal(id, val){
+      var e = document.getElementById(id);
+      if(!e) return;
+      var owned = pf.profile && e.dataset.total === String(pf.profile.id);
+      if(!owned) e.textContent = val;
+    }
+    setTotal('pfStatLikes', pfFmtCount(likes));
+    setTotal('pfStatViews', pfFmtCount(views));
     set('pfStatSaves', pfFmtCount(bms));
     set('pfStatCred',  pfFmtCount(cred));
     set('pfStatLevel', level);

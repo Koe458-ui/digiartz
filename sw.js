@@ -4,6 +4,35 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v111 — a second pass over the profile page, and two more found.
+       The Likes and Views tiles had two writers and no winner.
+       pfPaintStats sums the artwork rows it holds, which .limit(1000)
+       caps, so it is an estimate. get_profile_engagement returns the real
+       totals. Both wrote the same two elements and whichever reply landed
+       last won, so the number depended on network timing. The database's
+       answer now stamps the tile it filled, per profile, and the estimate
+       yields to a stamped tile — so the same value ends up there whichever
+       order they arrive in. They also format the same way now; one used
+       toLocaleString and the other pfFmtCount, so the same figure could
+       read 1,234 or 1.2K depending on who got there first.
+       That writer was also looking members up by the wrong name. It took
+       #pfUsername, which holds the display name whenever one is set, and
+       queried profiles by username — so for anybody with a display name
+       the lookup matched no row and the real totals never arrived. It
+       reads #pfHandle now, and skips the lookup entirely when the open
+       profile already knows its own id. It also wrote an em dash into
+       both tiles before fetching, which left a dash sitting where a
+       number had been on every failure. It no longer blanks anything.
+       Second: the gallery's paging index did not move when a row moved.
+       An upload puts a row on top and a delete takes one out, and both
+       shift every window after them by one — so the index of what has
+       been drawn and the count of what has been fetched have to shift
+       too, or the next page repeats a row or steps over one. A deleted
+       id also stayed in the index for good, which would have stopped that
+       artwork from ever being drawn again. pfGalleryAdopt and
+       pfGalleryForget keep both in step.
+       Changed: js/engagement.js, js/albums.js, js/profile.js,
+       js/mywork.js, js/upqueue.js, index.html, sw.js.
    v110 — createClient is called inside a try, and a correction.
        The number quoted in v108 and in its commit — roughly 36 of the 76
        functions touching sb do not check it — was wrong. It came from a
@@ -1583,7 +1612,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v110';
+const CACHE_VERSION = 'v111';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1642,12 +1671,12 @@ const SHELL_URLS = [
   '/js/gallery.js?v=69',
   '/js/auth.js?v=8',
   '/js/profile.js?v=7',
-  '/js/albums.js?v=6',
+  '/js/albums.js?v=7',
   '/js/drafts.js?v=1',
-  '/js/upqueue.js?v=2',
+  '/js/upqueue.js?v=3',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=6',
-  '/js/mywork.js?v=6',
+  '/js/mywork.js?v=7',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=2',
   '/js/search.js?v=2',

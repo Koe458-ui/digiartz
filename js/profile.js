@@ -152,7 +152,7 @@
       var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.hidden=true;
       var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.hidden=true;
       var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
-      pfPaintTopBar(null, '');
+      pfPaintTopBar(null);
       // clear previous tint
       if(window.DZ_MS){
         DZ_MS.paintName(document.getElementById('pfUsername'), 0);
@@ -189,25 +189,25 @@
   // Search, the bell and the settings menu act on your own account, so they
   // are only drawn on your own profile. Somebody else's carries a way back
   // out of it instead — the bar is the only chrome the page has.
-  // isOwner null means the row has not landed yet: show the neutral bar
-  // rather than flashing a back arrow at somebody opening their own profile
-  function pfPaintTopBar(isOwner, handle){
-    var back  = document.getElementById('pfTopBack');
-    var mark  = document.getElementById('pfTopMark');
-    var title = document.getElementById('pfTopTitle');
-    var acts  = document.getElementById('pfTopActions');
+  // The bar names the page, not the person on it: it reads PROFILE on every
+  // profile. Whose profile it is, is what the name under the banner is for.
+  // Only the two things that act on your own account move — the back arrow,
+  // which someone else's profile needs and yours does not, and the search,
+  // bell and menu, which are yours. isOwner null means the row has not landed
+  // yet: no back arrow, so opening your own does not flash one.
+  function pfPaintTopBar(isOwner){
+    var back = document.getElementById('pfTopBack');
+    var acts = document.getElementById('pfTopActions');
     var known = (isOwner !== null && isOwner !== undefined);
-    if(back)  back.hidden  = !known || !!isOwner;
-    if(mark)  mark.hidden  = known && !isOwner;
-    if(acts)  acts.hidden  = !isOwner;
-    if(title) title.textContent = (known && !isOwner) ? (handle || 'Profile') : 'Profile';
+    if(back) back.hidden = !known || !!isOwner;
+    if(acts) acts.hidden = !isOwner;
   }
 
   // paint profile row
   function pfPaintProfile(data, username, pushUrl){
       pf.profile = data;
       pf.isOwner = !!(currentUser && currentUser.id === data.id);
-      pfPaintTopBar(pf.isOwner, '@' + data.username);
+      pfPaintTopBar(pf.isOwner);
       // cache and preload
       pfMediaCache[username] = { avatar_url: data.avatar_url||null, banner_url: data.banner_url||null };
       pfPreloadImage(getThumbnailUrl(data.avatar_url));

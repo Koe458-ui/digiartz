@@ -4,6 +4,18 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v105 — the profile bar reads PROFILE on every profile.
+       It set itself in caps like every other page title on the site, and
+       it stopped putting the viewed member's @handle there. The bar names
+       the page, not the person on it — whose profile it is, is what the
+       name under the banner says, and it said it twice. The mark is drawn
+       on every profile for the same reason. Only the two things that act
+       on your own account still move: the back arrow, which someone
+       else's profile needs and yours does not, and search, the bell and
+       the menu, which are yours. pfPaintTopBar lost its handle argument
+       and #pfTopTitle and #pfTopMark lost their ids with it — nothing
+       rewrites either one now.
+       Changed: index.html, css/profile.css, js/profile.js, sw.js.
    v104 — one margin for the whole profile page.
        Edge to edge had been read literally: the tiles and the tab rail sat
        on a 5px gutter, the text on a 12px one and the artwork grid on a
@@ -1448,7 +1460,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v104';
+const CACHE_VERSION = 'v105';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1477,7 +1489,7 @@ const SHELL_URLS = [
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=5',
+  '/css/profile.css?v=6',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
@@ -1502,7 +1514,7 @@ const SHELL_URLS = [
   '/js/protect.js?v=2',
   '/js/gallery.js?v=69',
   '/js/auth.js?v=5',
-  '/js/profile.js?v=5',
+  '/js/profile.js?v=6',
   '/js/albums.js?v=4',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=2',

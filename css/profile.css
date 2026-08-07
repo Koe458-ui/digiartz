@@ -50,12 +50,12 @@
     .pfTopL{display:flex;align-items:center;gap:.6rem;min-width:0;}
     .pfTopR{display:flex;align-items:center;gap:.15rem;flex:0 0 auto;}
     .pfMark{display:flex;flex:0 0 auto;}
-    /* the bar swaps slots by attribute, so display must yield to hidden */
-    .pfMark[hidden],.pfTopL[hidden],.pfTopR[hidden]{display:none;}
+    /* display:flex would otherwise win over the hidden attribute */
+    .pfTopR[hidden]{display:none;}
     .pfMark svg{width:clamp(26px,7vw,30px);height:clamp(26px,7vw,30px);display:block;border-radius:9px;}
     .pfTopTitle{
       font-family:var(--fd);font-weight:800;
-      font-size:clamp(1rem,3.6vw,1.2rem);letter-spacing:-.01em;
+      font-size:clamp(.95rem,3.4vw,1.15rem);letter-spacing:.05em;
       color:var(--tx);
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
     }

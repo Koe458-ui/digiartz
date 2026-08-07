@@ -14,8 +14,18 @@
   // reading order of the chip row, and the order the arrow keys walk
   var FG_TABS = ['artworks','marketplace','blog','resources','jobs','cart'];
 
+  // one place to ask, so every motion in here agrees about it
+  function fgReduceMotion(){
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
   function fgSwitchSection(id){
     if(!id) return;
+    /* Back to the top before the swap, not after. The panel about to be shown
+       is the one that decides how tall the page is, so a scroll reset landing
+       after it has been drawn is a visible jump; landing before means the new
+       panel is only ever drawn at the top, and its rise-in covers the move. */
+    var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
     var secs=document.querySelectorAll('#fg .fgSec'), i;
     for(i=0;i<secs.length;i++) secs[i].classList.toggle('active', secs[i].id==='fgSec-'+id);
     // each section keeps its own search box, and the one on show is the one
@@ -34,19 +44,25 @@
       btns[i].tabIndex = on ? 0 : -1;
     }
     fgSection=id;
-    var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
     // One line at every width, which on a phone is wider than the screen, so
     // a section opened from somewhere else — a quick link, the hero CTA —
     // would land with its chip off the edge. Measured off the boxes rather
     // than offsetLeft, which is relative to whatever happens to be positioned
-    // above the chip rather than to the scroller.
+    // above the chip rather than to the scroller. This one does glide: the
+    // row it moves through is not being replaced, so there is something to
+    // watch it travel across.
     var rail=document.getElementById('fgSecRow');
     var tab=document.getElementById('fgSecBtn-'+id);
     if(rail && tab){
       var rr=rail.getBoundingClientRect(), tr=tab.getBoundingClientRect();
       var want=rail.scrollLeft+(tr.left-rr.left)-(rr.width-tr.width)/2;
       var max=rail.scrollWidth-rail.clientWidth;
-      rail.scrollLeft=Math.max(0,Math.min(want,max));
+      var left=Math.max(0,Math.min(want,max));
+      if(!fgReduceMotion() && typeof rail.scrollTo==='function'){
+        rail.scrollTo({left:left, behavior:'smooth'});
+      } else {
+        rail.scrollLeft=left;
+      }
     }
     // load section on first visit
     if(id!=='artworks' && typeof dzSecEnter==='function') dzSecEnter(id);

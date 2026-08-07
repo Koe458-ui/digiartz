@@ -4,6 +4,25 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v121 — the bar rides up with the page, and switching a section is no
+       longer a cut.
+       The search box and the chips were pinned below the title and held a
+       fifth of a phone screen for the whole scroll. They are in the flow
+       now: they leave with the artwork and come back when you return to the
+       top.
+       Switching sections swapped one panel for another between two frames
+       while the scroll snapped to the top in the same instant. The incoming
+       panel rises in over 300ms, the way the home page's boards do, and the
+       search box fades because only the words inside it change. The scroll
+       reset now runs before the swap rather than after: the panel about to
+       be shown is what decides the page's height, so resetting after it is
+       drawn is a visible jump, and resetting first means it is only ever
+       drawn at the top with the rise covering the move. The scroll itself
+       cannot be animated — what it would travel through is the content
+       being replaced.
+       The chip row does glide, since the row it moves along is not being
+       replaced. All of it stops under prefers-reduced-motion.
+       Changed: css/hero.css, js/gallery.js, index.html, sw.js.
    v120 — four icons redrawn, and a gradient that erased two of them.
        A shopping bag for Marketplace and a trolley for Cart sat three
        chips apart saying the same thing; Marketplace is a storefront now
@@ -1750,7 +1769,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v120';
+const CACHE_VERSION = 'v121';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1774,7 +1793,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=80',
+  '/css/hero.css?v=81',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
@@ -1806,7 +1825,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=16',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=74',
+  '/js/gallery.js?v=75',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
   '/js/albums.js?v=7',

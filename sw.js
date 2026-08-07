@@ -4,6 +4,24 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v118 — the chips are named, and coloured like the feed boards.
+       Icon-only asked a lot of six drawings — a shopping bag for
+       Marketplace and a cart for Cart sat three chips apart and said much
+       the same thing. Every chip carries its name now, and the chip itself
+       is the home page's feed board borrowed whole: same surface, border,
+       radius and weight of word, with the icon drawn in that entry's own
+       gradient and the light theme's darker pair spelled out per chip. The
+       two rails read as one family because they come from one recipe.
+       Selected reads through the chip, not the icon — accent border over a
+       tinted ground, as on the home page — so the icon keeps its colour and
+       the row stays legible either way.
+       Names make the row wider than a phone, so it is one line that scrolls
+       there and one line that does not from about 1024 up. Nothing wraps,
+       which is what lets the tablist stay a real element with Tags beside
+       it rather than inside it. The scroll-into-view in fgSwitchSection is
+       back with the scrolling, so a section opened from a quick link cannot
+       land with its chip off the edge.
+       Changed: index.html, css/hero.css, js/gallery.js, sw.js.
    v117 — every chip on one line, at every width, and never a scroll.
        The row scrolled sideways once the boxes stopped fitting, which on a
        phone meant the last section sat off the edge with nothing to say so.
@@ -1706,7 +1724,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v117';
+const CACHE_VERSION = 'v118';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1730,7 +1748,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=79',
+  '/css/hero.css?v=80',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
@@ -1762,7 +1780,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=16',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=72',
+  '/js/gallery.js?v=73',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
   '/js/albums.js?v=7',

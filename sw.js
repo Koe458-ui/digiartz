@@ -4,6 +4,34 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v107 — the same leak, swept for everywhere else it could happen.
+       The worst of it was on disk. dzcSet/dzcGet in js/app-core.js write
+       offline snapshots to localStorage under a plain key with no owner
+       recorded — and four of those keys are one member's: ownProfile,
+       frMap, convos and frProfiles. Every one is read from a catch block,
+       the fallback when a fetch fails, so on a shared device or after a
+       second sign-in the next member was handed the last member's own
+       profile row, friend map, conversation list and friend profiles the
+       first time the network hiccuped. Unlike the caches in memory this
+       survived a reload and a browser restart.
+       A record now remembers who it was written for and is refused for
+       anybody else. Public data — the artworks snapshot, the cp: channel
+       logs — says so by name, so the default is the safe one and a cache
+       key added later is scoped unless somebody decides otherwise. Old
+       records carry no owner and are refused once. Signing out also
+       deletes the scoped keys rather than leaving them to be refused.
+       Two more in memory: notifReadIds kept the previous member's read
+       marks when a reload failed, and frMap in js/dm.js — which decides
+       whether a profile offers Add friend, Message or nothing — was left
+       standing for 400ms after a sign-in while its reload was pending.
+       Both are emptied at the moment the session changes.
+       Audited and clean: only one query on the site pages server-side, so
+       the unstable-sort fault has nowhere else to occur; there is no
+       cursor pagination; dzArtistCache, avAuthorProfileCache,
+       profileIdCache, awArtworksCache, logRows and the cp: logs are
+       public data; dzCmLoad already guards with its own token; and the
+       marketplace cache is already thrown away on a session change.
+       Changed: js/app-core.js, js/auth.js, js/dm.js, index.html, sw.js.
    v106 — an artwork appeared twice, and one member's saves appeared under
        another member's name. Both were the same kind of mistake: the
        client trusting something it had no right to trust.
@@ -1487,7 +1515,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v106';
+const CACHE_VERSION = 'v107';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1533,14 +1561,14 @@ const SHELL_URLS = [
   // scripts
   '/js/ranking.js?v=2',
   '/js/community.js?v=2',
-  '/js/dm.js?v=4',
+  '/js/dm.js?v=5',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=11',
+  '/js/app-core.js?v=12',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=69',
-  '/js/auth.js?v=6',
+  '/js/auth.js?v=7',
   '/js/profile.js?v=7',
   '/js/albums.js?v=5',
   '/js/drafts.js?v=1',

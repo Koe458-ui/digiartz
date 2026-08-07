@@ -574,6 +574,10 @@
       // Likes, Bookmarks, albums and the profile media cache are one
       // member's. They are not carried across a sign-in.
       try{ albResetMine(); }catch(e){}
+      // the read/unread marks belong to whoever was signed in
+      notifList = []; notifReadIds = {};
+      // and the snapshots on disk belong to them too
+      try{ dzcDropScoped(); }catch(e){}
       try{
         pf.albums = []; pf.albumsLoaded = false;
         pf.galleryRows = []; pf.galleryIds = Object.create(null);
@@ -677,7 +681,11 @@
       } else {
         notifReadIds = {};
       }
-    }catch(e){ console.error('Error loading notifications: '+e.message); notifList=[]; }
+    }catch(e){
+      console.error('Error loading notifications: '+e.message);
+      // no list and no read marks, rather than the last member's read marks
+      notifList=[]; notifReadIds={};
+    }
     notifRender();
     notifMarkAllVisibleRead();
   }

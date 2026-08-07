@@ -653,15 +653,51 @@
 
   // offline data snapshots
   var DZC_PREFIX = 'dzc1:';
+  /* A cache in localStorage outlives the session that wrote it, the tab it
+     was written in, and the browser being closed. Most of what goes in here
+     is one member's — their own profile row, their friends, their
+     conversations — and on a shared device the next member to sign in was
+     being handed it whenever a fetch failed and the code fell back to the
+     snapshot. So a record remembers who it was written for and is refused
+     for anybody else. Anything genuinely public says so by name; the default
+     is the safe one, so a cache key added later is scoped unless someone
+     decides otherwise. Records written before this have no owner recorded
+     and are refused once, which is the right answer for them too. */
+  var DZC_PUBLIC = { artworks:1 };
+  function dzcPublic(key){
+    return (DZC_PUBLIC && DZC_PUBLIC[key] === 1) || String(key).indexOf('cp:') === 0;
+  }
+  function dzcOwner(){
+    return (typeof currentUser !== 'undefined' && currentUser) ? String(currentUser.id) : 'guest';
+  }
   function dzcSet(key, val){
-    try{ localStorage.setItem(DZC_PREFIX+key, JSON.stringify({t:Date.now(), v:val})); }
+    try{
+      localStorage.setItem(DZC_PREFIX+key, JSON.stringify({
+        t:Date.now(), u: dzcPublic(key) ? null : dzcOwner(), v:val
+      }));
+    }
     catch(e){ /* quota, best effort */ }
   }
   function dzcGet(key){
     try{
       var r = JSON.parse(localStorage.getItem(DZC_PREFIX+key) || 'null');
-      return (r && r.v) || null;
+      if(!r) return null;
+      // written for somebody else, or before owners were recorded
+      if(!dzcPublic(key) && r.u !== dzcOwner()) return null;
+      return r.v || null;
     }catch(e){ return null; }
+  }
+  // A refused record is already harmless, but leaving one member's profile
+  // and friend list sitting on a shared device is not something to shrug at.
+  function dzcDropScoped(){
+    try{
+      var kill = [];
+      for(var i=0; i<localStorage.length; i++){
+        var k = localStorage.key(i);
+        if(k && k.indexOf(DZC_PREFIX) === 0 && !dzcPublic(k.slice(DZC_PREFIX.length))) kill.push(k);
+      }
+      kill.forEach(function(k){ localStorage.removeItem(k); });
+    }catch(e){ /* best effort */ }
   }
   // warm thumbs at idle
   function dzcPrefetchThumbs(list){

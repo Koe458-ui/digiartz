@@ -682,7 +682,13 @@
     }
     // first load after auth
     if (db() && db().auth && db().auth.onAuthStateChange) {
-      db().auth.onAuthStateChange(function () { setTimeout(function () { loadFriendships(); refreshConvos(); }, 400); });
+      db().auth.onAuthStateChange(function () {
+        // the friendship map drives who the profile offers to add, message
+        // or block. Emptied now rather than in 400ms, so nothing in that
+        // gap is answered out of the last member's friend list.
+        frMap = {};
+        setTimeout(function () { loadFriendships(); refreshConvos(); }, 400);
+      });
     }
   });
 })();

@@ -285,9 +285,12 @@
     }
   }
 
+  // reading order of the rail, and the order the arrow keys walk
+  var PF_TABS = ['gallery','album','resources','blog','marketplace','progress','about'];
+
   function pfSwitchTab(tab){
     pf.tab=tab;
-    ['gallery','album','resources','blog','marketplace','progress','about'].forEach(function(t){
+    PF_TABS.forEach(function(t){
       var cap = t.charAt(0).toUpperCase()+t.slice(1);
       var btn = document.getElementById('pfTab'+cap);
       var pan = document.getElementById('pfPanel'+cap);
@@ -295,6 +298,10 @@
       if(btn){
         btn.classList.toggle('active', on);
         btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        // A tab rail is one stop on the page, not seven. Tab lands on the
+        // selected one and the arrow keys move within — which is also why
+        // the others are taken out of the tab order rather than hidden.
+        btn.tabIndex = on ? 0 : -1;
         // seven tabs do not fit a phone, so the one in use is scrolled into
         // the rail rather than left off the end of it
         if(on && btn.scrollIntoView){
@@ -312,6 +319,32 @@
     if(tab==='blog') pfLoadBlog();
     if(tab==='marketplace') pfLoadMarket();
   }
+
+  /* Arrow keys along the rail, Home and End to its ends — the tabs pattern
+     everything else with role="tablist" answers to. Selection follows the
+     arrow, which is right here because switching a tab costs nothing: the
+     panel is already in the page. Up and Down are left alone; this rail is
+     horizontal and they belong to the scroll. */
+  function pfTabKey(e){
+    var i = PF_TABS.indexOf(pf.tab);
+    if(i === -1) return;
+    var next;
+    if(e.key === 'ArrowRight')      next = (i + 1) % PF_TABS.length;
+    else if(e.key === 'ArrowLeft')  next = (i - 1 + PF_TABS.length) % PF_TABS.length;
+    else if(e.key === 'Home')       next = 0;
+    else if(e.key === 'End')        next = PF_TABS.length - 1;
+    else return;
+    e.preventDefault();
+    var t = PF_TABS[next];
+    pfSwitchTab(t);
+    var btn = document.getElementById('pfTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    // pfSwitchTab already scrolled it into the rail; focus must not fight that
+    if(btn) try{ btn.focus({preventScroll:true}); }catch(e2){ btn.focus(); }
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    var rail = document.getElementById('pfTabGroup');
+    if(rail) rail.addEventListener('keydown', pfTabKey);
+  });
 
   // resources and marketplace tabs
   function pfDzCard(sec){
@@ -484,10 +517,49 @@
     n.hidden = !msg;
   }
 
+  /* The search page covers the profile but does not remove it, so without
+     this Tab walks straight off the bottom of the search results and into
+     the tabs, buttons and thumbnails still sitting underneath — a keyboard
+     or screen reader ends up somewhere it cannot see. Tab is kept inside
+     the dialog, and where focus came from is remembered so it can be handed
+     back when the dialog closes. */
+  var pfSrchLastFocus = null;
+
+  function pfSrchFocusable(){
+    var pg = document.getElementById('pfSearchPage');
+    if(!pg) return [];
+    var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
+              'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    return Array.prototype.filter.call(pg.querySelectorAll(sel), function(el){
+      // the clear button only exists while there is something to clear
+      return !el.hidden && el.offsetParent !== null;
+    });
+  }
+
+  function pfSrchTrap(e){
+    if(e.key !== 'Tab') return;
+    var pg = document.getElementById('pfSearchPage');
+    if(!pg || !pg.classList.contains('open')) return;
+    var items = pfSrchFocusable();
+    if(!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    // focus outside the dialog at all — a click through, or a stray tabindex —
+    // comes back to the near end rather than being left where it was
+    if(!pg.contains(document.activeElement)){
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+      return;
+    }
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  }
+  document.addEventListener('keydown', pfSrchTrap, true);
+
   function openPfSearch(){
     if(!pf.profile){ showToast('Profile still loading — try again'); return; }
     var pg = document.getElementById('pfSearchPage');
     if(!pg) return;
+    pfSrchLastFocus = document.activeElement;
     pg.classList.add('open');
     document.body.style.overflow='hidden';
     var input = document.getElementById('pfSrchIn');
@@ -502,6 +574,12 @@
     if(!pg || !pg.classList.contains('open')) return;
     pg.classList.remove('open');
     if(silent !== true) document.body.style.overflow='hidden';   // profile is still up
+    // hand focus back to whatever opened the search — the bar button, usually.
+    // Not when the profile went with it: that button is gone from the page too.
+    var back = pfSrchLastFocus; pfSrchLastFocus = null;
+    if(silent !== true && back && back.isConnected && back.focus){
+      try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
+    }
   }
 
   function pfSearchClear(){

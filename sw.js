@@ -4,6 +4,22 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v113 — the profile tabs answer the arrow keys, and the search overlay
+       keeps Tab inside it.
+       The rail was seven separate stops in the tab order and had no
+       arrow-key handling, which is not what role="tablist" promises. It
+       is one stop now: the selected tab is the only one in the tab order,
+       and Left, Right, Home and End move within, wrapping at both ends.
+       Selection follows the arrow, which is right when the panel is
+       already in the page and costs nothing to show. Up and Down are left
+       alone — the rail is horizontal and they belong to the scroll.
+       The search overlay covers the profile but does not remove it, so
+       Tab walked off the end of the results and into the tabs, buttons
+       and thumbnails still underneath. Tab now cycles inside the dialog
+       in both directions, focus moves to the input when it opens, and
+       whatever opened it gets focus back when it closes — except when the
+       profile closed underneath it, where that control is gone too.
+       Changed: js/profile.js, index.html, sw.js.
    v112 — js/profile.js and js/engagement.js changed in v111 and their
        query strings did not move with them, so a browser holding
        profile.js?v=7 or engagement.js?v=4 would have kept serving the
@@ -1616,7 +1632,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v112';
+const CACHE_VERSION = 'v113';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1674,7 +1690,7 @@ const SHELL_URLS = [
   '/js/protect.js?v=2',
   '/js/gallery.js?v=69',
   '/js/auth.js?v=8',
-  '/js/profile.js?v=8',
+  '/js/profile.js?v=9',
   '/js/albums.js?v=7',
   '/js/drafts.js?v=1',
   '/js/upqueue.js?v=3',

@@ -97,18 +97,18 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
-  <link rel="stylesheet" href="/css/hero.css?v=81">
+  <link rel="stylesheet" href="/css/hero.css?v=82">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=4">
   <link rel="stylesheet" href="/css/connect.css?v=1">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
-  <link rel="stylesheet" href="/css/profile.css?v=6">
+  <link rel="stylesheet" href="/css/profile.css?v=7">
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=2">
   <link rel="stylesheet" href="/css/upload.css?v=2">
   <link rel="stylesheet" href="/css/widgets.css?v=3">
-  <link rel="stylesheet" href="/css/overrides.css?v=3">
+  <link rel="stylesheet" href="/css/overrides.css?v=4">
   <link rel="stylesheet" href="/css/select.css?v=2">
  </head>
  <body>
@@ -1201,109 +1201,44 @@
     </div>
   </div>
   <div id="fg" role="dialog" aria-modal="true" aria-label="Full Gallery">
-   <div class="fgIntro">
-    <h2 class="fgTitle">Gallery</h2>
-   </div>
-   <!-- One control block for the whole gallery: the search for whichever
-        section is open, and the section chips under it. Past the width where
-        both fit, they share a single line; below it they stack, each holding
-        the same inset so the two edges line up. -->
-   <div class="fgTopBar">
-    <div class="fgSearchStack">
-     <div class="fgSearchBlock active" data-sec="artworks">
-      <div class="tgSearch" id="fgSearchInWrap">
-       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-       <input type="search" class="tgSearchIn" id="fgSearchIn" placeholder="Search artworks, artists or tags..."
-              autocomplete="off" autocapitalize="off" spellcheck="false"
-              aria-label="Search artworks" oninput="fgSearchInput(this.value)">
-       <button type="button" class="tgSearchClear" onclick="fgSearchClear()" aria-label="Clear search">✕</button>
-       <span class="tgSearchKbd" aria-hidden="true"><kbd class="tgKbdMod">⌘</kbd><kbd>K</kbd></span>
-       <span class="tgFltDiv" aria-hidden="true"></span>
-       <button type="button" class="tgFltBtn" id="fgFltBtn" onclick="openFilterPanel()" title="FILTERS" aria-label="Open filters">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-       </button>
-      </div>
-     </div>
-
-     <div class="fgSearchBlock" data-sec="marketplace">
-      <div class="tgSearch" id="marketplaceSearchWrap">
-       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-       <input type="search" class="tgSearchIn" id="marketplaceSearchIn" placeholder="Search products, prints or services..."
-              autocomplete="off" autocapitalize="off" spellcheck="false"
-              aria-label="Search marketplace" oninput="fgSecSearchInput('marketplace',this.value)">
-       <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('marketplace')" aria-label="Clear search">✕</button>
-       <span class="tgFltDiv" aria-hidden="true"></span>
-       <button type="button" class="tgFltBtn" id="fgSecFltBtn-marketplace" onclick="openSecFilter('marketplace')" title="FILTERS" aria-label="Filter marketplace">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-       </button>
-      </div>
-     </div>
-
-     <div class="fgSearchBlock" data-sec="blog">
-      <div class="tgSearch" id="blogSearchWrap">
-       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-       <input type="search" class="tgSearchIn" id="blogSearchIn" placeholder="Search posts, spotlights or news..."
-              autocomplete="off" autocapitalize="off" spellcheck="false"
-              aria-label="Search blog posts" oninput="fgSecSearchInput('blog',this.value)">
-       <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('blog')" aria-label="Clear search">✕</button>
-       <span class="tgFltDiv" aria-hidden="true"></span>
-       <button type="button" class="tgFltBtn" id="fgSecFltBtn-blog" onclick="openSecFilter('blog')" title="FILTERS" aria-label="Filter blog posts">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-       </button>
-      </div>
-     </div>
-
-     <div class="fgSearchBlock" data-sec="resources">
-      <div class="tgSearch" id="resourcesSearchWrap">
-       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-       <input type="search" class="tgSearchIn" id="resourcesSearchIn" placeholder="Search tutorials, brushes or assets..."
-              autocomplete="off" autocapitalize="off" spellcheck="false"
-              aria-label="Search resources" oninput="fgSecSearchInput('resources',this.value)">
-       <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('resources')" aria-label="Clear search">✕</button>
-       <span class="tgFltDiv" aria-hidden="true"></span>
-       <button type="button" class="tgFltBtn" id="fgSecFltBtn-resources" onclick="openSecFilter('resources')" title="FILTERS" aria-label="Filter resources">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-       </button>
-      </div>
-     </div>
-
-     <div class="fgSearchBlock" data-sec="jobs">
-      <div class="tgSearch" id="jobsSearchWrap">
-       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-       <input type="search" class="tgSearchIn" id="jobsSearchIn" placeholder="Search jobs, gigs or collaborations..."
-              autocomplete="off" autocapitalize="off" spellcheck="false"
-              aria-label="Search jobs" oninput="fgSecSearchInput('jobs',this.value)">
-       <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('jobs')" aria-label="Clear search">✕</button>
-       <span class="tgFltDiv" aria-hidden="true"></span>
-       <button type="button" class="tgFltBtn" id="fgSecFltBtn-jobs" onclick="openSecFilter('jobs')" title="FILTERS" aria-label="Filter jobs">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-       </button>
-      </div>
-     </div>
-
-     <div class="fgSearchBlock" data-sec="cart">
-      <div class="tgSearch" id="cartSearchWrap">
-       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-       <input type="search" class="tgSearchIn" id="cartSearchIn" placeholder="Search orders, downloads or licenses..."
-              autocomplete="off" autocapitalize="off" spellcheck="false"
-              aria-label="Search cart" oninput="fgSecSearchInput('cart',this.value)">
-       <button type="button" class="tgSearchClear" onclick="fgSecSearchClear('cart')" aria-label="Clear search">✕</button>
-       <span class="tgFltDiv" aria-hidden="true"></span>
-       <button type="button" class="tgFltBtn" id="fgSecFltBtn-cart" onclick="openSecFilter('cart')" title="FILTERS" aria-label="Filter cart">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-       </button>
-      </div>
-     </div>
+   <!-- Header on the profile's pattern: the section's own mark and name on the
+        left, its controls on the right. Search opens a page of its own rather
+        than sitting in a bar that holds a fifth of a phone screen unused. -->
+   <header class="fgTopBar">
+    <div class="fgTopL">
+     <span class="fgMark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="32" height="32">
+       <defs>
+        <linearGradient id="fgMarkGrad" x1="0" y1="0" x2="1" y2="1">
+         <stop offset="0" stop-color="#C4B5FD"/>
+         <stop offset=".55" stop-color="#8B5CF6"/>
+         <stop offset="1" stop-color="#6D28D9"/>
+        </linearGradient>
+       </defs>
+       <rect width="32" height="32" rx="10" fill="url(#fgMarkGrad)"/>
+       <circle cx="12.2" cy="12.4" r="2.3" fill="#fff"/>
+       <path d="M6.4 23.8l6.2-6.2 3.4 3.4 4.6-4.6 5 5v1.4a1 1 0 0 1-1 1H6.4z" fill="#fff"/>
+      </svg>
+     </span>
+     <span class="fgTopTitle">GALLERY</span>
     </div>
+    <div class="fgTopR">
+     <button class="fgTopBtn" id="fgTopSearchBtn" type="button" onclick="openFgSearch()" aria-label="Search the gallery" aria-controls="fgSearchPage">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+     </button>
+     <button class="fgTopBtn" id="fgFltBtn" type="button" onclick="fgOpenFilter()" aria-label="Filters" aria-controls="fgFltPanel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+     </button>
+     <button class="fgTopBtn fgTagsBtn" id="fgTagsBtn" type="button" onclick="tgModOpen()" aria-label="Tags" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.9 2.9H4.6A1.7 1.7 0 0 0 2.9 4.6v8.3a2 2 0 0 0 .6 1.4l7.2 7.2a2 2 0 0 0 2.8 0l6.6-6.6a2 2 0 0 0 0-2.8l-7.2-7.2a2 2 0 0 0-1.4-.6z"/><circle cx="7.4" cy="7.4" r="1.3"/></svg>
+     </button>
+    </div>
+   </header>
 
     <!-- The chip row, shaped and coloured like the feed boards on the home
          page: one surface chip per entry, its icon drawn in that entry's own
-         gradient. Tags leads and is not one of the tabs — it opens the picker
-         rather than switching a panel, so it sits outside the tablist. -->
+         gradient. Six sections, one line, centred once there is room. -->
     <div class="fgSecRow" id="fgSecRow">
-     <button class="fgSecBtn fgTagsBtn" id="fgTagsBtn" type="button" aria-label="Tags" aria-haspopup="dialog" onclick="tgModOpen()"
-             style="--fgA:#5EEAD4;--fgB:#0D9488;--fgAL:#0F766E;--fgBL:#115E59">
-      <span class="fgSecIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><linearGradient id="fggTags" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" style="stop-color:var(--fgS1)"/><stop offset="1" style="stop-color:var(--fgS2)"/></linearGradient><g stroke="url(#fggTags)"><path d="M12.9 2.9H4.6A1.7 1.7 0 0 0 2.9 4.6v8.3a2 2 0 0 0 .6 1.4l7.2 7.2a2 2 0 0 0 2.8 0l6.6-6.6a2 2 0 0 0 0-2.8l-7.2-7.2a2 2 0 0 0-1.4-.6z"/><circle cx="7.4" cy="7.4" r="1.3"/></g></svg></span><span class="fgSecTxt">Tags</span></button>
      <div class="fgSecTabs" id="fgSecTabs" role="tablist" aria-label="Gallery sections">
       <button class="fgSecBtn active" id="fgSecBtn-artworks" role="tab" tabindex="0" aria-selected="true" aria-controls="fgSec-artworks" onclick="fgSwitchSection('artworks')"
               style="--fgA:#A78BFA;--fgB:#7C3AED;--fgAL:#7C3AED;--fgBL:#5B21B6">
@@ -1325,7 +1260,6 @@
        <span class="fgSecIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><linearGradient id="fggCart" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" style="stop-color:var(--fgS1)"/><stop offset="1" style="stop-color:var(--fgS2)"/></linearGradient><g stroke="url(#fggCart)"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.4a1.8 1.8 0 0 0 1.8 1.4h8.4a1.8 1.8 0 0 0 1.8-1.4L21.5 7H6"/></g></svg></span><span class="fgSecTxt">Cart</span></button>
      </div>
     </div>
-   </div>
 
    <div class="fgSec active" id="fgSec-artworks" role="tabpanel" aria-labelledby="fgSecBtn-artworks">
     <div class="fgBdy fgBdy--art">
@@ -2489,9 +2423,9 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=16"></script>
+  <script src="/js/app-core.js?v=17"></script>
   <script src="/js/protect.js?v=2"></script>
-  <script src="/js/gallery.js?v=75"></script>
+  <script src="/js/gallery.js?v=76"></script>
   <script src="/js/auth.js?v=10"></script>
   <script src="/js/profile.js?v=9"></script>
   <script src="/js/albums.js?v=7"></script>
@@ -2502,7 +2436,7 @@
   <script src="/js/mywork.js?v=7"></script>
   <script src="/js/startup.js?v=2"></script>
   <script src="/js/tagrail.js?v=3"></script>
-  <script src="/js/search.js?v=3"></script>
+  <script src="/js/search.js?v=4"></script>
   <script src="/js/feed.js?v=3"></script>
 
  <div id="rippleHost"></div>
@@ -2696,6 +2630,37 @@ window.ZEO_DATA = window.ZEO_DATA || {
 
 
 
+
+<!-- Search across the whole gallery: every approved artwork on the site,
+     plus the listings, posts, resources and jobs. Same shape as the search
+     inside a profile, and it borrows that page's styles — what differs is
+     what it looks in, not how it looks. -->
+<div id="fgSearchPage" role="dialog" aria-modal="true" aria-label="Search the gallery">
+  <div class="pfSrchHdr">
+    <button class="pfTopBtn" type="button" onclick="closeFgSearch()" aria-label="Close search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
+    </button>
+    <div class="tgSearch" id="fgSrchWrap">
+      <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" class="tgSearchIn" id="fgSrchIn" placeholder="Search artworks, listings, posts…"
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             aria-label="Search the gallery" oninput="fgSearchInput(this.value)">
+      <button type="button" class="tgSearchClear" onclick="fgSearchClear()" aria-label="Clear search">✕</button>
+    </div>
+  </div>
+  <div class="pfSrchScopes" id="fgSrchScopes" role="tablist" aria-label="Limit search to a section">
+    <button class="pfSrchChip on" role="tab" aria-selected="true"  type="button" onclick="fgSearchScope('all')">All</button>
+    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('artwork')">Artworks</button>
+    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('marketplace')">Market</button>
+    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('blog')">Blog</button>
+    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('resources')">Resources</button>
+    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('jobs')">Jobs</button>
+  </div>
+  <div class="pfSrchBdy">
+    <div class="pfSrchNote" id="fgSrchNote">Type to search the gallery.</div>
+    <div id="fgSrchRes" aria-live="polite"></div>
+  </div>
+</div>
 
 <div class="upPop" id="tgMod" role="dialog" aria-modal="true" aria-label="Search tags">
   <div class="upPopBox tgModBox">

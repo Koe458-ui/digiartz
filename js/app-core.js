@@ -622,7 +622,7 @@
   function restoreScroll(){
     // every overlay that locks scroll
     // album pages lock too
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','dzPanelHost'];
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','dzPanelHost','fgSearchPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -1169,6 +1169,10 @@
   function renderFG(){
     _renderFGPage();
   }
+  /* The gallery's search page looks in this rather than asking the database:
+     it is every approved artwork on the site, already loaded, already the
+     rows the grid draws — and already without whatever the viewer hid. */
+  window.galleryImages = function(){ return filterHidden(images); };
 
   function _renderFGPage(){
     const _fgIn=document.getElementById('fgSearchIn');
@@ -1236,10 +1240,12 @@
     }
   }
   function _fgSyncFilterBtn(){
-    const isFiltered=(filterCat!=='all'||filterSrt!=='trending');
-    const btn=document.getElementById('fgFltBtn');
-    if(btn)btn.classList.toggle('active',isFiltered);
+    if(typeof fgSyncFilterBtn==='function') fgSyncFilterBtn();
   }
+  // read by the one filter button in the bar
+  window.fgArtFiltered = function(){
+    return filterCat!=='all' || filterSrt!=='trending';
+  };
 
   function openFilterPanel(){
     fgFltMode = 'artworks';

@@ -28,12 +28,6 @@
     var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
     var secs=document.querySelectorAll('#fg .fgSec'), i;
     for(i=0;i<secs.length;i++) secs[i].classList.toggle('active', secs[i].id==='fgSec-'+id);
-    // each section keeps its own search box, and the one on show is the one
-    // belonging to the section under it
-    var blocks=document.querySelectorAll('#fg .fgSearchBlock');
-    for(i=0;i<blocks.length;i++){
-      blocks[i].classList.toggle('active', blocks[i].getAttribute('data-sec')===id);
-    }
     var btns=document.querySelectorAll('#fgSecTabs .fgSecBtn'), on;
     for(i=0;i<btns.length;i++){
       on = btns[i].id==='fgSecBtn-'+id;
@@ -64,9 +58,29 @@
         rail.scrollLeft=left;
       }
     }
+    fgSyncFilterBtn();
     // load section on first visit
     if(id!=='artworks' && typeof dzSecEnter==='function') dzSecEnter(id);
   }
+
+  /* One filter button in the bar, where there used to be one inside each
+     section's own search box. It opens whichever panel belongs to the section
+     on show, and wears the dot when that section is filtered — so the control
+     is in one place and still says something true about six of them. */
+  function fgOpenFilter(){
+    if(fgSection==='artworks'){ openFilterPanel(); return; }
+    openSecFilter(fgSection);
+  }
+  function fgSyncFilterBtn(){
+    var btn=document.getElementById('fgFltBtn');
+    if(!btn) return;
+    var on = fgSection==='artworks'
+      ? (typeof window.fgArtFiltered==='function' && window.fgArtFiltered())
+      : ((fgSecFilter[fgSection]||'all') !== 'all');
+    btn.classList.toggle('active', !!on);
+  }
+  window.fgOpenFilter=fgOpenFilter;
+  window.fgSyncFilterBtn=fgSyncFilterBtn;
 
   /* Arrow keys along the chip row, Home and End to its ends — the tabs
      pattern anything with role="tablist" answers to. Selection follows the
@@ -135,8 +149,7 @@
   function applySecFilter(){
     var id=fgFltMode, r=document.querySelector('input[name="fltSec"]:checked');
     fgSecFilter[id]=r?r.value:'all';
-    var btn=document.getElementById('fgSecFltBtn-'+id);
-    if(btn) btn.classList.toggle('active', fgSecFilter[id]!=='all');
+    fgSyncFilterBtn();
     closeFilterPanel();
     if(typeof dzSecRender==='function') dzSecRender(id);
   }
@@ -148,6 +161,9 @@
   window.openSecFilter=openSecFilter;
   window.applySecFilter=applySecFilter;
   function closeFG(){
+    // the search page sits over the gallery — it goes with it, and the scroll
+    // lock belongs to whatever is left on screen
+    if(typeof closeFgSearch==='function') closeFgSearch(true);
     document.getElementById('fg').classList.remove('open');
     restoreScroll();
     // reset category filter

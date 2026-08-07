@@ -193,94 +193,70 @@
       --tx:inherit;--txd:inherit;
       --pg:inherit;--pb:inherit;--ps:inherit;
       --pdim:inherit;
+      --fgPad:clamp(1rem,4.2vw,1.5rem);
       background:var(--bg);color:var(--tx);
     }
     #fg.open{transform:translateX(0);}
-    /* overlay title bar */
-    .fgIntro{
-      position:sticky;top:0;z-index:11;
-      margin:0;
-      height:3.4rem;
-      padding:0 1.5rem;
-      display:flex;align-items:center;justify-content:center;
-      text-align:center;
-      border-bottom:1px solid var(--bdr);
-      isolation:isolate;
-    }
-    /* blur layer */
-    .fgIntro::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
-    .fgTitle{
-      display:inline-flex;align-items:center;gap:.45rem;margin:0;
-      font-family:var(--fd);
-      font-size:1.15rem;
-      font-weight:800;
-      letter-spacing:.16em;
-      text-transform:uppercase;
-      white-space:nowrap;
-      background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-      text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
-    }
-    .fgTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);}
-    /* narrow screens */
-    @media(max-width:480px){
-      .fgTitle{font-size:1.02rem;letter-spacing:.08em;}
-    }
-    .fgHdr{position:sticky;top:3.4rem;z-index:10;border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;isolation:isolate;}
-    /* blur layer */
-    .fgHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
-    .fgQ{flex:1;min-width:140px;max-width:280px;background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.1em;padding:.55rem .9rem;outline:none;transition:border-color .25s;border-radius:6px;}
-    .fgQ:focus{border-color:var(--pg);}
-    .fgQ::placeholder{color:var(--txd);}
 
-    .fgFil{display:flex;align-items:center;flex-shrink:0;}
-    .fgFltBtn{flex-shrink:0;width:42px;height:42px;background:color-mix(in srgb,var(--tc) 8%,transparent);border:1px solid var(--bdrh);color:var(--txd);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .25s,color .25s,background .25s,box-shadow .25s;position:relative;border-radius:6px;}
-    .fgFltBtn svg{width:18px;height:18px;pointer-events:none;}
-    .fgFltBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
-    .fgFltBtn.active{border-color:var(--pg);color:var(--ps);background:var(--pdim);box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent);}
-    .fgFltBtn.active::after{content:'';position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--pg);border-radius:50%;box-shadow:0 0 6px var(--pg);}
-
-    /* The gallery's control block — the open section's search box and the
-       section chips. Both hold --fgInset, so however the two land they share
-       one left edge. */
-    /* Not pinned: it rides up and out with the artwork under it, so a scrolled
-       gallery is all gallery. Scrolling back to the top brings it in again. */
+    /* The profile's bar, in the gallery's colours: the page's own mark and
+       name on the left, its three controls on the right. It stays put while
+       the page moves, which is the one thing here that should. */
     .fgTopBar{
-      --fgInset:clamp(.7rem,2vw,2rem);
-      position:relative;z-index:10;
-      display:flex;flex-wrap:wrap;align-items:center;
-      gap:.75rem 1rem;
-      padding:.75rem var(--fgInset);
+      position:sticky;top:0;z-index:12;
+      min-height:3.5rem;
+      padding:.35rem var(--fgPad);
+      display:flex;align-items:center;justify-content:space-between;gap:.6rem;
       border-bottom:1px solid var(--bdr);
       isolation:isolate;
     }
-    /* blur layer */
-    .fgTopBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
-
-    /* The search asks for a comfortable line of its own and gives it up only
-       when the chips fit beside it. Below that width the basis reads 100% and
-       the row breaks — two lines, not a squeezed one. */
-    .fgSearchStack{flex:1 1 min(100%,26rem);min-width:0;}
-    .fgSearchBlock{display:none;}
-    /* the box does not move between sections, only the words inside it, so
-       this fades where the panel below rises */
-    .fgSearchBlock.active{display:block;animation:fgSearchIn .3s ease;}
-    @keyframes fgSearchIn{from{opacity:0;}to{opacity:1;}}
-    @media(prefers-reduced-motion:reduce){
-      .fgSearchBlock.active{animation:none;}
+    .fgTopBar::before{
+      content:'';position:absolute;inset:0;z-index:-1;
+      background:color-mix(in srgb,var(--bg) 92%,transparent);
+      backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
     }
-    /* the bar owns the inset now, not the block */
-    .fgTopBar .tgSearch{width:100%;margin:0;}
+    .fgTopL{display:flex;align-items:center;gap:.6rem;min-width:0;}
+    .fgTopR{display:flex;align-items:center;gap:.15rem;flex:0 0 auto;}
+    .fgMark{display:flex;flex:0 0 auto;}
+    .fgMark svg{width:clamp(26px,7vw,30px);height:clamp(26px,7vw,30px);display:block;border-radius:9px;}
+    .fgTopTitle{
+      font-family:var(--fd);font-weight:800;
+      font-size:clamp(.95rem,3.4vw,1.15rem);letter-spacing:.05em;
+      color:var(--tx);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+    }
+    .fgTopBtn{
+      position:relative;flex:0 0 auto;
+      width:42px;height:42px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;color:var(--tx);cursor:pointer;
+      transition:background .18s,color .18s,transform .15s;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .fgTopBtn svg{width:22px;height:22px;display:block;}
+    .fgTopBtn:active{transform:scale(.92);}
+    .fgTopBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    @media(hover:hover){ .fgTopBtn:hover{background:var(--sur2);} }
+    /* a filter in force, or a tag picked — the same dot either way */
+    .fgTopBtn.active,.fgTopBtn.on{color:var(--ps);background:var(--pdim);}
+    .fgTopBtn.active::after,.fgTopBtn.on::after{
+      content:'';position:absolute;top:7px;right:7px;
+      width:6px;height:6px;border-radius:50%;
+      background:var(--pg);box-shadow:0 0 6px var(--pg);
+    }
 
     /* Named chips, so the row is as wide as its words: it fits a desktop line
        whole and a phone's it cannot. One line either way — where there is not
        room it scrolls sideways, the way the feed rail on the home page does.
-       Nothing wraps, so the tablist can stay a real element with Tags beside
-       it rather than inside it. */
+       Nothing wraps, so the tablist stays a real element. */
     .fgSecRow{
-      flex:0 1 auto;min-width:0;
+      min-width:0;
       display:flex;flex-wrap:nowrap;align-items:center;gap:.5rem;
-      padding:.15rem 0;
+      /* centred where the row fits, honest start where it does not: safe
+         keeps a scrolled row reachable instead of parking its first chip
+         off the left edge with no way back to it */
+      justify-content:center;
+      justify-content:safe center;
+      padding:.55rem var(--fgPad) .7rem;
       overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
       -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
       scrollbar-width:none;-ms-overflow-style:none;
@@ -289,15 +265,6 @@
     .fgSecTabs{
       flex:0 0 auto;
       display:flex;flex-wrap:nowrap;align-items:center;gap:.5rem;
-    }
-    /* Tags is a picker, not a panel, so it never takes the selected fill —
-       it carries the dot the filter button uses to say a pick is in force. */
-    .fgTagsBtn{position:relative;}
-    .fgTagsBtn.on{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
-    .fgTagsBtn.on::after{
-      content:'';position:absolute;top:6px;right:6px;
-      width:6px;height:6px;border-radius:50%;
-      background:var(--pg);box-shadow:0 0 6px var(--pg);
     }
     /* The feed board's chip, borrowed whole: same surface, same border, same
        radius, same weight of word, and the icon carried in the entry's own
@@ -320,7 +287,7 @@
     html[data-theme="light"] .fgSecBtn{--fgS1:var(--fgAL);--fgS2:var(--fgBL);}
     @media(hover:hover){
       .fgSecBtn:hover{border-color:var(--bdrh);color:var(--tx);}
-      .fgSecBtn.active:hover,.fgTagsBtn.on:hover{border-color:var(--pg);}
+      .fgSecBtn.active:hover{border-color:var(--pg);}
     }
     .fgSecBtn:active{transform:scale(.97);}
     .fgSecBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
@@ -330,7 +297,6 @@
     .fgSecIco{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;}
     .fgSecIco svg{width:100%;height:100%;display:block;}
     @media(max-width:600px){
-      .fgTopBar{--fgInset:1rem;gap:.65rem;padding:.65rem var(--fgInset);}
       .fgSecRow,.fgSecTabs{gap:.4rem;}
       .fgSecBtn{padding:.5rem .7rem;gap:.4rem;font-size:.8rem;border-radius:12px;}
       .fgSecIco{width:20px;height:20px;}

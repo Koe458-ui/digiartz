@@ -243,9 +243,11 @@
     /* The gallery's control block — the open section's search box and the
        section chips. Both hold --fgInset, so however the two land they share
        one left edge. */
+    /* Not pinned: it rides up and out with the artwork under it, so a scrolled
+       gallery is all gallery. Scrolling back to the top brings it in again. */
     .fgTopBar{
       --fgInset:clamp(.7rem,2vw,2rem);
-      position:sticky;top:3.4rem;z-index:10;
+      position:relative;z-index:10;
       display:flex;flex-wrap:wrap;align-items:center;
       gap:.75rem 1rem;
       padding:.75rem var(--fgInset);
@@ -260,7 +262,13 @@
        the row breaks — two lines, not a squeezed one. */
     .fgSearchStack{flex:1 1 min(100%,26rem);min-width:0;}
     .fgSearchBlock{display:none;}
-    .fgSearchBlock.active{display:block;}
+    /* the box does not move between sections, only the words inside it, so
+       this fades where the panel below rises */
+    .fgSearchBlock.active{display:block;animation:fgSearchIn .3s ease;}
+    @keyframes fgSearchIn{from{opacity:0;}to{opacity:1;}}
+    @media(prefers-reduced-motion:reduce){
+      .fgSearchBlock.active{animation:none;}
+    }
     /* the bar owns the inset now, not the block */
     .fgTopBar .tgSearch{width:100%;margin:0;}
 
@@ -482,7 +490,21 @@
 
     /* one panel at a time */
     .fgSec{display:none;}
-    .fgSec.active{display:block;}
+    /* Switching sections was a cut: one panel swapped for another between two
+       frames, with the scroll snapping to the top in the same instant. The
+       incoming panel rises in instead — the same move the home page's boards
+       make — and the rise is what covers the scroll reset, which cannot
+       itself be animated because the content it would scroll through is the
+       content being replaced. Coming out of display:none replays this on
+       every switch, so nothing has to restart it by hand. */
+    .fgSec.active{display:block;animation:fgSecIn .3s cubic-bezier(.22,1,.36,1);}
+    @keyframes fgSecIn{
+      from{opacity:0;transform:translateY(10px);}
+      to{opacity:1;transform:none;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .fgSec.active{animation:none;}
+    }
 
     #fgFltOvr{position:fixed;inset:0;z-index:1050;opacity:0;pointer-events:none;transition:opacity .3s ease;isolation:isolate;}
     /* blur layer */

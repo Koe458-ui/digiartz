@@ -4,6 +4,21 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v124 — even spacing round the tabs, a calmer switch, and Tags stops
+       looking pressed.
+       The gap above the chip row was 9px and the gap below it 35px. Both
+       are one measure now, so the row sits the same distance from the
+       header as the artwork sits from the row.
+       Tags carried a filled pill and a dot whenever any tag was picked.
+       A pick outlives the visit, so that read as a button held down for
+       ever. It is drawn like every other control now; .on stays only as the
+       hook the count is written into for a screen reader. The filter button
+       keeps its dot, because a filter is set this visit and cleared the
+       same way.
+       The switch is one curve throughout, and the panel lifts six pixels
+       rather than ten — the further a grid thousands of pixels tall is
+       asked to travel, the more of it the compositor carries.
+       Changed: css/hero.css, index.html, sw.js.
    v123 — the artwork comes off the wall on a phone.
        The grid took the home page's inset, which is a few pixels and reads
        as hard against the edge on a phone. It takes the profile's now,
@@ -1796,7 +1811,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v123';
+const CACHE_VERSION = 'v124';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1820,7 +1835,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=83',
+  '/css/hero.css?v=84',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',

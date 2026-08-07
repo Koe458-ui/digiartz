@@ -194,6 +194,8 @@
       --pg:inherit;--pb:inherit;--ps:inherit;
       --pdim:inherit;
       --fgPad:clamp(1rem,4.2vw,1.5rem);
+      /* one measure, so header-to-tabs and tabs-to-artwork are the same */
+      --fgGap:.9rem;
       background:var(--bg);color:var(--tx);
     }
     #fg.open{transform:translateX(0);}
@@ -236,9 +238,13 @@
     .fgTopBtn:active{transform:scale(.92);}
     .fgTopBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
     @media(hover:hover){ .fgTopBtn:hover{background:var(--sur2);} }
-    /* a filter in force, or a tag picked — the same dot either way */
-    .fgTopBtn.active,.fgTopBtn.on{color:var(--ps);background:var(--pdim);}
-    .fgTopBtn.active::after,.fgTopBtn.on::after{
+    /* A filter in force says so: it is set this visit and cleared the same
+       way. A picked tag does not. Filling the button read as held down, and
+       since a pick outlives the visit it read that way for ever — Tags is
+       drawn like every other control now, and .on stays only as the hook
+       tgSyncBtn writes the count into for a screen reader. */
+    .fgTopBtn.active{color:var(--ps);}
+    .fgTopBtn.active::after{
       content:'';position:absolute;top:7px;right:7px;
       width:6px;height:6px;border-radius:50%;
       background:var(--pg);box-shadow:0 0 6px var(--pg);
@@ -256,7 +262,7 @@
          off the left edge with no way back to it */
       justify-content:center;
       justify-content:safe center;
-      padding:.55rem var(--fgPad) .7rem;
+      padding:var(--fgGap) var(--fgPad) 0;
       overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
       -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
       scrollbar-width:none;-ms-overflow-style:none;
@@ -282,7 +288,10 @@
       background:var(--sur);border:1px solid var(--bdr);color:var(--txd);
       font-family:var(--fb);font-size:.86rem;font-weight:600;letter-spacing:-.01em;
       white-space:nowrap;-webkit-tap-highlight-color:transparent;
-      transition:background .2s,border-color .2s,color .2s,transform .2s;
+      transition:background .24s cubic-bezier(.22,1,.36,1),
+                 border-color .24s cubic-bezier(.22,1,.36,1),
+                 color .24s cubic-bezier(.22,1,.36,1),
+                 transform .18s cubic-bezier(.22,1,.36,1);
     }
     html[data-theme="light"] .fgSecBtn{--fgS1:var(--fgAL);--fgS2:var(--fgBL);}
     @media(hover:hover){
@@ -463,9 +472,13 @@
        itself be animated because the content it would scroll through is the
        content being replaced. Coming out of display:none replays this on
        every switch, so nothing has to restart it by hand. */
-    .fgSec.active{display:block;animation:fgSecIn .3s cubic-bezier(.22,1,.36,1);}
+    .fgSec.active{display:block;animation:fgSecIn .28s cubic-bezier(.22,1,.36,1);}
+    /* A short lift rather than a long one. The panel can be a grid thousands
+       of pixels tall, and the further it is asked to travel the more of that
+       the compositor has to carry — six pixels reads as arriving, twelve
+       reads as sliding. */
     @keyframes fgSecIn{
-      from{opacity:0;transform:translateY(10px);}
+      from{opacity:0;transform:translateY(6px);}
       to{opacity:1;transform:none;}
     }
     @media(prefers-reduced-motion:reduce){
@@ -606,11 +619,11 @@
     }
     @keyframes cpSpin{to{transform:rotate(360deg);}}
 
-    .fgBdy{padding:1.5rem;}
+    .fgBdy{padding:var(--fgGap) var(--fgPad) 1.5rem;}
     /* The artwork grid runs to the edge here the same way it does on the home
        page and the profile, so the body adds no inset of its own — the grid
        carries it, and it is the home page's. */
-    .fgBdy--art{padding:1.5rem 0;}
+    .fgBdy--art{padding:var(--fgGap) 0 1.5rem;}
     .fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;}
     /* gallery grid */
     .fgGrid{

@@ -2452,7 +2452,12 @@
 
   <div class="toast" id="toast">
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Served from here, not from a CDN. The service worker precaches the
+       whole shell, so a repeat visit works with no network at all — except
+       this one file, which used to be fetched from jsdelivr on every visit
+       and is the first thing app-core.js touches. Version is in the name:
+       upgrading is a new path, so no cache can hand back the old one. -->
+  <script src="/js/vendor/supabase-js-2.112.2.min.js"></script>
   <script src="/js/badwords-list-a.js?v=1"></script>
   <script src="/js/badwords-list-b.js?v=1"></script>
   <script src="/js/badwords.js?v=1"></script>

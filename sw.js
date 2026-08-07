@@ -4,6 +4,29 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v108 — the backend client is served from here instead of from a CDN.
+       The shell is precached down to the thumbnails, so a repeat visit
+       works with no network — except for one file, fetched from jsdelivr
+       on every visit, which app-core.js touches on line 315 before
+       anything else. When it did not arrive, createClient threw there and
+       took the rest of the file with it: the 62 function declarations
+       below it still hoisted, so the page looked alive and answered
+       clicks, while the 20 let/const bindings under it — images and
+       filterCat among them — stayed in the temporal dead zone and threw
+       on every access. Alive and dead at once, from a third party being
+       slow.
+       js/vendor/supabase-js-2.112.2.min.js is the same file jsdelivr was
+       serving: the dist/umd/supabase.js that @supabase/supabase-js names
+       in its own jsdelivr field, taken from the npm tarball, MIT, noted
+       in ATTRIBUTIONS.md. It precaches with the rest of the shell, so
+       there is no longer a request to anyone else on the critical path.
+       The version is in the filename rather than a ?v= query, so an
+       upgrade is a different path and no cache can answer with the old
+       one.
+       This does not harden line 315 — createClient is still called
+       unguarded, and roughly 36 of the 76 functions that touch sb do not
+       check it first. It removes the thing that was making that reachable.
+       Changed: index.html, sw.js, ATTRIBUTIONS.md, js/vendor/ (new).
    v107 — the same leak, swept for everywhere else it could happen.
        The worst of it was on disk. dzcSet/dzcGet in js/app-core.js write
        offline snapshots to localStorage under a plain key with no owner
@@ -1515,7 +1538,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v107';
+const CACHE_VERSION = 'v108';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1552,6 +1575,10 @@ const SHELL_URLS = [
   '/css/widgets.css?v=1',
   '/css/overrides.css?v=1',
   '/css/select.css?v=2',
+
+  // the backend client. Cached like any other script now it is served from
+  // here — the shell was fully offline-capable apart from this one file.
+  '/js/vendor/supabase-js-2.112.2.min.js',
 
   // word list goes with the engine
   '/js/badwords-list-a.js?v=1',

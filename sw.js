@@ -4,6 +4,23 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v120 — four icons redrawn, and a gradient that erased two of them.
+       A shopping bag for Marketplace and a trolley for Cart sat three
+       chips apart saying the same thing; Marketplace is a storefront now
+       and the trolley is Cart's alone. A pencil for Blog and an open book
+       for Resources read closer to the other way round: Blog is an article
+       and Resources is a stack of layers, which is what a page of brushes,
+       textures and PSDs actually is. Tags was a 2x2 grid, which everywhere
+       else on the web means a layout toggle; it is a price tag.
+       Drawing them turned up a bug in how all seven are painted. The
+       gradients were left in objectBoundingBox units, and the spec says an
+       element whose bounding box has zero width or height is not rendered
+       at all under those units. A perfectly horizontal line has no height,
+       so Blog's three lines of text and the awning across the storefront
+       were dropped on the floor. All seven now use userSpaceOnUse over the
+       24x24 box, which also means one gradient runs across a whole icon
+       rather than restarting on every path inside it.
+       Changed: index.html, sw.js.
    v119 — Marketplace reads Market, and Jobs comes before Cart.
        The long word was the widest chip on the row and the one paying for
        it was the search box beside it. Short, the row drops from 818 to 783
@@ -1733,7 +1750,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v119';
+const CACHE_VERSION = 'v120';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

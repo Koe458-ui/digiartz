@@ -264,14 +264,29 @@
     /* the bar owns the inset now, not the block */
     .fgTopBar .tgSearch{width:100%;margin:0;}
 
-    .fgSecTabs{
+    /* The row scrolls, not the tablist inside it — Tags leads the row but is
+       not one of the tabs, so the two cannot be the same element. */
+    .fgSecRow{
       flex:0 1 auto;min-width:0;
       display:flex;flex-wrap:nowrap;align-items:center;gap:.6rem;
       padding:.15rem 0;
       overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
       scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
     }
-    .fgSecTabs::-webkit-scrollbar{display:none;}
+    .fgSecRow::-webkit-scrollbar{display:none;}
+    .fgSecTabs{
+      flex:0 0 auto;
+      display:flex;flex-wrap:nowrap;align-items:center;gap:.6rem;
+    }
+    /* Tags is a picker, not a panel, so it never takes the selected fill —
+       it carries the dot the filter button uses to say a pick is in force. */
+    .fgTagsBtn{position:relative;}
+    .fgTagsBtn.on{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
+    .fgTagsBtn.on::after{
+      content:'';position:absolute;top:6px;right:6px;
+      width:6px;height:6px;border-radius:50%;
+      background:var(--pg);box-shadow:0 0 6px var(--pg);
+    }
     /* Icon only, in a box wider than it is tall — the shape in the design,
        and the height the chips it replaces already had. The name is in the
        DOM for a screen reader and in the tooltip for everyone else, but it
@@ -304,7 +319,7 @@
     }
     @media(max-width:600px){
       .fgTopBar{--fgInset:1rem;gap:.65rem;padding:.65rem var(--fgInset);}
-      .fgSecTabs{gap:.5rem;}
+      .fgSecRow,.fgSecTabs{gap:.5rem;}
       .fgSecBtn{width:48px;height:40px;border-radius:12px;}
       .fgSecIco svg{width:20px;height:20px;}
     }

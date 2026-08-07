@@ -36,11 +36,14 @@
     fgSection=id;
     var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
     // the chip row scrolls, so a section opened from somewhere else
-    // (a quick link, the hero CTA) would land with its chip off-screen
-    var rail=document.getElementById('fgSecTabs');
+    // (a quick link, the hero CTA) would land with its chip off-screen.
+    // Measured off the boxes rather than offsetLeft, which is relative to
+    // whatever happens to be positioned above it rather than to the scroller.
+    var rail=document.getElementById('fgSecRow');
     var tab=document.getElementById('fgSecBtn-'+id);
     if(rail && tab){
-      var want=tab.offsetLeft-(rail.clientWidth-tab.offsetWidth)/2;
+      var rr=rail.getBoundingClientRect(), tr=tab.getBoundingClientRect();
+      var want=rail.scrollLeft+(tr.left-rr.left)-(rr.width-tr.width)/2;
       var max=rail.scrollWidth-rail.clientWidth;
       rail.scrollLeft=Math.max(0,Math.min(want,max));
     }
@@ -67,8 +70,8 @@
     if(btn) btn.focus();
   }
   (function(){
-    var rail = document.getElementById('fgSecTabs');
-    if(rail) rail.addEventListener('keydown', fgTabKey);
+    var tabs = document.getElementById('fgSecTabs');
+    if(tabs) tabs.addEventListener('keydown', fgTabKey);
   })();
 
   // stub sections hold the query

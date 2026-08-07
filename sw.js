@@ -4,6 +4,24 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v115 — Tags comes back, at the head of the chip row, and the picks now do
+       what the picker always claimed.
+       v114 took the tag rail out and the preferences with it. Tags is
+       wanted, so it returns — not as a second row, but as the first box in
+       the chip row, opening the same picker it always did. It is not one of
+       the tabs: it switches no panel, so it sits outside the tablist and
+       never takes the selected fill. It carries the filter button's dot
+       instead, which is the only place a pick shows now that the rail is
+       gone. The row is the scroller; the tablist inside it is not.
+       The picker's own note says picked tags move matching artwork to the
+       top. They never did — the only thing they moved was the order of the
+       rail's own chips, and that rail is gone. The gallery grid now lifts
+       artwork matching a picked tag above the rest, keeping the chosen
+       sort's order within each group. So the sentence is true for the first
+       time, and the control has an effect you can see.
+       Changed: index.html, css/hero.css, css/widgets.css,
+       css/overrides.css, js/gallery.js, js/app-core.js, js/auth.js, sw.js.
+       Restored, trimmed to the picker: js/tagrail.js.
    v114 — the gallery gets one control block, and the grid reaches the edge.
        The section tabs were a text strip above the search box, and a rail
        of tag chips sat under it. That is two rows of navigation for one
@@ -1654,7 +1672,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v114';
+const CACHE_VERSION = 'v115';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1678,7 +1696,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=77',
+  '/css/hero.css?v=78',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
@@ -1688,8 +1706,8 @@ const SHELL_URLS = [
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
   '/css/upload.css?v=2',
-  '/css/widgets.css?v=2',
-  '/css/overrides.css?v=2',
+  '/css/widgets.css?v=3',
+  '/css/overrides.css?v=3',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -1708,10 +1726,10 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=14',
+  '/js/app-core.js?v=15',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=70',
-  '/js/auth.js?v=9',
+  '/js/gallery.js?v=71',
+  '/js/auth.js?v=10',
   '/js/profile.js?v=9',
   '/js/albums.js?v=7',
   '/js/drafts.js?v=1',
@@ -1720,6 +1738,7 @@ const SHELL_URLS = [
   '/js/pfedit.js?v=6',
   '/js/mywork.js?v=7',
   '/js/startup.js?v=2',
+  '/js/tagrail.js?v=3',
   '/js/search.js?v=3',
   '/js/feed.js?v=3',
   '/js/effects.js?v=4',

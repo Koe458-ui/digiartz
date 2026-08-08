@@ -1283,5 +1283,8 @@
     // and rebuilding them all would cost a fresh fetch each
     fgVisible=Math.min(fgVisible||0, gridInitialBatch()+gridStepBatch()*8);
     renderFG();
+    // the showcase over the chip row reads the same artworks the grid does,
+    // so it is refreshed with it rather than on a clock of its own
+    if(typeof window.fgShowRender === 'function') window.fgShowRender();
   }
 

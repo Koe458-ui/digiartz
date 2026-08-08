@@ -4,6 +4,44 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v129 — a featured showcase over the gallery's chip row.
+       Six cards, paired off across the three boards the site already
+       scores: two for daily, two for weekly, two for monthly. Every card
+       is an artwork and every card says the same six things about it —
+       the picture, the title, who made it, a line or two of description,
+       its likes and its views, and a button that opens it. Only the chip
+       differs, and it names which of the pair's two slots this one took:
+       Artist Spotlight, or Artwork of the Day / Week / Month.
+       Nothing new is fetched. The boards are reorderings of the artworks
+       already loaded, so the picks are computed locally; the one request
+       the section can make is for the profiles behind the bylines, and it
+       goes through the same cache the hover chips fill, so opening the
+       gallery after reading the home page usually costs nothing at all.
+       The leader slot is that board's first place plainly. The spotlight
+       beside it is the best-placed piece by somebody else — otherwise a
+       pair would be one person printed twice, side by side. Picks are
+       kept apart down the column too, so a quiet week cannot fill all six
+       cards with the same upload; a site with too little to say gets a
+       shorter row instead of a padded one.
+       One row at every width — one card on a phone, two on a desktop,
+       three past 1600px — paged by the arrows, the dots, a swipe or the
+       arrow keys. A card is its own dark surface, a 2:1 picture under a
+       scrim, so it reads the same in all four themes without a per-theme
+       repaint; only the heading, arrows and dots take the page's tokens.
+       The words inside are sized against the CARD, not the window. The
+       column count steps to two at 700px and the pair that arrives there
+       is narrower than the single card a 390px phone was showing, so a
+       viewport breakpoint never sees the tightest card on the site. They
+       are container queries, with the phone case repeated as plain media
+       queries so a browser without them still gets that much right.
+       Checked at seventeen widths from 320 to 3440 across four themes:
+       no card overflows its own 2:1 box at any of them. And 288 contrast
+       measurements taken off the rendered pixels — every word scored
+       against the lightest pixel actually behind it, over a near-white
+       artwork, which is the worst thing a scrim can be asked to hold text
+       over — none below 4.5:1, the weakest 6.3:1.
+       Changed: index.html, css/hero.css, js/fgshow.js (new),
+       js/app-core.js, sw.js.
    v128 — the buttons come up bright too, and the page is checked on
        every theme at every width.
        The Select and publish buttons were the two colours held back, on
@@ -1882,7 +1920,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v128';
+const CACHE_VERSION = 'v129';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1906,7 +1944,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=84',
+  '/css/hero.css?v=88',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
@@ -1936,7 +1974,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=17',
+  '/js/app-core.js?v=18',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=76',
   '/js/auth.js?v=10',
@@ -1951,6 +1989,7 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=3',
   '/js/search.js?v=4',
   '/js/feed.js?v=3',
+  '/js/fgshow.js?v=1',
   '/js/effects.js?v=4',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',

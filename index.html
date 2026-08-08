@@ -97,7 +97,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
-  <link rel="stylesheet" href="/css/hero.css?v=87">
+  <link rel="stylesheet" href="/css/hero.css?v=88">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=4">
   <link rel="stylesheet" href="/css/connect.css?v=1">
@@ -1300,6 +1300,32 @@
     </div>
    </header>
 
+    <!-- Six cards over the chip row: for each of the three boards the gallery
+         already scores — daily, weekly, monthly — the artist holding it and
+         the artwork leading it. One row at every width, paged by the arrows
+         or by a swipe. Filled by js/fgshow.js, and out of the page entirely
+         until there is something to feature. -->
+    <section class="fgShow" id="fgShow" aria-label="Featured showcase" hidden>
+     <div class="fgShowHead">
+      <div class="fgShowTitle">
+       <span class="fgShowIco" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2l2.5 5.4 5.9.7-4.4 4 1.2 5.8L12 16.2 6.8 19.1 8 13.3 3.6 9.3l5.9-.7z"/></svg>
+       </span>
+       <span>FEATURED SHOWCASE</span>
+      </div>
+      <div class="fgShowNav" id="fgShowNav" hidden>
+       <button class="fgShowArw" type="button" onclick="fgsNav(-1)" aria-label="Previous featured cards" aria-controls="fgShowTrack">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>
+       </button>
+       <button class="fgShowArw" type="button" onclick="fgsNav(1)" aria-label="Next featured cards" aria-controls="fgShowTrack">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+       </button>
+      </div>
+     </div>
+     <div class="fgShowTrack" id="fgShowTrack" tabindex="0" role="group" aria-label="Featured cards, use the arrow keys"></div>
+     <div class="fgShowDots" id="fgShowDots" hidden></div>
+    </section>
+
     <!-- The chip row, shaped and coloured like the feed boards on the home
          page: one surface chip per entry, its icon drawn in that entry's own
          gradient. Six sections, one line, centred once there is room. -->
@@ -2488,7 +2514,7 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=17"></script>
+  <script src="/js/app-core.js?v=18"></script>
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=76"></script>
   <script src="/js/auth.js?v=10"></script>
@@ -2503,6 +2529,7 @@
   <script src="/js/tagrail.js?v=3"></script>
   <script src="/js/search.js?v=4"></script>
   <script src="/js/feed.js?v=3"></script>
+  <script src="/js/fgshow.js?v=1"></script>
 
  <div id="rippleHost"></div>
 

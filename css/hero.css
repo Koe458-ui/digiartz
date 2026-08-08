@@ -474,7 +474,7 @@
       padding:.16rem .45rem;border-radius:999px;
       background:color-mix(in srgb,var(--upcGreen) 16%,transparent);
       border:1px solid color-mix(in srgb,var(--upcGreen) 38%,transparent);
-      color:var(--upcGreen);font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--upcGreenInk);font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
     }
     .dzFileOk::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
     /* file actions */

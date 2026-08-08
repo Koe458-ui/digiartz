@@ -402,18 +402,18 @@
     .dzFileField{margin-bottom:1.75rem;}
     .dzFileZone{
       position:relative;border-radius:16px;
-      border:1.5px dashed color-mix(in srgb,var(--pg) 36%,transparent);
-      background:color-mix(in srgb,var(--pg) 4%,transparent);
+      border:1.5px dashed color-mix(in srgb,var(--upcViolet) 46%,transparent);
+      background:color-mix(in srgb,var(--upcViolet) 5%,transparent);
       padding:2.35rem 1.6rem;
       transition:border-color .2s ease,background .2s ease,box-shadow .2s ease;
     }
     .dzFileZone.over,.dzFileZone:focus-within{
-      border-color:var(--pg);
-      background:color-mix(in srgb,var(--pg) 9%,transparent);
-      box-shadow:0 0 0 3px color-mix(in srgb,var(--pg) 16%,transparent);
+      border-color:var(--upcViolet);
+      background:color-mix(in srgb,var(--upcViolet) 11%,transparent);
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--upcViolet) 18%,transparent);
     }
     @media(hover:hover){
-      .dzFileZone:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}
+      .dzFileZone:hover{border-color:var(--upcViolet);background:color-mix(in srgb,var(--upcViolet) 8%,transparent);}
     }
     /* hidden file input */
     .dzFileIn{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;}
@@ -435,7 +435,7 @@
        artwork dropzone wears the same face — one picked state, one look. */
     .dzFilePicked{display:none;align-items:center;gap:1rem;}
     .dzFileZone.dzHasFile,.upDz.dzHasFile{
-      --dzOk:#22C55E;
+      --dzOk:var(--upcGreen);
       border-style:solid;
       border-color:color-mix(in srgb,var(--dzOk) 42%,transparent);
       background:
@@ -472,8 +472,9 @@
     .dzFileOk{
       display:inline-flex;align-items:center;gap:.3rem;
       padding:.16rem .45rem;border-radius:999px;
-      background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.34);
-      color:#22C55E;font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+      background:color-mix(in srgb,var(--upcGreen) 16%,transparent);
+      border:1px solid color-mix(in srgb,var(--upcGreen) 38%,transparent);
+      color:var(--upcGreen);font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
     }
     .dzFileOk::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
     /* file actions */

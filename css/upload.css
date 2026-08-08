@@ -1,4 +1,26 @@
 /* upload popup */
+
+    /* ---- the upload page's palette ---------------------------------------
+       One named colour per role, so a chip, its guide sheet and the detail
+       rows on its form all draw from the same jar and a change lands in one
+       place. The values are set for the ground they sit on: on the near-black
+       the page runs under by default they take the light, luminous step, and
+       under the light theme they take the saturated one, because the same hex
+       cannot be bright on both. Every use is a glyph, a chip edge or a tint —
+       never type on a fill, which is why the button colours are not in here. */
+    :root{
+      --upcViolet:#A78BFA; --upcGreen:#4ADE80; --upcBlue:#60A5FA;
+      --upcAmber:#FBBF24;  --upcPink:#F472B6;  --upcCyan:#22D3EE;
+      --upcTeal:#2DD4BF;   --upcOrange:#FB923C;--upcPurple:#C084FC;
+      --upcRose:#FB7185;   --upcYellow:#FCD34D;--upcLilac:#C4B5FD;
+    }
+    html[data-theme="light"]{
+      --upcViolet:#7C3AED; --upcGreen:#16A34A; --upcBlue:#2563EB;
+      --upcAmber:#D97706;  --upcPink:#DB2777;  --upcCyan:#0891B2;
+      --upcTeal:#0D9488;   --upcOrange:#EA580C;--upcPurple:#9333EA;
+      --upcRose:#E11D48;   --upcYellow:#CA8A04;--upcLilac:#8B5CF6;
+    }
+
     .upPop{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:.9rem;opacity:0;pointer-events:none;transition:opacity .25s ease;isolation:isolate;}
     /* blur layer */
     .upPop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:-1;}
@@ -291,8 +313,8 @@
     /* artwork dropzone */
     .upDz{
       position:relative;display:flex;flex-direction:column;align-items:center;gap:.55rem;
-      border:1.5px dashed color-mix(in srgb,var(--pg) 36%,transparent);border-radius:16px;
-      background:color-mix(in srgb,var(--pg) 4%,transparent);
+      border:1.5px dashed color-mix(in srgb,var(--upcViolet) 46%,transparent);border-radius:16px;
+      background:color-mix(in srgb,var(--upcViolet) 5%,transparent);
       padding:2.35rem 1.6rem;text-align:center;cursor:pointer;margin-bottom:1.35rem;
       transition:border-color .2s ease,background .2s ease,box-shadow .2s ease;
     }
@@ -301,17 +323,17 @@
     .upDzBadge{
       width:74px;height:74px;border-radius:50%;margin-bottom:.35rem;
       display:flex;align-items:center;justify-content:center;
-      background:color-mix(in srgb,var(--pg) 14%,transparent);
-      color:var(--ps);
+      background:color-mix(in srgb,var(--upcViolet) 18%,transparent);
+      color:var(--upcViolet);
     }
     .upDzBadge svg{width:32px;height:32px;display:block;}
     .upDz.over,.upDz:focus-within{
-      border-color:var(--pg);
-      background:color-mix(in srgb,var(--pg) 9%,transparent);
-      box-shadow:0 0 0 3px color-mix(in srgb,var(--pg) 16%,transparent);
+      border-color:var(--upcViolet);
+      background:color-mix(in srgb,var(--upcViolet) 11%,transparent);
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--upcViolet) 18%,transparent);
     }
     @media(hover:hover){
-      .upDz:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}
+      .upDz:hover{border-color:var(--upcViolet);background:color-mix(in srgb,var(--upcViolet) 8%,transparent);}
     }
     .upDz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:1;}
     /* dropzone icon */

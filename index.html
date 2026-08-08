@@ -97,7 +97,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
-  <link rel="stylesheet" href="/css/hero.css?v=84">
+  <link rel="stylesheet" href="/css/hero.css?v=85">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=4">
   <link rel="stylesheet" href="/css/connect.css?v=1">
@@ -106,7 +106,7 @@
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=2">
-  <link rel="stylesheet" href="/css/upload.css?v=2">
+  <link rel="stylesheet" href="/css/upload.css?v=3">
   <link rel="stylesheet" href="/css/widgets.css?v=3">
   <link rel="stylesheet" href="/css/overrides.css?v=4">
   <link rel="stylesheet" href="/css/select.css?v=2">
@@ -922,30 +922,74 @@
 
   <div class="upPop" id="pfUpMod">
    <div class="upPopBox">
-    <div class="pfPageHdr">
-      <div class="cmHdrTitle"><span id="pfUpNavTitle">UPLOAD</span></div>
-    </div>
+    <!-- The bar the profile and the gallery already wear: the page's own mark
+         and name on the left, its one control on the right. The (i) carries the
+         guidelines for whichever section is open, so the rules travel with the
+         tab instead of taking a column of the page. -->
+    <header class="upTopBar">
+      <div class="upTopL">
+        <span class="upMark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="32" height="32">
+            <defs>
+              <linearGradient id="upMarkGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#C4B5FD"/>
+                <stop offset=".55" stop-color="#8B5CF6"/>
+                <stop offset="1" stop-color="#6D28D9"/>
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="10" fill="url(#upMarkGrad)"/>
+            <g transform="translate(4 4)" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/>
+              <path d="M12 21v-8"/>
+              <path d="m8 17 4-4 4 4"/>
+            </g>
+          </svg>
+        </span>
+        <span class="upTopTitle" id="pfUpNavTitle">UPLOAD</span>
+      </div>
+      <div class="upTopR">
+        <button class="upTopBtn" type="button" id="upGuideBtn" onclick="upGuideOpen()" aria-label="Upload guidelines" aria-haspopup="dialog" aria-controls="upGuideMod">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M12 16.6v-5.1"/><path d="M12 7.8h.01"/></svg>
+        </button>
+      </div>
+    </header>
     <div class="upPgBdy">
     <div class="subPgHeadline">
       <h2 id="pfUpTitle">Upload Artwork</h2>
       <p id="pfUpSubtitle">Share your creativity with artists around the world.</p>
     </div>
-    <div class="upSecTabs" id="upSecTabs" role="tablist" aria-label="What are you posting"></div>
+    <div class="upSecRow"><div class="upSecTabs" id="upSecTabs" role="tablist" aria-label="What are you posting"></div></div>
     <div id="upSecForms" style="display:none;"></div>
     <div class="upPopBody">
      <div class="upMain">
       <input id="pfUpEditId" type="hidden" value=""/>
+      <div class="upCard">
       <div class="upMediaCol">
+      <!-- Empty and picked are two faces of one zone, the way the marketplace
+           file picker already works: choosing a file swaps the dashed invite
+           for a row that names it, sizes it and says it is ready. -->
       <div class="upDz" id="pfDz">
        <input accept="image/*" id="pfUpF" onclick="if(pfGuestGate(event))return;" onchange="handlePfFile(event)" type="file"/>
-       <span class="fgSecIco fgSecIco--artworks" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span>
-       <div class="upDzTitle" id="pfDzTxt">Drag &amp; drop your artwork here</div>
-       <div class="upDzSub">or browse from your device</div>
-       <button type="button" class="upDzBtn" tabindex="-1">Select image</button>
-       <div class="upDzHint">JPG · PNG · WEBP · GIF · up to 20MB</div>
+       <div class="upDzEmpty">
+        <span class="upDzBadge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M12 21v-8"/><path d="m8 17 4-4 4 4"/></svg></span>
+        <div class="upDzTitle" id="pfDzTxt">Drag &amp; drop your artwork here</div>
+        <div class="upDzSub">or browse from your device</div>
+        <button type="button" class="upDzBtn" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg>Select image</button>
+        <div class="upDzHint">JPG · PNG · WEBP · GIF · up to 20MB</div>
+       </div>
+       <div class="dzFilePicked" id="pfDzPicked">
+        <span class="dzFileThumb" id="pfUpPrevWrap"><img alt="preview" class="upPrev" id="pfUpPrev"/></span>
+        <div class="dzFileMeta">
+          <div class="dzFileNm" id="pfUpFileNm">Selected image</div>
+          <div class="dzFileSz"><span id="pfUpFileSz">—</span><span class="dzFileOk" id="pfUpFileOk">Ready to publish</span></div>
+        </div>
+        <div class="dzFileActs" id="pfUpFileActs">
+          <button type="button" class="dzFileAct" id="pfUpThumbBtn" onclick="reopenPfCrop()">Adjust</button>
+          <button type="button" class="dzFileAct" onclick="pfReplaceFile(event)">Replace</button>
+          <button type="button" class="dzFileAct dzFileActRm" onclick="pfClearFile(event)">Remove</button>
+        </div>
+       </div>
       </div>
-      <div class="upPrevWrap" id="pfUpPrevWrap"><img alt="preview" class="upPrev" id="pfUpPrev"/></div>
-      <button type="button" class="upBtnSec upThumbEditBtn" id="pfUpThumbBtn" style="display:none;" onclick="reopenPfCrop()">🖼 Adjust Thumbnail</button>
 
       <div id="pfComicPagesWrap" style="display:none;">
         <div class="upDz upDzSm" id="pfDzPages">
@@ -959,28 +1003,35 @@
       </div>
 
       <div class="upFieldsCol">
-      <div class="upField">
-        <label class="upLbl" for="pfUpNm">Title <span class="upReq">*</span></label>
-        <div class="upInWrap">
-          <input class="upIn" id="pfUpNm" maxlength="100" oninput="pfUpdateCount('pfUpNm','pfUpNmCount',100)" placeholder="Give your artwork a title…" type="text"/>
-          <span class="upCount" id="pfUpNmCount">0/100</span>
+      <div class="upField upFCard" style="--fc:#8B5CF6">
+        <span class="upFIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+        <div class="upFBody">
+          <label class="upLbl" for="pfUpNm">Title <span class="upReq">*</span></label>
+          <div class="upInWrap">
+            <input class="upIn" id="pfUpNm" maxlength="100" oninput="pfUpdateCount('pfUpNm','pfUpNmCount',100)" placeholder="Enter artwork title" type="text"/>
+            <span class="upCount" id="pfUpNmCount">0/100</span>
+          </div>
         </div>
       </div>
 
-      <div class="upField">
-        <label class="upLbl" for="pfUpDesc">Description</label>
-        <div class="upInWrap upInWrapArea">
-          <textarea class="upIn upArea" id="pfUpDesc" maxlength="1000" oninput="pfUpdateCount('pfUpDesc','pfUpDescCount',1000)" placeholder="Tell the story behind your artwork…" rows="3"></textarea>
-          <span class="upCount" id="pfUpDescCount">0/1000</span>
+      <div class="upField upFCard" style="--fc:#22C55E">
+        <span class="upFIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h11"/><path d="M4 18h7"/></svg></span>
+        <div class="upFBody">
+          <label class="upLbl" for="pfUpDesc">Description</label>
+          <div class="upInWrap upInWrapArea">
+            <textarea class="upIn upArea" id="pfUpDesc" maxlength="1000" oninput="pfUpdateCount('pfUpDesc','pfUpDescCount',1000)" placeholder="Describe your artwork (optional)" rows="2"></textarea>
+            <span class="upCount" id="pfUpDescCount">0/1000</span>
+          </div>
         </div>
       </div>
 
-      <div class="upRow2">
-        <div class="upField" id="pfUpCatField">
+      <div class="upField upFCard" id="pfUpCatField" style="--fc:#F59E0B">
+        <span class="upFIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12.9 2.9H4.6A1.7 1.7 0 0 0 2.9 4.6v8.3a2 2 0 0 0 .6 1.4l7.2 7.2a2 2 0 0 0 2.8 0l6.6-6.6a2 2 0 0 0 0-2.8l-7.2-7.2a2 2 0 0 0-1.4-.6z"/><circle cx="7.4" cy="7.4" r="1.3"/></svg></span>
+        <div class="upFBody">
           <label class="upLbl">Category <span class="upReq">*</span></label>
           <div class="upCatDd" id="pfUpCatDd">
             <button type="button" class="upCatTrigger" onclick="togglePfCatDd(event)" id="pfUpCatTrigger">
-              <span id="pfUpCatTriggerLbl">Others</span><span class="upChev">⌄</span>
+              <span id="pfUpCatTriggerLbl">Others</span><span class="upChev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
             </button>
             <div class="upCatPanel" id="pfUpCatPanelWrap">
               <div class="upCatSearchWrap">
@@ -993,8 +1044,11 @@
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="upField">
+      <div class="upField upFCard" style="--fc:#06B6D4">
+        <span class="upFIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16"/><path d="M4 15h16"/><path d="M10 3 8 21"/><path d="M16 3l-2 18"/></svg></span>
+        <div class="upFBody">
           <label class="upLbl" for="pfUpTagsInput">Tags</label>
           <div class="upTagBox" id="pfUpTagBox" onclick="document.getElementById('pfUpTagsInput').focus()">
             <span id="pfUpTagChips"></span>
@@ -1004,75 +1058,85 @@
         </div>
       </div>
 
-      <div class="upField" id="pfUpSoftwareField">
-        <label class="upLbl">Software Used</label>
-        <div class="upCatDd" id="pfUpSoftwareDd">
-          <button type="button" class="upCatTrigger" onclick="togglePfSoftwareDd(event)" id="pfUpSoftwareTrigger">
-            <span id="pfUpSoftwareTriggerLbl">Select software…</span><span class="upChev">⌄</span>
-          </button>
-          <div class="upCatPanel" id="pfUpSoftwarePanel">
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Photoshop"/> Photoshop</label>
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="ibisPaint"/> ibisPaint</label>
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Procreate"/> Procreate</label>
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Clip Studio Paint"/> Clip Studio Paint</label>
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Krita"/> Krita</label>
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="MediBang Paint"/> MediBang Paint</label>
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Autodesk SketchBook"/> Autodesk SketchBook</label>
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Illustrator"/> Illustrator</label>
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Affinity Designer"/> Affinity Designer</label>
-            <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Other"/> Other</label>
+      <div class="upField upFCard" id="pfUpSoftwareField" style="--fc:#EC4899">
+        <span class="upFIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="19" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 16.5V21"/></svg></span>
+        <div class="upFBody">
+          <label class="upLbl">Software Used</label>
+          <div class="upCatDd" id="pfUpSoftwareDd">
+            <button type="button" class="upCatTrigger" onclick="togglePfSoftwareDd(event)" id="pfUpSoftwareTrigger">
+              <span id="pfUpSoftwareTriggerLbl">Select software…</span><span class="upChev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            </button>
+            <div class="upCatPanel" id="pfUpSoftwarePanel">
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Photoshop"/> Photoshop</label>
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="ibisPaint"/> ibisPaint</label>
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Procreate"/> Procreate</label>
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Clip Studio Paint"/> Clip Studio Paint</label>
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Krita"/> Krita</label>
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="MediBang Paint"/> MediBang Paint</label>
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Autodesk SketchBook"/> Autodesk SketchBook</label>
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Illustrator"/> Illustrator</label>
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Affinity Designer"/> Affinity Designer</label>
+              <label class="upCatOpt"><input type="radio" name="pfUpSoftwareRadio" onchange="updatePfSoftwareDisplay()" value="Other"/> Other</label>
+            </div>
           </div>
+          <input type="hidden" id="pfUpSoftware" value=""/>
         </div>
-        <input type="hidden" id="pfUpSoftware" value=""/>
       </div>
 
-      <div class="upField" id="pfUpAlbumField">
-        <label class="upLbl">Add to Album <span class="upOpt">optional</span></label>
-        <div class="upCatDd" id="pfUpAlbumDd">
-          <button type="button" class="upCatTrigger" onclick="togglePfAlbumDd(event)" id="pfUpAlbumTrigger">
-            <span id="pfUpAlbumTriggerLbl">None</span><span class="upChev">⌄</span>
-          </button>
-          <div class="upCatPanel" id="pfUpAlbumPanel">
+      <div class="upField upFCard" id="pfUpAlbumField" style="--fc:#3B82F6">
+        <span class="upFIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></span>
+        <div class="upFBody">
+          <label class="upLbl">Add to Album <span class="upOpt">optional</span></label>
+          <div class="upCatDd" id="pfUpAlbumDd">
+            <button type="button" class="upCatTrigger" onclick="togglePfAlbumDd(event)" id="pfUpAlbumTrigger">
+              <span id="pfUpAlbumTriggerLbl">None</span><span class="upChev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            </button>
+            <div class="upCatPanel" id="pfUpAlbumPanel">
+            </div>
           </div>
+          <div class="upSchedHint">Pick as many as you like — or none.</div>
         </div>
-        <div class="upSchedHint">Pick as many as you like — or none.</div>
       </div>
 
-      <div class="upField" id="pfUpSchedField">
-        <label class="upLbl" for="pfUpSched">Schedule <span class="upOpt">optional</span></label>
-        <div class="upCatDd" id="pfUpSchedDd">
-          <button type="button" class="upCatTrigger" id="pfUpSchedTrigger" onclick="pfSchedToggle(event)">
-            <span id="pfUpSchedLbl" class="upSchedPh">__/__/____&nbsp;&nbsp;__:__</span><span class="upChev">⌄</span>
-          </button>
-          <input type="hidden" id="pfUpSched" value=""/>
-          <div class="upCatPanel upSchedPanel" id="pfUpSchedPanel">
-            <div class="upSchedNav">
-              <button type="button" class="upSchedNavBtn" onclick="pfSchedNav(-1,event)" aria-label="Previous month">‹</button>
-              <span id="pfUpSchedMon">—</span>
-              <button type="button" class="upSchedNavBtn" onclick="pfSchedNav(1,event)" aria-label="Next month">›</button>
-            </div>
-            <div class="upSchedDows"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
-            <div class="upSchedGrid" id="pfUpSchedGrid"></div>
-            <div class="upSchedTime">
-              <span class="upSchedTimeLbl">Time</span>
-              <select class="upSchedSel" id="pfUpSchedH" onchange="pfSchedApply()" aria-label="Hour"></select>
-              <span class="upSchedColon">:</span>
-              <select class="upSchedSel" id="pfUpSchedM" onchange="pfSchedApply()" aria-label="Minute"></select>
-            </div>
-            <div class="upSchedActs">
-              <button type="button" class="upBtnSec" onclick="pfSchedClear(event)">Clear</button>
-              <button type="button" class="upBtnPri" onclick="pfSchedDone(event)">Done</button>
+      <div class="upField upFCard" id="pfUpSchedField" style="--fc:#14B8A6">
+        <span class="upFIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M16 2.5v4"/><path d="M8 2.5v4"/><path d="M3 10h18"/><path d="M12 13.5v3l2 1"/></svg></span>
+        <div class="upFBody">
+          <label class="upLbl" for="pfUpSched">Schedule <span class="upOpt">optional</span></label>
+          <div class="upCatDd" id="pfUpSchedDd">
+            <button type="button" class="upCatTrigger" id="pfUpSchedTrigger" onclick="pfSchedToggle(event)">
+              <span id="pfUpSchedLbl" class="upSchedPh">__/__/____&nbsp;&nbsp;__:__</span><span class="upChev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            </button>
+            <input type="hidden" id="pfUpSched" value=""/>
+            <div class="upCatPanel upSchedPanel" id="pfUpSchedPanel">
+              <div class="upSchedNav">
+                <button type="button" class="upSchedNavBtn" onclick="pfSchedNav(-1,event)" aria-label="Previous month">‹</button>
+                <span id="pfUpSchedMon">—</span>
+                <button type="button" class="upSchedNavBtn" onclick="pfSchedNav(1,event)" aria-label="Next month">›</button>
+              </div>
+              <div class="upSchedDows"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+              <div class="upSchedGrid" id="pfUpSchedGrid"></div>
+              <div class="upSchedTime">
+                <span class="upSchedTimeLbl">Time</span>
+                <select class="upSchedSel" id="pfUpSchedH" onchange="pfSchedApply()" aria-label="Hour"></select>
+                <span class="upSchedColon">:</span>
+                <select class="upSchedSel" id="pfUpSchedM" onchange="pfSchedApply()" aria-label="Minute"></select>
+              </div>
+              <div class="upSchedActs">
+                <button type="button" class="upBtnSec" onclick="pfSchedClear(event)">Clear</button>
+                <button type="button" class="upBtnPri" onclick="pfSchedDone(event)">Done</button>
+              </div>
             </div>
           </div>
+          <div class="upSchedHint" id="pfUpSchedHint">Leave empty to publish immediately.</div>
         </div>
-        <div class="upSchedHint" id="pfUpSchedHint">Leave empty to publish immediately.</div>
+      </div>
+      </div>
       </div>
 
       <div class="upActions">
         <button class="upBtnSec" id="pfUpBackBtn" style="display:none;" onclick="closePfUpload()">← Back</button>
         <button class="upBtnSec" id="pfDraftBtn" onclick="updrSave()">💾 Save Draft</button>
         <button class="upBtnPri" id="pfUpBtn" onclick="doPfUp()">📤 Upload Artwork</button>
-      </div>
       </div>
      </div>
 
@@ -1087,28 +1151,29 @@
          <p class="upDraftNote">Saved on this device · auto-deleted after 7 days</p>
          <div class="upDraftRow" id="upDraftRow"><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div><div class="upDraftCard upDraftGhost" aria-hidden="true"><span class="upDraftGhostIn">✦</span><span class="upDraftExp">7d</span></div></div>
        </div>
-       <div class="upSideCard">
-         <h3>Upload Guidelines</h3>
-         <ul class="upGuideList">
-           <li><span class="upGIco">🖼</span><div><strong>Original work only</strong>Make sure you own the rights.</div></li>
-           <li><span class="upGIco">✦</span><div><strong>High quality recommended</strong>Best results with high resolution files.</div></li>
-           <li><span class="upGIco">🛡</span><div><strong>Appropriate content</strong>No offensive, hateful or explicit content.</div></li>
-           <li><span class="upGIco">❤</span><div><strong>Give proper credit</strong>Credit references if inspired by others.</div></li>
-         </ul>
-       </div>
-       <div class="upSideCard">
-         <h3>Tips for better visibility</h3>
-         <ul class="upTipList">
-           <li>Use a clear and attractive thumbnail</li>
-           <li>Add a relevant title and description</li>
-           <li>Choose the right category</li>
-           <li>Use relevant tags</li>
-         </ul>
-       </div>
      </div>
     </div>
 
     </div>
+   </div>
+  </div>
+
+  <!-- The (i) in the upload bar. Every section carries its own rules and its
+       own tips, so the sheet is filled from whichever tab is open rather than
+       standing four copies of itself in the page. -->
+  <div class="upGdPop" id="upGuideMod" role="dialog" aria-modal="true" aria-labelledby="upGuideTitle" onclick="upGuideBackdrop(event)">
+   <div class="upGdBox" role="document">
+    <div class="upGdHead">
+      <span class="upGdHeadIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M12 16.6v-5.1"/><path d="M12 7.8h.01"/></svg></span>
+      <div class="upGdHeadTx">
+        <div class="upGdKicker" id="upGuideKicker">ARTWORK</div>
+        <h2 class="upGdTitle" id="upGuideTitle">Upload Guidelines</h2>
+      </div>
+      <button class="upTopBtn" type="button" onclick="upGuideClose()" aria-label="Close guidelines">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"/><path d="m18 6-12 12"/></svg>
+      </button>
+    </div>
+    <div class="upGdBody" id="upGuideBody"></div>
    </div>
   </div>
 
@@ -2428,12 +2493,12 @@
   <script src="/js/gallery.js?v=76"></script>
   <script src="/js/auth.js?v=10"></script>
   <script src="/js/profile.js?v=9"></script>
-  <script src="/js/albums.js?v=7"></script>
-  <script src="/js/drafts.js?v=1"></script>
+  <script src="/js/albums.js?v=8"></script>
+  <script src="/js/drafts.js?v=2"></script>
   <script src="/js/upqueue.js?v=3"></script>
   <script src="/js/avatar.js?v=2"></script>
-  <script src="/js/pfedit.js?v=7"></script>
-  <script src="/js/mywork.js?v=7"></script>
+  <script src="/js/pfedit.js?v=8"></script>
+  <script src="/js/mywork.js?v=8"></script>
   <script src="/js/startup.js?v=2"></script>
   <script src="/js/tagrail.js?v=3"></script>
   <script src="/js/search.js?v=4"></script>
@@ -2765,7 +2830,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=5"></script>
 
 
-  <script src="/js/sections.js?v=78"></script>
+  <script src="/js/sections.js?v=79"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

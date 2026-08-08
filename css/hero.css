@@ -340,17 +340,64 @@
     @media(hover:hover){.dzBuy:hover{filter:brightness(1.12);}}
     .dzBuy--free{background:var(--sur2);color:var(--tx);border:1px solid var(--bdr);}
 
-    /* upload section tabs */
-    .upSecTabs{display:flex;gap:0 1.3rem;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;border-bottom:1px solid var(--bdr);margin:0 0 1.4rem;}
-    .upSecTabs::-webkit-scrollbar{display:none;}
-    .upSecBtn{display:flex;align-items:center;gap:.4rem;background:none;border:0;border-bottom:2px solid transparent;padding:.6rem 0 .65rem;font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--txd);white-space:nowrap;flex-shrink:0;cursor:pointer;transition:color .2s,border-color .2s;}
-    .upSecBtn:hover{color:var(--tx);}
-    .upSecBtn.active{color:var(--tx);border-bottom-color:var(--pg);}
-    .upSecBtn .fgSecIco{width:20px;height:20px;border-radius:6px;}
-    .upSecBtn .fgSecIco svg{width:12px;height:12px;}
+    /* Upload section tabs, borrowed from the gallery's chip row: one surface
+       chip per section, its glyph in that section's own colour. The row is
+       centred wherever it fits — which on a desktop is always — and scrolls
+       sideways on a phone rather than wrapping. */
+    .upSecRow{
+      min-width:0;margin:0 0 1.4rem;
+      display:flex;flex-wrap:nowrap;align-items:center;
+      /* centred where the row fits, honest start where it does not: safe keeps
+         a scrolled row reachable instead of parking its first chip off-screen */
+      justify-content:center;
+      justify-content:safe center;
+      overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+      -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+      scrollbar-width:none;-ms-overflow-style:none;
+    }
+    .upSecRow::-webkit-scrollbar{display:none;}
+    .upSecTabs{flex:0 0 auto;display:flex;flex-wrap:nowrap;align-items:center;gap:.5rem;padding:.2rem;}
+    .upSecBtn{
+      --upA:var(--pg);
+      flex:0 0 auto;scroll-snap-align:center;
+      display:inline-flex;align-items:center;gap:.55rem;
+      padding:.5rem .85rem;margin:0;box-sizing:border-box;
+      border-radius:14px;cursor:pointer;
+      background:var(--sur);border:1px solid var(--bdr);color:var(--txd);
+      font-family:var(--fb);font-size:.86rem;font-weight:600;letter-spacing:-.01em;
+      white-space:nowrap;-webkit-tap-highlight-color:transparent;
+      transition:background .24s cubic-bezier(.22,1,.36,1),
+                 border-color .24s cubic-bezier(.22,1,.36,1),
+                 color .24s cubic-bezier(.22,1,.36,1),
+                 transform .18s cubic-bezier(.22,1,.36,1);
+    }
+    @media(hover:hover){ .upSecBtn:hover{border-color:var(--bdrh);color:var(--tx);} }
+    .upSecBtn:active{transform:scale(.97);}
+    .upSecBtn:focus-visible{outline:2px solid var(--upA);outline-offset:2px;}
+    .upSecBtn.active{
+      color:var(--tx);
+      border-color:color-mix(in srgb,var(--upA) 55%,transparent);
+      background:color-mix(in srgb,var(--upA) 14%,var(--sur));
+    }
+    .upSecIco{
+      flex:0 0 auto;width:28px;height:28px;border-radius:9px;
+      display:flex;align-items:center;justify-content:center;
+      background:color-mix(in srgb,var(--upA) 16%,transparent);
+      color:var(--upA);
+    }
+    .upSecIco svg{width:16px;height:16px;display:block;}
+    .upSecBtn.active .upSecIco{background:color-mix(in srgb,var(--upA) 24%,transparent);}
+    @media(max-width:600px){
+      .upSecTabs{gap:.4rem;}
+      .upSecBtn{padding:.45rem .7rem;gap:.45rem;font-size:.8rem;border-radius:12px;}
+      .upSecIco{width:24px;height:24px;border-radius:8px;}
+      .upSecIco svg{width:14px;height:14px;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .upSecBtn{transition:none;}
+      .upSecBtn:active{transform:none;}
+    }
     .dzHint{font-size:.72rem;color:var(--txd);margin-top:.3rem;line-height:1.5;}
-    .dzSel{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.85rem;padding:.6rem .7rem;outline:none;}
-    .dzSel:focus{border-color:var(--pg);}
     /* file picker */
     .dzFileField{margin-bottom:1.75rem;}
     .dzFileZone{
@@ -371,8 +418,7 @@
     /* hidden file input */
     .dzFileIn{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;}
     .dzFileEmpty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.55rem;pointer-events:none;}
-    .dzFileZone .fgSecIco{width:54px;height:54px;border-radius:16px;margin-bottom:.45rem;}
-    .dzFileZone .fgSecIco svg{width:26px;height:26px;}
+    .dzFileZone .upDzBadge{margin-bottom:.35rem;}
     .dzFileTitle{font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);}
     .dzFileSub{font-size:.8rem;color:var(--txd);}
     .dzFileBtn{
@@ -383,24 +429,53 @@
     }
     .dzFileTypes{margin-top:.5rem;font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--txd);}
 
-    /* picked state */
+    /* Picked state. A chosen file is a small win, so the zone says so in
+       colour: the dashed invite turns into a solid green-edged card with a
+       tinted wash, and the "ready" line is a pill rather than grey type. The
+       artwork dropzone wears the same face — one picked state, one look. */
     .dzFilePicked{display:none;align-items:center;gap:1rem;}
-    .dzFileZone.dzHasFile{
-      border-style:solid;border-color:var(--bdrh,var(--bdr));
-      background:var(--sur);padding:1.1rem 1.15rem;box-shadow:none;
+    .dzFileZone.dzHasFile,.upDz.dzHasFile{
+      --dzOk:#22C55E;
+      border-style:solid;
+      border-color:color-mix(in srgb,var(--dzOk) 42%,transparent);
+      background:
+        linear-gradient(135deg,
+          color-mix(in srgb,var(--dzOk) 9%,transparent),
+          color-mix(in srgb,var(--pg) 7%,transparent)),
+        var(--sur);
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--dzOk) 9%,transparent);
+    }
+    .dzFileZone.dzHasFile{padding:1.1rem 1.15rem;}
+    @media(hover:hover){
+      .dzFileZone.dzHasFile:hover,.upDz.dzHasFile:hover{
+        border-color:color-mix(in srgb,var(--dzOk) 42%,transparent);
+        background:
+          linear-gradient(135deg,
+            color-mix(in srgb,var(--dzOk) 9%,transparent),
+            color-mix(in srgb,var(--pg) 7%,transparent)),
+          var(--sur);
+      }
     }
     .dzFileZone.dzHasFile .dzFileEmpty{display:none;}
     .dzFileZone.dzHasFile .dzFilePicked{display:flex;}
     .dzFileThumb{
       width:66px;height:66px;flex-shrink:0;border-radius:12px;overflow:hidden;
-      background:var(--sur2);border:1px solid var(--bdr);
+      background:var(--sur2);border:1px solid color-mix(in srgb,var(--pg) 30%,var(--bdr));
       display:flex;align-items:center;justify-content:center;
     }
     .dzFileThumb img{width:100%;height:100%;object-fit:cover;display:block;}
     .dzFileThumbExt{font-family:var(--fm);font-size:.66rem;font-weight:700;letter-spacing:.1em;color:var(--ps);}
     .dzFileMeta{flex:1;min-width:0;}
     .dzFileNm{font-size:.9rem;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .dzFileSz{margin-top:.3rem;font-family:var(--fm);font-size:.64rem;letter-spacing:.08em;color:var(--txd);}
+    .dzFileSz{margin-top:.3rem;display:flex;align-items:center;flex-wrap:wrap;gap:.4rem;font-family:var(--fm);font-size:.64rem;letter-spacing:.08em;color:var(--txd);}
+    /* the ready mark */
+    .dzFileOk{
+      display:inline-flex;align-items:center;gap:.3rem;
+      padding:.16rem .45rem;border-radius:999px;
+      background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.34);
+      color:#22C55E;font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    }
+    .dzFileOk::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
     /* file actions */
     .dzFileActs{display:flex;gap:.45rem;flex-shrink:0;position:relative;z-index:2;}
     .dzFileAct{

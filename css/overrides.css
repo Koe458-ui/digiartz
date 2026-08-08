@@ -169,30 +169,7 @@
 /* rank title */
 .xpRankTitle{ color:var(--pg); }
 
-/* upload selects and calendar */
-
-/* section form selects */
-.dzSel{
-  width:100%;
-  background:rgba(var(--pg-rgb),.045);
-  border:1px solid rgba(var(--pg-rgb),.1);
-  border-radius:8px;
-  color:var(--tx);
-  font-family:var(--fb);
-  font-size:.86rem;
-  padding:.68rem 3.3rem .68rem .85rem;
-  outline:none;
-  cursor:pointer;
-  transition:border-color .2s;
-  appearance:none;-webkit-appearance:none;-moz-appearance:none;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-  background-repeat:no-repeat;
-  background-position:right .85rem center;
-  background-size:1rem;
-}
-.dzSel:focus{border-color:var(--pg);}
-.dzSel option{background:var(--sur2);color:var(--tx);}
-.dzSel option:disabled{color:color-mix(in srgb,var(--tx) 40%,transparent);}
+/* upload calendar */
 
 /* schedule hour minute */
 .upSchedSel{

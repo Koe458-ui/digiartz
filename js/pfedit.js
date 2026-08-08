@@ -134,6 +134,10 @@
     // not the profile under it
     var _pfs=document.getElementById('pfSearchPage');
     if(_pfs && _pfs.classList.contains('open')){ closePfSearch(); return; }
+    // the guidelines sheet sits over the upload page: Escape leaves the sheet,
+    // not the page under it
+    var _upg=document.getElementById('upGuideMod');
+    if(_upg && _upg.classList.contains('open')){ upGuideClose(); return; }
     closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
     cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();

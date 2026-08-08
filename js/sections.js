@@ -363,27 +363,45 @@
     marketplace: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
     jobs:        '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'
   };
-  function secIco(sec, cls){
+  // the round tinted badge an empty dropzone leads with. It was a white-stroked
+  // glyph on no background, which is invisible on the light theme's white
+  // surface; it takes the accent from the page now, like the artwork zone's.
+  function secIco(sec){
     var k = TAB_ICO[sec] || 'artworks';
-    return '<span class="fgSecIco fgSecIco--'+k+(cls ? ' '+cls : '')+'" aria-hidden="true">'+
-      '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" '+
+    return '<span class="upDzBadge" aria-hidden="true">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" '+
       'stroke-linejoin="round">'+SEC_SVG[k]+'</svg></span>';
+  }
+
+  // one colour per section, so a chip, its guide sheet and its form icons all
+  // speak with the same voice
+  var SEC_COLOR = {
+    artwork:'#8B5CF6', resources:'#22C55E', blog:'#3B82F6',
+    marketplace:'#F59E0B', jobs:'#EC4899'
+  };
+  // the chip's glyph: the section's own outline, drawn in the section's colour
+  function tabIco(sec){
+    var k = TAB_ICO[sec] || 'artworks';
+    return '<span class="upSecIco" aria-hidden="true">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '+
+      'stroke-linecap="round" stroke-linejoin="round">'+SEC_SVG[k]+'</svg></span>';
   }
 
   function buildTabs(){
     var host = document.getElementById('upSecTabs');
     if(!host || host.childNodes.length) return;
     host.innerHTML = ORDER.map(function(s){
-      var ico = secIco(s);
       return '<button class="upSecBtn'+(s==='artwork'?' active':'')+'" id="upSecBtn-'+s+
-        '" role="tab" aria-selected="'+(s==='artwork')+'" onclick="upSwitchSection(\''+s+'\')">'+
-        ico+'<span>'+TAB_LABEL[s]+'</span></button>';
+        '" style="--upA:'+SEC_COLOR[s]+'"'+
+        ' role="tab" aria-selected="'+(s==='artwork')+'" onclick="upSwitchSection(\''+s+'\')">'+
+        tabIco(s)+'<span>'+TAB_LABEL[s]+'</span></button>';
     }).join('');
   }
 
   function upSwitchSection(sec, silent){
     buildTabs();               // idempotent
     upSec = sec;
+    upGuideRender();           // the (i) follows the open tab
     var btns = document.querySelectorAll('#upSecTabs .upSecBtn');
     for(var i=0;i<btns.length;i++){
       var on = btns[i].id === 'upSecBtn-'+sec;
@@ -410,13 +428,23 @@
     if(p) p.textContent = FORMS[sec].sub;
     renderTags(sec);
     dzPaintFiles(sec);
+    upGrowAll();
     dzSchReset();
     dzDraftStrip(sec);
     dzSchedStrip(sec);
   }
 
-  // guide and tips copy
+  // guide and tips copy — read by the (i) in the upload bar, one entry per tab
   var GUIDE = {
+    artwork: {
+      guide: [
+        ['🖼','Original work only','Make sure you own the rights to what you post.'],
+        ['✦','High quality recommended','Best results come from high resolution files.'],
+        ['🛡','Appropriate content','No offensive, hateful or explicit content.'],
+        ['❤','Give proper credit','Credit references if you were inspired by others.']
+      ],
+      tips: ['Use a clear and attractive thumbnail','Add a relevant title and description','Choose the right category','Use relevant tags']
+    },
     resources: {
       guide: [
         ['📦','Package it cleanly','ZIP related files together and name folders clearly.'],
@@ -455,6 +483,43 @@
     }
   };
 
+  // ---- the (i) sheet ----------------------------------------------------
+  // Every tab has rules of its own, so the sheet is filled from whichever one
+  // is open rather than the page carrying four copies of itself.
+  function upGuideRender(){
+    var body = document.getElementById('upGuideBody');
+    if(!body) return;
+    var g = GUIDE[upSec] || {guide:[], tips:[]};
+    var kick = document.getElementById('upGuideKicker');
+    if(kick) kick.textContent = (TAB_LABEL[upSec] || 'Upload').toUpperCase();
+    var mod = document.getElementById('upGuideMod');
+    if(mod) mod.style.setProperty('--upGdC', SEC_COLOR[upSec] || '#8B5CF6');
+    var out = '';
+    if(g.guide.length){
+      out += '<div class="upGdSec"><h3>What we ask</h3><ul class="upGuideList">'+
+        g.guide.map(function(x){
+          return '<li><span class="upGIco">'+x[0]+'</span><div><strong>'+esc(x[1])+'</strong>'+esc(x[2])+'</div></li>';
+        }).join('')+'</ul></div>';
+    }
+    if(g.tips.length){
+      out += '<div class="upGdSec"><h3>Tips for better visibility</h3><ul class="upTipList">'+
+        g.tips.map(function(t){ return '<li>'+esc(t)+'</li>'; }).join('')+'</ul></div>';
+    }
+    body.innerHTML = out || '<p class="dzHint">Nothing to add for this section yet.</p>';
+  }
+  function upGuideOpen(){
+    var m = document.getElementById('upGuideMod');
+    if(!m) return;
+    upGuideRender();
+    m.classList.add('open');
+  }
+  function upGuideClose(){
+    var m = document.getElementById('upGuideMod');
+    if(m) m.classList.remove('open');
+  }
+  // only the backdrop dismisses; a tap inside the sheet is a tap on the sheet
+  function upGuideBackdrop(e){ if(e && e.target && e.target.id === 'upGuideMod') upGuideClose(); }
+
   // ghost slots
   function dzGhostCard(){
     return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
@@ -472,7 +537,12 @@
   // schedule picker markup
   function dzSchedField(){
     return ''+
-    '<div class="upField" id="dzSchedField">'+
+    '<div class="upField upFCard" id="dzSchedField" style="--fc:#14B8A6">'+
+      '<span class="upFIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '+
+        'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+
+        '<rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M16 2.5v4"/>'+
+        '<path d="M8 2.5v4"/><path d="M3 10h18"/><path d="M12 13.5v3l2 1"/></svg></span>'+
+      '<div class="upFBody">'+
       '<label class="upLbl">Schedule <span class="upOpt">optional</span></label>'+
       '<div class="upCatDd" id="dzSchedDd">'+
         '<button type="button" class="upCatTrigger" id="dzSchedTrigger" onclick="dzSchToggle(event)">'+
@@ -499,23 +569,24 @@
         '</div>'+
       '</div>'+
       '<div class="upSchedHint" id="dzSchedHint">Leave empty to publish immediately.</div>'+
+      '</div>'+
     '</div>';
   }
 
   function buildForm(sec){
     var f = FORMS[sec];
     var fields = f.fields.map(function(fd){ return field(sec, fd); }).join('');
-    var g = GUIDE[sec] || {guide:[], tips:[]};
-    var guideLis = g.guide.map(function(x){
-      return '<li><span class="upGIco">'+x[0]+'</span><div><strong>'+esc(x[1])+'</strong>'+esc(x[2])+'</div></li>';
-    }).join('');
-    var tipLis = g.tips.map(function(t){ return '<li>'+esc(t)+'</li>'; }).join('');
 
+    // Same shape as the artwork form: one card holds the pickers and the
+    // detail rows, the publish button sits outside it, and the rails follow
+    // underneath. Guidelines and tips live in the (i) now, not in a column.
     return ''+
     '<div class="dzUpWrap">'+
       '<div class="dzUpForm"><div class="upMain">'+
-        fields +
-        dzSchedField() +
+        '<div class="upCard"><div class="upFieldsCol">'+
+          fields +
+          dzSchedField() +
+        '</div></div>'+
         // save draft before publish
         '<div class="upActions">'+
           '<button type="button" class="upBtnSec" id="dzDraftBtn-'+sec+'" onclick="dzSaveDraft(\''+sec+'\')">💾 Save Draft</button>'+
@@ -523,7 +594,6 @@
         '</div>'+
         '<p class="dzHint" style="margin-top:.9rem">Posts are reviewed before they appear publicly.</p>'+
       '</div></div>'+
-      // same sidebar as artwork page
       '<aside class="dzUpSide">'+
         '<div class="upSideCard">'+
           '<div class="upDraftTitle">SCHEDULED</div>'+
@@ -535,9 +605,142 @@
           '<p class="upDraftNote">Saved on this device · auto-deleted after 7 days</p>'+
           '<div class="upDraftRow" id="dzDraftRow-'+sec+'">'+dzGhost4()+'</div>'+
         '</div>'+
-        '<div class="upSideCard"><h3>Upload Guidelines</h3><ul class="upGuideList">'+guideLis+'</ul></div>'+
-        '<div class="upSideCard"><h3>Tips for better visibility</h3><ul class="upTipList">'+tipLis+'</ul></div>'+
       '</aside>'+
+    '</div>';
+  }
+
+  // ---- field glyphs ------------------------------------------------------
+  // Each detail row leads with a tinted mark so a long form reads as a list of
+  // recognisable things rather than a stack of identical boxes. Keyed by field
+  // name where the field deserves its own, by type otherwise.
+  var ICO_PENCIL = '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+      ICO_LINES  = '<path d="M4 6h16"/><path d="M4 12h11"/><path d="M4 18h7"/>',
+      ICO_TAG    = '<path d="M12.9 2.9H4.6A1.7 1.7 0 0 0 2.9 4.6v8.3a2 2 0 0 0 .6 1.4l7.2 7.2a2 2 0 0 0 2.8 0l6.6-6.6a2 2 0 0 0 0-2.8l-7.2-7.2a2 2 0 0 0-1.4-.6z"/><circle cx="7.4" cy="7.4" r="1.3"/>',
+      ICO_HASH   = '<path d="M4 9h16"/><path d="M4 15h16"/><path d="M10 3 8 21"/><path d="M16 3l-2 18"/>',
+      ICO_SLIDER = '<path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1.5 14h5"/><path d="M9.5 8h5"/><path d="M17.5 16h5"/>',
+      ICO_MONEY  = '<path d="M12 1.8v20.4"/><path d="M17 5.5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+      ICO_CAL    = '<rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M16 2.5v4"/><path d="M8 2.5v4"/><path d="M3 10h18"/>',
+      ICO_CHECK  = '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+      ICO_SHIELD = '<path d="M12 21.6s7.6-3.8 7.6-9.6V5.4L12 2.4 4.4 5.4v6.6c0 5.8 7.6 9.6 7.6 9.6Z"/>',
+      ICO_SCREEN = '<rect x="2.5" y="3.5" width="19" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 16.5V21"/>',
+      ICO_BUILD  = '<rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M9 7h2"/><path d="M13 7h2"/><path d="M9 11h2"/><path d="M13 11h2"/><path d="M10 21.5v-4h4v4"/>',
+      ICO_LINK   = '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+      ICO_MAIL   = '<rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6 9 6.5L21 6"/>',
+      ICO_PIN    = '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+      ICO_COIN   = '<circle cx="12" cy="12" r="9"/><path d="M15 9.4a3.6 3.6 0 1 0 0 5.2"/>',
+      ICO_GRID   = '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
+      ICO_CLOCK  = '<circle cx="12" cy="12" r="9"/><path d="M12 6.8V12l3.2 2"/>';
+
+  var FIELD_ICO = {
+    title:['#8B5CF6',ICO_PENCIL],
+    description:['#22C55E',ICO_LINES], excerpt:['#22C55E',ICO_LINES], body:['#22C55E',ICO_LINES],
+    category:['#F59E0B',ICO_TAG],
+    tags:['#06B6D4',ICO_HASH],
+    software:['#EC4899',ICO_SCREEN],
+    license:['#F472B6',ICO_SHIELD],
+    price:['#22C55E',ICO_MONEY], salary_min:['#22C55E',ICO_MONEY], salary_max:['#22C55E',ICO_MONEY],
+    currency:['#FBBF24',ICO_COIN], salary_currency:['#FBBF24',ICO_COIN],
+    item_type:['#A855F7',ICO_GRID], employment_type:['#A855F7',ICO_GRID],
+    delivery_days:['#14B8A6',ICO_CLOCK], salary_unit:['#14B8A6',ICO_CLOCK],
+    company:['#3B82F6',ICO_BUILD],
+    company_url:['#3B82F6',ICO_LINK], apply_url:['#3B82F6',ICO_LINK],
+    apply_email:['#06B6D4',ICO_MAIL],
+    location_city:['#F97316',ICO_PIN], location_country:['#F97316',ICO_PIN],
+    applicant_countries:['#F97316',ICO_PIN], is_remote:['#F97316',ICO_PIN],
+    valid_through:['#14B8A6',ICO_CAL]
+  };
+  var TYPE_ICO = {
+    text:['#8B5CF6',ICO_PENCIL], area:['#22C55E',ICO_LINES], num:['#22C55E',ICO_MONEY],
+    date:['#14B8A6',ICO_CAL], sel:['#A78BFA',ICO_SLIDER], cat:['#F59E0B',ICO_TAG],
+    tags:['#06B6D4',ICO_HASH], chk:['#14B8A6',ICO_CHECK]
+  };
+  function fieldIco(k, t){ return FIELD_ICO[k] || TYPE_ICO[t] || ['#8B5CF6',ICO_PENCIL]; }
+
+  // ---- pick-from-a-list fields ------------------------------------------
+  // A native <select> opens the platform's own menu: it arrives in the
+  // platform's colours and knows nothing about the row it belongs to. These
+  // open the sheet's own dropdown instead, which inherits the row's tint the
+  // same way the artwork form's category and software pickers do. The chosen
+  // value lives on a hidden input keeping the field's id, so every read, draft
+  // save and draft restore path still finds it exactly where it was.
+  var DZ_CHEV = '<span class="upChev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" '+
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+
+    '<path d="m6 9 6 6 6-6"/></svg></span>';
+
+  function dzSelField(id, opts, want){
+    opts = opts || [];
+    var cur = null, i;
+    for(i=0;i<opts.length;i++){ if(String(opts[i][0]) === String(want)){ cur = opts[i]; break; } }
+    if(!cur) cur = opts[0] || ['',''];
+    return '<div class="upCatDd" id="'+id+'_dd">'+
+      '<button type="button" class="upCatTrigger" id="'+id+'_tr" '+
+        'onclick="dzSelToggle(event,\''+id+'\')" aria-haspopup="listbox">'+
+        '<span id="'+id+'_lb">'+esc(cur[1])+'</span>'+DZ_CHEV+
+      '</button>'+
+      '<div class="upCatPanel" id="'+id+'_pn" role="listbox">'+
+        opts.map(function(o){
+          return '<label class="upCatOpt"><input type="radio" name="'+id+'_r" value="'+esc(o[0])+'"'+
+            (String(o[0])===String(cur[0]) ? ' checked' : '')+
+            ' onchange="dzSelPick(\''+id+'\',this.value,this.parentNode.textContent)"> '+esc(o[1])+'</label>';
+        }).join('')+
+      '</div>'+
+      '<input type="hidden" id="'+id+'" value="'+esc(cur[0])+'">'+
+    '</div>';
+  }
+  function dzSelCloseAll(except){
+    var open = document.querySelectorAll('#upSecForms .upCatDd.open');
+    for(var i=0;i<open.length;i++){ if(open[i] !== except) open[i].classList.remove('open'); }
+  }
+  function dzSelToggle(e, id){
+    if(e) e.stopPropagation();
+    var dd = document.getElementById(id+'_dd'); if(!dd) return;
+    dzSelCloseAll(dd);
+    dzSchClose();                      // one menu at a time
+    dd.classList.toggle('open');
+  }
+  function dzSelPick(id, v, label){
+    var hid = document.getElementById(id);
+    if(hid) hid.value = v;
+    var lb = document.getElementById(id+'_lb');
+    if(lb) lb.textContent = String(label||'').trim() || v;
+    var dd = document.getElementById(id+'_dd');
+    if(dd) dd.classList.remove('open');
+  }
+  // a draft restore writes the hidden input directly, so the trigger has to be
+  // told what it now says
+  function dzSelSync(id){
+    var hid = document.getElementById(id), pn = document.getElementById(id+'_pn');
+    if(!hid || !pn) return;
+    var opts = pn.querySelectorAll('input[type=radio]');
+    for(var i=0;i<opts.length;i++){
+      var on = String(opts[i].value) === String(hid.value);
+      opts[i].checked = on;
+      if(on){
+        var lb = document.getElementById(id+'_lb');
+        if(lb) lb.textContent = String(opts[i].parentNode.textContent||'').trim();
+      }
+    }
+  }
+  function dzSelSyncAll(sec){
+    (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
+      if(fd.t === 'sel' || fd.t === 'cat') dzSelSync('dz_'+sec+'_'+fd.k);
+    });
+  }
+  document.addEventListener('click', function(ev){
+    var open = document.querySelectorAll('#upSecForms .upCatDd.open');
+    for(var i=0;i<open.length;i++){
+      if(!open[i].contains(ev.target)) open[i].classList.remove('open');
+    }
+  });
+  // wrap a control as one detail row
+  function fcard(k, t, inner){
+    var ic = fieldIco(k, t);
+    return '<div class="upField upFCard" style="--fc:'+ic[0]+'">'+
+      '<span class="upFIco" aria-hidden="true">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
+        'stroke-linecap="round" stroke-linejoin="round">'+ic[1]+'</svg>'+
+      '</span>'+
+      '<div class="upFBody">'+inner+'</div>'+
     '</div>';
   }
 
@@ -563,22 +766,19 @@
       // A pref field opens on the member's own transacting currency rather
       // than on whatever happens to be first in the list.
       var want = fd.pref ? dzPrefCurrency() : null;
-      body = '<select class="dzSel" id="'+id+'">'+ (fd.options||[]).map(function(o){
-        return '<option value="'+esc(o[0])+'"'+(o[0]===want?' selected':'')+'>'+
-               esc(o[1])+'</option>'; }).join('') +'</select>';
+      body = dzSelField(id, fd.options || [], want);
     } else if(fd.t === 'chk'){
-      return '<div class="upField"><label class="upCatOpt" style="padding:.5rem 0">'+
-             '<input type="checkbox" id="'+id+'"> '+esc(fd.label)+'</label>'+hint+'</div>';
+      return fcard(fd.k, fd.t, '<label class="upCatOpt upFChk">'+
+             '<input type="checkbox" id="'+id+'"> '+esc(fd.label)+'</label>'+hint);
     } else if(fd.t === 'cat'){
       var opts = (window.FG_SECTIONS && FG_SECTIONS[sec] && FG_SECTIONS[sec].opts) || [];
-      body = '<select class="dzSel" id="'+id+'">'+ opts.map(function(o){
-        return '<option value="'+esc(slugify(o))+'">'+esc(o)+'</option>'; }).join('') +'</select>';
+      body = dzSelField(id, opts.map(function(o){ return [slugify(o), o]; }), null);
     } else if(fd.t === 'tags'){
-      return '<div class="upField">'+lbl+
+      return fcard(fd.k, fd.t, lbl+
         '<div class="upTagBox" onclick="document.getElementById(\''+id+'\').focus()">'+
         '<span id="dzTags-'+sec+'"></span>'+
         '<input class="upTagInput" id="'+id+'" maxlength="20" placeholder="Add up to 10 tags…" '+
-        'onkeydown="dzTagKey(event,\''+sec+'\')"></div>'+hint+'</div>';
+        'onkeydown="dzTagKey(event,\''+sec+'\')"></div>'+hint);
     } else if(fd.t === 'file' || fd.t === 'image'){
       // dropzone instead of file input
       var acc   = fd.accept ? fd.accept : (fd.t === 'image' ? 'image/*' : '');
@@ -593,7 +793,7 @@
             ' onclick="if(typeof pfGuestGate===\'function\'&&pfGuestGate(event))return;"'+
             ' onchange="dzPick('+args+',this)">'+
           '<div class="dzFileEmpty">'+
-            secIco(sec, 'dzFileIco')+
+            secIco(sec)+
             '<div class="dzFileCopy">'+
               '<div class="dzFileTitle">Drag &amp; drop your '+(isImg ? 'image' : 'file')+' here</div>'+
               '<div class="dzFileSub">or browse from your device</div>'+
@@ -617,7 +817,7 @@
             ' onclick="if(typeof pfGuestGate===\'function\'&&pfGuestGate(event))return;"'+
             ' onchange="dzPick('+margs+',this)">'+
           '<div class="dzFileEmpty">'+
-            secIco(sec, 'dzFileIco')+
+            secIco(sec)+
             '<div class="dzFileCopy">'+
               '<div class="dzFileTitle">Drag &amp; drop the files you are selling</div>'+
               '<div class="dzFileSub">or browse from your device — you can add several</div>'+
@@ -628,7 +828,7 @@
           '<div class="dzFilePicked dzFileMulti" id="'+id+'_pk"></div>'+
         '</div>'+hint+'</div>';
     }
-    return '<div class="upField">'+lbl+body+hint+'</div>';
+    return fcard(fd.k, fd.t, lbl+body+hint);
   }
 
   // tags
@@ -1020,7 +1220,9 @@
           if(!el) return;
           if(el.type==='checkbox') el.checked=!!d.data[fd.k]; else el.value=d.data[fd.k];
         });
+        dzSelSyncAll(d.sec);   // the triggers read their hidden inputs back
         renderTags(d.sec);
+        upGrowAll();
         showToast('Draft loaded — re-attach any files, then publish');
       }, 60);
     });
@@ -1447,6 +1649,29 @@
     }
   }
 
+  // ---- growing text boxes -----------------------------------------------
+  // A description box that clips what is being written is a box the writer has
+  // to fight. Every text area on the upload page grows to fit its content, up
+  // to a ceiling past which it scrolls rather than pushing the publish button
+  // off the screen.
+  var UP_GROW_MAX = 460;
+  function upGrow(el){
+    if(!el || el.tagName !== 'TEXTAREA') return;
+    el.style.height = 'auto';
+    var h = el.scrollHeight;
+    el.style.height = Math.min(h, UP_GROW_MAX) + 'px';
+    el.style.overflowY = h > UP_GROW_MAX ? 'auto' : 'hidden';
+  }
+  function upGrowAll(){
+    var els = document.querySelectorAll('#pfUpMod textarea');
+    for(var i=0;i<els.length;i++) upGrow(els[i]);
+  }
+  // capture, so it fires for boxes built after this listener was attached
+  document.addEventListener('input', function(e){
+    var t = e.target;
+    if(t && t.tagName === 'TEXTAREA' && t.closest && t.closest('#pfUpMod')) upGrow(t);
+  }, true);
+
   // runs last in body
   buildTabs();
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildTabs);
@@ -1465,6 +1690,13 @@
   window.dzSecEnter      = dzSecEnter;
   window.dzSecRender     = dzSecRender;
   window.upSwitchSection = upSwitchSection;
+  window.upGuideOpen     = upGuideOpen;
+  window.upGuideClose    = upGuideClose;
+  window.upGuideBackdrop = upGuideBackdrop;
+  window.upGrow          = upGrow;
+  window.upGrowAll       = upGrowAll;
+  window.dzSelToggle     = dzSelToggle;
+  window.dzSelPick       = dzSelPick;
   window.dzSubmit        = dzSubmit;
   window.dzResetForm     = dzResetForm;
   window.dzTagKey        = dzTagKey;

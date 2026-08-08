@@ -4,6 +4,29 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v125 — the upload page, rebuilt.
+       The bar is the profile's and the gallery's: the page's own mark and
+       name on the left, one control on the right. That control is an (i),
+       and it holds the guidelines and the visibility tips for whichever tab
+       is open — they used to stand in a column beside the form and repeat
+       themselves once per section, which cost a column and told a phone
+       nothing until it had scrolled past the whole form.
+       The tabs are the gallery's chips now, one colour per section, centred
+       wherever the row fits and scrolled sideways where it does not.
+       The form is one card: the dropzone at its head, then a row per detail
+       with the field's own tinted glyph beside it, and the publish button
+       outside the card so the page reads invite, details, act. Every text
+       box grows to fit what is written in it rather than clipping it.
+       Choosing a file now looks the way the marketplace picker already
+       looked — a row naming the file, sizing it and saying it is ready —
+       and that picked state is drawn in colour, green-edged, in both
+       places. The empty zone's badge took the accent too; it was a white
+       glyph on no background, invisible on the light theme.
+       Every pick-from-a-list field opens the sheet's own menu instead of
+       the platform's <select> popup, tinted to the row that opened it. The
+       page is one column at every width, capped and centred on a desktop.
+       Changed: css/hero.css, css/upload.css, index.html, js/albums.js,
+       js/drafts.js, js/mywork.js, js/pfedit.js, js/sections.js, sw.js.
    v124 — even spacing round the tabs, a calmer switch, and Tags stops
        looking pressed.
        The gap above the chip row was 9px and the gap below it 35px. Both
@@ -1811,7 +1834,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v124';
+const CACHE_VERSION = 'v125';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

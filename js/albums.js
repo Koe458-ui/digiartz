@@ -1079,6 +1079,43 @@
     return true;
   }
 
+  // ---- the artwork dropzone's picked face --------------------------------
+  // The marketplace picker already had the right idea: once a file is chosen
+  // the dashed invite steps aside for a row that shows the thumbnail, names the
+  // file and says it is ready. The artwork zone wears the same face.
+  function pfPaintPicked(o){
+    var dz = document.getElementById('pfDz');
+    if(!dz) return;
+    if(!o){ dz.classList.remove('dzHasFile'); return; }
+    var set = function(id, tx){ var el = document.getElementById(id); if(el) el.textContent = tx; };
+    set('pfUpFileNm', o.name || 'Selected image');
+    var sz = o.size && window.dzHelpers ? window.dzHelpers.bytes(o.size) : '';
+    set('pfUpFileSz', sz || o.meta || 'Image');
+    set('pfUpFileOk', o.note || 'Ready to publish');
+    // an edit shows what is already published — there is nothing to swap here
+    var acts = document.getElementById('pfUpFileActs');
+    if(acts) acts.style.display = o.locked ? 'none' : '';
+    var pw = document.getElementById('pfUpPrevWrap');
+    if(pw) pw.style.display = '';
+    dz.classList.add('dzHasFile');
+  }
+  // Replace and Remove, the two the marketplace rows carry
+  function pfReplaceFile(e){
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    if(pfGuestGate(e)) return;
+    var input = document.getElementById('pfUpF');
+    if(input){ input.value = ''; input.click(); }
+  }
+  function pfClearFile(e){
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    pf.upFile = null;
+    pf.upThumbFocus = null;
+    var input = document.getElementById('pfUpF'); if(input) input.value = '';
+    var prev = document.getElementById('pfUpPrev');
+    if(prev){ prev.removeAttribute('style'); prev.removeAttribute('src'); }
+    pfPaintPicked(null);
+  }
+
   // reset upload session
   function pfUpResetSession(){
     pf.upFile = null;
@@ -1088,8 +1125,8 @@
     updrActiveId = null;
     var prev = document.getElementById('pfUpPrev');
     if(prev){ prev.removeAttribute('style'); prev.removeAttribute('src'); }
-    var pw = document.getElementById('pfUpPrevWrap'); if(pw) pw.style.display = 'none';
-    var tb = document.getElementById('pfUpThumbBtn'); if(tb) tb.style.display = 'none';
+    var _upf = document.getElementById('pfUpF'); if(_upf) _upf.value = '';
+    pfPaintPicked(null);
     var pp = document.getElementById('pfPagesPreview'); if(pp) pp.innerHTML = '';
     var nm = document.getElementById('pfUpNm');   if(nm) nm.value = '';
     var ds = document.getElementById('pfUpDesc'); if(ds) ds.value = '';
@@ -1131,6 +1168,7 @@
     document.getElementById('pfDz').style.display='';
     document.getElementById('pfUpBtn').textContent = '📤 Upload Artwork';
     document.getElementById('pfUpMod').classList.add('open');
+    if(typeof upGrowAll === 'function') upGrowAll();
     // page mode locks scroll
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';

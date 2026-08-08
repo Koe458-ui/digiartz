@@ -398,8 +398,6 @@
       .upSecBtn:active{transform:none;}
     }
     .dzHint{font-size:.72rem;color:var(--txd);margin-top:.3rem;line-height:1.5;}
-    .dzSel{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);font-family:var(--fb);font-size:.85rem;padding:.6rem .7rem;outline:none;}
-    .dzSel:focus{border-color:var(--pg);}
     /* file picker */
     .dzFileField{margin-bottom:1.75rem;}
     .dzFileZone{

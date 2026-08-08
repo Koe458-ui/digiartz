@@ -272,11 +272,6 @@
     .upFCard .upSchedDay.sel{background:var(--fc,var(--pg));border-color:var(--fc,var(--pg));color:#fff;}
     .upFCard .upSchedDay.today:not(.sel){border-color:color-mix(in srgb,var(--fc,var(--pg)) 50%,transparent);}
     .upFCard .upSchedActs .upBtnPri{background:var(--fc,var(--pg));box-shadow:none;}
-    /* native select, stripped to the row but keeping its own arrow */
-    .upFCard .dzSel{
-      background:none;border:0;border-radius:0;padding:.1rem 0;font-size:.88rem;
-      color:var(--tx);width:100%;
-    }
     .upFCard .upFChk{padding:.2rem 0 0;font-size:.86rem;color:var(--tx);}
     .upFCard .dzHint,.upFCard .upSchedHint{margin-top:.35rem;}
     /* a text box that grows with what is written in it — the height is set by
@@ -361,14 +356,9 @@
     .upInWrap{position:relative;}
     .upIn{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);padding:.68rem 3.3rem .68rem .85rem;font-size:.86rem;font-family:var(--fb);outline:none;transition:border-color .2s;}
     .upIn:focus{border-color:var(--pg);}
-    select.upIn{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right .85rem center;background-size:1rem;}
-    select.upIn option{background:var(--sur2);color:var(--tx);}
-    select.upIn option:disabled{color:color-mix(in srgb,var(--tx) 40%,transparent);}
     .upArea{resize:vertical;min-height:4.5rem;line-height:1.5;padding-right:.85rem;}
     .upInWrapArea .upCount{top:auto;bottom:.5rem;}
     .upCount{position:absolute;right:.75rem;top:.72rem;font-size:.68rem;color:rgba(var(--tx2-rgb),.4);pointer-events:none;}
-    /* one field per line */
-    .upRow2{display:grid;grid-template-columns:1fr;gap:1rem;}
 
     .upCatDd{position:relative;}
     .upCatTrigger{width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);padding:.68rem .85rem;font-size:.84rem;cursor:pointer;font-family:var(--fb);text-align:left;}
@@ -420,7 +410,6 @@
 
     .upSide{display:flex;flex-direction:column;gap:1rem;}
     .upSideCard{background:rgba(var(--pg-rgb),.03);border:1px solid rgba(var(--pg-rgb),.08);border-radius:12px;padding:1rem;}
-    .upSideCard h3{font-size:.82rem;font-weight:700;color:var(--tx);margin-bottom:.7rem;}
     .upGuideList,.upTipList{list-style:none;}
     .upGuideList{display:flex;flex-direction:column;gap:.7rem;}
     .upGuideList li{display:flex;gap:.6rem;font-size:.77rem;color:rgba(var(--tx2-rgb),.62);align-items:flex-start;}

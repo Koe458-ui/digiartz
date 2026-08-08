@@ -25,8 +25,13 @@
        Every pick-from-a-list field opens the sheet's own menu instead of
        the platform's <select> popup, tinted to the row that opened it. The
        page is one column at every width, capped and centred on a desktop.
-       Changed: css/hero.css, css/upload.css, index.html, js/albums.js,
-       js/drafts.js, js/mywork.js, js/pfedit.js, js/sections.js, sw.js.
+       Dead with it: the section form's <select> skin, which had three
+       copies across hero.css, overrides.css and upload.css and no element
+       left to paint; the two-up field row; select.upIn; and the heading
+       rule for the guidance cards that moved into the sheet.
+       Changed: css/hero.css, css/overrides.css, css/upload.css, index.html,
+       js/albums.js, js/drafts.js, js/mywork.js, js/pfedit.js,
+       js/sections.js, sw.js.
    v124 — even spacing round the tabs, a calmer switch, and Tags stops
        looking pressed.
        The gap above the chip row was 9px and the gap below it 35px. Both

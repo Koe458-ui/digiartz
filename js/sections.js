@@ -366,9 +366,9 @@
   // the round tinted badge an empty dropzone leads with. It was a white-stroked
   // glyph on no background, which is invisible on the light theme's white
   // surface; it takes the accent from the page now, like the artwork zone's.
-  function secIco(sec, cls){
+  function secIco(sec){
     var k = TAB_ICO[sec] || 'artworks';
-    return '<span class="upDzBadge'+(cls ? ' '+cls : '')+'" aria-hidden="true">'+
+    return '<span class="upDzBadge" aria-hidden="true">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" '+
       'stroke-linejoin="round">'+SEC_SVG[k]+'</svg></span>';
   }
@@ -793,7 +793,7 @@
             ' onclick="if(typeof pfGuestGate===\'function\'&&pfGuestGate(event))return;"'+
             ' onchange="dzPick('+args+',this)">'+
           '<div class="dzFileEmpty">'+
-            secIco(sec, 'dzFileIco')+
+            secIco(sec)+
             '<div class="dzFileCopy">'+
               '<div class="dzFileTitle">Drag &amp; drop your '+(isImg ? 'image' : 'file')+' here</div>'+
               '<div class="dzFileSub">or browse from your device</div>'+
@@ -817,7 +817,7 @@
             ' onclick="if(typeof pfGuestGate===\'function\'&&pfGuestGate(event))return;"'+
             ' onchange="dzPick('+margs+',this)">'+
           '<div class="dzFileEmpty">'+
-            secIco(sec, 'dzFileIco')+
+            secIco(sec)+
             '<div class="dzFileCopy">'+
               '<div class="dzFileTitle">Drag &amp; drop the files you are selling</div>'+
               '<div class="dzFileSub">or browse from your device — you can add several</div>'+

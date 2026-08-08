@@ -376,8 +376,8 @@
   // one colour per section, so a chip, its guide sheet and its form icons all
   // speak with the same voice
   var SEC_COLOR = {
-    artwork:'#8B5CF6', resources:'#22C55E', blog:'#3B82F6',
-    marketplace:'#F59E0B', jobs:'#EC4899'
+    artwork:'var(--upcViolet)', resources:'var(--upcGreen)', blog:'var(--upcBlue)',
+    marketplace:'var(--upcAmber)', jobs:'var(--upcPink)'
   };
   // the chip's glyph: the section's own outline, drawn in the section's colour
   function tabIco(sec){
@@ -493,7 +493,7 @@
     var kick = document.getElementById('upGuideKicker');
     if(kick) kick.textContent = (TAB_LABEL[upSec] || 'Upload').toUpperCase();
     var mod = document.getElementById('upGuideMod');
-    if(mod) mod.style.setProperty('--upGdC', SEC_COLOR[upSec] || '#8B5CF6');
+    if(mod) mod.style.setProperty('--upGdC', SEC_COLOR[upSec] || C_VIO);
     var out = '';
     if(g.guide.length){
       out += '<div class="upGdSec"><h3>What we ask</h3><ul class="upGuideList">'+
@@ -537,7 +537,7 @@
   // schedule picker markup
   function dzSchedField(){
     return ''+
-    '<div class="upField upFCard" id="dzSchedField" style="--fc:#14B8A6">'+
+    '<div class="upField upFCard" id="dzSchedField" style="--fc:var(--upcTeal)">'+
       '<span class="upFIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '+
         'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+
         '<rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M16 2.5v4"/>'+
@@ -631,30 +631,35 @@
       ICO_GRID   = '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
       ICO_CLOCK  = '<circle cx="12" cy="12" r="9"/><path d="M12 6.8V12l3.2 2"/>';
 
+  var C_VIO='var(--upcViolet)', C_GRN='var(--upcGreen)',  C_BLU='var(--upcBlue)',
+      C_AMB='var(--upcAmber)',  C_PNK='var(--upcPink)',   C_CYN='var(--upcCyan)',
+      C_TEA='var(--upcTeal)',   C_ORG='var(--upcOrange)', C_PUR='var(--upcPurple)',
+      C_ROS='var(--upcRose)',   C_YEL='var(--upcYellow)', C_LIL='var(--upcLilac)';
+
   var FIELD_ICO = {
-    title:['#8B5CF6',ICO_PENCIL],
-    description:['#22C55E',ICO_LINES], excerpt:['#22C55E',ICO_LINES], body:['#22C55E',ICO_LINES],
-    category:['#F59E0B',ICO_TAG],
-    tags:['#06B6D4',ICO_HASH],
-    software:['#EC4899',ICO_SCREEN],
-    license:['#F472B6',ICO_SHIELD],
-    price:['#22C55E',ICO_MONEY], salary_min:['#22C55E',ICO_MONEY], salary_max:['#22C55E',ICO_MONEY],
-    currency:['#FBBF24',ICO_COIN], salary_currency:['#FBBF24',ICO_COIN],
-    item_type:['#A855F7',ICO_GRID], employment_type:['#A855F7',ICO_GRID],
-    delivery_days:['#14B8A6',ICO_CLOCK], salary_unit:['#14B8A6',ICO_CLOCK],
-    company:['#3B82F6',ICO_BUILD],
-    company_url:['#3B82F6',ICO_LINK], apply_url:['#3B82F6',ICO_LINK],
-    apply_email:['#06B6D4',ICO_MAIL],
-    location_city:['#F97316',ICO_PIN], location_country:['#F97316',ICO_PIN],
-    applicant_countries:['#F97316',ICO_PIN], is_remote:['#F97316',ICO_PIN],
-    valid_through:['#14B8A6',ICO_CAL]
+    title:[C_VIO,ICO_PENCIL],
+    description:[C_GRN,ICO_LINES], excerpt:[C_GRN,ICO_LINES], body:[C_GRN,ICO_LINES],
+    category:[C_AMB,ICO_TAG],
+    tags:[C_CYN,ICO_HASH],
+    software:[C_PNK,ICO_SCREEN],
+    license:[C_ROS,ICO_SHIELD],
+    price:[C_GRN,ICO_MONEY], salary_min:[C_GRN,ICO_MONEY], salary_max:[C_GRN,ICO_MONEY],
+    currency:[C_YEL,ICO_COIN], salary_currency:[C_YEL,ICO_COIN],
+    item_type:[C_PUR,ICO_GRID], employment_type:[C_PUR,ICO_GRID],
+    delivery_days:[C_TEA,ICO_CLOCK], salary_unit:[C_TEA,ICO_CLOCK],
+    company:[C_BLU,ICO_BUILD],
+    company_url:[C_BLU,ICO_LINK], apply_url:[C_BLU,ICO_LINK],
+    apply_email:[C_CYN,ICO_MAIL],
+    location_city:[C_ORG,ICO_PIN], location_country:[C_ORG,ICO_PIN],
+    applicant_countries:[C_ORG,ICO_PIN], is_remote:[C_ORG,ICO_PIN],
+    valid_through:[C_TEA,ICO_CAL]
   };
   var TYPE_ICO = {
-    text:['#8B5CF6',ICO_PENCIL], area:['#22C55E',ICO_LINES], num:['#22C55E',ICO_MONEY],
-    date:['#14B8A6',ICO_CAL], sel:['#A78BFA',ICO_SLIDER], cat:['#F59E0B',ICO_TAG],
-    tags:['#06B6D4',ICO_HASH], chk:['#14B8A6',ICO_CHECK]
+    text:[C_VIO,ICO_PENCIL], area:[C_GRN,ICO_LINES], num:[C_GRN,ICO_MONEY],
+    date:[C_TEA,ICO_CAL], sel:[C_LIL,ICO_SLIDER], cat:[C_AMB,ICO_TAG],
+    tags:[C_CYN,ICO_HASH], chk:[C_TEA,ICO_CHECK]
   };
-  function fieldIco(k, t){ return FIELD_ICO[k] || TYPE_ICO[t] || ['#8B5CF6',ICO_PENCIL]; }
+  function fieldIco(k, t){ return FIELD_ICO[k] || TYPE_ICO[t] || [C_VIO,ICO_PENCIL]; }
 
   // ---- pick-from-a-list fields ------------------------------------------
   // A native <select> opens the platform's own menu: it arrives in the

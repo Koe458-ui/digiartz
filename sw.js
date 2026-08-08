@@ -4,6 +4,29 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v127 — the upload page's colours come up bright.
+       Every colour on the page was mid-tone: legible, but flat against the
+       near-black the page runs under. They move up a step — the field
+       glyphs, the section chips, the dropzone's dashed edge and badge, and
+       the green a chosen file is marked ready in.
+       They are named now rather than typed out at each use: one --upc*
+       token per role, set twice, because no single hex is bright on both
+       the near-black and the light theme's white. The dark themes take the
+       luminous step, the light theme the saturated one.
+       Two colours stay put: the Select and publish buttons. They are fills
+       with white type on them, and a violet bright enough to please the
+       eye drops that type to about 2.7:1.
+       Changed: css/hero.css, css/upload.css, index.html, js/sections.js,
+       sw.js.
+   v126 — the upload headline reads in the profile's blue.
+       Upload Artwork, Share a Resource, List a Product, Write a Post and
+       Post a Job all take the blue the profile's Edit Profile button
+       wears. That button carries #2563EB as a fill with white on it, where
+       it reads bright; as type on this page's near-black it goes muted, so
+       the dark themes take the step above it and the light theme, whose
+       ground is pale like the button's own white, takes the profile's
+       exact value.
+       Changed: css/overrides.css, css/upload.css, index.html, sw.js.
    v125 — the upload page, rebuilt.
        The bar is the profile's and the gallery's: the page's own mark and
        name on the left, one control on the right. That control is an (i),
@@ -1839,7 +1862,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v125';
+const CACHE_VERSION = 'v127';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

@@ -4,6 +4,15 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v126 — the upload headline reads in the profile's blue.
+       Upload Artwork, Share a Resource, List a Product, Write a Post and
+       Post a Job all take the blue the profile's Edit Profile button
+       wears. That button carries #2563EB as a fill with white on it, where
+       it reads bright; as type on this page's near-black it goes muted, so
+       the dark themes take the step above it and the light theme, whose
+       ground is pale like the button's own white, takes the profile's
+       exact value.
+       Changed: css/overrides.css, css/upload.css, index.html, sw.js.
    v125 — the upload page, rebuilt.
        The bar is the profile's and the gallery's: the page's own mark and
        name on the left, one control on the right. That control is an (i),
@@ -1839,7 +1848,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v125';
+const CACHE_VERSION = 'v126';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

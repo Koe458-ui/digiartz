@@ -41,11 +41,18 @@
       --pg-rgb:139,92,246;--pgd-rgb:124,58,237;
       --pdim:rgba(139,92,246,.16);
       --text-on-accent:#FFFFFF;
+      /* The headline's blue. Edit Profile wears #2563EB as a button fill with
+         white on it, where it reads bright; as type on this page's near-black
+         it goes muted, so the dark themes take the step above it and the light
+         theme — where the ground is pale, like the button's own white — takes
+         the profile's exact value. */
+      --upTitle:#3B82F6;
     }
     html[data-theme="light"] #pfUpMod,html[data-theme="light"] #pfUpMod *,
     html[data-theme="light"] .upGdPop,html[data-theme="light"] .upGdPop *{
       --pg:#7C3AED;--pgd:#6D28D9;--pb:#6D28D9;--ps:#5B21B6;
       --pg-rgb:124,58,237;--pgd-rgb:109,40,217;
+      --upTitle:#2563EB;
     }
     /* The upload sheet's title bar, drawn to the profile's and the gallery's
        pattern: the page's own mark and name on the left, its one control on

@@ -13,12 +13,18 @@
       --upcAmber:#FBBF24;  --upcPink:#F472B6;  --upcCyan:#22D3EE;
       --upcTeal:#2DD4BF;   --upcOrange:#FB923C;--upcPurple:#C084FC;
       --upcRose:#FB7185;   --upcYellow:#FCD34D;--upcLilac:#C4B5FD;
+      /* the ready mark's word is 9px, so it needs its own darker step where
+         the tint it sits in is pale */
+      --upcGreenInk:#4ADE80;
+      --upcReq:#F87171;
     }
     html[data-theme="light"]{
       --upcViolet:#7C3AED; --upcGreen:#16A34A; --upcBlue:#2563EB;
       --upcAmber:#D97706;  --upcPink:#DB2777;  --upcCyan:#0891B2;
       --upcTeal:#0D9488;   --upcOrange:#EA580C;--upcPurple:#9333EA;
       --upcRose:#E11D48;   --upcYellow:#CA8A04;--upcLilac:#8B5CF6;
+      --upcGreenInk:#15803D;
+      --upcReq:#B91C1C;
     }
 
     .upPop{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:.9rem;opacity:0;pointer-events:none;transition:opacity .25s ease;isolation:isolate;}
@@ -57,12 +63,19 @@
     /* The viewer scope this page borrows is deliberately colourless, because a
        page showing artwork should let the artwork carry the colour. This page
        shows a form, so it takes the brand's violet back — the dropzone, the
-       publish button and the tag chips all read from it. */
+       publish button and the tag chips all read from it.
+
+       A fill and the type on it are one decision, so they are set together.
+       Over the near-black the fill is the bright violet and its label is ink,
+       because white on a violet that bright falls to about 2.7:1. Over the
+       light theme's white the fill is the saturated violet and its label is
+       white, for the same reason in reverse — the pair flips, and nothing
+       that sits on a fill reads from anywhere else. */
     #pfUpMod,#pfUpMod *,.upGdPop,.upGdPop *{
-      --pg:#8B5CF6;--pgd:#7C3AED;--pb:#B9A3FB;--ps:#C9B8FD;
-      --pg-rgb:139,92,246;--pgd-rgb:124,58,237;
-      --pdim:rgba(139,92,246,.16);
-      --text-on-accent:#FFFFFF;
+      --pg:#A78BFA;--pgd:#B49BFF;--pb:#C4B5FD;--ps:#C4B5FD;
+      --pg-rgb:167,139,250;--pgd-rgb:180,155,255;
+      --pdim:rgba(167,139,250,.16);
+      --text-on-accent:#1A1526;
       /* The headline's blue. Edit Profile wears #2563EB as a button fill with
          white on it, where it reads bright; as type on this page's near-black
          it goes muted, so the dark themes take the step above it and the light
@@ -74,6 +87,8 @@
     html[data-theme="light"] .upGdPop,html[data-theme="light"] .upGdPop *{
       --pg:#7C3AED;--pgd:#6D28D9;--pb:#6D28D9;--ps:#5B21B6;
       --pg-rgb:124,58,237;--pgd-rgb:109,40,217;
+      --pdim:rgba(124,58,237,.10);
+      --text-on-accent:#FFFFFF;
       --upTitle:#2563EB;
     }
     /* The upload sheet's title bar, drawn to the profile's and the gallery's
@@ -193,7 +208,10 @@
     .upDraftGhost{cursor:default;background:rgba(var(--pg-rgb),.02);border-style:dashed;border-color:rgba(var(--pg-rgb),.14);}
     .upDraftGhost:hover{transform:none;border-color:rgba(var(--pg-rgb),.14);}
     .upDraftGhostIn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:rgba(var(--pg-rgb),.28);}
-    .upDraftGhost .upDraftExp{background:rgba(214,58,63,.45);}
+    .upDraftGhost .upDraftExp{
+      background:color-mix(in srgb,var(--tc) 28%,transparent);
+      color:var(--tx);box-shadow:none;
+    }
     /* draft rail */
     .upDraftRow{
       --slots:2;
@@ -297,10 +315,13 @@
     .upFCard .upCatSearch:focus{border-color:var(--fc,var(--pg));}
     .upFCard .upCatSearchWrap{border-bottom-color:color-mix(in srgb,var(--fc,var(--pg)) 22%,transparent);}
     /* the schedule row's calendar, in the schedule row's colour */
+    /* The row's colour tints and outlines the calendar, but does not fill
+       anything that carries type. --fc is a different hue per row and each
+       theme moves it, so a label on top of it would need its own ink twelve
+       times over; the two filled things here keep the accent, whose ink is
+       set beside it. */
     .upFCard .upSchedDay:hover:not(:disabled){background:color-mix(in srgb,var(--fc,var(--pg)) 18%,transparent);}
-    .upFCard .upSchedDay.sel{background:var(--fc,var(--pg));border-color:var(--fc,var(--pg));color:#fff;}
     .upFCard .upSchedDay.today:not(.sel){border-color:color-mix(in srgb,var(--fc,var(--pg)) 50%,transparent);}
-    .upFCard .upSchedActs .upBtnPri{background:var(--fc,var(--pg));box-shadow:none;}
     .upFCard .upFChk{padding:.2rem 0 0;font-size:.86rem;color:var(--tx);}
     .upFCard .dzHint,.upFCard .upSchedHint{margin-top:.35rem;}
     /* a text box that grows with what is written in it — the height is set by
@@ -381,7 +402,7 @@
     /* a detail row is spaced by the card's gap, not by its own margin */
     .upField.upFCard{margin-bottom:0;}
     .upLbl{display:block;font-size:.78rem;font-weight:700;color:var(--tx);margin-bottom:.4rem;letter-spacing:.02em;}
-    .upReq{color:#f87171;}
+    .upReq{color:var(--upcReq,#f87171);}
     .upInWrap{position:relative;}
     .upIn{width:100%;background:rgba(var(--pg-rgb),.045);border:1px solid rgba(var(--pg-rgb),.1);border-radius:8px;color:var(--tx);padding:.68rem 3.3rem .68rem .85rem;font-size:.86rem;font-family:var(--fb);outline:none;transition:border-color .2s;}
     .upIn:focus{border-color:var(--pg);}

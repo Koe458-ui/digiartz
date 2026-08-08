@@ -4,6 +4,26 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v128 — the buttons come up bright too, and the page is checked on
+       every theme at every width.
+       The Select and publish buttons were the two colours held back, on
+       the grounds that white on a bright violet falls to about 2.7:1. The
+       label goes to ink instead and the fill comes up with everything
+       else. A fill and the type on it are one decision now, set as a pair
+       and flipped by theme: bright violet with ink over the near-black,
+       saturated violet with white over the light theme's page.
+       The calendar stopped filling its selected day with the row's own
+       colour. --fc is a different hue per row and each theme moves it, so
+       a label on it would need its own ink twelve times over; the two
+       filled things there take the accent, whose ink is set beside it.
+       Two older faults surfaced under the same check, both light theme
+       only: the required asterisk was a pale red on a pale card at 2.4:1,
+       and the ghost draft slot's expiry chip was white on a 45% red at
+       1.09:1 — the chip is neutral now, which is what an empty slot with
+       no expiry should have said anyway.
+       1072 contrast checks across four themes and four widths, none
+       failing, nothing overflowing sideways.
+       Changed: css/hero.css, css/upload.css, index.html, sw.js.
    v127 — the upload page's colours come up bright.
        Every colour on the page was mid-tone: legible, but flat against the
        near-black the page runs under. They move up a step — the field
@@ -1862,7 +1882,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v127';
+const CACHE_VERSION = 'v128';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

@@ -4,6 +4,51 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v135 — a job posting says the whole job.
+       The form asked for a title, a company, one description box and a pay
+       range. Everything an applicant actually decides on — the hours, the
+       timezone, what to send, when it closes, whether there is one opening
+       or five — was either buried inside that one box or simply not asked
+       for, so the reader had to guess and the poster had to write an essay.
+       Forty fields now, in the order a job ad reads: who is hiring, what the
+       role is, where and when it happens, what it pays, how to apply.
+       Every text field carries a floor and a ceiling. The ceiling is the
+       element's own maxlength, which means the keystroke past it never
+       lands — there is nothing to warn about because the text does not
+       enter. Numbers work the same way by hand, since a number input hands
+       back an empty string for anything it dislikes and so cannot say what
+       was typed: the digit that would take the figure past its ceiling is
+       dropped as it is typed, so 10000000 openings is 100 and 999 years of
+       experience is 9. The floor cannot be enforced that way, because a
+       field is under it the whole time it is being filled in, so it is
+       shown instead — a count on the label line, opposite the label, in the
+       page's own muted ink, going to the same red the required asterisk
+       wears while the field is short. Publish refuses while any of them is,
+       and takes you to the field rather than naming a number.
+       Both bounds are repeated as table constraints, because a form is a
+       courtesy and a constraint is a guarantee: measured, the table rejects
+       a 200k-character company blurb, 9999 years of experience, a thousand
+       eligible countries and negative pay on its own, with no browser
+       involved.
+       Three questions decide which others get asked. A remote posting is
+       never asked for a city and a hybrid one never for a list of eligible
+       countries; a permanent role is never asked how long the contract
+       runs. A row that is not on the form is not required and is not read
+       when publishing, so an answer left behind by an earlier choice cannot
+       leak into the posting.
+       work_mode replaces the "100% remote" checkbox, which could not say
+       hybrid. is_remote stays and stays authoritative — the two location
+       constraints, the cards and the search index are all written against
+       it — and is kept in step. Postings written before any of this still
+       render: every new block is dropped when empty, which for them is all
+       of them.
+       The detail view lays the posting out instead of printing one box, and
+       says who posted it, which it never did. Visibility decides whether a
+       posting is listed at all, and featured ones sort first.
+       Search applies visibility too, since searching is exactly how an
+       unlisted posting would otherwise be found.
+       Changed: js/sections.js, js/search.js, css/upload.css, index.html,
+       sw.js, supabase/migrations/20260809_jobs_full_posting.sql.
    v134 — the showcase shows the artwork, and the part of it the uploader
        picked.
        The scrim was sized by eye and it buried the picture. Two
@@ -2068,7 +2113,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v134';
+const CACHE_VERSION = 'v135';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2101,7 +2146,7 @@ const SHELL_URLS = [
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=6',
+  '/css/upload.css?v=7',
   '/css/widgets.css?v=3',
   '/css/overrides.css?v=5',
   '/css/select.css?v=2',
@@ -2135,7 +2180,7 @@ const SHELL_URLS = [
   '/js/mywork.js?v=8',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=4',
+  '/js/search.js?v=5',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
   '/js/effects.js?v=6',
@@ -2144,7 +2189,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=80',
+  '/js/sections.js?v=81',
   '/js/navprogress.js?v=5'
 ];
 

@@ -77,7 +77,21 @@
     },
     jobs: {
       table:'jobs', kind:'list', noun:'job',
-      select:'id,user_id,title,company,company_url,description,category,tags,employment_type,is_remote,location_city,location_country,applicant_countries,salary_min,salary_max,salary_currency,salary_unit,apply_url,apply_email,valid_through,created_at'
+      // Only public postings reach the list. Unlisted ones stay reachable by
+      // their own link and private ones by nothing, which is the whole point
+      // of asking.
+      eq:{ visibility:'public' },
+      // featured first, then newest — the order the index is built for
+      order:[['featured',false],['created_at',false]],
+      select:'id,user_id,title,company,company_url,about_company,description,category,tags,'+
+             'employment_type,experience_level,years_experience,openings,'+
+             'responsibilities,requirements,required_skills,nice_to_have_skills,benefits,'+
+             'work_mode,is_remote,location_city,location_country,applicant_countries,'+
+             'timezone,working_hours,schedule,start_date,contract_duration,'+
+             'salary_min,salary_max,salary_currency,salary_unit,apply_url,apply_email,'+
+             'application_instructions,application_materials,application_questions,'+
+             'portfolio_required,resume_required,cover_letter_required,'+
+             'valid_through,featured,created_at'
     }
   };
 
@@ -161,8 +175,15 @@
     if(!sb){ host.innerHTML = '<div class="dzEmpty">BACKEND NOT CONFIGURED</div>'; return; }
     dzBusy[sec] = true;
     host.innerHTML = '<div class="dzBusy">LOADING…</div>';
-    sb.from(cfg.table).select(selectFor(sec))
-      .eq('status','approved').order('created_at',{ascending:false}).limit(200)
+    // built up rather than chained in one line, because a section may add a
+    // filter of its own (jobs hide anything not published publicly) and may
+    // sort on more than one column
+    var q = sb.from(cfg.table).select(selectFor(sec)).eq('status','approved');
+    if(cfg.eq) Object.keys(cfg.eq).forEach(function(k){ q = q.eq(k, cfg.eq[k]); });
+    (cfg.order || [['created_at',false]]).forEach(function(o){
+      q = q.order(o[0], {ascending:!!o[1]});
+    });
+    q.limit(200)
       .then(function(res){
         dzBusy[sec] = false; dzLoaded[sec] = true;
         dzCache[sec] = (res && res.data) || [];
@@ -249,22 +270,57 @@
         '<div class="dzHint">'+esc(ex)+'</div>'+chips(r)+'</div></div>';
     }
     // jobs
-    var where = r.is_remote ? 'Remote'
-      : [r.location_city, r.location_country].filter(Boolean).join(', ');
-    var pay = (r.salary_min || r.salary_max)
-      ? [r.salary_min, r.salary_max].filter(function(x){return x!=null;})
-          .map(function(x){ return money(Math.round(Number(x)*100), r.salary_currency); }).join(' – ')
-        + (r.salary_unit ? ' / '+r.salary_unit.toLowerCase() : '')
-      : '';
+    var where = jobWhere(r), pay = jobPay(r);
     return '<div class="dzRow" data-id="'+id+'" onclick="dzOpenView(\'jobs\',\''+id+'\')">'+
       '<div class="dzRowIco">'+esc((r.company||'?').charAt(0).toUpperCase())+'</div>'+
       '<div style="min-width:0;flex:1"><div class="dzName">'+esc(r.title)+'</div>'+
-      '<div class="dzMeta" style="margin:.2rem 0 .3rem"><span>'+esc(r.company)+'</span>'+
+      '<div class="dzMeta" style="margin:.2rem 0 .3rem">'+
+      (r.featured ? '<span>★ Featured</span>' : '')+
+      '<span>'+esc(r.company)+'</span>'+
       (where ? '<span>'+esc(where)+'</span>' : '')+
-      '<span>'+esc(String(r.employment_type||'').replace('_',' '))+'</span>'+
+      '<span>'+esc(String(r.employment_type||'').replace(/_/g,' '))+'</span>'+
       (pay ? '<span>'+esc(pay)+'</span>' : '')+
+      (r.openings > 1 ? '<span>'+esc(String(r.openings))+' openings</span>' : '')+
       '<span>'+esc(ago(r.created_at))+'</span></div>'+chips(r)+'</div></div>';
   }
+
+  // ---- how a posting says where it is, and what it pays ------------------
+  // Both read the same way on a card, in the detail view and in a share
+  // preview, so they are written once. work_mode is the answer when the row
+  // has one; is_remote is the fallback for anything posted before the form
+  // could say "hybrid".
+  var WORK_MODE_LBL = { remote:'Remote', onsite:'On-site', hybrid:'Hybrid' };
+  function jobMode(r){ return r.work_mode || (r.is_remote ? 'remote' : 'onsite'); }
+  function jobWhere(r){
+    var mode = jobMode(r);
+    var place = [r.location_city, r.location_country].filter(Boolean).join(', ');
+    if(mode === 'remote') return 'Remote';
+    if(mode === 'hybrid') return place ? 'Hybrid · '+place : 'Hybrid';
+    return place;
+  }
+  // money() answers "Free" at zero, which is right for a listing priced at
+  // nothing and wrong for a job that pays from zero — an unpaid internship is
+  // not a free job. Pay formats its own figures.
+  function jobAmount(x, cur){
+    var n = Number(x);
+    try{
+      return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD',
+        maximumFractionDigits: n % 1 ? 2 : 0}).format(n);
+    }catch(e){ return (n % 1 ? n.toFixed(2) : String(n)) + ' ' + (cur||'USD'); }
+  }
+  function jobPay(r){
+    if(r.salary_min == null && r.salary_max == null) return '';
+    var cur = r.salary_currency;
+    var parts = [r.salary_min, r.salary_max].filter(function(x){ return x != null; });
+    // a flat rate is one figure, not the same figure twice
+    if(parts.length === 2 && Number(parts[0]) === Number(parts[1])) parts = [parts[0]];
+    return parts.map(function(x){ return jobAmount(x, cur); }).join(' – ')
+      + (r.salary_unit ? ' / '+String(r.salary_unit).toLowerCase() : '');
+  }
+  window.dzJobWhere = jobWhere;
+  window.dzJobPay   = jobPay;
+  window.dzJobMode  = jobMode;
+  window.dzJobModeLbl = WORK_MODE_LBL;
 
   // upload forms
   var LICENSE_RES = [['personal','Personal use only'],['commercial','Commercial use OK'],
@@ -273,6 +329,22 @@
   var EMP = [['CONTRACTOR','Freelance / contract'],['FULL_TIME','Full-time'],['PART_TIME','Part-time'],
              ['INTERN','Internship'],['TEMPORARY','Temporary'],['VOLUNTEER','Volunteer / collab'],
              ['PER_DIEM','Per diem'],['OTHER','Other']];
+  // The employment types that end on a date, and so have to say when.
+  // CONTRACTOR is the option labelled "Freelance / contract"; TEMPORARY is
+  // the same fixed-term shape under another name.
+  var EMP_FIXED_TERM = { CONTRACTOR:1, TEMPORARY:1 };
+
+  // Stored as the label reads, because it is shown as-is and never matched on.
+  // Every one of them clears the two character floor the column asks for.
+  var EXP_LEVEL = [['Entry','Entry level'],['Junior','Junior'],['Mid','Mid level'],
+                   ['Senior','Senior'],['Lead','Lead'],['Principal','Principal'],
+                   ['Manager','Manager'],['Director','Director'],['Executive','Executive']];
+  var WORK_MODE = [['remote','Remote'],['onsite','On-site'],['hybrid','Hybrid']];
+  var PAY_PERIOD = [['HOUR','Per hour'],['DAY','Per day'],['WEEK','Per week'],
+                    ['MONTH','Per month'],['YEAR','Per year']];
+  var VISIBILITY = [['public','Public — listed in Jobs'],
+                    ['unlisted','Unlisted — reachable by link'],
+                    ['private','Private — only you']];
 
   var FORMS = {
     resources: { title:'Share a Resource', sub:'Brushes, textures, fonts, templates — anything that helps another artist work faster.',
@@ -315,30 +387,76 @@
         {k:'delivery_days',t:'num', label:'Delivery (days)', ph:'e.g. 7', hint:'For commissions and services.'},
         {k:'tags',   t:'tags',  label:'Tags'}
       ]},
+    // The posting, in the order someone reads a job ad: who is hiring, what
+    // the role is, where and when it happens, what it pays, and how to apply.
+    // Every text field carries a floor and a ceiling. The ceiling is the hard
+    // stop the box refuses to type past; the floor is what the counter turns
+    // red under and what the publish button checks. Both are repeated in the
+    // table's own constraints — see 20260809_jobs_full_posting.sql — because
+    // a form is a courtesy and a constraint is a guarantee.
     jobs: { title:'Post a Job', sub:'Hire an artist, or find someone to build with.',
       fields:[
-        {k:'title',  t:'text', label:'Job title', req:true, max:140, ph:'e.g. Character Concept Artist'},
-        {k:'company',t:'text', label:'Company / studio', req:true, max:100, ph:'Who is hiring?'},
-        {k:'company_url',t:'text', label:'Company website', ph:'https://…'},
-        {k:'description',t:'area', label:'Description', req:true, max:8000, rows:10,
-         ph:'Responsibilities, requirements, skills, hours… (minimum 80 characters)'},
+        {k:'title',  t:'text', label:'Job title', req:true, min:3, max:80,
+         ph:'e.g. Character Concept Artist'},
+        {k:'company',t:'text', label:'Company / studio', req:true, min:2, max:80,
+         ph:'Who is hiring?'},
+        {k:'about_company',t:'area', label:'About the company', req:true, min:50, max:2000, rows:4,
+         ph:'Who you are, what you make, how the team works…'},
+        {k:'company_url',t:'text', label:'Company website', min:5, max:200, ph:'https://…'},
         {k:'category',t:'cat', label:'Category', req:true},
-        {k:'employment_type',t:'sel', label:'Employment type', options:EMP},
-        {k:'is_remote',t:'chk', label:'This role is 100% remote'},
-        {k:'location_city',t:'text', label:'City', ph:'e.g. Berlin'},
-        {k:'location_country',t:'text', label:'Country code', max:2, ph:'e.g. DE',
-         hint:'Two letters. Required unless the role is fully remote.'},
-        {k:'applicant_countries',t:'text', label:'Remote — eligible countries', ph:'e.g. IN, DE, US',
-         hint:'Comma separated. Required for a remote role.'},
-        {k:'salary_min',t:'num', label:'Pay from', ph:'0', step:'0.01'},
-        {k:'salary_max',t:'num', label:'Pay to', ph:'0', step:'0.01'},
-        {k:'salary_currency',t:'sel', label:'Currency', options:DZ_CURRENCIES, pref:1},
-        {k:'salary_unit',t:'sel', label:'Per', options:[['','—'],['HOUR','Hour'],['DAY','Day'],['WEEK','Week'],['MONTH','Month'],['YEAR','Year']]},
-        {k:'apply_url',t:'text', label:'Apply link', ph:'https://…'},
-        {k:'apply_email',t:'text', label:'Apply email', ph:'jobs@studio.com',
+        {k:'employment_type',t:'sel', label:'Employment type', req:true, options:EMP},
+        {k:'experience_level',t:'sel', label:'Experience level', req:true, options:EXP_LEVEL, def:'Mid'},
+        {k:'years_experience',t:'int', label:'Years of experience', req:true, nmin:0, nmax:60,
+         ph:'e.g. 3', hint:'Whole years. 0 means none required.'},
+        {k:'openings',t:'int', label:'Number of openings', req:true, nmin:1, nmax:999, ph:'e.g. 1'},
+        {k:'description',t:'area', label:'Job overview / description', req:true, min:100, max:5000, rows:8,
+         ph:'What the role is, what the team is building, what a week looks like…'},
+        {k:'responsibilities',t:'area', label:'Responsibilities', req:true, min:50, max:3000, rows:5,
+         ph:'What this person will own — one per line.'},
+        {k:'requirements',t:'area', label:'Requirements', req:true, min:50, max:3000, rows:5,
+         ph:'What they must bring — one per line.'},
+        {k:'required_skills',t:'area', label:'Required skills', req:true, min:10, max:1000, rows:3,
+         ph:'e.g. Photoshop, ZBrush, character anatomy'},
+        {k:'nice_to_have_skills',t:'area', label:'Nice-to-have skills', min:10, max:1000, rows:3,
+         ph:'e.g. Unreal, rigging, motion'},
+        {k:'benefits',t:'area', label:'Benefits / perks', min:20, max:2000, rows:3,
+         ph:'Health cover, kit budget, paid leave, learning stipend…'},
+        {k:'work_mode',t:'sel', label:'Remote / on-site / hybrid', req:true, options:WORK_MODE, def:'remote'},
+        {k:'location_city',t:'text', label:'City', req:true, cond:'place', min:2, max:100,
+         ph:'e.g. Berlin'},
+        {k:'location_country',t:'text', label:'Country code', req:true, cond:'place', min:2, max:2, up:1,
+         ph:'e.g. DE', hint:'Two letters, ISO 3166.'},
+        {k:'applicant_countries',t:'text', label:'Remote eligible countries', req:true, cond:'remote',
+         min:2, max:500, up:1, ph:'e.g. IN, DE, US', hint:'Comma separated country codes.'},
+        {k:'timezone',t:'text', label:'Timezone', req:true, min:3, max:50, ph:'e.g. CET (UTC+1)'},
+        {k:'working_hours',t:'text', label:'Working hours', req:true, min:3, max:100,
+         ph:'e.g. 10:00–18:00, 4h overlap with CET'},
+        {k:'schedule',t:'text', label:'Schedule', min:3, max:100, ph:'e.g. Mon–Fri, flexible Fridays'},
+        {k:'start_date',t:'date', label:'Start date', req:true, hint:'When the role begins.'},
+        {k:'contract_duration',t:'text', label:'Contract duration', req:true, cond:'term', min:2, max:100,
+         ph:'e.g. 6 months'},
+        {k:'salary_min',t:'money', label:'Pay from', req:true, nmin:0, nmax:99999999, ph:'0'},
+        {k:'salary_max',t:'money', label:'Pay to', req:true, nmin:0, nmax:99999999, ph:'0'},
+        {k:'salary_currency',t:'sel', label:'Currency', req:true, options:DZ_CURRENCIES, pref:1},
+        {k:'salary_unit',t:'sel', label:'Pay period', req:true, options:PAY_PERIOD, def:'MONTH'},
+        {k:'apply_url',t:'text', label:'Apply link', min:10, max:200, ph:'https://…'},
+        {k:'apply_email',t:'text', label:'Apply email', min:5, max:254, ph:'jobs@studio.com',
          hint:'A link or an email is required — a posting with no way to apply is rejected.'},
-        {k:'valid_through',t:'date', label:'Closes on', hint:'Expired postings are hidden automatically.'},
-        {k:'tags',  t:'tags', label:'Tags'}
+        {k:'application_instructions',t:'area', label:'Application instructions', req:true,
+         min:20, max:1500, rows:3, ph:'How to apply, what to put in the subject line, what happens next…'},
+        {k:'application_materials',t:'area', label:'Required application materials', req:true,
+         min:10, max:1000, rows:2, ph:'e.g. Portfolio link, CV, two reference shots'},
+        {k:'application_questions',t:'area', label:'Application questions', min:5, max:1000, rows:2,
+         ph:'Anything you want every applicant to answer — one per line.'},
+        {k:'portfolio_required',t:'chk', label:'Portfolio required'},
+        {k:'resume_required',t:'chk', label:'Resume / CV required'},
+        {k:'cover_letter_required',t:'chk', label:'Cover letter required'},
+        {k:'valid_through',t:'date', label:'Closing date', req:true,
+         hint:'Expired postings are hidden automatically.'},
+        {k:'tags',  t:'tags', label:'Tags', max:30},
+        {k:'visibility',t:'sel', label:'Visibility', req:true, options:VISIBILITY, def:'public'},
+        {k:'featured',t:'chk', label:'Feature / promote this posting',
+         hint:'Featured postings sit at the top of the jobs list.'}
       ]}
   };
 
@@ -428,6 +546,7 @@
     if(p) p.textContent = FORMS[sec].sub;
     renderTags(sec);
     dzPaintFiles(sec);
+    dzCountAll(sec);       // counters start at 0/max, conditional rows decide
     upGrowAll();
     dzSchReset();
     dzDraftStrip(sec);
@@ -475,11 +594,14 @@
     jobs: {
       guide: [
         ['🧭','Be specific','A real title, scope and skill list draws better applicants.'],
-        ['📍','Location or remote','Add a country code, or list eligible countries.'],
+        ['📍','Location or remote','On-site and hybrid roles need a city and country code; a remote one needs the countries you can hire from.'],
+        ['💰','Say what it pays','A pay range, a currency and a period are all required — postings without them get ignored.'],
         ['🔗','A way to apply','Include an apply link or email — it is required.'],
         ['🛡','Genuine roles only','No spam, MLM or pay-to-apply postings.']
       ],
-      tips: ['Put must-have skills up top','Add a pay range to raise replies','Describe the team and workflow','Set a close date so it expires cleanly']
+      tips: ['Put must-have skills up top','Split responsibilities and requirements — one per line reads best',
+             'Name the timezone and the hours you expect overlap in','Describe the team and workflow',
+             'Set a closing date so it expires cleanly']
     }
   };
 
@@ -629,7 +751,17 @@
       ICO_PIN    = '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
       ICO_COIN   = '<circle cx="12" cy="12" r="9"/><path d="M15 9.4a3.6 3.6 0 1 0 0 5.2"/>',
       ICO_GRID   = '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
-      ICO_CLOCK  = '<circle cx="12" cy="12" r="9"/><path d="M12 6.8V12l3.2 2"/>';
+      ICO_CLOCK  = '<circle cx="12" cy="12" r="9"/><path d="M12 6.8V12l3.2 2"/>',
+      ICO_STAIR  = '<path d="M3 20h4v-4h5v-4h5V8h4"/><path d="M3 20v-4"/>',
+      ICO_USERS  = '<path d="M16 20v-1.8a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.4"/><path d="M22 20v-1.8a4 4 0 0 0-3-3.87"/><path d="M16.5 3.6a4 4 0 0 1 0 7.75"/>',
+      ICO_LIST   = '<path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4.5 6h.01"/><path d="M4.5 12h.01"/><path d="M4.5 18h.01"/>',
+      ICO_CLIP   = '<path d="M15.5 3.5H8.5A2 2 0 0 0 6.5 5.5v13a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-13a2 2 0 0 0-2-2Z"/><path d="M9.5 3.5V2h5v1.5"/><path d="M9.5 9h5"/><path d="M9.5 13h5"/>',
+      ICO_STAR   = '<path d="m12 2.8 2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.65 6.2 20.7l1.1-6.45-4.7-4.6 6.5-.95Z"/>',
+      ICO_EYE    = '<path d="M1.8 12S5.5 5 12 5s10.2 7 10.2 7-3.7 7-10.2 7S1.8 12 1.8 12Z"/><circle cx="12" cy="12" r="3"/>',
+      ICO_GLOBE  = '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18Z"/>',
+      ICO_SPARK  = '<path d="M12 3v4"/><path d="M12 17v4"/><path d="M4.9 7.5 8 9.3"/><path d="M16 14.7l3.1 1.8"/><path d="M4.9 16.5 8 14.7"/><path d="M16 9.3l3.1-1.8"/><circle cx="12" cy="12" r="3"/>',
+      ICO_GIFT   = '<rect x="2.8" y="8.5" width="18.4" height="4" rx="1"/><path d="M4.5 12.5V20a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-7.5"/><path d="M12 8.5V21"/><path d="M12 8.5S10.8 3.5 8 3.5a2.5 2.5 0 0 0 0 5Z"/><path d="M12 8.5s1.2-5 4-5a2.5 2.5 0 0 1 0 5Z"/>',
+      ICO_PLANE  = '<path d="M21 3 10.5 13.5"/><path d="M21 3l-6.8 18-3.7-7.5L3 9.8Z"/>';
 
   var C_VIO='var(--upcViolet)', C_GRN='var(--upcGreen)',  C_BLU='var(--upcBlue)',
       C_AMB='var(--upcAmber)',  C_PNK='var(--upcPink)',   C_CYN='var(--upcCyan)',
@@ -647,15 +779,30 @@
     currency:[C_YEL,ICO_COIN], salary_currency:[C_YEL,ICO_COIN],
     item_type:[C_PUR,ICO_GRID], employment_type:[C_PUR,ICO_GRID],
     delivery_days:[C_TEA,ICO_CLOCK], salary_unit:[C_TEA,ICO_CLOCK],
-    company:[C_BLU,ICO_BUILD],
+    company:[C_BLU,ICO_BUILD], about_company:[C_BLU,ICO_BUILD],
     company_url:[C_BLU,ICO_LINK], apply_url:[C_BLU,ICO_LINK],
     apply_email:[C_CYN,ICO_MAIL],
     location_city:[C_ORG,ICO_PIN], location_country:[C_ORG,ICO_PIN],
-    applicant_countries:[C_ORG,ICO_PIN], is_remote:[C_ORG,ICO_PIN],
-    valid_through:[C_TEA,ICO_CAL]
+    applicant_countries:[C_ORG,ICO_GLOBE], is_remote:[C_ORG,ICO_PIN],
+    work_mode:[C_ORG,ICO_GLOBE],
+    valid_through:[C_TEA,ICO_CAL], start_date:[C_TEA,ICO_CAL],
+    // the rest of a posting
+    experience_level:[C_PUR,ICO_STAIR], years_experience:[C_PUR,ICO_STAIR],
+    openings:[C_PNK,ICO_USERS],
+    responsibilities:[C_GRN,ICO_LIST], requirements:[C_GRN,ICO_LIST],
+    required_skills:[C_CYN,ICO_SPARK], nice_to_have_skills:[C_LIL,ICO_SPARK],
+    benefits:[C_ROS,ICO_GIFT],
+    timezone:[C_TEA,ICO_GLOBE], working_hours:[C_TEA,ICO_CLOCK], schedule:[C_TEA,ICO_CAL],
+    contract_duration:[C_AMB,ICO_CLOCK],
+    application_instructions:[C_BLU,ICO_PLANE], application_materials:[C_BLU,ICO_CLIP],
+    application_questions:[C_CYN,ICO_LINES],
+    portfolio_required:[C_VIO,ICO_CHECK], resume_required:[C_VIO,ICO_CLIP],
+    cover_letter_required:[C_VIO,ICO_PENCIL],
+    visibility:[C_YEL,ICO_EYE], featured:[C_AMB,ICO_STAR]
   };
   var TYPE_ICO = {
     text:[C_VIO,ICO_PENCIL], area:[C_GRN,ICO_LINES], num:[C_GRN,ICO_MONEY],
+    int:[C_GRN,ICO_HASH], money:[C_GRN,ICO_MONEY],
     date:[C_TEA,ICO_CAL], sel:[C_LIL,ICO_SLIDER], cat:[C_AMB,ICO_TAG],
     tags:[C_CYN,ICO_HASH], chk:[C_TEA,ICO_CHECK]
   };
@@ -710,6 +857,10 @@
     if(lb) lb.textContent = String(label||'').trim() || v;
     var dd = document.getElementById(id+'_dd');
     if(dd) dd.classList.remove('open');
+    // A hidden input written by hand fires no input event, so the rows that
+    // only exist for some answers are re-decided here rather than by the
+    // listener that watches everything a member types.
+    dzCondApply(upSec);
   }
   // a draft restore writes the hidden input directly, so the trigger has to be
   // told what it now says
@@ -738,9 +889,9 @@
     }
   });
   // wrap a control as one detail row
-  function fcard(k, t, inner){
+  function fcard(k, t, inner, extra){
     var ic = fieldIco(k, t);
-    return '<div class="upField upFCard" style="--fc:'+ic[0]+'">'+
+    return '<div class="upField upFCard'+(extra||'')+'" style="--fc:'+ic[0]+'" data-fk="'+esc(k)+'">'+
       '<span class="upFIco" aria-hidden="true">'+
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
         'stroke-linecap="round" stroke-linejoin="round">'+ic[1]+'</svg>'+
@@ -749,32 +900,78 @@
     '</div>';
   }
 
-  function field(sec, fd){
-    var id = 'dz_'+sec+'_'+fd.k;
+  // ---- the limits a box keeps to itself ---------------------------------
+  // Every text field carries a floor and a ceiling. The ceiling is enforced
+  // by the box: maxlength on the element means the keystroke past it simply
+  // never lands, so there is nothing to warn about and nothing to reject —
+  // the text does not enter. The floor cannot work that way, because a field
+  // is under it the whole time it is being filled in, so it is shown instead:
+  // the counter goes red under the floor and back to the page's own ink over
+  // it, and publish refuses while any of them is still red.
+  //
+  // The counter is written next to the label rather than floated inside the
+  // box, so it reads the same on a one-line input and on an eight-row
+  // textarea and never sits on top of what is being typed.
+  function limitAttrs(fd){
+    var out = '';
+    if(fd.min) out += ' data-min="'+fd.min+'"';
+    if(fd.max) out += ' data-cmax="'+fd.max+'"';
+    if(fd.up)  out += ' data-up="1"';
+    return out;
+  }
+  function labelFor(id, fd){
     var lbl = '<label class="upLbl" for="'+id+'">'+esc(fd.label)+
       (fd.req ? ' <span class="upReq">*</span>' : '')+'</label>';
+    // The counter is there to show the floor, so it appears on the fields
+    // that have one and nowhere else — which is every text field on the job
+    // form and none of the ones on the other three, whose ceilings are
+    // enforced by maxlength exactly as they always were.
+    //
+    // A tag box's input holds one tag being typed rather than the value of
+    // the field, so a running count of it would be counting the wrong thing.
+    if(!fd.min || fd.t === 'tags') return lbl;
+    return '<div class="upLblRow">'+lbl+
+      '<span class="upCount upCountInline" id="'+id+'_c" aria-live="off"></span></div>';
+  }
+
+  function field(sec, fd){
+    var id = 'dz_'+sec+'_'+fd.k;
+    var lbl = labelFor(id, fd);
     var hint = fd.hint ? '<div class="dzHint">'+esc(fd.hint)+'</div>' : '';
+    var cond = fd.cond ? ' upFCond' : '';
     var body = '';
 
     if(fd.t === 'text'){
-      body = '<input class="upIn" id="'+id+'" type="text" maxlength="'+(fd.max||200)+
-             '" placeholder="'+esc(fd.ph||'')+'">';
+      body = '<input class="upIn" id="'+id+'" type="text" maxlength="'+(fd.max||200)+'"'+
+             limitAttrs(fd)+' placeholder="'+esc(fd.ph||'')+'">';
     } else if(fd.t === 'num'){
       body = '<input class="upIn" id="'+id+'" type="number" min="0" step="'+(fd.step||'1')+
              '" placeholder="'+esc(fd.ph||'')+'">';
+    } else if(fd.t === 'int' || fd.t === 'money'){
+      // Not type=number. A number input hands back an empty string for
+      // anything it considers malformed, which makes "what did they actually
+      // type" unanswerable, and it accepts e, + and - along the way. This is
+      // a text box the keystroke filter below keeps numeric, so a digit that
+      // would take the figure past its ceiling never lands at all.
+      body = '<input class="upIn" id="'+id+'" type="text" autocomplete="off" '+
+             'inputmode="'+(fd.t === 'int' ? 'numeric' : 'decimal')+'" '+
+             'data-num="'+fd.t+'" data-nmin="'+(fd.nmin != null ? fd.nmin : 0)+'" '+
+             'data-nmax="'+(fd.nmax != null ? fd.nmax : 999999999)+'" '+
+             'placeholder="'+esc(fd.ph||'')+'">';
     } else if(fd.t === 'date'){
       body = '<input class="upIn" id="'+id+'" type="date">';
     } else if(fd.t === 'area'){
-      body = '<textarea class="upIn" id="'+id+'" rows="'+(fd.rows||4)+'" maxlength="'+(fd.max||2000)+
-             '" placeholder="'+esc(fd.ph||'')+'"></textarea>';
+      body = '<textarea class="upIn" id="'+id+'" rows="'+(fd.rows||4)+'" maxlength="'+(fd.max||2000)+'"'+
+             limitAttrs(fd)+' placeholder="'+esc(fd.ph||'')+'"></textarea>';
     } else if(fd.t === 'sel'){
       // A pref field opens on the member's own transacting currency rather
-      // than on whatever happens to be first in the list.
-      var want = fd.pref ? dzPrefCurrency() : null;
+      // than on whatever happens to be first in the list; a field with a
+      // stated default opens on that; everything else on its first option.
+      var want = fd.pref ? dzPrefCurrency() : (fd.def != null ? fd.def : null);
       body = dzSelField(id, fd.options || [], want);
     } else if(fd.t === 'chk'){
       return fcard(fd.k, fd.t, '<label class="upCatOpt upFChk">'+
-             '<input type="checkbox" id="'+id+'"> '+esc(fd.label)+'</label>'+hint);
+             '<input type="checkbox" id="'+id+'"> '+esc(fd.label)+'</label>'+hint, cond);
     } else if(fd.t === 'cat'){
       var opts = (window.FG_SECTIONS && FG_SECTIONS[sec] && FG_SECTIONS[sec].opts) || [];
       body = dzSelField(id, opts.map(function(o){ return [slugify(o), o]; }), null);
@@ -782,8 +979,8 @@
       return fcard(fd.k, fd.t, lbl+
         '<div class="upTagBox" onclick="document.getElementById(\''+id+'\').focus()">'+
         '<span id="dzTags-'+sec+'"></span>'+
-        '<input class="upTagInput" id="'+id+'" maxlength="20" placeholder="Add up to 10 tags…" '+
-        'onkeydown="dzTagKey(event,\''+sec+'\')"></div>'+hint);
+        '<input class="upTagInput" id="'+id+'" maxlength="'+(fd.max||20)+'" placeholder="Add up to 10 tags…" '+
+        'onkeydown="dzTagKey(event,\''+sec+'\')"></div>'+hint, cond);
     } else if(fd.t === 'file' || fd.t === 'image'){
       // dropzone instead of file input
       var acc   = fd.accept ? fd.accept : (fd.t === 'image' ? 'image/*' : '');
@@ -833,8 +1030,91 @@
           '<div class="dzFilePicked dzFileMulti" id="'+id+'_pk"></div>'+
         '</div>'+hint+'</div>';
     }
-    return fcard(fd.k, fd.t, lbl+body+hint);
+    return fcard(fd.k, fd.t, lbl+body+hint, cond);
   }
+
+  // ---- rows that only exist for some answers ----------------------------
+  // A city on a fully remote posting and a list of eligible countries on an
+  // on-site one are both noise, and asking for a contract length on a
+  // permanent role is worse than noise. Each conditional row states which
+  // question it hangs off; the row is in the form or it is not, and a row
+  // that is not there is neither required nor read when publishing.
+  var COND = {
+    place:  function(v){ return v.work_mode !== 'remote'; },
+    remote: function(v){ return v.work_mode === 'remote'; },
+    term:   function(v){ return !!EMP_FIXED_TERM[v.employment_type]; }
+  };
+  function dzCondShow(sec, fd){
+    if(!fd || !fd.cond) return true;
+    var f = COND[fd.cond];
+    if(!f) return true;
+    return !!f({ work_mode: val(sec,'work_mode'), employment_type: val(sec,'employment_type') });
+  }
+  function dzCondApply(sec){
+    if(!FORMS[sec]) return;
+    FORMS[sec].fields.forEach(function(fd){
+      if(!fd.cond) return;
+      var el = document.getElementById('dz_'+sec+'_'+fd.k);
+      var card = el && el.closest ? el.closest('.upField') : null;
+      if(card) card.classList.toggle('upFHide', !dzCondShow(sec, fd));
+    });
+  }
+
+  // ---- the counters, and the keystroke that never lands ------------------
+  function dzCountPaint(el){
+    if(!el || !el.id) return;
+    var c = document.getElementById(el.id+'_c');
+    if(!c) return;
+    var min = parseInt(el.getAttribute('data-min'), 10) || 0;
+    var max = parseInt(el.getAttribute('data-cmax'), 10) || 0;
+    var n   = String(el.value == null ? '' : el.value).trim().length;
+    c.textContent = max ? (n + '/' + max) : String(n);
+    // Red while the field is short of its floor. An untouched empty field is
+    // not scolded — the asterisk already says it is wanted, and publish will
+    // say so again if it is still empty then.
+    c.classList.toggle('bad', n > 0 && n < min);
+  }
+  // digits only, and never a figure past the ceiling: the character that
+  // would take it there is dropped as it is typed, the same way maxlength
+  // drops the character past a text field's last one
+  function dzNumClean(el){
+    var kind = el.getAttribute('data-num');
+    var max  = parseFloat(el.getAttribute('data-nmax'));
+    var v    = String(el.value == null ? '' : el.value);
+    v = (kind === 'int') ? v.replace(/[^0-9]/g, '') : v.replace(/[^0-9.]/g, '');
+    if(kind !== 'int'){
+      var p = v.split('.');
+      v = p.shift() + (p.length ? '.' + p.join('').slice(0, 2) : '');
+    }
+    v = v.replace(/^0+(?=[0-9])/, '');            // 007 is 7
+    if(isFinite(max)){
+      // trimming from the right rather than clamping, so what is on screen is
+      // always something the member could have typed
+      while(v !== '' && v !== '.' && parseFloat(v) > max) v = v.slice(0, -1);
+    }
+    if(el.value !== v) el.value = v;
+  }
+  // one pass over a freshly built or freshly restored form
+  function dzCountAll(sec){
+    var box = document.getElementById('upSecForms');
+    if(!box) return;
+    var els = box.querySelectorAll('[data-min],[data-cmax]');
+    for(var i=0;i<els.length;i++) dzCountPaint(els[i]);
+    dzCondApply(sec);
+  }
+  // Capture, so it also serves the boxes built after this ran. Scoped to the
+  // section forms so the artwork panel, which counts its own two fields its
+  // own way, is left alone.
+  document.addEventListener('input', function(e){
+    var t = e.target;
+    if(!t || !t.id || !t.closest || !t.closest('#upSecForms')) return;
+    if(t.getAttribute('data-up')){
+      var at = t.selectionStart, up = String(t.value||'').toUpperCase();
+      if(t.value !== up){ t.value = up; try{ t.setSelectionRange(at, at); }catch(err){} }
+    }
+    if(t.getAttribute('data-num')) dzNumClean(t);
+    dzCountPaint(t);
+  }, true);
 
   // tags
   function renderTags(sec){
@@ -1051,6 +1331,26 @@
     if(el.type === 'checkbox') return el.checked;
     return String(el.value||'').trim();
   }
+  // the spec for one field, by name
+  function dzField(sec, k){
+    var fds = FORMS[sec] ? FORMS[sec].fields : [];
+    for(var i=0;i<fds.length;i++){ if(fds[i].k === k) return fds[i]; }
+    return null;
+  }
+  // a whole number or nothing — 0 survives, which parseInt(x) || null does not
+  function dzInt(v){
+    var n = parseInt(v, 10);
+    return isFinite(n) ? n : null;
+  }
+  // A website typed the way people say it — koe.studio — is a website. The
+  // scheme is put back rather than the posting being refused over it.
+  function dzWebUrl(v){
+    v = String(v || '').trim();
+    if(!v) return '';
+    if(/^https?:\/\//i.test(v)) return v;
+    if(/^[a-z][a-z0-9+.-]*:/i.test(v)) return v;   // mailto:, tel:, anything explicit
+    return 'https://' + v;
+  }
 
   // repaint file fields
   function dzPaintFiles(sec){
@@ -1068,6 +1368,7 @@
     var box = document.getElementById('upSecForms');
     if(box) box.innerHTML = buildForm(sec);
     renderTags(sec);
+    dzCountAll(sec);
     dzSchReset();
     dzDraftStrip(sec);
     dzSchedStrip(sec);
@@ -1227,6 +1528,7 @@
         });
         dzSelSyncAll(d.sec);   // the triggers read their hidden inputs back
         renderTags(d.sec);
+        dzCountAll(d.sec);     // and the counters read the restored lengths
         upGrowAll();
         showToast('Draft loaded — re-attach any files, then publish');
       }, 60);
@@ -1330,6 +1632,55 @@
     }catch(e){ showToast('Could not cancel'); }
   }
 
+  // ---- publish-time limit check -----------------------------------------
+  // The ceilings cannot be breached by typing, so what is really being
+  // checked here is the floors, plus a paste or a restored draft that came in
+  // over a ceiling. Returns the first field that is wrong and why, so the
+  // member is taken to it rather than told a number and left to find it.
+  function dzLimits(sec){
+    var fds = FORMS[sec] ? FORMS[sec].fields : [];
+    for(var i=0;i<fds.length;i++){
+      var fd = fds[i];
+      if(fd.t === 'chk' || fd.t === 'tags' || fd.t === 'file' ||
+         fd.t === 'image' || fd.t === 'files') continue;
+      if(!dzCondShow(sec, fd)) continue;
+      var el = document.getElementById('dz_'+sec+'_'+fd.k);
+      if(!el) continue;
+      var raw = String(el.value == null ? '' : el.value).trim();
+
+      if(fd.t === 'int' || fd.t === 'money'){
+        if(!raw) continue;                       // emptiness is the miss check's job
+        var n = parseFloat(raw);
+        if(!isFinite(n)) return {k:fd.k, msg:fd.label+' takes a number'};
+        if(fd.nmin != null && n < fd.nmin) return {k:fd.k, msg:fd.label+' cannot be below '+fd.nmin};
+        if(fd.nmax != null && n > fd.nmax) return {k:fd.k, msg:fd.label+' cannot be above '+fd.nmax};
+        continue;
+      }
+      if(!raw) continue;
+      if(fd.min && raw.length < fd.min){
+        return {k:fd.k, msg:fd.label+' needs at least '+fd.min+' characters — it has '+raw.length};
+      }
+      if(fd.max && raw.length > fd.max){
+        return {k:fd.k, msg:fd.label+' is limited to '+fd.max+' characters'};
+      }
+    }
+    return null;
+  }
+  // say what is wrong, then go there
+  function dzFieldFail(sec, k, msg){
+    showToast(msg);
+    var el = document.getElementById('dz_'+sec+'_'+k);
+    if(!el) return;
+    var card = el.closest ? el.closest('.upField') : null;
+    if(card && card.scrollIntoView){
+      try{ card.scrollIntoView({behavior:'smooth', block:'center'}); }
+      catch(e){ card.scrollIntoView(); }
+    }
+    // a select keeps its value on a hidden input, which cannot take focus
+    if(el.type !== 'hidden'){ try{ el.focus({preventScroll:true}); }catch(e){ try{ el.focus(); }catch(e2){} } }
+    dzCountPaint(el);
+  }
+
   // submit
   // verification tracker
   var dzV = {
@@ -1396,14 +1747,23 @@
     // rows insert as approved
     var s = st(sec), row = {user_id: currentUser.id, tags: s.tags, status:'approved'};
 
-    // required fields from the spec
+    // required fields from the spec. A conditional row that is not on the
+    // form is not being asked for, so it cannot be missing.
     var miss = FORMS[sec].fields.filter(function(fd){
-      if(!fd.req) return false;
+      if(!fd.req || !dzCondShow(sec, fd)) return false;
       if(fd.t === 'files') return !(s.files[fd.k] || []).length;
       if(fd.t === 'file' || fd.t === 'image') return !s.files[fd.k];
-      return !val(sec, fd.k);
+      var v = val(sec, fd.k);
+      // 0 is an answer — years of experience, and a pay range that starts at
+      // nothing, are both real and both falsy
+      if((fd.t === 'int' || fd.t === 'money') && v === '0') return false;
+      return !v;
     });
-    if(miss.length){ showToast('Missing: ' + miss[0].label); return; }
+    if(miss.length){ dzFieldFail(sec, miss[0].k, 'Missing: ' + miss[0].label); return; }
+
+    // and then the floors and the ceilings
+    var bad = dzLimits(sec);
+    if(bad){ dzFieldFail(sec, bad.k, bad.msg); return; }
 
     if(btn){ btn.disabled = true; btn.textContent = 'Publishing…'; }
     // which sections get the image gate
@@ -1556,33 +1916,85 @@
       }
 
       else if(sec === 'jobs'){
-        var remote = val(sec,'is_remote') === true;
-        var countries = val(sec,'applicant_countries')
-          .split(',').map(function(x){ return x.trim().toUpperCase(); }).filter(Boolean);
-        var cc = val(sec,'location_country').toUpperCase();
-        var url = val(sec,'apply_url'), mail = val(sec,'apply_email');
+        var mode   = val(sec,'work_mode') || 'remote';
+        var remote = mode === 'remote';
+        // A conditional row that is not on the form may still hold what was
+        // typed into it before the answer above it changed. Only what is
+        // being asked for is read.
+        var countries = remote
+          ? val(sec,'applicant_countries').split(',')
+              .map(function(x){ return x.trim().toUpperCase(); }).filter(Boolean)
+          : [];
+        var cc   = remote ? '' : val(sec,'location_country').toUpperCase();
+        var city = remote ? '' : val(sec,'location_city');
+        var url  = dzWebUrl(val(sec,'apply_url'));
+        var mail = val(sec,'apply_email');
+        var site = dzWebUrl(val(sec,'company_url'));
 
         // mirror the table constraints
         if(!url && !mail) throw new Error('Add an apply link or an email');
+        if(mail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) throw new Error('That apply email does not look right');
+        // the ceiling is on what is stored, and what is stored is the link
+        // with its scheme put back on
+        if(url && (url.length < 10 || url.length > 200)) throw new Error('The apply link has to be 10–200 characters');
+        if(site && (site.length < 5 || site.length > 200)) throw new Error('The company website has to be 5–200 characters');
         if(remote && !countries.length) throw new Error('A remote role needs at least one eligible country');
         if(!remote && cc.length !== 2) throw new Error('Add a two-letter country code');
-        if(val(sec,'description').length < 80) throw new Error('The description needs at least 80 characters');
+        if(countries.length > 60) throw new Error('That is too many eligible countries — list up to 60');
+
+        var payFrom = parseFloat(val(sec,'salary_min'));
+        var payTo   = parseFloat(val(sec,'salary_max'));
+        if(!isFinite(payFrom) || !isFinite(payTo)) throw new Error('Add a pay range');
+        if(payTo < payFrom) throw new Error('Pay to cannot be lower than pay from');
+
+        var closes = val(sec,'valid_through');
+        if(!closes) throw new Error('Add a closing date');
+        // end of the chosen day, so a posting closing today is open today
+        if(new Date(closes+'T23:59:59').getTime() < Date.now()){
+          throw new Error('The closing date has already passed');
+        }
 
         row.title = val(sec,'title'); row.company = val(sec,'company');
-        row.company_url = val(sec,'company_url') || null;
+        row.about_company = val(sec,'about_company');
+        row.company_url = site || null;
         row.description = val(sec,'description');
         row.category = [val(sec,'category')];
         row.employment_type = val(sec,'employment_type') || 'CONTRACTOR';
+        row.experience_level = val(sec,'experience_level') || null;
+        row.years_experience = dzInt(val(sec,'years_experience'));
+        row.openings = dzInt(val(sec,'openings'));
+        row.responsibilities = val(sec,'responsibilities');
+        row.requirements = val(sec,'requirements');
+        row.required_skills = val(sec,'required_skills');
+        row.nice_to_have_skills = val(sec,'nice_to_have_skills') || null;
+        row.benefits = val(sec,'benefits') || null;
+        row.work_mode = mode;
+        // is_remote stays the authority the two location constraints, the
+        // cards and the search index are all written against
         row.is_remote = remote;
-        row.location_city = val(sec,'location_city') || null;
-        row.location_country = remote ? (cc.length === 2 ? cc : null) : cc;
+        row.location_city = city || null;
+        row.location_country = cc || null;
         row.applicant_countries = countries;
-        row.salary_min = parseFloat(val(sec,'salary_min')) || null;
-        row.salary_max = parseFloat(val(sec,'salary_max')) || null;
+        row.timezone = val(sec,'timezone');
+        row.working_hours = val(sec,'working_hours');
+        row.schedule = val(sec,'schedule') || null;
+        row.start_date = val(sec,'start_date') || null;
+        row.contract_duration = dzCondShow(sec, dzField(sec,'contract_duration'))
+          ? (val(sec,'contract_duration') || null) : null;
+        row.salary_min = payFrom;
+        row.salary_max = payTo;
         row.salary_currency = val(sec,'salary_currency') || 'USD';
-        row.salary_unit = val(sec,'salary_unit') || null;
+        row.salary_unit = val(sec,'salary_unit') || 'MONTH';
         row.apply_url = url || null; row.apply_email = mail || null;
-        row.valid_through = val(sec,'valid_through') || null;
+        row.application_instructions = val(sec,'application_instructions');
+        row.application_materials = val(sec,'application_materials');
+        row.application_questions = val(sec,'application_questions') || null;
+        row.portfolio_required = val(sec,'portfolio_required') === true;
+        row.resume_required = val(sec,'resume_required') === true;
+        row.cover_letter_required = val(sec,'cover_letter_required') === true;
+        row.valid_through = closes;
+        row.visibility = val(sec,'visibility') || 'public';
+        row.featured = val(sec,'featured') === true;
       }
 
       // schedule branch
@@ -1702,6 +2114,7 @@
   window.upGrowAll       = upGrowAll;
   window.dzSelToggle     = dzSelToggle;
   window.dzSelPick       = dzSelPick;
+  window.dzCondApply     = dzCondApply;
   window.dzSubmit        = dzSubmit;
   window.dzResetForm     = dzResetForm;
   window.dzTagKey        = dzTagKey;
@@ -2075,6 +2488,22 @@
     }).join('');
     return out ? '<div class="dzvMeta">'+out+'</div>' : '';
   }
+  // One titled block of a job posting, or nothing at all when the posting did
+  // not fill that part in — which is every one of these for a posting written
+  // before the form asked.
+  function jobBlock(head, body){
+    body = String(body == null ? '' : body).trim();
+    if(!body) return '';
+    return '<div><div class="avBlockH">'+esc2(head)+'</div>'+
+      '<div class="dzvArticle">'+esc2(body).replace(/\n/g,'<br>')+'</div></div>';
+  }
+  // a stored date read back the way the reader writes dates
+  function jobDate(v){
+    if(!v) return '';
+    var t = new Date(v);
+    if(!isFinite(t.getTime())) return String(v);
+    return t.toLocaleDateString([], {year:'numeric', month:'short', day:'numeric'});
+  }
   function cmBlock(kind, id){
     return '<div class="avCmBlock"><div class="avBlockH">Comments</div>'+
       '<div class="avCmList" id="dzvCmList"></div>'+
@@ -2151,14 +2580,56 @@
         '</div>';
     }
     else { // jobs, details and report
-      var where = r.is_remote ? 'Remote' : [r.location_city, r.location_country].filter(Boolean).join(', ');
+      // A posting now carries the whole job, so the view lays it out as a job
+      // ad reads rather than as one description box: who, then the role, then
+      // where and when, then what it pays, then how to apply. Every block is
+      // dropped when the posting did not fill it in, which is also what keeps
+      // the postings written before these fields existed rendering cleanly.
+      var jw = window.dzJobWhere ? window.dzJobWhere(r)
+             : (r.is_remote ? 'Remote' : [r.location_city, r.location_country].filter(Boolean).join(', '));
+      var jp = window.dzJobPay ? window.dzJobPay(r) : '';
+      var jmode = window.dzJobMode ? window.dzJobMode(r) : (r.is_remote ? 'remote' : 'onsite');
+      var jmodeLbl = (window.dzJobModeLbl || {})[jmode] || '';
+      var exp = [r.experience_level,
+                 (r.years_experience != null ? r.years_experience + '+ yrs' : '')]
+                .filter(Boolean).join(' \u00b7 ');
+      var sends = [r.portfolio_required ? 'Portfolio' : '', r.resume_required ? 'Resume / CV' : '',
+                   r.cover_letter_required ? 'Cover letter' : ''].filter(Boolean).join(' \u00b7 ');
+
       html = '<div class="dzvCol">'+
+        (r.featured ? '<p class="dzvExcerpt">\u2605 Featured posting</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
-        '<p class="dzvExcerpt">'+esc2(r.company||'')+(r.company_url ? ' \u00b7 <a href="'+esc2(r.company_url)+'" target="_blank" rel="noopener">website</a>' : '')+'</p>'+
-        metaRow([['Location', where],['Type', String(r.employment_type||'').replace('_',' ')],
-                 ['Pay', (r.salary_min||r.salary_max) ? [r.salary_min,r.salary_max].filter(function(x){return x!=null;}).join(' \u2013 ')+' '+(r.salary_currency||'') : ''],
-                 ['Closes', r.valid_through],['Posted', h.ago(r.created_at)]])+
-        '<div class="dzvArticle">'+esc2(r.description||'').replace(/\n/g,'<br>')+'</div>'+
+        '<p class="dzvExcerpt">'+esc2(r.company||'')+
+          (r.company_url ? ' \u00b7 <a href="'+esc2(r.company_url)+'" target="_blank" rel="noopener">website</a>' : '')+'</p>'+
+        '<div class="dzvAuthor" id="dzvAuthor"></div>'+
+        metaRow([
+          ['Location', jw],
+          ['Work mode', jmodeLbl],
+          ['Type', String(r.employment_type||'').replace(/_/g,' ')],
+          ['Experience', exp],
+          ['Openings', r.openings ? String(r.openings) : ''],
+          ['Remote from', (jmode === 'remote' && (r.applicant_countries||[]).length)
+                          ? (r.applicant_countries||[]).join(', ') : ''],
+          ['Timezone', r.timezone],
+          ['Working hours', r.working_hours],
+          ['Schedule', r.schedule],
+          ['Starts', jobDate(r.start_date)],
+          ['Duration', r.contract_duration],
+          ['Pay', jp],
+          ['Closes', jobDate(r.valid_through)],
+          ['Posted', h.ago(r.created_at)]
+        ])+
+        jobBlock('About the company', r.about_company)+
+        jobBlock('Overview', r.description)+
+        jobBlock('Responsibilities', r.responsibilities)+
+        jobBlock('Requirements', r.requirements)+
+        jobBlock('Required skills', r.required_skills)+
+        jobBlock('Nice to have', r.nice_to_have_skills)+
+        jobBlock('Benefits', r.benefits)+
+        jobBlock('How to apply', r.application_instructions)+
+        jobBlock('What to send', r.application_materials)+
+        (sends ? jobBlock('Required with every application', sends) : '')+
+        jobBlock('Questions to answer', r.application_questions)+
         (r.apply_url ? '<a class="avActWide" href="'+esc2(r.apply_url)+'" target="_blank" rel="noopener">Apply \u2197</a>'
          : r.apply_email ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Apply by email \u2709</a>' : '')+
         '<button class="avReportBtn" onclick="dzReportItem(\'job\',\''+id+'\')">\u2691 Report</button>'+

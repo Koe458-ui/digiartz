@@ -181,9 +181,13 @@
           .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
       }
       if(want('jobs')){
+        // visibility, same as the Jobs list applies it: a posting the poster
+        // marked unlisted or private is not a search result. Searching is
+        // exactly the way an unlisted posting would otherwise be found, which
+        // is the one thing marking it unlisted was meant to prevent.
         jobs.push(sb.from('jobs')
-          .select('id,user_id,title,company,description,category,tags,employment_type,is_remote,created_at')
-          .eq('status','approved').ilike('title',pattern)
+          .select('id,user_id,title,company,description,category,tags,employment_type,is_remote,work_mode,created_at')
+          .eq('status','approved').eq('visibility','public').ilike('title',pattern)
           .order('created_at',{ascending:false}).limit(30)
           .then(function(r){ return {key:'jobs', rows:(r&&r.data)||[]}; }));
       }

@@ -3751,6 +3751,14 @@
       tags.map(function(t){ return '<span class="avTagChip">'+esc2(t)+'</span>'; }).join('')+
       '</div></div>';
   }
+  // "Updated" only says something once it disagrees with the day the thing
+  // went out; before that it is the same date twice.
+  function updatedAgo(r, h){
+    if(!r || !r.updated_at) return '';
+    var base = r.published_at || r.created_at;
+    if(!base) return '';
+    return (new Date(r.updated_at) - new Date(base) > 60000) ? h.ago(r.updated_at) : '';
+  }
   // a stored date read back the way the reader writes dates
   function jobDate(v){
     if(!v) return '';
@@ -3779,11 +3787,18 @@
 
     if(sec === 'resources'){
       // What a downloader may actually do with it, scanned rather than read.
-      var resRights = [
+      //
+      // Only for a resource whose uploader was actually asked. Every resource
+      // shared before these three existed has them at their column defaults —
+      // false, false, true — and reading that back would print "Personal use
+      // only, modification allowed" under work nobody licensed that way.
+      // resource_type is required on the form and null on every older row, so
+      // it is what says these answers are the uploader's.
+      var resRights = r.resource_type ? [
         r.commercial_use ? 'Commercial use allowed' : 'Personal use only',
         r.modification_allowed ? 'Modification allowed' : 'No modification',
         r.attribution_required ? 'Attribution required' : ''
-      ].filter(Boolean).join(' \u00b7 ');
+      ].filter(Boolean).join(' \u00b7 ') : '';
       var resLinks = '';
       if(Array.isArray(r.external_links) && r.external_links.length){
         resLinks = '<div><div class="avBlockH">Links</div><ul class="dzvRefs">'+
@@ -3818,7 +3833,8 @@
                  ['Version', r.version],
                  ['Resolution', r.dimensions],
                  ['Format', (r.file_ext||'').toUpperCase()],
-                 ['Posted', h.ago(r.created_at)]])+
+                 ['Posted', h.ago(r.created_at)],
+                 ['Updated', updatedAgo(r, h)]])+
         jobBlock('What\u2019s included', r.whats_included)+
         jobBlock('Installation and use', r.instructions)+
         jobBlock('Content notes', r.safety_notes)+
@@ -3855,9 +3871,7 @@
                  ['Category', catLabels('blog', r.category)],
                  ['Published', h.ago(r.published_at || r.created_at)],
                  ['Read time', (r.read_minutes||1)+' min'],
-                 ['Updated', (r.updated_at && r.published_at &&
-                              new Date(r.updated_at) - new Date(r.published_at) > 6e4)
-                             ? h.ago(r.updated_at) : '']])+
+                 ['Updated', updatedAgo(r, h)]])+
         '<div class="dzvAuthor" id="dzvAuthor"></div>'+
         // the byline as it read when the post went out
         (r.author_bio ? '<p class="dzvAuthBio">'+esc2(r.author_bio)+'</p>' : '')+
@@ -3886,13 +3900,19 @@
       }
       // What a buyer may actually do with it. Written as a list of answers
       // rather than a paragraph, because it is the part they scan for.
-      var rights = [
+      //
+      // Only for a listing whose seller was actually asked. commercial_use
+      // defaults to true, so a listing from before these questions existed
+      // would announce "Commercial use allowed" — granting a licence its
+      // seller never granted, to a buyer paying on the strength of it.
+      // product_type is required on the form and null on every older row.
+      var rights = r.product_type ? [
         r.commercial_use ? 'Commercial use allowed' : 'Personal use only',
         r.personal_use ? 'Personal use allowed' : '',
         r.modification_allowed ? 'Modification allowed' : '',
         r.attribution_required ? 'Attribution required' : '',
         r.source_files_included ? 'Source files included' : ''
-      ].filter(Boolean).join(' · ');
+      ].filter(Boolean).join(' · ') : '';
 
       html = img(r.preview_url, r.title) +
         '<div class="dzvCol">'+
@@ -3921,7 +3941,8 @@
                  ['Support', r.support_period],
                  ['Custom requests', r.custom_requests ? 'Accepted' : ''],
                  ['Closes', jobDate(r.closing_date)],
-                 ['Listed', h.ago(r.created_at)]])+
+                 ['Listed', h.ago(r.created_at)],
+                 ['Updated', updatedAgo(r, h)]])+
         jobBlock('What you get', r.buyer_gets)+
         jobBlock('Delivery notes', r.delivery_notes)+
         jobBlock('Refund policy', r.refund_policy)+
@@ -3989,7 +4010,8 @@
           ['Duration', r.contract_duration],
           ['Pay', jp],
           ['Closes', jobDate(r.valid_through)],
-          ['Posted', h.ago(r.created_at)]
+          ['Posted', h.ago(r.created_at)],
+          ['Updated', updatedAgo(r, h)]
         ])+
         jobBlock('About the company', r.about_company)+
         jobBlock('Overview', r.description)+

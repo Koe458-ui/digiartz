@@ -4,6 +4,28 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v145 — no listing states a licence its owner was never asked about.
+       Checking the jobs and resource views for gaps found jobs complete
+       and resources complete, and turned up the same fault in resources
+       and the marketplace that v143 had already fixed for artworks.
+       Both views printed a Rights line built straight from three boolean
+       columns. Every row written before those questions existed carries
+       their defaults, not an answer — so a resource shared last year read
+       "Personal use only · Modification allowed", and a marketplace
+       listing read "Commercial use allowed", because that column defaults
+       to true. The second is the one that matters: it granted a licence
+       the seller never granted, on a page where somebody decides whether
+       to pay. Neither line is drawn now unless the row carries the field
+       that only the current form writes — resource_type and product_type
+       — so an older row states nothing on its owner's behalf.
+       Jobs was already clean, and for a reason worth keeping: its three
+       application booleans are rendered by listing only the ones that are
+       true and dropping the block when none are, which cannot invent a
+       claim whatever the defaults are.
+       Also gave jobs, resources and the marketplace the Updated row they
+       stored and never showed, sharing the rule the blog view already
+       used — it appears once it says something the posting date does not.
+       Changed: js/sections.js, index.html, sw.js.
    v144 — the category and the tags reach the detail views too.
        Checking the marketplace and blog views for gaps after v143 found
        the same two in all four sections, and one of them was a mislabel
@@ -2419,7 +2441,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v144';
+const CACHE_VERSION = 'v145';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2495,7 +2517,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=89',
+  '/js/sections.js?v=90',
   '/js/navprogress.js?v=5'
 ];
 

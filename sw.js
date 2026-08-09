@@ -4,6 +4,54 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v139 — an artwork says what it is, and what may be done with it.
+       The fifth and last, and the awkward one. The other four forms are
+       drawn by buildForm from a list of field descriptors; the artwork
+       panel is hand-written markup in index.html that predates all of it.
+       Rather than hand-write eighteen more cards into that markup — and
+       with them a second copy of the counters, the conditional rows and
+       the chip lists — five empty divs are cut into it and filled from a
+       descriptor list like everyone else's. That is what lets the whole
+       panel read in its specified order without being rebuilt: a summary
+       between the title and the description, the medium between the
+       category and the tags, the licence questions between the album
+       picker and the schedule.
+       Software is conditional in the sense the spec means, which is not
+       the sense the other forms use it in: the field is always on the
+       form, and what changes is whether publish will let it stay empty.
+       A digital painting must name what it was made in; a watercolour has
+       no software to name. That needed a required-when rather than a
+       shown-when, so reqIf exists now beside cond.
+       Two columns that already existed are kept rather than replaced.
+       software is a single name half the site reads, so software_list is
+       the real answer and software is kept in step with its first entry —
+       nothing that reads the old column has to learn anything. is_mature
+       was set by moderation from the AI rating; it now has two sources and
+       they are OR-ed, because an uploader calling their work mature is
+       something moderation does not know, and moderation calling it mature
+       is something the uploader did not volunteer.
+       The derived half is derived: format and size off the file,
+       dimensions off the image, the SEO pair and the slug off what was
+       typed. Not one of them has a box.
+       The scheduled path carries all of it. A scheduled upload waits in
+       scheduled_uploads and the publisher builds the row from it, so every
+       new field would have been dropped in transit; one jsonb column
+       carries them and the publisher unpacks it. Measured end to end: a
+       scheduled upload publishes with its software list, credits, links,
+       slug, dimensions and its declared maturity intact.
+       Ceilings: 20MB an image, ten extra images, ten albums, ten software
+       entries, twenty credits, five links — each refused at the point of
+       adding, and each repeated as a constraint. Measured, the table
+       rejects a 60k description, a 900MB file size, forty software
+       entries, twenty links, a 900-character credit, forty tags, a bogus
+       visibility, a description under its floor, 9999999px dimensions and
+       thirty extra images.
+       The gallery shows published work only, and a profile gallery shows a
+       visitor the same — while still showing you your own drafts.
+       All five composers share one system as of this version.
+       Changed: js/sections.js, js/drafts.js, js/albums.js, js/upqueue.js,
+       js/mywork.js, js/app-core.js, index.html, sw.js,
+       supabase/migrations/20260809_artworks_full_upload.sql.
    v138 — a resource says what is in the package, and reads the rest off
        the upload.
        The last of the four. The composer asked for a file, a preview, a
@@ -2240,7 +2288,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v138';
+const CACHE_VERSION = 'v139';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2294,17 +2342,17 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=18',
+  '/js/app-core.js?v=19',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=76',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
-  '/js/albums.js?v=8',
-  '/js/drafts.js?v=2',
-  '/js/upqueue.js?v=3',
+  '/js/albums.js?v=9',
+  '/js/drafts.js?v=3',
+  '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=8',
+  '/js/mywork.js?v=9',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',
@@ -2316,7 +2364,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=84',
+  '/js/sections.js?v=85',
   '/js/navprogress.js?v=5'
 ];
 

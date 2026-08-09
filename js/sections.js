@@ -427,6 +427,40 @@
     ['Views · likes · bookmarks', 'Counted by the site']
   ];
 
+  // ---- artwork vocabulary ------------------------------------------------
+  var ART_MEDIUM = [['Digital painting','Digital painting'],['Digital illustration','Digital illustration'],
+                    ['Concept art','Concept art'],['3D render','3D render'],['Pixel art','Pixel art'],
+                    ['Vector','Vector'],['Photomanipulation','Photomanipulation'],
+                    ['Sketch','Sketch'],['Line art','Line art'],
+                    ['Pencil','Pencil — traditional'],['Ink','Ink — traditional'],
+                    ['Watercolour','Watercolour — traditional'],['Acrylic','Acrylic — traditional'],
+                    ['Oil','Oil — traditional'],['Mixed media','Mixed media'],['Other','Other']];
+  // Which of those are made on a computer, and so have software to name. The
+  // traditional ones are not asked for it — a watercolour has no software.
+  var ART_DIGITAL = { 'Digital painting':1, 'Digital illustration':1, 'Concept art':1,
+                      '3D render':1, 'Pixel art':1, 'Vector':1, 'Photomanipulation':1 };
+  var ART_LICENSE = [['All rights reserved','All rights reserved'],
+                     ['Personal use only','Personal use only'],
+                     ['Commercial use allowed','Commercial use allowed'],
+                     ['CC BY','CC BY — credit required'],
+                     ['CC BY-SA','CC BY-SA — credit, share alike'],
+                     ['CC BY-NC','CC BY-NC — credit, non-commercial'],
+                     ['CC0','CC0 — public domain'],
+                     ['Custom','Custom terms']];
+  var ART_VISIBILITY = [['published','Published — shown in the gallery'],
+                        ['draft','Draft — kept, not shown'],
+                        ['scheduled','Scheduled — goes live at the set time'],
+                        ['hidden','Hidden — reachable by link only']];
+  var ART_AUTO = [
+    ['File format', 'Read from the image you upload'],
+    ['File size', 'Measured from the image'],
+    ['Dimensions', 'Read from the image — width × height'],
+    ['SEO title · description', 'Made from your title and description'],
+    ['URL slug', 'Made from the title, kept unique'],
+    ['Created · updated', 'Set when you publish, and on every save'],
+    ['Views · likes · bookmarks', 'Counted by the site']
+  ];
+
   // ---- resource vocabulary -----------------------------------------------
   var RESOURCE_TYPE = [['Brush','Brush pack'],['Texture','Texture'],['Font','Font'],
                        ['Template','Template'],['3D Model','3D model'],['Asset','Asset pack'],
@@ -460,6 +494,53 @@
                 ['no','No — personal use only']];
 
   var FORMS = {
+    // The artwork panel is hand-written markup in index.html and predates all
+    // of this, so it is not built by buildForm. What it gets instead is these
+    // fields, injected into five slots cut into that markup so the whole form
+    // still reads in the order it is specified in — a summary between the
+    // title and the description, the medium between the category and the
+    // tags, and so on. They are ordinary field descriptors, so they carry the
+    // same counters, conditions and chip lists as the other four forms.
+    artwork: { title:'Upload Artwork', sub:'Share your creativity with artists around the world.',
+      fields:[
+        {k:'summary', t:'text', slot:1, label:'Short summary', min:20, max:250,
+         ph:'One line shown on the card.'},
+        {k:'subject_matter', t:'text', slot:2, label:'Subject matter', min:2, max:100,
+         ph:'e.g. Character portrait, sci-fi landscape'},
+        {k:'medium', t:'sel', slot:2, label:'Artwork type / medium', req:true,
+         options:ART_MEDIUM, def:'Digital painting'},
+        // Required for digital work, optional for traditional — a watercolour
+        // has no software. reqIf makes it required without hiding it, which is
+        // what "conditional" means for this one.
+        {k:'software_list', t:'list', slot:3, cap:10, imin:2, imax:50,
+         label:'Software used', reqIf:'digitalart', ph:'Photoshop, then press Enter',
+         hint:'Up to 10. Required for digital work, optional for traditional.'},
+        {k:'license', t:'sel', slot:4, label:'License / usage rights', req:true,
+         options:ART_LICENSE, def:'All rights reserved'},
+        {k:'commercial_use', t:'sel', slot:4, label:'Commercial use allowed', req:true,
+         options:YES_NO_PLAIN, def:'no'},
+        {k:'attribution_required', t:'sel', slot:4, label:'Attribution required', req:true,
+         options:YES_NO_PLAIN, def:'yes'},
+        {k:'modification_allowed', t:'sel', slot:4, label:'Modification allowed',
+         options:YES_NO_PLAIN, def:'no'},
+        {k:'is_mature', t:'sel', slot:4, label:'Mature content', req:true,
+         options:YES_NO_PLAIN, def:'no',
+         hint:'Say so if it is. The review also marks work it judges mature.'},
+        {k:'credits', t:'list', slot:4, cap:20, imin:2, imax:300,
+         label:'Credits / collaborators', ph:'Name and role, then press Enter',
+         hint:'Models, assistants, client, team.'},
+        {k:'process_notes', t:'area', slot:4, label:'Process notes', min:20, max:3000, rows:3,
+         ph:'WIP notes, a breakdown, what you were trying.'},
+        {k:'external_links', t:'list', slot:4, url:1, cap:5, imin:5, imax:200,
+         label:'External links', hint:'Portfolio, source, video, reference. Up to 5.'},
+        {k:'comments_allowed', t:'sel', slot:4, label:'Comments allowed',
+         options:YES_NO_PLAIN, def:'yes'},
+        {k:'visibility', t:'sel', slot:5, label:'Visibility', req:true,
+         options:ART_VISIBILITY, def:'published'},
+        {k:'featured', t:'chk', slot:5, label:'Feature this artwork',
+         hint:'Featured work sits at the top of the gallery.'},
+        {k:'__auto', t:'auto', slot:5, label:'Read from your upload', items:ART_AUTO}
+      ]},
     // The package, then what is in it, then what may be done with it. The
     // same two ideas as the other three forms: floors and ceilings repeated
     // as table constraints, and a line between what a person types and what
@@ -784,6 +865,7 @@
     if(sec === 'artwork'){
       if(art) art.style.display = '';
       if(box){ box.style.display = 'none'; }
+      dzArtExtras();          // idempotent, so this is also the open hook
       // restore the visible panel
       if(!silent){
         if(h) h.textContent = 'Upload Artwork';
@@ -1522,17 +1604,32 @@
     term:    function(v){ return !!EMP_FIXED_TERM[v.employment_type]; },
     // a commission or a service is work, not a file
     svc:     function(v){ return !!ITEM_SERVICE[v.item_type]; },
-    digital: function(v){ return v.item_type === 'digital'; }
+    digital: function(v){ return v.item_type === 'digital'; },
+    // a watercolour has no software to name; a digital painting does
+    digitalart: function(v){ return !!ART_DIGITAL[v.medium]; }
   };
   function dzCondShow(sec, fd){
     if(!fd || !fd.cond) return true;
     var f = COND[fd.cond];
     if(!f) return true;
-    return !!f({
+    return !!f(dzCondState(sec));
+  }
+  function dzCondState(sec){
+    return {
       work_mode: val(sec,'work_mode'),
       employment_type: val(sec,'employment_type'),
-      item_type: val(sec,'item_type')
-    });
+      item_type: val(sec,'item_type'),
+      medium: val(sec,'medium')
+    };
+  }
+  // Required-when, as opposed to shown-when. A field with reqIf is always on
+  // the form; what changes is whether publish will let it stay empty.
+  function dzCondReq(sec, fd){
+    if(!fd) return false;
+    if(fd.req) return true;
+    if(!fd.reqIf) return false;
+    var f = COND[fd.reqIf];
+    return !!(f && f(dzCondState(sec)));
   }
   function dzCondApply(sec){
     if(!FORMS[sec]) return;
@@ -1542,6 +1639,107 @@
       var card = el && el.closest ? el.closest('.upField') : null;
       if(card) card.classList.toggle('upFHide', !dzCondShow(sec, fd));
     });
+  }
+
+  // ---- the artwork panel's extra fields ----------------------------------
+  // Five empty divs cut into the hand-written markup, each filled with the
+  // fields whose slot number it carries. Doing it this way rather than
+  // writing eighteen more cards into index.html by hand is what lets the
+  // artwork form share the counters, the conditions and the chip lists with
+  // the other four instead of growing its own copies of all three.
+  var ART_SLOTS = ['pfUpX1','pfUpX2','pfUpX3','pfUpX4','pfUpX5'];
+  function dzArtExtras(){
+    if(!FORMS.artwork) return;
+    var any = false;
+    ART_SLOTS.forEach(function(hostId, i){
+      var host = document.getElementById(hostId);
+      if(!host) return;
+      any = true;
+      if(host.getAttribute('data-built')) return;      // idempotent
+      var slot = i + 1;
+      host.innerHTML = FORMS.artwork.fields.filter(function(fd){
+        return fd.slot === slot;
+      }).map(function(fd){ return field('artwork', fd); }).join('');
+      host.setAttribute('data-built', '1');
+    });
+    if(!any) return;
+    // The panel shipped with a one-of-ten software picker. Software is a list
+    // now, so the old control is stood down rather than left to disagree with
+    // the new one.
+    var old = document.getElementById('pfUpSoftwareField');
+    if(old) old.style.display = 'none';
+    dzCountAll('artwork');
+  }
+  // after a publish, so the next upload starts clean
+  function dzArtReset(){
+    ART_SLOTS.forEach(function(id){
+      var h = document.getElementById(id);
+      if(h) h.removeAttribute('data-built');
+    });
+    dzArtExtras();
+  }
+  // what publish checks before it uploads anything
+  function dzArtValidate(){
+    if(!FORMS.artwork) return null;
+    var fds = FORMS.artwork.fields;
+    for(var i=0;i<fds.length;i++){
+      var fd = fds[i];
+      if(fd.t === 'auto' || fd.t === 'chk') continue;
+      if(!dzCondReq('artwork', fd)) continue;
+      if(!dzCondShow('artwork', fd)) continue;
+      if(!val('artwork', fd.k)) return {k:fd.k, msg:'Missing: ' + fd.label};
+    }
+    return dzLimits('artwork');
+  }
+  // ---- the artwork panel's own drafts ------------------------------------
+  // Saved as raw control values rather than as the row they turn into, so
+  // restoring is a straight write-back and a draft saved before a field
+  // existed simply has nothing to say about it.
+  function dzArtSnapshot(){
+    var out = {};
+    (FORMS.artwork ? FORMS.artwork.fields : []).forEach(function(fd){
+      if(fd.t === 'auto') return;
+      var el = document.getElementById('dz_artwork_'+fd.k);
+      if(!el) return;
+      out[fd.k] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    return out;
+  }
+  function dzArtRestore(data){
+    if(!data) return;
+    dzArtExtras();                       // make sure the slots exist
+    (FORMS.artwork ? FORMS.artwork.fields : []).forEach(function(fd){
+      if(fd.t === 'auto' || !(fd.k in data)) return;
+      var el = document.getElementById('dz_artwork_'+fd.k);
+      if(!el) return;
+      if(el.type === 'checkbox') el.checked = !!data[fd.k];
+      else el.value = data[fd.k];
+    });
+    dzSelSyncAll('artwork');             // the triggers read their hidden inputs back
+    dzCountAll('artwork');               // counters, chips and conditions follow
+  }
+
+  // the half of the row these fields account for
+  function dzArtValues(){
+    function v(k){ return val('artwork', k); }
+    return {
+      summary: v('summary') || null,
+      subject_matter: v('subject_matter') || null,
+      medium: v('medium') || null,
+      software_list: dzRefList('dz_artwork_software_list').slice(0, 10),
+      license: v('license') || null,
+      commercial_use: v('commercial_use') === 'yes',
+      attribution_required: v('attribution_required') === 'yes',
+      modification_allowed: v('modification_allowed') === 'yes',
+      // the uploader's own declaration; moderation may still add its own
+      declared_mature: v('is_mature') === 'yes',
+      credits: dzRefList('dz_artwork_credits').slice(0, 20),
+      process_notes: v('process_notes') || null,
+      external_links: dzRefList('dz_artwork_external_links').slice(0, 5),
+      comments_allowed: v('comments_allowed') !== 'no',
+      visibility: v('visibility') || 'published',
+      featured: v('featured') === true
+    };
   }
 
   // ---- the counters, and the keystroke that never lands ------------------
@@ -1578,9 +1776,16 @@
     }
     if(el.value !== v) el.value = v;
   }
+  // Where a section's fields live. Three of the four are drawn into one box
+  // by buildForm; the artwork panel is hand-written markup that predates all
+  // of this, and its extra fields are injected into slots inside it — so the
+  // scope is the panel rather than the box.
+  function dzFormScope(sec){
+    return document.getElementById(sec === 'artwork' ? 'pfUpMod' : 'upSecForms');
+  }
   // one pass over a freshly built or freshly restored form
   function dzCountAll(sec){
-    var box = document.getElementById('upSecForms');
+    var box = dzFormScope(sec);
     if(!box) return;
     var els = box.querySelectorAll('[data-min],[data-cmax]');
     for(var i=0;i<els.length;i++) dzCountPaint(els[i]);
@@ -1593,7 +1798,10 @@
   // own way, is left alone.
   document.addEventListener('input', function(e){
     var t = e.target;
-    if(!t || !t.id || !t.closest || !t.closest('#upSecForms')) return;
+    // The artwork panel counts its own title and description its own way, and
+    // those carry none of these attributes — dzCountPaint looks for a counter
+    // named after the field and finds nothing, so they are left alone.
+    if(!t || !t.id || !t.closest || !t.closest('#upSecForms, #pfUpMod')) return;
     if(t.getAttribute('data-up')){
       var at = t.selectionStart, up = String(t.value||'').toUpperCase();
       if(t.value !== up){ t.value = up; try{ t.setSelectionRange(at, at); }catch(err){} }
@@ -2921,6 +3129,17 @@
   // checked against a real file rather than taken on trust
   window.dzZipCount      = dzZipCount;
   window.dzImageDims     = dzImageDims;
+  // the artwork panel lives in another file, so its half of this is exported
+  window.dzArtExtras     = dzArtExtras;
+  window.dzArtReset      = dzArtReset;
+  window.dzArtValidate   = dzArtValidate;
+  window.dzArtValues     = dzArtValues;
+  window.dzArtSnapshot   = dzArtSnapshot;
+  window.dzArtRestore    = dzArtRestore;
+  window.dzFieldFail     = dzFieldFail;
+  window.dzSeoTitle      = dzSeoTitle;
+  window.dzSeoDesc       = dzSeoDesc;
+  window.dzSlugify       = slugify;
   window.dzSubmit        = dzSubmit;
   window.dzResetForm     = dzResetForm;
   window.dzTagKey        = dzTagKey;

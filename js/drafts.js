@@ -40,6 +40,9 @@
         file: pf.upFile, fname: pf.upFile.name || 'draft.png', ftype: pf.upFile.type || 'image/png',
         pages: (pf.upPageFiles||[]).slice(),
         thumb: pf.upThumbFocus ? {x:pf.upThumbFocus.x, y:pf.upThumbFocus.y, z:pf.upThumbFocus.z||1} : {x:50,y:50,z:1},
+        // the fields js/sections.js injects into the panel, kept as their raw
+        // control values so restoring is a straight write-back
+        extra: (typeof dzArtSnapshot === 'function') ? dzArtSnapshot() : null,
         created: Date.now()
       };
       await updrTx('readwrite', function(st){ st.put(rec); });
@@ -376,10 +379,11 @@
       document.getElementById('pfUpNm').value = rec.name||'';
       document.getElementById('pfUpDesc').value = rec.desc||'';
       pfUpdateCount('pfUpNm','pfUpNmCount',100);
-      pfUpdateCount('pfUpDesc','pfUpDescCount',1000);
+      pfUpdateCount('pfUpDesc','pfUpDescCount',5000);
       pfSetTagsFromArray((rec.tags||'').split(',').map(function(t){return t.trim();}).filter(Boolean));
       pfSetCats(rec.cats&&rec.cats.length?rec.cats:['others']);
       if(typeof pfSetSoftware==='function') pfSetSoftware(rec.software||'');
+      if(rec.extra && typeof dzArtRestore === 'function') dzArtRestore(rec.extra);
       // preview from the blob
       var u = URL.createObjectURL(pf.upFile); updrUrls.push(u);
       var p = document.getElementById('pfUpPrev');
@@ -521,9 +525,22 @@
     document.getElementById('pfCropMod').classList.remove('open');
     pfCropPending = null;
   }
+  // Extra views, detail shots and process images. Ten of them at 20MB each is
+  // the ceiling, and it is enforced the same way maxlength is: past it the
+  // file is simply not added. The table caps the stored list at ten too.
+  var PF_PAGES_MAX = 10, PF_IMG_MAX_BYTES = 20 * 1024 * 1024;
   function handlePfPagesFile(e){
     if(pfGuestGate(e)) return; // drop bypasses click gate
-    var files = Array.from(e.target.files||[]);
+    var picked = Array.from(e.target.files||[]);
+    var room = Math.max(0, PF_PAGES_MAX - (pf.upPageFiles||[]).length);
+    var files = [], overSize = false;
+    picked.forEach(function(f){
+      if(f.size > PF_IMG_MAX_BYTES){ overSize = true; return; }
+      if(files.length < room) files.push(f);
+    });
+    if(overSize) showToast('Each image has to be 20MB or under');
+    else if(files.length < picked.length) showToast('That is the limit — ' + PF_PAGES_MAX + ' extra images');
+    if(!files.length){ e.target.value = ''; return; }
     pf.upPageFiles = pf.upPageFiles.concat(files);
     var wrap = document.getElementById('pfPagesPreview');
     files.forEach(function(f){
@@ -550,11 +567,35 @@
     // universal upload
     var nm = document.getElementById('pfUpNm').value.trim();
     var desc = document.getElementById('pfUpDesc').value.trim();
-    var software = document.getElementById('pfUpSoftware').value;
     var tags = document.getElementById('pfUpTags').value.split(',').map(function(t){return t.trim();}).filter(Boolean);
+    // The rest of the form lives in the slots js/sections.js fills, and
+    // answers for itself whether it is complete.
+    var extra = (typeof dzArtValues === 'function') ? dzArtValues() : {};
+    var software = (extra.software_list && extra.software_list[0]) || '';
+
     if(!nm){ showToast('Enter a title'); return; }
+    if(nm.length < 3){ showToast('The title needs at least 3 characters'); return; }
     if(!editId && !pf.upFile){ showToast('Select an image'); return; }
-    if(!software){ showToast('Select the software used'); return; }
+    if(!desc){ showToast('Add a description'); return; }
+    if(desc.length < 20){ showToast('The description needs at least 20 characters'); return; }
+    if(!tags.length){ showToast('Add at least one tag'); return; }
+    if(typeof dzArtValidate === 'function'){
+      var bad = dzArtValidate();
+      if(bad){
+        if(typeof dzFieldFail === 'function') dzFieldFail('artwork', bad.k, bad.msg);
+        else showToast(bad.msg);
+        return;
+      }
+    }
+    // visibility and the schedule picker are two halves of one answer
+    var _vis = extra.visibility || 'published';
+    var _when = uschPicked();
+    if(_vis === 'scheduled' && !_when){ showToast('Pick a time under Schedule, or set visibility to Published'); return; }
+    if((_vis === 'draft' || _vis === 'hidden') && _when){
+      showToast('A ' + _vis + ' artwork is not shown, so it does not need a schedule'); return;
+    }
+    if(_vis === 'scheduled') _vis = 'published';
+    extra.visibility = _vis;
     var btn = document.getElementById('pfUpBtn');
     btn.disabled = true;
     try{
@@ -563,7 +604,17 @@
           // edit is ownership gated
           btn.textContent='SAVING…';
           var editCats = pf.upCats.length ? pf.upCats : ['others'];
-          const{error}=await sb.from('artworks').update({name:nm,description:desc||null,tags:tags,category:editCats,software:software||null}).eq('id',editId);
+          var editPatch = {
+            name:nm, description:desc||null, tags:tags, category:editCats,
+            software:software||null, updated_at:new Date().toISOString()
+          };
+          // everything the slots hold, saved alongside the four the panel owns
+          ['summary','subject_matter','medium','software_list','license','commercial_use',
+           'attribution_required','modification_allowed','credits','process_notes',
+           'external_links','comments_allowed','visibility','featured'].forEach(function(k){
+            if(k in extra) editPatch[k] = extra[k];
+          });
+          const{error}=await sb.from('artworks').update(editPatch).eq('id',editId);
           if(error) throw error;
           // patch every in memory copy
           var idx = images.findIndex(function(i){return String(i.id)===String(editId);});
@@ -581,9 +632,11 @@
           // background pipeline
           var prevEl = document.getElementById('pfUpPrev');
           // read schedule before reset
-          var _schedAt = uschPicked();
+          var _schedAt = _when;
           upqStart({
             name: nm, desc: desc, tags: tags, software: software,
+            // the rest of the form, carried through the queue to the insert
+            extra: extra,
             cats: (pf.upCats && pf.upCats.length) ? pf.upCats.slice() : ['others'],
             file: pf.upFile,
             pageFiles: (pf.upPageFiles || []).slice(),

@@ -74,7 +74,7 @@
     document.getElementById('pfUpNm').value = art.name||'';
     document.getElementById('pfUpDesc').value = art.description||'';
     pfUpdateCount('pfUpNm','pfUpNmCount',100);
-    pfUpdateCount('pfUpDesc','pfUpDescCount',1000);
+    pfUpdateCount('pfUpDesc','pfUpDescCount',5000);
     pfSetTagsFromArray(art.tags||[]);
     pfSetCats(catList(art.category).length?catList(art.category):['others']);
     if(typeof pfSetSoftware==='function') pfSetSoftware(art.software||'');

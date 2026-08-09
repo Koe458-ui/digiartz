@@ -9,6 +9,9 @@
       stage: 'checking',
       name: snap.name, desc: snap.desc, tags: snap.tags, cats: snap.cats,
       software: snap.software, file: snap.file, pageFiles: snap.pageFiles,
+      // the rest of the upload form, snapshotted with everything else so the
+      // panel is free to reset the moment the job is queued
+      extra: snap.extra || {},
       thumbFocus: snap.thumbFocus, preview: snap.preview,
       albums: (snap.albums || []).slice(),
       // copy publish time from snapshot
@@ -166,6 +169,31 @@
 
       // 3 almost done
       job.stage='finalizing'; upqSync();
+
+      // ---- the half of the row nobody typed --------------------------------
+      // Format, size and dimensions come off the file itself; the SEO pair and
+      // the slug come off what was typed. None of them has a box on the panel,
+      // because a format someone types disagrees with the file and a slug that
+      // drifts from the title is a link that lies.
+      var x = {}, ek;
+      for(ek in (job.extra||{})) x[ek] = job.extra[ek];
+      var _f = job.file || {};
+      var _em = /\.([a-z0-9]{1,8})$/i.exec(String(_f.name||''));
+      x.file_ext  = _em ? _em[1].toLowerCase() : ((_f.type||'').split('/')[1] || null);
+      x.file_size = _f.size || null;
+      if(typeof dzImageDims === 'function'){
+        var _d = await dzImageDims(_f);           // "3000×4000 px", or nothing
+        var _dm = _d && /^(\d+)×(\d+)/.exec(_d);
+        if(_dm){ x.width = +_dm[1]; x.height = +_dm[2]; }
+      }
+      x.seo_title = (typeof dzSeoTitle === 'function') ? dzSeoTitle('', job.name) : null;
+      x.seo_description = (typeof dzSeoDesc === 'function') ? dzSeoDesc('', job.desc, job.desc) : null;
+      x.slug = (typeof dzSlugify === 'function')
+        ? (dzSlugify(job.name).slice(0,110) + '-' + String(Date.now()).slice(-6))
+        : null;
+      // the uploader's declaration and the reviewer's judgement, OR-ed
+      var _mature = (mod.rating === 'MATURE') || !!x.declared_mature;
+
       // scheduled branch
       if(job.publishAt){
         const{error:se}=await sb.from('scheduled_uploads').insert({
@@ -177,8 +205,11 @@
           software:job.software||null, phash:phash,
           // reattach albums later
           album_ids: (job.albums && job.albums.length) ? job.albums : null,
-          content_rating:mod.rating, is_mature:mod.rating==='MATURE', ai_moderation:mod.audit,
-          mod_token:mod.token||null
+          content_rating:mod.rating, is_mature:_mature, ai_moderation:mod.audit,
+          mod_token:mod.token||null,
+          // the rest of the form, unpacked by publish_due_scheduled_uploads
+          // when its time comes
+          extra: x
         });
         if(se) throw se;
         job.stage='done'; upqSync();
@@ -186,7 +217,25 @@
         uschLoad();          // new scheduled card
         return;
       }
-      const{data:rows,error:de}=await sb.from('artworks').insert({name:job.name,description:job.desc||null,tags:job.tags,category:job.cats,image_url:publicUrl,storage_path:path,thumb_x:job.thumbFocus.x,thumb_y:job.thumbFocus.y,thumb_zoom:job.thumbFocus.z||1,pages:artPageUrls.length?artPageUrls:null,kind:ART_KIND_ART,user_id:currentUser.id,software:job.software||null,phash:phash,status:'approved',content_rating:mod.rating,is_mature:mod.rating==='MATURE',ai_moderation:mod.audit,mod_token:mod.token||null}).select();
+      var artRow = {
+        name:job.name, description:job.desc||null, tags:job.tags, category:job.cats,
+        image_url:publicUrl, storage_path:path,
+        thumb_x:job.thumbFocus.x, thumb_y:job.thumbFocus.y, thumb_zoom:job.thumbFocus.z||1,
+        pages:artPageUrls.length?artPageUrls:null, kind:ART_KIND_ART,
+        user_id:currentUser.id, software:job.software||null, phash:phash, status:'approved',
+        content_rating:mod.rating, is_mature:_mature, ai_moderation:mod.audit,
+        mod_token:mod.token||null
+      };
+      // everything the panel's extra fields hold, plus what was read off the
+      // upload. declared_mature is not a column — it was folded into is_mature
+      // above, which is the one the site reads.
+      ['summary','subject_matter','medium','software_list','license','commercial_use',
+       'attribution_required','modification_allowed','credits','process_notes',
+       'external_links','comments_allowed','visibility','featured',
+       'seo_title','seo_description','slug','file_ext','file_size','width','height'
+      ].forEach(function(k){ if(x[k] !== undefined) artRow[k] = x[k]; });
+
+      const{data:rows,error:de}=await sb.from('artworks').insert(artRow).select();
       if(de) throw de;
 
       // album membership

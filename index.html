@@ -1004,19 +1004,28 @@
 
         <div class="ftCol">
           <div class="ftColHead">Legal</div>
+          <!-- Anchors, not buttons, and the href is the real standalone page.
+               A click still opens the modal — openLegal returns false and
+               cancels the navigation — but the link now has an address that a
+               crawler can follow, a payment provider's reviewer can open, and a
+               member can copy. If the script has not loaded, the browser simply
+               follows the href instead of doing nothing. -->
           <ul class="ftColList">
             <li>
-              <button class="ftColLink" onclick="openLegal('privacy')" aria-label="Privacy Policy">Privacy Policy</button>
+              <a class="ftColLink" href="/legal/privacy" onclick="return openLegal('privacy')" aria-label="Privacy Policy">Privacy Policy</a>
             </li>
             <li>
-              <button class="ftColLink" onclick="openLegal('terms')" aria-label="Terms of Service">Terms of Service</button>
+              <a class="ftColLink" href="/legal/terms" onclick="return openLegal('terms')" aria-label="Terms of Service">Terms of Service</a>
             </li>
             <li>
-              <button class="ftColLink" aria-label="Refund Policy" onclick="openLegal('refund')">Refund Policy</button>
-              <button class="ftColLink" aria-label="Creator &amp; Seller Terms" onclick="openLegal('seller')">Creator &amp; Seller Terms</button>
+              <a class="ftColLink" href="/legal/refund" onclick="return openLegal('refund')" aria-label="Refund Policy">Refund Policy</a>
+              <a class="ftColLink" href="/legal/creator-terms" onclick="return openLegal('seller')" aria-label="Creator &amp; Seller Terms">Creator &amp; Seller Terms</a>
             </li>
             <li>
-              <button class="ftColLink" aria-label="Cookie Policy" onclick="openLegal('cookie')">Cookie Policy</button>
+              <a class="ftColLink" href="/legal/delivery" onclick="return openLegal('shipping')" aria-label="Delivery Policy">Delivery Policy</a>
+            </li>
+            <li>
+              <a class="ftColLink" href="/legal/cookies" onclick="return openLegal('cookie')" aria-label="Cookie Policy">Cookie Policy</a>
             </li>
           </ul>
         </div>
@@ -1031,7 +1040,10 @@
               <a class="ftColLink ftColLink--mail" href="mailto:DigiArtzsupport@gmail.com" aria-label="Help Center">Help Center</a>
             </li>
             <li>
-              <a class="ftColLink ftColLink--mail" href="mailto:DigiArtzsupport@gmail.com" aria-label="Contact Us">Contact Us</a>
+              <!-- A mailto is not a contact page. This one has an address and a
+                   phone number on it, which is what a payment provider's review
+                   looks for and what a buyer needs when email is not enough. -->
+              <a class="ftColLink" href="/legal/contact" onclick="return openLegal('contact')" aria-label="Contact Us">Contact Us</a>
             </li>
             <li>
               <a class="ftColLink ftColLink--mail" href="mailto:DigiArtzsupport@gmail.com" aria-label="Report an Issue">Report an Issue</a>
@@ -2265,7 +2277,12 @@
 
  <div id="rippleHost"></div>
 
-  <script src="/js/effects.js?v=4"></script>
+  <!-- The legal documents, shared with the /legal/* pages that Pages Functions
+       renders from the same file. type="module" because it is one — module
+       scripts are deferred, so it lands well before anyone can click a footer
+       link, and openLegal reads it at click time rather than at load time. -->
+  <script type="module" src="/js/legal-content.js?v=1"></script>
+  <script src="/js/effects.js?v=5"></script>
 
 
 

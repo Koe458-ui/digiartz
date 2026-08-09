@@ -4,6 +4,28 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v102 — the legal documents get addresses of their own.
+       Privacy, Terms, Cookie, Refund and the Creator & Seller terms
+       existed only as strings inside js/effects.js, shown in a modal by
+       a footer button. Nothing outside the browser could reach them:
+       not a crawler, and not the payment provider reviewing this domain,
+       which asks to open a refund policy at a URL and reads a delivery
+       timeline and a contact route before it will approve a site for
+       live payments. Razorpay was refusing payments on this domain, and
+       an unreadable policy set is the usual reason a review does not
+       pass.
+       The text moved to js/legal-content.js, which the modal and a new
+       Pages Function both read, so the two cannot drift apart. Seven
+       pages now answer at /legal/<slug>, self-contained and dependent on
+       no stylesheet or script of ours. Two of them are new: a contact
+       page, and a delivery policy saying digital goods arrive on
+       payment confirmation and nothing is ever shipped.
+       The footer links became anchors carrying those URLs. A click still
+       opens the modal — openLegal returns false and cancels the
+       navigation — so nothing changes for a member, but the links now
+       have somewhere to point when the script has not run.
+       Changed: index.html, sw.js, js/effects.js, js/legal-content.js,
+       functions/legal/[doc].js, functions/sitemap.xml.js.
    v101 — a section that has not loaded shows nothing, not the section
        before it.
        The account panel keeps all four of its views — Wallet, Payout
@@ -1371,7 +1393,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v101';
+const CACHE_VERSION = 'v102';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1436,7 +1458,8 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=2',
   '/js/search.js?v=2',
   '/js/feed.js?v=2',
-  '/js/effects.js?v=4',
+  '/js/effects.js?v=5',
+  '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',

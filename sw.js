@@ -4,6 +4,20 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v130 — the precache list catches up with what the page actually loads.
+       Eight assets had drifted: index.html asked for hero.css v87,
+       overrides v5, upload v6, albums v8, drafts v2, mywork v8, pfedit v8
+       and sections v80, while SHELL_URLS still named the versions before
+       each of those. Both halves of that are a fault. The precache warms
+       eight urls nobody requests, which is the exact waste v69 went and
+       fixed; and the eight that ARE requested were never precached at
+       all, so every one of them was a network round trip on a cold start
+       and simply missing offline — the shell cache quietly not doing the
+       one thing it exists for.
+       Nothing here changes a version the page loads. index.html is the
+       only place any of the eight is referenced, so it is the authority
+       and sw.js was moved to agree with it, not the other way round.
+       Changed: sw.js.
    v129 — the legal documents get addresses of their own, and a group in
        Settings.
        Privacy, Terms, Cookie, Refund and the Creator & Seller terms
@@ -1909,7 +1923,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v129';
+const CACHE_VERSION = 'v130';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1933,7 +1947,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=84',
+  '/css/hero.css?v=87',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
@@ -1942,9 +1956,9 @@ const SHELL_URLS = [
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=2',
+  '/css/upload.css?v=6',
   '/css/widgets.css?v=3',
-  '/css/overrides.css?v=4',
+  '/css/overrides.css?v=5',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -1968,12 +1982,12 @@ const SHELL_URLS = [
   '/js/gallery.js?v=76',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
-  '/js/albums.js?v=7',
-  '/js/drafts.js?v=1',
+  '/js/albums.js?v=8',
+  '/js/drafts.js?v=2',
   '/js/upqueue.js?v=3',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=7',
-  '/js/mywork.js?v=7',
+  '/js/pfedit.js?v=8',
+  '/js/mywork.js?v=8',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=4',
@@ -1984,7 +1998,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=78',
+  '/js/sections.js?v=80',
   '/js/navprogress.js?v=5'
 ];
 

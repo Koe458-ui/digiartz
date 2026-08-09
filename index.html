@@ -2206,17 +2206,17 @@
              account type entitled to it. Nobody else's page carries it. -->
         <button class="pfMenuItem pfMenuItem--danger" onclick="pfMenuLogout()">Log Out</button>
 
-        <!-- Below Log Out on purpose. These are reference documents, not
-             things a member does, so they sit past the end of the actions
-             rather than among them.
+        <!-- Below Log Out, under a heading of its own: a title, then the
+             documents it covers, the way the rest of the menu groups what
+             belongs together. Reference material a member opens once, not
+             somewhere they are being sent, so it reads quieter than the
+             actions above and sits past the end of them.
 
              Same anchors as the footer: the href is the real standalone page
              and the click opens the modal over this drawer, with openLegal
-             returning false to cancel the navigation. Signed out, a member
-             never reaches this menu — the footer carries the same links for
-             everyone, and /legal/<slug> is reachable by anyone with the URL. -->
+             returning false to cancel the navigation. -->
         <div class="setLegal">
-          <div class="setLegalHead">Legal</div>
+          <div class="setLegalHead">Terms &amp; Privacy</div>
           <a class="pfMenuItem pfMenuItem--legal" href="/legal/privacy" onclick="return openLegal('privacy')">Privacy Policy</a>
           <a class="pfMenuItem pfMenuItem--legal" href="/legal/terms" onclick="return openLegal('terms')">Terms &amp; Conditions</a>
           <a class="pfMenuItem pfMenuItem--legal" href="/legal/refund" onclick="return openLegal('refund')">Refund Policy</a>

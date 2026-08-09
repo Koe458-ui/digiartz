@@ -1050,15 +1050,26 @@
     document.getElementById('pfUpTags').value = pf.upTags.join(',');
   }
   // tag length cap
-  var TAG_MAX = 15;
+  // 30, the same ceiling the tag input carries, the other four forms use and
+  // the artworks table checks. It was 15 here, so a perfectly legal 20
+  // character tag was refused outright by the one form that has always had
+  // tags.
+  var TAG_MAX = 30;
+  // "anime, chr, genshin impact" is three tags, not one with commas in it —
+  // however it arrived, and however the member finished typing it.
   function pfAddTag(raw){
-    var t = (raw||'').trim();
-    if(!t) return;
-    if(t.length > TAG_MAX){ showToast('Tags are up to '+TAG_MAX+' characters'); return; }
-    if(pf.upTags.length>=10){ showToast('Up to 10 tags allowed'); return; }
-    if(pf.upTags.some(function(x){return x.toLowerCase()===t.toLowerCase();})) return;
-    pf.upTags.push(t);
-    pfRenderTagChips();
+    var added = 0, full = false, cut = false;
+    String(raw == null ? '' : raw).split(/[,\n]/).forEach(function(part){
+      var t = part.trim().replace(/^#+/, '').trim();
+      if(!t) return;
+      if(t.length > TAG_MAX){ t = t.slice(0, TAG_MAX); cut = true; }
+      if(pf.upTags.length >= 10){ full = true; return; }
+      if(pf.upTags.some(function(x){ return x.toLowerCase() === t.toLowerCase(); })) return;
+      pf.upTags.push(t); added++;
+    });
+    if(full)     showToast('Up to 10 tags allowed');
+    else if(cut) showToast('Tags are up to '+TAG_MAX+' characters');
+    if(added) pfRenderTagChips();
   }
   function pfRemoveTag(i,e){
     if(e) e.stopPropagation();
@@ -1083,6 +1094,22 @@
       pf.upTags.pop();
       pfRenderTagChips();
     }
+  }
+  // Leaving the box finishes the tag. Typing one and going straight to Upload
+  // used to lose it, which reads as the box not working.
+  function pfTagBlur(e){
+    var input = e.target;
+    if(input && String(input.value||'').trim()){ pfAddTag(input.value); input.value=''; }
+  }
+  // a pasted list is a list; a pasted word is just typing
+  function pfTagPaste(e){
+    var cb = e.clipboardData || window.clipboardData;
+    var txt = cb ? cb.getData('text') : '';
+    if(!txt || !/[,\n]/.test(txt)) return;
+    e.preventDefault();
+    var input = e.target;
+    pfAddTag(input.value + txt);
+    input.value = '';
   }
 
   // guest gate

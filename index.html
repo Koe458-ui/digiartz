@@ -1062,7 +1062,7 @@
           <label class="upLbl" for="pfUpTagsInput">Tags <span class="upReq">*</span></label>
           <div class="upTagBox" id="pfUpTagBox" onclick="document.getElementById('pfUpTagsInput').focus()">
             <span id="pfUpTagChips"></span>
-            <input class="upTagInput" id="pfUpTagsInput" maxlength="30" onkeydown="pfTagKeydown(event)" placeholder="Add up to 10 tags…" type="text"/>
+            <input class="upTagInput" id="pfUpTagsInput" maxlength="320" onkeydown="pfTagKeydown(event)" onblur="pfTagBlur(event)" onpaste="pfTagPaste(event)" placeholder="anime, chr, genshin impact…" type="text"/>
           </div>
           <input id="pfUpTags" type="hidden" value=""/>
         </div>
@@ -2575,7 +2575,7 @@
   <script src="/js/gallery.js?v=77"></script>
   <script src="/js/auth.js?v=10"></script>
   <script src="/js/profile.js?v=9"></script>
-  <script src="/js/albums.js?v=11"></script>
+  <script src="/js/albums.js?v=12"></script>
   <script src="/js/drafts.js?v=6"></script>
   <script src="/js/upqueue.js?v=4"></script>
   <script src="/js/avatar.js?v=2"></script>
@@ -2934,7 +2934,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=5"></script>
 
 
-  <script src="/js/sections.js?v=90"></script>
+  <script src="/js/sections.js?v=91"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

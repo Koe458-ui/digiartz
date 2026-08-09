@@ -4,6 +4,31 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v146 — a tag box takes a list.
+       "anime, chr, genshin impact" is three tags. It was one, with the
+       commas inside it, in every case except typing the commas slowly
+       enough for each keystroke to be caught on its own — so pasting a
+       list made one tag, and so did typing the lot and pressing Enter.
+       Commas and newlines split now, wherever the text came from. And
+       finishing counts three ways rather than one: Enter, a typed comma,
+       or simply tapping something else on the form. That last one was
+       losing a tag outright — typing one and going straight to Publish
+       left it sitting in the box, which reads as the box not working.
+       A pasted list commits; a pasted word does not, because that is
+       somebody starting to type rather than finishing.
+       The box's own ceiling was the per-tag ceiling, twenty or thirty
+       characters, so a run of three tags did not fit in it at all. The
+       box holds a run now and the per-tag limit is applied to each tag as
+       it is committed — over-long is trimmed to thirty and says so,
+       rather than the whole entry being refused.
+       Two smaller faults with it: the artwork panel capped a tag at
+       fifteen characters while its own input, the other four forms and
+       the artworks table all allow thirty, so a legal twenty character
+       tag was refused by the one form that has always had tags; and a
+       leading # is dropped on every form now rather than only some.
+       Empty entries between stray commas are ignored, the same tag typed
+       three ways is one tag, and the ten tag limit still holds.
+       Changed: js/sections.js, js/albums.js, index.html, sw.js.
    v145 — no listing states a licence its owner was never asked about.
        Checking the jobs and resource views for gaps found jobs complete
        and resources complete, and turned up the same fault in resources
@@ -2441,7 +2466,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v145';
+const CACHE_VERSION = 'v146';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2500,7 +2525,7 @@ const SHELL_URLS = [
   '/js/gallery.js?v=77',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
-  '/js/albums.js?v=11',
+  '/js/albums.js?v=12',
   '/js/drafts.js?v=6',
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
@@ -2517,7 +2542,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=90',
+  '/js/sections.js?v=91',
   '/js/navprogress.js?v=5'
 ];
 

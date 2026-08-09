@@ -1401,8 +1401,11 @@
       return fcard(fd.k, fd.t, lbl+
         '<div class="upTagBox" onclick="document.getElementById(\''+id+'\').focus()">'+
         '<span id="dzTags-'+sec+'"></span>'+
-        '<input class="upTagInput" id="'+id+'" maxlength="'+(fd.max||20)+'" placeholder="Add up to 10 tags…" '+
-        'onkeydown="dzTagKey(event,\''+sec+'\')"></div>'+hint, cond);
+        '<input class="upTagInput" id="'+id+'" maxlength="'+((fd.max||20)*10+20)+'" '+
+        'placeholder="anime, chr, genshin impact…" '+
+        'onkeydown="dzTagKey(event,\''+sec+'\')" '+
+        'onblur="dzTagBlur(event,\''+sec+'\')" '+
+        'onpaste="dzTagPaste(event,\''+sec+'\')"></div>'+hint, cond);
     } else if(fd.t === 'file' || fd.t === 'image'){
       // dropzone instead of file input
       var acc   = fd.accept ? fd.accept : (fd.t === 'image' ? 'image/*' : '');
@@ -1953,17 +1956,53 @@
         '<button type="button" onclick="dzTagDel(\''+sec+'\','+i+')" aria-label="Remove tag">✕</button></span>';
     }).join('');
   }
+  // ---- a tag box takes a list ---------------------------------------------
+  // "anime, chr, genshin impact" is three tags. It is three whether the
+  // commas were typed or pasted, and whether the member finishes with Enter
+  // or by tapping something else on the form — all three of those used to
+  // make one tag with the commas inside it.
+  function dzTagCommit(sec, raw){
+    var s = st(sec), fd = dzField(sec, 'tags') || {};
+    var cap = fd.max || 20, added = 0, full = false, cut = false;
+    String(raw == null ? '' : raw).split(/[,\n]/).forEach(function(part){
+      var v = part.trim().toLowerCase().replace(/^#+/, '').trim();
+      if(!v) return;                                  // ", ," is not a tag
+      if(v.length > cap){ v = v.slice(0, cap); cut = true; }
+      if(s.tags.length >= 10){ full = true; return; }
+      if(s.tags.indexOf(v) !== -1) return;            // the same tag twice is one
+      s.tags.push(v); added++;
+    });
+    if(full)     showToast('That is the limit — 10 tags');
+    else if(cut) showToast('A tag is at most ' + cap + ' characters');
+    if(added) renderTags(sec);
+    return added;
+  }
   function dzTagKey(e, sec){
     var el = e.target;
     if(e.key === 'Enter' || e.key === ','){
       e.preventDefault();
-      var v = String(el.value||'').trim().toLowerCase().replace(/^#/,'');
-      var s = st(sec);
-      if(v && s.tags.length < 10 && s.tags.indexOf(v) === -1){ s.tags.push(v); renderTags(sec); }
+      dzTagCommit(sec, el.value);
       el.value = '';
     } else if(e.key === 'Backspace' && !el.value && st(sec).tags.length){
       st(sec).tags.pop(); renderTags(sec);
     }
+  }
+  // Leaving the box finishes the tag. Without this, typing a tag and going
+  // straight to Publish loses it, which reads as the box not working.
+  function dzTagBlur(e, sec){
+    var el = e.target;
+    if(el && String(el.value||'').trim()){ dzTagCommit(sec, el.value); el.value = ''; }
+  }
+  // A pasted list is a list. A pasted word is just typing, so it is left in
+  // the box for the member to keep editing.
+  function dzTagPaste(e, sec){
+    var cb = e.clipboardData || window.clipboardData;
+    var txt = cb ? cb.getData('text') : '';
+    if(!txt || !/[,\n]/.test(txt)) return;
+    e.preventDefault();
+    var el = e.target;
+    dzTagCommit(sec, el.value + txt);
+    el.value = '';
   }
   function dzTagDel(sec, i){ st(sec).tags.splice(i,1); renderTags(sec); }
 
@@ -3285,6 +3324,8 @@
   window.dzSubmit        = dzSubmit;
   window.dzResetForm     = dzResetForm;
   window.dzTagKey        = dzTagKey;
+  window.dzTagBlur       = dzTagBlur;
+  window.dzTagPaste      = dzTagPaste;
   window.dzTagDel        = dzTagDel;
   window.dzPick          = dzPick;
   window.dzFileReplace   = dzFileReplace;

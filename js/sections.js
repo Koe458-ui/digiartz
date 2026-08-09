@@ -193,6 +193,7 @@
     return s;
   }
   window.dzSelectFor = selectFor;
+  window.dzCatLabel  = labelOf;
 
   function dzSecLoad(sec){
     var cfg = SEC[sec], host = document.getElementById('fgSecC-'+sec);
@@ -3732,6 +3733,24 @@
     return '<div><div class="avBlockH">'+esc2(head)+'</div>'+
       '<div class="dzvArticle">'+esc2(body).replace(/\n/g,'<br>')+'</div></div>';
   }
+  // A category is stored as the slug the picker wrote; this reads it back as
+  // the words the picker showed. Anything it does not recognise is printed as
+  // it stands rather than dropped.
+  function catLabels(sec, arr){
+    if(!Array.isArray(arr) || !arr.length) return '';
+    var f = window.dzCatLabel;
+    return arr.map(function(c){ return f ? f(sec, c) : c; })
+              .filter(Boolean).join(', ');
+  }
+  // Tags are the member's own words and the thing the section is searched by,
+  // so every detail view ends with them — the artwork viewer has shown its
+  // tags this way all along and these four never showed theirs at all.
+  function tagBlock(tags){
+    if(!Array.isArray(tags) || !tags.length) return '';
+    return '<div><div class="avBlockH">Tags</div><div class="avTagList">'+
+      tags.map(function(t){ return '<span class="avTagChip">'+esc2(t)+'</span>'; }).join('')+
+      '</div></div>';
+  }
   // a stored date read back the way the reader writes dates
   function jobDate(v){
     if(!v) return '';
@@ -3789,7 +3808,8 @@
         (r.summary ? '<p class="dzvExcerpt">'+esc2(r.summary)+'</p>' : '')+
         (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
         metaRow([['Type', r.resource_type],
-                 ['Category', r.subcategory],
+                 ['Category', catLabels('resources', r.category)],
+                 ['Subcategory', r.subcategory],
                  ['License', r.license],
                  ['Rights', resRights],
                  ['Made with', r.software],
@@ -3803,6 +3823,7 @@
         jobBlock('Installation and use', r.instructions)+
         jobBlock('Content notes', r.safety_notes)+
         resLinks+
+        tagBlock(r.tags)+
         cmBlock(kind, id)+
         '<a class="avActWide" href="'+esc2(r.file_url)+'" target="_blank" rel="noopener" download>\u2b07 Download file</a>'+
         '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
@@ -3831,6 +3852,7 @@
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
         (r.excerpt ? '<p class="dzvExcerpt">'+esc2(r.excerpt)+'</p>' : '')+
         metaRow([['Type', r.content_type],
+                 ['Category', catLabels('blog', r.category)],
                  ['Published', h.ago(r.published_at || r.created_at)],
                  ['Read time', (r.read_minutes||1)+' min'],
                  ['Updated', (r.updated_at && r.published_at &&
@@ -3842,6 +3864,7 @@
         '<div class="dzvArticle">'+esc2(r.body||'').replace(/\n/g,'<br>')+'</div>'+
         refsHtml+
         (hasRelated ? '<div id="dzvRelated"></div>' : '')+
+        tagBlock(r.tags)+
         cmBlock(kind, id)+
         // the resized copy: the origin bucket is not publicly readable, so a
         // link to the stored original would 403
@@ -3882,7 +3905,8 @@
         galleryHtml+
         (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
         metaRow([['Type', r.item_type],['Product', r.product_type],
-                 ['Category', (r.subcategory || '')],
+                 ['Category', catLabels('marketplace', r.category)],
+                 ['Subcategory', r.subcategory],
                  ['License', r.license],
                  ['Rights', rights],
                  ['File format', r.file_format],
@@ -3904,6 +3928,7 @@
         jobBlock('Content notes', r.safety_notes)+
         jobBlock('From the seller', r.seller_note)+
         (r.preview_watermark ? jobBlock('Previews', 'Preview images are watermarked. The files you receive are not.') : '')+
+        tagBlock(r.tags)+
         ((r.apply_url || r.apply_email)
           ? '<a class="avActWide" href="'+
               (r.apply_url ? esc2(r.apply_url)+'" target="_blank" rel="noopener'
@@ -3950,6 +3975,7 @@
         '<div class="dzvAuthor" id="dzvAuthor"></div>'+
         metaRow([
           ['Location', jw],
+          ['Category', catLabels('jobs', r.category)],
           ['Work mode', jmodeLbl],
           ['Type', String(r.employment_type||'').replace(/_/g,' ')],
           ['Experience', exp],
@@ -3976,6 +4002,7 @@
         jobBlock('What to send', r.application_materials)+
         (sends ? jobBlock('Required with every application', sends) : '')+
         jobBlock('Questions to answer', r.application_questions)+
+        tagBlock(r.tags)+
         (r.apply_url ? '<a class="avActWide" href="'+esc2(r.apply_url)+'" target="_blank" rel="noopener">Apply \u2197</a>'
          : r.apply_email ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Apply by email \u2709</a>' : '')+
         '<button class="avReportBtn" onclick="dzReportItem(\'job\',\''+id+'\')">\u2691 Report</button>'+

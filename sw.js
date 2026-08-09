@@ -4,6 +4,24 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v144 — the category and the tags reach the detail views too.
+       Checking the marketplace and blog views for gaps after v143 found
+       the same two in all four sections, and one of them was a mislabel
+       rather than an omission.
+       The marketplace and resource views had a row headed "Category" that
+       was printing the SUBcategory, so a listing filed under Brushes and
+       sub-filed under Inking read as "Category: Inking" and the real
+       category appeared nowhere. Both rows are there now under their own
+       names. Jobs and blog never had a category row at all and have one.
+       And not one of the four ever showed its tags — the words the member
+       chose, and the thing their section is searched by. Every detail
+       view ends with them now, drawn the way the artwork viewer has drawn
+       its own all along.
+       A category is stored as the slug the picker wrote, so it is read
+       back through the same map the cards use rather than printed as a
+       slug; anything that map does not recognise is printed as it stands
+       rather than dropped.
+       Changed: js/sections.js, index.html, sw.js.
    v143 — what an artist fills in about an artwork now reaches the viewer.
        The other four sections read their new fields back in v135 to v138;
        the artwork viewer never did, so a member could answer eighteen
@@ -2401,7 +2419,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v143';
+const CACHE_VERSION = 'v144';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2477,7 +2495,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=88',
+  '/js/sections.js?v=89',
   '/js/navprogress.js?v=5'
 ];
 

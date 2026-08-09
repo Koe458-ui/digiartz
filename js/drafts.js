@@ -91,9 +91,14 @@
       if(upPvUrl){ try{ URL.revokeObjectURL(upPvUrl); }catch(_){} }
       upPvUrl = URL.createObjectURL(rec.file);
       var daysLeft = Math.max(1, Math.ceil((rec.created + UPDR_TTL - Date.now())/(24*60*60*1000)));
+      // software moved to a list; a draft saved before that still has the old
+      // single value, so both are read and the list wins
+      var _drSw = (rec.extra && rec.extra.software_list)
+        ? String(rec.extra.software_list).split('\n').filter(Boolean).join(', ')
+        : (rec.software || '');
       upPvOpen({
         label:'DRAFT', src:upPvUrl, name:rec.name, desc:rec.desc,
-        tags:(rec.tags||'').split(','), cats:rec.cats, software:rec.software,
+        tags:(rec.tags||'').split(','), cats:rec.cats, software:_drSw,
         pages:(rec.pages&&rec.pages.length)||0,
         footHtml:'<span class="upPvWhen">Auto-deletes in <b>'+daysLeft+'d</b></span>'+
           '<button class="upBtnSec" onclick="upPvClose();updrResume(\''+esc(String(id))+'\')">Edit</button>'+
@@ -532,7 +537,8 @@
   function handlePfPagesFile(e){
     if(pfGuestGate(e)) return; // drop bypasses click gate
     var picked = Array.from(e.target.files||[]);
-    var room = Math.max(0, PF_PAGES_MAX - (pf.upPageFiles||[]).length);
+    if(!Array.isArray(pf.upPageFiles)) pf.upPageFiles = [];
+    var room = Math.max(0, PF_PAGES_MAX - pf.upPageFiles.length);
     var files = [], overSize = false;
     picked.forEach(function(f){
       if(f.size > PF_IMG_MAX_BYTES){ overSize = true; return; }
@@ -614,6 +620,9 @@
            'external_links','comments_allowed','visibility','featured'].forEach(function(k){
             if(k in extra) editPatch[k] = extra[k];
           });
+          // The uploader owns their own declaration and may raise it. What they
+          // cannot do is untick a piece moderation judged mature.
+          editPatch.is_mature = !!extra.declared_mature || !!pf.upEditModMature;
           const{error}=await sb.from('artworks').update(editPatch).eq('id',editId);
           if(error) throw error;
           // patch every in memory copy

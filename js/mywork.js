@@ -68,7 +68,10 @@
     document.getElementById('pfDzTxt').textContent = 'Drag & drop your artwork here';
     document.getElementById('pfUpCatField').style.display = '';
     document.getElementById('pfComicPagesWrap').style.display = 'none';
-    document.getElementById('pfUpSoftwareField').style.display = '';
+    // The one-of-ten software picker was replaced by a list; showing it here
+    // would put two software controls on the same form.
+    var _swF = document.getElementById('pfUpSoftwareField');
+    if(_swF) _swF.style.display = 'none';
     // albums not edited here
     var _albF2 = document.getElementById('pfUpAlbumField'); if(_albF2) _albF2.style.display = 'none';
     document.getElementById('pfUpNm').value = art.name||'';
@@ -78,6 +81,14 @@
     pfSetTagsFromArray(art.tags||[]);
     pfSetCats(catList(art.category).length?catList(art.category):['others']);
     if(typeof pfSetSoftware==='function') pfSetSoftware(art.software||'');
+    // The rest of the form starts from the stored piece rather than from its
+    // defaults — otherwise saving an edit would write "All rights reserved,
+    // published, no credits" over whatever the uploader really chose.
+    if(typeof dzArtRestore === 'function' && typeof dzArtFromRow === 'function'){
+      dzArtRestore(dzArtFromRow(art));
+    }
+    // What moderation decided, remembered so an edit cannot lower it.
+    pf.upEditModMature = (art.content_rating === 'MATURE');
     closePfCatDd();
     document.getElementById('pfDz').style.display='';
     var prev = document.getElementById('pfUpPrev');

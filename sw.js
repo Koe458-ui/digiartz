@@ -4,6 +4,40 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v140 — every text write is rate limited, and the artwork edit form
+       stops overwriting what it never read.
+       An audit of the write paths after the five composer revamps. The
+       site already rate limited the two things that cost money — uploads,
+       in the storage signer, and payments, in the payment endpoints — and
+       nothing else. A job posting and a blog post need no file at all, so
+       nothing whatsoever stood between one script and a table full of
+       them; comments, reports and direct messages were the same.
+       Twenty-one triggers now, on every table a member can write words
+       into, calling the rate counter that already existed for the download
+       and view tallies. Measured: the sixteenth job posting in an hour is
+       refused with a message a member can read, and the fifteen before it
+       are not. The bucket is per member, per table and per operation, so
+       commenting fast cannot exhaust the ability to publish and one member
+       can never exhaust another's. auth.uid() is null for the two
+       scheduled publishers, so a queue of forty scheduled posts still
+       publishes — they were rate limited when they were queued, which is
+       the moment that belonged to the member.
+       Two bugs found and fixed while looking:
+       artworks gained an updated_at column in v139 and nothing maintained
+       it, so "Last updated" would have read as the upload time forever.
+       The other four content tables have carried that trigger for a
+       while; artworks never had the column to need one.
+       The artwork edit form did not prefill any of the fields v139 added,
+       so opening a piece to fix a typo and saving would have written the
+       form's defaults — All rights reserved, published, no credits, no
+       links — over whatever the uploader actually chose. It starts from
+       the stored piece now. Maturity is the one thing an edit may raise
+       but not lower: an uploader can mark their own work mature, and
+       cannot untick a piece moderation judged so.
+       Also stood down the old one-of-ten software picker on the edit path,
+       which was being shown again beside the list that replaced it.
+       Changed: js/sections.js, js/drafts.js, js/mywork.js, index.html,
+       sw.js, supabase/migrations/20260809_write_rate_limits.sql.
    v139 — an artwork says what it is, and what may be done with it.
        The fifth and last, and the awkward one. The other four forms are
        drawn by buildForm from a list of field descriptors; the artwork
@@ -2288,7 +2322,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v139';
+const CACHE_VERSION = 'v140';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2348,11 +2382,11 @@ const SHELL_URLS = [
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
   '/js/albums.js?v=9',
-  '/js/drafts.js?v=3',
+  '/js/drafts.js?v=4',
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=9',
+  '/js/mywork.js?v=10',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',
@@ -2364,7 +2398,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=85',
+  '/js/sections.js?v=86',
   '/js/navprogress.js?v=5'
 ];
 

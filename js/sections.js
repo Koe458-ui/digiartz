@@ -1719,6 +1719,34 @@
     dzCountAll('artwork');               // counters, chips and conditions follow
   }
 
+  // A stored artwork, turned back into the control values the panel holds.
+  // Editing a piece has to start from what the piece says, or saving it would
+  // write the form's defaults over the answers the uploader actually gave.
+  function dzArtFromRow(a){
+    a = a || {};
+    function yn(v){ return v ? 'yes' : 'no'; }
+    var sw = (a.software_list && a.software_list.length)
+      ? a.software_list
+      : (a.software ? [a.software] : []);          // rows from before the list existed
+    return {
+      summary: a.summary || '',
+      subject_matter: a.subject_matter || '',
+      medium: a.medium || 'Digital painting',
+      software_list: sw.join('\n'),
+      license: a.license || 'All rights reserved',
+      commercial_use: yn(a.commercial_use),
+      attribution_required: yn(a.attribution_required),
+      modification_allowed: yn(a.modification_allowed),
+      is_mature: yn(a.is_mature),
+      credits: (a.credits || []).join('\n'),
+      process_notes: a.process_notes || '',
+      external_links: (a.external_links || []).join('\n'),
+      comments_allowed: a.comments_allowed === false ? 'no' : 'yes',
+      visibility: a.visibility || 'published',
+      featured: !!a.featured
+    };
+  }
+
   // the half of the row these fields account for
   function dzArtValues(){
     function v(k){ return val('artwork', k); }
@@ -3136,6 +3164,7 @@
   window.dzArtValues     = dzArtValues;
   window.dzArtSnapshot   = dzArtSnapshot;
   window.dzArtRestore    = dzArtRestore;
+  window.dzArtFromRow    = dzArtFromRow;
   window.dzFieldFail     = dzFieldFail;
   window.dzSeoTitle      = dzSeoTitle;
   window.dzSeoDesc       = dzSeoDesc;

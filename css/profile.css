@@ -73,6 +73,22 @@
     /* log out */
     .pfMenuItem--danger{margin-top:auto;}
     .pfMenuItem--danger:hover{background:rgba(220,38,38,.18);color:#fca5a5;}
+    /* legal, past the end of the actions */
+    .setLegal{
+      display:flex;flex-direction:column;gap:.15rem;
+      margin-top:1.1rem;padding-top:.9rem;border-top:1px solid var(--bdr);
+    }
+    .setLegalHead{
+      font-family:var(--fm);font-size:.64rem;font-weight:600;letter-spacing:.16em;
+      text-transform:uppercase;color:var(--txd);padding:0 .9rem .45rem;
+    }
+    /* Quieter than the items above it: reference material a member opens once,
+       not somewhere they are being sent. Still a full-width target — this is a
+       phone menu before it is anything else. */
+    .setList .pfMenuItem--legal{
+      font-size:.85rem;padding:.72rem .9rem;color:var(--txd);text-decoration:none;
+    }
+    .pfMenuItem--legal:hover{background:var(--pdim);color:var(--tx);}
     /* share profile sheet */
     .pfShareBox{max-width:340px;align-items:center;padding:1.6rem 1.4rem 1.5rem;position:relative;}
     .pfShareTitle{

@@ -102,7 +102,7 @@
   <link rel="stylesheet" href="/css/community.css?v=3">
   <link rel="stylesheet" href="/css/connect.css?v=1">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
-  <link rel="stylesheet" href="/css/profile.css?v=2">
+  <link rel="stylesheet" href="/css/profile.css?v=3">
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=2">
@@ -2205,6 +2205,26 @@
         <!-- syncAdmBtn in js/gallery.js adds one more item here, for the one
              account type entitled to it. Nobody else's page carries it. -->
         <button class="pfMenuItem pfMenuItem--danger" onclick="pfMenuLogout()">Log Out</button>
+
+        <!-- Below Log Out on purpose. These are reference documents, not
+             things a member does, so they sit past the end of the actions
+             rather than among them.
+
+             Same anchors as the footer: the href is the real standalone page
+             and the click opens the modal over this drawer, with openLegal
+             returning false to cancel the navigation. Signed out, a member
+             never reaches this menu — the footer carries the same links for
+             everyone, and /legal/<slug> is reachable by anyone with the URL. -->
+        <div class="setLegal">
+          <div class="setLegalHead">Legal</div>
+          <a class="pfMenuItem pfMenuItem--legal" href="/legal/privacy" onclick="return openLegal('privacy')">Privacy Policy</a>
+          <a class="pfMenuItem pfMenuItem--legal" href="/legal/terms" onclick="return openLegal('terms')">Terms &amp; Conditions</a>
+          <a class="pfMenuItem pfMenuItem--legal" href="/legal/refund" onclick="return openLegal('refund')">Refund Policy</a>
+          <a class="pfMenuItem pfMenuItem--legal" href="/legal/delivery" onclick="return openLegal('shipping')">Delivery Policy</a>
+          <a class="pfMenuItem pfMenuItem--legal" href="/legal/creator-terms" onclick="return openLegal('seller')">Creator &amp; Seller Terms</a>
+          <a class="pfMenuItem pfMenuItem--legal" href="/legal/cookies" onclick="return openLegal('cookie')">Cookie Policy</a>
+          <a class="pfMenuItem pfMenuItem--legal" href="/legal/contact" onclick="return openLegal('contact')">Contact Us</a>
+        </div>
       </div>
     </div>
   </div>
@@ -2304,7 +2324,10 @@
       </div>
       <p class="ckBody">
         We use cookies to improve your experience and keep the site running smoothly. See our
-        <button class="ckLink" onclick="openLegal('cookie')" aria-label="Open Cookie Policy">Cookie Policy</button>
+        <!-- An anchor for the same reason as the footer and the menu: if the
+             modal cannot open, the consent notice still points somewhere real
+             rather than at a button that does nothing. -->
+        <a class="ckLink" href="/legal/cookies" onclick="return openLegal('cookie')" aria-label="Open Cookie Policy">Cookie Policy</a>
         for details.
       </p>
     </div>

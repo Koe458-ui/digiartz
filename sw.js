@@ -4,6 +4,13 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v103 — the legal documents reach the settings menu.
+       Seven links below Log Out, in their own group past the end of the
+       actions: reference material a member opens once, not somewhere
+       they are being sent, so they are quieter than the items above and
+       sit under a rule. Same anchors as the footer — a real /legal/<slug>
+       href, the modal opening over the drawer on click.
+       Changed: index.html, sw.js, css/profile.css.
    v102 — the legal documents get addresses of their own.
        Privacy, Terms, Cookie, Refund and the Creator & Seller terms
        existed only as strings inside js/effects.js, shown in a modal by
@@ -1393,7 +1400,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v102';
+const CACHE_VERSION = 'v103';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1422,7 +1429,7 @@ const SHELL_URLS = [
   '/css/community.css?v=3',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=2',
+  '/css/profile.css?v=3',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',

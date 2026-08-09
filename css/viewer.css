@@ -836,3 +836,11 @@
       text-align:center;padding:3rem 2rem;
     }
 
+
+    /* The one-line summary the artist wrote, under the title and above the
+       meta. It reads as a lead rather than as the description, so it takes
+       the muted ink the subtype above it uses at the description's size. */
+    .avSummary{
+      font-family:var(--fb);font-size:.9rem;line-height:1.5;
+      color:rgba(var(--tx2-rgb),.75);margin:.45rem 0 0;overflow-wrap:anywhere;
+    }

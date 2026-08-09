@@ -4,6 +4,32 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v143 — what an artist fills in about an artwork now reaches the viewer.
+       The other four sections read their new fields back in v135 to v138;
+       the artwork viewer never did, so a member could answer eighteen
+       questions about a piece and see none of the answers anywhere. It
+       was the one place the work went in and did not come out.
+       The summary leads under the title. The meta list carries the
+       artist's own medium rather than a hard-coded "Digital Art", the
+       subject, the whole software list instead of the one name it used
+       to hold, the licence, what a viewer may do with it, and an 18+ mark
+       where the piece is mature. Process notes, credits and links follow
+       the tags, each with its own divider and each dropped when empty.
+       An artist who turned comments off gets no comment box, and the
+       panel says so — what was already said stays readable, because
+       turning comments off ends a conversation rather than erasing it.
+       The one thing worth being careful about: every artwork uploaded
+       before these columns existed has commercial_use, attribution and
+       modification sitting at false because that is the column default,
+       not because anyone said so. Reading those back would print
+       "Personal use only" under work whose artist never chose it. The
+       presence of a licence is what marks the answers as the artist's,
+       so a piece from before simply shows no rights at all — measured,
+       along with the medium falling back to its old label and every new
+       block staying absent.
+       Links are the artist's own text, so anything that is not http is
+       printed rather than made followable, and the rest carry noopener.
+       Changed: js/gallery.js, css/viewer.css, index.html, sw.js.
    v142 — Automatic Details fills itself in as you type.
        The card listed what the system would work out and described how,
        which told a member the mechanism and never the answer. It shows
@@ -2375,7 +2401,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v142';
+const CACHE_VERSION = 'v143';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2400,7 +2426,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=4',
   '/css/hero.css?v=91',
-  '/css/viewer.css?v=4',
+  '/css/viewer.css?v=5',
   '/css/community.css?v=4',
   '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
@@ -2431,7 +2457,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=19',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=76',
+  '/js/gallery.js?v=77',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
   '/js/albums.js?v=11',

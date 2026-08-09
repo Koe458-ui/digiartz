@@ -264,14 +264,40 @@
 
   function avRenderMeta(m){
     // only rows with data
-    var rows = [];
+    var rows = [], a = m.art || null;
     if(m.hasArt){
       if(m.category) rows.push(['Category', avCap(m.category)]);
-      rows.push(['Medium', 'Digital Art']);
-      if(m.software) rows.push(['Software', m.software]);
+      // the medium the artist picked, when they picked one
+      rows.push(['Medium', (a && a.medium) || 'Digital Art']);
+      if(a && a.subject_matter) rows.push(['Subject', a.subject_matter]);
+      // software is a list now; the old single value is the fallback for
+      // artworks uploaded before it was one
+      var sw = (a && a.software_list && a.software_list.length)
+        ? a.software_list.join(', ') : m.software;
+      if(sw) rows.push(['Software', sw]);
+      // A licence is only claimed when the artist actually answered the
+      // licence questions. Every artwork uploaded before those existed has
+      // them defaulted to false, and reading that back as "personal use
+      // only" would put words in the artist's mouth — so the presence of a
+      // licence is what says these answers are theirs.
+      if(a && a.license){
+        rows.push(['License', a.license]);
+        var rights = [
+          a.commercial_use ? 'Commercial use allowed' : 'Personal use only',
+          a.modification_allowed ? 'Modification allowed' : '',
+          a.attribution_required ? 'Attribution required' : ''
+        ].filter(Boolean).join(' · ');
+        if(rights) rows.push(['Rights', rights]);
+      }
+      if(a && a.is_mature) rows.push(['Content', 'Mature · 18+']);
     }
     rows.push(['Resolution', '—', 'avMetaResVal']);
     if(m.hasArt && m.createdAt) rows.push(['Uploaded', avFormatDate(m.createdAt) || '—']);
+    // shown only once it says something the upload date does not
+    if(a && a.updated_at && a.created_at &&
+       new Date(a.updated_at) - new Date(a.created_at) > 60000){
+      rows.push(['Updated', avFormatDate(a.updated_at) || '—']);
+    }
     var list = document.getElementById('avMetaList');
     if(!list) return;
     list.innerHTML = rows.map(function(r){
@@ -279,6 +305,60 @@
       return '<div class="avMetaRow"><span class="avMetaLbl">'+esc(r[0])+'</span><span class="avMetaVal"'+valId+'>'+esc(r[1])+'</span></div>';
     }).join('');
   }
+  // ---- the rest of what the artist wrote ---------------------------------
+  // The summary leads under the title; the process notes, credits and links
+  // sit below the tags. Each block carries its own divider and is dropped
+  // when empty, which is every one of them for an artwork uploaded before
+  // these fields existed.
+  function avProseBlock(head, body){
+    body = String(body == null ? '' : body).trim();
+    if(!body) return '';
+    return '<div class="avDiv"></div><div><div class="avBlockH">'+esc(head)+'</div>'+
+      '<p class="avDescTxt">'+esc(body).replace(/\n/g,'<br>')+'</p></div>';
+  }
+  function avRenderExtras(art){
+    var sEl = document.getElementById('avSummary');
+    if(sEl){
+      var sm = (art && art.summary) ? String(art.summary).trim() : '';
+      sEl.textContent = sm;
+      sEl.hidden = !sm;
+    }
+    var host = document.getElementById('avExtraBlocks');
+    if(host){
+      var out = '';
+      if(art){
+        out += avProseBlock('Process notes', art.process_notes);
+        if(Array.isArray(art.credits) && art.credits.length){
+          out += '<div class="avDiv"></div><div><div class="avBlockH">Credits</div>'+
+            '<div class="avTagList">'+art.credits.map(function(c){
+              return '<span class="avTagChip">'+esc(c)+'</span>';
+            }).join('')+'</div></div>';
+        }
+        if(Array.isArray(art.external_links) && art.external_links.length){
+          // the artist's own text, so anything that is not http is printed
+          // rather than turned into something the browser will follow
+          out += '<div class="avDiv"></div><div><div class="avBlockH">Links</div><ul class="dzvRefs">'+
+            art.external_links.map(function(u){
+              var safe = /^https?:\/\//i.test(String(u||'')) ? String(u) : '';
+              var show = String(u||'').replace(/^https?:\/\//i,'');
+              return safe
+                ? '<li><a href="'+esc(safe)+'" target="_blank" rel="noopener nofollow">'+esc(show)+'</a></li>'
+                : '<li>'+esc(show)+'</li>';
+            }).join('')+'</ul></div>';
+        }
+      }
+      host.innerHTML = out;
+    }
+    // An artist who turned comments off gets no comment box. What was already
+    // said stays readable — turning them off ends the conversation, it does
+    // not erase it.
+    var off = !!(art && art.comments_allowed === false);
+    var bar = document.querySelector('#artModal .avCmBar');
+    if(bar) bar.style.display = off ? 'none' : '';
+    var note = document.getElementById('avCmOff');
+    if(note) note.hidden = !off;
+  }
+
   function avUpdateResolution(w,h){
     var el = document.getElementById('avMetaResVal');
     if(el && w && h) el.textContent = w+' × '+h+' px';
@@ -737,7 +817,9 @@
       } else { tagListEl.innerHTML=''; tagsBlock.hidden=true; tagsDiv.hidden=true; }
     }
 
-    avRenderMeta({ category:catLabelStr, software: art?art.software:null, createdAt: art?art.created_at:null, hasArt: !!art });
+    avRenderMeta({ category:catLabelStr, software: art?art.software:null,
+                   createdAt: art?art.created_at:null, hasArt: !!art, art: art });
+    avRenderExtras(art);
     avRenderAuthor(art);
     avPaintQuota(null); avLoadQuota();
     avSetupNav(id, navSource);

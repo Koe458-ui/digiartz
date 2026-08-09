@@ -183,6 +183,81 @@
     if(e.target === backdrop) closeLegal();
   };
 
+  // ---- the same documents, as a slide page --------------------------------
+  //
+  // Opened from the Settings menu, where a modal was the wrong shape: every
+  // other item there — Theme, Edit My Work, Wallet, My Purchases — slides a
+  // page in over the menu and its back arrow returns to it. A sheet floating
+  // over a menu you cannot see behaves like nothing else in that list.
+  //
+  // The footer keeps the modal. At the bottom of the home page there is no
+  // menu to go back to, and a sheet over the page is right there.
+  //
+  // Same text either way: both read window.DZ_LEGAL, so there is still one
+  // copy of every document.
+  // Looked up on use, not now. This script runs from partway down the body
+  // and #legalPage is written out below it — resolving here would capture
+  // null, openLegalPage would report that it could not open, and every row in
+  // the menu would quietly navigate away instead of sliding. The modal gets
+  // away with binding early only because #legalBackdrop happens to sit above
+  // this script; that is an ordering accident, not something to rely on twice.
+  var lg = null;
+  function lgEls(){
+    if(lg) return lg;
+    var page  = document.getElementById('legalPage');
+    var title = document.getElementById('lgTitleText');
+    var body  = document.getElementById('lgBody');
+    if(!page || !title || !body) return null;
+    lg = { page:page, title:title, body:body };
+    return lg;
+  }
+  var lgPrevOverflow = '';
+
+  // Returns false when it opened the page and true when it could not, so the
+  // menu anchors can fall through to their href exactly as the footer's do.
+  window.openLegalPage = function(type){
+    var docs = window.DZ_LEGAL;
+    var c = docs && docs[type];
+    var els = lgEls();
+    if(!c || !els) return true;
+    els.title.innerHTML = c.title;
+    els.body.innerHTML  = c.html;
+    els.page.scrollTop  = 0;
+    els.page.classList.add('open');
+    lgPrevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    var back = els.page.querySelector('.subPgX');
+    if(back) setTimeout(function(){ back.focus({preventScroll:true}); }, 80);
+    return false;
+  };
+
+  window.closeLegalPage = function(){
+    var els = lgEls();
+    if(!els) return;
+    els.page.classList.remove('open');
+    document.body.style.overflow = lgPrevOverflow;
+  };
+
+  // setGo hands the menu the page's id and watches for it to close, so the
+  // back arrow lands on Settings rather than on the profile. Guarded: if the
+  // documents have not loaded there is nothing to open, and returning true
+  // lets the browser follow the row's href to the standalone page instead.
+  window.setGoLegal = function(type){
+    var docs = window.DZ_LEGAL;
+    if(!docs || !docs[type] || !lgEls() || typeof setGo !== 'function') return true;
+    setGo(function(){ window.openLegalPage(type); }, 'legalPage');
+    return false;
+  };
+
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    var els = lgEls();
+    if(els && els.page.classList.contains('open')){
+      e.stopPropagation();
+      closeLegalPage();
+    }
+  }, true);
+
   // close on escape
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape' && backdrop.classList.contains('open')) closeLegal();

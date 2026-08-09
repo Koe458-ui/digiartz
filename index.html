@@ -100,9 +100,9 @@
   <link rel="stylesheet" href="/css/hero.css?v=87">
   <link rel="stylesheet" href="/css/viewer.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=4">
-  <link rel="stylesheet" href="/css/connect.css?v=1">
+  <link rel="stylesheet" href="/css/connect.css?v=2">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
-  <link rel="stylesheet" href="/css/profile.css?v=8">
+  <link rel="stylesheet" href="/css/profile.css?v=9">
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=2">
@@ -2425,10 +2425,15 @@
              documents rather than things a member does. Same shape as every
              other group here: a heading, then the rows it covers.
 
-             Anchors, not buttons, and the href is the real standalone page.
-             The click opens the modal over the drawer, openLegal returning
-             false to cancel the navigation; where it cannot open — the module
-             has not loaded, or the document is unknown — it returns true and
+             setGoLegal, not openLegal: these open the slide page the way
+             Theme and Edit My Work do, so the back arrow returns to this menu
+             instead of a sheet floating over a menu you cannot see. The footer
+             still opens the modal — down there, there is no menu to go back
+             to. Same document either way.
+
+             Anchors, and the href is the real standalone page. setGoLegal
+             returns false to cancel the navigation once it has opened; where
+             it cannot — the documents have not loaded — it returns true and
              the browser follows the href, so a row is never dead. -->
         <section class="setGrp" aria-labelledby="setGrpLegal">
           <h3 class="setGrpHd" id="setGrpLegal">
@@ -2436,13 +2441,13 @@
             <span class="setGrpTxt">Terms &amp; Privacy</span>
           </h3>
           <div class="setGrpItems">
-            <a class="pfMenuItem" href="/legal/privacy" onclick="return openLegal('privacy')"><span class="pfMenuTxt">Privacy Policy</span></a>
-            <a class="pfMenuItem" href="/legal/terms" onclick="return openLegal('terms')"><span class="pfMenuTxt">Terms &amp; Conditions</span></a>
-            <a class="pfMenuItem" href="/legal/refund" onclick="return openLegal('refund')"><span class="pfMenuTxt">Refund Policy</span></a>
-            <a class="pfMenuItem" href="/legal/delivery" onclick="return openLegal('shipping')"><span class="pfMenuTxt">Delivery Policy</span></a>
-            <a class="pfMenuItem" href="/legal/creator-terms" onclick="return openLegal('seller')"><span class="pfMenuTxt">Creator &amp; Seller Terms</span></a>
-            <a class="pfMenuItem" href="/legal/cookies" onclick="return openLegal('cookie')"><span class="pfMenuTxt">Cookie Policy</span></a>
-            <a class="pfMenuItem" href="/legal/contact" onclick="return openLegal('contact')"><span class="pfMenuTxt">Contact Us</span></a>
+            <a class="pfMenuItem" href="/legal/privacy" onclick="return setGoLegal('privacy')"><span class="pfMenuTxt">Privacy Policy</span></a>
+            <a class="pfMenuItem" href="/legal/terms" onclick="return setGoLegal('terms')"><span class="pfMenuTxt">Terms &amp; Conditions</span></a>
+            <a class="pfMenuItem" href="/legal/refund" onclick="return setGoLegal('refund')"><span class="pfMenuTxt">Refund Policy</span></a>
+            <a class="pfMenuItem" href="/legal/delivery" onclick="return setGoLegal('shipping')"><span class="pfMenuTxt">Delivery Policy</span></a>
+            <a class="pfMenuItem" href="/legal/creator-terms" onclick="return setGoLegal('seller')"><span class="pfMenuTxt">Creator &amp; Seller Terms</span></a>
+            <a class="pfMenuItem" href="/legal/cookies" onclick="return setGoLegal('cookie')"><span class="pfMenuTxt">Cookie Policy</span></a>
+            <a class="pfMenuItem" href="/legal/contact" onclick="return setGoLegal('contact')"><span class="pfMenuTxt">Contact Us</span></a>
           </div>
         </section>
 
@@ -2548,7 +2553,7 @@
        scripts are deferred, so it lands well before anyone can click a footer
        link, and openLegal reads it at click time rather than at load time. -->
   <script type="module" src="/js/legal-content.js?v=1"></script>
-  <script src="/js/effects.js?v=5"></script>
+  <script src="/js/effects.js?v=6"></script>
 
 
 
@@ -2737,6 +2742,19 @@ window.ZEO_DATA = window.ZEO_DATA || {
 </div>
 
   <script src="/js/theme.js?v=2"></script>
+
+<!-- One page for all seven legal documents, opened from the Settings menu.
+     Same shape as Theme or Edit My Work: a header with a back arrow, then the
+     document. The title and body are filled in by openLegalPage from
+     js/legal-content.js — the same text the footer modal and the /legal/<slug>
+     pages read, so there is still only one copy of any of it. -->
+<div id="legalPage" role="dialog" aria-modal="true" aria-labelledby="lgTitleText">
+  <div class="subPgHdr">
+    <button class="subPgX" onclick="closeLegalPage()" aria-label="Back to settings">←</button>
+    <div class="subPgTitle" id="lgTitleText">LEGAL</div>
+  </div>
+  <div class="lgBdy" id="lgBody"></div>
+</div>
 
 
 

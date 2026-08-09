@@ -4,6 +4,25 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v131 — a legal document opened from Settings slides in, like everything
+       else in that menu.
+       Theme, Edit My Work, Wallet and My Purchases all open a page over
+       the menu with a back arrow that returns to it. The legal rows were
+       opening a modal instead — a sheet floating over a menu you could no
+       longer see, closing to nowhere in particular. They now go through
+       setGo the same way the rest do, into one #legalPage filled from
+       js/legal-content.js.
+       The footer keeps the modal. At the bottom of the home page there is
+       no menu to go back to, and a sheet over the page is the right shape
+       there. Both read the same documents, so there is still one copy of
+       any of them, and the typography is written once — connect.css now
+       carries .lmBody and .lgBdy on the same rules.
+       The page element is looked up when it is used rather than when the
+       script runs: #legalPage is written out below effects.js, so binding
+       it early would have captured null and every row would have quietly
+       navigated away instead of sliding.
+       Changed: index.html, sw.js, css/profile.css, css/connect.css,
+       js/effects.js.
    v130 — the precache list catches up with what the page actually loads.
        Eight assets had drifted: index.html asked for hero.css v87,
        overrides v5, upload v6, albums v8, drafts v2, mywork v8, pfedit v8
@@ -1923,7 +1942,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v130';
+const CACHE_VERSION = 'v131';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1950,9 +1969,9 @@ const SHELL_URLS = [
   '/css/hero.css?v=87',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
-  '/css/connect.css?v=1',
+  '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=8',
+  '/css/profile.css?v=9',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
@@ -1992,7 +2011,7 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=3',
   '/js/search.js?v=4',
   '/js/feed.js?v=3',
-  '/js/effects.js?v=5',
+  '/js/effects.js?v=6',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',

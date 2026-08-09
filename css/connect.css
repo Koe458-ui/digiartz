@@ -399,33 +399,36 @@
     .lmBody::-webkit-scrollbar{width:3px;}
     .lmBody::-webkit-scrollbar-track{background:transparent;}
     .lmBody::-webkit-scrollbar-thumb{background:var(--bdrh);}
-    .lmBody h2{
+    /* The same documents render in two places — the footer modal and the
+       settings slide page — so the typography is written once and both
+       selectors carry it. Only the container differs. */
+    .lmBody h2,.lgBdy h2{
       font-family:var(--fd);
       font-size:clamp(.7rem,2.5vw,.85rem);
       font-weight:700;letter-spacing:.12em;
       color:var(--ps);margin-bottom:1.4rem;
     }
-    .lmBody h3{
+    .lmBody h3,.lgBdy h3{
       font-family:var(--fd);
       font-size:clamp(.98rem,2.4vw,1.1rem);
       font-weight:700;letter-spacing:.01em;
       color:var(--tx);margin:1.5rem 0 .6rem;
     }
-    .lmBody h4{
+    .lmBody h4,.lgBdy h4{
       font-family:var(--fb);
       font-size:clamp(.92rem,2.2vw,1rem);
       font-weight:700;letter-spacing:0;
       color:var(--tx);margin:1rem 0 .4rem;
     }
-    .lmBody p,.lmBody li{
+    .lmBody p,.lmBody li,.lgBdy p,.lgBdy li{
       font-family:var(--fb);
       font-size:clamp(.95rem,2.2vw,1.05rem);
       line-height:1.85;color:var(--txd);
       margin-bottom:.85rem;
     }
-    .lmBody ul{padding-left:1.3rem;margin-bottom:.85rem;}
-    .lmBody li{margin-bottom:.4rem;}
-    .lmBody strong{color:var(--tx);font-style:normal;}
+    .lmBody ul,.lgBdy ul{padding-left:1.3rem;margin-bottom:.85rem;}
+    .lmBody li,.lgBdy li{margin-bottom:.4rem;}
+    .lmBody strong,.lgBdy strong{color:var(--tx);font-style:normal;}
     .lmDate{
       display:inline-block;margin-top:.6rem;
       font-family:var(--fm);

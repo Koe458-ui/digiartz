@@ -4,6 +4,44 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v138 — a resource says what is in the package, and reads the rest off
+       the upload.
+       The last of the four. The composer asked for a file, a preview, a
+       title, a description, a category and a license; what kind of asset
+       it is, what software opens it, what is actually inside the zip,
+       whether it may be sold on, and how to install it were all left to
+       one description box.
+       The same line as the blog form, drawn where it belongs here: file
+       format, file size, how many files are inside the package, the
+       preview's resolution, the author, the dates and the download count
+       are all worked out, and none of them has a box to type wrong.
+       Two of those are new and are read rather than guessed. The file
+       count walks the zip's own central directory — the record at the tail
+       says where the directory is and how many entries it holds, and the
+       entries say which are folders — so a 200MB package costs a few
+       kilobytes to count, folders are not counted as files, and anything
+       that is not a plain zip gets no answer rather than a wrong one.
+       Measured on a real archive of three files in two folders: three.
+       The resolution is the preview's own pixels, with a timeout so a
+       stubborn image can never hold up a publish.
+       The three licence questions are required answers rather than
+       unticked boxes, because an unticked box and an unanswered question
+       look identical and these decide whether someone may sell the work
+       they make with the file.
+       The chip list the blog form grew for its sources is general now: it
+       takes plain entries as well as links, with its own per-entry bounds
+       and its own ceiling. Compatible software uses it at ten entries and
+       does not have a scheme forced onto it; external links use it at five
+       and do.
+       Floors and ceilings repeated as constraints as in v135–v137:
+       measured, the table rejects a 60k description, a 900MB file size,
+       forty compatible-software entries, twenty links, a 9k what's-
+       included, a bogus visibility, a description under its floor and a
+       9999999 file count.
+       Search applies visibility for resources now, completing the set.
+       All four composers share one system as of this version.
+       Changed: js/sections.js, js/search.js, index.html, sw.js,
+       supabase/migrations/20260809_resources_full_listing.sql.
    v137 — a post carries its own context, and stops asking for what it
        already knows.
        The third of these, and the one with a line running through it. The
@@ -2202,7 +2240,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v137';
+const CACHE_VERSION = 'v138';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2269,7 +2307,7 @@ const SHELL_URLS = [
   '/js/mywork.js?v=8',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=6',
+  '/js/search.js?v=7',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
   '/js/effects.js?v=6',
@@ -2278,7 +2316,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=83',
+  '/js/sections.js?v=84',
   '/js/navprogress.js?v=5'
 ];
 

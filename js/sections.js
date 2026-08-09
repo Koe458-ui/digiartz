@@ -61,7 +61,14 @@
   var SEC = {
     resources: {
       table:'resources', kind:'grid', noun:'resource',
-      select:'id,user_id,title,description,category,tags,file_url,file_name,file_ext,file_size,preview_url,license,download_count,created_at'
+      // a draft is kept and not listed; a hidden one is reachable by its link
+      eq:{ visibility:'published' },
+      order:[['featured',false],['created_at',false]],
+      select:'id,user_id,title,summary,description,resource_type,category,subcategory,tags,'+
+             'file_url,file_name,file_ext,file_size,file_count,dimensions,preview_url,'+
+             'license,commercial_use,attribution_required,modification_allowed,'+
+             'software,compatible_software,compatible_versions,whats_included,instructions,'+
+             'version,external_links,safety_notes,featured,download_count,updated_at,created_at'
     },
     blog: {
       table:'blog_posts', kind:'list', noun:'post',
@@ -260,7 +267,13 @@
       return '<div class="dzCard" onclick="dzOpenView(\'resources\',\''+id+'\')">'+
         '<div class="dzThumb">'+thumb+'<span class="dzBadge">'+esc((r.file_ext||'').toUpperCase())+'</span></div>'+
         '<div class="dzBody"><div class="dzName">'+esc(r.title)+'</div>'+
-        '<div class="dzMeta"><span>'+esc(bytes(r.file_size))+'</span>'+
+        // the one-line hook, which is what it was written for
+        (r.summary ? '<div class="dzHint">'+esc(r.summary)+'</div>' : '')+
+        '<div class="dzMeta">'+
+        (r.featured ? '<span>★ Featured</span>' : '')+
+        (r.resource_type ? '<span>'+esc(r.resource_type)+'</span>' : '')+
+        '<span>'+esc(bytes(r.file_size))+'</span>'+
+        (r.file_count > 1 ? '<span>'+esc(String(r.file_count))+' files</span>' : '')+
         '<span>'+esc(String(r.download_count||0))+' downloads</span>'+
         '<span>'+esc(r.license||'')+'</span></div>'+chips(r)+'</div></div>';
     }
@@ -414,6 +427,32 @@
     ['Views · likes · bookmarks', 'Counted by the site']
   ];
 
+  // ---- resource vocabulary -----------------------------------------------
+  var RESOURCE_TYPE = [['Brush','Brush pack'],['Texture','Texture'],['Font','Font'],
+                       ['Template','Template'],['3D Model','3D model'],['Asset','Asset pack'],
+                       ['Preset','Preset'],['Action','Action / script'],['Plugin','Plugin'],
+                       ['Palette','Colour palette'],['Mockup','Mockup'],['Pattern','Pattern'],
+                       ['LUT','LUT'],['Other','Other']];
+  var RES_VISIBILITY = [['published','Published — listed in Resources'],
+                        ['draft','Draft — kept, not listed'],
+                        ['scheduled','Scheduled — goes live at the set time'],
+                        ['hidden','Hidden — reachable by link only']];
+  // The three licence questions are required answers, not unticked boxes: an
+  // unticked box and an unanswered question look identical, and these decide
+  // whether someone may sell what they make with the file.
+  var YES_NO_PLAIN = [['yes','Yes'],['no','No']];
+  // Read off the upload rather than typed. A file format someone types
+  // disagrees with the file, and a size someone types is a guess.
+  var RES_AUTO = [
+    ['File format', 'Read from the file you upload'],
+    ['File size', 'Measured from the file'],
+    ['File count', 'Counted inside the package'],
+    ['Resolution', 'Read from the preview image'],
+    ['Author', 'You — taken from the account sharing it'],
+    ['Created · updated', 'Set when you publish, and on every save'],
+    ['Download count', 'Counted by the site']
+  ];
+
   // Commercial use is a required answer rather than an unticked box, because
   // an unticked box and an unanswered question look identical and this one
   // decides whether a buyer may earn from what they bought.
@@ -421,18 +460,56 @@
                 ['no','No — personal use only']];
 
   var FORMS = {
+    // The package, then what is in it, then what may be done with it. The
+    // same two ideas as the other three forms: floors and ceilings repeated
+    // as table constraints, and a line between what a person types and what
+    // is read off the upload — format, size, how many files are inside and
+    // the preview's dimensions are all worked out and none has a box.
     resources: { title:'Share a Resource', sub:'Brushes, textures, fonts, templates — anything that helps another artist work faster.',
       fields:[
         {k:'file',   t:'file',  label:'Resource file', req:true,
          accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.woff2,.pdf,.obj,.fbx,.blend',
          hint:'ZIP, PSD, ABR, brushset, fonts, 3D — up to 200MB.'},
-        {k:'preview',t:'image', label:'Preview image', req:true, accept:'image/jpeg,image/png,image/webp,image/gif', hint:'Required. Shown on the card and auto-checked. JPG/PNG/WEBP up to 25MB.'},
-        {k:'title',  t:'text',  label:'Title', req:true, max:120, ph:'Name your resource…'},
-        {k:'description', t:'area', label:'Description', max:2000, ph:'What is it, and how is it used?'},
+        {k:'preview',t:'image', label:'Preview image', req:true,
+         accept:'image/jpeg,image/png,image/webp,image/gif',
+         hint:'Required. Shown on the card and auto-checked. JPG/PNG/WEBP/GIF up to 25MB.'},
+        {k:'title',  t:'text',  label:'Title', req:true, min:3, max:100, ph:'Name your resource…'},
+        {k:'summary',t:'text',  label:'Short summary', req:true, min:20, max:250,
+         ph:'One line — what it is and who it is for.',
+         hint:'Shown on the card and in search results.'},
+        {k:'description', t:'area', label:'Description', req:true, min:50, max:5000, rows:6,
+         ph:'What it is, how it was made, how it is meant to be used…'},
+        {k:'resource_type',t:'sel', label:'Resource type', req:true, options:RESOURCE_TYPE, def:'Brush'},
         {k:'category',t:'cat',  label:'Category', req:true},
-        {k:'license', t:'sel',  label:'License', options:LICENSE_RES},
-        {k:'software',t:'text', label:'Made with', max:60, ph:'Photoshop, Procreate…'},
-        {k:'tags',    t:'tags', label:'Tags'}
+        {k:'subcategory',t:'text', label:'Subcategory', min:2, max:50, ph:'e.g. Inking brushes'},
+        {k:'tags',    t:'tags', label:'Tags', max:30},
+        {k:'license', t:'sel',  label:'License', req:true, options:LICENSE_RES},
+        {k:'commercial_use',t:'sel', label:'Commercial use allowed', req:true,
+         options:YES_NO_PLAIN, def:'no',
+         hint:'Whether someone may sell the work they make with this.'},
+        {k:'attribution_required',t:'sel', label:'Attribution required', req:true,
+         options:YES_NO_PLAIN, def:'no'},
+        {k:'modification_allowed',t:'sel', label:'Modification allowed', req:true,
+         options:YES_NO_PLAIN, def:'yes'},
+        {k:'software',t:'text', label:'Made with', min:2, max:100, ph:'Photoshop, Procreate…'},
+        {k:'compatible_software',t:'list', cap:10, imin:2, imax:50,
+         label:'Compatible software', ph:'Photoshop, then press Enter',
+         hint:'Up to 10. Press Enter after each.'},
+        {k:'compatible_versions',t:'text', label:'Compatible versions', min:2, max:200,
+         ph:'e.g. Photoshop CC 2022+'},
+        {k:'whats_included',t:'area', label:'What’s included', req:true, min:20, max:2000, rows:4,
+         ph:'Every file and asset in the package — one per line.'},
+        {k:'instructions',t:'area', label:'Installation / usage instructions', min:20, max:3000, rows:4,
+         ph:'How to open, install or load it.'},
+        {k:'version',t:'text', label:'Version', min:1, max:30, ph:'e.g. 1.2.4'},
+        {k:'external_links',t:'list', url:1, cap:5, imin:5, imax:200,
+         label:'External links', hint:'Docs, demo, source, support. Up to 5.'},
+        {k:'safety_notes',t:'area', label:'Safety / content notes', min:20, max:500, rows:2,
+         ph:'AI assistance, mature content, anything a downloader should know up front.'},
+        {k:'visibility',t:'sel', label:'Visibility', req:true, options:RES_VISIBILITY, def:'published'},
+        {k:'featured',t:'chk', label:'Feature this resource',
+         hint:'Featured resources sit at the top of the list.'},
+        {k:'__auto', t:'auto', label:'Read from your upload', items:RES_AUTO}
       ]},
     // A post, and then the things a post is about. The dividing line here is
     // which fields a person fills in and which the system does: slug, author,
@@ -456,7 +533,7 @@
          hint:'Link up to 10 of your own artworks.'},
         {k:'related_items',t:'pick', label:'Related marketplace items', src:'marketplace', cap:10,
          hint:'Link up to 10 of your own listings.'},
-        {k:'external_refs',t:'refs', label:'External references / sources', cap:20,
+        {k:'external_refs',t:'list', url:1, cap:20, imin:5, imax:200, label:'External references / sources',
          hint:'Press Enter after each link. Up to 20.'},
         // 11 is the Schedule picker, which every form on this page already
         // carries — buildForm appends it after the fields.
@@ -467,7 +544,7 @@
          ph:'Leave empty and one is made from the title.'},
         {k:'seo_description',t:'area', label:'SEO description', min:50, max:160, rows:2,
          ph:'Leave empty and one is made from the excerpt.'},
-        {k:'__auto', t:'auto', label:'Filled in for you'}
+        {k:'__auto', t:'auto', label:'Filled in for you', items:BLOG_AUTO}
       ]},
     // The listing, in the order a buyer decides: what it is, what it looks
     // like, what is in it, what they may do with it, what it costs, how it
@@ -742,10 +819,14 @@
       guide: [
         ['📦','Package it cleanly','ZIP related files together and name folders clearly.'],
         ['🖼','Show a real preview','The preview must depict the actual asset — no AI art.'],
-        ['🔖','Pick the right license','Be explicit about commercial vs personal use.'],
+        ['📋','List what is inside','What’s included is required — say every file the download holds.'],
+        ['🔖','Answer the licence questions','Commercial use, attribution and modification are all required.'],
         ['🛡','Yours to share','Only upload files you made or are licensed to distribute.']
       ],
-      tips: ['Use a descriptive, searchable title','Show the asset in use in the preview','Tag the software and file type','Add a short how-to in the description']
+      tips: ['Use a descriptive, searchable title','Write the summary for someone skimming a grid',
+             'Show the asset in use in the preview','Name the software and versions it opens in',
+             'Add installation steps if it is not a double-click',
+             'The format, size, file count and resolution are read from your upload']
     },
     blog: {
       guide: [
@@ -1001,7 +1082,14 @@
     support_period:[C_TEA,ICO_CLOCK], refund_policy:[C_ROS,ICO_SHIELD],
     preview_watermark:[C_VIO,ICO_SHIELD], safety_notes:[C_ROS,ICO_SHIELD],
     seller_note:[C_PNK,ICO_PENCIL], internal_notes:[C_YEL,ICO_CLIP],
-    closing_date:[C_TEA,ICO_CAL], slug:[C_CYN,ICO_LINK]
+    closing_date:[C_TEA,ICO_CAL], slug:[C_CYN,ICO_LINK],
+    // a resource
+    file:[C_GRN,ICO_CLIP], preview:[C_VIO,ICO_SCREEN],
+    resource_type:[C_PUR,ICO_GRID],
+    compatible_software:[C_PNK,ICO_SCREEN], compatible_versions:[C_PNK,ICO_HASH],
+    whats_included:[C_GRN,ICO_GIFT], instructions:[C_BLU,ICO_LIST],
+    version:[C_TEA,ICO_HASH], external_links:[C_BLU,ICO_LINK],
+    modification_allowed:[C_ROS,ICO_SHIELD]
   };
   var TYPE_ICO = {
     text:[C_VIO,ICO_PENCIL], area:[C_GRN,ICO_LINES], num:[C_GRN,ICO_MONEY],
@@ -1192,12 +1280,19 @@
         '</div>'+
         '<input type="hidden" id="'+id+'" value="">'+
       '</div>';
-    } else if(fd.t === 'refs'){
+    } else if(fd.t === 'list'){
+      // A chip list, the same shape the tag box has, for anything that is a
+      // handful of short things rather than one long one — source links,
+      // the software a resource opens in. Whether an entry has to be a url is
+      // the field's own business; everything else about it is shared.
+      var isUrl = !!fd.url;
       body = '<div class="upTagBox" onclick="document.getElementById(\''+id+'_in\').focus()">'+
         '<span id="'+id+'_chips"></span>'+
-        '<input class="upTagInput" id="'+id+'_in" type="url" maxlength="200" '+
-          'placeholder="https://… then press Enter" '+
-          'onkeydown="dzRefKey(event,\''+id+'\','+(fd.cap||20)+')"></div>'+
+        '<input class="upTagInput" id="'+id+'_in" type="'+(isUrl ? 'url' : 'text')+'" '+
+          'maxlength="'+(fd.imax||200)+'" '+
+          'placeholder="'+esc(fd.ph || (isUrl ? 'https://… then press Enter' : 'Type one, then press Enter'))+'" '+
+          'onkeydown="dzRefKey(event,\''+id+'\','+(fd.cap||10)+','+(fd.imin||1)+','+
+            (fd.imax||200)+','+(isUrl?1:0)+')"></div>'+
         '<input type="hidden" id="'+id+'" value="">';
     } else if(fd.t === 'auto'){
       // Not an input, and deliberately so. It is here to answer "where did
@@ -1206,7 +1301,7 @@
       return fcard(fd.k, fd.t,
         '<label class="upLbl">'+esc(fd.label)+' <span class="upOpt">automatic</span></label>'+
         '<div class="dzvMeta" style="margin-top:.35rem">'+
-          BLOG_AUTO.map(function(x){
+          (fd.items||[]).map(function(x){
             return '<div class="dzvMetaRow"><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>';
           }).join('')+
         '</div>', cond);
@@ -1377,16 +1472,25 @@
         '<button type="button" onclick="dzRefDel(\''+id+'\','+i+')" aria-label="Remove link">✕</button></span>';
     }).join('');
   }
-  function dzRefKey(e, id, cap){
+  function dzRefKey(e, id, cap, imin, imax, isUrl){
     if(e.key !== 'Enter') return;          // a comma is legal inside a url
     e.preventDefault();
     var inp = e.target, hid = document.getElementById(id);
     if(!hid) return;
-    var v = dzWebUrl(String(inp.value||'').trim());
+    imin = imin || 1; imax = imax || 200;
+    var v = String(inp.value||'').trim();
+    // a link typed the way people say it is still a link
+    if(isUrl) v = dzWebUrl(v);
     if(!v) return;
-    if(v.length < 5 || v.length > 200){ showToast('A link has to be 5–200 characters'); return; }
+    if(v.length < imin || v.length > imax){
+      showToast((isUrl ? 'A link' : 'Each entry') + ' has to be '+imin+'–'+imax+' characters');
+      return;
+    }
     var list = dzRefList(id);
-    if(list.length >= cap){ showToast('That is the limit — ' + cap + ' links'); return; }
+    if(list.length >= cap){
+      showToast('That is the limit — ' + cap + (isUrl ? ' links' : ' entries'));
+      return;
+    }
     if(list.indexOf(v) === -1) list.push(v);
     hid.value = list.join('\n');
     inp.value = '';
@@ -1402,7 +1506,7 @@
   }
   function dzRefsAll(sec){
     (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
-      if(fd.t === 'refs') dzRefsRender('dz_'+sec+'_'+fd.k);
+      if(fd.t === 'list') dzRefsRender('dz_'+sec+'_'+fd.k);
     });
   }
 
@@ -1816,6 +1920,68 @@
     }catch(e){ return null; }
   }
 
+  // ---- what the upload says about itself ---------------------------------
+  // A file format someone types disagrees with the file, a size someone types
+  // is a guess, and a file count someone types is a guess about a zip they
+  // made three weeks ago. All three are read off the upload instead.
+  //
+  // The count walks the zip's own central directory rather than unpacking
+  // anything: the End of Central Directory record at the tail says where the
+  // directory is and how many entries it holds, and the entries themselves
+  // say which are folders. Only the tail and the directory are read, so a
+  // 200MB package costs a few kilobytes to count. Anything that is not a zip,
+  // or is a zip64, gets null — no answer is better than a wrong one.
+  async function dzZipCount(file){
+    try{
+      if(!file || !/\.zip$/i.test(file.name||'') || !file.slice) return null;
+      var tailLen = Math.min(file.size, 66000);
+      var tail = await file.slice(file.size - tailLen).arrayBuffer();
+      var dv = new DataView(tail), eocd = -1;
+      for(var i = dv.byteLength - 22; i >= 0; i--){
+        if(dv.getUint32(i, true) === 0x06054b50){ eocd = i; break; }
+      }
+      if(eocd < 0) return null;
+      var total  = dv.getUint16(eocd + 10, true);
+      var cdSize = dv.getUint32(eocd + 12, true);
+      var cdOff  = dv.getUint32(eocd + 16, true);
+      if(total === 0xffff || cdOff === 0xffffffff) return null;   // zip64
+      if(!total || !cdSize) return null;
+      var cd = await file.slice(cdOff, cdOff + cdSize).arrayBuffer();
+      var cv = new DataView(cd), p = 0, files = 0, dec = new TextDecoder();
+      for(var e = 0; e < total && p + 46 <= cv.byteLength; e++){
+        if(cv.getUint32(p, true) !== 0x02014b50) break;
+        var nameLen = cv.getUint16(p + 28, true);
+        var extraLen = cv.getUint16(p + 30, true);
+        var cmtLen = cv.getUint16(p + 32, true);
+        var name = dec.decode(new Uint8Array(cd, p + 46, nameLen));
+        // a folder entry is not a file the downloader receives
+        if(!/\/$/.test(name)) files++;
+        p += 46 + nameLen + extraLen + cmtLen;
+      }
+      return files || null;
+    }catch(e){ return null; }
+  }
+  // the preview's own pixels, which is what "resolution" means for a texture
+  function dzImageDims(file){
+    return new Promise(function(res){
+      if(!file || !/^image\//.test(file.type||'') || typeof Image !== 'function'){ res(null); return; }
+      var url = null, img = new Image(), done = false;
+      function finish(v){
+        if(done) return;
+        done = true;
+        if(url){ try{ URL.revokeObjectURL(url); }catch(e){} }
+        res(v);
+      }
+      img.onload = function(){
+        var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+        finish(w && h ? (w + '×' + h + ' px') : null);
+      };
+      img.onerror = function(){ finish(null); };
+      setTimeout(function(){ finish(null); }, 4000);   // never hold up a publish
+      try{ url = URL.createObjectURL(file); img.src = url; }catch(e){ finish(null); }
+    });
+  }
+
   // A website typed the way people say it — koe.studio — is a website. The
   // scheme is put back rather than the posting being refused over it.
   function dzWebUrl(v){
@@ -2119,7 +2285,7 @@
       // compound values: a list of ids, a list of links, a card that is not
       // an input at all
       if(fd.t === 'chk' || fd.t === 'tags' || fd.t === 'pick' ||
-         fd.t === 'refs' || fd.t === 'auto' || dzIsFileType(fd.t)) continue;
+         fd.t === 'list' || fd.t === 'auto' || dzIsFileType(fd.t)) continue;
       if(!dzCondShow(sec, fd)) continue;
       var el = document.getElementById('dz_'+sec+'_'+fd.k);
       if(!el) continue;
@@ -2334,12 +2500,48 @@
       var pendingSell = [];
 
       if(sec === 'resources'){
+        var rVis = val(sec,'visibility') || 'published';
+        var rWhen = dzSchPicked();
+        // visibility and the schedule picker are two halves of one answer
+        if(rVis === 'scheduled' && !rWhen){
+          throw new Error('Pick a time under Schedule, or set visibility to Published');
+        }
+        if((rVis === 'draft' || rVis === 'hidden') && rWhen){
+          throw new Error('A ' + rVis + ' resource is not listed, so it does not need a schedule');
+        }
+        if(rVis === 'scheduled') rVis = 'published';
+
+        // read off the upload before it goes anywhere, so what the row says
+        // about the package is what the package says about itself
+        var rCount = await dzZipCount(s.files.file);
+        var rDims  = await dzImageDims(s.files.preview);
+
         var rf = await put('file','resources'), rp = await put('preview','resources');
-        row.title = val(sec,'title'); row.description = val(sec,'description');
-        row.category = [val(sec,'category')]; row.license = val(sec,'license') || 'personal';
+        row.title = val(sec,'title');
+        row.summary = val(sec,'summary');
+        row.description = val(sec,'description');
+        row.resource_type = val(sec,'resource_type') || null;
+        row.category = [val(sec,'category')];
+        row.subcategory = val(sec,'subcategory') || null;
+        row.license = val(sec,'license') || 'personal';
+        row.commercial_use = val(sec,'commercial_use') === 'yes';
+        row.attribution_required = val(sec,'attribution_required') === 'yes';
+        row.modification_allowed = val(sec,'modification_allowed') !== 'no';
         row.software = val(sec,'software') || null;
+        row.compatible_software = dzRefList('dz_resources_compatible_software').slice(0, 10);
+        row.compatible_versions = val(sec,'compatible_versions') || null;
+        row.whats_included = val(sec,'whats_included');
+        row.instructions = val(sec,'instructions') || null;
+        row.version = val(sec,'version') || null;
+        row.external_links = dzRefList('dz_resources_external_links').slice(0, 5);
+        row.safety_notes = val(sec,'safety_notes') || null;
+        row.visibility = rVis;
+        row.featured = val(sec,'featured') === true;
+        // the derived half — none of these has a box on the form
         row.file_url = rf.url; row.file_storage_path = rf.path;
         row.file_name = rf.name; row.file_ext = rf.ext; row.file_size = rf.size;
+        row.file_count = rCount;
+        row.dimensions = rDims;
         if(rp){ row.preview_url = rp.url; row.preview_storage_path = rp.path; }
         pendingMedia.push({ fileKind:'resourceFile', url:rf.url, path:rf.path, file:s.files.file });
         if(rp) pendingMedia.push({ imageKind:'resourceImage', url:rp.url, path:rp.path, file:s.files.preview });
@@ -2715,6 +2917,10 @@
   window.dzPickSet       = dzPickSet;
   window.dzRefKey        = dzRefKey;
   window.dzRefDel        = dzRefDel;
+  // pure readers, exported so what the row claims about an upload can be
+  // checked against a real file rather than taken on trust
+  window.dzZipCount      = dzZipCount;
+  window.dzImageDims     = dzImageDims;
   window.dzSubmit        = dzSubmit;
   window.dzResetForm     = dzResetForm;
   window.dzTagKey        = dzTagKey;
@@ -3193,15 +3399,50 @@
     var img = function(u, alt){ return u ? '<div class="dzvMedia"><img src="'+esc2(getViewUrl(u))+'" alt="'+esc2(alt||'')+'" loading="lazy"></div>' : ''; };
 
     if(sec === 'resources'){
+      // What a downloader may actually do with it, scanned rather than read.
+      var resRights = [
+        r.commercial_use ? 'Commercial use allowed' : 'Personal use only',
+        r.modification_allowed ? 'Modification allowed' : 'No modification',
+        r.attribution_required ? 'Attribution required' : ''
+      ].filter(Boolean).join(' \u00b7 ');
+      var resLinks = '';
+      if(Array.isArray(r.external_links) && r.external_links.length){
+        resLinks = '<div><div class="avBlockH">Links</div><ul class="dzvRefs">'+
+          r.external_links.map(function(u){
+            var safe = /^https?:\/\//i.test(String(u||'')) ? String(u) : '';
+            var show = String(u||'').replace(/^https?:\/\//i,'');
+            return safe
+              ? '<li><a href="'+esc2(safe)+'" target="_blank" rel="noopener nofollow">'+esc2(show)+'</a></li>'
+              : '<li>'+esc2(show)+'</li>';
+          }).join('')+'</ul></div>';
+      }
       html = img(r.preview_url, r.title) +
         '<div class="dzvCol">'+
         '<div class="dzvFileCard"><span class="dzvExt">'+esc2((r.file_ext||'FILE').toUpperCase())+'</span>'+
         '<div><div class="dzvFileName">'+esc2(r.file_name||r.title)+'</div>'+
-        '<div class="dzvFileMeta">'+esc2(h.bytes(r.file_size))+' \u00b7 '+esc2(String(r.download_count||0))+' downloads</div></div></div>'+
+        '<div class="dzvFileMeta">'+esc2(h.bytes(r.file_size))+
+          (r.file_count ? ' \u00b7 '+esc2(String(r.file_count))+' file'+(r.file_count===1?'':'s') : '')+
+          ' \u00b7 '+esc2(String(r.download_count||0))+' downloads</div></div></div>'+
         '<div class="dzvAuthor" id="dzvAuthor"></div>'+
+        (r.featured ? '<p class="dzvExcerpt">\u2605 Featured resource</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
+        (r.summary ? '<p class="dzvExcerpt">'+esc2(r.summary)+'</p>' : '')+
         (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
-        metaRow([['License', r.license],['Made with', r.software],['Posted', h.ago(r.created_at)]])+
+        metaRow([['Type', r.resource_type],
+                 ['Category', r.subcategory],
+                 ['License', r.license],
+                 ['Rights', resRights],
+                 ['Made with', r.software],
+                 ['Works with', (r.compatible_software||[]).join(', ')],
+                 ['Versions', r.compatible_versions],
+                 ['Version', r.version],
+                 ['Resolution', r.dimensions],
+                 ['Format', (r.file_ext||'').toUpperCase()],
+                 ['Posted', h.ago(r.created_at)]])+
+        jobBlock('What\u2019s included', r.whats_included)+
+        jobBlock('Installation and use', r.instructions)+
+        jobBlock('Content notes', r.safety_notes)+
+        resLinks+
         cmBlock(kind, id)+
         '<a class="avActWide" href="'+esc2(r.file_url)+'" target="_blank" rel="noopener" download>\u2b07 Download file</a>'+
         '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+

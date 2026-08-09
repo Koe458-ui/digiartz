@@ -4,6 +4,33 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v129 — the legal documents get addresses of their own, and a group in
+       Settings.
+       Privacy, Terms, Cookie, Refund and the Creator & Seller terms
+       existed only as strings inside js/effects.js, shown in a modal by a
+       footer button. Nothing outside the browser could reach them: not a
+       crawler, and not the payment provider reviewing this domain, which
+       asks to open a refund policy at a URL and wants a delivery timeline
+       and a contact route before it will approve a site for live
+       payments. Razorpay has been refusing payments on digiartz.net with
+       "website does not match registered website(s)", and a policy set
+       that cannot be read is the usual reason that review does not pass.
+       The text moved to js/legal-content.js, which the modal and a new
+       Pages Function both read, so a policy cannot say one thing in the
+       modal and another on the page. Seven pages answer at /legal/<slug>,
+       each self-contained — no stylesheet of ours, no scripts, nothing
+       third-party, because a reviewer arrives on a cold cache with an ad
+       blocker up. Two are new: a contact page, and a delivery policy
+       saying digital goods arrive on payment confirmation and nothing is
+       ever shipped.
+       In Settings they are a group of their own, below the one carrying
+       Log Out, in the same shape as the groups above it. The footer links
+       and the cookie banner's became anchors over the same hrefs: the
+       modal still opens on click, and where it cannot, the browser
+       follows the link instead of doing nothing.
+       Changed: index.html, sw.js, css/profile.css, js/effects.js,
+       js/legal-content.js, functions/legal/[doc].js,
+       functions/_middleware.js, functions/sitemap.xml.js.
    v128 — the buttons come up bright too, and the page is checked on
        every theme at every width.
        The Select and publish buttons were the two colours held back, on
@@ -1882,7 +1909,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v128';
+const CACHE_VERSION = 'v129';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1911,7 +1938,7 @@ const SHELL_URLS = [
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=7',
+  '/css/profile.css?v=8',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
@@ -1951,7 +1978,8 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=3',
   '/js/search.js?v=4',
   '/js/feed.js?v=3',
-  '/js/effects.js?v=4',
+  '/js/effects.js?v=5',
+  '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',

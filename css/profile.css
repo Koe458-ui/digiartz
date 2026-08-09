@@ -477,6 +477,10 @@
       transition:background .18s,color .18s,border-color .18s,transform .18s;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     }
+    /* The Terms & Privacy rows are anchors, because they carry a real
+       /legal/<slug> href to fall back on. Everything else about them is
+       already a menu row; only the link underline has to go. */
+    a.pfMenuItem{text-decoration:none;}
     .pfMenuTxt{flex:1 1 auto;min-width:0;}
     /* chevron — also drawn for the rows JS injects, which carry no markup */
     .pfMenuItem::after{

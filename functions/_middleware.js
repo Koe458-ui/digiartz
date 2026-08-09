@@ -250,6 +250,12 @@ export async function onRequest(context) {
   let pathname = '/';
   try { pathname = new URL(request.url).pathname; } catch { /* keep slash */ }
 
+  // The legal pages arrive complete — their own title, description and
+  // canonical, and none of the elements this rewriter fills in. Everything
+  // below would be a Supabase round trip per view to discover it has nothing
+  // to change.
+  if (pathname.startsWith('/legal/')) return origin;
+
   const hit = await resolve(env, pathname);
 
   // gone, real 404 and noindex

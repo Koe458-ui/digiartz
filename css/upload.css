@@ -676,3 +676,17 @@
        are spaced by the same gap as everything else. It also means an empty
        slot takes up nothing at all, rather than eating a gap. */
     #pfUpX1, #pfUpX2, #pfUpX3, #pfUpX4, #pfUpX5{ display:contents; }
+
+    /* ---- the Automatic Details rows ---------------------------------------
+       A rule between each pair, so the label and the value it belongs to read
+       as one line rather than as a block of text. The last row has none —
+       inside a bordered card a trailing rule reads as a mistake.
+
+       The value is tabular so a figure that ticks up while somebody types
+       does not shift the ones under it, and it keeps its own line on a narrow
+       screen rather than crushing the label. */
+    .upAutoList .dzvMetaRow{ padding:.3rem 0; align-items:baseline; }
+    .upAutoList .dzvMetaRow:first-child{ padding-top:0; }
+    .upAutoList .dzvMetaRow:last-child{ padding-bottom:0; }
+    .upAutoList .dzvMetaRow + .dzvMetaRow{ border-top:1px solid var(--bdr); }
+    .upAutoList .dzvMetaRow b{ font-variant-numeric:tabular-nums; }

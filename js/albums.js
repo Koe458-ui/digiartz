@@ -1127,6 +1127,7 @@
     if(e){ e.preventDefault(); e.stopPropagation(); }
     pf.upFile = null;
     pf.upThumbFocus = null;
+    if(typeof dzAutoScan === 'function') dzAutoScan('artwork');
     var input = document.getElementById('pfUpF'); if(input) input.value = '';
     var prev = document.getElementById('pfUpPrev');
     if(prev){ prev.removeAttribute('style'); prev.removeAttribute('src'); }

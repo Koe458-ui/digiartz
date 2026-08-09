@@ -383,6 +383,7 @@
       updrActiveId = rec.id;
       pf.upFile = new File([rec.file], rec.fname, {type:rec.ftype});
       pf.upThumbFocus = rec.thumb || {x:50,y:50,z:1};
+      if(typeof dzAutoScan === 'function') dzAutoScan('artwork');
       document.getElementById('pfUpNm').value = rec.name||'';
       document.getElementById('pfUpDesc').value = rec.desc||'';
       pfUpdateCount('pfUpNm','pfUpNmCount',100);
@@ -520,6 +521,8 @@
   }
   function confirmPfCrop(){
     pf.upFile = pfCropPending;
+    // format, size and dimensions are known now
+    if(typeof dzAutoScan === 'function') dzAutoScan('artwork');
     pf.upThumbFocus = { x: Math.round(pfCrop.x), y: Math.round(pfCrop.y), z: Math.round(pfCrop.z*100)/100 };
     var p = document.getElementById('pfUpPrev');
     p.src = document.getElementById('pfCropImg').src;

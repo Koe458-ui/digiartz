@@ -418,13 +418,8 @@
   // title, a reading time someone types is wrong, and an author someone types
   // is a byline they may not be entitled to.
   var BLOG_AUTO = [
-    ['Author', 'You — taken from the account publishing the post'],
-    ['Author bio', 'Copied from your profile as it reads at publish'],
-    ['URL slug', 'Made from the title, kept unique'],
-    ['Reading time', 'Counted from the length of the post'],
-    ['Publication date', 'Set when the post goes live'],
-    ['Last updated', 'Set every time the post is saved'],
-    ['Views · likes · bookmarks', 'Counted by the site']
+    ['slug',         'URL slug'],
+    ['read_minutes', 'Reading time']
   ];
 
   // ---- artwork vocabulary ------------------------------------------------
@@ -451,14 +446,16 @@
                         ['draft','Draft — kept, not shown'],
                         ['scheduled','Scheduled — goes live at the set time'],
                         ['hidden','Hidden — reachable by link only']];
+  // Only what can actually be worked out while the form is being filled in.
+  // A created date and a view count cannot show a live value, so they are not
+  // listed — a row that reads "--" forever is worse than no row.
   var ART_AUTO = [
-    ['File format', 'Read from the image you upload'],
-    ['File size', 'Measured from the image'],
-    ['Dimensions', 'Read from the image — width × height'],
-    ['SEO title · description', 'Made from your title and description'],
-    ['URL slug', 'Made from the title, kept unique'],
-    ['Created · updated', 'Set when you publish, and on every save'],
-    ['Views · likes · bookmarks', 'Counted by the site']
+    ['file_format',     'File format'],
+    ['file_size',       'File size'],
+    ['dimensions',      'Dimensions'],
+    ['seo_title',       'SEO title'],
+    ['seo_description', 'SEO description'],
+    ['slug',            'URL slug']
   ];
 
   // ---- resource vocabulary -----------------------------------------------
@@ -478,13 +475,10 @@
   // Read off the upload rather than typed. A file format someone types
   // disagrees with the file, and a size someone types is a guess.
   var RES_AUTO = [
-    ['File format', 'Read from the file you upload'],
-    ['File size', 'Measured from the file'],
-    ['File count', 'Counted inside the package'],
-    ['Resolution', 'Read from the preview image'],
-    ['Author', 'You — taken from the account sharing it'],
-    ['Created · updated', 'Set when you publish, and on every save'],
-    ['Download count', 'Counted by the site']
+    ['file_format', 'File format'],
+    ['file_size',   'File size'],
+    ['file_count',  'File count'],
+    ['dimensions',  'Resolution']
   ];
 
   // Commercial use is a required answer rather than an unticked box, because
@@ -1394,9 +1388,12 @@
       // wrong in.
       return fcard(fd.k, fd.t,
         '<label class="upLbl">'+esc(fd.label)+' <span class="upOpt">automatic</span></label>'+
-        '<div class="dzvMeta" style="margin-top:.35rem">'+
+        '<div class="dzvMeta upAutoList" style="margin-top:.35rem">'+
           (fd.items||[]).map(function(x){
-            return '<div class="dzvMetaRow"><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>';
+            // the value starts as a placeholder and is filled in the moment
+            // there is something to fill it from
+            return '<div class="dzvMetaRow"><span>'+esc(x[1])+'</span>'+
+              '<b id="dzAuto_'+sec+'_'+esc(x[0])+'">'+DZ_AUTO_EMPTY+'</b></div>';
           }).join('')+
         '</div>', cond);
     } else if(fd.t === 'tags'){
@@ -1684,6 +1681,7 @@
   }
   // after a publish, so the next upload starts clean
   function dzArtReset(){
+    dzAutoReset('artwork');
     ART_SLOTS.forEach(function(id){
       var h = document.getElementById(id);
       if(h) h.removeAttribute('data-built');
@@ -1782,6 +1780,97 @@
     };
   }
 
+  // ---- Automatic Details, live ------------------------------------------
+  // The card shows what the system will store, worked out from what is on
+  // the form right now. Everything here is computed in the browser and
+  // written nowhere — the values that end up in the row are still produced by
+  // the publish path exactly as they were, so nothing is saved a keystroke at
+  // a time and the stored result does not depend on this card having run.
+  //
+  // What is read off a file is read once per file rather than once per
+  // keystroke: scanning a zip's directory or decoding an image to measure it
+  // is far too expensive to repeat while somebody types a title. The token
+  // below is what makes that safe — a repaint with the same files does no
+  // work at all.
+  var DZ_AUTO_EMPTY = '--';
+  var dzAutoRead = {};
+
+  function dzFileExt(f){
+    var m = /\.([a-z0-9]{1,8})$/i.exec(String((f && f.name) || ''));
+    if(m) return m[1].toUpperCase();
+    var t = String((f && f.type) || '').split('/')[1];
+    return t ? t.toUpperCase() : null;
+  }
+  function dzAutoSet(sec, key, v){
+    var el = document.getElementById('dzAuto_'+sec+'_'+key);
+    if(!el) return;
+    el.textContent = (v === null || v === undefined || v === '') ? DZ_AUTO_EMPTY : String(v);
+  }
+  // the cheap half: everything derived from text, repainted freely
+  function dzAutoPaint(sec){
+    if(!dzField(sec, '__auto')) return;
+    var read = dzAutoRead[sec] || {};
+    var title, body;
+    if(sec === 'artwork'){
+      var nm = document.getElementById('pfUpNm'), ds = document.getElementById('pfUpDesc');
+      title = String((nm && nm.value) || '').trim();
+      body  = String((ds && ds.value) || '').trim();
+      dzAutoSet(sec, 'file_format', read.file_format);
+      dzAutoSet(sec, 'file_size',   read.file_size);
+      dzAutoSet(sec, 'dimensions',  read.dimensions);
+      dzAutoSet(sec, 'seo_title',       title ? dzSeoTitle('', title) : null);
+      dzAutoSet(sec, 'seo_description', dzSeoDesc('', body, body));
+      // the base the publish path slugifies; it appends the uniquifier there,
+      // and that logic is untouched
+      dzAutoSet(sec, 'slug', title ? slugify(title).slice(0, 110) : null);
+    } else if(sec === 'blog'){
+      title = val(sec, 'title');
+      body  = val(sec, 'body');
+      dzAutoSet(sec, 'slug', title ? slugify(title).slice(0, 110) : null);
+      dzAutoSet(sec, 'read_minutes', body ? (dzReadMinutes(body) + ' min') : null);
+    } else if(sec === 'resources'){
+      dzAutoSet(sec, 'file_format', read.file_format);
+      dzAutoSet(sec, 'file_size',   read.file_size);
+      dzAutoSet(sec, 'file_count',  read.file_count);
+      dzAutoSet(sec, 'dimensions',  read.dimensions);
+    }
+  }
+  // the expensive half: what the files themselves say, read once per file
+  async function dzAutoScan(sec){
+    if(!dzField(sec, '__auto')) return;
+    var main = null, pic = null;
+    if(sec === 'artwork'){
+      main = pic = (window.pf && pf.upFile) || null;   // the artwork is the image
+    } else if(sec === 'resources'){
+      main = st(sec).files.file || null;
+      pic  = st(sec).files.preview || null;
+    }
+    function tok(f){ return f ? (f.name+'|'+f.size+'|'+(f.lastModified||0)) : ''; }
+    var tm = tok(main), tp = tok(pic);
+    var read = dzAutoRead[sec];
+    if(read && read.__m === tm && read.__p === tp) return;   // same files, nothing to redo
+
+    read = dzAutoRead[sec] = { __m:tm, __p:tp,
+      file_format: main ? dzFileExt(main) : null,
+      file_size:   main ? (bytes(main.size) || null) : null,
+      file_count:  null,
+      dimensions:  null
+    };
+    dzAutoPaint(sec);            // format and size are known immediately
+
+    // and the two that have to be read out of the bytes
+    if(sec === 'resources' && main){
+      var n = await dzZipCount(main);
+      if(dzAutoRead[sec] === read){ read.file_count = n; dzAutoPaint(sec); }
+    }
+    if(pic){
+      var d = await dzImageDims(pic);
+      if(dzAutoRead[sec] === read){ read.dimensions = d; dzAutoPaint(sec); }
+    }
+  }
+  // a form that was rebuilt has no readings to its name
+  function dzAutoReset(sec){ delete dzAutoRead[sec]; }
+
   // ---- the counters, and the keystroke that never lands ------------------
   function dzCountPaint(el){
     if(!el || !el.id) return;
@@ -1832,6 +1921,8 @@
     dzCondApply(sec);
     dzPickSyncAll(sec);
     dzRefsAll(sec);
+    dzAutoScan(sec);            // re-reads only if the files actually changed
+    dzAutoPaint(sec);
   }
   // Capture, so it also serves the boxes built after this ran. Scoped to the
   // section forms so the artwork panel, which counts its own two fields its
@@ -1848,6 +1939,8 @@
     }
     if(t.getAttribute('data-num')) dzNumClean(t);
     dzCountPaint(t);
+    // the Automatic Details card follows what is being typed
+    dzAutoPaint(upSec);
   }, true);
 
   // tags
@@ -1896,6 +1989,8 @@
 
   // paint the picked state
   function dzRenderFile(sec, key){
+    // format, size, file count and resolution all come off the files
+    dzAutoScan(sec);
     var id  = 'dz_'+sec+'_'+key,
         z   = document.getElementById(id+'_z'),
         box = document.getElementById(id+'_pk'),
@@ -2254,6 +2349,7 @@
     var old = S[sec];
     if(old && old.urls) Object.keys(old.urls).forEach(function(k){ dzRevoke(old.urls[k]); });
     S[sec] = {tags:[], files:{}, urls:{}};
+    dzAutoReset(sec);
     var box = document.getElementById('upSecForms');
     if(box) box.innerHTML = buildForm(sec);
     renderTags(sec);
@@ -3178,6 +3274,9 @@
   window.dzArtSnapshot   = dzArtSnapshot;
   window.dzArtRestore    = dzArtRestore;
   window.dzArtFromRow    = dzArtFromRow;
+  window.dzAutoScan      = dzAutoScan;
+  window.dzAutoPaint     = dzAutoPaint;
+  window.dzAutoReset     = dzAutoReset;
   window.dzFieldFail     = dzFieldFail;
   window.dzSeoTitle      = dzSeoTitle;
   window.dzSeoDesc       = dzSeoDesc;

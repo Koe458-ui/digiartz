@@ -4,6 +4,36 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v142 — Automatic Details fills itself in as you type.
+       The card listed what the system would work out and described how,
+       which told a member the mechanism and never the answer. It shows
+       the answer now, and shows it while the form is being filled in.
+       A value reads -- until there is something to derive it from. The
+       file format, the size and the dimensions arrive the moment an image
+       is chosen; the SEO title and the slug follow the Title keystroke by
+       keystroke; the SEO description follows the Description, and drops
+       back to -- when what is typed falls under the floor the column
+       asks for, because that is exactly when nothing would be stored.
+       The rows that could never be live are gone rather than sitting at
+       -- forever: the created and updated dates, the view, like and
+       bookmark counts, the author, and the resource download count. What
+       is left is only what the form can answer. Each pair is separated by
+       a rule, and the figures are tabular so one that changes as you type
+       does not shift the ones under it.
+       Nothing is written anywhere. Every value here is computed in the
+       browser and the publish path still produces the stored values
+       exactly as it did — the card having run or not cannot change what
+       lands in the row. What is read out of a file is read once per file
+       rather than once per keystroke, which matters because measuring an
+       image or walking a zip's directory is far too expensive to repeat
+       while somebody types a title: measured, a hundred keystrokes read
+       the file zero times, and a new file reads exactly once.
+       Blog and Resources have the same card and the same treatment —
+       blog's slug and reading time follow the title and the body, and a
+       resource's format, size, file count and resolution arrive with the
+       upload.
+       Changed: js/sections.js, js/albums.js, js/drafts.js,
+       css/upload.css, index.html, sw.js.
    v141 — the artwork panel's new rows sit and behave like every other
        upload form's.
        Two things were wrong with the way v139 fitted eighteen fields into
@@ -2345,7 +2375,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v141';
+const CACHE_VERSION = 'v142';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2378,7 +2408,7 @@ const SHELL_URLS = [
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=8',
+  '/css/upload.css?v=9',
   '/css/widgets.css?v=3',
   '/css/overrides.css?v=7',
   '/css/select.css?v=2',
@@ -2404,8 +2434,8 @@ const SHELL_URLS = [
   '/js/gallery.js?v=76',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
-  '/js/albums.js?v=10',
-  '/js/drafts.js?v=5',
+  '/js/albums.js?v=11',
+  '/js/drafts.js?v=6',
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
@@ -2421,7 +2451,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=87',
+  '/js/sections.js?v=88',
   '/js/navprogress.js?v=5'
 ];
 

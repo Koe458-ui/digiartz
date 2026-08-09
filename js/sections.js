@@ -65,7 +65,13 @@
     },
     blog: {
       table:'blog_posts', kind:'list', noun:'post',
-      select:'id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at'
+      // a draft is kept and not listed; a hidden post is reachable by its link
+      eq:{ visibility:'published' },
+      order:[['featured',false],['created_at',false]],
+      select:'id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,'+
+             'content_type,related_artworks,related_items,external_refs,featured,'+
+             'author_bio,seo_title,seo_description,like_count,view_count,bookmark_count,'+
+             'published_at,updated_at,created_at'
     },
     marketplace: {
       table:'marketplace_items', kind:'grid', noun:'item',
@@ -283,7 +289,10 @@
       var ex = r.excerpt || String(r.body||'').slice(0,140);
       return '<div class="dzRow" data-id="'+id+'" onclick="dzOpenView(\'blog\',\''+id+'\')"><div class="dzRowIco">'+ico+'</div>'+
         '<div style="min-width:0;flex:1"><div class="dzName">'+esc(r.title)+'</div>'+
-        '<div class="dzMeta" style="margin:.2rem 0 .3rem"><span>'+esc(ago(r.created_at))+'</span>'+
+        '<div class="dzMeta" style="margin:.2rem 0 .3rem">'+
+        (r.featured ? '<span>★ Featured</span>' : '')+
+        (r.content_type ? '<span>'+esc(r.content_type)+'</span>' : '')+
+        '<span>'+esc(ago(r.published_at || r.created_at))+'</span>'+
         '<span>'+esc(String(r.read_minutes||1))+' min read</span></div>'+
         '<div class="dzHint">'+esc(ex)+'</div>'+chips(r)+'</div></div>';
     }
@@ -384,6 +393,27 @@
   var MKT_VISIBILITY = [['published','Published — listed in the Marketplace'],
                         ['draft','Draft — kept, not listed'],
                         ['hidden','Hidden — reachable by link only']];
+  // ---- blog vocabulary ---------------------------------------------------
+  var CONTENT_TYPE = [['Article','Article'],['Tutorial','Tutorial'],['Guide','Guide'],
+                      ['Interview','Interview'],['News','News']];
+  var BLOG_VISIBILITY = [['published','Published — listed in the Blog'],
+                         ['draft','Draft — kept, not listed'],
+                         ['scheduled','Scheduled — goes live at the set time'],
+                         ['hidden','Hidden — reachable by link only']];
+  // What the system fills in, said out loud. These are not inputs and there is
+  // deliberately no box for any of them: a slug someone types drifts from the
+  // title, a reading time someone types is wrong, and an author someone types
+  // is a byline they may not be entitled to.
+  var BLOG_AUTO = [
+    ['Author', 'You — taken from the account publishing the post'],
+    ['Author bio', 'Copied from your profile as it reads at publish'],
+    ['URL slug', 'Made from the title, kept unique'],
+    ['Reading time', 'Counted from the length of the post'],
+    ['Publication date', 'Set when the post goes live'],
+    ['Last updated', 'Set every time the post is saved'],
+    ['Views · likes · bookmarks', 'Counted by the site']
+  ];
+
   // Commercial use is a required answer rather than an unticked box, because
   // an unticked box and an unanswered question look identical and this one
   // decides whether a buyer may earn from what they bought.
@@ -404,14 +434,40 @@
         {k:'software',t:'text', label:'Made with', max:60, ph:'Photoshop, Procreate…'},
         {k:'tags',    t:'tags', label:'Tags'}
       ]},
+    // A post, and then the things a post is about. The dividing line here is
+    // which fields a person fills in and which the system does: slug, author,
+    // reading time, publication date and the counters are never asked for,
+    // they are derived at publish and shown back by the last card on the form.
     blog: { title:'Write a Post', sub:'Stories, tips and studio notes for the community.',
       fields:[
-        {k:'cover', t:'image', label:'Cover image', hint:'Optional. JPG/PNG/WEBP up to 25MB.'},
-        {k:'title', t:'text',  label:'Title', req:true, max:160, ph:'Give the post a headline…'},
-        {k:'excerpt',t:'area', label:'Excerpt', max:300, ph:'One or two lines shown in the list.'},
-        {k:'body',  t:'area',  label:'Post', req:true, max:20000, rows:12, ph:'Write your post… (minimum 40 characters)'},
+        {k:'title', t:'text',  label:'Title', req:true, min:5, max:120,
+         ph:'Give the post a headline…'},
+        {k:'excerpt',t:'area', label:'Excerpt', req:true, min:20, max:300, rows:2,
+         ph:'One or two lines shown in the list.'},
+        {k:'body',  t:'area',  label:'Post', req:true, min:100, max:20000, rows:12,
+         ph:'Write your post…'},
+        {k:'cover', t:'image', label:'Cover image',
+         accept:'image/jpeg,image/png,image/webp,image/gif',
+         hint:'Optional. JPG/PNG/WEBP/GIF up to 25MB.'},
         {k:'category',t:'cat', label:'Category', req:true},
-        {k:'tags',  t:'tags',  label:'Tags'}
+        {k:'tags',  t:'tags',  label:'Tags', max:30},
+        {k:'content_type',t:'sel', label:'Content type', req:true, options:CONTENT_TYPE, def:'Article'},
+        {k:'related_artworks',t:'pick', label:'Related artwork', src:'artworks', cap:10,
+         hint:'Link up to 10 of your own artworks.'},
+        {k:'related_items',t:'pick', label:'Related marketplace items', src:'marketplace', cap:10,
+         hint:'Link up to 10 of your own listings.'},
+        {k:'external_refs',t:'refs', label:'External references / sources', cap:20,
+         hint:'Press Enter after each link. Up to 20.'},
+        // 11 is the Schedule picker, which every form on this page already
+        // carries — buildForm appends it after the fields.
+        {k:'visibility',t:'sel', label:'Visibility', req:true, options:BLOG_VISIBILITY, def:'published'},
+        {k:'featured',t:'chk', label:'Feature this post',
+         hint:'Featured posts sit at the top of the Blog.'},
+        {k:'seo_title',t:'text', label:'SEO title', min:10, max:70,
+         ph:'Leave empty and one is made from the title.'},
+        {k:'seo_description',t:'area', label:'SEO description', min:50, max:160, rows:2,
+         ph:'Leave empty and one is made from the excerpt.'},
+        {k:'__auto', t:'auto', label:'Filled in for you'}
       ]},
     // The listing, in the order a buyer decides: what it is, what it looks
     // like, what is in it, what they may do with it, what it costs, how it
@@ -695,10 +751,14 @@
       guide: [
         ['✍️','Write for artists','Studio notes, tutorials and stories land best.'],
         ['🖼','Add a cover','A strong cover image lifts clicks in the feed.'],
-        ['📏','Give it length','Posts need at least 40 characters — aim for a real read.'],
+        ['📏','Give it length','Posts need at least 100 characters — aim for a real read.'],
+        ['🔗','Show your sources','Link the references a claim rests on, and the work it is about.'],
         ['🛡','Keep it appropriate','No hateful, explicit or plagiarised content.']
       ],
-      tips: ['Open with a hook in the first line','Break long posts into short paragraphs','Write an excerpt so the list reads well','Pick one clear category']
+      tips: ['Open with a hook in the first line','Break long posts into short paragraphs',
+             'Write the excerpt for someone skimming a list','Pick one clear category',
+             'Link your own artwork so readers can see what you mean',
+             'The slug, reading time and byline are filled in for you']
     },
     marketplace: {
       guide: [
@@ -919,7 +979,29 @@
     application_questions:[C_CYN,ICO_LINES],
     portfolio_required:[C_VIO,ICO_CHECK], resume_required:[C_VIO,ICO_CLIP],
     cover_letter_required:[C_VIO,ICO_PENCIL],
-    visibility:[C_YEL,ICO_EYE], featured:[C_AMB,ICO_STAR]
+    visibility:[C_YEL,ICO_EYE], featured:[C_AMB,ICO_STAR],
+    // a post, and the things a post is about
+    body:[C_GRN,ICO_LINES], cover:[C_VIO,ICO_SCREEN],
+    content_type:[C_PUR,ICO_GRID],
+    related_artworks:[C_PNK,ICO_SCREEN], related_items:[C_AMB,ICO_GRID],
+    external_refs:[C_BLU,ICO_LINK],
+    seo_title:[C_CYN,ICO_SPARK], seo_description:[C_CYN,ICO_SPARK],
+    __auto:[C_TEA,ICO_CHECK],
+    // a listing
+    summary:[C_GRN,ICO_LINES], product_type:[C_PUR,ICO_GRID],
+    buyer_gets:[C_GRN,ICO_GIFT], file_format:[C_BLU,ICO_CLIP],
+    file_count:[C_BLU,ICO_HASH], file_size_mb:[C_BLU,ICO_HASH],
+    dimensions:[C_ORG,ICO_GRID], subcategory:[C_AMB,ICO_TAG],
+    source_files_included:[C_ROS,ICO_CLIP], commercial_use:[C_ROS,ICO_SHIELD],
+    personal_use:[C_ROS,ICO_SHIELD], modification_allowed:[C_ROS,ICO_SHIELD],
+    attribution_required:[C_ROS,ICO_SHIELD],
+    sale_price:[C_GRN,ICO_MONEY], stock:[C_TEA,ICO_HASH],
+    delivery_type:[C_TEA,ICO_PLANE], delivery_notes:[C_TEA,ICO_LINES],
+    custom_requests:[C_LIL,ICO_SPARK], revision_count:[C_LIL,ICO_HASH],
+    support_period:[C_TEA,ICO_CLOCK], refund_policy:[C_ROS,ICO_SHIELD],
+    preview_watermark:[C_VIO,ICO_SHIELD], safety_notes:[C_ROS,ICO_SHIELD],
+    seller_note:[C_PNK,ICO_PENCIL], internal_notes:[C_YEL,ICO_CLIP],
+    closing_date:[C_TEA,ICO_CAL], slug:[C_CYN,ICO_LINK]
   };
   var TYPE_ICO = {
     text:[C_VIO,ICO_PENCIL], area:[C_GRN,ICO_LINES], num:[C_GRN,ICO_MONEY],
@@ -1096,6 +1178,38 @@
     } else if(fd.t === 'cat'){
       var opts = (window.FG_SECTIONS && FG_SECTIONS[sec] && FG_SECTIONS[sec].opts) || [];
       body = dzSelField(id, opts.map(function(o){ return [slugify(o), o]; }), null);
+    } else if(fd.t === 'pick'){
+      // Your own work, chosen from a list rather than typed as an id. The
+      // chosen ids live on a hidden input keeping the field's name, so every
+      // read, draft save and draft restore path finds it where it expects to.
+      body = '<div class="upCatDd" id="'+id+'_dd">'+
+        '<button type="button" class="upCatTrigger" id="'+id+'_tr" aria-haspopup="listbox" '+
+          'onclick="dzPickToggle(event,\''+id+'\',\''+esc(fd.src||'artworks')+'\','+(fd.cap||10)+')">'+
+          '<span id="'+id+'_lb">Nothing linked</span>'+DZ_CHEV+
+        '</button>'+
+        '<div class="upCatPanel" id="'+id+'_pn" role="listbox">'+
+          '<div class="dzHint" style="padding:.4rem .5rem">Open to load your work…</div>'+
+        '</div>'+
+        '<input type="hidden" id="'+id+'" value="">'+
+      '</div>';
+    } else if(fd.t === 'refs'){
+      body = '<div class="upTagBox" onclick="document.getElementById(\''+id+'_in\').focus()">'+
+        '<span id="'+id+'_chips"></span>'+
+        '<input class="upTagInput" id="'+id+'_in" type="url" maxlength="200" '+
+          'placeholder="https://… then press Enter" '+
+          'onkeydown="dzRefKey(event,\''+id+'\','+(fd.cap||20)+')"></div>'+
+        '<input type="hidden" id="'+id+'" value="">';
+    } else if(fd.t === 'auto'){
+      // Not an input, and deliberately so. It is here to answer "where did
+      // the slug and the reading time go" without offering a box to get them
+      // wrong in.
+      return fcard(fd.k, fd.t,
+        '<label class="upLbl">'+esc(fd.label)+' <span class="upOpt">automatic</span></label>'+
+        '<div class="dzvMeta" style="margin-top:.35rem">'+
+          BLOG_AUTO.map(function(x){
+            return '<div class="dzvMetaRow"><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>';
+          }).join('')+
+        '</div>', cond);
     } else if(fd.t === 'tags'){
       return fcard(fd.k, fd.t, lbl+
         '<div class="upTagBox" onclick="document.getElementById(\''+id+'\').focus()">'+
@@ -1156,6 +1270,140 @@
         '</div>'+hint+'</div>';
     }
     return fcard(fd.k, fd.t, lbl+body+hint, cond);
+  }
+
+  // ---- linking your own work --------------------------------------------
+  // The list is the caller's own rows and nothing else. That is not a display
+  // choice: a picker that offered everyone's work would let a post attach
+  // itself to a stranger's artwork, and the row it wrote would be indexed as
+  // theirs. Loaded once, on first open, because most posts link nothing.
+  var PICK_SRC = {
+    artworks:    { table:'artworks', label:'name', extra:'title', where:{kind:'art'}, empty:'You have not uploaded any artwork yet.' },
+    marketplace: { table:'marketplace_items', label:'title', where:null, empty:'You have no marketplace listings yet.' }
+  };
+  function dzPickIds(id){
+    var hid = document.getElementById(id);
+    return String((hid && hid.value) || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+  }
+  function dzPickLabel(id, cap){
+    var n = dzPickIds(id).length;
+    var lb = document.getElementById(id+'_lb');
+    if(lb) lb.textContent = n ? (n + ' of ' + cap + ' linked') : 'Nothing linked';
+  }
+  function dzPickToggle(e, id, src, cap){
+    if(e) e.stopPropagation();
+    var dd = document.getElementById(id+'_dd'); if(!dd) return;
+    dzSelCloseAll(dd);
+    dzSchClose();
+    var opening = !dd.classList.contains('open');
+    dd.classList.toggle('open', opening);
+    if(opening && !dd.dataset.loaded) dzPickLoad(id, src, cap);
+  }
+  function dzPickLoad(id, src, cap){
+    var pn = document.getElementById(id+'_pn'), dd = document.getElementById(id+'_dd');
+    var cfg = PICK_SRC[src];
+    if(!pn || !cfg) return;
+    if(!sb || !window.currentUser){
+      pn.innerHTML = '<div class="dzHint" style="padding:.4rem .5rem">Sign in to link your work.</div>';
+      return;
+    }
+    pn.innerHTML = '<div class="dzHint" style="padding:.4rem .5rem">Loading…</div>';
+    var cols = ['id', cfg.label].concat(cfg.extra ? [cfg.extra] : []).join(',');
+    var q = sb.from(cfg.table).select(cols).eq('user_id', currentUser.id);
+    if(cfg.where) Object.keys(cfg.where).forEach(function(k){ q = q.eq(k, cfg.where[k]); });
+    q.order('created_at', {ascending:false}).limit(200).then(function(res){
+      var rows = (res && res.data) || [];
+      if(!rows.length){
+        pn.innerHTML = '<div class="dzHint" style="padding:.4rem .5rem">'+esc(cfg.empty)+'</div>';
+        return;
+      }
+      var chosen = dzPickIds(id), mark = {};
+      chosen.forEach(function(x){ mark[x] = 1; });
+      pn.innerHTML = rows.map(function(r){
+        var name = r[cfg.label] || (cfg.extra && r[cfg.extra]) || 'Untitled';
+        return '<label class="upCatOpt"><input type="checkbox" value="'+esc(r.id)+'"'+
+          (mark[r.id] ? ' checked' : '')+
+          ' onchange="dzPickSet(\''+id+'\','+cap+')"> '+esc(name)+'</label>';
+      }).join('');
+      if(dd) dd.dataset.loaded = '1';
+      dzPickLabel(id, cap);
+    }, function(){
+      pn.innerHTML = '<div class="dzHint" style="padding:.4rem .5rem">Could not load your work.</div>';
+    });
+  }
+  function dzPickSet(id, cap){
+    var pn = document.getElementById(id+'_pn'), hid = document.getElementById(id);
+    if(!pn || !hid) return;
+    var boxes = pn.querySelectorAll('input[type=checkbox]'), out = [];
+    for(var i=0;i<boxes.length;i++){
+      if(!boxes[i].checked) continue;
+      if(out.length >= cap){
+        // the ceiling again: the one past the limit does not go in
+        boxes[i].checked = false;
+        showToast('That is the limit — ' + cap);
+        continue;
+      }
+      out.push(boxes[i].value);
+    }
+    hid.value = out.join(',');
+    dzPickLabel(id, cap);
+  }
+  // a restored draft writes the hidden input directly, so the trigger has to
+  // be told what it now says — and the checkboxes are re-marked on next open
+  function dzPickSyncAll(sec){
+    (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
+      if(fd.t !== 'pick') return;
+      var id = 'dz_'+sec+'_'+fd.k, dd = document.getElementById(id+'_dd');
+      if(dd) delete dd.dataset.loaded;      // reload so the ticks match
+      dzPickLabel(id, fd.cap || 10);
+    });
+  }
+
+  // ---- a list of links ---------------------------------------------------
+  // Kept on a hidden input, newline separated, for the same reason the picker
+  // is: it makes the field indistinguishable from a text box to every draft
+  // and publish path that already exists.
+  function dzRefList(id){
+    var hid = document.getElementById(id);
+    return String((hid && hid.value) || '').split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
+  }
+  function dzRefsRender(id){
+    var host = document.getElementById(id+'_chips');
+    if(!host) return;
+    host.innerHTML = dzRefList(id).map(function(u, i){
+      // shown short, stored whole
+      var show = u.replace(/^https?:\/\//i, '').slice(0, 40);
+      return '<span class="upTagChip" title="'+esc(u)+'">'+esc(show)+
+        '<button type="button" onclick="dzRefDel(\''+id+'\','+i+')" aria-label="Remove link">✕</button></span>';
+    }).join('');
+  }
+  function dzRefKey(e, id, cap){
+    if(e.key !== 'Enter') return;          // a comma is legal inside a url
+    e.preventDefault();
+    var inp = e.target, hid = document.getElementById(id);
+    if(!hid) return;
+    var v = dzWebUrl(String(inp.value||'').trim());
+    if(!v) return;
+    if(v.length < 5 || v.length > 200){ showToast('A link has to be 5–200 characters'); return; }
+    var list = dzRefList(id);
+    if(list.length >= cap){ showToast('That is the limit — ' + cap + ' links'); return; }
+    if(list.indexOf(v) === -1) list.push(v);
+    hid.value = list.join('\n');
+    inp.value = '';
+    dzRefsRender(id);
+  }
+  function dzRefDel(id, i){
+    var hid = document.getElementById(id);
+    if(!hid) return;
+    var list = dzRefList(id);
+    list.splice(i, 1);
+    hid.value = list.join('\n');
+    dzRefsRender(id);
+  }
+  function dzRefsAll(sec){
+    (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
+      if(fd.t === 'refs') dzRefsRender('dz_'+sec+'_'+fd.k);
+    });
   }
 
   // ---- rows that only exist for some answers ----------------------------
@@ -1233,6 +1481,8 @@
     var els = box.querySelectorAll('[data-min],[data-cmax]');
     for(var i=0;i<els.length;i++) dzCountPaint(els[i]);
     dzCondApply(sec);
+    dzPickSyncAll(sec);
+    dzRefsAll(sec);
   }
   // Capture, so it also serves the boxes built after this ran. Scoped to the
   // section forms so the artwork panel, which counts its own two fields its
@@ -1521,6 +1771,51 @@
     var n = parseFloat(v);
     return isFinite(n) ? n : null;
   }
+  // ---- the half of a post the system writes ------------------------------
+  // Reading time, the slug, the byline and the SEO fallbacks are derived, not
+  // typed. A reading time someone enters is wrong the moment they edit a
+  // paragraph, and a slug that drifts from the title is a link that lies.
+  var DZ_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function dzUuids(v){
+    return String(v || '').split(',')
+      .map(function(x){ return x.trim(); })
+      .filter(function(x){ return DZ_UUID.test(x); })
+      .slice(0, 10);
+  }
+  function dzReadMinutes(body){
+    var words = String(body || '').trim().split(/\s+/).filter(Boolean).length;
+    // the column will not take less than 1 or more than 2000
+    return Math.min(2000, Math.max(1, Math.round(words / 200) || 1));
+  }
+  // The floors apply to what is stored, so a generated value that cannot
+  // reach its floor is not stored at all — a null SEO title is a search
+  // engine falling back to the real one, which is the right answer anyway.
+  function dzSeoTitle(typed, title){
+    if(typed) return typed;
+    var t = String(title || '').trim();
+    if(t.length < 10) t = (t + ' — DigiArtz').trim();
+    t = t.slice(0, 70);
+    return t.length >= 10 ? t : null;
+  }
+  function dzSeoDesc(typed, excerpt, body){
+    if(typed) return typed;
+    var d = String(excerpt || '').trim();
+    if(d.length < 50) d = String(body || '').replace(/\s+/g, ' ').trim();
+    d = d.slice(0, 160);
+    return d.length >= 50 ? d : null;
+  }
+  // The byline, copied from the profile as it reads now. A snapshot rather
+  // than a join, so the post keeps the bio it was published with — and null
+  // when the profile has none, or one too short for the column's floor.
+  async function dzAuthorBio(){
+    if(!sb || !window.currentUser) return null;
+    try{
+      var res = await sb.from('profiles').select('bio').eq('id', currentUser.id).single();
+      var bio = String((res && res.data && res.data.bio) || '').trim().slice(0, 500);
+      return bio.length >= 20 ? bio : null;
+    }catch(e){ return null; }
+  }
+
   // A website typed the way people say it — koe.studio — is a website. The
   // scheme is put back rather than the posting being refused over it.
   function dzWebUrl(v){
@@ -1821,7 +2116,10 @@
     var fds = FORMS[sec] ? FORMS[sec].fields : [];
     for(var i=0;i<fds.length;i++){
       var fd = fds[i];
-      if(fd.t === 'chk' || fd.t === 'tags' || dzIsFileType(fd.t)) continue;
+      // compound values: a list of ids, a list of links, a card that is not
+      // an input at all
+      if(fd.t === 'chk' || fd.t === 'tags' || fd.t === 'pick' ||
+         fd.t === 'refs' || fd.t === 'auto' || dzIsFileType(fd.t)) continue;
       if(!dzCondShow(sec, fd)) continue;
       var el = document.getElementById('dz_'+sec+'_'+fd.k);
       if(!el) continue;
@@ -2048,14 +2346,44 @@
       }
 
       else if(sec === 'blog'){
-        var bc = await put('cover','blog');
+        var bTitle = val(sec,'title');
         var body = val(sec,'body');
-        if(body.length < 40){ throw new Error('The post needs at least 40 characters'); }
-        row.title = val(sec,'title'); row.body = body;
-        row.excerpt = val(sec,'excerpt') || body.slice(0,200);
+        var bExcerpt = val(sec,'excerpt');
+        var bVis = val(sec,'visibility') || 'published';
+        var bWhen = dzSchPicked();
+
+        // Visibility and the schedule picker are two halves of one answer, so
+        // they have to agree before anything is uploaded.
+        if(bVis === 'scheduled' && !bWhen){
+          throw new Error('Pick a time under Schedule, or set visibility to Published');
+        }
+        if((bVis === 'draft' || bVis === 'hidden') && bWhen){
+          throw new Error('A ' + bVis + ' post is not listed, so it does not need a schedule');
+        }
+        // a scheduled post is published — at the set time, by the scheduler
+        if(bVis === 'scheduled') bVis = 'published';
+
+        var bc = await put('cover','blog');
+
+        row.title = bTitle; row.body = body;
+        row.excerpt = bExcerpt;
         row.category = [val(sec,'category')];
-        row.slug = slugify(val(sec,'title')).slice(0,80) + '-' + String(stamp).slice(-6);
-        row.read_minutes = Math.max(1, Math.round(body.split(/\s+/).length / 200));
+        row.tags = s.tags;
+        row.content_type = val(sec,'content_type') || 'Article';
+        row.related_artworks = dzUuids(val(sec,'related_artworks'));
+        row.related_items = dzUuids(val(sec,'related_items'));
+        row.external_refs = dzRefList('dz_blog_external_refs').slice(0, 20);
+        row.visibility = bVis;
+        row.featured = val(sec,'featured') === true;
+        row.seo_title = dzSeoTitle(val(sec,'seo_title'), bTitle);
+        row.seo_description = dzSeoDesc(val(sec,'seo_description'), bExcerpt, body);
+        // The automatic half. None of these has a box on the form, and none
+        // of them is read back off one.
+        row.slug = slugify(bTitle).slice(0,110) + '-' + String(stamp).slice(-6);
+        row.read_minutes = dzReadMinutes(body);
+        row.author_bio = await dzAuthorBio();
+        row.published_at = bWhen ? new Date(bWhen).toISOString() : new Date().toISOString();
+
         if(bc){ row.cover_url = bc.url; row.cover_storage_path = bc.path; }
         if(bc) pendingMedia.push({ imageKind:'blogImage', url:bc.url, path:bc.path, file:s.files.cover });
       }
@@ -2383,6 +2711,10 @@
   window.dzSelToggle     = dzSelToggle;
   window.dzSelPick       = dzSelPick;
   window.dzCondApply     = dzCondApply;
+  window.dzPickToggle    = dzPickToggle;
+  window.dzPickSet       = dzPickSet;
+  window.dzRefKey        = dzRefKey;
+  window.dzRefDel        = dzRefDel;
   window.dzSubmit        = dzSubmit;
   window.dzResetForm     = dzResetForm;
   window.dzTagKey        = dzTagKey;
@@ -2707,6 +3039,75 @@
       .then(function(res){ showToast(res.error ? 'Could not send the report' : 'Report sent'); });
   };
 
+  // ---- the work a post is about ------------------------------------------
+  // Fetched after the post is on screen rather than before it, because the
+  // post is the thing being read and these are a footnote to it. Each opens
+  // its own detail view, which is why the ids are worth carrying at all.
+  // An artwork opens in the gallery's own lightbox, which only knows the
+  // artworks it has loaded — a post can link one from years back, so the
+  // route is the fallback and it always works.
+  window.dzOpenArtwork = function(id){
+    try{
+      if(typeof openArtworkById === 'function' && openArtworkById(id, true)) return;
+    }catch(e){}
+    try{ location.href = '/artwork/' + encodeURIComponent(id); }catch(e){}
+  };
+  // A listing opens in the view above, which needs the whole row and not the
+  // three columns the related strip was drawn from.
+  window.dzOpenListing = async function(id){
+    if(!sb) return;
+    try{
+      var sel = (typeof window.dzSelectFor === 'function')
+                ? window.dzSelectFor('marketplace') : 'id,title,preview_url,description';
+      var res = await sb.from('marketplace_items').select(sel).eq('id', id).single();
+      if(res && res.data) window.dzOpenRow('marketplace', res.data);
+      else showToast('That listing is no longer available');
+    }catch(e){ showToast('Could not open that listing'); }
+  };
+
+  async function fillRelated(r){
+    var host = document.getElementById('dzvRelated');
+    if(!host || !sb) return;
+    var token = host.dataset.relToken = String(Math.random());
+    var art = (r.related_artworks || []).slice(0, 10);
+    var itm = (r.related_items || []).slice(0, 10);
+    var out = '';
+    try{
+      if(art.length){
+        var a = await sb.from('artworks').select('id,name,title,image_url')
+                  .in('id', art).eq('status','approved').limit(10);
+        var arows = (a && a.data) || [];
+        if(arows.length){
+          out += '<div><div class="avBlockH">Related artwork</div><div class="dzvRelRow">'+
+            arows.map(function(x){
+              var nm = x.name || x.title || 'Untitled';
+              return '<div class="dzvRelCard" onclick="dzOpenArtwork(\''+esc2(x.id)+'\')">'+
+                (x.image_url ? '<img src="'+esc2(getThumbnailUrl(x.image_url))+'" alt="" loading="lazy">'
+                             : '<span class="dzvRelNo"></span>')+
+                '<span class="dzvRelNm">'+esc2(nm)+'</span></div>';
+            }).join('')+'</div></div>';
+        }
+      }
+      if(itm.length){
+        var m = await sb.from('marketplace_items').select('id,title,preview_url')
+                  .in('id', itm).eq('status','approved').eq('visibility','published').limit(10);
+        var mrows = (m && m.data) || [];
+        if(mrows.length){
+          out += '<div><div class="avBlockH">Related listings</div><div class="dzvRelRow">'+
+            mrows.map(function(x){
+              return '<div class="dzvRelCard" onclick="dzOpenListing(\''+esc2(x.id)+'\')">'+
+                (x.preview_url ? '<img src="'+esc2(getThumbnailUrl(x.preview_url))+'" alt="" loading="lazy">'
+                               : '<span class="dzvRelNo"></span>')+
+                '<span class="dzvRelNm">'+esc2(x.title||'Untitled')+'</span></div>';
+            }).join('')+'</div></div>';
+        }
+      }
+    }catch(e){ out = ''; }
+    host = document.getElementById('dzvRelated');
+    if(!host || host.dataset.relToken !== token) return;   // reader moved on
+    host.innerHTML = out;
+  }
+
   // author row
   async function fillAuthor(uid, elId){
     var el = document.getElementById(elId);
@@ -2807,13 +3208,39 @@
         '</div>';
     }
     else if(sec === 'blog'){
+      // The sources a post cites, listed rather than buried in the prose. The
+      // links are the author's own text, so they are escaped and carry
+      // noopener — a post is not a licence to script the reader's tab.
+      var refsHtml = '';
+      if(Array.isArray(r.external_refs) && r.external_refs.length){
+        refsHtml = '<div><div class="avBlockH">Sources</div><ul class="dzvRefs">'+
+          r.external_refs.map(function(u){
+            var safe = /^https?:\/\//i.test(String(u||'')) ? String(u) : '';
+            var show = String(u||'').replace(/^https?:\/\//i,'');
+            return safe
+              ? '<li><a href="'+esc2(safe)+'" target="_blank" rel="noopener nofollow">'+esc2(show)+'</a></li>'
+              : '<li>'+esc2(show)+'</li>';
+          }).join('')+'</ul></div>';
+      }
+      var hasRelated = (r.related_artworks||[]).length || (r.related_items||[]).length;
+
       html = img(r.cover_url, r.title) +
         '<div class="dzvCol">'+
+        (r.featured ? '<p class="dzvExcerpt">★ Featured post</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
         (r.excerpt ? '<p class="dzvExcerpt">'+esc2(r.excerpt)+'</p>' : '')+
-        metaRow([['Posted', h.ago(r.created_at)],['Read time', (r.read_minutes||1)+' min']])+
+        metaRow([['Type', r.content_type],
+                 ['Published', h.ago(r.published_at || r.created_at)],
+                 ['Read time', (r.read_minutes||1)+' min'],
+                 ['Updated', (r.updated_at && r.published_at &&
+                              new Date(r.updated_at) - new Date(r.published_at) > 6e4)
+                             ? h.ago(r.updated_at) : '']])+
         '<div class="dzvAuthor" id="dzvAuthor"></div>'+
+        // the byline as it read when the post went out
+        (r.author_bio ? '<p class="dzvAuthBio">'+esc2(r.author_bio)+'</p>' : '')+
         '<div class="dzvArticle">'+esc2(r.body||'').replace(/\n/g,'<br>')+'</div>'+
+        refsHtml+
+        (hasRelated ? '<div id="dzvRelated"></div>' : '')+
         cmBlock(kind, id)+
         // the resized copy: the origin bucket is not publicly readable, so a
         // link to the stored original would 403
@@ -2963,6 +3390,7 @@
 
     // async fills
     if(r.user_id) fillAuthor(r.user_id, 'dzvAuthor');
+    if(sec === 'blog') fillRelated(r);
     if(sec !== 'jobs') window.dzCmLoad(kind, String(r.id), 'dzvCmList');
   }
 

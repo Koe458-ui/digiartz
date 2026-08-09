@@ -162,14 +162,19 @@
         jobs.push(sb.from('marketplace_items')
           .select(typeof window.dzSelectFor === 'function' ? window.dzSelectFor('marketplace')
             : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
-          .eq('status','approved').ilike('title',pattern)
+          // visibility, same as the Marketplace grid applies it — a draft or a
+          // hidden listing is not a search result
+          .eq('status','approved').eq('visibility','published').ilike('title',pattern)
           .order('created_at',{ascending:false}).limit(30)
           .then(function(r){ return {key:'marketplace', rows:(r&&r.data)||[]}; }));
       }
       if(want('blog')){
         jobs.push(sb.from('blog_posts')
-          .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at')
-          .eq('status','approved').ilike('title',pattern)
+          .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,'+
+                  'content_type,featured,published_at,created_at')
+          // a draft is not a search result, and neither is a post its author
+          // marked hidden
+          .eq('status','approved').eq('visibility','published').ilike('title',pattern)
           .order('created_at',{ascending:false}).limit(30)
           .then(function(r){ return {key:'blog', rows:(r&&r.data)||[]}; }));
       }

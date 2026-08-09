@@ -65,6 +65,24 @@
 .dzvAv img{width:100%;height:100%;object-fit:cover;}
 .dzvAuthName{font-weight:700;font-size:.95rem;color:var(--tx);}
 .dzvAuthHandle{font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;color:var(--txd);}
+/* A post's byline, its sources, and the work it points at. All three read as
+   footnotes to the article rather than as part of it, so they sit a step down
+   in weight — and every colour is a token, so they follow whichever theme is
+   on without a second definition. */
+.dzvAuthBio{font-size:.86rem;line-height:1.55;color:var(--txd);margin:-.5rem 0 0;}
+.dzvRefs{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:.3rem;}
+.dzvRefs li{font-size:.86rem;line-height:1.5;color:var(--txd);overflow-wrap:anywhere;}
+.dzvRefs a{color:var(--ps);}
+.dzvRelRow{display:flex;flex-wrap:wrap;gap:.6rem;}
+.dzvRelCard{width:118px;cursor:pointer;display:flex;flex-direction:column;gap:.35rem;}
+.dzvRelCard img,.dzvRelNo{width:118px;height:88px;object-fit:cover;display:block;border-radius:10px;border:1px solid var(--bdr);background:var(--sur2);}
+.dzvRelNm{font-size:.75rem;line-height:1.35;color:var(--txd);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.dzvRelCard:hover .dzvRelNm{color:var(--tx);}
+@media(max-width:520px){
+  .dzvRelCard,.dzvRelCard img,.dzvRelNo{width:96px;}
+  .dzvRelCard img,.dzvRelNo{height:72px;}
+}
+
 /* The extra preview shots on a marketplace listing. A strip that wraps rather
    than a carousel, because a carousel hides most of what the seller uploaded
    behind an arrow, and there are at most eight of them. Every colour here is

@@ -4,6 +4,50 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v137 — a post carries its own context, and stops asking for what it
+       already knows.
+       The third of these, and the one with a line running through it. The
+       composer asked for a title, an excerpt, a body, a category and tags;
+       what kind of piece it is, what work it is about, where its claims
+       came from and whether it is even meant to be public yet were all
+       unaskable.
+       The line is which fields a person fills in and which the system
+       does. Slug, author, author bio, reading time, publication date, last
+       updated and the three counters are never asked for — there is no box
+       to type them wrong in. A reading time somebody enters is wrong the
+       moment they edit a paragraph, a slug that drifts from the title is a
+       link that lies, and an author somebody types is a byline they may not
+       be entitled to. They are derived at publish and shown back by a
+       read-only card at the end of the form, so nobody wonders where they
+       went. The SEO pair sits on the other side of that line: editable,
+       and generated from the title and the excerpt when left empty — and
+       left null rather than stored short when the generated one cannot
+       reach its floor, because a null SEO title is a search engine falling
+       back to the real one, which was the better answer anyway.
+       Two controls that are new here. A picker that links up to ten of
+       your own artworks or listings — your own, which is not a display
+       choice: a picker offering everyone's work would let a post attach
+       itself to a stranger's artwork. And a list of up to twenty source
+       links, each typed and entered, each gaining its scheme if it was
+       typed without one. Both keep their value on a hidden input, which is
+       what makes them indistinguishable from a text box to every draft and
+       publish path that already existed.
+       Visibility and the Schedule picker are two halves of one answer, so
+       they are reconciled before anything uploads: Scheduled without a time
+       is refused, and a Draft with a time is refused, rather than either
+       being quietly ignored.
+       A post renders its sources as a list. Links that are not http are
+       printed rather than linked, and the ones that are carry noopener and
+       nofollow — a post is not a licence to script the reader's tab.
+       Floors and ceilings as in v135 and v136, repeated as constraints:
+       measured, the table rejects a 60k body, fifty references, a 900
+       character reference, forty tags, a 200 character tag, thirty related
+       artworks, a bogus visibility, a body under its floor, and a
+       999999-minute reading time.
+       Search applies visibility for blog and marketplace now, the way it
+       already did for jobs.
+       Changed: js/sections.js, js/search.js, css/overrides.css, index.html,
+       sw.js, supabase/migrations/20260809_blog_full_post.sql.
    v136 — a listing says what the buyer is actually buying.
        Same treatment as the job form in v135, applied to the marketplace.
        The composer asked for a title, one description box, a price and a
@@ -2158,7 +2202,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v136';
+const CACHE_VERSION = 'v137';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2193,7 +2237,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=2',
   '/css/upload.css?v=7',
   '/css/widgets.css?v=3',
-  '/css/overrides.css?v=6',
+  '/css/overrides.css?v=7',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -2225,7 +2269,7 @@ const SHELL_URLS = [
   '/js/mywork.js?v=8',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=5',
+  '/js/search.js?v=6',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
   '/js/effects.js?v=6',
@@ -2234,7 +2278,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=82',
+  '/js/sections.js?v=83',
   '/js/navprogress.js?v=5'
 ];
 

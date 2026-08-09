@@ -69,11 +69,24 @@
     },
     marketplace: {
       table:'marketplace_items', kind:'grid', noun:'item',
+      // only published listings; a draft is kept and a hidden one is reachable
+      // by its own link
+      eq:{ visibility:'published' },
+      order:[['featured',false],['created_at',false]],
       // file url is revoked for clients, and so is price_cents for anon — the
       // grant is column level, so asking for it while signed out fails the
       // whole query rather than returning null. selectFor adds it back once
-      // there is a session.
-      select:'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at'
+      // there is a session, along with the sale price, which is a price and
+      // goes exactly where price_cents goes.
+      //
+      // internal_notes is granted to nobody and is deliberately absent.
+      select:'id,user_id,title,summary,description,category,subcategory,tags,item_type,product_type,'+
+             'currency,file_ext,file_size,file_format,file_count,file_size_mb,dimensions,software,'+
+             'source_files_included,preview_url,gallery,license,commercial_use,personal_use,'+
+             'modification_allowed,attribution_required,stock,delivery_type,delivery_days,'+
+             'delivery_notes,custom_requests,revision_count,support_period,refund_policy,'+
+             'preview_watermark,safety_notes,seller_note,apply_url,apply_email,'+
+             'buyer_gets,featured,closing_date,seo_title,seo_description,slug,created_at'
     },
     jobs: {
       table:'jobs', kind:'list', noun:'job',
@@ -163,7 +176,7 @@
   // there is a session to justify it.
   function selectFor(sec){
     var s = SEC[sec].select;
-    if(sec === 'marketplace' && window.currentUser) s += ',price_cents';
+    if(sec === 'marketplace' && window.currentUser) s += ',price_cents,sale_price_cents';
     return s;
   }
   window.dzSelectFor = selectFor;
@@ -254,7 +267,12 @@
       return '<div class="dzCard" data-id="'+id+'" onclick="dzOpenView(\'marketplace\',\''+id+'\')">'+
         '<div class="dzThumb">'+mt+'<span class="dzBadge">'+esc((r.item_type||'').toUpperCase())+'</span></div>'+
         '<div class="dzBody"><div class="dzName">'+esc(r.title)+'</div>'+
-        '<div class="dzMeta"><span>'+esc(r.license||'')+'</span>'+
+        // the one-line hook, which is what it was written for
+        (r.summary ? '<div class="dzHint">'+esc(r.summary)+'</div>' : '')+
+        '<div class="dzMeta">'+
+        (r.featured ? '<span>★ Featured</span>' : '')+
+        (r.product_type ? '<span>'+esc(r.product_type)+'</span>' : '')+
+        '<span>'+esc(r.license||'')+'</span>'+
         (r.delivery_days ? '<span>'+esc(String(r.delivery_days))+'d delivery</span>' : '')+
         '</div>'+chips(r)+slot(r, id, hasFile, 'card')+'</div></div>';
     }
@@ -346,6 +364,32 @@
                     ['unlisted','Unlisted — reachable by link'],
                     ['private','Private — only you']];
 
+  // ---- marketplace vocabulary -------------------------------------------
+  // How many files one listing may carry. The signer already caps each file
+  // at 200MB and rate limits how fast they arrive; these cap how many, and
+  // the table repeats both — 50 as a trigger on marketplace_file, 8 as a
+  // check on the gallery column.
+  var DZ_SELL_MAX = 50, DZ_GALLERY_MAX = 8;
+  var ITEM_TYPE = [['digital','Digital download'],['commission','Commission slot'],['service','Service']];
+  // The two listing types that are work rather than a file, and so have a
+  // delivery time, a way to get in touch, and no download.
+  var ITEM_SERVICE = { commission:1, service:1 };
+  // Stored as the label reads. Every one clears the three character floor.
+  var PRODUCT_TYPE = [['Artwork','Artwork'],['Template','Template'],['Asset','Asset'],
+                      ['Preset','Preset'],['Brush','Brush pack'],['Font','Font'],
+                      ['Texture','Texture'],['3D Model','3D model'],['UI Kit','UI kit'],
+                      ['Icon Set','Icon set'],['Mockup','Mockup'],['Plugin','Plugin'],
+                      ['Tutorial','Tutorial'],['Other','Other']];
+  var DELIVERY_TYPE = [['instant','Instant download'],['custom','Custom delivery']];
+  var MKT_VISIBILITY = [['published','Published — listed in the Marketplace'],
+                        ['draft','Draft — kept, not listed'],
+                        ['hidden','Hidden — reachable by link only']];
+  // Commercial use is a required answer rather than an unticked box, because
+  // an unticked box and an unanswered question look identical and this one
+  // decides whether a buyer may earn from what they bought.
+  var YES_NO = [['yes','Yes — buyers may use it commercially'],
+                ['no','No — personal use only']];
+
   var FORMS = {
     resources: { title:'Share a Resource', sub:'Brushes, textures, fonts, templates — anything that helps another artist work faster.',
       fields:[
@@ -369,23 +413,97 @@
         {k:'category',t:'cat', label:'Category', req:true},
         {k:'tags',  t:'tags',  label:'Tags'}
       ]},
+    // The listing, in the order a buyer decides: what it is, what it looks
+    // like, what is in it, what they may do with it, what it costs, how it
+    // arrives, and then the seller's own bookkeeping. Same floors-and-
+    // ceilings rule as the job form — see the note on FORMS.jobs — and the
+    // same numbers again as constraints, in
+    // 20260809_marketplace_full_listing.sql.
     marketplace: { title:'List a Product', sub:'Sell digital goods, or offer commissions and services.',
       fields:[
-        {k:'item_type',t:'sel', label:'Listing type',
-         options:[['digital','Digital download'],['commission','Commission slot'],['service','Service']]},
-        {k:'files',  t:'files', label:'Files to sell',
-         accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.pdf,.obj,.fbx,.blend',
-         hint:'Required for a digital download — add every file the buyer receives, up to 200MB each. '+
-              'These are stored privately and stay locked until someone pays for the listing.'},
-        {k:'preview',t:'image', label:'Preview image', req:true, accept:'image/jpeg,image/png,image/webp,image/gif', hint:'Required. Shown on the card and auto-checked. JPG/PNG/WEBP up to 25MB.'},
-        {k:'title',  t:'text',  label:'Title', req:true, max:140, ph:'Name your listing…'},
-        {k:'description',t:'area', label:'Description', max:3000, ph:'What the buyer receives…'},
+        {k:'item_type',t:'sel', label:'Listing type', req:true, options:ITEM_TYPE},
+        {k:'product_type',t:'sel', label:'Product type', req:true, options:PRODUCT_TYPE, def:'Artwork'},
+        {k:'title',  t:'text',  label:'Title', req:true, min:3, max:100, ph:'Name your listing…'},
+        {k:'summary',t:'text',  label:'Short summary', req:true, min:20, max:200,
+         ph:'One line — what it is and who it is for.',
+         hint:'Shown on the card and in search results.'},
+        {k:'description',t:'area', label:'Description', req:true, min:100, max:5000, rows:8,
+         ph:'What it is, how it was made, how it is meant to be used…'},
         {k:'category',t:'cat',  label:'Category', req:true},
-        {k:'price',  t:'num',   label:'Price', ph:'0.00', step:'0.01', hint:'Leave 0 to list it free.'},
-        {k:'currency',t:'sel',  label:'Currency', options:DZ_CURRENCIES, pref:1},
-        {k:'license',t:'sel',   label:'License', options:LICENSE_MKT},
-        {k:'delivery_days',t:'num', label:'Delivery (days)', ph:'e.g. 7', hint:'For commissions and services.'},
-        {k:'tags',   t:'tags',  label:'Tags'}
+        {k:'subcategory',t:'text', label:'Subcategory', min:2, max:50, ph:'e.g. Portrait brushes'},
+        {k:'tags',   t:'tags',  label:'Tags', max:30},
+        {k:'preview',t:'image', label:'Preview image', req:true,
+         accept:'image/jpeg,image/png,image/webp,image/gif',
+         hint:'Required. Shown on the card and auto-checked. JPG/PNG/WEBP up to 25MB.'},
+        {k:'gallery',t:'images', label:'Additional preview images',
+         accept:'image/jpeg,image/png,image/webp,image/gif',
+         hint:'Optional. Up to 8 more shots, shown on the listing page. 25MB each.'},
+        {k:'files',  t:'files', label:'Files to sell', cond:'digital',
+         accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.pdf,.obj,.fbx,.blend',
+         hint:'Required for a digital download — add every file the buyer receives, up to 200MB each '+
+              'and 50 files in all. These are stored privately and stay locked until someone pays.'},
+        {k:'buyer_gets',t:'area', label:'What buyer gets', req:true, min:20, max:3000, rows:4,
+         ph:'Exactly what is included — one line per thing.'},
+        {k:'file_format',t:'text', label:'File format', req:true, min:2, max:100,
+         ph:'e.g. ZIP containing PSD + PNG'},
+        {k:'file_count',t:'int', label:'File count', nmin:1, nmax:9999, ph:'e.g. 12'},
+        {k:'file_size_mb',t:'money', label:'File size (MB)', nmin:0, nmax:100000, ph:'e.g. 240'},
+        {k:'dimensions',t:'text', label:'Resolution / dimensions', min:2, max:50,
+         ph:'e.g. 4K, or 3000×4000 px'},
+        {k:'software',t:'text', label:'Software used', min:2, max:100, ph:'Photoshop, Blender, Figma…'},
+        {k:'source_files_included',t:'chk', label:'Source files included',
+         hint:'The editable original — PSD, AI, FIG, BLEND.'},
+        {k:'license',t:'sel',   label:'License', req:true, options:LICENSE_MKT},
+        {k:'commercial_use',t:'sel', label:'Commercial use allowed', req:true, options:YES_NO, def:'yes'},
+        {k:'personal_use',t:'chk', label:'Personal use allowed'},
+        {k:'modification_allowed',t:'chk', label:'Modification allowed'},
+        {k:'attribution_required',t:'chk', label:'Attribution required'},
+        {k:'price',  t:'money', label:'Price', req:true, nmin:0, nmax:99999999, ph:'0.00',
+         hint:'Enter 0 to list it free.'},
+        {k:'currency',t:'sel',  label:'Currency', req:true, options:DZ_CURRENCIES, pref:1},
+        // Stored, and deliberately not shown as the price anywhere yet.
+        // Checkout charges price_cents, and that lives in the payments module
+        // rather than in this file, so a sale price rendered here would be a
+        // number the buyer is shown and then not charged. It is captured now
+        // and starts applying the moment checkout learns to read it.
+        {k:'sale_price',t:'money', label:'Discount / sale price', nmin:0, nmax:99999999, ph:'0.00',
+         hint:'Optional, and has to be below the price. Recorded on the listing — checkout does '+
+              'not charge it yet, so the price above is still what a buyer pays.'},
+        {k:'stock',  t:'int',   label:'Stock / quantity', nmin:0, nmax:999999,
+         hint:'Leave empty for an unlimited digital download.'},
+        {k:'delivery_type',t:'sel', label:'Delivery type', req:true, options:DELIVERY_TYPE},
+        {k:'delivery_days',t:'int', label:'Delivery days', req:true, cond:'svc', nmin:0, nmax:365,
+         ph:'e.g. 7'},
+        {k:'delivery_notes',t:'area', label:'Delivery notes', min:20, max:1000, rows:2,
+         ph:'Anything the buyer should know about timing.'},
+        {k:'custom_requests',t:'chk', label:'Custom requests accepted'},
+        {k:'revision_count',t:'int', label:'Revision count', nmin:0, nmax:99, ph:'e.g. 2'},
+        {k:'support_period',t:'text', label:'Support period', min:2, max:50, ph:'e.g. 7 days'},
+        {k:'refund_policy',t:'area', label:'Refund policy', min:20, max:500, rows:2,
+         ph:'When you refund, and when you do not.'},
+        {k:'preview_watermark',t:'chk', label:'Previews are watermarked'},
+        {k:'safety_notes',t:'area', label:'Safety / content notes', min:20, max:500, rows:2,
+         ph:'AI assistance, mature content, anything a buyer should know up front.'},
+        {k:'seller_note',t:'area', label:'Creator / seller note', min:20, max:500, rows:2,
+         ph:'Anything else you want buyers to read.'},
+        {k:'apply_url',t:'text', label:'Application link', cond:'svc', min:10, max:200, ph:'https://…'},
+        {k:'apply_email',t:'text', label:'Application email', cond:'svc', min:5, max:254,
+         ph:'you@studio.com',
+         hint:'A commission or service needs a link or an email — one of the two is required.'},
+        {k:'visibility',t:'sel', label:'Visibility', req:true, options:MKT_VISIBILITY, def:'published'},
+        {k:'featured',t:'chk', label:'Feature / promote this listing',
+         hint:'Featured listings sit at the top of the Marketplace.'},
+        {k:'closing_date',t:'date', label:'Closing date',
+         hint:'Optional. Use it for a limited run or a commission window.'},
+        {k:'internal_notes',t:'area', label:'Internal notes', min:20, max:1000, rows:2,
+         ph:'Anything the moderators should know.',
+         hint:'Only moderators read this. It is never shown to buyers, and it is not readable '+
+              'by the site — not even back to you.'},
+        {k:'seo_title',t:'text', label:'SEO title', min:3, max:80, ph:'Defaults to the listing title.'},
+        {k:'seo_description',t:'area', label:'SEO description', min:50, max:160, rows:2,
+         ph:'The snippet a search engine shows.'},
+        {k:'slug',   t:'text',  label:'Slug / URL name', min:3, max:120,
+         ph:'Leave empty and one is made from the title.'}
       ]},
     // The posting, in the order someone reads a job ad: who is hiring, what
     // the role is, where and when it happens, what it pays, and how to apply.
@@ -584,12 +702,15 @@
     },
     marketplace: {
       guide: [
-        ['💾','Digital needs a file','A digital download must include the product file.'],
-        ['🖼','Preview sells','Show exactly what the buyer receives.'],
-        ['💲','Price fairly','Set 0 to list free; be clear on delivery time.'],
+        ['💾','Digital needs a file','A digital download must include the product file — up to 50 of them.'],
+        ['🖼','Preview sells','Show exactly what the buyer receives, and add up to 8 more shots.'],
+        ['📦','Say what is in the box','What the buyer gets, the file format and the license are all required.'],
+        ['💲','Price fairly','Enter 0 to list free; be clear on delivery time.'],
         ['🛡','Deliver what you list','Misleading listings are removed.']
       ],
-      tips: ['Lead with your strongest preview','Spell out what is included','State delivery days for commissions','Choose an accurate listing type']
+      tips: ['Lead with your strongest preview','Write the one-line summary for someone skimming a grid',
+             'Spell out every file included and its format','State delivery days for commissions',
+             'Answer the license questions — buyers filter on them']
     },
     jobs: {
       guide: [
@@ -986,7 +1107,7 @@
       var acc   = fd.accept ? fd.accept : (fd.t === 'image' ? 'image/*' : '');
       var isImg = fd.t === 'image';
       var args  = '\''+sec+'\',\''+fd.k+'\'';
-      return '<div class="upField dzFileField">'+lbl+
+      return '<div class="upField dzFileField'+cond+'" data-fk="'+esc(fd.k)+'">'+lbl+
         '<div class="dzFileZone" id="'+id+'_z"'+
           ' ondragenter="dzDragOn(event,\''+id+'\')" ondragover="dzDragOn(event,\''+id+'\')"'+
           ' ondragleave="dzDragOff(event,\''+id+'\')" ondrop="dzDropFile(event,'+args+')">'+
@@ -1005,12 +1126,14 @@
           '</div>'+
           '<div class="dzFilePicked" id="'+id+'_pk"></div>'+
         '</div>'+hint+'</div>';
-    } else if(fd.t === 'files'){
+    } else if(fd.t === 'files' || fd.t === 'images'){
       // The same dropzone, holding a list instead of one file. A listing is
-      // whatever the buyer receives, and that is rarely a single object.
-      var macc  = fd.accept || '';
+      // whatever the buyer receives, and that is rarely a single object; the
+      // gallery is the same shape with pictures in it.
+      var isPics = fd.t === 'images';
+      var macc  = fd.accept || (isPics ? 'image/*' : '');
       var margs = '\''+sec+'\',\''+fd.k+'\'';
-      return '<div class="upField dzFileField">'+lbl+
+      return '<div class="upField dzFileField'+cond+'" data-fk="'+esc(fd.k)+'">'+lbl+
         '<div class="dzFileZone dzFileZone--multi" id="'+id+'_z"'+
           ' ondragenter="dzDragOn(event,\''+id+'\')" ondragover="dzDragOn(event,\''+id+'\')"'+
           ' ondragleave="dzDragOff(event,\''+id+'\')" ondrop="dzDropFile(event,'+margs+')">'+
@@ -1021,11 +1144,13 @@
           '<div class="dzFileEmpty">'+
             secIco(sec)+
             '<div class="dzFileCopy">'+
-              '<div class="dzFileTitle">Drag &amp; drop the files you are selling</div>'+
+              '<div class="dzFileTitle">'+(isPics
+                 ? 'Drag &amp; drop more preview images'
+                 : 'Drag &amp; drop the files you are selling')+'</div>'+
               '<div class="dzFileSub">or browse from your device — you can add several</div>'+
             '</div>'+
-            '<span class="dzFileBtn">Select files</span>'+
-            '<div class="dzFileTypes">'+esc(acceptLabel(macc, false))+'</div>'+
+            '<span class="dzFileBtn">'+(isPics ? 'Select images' : 'Select files')+'</span>'+
+            '<div class="dzFileTypes">'+esc(acceptLabel(macc, isPics))+'</div>'+
           '</div>'+
           '<div class="dzFilePicked dzFileMulti" id="'+id+'_pk"></div>'+
         '</div>'+hint+'</div>';
@@ -1040,15 +1165,22 @@
   // question it hangs off; the row is in the form or it is not, and a row
   // that is not there is neither required nor read when publishing.
   var COND = {
-    place:  function(v){ return v.work_mode !== 'remote'; },
-    remote: function(v){ return v.work_mode === 'remote'; },
-    term:   function(v){ return !!EMP_FIXED_TERM[v.employment_type]; }
+    place:   function(v){ return v.work_mode !== 'remote'; },
+    remote:  function(v){ return v.work_mode === 'remote'; },
+    term:    function(v){ return !!EMP_FIXED_TERM[v.employment_type]; },
+    // a commission or a service is work, not a file
+    svc:     function(v){ return !!ITEM_SERVICE[v.item_type]; },
+    digital: function(v){ return v.item_type === 'digital'; }
   };
   function dzCondShow(sec, fd){
     if(!fd || !fd.cond) return true;
     var f = COND[fd.cond];
     if(!f) return true;
-    return !!f({ work_mode: val(sec,'work_mode'), employment_type: val(sec,'employment_type') });
+    return !!f({
+      work_mode: val(sec,'work_mode'),
+      employment_type: val(sec,'employment_type'),
+      item_type: val(sec,'item_type')
+    });
   }
   function dzCondApply(sec){
     if(!FORMS[sec]) return;
@@ -1200,13 +1332,21 @@
       return;
     }
     z.classList.add('dzHasFile');
+    var fd = dzField(sec, key), pics = !!fd && fd.t === 'images';
+    var urls = st(sec).urls[key];
+    if(!Array.isArray(urls)) urls = [];
     var total = 0;
     list.forEach(function(f){ total += (f && f.size) || 0; });
     box.innerHTML =
       '<div class="dzFileRows">' +
         list.map(function(f, i){
+          // a preview image is worth showing as one; a product file has
+          // nothing to show but its type
+          var thumb = (pics && urls[i])
+            ? '<span class="dzFileThumb"><img src="'+esc(urls[i])+'" alt=""></span>'
+            : '<span class="dzFileThumb dzFileThumbExt">'+esc(ext(f.name))+'</span>';
           return '<div class="dzFileRow">'+
-            '<span class="dzFileThumb dzFileThumbExt">'+esc(ext(f.name))+'</span>'+
+            thumb+
             '<div class="dzFileMeta">'+
               '<div class="dzFileNm">'+esc(f.name)+'</div>'+
               '<div class="dzFileSz">'+esc(bytes(f.size) || '—')+'</div>'+
@@ -1218,7 +1358,8 @@
         }).join('') +
       '</div>'+
       '<div class="dzFileSum">'+
-        '<span>'+list.length+' file'+(list.length === 1 ? '' : 's')+' · '+esc(bytes(total) || '—')+' · locked until purchased</span>'+
+        '<span>'+list.length+' '+(pics ? 'image' : 'file')+(list.length === 1 ? '' : 's')+
+          ' · '+esc(bytes(total) || '—')+(pics ? '' : ' · locked until purchased')+'</span>'+
         '<button type="button" class="dzFileAct" onclick="dzFileReplace(event,\''+sec+'\',\''+key+'\')">Add more</button>'+
         '<button type="button" class="dzFileAct dzFileActRm" onclick="dzFileClear(event,\''+sec+'\',\''+key+'\')">Clear all</button>'+
       '</div>';
@@ -1227,7 +1368,7 @@
   // swap the held file
   function dzSetFile(sec, key, f){
     var s = st(sec);
-    if(s.urls[key]){ try{ URL.revokeObjectURL(s.urls[key]); }catch(e){} s.urls[key] = null; }
+    if(s.urls[key]){ dzRevoke(s.urls[key]); s.urls[key] = null; }
     s.files[key] = f || null;
     if(f && /^image\//.test(f.type||'')){
       try{ s.urls[key] = URL.createObjectURL(f); }catch(e){ s.urls[key] = null; }
@@ -1239,17 +1380,29 @@
   // you add a second file, not how you replace the first
   function dzAddFiles(sec, key, files){
     var s = st(sec);
+    var fd = dzField(sec, key), pics = !!fd && fd.t === 'images';
+    // The ceiling on a list, the same idea as maxlength on a box: past it the
+    // file is simply not added. The table enforces both numbers again.
+    var cap = pics ? DZ_GALLERY_MAX : DZ_SELL_MAX;
     var have = Array.isArray(s.files[key]) ? s.files[key] : [];
-    var seen = {};
+    if(!Array.isArray(s.urls[key])) s.urls[key] = [];
+    var urls = s.urls[key];
+    var seen = {}, full = false;
     have.forEach(function(f){ seen[f.name + '|' + f.size] = 1; });
     Array.prototype.forEach.call(files || [], function(f){
       if(!f) return;
       var k = f.name + '|' + f.size;
       if(seen[k]) return;            // the same file picked twice is one file
+      if(have.length >= cap){ full = true; return; }
       seen[k] = 1;
       have.push(f);
+      // an image row shows the picture, which needs a handle on the blob
+      urls.push(pics && /^image\//.test(f.type||'')
+        ? (function(){ try{ return URL.createObjectURL(f); }catch(e){ return null; } })()
+        : null);
     });
     s.files[key] = have;
+    if(full) showToast('That is the limit — ' + cap + (pics ? ' preview images' : ' files'));
     dzRenderFile(sec, key);
   }
 
@@ -1258,15 +1411,20 @@
     var s = st(sec);
     if(!Array.isArray(s.files[key])) return;
     s.files[key].splice(i, 1);
+    if(Array.isArray(s.urls[key])){
+      var gone = s.urls[key].splice(i, 1)[0];
+      if(gone){ try{ URL.revokeObjectURL(gone); }catch(err){} }
+    }
     var el = document.getElementById('dz_'+sec+'_'+key);
     if(el) el.value = '';
     dzRenderFile(sec, key);
   }
 
+  // 'files' sells a list of files; 'images' shows a list of them. Both hold a
+  // list rather than one file, and picking again adds to it.
   function isMulti(sec, key){
-    var fds = FORMS[sec] ? FORMS[sec].fields : [];
-    for(var i=0;i<fds.length;i++){ if(fds[i].k === key) return fds[i].t === 'files'; }
-    return false;
+    var fd = dzField(sec, key);
+    return !!fd && (fd.t === 'files' || fd.t === 'images');
   }
 
   function dzPick(sec, key, input){
@@ -1286,11 +1444,26 @@
     var el = document.getElementById('dz_'+sec+'_'+key);
     if(el) el.value = '';
     if(isMulti(sec, key)){
-      st(sec).files[key] = [];
+      var s = st(sec);
+      dzRevoke(s.urls[key]);
+      s.files[key] = [];
+      s.urls[key]  = [];
       dzRenderFile(sec, key);
       return;
     }
     dzSetFile(sec, key, null);
+  }
+
+  // A held blob url, or a list of them. Both shapes exist because a single
+  // file field keeps one and a multi field keeps one per row, and every path
+  // that drops files has to let go of whichever it was holding.
+  function dzRevoke(u){
+    if(!u) return;
+    if(Array.isArray(u)){
+      u.forEach(function(x){ if(x){ try{ URL.revokeObjectURL(x); }catch(e){} } });
+      return;
+    }
+    try{ URL.revokeObjectURL(u); }catch(e){}
   }
 
   // drag and drop
@@ -1342,6 +1515,12 @@
     var n = parseInt(v, 10);
     return isFinite(n) ? n : null;
   }
+  // the same, for a figure that may carry decimals
+  function dzNum(v){
+    if(String(v == null ? '' : v).trim() === '') return null;
+    var n = parseFloat(v);
+    return isFinite(n) ? n : null;
+  }
   // A website typed the way people say it — koe.studio — is a website. The
   // scheme is put back rather than the posting being refused over it.
   function dzWebUrl(v){
@@ -1353,17 +1532,18 @@
   }
 
   // repaint file fields
+  function dzIsFileType(t){
+    return t === 'file' || t === 'image' || t === 'files' || t === 'images';
+  }
   function dzPaintFiles(sec){
     (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
-      if(fd.t === 'file' || fd.t === 'image' || fd.t === 'files') dzRenderFile(sec, fd.k);
+      if(dzIsFileType(fd.t)) dzRenderFile(sec, fd.k);
     });
   }
 
   function dzResetForm(sec){
     var old = S[sec];
-    if(old && old.urls) Object.keys(old.urls).forEach(function(k){
-      if(old.urls[k]){ try{ URL.revokeObjectURL(old.urls[k]); }catch(e){} }
-    });
+    if(old && old.urls) Object.keys(old.urls).forEach(function(k){ dzRevoke(old.urls[k]); });
     S[sec] = {tags:[], files:{}, urls:{}};
     var box = document.getElementById('upSecForms');
     if(box) box.innerHTML = buildForm(sec);
@@ -1499,7 +1679,7 @@
     var s=st(sec), data={};
     FORMS[sec].fields.forEach(function(fd){
       if(fd.t==='tags'){ data.__tags=(s.tags||[]).slice(); return; }
-      if(fd.t==='file'||fd.t==='image'||fd.t==='files') return;   // blobs not persisted
+      if(dzIsFileType(fd.t)) return;   // blobs not persisted
       var el=document.getElementById('dz_'+sec+'_'+fd.k);
       if(!el) return;
       data[fd.k]= el.type==='checkbox' ? el.checked : el.value;
@@ -1520,7 +1700,7 @@
       setTimeout(function(){
         var s=st(d.sec); s.tags=(d.data.__tags||[]).slice();
         FORMS[d.sec].fields.forEach(function(fd){
-          if(fd.t==='tags'||fd.t==='file'||fd.t==='image'||fd.t==='files') return;
+          if(fd.t==='tags'||dzIsFileType(fd.t)) return;
           if(!(fd.k in d.data)) return;
           var el=document.getElementById('dz_'+d.sec+'_'+fd.k);
           if(!el) return;
@@ -1641,8 +1821,7 @@
     var fds = FORMS[sec] ? FORMS[sec].fields : [];
     for(var i=0;i<fds.length;i++){
       var fd = fds[i];
-      if(fd.t === 'chk' || fd.t === 'tags' || fd.t === 'file' ||
-         fd.t === 'image' || fd.t === 'files') continue;
+      if(fd.t === 'chk' || fd.t === 'tags' || dzIsFileType(fd.t)) continue;
       if(!dzCondShow(sec, fd)) continue;
       var el = document.getElementById('dz_'+sec+'_'+fd.k);
       if(!el) continue;
@@ -1751,7 +1930,7 @@
     // form is not being asked for, so it cannot be missing.
     var miss = FORMS[sec].fields.filter(function(fd){
       if(!fd.req || !dzCondShow(sec, fd)) return false;
-      if(fd.t === 'files') return !(s.files[fd.k] || []).length;
+      if(fd.t === 'files' || fd.t === 'images') return !(s.files[fd.k] || []).length;
       if(fd.t === 'file' || fd.t === 'image') return !s.files[fd.k];
       var v = val(sec, fd.k);
       // 0 is an answer — years of experience, and a pay range that starts at
@@ -1883,8 +2062,41 @@
 
       else if(sec === 'marketplace'){
         var type = val(sec,'item_type') || 'digital';
-        var sell = s.files.files || [];
+        var isSvc = !!ITEM_SERVICE[type];
+        // A commission is work, not a download. Files picked while the listing
+        // was still a digital one are not sold as part of it, and are not
+        // uploaded — the field they were picked in is not even on the form any
+        // more.
+        var sell = (type === 'digital') ? (s.files.files || []) : [];
         if(type === 'digital' && !sell.length){ throw new Error('A digital download needs at least one file'); }
+        if(sell.length > DZ_SELL_MAX){ throw new Error('A listing can carry at most '+DZ_SELL_MAX+' files'); }
+
+        var gal = s.files.gallery || [];
+        if(gal.length > DZ_GALLERY_MAX){
+          throw new Error('A listing can carry at most '+DZ_GALLERY_MAX+' extra preview images');
+        }
+
+        var mkPrice = parseFloat(val(sec,'price'));
+        if(!isFinite(mkPrice)) throw new Error('Add a price — enter 0 to list it free');
+        var mkCents = Math.round(mkPrice * 100);
+
+        var saleRaw = val(sec,'sale_price');
+        var saleCents = null;
+        if(saleRaw !== ''){
+          var saleNum = parseFloat(saleRaw);
+          if(!isFinite(saleNum)) throw new Error('That sale price is not a number');
+          saleCents = Math.round(saleNum * 100);
+          if(saleCents >= mkCents) throw new Error('The sale price has to be below the price');
+        }
+
+        var mkUrl  = dzWebUrl(val(sec,'apply_url'));
+        var mkMail = val(sec,'apply_email');
+        if(isSvc){
+          if(!mkUrl && !mkMail) throw new Error('A commission or service needs an application link or email');
+          if(mkMail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mkMail)) throw new Error('That application email does not look right');
+          if(mkUrl && (mkUrl.length < 10 || mkUrl.length > 200)) throw new Error('The application link has to be 10–200 characters');
+        }
+
         var mp = await put('preview','market');
 
         // The goods. Every one of these goes to the private bucket, so the
@@ -1894,12 +2106,65 @@
           pendingSell.push(await putPrivate(sell[si], 'market', si));
         }
 
+        // The extra preview shots. These are the opposite of the files above:
+        // they are meant to be looked at by anyone, so they go to the public
+        // bucket exactly like the main preview does.
+        var galRows = [];
+        for(var gi = 0; gi < gal.length; gi++){
+          var gext = safeSlug((gal[gi].name.split('.').pop()||'jpg'), 10);
+          var gpath = 'market/'+currentUser.id+'/'+stamp+'_g'+gi+'_'+base+'.'+gext;
+          var gurl = await s3Upload(BUCKET, gpath, gal[gi]);
+          galRows.push({ url:gurl, path:gpath, name:gal[gi].name, size:gal[gi].size });
+          pendingMedia.push({ imageKind:'marketImage', url:gurl, path:gpath, file:gal[gi] });
+        }
+
         row.title = val(sec,'title'); row.description = val(sec,'description');
-        row.category = [val(sec,'category')]; row.item_type = type;
-        row.price_cents = Math.round(parseFloat(val(sec,'price')||'0') * 100) || 0;
+        row.summary = val(sec,'summary');
+        row.category = [val(sec,'category')];
+        row.subcategory = val(sec,'subcategory') || null;
+        row.item_type = type;
+        row.product_type = val(sec,'product_type') || null;
+        row.buyer_gets = val(sec,'buyer_gets');
+        row.file_format = val(sec,'file_format');
+        row.file_count = dzInt(val(sec,'file_count'));
+        row.file_size_mb = dzNum(val(sec,'file_size_mb'));
+        row.dimensions = val(sec,'dimensions') || null;
+        row.software = val(sec,'software') || null;
+        row.source_files_included = val(sec,'source_files_included') === true;
+        row.price_cents = mkCents;
+        row.sale_price_cents = saleCents;
         row.currency = val(sec,'currency') || dzPrefCurrency();
         row.license = val(sec,'license') || 'standard';
-        row.delivery_days = parseInt(val(sec,'delivery_days'),10) || null;
+        row.commercial_use = val(sec,'commercial_use') !== 'no';
+        row.personal_use = val(sec,'personal_use') === true;
+        row.modification_allowed = val(sec,'modification_allowed') === true;
+        row.attribution_required = val(sec,'attribution_required') === true;
+        row.stock = dzInt(val(sec,'stock'));
+        row.delivery_type = val(sec,'delivery_type') || 'instant';
+        // asked for on a commission or a service, meaningless on a download
+        row.delivery_days = isSvc ? dzInt(val(sec,'delivery_days')) : null;
+        row.delivery_notes = val(sec,'delivery_notes') || null;
+        row.custom_requests = val(sec,'custom_requests') === true;
+        row.revision_count = dzInt(val(sec,'revision_count'));
+        row.support_period = val(sec,'support_period') || null;
+        row.refund_policy = val(sec,'refund_policy') || null;
+        row.preview_watermark = val(sec,'preview_watermark') === true;
+        row.safety_notes = val(sec,'safety_notes') || null;
+        row.seller_note = val(sec,'seller_note') || null;
+        row.apply_url = isSvc ? (mkUrl || null) : null;
+        row.apply_email = isSvc ? (mkMail || null) : null;
+        row.visibility = val(sec,'visibility') || 'published';
+        row.featured = val(sec,'featured') === true;
+        row.closing_date = val(sec,'closing_date') || null;
+        row.internal_notes = val(sec,'internal_notes') || null;
+        row.seo_title = val(sec,'seo_title') || null;
+        row.seo_description = val(sec,'seo_description') || null;
+        // A slug the seller typed is used as typed. One made here carries the
+        // stamp, the same way a blog post's does, so two listings with the
+        // same name do not end up with the same address.
+        row.slug = val(sec,'slug') ||
+          (slugify(val(sec,'title')).slice(0,110) + '-' + String(stamp).slice(-6));
+        if(galRows.length) row.gallery = galRows;
         if(pendingSell.length){
           var totalBytes = 0;
           pendingSell.forEach(function(x){ totalBytes += x.size || 0; });
@@ -2005,6 +2270,9 @@
         var paths = [];
         ['file_storage_path','preview_storage_path','cover_storage_path'].forEach(function(k){ if(row[k]) paths.push(row[k]); });
         pendingSell.forEach(function(x){ paths.push(x.path); });
+        // the extra preview shots are already in the public bucket, so
+        // cancelling the schedule has to know to clean them up too
+        if(Array.isArray(row.gallery)) row.gallery.forEach(function(g){ if(g && g.path) paths.push(g.path); });
         var sres = await sb.from('scheduled_sections').insert({
           user_id: currentUser.id, section: sec, payload: payload,
           storage_paths: paths, publish_at: new Date(when).toISOString(),
@@ -2555,15 +2823,65 @@
     }
     else if(sec === 'marketplace'){
       var hasFile = r.file_ext ? 1 : 0;
+      // The extra shots, under the main one. Same treatment as the preview:
+      // they are public images and nothing else, so there is nothing to gate.
+      var galleryHtml = '';
+      if(Array.isArray(r.gallery) && r.gallery.length){
+        galleryHtml = '<div class="dzvGallery">'+ r.gallery.map(function(g){
+          if(!g || !g.url) return '';
+          return '<a href="'+esc2(getViewUrl(g.url))+'" target="_blank" rel="noopener">'+
+            '<img src="'+esc2(getThumbnailUrl(g.url))+'" alt="" loading="lazy"></a>';
+        }).join('') +'</div>';
+      }
+      // What a buyer may actually do with it. Written as a list of answers
+      // rather than a paragraph, because it is the part they scan for.
+      var rights = [
+        r.commercial_use ? 'Commercial use allowed' : 'Personal use only',
+        r.personal_use ? 'Personal use allowed' : '',
+        r.modification_allowed ? 'Modification allowed' : '',
+        r.attribution_required ? 'Attribution required' : '',
+        r.source_files_included ? 'Source files included' : ''
+      ].filter(Boolean).join(' · ');
+
       html = img(r.preview_url, r.title) +
         '<div class="dzvCol">'+
         // the slot sits under the media, and stays empty for a guest
         (window.dzSlot ? window.dzSlot(r, id, hasFile, 'view') : '')+
         '<div class="dzvAuthor" id="dzvAuthor"></div>'+
+        (r.featured ? '<p class="dzvExcerpt">★ Featured listing</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
+        (r.summary ? '<p class="dzvExcerpt">'+esc2(r.summary)+'</p>' : '')+
+        galleryHtml+
         (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
-        metaRow([['Type', r.item_type],['License', r.license],
-                 ['Delivery', r.delivery_days ? r.delivery_days+' days' : ''],['Listed', h.ago(r.created_at)]])+
+        metaRow([['Type', r.item_type],['Product', r.product_type],
+                 ['Category', (r.subcategory || '')],
+                 ['License', r.license],
+                 ['Rights', rights],
+                 ['File format', r.file_format],
+                 ['Files', r.file_count ? String(r.file_count) : ''],
+                 ['Size', r.file_size_mb != null ? r.file_size_mb+' MB' : ''],
+                 ['Dimensions', r.dimensions],
+                 ['Made with', r.software],
+                 ['Stock', r.stock != null ? String(r.stock) : ''],
+                 ['Delivery', r.delivery_type === 'custom' ? 'Custom delivery' : 'Instant download'],
+                 ['Delivery time', r.delivery_days ? r.delivery_days+' days' : ''],
+                 ['Revisions', r.revision_count != null ? String(r.revision_count) : ''],
+                 ['Support', r.support_period],
+                 ['Custom requests', r.custom_requests ? 'Accepted' : ''],
+                 ['Closes', jobDate(r.closing_date)],
+                 ['Listed', h.ago(r.created_at)]])+
+        jobBlock('What you get', r.buyer_gets)+
+        jobBlock('Delivery notes', r.delivery_notes)+
+        jobBlock('Refund policy', r.refund_policy)+
+        jobBlock('Content notes', r.safety_notes)+
+        jobBlock('From the seller', r.seller_note)+
+        (r.preview_watermark ? jobBlock('Previews', 'Preview images are watermarked. The files you receive are not.') : '')+
+        ((r.apply_url || r.apply_email)
+          ? '<a class="avActWide" href="'+
+              (r.apply_url ? esc2(r.apply_url)+'" target="_blank" rel="noopener'
+                           : 'mailto:'+esc2(r.apply_email))+
+            '">Request this ↗</a>'
+          : '')+
         // There is no download control here any more, for anyone. The old one
         // was drawn for every visitor and refused at the database \u2014 which is
         // safe but reads as a broken button, and it advertised a file to people

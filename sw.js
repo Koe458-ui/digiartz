@@ -4,6 +4,51 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v136 — a listing says what the buyer is actually buying.
+       Same treatment as the job form in v135, applied to the marketplace.
+       The composer asked for a title, one description box, a price and a
+       license; what is in the download, what format it is in, whether the
+       buyer may earn from it, how long delivery takes and whether there is
+       a refund were all left to the description or to the comments.
+       Forty-seven fields now, in the order a buyer decides: what it is,
+       what it looks like, what is in it, what they may do with it, what it
+       costs, how it arrives, then the seller's own bookkeeping. Floors and
+       ceilings work exactly as they do on the job form, and are repeated as
+       table constraints — measured, the table rejects a 200k-character
+       description, forty tags, a thirty-image gallery, a "sale" price above
+       the price and a description under its floor.
+       A listing can carry a gallery now: up to eight more preview shots
+       beside the main one, shown as a strip that wraps. They go to the
+       public bucket like the preview does, because they are meant to be
+       looked at — unlike the files being sold, which keep going somewhere
+       a stranger cannot follow.
+       Two limits the browser cannot be trusted with. Fifty files per
+       listing, enforced by a trigger, because a CHECK cannot count rows in
+       another table and nothing capped this before; and eight gallery
+       images, enforced by a check on the column. The signer already capped
+       each file at 200MB, restricted the types and rate limited the
+       uploads, so what was missing was how many.
+       Listing type decides the shape of the form. A digital download is
+       asked for files and never for a delivery time; a commission or a
+       service is asked for a delivery time and a way to be reached, and is
+       never asked for files — nor are files picked before the switch
+       uploaded, since the listing is no longer selling them.
+       Two columns are readable by fewer people than the rest, and the
+       grants say so rather than the queries. sale_price_cents goes exactly
+       where price_cents goes — signed in only. internal_notes is granted
+       for writing and to nobody for reading: row policies cannot help
+       there, because any signed-in caller can already read every approved
+       listing, so a read grant would hand them everyone's private notes.
+       Moderation reads it through the service role.
+       The sale price is stored and deliberately not displayed. Checkout
+       charges price_cents and lives in the payments module, so a sale price
+       shown here would be a number the buyer is quoted and then not
+       charged. The field says so.
+       Visibility decides whether a listing is listed at all, and featured
+       listings sort first. Listings written before any of this still
+       render: every new block is dropped when empty.
+       Changed: js/sections.js, css/overrides.css, index.html, sw.js,
+       supabase/migrations/20260809_marketplace_full_listing.sql.
    v135 — a job posting says the whole job.
        The form asked for a title, a company, one description box and a pay
        range. Everything an applicant actually decides on — the hours, the
@@ -2113,7 +2158,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v135';
+const CACHE_VERSION = 'v136';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2148,7 +2193,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=2',
   '/css/upload.css?v=7',
   '/css/widgets.css?v=3',
-  '/css/overrides.css?v=5',
+  '/css/overrides.css?v=6',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -2189,7 +2234,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=81',
+  '/js/sections.js?v=82',
   '/js/navprogress.js?v=5'
 ];
 

@@ -433,21 +433,29 @@
        every theme — the card is deliberately dark whatever the page around it
        is doing.
 
-       The numbers are not taste, and they are not guesswork either. White type
-       needs about 55% ink over a white artwork to hold 4.5:1, so the ramp is
-       set a margin above that where words go and taken to nothing where they
-       do not — the right third of a wide card carries no text at all, and the
-       artwork there is the artwork, not a darkened copy of it. Measured
-       against a deliberately near-white picture, the weakest point any word
-       sits on is about 5:1.
+       The numbers are not taste, and they are not guesswork either. Two
+       measurements set them.
 
-       The ramp only has to cover what the text can reach, and .fgsBody's own
-       width is what decides that. */
+       The first is how much ink white type needs: about 55% over a white
+       artwork to hold 4.5:1. That is a floor, and no amount of wanting the
+       picture brighter moves it.
+
+       The second is how far the words actually reach, measured off the
+       rendered text rather than assumed from the box — and on a wide card
+       that is only a third of the way across, because the column is capped
+       at 27ch while the card keeps growing. So the ramp holds above the floor
+       out to there and is at nothing well before halfway. Past that point the
+       artwork is the artwork: not a darkened copy of it, not a veiled one,
+       the file as uploaded.
+
+       The wider the card the smaller that fraction gets, so the widest cards
+       take a tighter ramp again. A phone cannot have this: one card across a
+       360px screen puts the description within a few percent of the far edge,
+       and words there need their ink like words anywhere else. */
     .fgsScrim{
       position:absolute;inset:0;z-index:1;display:block;
       background:
-        linear-gradient(90deg,rgba(6,6,12,.8) 0%,rgba(6,6,12,.72) 46%,rgba(6,6,12,.32) 72%,rgba(6,6,12,0) 94%),
-        linear-gradient(0deg,rgba(6,6,12,.44) 0%,rgba(6,6,12,0) 52%);
+        linear-gradient(90deg,rgba(6,6,12,.78) 0%,rgba(6,6,12,.74) 39%,rgba(6,6,12,.6) 49%,rgba(6,6,12,.1) 55%,rgba(6,6,12,0) 59%);
     }
 
     .fgsBody{
@@ -455,7 +463,7 @@
       display:flex;flex-direction:column;align-items:flex-start;
       gap:.4rem;
       padding:clamp(.9rem,3.2vw,1.5rem);
-      width:min(100%,34ch);
+      width:min(100%,31ch);
     }
     .fgsChips{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;margin-bottom:.1rem;}
     /* the kind chip stays neutral glass so the bright one beside it is the
@@ -463,7 +471,7 @@
     .fgsKind{
       display:inline-flex;align-items:center;gap:.35rem;
       padding:.28rem .6rem;border-radius:999px;
-      background:rgba(8,8,14,.44);border:1px solid rgba(255,255,255,.3);
+      background:rgba(8,8,14,.72);border:1px solid rgba(255,255,255,.34);
       backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
       font-family:var(--fm);font-size:.6rem;font-weight:700;
       letter-spacing:.11em;text-transform:uppercase;color:#fff;white-space:nowrap;
@@ -581,8 +589,7 @@
     @container fgs (max-width:480px){
       .fgsScrim{
         background:
-          linear-gradient(90deg,rgba(6,6,12,.78) 0%,rgba(6,6,12,.71) 55%,rgba(6,6,12,.64) 100%),
-          linear-gradient(0deg,rgba(6,6,12,.36) 0%,rgba(6,6,12,0) 62%);
+          linear-gradient(90deg,rgba(6,6,12,.72) 0%,rgba(6,6,12,.68) 58%,rgba(6,6,12,.64) 90%,rgba(6,6,12,.61) 100%);
       }
       .fgsCard{border-radius:16px;}
       .fgsBody{padding:.8rem;gap:.28rem;width:100%;}
@@ -626,6 +633,12 @@
     }
     @container fgs (min-width:481px){
       .fgsSub{display:-webkit-box;}
+    }
+    @container fgs (min-width:640px){
+      .fgsScrim{
+        background:
+          linear-gradient(90deg,rgba(6,6,12,.78) 0%,rgba(6,6,12,.74) 30%,rgba(6,6,12,.6) 39%,rgba(6,6,12,.08) 46%,rgba(6,6,12,0) 50%);
+      }
     }
     @media(prefers-reduced-motion:reduce){
       .fgsCard,.fgsMedia img,.fgsGo,.fgsDot{transition:none;}

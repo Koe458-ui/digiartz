@@ -111,6 +111,68 @@
            '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + FGS_ICO[name] + '</svg>';
   }
 
+  /* Show the part of the artwork its uploader picked.
+
+     They pick it in a SQUARE — the crop stage is 1:1 — and thumb_x/thumb_y
+     are stored as an object-position, which is an anchor rather than a
+     centre: it lines the point x% across the image up with the point x%
+     across the box. That is exactly right as long as the box has the same
+     shape as the stage, which every grid cell on this site does and this card
+     does not. A card is 2:1, so it can only show a band, and anchoring slides
+     that band away from the middle of the chosen square in proportion to how
+     much shorter it is — up to 150px out on a portrait upload, in the one
+     direction that pulls it back towards the centre of the file. A crop
+     chosen at the top of an image was being answered with something closer to
+     the middle of it, which is precisely what picking a crop is for avoiding.
+
+     So the square is reconstructed — side min(w,h)/zoom, placed by the stored
+     anchor — and the card is centred on ITS centre, clamped to the edges of
+     the file. What the card shows is then always the middle of what they
+     framed, whatever shape the card happens to be. At 50% nothing changes,
+     which is why this never showed up in the middle of the range. */
+  function fgsFrame(img){
+    var a = img && img.__fgsArt;
+    if(!a) return;
+    var w = img.naturalWidth, h = img.naturalHeight;
+    var bw = img.clientWidth, bh = img.clientHeight;
+    if(!w || !h || !bw || !bh) return;
+
+    var num = function(v, d){ return (v != null && isFinite(+v)) ? +v : d; };
+    var tx = Math.max(0, Math.min(100, num(a.thumb_x, 50)));
+    var ty = Math.max(0, Math.min(100, num(a.thumb_y, 50)));
+    var tz = Math.max(1, Math.min(2, num(a.thumb_zoom, 1)));
+
+    // the square they framed, in the file's own pixels, and its centre
+    var m  = Math.min(w, h) / tz;
+    var cx = ((tx / 100) * (w - m) + m / 2) / w;
+    var cy = ((ty / 100) * (h - m) + m / 2) / h;
+
+    // the band this card can show, put centrally over that
+    var sc = Math.max(bw / w, bh / h);
+    var vw = bw / sc, vh = bh / sc;
+    var px = (w - vw) > 0.5 ? ((cx * w - vw / 2) / (w - vw)) * 100 : 50;
+    var py = (h - vh) > 0.5 ? ((cy * h - vh / 2) / (h - vh)) * 100 : 50;
+    px = Math.max(0, Math.min(100, px));
+    py = Math.max(0, Math.min(100, py));
+
+    img.style.objectPosition = px.toFixed(2) + '% ' + py.toFixed(2) + '%';
+    // their zoom is theirs; the card magnifies by the same amount about the
+    // same point, the way every other thumbnail on the site does
+    if(tz > 1){
+      img.style.transform = 'scale(' + tz + ')';
+      img.style.transformOrigin = px.toFixed(2) + '% ' + py.toFixed(2) + '%';
+    }
+  }
+
+  // the band depends on the card's shape, and the card's shape changes with
+  // the window — one column becomes two, and every crop is re-cut
+  function fgsReframe(){
+    var track = document.getElementById('fgShowTrack');
+    if(!track) return;
+    var imgs = track.querySelectorAll('.fgsMedia img');
+    for(var i = 0; i < imgs.length; i++) fgsFrame(imgs[i]);
+  }
+
   function fgsCard(slot, idx){
     var a = slot.art;
     var spot = slot.kind === 'Artist Spotlight';
@@ -153,7 +215,12 @@
     // a card is two grid cells wide, so the grid's own sizes would hand it the
     // 300 for a box that wants the 1000
     if(img.srcset) img.sizes = fgsSizes();
-    if(typeof thumbStyle === 'function') img.style.cssText = thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom);
+    // the crop needs the file's real proportions, which are not known until it
+    // has arrived; until then it sits centred, which is where it would have
+    // sat anyway
+    img.__fgsArt = a;
+    if(img.complete && img.naturalWidth) fgsFrame(img);
+    else img.onload = function(){ fgsFrame(img); };
 
     el.querySelector('.fgsGo').onclick = function(){
       if(typeof openLB !== 'function') return;
@@ -390,6 +457,10 @@
     sec.hidden = false;
     fgsBuilt = true;
 
+    // A cached picture is already complete before the section is shown, and a
+    // hidden box measures zero — so the crop is cut again here, once the cards
+    // have a size to be cut against.
+    fgsReframe();
     fgsPaintAll();
     fgsFetchPeople(slots.map(function(s){ return s.uid; }));
     fgsSyncNav();
@@ -539,7 +610,7 @@
     var rt = null;
     window.addEventListener('resize', function(){
       clearTimeout(rt);
-      rt = setTimeout(fgsSyncNav, 140);
+      rt = setTimeout(function(){ fgsSyncNav(); fgsReframe(); }, 140);
     }, { passive:true });
 
     // arrow keys walk the rail once it has focus, the way the chip row does

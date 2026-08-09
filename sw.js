@@ -4,6 +4,39 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v134 — the showcase shows the artwork, and the part of it the uploader
+       picked.
+       The scrim was sized by eye and it buried the picture. Two
+       measurements replace the guess. How much ink white type needs over a
+       white artwork: about 55% to hold 4.5:1, a floor nothing moves. And
+       how far the words actually reach, read off the rendered text rather
+       than assumed from the box — on a desktop card only about a third of
+       the way across, because the column is capped in ch while the card
+       keeps growing. So the ramp holds above the floor out to there and is
+       at nothing well before halfway, and the card is measured again to
+       say what that bought: 53% of a desktop card is now completely
+       untouched artwork, against none of it before, and the ink averaged
+       over the whole card falls from 60% to 31%. A phone cannot have this
+       and does not get it — one card across a 360px screen puts the
+       description within a few percent of the far edge — but it comes down
+       to the floor too, 71% to 68%.
+       The crop was the other half. thumb_x/thumb_y are stored as an
+       object-position, which is an anchor and not a centre: it lines the
+       point x% across the image up with the point x% across the box. That
+       is right while the box has the shape of the crop stage, which is
+       square and which every grid cell on this site matches. This card is
+       2:1, so it shows a band, and anchoring slides that band away from the
+       middle of the chosen square in proportion to how much shorter it is
+       — measured at up to 150px out on a portrait upload, always in the
+       direction of the middle of the file. Someone who cropped to the top
+       of their picture was shown something closer to the centre of it,
+       which is the one thing choosing a crop is meant to prevent. The
+       square is reconstructed now — side min(w,h)/zoom, placed by the
+       stored anchor — and the card centred on its centre, clamped to the
+       edges. Measured across five crops from 0% to 100% including a zoomed
+       one: every card lands dead on the centre of what was chosen. It only
+       ever agreed at 50%, which is why it read as "always the middle".
+       Changed: index.html, css/hero.css, js/fgshow.js, sw.js.
    v133 — the showcase rail answers straight away, moves one card at a
        time, and stops hiding the artwork.
        Three faults, all reported from using it.
@@ -2035,7 +2068,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v133';
+const CACHE_VERSION = 'v134';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2059,7 +2092,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=90',
+  '/css/hero.css?v=91',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=2',
@@ -2104,7 +2137,7 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=3',
   '/js/search.js?v=4',
   '/js/feed.js?v=3',
-  '/js/fgshow.js?v=3',
+  '/js/fgshow.js?v=4',
   '/js/effects.js?v=6',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',

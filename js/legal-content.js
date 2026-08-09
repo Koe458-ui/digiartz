@@ -341,20 +341,17 @@ export const LEGAL = {
     // website review asks for a contact route and a delivery timeline, and
     // neither was written down anywhere on this site.
     //
-    // ADDRESS AND PHONE ARE PLACEHOLDERS. Razorpay's review requires a real
-    // postal address and a working phone number, and inventing either would
-    // be worse than leaving them obviously blank. Search for FILL_IN and
-    // replace both before submitting the site for review.
+    // NO POSTAL ADDRESS OR PHONE NUMBER HERE, deliberately. Razorpay's review
+    // does ask for both, so this page may come back as a rejection reason —
+    // but a made-up address on a live payments site is worse than a missing
+    // one, and the real ones were not available when this was written. Add
+    // them as two more <h3> blocks when they are.
     contact: {
       title: 'CONTACT US',
       html: '<h2>Contact DigiArtz</h2>' +
         '<p>We answer support, billing, copyright and account questions by email, and we aim to reply within two working days.</p>' +
         '<h3>Email</h3>' +
         '<p>General support and billing: <a href="mailto:DigiArtzsupport@gmail.com">DigiArtzsupport@gmail.com</a></p>' +
-        '<h3>Registered address</h3>' +
-        '<p>FILL_IN_POSTAL_ADDRESS</p>' +
-        '<h3>Phone</h3>' +
-        '<p>FILL_IN_PHONE_NUMBER</p>' +
         '<h3>What to include</h3>' +
         '<p>For a billing or payment question, send the email address on the account and the date and amount of the payment. We do not need — and will never ask for — your card number, UPI PIN, CVV or any one-time password.</p>' +
         '<span class="lmDate">LAST UPDATED: AUGUST 2026</span>'

@@ -24,10 +24,26 @@
        cards with the same upload; a site with too little to say gets a
        shorter row instead of a padded one.
        One row at every width — one card on a phone, two on a desktop,
-       three past 1600px — paged by the arrows, the dots, a swipe or the
-       arrow keys. A card is its own dark surface, a 2:1 picture under a
-       scrim, so it reads the same in all four themes without a per-theme
-       repaint; only the heading, arrows and dots take the page's tokens.
+       three past 1600px — and it is slid rather than stepped through
+       buttons. There are no arrows on it. A wheel turns it a card at a
+       time, a mouse can take hold of it and pull, a finger swipes it, the
+       dots jump a page, and the arrow keys walk it once it has focus.
+       For as long as a gesture is running the snap and the easing are
+       both off so the rail tracks the hand exactly, and it glides to the
+       nearest card when the hand lets go — the nearest CARD, because a
+       card is 700px wide on a desktop and rounding a 300px push back to
+       the nearest page would land it exactly where it started. A push
+       worth more than a nudge lands on the next card the way it was
+       heading, and a wheel steps a whole card per turn rather than the
+       seventh of one a notch is actually worth. At either end the wheel
+       is handed straight back to the page, so the section is something to
+       scroll past rather than a trap to fall into.
+       A card is its own dark surface, a 2:1 picture under a scrim, so it
+       reads the same in all four themes without a per-theme repaint; only
+       the heading and the dots take the page's tokens. The heading is a
+       heading now — full weight, the page's own text colour — rather than
+       the dimmed grey the smaller section labels wear, which at that size
+       and tracking read as switched off.
        The words inside are sized against the CARD, not the window. The
        column count steps to two at 700px and the pair that arrives there
        is narrower than the single card a 390px phone was showing, so a
@@ -35,11 +51,16 @@
        are container queries, with the phone case repeated as plain media
        queries so a browser without them still gets that much right.
        Checked at seventeen widths from 320 to 3440 across four themes:
-       no card overflows its own 2:1 box at any of them. And 288 contrast
+       no card overflows its own 2:1 box at any of them. And 294 contrast
        measurements taken off the rendered pixels — every word scored
        against the lightest pixel actually behind it, over a near-white
        artwork, which is the worst thing a scrim can be asked to hold text
-       over — none below 4.5:1, the weakest 6.3:1.
+       over — none below 4.5:1, the weakest 6.3:1. Every way of moving the
+       rail driven for real in a browser: a wheel notch moves one card and
+       three move three, a drag follows the pointer and settles forward, a
+       drag across a button does not fire it while a plain click still
+       does, the dots and the arrow keys land on the page they name, and a
+       wheel at the far end scrolls the gallery instead of stalling on it.
        Changed: index.html, css/hero.css, js/fgshow.js (new),
        js/app-core.js, sw.js.
    v128 — the buttons come up bright too, and the page is checked on
@@ -1944,7 +1965,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=88',
+  '/css/hero.css?v=89',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=1',
@@ -1989,7 +2010,7 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=3',
   '/js/search.js?v=4',
   '/js/feed.js?v=3',
-  '/js/fgshow.js?v=1',
+  '/js/fgshow.js?v=2',
   '/js/effects.js?v=4',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',

@@ -334,40 +334,51 @@
       display:flex;align-items:center;justify-content:space-between;gap:.75rem;
       padding:0 var(--fgPad) .7rem;
     }
+    /* The mark over the rail is a heading, not a caption: it carries the page's
+       own text colour at full weight rather than the dimmed grey the smaller
+       section labels wear, because at this size and tracking a dimmed grey
+       reads as switched off. */
     .fgShowTitle{
       display:flex;align-items:center;gap:.5rem;min-width:0;
-      font-family:var(--fm);font-size:.68rem;font-weight:700;
-      letter-spacing:.16em;color:var(--txd);
+      font-family:var(--fd);font-size:.78rem;font-weight:800;
+      letter-spacing:.15em;color:var(--tx);
       text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
     .fgShowIco{display:flex;flex:0 0 auto;color:#FBBF24;}
-    .fgShowIco svg{width:17px;height:17px;display:block;}
-    .fgShowNav{display:flex;align-items:center;gap:.35rem;flex:0 0 auto;}
-    .fgShowNav[hidden]{display:none;}
-    .fgShowArw{
-      width:36px;height:36px;border-radius:999px;
-      display:flex;align-items:center;justify-content:center;
-      background:var(--sur);border:1px solid var(--bdr);color:var(--tx);
-      cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
-      transition:border-color .2s,background .2s,transform .15s;
-    }
-    .fgShowArw svg{width:17px;height:17px;display:block;}
-    .fgShowArw:active{transform:scale(.92);}
-    .fgShowArw:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    @media(hover:hover){ .fgShowArw:hover{background:var(--sur2);border-color:var(--bdrh);} }
+    .fgShowIco svg{width:18px;height:18px;display:block;fill:currentColor;stroke-width:1.4;}
 
-    /* The rail. Scroll padding matches the page inset so a snapped card lands
-       flush with the mark above it rather than against the screen edge. */
+    /* The rail. There are no arrows on it: it is slid — a wheel, a drag, a
+       swipe, the dots, or the arrow keys — so the only furniture is the row of
+       dots under it saying how far along it is.
+
+       Scroll padding matches the page inset so a snapped card lands flush with
+       the mark above it rather than against the screen edge. */
     .fgShowTrack{
       display:flex;gap:var(--fgsGap,16px);
       padding:0 var(--fgPad) 2px;
       overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
       -webkit-overflow-scrolling:touch;
       scroll-snap-type:x mandatory;scroll-padding-left:var(--fgPad);
+      scroll-behavior:smooth;
       scrollbar-width:none;-ms-overflow-style:none;
+      /* a mouse can take hold of this, and says so */
+      cursor:grab;
     }
     .fgShowTrack::-webkit-scrollbar{display:none;}
     .fgShowTrack:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;border-radius:18px;}
+
+    /* Driven by hand — a wheel turning or a pointer dragging. Both want the
+       rail to follow the gesture exactly, so for as long as one is running the
+       snap is off and the easing is off: a mandatory snap would yank each
+       frame back to the nearest card, and a smooth scroll would animate
+       towards a target the hand has already moved past. The moment the gesture
+       stops, both come back and the rail glides to the nearest page. */
+    .fgShowTrack.fgsFree{scroll-snap-type:none;scroll-behavior:auto;}
+    /* Held: the cards stop answering the pointer, so dragging across one
+       cannot start a text selection, leave a stuck hover, or land a click on
+       the button the drag happened to finish over. */
+    .fgShowTrack.fgsDrag{cursor:grabbing;}
+    .fgShowTrack.fgsDrag *{pointer-events:none;user-select:none;-webkit-user-select:none;}
 
     .fgShowDots{
       display:flex;align-items:center;justify-content:center;gap:.4rem;
@@ -515,12 +526,12 @@
       .fgsGo:not([disabled]):hover{box-shadow:0 6px 20px rgba(0,0,0,.45);}
     }
 
-    /* The rail's own furniture is a page thing, not a card thing, so this one
-       stays a media query. */
+    /* The rail's own gap is a page thing, not a card thing, so this one stays
+       a media query. */
     @media(max-width:600px){
       .fgShowTrack{--fgsGap:12px;}
-      .fgShowArw{width:32px;height:32px;}
-      .fgShowArw svg{width:15px;height:15px;}
+      .fgShowTitle{font-size:.72rem;letter-spacing:.13em;}
+      .fgShowIco svg{width:16px;height:16px;}
     }
 
     /* A 2:1 card is only ever half as tall as it is wide, so a narrow one is
@@ -607,7 +618,8 @@
       .fgsSub{display:-webkit-box;}
     }
     @media(prefers-reduced-motion:reduce){
-      .fgsCard,.fgsMedia img,.fgsGo,.fgsDot,.fgShowArw{transition:none;}
+      .fgsCard,.fgsMedia img,.fgsGo,.fgsDot{transition:none;}
+      .fgShowTrack{scroll-behavior:auto;}
       .fgsCard:hover{transform:none;}
       .fgsCard:hover .fgsMedia img{transform:none;}
     }

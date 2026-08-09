@@ -266,12 +266,10 @@
 
   function fgsSyncNav(){
     var dots = document.getElementById('fgShowDots');
-    var nav  = document.getElementById('fgShowNav');
     if(!dots) return;
     var pages = fgsPages(), here = fgsPage(), i;
 
-    // one control set or none: a single page has nothing to page through
-    if(nav)  nav.hidden  = pages < 2;
+    // a single page has nothing to page through, so it says nothing
     dots.hidden = pages < 2;
     if(pages < 2){ dots.innerHTML = ''; return; }
 
@@ -326,7 +324,11 @@
     var frag = document.createDocumentFragment();
     slots.forEach(function(s, i){ frag.appendChild(fgsCard(s, i)); });
     track.appendChild(frag);
+    // back to the first card instantly — the rail is being rebuilt, so there
+    // is nothing for a glide to read as movement across
+    track.classList.add('fgsFree');
     track.scrollLeft = 0;
+    track.classList.remove('fgsFree');
     sec.hidden = false;
     fgsBuilt = true;
 
@@ -339,8 +341,153 @@
     var track = document.getElementById('fgShowTrack');
     if(!track) return;
 
-    // the dots follow a swipe as well as an arrow, and settle rather than
-    // fire on every frame of the scroll
+    /* ---- driven by hand ------------------------------------------------
+       Free means the gesture is in charge: snap off, easing off, the rail
+       follows the pointer one to one. It goes back on when the rail comes to
+       rest, and the rest is always a card boundary.
+
+       Settling reads the direction the hand was going, not just where it
+       stopped. Rounding to the nearest card undoes a deliberate push: a card
+       here is 700px wide on a desktop, so a 300px drag rounds back to exactly
+       where it started and the rail looks broken. Any push worth more than a
+       nudge therefore lands on the NEXT card the way it was heading. */
+    var freeT = null, snapT = null;
+    var NUDGE = 0.12;             // of a card — under this it was not a push
+
+    function fgsFree(){
+      clearTimeout(freeT); clearTimeout(snapT);
+      track.classList.add('fgsFree');
+    }
+
+    // where a card boundary is, counted in cards from the start
+    function fgsCardAt(){
+      var m = fgsMetrics();
+      return m.step ? track.scrollLeft / m.step : 0;
+    }
+    function fgsGoCard(n){
+      var m = fgsMetrics();
+      if(!m.step) return;
+      var max = track.scrollWidth - track.clientWidth;
+      var left = Math.max(0, Math.min(max, n * m.step));
+      if(fgsMotionOk() && typeof track.scrollTo === 'function'){
+        track.scrollTo({ left:left, behavior:'smooth' });
+      } else {
+        track.scrollLeft = left;
+      }
+      fgsSyncNav();
+    }
+
+    function fgsSettle(dir){
+      clearTimeout(freeT);
+      freeT = setTimeout(function(){
+        var at = fgsCardAt(), off = at - Math.floor(at), to;
+        if(dir > 0 && off > NUDGE)      to = Math.ceil(at);
+        else if(dir < 0 && off < 1 - NUDGE) to = Math.floor(at);
+        else                            to = Math.round(at);
+        // the glide runs while the rail is still free, because a mandatory
+        // snap switched back on mid-flight would cut it short; it goes back on
+        // once the rail is already standing on a snap point, where turning it
+        // on moves nothing
+        fgsGoCard(to);
+        snapT = setTimeout(function(){
+          track.classList.remove('fgsFree');
+          fgsSyncNav();
+        }, 480);
+      }, 0);
+    }
+
+    /* A wheel over the rail turns the rail, one card per turn. It is a step
+       rather than a free scroll because a card is far wider than a notch: a
+       mouse reports about 100px a click and a card is seven times that, so
+       scrolling one to one would move the rail a seventh of a card and then
+       settle it straight back where it started. Both axes count, so a
+       trackpad's sideways flick and a mouse's vertical wheel do the same
+       thing, and a flick is held to one card per gesture rather than firing
+       once per delta the trackpad chooses to emit.
+
+       At either end the gesture is handed straight back to the page. Without
+       that the section is a trap: a reader scrolling down the gallery would
+       stop dead the moment the pointer crossed it, with the rail already on
+       its last card and nothing left to give. */
+    var wheelAcc = 0, wheelLock = false, wheelT = null;
+    var WHEEL_TRIP = 18;          // px of wheel before the rail answers
+
+    track.addEventListener('wheel', function(e){
+      if(e.ctrlKey) return;                       // pinch zoom is not ours
+      var m = fgsMetrics();
+      if(!m.step) return;
+      var max = track.scrollWidth - track.clientWidth;
+      if(max <= 1) return;
+
+      var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if(e.deltaMode === 1)      d *= 16;         // some mice report lines
+      else if(e.deltaMode === 2) d *= track.clientWidth;
+      if(!d) return;
+      if((d < 0 && track.scrollLeft <= 1) || (d > 0 && track.scrollLeft >= max - 1)) return;
+
+      e.preventDefault();
+      wheelAcc += d;
+      clearTimeout(wheelT);
+      wheelT = setTimeout(function(){ wheelAcc = 0; }, 200);
+
+      if(wheelLock || Math.abs(wheelAcc) < WHEEL_TRIP) return;
+      var dir = wheelAcc > 0 ? 1 : -1;
+      wheelAcc = 0;
+      wheelLock = true;
+      setTimeout(function(){ wheelLock = false; }, 280);
+      // already on a boundary, so this is a clean one-card step
+      fgsGoCard(Math.round(fgsCardAt()) + dir);
+    }, { passive:false });
+
+    /* And a mouse can take hold of it and pull. Touch is left alone: a finger
+       already gets the browser's own swipe, which carries momentum this
+       cannot, and taking that gesture over would only make it worse. */
+    var dragId = null, dragFrom = 0, dragAt = 0, dragMax = 0, dragDir = 0, dragReal = false;
+    var DRAG_SLOP = 6;                            // past this it is a drag, not a click
+
+    track.addEventListener('pointerdown', function(e){
+      if(e.pointerType !== 'mouse' || e.button !== 0) return;
+      if(track.scrollWidth - track.clientWidth <= 1) return;
+      dragId = e.pointerId; dragAt = e.clientX; dragFrom = track.scrollLeft;
+      dragMax = 0; dragDir = 0; dragReal = false;
+      try{ track.setPointerCapture(dragId); }catch(err){}
+      track.classList.add('fgsDrag');
+      fgsFree();
+    });
+
+    track.addEventListener('pointermove', function(e){
+      if(dragId === null || e.pointerId !== dragId) return;
+      var dx = e.clientX - dragAt;
+      if(Math.abs(dx) > dragMax) dragMax = Math.abs(dx);
+      if(dragMax > DRAG_SLOP){ dragReal = true; dragDir = dx < 0 ? 1 : -1; }
+      var max = track.scrollWidth - track.clientWidth;
+      track.scrollLeft = Math.max(0, Math.min(max, dragFrom - dx));
+    });
+
+    function dragEnd(e){
+      if(dragId === null || (e && e.pointerId !== dragId)) return;
+      try{ if(track.hasPointerCapture(dragId)) track.releasePointerCapture(dragId); }catch(err){}
+      dragId = null;
+      track.classList.remove('fgsDrag');
+      fgsSettle(dragDir);
+    }
+    track.addEventListener('pointerup', dragEnd);
+    track.addEventListener('pointercancel', dragEnd);
+
+    /* The click that follows a real drag belongs to the drag, not to whatever
+       button the hand happened to stop over. Caught on the way down, before
+       the button ever hears about it. */
+    track.addEventListener('click', function(e){
+      if(!dragReal) return;
+      dragReal = false;
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+    // a press that goes nowhere clears the flag rather than leaving it armed
+    track.addEventListener('pointerdown', function(){ dragReal = false; }, true);
+
+    // the dots follow a swipe as well as a dot, and settle rather than fire
+    // on every frame of the scroll
     var t = null;
     track.addEventListener('scroll', function(){
       clearTimeout(t);
@@ -364,4 +511,3 @@
   })();
 
   window.fgShowRender = fgShowRender;
-  window.fgsNav = fgsNav;

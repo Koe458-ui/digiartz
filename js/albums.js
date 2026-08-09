@@ -492,7 +492,11 @@
     var panel = document.getElementById('pfUpAlbumPanel');
     if(!panel) return;
     var picked = [];
-    panel.querySelectorAll('input[type="checkbox"]:checked').forEach(function(c){ picked.push(c.value); });
+    // ten albums is the ceiling, and the eleventh tick simply does not take
+    panel.querySelectorAll('input[type="checkbox"]:checked').forEach(function(c){
+      if(picked.length >= 10){ c.checked = false; showToast('That is the limit — 10 albums'); return; }
+      picked.push(c.value);
+    });
     pf.upAlbums = picked;
     var names = picked.map(function(id){
       var a = albMine.filter(function(x){ return String(x.id) === String(id); })[0];
@@ -593,8 +597,13 @@
       // a queued upload writes several rows in the same instant, and rows
       // that tie can come back in either order, which is how one artwork
       // ended up in two pages. id breaks every tie the same way each time.
-      const{data,error}=await sb.from('artworks').select('*')
-        .eq('user_id',forId).eq('kind',ART_KIND_ART)
+      // A profile gallery shows what that member published. Their own drafts
+      // and hidden pieces are theirs to see; a visitor gets neither.
+      var _own = !!currentUser && String(currentUser.id) === String(forId);
+      var _q = sb.from('artworks').select('*')
+        .eq('user_id',forId).eq('kind',ART_KIND_ART);
+      if(!_own) _q = _q.eq('visibility','published');
+      const{data,error}=await _q
         .order('created_at',{ascending:false}).order('id',{ascending:false})
         .range(from,to);
       if(error) throw error;
@@ -1131,7 +1140,9 @@
     var nm = document.getElementById('pfUpNm');   if(nm) nm.value = '';
     var ds = document.getElementById('pfUpDesc'); if(ds) ds.value = '';
     pfUpdateCount('pfUpNm','pfUpNmCount',100);
-    pfUpdateCount('pfUpDesc','pfUpDescCount',1000);
+    pfUpdateCount('pfUpDesc','pfUpDescCount',5000);
+    // the fields js/sections.js injected into this panel clear with the rest
+    if(typeof dzArtReset === 'function') dzArtReset();
     pfSetTagsFromArray([]);
     pfSetCats(['others']);
     pfSetSoftware('');
@@ -1190,6 +1201,12 @@
   function handlePfFile(e){
     if(pfGuestGate(e)) return; // drop bypasses click gate
     var f = e.target.files[0]; if(!f) return;
+    // 20MB, refused here rather than after the crop dialog and the upload
+    if(f.size > 20 * 1024 * 1024){
+      showToast('That image is over 20MB — pick a smaller one');
+      e.target.value = '';
+      return;
+    }
     if(!document.getElementById('pfUpNm').value.trim()){
       document.getElementById('pfUpNm').value = f.name.replace(/\.[^.]+$/,'');
       pfUpdateCount('pfUpNm','pfUpNmCount',100);

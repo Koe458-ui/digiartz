@@ -739,8 +739,9 @@
   async function loadDB(){
     if(!sb)return;
     try{
-      // public load, approved only
-      const{data:imgs}=await sb.from('artworks').select('*').eq('status','approved').eq('kind',ART_KIND_ART).order('created_at',{ascending:false});
+      // public load: approved, and published. A draft is kept and not shown,
+      // and a hidden piece is reachable by its own link and nowhere else.
+      const{data:imgs}=await sb.from('artworks').select('*').eq('status','approved').eq('visibility','published').eq('kind',ART_KIND_ART).order('created_at',{ascending:false});
       images=imgs||[];
       if(images.length){
         // offline snapshot, top 50

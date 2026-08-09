@@ -162,28 +162,40 @@
         jobs.push(sb.from('marketplace_items')
           .select(typeof window.dzSelectFor === 'function' ? window.dzSelectFor('marketplace')
             : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
-          .eq('status','approved').ilike('title',pattern)
+          // visibility, same as the Marketplace grid applies it — a draft or a
+          // hidden listing is not a search result
+          .eq('status','approved').eq('visibility','published').ilike('title',pattern)
           .order('created_at',{ascending:false}).limit(30)
           .then(function(r){ return {key:'marketplace', rows:(r&&r.data)||[]}; }));
       }
       if(want('blog')){
         jobs.push(sb.from('blog_posts')
-          .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at')
-          .eq('status','approved').ilike('title',pattern)
+          .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,'+
+                  'content_type,featured,published_at,created_at')
+          // a draft is not a search result, and neither is a post its author
+          // marked hidden
+          .eq('status','approved').eq('visibility','published').ilike('title',pattern)
           .order('created_at',{ascending:false}).limit(30)
           .then(function(r){ return {key:'blog', rows:(r&&r.data)||[]}; }));
       }
       if(want('resources')){
         jobs.push(sb.from('resources')
-          .select('id,user_id,title,description,category,tags,file_url,file_name,file_ext,file_size,preview_url,license,download_count,created_at')
-          .eq('status','approved').ilike('title',pattern)
+          .select('id,user_id,title,summary,description,resource_type,category,tags,'+
+                  'file_url,file_name,file_ext,file_size,file_count,preview_url,license,'+
+                  'featured,download_count,created_at')
+          // a draft or a hidden resource is not a search result
+          .eq('status','approved').eq('visibility','published').ilike('title',pattern)
           .order('created_at',{ascending:false}).limit(30)
           .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
       }
       if(want('jobs')){
+        // visibility, same as the Jobs list applies it: a posting the poster
+        // marked unlisted or private is not a search result. Searching is
+        // exactly the way an unlisted posting would otherwise be found, which
+        // is the one thing marking it unlisted was meant to prevent.
         jobs.push(sb.from('jobs')
-          .select('id,user_id,title,company,description,category,tags,employment_type,is_remote,created_at')
-          .eq('status','approved').ilike('title',pattern)
+          .select('id,user_id,title,company,description,category,tags,employment_type,is_remote,work_mode,created_at')
+          .eq('status','approved').eq('visibility','public').ilike('title',pattern)
           .order('created_at',{ascending:false}).limit(30)
           .then(function(r){ return {key:'jobs', rows:(r&&r.data)||[]}; }));
       }

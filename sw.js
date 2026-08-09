@@ -4,6 +4,260 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v140 — every text write is rate limited, and the artwork edit form
+       stops overwriting what it never read.
+       An audit of the write paths after the five composer revamps. The
+       site already rate limited the two things that cost money — uploads,
+       in the storage signer, and payments, in the payment endpoints — and
+       nothing else. A job posting and a blog post need no file at all, so
+       nothing whatsoever stood between one script and a table full of
+       them; comments, reports and direct messages were the same.
+       Twenty-one triggers now, on every table a member can write words
+       into, calling the rate counter that already existed for the download
+       and view tallies. Measured: the sixteenth job posting in an hour is
+       refused with a message a member can read, and the fifteen before it
+       are not. The bucket is per member, per table and per operation, so
+       commenting fast cannot exhaust the ability to publish and one member
+       can never exhaust another's. auth.uid() is null for the two
+       scheduled publishers, so a queue of forty scheduled posts still
+       publishes — they were rate limited when they were queued, which is
+       the moment that belonged to the member.
+       Two bugs found and fixed while looking:
+       artworks gained an updated_at column in v139 and nothing maintained
+       it, so "Last updated" would have read as the upload time forever.
+       The other four content tables have carried that trigger for a
+       while; artworks never had the column to need one.
+       The artwork edit form did not prefill any of the fields v139 added,
+       so opening a piece to fix a typo and saving would have written the
+       form's defaults — All rights reserved, published, no credits, no
+       links — over whatever the uploader actually chose. It starts from
+       the stored piece now. Maturity is the one thing an edit may raise
+       but not lower: an uploader can mark their own work mature, and
+       cannot untick a piece moderation judged so.
+       Also stood down the old one-of-ten software picker on the edit path,
+       which was being shown again beside the list that replaced it.
+       Changed: js/sections.js, js/drafts.js, js/mywork.js, index.html,
+       sw.js, supabase/migrations/20260809_write_rate_limits.sql.
+   v139 — an artwork says what it is, and what may be done with it.
+       The fifth and last, and the awkward one. The other four forms are
+       drawn by buildForm from a list of field descriptors; the artwork
+       panel is hand-written markup in index.html that predates all of it.
+       Rather than hand-write eighteen more cards into that markup — and
+       with them a second copy of the counters, the conditional rows and
+       the chip lists — five empty divs are cut into it and filled from a
+       descriptor list like everyone else's. That is what lets the whole
+       panel read in its specified order without being rebuilt: a summary
+       between the title and the description, the medium between the
+       category and the tags, the licence questions between the album
+       picker and the schedule.
+       Software is conditional in the sense the spec means, which is not
+       the sense the other forms use it in: the field is always on the
+       form, and what changes is whether publish will let it stay empty.
+       A digital painting must name what it was made in; a watercolour has
+       no software to name. That needed a required-when rather than a
+       shown-when, so reqIf exists now beside cond.
+       Two columns that already existed are kept rather than replaced.
+       software is a single name half the site reads, so software_list is
+       the real answer and software is kept in step with its first entry —
+       nothing that reads the old column has to learn anything. is_mature
+       was set by moderation from the AI rating; it now has two sources and
+       they are OR-ed, because an uploader calling their work mature is
+       something moderation does not know, and moderation calling it mature
+       is something the uploader did not volunteer.
+       The derived half is derived: format and size off the file,
+       dimensions off the image, the SEO pair and the slug off what was
+       typed. Not one of them has a box.
+       The scheduled path carries all of it. A scheduled upload waits in
+       scheduled_uploads and the publisher builds the row from it, so every
+       new field would have been dropped in transit; one jsonb column
+       carries them and the publisher unpacks it. Measured end to end: a
+       scheduled upload publishes with its software list, credits, links,
+       slug, dimensions and its declared maturity intact.
+       Ceilings: 20MB an image, ten extra images, ten albums, ten software
+       entries, twenty credits, five links — each refused at the point of
+       adding, and each repeated as a constraint. Measured, the table
+       rejects a 60k description, a 900MB file size, forty software
+       entries, twenty links, a 900-character credit, forty tags, a bogus
+       visibility, a description under its floor, 9999999px dimensions and
+       thirty extra images.
+       The gallery shows published work only, and a profile gallery shows a
+       visitor the same — while still showing you your own drafts.
+       All five composers share one system as of this version.
+       Changed: js/sections.js, js/drafts.js, js/albums.js, js/upqueue.js,
+       js/mywork.js, js/app-core.js, index.html, sw.js,
+       supabase/migrations/20260809_artworks_full_upload.sql.
+   v138 — a resource says what is in the package, and reads the rest off
+       the upload.
+       The last of the four. The composer asked for a file, a preview, a
+       title, a description, a category and a license; what kind of asset
+       it is, what software opens it, what is actually inside the zip,
+       whether it may be sold on, and how to install it were all left to
+       one description box.
+       The same line as the blog form, drawn where it belongs here: file
+       format, file size, how many files are inside the package, the
+       preview's resolution, the author, the dates and the download count
+       are all worked out, and none of them has a box to type wrong.
+       Two of those are new and are read rather than guessed. The file
+       count walks the zip's own central directory — the record at the tail
+       says where the directory is and how many entries it holds, and the
+       entries say which are folders — so a 200MB package costs a few
+       kilobytes to count, folders are not counted as files, and anything
+       that is not a plain zip gets no answer rather than a wrong one.
+       Measured on a real archive of three files in two folders: three.
+       The resolution is the preview's own pixels, with a timeout so a
+       stubborn image can never hold up a publish.
+       The three licence questions are required answers rather than
+       unticked boxes, because an unticked box and an unanswered question
+       look identical and these decide whether someone may sell the work
+       they make with the file.
+       The chip list the blog form grew for its sources is general now: it
+       takes plain entries as well as links, with its own per-entry bounds
+       and its own ceiling. Compatible software uses it at ten entries and
+       does not have a scheme forced onto it; external links use it at five
+       and do.
+       Floors and ceilings repeated as constraints as in v135–v137:
+       measured, the table rejects a 60k description, a 900MB file size,
+       forty compatible-software entries, twenty links, a 9k what's-
+       included, a bogus visibility, a description under its floor and a
+       9999999 file count.
+       Search applies visibility for resources now, completing the set.
+       All four composers share one system as of this version.
+       Changed: js/sections.js, js/search.js, index.html, sw.js,
+       supabase/migrations/20260809_resources_full_listing.sql.
+   v137 — a post carries its own context, and stops asking for what it
+       already knows.
+       The third of these, and the one with a line running through it. The
+       composer asked for a title, an excerpt, a body, a category and tags;
+       what kind of piece it is, what work it is about, where its claims
+       came from and whether it is even meant to be public yet were all
+       unaskable.
+       The line is which fields a person fills in and which the system
+       does. Slug, author, author bio, reading time, publication date, last
+       updated and the three counters are never asked for — there is no box
+       to type them wrong in. A reading time somebody enters is wrong the
+       moment they edit a paragraph, a slug that drifts from the title is a
+       link that lies, and an author somebody types is a byline they may not
+       be entitled to. They are derived at publish and shown back by a
+       read-only card at the end of the form, so nobody wonders where they
+       went. The SEO pair sits on the other side of that line: editable,
+       and generated from the title and the excerpt when left empty — and
+       left null rather than stored short when the generated one cannot
+       reach its floor, because a null SEO title is a search engine falling
+       back to the real one, which was the better answer anyway.
+       Two controls that are new here. A picker that links up to ten of
+       your own artworks or listings — your own, which is not a display
+       choice: a picker offering everyone's work would let a post attach
+       itself to a stranger's artwork. And a list of up to twenty source
+       links, each typed and entered, each gaining its scheme if it was
+       typed without one. Both keep their value on a hidden input, which is
+       what makes them indistinguishable from a text box to every draft and
+       publish path that already existed.
+       Visibility and the Schedule picker are two halves of one answer, so
+       they are reconciled before anything uploads: Scheduled without a time
+       is refused, and a Draft with a time is refused, rather than either
+       being quietly ignored.
+       A post renders its sources as a list. Links that are not http are
+       printed rather than linked, and the ones that are carry noopener and
+       nofollow — a post is not a licence to script the reader's tab.
+       Floors and ceilings as in v135 and v136, repeated as constraints:
+       measured, the table rejects a 60k body, fifty references, a 900
+       character reference, forty tags, a 200 character tag, thirty related
+       artworks, a bogus visibility, a body under its floor, and a
+       999999-minute reading time.
+       Search applies visibility for blog and marketplace now, the way it
+       already did for jobs.
+       Changed: js/sections.js, js/search.js, css/overrides.css, index.html,
+       sw.js, supabase/migrations/20260809_blog_full_post.sql.
+   v136 — a listing says what the buyer is actually buying.
+       Same treatment as the job form in v135, applied to the marketplace.
+       The composer asked for a title, one description box, a price and a
+       license; what is in the download, what format it is in, whether the
+       buyer may earn from it, how long delivery takes and whether there is
+       a refund were all left to the description or to the comments.
+       Forty-seven fields now, in the order a buyer decides: what it is,
+       what it looks like, what is in it, what they may do with it, what it
+       costs, how it arrives, then the seller's own bookkeeping. Floors and
+       ceilings work exactly as they do on the job form, and are repeated as
+       table constraints — measured, the table rejects a 200k-character
+       description, forty tags, a thirty-image gallery, a "sale" price above
+       the price and a description under its floor.
+       A listing can carry a gallery now: up to eight more preview shots
+       beside the main one, shown as a strip that wraps. They go to the
+       public bucket like the preview does, because they are meant to be
+       looked at — unlike the files being sold, which keep going somewhere
+       a stranger cannot follow.
+       Two limits the browser cannot be trusted with. Fifty files per
+       listing, enforced by a trigger, because a CHECK cannot count rows in
+       another table and nothing capped this before; and eight gallery
+       images, enforced by a check on the column. The signer already capped
+       each file at 200MB, restricted the types and rate limited the
+       uploads, so what was missing was how many.
+       Listing type decides the shape of the form. A digital download is
+       asked for files and never for a delivery time; a commission or a
+       service is asked for a delivery time and a way to be reached, and is
+       never asked for files — nor are files picked before the switch
+       uploaded, since the listing is no longer selling them.
+       Two columns are readable by fewer people than the rest, and the
+       grants say so rather than the queries. sale_price_cents goes exactly
+       where price_cents goes — signed in only. internal_notes is granted
+       for writing and to nobody for reading: row policies cannot help
+       there, because any signed-in caller can already read every approved
+       listing, so a read grant would hand them everyone's private notes.
+       Moderation reads it through the service role.
+       The sale price is stored and deliberately not displayed. Checkout
+       charges price_cents and lives in the payments module, so a sale price
+       shown here would be a number the buyer is quoted and then not
+       charged. The field says so.
+       Visibility decides whether a listing is listed at all, and featured
+       listings sort first. Listings written before any of this still
+       render: every new block is dropped when empty.
+       Changed: js/sections.js, css/overrides.css, index.html, sw.js,
+       supabase/migrations/20260809_marketplace_full_listing.sql.
+   v135 — a job posting says the whole job.
+       The form asked for a title, a company, one description box and a pay
+       range. Everything an applicant actually decides on — the hours, the
+       timezone, what to send, when it closes, whether there is one opening
+       or five — was either buried inside that one box or simply not asked
+       for, so the reader had to guess and the poster had to write an essay.
+       Forty fields now, in the order a job ad reads: who is hiring, what the
+       role is, where and when it happens, what it pays, how to apply.
+       Every text field carries a floor and a ceiling. The ceiling is the
+       element's own maxlength, which means the keystroke past it never
+       lands — there is nothing to warn about because the text does not
+       enter. Numbers work the same way by hand, since a number input hands
+       back an empty string for anything it dislikes and so cannot say what
+       was typed: the digit that would take the figure past its ceiling is
+       dropped as it is typed, so 10000000 openings is 100 and 999 years of
+       experience is 9. The floor cannot be enforced that way, because a
+       field is under it the whole time it is being filled in, so it is
+       shown instead — a count on the label line, opposite the label, in the
+       page's own muted ink, going to the same red the required asterisk
+       wears while the field is short. Publish refuses while any of them is,
+       and takes you to the field rather than naming a number.
+       Both bounds are repeated as table constraints, because a form is a
+       courtesy and a constraint is a guarantee: measured, the table rejects
+       a 200k-character company blurb, 9999 years of experience, a thousand
+       eligible countries and negative pay on its own, with no browser
+       involved.
+       Three questions decide which others get asked. A remote posting is
+       never asked for a city and a hybrid one never for a list of eligible
+       countries; a permanent role is never asked how long the contract
+       runs. A row that is not on the form is not required and is not read
+       when publishing, so an answer left behind by an earlier choice cannot
+       leak into the posting.
+       work_mode replaces the "100% remote" checkbox, which could not say
+       hybrid. is_remote stays and stays authoritative — the two location
+       constraints, the cards and the search index are all written against
+       it — and is kept in step. Postings written before any of this still
+       render: every new block is dropped when empty, which for them is all
+       of them.
+       The detail view lays the posting out instead of printing one box, and
+       says who posted it, which it never did. Visibility decides whether a
+       posting is listed at all, and featured ones sort first.
+       Search applies visibility too, since searching is exactly how an
+       unlisted posting would otherwise be found.
+       Changed: js/sections.js, js/search.js, css/upload.css, index.html,
+       sw.js, supabase/migrations/20260809_jobs_full_posting.sql.
    v134 — the showcase shows the artwork, and the part of it the uploader
        picked.
        The scrim was sized by eye and it buried the picture. Two
@@ -2068,7 +2322,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v134';
+const CACHE_VERSION = 'v140';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2101,9 +2355,9 @@ const SHELL_URLS = [
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=6',
+  '/css/upload.css?v=7',
   '/css/widgets.css?v=3',
-  '/css/overrides.css?v=5',
+  '/css/overrides.css?v=7',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -2122,20 +2376,20 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=18',
+  '/js/app-core.js?v=19',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=76',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
-  '/js/albums.js?v=8',
-  '/js/drafts.js?v=2',
-  '/js/upqueue.js?v=3',
+  '/js/albums.js?v=9',
+  '/js/drafts.js?v=4',
+  '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=8',
+  '/js/mywork.js?v=10',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=4',
+  '/js/search.js?v=7',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
   '/js/effects.js?v=6',
@@ -2144,7 +2398,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=80',
+  '/js/sections.js?v=86',
   '/js/navprogress.js?v=5'
 ];
 

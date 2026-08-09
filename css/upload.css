@@ -633,3 +633,33 @@
     /* avatar and banner cropper */
     .cropStage--banner{aspect-ratio:16/5;width:min(420px,100%);}
     @media(max-width:480px){.cropStage--banner{aspect-ratio:3/1;}}
+
+    /* ---- min–max on a section form ---------------------------------------
+       Every text field on the job form has a floor and a ceiling. The ceiling
+       is the element's own maxlength, so the keystroke past it never lands and
+       there is nothing here to draw for it. The floor is a thing to say, and
+       it is said in the one place a long form has room for it: on the label
+       line, opposite the label, where it reads the same above a one-line input
+       and above an eight-row textarea and never sits on top of what is being
+       typed.
+
+       Colour comes from the tokens the rest of the page uses — the count is
+       the page's own muted ink under whichever theme is on, and --upcReq is
+       the same red the required asterisk already wears, which is defined for
+       the dark and the light ground separately at the top of this file. */
+    .upLblRow{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;}
+    .upLblRow .upLbl{margin-bottom:0;min-width:0;}
+    /* beats `.upFCard .upCount`, which pins the floating variant to a corner */
+    .upFCard .upCountInline,
+    .upCountInline{
+      position:static;top:auto;right:auto;bottom:auto;
+      flex:0 0 auto;font-variant-numeric:tabular-nums;
+      font-size:.66rem;letter-spacing:.02em;
+    }
+    .upCount.bad{color:var(--upcReq,#f87171);font-weight:600;}
+    .upFCard .upLblRow{margin-bottom:.15rem;}
+
+    /* A question that only applies to some answers is not dimmed or disabled,
+       it is absent: a remote posting is never asked for a city, and a
+       permanent one is never asked how long the contract runs. */
+    .upField.upFHide{display:none;}

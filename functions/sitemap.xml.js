@@ -94,6 +94,24 @@ export async function onRequestGet(context) {
     )
     .join('\n');
 
+  // The standalone legal pages. Listed so they are crawlable and so anyone
+  // auditing the site — a payment provider reviewing the domain, most of all —
+  // can find them without being handed a link. The slugs are defined by
+  // functions/legal/[doc].js; they are repeated rather than imported because
+  // that route's filename carries brackets and is an awkward import specifier.
+  // A slug that drifts out of step costs a 404 in a sitemap, nothing more.
+  const legalEntries = [
+    'privacy', 'terms', 'refund', 'delivery', 'creator-terms', 'cookies', 'contact',
+  ]
+    .map(
+      (slug) => `  <url>
+    <loc>${SITE_URL}/legal/${slug}</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>`
+    )
+    .join('\n');
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
@@ -101,6 +119,7 @@ export async function onRequestGet(context) {
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+${legalEntries}
 ${artworkEntries}
 ${profileEntries}
 </urlset>`;

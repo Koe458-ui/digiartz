@@ -1,0 +1,48 @@
+# The checks that stop a known fault coming back.
+#
+# There is no build step in this project and nothing else runs on a push, so
+# this is deliberately small: it does not lint, it does not test, it holds one
+# invariant that has broken twice.
+name: checks
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  precache:
+    name: service worker precaches what index.html loads
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # No dependencies to install and nothing to build — the check is one
+      # file of plain Node reading two other files.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/check-precache.mjs
+
+  syntax:
+    name: changed javascript parses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # 22, not 20, and it matters: js/legal-content.js is ESM served to the
+      # browser from a .js file, and only 22 detects module syntax on its own.
+      # On 20, `node --check` reads it as CommonJS and stops at `export`.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # sw.js and the Pages Functions are served straight to browsers and to
+      # the edge with nothing in between to catch a typo. `node --check` is
+      # not a test, but it does mean a syntax error cannot reach production.
+      - name: parse
+        run: |
+          set -e
+          find js functions scripts -name '*.js' -o -name '*.mjs' | while read -r f; do
+            node --check "$f" || { echo "::error file=$f::does not parse"; exit 1; }
+          done
+          node --check sw.js
+          node --check uploadVerifier.js
+          node --check aiAssistantData.js

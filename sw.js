@@ -4,7 +4,7 @@
    bump CACHE_VERSION to refill every client
 
    changelog
-   v129 — a featured showcase over the gallery's chip row.
+   v132 — a featured showcase over the gallery's chip row.
        Six cards, paired off across the three boards the site already
        scores: two for daily, two for weekly, two for monthly. Every card
        is an artwork and every card says the same six things about it —
@@ -63,6 +63,66 @@
        wheel at the far end scrolls the gallery instead of stalling on it.
        Changed: index.html, css/hero.css, js/fgshow.js (new),
        js/app-core.js, sw.js.
+   v131 — a legal document opened from Settings slides in, like everything
+       else in that menu.
+       Theme, Edit My Work, Wallet and My Purchases all open a page over
+       the menu with a back arrow that returns to it. The legal rows were
+       opening a modal instead — a sheet floating over a menu you could no
+       longer see, closing to nowhere in particular. They now go through
+       setGo the same way the rest do, into one #legalPage filled from
+       js/legal-content.js.
+       The footer keeps the modal. At the bottom of the home page there is
+       no menu to go back to, and a sheet over the page is the right shape
+       there. Both read the same documents, so there is still one copy of
+       any of them, and the typography is written once — connect.css now
+       carries .lmBody and .lgBdy on the same rules.
+       The page element is looked up when it is used rather than when the
+       script runs: #legalPage is written out below effects.js, so binding
+       it early would have captured null and every row would have quietly
+       navigated away instead of sliding.
+       Changed: index.html, sw.js, css/profile.css, css/connect.css,
+       js/effects.js.
+   v130 — the precache list catches up with what the page actually loads.
+       Eight assets had drifted: index.html asked for hero.css v87,
+       overrides v5, upload v6, albums v8, drafts v2, mywork v8, pfedit v8
+       and sections v80, while SHELL_URLS still named the versions before
+       each of those. Both halves of that are a fault. The precache warms
+       eight urls nobody requests, which is the exact waste v69 went and
+       fixed; and the eight that ARE requested were never precached at
+       all, so every one of them was a network round trip on a cold start
+       and simply missing offline — the shell cache quietly not doing the
+       one thing it exists for.
+       Nothing here changes a version the page loads. index.html is the
+       only place any of the eight is referenced, so it is the authority
+       and sw.js was moved to agree with it, not the other way round.
+       Changed: sw.js.
+   v129 — the legal documents get addresses of their own, and a group in
+       Settings.
+       Privacy, Terms, Cookie, Refund and the Creator & Seller terms
+       existed only as strings inside js/effects.js, shown in a modal by a
+       footer button. Nothing outside the browser could reach them: not a
+       crawler, and not the payment provider reviewing this domain, which
+       asks to open a refund policy at a URL and wants a delivery timeline
+       and a contact route before it will approve a site for live
+       payments. Razorpay has been refusing payments on digiartz.net with
+       "website does not match registered website(s)", and a policy set
+       that cannot be read is the usual reason that review does not pass.
+       The text moved to js/legal-content.js, which the modal and a new
+       Pages Function both read, so a policy cannot say one thing in the
+       modal and another on the page. Seven pages answer at /legal/<slug>,
+       each self-contained — no stylesheet of ours, no scripts, nothing
+       third-party, because a reviewer arrives on a cold cache with an ad
+       blocker up. Two are new: a contact page, and a delivery policy
+       saying digital goods arrive on payment confirmation and nothing is
+       ever shipped.
+       In Settings they are a group of their own, below the one carrying
+       Log Out, in the same shape as the groups above it. The footer links
+       and the cookie banner's became anchors over the same hrefs: the
+       modal still opens on click, and where it cannot, the browser
+       follows the link instead of doing nothing.
+       Changed: index.html, sw.js, css/profile.css, js/effects.js,
+       js/legal-content.js, functions/legal/[doc].js,
+       functions/_middleware.js, functions/sitemap.xml.js.
    v128 — the buttons come up bright too, and the page is checked on
        every theme at every width.
        The Select and publish buttons were the two colours held back, on
@@ -1941,7 +2001,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v129';
+const CACHE_VERSION = 'v132';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1968,15 +2028,15 @@ const SHELL_URLS = [
   '/css/hero.css?v=89',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
-  '/css/connect.css?v=1',
+  '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=7',
+  '/css/profile.css?v=9',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=2',
+  '/css/upload.css?v=6',
   '/css/widgets.css?v=3',
-  '/css/overrides.css?v=4',
+  '/css/overrides.css?v=5',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -2000,23 +2060,24 @@ const SHELL_URLS = [
   '/js/gallery.js?v=76',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
-  '/js/albums.js?v=7',
-  '/js/drafts.js?v=1',
+  '/js/albums.js?v=8',
+  '/js/drafts.js?v=2',
   '/js/upqueue.js?v=3',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=7',
-  '/js/mywork.js?v=7',
+  '/js/pfedit.js?v=8',
+  '/js/mywork.js?v=8',
   '/js/startup.js?v=2',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=4',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=2',
-  '/js/effects.js?v=4',
+  '/js/effects.js?v=6',
+  '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=78',
+  '/js/sections.js?v=80',
   '/js/navprogress.js?v=5'
 ];
 

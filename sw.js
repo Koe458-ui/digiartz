@@ -4,6 +4,40 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v133 — the showcase rail answers straight away, moves one card at a
+       time, and stops hiding the artwork.
+       Three faults, all reported from using it.
+       A dot press did nothing for half a second and then arrived in
+       steps. Two causes. The dot it lit was read back off the rail's
+       position, so it could not change until the rail had travelled far
+       enough to round to the next page; it is set from the press now, at
+       nought pixels of movement, because the reader pressed it and the
+       answer to that is theirs immediately. And the glide ran with the
+       mandatory snap still on, which pulls the rail to the nearest card
+       over and over while the scroll is in flight — every way of moving
+       the rail now goes through one glide that switches the snap off for
+       the length of it and back on once the rail is standing on a card
+       boundary, where switching it on moves nothing.
+       One turn of a wheel moved three or four cards. A wheel does not
+       report a turn, it reports a stream: a mouse sends several deltas
+       per notch and a trackpad dozens per flick, and each was being
+       answered with a card. The stream is one gesture until it goes
+       quiet, and a gesture is worth one card however many events it was
+       made of.
+       And the artwork was being buried by its own scrim — 93% ink over
+       the words falling to 80% at the far edge of a phone card, which is
+       a black box with a hint of a picture behind it. White type needs
+       about 55% ink over a white artwork to hold 4.5:1, so the ramp sits
+       a margin above that where words go and falls to NOTHING where they
+       do not: the right third of a wide card carries no text, and the
+       artwork there is now the artwork rather than a darkened copy of it.
+       What was given up instead was the dimming of the type — the
+       description was at 76% white and the stat labels at 60%, and those
+       were a choice, not a requirement. They come up to 94% and 86% with
+       a shadow of their own, and the kind chip's glass is mixed dark
+       rather than light so it stops being a pale chip carrying pale type.
+       294 contrast measurements again, off the rendered pixels over a
+       deliberately near-white artwork, none below 4.5:1.
    v132 — a featured showcase over the gallery's chip row.
        Six cards, paired off across the three boards the site already
        scores: two for daily, two for weekly, two for monthly. Every card
@@ -2001,7 +2035,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v132';
+const CACHE_VERSION = 'v133';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2025,7 +2059,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=89',
+  '/css/hero.css?v=90',
   '/css/viewer.css?v=4',
   '/css/community.css?v=4',
   '/css/connect.css?v=2',
@@ -2070,7 +2104,7 @@ const SHELL_URLS = [
   '/js/tagrail.js?v=3',
   '/js/search.js?v=4',
   '/js/feed.js?v=3',
-  '/js/fgshow.js?v=2',
+  '/js/fgshow.js?v=3',
   '/js/effects.js?v=6',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',

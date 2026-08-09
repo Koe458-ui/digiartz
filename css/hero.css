@@ -433,16 +433,21 @@
        every theme — the card is deliberately dark whatever the page around it
        is doing.
 
-       The numbers are not taste. An artwork can be very nearly white, and
-       white type on 25% ink over white is about 1.8:1 — so the strong part of
-       the ramp has to cover everything the text can reach, and the text is
-       held inside it by .fgsBody's own width. Measured against a white
-       picture, the weakest point any word sits on is about 8:1. */
+       The numbers are not taste, and they are not guesswork either. White type
+       needs about 55% ink over a white artwork to hold 4.5:1, so the ramp is
+       set a margin above that where words go and taken to nothing where they
+       do not — the right third of a wide card carries no text at all, and the
+       artwork there is the artwork, not a darkened copy of it. Measured
+       against a deliberately near-white picture, the weakest point any word
+       sits on is about 5:1.
+
+       The ramp only has to cover what the text can reach, and .fgsBody's own
+       width is what decides that. */
     .fgsScrim{
       position:absolute;inset:0;z-index:1;display:block;
       background:
-        linear-gradient(90deg,rgba(6,6,12,.93) 0%,rgba(6,6,12,.88) 42%,rgba(6,6,12,.6) 68%,rgba(6,6,12,.14) 100%),
-        linear-gradient(0deg,rgba(6,6,12,.6) 0%,rgba(6,6,12,0) 58%);
+        linear-gradient(90deg,rgba(6,6,12,.8) 0%,rgba(6,6,12,.72) 46%,rgba(6,6,12,.32) 72%,rgba(6,6,12,0) 94%),
+        linear-gradient(0deg,rgba(6,6,12,.44) 0%,rgba(6,6,12,0) 52%);
     }
 
     .fgsBody{
@@ -458,7 +463,7 @@
     .fgsKind{
       display:inline-flex;align-items:center;gap:.35rem;
       padding:.28rem .6rem;border-radius:999px;
-      background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);
+      background:rgba(8,8,14,.44);border:1px solid rgba(255,255,255,.3);
       backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
       font-family:var(--fm);font-size:.6rem;font-weight:700;
       letter-spacing:.11em;text-transform:uppercase;color:#fff;white-space:nowrap;
@@ -491,12 +496,14 @@
     .fgsBy{
       min-height:1.1em;
       font-family:var(--fb);font-size:.78rem;font-weight:600;
-      color:rgba(255,255,255,.82);
+      color:rgba(255,255,255,.9);
+      text-shadow:0 1px 3px rgba(4,4,10,.6);
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
     }
     .fgsSub{
       margin:0;font-family:var(--fb);font-size:.82rem;line-height:1.4;
-      color:rgba(255,255,255,.76);
+      color:rgba(255,255,255,.94);
+      text-shadow:0 1px 3px rgba(4,4,10,.6);
       display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
     }
     .fgsStats{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem 1.1rem;margin-top:auto;}
@@ -505,10 +512,12 @@
     .fgsStatIco svg{width:15px;height:15px;display:block;}
     .fgsStatIco--like{color:#FB7185;}
     .fgsStatIco--view{color:#38BDF8;}
-    .fgsStat b{font-family:var(--fd);font-size:.95rem;font-weight:800;color:#fff;letter-spacing:-.01em;}
+    .fgsStat b{font-family:var(--fd);font-size:.95rem;font-weight:800;color:#fff;letter-spacing:-.01em;
+      text-shadow:0 1px 3px rgba(4,4,10,.6);}
     .fgsStat i{
       font-style:normal;font-family:var(--fm);font-size:.6rem;font-weight:600;
-      letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);
+      letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.86);
+      text-shadow:0 1px 3px rgba(4,4,10,.6);
     }
     .fgsGo{
       display:inline-flex;align-items:center;gap:.45rem;
@@ -564,15 +573,16 @@
     }
 
     /* A card this narrow has no left half to keep the words in — the stats row
-       alone is nearly its full width — so the ink covers the whole picture
-       rather than a column of it. At this size the card is a caption with a
-       texture behind it, and a legible caption is worth more than a visible
-       texture. */
+       alone runs nearly its full width — so the ink has to cover the whole
+       picture rather than a column of it. It is still only just enough to
+       carry the type: a flat 58% at the far edge, which is the least white
+       words can sit on, rather than the near-solid veil that made a phone
+       card read as a black box with a hint of artwork behind it. */
     @container fgs (max-width:480px){
       .fgsScrim{
         background:
-          linear-gradient(90deg,rgba(6,6,12,.93) 0%,rgba(6,6,12,.88) 55%,rgba(6,6,12,.8) 100%),
-          linear-gradient(0deg,rgba(6,6,12,.5) 0%,rgba(6,6,12,0) 70%);
+          linear-gradient(90deg,rgba(6,6,12,.78) 0%,rgba(6,6,12,.71) 55%,rgba(6,6,12,.64) 100%),
+          linear-gradient(0deg,rgba(6,6,12,.36) 0%,rgba(6,6,12,0) 62%);
       }
       .fgsCard{border-radius:16px;}
       .fgsBody{padding:.8rem;gap:.28rem;width:100%;}
@@ -623,16 +633,17 @@
       .fgsCard:hover{transform:none;}
       .fgsCard:hover .fgsMedia img{transform:none;}
     }
-    /* the picture is the card's own light source, so it keeps its contrast
-       where the page is asked to raise everything else's */
+    /* Asked for more contrast, the card gives up the artwork rather than the
+       words: the ink goes back up to where legibility has margin to spare. */
     @media(prefers-contrast:more){
-      .fgsScrim{
+      .fgsScrim,
+      .fgsCard .fgsScrim{
         background:
-          linear-gradient(90deg,rgba(4,4,8,.97) 0%,rgba(4,4,8,.9) 40%,rgba(4,4,8,.55) 70%,rgba(4,4,8,.2) 100%),
-          linear-gradient(0deg,rgba(4,4,8,.6) 0%,rgba(4,4,8,0) 55%);
+          linear-gradient(90deg,rgba(4,4,8,.95) 0%,rgba(4,4,8,.9) 46%,rgba(4,4,8,.7) 74%,rgba(4,4,8,.4) 100%),
+          linear-gradient(0deg,rgba(4,4,8,.55) 0%,rgba(4,4,8,0) 58%);
       }
-      .fgsSub{color:rgba(255,255,255,.9);}
-      .fgsStat i{color:rgba(255,255,255,.78);}
+      .fgsSub{color:rgba(255,255,255,.92);}
+      .fgsStat i{color:rgba(255,255,255,.8);}
     }
 
     /* section content */

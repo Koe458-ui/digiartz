@@ -125,14 +125,18 @@
       pfPreloadImage(getThumbnailUrl(currentUserAvatarUrl));
     }
     pf.profile=null; pf.galleryRows=[]; pf.galleryDone=false; pf.galleryBusy=false;
-    pf.likeLoaded=false; pf.bmLoaded=false;
+    // the page window and the ids already on it belong to one profile
+    pf.galleryOffset=0; pf.galleryIds=Object.create(null);
+    // and so does any claim on the totals tiles
+    ['pfStatLikes','pfStatViews'].forEach(function(id){
+      var e=document.getElementById(id); if(e) delete e.dataset.total;
+    });
     pf.resLoaded=false; pf.mktLoaded=false; pf.blogLoaded=false; pf.resRows=[]; pf.mktRows=[]; pf.blogRows=[];
-    pf.savedRows={like:[],bookmark:[]}; pf.savedShown={like:0,bookmark:0};
     // reset albums per profile
-    pf.albumsLoaded=false; pf.albums=[]; pf.albumSaved={like:[],bookmark:[]};
+    pf.albumsLoaded=false; pf.albums=[];
+    // a profile's search results belong to that profile
+    pfSearchReset();
     var _pgs=document.getElementById('pfGallerySentinel'); if(_pgs) _pgs.style.display='none';
-    var _pls=document.getElementById('pfLikeSentinel'); if(_pls) _pls.style.display='none';
-    var _pbs=document.getElementById('pfBookmarkSentinel'); if(_pbs) _pbs.style.display='none';
     // stale fetch guard
     var mySeq = ++pfOpenSeq;
 
@@ -143,11 +147,6 @@
       pfPaintProfile(cachedRow, cachedRow.username, pushUrl);
     } else {
       // first visit, show skeleton
-      // like and bookmark tabs removed
-      var _lg=document.getElementById('pfLikeGrid');     if(_lg) _lg.innerHTML='';
-      var _bg=document.getElementById('pfBookmarkGrid'); if(_bg) _bg.innerHTML='';
-      var _le=document.getElementById('pfLikeEmpty');    if(_le) _le.style.display='none';
-      var _be=document.getElementById('pfBookmarkEmpty');if(_be) _be.style.display='none';
       var _xpW=document.getElementById('pfXpWrap'); if(_xpW) _xpW.innerHTML='';
       document.getElementById('pfUsername').textContent='Loading…';
       document.getElementById('pfAvatarLetter').textContent='?';
@@ -156,9 +155,10 @@
       document.getElementById('pfJoined').textContent='';
       var _hb=document.getElementById('pfHeadBio'); if(_hb) _hb.textContent='';
       var _hn=document.getElementById('pfHandle'); if(_hn) _hn.textContent='';
-      var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.style.display='none';
-      var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.style.display='none';
+      var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.hidden=true;
+      var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.hidden=true;
       var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
+      pfPaintTopBar(null);
       // clear previous tint
       if(window.DZ_MS){
         DZ_MS.paintName(document.getElementById('pfUsername'), 0);
@@ -192,10 +192,28 @@
     }
   }
 
+  // Search, the bell and the settings menu act on your own account, so they
+  // are only drawn on your own profile. Somebody else's carries a way back
+  // out of it instead — the bar is the only chrome the page has.
+  // The bar names the page, not the person on it: it reads PROFILE on every
+  // profile. Whose profile it is, is what the name under the banner is for.
+  // Only the two things that act on your own account move — the back arrow,
+  // which someone else's profile needs and yours does not, and the search,
+  // bell and menu, which are yours. isOwner null means the row has not landed
+  // yet: no back arrow, so opening your own does not flash one.
+  function pfPaintTopBar(isOwner){
+    var back = document.getElementById('pfTopBack');
+    var acts = document.getElementById('pfTopActions');
+    var known = (isOwner !== null && isOwner !== undefined);
+    if(back) back.hidden = !known || !!isOwner;
+    if(acts) acts.hidden = !isOwner;
+  }
+
   // paint profile row
   function pfPaintProfile(data, username, pushUrl){
       pf.profile = data;
       pf.isOwner = !!(currentUser && currentUser.id === data.id);
+      pfPaintTopBar(pf.isOwner);
       // cache and preload
       pfMediaCache[username] = { avatar_url: data.avatar_url||null, banner_url: data.banner_url||null };
       pfPreloadImage(getThumbnailUrl(data.avatar_url));
@@ -206,9 +224,7 @@
       document.getElementById('pfAvatarLetter').textContent = (pfVisibleName||'?').charAt(0).toUpperCase();
       document.getElementById('pfEditAvatarLetter').textContent = (pfVisibleName||'?').charAt(0).toUpperCase();
       pfRenderAvatarBanner();
-      document.getElementById('pfJoined').textContent = data.created_at ? ('JOINED '+pfFormatDate(data.created_at).toUpperCase()) : '';
-      var _pfUpWrap = document.getElementById('pfUploadWrap'); if(_pfUpWrap) _pfUpWrap.style.display = 'none'; // upload moved to nav
-      // edit lives in action row
+      document.getElementById('pfJoined').textContent = data.created_at ? ('Joined '+pfFormatDate(data.created_at)) : '';
       pfRenderBio();
       pfRenderHeadBio();
       pfRenderConnect();
@@ -225,7 +241,7 @@
     var panel = document.getElementById('profilePage');
     if(!panel.classList.contains('open')) return;
     panel.classList.remove('open');
-    closePfUploadMenu();
+    closePfSearch(true);
     document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
@@ -269,11 +285,30 @@
     }
   }
 
+  // reading order of the rail, and the order the arrow keys walk
+  var PF_TABS = ['gallery','album','resources','blog','marketplace','progress','about'];
+
   function pfSwitchTab(tab){
     pf.tab=tab;
-    ['gallery','resources','blog','marketplace','album','progress','about'].forEach(function(t){
-      document.getElementById('pfTab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
-      document.getElementById('pfPanel'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+    PF_TABS.forEach(function(t){
+      var cap = t.charAt(0).toUpperCase()+t.slice(1);
+      var btn = document.getElementById('pfTab'+cap);
+      var pan = document.getElementById('pfPanel'+cap);
+      var on  = (t===tab);
+      if(btn){
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        // A tab rail is one stop on the page, not seven. Tab lands on the
+        // selected one and the arrow keys move within — which is also why
+        // the others are taken out of the tab order rather than hidden.
+        btn.tabIndex = on ? 0 : -1;
+        // seven tabs do not fit a phone, so the one in use is scrolled into
+        // the rail rather than left off the end of it
+        if(on && btn.scrollIntoView){
+          try{ btn.scrollIntoView({behavior:'smooth', inline:'nearest', block:'nearest'}); }catch(e){}
+        }
+      }
+      if(pan) pan.classList.toggle('active', on);
     });
     // on demand tabs
     if(tab==='progress' && typeof xpLoadInto==='function' && pf.profile){
@@ -284,6 +319,32 @@
     if(tab==='blog') pfLoadBlog();
     if(tab==='marketplace') pfLoadMarket();
   }
+
+  /* Arrow keys along the rail, Home and End to its ends — the tabs pattern
+     everything else with role="tablist" answers to. Selection follows the
+     arrow, which is right here because switching a tab costs nothing: the
+     panel is already in the page. Up and Down are left alone; this rail is
+     horizontal and they belong to the scroll. */
+  function pfTabKey(e){
+    var i = PF_TABS.indexOf(pf.tab);
+    if(i === -1) return;
+    var next;
+    if(e.key === 'ArrowRight')      next = (i + 1) % PF_TABS.length;
+    else if(e.key === 'ArrowLeft')  next = (i - 1 + PF_TABS.length) % PF_TABS.length;
+    else if(e.key === 'Home')       next = 0;
+    else if(e.key === 'End')        next = PF_TABS.length - 1;
+    else return;
+    e.preventDefault();
+    var t = PF_TABS[next];
+    pfSwitchTab(t);
+    var btn = document.getElementById('pfTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    // pfSwitchTab already scrolled it into the rail; focus must not fight that
+    if(btn) try{ btn.focus({preventScroll:true}); }catch(e2){ btn.focus(); }
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    var rail = document.getElementById('pfTabGroup');
+    if(rail) rail.addEventListener('keydown', pfTabKey);
+  });
 
   // resources and marketplace tabs
   function pfDzCard(sec){
@@ -403,9 +464,7 @@
     }
   }
 
-  // like and bookmark tabs
-  // thumbstyle builder
-  // contract
+  // thumbnail crop, shared by every grid card on the page
   function thumbStyle(x, y, z){
     var tx = (x!=null && isFinite(+x)) ? +x : 50;
     var ty = (y!=null && isFinite(+y)) ? +y : 50;
@@ -415,74 +474,260 @@
     return s;
   }
 
-  function pfSavedCardHTML(a){
-    return '<div class="awCard" onclick="pfSavedOpen(\''+esc(String(a.id))+'\')">'+
-      '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" '+dzThumbAttrs(a.image_url)+' alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'"></div>'+
-    '</div>';
+
+  /* ---- search inside one profile -------------------------------------
+     Scoped to the profile being viewed and to nothing else: this artist's
+     artwork, blog posts, listings and resources. It is drawn on your own
+     profile only, so in practice it is you searching your own work. */
+
+  var pfSrch = { q:'', scope:'all', seq:0, timer:null, rows:{} };
+
+  var PF_SRCH_GROUPS = [
+    { key:'artwork',     label:'Artwork' },
+    { key:'blog',        label:'Blog' },
+    { key:'marketplace', label:'Marketplace' },
+    { key:'resources',   label:'Resources' }
+  ];
+
+  // ilike takes a pattern, so the wildcards a user types are literal text to
+  // them and syntax to us. Strip those, and the characters PostgREST reads as
+  // filter punctuation, rather than searching for something nobody asked for.
+  function pfSearchPattern(q){
+    var clean = String(q||'').replace(/[%_*(),."\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
+    return clean ? '%'+clean+'%' : '';
   }
-  async function pfSavedOpen(id){
-    // fetch single row fallback
-    if(openArtworkById(id,false)) return;
-    try{
-      const{data}=await sb.from('artworks').select('*').eq('id',id).maybeSingle();
-      if(!data) return;
-      var cats=catList(data.category).length?catList(data.category):['others'];
-      openLB(data.image_url, data.name, cats[0]||'', data.description||'', String(data.id), false);
-    }catch(e){}
+
+  function pfSearchReset(){
+    pfSrch.q=''; pfSrch.scope='all'; pfSrch.rows={};
+    clearTimeout(pfSrch.timer); pfSrch.timer=null;
+    pfSrch.seq++;
+    var input = document.getElementById('pfSrchIn');
+    if(input) input.value='';
+    tgSearchChrome('pfSrchWrap','');
+    pfSearchPaintScopes();
+    var res = document.getElementById('pfSrchRes');
+    if(res) res.innerHTML='';
+    pfSearchNote('Type a name to search this profile.');
   }
-  var pfSavedSent = { like:null, bookmark:null };
-  function pfEnsureSavedSentinel(kind){
-    if(pfSavedSent[kind]) return;
-    var el = document.getElementById(kind==='like'?'pfLikeSentinel':'pfBookmarkSentinel');
-    if(!el) return;
-    pfSavedSent[kind] = makeGridSentinel(document.getElementById('profilePage'), function(){
-      pfSavedAppend(kind);
-    }, el);
+
+  function pfSearchNote(msg){
+    var n = document.getElementById('pfSrchNote');
+    if(!n) return;
+    n.textContent = msg || '';
+    n.hidden = !msg;
   }
-  // render in batches
-  function pfSavedAppend(kind){
-    if(!pf.savedRows) return;
-    var rows  = pf.savedRows[kind]||[];
-    var shown = (pf.savedShown && pf.savedShown[kind])||0;
-    var grid  = document.getElementById(kind==='like'?'pfLikeGrid':'pfBookmarkGrid');
-    var sentEl= document.getElementById(kind==='like'?'pfLikeSentinel':'pfBookmarkSentinel');
-    if(!grid || shown >= rows.length){ if(sentEl) sentEl.style.display='none'; return; }
-    var size = shown ? gridStepBatch() : gridInitialBatch();
-    var next = rows.slice(shown, shown + size);
-    pf.savedShown[kind] = shown + next.length;
-    grid.insertAdjacentHTML('beforeend', next.map(pfSavedCardHTML).join(''));
-    if(sentEl){
-      var more = pf.savedShown[kind] < rows.length;
-      sentEl.style.display = more ? '' : 'none';
-      if(more && pfSavedSent[kind]) pfSavedSent[kind].recheck();
+
+  /* The search page covers the profile but does not remove it, so without
+     this Tab walks straight off the bottom of the search results and into
+     the tabs, buttons and thumbnails still sitting underneath — a keyboard
+     or screen reader ends up somewhere it cannot see. Tab is kept inside
+     the dialog, and where focus came from is remembered so it can be handed
+     back when the dialog closes. */
+  var pfSrchLastFocus = null;
+
+  function pfSrchFocusable(){
+    var pg = document.getElementById('pfSearchPage');
+    if(!pg) return [];
+    var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
+              'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    return Array.prototype.filter.call(pg.querySelectorAll(sel), function(el){
+      // the clear button only exists while there is something to clear
+      return !el.hidden && el.offsetParent !== null;
+    });
+  }
+
+  function pfSrchTrap(e){
+    if(e.key !== 'Tab') return;
+    var pg = document.getElementById('pfSearchPage');
+    if(!pg || !pg.classList.contains('open')) return;
+    var items = pfSrchFocusable();
+    if(!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    // focus outside the dialog at all — a click through, or a stray tabindex —
+    // comes back to the near end rather than being left where it was
+    if(!pg.contains(document.activeElement)){
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+      return;
+    }
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  }
+  document.addEventListener('keydown', pfSrchTrap, true);
+
+  function openPfSearch(){
+    if(!pf.profile){ showToast('Profile still loading — try again'); return; }
+    var pg = document.getElementById('pfSearchPage');
+    if(!pg) return;
+    pfSrchLastFocus = document.activeElement;
+    pg.classList.add('open');
+    document.body.style.overflow='hidden';
+    var input = document.getElementById('pfSrchIn');
+    // the keyboard should come up with the page, not after a second tap
+    if(input) setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
+  }
+
+  // silent is for the profile closing underneath it: the page goes with it,
+  // and the scroll lock belongs to whatever is left on screen
+  function closePfSearch(silent){
+    var pg = document.getElementById('pfSearchPage');
+    if(!pg || !pg.classList.contains('open')) return;
+    pg.classList.remove('open');
+    if(silent !== true) document.body.style.overflow='hidden';   // profile is still up
+    // hand focus back to whatever opened the search — the bar button, usually.
+    // Not when the profile went with it: that button is gone from the page too.
+    var back = pfSrchLastFocus; pfSrchLastFocus = null;
+    if(silent !== true && back && back.isConnected && back.focus){
+      try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
     }
   }
-  async function pfLoadSaved(kind){
-    if(!pf.profile) return;
-    var like = kind==='like';
-    var grid  = document.getElementById(like?'pfLikeGrid':'pfBookmarkGrid');
-    var empty = document.getElementById(like?'pfLikeEmpty':'pfBookmarkEmpty');
-    var flag  = like?'likeLoaded':'bmLoaded';
-    if(pf[flag]) return; // already fetched
-    empty.style.display='none';
-    grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
-    try{
-      const{data,error}=await sb.rpc(like?'get_user_liked_artworks':'get_user_bookmarked_artworks',
-                                     {target: pf.profile.id, lim: 100, off: 0});
-      if(error) throw error;
-      var rows = data||[];
-      pf[flag]=true;
-      pf.savedRows  = pf.savedRows ||{like:[],bookmark:[]};
-      pf.savedShown = pf.savedShown||{like:0,bookmark:0};
-      pf.savedRows[kind] = rows;
-      pf.savedShown[kind] = 0;
-      grid.innerHTML = '';
-      pfEnsureSavedSentinel(kind);
-      pfSavedAppend(kind);
-      empty.style.display = rows.length ? 'none' : '';
-    }catch(e){
-      grid.innerHTML='';
-      empty.style.display='';
-      showToast('Couldn\u2019t load \u2014 try again');
+
+  function pfSearchClear(){
+    var input = document.getElementById('pfSrchIn');
+    if(input){ input.value=''; try{ input.focus(); }catch(e){} }
+    pfSearchInput('');
+  }
+
+  function pfSearchInput(v){
+    pfSrch.q = String(v||'');
+    tgSearchChrome('pfSrchWrap', pfSrch.q);
+    clearTimeout(pfSrch.timer);
+    pfSrch.timer = setTimeout(pfSearchRun, 220);
+  }
+
+  function pfSearchScope(scope){
+    if(pfSrch.scope === scope) return;
+    pfSrch.scope = scope;
+    pfSearchPaintScopes();
+    pfSearchRun();
+  }
+
+  function pfSearchPaintScopes(){
+    var wrap = document.getElementById('pfSrchScopes');
+    if(!wrap) return;
+    var order = ['all'].concat(PF_SRCH_GROUPS.map(function(g){ return g.key; }));
+    Array.prototype.forEach.call(wrap.children, function(btn, i){
+      var on = order[i] === pfSrch.scope;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+  }
+
+  async function pfSearchRun(){
+    if(!pf.profile || !sb) return;
+    var pattern = pfSearchPattern(pfSrch.q);
+    var res = document.getElementById('pfSrchRes');
+    if(!res) return;
+    if(!pattern){
+      pfSrch.rows = {};
+      res.innerHTML='';
+      pfSearchNote('Type a name to search this profile.');
+      return;
     }
+    var mySeq = ++pfSrch.seq, uid = pf.profile.id;
+    pfSearchNote('Searching…');
+
+    function want(key){ return pfSrch.scope === 'all' || pfSrch.scope === key; }
+
+    var jobs = [];
+    if(want('artwork')){
+      jobs.push(sb.from('artworks')
+        .select('id,name,description,category,tags,image_url,thumb_x,thumb_y,thumb_zoom,status,created_at')
+        .eq('user_id',uid).eq('kind',ART_KIND_ART).ilike('name',pattern)
+        .order('created_at',{ascending:false}).limit(30)
+        .then(function(r){ return {key:'artwork', rows:(r&&r.data)||[]}; }));
+    }
+    if(want('blog')){
+      jobs.push(sb.from('blog_posts')
+        .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at')
+        .eq('user_id',uid).eq('status','approved').ilike('title',pattern)
+        .order('created_at',{ascending:false}).limit(30)
+        .then(function(r){ return {key:'blog', rows:(r&&r.data)||[]}; }));
+    }
+    if(want('marketplace')){
+      jobs.push(sb.from('marketplace_items')
+        .select(typeof window.dzSelectFor === 'function'
+          ? window.dzSelectFor('marketplace')
+          : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
+        .eq('user_id',uid).eq('status','approved').ilike('title',pattern)
+        .order('created_at',{ascending:false}).limit(30)
+        .then(function(r){ return {key:'marketplace', rows:(r&&r.data)||[]}; }));
+    }
+    if(want('resources')){
+      jobs.push(sb.from('resources')
+        .select('id,user_id,title,description,category,tags,file_url,file_name,file_ext,file_size,preview_url,license,software,download_count,created_at')
+        .eq('user_id',uid).eq('status','approved').ilike('title',pattern)
+        .order('created_at',{ascending:false}).limit(30)
+        .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
+    }
+
+    var out;
+    try{ out = await Promise.all(jobs); }
+    catch(e){
+      if(mySeq !== pfSrch.seq) return;
+      res.innerHTML='';
+      pfSearchNote('Couldn\u2019t search — try again.');
+      return;
+    }
+    // a slower earlier query must not land on top of a newer one
+    if(mySeq !== pfSrch.seq || !pf.profile || pf.profile.id !== uid) return;
+
+    pfSrch.rows = {};
+    out.forEach(function(o){ pfSrch.rows[o.key] = o.rows; });
+    pfSearchRender();
+  }
+
+  function pfSearchRender(){
+    var res = document.getElementById('pfSrchRes');
+    if(!res) return;
+    var total = 0, html = '';
+    PF_SRCH_GROUPS.forEach(function(g){
+      var rows = pfSrch.rows[g.key] || [];
+      if(!rows.length) return;
+      total += rows.length;
+      html += '<section class="pfSrchGrp"><div class="pfSrchGrpHd">'+
+                '<span class="pfSrchGrpTitle">'+esc(g.label)+'</span>'+
+                '<span class="pfSrchGrpCount">'+rows.length+'</span>'+
+              '</div><div class="pfSrchRows">'+
+              rows.map(function(r){ return pfSearchRowHTML(g.key, r); }).join('')+
+              '</div></section>';
+    });
+    res.innerHTML = html;
+    pfSearchNote(total ? '' : 'Nothing here matches “'+pfSrch.q.trim()+'”.');
+  }
+
+  function pfSearchRowHTML(kind, r){
+    var title = (kind==='artwork' ? r.name : r.title) || 'Untitled';
+    var img   = kind==='artwork' ? r.image_url : (kind==='blog' ? r.cover_url : r.preview_url);
+    var thumb = img
+      ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(img))+'" alt="">'
+      : esc(String(kind==='resources' ? (r.file_ext||'FILE')
+                 : kind==='marketplace' ? (r.item_type||'ITEM')
+                 : kind==='blog' ? 'POST' : 'ART').toUpperCase());
+    var meta;
+    if(kind==='artwork')          meta = (r.status && r.status!=='approved' ? String(r.status).toUpperCase()+' · ' : '') + pfFormatDate(r.created_at);
+    else if(kind==='blog')        meta = (r.read_minutes||1)+' min read · '+pfFormatDate(r.created_at);
+    else if(kind==='marketplace') meta = String(r.item_type||'Listing')+' · '+pfFormatDate(r.created_at);
+    else                          meta = String(r.file_ext||'File').toUpperCase()+' · '+(r.download_count||0)+' downloads';
+    return '<button type="button" class="pfSrchRow" onclick="pfSearchOpen(\''+esc(kind)+'\',\''+esc(String(r.id))+'\')">'+
+      '<span class="pfSrchThumb">'+thumb+'</span>'+
+      '<span class="pfSrchTxt">'+
+        '<span class="pfSrchName">'+esc(title)+'</span>'+
+        '<span class="pfSrchMeta">'+esc(meta)+'</span>'+
+      '</span></button>';
+  }
+
+  // the results stay up behind whatever opens, so closing the artwork or the
+  // listing puts you back on the same search rather than back at the profile
+  function pfSearchOpen(kind, id){
+    var rows = pfSrch.rows[kind] || [];
+    var row  = rows.find(function(x){ return String(x.id)===String(id); });
+    if(!row) return;
+    if(kind==='artwork'){
+      var cats = catList(row.category).length ? catList(row.category)
+               : (catList(row.tags).length ? catList(row.tags) : ['others']);
+      openLB(row.image_url, row.name, cats[0]||'', row.description||'', String(row.id), false, rows);
+      return;
+    }
+    if(typeof window.dzOpenRow==='function') window.dzOpenRow(kind==='marketplace'?'marketplace':kind, row);
   }

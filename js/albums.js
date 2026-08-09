@@ -54,6 +54,11 @@
 
   // build one strip in parallel
   async function albFetchStrip(userId){
+    // Both callers happen to await this inside a try, so a null client is
+    // already caught today. That is their carefulness, not this function's,
+    // and the third caller will not inherit it. An empty strip is the honest
+    // answer: no client, no albums to name.
+    if(!sb) return [];
     function soft(p){ return p.then(function(r){ return r && !r.error ? r : {data:[]}; },
                                     function(){ return {data:[]}; }); }
     function soft1(p){ return p.then(function(r){ return r && !r.error && r.data ? r : {data:{}}; },
@@ -68,6 +73,8 @@
               .eq('id', userId).maybeSingle())
     ]);
     var flags = res[3].data || {};
+    // decided when the reply lands, not when the request left: signing out
+    // mid-flight must not leave a private Likes album marked as yours
     var owner = !!currentUser && String(currentUser.id) === String(userId);
     if(owner){
       var exp = flags.subscription_expires_at ? new Date(flags.subscription_expires_at) : null;
@@ -99,11 +106,11 @@
     if(pf.albumsLoaded){ albRenderProfileTab(); return; }
     empty.style.display = 'none';
     grid.innerHTML = '<div class="albLoading">Loading\u2026</div>';
-    var forId = pf.profile.id;
+    var forId = pf.profile.id, scope = dzScope();
     try{
       var strip = await albFetchStrip(forId);
-      // drop if another profile opened
-      if(!pf.profile || String(pf.profile.id) !== String(forId)) return;
+      // drop if another profile opened, or another account signed in
+      if(!dzScopeStill(scope) || !pf.profile || String(pf.profile.id) !== String(forId)) return;
       pf.albums = strip; pf.albumsLoaded = true;
       albRenderProfileTab();
     }catch(e){
@@ -124,16 +131,36 @@
 
   // albums manager page
   async function albLoadMine(force){
-    if(!currentUser) return;
+    if(!currentUser){ albResetMine(); return; }
     if(albMineLoaded && !force){ albRenderManager(); return; }
     var grid = document.getElementById('albGrid');
     if(grid && !albMine.length) grid.innerHTML = '<div class="albLoading">Loading\u2026</div>';
+    var scope = dzScope(), forId = String(currentUser.id);
     try{
-      albMine = await albFetchStrip(currentUser.id);
+      var strip = await albFetchStrip(forId);
+      // a different account signed in while this was in flight: these are
+      // somebody else's Likes and Bookmarks and they are not rendered here
+      if(!dzScopeStill(scope)) return;
+      albMine = strip;
       albMineLoaded = true;
       albRenderManager();
     }catch(e){
+      if(!dzScopeStill(scope)) return;
       if(grid) grid.innerHTML = '<div class="albLoading">Couldn\u2019t load \u2014 try again.</div>';
+    }
+  }
+
+  // Likes, Bookmarks and albums are one member's. When the session changes
+  // they are not this member's any more, so they are dropped rather than
+  // left on screen for whoever signs in next.
+  function albResetMine(){
+    albMine = []; albMineLoaded = false; albTier = 'guest';
+    var grid = document.getElementById('albGrid');
+    if(grid) grid.innerHTML = '';
+    if(albView && albView.src === 'me'){
+      albView = null;
+      var vp = document.getElementById('albViewPage');
+      if(vp) vp.classList.remove('open');
     }
   }
   function albRenderManager(){
@@ -519,19 +546,71 @@
       grid.querySelectorAll('[data-igskel]').forEach(function(t){ t.remove(); });
     }
   }
+  /* The gallery is paged by offset, and two things move rows in and out of it
+     without asking the server: an upload puts a new row on top, and a delete
+     takes one out. Both shift every window after them by one, so the index of
+     what has been drawn and the count of what has been fetched have to move
+     with them — otherwise the next page either repeats a row or steps over
+     one. These three are the only things that touch either. */
+  function pfGalleryHas(id){
+    if(!pf.galleryIds) pf.galleryIds = Object.create(null);
+    return pf.galleryIds[String(id)] === true;
+  }
+  // a row that arrived without being fetched: an upload landing on your own
+  // profile. It occupies a place in the server's order, so the window starts
+  // one later than it otherwise would.
+  function pfGalleryAdopt(id){
+    if(!pf.galleryIds) pf.galleryIds = Object.create(null);
+    if(pf.galleryIds[String(id)] === true) return;
+    pf.galleryIds[String(id)] = true;
+    pf.galleryOffset = (pf.galleryOffset || 0) + 1;
+  }
+  // and a row that has gone. Forgetting the id matters as much as the count:
+  // if it were left behind, the same artwork could never be drawn again.
+  function pfGalleryForget(id){
+    if(!pf.galleryIds) pf.galleryIds = Object.create(null);
+    if(pf.galleryIds[String(id)] !== true) return;
+    delete pf.galleryIds[String(id)];
+    pf.galleryOffset = Math.max(0, (pf.galleryOffset || 0) - 1);
+  }
   async function pfLoadMoreGallery(){
     if(!pf.profile || pf.galleryDone || pf.galleryBusy) return;
     pf.galleryBusy = true;
     pfEnsureGallerySentinel();
-    var size = pf.galleryRows.length ? gridStepBatch() : gridInitialBatch();
-    var from = pf.galleryRows.length, to = from + size - 1;
+    // the window counts rows fetched, not rows kept: dropping a duplicate
+    // must not walk the offset backwards and re-fetch the same page forever
+    var seen = pf.galleryOffset || 0;
+    var size = seen ? gridStepBatch() : gridInitialBatch();
+    var from = seen, to = from + size - 1;
+    // what this page is being fetched for. Both can change while it is in
+    // flight — a different profile opened, a different account signed in —
+    // and a page that arrives for the wrong one is not appended to the wrong
+    // grid, it is dropped.
+    var scope = dzScope(), forId = String(pf.profile.id);
     pfGallerySkeleton(size);
     try{
-      const{data,error}=await sb.from('artworks').select('*').eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART).order('created_at',{ascending:false}).range(from,to);
+      // range() windows only line up if the sort is total. created_at is not:
+      // a queued upload writes several rows in the same instant, and rows
+      // that tie can come back in either order, which is how one artwork
+      // ended up in two pages. id breaks every tie the same way each time.
+      const{data,error}=await sb.from('artworks').select('*')
+        .eq('user_id',forId).eq('kind',ART_KIND_ART)
+        .order('created_at',{ascending:false}).order('id',{ascending:false})
+        .range(from,to);
       if(error) throw error;
-      var rows = data||[];
+      if(!dzScopeStill(scope) || !pf.profile || String(pf.profile.id) !== forId){
+        pf.galleryBusy = false;   // superseded, and its skeleton went with it
+        return;
+      }
+      var all = data||[];
+      pf.galleryOffset = seen + all.length;
+      if(all.length < size) pf.galleryDone = true;
+      // belt and braces: a tie the database broke differently, a retry, an
+      // overlapping window — whatever the cause, an id already on the page
+      // does not go on it twice
+      var rows = all.filter(function(a){ return !pfGalleryHas(a.id); });
+      rows.forEach(function(a){ pf.galleryIds[String(a.id)] = true; });
       pf.galleryRows = pf.galleryRows.concat(rows);
-      if(rows.length < size) pf.galleryDone = true;
       rows.forEach(function(a){
         // approved rows only
         if(a.status!=='approved') return;
@@ -557,16 +636,11 @@
     document.getElementById('pfGalleryEmpty').style.display = (pf.galleryRows.length || qHtml) ? 'none' : '';
     pfGallerySentinelSync();
   }
+  // the card is the thumbnail — the title, date and tags belong to the
+  // artwork view, which is one tap away
   function pfGalleryCardHTML(a){
-    var tags = (a.tags && a.tags.length) ? a.tags : catList(a.category);
-    // read only showcase
     return '<div class="awCard" onclick="pfOpenArtwork(\''+esc(String(a.id))+'\')">'+
       '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" '+dzThumbAttrs(a.image_url)+' alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'">'+
-      '</div>'+
-      '<div class="pfCardMeta">'+
-        '<div class="pfCardTitle">'+esc(a.name||'Untitled')+'</div>'+
-        '<div class="pfCardDate">'+pfFormatDate(a.created_at)+'</div>'+
-        (tags.length ? '<div class="pfCardTags">'+tags.map(function(t){return '<span class="pfTagChip">'+esc(t)+'</span>';}).join('')+'</div>' : '')+
       '</div></div>';
   }
   function pfOpenArtwork(id){
@@ -606,24 +680,28 @@
     return String(n);
   }
 
-  // header stats row
-  // paint header and about cards
+  // one number per tile. Merit is not one of them \u2014 it is a moderation
+  // score, so it reads in About with the sentence that explains it
   function pfPaintStats(likes, views, bms, level, merit, cred){
     function set(id, val){ var e=document.getElementById(id); if(e) e.textContent = val; }
-    // header row
-    set('pfHeadStatLikes', '\u2764\uFE0F ' + pfFmtCount(likes));
-    set('pfHeadStatBms',   '\uD83D\uDD16 ' + pfFmtCount(bms));
-    set('pfHeadStatViews', '\uD83D\uDC41\uFE0F ' + pfFmtCount(views));
-    set('pfHeadStatLevel', 'LV ' + level);
-    set('pfHeadStatCred',  '\u2B50 ' + pfFmtCount(cred));
+    // Likes and views are summed here from the artwork rows in hand, which is
+    // capped and therefore an estimate. get_profile_engagement returns the
+    // real totals and stamps the tile when it lands. Whichever of the two
+    // arrives first, the database's answer is the one left standing.
+    function setTotal(id, val){
+      var e = document.getElementById(id);
+      if(!e) return;
+      var owned = pf.profile && e.dataset.total === String(pf.profile.id);
+      if(!owned) e.textContent = val;
+    }
+    setTotal('pfStatLikes', pfFmtCount(likes));
+    setTotal('pfStatViews', pfFmtCount(views));
+    set('pfStatSaves', pfFmtCount(bms));
+    set('pfStatCred',  pfFmtCount(cred));
+    set('pfStatLevel', level);
+    set('pfStatMerit', merit);
     var row = document.getElementById('pfStatsRow');
-    if(row) row.style.display = '';
-    // about tab cards
-    set('pfStatViews',     pfFmtCount(views));
-    set('pfStatLikes',     pfFmtCount(likes));
-    set('pfStatLevelCard', level);
-    set('pfStatCredCard',  pfFmtCount(cred));
-    set('pfStatMerit',     merit);
+    if(row) row.hidden = false;
     // low merit mark
     var warn = document.getElementById('pfWarnMark');
     if(warn) warn.classList.toggle('on', merit <= 20);
@@ -669,18 +747,24 @@
   var pfCredTotal = 0;              // cred value in stats row
   var pfCredited = false, pfCredBusy = false, pfFrBusy = false;
 
+  // each action button is an icon and a label, so only the label is rewritten
+  function pfActLabel(btn, text){
+    var span = btn.querySelector('.pfActTxt');
+    if(span) span.textContent = text; else btn.textContent = text;
+    btn.setAttribute('aria-label', text);
+  }
   function pfPaintCredBtn(){
     var b = document.getElementById('pfBtnCred'); if(!b) return;
-    b.textContent = pfCredited ? 'CREDITED' : 'CRED';
+    pfActLabel(b, pfCredited ? 'Credited' : 'Cred');
     b.classList.toggle('on', pfCredited);
   }
   function pfPaintFriendBtn(state){
     var b = document.getElementById('pfBtnFriend'); if(!b) return;
-    var map = { none:'ADD FRD', sent:'REQ SENT', incoming:'ACCEPT', friends:'MESSAGE' };
-    if(state === 'blocked_by_me' || state === 'blocked'){ b.style.display='none'; return; }
-    b.style.display = '';
-    b.textContent = map[state] || 'ADD FRD';
-    b.classList.toggle('on', state === 'friends');
+    var map = { none:'Add friend', sent:'Requested', incoming:'Accept', friends:'Message' };
+    if(state === 'blocked_by_me' || state === 'blocked'){ b.hidden = true; return; }
+    b.hidden = false;
+    pfActLabel(b, map[state] || 'Add friend');
+    b.classList.toggle('pfActBtn--pri', state !== 'sent');
     b.dataset.frState = state || 'none';
   }
 
@@ -689,20 +773,17 @@
     if(!row || !pf.profile) return;
     var bF = document.getElementById('pfBtnFriend'),
         bC = document.getElementById('pfBtnCred'),
-        bE = document.getElementById('pfBtnEdit'),
-        bS = document.getElementById('pfBtnSettings');
-    row.style.display = '';
+        bE = document.getElementById('pfBtnEdit');
+    row.hidden = false;
     if(pf.isOwner){
-      // own profile buttons
-      if(bF) bF.style.display = 'none';
-      if(bC) bC.style.display = 'none';
-      if(bE) bE.style.display = '';
-      if(bS) bS.style.display = '';
+      // your own profile: edit and share. Settings live in the top bar menu
+      if(bF) bF.hidden = true;
+      if(bC) bC.hidden = true;
+      if(bE) bE.hidden = false;
       return;
     }
-    if(bE) bE.style.display = 'none';
-    if(bS) bS.style.display = 'none';
-    if(bC) bC.style.display = '';
+    if(bE) bE.hidden = true;
+    if(bC) bC.hidden = false;
     var forId = pf.profile.id;
     pfCredited = false; pfPaintCredBtn(); pfPaintFriendBtn('none');
     if(!currentUser) return;   // logged out defaults
@@ -724,15 +805,13 @@
     if(!pf.profile || pf.isOwner || pfCredBusy) return;
     if(!currentUser){ showToast('Sign in to cred artists'); openAuthMod(); return; }
     var forId = pf.profile.id;
-    var statEl = document.getElementById('pfHeadStatCred');
-    var cardEl = document.getElementById('pfStatCredCard');
+    var tileEl = document.getElementById('pfStatCred');
     pfCredBusy = true;
     // optimistic flip
     var was = pfCredited;
     pfCredited = !was; pfPaintCredBtn();
     pfCredTotal += pfCredited ? 100 : -100;
-    if(statEl) statEl.textContent = '\u2B50 ' + pfFmtCount(Math.max(pfCredTotal,0));
-    if(cardEl) cardEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
+    if(tileEl) tileEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
     try{
       if(was){
         var d = await sb.from('profile_creds').delete()
@@ -746,8 +825,7 @@
     }catch(e){
       pfCredited = was; pfPaintCredBtn();                        // roll back
       pfCredTotal += pfCredited ? 100 : -100;
-      if(statEl) statEl.textContent = '\u2B50 ' + pfFmtCount(Math.max(pfCredTotal,0));
-      if(cardEl) cardEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
+      if(tileEl) tileEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
       showToast('Couldn\u2019t update cred \u2014 try again');
     }finally{ pfCredBusy = false; }
   }
@@ -1001,6 +1079,43 @@
     return true;
   }
 
+  // ---- the artwork dropzone's picked face --------------------------------
+  // The marketplace picker already had the right idea: once a file is chosen
+  // the dashed invite steps aside for a row that shows the thumbnail, names the
+  // file and says it is ready. The artwork zone wears the same face.
+  function pfPaintPicked(o){
+    var dz = document.getElementById('pfDz');
+    if(!dz) return;
+    if(!o){ dz.classList.remove('dzHasFile'); return; }
+    var set = function(id, tx){ var el = document.getElementById(id); if(el) el.textContent = tx; };
+    set('pfUpFileNm', o.name || 'Selected image');
+    var sz = o.size && window.dzHelpers ? window.dzHelpers.bytes(o.size) : '';
+    set('pfUpFileSz', sz || o.meta || 'Image');
+    set('pfUpFileOk', o.note || 'Ready to publish');
+    // an edit shows what is already published — there is nothing to swap here
+    var acts = document.getElementById('pfUpFileActs');
+    if(acts) acts.style.display = o.locked ? 'none' : '';
+    var pw = document.getElementById('pfUpPrevWrap');
+    if(pw) pw.style.display = '';
+    dz.classList.add('dzHasFile');
+  }
+  // Replace and Remove, the two the marketplace rows carry
+  function pfReplaceFile(e){
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    if(pfGuestGate(e)) return;
+    var input = document.getElementById('pfUpF');
+    if(input){ input.value = ''; input.click(); }
+  }
+  function pfClearFile(e){
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    pf.upFile = null;
+    pf.upThumbFocus = null;
+    var input = document.getElementById('pfUpF'); if(input) input.value = '';
+    var prev = document.getElementById('pfUpPrev');
+    if(prev){ prev.removeAttribute('style'); prev.removeAttribute('src'); }
+    pfPaintPicked(null);
+  }
+
   // reset upload session
   function pfUpResetSession(){
     pf.upFile = null;
@@ -1010,8 +1125,8 @@
     updrActiveId = null;
     var prev = document.getElementById('pfUpPrev');
     if(prev){ prev.removeAttribute('style'); prev.removeAttribute('src'); }
-    var pw = document.getElementById('pfUpPrevWrap'); if(pw) pw.style.display = 'none';
-    var tb = document.getElementById('pfUpThumbBtn'); if(tb) tb.style.display = 'none';
+    var _upf = document.getElementById('pfUpF'); if(_upf) _upf.value = '';
+    pfPaintPicked(null);
     var pp = document.getElementById('pfPagesPreview'); if(pp) pp.innerHTML = '';
     var nm = document.getElementById('pfUpNm');   if(nm) nm.value = '';
     var ds = document.getElementById('pfUpDesc'); if(ds) ds.value = '';
@@ -1053,6 +1168,7 @@
     document.getElementById('pfDz').style.display='';
     document.getElementById('pfUpBtn').textContent = '📤 Upload Artwork';
     document.getElementById('pfUpMod').classList.add('open');
+    if(typeof upGrowAll === 'function') upGrowAll();
     // page mode locks scroll
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';

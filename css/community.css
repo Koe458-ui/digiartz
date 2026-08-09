@@ -148,17 +148,9 @@
       /* member name */
       .cmMemName{font-size:.85rem;}
       .cmMemRole{font-size:.55rem;padding:.18rem .42rem;}
-
-      /* stats row wrap */
-      .pfStatsRow{gap:.4rem;font-size:.68rem;}
-
-      /* action buttons row */
-      .pfActionRow{width:100%;}
-      .pfActBtn{flex:1 1 auto;min-width:44%;padding:.65rem .8rem;}
     }
 
     @media(max-width:360px){
-      .pfStatsRow{font-size:.63rem;gap:.3rem;}
       .cmModCard,.rptCard{padding:.95rem;}
     }
 

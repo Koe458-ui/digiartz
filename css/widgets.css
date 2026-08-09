@@ -838,17 +838,12 @@ html.thmFade #themePage{
   #albPage,#albViewPage,.albCard{transition:none;}
 }
 
-.tgBlock{
-  /* shared padding */
-  --tgPad:1.25rem;
-  --tgInset:clamp(.7rem,2vw,2rem);
-  margin:var(--tgPad) 0;
-}
-
+/* The search box carries no inset of its own — every bar it sits in owns
+   that, and owning it in one place is what keeps the box lined up with
+   whatever runs beside or under it. */
 .tgSearch{
   display:flex;align-items:center;gap:.65rem;
-  width:calc(100% - var(--tgInset) * 2);
-  margin:0 var(--tgInset) .85rem;
+  width:100%;
   height:46px;padding:0 .8rem 0 .95rem;box-sizing:border-box;
   border-radius:11px;
   background:var(--sur);border:1px solid var(--bdr);
@@ -911,56 +906,6 @@ html.thmFade #themePage{
   .tgFltBtn svg{width:16px;height:16px;}
 }
 
-.tgRail{
-  margin:0;
-  --tgRow:38px;--tgGap:9px;
-  overflow-x:auto;overflow-y:hidden;
-  scrollbar-width:none;-ms-overflow-style:none;
-  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
-}
-.tgRail::-webkit-scrollbar{display:none;}
-.tgRail.ov{
-  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%);
-          mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%);
-}
-.tgScroll{
-  display:flex;flex-direction:column;gap:var(--tgGap);
-  width:max-content;
-  padding:calc(var(--tgGap) / 2) var(--tgInset);
-}
-.tgRowIn{display:flex;flex-wrap:nowrap;gap:var(--tgGap);}
-.tgChip{
-  position:relative;
-  display:inline-flex;align-items:center;gap:.4rem;
-  height:var(--tgRow);padding:0 .95rem;box-sizing:border-box;
-  border-radius:999px;cursor:pointer;white-space:nowrap;flex-shrink:0;
-  background:var(--sur);border:1px solid var(--bdr);color:var(--tx);
-  font-family:var(--fb);font-size:.8rem;letter-spacing:0;
-  transition:border-color .2s,background .2s,color .2s,transform .22s,opacity .22s;
-}
-@media(hover:hover){
-  .tgChip:hover{border-color:var(--bdrh);}
-  .tgChip.on:hover{border-color:var(--pg);}
-}
-.tgChip:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-.tgChip::after{
-  content:'';position:absolute;left:0;right:0;
-  top:calc(var(--tgGap) / -2);bottom:calc(var(--tgGap) / -2);
-}
-.tgChip.on{
-  background:var(--pg);border-color:var(--pg);color:var(--text-on-accent);
-}
-
-.tgChipAll{
-  position:sticky;left:var(--tgInset);z-index:2;
-  background:var(--bg);
-  box-shadow:6px 0 8px -6px rgba(0,0,0,.45);
-}
-.tgChipAll svg{width:14px;height:14px;flex-shrink:0;}
-
-@keyframes tgIn{from{transform:scale(.75);opacity:0;}to{transform:scale(1);opacity:1;}}
-.tgChip.tgEnter{animation:tgIn .28s cubic-bezier(.22,1,.36,1);}
-
 #fg .fgHdr .fgQ{display:none;}
 #fg .fgHdr{justify-content:flex-end;}
 
@@ -971,23 +916,14 @@ html.thmFade #themePage{
   .tgSearchKbd{display:none;}
 }
 @media(max-width:600px){
-  .tgBlock{--tgPad:1rem;}
-  .tgRail{--tgRow:35px;--tgGap:10px;}
-  .tgChip{font-size:.76rem;padding:0 .85rem;}
   .tgSearch{height:42px;border-radius:10px;padding:0 .7rem 0 .8rem;gap:.55rem;}
   .tgSearchIn{font-size:.84rem;}
   .tgSearchIco{width:15px;height:15px;}
-  .tgRail.ov{
-    -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
-            mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
-  }
 }
 @media(prefers-reduced-motion:reduce){
-  .tgChip{transition:none;}
-  .tgChip.tgEnter{animation:none;}
-  .tgRail{scroll-behavior:auto;}
   .tgSearch{transition:none;}
 }
+
 #tgMod .tgModBox{max-width:640px;padding:1.3rem 1.2rem 1.1rem;}
 .tgModHead{
   display:flex;align-items:center;gap:.7rem;margin-bottom:.9rem;

@@ -11,9 +11,21 @@
   var fgFltMode = 'artworks';           // panel owner
   var fgSecFilter = {};                 // chosen option per section
   var fgSecQuery  = {};                 // typed query per section
+  // reading order of the chip row, and the order the arrow keys walk
+  var FG_TABS = ['artworks','marketplace','blog','resources','jobs','cart'];
+
+  // one place to ask, so every motion in here agrees about it
+  function fgReduceMotion(){
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
 
   function fgSwitchSection(id){
     if(!id) return;
+    /* Back to the top before the swap, not after. The panel about to be shown
+       is the one that decides how tall the page is, so a scroll reset landing
+       after it has been drawn is a visible jump; landing before means the new
+       panel is only ever drawn at the top, and its rise-in covers the move. */
+    var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
     var secs=document.querySelectorAll('#fg .fgSec'), i;
     for(i=0;i<secs.length;i++) secs[i].classList.toggle('active', secs[i].id==='fgSec-'+id);
     var btns=document.querySelectorAll('#fgSecTabs .fgSecBtn'), on;
@@ -21,23 +33,77 @@
       on = btns[i].id==='fgSecBtn-'+id;
       btns[i].classList.toggle('active', on);
       btns[i].setAttribute('aria-selected', on?'true':'false');
+      // a tab rail is one stop on the page, not six: Tab lands on the
+      // selected chip and the arrow keys move within
+      btns[i].tabIndex = on ? 0 : -1;
     }
     fgSection=id;
-    var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
-    // the tab strip scrolls, so a section opened from somewhere else
-    // (a quick link, the hero CTA) would land with its tab off-screen
-    var rail=document.getElementById('fgSecTabs');
+    // One line at every width, which on a phone is wider than the screen, so
+    // a section opened from somewhere else — a quick link, the hero CTA —
+    // would land with its chip off the edge. Measured off the boxes rather
+    // than offsetLeft, which is relative to whatever happens to be positioned
+    // above the chip rather than to the scroller. This one does glide: the
+    // row it moves through is not being replaced, so there is something to
+    // watch it travel across.
+    var rail=document.getElementById('fgSecRow');
     var tab=document.getElementById('fgSecBtn-'+id);
     if(rail && tab){
-      var want=tab.offsetLeft-(rail.clientWidth-tab.offsetWidth)/2;
+      var rr=rail.getBoundingClientRect(), tr=tab.getBoundingClientRect();
+      var want=rail.scrollLeft+(tr.left-rr.left)-(rr.width-tr.width)/2;
       var max=rail.scrollWidth-rail.clientWidth;
-      rail.scrollLeft=Math.max(0,Math.min(want,max));
+      var left=Math.max(0,Math.min(want,max));
+      if(!fgReduceMotion() && typeof rail.scrollTo==='function'){
+        rail.scrollTo({left:left, behavior:'smooth'});
+      } else {
+        rail.scrollLeft=left;
+      }
     }
-    // rail measures while visible
-    if(id==='artworks' && typeof tgRenderRail==='function'){ try{ tgRenderRail(false); }catch(e){} }
+    fgSyncFilterBtn();
     // load section on first visit
     if(id!=='artworks' && typeof dzSecEnter==='function') dzSecEnter(id);
   }
+
+  /* One filter button in the bar, where there used to be one inside each
+     section's own search box. It opens whichever panel belongs to the section
+     on show, and wears the dot when that section is filtered — so the control
+     is in one place and still says something true about six of them. */
+  function fgOpenFilter(){
+    if(fgSection==='artworks'){ openFilterPanel(); return; }
+    openSecFilter(fgSection);
+  }
+  function fgSyncFilterBtn(){
+    var btn=document.getElementById('fgFltBtn');
+    if(!btn) return;
+    var on = fgSection==='artworks'
+      ? (typeof window.fgArtFiltered==='function' && window.fgArtFiltered())
+      : ((fgSecFilter[fgSection]||'all') !== 'all');
+    btn.classList.toggle('active', !!on);
+  }
+  window.fgOpenFilter=fgOpenFilter;
+  window.fgSyncFilterBtn=fgSyncFilterBtn;
+
+  /* Arrow keys along the chip row, Home and End to its ends — the tabs
+     pattern anything with role="tablist" answers to. Selection follows the
+     arrow: the panel is already in the page, so switching costs nothing. Up
+     and Down are left alone; the row is horizontal. */
+  function fgTabKey(e){
+    var i = FG_TABS.indexOf(fgSection);
+    if(i === -1) return;
+    var next;
+    if(e.key === 'ArrowRight')     next = (i + 1) % FG_TABS.length;
+    else if(e.key === 'ArrowLeft') next = (i - 1 + FG_TABS.length) % FG_TABS.length;
+    else if(e.key === 'Home')      next = 0;
+    else if(e.key === 'End')       next = FG_TABS.length - 1;
+    else return;
+    e.preventDefault();
+    fgSwitchSection(FG_TABS[next]);
+    var btn = document.getElementById('fgSecBtn-' + FG_TABS[next]);
+    if(btn) btn.focus();
+  }
+  (function(){
+    var tabs = document.getElementById('fgSecTabs');
+    if(tabs) tabs.addEventListener('keydown', fgTabKey);
+  })();
 
   // stub sections hold the query
   var fgSecQTimer={};
@@ -83,8 +149,7 @@
   function applySecFilter(){
     var id=fgFltMode, r=document.querySelector('input[name="fltSec"]:checked');
     fgSecFilter[id]=r?r.value:'all';
-    var btn=document.getElementById('fgSecFltBtn-'+id);
-    if(btn) btn.classList.toggle('active', fgSecFilter[id]!=='all');
+    fgSyncFilterBtn();
     closeFilterPanel();
     if(typeof dzSecRender==='function') dzSecRender(id);
   }
@@ -96,6 +161,9 @@
   window.openSecFilter=openSecFilter;
   window.applySecFilter=applySecFilter;
   function closeFG(){
+    // the search page sits over the gallery — it goes with it, and the scroll
+    // lock belongs to whatever is left on screen
+    if(typeof closeFgSearch==='function') closeFgSearch(true);
     document.getElementById('fg').classList.remove('open');
     restoreScroll();
     // reset category filter
@@ -855,15 +923,18 @@
   function syncAdmBtn(){
     var b=document.getElementById('smAdmBtn');
     if(!isDev){ if(b && b.parentNode) b.parentNode.removeChild(b); return; }
-    var list=document.querySelector('#setPage .setList');
+    // the Account group's empty slot; the flat list is the older shape, kept
+    // as a fallback so the entry still lands above Log Out either way
+    var gate=document.getElementById('setAdmGate');
+    var list=gate || document.querySelector('#setPage .setList');
     if(!list) return;
     if(!b){
       b=document.createElement('button');
       b.id='smAdmBtn';
       b.className='pfMenuItem';
       b.onclick=function(){ setGo(smHandleAdm,'admPage'); };
-      // above Log Out, which stays last
-      list.insertBefore(b, list.querySelector('.pfMenuItem--danger'));
+      if(gate) gate.appendChild(b);
+      else list.insertBefore(b, list.querySelector('.pfMenuItem--danger'));
     }
     b.textContent='⚙ ADMIN PANEL';
   }

@@ -48,7 +48,12 @@
 
     // sync card and comment bar
     syncSubOverviewCard();
-    cpSyncAvatar();
+    // cpSyncAvatar is in js/mywork.js, seven script tags below this file, and
+    // the first auth event fires before that one is parsed. The chip it
+    // paints is on the community composer, which cpOpenChannel paints again
+    // when the bar is actually on screen — so there is nothing to catch up on
+    // here, only a throw to not do.
+    if (typeof cpSyncAvatar === 'function') cpSyncAvatar();
   }
 
   // sync subscription card
@@ -196,7 +201,38 @@
   }
 
   // logout
+  //
+  // The Log Out row asks before it acts. Signing out is one tap from the
+  // bottom of a list people scroll through for everything else, and it used
+  // to happen on that tap alone, with no way back except signing in again.
+  var loLastFocus = null;
+
   function pfMenuLogout() {
+    var m = document.getElementById('loConfirm');
+    // no dialog in the page — sign out rather than leave the row dead
+    if (!m) { doLogout(); return; }
+    loLastFocus = document.activeElement;
+    m.classList.add('open');
+    // Cancel takes focus, not the button that signs you out
+    var no = document.getElementById('loConfirmNo');
+    if (no) { try { no.focus(); } catch (e) {} }
+  }
+
+  function closeLogoutConfirm() {
+    var m = document.getElementById('loConfirm');
+    if (m) m.classList.remove('open');
+    if (loLastFocus && loLastFocus.focus && loLastFocus.isConnected !== false) {
+      try { loLastFocus.focus(); } catch (e) {}
+    }
+    loLastFocus = null;
+  }
+
+  function confirmLogout() {
+    closeLogoutConfirm();
+    doLogout();
+  }
+
+  function doLogout() {
     closeSettingsPage();
     if (sb) {
       sb.auth.signOut()
@@ -205,22 +241,17 @@
     }
   }
 
-  // upload dropdown
-  var _pfUpMenuOpen = false;
+  // Escape and a tap on the backdrop both mean cancel — the same two ways
+  // out every other sheet on the site answers to
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var m = document.getElementById('loConfirm');
+    if (m && m.classList.contains('open')) { e.stopPropagation(); closeLogoutConfirm(); }
+  }, true);
 
-  // stubs kept for handlers
-  function openPfUploadMenu() {}
-  function closePfUploadMenu() {}
-  function togglePfUploadMenu() {}
-
-
-  // close on outside click
-  document.addEventListener('click', function(e) {
-    if (_pfUpMenuOpen) {
-      var umenu = document.getElementById('pfUploadMenu');
-      var utrig = document.querySelector('.pfUpTrigger');
-      if (umenu && !umenu.contains(e.target) && utrig && !utrig.contains(e.target)) closePfUploadMenu();
-    }
+  document.addEventListener('click', function (e) {
+    var m = document.getElementById('loConfirm');
+    if (m && m.classList.contains('open') && e.target === m) closeLogoutConfirm();
   });
 
   function openAuthMod() {
@@ -538,16 +569,47 @@
   if (sb) {
     sb.auth.onAuthStateChange(function(event, session) {
       currentUser = session ? session.user : null;
-      syncAuthBtn();
+
+      // Who the session belongs to, and what has to be forgotten because of
+      // it, is settled before anything is drawn. This used to run after
+      // syncAuthBtn(), which reaches into a file loaded further down the page
+      // and threw on the first event every time — taking the scope bump, all
+      // the cache wipes, the hidden-artwork list and the tag preferences down
+      // with it, because they were all sitting behind it in the same handler.
+      // Painting is allowed to fail. Deciding whose data this is, is not.
+
+      // Every stamp taken before this line was taken for the account that
+      // just went away. Bumping first means anything still in flight is
+      // already stale by the time it lands, whichever order it lands in.
+      dzScopeBump();
       // wipe caches on auth change
       pfRowCache = {}; cmMineRows = []; cpMsgCache = {}; cmMineCache = {};
+      // Likes, Bookmarks, albums and the profile media cache are one
+      // member's. They are not carried across a sign-in.
+      try{ albResetMine(); }catch(e){}
+      // the read/unread marks belong to whoever was signed in
+      notifList = []; notifReadIds = {};
+      // and the snapshots on disk belong to them too
+      try{ dzcDropScoped(); }catch(e){}
+      try{
+        pf.albums = []; pf.albumsLoaded = false;
+        pf.galleryRows = []; pf.galleryIds = Object.create(null);
+        pf.galleryOffset = 0; pf.galleryDone = false;
+        pfMediaCache = {};
+      }catch(e){}
+      // Now the painting. Every one of these reaches into a file that loads
+      // after this one, so each is on its own: one that fails takes nothing
+      // else with it.
+      try{ syncAuthBtn(); }catch(e){ console.error('syncAuthBtn: '+(e.message||e)); }
       // repaint ranking boards
       try{ if (typeof window.rkRefresh === 'function') window.rkRefresh(); }catch(e){}
       // reload hide list
-      loadHiddenArtworks().then(function(){
-        try{ renderHome(); }catch(e){}
-        try{ renderFG(); }catch(e){}
-      });
+      try{
+        loadHiddenArtworks().then(function(){
+          try{ renderHome(); }catch(e){}
+          try{ renderFG(); }catch(e){}
+        }, function(){ /* offline, keep what is on screen */ });
+      }catch(e){ console.error('loadHiddenArtworks: '+(e.message||e)); }
       // reload tag preferences
       try{ if(typeof tgLoad === 'function') tgLoad(true); }catch(e){}
       if (event === 'SIGNED_IN') {
@@ -638,7 +700,11 @@
       } else {
         notifReadIds = {};
       }
-    }catch(e){ console.error('Error loading notifications: '+e.message); notifList=[]; }
+    }catch(e){
+      console.error('Error loading notifications: '+e.message);
+      // no list and no read marks, rather than the last member's read marks
+      notifList=[]; notifReadIds={};
+    }
     notifRender();
     notifMarkAllVisibleRead();
   }
@@ -677,11 +743,18 @@
     notifRefreshBadge();
   }
 
-  // unread dot
+  // unread dot — the home screen bell and the one in the profile bar carry
+  // the same mark, so it cannot say unread in one place and read in the other
+  function notifPaintBadges(on){
+    ['hNotifBtn','pfTopNotifBtn'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.classList.toggle('hasUnread', !!on);
+    });
+  }
   async function notifRefreshBadge(){
     var btn = document.getElementById('hNotifBtn');
     if(!btn) return;
-    if(!sb || !currentUser){ btn.classList.remove('hasUnread'); return; }
+    if(!sb || !currentUser){ notifPaintBadges(false); return; }
     try{
       const{data:all,error:e1} = await sb.from('notifications').select('id').limit(200);
       if(e1) throw e1;
@@ -689,7 +762,7 @@
       if(e2) throw e2;
       var readSet = {}; (reads||[]).forEach(function(r){ readSet[r.notification_id]=true; });
       var hasUnread = (all||[]).some(function(n){ return !readSet[n.id]; });
-      btn.classList.toggle('hasUnread', hasUnread);
+      notifPaintBadges(hasUnread);
     }catch(e){ /* silent failure */ }
   }
 

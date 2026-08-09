@@ -4,35 +4,544 @@
    bump CACHE_VERSION to refill every client
 
    changelog
-   v103 — the legal documents reach the settings menu.
-       Seven links below Log Out, in their own group past the end of the
-       actions: reference material a member opens once, not somewhere
-       they are being sent, so they are quieter than the items above and
-       sit under a rule. Same anchors as the footer — a real /legal/<slug>
-       href, the modal opening over the drawer on click.
-       Changed: index.html, sw.js, css/profile.css.
-   v102 — the legal documents get addresses of their own.
+   v129 — the legal documents get addresses of their own, and a group in
+       Settings.
        Privacy, Terms, Cookie, Refund and the Creator & Seller terms
-       existed only as strings inside js/effects.js, shown in a modal by
-       a footer button. Nothing outside the browser could reach them:
-       not a crawler, and not the payment provider reviewing this domain,
-       which asks to open a refund policy at a URL and reads a delivery
-       timeline and a contact route before it will approve a site for
-       live payments. Razorpay was refusing payments on this domain, and
-       an unreadable policy set is the usual reason a review does not
-       pass.
+       existed only as strings inside js/effects.js, shown in a modal by a
+       footer button. Nothing outside the browser could reach them: not a
+       crawler, and not the payment provider reviewing this domain, which
+       asks to open a refund policy at a URL and wants a delivery timeline
+       and a contact route before it will approve a site for live
+       payments. Razorpay has been refusing payments on digiartz.net with
+       "website does not match registered website(s)", and a policy set
+       that cannot be read is the usual reason that review does not pass.
        The text moved to js/legal-content.js, which the modal and a new
-       Pages Function both read, so the two cannot drift apart. Seven
-       pages now answer at /legal/<slug>, self-contained and dependent on
-       no stylesheet or script of ours. Two of them are new: a contact
-       page, and a delivery policy saying digital goods arrive on
-       payment confirmation and nothing is ever shipped.
-       The footer links became anchors carrying those URLs. A click still
-       opens the modal — openLegal returns false and cancels the
-       navigation — so nothing changes for a member, but the links now
-       have somewhere to point when the script has not run.
-       Changed: index.html, sw.js, js/effects.js, js/legal-content.js,
-       functions/legal/[doc].js, functions/sitemap.xml.js.
+       Pages Function both read, so a policy cannot say one thing in the
+       modal and another on the page. Seven pages answer at /legal/<slug>,
+       each self-contained — no stylesheet of ours, no scripts, nothing
+       third-party, because a reviewer arrives on a cold cache with an ad
+       blocker up. Two are new: a contact page, and a delivery policy
+       saying digital goods arrive on payment confirmation and nothing is
+       ever shipped.
+       In Settings they are a group of their own, below the one carrying
+       Log Out, in the same shape as the groups above it. The footer links
+       and the cookie banner's became anchors over the same hrefs: the
+       modal still opens on click, and where it cannot, the browser
+       follows the link instead of doing nothing.
+       Changed: index.html, sw.js, css/profile.css, js/effects.js,
+       js/legal-content.js, functions/legal/[doc].js,
+       functions/_middleware.js, functions/sitemap.xml.js.
+   v128 — the buttons come up bright too, and the page is checked on
+       every theme at every width.
+       The Select and publish buttons were the two colours held back, on
+       the grounds that white on a bright violet falls to about 2.7:1. The
+       label goes to ink instead and the fill comes up with everything
+       else. A fill and the type on it are one decision now, set as a pair
+       and flipped by theme: bright violet with ink over the near-black,
+       saturated violet with white over the light theme's page.
+       The calendar stopped filling its selected day with the row's own
+       colour. --fc is a different hue per row and each theme moves it, so
+       a label on it would need its own ink twelve times over; the two
+       filled things there take the accent, whose ink is set beside it.
+       Two older faults surfaced under the same check, both light theme
+       only: the required asterisk was a pale red on a pale card at 2.4:1,
+       and the ghost draft slot's expiry chip was white on a 45% red at
+       1.09:1 — the chip is neutral now, which is what an empty slot with
+       no expiry should have said anyway.
+       1072 contrast checks across four themes and four widths, none
+       failing, nothing overflowing sideways.
+       Changed: css/hero.css, css/upload.css, index.html, sw.js.
+   v127 — the upload page's colours come up bright.
+       Every colour on the page was mid-tone: legible, but flat against the
+       near-black the page runs under. They move up a step — the field
+       glyphs, the section chips, the dropzone's dashed edge and badge, and
+       the green a chosen file is marked ready in.
+       They are named now rather than typed out at each use: one --upc*
+       token per role, set twice, because no single hex is bright on both
+       the near-black and the light theme's white. The dark themes take the
+       luminous step, the light theme the saturated one.
+       Two colours stay put: the Select and publish buttons. They are fills
+       with white type on them, and a violet bright enough to please the
+       eye drops that type to about 2.7:1.
+       Changed: css/hero.css, css/upload.css, index.html, js/sections.js,
+       sw.js.
+   v126 — the upload headline reads in the profile's blue.
+       Upload Artwork, Share a Resource, List a Product, Write a Post and
+       Post a Job all take the blue the profile's Edit Profile button
+       wears. That button carries #2563EB as a fill with white on it, where
+       it reads bright; as type on this page's near-black it goes muted, so
+       the dark themes take the step above it and the light theme, whose
+       ground is pale like the button's own white, takes the profile's
+       exact value.
+       Changed: css/overrides.css, css/upload.css, index.html, sw.js.
+   v125 — the upload page, rebuilt.
+       The bar is the profile's and the gallery's: the page's own mark and
+       name on the left, one control on the right. That control is an (i),
+       and it holds the guidelines and the visibility tips for whichever tab
+       is open — they used to stand in a column beside the form and repeat
+       themselves once per section, which cost a column and told a phone
+       nothing until it had scrolled past the whole form.
+       The tabs are the gallery's chips now, one colour per section, centred
+       wherever the row fits and scrolled sideways where it does not.
+       The form is one card: the dropzone at its head, then a row per detail
+       with the field's own tinted glyph beside it, and the publish button
+       outside the card so the page reads invite, details, act. Every text
+       box grows to fit what is written in it rather than clipping it.
+       Choosing a file now looks the way the marketplace picker already
+       looked — a row naming the file, sizing it and saying it is ready —
+       and that picked state is drawn in colour, green-edged, in both
+       places. The empty zone's badge took the accent too; it was a white
+       glyph on no background, invisible on the light theme.
+       Every pick-from-a-list field opens the sheet's own menu instead of
+       the platform's <select> popup, tinted to the row that opened it. The
+       page is one column at every width, capped and centred on a desktop.
+       Dead with it: the section form's <select> skin, which had three
+       copies across hero.css, overrides.css and upload.css and no element
+       left to paint; the two-up field row; select.upIn; and the heading
+       rule for the guidance cards that moved into the sheet.
+       Changed: css/hero.css, css/overrides.css, css/upload.css, index.html,
+       js/albums.js, js/drafts.js, js/mywork.js, js/pfedit.js,
+       js/sections.js, sw.js.
+   v124 — even spacing round the tabs, a calmer switch, and Tags stops
+       looking pressed.
+       The gap above the chip row was 9px and the gap below it 35px. Both
+       are one measure now, so the row sits the same distance from the
+       header as the artwork sits from the row.
+       Tags carried a filled pill and a dot whenever any tag was picked.
+       A pick outlives the visit, so that read as a button held down for
+       ever. It is drawn like every other control now; .on stays only as the
+       hook the count is written into for a screen reader. The filter button
+       keeps its dot, because a filter is set this visit and cleared the
+       same way.
+       The switch is one curve throughout, and the panel lifts six pixels
+       rather than ten — the further a grid thousands of pixels tall is
+       asked to travel, the more of it the compositor carries.
+       Changed: css/hero.css, index.html, sw.js.
+   v123 — the artwork comes off the wall on a phone.
+       The grid took the home page's inset, which is a few pixels and reads
+       as hard against the edge on a phone. It takes the profile's now,
+       which is also the gallery bar's, so a thumbnail starts under the mark
+       at every width — 16px on a phone, 24 on a desktop, and out to the
+       centred grid's own edge past 1680.
+       Changed: css/hero.css, index.html, sw.js.
+   v122 — the gallery gets a header, and search gets a page.
+       A search box held a whole line across the top of the gallery whether
+       or not anyone was searching, and each of the six sections carried its
+       own copy of it. All seven are gone. The bar is the profile's: the
+       page's own mark and name on the left, and on the right the three
+       controls that used to be scattered — search, filters, tags — in that
+       order.
+       Search is a page now, on the profile's pattern and its styles, but it
+       looks in the whole site rather than one member's work: every approved
+       artwork, and the listings, posts, resources and jobs beside them.
+       Artwork is answered from the list the gallery already holds rather
+       than by a query, so the results and the grid cannot disagree about
+       what exists and anything hidden stays hidden. Scope chips narrow it,
+       Tab is kept inside, and closing hands focus back.
+       Six filter buttons became one. It opens whichever panel belongs to
+       the section on show and wears the dot when that section is filtered.
+       Tags leaves the chip row for the bar, so the row is six sections,
+       one line, centred once there is room for it.
+       Changed: index.html, css/hero.css, css/profile.css, css/overrides.css,
+       js/search.js, js/gallery.js, js/app-core.js, sw.js.
+   v121 — the bar rides up with the page, and switching a section is no
+       longer a cut.
+       The search box and the chips were pinned below the title and held a
+       fifth of a phone screen for the whole scroll. They are in the flow
+       now: they leave with the artwork and come back when you return to the
+       top.
+       Switching sections swapped one panel for another between two frames
+       while the scroll snapped to the top in the same instant. The incoming
+       panel rises in over 300ms, the way the home page's boards do, and the
+       search box fades because only the words inside it change. The scroll
+       reset now runs before the swap rather than after: the panel about to
+       be shown is what decides the page's height, so resetting after it is
+       drawn is a visible jump, and resetting first means it is only ever
+       drawn at the top with the rise covering the move. The scroll itself
+       cannot be animated — what it would travel through is the content
+       being replaced.
+       The chip row does glide, since the row it moves along is not being
+       replaced. All of it stops under prefers-reduced-motion.
+       Changed: css/hero.css, js/gallery.js, index.html, sw.js.
+   v120 — four icons redrawn, and a gradient that erased two of them.
+       A shopping bag for Marketplace and a trolley for Cart sat three
+       chips apart saying the same thing; Marketplace is a storefront now
+       and the trolley is Cart's alone. A pencil for Blog and an open book
+       for Resources read closer to the other way round: Blog is an article
+       and Resources is a stack of layers, which is what a page of brushes,
+       textures and PSDs actually is. Tags was a 2x2 grid, which everywhere
+       else on the web means a layout toggle; it is a price tag.
+       Drawing them turned up a bug in how all seven are painted. The
+       gradients were left in objectBoundingBox units, and the spec says an
+       element whose bounding box has zero width or height is not rendered
+       at all under those units. A perfectly horizontal line has no height,
+       so Blog's three lines of text and the awning across the storefront
+       were dropped on the floor. All seven now use userSpaceOnUse over the
+       24x24 box, which also means one gradient runs across a whole icon
+       rather than restarting on every path inside it.
+       Changed: index.html, sw.js.
+   v119 — Marketplace reads Market, and Jobs comes before Cart.
+       The long word was the widest chip on the row and the one paying for
+       it was the search box beside it. Short, the row drops from 818 to 783
+       and stops scrolling from about 820 up rather than 1024.
+       Jobs and Cart swap. Cart is where a visit ends, so it goes last, and
+       the order is now the same in four places that have to agree: the chip
+       row, the search boxes stacked above it, the panels below it, and the
+       list the arrow keys walk.
+       Changed: index.html, js/gallery.js, sw.js.
+   v118 — the chips are named, and coloured like the feed boards.
+       Icon-only asked a lot of six drawings — a shopping bag for
+       Marketplace and a cart for Cart sat three chips apart and said much
+       the same thing. Every chip carries its name now, and the chip itself
+       is the home page's feed board borrowed whole: same surface, border,
+       radius and weight of word, with the icon drawn in that entry's own
+       gradient and the light theme's darker pair spelled out per chip. The
+       two rails read as one family because they come from one recipe.
+       Selected reads through the chip, not the icon — accent border over a
+       tinted ground, as on the home page — so the icon keeps its colour and
+       the row stays legible either way.
+       Names make the row wider than a phone, so it is one line that scrolls
+       there and one line that does not from about 1024 up. Nothing wraps,
+       which is what lets the tablist stay a real element with Tags beside
+       it rather than inside it. The scroll-into-view in fgSwitchSection is
+       back with the scrolling, so a section opened from a quick link cannot
+       land with its chip off the edge.
+       Changed: index.html, css/hero.css, js/gallery.js, sw.js.
+   v117 — every chip on one line, at every width, and never a scroll.
+       The row scrolled sideways once the boxes stopped fitting, which on a
+       phone meant the last section sat off the edge with nothing to say so.
+       The seven boxes now take an equal share of whatever room there is and
+       shrink into it: 56px each where there is space, down to about 30px at
+       280px wide, one line throughout.
+       Two grids rather than one, because Tags leads the row but is not one
+       of the tabs and cannot live inside the tablist. Flattening the
+       tablist with display:contents would have made one grid of all seven —
+       and drops the tablist out of the accessibility tree, leaving six tabs
+       with no owner, which was checked rather than assumed. So the row lays
+       out seven equal columns, the tablist takes the last six, and repeats
+       those six inside itself. Six columns spanning six columns come out
+       the same width, so all seven match exactly.
+       The scroll-into-view in fgSwitchSection goes with the scrolling: no
+       chip can be off-screen for it to reach.
+       Changed: css/hero.css, js/gallery.js, index.html, sw.js.
+   v116 — Escape stopped part-way through closing overlays.
+       The handler in js/pfedit.js ended with closeWalletPage(),
+       closeBankPage() and closePurchasesPage(). None of the three has
+       existed since the wallet, payout methods and purchases shells became
+       one panel built by the signed-in module — that change updated the
+       overlay lists in sections.js and app-core.js but not this line. So
+       every Escape threw on the first name and never reached the other two.
+       Nothing after them was lost, because they were last, but the panel
+       that replaced all three had no way to be closed with Escape at all.
+       It closes now. The panel owns its own close and the page cannot reach
+       it by name, so store.js publishes the one handle, guarded because the
+       panel is simply absent for a signed-out visitor. That close also
+       hands the scroll lock back through restoreScroll() rather than
+       clearing body overflow itself, and dzPanelHost joins the list
+       restoreScroll checks — otherwise closing it over another open overlay
+       unlocked the page under both.
+       Changed: js/pfedit.js, js/app-core.js, functions/api/store.js, sw.js.
+   v115 — Tags comes back, at the head of the chip row, and the picks now do
+       what the picker always claimed.
+       v114 took the tag rail out and the preferences with it. Tags is
+       wanted, so it returns — not as a second row, but as the first box in
+       the chip row, opening the same picker it always did. It is not one of
+       the tabs: it switches no panel, so it sits outside the tablist and
+       never takes the selected fill. It carries the filter button's dot
+       instead, which is the only place a pick shows now that the rail is
+       gone. The row is the scroller; the tablist inside it is not.
+       The picker's own note says picked tags move matching artwork to the
+       top. They never did — the only thing they moved was the order of the
+       rail's own chips, and that rail is gone. The gallery grid now lifts
+       artwork matching a picked tag above the rest, keeping the chosen
+       sort's order within each group. So the sentence is true for the first
+       time, and the control has an effect you can see.
+       Changed: index.html, css/hero.css, css/widgets.css,
+       css/overrides.css, js/gallery.js, js/app-core.js, js/auth.js, sw.js.
+       Restored, trimmed to the picker: js/tagrail.js.
+   v114 — the gallery gets one control block, and the grid reaches the edge.
+       The section tabs were a text strip above the search box, and a rail
+       of tag chips sat under it. That is two rows of navigation for one
+       screen. The tabs are icon chips now and they sit below the search,
+       so the gallery reads search, sections, artwork. On a screen long
+       enough for both the two share a line; below that width the row
+       breaks and they stack, holding one inset so the edges line up.
+       The tag rail is gone with its preferences, its modal and
+       js/tagrail.js. The ⌘K shortcut and its Ctrl hint were the only parts
+       of that file worth keeping and have moved to js/search.js; the log's
+       one call into tgLabel now goes to catLabel, which it should always
+       have used. The saved rows in user_tag_prefs are left where they are.
+       The grid took a 1.5rem inset from .fgBdy while the home page and the
+       profile run their thumbnails to within a few pixels of the edge. It
+       takes the home page's inset now, so the same artwork sits the same
+       distance from the wall on all three.
+       The chip row answers the arrow keys, Home and End, and is one stop
+       in the tab order rather than six — the same treatment the profile
+       tabs got in v113.
+       Changed: index.html, css/hero.css, css/widgets.css,
+       css/overrides.css, js/gallery.js, js/search.js, js/feed.js,
+       js/auth.js, js/app-core.js, sw.js. Removed: js/tagrail.js.
+   v113 — the profile tabs answer the arrow keys, and the search overlay
+       keeps Tab inside it.
+       The rail was seven separate stops in the tab order and had no
+       arrow-key handling, which is not what role="tablist" promises. It
+       is one stop now: the selected tab is the only one in the tab order,
+       and Left, Right, Home and End move within, wrapping at both ends.
+       Selection follows the arrow, which is right when the panel is
+       already in the page and costs nothing to show. Up and Down are left
+       alone — the rail is horizontal and they belong to the scroll.
+       The search overlay covers the profile but does not remove it, so
+       Tab walked off the end of the results and into the tabs, buttons
+       and thumbnails still underneath. Tab now cycles inside the dialog
+       in both directions, focus moves to the input when it opens, and
+       whatever opened it gets focus back when it closes — except when the
+       profile closed underneath it, where that control is gone too.
+       Changed: js/profile.js, index.html, sw.js.
+   v112 — js/profile.js and js/engagement.js changed in v111 and their
+       query strings did not move with them, so a browser holding
+       profile.js?v=7 or engagement.js?v=4 would have kept serving the
+       versions without the fix. Bumped, and CACHE_VERSION with them.
+   v111 — a second pass over the profile page, and two more found.
+       The Likes and Views tiles had two writers and no winner.
+       pfPaintStats sums the artwork rows it holds, which .limit(1000)
+       caps, so it is an estimate. get_profile_engagement returns the real
+       totals. Both wrote the same two elements and whichever reply landed
+       last won, so the number depended on network timing. The database's
+       answer now stamps the tile it filled, per profile, and the estimate
+       yields to a stamped tile — so the same value ends up there whichever
+       order they arrive in. They also format the same way now; one used
+       toLocaleString and the other pfFmtCount, so the same figure could
+       read 1,234 or 1.2K depending on who got there first.
+       That writer was also looking members up by the wrong name. It took
+       #pfUsername, which holds the display name whenever one is set, and
+       queried profiles by username — so for anybody with a display name
+       the lookup matched no row and the real totals never arrived. It
+       reads #pfHandle now, and skips the lookup entirely when the open
+       profile already knows its own id. It also wrote an em dash into
+       both tiles before fetching, which left a dash sitting where a
+       number had been on every failure. It no longer blanks anything.
+       Second: the gallery's paging index did not move when a row moved.
+       An upload puts a row on top and a delete takes one out, and both
+       shift every window after them by one — so the index of what has
+       been drawn and the count of what has been fetched have to shift
+       too, or the next page repeats a row or steps over one. A deleted
+       id also stayed in the index for good, which would have stopped that
+       artwork from ever being drawn again. pfGalleryAdopt and
+       pfGalleryForget keep both in step.
+       Changed: js/engagement.js, js/albums.js, js/profile.js,
+       js/mywork.js, js/upqueue.js, index.html, sw.js.
+   v110 — createClient is called inside a try, and a correction.
+       The number quoted in v108 and in its commit — roughly 36 of the 76
+       functions touching sb do not check it — was wrong. It came from a
+       line regex that called any function without a literal !sb
+       unguarded, and never looked at try/catch. Counted properly, by
+       matching braces and attributing each call to the function that
+       actually contains it: 71 functions touch sb, 37 check it first, 33
+       reach it only inside a try, and one — albFetchStrip — does neither,
+       and even that one is awaited inside a try by both of its callers.
+       Null sb was already safe everywhere. There was no sweep to do.
+       So what shipped is the piece that was actually missing. createClient
+       is called inside a try now, and both ways of having no backend — no
+       config, or a client that would not construct — go through one
+       dzNoBackend() that logs and raises the banner the site already had.
+       sb stays null, which the audit above says the rest of the code
+       knows how to be in. albFetchStrip gets an explicit guard, not
+       because it breaks today but because it is the only one relying on
+       every caller to be careful, and the next caller will not be.
+       Verified three ways of losing the client — the script never
+       arriving, createClient throwing, the global being undefined. All
+       three: sb null, images initialised, app-core run to its end, banner
+       shown, no errors on load and none while clicking through the
+       profile, albums, gallery, notifications and settings.
+       Changed: js/app-core.js, js/albums.js, index.html, sw.js.
+   v109 — the auth handler did its bookkeeping behind a paint, and the
+       paint threw on every first load.
+       syncAuthBtn() ends by calling cpSyncAvatar(), which lives in
+       js/mywork.js — seven script tags below js/auth.js — and the first
+       auth event fires before that file is parsed. So the call threw,
+       every visit. It was the second statement in the onAuthStateChange
+       handler, so everything after it was skipped: the scope bump, every
+       cache wipe, the read/unread marks, the localStorage purge, the
+       hidden-artwork list and the tag preferences. A missing avatar chip
+       was quietly cancelling the work that decides whose data is on
+       screen.
+       Two changes. The call is guarded — the chip it paints is on the
+       community composer, which cpOpenChannel paints again when that bar
+       is actually shown, so there was nothing to catch up on, only a
+       throw to not do. And the handler is reordered: identity and the
+       cache wipes are settled first, then everything that draws, each in
+       its own try. Painting is allowed to fail; deciding whose data this
+       is, is not.
+       Boot is clean now — no page errors at all, verified with the CDN
+       blocked and the vendored client serving.
+       Changed: js/auth.js, index.html, sw.js.
+   v108 — the backend client is served from here instead of from a CDN.
+       The shell is precached down to the thumbnails, so a repeat visit
+       works with no network — except for one file, fetched from jsdelivr
+       on every visit, which app-core.js touches on line 315 before
+       anything else. When it did not arrive, createClient threw there and
+       took the rest of the file with it: the 62 function declarations
+       below it still hoisted, so the page looked alive and answered
+       clicks, while the 20 let/const bindings under it — images and
+       filterCat among them — stayed in the temporal dead zone and threw
+       on every access. Alive and dead at once, from a third party being
+       slow.
+       js/vendor/supabase-js-2.112.2.min.js is the same file jsdelivr was
+       serving: the dist/umd/supabase.js that @supabase/supabase-js names
+       in its own jsdelivr field, taken from the npm tarball, MIT, noted
+       in ATTRIBUTIONS.md. It precaches with the rest of the shell, so
+       there is no longer a request to anyone else on the critical path.
+       The version is in the filename rather than a ?v= query, so an
+       upgrade is a different path and no cache can answer with the old
+       one.
+       This does not harden line 315 — createClient is still called
+       unguarded, and roughly 36 of the 76 functions that touch sb do not
+       check it first. It removes the thing that was making that reachable.
+       Changed: index.html, sw.js, ATTRIBUTIONS.md, js/vendor/ (new).
+   v107 — the same leak, swept for everywhere else it could happen.
+       The worst of it was on disk. dzcSet/dzcGet in js/app-core.js write
+       offline snapshots to localStorage under a plain key with no owner
+       recorded — and four of those keys are one member's: ownProfile,
+       frMap, convos and frProfiles. Every one is read from a catch block,
+       the fallback when a fetch fails, so on a shared device or after a
+       second sign-in the next member was handed the last member's own
+       profile row, friend map, conversation list and friend profiles the
+       first time the network hiccuped. Unlike the caches in memory this
+       survived a reload and a browser restart.
+       A record now remembers who it was written for and is refused for
+       anybody else. Public data — the artworks snapshot, the cp: channel
+       logs — says so by name, so the default is the safe one and a cache
+       key added later is scoped unless somebody decides otherwise. Old
+       records carry no owner and are refused once. Signing out also
+       deletes the scoped keys rather than leaving them to be refused.
+       Two more in memory: notifReadIds kept the previous member's read
+       marks when a reload failed, and frMap in js/dm.js — which decides
+       whether a profile offers Add friend, Message or nothing — was left
+       standing for 400ms after a sign-in while its reload was pending.
+       Both are emptied at the moment the session changes.
+       Audited and clean: only one query on the site pages server-side, so
+       the unstable-sort fault has nowhere else to occur; there is no
+       cursor pagination; dzArtistCache, avAuthorProfileCache,
+       profileIdCache, awArtworksCache, logRows and the cp: logs are
+       public data; dzCmLoad already guards with its own token; and the
+       marketplace cache is already thrown away on a session change.
+       Changed: js/app-core.js, js/auth.js, js/dm.js, index.html, sw.js.
+   v106 — an artwork appeared twice, and one member's saves appeared under
+       another member's name. Both were the same kind of mistake: the
+       client trusting something it had no right to trust.
+       The duplicates were the sort. The profile gallery is the one list
+       on the site paged by the server, .range(from,to), ordered by
+       created_at alone — and created_at is not unique. The upload queue
+       writes several rows in the same instant, and rows that tie can come
+       back in either order, so consecutive windows overlapped: some
+       artworks landed in two pages and others in none. Ordering by id as
+       well makes the sort total, so the windows tile exactly. The window
+       now counts rows fetched rather than rows kept, and every id is
+       remembered, so a row cannot be drawn twice whatever the server does.
+       The saves were caches outliving their session. onAuthStateChange
+       wiped pfRowCache and the community caches but not albMine,
+       albMineLoaded, albTier, pf.albums or pfMediaCache — so after a
+       second account signed in on the same tab, the albums page still
+       held the first one's Likes and Bookmarks. engagement.js was worse:
+       it waited 400ms before refetching, and on failure kept the previous
+       member's sets, painting their filled hearts indefinitely.
+       Rather than patch each call site, there is a scope stamp:
+       dzScope() in js/app-core.js returns the signed-in id and a counter
+       the session bump advances. A loader stamps what it is fetching for
+       before it awaits and checks the stamp before it paints, so a reply
+       that outlives its session is dropped instead of rendered. It guards
+       the profile gallery, both album loaders and the like/bookmark sets.
+       Changed: js/app-core.js, js/albums.js, js/auth.js, js/engagement.js,
+       js/profile.js, index.html, sw.js.
+   v105 — the profile bar reads PROFILE on every profile.
+       It set itself in caps like every other page title on the site, and
+       it stopped putting the viewed member's @handle there. The bar names
+       the page, not the person on it — whose profile it is, is what the
+       name under the banner says, and it said it twice. The mark is drawn
+       on every profile for the same reason. Only the two things that act
+       on your own account still move: the back arrow, which someone
+       else's profile needs and yours does not, and search, the bell and
+       the menu, which are yours. pfPaintTopBar lost its handle argument
+       and #pfTopTitle and #pfTopMark lost their ids with it — nothing
+       rewrites either one now.
+       Changed: index.html, css/profile.css, js/profile.js, sw.js.
+   v104 — one margin for the whole profile page.
+       Edge to edge had been read literally: the tiles and the tab rail sat
+       on a 5px gutter, the text on a 12px one and the artwork grid on a
+       third, so five blocks started on five different lines and the
+       thumbnails ran into the glass on a phone. There is one inset now —
+       16px at 390, 24px from tablet up, and past 1280 it follows the
+       1680px cap the grid already had, bars included. The artwork grid
+       keeps the home grid's columns and gaps; only its margin changed.
+       Both rails came to rest scrolled by exactly their own padding:
+       scroll-snap-align:start snaps to the scrollport edge, which sits
+       inside the padding, so the first tile and the first tab pressed
+       against the edge whatever the margin said. scroll-padding-inline
+       moves the snapport in to where the content starts.
+       Changed: css/profile.css, sw.js, index.html.
+   v103 — the profile page is rebuilt around a bar of its own.
+       The top of it used to be the word PROFILE centred in a strip. It
+       is now a bar: a profile mark on the left with the word Profile
+       beside it, and on the right search, notifications and the menu
+       that opens Settings. Those three act on your own account, so they
+       are only drawn on your own profile — someone else's carries a
+       back arrow and their @handle instead, which is also the first way
+       out that page has ever had. The bell carries the same unread mark
+       as the one on the home screen; notifRefreshBadge paints both.
+       Search is scoped to one profile. It queries that artist's
+       artwork, blog posts, listings and resources by name — nothing
+       else on the site — with an All/section chip row, results grouped
+       by section, and the results left standing behind whatever a row
+       opens, so closing an artwork lands back on the search.
+       Everything runs edge to edge. The body's 1100px cap is gone; the
+       artwork grid is the same shape as the grid on the home screen,
+       and past 1280 the identity block, the stat tiles and the tab rail
+       hold that grid's 1680px edge so a tile, a tab and a thumbnail all
+       start on one line.
+       The header stats were a row of emoji separated by dots and were
+       repeated again as cards in About. They are one row of six tiles
+       now — artworks, likes, views, saves, cred, level — one line at
+       every width, scrolling on a phone. Merit is not among them: it is
+       a moderation score, so it reads in About with the sentence that
+       explains it. About is Bio, Connect and Standing, with nothing the
+       tiles already say.
+       Removed with the old layout: the like and bookmark tab loaders,
+       which had no tabs left to fill; the upload dropdown stubs and
+       their outside-click listener, which watched a flag nothing set;
+       the artwork card's title, date and tag markup, which was built on
+       every card and hidden by three display:none rules; and the CSS
+       for all of it.
+       Changed: index.html, sw.js, css/profile.css, css/upload.css,
+       css/community.css, css/select.css, js/profile.js, js/albums.js,
+       js/auth.js, js/pfedit.js.
+   v102 — Settings is grouped under five headings instead of one long list.
+       Payments, Content, Activity, Account and Support, each with an
+       emoji and a heading set larger than the rows under it, so the eye
+       finds the group before it reads the items. The items are the same
+       items and open the same pages — this is layout only. Every row is
+       a full-width button with a chevron, so the whole line answers a
+       tap rather than the words on it, and the rows are 52px on a phone,
+       54px from tablet up, two columns of whole groups past 1000px.
+       Two slots are filled by script rather than by markup, and both
+       had to keep working: #setListGate, which /api/store fills with the
+       four items index.html deliberately does not name, and a new
+       #setAdmGate for the dev entry. Both are display:contents, so what
+       lands in them lays out as rows of its group rather than as one
+       block inside it. syncAdmBtn used to insert before the Log Out
+       button as a sibling, which the nesting would have broken; it
+       appends to the gate now, and still falls back to the flat list.
+       Privacy & Security, Notifications and Help & Support are named in
+       the Account and Support groups and marked SOON. They open nothing
+       — there is nothing behind them yet — and say so on a tap.
+       Log Out asks first. It is the last row of a list people scroll
+       through for everything else, and it used to sign the member out on
+       that one tap, with no way back except signing in again. It opens a
+       confirmation now — Cancel and "Yes, log out" — and Cancel is what
+       holds focus, what Escape does, and what a tap on the backdrop
+       does. The sign-out itself is untouched; it moved into doLogout()
+       and now runs only after the yes.
+       Changed: index.html, sw.js, css/profile.css, js/auth.js,
+       js/gallery.js.
    v101 — a section that has not loaded shows nothing, not the section
        before it.
        The account panel keeps all four of its views — Wallet, Payout
@@ -1400,7 +1909,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v103';
+const CACHE_VERSION = 'v129';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -1424,19 +1933,23 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=4',
-  '/css/hero.css?v=76',
+  '/css/hero.css?v=84',
   '/css/viewer.css?v=4',
-  '/css/community.css?v=3',
+  '/css/community.css?v=4',
   '/css/connect.css?v=1',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=3',
+  '/css/profile.css?v=8',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=1',
-  '/css/widgets.css?v=1',
-  '/css/overrides.css?v=1',
-  '/css/select.css?v=1',
+  '/css/upload.css?v=2',
+  '/css/widgets.css?v=3',
+  '/css/overrides.css?v=4',
+  '/css/select.css?v=2',
+
+  // the backend client. Cached like any other script now it is served from
+  // here — the shell was fully offline-capable apart from this one file.
+  '/js/vendor/supabase-js-2.112.2.min.js',
 
   // word list goes with the engine
   '/js/badwords-list-a.js?v=1',
@@ -1446,31 +1959,31 @@ const SHELL_URLS = [
   // scripts
   '/js/ranking.js?v=2',
   '/js/community.js?v=2',
-  '/js/dm.js?v=4',
+  '/js/dm.js?v=5',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=10',
+  '/js/app-core.js?v=17',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=68',
-  '/js/auth.js?v=3',
-  '/js/profile.js?v=4',
-  '/js/albums.js?v=3',
+  '/js/gallery.js?v=76',
+  '/js/auth.js?v=10',
+  '/js/profile.js?v=9',
+  '/js/albums.js?v=7',
   '/js/drafts.js?v=1',
-  '/js/upqueue.js?v=2',
+  '/js/upqueue.js?v=3',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=5',
-  '/js/mywork.js?v=6',
+  '/js/pfedit.js?v=7',
+  '/js/mywork.js?v=7',
   '/js/startup.js?v=2',
-  '/js/tagrail.js?v=2',
-  '/js/search.js?v=2',
-  '/js/feed.js?v=2',
+  '/js/tagrail.js?v=3',
+  '/js/search.js?v=4',
+  '/js/feed.js?v=3',
   '/js/effects.js?v=5',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/engagement.js?v=3',
+  '/js/engagement.js?v=5',
   '/js/sections.js?v=78',
   '/js/navprogress.js?v=5'
 ];

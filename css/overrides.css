@@ -89,6 +89,12 @@
   }
   .dzList{ max-width:1080px; margin-left:auto; margin-right:auto; gap:.9rem; }
 
+  /* The gallery's bars are full bleed, so they cannot be capped the way the
+     grid under them is — they take the inset the capped grid lands on, so the
+     mark starts over the first thumbnail. The chip row is centred and needs
+     no such help. */
+  #fg{ --fgPad:max(24px,calc((100% - 1680px) / 2 + 24px)); }
+
   /* text sizes */
   .dzName{ font-size:15px; line-height:1.4; }
   .dzMeta{ font-size:12.5px; letter-spacing:.06em; gap:.2rem .7rem; }
@@ -97,7 +103,6 @@
   .dzExt{ font-size:15px; }
   .dzEmpty,.dzBusy{ font-size:13px; }
   .secSub{ font-size:13px; letter-spacing:.28em; }
-  .fgSecTxt{ font-size:13px; }
   .tgSearchIn{ font-size:15px; }
   .subTagline{ font-size:14px; }
   .subFeatures li{ font-size:15px; line-height:1.55; }
@@ -141,7 +146,10 @@
 .subPgTitle{ color:var(--pg); }
 
 /* subscription headline */
-.subPgHeadline h2{ color:var(--pg); }
+/* the upload page's headline — Upload Artwork, Share a Resource, Post a Job.
+   It reads in the blue the profile's Edit Profile button wears, set as
+   --upTitle beside the page's other tokens. */
+.subPgHeadline h2{ color:var(--upTitle,var(--pg)); }
 .faqTitle{ color:var(--pg); }
 
 /* panels and modals */
@@ -164,30 +172,7 @@
 /* rank title */
 .xpRankTitle{ color:var(--pg); }
 
-/* upload selects and calendar */
-
-/* section form selects */
-.dzSel{
-  width:100%;
-  background:rgba(var(--pg-rgb),.045);
-  border:1px solid rgba(var(--pg-rgb),.1);
-  border-radius:8px;
-  color:var(--tx);
-  font-family:var(--fb);
-  font-size:.86rem;
-  padding:.68rem 3.3rem .68rem .85rem;
-  outline:none;
-  cursor:pointer;
-  transition:border-color .2s;
-  appearance:none;-webkit-appearance:none;-moz-appearance:none;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-  background-repeat:no-repeat;
-  background-position:right .85rem center;
-  background-size:1rem;
-}
-.dzSel:focus{border-color:var(--pg);}
-.dzSel option{background:var(--sur2);color:var(--tx);}
-.dzSel option:disabled{color:color-mix(in srgb,var(--tx) 40%,transparent);}
+/* upload calendar */
 
 /* schedule hour minute */
 .upSchedSel{

@@ -129,9 +129,25 @@
     finally{ btn.disabled=false; btn.textContent='SAVE CHANGES'; }
   }
 
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closePfUploadMenu();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){
+    // profile search sits on top of the profile: Escape leaves the search,
+    // not the profile under it
+    var _pfs=document.getElementById('pfSearchPage');
+    if(_pfs && _pfs.classList.contains('open')){ closePfSearch(); return; }
+    // the guidelines sheet sits over the upload page: Escape leaves the sheet,
+    // not the page under it
+    var _upg=document.getElementById('upGuideMod');
+    if(_upg && _upg.classList.contains('open')){ upGuideClose(); return; }
+    closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
-    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();closeWalletPage();closeBankPage();closePurchasesPage();
+    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();
+    // Wallet, payout methods and purchases were three page shells with three
+    // close functions until they became one panel built by the signed-in
+    // module. This line still called all three by their old names, so it
+    // threw on the first and the two after it never ran either. The panel
+    // owns its own close; it is absent for a signed-out visitor, hence the
+    // guard.
+    if(typeof window.dzClosePanel === 'function') window.dzClosePanel();
   }});
 
   // bottom navigation
@@ -319,8 +335,7 @@
       empty.style.display='none';
       rows.forEach(function(rep){
         var card = document.createElement('div');
-        card.className = 'pfStatCard';
-        card.style.textAlign = 'left';
+        card.className = 'pfCard';
         var art = rep.artworks || {};
         // user input, use textcontent
         var h = document.createElement('div');

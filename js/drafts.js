@@ -385,8 +385,12 @@
       var p = document.getElementById('pfUpPrev');
       p.src = u;
       p.style.cssText = thumbStyle(pf.upThumbFocus.x, pf.upThumbFocus.y, pf.upThumbFocus.z);
-      document.getElementById('pfUpPrevWrap').style.display = 'block';
-      document.getElementById('pfUpThumbBtn').style.display = '';
+      pfPaintPicked({
+        name: rec.name || (pf.upFile && pf.upFile.name) || 'Draft image',
+        size: pf.upFile && pf.upFile.size,
+        note: 'From your draft'
+      });
+      if(typeof upGrowAll === 'function') upGrowAll();
       // replay pages through handler
       if(rec.pages && rec.pages.length){
         handlePfPagesFile({target:{files:rec.pages.map(function(b,i){ return new File([b], 'page'+(i+1)+'.png', {type:b.type||'image/png'}); })}});
@@ -509,11 +513,11 @@
     var p = document.getElementById('pfUpPrev');
     p.src = document.getElementById('pfCropImg').src;
     p.style.cssText = thumbStyle(pfCrop.x, pfCrop.y, pfCrop.z);
-    var pw = document.getElementById('pfUpPrevWrap');
-    if(pw) pw.style.display = 'block';
-    // redo thumbnail before upload
-    var tb = document.getElementById('pfUpThumbBtn');
-    if(tb) tb.style.display = '';
+    // the zone shows its picked face; Adjust, Replace and Remove ride with it
+    pfPaintPicked({
+      name: (pf.upFile && pf.upFile.name) || 'Selected image',
+      size: pf.upFile && pf.upFile.size
+    });
     document.getElementById('pfCropMod').classList.remove('open');
     pfCropPending = null;
   }

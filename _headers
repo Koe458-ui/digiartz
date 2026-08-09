@@ -11,6 +11,11 @@
 /sw.js
   Cache-Control: no-cache
 
+# Vendored third-party build. The version is in the filename, so an upgrade is
+# a different path and this copy can be held for as long as a browser likes.
+/js/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+
 # Pages Functions answer per caller, behind a session check. Nothing here may
 # be held by a browser cache, a shared cache or a crawler — a stored copy is a
 # signed-in answer waiting to be handed to whoever asks next. The functions set

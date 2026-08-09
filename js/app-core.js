@@ -311,16 +311,36 @@
   var SITE_DEFAULT_IMAGE = (document.querySelector('meta[property="og:image"]')||{}).content || '';
 
   let sb = null;
-  if (SB_URL && SB_KEY) {
-    sb = supabase.createClient(SB_URL , SB_KEY )
-  } else {
-    // user facing message only
-    console.error('KOE_CONFIG missing SB_URL/SB_KEY \u2014 backend client not created.');
+
+  // one way to say it, wherever the client failed to appear
+  function dzNoBackend(why){
+    console.error(why);
     var _sb = document.getElementById('sBanner');
     if(_sb){
       _sb.textContent = '\u26a0 Can\u2019t connect right now. Please refresh, or try again in a moment.';
       _sb.classList.add('show');
     }
+  }
+
+  if (SB_URL && SB_KEY) {
+    /* This line used to be called bare, and it is the first thing in the file
+       that depends on anything outside it. If the script defining
+       createClient had not arrived — or it threw for any other reason — the
+       throw landed here and took the rest of the file with it: the 62
+       function declarations below hoisted and kept answering clicks, while
+       the 20 let/const bindings under it, images and filterCat among them,
+       stayed in the temporal dead zone and threw on every access. A page
+       that renders, responds, and is dead underneath.
+       sb stays null instead. That is a state the rest of the code already
+       knows how to be in: of the 71 functions that touch it, 37 check it
+       first and the rest reach it only inside a try. */
+    try{
+      sb = supabase.createClient(SB_URL, SB_KEY);
+    }catch(e){
+      dzNoBackend('Backend client could not be created: ' + ((e && e.message) || e));
+    }
+  } else {
+    dzNoBackend('KOE_CONFIG missing SB_URL/SB_KEY \u2014 backend client not created.');
   }
 
   let images = [];
@@ -602,7 +622,7 @@
   function restoreScroll(){
     // every overlay that locks scroll
     // album pages lock too
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod'];
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','dzPanelHost','fgSearchPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -653,15 +673,51 @@
 
   // offline data snapshots
   var DZC_PREFIX = 'dzc1:';
+  /* A cache in localStorage outlives the session that wrote it, the tab it
+     was written in, and the browser being closed. Most of what goes in here
+     is one member's — their own profile row, their friends, their
+     conversations — and on a shared device the next member to sign in was
+     being handed it whenever a fetch failed and the code fell back to the
+     snapshot. So a record remembers who it was written for and is refused
+     for anybody else. Anything genuinely public says so by name; the default
+     is the safe one, so a cache key added later is scoped unless someone
+     decides otherwise. Records written before this have no owner recorded
+     and are refused once, which is the right answer for them too. */
+  var DZC_PUBLIC = { artworks:1 };
+  function dzcPublic(key){
+    return (DZC_PUBLIC && DZC_PUBLIC[key] === 1) || String(key).indexOf('cp:') === 0;
+  }
+  function dzcOwner(){
+    return (typeof currentUser !== 'undefined' && currentUser) ? String(currentUser.id) : 'guest';
+  }
   function dzcSet(key, val){
-    try{ localStorage.setItem(DZC_PREFIX+key, JSON.stringify({t:Date.now(), v:val})); }
+    try{
+      localStorage.setItem(DZC_PREFIX+key, JSON.stringify({
+        t:Date.now(), u: dzcPublic(key) ? null : dzcOwner(), v:val
+      }));
+    }
     catch(e){ /* quota, best effort */ }
   }
   function dzcGet(key){
     try{
       var r = JSON.parse(localStorage.getItem(DZC_PREFIX+key) || 'null');
-      return (r && r.v) || null;
+      if(!r) return null;
+      // written for somebody else, or before owners were recorded
+      if(!dzcPublic(key) && r.u !== dzcOwner()) return null;
+      return r.v || null;
     }catch(e){ return null; }
+  }
+  // A refused record is already harmless, but leaving one member's profile
+  // and friend list sitting on a shared device is not something to shrug at.
+  function dzcDropScoped(){
+    try{
+      var kill = [];
+      for(var i=0; i<localStorage.length; i++){
+        var k = localStorage.key(i);
+        if(k && k.indexOf(DZC_PREFIX) === 0 && !dzcPublic(k.slice(DZC_PREFIX.length))) kill.push(k);
+      }
+      kill.forEach(function(k){ localStorage.removeItem(k); });
+    }catch(e){ /* best effort */ }
   }
   // warm thumbs at idle
   function dzcPrefetchThumbs(list){
@@ -1006,6 +1062,27 @@
     if(window.rebuildGalCarousels) window.rebuildGalCarousels(images);
   }
 
+  /* ---- scope guard -----------------------------------------------------
+     Every list on this site belongs to somebody: the signed-in member, or
+     the profile being looked at. A fetch is slow and a session is not, so
+     a reply can land after the thing it was asked for has already changed
+     — a different account signed in, a different profile opened — and
+     paint one member's rows under another member's name.
+
+     So a caller stamps the scope it is fetching for before it awaits, and
+     checks the stamp before it paints. If the stamp no longer matches, the
+     reply is stale by definition and is dropped rather than rendered. The
+     stamp carries the signed-in id, so nothing fetched for one account can
+     ever paint for another, whatever is sitting in a cache. */
+  var DZ_SCOPE_SEQ = 0;
+  function dzScope(){
+    var uid = (typeof currentUser !== 'undefined' && currentUser) ? String(currentUser.id) : 'guest';
+    return uid + '|' + DZ_SCOPE_SEQ;
+  }
+  // called when the session changes: every stamp taken before now is stale
+  function dzScopeBump(){ DZ_SCOPE_SEQ++; }
+  function dzScopeStill(token){ return token != null && token === dzScope(); }
+
   function gridCols(){
     var w = window.innerWidth || document.documentElement.clientWidth || 1280;
     return w >= 1280 ? 4 : (w >= 700 ? 3 : 2);
@@ -1092,6 +1169,10 @@
   function renderFG(){
     _renderFGPage();
   }
+  /* The gallery's search page looks in this rather than asking the database:
+     it is every approved artwork on the site, already loaded, already the
+     rows the grid draws — and already without whatever the viewer hid. */
+  window.galleryImages = function(){ return filterHidden(images); };
 
   function _renderFGPage(){
     const _fgIn=document.getElementById('fgSearchIn');
@@ -1115,6 +1196,20 @@
         var asc = iA<iB ? -1 : 1;
         return filterSrt==='new' ? -asc : asc;
       });
+    }
+
+    /* Picked tags move matching artwork to the top, which is what the tag
+       picker has always said they do. Everything below keeps the order the
+       chosen sort just gave it — this lifts, it does not re-sort. */
+    var picked = (typeof tgPickedTags === 'function') ? tgPickedTags() : null;
+    if(picked && picked.size){
+      var lifted=[], rest=[];
+      for(var pi=0; pi<imgs.length; pi++){
+        var cats=catList(imgs[pi].category), hit=false;
+        for(var ci=0; ci<cats.length; ci++){ if(picked.has(cats[ci])){ hit=true; break; } }
+        (hit?lifted:rest).push(imgs[pi]);
+      }
+      imgs = lifted.concat(rest);
     }
 
     if(fgSent){ fgSent.destroy(); fgSent = null; }
@@ -1145,10 +1240,12 @@
     }
   }
   function _fgSyncFilterBtn(){
-    const isFiltered=(filterCat!=='all'||filterSrt!=='trending');
-    const btn=document.getElementById('fgFltBtn');
-    if(btn)btn.classList.toggle('active',isFiltered);
+    if(typeof fgSyncFilterBtn==='function') fgSyncFilterBtn();
   }
+  // read by the one filter button in the bar
+  window.fgArtFiltered = function(){
+    return filterCat!=='all' || filterSrt!=='trending';
+  };
 
   function openFilterPanel(){
     fgFltMode = 'artworks';

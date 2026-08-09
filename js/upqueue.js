@@ -219,6 +219,9 @@
           if(pf.profile && String(pf.profile.id)===String(currentUser.id) && Array.isArray(pf.galleryRows) &&
              pf.galleryRows.findIndex(function(i){return String(i.id)===String(row.id);})===-1){
             pf.galleryRows.unshift(row);
+            // it is on the page without having been fetched, so the paging
+            // index and the window have to count it
+            if(typeof pfGalleryAdopt==='function') pfGalleryAdopt(row.id);
             var _st=document.getElementById('pfStatArt');
             if(_st) _st.textContent = (parseInt(_st.textContent,10)||0)+1;
           }

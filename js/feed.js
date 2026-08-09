@@ -315,7 +315,8 @@
   function logCatLabel(e){
     var slug = e.cats && e.cats[0];
     if(!slug) return '';
-    if(e.kind === 'artworks') return typeof tgLabel === 'function' ? tgLabel(slug) : slug;
+    // the tag rail used to own this lookup; the log is the last caller left
+    if(e.kind === 'artworks') return typeof catLabel === 'function' ? catLabel(slug) : slug;
     return typeof window.dzSecLabel === 'function' ? window.dzSecLabel(e.kind, slug) : slug;
   }
 

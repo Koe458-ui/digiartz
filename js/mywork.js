@@ -79,16 +79,21 @@
     pfSetCats(catList(art.category).length?catList(art.category):['others']);
     if(typeof pfSetSoftware==='function') pfSetSoftware(art.software||'');
     closePfCatDd();
-    document.getElementById('pfDz').style.display='none';
+    document.getElementById('pfDz').style.display='';
     var prev = document.getElementById('pfUpPrev');
     // the resized copy, not the stored original: the origin bucket is not meant
     // to stay publicly readable, and this is only an edit-form thumbnail
     prev.src = art.image_url ? getViewUrl(art.image_url) : '';
     prev.style.cssText = thumbStyle(art.thumb_x, art.thumb_y, art.thumb_zoom);
-    var prevWrap = document.getElementById('pfUpPrevWrap');
-    if(prevWrap) prevWrap.style.display = art.image_url ? 'block' : 'none';
-    // edit mode hides thumbnail and drafts
-    document.getElementById('pfUpThumbBtn').style.display = 'none';
+    // the image itself is not editable here, so the zone shows it without the
+    // Adjust / Replace / Remove row
+    if(art.image_url){
+      pfPaintPicked({ name: art.name || 'Current image', meta: 'Current image', note: 'Published', locked: true });
+    } else {
+      pfPaintPicked(null);
+    }
+    if(typeof upGrowAll === 'function') upGrowAll();
+    // edit mode hides drafts
     document.getElementById('upDraftSec').style.display = 'none';
     document.getElementById('upSchedSec').style.display = 'none';
     var _schF2 = document.getElementById('pfUpSchedField'); if(_schF2) _schF2.style.display = 'none';
@@ -115,6 +120,8 @@
       if(document.getElementById('fg').classList.contains('open')) renderFG();
       if(pf.profile && currentUser && pf.profile.id===currentUser.id){
         pf.galleryRows = pf.galleryRows.filter(function(r){ return String(r.id)!==String(id); });
+        // the paging index has to lose it too, or the next page steps over a row
+        if(typeof pfGalleryForget==='function') pfGalleryForget(id);
         pfRenderGallery();
       }
       injectGallerySEO();

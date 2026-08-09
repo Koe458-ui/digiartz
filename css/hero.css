@@ -314,6 +314,327 @@
       .fgSecBtn{transition:none;}
       .fgSecBtn:active{transform:none;}
     }
+
+    /* ── featured showcase ────────────────────────────────────────────────
+       Six cards over the chip row, one row at every width: one card on a
+       phone, two on a desktop, three once the screen is wider than the grid
+       under it. The arrows and the swipe move the same scroller, so there is
+       one source of truth about where the rail is.
+
+       A card is its own dark surface — a picture with a scrim over it — so it
+       reads the same in all four themes without a per-theme repaint. Only the
+       heading, the arrows and the dots take the page's tokens. */
+    .fgShow{
+      padding:var(--fgGap) 0 0;
+      /* the header sits over the top of the rail while it scrolls past */
+      isolation:isolate;
+    }
+    .fgShow[hidden]{display:none;}
+    .fgShowHead{
+      display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+      padding:0 var(--fgPad) .7rem;
+    }
+    /* The mark over the rail is a heading, not a caption: it carries the page's
+       own text colour at full weight rather than the dimmed grey the smaller
+       section labels wear, because at this size and tracking a dimmed grey
+       reads as switched off. */
+    .fgShowTitle{
+      display:flex;align-items:center;gap:.5rem;min-width:0;
+      font-family:var(--fd);font-size:.78rem;font-weight:800;
+      letter-spacing:.15em;color:var(--tx);
+      text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .fgShowIco{display:flex;flex:0 0 auto;color:#FBBF24;}
+    .fgShowIco svg{width:18px;height:18px;display:block;fill:currentColor;stroke-width:1.4;}
+
+    /* The rail. There are no arrows on it: it is slid — a wheel, a drag, a
+       swipe, the dots, or the arrow keys — so the only furniture is the row of
+       dots under it saying how far along it is.
+
+       Scroll padding matches the page inset so a snapped card lands flush with
+       the mark above it rather than against the screen edge. */
+    .fgShowTrack{
+      display:flex;gap:var(--fgsGap,16px);
+      padding:0 var(--fgPad) 2px;
+      overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+      -webkit-overflow-scrolling:touch;
+      scroll-snap-type:x mandatory;scroll-padding-left:var(--fgPad);
+      scroll-behavior:smooth;
+      scrollbar-width:none;-ms-overflow-style:none;
+      /* a mouse can take hold of this, and says so */
+      cursor:grab;
+    }
+    .fgShowTrack::-webkit-scrollbar{display:none;}
+    .fgShowTrack:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;border-radius:18px;}
+
+    /* Driven by hand — a wheel turning or a pointer dragging. Both want the
+       rail to follow the gesture exactly, so for as long as one is running the
+       snap is off and the easing is off: a mandatory snap would yank each
+       frame back to the nearest card, and a smooth scroll would animate
+       towards a target the hand has already moved past. The moment the gesture
+       stops, both come back and the rail glides to the nearest page. */
+    .fgShowTrack.fgsFree{scroll-snap-type:none;scroll-behavior:auto;}
+    /* Held: the cards stop answering the pointer, so dragging across one
+       cannot start a text selection, leave a stuck hover, or land a click on
+       the button the drag happened to finish over. */
+    .fgShowTrack.fgsDrag{cursor:grabbing;}
+    .fgShowTrack.fgsDrag *{pointer-events:none;user-select:none;-webkit-user-select:none;}
+
+    .fgShowDots{
+      display:flex;align-items:center;justify-content:center;gap:.4rem;
+      padding:.7rem var(--fgPad) 0;
+    }
+    .fgShowDots[hidden]{display:none;}
+    .fgsDot{
+      width:7px;height:7px;padding:0;border-radius:999px;
+      background:var(--bdrh);border:none;cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      transition:width .24s cubic-bezier(.22,1,.36,1),background .24s;
+    }
+    .fgsDot.on{width:20px;background:var(--tx);}
+    .fgsDot:focus-visible{outline:2px solid var(--pg);outline-offset:3px;}
+
+    /* One card: a 2:1 picture with everything else drawn on top of it. The
+       column count lives here and nowhere else — the script reads the width
+       back off the card rather than repeating the breakpoints. */
+    .fgsCard{
+      position:relative;flex:0 0 auto;scroll-snap-align:start;
+      width:100%;aspect-ratio:2/1;
+      border-radius:18px;overflow:hidden;isolation:isolate;
+      background:#0B0B12;border:1px solid var(--bdr);
+      transition:border-color .24s,transform .24s cubic-bezier(.22,1,.36,1);
+      /* A card's size does not track the viewport's: the column count steps
+         from one to two at 700px, and the two cards that arrive there are
+         narrower than the single card a 390px phone was showing. So the words
+         inside are sized against the card, not the window — otherwise the
+         tightest card on the site is a desktop one and no phone breakpoint
+         ever sees it. */
+      container-type:inline-size;container-name:fgs;
+    }
+    @media(min-width:700px){
+      .fgsCard{width:calc((100% - var(--fgsGap,16px)) / 2);}
+    }
+    @media(min-width:1600px){
+      .fgShowTrack{--fgsGap:20px;}
+      .fgsCard{width:calc((100% - var(--fgsGap,20px) * 2) / 3);}
+    }
+    @media(hover:hover){ .fgsCard:hover{border-color:var(--bdrh);transform:translateY(-2px);} }
+
+    .fgsMedia{position:absolute;inset:0;z-index:0;display:block;}
+    .fgsMedia img{
+      width:100%;height:100%;display:block;object-fit:cover;
+      transition:transform .6s cubic-bezier(.22,1,.36,1);
+    }
+    @media(hover:hover){ .fgsCard:hover .fgsMedia img{transform:scale(1.04);} }
+
+    /* Two passes: a column of ink up the left where the words are, and a wash
+       from the bottom so the stats and the button are not left sitting on a
+       highlight. Written in plain rgba so it holds without color-mix() and in
+       every theme — the card is deliberately dark whatever the page around it
+       is doing.
+
+       The numbers are not taste. An artwork can be very nearly white, and
+       white type on 25% ink over white is about 1.8:1 — so the strong part of
+       the ramp has to cover everything the text can reach, and the text is
+       held inside it by .fgsBody's own width. Measured against a white
+       picture, the weakest point any word sits on is about 8:1. */
+    .fgsScrim{
+      position:absolute;inset:0;z-index:1;display:block;
+      background:
+        linear-gradient(90deg,rgba(6,6,12,.93) 0%,rgba(6,6,12,.88) 42%,rgba(6,6,12,.6) 68%,rgba(6,6,12,.14) 100%),
+        linear-gradient(0deg,rgba(6,6,12,.6) 0%,rgba(6,6,12,0) 58%);
+    }
+
+    .fgsBody{
+      position:absolute;inset:0;z-index:2;
+      display:flex;flex-direction:column;align-items:flex-start;
+      gap:.4rem;
+      padding:clamp(.9rem,3.2vw,1.5rem);
+      width:min(100%,34ch);
+    }
+    .fgsChips{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;margin-bottom:.1rem;}
+    /* the kind chip stays neutral glass so the bright one beside it is the
+       thing the eye lands on */
+    .fgsKind{
+      display:inline-flex;align-items:center;gap:.35rem;
+      padding:.28rem .6rem;border-radius:999px;
+      background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      font-family:var(--fm);font-size:.6rem;font-weight:700;
+      letter-spacing:.11em;text-transform:uppercase;color:#fff;white-space:nowrap;
+    }
+    .fgsKind svg{width:13px;height:13px;display:block;flex:0 0 auto;}
+    /* one bright colour per board, on ink so it reads at this size */
+    .fgsWhen{
+      display:inline-flex;align-items:center;
+      padding:.28rem .6rem;border-radius:999px;
+      background:var(--fgsC,#FBBF24);color:#0B0B12;
+      font-family:var(--fm);font-size:.6rem;font-weight:800;
+      letter-spacing:.11em;text-transform:uppercase;white-space:nowrap;
+    }
+    .fgsCard[data-fgs="daily"]  {--fgsC:#FBBF24;}   /* amber  */
+    .fgsCard[data-fgs="weekly"] {--fgsC:#22D3EE;}   /* cyan   */
+    .fgsCard[data-fgs="monthly"]{--fgsC:#FB7185;}   /* rose   */
+    .fgsCard[data-fgs="daily"]   .fgsKind svg{color:#FBBF24;}
+    .fgsCard[data-fgs="weekly"]  .fgsKind svg{color:#22D3EE;}
+    .fgsCard[data-fgs="monthly"] .fgsKind svg{color:#FB7185;}
+
+    .fgsTitle{
+      margin:0;font-family:var(--fd);font-weight:800;color:#fff;
+      font-size:clamp(1.15rem,3.6vw,1.85rem);line-height:1.12;letter-spacing:-.02em;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+      text-shadow:0 2px 14px rgba(0,0,0,.5);
+    }
+    /* the byline is empty until the profile lands, so it holds its line from
+       the start rather than pushing everything below it down when the name
+       arrives */
+    .fgsBy{
+      min-height:1.1em;
+      font-family:var(--fb);font-size:.78rem;font-weight:600;
+      color:rgba(255,255,255,.82);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+    }
+    .fgsSub{
+      margin:0;font-family:var(--fb);font-size:.82rem;line-height:1.4;
+      color:rgba(255,255,255,.76);
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+    }
+    .fgsStats{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem 1.1rem;margin-top:auto;}
+    .fgsStat{display:inline-flex;align-items:baseline;gap:.35rem;white-space:nowrap;}
+    .fgsStatIco{display:inline-flex;align-self:center;flex:0 0 auto;}
+    .fgsStatIco svg{width:15px;height:15px;display:block;}
+    .fgsStatIco--like{color:#FB7185;}
+    .fgsStatIco--view{color:#38BDF8;}
+    .fgsStat b{font-family:var(--fd);font-size:.95rem;font-weight:800;color:#fff;letter-spacing:-.01em;}
+    .fgsStat i{
+      font-style:normal;font-family:var(--fm);font-size:.6rem;font-weight:600;
+      letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);
+    }
+    .fgsGo{
+      display:inline-flex;align-items:center;gap:.45rem;
+      margin-top:.55rem;padding:.6rem 1.05rem;border-radius:999px;
+      background:#fff;border:none;color:#0B0B12;cursor:pointer;
+      font-family:var(--fb);font-size:.82rem;font-weight:700;letter-spacing:-.01em;
+      white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+      transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .2s;
+    }
+    .fgsGo svg{width:14px;height:14px;display:block;}
+    .fgsGo:active{transform:scale(.96);}
+    .fgsGo:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+    .fgsGo[disabled]{opacity:.5;cursor:default;}
+    @media(hover:hover){
+      .fgsGo:not([disabled]):hover{box-shadow:0 6px 20px rgba(0,0,0,.45);}
+    }
+
+    /* The rail's own gap is a page thing, not a card thing, so this one stays
+       a media query. */
+    @media(max-width:600px){
+      .fgShowTrack{--fgsGap:12px;}
+      .fgShowTitle{font-size:.72rem;letter-spacing:.13em;}
+      .fgShowIco svg{width:16px;height:16px;}
+    }
+
+    /* A 2:1 card is only ever half as tall as it is wide, so a narrow one is
+       a short one and everything in it has to fit without the button being
+       clipped off the bottom.
+
+       The words give way in the order of what they are worth. First the title
+       stops wrapping — a long name is one clipped line rather than two lines
+       that push the button out — and the type steps down with the card; then
+       the bio drops to a single line; then, on the smallest card the layout
+       can produce, it goes entirely. The chips, the two numbers and the
+       button never give way: they are what the card is for.
+
+       Fallback first, in plain media queries, so a browser without container
+       queries still gets the phone case right — which is the case that
+       matters. The container rules then correct the ones a viewport cannot
+       see, the 700px two-column card above all. */
+    @media(max-width:600px){
+      .fgsCard{border-radius:16px;}
+      .fgsBody{padding:.8rem;gap:.28rem;width:100%;}
+      .fgsTitle{-webkit-line-clamp:1;font-size:1.12rem;}
+      .fgsSub{-webkit-line-clamp:1;font-size:.76rem;}
+      .fgsStats{gap:.2rem .8rem;}
+      .fgsStat b{font-size:.85rem;}
+      .fgsStat i{font-size:.56rem;}
+      .fgsGo{margin-top:.4rem;padding:.48rem .8rem;font-size:.76rem;}
+    }
+    @media(max-width:360px){
+      .fgsSub{display:none;}
+    }
+
+    /* A card this narrow has no left half to keep the words in — the stats row
+       alone is nearly its full width — so the ink covers the whole picture
+       rather than a column of it. At this size the card is a caption with a
+       texture behind it, and a legible caption is worth more than a visible
+       texture. */
+    @container fgs (max-width:480px){
+      .fgsScrim{
+        background:
+          linear-gradient(90deg,rgba(6,6,12,.93) 0%,rgba(6,6,12,.88) 55%,rgba(6,6,12,.8) 100%),
+          linear-gradient(0deg,rgba(6,6,12,.5) 0%,rgba(6,6,12,0) 70%);
+      }
+      .fgsCard{border-radius:16px;}
+      .fgsBody{padding:.8rem;gap:.28rem;width:100%;}
+      .fgsChips{gap:.3rem;margin-bottom:0;}
+      .fgsKind{padding:.24rem .5rem;font-size:.56rem;letter-spacing:.09em;}
+      .fgsKind svg{width:12px;height:12px;}
+      .fgsWhen{padding:.24rem .5rem;font-size:.56rem;letter-spacing:.09em;}
+      .fgsTitle{-webkit-line-clamp:1;font-size:1.12rem;}
+      .fgsBy{font-size:.72rem;}
+      .fgsSub{-webkit-line-clamp:1;font-size:.76rem;}
+      .fgsStats{gap:.2rem .8rem;}
+      .fgsStatIco svg{width:14px;height:14px;}
+      .fgsStat b{font-size:.85rem;}
+      .fgsStat i{font-size:.56rem;}
+      .fgsGo{margin-top:.4rem;padding:.48rem .8rem;font-size:.76rem;}
+      .fgsGo svg{width:13px;height:13px;}
+    }
+    /* The smallest cards the layout can make: a 320-360px phone, and the pair
+       that arrive the moment the second column does at 700px. Everything is
+       wound in one more notch so the description survives — it is the last
+       thing worth losing, and losing it leaves a card that says nothing about
+       the piece it is showing. */
+    @container fgs (max-width:340px){
+      .fgsBody{padding:.65rem .7rem;gap:.2rem;}
+      .fgsChips{gap:.25rem;}
+      .fgsKind{padding:.2rem .45rem;font-size:.53rem;}
+      .fgsKind svg{width:11px;height:11px;}
+      .fgsWhen{padding:.2rem .45rem;font-size:.53rem;}
+      .fgsTitle{font-size:1.02rem;}
+      .fgsBy{font-size:.68rem;min-height:0;}
+      .fgsSub{font-size:.72rem;line-height:1.3;}
+      .fgsStatIco svg{width:13px;height:13px;}
+      .fgsStat b{font-size:.8rem;}
+      .fgsStat i{font-size:.53rem;}
+      .fgsGo{margin-top:.3rem;padding:.4rem .7rem;font-size:.72rem;}
+      .fgsGo svg{width:12px;height:12px;}
+    }
+    /* past this there is genuinely no room, and the button matters more */
+    @container fgs (max-width:300px){
+      .fgsSub{display:none;}
+    }
+    @container fgs (min-width:481px){
+      .fgsSub{display:-webkit-box;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .fgsCard,.fgsMedia img,.fgsGo,.fgsDot{transition:none;}
+      .fgShowTrack{scroll-behavior:auto;}
+      .fgsCard:hover{transform:none;}
+      .fgsCard:hover .fgsMedia img{transform:none;}
+    }
+    /* the picture is the card's own light source, so it keeps its contrast
+       where the page is asked to raise everything else's */
+    @media(prefers-contrast:more){
+      .fgsScrim{
+        background:
+          linear-gradient(90deg,rgba(4,4,8,.97) 0%,rgba(4,4,8,.9) 40%,rgba(4,4,8,.55) 70%,rgba(4,4,8,.2) 100%),
+          linear-gradient(0deg,rgba(4,4,8,.6) 0%,rgba(4,4,8,0) 55%);
+      }
+      .fgsSub{color:rgba(255,255,255,.9);}
+      .fgsStat i{color:rgba(255,255,255,.78);}
+    }
+
     /* section content */
     .dzGrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));}
     .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s;}

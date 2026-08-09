@@ -145,9 +145,11 @@
   function pfSchedToggle(e){
     if(e){ e.stopPropagation(); }
     var dd = document.getElementById('pfUpSchedDd');
+    // one panel at a time, injected rows included
+    if(typeof dzCloseMenus === 'function') dzCloseMenus(dd);
     var open = dd.classList.toggle('open');
     if(open){
-      closePfCatDd();                       // one panel at a time
+      closePfCatDd();
       if(pfSched.y===null){
         var n = new Date();
         pfSched.vy = n.getFullYear(); pfSched.vm = n.getMonth();

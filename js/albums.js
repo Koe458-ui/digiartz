@@ -466,8 +466,13 @@
   // upload page picker
   function togglePfAlbumDd(e){
     if(e) e.stopPropagation();
-    closePfCatDd(); closePfSoftwareDd();   // one panel at a time
-    document.getElementById('pfUpAlbumDd').classList.toggle('open');
+    var dd = document.getElementById('pfUpAlbumDd');
+    // One panel at a time, and that includes the rows js/sections.js injects
+    // into this form — closing only the hand-written ones let a member stack
+    // this open on top of one of those.
+    if(typeof dzCloseMenus === 'function') dzCloseMenus(dd);
+    closePfCatDd(); closePfSoftwareDd();
+    dd.classList.toggle('open');
   }
   function closePfAlbumDd(){
     var d = document.getElementById('pfUpAlbumDd');
@@ -946,9 +951,12 @@
   // category dropdown
   function togglePfCatDd(e){
     if(e) e.stopPropagation();
-    closePfSoftwareDd(); // one dropdown at a time
+    var dd = document.getElementById('pfUpCatDd');
+    // one dropdown at a time, injected rows included
+    if(typeof dzCloseMenus === 'function') dzCloseMenus(dd);
+    closePfSoftwareDd();
     if(typeof closePfAlbumDd==='function') closePfAlbumDd();
-    document.getElementById('pfUpCatDd').classList.toggle('open');
+    dd.classList.toggle('open');
     // fresh search, no autofocus
     pfResetCatSearch();
   }

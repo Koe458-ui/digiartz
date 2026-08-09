@@ -1212,15 +1212,26 @@
       '<input type="hidden" id="'+id+'" value="'+esc(cur[0])+'">'+
     '</div>';
   }
-  function dzSelCloseAll(except){
-    var open = document.querySelectorAll('#upSecForms .upCatDd.open');
+  // ---- one menu at a time, everywhere ------------------------------------
+  // Every dropdown on either form carries .upCatDd — the section forms' own,
+  // and the artwork panel's category, album and schedule pickers, which were
+  // written by hand long before any of this. Closing them used to be scoped
+  // to #upSecForms, so on the artwork panel nothing closed anything and a
+  // member could stack four open menus on top of each other.
+  //
+  // Exported, because the panel's own toggles live in js/albums.js and
+  // js/drafts.js and have to close these too — otherwise the rule only holds
+  // in one direction.
+  function dzCloseMenus(except){
+    var open = document.querySelectorAll('#upSecForms .upCatDd.open, #pfUpMod .upCatDd.open');
     for(var i=0;i<open.length;i++){ if(open[i] !== except) open[i].classList.remove('open'); }
   }
+  function dzSelCloseAll(except){ dzCloseMenus(except); }
   function dzSelToggle(e, id){
     if(e) e.stopPropagation();
     var dd = document.getElementById(id+'_dd'); if(!dd) return;
-    dzSelCloseAll(dd);
-    dzSchClose();                      // one menu at a time
+    dzCloseMenus(dd);
+    dzSchClose();                      // the section form's schedule picker
     dd.classList.toggle('open');
   }
   function dzSelPick(id, v, label){
@@ -1255,8 +1266,9 @@
       if(fd.t === 'sel' || fd.t === 'cat') dzSelSync('dz_'+sec+'_'+fd.k);
     });
   }
+  // a click anywhere outside an open menu closes it, on either form
   document.addEventListener('click', function(ev){
-    var open = document.querySelectorAll('#upSecForms .upCatDd.open');
+    var open = document.querySelectorAll('#upSecForms .upCatDd.open, #pfUpMod .upCatDd.open');
     for(var i=0;i<open.length;i++){
       if(!open[i].contains(ev.target)) open[i].classList.remove('open');
     }
@@ -1470,7 +1482,7 @@
   function dzPickToggle(e, id, src, cap){
     if(e) e.stopPropagation();
     var dd = document.getElementById(id+'_dd'); if(!dd) return;
-    dzSelCloseAll(dd);
+    dzCloseMenus(dd);
     dzSchClose();
     var opening = !dd.classList.contains('open');
     dd.classList.toggle('open', opening);
@@ -3149,6 +3161,7 @@
   window.dzSelToggle     = dzSelToggle;
   window.dzSelPick       = dzSelPick;
   window.dzCondApply     = dzCondApply;
+  window.dzCloseMenus    = dzCloseMenus;
   window.dzPickToggle    = dzPickToggle;
   window.dzPickSet       = dzPickSet;
   window.dzRefKey        = dzRefKey;

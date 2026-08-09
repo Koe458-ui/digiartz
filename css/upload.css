@@ -663,3 +663,16 @@
        it is absent: a remote posting is never asked for a city, and a
        permanent one is never asked how long the contract runs. */
     .upField.upFHide{display:none;}
+
+    /* ---- the artwork panel's injected rows --------------------------------
+       The extra fields are written into five empty divs cut into the panel's
+       hand-written markup. Those divs are direct children of .upFieldsCol,
+       which is the flex column that spaces every row apart — so each slot
+       counted as ONE row and the cards inside it were left touching, while
+       the panel's own rows kept their gap.
+
+       display:contents removes the wrapper from layout entirely, so the rows
+       inside a slot become direct participants of the same flex column and
+       are spaced by the same gap as everything else. It also means an empty
+       slot takes up nothing at all, rather than eating a gap. */
+    #pfUpX1, #pfUpX2, #pfUpX3, #pfUpX4, #pfUpX5{ display:contents; }

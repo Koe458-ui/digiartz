@@ -4,6 +4,29 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v141 — the artwork panel's new rows sit and behave like every other
+       upload form's.
+       Two things were wrong with the way v139 fitted eighteen fields into
+       hand-written markup, and both were about the five slots they were
+       fitted into rather than about the fields.
+       The rows were touching. Those slots are direct children of
+       .upFieldsCol, the flex column that spaces every row on the form
+       apart — so a slot holding nine rows counted as one row, took one
+       gap, and left the nine inside it with none. The panel's own rows
+       kept their spacing, which is why only the new ones looked wrong.
+       display:contents takes the wrapper out of layout entirely: the rows
+       inside a slot become direct participants of the same column and are
+       spaced by the same gap as everything else, and an empty slot now
+       takes up nothing rather than eating a gap.
+       Four menus could be open at once. Every dropdown on either form
+       carries .upCatDd, but closing them was scoped to #upSecForms, so on
+       the artwork panel nothing closed anything — and the panel's own
+       category, album and schedule pickers, written long before any of
+       this, did not know the new ones existed either. One exported
+       function closes them all now, and both sides call it, so the rule
+       holds in both directions rather than in neither.
+       Changed: css/upload.css, js/sections.js, js/albums.js, js/drafts.js,
+       index.html, sw.js.
    v140 — every text write is rate limited, and the artwork edit form
        stops overwriting what it never read.
        An audit of the write paths after the five composer revamps. The
@@ -2322,7 +2345,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v140';
+const CACHE_VERSION = 'v141';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2355,7 +2378,7 @@ const SHELL_URLS = [
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=7',
+  '/css/upload.css?v=8',
   '/css/widgets.css?v=3',
   '/css/overrides.css?v=7',
   '/css/select.css?v=2',
@@ -2381,8 +2404,8 @@ const SHELL_URLS = [
   '/js/gallery.js?v=76',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
-  '/js/albums.js?v=9',
-  '/js/drafts.js?v=4',
+  '/js/albums.js?v=10',
+  '/js/drafts.js?v=5',
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
@@ -2398,7 +2421,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=86',
+  '/js/sections.js?v=87',
   '/js/navprogress.js?v=5'
 ];
 

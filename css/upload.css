@@ -13,16 +13,30 @@
       --upcAmber:#FBBF24;  --upcPink:#F472B6;  --upcCyan:#22D3EE;
       --upcTeal:#2DD4BF;   --upcOrange:#FB923C;--upcPurple:#C084FC;
       --upcRose:#FB7185;   --upcYellow:#FCD34D;--upcLilac:#C4B5FD;
+      /* Two steps the gallery's tab rail owns and this palette had no name
+         for. A section is one colour across the site, so the rail's hex is
+         the authority and these carry it rather than approximating it:
+         --upcSky is Jobs, --upcIndigo is Blog. Read off the --fgA values on
+         #fgSecTabs in index.html. Marketplace needed no new name — the
+         rail's orange is --upcOrange, which was already here. */
+      --upcSky:#38BDF8;    --upcIndigo:#818CF8;
       /* the ready mark's word is 9px, so it needs its own darker step where
          the tint it sits in is pale */
       --upcGreenInk:#4ADE80;
       --upcReq:#F87171;
     }
+    /* The one theme that moves these. The page runs on the near-black by
+       default and graydark is another dark ground, so both take the luminous
+       step above; only the light theme needs the saturated one. This is the
+       same split the gallery rail uses for the very same colours — .fgSecBtn
+       takes --fgA, and html[data-theme="light"] .fgSecBtn takes --fgAL — so
+       the two agree under all three themes rather than only under one. */
     html[data-theme="light"]{
       --upcViolet:#7C3AED; --upcGreen:#16A34A; --upcBlue:#2563EB;
       --upcAmber:#D97706;  --upcPink:#DB2777;  --upcCyan:#0891B2;
       --upcTeal:#0D9488;   --upcOrange:#EA580C;--upcPurple:#9333EA;
       --upcRose:#E11D48;   --upcYellow:#CA8A04;--upcLilac:#8B5CF6;
+      --upcSky:#0891B2;    --upcIndigo:#4F46E5;
       --upcGreenInk:#15803D;
       --upcReq:#B91C1C;
     }

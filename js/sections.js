@@ -841,14 +841,22 @@
   }
 
   // One colour per section, so a chip, its guide sheet and its form icons all
-  // speak with the same voice — and the same colour the gallery's rail gives
+  // speak with the same voice — and the same hex the gallery's rail gives
   // that section, so the voice does not change between browsing it and
-  // posting to it. Jobs was the last one that disagreed: pink here, cyan
-  // there. --upcCyan is the palette's own token, and its light-theme value is
-  // already the exact cyan the gallery rail uses.
+  // posting to it.
+  //
+  // Artwork and Resources always did agree, which is what made the other
+  // three read as drift rather than as a second palette. Jobs was pink here
+  // and cyan there; Blog was blue against the rail's indigo; Marketplace was
+  // amber against its orange. All five are the rail's own values now, in
+  // every theme — not a near neighbour of them.
+  //
+  // Not --upcCyan for Jobs, though it is the closer name: a dozen field
+  // icons draw from it, so bending it to the rail's sky would have recoloured
+  // tags, slug and seo on all five forms to settle one chip.
   var SEC_COLOR = {
-    artwork:'var(--upcViolet)', resources:'var(--upcGreen)', blog:'var(--upcBlue)',
-    marketplace:'var(--upcAmber)', jobs:'var(--upcCyan)'
+    artwork:'var(--upcViolet)', resources:'var(--upcGreen)', blog:'var(--upcIndigo)',
+    marketplace:'var(--upcOrange)', jobs:'var(--upcSky)'
   };
   // the chip's glyph: the section's own outline, drawn in the section's colour
   function tabIco(sec){

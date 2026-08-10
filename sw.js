@@ -4,6 +4,32 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v150 — every section is the gallery's own colour, in every theme.
+       v149 moved Jobs from pink to cyan and called the two rails settled.
+       They were not. Checking the actual hex rather than the colour's
+       name found Jobs still off in the dark themes — the sheet's cyan is
+       #22D3EE, the rail's is #38BDF8 — and two more that v149 had not
+       looked at: Blog was blue against the rail's indigo, Marketplace
+       amber against its orange, and those two disagreed under every
+       theme, not just the dark ones. Artwork and Resources were exact all
+       along, which is what made the other three read as drift rather than
+       as a second palette.
+       All five now carry the rail's own values. Marketplace needed no new
+       colour at all: the rail's orange is --upcOrange, already in the
+       palette and simply not the one Marketplace was pointing at. Jobs
+       and Blog needed names the palette did not have, so --upcSky and
+       --upcIndigo were added, read off #fgSecTabs.
+       Not --upcCyan for Jobs, though it is the nearer name. A dozen field
+       icons draw from it — tags, slug, the seo pair, four of the job
+       form's own rows — so bending it to the rail's sky would have
+       recoloured all of them on all five forms to settle one chip.
+       All three themes, not two. The sheet splits its palette :root /
+       html[data-theme="light"], and graydark is a dark ground that takes
+       the :root step — which is the same split .fgSecBtn uses for these
+       very colours, so the two rails now agree by construction rather
+       than by coincidence. Measured all fifteen: five sections across
+       dark, graydark and light, every one an exact match.
+       Changed: js/sections.js, css/upload.css, index.html, sw.js.
    v149 — Jobs is cyan on both rails.
        v148 gave the upload sheet the gallery's five section icons and
        left the five section colours alone, which closed the icon question
@@ -2536,7 +2562,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v149';
+const CACHE_VERSION = 'v150';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2569,7 +2595,7 @@ const SHELL_URLS = [
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=10',
+  '/css/upload.css?v=11',
   '/css/widgets.css?v=3',
   '/css/overrides.css?v=7',
   '/css/select.css?v=2',
@@ -2612,7 +2638,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=94',
+  '/js/sections.js?v=95',
   '/js/navprogress.js?v=5'
 ];
 

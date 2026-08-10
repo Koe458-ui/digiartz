@@ -381,8 +381,34 @@
   // Both are written by the section views' own module, so this viewer and the
   // four of them open with the same card, the same buttons and the same rail
   // at the same measurements — there is one implementation of each, not two.
+  // The card and the rail are written into two hosts index.html provides. A
+  // client running this file against an OLDER index.html has neither — a
+  // cached shell, an edge that has not caught up, a service worker mid
+  // update — and the viewer came up with no card, no way out and no actions
+  // at all, which is worse than either version on its own. The hosts are made
+  // when they are missing, so the chrome belongs to this file rather than to
+  // whichever markup happens to be on the page.
+  function avHost(id, afterId){
+    var el = document.getElementById(id);
+    if(el) return el;
+    var scroll = document.querySelector('#artModal .avSideScroll');
+    if(!scroll) return null;
+    el = document.createElement('div');
+    el.id = id;
+    var after = afterId && document.getElementById(afterId);
+    if(after && after.parentNode === scroll) scroll.insertBefore(el, after.nextSibling);
+    else scroll.insertBefore(el, scroll.firstChild);
+    // Whatever this replaced goes with it: the old author strip has no
+    // painter any more, and the old title-row hearts would be a second copy
+    // of the two in the rail.
+    var strip = document.getElementById('avAuthorRow');
+    if(strip && strip.parentNode) strip.parentNode.removeChild(strip);
+    var acts = document.querySelector('#artModal .avTitleActs');
+    if(acts && acts.parentNode) acts.parentNode.removeChild(acts);
+    return el;
+  }
   function avRenderCard(art){
-    var host = document.getElementById('avAuthorCard');
+    var host = avHost('avAuthorCard');
     if(!host || typeof window.dzVwCard !== 'function') return;
     host.innerHTML = window.dzVwCard('avCard', 'closeLB()');
     if(typeof window.dzVwFill === 'function') window.dzVwFill('avCard', art && art.user_id);
@@ -391,7 +417,7 @@
   // classes are what engagement.js paints and listens for, so they stay on
   // the buttons and only the shape around them changes.
   function avRenderRail(art){
-    var host = document.getElementById('avActRail');
+    var host = avHost('avActRail', 'avAuthorCard');
     if(!host || typeof window.dzVwActRow !== 'function') return;
     var id = art && art.id ? String(art.id) : '';
     host.innerHTML = window.dzVwActRow([

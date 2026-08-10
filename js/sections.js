@@ -3814,9 +3814,23 @@
       (mine ? '<button class="avCmDel" onclick="dzCmDelAsk('+c.id+',\''+esc2(kind)+'\',\''+esc2(id)+'\',\''+listId+'\')" aria-label="Delete comment">\u2715</button>' : '')+
       '</div><div class="avCmBody">'+esc2(c.body)+'</div></div></div>';
   }
+  // The button belongs to the markup that draws the list, but a client running
+  // this file against an older index.html has no button and would be stuck on
+  // the first twenty with no way to ask for more. Made when it is missing, for
+  // the same reason the viewer's card is.
   function cmMoreBtn(listId, show, busy){
     var b = document.getElementById(listId+'_more');
-    if(!b) return;
+    if(!b){
+      var list = document.getElementById(listId);
+      if(!list || !list.parentNode) return;
+      b = document.createElement('button');
+      b.type = 'button';
+      b.id = listId+'_more';
+      b.className = 'vwMore';
+      b.hidden = true;
+      b.onclick = function(){ window.dzCmMore(listId); };
+      list.parentNode.insertBefore(b, list.nextSibling);
+    }
     b.hidden = !show;
     b.disabled = !!busy;
     b.textContent = busy ? 'LOADING\u2026' : 'LOAD 20 MORE';

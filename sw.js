@@ -2721,7 +2721,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v155';
+const CACHE_VERSION = 'v156';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2746,7 +2746,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=4',
   '/css/hero.css?v=91',
-  '/css/viewer.css?v=5',
+  '/css/viewer.css?v=7',
   '/css/community.css?v=4',
   '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
@@ -2756,7 +2756,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=2',
   '/css/upload.css?v=12',
   '/css/widgets.css?v=3',
-  '/css/overrides.css?v=7',
+  '/css/overrides.css?v=9',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -2777,7 +2777,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=19',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=77',
+  '/js/gallery.js?v=80',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
   '/js/albums.js?v=13',
@@ -2786,7 +2786,7 @@ const SHELL_URLS = [
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
   '/js/mywork.js?v=10',
-  '/js/startup.js?v=2',
+  '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',
   '/js/feed.js?v=3',
@@ -2797,7 +2797,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=97',
+  '/js/sections.js?v=101',
   '/js/navprogress.js?v=5'
 ];
 

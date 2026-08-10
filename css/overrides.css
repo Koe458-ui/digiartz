@@ -21,8 +21,13 @@
 .avNavTxt:hover{color:var(--ps);}
 .avNavTxt:active{opacity:.7;}
 /* stacked images */
-.avImgStack{display:flex;flex-direction:column;gap:.7rem;background:transparent;
-  padding:.7rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;}
+/* Stacked images ran almost edge to edge, so two pictures read as one tall
+   one. Enough air to say "these are separate" and not so much that the set
+   stops reading as one upload — and the same figure above the first of them,
+   so the gap under the lead image matches the gaps under the rest. */
+.avImgStack{display:flex;flex-direction:column;gap:clamp(1.1rem,2.4vw,2rem);
+  background:transparent;
+  padding:clamp(1.1rem,2.4vw,2rem) clamp(1rem,5vw,3rem) 0;box-sizing:border-box;}
 .avImgStack{text-align:center;}
 .avImgStack img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
 /* hide while loading */

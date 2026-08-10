@@ -657,6 +657,10 @@
   window.dzQuotaOpen=dzQuotaOpen;
   window.dzQuotaClose=dzQuotaClose;
   window.dzQuotaBuy=dzQuotaBuy;
+  // A resource or a cover taken from a section view spends the same daily
+  // budget this counter reads, so the section views repaint it from here
+  // rather than keeping a second copy of the arithmetic.
+  window.avLoadQuota=avLoadQuota;
   // escape closes the quota modal only, the viewer behind it stays open
   document.addEventListener('keydown',function(e){
     if(e.key!=='Escape') return;

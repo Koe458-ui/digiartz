@@ -974,7 +974,11 @@
       <div class="upDz" id="pfDz">
        <input accept="image/*" id="pfUpF" onclick="if(pfGuestGate(event))return;" onchange="handlePfFile(event)" type="file"/>
        <div class="upDzEmpty">
-        <span class="upDzBadge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M12 21v-8"/><path d="m8 17 4-4 4 4"/></svg></span>
+        <!-- The same tray and arrow the Select image button under it carries,
+             and the same one the sheet's header mark carries. The cloud that
+             was here was the last of them, and it sat two lines above a
+             button drawing the other glyph for the same action. -->
+        <span class="upDzBadge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg></span>
         <div class="upDzTitle" id="pfDzTxt">Drag &amp; drop your artwork here</div>
         <div class="upDzSub">or browse from your device</div>
         <button type="button" class="upDzBtn" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg>Select image</button>

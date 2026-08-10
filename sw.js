@@ -20,6 +20,11 @@
        says the file goes somewhere else; the tray-and-arrow is what the
        rest of the web means by upload, and it is what the sheet was asked
        for. Indigo rather than violet, matching it.
+       The artwork dropzone's badge was the other cloud, and it sat two
+       lines above a Select image button already drawing the tray and
+       arrow for the same action. It carries that glyph now too, so the
+       header mark, the dropzone badge and the button are one symbol
+       rather than three-quarters of one.
        The five section colours are unchanged, so the tinting the forms,
        chips and guide sheets share still holds. Jobs is the one place the
        two rails still disagree — pink on the upload sheet, cyan in the

@@ -4,6 +4,26 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v149 — Jobs is cyan on both rails.
+       v148 gave the upload sheet the gallery's five section icons and
+       left the five section colours alone, which closed the icon question
+       and left one colour question open: Jobs was pink on the upload
+       sheet and cyan in the gallery, the only section where the two rails
+       still disagreed. It is cyan on both now.
+       --upcCyan rather than a fresh hex — it is already in the sheet's
+       palette, so the colour keeps the light/dark pair every other
+       section colour has instead of being one hex that has to work on
+       both. Measured: on the light theme it lands on #0891B2, which is
+       the gallery rail's light cyan exactly; on the dark theme it is
+       #22D3EE against the rail's #38BDF8 — neighbours rather than the
+       same swatch, since the two palettes were picked separately. Close
+       enough that the rails read as one, and not worth a hardcoded hex
+       outside the palette to close the last step.
+       The colour reaches two things: the Jobs tab chip and the Jobs
+       guidelines sheet. It does not reach the form's field icons — those
+       are coloured per field by what the field is, not by which section
+       it sits on — so nothing inside the jobs form moves.
+       Changed: js/sections.js, index.html, sw.js.
    v148 — a section wears one icon, and the upload mark is an upload mark.
        The gallery's tab rail and the upload sheet's tab rail name the same
        five sections and drew three of them as different objects.
@@ -2516,7 +2536,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v148';
+const CACHE_VERSION = 'v149';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2592,7 +2612,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=93',
+  '/js/sections.js?v=94',
   '/js/navprogress.js?v=5'
 ];
 

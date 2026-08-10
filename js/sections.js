@@ -840,11 +840,15 @@
       'stroke-linejoin="round">'+SEC_SVG[k]+'</svg></span>';
   }
 
-  // one colour per section, so a chip, its guide sheet and its form icons all
-  // speak with the same voice
+  // One colour per section, so a chip, its guide sheet and its form icons all
+  // speak with the same voice — and the same colour the gallery's rail gives
+  // that section, so the voice does not change between browsing it and
+  // posting to it. Jobs was the last one that disagreed: pink here, cyan
+  // there. --upcCyan is the palette's own token, and its light-theme value is
+  // already the exact cyan the gallery rail uses.
   var SEC_COLOR = {
     artwork:'var(--upcViolet)', resources:'var(--upcGreen)', blog:'var(--upcBlue)',
-    marketplace:'var(--upcAmber)', jobs:'var(--upcPink)'
+    marketplace:'var(--upcAmber)', jobs:'var(--upcCyan)'
   };
   // the chip's glyph: the section's own outline, drawn in the section's colour
   function tabIco(sec){

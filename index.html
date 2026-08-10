@@ -1001,14 +1001,13 @@
       <div id="pfComicPagesWrap" style="display:none;">
         <div class="upDz upDzSm" id="pfDzPages">
          <input accept="image/*" id="pfUpPages" multiple="" onclick="if(pfGuestGate(event))return;" onchange="handlePfPagesFile(event)" type="file"/>
-         <!-- A stack of frames, drawn rather than typed. This was the one
-              badge on the sheet that was a text emoji while every other
-              dropzone led with an SVG in a tinted tile, and it sits directly
-              under the cover dropzone, so the two were side by side. The
-              glyph is deliberately not the cover zone's tray and arrow: that
-              zone takes the one image that matters, this one takes the
-              extras. -->
-         <div class="upDzIco" id="pfDzPagesIco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="14" height="14" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2"/><circle cx="7.6" cy="11.6" r="1.2"/><path d="M17 18.8 12.4 14.2 3 20.6"/></svg></div>
+         <!-- The tray and arrow every dropzone on the sheet leads with. It
+              was a text emoji among drawn glyphs; v151 drew it as a stack of
+              frames to tell the extras zone from the cover zone above it,
+              which turned out to be a second rule nobody asked for. One
+              glyph on all seven zones now — the title under it is what says
+              whether this one takes the cover or the extras. -->
+         <div class="upDzIco" id="pfDzPagesIco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg></div>
          <div class="upDzTitle" id="pfDzPagesTitle">Drop page images here or click to browse</div>
          <div class="upDzSub" id="pfDzPagesSub">Multiple pages supported</div>
         </div>
@@ -2955,7 +2954,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=5"></script>
 
 
-  <script src="/js/sections.js?v=96"></script>
+  <script src="/js/sections.js?v=97"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

@@ -810,8 +810,12 @@
     return s;
   }
 
-  var ORDER = ['artwork','resources','blog','marketplace','jobs'];
-  var TAB_LABEL = {artwork:'Artwork', resources:'Resources', blog:'Blog', marketplace:'Marketplace', jobs:'Jobs'};
+  // Order and names are the gallery's, which is the canonical rail: it is
+  // where a member meets these five sections first and most often, so the
+  // upload sheet follows it rather than the other way round. The gallery's
+  // sixth tab, Cart, has nothing to post to and so has no tab here.
+  var ORDER = ['artwork','marketplace','blog','resources','jobs'];
+  var TAB_LABEL = {artwork:'Artworks', resources:'Resources', blog:'Blog', marketplace:'Market', jobs:'Jobs'};
   var TAB_ICO   = {artwork:'artworks', resources:'resources', blog:'blog', marketplace:'marketplace', jobs:'jobs'};
   var upSec = 'artwork';
 
@@ -830,14 +834,22 @@
     marketplace: '<path d="M3 9.4 4.8 4.3A2 2 0 0 1 6.7 3h10.6a2 2 0 0 1 1.9 1.3L21 9.4"/><path d="M4.6 9.4V19a2 2 0 0 0 2 2h10.8a2 2 0 0 0 2-2V9.4"/><path d="M3 9.4h18"/><path d="M9.6 21v-5.4h4.8V21"/>',
     jobs:        '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'
   };
-  // the round tinted badge an empty dropzone leads with. It was a white-stroked
-  // glyph on no background, which is invisible on the light theme's white
-  // surface; it takes the accent from the page now, like the artwork zone's.
-  function secIco(sec){
-    var k = TAB_ICO[sec] || 'artworks';
+  // The round tinted badge an empty dropzone leads with. It takes the accent
+  // from the page, so it survives the light theme's white surface — a
+  // white-stroked glyph on no background did not.
+  //
+  // One glyph for every dropzone on the sheet, and it is the upload mark
+  // rather than the section's own. A badge here answers "what does this box
+  // do", not "which section am I in" — the highlighted tab already answers
+  // that, and the title under the badge already says what goes in. Drawing
+  // the section glyph instead left the sheet with two rules: the artwork
+  // zone said upload, the other three said resources, blog, marketplace.
+  var DZ_ZONE_SVG = '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>'+
+    '<path d="m7 9 5-5 5 5"/><path d="M12 4v12"/>';
+  function zoneIco(){
     return '<span class="upDzBadge" aria-hidden="true">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" '+
-      'stroke-linejoin="round">'+SEC_SVG[k]+'</svg></span>';
+      'stroke-linejoin="round">'+DZ_ZONE_SVG+'</svg></span>';
   }
 
   // One colour per section, so a chip, its guide sheet and its form icons all
@@ -1482,7 +1494,7 @@
             ' onclick="if(typeof pfGuestGate===\'function\'&&pfGuestGate(event))return;"'+
             ' onchange="dzPick('+args+',this)">'+
           '<div class="dzFileEmpty">'+
-            secIco(sec)+
+            zoneIco()+
             '<div class="dzFileCopy">'+
               '<div class="dzFileTitle">Drag &amp; drop your '+(isImg ? 'image' : 'file')+' here</div>'+
               '<div class="dzFileSub">or browse from your device</div>'+
@@ -1508,7 +1520,7 @@
             ' onclick="if(typeof pfGuestGate===\'function\'&&pfGuestGate(event))return;"'+
             ' onchange="dzPick('+margs+',this)">'+
           '<div class="dzFileEmpty">'+
-            secIco(sec)+
+            zoneIco()+
             '<div class="dzFileCopy">'+
               '<div class="dzFileTitle">'+(isPics
                  ? 'Drag &amp; drop more preview images'

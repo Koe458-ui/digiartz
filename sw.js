@@ -4,6 +4,33 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v152 — the gallery's rail is the rail, and a dropzone badge means one
+       thing.
+       The last three the v151 audit left open, all of which needed a
+       decision rather than work. The decision: the gallery is canonical.
+       It is where a member meets these five sections first and most
+       often, so the upload sheet follows it rather than the other way
+       round.
+       Order was Artwork, Resources, Blog, Marketplace, Jobs against the
+       gallery's Artworks, Market, Blog, Resources, Jobs — Resources and
+       Marketplace swapped, so the two rails read differently on the same
+       five things. The sheet takes the gallery's order. Cart has nothing
+       to post to, so the sheet still has five tabs to the gallery's six.
+       Names follow too: Artworks and Market, not Artwork and
+       Marketplace. The guide sheet's kicker reads off the same table, so
+       it says ARTWORKS now without being told separately.
+       Dropzone badges followed two rules — the artwork zone drew the
+       upload mark, the other three drew their section's glyph. A badge
+       there answers "what does this box do", not "which section am I
+       in": the highlighted tab already answers that, and the title under
+       the badge already says what goes in. All eight zones draw the
+       upload mark now. That supersedes v151's stack of frames on the Add
+       more images zone — telling the extras zone from the cover zone was
+       a second rule nobody asked for, and the titles under them were
+       already doing that work.
+       secIco is zoneIco: it never depended on the section again, and a
+       name that says otherwise is how the two rules got there.
+       Changed: js/sections.js, index.html, sw.js.
    v151 — four things an audit of the upload sheet turned up.
        Sweeping the whole sheet — five forms against each other and
        against the gallery — found seven mismatches. Three of them are
@@ -2595,7 +2622,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v151';
+const CACHE_VERSION = 'v152';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2671,7 +2698,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=96',
+  '/js/sections.js?v=97',
   '/js/navprogress.js?v=5'
 ];
 

@@ -2721,7 +2721,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v156';
+const CACHE_VERSION = 'v157';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2746,7 +2746,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=4',
   '/css/hero.css?v=91',
-  '/css/viewer.css?v=7',
+  '/css/viewer.css?v=8',
   '/css/community.css?v=4',
   '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
@@ -2755,7 +2755,7 @@ const SHELL_URLS = [
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
   '/css/upload.css?v=12',
-  '/css/widgets.css?v=3',
+  '/css/widgets.css?v=4',
   '/css/overrides.css?v=9',
   '/css/select.css?v=2',
 
@@ -2797,7 +2797,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=101',
+  '/js/sections.js?v=102',
   '/js/navprogress.js?v=5'
 ];
 

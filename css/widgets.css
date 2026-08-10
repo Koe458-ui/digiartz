@@ -492,13 +492,9 @@ html.thmFade #themePage{
 .engBtn[aria-pressed="true"] svg{fill:var(--pg);stroke:var(--pg);}
 .avTitleRow{display:flex;align-items:flex-start;gap:.75rem;}
 .avTitleRow .avTitle{flex:1 1 auto;min-width:0;}
-.avTitleActs{display:flex;gap:.5rem;flex-shrink:0;padding-top:.1rem;}
-.avTitleActs .engBtn{
-  width:42px;height:42px;border-radius:12px;
-  background:color-mix(in srgb,var(--sur2) 55%,transparent);
-  backdrop-filter:none;-webkit-backdrop-filter:none;
-}
-.avTitleActs .engBtn svg{width:20px;height:20px;}
+/* .avTitleActs held the viewer's like and bookmark in the title row. Both
+   are in the rail under the card now, wearing .vwAct, so the row and its
+   two overrides have nothing left to style. */
 #frdPage{
   position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
   overflow-y:auto;transform:translateX(100%);

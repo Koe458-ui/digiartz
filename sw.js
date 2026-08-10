@@ -4,6 +4,24 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v154 — two ways to apply are two ways to apply.
+       A posting and a commission listing each take an apply link and an
+       apply email, and the detail views took the link when both were
+       there and dropped the address. That closes a door the employer or
+       the seller had deliberately opened — someone who offered both
+       offered both. Both are drawn now, as their own buttons: Apply and
+       Apply by email on a posting, Request this and Request by email on
+       a listing. Either alone is unchanged.
+       On the form the pair is a pair, and never said so. Neither box
+       carried the required mark, so nothing on the form asked for what
+       publish then refused to go without. Both carry it now while both
+       are empty, and it comes off both the moment either is filled —
+       which is the rule: one of the two, and filling one is what makes
+       the other optional. Clearing it again brings the mark back. The
+       hint on both boxes says it in words as well. reqOne is the field
+       spec for this; publish still checks the pair itself, since a form
+       is a courtesy and a constraint is a guarantee.
+       Changed: js/sections.js, index.html, sw.js.
    v153 — every detail view reads in the order someone reads it.
        The five upload forms grew most of a page of new fields each and
        every one of them reaches its detail view, but they arrived in the
@@ -2658,7 +2676,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v153';
+const CACHE_VERSION = 'v154';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

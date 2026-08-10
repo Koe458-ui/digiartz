@@ -710,10 +710,12 @@
          ph:'AI assistance, mature content, anything a buyer should know up front.'},
         {k:'seller_note',t:'area', label:'Creator / seller note', min:20, max:500, rows:2,
          ph:'Anything else you want buyers to read.'},
-        {k:'apply_url',t:'text', label:'Application link', cond:'svc', min:10, max:200, ph:'https://…'},
-        {k:'apply_email',t:'text', label:'Application email', cond:'svc', min:5, max:254,
-         ph:'you@studio.com',
-         hint:'A commission or service needs a link or an email — one of the two is required.'},
+        {k:'apply_url',t:'text', label:'Application link', cond:'svc', reqOne:'apply',
+         min:10, max:200, ph:'https://…',
+         hint:'A commission or service needs a link or an email — either one will do.'},
+        {k:'apply_email',t:'text', label:'Application email', cond:'svc', reqOne:'apply',
+         min:5, max:254, ph:'you@studio.com',
+         hint:'A commission or service needs a link or an email — either one will do.'},
         {k:'visibility',t:'sel', label:'Visibility', req:true, options:MKT_VISIBILITY, def:'published'},
         {k:'featured',t:'chk', label:'Feature / promote this listing',
          hint:'Featured listings sit at the top of the Marketplace.'},
@@ -781,9 +783,12 @@
         {k:'salary_max',t:'money', label:'Pay to', req:true, nmin:0, nmax:99999999, ph:'0'},
         {k:'salary_currency',t:'sel', label:'Currency', req:true, options:DZ_CURRENCIES, pref:1},
         {k:'salary_unit',t:'sel', label:'Pay period', req:true, options:PAY_PERIOD, def:'MONTH'},
-        {k:'apply_url',t:'text', label:'Apply link', min:10, max:200, ph:'https://…'},
-        {k:'apply_email',t:'text', label:'Apply email', min:5, max:254, ph:'jobs@studio.com',
-         hint:'A link or an email is required — a posting with no way to apply is rejected.'},
+        {k:'apply_url',t:'text', label:'Apply link', reqOne:'apply', min:10, max:200,
+         ph:'https://…',
+         hint:'A link or an email is required — either one will do, and a posting may carry both.'},
+        {k:'apply_email',t:'text', label:'Apply email', reqOne:'apply', min:5, max:254,
+         ph:'jobs@studio.com',
+         hint:'A link or an email is required — either one will do, and a posting may carry both.'},
         {k:'application_instructions',t:'area', label:'Application instructions', req:true,
          min:20, max:1500, rows:3, ph:'How to apply, what to put in the subject line, what happens next…'},
         {k:'application_materials',t:'area', label:'Required application materials', req:true,
@@ -1352,8 +1357,13 @@
     return out;
   }
   function labelFor(id, fd){
-    var lbl = '<label class="upLbl" for="'+id+'">'+esc(fd.label)+
-      (fd.req ? ' <span class="upReq">*</span>' : '')+'</label>';
+    // A required field's mark never moves. One of a required pair carries the
+    // same mark with a name on it, because the mark comes off both boxes the
+    // moment either is filled in — see dzReqOne.
+    var mark = fd.req    ? ' <span class="upReq">*</span>'
+             : fd.reqOne ? ' <span class="upReq" id="'+id+'_r">*</span>'
+             : '';
+    var lbl = '<label class="upLbl" for="'+id+'">'+esc(fd.label)+mark+'</label>';
     // The counter is there to show the floor, so it appears on the fields
     // that have one and nowhere else — which is every text field on the job
     // form and none of the ones on the other three, whose ceilings are
@@ -1774,6 +1784,30 @@
       var card = el && el.closest ? el.closest('.upField') : null;
       if(card) card.classList.toggle('upFHide', !dzCondShow(sec, fd));
     });
+    dzReqOne(sec);
+  }
+  // Required-one-of, as opposed to required. A posting needs a link or an
+  // email and does not care which, so both boxes wear the mark while both are
+  // empty and neither wears it once either is filled — filling one is what
+  // makes the other optional, and the form now says so instead of leaving it
+  // to publish to refuse. Publish still checks the pair itself; this only
+  // tells the truth about it earlier. Both may be filled, and a posting that
+  // fills both offers the reader both.
+  function dzReqOne(sec){
+    if(!FORMS[sec]) return;
+    var groups = {};
+    FORMS[sec].fields.forEach(function(fd){
+      if(!fd.reqOne) return;
+      (groups[fd.reqOne] = groups[fd.reqOne] || []).push(fd);
+    });
+    Object.keys(groups).forEach(function(g){
+      var fds = groups[g];
+      var met = fds.some(function(fd){ return !!val(sec, fd.k); });
+      fds.forEach(function(fd){
+        var m = document.getElementById('dz_'+sec+'_'+fd.k+'_r');
+        if(m) m.hidden = met;
+      });
+    });
   }
 
   // ---- the artwork panel's extra fields ----------------------------------
@@ -2067,6 +2101,8 @@
     dzCountPaint(t);
     // the Automatic Details card follows what is being typed
     dzAutoPaint(upSec);
+    // and so does the mark on a pair where only one of the two is needed
+    dzReqOne(upSec);
   }, true);
 
   // tags
@@ -4107,12 +4143,15 @@
           '</div>' : '';
       // How a commission or a service is booked, which for those listings is
       // the buy button — so it belongs beside the price, not after the tags.
-      var reqBtn = (r.apply_url || r.apply_email)
-          ? '<a class="avActWide" href="'+
-              (r.apply_url ? esc2(r.apply_url)+'" target="_blank" rel="noopener'
-                           : 'mailto:'+esc2(r.apply_email))+
-            '">Request this ↗</a>'
-          : '';
+      // A seller who gave both a link and an address offered two ways to be
+      // reached; the view used to pick the link and throw the address away.
+      var reqBtn =
+        (r.apply_url
+          ? '<a class="avActWide" href="'+esc2(r.apply_url)+'" target="_blank" rel="noopener">Request this ↗</a>'
+          : '')+
+        (r.apply_email
+          ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Request by email ✉</a>'
+          : '');
 
       // The order a listing is bought in: the shots, what it is, who sells it,
       // what it costs — and then everything a buyer reads to decide. The whole
@@ -4184,14 +4223,21 @@
                 .filter(Boolean).join(' \u00b7 ');
       var sends = [r.portfolio_required ? 'Portfolio' : '', r.resume_required ? 'Resume / CV' : '',
                    r.cover_letter_required ? 'Cover letter' : ''].filter(Boolean).join(' \u00b7 ');
-      // The button, written once and drawn twice: once under the facts, for
-      // the reader who has decided already, and once under the application
-      // instructions, for the reader who read the whole ad. A posting with
-      // neither a link nor an address never publishes, so this is only ever
-      // empty for a posting written before the form asked.
+      // Every way this posting can be applied through, written once and drawn
+      // twice: once under the facts, for the reader who has decided already,
+      // and once under the application instructions, for the reader who read
+      // the whole ad. A posting that gave a link and an address offered both,
+      // so both are here \u2014 the view used to take the link and drop the
+      // address, which quietly closed a door the employer had opened. A
+      // posting with neither never publishes, so this is only ever empty for
+      // one written before the form asked.
       var applyBtn =
-        (r.apply_url ? '<a class="avActWide" href="'+esc2(r.apply_url)+'" target="_blank" rel="noopener">Apply \u2197</a>'
-         : r.apply_email ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Apply by email \u2709</a>' : '');
+        (r.apply_url
+          ? '<a class="avActWide" href="'+esc2(r.apply_url)+'" target="_blank" rel="noopener">Apply \u2197</a>'
+          : '')+
+        (r.apply_email
+          ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Apply by email \u2709</a>'
+          : '');
 
       // The eight facts an applicant decides on — where, how, what it pays,
       // when it starts and when it shuts — read before anything else, so they

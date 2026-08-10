@@ -4,6 +4,42 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v153 — every detail view reads in the order someone reads it.
+       The five upload forms grew most of a page of new fields each and
+       every one of them reaches its detail view, but they arrived in the
+       order they were added rather than the order anyone reads. Five
+       views, re-laid-out; no field gained or lost, and nothing new is
+       asked for.
+       Artwork: the details panel sat between the summary and the
+       description, so the piece's specification interrupted the artist's
+       own words. Description first now, then process notes and credits,
+       then the panel — headed Details, which it never was — then the
+       links and the tags. Resolution moved up beside Software, since it
+       was splitting the two technical rows around the three legal ones.
+       A featured artwork says so, the way the other four sections have
+       always said it on theirs.
+       Resources: the file card sat above the title and the download
+       button below the comments, so the two halves of the one thing
+       every visitor came for were a page apart. Title, summary, author,
+       file card, download — then the reading.
+       Marketplace: the extra shots sat below the summary rather than
+       under the image they extend; the locked-files note and the
+       commission request sat past the tags, away from the price they
+       explain. All of the buying decision is one run at the top now, and
+       the twenty-row panel is two: what it is, and what happens after
+       the money.
+       Blog: the byline sat under the type-and-read-time panel, which put
+       the filing details ahead of the person who wrote the post.
+       Jobs: sixteen rows of specification stood between the headline and
+       the first sentence of the ad. Eight of them are the facts an
+       applicant decides on and stay at the top, with the Apply button
+       under them; the other eight are how the week works and sit below
+       the ad as Role details. Apply is also drawn once more under the
+       application instructions, for the reader who read to the end.
+       Two helpers came out of it: metaBlock, which is the meta panel
+       with a heading, and linkBlock, which the resource links and the
+       post's sources were each writing out for themselves.
+       Changed: js/sections.js, js/gallery.js, index.html, sw.js.
    v152 — the gallery's rail is the rail, and a dropzone badge means one
        thing.
        The last three the v151 audit left open, all of which needed a
@@ -2622,7 +2658,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v152';
+const CACHE_VERSION = 'v153';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

@@ -2264,23 +2264,35 @@
          </div>
         </div>
         <div class="avSubType" id="avSubType"></div>
+        <!-- Said here the way the other four sections say it on their own
+             detail views, so a featured artwork is not the one featured thing
+             on the site that never says so. -->
+        <div class="avSubType" id="avFeatured" hidden>★ Featured artwork</div>
         <p class="avSummary" id="avSummary" hidden></p>
        </div>
-       <div class="avDiv"></div>
-       <div class="avMetaList" id="avMetaList"></div>
+       <!-- What the artist wrote comes first — the description, then the
+            process notes and credits behind it. The details panel is what a
+            viewer checks afterwards, so it sits under the writing rather than
+            between the summary and it, and the links and tags close the
+            column. Each extra block carries its own divider, so an artwork
+            that filled none of them adds nothing at all here. -->
        <div class="avDiv" id="avDescDiv" hidden></div>
        <div id="avDescBlock" hidden>
         <div class="avBlockH">Description</div>
         <p class="avDescTxt" id="lbDesc"></p>
        </div>
+       <div id="avExtraBlocks"></div>
+       <div class="avDiv"></div>
+       <div>
+        <div class="avBlockH">Details</div>
+        <div class="avMetaList" id="avMetaList"></div>
+       </div>
+       <div id="avLinkBlocks"></div>
        <div class="avDiv" id="avTagsDiv" hidden></div>
        <div id="avTagsBlock" hidden>
         <div class="avBlockH">Tags</div>
         <div class="avTagList" id="avTagList"></div>
        </div>
-       <!-- Process notes, credits and links. Each carries its own divider, so
-            an artwork that filled none of them adds nothing at all here. -->
-       <div id="avExtraBlocks"></div>
        <div class="avDiv"></div>
        <div class="avCmBlock">
         <div class="avBlockH">Comments</div>
@@ -2592,7 +2604,7 @@
   <script src="/uploadVerifier.js"></script>
   <script src="/js/app-core.js?v=19"></script>
   <script src="/js/protect.js?v=2"></script>
-  <script src="/js/gallery.js?v=77"></script>
+  <script src="/js/gallery.js?v=78"></script>
   <script src="/js/auth.js?v=10"></script>
   <script src="/js/profile.js?v=9"></script>
   <script src="/js/albums.js?v=13"></script>
@@ -2954,7 +2966,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=5"></script>
 
 
-  <script src="/js/sections.js?v=97"></script>
+  <script src="/js/sections.js?v=98"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

@@ -4077,8 +4077,8 @@
       sec === 'marketplace'
         ? { k:'cart', c:'blue', id:'vwAct_cart', press:1, label:'Add to cart',
             on:'dzVwEng(\'cart\',\''+kind+'\',\''+id+'\')' }
-        : { k:'dl', c:'green', href:dl || null,
-            on: dl ? '' : 'dzToast(\'Nothing to download here\')',
+        : { k:'dl', c:'green',
+            on:'dzVwDownload(\''+kind+'\',\''+id+'\',\''+esc2(dl)+'\')',
             label: sec === 'blog' ? 'Download cover' : 'Download everything' },
       { k:'share', c:'blue', label:'Share',
         on:'dzVwShare(\''+sec+'\',\''+id+'\',\''+esc2(title)+'\')' },
@@ -4087,6 +4087,61 @@
     ]);
   }
   window.dzToast = function(m){ if(typeof showToast === 'function') showToast(m); };
+
+  // ---- the daily download budget, for the other two sections --------------
+  // The 5 / 10 / 15 / 20 a day that free, Lite, Premium and Max get had only
+  // ever counted artworks, so a resource package — the largest file on the
+  // site — was free to take as often as anyone liked. Every download now draws
+  // on the one budget: three resources leave two artworks, not a fresh five.
+  //
+  // The marketplace stays out of it. A buyer paid for those bytes, and
+  // rationing a file someone has already bought is not a saving.
+  //
+  // The grant is taken before the file is reached, so a refusal costs no
+  // bandwidth at all. The link is opened from here rather than being an <a>,
+  // because an <a> is followed before anything can be asked.
+  window.dzVwDownload = async function(kind, id, url){
+    if(!url){ showToast('Nothing to download here'); return; }
+    if(!window.currentUser){
+      if(typeof pfGuestGate === 'function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+      else if(typeof openAuthMod === 'function') openAuthMod();
+      return;
+    }
+    if(!sb){ showToast('Backend not configured'); return; }
+    var gate = null;
+    try{
+      var res = await sb.rpc('dz_request_item_download', { p_kind: kind, p_id: id });
+      if(res.error) throw res.error;
+      gate = res.data || null;
+    }catch(e){
+      showToast('Could not start the download — try again');
+      return;
+    }
+    if(!gate || !gate.allowed){
+      var why = gate && gate.reason;
+      if(why === 'limit'){
+        if(typeof window.dzQuotaOpen === 'function') window.dzQuotaOpen(gate);
+        else showToast('Daily download limit reached');
+      }
+      else if(why === 'rate') showToast('Too many downloads just now — try again in a minute');
+      else if(why === 'auth') showToast('Sign in to download');
+      else showToast('That file is not available');
+      return;
+    }
+    // the counter on the artwork viewer reads the same budget, so it is stale
+    // the moment this spends a unit
+    if(typeof window.avLoadQuota === 'function') window.avLoadQuota();
+    if(typeof gate.remaining === 'number'){
+      showToast(gate.own ? 'Downloading your own file — no quota used'
+                         : gate.remaining + ' download' + (gate.remaining === 1 ? '' : 's') + ' left today');
+    }
+    var a = document.createElement('a');
+    a.href = url; a.rel = 'noopener'; a.target = '_blank';
+    a.setAttribute('download', '');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   // ---- a link to one item -----------------------------------------------
   // Share needs something to share. Until now only an artwork had a url of
@@ -4527,8 +4582,9 @@
         '<div class="dzvFileMeta">'+esc2(h.bytes(r.file_size))+
           (r.file_count ? ' \u00b7 '+esc2(String(r.file_count))+' file'+(r.file_count===1?'':'s') : '')+
           ' \u00b7 '+esc2(String(r.download_count||0))+' downloads</div></div>'+
-        (r.file_url ? '<a class="vwFileDl" href="'+esc2(r.file_url)+'" target="_blank" rel="noopener" '+
-          'download aria-label="Download this file" title="Download this file">'+vwSvg('dl')+'</a>' : '')+
+        (r.file_url ? '<button type="button" class="vwFileDl" '+
+          'onclick="dzVwDownload(\''+kind+'\',\''+id+'\',\''+esc2(r.file_url)+'\')" '+
+          'aria-label="Download this file" title="Download this file">'+vwSvg('dl')+'</button>' : '')+
         '</div>'+
         (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
         jobBlock('What\u2019s included', r.whats_included)+
@@ -4703,10 +4759,11 @@
                 .filter(Boolean).join(' \u00b7 ');
       var sends = [r.portfolio_required ? 'Portfolio' : '', r.resume_required ? 'Resume / CV' : '',
                    r.cover_letter_required ? 'Cover letter' : ''].filter(Boolean).join(' \u00b7 ');
-      // Every way this posting can be applied through, written once and drawn
-      // twice: once under the facts, for the reader who has decided already,
-      // and once under the application instructions, for the reader who read
-      // the whole ad. A posting that gave a link and an address offered both,
+      // Every way this posting can be applied through, drawn once, under the
+      // facts an applicant decides on — where it is seen without scrolling,
+      // which the foot of a long ad is not. It used to be drawn there as well
+      // and two Apply buttons on one posting read as a mistake rather than as
+      // a convenience. A posting that gave a link and an address offered both,
       // so both are here \u2014 the view used to take the link and drop the
       // address, which quietly closed a door the employer had opened. A
       // posting with neither never publishes, so this is only ever empty for
@@ -4765,7 +4822,6 @@
         jobBlock('What to send', r.application_materials)+
         (sends ? jobBlock('Required with every application', sends) : '')+
         jobBlock('Questions to answer', r.application_questions)+
-        applyBtn+
         tagBlock(r.tags)+
         '<button class="avReportBtn" onclick="dzReportItem(\'job\',\''+id+'\')">\u2691 Report</button>'+
         '</div>';

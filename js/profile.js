@@ -387,7 +387,7 @@
     grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
     try{
       const{data,error}=await sb.from('resources')
-        .select('id,user_id,title,description,category,tags,file_url,file_name,file_ext,file_size,preview_url,license,software,download_count,created_at')
+        .select('id,user_id,title,description,category,tags,file_storage_path,file_name,file_ext,file_size,preview_url,license,software,download_count,created_at')
         .eq('user_id', pf.profile.id).eq('status','approved')
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
@@ -655,7 +655,7 @@
     }
     if(want('resources')){
       jobs.push(sb.from('resources')
-        .select('id,user_id,title,description,category,tags,file_url,file_name,file_ext,file_size,preview_url,license,software,download_count,created_at')
+        .select('id,user_id,title,description,category,tags,file_storage_path,file_name,file_ext,file_size,preview_url,license,software,download_count,created_at')
         .eq('user_id',uid).eq('status','approved').ilike('title',pattern)
         .order('created_at',{ascending:false}).limit(30)
         .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));

@@ -65,7 +65,7 @@
       eq:{ visibility:'published' },
       order:[['featured',false],['created_at',false]],
       select:'id,user_id,title,summary,description,resource_type,category,subcategory,tags,'+
-             'file_url,file_name,file_ext,file_size,file_count,dimensions,preview_url,'+
+             'file_storage_path,file_name,file_ext,file_size,file_count,dimensions,preview_url,'+
              'license,commercial_use,attribution_required,modification_allowed,'+
              'software,compatible_software,compatible_versions,whats_included,instructions,'+
              'version,external_links,safety_notes,featured,download_count,updated_at,created_at'
@@ -3113,7 +3113,15 @@
         var rCount = await dzZipCount(s.files.file);
         var rDims  = await dzImageDims(s.files.preview);
 
-        var rf = await put('file','resources'), rp = await put('preview','resources');
+        // The package goes to the private bucket; the preview stays public
+        // because it is the picture on the card. A resource used to be a
+        // public url printed into the page, which meant the daily cap counted
+        // the button and not the bytes — anyone who copied the link had an
+        // unlimited download. There is no url to copy now: the only route to
+        // the file is /api/resource-download, which spends a unit of quota and
+        // streams it from our own origin.
+        var rf = await putPrivate(s.files.file, 'resources', 0);
+        var rp = await put('preview','resources');
         row.title = val(sec,'title');
         row.summary = val(sec,'summary');
         row.description = val(sec,'description');
@@ -3135,7 +3143,9 @@
         row.visibility = rVis;
         row.featured = val(sec,'featured') === true;
         // the derived half — none of these has a box on the form
-        row.file_url = rf.url; row.file_storage_path = rf.path;
+        // file_url stays null: there is no public url for these any more
+        row.file_url = null;
+        row.file_storage_bucket = rf.bucket; row.file_storage_path = rf.path;
         row.file_name = rf.name; row.file_ext = rf.ext; row.file_size = rf.size;
         row.file_count = rCount;
         row.dimensions = rDims;
@@ -4065,8 +4075,12 @@
   // has always had at the foot of the ad.
   function vwSecRail(sec, kind, id, r){
     if(sec === 'jobs') return '';
-    var dl = sec === 'resources' ? r.file_url
-           : sec === 'blog'      ? (r.cover_url ? imgResize(r.cover_url, 1600) : '')
+    // A resource has no url to hand over — the endpoint is the only route to
+    // its bytes, so the button carries the row's id and nothing else. A blog
+    // cover is a public image the page is already showing, so gating the
+    // bytes would save nothing; it spends a unit and takes the link.
+    var dl = sec === 'blog' ? (r.cover_url ? imgResize(r.cover_url, 1600) : '')
+           : sec === 'resources' ? (r.file_storage_path ? '1' : '')
            : '';
     var title = String(r.title || '').replace(/'/g, '');
     return vwActRow([
@@ -4077,7 +4091,7 @@
       sec === 'marketplace'
         ? { k:'cart', c:'blue', id:'vwAct_cart', press:1, label:'Add to cart',
             on:'dzVwEng(\'cart\',\''+kind+'\',\''+id+'\')' }
-        : { k:'dl', c:'green',
+        : { k:'dl', c:'green', id:'vwAct_dl',
             on:'dzVwDownload(\''+kind+'\',\''+id+'\',\''+esc2(dl)+'\')',
             label: sec === 'blog' ? 'Download cover' : 'Download everything' },
       { k:'share', c:'blue', label:'Share',
@@ -4087,6 +4101,72 @@
     ]);
   }
   window.dzToast = function(m){ if(typeof showToast === 'function') showToast(m); };
+
+  // ---- a resource package, fetched through the gate -----------------------
+  // The artwork viewer's download works the same way and for the same reason:
+  // the file is a private object, the endpoint is the only thing that may sign
+  // for it, and the response is a stream this page turns into a save. There is
+  // no url at any point that a browser could be pointed at twice.
+  var resBusy = {};
+  async function dzResourceDownload(id){
+    if(!window.currentUser){
+      if(typeof pfGuestGate === 'function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+      else if(typeof openAuthMod === 'function') openAuthMod();
+      return;
+    }
+    if(!sb || resBusy[id]) return;
+    resBusy[id] = true;
+    var btn = document.getElementById('vwAct_dl');
+    if(btn) btn.setAttribute('aria-busy','true');
+    try{
+      var ses = await sb.auth.getSession();
+      var token = ses && ses.data && ses.data.session && ses.data.session.access_token;
+      if(!token){ showToast('Sign in to download'); return; }
+      showToast('Preparing your download…');
+      var res = await fetch('/api/resource-download', {
+        method:'POST', cache:'no-store',
+        headers:{ 'content-type':'application/json', authorization:'Bearer '+token },
+        body: JSON.stringify({ resource: String(id) })
+      });
+      if(!res.ok){
+        var err = null;
+        try{ err = await res.json(); }catch(e){}
+        var why = err && err.reason;
+        if(why === 'limit'){
+          if(typeof window.dzQuotaOpen === 'function') window.dzQuotaOpen(err);
+          else showToast('Daily download limit reached');
+        }
+        else if(why === 'rate') showToast('Too many downloads just now — try again in a minute');
+        else if(why === 'auth'){ showToast('Sign in to download'); if(typeof openAuthMod === 'function') openAuthMod(); }
+        else showToast((err && err.error) || 'That file is no longer available');
+        return;
+      }
+      // the name the uploader gave it, read off the header the endpoint set
+      var name = 'resource';
+      var cd = res.headers.get('content-disposition') || '';
+      var m = /filename\*=UTF-8''([^;]+)/i.exec(cd) || /filename="([^"]+)"/i.exec(cd);
+      if(m) { try{ name = decodeURIComponent(m[1]); }catch(e){ name = m[1]; } }
+      var blob = await res.blob();
+      var href = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = href; a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(href); }, 60000);
+      var left = res.headers.get('x-downloads-left');
+      if(left != null && left !== ''){
+        showToast(left + ' download' + (left === '1' ? '' : 's') + ' left today');
+      } else {
+        showToast('Downloaded');
+      }
+      if(typeof window.avLoadQuota === 'function') window.avLoadQuota();
+    }catch(e){
+      showToast('Download failed — try again');
+    }finally{
+      resBusy[id] = false;
+      if(btn) btn.removeAttribute('aria-busy');
+    }
+  }
+  window.dzResourceDownload = dzResourceDownload;
 
   // ---- the daily download budget, for the other two sections --------------
   // The 5 / 10 / 15 / 20 a day that free, Lite, Premium and Max get had only
@@ -4101,6 +4181,11 @@
   // bandwidth at all. The link is opened from here rather than being an <a>,
   // because an <a> is followed before anything can be asked.
   window.dzVwDownload = async function(kind, id, url){
+    // A resource has no url of its own any more, so it takes the other route:
+    // the endpoint spends the unit, signs a short-lived GET with the service
+    // role and streams the bytes back from our own origin. Nothing that
+    // reaches the browser can be copied, saved or passed on.
+    if(kind === 'resource') return dzResourceDownload(id);
     if(!url){ showToast('Nothing to download here'); return; }
     if(!window.currentUser){
       if(typeof pfGuestGate === 'function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
@@ -4582,8 +4667,8 @@
         '<div class="dzvFileMeta">'+esc2(h.bytes(r.file_size))+
           (r.file_count ? ' \u00b7 '+esc2(String(r.file_count))+' file'+(r.file_count===1?'':'s') : '')+
           ' \u00b7 '+esc2(String(r.download_count||0))+' downloads</div></div>'+
-        (r.file_url ? '<button type="button" class="vwFileDl" '+
-          'onclick="dzVwDownload(\''+kind+'\',\''+id+'\',\''+esc2(r.file_url)+'\')" '+
+        (r.file_storage_path ? '<button type="button" class="vwFileDl" '+
+          'onclick="dzVwDownload(\''+kind+'\',\''+id+'\',\'\')" '+
           'aria-label="Download this file" title="Download this file">'+vwSvg('dl')+'</button>' : '')+
         '</div>'+
         (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+

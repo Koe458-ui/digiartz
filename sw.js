@@ -2721,7 +2721,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v158';
+const CACHE_VERSION = 'v159';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2779,7 +2779,7 @@ const SHELL_URLS = [
   '/js/protect.js?v=2',
   '/js/gallery.js?v=81',
   '/js/auth.js?v=10',
-  '/js/profile.js?v=9',
+  '/js/profile.js?v=10',
   '/js/albums.js?v=13',
   '/js/drafts.js?v=6',
   '/js/upqueue.js?v=4',
@@ -2797,7 +2797,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=103',
+  '/js/sections.js?v=104',
   '/js/navprogress.js?v=5'
 ];
 

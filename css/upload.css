@@ -299,6 +299,14 @@
     .upFCard .upInWrapArea .upCount{top:auto;bottom:-.15rem;}
     .upFCard .upTagBox{padding:0;gap:.3rem;}
     .upFCard .upTagInput{padding:0;}
+    /* A chip list that also carries a menu. Both halves are bare inside a
+       row, so without a line between them the trigger and the box read as one
+       control and the chips look like they belong to the trigger. */
+    .upFCard .upRefDd{margin-bottom:.4rem;}
+    .upFCard .upRefDd+.upTagBox{
+      border-top:1px solid color-mix(in srgb,var(--fc,var(--pg)) 20%,transparent);
+      padding-top:.4rem;
+    }
     /* The menu belongs to the row that opened it, so it is drawn in that row's
        colour rather than in the sheet's one accent — the same rule for the
        artwork pickers and for the section forms, which open this menu now

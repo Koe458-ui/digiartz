@@ -435,6 +435,19 @@
   // traditional ones are not asked for it — a watercolour has no software.
   var ART_DIGITAL = { 'Digital painting':1, 'Digital illustration':1, 'Concept art':1,
                       '3D render':1, 'Pixel art':1, 'Vector':1, 'Photomanipulation':1 };
+  // The list the Software Used dropdown offered before this field became a
+  // list, kept and widened. Naming software is a recall question with a small
+  // answer set, and a box that only takes typing asks every uploader to spell
+  // "Clip Studio Paint" from memory. The list is a shortcut, not a fence: the
+  // box below it still takes anything, so a tool nobody thought of is one
+  // Enter away and nothing here has to be exhaustive to be useful.
+  var SOFTWARE_OPTS = [
+    'Photoshop','Illustrator','Procreate','Clip Studio Paint','ibisPaint',
+    'Krita','MediBang Paint','Paint Tool SAI','GIMP','Corel Painter',
+    'Affinity Photo','Affinity Designer','Autodesk SketchBook','Inkscape',
+    'Figma','Aseprite','Blender','ZBrush','Maya','Cinema 4D',
+    'Substance Painter','Nomad Sculpt','After Effects'
+  ];
   var ART_LICENSE = [['All rights reserved','All rights reserved'],
                      ['Personal use only','Personal use only'],
                      ['Commercial use allowed','Commercial use allowed'],
@@ -508,7 +521,8 @@
         // has no software. reqIf makes it required without hiding it, which is
         // what "conditional" means for this one.
         {k:'software_list', t:'list', slot:3, cap:10, imin:2, imax:50,
-         label:'Software used', reqIf:'digitalart', ph:'Photoshop, then press Enter',
+         label:'Software used', reqIf:'digitalart', opts:SOFTWARE_OPTS,
+         pick:'Pick your software', ph:'Or type another, then press Enter',
          hint:'Up to 10. Required for digital work, optional for traditional.'},
         {k:'license', t:'sel', slot:4, label:'License / usage rights', req:true,
          options:ART_LICENSE, def:'All rights reserved'},
@@ -569,8 +583,9 @@
          options:YES_NO_PLAIN, def:'yes'},
         {k:'software',t:'text', label:'Made with', min:2, max:100, ph:'Photoshop, Procreate…'},
         {k:'compatible_software',t:'list', cap:10, imin:2, imax:50,
-         label:'Compatible software', ph:'Photoshop, then press Enter',
-         hint:'Up to 10. Press Enter after each.'},
+         label:'Compatible software', opts:SOFTWARE_OPTS,
+         pick:'Pick the software', ph:'Or type another, then press Enter',
+         hint:'Up to 10. Pick from the list or press Enter after each.'},
         {k:'compatible_versions',t:'text', label:'Compatible versions', min:2, max:200,
          ph:'e.g. Photoshop CC 2022+'},
         {k:'whats_included',t:'area', label:'What’s included', req:true, min:20, max:2000, rows:4,
@@ -1112,7 +1127,7 @@
     description:[C_GRN,ICO_LINES], excerpt:[C_GRN,ICO_LINES], body:[C_GRN,ICO_LINES],
     category:[C_AMB,ICO_TAG],
     tags:[C_CYN,ICO_HASH],
-    software:[C_PNK,ICO_SCREEN],
+    software:[C_PNK,ICO_SCREEN], software_list:[C_PNK,ICO_SCREEN],
     license:[C_ROS,ICO_SHIELD],
     price:[C_GRN,ICO_MONEY], salary_min:[C_GRN,ICO_MONEY], salary_max:[C_GRN,ICO_MONEY],
     currency:[C_YEL,ICO_COIN], salary_currency:[C_YEL,ICO_COIN],
@@ -1375,7 +1390,29 @@
       // the software a resource opens in. Whether an entry has to be a url is
       // the field's own business; everything else about it is shared.
       var isUrl = !!fd.url;
-      body = '<div class="upTagBox" onclick="document.getElementById(\''+id+'_in\').focus()">'+
+      // A list whose answers are mostly drawn from a known set carries the
+      // set as a menu. Every other picker on this form opens one, so a list
+      // that offers nothing but a blank box reads as the odd one out and, on
+      // a phone, as broken — which is exactly what happened when Software
+      // Used stopped being a dropdown and became this.
+      var menu = '';
+      if(fd.opts && fd.opts.length){
+        menu = '<div class="upCatDd upRefDd" id="'+id+'_dd">'+
+          '<button type="button" class="upCatTrigger" id="'+id+'_tr" aria-haspopup="listbox" '+
+            'onclick="dzRefMenu(event,\''+id+'\')">'+
+            '<span id="'+id+'_lb" data-ph="'+esc(fd.pick || 'Pick from the list')+'">'+
+              esc(fd.pick || 'Pick from the list')+'</span>'+DZ_CHEV+
+          '</button>'+
+          '<div class="upCatPanel" id="'+id+'_pn" role="listbox">'+
+            fd.opts.map(function(o){
+              return '<label class="upCatOpt"><input type="checkbox" value="'+esc(o)+'" '+
+                'onchange="dzRefOpt(\''+id+'\',this,'+(fd.cap||10)+')"> '+esc(o)+'</label>';
+            }).join('')+
+          '</div>'+
+        '</div>';
+      }
+      body = menu+
+        '<div class="upTagBox" onclick="document.getElementById(\''+id+'_in\').focus()">'+
         '<span id="'+id+'_chips"></span>'+
         '<input class="upTagInput" id="'+id+'_in" type="'+(isUrl ? 'url' : 'text')+'" '+
           'maxlength="'+(fd.imax||200)+'" '+
@@ -1560,12 +1597,60 @@
   function dzRefsRender(id){
     var host = document.getElementById(id+'_chips');
     if(!host) return;
-    host.innerHTML = dzRefList(id).map(function(u, i){
+    var list = dzRefList(id);
+    host.innerHTML = list.map(function(u, i){
       // shown short, stored whole
       var show = u.replace(/^https?:\/\//i, '').slice(0, 40);
       return '<span class="upTagChip" title="'+esc(u)+'">'+esc(show)+
         '<button type="button" onclick="dzRefDel(\''+id+'\','+i+')" aria-label="Remove link">✕</button></span>';
     }).join('');
+    dzRefMenuSync(id, list);
+  }
+  // ---- the menu half of a chip list --------------------------------------
+  // The hidden input stays the single answer to "what is in this list": the
+  // ticks and the trigger's label are drawn from it every time it changes, so
+  // a chip removed with its ✕, a value typed by hand and a draft restored
+  // from storage all leave the menu saying the same thing as the chips.
+  function dzRefMenuSync(id, list){
+    var pn = document.getElementById(id+'_pn');
+    if(!pn) return;
+    list = list || dzRefList(id);
+    var boxes = pn.querySelectorAll('input[type=checkbox]');
+    for(var i=0;i<boxes.length;i++){
+      boxes[i].checked = list.indexOf(boxes[i].value) !== -1;
+    }
+    var lb = document.getElementById(id+'_lb');
+    if(lb) lb.textContent = list.length
+      ? list.length + ' selected'
+      : (lb.getAttribute('data-ph') || 'Pick from the list');
+  }
+  function dzRefMenu(e, id){
+    if(e) e.stopPropagation();
+    var dd = document.getElementById(id+'_dd'); if(!dd) return;
+    dzCloseMenus(dd);
+    dzSchClose();
+    dd.classList.toggle('open');
+  }
+  // Ticking adds, unticking removes, and the ceiling is the same one the
+  // typed half keeps to — so a member cannot get past it by using the menu.
+  function dzRefOpt(id, box, cap){
+    var hid = document.getElementById(id);
+    if(!hid) return;
+    var list = dzRefList(id), at = list.indexOf(box.value);
+    if(box.checked){
+      if(at === -1){
+        if(list.length >= cap){
+          box.checked = false;
+          showToast('That is the limit — ' + cap + ' entries');
+          return;
+        }
+        list.push(box.value);
+      }
+    } else if(at !== -1){
+      list.splice(at, 1);
+    }
+    hid.value = list.join('\n');
+    dzRefsRender(id);
   }
   function dzRefKey(e, id, cap, imin, imax, isUrl){
     if(e.key !== 'Enter') return;          // a comma is legal inside a url
@@ -3302,6 +3387,8 @@
   window.dzPickSet       = dzPickSet;
   window.dzRefKey        = dzRefKey;
   window.dzRefDel        = dzRefDel;
+  window.dzRefMenu       = dzRefMenu;
+  window.dzRefOpt        = dzRefOpt;
   // pure readers, exported so what the row claims about an upload can be
   // checked against a real file rather than taken on trust
   window.dzZipCount      = dzZipCount;

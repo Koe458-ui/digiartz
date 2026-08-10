@@ -4,6 +4,27 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v147 — Software Used is a list you can pick from again.
+       The artwork panel had a Software Used dropdown, ten entries, one
+       choice. v139 replaced it with a list — up to ten, so a piece made
+       in three programs can say so — and stood the old control down. But
+       the list shipped as a bare box with "Photoshop, then press Enter"
+       in it and nothing to open, sitting between Artwork type and Add to
+       Album, which both open menus. So the row read as a dropdown that
+       had stopped working, and answering it meant spelling "Clip Studio
+       Paint" from memory. The uploader who reported it read the field as
+       broken rather than as changed, which is fair: nothing on it said
+       there was anything to press.
+       A chip list can carry its own menu now, and Software Used carries
+       one — the ten it used to offer plus thirteen more. Ticking adds,
+       unticking removes, the box below still takes anything the list does
+       not name, and the ten-entry ceiling holds whichever half is used.
+       The hidden input stays the single answer to what is in the list, so
+       the ticks, the chips and the trigger are redrawn from it together
+       and a restored draft comes back with all three agreeing.
+       Resources' Compatible software is the same field with the same
+       list, so it gets the same menu.
+       Changed: js/sections.js, css/upload.css, index.html, sw.js.
    v146 — a tag box takes a list.
        "anime, chr, genshin impact" is three tags. It was one, with the
        commas inside it, in every case except typing the commas slowly
@@ -2466,7 +2487,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v146';
+const CACHE_VERSION = 'v147';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2499,7 +2520,7 @@ const SHELL_URLS = [
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=9',
+  '/css/upload.css?v=10',
   '/css/widgets.css?v=3',
   '/css/overrides.css?v=7',
   '/css/select.css?v=2',
@@ -2542,7 +2563,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=91',
+  '/js/sections.js?v=92',
   '/js/navprogress.js?v=5'
 ];
 

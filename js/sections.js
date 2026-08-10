@@ -4345,9 +4345,35 @@
 
   // ---- ask before deleting ----------------------------------------------
   var cfmFn = null;
-  window.dzConfirm = function(title, msg, yesLabel, fn){
+  // Built when it is missing, the way the viewer's card and the comment rail's
+  // button are: a client on an older index.html would otherwise get the
+  // browser's own confirm here and the site's everywhere else, which is the
+  // one question on the page you want to read carefully.
+  function cfmBox(){
     var box = document.getElementById('vwCfm');
-    if(!box){ if(window.confirm(title)) fn(); return; }   // no markup, no ceremony
+    if(box) return box;
+    if(!document.body) return null;
+    box = document.createElement('div');
+    box.id = 'vwCfm';
+    box.hidden = true;
+    box.onclick = function(e){ if(e.target === box) window.dzConfirmClose(); };
+    box.innerHTML =
+      '<div class="vwCfmBox" role="dialog" aria-modal="true" aria-labelledby="vwCfmT">'+
+        '<div class="vwCfmT" id="vwCfmT">Are you sure?</div>'+
+        '<p class="vwCfmM" id="vwCfmM"></p>'+
+        '<div class="vwCfmActs">'+
+          '<button class="vwCfmBtn" type="button" id="vwCfmNo">Cancel</button>'+
+          '<button class="vwCfmBtn vwCfmBtn--danger" type="button" id="vwCfmYes">Delete</button>'+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(box);
+    box.querySelector('#vwCfmNo').onclick = function(){ window.dzConfirmClose(); };
+    box.querySelector('#vwCfmYes').onclick = function(){ window.dzConfirmYes(); };
+    return box;
+  }
+  window.dzConfirm = function(title, msg, yesLabel, fn){
+    var box = cfmBox();
+    if(!box){ if(window.confirm(title)) fn(); return; }   // no document, no ceremony
     cfmFn = fn;
     document.getElementById('vwCfmT').textContent = title;
     document.getElementById('vwCfmM').textContent = msg || '';

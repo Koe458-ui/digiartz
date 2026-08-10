@@ -262,6 +262,10 @@
     }catch(e){ return null; }
   }
 
+  // How the panel reads: what the piece is, what it was made with and at what
+  // size, what may be done with it, and when it arrived. Resolution used to
+  // sit after the licence, which split the two technical rows around the
+  // three legal ones.
   function avRenderMeta(m){
     // only rows with data
     var rows = [], a = m.art || null;
@@ -275,6 +279,9 @@
       var sw = (a && a.software_list && a.software_list.length)
         ? a.software_list.join(', ') : m.software;
       if(sw) rows.push(['Software', sw]);
+    }
+    rows.push(['Resolution', '—', 'avMetaResVal']);
+    if(m.hasArt){
       // A licence is only claimed when the artist actually answered the
       // licence questions. Every artwork uploaded before those existed has
       // them defaulted to false, and reading that back as "personal use
@@ -291,7 +298,6 @@
       }
       if(a && a.is_mature) rows.push(['Content', 'Mature · 18+']);
     }
-    rows.push(['Resolution', '—', 'avMetaResVal']);
     if(m.hasArt && m.createdAt) rows.push(['Uploaded', avFormatDate(m.createdAt) || '—']);
     // shown only once it says something the upload date does not
     if(a && a.updated_at && a.created_at &&
@@ -306,10 +312,10 @@
     }).join('');
   }
   // ---- the rest of what the artist wrote ---------------------------------
-  // The summary leads under the title; the process notes, credits and links
-  // sit below the tags. Each block carries its own divider and is dropped
-  // when empty, which is every one of them for an artwork uploaded before
-  // these fields existed.
+  // The summary leads under the title, the process notes and credits follow
+  // the description, and the links sit under the details panel they belong
+  // with. Each block carries its own divider and is dropped when empty, which
+  // is every one of them for an artwork uploaded before these fields existed.
   function avProseBlock(head, body){
     body = String(body == null ? '' : body).trim();
     if(!body) return '';
@@ -323,6 +329,8 @@
       sEl.textContent = sm;
       sEl.hidden = !sm;
     }
+    var fEl = document.getElementById('avFeatured');
+    if(fEl) fEl.hidden = !(art && art.featured);
     var host = document.getElementById('avExtraBlocks');
     if(host){
       var out = '';
@@ -334,20 +342,25 @@
               return '<span class="avTagChip">'+esc(c)+'</span>';
             }).join('')+'</div></div>';
         }
-        if(Array.isArray(art.external_links) && art.external_links.length){
-          // the artist's own text, so anything that is not http is printed
-          // rather than turned into something the browser will follow
-          out += '<div class="avDiv"></div><div><div class="avBlockH">Links</div><ul class="dzvRefs">'+
-            art.external_links.map(function(u){
-              var safe = /^https?:\/\//i.test(String(u||'')) ? String(u) : '';
-              var show = String(u||'').replace(/^https?:\/\//i,'');
-              return safe
-                ? '<li><a href="'+esc(safe)+'" target="_blank" rel="noopener nofollow">'+esc(show)+'</a></li>'
-                : '<li>'+esc(show)+'</li>';
-            }).join('')+'</ul></div>';
-        }
       }
       host.innerHTML = out;
+    }
+    var links = document.getElementById('avLinkBlocks');
+    if(links){
+      var lo = '';
+      if(art && Array.isArray(art.external_links) && art.external_links.length){
+        // the artist's own text, so anything that is not http is printed
+        // rather than turned into something the browser will follow
+        lo = '<div class="avDiv"></div><div><div class="avBlockH">Links</div><ul class="dzvRefs">'+
+          art.external_links.map(function(u){
+            var safe = /^https?:\/\//i.test(String(u||'')) ? String(u) : '';
+            var show = String(u||'').replace(/^https?:\/\//i,'');
+            return safe
+              ? '<li><a href="'+esc(safe)+'" target="_blank" rel="noopener nofollow">'+esc(show)+'</a></li>'
+              : '<li>'+esc(show)+'</li>';
+          }).join('')+'</ul></div>';
+      }
+      links.innerHTML = lo;
     }
     // An artist who turned comments off gets no comment box. What was already
     // said stays readable — turning them off ends the conversation, it does

@@ -4,6 +4,27 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v148 — a section wears one icon, and the upload mark is an upload mark.
+       The gallery's tab rail and the upload sheet's tab rail name the same
+       five sections and drew three of them as different objects.
+       Marketplace was a storefront to browse and a shopping bag to post
+       to; Blog was a page of text and a pencil; Resources was a stack of
+       layers and an open book. Artworks and Jobs already agreed, which is
+       what made the other three read as a mistake rather than a style.
+       The upload sheet takes the gallery's path data for all five now,
+       copied rather than redrawn, so the two rails cannot drift again
+       without somebody editing both. The same glyphs lead each section's
+       empty dropzone, so what a member taps in the rail is what greets
+       them inside it.
+       The sheet's own mark was a cloud with an arrow through it. A cloud
+       says the file goes somewhere else; the tray-and-arrow is what the
+       rest of the web means by upload, and it is what the sheet was asked
+       for. Indigo rather than violet, matching it.
+       The five section colours are unchanged, so the tinting the forms,
+       chips and guide sheets share still holds. Jobs is the one place the
+       two rails still disagree — pink on the upload sheet, cyan in the
+       gallery — and that is a colour question, not an icon one.
+       Changed: js/sections.js, index.html, sw.js.
    v147 — Software Used is a list you can pick from again.
        The artwork panel had a Software Used dropdown, ten entries, one
        choice. v139 replaced it with a list — up to ten, so a piece made
@@ -2490,7 +2511,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v147';
+const CACHE_VERSION = 'v148';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2566,7 +2587,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=92',
+  '/js/sections.js?v=93',
   '/js/navprogress.js?v=5'
 ];
 

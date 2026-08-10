@@ -932,16 +932,19 @@
           <svg viewBox="0 0 32 32" width="32" height="32">
             <defs>
               <linearGradient id="upMarkGrad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#C4B5FD"/>
-                <stop offset=".55" stop-color="#8B5CF6"/>
-                <stop offset="1" stop-color="#6D28D9"/>
+                <stop offset="0" stop-color="#A5B4FC"/>
+                <stop offset=".55" stop-color="#6366F1"/>
+                <stop offset="1" stop-color="#4338CA"/>
               </linearGradient>
             </defs>
             <rect width="32" height="32" rx="10" fill="url(#upMarkGrad)"/>
+            <!-- An arrow leaving a tray, not a cloud. The cloud said "sent
+                 somewhere else"; this is the mark the rest of the web reads as
+                 upload, and it is the one the sheet was asked for. -->
             <g transform="translate(4 4)" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/>
-              <path d="M12 21v-8"/>
-              <path d="m8 17 4-4 4 4"/>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <path d="m7 8 5-5 5 5"/>
+              <path d="M12 3v12"/>
             </g>
           </svg>
         </span>
@@ -2934,7 +2937,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=5"></script>
 
 
-  <script src="/js/sections.js?v=92"></script>
+  <script src="/js/sections.js?v=93"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

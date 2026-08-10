@@ -815,12 +815,19 @@
   var TAB_ICO   = {artwork:'artworks', resources:'resources', blog:'blog', marketplace:'marketplace', jobs:'jobs'};
   var upSec = 'artwork';
 
-  // one icon per section
+  // One icon per section, and the same one the gallery's tab rail uses for
+  // that section — the path data below is copied from #fgSecTabs in
+  // index.html rather than drawn again. A section is one thing to a member
+  // whether they are browsing it or posting to it, so it cannot be a
+  // storefront on the gallery and a shopping bag on the upload sheet.
+  // Artworks and Jobs already agreed; Marketplace, Blog and Resources did
+  // not, and each was a different object rather than a different drawing of
+  // the same one.
   var SEC_SVG = {
     artworks:    '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>',
-    resources:   '<path d="M12 7c-1.8-1.3-4-2-6.5-2H3v13h2.5c2.5 0 4.7.7 6.5 2 1.8-1.3 4-2 6.5-2H21V5h-2.5C16 5 13.8 5.7 12 7z"/><path d="M12 7v13"/>',
-    blog:        '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
-    marketplace: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+    resources:   '<path d="M12 2.7 2.8 7.1 12 11.5l9.2-4.4z"/><path d="M3.2 12.1 12 16.3l8.8-4.2"/><path d="M3.2 16.5 12 20.7l8.8-4.2"/>',
+    blog:        '<rect x="3.4" y="3" width="17.2" height="18" rx="2.4"/><path d="M7.3 8.2h9.4"/><path d="M7.3 12h9.4"/><path d="M7.3 15.8h5.2"/>',
+    marketplace: '<path d="M3 9.4 4.8 4.3A2 2 0 0 1 6.7 3h10.6a2 2 0 0 1 1.9 1.3L21 9.4"/><path d="M4.6 9.4V19a2 2 0 0 0 2 2h10.8a2 2 0 0 0 2-2V9.4"/><path d="M3 9.4h18"/><path d="M9.6 21v-5.4h4.8V21"/>',
     jobs:        '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'
   };
   // the round tinted badge an empty dropzone leads with. It was a white-stroked

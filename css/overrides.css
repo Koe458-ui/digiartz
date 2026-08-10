@@ -255,3 +255,36 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 .dzPMeta span:last-child{ text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* failed schedule */
 .dzPMeta span.dzPErr{ color:var(--danger); white-space:normal; line-height:1.3; }
+
+/* ── one set of measurements for all five viewers ─────────────────────────
+   The artwork viewer's side panel and the four section views' column grew
+   their own padding and their own gaps, so the same card sat at a different
+   inset depending on which of them you opened. One pair of tokens now, one
+   step down on a phone, and both columns read off them — so every viewer has
+   the same space from the left, the same from the right, and the same
+   distance between the things in it, at every width. */
+:root{ --vwGap:1.5rem; --vwPad:1.75rem; }
+@media(max-width:520px){ :root{ --vwPad:1.15rem; --vwGap:1.2rem; } }
+@media(min-width:1100px){ :root{ --vwPad:2.25rem; --vwGap:1.6rem; } }
+
+.dzvCol{
+  gap:var(--vwGap);
+  padding:var(--vwPad) var(--vwPad) 4rem;
+}
+#artModal .avSideScroll{
+  gap:var(--vwGap);
+  padding:var(--vwPad) var(--vwPad) 4rem;
+}
+/* The media above a section view takes the same inset as the column under
+   it, instead of a clamp that drifted from it at every width. */
+.dzvMedia{ padding:var(--vwPad) var(--vwPad) 0; }
+
+/* Comments run down the page now rather than inside a 340px window of their
+   own: the page already scrolls, the newest is at the top, and the rest
+   arrive twenty at a time on the button below them. A scroller inside a
+   scroller was hiding the button that loads them. */
+.avCmList{ max-height:none; overflow:visible; padding-right:0; }
+
+/* a line in the cart: the listing's own card, and the way to take it out */
+.dzCartCell{ display:flex; flex-direction:column; gap:.5rem; }
+.dzCartRm{ align-self:stretch; text-align:center; }

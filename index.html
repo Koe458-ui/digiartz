@@ -98,7 +98,7 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
   <link rel="stylesheet" href="/css/hero.css?v=91">
-  <link rel="stylesheet" href="/css/viewer.css?v=5">
+  <link rel="stylesheet" href="/css/viewer.css?v=7">
   <link rel="stylesheet" href="/css/community.css?v=4">
   <link rel="stylesheet" href="/css/connect.css?v=2">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
@@ -108,7 +108,7 @@
   <link rel="stylesheet" href="/css/panels.css?v=2">
   <link rel="stylesheet" href="/css/upload.css?v=12">
   <link rel="stylesheet" href="/css/widgets.css?v=3">
-  <link rel="stylesheet" href="/css/overrides.css?v=7">
+  <link rel="stylesheet" href="/css/overrides.css?v=9">
   <link rel="stylesheet" href="/css/select.css?v=2">
  </head>
  <body>
@@ -2218,6 +2218,20 @@
     </div>
   </div>
 
+  <!-- One question, asked before anything is deleted for good. The site asks
+       with the browser's own confirm in a few older places; the comment rails
+       ask here, in the site's own voice. dzConfirm fills it in. -->
+  <div id="vwCfm" hidden onclick="if(event.target===this)dzConfirmClose()">
+   <div class="vwCfmBox" role="dialog" aria-modal="true" aria-labelledby="vwCfmT">
+    <div class="vwCfmT" id="vwCfmT">Are you sure?</div>
+    <p class="vwCfmM" id="vwCfmM"></p>
+    <div class="vwCfmActs">
+     <button class="vwCfmBtn" type="button" id="vwCfmNo" onclick="dzConfirmClose()">Cancel</button>
+     <button class="vwCfmBtn vwCfmBtn--danger" type="button" id="vwCfmYes" onclick="dzConfirmYes()">Delete</button>
+    </div>
+   </div>
+  </div>
+
   <div id="dzView" role="dialog" aria-modal="true" aria-label="Detail view">
    <div class="dzvTop">
     <button class="avNavTxt" id="dzvPrev" onclick="dzViewNav(-1)" aria-label="Previous">Previous</button>
@@ -2245,23 +2259,18 @@
      </div>
      <div class="avSide" id="avSide">
       <div class="avSideScroll">
-       <div class="avAuthorRow" id="avAuthorRow" onclick="avGoToAuthor()">
-        <div class="avAvatar" id="avAvatar">
-         <img id="avAvatarImg" alt="" style="display:none;">
-         <span id="avAvatarTxt"></span>
-        </div>
-        <div>
-         <div class="avAuthorName" id="avAuthorName"></div>
-         <div class="avAuthorHandle" id="avAuthorHandle"></div>
-        </div>
-       </div>
+       <!-- Who made it, how to reach them, and the way out. Written by
+            dzVwCard so this viewer and the four section views open with the
+            same card at the same measurements. -->
+       <div id="avAuthorCard"></div>
+       <!-- Like, bookmark, download, share, report — the same rail the
+            section views carry, written by avRenderRail once the artwork is
+            known, because the download and the report both need its id. -->
+       <div id="avActRail"></div>
+       <div class="avDlNote" id="avDlNote" hidden></div>
        <div>
         <div class="avTitleRow">
          <div class="avTitle" id="lbNm"></div>
-         <div class="avTitleActs">
-          <button type="button" class="engBtn engLike" aria-label="Like" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 1 1 12 6.3a5 5 0 1 1 7.5 6.3Z"/></svg></button>
-          <button type="button" class="engBtn engBm" aria-label="Bookmark" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1Z"/></svg></button>
-         </div>
         </div>
         <div class="avSubType" id="avSubType"></div>
         <!-- Said here the way the other four sections say it on their own
@@ -2294,21 +2303,21 @@
         <div class="avTagList" id="avTagList"></div>
        </div>
        <div class="avDiv"></div>
+       <!-- The box you type in sits above what everyone else typed, and the
+            comments arrive twenty at a time on the button under them. Nothing
+            follows this block: every action the viewer offers is in the rail
+            at the top now. -->
        <div class="avCmBlock">
         <div class="avBlockH">Comments</div>
-        <div class="avCmList" id="avCmList"></div>
-        <div class="avCmEmpty" id="avCmOff" hidden>THE ARTIST TURNED COMMENTS OFF</div>
         <div class="avCmBar">
          <input class="avCmIn" id="avCmIn" type="text" maxlength="1000" placeholder="Write a comment…"
                 onkeydown="if(event.key==='Enter')dzCmPost('artwork',avCurrentArt&&avCurrentArt.id,'avCmIn','avCmList')">
          <button class="avCmSend" onclick="dzCmPost('artwork',avCurrentArt&&avCurrentArt.id,'avCmIn','avCmList')" aria-label="Send comment">➤</button>
         </div>
+        <div class="avCmEmpty" id="avCmOff" hidden>THE ARTIST TURNED COMMENTS OFF</div>
+        <div class="avCmList" id="avCmList"></div>
+        <button class="vwMore" type="button" id="avCmList_more" hidden onclick="dzCmMore('avCmList')">LOAD 20 MORE</button>
        </div>
-       <div class="avDiv"></div>
-       <button class="avActWide avDlBtn" onclick="avDownload()">⬇ Download</button>
-       <div class="avDlNote" id="avDlNote" hidden></div>
-       <button class="avReportBtn" onclick="avReport()">⚑ Report artwork</button>
-       <button class="avActWide" onclick="avShare()">↗ Share</button>
       </div>
      </div>
     </div>
@@ -2604,7 +2613,7 @@
   <script src="/uploadVerifier.js"></script>
   <script src="/js/app-core.js?v=19"></script>
   <script src="/js/protect.js?v=2"></script>
-  <script src="/js/gallery.js?v=78"></script>
+  <script src="/js/gallery.js?v=80"></script>
   <script src="/js/auth.js?v=10"></script>
   <script src="/js/profile.js?v=9"></script>
   <script src="/js/albums.js?v=13"></script>
@@ -2613,7 +2622,7 @@
   <script src="/js/avatar.js?v=2"></script>
   <script src="/js/pfedit.js?v=8"></script>
   <script src="/js/mywork.js?v=10"></script>
-  <script src="/js/startup.js?v=2"></script>
+  <script src="/js/startup.js?v=3"></script>
   <script src="/js/tagrail.js?v=3"></script>
   <script src="/js/search.js?v=7"></script>
   <script src="/js/feed.js?v=3"></script>
@@ -2966,7 +2975,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=5"></script>
 
 
-  <script src="/js/sections.js?v=99"></script>
+  <script src="/js/sections.js?v=101"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

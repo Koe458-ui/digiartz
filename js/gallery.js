@@ -377,54 +377,39 @@
     if(el && w && h) el.textContent = w+' × '+h+' px';
   }
 
-  var avAuthorProfileCache = {};
-  function avRenderAuthor(art){
-    var row = document.getElementById('avAuthorRow');
-    var nameEl = document.getElementById('avAuthorName');
-    var handleEl = document.getElementById('avAuthorHandle');
-    if(!row || !nameEl || !handleEl) return;
-    if(!art || !art.user_id){ row.style.display='none'; return; }
-    row.style.display='';
-    var uid = art.user_id;
-    function paint(uname, avatarUrl){
-      paintAvatarChip('avAvatarImg', 'avAvatarTxt', avatarUrl||null, (uname||'?').charAt(0).toUpperCase());
-      nameEl.textContent = uname || 'Artist';
-      handleEl.textContent = '@'+(uname||'artist');
-    }
-    // use freshest own avatar
-    if(pf.profile && pf.profile.id===uid){ avAuthorProfileCache[uid] = { username:pf.profile.username, avatar_url:pf.profile.avatar_url }; paint(pf.profile.username, pf.profile.avatar_url); return; }
-    if(currentUser && currentUser.id===uid){ var _ownU=(currentUser.user_metadata && currentUser.user_metadata.username)||null; if(_ownU) avAuthorProfileCache[uid]={ username:_ownU, avatar_url:currentUserAvatarUrl||null }; paint(cpGetDisplayName(), currentUserAvatarUrl); return; }
-    if(avAuthorProfileCache[uid]){ paint(avAuthorProfileCache[uid].username, avAuthorProfileCache[uid].avatar_url); return; }
-    paintAvatarChip('avAvatarImg', 'avAvatarTxt', null, '?'); nameEl.textContent='…'; handleEl.textContent='';
-    if(sb){
-      sb.from('profiles').select('username,avatar_url').eq('id',uid).single().then(function(res){
-        var uname = res && res.data && res.data.username ? res.data.username : 'Artist';
-        var avatarUrl = res && res.data ? res.data.avatar_url : null;
-        avAuthorProfileCache[uid] = { username:uname, avatar_url:avatarUrl };
-        if(!avCurrentArt || avCurrentArt.user_id!==uid) return; // modal moved on
-        paint(uname, avatarUrl);
-      }).catch(function(){});
-    }
+  // ---- the card and the rail ---------------------------------------------
+  // Both are written by the section views' own module, so this viewer and the
+  // four of them open with the same card, the same buttons and the same rail
+  // at the same measurements — there is one implementation of each, not two.
+  function avRenderCard(art){
+    var host = document.getElementById('avAuthorCard');
+    if(!host || typeof window.dzVwCard !== 'function') return;
+    host.innerHTML = window.dzVwCard('avCard', 'closeLB()');
+    if(typeof window.dzVwFill === 'function') window.dzVwFill('avCard', art && art.user_id);
   }
-  function avGoToAuthor(){
-    if(!avCurrentArt || !avCurrentArt.user_id) return;
-    var uid = avCurrentArt.user_id;
-    // resolve author username
-    var cached = avAuthorProfileCache[uid];
-    var uname = (cached && cached.username)
-      || (pf.profile && pf.profile.id===uid ? pf.profile.username : null)
-      || (currentUser && currentUser.id===uid && currentUser.user_metadata ? currentUser.user_metadata.username : null)
-      || null;
-    if(uname){ closeLB(true); openProfileByUsername(uname); return; }
-    if(!sb){ if(typeof showToast==='function') showToast('Can\u2019t open profile \u2014 try again'); return; }
-    sb.from('profiles').select('username').eq('id',uid).single().then(function(res){
-      var u = res && res.data && res.data.username;
-      if(!u){ if(typeof showToast==='function') showToast('Profile not found'); return; }
-      avAuthorProfileCache[uid] = avAuthorProfileCache[uid] || { username:u, avatar_url:null };
-      closeLB(true);
-      openProfileByUsername(u);
-    }).catch(function(){ if(typeof showToast==='function') showToast('Couldn\u2019t open profile'); });
+  // Like and bookmark keep their own two tables and their own module — the
+  // classes are what engagement.js paints and listens for, so they stay on
+  // the buttons and only the shape around them changes.
+  function avRenderRail(art){
+    var host = document.getElementById('avActRail');
+    if(!host || typeof window.dzVwActRow !== 'function') return;
+    var id = art && art.id ? String(art.id) : '';
+    host.innerHTML = window.dzVwActRow([
+      { k:'like', c:'red',   cls:'engLike', press:1, label:'Like',
+        attrs:' data-id="'+esc(id)+'"', on:'' },
+      { k:'bm',   c:'amber', cls:'engBm',   press:1, label:'Bookmark',
+        attrs:' data-id="'+esc(id)+'"', on:'' },
+      { k:'dl',    c:'green', label:'Download', on:'avDownload()' },
+      { k:'share', c:'blue',  label:'Share',    on:'avShare()' },
+      { k:'report',c:'red',   label:'Report artwork', on:'avReport()' }
+    ]);
+    if(typeof window.dzRepaintEng === 'function') window.dzRepaintEng();
   }
+
+  // The author strip and the two functions that painted it are gone with the
+  // markup they wrote into: dzVwCard draws the card and dzVwFill fills it,
+  // for this viewer and for the four section views alike, and the card's own
+  // name and avatar are the click that opens the profile.
 
   function avSetupNav(id, navSource){
     var prevBtn = document.getElementById('avPrevBtn');
@@ -449,7 +434,7 @@
     if(!art) return;
     var cats=catList(art.category).length?catList(art.category):['others'];
     // keep prev next within list
-    openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, avNavList);
+    openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), 'replace', avNavList);
   }
 
   function avResetZoom(){
@@ -766,9 +751,6 @@
 
     // instant reset
     (function(){
-      var btns=document.querySelectorAll('#artModal .engLike,#artModal .engBm');
-      btns.forEach(function(b){ b.setAttribute('data-id', id?String(id):''); });
-      if(typeof window.dzRepaintEng==='function') window.dzRepaintEng();
       var cl=document.getElementById('avCmList');
       if(cl) cl.innerHTML='<div class="avCmEmpty">LOADING\u2026</div>';
       var ci=document.getElementById('avCmIn'); if(ci) ci.value='';
@@ -833,7 +815,8 @@
     avRenderMeta({ category:catLabelStr, software: art?art.software:null,
                    createdAt: art?art.created_at:null, hasArt: !!art, art: art });
     avRenderExtras(art);
-    avRenderAuthor(art);
+    avRenderCard(art);
+    avRenderRail(art);
     avPaintQuota(null); avLoadQuota();
     avSetupNav(id, navSource);
     if(id && typeof window.dzCmLoad==='function') window.dzCmLoad('artwork', String(id), 'avCmList');
@@ -848,7 +831,13 @@
     // update url and meta
     if(id){
       if(pushUrl!==false && window.location.pathname!=='/artwork/'+id){
-        try{ history.pushState({artId:id},'',  '/artwork/'+id); }catch(e){}
+        // 'replace' is what Next and Previous pass: the viewer is one
+        // place, not one place per artwork stepped through, so walking a
+        // gallery leaves one entry behind rather than one per step.
+        try{
+          if(pushUrl === 'replace') history.replaceState({artId:id},'', '/artwork/'+id);
+          else history.pushState({artId:id},'', '/artwork/'+id);
+        }catch(e){}
       }
       updateArtworkSEO({id:id,name:name,description:desc,category:cat,image_url:src});
     }

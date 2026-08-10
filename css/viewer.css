@@ -844,3 +844,192 @@
       font-family:var(--fb);font-size:.9rem;line-height:1.5;
       color:rgba(var(--tx2-rgb),.75);margin:.45rem 0 0;overflow-wrap:anywhere;
     }
+
+    /* ── the viewer's own chrome ──────────────────────────────────────────
+       One card and one rail, shared by the artwork viewer and the four
+       section detail views, so all five open the same way: who made this,
+       how to reach them, and the way out.
+
+       Every colour here is a token and every token is redefined per theme,
+       so the rail follows whichever theme is on without a second rule. The
+       light themes take the darker, more saturated end of each hue because
+       a pastel icon on white is a smudge. */
+    :root{
+      --vwRed:#FF3B3B; --vwAmber:#FFB800; --vwGreen:#00E27A; --vwBlue:#2E9BFF;
+      /* The profile page declares these two on #profilePage, so outside it the
+         primary button had no blue to take and drew as a plain outline. Same
+         two values, hoisted to the root: Add friend is the blue here that it is
+         when you are looking at someone's profile. */
+      --pfBlue:#2563EB; --pfBlueH:#1D4ED8;
+    }
+    html[data-theme="light"]{
+      --vwRed:#FF2020; --vwAmber:#F08C00; --vwGreen:#00B85C; --vwBlue:#0B72E7;
+    }
+
+    /* the card: avatar and name, the way out, and the two buttons the
+       profile page carries — literally .pfActBtn, so they are the same size
+       and the same colour here as they are there */
+    .vwCard{
+      display:flex;flex-direction:column;gap:.9rem;
+      border:1px solid var(--bdr);border-radius:16px;background:var(--sur);
+      padding:1.05rem 1.1rem;box-sizing:border-box;
+    }
+    .vwCardTop{display:flex;align-items:center;gap:.9rem;min-width:0;}
+    .vwAv{
+      width:54px;height:54px;border-radius:50%;flex:0 0 auto;cursor:pointer;
+      background:linear-gradient(135deg,var(--pg),var(--pgd));
+      color:var(--text-on-accent);font-family:var(--fd);font-weight:700;font-size:1.2rem;
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
+    }
+    .vwAv img{width:100%;height:100%;object-fit:cover;display:block;}
+    .vwWho{flex:1 1 auto;min-width:0;cursor:pointer;}
+    .vwName{
+      font-family:var(--fb);font-weight:700;font-size:1.08rem;color:var(--tx);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .vwHandle{
+      font-family:var(--fm);font-size:.76rem;letter-spacing:.04em;
+      color:rgba(var(--tx2-rgb),.55);margin-top:.16rem;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    /* the way out, and the reason this whole card exists. Red, because it is
+       the one control on the page that leaves it */
+    .vwClose{
+      width:48px;height:48px;flex:0 0 auto;border-radius:14px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      border:1px solid color-mix(in srgb,var(--vwRed) 60%,var(--bdr));
+      background:color-mix(in srgb,var(--vwRed) 16%,var(--sur));
+      color:var(--vwRed);
+      transition:background .15s ease,transform .15s ease;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .vwClose svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+    @media(hover:hover){ .vwClose:hover{background:color-mix(in srgb,var(--vwRed) 22%,var(--sur));} }
+    .vwClose:active{transform:scale(.94);}
+    .vwClose:focus-visible{outline:2px solid var(--vwRed);outline-offset:2px;}
+    .vwActs{display:flex;gap:.6rem;min-width:0;}
+    .vwActs[hidden]{display:none;}
+    /* The profile page lets these two size to their words once the row is
+       wide enough. Here they are a pair and nothing else shares the row, so
+       they split it evenly at every width — same box, same colour, same
+       size as each other and as the ones on the profile. */
+    .vwActs .pfActBtn{flex:1 1 0;min-width:0;min-height:50px;padding-inline:.9rem;font-size:.9rem;border-radius:13px;}
+    /* The profile's own copies of these glyphs carry fill and stroke as
+       markup attributes; these are written from one icon table that holds
+       paths and nothing else, so the drawing rules live here. Without them
+       the cred star filled solid black on every dark theme instead of
+       drawing as an outline in the button's own ink. */
+    .vwActs .pfActBtn svg{
+      width:19px;height:19px;flex:0 0 auto;
+      fill:none;stroke:currentColor;stroke-width:1.8;
+      stroke-linecap:round;stroke-linejoin:round;
+    }
+
+    /* the rail: one round button per action, each in its own colour so the
+       row reads at a glance rather than as five identical grey circles */
+    /* Centred, because the rail is a row of five equal things and a row of
+       five equal things has a middle. On a phone it spreads instead: the
+       screen is narrower than the group is wide is not the problem — the
+       problem is that a centred group there leaves dead margin on both sides
+       and a thumb has less to hit. Edge to edge on a phone, centred once
+       there is room to centre in. */
+    .vwActRow{display:flex;gap:1.15rem;align-items:center;justify-content:center;}
+    @media(max-width:520px){ .vwActRow{justify-content:space-between;gap:.4rem;} }
+    .vwAct{
+      width:52px;height:52px;border-radius:50%;flex:0 0 auto;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      border:1px solid color-mix(in srgb,var(--vwc) 55%,var(--bdr));
+      background:color-mix(in srgb,var(--vwc) 16%,var(--sur));
+      color:var(--vwc);
+      transition:background .15s ease,transform .15s ease,border-color .15s ease;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .vwAct svg{
+      width:23px;height:23px;fill:none;stroke:currentColor;
+      stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+      transition:fill .15s ease;
+    }
+    @media(hover:hover){
+      .vwAct:hover{background:color-mix(in srgb,var(--vwc) 28%,var(--sur));transform:scale(1.06);}
+    }
+    .vwAct:active{transform:scale(.94);}
+    .vwAct:focus-visible{outline:2px solid var(--vwc);outline-offset:2px;}
+    /* liked and bookmarked fill their glyph in, the way they always have */
+    .vwAct[aria-pressed="true"]{
+      background:color-mix(in srgb,var(--vwc) 30%,var(--sur));
+      border-color:var(--vwc);
+    }
+    .vwAct[aria-pressed="true"] svg{fill:currentColor;}
+    .vwAct[data-c="red"]{--vwc:var(--vwRed);}
+    .vwAct[data-c="amber"]{--vwc:var(--vwAmber);}
+    .vwAct[data-c="green"]{--vwc:var(--vwGreen);}
+    .vwAct[data-c="blue"]{--vwc:var(--vwBlue);}
+
+    /* one more page of comments, and nothing at all once there are none */
+    .vwMore{
+      align-self:flex-start;cursor:pointer;
+      font-family:var(--fm);font-size:.66rem;letter-spacing:.12em;
+      padding:.6rem 1rem;border-radius:10px;
+      border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
+      transition:border-color .15s ease;
+    }
+    .vwMore[hidden]{display:none;}
+    @media(hover:hover){ .vwMore:hover{border-color:var(--pg);color:var(--ps);} }
+    .vwMore:disabled{opacity:.6;cursor:default;}
+
+    /* ask before deleting. The site asks with the browser's own confirm in a
+       few older places; this is the same question in the site's own voice,
+       and it is the one the comment rail uses. */
+    #vwCfm{
+      position:fixed;inset:0;z-index:1200;display:flex;
+      align-items:center;justify-content:center;padding:1.2rem;
+      background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+    }
+    #vwCfm[hidden]{display:none;}
+    .vwCfmBox{
+      width:100%;max-width:340px;box-sizing:border-box;
+      border:1px solid var(--bdr);border-radius:16px;background:var(--sur);
+      padding:1.2rem;display:flex;flex-direction:column;gap:.6rem;
+    }
+    .vwCfmT{font-family:var(--fd);font-weight:800;font-size:1.05rem;color:var(--tx);}
+    .vwCfmM{font-family:var(--fb);font-size:.85rem;line-height:1.55;color:var(--txd);margin:0;}
+    .vwCfmActs{display:flex;gap:.5rem;margin-top:.4rem;}
+    .vwCfmBtn{
+      flex:1 1 0;min-height:44px;cursor:pointer;border-radius:12px;
+      font-family:var(--fb);font-size:.85rem;font-weight:600;
+      border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
+      transition:background .15s ease,border-color .15s ease;
+    }
+    .vwCfmBtn:active{transform:scale(.98);}
+    .vwCfmBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    .vwCfmBtn--danger{
+      border-color:color-mix(in srgb,var(--vwRed) 45%,var(--bdr));
+      background:color-mix(in srgb,var(--vwRed) 14%,var(--sur));
+      color:var(--vwRed);
+    }
+    @media(hover:hover){
+      .vwCfmBtn:hover{border-color:var(--bdrh);}
+      .vwCfmBtn--danger:hover{background:color-mix(in srgb,var(--vwRed) 24%,var(--sur));}
+    }
+
+    /* a phone gives the card less room than the buttons want */
+    @media(max-width:400px){
+      .vwAct{width:48px;height:48px;}
+      .vwAct svg{width:21px;height:21px;}
+      .vwClose{width:44px;height:44px;}
+      .vwAv{width:48px;height:48px;}
+    }
+
+    /* the download beside one file in a package, as against the one in the
+       rail, which takes the whole package */
+    .vwFileDl{
+      width:46px;height:46px;flex:0 0 auto;border-radius:12px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;margin-left:auto;
+      border:1px solid color-mix(in srgb,var(--vwGreen) 55%,var(--bdr));
+      background:color-mix(in srgb,var(--vwGreen) 16%,var(--sur));
+      color:var(--vwGreen);transition:background .15s ease,transform .15s ease;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .vwFileDl svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+    @media(hover:hover){ .vwFileDl:hover{background:color-mix(in srgb,var(--vwGreen) 20%,var(--sur));} }
+    .vwFileDl:active{transform:scale(.94);}

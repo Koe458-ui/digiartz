@@ -4,6 +4,51 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v155 — every viewer opens the same way, and closes.
+       The five detail views had no way out. Closing one meant the
+       browser's own back button, and since every Next pushed a history
+       entry, ten artworks into a gallery was ten presses to get out of
+       it. Both halves of that are fixed: Next and Previous replace the
+       entry rather than stacking one, so a run of any length is one
+       press — and there is a red ✕ at the top of all five now, in a card
+       that is the same card everywhere.
+       The card: avatar, display name, @handle, the way out, and the
+       profile page's own two buttons — literally .pfActBtn, so Add
+       friend and Cred are the same size and the same colour here as
+       there, and split the row evenly. Both act on the artist whose work
+       is open. Your own work shows neither.
+       Under it, a rail of five round buttons, each in its own colour:
+       like, bookmark, download-or-cart, share, report. Centred where
+       there is room, spread edge to edge on a phone. Jobs has no rail —
+       a posting is not liked, saved or bought — and keeps the report
+       button at the foot of the ad.
+       Everything that used to sit at the bottom of a view is in that
+       rail now, so the foot of all five is the comment block and
+       nothing else. On a resource the file row carries its own download
+       beside the rail's: the rail takes the package, the row takes the
+       file.
+       Comments: the box you type in is above what everyone else typed,
+       the newest is directly under it, and they arrive twenty at a time
+       on a button rather than two hundred at once. Deleting one asks
+       first — Cancel or Delete, in the site's own voice rather than the
+       browser's.
+       Three tables behind it, in 20260810_item_engagement_and_cart.sql:
+       item_likes and item_bookmarks give resources, posts and listings
+       the two answers artworks have always had, and cart_items is the
+       store behind the Cart tab, which has been a tab with filters and
+       nothing behind it since the gallery grew six of them. Cart is a
+       panel now, and Add to cart fills it.
+       A post, a resource, a listing and a posting each have a link of
+       their own — /blog/<id>, /resource/<id>, /listing/<id>,
+       /job/<id> — because Share needs something to share and until now
+       only an artwork had one. The view writes it while it is open and
+       opens from it on a cold load.
+       One pair of tokens sets the padding and the gap for all five, so
+       every viewer has the same space left, right and between at every
+       width, one step down on a phone and one step up on a wide screen.
+       Changed: js/sections.js, js/gallery.js, js/startup.js, index.html,
+       css/viewer.css, css/overrides.css, _redirects, sw.js, and a
+       migration.
    v154 — two ways to apply are two ways to apply.
        A posting and a commission listing each take an apply link and an
        apply email, and the detail views took the link when both were
@@ -2676,7 +2721,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v154';
+const CACHE_VERSION = 'v155';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;

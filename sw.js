@@ -4,6 +4,39 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v151 — four things an audit of the upload sheet turned up.
+       Sweeping the whole sheet — five forms against each other and
+       against the gallery — found seven mismatches. Three of them are
+       decisions rather than defects and are left alone for now: the two
+       rails order and name their tabs differently, and the dropzone
+       badges follow two different rules about what a badge means. These
+       four had no such question hanging over them.
+       The artwork panel never said uploads are reviewed. All four
+       section forms have carried that line since they were built, and
+       this is the one form that actually stops on it — every artwork goes
+       through /api/moderate-upload on the way out. So the member most
+       likely to meet a refusal was the only one not warned it was coming.
+       It says so now, before the wait rather than after.
+       The section forms' Publish was the one button of the ten on the
+       sheet with no mark on it — Save Draft beside it has had its 💾 all
+       along, and the artwork panel's primary its 📤. It takes the 📤 too.
+       The restore in dzSubmit's finally block was writing the bare word
+       back, so the first failed publish would have stripped it off again;
+       that writes the full label now.
+       The Add more images dropzone led with a text emoji while every
+       other dropzone on the sheet led with a drawn glyph in a tinted
+       tile, and it sits directly under the cover dropzone. It is a stack
+       of frames now, drawn — deliberately not the cover zone's tray and
+       arrow, since that zone takes the one image that matters and this
+       one takes the extras. openPfUpload was overwriting the badge with
+       textContent, which would have deleted the svg, so it no longer
+       writes it; only the words that panel changes are written.
+       FIELD_ICO had two keys declared twice, body and
+       modification_allowed. Both pairs held the same value, so nothing
+       rendered wrong and the later one silently won — removed before the
+       values drift apart and the duplicate starts mattering.
+       Changed: js/sections.js, js/albums.js, css/upload.css, index.html,
+       sw.js.
    v150 — every section is the gallery's own colour, in every theme.
        v149 moved Jobs from pink to cyan and called the two rails settled.
        They were not. Checking the actual hex rather than the colour's
@@ -2562,7 +2595,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v150';
+const CACHE_VERSION = 'v151';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2595,7 +2628,7 @@ const SHELL_URLS = [
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=2',
-  '/css/upload.css?v=11',
+  '/css/upload.css?v=12',
   '/css/widgets.css?v=3',
   '/css/overrides.css?v=7',
   '/css/select.css?v=2',
@@ -2621,7 +2654,7 @@ const SHELL_URLS = [
   '/js/gallery.js?v=77',
   '/js/auth.js?v=10',
   '/js/profile.js?v=9',
-  '/js/albums.js?v=12',
+  '/js/albums.js?v=13',
   '/js/drafts.js?v=6',
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
@@ -2638,7 +2671,7 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/engagement.js?v=5',
-  '/js/sections.js?v=95',
+  '/js/sections.js?v=96',
   '/js/navprogress.js?v=5'
 ];
 

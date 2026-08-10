@@ -106,7 +106,7 @@
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=2">
-  <link rel="stylesheet" href="/css/upload.css?v=11">
+  <link rel="stylesheet" href="/css/upload.css?v=12">
   <link rel="stylesheet" href="/css/widgets.css?v=3">
   <link rel="stylesheet" href="/css/overrides.css?v=7">
   <link rel="stylesheet" href="/css/select.css?v=2">
@@ -1001,7 +1001,14 @@
       <div id="pfComicPagesWrap" style="display:none;">
         <div class="upDz upDzSm" id="pfDzPages">
          <input accept="image/*" id="pfUpPages" multiple="" onclick="if(pfGuestGate(event))return;" onchange="handlePfPagesFile(event)" type="file"/>
-         <div class="upDzIco" id="pfDzPagesIco">📖</div>
+         <!-- A stack of frames, drawn rather than typed. This was the one
+              badge on the sheet that was a text emoji while every other
+              dropzone led with an SVG in a tinted tile, and it sits directly
+              under the cover dropzone, so the two were side by side. The
+              glyph is deliberately not the cover zone's tray and arrow: that
+              zone takes the one image that matters, this one takes the
+              extras. -->
+         <div class="upDzIco" id="pfDzPagesIco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="14" height="14" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2"/><circle cx="7.6" cy="11.6" r="1.2"/><path d="M17 18.8 12.4 14.2 3 20.6"/></svg></div>
          <div class="upDzTitle" id="pfDzPagesTitle">Drop page images here or click to browse</div>
          <div class="upDzSub" id="pfDzPagesSub">Multiple pages supported</div>
         </div>
@@ -1161,6 +1168,13 @@
         <button class="upBtnSec" id="pfDraftBtn" onclick="updrSave()">💾 Save Draft</button>
         <button class="upBtnPri" id="pfUpBtn" onclick="doPfUp()">📤 Upload Artwork</button>
       </div>
+      <!-- The other four forms have carried this line since they were built,
+           and this panel never did — while being the one form that actually
+           stops on it. Every artwork goes through /api/moderate-upload on the
+           way out (js/upqueue.js), so a member who is going to meet a refusal
+           is told before they spend the wait rather than after. "Uploads"
+           rather than "Posts" because that is what this form takes. -->
+      <p class="dzHint" style="margin-top:.9rem">Uploads are reviewed before they appear publicly.</p>
      </div>
 
      <div class="upSide">
@@ -2582,7 +2596,7 @@
   <script src="/js/gallery.js?v=77"></script>
   <script src="/js/auth.js?v=10"></script>
   <script src="/js/profile.js?v=9"></script>
-  <script src="/js/albums.js?v=12"></script>
+  <script src="/js/albums.js?v=13"></script>
   <script src="/js/drafts.js?v=6"></script>
   <script src="/js/upqueue.js?v=4"></script>
   <script src="/js/avatar.js?v=2"></script>
@@ -2941,7 +2955,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=5"></script>
 
 
-  <script src="/js/sections.js?v=95"></script>
+  <script src="/js/sections.js?v=96"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

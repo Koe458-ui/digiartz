@@ -1200,7 +1200,9 @@
     document.getElementById('pfUpCatField').style.display = '';
     // optional extra images
     document.getElementById('pfComicPagesWrap').style.display = '';
-    document.getElementById('pfDzPagesIco').textContent   = '🖼';
+    // The badge is markup now, not a character, so it is left alone — writing
+    // textContent here would delete the svg and leave the tile empty. Only the
+    // words this panel changes are written.
     document.getElementById('pfDzPagesTitle').textContent = 'Add more images (optional)';
     document.getElementById('pfDzPagesSub').textContent   = 'The image above stays the cover. Add as many extras as you like.';
     document.getElementById('pfUpSoftwareField').style.display = '';

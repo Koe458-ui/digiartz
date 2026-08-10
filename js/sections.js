@@ -1085,7 +1085,10 @@
         // save draft before publish
         '<div class="upActions">'+
           '<button type="button" class="upBtnSec" id="dzDraftBtn-'+sec+'" onclick="dzSaveDraft(\''+sec+'\')">💾 Save Draft</button>'+
-          '<button type="button" class="upBtnPri" id="dzSubmit-'+sec+'" onclick="dzSubmit(\''+sec+'\')">Publish</button>'+
+          // 📤, like the artwork panel's own primary and like the Save Draft
+          // beside it. This was the one button of the ten on the sheet with no
+          // mark on it, which read as the odd one rather than as the plain one.
+          '<button type="button" class="upBtnPri" id="dzSubmit-'+sec+'" onclick="dzSubmit(\''+sec+'\')">📤 Publish</button>'+
         '</div>'+
         '<p class="dzHint" style="margin-top:.9rem">Posts are reviewed before they appear publicly.</p>'+
       '</div></div>'+
@@ -1172,8 +1175,10 @@
     portfolio_required:[C_VIO,ICO_CHECK], resume_required:[C_VIO,ICO_CLIP],
     cover_letter_required:[C_VIO,ICO_PENCIL],
     visibility:[C_YEL,ICO_EYE], featured:[C_AMB,ICO_STAR],
-    // a post, and the things a post is about
-    body:[C_GRN,ICO_LINES], cover:[C_VIO,ICO_SCREEN],
+    // a post, and the things a post is about. body is not repeated here — it
+    // is up with the other long-text fields, which is where a reader looking
+    // for it would go.
+    cover:[C_VIO,ICO_SCREEN],
     content_type:[C_PUR,ICO_GRID],
     related_artworks:[C_PNK,ICO_SCREEN], related_items:[C_AMB,ICO_GRID],
     external_refs:[C_BLU,ICO_LINK],
@@ -1199,8 +1204,9 @@
     resource_type:[C_PUR,ICO_GRID],
     compatible_software:[C_PNK,ICO_SCREEN], compatible_versions:[C_PNK,ICO_HASH],
     whats_included:[C_GRN,ICO_GIFT], instructions:[C_BLU,ICO_LIST],
-    version:[C_TEA,ICO_HASH], external_links:[C_BLU,ICO_LINK],
-    modification_allowed:[C_ROS,ICO_SHIELD]
+    version:[C_TEA,ICO_HASH], external_links:[C_BLU,ICO_LINK]
+    // modification_allowed is not repeated here either — it sits with the
+    // other rights questions above, all of which share the shield.
   };
   var TYPE_ICO = {
     text:[C_VIO,ICO_PENCIL], area:[C_GRN,ICO_LINES], num:[C_GRN,ICO_MONEY],
@@ -3348,7 +3354,10 @@
       if(moderated){ dzV.fail((err && err.message) ? err.message : 'Could not publish'); }
       else { showToast((err && err.message) ? err.message : 'Could not publish'); }
     }finally{
-      if(btn){ btn.disabled = false; btn.textContent = 'Publish'; }
+      // the same label buildForm gave it, mark and all — restoring the bare
+      // word here would have quietly stripped the 📤 off after the first
+      // failed publish and left that one button odd again
+      if(btn){ btn.disabled = false; btn.textContent = '📤 Publish'; }
     }
   }
 

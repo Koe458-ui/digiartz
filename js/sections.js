@@ -181,9 +181,64 @@
 
   // load
   function dzSecEnter(sec){
+    // The Cart tab has been a tab with filters and nothing behind it since the
+    // gallery grew six of them. It has a table now, so it has a panel.
+    if(sec === 'cart'){ dzCartRender(); return; }
     if(!SEC[sec] || dzLoaded[sec] || dzBusy[sec]) { dzSecRender(sec); return; }
     dzSecLoad(sec);
   }
+
+  // ---- the cart ----------------------------------------------------------
+  // What is in it, and the two things that can be done with a line in it:
+  // open the listing, or take it out again. It carries no total, because a
+  // total is a price and the price a buyer is charged is decided by the
+  // checkout backend at the moment of payment — this panel is a list of
+  // intentions, not an invoice.
+  async function dzCartRender(){
+    var host = document.getElementById('fgSecC-cart');
+    if(!host) return;
+    if(!window.currentUser){
+      host.innerHTML = '<div class="dzEmpty">SIGN IN TO USE YOUR CART</div>';
+      return;
+    }
+    if(!sb){ host.innerHTML = '<div class="dzEmpty">BACKEND NOT CONFIGURED</div>'; return; }
+    host.innerHTML = '<div class="dzEmpty">LOADING…</div>';
+    try{
+      var c = await sb.from('cart_items').select('item_id,created_at')
+                .eq('user_id', currentUser.id).order('created_at',{ascending:false}).limit(100);
+      var ids = ((c && c.data) || []).map(function(x){ return x.item_id; });
+      if(!ids.length){ host.innerHTML = '<div class="dzEmpty">YOUR CART IS EMPTY</div>'; return; }
+      var m = await sb.from('marketplace_items').select(selectFor('marketplace')).in('id', ids);
+      var rows = (m && m.data) || [];
+      // the cart's own order, not the database's
+      var byId = {};
+      rows.forEach(function(r){ byId[String(r.id)] = r; });
+      rows = ids.map(function(i){ return byId[String(i)]; }).filter(Boolean);
+      if(!rows.length){ host.innerHTML = '<div class="dzEmpty">YOUR CART IS EMPTY</div>'; return; }
+      dzCartRows = rows;
+      host.innerHTML = '<div class="dzGrid">'+rows.map(function(r){
+        return '<div class="dzCartCell">'+card('marketplace', r)+
+          '<button class="vwMore dzCartRm" type="button" onclick="dzCartRemove(\''+esc(r.id)+'\')">'+
+          'REMOVE FROM CART</button></div>';
+      }).join('')+'</div>';
+      if(typeof window.dzExtras === 'function') window.dzExtras();
+    }catch(e){
+      host.innerHTML = '<div class="dzEmpty">COULD NOT LOAD YOUR CART</div>';
+    }
+  }
+  var dzCartRows = [];
+  window.dzCartRows   = function(){ return dzCartRows; };
+  window.dzCartPaint  = dzCartRender;
+  window.dzCartRemove = async function(id){
+    if(!window.currentUser || !sb) return;
+    try{
+      var r = await sb.from('cart_items').delete()
+                .eq('user_id', currentUser.id).eq('item_id', id);
+      if(r.error) throw r.error;
+      showToast('Removed from cart');
+      dzCartRender();
+    }catch(e){ showToast('Could not remove it — try again'); }
+  };
   // The one column a signed-out visitor may not read. Asked for anyway it
   // fails the request outright, so it is only ever in the select list when
   // there is a session to justify it.
@@ -3743,32 +3798,72 @@
   function esc2(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function rows(){ return (typeof window.dzGetRows==='function' ? window.dzGetRows(cur.sec) : []) || []; }
 
-  // comments
-  window.dzCmLoad = async function(kind, id, listId){
+  // ---- comments ---------------------------------------------------------
+  // The box you type in is above what everyone else typed, and the newest
+  // comment is the one directly under it. That is the order it reads in and
+  // the order it is fetched in, so the first twenty are the twenty a reader
+  // wants; the rest arrive twenty at a time on the button underneath, rather
+  // than two hundred at once whether or not anybody scrolls that far.
+  var CM_PAGE = 20;
+  function cmRow(c, kind, id, listId){
+    var mine = window.currentUser && c.user_id === currentUser.id;
+    return '<div class="avCm">'+
+      '<div class="avCmAv">'+esc2((c.username||'?').charAt(0).toUpperCase())+'</div>'+
+      '<div class="avCmMain"><div class="avCmHead"><span class="avCmName">'+esc2(c.username||'artist')+'</span>'+
+      '<span class="avCmTime">'+esc2(H().ago(c.created_at))+'</span>'+
+      (mine ? '<button class="avCmDel" onclick="dzCmDelAsk('+c.id+',\''+esc2(kind)+'\',\''+esc2(id)+'\',\''+listId+'\')" aria-label="Delete comment">\u2715</button>' : '')+
+      '</div><div class="avCmBody">'+esc2(c.body)+'</div></div></div>';
+  }
+  function cmMoreBtn(listId, show, busy){
+    var b = document.getElementById(listId+'_more');
+    if(!b) return;
+    b.hidden = !show;
+    b.disabled = !!busy;
+    b.textContent = busy ? 'LOADING\u2026' : 'LOAD 20 MORE';
+  }
+  async function cmPage(listId, token, first){
     var host = document.getElementById(listId);
-    if(!host || !id || !sb) return;
-    var token = host.dataset.cmToken = String(Math.random());
+    if(!host || !sb) return;
+    var kind = host.dataset.cmKind, id = host.dataset.cmSid;
+    var off = parseInt(host.dataset.cmOff, 10) || 0;
+    if(!first) cmMoreBtn(listId, true, true);
     try{
       var res = await sb.from('item_comments')
         .select('id,user_id,username,body,created_at')
         .eq('kind',kind).eq('subject_id',id)
-        .order('created_at',{ascending:true}).limit(200);
-      if(host.dataset.cmToken !== token) return;   // user navigated on
+        .order('created_at',{ascending:false})
+        .range(off, off + CM_PAGE - 1);
+      host = document.getElementById(listId);
+      if(!host || host.dataset.cmToken !== token) return;   // reader moved on
       var list = (res && res.data) || [];
-      if(!list.length){ host.innerHTML = '<div class="avCmEmpty">NO COMMENTS YET \u2014 BE THE FIRST</div>'; return; }
-      host.innerHTML = list.map(function(c){
-        var mine = window.currentUser && c.user_id === currentUser.id;
-        return '<div class="avCm">'+
-          '<div class="avCmAv">'+esc2((c.username||'?').charAt(0).toUpperCase())+'</div>'+
-          '<div class="avCmMain"><div class="avCmHead"><span class="avCmName">'+esc2(c.username||'artist')+'</span>'+
-          '<span class="avCmTime">'+esc2(H().ago(c.created_at))+'</span>'+
-          (mine ? '<button class="avCmDel" onclick="dzCmDel('+c.id+',\''+esc2(kind)+'\',\''+esc2(id)+'\',\''+listId+'\')" aria-label="Delete comment">\u2715</button>' : '')+
-          '</div><div class="avCmBody">'+esc2(c.body)+'</div></div></div>';
-      }).join('');
-      host.scrollTop = host.scrollHeight;
+      var html = list.map(function(c){ return cmRow(c, kind, id, listId); }).join('');
+      if(first) host.innerHTML = html || '<div class="avCmEmpty">NO COMMENTS YET \u2014 BE THE FIRST</div>';
+      else if(html) host.insertAdjacentHTML('beforeend', html);
+      host.dataset.cmOff = String(off + list.length);
+      cmMoreBtn(listId, list.length === CM_PAGE, false);
     }catch(e){
-      if(host.dataset.cmToken === token) host.innerHTML = '<div class="avCmEmpty">COULD NOT LOAD COMMENTS</div>';
+      host = document.getElementById(listId);
+      if(host && host.dataset.cmToken === token && first){
+        host.innerHTML = '<div class="avCmEmpty">COULD NOT LOAD COMMENTS</div>';
+      }
+      cmMoreBtn(listId, false, false);
     }
+  }
+  window.dzCmLoad = function(kind, id, listId){
+    var host = document.getElementById(listId);
+    if(!host || !id || !sb) return;
+    host.dataset.cmKind = String(kind);
+    host.dataset.cmSid  = String(id);
+    host.dataset.cmOff  = '0';
+    var token = host.dataset.cmToken = String(Math.random());
+    host.innerHTML = '<div class="avCmEmpty">LOADING\u2026</div>';
+    cmMoreBtn(listId, false, false);
+    return cmPage(listId, token, true);
+  };
+  window.dzCmMore = function(listId){
+    var host = document.getElementById(listId);
+    if(!host) return;
+    cmPage(listId, host.dataset.cmToken, false);
   };
   window.dzCmPost = async function(kind, id, inputId, listId){
     if(!id) return;
@@ -3787,6 +3882,14 @@
       window.dzCmLoad(kind, id, listId);
     }catch(e){ showToast((e && e.message) || 'Could not post the comment'); }
     finally{ if(input) input.disabled = false; }
+  };
+  // A comment is gone for good and gone for everyone, so it is worth one
+  // question first. The ✕ used to delete on the tap, with a mis-tap costing
+  // whatever had been written.
+  window.dzCmDelAsk = function(cid, kind, id, listId){
+    window.dzConfirm('Delete your comment?',
+      'This removes it for everyone. It cannot be undone.', 'Delete',
+      function(){ window.dzCmDel(cid, kind, id, listId); });
   };
   window.dzCmDel = async function(cid, kind, id, listId){
     try{
@@ -3879,48 +3982,380 @@
     host.innerHTML = out;
   }
 
-  // author row
-  async function fillAuthor(uid, elId){
-    var el = document.getElementById(elId);
-    if(!el || !uid || !sb) return;
-    // wire the click first
-    el.style.cursor = 'pointer';
-    el.onclick = function(){
-      var cp = profCache[uid];
-      if(cp && cp.username){ openProfileByUsername(cp.username); return; }
-      sb.from('profiles').select('username').eq('id',uid).single().then(function(r){
-        var u = r && r.data && r.data.username;
-        if(!u){ if(typeof showToast==='function') showToast('Profile not found'); return; }
-        openProfileByUsername(u);
-      }).catch(function(){ if(typeof showToast==='function') showToast('Couldn\u2019t open profile'); });
-    };
-    var p = profCache[uid];
-    if(!p){
+  // ---- the viewer's own chrome ------------------------------------------
+  // One card and one rail, shared by the artwork viewer and the four section
+  // detail views, so all five open the same way and to the same measurements.
+  //
+  // The card is the answer to the thing that was actually wrong with these
+  // views: they had no way out. Closing meant the browser's own back button,
+  // and since every Next used to push a history entry, ten artworks in meant
+  // ten presses to get out. The card carries the way out, in red, at the top
+  // of every one of them \u2014 and the nav no longer stacks history at all.
+  var VW_ICO = {
+    close : '<path d="M6 6 18 18"/><path d="M18 6 6 18"/>',
+    like  : '<path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 1 1 12 6.3a5 5 0 1 1 7.5 6.3Z"/>',
+    bm    : '<path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1Z"/>',
+    dl    : '<path d="M12 4v10"/><path d="m8 11 4 4 4-4"/>'+
+            '<path d="M5 16.5v2A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-2"/>',
+    cart  : '<circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/>'+
+            '<path d="M2.5 3.5h2.6l2.3 11a1.6 1.6 0 0 0 1.6 1.3h7.4a1.6 1.6 0 0 0 1.6-1.3l1.5-7.3H5.7"/>',
+    share : '<circle cx="18" cy="5.5" r="2.4"/><circle cx="6" cy="12" r="2.4"/>'+
+            '<circle cx="18" cy="18.5" r="2.4"/><path d="m8.2 10.8 7.6-4"/><path d="m8.2 13.2 7.6 4"/>',
+    report: '<path d="M5 21V4"/><path d="M5 5c4-2 8 2 12 0v8c-4 2-8-2-12 0"/>',
+    friend: '<path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/>'+
+            '<circle cx="10" cy="8" r="3.2"/><path d="M18 8v6"/><path d="M21 11h-6"/>',
+    msg   : '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>',
+    cred  : '<path d="m12 3.6 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 17l-5.25 2.75 1-5.85L3.5 9.75l5.9-.85Z"/>'
+  };
+  function vwSvg(k){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(VW_ICO[k]||'')+'</svg>'; }
+  window.dzVwSvg = vwSvg;
+
+  // The card's markup, with the ids the filler writes into. `close` is the
+  // call that closes whichever viewer this is \u2014 the two of them close
+  // differently, and that is the only thing about the card that differs.
+  function vwCard(id, close){
+    return '<div class="vwCard">'+
+      '<div class="vwCardTop">'+
+        '<div class="vwAv" id="'+id+'_av" onclick="dzVwProfile(\''+id+'\')"></div>'+
+        '<div class="vwWho" onclick="dzVwProfile(\''+id+'\')">'+
+          '<div class="vwName" id="'+id+'_nm">Artist</div>'+
+          '<div class="vwHandle" id="'+id+'_un"></div>'+
+        '</div>'+
+        '<button class="vwClose" type="button" onclick="'+close+'" aria-label="Close">'+vwSvg('close')+'</button>'+
+      '</div>'+
+      '<div class="vwActs" id="'+id+'_acts" hidden></div>'+
+    '</div>';
+  }
+  window.dzVwCard = vwCard;
+
+  // The rail. Each entry is {k:icon, c:colour, label, on:onclick, id, press},
+  // or the same with href instead of on — a download is a link, and a link is
+  // what lets the browser save the file rather than navigate to it.
+  function vwActRow(items){
+    var out = items.filter(Boolean).map(function(a){
+      var common = ' class="vwAct'+(a.cls ? ' '+a.cls : '')+'" data-c="'+a.c+'"'+
+        (a.id ? ' id="'+a.id+'"' : '')+(a.attrs || '')+
+        (a.press ? ' aria-pressed="false"' : '')+
+        ' aria-label="'+esc2(a.label)+'" title="'+esc2(a.label)+'"';
+      return a.href
+        ? '<a href="'+esc2(a.href)+'" target="_blank" rel="noopener" download'+common+'>'+vwSvg(a.k)+'</a>'
+        : '<button type="button"'+common+' onclick="'+a.on+'">'+vwSvg(a.k)+'</button>';
+    }).join('');
+    return out ? '<div class="vwActRow">'+out+'</div>' : '';
+  }
+  // The rail every section view shows, in one place so the three of them
+  // cannot drift apart: five things, the same five positions, the middle one
+  // being whatever this section's own act is — take the package, or take the
+  // listing to the cart. Jobs is the one section with no rail: a posting is
+  // not liked, saved, downloaded or bought, and it keeps the report button it
+  // has always had at the foot of the ad.
+  function vwSecRail(sec, kind, id, r){
+    if(sec === 'jobs') return '';
+    var dl = sec === 'resources' ? r.file_url
+           : sec === 'blog'      ? (r.cover_url ? imgResize(r.cover_url, 1600) : '')
+           : '';
+    var title = String(r.title || '').replace(/'/g, '');
+    return vwActRow([
+      { k:'like', c:'red',   id:'vwAct_like', press:1, label:'Like',
+        on:'dzVwEng(\'like\',\''+kind+'\',\''+id+'\')' },
+      { k:'bm',   c:'amber', id:'vwAct_bm',   press:1, label:'Bookmark',
+        on:'dzVwEng(\'bm\',\''+kind+'\',\''+id+'\')' },
+      sec === 'marketplace'
+        ? { k:'cart', c:'blue', id:'vwAct_cart', press:1, label:'Add to cart',
+            on:'dzVwEng(\'cart\',\''+kind+'\',\''+id+'\')' }
+        : { k:'dl', c:'green', href:dl || null,
+            on: dl ? '' : 'dzToast(\'Nothing to download here\')',
+            label: sec === 'blog' ? 'Download cover' : 'Download everything' },
+      { k:'share', c:'blue', label:'Share',
+        on:'dzVwShare(\''+sec+'\',\''+id+'\',\''+esc2(title)+'\')' },
+      { k:'report', c:'red', label:'Report',
+        on:'dzReportItem(\''+kind+'\',\''+id+'\')' }
+    ]);
+  }
+  window.dzToast = function(m){ if(typeof showToast === 'function') showToast(m); };
+
+  // ---- a link to one item -----------------------------------------------
+  // Share needs something to share. Until now only an artwork had a url of
+  // its own; a post, a resource and a listing lived at whatever page you
+  // happened to be on, so a shared link opened the home page. Each section
+  // has its own path now — the same shape /artwork/<id> has always had — and
+  // the view writes it while it is open, so Share, the address bar and the
+  // back button all say the same thing.
+  var VW_PATH = { resources:'resource', blog:'blog', marketplace:'listing', jobs:'job' };
+  window.dzVwPath = VW_PATH;
+  function vwUrl(sec, id){
+    var seg = VW_PATH[sec];
+    return seg ? (location.origin + '/' + seg + '/' + id) : location.href;
+  }
+  window.dzVwUrl = vwUrl;
+  // The other end of that link: a path segment and an id, fetched and opened
+  // on its own. A section the reader has never opened has no cache to look in,
+  // so this asks the table directly and opens the single row it gets back.
+  var VW_SEG = { resource:'resources', blog:'blog', listing:'marketplace', job:'jobs' };
+  var VW_TABLE = { resources:'resources', blog:'blog_posts', marketplace:'marketplace_items', jobs:'jobs' };
+  window.dzOpenById = async function(seg, id){
+    var sec = VW_SEG[seg];
+    if(!sec || !sb || typeof window.dzSelectFor !== 'function') return;
+    try{
+      var res = await sb.from(VW_TABLE[sec]).select(window.dzSelectFor(sec)).eq('id', id).maybeSingle();
+      var row = res && res.data;
+      if(!row){ if(typeof showToast === 'function') showToast('That item is no longer available'); return; }
+      if(typeof openFG === 'function') openFG();
+      if(typeof fgSwitchSection === 'function') fgSwitchSection(sec === 'resources' ? 'resources' : sec);
+      window.dzOpenRow(sec, row);
+    }catch(e){ if(typeof showToast === 'function') showToast('Could not open that link'); }
+  };
+  window.dzVwShare = function(sec, id, title){
+    var url = vwUrl(sec, id);
+    var t = title || document.title;
+    if(navigator.share){ navigator.share({ title:t, url:url }).catch(function(){}); return; }
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(url).then(function(){ showToast('Link copied'); },
+        function(){ showToast('Could not copy the link'); });
+      return;
+    }
+    showToast('Share is not supported here');
+  };
+  window.dzVwActRow = vwActRow;
+
+  // which profile each rendered card is showing, so the click and the two
+  // buttons act on the artist whose work is open rather than on whoever was
+  // open last
+  var vwWho = {};
+  window.dzVwProfile = function(id){
+    var p = vwWho[id];
+    if(!p || !p.username){ if(typeof showToast==='function') showToast('Profile not found'); return; }
+    openProfileByUsername(p.username);
+  };
+
+  async function vwFill(id, uid){
+    var nm = document.getElementById(id+'_nm');
+    if(!nm) return;
+    vwWho[id] = null;
+    var p = uid ? profCache[uid] : null;
+    if(uid && !p && sb){
       try{
         var res = await sb.from('profiles').select('id,username,display_name,avatar_url').eq('id',uid).single();
         p = profCache[uid] = (res && res.data) || null;
       }catch(e){ p = null; }
     }
-    el = document.getElementById(elId);            // may have re rendered
-    if(!el){ return; }
-    // re arm after a re render
-    el.style.cursor = 'pointer';
-    el.onclick = function(){
-      var cp = profCache[uid];
-      if(cp && cp.username){ openProfileByUsername(cp.username); return; }
-      sb.from('profiles').select('username').eq('id',uid).single().then(function(r){
-        var u = r && r.data && r.data.username;
-        if(!u){ if(typeof showToast==='function') showToast('Profile not found'); return; }
-        openProfileByUsername(u);
-      }).catch(function(){ if(typeof showToast==='function') showToast('Couldn\u2019t open profile'); });
-    };
-    if(!p) return;
-    var name = p.display_name || p.username || 'artist';
-    el.innerHTML = '<div class="dzvAv">'+
-        (p.avatar_url ? '<img src="'+esc2(getThumbnailUrl(p.avatar_url))+'" alt="">' : esc2(name.charAt(0).toUpperCase()))+
-      '</div><div><div class="dzvAuthName">'+esc2(name)+'</div>'+
-      (p.username ? '<div class="dzvAuthHandle">@'+esc2(p.username)+'</div>' : '')+'</div>';
+    nm = document.getElementById(id+'_nm');
+    if(!nm) return;                                  // viewer moved on
+    vwWho[id] = p;
+    var name = (p && (p.display_name || p.username)) || 'Artist';
+    nm.textContent = name;
+    var un = document.getElementById(id+'_un');
+    if(un) un.textContent = (p && p.username) ? '@'+p.username : '';
+    var av = document.getElementById(id+'_av');
+    if(av){
+      av.innerHTML = (p && p.avatar_url)
+        ? '<img src="'+esc2(getThumbnailUrl(p.avatar_url))+'" alt="">'
+        : esc2(name.charAt(0).toUpperCase());
+    }
+    // Your own work offers neither button \u2014 there is nobody to befriend and
+    // nobody to cred. A signed-out reader gets them and meets the sign-in
+    // gate on the tap, which is what every other action on the site does.
+    var acts = document.getElementById(id+'_acts');
+    if(!acts) return;
+    var mine = window.currentUser && p && String(p.id) === String(currentUser.id);
+    if(!p || mine){ acts.innerHTML = ''; acts.hidden = true; return; }
+    acts.hidden = false;
+    acts.innerHTML =
+      '<button class="pfActBtn pfActBtn--pri" type="button" id="'+id+'_fr" '+
+        'onclick="dzVwFriend(\''+id+'\')">'+vwSvg('friend')+
+        '<span class="pfActTxt">Add friend</span></button>'+
+      '<button class="pfActBtn" type="button" id="'+id+'_cr" '+
+        'onclick="dzVwCred(\''+id+'\')">'+vwSvg('cred')+
+        '<span class="pfActTxt">Cred</span></button>';
+    vwLoadRel(id, p.id);
   }
+  window.dzVwFill = vwFill;
+
+  // The two buttons say what they say on the profile page, because they are
+  // the profile page's buttons \u2014 same classes, same states, same words.
+  function vwFrPaint(id, state){
+    var b = document.getElementById(id+'_fr'); if(!b) return;
+    var map = { none:'Add friend', sent:'Requested', incoming:'Accept', friends:'Message' };
+    if(state === 'blocked' || state === 'blocked_by_me'){ b.hidden = true; return; }
+    b.hidden = false;
+    b.dataset.frState = state || 'none';
+    var span = b.querySelector('.pfActTxt');
+    if(span) span.textContent = map[state] || 'Add friend';
+    b.setAttribute('aria-label', map[state] || 'Add friend');
+    b.classList.toggle('pfActBtn--pri', state !== 'sent');
+    // Message is a different act from Add friend and wears a different glyph
+    var svg = b.querySelector('svg');
+    if(svg) svg.innerHTML = (state === 'friends') ? VW_ICO.msg : VW_ICO.friend;
+  }
+  function vwCrPaint(id, on){
+    var b = document.getElementById(id+'_cr'); if(!b) return;
+    var span = b.querySelector('.pfActTxt');
+    if(span) span.textContent = on ? 'Credited' : 'Cred';
+    b.setAttribute('aria-label', on ? 'Credited' : 'Cred');
+    b.classList.toggle('on', !!on);
+    b.dataset.on = on ? '1' : '';
+  }
+  async function vwLoadRel(id, uid){
+    if(!window.currentUser || !sb) return;
+    try{
+      if(window.pfFriendBridge){
+        await window.pfFriendBridge.load();
+        if(vwWho[id] && String(vwWho[id].id) === String(uid)) vwFrPaint(id, window.pfFriendBridge.state(uid));
+      }
+      var c = await sb.from('profile_creds').select('giver_id')
+        .eq('giver_id', currentUser.id).eq('receiver_id', uid).maybeSingle();
+      if(vwWho[id] && String(vwWho[id].id) === String(uid)) vwCrPaint(id, !!(c && c.data));
+    }catch(e){ /* the buttons still work; they just start at their defaults */ }
+  }
+  window.dzVwFriend = async function(id){
+    var p = vwWho[id]; if(!p) return;
+    if(!window.currentUser){
+      if(typeof showToast === 'function') showToast('Sign in to add friends');
+      if(typeof openAuthMod === 'function') openAuthMod();
+      return;
+    }
+    if(!window.pfFriendBridge) return;
+    var b = document.getElementById(id+'_fr'); if(!b || b.disabled) return;
+    var state = b.dataset.frState || 'none';
+    if(state === 'friends'){
+      window.pfFriendBridge.chat({ id:p.id, username:p.username, avatar_url:p.avatar_url });
+      return;
+    }
+    b.disabled = true;
+    try{
+      if(state === 'none')          await window.pfFriendBridge.send(p.id);
+      else if(state === 'sent')     await window.pfFriendBridge.cancel(p.id);
+      else if(state === 'incoming') await window.pfFriendBridge.accept(p.id);
+      await window.pfFriendBridge.load();
+      if(vwWho[id] && String(vwWho[id].id) === String(p.id)) vwFrPaint(id, window.pfFriendBridge.state(p.id));
+    }catch(e){ if(typeof showToast === 'function') showToast('Action failed \u2014 try again'); }
+    finally{ b.disabled = false; }
+  };
+  window.dzVwCred = async function(id){
+    var p = vwWho[id]; if(!p || !sb) return;
+    if(!window.currentUser){
+      if(typeof showToast === 'function') showToast('Sign in to cred artists');
+      if(typeof openAuthMod === 'function') openAuthMod();
+      return;
+    }
+    var b = document.getElementById(id+'_cr'); if(!b || b.disabled) return;
+    var was = b.dataset.on === '1';
+    b.disabled = true;
+    vwCrPaint(id, !was);                                   // optimistic
+    try{
+      var r = was
+        ? await sb.from('profile_creds').delete().eq('giver_id', currentUser.id).eq('receiver_id', p.id)
+        : await sb.from('profile_creds').insert({ giver_id: currentUser.id, receiver_id: p.id });
+      if(r.error && !(!was && r.error.code === '23505')) throw r.error;
+    }catch(e){
+      vwCrPaint(id, was);                                  // roll back
+      if(typeof showToast === 'function') showToast('Couldn\u2019t update cred \u2014 try again');
+    }finally{ b.disabled = false; }
+  };
+
+  // ---- liked, saved, in the cart ----------------------------------------
+  // Artworks have had their own two tables since the gallery was built; the
+  // other three sections had none, so the same two answers are kept for them
+  // in item_likes and item_bookmarks, keyed the way item_comments already
+  // keys everything \u2014 a kind and a subject. The cart is the third of the
+  // same shape, and the only one that is not merit gated.
+  var VW_TBL = {
+    like: { t:'item_likes',     on:'Liked',   off:'Removed the like' },
+    bm:   { t:'item_bookmarks', on:'Saved to bookmarks', off:'Removed from bookmarks' },
+    cart: { t:'cart_items',     on:'Added to cart', off:'Removed from cart' }
+  };
+  var vwEngTok = 0;
+  function vwEngRow(what, kind, id){
+    return what === 'cart'
+      ? { user_id: currentUser.id, item_id: id }
+      : { kind: kind, subject_id: id, user_id: currentUser.id };
+  }
+  function vwEngMatch(what, kind, id){
+    return what === 'cart'
+      ? { user_id: currentUser.id, item_id: id }
+      : { kind: kind, subject_id: id, user_id: currentUser.id };
+  }
+  // what this member already did to this item, painted onto the rail
+  async function vwEngPaint(kind, id){
+    var tok = ++vwEngTok;
+    ['like','bm','cart'].forEach(function(w){
+      var b = document.getElementById('vwAct_'+w);
+      if(b) b.setAttribute('aria-pressed','false');
+    });
+    if(!window.currentUser || !sb) return;
+    var want = ['like','bm','cart'].filter(function(w){ return document.getElementById('vwAct_'+w); });
+    if(!want.length) return;
+    try{
+      var res = await Promise.all(want.map(function(w){
+        var q = sb.from(VW_TBL[w].t).select(w === 'cart' ? 'item_id' : 'kind');
+        var m = vwEngMatch(w, kind, id);
+        Object.keys(m).forEach(function(k){ q = q.eq(k, m[k]); });
+        return q.maybeSingle();
+      }));
+      if(tok !== vwEngTok) return;                    // reader moved on
+      want.forEach(function(w, i){
+        var b = document.getElementById('vwAct_'+w);
+        if(b) b.setAttribute('aria-pressed', (res[i] && res[i].data) ? 'true' : 'false');
+      });
+    }catch(e){ /* an unpainted rail is wrong for a beat; a wrong one is worse */ }
+  }
+  window.dzVwEngPaint = vwEngPaint;
+  window.dzVwEng = async function(what, kind, id){
+    var cfg = VW_TBL[what]; if(!cfg || !sb) return;
+    if(!window.currentUser){
+      if(typeof pfGuestGate === 'function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+      else if(typeof openAuthMod === 'function') openAuthMod();
+      return;
+    }
+    var b = document.getElementById('vwAct_'+what); if(!b || b.disabled) return;
+    var on = b.getAttribute('aria-pressed') !== 'true';
+    b.disabled = true;
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');        // optimistic
+    try{
+      var r;
+      if(on){ r = await sb.from(cfg.t).insert(vwEngRow(what, kind, id)); }
+      else {
+        var q = sb.from(cfg.t).delete(), m = vwEngMatch(what, kind, id);
+        Object.keys(m).forEach(function(k){ q = q.eq(k, m[k]); });
+        r = await q;
+      }
+      if(r.error && !(on && r.error.code === '23505')) throw r.error;
+      if(typeof showToast === 'function') showToast(on ? cfg.on : cfg.off);
+      if(what === 'cart' && typeof window.dzCartPaint === 'function') window.dzCartPaint();
+    }catch(e){
+      b.setAttribute('aria-pressed', on ? 'false' : 'true');      // roll back
+      if(window.meritDenied && window.meritDenied(e, what === 'like' ? 'like' : 'save')) { b.disabled = false; return; }
+      if(typeof showToast === 'function') showToast('Action failed \u2014 try again');
+    }finally{ b.disabled = false; }
+  };
+
+  // ---- ask before deleting ----------------------------------------------
+  var cfmFn = null;
+  window.dzConfirm = function(title, msg, yesLabel, fn){
+    var box = document.getElementById('vwCfm');
+    if(!box){ if(window.confirm(title)) fn(); return; }   // no markup, no ceremony
+    cfmFn = fn;
+    document.getElementById('vwCfmT').textContent = title;
+    document.getElementById('vwCfmM').textContent = msg || '';
+    var y = document.getElementById('vwCfmYes');
+    y.textContent = yesLabel || 'Delete';
+    box.hidden = false;
+    setTimeout(function(){ try{ document.getElementById('vwCfmNo').focus(); }catch(e){} }, 20);
+  };
+  window.dzConfirmClose = function(){
+    var box = document.getElementById('vwCfm');
+    if(box) box.hidden = true;
+    cfmFn = null;
+  };
+  window.dzConfirmYes = function(){
+    var fn = cfmFn;
+    window.dzConfirmClose();
+    if(typeof fn === 'function') fn();
+  };
+  document.addEventListener('keydown', function(e){
+    var box = document.getElementById('vwCfm');
+    if(e.key === 'Escape' && box && !box.hidden){ e.stopPropagation(); window.dzConfirmClose(); }
+  }, true);
 
   function metaRow(pairs){
     var out = pairs.filter(function(x){ return x[1]; }).map(function(x){
@@ -3997,12 +4432,14 @@
   }
   function cmBlock(kind, id){
     return '<div class="avCmBlock"><div class="avBlockH">Comments</div>'+
-      '<div class="avCmList" id="dzvCmList"></div>'+
       '<div class="avCmBar">'+
       '<input class="avCmIn" id="dzvCmIn" type="text" maxlength="1000" placeholder="Write a comment\u2026" '+
       'onkeydown="if(event.key===\'Enter\')dzCmPost(\''+kind+'\',\''+id+'\',\'dzvCmIn\',\'dzvCmList\')">'+
       '<button class="avCmSend" onclick="dzCmPost(\''+kind+'\',\''+id+'\',\'dzvCmIn\',\'dzvCmList\')" aria-label="Send">\u27a4</button>'+
-      '</div></div>';
+      '</div>'+
+      '<div class="avCmList" id="dzvCmList"></div>'+
+      '<button class="vwMore" type="button" id="dzvCmList_more" hidden onclick="dzCmMore(\'dzvCmList\')">LOAD 20 MORE</button>'+
+      '</div>';
   }
 
   // renderers
@@ -4036,16 +4473,23 @@
       // button below the comments.
       html = img(r.preview_url, r.title) +
         '<div class="dzvCol">'+
+        vwCard('dzvCard', 'dzCloseView()')+
+        vwSecRail(sec, kind, id, r)+
         (r.featured ? '<p class="dzvExcerpt">\u2605 Featured resource</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
         (r.summary ? '<p class="dzvExcerpt">'+esc2(r.summary)+'</p>' : '')+
-        '<div class="dzvAuthor" id="dzvAuthor"></div>'+
+        // The rail's download takes the whole package; this one takes the file
+        // it sits beside. Today a resource is one file, so the two reach the
+        // same bytes \u2014 the control belongs on the row either way, because the
+        // row is what a reader is looking at when they decide to take it.
         '<div class="dzvFileCard"><span class="dzvExt">'+esc2((r.file_ext||'FILE').toUpperCase())+'</span>'+
         '<div><div class="dzvFileName">'+esc2(r.file_name||r.title)+'</div>'+
         '<div class="dzvFileMeta">'+esc2(h.bytes(r.file_size))+
           (r.file_count ? ' \u00b7 '+esc2(String(r.file_count))+' file'+(r.file_count===1?'':'s') : '')+
-          ' \u00b7 '+esc2(String(r.download_count||0))+' downloads</div></div></div>'+
-        '<a class="avActWide" href="'+esc2(r.file_url)+'" target="_blank" rel="noopener" download>\u2b07 Download file</a>'+
+          ' \u00b7 '+esc2(String(r.download_count||0))+' downloads</div></div>'+
+        (r.file_url ? '<a class="vwFileDl" href="'+esc2(r.file_url)+'" target="_blank" rel="noopener" '+
+          'download aria-label="Download this file" title="Download this file">'+vwSvg('dl')+'</a>' : '')+
+        '</div>'+
         (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
         jobBlock('What\u2019s included', r.whats_included)+
         jobBlock('Installation and use', r.instructions)+
@@ -4067,7 +4511,6 @@
         linkBlock('Links', r.external_links)+
         tagBlock(r.tags)+
         cmBlock(kind, id)+
-        '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
         '</div>';
     }
     else if(sec === 'blog'){
@@ -4079,10 +4522,11 @@
       // panel, which put the filing details ahead of the author.
       html = img(r.cover_url, r.title) +
         '<div class="dzvCol">'+
+        vwCard('dzvCard', 'dzCloseView()')+
+        vwSecRail(sec, kind, id, r)+
         (r.featured ? '<p class="dzvExcerpt">★ Featured post</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
         (r.excerpt ? '<p class="dzvExcerpt">'+esc2(r.excerpt)+'</p>' : '')+
-        '<div class="dzvAuthor" id="dzvAuthor"></div>'+
         // the byline as it read when the post went out
         (r.author_bio ? '<p class="dzvAuthBio">'+esc2(r.author_bio)+'</p>' : '')+
         metaRow([['Type', r.content_type],
@@ -4096,10 +4540,6 @@
         (hasRelated ? '<div id="dzvRelated"></div>' : '')+
         tagBlock(r.tags)+
         cmBlock(kind, id)+
-        // the resized copy: the origin bucket is not publicly readable, so a
-        // link to the stored original would 403
-        (r.cover_url ? '<a class="avActWide" href="'+esc2(imgResize(r.cover_url, 1600))+'" target="_blank" rel="noopener" download>\u2b07 Download cover</a>' : '')+
-        '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
         '</div>';
     }
     else if(sec === 'marketplace'){
@@ -4161,11 +4601,12 @@
       // between the top of the page and the far side of the tags.
       html = img(r.preview_url, r.title) +
         '<div class="dzvCol">'+
+        vwCard('dzvCard', 'dzCloseView()')+
+        vwSecRail(sec, kind, id, r)+
         galleryHtml+
         (r.featured ? '<p class="dzvExcerpt">★ Featured listing</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
         (r.summary ? '<p class="dzvExcerpt">'+esc2(r.summary)+'</p>' : '')+
-        '<div class="dzvAuthor" id="dzvAuthor"></div>'+
         // the slot stays empty for a guest
         (window.dzSlot ? window.dzSlot(r, id, hasFile, 'view') : '')+
         lockNote+
@@ -4203,7 +4644,6 @@
         jobBlock('From the seller', r.seller_note)+
         tagBlock(r.tags)+
         cmBlock(kind, id)+
-        '<button class="avReportBtn" onclick="dzReportItem(\''+kind+'\',\''+id+'\')">\u2691 Report</button>'+
         '</div>';
     }
     else { // jobs, details and report
@@ -4247,11 +4687,11 @@
       // sixteen rows of them ahead of the first sentence of the ad buried the
       // ad.
       html = '<div class="dzvCol">'+
+        vwCard('dzvCard', 'dzCloseView()')+
         (r.featured ? '<p class="dzvExcerpt">\u2605 Featured posting</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
         '<p class="dzvExcerpt">'+esc2(r.company||'')+
           (r.company_url ? ' \u00b7 <a href="'+esc2(r.company_url)+'" target="_blank" rel="noopener">website</a>' : '')+'</p>'+
-        '<div class="dzvAuthor" id="dzvAuthor"></div>'+
         metaRow([
           ['Location', jw],
           ['Work mode', jmodeLbl],
@@ -4299,7 +4739,8 @@
     if(nb) nb.style.visibility = multi ? 'visible' : 'hidden';
 
     // async fills
-    if(r.user_id) fillAuthor(r.user_id, 'dzvAuthor');
+    vwFill('dzvCard', r.user_id);
+    if(sec !== 'jobs') vwEngPaint(kind, String(r.id));
     if(sec === 'blog') fillRelated(r);
     if(sec !== 'jobs') window.dzCmLoad(kind, String(r.id), 'dzvCmList');
   }
@@ -4309,14 +4750,22 @@
     curExt = null;
     var list = (typeof window.dzGetRows==='function' ? window.dzGetRows(sec) : []) || [];
     var idx = list.findIndex(function(x){ return String(x.id)===String(id); });
-    if(idx === -1) return;
+    if(idx === -1){
+      // A listing opened from the cart is not in the marketplace panel's own
+      // cache — the cart fetched it by id. Open it as the single row it is,
+      // rather than refusing to open a card the member just tapped.
+      var cr = (typeof window.dzCartRows === 'function' ? window.dzCartRows() : []) || [];
+      var one = cr.filter(function(x){ return String(x.id)===String(id); })[0];
+      if(one){ window.dzOpenRow(sec, one); return; }
+      return;
+    }
     cur = { sec:sec, idx:idx };
     render();
     var v = document.getElementById('dzView');
     if(v) v.classList.add('open');
     document.body.style.overflow = 'hidden';
     // back button closes
-    if(!pushed){ try{ history.pushState({dzv:1},''); pushed = true; }catch(e){} }
+    vwMark(sec, id);
   };
   window.dzOpenRow = function(sec, row){
     if(!row) return;
@@ -4324,8 +4773,24 @@
     render();
     var v = document.getElementById('dzView'); if(v) v.classList.add('open');
     document.body.style.overflow = 'hidden';
-    if(!pushed){ try{ history.pushState({dzv:1},''); pushed = true; }catch(e){} }
+    vwMark(sec, row.id);
   };
+  // One history entry for the whole visit, and the open item's own address in
+  // the bar while it is up. Stepping through with Next replaces that address
+  // rather than stacking a new entry per step — the viewer is one place, not
+  // one place per item walked through, so Back leaves it in a single press
+  // however far along the run you are.
+  function vwMark(sec, id){
+    var path = VW_PATH[sec] ? ('/'+VW_PATH[sec]+'/'+id) : null;
+    try{
+      if(!pushed){
+        history.pushState({dzv:1, sec:sec, id:String(id)}, '', path || undefined);
+        pushed = true;
+      } else {
+        history.replaceState({dzv:1, sec:sec, id:String(id)}, '', path || undefined);
+      }
+    }catch(e){}
+  }
 
   window.addEventListener('popstate', function(){
     var v = document.getElementById('dzView');
@@ -4337,6 +4802,8 @@
     if(!n) return;
     cur.idx = (cur.idx + dir + n) % n;
     render();                                       // synchronous, no stale frame
+    var r = rows()[cur.idx];
+    if(r) vwMark(cur.sec, r.id);
   };
   window.dzCloseView = function(){
     var v = document.getElementById('dzView');

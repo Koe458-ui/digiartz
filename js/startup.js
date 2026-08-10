@@ -13,6 +13,11 @@
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
     if(pm) openProfileByUsername(decodeURIComponent(pm[1]), false);
     if(window.location.pathname === '/login') openAuthMod();
+    // A resource, a post, a listing or a posting opened straight from its own
+    // link. Same shape as /artwork/<id>, and the same rule: the row is fetched
+    // by id rather than hoping the section it belongs to has been browsed.
+    var sm = window.location.pathname.match(/^\/(resource|blog|listing|job)\/([^/]+)\/?$/);
+    if(sm && typeof window.dzOpenById === 'function') window.dzOpenById(sm[1], sm[2]);
     // gallery structured data
     injectGallerySEO();
   })();

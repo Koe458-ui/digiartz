@@ -24,7 +24,10 @@
        and a restored draft comes back with all three agreeing.
        Resources' Compatible software is the same field with the same
        list, so it gets the same menu.
-       Changed: js/sections.js, css/upload.css, index.html, sw.js.
+       Also: the tag box's example reads "character, birds, nature, etc."
+       on all five forms now, instead of naming one fandom.
+       Changed: js/sections.js, js/albums.js, css/upload.css, index.html,
+       sw.js.
    v146 — a tag box takes a list.
        "anime, chr, genshin impact" is three tags. It was one, with the
        commas inside it, in every case except typing the commas slowly

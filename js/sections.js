@@ -1439,7 +1439,7 @@
         '<div class="upTagBox" onclick="document.getElementById(\''+id+'\').focus()">'+
         '<span id="dzTags-'+sec+'"></span>'+
         '<input class="upTagInput" id="'+id+'" maxlength="'+((fd.max||20)*10+20)+'" '+
-        'placeholder="anime, chr, genshin impact…" '+
+        'placeholder="character, birds, nature, etc." '+
         'onkeydown="dzTagKey(event,\''+sec+'\')" '+
         'onblur="dzTagBlur(event,\''+sec+'\')" '+
         'onpaste="dzTagPaste(event,\''+sec+'\')"></div>'+hint, cond);
@@ -2042,7 +2042,7 @@
     }).join('');
   }
   // ---- a tag box takes a list ---------------------------------------------
-  // "anime, chr, genshin impact" is three tags. It is three whether the
+  // "character, birds, nature" is three tags. It is three whether the
   // commas were typed or pasted, and whether the member finishes with Enter
   // or by tapping something else on the form — all three of those used to
   // make one tag with the commas inside it.

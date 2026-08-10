@@ -1055,7 +1055,7 @@
   // character tag was refused outright by the one form that has always had
   // tags.
   var TAG_MAX = 30;
-  // "anime, chr, genshin impact" is three tags, not one with commas in it —
+  // "character, birds, nature" is three tags, not one with commas in it —
   // however it arrived, and however the member finished typing it.
   function pfAddTag(raw){
     var added = 0, full = false, cut = false;

@@ -475,7 +475,7 @@ function hideCommentThumbnail(){
     if(!rows.length){
       wrap.style.display='none';
       grid.innerHTML='';
-      if(typeof cmReapplySearch === 'function') cmReapplySearch();
+      if(typeof cmSyncCount === 'function') cmSyncCount();
       return;
     }
     wrap.style.display = '';
@@ -522,9 +522,8 @@ function hideCommentThumbnail(){
         }
         grid.appendChild(card);
       });
-    // the grid was repainted under the header search — re-run it, and let the
-    // banner count the cards that are actually there
-    if(typeof cmReapplySearch === 'function') cmReapplySearch();
+    // the banner counts the cards that are actually there
+    if(typeof cmSyncCount === 'function') cmSyncCount();
   }
 
   async function cmMod(rpc, args){
@@ -699,7 +698,6 @@ function hideCommentThumbnail(){
       cmiEl('cmiSetDesc').value   = cmi.c.description || '';
       cmiEl('cmiSetRules').value  = cmi.c.rules || '';
       cmiEl('cmiSetPublic').checked = !!cmi.c.is_public;
-      cmiEl('cmiSetLinks').checked  = !!cmi.c.links_allowed;
     }
   }
 
@@ -807,8 +805,7 @@ function hideCommentThumbnail(){
         short_description: cmiEl('cmiSetShort').value.trim() || null,
         description      : cmiEl('cmiSetDesc').value.trim()  || null,
         rules            : cmiEl('cmiSetRules').value.trim() || null,
-        is_public        : cmiEl('cmiSetPublic').checked,
-        links_allowed    : cmiEl('cmiSetLinks').checked
+        is_public        : cmiEl('cmiSetPublic').checked
       };
       var r = await sb.from('communities').update(upd).eq('id', cmi.cid);
       if(r.error) throw r.error;
@@ -984,6 +981,190 @@ function hideCommentThumbnail(){
   function cmiReport(){
     if(!currentUser){ openAuthMod(); return; }
     cmRptOpen('community', cmi.cid, null, 'Report ' + ((cmi.c && cmi.c.name) || 'this community'));
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var i = document.getElementById('cmBrwIn');
+    if(i) i.addEventListener('input', function(){
+      clearTimeout(cmBrw.timer);
+      cmBrw.q = i.value.trim();
+      cmBrw.timer = setTimeout(cmBrowseReload, 280);
+    });
+  });
+
+  // Escape leaves the browse page, and stops there — js/pfedit.js would
+  // otherwise close the section behind it.
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    var pg = document.getElementById('cmBrowsePage');
+    if(!pg || !pg.classList.contains('open')) return;
+    e.stopImmediatePropagation();
+    cmCloseBrowse();
+  });
+
+  // ===========================================================================
+  // browse every community
+  //
+  // Until this, the only way to find a community you were not already in was
+  // to be handed its name and its six-character join ID by somebody who was.
+  // cm_browse ranks them by member count — banned rows excluded, because that
+  // is what a member count means — and pages 30 at a time.
+  //
+  // A private community is listed because its row has always been readable;
+  // being listed is not being let in. Joining one still needs its join ID.
+  // ===========================================================================
+  var CM_BRW_PAGE = 30;
+  var cmBrw = { q:'', offset:0, busy:false, done:false, timer:null };
+
+  function cmOpenBrowse(){
+    var pg = document.getElementById('cmBrowsePage'); if(!pg) return;
+    cmBrw.lastFocus = document.activeElement;
+    document.getElementById('cmBrwIn').value = '';
+    cmBrw.q = '';
+    pg.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    cmBrowseReload();
+    setTimeout(function(){ try{ document.getElementById('cmBrwIn').focus(); }catch(e){} }, 60);
+  }
+  function cmCloseBrowse(){
+    var pg = document.getElementById('cmBrowsePage');
+    if(!pg || !pg.classList.contains('open')) return;
+    pg.classList.remove('open');
+    clearTimeout(cmBrw.timer);
+    // the community section is still up behind it and owns the scroll lock
+    var back = cmBrw.lastFocus; cmBrw.lastFocus = null;
+    if(back && back.isConnected && back.focus){
+      try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
+    }
+  }
+  function cmBrowseClear(){
+    var i = document.getElementById('cmBrwIn');
+    if(i){ i.value = ''; try{ i.focus(); }catch(e){} }
+    cmBrw.q = '';
+    cmBrowseReload();
+  }
+  function cmBrwNote(msg){
+    var n = document.getElementById('cmBrwNote');
+    if(n){ n.textContent = msg || ''; n.hidden = !msg; }
+  }
+  function cmBrowseReload(){
+    cmBrw.offset = 0; cmBrw.done = false;
+    document.getElementById('cmBrwList').innerHTML = '';
+    document.getElementById('cmBrwMore').hidden = true;
+    cmBrowseMore();
+  }
+  function cmBrowseMore(){ cmBrowseLoad(); }
+
+  async function cmBrowseLoad(){
+    if(cmBrw.busy || cmBrw.done) return;
+    cmBrw.busy = true;
+    var more = document.getElementById('cmBrwMore');
+    if(more) more.hidden = true;
+    if(!cmBrw.offset) cmBrwNote('Loading…');
+    try{
+      var r = await sb.rpc('cm_browse', {
+        p_q: cmBrw.q || null, p_limit: CM_BRW_PAGE, p_offset: cmBrw.offset
+      });
+      if(r.error) throw r.error;
+      var rows = r.data || [];
+      cmBrowseRender(rows);
+      cmBrw.offset += rows.length;
+      cmBrw.done = rows.length < CM_BRW_PAGE;
+      if(more) more.hidden = cmBrw.done;
+      if(!cmBrw.offset){
+        cmBrwNote(cmBrw.q ? 'No community matches that.'
+                          : 'No communities yet — create the first one.');
+      } else cmBrwNote('');
+    }catch(e){
+      cmBrwNote('Couldn’t load communities — try again.');
+    }finally{ cmBrw.busy = false; }
+  }
+
+  function cmBrowseRender(rows){
+    var list = document.getElementById('cmBrwList');
+    rows.forEach(function(c, i){
+      var rank = cmBrw.offset + i + 1;
+      var card = document.createElement('div');
+      card.className = 'cmBrwRow';
+
+      var num = document.createElement('span');
+      num.className = 'cmBrwRank'; num.textContent = rank;
+
+      var ico = document.createElement('div');
+      ico.className = 'cmCardIcon cmBrwIco';
+      if(c.avatar_url){
+        var im = document.createElement('img');
+        im.src = getThumbnailUrl(c.avatar_url); im.alt = '';
+        im.onerror = function(){ im.remove(); ico.textContent = (c.name||'?').charAt(0).toUpperCase(); };
+        ico.appendChild(im);
+      } else {
+        ico.textContent = (c.name || '?').charAt(0).toUpperCase();
+      }
+
+      var meta = document.createElement('div');
+      meta.className = 'cmBrwMeta';
+      var nm = document.createElement('div');
+      nm.className = 'cmCardName';
+      nm.textContent = c.name;
+      var desc = document.createElement('p');
+      desc.textContent = c.short_description || c.description || 'No description yet.';
+      var cnt = document.createElement('div');
+      cnt.className = 'cmBrwCount';
+      cnt.textContent = c.members + (Number(c.members) === 1 ? ' member' : ' members');
+      meta.appendChild(nm); meta.appendChild(desc); meta.appendChild(cnt);
+
+      var btn = document.createElement('button');
+      btn.className = 'cmBrwJoin';
+      if(c.joined){
+        btn.textContent = 'Open';
+        btn.classList.add('cmBrwJoin--in');
+        // cmOpenCommunity resolves a c:<id> channel out of this cache, so seed
+        // it here rather than relying on cmLoadMine having already run
+        cmMineCache['c:' + c.id] = c;
+        btn.onclick = function(){ cmCloseBrowse(); cmOpenCommunity('c:' + c.id); };
+      } else {
+        btn.textContent = 'Join';
+        btn.onclick = function(){ cmJoinAsk(c); };
+      }
+
+      card.appendChild(num); card.appendChild(ico); card.appendChild(meta); card.appendChild(btn);
+      // the row itself opens the community's page, so somebody can read what it
+      // is before deciding
+      card.addEventListener('click', function(e){
+        if(e.target.closest('.cmBrwJoin')) return;
+        cmCloseBrowse();
+        cmiOpen('c:' + c.id);
+      });
+      list.appendChild(card);
+    });
+  }
+
+  // ---- joining asks first --------------------------------------------------
+  // Browse lists public communities only — a private one is not in the list to
+  // be joined from it — so this never has to explain a join ID.
+  var cmJoinAskC = null;
+  function cmJoinAsk(c){
+    if(!currentUser){ openAuthMod(); return; }
+    if(cmAtJoinCap()) return;
+    cmJoinAskC = c;
+    document.getElementById('cmJoinAskTitle').textContent = 'Join ' + c.name + '?';
+    document.getElementById('cmJoinAskSub').textContent =
+      'You will be able to read and post in it, and you can leave whenever you like.';
+    cmOpenMod('cmJoinAsk');
+  }
+  async function cmJoinAskGo(){
+    var c = cmJoinAskC; if(!c) return;
+    cmCloseMod('cmJoinAsk');
+    var btn = document.getElementById('cmJoinAskGo');
+    btn.disabled = true;
+    try{
+      var r = await sb.rpc('cm_join_public', { cid: c.id });
+      if(r.error) throw r.error;
+      showToast('Joined ' + c.name);
+      cmLoadMine();
+      cmBrowseReload();
+    }catch(e){ showToast(cmErr(e)); }
+    finally{ btn.disabled = false; cmJoinAskC = null; }
   }
 
   // ===========================================================================

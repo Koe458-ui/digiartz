@@ -75,15 +75,13 @@
 
       // ---- tabs -------------------------------------------------------------
       // Community and Friends are two panes under one banner. Which one is open
-      // is also what the header search searches — there is one search box, not
-      // one per pane, so it has to know where it is pointed.
+      // is also what the search page opens on, so a member searching from the
+      // Friends tab is looking for people without having to say so.
       var tab = 'community', searchTimer = null;
 
       var TABS = {
-        community: { btn: 'cmTabCommunity', pane: 'cmPaneCommunity',
-                     hint: 'Search communities' },
-        friends:   { btn: 'cmTabFriends',   pane: 'cmPaneFriends',
-                     hint: 'Search artists by username' }
+        community: { btn: 'cmTabCommunity', pane: 'cmPaneCommunity' },
+        friends:   { btn: 'cmTabFriends',   pane: 'cmPaneFriends' }
       };
 
       window.cmCurrentTab = function () { return tab; };
@@ -97,105 +95,146 @@
           if (b) { b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
           if (p) p.hidden = !on;
         });
-        var inp = $('cmSearchInput');
-        if (inp) inp.placeholder = TABS[next].hint;
-        // a query typed against communities means nothing against people, so
-        // the box is emptied rather than re-run against the other pane
-        clearSearchValue();
         var scroll = $('cmGridScroll');
         if (scroll) scroll.scrollTop = 0;
       };
 
-      // ---- header search ----------------------------------------------------
-      function clearSearchValue () {
+      // ---- search ------------------------------------------------------------
+      // A page, not a bar. Every other section on the site opens search the
+      // same way — back arrow, one field, scope chips, results underneath —
+      // and this is that component (#fgSearchPage, #pfSearchPage) pointed at a
+      // different haystack. The scope opens on whichever tab was being read,
+      // and can be changed without leaving.
+      var srchScope = 'community';
+      var srchLastFocus = null;
+
+      window.cmSearchScope = function (scope) {
+        if (scope !== 'community' && scope !== 'friends') return;
+        srchScope = scope;
+        var a = $('cmSrchScopeCommunity'), b = $('cmSrchScopeFriends');
+        if (a) { a.classList.toggle('on', scope === 'community'); a.setAttribute('aria-selected', scope === 'community'); }
+        if (b) { b.classList.toggle('on', scope === 'friends');   b.setAttribute('aria-selected', scope === 'friends'); }
+        var inp = $('cmSearchInput');
+        if (inp) inp.placeholder = scope === 'community' ? 'Search communities' : 'Search artists by username';
+        runSearch();
+      };
+
+      window.cmOpenSearch = function () {
+        var pg = $('cmSearchPage'); if (!pg) return;
+        srchLastFocus = document.activeElement;
+        // whichever tab they were on is what they meant to search
+        window.cmSearchScope(tab === 'friends' ? 'friends' : 'community');
         var inp = $('cmSearchInput');
         if (inp) inp.value = '';
-        clearTimeout(searchTimer);
-        filterCommunities('');
-        var box = $('dmResults'); if (box) box.innerHTML = '';
-      }
-
-      // opening a chat leaves the results behind it — dm.js calls this so the
-      // page under the panel is not still showing a half-typed query
-      window.cmSearchReset = function () {
-        var bar = $('cmSearchBar'), btn = $('cmSearchBtn');
-        clearSearchValue();
-        if (bar) bar.hidden = true;
-        if (btn) { btn.classList.remove('on'); btn.setAttribute('aria-expanded', 'false'); }
+        runSearch();
+        pg.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        // the keyboard comes up with the page, not after a second tap
+        if (inp) setTimeout(function () { try { inp.focus(); } catch (e) {} }, 60);
       };
 
-      window.cmToggleSearch = function () {
-        var bar = $('cmSearchBar'), btn = $('cmSearchBtn');
-        if (!bar) return;
-        var open = bar.hidden;              // about to open
-        bar.hidden = !open;
-        if (btn) { btn.classList.toggle('on', open); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); }
-        if (open) {
-          var inp = $('cmSearchInput');
-          if (inp) { inp.placeholder = TABS[tab].hint; inp.focus(); }
-        } else {
-          clearSearchValue();
+      window.cmCloseSearch = function () {
+        var pg = $('cmSearchPage');
+        if (!pg || !pg.classList.contains('open')) return;
+        pg.classList.remove('open');
+        clearTimeout(searchTimer);
+        // the community section is still up behind it and owns the lock
+        var back = srchLastFocus; srchLastFocus = null;
+        if (back && back.isConnected && back.focus) {
+          try { back.focus({ preventScroll: true }); } catch (e) { try { back.focus(); } catch (e2) {} }
         }
       };
+      // dm.js closes it when a chat opens out of a result
+      window.cmSearchReset = window.cmCloseSearch;
 
       window.cmClearSearch = function () {
-        clearSearchValue();
-        var inp = $('cmSearchInput'); if (inp) inp.focus();
-      };
-
-      // Community search is a filter over what is already on the page. Every
-      // community is rendered — there is no "view all" and nothing is held
-      // back — so matching them needs no round trip.
-      function matchGrid (grid, needle) {
-        if (!grid) return 0;
-        var cards = grid.querySelectorAll('.cmCard'), hits = 0;
-        Array.prototype.forEach.call(cards, function (card) {
-          var hit = !needle || (card.textContent || '').toLowerCase().indexOf(needle) !== -1;
-          card.style.display = hit ? '' : 'none';
-          if (hit) hits++;
-        });
-        return hits;
-      }
-
-      function filterCommunities (q) {
-        var pane = $('cmPaneCommunity'); if (!pane) return;
-        var needle = q.trim().toLowerCase(), searching = !!needle;
-        var explore = matchGrid($('cmExploreGrid'), needle);
-        var mineHits = matchGrid($('cmMineGrid'), needle);
-        var mineTotal = $('cmMineGrid') ? $('cmMineGrid').querySelectorAll('.cmCard').length : 0;
-
-        // a heading over nothing reads as a section that failed to load, so
-        // each one goes with its cards
-        var exploreHead = $('cmExploreHead');
-        if (exploreHead) exploreHead.style.display = explore ? '' : 'none';
-        var mine = $('cmMineWrap');
-        if (mine) mine.style.display = (searching ? mineHits : mineTotal) ? '' : 'none';
-        // create and join belong to the full list, not to a result set
-        var cta = $('cmFooterCta');
-        if (cta) cta.style.display = searching ? 'none' : '';
-        var none = $('cmSearchEmpty');
-        if (none) none.style.display = (searching && !explore && !mineHits) ? '' : 'none';
-      }
-      // cmRenderMine repaints the grid under us, so the filter has to be
-      // re-applied against whatever is there now
-      window.cmReapplySearch = function () {
         var inp = $('cmSearchInput');
-        filterCommunities(inp ? inp.value : '');
-        window.cmSyncCount();
+        if (inp) { inp.value = ''; try { inp.focus(); } catch (e) {} }
+        runSearch();
       };
 
-      function onSearchInput () {
-        var inp = $('cmSearchInput'); if (!inp) return;
-        var q = inp.value;
+      function srchNote (msg) {
+        var n = $('cmSrchNote');
+        if (n) { n.textContent = msg || ''; n.hidden = !msg; }
+      }
+
+      // Communities are searched off the page rather than over the network:
+      // every one of them is already rendered — there is no "view all" and
+      // nothing held back — so the list under the banner is the whole set.
+      // Each result clicks its own card, so a result opens exactly what the
+      // card opens and neither can drift from the other.
+      function searchCommunities (needle) {
+        var pane = $('cmPaneCommunity'), box = $('cmSrchRes');
+        if (!pane || !box) return;
+        box.innerHTML = '';
+        var cards = pane.querySelectorAll('.cmCard'), hits = 0;
+        Array.prototype.forEach.call(cards, function (card) {
+          if ((card.textContent || '').toLowerCase().indexOf(needle) === -1) return;
+          hits++;
+          var row = card.cloneNode(true);
+          row.removeAttribute('onclick');
+          Array.prototype.forEach.call(row.querySelectorAll('[onclick]'), function (el) {
+            el.removeAttribute('onclick');
+          });
+          // MANAGE belongs on the card, not in a result
+          Array.prototype.forEach.call(row.querySelectorAll('button'), function (el) { el.remove(); });
+          row.setAttribute('role', 'button');
+          row.tabIndex = 0;
+          function go () { window.cmCloseSearch(); card.click(); }
+          row.addEventListener('click', go);
+          row.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+          });
+          box.appendChild(row);
+        });
+        srchNote(hits ? '' : 'No communities match that.');
+      }
+
+      function runSearch () {
+        var inp = $('cmSearchInput');
+        var q = inp ? inp.value.trim() : '';
+        var box = $('cmSrchRes');
         clearTimeout(searchTimer);
-        if (tab === 'community') { filterCommunities(q); return; }
-        // people search is a query, so it waits for the typing to settle
-        var box = $('dmResults'); if (!box) return;
-        if (q.trim().length < 2) { box.innerHTML = ''; return; }
+        if (box) box.innerHTML = '';
+
+        if (srchScope === 'community') {
+          if (!q) { srchNote('Type to search communities.'); return; }
+          searchCommunities(q.toLowerCase());
+          return;
+        }
+        if (q.length < 2) { srchNote('Type at least two letters to find an artist.'); return; }
+        srchNote('Searching\u2026');
         searchTimer = setTimeout(function () {
-          if (typeof window.dmPeopleSearch === 'function') window.dmPeopleSearch(q.trim(), box);
+          if (typeof window.dmPeopleSearch !== 'function') { srchNote('Search is unavailable.'); return; }
+          window.dmPeopleSearch(q, box);
+          srchNote('');
         }, 300);
       }
+
+      /* The page covers the section but does not remove it, so without this
+         Tab walks off the bottom of the results and into the cards still
+         sitting underneath. #fgSearchPage earns its trap the same way. */
+      function srchFocusable () {
+        var pg = $('cmSearchPage'); if (!pg) return [];
+        var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
+                  'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+        return Array.prototype.filter.call(pg.querySelectorAll(sel), function (el) {
+          return !el.hidden && el.offsetParent !== null;
+        });
+      }
+      document.addEventListener('keydown', function (e) {
+        var pg = $('cmSearchPage');
+        if (!pg || !pg.classList.contains('open')) return;
+        if (e.key === 'Escape') { e.stopImmediatePropagation(); window.cmCloseSearch(); return; }
+        if (e.key !== 'Tab') return;
+        var items = srchFocusable(); if (!items.length) return;
+        var first = items[0], last = items[items.length - 1];
+        if (!pg.contains(document.activeElement)) {
+          e.preventDefault(); (e.shiftKey ? last : first).focus(); return;
+        }
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }, true);
 
       // ---- pending friend requests badge ------------------------------------
       window.cmSetFriendBadge = function (n) {
@@ -209,9 +248,7 @@
       // Called by openCommunityHome. Every visit lands on Community with the
       // search closed, rather than on wherever the last visit left off.
       window.cmHomeReset = function () {
-        var bar = $('cmSearchBar'), btn = $('cmSearchBtn');
-        if (bar) bar.hidden = true;
-        if (btn) { btn.classList.remove('on'); btn.setAttribute('aria-expanded', 'false'); }
+        window.cmCloseSearch();
         window.cmSetTab('community');
       };
 
@@ -353,12 +390,7 @@
         window.dzChat.watch('cpBarSend', 'Send');
         window.dzChat.watch('dmSendBtn', 'Send');
         var inp = $('cmSearchInput');
-        if (inp) {
-          inp.addEventListener('input', onSearchInput);
-          inp.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') { e.preventDefault(); window.cmToggleSearch(); }
-          });
-        }
+        if (inp) inp.addEventListener('input', runSearch);
         window.cmSyncCount();
       });
     })();

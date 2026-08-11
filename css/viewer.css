@@ -385,74 +385,19 @@
       .cmHdrBack{left:1rem;}
     }
 
-    /* home mode — the section icon and its name on the left, the two things
-       this page can do on the right. No avatar: the member's own profile is
-       one tap away in the nav and has no business in a section header. */
-    .cmHdr--home{
-      justify-content:space-between;
-      gap:.6rem;
-      padding:1rem 1.1rem;
-    }
-    .cmHdrBrand{display:flex;align-items:center;gap:.6rem;min-width:0;}
-    .cmHdrBrandIco{
-      width:34px;height:34px;border-radius:11px;flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;
-      color:var(--pg);background:var(--pdim);
-      border:1px solid rgba(var(--pg-rgb),.32);
-    }
-    .cmHdrBrandIco svg{width:19px;height:19px;}
-    .cmHdrActs{display:flex;align-items:center;gap:.45rem;flex-shrink:0;}
-    .cmHdrBtn{
-      position:relative;
-      width:38px;height:38px;border-radius:11px;flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;
-      background:none;border:1px solid var(--bdr);color:var(--tx);
-      cursor:pointer;transition:border-color .2s,background .2s,color .2s;
-    }
-    .cmHdrBtn svg{width:19px;height:19px;}
-    .cmHdrBtn:hover{border-color:var(--pg);background:var(--pdim);color:var(--pg);}
-    .cmHdrBtn:active{transform:scale(.96);}
-    .cmHdrBtn.on{border-color:var(--pg);background:var(--pdim);color:var(--pg);}
-    /* pending friend requests, count only when there are any */
+    /* Home mode is not a mode any more: #cmHomeHdr wears .fgTopBar, the same
+       header the gallery and the profile use. Only the badge on one of its
+       buttons is this section's own. */
     .cmHdrBadge{
-      position:absolute;top:-5px;right:-5px;
+      position:absolute;top:5px;right:5px;
       min-width:17px;height:17px;padding:0 .25rem;border-radius:999px;
       display:flex;align-items:center;justify-content:center;
       font-family:var(--fm);font-size:.55rem;line-height:1;
-      background:var(--pg);color:var(--text-on-accent);
-      border:2px solid var(--sur);
+      background:#E4572E;color:#fff;
+      border:2px solid var(--bg);
+      pointer-events:none;
     }
     .cmHdrBadge[hidden]{display:none;}
-
-    /* header search — collapsed until the search button asks for it, and it
-       searches whichever tab is open rather than being two separate boxes */
-    .cmSearchBar{
-      position:sticky;top:0;z-index:9;flex-shrink:0;
-      display:flex;align-items:center;gap:.6rem;
-      padding:.7rem 1.1rem;
-      background:var(--sur);
-      border-bottom:1px solid var(--bdr);
-    }
-    .cmSearchBar[hidden]{display:none;}
-    .cmSearchBar > svg{width:17px;height:17px;color:var(--txd);flex-shrink:0;}
-    .cmSearchInput{
-      flex:1;min-width:0;
-      background:none;border:none;outline:none;
-      font-family:var(--fb);font-size:.92rem;color:var(--tx);
-    }
-    .cmSearchInput::placeholder{color:var(--txd);}
-    .cmSearchClear{
-      width:28px;height:28px;border-radius:8px;flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;
-      background:none;border:none;color:var(--txd);cursor:pointer;
-    }
-    .cmSearchClear svg{width:15px;height:15px;}
-    .cmSearchClear:hover{color:var(--tx);}
-    @media (pointer:coarse){ .cmSearchInput{font-size:16px;} }
-    @media(max-width:480px){
-      .cmHdr--home{padding:.85rem .9rem;}
-      .cmSearchBar{padding:.6rem .9rem;}
-    }
 
     /* chat banner mode */
     .cmHdrChat{display:none;align-items:center;gap:.7rem;flex:1;min-width:0;}

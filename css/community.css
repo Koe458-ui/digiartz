@@ -4,21 +4,171 @@
     .cmScroll{flex:1;min-height:0;overflow-y:auto;padding:1.4rem 1.5rem 100px;}
     @media(max-width:640px){.cmScroll{padding:1.1rem 1.1rem 100px;}}
 
-    /* hero banner */
+    /* hero banner — the one block on the page whose colours are fixed rather
+       than themed, so Connect/Share/Grow reads the same in every theme */
     .cmBanner{
+      position:relative;overflow:hidden;
+      display:flex;align-items:center;
+      /* a floor that scales with the viewport, so the motif layer has room to
+         breathe on a wide screen where the copy alone would be a thin strip */
+      min-height:clamp(190px,23vw,300px);
       background:linear-gradient(160deg,var(--sur2) 0%,color-mix(in srgb,var(--tc) 6%,var(--sur2)) 100%);
       border:1px solid var(--bdr);
       border-radius:14px;
       padding:1.8rem 1.8rem;
       margin-bottom:1.8rem;
     }
-    .cmBannerTitle{font-family:var(--fd);font-size:clamp(1.5rem,4.5vw,2.2rem);font-weight:800;letter-spacing:-.01em;color:var(--tx);margin-bottom:.6rem;}
+    .cmBannerCopy{flex:1 1 auto;min-width:0;position:relative;z-index:1;}
+    .cmBannerTitle{
+      font-family:var(--fd);font-size:clamp(1.5rem,4.5vw,2.2rem);font-weight:800;
+      letter-spacing:-.01em;line-height:1.15;margin-bottom:.6rem;
+    }
+    .cmBannerTitle span{display:block;}
+    .cmBannerL1{color:var(--cmInk,var(--tx));}
+    .cmBannerL2{color:#E4572E;}
+    .cmBannerL3{color:#2FA37C;}
     .cmBannerSub{font-family:var(--fb);font-size:.92rem;color:var(--txd);line-height:1.6;max-width:520px;}
-    .cmStats{display:flex;gap:2rem;margin-top:1.3rem;flex-wrap:wrap;}
-    .cmStat{display:flex;align-items:center;gap:.65rem;}
-    .cmStat svg{width:22px;height:22px;color:var(--ps);flex-shrink:0;}
-    .cmStatNum{font-family:var(--fd);font-size:1.15rem;font-weight:700;color:var(--tx);display:block;line-height:1.2;}
-    .cmStatLbl{font-family:var(--fm);font-size:.66rem;letter-spacing:.1em;color:var(--txd);}
+    /* Two counts, both of them the member's own: the communities they are in
+       and the friends they have. A two-column grid rather than a flex row, so
+       the boxes are the same width as each other at every screen size instead
+       of each being as wide as its own label. */
+    .cmStats{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:.55rem;margin-top:1.3rem;max-width:400px;
+    }
+    .cmStat{
+      display:flex;align-items:center;gap:.6rem;min-width:0;min-height:58px;
+      padding:.5rem .85rem .5rem .7rem;border-radius:12px;
+      background:rgba(47,163,124,.1);border:1px solid rgba(47,163,124,.3);
+    }
+    .cmStat > div{min-width:0;}
+    .cmStat svg{width:20px;height:20px;color:#2FA37C;flex-shrink:0;}
+    .cmStat--coral{background:rgba(228,87,46,.1);border-color:rgba(228,87,46,.3);}
+    .cmStat--coral svg{color:#E4572E;}
+    .cmStatNum{font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--tx);display:block;line-height:1.2;}
+    .cmStatLbl{font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--txd);white-space:nowrap;}
+    /* the line under the chips — what the caps are, said once, where somebody
+       reads it before they hit one rather than after */
+    .cmBannerNote{
+      display:flex;align-items:center;gap:.45rem;margin-top:.9rem;
+      font-family:var(--fm);font-size:.62rem;letter-spacing:.06em;
+      color:var(--txd);
+    }
+    .cmBannerDot{
+      width:6px;height:6px;border-radius:50%;flex-shrink:0;
+      background:#2FA37C;box-shadow:0 0 7px rgba(47,163,124,.8);
+    }
+    /* ---- the decorative layer ----------------------------------------------
+       Dashed wire circles, dot grids and a few colour dots — no icons and no
+       artwork, so there is nothing here that has a right aspect ratio to be
+       stretched out of. Everything is positioned in percentages of the banner
+       and sized in a clamp of vw: the same pattern at 320px and at 1440px, and
+       a banner that grows taller because the copy wrapped simply gives its
+       rings more room rather than squashing them.
+
+       It is texture, not objects, so it is allowed behind the words — at this
+       weight it reads as paper. */
+    .cmBannerFx{
+      position:absolute;inset:0;z-index:0;
+      overflow:hidden;pointer-events:none;
+      border-radius:inherit;
+    }
+    .cmFxRing{
+      position:absolute;
+      border-radius:50%;
+      aspect-ratio:1;
+      border:2px dashed currentColor;
+      opacity:.3;
+    }
+    /* Each ring is anchored to a different corner and mostly sits outside the
+       banner, so what shows is an arc rather than a circle — and the arc
+       re-crops itself as the box changes shape instead of being redrawn. */
+    .cmFxRing--1{color:#3B82F6; top:-58%;  left:-8%;  width:clamp(150px,32vw,330px);}
+    .cmFxRing--2{color:#2FA37C; bottom:-64%;right:-10%;width:clamp(180px,40vw,400px);}
+    .cmFxRing--3{color:#F4B740; top:-30%;  right:14%; width:clamp(110px,24vw,240px); opacity:.24;}
+    .cmFxRing--4{color:#E4572E; bottom:-34%;left:22%; width:clamp(90px,20vw,200px);  opacity:.2;}
+
+    .cmFxDots{
+      position:absolute;
+      width:clamp(40px,6.5vw,78px);aspect-ratio:1;
+      background-image:radial-gradient(currentColor 1.4px,transparent 1.5px);
+      background-size:11px 11px;
+      opacity:.24;
+    }
+    .cmFxDots--tl{top:9%;   left:2%;   color:#3B82F6;}
+    .cmFxDots--tr{top:6%;   right:5%;  color:#EC6E9B;}
+    .cmFxDots--br{bottom:7%;right:16%; color:#F4B740;}
+
+    .cmFxBit{position:absolute;border-radius:50%;}
+    .cmFxBit--1{top:20%;   right:9%;  width:8px;height:8px;background:#3B82F6;opacity:.5;}
+    .cmFxBit--2{top:44%;   right:3%;  width:6px;height:6px;background:#7C3AED;opacity:.45;}
+    .cmFxBit--3{bottom:24%;right:6%;  width:7px;height:7px;background:#EC6E9B;opacity:.5;}
+    .cmFxBit--4{bottom:9%; left:6%;   width:7px;height:7px;background:#F4B740;opacity:.55;}
+    .cmFxBit--5{top:12%;   left:32%;  width:5px;height:5px;background:#2FA37C;opacity:.5;}
+
+    /* ---- device sizes -------------------------------------------------------
+       The pattern does not need switching off as the screen narrows — it is
+       texture, and texture scales. What changes is the padding, the type and
+       how densely the dots are scattered, so the smallest phone gets a calmer
+       version of the same banner rather than a different one. */
+    @media(max-width:760px){
+      .cmBanner{padding:1.6rem 1.4rem;}
+      .cmStats{gap:.45rem;}
+      .cmStat{padding:.45rem .7rem .45rem .5rem;gap:.5rem;}
+    }
+    @media(max-width:560px){
+      .cmBanner{padding:1.35rem 1.15rem;min-height:clamp(170px,44vw,230px);}
+      .cmBannerSub{font-size:.86rem;}
+      .cmStatNum{font-size:1rem;}
+      .cmStatLbl{font-size:.55rem;}
+      /* fewer scattered dots and a lighter pattern, so the copy stays the
+         loudest thing in the box at the width where it fills it */
+      .cmBannerFx{opacity:.75;}
+      .cmFxDots--br,.cmFxBit--5{display:none;}
+    }
+    @media(max-width:400px){
+      .cmBanner{padding:1.2rem 1rem;}
+      .cmBannerFx{opacity:.6;}
+      .cmFxDots--tl,.cmFxBit--2{display:none;}
+      .cmStat{flex:1 1 auto;}
+    }
+    @media(max-width:340px){
+      .cmStat{flex:1 1 100%;}
+    }
+    /* short landscape phones — the banner is a header, not a page */
+    @media(max-height:520px) and (orientation:landscape){
+      .cmBanner{padding:1.1rem 1.2rem;margin-bottom:1.1rem;min-height:0;}
+      .cmBannerSub{display:none;}
+      .cmBannerNote{display:none;}
+    }
+    /* wide screens: the copy stops growing with the box and the pattern takes
+       the room it leaves, rather than the banner becoming a long empty strip */
+    @media(min-width:1000px){
+      .cmBanner{padding:2.4rem 2.2rem;}
+      .cmBannerCopy{max-width:620px;}
+      .cmFxDots--br{right:8%;}
+    }
+
+    /* community and friends tabs — the segmented control the header search
+       reads to decide what it is searching */
+    .cmTabs{
+      display:grid;grid-template-columns:1fr 1fr;gap:.35rem;
+      padding:.3rem;margin-bottom:1.6rem;
+      background:var(--sur2);border:1px solid var(--bdr);border-radius:12px;
+    }
+    .cmTab{
+      display:flex;align-items:center;justify-content:center;gap:.5rem;
+      padding:.7rem .6rem;min-width:0;
+      background:none;border:1px solid transparent;border-radius:9px;
+      font-family:var(--fb);font-size:.86rem;font-weight:600;
+      color:var(--txd);cursor:pointer;
+      transition:background .2s,color .2s,border-color .2s;
+    }
+    .cmTab svg{width:17px;height:17px;flex-shrink:0;}
+    .cmTab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .cmTab.active{background:var(--sur);color:var(--tx);border-color:var(--bdrh);}
+    .cmTab:active{transform:scale(.99);}
+    .cmPane[hidden]{display:none;}
 
     /* section head */
     .cmSectionHead{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem;}
@@ -41,6 +191,174 @@
     /* create and join buttons */
     .cmHeadBtns{display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap;}
     .cmJoinBtn{background:none;border-color:var(--bdrh);color:var(--tx);}
+
+    /* ---- the community's own page ------------------------------------------
+       Built like #frdPage: a fixed sheet that slides in from the right over
+       whatever opened it, not a modal. */
+    #cmInfoPage{
+      position:fixed;inset:0;z-index:1600;
+      background:var(--bg);color:var(--tx);
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+      transform:translateX(100%);
+      transition:transform .4s cubic-bezier(.22,1,.36,1);
+    }
+    #cmInfoPage.open{transform:translateX(0);}
+    @media (prefers-reduced-motion:reduce){#cmInfoPage{transition:none;}}
+    .cmiBdy{max-width:660px;margin:0 auto;padding:1rem 1.1rem 3.5rem;}
+
+    /* hero */
+    .cmiHero{
+      display:flex;flex-direction:column;align-items:center;text-align:center;
+      gap:.5rem;padding:1.4rem 1rem 1.6rem;
+    }
+    .cmiIcon{
+      width:82px;height:82px;border-radius:50%;overflow:hidden;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      font-size:2.4rem;line-height:1;
+      background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 55%,#60a5fa 100%);
+      color:#fff;font-family:var(--fd);font-weight:800;
+      border:1px solid var(--bdrh);
+      box-shadow:0 6px 22px rgba(0,0,0,.28);
+    }
+    .cmiIcon img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cmiName{font-family:var(--fd);font-size:1.45rem;font-weight:800;color:var(--tx);line-height:1.2;}
+    .cmiShort{font-family:var(--fb);font-size:.9rem;color:var(--txd);line-height:1.5;max-width:440px;}
+    .cmiShort:empty{display:none;}
+    .cmiChips{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;margin-top:.5rem;}
+    .cmiChip{
+      font-family:var(--fm);font-size:.58rem;letter-spacing:.12em;
+      padding:.3rem .6rem;border-radius:999px;
+      border:1px solid var(--bdrh);color:var(--txd);
+    }
+    .cmiChip b{color:var(--tx);font-weight:700;}
+
+    /* sections */
+    .cmiSec{
+      border-top:1px solid var(--bdr);
+      padding:1.3rem 0 .3rem;
+    }
+    .cmiSec[hidden]{display:none;}
+    .cmiSecHd{
+      font-family:var(--fm);font-size:.62rem;letter-spacing:.18em;
+      color:var(--txd);margin-bottom:.75rem;
+    }
+    .cmiText{
+      font-family:var(--fb);font-size:.9rem;line-height:1.65;color:var(--tx);
+      white-space:pre-wrap;overflow-wrap:anywhere;
+    }
+    .cmiNote{
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.06em;
+      color:var(--txd);margin-top:.7rem;line-height:1.6;
+    }
+    .cmiNote:empty{display:none;}
+
+    /* all members / ban list */
+    .cmiSeg{
+      display:flex;gap:.35rem;padding:.28rem;margin-bottom:.8rem;
+      background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;
+    }
+    .cmiSegBtn{
+      flex:1;padding:.55rem .5rem;border-radius:8px;
+      background:none;border:1px solid transparent;
+      font-family:var(--fb);font-size:.8rem;font-weight:600;
+      color:var(--txd);cursor:pointer;transition:background .2s,color .2s,border-color .2s;
+    }
+    .cmiSegBtn.active{background:var(--sur);color:#2FA37C;border-color:#2FA37C;}
+    .cmiSegBtn[hidden]{display:none;}
+    /* one button is not a choice — cmiPaintRole hides the pair for a member */
+    .cmiSeg[hidden]{display:none;}
+
+    /* the page carries the section's green the same way the community page
+       does, so walking into it is not walking out of the theme */
+    #cmInfoPage .cmiIcon{border-color:rgba(47,163,124,.4);}
+    #cmInfoPage .cmiChip--role{color:#2FA37C;border-color:rgba(47,163,124,.45);background:rgba(47,163,124,.1);}
+    #cmInfoPage .cmiMini:hover{border-color:#2FA37C;color:#2FA37C;}
+    #cmInfoPage .cmInput:focus,#cmInfoPage .cmArea:focus{border-color:#2FA37C;}
+    #cmInfoPage .cmToggleRow input{accent-color:#2FA37C;}
+    #cmInfoPage .cmModBtn--go{border-color:#2FA37C;background:rgba(47,163,124,.14);color:#2FA37C;}
+    #cmInfoPage .cmiAct:hover{border-color:rgba(47,163,124,.5);}
+    #cmInfoPage .cmiAct--danger:hover{border-color:var(--danger-bd);}
+
+    /* join id */
+    .cmiJoinId{
+      display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+      padding:.7rem .85rem;margin-bottom:.4rem;
+      background:var(--sur2);border:1px dashed var(--bdrh);border-radius:10px;
+      font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;color:var(--txd);
+    }
+    .cmiJoinId code{
+      font-family:var(--fm);font-size:.95rem;letter-spacing:.28em;
+      color:var(--tx);flex:1;min-width:0;
+    }
+    .cmiMini{
+      padding:.45rem .8rem;border-radius:8px;cursor:pointer;
+      background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);
+      font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;
+    }
+    .cmiMini:hover{border-color:var(--pg);}
+    .cmiMini:disabled{opacity:.55;cursor:default;}
+    .cmiMini--danger{color:var(--danger);border-color:var(--danger-bd);background:var(--danger-bg);}
+    .cmiMini--danger[hidden]{display:none;}
+
+    /* the icon picker */
+    .cmiIconPick{display:flex;align-items:flex-start;gap:.9rem;margin-bottom:.3rem;}
+    .cmiIconPrev{
+      width:62px;height:62px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 55%,#60a5fa 100%);
+      color:#fff;font-family:var(--fd);font-weight:800;font-size:1.5rem;
+      border:1px solid var(--bdrh);
+    }
+    .cmiIconPrev img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cmiIconPickMeta{display:flex;flex-wrap:wrap;gap:.45rem;min-width:0;flex:1;}
+    .cmiIconPickMeta p{
+      flex:1 1 100%;margin-top:.15rem;
+      font-family:var(--fb);font-size:.75rem;line-height:1.5;color:var(--txd);
+    }
+
+    /* actions */
+    .cmiActs{display:flex;flex-direction:column;gap:.5rem;}
+    .cmiAct{
+      width:100%;text-align:left;
+      padding:.85rem 1rem;border-radius:10px;cursor:pointer;
+      background:var(--sur);border:1px solid var(--bdr);color:var(--tx);
+      font-family:var(--fb);font-size:.88rem;
+      transition:border-color .2s,background .2s;
+    }
+    .cmiAct:hover{border-color:var(--bdrh);background:var(--sur2);}
+    .cmiAct[hidden]{display:none;}
+    .cmiAct--danger{color:var(--danger);border-color:var(--danger-bd);}
+    .cmiAct--danger:hover{background:var(--danger-bg-hover);border-color:var(--danger-bd);}
+
+    /* the person sheet */
+    .cmuHead{display:flex;align-items:center;gap:.8rem;margin-bottom:1rem;}
+    .cmuAva{
+      width:48px;height:48px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,var(--pb),var(--pg));color:var(--text-on-accent);
+      font-family:var(--fd);font-weight:700;font-size:1.15rem;
+    }
+    .cmuAva img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cmuMeta{min-width:0;}
+    .cmuName{font-family:var(--fb);font-size:1rem;font-weight:700;color:var(--tx);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .cmuHandle{font-family:var(--fm);font-size:.65rem;letter-spacing:.06em;color:var(--txd);margin-top:.15rem;}
+
+    /* the quoted message in the message sheet */
+    .cmTxtQuote{
+      border-left:2px solid var(--bdrh);padding-left:.7rem;
+      max-height:5.4em;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;
+    }
+    /* the ⋯ on a bubble, the only way into that sheet */
+    .cpMsgAct{
+      position:absolute;top:2px;right:4px;
+      width:22px;height:18px;padding:0;border:none;background:none;
+      color:currentColor;opacity:.4;cursor:pointer;line-height:1;
+      font-size:.9rem;border-radius:5px;
+    }
+    .cpMsgAct:hover{opacity:1;background:rgba(128,128,128,.16);}
+    .cpBubble{position:relative;}
+    .cpBubble--act{padding-right:1.7rem;}
 
     /* community modals */
     .cmMod{
@@ -75,11 +393,6 @@
     .cmModBtn--go{border-color:var(--pg);background:var(--pdim);color:var(--pg);}
     .cmModBtn--danger{border-color:var(--danger-bd);background:var(--danger-bg);color:var(--danger);}
     .cmModBtn:disabled{opacity:.55;cursor:default;}
-    .cmCode{
-      font-family:var(--fm);font-size:1rem;letter-spacing:.3em;color:var(--pg);
-      background:var(--sur2);border:1px dashed var(--bdrh);border-radius:8px;
-      padding:.6rem;text-align:center;margin-top:.4rem;
-    }
     /* member list */
     .cmMemRow{
       display:flex;align-items:center;gap:.7rem;padding:.6rem .2rem;
@@ -104,14 +417,28 @@
     .cmMemRole--sr_mod{color:var(--role-srmod);border-color:var(--role-srmod-bd);}
     .cmMemRole--jr_mod{color:var(--role-jrmod);border-color:var(--role-jrmod-bd);}
     .cmMemRole--banned{color:var(--danger-strong);border-color:var(--danger-bd);}
-    .cmActList{display:flex;flex-direction:column;gap:.1rem;}
+    /* Every action is a box. They used to be bare rows of text, which read as
+       a paragraph you could tap somewhere in rather than as a list of separate
+       things — View profile, Report and Ban are three decisions and each one
+       gets its own edge. */
+    .cmActList{display:flex;flex-direction:column;gap:.45rem;}
     .cmActItem{
-      text-align:left;padding:.8rem .7rem;border-radius:8px;border:none;background:none;
-      color:var(--tx);font-family:var(--fb);font-size:.9rem;cursor:pointer;transition:background .15s;
+      text-align:left;padding:.8rem .95rem;border-radius:10px;
+      border:1px solid var(--bdr);background:var(--sur2);
+      color:var(--tx);font-family:var(--fb);font-size:.9rem;cursor:pointer;
+      transition:background .15s,border-color .15s;
     }
-    .cmActItem:hover{background:var(--pdim);}
-    .cmActItem--danger{color:var(--danger);}
-    .cmActItem--danger:hover{background:var(--danger-bg-hover);}
+    .cmActItem:hover{background:var(--sur);border-color:var(--bdrh);}
+    .cmActItem:active{transform:scale(.995);}
+    .cmActItem--danger{color:var(--danger);border-color:var(--danger-bd);background:var(--danger-bg);}
+    .cmActItem--danger:hover{background:var(--danger-bg-hover);border-color:var(--danger-bd);}
+    /* the report reason that has been picked */
+    .cmActItem--on{
+      background:rgba(47,163,124,.14);
+      box-shadow:inset 0 0 0 1px rgba(47,163,124,.55);
+      color:var(--tx);
+    }
+    .cmActItem--on:hover{background:rgba(47,163,124,.2);}
 
     /* device optimization */
 
@@ -121,7 +448,7 @@
     }
 
     /* modal safe area */
-    .cmMod,#rptMod,#cpuMod{
+    .cmMod,#rptMod{
       padding:calc(1rem + env(safe-area-inset-top)) 1rem
               calc(1rem + env(safe-area-inset-bottom)) 1rem;
     }
@@ -129,7 +456,6 @@
     @media(max-width:520px){
       /* full width cards */
       .cmModCard,.rptCard{max-width:100%;max-height:86dvh;padding:1.1rem;border-radius:14px;}
-      .cpuCard{max-width:100%;}
 
       /* create and join row */
       .cmHeadBtns{width:100%;gap:.5rem;}
@@ -267,7 +593,13 @@
     #subOverview .subOvPlanBadge--max     { color:#fcd34d; border-color:#8a6a2a; background:rgba(234,179,8,.14); }
     #subOverview .subOvPlanBadge--dev     { color:#fca5a5; border-color:#8a3a3a; background:rgba(220,38,38,.14); }
 
-    /* community page theme */
+    /* community page theme
+       Surfaces still follow whatever theme the member picked — this page is
+       not a light island in a dark app. The accent does not: it is the green
+       out of the banner illustration, fixed, so the tabs, the chips, the
+       buttons and the card rings all belong to the same picture in every
+       theme. Sites where the accent is themed get a community page that turns
+       grey in the mono themes, which is what this replaces. */
     #communityPage,#cmChatPanel{
       --cmBg:var(--bg);
       --cmSur:var(--sur);
@@ -276,9 +608,20 @@
       --cmBdrh:var(--bdrh);
       --cmTx:var(--tx);
       --cmTxd:var(--txd);
-      --cmAccent:var(--pg);
-      --cmAccentSoft:var(--pb);
-      --cmAccentDim:var(--pdim);
+      --cmAccent:#2FA37C;
+      --cmAccent-rgb:47,163,124;
+      --cmAccentSoft:#3FBF93;
+      --cmAccentDim:rgba(47,163,124,.14);
+      --cmOnAccent:#04150F;
+      /* the other three hues the illustration uses, for the things that are
+         not the primary action */
+      --cmCoral:#E4572E;
+      --cmAmber:#F4B740;
+      /* amber as a fill reads fine on a dark surface and washes out on a
+         light one, so text and borders drawn in it get their own darker
+         value under the light theme */
+      --cmAmberInk:#F4B740;
+      --cmBlue:#3B82F6;
       --cmOnline:#2ecf7e;
       background:var(--cmBg);
     }
@@ -286,34 +629,85 @@
       border-bottom:1px solid var(--cmBdr);
     }
     #communityPage .cmHdr::before,#cmChatPanel .cmHdr::before{background:var(--cmBg)!important;}
+    #communityPage .cmTabs,#cmChatPanel .cmTabs{background:var(--cmSur2);border:1px solid var(--cmBdr);}
     #communityPage .cmTab,#cmChatPanel .cmTab{color:var(--cmTxd);}
-    #communityPage .cmTab.active,#cmChatPanel .cmTab.active{color:var(--cmTx);border-color:var(--cmAccent);}
-    #communityPage .cmTab:hover,#cmChatPanel .cmTab:hover{color:var(--cmTx);}
-
-    #communityPage .cmBanner,#cmChatPanel .cmBanner{
-      background:linear-gradient(150deg,color-mix(in srgb,var(--pg) 10%,var(--vsur2)) 0%,var(--vsur) 100%);
-      border:1px solid color-mix(in srgb,var(--pg) 22%,var(--bdr));
+    #communityPage .cmTab.active,#cmChatPanel .cmTab.active{
+      color:var(--cmAccent);background:var(--cmAccentDim);border-color:var(--cmAccent);
     }
-    #communityPage .cmBannerTitle,#cmChatPanel .cmBannerTitle{color:var(--vtx);}
-    #communityPage .cmBannerSub,#cmChatPanel .cmBannerSub{color:rgba(var(--vtx2-rgb),.72);}
-    #communityPage .cmStat svg,#cmChatPanel .cmStat svg{color:rgba(var(--vtx2-rgb),.9);}
-    #communityPage .cmStatNum,#cmChatPanel .cmStatNum{color:var(--vtx);}
-    #communityPage .cmStatLbl,#cmChatPanel .cmStatLbl{color:rgba(var(--vtx2-rgb),.55);}
+    #communityPage .cmTab:hover,#cmChatPanel .cmTab:hover{color:var(--cmTx);}
+    #communityPage .cmTab.active:hover,#cmChatPanel .cmTab.active:hover{color:var(--cmAccent);}
 
-    #communityPage .cmSectionHead h3,#cmChatPanel .cmSectionHead h3{color:var(--cmTx);}
+    /* home header pieces. The section icon is the one chip that is filled
+       rather than tinted — it is the page's mark, and it matches the palette
+       the illustration under it is drawn in. */
+    #communityPage .cmHdrBrandIco{
+      color:#fff;border:none;
+      background:linear-gradient(135deg,#2FA37C 0%,#3FBF93 55%,#7FD8C0 100%);
+      box-shadow:0 2px 10px rgba(var(--cmAccent-rgb),.35);
+    }
+    #communityPage .cmHdrBtn{border:1px solid var(--cmBdr);color:var(--cmTx);}
+    #communityPage .cmHdrBtn:hover,#communityPage .cmHdrBtn.on{
+      border-color:var(--cmAccent);background:var(--cmAccentDim);color:var(--cmAccentSoft);
+    }
+    /* coral, not the page accent — this one is asking for something */
+    #communityPage .cmHdrBadge{background:var(--cmCoral);color:#fff;border-color:var(--cmBg);}
+    #communityPage .cmSearchBar{background:var(--cmBg);border-bottom:1px solid var(--cmBdr);}
+    #communityPage .cmSearchInput{color:var(--cmTx);}
+    #communityPage .cmSearchInput::placeholder{color:var(--cmTxd);}
+    #communityPage .cmSearchClear{color:var(--cmTxd);}
+    #communityPage .cmSearchClear:hover{color:var(--cmTx);}
+
+    /* The banner is warm and green in every theme rather than a tint of
+       whatever the theme's accent happens to be — that tint went grey in the
+       mono themes, which is the whole reason this is spelled out. */
+    #communityPage .cmBanner,#cmChatPanel .cmBanner{
+      background:
+        radial-gradient(120% 130% at 88% 20%, rgba(244,183,64,.20) 0%, transparent 58%),
+        radial-gradient(110% 120% at 4% 90%, rgba(228,87,46,.13) 0%, transparent 55%),
+        linear-gradient(150deg, rgba(47,163,124,.16) 0%, var(--vsur) 100%);
+      border:1px solid rgba(var(--cmAccent-rgb),.3);
+    }
+    #communityPage .cmBannerL1,#cmChatPanel .cmBannerL1{color:var(--vtx);}
+    #communityPage .cmBannerSub,#cmChatPanel .cmBannerSub{color:rgba(var(--vtx2-rgb),.78);}
+    #communityPage .cmStatNum,#cmChatPanel .cmStatNum{color:var(--vtx);}
+    #communityPage .cmStatLbl,#cmChatPanel .cmStatLbl{color:rgba(var(--vtx2-rgb),.62);}
+
+    #communityPage .cmSectionHead h3,#cmChatPanel .cmSectionHead h3{
+      color:var(--cmTx);
+      display:flex;align-items:center;gap:.55rem;
+    }
+    /* a coloured mark on every heading, so the banner's palette carries down
+       the page instead of stopping at the banner */
+    #communityPage .cmSectionHead h3::before,#cmChatPanel .cmSectionHead h3::before{
+      content:'';width:4px;height:1.05em;border-radius:999px;flex-shrink:0;
+      background:linear-gradient(180deg,var(--cmAccent),var(--cmAmber));
+    }
     #communityPage .cmSectionHead p,#cmChatPanel .cmSectionHead p{color:var(--cmTxd);}
+    /* Create is the primary action and is filled; Join is the second one and
+       takes the amber out of the same palette rather than a grey outline */
     #communityPage .cmCreateBtn,#cmChatPanel .cmCreateBtn{
-      background:var(--cmAccentDim);
+      background:var(--cmAccent);
       border:1px solid var(--cmAccent);
-      color:var(--cmAccentSoft);
+      color:#fff;
     }
     #communityPage .cmCreateBtn:hover,#cmChatPanel .cmCreateBtn:hover{
-      background:color-mix(in srgb,var(--cmAccent) 28%,transparent);
-      box-shadow:0 0 18px rgba(var(--pg-rgb),.35);
+      filter:brightness(1.08);
+      background:var(--cmAccent);
+      box-shadow:0 0 18px rgba(var(--cmAccent-rgb),.35);
+    }
+    html[data-theme="light"] #communityPage,html[data-theme="light"] #cmChatPanel{--cmAmberInk:#9A6A08;}
+    #communityPage .cmJoinBtn,#cmChatPanel .cmJoinBtn{
+      background:rgba(244,183,64,.14);
+      border-color:var(--cmAmber);
+      color:var(--cmAmberInk);
+    }
+    #communityPage .cmJoinBtn:hover,#cmChatPanel .cmJoinBtn:hover{
+      background:rgba(244,183,64,.22);
+      box-shadow:0 0 18px rgba(244,183,64,.3);
     }
 
     #communityPage .cmCard,#cmChatPanel .cmCard{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cmCard:hover,#cmChatPanel .cmCard:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
+    #communityPage .cmCard:hover,#cmChatPanel .cmCard:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--cmAccent-rgb),.18);}
     #communityPage .cmCard .cmCardIcon,#cmChatPanel .cmCard .cmCardIcon{border:1px solid var(--cmBdrh);}
     #communityPage .cmCard .cmCardName,#cmChatPanel .cmCard .cmCardName{color:var(--cmTx);}
     #communityPage .cmCard p,#cmChatPanel .cmCard p{color:var(--cmTxd);}
@@ -347,7 +741,7 @@
     .cmFriendStatus{font-family:var(--fm);font-size:.68rem;letter-spacing:.04em;display:flex;align-items:center;gap:.4rem;margin-top:.25rem;}
 
     #communityPage .cmFriendItem,#cmChatPanel .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cmFriendItem:hover,#cmChatPanel .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--pg-rgb),.18);}
+    #communityPage .cmFriendItem:hover,#cmChatPanel .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--cmAccent-rgb),.18);}
     #communityPage .cmFriendAvatar,#cmChatPanel .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
     /* zeo avatar chip */
     #communityPage .cmFriendAvatar.zeoChip,#cmChatPanel .cmFriendAvatar.zeoChip{background:linear-gradient(135deg,#1a2a4a,#2a4080);border-color:rgba(99,179,237,.3);}
@@ -355,10 +749,6 @@
     #communityPage .cmFriendStatus,#cmChatPanel .cmFriendStatus{color:var(--cmTxd);}
 
     /* art talk chat */
-    #communityPage .cpHdr::before,#cmChatPanel .cpHdr::before{background:var(--cmBg)!important;}
-    #communityPage .cpHdr,#cmChatPanel .cpHdr{border-bottom:1px solid var(--cmBdr);}
-    #communityPage .cpTitle,#cmChatPanel .cpTitle{color:var(--cmTx);}
-    #communityPage .cpTitle .s,#cmChatPanel .cpTitle .s{color:var(--cmAccentSoft);}
     #communityPage .cmBack,#cmChatPanel .cmBack{border:1px solid var(--cmBdr);color:var(--cmTx);}
     #communityPage .cmBack:hover,#cmChatPanel .cmBack:hover{border-color:var(--cmAccent);background:var(--cmAccentDim);}
     #communityPage .cpEmpty,#cmChatPanel .cpEmpty{color:var(--cmTxd);}
@@ -368,9 +758,7 @@
     #communityPage .cpAvatar,#cmChatPanel .cpAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
     #communityPage .cpAvatar::after,#cmChatPanel .cpAvatar::after{border-color:var(--cmSur);}
     #communityPage .cpCommentUser,#cmChatPanel .cpCommentUser{color:var(--cmAccentSoft);}
-    #communityPage .cpCommentText,#cmChatPanel .cpCommentText{color:var(--cmTx);}
     #communityPage .cpCommentTime,#cmChatPanel .cpCommentTime{color:var(--cmTxd);}
-    #communityPage .cpSubtitle,#cmChatPanel .cpSubtitle{color:var(--cmTxd);}
     #communityPage .cpLockNote::before,#cmChatPanel .cpLockNote::before{background:var(--cmBg)!important;}
     #communityPage .cpLockNote,#cmChatPanel .cpLockNote{border-top:1px solid var(--cmBdr);color:var(--cmTxd);}
     #communityPage .cpLockNote svg,#cmChatPanel .cpLockNote svg{color:var(--cmAccentSoft);}
@@ -378,7 +766,6 @@
     #communityPage .cpAttachBtn:hover,#cmChatPanel .cpAttachBtn:hover{background:color-mix(in srgb,var(--cmAccent) 30%,transparent)!important;}
     #communityPage .cpShowcase,#cmChatPanel .cpShowcase{background:var(--cmSur);border:1px solid var(--cmBdr);}
     #communityPage .cpShowcaseText,#cmChatPanel .cpShowcaseText{color:var(--cmTx);}
-    #communityPage .cpPhoto,#cmChatPanel .cpPhoto{border:1px solid var(--cmBdr);}
     #communityPage .cpRefreshSpinner,#cmChatPanel .cpRefreshSpinner{border-color:color-mix(in srgb,var(--cmAccent) 25%,transparent);border-top-color:var(--cmAccent);}
 
     #communityPage .cpBar::before,#cmChatPanel .cpBar::before{background:var(--cmSur)!important;}
@@ -388,8 +775,8 @@
     #communityPage .cpBarAvatar,#cmChatPanel .cpBarAvatar{display:none;}
     #communityPage .cpBarInput,#cmChatPanel .cpBarInput{background:var(--cmSur2)!important;color:var(--cmTx)!important;border:1px solid var(--cmBdr)!important;}
     #communityPage .cpBarInput::placeholder,#cmChatPanel .cpBarInput::placeholder{color:var(--cmTxd);}
-    #communityPage .cpBarSend,#cmChatPanel .cpBarSend{background:var(--cmAccent);border:none;color:var(--text-on-accent);}
-    #communityPage .cpBarSend:hover,#cmChatPanel .cpBarSend:hover{filter:brightness(1.08);box-shadow:0 3px 14px rgba(var(--pg-rgb),.4)!important;}
+    #communityPage .cpBarSend,#cmChatPanel .cpBarSend{background:var(--cmAccent);border:none;color:#fff;}
+    #communityPage .cpBarSend:hover,#cmChatPanel .cpBarSend:hover{filter:brightness(1.08);box-shadow:0 3px 14px rgba(var(--cmAccent-rgb),.4)!important;}
     #communityPage .cpSelectedImage img,#communityPage .cpThumbPreview,#cmChatPanel .cpSelectedImage img,#cmChatPanel .cpThumbPreview{border:1px solid var(--cmBdr);background:var(--cmSur);}
     #communityPage .cpThumbClose,#cmChatPanel .cpThumbClose{background:var(--cmSur2);border:1px solid var(--cmBdrh);color:var(--cmTx);}
 

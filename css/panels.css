@@ -286,8 +286,8 @@ body{background:var(--bg);}
 
 /* overlay scrims */
 #fgFltOvr::before{background:color-mix(in srgb,var(--bg) 55%,transparent)!important;}
-.fgHdr::before,.cpHdr::before,.apHdr::before,.subPgHdr::before{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;}
-.fgHdr,.cpHdr,.apHdr,.subPgHdr{border-bottom:1px solid var(--bdr);}
+.fgHdr::before,.apHdr::before,.subPgHdr::before{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;}
+.fgHdr,.apHdr,.subPgHdr{border-bottom:1px solid var(--bdr);}
 .cpBar::before{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;}
 .cpBar{border-top:1px solid var(--bdr);}
 #legalBackdrop::before{background:color-mix(in srgb,var(--bg) 75%,transparent)!important;}

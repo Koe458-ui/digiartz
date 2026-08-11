@@ -138,6 +138,16 @@
     // not the page under it
     var _upg=document.getElementById('upGuideMod');
     if(_upg && _upg.classList.contains('open')){ upGuideClose(); return; }
+    // Same rule for the two pages that slide in over the community section.
+    // Without this the line below closes the section out from under them, so
+    // one Escape on a community's page dropped the whole section — and the
+    // friends page has been doing it for as long as it has existed. Each page
+    // owns its own Escape (js/mywork.js, js/dm.js); this only has to stop
+    // reaching past them.
+    var _cmi=document.getElementById('cmInfoPage');
+    if(_cmi && _cmi.classList.contains('open')) return;
+    var _frd=document.getElementById('frdPage');
+    if(_frd && _frd.classList.contains('open')) return;
     closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
     cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();

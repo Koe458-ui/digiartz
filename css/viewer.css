@@ -344,22 +344,6 @@
 }
     #communityPage.open{transform:translateX(0);}
 
-    /* header bar */
-    .cpHdr{
-      position:sticky;top:0;z-index:10;
-      border-bottom:1px solid var(--bdr);
-      padding:1rem 1.5rem;
-      display:flex;flex-direction:column;align-items:flex-start;gap:.6rem;
-      flex-shrink:0;
-      isolation:isolate;
-    }
-    /* blur layer */
-    .cpHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--sur) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
-    .cpTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;letter-spacing:.15em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
-    .cpTitle .s{color:var(--pg);font-size:.6em;}
-    .cpHdrText{display:flex;flex-direction:column;gap:.2rem;min-width:0;}
-    .cpSubtitle{font-family:var(--fb);font-size:.74rem;font-weight:400;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
     /* community header */
     .cmHdr{
       position:sticky;top:0;z-index:10;
@@ -399,6 +383,75 @@
       .cmHdrTitle{font-size:1.02rem;letter-spacing:.08em;}
       .cmHdr{padding:1rem 3.9rem;}
       .cmHdrBack{left:1rem;}
+    }
+
+    /* home mode — the section icon and its name on the left, the two things
+       this page can do on the right. No avatar: the member's own profile is
+       one tap away in the nav and has no business in a section header. */
+    .cmHdr--home{
+      justify-content:space-between;
+      gap:.6rem;
+      padding:1rem 1.1rem;
+    }
+    .cmHdrBrand{display:flex;align-items:center;gap:.6rem;min-width:0;}
+    .cmHdrBrandIco{
+      width:34px;height:34px;border-radius:11px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      color:var(--pg);background:var(--pdim);
+      border:1px solid rgba(var(--pg-rgb),.32);
+    }
+    .cmHdrBrandIco svg{width:19px;height:19px;}
+    .cmHdrActs{display:flex;align-items:center;gap:.45rem;flex-shrink:0;}
+    .cmHdrBtn{
+      position:relative;
+      width:38px;height:38px;border-radius:11px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:1px solid var(--bdr);color:var(--tx);
+      cursor:pointer;transition:border-color .2s,background .2s,color .2s;
+    }
+    .cmHdrBtn svg{width:19px;height:19px;}
+    .cmHdrBtn:hover{border-color:var(--pg);background:var(--pdim);color:var(--pg);}
+    .cmHdrBtn:active{transform:scale(.96);}
+    .cmHdrBtn.on{border-color:var(--pg);background:var(--pdim);color:var(--pg);}
+    /* pending friend requests, count only when there are any */
+    .cmHdrBadge{
+      position:absolute;top:-5px;right:-5px;
+      min-width:17px;height:17px;padding:0 .25rem;border-radius:999px;
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--fm);font-size:.55rem;line-height:1;
+      background:var(--pg);color:var(--text-on-accent);
+      border:2px solid var(--sur);
+    }
+    .cmHdrBadge[hidden]{display:none;}
+
+    /* header search — collapsed until the search button asks for it, and it
+       searches whichever tab is open rather than being two separate boxes */
+    .cmSearchBar{
+      position:sticky;top:0;z-index:9;flex-shrink:0;
+      display:flex;align-items:center;gap:.6rem;
+      padding:.7rem 1.1rem;
+      background:var(--sur);
+      border-bottom:1px solid var(--bdr);
+    }
+    .cmSearchBar[hidden]{display:none;}
+    .cmSearchBar > svg{width:17px;height:17px;color:var(--txd);flex-shrink:0;}
+    .cmSearchInput{
+      flex:1;min-width:0;
+      background:none;border:none;outline:none;
+      font-family:var(--fb);font-size:.92rem;color:var(--tx);
+    }
+    .cmSearchInput::placeholder{color:var(--txd);}
+    .cmSearchClear{
+      width:28px;height:28px;border-radius:8px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;color:var(--txd);cursor:pointer;
+    }
+    .cmSearchClear svg{width:15px;height:15px;}
+    .cmSearchClear:hover{color:var(--tx);}
+    @media (pointer:coarse){ .cmSearchInput{font-size:16px;} }
+    @media(max-width:480px){
+      .cmHdr--home{padding:.85rem .9rem;}
+      .cmSearchBar{padding:.6rem .9rem;}
     }
 
     /* chat banner mode */
@@ -509,62 +562,13 @@
       width:10px;height:10px;border-radius:50%;
       background:#22c55e;border:2px solid var(--sur);
     }
-    .cpCommentMeta{display:flex;flex-direction:column;gap:.3rem;flex:1;min-width:0;}
 
-    /* mini profile card */
-    #cpuMod{
-      position:fixed;inset:0;z-index:4200;display:none;
-      align-items:center;justify-content:center;padding:1rem;
-      background:rgba(0,0,0,.6);backdrop-filter:blur(3px);
-    }
-    #cpuMod.open{display:flex;}
-    .cpuCard{
-      width:100%;max-width:280px;
-      background:var(--sur);border:1px solid var(--bdr);border-radius:18px;
-      padding:1.1rem;
-      box-shadow:0 18px 50px rgba(0,0,0,.45);
-      animation:cpuPop .2s cubic-bezier(.22,1,.36,1) backwards;
-    }
-    @keyframes cpuPop{
-      from{opacity:0;transform:scale(.94) translateY(8px);}
-      to{opacity:1;transform:none;}
-    }
-    .cpuRow{display:flex;align-items:center;gap:.7rem;margin-bottom:.65rem;}
-    .cpuIco{
-      width:38px;height:38px;border-radius:50%;flex-shrink:0;overflow:hidden;
-      background:linear-gradient(135deg,var(--pg),var(--pgd));
-      color:var(--text-on-accent);
-      display:flex;align-items:center;justify-content:center;
-      font-family:var(--fd);font-weight:700;font-size:.95rem;
-    }
-    .cpuIco img{width:100%;height:100%;object-fit:cover;display:block;}
-    .cpuIco--sm{
-      background:none;border:1px solid var(--bdr);color:var(--txd);
-      font-size:.8rem;font-family:var(--fm);
-    }
-    .cpuName{
-      font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    }
-    .cpuHandle{
-      font-family:var(--fm);font-size:.75rem;letter-spacing:.06em;color:var(--txd);
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    }
-    .cpuBtn{
-      width:100%;margin-top:.35rem;
-      font-family:var(--fm);font-size:.7rem;letter-spacing:.12em;
-      padding:.65rem 1rem;border-radius:10px;cursor:pointer;
-      border:1px solid var(--pg);background:var(--pdim);color:var(--pg);
-      transition:background .2s;
-    }
-    .cpuBtn:hover{background:color-mix(in srgb,var(--pg) 22%,transparent);}
     /* tappable identity */
     .cpMsgRow--them .cpMsgAvatar,
     .cpMsgRow--them .cpBubbleName,
     .cpShowcaseHead .cpAvatar,
     .cpShowcaseHead .cpCommentUser{cursor:pointer;}
     .cpCommentUser{font-family:var(--fm);font-size:.78rem;font-weight:700;letter-spacing:.15em;color:var(--ps);}
-    .cpCommentText{font-family:var(--fb);font-size:.95rem;font-weight:400;color:var(--tx);line-height:1.6;word-break:break-word;}
     .cpCommentTime{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);}
 
     /* chat rows */
@@ -606,10 +610,6 @@
       float:right;margin:.65em -.1em 0 .65em;
       font-family:var(--fm);font-size:.56rem;letter-spacing:.04em;
       color:var(--txd);white-space:nowrap;user-select:none;
-    }
-    .cpBubble .cpPhoto{
-      display:block;width:100%;height:auto;max-width:260px;max-height:260px;
-      object-fit:cover;border-radius:10px;margin:.25rem 0 .35rem;cursor:pointer;
     }
     /* chat wallpaper */
     #cmChatView .cpBody,#dmChatView .cpBody{

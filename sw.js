@@ -4,6 +4,154 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v165 — Escape stops at the page it was pressed on.
+       js/pfedit.js carries one global Escape that closes a dozen
+       overlays by name, the community section among them. It already
+       stepped aside for the profile search and the guidelines sheet;
+       it did not for the community's own page or the friends page, so
+       one Escape on either dropped the whole section behind them. The
+       friends page has been doing that for as long as it has existed.
+       Both are guarded now, and each page stops the event where it
+       handles it, so the fix does not depend on which script loaded
+       first.
+       Swept out with it: .cmCode, orphaned when the manage modal went,
+       and .cpHdr, .cpTitle, .cpSubtitle, .cpHdrText, .cpCommentMeta,
+       .cpCommentText, .cpPhoto and .dmHint, which had outlived their
+       markup some time before this branch and nothing referenced.
+       Changed: js/pfedit.js, js/dm.js, js/mywork.js, css/community.css,
+       css/viewer.css, css/widgets.css, css/overrides.css,
+       css/panels.css, index.html, sw.js.
+   v164 — every message goes through one sliding-window gate.
+       comments and direct_messages were behind a fixed-window counter:
+       20 comments per 5 minutes, which is four a minute — two people
+       talking quickly hit it while behaving perfectly normally, and got
+       a refusal with no idea when it lifted. A fixed window is also the
+       wrong shape: it resets on a clock boundary, so a script sending
+       its whole allowance at :59 and again at :01 gets double through in
+       two seconds, while somebody who sent nothing for four minutes
+       still cannot send at 4:59.
+       Five sliding bands now, over an append-only log — 5 in 10s, 30 a
+       minute, 150 in ten minutes, 500 an hour, 3000 a day — plus 1000
+       characters, a second between messages, and thirty seconds before
+       the same text goes twice. The log is its own table rather than a
+       count of the message tables, because a member can delete their own
+       messages and counting deletable rows means a spammer resets their
+       own limit by tidying up.
+       Hitting one is a cooldown, not a ban, and it says how long. They
+       escalate only on repeats — 10s, 30s, 2m, 10m, an hour — and the
+       record clears after an hour of behaving, so an ordinary member who
+       trips the burst limit once never sees the second step. Past the
+       fifth strike it becomes an hour muted in the room, through the
+       timeout_until moderators already use.
+       The gate drops the row rather than raising: raising aborted the
+       statement and took the cooldown it had just written with it, so
+       every strike was the first strike forever. What a caller sees is
+       an insert that returns no row; dz_chat_status says why and for how
+       long, and says it whether the caller is the site or somebody
+       posting to PostgREST by hand.
+       The composers check the same five bands before the round trip and
+       count the cooldown down on the send button. Name, short
+       description, description and rules are CHECK constraints now, not
+       just maxlength on an input.
+       Changed: index.html, js/community.js, js/dm.js, js/mywork.js,
+       sw.js, and a migration.
+   v163 — the community icon is stored as webp.
+       It was encoded to jpeg. Every other image this site stores is
+       webp, and there was no reason a 256px icon should be the one that
+       is not. toBlob quietly hands back a PNG when it cannot encode the
+       type it was asked for, so the extension is taken from the blob
+       that came out rather than the one that went in — a .webp holding
+       PNG bytes would be served with the wrong content type.
+       The picker's hint line lost a sentence it had no business making
+       a promise about.
+       Changed: index.html, js/mywork.js, sw.js.
+   v162 — the icon is a file, and every action is a box.
+       The settings form asked for an "icon image URL", which only works
+       for somebody who already has the image hosted somewhere else, and
+       whatever they paste can rot, redirect or be swapped out later. It
+       is a file picker now, through the same signer profile photos use:
+       centre-cropped square, 256px, stored on DigiArtz, committed the
+       moment it is chosen. Replacing an icon deletes the file it
+       replaced — avatar_storage_path is what makes that possible.
+       View profile, Report and Ban were bare rows of text, which read as
+       a paragraph you tap somewhere in rather than as separate
+       decisions. Each one has its own edge now, in every sheet on the
+       page. Change role and Timeout became their own step behind a Back
+       — flattened they were eleven boxes, and View profile, which is
+       what almost every tap is after, sat above a scroll.
+       Checked in all three themes rather than the one it was built in.
+       Changed: index.html, css/community.css, js/mywork.js, sw.js, and a
+       column on communities.
+   v161 — a community becomes a place, not just a room.
+       Tapping a community's icon in the chat header opens its own page —
+       a page, sliding in over the room, not a box you dismiss by tapping
+       beside it. Icon, name, the short line, the description, the rules,
+       how many people are in it, and who they are.
+       What that page offers is decided once, by rank, and everything
+       somebody may not do is absent rather than greyed out. A member
+       sees the community, All members, Leave and Report. Whoever runs it
+       also sees the Ban list beside All members, the settings — icon,
+       name, short description, description, rules, public/private, links
+       — and Delete, behind a confirm and then the name typed back.
+       Tapping a name in the chat and tapping a row in the member list
+       now open the same sheet: avatar, name, @handle, View profile,
+       Report, and — only for somebody who holds rank over them —
+       promote, timeout, remove and ban. There were two of these before,
+       one per place, and only one of them could moderate.
+       A message gets a ⋯: copy it, look at who wrote it, report it, and
+       delete it if it is yours or you moderate there. comments had no
+       delete policy at all, so until now nothing was deletable by
+       anyone, author included.
+       In 20260812_community_page.sql: short_description and is_public on
+       communities, cm_leave (an owner cannot — delete it instead),
+       cm_delete (which takes the room's messages with it, since they are
+       keyed by a text channel and no foreign key would ever collect
+       them), cm_join_public, a delete policy on comments, and
+       item_reports widened to carry a community, a member and a message.
+       is_public defaults to false, so no existing community changes
+       hands the day this lands.
+       Retired with it: the manage modal, the member modal and the mini
+       profile card, all three replaced by the page and the one sheet.
+       Changed: index.html, css/community.css, css/viewer.css,
+       js/mywork.js, js/app-core.js, sw.js, and a migration.
+   v160 — the community header does the two things the page is for.
+       COMMUNITY sat centred in its own bar with nothing beside it, and
+       everything the page can do was somewhere down the scroll: the
+       people search was a box halfway down, and the friends page — the
+       only place a request can be accepted, declined or a friend
+       removed — was reachable only from the profile drawer.
+       The header carries them now. Section icon and name on the left,
+       search and friends on the right, and no avatar: the member's own
+       profile is already one tap away in the nav and has no business in
+       a section header.
+       Community and Friends are two tabs under the banner, and there is
+       one search box rather than one per tab — it reads which tab is
+       open and searches that. On Community it filters the cards already
+       on the page, which it can do because every community is rendered:
+       no "view all", nothing held back, nothing to fetch. On Friends it
+       runs the username search that used to live in the scroll, through
+       dmPeopleSearch. The friends button opens the same #frdPage the
+       drawer opens, and wears the number of requests waiting.
+       The page is coloured now, and stays coloured: the accent is a fixed
+       green rather than the theme's, which went grey in the mono themes and
+       took the whole section with it. The banner is drawn in that palette —
+       three-colour headline, dashed wire rings, dot grids and scattered
+       colour dots, all positioned in percentages and sized in vw, so it is
+       one design from a 320px phone to a desktop and has nothing in it with
+       an aspect ratio to distort. Two counts sit on it, the member's own:
+       communities they are in and friends they have, in boxes that are the
+       same size as each other at every width.
+       Behind it, in 20260811_community_and_friend_caps.sql: 50
+       communities and 200 friends per member, 100 outgoing requests
+       waiting, and the write rate limiter — which went table by table
+       through everything typed and never reached these three, because a
+       membership is not text — now covers friendships, communities and
+       community_members. One created community per artist was already
+       real in cm_create and is unchanged. The js checks the same
+       numbers so a member is told before the round trip, but the
+       triggers are what enforce them.
+       Changed: index.html, css/viewer.css, css/community.css,
+       js/community.js, js/dm.js, js/mywork.js, sw.js, and a migration.
    v155 — every viewer opens the same way, and closes.
        The five detail views had no way out. Closing one meant the
        browser's own back button, and since every Next pushed a history
@@ -2721,7 +2869,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v159';
+const CACHE_VERSION = 'v165';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2746,17 +2894,17 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=4',
   '/css/hero.css?v=91',
-  '/css/viewer.css?v=8',
-  '/css/community.css?v=4',
+  '/css/viewer.css?v=11',
+  '/css/community.css?v=8',
   '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=9',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
-  '/css/panels.css?v=2',
+  '/css/panels.css?v=3',
   '/css/upload.css?v=12',
-  '/css/widgets.css?v=4',
-  '/css/overrides.css?v=10',
+  '/css/widgets.css?v=5',
+  '/css/overrides.css?v=11',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -2770,12 +2918,12 @@ const SHELL_URLS = [
 
   // scripts
   '/js/ranking.js?v=2',
-  '/js/community.js?v=2',
-  '/js/dm.js?v=5',
+  '/js/community.js?v=4',
+  '/js/dm.js?v=8',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=19',
+  '/js/app-core.js?v=20',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=81',
   '/js/auth.js?v=10',
@@ -2784,8 +2932,8 @@ const SHELL_URLS = [
   '/js/drafts.js?v=6',
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=10',
+  '/js/pfedit.js?v=9',
+  '/js/mywork.js?v=16',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',

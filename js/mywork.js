@@ -201,6 +201,8 @@ function hideCommentThumbnail(){
     // land on the grid without the chat sliding out over it
     if(typeof cmChatPanelReset === 'function') cmChatPanelReset();
     cmCloseChat();
+    // Community tab, search closed — every visit starts the same way
+    if(typeof cmHomeReset === 'function') cmHomeReset();
     cmLoadMine();  // refresh own communities
   }
 
@@ -249,7 +251,9 @@ function hideCommentThumbnail(){
     if(inpEl)   inpEl.placeholder = isShowcase ? 'Write a caption for your artwork...' : ('Message #' + chan.name);
     if(attachBtn) attachBtn.style.display = isShowcase ? 'flex' : 'none';
 
-    // header flips to chat banner
+    // header flips to chat banner. Its icon and name are the way into the
+    // community's own page — what it is, who is in it, and for whoever is
+    // entitled to it, how it is run.
     if(typeof cmHdrChatMode === 'function'){
       cmHdrChatMode({
         name  : chan.name,
@@ -257,7 +261,8 @@ function hideCommentThumbnail(){
         avatar: chan.avatar || null,
         emoji : chan.icon || null,
         letter: (chan.name || '?').charAt(0).toUpperCase(),
-        grad  : chan.grad || null
+        grad  : chan.grad || null,
+        tap   : function(){ cmiOpen(id); }
       });
     }
 
@@ -328,14 +333,26 @@ function hideCommentThumbnail(){
     { m:43200, lbl:'1 month'   },
     { m:0,     lbl:'Clear timeout' }
   ];
-  var cmMg = null;   // community in manage modal
   var cmMineCache = {};  // channel lookup map
   var cmMineRows  = [];  // last membership rows
+  // Mirrors the database cap in supabase/migrations/20260811_community_and_friend_caps.sql.
+  // The trigger is what enforces it; this is here so the member is told before
+  // the round trip rather than after it.
+  var CM_MAX_JOINED = 50;
+  window.CM_MAX_JOINED = CM_MAX_JOINED;   // read by the banner in js/community.js
 
   function cmErr(e){
     var m = (e && e.message) || '';
     if(/CM_LEVEL/.test(m))         return 'You need artist Level 100 to create a community.';
     if(/CM_ALREADY_OWNER/.test(m)) return 'You already own a community — one per artist.';
+    if(/CM_OWNER_LEAVE/.test(m))   return 'You own this community — delete it instead of leaving.';
+    // the CHECK that backs the four length limits, when a paste gets past the
+    // form and the database is the one that has to say no
+    if(/communities_text_len_chk/.test(m))
+      return 'One of those is too long — name 40, short description 120, description 500, rules 2000.';
+    if(/CM_MAX_JOINED/.test(m))    return 'You’re in ' + CM_MAX_JOINED + ' communities — the most allowed. Leave one to join another.';
+    // the shared write rate limiter words its own message for the member
+    if(/Too many .* in a short time/i.test(m)) return m;
     if(/CM_NAME_TAKEN/.test(m) || /communities_name_lower_idx/.test(m))
                                    return 'That community name is already taken.';
     if(/CM_NOT_FOUND/.test(m))     return 'No community matches that name and join ID.';
@@ -360,7 +377,7 @@ function hideCommentThumbnail(){
   document.addEventListener('focusin', function(e){
     var t = e.target;
     if(!t || !t.matches || !t.matches('input, textarea')) return;
-    if(!t.closest('.cmMod, #rptMod, #cpuMod')) return;
+    if(!t.closest('.cmMod, #rptMod, #cmInfoPage')) return;
     setTimeout(function(){
       try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){}
     }, 320);
@@ -403,15 +420,24 @@ function hideCommentThumbnail(){
   // join
   function cmOpenJoin(){
     if(!currentUser){ openAuthMod(); return; }
+    if(cmAtJoinCap()) return;
     document.getElementById('cmJoinName').value = '';
     document.getElementById('cmJoinCode').value = '';
     cmOpenMod('cmJoinMod');
+  }
+
+  // the cap the database holds, checked against the list already loaded
+  function cmAtJoinCap(){
+    if(cmMineRows.length < CM_MAX_JOINED) return false;
+    showToast('You’re in ' + CM_MAX_JOINED + ' communities — the most allowed. Leave one to join another.');
+    return true;
   }
 
   async function cmDoJoin(){
     var name = document.getElementById('cmJoinName').value.trim();
     var code = document.getElementById('cmJoinCode').value.trim();
     if(!name || !code){ showToast('Enter both the name and the join ID'); return; }
+    if(cmAtJoinCap()){ cmCloseMod('cmJoinMod'); return; }
     var btn = document.getElementById('cmJoinGo');
     btn.disabled = true; btn.textContent = 'JOINING…';
     try{
@@ -446,7 +472,12 @@ function hideCommentThumbnail(){
     var wrap = document.getElementById('cmMineWrap');
     var grid = document.getElementById('cmMineGrid');
     if(!wrap || !grid) return;
-    if(!rows.length){ wrap.style.display='none'; return; }
+    if(!rows.length){
+      wrap.style.display='none';
+      grid.innerHTML='';
+      if(typeof cmReapplySearch === 'function') cmReapplySearch();
+      return;
+    }
     wrap.style.display = '';
     grid.innerHTML = '';
     rows.forEach(function(r){
@@ -486,180 +517,730 @@ function hideCommentThumbnail(){
           mg.className = 'cmModBtn';
           mg.style.cssText = 'flex-shrink:0;margin-left:auto;font-size:.6rem;padding:.4rem .7rem;';
           mg.textContent = 'MANAGE';
-          mg.onclick = function(ev){ ev.stopPropagation(); cmOpenManage(c.id); };
+          mg.onclick = function(ev){ ev.stopPropagation(); cmiOpen('c:' + c.id); };
           card.appendChild(mg);
         }
         grid.appendChild(card);
       });
-  }
-
-  // manage a community
-  async function cmOpenManage(cid){
-    if(!currentUser) return;
-    try{
-      var c = await sb.from('communities').select('*').eq('id', cid).maybeSingle();
-      if(c.error || !c.data) throw (c.error || new Error('missing'));
-      var me = await sb.from('community_members')
-        .select('role').eq('community_id', cid).eq('user_id', currentUser.id).maybeSingle();
-      cmMg = {
-        c: c.data,
-        myRole: (me.data && me.data.role) || 'member',
-        isOwner: c.data.owner_id === currentUser.id
-      };
-      cmMg.myRank = CM_RANK[cmMg.myRole] || 1;
-
-      document.getElementById('cmManageTitle').textContent = c.data.name;
-      document.getElementById('cmManageCode').textContent = c.data.join_code;
-      // settings are owner only
-      document.getElementById('cmOwnerFields').style.display = cmMg.isOwner ? '' : 'none';
-      if(cmMg.isOwner){
-        document.getElementById('cmMgName').value   = c.data.name || '';
-        document.getElementById('cmMgDesc').value   = c.data.description || '';
-        document.getElementById('cmMgAvatar').value = c.data.avatar_url || '';
-        document.getElementById('cmMgBanner').value = c.data.banner_url || '';
-        document.getElementById('cmMgRules').value  = c.data.rules || '';
-        document.getElementById('cmMgLinks').checked = !!c.data.links_allowed;
-      }
-      cmOpenMod('cmManageMod');
-      cmLoadMembers();
-    }catch(e){ showToast('Couldn\u2019t open that community'); }
-  }
-
-  async function cmSaveSettings(){
-    if(!cmMg || !cmMg.isOwner) return;
-    var btn = document.getElementById('cmMgSave');
-    btn.disabled = true; btn.textContent = 'SAVING…';
-    try{
-      var upd = {
-        name         : document.getElementById('cmMgName').value.trim(),
-        description  : document.getElementById('cmMgDesc').value.trim() || null,
-        avatar_url   : document.getElementById('cmMgAvatar').value.trim() || null,
-        banner_url   : document.getElementById('cmMgBanner').value.trim() || null,
-        rules        : document.getElementById('cmMgRules').value.trim() || null,
-        links_allowed: document.getElementById('cmMgLinks').checked
-      };
-      if(upd.name.length < 3){ showToast('Name must be at least 3 characters'); return; }
-      var r = await sb.from('communities').update(upd).eq('id', cmMg.c.id);
-      if(r.error) throw r.error;
-      cmMg.c.name = upd.name;
-      document.getElementById('cmManageTitle').textContent = upd.name;
-      showToast('Community updated');
-      cmLoadMine();
-    }catch(e){ showToast(cmErr(e)); }
-    finally{ btn.disabled = false; btn.textContent = 'Save Settings'; }
-  }
-
-  async function cmLoadMembers(){
-    var list = document.getElementById('cmMemList');
-    if(!list || !cmMg) return;
-    list.innerHTML = '<div class="dmSearchNote">LOADING…</div>';
-    try{
-      var r = await sb.from('community_members')
-        .select('user_id,role,banned,timeout_until,profiles(username,display_name,avatar_url)')
-        .eq('community_id', cmMg.c.id);
-      if(r.error) throw r.error;
-      var rows = (r.data || []).slice().sort(function(a,b){
-        return (CM_RANK[b.role]||1) - (CM_RANK[a.role]||1);
-      });
-      document.getElementById('cmMemCount').textContent = rows.filter(function(x){return !x.banned;}).length;
-      list.innerHTML = '';
-      rows.forEach(function(m){
-        var p = m.profiles || {};
-        var row = document.createElement('div');
-        row.className = 'cmMemRow';
-        var ava = document.createElement('div');
-        ava.className = 'cmMemAva';
-        if(p.avatar_url){
-          var im = document.createElement('img');
-          im.src = getThumbnailUrl(p.avatar_url); im.alt='';
-          ava.appendChild(im);
-        } else {
-          ava.textContent = ((p.display_name || p.username || '?')).charAt(0).toUpperCase();
-        }
-        var nm = document.createElement('div');
-        nm.className = 'cmMemName';
-        nm.textContent = p.display_name || p.username || 'User';
-        var badge = document.createElement('span');
-        var isTimedOut = m.timeout_until && new Date(m.timeout_until) > new Date();
-        badge.className = 'cmMemRole cmMemRole--' + (m.banned ? 'banned' : m.role);
-        badge.textContent = m.banned ? 'BANNED'
-                          : isTimedOut ? 'TIMED OUT'
-                          : (CM_ROLE_LABEL[m.role] || 'Member');
-        row.appendChild(ava); row.appendChild(nm); row.appendChild(badge);
-        row.onclick = function(){ cmOpenMemberActions(m, p); };
-        list.appendChild(row);
-      });
-    }catch(e){ list.innerHTML = '<div class="dmSearchNote">COULDN\u2019T LOAD MEMBERS</div>'; }
-  }
-
-  // staff actions on a member
-  function cmOpenMemberActions(m, p){
-    if(!cmMg) return;
-    var uname = p.username || null;
-    var name  = p.display_name || p.username || 'User';
-    document.getElementById('cmMemModName').textContent = name;
-    document.getElementById('cmMemModRole').textContent =
-      m.banned ? 'Banned' : (CM_ROLE_LABEL[m.role] || 'Member');
-    var acts = document.getElementById('cmMemActs');
-    acts.innerHTML = '';
-
-    function add(label, fn, danger){
-      var b = document.createElement('button');
-      b.className = 'cmActItem' + (danger ? ' cmActItem--danger' : '');
-      b.textContent = label;
-      b.onclick = fn;
-      acts.appendChild(b);
-    }
-
-    // profile open to everyone
-    if(uname) add('View profile', function(){
-      cmCloseMod('cmMemMod'); cmCloseMod('cmManageMod');
-      // back returns here
-      openProfileByUsername(uname, true);
-    });
-
-    var targetRank = CM_RANK[m.role] || 1;
-    var isSelf = String(m.user_id) === String(currentUser && currentUser.id);
-    // mirror the server rank rules
-    var canAct = !isSelf && cmMg.myRank >= 2 && targetRank < cmMg.myRank;
-
-    if(canAct){
-      if(cmMg.myRank >= 4){                       // admin: promote or demote
-        ['member','jr_mod','sr_mod','admin'].forEach(function(role){
-          if(CM_RANK[role] >= cmMg.myRank) return;   // cannot grant own rank
-          if(role === m.role) return;
-          var verb = CM_RANK[role] > targetRank ? 'Promote to ' : 'Demote to ';
-          add(verb + CM_ROLE_LABEL[role], function(){ cmMod('cm_set_role', { cid: cmMg.c.id, target: m.user_id, new_role: role }); });
-        });
-      }
-      add('Kick from community', function(){ cmMod('cm_kick', { cid: cmMg.c.id, target: m.user_id }); }, true);
-
-      CM_TIMEOUTS.forEach(function(t){
-        add('Timeout — ' + t.lbl, function(){ cmMod('cm_timeout', { cid: cmMg.c.id, target: m.user_id, minutes: t.m }); });
-      });
-
-      if(cmMg.myRank >= 3){                       // sr mod: ban or unban
-        add(m.banned ? 'Unban' : 'Ban from community',
-            function(){ cmMod('cm_set_ban', { cid: cmMg.c.id, target: m.user_id, do_ban: !m.banned }); }, true);
-      }
-    } else if(!isSelf){
-      var note = document.createElement('div');
-      note.className = 'cmModSub';
-      note.style.margin = '.4rem 0 0';
-      note.textContent = 'No moderation options for this member.';
-      acts.appendChild(note);
-    }
-    cmOpenMod('cmMemMod');
+    // the grid was repainted under the header search — re-run it, and let the
+    // banner count the cards that are actually there
+    if(typeof cmReapplySearch === 'function') cmReapplySearch();
   }
 
   async function cmMod(rpc, args){
     try{
       var r = await sb.rpc(rpc, args);
       if(r.error) throw r.error;
-      cmCloseMod('cmMemMod');
+      cmCloseMod('cmUserMod');
       showToast('Done');
-      cmLoadMembers();
+      if(cmi.cid) cmiLoadMembers();
     }catch(e){ showToast(cmErr(e)); }
+  }
+
+  // ===========================================================================
+  // the community page
+  //
+  // Opened by tapping the community's icon in the chat header. It is the one
+  // place a community is read — icon, name, the short line, the description,
+  // the rules, who is in it — and, for whoever is entitled to it, the one
+  // place it is run. What somebody may do is decided once, in cmiPaintRole,
+  // and everything they may not do is removed from the page rather than
+  // greyed out: a member never sees a ban list, a settings form or a delete
+  // button, and the server would refuse them anyway if they forged one.
+  // ===========================================================================
+  var cmi = { key:null, cid:null, c:null, role:null, rank:0, isOwner:false,
+              isMember:false, memRows:[], memTab:'all', builtin:null };
+
+  function cmiEl(id){ return document.getElementById(id); }
+
+  function cmiOpen(key){
+    if(!key) return;
+    cmi.key = key;
+    cmi.cid = /^c:/.test(key) ? key.slice(2) : null;
+    cmi.builtin = cmi.cid ? null : (CM_CHANNELS[key] || null);
+    cmi.memTab = 'all';
+    var page = cmiEl('cmInfoPage'); if(!page) return;
+    page.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    page.scrollTop = 0;
+    if(cmi.cid) cmiLoadCommunity();
+    else cmiPaintBuiltin();
+  }
+  // Escape leaves this page. The global handler in js/pfedit.js steps aside
+  // while it is open, so this is the only thing that acts.
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    var page = document.getElementById('cmInfoPage');
+    if(!page || !page.classList.contains('open')) return;
+    e.stopImmediatePropagation();
+    cmiClose();
+  });
+
+  function cmiClose(){
+    var page = cmiEl('cmInfoPage');
+    if(page) page.classList.remove('open');
+    // the chat panel is still open behind this, and owns the scroll lock
+    var chat = document.getElementById('cmChatPanel');
+    var home = document.getElementById('communityPage');
+    if(!(chat && chat.classList.contains('open')) &&
+       !(home && home.classList.contains('open')) &&
+       typeof restoreScroll === 'function'){
+      restoreScroll();
+    }
+  }
+
+  // The six rooms the site runs are not rows in communities: they have no
+  // members, no owner and no settings. The page still opens on them, and shows
+  // the half of itself that means anything.
+  function cmiPaintBuiltin(){
+    var ch = cmi.builtin || {};
+    cmiSetIcon(null, ch.icon || (ch.name || '?').charAt(0).toUpperCase(), ch.grad);
+    cmiEl('cmiName').textContent  = ch.name || 'Community';
+    cmiEl('cmiShort').textContent = ch.desc || '';
+    cmiEl('cmiVis').textContent   = 'OPEN TO EVERYONE';
+    cmiEl('cmiRole').hidden = true;
+    cmiEl('cmiCount').parentNode.hidden = true;
+    cmiSecText('cmiAboutSec','cmiDesc', ch.desc || '');
+    cmiSecText('cmiRulesSec','cmiRules', '');
+    cmiEl('cmiMemSec').hidden = true;
+    cmiEl('cmiSetSec').hidden = true;
+    ['cmiJoinBtn','cmiLeaveBtn','cmiDeleteBtn'].forEach(function(id){ cmiEl(id).hidden = true; });
+    cmiEl('cmiReportBtn').hidden = !!ch.readOnly;
+    cmiEl('cmiActNote').textContent = ch.readOnly
+      ? 'An official DigiArtz room. Everyone can read it; only DigiArtz posts.'
+      : 'A room DigiArtz runs. Everyone signed in can read and post here.';
+  }
+
+  async function cmiLoadCommunity(){
+    cmiEl('cmiName').textContent = 'Loading…';
+    try{
+      var c = await sb.from('communities').select('*').eq('id', cmi.cid).maybeSingle();
+      if(c.error || !c.data) throw (c.error || new Error('missing'));
+      cmi.c = c.data;
+      cmi.isOwner = !!(currentUser && c.data.owner_id === currentUser.id);
+      var mem = currentUser
+        ? await sb.from('community_members').select('role,banned')
+            .eq('community_id', cmi.cid).eq('user_id', currentUser.id).maybeSingle()
+        : { data:null };
+      cmi.role      = (mem.data && !mem.data.banned) ? mem.data.role : null;
+      cmi.isMember  = !!cmi.role;
+      cmi.rank      = CM_RANK[cmi.role] || 0;
+      cmiPaint();
+      cmiPaintRole();
+      cmiLoadMembers();
+    }catch(e){
+      cmiEl('cmiName').textContent = 'Couldn\u2019t load this community';
+      showToast('Couldn\u2019t load this community');
+    }
+  }
+
+  function cmiSetIcon(url, letter, grad){
+    var el = cmiEl('cmiIcon');
+    el.textContent = '';
+    el.style.background = grad || 'linear-gradient(135deg,#1e3a8a 0%,#3b82f6 55%,#60a5fa 100%)';
+    if(url){
+      var im = document.createElement('img');
+      im.src = getThumbnailUrl(url); im.alt = '';
+      im.onerror = function(){ im.remove(); el.textContent = letter || '?'; };
+      el.appendChild(im);
+    } else {
+      el.textContent = letter || '?';
+    }
+  }
+  // a section with nothing in it is removed, not left as a bare heading
+  function cmiSecText(secId, txtId, value){
+    var sec = cmiEl(secId), txt = cmiEl(txtId);
+    if(txt) txt.textContent = value || '';
+    if(sec) sec.hidden = !value;
+  }
+
+  function cmiPaint(){
+    var c = cmi.c || {};
+    cmiSetIcon(c.avatar_url, (c.name || '?').charAt(0).toUpperCase(), null);
+    cmiEl('cmiName').textContent  = c.name || 'Community';
+    cmiEl('cmiShort').textContent = c.short_description || '';
+    var vis = cmiEl('cmiVis');
+    vis.hidden = false;
+    vis.textContent = c.is_public ? 'PUBLIC' : 'PRIVATE';
+    var role = cmiEl('cmiRole');
+    role.hidden = !cmi.isMember;
+    role.textContent = (CM_ROLE_LABEL[cmi.role] || 'Member').toUpperCase();
+    cmiEl('cmiCount').parentNode.hidden = false;
+    cmiSecText('cmiAboutSec','cmiDesc',  c.description || '');
+    cmiSecText('cmiRulesSec','cmiRules', c.rules || '');
+  }
+
+  // The one place the question "what may this person do here?" is answered.
+  function cmiPaintRole(){
+    var isStaff = cmi.rank >= 2;   // jr_mod and up. In a community with no
+                                   // moderators that is the owner and nobody else.
+    document.querySelectorAll('#cmInfoPage [data-cmi]').forEach(function(el){
+      var need = el.getAttribute('data-cmi');
+      el.hidden = (need === 'owner') ? !cmi.isOwner : !isStaff;
+    });
+    cmiEl('cmiSeg').hidden = !isStaff;
+    if(!isStaff && cmi.memTab === 'ban') cmi.memTab = 'all';
+
+    cmiEl('cmiMemSec').hidden = false;
+    cmiEl('cmiJoinBtn').hidden   = cmi.isMember || !(cmi.c && cmi.c.is_public);
+    cmiEl('cmiLeaveBtn').hidden  = !cmi.isMember || cmi.isOwner;
+    cmiEl('cmiReportBtn').hidden = !currentUser || cmi.isOwner;
+
+    var note = '';
+    if(cmi.isOwner) note = 'You own this community. Leaving is not one of the options — delete it instead.';
+    else if(!cmi.isMember && !(cmi.c && cmi.c.is_public)) note = 'This community is private. Joining needs its name and join ID.';
+    cmiEl('cmiActNote').textContent = note;
+
+    if(cmi.isOwner && cmi.c){
+      cmiEl('cmiJoinCode').textContent  = cmi.c.join_code || '------';
+      cmiPaintIconPreview();
+      cmiEl('cmiSetName').value   = cmi.c.name || '';
+      cmiEl('cmiSetShort').value  = cmi.c.short_description || '';
+      cmiEl('cmiSetDesc').value   = cmi.c.description || '';
+      cmiEl('cmiSetRules').value  = cmi.c.rules || '';
+      cmiEl('cmiSetPublic').checked = !!cmi.c.is_public;
+      cmiEl('cmiSetLinks').checked  = !!cmi.c.links_allowed;
+    }
+  }
+
+  function cmiMemTab(tab){
+    cmi.memTab = tab;
+    cmiEl('cmiSegAll').classList.toggle('active', tab === 'all');
+    cmiEl('cmiSegBan').classList.toggle('active', tab === 'ban');
+    cmiRenderMembers();
+  }
+
+  async function cmiLoadMembers(){
+    var list = cmiEl('cmiMemList');
+    if(!list || !cmi.cid) return;
+    list.innerHTML = '<div class="dmSearchNote">LOADING…</div>';
+    try{
+      var r = await sb.from('community_members')
+        .select('user_id,role,banned,timeout_until,profiles(username,display_name,avatar_url)')
+        .eq('community_id', cmi.cid);
+      if(r.error) throw r.error;
+      cmi.memRows = (r.data || []).slice().sort(function(a,b){
+        return (CM_RANK[b.role]||1) - (CM_RANK[a.role]||1);
+      });
+      cmiEl('cmiCount').textContent = cmi.memRows.filter(function(x){ return !x.banned; }).length;
+      cmiRenderMembers();
+    }catch(e){
+      list.innerHTML = '<div class="dmSearchNote">COULDN\u2019T LOAD MEMBERS</div>';
+    }
+  }
+
+  function cmiRenderMembers(){
+    var list = cmiEl('cmiMemList'); if(!list) return;
+    var banned = cmi.memTab === 'ban';
+    var rows = cmi.memRows.filter(function(m){ return !!m.banned === banned; });
+    list.innerHTML = '';
+    if(!rows.length){
+      list.innerHTML = '<div class="dmSearchNote">' +
+        (banned ? 'NOBODY IS BANNED' : 'NO MEMBERS YET') + '</div>';
+      return;
+    }
+    rows.forEach(function(m){
+      var p = m.profiles || {};
+      var row = document.createElement('div');
+      row.className = 'cmMemRow';
+      var ava = document.createElement('div');
+      ava.className = 'cmMemAva';
+      if(p.avatar_url){
+        var im = document.createElement('img');
+        im.src = getThumbnailUrl(p.avatar_url); im.alt = '';
+        ava.appendChild(im);
+      } else {
+        ava.textContent = (p.display_name || p.username || '?').charAt(0).toUpperCase();
+      }
+      var nm = document.createElement('div');
+      nm.className = 'cmMemName';
+      nm.textContent = p.display_name || p.username || 'User';
+      var badge = document.createElement('span');
+      var isTimedOut = m.timeout_until && new Date(m.timeout_until) > new Date();
+      badge.className = 'cmMemRole cmMemRole--' + (m.banned ? 'banned' : m.role);
+      badge.textContent = m.banned ? 'BANNED'
+                        : isTimedOut ? 'TIMED OUT'
+                        : (CM_ROLE_LABEL[m.role] || 'Member');
+      row.appendChild(ava); row.appendChild(nm); row.appendChild(badge);
+      row.onclick = function(){
+        cmUserOpen({
+          id     : m.user_id,
+          name   : p.display_name || p.username || 'User',
+          username: p.username || null,
+          avatar : p.avatar_url || null
+        }, m);
+      };
+      list.appendChild(row);
+    });
+  }
+
+  // The four lengths, in one place, matching the CHECK constraint on
+  // communities exactly. maxlength on the input stops typing past them; this
+  // is what catches a paste, and says which field is the problem.
+  var CM_TEXT_LIMITS = [
+    { id:'cmiSetName',  label:'Name',              min:3, max:40   },
+    { id:'cmiSetShort', label:'Short description', min:0, max:120  },
+    { id:'cmiSetDesc',  label:'Description',       min:0, max:500  },
+    { id:'cmiSetRules', label:'Rules',             min:0, max:2000 }
+  ];
+  function cmiTextProblem(){
+    for(var i = 0; i < CM_TEXT_LIMITS.length; i++){
+      var f = CM_TEXT_LIMITS[i], v = (cmiEl(f.id).value || '').trim();
+      if(v.length < f.min) return f.label + ' must be at least ' + f.min + ' characters';
+      if(v.length > f.max) return f.label + ' is over ' + f.max + ' characters';
+    }
+    return null;
+  }
+
+  async function cmiSave(){
+    if(!cmi.isOwner || !cmi.cid) return;
+    var btn = cmiEl('cmiSaveBtn');
+    var name = cmiEl('cmiSetName').value.trim();
+    var problem = cmiTextProblem();
+    if(problem){ showToast(problem); return; }
+    btn.disabled = true; btn.textContent = 'SAVING…';
+    try{
+      // the icon is not in here: it is committed by the picker the moment it
+      // is chosen, the way a profile photo is, rather than waiting on Save
+      var upd = {
+        name             : name,
+        short_description: cmiEl('cmiSetShort').value.trim() || null,
+        description      : cmiEl('cmiSetDesc').value.trim()  || null,
+        rules            : cmiEl('cmiSetRules').value.trim() || null,
+        is_public        : cmiEl('cmiSetPublic').checked,
+        links_allowed    : cmiEl('cmiSetLinks').checked
+      };
+      var r = await sb.from('communities').update(upd).eq('id', cmi.cid);
+      if(r.error) throw r.error;
+      Object.keys(upd).forEach(function(k){ cmi.c[k] = upd[k]; });
+      cmiPaint();
+      showToast('Community updated');
+      // the card on the community page carries the same name and icon
+      delete CM_CHANNELS['c:' + cmi.cid];
+      cmLoadMine();
+    }catch(e){ showToast(cmErr(e)); }
+    finally{ btn.disabled = false; btn.textContent = 'Save settings'; }
+  }
+
+  // ---- the icon ------------------------------------------------------------
+  // A picker, not a URL box. The old field wanted a link to an image already
+  // hosted somewhere else — which most people do not have, and which can rot,
+  // redirect or be swapped out from under the site later. This uploads through
+  // the same signer profile photos go through, so the file lives on DigiArtz.
+  var CMI_ICON_PX = 256;
+
+  function cmiPaintIconPreview(){
+    var el = cmiEl('cmiIconPrev'); if(!el) return;
+    var url = cmi.c && cmi.c.avatar_url;
+    el.textContent = '';
+    if(url){
+      var im = document.createElement('img');
+      im.src = getThumbnailUrl(url); im.alt = '';
+      im.onerror = function(){ im.remove(); el.textContent = ((cmi.c && cmi.c.name) || '?').charAt(0).toUpperCase(); };
+      el.appendChild(im);
+    } else {
+      el.textContent = ((cmi.c && cmi.c.name) || '?').charAt(0).toUpperCase();
+    }
+    var clear = cmiEl('cmiIconClear');
+    if(clear) clear.hidden = !url;
+  }
+
+  function cmiPickIcon(){
+    if(!cmi.isOwner) return;
+    var f = cmiEl('cmiIconFile');
+    if(f){ f.value = ''; f.click(); }
+  }
+
+  function cmiIconChosen(input){
+    var file = input && input.files && input.files[0];
+    if(!file || !cmi.isOwner || !cmi.cid) return;
+    if(!/^image\/(png|jpeg|webp)$/.test(file.type)){ showToast('PNG, JPEG or WebP only'); return; }
+    if(file.size > 8 * 1024 * 1024){ showToast('That image is over 8MB — pick a smaller one'); return; }
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      URL.revokeObjectURL(url);
+      // centre square crop, so a wide or tall photo is not squashed into the
+      // circle it is about to be drawn in
+      var side = Math.min(img.naturalWidth, img.naturalHeight);
+      if(side < 64){ showToast('That image is too small — 128×128 or larger'); return; }
+      var sx = (img.naturalWidth  - side) / 2;
+      var sy = (img.naturalHeight - side) / 2;
+      var cv = document.createElement('canvas');
+      cv.width = cv.height = CMI_ICON_PX;
+      cv.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, CMI_ICON_PX, CMI_ICON_PX);
+      // WebP, like every other image this site stores. toBlob ignores a type
+      // it cannot encode and hands back a PNG instead, so what actually came
+      // out decides the extension rather than what was asked for — a .webp
+      // holding PNG bytes would be served with the wrong content type.
+      cv.toBlob(function(blob){
+        if(blob) { cmiUploadIcon(blob); return; }
+        cv.toBlob(function(fallback){ if(fallback) cmiUploadIcon(fallback); }, 'image/jpeg', 0.9);
+      }, 'image/webp', 0.9);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); showToast('Couldn’t read that image'); };
+    img.src = url;
+  }
+
+  async function cmiUploadIcon(blob){
+    var btn = cmiEl('cmiIconBtn');
+    btn.disabled = true; btn.textContent = 'UPLOADING…';
+    try{
+      // koe-media's policies read the second path segment as the owner, so the
+      // uploader's id has to sit there — not the community's. The extension
+      // comes off the blob, so it always matches the bytes inside it.
+      var ext = ({ 'image/webp':'webp', 'image/png':'png' })[blob.type] || 'jpg';
+      var path = 'communities/' + currentUser.id + '/' + cmi.cid + '-' + Date.now() + '.' + ext;
+      var publicUrl = await s3Upload(BUCKET, path, blob);
+      var old = cmi.c.avatar_storage_path || null;
+      var r = await sb.from('communities')
+        .update({ avatar_url: publicUrl, avatar_storage_path: path })
+        .eq('id', cmi.cid);
+      if(r.error) throw r.error;
+      cmi.c.avatar_url = publicUrl;
+      cmi.c.avatar_storage_path = path;
+      // only once the row points at the new file
+      if(old){ try{ await s3Delete(BUCKET, old); }catch(e){} }
+      cmiPaintIconPreview();
+      cmiSetIcon(publicUrl, (cmi.c.name || '?').charAt(0).toUpperCase(), null);
+      delete CM_CHANNELS['c:' + cmi.cid];
+      cmLoadMine();
+      showToast('Icon updated');
+    }catch(e){
+      if(window.meritDenied && window.meritDenied(e, 'upload')) return;
+      showToast(cmErr(e));
+    }
+    finally{ btn.disabled = false; btn.textContent = 'Upload an image'; }
+  }
+
+  async function cmiClearIcon(){
+    if(!cmi.isOwner || !cmi.cid || !cmi.c.avatar_url) return;
+    try{
+      var old = cmi.c.avatar_storage_path || null;
+      var r = await sb.from('communities')
+        .update({ avatar_url: null, avatar_storage_path: null }).eq('id', cmi.cid);
+      if(r.error) throw r.error;
+      cmi.c.avatar_url = null; cmi.c.avatar_storage_path = null;
+      if(old){ try{ await s3Delete(BUCKET, old); }catch(e){} }
+      cmiPaintIconPreview();
+      cmiSetIcon(null, (cmi.c.name || '?').charAt(0).toUpperCase(), null);
+      delete CM_CHANNELS['c:' + cmi.cid];
+      cmLoadMine();
+      showToast('Icon removed');
+    }catch(e){ showToast(cmErr(e)); }
+  }
+
+  function cmiCopyCode(){
+    var code = (cmi.c && cmi.c.join_code) || '';
+    if(!code) return;
+    if(navigator.clipboard) navigator.clipboard.writeText(code).then(function(){ showToast('Join ID copied'); });
+    else showToast(code);
+  }
+
+  async function cmiJoin(){
+    if(!currentUser){ openAuthMod(); return; }
+    if(cmAtJoinCap()) return;
+    try{
+      var r = await sb.rpc('cm_join_public', { cid: cmi.cid });
+      if(r.error) throw r.error;
+      showToast('Joined ' + ((cmi.c && cmi.c.name) || 'community'));
+      cmLoadMine();
+      cmiLoadCommunity();
+    }catch(e){ showToast(cmErr(e)); }
+  }
+
+  async function cmiLeave(){
+    if(!cmi.cid) return;
+    var nm = (cmi.c && cmi.c.name) || 'this community';
+    if(!confirm('Leave ' + nm + '? You can join again later if it lets you.')) return;
+    try{
+      var r = await sb.rpc('cm_leave', { cid: cmi.cid });
+      if(r.error) throw r.error;
+      showToast('You left ' + nm);
+      cmiClose();
+      cmCloseChat();
+      cmLoadMine();
+    }catch(e){ showToast(cmErr(e)); }
+  }
+
+  async function cmiDelete(){
+    if(!cmi.isOwner || !cmi.cid) return;
+    var nm = (cmi.c && cmi.c.name) || 'this community';
+    // two steps, because there is no undo and every message goes with it
+    if(!confirm('Delete ' + nm + '? Every message in it is deleted too, and this cannot be undone.')) return;
+    var typed = prompt('Type the community name to confirm:', '');
+    if(typed === null) return;
+    if(typed.trim().toLowerCase() !== nm.trim().toLowerCase()){ showToast('That didn\u2019t match — nothing was deleted'); return; }
+    try{
+      var r = await sb.rpc('cm_delete', { cid: cmi.cid });
+      if(r.error) throw r.error;
+      showToast(nm + ' deleted');
+      cmiClose();
+      cmCloseChat();
+      cmLoadMine();
+    }catch(e){ showToast(cmErr(e)); }
+  }
+
+  function cmiReport(){
+    if(!currentUser){ openAuthMod(); return; }
+    cmRptOpen('community', cmi.cid, null, 'Report ' + ((cmi.c && cmi.c.name) || 'this community'));
+  }
+
+  // ===========================================================================
+  // one person, one sheet
+  //
+  // Reached from a name in the chat and from a row in the member list, and it
+  // is the same sheet either way. Everyone gets the profile and the report;
+  // the moderation half only appears for somebody who actually holds rank in
+  // the community being looked at, over somebody below them. cm_assert_can_act
+  // enforces the same rule server-side, so this is the courtesy copy.
+  // ===========================================================================
+  var cmuUser = null, cmuView = 'main';
+
+  function cmuAct(label, fn, danger){
+    var b = document.createElement('button');
+    b.className = 'cmActItem' + (danger ? ' cmActItem--danger' : '');
+    b.textContent = label;
+    b.onclick = fn;
+    document.getElementById('cmuActs').appendChild(b);
+  }
+
+  // p: {id,name,username,avatar}   mem: the community_members row, when known
+  function cmUserOpen(p, mem, view){
+    if(!p || !p.id) return;
+    cmuUser = p;
+    cmuView = view || 'main';
+    var ava = document.getElementById('cmuAva');
+    ava.textContent = '';
+    if(p.avatar){
+      var im = document.createElement('img');
+      im.src = getThumbnailUrl(p.avatar); im.alt = '';
+      im.onerror = function(){ im.remove(); ava.textContent = (p.name || '?').charAt(0).toUpperCase(); };
+      ava.appendChild(im);
+    } else {
+      ava.textContent = (p.name || '?').charAt(0).toUpperCase();
+    }
+    document.getElementById('cmuName').textContent   = p.name || 'User';
+    document.getElementById('cmuHandle').textContent = p.username ? ('@' + p.username) : '…';
+    var acts = document.getElementById('cmuActs');
+    acts.innerHTML = '';
+
+    var isSelf = !!(currentUser && String(currentUser.id) === String(p.id));
+    var m = mem || cmuMemberRow(p.id);
+    var canModerate = !!(cmi.cid && m && !isSelf && cmi.rank >= 2 &&
+                         (CM_RANK[m.role] || 1) < cmi.rank);
+
+    // The role and timeout pickers are their own step. Flattened into one
+    // list they were eleven boxes deep, and View profile — the thing almost
+    // every tap is after — was buried at the top of a scroll.
+    if(cmuView === 'role' || cmuView === 'timeout'){
+      cmuAct('← Back', function(){ cmUserOpen(p, m, 'main'); });
+      if(cmuView === 'role'){
+        var targetRank = CM_RANK[m.role] || 1;
+        ['member','jr_mod','sr_mod','admin'].forEach(function(role){
+          if(CM_RANK[role] >= cmi.rank) return;   // cannot grant your own rank
+          if(role === m.role) return;
+          var verb = CM_RANK[role] > targetRank ? 'Promote to ' : 'Demote to ';
+          cmuAct(verb + CM_ROLE_LABEL[role], function(){
+            cmMod('cm_set_role', { cid: cmi.cid, target: p.id, new_role: role });
+          });
+        });
+      } else {
+        CM_TIMEOUTS.forEach(function(t){
+          cmuAct(t.m ? ('Mute for ' + t.lbl) : 'Clear timeout', function(){
+            cmMod('cm_timeout', { cid: cmi.cid, target: p.id, minutes: t.m });
+          });
+        });
+      }
+      cmOpenMod('cmUserMod');
+      return;
+    }
+
+    if(p.username){
+      cmuAct('View profile', function(){
+        cmCloseMod('cmUserMod');
+        openProfileByUsername(p.username, true);
+      });
+    }
+
+    if(!isSelf){
+      cmuAct('Report ' + (p.username ? '@' + p.username : 'this member'), function(){
+        cmCloseMod('cmUserMod');
+        if(!currentUser){ openAuthMod(); return; }
+        cmRptOpen('community_member', p.id, null, 'Report ' + (p.name || 'this member'));
+      });
+    }
+
+    if(canModerate){
+      if(cmi.rank >= 4) cmuAct('Change role…', function(){ cmUserOpen(p, m, 'role'); });
+      cmuAct('Timeout…', function(){ cmUserOpen(p, m, 'timeout'); });
+      cmuAct('Remove from community', function(){
+        if(confirm('Remove ' + (p.name || 'this member') + '? They can join again.'))
+          cmMod('cm_kick', { cid: cmi.cid, target: p.id });
+      }, true);
+      if(cmi.rank >= 3){
+        cmuAct(m.banned ? 'Unban' : 'Ban from community', function(){
+          cmMod('cm_set_ban', { cid: cmi.cid, target: p.id, do_ban: !m.banned });
+        }, true);
+      }
+    }
+
+    if(!acts.children.length){
+      var note = document.createElement('div');
+      note.className = 'cmModSub';
+      note.style.margin = '.4rem 0 0';
+      note.textContent = isSelf ? 'This is you.' : 'Nothing to do here.';
+      acts.appendChild(note);
+    }
+    cmOpenMod('cmUserMod');
+  }
+
+  // the member row for somebody tapped in the chat rather than the list
+  function cmuMemberRow(uid){
+    for(var i = 0; i < cmi.memRows.length; i++){
+      if(String(cmi.memRows[i].user_id) === String(uid)) return cmi.memRows[i];
+    }
+    return null;
+  }
+
+  // A name tapped in the chat: the sheet opens on what the message already
+  // knows, and the handle fills in when the profile lands.
+  async function cmUserOpenById(uid){
+    if(!uid) return;
+    var a = cpAuthors[String(uid)] || null;
+    cmUserOpen({ id:uid, name:(a && a.name) || 'User', username:null, avatar:(a && a.avatar) || null }, null);
+    try{
+      var r = await sb.from('profiles').select('username,display_name,avatar_url').eq('id', uid).maybeSingle();
+      if(r.error || !r.data) return;
+      if(!cmuUser || String(cmuUser.id) !== String(uid)) return;   // sheet moved on
+      cmUserOpen({
+        id: uid,
+        name: r.data.display_name || r.data.username || 'User',
+        username: r.data.username || null,
+        avatar: r.data.avatar_url || (a && a.avatar) || null
+      }, null, cmuView);
+    }catch(e){}
+  }
+
+  // ===========================================================================
+  // one message
+  //
+  // Text only, and only what text needs: its author or a moderator can delete
+  // it, anyone else can report it, and anyone can copy it. No likes, no
+  // shares, no bookmarks — those do not exist in a community and are not
+  // quietly reachable from here.
+  // ===========================================================================
+  var cmTxtMsg = null;
+
+  function cmTxtOpen(mid){
+    var msg = null;
+    for(var i = 0; i < cpComments.length; i++){
+      if(String(cpComments[i].id) === String(mid)){ msg = cpComments[i]; break; }
+    }
+    if(!msg) return;
+    cmTxtMsg = msg;
+    document.getElementById('cmTxtQuote').textContent = msg.text || '';
+    var acts = document.getElementById('cmTxtActs');
+    acts.innerHTML = '';
+    function add(label, fn, danger){
+      var b = document.createElement('button');
+      b.className = 'cmActItem' + (danger ? ' cmActItem--danger' : '');
+      b.textContent = label; b.onclick = fn;
+      acts.appendChild(b);
+    }
+    var mine = !!(currentUser && msg.user_id && String(msg.user_id) === String(currentUser.id));
+    var canModerate = cmi.cid && cmi.rank >= 2;
+
+    add('Copy text', function(){
+      cmCloseMod('cmTxtMod');
+      if(navigator.clipboard) navigator.clipboard.writeText(msg.text || '').then(function(){ showToast('Copied'); });
+    });
+    if(msg.user_id && !mine){
+      add('View ' + (msg.user || 'author'), function(){
+        cmCloseMod('cmTxtMod');
+        cmUserOpenById(msg.user_id);
+      });
+      add('Report this message', function(){
+        cmCloseMod('cmTxtMod');
+        if(!currentUser){ openAuthMod(); return; }
+        // the subject is the community; the message is what the report points at
+        cmRptOpen('community_message', cmi.cid || null, String(msg.id), 'Report this message');
+      });
+    }
+    if(mine || canModerate){
+      add(mine ? 'Delete my message' : 'Delete this message', function(){ cmTxtDelete(msg); }, true);
+    }
+    cmOpenMod('cmTxtMod');
+  }
+
+  async function cmTxtDelete(msg){
+    if(!confirm('Delete this message? It cannot be undone.')) return;
+    try{
+      var r = await sb.from('comments').delete().eq('id', msg.id);
+      if(r.error) throw r.error;
+      cmCloseMod('cmTxtMod');
+      showToast('Message deleted');
+      cpLastSig = '';           // force a repaint, the list is one shorter
+      await cpLoadComments();
+    }catch(e){ showToast('Couldn’t delete that message'); }
+  }
+
+  // ===========================================================================
+  // reporting, for the three things a community has to report
+  // ===========================================================================
+  var CM_RPT_REASONS = [
+    'Spam or advertising',
+    'Harassment or bullying',
+    'Hate speech',
+    'Sexual or explicit content',
+    'Violence or threats',
+    'Impersonation',
+    'Something else'
+  ];
+  var cmRpt = null;
+
+  function cmRptOpen(kind, subjectId, subjectRef, title){
+    if(!currentUser){ openAuthMod(); return; }
+    if(!subjectId){ showToast('Nothing to report here'); return; }
+    cmRpt = { kind: kind, id: subjectId, ref: subjectRef || null, reason: null };
+    document.getElementById('cmRptTitle').textContent = title || 'Report';
+    document.getElementById('cmRptDetails').value = '';
+    var box = document.getElementById('cmRptReasons');
+    box.innerHTML = '';
+    CM_RPT_REASONS.forEach(function(reason){
+      var b = document.createElement('button');
+      b.className = 'cmActItem';
+      b.textContent = reason;
+      b.onclick = function(){
+        cmRpt.reason = reason;
+        Array.prototype.forEach.call(box.children, function(c){ c.classList.remove('cmActItem--on'); });
+        b.classList.add('cmActItem--on');
+      };
+      box.appendChild(b);
+    });
+    cmOpenMod('cmRptMod');
+  }
+
+  async function cmRptSubmit(){
+    if(!cmRpt) return;
+    if(!cmRpt.reason){ showToast('Pick a reason first'); return; }
+    var btn = document.getElementById('cmRptGo');
+    btn.disabled = true; btn.textContent = 'SENDING…';
+    try{
+      var detail = document.getElementById('cmRptDetails').value.trim();
+      var r = await sb.from('item_reports').insert({
+        kind       : cmRpt.kind,
+        subject_id : cmRpt.id,
+        subject_ref: cmRpt.ref,
+        reporter_id: currentUser.id,
+        reason     : detail ? (cmRpt.reason + ' — ' + detail).slice(0, 500) : cmRpt.reason
+      });
+      // reporting the same thing twice is not an error worth showing
+      if(r.error && r.error.code !== '23505') throw r.error;
+      cmCloseMod('cmRptMod');
+      showToast('Report sent — thank you');
+    }catch(e){ showToast(cmErr(e)); }
+    finally{ btn.disabled = false; btn.textContent = 'Send report'; }
   }
 
   // zeo opens the assistant page
@@ -739,80 +1320,23 @@ function hideCommentThumbnail(){
   }
 
   // mini profile card
-  var cpuUser = null;
-
-  function cpuClose(){
-    var m = document.getElementById('cpuMod');
-    if(m) m.classList.remove('open');
-    cpuUser = null;
-  }
-
-  function cpuViewProfile(){
-    if(!cpuUser || !cpuUser.username) return;
-    var uname = cpuUser.username;
-    cpuClose();
-    // back returns to community
-    openProfileByUsername(uname, true);
-  }
-
-  async function cpuOpen(uid){
-    if(!uid) return;
-    // never open on yourself
-    if(typeof currentUser !== 'undefined' && currentUser && String(currentUser.id) === String(uid)) return;
-    var m = document.getElementById('cpuMod');
-    if(!m) return;
-
-    var a = cpAuthors[String(uid)] || null;
-    cpuUser = { id: uid, name: (a && a.name) || 'User', username: null, avatar: (a && a.avatar) || null };
-    cpuPaint();
-    m.classList.add('open');
-
-    // fetch the handle
-    try{
-      var r = await sb.from('profiles')
-        .select('username,display_name,avatar_url')
-        .eq('id', uid).maybeSingle();
-      if(r.error || !r.data) throw (r.error || new Error('no profile'));
-      if(!cpuUser || String(cpuUser.id) !== String(uid)) return;  // card closed or switched
-      cpuUser.username = r.data.username || null;
-      cpuUser.name     = r.data.display_name || r.data.username || cpuUser.name;
-      cpuUser.avatar   = r.data.avatar_url || cpuUser.avatar;
-      cpuPaint();
-    }catch(e){
-      var btn = document.getElementById('cpuView');
-      if(btn){ btn.disabled = true; btn.textContent = 'PROFILE UNAVAILABLE'; }
-    }
-  }
-
-  function cpuPaint(){
-    if(!cpuUser) return;
-    var ico = document.getElementById('cpuIco');
-    var nm  = document.getElementById('cpuName');
-    var hd  = document.getElementById('cpuHandle');
-    var btn = document.getElementById('cpuView');
-    if(nm) nm.textContent = cpuUser.name || 'User';
-    if(hd) hd.textContent = cpuUser.username ? ('@' + cpuUser.username) : '…';
-    if(btn){ btn.disabled = !cpuUser.username; btn.textContent = 'VIEW PROFILE'; }
-    if(ico){
-      ico.textContent = '';
-      if(cpuUser.avatar){
-        var img = document.createElement('img');
-        img.src = getThumbnailUrl(cpuUser.avatar);
-        img.alt = ''; img.loading = 'lazy';
-        ico.appendChild(img);
-      } else {
-        ico.textContent = (cpuUser.name || '?').charAt(0).toUpperCase();
-      }
-    }
-  }
-
-  // one delegated listener
+  // A name in the chat opens the person sheet — the same one the member list
+  // opens, so there is one place a person is acted on rather than two.
   document.addEventListener('click', function(e){
     var t = e.target.closest && e.target.closest('[data-uid]');
     if(!t) return;
-    if(!t.closest('#communityPage')) return;   // chat rows only
+    if(!t.closest('#communityPage') && !t.closest('#cmChatPanel')) return;
     e.preventDefault(); e.stopPropagation();
-    cpuOpen(t.getAttribute('data-uid'));
+    cmUserOpenById(t.getAttribute('data-uid'));
+  });
+
+  // The ⋯ on a bubble. A message has actions, and a bubble you can also select
+  // text in is the wrong place to hang them off a plain tap.
+  document.addEventListener('click', function(e){
+    var t = e.target.closest && e.target.closest('.cpMsgAct');
+    if(!t) return;
+    e.preventDefault(); e.stopPropagation();
+    cmTxtOpen(t.getAttribute('data-mid'));
   });
 
   function cpRender(){
@@ -894,12 +1418,18 @@ function hideCommentThumbnail(){
         var shortTime = cpHHMM(c.raw_time) || esc(c.time);
 
         div.className = 'cpMsgRow ' + (mine ? 'cpMsgRow--me' : 'cpMsgRow--them') + (cont ? ' cpMsgRow--cont' : '');
+        // A message cached offline from before this existed has no id, and
+        // without one there is nothing to delete or report.
+        var act = c.id != null
+          ? '<button class="cpMsgAct" type="button" data-mid="' + esc(String(c.id)) + '" title="Message options" aria-label="Message options">⋯</button>'
+          : '';
         div.innerHTML =
           (!mine ? cpAvatarHTML(c, 'cpMsgAvatar' + (cont ? ' cpMsgAvatar--ghost' : '')) : '') +
-          '<div class="cpBubble">' +
+          '<div class="cpBubble' + (act ? ' cpBubble--act' : '') + '">' +
             (!mine && !cont ? '<div class="cpBubbleName"' + (c.user_id ? ' data-uid="' + esc(String(c.user_id)) + '"' : '') + '>' + esc(cpAuthorName(c)) + '</div>' : '') +
             '<span class="cpBubbleText">' + esc(c.text) + '</span>' +
             '<span class="cpBubbleTime">' + shortTime + '</span>' +
+            act +
           '</div>';
       }
       body.appendChild(div);
@@ -998,6 +1528,11 @@ function hideCommentThumbnail(){
         return;
       }
     }
+
+    // the same limits the database holds, checked here so the member is told
+    // to wait rather than watching a send do nothing
+    var wait = window.dzChat.check(text);
+    if(wait){ showToast(wait); return; }
 
     const ok=await cpSaveComment(text);
     if(!ok) return;
@@ -1114,6 +1649,7 @@ function hideCommentThumbnail(){
       cpComments = rows.map(function(row){
         var displayName = row.username || 'User';
         return {
+          id        : row.id,
           initial   : displayName.charAt(0).toUpperCase(),
           user      : displayName,
           user_id   : row.user_id || null,
@@ -1177,6 +1713,8 @@ function hideCommentThumbnail(){
     try{
       // username only, never email
       var commentUsername = (currentUser.user_metadata && currentUser.user_metadata.username) || 'User';
+      // .select() is what makes the rate gate visible: it drops the row
+      // rather than raising, so a refusal arrives as no error and no row
       var result = await sb.from('comments').insert({
         user_id      : currentUser.id,
         // email not stored
@@ -1184,8 +1722,13 @@ function hideCommentThumbnail(){
         comment_text : text,
         image_url    : imageUrl,
         channel      : cpCurrentChannel
-      });
+      }).select('id');
       if(result.error) throw result.error;
+      if(!result.data || !result.data.length){
+        showToast(await window.dzChat.fromServer(sb));
+        return false;
+      }
+      window.dzChat.note(text);
       // clear thumbnail
       if(thumbEl)  thumbEl.style.display = 'none';
       if(thumbImg) thumbImg.src = '';

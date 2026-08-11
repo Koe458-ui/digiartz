@@ -87,10 +87,6 @@
 .frBtn--danger:hover{background:rgba(239,68,68,.12);filter:none;}
 .frRowBtns{display:flex;gap:.4rem;flex-shrink:0;align-items:center;margin-left:auto;}
 .frRowBtns .frBtn{padding:.42rem .8rem;font-size:.58rem;}
-.dmHint{
-  font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;
-  color:var(--txd);text-align:center;padding:.35rem 0 0;
-}
 @media(prefers-reduced-motion:no-preference){
   .dmMsg{animation:dmIn .18s ease both;}
   @keyframes dmIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}

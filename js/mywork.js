@@ -566,10 +566,14 @@ function hideCommentThumbnail(){
     if(cmi.cid) cmiLoadCommunity();
     else cmiPaintBuiltin();
   }
+  // Escape leaves this page. The global handler in js/pfedit.js steps aside
+  // while it is open, so this is the only thing that acts.
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
     var page = document.getElementById('cmInfoPage');
-    if(page && page.classList.contains('open')){ e.stopPropagation(); cmiClose(); }
+    if(!page || !page.classList.contains('open')) return;
+    e.stopImmediatePropagation();
+    cmiClose();
   });
 
   function cmiClose(){

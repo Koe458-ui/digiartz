@@ -344,22 +344,6 @@
 }
     #communityPage.open{transform:translateX(0);}
 
-    /* header bar */
-    .cpHdr{
-      position:sticky;top:0;z-index:10;
-      border-bottom:1px solid var(--bdr);
-      padding:1rem 1.5rem;
-      display:flex;flex-direction:column;align-items:flex-start;gap:.6rem;
-      flex-shrink:0;
-      isolation:isolate;
-    }
-    /* blur layer */
-    .cpHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--sur) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
-    .cpTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;letter-spacing:.15em;color:var(--tx);display:flex;align-items:center;gap:.4rem;}
-    .cpTitle .s{color:var(--pg);font-size:.6em;}
-    .cpHdrText{display:flex;flex-direction:column;gap:.2rem;min-width:0;}
-    .cpSubtitle{font-family:var(--fb);font-size:.74rem;font-weight:400;color:var(--txd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
     /* community header */
     .cmHdr{
       position:sticky;top:0;z-index:10;
@@ -578,7 +562,6 @@
       width:10px;height:10px;border-radius:50%;
       background:#22c55e;border:2px solid var(--sur);
     }
-    .cpCommentMeta{display:flex;flex-direction:column;gap:.3rem;flex:1;min-width:0;}
 
     /* tappable identity */
     .cpMsgRow--them .cpMsgAvatar,
@@ -586,7 +569,6 @@
     .cpShowcaseHead .cpAvatar,
     .cpShowcaseHead .cpCommentUser{cursor:pointer;}
     .cpCommentUser{font-family:var(--fm);font-size:.78rem;font-weight:700;letter-spacing:.15em;color:var(--ps);}
-    .cpCommentText{font-family:var(--fb);font-size:.95rem;font-weight:400;color:var(--tx);line-height:1.6;word-break:break-word;}
     .cpCommentTime{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);}
 
     /* chat rows */
@@ -628,10 +610,6 @@
       float:right;margin:.65em -.1em 0 .65em;
       font-family:var(--fm);font-size:.56rem;letter-spacing:.04em;
       color:var(--txd);white-space:nowrap;user-select:none;
-    }
-    .cpBubble .cpPhoto{
-      display:block;width:100%;height:auto;max-width:260px;max-height:260px;
-      object-fit:cover;border-radius:10px;margin:.25rem 0 .35rem;cursor:pointer;
     }
     /* chat wallpaper */
     #cmChatView .cpBody,#dmChatView .cpBody{

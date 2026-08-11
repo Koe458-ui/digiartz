@@ -393,11 +393,6 @@
     .cmModBtn--go{border-color:var(--pg);background:var(--pdim);color:var(--pg);}
     .cmModBtn--danger{border-color:var(--danger-bd);background:var(--danger-bg);color:var(--danger);}
     .cmModBtn:disabled{opacity:.55;cursor:default;}
-    .cmCode{
-      font-family:var(--fm);font-size:1rem;letter-spacing:.3em;color:var(--pg);
-      background:var(--sur2);border:1px dashed var(--bdrh);border-radius:8px;
-      padding:.6rem;text-align:center;margin-top:.4rem;
-    }
     /* member list */
     .cmMemRow{
       display:flex;align-items:center;gap:.7rem;padding:.6rem .2rem;
@@ -754,10 +749,6 @@
     #communityPage .cmFriendStatus,#cmChatPanel .cmFriendStatus{color:var(--cmTxd);}
 
     /* art talk chat */
-    #communityPage .cpHdr::before,#cmChatPanel .cpHdr::before{background:var(--cmBg)!important;}
-    #communityPage .cpHdr,#cmChatPanel .cpHdr{border-bottom:1px solid var(--cmBdr);}
-    #communityPage .cpTitle,#cmChatPanel .cpTitle{color:var(--cmTx);}
-    #communityPage .cpTitle .s,#cmChatPanel .cpTitle .s{color:var(--cmAccentSoft);}
     #communityPage .cmBack,#cmChatPanel .cmBack{border:1px solid var(--cmBdr);color:var(--cmTx);}
     #communityPage .cmBack:hover,#cmChatPanel .cmBack:hover{border-color:var(--cmAccent);background:var(--cmAccentDim);}
     #communityPage .cpEmpty,#cmChatPanel .cpEmpty{color:var(--cmTxd);}
@@ -767,9 +758,7 @@
     #communityPage .cpAvatar,#cmChatPanel .cpAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
     #communityPage .cpAvatar::after,#cmChatPanel .cpAvatar::after{border-color:var(--cmSur);}
     #communityPage .cpCommentUser,#cmChatPanel .cpCommentUser{color:var(--cmAccentSoft);}
-    #communityPage .cpCommentText,#cmChatPanel .cpCommentText{color:var(--cmTx);}
     #communityPage .cpCommentTime,#cmChatPanel .cpCommentTime{color:var(--cmTxd);}
-    #communityPage .cpSubtitle,#cmChatPanel .cpSubtitle{color:var(--cmTxd);}
     #communityPage .cpLockNote::before,#cmChatPanel .cpLockNote::before{background:var(--cmBg)!important;}
     #communityPage .cpLockNote,#cmChatPanel .cpLockNote{border-top:1px solid var(--cmBdr);color:var(--cmTxd);}
     #communityPage .cpLockNote svg,#cmChatPanel .cpLockNote svg{color:var(--cmAccentSoft);}
@@ -777,7 +766,6 @@
     #communityPage .cpAttachBtn:hover,#cmChatPanel .cpAttachBtn:hover{background:color-mix(in srgb,var(--cmAccent) 30%,transparent)!important;}
     #communityPage .cpShowcase,#cmChatPanel .cpShowcase{background:var(--cmSur);border:1px solid var(--cmBdr);}
     #communityPage .cpShowcaseText,#cmChatPanel .cpShowcaseText{color:var(--cmTx);}
-    #communityPage .cpPhoto,#cmChatPanel .cpPhoto{border:1px solid var(--cmBdr);}
     #communityPage .cpRefreshSpinner,#cmChatPanel .cpRefreshSpinner{border-color:color-mix(in srgb,var(--cmAccent) 25%,transparent);border-top-color:var(--cmAccent);}
 
     #communityPage .cpBar::before,#cmChatPanel .cpBar::before{background:var(--cmSur)!important;}

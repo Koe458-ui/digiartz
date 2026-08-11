@@ -4,6 +4,23 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v165 — Escape stops at the page it was pressed on.
+       js/pfedit.js carries one global Escape that closes a dozen
+       overlays by name, the community section among them. It already
+       stepped aside for the profile search and the guidelines sheet;
+       it did not for the community's own page or the friends page, so
+       one Escape on either dropped the whole section behind them. The
+       friends page has been doing that for as long as it has existed.
+       Both are guarded now, and each page stops the event where it
+       handles it, so the fix does not depend on which script loaded
+       first.
+       Swept out with it: .cmCode, orphaned when the manage modal went,
+       and .cpHdr, .cpTitle, .cpSubtitle, .cpHdrText, .cpCommentMeta,
+       .cpCommentText, .cpPhoto and .dmHint, which had outlived their
+       markup some time before this branch and nothing referenced.
+       Changed: js/pfedit.js, js/dm.js, js/mywork.js, css/community.css,
+       css/viewer.css, css/widgets.css, css/overrides.css,
+       css/panels.css, index.html, sw.js.
    v164 — every message goes through one sliding-window gate.
        comments and direct_messages were behind a fixed-window counter:
        20 comments per 5 minutes, which is four a minute — two people
@@ -2852,7 +2869,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v164';
+const CACHE_VERSION = 'v165';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2877,17 +2894,17 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=4',
   '/css/hero.css?v=91',
-  '/css/viewer.css?v=10',
-  '/css/community.css?v=7',
+  '/css/viewer.css?v=11',
+  '/css/community.css?v=8',
   '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=9',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
-  '/css/panels.css?v=2',
+  '/css/panels.css?v=3',
   '/css/upload.css?v=12',
-  '/css/widgets.css?v=4',
-  '/css/overrides.css?v=10',
+  '/css/widgets.css?v=5',
+  '/css/overrides.css?v=11',
   '/css/select.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
@@ -2902,7 +2919,7 @@ const SHELL_URLS = [
   // scripts
   '/js/ranking.js?v=2',
   '/js/community.js?v=4',
-  '/js/dm.js?v=7',
+  '/js/dm.js?v=8',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
@@ -2915,8 +2932,8 @@ const SHELL_URLS = [
   '/js/drafts.js?v=6',
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=15',
+  '/js/pfedit.js?v=9',
+  '/js/mywork.js?v=16',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',

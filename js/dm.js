@@ -682,8 +682,15 @@
     else document.body.style.overflow = '';
     if (frdLastFocus && frdLastFocus.focus) frdLastFocus.focus({ preventScroll: true });
   }
+  // Escape leaves this page and stops there. js/dm.js is loaded before
+  // js/pfedit.js, whose global Escape closes the community section — and its
+  // guard cannot help, because by the time it runs this has already taken the
+  // .open class off. Stopping here is what keeps the section standing.
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && $('frdPage') && $('frdPage').classList.contains('open')) closeFriendsPage();
+    if (e.key !== 'Escape') return;
+    if (!$('frdPage') || !$('frdPage').classList.contains('open')) return;
+    e.stopImmediatePropagation();
+    closeFriendsPage();
   });
   window.openFriendsPage  = openFriendsPage;
   // the community header's search box on its Friends tab

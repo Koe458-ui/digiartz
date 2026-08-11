@@ -4,7 +4,7 @@
   var LINK_RE = /(https?:\/\/|www\.|\S+\.(com|net|org|io|gg|xyz)\b)/i; // mirror of the db check
   var POLL_MS = 5000, MAX_LEN = 1000;
   var dmPartner = null;     // open thread partner
-  var dmPoll = null, dmSending = false, searchTimer = null;
+  var dmPoll = null, dmSending = false;
   // message paging
   var dmLimit = 25, DM_LOAD_STEP = 25, dmHasMore = false, dmLoadingOlder = false, dmLastSig = '';
 
@@ -40,7 +40,33 @@
   }
 
   // friendships
+  // Mirrors the database cap in
+  // supabase/migrations/20260811_community_and_friend_caps.sql. The trigger is
+  // what enforces it; this is here so nobody sends a request that cannot land.
+  var FR_MAX_FRIENDS = 200;
+  window.FR_MAX_FRIENDS = FR_MAX_FRIENDS;   // read by the banner in js/community.js
   var frMap = {};
+  function frCount (status) {
+    return Object.keys(frMap).filter(function (k) { return frMap[k].status === status; }).length;
+  }
+  // incoming requests waiting on this member — the header badge
+  function frPending () {
+    var uid = me() && me().id;
+    if (!uid) return 0;
+    return Object.keys(frMap).filter(function (k) {
+      var f = frMap[k];
+      return f.status === 'pending' && f.addressee_id === uid;
+    }).length;
+  }
+  function frPaintBadge () {
+    if (typeof window.cmSetFriendBadge === 'function') window.cmSetFriendBadge(frPending());
+    if (typeof window.cmSetFriendCount === 'function') window.cmSetFriendCount(frCount('accepted'));
+  }
+  function frAtCap () {
+    if (frCount('accepted') < FR_MAX_FRIENDS) return false;
+    toast('You have ' + FR_MAX_FRIENDS + ' friends — the most allowed. Remove one first.');
+    return true;
+  }
   async function loadFriendships () {
     frMap = {};
     if (!db() || !me()) return;
@@ -69,32 +95,44 @@
   }
   async function refreshAfterFrChange () {
     await loadFriendships();
+    frPaintBadge();
     if ($('frdPage') && $('frdPage').classList.contains('open')) loadFriendsPage();
     if (dmPartner) dmApplyGate();
     // update open search boxes
-    ['dmSearchInput', 'frdSearchInput'].forEach(function (id) {
+    ['cmSearchInput', 'frdSearchInput'].forEach(function (id) {
       var i = $(id);
       if (i && i.value.trim().length >= 2) i.dispatchEvent(new Event('input'));
     });
   }
+  // what the member sees when the database turns a write down
+  function frErr (e, fallback) {
+    var m = (e && e.message) || '';
+    if (/FR_MAX_FRIENDS/.test(m))  return 'That would go over the ' + FR_MAX_FRIENDS + ' friend limit.';
+    if (/FR_MAX_PENDING/.test(m))  return 'You have too many requests waiting \u2014 cancel some first.';
+    if (/Too many .* in a short time/i.test(m)) return m;
+    if (/duplicate|uniq/i.test(m)) return 'A request already exists';
+    return fallback;
+  }
   async function frSendReq (pid) {
     if (!db() || !me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
+    if (frAtCap()) return;
     try {
       var r = await db().from('friendships').insert({ requester_id: me().id, addressee_id: pid });
       if (r.error) throw r.error;
       toast('Friend request sent');
     } catch (e) {
-      toast(e && e.message && /duplicate|uniq/i.test(e.message) ? 'A request already exists' : 'Couldn\u2019t send the request');
+      toast(frErr(e, 'Couldn\u2019t send the request'));
     }
     await refreshAfterFrChange();
   }
   async function frAccept (pid) {
     var f = frMap[pid]; if (!f || !db()) return;
+    if (frAtCap()) return;
     try {
       var r = await db().from('friendships').update({ status: 'accepted' }).eq('id', f.id);
       if (r.error) throw r.error;
       toast('You are now friends');
-    } catch (e) { toast('Couldn\u2019t accept — try again'); }
+    } catch (e) { toast(frErr(e, 'Couldn\u2019t accept — try again')); }
     await refreshAfterFrChange();
   }
   // delete row cancels or unblocks
@@ -134,17 +172,9 @@
     return b;
   }
 
-  // username search
-  function initSearch () {
-    var inp = $('dmSearchInput'), box = $('dmResults');
-    if (!inp || !box) return;
-    inp.addEventListener('input', function () {
-      clearTimeout(searchTimer);
-      var q = inp.value.trim();
-      if (q.length < 2) { box.innerHTML = ''; return; }
-      searchTimer = setTimeout(function () { runSearch(q, box); }, 300);
-    });
-  }
+  // username search. The community page has one search box in its header
+  // rather than one per pane, so it drives this rather than owning a copy —
+  // js/community.js debounces and calls in.
   async function runSearch (q, box, onOpen) {
     if (!db()) { toast('Backend not configured'); return; }
     var safe = q.replace(/[%_]/g, '\\$&');
@@ -316,7 +346,8 @@
     }
     // the bottom nav is left alone — the panel outranks it and covers it
     var res = $('dmResults');   if (res) res.innerHTML = '';
-    var inp = $('dmSearchInput'); if (inp) inp.value = '';
+    // the header search is the one that found this person — close it behind us
+    if (typeof window.cmSearchReset === 'function') window.cmSearchReset();
     $('dmBody').innerHTML = '<div class="dmSearchNote">LOADING…</div>';
     // friend gate. Paint it from the cached friend map first, so the
     // composer rides in with the panel instead of appearing a round-trip
@@ -540,7 +571,10 @@
         else if (f.status === 'blocked' && f.blocked_by === uid) blocked.push(pid);
       });
       list.innerHTML = '';
-      if (cnt) cnt.textContent = friends.length;
+      // shown against the cap, so a member near it can see why the next
+      // request is being turned down
+      if (cnt) cnt.textContent = friends.length + ' / ' + FR_MAX_FRIENDS;
+      frPaintBadge();
       var allIds = reqs.concat(sent, friends, blocked);
       if (!allIds.length) { empty.style.display = ''; return; }
       var byId = {};
@@ -586,6 +620,14 @@
         friends.forEach(function (pid) {
           var row = userRow(prof(pid), false, 'Friend, tap to chat', null, frdStartChat);
           var acts = document.createElement('span'); acts.className = 'frRowBtns';
+          // ending a friendship and blocking somebody are not the same act,
+          // and blocking was the only one on offer here
+          acts.appendChild(frBtnEl('REMOVE', 'frBtn--ghost', function () {
+            var u = prof(pid).username || 'this artist';
+            if (confirm('Remove ' + u + ' as a friend? Neither of you will be able to message the other until one sends a new request.')) {
+              frRemove(pid, 'Friend removed');
+            }
+          }));
           acts.appendChild(frBtnEl('BLOCK', 'frBtn--danger', function () {
             var u = prof(pid).username || 'this artist';
             if (confirm('Block ' + u + '? They won\u2019t be able to message you, and you won\u2019t see their requests.')) frBlock(pid);
@@ -629,6 +671,8 @@
     if (e.key === 'Escape' && $('frdPage') && $('frdPage').classList.contains('open')) closeFriendsPage();
   });
   window.openFriendsPage  = openFriendsPage;
+  // the community header's search box on its Friends tab
+  window.dmPeopleSearch = function (q, box, onOpen) { return runSearch(q, box, onOpen || null); };
   // bridge for profile buttons
   window.pfFriendBridge = {
     load:   loadFriendships,
@@ -643,7 +687,6 @@
 
   // wiring
   document.addEventListener('DOMContentLoaded', function () {
-    initSearch();
     // friends page search
     var fInp = $('frdSearchInput'), fBox = $('frdResults');
     if (fInp && fBox) fInp.addEventListener('input', function () {
@@ -677,6 +720,8 @@
       window.openCommunityHome = function () {
         var out = origOpen.apply(this, arguments);
         refreshConvos();
+        // the header's friends button carries the pending count
+        loadFriendships().then(frPaintBadge);
         return out;
       };
     }
@@ -687,7 +732,8 @@
         // or block. Emptied now rather than in 400ms, so nothing in that
         // gap is answered out of the last member's friend list.
         frMap = {};
-        setTimeout(function () { loadFriendships(); refreshConvos(); }, 400);
+        frPaintBadge();
+        setTimeout(function () { loadFriendships().then(frPaintBadge); refreshConvos(); }, 400);
       });
     }
   });

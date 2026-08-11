@@ -201,6 +201,8 @@ function hideCommentThumbnail(){
     // land on the grid without the chat sliding out over it
     if(typeof cmChatPanelReset === 'function') cmChatPanelReset();
     cmCloseChat();
+    // Community tab, search closed — every visit starts the same way
+    if(typeof cmHomeReset === 'function') cmHomeReset();
     cmLoadMine();  // refresh own communities
   }
 
@@ -331,11 +333,19 @@ function hideCommentThumbnail(){
   var cmMg = null;   // community in manage modal
   var cmMineCache = {};  // channel lookup map
   var cmMineRows  = [];  // last membership rows
+  // Mirrors the database cap in supabase/migrations/20260811_community_and_friend_caps.sql.
+  // The trigger is what enforces it; this is here so the member is told before
+  // the round trip rather than after it.
+  var CM_MAX_JOINED = 50;
+  window.CM_MAX_JOINED = CM_MAX_JOINED;   // read by the banner in js/community.js
 
   function cmErr(e){
     var m = (e && e.message) || '';
     if(/CM_LEVEL/.test(m))         return 'You need artist Level 100 to create a community.';
     if(/CM_ALREADY_OWNER/.test(m)) return 'You already own a community — one per artist.';
+    if(/CM_MAX_JOINED/.test(m))    return 'You’re in ' + CM_MAX_JOINED + ' communities — the most allowed. Leave one to join another.';
+    // the shared write rate limiter words its own message for the member
+    if(/Too many .* in a short time/i.test(m)) return m;
     if(/CM_NAME_TAKEN/.test(m) || /communities_name_lower_idx/.test(m))
                                    return 'That community name is already taken.';
     if(/CM_NOT_FOUND/.test(m))     return 'No community matches that name and join ID.';
@@ -403,15 +413,24 @@ function hideCommentThumbnail(){
   // join
   function cmOpenJoin(){
     if(!currentUser){ openAuthMod(); return; }
+    if(cmAtJoinCap()) return;
     document.getElementById('cmJoinName').value = '';
     document.getElementById('cmJoinCode').value = '';
     cmOpenMod('cmJoinMod');
+  }
+
+  // the cap the database holds, checked against the list already loaded
+  function cmAtJoinCap(){
+    if(cmMineRows.length < CM_MAX_JOINED) return false;
+    showToast('You’re in ' + CM_MAX_JOINED + ' communities — the most allowed. Leave one to join another.');
+    return true;
   }
 
   async function cmDoJoin(){
     var name = document.getElementById('cmJoinName').value.trim();
     var code = document.getElementById('cmJoinCode').value.trim();
     if(!name || !code){ showToast('Enter both the name and the join ID'); return; }
+    if(cmAtJoinCap()){ cmCloseMod('cmJoinMod'); return; }
     var btn = document.getElementById('cmJoinGo');
     btn.disabled = true; btn.textContent = 'JOINING…';
     try{
@@ -446,7 +465,12 @@ function hideCommentThumbnail(){
     var wrap = document.getElementById('cmMineWrap');
     var grid = document.getElementById('cmMineGrid');
     if(!wrap || !grid) return;
-    if(!rows.length){ wrap.style.display='none'; return; }
+    if(!rows.length){
+      wrap.style.display='none';
+      grid.innerHTML='';
+      if(typeof cmReapplySearch === 'function') cmReapplySearch();
+      return;
+    }
     wrap.style.display = '';
     grid.innerHTML = '';
     rows.forEach(function(r){
@@ -491,6 +515,9 @@ function hideCommentThumbnail(){
         }
         grid.appendChild(card);
       });
+    // the grid was repainted under the header search — re-run it, and let the
+    // banner count the cards that are actually there
+    if(typeof cmReapplySearch === 'function') cmReapplySearch();
   }
 
   // manage a community

@@ -4,6 +4,44 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v160 — the community header does the two things the page is for.
+       COMMUNITY sat centred in its own bar with nothing beside it, and
+       everything the page can do was somewhere down the scroll: the
+       people search was a box halfway down, and the friends page — the
+       only place a request can be accepted, declined or a friend
+       removed — was reachable only from the profile drawer.
+       The header carries them now. Section icon and name on the left,
+       search and friends on the right, and no avatar: the member's own
+       profile is already one tap away in the nav and has no business in
+       a section header.
+       Community and Friends are two tabs under the banner, and there is
+       one search box rather than one per tab — it reads which tab is
+       open and searches that. On Community it filters the cards already
+       on the page, which it can do because every community is rendered:
+       no "view all", nothing held back, nothing to fetch. On Friends it
+       runs the username search that used to live in the scroll, through
+       dmPeopleSearch. The friends button opens the same #frdPage the
+       drawer opens, and wears the number of requests waiting.
+       The page is coloured now, and stays coloured: the accent is a fixed
+       green rather than the theme's, which went grey in the mono themes and
+       took the whole section with it. The banner is drawn in that palette —
+       three-colour headline, dashed wire rings, dot grids and scattered
+       colour dots, all positioned in percentages and sized in vw, so it is
+       one design from a 320px phone to a desktop and has nothing in it with
+       an aspect ratio to distort. Two counts sit on it, the member's own:
+       communities they are in and friends they have, in boxes that are the
+       same size as each other at every width.
+       Behind it, in 20260811_community_and_friend_caps.sql: 50
+       communities and 200 friends per member, 100 outgoing requests
+       waiting, and the write rate limiter — which went table by table
+       through everything typed and never reached these three, because a
+       membership is not text — now covers friendships, communities and
+       community_members. One created community per artist was already
+       real in cm_create and is unchanged. The js checks the same
+       numbers so a member is told before the round trip, but the
+       triggers are what enforce them.
+       Changed: index.html, css/viewer.css, css/community.css,
+       js/community.js, js/dm.js, js/mywork.js, sw.js, and a migration.
    v155 — every viewer opens the same way, and closes.
        The five detail views had no way out. Closing one meant the
        browser's own back button, and since every Next pushed a history
@@ -2721,7 +2759,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v159';
+const CACHE_VERSION = 'v160';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2746,8 +2784,8 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=4',
   '/css/hero.css?v=91',
-  '/css/viewer.css?v=8',
-  '/css/community.css?v=4',
+  '/css/viewer.css?v=9',
+  '/css/community.css?v=5',
   '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=9',
@@ -2770,8 +2808,8 @@ const SHELL_URLS = [
 
   // scripts
   '/js/ranking.js?v=2',
-  '/js/community.js?v=2',
-  '/js/dm.js?v=5',
+  '/js/community.js?v=3',
+  '/js/dm.js?v=6',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
@@ -2785,7 +2823,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=10',
+  '/js/mywork.js?v=11',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',

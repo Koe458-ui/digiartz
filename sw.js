@@ -4,6 +4,31 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v167 — the section header is the section header, and Browse exists.
+       Community had its own header — a bordered chip, bordered
+       buttons, its own sizes — while every other section shares one.
+       It wears .fgTopBar now, literally the gallery's classes rather
+       than a copy of them, so the two cannot drift: same mark, same
+       type, same borderless controls, this section's green.
+       Search was a bar that slid down under the header. It is a page,
+       on the same component #fgSearchPage and #pfSearchPage use — back
+       arrow, one field, scope chips, results — and it opens on
+       Communities or Artists depending on which tab was being read.
+       New beside it: Browse, listing every public community biggest
+       first. Until now the only way to find one you were not in was to
+       be handed its name and join ID by somebody who was. Icon, name,
+       description, member count and a Join that asks before it acts.
+       cm_browse ranks them, excludes banned rows from the count, and
+       lists public communities only — a private one being unlisted is
+       most of what private means.
+       Gone: links_allowed. enforce_community_links only refused a link
+       when the flag was explicitly false, so any community with it null
+       allowed every link ever posted. Links are refused everywhere now,
+       in the six site rooms too, which the old body returned early for,
+       and there is no setting.
+       Changed: index.html, css/community.css, css/viewer.css,
+       js/community.js, js/mywork.js, js/app-core.js, sw.js, and two
+       migrations.
    v165 — Escape stops at the page it was pressed on.
        js/pfedit.js carries one global Escape that closes a dozen
        overlays by name, the community section among them. It already
@@ -2869,7 +2894,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v165';
+const CACHE_VERSION = 'v168';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2894,8 +2919,8 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=4',
   '/css/hero.css?v=91',
-  '/css/viewer.css?v=11',
-  '/css/community.css?v=8',
+  '/css/viewer.css?v=13',
+  '/css/community.css?v=11',
   '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=9',
@@ -2918,12 +2943,12 @@ const SHELL_URLS = [
 
   // scripts
   '/js/ranking.js?v=2',
-  '/js/community.js?v=4',
+  '/js/community.js?v=5',
   '/js/dm.js?v=8',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=20',
+  '/js/app-core.js?v=21',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=81',
   '/js/auth.js?v=10',
@@ -2933,7 +2958,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=9',
-  '/js/mywork.js?v=16',
+  '/js/mywork.js?v=18',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',

@@ -98,8 +98,8 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
   <link rel="stylesheet" href="/css/hero.css?v=91">
-  <link rel="stylesheet" href="/css/viewer.css?v=11">
-  <link rel="stylesheet" href="/css/community.css?v=8">
+  <link rel="stylesheet" href="/css/viewer.css?v=13">
+  <link rel="stylesheet" href="/css/community.css?v=11">
   <link rel="stylesheet" href="/css/connect.css?v=2">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
   <link rel="stylesheet" href="/css/profile.css?v=9">
@@ -1450,35 +1450,49 @@
    </div>
   </div>
   <div id="communityPage">
-    <div class="cmHdr cmHdr--home" id="cmHomeHdr">
-      <div class="cmHdrBrand">
-        <span class="cmHdrBrandIco" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.5"/><path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/><path d="M16 3.6a3.5 3.5 0 0 1 0 6.8"/></svg>
-        </span>
-        <div class="cmHdrTitle"><span id="cmHdrTitleTxt">COMMUNITY</span></div>
-      </div>
-      <div class="cmHdrActs">
-        <button class="cmHdrBtn" id="cmSearchBtn" type="button" onclick="cmToggleSearch()"
-                title="Search" aria-label="Search" aria-expanded="false" aria-controls="cmSearchBar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        </button>
-        <button class="cmHdrBtn" id="cmFrdBtn" type="button" onclick="openFriendsPage()"
-                title="Friends" aria-label="Friends">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg>
-          <span class="cmHdrBadge" id="cmFrdBadge" hidden></span>
-        </button>
-      </div>
-    </div>
-    <div class="cmSearchBar" id="cmSearchBar" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input class="cmSearchInput" id="cmSearchInput" type="text" maxlength="40"
-             placeholder="Search communities" autocomplete="off" aria-label="Search">
-      <button class="cmSearchClear" id="cmSearchClear" type="button" onclick="cmClearSearch()"
-              title="Clear" aria-label="Clear search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    <!-- The section header, on the same component every other section uses:
+         .fgTopBar with the section's own mark and name on the left and its
+         controls on the right. Literally the gallery's classes rather than a
+         copy of them, so the two cannot drift apart. Search and Browse each
+         open a page of their own; no avatar, because the member's own profile
+         is already in the nav. -->
+    <header class="fgTopBar cmTopBar" id="cmHomeHdr">
+     <div class="fgTopL">
+      <span class="fgMark" aria-hidden="true">
+       <svg viewBox="0 0 32 32" width="32" height="32">
+        <defs>
+         <linearGradient id="cmMarkGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#7FD8C0"/>
+          <stop offset=".55" stop-color="#2FA37C"/>
+          <stop offset="1" stop-color="#16745A"/>
+         </linearGradient>
+        </defs>
+        <rect width="32" height="32" rx="10" fill="url(#cmMarkGrad)"/>
+        <circle cx="12.6" cy="11.4" r="3.4" fill="#fff"/>
+        <path d="M5.6 24.6v-1.4a5.2 5.2 0 0 1 5.2-5.2h3.6a5.2 5.2 0 0 1 5.2 5.2v1.4z" fill="#fff"/>
+        <circle cx="21.6" cy="12.4" r="2.6" fill="#fff" opacity=".72"/>
+        <path d="M18.9 18.3a5.2 5.2 0 0 1 7.5 4.9v1.4h-4.9v-1.4a6.6 6.6 0 0 0-2.6-4.9z" fill="#fff" opacity=".72"/>
+       </svg>
+      </span>
+      <span class="fgTopTitle" id="cmHdrTitleTxt">COMMUNITY</span>
+     </div>
+     <div class="fgTopR">
+      <button class="fgTopBtn" id="cmSearchBtn" type="button" onclick="cmOpenSearch()"
+              aria-label="Search the community section" aria-controls="cmSearchPage">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
       </button>
-    </div>
-  <script src="/js/community.js?v=4"></script>
+      <button class="fgTopBtn" id="cmBrowseBtn" type="button" onclick="cmOpenBrowse()"
+              aria-label="Browse communities" aria-controls="cmBrowsePage">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+      </button>
+      <button class="fgTopBtn" id="cmFrdBtn" type="button" onclick="openFriendsPage()"
+              aria-label="Friends">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg>
+       <span class="cmHdrBadge" id="cmFrdBadge" hidden></span>
+      </button>
+     </div>
+    </header>
+  <script src="/js/community.js?v=5"></script>
 
     <div class="cmView" id="cmViewCommunity" style="display:flex;">
 
@@ -1605,12 +1619,6 @@
             </div>
           </div>
           <div class="cmGrid" id="cmMineGrid"></div>
-        </div>
-
-        <div class="cmEmpty" id="cmSearchEmpty" style="display:none;">
-          <div class="cmEmptyIco">◎</div>
-          <div>NO COMMUNITIES MATCH</div>
-          <div class="cmEmptySub">Try a different name, or join one with its join ID.</div>
         </div>
 
         <div class="cmFooterCta" id="cmFooterCta">
@@ -2637,7 +2645,7 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=20"></script>
+  <script src="/js/app-core.js?v=21"></script>
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=81"></script>
   <script src="/js/auth.js?v=10"></script>
@@ -2647,7 +2655,7 @@
   <script src="/js/upqueue.js?v=4"></script>
   <script src="/js/avatar.js?v=2"></script>
   <script src="/js/pfedit.js?v=9"></script>
-  <script src="/js/mywork.js?v=16"></script>
+  <script src="/js/mywork.js?v=18"></script>
   <script src="/js/startup.js?v=3"></script>
   <script src="/js/tagrail.js?v=3"></script>
   <script src="/js/search.js?v=7"></script>
@@ -2898,6 +2906,72 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
+<!-- The community section's search. Same component as #fgSearchPage and
+     #pfSearchPage — back arrow, one field, scope chips, results — because a
+     member who has used search anywhere else on the site has already learned
+     this one. The scope opens on whichever tab they were reading. -->
+<div id="cmSearchPage" role="dialog" aria-modal="true" aria-label="Search the community section">
+  <div class="pfSrchHdr">
+    <button class="pfTopBtn" type="button" onclick="cmCloseSearch()" aria-label="Close search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
+    </button>
+    <div class="tgSearch" id="cmSrchWrap">
+      <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" class="tgSearchIn" id="cmSearchInput" placeholder="Search communities"
+             autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40"
+             aria-label="Search the community section">
+      <button type="button" class="tgSearchClear" onclick="cmClearSearch()" aria-label="Clear search">✕</button>
+    </div>
+  </div>
+  <div class="pfSrchScopes" id="cmSrchScopes" role="tablist" aria-label="What to search">
+    <button class="pfSrchChip on" id="cmSrchScopeCommunity" role="tab" aria-selected="true"
+            type="button" onclick="cmSearchScope('community')">Communities</button>
+    <button class="pfSrchChip" id="cmSrchScopeFriends" role="tab" aria-selected="false"
+            type="button" onclick="cmSearchScope('friends')">Artists</button>
+  </div>
+  <div class="pfSrchBdy">
+    <div class="pfSrchNote" id="cmSrchNote">Type to search communities.</div>
+    <div id="cmSrchRes" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- Browse every community, biggest first. Until now the only way to find one
+     you were not already in was to be handed its name and join ID by somebody
+     who was. Ranked by member count, which is what cm_browse orders by. -->
+<div id="cmBrowsePage" role="dialog" aria-modal="true" aria-label="Browse communities">
+  <div class="pfSrchHdr">
+    <button class="pfTopBtn" type="button" onclick="cmCloseBrowse()" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
+    </button>
+    <div class="tgSearch" id="cmBrwWrap">
+      <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" class="tgSearchIn" id="cmBrwIn" placeholder="Find a community"
+             autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40"
+             aria-label="Find a community">
+      <button type="button" class="tgSearchClear" onclick="cmBrowseClear()" aria-label="Clear">✕</button>
+    </div>
+  </div>
+  <div class="pfSrchBdy">
+    <div class="cmBrwHd">MOST MEMBERS FIRST</div>
+    <div id="cmBrwList"></div>
+    <div class="pfSrchNote" id="cmBrwNote" hidden></div>
+    <div class="cmBrwMoreWrap"><button class="cmiAct" id="cmBrwMore" type="button" onclick="cmBrowseMore()" hidden>Load more</button></div>
+  </div>
+</div>
+
+<!-- Joining asks first. A community is a room full of people, and walking into
+     one should not be something a mistimed tap does on your behalf. -->
+<div class="cmMod" id="cmJoinAsk" onclick="if(event.target===this)cmCloseMod('cmJoinAsk')">
+  <div class="cmModCard" style="max-width:340px;">
+    <div class="cmModTitle" id="cmJoinAskTitle">Join this community?</div>
+    <div class="cmModSub" id="cmJoinAskSub">You will be able to read and post in it.</div>
+    <div class="cmModActs">
+      <button class="cmModBtn" onclick="cmCloseMod('cmJoinAsk')">Cancel</button>
+      <button class="cmModBtn cmModBtn--go" id="cmJoinAskGo" onclick="cmJoinAskGo()">Join</button>
+    </div>
+  </div>
+</div>
+
 <div class="upPop" id="tgMod" role="dialog" aria-modal="true" aria-label="Search tags">
   <div class="upPopBox tgModBox">
     <div class="tgModHead">
@@ -3066,8 +3140,8 @@ window.ZEO_DATA = window.ZEO_DATA || {
       <textarea class="cmArea" id="cmiSetDesc" maxlength="500" placeholder="What is this community about?"></textarea>
       <div class="cmLbl">RULES</div>
       <textarea class="cmArea" id="cmiSetRules" maxlength="2000" placeholder="1. Be respectful…"></textarea>
-      <label class="cmToggleRow"><input type="checkbox" id="cmiSetPublic"><span>Public — anyone can read and join without the join ID</span></label>
-      <label class="cmToggleRow"><input type="checkbox" id="cmiSetLinks"><span>Allow links in this community</span></label>
+      <label class="cmToggleRow"><input type="checkbox" id="cmiSetPublic"><span>Public — anyone can read it, join it, and find it in Browse</span></label>
+      <div class="cmiNote">Communities are text only. Links are never allowed in one, and there is no setting for that.</div>
       <div class="cmModActs">
         <button class="cmModBtn cmModBtn--go" id="cmiSaveBtn" type="button" onclick="cmiSave()">Save settings</button>
       </div>

@@ -155,3 +155,12 @@ alter table public.item_reports add constraint item_reports_kind_check
 -- one report per person per subject, so a second tap is not a second row
 create unique index if not exists item_reports_once_idx
   on public.item_reports (reporter_id, kind, subject_id, coalesce(subject_ref, ''));
+
+-- ---- the community icon is uploaded, not pasted --------------------------
+-- The settings form asked for an "icon image URL", which is only usable by
+-- somebody who already has the image hosted somewhere else — and whatever
+-- they paste can rot, redirect or be swapped under us. It is a file picker
+-- now, uploading through the same signer profile photos use, and the object
+-- key is kept so replacing an icon deletes the file it replaced instead of
+-- leaving every icon the community has ever had in the bucket.
+alter table public.communities add column if not exists avatar_storage_path text;

@@ -685,7 +685,7 @@ function hideCommentThumbnail(){
 
     if(cmi.isOwner && cmi.c){
       cmiEl('cmiJoinCode').textContent  = cmi.c.join_code || '------';
-      cmiEl('cmiSetAvatar').value = cmi.c.avatar_url || '';
+      cmiPaintIconPreview();
       cmiEl('cmiSetName').value   = cmi.c.name || '';
       cmiEl('cmiSetShort').value  = cmi.c.short_description || '';
       cmiEl('cmiSetDesc').value   = cmi.c.description || '';
@@ -773,12 +773,13 @@ function hideCommentThumbnail(){
     if(name.length < 3){ showToast('Name must be at least 3 characters'); return; }
     btn.disabled = true; btn.textContent = 'SAVING…';
     try{
+      // the icon is not in here: it is committed by the picker the moment it
+      // is chosen, the way a profile photo is, rather than waiting on Save
       var upd = {
         name             : name,
         short_description: cmiEl('cmiSetShort').value.trim() || null,
         description      : cmiEl('cmiSetDesc').value.trim()  || null,
         rules            : cmiEl('cmiSetRules').value.trim() || null,
-        avatar_url       : cmiEl('cmiSetAvatar').value.trim()|| null,
         is_public        : cmiEl('cmiSetPublic').checked,
         links_allowed    : cmiEl('cmiSetLinks').checked
       };
@@ -792,6 +793,105 @@ function hideCommentThumbnail(){
       cmLoadMine();
     }catch(e){ showToast(cmErr(e)); }
     finally{ btn.disabled = false; btn.textContent = 'Save settings'; }
+  }
+
+  // ---- the icon ------------------------------------------------------------
+  // A picker, not a URL box. The old field wanted a link to an image already
+  // hosted somewhere else — which most people do not have, and which can rot,
+  // redirect or be swapped out from under the site later. This uploads through
+  // the same signer profile photos go through, so the file lives on DigiArtz.
+  var CMI_ICON_PX = 256;
+
+  function cmiPaintIconPreview(){
+    var el = cmiEl('cmiIconPrev'); if(!el) return;
+    var url = cmi.c && cmi.c.avatar_url;
+    el.textContent = '';
+    if(url){
+      var im = document.createElement('img');
+      im.src = getThumbnailUrl(url); im.alt = '';
+      im.onerror = function(){ im.remove(); el.textContent = ((cmi.c && cmi.c.name) || '?').charAt(0).toUpperCase(); };
+      el.appendChild(im);
+    } else {
+      el.textContent = ((cmi.c && cmi.c.name) || '?').charAt(0).toUpperCase();
+    }
+    var clear = cmiEl('cmiIconClear');
+    if(clear) clear.hidden = !url;
+  }
+
+  function cmiPickIcon(){
+    if(!cmi.isOwner) return;
+    var f = cmiEl('cmiIconFile');
+    if(f){ f.value = ''; f.click(); }
+  }
+
+  function cmiIconChosen(input){
+    var file = input && input.files && input.files[0];
+    if(!file || !cmi.isOwner || !cmi.cid) return;
+    if(!/^image\/(png|jpeg|webp)$/.test(file.type)){ showToast('PNG, JPEG or WebP only'); return; }
+    if(file.size > 8 * 1024 * 1024){ showToast('That image is over 8MB — pick a smaller one'); return; }
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      URL.revokeObjectURL(url);
+      // centre square crop, so a wide or tall photo is not squashed into the
+      // circle it is about to be drawn in
+      var side = Math.min(img.naturalWidth, img.naturalHeight);
+      if(side < 64){ showToast('That image is too small — 128×128 or larger'); return; }
+      var sx = (img.naturalWidth  - side) / 2;
+      var sy = (img.naturalHeight - side) / 2;
+      var cv = document.createElement('canvas');
+      cv.width = cv.height = CMI_ICON_PX;
+      cv.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, CMI_ICON_PX, CMI_ICON_PX);
+      cv.toBlob(function(blob){ if(blob) cmiUploadIcon(blob); }, 'image/jpeg', 0.9);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); showToast('Couldn’t read that image'); };
+    img.src = url;
+  }
+
+  async function cmiUploadIcon(blob){
+    var btn = cmiEl('cmiIconBtn');
+    btn.disabled = true; btn.textContent = 'UPLOADING…';
+    try{
+      // koe-media's policies read the second path segment as the owner, so the
+      // uploader's id has to sit there — not the community's
+      var path = 'communities/' + currentUser.id + '/' + cmi.cid + '-' + Date.now() + '.jpg';
+      var publicUrl = await s3Upload(BUCKET, path, blob);
+      var old = cmi.c.avatar_storage_path || null;
+      var r = await sb.from('communities')
+        .update({ avatar_url: publicUrl, avatar_storage_path: path })
+        .eq('id', cmi.cid);
+      if(r.error) throw r.error;
+      cmi.c.avatar_url = publicUrl;
+      cmi.c.avatar_storage_path = path;
+      // only once the row points at the new file
+      if(old){ try{ await s3Delete(BUCKET, old); }catch(e){} }
+      cmiPaintIconPreview();
+      cmiSetIcon(publicUrl, (cmi.c.name || '?').charAt(0).toUpperCase(), null);
+      delete CM_CHANNELS['c:' + cmi.cid];
+      cmLoadMine();
+      showToast('Icon updated');
+    }catch(e){
+      if(window.meritDenied && window.meritDenied(e, 'upload')) return;
+      showToast(cmErr(e));
+    }
+    finally{ btn.disabled = false; btn.textContent = 'Upload an image'; }
+  }
+
+  async function cmiClearIcon(){
+    if(!cmi.isOwner || !cmi.cid || !cmi.c.avatar_url) return;
+    try{
+      var old = cmi.c.avatar_storage_path || null;
+      var r = await sb.from('communities')
+        .update({ avatar_url: null, avatar_storage_path: null }).eq('id', cmi.cid);
+      if(r.error) throw r.error;
+      cmi.c.avatar_url = null; cmi.c.avatar_storage_path = null;
+      if(old){ try{ await s3Delete(BUCKET, old); }catch(e){} }
+      cmiPaintIconPreview();
+      cmiSetIcon(null, (cmi.c.name || '?').charAt(0).toUpperCase(), null);
+      delete CM_CHANNELS['c:' + cmi.cid];
+      cmLoadMine();
+      showToast('Icon removed');
+    }catch(e){ showToast(cmErr(e)); }
   }
 
   function cmiCopyCode(){
@@ -859,7 +959,7 @@ function hideCommentThumbnail(){
   // the community being looked at, over somebody below them. cm_assert_can_act
   // enforces the same rule server-side, so this is the courtesy copy.
   // ===========================================================================
-  var cmuUser = null;
+  var cmuUser = null, cmuView = 'main';
 
   function cmuAct(label, fn, danger){
     var b = document.createElement('button');
@@ -870,9 +970,10 @@ function hideCommentThumbnail(){
   }
 
   // p: {id,name,username,avatar}   mem: the community_members row, when known
-  function cmUserOpen(p, mem){
+  function cmUserOpen(p, mem, view){
     if(!p || !p.id) return;
     cmuUser = p;
+    cmuView = view || 'main';
     var ava = document.getElementById('cmuAva');
     ava.textContent = '';
     if(p.avatar){
@@ -889,6 +990,35 @@ function hideCommentThumbnail(){
     acts.innerHTML = '';
 
     var isSelf = !!(currentUser && String(currentUser.id) === String(p.id));
+    var m = mem || cmuMemberRow(p.id);
+    var canModerate = !!(cmi.cid && m && !isSelf && cmi.rank >= 2 &&
+                         (CM_RANK[m.role] || 1) < cmi.rank);
+
+    // The role and timeout pickers are their own step. Flattened into one
+    // list they were eleven boxes deep, and View profile — the thing almost
+    // every tap is after — was buried at the top of a scroll.
+    if(cmuView === 'role' || cmuView === 'timeout'){
+      cmuAct('← Back', function(){ cmUserOpen(p, m, 'main'); });
+      if(cmuView === 'role'){
+        var targetRank = CM_RANK[m.role] || 1;
+        ['member','jr_mod','sr_mod','admin'].forEach(function(role){
+          if(CM_RANK[role] >= cmi.rank) return;   // cannot grant your own rank
+          if(role === m.role) return;
+          var verb = CM_RANK[role] > targetRank ? 'Promote to ' : 'Demote to ';
+          cmuAct(verb + CM_ROLE_LABEL[role], function(){
+            cmMod('cm_set_role', { cid: cmi.cid, target: p.id, new_role: role });
+          });
+        });
+      } else {
+        CM_TIMEOUTS.forEach(function(t){
+          cmuAct(t.m ? ('Mute for ' + t.lbl) : 'Clear timeout', function(){
+            cmMod('cm_timeout', { cid: cmi.cid, target: p.id, minutes: t.m });
+          });
+        });
+      }
+      cmOpenMod('cmUserMod');
+      return;
+    }
 
     if(p.username){
       cmuAct('View profile', function(){
@@ -905,35 +1035,17 @@ function hideCommentThumbnail(){
       });
     }
 
-    // moderation, only inside a community and only over a lower rank
-    var m = mem || cmuMemberRow(p.id);
-    if(cmi.cid && m && !isSelf){
-      var targetRank = CM_RANK[m.role] || 1;
-      if(cmi.rank >= 2 && targetRank < cmi.rank){
-        if(cmi.rank >= 4){
-          ['member','jr_mod','sr_mod','admin'].forEach(function(role){
-            if(CM_RANK[role] >= cmi.rank) return;
-            if(role === m.role) return;
-            var verb = CM_RANK[role] > targetRank ? 'Promote to ' : 'Demote to ';
-            cmuAct(verb + CM_ROLE_LABEL[role], function(){
-              cmMod('cm_set_role', { cid: cmi.cid, target: p.id, new_role: role });
-            });
-          });
-        }
-        CM_TIMEOUTS.forEach(function(t){
-          cmuAct('Timeout — ' + t.lbl, function(){
-            cmMod('cm_timeout', { cid: cmi.cid, target: p.id, minutes: t.m });
-          });
-        });
-        cmuAct('Remove from community', function(){
-          if(confirm('Remove ' + (p.name || 'this member') + '? They can join again.'))
-            cmMod('cm_kick', { cid: cmi.cid, target: p.id });
+    if(canModerate){
+      if(cmi.rank >= 4) cmuAct('Change role…', function(){ cmUserOpen(p, m, 'role'); });
+      cmuAct('Timeout…', function(){ cmUserOpen(p, m, 'timeout'); });
+      cmuAct('Remove from community', function(){
+        if(confirm('Remove ' + (p.name || 'this member') + '? They can join again.'))
+          cmMod('cm_kick', { cid: cmi.cid, target: p.id });
+      }, true);
+      if(cmi.rank >= 3){
+        cmuAct(m.banned ? 'Unban' : 'Ban from community', function(){
+          cmMod('cm_set_ban', { cid: cmi.cid, target: p.id, do_ban: !m.banned });
         }, true);
-        if(cmi.rank >= 3){
-          cmuAct(m.banned ? 'Unban' : 'Ban from community', function(){
-            cmMod('cm_set_ban', { cid: cmi.cid, target: p.id, do_ban: !m.banned });
-          }, true);
-        }
       }
     }
 
@@ -970,7 +1082,7 @@ function hideCommentThumbnail(){
         name: r.data.display_name || r.data.username || 'User',
         username: r.data.username || null,
         avatar: r.data.avatar_url || (a && a.avatar) || null
-      }, null);
+      }, null, cmuView);
     }catch(e){}
   }
 

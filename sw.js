@@ -4,6 +4,23 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v162 — the icon is a file, and every action is a box.
+       The settings form asked for an "icon image URL", which only works
+       for somebody who already has the image hosted somewhere else, and
+       whatever they paste can rot, redirect or be swapped out later. It
+       is a file picker now, through the same signer profile photos use:
+       centre-cropped square, 256px, stored on DigiArtz, committed the
+       moment it is chosen. Replacing an icon deletes the file it
+       replaced — avatar_storage_path is what makes that possible.
+       View profile, Report and Ban were bare rows of text, which read as
+       a paragraph you tap somewhere in rather than as separate
+       decisions. Each one has its own edge now, in every sheet on the
+       page. Change role and Timeout became their own step behind a Back
+       — flattened they were eleven boxes, and View profile, which is
+       what almost every tap is after, sat above a scroll.
+       Checked in all three themes rather than the one it was built in.
+       Changed: index.html, css/community.css, js/mywork.js, sw.js, and a
+       column on communities.
    v161 — a community becomes a place, not just a room.
        Tapping a community's icon in the chat header opens its own page —
        a page, sliding in over the room, not a box you dismiss by tapping
@@ -2791,7 +2808,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v161';
+const CACHE_VERSION = 'v162';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2817,7 +2834,7 @@ const SHELL_URLS = [
   '/css/base.css?v=4',
   '/css/hero.css?v=91',
   '/css/viewer.css?v=10',
-  '/css/community.css?v=6',
+  '/css/community.css?v=7',
   '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=9',
@@ -2855,7 +2872,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=12',
+  '/js/mywork.js?v=13',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',

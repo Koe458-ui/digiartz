@@ -291,11 +291,30 @@
       color:var(--tx);flex:1;min-width:0;
     }
     .cmiMini{
-      padding:.35rem .7rem;border-radius:7px;cursor:pointer;
-      background:none;border:1px solid var(--bdr);color:var(--tx);
+      padding:.45rem .8rem;border-radius:8px;cursor:pointer;
+      background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);
       font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;
     }
     .cmiMini:hover{border-color:var(--pg);}
+    .cmiMini:disabled{opacity:.55;cursor:default;}
+    .cmiMini--danger{color:var(--danger);border-color:var(--danger-bd);background:var(--danger-bg);}
+    .cmiMini--danger[hidden]{display:none;}
+
+    /* the icon picker */
+    .cmiIconPick{display:flex;align-items:flex-start;gap:.9rem;margin-bottom:.3rem;}
+    .cmiIconPrev{
+      width:62px;height:62px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 55%,#60a5fa 100%);
+      color:#fff;font-family:var(--fd);font-weight:800;font-size:1.5rem;
+      border:1px solid var(--bdrh);
+    }
+    .cmiIconPrev img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cmiIconPickMeta{display:flex;flex-wrap:wrap;gap:.45rem;min-width:0;flex:1;}
+    .cmiIconPickMeta p{
+      flex:1 1 100%;margin-top:.15rem;
+      font-family:var(--fb);font-size:.75rem;line-height:1.5;color:var(--txd);
+    }
 
     /* actions */
     .cmiActs{display:flex;flex-direction:column;gap:.5rem;}
@@ -403,14 +422,21 @@
     .cmMemRole--sr_mod{color:var(--role-srmod);border-color:var(--role-srmod-bd);}
     .cmMemRole--jr_mod{color:var(--role-jrmod);border-color:var(--role-jrmod-bd);}
     .cmMemRole--banned{color:var(--danger-strong);border-color:var(--danger-bd);}
-    .cmActList{display:flex;flex-direction:column;gap:.1rem;}
+    /* Every action is a box. They used to be bare rows of text, which read as
+       a paragraph you could tap somewhere in rather than as a list of separate
+       things — View profile, Report and Ban are three decisions and each one
+       gets its own edge. */
+    .cmActList{display:flex;flex-direction:column;gap:.45rem;}
     .cmActItem{
-      text-align:left;padding:.8rem .7rem;border-radius:8px;border:none;background:none;
-      color:var(--tx);font-family:var(--fb);font-size:.9rem;cursor:pointer;transition:background .15s;
+      text-align:left;padding:.8rem .95rem;border-radius:10px;
+      border:1px solid var(--bdr);background:var(--sur2);
+      color:var(--tx);font-family:var(--fb);font-size:.9rem;cursor:pointer;
+      transition:background .15s,border-color .15s;
     }
-    .cmActItem:hover{background:var(--pdim);}
-    .cmActItem--danger{color:var(--danger);}
-    .cmActItem--danger:hover{background:var(--danger-bg-hover);}
+    .cmActItem:hover{background:var(--sur);border-color:var(--bdrh);}
+    .cmActItem:active{transform:scale(.995);}
+    .cmActItem--danger{color:var(--danger);border-color:var(--danger-bd);background:var(--danger-bg);}
+    .cmActItem--danger:hover{background:var(--danger-bg-hover);border-color:var(--danger-bd);}
     /* the report reason that has been picked */
     .cmActItem--on{
       background:rgba(47,163,124,.14);

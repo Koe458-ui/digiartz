@@ -842,7 +842,14 @@ function hideCommentThumbnail(){
       var cv = document.createElement('canvas');
       cv.width = cv.height = CMI_ICON_PX;
       cv.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, CMI_ICON_PX, CMI_ICON_PX);
-      cv.toBlob(function(blob){ if(blob) cmiUploadIcon(blob); }, 'image/jpeg', 0.9);
+      // WebP, like every other image this site stores. toBlob ignores a type
+      // it cannot encode and hands back a PNG instead, so what actually came
+      // out decides the extension rather than what was asked for — a .webp
+      // holding PNG bytes would be served with the wrong content type.
+      cv.toBlob(function(blob){
+        if(blob) { cmiUploadIcon(blob); return; }
+        cv.toBlob(function(fallback){ if(fallback) cmiUploadIcon(fallback); }, 'image/jpeg', 0.9);
+      }, 'image/webp', 0.9);
     };
     img.onerror = function(){ URL.revokeObjectURL(url); showToast('Couldn’t read that image'); };
     img.src = url;
@@ -853,8 +860,10 @@ function hideCommentThumbnail(){
     btn.disabled = true; btn.textContent = 'UPLOADING…';
     try{
       // koe-media's policies read the second path segment as the owner, so the
-      // uploader's id has to sit there — not the community's
-      var path = 'communities/' + currentUser.id + '/' + cmi.cid + '-' + Date.now() + '.jpg';
+      // uploader's id has to sit there — not the community's. The extension
+      // comes off the blob, so it always matches the bytes inside it.
+      var ext = ({ 'image/webp':'webp', 'image/png':'png' })[blob.type] || 'jpg';
+      var path = 'communities/' + currentUser.id + '/' + cmi.cid + '-' + Date.now() + '.' + ext;
       var publicUrl = await s3Upload(BUCKET, path, blob);
       var old = cmi.c.avatar_storage_path || null;
       var r = await sb.from('communities')

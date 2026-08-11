@@ -4,6 +4,16 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v163 — the community icon is stored as webp.
+       It was encoded to jpeg. Every other image this site stores is
+       webp, and there was no reason a 256px icon should be the one that
+       is not. toBlob quietly hands back a PNG when it cannot encode the
+       type it was asked for, so the extension is taken from the blob
+       that came out rather than the one that went in — a .webp holding
+       PNG bytes would be served with the wrong content type.
+       The picker's hint line lost a sentence it had no business making
+       a promise about.
+       Changed: index.html, js/mywork.js, sw.js.
    v162 — the icon is a file, and every action is a box.
        The settings form asked for an "icon image URL", which only works
        for somebody who already has the image hosted somewhere else, and
@@ -2808,7 +2818,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v162';
+const CACHE_VERSION = 'v163';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2872,7 +2882,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=13',
+  '/js/mywork.js?v=14',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',

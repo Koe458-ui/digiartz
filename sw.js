@@ -4,6 +4,38 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v161 — a community becomes a place, not just a room.
+       Tapping a community's icon in the chat header opens its own page —
+       a page, sliding in over the room, not a box you dismiss by tapping
+       beside it. Icon, name, the short line, the description, the rules,
+       how many people are in it, and who they are.
+       What that page offers is decided once, by rank, and everything
+       somebody may not do is absent rather than greyed out. A member
+       sees the community, All members, Leave and Report. Whoever runs it
+       also sees the Ban list beside All members, the settings — icon,
+       name, short description, description, rules, public/private, links
+       — and Delete, behind a confirm and then the name typed back.
+       Tapping a name in the chat and tapping a row in the member list
+       now open the same sheet: avatar, name, @handle, View profile,
+       Report, and — only for somebody who holds rank over them —
+       promote, timeout, remove and ban. There were two of these before,
+       one per place, and only one of them could moderate.
+       A message gets a ⋯: copy it, look at who wrote it, report it, and
+       delete it if it is yours or you moderate there. comments had no
+       delete policy at all, so until now nothing was deletable by
+       anyone, author included.
+       In 20260812_community_page.sql: short_description and is_public on
+       communities, cm_leave (an owner cannot — delete it instead),
+       cm_delete (which takes the room's messages with it, since they are
+       keyed by a text channel and no foreign key would ever collect
+       them), cm_join_public, a delete policy on comments, and
+       item_reports widened to carry a community, a member and a message.
+       is_public defaults to false, so no existing community changes
+       hands the day this lands.
+       Retired with it: the manage modal, the member modal and the mini
+       profile card, all three replaced by the page and the one sheet.
+       Changed: index.html, css/community.css, css/viewer.css,
+       js/mywork.js, js/app-core.js, sw.js, and a migration.
    v160 — the community header does the two things the page is for.
        COMMUNITY sat centred in its own bar with nothing beside it, and
        everything the page can do was somewhere down the scroll: the
@@ -2759,7 +2791,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v160';
+const CACHE_VERSION = 'v161';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2784,8 +2816,8 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=4',
   '/css/hero.css?v=91',
-  '/css/viewer.css?v=9',
-  '/css/community.css?v=5',
+  '/css/viewer.css?v=10',
+  '/css/community.css?v=6',
   '/css/connect.css?v=2',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=9',
@@ -2813,7 +2845,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=19',
+  '/js/app-core.js?v=20',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=81',
   '/js/auth.js?v=10',
@@ -2823,7 +2855,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=11',
+  '/js/mywork.js?v=12',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',

@@ -98,8 +98,8 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=4">
   <link rel="stylesheet" href="/css/hero.css?v=91">
-  <link rel="stylesheet" href="/css/viewer.css?v=9">
-  <link rel="stylesheet" href="/css/community.css?v=5">
+  <link rel="stylesheet" href="/css/viewer.css?v=10">
+  <link rel="stylesheet" href="/css/community.css?v=6">
   <link rel="stylesheet" href="/css/connect.css?v=2">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
   <link rel="stylesheet" href="/css/profile.css?v=9">
@@ -2169,20 +2169,6 @@
     </div>
   </div>
 
-  <div id="cpuMod" role="dialog" aria-modal="true" aria-label="User" onclick="if(event.target===this)cpuClose()">
-    <div class="cpuCard">
-      <div class="cpuRow">
-        <div class="cpuIco" id="cpuIco">?</div>
-        <div class="cpuName" id="cpuName">—</div>
-      </div>
-      <div class="cpuRow">
-        <div class="cpuIco cpuIco--sm">@</div>
-        <div class="cpuHandle" id="cpuHandle">—</div>
-      </div>
-      <button class="cpuBtn" id="cpuView" onclick="cpuViewProfile()">VIEW PROFILE</button>
-    </div>
-  </div>
-
 
   <div class="cmMod" id="cmCreateMod" onclick="if(event.target===this)cmCloseMod('cmCreateMod')">
     <div class="cmModCard">
@@ -2210,49 +2196,6 @@
       <div class="cmModActs">
         <button class="cmModBtn" onclick="cmCloseMod('cmJoinMod')">Cancel</button>
         <button class="cmModBtn cmModBtn--go" id="cmJoinGo" onclick="cmDoJoin()">Join</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="cmMod" id="cmManageMod" onclick="if(event.target===this)cmCloseMod('cmManageMod')">
-    <div class="cmModCard">
-      <div class="cmModTitle" id="cmManageTitle">Manage Community</div>
-      <div class="cmModSub">Join ID — share this so others can join.</div>
-      <div class="cmCode" id="cmManageCode">------</div>
-
-      <div id="cmOwnerFields">
-        <div class="cmLbl">NAME</div>
-        <input class="cmInput" id="cmMgName" maxlength="40">
-        <div class="cmLbl">DESCRIPTION</div>
-        <textarea class="cmArea" id="cmMgDesc" maxlength="500"></textarea>
-        <div class="cmLbl">PROFILE IMAGE URL</div>
-        <input class="cmInput" id="cmMgAvatar" placeholder="https://…">
-        <div class="cmLbl">BANNER IMAGE URL</div>
-        <input class="cmInput" id="cmMgBanner" placeholder="https://…">
-        <div class="cmLbl">SERVER RULES</div>
-        <textarea class="cmArea" id="cmMgRules" maxlength="2000" placeholder="1. Be respectful…"></textarea>
-        <label class="cmToggleRow"><input type="checkbox" id="cmMgLinks"><span>Allow links in this community</span></label>
-        <div class="cmModActs">
-          <button class="cmModBtn cmModBtn--go" id="cmMgSave" onclick="cmSaveSettings()">Save Settings</button>
-        </div>
-      </div>
-
-      <div class="cmLbl" style="margin-top:1.2rem;">MEMBERS · <span id="cmMemCount">0</span></div>
-      <div id="cmMemList"></div>
-
-      <div class="cmModActs">
-        <button class="cmModBtn" onclick="cmCloseMod('cmManageMod')">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="cmMod" id="cmMemMod" onclick="if(event.target===this)cmCloseMod('cmMemMod')">
-    <div class="cmModCard" style="max-width:340px;">
-      <div class="cmModTitle" id="cmMemModName">Member</div>
-      <div class="cmModSub" id="cmMemModRole">member</div>
-      <div class="cmActList" id="cmMemActs"></div>
-      <div class="cmModActs">
-        <button class="cmModBtn" onclick="cmCloseMod('cmMemMod')">Cancel</button>
       </div>
     </div>
   </div>
@@ -2694,7 +2637,7 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=19"></script>
+  <script src="/js/app-core.js?v=20"></script>
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=81"></script>
   <script src="/js/auth.js?v=10"></script>
@@ -2704,7 +2647,7 @@
   <script src="/js/upqueue.js?v=4"></script>
   <script src="/js/avatar.js?v=2"></script>
   <script src="/js/pfedit.js?v=8"></script>
-  <script src="/js/mywork.js?v=11"></script>
+  <script src="/js/mywork.js?v=12"></script>
   <script src="/js/startup.js?v=3"></script>
   <script src="/js/tagrail.js?v=3"></script>
   <script src="/js/search.js?v=7"></script>
@@ -3051,6 +2994,133 @@ window.ZEO_DATA = window.ZEO_DATA || {
       <div class="ico">✦</div>
       <div>NO FRIENDS YET</div>
       <div style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">Search for artists above and send a friend request — once they accept, you can chat.</div>
+    </div>
+  </div>
+</div>
+
+<!-- The community's own page, opened by tapping its icon in the chat header.
+     A page and not a modal: it is where a community is read, its members are
+     listed and — for whoever can — where it is run, and none of that belongs
+     in a box you dismiss by tapping beside it. Everything under
+     data-cmi="staff" or data-cmi="owner" is hidden outright for anyone else,
+     by cmiPaintRole, rather than merely disabled. -->
+<div id="cmInfoPage" role="dialog" aria-modal="true" aria-label="Community">
+  <div class="subPgHdr">
+    <button class="subPgX" onclick="cmiClose()" aria-label="Back to the community">←</button>
+    <div class="subPgTitle">COMMUNITY</div>
+  </div>
+  <div class="cmiBdy">
+
+    <div class="cmiHero">
+      <div class="cmiIcon" id="cmiIcon">?</div>
+      <div class="cmiName" id="cmiName">—</div>
+      <div class="cmiShort" id="cmiShort"></div>
+      <div class="cmiChips">
+        <span class="cmiChip" id="cmiVis">PRIVATE</span>
+        <span class="cmiChip cmiChip--role" id="cmiRole">MEMBER</span>
+        <span class="cmiChip"><b id="cmiCount">0</b>&nbsp;MEMBERS</span>
+      </div>
+    </div>
+
+    <section class="cmiSec" id="cmiAboutSec">
+      <h4 class="cmiSecHd">ABOUT</h4>
+      <p class="cmiText" id="cmiDesc"></p>
+    </section>
+
+    <section class="cmiSec" id="cmiRulesSec">
+      <h4 class="cmiSecHd">RULES</h4>
+      <p class="cmiText" id="cmiRules"></p>
+    </section>
+
+    <section class="cmiSec" id="cmiMemSec">
+      <h4 class="cmiSecHd">MEMBERS</h4>
+      <div class="cmiSeg" id="cmiSeg">
+        <button class="cmiSegBtn active" id="cmiSegAll" type="button" onclick="cmiMemTab('all')">All members</button>
+        <button class="cmiSegBtn" id="cmiSegBan" type="button" onclick="cmiMemTab('ban')" data-cmi="staff">Ban list</button>
+      </div>
+      <div id="cmiMemList"></div>
+    </section>
+
+    <section class="cmiSec" id="cmiSetSec" data-cmi="owner">
+      <h4 class="cmiSecHd">COMMUNITY SETTINGS</h4>
+      <div class="cmiJoinId">
+        <span>JOIN ID</span>
+        <code id="cmiJoinCode">------</code>
+        <button class="cmiMini" type="button" onclick="cmiCopyCode()">Copy</button>
+      </div>
+      <div class="cmLbl">ICON IMAGE URL</div>
+      <input class="cmInput" id="cmiSetAvatar" placeholder="https://…" autocomplete="off">
+      <div class="cmLbl">NAME</div>
+      <input class="cmInput" id="cmiSetName" maxlength="40" autocomplete="off">
+      <div class="cmLbl">SHORT DESCRIPTION</div>
+      <input class="cmInput" id="cmiSetShort" maxlength="120" placeholder="One line, shown on the card" autocomplete="off">
+      <div class="cmLbl">DESCRIPTION</div>
+      <textarea class="cmArea" id="cmiSetDesc" maxlength="500" placeholder="What is this community about?"></textarea>
+      <div class="cmLbl">RULES</div>
+      <textarea class="cmArea" id="cmiSetRules" maxlength="2000" placeholder="1. Be respectful…"></textarea>
+      <label class="cmToggleRow"><input type="checkbox" id="cmiSetPublic"><span>Public — anyone can read and join without the join ID</span></label>
+      <label class="cmToggleRow"><input type="checkbox" id="cmiSetLinks"><span>Allow links in this community</span></label>
+      <div class="cmModActs">
+        <button class="cmModBtn cmModBtn--go" id="cmiSaveBtn" type="button" onclick="cmiSave()">Save settings</button>
+      </div>
+    </section>
+
+    <section class="cmiSec" id="cmiActSec">
+      <h4 class="cmiSecHd">ACTIONS</h4>
+      <div class="cmiActs">
+        <button class="cmiAct" id="cmiJoinBtn" type="button" onclick="cmiJoin()" hidden>Join community</button>
+        <button class="cmiAct" id="cmiReportBtn" type="button" onclick="cmiReport()" hidden>Report community</button>
+        <button class="cmiAct cmiAct--danger" id="cmiLeaveBtn" type="button" onclick="cmiLeave()" hidden>Leave community</button>
+        <button class="cmiAct cmiAct--danger" id="cmiDeleteBtn" type="button" onclick="cmiDelete()" data-cmi="owner">Delete community</button>
+      </div>
+      <div class="cmiNote" id="cmiActNote"></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- One sheet for a person, wherever they were tapped: a name in the chat or a
+     row in the member list. What it offers depends on who is looking. -->
+<div class="cmMod" id="cmUserMod" onclick="if(event.target===this)cmCloseMod('cmUserMod')">
+  <div class="cmModCard" style="max-width:340px;">
+    <div class="cmuHead">
+      <div class="cmuAva" id="cmuAva">?</div>
+      <div class="cmuMeta">
+        <div class="cmuName" id="cmuName">User</div>
+        <div class="cmuHandle" id="cmuHandle">…</div>
+      </div>
+    </div>
+    <div class="cmActList" id="cmuActs"></div>
+    <div class="cmModActs">
+      <button class="cmModBtn" onclick="cmCloseMod('cmUserMod')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- A single message: its author can delete it, a moderator can delete it,
+     anyone else can report it. Nothing else — no likes, no shares, no saves. -->
+<div class="cmMod" id="cmTxtMod" onclick="if(event.target===this)cmCloseMod('cmTxtMod')">
+  <div class="cmModCard" style="max-width:340px;">
+    <div class="cmModTitle">Message</div>
+    <div class="cmModSub cmTxtQuote" id="cmTxtQuote"></div>
+    <div class="cmActList" id="cmTxtActs"></div>
+    <div class="cmModActs">
+      <button class="cmModBtn" onclick="cmCloseMod('cmTxtMod')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reason picker shared by the three community report kinds. -->
+<div class="cmMod" id="cmRptMod" onclick="if(event.target===this)cmCloseMod('cmRptMod')">
+  <div class="cmModCard" style="max-width:380px;">
+    <div class="cmModTitle" id="cmRptTitle">Report</div>
+    <div class="cmModSub" id="cmRptSub">Tell us what is wrong. Reports go to the DigiArtz team.</div>
+    <div class="cmActList" id="cmRptReasons"></div>
+    <div class="cmLbl">ANYTHING ELSE (OPTIONAL)</div>
+    <textarea class="cmArea" id="cmRptDetails" maxlength="300" placeholder="Optional detail"></textarea>
+    <div class="cmModActs">
+      <button class="cmModBtn" onclick="cmCloseMod('cmRptMod')">Cancel</button>
+      <button class="cmModBtn cmModBtn--danger" id="cmRptGo" onclick="cmRptSubmit()">Send report</button>
     </div>
   </div>
 </div>

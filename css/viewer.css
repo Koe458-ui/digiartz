@@ -580,53 +580,6 @@
     }
     .cpCommentMeta{display:flex;flex-direction:column;gap:.3rem;flex:1;min-width:0;}
 
-    /* mini profile card */
-    #cpuMod{
-      position:fixed;inset:0;z-index:4200;display:none;
-      align-items:center;justify-content:center;padding:1rem;
-      background:rgba(0,0,0,.6);backdrop-filter:blur(3px);
-    }
-    #cpuMod.open{display:flex;}
-    .cpuCard{
-      width:100%;max-width:280px;
-      background:var(--sur);border:1px solid var(--bdr);border-radius:18px;
-      padding:1.1rem;
-      box-shadow:0 18px 50px rgba(0,0,0,.45);
-      animation:cpuPop .2s cubic-bezier(.22,1,.36,1) backwards;
-    }
-    @keyframes cpuPop{
-      from{opacity:0;transform:scale(.94) translateY(8px);}
-      to{opacity:1;transform:none;}
-    }
-    .cpuRow{display:flex;align-items:center;gap:.7rem;margin-bottom:.65rem;}
-    .cpuIco{
-      width:38px;height:38px;border-radius:50%;flex-shrink:0;overflow:hidden;
-      background:linear-gradient(135deg,var(--pg),var(--pgd));
-      color:var(--text-on-accent);
-      display:flex;align-items:center;justify-content:center;
-      font-family:var(--fd);font-weight:700;font-size:.95rem;
-    }
-    .cpuIco img{width:100%;height:100%;object-fit:cover;display:block;}
-    .cpuIco--sm{
-      background:none;border:1px solid var(--bdr);color:var(--txd);
-      font-size:.8rem;font-family:var(--fm);
-    }
-    .cpuName{
-      font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    }
-    .cpuHandle{
-      font-family:var(--fm);font-size:.75rem;letter-spacing:.06em;color:var(--txd);
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    }
-    .cpuBtn{
-      width:100%;margin-top:.35rem;
-      font-family:var(--fm);font-size:.7rem;letter-spacing:.12em;
-      padding:.65rem 1rem;border-radius:10px;cursor:pointer;
-      border:1px solid var(--pg);background:var(--pdim);color:var(--pg);
-      transition:background .2s;
-    }
-    .cpuBtn:hover{background:color-mix(in srgb,var(--pg) 22%,transparent);}
     /* tappable identity */
     .cpMsgRow--them .cpMsgAvatar,
     .cpMsgRow--them .cpBubbleName,

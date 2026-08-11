@@ -4,6 +4,40 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v164 — every message goes through one sliding-window gate.
+       comments and direct_messages were behind a fixed-window counter:
+       20 comments per 5 minutes, which is four a minute — two people
+       talking quickly hit it while behaving perfectly normally, and got
+       a refusal with no idea when it lifted. A fixed window is also the
+       wrong shape: it resets on a clock boundary, so a script sending
+       its whole allowance at :59 and again at :01 gets double through in
+       two seconds, while somebody who sent nothing for four minutes
+       still cannot send at 4:59.
+       Five sliding bands now, over an append-only log — 5 in 10s, 30 a
+       minute, 150 in ten minutes, 500 an hour, 3000 a day — plus 1000
+       characters, a second between messages, and thirty seconds before
+       the same text goes twice. The log is its own table rather than a
+       count of the message tables, because a member can delete their own
+       messages and counting deletable rows means a spammer resets their
+       own limit by tidying up.
+       Hitting one is a cooldown, not a ban, and it says how long. They
+       escalate only on repeats — 10s, 30s, 2m, 10m, an hour — and the
+       record clears after an hour of behaving, so an ordinary member who
+       trips the burst limit once never sees the second step. Past the
+       fifth strike it becomes an hour muted in the room, through the
+       timeout_until moderators already use.
+       The gate drops the row rather than raising: raising aborted the
+       statement and took the cooldown it had just written with it, so
+       every strike was the first strike forever. What a caller sees is
+       an insert that returns no row; dz_chat_status says why and for how
+       long, and says it whether the caller is the site or somebody
+       posting to PostgREST by hand.
+       The composers check the same five bands before the round trip and
+       count the cooldown down on the send button. Name, short
+       description, description and rules are CHECK constraints now, not
+       just maxlength on an input.
+       Changed: index.html, js/community.js, js/dm.js, js/mywork.js,
+       sw.js, and a migration.
    v163 — the community icon is stored as webp.
        It was encoded to jpeg. Every other image this site stores is
        webp, and there was no reason a 256px icon should be the one that
@@ -2818,7 +2852,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v163';
+const CACHE_VERSION = 'v164';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2867,8 +2901,8 @@ const SHELL_URLS = [
 
   // scripts
   '/js/ranking.js?v=2',
-  '/js/community.js?v=3',
-  '/js/dm.js?v=6',
+  '/js/community.js?v=4',
+  '/js/dm.js?v=7',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
@@ -2882,7 +2916,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
   '/js/pfedit.js?v=8',
-  '/js/mywork.js?v=14',
+  '/js/mywork.js?v=15',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=7',

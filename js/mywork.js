@@ -346,6 +346,10 @@ function hideCommentThumbnail(){
     if(/CM_LEVEL/.test(m))         return 'You need artist Level 100 to create a community.';
     if(/CM_ALREADY_OWNER/.test(m)) return 'You already own a community — one per artist.';
     if(/CM_OWNER_LEAVE/.test(m))   return 'You own this community — delete it instead of leaving.';
+    // the CHECK that backs the four length limits, when a paste gets past the
+    // form and the database is the one that has to say no
+    if(/communities_text_len_chk/.test(m))
+      return 'One of those is too long — name 40, short description 120, description 500, rules 2000.';
     if(/CM_MAX_JOINED/.test(m))    return 'You’re in ' + CM_MAX_JOINED + ' communities — the most allowed. Leave one to join another.';
     // the shared write rate limiter words its own message for the member
     if(/Too many .* in a short time/i.test(m)) return m;
@@ -766,11 +770,30 @@ function hideCommentThumbnail(){
     });
   }
 
+  // The four lengths, in one place, matching the CHECK constraint on
+  // communities exactly. maxlength on the input stops typing past them; this
+  // is what catches a paste, and says which field is the problem.
+  var CM_TEXT_LIMITS = [
+    { id:'cmiSetName',  label:'Name',              min:3, max:40   },
+    { id:'cmiSetShort', label:'Short description', min:0, max:120  },
+    { id:'cmiSetDesc',  label:'Description',       min:0, max:500  },
+    { id:'cmiSetRules', label:'Rules',             min:0, max:2000 }
+  ];
+  function cmiTextProblem(){
+    for(var i = 0; i < CM_TEXT_LIMITS.length; i++){
+      var f = CM_TEXT_LIMITS[i], v = (cmiEl(f.id).value || '').trim();
+      if(v.length < f.min) return f.label + ' must be at least ' + f.min + ' characters';
+      if(v.length > f.max) return f.label + ' is over ' + f.max + ' characters';
+    }
+    return null;
+  }
+
   async function cmiSave(){
     if(!cmi.isOwner || !cmi.cid) return;
     var btn = cmiEl('cmiSaveBtn');
     var name = cmiEl('cmiSetName').value.trim();
-    if(name.length < 3){ showToast('Name must be at least 3 characters'); return; }
+    var problem = cmiTextProblem();
+    if(problem){ showToast(problem); return; }
     btn.disabled = true; btn.textContent = 'SAVING…';
     try{
       // the icon is not in here: it is committed by the picker the moment it
@@ -1502,6 +1525,11 @@ function hideCommentThumbnail(){
       }
     }
 
+    // the same limits the database holds, checked here so the member is told
+    // to wait rather than watching a send do nothing
+    var wait = window.dzChat.check(text);
+    if(wait){ showToast(wait); return; }
+
     const ok=await cpSaveComment(text);
     if(!ok) return;
 
@@ -1681,6 +1709,8 @@ function hideCommentThumbnail(){
     try{
       // username only, never email
       var commentUsername = (currentUser.user_metadata && currentUser.user_metadata.username) || 'User';
+      // .select() is what makes the rate gate visible: it drops the row
+      // rather than raising, so a refusal arrives as no error and no row
       var result = await sb.from('comments').insert({
         user_id      : currentUser.id,
         // email not stored
@@ -1688,8 +1718,13 @@ function hideCommentThumbnail(){
         comment_text : text,
         image_url    : imageUrl,
         channel      : cpCurrentChannel
-      });
+      }).select('id');
       if(result.error) throw result.error;
+      if(!result.data || !result.data.length){
+        showToast(await window.dzChat.fromServer(sb));
+        return false;
+      }
+      window.dzChat.note(text);
       // clear thumbnail
       if(thumbEl)  thumbEl.style.display = 'none';
       if(thumbImg) thumbImg.src = '';

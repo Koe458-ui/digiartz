@@ -507,11 +507,26 @@
     if (LINK_RE.test(text)) { toast('Links aren\'t allowed in messages'); return; }
     // friends only
     if (frState(dmPartner.id) !== 'friends') { dmApplyGate(); toast('You can only message friends'); return; }
+    // the same limits the database holds, answered here first so a member is
+    // told to wait rather than watching a send do nothing
+    if (window.dzChat) {
+      var wait = window.dzChat.check(text);
+      if (wait) { toast(wait); return; }
+    }
     dmSending = true; if (btn) btn.disabled = true;
     try {
+      // .select() is what makes the rate gate visible: it drops the row rather
+      // than raising, so a refusal arrives as no error and no row
       var r = await db().from('direct_messages')
-        .insert({ sender_id: me().id, recipient_id: dmPartner.id, content: text });
+        .insert({ sender_id: me().id, recipient_id: dmPartner.id, content: text })
+        .select('id');
       if (r.error) throw r.error;
+      if (!r.data || !r.data.length) {
+        toast(window.dzChat ? await window.dzChat.fromServer(db())
+                            : 'That didn\u2019t send \u2014 try again');
+        return;
+      }
+      if (window.dzChat) window.dzChat.note(text);
       inp.value = '';
       await loadThread(true);
     } catch (e) {

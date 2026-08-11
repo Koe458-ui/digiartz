@@ -239,7 +239,119 @@
         if (note && c && f) note.textContent = 'Join up to ' + c + ' communities and ' + f + ' friends.';
       }
 
+      // ---- the chat gate, this side of it -----------------------------------
+      // The database is what enforces the limits; this exists so a member is
+      // told to wait before the round trip rather than watching a send quietly
+      // do nothing. The bands are the same five, mirrored — when the two
+      // disagree the server wins, and syncing from its answer is how they stop
+      // disagreeing.
+      var CHAT_BANDS = [
+        { ms: 10000,    max: 5,    label: '5 messages in ten seconds' },
+        { ms: 60000,    max: 30,   label: '30 messages in a minute' },
+        { ms: 600000,   max: 150,  label: '150 messages in ten minutes' },
+        { ms: 3600000,  max: 500,  label: '500 messages in an hour' },
+        { ms: 86400000, max: 3000, label: '3000 messages in a day' }
+      ];
+      var CHAT_MAX_CHARS = 1000;
+      var CHAT_MIN_GAP_MS = 1000;
+      var CHAT_DUPE_MS = 30000;
+
+      var sent = [];          // timestamps, newest last
+      var lastText = '';      // normalised, for the identical check
+      var lastTextAt = 0;
+      var coolUntil = 0;
+      var coolReason = '';
+      var coolTimer = null;
+      var coolTargets = [];   // [{btn, input, label}]
+
+      function norm (s) { return String(s || '').trim().toLowerCase(); }
+      function secsLeft () { return Math.max(0, Math.ceil((coolUntil - Date.now()) / 1000)); }
+
+      function paintCooldown () {
+        var left = secsLeft();
+        coolTargets.forEach(function (t) {
+          var btn = $(t.btn); if (!btn) return;
+          btn.disabled = left > 0;
+          btn.title = left > 0 ? (coolReason + ' — ' + left + 's') : (t.label || 'Send');
+        });
+        if (left > 0) return;
+        clearInterval(coolTimer); coolTimer = null; coolReason = '';
+      }
+
+      function startCooldown (seconds, reason) {
+        coolUntil = Date.now() + (Number(seconds) || 0) * 1000;
+        coolReason = reason || 'Slow down';
+        clearInterval(coolTimer);
+        coolTimer = setInterval(paintCooldown, 500);
+        paintCooldown();
+      }
+
+      window.dzChat = {
+        MAX_CHARS: CHAT_MAX_CHARS,
+
+        // register a composer so its send button carries the countdown
+        watch: function (btnId, label) {
+          if (!coolTargets.some(function (t) { return t.btn === btnId; })) {
+            coolTargets.push({ btn: btnId, label: label });
+          }
+        },
+
+        // may this text go? Returns null when it may, a message when it may not.
+        check: function (text) {
+          var now = Date.now();
+          var left = secsLeft();
+          if (left > 0) return coolReason + ' — try again in ' + left + 's';
+
+          var t = String(text || '');
+          if (t.length > CHAT_MAX_CHARS) {
+            return 'That is over ' + CHAT_MAX_CHARS + ' characters — shorten it';
+          }
+          if (norm(t) && norm(t) === lastText && now - lastTextAt < CHAT_DUPE_MS) {
+            return 'You just sent that — wait ' +
+                   Math.ceil((CHAT_DUPE_MS - (now - lastTextAt)) / 1000) + 's';
+          }
+          if (sent.length && now - sent[sent.length - 1] < CHAT_MIN_GAP_MS) {
+            return 'One message a second';
+          }
+          for (var i = CHAT_BANDS.length - 1; i >= 0; i--) {
+            var b = CHAT_BANDS[i];
+            var n = 0;
+            for (var j = sent.length - 1; j >= 0 && now - sent[j] < b.ms; j--) n++;
+            if (n >= b.max) return 'That is ' + b.label + ' — take a moment';
+          }
+          return null;
+        },
+
+        // a message actually landed
+        note: function (text) {
+          var now = Date.now();
+          sent.push(now);
+          // nothing older than the widest band can matter again
+          var cut = now - CHAT_BANDS[CHAT_BANDS.length - 1].ms;
+          while (sent.length && sent[0] < cut) sent.shift();
+          lastText = norm(text); lastTextAt = now;
+        },
+
+        // The server dropped the row. It knows why and for how long, and this
+        // is the only place that answer comes from.
+        async fromServer (sb) {
+          try {
+            var r = await sb.rpc('dz_chat_status');
+            var row = r && r.data && r.data[0];
+            if (!row) return 'That didn’t send — try again';
+            var s = Number(row.cooldown_seconds) || 0;
+            var why = row.reason || 'Slow down';
+            if (s > 0) startCooldown(s, why);
+            return why + (s > 0 ? ' — try again in ' + s + 's' : '');
+          } catch (e) {
+            return 'That didn’t send — try again';
+          }
+        }
+      };
+
       document.addEventListener('DOMContentLoaded', function () {
+        window.dzChat.watch('cpBarSend', 'Send');
+        window.dzChat.watch('dmSendBtn', 'Send');
         var inp = $('cmSearchInput');
         if (inp) {
           inp.addEventListener('input', onSearchInput);

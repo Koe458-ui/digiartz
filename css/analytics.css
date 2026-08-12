@@ -360,14 +360,23 @@
 }
 
 /* ---- view all ----------------------------------------------------------- */
+/* A button, centred under the ten rows it continues — not a full-width dashed
+   strip, which reads as a drop zone rather than something to press. */
 .anMore{
-  width:100%;background:transparent;border:1px dashed var(--bdr);color:var(--txd);
-  border-radius:11px;padding:.7rem .8rem;cursor:pointer;min-height:44px;
-  font-family:var(--fm);font-size:var(--an-fs-chip);letter-spacing:.08em;
-  text-transform:uppercase;transition:color .2s,border-color .2s,background .2s;
+  display:block;width:fit-content;max-width:100%;margin:.5rem auto 0;
+  background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);
+  border-radius:999px;padding:.6rem 1.4rem;cursor:pointer;min-height:44px;
+  font-family:var(--fm);font-size:var(--an-fs-chip);letter-spacing:.1em;
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:color .2s,border-color .2s,background .2s;
 }
-.anMore:hover{color:var(--tx);border-color:var(--bdrh);background:var(--sur2);}
+.anMore:hover{border-color:var(--bdrh);background:var(--sur);}
 .anMore:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+
+/* the strip at the bottom of a lazy list: it is what the observer watches,
+   and it is the "loading" line while the next twenty are being added */
+.anSentinel{padding:.4rem 0 .2rem;}
+.anSentinel .anEmpty{padding:.9rem .6rem;}
 
 /* ---- the full list, on a page of its own -------------------------------- */
 #anListPage{

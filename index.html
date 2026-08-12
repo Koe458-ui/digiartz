@@ -27,6 +27,19 @@
     html[data-theme="dark"]{--vbg:#060609;}
     html[data-theme="graydark"]{--vbg:#0E0E12;}
     html[data-theme="light"]{--vbg:#EFEEF4;}
+
+    /* An overlay must be an overlay before its stylesheet arrives.
+       #anPage is a full dashboard sitting in this document at all times, held
+       off screen by one transform in css/analytics.css. If that file is late,
+       missing, or a stale copy the service worker is still serving against a
+       newer script, the rule is not there — and a fixed overlay becomes an
+       ordinary block, so the whole of Analytics prints down the bottom of the
+       home page. That happened. These four properties are the difference
+       between an overlay and a paragraph, so they live here where no
+       stylesheet has to load for them to hold; everything else about the page
+       stays in analytics.css. */
+    #anPage{position:fixed;inset:0;z-index:545;overflow-y:auto;transform:translateX(100%);}
+    #anPage.open{transform:translateX(0);}
   </style>
   <!-- Cloudflare Web Analytics -->
   <script data-cf-beacon='{"token": "aa4b7177387e4f689739a5fdf44cbffa"}' defer="" src="https://static.cloudflareinsights.com/beacon.min.js">
@@ -110,7 +123,7 @@
   <link rel="stylesheet" href="/css/widgets.css?v=5">
   <link rel="stylesheet" href="/css/overrides.css?v=11">
   <link rel="stylesheet" href="/css/select.css?v=2">
-  <link rel="stylesheet" href="/css/analytics.css?v=3">
+  <link rel="stylesheet" href="/css/analytics.css?v=4">
  </head>
  <body>
 
@@ -2522,10 +2535,10 @@
             <span class="setGrpTxt">Analytics</span>
           </h3>
           <div class="setGrpItems">
-            <button class="pfMenuItem" onclick="setGo(function(){openAnalyticsPage('artwork');},'anPage')"><span class="pfMenuTxt">Artwork Analytics</span></button>
-            <button class="pfMenuItem" onclick="setGo(function(){openAnalyticsPage('marketplace');},'anPage')"><span class="pfMenuTxt">Marketplace Analytics</span></button>
-            <button class="pfMenuItem" onclick="setGo(function(){openAnalyticsPage('blog');},'anPage')"><span class="pfMenuTxt">Blog Analytics</span></button>
-            <button class="pfMenuItem" onclick="setGo(function(){openAnalyticsPage('resource');},'anPage')"><span class="pfMenuTxt">Resources Analytics</span></button>
+            <button class="pfMenuItem" onclick="anGo('artwork')"><span class="pfMenuTxt">Artwork Analytics</span></button>
+            <button class="pfMenuItem" onclick="anGo('marketplace')"><span class="pfMenuTxt">Marketplace Analytics</span></button>
+            <button class="pfMenuItem" onclick="anGo('blog')"><span class="pfMenuTxt">Blog Analytics</span></button>
+            <button class="pfMenuItem" onclick="anGo('resource')"><span class="pfMenuTxt">Resources Analytics</span></button>
           </div>
         </section>
 
@@ -3243,7 +3256,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <!-- Before engagement.js on purpose. It defines dzAnDims, which is what a
        view, a like and a download carry alongside themselves; engagement.js
        guards for its absence anyway, but the order means it is never absent. -->
-  <script src="/js/analytics.js?v=3"></script>
+  <script src="/js/analytics.js?v=4"></script>
   <script src="/js/engagement.js?v=6"></script>
 
 

@@ -4,6 +4,32 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v173 — Analytics goes back where you were, and the long lists load
+       as you reach them.
+       The four Settings rows called setGo, which watches the page it
+       opened and slides Settings back the moment it closes. Wrong here
+       twice: closing Analytics belongs on your profile, not on the
+       menu you passed through — and tapping a row to open an artwork
+       closes Analytics on the way, so the watcher dropped the Settings
+       menu over the artwork that was opening underneath, which is why
+       tapping a row looked like it did nothing. They call anGo now,
+       which closes Settings outright.
+       View all is a centred button reading "View all", not a
+       full-width dashed strip with a count in it.
+       The full list loads twenty at a time — fifty for activity, whose
+       rows are one line each — with an observer at the bottom pulling
+       the next twenty in as it comes into view. Hundreds of rows no
+       longer have to exist before the page will paint.
+       And the reason Analytics turned up at the bottom of the home
+       page: the list page was appended to <body> once and left there,
+       held off screen by one transform in analytics.css. A client
+       running a new script against a service-worker-cached older
+       stylesheet has no such rule, and a fixed overlay with no rule is
+       an ordinary block. It is built on open and removed on close now,
+       with its layout properties set inline; #anPage keeps the four
+       properties that make it an overlay in the critical style block in
+       index.html, where no stylesheet has to load for them to hold.
+       Changed: index.html, js/analytics.js, css/analytics.css, sw.js.
    v172 — one dashboard per section, ten rows a card, one gap.
        The scope tabs are gone. Artwork Analytics is artworks and
        nothing else: the row tapped in Settings is the dashboard you
@@ -3018,7 +3044,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v172';
+const CACHE_VERSION = 'v173';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -3055,7 +3081,7 @@ const SHELL_URLS = [
   '/css/widgets.css?v=5',
   '/css/overrides.css?v=11',
   '/css/select.css?v=2',
-  '/css/analytics.css?v=3',
+  '/css/analytics.css?v=4',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.
@@ -3094,7 +3120,7 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/analytics.js?v=3',
+  '/js/analytics.js?v=4',
   '/js/engagement.js?v=6',
   '/js/sections.js?v=106',
   '/js/navprogress.js?v=5'

@@ -4,6 +4,36 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v171 — the other three sections start counting views, and a view
+       stops being an edit.
+       v170 recorded item views in item_view_dedup and left the three
+       view_count columns alone, reasoning that the touch trigger and
+       the edit rate limiter made a bump impossible. That was wrong:
+       artworks carries the same two triggers and has bumped its
+       counter since the day it was written. What is true is that both
+       triggers treat a counter bump as an edit, and both are wrong to.
+       dz_write_rate no longer charges a view to the VIEWER's edit
+       budget — 120 an hour, after which their views were dropped and
+       their next real edit refused. dz_touch_updated_at no longer
+       restamps the row, so an artwork stops reading "Updated 2 minutes
+       ago" every time a stranger looks at it. Both were already true
+       of artworks.
+       Trying it turned up something bigger. blog_posts,
+       marketplace_items and resources carry CHECK constraints added
+       NOT VALID, and a CHECK is re-evaluated against the whole row on
+       every UPDATE — so a row written under the old bounds could not
+       be updated at all, in any column, by anyone. Every row in those
+       two tables was frozen: a 56-character blog body against a 100
+       minimum, a 19-character listing description against the same.
+       Their owners could not save an edit and moderation could not
+       change a status. Those bounds are triggers now, checked when the
+       field is written rather than when the row is touched — the same
+       rule on insert and on update, and nothing accepts content the
+       form would reject.
+       view_count is a cache of item_view_dedup and is written last, in
+       its own block, so a constraint added tomorrow costs a number on
+       a card rather than a real view.
+       Changed: a migration only.
    v170 — marketplace, blog and resources get the same dashboard.
        Settings gains an Analytics group with four rows in order:
        Artwork, Marketplace, Blog, Resources. One page, four scopes,

@@ -1104,7 +1104,12 @@
   function artRows(rows, limit) {
     var list = el('div', 'anArts');
     var show = limit ? rows.slice(0, limit) : rows;
-    show.forEach(function (r, i) {
+    show.forEach(function (r, i) { list.appendChild(artRow(r, i)); });
+    return list;
+  }
+
+  function artRow(r, i) {
+    {
       var row = el('button', 'anArt');
       row.type = 'button';
       row.appendChild(el('div', 'anArtRank', String(i + 1)));
@@ -1150,11 +1155,13 @@
       row.appendChild(nums);
 
       row.addEventListener('click', function () {
+        var id = String(r.id);
         closeAnList();
         closeAnalyticsPage();
-        var id = String(r.id);
         if (state.scope === 'artwork') {
-          // the gallery owns the viewer; where it is not loaded, the URL is
+          // the gallery owns the artwork viewer, and only if the grid it
+          // reads is actually on the page. Opened from Settings it usually is
+          // not, so the honest fallback is the artwork's own address.
           if (typeof window.handleArtClick === 'function' &&
               document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
             window.handleArtClick({ preventDefault: function () {}, stopPropagation: function () {} }, id);
@@ -1165,12 +1172,14 @@
         }
         // the other three share one viewer, opened by path segment and id
         var seg = { marketplace: 'listing', blog: 'blog', resource: 'resource' }[state.scope];
-        if (typeof window.dzOpenById === 'function') window.dzOpenById(seg, id);
-        else location.href = '/' + seg + '/' + encodeURIComponent(id);
+        if (typeof window.dzOpenById === 'function') {
+          window.dzOpenById(seg, id);
+        } else {
+          location.href = '/' + seg + '/' + encodeURIComponent(id);
+        }
       });
-      list.appendChild(row);
-    });
-    return list;
+      return row;
+    }
   }
 
   function paintArtworks() {
@@ -1207,8 +1216,7 @@
     var list = artRows(rows, CARD_ROWS);
     card.appendChild(list);
     if (rows.length > CARD_ROWS) {
-      card.appendChild(moreBtn('View all ' + full(rows.length) + ' ' + scw.nouns,
-                               function () { openAnList('items'); }));
+      card.appendChild(moreBtn('View all', function () { openAnList('items'); }));
     }
     b.appendChild(card);
 
@@ -1624,26 +1632,13 @@
     if (!feed.length) {
       empty(card, 'NOTHING YET');
     } else {
-      var ICO = { like: ['❤️', '#FF3DE0'], bookmark: ['🔖', '#00A6FF'], comment: ['💬', '#FFB300'] };
+      // the same row builder the full list uses, so the ten on the card and
+      // the rest behind View all are the same rows in the same colours
       var list = el('div', 'anFeed');
-      feed.slice(0, CARD_ROWS).forEach(function (x) {
-        var r2 = el('div', 'anFeedRow');
-        var pair = ICO[x.event] || ['•', '#8A8F98'];
-        var ic = el('div', 'anFeedIco', pair[0]);
-        ic.style.background = pair[1] + '22';
-        r2.appendChild(ic);
-        var t = el('div', 'anFeedTxt');
-        var verb = x.event === 'like' ? 'Someone liked ' : x.event === 'bookmark' ? 'Someone saved ' : 'New comment on ';
-        t.appendChild(document.createTextNode(verb));
-        t.appendChild(el('b', null, x.title));
-        r2.appendChild(t);
-        r2.appendChild(el('div', 'anFeedAt', ago(x.at)));
-        list.appendChild(r2);
-      });
+      feed.slice(0, CARD_ROWS).forEach(function (x) { list.appendChild(feedRow(x)); });
       card.appendChild(list);
       if (feed.length > CARD_ROWS) {
-        card.appendChild(moreBtn('View all ' + full(feed.length),
-                                 function () { openAnList('activity'); }));
+        card.appendChild(moreBtn('View all', function () { openAnList('activity'); }));
       }
     }
     b.appendChild(card);
@@ -2153,15 +2148,30 @@
    * exactly where you were — the same way every other sub-page on this site
    * behaves.
    */
-  var anListMode = 'items';
-
+  // Built when it opens, removed when it closes — never parked in the
+  // document waiting to be hidden by a stylesheet.
+  //
+  // The first version appended this to <body> once and left it there, off
+  // screen by transform alone. That is fine until a client runs this file
+  // against a cached older analytics.css, which has no rule for it at all:
+  // with no rule it is a plain block at the end of <body>, so "LATEST ON YOUR
+  // WORK" and the whole feed appear at the bottom of the home page. The
+  // service worker updates the two files on separate fetches, so that window
+  // is real and a version bump does not close it.
+  //
+  // Two answers, both applied. It is not in the document unless it is open,
+  // and the handful of properties that decide whether it is an overlay or a
+  // paragraph are set inline, where no stylesheet has to be present for them
+  // to hold.
   function anListHost() {
     var pg = $('anListPage');
-    if (pg) return pg;
+    if (pg && pg.parentNode) pg.parentNode.removeChild(pg);
     pg = document.createElement('div');
     pg.id = 'anListPage';
     pg.setAttribute('role', 'dialog');
     pg.setAttribute('aria-modal', 'true');
+    pg.style.cssText = 'position:fixed;inset:0;z-index:546;overflow-y:auto;' +
+                       'background:var(--bg,#0A0A0E);color:var(--tx,#F4F4F7);';
 
     var hdr = el('div', 'subPgHdr');
     var back = el('button', 'subPgX', '\u2190');
@@ -2182,94 +2192,166 @@
   }
 
   function openAnList(mode) {
-    anListMode = mode === 'activity' ? 'activity' : 'items';
+    anList.mode = mode === 'activity' ? 'activity' : 'items';
     var pg = anListHost();
+    // the class drives the slide; the inline transform is what actually keeps
+    // it off screen for the first frame, with or without the stylesheet
+    pg.style.transform = 'translateX(100%)';
     pg.classList.add('open');
+    /* force a frame so the transition has something to animate from */
+    void pg.offsetWidth;
+    pg.style.transform = 'translateX(0)';
     var hdr = pg.querySelector('.subPgHdr');
     if (hdr) pg.style.setProperty('--an-hdr', Math.round(hdr.getBoundingClientRect().height) + 'px');
     paintAnList();
     pg.scrollTop = 0;
   }
 
+  var anListGone = null;
   function closeAnList() {
     var pg = $('anListPage');
     if (!pg) return;
     pg.classList.remove('open');
+    pg.style.transform = 'translateX(100%)';
     // the dashboard is still open underneath, so the scroll lock stays on
-    document.body.style.overflow = 'hidden';
+    if ($('anPage') && $('anPage').classList.contains('open')) {
+      document.body.style.overflow = 'hidden';
+    }
+    // and then it leaves the document entirely, once the slide has finished
+    anListStop();
+    clearTimeout(anListGone);
+    anListGone = setTimeout(function () {
+      if (pg.parentNode && !pg.classList.contains('open')) pg.parentNode.removeChild(pg);
+    }, 500);
+  }
+
+  /* Lazy, because "all of them" can be hundreds of rows and a page that
+   * builds hundreds of DOM nodes before it will paint is a page that stalls
+   * on the tap that opened it. A first screenful goes in, then the next
+   * twenty arrive as the sentinel at the bottom scrolls into view — so
+   * scrolling is the only thing that ever costs anything, and only for what
+   * is about to be looked at.
+   *
+   * Twenty for items, fifty for activity: an activity row is one line and a
+   * screenful of them is far more than twenty.
+   */
+  var anList = { rows: [], mode: 'items', shown: 0, listEl: null, sentinel: null, io: null };
+  var AN_FIRST = { items: 20, activity: 50 }, AN_STEP = 20;
+
+  function anListStop() {
+    if (anList.io) { try { anList.io.disconnect(); } catch (e) {} anList.io = null; }
+    anList.sentinel = null;
+    anList.listEl = null;
+  }
+
+  function anListChunk(n) {
+    if (!anList.listEl) return;
+    var to = Math.min(anList.rows.length, anList.shown + n);
+    for (var i = anList.shown; i < to; i++) {
+      anList.listEl.appendChild(
+        anList.mode === 'activity' ? feedRow(anList.rows[i]) : artRow(anList.rows[i], i));
+    }
+    anList.shown = to;
+    if (anList.shown >= anList.rows.length) {
+      if (anList.sentinel && anList.sentinel.parentNode) {
+        anList.sentinel.parentNode.removeChild(anList.sentinel);
+      }
+      anListStop();
+    }
+  }
+
+  function anListWatch(pg) {
+    if (anList.shown >= anList.rows.length) return null;
+    var s = el('div', 'anSentinel');
+    s.appendChild(el('div', 'anEmpty', 'Loading more\u2026'));
+    anList.sentinel = s;
+    if (!window.IntersectionObserver) {
+      // no observer: a button does the same job, just by hand
+      s.innerHTML = '';
+      s.appendChild(moreBtn('Load more', function () { anListChunk(AN_STEP); }));
+      return s;
+    }
+    anList.io = new IntersectionObserver(function (entries) {
+      if (entries.some(function (e) { return e.isIntersecting; })) anListChunk(AN_STEP);
+    }, { root: pg, rootMargin: '600px 0px' });
+    setTimeout(function () { if (anList.io && s.isConnected) anList.io.observe(s); }, 0);
+    return s;
+  }
+
+  function feedRow(x) {
+    var ICO = { like: ['\u2764\uFE0F', '#FF3D3D'], bookmark: ['\uD83D\uDD16', '#00D9B8'],
+                comment: ['\uD83D\uDCAC', '#FF3DE0'] };
+    var row = el('div', 'anFeedRow');
+    var pair = ICO[x.event] || ['\u2022', '#8A8F98'];
+    var ic = el('div', 'anFeedIco', pair[0]);
+    ic.style.background = pair[1] + '22';
+    row.appendChild(ic);
+    var t = el('div', 'anFeedTxt');
+    var verb = x.event === 'like' ? 'Someone liked ' :
+               x.event === 'bookmark' ? 'Someone saved ' : 'New comment on ';
+    t.appendChild(document.createTextNode(verb));
+    t.appendChild(el('b', null, x.title));
+    row.appendChild(t);
+    row.appendChild(el('div', 'anFeedAt', ago(x.at)));
+    return row;
   }
 
   function paintAnList() {
     var pg = $('anListPage');
-    if (!pg || !pg.classList.contains('open')) return;
+    if (!pg) return;
     var body = $('anListBdy'), ttl = $('anListTitle');
     if (!body) return;
     var sc = scopeOf(state.scope);
+    anListStop();
     body.innerHTML = '';
 
-    if (anListMode === 'activity') {
-      var feed = (state.data.activity && state.data.activity.activity) || [];
+    var card = el('div', 'anCard');
+    var hd = el('div', 'anCardHd');
+
+    if (anList.mode === 'activity') {
+      anList.rows = (state.data.activity && state.data.activity.activity) || [];
       if (ttl) ttl.textContent = 'LATEST ON YOUR WORK';
       pg.setAttribute('aria-label', 'Everything that happened on your work');
-      var card = el('div', 'anCard');
-      var hd = el('div', 'anCardHd');
-      hd.appendChild(el('div', 'anCardTitle', full(feed.length) + ' most recent'));
+      hd.appendChild(el('div', 'anCardTitle', 'Most recent first'));
       card.appendChild(hd);
-      if (!feed.length) { empty(card, 'NOTHING YET'); body.appendChild(card); return; }
-      var ICO = { like: ['\u2764\uFE0F', '#FF3D3D'], bookmark: ['\uD83D\uDD16', '#00D9B8'],
-                  comment: ['\uD83D\uDCAC', '#FF3DE0'] };
-      var list = el('div', 'anFeed');
-      feed.forEach(function (x) {
-        var row = el('div', 'anFeedRow');
-        var pair = ICO[x.event] || ['\u2022', '#8A8F98'];
-        var ic = el('div', 'anFeedIco', pair[0]);
-        ic.style.background = pair[1] + '22';
-        row.appendChild(ic);
-        var t = el('div', 'anFeedTxt');
-        var verb = x.event === 'like' ? 'Someone liked ' :
-                   x.event === 'bookmark' ? 'Someone saved ' : 'New comment on ';
-        t.appendChild(document.createTextNode(verb));
-        t.appendChild(el('b', null, x.title));
-        row.appendChild(t);
-        row.appendChild(el('div', 'anFeedAt', ago(x.at)));
-        list.appendChild(row);
+      if (!anList.rows.length) { empty(card, 'NOTHING YET'); body.appendChild(card); return; }
+      anList.listEl = el('div', 'anFeed');
+    } else {
+      anList.rows = ((state.data.content && state.data.content.artworks) || []).slice();
+      if (ttl) ttl.textContent = 'ALL ' + sc.nouns.toUpperCase();
+      pg.setAttribute('aria-label', 'All ' + sc.nouns);
+      hd.appendChild(el('div', 'anCardTitle', 'Ranked over the period'));
+      var sorts = el('div', 'anSort');
+      ART_SORTS.forEach(function (so) {
+        if (so.key === 'downloads' && state.scope === 'marketplace') so = { key: 'sales', label: 'Sales' };
+        var btn = el('button', 'anSortBtn' + (state.artSort === so.key ? ' on' : ''), so.label);
+        btn.type = 'button';
+        btn.addEventListener('click', function () {
+          state.artSort = so.key;
+          paintAnList();       // back to the top of a freshly sorted list
+          paintArtworks();     // and the card behind agrees with the page in front
+          pg.scrollTop = 0;
+        });
+        sorts.appendChild(btn);
       });
-      card.appendChild(list);
-      body.appendChild(card);
-      return;
+      hd.appendChild(sorts);
+      card.appendChild(hd);
+      if (!anList.rows.length) { empty(card, 'NOTHING HERE YET'); body.appendChild(card); return; }
+      var k = state.artSort;
+      anList.rows.sort(function (x, y) {
+        if (k === 'created_at') return String(y.created_at).localeCompare(String(x.created_at));
+        return (Number(y[k]) || 0) - (Number(x[k]) || 0);
+      });
+      anList.listEl = el('div', 'anArts');
     }
 
-    var rows = ((state.data.content && state.data.content.artworks) || []).slice();
-    if (ttl) ttl.textContent = 'ALL ' + sc.nouns.toUpperCase();
-    pg.setAttribute('aria-label', 'All ' + sc.nouns);
+    card.appendChild(anList.listEl);
+    body.appendChild(card);
 
-    var card2 = el('div', 'anCard');
-    var hd2 = el('div', 'anCardHd');
-    hd2.appendChild(el('div', 'anCardTitle', full(rows.length) + ' ' + sc.nouns));
-    var sorts = el('div', 'anSort');
-    ART_SORTS.forEach(function (so) {
-      if (so.key === 'downloads' && state.scope === 'marketplace') so = { key: 'sales', label: 'Sales' };
-      var btn = el('button', 'anSortBtn' + (state.artSort === so.key ? ' on' : ''), so.label);
-      btn.type = 'button';
-      btn.addEventListener('click', function () {
-        state.artSort = so.key;
-        paintAnList();
-        paintArtworks();     // the card behind agrees with the page in front
-      });
-      sorts.appendChild(btn);
-    });
-    hd2.appendChild(sorts);
-    card2.appendChild(hd2);
-
-    if (!rows.length) { empty(card2, 'NOTHING HERE YET'); body.appendChild(card2); return; }
-
-    var k = state.artSort;
-    rows.sort(function (x, y) {
-      if (k === 'created_at') return String(y.created_at).localeCompare(String(x.created_at));
-      return (Number(y[k]) || 0) - (Number(x[k]) || 0);
-    });
-    card2.appendChild(artRows(rows, 0));
-    body.appendChild(card2);
+    anList.shown = 0;
+    anListChunk(AN_FIRST[anList.mode] || AN_STEP);
+    var s = anListWatch(pg);
+    if (s) body.appendChild(s);
   }
 
   document.addEventListener('keydown', function (e) {
@@ -2317,6 +2399,9 @@
   function closeAnalyticsPage() {
     var pg = $('anPage');
     if (!pg) return;
+    // nothing of this page is left behind on whatever is underneath it
+    var lp = $('anListPage');
+    if (lp && lp.parentNode) { anListStop(); clearTimeout(anListGone); lp.parentNode.removeChild(lp); }
     state.open = false;
     stopLive();
     pg.classList.remove('open');
@@ -2358,4 +2443,19 @@
 
   window.openAnalyticsPage = openAnalyticsPage;
   window.closeAnalyticsPage = closeAnalyticsPage;
+
+  // What the four Settings rows call, instead of setGo.
+  //
+  // setGo watches the page it opened and slides Settings back the moment that
+  // page closes — right for Theme or Albums, wrong here twice over. Closing
+  // Analytics should put you back where you were, on your profile, not on the
+  // menu you passed through. And tapping a row to open an artwork closes
+  // Analytics on the way, so the watcher fired and dropped the Settings menu
+  // over the artwork that was opening underneath it — which is why nothing
+  // seemed to happen. closeSettingsPage() with no argument drops the pending
+  // return, so neither can happen.
+  window.anGo = function (scope) {
+    if (typeof closeSettingsPage === 'function') closeSettingsPage();
+    openAnalyticsPage(scope);
+  };
 })();

@@ -231,16 +231,23 @@
      to nobody's dashboard. dz_analytics_track_search takes the whole visible
      page of results in one call. */
   var fgSrchLogTimer = null, fgSrchLogged = '';
+  var FG_SRCH_SCOPE = { artwork:'artwork', marketplace:'marketplace', blog:'blog', resources:'resource' };
   function fgSearchLog(term){
     clearTimeout(fgSrchLogTimer);
     if(typeof window.dzAnSearch !== 'function') return;
     var q = String(term||'').trim();
     if(q.length < 2 || q === fgSrchLogged) return;
     fgSrchLogTimer = setTimeout(function(){
-      var rows = fgSrch.rows.artwork || [];
-      if(String(fgSrch.q||'').trim() !== q || !rows.length) return;
-      fgSrchLogged = q;
-      window.dzAnSearch(rows.slice(0,12).map(function(r){ return String(r.id); }), q);
+      if(String(fgSrch.q||'').trim() !== q) return;
+      var any = false;
+      Object.keys(FG_SRCH_SCOPE).forEach(function(g){
+        var rows = fgSrch.rows[g] || [];
+        if(!rows.length) return;
+        any = true;
+        window.dzAnSearch(rows.slice(0,12).map(function(r){ return String(r.id); }),
+                          q, FG_SRCH_SCOPE[g]);
+      });
+      if(any) fgSrchLogged = q;
     }, 1200);
   }
 
@@ -292,12 +299,12 @@
     var rows = fgSrch.rows[kind] || [];
     var row  = rows.find(function(x){ return String(x.id)===String(id); });
     if(!row) return;
+    // the other half of the CTR: this term was shown, and this one was opened
+    if(FG_SRCH_SCOPE[kind] && typeof window.dzAnTrack === 'function'){
+      var sq = String(fgSrch.q||'').trim();
+      if(sq) window.dzAnTrack('search_click', String(id), { term: sq, scope: FG_SRCH_SCOPE[kind] });
+    }
     if(kind==='artwork'){
-      // the other half of the CTR: this term was shown, and this one was opened
-      if(typeof window.dzAnTrack === 'function'){
-        var q = String(fgSrch.q||'').trim();
-        if(q) window.dzAnTrack('search_click', String(id), { term: q });
-      }
       var cats = catList(row.category).length ? catList(row.category)
                : (catList(row.tags).length ? catList(row.tags) : ['others']);
       openLB(row.image_url, row.name, cats[0]||'', row.description||'', String(row.id), false, rows);

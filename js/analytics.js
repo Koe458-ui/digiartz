@@ -152,7 +152,7 @@
   window.dzAnTrack = track;
 
   // One call for a page of results rather than one per row.
-  window.dzAnSearch = function (ids, term) {
+  window.dzAnSearch = function (ids, term, scope) {
     var c = db();
     if (!c || !term || !ids || !ids.length) return;
     var x = ctx();
@@ -161,7 +161,35 @@
         p_subjects: ids.slice(0, 12).map(String),
         p_term: String(term).slice(0, 80),
         p_source: x.source, p_ref: x.ref || null,
-        p_device: x.device, p_country: x.country, p_anon_key: x.key
+        p_device: x.device, p_country: x.country, p_anon_key: x.key,
+        p_scope: scope || 'artwork'
+      }).then(noop, noop);
+    } catch (e) {}
+  };
+
+  // A view of a listing, a post or a resource. Artworks have their own
+  // function and their own dedup table; these three had neither until now,
+  // so this is the only thing that records that they were opened at all.
+  // Same client-side cooldown the gallery uses, so a page reopened three
+  // times in a minute is not three calls before the database even sees it.
+  var ITEM_SEEN_KEY = 'dzAnItemSeen', ITEM_COOLDOWN = 6 * 3600 * 1000;
+  window.dzAnItemView = function (kind, id) {
+    var c = db();
+    if (!c || !id) return;
+    if (kind === 'resources') kind = 'resource';
+    if (['marketplace', 'blog', 'resource'].indexOf(kind) === -1) return;
+    var mapKey = kind + ':' + id, now = Date.now(), map = {};
+    try { map = JSON.parse(localStorage.getItem(ITEM_SEEN_KEY) || '{}'); } catch (e) {}
+    if (map[mapKey] && now - map[mapKey] < ITEM_COOLDOWN) return;
+    map[mapKey] = now;
+    for (var k in map) if (now - map[k] > 8 * ITEM_COOLDOWN) delete map[k];
+    try { localStorage.setItem(ITEM_SEEN_KEY, JSON.stringify(map)); } catch (e) {}
+    var x = ctx();
+    try {
+      c.rpc('register_item_view', {
+        p_kind: kind, p_subject: String(id), p_anon_key: x.key,
+        p_source: x.source, p_ref: x.ref || null,
+        p_device: x.device, p_country: x.country
       }).then(noop, noop);
     } catch (e) {}
   };
@@ -169,6 +197,23 @@
   /* =======================================================================
      2. THE DASHBOARD
      ======================================================================= */
+
+  // Four dashboards, one page. The order is the order they appear in the
+  // Settings menu and the order they are listed everywhere else.
+  var SCOPES = [
+    { key: 'artwork',     label: 'Artwork',     noun: 'artwork',  nouns: 'artworks',
+      title: 'ARTWORK ANALYTICS',     sub: 'Everything your artworks did, and where it came from.' },
+    { key: 'marketplace', label: 'Marketplace', noun: 'listing',  nouns: 'listings',
+      title: 'MARKETPLACE ANALYTICS', sub: 'Everything your listings did, and where it came from.' },
+    { key: 'blog',        label: 'Blog',        noun: 'post',     nouns: 'posts',
+      title: 'BLOG ANALYTICS',        sub: 'Everything your posts did, and where it came from.' },
+    { key: 'resource',    label: 'Resources',   noun: 'resource', nouns: 'resources',
+      title: 'RESOURCES ANALYTICS',   sub: 'Everything your resources did, and where it came from.' }
+  ];
+  function scopeOf(key) {
+    for (var i = 0; i < SCOPES.length; i++) if (SCOPES[i].key === key) return SCOPES[i];
+    return SCOPES[0];
+  }
 
   var RANGES = [
     { d: 7,   label: 'Last 7 days' },
@@ -187,14 +232,24 @@
     { key: 'bookmarks', label: 'Saves',     ico: '🔖', color: 'var(--an-bookmarks)', hex: '#00D9B8' },
     { key: 'downloads', label: 'Downloads', ico: '⬇️', color: 'var(--an-downloads)', hex: '#FFB300' },
     { key: 'comments',  label: 'Comments',  ico: '💬', color: 'var(--an-comments)',  hex: '#FF3DE0' },
-    // Cred, not followers. Nobody follows anybody on DigiArtz — one artist
-    // gives another cred, profile_creds records it, and the profile shows the
-    // count. A followers tile would be a tile for a button that is not there.
-    { key: 'cred',      label: 'Cred',      ico: '🏅', color: 'var(--an-cred)',      hex: '#16D95F' }
+    // Shares, not cred. Every tile in this row has to be a number this
+    // section earned, and cred is given to a person on their profile — it has
+    // no section to belong to, so it lives in the account block instead.
+    { key: 'shares',    label: 'Shares',    ico: '↗',  color: 'var(--an-cred)',      hex: '#16D95F' }
   ];
   function metric(key) {
     for (var i = 0; i < METRICS.length; i++) if (METRICS[i].key === key) return METRICS[i];
     return METRICS[0];
+  }
+  // Nothing is downloaded from the marketplace — it is bought. Same slot in
+  // the row, same colour, the word that is true for the section.
+  function metricsFor(sc) {
+    return METRICS.map(function (m) {
+      if (m.key === 'downloads' && sc === 'marketplace') {
+        return { key: 'sales', label: 'Sales', ico: '🛒', color: m.color, hex: m.hex };
+      }
+      return m;
+    });
   }
 
   var SOURCE_LABEL = {
@@ -631,6 +686,7 @@
 
   /* ---- state ------------------------------------------------------------- */
   var state = {
+    scope: 'artwork',
     days: 30,
     open: false,
     seq: 0,
@@ -649,6 +705,8 @@
   try {
     var savedDays = parseInt(localStorage.getItem('dzAnDays') || '30', 10);
     if ([7, 30, 90, 365].indexOf(savedDays) !== -1) state.days = savedDays;
+    var savedScope = localStorage.getItem('dzAnScope');
+    if (savedScope && scopeOf(savedScope).key === savedScope) state.scope = savedScope;
   } catch (e) {}
 
   /* ---- page shell -------------------------------------------------------- */
@@ -664,7 +722,10 @@
     hi.id = 'anHi';
     hi.textContent = 'Your analytics';
     left.appendChild(hi);
-    left.appendChild(el('div', 'anSub', 'Everything your artworks did, and where it came from.'));
+    var sub = el('div', 'anSub');
+    sub.id = 'anSub';
+    sub.textContent = scopeOf(state.scope).sub;
+    left.appendChild(sub);
     top.appendChild(left);
 
     var right = el('div', 'anTopRight');
@@ -692,11 +753,28 @@
     top.appendChild(right);
     body.appendChild(top);
 
+    // The four dashboards, in the order they are listed everywhere else.
+    // Switching here is a repaint and four reads — it does not leave the page,
+    // because comparing two sections means flicking between them.
+    var tabs = el('div', 'anScopes');
+    tabs.id = 'anScopes';
+    tabs.setAttribute('role', 'tablist');
+    SCOPES.forEach(function (sc) {
+      var t = el('button', 'anScopeBtn' + (sc.key === state.scope ? ' on' : ''), sc.label);
+      t.type = 'button';
+      t.setAttribute('role', 'tab');
+      t.setAttribute('aria-selected', sc.key === state.scope ? 'true' : 'false');
+      t.dataset.scope = sc.key;
+      t.addEventListener('click', function () { setScope(sc.key); });
+      tabs.appendChild(t);
+    });
+    body.appendChild(tabs);
+
     var nav = el('div', 'anNav');
     nav.id = 'anNav';
     body.appendChild(nav);
 
-    SECTIONS.forEach(function (s) {
+    sectionsFor(state.scope).forEach(function (s) {
       var btn = el('button', 'anNavBtn', s.short);
       btn.type = 'button';
       btn.addEventListener('click', function () {
@@ -721,6 +799,23 @@
     watchNav();
   }
 
+  // A section list that differs by scope means the page is rebuilt rather
+  // than repainted — Revenue exists under Marketplace and nowhere else, and
+  // a stale empty card left behind by the previous scope would be a lie.
+  function setScope(key) {
+    if (state.scope === key) return;
+    state.scope = key;
+    try { localStorage.setItem('dzAnScope', key); } catch (e) {}
+    var body = $('anBdy');
+    if (body) { body.innerHTML = ''; body.dataset.built = ''; }
+    state.data = { overview: null, content: null, reach: null, activity: null };
+    buildShell();
+    measureHeader();
+    load(true);
+    stopLive();
+    startLive();
+  }
+
   // The chip row marks where you are. An observer rather than a scroll
   // handler, so it costs nothing while the page sits still.
   function watchNav() {
@@ -731,13 +826,13 @@
       entries.forEach(function (e) {
         if (!e.isIntersecting) return;
         var id = e.target.id.replace('anSec_', '');
-        var idx = SECTIONS.findIndex(function (s) { return s.id === id; });
+        var idx = sectionsFor(state.scope).findIndex(function (s) { return s.id === id; });
         Array.prototype.forEach.call(nav.children, function (c, i) {
           c.classList.toggle('on', i === idx);
         });
       });
     }, { rootMargin: '-120px 0px -70% 0px', threshold: 0 });
-    SECTIONS.forEach(function (s) {
+    sectionsFor(state.scope).forEach(function (s) {
       var t = $('anSec_' + s.id);
       if (t) io.observe(t);
     });
@@ -746,17 +841,31 @@
   var SECTIONS = [
     { id: 'overview',  short: 'Overview',   title: 'Overview',              note: 'the period at a glance' },
     { id: 'growth',    short: 'Growth',     title: 'Growth & Trends',       note: 'day by day' },
-    { id: 'artworks',  short: 'Artworks',   title: 'Artwork Performance',   note: 'piece by piece' },
+    // the one section whose name is the section it is in
+    { id: 'artworks',  short: 'Artworks',   title: 'Artwork Performance',   note: 'piece by piece',
+      per: { marketplace: ['Listings',  'Listing Performance',  'listing by listing'],
+             blog:        ['Posts',     'Post Performance',     'post by post'],
+             resource:    ['Resources', 'Resource Performance', 'one by one'] } },
     { id: 'content',   short: 'Content',    title: 'Content Insights',      note: 'what you make' },
     { id: 'audience',  short: 'Audience',   title: 'Audience',              note: 'who is looking' },
     { id: 'traffic',   short: 'Traffic',    title: 'Traffic Sources',       note: 'how they arrived' },
     { id: 'search',    short: 'Search',     title: 'Search Analytics',      note: 'what they typed' },
     { id: 'engage',    short: 'Engagement', title: 'Engagement',            note: 'what a view turns into' },
-    { id: 'cred',      short: 'Cred',       title: 'Cred',                  note: 'recognition from other artists' },
+    // marketplace only — the page drops it when the reader sends no revenue
+    { id: 'revenue',   short: 'Revenue',    title: 'Revenue',               note: 'what your listings earned',
+      only: 'marketplace' },
+    { id: 'account',   short: 'Account',    title: 'Account & Cred',        note: 'you, not this section' },
     { id: 'community', short: 'Community',  title: 'Community Analytics',   note: 'your part in the place' },
     { id: 'goals',     short: 'Goals',      title: 'Goals & Achievements',  note: 'what you are aiming at' },
     { id: 'compare',   short: 'Compare',    title: 'Comparisons',           note: 'against yourself, and the site' }
   ];
+  function sectionsFor(sc) {
+    return SECTIONS.filter(function (s) { return !s.only || s.only === sc; })
+      .map(function (s) {
+        var p = s.per && s.per[sc];
+        return p ? { id: s.id, short: p[0], title: p[1], note: p[2] } : s;
+      });
+  }
 
   /* ---- loading ----------------------------------------------------------- */
 
@@ -766,17 +875,17 @@
     var seq = ++state.seq;
     state.loading = true;
     if (showSkeleton) {
-      SECTIONS.forEach(function (s) {
+      sectionsFor(state.scope).forEach(function (s) {
         var b = $('anBox_' + s.id);
         if (b) empty(b, 'Loading…');
       });
     }
-    var d = state.days;
+    var d = state.days, sc = state.scope;
     var jobs = [
-      c.rpc('dz_analytics_overview', { p_days: d }),
-      c.rpc('dz_analytics_content',  { p_days: d }),
-      c.rpc('dz_analytics_reach',    { p_days: d }),
-      c.rpc('dz_analytics_activity', { p_days: d })
+      c.rpc('dz_analytics_overview', { p_days: d, p_scope: sc }),
+      c.rpc('dz_analytics_content',  { p_days: d, p_scope: sc }),
+      c.rpc('dz_analytics_reach',    { p_days: d, p_scope: sc }),
+      c.rpc('dz_analytics_activity', { p_days: d, p_scope: sc })
     ];
     var out;
     try { out = await Promise.all(jobs); }
@@ -804,7 +913,7 @@
   }
 
   function failAll() {
-    SECTIONS.forEach(function (s) {
+    sectionsFor(state.scope).forEach(function (s) {
       var b = $('anBox_' + s.id);
       if (!b) return;
       b.innerHTML = '';
@@ -835,8 +944,15 @@
   }
 
   function paint() {
+    var sc = scopeOf(state.scope);
     var hi = $('anHi');
     if (hi) hi.textContent = myName ? ('Welcome back, ' + myName) : 'Your analytics';
+    var sb2 = $('anSub');
+    if (sb2) sb2.textContent = sc.sub;
+    var ttl = document.querySelector('#anPage .subPgTitle');
+    if (ttl) ttl.textContent = sc.title;
+    var pg = $('anPage');
+    if (pg) pg.setAttribute('aria-label', sc.title.toLowerCase());
     paintOverview();
     paintGrowth();
     paintArtworks();
@@ -845,7 +961,8 @@
     paintTraffic();
     paintSearch();
     paintEngagement();
-    paintCred();
+    paintRevenue();
+    paintAccount();
     paintCommunity();
     paintGoals();
     paintCompare();
@@ -868,7 +985,7 @@
     var win = o['window'] || {}, prev = o.prev || {};
 
     var grid = el('div', 'anKpis');
-    METRICS.forEach(function (m) {
+    metricsFor(state.scope).forEach(function (m) {
       var tile = el('div', 'anKpi');
       var top = el('div', 'anKpiTop');
       var ico = el('div', 'anKpiIco', m.ico);
@@ -888,22 +1005,28 @@
     b.appendChild(grid);
 
     var t = o.totals || {};
+    var sc = scopeOf(state.scope);
     var card = el('div', 'anCard');
     card.classList.add('anStack');
     var hd = el('div', 'anCardHd');
     hd.appendChild(el('div', 'anCardTitle', 'All time'));
+    hd.appendChild(el('div', 'anSecNote', sc.nouns + ' only'));
     card.appendChild(hd);
     var fbox = el('div');
-    facts(fbox, [
-      { n: full(t.artworks), l: 'Artworks' },
+    var tiles = [
+      { n: full(t.items), l: sc.nouns.charAt(0).toUpperCase() + sc.nouns.slice(1) },
       { n: full(t.views_all), l: 'Total views' },
       { n: full(t.likes_all), l: 'Total likes' },
       { n: full(t.bookmarks_all), l: 'Total saves' },
-      { n: full(t.downloads_all), l: 'Downloads' },
-      { n: full(t.cred_all), l: 'Cred received' },
-      { n: t.artworks > 0 ? full(Math.round((t.views_all || 0) / t.artworks)) : '0', l: 'Views / artwork' },
-      { n: (o.range && o.range.days ? o.range.days : state.days) + 'd', l: 'Window' }
-    ]);
+      { n: full(t.comments_all), l: 'Comments' },
+      { n: full(t.shares_all), l: 'Shares' }
+    ];
+    tiles.push(state.scope === 'marketplace'
+      ? { n: full(t.sales_all), l: 'Sales' }
+      : { n: full(t.downloads_all), l: 'Downloads' });
+    tiles.push({ n: t.items > 0 ? full(Math.round((t.views_all || 0) / t.items)) : '0',
+                 l: 'Views / ' + sc.noun });
+    facts(fbox, tiles);
     card.appendChild(fbox);
     b.appendChild(card);
   }
@@ -921,8 +1044,9 @@
     var card = el('div', 'anCard');
     var hd = el('div', 'anCardHd');
     hd.appendChild(el('div', 'anCardTitle', 'Daily totals'));
+    var mx = metricsFor(state.scope);
     var legend = el('div', 'anLegend');
-    METRICS.forEach(function (m) {
+    mx.forEach(function (m) {
       var btn = el('button', 'anLegBtn' + (state.chartMetrics[m.key] ? '' : ' off'));
       btn.type = 'button';
       var dot = el('span', 'anTipDot');
@@ -945,7 +1069,7 @@
     card.appendChild(chartHost);
     b.appendChild(card);
 
-    var picked = METRICS.filter(function (m) { return state.chartMetrics[m.key]; });
+    var picked = mx.filter(function (m) { return state.chartMetrics[m.key]; });
     lineChart(chartHost, labels, picked.map(function (m) {
       return { key: m.key, label: m.label, hex: m.hex, values: series.map(function (r) { return Number(r[m.key]) || 0; }) };
     }));
@@ -1000,7 +1124,11 @@
     if (!b) return;
     if (!c || c.error) { empty(b, 'COULDN’T LOAD YOUR ARTWORKS'); return; }
     var rows = (c.artworks || []).slice();
-    if (!rows.length) { empty(b, 'NO ARTWORKS YET — UPLOAD ONE AND THIS FILLS IN'); return; }
+    var scw = scopeOf(state.scope);
+    if (!rows.length) {
+      empty(b, 'NO ' + scw.nouns.toUpperCase() + ' YET — PUBLISH ONE AND THIS FILLS IN');
+      return;
+    }
     b.innerHTML = '';
 
     var card = el('div', 'anCard');
@@ -1057,7 +1185,8 @@
       row.appendChild(txt);
 
       var nums = el('div', 'anArtNums');
-      [['👁', r.views], ['❤️', r.likes], ['🔖', r.bookmarks], ['⬇️', r.downloads]].forEach(function (p) {
+      var last = state.scope === 'marketplace' ? ['🛒', r.sales] : ['⬇️', r.downloads];
+      [['👁', r.views], ['❤️', r.likes], ['🔖', r.bookmarks], last].forEach(function (p) {
         var n = el('span', 'anArtNum');
         n.appendChild(document.createTextNode(p[0] + ' '));
         var bEl = el('b', null, num(p[1]));
@@ -1068,13 +1197,21 @@
 
       row.addEventListener('click', function () {
         closeAnalyticsPage();
-        // the gallery owns the viewer; where it is not loaded, the URL is
-        if (typeof window.handleArtClick === 'function' &&
-            document.querySelector('.gItem[data-id="' + CSS.escape(String(r.id)) + '"]')) {
-          window.handleArtClick({ preventDefault: function () {}, stopPropagation: function () {} }, String(r.id));
-        } else {
-          location.href = '/artwork/' + encodeURIComponent(String(r.id));
+        var id = String(r.id);
+        if (state.scope === 'artwork') {
+          // the gallery owns the viewer; where it is not loaded, the URL is
+          if (typeof window.handleArtClick === 'function' &&
+              document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
+            window.handleArtClick({ preventDefault: function () {}, stopPropagation: function () {} }, id);
+          } else {
+            location.href = '/artwork/' + encodeURIComponent(id);
+          }
+          return;
         }
+        // the other three share one viewer, opened by path segment and id
+        var seg = { marketplace: 'listing', blog: 'blog', resource: 'resource' }[state.scope];
+        if (typeof window.dzOpenById === 'function') window.dzOpenById(seg, id);
+        else location.href = '/' + seg + '/' + encodeURIComponent(id);
       });
       list.appendChild(row);
     });
@@ -1180,7 +1317,8 @@
     f.appendChild(fh);
     var fb = el('div');
     facts(fb, [
-      { n: full(s.artworks), l: 'Artworks' },
+      { n: full(s.artworks), l: scopeOf(state.scope).nouns.charAt(0).toUpperCase() +
+                                 scopeOf(state.scope).nouns.slice(1) },
       { n: full(s.approved), l: 'Approved' },
       { n: full(s.unlisted), l: 'Unlisted' },
       { n: full(s.featured), l: 'Featured' },
@@ -1475,7 +1613,7 @@
       { n: num(e.bookmarks), l: 'Saves' },
       { n: num(e.comments), l: 'Comments' },
       { n: num(e.shares), l: 'Shares' },
-      { n: num(e.profile_views), l: 'Profile views' },
+      { n: num(e.downloads), l: 'Downloads' },
       { n: pct(e.rate), l: 'Engagement rate' },
       { n: full(e.views > 0 ? Math.round((e.likes / e.views) * 100) / 100 : 0), l: 'Likes per view' }
     ]);
@@ -1514,40 +1652,98 @@
   }
 
   /* ---- 9. Followers ------------------------------------------------------ */
-  function paintCred() {
-    var b = box('cred'), a = state.data.activity;
-    if (!b) return;
-    if (!a || a.error) { empty(b, 'COULDN’T LOAD CRED'); return; }
+  /* ---- Revenue — the marketplace only ------------------------------------ */
+  function paintRevenue() {
+    var b = box('revenue'), a = state.data.activity;
+    if (!b) return;                                  // not drawn for this scope
+    if (!a || a.error) { empty(b, 'COULDN\u2019T LOAD REVENUE'); return; }
+    var r = a.revenue;
+    if (!r) { empty(b, 'NOTHING SOLD IN THIS PERIOD'); return; }
     b.innerHTML = '';
-    var f = a.cred || {};
+
+    var cur = r.currency || 'USD';
+    function money(cents) {
+      var n = (Number(cents) || 0) / 100;
+      try {
+        return n.toLocaleString(undefined, { style: 'currency', currency: cur,
+                                             minimumFractionDigits: 2 });
+      } catch (e) { return cur + ' ' + n.toFixed(2); }
+    }
 
     var fCard = el('div', 'anCard');
     var fh = el('div', 'anCardHd');
-    fh.appendChild(el('div', 'anCardTitle', 'Cred received'));
-    fh.appendChild(el('div', 'anSecNote', 'what other artists have vouched for'));
+    fh.appendChild(el('div', 'anCardTitle', 'Earned in this period'));
+    fh.appendChild(el('div', 'anSecNote', 'after the platform fee'));
     fCard.appendChild(fh);
     var fb = el('div');
     facts(fb, [
-      { n: full(f.total), l: 'Cred all time' },
-      { n: '+' + full(f.gained), l: 'This period' },
-      { n: full(f.givers), l: 'Artists who gave it' },
-      { n: full(f.given), l: 'Cred you gave' }
+      { n: money(r.net), l: 'Net this period' },
+      { n: money(r.gross), l: 'Gross' },
+      { n: money(r.fees), l: 'Fees' },
+      { n: full(r.sales), l: 'Sales' },
+      { n: money(r.net_all), l: 'Net all time' },
+      { n: money(r.available), l: 'Available' },
+      { n: money(r.pending), l: 'Clearing' },
+      { n: r.sales > 0 ? money(Math.round(r.net / r.sales)) : money(0), l: 'Average sale' }
     ]);
     fCard.appendChild(fb);
     b.appendChild(fCard);
 
-    var g = el('div', 'anGrid2');
+    var cCard = el('div', 'anCard anStack');
+    var ch = el('div', 'anCardHd');
+    ch.appendChild(el('div', 'anCardTitle', 'Earned per day'));
+    cCard.appendChild(ch);
+    var cHost = el('div');
+    var srs = r.series || [];
+    if (srs.some(function (x) { return Number(x.net) > 0; })) {
+      lineChart(cHost, srs.map(function (x) { return x.d; }), [{
+        key: 'net', label: 'Net (' + cur + ')', hex: '#16D95F',
+        values: srs.map(function (x) { return (Number(x.net) || 0) / 100; })
+      }]);
+    } else empty(cHost, 'NOTHING EARNED IN THIS PERIOD');
+    cCard.appendChild(cHost);
+    b.appendChild(cCard);
+  }
+
+  /* ---- Account & Cred — the one block that is not this section ----------- */
+  function paintAccount() {
+    var b = box('account'), a = state.data.activity;
+    if (!b) return;
+    if (!a || a.error) { empty(b, 'COULDN\u2019T LOAD YOUR ACCOUNT'); return; }
+    b.innerHTML = '';
+    var f = a.account || {};
+
+    var fCard = el('div', 'anCard');
+    var fh = el('div', 'anCardHd');
+    fh.appendChild(el('div', 'anCardTitle', 'Cred received'));
+    // The one thing on the page that is deliberately not a section number,
+    // and it says so rather than being mistaken for one. Cred is given to a
+    // person on their profile — there is no blog cred or artwork cred.
+    fh.appendChild(el('div', 'anSecNote', 'account-wide \u2014 cred is given to you, not to a ' +
+                                          scopeOf(state.scope).noun));
+    fCard.appendChild(fh);
+    var fb = el('div');
+    facts(fb, [
+      { n: full(f.cred_total), l: 'Cred all time' },
+      { n: '+' + full(f.cred_gained), l: 'This period' },
+      { n: full(f.cred_givers), l: 'Artists who gave it' },
+      { n: full(f.cred_given), l: 'Cred you gave' }
+    ]);
+    fCard.appendChild(fb);
+    b.appendChild(fCard);
+
+    var g = el('div', 'anGrid2 anStack');
 
     var cCard = el('div', 'anCard');
     var ch = el('div', 'anCardHd');
     ch.appendChild(el('div', 'anCardTitle', 'Cred per day'));
     cCard.appendChild(ch);
     var cHost = el('div');
-    var s = f.series || [];
-    if (s.some(function (x) { return x.gained > 0; })) {
-      lineChart(cHost, s.map(function (x) { return x.d; }), [{
+    var srs = f.cred_series || [];
+    if (srs.some(function (x) { return x.gained > 0; })) {
+      lineChart(cHost, srs.map(function (x) { return x.d; }), [{
         key: 'cred', label: 'Cred', hex: '#16D95F',
-        values: s.map(function (x) { return Number(x.gained) || 0; })
+        values: srs.map(function (x) { return Number(x.gained) || 0; })
       }]);
     } else empty(cHost, 'NO CRED IN THIS PERIOD');
     cCard.appendChild(cHost);
@@ -1558,7 +1754,7 @@
     rh.appendChild(el('div', 'anCardTitle', 'Who gave it'));
     rCard.appendChild(rh);
     var rHost = el('div');
-    var recent = f.recent || [];
+    var recent = f.cred_recent || [];
     if (recent.length) {
       var wrap = el('div', 'anPeople');
       recent.forEach(function (p) { wrap.appendChild(personRow(p, ago(p.at))); });
@@ -1576,24 +1772,22 @@
     if (!b) return;
     if (!a || a.error) { empty(b, 'COULDN’T LOAD COMMUNITY'); return; }
     b.innerHTML = '';
-    var c = a.community || {};
+    var c = a.account || {};
 
     var card = el('div', 'anCard');
     var hd = el('div', 'anCardHd');
     hd.appendChild(el('div', 'anCardTitle', 'Your part in the place'));
+    hd.appendChild(el('div', 'anSecNote', 'account-wide'));
     card.appendChild(hd);
     var fb = el('div');
     facts(fb, [
-      { n: full(c.joined), l: 'Communities joined' },
-      { n: full(c.owned), l: 'Communities you run' },
+      { n: full(c.communities_joined), l: 'Communities joined' },
+      { n: full(c.communities_owned), l: 'Communities you run' },
       { n: full(c.messages), l: 'Messages sent' },
       { n: full(c.dms), l: 'Direct messages sent' },
       { n: full(c.comments_made), l: 'Comments you left' },
-      { n: full(c.comments_received), l: 'Comments received' },
-      // cred received has a section of its own; what belongs here is the half
-      // of it that is an act rather than a result
-      { n: full(c.cred_given), l: 'Cred you gave' },
       { n: full(c.friends), l: 'Friends' },
+      { n: full(c.profile_views), l: 'Profile views' },
       { n: full(c.merit), l: 'Merit' }
     ]);
     card.appendChild(fb);
@@ -1604,9 +1798,15 @@
   var GOAL_METRICS = [
     { key: 'views', label: 'Views' }, { key: 'likes', label: 'Likes' },
     { key: 'bookmarks', label: 'Saves' }, { key: 'downloads', label: 'Downloads' },
-    { key: 'comments', label: 'Comments' }, { key: 'cred', label: 'Cred' },
-    { key: 'uploads', label: 'Uploads' }
+    { key: 'comments', label: 'Comments' }, { key: 'uploads', label: 'Uploads' },
+    { key: 'sales', label: 'Sales', only: 'marketplace' }
   ];
+  function goalMetricsFor(sc) {
+    return GOAL_METRICS.filter(function (m) {
+      if (m.only) return m.only === sc;
+      return !(m.key === 'downloads' && sc === 'marketplace');
+    });
+  }
   var GOAL_PERIODS = [
     { key: '7d', label: 'in 7 days' }, { key: '30d', label: 'in 30 days' },
     { key: '90d', label: 'in 90 days' }, { key: 'all', label: 'all time' }
@@ -1629,6 +1829,7 @@
     var gCard = el('div', 'anCard');
     var gh = el('div', 'anCardHd');
     gh.appendChild(el('div', 'anCardTitle', 'Goals'));
+    gh.appendChild(el('div', 'anSecNote', 'for ' + scopeOf(state.scope).nouns));
     gCard.appendChild(gh);
 
     var goals = a.goals || [];
@@ -1668,7 +1869,7 @@
     var form = el('div', 'anGoalNew');
     var mSel = el('select');
     mSel.setAttribute('aria-label', 'Goal metric');
-    GOAL_METRICS.forEach(function (m) {
+    goalMetricsFor(state.scope).forEach(function (m) {
       var o = el('option', null, m.label); o.value = m.key; mSel.appendChild(o);
     });
     var tIn = el('input');
@@ -1732,8 +1933,9 @@
     if (!c || !u) return;
     try {
       var r = await c.from('analytics_goals')
-        .upsert({ user_id: u.id, metric: metric, target: target, period: period, achieved_at: null },
-                { onConflict: 'user_id,metric,period' });
+        .upsert({ user_id: u.id, scope: state.scope, metric: metric,
+                  target: target, period: period, achieved_at: null },
+                { onConflict: 'user_id,scope,metric,period' });
       if (r.error) throw r.error;
       toast('Goal set');
       await refresh();
@@ -1765,7 +1967,7 @@
     ph.appendChild(el('div', 'anCardTitle', 'This period vs the one before'));
     pCard.appendChild(ph);
     var pHost = el('div');
-    bars(pHost, METRICS.map(function (m) {
+    bars(pHost, metricsFor(state.scope).map(function (m) {
       var cur = Number(win[m.key]) || 0, pv = Number(prev[m.key]) || 0;
       var d = delta(cur, pv);
       return { label: m.label, n: cur, sub: full(cur) + ' vs ' + full(pv) + ' · ' + d.txt.replace(' on previous', '') };
@@ -1948,7 +2150,7 @@
 
   /* ---- open / close ------------------------------------------------------ */
 
-  function openAnalyticsPage() {
+  function openAnalyticsPage(scope) {
     if (!me()) {
       toast('Sign in to see your analytics');
       if (typeof openAuthMod === 'function') openAuthMod();
@@ -1956,6 +2158,14 @@
     }
     var pg = $('anPage');
     if (!pg) return;
+    var want = scope ? scopeOf(scope).key : state.scope;
+    if (want !== state.scope) {
+      state.scope = want;
+      try { localStorage.setItem('dzAnScope', want); } catch (e) {}
+      var body = $('anBdy');
+      if (body) { body.innerHTML = ''; body.dataset.built = ''; }
+      state.data = { overview: null, content: null, reach: null, activity: null };
+    }
     buildShell();
     state.lastFocus = document.activeElement;
     state.open = true;

@@ -135,6 +135,28 @@
 }
 .anRange:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 
+/* ---- the four dashboards ------------------------------------------------
+ * Artwork, Marketplace, Blog, Resources — one page, four scopes, and the
+ * order here is the order they appear in the Settings menu. Bigger and more
+ * solid than the section chips below them, because these switch what the
+ * whole page is about while those only scroll it. */
+.anScopes{
+  display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;
+  padding:.15rem 0 .9rem;
+}
+.anScopes::-webkit-scrollbar{display:none;}
+.anScopeBtn{
+  flex:0 0 auto;background:var(--sur);border:1px solid var(--bdr);color:var(--txd);
+  border-radius:11px;padding:.55rem 1rem;cursor:pointer;min-height:42px;
+  font-family:var(--fb);font-weight:600;font-size:var(--an-fs-body);white-space:nowrap;
+  transition:color .2s,border-color .2s,background .2s;
+}
+.anScopeBtn:hover{color:var(--tx);border-color:var(--bdrh);}
+.anScopeBtn.on{
+  color:var(--text-on-accent);background:var(--pg);border-color:var(--pg);
+}
+.anScopeBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+
 /* ---- section jump chips ------------------------------------------------- */
 .anNav{
   /* --an-hdr is measured from the real header in analytics.js: it is not the

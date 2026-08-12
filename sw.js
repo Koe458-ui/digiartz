@@ -4,6 +4,35 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v170 — marketplace, blog and resources get the same dashboard.
+       Settings gains an Analytics group with four rows in order:
+       Artwork, Marketplace, Blog, Resources. One page, four scopes,
+       switchable by tabs at the top without leaving it.
+       One rule decides most of this: a number appears in the section
+       it came from and nowhere else. A like on an artwork is one like
+       under Artworks and zero under the other three; a post's five
+       likes are five under Blog and zero elsewhere. cred is the one
+       thing that cannot be split — profile_creds has a giver, a
+       receiver and a time and no subject, because cred is given to a
+       person on their profile, not to a piece of work — so it stops
+       being reported as a section metric and moves to an account
+       block that says what it covers. Shares take its place in the
+       KPI row, and on the marketplace Downloads reads Sales.
+       The other three sections had no views at all: their view_count
+       columns existed and nothing had ever incremented them.
+       item_view_dedup and register_item_view are that missing half,
+       and they do not touch the item tables — all three carry a touch
+       trigger and an edit rate limit on UPDATE, so counting a view
+       there would restamp updated_at and spend the viewer's own edit
+       budget. Five normalised views (an_item, an_view, an_like,
+       an_bookmark, an_download) give the readers one shape for four
+       sections.
+       Marketplace alone gets a Revenue section, from
+       marketplace_earnings. Goals and achievements are per dashboard
+       now — "500 views in 30 days" means something different under
+       Blog than under Artworks.
+       Changed: index.html, js/analytics.js, js/sections.js,
+       js/search.js, css/analytics.css, sw.js, and a migration.
    v169 — an artist can see what their work did.
        Profile → Settings → Activity → Analytics: twelve sections over
        artworks only, on a new page that builds itself the first time
@@ -2943,7 +2972,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v169';
+const CACHE_VERSION = 'v170';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2980,7 +3009,7 @@ const SHELL_URLS = [
   '/css/widgets.css?v=5',
   '/css/overrides.css?v=11',
   '/css/select.css?v=2',
-  '/css/analytics.css?v=1',
+  '/css/analytics.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.
@@ -3011,7 +3040,7 @@ const SHELL_URLS = [
   '/js/mywork.js?v=18',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=8',
+  '/js/search.js?v=9',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
   '/js/effects.js?v=6',
@@ -3019,9 +3048,9 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/analytics.js?v=1',
+  '/js/analytics.js?v=2',
   '/js/engagement.js?v=6',
-  '/js/sections.js?v=105',
+  '/js/sections.js?v=106',
   '/js/navprogress.js?v=5'
 ];
 

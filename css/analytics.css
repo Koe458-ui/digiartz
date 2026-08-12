@@ -355,8 +355,18 @@
 @media (prefers-reduced-motion:reduce){ .anHeatCol{transition:none;} }
 
 /* ---- people lists ------------------------------------------------------- */
-.anPeople{display:flex;flex-direction:column;gap:.55rem;}
-.anPerson{display:flex;align-items:center;gap:.65rem;min-width:0;}
+.anPeople{display:flex;flex-direction:column;gap:.4rem;}
+/* a button when there is a profile behind it, a div when there is not — both
+   have to lay out identically, so the button is stripped back to one */
+.anPerson{
+  display:flex;align-items:center;gap:.65rem;min-width:0;width:100%;
+  background:transparent;border:1px solid transparent;border-radius:10px;
+  padding:.3rem .35rem;text-align:left;font:inherit;color:inherit;
+  transition:background .2s,border-color .2s;
+}
+button.anPerson{cursor:pointer;}
+button.anPerson:hover{background:var(--sur2);border-color:var(--bdr);}
+button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
 .anAva{
   width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 auto;
   background:var(--sur2);border:1px solid var(--bdr);

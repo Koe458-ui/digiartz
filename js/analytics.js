@@ -1287,8 +1287,22 @@
     b.appendChild(g);
   }
 
+  // A name on this page is a person the artist may well want to go and look
+  // at — the artist who gave them cred, the one who has liked nine of their
+  // pieces. So the row opens that profile, the same way every other list of
+  // people on the site does. A row with no handle has nothing to open and
+  // stays a plain div rather than a button that does nothing.
   function personRow(p, sub) {
-    var row = el('div', 'anPerson');
+    var row = el(p && p.handle ? 'button' : 'div', 'anPerson');
+    if (p && p.handle) {
+      row.type = 'button';
+      row.setAttribute('aria-label', 'Open ' + (p.name || p.handle) + '’s profile');
+      row.addEventListener('click', function () {
+        if (typeof openProfileByUsername !== 'function') return;
+        closeAnalyticsPage();
+        openProfileByUsername(p.handle, true);
+      });
+    }
     if (p.avatar) {
       var img = document.createElement('img');
       img.className = 'anAva';
@@ -1539,27 +1553,15 @@
     cCard.appendChild(cHost);
     g.appendChild(cCard);
 
-    // When, not who. profile_creds only lets the giver read their own rows —
-    // the receiver has never seen who vouched for them on this site, and this
-    // page is not the place that quietly changes that.
     var rCard = el('div', 'anCard');
     var rh = el('div', 'anCardHd');
-    rh.appendChild(el('div', 'anCardTitle', 'Most recent'));
-    rh.appendChild(el('div', 'anSecNote', 'who gave it stays private'));
+    rh.appendChild(el('div', 'anCardTitle', 'Who gave it'));
     rCard.appendChild(rh);
     var rHost = el('div');
     var recent = f.recent || [];
     if (recent.length) {
-      var wrap = el('div', 'anFeed');
-      recent.forEach(function (p) {
-        var row = el('div', 'anFeedRow');
-        var ic = el('div', 'anFeedIco', '🏅');
-        ic.style.background = '#16D95F22';
-        row.appendChild(ic);
-        row.appendChild(el('div', 'anFeedTxt', 'An artist gave you cred'));
-        row.appendChild(el('div', 'anFeedAt', ago(p.at)));
-        wrap.appendChild(row);
-      });
+      var wrap = el('div', 'anPeople');
+      recent.forEach(function (p) { wrap.appendChild(personRow(p, ago(p.at))); });
       rHost.appendChild(wrap);
     } else empty(rHost, 'NOBODY HAS GIVEN YOU CRED YET');
     rCard.appendChild(rHost);

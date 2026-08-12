@@ -338,13 +338,12 @@ begin
     v_scope := 'artwork';
   end if;
 
-  -- A cred row exists so the receiver's dashboard hears about it the moment
-  -- it happens, and it must not say who. profile_creds lets only the giver
-  -- read their own rows; analytics_events is read by its owner, who here is
-  -- the receiver. So actor_id is nulled AND the viewer key is hashed — a key
-  -- of 'u:<uuid>' would have handed over the giver's id in the one column
-  -- nobody thinks of as identifying, while the hash still dedups one cred per
-  -- giver per receiver per day.
+  -- A cred row exists only so the receiver's dashboard hears about it the
+  -- moment it happens; the names it then shows come from the reader, off
+  -- profile_creds itself. So this row carries no identity — it does not need
+  -- any to do its job, and a log that holds only what it uses is the smaller
+  -- thing to get wrong later. The hash still dedups one cred per giver per
+  -- receiver per day.
   if p_event = 'cred' then
     v_actor := null;
     v_key := 'c:' || md5('dzcred|' || v_key);
@@ -1147,18 +1146,21 @@ begin
          group by 1
       ) g on g.day = cal.day
   ),
-  -- When, not who. profile_creds lets the GIVER read their own rows and
-  -- nobody else — the receiver has never been able to see who vouched for
-  -- them, and a SECURITY DEFINER function is exactly the thing that could
-  -- quietly undo that. It does not: this returns timestamps.
+  -- Who gave it, by name. profile_creds' own SELECT policy lets only the
+  -- giver read their rows, so this reader is the one place a receiver sees
+  -- it — a deliberate widening, asked for, not a side effect. It is the
+  -- receiver's own eight most recent and nobody else's, and giving cred is
+  -- an attributable act on this site, the same way a like is.
   recent_cred as (
-    select jsonb_agg(jsonb_build_object('at', c.at) order by c.at desc) as list
+    select jsonb_agg(jsonb_build_object(
+             'id', p.id, 'name', coalesce(nullif(p.display_name, ''), p.username, 'Artist'),
+             'handle', p.username, 'avatar', p.avatar_url, 'at', c.at) order by c.at desc) as list
       from (
-        select c.created_at as at
+        select c.giver_id as other, c.created_at as at
           from public.profile_creds c
          where c.receiver_id = v_me
          order by c.created_at desc limit 8
-      ) c
+      ) c join public.profiles p on p.id = c.other
   ),
   goals as (
     select jsonb_agg(jsonb_build_object(

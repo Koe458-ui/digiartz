@@ -27,6 +27,18 @@
   function seenMap () {
     try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '{}'); } catch (e) { return {}; }
   }
+  // Where the visit came from, what it is being read on, roughly where it is.
+  // js/analytics.js works these out once per session; this is written so a
+  // page loading without it still records the view, minus the dimensions.
+  function dims () {
+    return (typeof window.dzAnDims === 'function') ? window.dzAnDims() : {};
+  }
+  function withDims (args) {
+    var d = dims();
+    for (var k in d) args[k] = d[k];
+    return args;
+  }
+
   function registerView (id) {
     if (!id || !db()) return;
     var now = Date.now(), map = seenMap();
@@ -34,13 +46,13 @@
     map[id] = now;
     for (var k in map) if (now - map[k] > 2 * VIEW_COOLDOWN * 4) delete map[k]; // prune
     try { localStorage.setItem(SEEN_KEY, JSON.stringify(map)); } catch (e) {}
-    db().rpc('register_artwork_view', { p_artwork: id, p_anon_key: viewerKey() })
+    db().rpc('register_artwork_view', withDims({ p_artwork: id, p_anon_key: viewerKey() }))
       .then(function () {}, function () {});               // fire-and-forget
   }
   // download tracking
   window.registerArtworkDownload = function (id) {
     if (!id || !db()) return;
-    db().rpc('register_artwork_download', { p_artwork: id, p_anon_key: viewerKey() })
+    db().rpc('register_artwork_download', withDims({ p_artwork: id, p_anon_key: viewerKey() }))
       .then(function () {}, function () {});               // fire-and-forget
   };
   // shared viewer key
@@ -141,6 +153,13 @@
         ? await db().from(table).insert({ artwork_id: id, user_id: me().id })
         : await db().from(table).delete().match({ artwork_id: id, user_id: me().id });
       if (r.error && !(on && r.error.code === '23505')) throw r.error; // dup means already set
+      // After the write, never before it: the artist's dashboard should only
+      // ever hear about a like that actually landed. Fire-and-forget, so an
+      // analytics failure cannot un-like anything.
+      if (typeof window.dzAnTrack === 'function') {
+        window.dzAnTrack(kind === 'like' ? (on ? 'like' : 'unlike')
+                                         : (on ? 'bookmark' : 'unbookmark'), String(id));
+      }
       if (kind === 'bm') toast(on ? 'Saved to bookmarks' : 'Removed from bookmarks');
       if (kind === 'like') refreshProfileStatsIfOpen();
       if (!on) removeBmCard(id, kind);

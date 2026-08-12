@@ -622,7 +622,7 @@
   function restoreScroll(){
     // every overlay that locks scroll
     // album pages lock too
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','cmInfoPage','cmSearchPage','cmBrowsePage','bmPage','xpPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','dzPanelHost','fgSearchPage'];
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','cmInfoPage','cmSearchPage','cmBrowsePage','bmPage','xpPage','anPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','dzPanelHost','fgSearchPage'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
@@ -642,7 +642,7 @@
   // over the gallery, community, upload, login and profile pages, and marks
   // which of them you are in.
   var NAV_OVER=['setPage','dzPanelHost','subPage','pfEditPage','pfMyWorkPage',
-                'notifPage','admPage','bmPage','frdPage','cmInfoPage','cmSearchPage','cmBrowsePage','xpPage','rankPage','themePage',
+                'notifPage','admPage','bmPage','frdPage','cmInfoPage','cmSearchPage','cmBrowsePage','xpPage','anPage','rankPage','themePage',
                 'albPage','albViewPage'];
   function dzNavSync(){
     var nav=document.getElementById('bnNav');

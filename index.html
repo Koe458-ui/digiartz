@@ -110,6 +110,7 @@
   <link rel="stylesheet" href="/css/widgets.css?v=5">
   <link rel="stylesheet" href="/css/overrides.css?v=11">
   <link rel="stylesheet" href="/css/select.css?v=2">
+  <link rel="stylesheet" href="/css/analytics.css?v=1">
  </head>
  <body>
 
@@ -2503,6 +2504,7 @@
             <span class="setGrpTxt">Activity</span>
           </h3>
           <div class="setGrpItems">
+            <button class="pfMenuItem" onclick="setGo(openAnalyticsPage,'anPage')"><span class="pfMenuTxt">Analytics</span></button>
             <button class="pfMenuItem" onclick="setGo(openXpPage,'xpPage')"><span class="pfMenuTxt">Artist Progress</span></button>
             <button class="pfMenuItem" onclick="setGo(openLikesPage,'bmPage')"><span class="pfMenuTxt">Likes</span> <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
             <button class="pfMenuItem" onclick="setGo(openBookmarksPage,'bmPage')"><span class="pfMenuTxt">Bookmarks</span> <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
@@ -2606,6 +2608,20 @@
     </div>
   </div>
 
+  <!-- Analytics. Twelve sections and every chart in them are built by
+       js/analytics.js the first time the page is opened, into #anBdy: the
+       markup is a few hundred nodes that mean nothing to a visitor who never
+       opens it, and writing it out here would put it in the HTML every page
+       load pays for. What is here is the shell, so the page can slide in and
+       the header can be read while the numbers are still on their way. -->
+  <div id="anPage" role="dialog" aria-modal="true" aria-label="Analytics">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeAnalyticsPage()" aria-label="Close analytics">←</button>
+      <div class="subPgTitle">ANALYTICS</div>
+    </div>
+    <div class="anBdy" id="anBdy"></div>
+  </div>
+
   <div class="upPop" id="pfShareMod" role="dialog" aria-modal="true" aria-label="Share profile">
     <div class="upPopBox pfShareBox">
       <button class="upPopX" onclick="closePfShare()" aria-label="Close">✕</button>
@@ -2645,11 +2661,11 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=21"></script>
+  <script src="/js/app-core.js?v=22"></script>
   <script src="/js/protect.js?v=2"></script>
-  <script src="/js/gallery.js?v=81"></script>
+  <script src="/js/gallery.js?v=82"></script>
   <script src="/js/auth.js?v=10"></script>
-  <script src="/js/profile.js?v=10"></script>
+  <script src="/js/profile.js?v=11"></script>
   <script src="/js/albums.js?v=13"></script>
   <script src="/js/drafts.js?v=6"></script>
   <script src="/js/upqueue.js?v=4"></script>
@@ -2658,7 +2674,7 @@
   <script src="/js/mywork.js?v=18"></script>
   <script src="/js/startup.js?v=3"></script>
   <script src="/js/tagrail.js?v=3"></script>
-  <script src="/js/search.js?v=7"></script>
+  <script src="/js/search.js?v=8"></script>
   <script src="/js/feed.js?v=3"></script>
   <script src="/js/fgshow.js?v=4"></script>
 
@@ -3207,10 +3223,14 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-  <script src="/js/engagement.js?v=5"></script>
+  <!-- Before engagement.js on purpose. It defines dzAnDims, which is what a
+       view, a like and a download carry alongside themselves; engagement.js
+       guards for its absence anyway, but the order means it is never absent. -->
+  <script src="/js/analytics.js?v=1"></script>
+  <script src="/js/engagement.js?v=6"></script>
 
 
-  <script src="/js/sections.js?v=104"></script>
+  <script src="/js/sections.js?v=105"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

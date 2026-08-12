@@ -670,6 +670,12 @@
   function avShare(){
     var url=window.location.href;
     var title=(document.getElementById('lbNm')||{}).textContent||'Artwork';
+    // A share is the one thing on this page no table has ever recorded. Logged
+    // on the tap rather than on the result, because neither the share sheet
+    // nor the clipboard tells us whether anything was actually sent.
+    if(avCurrentArt && avCurrentArt.id && typeof window.dzAnTrack==='function'){
+      window.dzAnTrack('share', String(avCurrentArt.id));
+    }
     if(navigator.share){ navigator.share({title:title,url:url}).catch(function(){}); }
     else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(function(){ showToast('Link copied'); }); }
     else { showToast('Share not supported'); }

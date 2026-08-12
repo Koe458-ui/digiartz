@@ -220,6 +220,28 @@
     if(mySeq !== fgSrch.seq) return;
     fgSrch.rows = rows;
     fgSearchRender();
+    fgSearchLog(raw);
+  }
+
+  /* An artist's Search Analytics should say what people looked for, not what
+     they typed on the way there. Typing "robin" fires this five times — r, ro,
+     rob, robi, robin — and four of those are keystrokes, not searches. So the
+     term is only recorded once it has sat still for a beat, and only when it
+     actually matched somebody's artwork; a search that found nothing belongs
+     to nobody's dashboard. dz_analytics_track_search takes the whole visible
+     page of results in one call. */
+  var fgSrchLogTimer = null, fgSrchLogged = '';
+  function fgSearchLog(term){
+    clearTimeout(fgSrchLogTimer);
+    if(typeof window.dzAnSearch !== 'function') return;
+    var q = String(term||'').trim();
+    if(q.length < 2 || q === fgSrchLogged) return;
+    fgSrchLogTimer = setTimeout(function(){
+      var rows = fgSrch.rows.artwork || [];
+      if(String(fgSrch.q||'').trim() !== q || !rows.length) return;
+      fgSrchLogged = q;
+      window.dzAnSearch(rows.slice(0,12).map(function(r){ return String(r.id); }), q);
+    }, 1200);
   }
 
   function fgSearchRender(warn){
@@ -271,6 +293,11 @@
     var row  = rows.find(function(x){ return String(x.id)===String(id); });
     if(!row) return;
     if(kind==='artwork'){
+      // the other half of the CTR: this term was shown, and this one was opened
+      if(typeof window.dzAnTrack === 'function'){
+        var q = String(fgSrch.q||'').trim();
+        if(q) window.dzAnTrack('search_click', String(id), { term: q });
+      }
       var cats = catList(row.category).length ? catList(row.category)
                : (catList(row.tags).length ? catList(row.tags) : ['others']);
       openLB(row.image_url, row.name, cats[0]||'', row.description||'', String(row.id), false, rows);

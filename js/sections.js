@@ -32,7 +32,7 @@
   // visible while that panel was short; obvious once it grew a long one.
   // dzPanelHost is created by the signed-in module and is simply absent for
   // everyone else — overlayEls skips what it cannot find.
-  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'dzPanelHost', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
+  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'dzPanelHost', 'themePage', 'bmPage', 'xpPage', 'anPage', 'rankPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);
@@ -3903,6 +3903,9 @@
       var res = await sb.from('item_comments').insert({ kind:kind, subject_id:id, user_id:currentUser.id, body:body });
       if(res.error) throw res.error;
       if(input) input.value = '';
+      // the artist's dashboard counts comments from item_comments itself; this
+      // is only here to give the comment a country, a device and a source
+      if(kind === 'artwork' && typeof window.dzAnTrack === 'function') window.dzAnTrack('comment', String(id));
       window.dzCmLoad(kind, id, listId);
     }catch(e){ showToast((e && e.message) || 'Could not post the comment'); }
     finally{ if(input) input.disabled = false; }

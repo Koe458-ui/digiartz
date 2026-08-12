@@ -4,6 +4,84 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v170 — marketplace, blog and resources get the same dashboard.
+       Settings gains an Analytics group with four rows in order:
+       Artwork, Marketplace, Blog, Resources. One page, four scopes,
+       switchable by tabs at the top without leaving it.
+       One rule decides most of this: a number appears in the section
+       it came from and nowhere else. A like on an artwork is one like
+       under Artworks and zero under the other three; a post's five
+       likes are five under Blog and zero elsewhere. cred is the one
+       thing that cannot be split — profile_creds has a giver, a
+       receiver and a time and no subject, because cred is given to a
+       person on their profile, not to a piece of work — so it stops
+       being reported as a section metric and moves to an account
+       block that says what it covers. Shares take its place in the
+       KPI row, and on the marketplace Downloads reads Sales.
+       The other three sections had no views at all: their view_count
+       columns existed and nothing had ever incremented them.
+       item_view_dedup and register_item_view are that missing half,
+       and they do not touch the item tables — all three carry a touch
+       trigger and an edit rate limit on UPDATE, so counting a view
+       there would restamp updated_at and spend the viewer's own edit
+       budget. Five normalised views (an_item, an_view, an_like,
+       an_bookmark, an_download) give the readers one shape for four
+       sections.
+       Marketplace alone gets a Revenue section, from
+       marketplace_earnings. Goals and achievements are per dashboard
+       now — "500 views in 30 days" means something different under
+       Blog than under Artworks.
+       Changed: index.html, js/analytics.js, js/sections.js,
+       js/search.js, css/analytics.css, sw.js, and a migration.
+   v169 — an artist can see what their work did.
+       Profile → Settings → Activity → Analytics: twelve sections over
+       artworks only, on a new page that builds itself the first time
+       it is opened. Overview, growth, per-artwork performance, content
+       insights, audience, traffic, on-site search, engagement, cred,
+       community, goals and comparisons. Cred, not followers: nobody
+       follows anybody here, profile_creds is what one artist gives
+       another, and that is the metric the page charts. No money in it
+       either — artworks are not for sale on this site, so an earnings
+       tile would read zero for everyone forever.
+       Almost all of it comes off tables that already existed, so the
+       charts have real history the day they ship: artwork_view_dedup
+       is a daily series nobody had drawn, likes and bookmarks carry
+       created_at, item_comments carries the comments and friendships
+       carries the connections. Four things had never been written
+       down anywhere — where a visit came from, what country it was
+       from, what device it was on, and what was searched — and one
+       thing had no table at all: a share. analytics_events is that
+       table, written only by SECURITY DEFINER functions that resolve
+       the owner themselves, deduped to one row per viewer per thing
+       per day, and readable only by the artist it belongs to.
+       register_artwork_view and register_artwork_download gained four
+       optional parameters and record the dimension row inside the
+       same branch that decides a view happened, so the two counts can
+       never disagree.
+       Live: the page subscribes to its own rows over realtime — the
+       first thing on the site to use it — and polls every 45 seconds
+       as well, because a socket can be blocked and a number that is
+       quietly stale is worse than one that is slow. A refresh asked
+       for while one is in flight is queued rather than dropped, and a
+       dropped socket resubscribes.
+       Giving cred writes an analytics_events row so the receiver's
+       page updates on the spot. It carries no giver: actor_id is
+       nulled and the viewer key hashed, because profile_creds has
+       always let only the giver read their own rows and a SECURITY
+       DEFINER function is exactly the thing that could undo that
+       without anyone noticing. The dashboard says "an artist gave you
+       cred" and means it.
+       Every figure is written out in full. 238,393, never 238K. The
+       type scale is seven variables re-set at the same three
+       breakpoints css/profile.css uses, so the page reads at the same
+       size as the rest of the site on a phone, a tablet and a desktop.
+       Six bright chart colours, evenly spaced round the wheel, fixed
+       rather than themed — a metric has to be the same colour in dark,
+       graydark and light, and the accent token is not.
+       Changed: index.html, css/analytics.css (new), js/analytics.js
+       (new), js/engagement.js, js/search.js, js/gallery.js,
+       js/profile.js, js/sections.js, js/app-core.js, sw.js, and a
+       migration.
    v167 — the section header is the section header, and Browse exists.
        Community had its own header — a bordered chip, bordered
        buttons, its own sizes — while every other section shares one.
@@ -2894,7 +2972,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v168';
+const CACHE_VERSION = 'v170';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -2931,6 +3009,7 @@ const SHELL_URLS = [
   '/css/widgets.css?v=5',
   '/css/overrides.css?v=11',
   '/css/select.css?v=2',
+  '/css/analytics.css?v=2',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.
@@ -2948,12 +3027,12 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=21',
+  '/js/app-core.js?v=22',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=81',
+  '/js/gallery.js?v=82',
   '/js/auth.js?v=10',
-  '/js/profile.js?v=10',
-  '/js/albums.js?v=13',
+  '/js/profile.js?v=11',
+  '/js/albums.js?v=14',
   '/js/drafts.js?v=6',
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',
@@ -2961,7 +3040,7 @@ const SHELL_URLS = [
   '/js/mywork.js?v=18',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=7',
+  '/js/search.js?v=9',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
   '/js/effects.js?v=6',
@@ -2969,8 +3048,9 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/engagement.js?v=5',
-  '/js/sections.js?v=104',
+  '/js/analytics.js?v=2',
+  '/js/engagement.js?v=6',
+  '/js/sections.js?v=106',
   '/js/navprogress.js?v=5'
 ];
 

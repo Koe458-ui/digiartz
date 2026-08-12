@@ -214,6 +214,12 @@
       pf.profile = data;
       pf.isOwner = !!(currentUser && currentUser.id === data.id);
       pfPaintTopBar(pf.isOwner);
+      // Somebody else's profile, opened. Deduped per viewer per day in the
+      // database, and dropped outright when the viewer is the owner, so this
+      // does not need to know whether the page was already open.
+      if(!pf.isOwner && typeof window.dzAnTrack === 'function'){
+        window.dzAnTrack('profile_view', null, { scope: 'profile', owner: String(data.id) });
+      }
       // cache and preload
       pfMediaCache[username] = { avatar_url: data.avatar_url||null, banner_url: data.banner_url||null };
       pfPreloadImage(getThumbnailUrl(data.avatar_url));

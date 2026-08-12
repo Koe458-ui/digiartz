@@ -32,7 +32,7 @@
   // visible while that panel was short; obvious once it grew a long one.
   // dzPanelHost is created by the signed-in module and is simply absent for
   // everyone else — overlayEls skips what it cannot find.
-  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'dzPanelHost', 'themePage', 'bmPage', 'xpPage', 'rankPage'];
+  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'dzPanelHost', 'themePage', 'bmPage', 'xpPage', 'anPage', 'rankPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);
@@ -3903,6 +3903,12 @@
       var res = await sb.from('item_comments').insert({ kind:kind, subject_id:id, user_id:currentUser.id, body:body });
       if(res.error) throw res.error;
       if(input) input.value = '';
+      // the dashboard counts comments from item_comments itself; this is only
+      // here to give the comment a country, a device and a source, and it
+      // files it under the section it was left in
+      if(kind !== 'job' && typeof window.dzAnTrack === 'function'){
+        window.dzAnTrack('comment', String(id), { scope: kind });
+      }
       window.dzCmLoad(kind, id, listId);
     }catch(e){ showToast((e && e.message) || 'Could not post the comment'); }
     finally{ if(input) input.disabled = false; }
@@ -4262,6 +4268,11 @@
   window.dzVwShare = function(sec, id, title){
     var url = vwUrl(sec, id);
     var t = title || document.title;
+    // Counted on the tap, like the artwork viewer's: neither the share sheet
+    // nor the clipboard reports back whether anything was actually sent.
+    if(KIND[sec] && KIND[sec] !== 'job' && typeof window.dzAnTrack === 'function'){
+      window.dzAnTrack('share', String(id), { scope: KIND[sec] });
+    }
     if(navigator.share){ navigator.share({ title:t, url:url }).catch(function(){}); return; }
     if(navigator.clipboard){
       navigator.clipboard.writeText(url).then(function(){ showToast('Link copied'); },
@@ -4474,6 +4485,13 @@
         r = await q;
       }
       if(r.error && !(on && r.error.code === '23505')) throw r.error;
+      // after the write, and only for the two that are a section's own
+      // number: a cart is the shopper's, not the seller's dashboard's
+      if(what !== 'cart' && typeof window.dzAnTrack === 'function'){
+        window.dzAnTrack(what === 'like' ? (on ? 'like' : 'unlike')
+                                         : (on ? 'bookmark' : 'unbookmark'),
+                         String(id), { scope: kind });
+      }
       if(typeof showToast === 'function') showToast(on ? cfg.on : cfg.off);
       if(what === 'cart' && typeof window.dzCartPaint === 'function') window.dzCartPaint();
     }catch(e){
@@ -4962,6 +4980,14 @@
   // one place per item walked through, so Back leaves it in a single press
   // however far along the run you are.
   function vwMark(sec, id){
+    // The one place every opened item passes through — the first open and
+    // every Next after it — so it is where a view is recorded. Jobs are not
+    // one of the four dashboards and are not counted. Deduped per viewer per
+    // day in the database, so stepping back and forth is one view.
+    var an = KIND[sec];
+    if(an && an !== 'job' && typeof window.dzAnItemView === 'function'){
+      window.dzAnItemView(an, String(id));
+    }
     var path = VW_PATH[sec] ? ('/'+VW_PATH[sec]+'/'+id) : null;
     try{
       if(!pushed){

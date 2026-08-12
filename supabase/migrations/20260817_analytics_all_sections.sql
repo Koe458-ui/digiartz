@@ -995,7 +995,9 @@ begin
         select 'comment', c.created_at, m.title, m.id
           from public.item_comments c join mine m on m.id = c.subject_id
          where c.kind = v_sc and c.user_id <> v_me
-        order by at desc limit 12
+        -- the card shows ten; the dedicated list page shows the rest, so
+        -- the reader has to return more than the card asks for
+        order by at desc limit 100
       ) s
   ),
   money as (

@@ -42,12 +42,10 @@
   --an-grid:rgba(var(--tx2-rgb),.10);
 }
 
-#anPage{
-  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
-  overflow-y:auto;transform:translateX(100%);
-  transition:transform .45s cubic-bezier(.22,1,.36,1);
-
-  /* the scale — phone first, raised at 640 and again at 1000 */
+#anPage,#anListPage{
+  /* the scale — phone first, raised at 640 and again at 1000. The full-list
+     page is built from the same cards and rows, so it reads from the same
+     variables rather than keeping a second copy of them. */
   --an-fs-micro:.64rem;   /* fact labels, sub-lines, the smallest thing here */
   --an-fs-label:.68rem;   /* all-caps tracked card titles */
   --an-fs-chip:.68rem;    /* nav chips, legend and sort buttons */
@@ -57,18 +55,23 @@
   --an-fs-kpi:1.42rem;    /* the number in a KPI tile */
   --an-fs-sec:1.12rem;    /* section heading */
 }
+#anPage{
+  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
 #anPage.open{transform:translateX(0);}
 @media (prefers-reduced-motion:reduce){ #anPage{transition:none;} }
 
 @media(min-width:640px){
-  #anPage{
+  #anPage,#anListPage{
     --an-fs-micro:.66rem; --an-fs-label:.72rem; --an-fs-chip:.7rem;
     --an-fs-num:.8rem;    --an-fs-body:.88rem;  --an-fs-big:1.3rem;
     --an-fs-kpi:1.6rem;   --an-fs-sec:1.25rem;
   }
 }
 @media(min-width:1000px){
-  #anPage{
+  #anPage,#anListPage{
     --an-fs-micro:.68rem; --an-fs-label:.74rem; --an-fs-chip:.72rem;
     --an-fs-num:.82rem;   --an-fs-body:.9rem;   --an-fs-big:1.38rem;
     --an-fs-kpi:1.7rem;   --an-fs-sec:1.35rem;
@@ -135,28 +138,6 @@
 }
 .anRange:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 
-/* ---- the four dashboards ------------------------------------------------
- * Artwork, Marketplace, Blog, Resources — one page, four scopes, and the
- * order here is the order they appear in the Settings menu. Bigger and more
- * solid than the section chips below them, because these switch what the
- * whole page is about while those only scroll it. */
-.anScopes{
-  display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;
-  padding:.15rem 0 .9rem;
-}
-.anScopes::-webkit-scrollbar{display:none;}
-.anScopeBtn{
-  flex:0 0 auto;background:var(--sur);border:1px solid var(--bdr);color:var(--txd);
-  border-radius:11px;padding:.55rem 1rem;cursor:pointer;min-height:42px;
-  font-family:var(--fb);font-weight:600;font-size:var(--an-fs-body);white-space:nowrap;
-  transition:color .2s,border-color .2s,background .2s;
-}
-.anScopeBtn:hover{color:var(--tx);border-color:var(--bdrh);}
-.anScopeBtn.on{
-  color:var(--text-on-accent);background:var(--pg);border-color:var(--pg);
-}
-.anScopeBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-
 /* ---- section jump chips ------------------------------------------------- */
 .anNav{
   /* --an-hdr is measured from the real header in analytics.js: it is not the
@@ -197,15 +178,27 @@
 @media(min-width:1000px){ .anCard{padding:1.2rem 1.25rem;} }
 .anCardHd{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin-bottom:1rem;flex-wrap:wrap;}
 .anCardTitle{font-family:var(--fm);font-size:var(--an-fs-label);letter-spacing:.18em;color:var(--txd);text-transform:uppercase;}
-/* One gap value for every grid on the page, and the same one between stacked
-   cards, so nothing ever reads as two boxes that happen to be near each
-   other. */
-.anGrid2{display:grid;gap:1.1rem;grid-template-columns:1fr;}
+/* ONE GAP, SET IN ONE PLACE.
+ *
+ * Spacing between boxes used to be a margin on whichever card happened to
+ * need one, which is how two boxes end up touching: the day a card is added
+ * without the margin, or a grid lands next to a card, nothing separates them.
+ * Every section body is a flex column with a fixed gap instead, so the
+ * distance between any two boxes is the same distance and no card has to
+ * remember anything. --an-gap is the only number involved.
+ */
+#anPage,#anListPage{--an-gap:1.1rem;}
+@media(min-width:1000px){ #anPage,#anListPage{--an-gap:1.25rem;} }
+
+.anBox{display:flex;flex-direction:column;gap:var(--an-gap);}
+.anGrid2{display:grid;gap:var(--an-gap);grid-template-columns:1fr;}
 @media(min-width:860px){ .anGrid2{grid-template-columns:1fr 1fr;} }
-.anGrid2w{display:grid;gap:1.1rem;grid-template-columns:1fr;}
+.anGrid2w{display:grid;gap:var(--an-gap);grid-template-columns:1fr;}
 @media(min-width:860px){ .anGrid2w{grid-template-columns:1.6fr 1fr;} }
-/* a card sitting under another card or a grid inside the same section */
-.anStack{margin-top:1.1rem;}
+/* the flex gap above owns the spacing now; the class is kept because the
+   painters still tag the cards that used to carry a margin, and it must not
+   add a second one on top of the gap */
+.anStack{margin-top:0;}
 
 /* ---- 1. KPI tiles ------------------------------------------------------- */
 /* Six tiles, and every one of them shows the number in full — 238,393, not
@@ -213,9 +206,9 @@
    with the viewport rather than sitting at one size, and it is allowed to
    break onto a second line rather than be clipped, because a truncated total
    is worse than a tall tile. */
-.anKpis{display:grid;gap:.8rem;grid-template-columns:repeat(2,1fr);}
+.anKpis{display:grid;gap:var(--an-gap);grid-template-columns:repeat(2,1fr);}
 @media(min-width:560px){ .anKpis{grid-template-columns:repeat(3,1fr);} }
-@media(min-width:1040px){ .anKpis{grid-template-columns:repeat(6,1fr);gap:.9rem;} }
+@media(min-width:1040px){ .anKpis{grid-template-columns:repeat(6,1fr);} }
 .anKpi{
   background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
   padding:.85rem .85rem .55rem;display:flex;flex-direction:column;gap:.25rem;
@@ -365,6 +358,28 @@
 @media(max-width:430px){
   .anArtNums{padding-left:0;gap:.6rem;}
 }
+
+/* ---- view all ----------------------------------------------------------- */
+.anMore{
+  width:100%;background:transparent;border:1px dashed var(--bdr);color:var(--txd);
+  border-radius:11px;padding:.7rem .8rem;cursor:pointer;min-height:44px;
+  font-family:var(--fm);font-size:var(--an-fs-chip);letter-spacing:.08em;
+  text-transform:uppercase;transition:color .2s,border-color .2s,background .2s;
+}
+.anMore:hover{color:var(--tx);border-color:var(--bdrh);background:var(--sur2);}
+.anMore:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+
+/* ---- the full list, on a page of its own -------------------------------- */
+#anListPage{
+  position:fixed;inset:0;z-index:546;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#anListPage.open{transform:translateX(0);}
+@media (prefers-reduced-motion:reduce){ #anListPage{transition:none;} }
+#anListPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
+#anListPage .subPgTitle{color:var(--tx);}
+#anListBdy{display:flex;flex-direction:column;gap:var(--an-gap);}
 
 /* ---- hour heat ---------------------------------------------------------- */
 .anHeat{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;align-items:end;height:76px;}

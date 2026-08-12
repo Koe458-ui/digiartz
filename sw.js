@@ -4,6 +4,22 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v172 — one dashboard per section, ten rows a card, one gap.
+       The scope tabs are gone. Artwork Analytics is artworks and
+       nothing else: the row tapped in Settings is the dashboard you
+       get, and no control on the page turns it into another one.
+       Artwork Performance and Latest On Your Work show ten. Both carry
+       a View all that opens a page of their own with the whole list —
+       the same rows, the same sort buttons, no cap — sitting over the
+       dashboard so closing it puts you back where you were. The reader
+       returns 100 activity rows now rather than 12, because the page
+       behind View all needs more than the card asks for.
+       Spacing between boxes was a margin on whichever card happened to
+       need one, which is how two boxes end up touching. Every section
+       body is a flex column with one gap now, --an-gap, and every grid
+       on the page reads the same variable. No card remembers anything.
+       Changed: index.html, js/analytics.js, css/analytics.css, sw.js,
+       and a migration.
    v171 — the other three sections start counting views, and a view
        stops being an edit.
        v170 recorded item views in item_view_dedup and left the three
@@ -3002,7 +3018,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v170';
+const CACHE_VERSION = 'v172';
 const SHELL = `dz-shell-${CACHE_VERSION}`;
 const THUMB = `dz-thumb-${CACHE_VERSION}`;
 const VIEW  = `dz-view-${CACHE_VERSION}`;
@@ -3039,7 +3055,7 @@ const SHELL_URLS = [
   '/css/widgets.css?v=5',
   '/css/overrides.css?v=11',
   '/css/select.css?v=2',
-  '/css/analytics.css?v=2',
+  '/css/analytics.css?v=3',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.
@@ -3078,7 +3094,7 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/analytics.js?v=2',
+  '/js/analytics.js?v=3',
   '/js/engagement.js?v=6',
   '/js/sections.js?v=106',
   '/js/navprogress.js?v=5'

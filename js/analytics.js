@@ -384,13 +384,27 @@
     var top = Math.ceil(max / step) * step;
     if (top / max > 2 && step > 1) { step = step / 2; top = Math.ceil(max / step) * step; }
 
+    // How many gridlines, chosen so every label is a whole number and no two
+    // read the same. Four lines over a ceiling of 3 gives 0, 1, 2, 2, 3 —
+    // which looks like a rendering bug and is really just rounding, and a
+    // chart of cred or uploads is exactly where the ceiling is that small.
+    var ticks = 4;
+    if (top <= 4) {
+      ticks = Math.max(1, Math.round(top));
+    } else {
+      var opts = [4, 5, 3, 2];
+      for (var oi = 0; oi < opts.length; oi++) {
+        if (top % opts[oi] === 0) { ticks = opts[oi]; break; }
+      }
+    }
+
     // Axis labels are written out in full like everything else, so the gutter
     // is measured from the widest one rather than guessed at — "1,250,000" and
     // "40" need very different amounts of room.
     var axisFont = narrow ? 11 : 12;
     var widest = 0;
-    for (var gi = 0; gi <= 4; gi++) {
-      widest = Math.max(widest, full(Math.round((top / 4) * gi)).length);
+    for (var gi = 0; gi <= ticks; gi++) {
+      widest = Math.max(widest, full(Math.round((top / ticks) * gi)).length);
     }
     var L = Math.min(Math.round(W * 0.28), 12 + Math.ceil(widest * axisFont * 0.62));
     var iw = Math.max(40, W - L - R), ih = H - T - B;
@@ -406,11 +420,15 @@
     function yAt(v) { return T + ih - (Number(v) / top) * ih; }
 
     // gridlines
-    for (var g = 0; g <= 4; g++) {
-      var v = (top / 4) * g, y = yAt(v);
+    var seenLabel = null;
+    for (var g = 0; g <= ticks; g++) {
+      var v = (top / ticks) * g, y = yAt(v);
       svg.appendChild(svgEl('line', { class: 'anGridLine', x1: L, y1: y, x2: W - R, y2: y }));
+      var text = full(Math.round(v));
+      if (text === seenLabel) continue;   // belt and braces against the above
+      seenLabel = text;
       var lbl = svgEl('text', { class: 'anAxis', x: L - 6, y: y + 3.5, 'text-anchor': 'end' });
-      lbl.textContent = full(Math.round(v));
+      lbl.textContent = text;
       svg.appendChild(lbl);
     }
 
@@ -623,7 +641,9 @@
     lastFocus: null,
     poll: null,
     channel: null,
-    dirty: null
+    dirty: null,
+    retry: null,
+    again: false
   };
 
   try {
@@ -676,7 +696,7 @@
     nav.id = 'anNav';
     body.appendChild(nav);
 
-    SECTIONS.forEach(function (s, i) {
+    SECTIONS.forEach(function (s) {
       var btn = el('button', 'anNavBtn', s.short);
       btn.type = 'button';
       btn.addEventListener('click', function () {
@@ -688,7 +708,6 @@
       var sec = el('section', 'anSec');
       sec.id = 'anSec_' + s.id;
       var hd = el('div', 'anSecHd');
-      hd.appendChild(el('span', 'anSecNo', String(i + 1)));
       hd.appendChild(el('h2', 'anSecTitle', s.title));
       if (s.note) hd.appendChild(el('span', 'anSecNote', s.note));
       sec.appendChild(hd);
@@ -764,6 +783,7 @@
     catch (e) {
       if (seq !== state.seq) return;
       state.loading = false;
+      state.again = false;
       failAll();
       return;
     }
@@ -778,6 +798,9 @@
     state.data.activity = (out[3] && !out[3].error) ? out[3].data : null;
 
     paint();
+
+    // something landed while this was in flight
+    if (state.again) { state.again = false; if (state.open) load(false); }
   }
 
   function failAll() {
@@ -866,7 +889,7 @@
 
     var t = o.totals || {};
     var card = el('div', 'anCard');
-    card.style.marginTop = '.8rem';
+    card.classList.add('anStack');
     var hd = el('div', 'anCardHd');
     hd.appendChild(el('div', 'anCardTitle', 'All time'));
     card.appendChild(hd);
@@ -943,7 +966,7 @@
     for (var i = views.length - 1; i >= 0 && views[i] > 0; i--) streak++;
 
     var f = el('div', 'anCard');
-    f.style.marginTop = '.8rem';
+    f.classList.add('anStack');
     var fh = el('div', 'anCardHd');
     fh.appendChild(el('div', 'anCardTitle', 'Trend read'));
     f.appendChild(fh);
@@ -1062,7 +1085,7 @@
     var byViews = rows.slice().sort(function (x, y) { return (y.views || 0) - (x.views || 0); });
     var top = byViews[0], low = byViews[byViews.length - 1];
     var f = el('div', 'anCard');
-    f.style.marginTop = '.8rem';
+    f.classList.add('anStack');
     var fh = el('div', 'anCardHd');
     fh.appendChild(el('div', 'anCardTitle', 'Highs and lows'));
     f.appendChild(fh);
@@ -1151,7 +1174,7 @@
 
     var s = c.shape || {};
     var f = el('div', 'anCard');
-    f.style.marginTop = '.8rem';
+    f.classList.add('anStack');
     var fh = el('div', 'anCardHd');
     fh.appendChild(el('div', 'anCardTitle', 'Your body of work'));
     f.appendChild(fh);
@@ -1330,7 +1353,7 @@
     b.appendChild(g);
 
     var rCard = el('div', 'anCard');
-    rCard.style.marginTop = '.8rem';
+    rCard.classList.add('anStack');
     var rh = el('div', 'anCardHd');
     rh.appendChild(el('div', 'anCardTitle', 'Sites that sent people'));
     rCard.appendChild(rh);
@@ -1369,7 +1392,7 @@
     b.appendChild(f);
 
     var card = el('div', 'anCard');
-    card.style.marginTop = '.8rem';
+    card.classList.add('anStack');
     var hd = el('div', 'anCardHd');
     hd.appendChild(el('div', 'anCardTitle', 'What people searched'));
     card.appendChild(hd);
@@ -1448,7 +1471,7 @@
 
     var feed = a.activity || [];
     var card = el('div', 'anCard');
-    card.style.marginTop = '.8rem';
+    card.classList.add('anStack');
     var hd = el('div', 'anCardHd');
     hd.appendChild(el('div', 'anCardTitle', 'Latest on your work'));
     card.appendChild(hd);
@@ -1516,15 +1539,27 @@
     cCard.appendChild(cHost);
     g.appendChild(cCard);
 
+    // When, not who. profile_creds only lets the giver read their own rows —
+    // the receiver has never seen who vouched for them on this site, and this
+    // page is not the place that quietly changes that.
     var rCard = el('div', 'anCard');
     var rh = el('div', 'anCardHd');
     rh.appendChild(el('div', 'anCardTitle', 'Most recent'));
+    rh.appendChild(el('div', 'anSecNote', 'who gave it stays private'));
     rCard.appendChild(rh);
     var rHost = el('div');
     var recent = f.recent || [];
     if (recent.length) {
-      var wrap = el('div', 'anPeople');
-      recent.forEach(function (p) { wrap.appendChild(personRow(p, ago(p.at))); });
+      var wrap = el('div', 'anFeed');
+      recent.forEach(function (p) {
+        var row = el('div', 'anFeedRow');
+        var ic = el('div', 'anFeedIco', '🏅');
+        ic.style.background = '#16D95F22';
+        row.appendChild(ic);
+        row.appendChild(el('div', 'anFeedTxt', 'An artist gave you cred'));
+        row.appendChild(el('div', 'anFeedAt', ago(p.at)));
+        wrap.appendChild(row);
+      });
       rHost.appendChild(wrap);
     } else empty(rHost, 'NOBODY HAS GIVEN YOU CRED YET');
     rCard.appendChild(rHost);
@@ -1660,7 +1695,7 @@
     b.appendChild(gCard);
 
     var aCard = el('div', 'anCard');
-    aCard.style.marginTop = '.8rem';
+    aCard.classList.add('anStack');
     var ah = el('div', 'anCardHd');
     ah.appendChild(el('div', 'anCardTitle', 'Achievements'));
     var done = (a.achievements || []).filter(function (x) { return x.done; }).length;
@@ -1737,7 +1772,7 @@
     b.appendChild(pCard);
 
     var sCard = el('div', 'anCard');
-    sCard.style.marginTop = '.8rem';
+    sCard.classList.add('anStack');
     var sh = el('div', 'anCardHd');
     sh.appendChild(el('div', 'anCardTitle', 'Against the rest of DigiArtz'));
     sh.appendChild(el('div', 'anSecNote', 'views over the same window'));
@@ -1776,8 +1811,8 @@
     sCard.appendChild(wrap);
     sCard.appendChild(el('div', 'anCmpMine', 'Your ' + full(cmp.my_views) + ' views this period'));
 
-    var fb = el('div');
-    fb.style.marginTop = '1.4rem';
+    // the reference labels under the bar own the space above this
+    var fb = el('div', 'anStack');
     facts(fb, [
       { n: full(cmp.my_views), l: 'Your views' },
       { n: full(cmp.median_views), l: 'Site median' },
@@ -1791,17 +1826,22 @@
   /* ---- live -------------------------------------------------------------- */
 
   // Two ways to hear about a change, because neither is enough alone.
-  // Realtime is instant and can be blocked by a proxy or a flaky socket; the
-  // poll is slow and always works. Both funnel into one debounced refresh, so
-  // a burst of ten likes is one repaint.
+  // Realtime is instant and can be blocked by a proxy, a corporate firewall or
+  // a flaky socket; the poll is slow and always works. Both funnel into one
+  // debounced refresh, so a burst of ten likes is one repaint.
+  //
+  // A refresh asked for while one is already in flight is not dropped — it is
+  // remembered and run once the first lands. Dropping it is how a dashboard
+  // ends up one event behind and stays there: the very moment something
+  // happens is the moment a load is most likely to be running.
   function refresh() {
-    if (state.loading) return Promise.resolve();
+    if (state.loading) { state.again = true; return Promise.resolve(); }
     return load(false);
   }
 
   function markDirty() {
     clearTimeout(state.dirty);
-    state.dirty = setTimeout(function () { if (state.open) refresh(); }, 1500);
+    state.dirty = setTimeout(function () { if (state.open) refresh(); }, 1200);
   }
 
   function startLive() {
@@ -1814,6 +1854,22 @@
     }, 45000);
 
     if (typeof c.channel !== 'function') { setLive(false); return; }
+
+    // Realtime reads the same RLS policy the table carries, so the socket has
+    // to be carrying this member's token or the server has nothing to check
+    // and sends nothing. supabase-js sets it on its own when the session
+    // changes; a page that has been open since before this panel existed may
+    // never have had that moment, so it is set here too.
+    try {
+      if (c.realtime && typeof c.realtime.setAuth === 'function' &&
+          c.auth && typeof c.auth.getSession === 'function') {
+        c.auth.getSession().then(function (r) {
+          var tok = r && r.data && r.data.session && r.data.session.access_token;
+          if (tok) { try { c.realtime.setAuth(tok); } catch (e) {} }
+        }, function () {});
+      }
+    } catch (e) {}
+
     try {
       state.channel = c.channel('dz-analytics-' + u.id)
         .on('postgres_changes',
@@ -1821,6 +1877,15 @@
             markDirty)
         .subscribe(function (status) {
           setLive(status === 'SUBSCRIBED');
+          // A dropped socket is the case the poll exists for, so nothing is
+          // lost while this is down — but it should come back rather than
+          // leave the page on the slow path for the rest of the session.
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            clearTimeout(state.retry);
+            state.retry = setTimeout(function () {
+              if (state.open) startLive();
+            }, 15000);
+          }
         });
     } catch (e) { setLive(false); }
   }
@@ -1828,6 +1893,7 @@
   function stopLive() {
     if (state.poll) { clearInterval(state.poll); state.poll = null; }
     clearTimeout(state.dirty);
+    clearTimeout(state.retry);
     var c = db();
     if (state.channel && c && typeof c.removeChannel === 'function') {
       try { c.removeChannel(state.channel); } catch (e) {}

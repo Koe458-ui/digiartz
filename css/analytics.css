@@ -158,12 +158,13 @@
 .anNavBtn.on{color:var(--text-on-accent);background:var(--pg);border-color:var(--pg);}
 
 /* ---- section + card ----------------------------------------------------- */
-.anSec{scroll-margin-top:110px;margin:0 0 1.8rem;}
-.anSecHd{display:flex;align-items:baseline;gap:.6rem;margin:0 0 .8rem;flex-wrap:wrap;}
-.anSecNo{
-  font-family:var(--fm);font-size:var(--an-fs-micro);letter-spacing:.12em;color:var(--pg);
-  border:1px solid rgba(var(--pg-rgb),.3);border-radius:6px;padding:.12rem .4rem;
-}
+/* Two things are stuck to the top of this page — the page header and the chip
+   row under it — so a heading jumped to by a chip has to clear BOTH or it
+   arrives tucked under the bar it was scrolled to by. Measured off the same
+   --an-hdr the chip row is positioned with, plus the chip row's own height and
+   a gap, rather than one hardcoded number that was right at one width. */
+.anSec{scroll-margin-top:calc(var(--an-hdr,52px) + 76px);margin:0 0 2.4rem;}
+.anSecHd{display:flex;align-items:baseline;gap:.6rem;margin:0 0 .9rem;flex-wrap:wrap;}
 .anSecTitle{font-family:var(--fd);font-weight:700;font-size:var(--an-fs-sec);color:var(--tx);letter-spacing:-.01em;}
 .anSecNote{font-family:var(--fb);font-size:var(--an-fs-num);color:var(--txd);}
 
@@ -172,12 +173,17 @@
   padding:1.05rem 1.1rem;
 }
 @media(min-width:1000px){ .anCard{padding:1.2rem 1.25rem;} }
-.anCardHd{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin-bottom:.9rem;flex-wrap:wrap;}
+.anCardHd{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin-bottom:1rem;flex-wrap:wrap;}
 .anCardTitle{font-family:var(--fm);font-size:var(--an-fs-label);letter-spacing:.18em;color:var(--txd);text-transform:uppercase;}
-.anGrid2{display:grid;gap:1rem;grid-template-columns:1fr;}
+/* One gap value for every grid on the page, and the same one between stacked
+   cards, so nothing ever reads as two boxes that happen to be near each
+   other. */
+.anGrid2{display:grid;gap:1.1rem;grid-template-columns:1fr;}
 @media(min-width:860px){ .anGrid2{grid-template-columns:1fr 1fr;} }
-.anGrid2w{display:grid;gap:1rem;grid-template-columns:1fr;}
+.anGrid2w{display:grid;gap:1.1rem;grid-template-columns:1fr;}
 @media(min-width:860px){ .anGrid2w{grid-template-columns:1.6fr 1fr;} }
+/* a card sitting under another card or a grid inside the same section */
+.anStack{margin-top:1.1rem;}
 
 /* ---- 1. KPI tiles ------------------------------------------------------- */
 /* Six tiles, and every one of them shows the number in full — 238,393, not
@@ -185,9 +191,9 @@
    with the viewport rather than sitting at one size, and it is allowed to
    break onto a second line rather than be clipped, because a truncated total
    is worse than a tall tile. */
-.anKpis{display:grid;gap:.7rem;grid-template-columns:repeat(2,1fr);}
+.anKpis{display:grid;gap:.8rem;grid-template-columns:repeat(2,1fr);}
 @media(min-width:560px){ .anKpis{grid-template-columns:repeat(3,1fr);} }
-@media(min-width:1040px){ .anKpis{grid-template-columns:repeat(6,1fr);gap:.8rem;} }
+@media(min-width:1040px){ .anKpis{grid-template-columns:repeat(6,1fr);gap:.9rem;} }
 .anKpi{
   background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
   padding:.85rem .85rem .55rem;display:flex;flex-direction:column;gap:.25rem;
@@ -530,7 +536,6 @@
  *   background: the faint tracks go a shade stronger, or they disappear.
  */
 html[data-theme="light"] .anTip{box-shadow:0 10px 26px rgba(26,24,38,.14);}
-html[data-theme="light"] .anSecNo{color:var(--an-views);border-color:rgba(0,166,255,.4);}
 html[data-theme="light"] .anAchBarFill{background:var(--an-views);}
 html[data-theme="light"] .anBarTrack,
 html[data-theme="light"] .anAchBar{background:rgba(var(--tx2-rgb),.14);}
@@ -541,11 +546,8 @@ html[data-theme="light"] .anAchCard{opacity:.62;}
 html[data-theme="light"] .anAchCard.done{opacity:1;}
 
 /* The two dark themes make the accent near-white, which is right for a button
-   and wrong for a section number on a dark card — it stops reading as a
-   marker and starts reading as a heading. The chart blue marks it instead:
-   already on the page, already meaning "this is a measurement". */
-html[data-theme="dark"] .anSecNo,
-html[data-theme="graydark"] .anSecNo{color:var(--an-views);border-color:rgba(0,166,255,.4);}
+   and wrong for a thin border on a dark card. The chart azure marks these
+   instead: already on the page, already meaning "this is a measurement". */
 html[data-theme="dark"] .anAchCard.done,
 html[data-theme="graydark"] .anAchCard.done{border-color:rgba(0,166,255,.35);}
 html[data-theme="dark"] .anAchBarFill,
@@ -559,7 +561,7 @@ html[data-theme="graydark"] .anAchBarFill{background:var(--an-views);}
    than it gives, and the sections should not each fill the viewport */
 @media(max-height:520px) and (orientation:landscape){
   .anNav{position:static;}
-  .anSec{scroll-margin-top:64px;}
+  .anSec{scroll-margin-top:calc(var(--an-hdr,52px) + 12px);margin-bottom:1.8rem;}
 }
 
 /* touch: the tap targets that were sized for a cursor */

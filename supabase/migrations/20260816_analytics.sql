@@ -76,7 +76,8 @@ create table if not exists public.analytics_events (
 
   constraint an_ev_event check (event in (
     'view','like','unlike','bookmark','unbookmark','download','comment',
-    'share','profile_view','search_impression','search_click','follow','unfollow'
+    'share','profile_view','search_impression','search_click','follow','unfollow',
+    'cred'
   )),
   constraint an_ev_scope   check (scope in ('artwork','marketplace','blog','resource','profile')),
   constraint an_ev_source  check (source in ('direct','social','search','referral','internal')),
@@ -271,6 +272,7 @@ declare
   v_term   text;
   v_ref    text;
   v_scope  text;
+  v_actor  uuid;
 begin
   if p_event is null then return; end if;
 
@@ -280,7 +282,7 @@ begin
   -- would be a second, disagreeing number.
   if p_event not in ('like','unlike','bookmark','unbookmark','comment','share',
                      'profile_view','search_impression','search_click',
-                     'follow','unfollow') then
+                     'follow','unfollow','cred') then
     return;
   end if;
 
@@ -298,7 +300,7 @@ begin
     select a.user_id into v_owner
       from public.artworks a
      where a.id = p_subject and a.status = 'approved';
-  elsif p_event in ('profile_view','follow','unfollow') and p_owner is not null then
+  elsif p_event in ('profile_view','follow','unfollow','cred') and p_owner is not null then
     select p.id into v_owner from public.profiles p where p.id = p_owner;
   end if;
   if v_owner is null then return; end if;
@@ -330,17 +332,31 @@ begin
     v_ref := nullif(left(regexp_replace(v_ref, '[^a-z0-9.:-]', '', 'g'), 120), '');
   end if;
 
-  v_scope := case when p_event in ('profile_view','follow','unfollow') then 'profile'
+  v_scope := case when p_event in ('profile_view','follow','unfollow','cred') then 'profile'
                   else coalesce(p_scope, 'artwork') end;
   if v_scope not in ('artwork','marketplace','blog','resource','profile') then
     v_scope := 'artwork';
+  end if;
+
+  -- A cred row exists so the receiver's dashboard hears about it the moment
+  -- it happens, and it must not say who. profile_creds lets only the giver
+  -- read their own rows; analytics_events is read by its owner, who here is
+  -- the receiver. So actor_id is nulled AND the viewer key is hashed — a key
+  -- of 'u:<uuid>' would have handed over the giver's id in the one column
+  -- nobody thinks of as identifying, while the hash still dedups one cred per
+  -- giver per receiver per day.
+  if p_event = 'cred' then
+    v_actor := null;
+    v_key := 'c:' || md5('dzcred|' || v_key);
+  else
+    v_actor := auth.uid();
   end if;
 
   insert into public.analytics_events
     (owner_id, actor_id, viewer_key, scope, subject_id, event,
      source, referrer_host, country, device, term)
   values
-    (v_owner, auth.uid(), v_key, v_scope, p_subject, p_event,
+    (v_owner, v_actor, v_key, v_scope, p_subject, p_event,
      v_source, v_ref, public.dz_an_country(p_country), v_device, v_term)
   on conflict do nothing;
 end $$;
@@ -1131,16 +1147,18 @@ begin
          group by 1
       ) g on g.day = cal.day
   ),
+  -- When, not who. profile_creds lets the GIVER read their own rows and
+  -- nobody else — the receiver has never been able to see who vouched for
+  -- them, and a SECURITY DEFINER function is exactly the thing that could
+  -- quietly undo that. It does not: this returns timestamps.
   recent_cred as (
-    select jsonb_agg(jsonb_build_object(
-             'id', p.id, 'name', coalesce(nullif(p.display_name, ''), p.username, 'Artist'),
-             'handle', p.username, 'avatar', p.avatar_url, 'at', c.at) order by c.at desc) as list
+    select jsonb_agg(jsonb_build_object('at', c.at) order by c.at desc) as list
       from (
-        select c.giver_id as other, c.created_at as at
+        select c.created_at as at
           from public.profile_creds c
          where c.receiver_id = v_me
          order by c.created_at desc limit 8
-      ) c join public.profiles p on p.id = c.other
+      ) c
   ),
   goals as (
     select jsonb_agg(jsonb_build_object(

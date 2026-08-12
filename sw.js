@@ -32,7 +32,16 @@
        Live: the page subscribes to its own rows over realtime — the
        first thing on the site to use it — and polls every 45 seconds
        as well, because a socket can be blocked and a number that is
-       quietly stale is worse than one that is slow.
+       quietly stale is worse than one that is slow. A refresh asked
+       for while one is in flight is queued rather than dropped, and a
+       dropped socket resubscribes.
+       Giving cred writes an analytics_events row so the receiver's
+       page updates on the spot. It carries no giver: actor_id is
+       nulled and the viewer key hashed, because profile_creds has
+       always let only the giver read their own rows and a SECURITY
+       DEFINER function is exactly the thing that could undo that
+       without anyone noticing. The dashboard says "an artist gave you
+       cred" and means it.
        Every figure is written out in full. 238,393, never 238K. The
        type scale is seven variables re-set at the same three
        breakpoints css/profile.css uses, so the page reads at the same
@@ -2994,7 +3003,7 @@ const SHELL_URLS = [
   '/js/gallery.js?v=82',
   '/js/auth.js?v=10',
   '/js/profile.js?v=11',
-  '/js/albums.js?v=13',
+  '/js/albums.js?v=14',
   '/js/drafts.js?v=6',
   '/js/upqueue.js?v=4',
   '/js/avatar.js?v=2',

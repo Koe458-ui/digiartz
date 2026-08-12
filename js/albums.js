@@ -834,6 +834,10 @@
       } else {
         var i = await sb.from('profile_creds').insert({ giver_id: currentUser.id, receiver_id: forId });
         if(i.error && i.error.code !== '23505') throw i.error;  // duplicate means already credited
+        // Their Analytics is watching for this and updates the moment it
+        // lands. The row it writes carries no giver — profile_creds only ever
+        // let the giver read their own rows and that does not change here.
+        if(typeof window.dzAnTrack === 'function') window.dzAnTrack('cred', null, { scope:'profile', owner: String(forId) });
       }
       pf.profile.cred_received_count = Math.max((+pf.profile.cred_received_count||0) + (pfCredited?1:-1), 0);
     }catch(e){

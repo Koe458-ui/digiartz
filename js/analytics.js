@@ -679,6 +679,16 @@
     host.appendChild(wrap);
   }
 
+  // How many rows a dashboard card shows before it stops being a dashboard.
+  var CARD_ROWS = 10;
+
+  function moreBtn(label, onTap) {
+    var b = el('button', 'anMore', label);
+    b.type = 'button';
+    b.addEventListener('click', onTap);
+    return b;
+  }
+
   function empty(host, msg) {
     host.innerHTML = '';
     host.appendChild(el('div', 'anEmpty', msg));
@@ -705,8 +715,6 @@
   try {
     var savedDays = parseInt(localStorage.getItem('dzAnDays') || '30', 10);
     if ([7, 30, 90, 365].indexOf(savedDays) !== -1) state.days = savedDays;
-    var savedScope = localStorage.getItem('dzAnScope');
-    if (savedScope && scopeOf(savedScope).key === savedScope) state.scope = savedScope;
   } catch (e) {}
 
   /* ---- page shell -------------------------------------------------------- */
@@ -753,23 +761,9 @@
     top.appendChild(right);
     body.appendChild(top);
 
-    // The four dashboards, in the order they are listed everywhere else.
-    // Switching here is a repaint and four reads — it does not leave the page,
-    // because comparing two sections means flicking between them.
-    var tabs = el('div', 'anScopes');
-    tabs.id = 'anScopes';
-    tabs.setAttribute('role', 'tablist');
-    SCOPES.forEach(function (sc) {
-      var t = el('button', 'anScopeBtn' + (sc.key === state.scope ? ' on' : ''), sc.label);
-      t.type = 'button';
-      t.setAttribute('role', 'tab');
-      t.setAttribute('aria-selected', sc.key === state.scope ? 'true' : 'false');
-      t.dataset.scope = sc.key;
-      t.addEventListener('click', function () { setScope(sc.key); });
-      tabs.appendChild(t);
-    });
-    body.appendChild(tabs);
-
+    // No scope switcher. Artwork Analytics is artworks and nothing else —
+    // the row you tapped in Settings is the dashboard you get, and there is
+    // no control on the page that quietly turns it into a different one.
     var nav = el('div', 'anNav');
     nav.id = 'anNav';
     body.appendChild(nav);
@@ -789,7 +783,7 @@
       hd.appendChild(el('h2', 'anSecTitle', s.title));
       if (s.note) hd.appendChild(el('span', 'anSecNote', s.note));
       sec.appendChild(hd);
-      var host = el('div');
+      var host = el('div', 'anBox');
       host.id = 'anBox_' + s.id;
       host.appendChild(el('div', 'anEmpty', 'Loading…'));
       sec.appendChild(host);
@@ -799,22 +793,6 @@
     watchNav();
   }
 
-  // A section list that differs by scope means the page is rebuilt rather
-  // than repainted — Revenue exists under Marketplace and nowhere else, and
-  // a stale empty card left behind by the previous scope would be a lie.
-  function setScope(key) {
-    if (state.scope === key) return;
-    state.scope = key;
-    try { localStorage.setItem('dzAnScope', key); } catch (e) {}
-    var body = $('anBdy');
-    if (body) { body.innerHTML = ''; body.dataset.built = ''; }
-    state.data = { overview: null, content: null, reach: null, activity: null };
-    buildShell();
-    measureHeader();
-    load(true);
-    stopLive();
-    startLive();
-  }
 
   // The chip row marks where you are. An observer rather than a scroll
   // handler, so it costs nothing while the page sits still.
@@ -1119,6 +1097,82 @@
     { key: 'created_at', label: 'Newest' }
   ];
 
+  // One row builder for both places the list appears: the ten on the
+  // dashboard and all of them on the page behind "View all". They have to be
+  // the same row — a different-looking list on the full page would read as a
+  // different list.
+  function artRows(rows, limit) {
+    var list = el('div', 'anArts');
+    var show = limit ? rows.slice(0, limit) : rows;
+    show.forEach(function (r, i) {
+      var row = el('button', 'anArt');
+      row.type = 'button';
+      row.appendChild(el('div', 'anArtRank', String(i + 1)));
+
+      // An empty src is not "no image", it is a request for the current page
+      // that comes back as a broken-image icon. A row whose file never landed
+      // gets a tile instead.
+      var src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(r.thumb || '') : (r.thumb || '');
+      if (src) {
+        var img = document.createElement('img');
+        img.className = 'anArtThumb';
+        img.loading = 'lazy'; img.decoding = 'async'; img.alt = '';
+        img.src = src;
+        img.addEventListener('error', function () {
+          var ph = el('div', 'anArtNoThumb', '\uD83D\uDDBC');
+          if (img.parentNode) img.parentNode.replaceChild(ph, img);
+        });
+        row.appendChild(img);
+      } else {
+        row.appendChild(el('div', 'anArtNoThumb', '\uD83D\uDDBC'));
+      }
+
+      var txt = el('div', 'anArtTxt');
+      txt.appendChild(el('div', 'anArtName', r.title));
+      var metaBits = [];
+      if (typeof catLabel === 'function') metaBits.push(catLabel(r.category) || r.category);
+      else metaBits.push(r.category);
+      metaBits.push(pct(r.engagement) + ' engaged');
+      if (r.visibility && r.visibility !== 'published') metaBits.push('unlisted');
+      txt.appendChild(el('div', 'anArtMeta', metaBits.filter(Boolean).join(' \u00B7 ')));
+      row.appendChild(txt);
+
+      var nums = el('div', 'anArtNums');
+      var last = state.scope === 'marketplace'
+        ? ['\uD83D\uDED2', r.sales] : ['\u2B07\uFE0F', r.downloads];
+      [['\uD83D\uDC41', r.views], ['\u2764\uFE0F', r.likes],
+       ['\uD83D\uDD16', r.bookmarks], last].forEach(function (p) {
+        var n = el('span', 'anArtNum');
+        n.appendChild(document.createTextNode(p[0] + ' '));
+        n.appendChild(el('b', null, num(p[1])));
+        nums.appendChild(n);
+      });
+      row.appendChild(nums);
+
+      row.addEventListener('click', function () {
+        closeAnList();
+        closeAnalyticsPage();
+        var id = String(r.id);
+        if (state.scope === 'artwork') {
+          // the gallery owns the viewer; where it is not loaded, the URL is
+          if (typeof window.handleArtClick === 'function' &&
+              document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
+            window.handleArtClick({ preventDefault: function () {}, stopPropagation: function () {} }, id);
+          } else {
+            location.href = '/artwork/' + encodeURIComponent(id);
+          }
+          return;
+        }
+        // the other three share one viewer, opened by path segment and id
+        var seg = { marketplace: 'listing', blog: 'blog', resource: 'resource' }[state.scope];
+        if (typeof window.dzOpenById === 'function') window.dzOpenById(seg, id);
+        else location.href = '/' + seg + '/' + encodeURIComponent(id);
+      });
+      list.appendChild(row);
+    });
+    return list;
+  }
+
   function paintArtworks() {
     var b = box('artworks'), c = state.data.content;
     if (!b) return;
@@ -1150,72 +1204,12 @@
       return (Number(y[k]) || 0) - (Number(x[k]) || 0);
     });
 
-    var list = el('div', 'anArts');
-    rows.slice(0, 50).forEach(function (r, i) {
-      var row = el('button', 'anArt');
-      row.type = 'button';
-      row.appendChild(el('div', 'anArtRank', String(i + 1)));
-
-      // An empty src is not "no image", it is a request for the current page
-      // that comes back as a broken-image icon. A row for an artwork whose
-      // file never landed gets a tile instead.
-      var src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(r.thumb || '') : (r.thumb || '');
-      if (src) {
-        var img = document.createElement('img');
-        img.className = 'anArtThumb';
-        img.loading = 'lazy'; img.decoding = 'async'; img.alt = '';
-        img.src = src;
-        img.addEventListener('error', function () {
-          var ph = el('div', 'anArtNoThumb', '🖼');
-          if (img.parentNode) img.parentNode.replaceChild(ph, img);
-        });
-        row.appendChild(img);
-      } else {
-        row.appendChild(el('div', 'anArtNoThumb', '🖼'));
-      }
-
-      var txt = el('div', 'anArtTxt');
-      txt.appendChild(el('div', 'anArtName', r.title));
-      var metaBits = [];
-      if (typeof catLabel === 'function') metaBits.push(catLabel(r.category) || r.category);
-      else metaBits.push(r.category);
-      metaBits.push(pct(r.engagement) + ' engaged');
-      if (r.visibility && r.visibility !== 'published') metaBits.push('unlisted');
-      txt.appendChild(el('div', 'anArtMeta', metaBits.filter(Boolean).join(' · ')));
-      row.appendChild(txt);
-
-      var nums = el('div', 'anArtNums');
-      var last = state.scope === 'marketplace' ? ['🛒', r.sales] : ['⬇️', r.downloads];
-      [['👁', r.views], ['❤️', r.likes], ['🔖', r.bookmarks], last].forEach(function (p) {
-        var n = el('span', 'anArtNum');
-        n.appendChild(document.createTextNode(p[0] + ' '));
-        var bEl = el('b', null, num(p[1]));
-        n.appendChild(bEl);
-        nums.appendChild(n);
-      });
-      row.appendChild(nums);
-
-      row.addEventListener('click', function () {
-        closeAnalyticsPage();
-        var id = String(r.id);
-        if (state.scope === 'artwork') {
-          // the gallery owns the viewer; where it is not loaded, the URL is
-          if (typeof window.handleArtClick === 'function' &&
-              document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
-            window.handleArtClick({ preventDefault: function () {}, stopPropagation: function () {} }, id);
-          } else {
-            location.href = '/artwork/' + encodeURIComponent(id);
-          }
-          return;
-        }
-        // the other three share one viewer, opened by path segment and id
-        var seg = { marketplace: 'listing', blog: 'blog', resource: 'resource' }[state.scope];
-        if (typeof window.dzOpenById === 'function') window.dzOpenById(seg, id);
-        else location.href = '/' + seg + '/' + encodeURIComponent(id);
-      });
-      list.appendChild(row);
-    });
+    var list = artRows(rows, CARD_ROWS);
     card.appendChild(list);
+    if (rows.length > CARD_ROWS) {
+      card.appendChild(moreBtn('View all ' + full(rows.length) + ' ' + scw.nouns,
+                               function () { openAnList('items'); }));
+    }
     b.appendChild(card);
 
     // best and quietest, said plainly
@@ -1632,7 +1626,7 @@
     } else {
       var ICO = { like: ['❤️', '#FF3DE0'], bookmark: ['🔖', '#00A6FF'], comment: ['💬', '#FFB300'] };
       var list = el('div', 'anFeed');
-      feed.forEach(function (x) {
+      feed.slice(0, CARD_ROWS).forEach(function (x) {
         var r2 = el('div', 'anFeedRow');
         var pair = ICO[x.event] || ['•', '#8A8F98'];
         var ic = el('div', 'anFeedIco', pair[0]);
@@ -1647,6 +1641,10 @@
         list.appendChild(r2);
       });
       card.appendChild(list);
+      if (feed.length > CARD_ROWS) {
+        card.appendChild(moreBtn('View all ' + full(feed.length),
+                                 function () { openAnList('activity'); }));
+      }
     }
     b.appendChild(card);
   }
@@ -2148,6 +2146,145 @@
     if (hdr) pg.style.setProperty('--an-hdr', Math.round(hdr.getBoundingClientRect().height) + 'px');
   }
 
+  /* ---- the full list, on a page of its own -------------------------------
+   * The dashboard shows ten of anything. Everything else is here: the same
+   * rows, the same sort buttons, no cap. It is built on demand and it sits
+   * over the dashboard rather than replacing it, so closing it puts you back
+   * exactly where you were — the same way every other sub-page on this site
+   * behaves.
+   */
+  var anListMode = 'items';
+
+  function anListHost() {
+    var pg = $('anListPage');
+    if (pg) return pg;
+    pg = document.createElement('div');
+    pg.id = 'anListPage';
+    pg.setAttribute('role', 'dialog');
+    pg.setAttribute('aria-modal', 'true');
+
+    var hdr = el('div', 'subPgHdr');
+    var back = el('button', 'subPgX', '\u2190');
+    back.type = 'button';
+    back.setAttribute('aria-label', 'Back to analytics');
+    back.addEventListener('click', closeAnList);
+    hdr.appendChild(back);
+    var t = el('div', 'subPgTitle');
+    t.id = 'anListTitle';
+    hdr.appendChild(t);
+    pg.appendChild(hdr);
+
+    var body = el('div', 'anBdy');
+    body.id = 'anListBdy';
+    pg.appendChild(body);
+    document.body.appendChild(pg);
+    return pg;
+  }
+
+  function openAnList(mode) {
+    anListMode = mode === 'activity' ? 'activity' : 'items';
+    var pg = anListHost();
+    pg.classList.add('open');
+    var hdr = pg.querySelector('.subPgHdr');
+    if (hdr) pg.style.setProperty('--an-hdr', Math.round(hdr.getBoundingClientRect().height) + 'px');
+    paintAnList();
+    pg.scrollTop = 0;
+  }
+
+  function closeAnList() {
+    var pg = $('anListPage');
+    if (!pg) return;
+    pg.classList.remove('open');
+    // the dashboard is still open underneath, so the scroll lock stays on
+    document.body.style.overflow = 'hidden';
+  }
+
+  function paintAnList() {
+    var pg = $('anListPage');
+    if (!pg || !pg.classList.contains('open')) return;
+    var body = $('anListBdy'), ttl = $('anListTitle');
+    if (!body) return;
+    var sc = scopeOf(state.scope);
+    body.innerHTML = '';
+
+    if (anListMode === 'activity') {
+      var feed = (state.data.activity && state.data.activity.activity) || [];
+      if (ttl) ttl.textContent = 'LATEST ON YOUR WORK';
+      pg.setAttribute('aria-label', 'Everything that happened on your work');
+      var card = el('div', 'anCard');
+      var hd = el('div', 'anCardHd');
+      hd.appendChild(el('div', 'anCardTitle', full(feed.length) + ' most recent'));
+      card.appendChild(hd);
+      if (!feed.length) { empty(card, 'NOTHING YET'); body.appendChild(card); return; }
+      var ICO = { like: ['\u2764\uFE0F', '#FF3D3D'], bookmark: ['\uD83D\uDD16', '#00D9B8'],
+                  comment: ['\uD83D\uDCAC', '#FF3DE0'] };
+      var list = el('div', 'anFeed');
+      feed.forEach(function (x) {
+        var row = el('div', 'anFeedRow');
+        var pair = ICO[x.event] || ['\u2022', '#8A8F98'];
+        var ic = el('div', 'anFeedIco', pair[0]);
+        ic.style.background = pair[1] + '22';
+        row.appendChild(ic);
+        var t = el('div', 'anFeedTxt');
+        var verb = x.event === 'like' ? 'Someone liked ' :
+                   x.event === 'bookmark' ? 'Someone saved ' : 'New comment on ';
+        t.appendChild(document.createTextNode(verb));
+        t.appendChild(el('b', null, x.title));
+        row.appendChild(t);
+        row.appendChild(el('div', 'anFeedAt', ago(x.at)));
+        list.appendChild(row);
+      });
+      card.appendChild(list);
+      body.appendChild(card);
+      return;
+    }
+
+    var rows = ((state.data.content && state.data.content.artworks) || []).slice();
+    if (ttl) ttl.textContent = 'ALL ' + sc.nouns.toUpperCase();
+    pg.setAttribute('aria-label', 'All ' + sc.nouns);
+
+    var card2 = el('div', 'anCard');
+    var hd2 = el('div', 'anCardHd');
+    hd2.appendChild(el('div', 'anCardTitle', full(rows.length) + ' ' + sc.nouns));
+    var sorts = el('div', 'anSort');
+    ART_SORTS.forEach(function (so) {
+      if (so.key === 'downloads' && state.scope === 'marketplace') so = { key: 'sales', label: 'Sales' };
+      var btn = el('button', 'anSortBtn' + (state.artSort === so.key ? ' on' : ''), so.label);
+      btn.type = 'button';
+      btn.addEventListener('click', function () {
+        state.artSort = so.key;
+        paintAnList();
+        paintArtworks();     // the card behind agrees with the page in front
+      });
+      sorts.appendChild(btn);
+    });
+    hd2.appendChild(sorts);
+    card2.appendChild(hd2);
+
+    if (!rows.length) { empty(card2, 'NOTHING HERE YET'); body.appendChild(card2); return; }
+
+    var k = state.artSort;
+    rows.sort(function (x, y) {
+      if (k === 'created_at') return String(y.created_at).localeCompare(String(x.created_at));
+      return (Number(y[k]) || 0) - (Number(x[k]) || 0);
+    });
+    card2.appendChild(artRows(rows, 0));
+    body.appendChild(card2);
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var pg = $('anListPage');
+    if (!pg || !pg.classList.contains('open')) return;
+    closeAnList();
+    // stopImmediatePropagation, not stopPropagation: the dashboard's own
+    // Escape handler is on this same node, and stopPropagation does not hold
+    // off a listener on the node the event is already at. Without this, one
+    // press closes the list and then the dashboard behind it.
+    e.stopImmediatePropagation();
+    e.preventDefault();
+  }, true);
+
   /* ---- open / close ------------------------------------------------------ */
 
   function openAnalyticsPage(scope) {
@@ -2158,14 +2295,14 @@
     }
     var pg = $('anPage');
     if (!pg) return;
-    var want = scope ? scopeOf(scope).key : state.scope;
-    if (want !== state.scope) {
-      state.scope = want;
-      try { localStorage.setItem('dzAnScope', want); } catch (e) {}
-      var body = $('anBdy');
-      if (body) { body.innerHTML = ''; body.dataset.built = ''; }
-      state.data = { overview: null, content: null, reach: null, activity: null };
-    }
+    // Rebuilt every time rather than repainted: the section list differs by
+    // scope — Revenue exists under Marketplace and nowhere else — and a card
+    // left behind from the last dashboard would be a lie.
+    var want = scopeOf(scope || 'artwork').key;
+    state.scope = want;
+    var body = $('anBdy');
+    if (body) { body.innerHTML = ''; body.dataset.built = ''; }
+    state.data = { overview: null, content: null, reach: null, activity: null };
     buildShell();
     state.lastFocus = document.activeElement;
     state.open = true;
@@ -2194,6 +2331,12 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
+    // The full list sits over the dashboard and closes first. Both handlers
+    // are capture-phase listeners on document, so stopPropagation in the
+    // other one cannot hold this one off — it has to check for itself, and
+    // then the order the two were registered in stops mattering.
+    var list = $('anListPage');
+    if (list && list.classList.contains('open')) return;
     var pg = $('anPage');
     if (pg && pg.classList.contains('open')) { closeAnalyticsPage(); e.stopPropagation(); }
   }, true);

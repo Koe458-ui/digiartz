@@ -203,8 +203,8 @@
             .eq('status','approved').eq('visibility','public').ilike('title',pattern)
             .order('created_at',{ascending:false}).limit(30)
             .then(function(r){ return {key:'jobs', rows:(r&&r.data)||[]}; }));
-          }
         }
+      }
       return jobs;
     }
     var fgSearchWanted = !!(sb && pattern) &&

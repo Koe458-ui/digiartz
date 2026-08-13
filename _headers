@@ -54,10 +54,35 @@
 /ads.txt
   Cache-Control: public, max-age=3600
 
-# index.html is left on the Pages default — public, max-age=0,
-# must-revalidate — on purpose, and so are the SPA fallback paths in
-# _redirects. The HTML is the one file that says which bundles are current, so
-# it is the one file that must never be answered from a cache without asking.
+# The HTML, spelled out rather than left to a platform default.
+#
+# index.html is the one file that says which bundles are current, so it is the
+# one file that must never be answered from a cache without asking. Everything
+# above depends on that: /js/* and /css/* are pinned for a year precisely
+# BECAUSE the HTML pointing at them is always revalidated, and a release that
+# could not update the HTML would be a release nobody receives.
+#
+# Every path here resolves to index.html — the four section links and the
+# artwork link are SPA fallbacks in _redirects, and a header rule matches the
+# path that was REQUESTED, not the file that answers it, so each one needs
+# saying. must-revalidate rather than no-store: the browser may keep its copy,
+# it just may not use it without checking.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/artwork/*
+  Cache-Control: public, max-age=0, must-revalidate
+/resource/*
+  Cache-Control: public, max-age=0, must-revalidate
+/blog/*
+  Cache-Control: public, max-age=0, must-revalidate
+/listing/*
+  Cache-Control: public, max-age=0, must-revalidate
+/job/*
+  Cache-Control: public, max-age=0, must-revalidate
+/profile/*
+  Cache-Control: public, max-age=0, must-revalidate
 
 # Pages Functions answer per caller, behind a session check. Nothing here may
 # be held by a browser cache, a shared cache or a crawler — a stored copy is a

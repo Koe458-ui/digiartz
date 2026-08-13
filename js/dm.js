@@ -525,10 +525,16 @@
       if (dmHasMore) rows = rows.slice(0, dmLimit);
       rows.reverse(); // oldest first for display
 
-      // Written down whether or not it repaints: the poll that found nothing
-      // new still confirms what the saved copy should be.
+      /* Written down whether or not it repaints: the poll that found nothing
+         new still confirms what the saved copy should be.
+
+         `more` is true if the server said there are older messages beyond the
+         window, OR if the window itself is longer than the fifty kept here —
+         somebody who has scrolled back through a long thread has more above
+         them than this record holds, and the saved paint should say so. */
       if (c && k) {
-        c.set(k, { rows: rows.slice(-50), more: dmHasMore && rows.length >= dmLimit }, 'user:thread');
+        c.set(k, { rows: rows.slice(-50), more: dmHasMore || rows.length > 50 },
+              'user:thread');
       }
 
       // skip repaint if unchanged

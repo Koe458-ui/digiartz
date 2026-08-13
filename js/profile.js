@@ -32,14 +32,30 @@
   // profile columns
   var PF_PROFILE_COLS = 'id,username,display_name,bio,role,created_at,username_changed_at,cred_received_count,merit,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
 
-  // self heal missing row
+  // One member's own row. Private, so the cache stamps it with their id and
+  // refuses it for anybody else; short, because it is what the header, the
+  // greeting and every avatar chip read; and written down, so the profile
+  // panel opens with a name in it rather than a blank while the query runs.
+  function pfOwnKey(){
+    var c = window.dzCached ? window.dzCached() : null;
+    return (c && c.ukey) ? c.ukey('profile') : null;
+  }
+  function pfCacheOwn(row){
+    var c = window.dzCached && window.dzCached(), k = pfOwnKey();
+    if(c && k && row) c.set(k, row, 'user:profile');
+  }
+  window.pfOwnProfileCached = function(){
+    var c = window.dzCached && window.dzCached(), k = pfOwnKey();
+    return (c && k) ? c.peek(k, 'user:profile', { any:true }) : null;
+  };
+
   async function pfEnsureOwnProfile(){
     if(!sb || !currentUser) return null;
     try{
       // zero rows is expected
       const{data:existing,error:se}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('id',currentUser.id).maybeSingle();
       if(se) throw se;
-      if(existing){ dzcSet('ownProfile', existing); return existing; }
+      if(existing){ pfCacheOwn(existing); return existing; }
       // build username from session
       var base = (currentUser.user_metadata && currentUser.user_metadata.username) ||
                  (currentUser.email ? currentUser.email.split('@')[0] : '') || 'user';
@@ -52,13 +68,14 @@
           if(uname !== (currentUser.user_metadata && currentUser.user_metadata.username)){
             try{ await sb.auth.updateUser({data:{username:uname}}); }catch(e){}
           }
+          pfCacheOwn(ins);
           return ins;
         }
         var msg = (ie && ie.message) || '';
         if(/duplicate|unique|23505/i.test(msg)){
           // handle id or name conflict
           const{data:again}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('id',currentUser.id).maybeSingle();
-          if(again) return again;
+          if(again){ pfCacheOwn(again); return again; }
           uname = base.slice(0,24)+'_'+Math.random().toString(36).slice(2,6);
           continue;
         }
@@ -67,8 +84,9 @@
       }
     }catch(e){
       console.error('pfEnsureOwnProfile: '+(e.message||e));
-      // offline cached profile
-      var cachedProf = dzcGet('ownProfile');
+      // Offline. Their own saved row, however old — refused outright if the
+      // session it was written for is not this one.
+      var cachedProf = window.pfOwnProfileCached();
       if(cachedProf){ showToast('Offline \u2014 showing saved profile'); return cachedProf; }
     }
     return null;
@@ -140,8 +158,18 @@
     // stale fetch guard
     var mySeq = ++pfOpenSeq;
 
-    // stale while revalidate
-    var cachedRow = pfRowCache[String(username).toLowerCase()];
+    /* Stale while revalidate, now across visits rather than only within one.
+       pfRowCache is this tab's memory and empties on reload; the cache service
+       keeps the row on disk under the name it was opened by, so opening a
+       profile you have seen before paints the header, avatar and banner
+       immediately and the query behind it only corrects them. Public data, so
+       it is not partitioned by viewer — a profile page looks the same to
+       everybody, which is exactly why it is safe to share on a device. */
+    var pfLc = String(username).toLowerCase();
+    var pfCache = window.dzCached ? window.dzCached() : null;
+    var pfKey = 'profile:public:name:' + (pfCache ? pfCache.norm(pfLc) : pfLc);
+    var cachedRow = pfRowCache[pfLc] ||
+                    (pfCache ? pfCache.peek(pfKey, 'profile:public', { any:true }) : null);
     if(cachedRow){
       pfSwitchTab('gallery');
       pfPaintProfile(cachedRow, cachedRow.username, pushUrl);
@@ -184,6 +212,7 @@
       // use db username
       username = data.username;
       pfRowCache[String(username).toLowerCase()] = data;   // warm for next open
+      if(pfCache) pfCache.set(pfKey, data, 'profile:public');   // and for the next visit
       pfPaintProfile(data, username, pushUrl);
     }catch(e){
       console.error('Error: '+e.message);

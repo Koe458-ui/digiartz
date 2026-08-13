@@ -124,6 +124,19 @@
       if(art.storage_path) await s3Delete(BUCKET,art.storage_path);
       const{error}=await sb.from('artworks').delete().eq('id',id);
       if(error) throw error;
+      /* The row is gone, so every listing that carried it is now wrong: the
+         gallery, this artist's profile page, the searches that matched it and
+         the rankings that counted it. They are dropped by name — not the whole
+         cache, which would also cost this member the three hundred thumbnails
+         they have already downloaded and every section tab they have opened.
+         The piece's own images go too, out of the service worker's caches,
+         because the objects behind them have just left storage. */
+      if(typeof window.dzArtworkChanged === 'function'){
+        // Awaited, so the drops finish before dzGalleryStore below writes the
+        // list back. Unawaited, the two overlap and the write that carries the
+        // deletion can be the one the invalidation cancels.
+        await window.dzArtworkChanged(id, { userId: art.user_id, images: [art.image_url] });
+      }
       mw.art = mw.art.filter(function(r){ return String(r.id)!==String(id); });
       mwRenderArt();
       images = images.filter(function(i){ return String(i.id)!==String(id); });
@@ -136,6 +149,9 @@
         pfRenderGallery();
       }
       injectGallerySEO();
+      // `images` was filtered above; the saved copy has to lose it too, or the
+      // next visit paints the piece back in from disk.
+      if(typeof window.dzGalleryStore === 'function') window.dzGalleryStore();
       showToast('Artwork removed');
     }catch(err){ console.error('Error: '+err.message); }
   }
@@ -285,8 +301,12 @@ function hideCommentThumbnail(){
     // reset offset
     cpOffset = 0;
     cpLastSig = ''; // force a paint
-    // swap to this channel now
-    cpComments = cpMsgCache[id] || [];
+    /* Swap to this channel now, from whatever copy exists: this tab's memory
+       first, then the copy on disk from a previous visit. A room you have been
+       in before opens with its last messages already on screen — which is the
+       difference between a chat panel and a loading spinner — and the fetch
+       below replaces them a moment later. */
+    cpComments = cpMsgCache[id] || cpSavedMessages(id) || [];
     try{ cpRender(); }catch(e){}
     await cpLoadComments();
 
@@ -1362,6 +1382,9 @@ function hideCommentThumbnail(){
       cmCloseMod('cmTxtMod');
       showToast('Message deleted');
       cpLastSig = '';           // force a repaint, the list is one shorter
+      // and the saved copy of this room, so a re-open does not bring it back
+      var cDel = window.dzCached && window.dzCached();
+      if(cDel){ try{ await cDel.invalidateCommunity(cpCurrentChannel); }catch(e2){} }
       await cpLoadComments();
     }catch(e){ showToast('Couldn’t delete that message'); }
   }
@@ -1803,6 +1826,30 @@ function hideCommentThumbnail(){
     }
   });
 
+  /* A room's recent messages, kept on the device.
+
+     Read and written through js/cache.js, which stamps each record with the id
+     of the member it was fetched for and refuses it for anybody else. That
+     matters here more than it looks: most channels are open to everyone, but
+     whether this member may read THIS one is the database's call, and a record
+     shared across sessions on one device would hand a members-only room to
+     whoever signs in next. Fifty messages, the last dozen rooms visited. */
+  function cpMsgKey(channel){
+    var c = window.dzCached ? window.dzCached() : null;
+    return (c && channel) ? c.ukey('community', channel) : null;
+  }
+  function cpSavedMessages(channel){
+    var c = window.dzCached && window.dzCached(), k = cpMsgKey(channel);
+    if(!c || !k) return null;
+    var got = c.peek(k, 'community:posts', { any:true });
+    return (got && got.length) ? got : null;
+  }
+  function cpSaveMessages(channel, rows){
+    var c = window.dzCached && window.dzCached(), k = cpMsgKey(channel);
+    if(!c || !k || !rows) return;
+    c.set(k, rows.slice(-50), 'community:posts');
+  }
+
   // load comments
   async function cpLoadComments(silent){
     if(!sb){
@@ -1854,13 +1901,13 @@ function hideCommentThumbnail(){
           : '<div class="cpEIco">◎</div><div>NO COMMENTS YET</div><div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>';
       }
       cpRender();
-      // offline snapshot
-      dzcSet('cp:'+cpCurrentChannel, cpComments.slice(-50));
+      // The last fifty of this room, on this device, for this member.
+      cpSaveMessages(forChannel, cpComments);
     }catch(e){
       console.error('cpLoadComments:', e);
       if(silent) return; // transient poll error
       // offline, serve saved copy
-      var cachedCp = dzcGet('cp:'+cpCurrentChannel);
+      var cachedCp = cpSavedMessages(cpCurrentChannel);
       if(cachedCp && cachedCp.length){
         cpComments = cachedCp;
         cpHasMore = false;

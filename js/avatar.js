@@ -190,6 +190,18 @@
 
       // delete old file after commit
       if(oldPath) await s3Delete(BUCKET,oldPath);
+      /* The new object is at a path carrying this moment's timestamp, so it is
+         a different URL and nothing cached under the old one can be served in
+         its place — which is why avatars can be held for a week without an
+         update ever being missed. What does need dropping is the profile ROW,
+         which still carries the old url, in this tab and on disk. */
+      if(window.dzCache){
+        try{ window.dzCache.invalidateProfile(currentUser.id, pf.profile && pf.profile.username); }catch(e){}
+      }
+      // and the old object, on its way out of storage, out of the image caches
+      if(oldPath && window.dzCache && pf.profile && pf.profile[kind+'_url']){
+        try{ window.dzCache.purgeImages([pf.profile[kind+'_url']]); }catch(e){}
+      }
       Object.assign(pf.profile, updates);
       pfRenderAvatarBanner();
       if(pf.profile.username){

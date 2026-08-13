@@ -160,6 +160,16 @@
         window.dzAnTrack(kind === 'like' ? (on ? 'like' : 'unlike')
                                          : (on ? 'bookmark' : 'unbookmark'), String(id));
       }
+      /* The write landed, so the saved copy of the list this belongs to is
+         wrong and goes — after the write, and only the one list. The optimistic
+         paint above is a promise about the screen; this is what keeps the
+         promise true for the next visit. The public like TOTAL is somebody
+         else's cached number and is left to its own fifteen seconds. */
+      var cache = window.dzCached ? window.dzCached() : null;
+      if (cache) {
+        try { await cache.invalidateUserList(kind === 'like' ? 'likes' : 'bookmarks'); }
+        catch (e2) {}
+      }
       if (kind === 'bm') toast(on ? 'Saved to bookmarks' : 'Removed from bookmarks');
       if (kind === 'like') refreshProfileStatsIfOpen();
       if (!on) removeBmCard(id, kind);
@@ -201,7 +211,18 @@
     grid.innerHTML = '';
     empty.style.display = 'none';
     if (!db() || !me()) { empty.style.display = ''; return; }
-    try {
+
+    /* One member's own likes or bookmarks, and the artwork rows behind them.
+       Private in every sense the cache service understands: stamped with their
+       id, refused for any other session, off the device at sign-out. Short,
+       because they change from the same screens that read them. Cached at all
+       because this is two queries deep and the page is opened, closed and
+       re-opened constantly — and painted from the saved copy first, so it opens
+       with the grid already in place rather than with a gap. */
+    var c = window.dzCached ? window.dzCached() : null;
+    var key = c ? c.ukey('list', mode === 'like' ? 'likes' : 'bookmarks') : null;
+
+    var load = async function () {
       // filter by user id
       var b = await db().from(mode === 'like' ? 'artwork_likes' : 'artwork_bookmarks')
         .select('artwork_id,created_at')
@@ -209,25 +230,35 @@
         .order('created_at', { ascending: false })
         .limit(200);
       if (b.error) throw b.error;
-      if (!live()) return;
       var ids = (b.data || []).map(function (r) { return r.artwork_id; });
-      if (!ids.length) { grid.innerHTML = ''; empty.style.display = ''; return; }
+      if (!ids.length) return { ids: [], rows: [] };
       var a = await db().from('artworks')
         .select('id,name,image_url,category')
         .in('id', ids);
       if (a.error) throw a.error;
-      if (!live()) return;
+      return { ids: ids, rows: a.data || [] };
+    };
+
+    var paint = function (snap) {
+      if (!live() || !snap) return;
       var byId = {};
-      (a.data || []).forEach(function (art) { byId[String(art.id)] = art; });
+      (snap.rows || []).forEach(function (art) { byId[String(art.id)] = art; });
       grid.innerHTML = '';
-      ids.forEach(function (rawId) {
+      (snap.ids || []).forEach(function (rawId) {
         var art = byId[String(rawId)];
         if (!art) return;                       // artwork was deleted
         grid.appendChild(bmCard(art));
       });
-      if (!grid.children.length) empty.style.display = '';
+      empty.style.display = grid.children.length ? 'none' : '';
+    };
+
+    try {
+      paint((c && key) ? await c.warm(key, load, 'user:list', paint, paint) : await load());
     } catch (e) {
       if (!live()) return;
+      // their own saved copy, if there is one, rather than an error over a grid
+      var old = (c && key) ? await c.recall(key, 'user:list') : null;
+      if (old && old.ids && old.ids.length) { paint(old); return; }
       grid.innerHTML = '<div class="bmEmpty">COULDN\u2019T LOAD ' +
         (mode === 'like' ? 'LIKES' : 'BOOKMARKS') + ' — TRY AGAIN</div>';
     }

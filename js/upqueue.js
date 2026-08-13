@@ -263,6 +263,19 @@
       job.stage='live';
       upqSync();
       var row = rows && rows[0];
+
+      /* The piece is published. Every cached listing it belongs in is dropped
+         now — and NOT one line earlier: the order is upload the object, write
+         the row, confirm the write, then invalidate. Dropping the caches before
+         the insert lands leaves a window in which a refresh reads the gallery
+         from before the upload and stores that as the current answer, which is
+         exactly the bug this ordering exists to prevent.
+
+         No image purge here. The objects were written seconds ago under paths
+         nothing has requested yet, so there is nothing cached to remove. */
+      if(row && typeof window.dzArtworkChanged === 'function'){
+        window.dzArtworkChanged(row.id, { userId: row.user_id || (currentUser && currentUser.id) });
+      }
       setTimeout(function(){
         if(row){
           if(pf.profile && String(pf.profile.id)===String(currentUser.id) && Array.isArray(pf.galleryRows) &&
@@ -278,6 +291,9 @@
           if(typeof mw==='object' && mw && Array.isArray(mw.art) && mw.art.findIndex(function(i){return String(i.id)===String(row.id);})===-1) mw.art.unshift(row);
           if(typeof renderHome==='function') renderHome();
           var _fgEl=document.getElementById('fg'); if(_fgEl && _fgEl.classList.contains('open') && typeof renderFG==='function') renderFG();
+          // the new piece was pushed onto `images` above, so the saved copy is
+          // rewritten with it at the front rather than left one short
+          if(typeof window.dzGalleryStore==='function') window.dzGalleryStore();
         }
         upqRemove(job.id); // blur card out, real card in
       }, 1600);

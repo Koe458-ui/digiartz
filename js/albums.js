@@ -605,13 +605,28 @@
       // A profile gallery shows what that member published. Their own drafts
       // and hidden pieces are theirs to see; a visitor gets neither.
       var _own = !!currentUser && String(currentUser.id) === String(forId);
-      var _q = sb.from('artworks').select('*')
-        .eq('user_id',forId).eq('kind',ART_KIND_ART);
-      if(!_own) _q = _q.eq('visibility','published');
-      const{data,error}=await _q
-        .order('created_at',{ascending:false}).order('id',{ascending:false})
-        .range(from,to);
-      if(error) throw error;
+      var _load = async function(){
+        var _q = sb.from('artworks').select('*')
+          .eq('user_id',forId).eq('kind',ART_KIND_ART);
+        if(!_own) _q = _q.eq('visibility','published');
+        const{data:rows,error:qe}=await _q
+          .order('created_at',{ascending:false}).order('id',{ascending:false})
+          .range(from,to);
+        if(qe) throw qe;
+        return rows||[];
+      };
+      /* The first page of a profile's gallery is the one that gets asked for
+         over and over — every open, every back-out and back-in — and it is the
+         one a visitor waits on. So it is cached, and only it: pages two and up
+         are reached by scrolling, which nobody does twice in three minutes.
+
+         Only a VISITOR's view is cached. The owner's includes their drafts and
+         hidden pieces, and a record holding those has no business being read
+         from a key that says nothing about who it was written for. */
+      var data = (!_own && from === 0)
+        ? await window.dzCached().getOrSet(
+            'artist:artworks:' + forId + ':page1:' + size, _load, 'artist:artworks')
+        : await _load();
       if(!dzScopeStill(scope) || !pf.profile || String(pf.profile.id) !== forId){
         pf.galleryBusy = false;   // superseded, and its skeleton went with it
         return;

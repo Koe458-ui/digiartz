@@ -114,6 +114,33 @@ for (const path of dupes) {
   });
 }
 
+/* Every script and stylesheet must carry its version in its URL.
+ *
+ * _headers serves /js/* and /css/* with max-age=31536000, immutable, and the
+ * service worker answers them cache-first without revalidating. Both are
+ * correct only while a release means a NEW url. An asset referenced without
+ * ?v= breaks that: the browser is told to keep the copy it has for a year, the
+ * worker never asks again, and the next deploy of that file reaches nobody —
+ * a caching bug that cannot be cleared by reloading, only by waiting out the
+ * year or renaming the file.
+ *
+ * /js/vendor/* is exempt because its version is in the filename, which is the
+ * same guarantee spelled differently.
+ */
+for (const [, url] of html.matchAll(/(?:src|href)="(\/(?:js|css)\/[^"]+)"/g)) {
+  if (/\/js\/vendor\//.test(url)) continue;
+  if (ALLOW_UNCACHED.has(url)) continue;
+  const [path, version] = split(url);
+  if (version !== null) continue;
+  problems.push({
+    kind: 'unversioned',
+    path,
+    detail: 'index.html loads it with no ?v=, and _headers serves /js/* and ' +
+            '/css/* as immutable for a year',
+    fix: `load it as '${path}?v=1' and add that url to SHELL_URLS`,
+  });
+}
+
 if (problems.length === 0) {
   console.log(`precache ok — ${loaded.size} versioned assets, index.html and sw.js agree`);
   process.exit(0);

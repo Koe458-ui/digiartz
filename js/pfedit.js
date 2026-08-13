@@ -93,6 +93,16 @@
         delete pfRowCache[String(oldUsername||'').toLowerCase()];
         pfRowCache[String(newUsername).toLowerCase()] = pf.profile;
       }catch(e){}
+      /* And the saved copies, both of them. A rename leaves a record under the
+         old name that no lookup will ever ask for again, and a record under the
+         new name that may hold the row from before the edit — dropped by name
+         so the next open re-reads it, rather than by clearing profiles wholesale. */
+      try{
+        if(window.dzCache){
+          window.dzCache.invalidateProfile(pf.profile.id, oldUsername);
+          window.dzCache.invalidateProfile(pf.profile.id, newUsername);
+        }
+      }catch(e){}
       pf.profile.bio = newBio;
       pf.profile.social_links = newSocialLinks;
       if(usernameChanged){

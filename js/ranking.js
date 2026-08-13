@@ -146,19 +146,36 @@
       syncNav();
     }
 
-    // fetch top 10
+    /* The top ten of a board.
+
+       get_rank_board is the most expensive read on the site \u2014 it ranks every
+       member \u2014 and it is on the home page, so every visitor triggers it and
+       they all get the same answer. That is the textbook case for a cache:
+       public, identical for everyone, costly to compute, and nobody minds if
+       the leaderboard is three minutes behind. Held for three, servable for
+       ten while a refresh runs, and one request however many boards ask at
+       once. A board painted from the saved copy repaints when the fresh rows
+       land. */
     async function loadTop (b) {
       var s = state[b.key], c = db();
       if (!s || s.busy) return;
       if (!c) { note(s, 'RANKING UNAVAILABLE'); return; }
       s.busy = true;
-      try {
+      var cache = window.dzCached ? window.dzCached() : null;
+      var apply = function (rows) {
+        s.rows  = rows || [];
+        s.total = s.rows.length ? (Number(s.rows[0].total) || 0) : 0;
+        render(b);
+      };
+      var load = async function () {
         var r = await c.rpc('get_rank_board', { board: b.key, lim: TOP, off: 0 });
         if (r.error) throw r.error;
-        var rows = r.data || [];
-        s.rows  = rows;
-        s.total = rows.length ? (Number(rows[0].total) || 0) : 0;
-        render(b);
+        return r.data || [];
+      };
+      try {
+        apply(cache
+          ? await cache.getOrSet('ranking:' + b.key + ':top:' + TOP, load, 'ranking', apply)
+          : await load());
       } catch (e) {
         if (!s.rows.length) note(s, 'COULDN\u2019T LOAD RANKING');
       } finally {
@@ -376,9 +393,19 @@
       if (!c) { list.innerHTML = ''; list.appendChild(el('div', 'xpNote', 'RANKING UNAVAILABLE')); return; }
       pg.busy = true;
       try {
-        var r = await c.rpc('get_rank_board', { board: b.key, lim: PG_PAGE, off: pg.off });
-        if (r.error) throw r.error;
-        var rows = r.data || [];
+        // The full board, fifty at a time. Same query, same public answer, so
+        // each page is cached under its own offset — a reader scrolling back up
+        // and down the leaderboard does not re-rank the site for every screen.
+        var pgCache = window.dzCached ? window.dzCached() : null;
+        var pgLoadRows = async function () {
+          var r = await c.rpc('get_rank_board', { board: b.key, lim: PG_PAGE, off: pg.off });
+          if (r.error) throw r.error;
+          return r.data || [];
+        };
+        var rows = pgCache
+          ? await pgCache.getOrSet(
+              'ranking:' + b.key + ':page:' + pg.off + ':' + PG_PAGE, pgLoadRows, 'ranking')
+          : await pgLoadRows();
         if (!pg.off) list.innerHTML = '';               // clear skeletons
         if (rows.length) pg.total = Number(rows[0].total) || pg.total;
         pg.rows = pg.rows.concat(rows);

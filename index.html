@@ -393,7 +393,11 @@
     <div class="rkDots" id="rkDots" role="tablist" aria-label="Board"></div>
   </section>
 
-  <script src="/js/ranking.js?v=2"></script>
+  <!-- The cache service, before everything: every file below reaches for
+       window.dzCache and each of them works without it, but none of them
+       should have to find out. -->
+  <script src="/js/cache.js?v=1"></script>
+  <script src="/js/ranking.js?v=3"></script>
 
   <div id="rankPage" role="dialog" aria-modal="true" aria-label="Full ranking">
     <div class="subPgHdr">
@@ -1721,7 +1725,7 @@
   </div>
 </div>
 
-  <script src="/js/dm.js?v=8"></script>
+  <script src="/js/dm.js?v=9"></script>
 
   <script src="/js/composer.js?v=2"></script>
 
@@ -2691,20 +2695,20 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=22"></script>
+  <script src="/js/app-core.js?v=23"></script>
   <script src="/js/protect.js?v=2"></script>
   <script src="/js/gallery.js?v=82"></script>
-  <script src="/js/auth.js?v=10"></script>
-  <script src="/js/profile.js?v=11"></script>
-  <script src="/js/albums.js?v=14"></script>
-  <script src="/js/drafts.js?v=6"></script>
-  <script src="/js/upqueue.js?v=4"></script>
-  <script src="/js/avatar.js?v=2"></script>
-  <script src="/js/pfedit.js?v=9"></script>
-  <script src="/js/mywork.js?v=18"></script>
+  <script src="/js/auth.js?v=11"></script>
+  <script src="/js/profile.js?v=12"></script>
+  <script src="/js/albums.js?v=15"></script>
+  <script src="/js/drafts.js?v=7"></script>
+  <script src="/js/upqueue.js?v=5"></script>
+  <script src="/js/avatar.js?v=3"></script>
+  <script src="/js/pfedit.js?v=10"></script>
+  <script src="/js/mywork.js?v=19"></script>
   <script src="/js/startup.js?v=3"></script>
   <script src="/js/tagrail.js?v=3"></script>
-  <script src="/js/search.js?v=9"></script>
+  <script src="/js/search.js?v=10"></script>
   <script src="/js/feed.js?v=3"></script>
   <script src="/js/fgshow.js?v=4"></script>
 
@@ -3256,11 +3260,11 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <!-- Before engagement.js on purpose. It defines dzAnDims, which is what a
        view, a like and a download carry alongside themselves; engagement.js
        guards for its absence anyway, but the order means it is never absent. -->
-  <script src="/js/analytics.js?v=4"></script>
-  <script src="/js/engagement.js?v=6"></script>
+  <script src="/js/analytics.js?v=5"></script>
+  <script src="/js/engagement.js?v=7"></script>
 
 
-  <script src="/js/sections.js?v=106"></script>
+  <script src="/js/sections.js?v=107"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

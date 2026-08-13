@@ -712,8 +712,15 @@
     again: false
   };
 
+  /* Which window the page opens on, remembered. A device preference, not a
+     fact about anybody — held under the one policy in the cache service that is
+     device-wide rather than member-scoped, because this is read while the page
+     is still starting and the session has not been restored yet. */
+  var AN_DAYS_KEY = 'device:prefs:analytics:days';
   try {
-    var savedDays = parseInt(localStorage.getItem('dzAnDays') || '30', 10);
+    var savedDays = parseInt(
+      (window.dzCache && window.dzCache.peek(AN_DAYS_KEY, 'device:prefs', { any: true })) ||
+      localStorage.getItem('dzAnDays') || '30', 10);
     if ([7, 30, 90, 365].indexOf(savedDays) !== -1) state.days = savedDays;
   } catch (e) {}
 
@@ -754,7 +761,10 @@
     });
     sel.addEventListener('change', function () {
       state.days = parseInt(sel.value, 10) || 30;
-      try { localStorage.setItem('dzAnDays', String(state.days)); } catch (e) {}
+      try {
+        if (window.dzCache) window.dzCache.set(AN_DAYS_KEY, state.days, 'device:prefs');
+        else localStorage.setItem('dzAnDays', String(state.days));
+      } catch (e) {}
       load(true);
     });
     right.appendChild(sel);
@@ -859,14 +869,39 @@
       });
     }
     var d = state.days, sc = state.scope;
-    var jobs = [
-      c.rpc('dz_analytics_overview', { p_days: d, p_scope: sc }),
-      c.rpc('dz_analytics_content',  { p_days: d, p_scope: sc }),
-      c.rpc('dz_analytics_reach',    { p_days: d, p_scope: sc }),
-      c.rpc('dz_analytics_activity', { p_days: d, p_scope: sc })
-    ];
+
+    /* Four aggregate readers over one member's own rows, and every one of them
+       is a scan. Opening the dashboard, switching from 7 days to 30 and back,
+       or leaving and returning re-ran all four — so they are cached, for two
+       minutes, under a key carrying the member id, the scope and the window.
+
+       Private, in every sense the cache service understands: stamped with the
+       member id, refused for any other session, dropped from the device when
+       they sign out, and never eligible for a shared cache. Nobody's numbers
+       can be answered from a record written for somebody else — the key would
+       have to match AND the owner stamp would have to match, and neither does.
+
+       No stale-while-revalidate here. A dashboard is read as a statement of
+       fact; showing an old figure and correcting it under the reader's eyes is
+       worse than making them wait two hundred milliseconds. */
+    var cache = window.dzCached ? window.dzCached() : null;
+    var key = cache ? cache.ukey('analytics', sc, d + 'd') : null;
+    var load = function () {
+      return Promise.all([
+        c.rpc('dz_analytics_overview', { p_days: d, p_scope: sc }),
+        c.rpc('dz_analytics_content',  { p_days: d, p_scope: sc }),
+        c.rpc('dz_analytics_reach',    { p_days: d, p_scope: sc }),
+        c.rpc('dz_analytics_activity', { p_days: d, p_scope: sc })
+      ]).then(function (res) {
+        // Stored as the four payloads rather than the four responses: a
+        // Supabase response object is not worth writing to disk, and a reader
+        // that failed is stored as null so the card can say so.
+        return res.map(function (r) { return (r && !r.error) ? r.data : null; });
+      });
+    };
+
     var out;
-    try { out = await Promise.all(jobs); }
+    try { out = (cache && key) ? await cache.getOrSet(key, load, 'user:analytics') : await load(); }
     catch (e) {
       if (seq !== state.seq) return;
       state.loading = false;
@@ -877,12 +912,11 @@
     if (seq !== state.seq) return;
     state.loading = false;
 
-    // One section failing takes its own card, not the page. Every reader
-    // returns an object, so a null here means the call itself came back bad.
-    state.data.overview = (out[0] && !out[0].error) ? out[0].data : null;
-    state.data.content  = (out[1] && !out[1].error) ? out[1].data : null;
-    state.data.reach    = (out[2] && !out[2].error) ? out[2].data : null;
-    state.data.activity = (out[3] && !out[3].error) ? out[3].data : null;
+    // One section failing takes its own card, not the page.
+    state.data.overview = out[0] || null;
+    state.data.content  = out[1] || null;
+    state.data.reach    = out[2] || null;
+    state.data.activity = out[3] || null;
 
     paint();
 
@@ -914,8 +948,21 @@
     if (!c || !u || myName !== null) return;
     myName = '';
     try {
-      var r = await c.from('profiles').select('username,display_name').eq('id', u.id).maybeSingle();
-      if (!r.error && r.data) myName = r.data.display_name || r.data.username || '';
+      /* The signed-in member's own name. It was already cached for the session;
+         it is cached across sessions now, so the greeting reads their name on
+         open rather than "Your analytics" until a query lands. Their own row,
+         so the same record the profile panel keeps — one query on this device
+         per minute instead of one per page load. */
+      var cache = window.dzCached ? window.dzCached() : null;
+      var nameLoad = async function () {
+        var res = await c.from('profiles').select('username,display_name').eq('id', u.id).maybeSingle();
+        if (res.error) throw res.error;
+        return res.data || null;
+      };
+      var row = (cache && cache.ukey)
+        ? await cache.getOrSet(cache.ukey('profile', 'name'), nameLoad, 'user:profile')
+        : await nameLoad();
+      if (row) myName = row.display_name || row.username || '';
     } catch (e) {}
     var hi = $('anHi');
     if (hi && myName && state.open) hi.textContent = 'Welcome back, ' + myName;
@@ -2031,8 +2078,16 @@
   // remembered and run once the first lands. Dropping it is how a dashboard
   // ends up one event behind and stays there: the very moment something
   // happens is the moment a load is most likely to be running.
+  /* Refresh means "something changed" — a goal set or cleared, a live event
+     landing, the reader pressing it — so it drops the cached readings before
+     asking again. Without that, the two-minute window would swallow exactly the
+     reloads that were requested BECAUSE the numbers are known to have moved,
+     which is the one way a cache on a dashboard becomes a bug rather than a
+     saving. Every window and scope goes, not just the one on screen: whatever
+     changed did not change only the last seven days. */
   function refresh() {
     if (state.loading) { state.again = true; return Promise.resolve(); }
+    try { if (window.dzCache) window.dzCache.invalidateAnalytics(); } catch (e) {}
     return load(false);
   }
 

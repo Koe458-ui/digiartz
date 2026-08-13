@@ -156,54 +156,84 @@
     var rows = {};
     if(want('artwork')) rows.artwork = fgSearchArtworks(raw);
 
-    var jobs = [];
-    if(sb && pattern){
-      if(want('marketplace')){
-        jobs.push(sb.from('marketplace_items')
-          .select(typeof window.dzSelectFor === 'function' ? window.dzSelectFor('marketplace')
-            : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
-          // visibility, same as the Marketplace grid applies it — a draft or a
-          // hidden listing is not a search result
-          .eq('status','approved').eq('visibility','published').ilike('title',pattern)
-          .order('created_at',{ascending:false}).limit(30)
-          .then(function(r){ return {key:'marketplace', rows:(r&&r.data)||[]}; }));
+    /* Built inside a function, not up front. A Supabase builder issues its
+       request the moment .then() is called on it, so constructing these four
+       eagerly and then finding the answer in the cache would send every query
+       the cache exists to avoid. Nothing is asked until the loader runs. */
+    function fgSearchJobs(){
+      var jobs = [];
+      if(sb && pattern){
+        if(want('marketplace')){
+          jobs.push(sb.from('marketplace_items')
+            .select(typeof window.dzSelectFor === 'function' ? window.dzSelectFor('marketplace')
+              : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
+            // visibility, same as the Marketplace grid applies it — a draft or a
+            // hidden listing is not a search result
+            .eq('status','approved').eq('visibility','published').ilike('title',pattern)
+            .order('created_at',{ascending:false}).limit(30)
+            .then(function(r){ return {key:'marketplace', rows:(r&&r.data)||[]}; }));
+        }
+        if(want('blog')){
+          jobs.push(sb.from('blog_posts')
+            .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,'+
+                    'content_type,featured,published_at,created_at')
+            // a draft is not a search result, and neither is a post its author
+            // marked hidden
+            .eq('status','approved').eq('visibility','published').ilike('title',pattern)
+            .order('created_at',{ascending:false}).limit(30)
+            .then(function(r){ return {key:'blog', rows:(r&&r.data)||[]}; }));
+        }
+        if(want('resources')){
+          jobs.push(sb.from('resources')
+            .select('id,user_id,title,summary,description,resource_type,category,tags,'+
+                    'file_url,file_name,file_ext,file_size,file_count,preview_url,license,'+
+                    'featured,download_count,created_at')
+            // a draft or a hidden resource is not a search result
+            .eq('status','approved').eq('visibility','published').ilike('title',pattern)
+            .order('created_at',{ascending:false}).limit(30)
+            .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
+        }
+        if(want('jobs')){
+          // visibility, same as the Jobs list applies it: a posting the poster
+          // marked unlisted or private is not a search result. Searching is
+          // exactly the way an unlisted posting would otherwise be found, which
+          // is the one thing marking it unlisted was meant to prevent.
+          jobs.push(sb.from('jobs')
+            .select('id,user_id,title,company,description,category,tags,employment_type,is_remote,work_mode,created_at')
+            .eq('status','approved').eq('visibility','public').ilike('title',pattern)
+            .order('created_at',{ascending:false}).limit(30)
+            .then(function(r){ return {key:'jobs', rows:(r&&r.data)||[]}; }));
+        }
       }
-      if(want('blog')){
-        jobs.push(sb.from('blog_posts')
-          .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,'+
-                  'content_type,featured,published_at,created_at')
-          // a draft is not a search result, and neither is a post its author
-          // marked hidden
-          .eq('status','approved').eq('visibility','published').ilike('title',pattern)
-          .order('created_at',{ascending:false}).limit(30)
-          .then(function(r){ return {key:'blog', rows:(r&&r.data)||[]}; }));
-      }
-      if(want('resources')){
-        jobs.push(sb.from('resources')
-          .select('id,user_id,title,summary,description,resource_type,category,tags,'+
-                  'file_url,file_name,file_ext,file_size,file_count,preview_url,license,'+
-                  'featured,download_count,created_at')
-          // a draft or a hidden resource is not a search result
-          .eq('status','approved').eq('visibility','published').ilike('title',pattern)
-          .order('created_at',{ascending:false}).limit(30)
-          .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
-      }
-      if(want('jobs')){
-        // visibility, same as the Jobs list applies it: a posting the poster
-        // marked unlisted or private is not a search result. Searching is
-        // exactly the way an unlisted posting would otherwise be found, which
-        // is the one thing marking it unlisted was meant to prevent.
-        jobs.push(sb.from('jobs')
-          .select('id,user_id,title,company,description,category,tags,employment_type,is_remote,work_mode,created_at')
-          .eq('status','approved').eq('visibility','public').ilike('title',pattern)
-          .order('created_at',{ascending:false}).limit(30)
-          .then(function(r){ return {key:'jobs', rows:(r&&r.data)||[]}; }));
-      }
+      return jobs;
     }
+    var fgSearchWanted = !!(sb && pattern) &&
+      (want('marketplace') || want('blog') || want('resources') || want('jobs'));
 
-    if(jobs.length){
+    /* Searching is the most expensive thing a visitor can do casually: four
+       ilike queries across four tables, re-run on the same word every time
+       somebody clears the box and types it again, or walks back through the
+       scope chips. So the whole set of section results is one cached record,
+       keyed by the NORMALISED query and the scope — "  Dragon " and "dragon"
+       are the same search and get the same record — held for a minute, in
+       memory only, and capped so a bot walking the alphabet cannot grow it
+       without bound. Every row in it is public and already filtered to
+       approved and published, which is what makes it shareable.
+
+       Artwork is not part of this: it is answered from the list the gallery is
+       already holding, which costs nothing to redo. */
+    if(fgSearchWanted){
       var out;
-      try{ out = await Promise.all(jobs); }
+      var cSrch = window.dzCached ? window.dzCached() : null;
+      var srchKey = cSrch
+        ? 'search:sections:' + cSrch.norm(raw) + ':' + (fgSrch.scope || 'all') +
+          ':' + (window.currentUser ? 'member' : 'public')
+        : null;
+      try{
+        out = (cSrch && srchKey && raw.length >= 2)
+          ? await cSrch.getOrSet(srchKey, function(){ return Promise.all(fgSearchJobs()); }, 'search')
+          : await Promise.all(fgSearchJobs());
+      }
       catch(e){
         if(mySeq !== fgSrch.seq) return;
         // artwork came from memory and is already good, so a failed query

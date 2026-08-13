@@ -589,8 +589,15 @@
       try{ albResetMine(); }catch(e){}
       // the read/unread marks belong to whoever was signed in
       notifList = []; notifReadIds = {};
-      // and the snapshots on disk belong to them too
-      try{ dzcDropScoped(); }catch(e){}
+      /* And everything the cache service wrote down for them. Every private
+         record is stamped with a member id and would be refused for the next
+         session anyway, but "would be refused" is not the same as "is not
+         there": their conversations, friends, bookmarks, settings and
+         analytics come off this device now rather than sitting in IndexedDB
+         waiting for a bug to hand them over. Public records — the gallery,
+         the section tabs — stay, because they are the same for everybody and
+         the next visit is faster for having them. */
+      try{ if(window.dzCache) window.dzCache.dropPrivate(); }catch(e){}
       try{
         pf.albums = []; pf.albumsLoaded = false;
         pf.galleryRows = []; pf.galleryIds = Object.create(null);

@@ -641,6 +641,21 @@
           pfRenderGallery();
           if(typeof mwRenderArt==='function') mwRenderArt();
           if(typeof renderHome==='function') renderHome();
+          /* The title, description, tags and categories just changed, which
+             changes which category and tag listings this piece belongs in — the
+             old ones and the new ones both. The cached listings go, and so does
+             this piece's own record; the images do not, because an edit through
+             this panel never replaces the file. The in-memory copies were
+             patched above, so the saved gallery is rewritten from them rather
+             than waiting for a refetch. */
+          if(typeof window.dzArtworkChanged === 'function'){
+            // Awaited before the store below, so the two do not overlap.
+            await window.dzArtworkChanged(editId, {
+              userId: (currentUser && currentUser.id) || null,
+              ranking: false          // an edit does not move anybody's rank
+            });
+          }
+          if(typeof window.dzGalleryStore === 'function') window.dzGalleryStore();
           closePfUpload(); showToast('Artwork updated');
         } else {
           // background pipeline

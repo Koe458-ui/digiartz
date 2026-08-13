@@ -671,100 +671,175 @@
   // merged artworks table
   var ART_KIND_ART = 'art';
 
-  // offline data snapshots
-  var DZC_PREFIX = 'dzc1:';
-  /* A cache in localStorage outlives the session that wrote it, the tab it
-     was written in, and the browser being closed. Most of what goes in here
-     is one member's — their own profile row, their friends, their
-     conversations — and on a shared device the next member to sign in was
-     being handed it whenever a fetch failed and the code fell back to the
-     snapshot. So a record remembers who it was written for and is refused
-     for anybody else. Anything genuinely public says so by name; the default
-     is the safe one, so a cache key added later is scoped unless someone
-     decides otherwise. Records written before this have no owner recorded
-     and are refused once, which is the right answer for them too. */
-  var DZC_PUBLIC = { artworks:1 };
-  function dzcPublic(key){
-    return (DZC_PUBLIC && DZC_PUBLIC[key] === 1) || String(key).indexOf('cp:') === 0;
+  /* ---- the data cache --------------------------------------------------
+     What used to be here was a set of hand-written localStorage snapshots
+     — one member's profile, their friends, their conversations, the top
+     fifty artworks — read only when a fetch had already failed. They are
+     gone. js/cache.js is the one cache service now: memory, IndexedDB and
+     a small synchronous tier, one TTL table, single-flight requests and
+     invalidation by key rather than by clearing everything. The rules
+     about whose data may be read by whom did not get more relaxed in the
+     move; they got enforced in one place instead of five.
+
+     Everything below goes through dzCache, and every one of them works
+     without it: if the file failed to load, or IndexedDB is unavailable,
+     or the browser is in a mode where storage throws, dzCached() hands
+     back a shim that just calls the loader. Slower, never broken. */
+  var DZ_CACHE_SHIM = {
+    getOrSet: function(k, loader){ return Promise.resolve().then(loader); },
+    warm:     function(k, loader){ return Promise.resolve().then(loader); },
+    peek:     function(){ return null; },
+    recall:   function(){ return Promise.resolve(null); },
+    get:      function(){ return Promise.resolve(null); },
+    set:      function(k, v){ return Promise.resolve(v); },
+    delete:   function(){ return Promise.resolve(); },
+    deleteByPrefix: function(){ return Promise.resolve(); },
+    key:      function(){ return [].slice.call(arguments).join(':'); },
+    ukey:     function(){ return 'user:' + [].slice.call(arguments).join(':'); },
+    norm:     function(s){ return String(s == null ? '' : s).toLowerCase().trim(); },
+    params:   function(){ return ''; },
+    warmImages: function(){},
+    purgeImages: function(){},
+    dropPrivate: function(){ return Promise.resolve(); },
+    invalidateArtwork: noop2, invalidateProfile: noop2, invalidateCommunity: noop2,
+    invalidateSection: noop2, invalidateComments: noop2, invalidateStats: noop2,
+    invalidateRanking: noop2, invalidateSearch: noop2, invalidateFriends: noop2,
+    invalidateThread: noop2, invalidateAnalytics: noop2, invalidateUserList: noop2
+  };
+  function noop2(){ return Promise.resolve(); }
+  function dzCached(){ return window.dzCache || DZ_CACHE_SHIM; }
+  window.dzCached = dzCached;
+
+  // The home page and the gallery read the same rows: one list of approved,
+  // published artwork, newest first. So it is one cache record, and the two
+  // surfaces sort and filter their own copy of it rather than each asking for
+  // it. Every page of every listing derived from these rows is invalidated
+  // together, by prefix, when a piece is added, edited or removed.
+  var GAL_ALL = 'gallery:latest:all:page:1';
+  // The first twenty, trimmed to the columns a card needs and small enough to
+  // sit in the synchronous tier. This is what paints before the network has
+  // been asked at all, on the home page and in the gallery.
+  var GAL_TOP = 'gallery:latest:top20';
+
+  function galTrim(a){
+    return { id:a.id, name:a.name, image_url:a.image_url,
+             thumb_x:a.thumb_x, thumb_y:a.thumb_y, thumb_zoom:a.thumb_zoom,
+             category:a.category, tags:a.tags||null, kind:a.kind,
+             status:a.status, created_at:a.created_at,
+             user_id:a.user_id||null, description:a.description||null,
+             software:a.software||null, pages:a.pages||null };
   }
-  function dzcOwner(){
-    return (typeof currentUser !== 'undefined' && currentUser) ? String(currentUser.id) : 'guest';
+
+  async function galFetch(){
+    // public load: approved, and published. A draft is kept and not shown,
+    // and a hidden piece is reachable by its own link and nowhere else.
+    const{data:imgs,error}=await sb.from('artworks').select('*')
+      .eq('status','approved').eq('visibility','published').eq('kind',ART_KIND_ART)
+      .order('created_at',{ascending:false});
+    if(error) throw error;
+    return imgs||[];
   }
-  function dzcSet(key, val){
-    try{
-      localStorage.setItem(DZC_PREFIX+key, JSON.stringify({
-        t:Date.now(), u: dzcPublic(key) ? null : dzcOwner(), v:val
-      }));
+
+  // Applied in one place, whether the rows came from the cache, from the
+  // network, or from a background refresh that landed after the page had
+  // already painted. `repaint` is false on the first pass because startup
+  // renders as soon as loadDB returns; it is true for a refresh, which is the
+  // only case where nobody else is going to draw the new rows.
+  function galApply(rows, repaint){
+    if(!rows || !rows.length) return;
+    /* A COPY of the array, not the array. renderHome sorts `images` in place
+       by trending score, and `rows` here may be the very array the cache is
+       holding in memory — sorting that would quietly reorder a record other
+       readers are about to be handed, and leave the copy in memory disagreeing
+       with the copy on disk. The row objects are shared, which is intended:
+       an edit patches them and dzGalleryStore writes them back. */
+    images = rows.slice();
+    if(repaint){
+      renderHome();
+      if(typeof injectGallerySEO === 'function') injectGallerySEO();
+      var fgEl = document.getElementById('fg');
+      if(fgEl && fgEl.classList.contains('open') && typeof renderFG === 'function') renderFG();
     }
-    catch(e){ /* quota, best effort */ }
   }
-  function dzcGet(key){
-    try{
-      var r = JSON.parse(localStorage.getItem(DZC_PREFIX+key) || 'null');
-      if(!r) return null;
-      // written for somebody else, or before owners were recorded
-      if(!dzcPublic(key) && r.u !== dzcOwner()) return null;
-      return r.v || null;
-    }catch(e){ return null; }
-  }
-  // A refused record is already harmless, but leaving one member's profile
-  // and friend list sitting on a shared device is not something to shrug at.
-  function dzcDropScoped(){
-    try{
-      var kill = [];
-      for(var i=0; i<localStorage.length; i++){
-        var k = localStorage.key(i);
-        if(k && k.indexOf(DZC_PREFIX) === 0 && !dzcPublic(k.slice(DZC_PREFIX.length))) kill.push(k);
-      }
-      kill.forEach(function(k){ localStorage.removeItem(k); });
-    }catch(e){ /* best effort */ }
-  }
-  // warm thumbs at idle
-  function dzcPrefetchThumbs(list){
-    if(!('serviceWorker' in navigator)) return;
-    var urls = (list||[]).slice(0,50)
-      .map(function(a){ return getThumbnailUrl(a.image_url); })
-      .filter(function(u){ return typeof u === 'string' && u.indexOf('http') === 0; });
-    var i = 0;
-    function next(){
-      if(i >= urls.length) return;
-      var u = urls[i++];
-      try{ fetch(u, { mode:'no-cors' }).then(next, next); }
-      catch(e){ next(); }
-    }
-    if('requestIdleCallback' in window) requestIdleCallback(next, { timeout: 4000 });
-    else setTimeout(next, 2500);
+
+  // The newest twenty, whatever order the caller happens to be holding. Sorted
+  // here rather than trusted, because `images` is trending-sorted for most of
+  // its life and the first paint of the gallery reads this expecting latest.
+  function galStore(rows){
+    dzCached().set(GAL_TOP, rows.slice().sort(artTieBreak).slice(0,20).map(galTrim),
+                   'gallery:latest');
   }
 
   async function loadDB(){
     if(!sb)return;
+    var c = dzCached();
+
+    /* The saved copy goes on screen first. This is the whole reason the top
+       twenty are written down: on a repeat visit the grid is populated in the
+       time it takes to read one localStorage key, rather than after a round
+       trip to Supabase. It may be a few minutes old — or a day old, offline —
+       and the load below corrects it either way. */
+    var snap = c.peek(GAL_TOP, 'gallery:latest', { any:true });
+    if(snap && snap.length) images = snap;
+
     try{
-      // public load: approved, and published. A draft is kept and not shown,
-      // and a hidden piece is reachable by its own link and nowhere else.
-      const{data:imgs}=await sb.from('artworks').select('*').eq('status','approved').eq('visibility','published').eq('kind',ART_KIND_ART).order('created_at',{ascending:false});
-      images=imgs||[];
-      if(images.length){
-        // offline snapshot, top 50
-        dzcSet('artworks', images.slice(0,50).map(function(a){
-          return { id:a.id, name:a.name, image_url:a.image_url,
-                   thumb_x:a.thumb_x, thumb_y:a.thumb_y, thumb_zoom:a.thumb_zoom,
-                   category:a.category, tags:a.tags||null, kind:a.kind,
-                   status:a.status, created_at:a.created_at,
-                   user_id:a.user_id||null, description:a.description||null,
-                   software:a.software||null, pages:a.pages||null };
-        }));
-        dzcPrefetchThumbs(images); // warm top 50 thumbs
+      // One record, one request however many panels want it, and a stale copy
+      // served immediately while the refresh runs behind it.
+      var rows = await c.getOrSet(GAL_ALL, galFetch, 'gallery:latest', function(fresh){
+        galApply(fresh, true);
+        galStore(fresh);
+      });
+      galApply(rows, false);
+      if(rows && rows.length){
+        galStore(rows);
+        // Warm the thumbnails the first screens will ask for, at idle. Bounded
+        // and predictable — the top of the list, not the whole collection.
+        c.warmImages(rows.slice(0,50).map(function(a){ return getThumbnailUrl(a.image_url); }), 50);
       }
     }catch(e){
       console.error(e);
-      // offline, serve saved copy
-      var cached = dzcGet('artworks');
-      if(cached && cached.length && !images.length){
-        images = cached;
-        showToast('Offline \u2014 showing saved artworks');
+      /* Nothing fresh, and nothing inside the stale window either. Fall back to
+         whatever was last saved, however old, and say so — an old gallery with a
+         notice beats an empty page. The full list is preferred over the trimmed
+         twenty; the twenty is what is there when the full one was never stored,
+         or was swept. */
+      var old = await c.recall(GAL_ALL, 'gallery:latest');
+      if(!old || !old.length) old = c.peek(GAL_TOP, 'gallery:latest', { any:true });
+      if(old && old.length){
+        images = old.slice();
+        showToast('Offline — showing saved artworks');
       }
     }
   }
+
+  /* The grid, the viewer and a profile all edit rows in `images` in place —
+     a like counted, a piece removed. When they do, the cached copy has to
+     follow, or the next visit paints the state from before the edit. */
+  function dzGalleryStore(){
+    if(!images || !images.length) return;
+    var c = dzCached();
+    c.set(GAL_ALL, images.slice(), 'gallery:latest');
+    galStore(images);
+  }
+  window.dzGalleryStore = dzGalleryStore;
+
+  /* Called after a confirmed write to an artwork: an upload, an edit, a
+     delete. It drops the listings the piece can appear in and nothing else —
+     not the section tabs, not communities, not anybody's private data — and
+     for a delete it also asks the service worker to drop that piece's images,
+     since the objects behind them are on their way out of storage.
+
+     Order matters and is not negotiable: this runs AFTER the database has
+     confirmed the write. Invalidating first means a refresh can land in the
+     window before the commit and cache the state the mutation was replacing. */
+  function dzArtworkChanged(id, opts){
+    var o = opts || {};
+    var c = dzCached();
+    if(o.images && o.images.length) c.purgeImages(o.images);
+    return Promise.resolve(c.invalidateArtwork(id, { userId:o.userId, ranking:o.ranking }))
+      .catch(function(){});
+  }
+  window.dzArtworkChanged = dzArtworkChanged;
 
   // Sizes are generated once at upload and live beside each other in
   // koe-media, distinguished by a filename suffix:

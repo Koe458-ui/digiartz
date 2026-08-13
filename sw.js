@@ -1,9 +1,47 @@
 /* service worker, offline cache
-   caches: shell, thumbs, lightbox images, fonts
-   supabase, analytics and ads are never cached
+   caches: static shell, one per image size, profile and section media, fonts
+   supabase rest/auth/realtime, /api/* , analytics and ads are never cached
    bump CACHE_VERSION to refill every client
 
    changelog
+   v174 — the cache system, rebuilt.
+       The site used to be one HTML file. It is thirty-six scripts and
+       fifteen stylesheets now, and the caching had not caught up: one
+       cache called the shell held every static file, every js and css
+       request went stale-while-revalidate — a network round trip on
+       every load for a file whose URL already carries its version —
+       and two image caches held sixty and fifty objects between them,
+       which a single scroll through the gallery evicts.
+       Now: one cache per thing cached. Versioned assets (?v=, or a
+       version in the filename) are cache-first, because a versioned
+       URL cannot go stale — a new release is a different URL. Images
+       are held per size, and their caps are large enough to survive a
+       session: 300 thumbnails, 150 cards, 60 viewer images, 150 avatars
+       and section previews. Profile photos, banners, community icons
+       and section covers were not cached at all before; every object
+       path carries a timestamp and is never overwritten, so they are
+       immutable by construction and now held for as long as the
+       browser likes.
+       Storage objects are re-requested as cors rather than stored
+       opaque. An opaque response has no readable status, so a 404 from
+       storage — a deleted artwork, a mistyped path — was being cached
+       as if it were the image, and pinned there. Now only a 200 is
+       stored.
+       The page can ask the worker to drop specific images, which is
+       what a delete needs: the row goes from the database and the
+       objects go from the caches on the way out. There is no message
+       that empties everything, on purpose.
+       A successful navigation refreshes the offline copy of
+       index.html, so the offline shell is the last page seen rather
+       than the one from install.
+       And js/cache.js is new: one cache service for data, in memory
+       and IndexedDB, described in CACHE.md.
+       Changed: sw.js, _headers, index.html, js/cache.js (new),
+       scripts/cache-test.mjs (new), scripts/check-precache.mjs, the
+       checks workflow, CACHE.md (new), and the loaders and mutation
+       paths in app-core, albums, analytics, auth, avatar, dm, drafts,
+       engagement, mywork, pfedit, profile, ranking, search, sections
+       and upqueue.
    v173 — Analytics goes back where you were, and the long lists load
        as you reach them.
        The four Settings rows called setGo, which watches the page it
@@ -3044,15 +3082,43 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v173';
-const SHELL = `dz-shell-${CACHE_VERSION}`;
-const THUMB = `dz-thumb-${CACHE_VERSION}`;
-const VIEW  = `dz-view-${CACHE_VERSION}`;
-const FONT  = `dz-font-${CACHE_VERSION}`;
-const KEEP  = [SHELL, THUMB, VIEW, FONT];
+const CACHE_VERSION = 'v174';
 
-// cap each image cache
-const LIMITS = { [THUMB]: 60, [VIEW]: 50, [FONT]: 20 };
+/* One cache per thing cached, not one cache for everything.
+
+   The point of the split is that these have nothing in common except being
+   fetched over HTTP. The shell is a fixed list refilled at install; thumbnails
+   are hundreds of small objects with a high hit rate; a viewer image is large
+   and read once or twice; an avatar is tiny and read on every screen. Held
+   together they share one eviction rule and one lifetime, and the cheapest,
+   most-read objects get pushed out by the most expensive ones. Held apart,
+   each gets a cap that suits it and a scroll through the gallery cannot
+   evict the app itself. */
+const STATIC = `dz-static-${CACHE_VERSION}`;      // index.html, js, css, icons
+const THUMB  = `dz-img-thumb-${CACHE_VERSION}`;   // __t300, grid at 1x
+const CARD   = `dz-img-card-${CACHE_VERSION}`;    // __t600, grid at 2x
+const VIEW   = `dz-img-view-${CACHE_VERSION}`;    // __v1000, the viewer
+const FULL   = `dz-img-full-${CACHE_VERSION}`;    // __f1600, download size
+const MEDIA  = `dz-img-media-${CACHE_VERSION}`;   // avatars, banners, previews
+const FONT   = `dz-font-${CACHE_VERSION}`;
+const KEEP   = [STATIC, THUMB, CARD, VIEW, FULL, MEDIA, FONT];
+const IMAGE_CACHES = [THUMB, CARD, VIEW, FULL, MEDIA];
+
+/* Caps, in objects. Sized so an ordinary session does not evict its own
+   working set: fifty cards on screen at 2x is fifty card images, and a member
+   who scrolls three pages and opens six pieces should still find page one in
+   the cache when they come back to it.
+
+   f1600 is the exception at six. It is the download size, 130KB and up, and
+   the only reason to hold any is the piece being looked at right now. */
+const LIMITS = {
+  [THUMB]: 300,
+  [CARD]:  150,
+  [VIEW]:  60,
+  [FULL]:  6,
+  [MEDIA]: 150,
+  [FONT]:  20
+};
 
 // precached shell
 const SHELL_URLS = [
@@ -3093,26 +3159,27 @@ const SHELL_URLS = [
   '/js/badwords.js?v=1',
 
   // scripts
-  '/js/ranking.js?v=2',
+  '/js/cache.js?v=1',
+  '/js/ranking.js?v=3',
   '/js/community.js?v=5',
-  '/js/dm.js?v=8',
+  '/js/dm.js?v=9',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=22',
+  '/js/app-core.js?v=23',
   '/js/protect.js?v=2',
   '/js/gallery.js?v=82',
-  '/js/auth.js?v=10',
-  '/js/profile.js?v=11',
-  '/js/albums.js?v=14',
-  '/js/drafts.js?v=6',
-  '/js/upqueue.js?v=4',
-  '/js/avatar.js?v=2',
-  '/js/pfedit.js?v=9',
-  '/js/mywork.js?v=18',
+  '/js/auth.js?v=11',
+  '/js/profile.js?v=12',
+  '/js/albums.js?v=15',
+  '/js/drafts.js?v=7',
+  '/js/upqueue.js?v=5',
+  '/js/avatar.js?v=3',
+  '/js/pfedit.js?v=10',
+  '/js/mywork.js?v=19',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=9',
+  '/js/search.js?v=10',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
   '/js/effects.js?v=6',
@@ -3120,9 +3187,9 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/analytics.js?v=4',
-  '/js/engagement.js?v=6',
-  '/js/sections.js?v=106',
+  '/js/analytics.js?v=5',
+  '/js/engagement.js?v=7',
+  '/js/sections.js?v=107',
   '/js/navprogress.js?v=5'
 ];
 
@@ -3132,19 +3199,49 @@ const SUPABASE_RE  = /\.supabase\.co$/;
 const FONT_RE      = /^fonts\.(googleapis|gstatic)\.com$/;
 const BYPASS_RE    = /(googletagmanager|google-analytics|googlesyndication|doubleclick|cloudflareinsights)\./;
 
-// Supabase Storage public objects. Migrated images live here, and each size is
-// a separate object identified by a filename suffix rather than a resize path.
-// These MUST be cached: Supabase egress is metered, so an uncached thumbnail
-// grid is the most expensive thing the site can do. Everything else on the
-// Supabase host (rest, auth, realtime) stays uncached.
+/* Supabase Storage public objects. Every size of every image lives here, each
+   one a separate object identified by a filename suffix rather than a resize
+   path, and every upload path carries a timestamp: artworks/<uid>/<ms>_<name>,
+   avatars/<uid>/<ms>.jpg, communities/<uid>/<cid>-<ms>.<ext>. Nothing is ever
+   written over — a re-crop uploads a new object and deletes the old one — so
+   these URLs are immutable by construction and a cached copy cannot be wrong.
+
+   They MUST be cached: Supabase egress is metered, and an uncached thumbnail
+   grid is the most expensive thing this site can do. Everything else on the
+   Supabase host — rest, auth, realtime — is per-caller and stays uncached. */
 const SB_OBJECT_RE = /^\/storage\/v1\/object\/public\//;
-const SB_THUMB_RE  = /__(?:t300|t600)\.webp$/;
-const SB_VIEW_RE   = /__v1000\.webp$/;
+const SB_T300_RE   = /__t300\.webp$/;
+const SB_T600_RE   = /__t600\.webp$/;
+const SB_V1000_RE  = /__v1000\.webp$/;
+const SB_F1600_RE  = /__f1600\.webp$/;
+const SB_IMAGE_RE  = /\.(?:webp|jpe?g|png|gif|avif|svg)$/i;
+
+// Which cache a storage object belongs in. Anything that is an image but not
+// one of the four generated artwork sizes is profile or section media: an
+// avatar, a banner, a community icon, a blog cover, a marketplace preview.
+function imageCacheFor(pathname) {
+  if (SB_T300_RE.test(pathname))  return THUMB;
+  if (SB_T600_RE.test(pathname))  return CARD;
+  if (SB_V1000_RE.test(pathname)) return VIEW;
+  if (SB_F1600_RE.test(pathname)) return FULL;
+  if (SB_IMAGE_RE.test(pathname)) return MEDIA;
+  return null;   // a document, an archive, a psd — not ours to hold
+}
+
+// A versioned URL cannot go stale. Every script and stylesheet the page loads
+// carries ?v=<n>, and the vendored build carries its version in the filename,
+// so a release is a different URL rather than different bytes at the same one.
+// That is what makes cache-first correct here — and it is the whole win: a
+// warm load reads thirty-six scripts and fifteen stylesheets off the disk
+// without asking the network whether any of them changed.
+function isVersioned(url) {
+  return url.searchParams.has('v') || /\/js\/vendor\//.test(url.pathname);
+}
 
 // install, precache the shell
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const cache = await caches.open(SHELL);
+    const cache = await caches.open(STATIC);
     await Promise.all(SHELL_URLS.map((url) =>
       cache.add(new Request(url, { cache: 'reload' })).catch(() => {})
     ));
@@ -3160,30 +3257,87 @@ self.addEventListener('activate', (event) => {
       names.filter((n) => n.startsWith('dz-') && !KEEP.includes(n))
            .map((n) => caches.delete(n))
     );
+    await pruneStatic();
     await self.clients.claim();
   })());
 });
 
-// trim to cap, oldest first
+/* A ?v= bump that ships without a CACHE_VERSION bump leaves the previous
+   version of that file in the static cache for nobody: the page will never ask
+   for it again, and cache-first means it is never revalidated either. Renaming
+   the cache is the usual sweep; this is the one for the release that did not
+   rename it. Only /js/ and /css/ are pruned — the rest of the precache list is
+   unversioned by design. */
+async function pruneStatic() {
+  try {
+    const cache = await caches.open(STATIC);
+    const want = new Set(SHELL_URLS.map((u) => new URL(u, self.location.origin).href));
+    const keys = await cache.keys();
+    await Promise.all(keys.map(async (req) => {
+      const u = new URL(req.url);
+      if (!/^\/(?:js|css)\//.test(u.pathname)) return;
+      if (!want.has(u.href)) await cache.delete(req);
+    }));
+  } catch (err) { /* a prune that fails costs space, not correctness */ }
+}
+
+/* Trim to the cap, oldest insertion first — Cache Storage keeps insertion
+   order, which is not true LRU but is close enough for objects that are read
+   in the order they are shown. Trimmed to 90% rather than exactly to the cap,
+   so a full cache does not run a delete on every single put. */
 async function trim(cacheName) {
   const limit = LIMITS[cacheName];
   if (!limit) return;
   const cache = await caches.open(cacheName);
   const keys = await cache.keys();
   if (keys.length <= limit) return;
-  await Promise.all(keys.slice(0, keys.length - limit).map((k) => cache.delete(k)));
+  const target = Math.floor(limit * 0.9);
+  await Promise.all(keys.slice(0, keys.length - target).map((k) => cache.delete(k)));
 }
 
-// cache first
+/* Storage objects are requested as cors, not stored as they arrive.
+
+   An <img> fetches no-cors, and a no-cors response is opaque: status 0, no
+   readable headers. Caching those meant caching whatever came back — and what
+   comes back for a deleted artwork or a mistyped path is a 404, stored under
+   the image's URL and pinned there for as long as the cache lives. The public
+   bucket answers cors, so asking for it that way makes the status readable and
+   only a 200 is kept. A cors response satisfies a no-cors request; the reverse
+   would not be true, which is why this is safe in this direction only. */
+async function imageFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+
+  let res = null;
+  try {
+    res = await fetch(new Request(request.url, { mode: 'cors', credentials: 'omit' }));
+  } catch (err) {
+    // No CORS headers, or the network is gone. Fall back to the request as it
+    // was made, and do not cache what we cannot inspect.
+    try { return await fetch(request); }
+    catch (err2) {
+      const stale = await cache.match(request, { ignoreVary: true });
+      if (stale) return stale;
+      throw err2;
+    }
+  }
+  if (res && res.ok) {
+    await cache.put(request, res.clone());
+    trim(cacheName).catch(() => {});   // fire and forget eviction
+  }
+  return res;
+}
+
+// cache first, for our own versioned assets and for fonts
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request);
   if (hit) return hit;
   try {
     const res = await fetch(request);
-    if (res && (res.type === 'opaque' || res.ok)) {
+    if (res && (res.ok || res.type === 'opaque')) {
       await cache.put(request, res.clone());
-      // fire and forget eviction
       trim(cacheName).catch(() => {});
     }
     return res;
@@ -3194,7 +3348,9 @@ async function cacheFirst(request, cacheName) {
   }
 }
 
-// stale while revalidate
+// stale while revalidate, for our own UNversioned assets — config.js, the
+// icons, the manifest. Cached so they survive offline, revalidated because
+// nothing in their URL says which copy this is.
 async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request);
@@ -3217,12 +3373,12 @@ self.addEventListener('fetch', (event) => {
   try { url = new URL(req.url); } catch { return; }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return;
 
-  // migrated images, cached by size. checked before the Supabase skip below,
-  // which is there for rest/auth/realtime and would otherwise cover these too
+  // Images, cached by size. Checked before the Supabase skip below, which is
+  // there for rest/auth/realtime and would otherwise cover these too.
   if (SUPABASE_RE.test(url.hostname) && SB_OBJECT_RE.test(url.pathname)) {
-    if (SB_THUMB_RE.test(url.pathname)) { event.respondWith(cacheFirst(req, THUMB)); return; }
-    if (SB_VIEW_RE.test(url.pathname))  { event.respondWith(cacheFirst(req, VIEW));  return; }
-    return;   // other sizes, no cache
+    const bucket = imageCacheFor(url.pathname);
+    if (bucket) { event.respondWith(imageFirst(req, bucket)); return; }
+    return;   // not an image, straight to the network
   }
 
   // skip live data
@@ -3235,13 +3391,21 @@ self.addEventListener('fetch', (event) => {
   // to someone who has since signed in. Straight to the network, always.
   if (url.origin === self.location.origin && API_RE.test(url.pathname)) return;
 
-  // navigations, network first
+  // Navigations, network first — the HTML is what points at the current
+  // bundles, so it is never answered from a cache while there is a network.
+  // A successful one refreshes the offline copy, so the shell that comes back
+  // offline is the page as it was last seen rather than as it was at install.
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        return await fetch(req);
+        const res = await fetch(req);
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(STATIC).then((c) => c.put('/index.html', copy)).catch(() => {});
+        }
+        return res;
       } catch {
-        const cache = await caches.open(SHELL);
+        const cache = await caches.open(STATIC);
         return (await cache.match(req)) ||
                (await cache.match('/index.html')) ||
                (await cache.match('/')) ||
@@ -3257,13 +3421,64 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // own static assets
+  // our own files
   if (url.origin === self.location.origin) {
-    event.respondWith(staleWhileRevalidate(req, SHELL));
+    event.respondWith(isVersioned(url)
+      ? cacheFirst(req, STATIC)
+      : staleWhileRevalidate(req, STATIC));
   }
 });
 
-// skip waiting message
+/* Messages from the page.
+
+   There is deliberately no "empty everything" message. Clearing whole caches
+   on a mutation is the pattern this rebuild exists to remove: a member
+   deleting one piece should cost them that piece's images, not the three
+   hundred thumbnails they had already downloaded. */
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+  const data = event.data;
+  if (!data || !data.type) return;
+
+  if (data.type === 'SKIP_WAITING') { self.skipWaiting(); return; }
+
+  // Drop specific images, for a delete: the row goes from the database, the
+  // objects go from storage, and their cached copies go from here. Every size
+  // of the URL given goes, because the page holds one URL and the caches hold
+  // the four sizes derived from it.
+  if (data.type === 'DZ_DROP_IMAGES' && Array.isArray(data.urls)) {
+    event.waitUntil((async () => {
+      const sizes = ['__t300.webp', '__t600.webp', '__v1000.webp', '__f1600.webp'];
+      const targets = [];
+      data.urls.forEach((raw) => {
+        if (typeof raw !== 'string' || !raw) return;
+        targets.push(raw);
+        const base = raw.replace(/__(?:t300|t600|v1000|f1600)\.webp$/, '');
+        if (base !== raw) sizes.forEach((s) => targets.push(base + s));
+      });
+      const caches_ = await Promise.all(IMAGE_CACHES.map((n) => caches.open(n)));
+      await Promise.all(caches_.map((c) =>
+        Promise.all(targets.map((u) => c.delete(u).catch(() => false)))
+      ));
+    })());
+    return;
+  }
+
+  // What is actually being held, per cache. Read from the console through
+  // dzCache.report(); nothing on the page depends on it.
+  if (data.type === 'DZ_CACHE_STATS') {
+    event.waitUntil((async () => {
+      const out = { version: CACHE_VERSION };
+      for (const name of KEEP) {
+        try {
+          const c = await caches.open(name);
+          out[name] = (await c.keys()).length;
+        } catch (err) { out[name] = -1; }
+      }
+      const port = event.ports && event.ports[0];
+      if (port) port.postMessage(out);
+      else if (event.source && event.source.postMessage) {
+        event.source.postMessage({ type: 'DZ_CACHE_STATS_RESULT', stats: out });
+      }
+    })());
+  }
 });

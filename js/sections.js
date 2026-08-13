@@ -55,8 +55,12 @@
 (function(){
   'use strict';
 
-  // cache rows per section
-  var dzCache = {}, dzBusy = {}, dzLoaded = {};
+  /* Rows per section, for this tab. Named dzSecRows and not dzCache, which is
+     what it used to be called: the global cache service is window.dzCache, and
+     one file holding a different thing under the same name in its own scope is
+     a trap. The service is reached through window.dzCached() below. */
+  var dzSecRows = {}, dzBusy = {}, dzLoaded = {};
+  function dzc(){ return window.dzCached ? window.dzCached() : null; }
 
   var SEC = {
     resources: {
@@ -250,28 +254,66 @@
   window.dzSelectFor = selectFor;
   window.dzCatLabel  = labelOf;
 
+  /* A section's rows: two hundred of them, filtered and sorted in the browser.
+     One request per section per visit was already the shape of this; now it is
+     one request per section per few minutes, shared across every tab, and a
+     tab opened a second time paints from the saved copy without asking at all.
+
+     The key carries the section AND whether there is a session, because the
+     select list does: a signed-in caller asks for price columns a signed-out
+     one may not read, so the two answers are different rows and must not share
+     a record. Everything in them is public — approved, listed, visible to
+     anyone — which is what makes them shareable at all. */
+  function dzSecKey(sec){
+    return 'section:' + sec + ':list:' + (window.currentUser ? 'member' : 'public');
+  }
+
   function dzSecLoad(sec){
     var cfg = SEC[sec], host = document.getElementById('fgSecC-'+sec);
     if(!cfg || !host) return;
     // sb is lexical, not on window
     if(!sb){ host.innerHTML = '<div class="dzEmpty">BACKEND NOT CONFIGURED</div>'; return; }
-    dzBusy[sec] = true;
-    host.innerHTML = '<div class="dzBusy">LOADING…</div>';
-    // built up rather than chained in one line, because a section may add a
-    // filter of its own (jobs hide anything not published publicly) and may
-    // sort on more than one column
-    var q = sb.from(cfg.table).select(selectFor(sec)).eq('status','approved');
-    if(cfg.eq) Object.keys(cfg.eq).forEach(function(k){ q = q.eq(k, cfg.eq[k]); });
-    (cfg.order || [['created_at',false]]).forEach(function(o){
-      q = q.order(o[0], {ascending:!!o[1]});
-    });
-    q.limit(200)
-      .then(function(res){
-        dzBusy[sec] = false; dzLoaded[sec] = true;
-        dzCache[sec] = (res && res.data) || [];
-        dzSecRender(sec);
-      }, function(){
+
+    var c = dzc(), key = dzSecKey(sec), policy = 'section:' + sec;
+
+    // The saved copy, if there is one, goes up instead of the spinner.
+    var warm = c ? c.peek(key, policy, { any:true }) : null;
+    if(warm && warm.length){
+      dzSecRows[sec] = warm;
+      dzLoaded[sec] = true;
+      dzBusy[sec] = false;
+      dzSecRender(sec);
+    } else {
+      dzBusy[sec] = true;
+      host.innerHTML = '<div class="dzBusy">LOADING…</div>';
+    }
+
+    var load = function(){
+      // built up rather than chained in one line, because a section may add a
+      // filter of its own (jobs hide anything not published publicly) and may
+      // sort on more than one column
+      var q = sb.from(cfg.table).select(selectFor(sec)).eq('status','approved');
+      if(cfg.eq) Object.keys(cfg.eq).forEach(function(k){ q = q.eq(k, cfg.eq[k]); });
+      (cfg.order || [['created_at',false]]).forEach(function(o){
+        q = q.order(o[0], {ascending:!!o[1]});
+      });
+      return q.limit(200).then(function(res){
+        if(res && res.error) throw res.error;
+        return (res && res.data) || [];
+      });
+    };
+
+    var apply = function(rows){
+      dzBusy[sec] = false; dzLoaded[sec] = true;
+      dzSecRows[sec] = rows || [];
+      dzSecRender(sec);
+    };
+
+    (c ? c.getOrSet(key, load, policy, apply) : load())
+      .then(apply, function(){
         dzBusy[sec] = false;
+        // A failed refresh must not blank rows that are already on screen.
+        if(dzSecRows[sec] && dzSecRows[sec].length){ dzSecRender(sec); return; }
         host.innerHTML = '<div class="dzEmpty">COULD NOT LOAD — TRY AGAIN</div>';
       });
   }
@@ -291,7 +333,7 @@
 
     var q   = String((window.fgSecQuery||{})[sec]||'').trim().toLowerCase();
     var cat = (window.fgSecFilter||{})[sec] || 'all';
-    var rows = (dzCache[sec]||[]).filter(function(r){
+    var rows = (dzSecRows[sec]||[]).filter(function(r){
       if(cat !== 'all' && (r.category||[]).indexOf(cat) === -1) return false;
       return matches(r, q);
     });
@@ -3463,6 +3505,14 @@
       showToast('Published');
       dzResetForm(sec);
       dzLoaded[sec] = false;   // next visit re queries
+      /* And the saved copy of this section goes, in every tab and on disk —
+         otherwise "next visit re queries" is only true of this tab, and the
+         member's own new post is missing from the list for as long as the
+         policy allows. Both signed-in and signed-out variants of the key go,
+         and the searches that could have matched it. This section only: a new
+         job posting has nothing to do with the blog. */
+      var cPub = dzc();
+      if(cPub){ try{ await cPub.invalidateSection(sec, res.data && res.data.id); }catch(e3){} }
     }catch(err){
       if(moderated){ dzV.fail((err && err.message) ? err.message : 'Could not publish'); }
       else { showToast((err && err.message) ? err.message : 'Could not publish'); }
@@ -3575,12 +3625,12 @@
   window.dzSchClear      = dzSchClear;
   window.dzSchDone       = dzSchDone;
   // expose rows to the detail view
-  window.dzGetRows = function(sec){ return dzCache[sec] || []; };
+  window.dzGetRows = function(sec){ return dzSecRows[sec] || []; };
   // Signing in or out changes which columns the rows may even carry, so a
   // cached page from the other state is stale in a way a re-render cannot fix.
   // Drop it and let the section load again on next view.
   window.dzSecReset = function(sec){
-    if(sec){ delete dzCache[sec]; dzLoaded[sec] = false; dzBusy[sec] = false; }
+    if(sec){ delete dzSecRows[sec]; dzLoaded[sec] = false; dzBusy[sec] = false; }
     var host = sec && document.getElementById('fgSecC-'+sec);
     if(host && host.children.length) dzSecLoad(sec);
   };
@@ -3807,6 +3857,10 @@
   function H(){ return window.dzHelpers || { money:function(){return '';}, bytes:function(){return '';}, ago:function(){return '';} }; }
   function esc2(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function rows(){ return (typeof window.dzGetRows==='function' ? window.dzGetRows(cur.sec) : []) || []; }
+  // This file is several IIFEs, so each one that uses the cache service names
+  // it for itself. It is the same service either way — window.dzCache, reached
+  // through the shim so a missing one is a slower page and not a broken one.
+  function dzc(){ return window.dzCached ? window.dzCached() : null; }
 
   // ---- comments ---------------------------------------------------------
   // The box you type in is above what everyone else typed, and the newest
@@ -3852,14 +3906,30 @@
     var off = parseInt(host.dataset.cmOff, 10) || 0;
     if(!first) cmMoreBtn(listId, true, true);
     try{
-      var res = await sb.from('item_comments')
-        .select('id,user_id,username,body,created_at')
-        .eq('kind',kind).eq('subject_id',id)
-        .order('created_at',{ascending:false})
-        .range(off, off + CM_PAGE - 1);
+      var cmLoad = async function(){
+        var r = await sb.from('item_comments')
+          .select('id,user_id,username,body,created_at')
+          .eq('kind',kind).eq('subject_id',id)
+          .order('created_at',{ascending:false})
+          .range(off, off + CM_PAGE - 1);
+        if(r && r.error) throw r.error;
+        return (r && r.data) || [];
+      };
+      /* Comments get twenty seconds and this tab's memory, nothing more. They
+         are a conversation: the point of opening them is to see what was just
+         said, and a copy that outlives the reader's attention span is worse
+         than no copy. What the twenty seconds buys is the case this page
+         actually hits — an item closed and re-opened, or two panels asking for
+         the same thread in the same breath. Posting or deleting one drops the
+         record outright rather than waiting for it to expire.
+         Only the first page: the later ones are reached by a button nobody
+         presses twice. */
+      var c = dzc();
+      var list = (c && off === 0)
+        ? await c.getOrSet('comments:' + kind + ':' + id + ':page:0', cmLoad, 'comments')
+        : await cmLoad();
       host = document.getElementById(listId);
       if(!host || host.dataset.cmToken !== token) return;   // reader moved on
-      var list = (res && res.data) || [];
       var html = list.map(function(c){ return cmRow(c, kind, id, listId); }).join('');
       if(first) host.innerHTML = html || '<div class="avCmEmpty">NO COMMENTS YET \u2014 BE THE FIRST</div>';
       else if(html) host.insertAdjacentHTML('beforeend', html);
@@ -3903,6 +3973,11 @@
       var res = await sb.from('item_comments').insert({ kind:kind, subject_id:id, user_id:currentUser.id, body:body });
       if(res.error) throw res.error;
       if(input) input.value = '';
+      /* The write is in. Only now does the cached first page go — invalidating
+         before the insert would leave a window where a refresh reads the list
+         from before it and stores that as the current answer. */
+      var cPost = dzc();
+      if(cPost) { try{ await cPost.invalidateComments(kind, id); }catch(e2){} }
       // the dashboard counts comments from item_comments itself; this is only
       // here to give the comment a country, a device and a source, and it
       // files it under the section it was left in
@@ -3925,6 +4000,8 @@
     try{
       var res = await sb.from('item_comments').delete().eq('id', cid);
       if(res.error) throw res.error;
+      var cDel = dzc();
+      if(cDel) { try{ await cDel.invalidateComments(kind, id); }catch(e2){} }
       window.dzCmLoad(kind, id, listId);
     }catch(e){ showToast('Could not delete'); }
   };
@@ -4257,8 +4334,21 @@
     var sec = VW_SEG[seg];
     if(!sec || !sb || typeof window.dzSelectFor !== 'function') return;
     try{
-      var res = await sb.from(VW_TABLE[sec]).select(window.dzSelectFor(sec)).eq('id', id).maybeSingle();
-      var row = res && res.data;
+      /* One public row by id, cached: this is the path a shared link takes, so
+         it is the one most likely to be opened by several people at once and
+         several times by the same person. Keyed by section, id and whether the
+         caller has a session, for the same reason the listings are — the
+         select list differs. A price shown from here is a display value; the
+         authoritative one is re-read at checkout, which is the rule this cache
+         does not get to bend. */
+      var c = dzc();
+      var vwKey = 'section:item:' + sec + ':' + id + ':' + (window.currentUser ? 'member' : 'public');
+      var load = async function(){
+        var r = await sb.from(VW_TABLE[sec]).select(window.dzSelectFor(sec)).eq('id', id).maybeSingle();
+        if(r && r.error) throw r.error;
+        return (r && r.data) || null;
+      };
+      var row = c ? await c.getOrSet(vwKey, load, 'section:item') : await load();
       if(!row){ if(typeof showToast === 'function') showToast('That item is no longer available'); return; }
       if(typeof openFG === 'function') openFG();
       if(typeof fgSwitchSection === 'function') fgSwitchSection(sec === 'resources' ? 'resources' : sec);

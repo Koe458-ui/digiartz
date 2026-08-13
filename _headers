@@ -11,10 +11,78 @@
 /sw.js
   Cache-Control: no-cache
 
-# Vendored third-party build. The version is in the filename, so an upgrade is
-# a different path and this copy can be held for as long as a browser likes.
-/js/vendor/*
+# Scripts and stylesheets. Every reference to one of these carries ?v=<n> —
+# index.html is the authority for the numbers and scripts/check-precache.mjs
+# fails the build if a reference is missing its version or disagrees with the
+# service worker. That enforcement is what makes a year and `immutable` correct
+# here: a release changes the URL, so this copy can never be the wrong one, and
+# the browser is told it need not even ask.
+#
+# The unversioned path (/js/app-core.js with no query) gets the same header and
+# is not referenced by anything, so nothing can pin content that changes.
+/js/*
   Cache-Control: public, max-age=31536000, immutable
+
+/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Runtime configuration, deliberately unversioned so a key can be rotated
+# without a deploy. Short, and revalidated.
+/config.js
+  Cache-Control: public, max-age=300, must-revalidate
+
+# Icons and the touch icon. Unversioned, but they change roughly never and a
+# stale one is a stale icon rather than a stale site.
+/favicon.ico
+  Cache-Control: public, max-age=604800
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
+/icon-192.png
+  Cache-Control: public, max-age=604800
+/icon-512.png
+  Cache-Control: public, max-age=604800
+/zeo-avatar.png
+  Cache-Control: public, max-age=604800
+
+# The manifest and the crawler files are checked often enough to be worth an
+# hour and no more. Never immutable: nothing in their URL says which copy this
+# is, and a pinned manifest is a pinned app identity.
+/site.webmanifest
+  Cache-Control: public, max-age=3600
+/robots.txt
+  Cache-Control: public, max-age=3600
+/ads.txt
+  Cache-Control: public, max-age=3600
+
+# The HTML, spelled out rather than left to a platform default.
+#
+# index.html is the one file that says which bundles are current, so it is the
+# one file that must never be answered from a cache without asking. Everything
+# above depends on that: /js/* and /css/* are pinned for a year precisely
+# BECAUSE the HTML pointing at them is always revalidated, and a release that
+# could not update the HTML would be a release nobody receives.
+#
+# Every path here resolves to index.html — the four section links and the
+# artwork link are SPA fallbacks in _redirects, and a header rule matches the
+# path that was REQUESTED, not the file that answers it, so each one needs
+# saying. must-revalidate rather than no-store: the browser may keep its copy,
+# it just may not use it without checking.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/artwork/*
+  Cache-Control: public, max-age=0, must-revalidate
+/resource/*
+  Cache-Control: public, max-age=0, must-revalidate
+/blog/*
+  Cache-Control: public, max-age=0, must-revalidate
+/listing/*
+  Cache-Control: public, max-age=0, must-revalidate
+/job/*
+  Cache-Control: public, max-age=0, must-revalidate
+/profile/*
+  Cache-Control: public, max-age=0, must-revalidate
 
 # Pages Functions answer per caller, behind a session check. Nothing here may
 # be held by a browser cache, a shared cache or a crawler — a stored copy is a

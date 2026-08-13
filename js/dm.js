@@ -67,24 +67,48 @@
     toast('You have ' + FR_MAX_FRIENDS + ' friends — the most allowed. Remove one first.');
     return true;
   }
+  /* Friends, conversations and messages are one member's, and the cache
+     service treats them that way: stamped with the member id, refused for
+     anybody else, dropped from the device when they sign out, and never
+     eligible for a shared cache of any kind. What they are NOT is uncached —
+     the friend map decides whether a chat box is even usable, and asking the
+     database for it before the panel can paint is a visible wait every time
+     the panel opens. Thirty seconds fresh, five minutes servable, and every
+     friend change invalidates it outright rather than waiting for either. */
+  function dmc () { return window.dzCached ? window.dzCached() : null; }
+  function frKey () { var c = dmc(); return c ? c.ukey('friends') : null; }
+
   async function loadFriendships () {
-    frMap = {};
-    if (!db() || !me()) return;
+    var c = dmc(), k = frKey();
+    // The saved map goes in place before the query runs, so a panel opening
+    // now has something to gate on rather than treating everyone as a stranger.
+    var warm = (c && k) ? c.peek(k, 'user:friends', { any: true }) : null;
+    frMap = warm ? warm : {};
+    if (!db() || !me()) { frMap = {}; return; }
     try {
-      var r = await db().from('friendships')
-        .select('id,requester_id,addressee_id,status,blocked_by')
-        .or('requester_id.eq.' + me().id + ',addressee_id.eq.' + me().id);
-      if (r.error) throw r.error;
-      (r.data || []).forEach(function (f) {
-        frMap[f.requester_id === me().id ? f.addressee_id : f.requester_id] = f;
-      });
-      if (typeof dzcSet === 'function') dzcSet('frMap', frMap); // offline snapshot
+      var fresh = await (c && k
+        ? c.getOrSet(k, frFetch, 'user:friends')
+        : frFetch());
+      frMap = fresh || {};
     } catch (e) {
-      // restore saved map offline
-      if (!Object.keys(frMap).length && typeof dzcGet === 'function') {
-        frMap = dzcGet('frMap') || {};
-      }
+      // Leave whatever was warmed in place: a stale friend list is how the
+      // chat panel stays usable on a bad connection. It cannot grant anything
+      // — every send is checked by the database.
+      if (!frMap) frMap = {};
     }
+  }
+
+  async function frFetch () {
+    var uid = me().id;
+    var r = await db().from('friendships')
+      .select('id,requester_id,addressee_id,status,blocked_by')
+      .or('requester_id.eq.' + uid + ',addressee_id.eq.' + uid);
+    if (r.error) throw r.error;
+    var map = {};
+    (r.data || []).forEach(function (f) {
+      map[f.requester_id === uid ? f.addressee_id : f.requester_id] = f;
+    });
+    return map;
   }
   function frState (pid) {
     var f = frMap[pid];
@@ -94,6 +118,14 @@
     return f.requester_id === (me() && me().id) ? 'sent' : 'incoming';
   }
   async function refreshAfterFrChange () {
+    /* A request sent, accepted, declined or blocked. The write has already
+       been confirmed by the time this runs, so the cached map is now known to
+       be wrong and is dropped rather than left to expire — the caller is about
+       to repaint, and repainting from a copy taken before the change is how a
+       declined request stays on screen. The conversation list goes with it: a
+       block changes who is in it. */
+    var c = dmc();
+    if (c && c.invalidateFriends) { try { await c.invalidateFriends(); } catch (e) {} }
     await loadFriendships();
     frPaintBadge();
     if ($('frdPage') && $('frdPage').classList.contains('open')) loadFriendsPage();
@@ -281,39 +313,55 @@
       .map(function (k) { return { id: k }; });
   };
 
-  async function refreshConvos () {
+  // One record for the whole list: the partners and the profile rows that go
+  // with them, so painting it needs no second query.
+  async function convosFetch () {
+    var partners = await fetchPartners();
+    if (!partners.length) return { partners: [], profiles: {} };
+    var pr = await db().from('profiles')
+      .select('id,username,avatar_url')
+      .in('id', partners.map(function (p) { return p.id; }));
+    var byId = {};
+    (pr.data || []).forEach(function (p) { byId[p.id] = p; });
+    return { partners: partners, profiles: byId };
+  }
+
+  function convosPaint (snap) {
     var list = $('dmConvoList'), empty = $('dmEmpty'), head = $('dmConvoHead');
+    if (!list || !snap) return;
+    var partners = snap.partners || [], byId = snap.profiles || {};
+    list.innerHTML = '';
+    if (head) head.style.display = partners.length ? '' : 'none';
+    if (empty) empty.style.display = partners.length ? 'none' : '';
+    partners.forEach(function (pt) {
+      var prof = byId[pt.id] || { id: pt.id, username: 'Artist' };
+      list.appendChild(userRow(prof, false, pt.preview, pt.ts));
+    });
+  }
+
+  async function refreshConvos () {
+    var list = $('dmConvoList');
     if (!list || !db() || !me()) return;
+    var c = dmc(), k = c ? c.ukey('convos') : null;
     try {
-      var partners = await fetchPartners();
-      list.innerHTML = '';
-      if (head) head.style.display = partners.length ? '' : 'none';
-      if (empty) empty.style.display = partners.length ? 'none' : '';
-      if (!partners.length) return;
-      var pr = await db().from('profiles')
-        .select('id,username,avatar_url')
-        .in('id', partners.map(function (p) { return p.id; }));
-      var byId = {};
-      (pr.data || []).forEach(function (p) { byId[p.id] = p; });
-      partners.forEach(function (pt) {
-        var prof = byId[pt.id] || { id: pt.id, username: 'Artist' };
-        list.appendChild(userRow(prof, false, pt.preview, pt.ts));
-      });
-      // offline snapshot
-      if (typeof dzcSet === 'function') dzcSet('convos', { partners: partners, profiles: byId });
-    } catch (e) {
-      // rebuild from snapshot
-      var snap = (typeof dzcGet === 'function') && dzcGet('convos');
-      if (snap && snap.partners && snap.partners.length && list) {
-        list.innerHTML = '';
-        if (head) head.style.display = '';
-        if (empty) empty.style.display = 'none';
-        snap.partners.forEach(function (pt) {
-          var prof = (snap.profiles && snap.profiles[pt.id]) || { id: pt.id, username: 'Artist' };
-          list.appendChild(userRow(prof, false, pt.preview, pt.ts));
-        });
+      /* The saved list paints first and the refresh corrects it. This is the
+         one place in chat where a slightly old answer is welcome: the row
+         previews are already only as fresh as the last poll, and an empty
+         drawer that fills in half a second later reads as a bug. The messages
+         themselves are a different matter — see loadThread. */
+      if (c && k) {
+        await c.warm(k, convosFetch, 'user:convos', convosPaint, convosPaint)
+               .then(convosPaint);
+      } else {
+        convosPaint(await convosFetch());
       }
-      // leave list as is
+    } catch (e) {
+      // Nothing fresh. Whatever was last saved for THIS member, or the list
+      // stays as it is — never blanked on a failed refresh.
+      if (c && k) {
+        var old = await c.recall(k, 'user:convos');
+        if (old && old.partners && old.partners.length) convosPaint(old);
+      }
     }
   }
 
@@ -380,9 +428,89 @@
     // the nav is uncovered by the slide itself, nothing to restore
     refreshConvos();
   }
+  /* Painting a thread, separated from fetching one so the saved copy can use
+     it. `mode` is 'open' (jump to the newest), 'older' (hold the reading
+     position while earlier messages are prepended) or 'poll' (stay put unless
+     already at the end). */
+  function dmPaint (rows, hasMore, mode, uid) {
+    var body = $('dmBody');
+    if (!body) return;
+    var atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
+    var prevHeight = body.scrollHeight, prevTop = body.scrollTop;
+
+    // day chips and grouping
+    var msgHtml = '';
+    var lastDayKey = '', lastSender = null, lastTs = 0;
+    rows.forEach(function (m) {
+      var mine = m.sender_id === uid;
+      var d = m.created_at ? new Date(m.created_at) : null;
+      var dayKey = d ? d.toDateString() : '';
+      if (dayKey && dayKey !== lastDayKey) {
+        msgHtml += '<div class="chatDay"><span>' + dayChip(d) + '</span></div>';
+        lastDayKey = dayKey;
+        lastSender = null; // new day restarts group
+      }
+      var ts = d ? d.getTime() : 0;
+      var cont = lastSender === m.sender_id && ts && (ts - lastTs) < 300000;
+      lastSender = m.sender_id; lastTs = ts;
+      msgHtml += '<div class="dmMsg ' + (mine ? 'dmMsg--me' : 'dmMsg--them') + (cont ? ' dmMsg--cont' : '') + '">' +
+               escq(m.content) +
+               '<span class="dmMsgTime">' + hhmm(m.created_at) + '</span>' +
+             '</div>';
+    });
+
+    // load older spinner
+    var loaderHtml = hasMore
+      ? '<div class="cpRefreshWrap visible" id="dmRefreshWrap" aria-hidden="true"><div class="cpRefreshSpinner"></div></div>'
+      : '';
+
+    body.innerHTML = loaderHtml + (msgHtml ||
+      '<div class="dmSearchNote">SAY HI — THIS IS THE START OF YOUR CHAT</div>');
+
+    if (mode === 'older') {
+      // keep reading position
+      body.scrollTop = prevTop + (body.scrollHeight - prevHeight);
+    } else if (mode === 'open' || atEnd) {
+      body.scrollTop = body.scrollHeight;
+    } else {
+      // background poll, keep view
+      body.scrollTop = prevTop;
+    }
+  }
+
+  /* A thread, cached for the paint and NEVER for the poll.
+
+     The messages themselves are written down — the last fifty of each of the
+     last thirty conversations, stamped with the member id, on this device only
+     — so opening a chat you have had before shows it instantly instead of an
+     empty panel with a spinner. That is the whole benefit, and it is worth
+     having: a chat that takes a beat to appear feels broken in a way a gallery
+     does not.
+
+     What is deliberately absent is a cached READ on the five-second poll. A
+     message that has arrived and is not shown is the one thing chat may never
+     do, so every poll goes to the database, and the cache is written from the
+     answer rather than consulted before it. Same reason there is no
+     stale-while-revalidate here: for messages, "briefly out of date" is not a
+     smaller version of correct. */
+  function dmThreadKey (pid) {
+    var c = dmc();
+    return c ? c.ukey('thread', pid) : null;
+  }
+
   async function loadThread (scrollToEnd) {
     if (!dmPartner || !db() || !me()) return;
     var uid = me().id, pid = dmPartner.id;
+    var c = dmc(), k = dmThreadKey(pid);
+
+    // On open, and only on open: the saved copy goes up while the fetch runs.
+    if (scrollToEnd && c && k) {
+      var snap = c.peek(k, 'user:thread', { any: true });
+      if (snap && snap.rows && snap.rows.length) {
+        dmPaint(snap.rows, !!snap.more, 'open', uid);
+      }
+    }
+
     try {
       // fetch newest messages
       var r = await db().from('direct_messages')
@@ -397,54 +525,26 @@
       if (dmHasMore) rows = rows.slice(0, dmLimit);
       rows.reverse(); // oldest first for display
 
+      /* Written down whether or not it repaints: the poll that found nothing
+         new still confirms what the saved copy should be.
+
+         `more` is true if the server said there are older messages beyond the
+         window, OR if the window itself is longer than the fifty kept here —
+         somebody who has scrolled back through a long thread has more above
+         them than this record holds, and the saved paint should say so. */
+      if (c && k) {
+        c.set(k, { rows: rows.slice(-50), more: dmHasMore || rows.length > 50 },
+              'user:thread');
+      }
+
       // skip repaint if unchanged
       var sig = dmLimit + '|' + dmHasMore + '|' + rows.map(function (m) { return m.id; }).join(',');
       if (!scrollToEnd && !dmLoadingOlder && sig === dmLastSig) return;
       dmLastSig = sig;
 
-      var body = $('dmBody');
-      var atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
-      var prevHeight = body.scrollHeight, prevTop = body.scrollTop;
-
-      // day chips and grouping
-      var msgHtml = '';
-      var lastDayKey = '', lastSender = null, lastTs = 0;
-      rows.forEach(function (m) {
-        var mine = m.sender_id === uid;
-        var d = m.created_at ? new Date(m.created_at) : null;
-        var dayKey = d ? d.toDateString() : '';
-        if (dayKey && dayKey !== lastDayKey) {
-          msgHtml += '<div class="chatDay"><span>' + dayChip(d) + '</span></div>';
-          lastDayKey = dayKey;
-          lastSender = null; // new day restarts group
-        }
-        var ts = d ? d.getTime() : 0;
-        var cont = lastSender === m.sender_id && ts && (ts - lastTs) < 300000;
-        lastSender = m.sender_id; lastTs = ts;
-        msgHtml += '<div class="dmMsg ' + (mine ? 'dmMsg--me' : 'dmMsg--them') + (cont ? ' dmMsg--cont' : '') + '">' +
-                 escq(m.content) +
-                 '<span class="dmMsgTime">' + hhmm(m.created_at) + '</span>' +
-               '</div>';
-      });
-
-      // load older spinner
-      var loaderHtml = dmHasMore
-        ? '<div class="cpRefreshWrap visible" id="dmRefreshWrap" aria-hidden="true"><div class="cpRefreshSpinner"></div></div>'
-        : '';
-
-      body.innerHTML = loaderHtml + (msgHtml ||
-        '<div class="dmSearchNote">SAY HI — THIS IS THE START OF YOUR CHAT</div>');
-
-      if (dmLoadingOlder) {
-        // keep reading position
-        body.scrollTop = prevTop + (body.scrollHeight - prevHeight);
-        dmLoadingOlder = false;
-      } else if (scrollToEnd || atEnd) {
-        body.scrollTop = body.scrollHeight;
-      } else {
-        // background poll, keep view
-        body.scrollTop = prevTop;
-      }
+      var mode = dmLoadingOlder ? 'older' : (scrollToEnd ? 'open' : 'poll');
+      dmLoadingOlder = false;
+      dmPaint(rows, dmHasMore, mode, uid);
     } catch (e) { dmLoadingOlder = false; /* keep last good render */ }
   }
 
@@ -528,6 +628,13 @@
       }
       if (window.dzChat) window.dzChat.note(text);
       inp.value = '';
+      /* The row is in. The conversation list now shows a preview from before
+         this message, so it is dropped — the drawer is repainted on the way
+         out of the thread and would otherwise show the previous line as the
+         latest. The thread itself is not dropped; loadThread is about to
+         overwrite it with the answer that includes this message. */
+      var c = dmc();
+      if (c && c.deleteByPrefix) { try { c.deleteByPrefix(c.ukey('convos')); } catch (e2) {} }
       await loadThread(true);
     } catch (e) {
       var m = (e && e.message) || '';
@@ -592,17 +699,28 @@
       frPaintBadge();
       var allIds = reqs.concat(sent, friends, blocked);
       if (!allIds.length) { empty.style.display = ''; return; }
+      /* The names and avatars behind the ids. Which ids these are is private —
+         it is this member's friend list — so the record is theirs, keyed by
+         the list it was fetched for: a new request means a different set of
+         ids and a different key, rather than a partial map reused for a list
+         it does not cover. */
       var byId = {};
-      try {
+      var c = dmc();
+      var frpKey = c ? c.ukey('list', 'frprofiles', allIds.length) : null;
+      var frpLoad = async function () {
         var pr = await db().from('profiles')
           .select('id,username,avatar_url')
           .in('id', allIds);
         if (pr.error) throw pr.error;
-        (pr.data || []).forEach(function (p) { byId[p.id] = p; });
-        if (typeof dzcSet === 'function') dzcSet('frProfiles', byId); // offline snapshot
+        var out = {};
+        (pr.data || []).forEach(function (p) { out[p.id] = p; });
+        return out;
+      };
+      try {
+        byId = (c && frpKey) ? await c.getOrSet(frpKey, frpLoad, 'user:list') : await frpLoad();
       } catch (ppe) {
-        // cached profiles offline
-        byId = (typeof dzcGet === 'function' && dzcGet('frProfiles')) || {};
+        // offline: their own saved copy, or first initials in place of avatars
+        byId = (c && frpKey) ? (await c.recall(frpKey, 'user:list')) || {} : {};
       }
       function prof (pid) { return byId[pid] || { id: pid, username: 'Artist' }; }
 

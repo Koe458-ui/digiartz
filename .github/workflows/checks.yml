@@ -1,8 +1,9 @@
 # The checks that stop a known fault coming back.
 #
-# There is no build step in this project and nothing else runs on a push, so
-# this is deliberately small: it does not lint, it does not test, it holds one
-# invariant that has broken twice.
+# There is no build step in this project, so this is deliberately small: it does
+# not lint, and it tests one file. What it holds is an invariant that has broken
+# twice, the invariants of the cache service — where a mistake is a disclosure
+# rather than a glitch — and that everything served to a browser parses.
 name: checks
 
 on:
@@ -22,6 +23,19 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/check-precache.mjs
+
+  cache:
+    name: cache keeps one member's data out of another's session
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # No browser and no IndexedDB, which is the point twice over: the
+      # user-isolation and invalidation rules hold in plain Node, and the
+      # service has to stay correct with its disk tier missing.
+      - run: node scripts/cache-test.mjs
 
   syntax:
     name: changed javascript parses

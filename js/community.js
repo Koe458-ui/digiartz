@@ -84,8 +84,6 @@
         friends:   { btn: 'cmTabFriends',   pane: 'cmPaneFriends' }
       };
 
-      window.cmCurrentTab = function () { return tab; };
-
       window.cmSetTab = function (next) {
         if (!TABS[next]) return;
         tab = next;

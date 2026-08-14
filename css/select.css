@@ -26,7 +26,7 @@ input, textarea, select, option,
 [data-selectable], [data-selectable] *,
 
 /* artwork viewer — title, description, artist, tags, comments */
-#lbNm, #lbDesc, #avAuthorName, #avAuthorHandle,
+#lbNm, #lbDesc,
 .avTagChip, .avCmName, .avCmBody,
 
 /* profile — username, handle, bio, own artwork titles and tags */
@@ -42,7 +42,7 @@ input, textarea, select, option,
 /* resources, blog, marketplace and jobs — list rows and the open view */
 .dzName, .dzRow .dzHint, .dzChip, .dzFileNm,
 .dzvTitle, .dzvDesc, .dzvExcerpt, .dzvArticle,
-.dzvAuthName, .dzvAuthHandle, .dzvFileName,
+.dzvFileName,
 .dzPTitle, .dzPExc,
 
 /* own drafts, upload preview and queue */

@@ -3082,7 +3082,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v174';
+const CACHE_VERSION = 'v175';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3133,21 +3133,21 @@ const SHELL_URLS = [
   '/icon-192.png',
 
   // stylesheets
-  '/css/base.css?v=4',
-  '/css/hero.css?v=91',
-  '/css/viewer.css?v=13',
+  '/css/base.css?v=5',
+  '/css/hero.css?v=92',
+  '/css/viewer.css?v=14',
   '/css/community.css?v=11',
-  '/css/connect.css?v=2',
+  '/css/connect.css?v=3',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=9',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
-  '/css/panels.css?v=3',
+  '/css/panels.css?v=4',
   '/css/upload.css?v=12',
-  '/css/widgets.css?v=5',
-  '/css/overrides.css?v=11',
-  '/css/select.css?v=2',
-  '/css/analytics.css?v=4',
+  '/css/widgets.css?v=6',
+  '/css/overrides.css?v=12',
+  '/css/select.css?v=3',
+  '/css/analytics.css?v=5',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.
@@ -3161,22 +3161,22 @@ const SHELL_URLS = [
   // scripts
   '/js/cache.js?v=1',
   '/js/ranking.js?v=3',
-  '/js/community.js?v=5',
+  '/js/community.js?v=6',
   '/js/dm.js?v=9',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=23',
+  '/js/app-core.js?v=24',
   '/js/protect.js?v=2',
-  '/js/gallery.js?v=82',
-  '/js/auth.js?v=11',
+  '/js/gallery.js?v=83',
+  '/js/auth.js?v=12',
   '/js/profile.js?v=12',
   '/js/albums.js?v=15',
   '/js/drafts.js?v=7',
   '/js/upqueue.js?v=5',
   '/js/avatar.js?v=3',
   '/js/pfedit.js?v=10',
-  '/js/mywork.js?v=19',
+  '/js/mywork.js?v=20',
   '/js/startup.js?v=3',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=10',
@@ -3187,9 +3187,9 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/analytics.js?v=5',
+  '/js/analytics.js?v=6',
   '/js/engagement.js?v=7',
-  '/js/sections.js?v=107',
+  '/js/sections.js?v=108',
   '/js/navprogress.js?v=5'
 ];
 

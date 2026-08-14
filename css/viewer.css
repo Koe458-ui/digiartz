@@ -32,32 +32,6 @@
       position:relative;
       z-index:6;
     }
-    .avTopBtn{
-      display:inline-flex;align-items:center;gap:.45rem;
-      background:none;border:none;color:var(--tx);
-      font-family:var(--fb);
-      font-size:.85rem;font-weight:600;cursor:pointer;
-      padding:.4rem .65rem;border-radius:8px;
-      transition:background .2s,color .2s;
-    }
-    .avTopBtn:hover{background:rgba(var(--pg-rgb),.07);}
-    .avTopBtn kbd{
-      font-family:var(--fm);font-size:.62rem;color:color-mix(in srgb,var(--tx) 40%,transparent);
-      border:1px solid var(--bdr);border-radius:4px;padding:.1rem .35rem;margin-left:.15rem;
-    }
-    .avTopRight{display:flex;align-items:center;gap:.5rem;position:relative;}
-    .avActBtn{
-      width:2.3rem;height:2.3rem;border-radius:50%;flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;
-      background:color-mix(in srgb,var(--sur2) 55%,transparent);border:1px solid rgba(var(--pg-rgb),.12);
-      color:var(--tx);font-size:1.05rem;cursor:pointer;
-      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-      transition:background .2s,transform .15s;
-    }
-    .avActBtn:hover{background:rgba(var(--pg-rgb),.4);}
-    .avActBtn:active{transform:scale(.92);}
-    .avBtnIcon{display:inline-flex;}
-    .avBtnLabel{display:inline-flex;}
     .avBody{flex:1 1 auto;display:flex;min-height:0;}
     .avImgPane{
       position:relative;flex:1 1 auto;min-width:0;
@@ -90,84 +64,6 @@
       transition:transform .05s linear, opacity .1s ease;
       user-select:none;-webkit-user-drag:none;
     }
-    .avNavBtn{
-      position:absolute;top:50%;transform:translateY(-50%);
-      width:2.6rem;height:2.6rem;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(20,20,30,.55);border:1px solid rgba(var(--pg-rgb),.12);
-      color:#F5F4FB;font-size:1.2rem;cursor:pointer;z-index:4;
-      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-      transition:background .2s,transform .15s;
-    }
-    .avNavBtn:hover{background:rgba(var(--pg-rgb),.4);}
-    .avNavBtn:active{transform:translateY(-50%) scale(.92);}
-    .avNavPrev{left:1rem;}
-    .avNavNext{right:1rem;}
-    /* counter and thumb strip */
-    .avImgCount{
-      position:absolute;top:1rem;left:1rem;z-index:4;
-      background:rgba(20,20,30,.72);
-      border:1px solid rgba(var(--pg-rgb),.14);
-      border-radius:999px;
-      padding:.28rem .7rem;
-      font-family:var(--fm);font-size:.68rem;letter-spacing:.12em;
-      color:var(--tx);
-      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-      pointer-events:none;
-    }
-    .avStrip{
-      flex:0 0 auto;
-      width:100%;
-      display:flex;gap:.45rem;
-      padding:.7rem 1rem;
-      overflow-x:auto;
-      scrollbar-width:none;-ms-overflow-style:none;
-      -webkit-overflow-scrolling:touch;
-      border-top:1px solid rgba(255,255,255,.09);
-      background:rgba(12,10,18,.92);
-    }
-    /* center thumbs, then scroll */
-    .avStrip > :first-child{margin-left:auto;}
-    .avStrip > :last-child{margin-right:auto;}
-    .avStrip::-webkit-scrollbar{display:none;}
-    .avStrip[hidden]{display:none;}
-    .avThumb{
-      flex:0 0 auto;
-      width:52px;height:52px;
-      padding:0;border-radius:6px;overflow:hidden;cursor:pointer;
-      background:none;
-      border:1px solid var(--bdr);
-      opacity:.55;
-      transition:opacity .2s,border-color .2s,transform .15s;
-    }
-    .avThumb img{width:100%;height:100%;object-fit:cover;display:block;}
-    .avThumb:hover{opacity:.85;}
-    .avThumb:active{transform:scale(.94);}
-    .avThumb:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    .avThumb.active{opacity:1;border-color:var(--pg);box-shadow:0 0 10px rgba(var(--pg-rgb),.4);}
-    @media(max-width:640px){
-      .avThumb{width:44px;height:44px;}
-      .avStrip{padding:.55rem .8rem;}
-    }
-    .avZoomBar{
-      position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);
-      display:flex;align-items:center;gap:.1rem;
-      background:rgba(20,20,30,.72);border:1px solid rgba(var(--pg-rgb),.1);
-      border-radius:999px;padding:.35rem .5rem;
-      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:4;
-    }
-    .avZoomBar button{
-      width:2rem;height:2rem;border-radius:50%;border:none;background:none;
-      color:#F5F4FB;font-size:1rem;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      transition:background .2s;
-    }
-    .avZoomBar button:hover{background:rgba(var(--pg-rgb),.12);}
-    .avZoomPct{
-      font-family:var(--fm);font-size:.7rem;color:rgba(245,244,251,.75);
-      min-width:3rem;text-align:center;
-    }
-    .avZoomDiv{width:1px;height:1.1rem;background:rgba(var(--pg-rgb),.15);margin:0 .15rem;}
     .avSide{
       flex:0 0 360px;width:360px;
       background:var(--sur);border-left:1px solid var(--bdr);
@@ -320,15 +216,11 @@
       .avBody{flex-direction:column;}
       .avImgPane{flex:0 0 44%;}
       .avSide{flex:1 1 auto;width:100%;border-left:none;border-top:1px solid var(--bdr);}
-      .avNavBtn{width:2.2rem;height:2.2rem;font-size:1rem;}
       .avTitle{font-size:1.2rem;}
     }
     @media(max-width:480px){
       #artModal{padding:.5rem;}
       .avTopBar{padding:.7rem 1rem;}
-      .avTopBtn .avBtnLabel{display:none;}
-      .avTopBtn kbd{display:none;}
-      .avZoomBar{bottom:.7rem;padding:.3rem .4rem;}
       .avSideScroll{padding:1.2rem 1.1rem;}
     }
     @media(prefers-reduced-motion:reduce){

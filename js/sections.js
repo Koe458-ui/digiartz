@@ -1375,7 +1375,6 @@
     var open = document.querySelectorAll('#upSecForms .upCatDd.open, #pfUpMod .upCatDd.open');
     for(var i=0;i<open.length;i++){ if(open[i] !== except) open[i].classList.remove('open'); }
   }
-  function dzSelCloseAll(except){ dzCloseMenus(except); }
   function dzSelToggle(e, id){
     if(e) e.stopPropagation();
     var dd = document.getElementById(id+'_dd'); if(!dd) return;
@@ -4115,7 +4114,6 @@
     cred  : '<path d="m12 3.6 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 17l-5.25 2.75 1-5.85L3.5 9.75l5.9-.85Z"/>'
   };
   function vwSvg(k){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(VW_ICO[k]||'')+'</svg>'; }
-  window.dzVwSvg = vwSvg;
 
   // The card's markup, with the ids the filler writes into. `close` is the
   // call that closes whichever viewer this is \u2014 the two of them close
@@ -4183,7 +4181,6 @@
         on:'dzReportItem(\''+kind+'\',\''+id+'\')' }
     ]);
   }
-  window.dzToast = function(m){ if(typeof showToast === 'function') showToast(m); };
 
   // ---- a resource package, fetched through the gate -----------------------
   // The artwork viewer's download works the same way and for the same reason:
@@ -4319,12 +4316,10 @@
   // the view writes it while it is open, so Share, the address bar and the
   // back button all say the same thing.
   var VW_PATH = { resources:'resource', blog:'blog', marketplace:'listing', jobs:'job' };
-  window.dzVwPath = VW_PATH;
   function vwUrl(sec, id){
     var seg = VW_PATH[sec];
     return seg ? (location.origin + '/' + seg + '/' + id) : location.href;
   }
-  window.dzVwUrl = vwUrl;
   // The other end of that link: a path segment and an id, fetched and opened
   // on its own. A section the reader has never opened has no cache to look in,
   // so this asks the table directly and opens the single row it gets back.
@@ -4554,7 +4549,6 @@
       });
     }catch(e){ /* an unpainted rail is wrong for a beat; a wrong one is worse */ }
   }
-  window.dzVwEngPaint = vwEngPaint;
   window.dzVwEng = async function(what, kind, id){
     var cfg = VW_TBL[what]; if(!cfg || !sb) return;
     if(!window.currentUser){

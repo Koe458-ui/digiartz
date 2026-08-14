@@ -3165,10 +3165,10 @@ const SHELL_URLS = [
   '/uploadVerifier.js',
   '/aiAssistantData.js',
   '/site.webmanifest',
-  '/favicon.svg?v=2',
-  '/favicon.ico?v=2',
-  '/apple-touch-icon.png?v=2',
-  '/icon-192.png?v=2',
+  '/favicon.svg?v=3',
+  '/favicon.ico?v=3',
+  '/apple-touch-icon.png?v=3',
+  '/icon-192.png?v=3',
 
   // stylesheets
   '/css/base.css?v=5',
@@ -3304,16 +3304,28 @@ self.addEventListener('activate', (event) => {
    version of that file in the static cache for nobody: the page will never ask
    for it again, and cache-first means it is never revalidated either. Renaming
    the cache is the usual sweep; this is the one for the release that did not
-   rename it. Only /js/ and /css/ are pruned — the rest of the precache list is
-   unversioned by design. */
+   rename it — and renaming is the expensive answer, because CACHE_VERSION is
+   in the name of the five IMAGE caches too and bumping it makes every visitor
+   re-download every thumbnail they already had, off metered Supabase egress,
+   to fix a stale copy of a favicon.
+
+   The test is on the PATH, not on the directory. It used to be /js/ and /css/
+   only, on the reasoning that the rest of the precache list is unversioned —
+   which stopped being true when the icons started carrying ?v=. A path this
+   worker still precaches, at a query it no longer asks for, is a dead copy
+   whatever directory it lives in. A path that is not in the precache list at
+   all was put here by staleWhileRevalidate at runtime and is none of this
+   function's business. */
 async function pruneStatic() {
   try {
     const cache = await caches.open(STATIC);
-    const want = new Set(SHELL_URLS.map((u) => new URL(u, self.location.origin).href));
+    const abs = SHELL_URLS.map((u) => new URL(u, self.location.origin));
+    const want = new Set(abs.map((u) => u.href));
+    const wantPaths = new Set(abs.map((u) => u.pathname));
     const keys = await cache.keys();
     await Promise.all(keys.map(async (req) => {
       const u = new URL(req.url);
-      if (!/^\/(?:js|css)\//.test(u.pathname)) return;
+      if (!wantPaths.has(u.pathname)) return;   // runtime-cached, not ours
       if (!want.has(u.href)) await cache.delete(req);
     }));
   } catch (err) { /* a prune that fails costs space, not correctness */ }

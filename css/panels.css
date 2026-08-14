@@ -1182,9 +1182,12 @@ body{background:var(--bg);}
   object-fit: cover;
   border-radius: 50%;
   display: block;
-  /* crisp rendering */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+  /* Smooth, deliberately. This was crisp-edges, which is nearest-neighbour:
+     it suited the old line-art avatar and destroys this one, because a 512px
+     disc drawn at ~50px is a 10:1 downscale and the mark is round caps over
+     gradients — every one of those edges goes to a staircase with the
+     sampling turned off. */
+  image-rendering: auto;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;

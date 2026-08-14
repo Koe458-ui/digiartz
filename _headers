@@ -31,8 +31,12 @@
 /config.js
   Cache-Control: public, max-age=300, must-revalidate
 
-# Icons and the touch icon. Unversioned, but they change roughly never and a
-# stale one is a stale icon rather than a stale site.
+# Icons and the touch icon. A week, and index.html carries a ?v= on every one
+# of them, so a mark that changes reaches a returning visitor on the deploy
+# rather than whenever their week happens to be up. Rules here match on the
+# path, so the query string does not need repeating.
+/favicon.svg
+  Cache-Control: public, max-age=604800
 /favicon.ico
   Cache-Control: public, max-age=604800
 /apple-touch-icon.png
@@ -40,6 +44,10 @@
 /icon-192.png
   Cache-Control: public, max-age=604800
 /icon-512.png
+  Cache-Control: public, max-age=604800
+/icon-maskable-512.png
+  Cache-Control: public, max-age=604800
+/logo.svg
   Cache-Control: public, max-age=604800
 /zeo-avatar.png
   Cache-Control: public, max-age=604800

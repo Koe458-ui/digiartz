@@ -77,10 +77,25 @@
   <!-- Google Search reads only these link tags — never the web manifest — picks a
        single icon per hostname, and ignores the media attribute. The whole set is
        therefore media-free and every entry clears 48px, so there is no declaration
-       here that resolves to a small or theme-conditional icon. -->
-  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64 128x128"/>
-  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"/>
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+       here that resolves to a small or theme-conditional icon.
+
+       favicon.svg is first because it is the only one of these that is the
+       artwork rather than a photograph of it: a browser drawing the tab at
+       16px, at 32px on a retina panel, or at whatever a zoomed pinned tab
+       asks for renders the vectors at that size, so none of those is a
+       resample of another. Chrome, Firefox, Edge, Brave and Tor take it.
+       Safari has never supported rel=icon svg and iOS reads the touch icon,
+       so the raster set below is not a fallback for old browsers — it is the
+       live answer for a whole platform, and is generated from the same file.
+       The .ico stays for the bare GET /favicon.ico that arrives with no link
+       tag involved, and carries 128 so Google has a square over 48 to pick.
+       The ?v= is what a returning visitor needs: these are cached for a week
+       in _headers, and without a new url the old mark stays in the tab for
+       up to seven days after the deploy. -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" sizes="any"/>
+  <link rel="icon" href="/favicon.ico?v=2" sizes="16x16 32x32 48x48 64x64 128x128"/>
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2"/>
   <link rel="manifest" href="/site.webmanifest"/>
   <script type="application/ld+json">
   {
@@ -88,7 +103,7 @@
     "@type": "Organization",
     "name": "Digiartz",
     "url": "https://digiartz.net/",
-    "logo": "https://digiartz.net/icon-512.png"
+    "logo": "https://digiartz.net/icon-512.png?v=2"
   }
   </script>
   <script type="application/ld+json" id="ldGallery">
@@ -99,12 +114,12 @@
   <meta property="og:title" content="DigiArtz — The Digital Art Community"/>
   <meta property="og:description" content="DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists."/>
   <meta property="og:url" content="https://digiartz.net/"/>
-  <meta property="og:image" content="https://digiartz.net/icon-512.png"/>
+  <meta property="og:image" content="https://digiartz.net/icon-512.png?v=2"/>
   <meta property="og:image:alt" content="Digiartz — digital art showcase"/>
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="DigiArtz — The Digital Art Community"/>
   <meta name="twitter:description" content="DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists."/>
-  <meta name="twitter:image" content="https://digiartz.net/icon-512.png"/>
+  <meta name="twitter:image" content="https://digiartz.net/icon-512.png?v=2"/>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
@@ -1665,7 +1680,7 @@
         <div class="cmFriendList">
           <div class="cmFriendItem" onclick="cmOpenZeo()">
             <div class="cmFriendAvatar zeoChip">
-              <img src="/zeo-avatar.png"
+              <img src="/zeo-avatar.png?v=2"
                    alt="Zeo" draggable="false"
                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
               <span class="cmFriendAvatarFallback" style="display:none;">🤖</span>
@@ -2774,7 +2789,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <img
     id="zeoBtnImg"
     class="zeoBtnAvatar"
-    src="/zeo-avatar.png"
+    src="/zeo-avatar.png?v=2"
     alt="Zeo Bot"
     aria-hidden="true"
     draggable="false"
@@ -2794,7 +2809,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
 
 <div id="zeoPage" role="dialog" aria-label="Zeo Bot" aria-modal="true">
   <div class="zeoChatHeader">
-    <div class="zeoChatHeaderAvatar" aria-hidden="true"><img src="/zeo-avatar.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="var p=this.parentElement;this.remove();if(p)p.textContent='🤖';"/></div>
+    <div class="zeoChatHeaderAvatar" aria-hidden="true"><img src="/zeo-avatar.png?v=2" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="var p=this.parentElement;this.remove();if(p)p.textContent='🤖';"/></div>
     <div class="zeoChatHeaderInfo">
       <div class="zeoChatHeaderName">Zeo</div>
       <div class="zeoChatHeaderStatus">Bot · Online</div>

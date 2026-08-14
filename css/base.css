@@ -139,7 +139,7 @@
     h1{font-weight:800;letter-spacing:-.02em;}
     h2,h3{font-weight:700;letter-spacing:-.01em;}
     a{color:var(--link-color);}
-    kbd,.avZoomPct{font-variant-numeric:tabular-nums;}
+    kbd{font-variant-numeric:tabular-nums;}
 
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 

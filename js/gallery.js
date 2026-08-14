@@ -181,7 +181,6 @@
   var avCurrentArt = null;
   // multi image artworks
   var avImages = [];
-  var avImgIdx = 0;
 
   // cover first, then extras
   function avImageList(art, src){
@@ -195,60 +194,19 @@
     }
     return list;
   }
-  // build thumb strip
+  // the extra pages, stacked under the cover
   function avBuildStrip(art, src){
     avImages = avImageList(art, src);
-    avImgIdx = 0;
-    var strip = document.getElementById('avStrip');
-    var cnt   = document.getElementById('avImgCount');
-    if(!strip) return;
+    var stack = document.getElementById('avImgStack');
+    if(!stack) return;
     if(avImages.length < 2){
-      strip.hidden = true; strip.innerHTML = '';
-      if(cnt) cnt.hidden = true;
-      var st0 = document.getElementById('avImgStack');
-      if(st0){ st0.hidden = true; st0.innerHTML = ''; }
+      stack.hidden = true; stack.innerHTML = '';
       return;
     }
-    // stacked layout
-    strip.hidden = true; strip.innerHTML = '';
-    if(cnt){ cnt.hidden = true; }   // counter retired
-    var stack = document.getElementById('avImgStack');
-    if(stack){
-      stack.hidden = false;
-      stack.innerHTML = avImages.slice(1).map(function(u,n){
-        return '<img src="'+esc(getViewUrl(u))+'" alt="Image '+(n+2)+' of '+avImages.length+'" loading="lazy" decoding="async">';
-      }).join('');
-    }
-  }
-  // swap main image
-  function avShowImage(i){
-    if(!avImages.length) return;
-    avImgIdx = Math.max(0, Math.min(i, avImages.length - 1));
-    var url = avImages[avImgIdx];
-    currentLightboxImageSrc = url;
-    var viewport = document.getElementById('avImgViewport');
-    var imgEl    = document.getElementById('lbImg');
-    if(viewport) viewport.classList.add('loading');
-    avResetZoom();
-    if(imgEl){
-      imgEl.src = getViewUrl(url);
-      // cached image may skip onload
-      if(imgEl.complete && imgEl.naturalWidth && viewport) viewport.classList.remove('loading');
-    }
-    var strip = document.getElementById('avStrip');
-    if(strip){
-      Array.prototype.forEach.call(strip.children, function(btn,n){
-        btn.classList.toggle('active', n === avImgIdx);
-        btn.setAttribute('aria-selected', n === avImgIdx ? 'true' : 'false');
-      });
-      // scroll active thumb into view
-      var activeThumb = strip.children[avImgIdx];
-      if(activeThumb && activeThumb.scrollIntoView){
-        activeThumb.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
-      }
-    }
-    var cnt = document.getElementById('avImgCount');
-    if(cnt){ cnt.textContent = (avImgIdx+1)+' / '+avImages.length; cnt.hidden = avImages.length < 2; }
+    stack.hidden = false;
+    stack.innerHTML = avImages.slice(1).map(function(u,n){
+      return '<img src="'+esc(getViewUrl(u))+'" alt="Image '+(n+2)+' of '+avImages.length+'" loading="lazy" decoding="async">';
+    }).join('');
   }
 
   function avCap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
@@ -470,19 +428,6 @@
   function avApplyTransform(){
     var img=document.getElementById('lbImg');
     if(img) img.style.transform='translate('+avPanX+'px,'+avPanY+'px) scale('+avZoomLevel+')';
-    var pct=document.getElementById('avZoomPct');
-    if(pct) pct.textContent=Math.round(avZoomLevel*100)+'%';
-  }
-  function avZoom(dir){
-    avZoomLevel=Math.max(1,Math.min(4,avZoomLevel+dir*0.25));
-    if(avZoomLevel===1){ avPanX=0; avPanY=0; }
-    avApplyTransform();
-  }
-  function avToggleFullscreen(){
-    var box=document.querySelector('#artModal .avBox');
-    if(!box) return;
-    if(!document.fullscreenElement){ if(box.requestFullscreen) box.requestFullscreen(); }
-    else { if(document.exitFullscreen) document.exitFullscreen(); }
   }
   // the download button is the only way out of the site with a file, so every
   // click has to clear the server side daily quota first

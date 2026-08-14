@@ -8,10 +8,12 @@
     if(typeof window._heroLoadCb === 'function'){
       window._heroLoadCb(null);
     }
+    // decoded, like the profile branch below and like js/engagement.js reading
+    // the same segment — three readers of one path had two conventions
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
-    if(m) openArtworkById(m[1], false);
+    if(m) openArtworkById(dzDecodeSeg(m[1]), false);
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
-    if(pm) openProfileByUsername(decodeURIComponent(pm[1]), false);
+    if(pm) openProfileByUsername(dzDecodeSeg(pm[1]), false);
     if(window.location.pathname === '/login') openAuthMod();
     // A resource, a post, a listing or a posting opened straight from its own
     // link. Same shape as /artwork/<id>, and the same rule: the row is fetched

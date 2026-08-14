@@ -120,6 +120,8 @@
     return u8.length > 8 && u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e && u8[3] === 0x47;
   }
 
+  // u8 may be only the HEAD of the file, so a chunk running past the end is
+  // the ordinary way this stops rather than a sign of corruption.
   async function pngTextChunks(u8) {
     var out = '', p = 8;
     var dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
@@ -128,7 +130,9 @@
       var len  = dv.getUint32(p);
       var type = String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
       var at   = p + 8;
-      if (len < 0 || len > u8.length - at) break;                  // truncated / malformed
+      // getUint32 is unsigned, so the old `len < 0` half of this could never
+      // be true; the length check is the one doing the work.
+      if (len > u8.length - at) break;                             // truncated / past the head
       var d = u8.subarray(at, at + len);
 
       if (type === 'tEXt') {
@@ -160,17 +164,33 @@
     return out;
   }
 
+  // Reads only the two ends of the file, which is what scanBytes was always
+  // meant to mean. It used to say so and then do the opposite: the whole file
+  // went into memory as one Uint8Array before scanBytes was applied to it, and
+  // pngTextChunks walked all of it. On an eleven-page upload at 25MB a page
+  // that is a quarter of a gigabyte read through a phone's JS heap to look at
+  // half a megabyte of it — and js/upqueue.js has no way to survive the tab
+  // being discarded for it.
+  //
+  // Blob.slice() is a view, not a copy: the bytes in between are never read.
+  var META_TAIL_BYTES = 65536;
+
   async function scanAIMeta(file) {
     try {
-      var buf  = new Uint8Array(await file.arrayBuffer());
-      var head = buf.subarray(0, Math.min(buf.length, CONFIG.scanBytes));
-      var tail = buf.length > 65536 ? buf.subarray(buf.length - 65536) : new Uint8Array(0);
+      var headEnd = Math.min(file.size, CONFIG.scanBytes);
+      var head = new Uint8Array(await file.slice(0, headEnd).arrayBuffer());
+      var tail = file.size > META_TAIL_BYTES
+        ? new Uint8Array(await file.slice(file.size - META_TAIL_BYTES).arrayBuffer())
+        : new Uint8Array(0);
 
       var raw = latin1(head) + '\n' + latin1(tail);
 
-      // read every png text chunk
-      if (isPNG(buf)) {
-        try { raw += '\n' + await pngTextChunks(buf); } catch (e) {}
+      // PNG text chunks, over the head only. tEXt/zTXt/iTXt are written before
+      // IDAT by every encoder that puts generation parameters in them, so the
+      // first half-megabyte is where they are; a chunk that runs past the head
+      // stops the walk, which is the same thing a truncated file does.
+      if (isPNG(head)) {
+        try { raw += '\n' + await pngTextChunks(head); } catch (e) {}
       }
 
       // utf 16 metadata
@@ -214,7 +234,20 @@
     ]);
     if (((ex[0].count || 0) + (ex[1].count || 0)) > 0)
       return { block: true, flag: false, detail: 'This exact image is already on DigiArtz.' };
-    // near match, review
+    /* NEAR match, and this half only sees a WINDOW of the catalogue.
+       The exact check above is a single indexed equality and covers every row
+       in both tables. This one has to compare bit distances, which no index
+       can answer, so it pulls the most recent recentPull hashes per table and
+       compares in the browser. Anything older than that window is not looked
+       at — so as the catalogue grows past it, a near-duplicate of an older
+       piece passes with no flag at all, and silently.
+
+       Left as a window on purpose rather than widened: two thousand rows a
+       side is four thousand hashes down a phone connection on every single
+       upload, and the honest fix is an LSH band index in Postgres so the
+       distance query can be asked of the database. Until then the coverage is
+       reported rather than implied, so the admin reading a verdict can see
+       what was actually compared. */
     var rc = await Promise.all([
       sb.from('artworks').select('phash').not('phash', 'is', null)
         .order('created_at', { ascending: false }).limit(CONFIG.recentPull),
@@ -224,6 +257,12 @@
     var pool = [];
     (rc[0].data || []).forEach(function (r) { if (r.phash) pool.push(r.phash); });
     (rc[1].data || []).forEach(function (r) { if (r.phash) pool.push(r.phash); });
+    // whether either table filled its window, which is what says the
+    // comparison was partial rather than exhaustive
+    var partial = ((rc[0].data || []).length >= CONFIG.recentPull) ||
+                  ((rc[1].data || []).length >= CONFIG.recentPull);
+    var scope = pool.length + ' recent' + (partial ? ' (window, not the whole catalogue)' : '');
+
     var best = 64;
     for (var i = 0; i < pool.length; i++) {
       var dd = hamming(phash, pool[i]);
@@ -231,12 +270,27 @@
       if (best === 0) break;
     }
     if (best >= 1 && best <= CONFIG.nearThreshold)
-      return { block: false, flag: true, detail: 'Very similar to an existing upload (possible repost).' };
-    return { block: false, flag: false, detail: 'no duplicates' };
+      return { block: false, flag: true,
+               detail: 'Very similar to an existing upload (possible repost).' };
+    return { block: false, flag: false, detail: 'no duplicates in ' + scope };
   }
 
-  // paid detector hook, disabled
-  var _aiApiHook = null; // TODO: wire an AI-image-detection API + set CONFIG.aiApiEnabled=true
+  /* Paid detector hook, not wired up.
+     TODO: point setAiHook() at an AI-image-detection API and set
+     CONFIG.aiApiEnabled = true.
+
+     Read off the exported object rather than out of this closure, which is
+     what makes it installable at all. The variable was exported by VALUE —
+     `_aiApiHook: _aiApiHook` copied null onto the public object once, at load
+     — so assigning UploadVerifier._aiApiHook = fn replaced a property nothing
+     read, while the check below went on testing a closure binding that could
+     never change. The documented extension point silently did nothing. */
+  var _aiApiHook = null;
+  function aiHook() {
+    var pub = window.UploadVerifier && window.UploadVerifier._aiApiHook;
+    return typeof pub === 'function' ? pub : _aiApiHook;
+  }
+  function setAiHook(fn) { _aiApiHook = typeof fn === 'function' ? fn : null; }
 
   async function aiCheck(file, pages) {
     var files = [file].concat(pages || []);
@@ -245,9 +299,10 @@
       var m = await scanAIMeta(files[i]);
       for (var j = 0; j < m.length; j++) if (hits.indexOf(m[j]) === -1) hits.push(m[j]);
     }
-    if (CONFIG.aiApiEnabled && typeof _aiApiHook === 'function') {
+    var hook = aiHook();
+    if (CONFIG.aiApiEnabled && hook) {
       try {
-        var api = await _aiApiHook(file);
+        var api = await hook(file);
         if (api && api.flag && hits.indexOf(api.detail || 'AI model') === -1) hits.push(api.detail || 'AI model');
       } catch (e) { /* api failures never block */ }
     }
@@ -303,6 +358,9 @@
     computeDHash: computeDHash,
     hamming: hamming,
     scanAIMeta: scanAIMeta,
-    _aiApiHook: _aiApiHook
+    // Either works: call setAiHook(fn), or assign _aiApiHook on this object.
+    // aiHook() reads the property first, so both actually take effect now.
+    setAiHook: setAiHook,
+    _aiApiHook: null
   };
 })();

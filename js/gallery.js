@@ -991,9 +991,9 @@
           if(typeof bnSetActive==='function') bnSetActive('bnGallery');
         }
       }
-      openArtworkById(m[1], false);
+      openArtworkById(dzDecodeSeg(m[1]), false);
     } else if(pm){
-      openProfileByUsername(decodeURIComponent(pm[1]), false);
+      openProfileByUsername(dzDecodeSeg(pm[1]), false);
     } else if(window.location.pathname === '/login'){
       openAuthMod();
     } else {

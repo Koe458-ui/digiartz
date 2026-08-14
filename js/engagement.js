@@ -263,6 +263,17 @@
         (mode === 'like' ? 'LIKES' : 'BOOKMARKS') + ' — TRY AGAIN</div>';
     }
   }
+  /* CSS.escape is assumed by two selectors below and feature-detected in
+     js/app-core.js, which is the same bundle. A browser without it threw
+     inside the click handler, so the bookmark card neither opened nor was
+     removed — a hard failure where a degraded one was available. Same
+     fallback app-core uses. */
+  function cssEsc (v) {
+    return (window.CSS && CSS.escape)
+      ? CSS.escape(String(v))
+      : String(v).replace(/["\\]/g, '\\$&');
+  }
+
   function bmCard (art) {
     var id = String(art.id);
     var card = document.createElement('div');
@@ -273,7 +284,7 @@
     link.addEventListener('click', function (ev) {
       // modal if loaded, else navigate
       if (typeof window.handleArtClick === 'function' &&
-          document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
+          document.querySelector('.gItem[data-id="' + cssEsc(id) + '"]')) {
         closeBookmarksPage();
         window.handleArtClick(ev, id);
       }
@@ -302,7 +313,7 @@
   function removeBmCard (id, kind) {
     var page = $('bmPage');
     if (!page || !page.classList.contains('open') || bmMode !== (kind || 'bm')) return;
-    var btn = page.querySelector('.bmRemove[data-id="' + CSS.escape(String(id)) + '"]');
+    var btn = page.querySelector('.bmRemove[data-id="' + cssEsc(id) + '"]');
     if (btn && btn.closest('.bmCard')) btn.closest('.bmCard').remove();
     if (!$('bmGrid').children.length) $('bmEmptyState').style.display = '';
   }

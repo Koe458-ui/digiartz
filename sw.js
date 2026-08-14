@@ -3166,9 +3166,9 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=25',
-  '/js/protect.js?v=2',
-  '/js/gallery.js?v=84',
+  '/js/app-core.js?v=26',
+  '/js/protect.js?v=3',
+  '/js/gallery.js?v=85',
   '/js/auth.js?v=13',
   '/js/profile.js?v=13',
   '/js/albums.js?v=15',
@@ -3177,7 +3177,7 @@ const SHELL_URLS = [
   '/js/avatar.js?v=3',
   '/js/pfedit.js?v=10',
   '/js/mywork.js?v=20',
-  '/js/startup.js?v=3',
+  '/js/startup.js?v=4',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=10',
   '/js/feed.js?v=3',
@@ -3188,8 +3188,8 @@ const SHELL_URLS = [
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/analytics.js?v=6',
-  '/js/engagement.js?v=8',
-  '/js/sections.js?v=110',
+  '/js/engagement.js?v=9',
+  '/js/sections.js?v=111',
   '/js/navprogress.js?v=5'
 ];
 
@@ -3399,7 +3399,20 @@ self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
       try {
         const res = await fetch(req);
-        if (res && res.ok) {
+        // Refresh the offline shell from ROUTE-NEUTRAL navigations only.
+        //
+        // functions/_middleware.js rewrites the title, the description, the
+        // canonical, every og: and twitter: tag and appends a JSON-LD block
+        // per route, so these responses are not interchangeable. Storing any
+        // of them under '/index.html' meant the offline app booted wearing
+        // whichever artwork or profile was visited last — its title in the tab,
+        // its canonical in the head, its structured data in the document — for
+        // every route the shell then served.
+        //
+        // '/' and '/index.html' are the two the middleware leaves generic, so
+        // they are the two worth keeping current. Anything else falls back to
+        // the copy installed at install time, which is the same file.
+        if (res && res.ok && (url.pathname === '/' || url.pathname === '/index.html')) {
           const copy = res.clone();
           caches.open(STATIC).then((c) => c.put('/index.html', copy)).catch(() => {});
         }

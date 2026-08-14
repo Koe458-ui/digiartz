@@ -23,10 +23,18 @@
 // mistake the wallet used to make in the other direction — a rate moving would
 // silently move the floor. These are round numbers in each currency, roughly
 // five dollars' worth, chosen once.
+// One row per currency store.js offers, which is the whole point of the list.
+// CHF, HKD, NZD and SEK were missing and fell through to MIN_DEFAULT — five
+// hundred minor units, which is five dollars in USD and about fifty cents in
+// SEK. A floor an order of magnitude under the intended one lets a payout out
+// that PayPal's own per-item fee can exceed.
 const MIN_PAYOUT = {
   USD: 500, EUR: 500, GBP: 400, INR: 50000, JPY: 700,
   AUD: 800, CAD: 700, SGD: 700,
+  CHF: 400, HKD: 4000, NZD: 900, SEK: 5000,
 };
+// Only reached by a currency not in the table above, which today is none of
+// the twelve that can be selected.
 const MIN_DEFAULT = 500;
 const minPayout = (cur) => MIN_PAYOUT[cur] != null ? MIN_PAYOUT[cur] : MIN_DEFAULT;
 
@@ -477,8 +485,24 @@ export async function onRequestPost({ env, request }) {
         '&status=in.(requested,approved,processing)&select=id&limit=1');
       if (open && open.length)
         return json({ error: 'You have a payout in progress — wait for it to finish' }, 400);
-      await sbService(env, '/payout_methods?id=eq.' + id + '&user_id=eq.' + user.id,
-        { method: 'DELETE' });
+      const gone = await sbService(env,
+        '/payout_methods?id=eq.' + id + '&user_id=eq.' + user.id, { method: 'DELETE' });
+
+      // Removing the default used to leave the account with methods and no
+      // default, and the payout request then answered "Add a payout method
+      // before requesting a payout" with one plainly on screen. Promote the
+      // oldest survivor instead. The partial unique index allows one, and
+      // there is none at this point, so this cannot collide.
+      const removedDefault = Array.isArray(gone) && gone[0] && gone[0].is_default;
+      if (removedDefault) {
+        const left = await sbService(env,
+          '/payout_methods?user_id=eq.' + user.id +
+          '&order=created_at.asc&select=id&limit=1');
+        if (left && left[0]) {
+          await sbService(env, '/payout_methods?id=eq.' + left[0].id,
+            { method: 'PATCH', body: JSON.stringify({ is_default: true }) }).catch(() => {});
+        }
+      }
       return json({ ok: true });
     }
 

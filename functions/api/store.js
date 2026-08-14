@@ -1637,16 +1637,22 @@ const MODULE = `
     }
     el.classList.add('iHide');
     var done = false;
+    // Whichever of the two gets here first takes the listener off with it. The
+    // timeout used to set the flag and leave the handler bound — and it is the
+    // one that wins in a background tab, with prefers-reduced-motion, or any
+    // time the transition never starts — so a dead listener accumulated on
+    // #intro, which lives as long as the page does.
+    var h = function(e){
+      if(e.propertyName !== 'opacity') return;
+      gone();
+    };
     var gone = function(){
       if(done) return;
       done = true;
+      el.removeEventListener('transitionend', h);
       el.classList.add('iGone');
     };
-    el.addEventListener('transitionend', function h(e){
-      if(e.propertyName !== 'opacity') return;
-      el.removeEventListener('transitionend', h);
-      gone();
-    });
+    el.addEventListener('transitionend', h);
     setTimeout(gone, 450);            // transitionend can be missed
   }
 
@@ -1768,6 +1774,18 @@ const MODULE = `
     if(!box) return;
     if(!box.hidden){ box.hidden = true; return; }
     if(box.dataset.loaded){ box.hidden = false; return; }
+    // A purchase with ONE file never reached the dataset.loaded line below —
+    // it handed off and returned — so every tap on it asked dz_market_files
+    // again. The answer does not change: a listing's file list is fixed once
+    // it is bought. Remembered on the row, so a second tap starts the download
+    // rather than a round trip.
+    if(box.dzOneFile){
+      if(typeof window.dzMarketFetch === 'function'){
+        window.dzMarketFetch(item, box.dzOneFile.file_id, box.dzOneFile.name, btn);
+      }
+      return;
+    }
+    if(btn.disabled) return;   // a tap while the first one is still in flight
 
     btn.disabled = true;
     sb.rpc('dz_market_files', {p_item: item}).then(function(res){
@@ -1780,6 +1798,7 @@ const MODULE = `
       if(!files.length){ toast('This listing has no files attached'); return; }
       // one file is not a list — hand it straight over
       if(files.length === 1 && typeof window.dzMarketFetch === 'function'){
+        box.dzOneFile = files[0];
         window.dzMarketFetch(item, files[0].file_id, files[0].name, btn);
         return;
       }

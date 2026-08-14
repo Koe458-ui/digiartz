@@ -442,11 +442,23 @@ export async function onRequestPost({ env, request }) {
     if (body.action === 'verify') {
       const { orderId, paymentId, signature } = body;
       if (!orderId || !paymentId) return json({ error: 'Bad request' }, 400);
+      // Shape-checked before either id is put in a url, the way paypal.js
+      // checks its own. Razorpay mints these as order_/pay_ plus base62, so
+      // nothing legitimate is refused. What this closes is not reachable today
+      // — validSignature is an HMAC over exactly these two strings under the
+      // key secret, so a caller cannot choose them — but orderId went
+      // unencoded into a PostgREST filter on the payments table two calls
+      // below, and "safe because of a check twenty lines up" is one refactor
+      // away from a filter injection. paymentId was already encoded at its
+      // call site; this makes the pair consistent.
+      if (!/^[A-Za-z0-9_-]{6,64}$/.test(String(orderId)) ||
+          !/^[A-Za-z0-9_-]{6,64}$/.test(String(paymentId)))
+        return json({ error: 'Bad request' }, 400);
       if (!(await validSignature(env, orderId, paymentId, signature)))
         return json({ error: 'Payment verification failed' }, 400);
 
       // order is the source of truth
-      const order = await rzp(env, '/v1/orders/' + orderId);
+      const order = await rzp(env, '/v1/orders/' + encodeURIComponent(orderId));
       if (order.status !== 'paid') return json({ error: 'Payment not completed yet' }, 400);
       const notes = order.notes || {};
       if (notes.user_id !== user.id) return json({ error: 'Order does not belong to you' }, 403);
@@ -464,7 +476,7 @@ export async function onRequestPost({ env, request }) {
 
       // block replayed signatures
       const paidRows = await sbService(env,
-        '/payments?rzp_order_id=eq.' + orderId + '&status=eq.created' +
+        '/payments?rzp_order_id=eq.' + encodeURIComponent(orderId) + '&status=eq.created' +
         '&select=id,user_id,kind,item_id,amount,currency', {
         method: 'PATCH',
         body: JSON.stringify({

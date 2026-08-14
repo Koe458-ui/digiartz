@@ -3827,7 +3827,10 @@
   // four downloads the browser starts at once.
   function dzMarketPick(item, files){
     var old = document.getElementById('dzGetPop');
-    if(old) old.remove();
+    // Through its own close, not a bare remove: the dialog binds a document
+    // keydown listener, and removing the element leaves that listener bound to
+    // nothing for the rest of the session.
+    if(old) (typeof old.dzShut === 'function') ? old.dzShut() : old.remove();
     var pop = document.createElement('div');
     pop.className = 'upPop open';
     pop.id = 'dzGetPop';
@@ -3857,13 +3860,40 @@
       '</div>';
     document.body.appendChild(pop);
 
+    /* It says aria-modal="true", so it has to behave like one. It had a click
+       handler and nothing else: no Escape, no focus moved in, no focus put
+       back — so a reader who opened it from the keyboard had no way to close
+       it, and a screen reader was told a trap existed that was not
+       implemented. Every other overlay here binds these (openSheet and openCo
+       in the payments module, the bookmarks page in js/engagement.js). */
+    var lastFocus = document.activeElement;
+    function shut(){
+      document.removeEventListener('keydown', onKey, true);
+      if(pop.parentNode) pop.remove();
+      if(lastFocus && lastFocus.focus && lastFocus.isConnected !== false){
+        try{ lastFocus.focus(); }catch(e){}
+      }
+      lastFocus = null;
+    }
+    function onKey(e){
+      if(e.key !== 'Escape') return;
+      e.stopPropagation();     // this dialog owns the key while it is up
+      shut();
+    }
+    document.addEventListener('keydown', onKey, true);
+    pop.dzShut = shut;   // so a replacement dialog can unbind this one
+
     pop.addEventListener('click', function(e){
-      if(e.target === pop || e.target.getAttribute('data-x')){ pop.remove(); return; }
+      if(e.target === pop || e.target.getAttribute('data-x')){ shut(); return; }
       var b = e.target.closest ? e.target.closest('[data-i]') : null;
       if(!b) return;
       var f = files[Number(b.getAttribute('data-i'))];
       if(f) window.dzMarketFetch(item, f.file_id, f.name, b);
     });
+
+    // first thing inside the dialog, so the keyboard lands where the eye does
+    var first = pop.querySelector('.dzGetBtn') || pop.querySelector('.upPopX');
+    if(first){ try{ first.focus(); }catch(e){} }
   }
 })();
 
@@ -4347,6 +4377,10 @@
   // the view writes it while it is open, so Share, the address bar and the
   // back button all say the same thing.
   var VW_PATH = { resources:'resource', blog:'blog', marketplace:'listing', jobs:'job' };
+  // The same four, as a path test. Kept beside the map it is built from so a
+  // fifth section cannot be added to one and forgotten in the other.
+  var VW_IS_ITEM = new RegExp('^/(?:' +
+    Object.keys(VW_PATH).map(function(k){ return VW_PATH[k]; }).join('|') + ')/');
   function vwUrl(sec, id){
     var seg = VW_PATH[sec];
     return seg ? (location.origin + '/' + seg + '/' + id) : location.href;
@@ -5072,6 +5106,9 @@
   }
 
   var pushed = false;
+  // Where the address bar was when this panel took it over, so closing hands
+  // it back. Null when the item was deep-linked and there is nothing behind it.
+  var vwReturnUrl = null;
   window.dzOpenView = function(sec, id){
     curExt = null;
     var list = (typeof window.dzGetRows==='function' ? window.dzGetRows(sec) : []) || [];
@@ -5117,7 +5154,15 @@
     }
     var path = VW_PATH[sec] ? ('/'+VW_PATH[sec]+'/'+id) : null;
     try{
-      if(!pushed){
+      // Already standing on this item's own url — a shared link followed
+      // straight here — so there is nothing to push. It used to stack a second
+      // entry for the same address, and closing then stepped back onto the
+      // first copy: the panel shut but the address bar still named the item,
+      // so a refresh re-opened what had just been closed and a re-share sent
+      // the item's link from a page showing the gallery.
+      var here = path && window.location.pathname === path;
+      if(!pushed && !here){
+        vwReturnUrl = window.location.pathname + window.location.search;
         history.pushState({dzv:1, sec:sec, id:String(id)}, '', path || undefined);
         pushed = true;
       } else {
@@ -5127,6 +5172,9 @@
   }
 
   window.addEventListener('popstate', function(){
+    // the browser moved, so a recorded way back belongs to a position we are
+    // not in any more
+    vwReturnUrl = null;
     var v = document.getElementById('dzView');
     if(v && v.classList.contains('open')){ pushed = false; dzCloseView(); }
   });
@@ -5154,7 +5202,16 @@
     if(v) v.classList.remove('open');
     vwUnlock();
     curExt = null;
-    if(pushed){ pushed = false; try{ history.back(); }catch(e){} }
+    if(pushed){
+      pushed = false;
+      try{ history.back(); }catch(e){}
+    } else if(VW_IS_ITEM.test(window.location.pathname)){
+      // Deep-linked: nothing was pushed, so there is nothing to step back off
+      // and the address has to be corrected in place or it goes on naming a
+      // panel that is no longer open.
+      try{ history.replaceState({}, '', vwReturnUrl || '/'); }catch(e){}
+    }
+    vwReturnUrl = null;
   };
   // hide without touching history
   window.dzCloseViewSilent = function(){

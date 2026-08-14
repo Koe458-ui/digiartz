@@ -619,6 +619,16 @@
   }
   // paint synchronously
   buildCategoryUI();
+  /* One path segment, decoded, without throwing on a malformed escape.
+     decodeURIComponent raises URIError on a lone '%' — which a hand-typed or
+     truncated url supplies — and a throw here takes the whole boot sequence
+     with it. The raw segment is the right fallback: it is what the readers
+     that never decoded were using anyway. */
+  function dzDecodeSeg(s){
+    try{ return decodeURIComponent(String(s)); }catch(e){ return String(s); }
+  }
+  window.dzDecodeSeg = dzDecodeSeg;
+
   function restoreScroll(){
     // every overlay that locks scroll
     // album pages lock too

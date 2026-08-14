@@ -99,6 +99,11 @@
   // save page / save image shortcuts
   document.addEventListener('keydown', function (e) {
     if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    // Not while somebody is typing. Every other handler in this file exempts a
+    // field first; this one did not, so the save reflex in the middle of a
+    // blog post or a long description answered with "Use the Download button
+    // to save artwork" — advice about a page the writer was not looking at.
+    if (inField(e.target) || inField(document.activeElement)) return;
     var k = (e.key || '').toLowerCase();
     if (k === 's') {                       // save page
       e.preventDefault();

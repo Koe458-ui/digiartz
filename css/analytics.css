@@ -561,12 +561,6 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
   font-family:var(--fm);font-size:var(--an-fs-num);letter-spacing:.08em;color:var(--txd);
   text-align:center;padding:1.5rem .6rem;line-height:1.8;
 }
-.anSkel{
-  border-radius:12px;background:linear-gradient(90deg,var(--sur) 0%,var(--sur2) 50%,var(--sur) 100%);
-  background-size:200% 100%;animation:anShine 1.3s linear infinite;
-}
-@keyframes anShine{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-@media (prefers-reduced-motion:reduce){ .anSkel{animation:none;} }
 .anErr{
   font-family:var(--fm);font-size:var(--an-fs-num);letter-spacing:.08em;color:var(--danger);
   text-align:center;padding:1.3rem;

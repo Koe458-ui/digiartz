@@ -85,8 +85,6 @@
 .secT{font-family:var(--fd);font-size:clamp(2.2rem,6vw,4rem);font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;}
 .secT .s{color:var(--pg);font-size:.5em;}
 .secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
-.upBtn{padding:.65rem 1.3rem;border:1px solid var(--bdr);background:transparent;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.18em;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .3s,color .3s,background .3s;border-radius:6px;}
-.upBtn:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
 
     /* gallery card */
     .gItem{position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;line-height:0;}
@@ -973,17 +971,6 @@
     .fltOpt input[type=radio]:checked ~ .fltLbl{color:var(--ps);}
     .fltLbl{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--txd);transition:color .2s;}
 
-    /* grid options row */
-    .fltOptsH{display:flex;flex-direction:row;gap:.5rem;}
-    .fltOptH{flex:1;display:flex;flex-direction:column;align-items:center;gap:.45rem;padding:.65rem .3rem;cursor:pointer;border:1px solid var(--bdr);background:color-mix(in srgb,var(--tc) 4%,transparent);border-radius:6px;transition:border-color .2s,background .2s,box-shadow .2s;user-select:none;}
-    .fltOptH:hover{border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 8%,transparent);}
-    .fltOptH input[type=radio]{display:none;}
-    .fltOptH:has(input[type=radio]:checked){border-color:var(--pg);background:var(--pdim);box-shadow:0 0 14px color-mix(in srgb,var(--tc) 28%,transparent);}
-    .fltOptH:has(input[type=radio]:checked) .fltGridIco{color:var(--ps);}
-    .fltOptH:has(input[type=radio]:checked) .fltLbl{color:var(--ps);}
-    .fltGridIco{color:var(--txd);display:flex;gap:2px;transition:color .2s;}
-    .fltGridIco span{display:block;width:7px;height:7px;border:1px solid currentColor;border-radius:1px;opacity:.8;}
-
     /* separator */
     .fltSep{height:1px;background:linear-gradient(to right,transparent,var(--bdr),transparent);margin:0 1rem;}
 
@@ -1061,11 +1048,6 @@
     }
     @media(min-width:700px){ .fgGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
     @media(min-width:1280px){ .fgGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
-    /* gallery overlay responsive */
-    @media(max-width:640px){
-      .fgHdr{padding:.8rem 1rem}
-    }
-
     #artModal{
       position:fixed;inset:0;z-index:1100;
       display:flex;align-items:center;justify-content:center;
@@ -1094,138 +1076,19 @@
       opacity:0;
       transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;
     }
-    /* glass container */
-    .amCard{
-      position:relative;
-      width:min(1100px,94vw);
-      max-width:1100px;
-      min-width:min(900px,94vw);
-      max-height:90vh;
-      display:flex;
-      flex-direction:column;
-      background:linear-gradient(160deg,color-mix(in srgb,var(--sur) 78%,transparent) 0%,color-mix(in srgb,var(--sur2) 72%,transparent) 100%);
-      border:1px solid color-mix(in srgb,var(--bdr) 80%,white 10%);
-      border-radius:28px;
-      overflow:hidden;
-      backdrop-filter:blur(28px) saturate(160%);
-      -webkit-backdrop-filter:blur(28px) saturate(160%);
-      box-shadow:0 40px 100px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.22),inset 0 1px 0 color-mix(in srgb,white 18%,transparent);
-      transform:scale(.92) translateY(10px);
-      opacity:0;
-      transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
-    }
-    /* image */
-    .amImgWrap{
-      position:relative;
-      width:100%;
-      flex:1 1 auto;
-      min-height:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:color-mix(in srgb,var(--bg) 90%,black 6%);
-      overflow:hidden;
-    }
-    .amImgWrap img{
-      max-width:100%;
-      max-height:66vh;
-      width:auto;
-      height:auto;
-      object-fit:contain;
-      display:block;
-    }
-    .amImgWrap.loading::after{
-      content:'';
-      position:absolute;inset:0;
-      background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--tc) 8%,transparent) 50%,transparent 70%);
-      background-size:200% 100%;
-      animation:amShimmer 1.3s ease-in-out infinite;
-    }
+    /* Shared with .avImgViewport.loading in css/viewer.css, which is the
+       only caller left now that the .am* modal card it was written for
+       has been replaced by .avBox. */
     @keyframes amShimmer{0%{background-position:140% 0;}100%{background-position:-40% 0;}}
-    /* info block */
-    .amInfo{
-      flex:0 0 auto;
-      padding:1.8rem clamp(1.5rem,4vw,2.8rem) clamp(1.6rem,4vw,2.4rem);
-      display:flex;
-      flex-direction:column;
-      gap:1.1rem;
-      border-top:1px solid color-mix(in srgb,var(--bdr) 80%,white 8%);
-      max-height:34vh;
-      overflow-y:auto;
-    }
-    .amDiv{
-      width:100%;
-      height:1px;
-      background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--bdr) 90%,white 10%) 18%,color-mix(in srgb,var(--bdr) 90%,white 10%) 82%,transparent);
-      flex:0 0 auto;
-    }
-    .amName{
-      font-family:var(--fd);
-      font-size:clamp(1.2rem,2.4vw,1.55rem);
-      font-weight:700;
-      letter-spacing:.02em;
-      color:var(--tx);
-      line-height:1.3;
-      word-break:break-word;
-    }
-    .amDesc{
-      font-family:var(--fb);
-      font-size:.92rem;
-      line-height:1.65;
-      color:var(--txd);
-      word-break:break-word;
-    }
-    .amDesc:empty,.amDesc[hidden]{display:none;}
-    /* close button */
-    .amX{
-      position:absolute;
-      top:1.1rem;right:1.1rem;
-      width:2.4rem;height:2.4rem;
-      display:flex;align-items:center;justify-content:center;
-      background:color-mix(in srgb,var(--bg) 45%,transparent);
-      border:1px solid color-mix(in srgb,var(--bdr) 80%,white 10%);
-      border-radius:50%;
-      color:var(--tx);
-      font-size:1.05rem;
-      line-height:1;
-      cursor:pointer;
-      z-index:5;
-      backdrop-filter:blur(8px);
-      -webkit-backdrop-filter:blur(8px);
-      transition:color .2s,border-color .2s,background .2s,transform .15s;
-    }
-    .amX:hover{color:var(--pg);border-color:var(--bdrh);transform:scale(1.06);}
-    .amX:active{transform:scale(.94);}
 
 
-    /* tablet */
-
-    @media(max-width:1024px){
-      .amCard{width:min(92vw,860px);min-width:0;border-radius:22px;}
-      .amImgWrap img{max-height:58vh;}
-    }
     /* mobile */
     @media(max-width:640px){
       #artModal{padding:.6rem;}
-      .amCard{
-        width:100%;
-        min-width:0;
-        max-height:96vh;
-        border-radius:18px;
-      }
-      .amImgWrap img{max-height:48vh;}
-      .amInfo{
-        padding:1.3rem 1.2rem 1.4rem;
-        gap:.9rem;
-        max-height:40vh;
-      }
-      .amName{font-size:1.08rem;}
-      .amDesc{font-size:.88rem;}
-      .amX{top:.7rem;right:.7rem;width:2.2rem;height:2.2rem;font-size:.95rem;}
     }
     @media(prefers-reduced-motion:reduce){
-      #artModal,#artModal .amCard,#artModal .avBox{transition:opacity .15s linear;}
-      .amCard,.avBox{transform:none!important;}
+      #artModal,#artModal .avBox{transition:opacity .15s linear;}
+      .avBox{transform:none!important;}
     }
 
 

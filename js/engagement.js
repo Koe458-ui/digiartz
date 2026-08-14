@@ -400,13 +400,25 @@
       }).observe(h, { childList: true, characterData: true, subtree: true });
     }
     if (db() && db().auth && db().auth.onAuthStateChange) {
+      // Only when the MEMBER changes. This handler also runs for
+      // TOKEN_REFRESHED, roughly once an hour for as long as a tab is open, and
+      // clearing on that emptied both sets and left every heart and bookmark on
+      // screen reading as unset until the refetch landed 400ms-plus later —
+      // for a session that had not changed at all.
+      var lastId = me() ? String(me().id) : 'guest';
       db().auth.onAuthStateChange(function () {
+        var nowId = me() ? String(me().id) : 'guest';
+        if (nowId === lastId) return;
+        lastId = nowId;
         // empty now, refill when the new session's answer comes back — the
         // gap used to paint the previous member's hearts for 400ms, and for
         // good if the refetch then failed
         clearSets();
         setTimeout(loadSets, 400);
       });
+      // The listener above only fires on a change, so the first load needs
+      // asking for outright — it used to arrive as the initial auth event.
+      loadSets();
     } else {
       loadSets();
     }

@@ -175,6 +175,52 @@ async function recordEarning(env, row, capture) {
 //
 // Takes the capture OBJECT rather than its id: the fee PayPal kept is on the
 // capture's seller_receivable_breakdown, and an id alone cannot report it.
+// ---------------------------------------------------------------------------
+// APPLYING A MONTH TO WHAT THE MEMBER ALREADY HOLDS.
+//
+// The same block is in rzp.js, paypal.js, rzp-webhook.js and paypal-webhook.js,
+// which are the four paths that can settle a subscription. It used to be an
+// unconditional PATCH to { tier, now + 31 days } in all four, reading neither
+// the current tier nor the current expiry first:
+//
+//   buying a month with twenty days left gave thirty-one, not fifty-one, so
+//   twenty paid days were destroyed — and the plan copy invites exactly that
+//   purchase ("A single charge for 31 days. Nothing recurring");
+//
+//   buying Lite while holding Max dropped the daily quota from twenty to ten
+//   on the spot and took the remaining Max days with it.
+//
+// So: extend from whichever is later, now or the existing expiry, and never
+// come out of this holding a lower tier than went in. sub-order refuses a
+// downgrade before any money moves; this is the backstop for an order created
+// before an upgrade and settled after it, where the money is already taken and
+// the only wrong answer is to give less than was there before.
+const TIER_RANK = { lite: 1, premium: 2, max: 3 };
+
+async function applySubscription(env, userId, tier) {
+  let curTier = null, curExp = 0;
+  try {
+    const rows = await sbService(env, '/profiles?id=eq.' + userId +
+      '&select=subscription_tier,subscription_expires_at&limit=1');
+    const p = rows && rows[0];
+    const t = p && p.subscription_expires_at
+      ? new Date(p.subscription_expires_at).getTime() : 0;
+    // an expired subscription is not a subscription; it starts from today
+    if (t && t > Date.now()) { curTier = p.subscription_tier || null; curExp = t; }
+  } catch { /* unreadable — fall through to a plain month from now */ }
+
+  const from = Math.max(Date.now(), curExp);
+  const keep = (TIER_RANK[curTier] || 0) > (TIER_RANK[tier] || 0) ? curTier : tier;
+  await sbService(env, '/profiles?id=eq.' + userId, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      subscription_tier: keep,
+      subscription_expires_at: new Date(from + SUB_DAYS * 86400000).toISOString(),
+    }),
+  });
+  return keep;
+}
+
 async function fulfil(env, orderId, capture) {
   const captureId = (capture && capture.id) || '';
   const rows = await sbService(env,
@@ -200,13 +246,7 @@ async function fulfil(env, orderId, capture) {
   if (!first) return 'already settled';
 
   if (row.kind === 'subscription' && PLAN_TIERS[row.plan]) {
-    await sbService(env, '/profiles?id=eq.' + row.user_id, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        subscription_tier: PLAN_TIERS[row.plan],
-        subscription_expires_at: new Date(Date.now() + SUB_DAYS * 86400000).toISOString(),
-      }),
-    });
+    await applySubscription(env, row.user_id, PLAN_TIERS[row.plan]);
   }
   return 'settled';
 }

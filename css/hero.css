@@ -1953,6 +1953,10 @@
       padding:.1rem .4rem;border-radius:5px;background:var(--pdim);
       color:var(--pg);font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
     }
+    /* A method that is kept on file but cannot be paid out to automatically.
+       Amber rather than red: nothing is wrong with it, it just needs a human. */
+    .dzBkTag--manual{background:rgba(217,119,6,.16);color:#d97706;}
+    .dzBkRow--manual{border-style:dashed;}
     .dzBkActs{display:flex;gap:.35rem;flex-shrink:0;}
     .dzBkBtn{
       padding:.4rem .6rem;border:1px solid var(--bdr);border-radius:8px;
@@ -1979,6 +1983,12 @@
     }
     .dzBkIn:focus{outline:none;border-color:var(--pg);}
     .dzBkNote{margin:.5rem 0 0;font-size:.7rem;line-height:1.5;color:var(--txd);}
+    /* Which methods a payout can actually reach. Said before a seller fills in
+       an account number, not after they press Request. */
+    .dzBkNote--warn{
+      margin-top:.6rem;padding:.6rem .7rem;border-radius:10px;
+      border:1px solid rgba(217,119,6,.35);background:rgba(217,119,6,.09);color:var(--tx);
+    }
 
     /* ---- reconciliation flag --------------------------------------------
        Shown when the wallet total and the independent ledger disagree. */

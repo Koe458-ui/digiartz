@@ -318,9 +318,18 @@ Deno.serve(async (req) => {
       const now = Date.now();
       const since10m = new Date(now - 10 * 60 * 1000).toISOString();
       const since24h = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+      // Scoped to the caller EXPLICITLY. These two counted every row in the
+      // table and left the scoping to an RLS policy stated nowhere near them,
+      // so whether "per-user" was true at all depended on a file that is not
+      // in this repository — and if that policy ever let one authenticated
+      // member read another's rows, forty uploads by anybody would have
+      // stopped uploads for everybody. The insert below has always named the
+      // user; now the reads do too.
       const [r10, r24] = await Promise.all([
-        supa.from("upload_events").select("id", { count: "exact", head: true }).gte("created_at", since10m),
-        supa.from("upload_events").select("id", { count: "exact", head: true }).gte("created_at", since24h),
+        supa.from("upload_events").select("id", { count: "exact", head: true })
+          .eq("user_id", user.id).gte("created_at", since10m),
+        supa.from("upload_events").select("id", { count: "exact", head: true })
+          .eq("user_id", user.id).gte("created_at", since24h),
       ]);
       if ((r10.count ?? 0) >= RATE_10MIN || (r24.count ?? 0) >= RATE_24H)
         return json({ error: "Upload limit reached — please try again in a little while." }, 429);

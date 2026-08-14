@@ -3723,7 +3723,17 @@
   // session — and again the moment one appears.
   if(sb && sb.auth){
     window.dzExtras();
+    // Gated on the member changing, not on an event arriving. This also runs
+    // for TOKEN_REFRESHED — about once an hour per open tab — and the reset
+    // below threw away a loaded marketplace tab and refetched two hundred rows
+    // for a session that was the same one before and after.
+    var dzLastAuthId = (window.currentUser && currentUser.id)
+      ? String(currentUser.id) : 'guest';
     sb.auth.onAuthStateChange(function(_ev, session){
+      var nowId = (session && session.user && session.user.id)
+        ? String(session.user.id) : 'guest';
+      if(nowId === dzLastAuthId) return;
+      dzLastAuthId = nowId;
       // The marketplace rows differ by session — a guest is not served
       // price_cents at all — so a page rendered in the other state has to be
       // thrown away rather than patched.
@@ -5129,10 +5139,20 @@
     var r = rows()[cur.idx];
     if(r) vwMark(cur.sec, r.id);
   };
+  /* This view is almost always opened from inside the gallery, which took the
+     scroll lock itself on the way in. Clearing body.overflow directly handed
+     it back while that overlay was still up, so the page underneath scrolled
+     behind it. restoreScroll() is the site's one owner of the lock: it looks
+     at every panel that can hold one and only releases when none of them is
+     open. Every other overlay already calls it. */
+  function vwUnlock(){
+    if(typeof restoreScroll === 'function') restoreScroll();
+    else document.body.style.overflow = '';
+  }
   window.dzCloseView = function(){
     var v = document.getElementById('dzView');
     if(v) v.classList.remove('open');
-    document.body.style.overflow = '';
+    vwUnlock();
     curExt = null;
     if(pushed){ pushed = false; try{ history.back(); }catch(e){} }
   };
@@ -5140,7 +5160,7 @@
   window.dzCloseViewSilent = function(){
     var v = document.getElementById('dzView');
     if(v) v.classList.remove('open');
-    document.body.style.overflow = '';
+    vwUnlock();
   };
   document.addEventListener('keydown', function(e){
     var v = document.getElementById('dzView');

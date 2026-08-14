@@ -268,9 +268,18 @@
       pfLoadActionRow();
       pfLoadMoreGallery();
       if(pushUrl!==false && window.location.pathname !== '/profile/'+encodeURIComponent(username)){
+        // where to put the address bar back when this closes
+        pfReturnUrl = window.location.pathname + window.location.search;
         try{ history.pushState({profileUser:username},'','/profile/'+encodeURIComponent(username)); }catch(e){}
       }
   }
+
+  // Where the address bar was when this panel took it over. Null means the
+  // profile was opened by its own url and there is nothing behind it.
+  var pfReturnUrl = null;
+  // A browser-driven move invalidates it: the recorded position is not where
+  // we are any more.
+  window.addEventListener('popstate', function(){ pfReturnUrl = null; });
 
   function closeProfilePage(revertUrl, restore){
     var panel = document.getElementById('profilePage');
@@ -279,8 +288,14 @@
     closePfSearch(true);
     document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
+    /* REPLACE, do not push. Opening pushed /profile/<name>; closing pushed '/'
+       on top of it, so each visit left two entries behind and Back re-opened
+       the profile that had just been closed. And '/' was a guess: a profile
+       opened from the gallery or from an artwork used to drop the reader on the
+       home page instead of back where they were. */
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
-      try{ history.pushState({},'', '/'); }catch(e){}
+      try{ history.replaceState({},'', pfReturnUrl || '/'); }catch(e){}
+      pfReturnUrl = null;
     }
     // back returns to overlay
     var ret = window.pfReturnOverlay; window.pfReturnOverlay = null;

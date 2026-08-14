@@ -1011,20 +1011,35 @@ const MODULE = `
           (h.provider ? ' · ' + esc(h.provider) : '') + '</div>' +
       '</div>' +
       '<div class="dzWlRight">' +
-        '<div class="dzWlAmt ' + cls + '">' + sign + esc(money(h.amount, h.currency)) + '</div>' +
+        '<div class="dzWlAmt ' + cls + '">' + sign + esc(moneyMinor(h.amount, h.currency)) + '</div>' +
         '<div class="dzWlSt dzWlSt--' + esc(h.status) + '">' +
           esc(STATUS_WORD[h.status] || h.status) + '</div>' +
       '</div></li>';
+  }
+
+  // Which kinds a payout can actually be sent to, straight from the payout
+  // service so this cannot drift from what it will accept. Absent (an older
+  // backend) means say nothing rather than guess.
+  var sendable = null;
+  function canSendTo(kind){
+    return !sendable || sendable.indexOf(kind) !== -1;
   }
 
   function methodLine(m){
     var what = m.kind === 'paypal_email' ? 'PayPal · ' + esc(m.paypal_email)
              : m.kind === 'upi'          ? 'UPI · ' + esc(m.upi_vpa)
              : 'Bank · ' + esc(m.bank_name || 'Account') + ' ••••' + esc(m.bank_last4 || '');
-    return '<li class="dzBkRow' + (m.is_default ? ' dzBkRow--def' : '') + '">' +
+    // A method that cannot be paid to says so on its own row, where the seller
+    // is looking at it — rather than at the end of a payout request, after
+    // they have typed an account number in.
+    var manual = !canSendTo(m.kind);
+    return '<li class="dzBkRow' + (m.is_default ? ' dzBkRow--def' : '') +
+        (manual ? ' dzBkRow--manual' : '') + '">' +
       '<div class="dzBkMain"><div class="dzBkWhat">' + what + '</div>' +
       '<div class="dzBkSub">' + esc(m.label || '') +
-        (m.is_default ? '<span class="dzBkTag">Default</span>' : '') + '</div></div>' +
+        (m.is_default ? '<span class="dzBkTag">Default</span>' : '') +
+        (manual ? '<span class="dzBkTag dzBkTag--manual">Not paid automatically</span>' : '') +
+        '</div></div>' +
       '<div class="dzBkActs">' +
         (m.is_default ? '' : '<button type="button" class="dzBkBtn" data-def="' + esc(m.id) + '">Make default</button>') +
         '<button type="button" class="dzBkBtn dzBkBtn--rm" data-rm="' + esc(m.id) + '">Remove</button>' +
@@ -1079,7 +1094,7 @@ const MODULE = `
     return '<div class="dzWlPend">' +
       '<div class="dzWlPendTop">' +
         '<span class="dzWlPendLbl">Pending \\u00b7 ' + esc(cur) + '</span>' +
-        '<span class="dzWlPendAmt">' + esc(money(g, cur)) + '</span>' +
+        '<span class="dzWlPendAmt">' + esc(moneyMinor(g, cur)) + '</span>' +
       '</div>' +
       '<p class="dzWlPendWhy">Sold, but still with the payment provider. None of ' +
         'this can be withdrawn yet' +
@@ -1087,39 +1102,55 @@ const MODULE = `
         '.' + (s.settlement_note ? ' ' + esc(s.settlement_note) + '.' : '') + '</p>' +
       '<ul class="dzWlPendList">' +
         rows.map(function(r){
-          return '<li><span>' + esc(r[0]) + '</span><b>\\u2212 ' + esc(money(r[1], cur)) + '</b></li>';
+          return '<li><span>' + esc(r[0]) + '</span><b>\\u2212 ' + esc(moneyMinor(r[1], cur)) + '</b></li>';
         }).join('') +
         '<li class="dzWlPendNet"><span>Reaches your wallet</span><b>' +
-          esc(money(s.pending_net || 0, cur)) + '</b></li>' +
+          esc(moneyMinor(s.pending_net || 0, cur)) + '</b></li>' +
       '</ul>' +
     '</div>';
   }
 
+  // Why the payout button cannot be pressed, or '' when it can. Answered here
+  // so the button says it, rather than the request failing at the end with the
+  // seller already committed to a form.
+  function payoutBlock(d){
+    var ms = d.methods || [], def = null;
+    if(!ms.length) return 'Add a payout method';
+    ms.forEach(function(m){ if(m.is_default) def = m; });
+    if(!def) return 'Choose a default method';
+    if(!canSendTo(def.kind)) return 'Default method is paid by hand';
+    return '';
+  }
+
   function balanceCard(s, d, flagged){
-    var cur  = s.currency;
-    var can  = !flagged && (s.withdrawable || 0) > 0;
+    var cur   = s.currency;
+    var block = flagged ? 'Withdrawals paused' : payoutBlock(d);
+    var can   = !block && (s.withdrawable || 0) > 0;
     return '<div class="dzWlCur">' +
       '<div class="dzWlHead">' +
         '<div class="dzWlBalLbl">Wallet \\u00b7 ' + esc(cur) + '</div>' +
-        '<div class="dzWlBal">' + esc(money(s.withdrawable || 0, cur)) + '</div>' +
+        '<div class="dzWlBal">' + esc(moneyMinor(s.withdrawable || 0, cur)) + '</div>' +
         '<div class="dzWlBalSub">Settled, after every deduction. Yours to withdraw ' +
           'in ' + esc(cur) + ' \\u2014 nothing is converted at any point</div>' +
       '</div>' +
       '<button type="button" class="dzWlReq" data-cur="' + esc(cur) + '"' +
         (can ? '' : ' disabled') + '>' +
-        (flagged ? 'Withdrawals paused' : 'Request ' + esc(cur) + ' payout') + '</button>' +
+        (block || ('Request ' + esc(cur) + ' payout')) + '</button>' +
       '<div class="dzWlGrid">' +
-        '<div class="dzWlCell"><span>Total sales</span><b>' + esc(money(s.total_sales || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Total sales</span><b>' + esc(moneyMinor(s.total_sales || 0, cur)) + '</b></div>' +
         '<div class="dzWlCell"><span>Artworks sold</span><b>' + esc(String(s.items_sold || 0)) + '</b></div>' +
-        '<div class="dzWlCell"><span>Gateway fees</span><b>' + esc(money(s.gateway_fees || 0, cur)) + '</b></div>' +
-        '<div class="dzWlCell"><span>Commission paid</span><b>' + esc(money(s.commission || 0, cur)) + '</b></div>' +
-        '<div class="dzWlCell"><span>Tax withheld</span><b>' + esc(money(s.tds_withheld || 0, cur)) + '</b></div>' +
-        '<div class="dzWlCell"><span>Withdrawn</span><b>' + esc(money(s.paid_out || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Gateway fees</span><b>' + esc(moneyMinor(s.gateway_fees || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Commission paid</span><b>' + esc(moneyMinor(s.commission || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Tax withheld</span><b>' + esc(moneyMinor(s.tds_withheld || 0, cur)) + '</b></div>' +
+        '<div class="dzWlCell"><span>Withdrawn</span><b>' + esc(moneyMinor(s.paid_out || 0, cur)) + '</b></div>' +
       '</div>' +
     '</div>';
   }
 
   function renderWallet(host, d){
+    // Both views are fed by the same overview call, and either can be the
+    // first one opened, so both read this.
+    sendable = Array.isArray(d.sendableKinds) ? d.sendableKinds : null;
     var rows = Array.isArray(d.summary) ? d.summary : [];
     // The member's own currency leads. The rest keep their order — they are
     // separate balances, not a ranking, and none of them is converted into
@@ -1153,7 +1184,7 @@ const MODULE = `
           ? rows.map(function(s){ return balanceCard(s, d, flagged); }).join('')
           : '<div class="dzWlHead">' +
               '<div class="dzWlBalLbl">Wallet</div>' +
-              '<div class="dzWlBal">' + esc(money(0, 'USD')) + '</div>' +
+              '<div class="dzWlBal">' + esc(moneyMinor(0, 'USD')) + '</div>' +
               '<div class="dzWlBalSub">Nothing sold yet. You are paid in whichever ' +
                 'currency you priced your listing in.</div>' +
             '</div>') +
@@ -1169,7 +1200,7 @@ const MODULE = `
           ? '<div class="dzWlSect">Payout history</div><ul class="dzWlList">' +
             paid.map(function(p){
               return '<li class="dzWlRow"><div class="dzWlMain">' +
-                '<div class="dzWlTitle">' + esc(money(p.amount, p.currency)) + ' paid</div>' +
+                '<div class="dzWlTitle">' + esc(moneyMinor(p.amount, p.currency)) + ' paid</div>' +
                 '<div class="dzWlSub">' + esc(when(p.paid_at)) + ' · ' + esc(p.destination || '') + '</div>' +
                 '</div></li>';
             }).join('') + '</ul>'
@@ -1251,8 +1282,8 @@ const MODULE = `
         '<label class="dzBkLbl">Amount in ' + esc(cur) + '</label>' +
         '<input class="dzBkIn" id="dzWlAmt" type="text" inputmode="decimal" placeholder="' +
           esc(majorOf(max, cur)) + '">' +
-        '<p class="dzBkNote">Minimum ' + esc(money(min, cur)) + '. You can withdraw up to ' +
-          esc(money(max, cur)) + ', and it is sent in ' + esc(cur) +
+        '<p class="dzBkNote">Minimum ' + esc(moneyMinor(min, cur)) + '. You can withdraw up to ' +
+          esc(moneyMinor(max, cur)) + ', and it is sent in ' + esc(cur) +
           ' \\u2014 not converted \\u2014 to your default method.' +
           ((d.tax && d.tax.country === 'IN') || !d.tax
             ? ' Tax may be withheld at source under section 194-O; it is withheld in ' +
@@ -1274,7 +1305,7 @@ const MODULE = `
         .then(function(r){
                 closeSheet();
                 toast(r && r.tds
-                  ? 'Payout requested \\u00b7 ' + money(r.tds, cur) + ' withheld as tax'
+                  ? 'Payout requested \\u00b7 ' + moneyMinor(r.tds, cur) + ' withheld as tax'
                   : 'Payout requested');
                 refreshPanel();
               },
@@ -1288,6 +1319,11 @@ const MODULE = `
   }
 
   function renderBank(host, d){
+    sendable = Array.isArray(d.sendableKinds) ? d.sendableKinds : null;
+    // Said once, above the buttons, and again on any row it applies to. The
+    // three kinds were offered as equals while only one of them could actually
+    // be paid — which a seller discovered after filling in a bank form.
+    var manualKinds = ['upi', 'bank_account'].filter(function(k){ return !canSendTo(k); });
     host.innerHTML =
       '<div class="dzBk">' +
         ((d.methods || []).length
@@ -1295,9 +1331,20 @@ const MODULE = `
           : '<div class="dzWlEmpty">No payout method yet.</div>') +
         '<div class="dzBkPick">' +
           '<button type="button" class="dzBkAdd" data-add="paypal_email">Add PayPal</button>' +
-          '<button type="button" class="dzBkAdd" data-add="upi">Add UPI</button>' +
-          '<button type="button" class="dzBkAdd" data-add="bank_account">Add bank account</button>' +
+          '<button type="button" class="dzBkAdd" data-add="upi">Add UPI' +
+            (canSendTo('upi') ? '' : ' ·  manual') + '</button>' +
+          '<button type="button" class="dzBkAdd" data-add="bank_account">Add bank account' +
+            (canSendTo('bank_account') ? '' : ' · manual') + '</button>' +
         '</div>' +
+        (manualKinds.length
+          ? '<p class="dzBkNote dzBkNote--warn">Payouts are sent automatically to a ' +
+            'PayPal address only. ' +
+            (manualKinds.length === 2 ? 'A UPI ID or a bank account' :
+             manualKinds[0] === 'upi' ? 'A UPI ID' : 'A bank account') +
+            ' can be kept here for our records, but a payout to one has to be ' +
+            'arranged by hand — email DigiArtzsupport@gmail.com. Add a PayPal ' +
+            'address and make it your default if you want to withdraw from this page.</p>'
+          : '') +
         '<p class="dzBkNote">Card numbers are never asked for or stored here. ' +
         'Cards are handled inside the provider’s own checkout, which is the only ' +
         'place they belong.</p>' +
@@ -1677,7 +1724,7 @@ const MODULE = `
           '<div class="dzPuTitle">' + title + '</div>' +
           '<div class="dzPuSub">' +
             (p.seller_name ? 'by ' + esc(p.seller_name) + ' \\u00b7 ' : '') +
-            esc(money(p.amount, p.currency)) + ' \\u00b7 ' + esc(when(p.paid_at)) +
+            esc(moneyMinor(p.amount, p.currency)) + ' \\u00b7 ' + esc(when(p.paid_at)) +
           '</div>' +
           '<div class="dzPuFiles">' +
             (p.delisted

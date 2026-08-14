@@ -179,6 +179,10 @@
   var avLbFromGallery = false;
   var avZoomLevel = 1, avPanX = 0, avPanY = 0;
   var avCurrentArt = null;
+  // Where the address bar was when this viewer took it over, so closing can
+  // hand it back rather than assuming the home page. Null means the viewer was
+  // opened by its own url and there is nothing to hand back to.
+  var avReturnUrl = null;
   // multi image artworks
   var avImages = [];
 
@@ -816,7 +820,13 @@
         // gallery leaves one entry behind rather than one per step.
         try{
           if(pushUrl === 'replace') history.replaceState({artId:id},'', '/artwork/'+id);
-          else history.pushState({artId:id},'', '/artwork/'+id);
+          else {
+            // Where to put the address bar back when this closes. Captured on
+            // the push and not on a 'replace', so stepping through a gallery
+            // still returns to wherever the run started.
+            avReturnUrl = window.location.pathname + window.location.search;
+            history.pushState({artId:id},'', '/artwork/'+id);
+          }
         }catch(e){}
       }
       updateArtworkSEO({id:id,name:name,description:desc,category:cat,image_url:src});
@@ -837,9 +847,21 @@
       if(imgEl){imgEl.src='';imgEl.alt='';}
       avCurrentArt=null;
     },230);
-    // revert url and meta
+    /* REPLACE the entry, do not push another one.
+       Opening pushed /artwork/<id>; closing used to push '/' on top of it, so
+       every open-and-close left two entries behind and Back walked straight
+       into the viewer it had just closed. Two artworks viewed took four
+       presses to get out of, four took eight, and on a phone Back is the
+       navigation. replaceState swaps the viewer's own entry for where it came
+       from, which keeps the stack the length it was and makes one Back mean
+       one Back.
+       avReturnUrl is where the viewer was opened FROM, not a hard-coded '/':
+       an artwork opened from a profile used to drop the reader on the home
+       page. Null when this page was deep-linked, and then '/' is the only
+       honest answer — there is nothing behind it. */
     if(!keepUrl && /^\/artwork\//.test(window.location.pathname)){
-      try{ history.pushState({},'', '/'); }catch(e){}
+      try{ history.replaceState({},'', avReturnUrl || '/'); }catch(e){}
+      avReturnUrl = null;
       resetArtworkSEO();
     }
   }
@@ -953,6 +975,9 @@
 
   // sync with history
   window.addEventListener('popstate', function(){
+    // The browser has moved the address bar itself, so whatever the viewer
+    // recorded as its way back belongs to a position we are no longer in.
+    avReturnUrl = null;
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
     if(m){

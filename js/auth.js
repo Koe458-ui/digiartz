@@ -253,6 +253,11 @@
     if (m && m.classList.contains('open') && e.target === m) closeLogoutConfirm();
   });
 
+  // Where the address bar was when the sign-in sheet took it over. Null when
+  // the page was opened at /login and there is nothing behind it.
+  var authReturnUrl = null;
+  window.addEventListener('popstate', function(){ authReturnUrl = null; });
+
   function openAuthMod() {
     document.getElementById('authUser').value  = '';
     document.getElementById('authEmail').value = '';
@@ -266,6 +271,8 @@
     document.getElementById('authMod').classList.add('open');
     document.body.style.overflow = 'hidden';
     if (window.location.pathname !== '/login') {
+      // where to put the address bar back when this closes
+      authReturnUrl = window.location.pathname + window.location.search;
       try{ history.pushState({},'', '/login'); }catch(e){}
     }
     // focus first field
@@ -281,8 +288,16 @@
     if (!panel.classList.contains('open')) return;
     panel.classList.remove('open');
     restoreScroll();
+    /* REPLACE, do not push, and go back to where the sheet was opened from.
+       Two bugs in one line before: pushing meant an open-and-close left two
+       entries behind and Back re-opened the sheet, and '/' was hard-coded —
+       so tapping a sign-in gate while reading /artwork/<id> and then
+       dismissing the sheet rewrote the address to the home page while the
+       artwork was still on screen behind it. Sharing or refreshing at that
+       point lost the artwork. */
     if (revertUrl !== false && window.location.pathname === '/login') {
-      try{ history.pushState({},'', '/'); }catch(e){}
+      try{ history.replaceState({},'', authReturnUrl || '/'); }catch(e){}
+      authReturnUrl = null;
     }
   }
 
@@ -548,7 +563,16 @@
       isDev    = !!data && data.role==='dev';
       userPlan = (data && data.subscription_tier) ? data.subscription_tier : 'guest';
       currentUserAvatarUrl = (data && data.avatar_url) ? data.avatar_url : null;
-    }catch(e){ console.error(e); isDev=false; userPlan='guest'; }
+    }catch(e){
+      console.error(e);
+      // The avatar goes with the rest of it. It used to be left alone here,
+      // so a failed read — no profile row yet on a fresh signup, or simply
+      // offline — kept the PREVIOUS account's photo on the nav chip and the
+      // subscription card beside the new member's name. Nothing had leaked,
+      // but on a shared device that is indistinguishable from something that
+      // had. A letter is the honest fallback.
+      isDev=false; userPlan='guest'; currentUserAvatarUrl=null;
+    }
     syncAdmBtn();
     syncAuthBtn(); // repaint avatar chips
     notifRefreshBadge();
@@ -564,10 +588,33 @@
     }
   }
 
-  // auth state changes
+  // WHICH AUTH EVENTS ACTUALLY CHANGE WHO IS SIGNED IN.
+  //
+  // supabase-js fires this handler for TOKEN_REFRESHED as well — every fifty
+  // minutes or so, for as long as a tab stays open — and for INITIAL_SESSION on
+  // load. Neither changes the member. Everything below used to run on all of
+  // them, so an ordinary token renewal deleted every private record in
+  // IndexedDB, threw away the marketplace tab, re-sorted and repainted the
+  // gallery under whatever the reader was looking at, and blanked every like
+  // and bookmark heart for the length of a round trip. It also put a burst of
+  // Supabase traffic on the wire once an hour per open tab, which is precisely
+  // what js/cache.js exists to avoid.
+  //
+  // The id is what decides, not the event name: a session object arrives on a
+  // refresh too, and comparing the member is the question actually being asked.
+  // A signed-out tab is 'guest' rather than null so the first event on a page
+  // opened signed-out is not mistaken for a change.
+  var dzLastAuthId = (function(){
+    try { return currentUser && currentUser.id ? String(currentUser.id) : 'guest'; }
+    catch (e) { return 'guest'; }
+  })();
+
   if (sb) {
     sb.auth.onAuthStateChange(function(event, session) {
       currentUser = session ? session.user : null;
+      var nowId = currentUser && currentUser.id ? String(currentUser.id) : 'guest';
+      var switched = nowId !== dzLastAuthId;
+      dzLastAuthId = nowId;
 
       // Who the session belongs to, and what has to be forgotten because of
       // it, is settled before anything is drawn. This used to run after
@@ -577,47 +624,56 @@
       // with it, because they were all sitting behind it in the same handler.
       // Painting is allowed to fail. Deciding whose data this is, is not.
 
-      // Every stamp taken before this line was taken for the account that
-      // just went away. Bumping first means anything still in flight is
-      // already stale by the time it lands, whichever order it lands in.
-      dzScopeBump();
-      // wipe caches on auth change
-      pfRowCache = {}; cmMineRows = []; cpMsgCache = {}; cmMineCache = {};
-      // Likes, Bookmarks, albums and the profile media cache are one
-      // member's. They are not carried across a sign-in.
-      try{ albResetMine(); }catch(e){}
-      // the read/unread marks belong to whoever was signed in
-      notifList = []; notifReadIds = {};
-      /* And everything the cache service wrote down for them. Every private
-         record is stamped with a member id and would be refused for the next
-         session anyway, but "would be refused" is not the same as "is not
-         there": their conversations, friends, bookmarks, settings and
-         analytics come off this device now rather than sitting in IndexedDB
-         waiting for a bug to hand them over. Public records — the gallery,
-         the section tabs — stay, because they are the same for everybody and
-         the next visit is faster for having them. */
-      try{ if(window.dzCache) window.dzCache.dropPrivate(); }catch(e){}
-      try{
-        pf.albums = []; pf.albumsLoaded = false;
-        pf.galleryRows = []; pf.galleryIds = Object.create(null);
-        pf.galleryOffset = 0; pf.galleryDone = false;
-        pfMediaCache = {};
-      }catch(e){}
-      // Now the painting. Every one of these reaches into a file that loads
-      // after this one, so each is on its own: one that fails takes nothing
-      // else with it.
-      try{ syncAuthBtn(); }catch(e){ console.error('syncAuthBtn: '+(e.message||e)); }
-      // repaint ranking boards
-      try{ if (typeof window.rkRefresh === 'function') window.rkRefresh(); }catch(e){}
-      // reload hide list
-      try{
-        loadHiddenArtworks().then(function(){
-          try{ renderHome(); }catch(e){}
-          try{ renderFG(); }catch(e){}
-        }, function(){ /* offline, keep what is on screen */ });
-      }catch(e){ console.error('loadHiddenArtworks: '+(e.message||e)); }
-      // reload tag preferences
-      try{ if(typeof tgLoad === 'function') tgLoad(true); }catch(e){}
+      // ALL OF THIS IS GATED ON THE MEMBER ACTUALLY CHANGING. On a token
+      // refresh it is not just unnecessary, it is destructive: it throws away
+      // a cache that is still correct and repaints the page under the reader.
+      if (switched) {
+        // Every stamp taken before this line was taken for the account that
+        // just went away. Bumping first means anything still in flight is
+        // already stale by the time it lands, whichever order it lands in.
+        dzScopeBump();
+        // wipe caches on auth change
+        pfRowCache = {}; cmMineRows = []; cpMsgCache = {}; cmMineCache = {};
+        // Likes, Bookmarks, albums and the profile media cache are one
+        // member's. They are not carried across a sign-in.
+        try{ albResetMine(); }catch(e){}
+        // the read/unread marks belong to whoever was signed in
+        notifList = []; notifReadIds = {};
+        /* And everything the cache service wrote down for them. Every private
+           record is stamped with a member id and would be refused for the next
+           session anyway, but "would be refused" is not the same as "is not
+           there": their conversations, friends, bookmarks, settings and
+           analytics come off this device now rather than sitting in IndexedDB
+           waiting for a bug to hand them over. Public records — the gallery,
+           the section tabs — stay, because they are the same for everybody and
+           the next visit is faster for having them. */
+        try{ if(window.dzCache) window.dzCache.dropPrivate(); }catch(e){}
+        try{
+          pf.albums = []; pf.albumsLoaded = false;
+          pf.galleryRows = []; pf.galleryIds = Object.create(null);
+          pf.galleryOffset = 0; pf.galleryDone = false;
+          pfMediaCache = {};
+        }catch(e){}
+        // Now the painting. Every one of these reaches into a file that loads
+        // after this one, so each is on its own: one that fails takes nothing
+        // else with it.
+        try{ syncAuthBtn(); }catch(e){ console.error('syncAuthBtn: '+(e.message||e)); }
+        // repaint ranking boards
+        try{ if (typeof window.rkRefresh === 'function') window.rkRefresh(); }catch(e){}
+        // reload hide list
+        try{
+          loadHiddenArtworks().then(function(){
+            try{ renderHome(); }catch(e){}
+            try{ renderFG(); }catch(e){}
+          }, function(){ /* offline, keep what is on screen */ });
+        }catch(e){ console.error('loadHiddenArtworks: '+(e.message||e)); }
+        // reload tag preferences
+        try{ if(typeof tgLoad === 'function') tgLoad(true); }catch(e){}
+      }
+
+      // Outside the gate on purpose: signing in as the account already signed
+      // in is not a change of member, but the sheet still has to close and the
+      // greeting still belongs to the act of signing in.
       if (event === 'SIGNED_IN') {
         closeAuthMod();
         checkUserRole();
@@ -692,10 +748,18 @@
     return d.toLocaleDateString();
   }
 
+  /* The list and the unread dot have to ask about the same notifications.
+     The list read the newest 60 and marked exactly those read; the dot read
+     200 and lit if any of them was unread — so on an account with more than
+     sixty, rows 61 to 200 could never be marked and the dot came back on every
+     repaint, with nothing the member could do about it. One number, used by
+     both. */
+  var NOTIF_WINDOW = 60;
+
   async function notifLoad(){
     if(!sb){ notifList=[]; notifRender(); return; }
     try{
-      const{data,error} = await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(60);
+      const{data,error} = await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(NOTIF_WINDOW);
       if(error) throw error;
       notifList = data||[];
       if(currentUser){
@@ -762,7 +826,10 @@
     if(!btn) return;
     if(!sb || !currentUser){ notifPaintBadges(false); return; }
     try{
-      const{data:all,error:e1} = await sb.from('notifications').select('id').limit(200);
+      // Same window, and the same order, as notifLoad — the dot must be
+      // asking about the notifications opening the page can actually clear.
+      const{data:all,error:e1} = await sb.from('notifications').select('id')
+        .order('created_at',{ascending:false}).limit(NOTIF_WINDOW);
       if(e1) throw e1;
       const{data:reads,error:e2} = await sb.from('notification_reads').select('notification_id').eq('user_id',currentUser.id);
       if(e2) throw e2;

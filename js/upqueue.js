@@ -402,3 +402,37 @@
     body.innerHTML = html;
   }
 
+
+  /* ---- leaving with an upload still running ------------------------------
+     The queue lives in this tab and nowhere else. Nothing is written down and
+     nothing resumes, so a refresh, a closed tab or a tapped link took the job
+     with it and said nothing — after minutes of somebody's connection, and
+     with however many objects had already reached storage left behind. The
+     cleanup that removes those runs only inside upqRun's own catch, so it
+     never gets the chance.
+
+     A confirmation is what a page can actually do about that. Browsers show
+     their own wording and ignore whatever string is returned, so there is no
+     message to write here; what matters is that the event is cancelled, and
+     only while something is genuinely in flight — a dialog on every navigation
+     would be worse than the bug.
+
+     Not attempted: sweeping the leftover objects on the next visit. It would
+     need a list of paths that survives the crash, and a list that is one write
+     behind reality is a list that deletes a published artwork's file. The
+     orphans are a storage cost; that would be data loss. */
+  function upqBusy(){
+    for(var i = 0; i < upq.jobs.length; i++){
+      var st = upq.jobs[i].stage;
+      if(st === 'checking' || st === 'uploading' || st === 'finalizing') return true;
+    }
+    return false;
+  }
+  window.upqBusy = upqBusy;
+
+  window.addEventListener('beforeunload', function(e){
+    if(!upqBusy()) return;
+    e.preventDefault();
+    e.returnValue = '';   // the half every current browser actually reads
+    return '';
+  });

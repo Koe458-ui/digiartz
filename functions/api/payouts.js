@@ -98,6 +98,16 @@ async function pp(env, path, init = {}) {
 
 // RPC as the CALLER, not the service role — dz_wallet_summary reads auth.uid()
 // and must answer for whoever asked, never for everyone.
+// Throws on failure rather than answering null.
+//
+// It used to return null for anything that went wrong, and the overview
+// handler turned that into `summary: []` beside `ok: true` — so a transport
+// error, an expired token on the forwarded header or an RLS refusal all
+// rendered as "Nothing sold yet. You are paid in whichever currency you priced
+// your listing in." A seller with money was told they had none, in the one
+// panel where that is most alarming, and the payout button was disabled with
+// it so there was no way back except a reload. An empty wallet and a broken
+// one have to be distinguishable, and only the caller can tell them apart.
 async function sbRpc(env, request, fn, args = {}) {
   const res = await fetch(sbUrl(env) + '/rest/v1/rpc/' + fn, {
     method: 'POST',
@@ -108,7 +118,7 @@ async function sbRpc(env, request, fn, args = {}) {
     },
     body: JSON.stringify(args),
   });
-  if (!res.ok) return null;
+  if (!res.ok) throw new Error('Could not read your balance (' + res.status + ')');
   return res.json().catch(() => null);
 }
 
@@ -229,16 +239,26 @@ async function reconciled(env, userId, currency) {
 
   // Record it so support has something to look at, and so a member cannot
   // simply retry until a race lets it through.
-  await sbService(env, '/reconciliation_flags', {
-    method: 'POST',
-    body: JSON.stringify({
-      user_id: userId, currency,
-      operational: row.operational, ledger: row.ledger,
-      discrepancy: row.discrepancy, kind: 'balance_mismatch',
-      detail: 'Withdrawal blocked: wallet says ' + row.operational +
-              ', ledger says ' + row.ledger + ' (' + currency + ', minor units)',
-    }),
-  }).catch(() => {});
+  //
+  // One open flag per member per currency. This used to insert unconditionally,
+  // so every retry after a flag had been resolved — while the divergence behind
+  // it was still there — filed the same incident again, and support could not
+  // tell one problem from ten attempts at it.
+  const open = await sbService(env,
+    '/reconciliation_flags?user_id=eq.' + userId +
+    '&currency=eq.' + currency + '&status=eq.open&select=id&limit=1').catch(() => null);
+  if (!(open && open.length)) {
+    await sbService(env, '/reconciliation_flags', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: userId, currency,
+        operational: row.operational, ledger: row.ledger,
+        discrepancy: row.discrepancy, kind: 'balance_mismatch',
+        detail: 'Withdrawal blocked: wallet says ' + row.operational +
+                ', ledger says ' + row.ledger + ' (' + currency + ', minor units)',
+      }),
+    }).catch(() => {});
+  }
 
   return { ok: false, reason: 'mismatch', row };
 }
@@ -341,6 +361,14 @@ export async function onRequestPost({ env, request }) {
         flags: flags || [],
         minPayouts: MIN_PAYOUT,
         minDefault: MIN_DEFAULT,
+        // Which method kinds a payout can actually be SENT to, so the panel
+        // can say so where a seller picks one. The request handler refuses
+        // anything else, and it used to be the only thing that knew — a seller
+        // entered an account holder name, a bank, an account number and an
+        // IFSC, made it their default, and found out at the end that none of
+        // it could be paid to. Named here rather than hard-coded in the module
+        // so the two cannot drift.
+        sendableKinds: ['paypal_email'],
         withdrawable: await withdrawable(env, user.id),
       });
     }

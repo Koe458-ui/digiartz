@@ -7,6 +7,10 @@
 // a dollar figure run through an exchange rate — that is how you end up
 // quoting Rs 416.67 a month.
 const TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
+// What a member already holds decides both whether a plan may be ordered and
+// how a settled month is applied, so the three need an order. The same block
+// is in paypal.js and both webhooks — see applySubscription below.
+const TIER_RANK = { lite: 1, premium: 2, max: 3 };
 const PLAN_LABEL = {
   lite: 'Lite \u2014 1 month', premium: 'Premium \u2014 1 month',
   max: 'Max \u2014 1 month',   support: 'Support DigiArtz',
@@ -247,6 +251,58 @@ const showAmount = (minor, cur) =>
   ZERO_DECIMAL.has(cur) ? String(minor) + ' ' + cur
                         : (minor / 100).toFixed(2) + ' ' + cur;
 
+// ---------------------------------------------------------------------------
+// WHAT THE MEMBER ALREADY HOLDS.
+//
+// Read before an order is created, so a plan that would take something away
+// can be refused while the buyer still has their money, and read again at
+// settlement so a month is added to what is there rather than written over it.
+async function currentPlan(env, userId) {
+  try {
+    const rows = await sbService(env, '/profiles?id=eq.' + userId +
+      '&select=subscription_tier,subscription_expires_at&limit=1');
+    const p = rows && rows[0];
+    const t = p && p.subscription_expires_at
+      ? new Date(p.subscription_expires_at).getTime() : 0;
+    // an expired subscription is not a subscription
+    if (t && t > Date.now()) return { tier: p.subscription_tier || null, expires: t };
+  } catch { /* unreadable — treated as holding nothing */ }
+  return { tier: null, expires: 0 };
+}
+
+// APPLYING A MONTH TO WHAT IS ALREADY THERE.
+//
+// The same block is in paypal.js, rzp-webhook.js and paypal-webhook.js, which
+// with this file are the four paths that can settle a subscription. It used to
+// be an unconditional PATCH to { tier, now + 31 days } in all four, reading
+// neither the current tier nor the current expiry first:
+//
+//   buying a month with twenty days left gave thirty-one, not fifty-one, so
+//   twenty paid days were destroyed — and the plan copy invites exactly that
+//   purchase ("A single charge for 31 days. Nothing recurring");
+//
+//   buying Lite while holding Max dropped the daily quota from twenty to ten
+//   on the spot and took the remaining Max days with it.
+//
+// So: extend from whichever is later, now or the existing expiry, and never
+// come out of this holding a lower tier than went in. sub-order refuses a
+// downgrade before any money moves; this is the backstop for an order created
+// before an upgrade and settled after it, where the money is already taken and
+// the only wrong answer is to give less than was there before.
+async function applySubscription(env, userId, tier) {
+  const cur = await currentPlan(env, userId);
+  const from = Math.max(Date.now(), cur.expires);
+  const keep = (TIER_RANK[cur.tier] || 0) > (TIER_RANK[tier] || 0) ? cur.tier : tier;
+  await sbService(env, '/profiles?id=eq.' + userId, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      subscription_tier: keep,
+      subscription_expires_at: new Date(from + SUB_DAYS * 86400000).toISOString(),
+    }),
+  });
+  return keep;
+}
+
 // create order and ledger row
 async function makeOrder(env, user, { amount, currency, kind, plan, itemId, label }) {
   const order = await rzp(env, '/v1/orders', {
@@ -331,6 +387,19 @@ export async function onRequestPost({ env, request }) {
       } else {
         amount = await planPrice(env, key, currency);
         if (!amount) return json({ error: 'That plan is not priced in ' + currency }, 400);
+
+        // Refused BEFORE the order exists, which is the only place a downgrade
+        // can be refused without taking someone's money for it. Buying Lite
+        // while Max is still running used to drop the quota from twenty
+        // downloads to ten on the spot and discard the remaining Max days;
+        // buying the same plan again is fine and extends it.
+        const cur = await currentPlan(env, user.id);
+        if (cur.tier && (TIER_RANK[cur.tier] || 0) > (TIER_RANK[key] || 0)) {
+          return json({ error: 'Your ' + cur.tier + ' plan runs until ' +
+            new Date(cur.expires).toISOString().slice(0, 10) +
+            '. Buying ' + key + ' now would not add anything to it \u2014 ' +
+            'renew ' + cur.tier + ', or wait until it ends.' }, 400);
+        }
       }
 
       // Both a plan price and a support amount are already in the smallest
@@ -413,14 +482,9 @@ export async function onRequestPost({ env, request }) {
       if (notes.kind === 'subscription') {
         const t = TIERS[notes.plan];
         if (t) {
-          tier = t;
-          if (firstVerify) {
-            const exp = new Date(Date.now() + SUB_DAYS * 86400000).toISOString();
-            await sbService(env, '/profiles?id=eq.' + user.id, {
-              method: 'PATCH',
-              body: JSON.stringify({ subscription_tier: tier, subscription_expires_at: exp }),
-            });
-          }
+          // What they end up holding, which is not always what they bought —
+          // a month bought under a higher tier extends that tier instead.
+          tier = firstVerify ? await applySubscription(env, user.id, t) : t;
         }
       }
       return json({ ok: true, kind: notes.kind, tier });

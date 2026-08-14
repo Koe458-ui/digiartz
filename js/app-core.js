@@ -622,7 +622,10 @@
   function restoreScroll(){
     // every overlay that locks scroll
     // album pages lock too
-    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','cmInfoPage','cmSearchPage','cmBrowsePage','bmPage','xpPage','anPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','dzPanelHost','fgSearchPage'];
+    // dzView is the section detail panel (js/sections.js). It was missing here
+    // while it took the lock like everything else, so any other overlay
+    // closing underneath it released the lock out from under an open panel.
+    var locks=['fg','artModal','communityPage','adsPanel','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','cmInfoPage','cmSearchPage','cmBrowsePage','bmPage','xpPage','anPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','dzPanelHost','fgSearchPage','dzView'];
     var anyOpen=locks.some(function(id){
       var el=document.getElementById(id);
       return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');

@@ -85,6 +85,11 @@ const ARTWORK_RE = /^\/artwork\/([^/]+)\/?$/;
 
 // safe username charset
 const SAFE_NAME = /^[\p{L}\p{N}._-]{1,40}$/u;
+// '_' and '%' are wildcards to SQL LIKE; a username is not a pattern.
+const likeEscape = (s) => String(s).replace(/[\\%_]/g, '\\$&');
+// the row that answered has to be the member who was asked for
+const sameName = (a, b) =>
+  String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase();
 const UUID_RE   = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // resolve a path
@@ -102,12 +107,21 @@ async function resolve(env, pathname) {
   if (type === 'profile') {
     if (!SAFE_NAME.test(raw)) return { type, status: 'gone' };
     try {
-      // case insensitive lookup
+      // Case-insensitive lookup, and the pattern is escaped on the way in.
+      // ILIKE reads '_' as "any single character" and SAFE_NAME admits '_' in
+      // a username — so /profile/a_b matched a member called axb, and with
+      // limit=1 and no order an arbitrary one of them won. The page then went
+      // out with somebody else's name, bio, avatar and canonical url on it.
+      // ('%' is already refused by the charset; both are escaped anyway, with
+      // the backslash Postgres takes as LIKE's default escape character.)
       const rows = await sbGet(env,
         'profiles?select=id,username,display_name,bio,avatar_url,banner_url' +
-        `&username=ilike.${encodeURIComponent(raw)}&limit=1`,
+        `&username=ilike.${encodeURIComponent(likeEscape(raw))}&limit=1`,
         ROW_CACHE_SECONDS);
       if (!rows.length) return { type, status: 'gone' };
+      // The escape above is the fix; this is the proof. Whatever the pattern
+      // did, the row that came back has to be the member who was asked for.
+      if (!sameName(rows[0].username, raw)) return { type, status: 'gone' };
       return { type, status: 'found', row: rows[0] };
     } catch { return { type, status: 'unknown' }; }
   }

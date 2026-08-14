@@ -937,14 +937,6 @@
     if(ss){ im.srcset = ss; im.sizes = dzGridSizes(); }
     im.src = getThumbnailUrl(url || '');
   }
-  // largest thing safe to hand out publicly. never the private original: on
-  // Supabase that lives in koe-originals and is only reachable through a signed
-  // url minted after the quota check.
-  function getFullUrl(url){
-    if(!url || typeof url !== 'string') return url;
-    return sbSwapSize(url, '__f1600.webp');
-  }
-
   function itemHTML(img){
     const thumbAttrs=dzThumbAttrs(img.image_url||'');
     const thumbPos=thumbStyle(img.thumb_x, img.thumb_y, img.thumb_zoom);
@@ -1207,7 +1199,6 @@
   var fgList = [];
   var fgSent = null;
 
-  window.MERIT_GATES = { upload:80, chat:60, like:40 };
   window.meritDenied = function(err, action){
     if(!err) return false;
     var msg = (err.message || '') + ' ' + (err.code || '');

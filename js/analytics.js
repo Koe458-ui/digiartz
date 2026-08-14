@@ -119,7 +119,6 @@
     };
     return ctxCache;
   }
-  window.dzAnCtx = ctx;
 
   // The four dimensions, named the way both register_artwork_view and
   // dz_analytics_track spell them, so a caller of either passes the same
@@ -994,10 +993,6 @@
   }
 
   function box(id) { return $('anBox_' + id); }
-  function noData(id, msg) {
-    var b = box(id);
-    if (b) empty(b, msg);
-  }
 
   /* ---- 1. Overview ------------------------------------------------------- */
   function paintOverview() {

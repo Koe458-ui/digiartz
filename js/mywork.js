@@ -200,8 +200,6 @@
   }
 
 
-let currentLightboxImageSrc='';
-
 function hideCommentThumbnail(){
   var box=document.getElementById('cpSelectedImage');
   if(box) box.style.display='none';
@@ -1331,15 +1329,12 @@ function hideCommentThumbnail(){
   // shares, no bookmarks — those do not exist in a community and are not
   // quietly reachable from here.
   // ===========================================================================
-  var cmTxtMsg = null;
-
   function cmTxtOpen(mid){
     var msg = null;
     for(var i = 0; i < cpComments.length; i++){
       if(String(cpComments[i].id) === String(mid)){ msg = cpComments[i]; break; }
     }
     if(!msg) return;
-    cmTxtMsg = msg;
     document.getElementById('cmTxtQuote').textContent = msg.text || '';
     var acts = document.getElementById('cmTxtActs');
     acts.innerHTML = '';

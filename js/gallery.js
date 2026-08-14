@@ -716,7 +716,6 @@
   })();
 
   function openLB(src,name,cat,desc,id,pushUrl,navSource){
-    currentLightboxImageSrc=src;
     var art = id ? findArtworkById(id) : null;
     if(!art && id && navSource && navSource.length){
       art = navSource.find(function(a){ return String(a.id)===String(id); }) || null;

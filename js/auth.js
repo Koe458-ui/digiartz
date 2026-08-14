@@ -29,7 +29,6 @@
   function syncAuthBtn() {
     var loginBtn  = document.getElementById('navLoginBtn');
     var avatarBtn = document.getElementById('navAvatarBtn');
-    var letterEl  = document.getElementById('navAvatarLetter');
 
     if (currentUser) {
       // logged in

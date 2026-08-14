@@ -1,3 +1,10 @@
+-- WHAT THIS FILE STILL DOES: it creates dz_client_ip() and locks it down. The
+-- two counter rewrites the note below describes were superseded by
+-- 20260816_analytics.sql before this file was ever committed, and the comment
+-- at the foot of the file explains why replaying them here would be a
+-- regression rather than a no-op. The history is kept because it is the reason
+-- dz_client_ip() exists at all.
+--
 -- Anonymous view and download counting trusted a client-supplied p_anon_key as
 -- the dedup identity. The value was only shape-checked (16-64 chars, drawn from
 -- [A-Za-z0-9-]) and never bound to the caller, so a script minting a fresh key
@@ -75,123 +82,29 @@ revoke all on function public.dz_client_ip() from anon;
 revoke all on function public.dz_client_ip() from authenticated;
 
 
-create or replace function public.register_artwork_view(p_artwork uuid, p_anon_key text default null::text)
-returns void
-language plpgsql
-security definer
-set search_path = public, pg_temp
-as $$
-declare
-  v_key text;
-  v_ip  text;
-begin
-  if not exists (
-    select 1 from public.artworks
-     where id = p_artwork and status = 'approved'
-  ) then
-    return;
-  end if;
-
-  if auth.uid() is not null then
-    -- the session is the identity, there is nothing here to forge
-    if not public.dz_rate_ok('vw:u:' || auth.uid()::text, 120, 60) then
-      return;
-    end if;
-    v_key := 'u:' || auth.uid()::text;
-  else
-    v_ip := public.dz_client_ip();
-
-    if v_ip is not null then
-      if not public.dz_rate_ok('vw:ip:' || v_ip, 120, 60) then
-        return;
-      end if;
-      -- hashed so the dedup table does not become a log of visitor IPs
-      v_key := 'a:' || md5('dzview|' || v_ip);
-    else
-      -- No forwarded IP to trust. Keep counting rather than going silent, but
-      -- the caller chooses its own key on this path, so cap the path as a whole
-      -- instead of per key -- a per-key limit is meaningless when the attacker
-      -- picks the key.
-      if p_anon_key is null
-         or length(p_anon_key) not between 16 and 64
-         or p_anon_key !~ '^[A-Za-z0-9-]+$' then
-        return;
-      end if;
-      if not public.dz_rate_ok('vw:nokey', 600, 60) then
-        return;
-      end if;
-      v_key := 'a:' || p_anon_key;
-    end if;
-  end if;
-
-  insert into public.artwork_view_dedup (artwork_id, viewer_key, day)
-  values (p_artwork, v_key, current_date)
-  on conflict do nothing;
-
-  if found then
-    perform set_config('app.allow_view_count_write', '1', true);
-    update public.artworks
-       set view_count = coalesce(view_count, 0) + 1
-     where id = p_artwork;
-    perform set_config('app.allow_view_count_write', '0', true);
-  end if;
-end
-$$;
-
-
-create or replace function public.register_artwork_download(p_artwork uuid, p_anon_key text default null::text)
-returns void
-language plpgsql
-security definer
-set search_path = public, pg_temp
-as $$
-declare
-  v_key text;
-  v_ip  text;
-begin
-  if not exists (
-    select 1 from public.artworks
-     where id = p_artwork and status = 'approved'
-  ) then
-    return;
-  end if;
-
-  if auth.uid() is not null then
-    if not public.dz_rate_ok('dlc:u:' || auth.uid()::text, 60, 60) then
-      return;
-    end if;
-    v_key := 'u:' || auth.uid()::text;
-  else
-    v_ip := public.dz_client_ip();
-
-    if v_ip is not null then
-      if not public.dz_rate_ok('dlc:ip:' || v_ip, 60, 60) then
-        return;
-      end if;
-      v_key := 'a:' || md5('dzdownload|' || v_ip);
-    else
-      if p_anon_key is null
-         or length(p_anon_key) not between 16 and 64
-         or p_anon_key !~ '^[A-Za-z0-9-]+$' then
-        return;
-      end if;
-      if not public.dz_rate_ok('dlc:nokey', 300, 60) then
-        return;
-      end if;
-      v_key := 'a:' || p_anon_key;
-    end if;
-  end if;
-
-  insert into public.artwork_download_dedup (artwork_id, viewer_key, day)
-  values (p_artwork, v_key, current_date)
-  on conflict do nothing;
-
-  if found then
-    perform set_config('app.allow_download_count_write', '1', true);
-    update public.artworks
-       set download_count = coalesce(download_count, 0) + 1
-     where id = p_artwork;
-    perform set_config('app.allow_download_count_write', '0', true);
-  end if;
-end
-$$;
+-- ---------------------------------------------------------------------------
+-- The two counter bodies that used to live here have been dropped from this
+-- file, deliberately, and this is the one place that says why.
+--
+-- They redefined register_artwork_view/register_artwork_download on their
+-- ORIGINAL two-argument signature (p_artwork, p_anon_key).
+-- 20260816_analytics.sql later replaced both with six-argument versions that
+-- also take p_source, p_ref, p_device and p_country, and that is what the
+-- live database has. Replaying the two-argument bodies here would not replace
+-- those -- a different argument list is a different function -- it would add a
+-- second overload alongside them.
+--
+-- That is not cosmetic. js/engagement.js calls these through withDims(), and
+-- dims() returns {} whenever js/analytics.js has not loaded yet, so a real
+-- cold-start call arrives with exactly p_artwork and p_anon_key. Today it
+-- resolves to the six-argument function through its defaults and the view is
+-- counted with its dimensions null. With a two-argument overload present it
+-- would bind to that instead and silently stop recording dimensions.
+--
+-- What this file still has to carry is dz_client_ip() above.
+-- 20260816_analytics.sql, 20260817 and 20260818 all call it and none of them
+-- create it -- it reached the database by hand and its definition was never
+-- committed, so rebuilding from supabase/migrations/ alone failed at 20260816
+-- until this file landed. The server-side IP derivation and the rate limiting
+-- described at the top are in force through those later definitions.
+-- ---------------------------------------------------------------------------

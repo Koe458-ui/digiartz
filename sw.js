@@ -4,6 +4,43 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v176 — new logo, and the icon set is generated rather than kept.
+       The bird is gone. The mark is two slanted bars, red and black, and
+       it is now the tab icon, the app icons, the touch icon and Zeo's
+       avatar — the bot had been wearing the old bird on a transparent
+       background, which was the last thing on the site still shipping it.
+       Every icon is built by scripts/build-icons.mjs out of one drawing,
+       which is the part that matters more than the mark. The set used to
+       be a folder of PNGs resampled from a 512, so a 16px tab icon was a
+       512px image with 99.9% of its pixels thrown away, and any size
+       nobody had thought to export was a browser's guess. Now favicon.svg
+       ships the vectors themselves — Chrome, Firefox, Edge, Brave and Tor
+       draw the tab at whatever size the device asks for, and there is no
+       size at which it is soft. Safari does not read rel=icon svg and iOS
+       reads the touch icon, so the rasters are not a fallback for old
+       browsers, they are the live answer for a platform; each is rendered
+       from the vectors at its exact size rather than downscaled from a
+       neighbour, including all five frames inside the .ico.
+       Three framings, because the crop is not ours to choose: the app
+       icons sit at the artwork's own scale, the tab icon larger because
+       16px has no rounded corner to clear, and the maskable icon and the
+       avatar smaller so the mark survives being cut to a circle. Android
+       gets a real maskable entry in the manifest, so an installed icon
+       fills its shape instead of being shrunk onto a white plate.
+       The shadow is five SVG 1.1 primitives, not feDropShadow, which is
+       SVG 2 and absent before Safari 15.4 — where a missing filter is not
+       a missing shadow but a missing logo. Its region is stated in user
+       units because the bounding box of a <line> does not include its own
+       stroke, and its colour space is pinned to sRGB because the spec
+       default is linearRGB and engines disagree about it.
+       The icons are cached for a week, so every one of them is requested
+       with a ?v= — without it the old mark sits in the tab for seven days
+       after this deploy. SHELL_URLS carries the same query strings.
+       Changed: index.html, sw.js, _headers, site.webmanifest,
+       css/panels.css, functions/legal/[doc].js, every icon at the root;
+       logo.svg, favicon.svg, icon-maskable-512.png and
+       scripts/build-icons.mjs are new.
+
    v174 — the cache system, rebuilt.
        The site used to be one HTML file. It is thirty-six scripts and
        fifteen stylesheets now, and the caching had not caught up: one
@@ -3082,7 +3119,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v175';
+const CACHE_VERSION = 'v176';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3128,9 +3165,10 @@ const SHELL_URLS = [
   '/uploadVerifier.js',
   '/aiAssistantData.js',
   '/site.webmanifest',
-  '/favicon.ico',
-  '/apple-touch-icon.png',
-  '/icon-192.png',
+  '/favicon.svg?v=2',
+  '/favicon.ico?v=2',
+  '/apple-touch-icon.png?v=2',
+  '/icon-192.png?v=2',
 
   // stylesheets
   '/css/base.css?v=5',

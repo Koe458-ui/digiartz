@@ -62,11 +62,14 @@
 # BECAUSE the HTML pointing at them is always revalidated, and a release that
 # could not update the HTML would be a release nobody receives.
 #
-# Every path here resolves to index.html — the four section links and the
-# artwork link are SPA fallbacks in _redirects, and a header rule matches the
-# path that was REQUESTED, not the file that answers it, so each one needs
-# saying. must-revalidate rather than no-store: the browser may keep its copy,
-# it just may not use it without checking.
+# Every path here resolves to index.html — the artwork link, the four section
+# links, the profile link and /login are SPA fallbacks in _redirects, and a
+# header rule matches the path that was REQUESTED, not the file that answers
+# it, so each one needs saying. Keep this list and _redirects in step: a path
+# listed here with no fallback there is a 404 wearing a cache policy, which is
+# exactly what /profile/* was.
+# must-revalidate rather than no-store: the browser may keep its copy, it just
+# may not use it without checking.
 /
   Cache-Control: public, max-age=0, must-revalidate
 /index.html
@@ -82,6 +85,8 @@
 /job/*
   Cache-Control: public, max-age=0, must-revalidate
 /profile/*
+  Cache-Control: public, max-age=0, must-revalidate
+/login
   Cache-Control: public, max-age=0, must-revalidate
 
 # Pages Functions answer per caller, behind a session check. Nothing here may

@@ -540,11 +540,15 @@ export async function onRequestPost({ env, request }) {
       // again here would withhold twice on the same sale.
       //
       // The figures are still carried on the request, for the record — walked
-      // from the earnings this payout will actually retire, oldest first, the
-      // same order admin-send retires them in.
+      // from the earnings this payout will actually retire, oldest first, in
+      // the same order and under the same filter admin-send retires them in.
+      // available_at is part of that filter: without it this walks earnings
+      // that have not settled, and records a gross and a withheld figure
+      // against money the payout will never touch.
       const covering = await sbService(env,
         '/marketplace_earnings?seller_id=eq.' + user.id +
         '&status=eq.available&currency=eq.' + currency +
+        '&available_at=lte.' + new Date().toISOString() +
         '&select=gross_amount,net_amount,tds_amount&order=created_at.asc');
       let left = amount, grossBasis = 0, tdsAlready = 0;
       for (const e of covering || []) {
@@ -650,6 +654,10 @@ export async function onRequestPost({ env, request }) {
       if (!req) return json({ error: 'That request is not approved and waiting' }, 400);
 
       const batchId = 'dzpo_' + req.id.slice(0, 8) + '_' + Date.now();
+      // Exactly the earnings THIS attempt retires, so the rollback below has
+      // something to name. It used to have nothing, and swept every row the
+      // seller had ever had paid out back to available.
+      const retiredIds = [];
       try {
         const out = await pp(env, '/v1/payments/payouts', {
           method: 'POST',
@@ -677,9 +685,20 @@ export async function onRequestPost({ env, request }) {
         // Retire exactly the earnings this payout covers, oldest first, so the
         // same money cannot be requested twice while the item is in flight.
         // PAYMENTS.PAYOUTS-ITEM.* hands them back if the item never lands.
+        //
+        // available_at is not optional here, and leaving it off was a way to
+        // pay the same money twice. An earning sits at status 'available' from
+        // the moment it is written, while available_at is the settlement date
+        // days ahead — that gap is the whole of the pending/settled split the
+        // wallet shows. withdrawable() above counts only rows past it, so a
+        // walk without it retires PENDING earnings oldest-first and leaves the
+        // settled ones this payout was actually drawn from still available.
+        // Once the request closed, the seller's withdrawable balance was
+        // unchanged and the same money could be taken again.
         const earned = await sbService(env,
           '/marketplace_earnings?seller_id=eq.' + req.user_id +
           '&status=eq.available&currency=eq.' + req.currency +
+          '&available_at=lte.' + new Date().toISOString() +
           '&select=id,net_amount&order=created_at.asc');
         let left = Number(req.amount), retired = 0;
         for (const e of earned || []) {
@@ -687,6 +706,7 @@ export async function onRequestPost({ env, request }) {
           await sbService(env, '/marketplace_earnings?id=eq.' + e.id, {
             method: 'PATCH', body: JSON.stringify({ status: 'paid_out' }),
           });
+          retiredIds.push(e.id);
           retired += Number(e.net_amount || 0);
           left -= Number(e.net_amount || 0);
         }
@@ -729,12 +749,30 @@ export async function onRequestPost({ env, request }) {
             review_note: String((err && err.message) || 'Send failed').slice(0, 500),
           }),
         }).catch(() => {});
-        // nothing was sent, so nothing stays retired
-        await sbService(env,
-          '/marketplace_earnings?seller_id=eq.' + req.user_id +
-          '&currency=eq.' + req.currency + '&status=eq.paid_out', {
-          method: 'PATCH', body: JSON.stringify({ status: 'available' }),
-        }).catch(() => {});
+        // Nothing was sent, so nothing THIS ATTEMPT retired stays retired.
+        //
+        // The filter names the ids collected above, and that is the whole
+        // point of collecting them. It used to say
+        // "seller_id=eq.<user>&currency=eq.<cur>&status=eq.paid_out", which
+        // names every earning the seller has ever been paid for — so one
+        // failed send handed back the seller's entire payout history as
+        // withdrawable balance. Worse, the retirement loop runs only after
+        // PayPal succeeds, so on the ordinary failure path (a merchant account
+        // without the Payouts entitlement, which is the default — see the note
+        // at the top of this file) nothing had been retired at all and the
+        // rollback still fired. ledger_entries is append-only, so the old
+        // payout_debit rows stayed behind and dz_reconcile then froze the
+        // account for a mismatch it had just been given.
+        //
+        // Empty when the send failed before the loop, and then there is
+        // nothing to undo.
+        if (retiredIds.length) {
+          await sbService(env,
+            '/marketplace_earnings?status=eq.paid_out' +
+            '&id=in.(' + retiredIds.join(',') + ')', {
+            method: 'PATCH', body: JSON.stringify({ status: 'available' }),
+          }).catch(() => {});
+        }
         return json({ error: (err && err.message) || 'Could not send the payout' }, 502);
       }
     }

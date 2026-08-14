@@ -2621,11 +2621,23 @@
 
   // A website typed the way people say it — koe.studio — is a website. The
   // scheme is put back rather than the posting being refused over it.
+  //
+  // Only http and https come back. This used to return ANY explicit scheme —
+  // "mailto:, tel:, anything explicit" — and javascript: is explicit: it
+  // matched, it was stored on the listing, and the three places that render an
+  // apply link write it straight into an href. A seller could script every
+  // reader's tab from a job posting. There is a separate field for an email
+  // address on every form that has one of these, so nothing legitimate was
+  // reaching the branch that is gone.
+  //
+  // A refused link comes back empty rather than throwing, which the callers
+  // already handle: a listing needing one has to answer "add an application
+  // link or email", and a company website is optional.
   function dzWebUrl(v){
     v = String(v || '').trim();
     if(!v) return '';
     if(/^https?:\/\//i.test(v)) return v;
-    if(/^[a-z][a-z0-9+.-]*:/i.test(v)) return v;   // mailto:, tel:, anything explicit
+    if(/^[a-z][a-z0-9+.-]*:/i.test(v)) return '';   // any other scheme, refused
     return 'https://' + v;
   }
 
@@ -3855,6 +3867,15 @@
 
   function H(){ return window.dzHelpers || { money:function(){return '';}, bytes:function(){return '';}, ago:function(){return '';} }; }
   function esc2(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  /* Escaping is not enough for an href. esc2 handles & < > " ' — a
+     javascript: url contains none of them and survives into the attribute
+     intact, where the browser runs it. linkBlock below has always tested the
+     scheme before writing a link; the apply and company-website links did not,
+     and this is that same test in one place so the next one cannot forget it.
+     An unsafe url comes back empty, and every caller draws nothing rather than
+     a link to it. Applied at render as well as on the way in, because rows
+     written before dzWebUrl was tightened are still in the table. */
+  function safeHref(u){ return /^https?:\/\//i.test(String(u||'')) ? String(u) : ''; }
   function rows(){ return (typeof window.dzGetRows==='function' ? window.dzGetRows(cur.sec) : []) || []; }
   // This file is several IIFEs, so each one that uses the cache service names
   // it for itself. It is the same service either way — window.dzCache, reached
@@ -4833,7 +4854,15 @@
       if(Array.isArray(r.gallery) && r.gallery.length){
         galleryHtml = '<div class="dzvGallery">'+ r.gallery.map(function(g){
           if(!g || !g.url) return '';
-          return '<a href="'+esc2(getViewUrl(g.url))+'" target="_blank" rel="noopener">'+
+          // gallery is a jsonb column the browser fills in, so the url in it is
+          // whatever was written there rather than something this file
+          // produced. imgResize hands back an unrecognised url untouched, so
+          // the scheme is checked here for the same reason it is on an apply
+          // link — an <a href> runs a javascript: url, and this one wraps every
+          // shot on the listing.
+          var full = safeHref(getViewUrl(g.url));
+          if(!full) return '';
+          return '<a href="'+esc2(full)+'" target="_blank" rel="noopener">'+
             '<img src="'+esc2(getThumbnailUrl(g.url))+'" alt="" loading="lazy"></a>';
         }).join('') +'</div>';
       }
@@ -4868,9 +4897,10 @@
       // the buy button — so it belongs beside the price, not after the tags.
       // A seller who gave both a link and an address offered two ways to be
       // reached; the view used to pick the link and throw the address away.
+      var reqUrl = safeHref(r.apply_url);
       var reqBtn =
-        (r.apply_url
-          ? '<a class="avActWide" href="'+esc2(r.apply_url)+'" target="_blank" rel="noopener">Request this ↗</a>'
+        (reqUrl
+          ? '<a class="avActWide" href="'+esc2(reqUrl)+'" target="_blank" rel="noopener">Request this ↗</a>'
           : '')+
         (r.apply_email
           ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Request by email ✉</a>'
@@ -4955,9 +4985,10 @@
       // address, which quietly closed a door the employer had opened. A
       // posting with neither never publishes, so this is only ever empty for
       // one written before the form asked.
+      var applyUrl = safeHref(r.apply_url);
       var applyBtn =
-        (r.apply_url
-          ? '<a class="avActWide" href="'+esc2(r.apply_url)+'" target="_blank" rel="noopener">Apply \u2197</a>'
+        (applyUrl
+          ? '<a class="avActWide" href="'+esc2(applyUrl)+'" target="_blank" rel="noopener">Apply \u2197</a>'
           : '')+
         (r.apply_email
           ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Apply by email \u2709</a>'
@@ -4975,7 +5006,9 @@
         (r.featured ? '<p class="dzvExcerpt">\u2605 Featured posting</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
         '<p class="dzvExcerpt">'+esc2(r.company||'')+
-          (r.company_url ? ' \u00b7 <a href="'+esc2(r.company_url)+'" target="_blank" rel="noopener">website</a>' : '')+'</p>'+
+          (safeHref(r.company_url)
+            ? ' \u00b7 <a href="'+esc2(safeHref(r.company_url))+'" target="_blank" rel="noopener">website</a>'
+            : '')+'</p>'+
         metaRow([
           ['Location', jw],
           ['Work mode', jmodeLbl],

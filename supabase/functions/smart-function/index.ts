@@ -107,6 +107,18 @@
 // the site and an older cached bundle keeps working. delete already
 // sweeps both buckets for the same key, so removing one of these needs
 // nothing new.
+//
+// v21 — delete authorises on the object KEY rather than on a row that
+// claims it. The old test asked whether the caller owned a row whose
+// storage_path matched, across nine columns; every one of those columns
+// is written by the browser, so inserting a row naming somebody else's
+// key was enough to have it removed on the service role. Ownership now
+// comes from the second path segment, which is where every upload here
+// puts the uploader and where koe-media's own policies already look for
+// it. Two consequences worth knowing before deploying: the twenty
+// pre-convention artworks stored flat as artworks/<file> are staff-only
+// to delete, and a failed upload can now clean up its own objects before
+// a row exists — which the row check had been silently refusing.
 // ═══════════════════════════════════════════════════════════════
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -382,27 +394,40 @@ Deno.serve(async (req) => {
   }
 
   if (body.action === "delete") {
-    const like = "%" + path.split("/").slice(1).join("/") + "%";
-    const owns = async (t: string, col: string, ownerCol = "user_id") => {
-      const { data } = await supa.from(t).select("id").eq(ownerCol, user.id).ilike(col, like).limit(1);
-      return !!(data && data.length);
-    };
+    // WHO OWNS AN OBJECT IS DECIDED BY ITS KEY, NOT BY A ROW POINTING AT IT.
+    //
+    // This used to ask "does the caller own a row whose storage_path column
+    // matches this key?", across nine columns, with an ilike. Every one of
+    // those columns is written by the browser on insert — js/sections.js sets
+    // storage_path straight from client state, and the insert policies
+    // constrain user_id and merit and nothing else. So the answer was yes for
+    // anyone willing to insert a row of their own naming somebody else's key,
+    // and the removal below runs on the SERVICE ROLE and deliberately bypasses
+    // every storage policy. That is a delete-anyone's-artwork bug: the check
+    // and the thing it protects were on opposite sides of the trust boundary.
+    //
+    // Every upload this site mints puts the uploader in the second segment —
+    // artworks/<uid>/…, avatars/<uid>/…, resources/<uid>/…, market/<uid>/… —
+    // which is the same position koe-media's own policies test as
+    // foldername(name)[2] = auth.uid(). It is part of the object's name, so
+    // nothing the browser sends can move it.
+    //
+    // The ilike is gone with the row check, and so is a second defect in it:
+    // the validated path charset admits '_', which is a single-character
+    // wildcard in LIKE, so the pattern matched more keys than it named.
+    const seg = objKey.split("/");
+    const pathOwner = seg.length >= 3 ? seg[1] : null;
+
     const { data: prof } = await supa.from("profiles").select("role").eq("id", user.id).single();
     const isAdmin = !!prof && ["admin", "dev"].includes(prof.role ?? "");
-    const allowed = isAdmin
-      || await owns("artworks", "storage_path")
-      || await owns("comics", "cover_storage_path")
-      || await owns("profiles", "avatar_storage_path", "id")
-      || await owns("profiles", "banner_storage_path", "id")
-      || await owns("resources", "file_storage_path")
-      || await owns("resources", "preview_storage_path")
-      || await owns("marketplace_items", "file_storage_path")
-      || await owns("marketplace_items", "preview_storage_path")
-      || await owns("blog_posts", "cover_storage_path");
+    // Staff, or the folder is yours. The twenty pre-convention artworks stored
+    // flat as artworks/<file> carry no owner segment and are staff-only now —
+    // they were never safely attributable to anybody, which is exactly why the
+    // koe-originals policies read NULL for them.
+    const allowed = isAdmin || (!!pathOwner && pathOwner === user.id);
     if (!allowed) return json({ error: "not your object" }, 403);
 
-    // The ownership test above is the gate: it checks the caller against every
-    // column that can own an object. The removal itself runs with the SERVICE
+    // The key test above is the gate. The removal itself runs with the SERVICE
     // ROLE, the same shape "download" uses after its quota gate.
     //
     // It cannot run as the caller. koe-media has no delete policy that matches

@@ -3189,7 +3189,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=2',
   '/js/analytics.js?v=6',
   '/js/engagement.js?v=7',
-  '/js/sections.js?v=108',
+  '/js/sections.js?v=109',
   '/js/navprogress.js?v=5'
 ];
 

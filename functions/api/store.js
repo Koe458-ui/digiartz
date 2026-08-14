@@ -290,13 +290,20 @@ const MODULE = `
     }catch(e){ return ((Number(cents)||0)/100).toFixed(2)+' '+(cur||'USD'); }
   }
 
-  // An order quotes its amount in the provider's smallest unit, which for a
-  // zero-decimal currency is the whole unit — money() divides by a hundred, so
-  // those have to be scaled back first. Same list the backends use.
+  // money() takes HUNDREDTHS OF A MAJOR UNIT, because that is what
+  // marketplace_items.price_cents holds for every currency — the composer
+  // writes Math.round(price * 100) and does not special-case anything.
+  //
+  // Most figures on this page are not that. An order amount, a support
+  // minimum, a wallet balance and an earning are all in the currency's
+  // SMALLEST unit, which for a zero-decimal currency is the major unit: ¥1500
+  // is 1500, not 150000. Handing one of those to money() shows a hundredth of
+  // it. Same list the backends use.
   var ZERO_DEC = {JPY:1, HUF:1, TWD:1};
-  function orderMoney(o){
-    return money(ZERO_DEC[o.currency] ? o.amount * 100 : o.amount, o.currency);
+  function moneyMinor(v, cur){
+    return money(ZERO_DEC[cur] ? Number(v) * 100 : v, cur);
   }
+  function orderMoney(o){ return moneyMinor(o.amount, o.currency); }
 
   // ---- provider sdks ------------------------------------------------------
   var rzpP = null;
@@ -775,7 +782,8 @@ const MODULE = `
       title: 'Support DigiArtz',
       name: 'Support DigiArtz',
       sub: 'A one-off contribution',
-      price: money(amount, cur),
+      // smallest unit, the same figure the order is created with
+      price: moneyMinor(amount, cur),
       priceLabel: 'Amount',
       currency: cur,
       icon: '\\u2665',
@@ -791,12 +799,16 @@ const MODULE = `
     if(plan === 'support'){
       var cur = C.currency || 'USD';
       var min = (C.support && C.support.min) || 50;
+      // support_limits.min_amount is in the smallest unit, and minorOf() puts
+      // what the member types into the same unit, so the two compare directly.
+      // Only the DISPLAY needed fixing: money() would have quoted a ¥700
+      // minimum as ¥7 and then refused ¥7.
       var v = prompt('Support amount in ' + cur +
-                     ' (minimum ' + money(min, cur) + '):', '');
+                     ' (minimum ' + moneyMinor(min, cur) + '):', '');
       if(v === null) return;
       amount = minorOf(parseFloat(v), cur);
       if(!Number.isFinite(amount) || amount < min){
-        toast('Minimum is ' + money(min, cur)); return;
+        toast('Minimum is ' + moneyMinor(min, cur)); return;
       }
     }
     start(planSpec(plan, amount), function(prov){

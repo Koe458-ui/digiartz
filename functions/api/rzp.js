@@ -13,9 +13,33 @@ const PLAN_LABEL = {
 };
 const SUB_DAYS = 31;
 
-// smallest currency unit
-const ZERO_DECIMAL = new Set(['JPY']);
-const toRzpAmount = (cents, cur) =>
+// TWO UNITS LIVE IN THIS SYSTEM AND THEY ARE NOT THE SAME UNIT.
+//
+// Everything on the money side — payments.amount, marketplace_earnings.*,
+// support_limits, subscription_prices, MIN_PAYOUT in payouts.js — is in the
+// currency's SMALLEST unit, and for a zero-decimal currency that IS the major
+// unit: 1500 JPY is stored as 1500. The rule is written out in
+// 20260802_money_flow.sql, and dz_earning_apply_deductions scales by 100 for
+// exactly these three currencies on the strength of it.
+//
+// marketplace_items.price_cents is the exception, and it is not a small one:
+// the composer stores Math.round(price * 100) whatever the currency, so a
+// ¥1500 listing carries 150000 and has to be scaled DOWN before it can be
+// charged or written to payments.amount.
+//
+// One helper used to serve both, dividing for every zero-decimal currency. It
+// is right for a listing and wrong for a plan: a ¥1500 plan was ordered at ¥15
+// and the buyer paid one percent of the price they had just been quoted. The
+// checkout page even showed both figures — the plan grid's, and the server
+// order's at the gateway step — and they disagreed on screen.
+//
+// The set matches paypal.js, payouts.js and store.js. It said {JPY} alone
+// here, which was a second 100x error waiting on whoever added HUF or TWD to
+// the currency list.
+const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD']);
+
+// price_cents -> the currency's smallest unit. Listings only.
+const fromPriceCents = (cents, cur) =>
   ZERO_DECIMAL.has(cur) ? Math.round(cents / 100) : cents;
 
 const json = (b, s = 200) =>
@@ -309,8 +333,11 @@ export async function onRequestPost({ env, request }) {
         if (!amount) return json({ error: 'That plan is not priced in ' + currency }, 400);
       }
 
+      // Both a plan price and a support amount are already in the smallest
+      // unit — subscription_prices.amount is, and the browser sends a support
+      // amount through minorOf(), which does the same. Nothing to convert.
       return await makeOrder(env, user, {
-        amount: toRzpAmount(amount, currency), currency,
+        amount, currency,
         kind: 'subscription', plan: key, label: PLAN_LABEL[key],
       });
     }
@@ -335,7 +362,7 @@ export async function onRequestPost({ env, request }) {
       if (paid && paid.length) return json({ owned: true });
 
       return await makeOrder(env, user, {
-        amount: toRzpAmount(item.price_cents, item.currency),
+        amount: fromPriceCents(item.price_cents, item.currency),
         currency: item.currency || 'USD',
         kind: 'marketplace', itemId,
         label: String(item.title || 'Marketplace item').slice(0, 120),

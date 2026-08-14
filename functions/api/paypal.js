@@ -35,8 +35,16 @@ const SUPPORTED = new Set(['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF',
   'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'NZD', 'SGD', 'HKD', 'MXN',
   'BRL', 'ILS', 'PHP', 'THB', 'TWD']);
 
-// smallest currency unit, same convention rzp.js stores in payments.amount
-const toMinor = (cents, cur) =>
+// TWO UNITS, AND ONLY ONE OF THEM NEEDS CONVERTING. See the long note in
+// rzp.js: payments.amount, marketplace_earnings, support_limits and
+// subscription_prices are all in the currency's smallest unit already — 1500
+// JPY is stored as 1500 — while marketplace_items.price_cents is always
+// major x 100 whatever the currency, because that is what the composer writes.
+//
+// This helper divided for every zero-decimal currency and was applied to both,
+// so a ¥1500 plan was ordered at ¥15. It is now named for the one input it is
+// actually for.
+const fromPriceCents = (cents, cur) =>
   ZERO_DECIMAL.has(cur) ? Math.round(cents / 100) : cents;
 
 // minor units back out to the decimal string PayPal wants
@@ -380,8 +388,10 @@ export async function onRequestPost({ env, request }) {
         if (!amount) return json({ error: 'That plan is not priced in ' + currency }, 400);
       }
 
+      // A plan price and a support amount are both already in the smallest
+      // unit, so they go through untouched.
       return await makeOrder(env, user, {
-        minor: toMinor(amount, currency), currency,
+        minor: amount, currency,
         kind: 'subscription', plan: key, label: PLAN_LABEL[key],
       });
     }
@@ -410,7 +420,7 @@ export async function onRequestPost({ env, request }) {
       if (paid && paid.length) return json({ owned: true });
 
       return await makeOrder(env, user, {
-        minor: toMinor(item.price_cents, currency),
+        minor: fromPriceCents(item.price_cents, currency),
         currency,
         kind: 'marketplace', itemId,
         label: String(item.title || 'Marketplace item').slice(0, 120),

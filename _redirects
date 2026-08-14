@@ -1,6 +1,19 @@
 # spa fallback for artwork urls
 /artwork/*  /index.html  200
 
+# and for profiles, which js/profile.js pushes and functions/sitemap.xml.js
+# publishes one of per member. This rule was missing while every other part of
+# the system assumed it: _headers carries a /profile/* cache rule,
+# functions/_middleware.js builds the Open Graph card for one, and
+# js/startup.js opens the profile named in the path on boot. Without it Pages
+# has no asset at that path and answers its own 404 — so every profile link
+# ever shared, and every profile url in the sitemap, was dead.
+/profile/*  /index.html  200
+
+# the sign-in sheet writes /login while it is open (js/auth.js), so a refresh
+# with it up has to reach the app rather than 404
+/login      /index.html  200
+
 # and for the four sections, which have their own links now — the viewer
 # writes /resource/<id>, /blog/<id>, /listing/<id> and /job/<id> while an item
 # is open, so those paths have to reach the app rather than 404

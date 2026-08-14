@@ -3119,7 +3119,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v176';
+const CACHE_VERSION = 'v177';
 
 /* One cache per thing cached, not one cache for everything.
 

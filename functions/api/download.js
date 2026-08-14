@@ -19,11 +19,13 @@
 //   1. same-origin  (headers only)
 //   2. json body    (headers only)
 //   3. jwt shape and expiry, decoded locally, no network
-//   4. burst limit + daily quota + presign, one call to smart-function
-//   5. the file itself
+//   4. per-IP burst limit on the real client address, one cheap rpc
+//   5. daily quota + presign, one call to smart-function
+//   6. the file itself
 //
 // env: SB_URL, SB_KEY (falls back to SUPABASE_URL / SUPABASE_ANON_KEY),
 //      S3_FN_URL (defaults to SB_URL/functions/v1/smart-function),
+//      SB_SERVICE_KEY (or SUPABASE_SERVICE_ROLE_KEY) for the per-IP limiter,
 //      ALLOWED_ORIGINS (comma separated extra hosts)
 
 const SB_URL_FALLBACK  = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
@@ -71,7 +73,19 @@ export async function onRequestPost(context) {
       return json({ reason: 'auth', error: 'Session expired — sign in again.' }, 401);
     }
 
-    // one call does the burst limit, the daily quota and the presign. it runs
+    // the per-IP burst limit is settled here, not in the database. the ip below
+    // is written by Cloudflare and page script cannot touch it, whereas the
+    // p_ip that dz_request_download takes is an ordinary parameter that has
+    // travelled through the browser — anything calling that rpc directly can
+    // hand it a fresh string per request and never land in the same bucket
+    // twice. the per-account limits it applies are the ones that hold there.
+    if (!(await underIpLimit(env, request.headers.get('CF-Connecting-IP')))) {
+      return json({ reason: 'rate', error: 'Too many download requests — wait a moment.' },
+                  429, { 'Retry-After': '60' });
+    }
+
+    // one call does the per-account burst limit, the daily quota and the
+    // presign — the per-IP half of the burst limit is already settled. it runs
     // as the caller, so the quota counts against their own tier, and it holds
     // the AWS credentials so nothing here has to. the ip is a hint for the
     // second limiter bucket, taken from Cloudflare rather than the request body
@@ -146,6 +160,40 @@ export async function onRequestPost(context) {
   } catch (err) {
     return json({ error: 'Download failed — try again.', detail: String(err).slice(0, 200) }, 500);
   }
+}
+
+// Counts one attempt against the caller's real address and reports whether they
+// are still under the limit. Its own bucket, deliberately: dz_request_download
+// keeps its dl:ip: bucket for the honest path, and sharing a name would make
+// every download count twice and halve both limits.
+//
+// Fails OPEN, like every other limiter here — no service key bound, a network
+// blip, or a limiter that errors must never stop a legitimate download. The
+// account-level quota inside dz_request_download is the control that fails
+// closed.
+async function underIpLimit(env, ip) {
+  const addr = String(ip || '').trim();
+  if (!addr) return true;
+  const key = env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!key) return true;
+  const base = String(env.SB_URL || env.SUPABASE_URL || SB_URL_FALLBACK).replace(/\/$/, '');
+  try {
+    const res = await fetch(base + '/rest/v1/rpc/dz_rate_take', {
+      method: 'POST',
+      headers: {
+        apikey: key,
+        authorization: 'Bearer ' + key,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_bucket: 'dl:edge:' + addr.slice(0, 64),
+        p_limit: 60,
+        p_seconds: 60
+      })
+    });
+    if (!res.ok) return true;
+    return (await res.json()) !== false;
+  } catch { return true; }
 }
 
 // the request has to have come from a page we serve.

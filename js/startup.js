@@ -2,7 +2,29 @@
   (
 
   async function init(){
-    await loadDB();
+    /* THE FETCH STARTS NOW; THE WORK BELOW WAITS FOR THE PAGE TO FINISH
+       PARSING. Everything after this point reaches into a file that loads
+       AFTER this one — renderHome needs rebuildGalCarousels from js/feed.js,
+       openProfileByUsername reaches js/search.js through pfSearchReset,
+       dzOpenById is js/sections.js, and this is the fourteenth of thirty-odd
+       script tags.
+
+       That was survivable only for as long as `await loadDB()` meant a network
+       round trip. It does not: js/cache.js answers a warm visit out of its
+       synchronous tier, so the await resolves on a microtask and the
+       continuation lands while the parser is still working through the
+       remaining tags. Two things happened there, and one of them was silent —
+       a profile deep link threw "tgSearchChrome is not defined", and
+       renderHome found window.rebuildGalCarousels undefined and painted
+       nothing at all, on exactly the repeat visits the cache exists to make
+       fast.
+
+       Starting the load before the wait rather than after keeps the request in
+       flight across the parse, so a cold visit pays nothing for this: its
+       round trip finishes long after DOMContentLoaded either way. */
+    var loading = loadDB();
+    await dzDomReady();
+    await loading;
     renderHome();
     // no hero image preload
     if(typeof window._heroLoadCb === 'function'){

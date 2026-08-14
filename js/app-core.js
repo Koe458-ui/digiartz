@@ -629,6 +629,22 @@
   }
   window.dzDecodeSeg = dzDecodeSeg;
 
+  /* Resolves once every classic script in the page has run.
+     This file is the third script tag; there are thirty-odd after it, and
+     js/startup.js — which boots the page — is in the middle of them. Anything
+     it calls that lives in a later file is only there if the parser has got
+     that far, and an `await` hands control back to the parser mid-flight, so
+     "later" is not a guarantee of "not yet". readyState leaves 'loading' at
+     DOMContentLoaded, which is precisely the point the last script tag has
+     executed. */
+  function dzDomReady(){
+    if(document.readyState !== 'loading') return Promise.resolve();
+    return new Promise(function(res){
+      document.addEventListener('DOMContentLoaded', function(){ res(); }, { once:true });
+    });
+  }
+  window.dzDomReady = dzDomReady;
+
   function restoreScroll(){
     // every overlay that locks scroll
     // album pages lock too

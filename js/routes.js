@@ -284,12 +284,18 @@
     enter(path);
     return true;
   };
-  // The names the rest of the app already uses for these destinations. The
-  // gallery calls its grid `artworks` and the hero calls the same place
-  // Explore; the community page is not a gallery chip at all and so is not in
-  // SECTION_PATH. All of them resolve to the one url each destination has.
-  var ALIAS = { community: '/community', explore: '/explore' };
-  window.dzRoutePath = function (id) { return SECTION_PATH[id] || ALIAS[id] || null; };
+  /* The gallery's own name for a section, mapped to that section's url —
+     `artworks` is what the chip row, the hero call to action and the feed's
+     log rows all call the grid, and it is /explore. Only the gallery chips are
+     here: those are the only names that reach this, because the community page
+     and the sign-in sheet are linked by anchors that carry their url already.
+
+     There was an alias table beside this for `community` and `explore`. Every
+     id that can arrive here comes from one of three lists — the hero's tabs,
+     the quick link onclicks, and LOG_KINDS in js/feed.js — and neither name
+     appears in any of them, so both entries were unreachable from the day
+     they were written. */
+  window.dzRoutePath = function (id) { return SECTION_PATH[id] || null; };
 
   // Boot. A member who opened /marketplace directly, or followed one out of a
   // search result, arrives at the home document with nothing open — this is

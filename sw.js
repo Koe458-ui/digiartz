@@ -5,8 +5,8 @@
 
    changelog
    v178 — the public sections have urls, so the shell has one more script.
-       /explore, /marketplace, /community, /resources, /blog and /jobs were
-       panels reachable only by a click handler; each is an address now, with
+       /explore, /marketplace, /community, /resources and /blog were panels
+       reachable only by a click handler; each is an address now, with
        a fallback in _redirects, a cache rule in _headers, its own title and
        canonical from functions/_middleware.js, and an entry in the sitemap.
        js/routes.js is the one file that knows which url opens which panel,

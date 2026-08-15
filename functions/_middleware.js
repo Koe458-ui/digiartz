@@ -125,13 +125,13 @@ const SECTIONS = {
           'digital art community.',
     ld: 'CollectionPage'
   },
-  '/jobs': {
-    crumb: 'Jobs',
-    title: 'Art and Design Jobs — DigiArtz',
-    desc: 'Freelance, remote, contract and full-time openings for digital artists, ' +
-          'illustrators and designers, posted on DigiArtz.',
-    ld: 'CollectionPage'
-  },
+  // Jobs is deliberately not here. The section is in the app and is not going
+  // anywhere — it is a chip in the gallery and a quick link on the home page —
+  // it is simply not one of the destinations this site is putting forward to
+  // search. So there is no /jobs url, no entry in the sitemap and no link in
+  // the footer. Individual postings keep their own /job/<id> address, because
+  // those links are shared and have to answer as themselves rather than as the
+  // home page.
   '/login': {
     crumb: 'Log in',
     title: 'Log in to DigiArtz',
@@ -182,7 +182,10 @@ const ITEMS = {
     ld: 'CreativeWork'
   },
   job: {
-    table: 'jobs', parent: '/jobs', crumb: 'Jobs',
+    // No `parent`, alone among these four: there is no /jobs index to sit
+    // under, so a posting's trail is Home → the posting. A breadcrumb pointing
+    // at a url that does not resolve is worse than a short breadcrumb.
+    table: 'jobs', crumb: 'Jobs',
     vis: 'visibility=eq.public&status=eq.approved',
     select: 'id,title,company,description,created_at',
     // Deliberately not JobPosting. That type is worth having and is worth
@@ -423,10 +426,11 @@ function itemMeta(seg, cfg, row) {
         ...(img ? { image: img } : {}),
         isPartOf: { '@type': 'WebSite', name: 'DigiArtz', url: `${SITE}/` }
       },
-      crumbs([
-        { name: cfg.crumb, url: `${SITE}${cfg.parent}` },
-        { name, url }
-      ])
+      // The section index, where there is one to point at. A job posting has
+      // none, so its trail is Home → the posting.
+      crumbs(cfg.parent
+        ? [{ name: cfg.crumb, url: `${SITE}${cfg.parent}` }, { name, url }]
+        : [{ name, url }])
     ],
     ldId: 'ldItem'
   };
@@ -446,7 +450,9 @@ function unlistedMeta(seg, cfg, id) {
     imgAlt: 'DigiArtz',
     ogType: 'website',
     robots: 'noindex, follow',
-    ld: crumbs([{ name: cfg.crumb, url: `${SITE}${cfg.parent}` }]),
+    ld: cfg.parent
+      ? crumbs([{ name: cfg.crumb, url: `${SITE}${cfg.parent}` }])
+      : crumbs([]),
     ldId: 'ldItem'
   };
 }

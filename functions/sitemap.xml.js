@@ -64,7 +64,6 @@ export async function onRequestGet(context) {
     { seg: 'resource', q: 'resources?select=id,created_at&visibility=eq.published&status=eq.approved' },
     { seg: 'blog',     q: 'blog_posts?select=id,created_at&visibility=eq.published&status=eq.approved' },
     { seg: 'listing',  q: 'marketplace_items?select=id,created_at&visibility=eq.published&status=eq.approved' },
-    { seg: 'job',      q: 'jobs?select=id,created_at&visibility=eq.public&status=eq.approved' },
   ];
 
   let artworks = [];
@@ -134,7 +133,6 @@ export async function onRequestGet(context) {
     ['/community', '0.9', 'daily'],
     ['/resources', '0.8', 'weekly'],
     ['/blog', '0.8', 'weekly'],
-    ['/jobs', '0.8', 'weekly'],
     ['/login', '0.3', 'yearly'],
   ]
     .map(

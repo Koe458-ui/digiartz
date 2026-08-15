@@ -12,7 +12,6 @@
 /marketplace  /index.html  200
 /resources    /index.html  200
 /blog         /index.html  200
-/jobs         /index.html  200
 /community    /index.html  200
 
 # One url per destination. The bottom nav calls this section Gallery and the

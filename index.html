@@ -131,7 +131,6 @@
       { "@type": "CollectionPage", "name": "Community", "url": "https://digiartz.net/community" },
       { "@type": "CollectionPage", "name": "Resources", "url": "https://digiartz.net/resources" },
       { "@type": "CollectionPage", "name": "Blog", "url": "https://digiartz.net/blog" },
-      { "@type": "CollectionPage", "name": "Jobs", "url": "https://digiartz.net/jobs" },
       { "@type": "WebPage", "name": "Log in", "url": "https://digiartz.net/login" }
     ]
   }
@@ -256,10 +255,12 @@
   </section>
 
 
-  <!-- Quick links. The six destinations that have a url of their own are
-       anchors carrying it; the rest — Upload, Ranking, Level, Subscription,
-       Cart, Theme — stay buttons, because each of those is one member's own
-       page or one member's own basket and has no public address to give.
+  <!-- Quick links. The five destinations that have a url of their own are
+       anchors carrying it; the rest — Jobs, Upload, Ranking, Level,
+       Subscription, Cart, Theme — stay buttons, because none of those is a
+       public destination this site puts forward: they are one member's own
+       page, one member's own basket, or a section that is simply not in the
+       index.
        js/routes.js answers the anchors and js/sections.js still answers the
        buttons, and both end up in qlGo either way. -->
   <section id="quickLinks" aria-label="Explore DigiArtz">
@@ -285,11 +286,11 @@
           <span class="qlTitle">Blog</span>
           <span class="qlDesc">Insights, tutorials and artist stories</span>
         </a>
-        <a class="qlItem" href="/jobs" style="--qlC:#F97316;--qlL:#CF5F12">
+        <button class="qlItem" type="button" style="--qlC:#F97316;--qlL:#CF5F12" onclick="qlGo('jobs')">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M2 13h20"/></svg></span>
           <span class="qlTitle">Jobs</span>
           <span class="qlDesc">Find work and grow your career</span>
-        </a>
+        </button>
         <a class="qlItem" href="/community" style="--qlC:#F43F5E;--qlL:#EA3C5A">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
           <span class="qlTitle">Community</span>
@@ -1345,7 +1346,6 @@
             <li><a class="ftColLink" href="/community">Community</a></li>
             <li><a class="ftColLink" href="/resources">Resources for artists</a></li>
             <li><a class="ftColLink" href="/blog">Blog</a></li>
-            <li><a class="ftColLink" href="/jobs">Art &amp; design jobs</a></li>
             <li><a class="ftColLink" href="/login">Log in</a></li>
           </ul>
         </div>

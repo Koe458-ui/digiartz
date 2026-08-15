@@ -5,7 +5,7 @@
 // (#communityPage) — and until now the only way into one was a click handler.
 // That is fine for a member and invisible to everyone else: a crawler cannot
 // press a button, a member cannot bookmark what they are reading, and the
-// address bar said "digiartz.net" whichever of the six sections was open.
+// address bar said "digiartz.net" whichever of the sections was open.
 //
 // So each of those destinations gets a real url, and this file is the one
 // place that knows which url opens which panel. Nothing here replaces the
@@ -16,7 +16,6 @@
 //   /marketplace  gallery, Marketplace
 //   /resources    gallery, Resources
 //   /blog         gallery, Blog
-//   /jobs         gallery, Jobs
 //   /community    the community page
 //   /             home, every panel shut
 //
@@ -42,7 +41,6 @@
     '/marketplace': { panel: 'fg',            open: gallery('marketplace'), section: 'marketplace' },
     '/resources':   { panel: 'fg',            open: gallery('resources'),   section: 'resources' },
     '/blog':        { panel: 'fg',            open: gallery('blog'),        section: 'blog' },
-    '/jobs':        { panel: 'fg',            open: gallery('jobs'),        section: 'jobs' },
     '/community':   { panel: 'communityPage', open: community },
     // Not a panel route — auth.js pushes and restores /login itself — but
     // listed so a click on a /login link opens the sheet rather than

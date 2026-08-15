@@ -104,8 +104,6 @@
   Cache-Control: public, max-age=0, must-revalidate
 /blog
   Cache-Control: public, max-age=0, must-revalidate
-/jobs
-  Cache-Control: public, max-age=0, must-revalidate
 /community
   Cache-Control: public, max-age=0, must-revalidate
 

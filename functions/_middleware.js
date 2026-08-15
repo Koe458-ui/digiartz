@@ -133,8 +133,12 @@ const SECTIONS = {
   // those links are shared and have to answer as themselves rather than as the
   // home page.
   '/login': {
-    crumb: 'Log in',
-    title: 'Log in to DigiArtz',
+    // One word, and it leads. The sitelink label a search engine prints for a
+    // page is drawn from its title and from the words the site links to it
+    // with, so all three say the same thing: the anchor in the footer, the
+    // accessible name on the nav control, and this.
+    crumb: 'Login',
+    title: 'Login — DigiArtz',
     desc: 'Sign in to your DigiArtz account to upload artwork, sell in the marketplace, ' +
           'join communities and follow other artists.',
     // A sign-in form is a page, not a collection, and it is the one entry here

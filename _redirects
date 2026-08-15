@@ -14,10 +14,11 @@
 /blog         /index.html  200
 /community    /index.html  200
 
-# One url per destination. The bottom nav calls this section Gallery and the
-# hero calls it Explore; /explore is the one that is canonical, indexed and in
-# the sitemap, so the other name redirects into it rather than becoming a
-# second address for the same grid.
+# One url per destination. This section was called Gallery for a long time and
+# a link to /gallery may well exist somewhere outside this repository; /explore
+# is the name it goes by now and the one that is canonical, indexed and in the
+# sitemap, so the old name redirects into it rather than becoming a second
+# address for the same grid.
 /gallery      /explore     301
 
 # spa fallback for artwork urls

@@ -131,7 +131,7 @@
       { "@type": "CollectionPage", "name": "Community", "url": "https://digiartz.net/community" },
       { "@type": "CollectionPage", "name": "Resources", "url": "https://digiartz.net/resources" },
       { "@type": "CollectionPage", "name": "Blog", "url": "https://digiartz.net/blog" },
-      { "@type": "WebPage", "name": "Log in", "url": "https://digiartz.net/login" }
+      { "@type": "WebPage", "name": "Login", "url": "https://digiartz.net/login" }
     ]
   }
   </script>
@@ -185,6 +185,13 @@
        script: they are in the sitemap, they can be shared, and a crawler can
        follow them.
 
+       The gallery is called Explore here, in the quick links rail and in the
+       footer, because a destination linked under three different names is a
+       destination a search engine has three guesses at. The chip row inside
+       the gallery still says Artworks — that chip is one section of the
+       gallery among six and is not a link, so it names a place within the
+       page rather than the page.
+
        Upload keeps its button. It is an action behind a sign-in gate, not a
        public destination, and it has no url for the same reason the cart and
        the settings sheet have none. -->
@@ -193,9 +200,9 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h4.5v-6h2v6H17.5a1 1 0 0 0 1-1v-9"/></svg>
     <span class="bnLabel">Home</span>
    </a>
-   <a class="bnItem" id="bnGallery" href="/explore" title="Explore" aria-label="Explore the gallery">
+   <a class="bnItem" id="bnGallery" href="/explore" title="Explore" aria-label="Explore">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-    <span class="bnLabel">Gallery</span>
+    <span class="bnLabel">Explore</span>
    </a>
    <button class="bnItem" id="bnUpload" onclick="bnGoUpload()" title="Upload" aria-label="Upload artwork">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -212,7 +219,7 @@
          js/routes.js stands down when a click has already been handled. Signed
          out this is the /login link; signed in it is swapped for the avatar
          button beside it, which goes to a profile and not to a public url. -->
-    <a class="nLoginBtn" id="navLoginBtn" href="/login" onclick="bnGoProfile(event); return false;" title="Log in" aria-label="Log in">
+    <a class="nLoginBtn" id="navLoginBtn" href="/login" onclick="bnGoProfile(event); return false;" title="Login" aria-label="Login">
      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
       <circle cx="12" cy="8" r="3.5"/>
       <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7"/>
@@ -268,7 +275,7 @@
       <div class="qlRail" id="qlRail">
         <a class="qlItem" href="/explore" style="--qlC:#22D3EE;--qlL:#178D9F">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span>
-          <span class="qlTitle">Artworks</span>
+          <span class="qlTitle">Explore</span>
           <span class="qlDesc">Discover art from top creators</span>
         </a>
         <a class="qlItem" href="/marketplace" style="--qlC:#22C55E;--qlL:#199446">
@@ -1341,12 +1348,12 @@
         <div class="ftCol">
           <div class="ftColHead">Browse</div>
           <ul class="ftColList">
-            <li><a class="ftColLink" href="/explore">Explore digital art</a></li>
+            <li><a class="ftColLink" href="/explore">Explore</a></li>
             <li><a class="ftColLink" href="/marketplace">Marketplace</a></li>
             <li><a class="ftColLink" href="/community">Community</a></li>
             <li><a class="ftColLink" href="/resources">Resources for artists</a></li>
             <li><a class="ftColLink" href="/blog">Blog</a></li>
-            <li><a class="ftColLink" href="/login">Log in</a></li>
+            <li><a class="ftColLink" href="/login">Login</a></li>
           </ul>
         </div>
 

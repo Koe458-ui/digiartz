@@ -5275,6 +5275,12 @@
       }
       return;
     }
+    // Explore, Learn and Buy all land on a section that has a url of its own
+    // now, so they go through the router and the address bar says where the
+    // reader ended up. Selling does not: it opens the upload sheet, which is
+    // behind a sign-in gate and is not a public page.
+    var path = typeof window.dzRoutePath === 'function' ? window.dzRoutePath(to) : null;
+    if(path && typeof window.dzRouteGo === 'function' && window.dzRouteGo(path)) return;
     if(typeof openFG === 'function'){
       openFG();
       if(typeof fgSwitchSection === 'function') fgSwitchSection(to);
@@ -5399,14 +5405,30 @@
   // nav's own sweep but it predates the ranking, theme and progress
   // pages, so those are closed here as well — each hides the bottom bar
   // while it is up, and left open it takes the bar with it.
-  function shut(){
-    if(typeof bnCloseAllSections === 'function') bnCloseAllSections();
+  function shutExtras(){
     if(typeof closeRankPage === 'function') closeRankPage();
     if(typeof closeThemePage === 'function') closeThemePage();
     if(typeof closeXpPage === 'function') closeXpPage();
   }
+  function shut(){
+    if(typeof bnCloseAllSections === 'function') bnCloseAllSections();
+    shutExtras();
+  }
 
   window.qlGo = function(id){
+    /* Six of these destinations have a url of their own. They go through the
+       router, which closes what is open (the openers below are the same
+       bnGo* functions this used to call) and leaves the address bar naming
+       where the member ended up — so arriving from the rail, from the hero,
+       from a feed card or from a search result all agree.
+
+       The three pages bnCloseAllSections predates are still swept here: the
+       router opens panels and does not know about them. */
+    var path = typeof window.dzRoutePath === 'function' ? window.dzRoutePath(id) : null;
+    if(path && typeof window.dzRouteGo === 'function'){
+      shutExtras();
+      if(window.dzRouteGo(path)) return;
+    }
     shut();
     if(GALLERY[id]){
       // bnGoGallery is the real entry: closes the rest, resets the

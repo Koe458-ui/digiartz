@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
 
+# The Pages Functions behind the app: checkout, downloads, payment webhooks,
+# moderation. Every one of them answers per caller behind a session check and
+# already carries "X-Robots-Tag: noindex, nofollow" from _headers, so this is
+# not what keeps them out of the index — it is what keeps a crawler from
+# spending its budget asking. Nothing a visitor can read is under /api/.
+Disallow: /api/
+
 Sitemap: https://digiartz.net/sitemap.xml

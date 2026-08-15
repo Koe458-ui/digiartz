@@ -36,7 +36,14 @@
     if(m) openArtworkById(dzDecodeSeg(m[1]), false);
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
     if(pm) openProfileByUsername(dzDecodeSeg(pm[1]), false);
-    if(window.location.pathname === '/login') openAuthMod();
+    /* /login used to be opened from here, and it does not belong here: every
+       other deep link on this line needs a row out of the database and waits
+       on `loading` for it, and the sign-in sheet needs nothing at all. It sat
+       behind the gallery load anyway — so a slow, failing or hanging fetch of
+       the artwork feed was a sign-in page that never opened, on the one url
+       where a visitor has already told you they cannot see their account.
+       js/routes.js opens it now, at parse time, out of the same ROUTES table
+       as every other public destination. */
     // A resource, a post, a listing or a posting opened straight from its own
     // link. Same shape as /artwork/<id>, and the same rule: the row is fetched
     // by id rather than hoping the section it belongs to has been browsed.
@@ -49,6 +56,15 @@
   // gallery json ld
   function injectGallerySEO(){
     if(!images.length) return;
+    /* The home page's gallery, described on the home page and nowhere else.
+       This used to run on every route, so /artwork/<id>, /profile/<name> and
+       now every section url carried an ImageGallery block whose own url said
+       'https://digiartz.net/' — each of those pages claiming to be a different
+       page. functions/_middleware.js strips the block from the document away
+       from home for the same reason; without this guard the script simply put
+       it back as soon as it ran. */
+    var here = window.location.pathname;
+    if(here !== '/' && here !== '/index.html') return;
     var ld = document.getElementById('ldGallery');
     if(!ld){
       ld = document.createElement('script');

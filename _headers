@@ -96,6 +96,18 @@
   Cache-Control: public, max-age=0, must-revalidate
 /login
   Cache-Control: public, max-age=0, must-revalidate
+/explore
+  Cache-Control: public, max-age=0, must-revalidate
+/marketplace
+  Cache-Control: public, max-age=0, must-revalidate
+/resources
+  Cache-Control: public, max-age=0, must-revalidate
+/blog
+  Cache-Control: public, max-age=0, must-revalidate
+/jobs
+  Cache-Control: public, max-age=0, must-revalidate
+/community
+  Cache-Control: public, max-age=0, must-revalidate
 
 # Pages Functions answer per caller, behind a session check. Nothing here may
 # be held by a browser cache, a shared cache or a crawler — a stored copy is a

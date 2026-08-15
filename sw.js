@@ -4,6 +4,22 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v178 — the public sections have urls, so the shell has one more script.
+       /explore, /marketplace, /community, /resources, /blog and /jobs were
+       panels reachable only by a click handler; each is an address now, with
+       a fallback in _redirects, a cache rule in _headers, its own title and
+       canonical from functions/_middleware.js, and an entry in the sitemap.
+       js/routes.js is the one file that knows which url opens which panel,
+       and it joins the precache list — a route whose script is missing
+       offline is a section that will not open. The panels themselves are
+       untouched: the router calls the same bnGo* functions the buttons did.
+       Navigations were already network-first with the shell behind them, so
+       a direct hit on /marketplace offline still falls back to index.html
+       and the router opens the marketplace from there.
+       Changed: index.html, sw.js, _headers, _redirects, css/base.css,
+       css/hero.css, js/routes.js (new), js/sections.js, js/startup.js,
+       functions/_middleware.js, functions/sitemap.xml.js, robots.txt.
+
    v176 — new logo, and the icon set is generated rather than kept.
        The bird is gone. The mark is two slanted bars, red and black, and
        it is now the tab icon, the app icons, the touch icon and Zeo's
@@ -3119,7 +3135,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v177';
+const CACHE_VERSION = 'v178';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3171,8 +3187,8 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=5',
-  '/css/hero.css?v=93',
+  '/css/base.css?v=6',
+  '/css/hero.css?v=94',
   '/css/viewer.css?v=14',
   '/css/community.css?v=11',
   '/css/connect.css?v=3',
@@ -3215,7 +3231,7 @@ const SHELL_URLS = [
   '/js/avatar.js?v=3',
   '/js/pfedit.js?v=10',
   '/js/mywork.js?v=20',
-  '/js/startup.js?v=5',
+  '/js/startup.js?v=6',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=10',
   '/js/feed.js?v=3',
@@ -3227,7 +3243,8 @@ const SHELL_URLS = [
   '/js/theme.js?v=2',
   '/js/analytics.js?v=6',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=111',
+  '/js/sections.js?v=112',
+  '/js/routes.js?v=1',
   '/js/navprogress.js?v=5'
 ];
 

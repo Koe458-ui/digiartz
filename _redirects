@@ -1,3 +1,26 @@
+# The public sections. Each of these is a panel that slides over the home
+# document — the gallery overlay and the community page — and js/routes.js is
+# what opens the right one for the path. Without a fallback here Pages has no
+# asset at /marketplace and answers its own 404, so the url in the sitemap, the
+# link in the footer and the address the app itself writes would all be dead on
+# a direct hit or a refresh. Exact paths, listed before the splats below so
+# there is no question which rule answers.
+#
+# Keep this list, the ROUTES table in js/routes.js, the SECTIONS table in
+# functions/_middleware.js and the cache rules in _headers in step.
+/explore      /index.html  200
+/marketplace  /index.html  200
+/resources    /index.html  200
+/blog         /index.html  200
+/jobs         /index.html  200
+/community    /index.html  200
+
+# One url per destination. The bottom nav calls this section Gallery and the
+# hero calls it Explore; /explore is the one that is canonical, indexed and in
+# the sitemap, so the other name redirects into it rather than becoming a
+# second address for the same grid.
+/gallery      /explore     301
+
 # spa fallback for artwork urls
 /artwork/*  /index.html  200
 

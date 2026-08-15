@@ -1118,6 +1118,11 @@
       text-align:center;-webkit-tap-highlight-color:transparent;
       transition:background .2s,transform .2s;
     }
+    /* Six of the twelve slots are anchors now and six are still buttons. The
+       rule above was written for the button; this is what stops the anchor
+       arriving underlined and wearing the link colour, so the row reads as one
+       row however each slot is built. */
+    a.qlItem{text-decoration:none;color:inherit;}
     .qlIco{
       /* fixed box so icons of different heights still share one baseline */
       display:flex;align-items:center;justify-content:center;

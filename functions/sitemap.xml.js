@@ -51,14 +51,35 @@ export async function onRequestGet(context) {
     return res.ok ? res.json() : [];
   };
 
+  /* The four section item types, published and approved only. Same filters
+     the section panels use, plus the moderation gate: a draft, a hidden
+     listing or an unreviewed post is reachable by its own link on purpose and
+     is not something to hand to a crawler. functions/_middleware.js marks the
+     same rows noindex when one is opened directly, so the two agree.
+
+     Each type's url segment is what the app pushes when the item is open —
+     /listing/<id> for a marketplace item, not /marketplace/<id> — so these are
+     the addresses that exist. */
+  const ITEM_FEEDS = [
+    { seg: 'resource', q: 'resources?select=id,created_at&visibility=eq.published&status=eq.approved' },
+    { seg: 'blog',     q: 'blog_posts?select=id,created_at&visibility=eq.published&status=eq.approved' },
+    { seg: 'listing',  q: 'marketplace_items?select=id,created_at&visibility=eq.published&status=eq.approved' },
+    { seg: 'job',      q: 'jobs?select=id,created_at&visibility=eq.public&status=eq.approved' },
+  ];
+
   let artworks = [];
   let profiles = [];
+  let itemSets = ITEM_FEEDS.map(() => []);
   try {
     // approved art only
-    [artworks, profiles] = await Promise.all([
+    const all = await Promise.all([
       sbGet('artworks?select=id,name,image_url,created_at&status=eq.approved&kind=eq.art&order=created_at.desc&limit=5000'),
       sbGet('profiles?select=username&limit=5000'),
+      ...ITEM_FEEDS.map((f) => sbGet(`${f.q}&order=created_at.desc&limit=5000`)),
     ]);
+    artworks = all[0];
+    profiles = all[1];
+    itemSets = all.slice(2);
   } catch (e) {
     // still serve a partial sitemap
   }
@@ -94,6 +115,53 @@ export async function onRequestGet(context) {
     )
     .join('\n');
 
+  /* The public sections, listed first and weighted above everything below
+     them because they are what the site is organised into: Explore is the
+     gallery, Marketplace is the shop, Community is the forum, and each one is
+     the parent of a whole class of item urls further down this file.
+
+     /login is here as well and deliberately so. It is a public page — a sign-in
+     form anybody can open, not a page BEHIND sign-in — and it is one of the
+     four destinations a visitor looks for by name. Nothing that requires a
+     session is in this file: no cart, no dashboard, no upload manager, no
+     admin, no settings.
+
+     Kept in step with the SECTIONS table in functions/_middleware.js, the
+     ROUTES table in js/routes.js and the fallbacks in _redirects. */
+  const sectionEntries = [
+    ['/explore', '0.9', 'daily'],
+    ['/marketplace', '0.9', 'daily'],
+    ['/community', '0.9', 'daily'],
+    ['/resources', '0.8', 'weekly'],
+    ['/blog', '0.8', 'weekly'],
+    ['/jobs', '0.8', 'weekly'],
+    ['/login', '0.3', 'yearly'],
+  ]
+    .map(
+      ([path, priority, freq]) => `  <url>
+    <loc>${SITE_URL}${path}</loc>
+    <changefreq>${freq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`
+    )
+    .join('\n');
+
+  const itemEntries = itemSets
+    .map((rows, i) =>
+      (Array.isArray(rows) ? rows : [])
+        .map((r) => {
+          const lastmod = r && r.created_at ? new Date(r.created_at).toISOString().slice(0, 10) : '';
+          return `  <url>
+    <loc>${SITE_URL}/${ITEM_FEEDS[i].seg}/${xesc(r.id)}</loc>${lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : ''}
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>`;
+        })
+        .join('\n')
+    )
+    .filter(Boolean)
+    .join('\n');
+
   // The standalone legal pages. Listed so they are crawlable and so anyone
   // auditing the site — a payment provider reviewing the domain, most of all —
   // can find them without being handed a link. The slugs are defined by
@@ -119,7 +187,9 @@ export async function onRequestGet(context) {
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+${sectionEntries}
 ${legalEntries}
+${itemEntries}
 ${artworkEntries}
 ${profileEntries}
 </urlset>`;

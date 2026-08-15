@@ -194,6 +194,13 @@
       color:rgba(var(--tx2-rgb),.62);
       transition:color .22s,background .22s,transform .15s;
     }
+    /* Home, Gallery and Community are anchors now, and Upload is still a
+       button — one row, two elements, and the rule above was written for the
+       button. These three properties are the whole of the difference: an
+       anchor arrives underlined, tinted with the link colour and inline, and
+       the flex above already fixes the last of those. Nothing else about the
+       bar moves. */
+    a.bnItem,a.nLoginBtn{text-decoration:none;color:rgba(var(--tx2-rgb),.62);-webkit-tap-highlight-color:transparent;}
     .bnItem svg{width:26px;height:26px;display:block;stroke-width:1.8;transition:transform .22s cubic-bezier(.34,1.56,.64,1);}
     .bnItem:hover{color:var(--tx);background:rgba(var(--pg-rgb),.14);}
     .bnItem:active{transform:scale(.92);}

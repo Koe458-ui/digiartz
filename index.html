@@ -106,6 +106,36 @@
     "logo": "https://digiartz.net/icon-512.png?v=3"
   }
   </script>
+  <!-- The site itself, and what it is organised into. Nothing here is invented:
+       every url below is a real page with its own title, description and
+       canonical (functions/_middleware.js writes them) and its own fallback in
+       _redirects, and every one of them is linked from the footer of this
+       document in plain anchors. This block adds no claim the page does not
+       already make; it says the same thing in the form a machine reads.
+
+       Only the destinations, and only the public ones. There is no cart here,
+       no dashboard, no upload manager: those are one member's own pages and
+       have no address to give. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "DigiArtz",
+    "alternateName": "Digiartz",
+    "url": "https://digiartz.net/",
+    "description": "DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists.",
+    "publisher": { "@type": "Organization", "name": "Digiartz", "url": "https://digiartz.net/" },
+    "hasPart": [
+      { "@type": "CollectionPage", "name": "Explore", "url": "https://digiartz.net/explore" },
+      { "@type": "CollectionPage", "name": "Marketplace", "url": "https://digiartz.net/marketplace" },
+      { "@type": "CollectionPage", "name": "Community", "url": "https://digiartz.net/community" },
+      { "@type": "CollectionPage", "name": "Resources", "url": "https://digiartz.net/resources" },
+      { "@type": "CollectionPage", "name": "Blog", "url": "https://digiartz.net/blog" },
+      { "@type": "CollectionPage", "name": "Jobs", "url": "https://digiartz.net/jobs" },
+      { "@type": "WebPage", "name": "Log in", "url": "https://digiartz.net/login" }
+    ]
+  }
+  </script>
   <script type="application/ld+json" id="ldGallery">
   {"@context":"https://schema.org","@type":"ImageGallery","name":"DigiArtz — Digital Art Gallery","url":"https://digiartz.net/","description":"Digital art posted by the DigiArtz community: character illustrations, fan art, landscapes, cars and original work.","image":["https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet__f1600.webp","https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1782822019716_Archer_Queen__f1600.webp","https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781717079470_Prushka__f1600.webp","https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781630475302_Meili_Portroute__f1600.webp","https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781459752137_Junko_Enoshima__f1600.webp","https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781282837085_Kyojuro_Rengoku__f1600.webp"],"hasPart":[{"@type":"ImageObject","position":1,"name":"Ethereal Violet","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet__t300.webp","url":"https://digiartz.net/artwork/7cd74497-cd51-446b-a084-afb6b04fa84c","datePublished":"2026-07-03","creator":{"@type":"Person","name":"user_9f8c7d5a","url":"https://digiartz.net/profile/user_9f8c7d5a"}},{"@type":"ImageObject","position":2,"name":"Archer Queen","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1782822019716_Archer_Queen__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1782822019716_Archer_Queen__t300.webp","url":"https://digiartz.net/artwork/42b36e1e-0bea-4bd6-a1d4-33615cddbd8d","datePublished":"2026-06-30","creator":{"@type":"Person","name":"Koe_Official","url":"https://digiartz.net/profile/Koe_Official"}},{"@type":"ImageObject","position":3,"name":"Prushka","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781717079470_Prushka__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781717079470_Prushka__t300.webp","url":"https://digiartz.net/artwork/87230979-277b-48e7-9190-dcd90f1c8956","datePublished":"2026-06-17"},{"@type":"ImageObject","position":4,"name":"Meili Portroute","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781630475302_Meili_Portroute__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781630475302_Meili_Portroute__t300.webp","url":"https://digiartz.net/artwork/c1677e60-d791-4aee-a054-1c3b83914431","datePublished":"2026-06-16"},{"@type":"ImageObject","position":5,"name":"Junko Enoshima","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781459752137_Junko_Enoshima__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781459752137_Junko_Enoshima__t300.webp","url":"https://digiartz.net/artwork/e7a15ef1-f043-4176-b260-919e5da88d29","datePublished":"2026-06-14"},{"@type":"ImageObject","position":6,"name":"Kyojuro Rengoku","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781282837085_Kyojuro_Rengoku__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781282837085_Kyojuro_Rengoku__t300.webp","url":"https://digiartz.net/artwork/478488e3-0bcf-4b13-9fdd-e07ddaba2fd1","datePublished":"2026-06-12"},{"@type":"ImageObject","position":7,"name":"Fushi","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781195618071_Fushi__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781195618071_Fushi__t300.webp","url":"https://digiartz.net/artwork/637c58b1-0b8d-4e59-a4b5-45d8b364b888","datePublished":"2026-06-11"},{"@type":"ImageObject","position":8,"name":"Makima","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781091495828_Makima__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781091495828_Makima__t300.webp","url":"https://digiartz.net/artwork/40a29b41-36e1-4267-8f17-fd72a0a9fd92","datePublished":"2026-06-10"},{"@type":"ImageObject","position":9,"name":"Misa Amane","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781024008823_Misa_Amane__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781024008823_Misa_Amane__t300.webp","url":"https://digiartz.net/artwork/afd0f86b-ee4b-40b4-b4c5-e5d61559a818","datePublished":"2026-06-09"},{"@type":"ImageObject","position":10,"name":"Lelouch vi Britannia","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780944274654_Lelouch_vi_Britannia__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780944274654_Lelouch_vi_Britannia__t300.webp","url":"https://digiartz.net/artwork/a7f35adb-7f8c-4011-96b5-66a1c372d34a","datePublished":"2026-06-08"},{"@type":"ImageObject","position":11,"name":"Thorfinn Karlsefni","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780918474836_Thorfinn_Karlsefni__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780918474836_Thorfinn_Karlsefni__t300.webp","url":"https://digiartz.net/artwork/aa976152-d904-4955-b83b-6b9e4a41717d","datePublished":"2026-06-08"},{"@type":"ImageObject","position":12,"name":"Natsuki Subaru","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780902931537_Natsuki_Subaru__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780902931537_Natsuki_Subaru__t300.webp","url":"https://digiartz.net/artwork/641b7af6-922c-4726-b1b6-53fc53f92fcf","datePublished":"2026-06-08"},{"@type":"ImageObject","position":13,"name":"Crimson Horizon","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780836584964_Crimson_Horizon__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780836584964_Crimson_Horizon__t300.webp","url":"https://digiartz.net/artwork/44576437-ac6e-4be5-882b-98273b7ec8d7","datePublished":"2026-06-07"},{"@type":"ImageObject","position":14,"name":"Reinhard van Astrea","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780766256380_Reinhard_van_Astrea__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780766256380_Reinhard_van_Astrea__t300.webp","url":"https://digiartz.net/artwork/8a7f8e72-71ed-4d0a-8d44-712af28449b7","datePublished":"2026-06-06"},{"@type":"ImageObject","position":15,"name":"Subaru Natsuki","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780766222807_Subaru_Natsuki__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780766222807_Subaru_Natsuki__t300.webp","url":"https://digiartz.net/artwork/12bc412e-1c62-4dec-a007-278d9f129a3e","datePublished":"2026-06-06"},{"@type":"ImageObject","position":16,"name":"Natsuki Subaru","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780674011083_Natsuki_Subaru__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780674011083_Natsuki_Subaru__t300.webp","url":"https://digiartz.net/artwork/6b632969-253a-4510-9ec8-da2c4eee7f17","datePublished":"2026-06-05"},{"@type":"ImageObject","position":17,"name":"Mountain Field","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501989833_Mountain_Field__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501989833_Mountain_Field__t300.webp","url":"https://digiartz.net/artwork/d5e258ad-ce58-44d1-a280-b05f0d349436","datePublished":"2026-06-03"},{"@type":"ImageObject","position":18,"name":"Kirigiri Execution","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501850798_Kirigiri_Execution__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501850798_Kirigiri_Execution__t300.webp","url":"https://digiartz.net/artwork/7b77294f-a857-4795-9903-e7b4a7df24ff","datePublished":"2026-06-03"},{"@type":"ImageObject","position":19,"name":"Kaoruko Waguri","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501817488_Kaoruko_Waguri__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501817488_Kaoruko_Waguri__t300.webp","url":"https://digiartz.net/artwork/219ef20a-ab00-4b7b-b9a0-961ec78954d6","datePublished":"2026-06-03"},{"@type":"ImageObject","position":20,"name":"Koenigsegg Jesko Absolute","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501758632_Koenigsegg_Jesko_Absolute__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501758632_Koenigsegg_Jesko_Absolute__t300.webp","url":"https://digiartz.net/artwork/a8de271d-413a-476b-acca-5c31e89dcbc2","datePublished":"2026-06-03"},{"@type":"ImageObject","position":21,"name":"Cute Anime Girl","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501723126_Cute_Anime_Girl__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501723126_Cute_Anime_Girl__t300.webp","url":"https://digiartz.net/artwork/ade6dc20-0b1c-4fa9-8a34-a6f897c8fcdd","datePublished":"2026-06-03"},{"@type":"ImageObject","position":22,"name":"Melissa Moretti","contentUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501669939_Melissa_Moretti__f1600.webp","thumbnailUrl":"https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1780501669939_Melissa_Moretti__t300.webp","url":"https://digiartz.net/artwork/cf63b47e-af6f-4875-b104-f0f7a431a56a","datePublished":"2026-06-03"}]}
   </script>
@@ -124,8 +154,8 @@
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
-  <link rel="stylesheet" href="/css/base.css?v=5">
-  <link rel="stylesheet" href="/css/hero.css?v=93">
+  <link rel="stylesheet" href="/css/base.css?v=6">
+  <link rel="stylesheet" href="/css/hero.css?v=94">
   <link rel="stylesheet" href="/css/viewer.css?v=14">
   <link rel="stylesheet" href="/css/community.css?v=11">
   <link rel="stylesheet" href="/css/connect.css?v=3">
@@ -147,30 +177,48 @@
    <div class="iTxt">LOADING</div>
   </div>
   <div id="sBanner"></div>
+  <!-- The primary navigation, and now genuinely navigation: Home, Gallery and
+       Community are anchors with real addresses rather than buttons that only
+       a script can answer. The panels they open are unchanged — js/routes.js
+       hears the click, cancels the navigation and calls the same bnGo*
+       function the onclick used to — so nothing about how this behaves has
+       moved. What has moved is that the destinations now exist without a
+       script: they are in the sitemap, they can be shared, and a crawler can
+       follow them.
+
+       Upload keeps its button. It is an action behind a sign-in gate, not a
+       public destination, and it has no url for the same reason the cart and
+       the settings sheet have none. -->
   <nav id="bnNav" aria-label="Primary navigation">
-   <button class="bnItem" id="bnHome" onclick="bnGoHome()" title="Home" aria-label="Home">
+   <a class="bnItem" id="bnHome" href="/" title="Home" aria-label="Home">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h4.5v-6h2v6H17.5a1 1 0 0 0 1-1v-9"/></svg>
     <span class="bnLabel">Home</span>
-   </button>
-   <button class="bnItem" id="bnGallery" onclick="bnGoGallery()" title="Gallery" aria-label="Gallery">
+   </a>
+   <a class="bnItem" id="bnGallery" href="/explore" title="Explore" aria-label="Explore the gallery">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
     <span class="bnLabel">Gallery</span>
-   </button>
+   </a>
    <button class="bnItem" id="bnUpload" onclick="bnGoUpload()" title="Upload" aria-label="Upload artwork">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     <span class="bnLabel">Upload</span>
    </button>
-   <button class="bnItem" id="bnCommunity" onclick="bnGoCommunity()" title="Community" aria-label="Community">
+   <a class="bnItem" id="bnCommunity" href="/community" title="Community" aria-label="Community">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
     <span class="bnLabel">Community</span>
-   </button>
+   </a>
    <div class="bnItem bnProfile" id="bnProfile">
-    <button class="nLoginBtn" id="navLoginBtn" onclick="bnGoProfile(event)" title="Login" aria-label="Login">
+    <!-- The sign-in control keeps its handler and gains an address. The
+         handler is what decides between the sheet and your own profile, so it
+         stays in charge; returning false cancels the navigation, and
+         js/routes.js stands down when a click has already been handled. Signed
+         out this is the /login link; signed in it is swapped for the avatar
+         button beside it, which goes to a profile and not to a public url. -->
+    <a class="nLoginBtn" id="navLoginBtn" href="/login" onclick="bnGoProfile(event); return false;" title="Log in" aria-label="Log in">
      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
       <circle cx="12" cy="8" r="3.5"/>
       <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7"/>
      </svg>
-    </button>
+    </a>
     <button class="nAvatarBtn" id="navAvatarBtn"
       onclick="bnGoProfile(event)"
       title="Profile"
@@ -208,40 +256,45 @@
   </section>
 
 
-  <!-- quick links -->
+  <!-- Quick links. The six destinations that have a url of their own are
+       anchors carrying it; the rest — Upload, Ranking, Level, Subscription,
+       Cart, Theme — stay buttons, because each of those is one member's own
+       page or one member's own basket and has no public address to give.
+       js/routes.js answers the anchors and js/sections.js still answers the
+       buttons, and both end up in qlGo either way. -->
   <section id="quickLinks" aria-label="Explore DigiArtz">
     <div class="qlWrap">
       <div class="qlRail" id="qlRail">
-        <button class="qlItem" type="button" style="--qlC:#22D3EE;--qlL:#178D9F" onclick="qlGo('artworks')">
+        <a class="qlItem" href="/explore" style="--qlC:#22D3EE;--qlL:#178D9F">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span>
           <span class="qlTitle">Artworks</span>
           <span class="qlDesc">Discover art from top creators</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#22C55E;--qlL:#199446" onclick="qlGo('marketplace')">
+        </a>
+        <a class="qlItem" href="/marketplace" style="--qlC:#22C55E;--qlL:#199446">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
           <span class="qlTitle">Marketplace</span>
           <span class="qlDesc">Buy and sell digital products</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#A78BFA;--qlL:#8972CD" onclick="qlGo('resources')">
+        </a>
+        <a class="qlItem" href="/resources" style="--qlC:#A78BFA;--qlL:#8972CD">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c-1.8-1.3-4-2-6.5-2H3v13h2.5c2.5 0 4.7.7 6.5 2 1.8-1.3 4-2 6.5-2H21V5h-2.5C16 5 13.8 5.7 12 7z"/><path d="M12 7v13"/></svg></span>
           <span class="qlTitle">Resources</span>
           <span class="qlDesc">Learn, grow and level up your skills</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#3B82F6;--qlL:#397EEF" onclick="qlGo('blog')">
+        </a>
+        <a class="qlItem" href="/blog" style="--qlC:#3B82F6;--qlL:#397EEF">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg></span>
           <span class="qlTitle">Blog</span>
           <span class="qlDesc">Insights, tutorials and artist stories</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#F97316;--qlL:#CF5F12" onclick="qlGo('jobs')">
+        </a>
+        <a class="qlItem" href="/jobs" style="--qlC:#F97316;--qlL:#CF5F12">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M2 13h20"/></svg></span>
           <span class="qlTitle">Jobs</span>
           <span class="qlDesc">Find work and grow your career</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#F43F5E;--qlL:#EA3C5A" onclick="qlGo('community')">
+        </a>
+        <a class="qlItem" href="/community" style="--qlC:#F43F5E;--qlL:#EA3C5A">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
           <span class="qlTitle">Community</span>
           <span class="qlDesc">Connect, share and collaborate</span>
-        </button>
+        </a>
         <button class="qlItem" type="button" style="--qlC:#6366F1;--qlL:#6366F1" onclick="qlGo('upload')">
           <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg></span>
           <span class="qlTitle">Upload</span>
@@ -1272,6 +1325,30 @@
       </div>
 
       <div class="ftCols">
+
+        <!-- Every public destination on the site, in one place, as plain
+             anchors with the words a visitor would search for. The bottom nav
+             carries four of these and the quick links rail carries six, but
+             both of those live above the fold and neither is a complete list;
+             this is the one block that names all of them together, which is
+             what makes it worth having for a reader skimming for a section and
+             for a crawler working out how the site is organised.
+
+             No handlers on any of them. js/routes.js hears the click and opens
+             the panel; with the script gone the browser follows the href and
+             the page boots into the same section. -->
+        <div class="ftCol">
+          <div class="ftColHead">Browse</div>
+          <ul class="ftColList">
+            <li><a class="ftColLink" href="/explore">Explore digital art</a></li>
+            <li><a class="ftColLink" href="/marketplace">Marketplace</a></li>
+            <li><a class="ftColLink" href="/community">Community</a></li>
+            <li><a class="ftColLink" href="/resources">Resources for artists</a></li>
+            <li><a class="ftColLink" href="/blog">Blog</a></li>
+            <li><a class="ftColLink" href="/jobs">Art &amp; design jobs</a></li>
+            <li><a class="ftColLink" href="/login">Log in</a></li>
+          </ul>
+        </div>
 
         <div class="ftCol">
           <div class="ftColHead">Legal</div>
@@ -2719,7 +2796,7 @@
   <script src="/js/avatar.js?v=3"></script>
   <script src="/js/pfedit.js?v=10"></script>
   <script src="/js/mywork.js?v=20"></script>
-  <script src="/js/startup.js?v=5"></script>
+  <script src="/js/startup.js?v=6"></script>
   <script src="/js/tagrail.js?v=3"></script>
   <script src="/js/search.js?v=10"></script>
   <script src="/js/feed.js?v=3"></script>
@@ -3277,7 +3354,10 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=9"></script>
 
 
-  <script src="/js/sections.js?v=111"></script>
+  <script src="/js/sections.js?v=112"></script>
+  <!-- The url of every public section, and the panel each one opens. After
+       sections.js, whose qlGo and hero call-to-action hand over to it. -->
+  <script src="/js/routes.js?v=1"></script>
 
   <script src="/js/navprogress.js?v=5"></script>
 

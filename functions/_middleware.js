@@ -78,10 +78,121 @@ async function fetchArtworks(env) {
   } catch { return []; }
 }
 
+// the public sections
+
+/* One entry per public destination that is a panel in the app rather than a
+   document of its own. The panels are unchanged — js/routes.js opens the same
+   ones the buttons always opened — but each now has a url, and a url with the
+   home page's title, description and canonical on it is a url Google reads as
+   the home page. This table is what makes each one its own page.
+
+   Keep it in step with the ROUTES table in js/routes.js, the fallbacks in
+   _redirects and the cache rules in _headers: a path in one list and not the
+   others is either a 404 or a page wearing the wrong name. */
+const SECTIONS = {
+  '/explore': {
+    crumb: 'Explore',
+    title: 'Explore Digital Art — DigiArtz',
+    desc: 'Browse digital artwork from the DigiArtz community — character illustration, ' +
+          'fan art, concept art, landscapes, vehicles and original work from artists worldwide.',
+    ld: 'CollectionPage'
+  },
+  '/marketplace': {
+    crumb: 'Marketplace',
+    title: 'Marketplace — Buy and Sell Digital Art on DigiArtz',
+    desc: 'Buy and sell digital art and creative assets on DigiArtz: artwork, prints, ' +
+          'brushes, templates, UI kits, 3D models and commissions from independent artists.',
+    ld: 'CollectionPage'
+  },
+  '/community': {
+    crumb: 'Community',
+    title: 'Community — DigiArtz',
+    desc: 'Join the DigiArtz community. Talk with other digital artists, share work in ' +
+          'progress, swap feedback and find people to collaborate with.',
+    ld: 'CollectionPage'
+  },
+  '/resources': {
+    crumb: 'Resources',
+    title: 'Resources for Digital Artists — DigiArtz',
+    desc: 'Resources for digital artists on DigiArtz: brushes, textures, fonts, references, ' +
+          'colour palettes, mockups, templates and tutorials shared by the community.',
+    ld: 'CollectionPage'
+  },
+  '/blog': {
+    crumb: 'Blog',
+    title: 'Blog — Tutorials and Artist Stories — DigiArtz',
+    desc: 'Tutorials, artist spotlights, interviews, reviews and news from the DigiArtz ' +
+          'digital art community.',
+    ld: 'CollectionPage'
+  },
+  '/jobs': {
+    crumb: 'Jobs',
+    title: 'Art and Design Jobs — DigiArtz',
+    desc: 'Freelance, remote, contract and full-time openings for digital artists, ' +
+          'illustrators and designers, posted on DigiArtz.',
+    ld: 'CollectionPage'
+  },
+  '/login': {
+    crumb: 'Log in',
+    title: 'Log in to DigiArtz',
+    desc: 'Sign in to your DigiArtz account to upload artwork, sell in the marketplace, ' +
+          'join communities and follow other artists.',
+    // A sign-in form is a page, not a collection, and it is the one entry here
+    // with nothing behind it to collect.
+    ld: 'WebPage'
+  }
+};
+
 // route resolution
 
 const PROFILE_RE = /^\/profile\/([^/]+)\/?$/;
 const ARTWORK_RE = /^\/artwork\/([^/]+)\/?$/;
+const ITEM_RE    = /^\/(resource|blog|listing|job)\/([^/]+)\/?$/;
+
+/* The four section item types, by the url segment each one is published under.
+   `parent` is the section index the item belongs beneath, which is what makes
+   /marketplace → /listing/<id> a hierarchy rather than two unrelated pages.
+
+   `select` asks for the columns the anon key is granted and no more. Several
+   of these tables revoke a column from anon at the grant level — a marketplace
+   listing's price and file url among them — and asking for one of those fails
+   the whole query rather than returning null, so this list is deliberately
+   short: it is what a search result needs and nothing else.
+
+   `eq` is the same visibility filter the app's own lists use. An item that
+   does not match is not deleted — a hidden listing stays reachable by its own
+   link, which is the point of hiding rather than unpublishing — it is simply
+   not something to put in an index, so it comes back unresolved and the page
+   is marked noindex below. */
+const ITEMS = {
+  resource: {
+    table: 'resources', parent: '/resources', crumb: 'Resources', vis: 'visibility=eq.published&status=eq.approved',
+    select: 'id,title,summary,preview_url,created_at', ld: 'CreativeWork'
+  },
+  blog: {
+    table: 'blog_posts', parent: '/blog', crumb: 'Blog',
+    vis: 'visibility=eq.published&status=eq.approved',
+    select: 'id,title,excerpt,cover_url,seo_title,seo_description,published_at,created_at',
+    ld: 'BlogPosting'
+  },
+  listing: {
+    table: 'marketplace_items', parent: '/marketplace', crumb: 'Marketplace',
+    vis: 'visibility=eq.published&status=eq.approved',
+    select: 'id,title,summary,preview_url,seo_title,seo_description,created_at',
+    ld: 'CreativeWork'
+  },
+  job: {
+    table: 'jobs', parent: '/jobs', crumb: 'Jobs',
+    vis: 'visibility=eq.public&status=eq.approved',
+    select: 'id,title,company,description,created_at',
+    // Deliberately not JobPosting. That type is worth having and is worth
+    // having correctly — datePosted, validThrough, hiringOrganization,
+    // jobLocation and employmentType all carry policy — and a half-filled one
+    // is worse than none. WebPage is the honest description of what this is
+    // until the full set is mapped.
+    ld: 'WebPage'
+  }
+};
 
 // safe username charset
 const SAFE_NAME = /^[\p{L}\p{N}._-]{1,40}$/u;
@@ -94,6 +205,36 @@ const UUID_RE   = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 
 // resolve a path
 async function resolve(env, pathname) {
+  // The section indexes are static text — no row to look up, so no round trip
+  // to discover that.
+  const sec = SECTIONS[pathname.replace(/(.)\/$/, '$1')];
+  if (sec) return { type: 'section', status: 'found', sec, path: pathname.replace(/(.)\/$/, '$1') };
+
+  const im = pathname.match(ITEM_RE);
+  if (im) {
+    const cfg = ITEMS[im[1]];
+    if (!cfg) return { type: 'other', status: 'found' };
+    if (!env || !env.SB_URL || !env.SB_KEY) return { type: 'item', status: 'unknown', cfg };
+    let raw;
+    try { raw = decodeURIComponent(im[2]); } catch { return { type: 'other', status: 'found' }; }
+    // Every one of these tables keys on a uuid, so anything else is not an id
+    // that could exist — and handing it to PostgREST is a 400 rather than an
+    // empty result. It is also the whole of the injection guard on the query
+    // below: nothing but a uuid ever reaches it.
+    if (!UUID_RE.test(raw)) return { type: 'item', status: 'gone', cfg, seg: im[1] };
+    try {
+      const rows = await sbGet(env,
+        `${cfg.table}?select=${cfg.select}&id=eq.${raw}&${cfg.vis}&limit=1`,
+        ROW_CACHE_SECONDS);
+      // Not published, or not there at all. This one is deliberately NOT a
+      // 404: a hidden listing is reachable by its own link on purpose, and
+      // that link has been shared. The page is served, kept out of the index,
+      // and left carrying its own address rather than the home page's.
+      if (!rows.length) return { type: 'item', status: 'unlisted', cfg, seg: im[1], id: raw };
+      return { type: 'item', status: 'found', cfg, seg: im[1], row: rows[0] };
+    } catch { return { type: 'item', status: 'unknown', cfg }; }
+  }
+
   const pm = pathname.match(PROFILE_RE);
   const am = pathname.match(ARTWORK_RE);
   if (!pm && !am) return { type: 'other', status: 'found' };
@@ -211,6 +352,105 @@ function profileMeta(row) {
   };
 }
 
+// A trail back up to the home page, on every page that has one. It is the
+// cheapest way to tell a crawler that /listing/<id> sits under /marketplace
+// which sits under /, and it is the same trail the app's own back button walks.
+function crumbs(trail) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [{ name: 'Home', url: `${SITE}/` }, ...trail].map((c, i) => ({
+      '@type': 'ListItem', position: i + 1, name: c.name, item: c.url
+    }))
+  };
+}
+
+function sectionMeta(path, sec) {
+  const url = `${SITE}${path}`;
+  return {
+    title: sec.title,
+    desc: sec.desc,
+    url,
+    // The section indexes have no single image of their own — the grid behind
+    // them changes by the hour — so the site card stands, which is what the
+    // document already carries.
+    img: '',
+    imgAlt: `${sec.crumb} on DigiArtz`,
+    ogType: 'website',
+    ld: [
+      {
+        '@context': 'https://schema.org',
+        '@type': sec.ld,
+        name: sec.title,
+        description: sec.desc,
+        url,
+        isPartOf: { '@type': 'WebSite', name: 'DigiArtz', url: `${SITE}/` }
+      },
+      crumbs([{ name: sec.crumb, url }])
+    ],
+    ldId: 'ldSection'
+  };
+}
+
+function itemMeta(seg, cfg, row) {
+  const url = `${SITE}/${seg}/${row.id}`;
+  const name = row.seo_title || row.title || 'Untitled';
+  const body = row.seo_description || row.summary || row.excerpt || row.description || '';
+  const img = ogImage(row.preview_url || row.cover_url || '') || '';
+  const date = (row.published_at || row.created_at || '').slice(0, 10);
+  const desc = clamp(body || `${name} — ${cfg.crumb.toLowerCase()} on DigiArtz.`);
+  // The company is part of what a job posting IS, so it belongs in the title
+  // where a searcher reads it rather than only in the body.
+  const title = seg === 'job' && row.company
+    ? `${name} at ${row.company} — DigiArtz`
+    : `${name} — DigiArtz`;
+
+  return {
+    title,
+    desc,
+    url,
+    img,
+    imgAlt: name,
+    ogType: seg === 'blog' ? 'article' : 'website',
+    ld: [
+      {
+        '@context': 'https://schema.org',
+        '@type': cfg.ld,
+        ...(cfg.ld === 'BlogPosting' ? { headline: name } : { name }),
+        description: desc,
+        url,
+        ...(date ? { datePublished: date } : {}),
+        ...(img ? { image: img } : {}),
+        isPartOf: { '@type': 'WebSite', name: 'DigiArtz', url: `${SITE}/` }
+      },
+      crumbs([
+        { name: cfg.crumb, url: `${SITE}${cfg.parent}` },
+        { name, url }
+      ])
+    ],
+    ldId: 'ldItem'
+  };
+}
+
+// An item that is real enough for the app to open and not public enough to
+// index: a hidden listing, an unpublished draft, a posting that has been taken
+// down. It keeps its own canonical — pointing it at the home page would be a
+// lie about what is here — and is told plainly not to be indexed.
+function unlistedMeta(seg, cfg, id) {
+  const url = `${SITE}/${seg}/${id}`;
+  return {
+    title: `${cfg.crumb} — DigiArtz`,
+    desc: `${cfg.crumb} on DigiArtz.`,
+    url,
+    img: '',
+    imgAlt: 'DigiArtz',
+    ogType: 'website',
+    robots: 'noindex, follow',
+    ld: crumbs([{ name: cfg.crumb, url: `${SITE}${cfg.parent}` }]),
+    ldId: 'ldItem'
+  };
+}
+
 // rewrite head tags in place
 function applyMeta(rw, m) {
   const set = (sel, val) => rw.on(sel, {
@@ -235,6 +475,11 @@ function applyMeta(rw, m) {
 
   set('meta[name="twitter:title"]', m.title);
   set('meta[name="twitter:description"]', m.desc);
+
+  // Only when the page asks for one. The document's own directive is
+  // "index, follow, max-image-preview:large" and that is the right answer for
+  // everything here except an item that is not published.
+  if (m.robots) set('meta[name="robots"]', m.robots);
 
   // client looks this up by id
   const json = JSON.stringify(m.ld).replace(/<\//g, '<\\/');
@@ -287,11 +532,25 @@ export async function onRequest(context) {
   const arts = await fetchArtworks(env);
   const meta = hit.status === 'found' && hit.type === 'artwork' ? artworkMeta(hit.row, hit.artist)
              : hit.status === 'found' && hit.type === 'profile' ? profileMeta(hit.row)
+             : hit.type === 'section' ? sectionMeta(hit.path, hit.sec)
+             : hit.status === 'found' && hit.type === 'item' ? itemMeta(hit.seg, hit.cfg, hit.row)
+             : hit.status === 'unlisted' ? unlistedMeta(hit.seg, hit.cfg, hit.id)
              : null;
 
   if (!arts.length && !meta) return origin;   // nothing to say, pass through
 
+  // The home page's gallery is the home page's. It is described once, at '/',
+  // and nowhere else: the same ImageGallery block repeated on /marketplace and
+  // on every artwork page said each of those urls WAS that gallery, at the url
+  // of a different page. The cards below still go into every route — they are
+  // real links to real artworks and are how a crawler walks off any page into
+  // the collection — but the claim about what the page is stays at home.
+  const home = pathname === '/' || pathname === '/index.html';
+
   let rw = new HTMLRewriter();
+
+  // Elsewhere the block baked into index.html is the same claim, so it goes.
+  if (!home) rw = rw.on('script#ldGallery', { element(el) { el.remove(); } });
 
   if (arts.length) {
     const cards = arts.map((a) =>
@@ -311,14 +570,15 @@ export async function onRequest(context) {
       }))
     }).replace(/<\//g, '<\\/');
 
-    rw = rw
-      .on('div#awGrid', {
-        element(el) { el.setInnerContent(cards, { html: true }); }
-      })
-      // overwrite, never append
-      .on('script#ldGallery', {
+    rw = rw.on('div#awGrid', {
+      element(el) { el.setInnerContent(cards, { html: true }); }
+    });
+    // overwrite, never append
+    if (home) {
+      rw = rw.on('script#ldGallery', {
         element(el) { el.setInnerContent(galleryLd, { html: true }); }
       });
+    }
   }
 
   if (meta) rw = applyMeta(rw, meta);

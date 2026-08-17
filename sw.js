@@ -4,6 +4,38 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v183 — a profile shows its own member's work, once.
+       Two bugs, one cause. Opening a profile empties every ARRAY the page is
+       drawn from — gallery rows, album strip, the three section lists — and
+       left the drawn panels in the document, holding whoever was opened last.
+       Both only bit on a profile that had been opened before, because the
+       warm path is the one that skipped the clear, which is why both looked
+       like caching.
+       The gallery multiplied. Its pager appends a page rather than replacing
+       the grid, and the id-dedupe it appends through was reset a line above,
+       so a second open drew page one underneath page one. Measured against
+       the real page with a stubbed backend: six artworks became twelve on the
+       second open and eighteen on the third. Six, six, six now.
+       The other tabs showed the wrong member's. Every on-demand tab starts
+       `if(!pf.profile) return`, and pf.profile is null from the moment a
+       profile is opened until its row arrives — so a tab tapped in that
+       window returned before clearing anything, and the previous member's
+       Likes and Bookmarks covers stayed on screen under this profile's name,
+       permanently, because nothing re-ran the loader afterwards. The About
+       tab was worse: it is painted from the row rather than fetched, so it
+       had no loader to clear it at all and showed the last profile's bio,
+       links and merit.
+       Fixed where the state it mirrors is emptied: the panels are cleared on
+       every open, on both paths. Two things go with it — the tab that was
+       opened before the row landed is loaded when it lands, so it fills in
+       instead of sitting empty; and the three section loaders now check whose
+       profile they were fetched for before painting, the way the album strip
+       and the gallery pager always have. Without that, opening one profile,
+       tapping Resources and opening another before the reply arrived painted
+       the first member's work into the second member's tab and set the loaded
+       flag, so the right rows were never fetched.
+       Changed: index.html, sw.js, js/profile.js.
+
    v182 — what a Max subscription actually buys.
        Max was a bigger download allowance and a badge. It is five things now,
        and the three that could be lied about are decided in the database:
@@ -3253,7 +3285,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v182';
+const CACHE_VERSION = 'v183';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3342,7 +3374,7 @@ const SHELL_URLS = [
   '/js/protect.js?v=3',
   '/js/gallery.js?v=85',
   '/js/auth.js?v=14',
-  '/js/profile.js?v=13',
+  '/js/profile.js?v=14',
   '/js/albums.js?v=16',
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',

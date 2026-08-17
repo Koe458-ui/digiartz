@@ -974,7 +974,7 @@
     var sb2 = $('anSub');
     if (sb2) sb2.textContent = sc.sub;
     var ttl = document.querySelector('#anPage .subPgTitle');
-    if (ttl) ttl.textContent = sc.title;
+    if (ttl) { ttl.textContent = sc.title; measureHeader(); }
     var pg = $('anPage');
     if (pg) pg.setAttribute('aria-label', sc.title.toLowerCase());
     paintOverview();
@@ -2184,11 +2184,23 @@
   // The chip row sits under the page header, and the header is not the same
   // height on a phone as on a desktop. Measured rather than hardcoded, so the
   // chips never hide behind it or float below a gap.
+  //
+  // Measured more than once, because the header is not its final height at the
+  // moment the page opens: the title is still the one in the markup until the
+  // first paint replaces it, and the webfont it is set in may not have arrived
+  // yet. Either can move the header by a line or by a pixel, and a stale
+  // number leaves exactly the seam of scrolling page the opaque bars are there
+  // to close. Setting the same value twice costs nothing.
+  // Rounded down, never up. A header is 53.8 tall as often as it is 54, and
+  // the half pixel decides which of two things happens: down, and the chip row
+  // is stuck a fraction too high, where the header covers it and nobody can
+  // tell; up, and it is stuck a fraction too low, which is a crack of moving
+  // page between the two bars — thin, but bright enough to read as a gap.
   function measureHeader() {
     var pg = $('anPage');
     if (!pg) return;
     var hdr = pg.querySelector('.subPgHdr');
-    if (hdr) pg.style.setProperty('--an-hdr', Math.round(hdr.getBoundingClientRect().height) + 'px');
+    if (hdr) pg.style.setProperty('--an-hdr', Math.floor(hdr.getBoundingClientRect().height) + 'px');
   }
 
   /* ---- the full list, on a page of its own -------------------------------
@@ -2252,7 +2264,7 @@
     void pg.offsetWidth;
     pg.style.transform = 'translateX(0)';
     var hdr = pg.querySelector('.subPgHdr');
-    if (hdr) pg.style.setProperty('--an-hdr', Math.round(hdr.getBoundingClientRect().height) + 'px');
+    if (hdr) pg.style.setProperty('--an-hdr', Math.floor(hdr.getBoundingClientRect().height) + 'px');
     paintAnList();
     pg.scrollTop = 0;
   }
@@ -2441,6 +2453,9 @@
     pg.classList.add('open');
     document.body.style.overflow = 'hidden';
     measureHeader();
+    if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+      document.fonts.ready.then(function () { if (state.open) measureHeader(); });
+    }
     loadMyName();
     load(true);
     startLive();

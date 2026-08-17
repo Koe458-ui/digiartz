@@ -4,6 +4,156 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v183 — a profile shows its own member's work, once.
+       Two bugs, one cause. Opening a profile empties every ARRAY the page is
+       drawn from — gallery rows, album strip, the three section lists — and
+       left the drawn panels in the document, holding whoever was opened last.
+       Both only bit on a profile that had been opened before, because the
+       warm path is the one that skipped the clear, which is why both looked
+       like caching.
+       The gallery multiplied. Its pager appends a page rather than replacing
+       the grid, and the id-dedupe it appends through was reset a line above,
+       so a second open drew page one underneath page one. Measured against
+       the real page with a stubbed backend: six artworks became twelve on the
+       second open and eighteen on the third. Six, six, six now.
+       The other tabs showed the wrong member's. Every on-demand tab starts
+       `if(!pf.profile) return`, and pf.profile is null from the moment a
+       profile is opened until its row arrives — so a tab tapped in that
+       window returned before clearing anything, and the previous member's
+       Likes and Bookmarks covers stayed on screen under this profile's name,
+       permanently, because nothing re-ran the loader afterwards. The About
+       tab was worse: it is painted from the row rather than fetched, so it
+       had no loader to clear it at all and showed the last profile's bio,
+       links and merit.
+       Fixed where the state it mirrors is emptied: the panels are cleared on
+       every open, on both paths. Two things go with it — the tab that was
+       opened before the row landed is loaded when it lands, so it fills in
+       instead of sitting empty; and the three section loaders now check whose
+       profile they were fetched for before painting, the way the album strip
+       and the gallery pager always have. Without that, opening one profile,
+       tapping Resources and opening another before the reply arrived painted
+       the first member's work into the second member's tab and set the loaded
+       flag, so the right rows were never fetched.
+       Changed: index.html, sw.js, js/profile.js.
+
+   v182 — what a Max subscription actually buys.
+       Max was a bigger download allowance and a badge. It is five things now,
+       and the three that could be lied about are decided in the database:
+       the seller keeps 90% of a sale instead of 85% (a rate in
+       platform_tax_config, read at the moment the earning is written and
+       frozen into the row), a Max member may own one community beyond
+       whatever their level earns them, and that community goes quiet three
+       days after the subscription does — the state is the owner's expiry
+       compared with now(), so there is no job to run and renewing reopens
+       the room in the same instant. The other two are size ceilings, and
+       they live with the signer that refuses the bytes: 25MB on an artwork
+       instead of 20, and 400MB on a product file instead of 200.
+       Ads are the fifth. The AdSense script left <head>, where it loaded on
+       every visit before anybody had asked for an ad; js/effects.js fetches
+       it the first time a member who HAS ads opens the Sponsor panel, and a
+       Max member never fetches it at all.
+       One table decides all of it on this side — DZ_TIER_LIMITS in
+       js/app-core.js — and one function answers "which tier is this",
+       expiry included. That mattered more than it looks: userPlan was
+       profiles.subscription_tier as stored, which keeps saying 'max' the
+       morning after a subscription lapses. Every client-side gate asks
+       dzTier() now, which is the same rule dz_effective_tier() has always
+       applied on the server.
+       The subscription page gained a comparison table between the last plan
+       card and the FAQ: nine rows, four columns, every one of them a thing
+       this repository actually enforces. Rules and nothing else — no box, no
+       corners, no vertical dividers, and the lines run the full width of the
+       screen. It scrolls sideways on a phone with the feature column pinned,
+       and sits still on anything wider.
+       Gone with it: the Subscription Coming Soon modal — markup, three
+       functions nothing had called since payments went live, its keyframes,
+       three stylesheet blocks and a hit-target selector.
+       NOT deployed by this release: the 400MB ceiling also needs
+       supabase/functions/smart-function deployed. Production is on v25 of
+       that function, which predates the v21 delete-authorisation fix in this
+       repository, so deploying ships that too — a decision worth making on
+       purpose rather than as a side effect of a size limit.
+       Changed: index.html, sw.js, css/panels.css, css/community.css,
+       css/overrides.css, js/app-core.js, js/auth.js, js/albums.js,
+       js/drafts.js, js/sections.js, js/mywork.js, js/effects.js,
+       js/search.js, js/pfedit.js, functions/api/store.js,
+       supabase/functions/smart-function/index.ts,
+       supabase/migrations/20260820_max_tier_benefits.sql (new),
+       supabase/migrations/20260821_max_asset_ceiling.sql (new).
+
+   v181 — resources get the SEO the other three sections have. v180 said
+       Resources was untouched because the table had no column to write to.
+       It has three now — seo_title, seo_description and slug, nullable, with
+       the same length checks their siblings carry and the column-level grants
+       this table gives everything else, in
+       supabase/migrations/20260819_resources_seo.sql. The migration is
+       applied; it has to land before this build does, because the columns
+       have to exist for the insert to be accepted.
+       The form does not ask for any of them. The automatic card it already
+       showed — format, size, file count, resolution, all read off the
+       package — carries three more rows read off the form instead, from the
+       same two functions every other section uses, with the same
+       summary-then-description fallback the marketplace has. And
+       functions/_middleware.js selects the pair for a resource now, so a
+       shared resource link carries the snippet the row stores rather than
+       falling back to the raw title every time.
+       Dead weight found on the way: the blog and marketplace feeds were
+       selecting seo_title, seo_description and slug on every row of every
+       page, and no screen in the app has ever read one — they are written
+       for search engines and read by the middleware, which fetches its own
+       copy server-side. Three text columns a row, dropped from both queries,
+       and never added to the resources one.
+       Changed: index.html, sw.js, js/sections.js, functions/_middleware.js,
+       supabase/migrations/20260819_resources_seo.sql (new).
+
+   v180 — one answer to "who writes the SEO", on every form that has any.
+       The artwork upload never asked for a search snippet: the title and the
+       opening of the description are what a search engine shows, cut to the
+       lengths the columns take, and the upload shows them back in a read-only
+       card as they are typed. The blog and the marketplace asked instead —
+       an SEO title box, an SEO description box, and on the marketplace a slug
+       box as well. Three boxes for values nobody should have to invent, each
+       with a floor that made a half-written one invalid, and the marketplace
+       stored whatever was typed with no fallback at all, so skipping the
+       boxes stored nothing and the listing went out with no snippet.
+       Both forms lost the boxes and gained the card the artwork upload has.
+       The marketplace had no automatic card at all and has one now, carrying
+       the pair and the slug; the blog's card carries them beside the slug and
+       the reading time it already showed. The values come from the same two
+       functions the publish path uses, so the card is not a second opinion.
+       Nothing about how they are generated changed, and no stored row does
+       either — only who is asked.
+       Dead code that went with it: both generators took a typed value to
+       prefer over the made one, and with no box left anywhere every caller
+       passed an empty string, so that parameter is gone; the field-icon map
+       kept entries for three fields that are no longer fields; and two
+       comments describing where the SEO lived were describing the old shape.
+       Resources and Jobs are untouched — neither table has an SEO column, so
+       neither form had anything to ask for or to fill in.
+       Changed: index.html, sw.js, js/sections.js, js/upqueue.js.
+
+   v179 — no seam between a bar and the row stuck under it. The profile's top
+       bar and its tabs, and the analytics header and its chip row, are two
+       bars stacked against the top of a page the content scrolls beneath.
+       Both were 92% backgrounds over a blur, and both drew their bottom edge
+       in a colour mixed into transparency — and a translucent hairline sits
+       outside the background layer, which covers the padding box and not the
+       border. So the join between the two bars took the colour of whatever
+       thumbnail was passing behind it: a bright line that changed as you
+       scrolled and read as a gap. All four fills are the page's own
+       background now, opaque, and the hairlines are mixed into that
+       background rather than into transparency. Nothing about the bars looks
+       different where there is nothing behind them.
+       Two smaller things in the same seam. The analytics chip row is stuck at
+       a measured header height, and the measurement rounded up — half a pixel
+       up is a crack of moving page between the bars, half a pixel down is
+       hidden under the header, so it rounds down. And it was measured once,
+       at open, while the title was still the one in the markup and the
+       webfont had not necessarily landed; it is measured again when the title
+       is painted and again when the fonts settle.
+       Changed: index.html, sw.js, css/profile.css, css/analytics.css,
+       js/analytics.js.
+
    v178 — the public sections have urls, so the shell has one more script.
        /explore, /marketplace, /community, /resources and /blog were panels
        reachable only by a click handler; each is an address now, with
@@ -3135,7 +3285,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v178';
+const CACHE_VERSION = 'v183';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3190,18 +3340,18 @@ const SHELL_URLS = [
   '/css/base.css?v=6',
   '/css/hero.css?v=94',
   '/css/viewer.css?v=14',
-  '/css/community.css?v=11',
+  '/css/community.css?v=12',
   '/css/connect.css?v=3',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=9',
+  '/css/profile.css?v=10',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
-  '/css/panels.css?v=4',
+  '/css/panels.css?v=5',
   '/css/upload.css?v=12',
   '/css/widgets.css?v=6',
-  '/css/overrides.css?v=12',
+  '/css/overrides.css?v=13',
   '/css/select.css?v=3',
-  '/css/analytics.css?v=5',
+  '/css/analytics.css?v=6',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.
@@ -3220,30 +3370,30 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=27',
+  '/js/app-core.js?v=28',
   '/js/protect.js?v=3',
   '/js/gallery.js?v=85',
-  '/js/auth.js?v=13',
-  '/js/profile.js?v=13',
-  '/js/albums.js?v=15',
-  '/js/drafts.js?v=7',
-  '/js/upqueue.js?v=6',
+  '/js/auth.js?v=14',
+  '/js/profile.js?v=14',
+  '/js/albums.js?v=16',
+  '/js/drafts.js?v=8',
+  '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=10',
-  '/js/mywork.js?v=20',
+  '/js/pfedit.js?v=11',
+  '/js/mywork.js?v=21',
   '/js/startup.js?v=6',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=10',
+  '/js/search.js?v=11',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
-  '/js/effects.js?v=6',
+  '/js/effects.js?v=7',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/analytics.js?v=6',
+  '/js/analytics.js?v=7',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=112',
+  '/js/sections.js?v=115',
   '/js/routes.js?v=1',
   '/js/navprogress.js?v=5'
 ];

@@ -171,7 +171,7 @@ const ITEM_RE    = /^\/(resource|blog|listing|job)\/([^/]+)\/?$/;
 const ITEMS = {
   resource: {
     table: 'resources', parent: '/resources', crumb: 'Resources', vis: 'visibility=eq.published&status=eq.approved',
-    select: 'id,title,summary,preview_url,created_at', ld: 'CreativeWork'
+    select: 'id,title,summary,preview_url,seo_title,seo_description,created_at', ld: 'CreativeWork'
   },
   blog: {
     table: 'blog_posts', parent: '/blog', crumb: 'Blog',

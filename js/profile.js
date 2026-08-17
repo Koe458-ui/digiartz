@@ -152,6 +152,39 @@
     pf.resLoaded=false; pf.mktLoaded=false; pf.blogLoaded=false; pf.resRows=[]; pf.mktRows=[]; pf.blogRows=[];
     // reset albums per profile
     pf.albumsLoaded=false; pf.albums=[];
+    /* And the panels themselves, which is the half this used to leave out.
+       Everything above empties the ARRAYS a panel is drawn from; the drawn
+       panel stayed in the document, holding the last profile opened.
+
+       It cost two bugs, both of which read as caching because both only
+       happened on a profile that had been opened before — the warm path is
+       the one that skipped the clear:
+
+       the gallery multiplied. Its loader appends a page rather than
+       replacing the grid, and the id-dedupe it appends through was reset one
+       line above. So a second open drew page one under page one, a third
+       drew it a third time, and every artwork appeared once per visit.
+
+       the other tabs showed the wrong member's work. A tab's loader starts
+       `if(!pf.profile) return`, and pf.profile is null from here until the
+       row lands, so tapping Albums in that window returned before the grid
+       was cleared and left the previous profile's Likes and Bookmarks
+       covers on screen, under this profile's name.
+
+       Emptied here, beside the state each one mirrors, so a panel and the
+       array behind it cannot disagree about whose profile this is. */
+    ['pfGalleryGrid','pfAlbumGrid','pfResGrid','pfBlogList','pfMktGrid','pfXpWrap',
+     'pfConnectList']
+      .forEach(function(id){ var e=document.getElementById(id); if(e) e.innerHTML=''; });
+    // About is painted from the row rather than fetched, so it has no loader
+    // to clear it and was showing the last profile's bio, links and merit
+    // under this profile's name for as long as the row took to arrive.
+    var _bio=document.getElementById('pfBioText'); if(_bio) _bio.textContent='';
+    var _mer=document.getElementById('pfStatMerit'); if(_mer) _mer.textContent='—';
+    // an empty-state belongs to the panel it sits under, and none of them has
+    // been answered for this profile yet
+    ['pfGalleryEmpty','pfAlbumEmpty','pfResEmpty','pfBlogEmpty','pfMktEmpty']
+      .forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
     // a profile's search results belong to that profile
     pfSearchReset();
     var _pgs=document.getElementById('pfGallerySentinel'); if(_pgs) _pgs.style.display='none';
@@ -174,8 +207,8 @@
       pfSwitchTab('gallery');
       pfPaintProfile(cachedRow, cachedRow.username, pushUrl);
     } else {
-      // first visit, show skeleton
-      var _xpW=document.getElementById('pfXpWrap'); if(_xpW) _xpW.innerHTML='';
+      // first visit, show skeleton. The panels were emptied above, on both
+      // paths — this branch only has the header left to blank.
       document.getElementById('pfUsername').textContent='Loading…';
       document.getElementById('pfAvatarLetter').textContent='?';
       document.getElementById('pfAvatarImg').style.display='none';
@@ -192,7 +225,6 @@
         DZ_MS.paintName(document.getElementById('pfUsername'), 0);
         DZ_MS.paintRibbon(document.getElementById('pfMsRibbon'), 0);
       }
-      document.getElementById('pfGalleryGrid').innerHTML='';
       pfSwitchTab('gallery');
     }
     try{
@@ -267,6 +299,9 @@
       pfLoadHeadStats();
       pfLoadActionRow();
       pfLoadMoreGallery();
+      // the row exists now, so a tab that was opened before it arrived and
+      // bailed out of its own loader gets the load it was waiting for
+      if(pf.tab && pf.tab !== 'gallery') pfLoadTab(pf.tab);
       if(pushUrl!==false && window.location.pathname !== '/profile/'+encodeURIComponent(username)){
         // where to put the address bar back when this closes
         pfReturnUrl = window.location.pathname + window.location.search;
@@ -360,7 +395,17 @@
       }
       if(pan) pan.classList.toggle('active', on);
     });
-    // on demand tabs
+    pfLoadTab(tab);
+  }
+
+  /* The four tabs that fetch when they are opened, and the one that needs the
+     row to exist first. Every one of them starts by checking pf.profile, which
+     is null from the moment a profile is opened until its row lands — so a tab
+     tapped in that window used to load nothing and never try again. It is
+     called from two places for that reason: when a tab is chosen, and when the
+     row arrives, whichever happens second. Each loader keeps its own loaded
+     flag, so being asked twice costs one call. */
+  function pfLoadTab(tab){
     if(tab==='progress' && typeof xpLoadInto==='function' && pf.profile){
       xpLoadInto('pfXpWrap', pf.profile.id, { leaderboard:true });
     }
@@ -429,10 +474,22 @@
     if(row && typeof window.dzOpenRow==='function') window.dzOpenRow(sec, row);
   }
 
+  /* Whose profile a tab is being loaded for, checked again when the reply
+     lands. All three of these await a query and then paint, and none of them
+     used to look up afterwards — so opening one profile, tapping Resources
+     and opening another before the reply arrived painted the first member's
+     work into the second member's tab, and set the loaded flag, so the right
+     rows were never fetched at all. The albums tab and the gallery pager have
+     always checked; these three are brought into line with them. */
+  function pfStillOn(forId){
+    return !!pf.profile && String(pf.profile.id) === String(forId);
+  }
+
   async function pfLoadResources(){
     if(!pf.profile || pf.resLoaded) return;
     var grid = document.getElementById('pfResGrid'), empty = document.getElementById('pfResEmpty');
     if(!grid) return;
+    var forId = String(pf.profile.id);
     if(empty) empty.style.display='none';
     grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
     try{
@@ -441,11 +498,13 @@
         .eq('user_id', pf.profile.id).eq('status','approved')
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
+      if(!pfStillOn(forId)) return;   // another profile owns this tab now
       var rows = data||[];
       pf.resLoaded=true; pf.resRows=rows;
       grid.innerHTML = rows.map(pfDzCard('resources')).join('');
       if(empty) empty.style.display = rows.length ? 'none' : '';
     }catch(e){
+      if(!pfStillOn(forId)) return;
       grid.innerHTML=''; if(empty) empty.style.display='';
       showToast('Couldn\u2019t load \u2014 try again');
     }
@@ -455,6 +514,7 @@
     if(!pf.profile || pf.mktLoaded) return;
     var grid = document.getElementById('pfMktGrid'), empty = document.getElementById('pfMktEmpty');
     if(!grid) return;
+    var forId = String(pf.profile.id);
     if(empty) empty.style.display='none';
     grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
     try{
@@ -466,12 +526,14 @@
         .eq('user_id', pf.profile.id).eq('status','approved')
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
+      if(!pfStillOn(forId)) return;   // another profile owns this tab now
       var rows = data||[];
       pf.mktLoaded=true; pf.mktRows=rows;
       grid.innerHTML = rows.map(pfDzCard('marketplace')).join('');
       if(typeof window.dzExtras === 'function') window.dzExtras();
       if(empty) empty.style.display = rows.length ? 'none' : '';
     }catch(e){
+      if(!pfStillOn(forId)) return;
       grid.innerHTML=''; if(empty) empty.style.display='';
       showToast('Couldn\u2019t load \u2014 try again');
     }
@@ -496,6 +558,7 @@
     if(!pf.profile || pf.blogLoaded) return;
     var host = document.getElementById('pfBlogList'), empty = document.getElementById('pfBlogEmpty');
     if(!host) return;
+    var forId = String(pf.profile.id);
     if(empty) empty.style.display='none';
     host.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
     try{
@@ -504,11 +567,13 @@
         .eq('user_id', pf.profile.id).eq('status','approved')
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
+      if(!pfStillOn(forId)) return;   // another profile owns this tab now
       var rows = data||[];
       pf.blogLoaded=true; pf.blogRows=rows;
       host.innerHTML = rows.map(pfBlogRow).join('');
       if(empty) empty.style.display = rows.length ? 'none' : '';
     }catch(e){
+      if(!pfStillOn(forId)) return;
       host.innerHTML=''; if(empty) empty.style.display='';
       showToast('Couldn\u2019t load \u2014 try again');
     }

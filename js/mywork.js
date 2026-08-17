@@ -256,6 +256,21 @@ function hideCommentThumbnail(){
       showToast('This community is coming soon');
       return;
     }
+    /* A community that exists on somebody's Max subscription goes quiet three
+       days after that subscription does. Asked here, before ANY of the state
+       below is touched: the header flips to chat mode a few lines down, and a
+       room that turns out to be locked would have left that header behind on
+       the community home with nothing under it. Nothing is mutated until the
+       room is known to be open. */
+    var state = await cmStateOf(id);
+    if(state.state === 'locked'){
+      showToast(state.mine
+        ? 'Your Max subscription ended — renew to reopen this community'
+        : 'This community is closed — its subscription ended');
+      if(state.mine && typeof openSubscription === 'function') openSubscription();
+      return;
+    }
+
     cpCurrentChannel = id;
 
     // update composer
@@ -287,6 +302,9 @@ function hideCommentThumbnail(){
     var lockNote = document.getElementById('cpLockNote');
     if(bar) bar.style.display = canPost ? 'flex' : 'none';
     if(lockNote) lockNote.style.display = canPost ? 'none' : 'flex';
+    // In grace the room works exactly as it did; what changes is that it says
+    // so, with the date it stops on, to whoever can do something about it.
+    cmPaintGrace(state);
 
     // the bottom nav is left alone — the panel outranks it and slides
     // over it, so it is covered rather than switched off ahead of time
@@ -341,6 +359,71 @@ function hideCommentThumbnail(){
 
   // user made communities
 
+  /* ── a community's subscription, and the three days after it ──────────────
+     A community created on a Max subscription stays up for three days after
+     that subscription lapses, and is locked after that. The rule is
+     public.cm_state(cid) and it is asked rather than worked out here: the
+     owner's expiry is not something a member's browser can see, and a lock
+     a client decides for itself is a lock anybody can decide against.
+
+     Cached for a minute per room. The state changes on a day boundary, not on
+     a keystroke, and this is asked every time a room is opened. */
+  var cmStateCache = {};
+  async function cmStateOf(chanId){
+    var out = { state:'live', mine:false, until:null };
+    if(!/^c:/.test(String(chanId || ''))) return out;      // a built-in room
+    var cid = String(chanId).slice(2);
+    var hit = cmStateCache[cid];
+    if(hit && (Date.now() - hit.at) < 60000) return hit.val;
+    try{
+      var r = await sb.rpc('cm_state', { cid: cid });
+      if(r.error) throw r.error;
+      out.state = r.data || 'live';
+      if(out.state === 'grace'){
+        var g = await sb.rpc('cm_grace_until', { cid: cid });
+        if(!g.error && g.data) out.until = new Date(g.data);
+      }
+      var mine = cmMineCache['c:' + cid];
+      out.mine = !!(currentUser && mine && mine.owner_id === currentUser.id);
+    }catch(e){
+      // Unreachable is not locked. The database refuses the join and the
+      // message on its own, so failing open here costs nothing but a wasted
+      // trip, while failing closed would shut a paid-up room over one bad
+      // request.
+      return out;
+    }
+    cmStateCache[cid] = { at: Date.now(), val: out };
+    return out;
+  }
+
+  /* The banner inside a room that is in its last three days. Built here rather
+     than in index.html because it belongs to a state most rooms are never in,
+     and it is removed the moment they are not in it. */
+  function cmPaintGrace(state){
+    var host = document.getElementById('cmChatView');
+    var old  = document.getElementById('cmGraceBar');
+    if(old) old.parentNode.removeChild(old);
+    if(!host || !state || state.state !== 'grace') return;
+    var left = state.until
+      ? Math.max(1, Math.ceil((state.until.getTime() - Date.now()) / 86400000))
+      : 3;
+    var bar = document.createElement('div');
+    bar.id = 'cmGraceBar';
+    bar.className = 'cmGraceBar';
+    bar.innerHTML =
+      '<span class="cmGraceTxt">' +
+        (state.mine
+          ? 'Your Max subscription ended. This community closes in ' +
+            left + ' day' + (left === 1 ? '' : 's') + '.'
+          : 'This community\u2019s subscription ended. It closes in ' +
+            left + ' day' + (left === 1 ? '' : 's') + '.') +
+      '</span>' +
+      (state.mine
+        ? '<button type="button" class="cmGraceBtn" onclick="openSubscription()">Renew</button>'
+        : '');
+    host.insertBefore(bar, host.firstChild);
+  }
+
   var CM_ROLE_LABEL = { owner:'Owner', admin:'Admin', sr_mod:'Senior Mod', jr_mod:'Junior Mod', member:'Member' };
   var CM_RANK = { owner:5, admin:4, sr_mod:3, jr_mod:2, member:1 };
   var CM_TIMEOUTS = [
@@ -361,8 +444,9 @@ function hideCommentThumbnail(){
 
   function cmErr(e){
     var m = (e && e.message) || '';
-    if(/CM_LEVEL/.test(m))         return 'You need artist Level 100 to create a community.';
-    if(/CM_ALREADY_OWNER/.test(m)) return 'You already own a community — one per artist.';
+    if(/CM_LEVEL/.test(m))         return 'You need artist Level 100, or a Max subscription, to create a community.';
+    if(/CM_ALREADY_OWNER/.test(m)) return 'You already own every community your level and plan allow.';
+    if(/CM_LOCKED/.test(m))        return 'That community is closed — its subscription ended.';
     if(/CM_OWNER_LEAVE/.test(m))   return 'You own this community — delete it instead of leaving.';
     // the CHECK that backs the four length limits, when a paste gets past the
     // form and the database is the one that has to say no
@@ -407,15 +491,20 @@ function hideCommentThumbnail(){
     document.getElementById('cmNewName').value = '';
     document.getElementById('cmNewDesc').value = '';
     var sub = document.getElementById('cmCreateSub');
-    sub.textContent = 'Requires artist Level 100. One community per artist.';
+    sub.textContent = 'Requires artist Level 100, or a Max subscription.';
     cmOpenMod('cmCreateMod');
-    // show their level
+    // Which of the two routes is open, in the member's own terms. A room
+    // earned at Level 100 is theirs for good; one that comes with Max lasts
+    // as long as the subscription does, and this is the only honest place to
+    // say so — before they name it and invite anybody into it.
     try{
       var pr = await sb.rpc('get_artist_progress', { target: currentUser.id });
       var lvl = (pr.data && pr.data[0] && pr.data[0].level) || 1;
-      sub.textContent = lvl >= 100
-        ? 'You\u2019re Level ' + lvl + ' — you can create a community.'
-        : 'You\u2019re Level ' + lvl + '. Level 100 is required to create a community.';
+      var isMax = typeof dzTier === 'function' && dzTier() === 'max';
+      sub.textContent =
+        lvl >= 100 ? 'You\u2019re Level ' + lvl + ' — you can create a community.'
+      : isMax      ? 'Max includes a community. It stays open while your subscription does.'
+                   : 'You\u2019re Level ' + lvl + '. Level 100, or a Max subscription, is required.';
     }catch(e){}
   }
 

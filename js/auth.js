@@ -556,13 +556,30 @@
   // user plan
   let userPlan = null;
   async function checkUserRole(){
-    if(!sb || !currentUser){ isDev=false; userPlan=null; currentUserAvatarUrl=null; syncAdmBtn(); return; }
+    if(!sb || !currentUser){
+      isDev=false; userPlan=null; currentUserAvatarUrl=null;
+      dzSetPlan('guest', null); dzPaintLimits();
+      if(typeof dzPaintAds === 'function') dzPaintAds();
+      syncAdmBtn(); return;
+    }
     try{
-      const{data,error}=await sb.from('profiles').select('role,subscription_tier,avatar_url').eq('id',currentUser.id).single();
+      const{data,error}=await sb.from('profiles')
+        .select('role,subscription_tier,subscription_expires_at,avatar_url')
+        .eq('id',currentUser.id).single();
       if(error) throw error;
       isDev    = !!data && data.role==='dev';
       userPlan = (data && data.subscription_tier) ? data.subscription_tier : 'guest';
       currentUserAvatarUrl = (data && data.avatar_url) ? data.avatar_url : null;
+      // The expiry comes back with the tier now and goes to the one helper
+      // that answers "what is this member allowed". The column on its own
+      // still says 'max' the morning after a subscription lapses; the server
+      // has always read dz_effective_tier() instead, and dzTier() is that
+      // same rule on this side of the wire. A dev is given Max's ceilings
+      // rather than their stored tier, which is usually none.
+      dzSetPlan(isDev ? 'dev' : userPlan,
+                (data && data.subscription_expires_at) || null);
+      dzPaintLimits();
+      if(typeof dzPaintAds === 'function') dzPaintAds();
     }catch(e){
       console.error(e);
       // The avatar goes with the rest of it. It used to be left alone here,
@@ -572,6 +589,8 @@
       // but on a shared device that is indistinguishable from something that
       // had. A letter is the honest fallback.
       isDev=false; userPlan='guest'; currentUserAvatarUrl=null;
+      dzSetPlan('guest', null); dzPaintLimits();
+      if(typeof dzPaintAds === 'function') dzPaintAds();
     }
     syncAdmBtn();
     syncAuthBtn(); // repaint avatar chips
@@ -691,6 +710,8 @@
         currentUserAvatarUrl = null;
         syncAuthBtn();
         isDev=false; userPlan=null; syncAdmBtn();
+        dzSetPlan('guest', null); dzPaintLimits();
+        if(typeof dzPaintAds === 'function') dzPaintAds();
         syncSubOverviewCard(); // reset card to guest
         notifRefreshBadge(); // clear unread dot
         // close owner only pages

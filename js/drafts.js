@@ -535,10 +535,13 @@
     document.getElementById('pfCropMod').classList.remove('open');
     pfCropPending = null;
   }
-  // Extra views, detail shots and process images. Ten of them at 20MB each is
-  // the ceiling, and it is enforced the same way maxlength is: past it the
-  // file is simply not added. The table caps the stored list at ten too.
-  var PF_PAGES_MAX = 10, PF_IMG_MAX_BYTES = 20 * 1024 * 1024;
+  // Extra views, detail shots and process images. Ten of them at the tier's
+  // image ceiling each, and it is enforced the same way maxlength is: past it
+  // the file is simply not added. The table caps the stored list at ten too.
+  // The same ceiling as the main image, from the same helper — a Max upload
+  // whose cover may be 25MB and whose detail shots may not would be a rule
+  // nobody could guess.
+  var PF_PAGES_MAX = 10;
   function handlePfPagesFile(e){
     if(pfGuestGate(e)) return; // drop bypasses click gate
     var picked = Array.from(e.target.files||[]);
@@ -546,10 +549,10 @@
     var room = Math.max(0, PF_PAGES_MAX - pf.upPageFiles.length);
     var files = [], overSize = false;
     picked.forEach(function(f){
-      if(f.size > PF_IMG_MAX_BYTES){ overSize = true; return; }
+      if(f.size > dzImageMax()){ overSize = true; return; }
       if(files.length < room) files.push(f);
     });
-    if(overSize) showToast('Each image has to be 20MB or under');
+    if(overSize) showToast('Each image has to be ' + dzImageMaxMb() + 'MB or under');
     else if(files.length < picked.length) showToast('That is the limit — ' + PF_PAGES_MAX + ' extra images');
     if(!files.length){ e.target.value = ''; return; }
     pf.upPageFiles = pf.upPageFiles.concat(files);

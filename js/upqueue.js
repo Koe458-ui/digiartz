@@ -186,8 +186,8 @@
         var _dm = _d && /^(\d+)×(\d+)/.exec(_d);
         if(_dm){ x.width = +_dm[1]; x.height = +_dm[2]; }
       }
-      x.seo_title = (typeof dzSeoTitle === 'function') ? dzSeoTitle('', job.name) : null;
-      x.seo_description = (typeof dzSeoDesc === 'function') ? dzSeoDesc('', job.desc, job.desc) : null;
+      x.seo_title = (typeof dzSeoTitle === 'function') ? dzSeoTitle(job.name) : null;
+      x.seo_description = (typeof dzSeoDesc === 'function') ? dzSeoDesc(job.desc, job.desc) : null;
       x.slug = (typeof dzSlugify === 'function')
         ? (dzSlugify(job.name).slice(0,110) + '-' + String(Date.now()).slice(-6))
         : null;

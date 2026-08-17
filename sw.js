@@ -4,6 +4,31 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v181 — resources get the SEO the other three sections have. v180 said
+       Resources was untouched because the table had no column to write to.
+       It has three now — seo_title, seo_description and slug, nullable, with
+       the same length checks their siblings carry and the column-level grants
+       this table gives everything else, in
+       supabase/migrations/20260819_resources_seo.sql. The migration is
+       applied; it has to land before this build does, because the columns
+       have to exist for the insert to be accepted.
+       The form does not ask for any of them. The automatic card it already
+       showed — format, size, file count, resolution, all read off the
+       package — carries three more rows read off the form instead, from the
+       same two functions every other section uses, with the same
+       summary-then-description fallback the marketplace has. And
+       functions/_middleware.js selects the pair for a resource now, so a
+       shared resource link carries the snippet the row stores rather than
+       falling back to the raw title every time.
+       Dead weight found on the way: the blog and marketplace feeds were
+       selecting seo_title, seo_description and slug on every row of every
+       page, and no screen in the app has ever read one — they are written
+       for search engines and read by the middleware, which fetches its own
+       copy server-side. Three text columns a row, dropped from both queries,
+       and never added to the resources one.
+       Changed: index.html, sw.js, js/sections.js, functions/_middleware.js,
+       supabase/migrations/20260819_resources_seo.sql (new).
+
    v180 — one answer to "who writes the SEO", on every form that has any.
        The artwork upload never asked for a search snippet: the title and the
        opening of the description are what a search engine shows, cut to the
@@ -3183,7 +3208,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v180';
+const CACHE_VERSION = 'v181';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3291,7 +3316,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=2',
   '/js/analytics.js?v=7',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=113',
+  '/js/sections.js?v=114',
   '/js/routes.js?v=1',
   '/js/navprogress.js?v=5'
 ];

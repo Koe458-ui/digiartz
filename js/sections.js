@@ -79,9 +79,14 @@
       // a draft is kept and not listed; a hidden post is reachable by its link
       eq:{ visibility:'published' },
       order:[['featured',false],['created_at',false]],
-      select:'id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,'+
+      // The SEO pair and the slug are not asked for. They are written for
+      // search engines and read by functions/_middleware.js, which does its
+      // own fetch server-side; no screen in the app has ever displayed one,
+      // so asking for them here was three text columns a row that arrived
+      // and went nowhere. Same on the marketplace and the resources feeds.
+      select:'id,user_id,title,excerpt,body,cover_url,category,tags,read_minutes,'+
              'content_type,related_artworks,related_items,external_refs,featured,'+
-             'author_bio,seo_title,seo_description,like_count,view_count,bookmark_count,'+
+             'author_bio,like_count,view_count,bookmark_count,'+
              'published_at,updated_at,created_at'
     },
     marketplace: {
@@ -103,7 +108,7 @@
              'modification_allowed,attribution_required,stock,delivery_type,delivery_days,'+
              'delivery_notes,custom_requests,revision_count,support_period,refund_policy,'+
              'preview_watermark,safety_notes,seller_note,apply_url,apply_email,'+
-             'buyer_gets,featured,closing_date,seo_title,seo_description,slug,created_at'
+             'buyer_gets,featured,closing_date,created_at'
     },
     jobs: {
       table:'jobs', kind:'list', noun:'job',
@@ -603,12 +608,17 @@
   // whether someone may sell what they make with the file.
   var YES_NO_PLAIN = [['yes','Yes'],['no','No']];
   // Read off the upload rather than typed. A file format someone types
-  // disagrees with the file, and a size someone types is a guess.
+  // disagrees with the file, and a size someone types is a guess. The last
+  // three are read off the form instead of the file, on the same rule the
+  // other three sections follow — see ART_AUTO.
   var RES_AUTO = [
-    ['file_format', 'File format'],
-    ['file_size',   'File size'],
-    ['file_count',  'File count'],
-    ['dimensions',  'Resolution']
+    ['file_format',     'File format'],
+    ['file_size',       'File size'],
+    ['file_count',      'File count'],
+    ['dimensions',      'Resolution'],
+    ['seo_title',       'SEO title'],
+    ['seo_description', 'SEO description'],
+    ['slug',            'URL slug']
   ];
 
   // Commercial use is a required answer rather than an unticked box, because
@@ -2109,10 +2119,17 @@
       dzAutoSet(sec, 'seo_description', dzSeoDesc(val(sec, 'summary'), val(sec, 'description')));
       dzAutoSet(sec, 'slug', title ? slugify(title).slice(0, 110) : null);
     } else if(sec === 'resources'){
+      title = val(sec, 'title');
       dzAutoSet(sec, 'file_format', read.file_format);
       dzAutoSet(sec, 'file_size',   read.file_size);
       dzAutoSet(sec, 'file_count',  read.file_count);
       dzAutoSet(sec, 'dimensions',  read.dimensions);
+      // the four above come off the package, these three off the form — same
+      // pair of functions, same summary-then-description fallback the
+      // marketplace uses, because a resource carries the same two fields
+      dzAutoSet(sec, 'seo_title',       title ? dzSeoTitle(title) : null);
+      dzAutoSet(sec, 'seo_description', dzSeoDesc(val(sec, 'summary'), val(sec, 'description')));
+      dzAutoSet(sec, 'slug', title ? slugify(title).slice(0, 110) : null);
     }
   }
   // the expensive half: what the files themselves say, read once per file
@@ -3230,6 +3247,11 @@
         row.file_name = rf.name; row.file_ext = rf.ext; row.file_size = rf.size;
         row.file_count = rCount;
         row.dimensions = rDims;
+        // and the half read off the form rather than the package — the same
+        // three every other section stores, made the same way
+        row.seo_title = dzSeoTitle(val(sec,'title'));
+        row.seo_description = dzSeoDesc(val(sec,'summary'), val(sec,'description'));
+        row.slug = slugify(val(sec,'title')).slice(0,110) + '-' + String(stamp).slice(-6);
         if(rp){ row.preview_url = rp.url; row.preview_storage_path = rp.path; }
         pendingMedia.push({ fileKind:'resourceFile', url:rf.url, path:rf.path, file:s.files.file });
         if(rp) pendingMedia.push({ imageKind:'resourceImage', url:rp.url, path:rp.path, file:s.files.preview });

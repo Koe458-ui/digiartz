@@ -4,6 +4,28 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v179 — no seam between a bar and the row stuck under it. The profile's top
+       bar and its tabs, and the analytics header and its chip row, are two
+       bars stacked against the top of a page the content scrolls beneath.
+       Both were 92% backgrounds over a blur, and both drew their bottom edge
+       in a colour mixed into transparency — and a translucent hairline sits
+       outside the background layer, which covers the padding box and not the
+       border. So the join between the two bars took the colour of whatever
+       thumbnail was passing behind it: a bright line that changed as you
+       scrolled and read as a gap. All four fills are the page's own
+       background now, opaque, and the hairlines are mixed into that
+       background rather than into transparency. Nothing about the bars looks
+       different where there is nothing behind them.
+       Two smaller things in the same seam. The analytics chip row is stuck at
+       a measured header height, and the measurement rounded up — half a pixel
+       up is a crack of moving page between the bars, half a pixel down is
+       hidden under the header, so it rounds down. And it was measured once,
+       at open, while the title was still the one in the markup and the
+       webfont had not necessarily landed; it is measured again when the title
+       is painted and again when the fonts settle.
+       Changed: index.html, sw.js, css/profile.css, css/analytics.css,
+       js/analytics.js.
+
    v178 — the public sections have urls, so the shell has one more script.
        /explore, /marketplace, /community, /resources and /blog were panels
        reachable only by a click handler; each is an address now, with
@@ -3135,7 +3157,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v178';
+const CACHE_VERSION = 'v179';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3193,7 +3215,7 @@ const SHELL_URLS = [
   '/css/community.css?v=11',
   '/css/connect.css?v=3',
   '/css/ranking.css?v=2',
-  '/css/profile.css?v=9',
+  '/css/profile.css?v=10',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=4',
@@ -3201,7 +3223,7 @@ const SHELL_URLS = [
   '/css/widgets.css?v=6',
   '/css/overrides.css?v=12',
   '/css/select.css?v=3',
-  '/css/analytics.css?v=5',
+  '/css/analytics.css?v=6',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.
@@ -3241,7 +3263,7 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
-  '/js/analytics.js?v=6',
+  '/js/analytics.js?v=7',
   '/js/engagement.js?v=9',
   '/js/sections.js?v=112',
   '/js/routes.js?v=1',

@@ -53,14 +53,51 @@ const PLANS = [
     features: [
       '20 downloads per day — the highest limit',
       'Everything in Premium',
-      'Full-resolution original files',
-      'Exclusive artworks and resources',
+      'Keep 90% of every sale, not 85%',
+      'No ads anywhere on the site',
+      'A community of your own, without Level 100',
+      'Upload artwork up to 25MB, and 400MB product files',
       'Early access to new features',
       'Priority support',
     ],
     cta: 'Get Max',
   },
 ];
+
+// ---------------------------------------------------------------------------
+// The same plans read the other way round: one row per thing somebody is
+// deciding between, rather than one card per plan. A card answers "what do I
+// get"; this answers "what do I get that I do not get now", which is the
+// question somebody scrolling past three prices is actually asking.
+//
+// Ordered by what changes a decision, not by what is easiest to list. The
+// download allowance is why most people are on this page at all, so it leads;
+// the two upload ceilings and the seller's share follow, because they are the
+// numbers a working artist checks; the two Max-only switches come last, where
+// a reader who has got that far is already deciding between Premium and Max.
+//
+// Every row here is enforced somewhere in this repository. Nothing in this
+// table is a plan for a feature — a comparison table that promises is a
+// comparison table nobody trusts twice.
+const COMPARE = {
+  cols: [
+    { key: 'free',    label: 'Free',    tone: 'free'    },
+    { key: 'lite',    label: 'Lite',    tone: 'lite'    },
+    { key: 'premium', label: 'Premium', tone: 'premium' },
+    { key: 'max',     label: 'Max',     tone: 'max'     },
+  ],
+  rows: [
+    { label: 'Downloads per day',   free: '5',       lite: '10',      premium: '15',       max: '20' },
+    { label: 'Download quality',    free: '1600px',  lite: '1600px',  premium: 'Original', max: 'Original' },
+    { label: 'Artwork upload size', free: '20MB',    lite: '20MB',    premium: '20MB',     max: '25MB' },
+    { label: 'Product file size',   free: '200MB',   lite: '200MB',   premium: '200MB',    max: '400MB' },
+    { label: 'You keep on a sale',  free: '85%',     lite: '85%',     premium: '85%',      max: '90%' },
+    { label: 'Premium artworks',    free: false,     lite: false,     premium: true,       max: true },
+    { label: 'Community of your own', free: 'Level 100', lite: 'Level 100', premium: 'Level 100', max: 'Included' },
+    { label: 'Ad free',             free: false,     lite: false,     premium: false,      max: true },
+    { label: 'Priority support',    free: false,     lite: false,     premium: false,      max: true },
+  ],
+};
 
 
 // ---------------------------------------------------------------------------
@@ -144,9 +181,49 @@ function plansHtml(priced) {
       '</div>').join('') +
     '</div>';
 
+  // Between the last card and the FAQ, which is where somebody who has read
+  // three cards and not decided is looking.
+  const compare =
+    '<div class="subCmp" aria-labelledby="subCmpTitle">' +
+      '<div class="subCmpTitle" id="subCmpTitle">Every plan, side by side</div>' +
+      // The scroller is its own element so the table inside can keep its
+      // natural width on a phone and be dragged, while on a wide screen the
+      // table is centred and the scroller never scrolls.
+      '<div class="subCmpScroll" tabindex="0" role="region" aria-label="Plan comparison, scrolls sideways">' +
+        '<table class="subCmpTbl">' +
+          '<thead><tr>' +
+            '<th scope="col" class="subCmpFeat">Feature</th>' +
+            COMPARE.cols.map((c) =>
+              '<th scope="col" class="subCmpCol subCmpCol--' + c.tone + '">' + esc(c.label) + '</th>').join('') +
+          '</tr></thead>' +
+          '<tbody>' +
+          COMPARE.rows.map((r) =>
+            '<tr>' +
+              '<th scope="row" class="subCmpFeat">' + esc(r.label) + '</th>' +
+              COMPARE.cols.map((c) => {
+                const v = r[c.key];
+                // A tick and a cross are read by everyone; the screen reader
+                // is given the word, because "✓" alone is not an answer.
+                const cell = v === true
+                  ? '<span class="subCmpYes" aria-hidden="true">✓</span>' +
+                    '<span class="srOnly">Included</span>'
+                  : v === false
+                  ? '<span class="subCmpNo" aria-hidden="true">✕</span>' +
+                    '<span class="srOnly">Not included</span>'
+                  : esc(v);
+                return '<td class="subCmpCell subCmpCell--' + c.tone + '">' + cell + '</td>';
+              }).join('') +
+            '</tr>').join('') +
+          '</tbody>' +
+        '</table>' +
+      '</div>' +
+      '<p class="subCmpNote">A community earned at artist Level 100 is yours for good. ' +
+      'The one included with Max stays open while the subscription does, plus three days.</p>' +
+    '</div>';
+
   return '<div class="subPgHeadline"><h2>Choose Your Plan</h2>' +
          '<p>Support the project and unlock exclusive benefits</p></div>' +
-         quota + cards;
+         quota + cards + compare;
 }
 
 // ---------------------------------------------------------------------------

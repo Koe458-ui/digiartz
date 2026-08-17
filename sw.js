@@ -4,6 +4,51 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v182 — what a Max subscription actually buys.
+       Max was a bigger download allowance and a badge. It is five things now,
+       and the three that could be lied about are decided in the database:
+       the seller keeps 90% of a sale instead of 85% (a rate in
+       platform_tax_config, read at the moment the earning is written and
+       frozen into the row), a Max member may own one community beyond
+       whatever their level earns them, and that community goes quiet three
+       days after the subscription does — the state is the owner's expiry
+       compared with now(), so there is no job to run and renewing reopens
+       the room in the same instant. The other two are size ceilings, and
+       they live with the signer that refuses the bytes: 25MB on an artwork
+       instead of 20, and 400MB on a product file instead of 200.
+       Ads are the fifth. The AdSense script left <head>, where it loaded on
+       every visit before anybody had asked for an ad; js/effects.js fetches
+       it the first time a member who HAS ads opens the Sponsor panel, and a
+       Max member never fetches it at all.
+       One table decides all of it on this side — DZ_TIER_LIMITS in
+       js/app-core.js — and one function answers "which tier is this",
+       expiry included. That mattered more than it looks: userPlan was
+       profiles.subscription_tier as stored, which keeps saying 'max' the
+       morning after a subscription lapses. Every client-side gate asks
+       dzTier() now, which is the same rule dz_effective_tier() has always
+       applied on the server.
+       The subscription page gained a comparison table between the last plan
+       card and the FAQ: nine rows, four columns, every one of them a thing
+       this repository actually enforces. Rules and nothing else — no box, no
+       corners, no vertical dividers, and the lines run the full width of the
+       screen. It scrolls sideways on a phone with the feature column pinned,
+       and sits still on anything wider.
+       Gone with it: the Subscription Coming Soon modal — markup, three
+       functions nothing had called since payments went live, its keyframes,
+       three stylesheet blocks and a hit-target selector.
+       NOT deployed by this release: the 400MB ceiling also needs
+       supabase/functions/smart-function deployed. Production is on v25 of
+       that function, which predates the v21 delete-authorisation fix in this
+       repository, so deploying ships that too — a decision worth making on
+       purpose rather than as a side effect of a size limit.
+       Changed: index.html, sw.js, css/panels.css, css/community.css,
+       css/overrides.css, js/app-core.js, js/auth.js, js/albums.js,
+       js/drafts.js, js/sections.js, js/mywork.js, js/effects.js,
+       js/search.js, js/pfedit.js, functions/api/store.js,
+       supabase/functions/smart-function/index.ts,
+       supabase/migrations/20260820_max_tier_benefits.sql (new),
+       supabase/migrations/20260821_max_asset_ceiling.sql (new).
+
    v181 — resources get the SEO the other three sections have. v180 said
        Resources was untouched because the table had no column to write to.
        It has three now — seo_title, seo_description and slug, nullable, with
@@ -3208,7 +3253,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v181';
+const CACHE_VERSION = 'v182';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3263,16 +3308,16 @@ const SHELL_URLS = [
   '/css/base.css?v=6',
   '/css/hero.css?v=94',
   '/css/viewer.css?v=14',
-  '/css/community.css?v=11',
+  '/css/community.css?v=12',
   '/css/connect.css?v=3',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=10',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
-  '/css/panels.css?v=4',
+  '/css/panels.css?v=5',
   '/css/upload.css?v=12',
   '/css/widgets.css?v=6',
-  '/css/overrides.css?v=12',
+  '/css/overrides.css?v=13',
   '/css/select.css?v=3',
   '/css/analytics.css?v=6',
 
@@ -3293,30 +3338,30 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=27',
+  '/js/app-core.js?v=28',
   '/js/protect.js?v=3',
   '/js/gallery.js?v=85',
-  '/js/auth.js?v=13',
+  '/js/auth.js?v=14',
   '/js/profile.js?v=13',
-  '/js/albums.js?v=15',
-  '/js/drafts.js?v=7',
+  '/js/albums.js?v=16',
+  '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=10',
-  '/js/mywork.js?v=20',
+  '/js/pfedit.js?v=11',
+  '/js/mywork.js?v=21',
   '/js/startup.js?v=6',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=10',
+  '/js/search.js?v=11',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
-  '/js/effects.js?v=6',
+  '/js/effects.js?v=7',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=2',
   '/js/analytics.js?v=7',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=114',
+  '/js/sections.js?v=115',
   '/js/routes.js?v=1',
   '/js/navprogress.js?v=5'
 ];

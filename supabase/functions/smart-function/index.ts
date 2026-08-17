@@ -123,7 +123,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const MAX_IMG_BYTES   = 25 * 1024 * 1024;    // unchanged
-const MAX_ASSET_BYTES = 200 * 1024 * 1024;   // downloadable files
+// Downloadable files. 200MB for everyone; 400 on Max, which is a benefit of
+// the plan and therefore a question for the database, not for the caller —
+// the browser sends a size and this function decides what to do with it. The
+// bucket's own file_size_limit is the higher of the two, so the ceiling that
+// separates the tiers is the one below.
+const MAX_ASSET_BYTES     = 200 * 1024 * 1024;
+const MAX_ASSET_BYTES_MAX = 400 * 1024 * 1024;
 const IMG_TYPES = /^image\/(png|jpe?g|webp|gif|avif)$/;
 
 // Upload-rate ceilings (per authenticated user). Generous enough that
@@ -302,8 +308,21 @@ Deno.serve(async (req) => {
     if (asset) {
       if (!ASSET_EXT.has(extOf(path)))
         return json({ error: "file type not allowed" }, 400);
-      if (!(size > 0) || size > MAX_ASSET_BYTES)
-        return json({ error: "file too large (max 200MB)" }, 400);
+      // The tier is read on the service role through dz_effective_tier, which
+      // is the same function the rest of the schema asks — so an expired Max
+      // is refused at 200MB like everyone else, without this file having to
+      // know what an expiry is. A failed lookup falls back to the lower
+      // ceiling: the safe direction for a benefit is "not granted".
+      let assetCap = MAX_ASSET_BYTES;
+      try {
+        const tierSvc = serviceClient();
+        if (tierSvc) {
+          const { data: tier } = await tierSvc.rpc("dz_effective_tier", { p_user: user.id });
+          if (tier === "max") assetCap = MAX_ASSET_BYTES_MAX;
+        }
+      } catch { /* keep the lower ceiling */ }
+      if (!(size > 0) || size > assetCap)
+        return json({ error: `file too large (max ${Math.round(assetCap / 1048576)}MB)` }, 400);
     } else {
       if (!IMG_TYPES.test(ct))
         return json({ error: "images only" }, 400);

@@ -629,6 +629,71 @@
   }
   window.dzDecodeSeg = dzDecodeSeg;
 
+  /* ── what a tier is allowed ────────────────────────────────────────────────
+     One table, read by every gate that asks a size question, so a limit
+     changes in one place and the panel, the picker and the hint cannot
+     disagree about it.
+
+     These are courtesies. The signer refuses the bytes and the row's own
+     check constraint refuses the number, both without asking the browser —
+     what this table decides is whether somebody is told before the upload or
+     after it. Any limit that would matter if a client lied is enforced in
+     supabase/functions/smart-function and in the migrations, not here.
+
+     A dev sees Max's ceilings: the alternative is testing the paid path by
+     buying it. */
+  var DZ_TIER_LIMITS = {
+    guest:   { image: 20, asset: 200 },
+    lite:    { image: 20, asset: 200 },
+    premium: { image: 20, asset: 200 },
+    max:     { image: 25, asset: 400 },
+    dev:     { image: 25, asset: 400 }
+  };
+
+  /* The tier this member is actually on, expiry included.
+     userPlan in js/auth.js is profiles.subscription_tier as stored, and that
+     column keeps saying 'max' after the subscription has run out — the server
+     reads dz_effective_tier() precisely because the raw column is not the
+     answer. The expiry is read alongside it there and parked here, so every
+     client-side gate asks this rather than the column. */
+  var dzPlanTier = 'guest', dzPlanExpires = 0;
+  function dzSetPlan(tier, expiresAt){
+    dzPlanTier = String(tier || 'guest');
+    var t = expiresAt ? new Date(expiresAt).getTime() : 0;
+    dzPlanExpires = isFinite(t) ? t : 0;
+  }
+  function dzTier(){
+    if(dzPlanExpires && dzPlanExpires < Date.now()) return 'guest';
+    return DZ_TIER_LIMITS[dzPlanTier] ? dzPlanTier : 'guest';
+  }
+  function dzLimits(){ return DZ_TIER_LIMITS[dzTier()] || DZ_TIER_LIMITS.guest; }
+  /* the two questions every caller actually asks, in bytes and in whole MB */
+  function dzImageMax(){ return dzLimits().image * 1024 * 1024; }
+  function dzAssetMax(){ return dzLimits().asset * 1024 * 1024; }
+  function dzImageMaxMb(){ return dzLimits().image; }
+  function dzAssetMaxMb(){ return dzLimits().asset; }
+  window.dzSetPlan    = dzSetPlan;
+  window.dzTier       = dzTier;
+  window.dzImageMax   = dzImageMax;
+  window.dzAssetMax   = dzAssetMax;
+  window.dzImageMaxMb = dzImageMaxMb;
+  window.dzAssetMaxMb = dzAssetMaxMb;
+
+  /* Every place that prints a ceiling into a sentence carries data-dz-mb, and
+     is repainted whenever the tier lands or changes. The attribute names which
+     ceiling — "image" or "asset" — and the element's text has exactly one
+     number in it to replace, so buying Max changes 20 to 25 and changes
+     nothing else about the sentence. */
+  function dzPaintLimits(){
+    var els = document.querySelectorAll('[data-dz-mb]');
+    for(var i = 0; i < els.length; i++){
+      var el = els[i];
+      var mb = el.getAttribute('data-dz-mb') === 'asset' ? dzAssetMaxMb() : dzImageMaxMb();
+      el.textContent = String(el.textContent).replace(/\d+(?=\s*MB)/i, mb);
+    }
+  }
+  window.dzPaintLimits = dzPaintLimits;
+
   /* Resolves once every classic script in the page has run.
      This file is the third script tag; there are thirty-odd after it, and
      js/startup.js — which boots the page — is in the middle of them. Anything

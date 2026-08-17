@@ -158,7 +158,7 @@
     if(_cmi && _cmi.classList.contains('open')) return;
     var _frd=document.getElementById('frdPage');
     if(_frd && _frd.classList.contains('open')) return;
-    closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closeSubModal();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
+    closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
     cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();
     // Wallet, payout methods and purchases were three page shells with three

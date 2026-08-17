@@ -387,20 +387,3 @@
     restoreScroll();
   }
 
-  function openSubModal() {
-    var m = document.getElementById('subModal');
-    if (!m) return;
-    m.classList.add('subModal--open');
-    var btn = m.querySelector('.subModalClose');
-    if (btn) setTimeout(function(){ btn.focus(); }, 40);
-  }
-
-  function closeSubModal() {
-    var m = document.getElementById('subModal');
-    if (!m) return;
-    m.classList.remove('subModal--open');
-  }
-
-  function handleSubModalBackdrop(e) {
-    if (e.target === document.getElementById('subModal')) closeSubModal();
-  }

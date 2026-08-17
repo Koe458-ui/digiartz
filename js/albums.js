@@ -1258,9 +1258,11 @@
   function handlePfFile(e){
     if(pfGuestGate(e)) return; // drop bypasses click gate
     var f = e.target.files[0]; if(!f) return;
-    // 20MB, refused here rather than after the crop dialog and the upload
-    if(f.size > 20 * 1024 * 1024){
-      showToast('That image is over 20MB — pick a smaller one');
+    // The tier's ceiling, refused here rather than after the crop dialog and
+    // the upload. 20MB, or 25 on Max — the number and the hint under the
+    // dropzone read from the same place, so they cannot disagree.
+    if(f.size > dzImageMax()){
+      showToast('That image is over ' + dzImageMaxMb() + 'MB — pick a smaller one');
       e.target.value = '';
       return;
     }

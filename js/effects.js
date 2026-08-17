@@ -55,8 +55,41 @@
   var cards  = document.querySelectorAll('#apTrack .apCard');
   var adsInit = false;
 
+  /* Max is the plan without ads, and "without ads" is meant literally: the
+     network's script is never fetched, so there is nothing to block, nothing
+     to consent to and no third party told that this member opened the page.
+     That is only possible because the script is no longer in <head> — it was
+     loaded by every visit whether or not anybody ever opened this panel, and
+     it is fetched here, once, the first time somebody who has ads opens it. */
+  var adsSrc = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js' +
+               '?client=ca-pub-1351696642556147';
+  function adsFree(){ return typeof dzTier === 'function' && dzTier() === 'max'; }
+  function adsLoadScript(){
+    if(document.querySelector('script[data-dz-ads]')) return;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = adsSrc;
+    s.crossOrigin = 'anonymous';
+    s.setAttribute('data-dz-ads', '1');
+    document.head.appendChild(s);
+  }
+
+  /* The Sponsor link in the footer is the only way in here, so on Max it is
+     not drawn. Called when the tier lands, and again if it changes. */
+  window.dzPaintAds = function(){
+    var links = document.querySelectorAll('[data-dz-ads-entry]');
+    for(var i = 0; i < links.length; i++){
+      var li = links[i].closest('li') || links[i];
+      li.hidden = adsFree();
+    }
+  };
+
   // open
   window.openAdsPanel = function(){
+    // A Max member has no ads to browse. The entry point is already hidden
+    // for them; this is the same answer for anything else that calls in.
+    if(adsFree()) return;
+    adsLoadScript();
     closeMenu();
     panel.classList.add('open');
     var hint = panel.querySelector('.apHint');

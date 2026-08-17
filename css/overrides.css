@@ -138,7 +138,7 @@
   .upIn, .upField textarea, .upField select{ font-size:15px; }
 
   /* button hit targets */
-  .upBtnPri, .dzBuy, .subBtn, .hpCta, .subModalClose{
+  .upBtnPri, .dzBuy, .subBtn, .hpCta{
     min-height:46px;
     font-size:14px;
     padding:12px 18px;

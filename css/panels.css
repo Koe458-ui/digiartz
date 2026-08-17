@@ -372,11 +372,6 @@ body{background:var(--bg);}
   0%,100% { opacity:1; }
   50%      { opacity:.7; }
 }
-@keyframes subModalIn {
-  from { opacity:0; transform:translate(-50%,-50%) scale(.94); }
-  to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
-}
-
 /* overlay panel */
 #subPage {
   position: fixed;
@@ -782,83 +777,139 @@ body{background:var(--bg);}
   .subPgHeadline    { margin-bottom: 2rem; }
   .subCardInner     { padding: 1.5rem 1.2rem 1.3rem; }
   .subFeatures li   { font-size: .8rem; }
-  .subModalCard     { padding: 1.8rem 1.3rem 1.4rem; }
 }
 
-/* coming soon modal */
-#subModal {
-  position: fixed;
-  inset: 0;
-  z-index: 9000;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity .22s ease, visibility .22s ease;
-  isolation: isolate;
+/* ---------------------------------------------------------------------------
+   PLAN COMPARISON — the table between the last card and the FAQ
+
+   Rules and nothing else. No box around it, no rounded corners, no vertical
+   dividers: one line under each row, running the full width of the screen.
+   The table is pulled out of the page's side padding and its 1400px cap by a
+   block 100vw wide centred on its parent's centre line, clamped so that a
+   desktop scrollbar — which 100vw counts and the window does not — cannot
+   make it a few pixels too wide and start the page scrolling sideways.
+
+   Two shapes, one table. Wide screens fit all four plans, so nothing scrolls
+   and the columns share the width evenly. A phone does not, so the table
+   keeps the width its words need and is dragged sideways inside its own
+   scroller, with the feature column pinned at the left edge — scrolling to
+   the Max column is useless if you can no longer see which row you are on.
+--------------------------------------------------------------------------- */
+.subCmp {
+  /* --subCmpPull is the side padding .subPgBdy carries at this width, and
+     cancelling it exactly is what puts the rules on the screen's edges. It is
+     matched to that rule's five breakpoints below. Deliberately not 100vw: vw
+     counts the scroll bar and the page does not, so on a desktop with a
+     classic scrollbar a 100vw block is a few pixels too wide and the whole
+     page starts scrolling sideways — the exact bug the sticky column already
+     caused here once. */
+  --subCmpPull: 2.5rem;
+  margin: 2.6rem calc(-1 * var(--subCmpPull)) 0;
 }
-/* blur layer */
-#subModal::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb,var(--bg) 42%,transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  z-index: -1;
-}
-#subModal.subModal--open {
-  opacity: 1;
-  visibility: visible;
-}
-.subModalCard {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%,-50%);
-  background: var(--sur);
-  border: 1px solid var(--bdr);
-  border-radius: 16px;
-  padding: 2.5rem 2.2rem 2rem;
-  max-width: 420px;
-  width: calc(100% - 2.5rem);
-  text-align: center;
-  box-shadow: 0 1px 3px rgba(5,3,8,.3), 0 12px 40px rgba(5,3,8,.5);
-  animation: subModalIn .28s cubic-bezier(.22,1,.36,1) both;
-}
-.subModalIcon  { font-size: 2.4rem; display: block; margin-bottom: .9rem; }
-.subModalTitle {
-  font-family: var(--fd);
-  font-size: 1.3rem;
-  font-weight: 900;
-  letter-spacing: -.02em;
+@media (max-width: 1199px) { .subCmp { --subCmpPull: 2rem; } }
+@media (max-width: 899px)  { .subCmp { --subCmpPull: 1.8rem; } }
+@media (max-width: 699px)  { .subCmp { --subCmpPull: 1.2rem; } }
+@media (max-width: 519px)  { .subCmp { --subCmpPull: 1rem; } }
+.subCmpTitle {
+  font-family: var(--fd, sans-serif);
+  font-weight: 700;
+  font-size: 1.05rem;
   color: var(--tx);
-  margin-bottom: .55rem;
+  text-align: center;
+  margin-bottom: 1.1rem;
 }
-.subModalMsg {
+.subCmpScroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  /* A sticky descendant inside a scroller is counted in the scrollable
+     overflow of everything ABOVE the scroller too, so the sticky feature
+     column below made the whole page wider than the phone it was on — the
+     table scrolled sideways as intended and so did the document. `contain:
+     paint` says the box paints nothing outside itself, which was already
+     true, and the leak stops. overflow-x:hidden on an ancestor does not fix
+     this; it only hides the symptom on the element that carries it. */
+  contain: paint;
+}
+.subCmpScroll:focus-visible { outline: 2px solid var(--pg); outline-offset: -2px; }
+.subCmpTbl {
+  border-collapse: collapse;
+  width: 100%;
+  /* Wider than a phone on purpose: past this the scroller takes over rather
+     than the columns giving up their words. */
+  min-width: 560px;
   font-family: var(--fb, sans-serif);
-  font-size: .88rem;
-  line-height: 1.65;
-  color: var(--txd);
-  margin-bottom: 1.6rem;
+  font-size: .82rem;
 }
-.subModalClose {
-  background: var(--tc);
+.subCmpTbl th,
+.subCmpTbl td {
+  padding: .78rem .6rem;
+  text-align: center;
+  vertical-align: middle;
   border: none;
-  border-radius: 8px;
-  color: #fff;
-  font-family: var(--fm);
+  border-bottom: 1px solid var(--bdr);
+  white-space: nowrap;
+}
+/* the row label: left aligned, and it stays put while the rest is dragged */
+.subCmpTbl .subCmpFeat {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left;
+  font-weight: 600;
+  color: var(--tx);
+  background: var(--bg);
+  padding-left: 1rem;
+  min-width: 152px;
+  white-space: normal;
+}
+.subCmpTbl thead th {
+  font-family: var(--fm, sans-serif);
   font-size: .7rem;
   font-weight: 700;
-  letter-spacing: .18em;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  padding: .8rem 2.2rem;
-  cursor: pointer;
-  transition: transform .18s, filter .18s;
-  box-shadow: 0 3px 14px rgba(20,20,30,.18);
+  color: var(--txd);
 }
-.subModalClose:hover  { transform: translateY(-2px); filter: brightness(1.1); }
-.subModalClose:active { transform: scale(.97); }
-.subModalClose:focus-visible { outline: 2px solid var(--pg); outline-offset: 3px; }
-
+.subCmpCell { color: var(--tx); font-variant-numeric: tabular-nums; }
+/* Each plan's own hue at full strength, on the head and on the line under it
+   — the whole point of the row is to be found at a glance from the other end
+   of the table. The line is the only place the colour lives: a wash down the
+   column would be a vertical band, and there is nothing vertical here. */
+.subCmpTbl thead th.subCmpCol { border-bottom-width: 3px; }
+.subCmpTbl thead th.subCmpCol--free    { border-bottom-color: #94a3b8; color: #cbd5e1; }
+.subCmpTbl thead th.subCmpCol--lite    { border-bottom-color: #3b9dff; color: #3b9dff; }
+.subCmpTbl thead th.subCmpCol--premium { border-bottom-color: #c77dff; color: #c77dff; }
+.subCmpTbl thead th.subCmpCol--max     { border-bottom-color: #ffc93c; color: #ffc93c; }
+/* The light theme reverses which end of each ramp is legible: these sit on a
+   near-white surface there, where the bright ends miss 4.5:1 as text. Same
+   hues, darker step — the plan cards make the same swap. */
+html[data-theme="light"] .subCmpTbl thead th.subCmpCol--free    { color: #475569; }
+html[data-theme="light"] .subCmpTbl thead th.subCmpCol--lite    { color: #1d4ed8; }
+html[data-theme="light"] .subCmpTbl thead th.subCmpCol--premium { color: #7e22ce; }
+html[data-theme="light"] .subCmpTbl thead th.subCmpCol--max     { color: #a16207; }
+.subCmpYes { color: #22ff88; font-size: 1.05rem; font-weight: 800; }
+.subCmpNo  { color: #ff5c5c; font-size: 1rem; font-weight: 700; }
+html[data-theme="light"] .subCmpYes { color: #059669; }
+html[data-theme="light"] .subCmpNo  { color: #dc2626; }
+.subCmpNote {
+  font-family: var(--fb, sans-serif);
+  font-size: .74rem;
+  line-height: 1.55;
+  color: var(--txd);
+  text-align: center;
+  margin: .9rem 1rem 0;
+}
+@media (min-width: 620px) {
+  .subCmpTbl { font-size: .85rem; }
+  .subCmpTbl th, .subCmpTbl td { padding: .85rem .7rem; }
+}
+@media (max-width: 519px) {
+  .subCmp { margin-top: 2rem; }
+  .subCmpTbl { font-size: .78rem; }
+  .subCmpTbl .subCmpFeat { min-width: 138px; padding-left: .85rem; }
+  .subCmpNote { text-align: left; }
+}
 
 /* faq wrapper */
 .faqSection {
@@ -1549,15 +1600,6 @@ body{background:var(--bg);}
 .lmBody p,.lmBody li{color:var(--txd)!important;}
 .lmBody strong{color:var(--tx)!important;}
 .lmDate{color:var(--ps)!important;background:rgba(var(--pg-rgb),.1)!important;border-color:var(--bdr)!important;}
-
-/* coming soon popup */
-.subModalCard{
-  background:var(--sur)!important;
-  border-color:var(--bdr)!important;
-  box-shadow:0 0 60px rgba(var(--pg-rgb),.12),0 32px 64px rgba(5,3,8,.7)!important;
-}
-.subModalTitle{color:var(--tx)!important;}
-.subModalMsg{color:rgba(var(--tx2-rgb),.62)!important;}
 
 /* cookie banner */
 #cookieBanner{

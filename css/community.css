@@ -868,3 +868,28 @@
     .cLbl{font-family:var(--fm);font-size:.75rem;letter-spacing:.35em;color:var(--txd);display:flex;align-items:center;gap:.5rem;}
     .cLbl .s{color:var(--pg);}
 
+
+    /* The last three days of a community whose subscription has lapsed. It
+       sits at the top of the chat rather than over it: the room still works
+       for the whole of the grace, and a modal in front of a working room
+       would say otherwise. Amber, which is the site's warning colour and not
+       its danger one — nothing has gone wrong yet. */
+    .cmGraceBar{
+      display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;
+      padding:.6rem .9rem;
+      background:color-mix(in srgb,#F59E0B 14%,var(--cmSur,var(--sur)));
+      border-bottom:1px solid color-mix(in srgb,#F59E0B 38%,transparent);
+      font-family:var(--fb);font-size:.82rem;line-height:1.45;
+      color:var(--cmTx,var(--tx));
+      flex:0 0 auto;
+    }
+    .cmGraceTxt{flex:1 1 auto;min-width:0;}
+    .cmGraceBtn{
+      flex:0 0 auto;
+      padding:.35rem .8rem;border-radius:999px;
+      background:#F59E0B;border:none;color:#1A1206;
+      font-family:var(--fb);font-size:.78rem;font-weight:700;cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .cmGraceBtn:hover{background:#FBBF24;}
+    .cmGraceBtn:focus-visible{outline:2px solid var(--tx);outline-offset:2px;}

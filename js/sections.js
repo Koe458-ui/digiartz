@@ -685,7 +685,7 @@
       fields:[
         {k:'file',   t:'file',  label:'Resource file', req:true,
          accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.woff2,.pdf,.obj,.fbx,.blend',
-         hint:'ZIP, PSD, ABR, brushset, fonts, 3D — up to 200MB.'},
+         mb:'asset', hint:'ZIP, PSD, ABR, brushset, fonts, 3D — up to 200MB.'},
         {k:'preview',t:'image', label:'Preview image', req:true,
          accept:'image/jpeg,image/png,image/webp,image/gif',
          hint:'Required. Shown on the card and auto-checked. JPG/PNG/WEBP/GIF up to 25MB.'},
@@ -786,6 +786,7 @@
          hint:'Optional. Up to 8 more shots, shown on the listing page. 25MB each.'},
         {k:'files',  t:'files', label:'Files to sell', cond:'digital',
          accept:'.zip,.rar,.7z,.psd,.abr,.brushset,.procreate,.clip,.ttf,.otf,.pdf,.obj,.fbx,.blend',
+         mb:'asset',
          hint:'Required for a digital download — add every file the buyer receives, up to 200MB each '+
               'and 50 files in all. These are stored privately and stay locked until someone pays.'},
         {k:'buyer_gets',t:'area', label:'What buyer gets', req:true, min:20, max:3000, rows:4,
@@ -1500,7 +1501,13 @@
   function field(sec, fd){
     var id = 'dz_'+sec+'_'+fd.k;
     var lbl = labelFor(id, fd);
-    var hint = fd.hint ? '<div class="dzHint">'+esc(fd.hint)+'</div>' : '';
+    // A hint that quotes a size ceiling carries the tier's number rather than
+    // a written-in one. data-dz-mb marks which ceiling, and dzPaintLimits
+    // rewrites the digits in place when the tier lands — the sentence is the
+    // same sentence on every plan.
+    var hint = fd.hint
+      ? '<div class="dzHint"' + (fd.mb ? ' data-dz-mb="'+fd.mb+'"' : '') + '>'+esc(fd.hint)+'</div>'
+      : '';
     var cond = fd.cond ? ' upFCond' : '';
     var body = '';
 
@@ -2220,6 +2227,9 @@
     dzRefsAll(sec);
     dzAutoScan(sec);            // re-reads only if the files actually changed
     dzAutoPaint(sec);
+    // the size ceilings quoted in the hints are this member's, and the form
+    // was built from a template that does not know whose it is
+    if(typeof dzPaintLimits === 'function') dzPaintLimits();
   }
   // Capture, so it also serves the boxes built after this ran. Scoped to the
   // section forms so the artwork panel, which counts its own two fields its
@@ -2397,9 +2407,24 @@
       '</div>';
   }
 
+  /* The tier's ceiling on one file, checked where the file is picked rather
+     than where it is sent. The signer refuses the same byte count with the
+     same number and is the limit that counts; this is only the difference
+     between being told now and being told after a long upload. Images are not
+     asked about here — every image field on these forms is a preview, and the
+     preview ceiling is the same on every plan. */
+  function dzFileTooBig(f){
+    if(!f || /^image\//.test(f.type || '')) return false;
+    if(f.size <= dzAssetMax()) return false;
+    showToast('That file is over ' + dzAssetMaxMb() + 'MB — ' +
+              (dzTier() === 'max' ? 'pick a smaller one' : 'Max lifts this to 400MB'));
+    return true;
+  }
+
   // swap the held file
   function dzSetFile(sec, key, f){
     var s = st(sec);
+    if(dzFileTooBig(f)) return;
     if(s.urls[key]){ dzRevoke(s.urls[key]); s.urls[key] = null; }
     s.files[key] = f || null;
     if(f && /^image\//.test(f.type||'')){
@@ -2423,6 +2448,7 @@
     have.forEach(function(f){ seen[f.name + '|' + f.size] = 1; });
     Array.prototype.forEach.call(files || [], function(f){
       if(!f) return;
+      if(dzFileTooBig(f)) return;    // one file over the ceiling, not the batch
       var k = f.name + '|' + f.size;
       if(seen[k]) return;            // the same file picked twice is one file
       if(have.length >= cap){ full = true; return; }

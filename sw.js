@@ -68,11 +68,16 @@
        Gone with it: the Subscription Coming Soon modal — markup, three
        functions nothing had called since payments went live, its keyframes,
        three stylesheet blocks and a hit-target selector.
-       NOT deployed by this release: the 400MB ceiling also needs
-       supabase/functions/smart-function deployed. Production is on v25 of
-       that function, which predates the v21 delete-authorisation fix in this
-       repository, so deploying ships that too — a decision worth making on
-       purpose rather than as a side effect of a size limit.
+       smart-function was deployed with this release, after the fact and on
+       purpose: production had been on v25, which predated the v21
+       delete-authorisation fix already sitting in this repository, so the
+       deploy carried that as well as the 400MB ceiling. v21 is the one worth
+       knowing about — object ownership is decided by the key's second path
+       segment now, not by a row claiming the key, because every column that
+       row check read is written by the browser. Two consequences: the twenty
+       pre-convention artworks stored flat as artworks/<file> are staff-only
+       to delete, and a failed upload can clean up after itself before a row
+       exists. Deployed as version 26, verify_jwt on.
        Changed: index.html, sw.js, css/panels.css, css/community.css,
        css/overrides.css, js/app-core.js, js/auth.js, js/albums.js,
        js/drafts.js, js/sections.js, js/mywork.js, js/effects.js,

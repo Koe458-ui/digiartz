@@ -256,6 +256,21 @@ function hideCommentThumbnail(){
       showToast('This community is coming soon');
       return;
     }
+    /* A community that exists on somebody's Max subscription goes quiet three
+       days after that subscription does. Asked here, before ANY of the state
+       below is touched: the header flips to chat mode a few lines down, and a
+       room that turns out to be locked would have left that header behind on
+       the community home with nothing under it. Nothing is mutated until the
+       room is known to be open. */
+    var state = await cmStateOf(id);
+    if(state.state === 'locked'){
+      showToast(state.mine
+        ? 'Your Max subscription ended — renew to reopen this community'
+        : 'This community is closed — its subscription ended');
+      if(state.mine && typeof openSubscription === 'function') openSubscription();
+      return;
+    }
+
     cpCurrentChannel = id;
 
     // update composer
@@ -278,20 +293,6 @@ function hideCommentThumbnail(){
         grad  : chan.grad || null,
         tap   : function(){ cmiOpen(id); }
       });
-    }
-
-    // A community that exists on somebody's Max subscription goes quiet three
-    // days after that subscription does. Asked before the panel slides, so a
-    // locked room never opens with a composer that the database would refuse
-    // the message from anyway.
-    var state = await cmStateOf(id);
-    if(state.state === 'locked'){
-      cpCurrentChannel = null;
-      showToast(state.mine
-        ? 'Your Max subscription ended — renew to reopen this community'
-        : 'This community is closed — its subscription ended');
-      if(state.mine && typeof openSubscription === 'function') openSubscription();
-      return;
     }
 
     // read only channels — settled before the slide so the foot of the

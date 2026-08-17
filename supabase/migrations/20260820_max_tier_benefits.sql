@@ -153,8 +153,12 @@ comment on column public.communities.plan_backed is
   'can take away.';
 
 -- How long a lapsed Max keeps its community. Three days, in one place.
+-- search_path is pinned like every other function here. It reads nothing, so
+-- there is nothing to hijack, but a function without it is a lint row that
+-- somebody has to decide about again later.
 create or replace function public.cm_grace_days()
 returns integer language sql immutable
+set search_path to 'public', 'pg_temp'
 as $$ select 3 $$;
 
 -- ---- the state of one community -------------------------------------------

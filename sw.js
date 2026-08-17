@@ -4,6 +4,32 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v180 — one answer to "who writes the SEO", on every form that has any.
+       The artwork upload never asked for a search snippet: the title and the
+       opening of the description are what a search engine shows, cut to the
+       lengths the columns take, and the upload shows them back in a read-only
+       card as they are typed. The blog and the marketplace asked instead —
+       an SEO title box, an SEO description box, and on the marketplace a slug
+       box as well. Three boxes for values nobody should have to invent, each
+       with a floor that made a half-written one invalid, and the marketplace
+       stored whatever was typed with no fallback at all, so skipping the
+       boxes stored nothing and the listing went out with no snippet.
+       Both forms lost the boxes and gained the card the artwork upload has.
+       The marketplace had no automatic card at all and has one now, carrying
+       the pair and the slug; the blog's card carries them beside the slug and
+       the reading time it already showed. The values come from the same two
+       functions the publish path uses, so the card is not a second opinion.
+       Nothing about how they are generated changed, and no stored row does
+       either — only who is asked.
+       Dead code that went with it: both generators took a typed value to
+       prefer over the made one, and with no box left anywhere every caller
+       passed an empty string, so that parameter is gone; the field-icon map
+       kept entries for three fields that are no longer fields; and two
+       comments describing where the SEO lived were describing the old shape.
+       Resources and Jobs are untouched — neither table has an SEO column, so
+       neither form had anything to ask for or to fill in.
+       Changed: index.html, sw.js, js/sections.js, js/upqueue.js.
+
    v179 — no seam between a bar and the row stuck under it. The profile's top
        bar and its tabs, and the analytics header and its chip row, are two
        bars stacked against the top of a page the content scrolls beneath.
@@ -3157,7 +3183,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v179';
+const CACHE_VERSION = 'v180';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3249,7 +3275,7 @@ const SHELL_URLS = [
   '/js/profile.js?v=13',
   '/js/albums.js?v=15',
   '/js/drafts.js?v=7',
-  '/js/upqueue.js?v=6',
+  '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
   '/js/pfedit.js?v=10',
   '/js/mywork.js?v=20',
@@ -3265,7 +3291,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=2',
   '/js/analytics.js?v=7',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=112',
+  '/js/sections.js?v=113',
   '/js/routes.js?v=1',
   '/js/navprogress.js?v=5'
 ];

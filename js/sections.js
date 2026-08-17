@@ -504,6 +504,15 @@
   var MKT_VISIBILITY = [['published','Published — listed in the Marketplace'],
                         ['draft','Draft — kept, not listed'],
                         ['hidden','Hidden — reachable by link only']];
+  // Written for the seller rather than by them, on the same rule as ART_AUTO.
+  // The address is in here for the reason the snippet is: a slug typed once
+  // and then left behind when the title changes is a link that lies about
+  // what it opens.
+  var MKT_AUTO = [
+    ['seo_title',       'SEO title'],
+    ['seo_description', 'SEO description'],
+    ['slug',            'URL slug']
+  ];
   // ---- blog vocabulary ---------------------------------------------------
   var CONTENT_TYPE = [['Article','Article'],['Tutorial','Tutorial'],['Guide','Guide'],
                       ['Interview','Interview'],['News','News']];
@@ -514,10 +523,13 @@
   // What the system fills in, said out loud. These are not inputs and there is
   // deliberately no box for any of them: a slug someone types drifts from the
   // title, a reading time someone types is wrong, and an author someone types
-  // is a byline they may not be entitled to.
+  // is a byline they may not be entitled to. The SEO pair joined them for the
+  // reason the artwork upload never asked for it either — see ART_AUTO.
   var BLOG_AUTO = [
-    ['slug',         'URL slug'],
-    ['read_minutes', 'Reading time']
+    ['seo_title',       'SEO title'],
+    ['seo_description', 'SEO description'],
+    ['slug',            'URL slug'],
+    ['read_minutes',    'Reading time']
   ];
 
   // ---- artwork vocabulary ------------------------------------------------
@@ -560,6 +572,13 @@
   // Only what can actually be worked out while the form is being filled in.
   // A created date and a view count cannot show a live value, so they are not
   // listed — a row that reads "--" forever is worse than no row.
+  //
+  // The SEO pair is here rather than in a box, and every other form follows
+  // this one. A search snippet is not a preference: it is the title and the
+  // opening of the description, cut to the length a search engine shows, and
+  // the two lengths are what the columns will take. Asked for, it is a second
+  // title to keep in step with the first — and one left half-written is worse
+  // than none, because a stored snippet is the one that gets shown.
   var ART_AUTO = [
     ['file_format',     'File format'],
     ['file_size',       'File size'],
@@ -728,10 +747,6 @@
         {k:'visibility',t:'sel', label:'Visibility', req:true, options:BLOG_VISIBILITY, def:'published'},
         {k:'featured',t:'chk', label:'Feature this post',
          hint:'Featured posts sit at the top of the Blog.'},
-        {k:'seo_title',t:'text', label:'SEO title', min:10, max:70,
-         ph:'Leave empty and one is made from the title.'},
-        {k:'seo_description',t:'area', label:'SEO description', min:50, max:160, rows:2,
-         ph:'Leave empty and one is made from the excerpt.'},
         {k:'__auto', t:'auto', label:'Filled in for you', items:BLOG_AUTO}
       ]},
     // The listing, in the order a buyer decides: what it is, what it looks
@@ -822,11 +837,7 @@
          ph:'Anything the moderators should know.',
          hint:'Only moderators read this. It is never shown to buyers, and it is not readable '+
               'by the site — not even back to you.'},
-        {k:'seo_title',t:'text', label:'SEO title', min:3, max:80, ph:'Defaults to the listing title.'},
-        {k:'seo_description',t:'area', label:'SEO description', min:50, max:160, rows:2,
-         ph:'The snippet a search engine shows.'},
-        {k:'slug',   t:'text',  label:'Slug / URL name', min:3, max:120,
-         ph:'Leave empty and one is made from the title.'}
+        {k:'__auto', t:'auto', label:'Filled in for you', items:MKT_AUTO}
       ]},
     // The posting, in the order someone reads a job ad: who is hiring, what
     // the role is, where and when it happens, what it pays, and how to apply.
@@ -967,7 +978,8 @@
   //
   // Not --upcCyan for Jobs, though it is the closer name: a dozen field
   // icons draw from it, so bending it to the rail's sky would have recoloured
-  // tags, slug and seo on all five forms to settle one chip.
+  // tags and the skill and contact fields on all five forms to settle one
+  // chip.
   var SEC_COLOR = {
     artwork:'var(--upcViolet)', resources:'var(--upcGreen)', blog:'var(--upcIndigo)',
     marketplace:'var(--upcOrange)', jobs:'var(--upcSky)'
@@ -1064,7 +1076,7 @@
       tips: ['Open with a hook in the first line','Break long posts into short paragraphs',
              'Write the excerpt for someone skimming a list','Pick one clear category',
              'Link your own artwork so readers can see what you mean',
-             'The slug, reading time and byline are filled in for you']
+             'The search snippet, slug, reading time and byline are filled in for you']
     },
     marketplace: {
       guide: [
@@ -1076,7 +1088,8 @@
       ],
       tips: ['Lead with your strongest preview','Write the one-line summary for someone skimming a grid',
              'Spell out every file included and its format','State delivery days for commissions',
-             'Answer the license questions — buyers filter on them']
+             'Answer the license questions — buyers filter on them',
+             'The search snippet and the listing address are filled in for you']
     },
     jobs: {
       guide: [
@@ -1296,7 +1309,9 @@
     content_type:[C_PUR,ICO_GRID],
     related_artworks:[C_PNK,ICO_SCREEN], related_items:[C_AMB,ICO_GRID],
     external_refs:[C_BLU,ICO_LINK],
-    seo_title:[C_CYN,ICO_SPARK], seo_description:[C_CYN,ICO_SPARK],
+    // No seo_title, seo_description or slug here: this map dresses input
+    // cards, and none of the three is an input on any form. They are rows in
+    // the automatic card, which wears the __auto chip below.
     __auto:[C_TEA,ICO_CHECK],
     // a listing
     summary:[C_GRN,ICO_LINES], product_type:[C_PUR,ICO_GRID],
@@ -1312,7 +1327,7 @@
     support_period:[C_TEA,ICO_CLOCK], refund_policy:[C_ROS,ICO_SHIELD],
     preview_watermark:[C_VIO,ICO_SHIELD], safety_notes:[C_ROS,ICO_SHIELD],
     seller_note:[C_PNK,ICO_PENCIL], internal_notes:[C_YEL,ICO_CLIP],
-    closing_date:[C_TEA,ICO_CAL], slug:[C_CYN,ICO_LINK],
+    closing_date:[C_TEA,ICO_CAL],
     // a resource
     file:[C_GRN,ICO_CLIP], preview:[C_VIO,ICO_SCREEN],
     resource_type:[C_PUR,ICO_GRID],
@@ -1565,8 +1580,8 @@
         '<input type="hidden" id="'+id+'" value="">';
     } else if(fd.t === 'auto'){
       // Not an input, and deliberately so. It is here to answer "where did
-      // the slug and the reading time go" without offering a box to get them
-      // wrong in.
+      // the search snippet and the slug go" without offering a box to get
+      // them wrong in.
       return fcard(fd.k, fd.t,
         '<label class="upLbl">'+esc(fd.label)+' <span class="upOpt">automatic</span></label>'+
         '<div class="dzvMeta upAutoList" style="margin-top:.35rem">'+
@@ -2074,16 +2089,25 @@
       dzAutoSet(sec, 'file_format', read.file_format);
       dzAutoSet(sec, 'file_size',   read.file_size);
       dzAutoSet(sec, 'dimensions',  read.dimensions);
-      dzAutoSet(sec, 'seo_title',       title ? dzSeoTitle('', title) : null);
-      dzAutoSet(sec, 'seo_description', dzSeoDesc('', body, body));
+      dzAutoSet(sec, 'seo_title',       title ? dzSeoTitle(title) : null);
+      dzAutoSet(sec, 'seo_description', dzSeoDesc(body, body));
       // the base the publish path slugifies; it appends the uniquifier there,
       // and that logic is untouched
       dzAutoSet(sec, 'slug', title ? slugify(title).slice(0, 110) : null);
     } else if(sec === 'blog'){
       title = val(sec, 'title');
       body  = val(sec, 'body');
+      // the same three the artwork card shows, from the same two functions the
+      // publish path uses — the excerpt is this form's opening line
+      dzAutoSet(sec, 'seo_title',       title ? dzSeoTitle(title) : null);
+      dzAutoSet(sec, 'seo_description', dzSeoDesc(val(sec, 'excerpt'), body));
       dzAutoSet(sec, 'slug', title ? slugify(title).slice(0, 110) : null);
       dzAutoSet(sec, 'read_minutes', body ? (dzReadMinutes(body) + ' min') : null);
+    } else if(sec === 'marketplace'){
+      title = val(sec, 'title');
+      dzAutoSet(sec, 'seo_title',       title ? dzSeoTitle(title) : null);
+      dzAutoSet(sec, 'seo_description', dzSeoDesc(val(sec, 'summary'), val(sec, 'description')));
+      dzAutoSet(sec, 'slug', title ? slugify(title).slice(0, 110) : null);
     } else if(sec === 'resources'){
       dzAutoSet(sec, 'file_format', read.file_format);
       dzAutoSet(sec, 'file_size',   read.file_size);
@@ -2513,7 +2537,7 @@
     return isFinite(n) ? n : null;
   }
   // ---- the half of a post the system writes ------------------------------
-  // Reading time, the slug, the byline and the SEO fallbacks are derived, not
+  // Reading time, the slug, the byline and the SEO pair are derived, not
   // typed. A reading time someone enters is wrong the moment they edit a
   // paragraph, and a slug that drifts from the title is a link that lies.
   var DZ_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -2531,15 +2555,19 @@
   // The floors apply to what is stored, so a generated value that cannot
   // reach its floor is not stored at all — a null SEO title is a search
   // engine falling back to the real one, which is the right answer anyway.
-  function dzSeoTitle(typed, title){
-    if(typed) return typed;
+  //
+  // Both used to take a typed value first and fall back to a made one. No
+  // form offers the box any more — artwork never did, and the blog and the
+  // marketplace stopped — so every caller passed an empty string into that
+  // first parameter. It is gone rather than left as an argument that only
+  // ever has one value.
+  function dzSeoTitle(title){
     var t = String(title || '').trim();
     if(t.length < 10) t = (t + ' — DigiArtz').trim();
     t = t.slice(0, 70);
     return t.length >= 10 ? t : null;
   }
-  function dzSeoDesc(typed, excerpt, body){
-    if(typed) return typed;
+  function dzSeoDesc(excerpt, body){
     var d = String(excerpt || '').trim();
     if(d.length < 50) d = String(body || '').replace(/\s+/g, ' ').trim();
     d = d.slice(0, 160);
@@ -3237,10 +3265,10 @@
         row.external_refs = dzRefList('dz_blog_external_refs').slice(0, 20);
         row.visibility = bVis;
         row.featured = val(sec,'featured') === true;
-        row.seo_title = dzSeoTitle(val(sec,'seo_title'), bTitle);
-        row.seo_description = dzSeoDesc(val(sec,'seo_description'), bExcerpt, body);
         // The automatic half. None of these has a box on the form, and none
         // of them is read back off one.
+        row.seo_title = dzSeoTitle(bTitle);
+        row.seo_description = dzSeoDesc(bExcerpt, body);
         row.slug = slugify(bTitle).slice(0,110) + '-' + String(stamp).slice(-6);
         row.read_minutes = dzReadMinutes(body);
         row.author_bio = await dzAuthorBio();
@@ -3347,13 +3375,15 @@
         row.featured = val(sec,'featured') === true;
         row.closing_date = val(sec,'closing_date') || null;
         row.internal_notes = val(sec,'internal_notes') || null;
-        row.seo_title = val(sec,'seo_title') || null;
-        row.seo_description = val(sec,'seo_description') || null;
-        // A slug the seller typed is used as typed. One made here carries the
-        // stamp, the same way a blog post's does, so two listings with the
-        // same name do not end up with the same address.
-        row.slug = val(sec,'slug') ||
-          (slugify(val(sec,'title')).slice(0,110) + '-' + String(stamp).slice(-6));
+        // The automatic half, on the same rule as the blog's and the
+        // artwork's: made from the listing rather than asked for. The snippet
+        // is the summary, which is already the one-line pitch, and falls back
+        // to the description when the summary is under the column's floor.
+        // The slug carries the stamp so two listings with the same name do
+        // not end up with the same address.
+        row.seo_title = dzSeoTitle(val(sec,'title'));
+        row.seo_description = dzSeoDesc(val(sec,'summary'), val(sec,'description'));
+        row.slug = slugify(val(sec,'title')).slice(0,110) + '-' + String(stamp).slice(-6);
         if(galRows.length) row.gallery = galRows;
         if(pendingSell.length){
           var totalBytes = 0;

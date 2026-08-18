@@ -57,9 +57,20 @@
 -- ===========================================================================
 -- 1. THE ROLE
 -- ===========================================================================
--- profiles.role already carries 'admin' and 'dev' and is read by
--- dz_platform_revenue() and dz_tax_due(). 'partner' joins them. Everything
--- else — an ordinary member — leaves the column null, as it does today.
+-- profiles.role already carries 'admin' and 'dev'. 'partner' joins them.
+--
+-- AND SO DOES 'guest', WHICH IS WHAT AN ORDINARY MEMBER ACTUALLY HAS. Every
+-- non-staff profile on the live project carries the string 'guest'; not one
+-- carries null. This file was first written assuming null meant "no role",
+-- which is the obvious reading of a nullable column and was wrong about this
+-- database — the constraint below would have refused ten of eleven rows and
+-- taken the migration down at the VALIDATE.
+--
+-- Both are accepted rather than one being migrated to the other. Rewriting ten
+-- rows to null to match an assumption in a new file is the wrong way round:
+-- the data is the fact, the file is the thing that was wrong. dz_is_ordinary()
+-- below is the single place that knows the two mean the same thing, so nothing
+-- downstream has to remember.
 --
 -- The constraint is added NOT VALID and then validated, so a pre-existing row
 -- with some other spelling in it names itself in the error rather than taking
@@ -71,7 +82,7 @@ begin
   ) then
     alter table public.profiles
       add constraint profiles_role_known
-      check (role is null or role in ('admin', 'dev', 'partner')) not valid;
+      check (role is null or role in ('guest', 'admin', 'dev', 'partner')) not valid;
     alter table public.profiles validate constraint profiles_role_known;
   end if;
 end $$;
@@ -201,6 +212,23 @@ as $$
 $$;
 revoke all on function public.dz_is_staff(uuid) from public, anon;
 
+-- Neither staff nor partner: the accounts a partner is allowed to moderate.
+-- 'guest' is what this database writes and null is what a nullable column
+-- suggests, and both have always meant the same thing here. This is the only
+-- place that has to know that.
+create or replace function public.dz_is_ordinary(p_user uuid default auth.uid())
+returns boolean
+language sql
+stable
+security definer
+set search_path to 'public', 'pg_temp'
+as $$
+  select coalesce(
+    (select role is null or role = 'guest' from public.profiles where id = p_user),
+    false);
+$$;
+revoke all on function public.dz_is_ordinary(uuid) from public, anon;
+
 create or replace function public.dz_is_partner(p_user uuid default auth.uid())
 returns boolean
 language sql
@@ -328,7 +356,11 @@ as $$
     when p_actor is null or p_target is null then false
     when p_actor = p_target                  then false
     when public.dz_is_staff(p_actor)         then not public.dz_is_staff(p_target)
-    when public.dz_is_partner(p_actor)       then public.dz_role(p_target) is null
+    -- dz_is_ordinary, not "role is null". Written as the latter, a partner
+    -- could moderate nobody at all on the live database, where every ordinary
+    -- member's role is the string 'guest' — the ban engine would have shipped
+    -- refusing every target a partner was given the power to act on.
+    when public.dz_is_partner(p_actor)       then public.dz_is_ordinary(p_target)
     else false
   end;
 $$;
@@ -1366,7 +1398,11 @@ begin
     return jsonb_build_object('ok', true, 'changed', false);
   end if;
 
-  update public.profiles set role = null where id = p_user;
+  -- 'guest', not null: a revoked partner should be indistinguishable from
+  -- every other member, and on this database that is what every other member
+  -- says. dz_is_ordinary() accepts either, so this is about not leaving one
+  -- odd row behind rather than about correctness.
+  update public.profiles set role = 'guest' where id = p_user;
   -- The code stops taking business; it is not deleted, because every
   -- commission row points at it and the history has to stay readable. Nothing
   -- already earned is touched, and a balance stays withdrawable.

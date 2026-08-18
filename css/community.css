@@ -527,7 +527,7 @@
     }
 
     /* modal safe area */
-    .cmMod,#rptMod{
+    .cmMod,.rptMod{
       padding:calc(1rem + env(safe-area-inset-top)) 1rem
               calc(1rem + env(safe-area-inset-bottom)) 1rem;
     }

@@ -4,6 +4,17 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v187 — the account-report sheet is a sheet again.
+       It was styled by copying #rptMod's markup, but #rptMod's overlay rules
+       are keyed to that id: position:fixed, inset:0, and display:none until
+       .open. The copy matched none of them, so it was never hidden and never
+       positioned, and it rendered in the page flow at the bottom of the
+       document — under the hero, permanently visible. Every class inside it
+       was styled correctly, which is why checking the classes missed it.
+       The overlay rules are .rptMod now and both sheets wear it, the
+       focus-into-view handler covers both, and scripts/check-overlays.mjs
+       fails the build if any role="dialog" has nothing positioning it.
+
    v186 — the admin panel leaves the public bundle.
        js/pfedit.js carried seven hundred lines of it: every privileged
        endpoint, the telemetry fields, the partner programme, the invite flow
@@ -3326,7 +3337,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v186';
+const CACHE_VERSION = 'v187';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3380,8 +3391,8 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=6',
   '/css/hero.css?v=95',
-  '/css/viewer.css?v=14',
-  '/css/community.css?v=12',
+  '/css/viewer.css?v=15',
+  '/css/community.css?v=13',
   '/css/connect.css?v=3',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=10',
@@ -3421,7 +3432,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
   '/js/pfedit.js?v=14',
-  '/js/mywork.js?v=21',
+  '/js/mywork.js?v=22',
   '/js/startup.js?v=6',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=11',

@@ -466,7 +466,7 @@ const HEAD = `
             'aria-label="Username, email address or user ID">' +
           '<button type="submit" class="admModGo">Find</button>' +
         '</form>' +
-        '<div data-m="result" class="admModResult"></div>';
+        '<div data-m="result"></div>';
     },
     wire: function(host){
       host.querySelector('[data-m="form"]').addEventListener('submit', function(e){

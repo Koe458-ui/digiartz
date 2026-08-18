@@ -116,13 +116,20 @@
     }
     .avReportBtn:hover{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
 
-    /* report modal */
-    #rptMod{
+    /* report modals — a CLASS, not an id, and that is the whole point.
+       These rules carry three things a report sheet cannot do without: the
+       fixed full-screen overlay, and `display:none` until .open is added.
+       Written against #rptMod alone, a second report sheet inherits none of
+       them — it is not hidden, it is not positioned, and it lands in the
+       normal page flow at the bottom of the document, permanently visible.
+       That is exactly what the account-report sheet did when it was added
+       beside the artwork one. Any dialog wearing .rptMod is now an overlay. */
+    .rptMod{
       position:fixed;inset:0;z-index:4000;display:none;
       align-items:center;justify-content:center;padding:1rem;
       background:rgba(0,0,0,.72);backdrop-filter:blur(4px);
     }
-    #rptMod.open{display:flex;}
+    .rptMod.open{display:flex;}
     .rptCard{
       width:100%;max-width:460px;max-height:88dvh;overflow-y:auto;
       background:var(--sur);border:1px solid var(--bdr);border-radius:14px;

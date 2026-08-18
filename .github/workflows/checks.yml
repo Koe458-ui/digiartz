@@ -24,6 +24,20 @@ jobs:
           node-version: '22'
       - run: node scripts/check-precache.mjs
 
+  overlays:
+    name: every dialog renders over the page, not in it
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # A dialog styled by id gives a second dialog copying its markup no
+      # position and no display:none, so it lands in the page flow and is
+      # permanently visible. Every inner class can be correct while this is
+      # wrong, which is why reviewing the classes did not catch it.
+      - run: node scripts/check-overlays.mjs
+
   cache:
     name: cache keeps one member's data out of another's session
     runs-on: ubuntu-latest

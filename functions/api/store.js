@@ -2026,7 +2026,7 @@ const MODULE = `
   // ---- the code -----------------------------------------------------------
   function promoHtml(promo){
     if(!promo.code){
-      return '<section class="dzClCard dzClMakeCard">' +
+      return '<section class="dzClCard">' +
         '<div class="dzClCardHd">Your promo code</div>' +
         '<p class="dzClMakeNote">Pick 4 to 6 letters or digits. It is yours for ' +
           'good — it cannot be changed once it is made, and nobody else can ' +
@@ -2041,7 +2041,7 @@ const MODULE = `
       '</section>';
     }
 
-    return '<section class="dzClCard dzClCodeCard">' +
+    return '<section class="dzClCard">' +
       '<div class="dzClCardHd">Your promo code</div>' +
       '<div class="dzClCode">' +
         '<span class="dzClCodeTxt">' + esc(promo.code) + '</span>' +

@@ -479,7 +479,7 @@ function hideCommentThumbnail(){
   document.addEventListener('focusin', function(e){
     var t = e.target;
     if(!t || !t.matches || !t.matches('input, textarea')) return;
-    if(!t.closest('.cmMod, #rptMod, #cmInfoPage')) return;
+    if(!t.closest('.cmMod, .rptMod, #cmInfoPage')) return;
     setTimeout(function(){
       try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){}
     }, 320);

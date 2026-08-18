@@ -265,9 +265,78 @@
   function pfPaintTopBar(isOwner){
     var back = document.getElementById('pfTopBack');
     var acts = document.getElementById('pfTopActions');
+    var guest = document.getElementById('pfTopGuest');
     var known = (isOwner !== null && isOwner !== undefined);
     if(back) back.hidden = !known || !!isOwner;
     if(acts) acts.hidden = !isOwner;
+    // Only once we know whose profile this is, only on somebody else's, and
+    // only for a member — there is nobody to attribute a signed-out report to,
+    // and user_reports.reporter_id is how a queue of them is deduplicated.
+    if(guest) guest.hidden = !known || !!isOwner || !currentUser;
+  }
+
+  // ---- reporting an account ------------------------------------------------
+  //
+  // The sibling of the artwork report in js/gallery.js, and it shares that
+  // sheet's markup classes so the two look alike. What it does NOT share is
+  // the reason list: an upload is judged on what it is, an account on what it
+  // keeps doing, and the values here are the ones public.user_reports accepts.
+  var rptUserBusy = false;
+
+  function pfReportUser(){
+    if(!currentUser){ showToast('Sign in to report an account'); openAuthMod(); return; }
+    if(!pf.profile){ showToast('Nothing to report'); return; }
+    if(pf.profile.id === currentUser.id) return;
+
+    var m = document.getElementById('rptUserMod');
+    if(!m) return;
+    var chosen = m.querySelector('input[name="rptUserReason"]:checked');
+    if(chosen) chosen.checked = false;
+    document.getElementById('rptUserDetails').value = '';
+    // The handle, so nobody reports the wrong account off a stale sheet.
+    var sub = document.getElementById('rptUserSub');
+    if(sub) sub.textContent = 'Why are you reporting @' +
+      (pf.profile.username || 'this account') + '?';
+    m.classList.add('open');
+  }
+
+  function rptUserClose(){
+    var m = document.getElementById('rptUserMod');
+    if(m) m.classList.remove('open');
+  }
+
+  async function rptUserSubmit(){
+    if(rptUserBusy) return;
+    var m = document.getElementById('rptUserMod');
+    var picked = m.querySelector('input[name="rptUserReason"]:checked');
+    if(!picked){ showToast('Pick a reason first'); return; }
+    if(!pf.profile || !currentUser) return;
+
+    var btn = document.getElementById('rptUserSubmit');
+    rptUserBusy = true; btn.disabled = true; btn.textContent = 'SENDING…';
+    try{
+      var ins = await sb.from('user_reports').insert({
+        reporter_id: currentUser.id,
+        target_id  : pf.profile.id,
+        reason     : picked.value,
+        details    : (document.getElementById('rptUserDetails').value.trim() || null)
+      });
+      // A second report of the same account by the same member is refused by
+      // the partial unique index, and that is not a failure to tell them
+      // about: they reported it, it is in the queue, and saying so twice would
+      // only invite them to try a third time.
+      if(ins.error && ins.error.code !== '23505') throw ins.error;
+      rptUserClose();
+      showToast('Report submitted — thank you');
+    }catch(e){
+      // safeErr passes our own messages through and swallows anything that
+      // reads like a database error — which is how the suspension notice from
+      // dz_ban_gate() reaches a banned member who tries to report their way
+      // out of it, while a constraint violation does not.
+      showToast(safeErr(e, 'Couldn\u2019t submit report — try again'));
+    }finally{
+      rptUserBusy = false; btn.disabled = false; btn.textContent = '🚩 Submit Report';
+    }
   }
 
   // paint profile row

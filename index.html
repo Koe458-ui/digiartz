@@ -630,6 +630,14 @@
         </span>
         <span class="pfTopTitle">PROFILE</span>
       </div>
+      <!-- Shown on somebody else's profile, and only to a signed-in visitor.
+           pfPaintTopBar decides; it is hidden here so it never flashes on the
+           owner's own page while the profile is still loading. -->
+      <div class="pfTopR" id="pfTopGuest" hidden>
+        <button class="pfTopBtn" id="pfTopReportBtn" onclick="pfReportUser()" aria-label="Report this account">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V4"/><path d="M4 5h11l-1.5 3L15 11H4"/></svg>
+        </button>
+      </div>
       <div class="pfTopR" id="pfTopActions">
         <button class="pfTopBtn" id="pfTopSearchBtn" onclick="openPfSearch()" aria-label="Search this profile" aria-controls="pfSearchPage">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
@@ -2353,6 +2361,38 @@
     </div>
   </div>
 
+  <!-- Reporting an ACCOUNT, which is a different queue from reporting an
+       upload above and has different reasons: an upload is judged on what it
+       is, an account on what it keeps doing. The reasons here are exactly the
+       ones public.user_reports accepts — its check constraint is the authority
+       and this list has to match it, or a member picks a reason and the insert
+       is refused for a shape they cannot see.
+
+       Same card, same classes, same stylesheet. Nothing new to style, and the
+       two report sheets look like siblings because they are. -->
+  <div id="rptUserMod" role="dialog" aria-modal="true" aria-labelledby="rptUserTitle" onclick="if(event.target===this)rptUserClose()">
+    <div class="rptCard">
+      <div class="rptTitle" id="rptUserTitle">🚩 Report Account</div>
+      <div class="rptSub" id="rptUserSub">Why are you reporting this account?</div>
+      <div class="rptOpts">
+        <label class="rptOpt"><input type="radio" name="rptUserReason" value="dmca"><span>DMCA / Copyright</span></label>
+        <label class="rptOpt"><input type="radio" name="rptUserReason" value="spam"><span>Spam / Advertising</span></label>
+        <label class="rptOpt"><input type="radio" name="rptUserReason" value="harassment"><span>Harassment</span></label>
+        <label class="rptOpt"><input type="radio" name="rptUserReason" value="fraud"><span>Fraud / Scam</span></label>
+        <label class="rptOpt"><input type="radio" name="rptUserReason" value="impersonation"><span>Impersonation</span></label>
+        <label class="rptOpt"><input type="radio" name="rptUserReason" value="hate"><span>Hate speech</span></label>
+        <label class="rptOpt"><input type="radio" name="rptUserReason" value="illegal"><span>Illegal activity</span></label>
+        <label class="rptOpt"><input type="radio" name="rptUserReason" value="other"><span>Other</span></label>
+      </div>
+      <div class="rptLbl">ADDITIONAL DETAILS (OPTIONAL)</div>
+      <textarea class="rptArea" id="rptUserDetails" maxlength="1000" placeholder="What has this account been doing?"></textarea>
+      <div class="rptActions">
+        <button class="rptBtn" onclick="rptUserClose()">Cancel</button>
+        <button class="rptBtn rptBtn--go" id="rptUserSubmit" onclick="rptUserSubmit()">🚩 Submit Report</button>
+      </div>
+    </div>
+  </div>
+
   <div id="dlQuotaMod" role="dialog" aria-modal="true" aria-labelledby="dlQuotaTitle" onclick="if(event.target===this)dzQuotaClose()">
     <div class="dlqCard">
       <div class="dlqIcon" aria-hidden="true">⬇</div>
@@ -2793,7 +2833,7 @@
   <script src="/js/protect.js?v=3"></script>
   <script src="/js/gallery.js?v=86"></script>
   <script src="/js/auth.js?v=15"></script>
-  <script src="/js/profile.js?v=14"></script>
+  <script src="/js/profile.js?v=15"></script>
   <script src="/js/albums.js?v=16"></script>
   <script src="/js/drafts.js?v=8"></script>
   <script src="/js/upqueue.js?v=7"></script>

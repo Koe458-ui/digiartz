@@ -450,6 +450,64 @@ end $$;
 revoke all on function public.dz_mod_find(text) from public, anon;
 grant execute on function public.dz_mod_find(text) to authenticated;
 
+-- ---------------------------------------------------------------------------
+-- AND THE BAN HAS TO ACTUALLY STOP SOMETHING.
+--
+-- A row in user_bans is a record of a decision. On its own it is not a ban:
+-- until something reads it, a banned member uploads, comments and sells
+-- exactly as before, and the moderator who pressed the button has been told a
+-- lie by their own panel. So it is read here, on the same tables and by the
+-- same mechanism as the write rate limiter in 20260809_write_rate_limits.sql —
+-- one BEFORE trigger per member-writable table, attached by the same loop.
+--
+-- WHAT THIS DOES AND DOES NOT DO, because a half-enforced ban is worse than a
+-- documented one:
+--
+--   It stops every write a member can make: uploads, listings, posts, jobs,
+--   comments, messages, reports, albums, profile edits. That is the surface a
+--   banned account is banned FOR.
+--
+--   It does not stop reading. Every read on this site is governed by an RLS
+--   policy of its own, and threading a ban check through all of them is a
+--   change with a much larger blast radius than this one — a mistake there
+--   takes the site down for everybody rather than letting one banned account
+--   keep browsing. A banned member can still see pages. They cannot touch
+--   anything.
+--
+--   It does not end their session. Supabase issues the token and this schema
+--   does not revoke it. The next write fails, which is the moment it matters.
+--
+-- The service role and the schedulers pass through, exactly as they do in the
+-- rate limiter, and for the same reason: auth.uid() is null for both, and a
+-- scheduled post queued before a ban is not a write the banned member is
+-- making now.
+create or replace function public.dz_ban_gate()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public', 'pg_temp'
+as $$
+declare v_uid uuid := auth.uid();
+begin
+  if v_uid is null then return new; end if;
+  if public.dz_is_banned(v_uid) then
+    -- Worded to survive safeErr in js/app-core.js, which suppresses anything
+    -- that reads like a database error and shows the rest to the member. The
+    -- reason is not quoted back: it is written for the audit log and for
+    -- support, not as a message to argue with.
+    raise exception 'Your account is suspended. Contact DigiArtzsupport@gmail.com'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end $$;
+revoke all on function public.dz_ban_gate() from public, anon, authenticated;
+
+-- The triggers that call it are attached at the END of this file, not here.
+-- The loop skips a table this deployment does not have, and user_reports is
+-- created further down — attached at this point it would silently skip the one
+-- table this migration itself adds, which is exactly what it did on the first
+-- run of this file. Nothing else in here is order-dependent; that one is.
+
 -- ===========================================================================
 -- 5. REPORTS ABOUT PEOPLE
 -- ===========================================================================
@@ -1551,3 +1609,52 @@ begin
 end $$;
 revoke all on function public.dz_platform_revenue() from public, anon;
 grant execute on function public.dz_platform_revenue() to authenticated;
+
+-- ===========================================================================
+-- 12. THE BAN GATE, ATTACHED
+-- ===========================================================================
+-- Last, because the loop below skips any table that does not exist yet and
+-- user_reports is created in section 5 of this same file. Attaching it up
+-- beside dz_ban_gate() left the one table this migration adds ungated, and a
+-- banned account could still file reports — which is precisely the abuse a
+-- ban is for.
+-- The same table list the rate limiter uses, and deliberately so: those are
+-- the tables a member can write, and the two lists drifting apart is how a
+-- surface ends up rate limited but not ban-gated, or the reverse.
+do $$
+declare r record;
+begin
+  for r in
+    select * from (values
+      ('artworks', 'INSERT'), ('artworks', 'UPDATE'),
+      ('resources', 'INSERT'), ('resources', 'UPDATE'),
+      ('marketplace_items', 'INSERT'), ('marketplace_items', 'UPDATE'),
+      ('blog_posts', 'INSERT'), ('blog_posts', 'UPDATE'),
+      ('jobs', 'INSERT'), ('jobs', 'UPDATE'),
+      ('item_comments', 'INSERT'), ('comments', 'INSERT'),
+      ('direct_messages', 'INSERT'),
+      ('item_reports', 'INSERT'), ('artwork_reports', 'INSERT'),
+      ('user_reports', 'INSERT'),
+      ('albums', 'INSERT'), ('albums', 'UPDATE'),
+      ('profiles', 'UPDATE'),
+      ('profile_creds', 'INSERT'),
+      ('scheduled_uploads', 'INSERT'), ('scheduled_sections', 'INSERT'),
+      ('item_likes', 'INSERT'), ('item_bookmarks', 'INSERT'),
+      ('cart_items', 'INSERT'), ('community_members', 'INSERT'),
+      ('friendships', 'INSERT')
+    ) as t(tbl, op)
+  loop
+    if to_regclass('public.' || r.tbl) is null then continue; end if;
+
+    execute format('drop trigger if exists dz_ban_%s_%s on public.%I',
+                   lower(r.op), r.tbl, r.tbl);
+    -- Fired BEFORE the rate limiter would matter and before any of the row's
+    -- own triggers: a suspended account should not consume a rate budget it
+    -- cannot spend, and should not reach a uniqueness check that would tell it
+    -- something about the table.
+    execute format(
+      'create trigger dz_ban_%s_%s before %s on public.%I '||
+      'for each row execute function public.dz_ban_gate()',
+      lower(r.op), r.tbl, r.op, r.tbl);
+  end loop;
+end $$;

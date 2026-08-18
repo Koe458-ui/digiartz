@@ -179,6 +179,15 @@ create trigger dz_profiles_guard_insert
 revoke all on function public.dz_profiles_guard_privileged() from public, anon, authenticated;
 revoke all on function public.dz_profiles_guard_insert() from public, anon, authenticated;
 
+-- Pinned for hygiene rather than for a hole: both are SECURITY INVOKER and
+-- reference no schema-qualified object, so there is nothing in them to hijack.
+-- But a mutable search_path on the function guarding the role column is a line
+-- nobody should have to think twice about, and Supabase's advisor flags it.
+-- `set search_path` does not affect current_user, which is the whole test
+-- these two make.
+alter function public.dz_profiles_guard_privileged() set search_path to 'public', 'pg_temp';
+alter function public.dz_profiles_guard_insert()     set search_path to 'public', 'pg_temp';
+
 -- ===========================================================================
 -- 2. WHO IS WHAT — one answer, read by everything below
 -- ===========================================================================
@@ -194,10 +203,26 @@ set search_path to 'public', 'pg_temp'
 as $$
   select role from public.profiles where id = p_user;
 $$;
-revoke all on function public.dz_role(uuid) from public, anon;
--- Deliberately not granted to `authenticated`: a member has no business
--- enumerating who the staff are. The SECURITY DEFINER functions below call it
--- as their own owner, which is what it exists for.
+-- ...FROM authenticated TOO, AND THAT WORD IS LOAD-BEARING.
+--
+-- Supabase grants EXECUTE on functions in `public` to anon and authenticated by
+-- default. Revoking from PUBLIC does not take that away — the grant to
+-- `authenticated` is its own, and it survives. Written as "from public, anon",
+-- as every line here first was, these helpers stayed reachable at
+-- /rest/v1/rpc for any signed-in member.
+--
+-- dz_role is the one that matters: post a uuid, read back that account's role,
+-- and the list of who the admins, devs and partners are falls out. That is the
+-- exact leak dz_mod_find() is hardened against, arriving through the helper the
+-- hardening is built on.
+--
+-- Caught by Supabase's own advisor against the live project, not by the test
+-- suite — the scratch fixture had no such default grant, so a revoke that was
+-- doing nothing in production looked like it worked. The fixture grants it now.
+--
+-- Every one of these exists to be called BY the SECURITY DEFINER functions
+-- below, which run as their owner and are unaffected.
+revoke all on function public.dz_role(uuid) from public, anon, authenticated;
 
 create or replace function public.dz_is_staff(p_user uuid default auth.uid())
 returns boolean
@@ -210,7 +235,7 @@ as $$
     (select role in ('admin', 'dev') from public.profiles where id = p_user),
     false);
 $$;
-revoke all on function public.dz_is_staff(uuid) from public, anon;
+revoke all on function public.dz_is_staff(uuid) from public, anon, authenticated;
 
 -- Neither staff nor partner: the accounts a partner is allowed to moderate.
 -- 'guest' is what this database writes and null is what a nullable column
@@ -227,7 +252,7 @@ as $$
     (select role is null or role = 'guest' from public.profiles where id = p_user),
     false);
 $$;
-revoke all on function public.dz_is_ordinary(uuid) from public, anon;
+revoke all on function public.dz_is_ordinary(uuid) from public, anon, authenticated;
 
 create or replace function public.dz_is_partner(p_user uuid default auth.uid())
 returns boolean
@@ -240,7 +265,7 @@ as $$
     (select role = 'partner' from public.profiles where id = p_user),
     false);
 $$;
-revoke all on function public.dz_is_partner(uuid) from public, anon;
+revoke all on function public.dz_is_partner(uuid) from public, anon, authenticated;
 
 -- ===========================================================================
 -- 3. THE AUDIT LOG — written before the thing it records is allowed to matter
@@ -334,8 +359,7 @@ as $$
        and lifted_at is null
        and (expires_at is null or expires_at > now()));
 $$;
-revoke all on function public.dz_is_banned(uuid) from public, anon;
-grant execute on function public.dz_is_banned(uuid) to authenticated;
+revoke all on function public.dz_is_banned(uuid) from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Who may ban whom.
@@ -364,7 +388,7 @@ as $$
     else false
   end;
 $$;
-revoke all on function public.dz_may_moderate(uuid, uuid) from public, anon;
+revoke all on function public.dz_may_moderate(uuid, uuid) from public, anon, authenticated;
 
 create or replace function public.dz_ban_user(
   p_target uuid, p_reason text, p_note text default null, p_days integer default null)

@@ -42,6 +42,16 @@ const SUB_DAYS = 31;
 // the currency list.
 const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD']);
 
+// The smallest charge a gateway will accept, per currency, in minor units.
+// A 90% discount on a cheap plan in a cheap currency can land under this, and
+// a gateway refusing the order is a checkout that fails with a message the
+// buyer cannot act on. The floor is roughly one major unit — a rupee, a cent,
+// a yen — which is what both providers document as their minimum.
+const MIN_CHARGE = { INR: 100, JPY: 1, HUF: 1, TWD: 1 };
+const MIN_CHARGE_DEFAULT = 50;
+const minCharge = (cur) => MIN_CHARGE[cur] != null ? MIN_CHARGE[cur] : MIN_CHARGE_DEFAULT;
+
+
 // price_cents -> the currency's smallest unit. Listings only.
 const fromPriceCents = (cents, cur) =>
   ZERO_DECIMAL.has(cur) ? Math.round(cents / 100) : cents;
@@ -168,6 +178,13 @@ async function recordEarning(env, row, prov) {
       gross_amount: Number(row.amount) || 0,
       gateway_fee: (prov && prov.fee) || 0,
       currency: row.currency,
+      // Which promo code, if any, the buyer arrived with. Nothing here does
+      // anything with it: dz_partner_credit_market() reads it off the inserted
+      // row and takes the partner's share out of the platform's commission,
+      // for the same reason the deductions are computed there rather than in
+      // four checkout paths. A marketplace code is attribution only — it does
+      // not change the price, and it does not change what the seller keeps.
+      promo_code_id: row.promo_code_id || null,
       provider: 'razorpay',
       status: 'available',
     }),
@@ -303,8 +320,56 @@ async function applySubscription(env, userId, tier) {
   return keep;
 }
 
+
+// ---------------------------------------------------------------------------
+// A PROMO CODE, AND WHAT IT IS WORTH.
+//
+// Resolved by Postgres, AS THE BUYER — the caller's own bearer, not the
+// service key — because dz_promo_resolve() has to know who is asking in order
+// to refuse a partner spending their own code. Sending the service key here
+// would make every check pass and hand a partner a 90% discount on their own
+// Max plus a rebate to themselves on top of it.
+//
+// Nothing about the discount is decided in the browser. The browser sends six
+// characters; the amount charged is computed here from what Postgres said the
+// code was worth, and the code's id goes onto the payments row so the
+// commission trigger can find it at settlement.
+async function resolvePromo(env, request, code, kind) {
+  const raw = String(code || '').trim().toUpperCase();
+  if (!raw) return { id: null, discountBps: 0 };
+  if (!/^[A-Z0-9]{4,6}$/.test(raw)) return { error: 'That code does not look right' };
+  try {
+    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_promo_resolve', {
+      method: 'POST',
+      headers: {
+        apikey: sbAnon(env),
+        authorization: request.headers.get('authorization') || '',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ p_code: raw, p_kind: kind }),
+    });
+    if (!res.ok) return { error: 'That code could not be checked' };
+    const r = await res.json();
+    if (!r || !r.ok) return { error: (r && r.error) || 'No such code' };
+    // Clamped on the way out. The discount comes from a config row an admin can
+    // edit, and a typo there should cost the platform a sale, not the whole
+    // price of one.
+    const bps = Math.min(Math.max(Number(r.discount_bps) || 0, 0), 9500);
+    return { id: r.id, code: raw, discountBps: bps };
+  } catch {
+    // A code that cannot be checked is not silently honoured and not silently
+    // dropped either — the buyer is told, and can pay without it.
+    return { error: 'That code could not be checked' };
+  }
+}
+
+// Only Max carries a promo discount. A code typed against Lite or Premium is
+// refused rather than quietly ignored: a buyer who thinks they used a code and
+// was charged full price will say so, and they will be right.
+const PROMO_PLAN = 'max';
+
 // create order and ledger row
-async function makeOrder(env, user, { amount, currency, kind, plan, itemId, label }) {
+async function makeOrder(env, user, { amount, currency, kind, plan, itemId, label, promoId }) {
   const order = await rzp(env, '/v1/orders', {
     method: 'POST',
     body: JSON.stringify({
@@ -318,6 +383,9 @@ async function makeOrder(env, user, { amount, currency, kind, plan, itemId, labe
     body: JSON.stringify({
       user_id: user.id, kind, plan: plan || null, item_id: itemId || null,
       amount, currency, provider: 'razorpay',
+      // Set at checkout and never afterwards. The commission triggers read it
+      // at settlement; nothing else in this file touches it again.
+      promo_code_id: promoId || null,
       // What the buyer thought they were buying, kept on the payment itself.
       // A seller who delists after the sale takes the listing row with them,
       // and My Purchases falls back to this so the buyer's own history does not
@@ -402,11 +470,26 @@ export async function onRequestPost({ env, request }) {
         }
       }
 
+      // A promo code, if one was typed. Applied after the downgrade check, so
+      // a discounted order still cannot take a plan away from somebody.
+      const promo = await resolvePromo(env, request, body.promo, 'subscription');
+      if (promo.error) return json({ error: promo.error }, 400);
+      if (promo.id && key !== PROMO_PLAN)
+        return json({ error: 'That code only applies to Max' }, 400);
+      if (promo.discountBps > 0) {
+        amount = Math.round(amount * (10000 - promo.discountBps) / 10000);
+        // Razorpay refuses an order under one major unit, and so does every
+        // other gateway. A discount that lands under the floor is honoured up
+        // to it rather than turning into a failed checkout the buyer cannot
+        // read the reason for.
+        amount = Math.max(amount, minCharge(currency));
+      }
+
       // Both a plan price and a support amount are already in the smallest
       // unit — subscription_prices.amount is, and the browser sends a support
       // amount through minorOf(), which does the same. Nothing to convert.
       return await makeOrder(env, user, {
-        amount, currency,
+        amount, currency, promoId: promo.id,
         kind: 'subscription', plan: key, label: PLAN_LABEL[key],
       });
     }
@@ -430,10 +513,17 @@ export async function onRequestPost({ env, request }) {
         '&status=eq.paid&select=id&limit=1');
       if (paid && paid.length) return json({ owned: true });
 
+      // A code on a marketplace purchase is attribution, not a discount — the
+      // buyer pays the listed price and the partner's share comes out of the
+      // platform's commission. dz_promo_resolve() returns discount_bps 0 for
+      // this kind, so there is nothing to apply; only the id is carried.
+      const promo = await resolvePromo(env, request, body.promo, 'marketplace');
+      if (promo.error) return json({ error: promo.error }, 400);
+
       return await makeOrder(env, user, {
         amount: fromPriceCents(item.price_cents, item.currency),
         currency: item.currency || 'USD',
-        kind: 'marketplace', itemId,
+        kind: 'marketplace', itemId, promoId: promo.id,
         label: String(item.title || 'Marketplace item').slice(0, 120),
       });
     }
@@ -477,7 +567,7 @@ export async function onRequestPost({ env, request }) {
       // block replayed signatures
       const paidRows = await sbService(env,
         '/payments?rzp_order_id=eq.' + encodeURIComponent(orderId) + '&status=eq.created' +
-        '&select=id,user_id,kind,item_id,amount,currency', {
+        '&select=id,user_id,kind,item_id,amount,currency,promo_code_id', {
         method: 'PATCH',
         body: JSON.stringify({
           status: 'paid', rzp_payment_id: String(paymentId),

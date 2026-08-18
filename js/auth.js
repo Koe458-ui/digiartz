@@ -552,12 +552,37 @@
   }
 
   // role check
+  //
+  // isDev is 'dev' and nothing else, and it stays that way. Five other files
+  // read it — js/badwords.js waves a dev past the word filter, js/mywork.js
+  // lets one post in a read-only channel, js/sections.js and js/upqueue.js
+  // show one the moderation code behind a refusal — and every one of those is
+  // a developer's privilege rather than a moderator's. Widening it to include
+  // the partners would have handed all of that to an account type that is
+  // meant to have reports and bans and nothing else.
+  //
+  // So the two questions this feature actually asks get their own answers.
+  // userRole is the raw column; the two helpers below are what the admin panel
+  // and the nav entry read.
   let isDev = false;
+  let userRole = null;
   // user plan
   let userPlan = null;
+  // What the admin panel and its nav entry ask. Two names for two different
+  // powers, so no caller has to remember which roles are which.
+  //
+  // Neither is an authority. Both exist to decide what to DRAW — every action
+  // behind them is refused again in Postgres by dz_is_staff() and
+  // dz_may_moderate(), which are the copies that count. A member who edits
+  // these in a console gets a panel with buttons that all answer 403.
+  function dzIsStaff(){ return userRole === 'admin' || userRole === 'dev'; }
+  function dzIsPartner(){ return userRole === 'partner'; }
+  window.dzIsStaff = dzIsStaff;
+  window.dzIsPartner = dzIsPartner;
+
   async function checkUserRole(){
     if(!sb || !currentUser){
-      isDev=false; userPlan=null; currentUserAvatarUrl=null;
+      isDev=false; userRole=null; userPlan=null; currentUserAvatarUrl=null;
       dzSetPlan('guest', null); dzPaintLimits();
       if(typeof dzPaintAds === 'function') dzPaintAds();
       syncAdmBtn(); return;
@@ -568,6 +593,7 @@
         .eq('id',currentUser.id).single();
       if(error) throw error;
       isDev    = !!data && data.role==='dev';
+      userRole = (data && data.role) || null;
       userPlan = (data && data.subscription_tier) ? data.subscription_tier : 'guest';
       currentUserAvatarUrl = (data && data.avatar_url) ? data.avatar_url : null;
       // The expiry comes back with the tier now and goes to the one helper
@@ -588,7 +614,7 @@
       // subscription card beside the new member's name. Nothing had leaked,
       // but on a shared device that is indistinguishable from something that
       // had. A letter is the honest fallback.
-      isDev=false; userPlan='guest'; currentUserAvatarUrl=null;
+      isDev=false; userRole=null; userPlan='guest'; currentUserAvatarUrl=null;
       dzSetPlan('guest', null); dzPaintLimits();
       if(typeof dzPaintAds === 'function') dzPaintAds();
     }
@@ -709,7 +735,7 @@
       if (event === 'SIGNED_OUT') {
         currentUserAvatarUrl = null;
         syncAuthBtn();
-        isDev=false; userPlan=null; syncAdmBtn();
+        isDev=false; userRole=null; userPlan=null; syncAdmBtn();
         dzSetPlan('guest', null); dzPaintLimits();
         if(typeof dzPaintAds === 'function') dzPaintAds();
         syncSubOverviewCard(); // reset card to guest
@@ -717,7 +743,11 @@
         // close owner only pages
         closeProfilePage();
         closeMyWorkPage();
-        closeAdmPage();
+        // The admin panel is loaded per account; on sign-out it gives up its
+        // shell and its menu entry rather than merely closing, so the next
+        // account cannot inherit either. Guarded because a member who was
+        // never entitled to it never loaded the module that defines this.
+        if(typeof dzOpsReset === 'function') dzOpsReset();
       }
     });
 
@@ -860,41 +890,10 @@
     }catch(e){ /* silent failure */ }
   }
 
-  // broadcast composer
-  async function admSendBroadcast(){
-    if(!isDev) return;
-    var titleEl = document.getElementById('admNotiTitle'), msgEl = document.getElementById('admNotiMsg');
-    var title = (titleEl.value||'').trim(), msg = (msgEl.value||'').trim();
-    if(!title || !msg){ showToast('Enter a title and message'); return; }
-    var btn = document.getElementById('admNotiSendBtn');
-    if(btn) btn.disabled = true;
-    try{
-      const{error} = await sb.from('notifications').insert({user_id:null, type:'admin', title:title, message:msg});
-      if(error) throw error;
-      titleEl.value=''; msgEl.value='';
-      showToast('Notification sent to all users');
-      admLoadNotifSent();
-    }catch(e){ console.error('Error: '+e.message); }
-    if(btn) btn.disabled = false;
-  }
-
-  async function admLoadNotifSent(){
-    var wrap = document.getElementById('admNotiSentList'), empty = document.getElementById('admNotiEmpty');
-    if(!sb || !wrap) return;
-    try{
-      const{data,error} = await sb.from('notifications').select('*').is('user_id',null).order('created_at',{ascending:false}).limit(20);
-      if(error) throw error;
-      var rows = data||[];
-      wrap.innerHTML = rows.map(function(r){
-        return '<div class="admNotiSentItem">'+
-          '<div class="admNotiSentTitle">'+esc(r.title)+'</div>'+
-          '<div class="admNotiSentMsg">'+esc(r.message)+'</div>'+
-          '<div class="admNotiSentTime">'+(r.created_at?new Date(r.created_at).toLocaleString():'')+'</div>'+
-        '</div>';
-      }).join('');
-      if(empty) empty.style.display = rows.length ? 'none' : 'block';
-    }catch(e){ console.error('Error loading sent notifications: '+e.message); }
-  }
+  // The broadcast composer and the list of what has been sent used to be here.
+  // Both are part of the admin panel, so both moved with it into the module
+  // /api/ops serves — see the note in js/gallery.js. Nothing in this file
+  // names them any more.
 
 // admin upload removed
 

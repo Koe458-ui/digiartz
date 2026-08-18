@@ -741,8 +741,28 @@ const MODULE = `
           '</div>' +
         '</section>' +
 
-        '<section class="dzCoStep" id="dzCoHow">' +
+        // Only where a code can actually do something. Drawing the field on
+        // every checkout and refusing the code afterwards is how a buyer ends
+        // up believing they got a discount they did not get.
+        (spec.promo ?
+        '<section class="dzCoStep" id="dzCoPromo">' +
           '<div class="dzCoStepHead"><span class="dzCoNum">2</span>' +
+            '<h2>Promo code</h2></div>' +
+          '<div class="dzCoBox">' +
+            '<div class="dzCoPromoRow">' +
+              '<input type="text" id="dzCoPromoIn" class="dzCoPromoIn" ' +
+                'maxlength="6" autocapitalize="characters" autocomplete="off" ' +
+                'spellcheck="false" placeholder="ART24" ' +
+                'aria-label="Promo code, 4 to 6 letters or digits">' +
+              '<button type="button" id="dzCoPromoGo" class="dzCoPromoGo">Apply</button>' +
+            '</div>' +
+            '<div class="dzCoPromoMsg" id="dzCoPromoMsg" role="status"></div>' +
+          '</div>' +
+        '</section>' : '') +
+
+        '<section class="dzCoStep" id="dzCoHow">' +
+          '<div class="dzCoStepHead"><span class="dzCoNum">' +
+            (spec.promo ? '3' : '2') + '</span>' +
             '<h2>Payment method</h2></div>' +
           '<div class="dzCoBox">' +
             '<div class="dzCoPickMsg" hidden></div>' +
@@ -751,7 +771,8 @@ const MODULE = `
         '</section>' +
 
         '<section class="dzCoStep" id="dzCoGo" hidden>' +
-          '<div class="dzCoStepHead"><span class="dzCoNum">3</span>' +
+          '<div class="dzCoStepHead"><span class="dzCoNum">' +
+            (spec.promo ? '4' : '3') + '</span>' +
             '<h2>Payment gateway</h2></div>' +
           '<div class="dzCoBox dzCoGate"></div>' +
         '</section>' +
@@ -773,9 +794,126 @@ const MODULE = `
       how: root.querySelector('#dzCoHow'),
       step3: root.querySelector('#dzCoGo'),
       gate: root.querySelector('.dzCoGate'),
-      pickMsg: root.querySelector('.dzCoPickMsg')
+      pickMsg: root.querySelector('.dzCoPickMsg'),
+      // The code the buyer has successfully applied, or null. Read by the
+      // order callback at the moment the order is created — NOT stored
+      // anywhere else, and never trusted for the price: the server resolves
+      // the code again and computes the charge itself. What this holds is a
+      // string to send and a line to show, nothing more.
+      promo: null
     };
+
+    if(spec.promo) wirePromo(spec);
     return co;
+  }
+
+  // Checking a code before the buyer commits to it.
+  //
+  // The check is the same call the server makes at order time —
+  // /api/collab promo-resolve — so a code that passes here is a code that
+  // will pass there, and the discount quoted is the discount charged. It has
+  // to be: quoting a saving the order then does not honour is worse than
+  // offering no field at all.
+  function wirePromo(spec){
+    var input = co.root.querySelector('#dzCoPromoIn');
+    var btn   = co.root.querySelector('#dzCoPromoGo');
+    var msg   = co.root.querySelector('#dzCoPromoMsg');
+    if(!input || !btn || !msg) return;
+
+    function say(text, kind){
+      msg.textContent = text || '';
+      msg.className = 'dzCoPromoMsg' + (kind ? ' dzCoPromoMsg--' + kind : '');
+    }
+
+    function apply(){
+      var code = String(input.value || '').trim().toUpperCase();
+      input.value = code;
+      if(!code){ co.promo = null; say('', ''); return; }
+      if(!/^[A-Z0-9]{4,6}$/.test(code)){
+        co.promo = null;
+        say('A code is 4 to 6 letters or digits.', 'bad');
+        return;
+      }
+      btn.disabled = true;
+      say('Checking\u2026', '');
+      collabApi('promo-resolve', {code: code, kind: spec.promoKind || 'subscription'})
+        .then(function(r){
+          btn.disabled = false;
+          if(!r || !r.ok){
+            co.promo = null;
+            say((r && r.error) || 'No such code', 'bad');
+            return;
+          }
+          co.promo = code;
+          var off = Number(r.discount_bps) || 0;
+          say(off > 0
+                ? code + ' applied \u2014 ' + (off / 100) + '% off, charged at checkout.'
+                : code + ' applied. It does not change your price; it credits ' +
+                  'the creator who shared it.',
+              'ok');
+        }, function(){
+          btn.disabled = false;
+          co.promo = null;
+          say('That code could not be checked \u2014 you can pay without it.', 'bad');
+        });
+    }
+
+    btn.addEventListener('click', apply);
+    input.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); apply(); }
+    });
+    // Typing after applying drops the applied code, so the order cannot go out
+    // carrying one string while the buyer is looking at another.
+    input.addEventListener('input', function(){
+      if(co && co.promo){ co.promo = null; say('', ''); }
+    });
+  }
+
+  // Who this member is, asked ONCE.
+  //
+  // fillMenu() needs it to decide whether to append the Collab Hub row, and
+  // paintClaim() needs it to decide what the Max card's button is. Both run on
+  // every signed-in page load, and both used to ask separately — two identical
+  // round trips per member per load, for an answer that cannot differ between
+  // them.
+  //
+  // Cached as the PROMISE rather than the answer, so two callers racing on
+  // first paint share one request rather than starting a second while the
+  // first is still open. Cleared by dzCollabForget() when the answer could
+  // have changed, which is after claiming Max.
+  var statePromise = null;
+  function collabState(){
+    if(!statePromise){
+      statePromise = collabApi('state', {}).then(function(r){
+        return (r && r.state) || null;
+      }, function(){
+        // A failed lookup is not cached: the next paint should ask again
+        // rather than treat one dropped request as "not a partner" forever.
+        statePromise = null;
+        return null;
+      });
+    }
+    return statePromise;
+  }
+  function dzCollabForget(){ statePromise = null; }
+
+  // The collab endpoint, which is not one of the two payment providers and so
+  // does not go through api(). Same session, same no-store.
+  function collabApi(action, body){
+    if(typeof sb === 'undefined' || !sb) return Promise.reject(new Error('Sign in required'));
+    return sb.auth.getSession().then(function(s){
+      var session = s && s.data && s.data.session;
+      if(!session) throw new Error('Sign in required');
+      return fetch('/api/collab', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: 'Bearer ' + session.access_token
+        },
+        cache: 'no-store',
+        body: JSON.stringify(Object.assign({action: action}, body || {}))
+      });
+    }).then(function(res){ return res.json().catch(function(){ return null; }); });
   }
 
   // ---- one flow, either provider -----------------------------------------
@@ -851,6 +989,10 @@ const MODULE = `
       // card they tapped and not one next to it.
       tone: p.tone,
       gets: p.features,
+      // Max is the only plan a promo code touches, and the server agrees:
+      // rzp.js and paypal.js both refuse a code sent against anything else.
+      promo: id === 'max',
+      promoKind: 'subscription',
       note: 'A single charge for 31 days. Nothing recurring \\u2014 it does not ' +
             'renew itself, and you keep anything you bought on the marketplace ' +
             'whatever happens to your plan.'
@@ -889,7 +1031,11 @@ const MODULE = `
       }
     }
     start(planSpec(plan, amount), function(prov){
-      return api(prov, {action:'sub-order', plan:plan, amount:amount});
+      // co.promo is whatever the buyer applied and saw confirmed. The server
+      // resolves it again and computes the charge from its own figures — this
+      // is a string being forwarded, not a price being asserted.
+      return api(prov, {action:'sub-order', plan:plan, amount:amount,
+                        promo:(co && co.promo) || null});
     }, function(r){
       toast(r.tier ? 'Subscription active' : 'Thank you for the support');
     });
@@ -969,6 +1115,76 @@ const MODULE = `
     Array.prototype.forEach.call(host.querySelectorAll('.subBtn'), function(b){
       b.addEventListener('click', function(){ window.dzSubBuy(b.getAttribute('data-plan')); });
     });
+    paintClaim(host);
+  }
+
+  // ---- the partner's Max --------------------------------------------------
+  //
+  // A partner does not buy Max, so for a partner the Max card's button is not
+  // a payment button. It is replaced outright rather than hidden beside a
+  // second one: two buttons on one card, one of which charges money, is a
+  // mistake waiting for a mis-tap.
+  //
+  // The state comes from the server on every paint. Nothing about who is a
+  // partner is cached in this module or written into the page — a member who
+  // is not one sees the ordinary card and no trace that another one exists.
+  function paintClaim(host){
+    var card = host.querySelector('.subBtn[data-plan="max"]');
+    if(!card) return;
+
+    collabState().then(function(st){
+      if(!st || !st.is_partner) return;              // ordinary member, ordinary card
+      var btn = host.querySelector('.subBtn[data-plan="max"]');
+      if(!btn) return;                               // repainted underneath us
+
+      if(st.max_claimed){ claimed(btn); return; }
+
+      btn.textContent = 'Claim Max Membership';
+      btn.classList.add('subBtn--claim');
+      btn.removeAttribute('data-plan');              // dzSubBuy can no longer reach it
+      btn.setAttribute('aria-label', 'Claim your free Max membership');
+
+      var fresh = btn.cloneNode(true);               // drops the buy listener
+      btn.parentNode.replaceChild(fresh, btn);
+      fresh.addEventListener('click', function(){
+        fresh.disabled = true;
+        fresh.textContent = 'Claiming\u2026';
+        collabApi('claim-max', {}).then(function(res){
+          if(!res || !res.ok){
+            fresh.disabled = false;
+            fresh.textContent = 'Claim Max Membership';
+            toast((res && res.error) || 'Could not claim Max');
+            return;
+          }
+          claimed(fresh);
+          dzCollabForget();          // max_claimed has moved
+          toast('Max is yours \u2014 enjoy it');
+          // The rest of the page reads the tier off the profile, so it has to
+          // be told the profile moved. checkUserRole() repaints the nav chip,
+          // the daily limits and the ad slots from one read.
+          if(typeof window.checkUserRole === 'function') window.checkUserRole();
+        }, function(){
+          fresh.disabled = false;
+          fresh.textContent = 'Claim Max Membership';
+          toast('Could not claim Max');
+        });
+      });
+    }, function(){ /* unreachable collab endpoint leaves the ordinary card */ });
+
+    function claimed(btn){
+      btn.textContent = 'Max Claimed';
+      btn.disabled = true;
+      btn.classList.add('subBtn--claim', 'subBtn--claimed');
+      btn.removeAttribute('data-plan');
+      btn.setAttribute('aria-label', 'Max claimed \u2014 yours at no cost');
+      var price = btn.closest('.subCard');
+      price = price && price.querySelector('.subPrice');
+      if(price){
+        price.textContent = C.freePrice || '0';
+        var per = btn.closest('.subCard').querySelector('.subPricePer');
+        if(per) per.textContent = 'yours as a partner';
+      }
+    }
   }
 
   // What this caller has already bought, as far as the last answer goes. It is
@@ -1029,7 +1245,7 @@ const MODULE = `
 
   // One question for the whole page rather than one per card.
   function askOwned(ids){
-    if(!ids.length || !window.sb || !sb.rpc) return;
+    if(!ids.length || typeof sb === 'undefined' || !sb || !sb.rpc) return;
     sb.rpc('dz_market_owned', {p_items: ids}).then(function(res){
       if(!res || res.error || !res.data) return;
       var got = false;
@@ -1507,7 +1723,7 @@ const MODULE = `
   // One panel, three views, one neutral id. Simpler than three shells that had
   // to be kept in step, and there is nothing in the public page to read.
   var VIEWS = { bal: 'Balance', pay: 'Payout methods', buy: 'My purchases',
-                cur: 'Currency' };
+                cur: 'Currency', collab: 'Collab Hub' };
 
   function panelEl(){
     var el = document.getElementById('dzPanelHost');
@@ -1587,6 +1803,7 @@ const MODULE = `
 
     if(view === 'buy') return loadPurchases(force, host, seq);
     if(view === 'cur') return renderCurrency(host);
+    if(view === 'collab') return loadCollab(force, host, seq);
     loadWallet(force, host, view === 'pay' ? renderBank : renderWallet, seq);
   }
 
@@ -1604,7 +1821,36 @@ const MODULE = `
         return '<button class="pfMenuItem" type="button" data-v="' + esc(p[0]) + '">' +
                esc(p[1]) + '</button>';
       }).join('');
+    wireMenu(host);
+
+    // COLLAB HUB, and only for a partner.
+    //
+    // Appended after the four above rather than written with them, because it
+    // takes a round trip to know whether this member is entitled to it — and
+    // the four do not, so making all five wait would slow the menu down for
+    // everyone to hide one row from most of them.
+    //
+    // Nothing about the Collab Hub is in index.html, in this bundle's markup,
+    // or in the menu until the server has said the word 'partner'. That is the
+    // same reasoning that keeps the wallet out of the public page: a heading
+    // nobody is entitled to still tells them the programme exists.
+    collabState().then(function(st){
+      if(!st || !st.is_partner) return;
+      if(host.querySelector('[data-v="collab"]')) return;   // menu rebuilt underneath us
+      var b = document.createElement('button');
+      b.className = 'pfMenuItem';
+      b.type = 'button';
+      b.setAttribute('data-v', 'collab');
+      b.textContent = 'Collab Hub';
+      host.appendChild(b);
+      wireMenu(host);
+    }, function(){ /* unreachable endpoint simply leaves the four */ });
+  }
+
+  function wireMenu(host){
     Array.prototype.forEach.call(host.querySelectorAll('[data-v]'), function(b){
+      if(b.dataset.dzWired) return;
+      b.dataset.dzWired = '1';
       b.addEventListener('click', function(){
         var v = b.getAttribute('data-v');
         if(typeof setGo === 'function') setGo(function(){ openPanel(v); }, 'dzPanelHost');
@@ -1613,6 +1859,330 @@ const MODULE = `
     });
   }
 
+
+  // ---- the Collab Hub -----------------------------------------------------
+  //
+  // A partner's own code, their own numbers, their own money. Every figure on
+  // this page comes from one call, so the balance and the rows under it are
+  // from the same moment — the same rule the wallet is built on.
+  //
+  // THERE IS NOTHING TO ISOLATE HERE, WHICH IS THE POINT. This view cannot ask
+  // about another partner: dz_promo_mine(), dz_partner_wallet() and
+  // dz_partner_ledger() take no partner argument at all, so there is no id for
+  // this code to get wrong and no filter for it to forget. Partner 2's figures
+  // are not blurred out of this page — they never reach the browser.
+
+  var collabP = null;
+
+  function loadCollab(force, host, seq){
+    if(force) collabP = null;
+    if(!collabP) collabP = collabApi('wallet', {limit: 50});
+    collabP.then(function(d){
+      if(!d || !d.ok){
+        collabP = null;
+        if(stale(seq)) return;
+        host.innerHTML = '<div class="dzWlEmpty">' +
+          esc((d && d.error) || 'Could not load your Collab Hub') + '</div>';
+        return;
+      }
+      if(!stale(seq)) renderCollab(host, d);
+    }, function(){
+      collabP = null;
+      if(stale(seq)) return;
+      host.innerHTML = '<div class="dzWlEmpty">Could not load your Collab Hub</div>';
+    });
+  }
+
+  function refreshCollab(){
+    collabP = null;
+    var el = document.getElementById('dzPanelHost');
+    if(el && el.classList.contains('open') && el.dataset.view === 'collab') paintPanel(true);
+  }
+
+  // The breakdown behind the ⓘ.
+  //
+  // Written out to the last decimal because a partner is being asked to trust
+  // an arithmetic they cannot see run. The marketplace row says where the
+  // money comes from — the platform's cut, not the seller's — because that is
+  // the question anyone reading a revenue share asks second, and answering it
+  // badly is how a creator programme gets a reputation.
+  var SPLIT_INFO = [
+    {
+      head: 'When someone buys a marketplace file with your code',
+      note: 'Your code does not change what the buyer pays here. It tells us ' +
+            'who sent them.',
+      rows: [
+        ['The artist who made it', '85%', 'Or 90% if they are on Max. Your ' +
+          'commission never comes out of this.'],
+        ['Tax and processing', 'as charged', 'Payment fees, plus whatever tax ' +
+          'is due by law on the sale. Not a rate we set.'],
+        ['You', '5%', 'Of the sale, paid the moment it settles.'],
+        ['DigiArtz', 'the rest', 'Our commission, less your 5%.']
+      ]
+    },
+    {
+      head: 'When someone buys Max with your code',
+      note: 'They pay a tenth of the price. Half of everything collected is ' +
+            'yours.',
+      rows: [
+        ['The buyer saves', '90%', 'The discount your code applies at checkout.'],
+        ['Tax and processing', '5%', 'Of the full price.'],
+        ['You', '2.5%', 'Of the full price — a quarter of what was actually ' +
+          'charged.'],
+        ['DigiArtz', '2.5%', 'The same as you.']
+      ]
+    }
+  ];
+
+  function splitInfoHtml(){
+    return SPLIT_INFO.map(function(b){
+      return '<div class="dzClInfoBlk">' +
+        '<h3>' + esc(b.head) + '</h3>' +
+        '<p class="dzClInfoNote">' + esc(b.note) + '</p>' +
+        '<ul class="dzClInfoRows">' +
+          b.rows.map(function(r){
+            return '<li>' +
+              '<span class="dzClInfoWho">' + esc(r[0]) + '</span>' +
+              '<span class="dzClInfoPct">' + esc(r[1]) + '</span>' +
+              '<span class="dzClInfoWhy">' + esc(r[2]) + '</span>' +
+            '</li>';
+          }).join('') +
+        '</ul>' +
+      '</div>';
+    }).join('') +
+    '<p class="dzClInfoFine">Commissions are credited the moment a sale ' +
+    'settles — there is no holding period, because DigiArtz does not refund ' +
+    'digital files or subscriptions. If a payment is later charged back by the ' +
+    'buyer’s bank, the commission on it is reversed with the sale.</p>';
+  }
+
+  function openSplitInfo(){
+    var sh = openSheet('How the split works');
+    sh.body.innerHTML = '<div class="dzClInfo">' + splitInfoHtml() + '</div>';
+  }
+
+  function renderCollab(host, d){
+    var promo  = d.promo || {};
+    var wallet = d.wallet || [];
+    var ledger = d.ledger || [];
+    var pref   = C.currency || 'USD';
+
+    // The member's own currency first; the rest keep their order. Separate
+    // balances, not a ranking — and nothing is converted to decide which is
+    // bigger, here or anywhere else in this system.
+    wallet = wallet.slice().sort(function(a, b){
+      return (b.currency === pref) - (a.currency === pref);
+    });
+
+    // Read from the state, not from the wallet rows. dz_partner_wallet()
+    // groups by currency, so it returns nothing at all until the first
+    // commission lands — and "no rows" is not "no payout method".
+    var routed = !!(d.state && d.state.has_payout_method);
+
+    host.innerHTML =
+      '<div class="dzCl">' +
+
+        '<div class="dzClTop">' +
+          '<div class="dzClTopTxt">' +
+            '<div class="dzClTopLbl">Creator collab</div>' +
+            '<p class="dzClTopSub">Your code, what it has earned, and where ' +
+              'that money goes.</p>' +
+          '</div>' +
+          '<button type="button" class="dzClInfoBtn" id="dzClInfoBtn" ' +
+            'aria-label="How the revenue split works">ⓘ</button>' +
+        '</div>' +
+
+        promoHtml(promo) +
+        collabWalletHtml(wallet, routed) +
+        ledgerHtml(ledger) +
+
+      '</div>';
+
+    host.querySelector('#dzClInfoBtn').addEventListener('click', openSplitInfo);
+
+    var make = host.querySelector('#dzClMake');
+    if(make) wirePromoMaker(host);
+
+    var copy = host.querySelector('#dzClCopy');
+    if(copy) copy.addEventListener('click', function(){
+      var code = copy.getAttribute('data-code') || '';
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(code).then(
+          function(){ toast('Copied ' + code); },
+          function(){ toast(code); });
+      } else toast(code);
+    });
+
+    var add = host.querySelector('#dzClAddPay');
+    if(add) add.addEventListener('click', function(){
+      // The payout methods view already exists and is the one place an
+      // instrument is added. Sending the partner there rather than building a
+      // second form means one form to keep correct, and a partner who is also
+      // a seller keeps every instrument in one list.
+      openPanel('pay');
+    });
+  }
+
+  // ---- the code -----------------------------------------------------------
+  function promoHtml(promo){
+    if(!promo.code){
+      return '<section class="dzClCard dzClMakeCard">' +
+        '<div class="dzClCardHd">Your promo code</div>' +
+        '<p class="dzClMakeNote">Pick 4 to 6 letters or digits. It is yours for ' +
+          'good — it cannot be changed once it is made, and nobody else can ' +
+          'take it.</p>' +
+        '<div class="dzClMakeRow">' +
+          '<input type="text" id="dzClMakeIn" class="dzClMakeIn" maxlength="6" ' +
+            'autocapitalize="characters" autocomplete="off" spellcheck="false" ' +
+            'placeholder="ART24" aria-label="Your promo code, 4 to 6 letters or digits">' +
+          '<button type="button" id="dzClMake" class="dzClMakeGo">Create</button>' +
+        '</div>' +
+        '<div class="dzClMakeMsg" id="dzClMakeMsg" role="status"></div>' +
+      '</section>';
+    }
+
+    return '<section class="dzClCard dzClCodeCard">' +
+      '<div class="dzClCardHd">Your promo code</div>' +
+      '<div class="dzClCode">' +
+        '<span class="dzClCodeTxt">' + esc(promo.code) + '</span>' +
+        '<button type="button" id="dzClCopy" class="dzClCopy" ' +
+          'data-code="' + esc(promo.code) + '" aria-label="Copy your promo code">Copy</button>' +
+      '</div>' +
+      (promo.is_active
+        ? ''
+        : '<p class="dzClCodeOff">This code is not taking new orders. Anything ' +
+          'it already earned is still yours.</p>') +
+      '<ul class="dzClStats">' +
+        statCell('Times used', promo.usage_count || 0) +
+        statCell('Buyers', promo.unique_buyers || 0) +
+        statCell('Files', promo.marketplace_conversions || 0) +
+        statCell('Max plans', promo.subscription_conversions || 0) +
+      '</ul>' +
+    '</section>';
+  }
+
+  function statCell(label, n){
+    return '<li class="dzClStat">' +
+      '<span class="dzClStatN">' + esc(String(n)) + '</span>' +
+      '<span class="dzClStatL">' + esc(label) + '</span>' +
+    '</li>';
+  }
+
+  function wirePromoMaker(host){
+    var input = host.querySelector('#dzClMakeIn');
+    var btn   = host.querySelector('#dzClMake');
+    var msg   = host.querySelector('#dzClMakeMsg');
+
+    function say(t, kind){
+      msg.textContent = t || '';
+      msg.className = 'dzClMakeMsg' + (kind ? ' dzClMakeMsg--' + kind : '');
+    }
+
+    input.addEventListener('input', function(){
+      input.value = String(input.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      say('', '');
+    });
+
+    btn.addEventListener('click', function(){
+      var code = String(input.value || '').trim().toUpperCase();
+      if(!/^[A-Z0-9]{4,6}$/.test(code)){
+        say('4 to 6 letters or digits, nothing else.', 'bad');
+        return;
+      }
+      btn.disabled = true;
+      say('Creating…', '');
+      collabApi('promo-create', {code: code}).then(function(r){
+        btn.disabled = false;
+        if(!r || !r.ok){ say((r && r.error) || 'Could not create that code', 'bad'); return; }
+        toast(r.code + ' is yours');
+        refreshCollab();
+      }, function(){
+        btn.disabled = false;
+        say('Could not create that code', 'bad');
+      });
+    });
+  }
+
+  // ---- the money ----------------------------------------------------------
+  function collabWalletHtml(wallet, routed){
+    if(!wallet.length){
+      return '<section class="dzClCard">' +
+        '<div class="dzClCardHd">Earnings</div>' +
+        '<div class="dzClBal">' + esc(moneyMinor(0, C.currency || 'USD')) + '</div>' +
+        '<p class="dzClBalSub">Nothing yet. You earn in whichever currency the ' +
+          'buyer paid in, and it is never converted.</p>' +
+      '</section>';
+    }
+
+    return wallet.map(function(w){
+      return '<section class="dzClCard">' +
+        '<div class="dzClCardHd">Earnings · ' + esc(w.currency) + '</div>' +
+        '<div class="dzClBal">' + esc(moneyMinor(w.available, w.currency)) + '</div>' +
+        '<div class="dzClBalSub">Available now</div>' +
+        '<ul class="dzClFigs">' +
+          '<li><span>Lifetime</span><b>' + esc(moneyMinor(w.lifetime, w.currency)) + '</b></li>' +
+          '<li><span>Paid out</span><b>' + esc(moneyMinor(w.paid_out, w.currency)) + '</b></li>' +
+          '<li><span>Sales</span><b>' + esc(String(w.conversions || 0)) + '</b></li>' +
+        '</ul>' +
+      '</section>';
+    }).join('') + routeHtml(routed);
+  }
+
+  // Which of the two routes this partner is on. Decided by the server — the
+  // route column of dz_partner_wallet() — and restated here in a sentence
+  // rather than a status word, because "wallet" and "direct" mean nothing to
+  // somebody who has not read the schema.
+  function routeHtml(routed){
+    if(routed){
+      return '<section class="dzClCard dzClRoute dzClRoute--on">' +
+        '<div class="dzClRouteHd">✓ Paid to your account</div>' +
+        '<p>You have a payout method on file, so your commissions are ready to ' +
+          'withdraw to it. Use Payout Methods in Settings to change where they ' +
+          'go.</p>' +
+      '</section>';
+    }
+    return '<section class="dzClCard dzClRoute">' +
+      '<div class="dzClRouteHd">Held in your DigiArtz wallet</div>' +
+      '<p>You have not added a payout method, so everything you earn is ' +
+        'accumulating here. Nothing is lost or expiring — add an account and ' +
+        'you can withdraw it.</p>' +
+      '<button type="button" id="dzClAddPay" class="dzClAddPay">' +
+        'Add Payment Method to Withdraw</button>' +
+    '</section>';
+  }
+
+  // ---- who used it, and on what -------------------------------------------
+  function ledgerHtml(rows){
+    if(!rows.length){
+      return '<section class="dzClCard">' +
+        '<div class="dzClCardHd">Activity</div>' +
+        '<div class="dzWlEmpty">Nobody has used your code yet.</div>' +
+      '</section>';
+    }
+
+    return '<section class="dzClCard">' +
+      '<div class="dzClCardHd">Activity</div>' +
+      '<ul class="dzClLedger">' +
+        rows.map(function(r){
+          var when = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
+          var off  = r.payout_status === 'reversed';
+          return '<li class="dzClRow' + (off ? ' dzClRow--off' : '') + '">' +
+            '<div class="dzClRowMain">' +
+              '<span class="dzClRowWho">@' + esc(r.buyer_username || 'someone') + '</span>' +
+              '<span class="dzClRowWhat">' + esc(r.label || r.kind) + '</span>' +
+            '</div>' +
+            '<div class="dzClRowSide">' +
+              '<span class="dzClRowAmt">' +
+                (off ? '—' : '+' + esc(moneyMinor(r.amount, r.currency))) +
+              '</span>' +
+              '<span class="dzClRowWhen">' + esc(when) +
+                (off ? ' · reversed' : '') + '</span>' +
+            '</div>' +
+          '</li>';
+        }).join('') +
+      '</ul>' +
+    '</section>';
+  }
 
   // ---- currency ------------------------------------------------------------
   // What this member transacts in: the currency their subscription is charged
@@ -1911,7 +2481,7 @@ const MODULE = `
 
   var purchasesP = null;
   function loadPurchases(force, host, seq){
-    if(!host || !window.sb || !sb.rpc) return;
+    if(!host || typeof sb === 'undefined' || !sb || !sb.rpc) return;
     if(force) purchasesP = null;
     // Promise.resolve, not the builder itself: a PostgrestBuilder fires a fresh
     // request every time something calls .then on it, so caching the builder
@@ -2062,6 +2632,11 @@ export async function onRequestGet({ env, request }) {
     currency,
     currencies: CURRENCIES,
     support,
+    // Zero, written the way this member's currency writes it, so a partner's
+    // claimed Max card reads "₹0.00" or "¥0" rather than a bare digit. Formatted
+    // here for the same reason every other price on this page is: fmtMoney
+    // knows which currencies have no minor unit and the browser does not.
+    freePrice: fmtMoney(0, currency),
     plansHtml: plansHtml(priced),
     plans: priced.map((p) => ({
       id: p.id, name: p.name, price: p.price, tone: p.tone,

@@ -4,6 +4,42 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v186 — the admin panel leaves the public bundle.
+       js/pfedit.js carried seven hundred lines of it: every privileged
+       endpoint, the telemetry fields, the partner programme, the invite flow
+       and the ban engine, in a file Cloudflare serves to anyone, this worker
+       caches, and Googlebot reads. None of it was exploitable — every action
+       is refused by a guard in Postgres — but a page whose source names no
+       payment provider has no business describing the moderation tooling.
+       /api/ops serves it instead, to a caller holding a session AND a role,
+       and builds it for whoever asked: a partner's copy contains the reports
+       and moderation code and nothing else. css/admin.css is back to exactly
+       what it was before any of this, and pfedit.js is 640 lines lighter.
+
+   v185 — a security pass over v184.
+       Four leaks closed, none of them exploitable for privilege but all of
+       them for information: the API error translator sniffed message text and
+       let constraint and index names through; user_reports let a reporter read
+       back the id of the moderator who handled their report; dz_mod_find gave
+       partners the role and email of anyone they looked up, which made the
+       moderation tool an oracle for who the other partners are; and the
+       reports queue showed a partner rows about accounts they cannot touch.
+       Also: the admin panel gained the audit trail it had been writing to all
+       along, and a partner with a payout method but no earnings yet is no
+       longer told to add one.
+
+   v184 — partners, promo codes, and the money that follows them.
+       A new account type with a revenue share, a promo code, and a slice of
+       moderation. Nothing about it is in the public bundle: the Collab Hub is
+       a view of the account panel that /api/store builds for a signed-in
+       member, the Settings entry is appended only after the server has said
+       'partner', and the Max card's Claim button replaces the pay button
+       rather than sitting beside it. A signed-out visitor's page source
+       carries no trace that the programme exists, which is the same reasoning
+       that kept the wallet out of index.html.
+       hero.css carries the styles for all three — the checkout promo field,
+       the claim button and the hub — so it is the one asset that moved.
+
    v183 — a profile shows its own member's work, once.
        Two bugs, one cause. Opening a profile empties every ARRAY the page is
        drawn from — gallery rows, album strip, the three section lists — and
@@ -3290,7 +3326,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v183';
+const CACHE_VERSION = 'v186';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3343,7 +3379,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=6',
-  '/css/hero.css?v=94',
+  '/css/hero.css?v=95',
   '/css/viewer.css?v=14',
   '/css/community.css?v=12',
   '/css/connect.css?v=3',
@@ -3377,14 +3413,14 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=28',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=85',
-  '/js/auth.js?v=14',
-  '/js/profile.js?v=14',
+  '/js/gallery.js?v=87',
+  '/js/auth.js?v=16',
+  '/js/profile.js?v=15',
   '/js/albums.js?v=16',
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=11',
+  '/js/pfedit.js?v=14',
   '/js/mywork.js?v=21',
   '/js/startup.js?v=6',
   '/js/tagrail.js?v=3',

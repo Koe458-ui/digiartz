@@ -141,6 +141,13 @@ async function recordEarning(env, row, prov) {
       gross_amount: Number(row.amount) || 0,
       gateway_fee: (prov && prov.fee) || 0,
       currency: row.currency,
+      // Which promo code, if any, the buyer arrived with. Nothing here does
+      // anything with it: dz_partner_credit_market() reads it off the inserted
+      // row and takes the partner's share out of the platform's commission,
+      // for the same reason the deductions are computed there rather than in
+      // four checkout paths. A marketplace code is attribution only — it does
+      // not change the price, and it does not change what the seller keeps.
+      promo_code_id: row.promo_code_id || null,
       provider: 'razorpay',
       status: 'available',
     }),
@@ -223,7 +230,7 @@ async function applySubscription(env, userId, tier) {
 // settle a ledger row, once
 async function fulfil(env, orderId, payment) {
   const row = await rowFor(env, orderId,
-    'id,user_id,kind,plan,item_id,amount,currency,status');
+    'id,user_id,kind,plan,item_id,amount,currency,status,promo_code_id');
   if (!row) return 'no ledger row';
 
   // What Razorpay says it took must be what we asked for. The order was priced

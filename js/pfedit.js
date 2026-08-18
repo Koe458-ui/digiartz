@@ -160,7 +160,10 @@
     if(_frd && _frd.classList.contains('open')) return;
     closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
-    cancelPfCrop();closeNotifPage();closeAdmPage();closeMyWorkPage();
+    cancelPfCrop();closeNotifPage();closeMyWorkPage();
+    // The admin panel closes through the handle its module publishes;
+    // an account that never loaded it has nothing to close.
+    if(typeof dzOpsClose === 'function') dzOpsClose();
     // Wallet, payout methods and purchases were three page shells with three
     // close functions until they became one panel built by the signed-in
     // module. This line still called all three by their old names, so it
@@ -189,7 +192,7 @@
     closeProfilePage();
     closeSubscription();
     closeAuthMod();
-    closeAdmPage();
+    if(typeof dzOpsClose === 'function') dzOpsClose();
     // close my work too
     closeMyWorkPage();
     closeNotifPage();
@@ -246,174 +249,7 @@
     if(typeof zeoSectionTrigger==='function') zeoSectionTrigger();
   }
   function ddOpenCommunity(){ openCommunityHome(); }
-  // open admin panel
-  // The menu entry only exists on an entitled account, so this is the second
-  // check rather than the first — and it answers anyone else with nothing at
-  // all. It used to say "sign in with a dev account to access admin", which
-  // told every visitor who tripped it that there was something to sign in to.
-  function smHandleAdm(){
-    if(!isDev) return;
-    closeMenu();
-    openAdmPage();
-  }
-
-  // admin panel page
-  var admTab = 'noti';
-
-  // index.html carries an empty #admPage and this writes the inside of it,
-  // once, on first open. Nothing here reaches a page that never opens it.
-  function admBuild(el){
-    if(el.firstElementChild) return;
-    el.setAttribute('role', 'dialog');
-    el.setAttribute('aria-modal', 'true');
-    el.setAttribute('aria-label', 'Admin panel');
-    el.innerHTML =
-      '<div class="subPgHdr">' +
-        '<button class="subPgX" onclick="closeAdmPage()" aria-label="Close admin panel">←</button>' +
-        '<div class="subPgTitle">ADMIN PANEL</div>' +
-      '</div>' +
-      '<div class="admBdy">' +
-        '<div class="pfTabs" role="tablist">' +
-          '<div class="pfTabGroup">' +
-            '<button class="pfTab active" id="admTabNoti" role="tab" aria-selected="true" onclick="admSwitchTab(\'noti\')">NOTIFICATIONS</button>' +
-            '<button class="pfTab" id="admTabRpt" role="tab" aria-selected="false" onclick="admSwitchTab(\'rpt\')">REPORT<span class="admTabCount" id="admCountRpt" style="display:none;">0</span></button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="pfPanel" id="admPanelRpt">' +
-          '<div class="pfGrid" id="admRptList"></div>' +
-          '<div class="pfEmpty" id="admRptEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>No open reports.</div>' +
-        '</div>' +
-        '<div class="pfPanel active" id="admPanelNoti">' +
-          '<div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>' +
-          '<div class="admNotiCompose">' +
-            '<input type="text" id="admNotiTitle" class="admNotiInput" placeholder="Title" maxlength="80">' +
-            '<textarea id="admNotiMsg" class="admNotiTextarea" placeholder="Message" maxlength="500" rows="3"></textarea>' +
-            '<button class="admNotiSendBtn" id="admNotiSendBtn" onclick="admSendBroadcast()">Send to All Users</button>' +
-          '</div>' +
-          '<div class="admNotiSentLbl">RECENTLY SENT</div>' +
-          '<div class="pfEmpty" id="admNotiEmpty" style="display:none;"><span class="admEmptyIcon">🔔</span>No notifications sent yet.</div>' +
-          '<div id="admNotiSentList" class="admNotiSentList"></div>' +
-        '</div>' +
-      '</div>';
-    admTab = 'noti';
-  }
-
-  function openAdmPage(){
-    var el = document.getElementById('admPage');
-    if(!el || !isDev) return;
-    admBuild(el);
-    el.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    admLoadNotifSent();
-    admLoadReports();   // report tab badge
-  }
-
-  function closeAdmPage(){
-    var el = document.getElementById('admPage');
-    if(!el) return;
-    el.classList.remove('open');
-    restoreScroll();
-  }
-
-
-
-  function admSwitchTab(tab){
-    admTab = tab;
-    ['Noti','Rpt'].forEach(function(t){
-      var key = t.toLowerCase();
-      document.getElementById('admTab'+t).classList.toggle('active', key===tab);
-      document.getElementById('admPanel'+t).classList.toggle('active', key===tab);
-    });
-    if(tab==='noti') admLoadNotifSent();
-    if(tab==='rpt')  admLoadReports();
-  }
-
-  // reports queue
-  var RPT_LABELS = {
-    copyright:'Copyright infringement', ai_undisclosed:'AI-generated without disclosure',
-    nudity:'Nudity / Sexual content', violence:'Violence / Gore',
-    hate:'Hate speech / Harassment', spam:'Spam / Advertising',
-    misinformation:'Misinformation', impersonation:'Impersonation',
-    illegal:'Illegal content', offtopic:'Off-topic / Wrong category',
-    lowquality:'Low-quality / Broken upload', other:'Other'
-  };
-
-  async function admLoadReports(){
-    var list = document.getElementById('admRptList');
-    var empty = document.getElementById('admRptEmpty');
-    if(!list || !sb) return;
-    list.innerHTML = '';
-    try{
-      var r = await sb.from('artwork_reports')
-        .select('id,artwork_id,reason,details,created_at,reporter_id,artworks(name,image_url,user_id)')
-        .eq('status','open').order('created_at',{ascending:false}).limit(100);
-      if(r.error) throw r.error;
-      var rows = r.data || [];
-      admSetRptCount(rows.length);
-      if(!rows.length){ empty.style.display='block'; return; }
-      empty.style.display='none';
-      rows.forEach(function(rep){
-        var card = document.createElement('div');
-        card.className = 'pfCard';
-        var art = rep.artworks || {};
-        // user input, use textcontent
-        var h = document.createElement('div');
-        h.style.cssText = 'font-family:var(--fm);font-size:.7rem;letter-spacing:.08em;color:var(--danger);margin-bottom:.4rem;';
-        h.textContent = '🚩 ' + (RPT_LABELS[rep.reason] || rep.reason);
-        card.appendChild(h);
-        var n = document.createElement('div');
-        n.style.cssText = 'font-family:var(--fd);font-weight:700;color:var(--tx);margin-bottom:.3rem;';
-        n.textContent = art.name || '(untitled artwork)';
-        card.appendChild(n);
-        if(rep.details){
-          var d = document.createElement('div');
-          d.style.cssText = 'font-family:var(--fb);font-size:.82rem;color:var(--txd);margin-bottom:.5rem;white-space:pre-wrap;';
-          d.textContent = rep.details;
-          card.appendChild(d);
-        }
-        var when = document.createElement('div');
-        when.style.cssText = 'font-family:var(--fm);font-size:.65rem;color:var(--txd);margin-bottom:.6rem;';
-        when.textContent = new Date(rep.created_at).toLocaleString();
-        card.appendChild(when);
-        var acts = document.createElement('div');
-        acts.style.cssText = 'display:flex;gap:.5rem;flex-wrap:wrap;';
-        var view = document.createElement('button');
-        view.className = 'rptBtn'; view.textContent = 'VIEW';
-        view.onclick = function(){
-          // fetch full row
-          openArtworkById(String(rep.artwork_id), false);
-        };
-        var res = document.createElement('button');
-        res.className = 'rptBtn'; res.textContent = 'RESOLVE';
-        res.onclick = function(){ admResolveReport(rep.id, 'resolved'); };
-        var dis = document.createElement('button');
-        dis.className = 'rptBtn'; dis.textContent = 'DISMISS';
-        dis.onclick = function(){ admResolveReport(rep.id, 'dismissed'); };
-        acts.appendChild(view); acts.appendChild(res); acts.appendChild(dis);
-        card.appendChild(acts);
-        list.appendChild(card);
-      });
-    }catch(e){
-      console.error('admLoadReports:', e);
-      empty.style.display='block';
-      empty.textContent = 'Couldn\u2019t load reports.';
-    }
-  }
-
-  function admSetRptCount(n){
-    var b = document.getElementById('admCountRpt');
-    if(!b) return;
-    b.textContent = n;
-    b.style.display = n ? '' : 'none';
-  }
-
-  async function admResolveReport(id, status){
-    try{
-      var r = await sb.from('artwork_reports').update({ status: status }).eq('id', id);
-      if(r.error) throw r.error;
-      showToast(status === 'resolved' ? 'Report resolved' : 'Report dismissed');
-      admLoadReports();
-    }catch(e){ showToast('Action failed — try again'); }
-  }
-
+  // The admin panel used to be opened from here. It is served by /api/ops now
+  // and builds its own Settings entry, holding its opener in a closure — so
+  // there is no longer a function in this bundle that opens it, and no name
+  // for a console to call. See the note in js/gallery.js.

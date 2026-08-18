@@ -869,6 +869,34 @@ const MODULE = `
     });
   }
 
+  // Who this member is, asked ONCE.
+  //
+  // fillMenu() needs it to decide whether to append the Collab Hub row, and
+  // paintClaim() needs it to decide what the Max card's button is. Both run on
+  // every signed-in page load, and both used to ask separately — two identical
+  // round trips per member per load, for an answer that cannot differ between
+  // them.
+  //
+  // Cached as the PROMISE rather than the answer, so two callers racing on
+  // first paint share one request rather than starting a second while the
+  // first is still open. Cleared by dzCollabForget() when the answer could
+  // have changed, which is after claiming Max.
+  var statePromise = null;
+  function collabState(){
+    if(!statePromise){
+      statePromise = collabApi('state', {}).then(function(r){
+        return (r && r.state) || null;
+      }, function(){
+        // A failed lookup is not cached: the next paint should ask again
+        // rather than treat one dropped request as "not a partner" forever.
+        statePromise = null;
+        return null;
+      });
+    }
+    return statePromise;
+  }
+  function dzCollabForget(){ statePromise = null; }
+
   // The collab endpoint, which is not one of the two payment providers and so
   // does not go through api(). Same session, same no-store.
   function collabApi(action, body){
@@ -1104,8 +1132,7 @@ const MODULE = `
     var card = host.querySelector('.subBtn[data-plan="max"]');
     if(!card) return;
 
-    collabApi('state', {}).then(function(r){
-      var st = r && r.state;
+    collabState().then(function(st){
       if(!st || !st.is_partner) return;              // ordinary member, ordinary card
       var btn = host.querySelector('.subBtn[data-plan="max"]');
       if(!btn) return;                               // repainted underneath us
@@ -1130,6 +1157,7 @@ const MODULE = `
             return;
           }
           claimed(fresh);
+          dzCollabForget();          // max_claimed has moved
           toast('Max is yours \u2014 enjoy it');
           // The rest of the page reads the tier off the profile, so it has to
           // be told the profile moved. checkUserRole() repaints the nav chip,
@@ -1806,8 +1834,7 @@ const MODULE = `
     // or in the menu until the server has said the word 'partner'. That is the
     // same reasoning that keeps the wallet out of the public page: a heading
     // nobody is entitled to still tells them the programme exists.
-    collabApi('state', {}).then(function(r){
-      var st = r && r.state;
+    collabState().then(function(st){
       if(!st || !st.is_partner) return;
       if(host.querySelector('[data-v="collab"]')) return;   // menu rebuilt underneath us
       var b = document.createElement('button');
@@ -1947,7 +1974,10 @@ const MODULE = `
       return (b.currency === pref) - (a.currency === pref);
     });
 
-    var routed = wallet.length && wallet[0].has_payout_method;
+    // Read from the state, not from the wallet rows. dz_partner_wallet()
+    // groups by currency, so it returns nothing at all until the first
+    // commission lands — and "no rows" is not "no payout method".
+    var routed = !!(d.state && d.state.has_payout_method);
 
     host.innerHTML =
       '<div class="dzCl">' +

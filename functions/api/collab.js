@@ -68,19 +68,44 @@ class Refused extends Error {
   }
 }
 
+// A message is passed through to the browser ONLY when Postgres says it came
+// from a RAISE in one of our own functions. That is SQLSTATE P0001, which is
+// what `raise exception '...'` produces and what dz_ban_gate() sets explicitly.
+// Everything else — a constraint, a permission error, a missing function — is
+// replaced with a sentence that describes nothing.
+//
+// This used to sniff the MESSAGE with a regex, and it leaked. The SQLSTATE is
+// in body.code, not at the front of body.message, so the "does this look like
+// a Postgres error code" test never matched anything; and the wording filter
+// beside it did not mention constraints, so
+//
+//   duplicate key value violates unique constraint "promo_codes_code_idx"
+//
+// was 68 characters of internal schema handed straight to whoever asked. An
+// allowlist on the one code we control cannot fail that way: a message either
+// carries P0001 or it does not reach the caller.
 function refusalFrom(status, body) {
+  const code = String((body && body.code) || '');
   const msg = String((body && (body.message || body.error)) || '').trim();
-  if (/not allowed/i.test(msg)) return new Refused('Not allowed', 403);
-  if (/sign in required/i.test(msg)) return new Refused('Sign in required', 401);
-  // A raise from one of our own functions is a message written for a member to
-  // read — "That code is taken", "No account is registered to that address" —
-  // so it is passed through. A error from Postgres itself is not, and is
-  // replaced rather than leaked.
-  if (msg && msg.length <= 160 && !/^(P0|22|23|42|55)/.test(msg) &&
-      !/syntax|relation|column|function .* does not exist/i.test(msg)) {
-    return new Refused(msg, 400);
+
+  // PostgREST's own refusals, before any of our SQL runs.
+  if (status === 401) return new Refused('Sign in required', 401);
+  if (status === 404) return new Refused('Unavailable', 503);
+
+  if (code === 'P0001') {
+    // 'not allowed' is raised identically by every guard — for "you are not a
+    // partner" and for "not that member" alike — so a prober learns nothing
+    // from the reply about which it was, and nothing about who the other
+    // partners are.
+    if (/^not allowed$/i.test(msg)) return new Refused('Not allowed', 403);
+    if (/^sign in required$/i.test(msg)) return new Refused('Sign in required', 401);
+    // Written for a member to read: "That code is taken", "No account is
+    // registered to that address". Still capped, so a raise that ever
+    // interpolates something large cannot become a channel.
+    return new Refused(msg.slice(0, 160) || 'That did not work', 400);
   }
-  return new Refused('That did not work (' + status + ')', 400);
+
+  return new Refused('That did not work', 400);
 }
 
 // Called AS THE CALLER. This is the whole security model of the file.
@@ -189,15 +214,21 @@ const ACTIONS = {
   // from the same moment. /api/payouts assembles the seller wallet the same
   // way and for the same reason.
   async wallet({ env, request, body }) {
-    const [promo, wallet, ledger] = await Promise.all([
+    const [promo, wallet, ledger, state] = await Promise.all([
       rpc(env, request, 'dz_promo_mine'),
       rpc(env, request, 'dz_partner_wallet'),
       rpc(env, request, 'dz_partner_ledger', {
         p_limit: Math.min(Math.max(Number(body.limit) || 50, 1), 100),
         p_before: body.before || null,
       }),
+      // Carried because dz_partner_wallet() groups by currency and therefore
+      // returns NO ROWS to a partner who has not earned anything yet — so
+      // has_payout_method could not be read off it in exactly the case it
+      // matters most. A partner who has added an account and is waiting for
+      // their first sale was being told they had not added one.
+      rpc(env, request, 'dz_my_collab_state'),
     ]);
-    return { ok: true, promo, wallet: wallet || [], ledger: ledger || [] };
+    return { ok: true, promo, wallet: wallet || [], ledger: ledger || [], state };
   },
 
   // ---- partner and staff: moderation --------------------------------------
@@ -270,6 +301,14 @@ const ACTIONS = {
     return { ok: true, partners: (await rpc(env, request, 'dz_admin_partners')) || [] };
   },
 
+  async audit({ env, request, body }) {
+    const rows = await rpc(env, request, 'dz_audit_log', {
+      p_limit: Math.min(Math.max(Number(body.limit) || 100, 1), 200),
+      p_before: body.before || null,
+    });
+    return { ok: true, entries: rows || [] };
+  },
+
   async telemetry({ env, request }) {
     return { ok: true, telemetry: await rpc(env, request, 'dz_admin_telemetry') };
   },
@@ -320,8 +359,17 @@ const LIMITS = {
   ban: [20, 60],
   unban: [20, 60],
   broadcast: [5, 300],
-  'promo-resolve': [30, 60],
-  'mod-find': [30, 60],
+  // Typing a code is a deliberate act; thirty a minute was a script's budget,
+  // not a buyer's. A promo code is meant to be shared publicly, so guessing one
+  // yields something a partner gives away on purpose — this is not the fix for
+  // an enumeration hole, it is refusing to pay for the traffic.
+  'promo-resolve': [10, 60],
+  // Looking a member up is an exact-match lookup against usernames and email
+  // addresses. dz_mod_find() refuses a prefix, so this cannot be walked to
+  // enumerate, but a moderator moderates one account at a time and does not
+  // need thirty lookups a minute to do it.
+  'mod-find': [12, 60],
+  audit: [30, 60],
 };
 const LIMIT_DEFAULT = [60, 60];
 

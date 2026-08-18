@@ -4,6 +4,18 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v185 — a security pass over v184.
+       Four leaks closed, none of them exploitable for privilege but all of
+       them for information: the API error translator sniffed message text and
+       let constraint and index names through; user_reports let a reporter read
+       back the id of the moderator who handled their report; dz_mod_find gave
+       partners the role and email of anyone they looked up, which made the
+       moderation tool an oracle for who the other partners are; and the
+       reports queue showed a partner rows about accounts they cannot touch.
+       Also: the admin panel gained the audit trail it had been writing to all
+       along, and a partner with a payout method but no earnings yet is no
+       longer told to add one.
+
    v184 — partners, promo codes, and the money that follows them.
        A new account type with a revenue share, a promo code, and a slice of
        moderation. Nothing about it is in the public bundle: the Collab Hub is
@@ -3302,7 +3314,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v184';
+const CACHE_VERSION = 'v185';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3361,7 +3373,7 @@ const SHELL_URLS = [
   '/css/connect.css?v=3',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=10',
-  '/css/admin.css?v=2',
+  '/css/admin.css?v=3',
   '/css/auth.css?v=1',
   '/css/panels.css?v=5',
   '/css/upload.css?v=12',
@@ -3396,7 +3408,7 @@ const SHELL_URLS = [
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=12',
+  '/js/pfedit.js?v=13',
   '/js/mywork.js?v=21',
   '/js/startup.js?v=6',
   '/js/tagrail.js?v=3',

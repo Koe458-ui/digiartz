@@ -153,6 +153,21 @@ create trigger dz_profiles_guard_insert
   before insert on public.profiles
   for each row execute function public.dz_profiles_guard_insert();
 
+-- Neither is callable by hand. A trigger function refuses a direct call anyway
+-- ("trigger functions can only be called as triggers"), so this is defence in
+-- depth rather than a hole being closed — but every other trigger function in
+-- this schema is revoked, including dz_earning_apply_deductions in
+-- 20260802_money_flow.sql, and one that is not invites the question of whether
+-- it was meant to be.
+--
+-- Revoking EXECUTE does NOT stop the trigger firing: PostgreSQL checks that
+-- privilege when the trigger is CREATED, not each time it fires. Verified
+-- against a scratch database rather than assumed, because getting it backwards
+-- would silently disable the one guard standing between a member and the
+-- 'partner' role.
+revoke all on function public.dz_profiles_guard_privileged() from public, anon, authenticated;
+revoke all on function public.dz_profiles_guard_insert() from public, anon, authenticated;
+
 -- ===========================================================================
 -- 2. WHO IS WHAT — one answer, read by everything below
 -- ===========================================================================
@@ -409,10 +424,11 @@ security definer
 set search_path to 'public', 'pg_temp'
 as $$
 declare
-  v_q  text := btrim(coalesce(p_query, ''));
-  v_id uuid;
+  v_q     text := btrim(coalesce(p_query, ''));
+  v_id    uuid;
+  v_staff boolean := public.dz_is_staff(auth.uid());
 begin
-  if not (public.dz_is_staff(auth.uid()) or public.dz_is_partner(auth.uid())) then
+  if not (v_staff or public.dz_is_partner(auth.uid())) then
     raise exception 'not allowed';
   end if;
   if char_length(v_q) < 2 then
@@ -428,12 +444,34 @@ begin
   end;
   v_q := ltrim(v_q, '@');
 
+  -- WHAT COMES BACK DEPENDS ON WHO ASKED, and this is the second half of the
+  -- isolation rule rather than a nicety.
+  --
+  -- Staff get the whole row, including the address, because staff are the
+  -- people who answer support mail about an account.
+  --
+  -- A partner gets neither the email nor the role, and both omissions matter:
+  --
+  --   role would have made this an oracle for exactly the thing partners are
+  --   not allowed to see. Look up handles, read the role back, and you have
+  --   the list of who the other partners are — the isolation rule defeated
+  --   through the moderation tool rather than through the analytics.
+  --
+  --   email would have turned a username into an address. A partner searching
+  --   BY an address already knows it; being handed one they did not have is a
+  --   different thing, and it is address harvesting with a moderator's badge on.
+  --
+  -- can_moderate is the answer a moderator actually needs, and it is computed
+  -- by dz_may_moderate() rather than inferred from a role on this side. A
+  -- partner is told they cannot act on this account. They are not told whether
+  -- that is because it is an admin, a dev, or a fellow partner — and there is
+  -- no field in this result from which they could work it out.
   return query
   select p.id,
          p.username,
          p.display_name,
-         u.email::text,
-         p.role,
+         case when v_staff then u.email::text else null end,
+         case when v_staff then p.role else null end,
          coalesce(public.dz_effective_tier(p.id), 'guest') as tier,
          public.dz_is_banned(p.id) as banned,
          b.reason,
@@ -546,21 +584,33 @@ create unique index if not exists user_reports_one_open_idx
 
 alter table public.user_reports enable row level security;
 revoke all on public.user_reports from anon, authenticated;
-grant select, insert on public.user_reports to authenticated;
+grant insert on public.user_reports to authenticated;
 
 drop policy if exists user_reports_insert_own on public.user_reports;
 create policy user_reports_insert_own on public.user_reports
   for insert to authenticated
   with check (reporter_id = auth.uid() and target_id <> auth.uid());
 
--- A reporter sees their own report and nothing else through the table. The
--- moderation queue is an RPC below, not a policy, because a moderator's view
--- carries the reported account's name and the reporter's, and that is a
--- decision worth writing down in one function rather than in a USING clause.
+-- INSERT AND NOTHING ELSE. No select policy, and no select grant either.
+--
+-- There was one, letting a reporter read the reports they had filed, and it
+-- was a mistake worth describing because it looked so reasonable. The row a
+-- reporter would have read back carries resolved_by and resolution — the id of
+-- the moderator who handled it, and their note. So: report an account, wait,
+-- read your own row, and you have the user id of the moderator who acted. Look
+-- it up and you have their handle.
+--
+-- On a platform where some moderators are partners, whose whole isolation rule
+-- is that one partner cannot be identified from another's activity, that is
+-- the leak the rest of this file is written to prevent — arriving through the
+-- one table a member is allowed to write to.
+--
+-- Nothing needed the read: js/profile.js inserts without asking for the row
+-- back, and a duplicate is recognised by its SQLSTATE rather than by looking.
+-- If a "reports you have filed" view is ever wanted, it comes as a scoped RPC
+-- that returns the reporter's own columns, the way every other read in this
+-- schema does — not as a policy over a table with a moderator's name in it.
 drop policy if exists user_reports_select_own on public.user_reports;
-create policy user_reports_select_own on public.user_reports
-  for select to authenticated
-  using (reporter_id = auth.uid());
 
 create or replace function public.dz_reports_queue(
   p_status text default 'pending', p_limit integer default 100)
@@ -574,14 +624,24 @@ stable
 security definer
 set search_path to 'public', 'pg_temp'
 as $$
+declare v_staff boolean := public.dz_is_staff(auth.uid());
 begin
-  if not (public.dz_is_staff(auth.uid()) or public.dz_is_partner(auth.uid())) then
+  if not (v_staff or public.dz_is_partner(auth.uid())) then
     raise exception 'not allowed';
   end if;
   if p_status not in ('pending', 'resolved', 'dismissed', 'all') then
     raise exception 'unknown status';
   end if;
 
+  -- A partner's queue is the queue they can act on, and nothing else.
+  --
+  -- Without the dz_may_moderate() line a report filed against an admin, a dev
+  -- or a fellow partner would appear in every partner's queue, naming them —
+  -- which is the same leak dz_mod_find() would have been, arriving by the
+  -- other door. Filtering it here also happens to be the better queue: a
+  -- partner is never shown a row whose buttons would refuse them.
+  --
+  -- Staff see every row, including reports about each other.
   return query
   select r.id, r.reason, r.details, r.status, r.created_at,
          r.target_id, t.username, public.dz_is_banned(r.target_id),
@@ -590,7 +650,8 @@ begin
     from public.user_reports r
     left join public.profiles t  on t.id  = r.target_id
     left join public.profiles rp on rp.id = r.reporter_id
-   where p_status = 'all' or r.status = p_status
+   where (p_status = 'all' or r.status = p_status)
+     and (v_staff or public.dz_may_moderate(auth.uid(), r.target_id))
    order by r.created_at desc
    limit least(greatest(coalesce(p_limit, 100), 1), 200);
 end $$;
@@ -1446,6 +1507,53 @@ begin
 end $$;
 revoke all on function public.dz_admin_partners() from public, anon;
 grant execute on function public.dz_admin_partners() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- The audit trail, read back.
+--
+-- dz_audit() has been writing to audit_log since the first guard in this file;
+-- this is what makes it readable, and without it the log was a table nobody
+-- could look at without a database console — which is the same as not having
+-- one when a partner's ban is questioned three months later.
+--
+-- STAFF ONLY, and deliberately not extended to partners even for their own
+-- actions. The log names every actor, and a partner reading even a filtered
+-- slice of it learns that other moderators exist and roughly what they do.
+-- A partner who needs a record of their own bans has the member's ban row,
+-- which names them.
+--
+-- The actor's role is read off the ROW, not joined from the profile. It was
+-- copied there when the action happened, so a partner who is demoted next
+-- month does not make last month's ban look like a member did it.
+create or replace function public.dz_audit_log(
+  p_limit integer default 100, p_before timestamptz default null)
+returns table(
+  id bigint, created_at timestamptz, action text,
+  actor_id uuid, actor_username text, actor_role text,
+  target_id uuid, target_username text, metadata jsonb)
+language plpgsql
+stable
+security definer
+set search_path to 'public', 'pg_temp'
+as $$
+begin
+  if not public.dz_is_staff(auth.uid()) then
+    raise exception 'not allowed';
+  end if;
+
+  return query
+  select a.id, a.created_at, a.action,
+         a.actor_id, ap.username, a.actor_role,
+         a.target_id, tp.username, a.metadata
+    from public.audit_log a
+    left join public.profiles ap on ap.id = a.actor_id
+    left join public.profiles tp on tp.id = a.target_id
+   where p_before is null or a.created_at < p_before
+   order by a.created_at desc, a.id desc
+   limit least(greatest(coalesce(p_limit, 100), 1), 200);
+end $$;
+revoke all on function public.dz_audit_log(integer, timestamptz) from public, anon;
+grant execute on function public.dz_audit_log(integer, timestamptz) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- The telemetry dashboard, in one call.

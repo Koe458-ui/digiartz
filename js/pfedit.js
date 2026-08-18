@@ -326,7 +326,7 @@
   function admTabs(){
     if(admIsStaff()){
       return [['tel','TELEMETRY'], ['rpt','REPORTS'], ['mod','MODERATION'],
-              ['prt','PARTNERS'], ['noti','NOTIFY']];
+              ['prt','PARTNERS'], ['log','AUDIT'], ['noti','NOTIFY']];
     }
     return [['rpt','REPORTS'], ['mod','MODERATION']];
   }
@@ -402,6 +402,14 @@
       '</form>' +
       '<div id="admModResult" class="admModResult"></div>';
 
+    if(tab === 'log') return '' +
+      '<div class="admModLbl">WHO DID WHAT</div>' +
+      '<p class="admModNote">Every privileged action on this platform, newest ' +
+        'first. Append-only — nothing here can be edited or deleted, by anyone.</p>' +
+      '<div id="admLogList" class="admLogList"></div>' +
+      '<div class="pfEmpty" id="admLogEmpty" style="display:none;">' +
+        '<span class="admEmptyIcon">📋</span>Nothing logged yet.</div>';
+
     if(tab === 'prt') return '' +
       '<div class="admPrtTop">' +
         '<div class="admPrtLbl">PARTNERS</div>' +
@@ -459,6 +467,7 @@
     if(tab==='tel')  return admLoadTelemetry();
     if(tab==='rpt')  return admLoadReports();
     if(tab==='prt')  return admLoadPartners();
+    if(tab==='log')  return admLoadAudit();
     if(tab==='noti') return admLoadNotifSent();
     // 'mod' has nothing to load until something is searched for
   }
@@ -735,16 +744,26 @@
   }
 
   function admRenderMember(host, u){
-    var role = u.role ? u.role : 'member';
+    // role and email come back null for a partner — dz_mod_find() withholds
+    // both, so that looking accounts up cannot be used to work out who the
+    // other partners are. So neither is invented here. The role chip is drawn
+    // only when there is a role to draw, which means a partner never sees one
+    // and a staff member sees one on exactly the privileged accounts.
+    //
+    // The previous line read `u.role ? u.role : 'member'`, which would have
+    // labelled every withheld role 'member' — a partner looking up an admin
+    // would have been shown a badge saying the opposite of the truth, and then
+    // refused when they acted on it.
     host.innerHTML =
       '<div class="admMemb">' +
         '<div class="admMembTop">' +
           '<div>' +
             '<div class="admMembName">@' + admEsc(u.username || '—') + '</div>' +
-            '<div class="admMembSub">' + admEsc(u.email || '') + '</div>' +
+            (u.email ? '<div class="admMembSub">' + admEsc(u.email) + '</div>' : '') +
           '</div>' +
           '<div class="admMembTags">' +
-            '<span class="admTag admTag--' + admEsc(role) + '">' + admEsc(role) + '</span>' +
+            (u.role ? '<span class="admTag admTag--' + admEsc(u.role) + '">' +
+                      admEsc(u.role) + '</span>' : '') +
             '<span class="admTag">' + admEsc(u.tier || 'guest') + '</span>' +
             (u.banned ? '<span class="admTag admTag--ban">banned</span>' : '') +
           '</div>' +
@@ -813,6 +832,59 @@
           admModSearch(u.id);
           admLoadReports();
         }, function(e){ showToast(e.message || 'Could not ban that account'); });
+    });
+  }
+
+  // ---- the audit trail ----------------------------------------------------
+  //
+  // The actor's role is shown from the row rather than looked up now, because
+  // that is how it was recorded: a partner demoted since must not make the ban
+  // they placed look like a member placed it.
+  var AUDIT_VERB = {
+    ban_user:'banned', unban_user:'lifted the ban on',
+    grant_partner:'made a partner', revoke_partner:'removed as a partner',
+    create_promo:'created a promo code', claim_max:'claimed Max',
+    resolve_report:'resolved a report about'
+  };
+
+  function admLoadAudit(){
+    var list = document.getElementById('admLogList');
+    var empty = document.getElementById('admLogEmpty');
+    if(!list) return;
+
+    admApi('audit', {limit:100}).then(function(r){
+      var rows = (r && r.entries) || [];
+      list.innerHTML = '';
+      if(!rows.length){ if(empty) empty.style.display='block'; return; }
+      if(empty) empty.style.display='none';
+
+      rows.forEach(function(e){
+        var row = document.createElement('div');
+        row.className = 'admLog';
+        var verb = AUDIT_VERB[e.action] || e.action;
+        var who  = e.actor_username ? '@' + e.actor_username : 'someone';
+        var whom = e.target_username ? '@' + e.target_username : '';
+        // The reason a moderator typed is the one field here somebody else
+        // wrote, so it goes in as text rather than as markup.
+        var why = (e.metadata && e.metadata.reason) ? String(e.metadata.reason) : '';
+
+        row.innerHTML =
+          '<div class="admLogMain">' +
+            '<span class="admLogWho">' + admEsc(who) + '</span>' +
+            '<span class="admLogRole">' + admEsc(e.actor_role || 'member') + '</span>' +
+            '<span class="admLogAct">' + admEsc(verb) + '</span>' +
+            (whom ? '<span class="admLogTgt">' + admEsc(whom) + '</span>' : '') +
+          '</div>' +
+          (why ? '<div class="admLogWhy"></div>' : '') +
+          '<div class="admLogWhen">' +
+            admEsc(e.created_at ? new Date(e.created_at).toLocaleString() : '') +
+          '</div>';
+        if(why) row.querySelector('.admLogWhy').textContent = '\u201c' + why + '\u201d';
+        list.appendChild(row);
+      });
+    }, function(err){
+      list.innerHTML = '';
+      if(empty){ empty.style.display='block'; empty.textContent = err.message; }
     });
   }
 

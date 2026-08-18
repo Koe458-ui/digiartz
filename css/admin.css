@@ -301,3 +301,25 @@
     .admPrtOff{color:var(--danger);}
     .admPrtMoney{margin-top:.25rem;font-family:var(--fm);font-size:.62rem;color:var(--txd);opacity:.85;}
     .admPrtActs{flex:0 0 auto;}
+
+    /* ---- the audit trail ------------------------------------------------- */
+    .admLogList{display:flex;flex-direction:column;}
+    .admLog{
+      padding:.7rem 0;border-bottom:1px solid var(--bdr);
+      display:flex;flex-direction:column;gap:.2rem;
+    }
+    .admLog:last-child{border-bottom:none;}
+    .admLogMain{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
+    .admLogWho{font-family:var(--fm);font-size:.78rem;font-weight:700;color:var(--tx);}
+    .admLogRole{
+      padding:.1rem .4rem;border:1px solid var(--bdr);border-radius:999px;
+      font-family:var(--fm);font-size:.54rem;font-weight:700;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--txd);
+    }
+    .admLogAct{font-family:var(--fb);font-size:.8rem;color:var(--txd);}
+    .admLogTgt{font-family:var(--fm);font-size:.78rem;font-weight:700;color:var(--tx);}
+    .admLogWhy{
+      font-family:var(--fb);font-size:.78rem;font-style:italic;color:var(--txd);
+      word-break:break-word;
+    }
+    .admLogWhen{font-family:var(--fm);font-size:.6rem;color:var(--txd);opacity:.75;}

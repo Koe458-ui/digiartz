@@ -161,6 +161,23 @@ const HEAD = `
   }
   function toast(m){ if(typeof showToast==='function') showToast(m); }
 
+  // Amounts are stored in each currency's smallest unit, and a zero-decimal
+  // currency's smallest unit IS its major unit — 100 JPY is stored as 100, not
+  // 10000. The partner list used to print the raw figure with "(minor units)"
+  // beside it, which is a number nobody reads as money: 7250 for what the
+  // partner's own hub, three taps away, calls $72.50.
+  var ZERO_DEC = { JPY:1, HUF:1, TWD:1 };
+  function money(minor, cur){
+    var n = Number(minor) || 0;
+    var v = ZERO_DEC[cur] ? n : n / 100;
+    try {
+      return new Intl.NumberFormat(undefined, { style:'currency', currency:cur,
+        minimumFractionDigits: ZERO_DEC[cur] ? 0 : 2 }).format(v);
+    } catch(e) {
+      return cur + ' ' + v.toFixed(ZERO_DEC[cur] ? 0 : 2);
+    }
+  }
+
   function style(){
     if(document.getElementById('dzOpsCss')) return;
     var s = document.createElement('style');
@@ -697,8 +714,8 @@ const PANEL_PRT = `
           // view — the isolation rule is about what one PARTNER sees of
           // another, and dz_admin_partners refuses anyone who is not staff.
           var earned = p.earned_json || {};
-          var money = Object.keys(earned).map(function(c){
-            return esc(c) + ' ' + esc(earned[c]);
+          var earnedTxt = Object.keys(earned).map(function(c){
+            return esc(money(earned[c], c));
           }).join(' \\u00b7 ');
 
           var row = document.createElement('div');
@@ -714,8 +731,8 @@ const PANEL_PRT = `
                   : 'No code yet') +
                 (p.max_claimed ? ' \\u00b7 Max claimed' : '') +
               '</div>' +
-              (money ? '<div class="admPrtMoney">' + money +
-                       ' earned (minor units)</div>' : '') +
+              (earnedTxt ? '<div class="admPrtMoney">' + earnedTxt +
+                           ' earned</div>' : '') +
             '</div><div class="admPrtActs"></div>';
 
           row.querySelector('.admPrtActs').appendChild(btn('REVOKE', function(){

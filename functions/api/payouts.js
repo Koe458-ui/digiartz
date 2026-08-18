@@ -184,9 +184,20 @@ async function ledgerAppend(env, args) {
   } catch { /* the payout already went; never fail on the audit write */ }
 }
 
+// Admin OR dev, and the second half is not a widening — it is the fix for a
+// gate that has never opened for anybody.
+//
+// profiles carried a CHECK allowing only guest, premium and dev, so no row
+// could ever hold 'admin'. Every action behind this — admin-list,
+// admin-decide, admin-send — is a control for reviewing and sending a seller's
+// withdrawal, and all three have been unreachable since the column was
+// constrained. supabase/migrations/20260823 widens the vocabulary and points
+// dz_tax_due() at dz_is_staff() for the same reason; this is the third place
+// that asked for a value the database refused to store.
 async function isAdmin(env, userId) {
   const rows = await sbService(env, '/profiles?id=eq.' + userId + '&select=role&limit=1');
-  return !!(rows && rows[0] && rows[0].role === 'admin');
+  const role = rows && rows[0] && rows[0].role;
+  return role === 'admin' || role === 'dev';
 }
 
 // ---------------------------------------------------------------------------

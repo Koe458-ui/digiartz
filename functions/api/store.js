@@ -900,7 +900,7 @@ const MODULE = `
   // The collab endpoint, which is not one of the two payment providers and so
   // does not go through api(). Same session, same no-store.
   function collabApi(action, body){
-    if(!window.sb) return Promise.reject(new Error('Sign in required'));
+    if(typeof sb === 'undefined' || !sb) return Promise.reject(new Error('Sign in required'));
     return sb.auth.getSession().then(function(s){
       var session = s && s.data && s.data.session;
       if(!session) throw new Error('Sign in required');
@@ -1245,7 +1245,7 @@ const MODULE = `
 
   // One question for the whole page rather than one per card.
   function askOwned(ids){
-    if(!ids.length || !window.sb || !sb.rpc) return;
+    if(!ids.length || typeof sb === 'undefined' || !sb || !sb.rpc) return;
     sb.rpc('dz_market_owned', {p_items: ids}).then(function(res){
       if(!res || res.error || !res.data) return;
       var got = false;
@@ -2481,7 +2481,7 @@ const MODULE = `
 
   var purchasesP = null;
   function loadPurchases(force, host, seq){
-    if(!host || !window.sb || !sb.rpc) return;
+    if(!host || typeof sb === 'undefined' || !sb || !sb.rpc) return;
     if(force) purchasesP = null;
     // Promise.resolve, not the builder itself: a PostgrestBuilder fires a fresh
     // request every time something calls .then on it, so caching the builder

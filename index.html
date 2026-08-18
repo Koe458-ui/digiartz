@@ -164,7 +164,7 @@
   <link rel="stylesheet" href="/css/connect.css?v=3">
   <link rel="stylesheet" href="/css/ranking.css?v=2">
   <link rel="stylesheet" href="/css/profile.css?v=10">
-  <link rel="stylesheet" href="/css/admin.css?v=3">
+  <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=5">
   <link rel="stylesheet" href="/css/upload.css?v=12">
@@ -931,11 +931,13 @@
     </div>
   </div>
 
-  <!-- An empty shell on purpose. admBuild() in js/pfedit.js fills it the
-       first time an entitled account opens it, and no other page load
-       carries a word of what goes in here. The element itself stays put so
-       the panel watchers — the nav in js/app-core.js, the floating widgets
-       in js/sections.js — have something to watch from the start. -->
+  <!-- An empty shell on purpose, and emptier than it used to be. What goes
+       inside is no longer written by any script this page loads: /api/ops
+       serves it, to a caller holding both a session and a role of admin, dev
+       or partner, and builds it for whichever of those they are. No other
+       page load carries a word of it. The element itself stays put so the
+       panel watchers — the nav in js/app-core.js, the floating widgets in
+       js/sections.js — have something to watch from the start. -->
   <div id="admPage"></div>
 
   <div id="pfMyWorkPage" role="dialog" aria-modal="true" aria-label="Edit my work">
@@ -2831,14 +2833,14 @@
   <script src="/uploadVerifier.js"></script>
   <script src="/js/app-core.js?v=28"></script>
   <script src="/js/protect.js?v=3"></script>
-  <script src="/js/gallery.js?v=86"></script>
-  <script src="/js/auth.js?v=15"></script>
+  <script src="/js/gallery.js?v=87"></script>
+  <script src="/js/auth.js?v=16"></script>
   <script src="/js/profile.js?v=15"></script>
   <script src="/js/albums.js?v=16"></script>
   <script src="/js/drafts.js?v=8"></script>
   <script src="/js/upqueue.js?v=7"></script>
   <script src="/js/avatar.js?v=3"></script>
-  <script src="/js/pfedit.js?v=13"></script>
+  <script src="/js/pfedit.js?v=14"></script>
   <script src="/js/mywork.js?v=21"></script>
   <script src="/js/startup.js?v=6"></script>
   <script src="/js/tagrail.js?v=3"></script>

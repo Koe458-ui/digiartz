@@ -1004,33 +1004,89 @@
     }
   });
 
-  // The entry is built for a dev account and taken out again for anyone
-  // else. It used to be written into the settings list and hidden with a
-  // stylesheet, which is not hidden: it was in the page source of every
-  // visit, it answered a click, and it named a panel that nobody outside
-  // that account has any business knowing exists.
+  // THE ADMIN PANEL IS NOT IN THIS BUNDLE.
+  //
+  // It used to be: seven hundred lines in js/pfedit.js naming every privileged
+  // endpoint, the telemetry fields, the partner programme, the invite flow and
+  // the ban engine. None of it was exploitable — every action behind it is
+  // refused by a guard in Postgres — but js/pfedit.js is a static asset that
+  // Cloudflare serves to anyone, the service worker caches, and Googlebot
+  // reads. A visitor's page source names no payment provider and quotes no
+  // price; it has no business describing the moderation tooling either.
+  //
+  // So this is all that is left here: the address, and the decision to ask for
+  // it. /api/ops answers only a caller holding a valid session AND a role of
+  // admin, dev or partner — checked against Postgres, never against anything
+  // the browser sends — and it builds the module for whoever asked. A
+  // partner's copy contains the reports and moderation code and nothing else;
+  // the telemetry, the partner list, the invite flow, the audit reader and the
+  // broadcast composer are not hidden from it, they are absent from it.
+  //
+  // Anyone else gets a JavaScript comment, which is the same thing they would
+  // get for an endpoint that does not exist.
+  //
+  // The two role checks below decide only whether to ASK. They are not a
+  // gate — /api/ops re-decides on its own, so editing them in a console gets
+  // you the same comment.
+  var opsFor = null, opsInflight = null;
+
+  function opsLoad(uid){
+    if(opsFor === uid) {
+      if(typeof dzOpsMenu === 'function') dzOpsMenu();
+      return Promise.resolve(true);
+    }
+    if(opsInflight) return opsInflight;
+
+    opsInflight = Promise.resolve().then(function(){
+      if(typeof sb === 'undefined' || !sb) return false;
+      return sb.auth.getSession().then(function(s){
+        var session = s && s.data && s.data.session;
+        if(!session) return false;
+        return fetch('/api/ops', {
+          headers: { authorization: 'Bearer ' + session.access_token },
+          cache: 'no-store'
+        }).then(function(res){
+          return res.ok ? res.text() : null;
+        }).then(function(code){
+          if(!code) return false;
+          // A module already loaded for a different account has to give up its
+          // shell and its menu entry before the incoming one draws over them.
+          if(opsFor && typeof dzOpsReset === 'function') dzOpsReset();
+          var url = URL.createObjectURL(new Blob([code], {type:'text/javascript'}));
+          return new Promise(function(ok, no){
+            var el = document.createElement('script');
+            el.src = url;
+            el.onload  = function(){ URL.revokeObjectURL(url); ok(true); };
+            el.onerror = function(){ URL.revokeObjectURL(url); no(new Error('load failed')); };
+            document.head.appendChild(el);
+          });
+        });
+      });
+    }).then(function(ok){
+      opsInflight = null;
+      if(ok) opsFor = uid;
+      return !!ok;
+    }, function(){ opsInflight = null; return false; });
+
+    return opsInflight;
+  }
+
   function syncAdmBtn(){
-    var b=document.getElementById('smAdmBtn');
-    // Staff get the whole panel; a partner gets the two tabs they are trusted
-    // with and is told so by the label, rather than opening something called
-    // ADMIN PANEL and finding most of it missing. Everyone else gets no
-    // element at all — see the note above about hiding one with a stylesheet.
     var staff   = typeof dzIsStaff   === 'function' && dzIsStaff();
     var partner = typeof dzIsPartner === 'function' && dzIsPartner();
-    if(!staff && !partner){ if(b && b.parentNode) b.parentNode.removeChild(b); return; }
-    // the Account group's empty slot; the flat list is the older shape, kept
-    // as a fallback so the entry still lands above Log Out either way
-    var gate=document.getElementById('setAdmGate');
-    var list=gate || document.querySelector('#setPage .setList');
-    if(!list) return;
-    if(!b){
-      b=document.createElement('button');
-      b.id='smAdmBtn';
-      b.className='pfMenuItem';
-      b.onclick=function(){ setGo(smHandleAdm,'admPage'); };
-      if(gate) gate.appendChild(b);
-      else list.insertBefore(b, list.querySelector('.pfMenuItem--danger'));
+    var uid = (window.currentUser && currentUser.id) ? String(currentUser.id) : null;
+
+    if(!uid || (!staff && !partner)){
+      // Signed out, or an account with no business here. Whatever a previous
+      // account left on this page goes with it.
+      if(opsFor && typeof dzOpsReset === 'function') dzOpsReset();
+      else {
+        var b = document.getElementById('smAdmBtn');
+        if(b && b.parentNode) b.parentNode.removeChild(b);
+      }
+      opsFor = null;
+      return;
     }
-    b.textContent = staff ? '⚙ ADMIN PANEL' : '🛡 MODERATION';
+    opsLoad(uid);
   }
 

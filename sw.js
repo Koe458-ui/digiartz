@@ -4,6 +4,18 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v186 — the admin panel leaves the public bundle.
+       js/pfedit.js carried seven hundred lines of it: every privileged
+       endpoint, the telemetry fields, the partner programme, the invite flow
+       and the ban engine, in a file Cloudflare serves to anyone, this worker
+       caches, and Googlebot reads. None of it was exploitable — every action
+       is refused by a guard in Postgres — but a page whose source names no
+       payment provider has no business describing the moderation tooling.
+       /api/ops serves it instead, to a caller holding a session AND a role,
+       and builds it for whoever asked: a partner's copy contains the reports
+       and moderation code and nothing else. css/admin.css is back to exactly
+       what it was before any of this, and pfedit.js is 640 lines lighter.
+
    v185 — a security pass over v184.
        Four leaks closed, none of them exploitable for privilege but all of
        them for information: the API error translator sniffed message text and
@@ -3314,7 +3326,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v185';
+const CACHE_VERSION = 'v186';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3373,7 +3385,7 @@ const SHELL_URLS = [
   '/css/connect.css?v=3',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=10',
-  '/css/admin.css?v=3',
+  '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=5',
   '/css/upload.css?v=12',
@@ -3401,14 +3413,14 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=28',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=86',
-  '/js/auth.js?v=15',
+  '/js/gallery.js?v=87',
+  '/js/auth.js?v=16',
   '/js/profile.js?v=15',
   '/js/albums.js?v=16',
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=13',
+  '/js/pfedit.js?v=14',
   '/js/mywork.js?v=21',
   '/js/startup.js?v=6',
   '/js/tagrail.js?v=3',

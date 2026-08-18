@@ -743,7 +743,11 @@
         // close owner only pages
         closeProfilePage();
         closeMyWorkPage();
-        closeAdmPage();
+        // The admin panel is loaded per account; on sign-out it gives up its
+        // shell and its menu entry rather than merely closing, so the next
+        // account cannot inherit either. Guarded because a member who was
+        // never entitled to it never loaded the module that defines this.
+        if(typeof dzOpsReset === 'function') dzOpsReset();
       }
     });
 
@@ -886,67 +890,10 @@
     }catch(e){ /* silent failure */ }
   }
 
-  // broadcast composer
-  //
-  // Two things changed here when the panel learned about roles.
-  //
-  // The gate was isDev, so an account whose role is 'admin' — which every
-  // other part of the admin panel treats as staff, and which
-  // dz_platform_revenue() has read as staff since the money migration — got
-  // the composer drawn and a Send button that returned silently. It is
-  // dzIsStaff() now, which is the same question the panel asked to draw the
-  // tab in the first place.
-  //
-  // And the insert goes through /api/collab rather than straight at the table.
-  // A row with a null user_id is a row every member reads, so who may write
-  // one is not a question to leave to whichever policy happens to be on
-  // notifications: the endpoint asks Postgres whether the caller is staff and
-  // only then picks up the service role. A failure is now also SHOWN — the old
-  // catch logged to a console nobody watching a broadcast has open.
-  async function admSendBroadcast(){
-    if(typeof dzIsStaff !== 'function' || !dzIsStaff()) return;
-    var titleEl = document.getElementById('admNotiTitle'), msgEl = document.getElementById('admNotiMsg');
-    var title = (titleEl.value||'').trim(), msg = (msgEl.value||'').trim();
-    if(!title || !msg){ showToast('Enter a title and message'); return; }
-    var btn = document.getElementById('admNotiSendBtn');
-    if(btn) btn.disabled = true;
-    try{
-      var s = await sb.auth.getSession();
-      var session = s && s.data && s.data.session;
-      if(!session) throw new Error('Not signed in');
-      var res = await fetch('/api/collab', {
-        method:'POST',
-        headers:{'content-type':'application/json',
-                 authorization:'Bearer '+session.access_token},
-        cache:'no-store',
-        body:JSON.stringify({action:'broadcast', title:title, message:msg})
-      });
-      var body = await res.json().catch(function(){ return null; });
-      if(!res.ok) throw new Error((body && body.error) || 'Could not send that');
-      titleEl.value=''; msgEl.value='';
-      showToast('Notification sent to all users');
-      admLoadNotifSent();
-    }catch(e){ showToast(e.message || 'Could not send that'); }
-    if(btn) btn.disabled = false;
-  }
-
-  async function admLoadNotifSent(){
-    var wrap = document.getElementById('admNotiSentList'), empty = document.getElementById('admNotiEmpty');
-    if(!sb || !wrap) return;
-    try{
-      const{data,error} = await sb.from('notifications').select('*').is('user_id',null).order('created_at',{ascending:false}).limit(20);
-      if(error) throw error;
-      var rows = data||[];
-      wrap.innerHTML = rows.map(function(r){
-        return '<div class="admNotiSentItem">'+
-          '<div class="admNotiSentTitle">'+esc(r.title)+'</div>'+
-          '<div class="admNotiSentMsg">'+esc(r.message)+'</div>'+
-          '<div class="admNotiSentTime">'+(r.created_at?new Date(r.created_at).toLocaleString():'')+'</div>'+
-        '</div>';
-      }).join('');
-      if(empty) empty.style.display = rows.length ? 'none' : 'block';
-    }catch(e){ console.error('Error loading sent notifications: '+e.message); }
-  }
+  // The broadcast composer and the list of what has been sent used to be here.
+  // Both are part of the admin panel, so both moved with it into the module
+  // /api/ops serves — see the note in js/gallery.js. Nothing in this file
+  // names them any more.
 
 // admin upload removed
 

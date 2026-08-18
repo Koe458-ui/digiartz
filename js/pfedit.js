@@ -252,61 +252,189 @@
   // all. It used to say "sign in with a dev account to access admin", which
   // told every visitor who tripped it that there was something to sign in to.
   function smHandleAdm(){
-    if(!isDev) return;
+    if(!admMayOpen()) return;
     closeMenu();
     openAdmPage();
   }
 
-  // admin panel page
-  var admTab = 'noti';
+  // ---- the admin panel ----------------------------------------------------
+  //
+  // One panel, two audiences, and the difference between them is the whole
+  // reason this file grew.
+  //
+  //   STAFF (admin, dev) see everything: the live counters, the partner list
+  //   and its invite button, the broadcast composer, both report queues and
+  //   the ban engine.
+  //
+  //   A PARTNER sees two tabs — reports and moderation — because that is the
+  //   whole of what the role is trusted with. Not a greyed-out version of the
+  //   rest: the tabs are not built, so there is no telemetry in their document
+  //   and no partner list to read out of it.
+  //
+  // NONE OF THIS IS A SECURITY BOUNDARY and it is worth saying so where the
+  // markup is written. Everything below decides what to DRAW. Every action it
+  // draws is refused again in Postgres — dz_is_staff() guards the telemetry,
+  // the partner list and the revenue report; dz_may_moderate() decides every
+  // ban one target at a time and will not let a partner touch an admin, a dev
+  // or another partner whatever this file believes. A member who edits
+  // userRole in a console gets a panel of buttons that all answer 403.
 
-  // index.html carries an empty #admPage and this writes the inside of it,
-  // once, on first open. Nothing here reaches a page that never opens it.
+  var admTab = null;
+
+  function admMayOpen(){
+    return (typeof dzIsStaff === 'function' && dzIsStaff()) ||
+           (typeof dzIsPartner === 'function' && dzIsPartner());
+  }
+  function admIsStaff(){
+    return typeof dzIsStaff === 'function' && dzIsStaff();
+  }
+
+  // The collab endpoint. Everything privileged goes through it rather than
+  // through the Supabase client, so the guard is a SECURITY DEFINER function
+  // in Postgres and not an RLS policy that has to be right for every table the
+  // panel touches.
+  function admApi(action, body){
+    if(!sb) return Promise.reject(new Error('Not signed in'));
+    return sb.auth.getSession().then(function(s){
+      var session = s && s.data && s.data.session;
+      if(!session) throw new Error('Not signed in');
+      return fetch('/api/collab', {
+        method:'POST',
+        headers:{'content-type':'application/json',
+                 authorization:'Bearer ' + session.access_token},
+        cache:'no-store',
+        body:JSON.stringify(Object.assign({action:action}, body || {}))
+      });
+    }).then(function(res){
+      return res.json().catch(function(){ return null; }).then(function(j){
+        if(!res.ok) throw new Error((j && j.error) || 'That did not work');
+        return j;
+      });
+    });
+  }
+
+  function admEsc(v){
+    return String(v==null?'':v)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // Which tabs this account gets, in the order they are useful. Reports leads
+  // for a partner because it is the only queue they act on; telemetry leads
+  // for staff because it is the thing anyone opening an admin panel looks at
+  // first.
+  function admTabs(){
+    if(admIsStaff()){
+      return [['tel','TELEMETRY'], ['rpt','REPORTS'], ['mod','MODERATION'],
+              ['prt','PARTNERS'], ['noti','NOTIFY']];
+    }
+    return [['rpt','REPORTS'], ['mod','MODERATION']];
+  }
+
+  // index.html carries an empty #admPage and this writes the inside of it.
+  // Rebuilt when the role changes rather than only once: an account that
+  // opened this as a partner and was promoted must not keep the partner's two
+  // tabs, and one that was demoted must not keep the rest.
   function admBuild(el){
-    if(el.firstElementChild) return;
+    var want = admIsStaff() ? 'staff' : 'partner';
+    if(el.firstElementChild && el.dataset.admFor === want) return;
+    el.dataset.admFor = want;
+
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-modal', 'true');
-    el.setAttribute('aria-label', 'Admin panel');
+    el.setAttribute('aria-label', admIsStaff() ? 'Admin panel' : 'Moderation');
+
+    var tabs = admTabs();
+    admTab = tabs[0][0];
+
     el.innerHTML =
       '<div class="subPgHdr">' +
-        '<button class="subPgX" onclick="closeAdmPage()" aria-label="Close admin panel">←</button>' +
-        '<div class="subPgTitle">ADMIN PANEL</div>' +
+        '<button class="subPgX" onclick="closeAdmPage()" aria-label="Close">←</button>' +
+        '<div class="subPgTitle">' +
+          (admIsStaff() ? 'ADMIN PANEL' : 'MODERATION') + '</div>' +
       '</div>' +
       '<div class="admBdy">' +
         '<div class="pfTabs" role="tablist">' +
           '<div class="pfTabGroup">' +
-            '<button class="pfTab active" id="admTabNoti" role="tab" aria-selected="true" onclick="admSwitchTab(\'noti\')">NOTIFICATIONS</button>' +
-            '<button class="pfTab" id="admTabRpt" role="tab" aria-selected="false" onclick="admSwitchTab(\'rpt\')">REPORT<span class="admTabCount" id="admCountRpt" style="display:none;">0</span></button>' +
+            tabs.map(function(t, i){
+              return '<button class="pfTab' + (i===0 ? ' active' : '') +
+                '" id="admTab-' + t[0] + '" role="tab" aria-selected="' +
+                (i===0 ? 'true' : 'false') + '" onclick="admSwitchTab(\'' + t[0] + '\')">' +
+                t[1] +
+                (t[0]==='rpt' ? '<span class="admTabCount" id="admCountRpt" style="display:none;">0</span>' : '') +
+              '</button>';
+            }).join('') +
           '</div>' +
         '</div>' +
-        '<div class="pfPanel" id="admPanelRpt">' +
-          '<div class="pfGrid" id="admRptList"></div>' +
-          '<div class="pfEmpty" id="admRptEmpty" style="display:none;"><span class="admEmptyIcon">✓</span>No open reports.</div>' +
-        '</div>' +
-        '<div class="pfPanel active" id="admPanelNoti">' +
-          '<div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>' +
-          '<div class="admNotiCompose">' +
-            '<input type="text" id="admNotiTitle" class="admNotiInput" placeholder="Title" maxlength="80">' +
-            '<textarea id="admNotiMsg" class="admNotiTextarea" placeholder="Message" maxlength="500" rows="3"></textarea>' +
-            '<button class="admNotiSendBtn" id="admNotiSendBtn" onclick="admSendBroadcast()">Send to All Users</button>' +
-          '</div>' +
-          '<div class="admNotiSentLbl">RECENTLY SENT</div>' +
-          '<div class="pfEmpty" id="admNotiEmpty" style="display:none;"><span class="admEmptyIcon">🔔</span>No notifications sent yet.</div>' +
-          '<div id="admNotiSentList" class="admNotiSentList"></div>' +
-        '</div>' +
+        tabs.map(function(t, i){
+          return '<div class="pfPanel' + (i===0 ? ' active' : '') +
+                 '" id="admPanel-' + t[0] + '">' + admPanelHtml(t[0]) + '</div>';
+        }).join('') +
       '</div>';
-    admTab = 'noti';
+
+    if(el.querySelector('#admModForm')) admWireMod(el);
+    if(el.querySelector('#admAddPartner')) admWirePartners(el);
+  }
+
+  function admPanelHtml(tab){
+    if(tab === 'tel') return '<div id="admTel" class="admTel"></div>';
+
+    if(tab === 'rpt') return '' +
+      '<div class="admRptSwitch" role="group" aria-label="Which reports">' +
+        '<button type="button" class="admRptTog active" data-q="user" ' +
+          'onclick="admRptKind(\'user\')">Accounts</button>' +
+        '<button type="button" class="admRptTog" data-q="item" ' +
+          'onclick="admRptKind(\'item\')">Uploads</button>' +
+      '</div>' +
+      '<div class="pfGrid" id="admRptList"></div>' +
+      '<div class="pfEmpty" id="admRptEmpty" style="display:none;">' +
+        '<span class="admEmptyIcon">✓</span>No open reports.</div>';
+
+    if(tab === 'mod') return '' +
+      '<div class="admModLbl">FIND A MEMBER</div>' +
+      '<p class="admModNote">Search by username, email address or user ID. ' +
+        'It has to be exact — this does not list members, it finds one.</p>' +
+      '<form class="admModForm" id="admModForm">' +
+        '<input type="text" id="admModQ" class="admModIn" autocomplete="off" ' +
+          'spellcheck="false" placeholder="@handle, email, or ID" ' +
+          'aria-label="Username, email address or user ID">' +
+        '<button type="submit" class="admModGo">Find</button>' +
+      '</form>' +
+      '<div id="admModResult" class="admModResult"></div>';
+
+    if(tab === 'prt') return '' +
+      '<div class="admPrtTop">' +
+        '<div class="admPrtLbl">PARTNERS</div>' +
+        '<button type="button" class="admPrtAdd" id="admAddPartner" ' +
+          'aria-label="Add a partner">+</button>' +
+      '</div>' +
+      '<div id="admPrtList" class="admPrtList"></div>' +
+      '<div class="pfEmpty" id="admPrtEmpty" style="display:none;">' +
+        '<span class="admEmptyIcon">🤝</span>No partners yet. Use + to invite one.</div>';
+
+    // notify
+    return '' +
+      '<div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>' +
+      '<div class="admNotiCompose">' +
+        '<input type="text" id="admNotiTitle" class="admNotiInput" placeholder="Title" maxlength="80">' +
+        '<textarea id="admNotiMsg" class="admNotiTextarea" placeholder="Message" maxlength="500" rows="3"></textarea>' +
+        '<button class="admNotiSendBtn" id="admNotiSendBtn" onclick="admSendBroadcast()">Send to All Users</button>' +
+      '</div>' +
+      '<div class="admNotiSentLbl">RECENTLY SENT</div>' +
+      '<div class="pfEmpty" id="admNotiEmpty" style="display:none;">' +
+        '<span class="admEmptyIcon">🔔</span>No notifications sent yet.</div>' +
+      '<div id="admNotiSentList" class="admNotiSentList"></div>';
   }
 
   function openAdmPage(){
     var el = document.getElementById('admPage');
-    if(!el || !isDev) return;
+    if(!el || !admMayOpen()) return;
     admBuild(el);
     el.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-    admLoadNotifSent();
-    admLoadReports();   // report tab badge
+    admLoadTab(admTab);
+    admLoadReports();            // the tab badge, whichever tab is up
   }
 
   function closeAdmPage(){
@@ -316,30 +444,197 @@
     restoreScroll();
   }
 
-
-
   function admSwitchTab(tab){
     admTab = tab;
-    ['Noti','Rpt'].forEach(function(t){
-      var key = t.toLowerCase();
-      document.getElementById('admTab'+t).classList.toggle('active', key===tab);
-      document.getElementById('admPanel'+t).classList.toggle('active', key===tab);
+    admTabs().forEach(function(t){
+      var b = document.getElementById('admTab-' + t[0]);
+      var p = document.getElementById('admPanel-' + t[0]);
+      if(b){ b.classList.toggle('active', t[0]===tab); b.setAttribute('aria-selected', t[0]===tab ? 'true':'false'); }
+      if(p) p.classList.toggle('active', t[0]===tab);
     });
-    if(tab==='noti') admLoadNotifSent();
-    if(tab==='rpt')  admLoadReports();
+    admLoadTab(tab);
   }
 
-  // reports queue
+  function admLoadTab(tab){
+    if(tab==='tel')  return admLoadTelemetry();
+    if(tab==='rpt')  return admLoadReports();
+    if(tab==='prt')  return admLoadPartners();
+    if(tab==='noti') return admLoadNotifSent();
+    // 'mod' has nothing to load until something is searched for
+  }
+
+  // ---- telemetry ----------------------------------------------------------
+  //
+  // One call. Nine separate fetches would show a submission count from one
+  // second beside an active-user count from another, and somebody eventually
+  // reconciles the two and finds a bug that is not there.
+  function admLoadTelemetry(){
+    var host = document.getElementById('admTel');
+    if(!host) return;
+    if(!host.dataset.once){ host.dataset.once = '1'; host.innerHTML = ''; }
+
+    admApi('telemetry', {}).then(function(r){
+      var t = r && r.telemetry;
+      if(!t){ host.innerHTML = '<div class="pfEmpty">Could not read telemetry.</div>'; return; }
+      var c = t.content || {}, day = c.today || {}, s = t.subscriptions || {},
+          e = t.engagement || {}, d = t.devices || {}, m = t.moderation || {};
+
+      host.innerHTML =
+        admGroup('Live submissions', [
+          admStat('Artworks',    c.artworks,    day.artworks),
+          admStat('Resources',   c.resources,   day.resources),
+          admStat('Marketplace', c.marketplace, day.marketplace),
+          admStat('Blogs',       c.blogs,       day.blogs),
+          admStat('Jobs',        c.jobs,        day.jobs),
+          admStat('Communities', c.communities, null)
+        ]) +
+        admGroup('Subscriptions, live', [
+          admStat('Lite',     s.lite),
+          admStat('Premium',  s.premium),
+          admStat('Max',      s.max),
+          admStat('Free',     s.free),
+          admStat('Partners', s.partners),
+          admStat('Members',  s.total)
+        ]) +
+        admGroup('Engagement', [
+          admStat('DAU', e.dau),
+          admStat('MAU', e.mau),
+          admStat('Signed-in DAU', e.dau_signed_in),
+          admStat('Events, 24h', e.events_24h),
+          admStat('New members, 24h', e.new_members_24h)
+        ]) +
+        admGroup('Devices, 24h', Object.keys(d).sort().map(function(k){
+          return admStat(k.charAt(0).toUpperCase() + k.slice(1), d[k]);
+        })) +
+        admGroup('Moderation', [
+          admStat('Open account reports', m.open_user_reports),
+          admStat('Open upload reports',  m.open_item_reports),
+          admStat('Active bans',          m.active_bans)
+        ]) +
+        '<p class="admTelAt">Read at ' +
+          admEsc(t.at ? new Date(t.at).toLocaleTimeString() : '') +
+          '. Subscription counts are live — a lapsed plan is not counted as ' +
+          'active. Device and engagement figures cover recorded activity only.</p>';
+    }, function(err){
+      host.innerHTML = '<div class="pfEmpty">' + admEsc(err.message) + '</div>';
+    });
+  }
+
+  function admGroup(title, cells){
+    var body = cells.filter(Boolean).join('');
+    if(!body) return '';
+    return '<section class="admTelGrp">' +
+      '<h3 class="admTelHd">' + admEsc(title) + '</h3>' +
+      '<ul class="admTelGrid">' + body + '</ul>' +
+    '</section>';
+  }
+
+  // A "today" figure is drawn only where there is one, and a zero is drawn as
+  // a zero rather than hidden — "0 today" is information; a missing line is
+  // ambiguous between none and not measured.
+  function admStat(label, n, today){
+    return '<li class="admTelCell">' +
+      '<span class="admTelN">' + admEsc(Number(n) || 0) + '</span>' +
+      '<span class="admTelL">' + admEsc(label) + '</span>' +
+      (today == null ? '' :
+        '<span class="admTelToday">+' + admEsc(Number(today) || 0) + ' today</span>') +
+    '</li>';
+  }
+
+  // ---- reports ------------------------------------------------------------
   var RPT_LABELS = {
     copyright:'Copyright infringement', ai_undisclosed:'AI-generated without disclosure',
     nudity:'Nudity / Sexual content', violence:'Violence / Gore',
     hate:'Hate speech / Harassment', spam:'Spam / Advertising',
     misinformation:'Misinformation', impersonation:'Impersonation',
     illegal:'Illegal content', offtopic:'Off-topic / Wrong category',
-    lowquality:'Low-quality / Broken upload', other:'Other'
+    lowquality:'Low-quality / Broken upload', other:'Other',
+    dmca:'DMCA / Copyright', harassment:'Harassment', fraud:'Fraud'
   };
 
-  async function admLoadReports(){
+  var admRptWhich = 'user';
+  function admRptKind(kind){
+    admRptWhich = kind;
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.admRptTog'), function(b){
+        b.classList.toggle('active', b.getAttribute('data-q') === kind);
+      });
+    admLoadReports();
+  }
+
+  function admLoadReports(){
+    return admRptWhich === 'item' ? admLoadItemReports() : admLoadUserReports();
+  }
+
+  // Accounts. The queue a partner is here for, and the one the ban engine
+  // below acts on.
+  function admLoadUserReports(){
+    var list = document.getElementById('admRptList');
+    var empty = document.getElementById('admRptEmpty');
+    if(!list) return;
+
+    admApi('reports', {status:'pending'}).then(function(r){
+      var rows = (r && r.reports) || [];
+      admSetRptCount(rows.length);
+      list.innerHTML = '';
+      if(!rows.length){
+        if(empty){ empty.style.display='block';
+                   empty.innerHTML = '<span class="admEmptyIcon">✓</span>No open reports.'; }
+        return;
+      }
+      if(empty) empty.style.display='none';
+
+      rows.forEach(function(rep){
+        var card = document.createElement('div');
+        card.className = 'pfCard admRptCard';
+        card.innerHTML =
+          '<div class="admRptWhy">🚩 ' + admEsc(RPT_LABELS[rep.reason] || rep.reason) + '</div>' +
+          '<div class="admRptWho">@' + admEsc(rep.target_username || 'unknown') +
+            (rep.target_banned ? ' <span class="admRptBanned">banned</span>' : '') + '</div>' +
+          (rep.details ? '<div class="admRptDet"></div>' : '') +
+          '<div class="admRptMeta">by @' + admEsc(rep.reporter_username || 'someone') +
+            ' · ' + admEsc(rep.created_at ? new Date(rep.created_at).toLocaleString() : '') +
+          '</div>' +
+          '<div class="admRptActs"></div>';
+
+        // The reporter's own words, as text. This is the one field on the card
+        // somebody else typed.
+        if(rep.details) card.querySelector('.admRptDet').textContent = rep.details;
+
+        var acts = card.querySelector('.admRptActs');
+        acts.appendChild(admBtn('REVIEW', function(){
+          admSwitchTab('mod');
+          var q = document.getElementById('admModQ');
+          if(q){ q.value = rep.target_id; admModSearch(rep.target_id); }
+        }));
+        acts.appendChild(admBtn('RESOLVE', function(){ admResolveUser(rep.id, 'resolved'); }));
+        acts.appendChild(admBtn('DISMISS', function(){ admResolveUser(rep.id, 'dismissed'); }));
+        list.appendChild(card);
+      });
+    }, function(err){
+      list.innerHTML = '';
+      if(empty){ empty.style.display='block'; empty.textContent = err.message; }
+    });
+  }
+
+  function admBtn(text, fn){
+    var b = document.createElement('button');
+    b.className = 'rptBtn';
+    b.textContent = text;
+    b.onclick = fn;
+    return b;
+  }
+
+  function admResolveUser(id, status){
+    admApi('report-resolve', {id:id, status:status}).then(function(){
+      showToast(status === 'resolved' ? 'Report resolved' : 'Report dismissed');
+      admLoadReports();
+    }, function(e){ showToast(e.message || 'Action failed'); });
+  }
+
+  // Uploads. The queue that was here before any of this, unchanged except for
+  // where it is drawn.
+  async function admLoadItemReports(){
     var list = document.getElementById('admRptList');
     var empty = document.getElementById('admRptEmpty');
     if(!list || !sb) return;
@@ -350,54 +645,45 @@
         .eq('status','open').order('created_at',{ascending:false}).limit(100);
       if(r.error) throw r.error;
       var rows = r.data || [];
-      admSetRptCount(rows.length);
-      if(!rows.length){ empty.style.display='block'; return; }
-      empty.style.display='none';
+      if(!rows.length){
+        if(empty){ empty.style.display='block';
+                   empty.innerHTML = '<span class="admEmptyIcon">✓</span>No open reports.'; }
+        return;
+      }
+      if(empty) empty.style.display='none';
       rows.forEach(function(rep){
         var card = document.createElement('div');
-        card.className = 'pfCard';
+        card.className = 'pfCard admRptCard';
         var art = rep.artworks || {};
-        // user input, use textcontent
         var h = document.createElement('div');
-        h.style.cssText = 'font-family:var(--fm);font-size:.7rem;letter-spacing:.08em;color:var(--danger);margin-bottom:.4rem;';
+        h.className = 'admRptWhy';
         h.textContent = '🚩 ' + (RPT_LABELS[rep.reason] || rep.reason);
         card.appendChild(h);
         var n = document.createElement('div');
-        n.style.cssText = 'font-family:var(--fd);font-weight:700;color:var(--tx);margin-bottom:.3rem;';
+        n.className = 'admRptWho';
         n.textContent = art.name || '(untitled artwork)';
         card.appendChild(n);
         if(rep.details){
           var d = document.createElement('div');
-          d.style.cssText = 'font-family:var(--fb);font-size:.82rem;color:var(--txd);margin-bottom:.5rem;white-space:pre-wrap;';
+          d.className = 'admRptDet';
           d.textContent = rep.details;
           card.appendChild(d);
         }
         var when = document.createElement('div');
-        when.style.cssText = 'font-family:var(--fm);font-size:.65rem;color:var(--txd);margin-bottom:.6rem;';
-        when.textContent = new Date(rep.created_at).toLocaleString();
+        when.className = 'admRptMeta';
+        when.textContent = rep.created_at ? new Date(rep.created_at).toLocaleString() : '';
         card.appendChild(when);
         var acts = document.createElement('div');
-        acts.style.cssText = 'display:flex;gap:.5rem;flex-wrap:wrap;';
-        var view = document.createElement('button');
-        view.className = 'rptBtn'; view.textContent = 'VIEW';
-        view.onclick = function(){
-          // fetch full row
-          openArtworkById(String(rep.artwork_id), false);
-        };
-        var res = document.createElement('button');
-        res.className = 'rptBtn'; res.textContent = 'RESOLVE';
-        res.onclick = function(){ admResolveReport(rep.id, 'resolved'); };
-        var dis = document.createElement('button');
-        dis.className = 'rptBtn'; dis.textContent = 'DISMISS';
-        dis.onclick = function(){ admResolveReport(rep.id, 'dismissed'); };
-        acts.appendChild(view); acts.appendChild(res); acts.appendChild(dis);
+        acts.className = 'admRptActs';
+        acts.appendChild(admBtn('VIEW', function(){ openArtworkById(String(rep.artwork_id), false); }));
+        acts.appendChild(admBtn('RESOLVE', function(){ admResolveReport(rep.id, 'resolved'); }));
+        acts.appendChild(admBtn('DISMISS', function(){ admResolveReport(rep.id, 'dismissed'); }));
         card.appendChild(acts);
         list.appendChild(card);
       });
     }catch(e){
-      console.error('admLoadReports:', e);
-      empty.style.display='block';
-      empty.textContent = 'Couldn\u2019t load reports.';
+      console.error('admLoadItemReports:', e);
+      if(empty){ empty.style.display='block'; empty.textContent = 'Couldn’t load reports.'; }
     }
   }
 
@@ -417,3 +703,194 @@
     }catch(e){ showToast('Action failed — try again'); }
   }
 
+  // ---- moderation ---------------------------------------------------------
+  //
+  // One member at a time, found exactly. dz_mod_find() refuses a prefix, so
+  // this cannot be walked to enumerate accounts or harvest addresses — and the
+  // reply carries can_moderate, computed by Postgres for THIS moderator
+  // against THIS target, so the buttons drawn are the buttons that will work.
+  function admWireMod(el){
+    var form = el.querySelector('#admModForm');
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var q = el.querySelector('#admModQ');
+      admModSearch(q ? q.value : '');
+    });
+  }
+
+  function admModSearch(query){
+    var host = document.getElementById('admModResult');
+    if(!host) return;
+    var q = String(query || '').trim();
+    if(q.length < 2){ host.innerHTML = '<div class="pfEmpty">Type a little more.</div>'; return; }
+    host.innerHTML = '<div class="pfEmpty">Looking…</div>';
+
+    admApi('mod-find', {query:q}).then(function(r){
+      var u = r && r.user;
+      if(!u){ host.innerHTML = '<div class="pfEmpty">No member matches that exactly.</div>'; return; }
+      admRenderMember(host, u);
+    }, function(err){
+      host.innerHTML = '<div class="pfEmpty">' + admEsc(err.message) + '</div>';
+    });
+  }
+
+  function admRenderMember(host, u){
+    var role = u.role ? u.role : 'member';
+    host.innerHTML =
+      '<div class="admMemb">' +
+        '<div class="admMembTop">' +
+          '<div>' +
+            '<div class="admMembName">@' + admEsc(u.username || '—') + '</div>' +
+            '<div class="admMembSub">' + admEsc(u.email || '') + '</div>' +
+          '</div>' +
+          '<div class="admMembTags">' +
+            '<span class="admTag admTag--' + admEsc(role) + '">' + admEsc(role) + '</span>' +
+            '<span class="admTag">' + admEsc(u.tier || 'guest') + '</span>' +
+            (u.banned ? '<span class="admTag admTag--ban">banned</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="admMembId">' + admEsc(u.id) + '</div>' +
+        (u.banned && u.ban_reason
+          ? '<div class="admMembBan">Banned for ' + admEsc(u.ban_reason) +
+            (u.ban_expires_at
+              ? ' until ' + admEsc(new Date(u.ban_expires_at).toLocaleDateString())
+              : ' — no end date') + '</div>'
+          : '') +
+        '<div class="admMembActs" id="admMembActs"></div>' +
+      '</div>';
+
+    var acts = host.querySelector('#admMembActs');
+
+    // Postgres has already answered whether this moderator may touch this
+    // member. Where it says no, the reason is said plainly rather than a
+    // button being drawn that would answer 403.
+    if(!u.can_moderate){
+      var no = document.createElement('p');
+      no.className = 'admMembNo';
+      no.textContent = admIsStaff()
+        ? 'Staff accounts cannot be banned from here.'
+        : 'You can moderate ordinary members. Admins, devs and other partners ' +
+          'are outside what this account may do.';
+      acts.appendChild(no);
+      return;
+    }
+
+    if(u.banned){
+      acts.appendChild(admBtn('LIFT BAN', function(){
+        admApi('unban', {userId:u.id}).then(function(){
+          showToast('Ban lifted');
+          admModSearch(u.id);
+          admLoadReports();
+        }, function(e){ showToast(e.message || 'Could not lift that ban'); });
+      }));
+      return;
+    }
+
+    var form = document.createElement('div');
+    form.className = 'admBanForm';
+    form.innerHTML =
+      '<input type="text" id="admBanWhy" class="admModIn" maxlength="60" ' +
+        'placeholder="Reason (shown in the audit log)" aria-label="Reason for the ban">' +
+      '<div class="admBanRow">' +
+        '<select id="admBanLen" class="admBanLen" aria-label="How long">' +
+          '<option value="">Permanent</option>' +
+          '<option value="1">1 day</option>' +
+          '<option value="7">7 days</option>' +
+          '<option value="30">30 days</option>' +
+          '<option value="90">90 days</option>' +
+        '</select>' +
+        '<button type="button" class="admBanGo" id="admBanGo">Ban</button>' +
+      '</div>';
+    acts.appendChild(form);
+
+    form.querySelector('#admBanGo').addEventListener('click', function(){
+      var why = String((form.querySelector('#admBanWhy').value) || '').trim();
+      if(why.length < 2){ showToast('Give a reason'); return; }
+      var days = form.querySelector('#admBanLen').value;
+      admApi('ban', {userId:u.id, reason:why, days:days ? Number(days) : null})
+        .then(function(){
+          showToast('@' + (u.username || 'member') + ' banned');
+          admModSearch(u.id);
+          admLoadReports();
+        }, function(e){ showToast(e.message || 'Could not ban that account'); });
+    });
+  }
+
+  // ---- partners -----------------------------------------------------------
+  function admWirePartners(el){
+    el.querySelector('#admAddPartner').addEventListener('click', admInvitePartner);
+  }
+
+  // The + button. An email address, because that is what an admin has to hand:
+  // they are inviting somebody they have spoken to, not somebody they found in
+  // a list. An unregistered address is refused rather than held as a pending
+  // invitation — there is no state that could hand the role to whoever signs
+  // up with that address later.
+  function admInvitePartner(){
+    var email = prompt('Email address of the member to make a partner:', '');
+    if(email === null) return;
+    email = String(email).trim();
+    if(!email) return;
+
+    admApi('add-partner', {email:email}).then(function(r){
+      showToast(r && r.changed
+        ? '@' + (r.username || 'they') + ' is now a partner'
+        : 'That member was already a partner');
+      admLoadPartners();
+    }, function(e){ showToast(e.message || 'Could not add that partner'); });
+  }
+
+  function admLoadPartners(){
+    var list = document.getElementById('admPrtList');
+    var empty = document.getElementById('admPrtEmpty');
+    if(!list) return;
+
+    admApi('partners', {}).then(function(r){
+      var rows = (r && r.partners) || [];
+      list.innerHTML = '';
+      if(!rows.length){ if(empty) empty.style.display='block'; return; }
+      if(empty) empty.style.display='none';
+
+      rows.forEach(function(p){
+        // Every partner's earnings, unblurred, because this is the staff view
+        // — the isolation rule is about what one PARTNER can see of another,
+        // and dz_admin_partners() refuses anyone who is not staff outright.
+        var earned = p.earned_json || {};
+        var money = Object.keys(earned).map(function(c){
+          return admEsc(c) + ' ' + admEsc(earned[c]);
+        }).join(' · ');
+
+        var row = document.createElement('div');
+        row.className = 'admPrt';
+        row.innerHTML =
+          '<div class="admPrtMain">' +
+            '<div class="admPrtName">@' + admEsc(p.username || '—') + '</div>' +
+            '<div class="admPrtSub">' +
+              (p.code
+                ? '<span class="admPrtCode">' + admEsc(p.code) + '</span>' +
+                  (p.code_active ? '' : ' <span class="admPrtOff">inactive</span>') +
+                  ' · ' + admEsc(p.usage_count || 0) + ' uses'
+                : 'No code yet') +
+              (p.max_claimed ? ' · Max claimed' : '') +
+            '</div>' +
+            (money ? '<div class="admPrtMoney">' + money + ' earned (minor units)</div>' : '') +
+          '</div>' +
+          '<div class="admPrtActs"></div>';
+
+        row.querySelector('.admPrtActs').appendChild(
+          admBtn('REVOKE', function(){
+            if(!confirm('Remove partner status from @' + (p.username || 'this member') +
+                        '? Their code stops taking new orders. Anything already ' +
+                        'earned stays theirs.')) return;
+            admApi('revoke-partner', {userId:p.partner_id}).then(function(){
+              showToast('Partner removed');
+              admLoadPartners();
+            }, function(e){ showToast(e.message || 'Could not remove that partner'); });
+          }));
+        list.appendChild(row);
+      });
+    }, function(err){
+      list.innerHTML = '';
+      if(empty){ empty.style.display='block'; empty.textContent = err.message; }
+    });
+  }

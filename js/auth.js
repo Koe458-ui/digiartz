@@ -552,12 +552,37 @@
   }
 
   // role check
+  //
+  // isDev is 'dev' and nothing else, and it stays that way. Five other files
+  // read it — js/badwords.js waves a dev past the word filter, js/mywork.js
+  // lets one post in a read-only channel, js/sections.js and js/upqueue.js
+  // show one the moderation code behind a refusal — and every one of those is
+  // a developer's privilege rather than a moderator's. Widening it to include
+  // the partners would have handed all of that to an account type that is
+  // meant to have reports and bans and nothing else.
+  //
+  // So the two questions this feature actually asks get their own answers.
+  // userRole is the raw column; the two helpers below are what the admin panel
+  // and the nav entry read.
   let isDev = false;
+  let userRole = null;
   // user plan
   let userPlan = null;
+  // What the admin panel and its nav entry ask. Two names for two different
+  // powers, so no caller has to remember which roles are which.
+  //
+  // Neither is an authority. Both exist to decide what to DRAW — every action
+  // behind them is refused again in Postgres by dz_is_staff() and
+  // dz_may_moderate(), which are the copies that count. A member who edits
+  // these in a console gets a panel with buttons that all answer 403.
+  function dzIsStaff(){ return userRole === 'admin' || userRole === 'dev'; }
+  function dzIsPartner(){ return userRole === 'partner'; }
+  window.dzIsStaff = dzIsStaff;
+  window.dzIsPartner = dzIsPartner;
+
   async function checkUserRole(){
     if(!sb || !currentUser){
-      isDev=false; userPlan=null; currentUserAvatarUrl=null;
+      isDev=false; userRole=null; userPlan=null; currentUserAvatarUrl=null;
       dzSetPlan('guest', null); dzPaintLimits();
       if(typeof dzPaintAds === 'function') dzPaintAds();
       syncAdmBtn(); return;
@@ -568,6 +593,7 @@
         .eq('id',currentUser.id).single();
       if(error) throw error;
       isDev    = !!data && data.role==='dev';
+      userRole = (data && data.role) || null;
       userPlan = (data && data.subscription_tier) ? data.subscription_tier : 'guest';
       currentUserAvatarUrl = (data && data.avatar_url) ? data.avatar_url : null;
       // The expiry comes back with the tier now and goes to the one helper
@@ -588,7 +614,7 @@
       // subscription card beside the new member's name. Nothing had leaked,
       // but on a shared device that is indistinguishable from something that
       // had. A letter is the honest fallback.
-      isDev=false; userPlan='guest'; currentUserAvatarUrl=null;
+      isDev=false; userRole=null; userPlan='guest'; currentUserAvatarUrl=null;
       dzSetPlan('guest', null); dzPaintLimits();
       if(typeof dzPaintAds === 'function') dzPaintAds();
     }
@@ -709,7 +735,7 @@
       if (event === 'SIGNED_OUT') {
         currentUserAvatarUrl = null;
         syncAuthBtn();
-        isDev=false; userPlan=null; syncAdmBtn();
+        isDev=false; userRole=null; userPlan=null; syncAdmBtn();
         dzSetPlan('guest', null); dzPaintLimits();
         if(typeof dzPaintAds === 'function') dzPaintAds();
         syncSubOverviewCard(); // reset card to guest
@@ -861,20 +887,46 @@
   }
 
   // broadcast composer
+  //
+  // Two things changed here when the panel learned about roles.
+  //
+  // The gate was isDev, so an account whose role is 'admin' — which every
+  // other part of the admin panel treats as staff, and which
+  // dz_platform_revenue() has read as staff since the money migration — got
+  // the composer drawn and a Send button that returned silently. It is
+  // dzIsStaff() now, which is the same question the panel asked to draw the
+  // tab in the first place.
+  //
+  // And the insert goes through /api/collab rather than straight at the table.
+  // A row with a null user_id is a row every member reads, so who may write
+  // one is not a question to leave to whichever policy happens to be on
+  // notifications: the endpoint asks Postgres whether the caller is staff and
+  // only then picks up the service role. A failure is now also SHOWN — the old
+  // catch logged to a console nobody watching a broadcast has open.
   async function admSendBroadcast(){
-    if(!isDev) return;
+    if(typeof dzIsStaff !== 'function' || !dzIsStaff()) return;
     var titleEl = document.getElementById('admNotiTitle'), msgEl = document.getElementById('admNotiMsg');
     var title = (titleEl.value||'').trim(), msg = (msgEl.value||'').trim();
     if(!title || !msg){ showToast('Enter a title and message'); return; }
     var btn = document.getElementById('admNotiSendBtn');
     if(btn) btn.disabled = true;
     try{
-      const{error} = await sb.from('notifications').insert({user_id:null, type:'admin', title:title, message:msg});
-      if(error) throw error;
+      var s = await sb.auth.getSession();
+      var session = s && s.data && s.data.session;
+      if(!session) throw new Error('Not signed in');
+      var res = await fetch('/api/collab', {
+        method:'POST',
+        headers:{'content-type':'application/json',
+                 authorization:'Bearer '+session.access_token},
+        cache:'no-store',
+        body:JSON.stringify({action:'broadcast', title:title, message:msg})
+      });
+      var body = await res.json().catch(function(){ return null; });
+      if(!res.ok) throw new Error((body && body.error) || 'Could not send that');
       titleEl.value=''; msgEl.value='';
       showToast('Notification sent to all users');
       admLoadNotifSent();
-    }catch(e){ console.error('Error: '+e.message); }
+    }catch(e){ showToast(e.message || 'Could not send that'); }
     if(btn) btn.disabled = false;
   }
 

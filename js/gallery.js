@@ -1011,7 +1011,13 @@
   // that account has any business knowing exists.
   function syncAdmBtn(){
     var b=document.getElementById('smAdmBtn');
-    if(!isDev){ if(b && b.parentNode) b.parentNode.removeChild(b); return; }
+    // Staff get the whole panel; a partner gets the two tabs they are trusted
+    // with and is told so by the label, rather than opening something called
+    // ADMIN PANEL and finding most of it missing. Everyone else gets no
+    // element at all — see the note above about hiding one with a stylesheet.
+    var staff   = typeof dzIsStaff   === 'function' && dzIsStaff();
+    var partner = typeof dzIsPartner === 'function' && dzIsPartner();
+    if(!staff && !partner){ if(b && b.parentNode) b.parentNode.removeChild(b); return; }
     // the Account group's empty slot; the flat list is the older shape, kept
     // as a fallback so the entry still lands above Log Out either way
     var gate=document.getElementById('setAdmGate');
@@ -1025,6 +1031,6 @@
       if(gate) gate.appendChild(b);
       else list.insertBefore(b, list.querySelector('.pfMenuItem--danger'));
     }
-    b.textContent='⚙ ADMIN PANEL';
+    b.textContent = staff ? '⚙ ADMIN PANEL' : '🛡 MODERATION';
   }
 

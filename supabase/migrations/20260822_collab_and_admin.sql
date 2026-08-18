@@ -1300,6 +1300,12 @@ grant execute on function public.dz_claim_max() to authenticated;
 -- member a partner, and have they already claimed. Cheap, and safe for a
 -- member to ask about themselves — it answers about auth.uid() and takes no
 -- argument.
+-- Answers with a whole object or with an object saying no, and never with
+-- NULL. A signed-in member whose profile row has not been written yet — the
+-- seconds between signing up and the signup trigger landing — used to get a
+-- bare null here, and every caller then had to remember to test for it before
+-- reading a field off it. Two of them do test for it; the third would have
+-- been the bug.
 create or replace function public.dz_my_collab_state()
 returns jsonb
 language sql
@@ -1307,15 +1313,22 @@ stable
 security definer
 set search_path to 'public', 'pg_temp'
 as $$
-  select jsonb_build_object(
-    'role', p.role,
-    'is_partner', p.role = 'partner',
-    'is_staff', p.role in ('admin', 'dev'),
-    'max_claimed', p.max_claimed,
-    'tier', coalesce(public.dz_effective_tier(p.id), 'guest'),
-    'has_promo', exists (select 1 from public.promo_codes where partner_id = p.id),
-    'has_payout_method', exists (select 1 from public.payout_methods where user_id = p.id))
-  from public.profiles p where p.id = auth.uid();
+  select coalesce(
+    (select jsonb_build_object(
+       'role', p.role,
+       'is_partner', p.role = 'partner',
+       'is_staff', p.role in ('admin', 'dev'),
+       'max_claimed', p.max_claimed,
+       'tier', coalesce(public.dz_effective_tier(p.id), 'guest'),
+       'has_promo', exists (
+         select 1 from public.promo_codes pc where pc.partner_id = p.id),
+       'has_payout_method', exists (
+         select 1 from public.payout_methods pm where pm.user_id = p.id))
+     from public.profiles p where p.id = auth.uid()),
+    jsonb_build_object(
+      'role', null, 'is_partner', false, 'is_staff', false,
+      'max_claimed', false, 'tier', 'guest',
+      'has_promo', false, 'has_payout_method', false));
 $$;
 revoke all on function public.dz_my_collab_state() from public, anon;
 grant execute on function public.dz_my_collab_state() to authenticated;
@@ -1350,13 +1363,18 @@ begin
          coalesce(x.earned, '{}'::jsonb)
     from public.profiles p
     left join public.promo_codes c on c.partner_id = p.id
+    -- pc, not a bare table name: partner_id is also this function's first OUT
+    -- parameter, and an unqualified reference to it here resolves to the
+    -- variable rather than the column. Postgres calls that ambiguous and
+    -- refuses the whole function at run time — which is a PARTNERS tab that
+    -- shows an error and no list.
     left join lateral (
       select count(*) as n,
              jsonb_object_agg(t.currency, t.amt) as earned
-        from (select currency, sum(amount)::bigint as amt
-                from public.partner_commissions
-               where partner_id = p.id and payout_status <> 'reversed'
-               group by currency) t
+        from (select pc.currency, sum(pc.amount)::bigint as amt
+                from public.partner_commissions pc
+               where pc.partner_id = p.id and pc.payout_status <> 'reversed'
+               group by pc.currency) t
     ) x on true
    where p.role = 'partner'
    order by p.partner_since desc nulls last, p.username;

@@ -1114,7 +1114,14 @@ set search_path to 'public', 'pg_temp'
 as $$
 declare v_has boolean;
 begin
-  if not (public.dz_is_partner(auth.uid()) or public.dz_is_staff(auth.uid())) then
+  -- Partner only, and the same guard as dz_partner_ledger() and
+  -- dz_promo_mine() beside it. This admitted staff for a while, which was
+  -- worse than useless: nothing calls it as staff — an admin reads
+  -- dz_admin_partners() — so the branch was dead, and a dead branch saying
+  -- "staff may read a partner's wallet" is a sentence about this system that
+  -- is not true. The three functions a partner's own page is built from now
+  -- answer the same question the same way.
+  if not public.dz_is_partner(auth.uid()) then
     raise exception 'not allowed';
   end if;
 

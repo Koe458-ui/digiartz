@@ -4,6 +4,18 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v184 — partners, promo codes, and the money that follows them.
+       A new account type with a revenue share, a promo code, and a slice of
+       moderation. Nothing about it is in the public bundle: the Collab Hub is
+       a view of the account panel that /api/store builds for a signed-in
+       member, the Settings entry is appended only after the server has said
+       'partner', and the Max card's Claim button replaces the pay button
+       rather than sitting beside it. A signed-out visitor's page source
+       carries no trace that the programme exists, which is the same reasoning
+       that kept the wallet out of index.html.
+       hero.css carries the styles for all three — the checkout promo field,
+       the claim button and the hub — so it is the one asset that moved.
+
    v183 — a profile shows its own member's work, once.
        Two bugs, one cause. Opening a profile empties every ARRAY the page is
        drawn from — gallery rows, album strip, the three section lists — and
@@ -3290,7 +3302,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v183';
+const CACHE_VERSION = 'v184';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3343,7 +3355,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=6',
-  '/css/hero.css?v=94',
+  '/css/hero.css?v=95',
   '/css/viewer.css?v=14',
   '/css/community.css?v=12',
   '/css/connect.css?v=3',

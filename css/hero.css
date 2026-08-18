@@ -2123,3 +2123,231 @@
     @media(prefers-reduced-motion:reduce){
       #dzPanelHost{transition:none;}
     }
+
+    /* ---- promo code, on the checkout page -------------------------------
+       Drawn only where a code can do something — the Max card's checkout —
+       so nobody is offered a field their purchase would then refuse. */
+    .dzCoPromoRow{display:flex;gap:.5rem;align-items:stretch;}
+    .dzCoPromoIn{
+      flex:1 1 auto;min-width:0;padding:.6rem .75rem;
+      border:1px solid var(--bdr);border-radius:9px;background:var(--sur2);
+      color:var(--tx);font-family:var(--fm);font-size:.85rem;font-weight:700;
+      letter-spacing:.18em;text-transform:uppercase;
+    }
+    .dzCoPromoIn::placeholder{letter-spacing:.18em;color:var(--txd);opacity:.55;}
+    .dzCoPromoIn:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
+    .dzCoPromoGo{
+      flex:0 0 auto;padding:.6rem 1.05rem;border:1px solid var(--pg);border-radius:9px;
+      background:var(--pdim);color:var(--pg);
+      font-family:var(--fm);font-size:.7rem;font-weight:700;letter-spacing:.1em;
+      text-transform:uppercase;cursor:pointer;
+    }
+    .dzCoPromoGo:disabled{opacity:.55;cursor:progress;}
+    @media(hover:hover){.dzCoPromoGo:not(:disabled):hover{filter:brightness(1.12);}}
+    .dzCoPromoMsg{
+      margin-top:.5rem;font-family:var(--fb);font-size:.78rem;color:var(--txd);
+      line-height:1.45;
+    }
+    .dzCoPromoMsg:empty{display:none;}
+    .dzCoPromoMsg--ok{color:#16a34a;}
+    .dzCoPromoMsg--bad{color:var(--danger);}
+
+    /* ---- the partner's Max ----------------------------------------------
+       The Max card's button when the member is a partner. Green rather than
+       the card's gold, because it is not the same action: nothing is being
+       charged, and it should not look like the button that charges. */
+    .subBtn--claim{
+      background:linear-gradient(135deg,#16a34a,#0d9488);color:#f0fdf4;
+      box-shadow:0 3px 14px rgba(34,197,94,.26);
+    }
+    @media(hover:hover){.subBtn--claim:hover{box-shadow:0 5px 22px rgba(34,197,94,.38);}}
+    .subBtn--claimed{
+      background:var(--sur2);color:var(--txd);box-shadow:none;
+      border:1px solid var(--bdr);cursor:default;opacity:1;
+    }
+    .subBtn--claimed:hover{transform:none;filter:none;}
+
+    /* ---- the Collab Hub -------------------------------------------------
+       A view of the account panel (#dzPanelHost), built by the signed-in
+       module and reachable only by a partner. Nothing here matches anything
+       in the public page — there is no markup for it to match. */
+    .dzCl{display:flex;flex-direction:column;gap:.9rem;padding-top:.4rem;}
+
+    .dzClTop{display:flex;align-items:flex-start;gap:.7rem;}
+    .dzClTopTxt{flex:1 1 auto;min-width:0;}
+    .dzClTopLbl{
+      font-family:var(--fm);font-size:.66rem;font-weight:700;letter-spacing:.16em;
+      text-transform:uppercase;color:var(--txd);
+    }
+    .dzClTopSub{
+      margin:.3rem 0 0;font-family:var(--fb);font-size:.85rem;line-height:1.5;
+      color:var(--txd);
+    }
+    /* The info button sits at the top of the section, where somebody deciding
+       whether to trust the numbers below it will look first. */
+    .dzClInfoBtn{
+      flex:0 0 auto;width:34px;height:34px;border:1px solid var(--bdr);
+      border-radius:999px;background:var(--sur2);color:var(--pg);
+      font-size:1.05rem;line-height:1;cursor:pointer;display:grid;place-items:center;
+    }
+    @media(hover:hover){.dzClInfoBtn:hover{border-color:var(--pg);background:var(--pdim);}}
+    .dzClInfoBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+
+    .dzClCard{
+      padding:1rem;border:1px solid var(--bdr);border-radius:16px;background:var(--sur);
+    }
+    .dzClCardHd{
+      font-family:var(--fm);font-size:.64rem;font-weight:700;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--txd);margin-bottom:.6rem;
+    }
+
+    /* the code itself */
+    .dzClCode{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+    .dzClCodeTxt{
+      font-family:var(--fm);font-size:1.6rem;font-weight:800;letter-spacing:.22em;
+      color:var(--tx);
+    }
+    .dzClCopy{
+      margin-left:auto;padding:.42rem .85rem;border:1px solid var(--bdr);
+      border-radius:8px;background:var(--sur2);color:var(--tx);
+      font-family:var(--fm);font-size:.66rem;font-weight:700;letter-spacing:.1em;
+      text-transform:uppercase;cursor:pointer;
+    }
+    @media(hover:hover){.dzClCopy:hover{border-color:var(--bdrh);}}
+    .dzClCodeOff{
+      margin:.6rem 0 0;font-family:var(--fb);font-size:.8rem;color:var(--danger);
+    }
+
+    .dzClStats{
+      list-style:none;margin:.9rem 0 0;padding:0;
+      display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;
+    }
+    .dzClStat{
+      padding:.55rem .3rem;border-radius:10px;background:var(--sur2);text-align:center;
+    }
+    .dzClStatN{display:block;font-family:var(--fd);font-size:1.15rem;font-weight:800;color:var(--tx);}
+    .dzClStatL{
+      display:block;margin-top:.15rem;font-family:var(--fm);font-size:.58rem;
+      font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);
+    }
+    @media(max-width:420px){
+      .dzClStats{grid-template-columns:repeat(2,1fr);}
+    }
+
+    /* making one */
+    .dzClMakeNote{
+      margin:0 0 .7rem;font-family:var(--fb);font-size:.83rem;line-height:1.5;color:var(--txd);
+    }
+    .dzClMakeRow{display:flex;gap:.5rem;}
+    .dzClMakeIn{
+      flex:1 1 auto;min-width:0;padding:.6rem .75rem;border:1px solid var(--bdr);
+      border-radius:9px;background:var(--sur2);color:var(--tx);
+      font-family:var(--fm);font-size:1rem;font-weight:800;letter-spacing:.22em;
+      text-transform:uppercase;
+    }
+    .dzClMakeIn::placeholder{color:var(--txd);opacity:.5;}
+    .dzClMakeIn:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
+    .dzClMakeGo{
+      flex:0 0 auto;padding:.6rem 1.1rem;border:none;border-radius:9px;
+      background:var(--pg);color:var(--text-on-accent);
+      font-family:var(--fm);font-size:.7rem;font-weight:700;letter-spacing:.1em;
+      text-transform:uppercase;cursor:pointer;
+    }
+    .dzClMakeGo:disabled{opacity:.55;cursor:progress;}
+    @media(hover:hover){.dzClMakeGo:not(:disabled):hover{filter:brightness(1.1);}}
+    .dzClMakeMsg{
+      margin-top:.55rem;font-family:var(--fb);font-size:.8rem;line-height:1.45;color:var(--txd);
+    }
+    .dzClMakeMsg:empty{display:none;}
+    .dzClMakeMsg--bad{color:var(--danger);}
+
+    /* the money */
+    .dzClBal{
+      font-family:var(--fd);font-size:2rem;font-weight:800;letter-spacing:-.02em;
+      color:var(--tx);line-height:1.1;
+    }
+    .dzClBalSub{
+      margin-top:.2rem;font-family:var(--fm);font-size:.64rem;font-weight:600;
+      letter-spacing:.1em;text-transform:uppercase;color:var(--txd);
+    }
+    .dzClFigs{
+      list-style:none;margin:.85rem 0 0;padding:.8rem 0 0;border-top:1px solid var(--bdr);
+      display:flex;flex-wrap:wrap;gap:.4rem 1.3rem;
+    }
+    .dzClFigs li{display:flex;flex-direction:column;gap:.1rem;}
+    .dzClFigs span{
+      font-family:var(--fm);font-size:.58rem;font-weight:600;letter-spacing:.08em;
+      text-transform:uppercase;color:var(--txd);
+    }
+    .dzClFigs b{font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);}
+
+    /* which of the two routes the money is on */
+    .dzClRouteHd{
+      font-family:var(--fm);font-size:.68rem;font-weight:700;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--tx);margin-bottom:.4rem;
+    }
+    .dzClRoute p{
+      margin:0;font-family:var(--fb);font-size:.83rem;line-height:1.55;color:var(--txd);
+    }
+    .dzClRoute--on{border-color:rgba(34,197,94,.4);}
+    .dzClRoute--on .dzClRouteHd{color:#16a34a;}
+    .dzClAddPay{
+      width:100%;margin-top:.85rem;padding:.75rem 1rem;border:none;border-radius:10px;
+      background:var(--pg);color:var(--text-on-accent);
+      font-family:var(--fm);font-size:.7rem;font-weight:700;letter-spacing:.1em;
+      text-transform:uppercase;cursor:pointer;
+    }
+    @media(hover:hover){.dzClAddPay:hover{filter:brightness(1.1);}}
+
+    /* who used it */
+    .dzClLedger{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;}
+    .dzClRow{
+      display:flex;align-items:center;gap:.8rem;padding:.65rem 0;
+      border-bottom:1px solid var(--bdr);
+    }
+    .dzClRow:last-child{border-bottom:none;padding-bottom:0;}
+    .dzClRow--off{opacity:.5;}
+    .dzClRowMain{flex:1 1 auto;min-width:0;}
+    .dzClRowWho{
+      display:block;font-family:var(--fm);font-size:.78rem;font-weight:700;color:var(--tx);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .dzClRowWhat{
+      display:block;margin-top:.1rem;font-family:var(--fb);font-size:.75rem;color:var(--txd);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .dzClRowSide{flex:0 0 auto;text-align:right;}
+    .dzClRowAmt{
+      display:block;font-family:var(--fd);font-size:.92rem;font-weight:700;color:#16a34a;
+    }
+    .dzClRow--off .dzClRowAmt{color:var(--txd);}
+    .dzClRowWhen{
+      display:block;margin-top:.1rem;font-family:var(--fm);font-size:.6rem;color:var(--txd);
+    }
+
+    /* the breakdown behind the info button */
+    .dzClInfo{display:flex;flex-direction:column;gap:1.1rem;}
+    .dzClInfoBlk h3{
+      margin:0 0 .3rem;font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);
+    }
+    .dzClInfoNote{
+      margin:0 0 .65rem;font-family:var(--fb);font-size:.8rem;line-height:1.5;color:var(--txd);
+    }
+    .dzClInfoRows{list-style:none;margin:0;padding:0;}
+    .dzClInfoRows li{
+      display:grid;grid-template-columns:1fr auto;gap:.15rem .8rem;
+      padding:.55rem 0;border-bottom:1px solid var(--bdr);
+    }
+    .dzClInfoRows li:last-child{border-bottom:none;}
+    .dzClInfoWho{font-family:var(--fm);font-size:.76rem;font-weight:700;color:var(--tx);}
+    .dzClInfoPct{
+      font-family:var(--fd);font-size:.95rem;font-weight:800;color:var(--pg);
+      text-align:right;white-space:nowrap;
+    }
+    .dzClInfoWhy{
+      grid-column:1 / -1;font-family:var(--fb);font-size:.75rem;line-height:1.45;color:var(--txd);
+    }
+    .dzClInfoFine{
+      margin:0;padding-top:.9rem;border-top:1px solid var(--bdr);
+      font-family:var(--fb);font-size:.78rem;line-height:1.55;color:var(--txd);
+    }

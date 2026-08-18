@@ -32,6 +32,16 @@ const SUB_DAYS = 31;
 // currency that has none. These are the zero-decimal currencies PayPal lists.
 const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD']);
 
+// The smallest charge a gateway will accept, per currency, in minor units.
+// A 90% discount on a cheap plan in a cheap currency can land under this, and
+// a gateway refusing the order is a checkout that fails with a message the
+// buyer cannot act on. The floor is roughly one major unit — a rupee, a cent,
+// a yen — which is what both providers document as their minimum.
+const MIN_CHARGE = { INR: 100, JPY: 1, HUF: 1, TWD: 1 };
+const MIN_CHARGE_DEFAULT = 50;
+const minCharge = (cur) => MIN_CHARGE[cur] != null ? MIN_CHARGE[cur] : MIN_CHARGE_DEFAULT;
+
+
 // The marketplace composer offers USD, EUR, GBP, INR and JPY. PayPal settles
 // four of those; INR is not a currency it will take here, so an INR listing
 // stays a Razorpay purchase and says so rather than failing inside the popup.
@@ -203,6 +213,13 @@ async function recordEarning(env, row, prov) {
       gross_amount: Number(row.amount) || 0,
       gateway_fee: (prov && prov.fee) || 0,
       currency: row.currency,
+      // Which promo code, if any, the buyer arrived with. Nothing here does
+      // anything with it: dz_partner_credit_market() reads it off the inserted
+      // row and takes the partner's share out of the platform's commission,
+      // for the same reason the deductions are computed there rather than in
+      // four checkout paths. A marketplace code is attribution only — it does
+      // not change the price, and it does not change what the seller keeps.
+      promo_code_id: row.promo_code_id || null,
       provider: 'paypal',
       status: 'available',
     }),
@@ -339,7 +356,47 @@ async function applySubscription(env, userId, tier) {
 }
 
 // create order and ledger row
-async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label }) {
+
+// ---------------------------------------------------------------------------
+// A PROMO CODE, AND WHAT IT IS WORTH.
+//
+// Resolved by Postgres, AS THE BUYER — the caller's own bearer, not the
+// service key — because dz_promo_resolve() has to know who is asking in order
+// to refuse a partner spending their own code. Sending the service key here
+// would make every check pass and hand a partner a 90% discount on their own
+// Max plus a rebate to themselves on top of it.
+//
+// The twin of this function is in rzp.js. Two copies is one more than ideal
+// and it is the lesser evil here: these two files share no module today, and
+// the arithmetic they would share is one multiplication — the decision that
+// matters, what the code is worth, is made in Postgres and read by both.
+async function resolvePromo(env, request, code, kind) {
+  const raw = String(code || '').trim().toUpperCase();
+  if (!raw) return { id: null, discountBps: 0 };
+  if (!/^[A-Z0-9]{4,6}$/.test(raw)) return { error: 'That code does not look right' };
+  try {
+    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_promo_resolve', {
+      method: 'POST',
+      headers: {
+        apikey: sbAnon(env),
+        authorization: request.headers.get('authorization') || '',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ p_code: raw, p_kind: kind }),
+    });
+    if (!res.ok) return { error: 'That code could not be checked' };
+    const r = await res.json();
+    if (!r || !r.ok) return { error: (r && r.error) || 'No such code' };
+    const bps = Math.min(Math.max(Number(r.discount_bps) || 0, 0), 9500);
+    return { id: r.id, code: raw, discountBps: bps };
+  } catch {
+    return { error: 'That code could not be checked' };
+  }
+}
+
+const PROMO_PLAN = 'max';
+
+async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label, promoId }) {
   const order = await pp(env, '/v2/checkout/orders', {
     method: 'POST',
     headers: { 'paypal-request-id': 'dz_' + user.id.slice(0, 8) + '_' + Date.now() },
@@ -368,6 +425,9 @@ async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label
     body: JSON.stringify({
       user_id: user.id, kind, plan: plan || null, item_id: itemId || null,
       amount: minor, currency, provider: 'paypal',
+      // Set at checkout and never afterwards. The commission triggers read it
+      // at settlement; nothing else in this file touches it again.
+      promo_code_id: promoId || null,
       // the title as it stood at checkout, so a purchase outlives its listing
       order_label: label ? String(label).slice(0, 200) : null,
       pp_order_id: order.id, status: 'created',
@@ -457,10 +517,21 @@ export async function onRequestPost({ env, request }) {
         }
       }
 
+      // A promo code, if one was typed. Applied after the downgrade check, so
+      // a discounted order still cannot take a plan away from somebody.
+      const promo = await resolvePromo(env, request, body.promo, 'subscription');
+      if (promo.error) return json({ error: promo.error }, 400);
+      if (promo.id && key !== PROMO_PLAN)
+        return json({ error: 'That code only applies to Max' }, 400);
+      if (promo.discountBps > 0) {
+        amount = Math.round(amount * (10000 - promo.discountBps) / 10000);
+        amount = Math.max(amount, minCharge(currency));
+      }
+
       // A plan price and a support amount are both already in the smallest
       // unit, so they go through untouched.
       return await makeOrder(env, user, {
-        minor: amount, currency,
+        minor: amount, currency, promoId: promo.id,
         kind: 'subscription', plan: key, label: PLAN_LABEL[key],
       });
     }
@@ -488,10 +559,17 @@ export async function onRequestPost({ env, request }) {
         '&status=eq.paid&select=id&limit=1');
       if (paid && paid.length) return json({ owned: true });
 
+      // A code on a marketplace purchase is attribution, not a discount — the
+      // buyer pays the listed price and the partner's share comes out of the
+      // platform's commission. dz_promo_resolve() returns discount_bps 0 for
+      // this kind, so there is nothing to apply; only the id is carried.
+      const promo = await resolvePromo(env, request, body.promo, 'marketplace');
+      if (promo.error) return json({ error: promo.error }, 400);
+
       return await makeOrder(env, user, {
         minor: fromPriceCents(item.price_cents, currency),
         currency,
-        kind: 'marketplace', itemId,
+        kind: 'marketplace', itemId, promoId: promo.id,
         label: String(item.title || 'Marketplace item').slice(0, 120),
       });
     }
@@ -506,7 +584,7 @@ export async function onRequestPost({ env, request }) {
       const rows = await sbService(env,
         '/payments?pp_order_id=eq.' + encodeURIComponent(orderId) +
         '&user_id=eq.' + user.id +
-        '&select=id,kind,plan,item_id,amount,currency,status&limit=1');
+        '&select=id,kind,plan,item_id,amount,currency,status,promo_code_id&limit=1');
       const row = rows && rows[0];
       if (!row) return json({ error: 'Order does not belong to you' }, 403);
 

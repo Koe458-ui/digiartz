@@ -165,6 +165,13 @@ async function recordEarning(env, row, capture) {
       gross_amount: Number(row.amount) || 0,
       gateway_fee: ppFee(capture, row.currency),
       currency: row.currency,
+      // Which promo code, if any, the buyer arrived with. Nothing here does
+      // anything with it: dz_partner_credit_market() reads it off the inserted
+      // row and takes the partner's share out of the platform's commission,
+      // for the same reason the deductions are computed there rather than in
+      // four checkout paths. A marketplace code is attribution only — it does
+      // not change the price, and it does not change what the seller keeps.
+      promo_code_id: row.promo_code_id || null,
       provider: 'paypal',
       status: 'available',
     }),
@@ -225,7 +232,7 @@ async function fulfil(env, orderId, capture) {
   const captureId = (capture && capture.id) || '';
   const rows = await sbService(env,
     '/payments?pp_order_id=eq.' + encodeURIComponent(orderId) +
-    '&select=id,user_id,kind,plan,item_id,amount,currency,status&limit=1');
+    '&select=id,user_id,kind,plan,item_id,amount,currency,status,promo_code_id&limit=1');
   const row = rows && rows[0];
   if (!row) return 'no ledger row';
 

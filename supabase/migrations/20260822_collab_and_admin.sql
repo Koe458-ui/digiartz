@@ -976,6 +976,63 @@ create trigger dz_partner_credit_sub_upd
   execute function public.dz_partner_credit_sub();
 revoke all on function public.dz_partner_credit_sub() from public, anon, authenticated;
 
+-- ---------------------------------------------------------------------------
+-- AND WHEN A SALE IS TAKEN BACK.
+--
+-- This platform does not refund, which is why a commission is available the
+-- moment it is written and why there is no escrow anywhere above. A chargeback
+-- is not a refund and does not ask our permission: paypal-webhook.js already
+-- flips a disputed earning to 'reversed' and a refunded subscription's payment
+-- to 'refunded', and without what follows the seller would lose the sale while
+-- the partner kept the commission on it.
+--
+-- Reversed rather than deleted, so the ledger still shows what happened, and
+-- dz_partner_wallet() excludes it from every figure it reports.
+create or replace function public.dz_partner_reverse()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public', 'pg_temp'
+as $$
+declare v_rows integer;
+begin
+  update public.partner_commissions
+     set payout_status = 'reversed'
+   where payout_status = 'wallet_credited'
+     and (   (tg_table_name = 'marketplace_earnings' and earning_id = new.id)
+          or (tg_table_name = 'payments'             and payment_id = new.id));
+  get diagnostics v_rows = row_count;
+
+  -- The counter follows the ledger, as it does on the way in. A code whose one
+  -- sale was charged back reads as zero uses, which is the truth.
+  if v_rows > 0 then
+    update public.promo_codes c
+       set usage_count = greatest(c.usage_count - v_rows, 0)
+     where c.id = new.promo_code_id;
+  end if;
+
+  return new;
+end $$;
+
+-- A commission already sent out of the platform is NOT clawed back here. That
+-- is money that has left, and turning a paid_direct row into a reversed one
+-- would make the wallet claim to have recovered something it has not. It is a
+-- debt to chase, the same call paypal-webhook.js already makes about a
+-- seller's paid-out earnings, and the same one for the same reason.
+drop trigger if exists dz_partner_reverse_earning on public.marketplace_earnings;
+create trigger dz_partner_reverse_earning
+  after update of status on public.marketplace_earnings
+  for each row when (old.status is distinct from new.status and new.status = 'reversed')
+  execute function public.dz_partner_reverse();
+
+drop trigger if exists dz_partner_reverse_payment on public.payments;
+create trigger dz_partner_reverse_payment
+  after update of status on public.payments
+  for each row when (old.status is distinct from new.status
+                     and new.status in ('refunded', 'reversed', 'disputed'))
+  execute function public.dz_partner_reverse();
+revoke all on function public.dz_partner_reverse() from public, anon, authenticated;
+
 -- ===========================================================================
 -- 8. THE PARTNER'S WALLET — derived, per currency, never converted
 -- ===========================================================================

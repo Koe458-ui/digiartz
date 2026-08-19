@@ -3680,7 +3680,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=10',
-  '/css/hero.css?v=98',
+  '/css/hero.css?v=99',
   '/css/viewer.css?v=16',
   '/css/community.css?v=15',
   '/css/connect.css?v=5',

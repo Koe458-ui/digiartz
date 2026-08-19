@@ -92,6 +92,7 @@ async function fetchArtworks(env) {
 const SECTIONS = {
   '/explore': {
     crumb: 'Explore',
+    h1: 'Explore Digital Art',
     title: 'Explore Digital Art — DigiArtz',
     desc: 'Browse digital artwork from the DigiArtz community — character illustration, ' +
           'fan art, concept art, landscapes, vehicles and original work from artists worldwide.',
@@ -99,6 +100,7 @@ const SECTIONS = {
   },
   '/marketplace': {
     crumb: 'Marketplace',
+    h1: 'Marketplace — Buy and Sell Digital Art',
     title: 'Marketplace — Buy and Sell Digital Art on DigiArtz',
     desc: 'Buy and sell digital art and creative assets on DigiArtz: artwork, prints, ' +
           'brushes, templates, UI kits, 3D models and commissions from independent artists.',
@@ -106,6 +108,7 @@ const SECTIONS = {
   },
   '/community': {
     crumb: 'Community',
+    h1: 'Community',
     title: 'Community — DigiArtz',
     desc: 'Join the DigiArtz community. Talk with other digital artists, share work in ' +
           'progress, swap feedback and find people to collaborate with.',
@@ -113,6 +116,7 @@ const SECTIONS = {
   },
   '/resources': {
     crumb: 'Resources',
+    h1: 'Resources for Digital Artists',
     title: 'Resources for Digital Artists — DigiArtz',
     desc: 'Resources for digital artists on DigiArtz: brushes, textures, fonts, references, ' +
           'colour palettes, mockups, templates and tutorials shared by the community.',
@@ -120,6 +124,7 @@ const SECTIONS = {
   },
   '/blog': {
     crumb: 'Blog',
+    h1: 'Blog — Tutorials and Artist Stories',
     title: 'Blog — Tutorials and Artist Stories — DigiArtz',
     desc: 'Tutorials, artist spotlights, interviews, reviews and news from the DigiArtz ' +
           'digital art community.',
@@ -138,6 +143,7 @@ const SECTIONS = {
     // with, so all three say the same thing: the anchor in the footer, the
     // accessible name on the nav control, and this.
     crumb: 'Login',
+    h1: 'Login',
     title: 'Login — DigiArtz',
     desc: 'Sign in to your DigiArtz account to upload artwork, sell in the marketplace, ' +
           'join communities and follow other artists.',
@@ -328,7 +334,7 @@ function artworkMeta(row, artist) {
                           url: `${SITE}/profile/${encodeURIComponent(artist.username)}` } } : {})
   };
 
-  return { title, desc, url, img, imgAlt: name, ogType: 'article', ld, ldId: 'ldArtwork' };
+  return { title, desc, url, img, imgAlt: name, ogType: 'article', h1: name, ld, ldId: 'ldArtwork' };
 }
 
 function profileMeta(row) {
@@ -343,6 +349,7 @@ function profileMeta(row) {
     img,
     imgAlt: `${name} on DigiArtz`,
     ogType: 'profile',
+    h1: name,
     ld: {
       '@context': 'https://schema.org',
       '@type': 'ProfilePage',
@@ -384,6 +391,7 @@ function sectionMeta(path, sec) {
     img: '',
     imgAlt: `${sec.crumb} on DigiArtz`,
     ogType: 'website',
+    h1: sec.h1,
     ld: [
       {
         '@context': 'https://schema.org',
@@ -419,6 +427,7 @@ function itemMeta(seg, cfg, row) {
     img,
     imgAlt: name,
     ogType: seg === 'blog' ? 'article' : 'website',
+    h1: name,
     ld: [
       {
         '@context': 'https://schema.org',
@@ -453,6 +462,7 @@ function unlistedMeta(seg, cfg, id) {
     img: '',
     imgAlt: 'DigiArtz',
     ogType: 'website',
+    h1: cfg.crumb,
     robots: 'noindex, follow',
     ld: cfg.parent
       ? crumbs([{ name: cfg.crumb, url: `${SITE}${cfg.parent}` }])
@@ -468,6 +478,32 @@ function applyMeta(rw, m) {
   });
 
   rw.on('title', { element(el) { el.setInnerContent(m.title); } });
+
+  /* The page's heading, and the one piece of BODY text that has ever told
+     these routes apart.
+
+     Every route on this site answers with the same document — index.html, the
+     app shell — and until now everything this rewriter changed was inside
+     <head>. So /explore, /marketplace, /community, /resources, /blog and
+     /login each arrived with a correct, unique title and canonical wrapped
+     around twelve thousand characters of identical body text, whose only
+     heading read "DigiArtz — The Digital Art Community" on all six.
+
+     Google renders the page and sees the section the app opens. Bing, Yandex,
+     Seznam, Naver, Marginalia and everything reading Bing's index second-hand
+     — DuckDuckGo, Ecosia, Brave's fallback — do far less of that, and what
+     they were handed was six near-identical documents. Near-identical
+     documents get collapsed to one, and the one they kept was rarely the one
+     anybody searched for.
+
+     The heading is the highest-weighted element in the body and it is now the
+     page's own. It costs nothing at render time — the element is already
+     there, this replaces its text — and it changes nothing on screen: the h1
+     is .srOnly, so it has always been for readers who arrive by screen reader
+     and by crawler, and both of those are now told which page this is instead
+     of being told the site's name six times. */
+  if (m.h1) rw.on('h1.srOnly', { element(el) { el.setInnerContent(m.h1); } });
+
   set('meta[name="description"]', m.desc);
   rw.on('link[rel="canonical"]', {
     element(el) { el.setAttribute('href', m.url); }

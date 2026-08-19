@@ -61,6 +61,13 @@
   Cache-Control: public, max-age=3600
 /ads.txt
   Cache-Control: public, max-age=3600
+# The IndexNow ownership key. Bing, Yandex, Seznam and Naver fetch this back
+# to prove a submission came from whoever runs the domain, so it has to stay
+# reachable and has to keep saying the same thing — see scripts/indexnow.mjs.
+# Not a secret: the protocol works by publishing it.
+/8968b78d9c9d0df0553bf47f2e121021.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
 
 # The HTML, spelled out rather than left to a platform default.
 #

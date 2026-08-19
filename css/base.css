@@ -148,11 +148,17 @@
       --ms7-name:#048196;   /* cyan */
       --ms8-name:#8F7303;   /* legend gold */
     }
-    /* semantic text tokens */
+    /* The two aliases the base typography rules below actually read.
+       Declared on * rather than on :root deliberately: a dozen panels
+       redefine --tx and --pb for their own surface (admin, profile, upload,
+       ranking, the community page), and a heading inside one of those has to
+       resolve against the scope it is in. On :root it would resolve once, at
+       the root, and every scoped panel would lose its heading colour.
+       Four more aliases stood here — --text-primary, --text-secondary,
+       --text-muted and --border-color — that nothing ever read. */
     *{
-      --text-primary:var(--tx);   --text-secondary:var(--txd);
-      --text-muted:var(--tc);     --heading-color:var(--tx);
-      --link-color:var(--pb);     --border-color:var(--bdr);
+      --heading-color:var(--tx);
+      --link-color:var(--pb);
     }
     /* below fold render perf */
     #artworks,#subOverview,footer.siteFooter{

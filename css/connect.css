@@ -206,22 +206,6 @@
       outline-offset: 2px;
       border-radius: 3px;
     }
-    /* mail arrow */
-    .ftColLink--mail::before {
-      content: '→';
-      font-family: var(--fb);
-      font-size: .7rem;
-      color: var(--pg);
-      opacity: 0;
-      transform: translateX(-4px);
-      transition: opacity .22s ease, transform .22s ease;
-      flex-shrink: 0;
-    }
-    .ftColLink--mail:hover::before {
-      opacity: 1;
-      transform: translateX(0);
-    }
-
     /* copyright band */
     .ftBase {
       border-top: 1px solid var(--bdr);
@@ -327,7 +311,7 @@
       .ftCol { min-width: 0; flex: none; width: 100%; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .ftColLink, .ftColLink::after, .ftColLink--mail::before { transition: none; }
+      .ftColLink, .ftColLink::after { transition: none; }
     }
 
     /* legal overlay */

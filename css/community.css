@@ -693,7 +693,6 @@
       --cmAccent-rgb:47,163,124;
       --cmAccentSoft:#3FBF93;
       --cmAccentDim:rgba(47,163,124,.14);
-      --cmOnAccent:#04150F;
       /* the other three hues the illustration uses, for the things that are
          not the primary action */
       --cmCoral:#E4572E;
@@ -702,7 +701,6 @@
          light one, so text and borders drawn in it get their own darker
          value under the light theme */
       --cmAmberInk:#F4B740;
-      --cmBlue:#3B82F6;
       --cmOnline:#2ecf7e;
       background:var(--cmBg);
     }

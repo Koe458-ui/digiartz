@@ -4,6 +4,55 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v192 — the six Browse destinations become six documents.
+
+       Every route on this site answers with the same file. index.html is
+       the app shell, _redirects rewrites /explore, /marketplace,
+       /community, /resources, /blog and /login onto it, and everything
+       functions/_middleware.js changed per route lived inside <head>. So
+       each of those six arrived with a correct and unique title,
+       description and canonical wrapped around twelve thousand characters
+       of byte-identical body text, whose only heading said "DigiArtz — The
+       Digital Art Community" six times over.
+
+       Google renders the page and sees the section the app opens, which is
+       why this never showed there. Bing, Yandex, Seznam, Naver and
+       Marginalia do far less of that, and so does everything reading
+       Bing's index second-hand — DuckDuckGo, Ecosia, Brave's fallback.
+       What they were handed was six near-identical documents, and
+       near-identical documents get collapsed to one.
+
+       The middleware writes the h1 now, per route, from the same table the
+       title comes from — so the highest-weighted element in the body says
+       what the page is. It changes nothing on screen: that h1 is .srOnly
+       and always has been, which means it was already written for the two
+       audiences that cannot see the page, and both of them are now told
+       which page this is. Items, artworks and profiles get their own name
+       there too, on the same mechanism.
+
+       IndexNow goes with it, which is the part that is not Google by
+       definition: one submission reaches Bing, Yandex, Seznam and Naver at
+       once. The key is published at the root the way the protocol requires
+       — it is not a secret, publishing it is how ownership is proved — and
+       scripts/indexnow.mjs submits the sections, the home page and the
+       legal pages, or the whole sitemap with --sitemap.
+
+       Dead code out with it, all of it confirmed unreferenced rather than
+       assumed: .ftColLink--mail, the mail-arrow rule left behind when the
+       Support column went; --text-primary, --text-secondary, --text-muted
+       and --border-color, four of the six aliases declared on the
+       universal selector and read by nothing (the two that ARE read stay
+       on * deliberately — a dozen panels redefine --tx and --pb, and a
+       heading inside one has to resolve against its own scope); and
+       --cmBlue and --cmOnAccent from the community palette. Everything
+       else that scanned as dead turned out to be built by string
+       concatenation — the --variant classes, the milestone name tokens
+       through nameC() in js/misc-core.js, ids like listId + '_more' — and
+       was left alone.
+       Changed: functions/_middleware.js, css/base.css, css/community.css,
+       css/connect.css, _headers, scripts/indexnow.mjs (new),
+       8968b78d9c9d0df0553bf47f2e121021.txt (new), index.html, sw.js.
+
    v191 — the footer stops answering questions nobody asked, and the ads
        move to where the reading happens.
        Two blocks left the footer: Legal and Support. Both were plain
@@ -3473,7 +3522,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v191';
+const CACHE_VERSION = 'v192';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3525,11 +3574,11 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=7',
+  '/css/base.css?v=8',
   '/css/hero.css?v=96',
   '/css/viewer.css?v=15',
-  '/css/community.css?v=13',
-  '/css/connect.css?v=3',
+  '/css/community.css?v=14',
+  '/css/connect.css?v=4',
   '/css/ranking.css?v=2',
   '/css/profile.css?v=10',
   '/css/admin.css?v=1',

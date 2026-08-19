@@ -361,34 +361,38 @@
 }
 .thmCheck svg{width:13px;height:13px;}
 .thmCard[aria-checked="true"] .thmCheck{transform:scale(1);opacity:1;}
-/* the swatch in each card is that theme's own ladder, so the preview shows
-   what the page becomes: --p-bg is the page, --p-sur the card sitting above
-   it, --p-ln the edge. Read off css/base.css — if a ground moves there it
-   has to move here, or the picker advertises something the site will not
-   paint. */
-.thmCard[data-theme="graydark"]  {--p-bg:#1A1A1F;--p-sur:#24242C;--p-ln:#40404E;--p-ac:#F4F4F6;}
-.thmCard[data-theme="light"]     {--p-bg:#F7F5EB;--p-sur:#FFFEF9;--p-ln:#D8D3B8;--p-ac:#17151F;}
+/* The swatch is that theme's own ladder, so the preview shows what the page
+   becomes: --p-bg is the page, --p-sur the card sitting above it, --p-ln the
+   edge, --p-ac the accent. Each card carries its four values inline in
+   index.html, next to the markup that spends them.
+
+   Every property below that spends one names a fallback anyway. A preview
+   whose colours are missing is not a preview that degrades — .thmPrev has a
+   fixed aspect-ratio, so it holds its full size and paints nothing at all: a
+   large, silent, empty box. The fallbacks are charcoal's, so the worst case
+   is a preview showing the wrong theme's ground rather than no theme at
+   all. */
 .thmPrev{
   position:relative;display:block;overflow:hidden;
-  background:var(--p-bg);border:1px solid var(--p-ln);border-radius:10px;
+  background:var(--p-bg,#1A1A1F);border:1px solid var(--p-ln,#40404E);border-radius:10px;
   aspect-ratio:10/9;
 }
 .thmPrevTop{
   display:flex;align-items:center;height:16%;
-  border-bottom:1px solid var(--p-ln);padding-left:9%;
+  border-bottom:1px solid var(--p-ln,#40404E);padding-left:9%;
 }
 .thmPrevLogo{
-  width:9px;height:9px;background:var(--p-ac);
+  width:9px;height:9px;background:var(--p-ac,#F4F4F6);
   clip-path:polygon(50% 0,100% 100%,0 100%);
 }
 .thmPrevBody{display:flex;height:84%;}
 .thmPrevSide{
-  width:33%;flex-shrink:0;border-right:1px solid var(--p-ln);
+  width:33%;flex-shrink:0;border-right:1px solid var(--p-ln,#40404E);
   padding:11% 8%;display:flex;flex-direction:column;gap:14%;
 }
-.thmLn{display:block;height:5px;border-radius:3px;background:var(--p-ln);}
+.thmLn{display:block;height:5px;border-radius:3px;background:var(--p-ln,#40404E);}
 .thmLn--s{width:70%;}
-.thmLn--ac{background:var(--p-ac);box-shadow:0 0 7px var(--p-ac);}
+.thmLn--ac{background:var(--p-ac,#F4F4F6);box-shadow:0 0 7px var(--p-ac,#F4F4F6);}
 .thmPrevMain{
   flex:1;padding:9% 9% 11%;
   display:grid;grid-template-columns:1fr 1fr;
@@ -397,16 +401,16 @@
 .thmTbWrap{display:flex;flex-direction:column;gap:16%;min-width:0;}
 .thmTb{
   position:relative;overflow:hidden;
-  background:var(--p-sur);border-radius:4px;aspect-ratio:5/4;
+  background:var(--p-sur,#24242C);border-radius:4px;aspect-ratio:5/4;
 }
 .thmTb::before{
   content:'';position:absolute;left:18%;right:18%;bottom:22%;height:40%;
-  background:var(--p-ln);
+  background:var(--p-ln,#40404E);
   clip-path:polygon(0 100%,36% 18%,58% 66%,78% 30%,100% 100%);
 }
 .thmTb::after{
   content:'';position:absolute;top:16%;right:20%;
-  width:13%;aspect-ratio:1;border-radius:50%;background:var(--p-ln);
+  width:13%;aspect-ratio:1;border-radius:50%;background:var(--p-ln,#40404E);
 }
 .thmTbWrap .thmLn{height:4px;width:82%;}
 .thmMeta{display:block;padding:.95rem .35rem 0;}

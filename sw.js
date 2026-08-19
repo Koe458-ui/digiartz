@@ -4,6 +4,32 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v189 — a theme card carries its own colours.
+       The picker rendered as two correctly sized, completely empty boxes on
+       at least one device, with no card ticked and nothing happening on tap.
+       One cause under all three. Everything the preview paints with —
+       --p-bg, --p-sur, --p-ln, --p-ac — arrived from css/widgets.css through
+       an attribute selector on the card, .thmCard[data-theme="…"], and the
+       theme each card stands for was read back off that same attribute by
+       js/theme.js. So the moment that binding does not take, the preview
+       paints nothing, syncCards ticks nothing, and apply() is handed a value
+       that is not in VALID and returns without doing anything. The box keeps
+       its full size throughout, because .thmPrev is sized by aspect-ratio
+       rather than by its contents: a large, silent, empty rectangle.
+       The four values are inline on each card now, in index.html, next to
+       the markup that spends them — they cannot go missing while the markup
+       that needs them is present. Each property that reads one still names a
+       charcoal fallback, so the worst case left is a preview showing the
+       wrong ground rather than no ground. And each card writes its theme id
+       twice, data-theme for the stylesheet and value for the script, so one
+       of the two failing to arrive is not a dead picker.
+       css/base.css still owns the palette. These are the only two swatches
+       that travel with the markup, and the comment in widgets.css says so.
+       Asset versions bumped past the ones that shipped with v188 —
+       widgets.css and theme.js — so no client, edge or precache can answer
+       from a copy taken before this.
+       Changed: index.html, css/widgets.css, js/theme.js, sw.js.
+
    v188 — the theme is two themes, and both of them are built to be
        scrolled for an hour.
        A feed is read almost entirely by peripheral vision, and peripheral
@@ -3378,7 +3404,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v188';
+const CACHE_VERSION = 'v189';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3441,7 +3467,7 @@ const SHELL_URLS = [
   '/css/auth.css?v=1',
   '/css/panels.css?v=5',
   '/css/upload.css?v=13',
-  '/css/widgets.css?v=7',
+  '/css/widgets.css?v=8',
   '/css/overrides.css?v=13',
   '/css/select.css?v=3',
   '/css/analytics.css?v=7',
@@ -3483,7 +3509,7 @@ const SHELL_URLS = [
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
-  '/js/theme.js?v=3',
+  '/js/theme.js?v=4',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
   '/js/sections.js?v=115',

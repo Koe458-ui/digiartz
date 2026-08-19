@@ -174,7 +174,7 @@
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=5">
   <link rel="stylesheet" href="/css/upload.css?v=13">
-  <link rel="stylesheet" href="/css/widgets.css?v=7">
+  <link rel="stylesheet" href="/css/widgets.css?v=8">
   <link rel="stylesheet" href="/css/overrides.css?v=13">
   <link rel="stylesheet" href="/css/select.css?v=3">
   <link rel="stylesheet" href="/css/analytics.css?v=7">
@@ -2961,8 +2961,18 @@ window.ZEO_DATA = window.ZEO_DATA || {
       <h1 class="thmTitle">Choose Your Theme</h1>
       <p class="thmSub">Select the theme that suits your style</p>
     </div>
+    <!-- Each card carries its own four preview colours inline, and its theme
+         id twice — data-theme for the stylesheet and value for the script.
+         The preview is drawn from --p-bg/--p-sur/--p-ln/--p-ac, so if those
+         arrive from a separate stylesheet keyed on an attribute selector,
+         anything that stops that selector matching leaves a correctly sized
+         but completely invisible box, with no fallback and nothing on screen
+         to say why. On the element they cannot go missing while the markup
+         that needs them is present. css/base.css still owns the palette;
+         these are the two swatches that have to travel with the markup. -->
     <div class="thmGrid" role="radiogroup" aria-label="Theme">
-      <button class="thmCard" data-theme="graydark" role="radio" aria-checked="false" type="button">
+      <button class="thmCard" data-theme="graydark" value="graydark" role="radio" aria-checked="false" type="button"
+              style="--p-bg:#1A1A1F;--p-sur:#24242C;--p-ln:#40404E;--p-ac:#F4F4F6">
         <span class="thmCheck" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7-8"/></svg></span>
         <span class="thmPrev" aria-hidden="true">
           <span class="thmPrevTop"><span class="thmPrevLogo"></span></span>
@@ -2981,7 +2991,8 @@ window.ZEO_DATA = window.ZEO_DATA || {
           <span class="thmDesc">Deep, warm charcoal. Cards lift off the page so your eye lands on the art, not the screen.</span>
         </span>
       </button>
-      <button class="thmCard" data-theme="light" role="radio" aria-checked="false" type="button">
+      <button class="thmCard" data-theme="light" value="light" role="radio" aria-checked="false" type="button"
+              style="--p-bg:#F7F5EB;--p-sur:#FFFEF9;--p-ln:#D8D3B8;--p-ac:#17151F">
         <span class="thmCheck" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7-8"/></svg></span>
         <span class="thmPrev" aria-hidden="true">
           <span class="thmPrevTop"><span class="thmPrevLogo"></span></span>
@@ -3008,7 +3019,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-  <script src="/js/theme.js?v=3"></script>
+  <script src="/js/theme.js?v=4"></script>
 
 <!-- One page for all seven legal documents, opened from the Settings menu.
      Same shape as Theme or Edit My Work: a header with a back arrow, then the

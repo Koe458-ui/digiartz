@@ -16,6 +16,18 @@
     return VALID[v] ? v : 'graydark';
   }
 
+  /* Which theme a card stands for, read from either carrier it ships with.
+     index.html writes the id twice — data-theme for the stylesheet, value for
+     this — because everything the picker does hangs off getting it back: the
+     click applies it, syncCards ticks the matching card, and a card whose id
+     does not resolve is a card that silently does nothing when tapped. Two
+     independent attributes in the same tag cost nothing and mean one of them
+     failing to arrive is not a dead picker. */
+  function idOf (c) {
+    var v = c.getAttribute('data-theme') || c.getAttribute('value');
+    return VALID[v] ? v : null;
+  }
+
   // swap tokens at once
   function paint (t) {
     document.documentElement.setAttribute('data-theme', t);
@@ -47,14 +59,14 @@
   // roving tabindex
   function syncCards (t) {
     cards.forEach(function (c) {
-      var on = c.getAttribute('data-theme') === t;
+      var on = idOf(c) === t;
       c.setAttribute('aria-checked', on ? 'true' : 'false');
       c.tabIndex = on ? 0 : -1;
     });
   }
 
   cards.forEach(function (c, i) {
-    c.addEventListener('click', function () { apply(c.getAttribute('data-theme')); });
+    c.addEventListener('click', function () { apply(idOf(c)); });
     c.addEventListener('keydown', function (e) {
       var j = null;
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % cards.length;
@@ -63,7 +75,7 @@
       else if (e.key === 'End')  j = cards.length - 1;
       if (j === null) return;
       e.preventDefault();
-      apply(cards[j].getAttribute('data-theme'));
+      apply(idOf(cards[j]));
       cards[j].focus();
     });
   });

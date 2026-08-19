@@ -1,12 +1,23 @@
 /* dark overrides, subscription */
-/* dark theme overrides */
+/* Ground, glow and chrome.
+
+   This section used to be called "dark theme overrides", and it was: it is
+   older than the second theme, from when the site had one ground and this was
+   the file that forced everything onto it. The rules themselves were brought
+   over to tokens long ago — --bg, --sur, --sur2, --bdr, --tx all follow
+   whichever theme is on — but two shadows and a scrim were left as literals,
+   and the name kept saying the block belonged to one theme.
+
+   The name is wrong and now gone. The shadows read --sh-card, which each
+   palette defines for itself, so a card on paper is no longer lit like a card
+   on charcoal. Charcoal's values are unchanged. */
 body{background:var(--bg);}
 
 /* glow and shadow */
 .gItem,.modal,.legalModal,#fgFltPanel{
-  box-shadow:0 1px 3px rgba(5,3,8,.3),0 4px 14px rgba(5,3,8,.35)!important;
+  box-shadow:var(--sh-card)!important;
 }
-.gItem:hover{box-shadow:0 6px 20px rgba(5,3,8,.4)!important;}
+.gItem:hover{box-shadow:var(--sh-card-hover)!important;}
 .fltDone:hover,.sCard:hover,.cpBarSend:hover,.fgFltBtn:hover,.fgFltBtn.active{box-shadow:none!important;}
 
 /* overlay scrims */
@@ -17,8 +28,12 @@ body{background:var(--bg);}
 .cpBar{border-top:1px solid var(--bdr);}
 #legalBackdrop::before{background:color-mix(in srgb,var(--bg) 75%,transparent)!important;}
 #artModal::before{background:color-mix(in srgb,var(--bg) 85%,transparent)!important;}
-/* card hover scrim */
-.gOv{background:rgba(0,0,0,.7)!important;}
+/* The card hover scrim was declared here too, at the identical value css/hero.css
+   already gives it, with an !important bolted on that nothing needed — no other
+   rule sets .gOv's background. One declaration now, in the file that owns the
+   card. It is deliberately not a token and deliberately not theme-aware: it
+   darkens ARTWORK so the artist's name can be read in white over it, and a
+   photograph is the same photograph in both themes. */
 
 /* cards and containers */
 .gItem,.modal,.legalModal,#fgFltPanel{

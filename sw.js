@@ -4,6 +4,39 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v194 — the block that still thought there was one theme.
+
+       css/panels.css opened with a section called "dark theme overrides".
+       It is older than the second theme: it comes from when the site had
+       one ground and this was the file that forced everything onto it. Its
+       rules had been moved to tokens long ago — --bg, --sur, --sur2,
+       --bdr and --tx all follow whichever theme is on — but three things
+       were left behind, and the name kept insisting the block belonged to
+       one theme.
+
+       Two were shadows, hardcoded at rgba(5,3,8,...) with !important, so a
+       card, a modal, the legal sheet and the gallery's filter panel were
+       lit on paper exactly the way they are lit on charcoal: a near-black
+       drop at dark-ground weight, on ivory. Neither palette had a shadow
+       token at all — every one of the 81 box-shadows in the stylesheets is
+       a literal — so both palettes gain --sh-card and --sh-card-hover.
+       Charcoal's values are the ones it already had, to the digit. Paper
+       drops its own ink at the alpha the single light-theme shadow that
+       already existed uses, html[data-theme="light"] .anTip.
+
+       The third was .gOv, the scrim that darkens an artwork on hover so the
+       artist's name can be read in white over it. It was declared here at
+       the identical value css/hero.css already gives it, with an !important
+       bolted on that nothing needed — no other rule sets that background.
+       The duplicate is gone; hero.css owns it. It stays a literal and stays
+       theme-blind on purpose, and now says so: it darkens a photograph, and
+       a photograph is the same photograph in both themes.
+
+       Verified: both themes render pixel-identical before and after at
+       every scroll position, .gOv resolves to the same value with the
+       duplicate removed, and --sh-card resolves per theme.
+       Changed: css/base.css, css/panels.css, index.html, sw.js.
+
    v193 — the ad label sits over the ad it labels.
 
        Both halves of the slot measured as centred to the pixel and still
@@ -3550,7 +3583,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v193';
+const CACHE_VERSION = 'v194';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3602,7 +3635,7 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=8',
+  '/css/base.css?v=9',
   '/css/hero.css?v=96',
   '/css/viewer.css?v=15',
   '/css/community.css?v=14',
@@ -3611,7 +3644,7 @@ const SHELL_URLS = [
   '/css/profile.css?v=10',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
-  '/css/panels.css?v=6',
+  '/css/panels.css?v=7',
   '/css/upload.css?v=13',
   '/css/widgets.css?v=9',
   '/css/overrides.css?v=15',

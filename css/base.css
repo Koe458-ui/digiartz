@@ -59,6 +59,14 @@
       --pg-rgb:244,244,246; --pgd-rgb:198,198,206;
       --pdim:rgba(var(--pg-rgb),.10);
       --text-on-accent:#1A1A1F;
+      /* The ink a raised surface casts. Every shadow in the stylesheets was a
+         literal before this, which meant a card on paper was lit the way a
+         card on charcoal is: a near-black drop at dark-ground weight, on
+         ivory. Charcoal keeps exactly the values it always had; paper drops
+         its own ink far lighter, at the alpha the one light-theme shadow that
+         already existed uses — html[data-theme="light"] .anTip. */
+      --sh-card:0 1px 3px rgba(5,3,8,.3),0 4px 14px rgba(5,3,8,.35);
+      --sh-card-hover:0 6px 20px rgba(5,3,8,.4);
       /* the well: overlays and full-screen sub-pages sit below the page */
       --vbg:#101015; --vsur:#191920; --vsur2:#222229;
       --vtx:#F1F1F5; --vtx2-rgb:210,210,222; --vtxd:rgba(var(--vtx2-rgb),.66);
@@ -119,6 +127,8 @@
       --pg-rgb:23,21,31; --pgd-rgb:46,44,58;
       --pdim:rgba(var(--pg-rgb),.07);
       --text-on-accent:#FFFFFF;
+      --sh-card:0 1px 3px rgba(26,24,38,.10),0 4px 14px rgba(26,24,38,.12);
+      --sh-card-hover:0 6px 20px rgba(26,24,38,.16);
       --vbg:#EEEBDC; --vsur:#FBFAF2; --vsur2:#F3F1E4;
       --vtx:#211F16; --vtx2-rgb:70,66,50; --vtxd:rgba(var(--vtx2-rgb),.78);
       --vtc:#6E6957; --vtc-rgb:110,105,87;

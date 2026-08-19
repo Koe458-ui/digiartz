@@ -26,13 +26,15 @@
     }
   }
 
-  // overlay panels hide the widgets
-  // pfEditPage was missing here while every other full-screen panel was
-  // listed, so the floating widgets stayed on top of profile settings. Barely
-  // visible while that panel was short; obvious once it grew a long one.
-  // dzPanelHost is created by the signed-in module and is simply absent for
-  // everyone else — overlayEls skips what it cannot find.
-  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'dzPanelHost', 'themePage', 'bmPage', 'xpPage', 'anPage', 'rankPage'];
+  /* Overlay panels hide the widgets, and which panels those are is the
+     `widget` flag on the table in js/app-core.js. It used to be a list
+     written out here — the third copy of the same set of ids in this app, and
+     the one that kept falling behind: pfEditPage was missing from it while
+     every other full-screen panel was listed, so the floating widgets sat on
+     top of profile settings. A panel is listed in one place now.
+     dzPanelHost is built by the signed-in module and is simply absent for
+     everyone else — overlayEls skips what it cannot find. */
+  var OVERLAY_IDS = window.dzPanelIds ? window.dzPanelIds('widget') : [];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);
@@ -4471,6 +4473,11 @@
   window.dzOpenById = async function(seg, id){
     var sec = VW_SEG[seg];
     if(!sec || !sb || typeof window.dzSelectFor !== 'function') return;
+    // The row is a round trip away and this opens two panels when it lands.
+    // If the member has changed section in the meantime they have said where
+    // they want to be more recently than this link did, and the answer to a
+    // question nobody is still asking does not get to take over the screen.
+    var navToken = window.dzNavToken ? window.dzNavToken() : null;
     try{
       /* One public row by id, cached: this is the path a shared link takes, so
          it is the one most likely to be opened by several people at once and
@@ -4488,6 +4495,8 @@
       };
       var row = c ? await c.getOrSet(vwKey, load, 'section:item') : await load();
       if(!row){ if(typeof showToast === 'function') showToast('That item is no longer available'); return; }
+      if(navToken != null && typeof window.dzNavCurrent === 'function' &&
+         !window.dzNavCurrent(navToken)) return;
       if(typeof openFG === 'function') openFG();
       if(typeof fgSwitchSection === 'function') fgSwitchSection(sec === 'resources' ? 'resources' : sec);
       window.dzOpenRow(sec, row);
@@ -5293,22 +5302,31 @@
     if(v) v.classList.remove('open');
     vwUnlock();
     curExt = null;
-    if(pushed){
-      pushed = false;
-      try{ history.back(); }catch(e){}
-    } else if(VW_IS_ITEM.test(window.location.pathname)){
-      // Deep-linked: nothing was pushed, so there is nothing to step back off
-      // and the address has to be corrected in place or it goes on naming a
-      // panel that is no longer open.
+    /* SWAP the address, do not step back to it.
+       This used to call history.back() when it had pushed an entry, and a
+       step back is a navigation: asynchronous, and answered by the popstate
+       handler in every other module that has one. Close an item from inside
+       the gallery and the step landed on whatever was behind it — often an
+       address belonging to a panel this close had nothing to do with — which
+       then re-opened it. Replacing the entry leaves the stack exactly as long
+       as stepping back off it did, without moving anything. */
+    if(pushed || VW_IS_ITEM.test(window.location.pathname)){
       try{ history.replaceState({}, '', vwReturnUrl || '/'); }catch(e){}
     }
+    pushed = false;
     vwReturnUrl = null;
   };
-  // hide without touching history
+  /* Hide without touching history: the panel is being swept out of the way by
+     a move, and the move writes the address for wherever it lands. The
+     bookkeeping still resets — leaving `pushed` raised meant the NEXT item
+     opened swapped the section's address for its own instead of taking an
+     entry, so Back out of that item skipped the section it was opened from. */
   window.dzCloseViewSilent = function(){
     var v = document.getElementById('dzView');
     if(v) v.classList.remove('open');
     vwUnlock();
+    pushed = false;
+    vwReturnUrl = null;
   };
   document.addEventListener('keydown', function(e){
     var v = document.getElementById('dzView');
@@ -5492,18 +5510,14 @@
     artworks:1, marketplace:1, resources:1, blog:1, jobs:1, cart:1
   };
 
-  // whatever is open has to go first. bnCloseAllSections is the bottom
-  // nav's own sweep but it predates the ranking, theme and progress
-  // pages, so those are closed here as well — each hides the bottom bar
-  // while it is up, and left open it takes the bar with it.
-  function shutExtras(){
-    if(typeof closeRankPage === 'function') closeRankPage();
-    if(typeof closeThemePage === 'function') closeThemePage();
-    if(typeof closeXpPage === 'function') closeXpPage();
-  }
+  /* Whatever is open has to go first, and "whatever" now means every panel:
+     bnCloseAllSections sweeps the table in js/app-core.js rather than a list
+     of its own. There used to be a second sweep here for the ranking, theme
+     and progress pages, because the nav's own predated all three — a rail
+     that had to remember what the nav had forgotten. Both halves are one
+     list now, so this is the same call twice over. */
   function shut(){
     if(typeof bnCloseAllSections === 'function') bnCloseAllSections();
-    shutExtras();
   }
 
   window.qlGo = function(id){
@@ -5513,23 +5527,34 @@
        where the member ended up — so arriving from the rail, from the hero,
        from a feed card or from a search result all agree.
 
-       The three pages bnCloseAllSections predates are still swept here: the
-       router opens panels and does not know about them. */
+       The rail used to sweep three pages of its own before handing over,
+       because the nav's sweep predated them. It does not any more: one table
+       lists every panel and one sweep reads it. */
     var path = typeof window.dzRoutePath === 'function' ? window.dzRoutePath(id) : null;
-    if(path && typeof window.dzRouteGo === 'function'){
-      shutExtras();
-      if(window.dzRouteGo(path)) return;
+    if(path && typeof window.dzRouteGo === 'function' && window.dzRouteGo(path)) return;
+
+    /* One move, the same as a tap on the bottom nav — the sweep and the open
+       are held together so the watchers that react to a panel closing do not
+       read the gap between them as somebody leaving a section. */
+    if(window.dzNavBegin) window.dzNavBegin();
+    try{
+      if(GALLERY[id]){
+        // bnGoGallery is the real entry: closes the rest, resets the
+        // category filter and lights up the Gallery tab. openFG alone
+        // opened the overlay with the app still thinking it was Home.
+        if(typeof bnGoGallery === 'function') bnGoGallery();
+        else if(typeof openFG === 'function') openFG();
+        if(typeof fgSwitchSection === 'function') fgSwitchSection(id);
+      } else {
+        shut();
+        if(OWN[id]) OWN[id]();
+      }
+    } finally {
+      if(window.dzNavEnd) window.dzNavEnd();
+      // None of the pages left here has a url — the cart is one member's
+      // basket, the wallet is one member's money — so the bar is asked to
+      // stop naming whatever was closed to make room for them.
+      if(typeof window.dzRouteAudit === 'function') window.dzRouteAudit();
     }
-    shut();
-    if(GALLERY[id]){
-      // bnGoGallery is the real entry: closes the rest, resets the
-      // category filter and lights up the Gallery tab. openFG alone
-      // opened the overlay with the app still thinking it was Home.
-      if(typeof bnGoGallery === 'function') bnGoGallery();
-      else if(typeof openFG === 'function') openFG();
-      if(typeof fgSwitchSection === 'function') fgSwitchSection(id);
-      return;
-    }
-    if(OWN[id]) OWN[id]();
   };
 })();

@@ -710,18 +710,210 @@
   }
   window.dzDomReady = dzDomReady;
 
-  function restoreScroll(){
-    // every overlay that locks scroll
-    // album pages lock too
-    // dzView is the section detail panel (js/sections.js). It was missing here
-    // while it took the lock like everything else, so any other overlay
-    // closing underneath it released the lock out from under an open panel.
-    var locks=['fg','artModal','communityPage','legalBackdrop','subPage','profilePage','pfEditPage','pfMyWorkPage','authMod','notifPage','admPage','zeoPage','frdPage','cmInfoPage','cmSearchPage','cmBrowsePage','bmPage','xpPage','anPage','setPage','rankPage','pfUpMod','albPage','albViewPage','tgMod','dzPanelHost','fgSearchPage','dzView'];
-    var anyOpen=locks.some(function(id){
-      var el=document.getElementById(id);
-      return el&&(el.classList.contains('open')||el.getAttribute('data-state')==='open');
+  /* ---- every panel this app can put on screen, in one table ---------------
+
+     There were three lists of these ids, in two files, and each of them was a
+     different partial answer to the same question — which panels are open on
+     top of the page:
+
+       restoreScroll's `locks`   who is holding the scroll lock
+       NAV_OVER                  who hides the bottom nav
+       OVERLAY_IDS (sections.js) who hides the floating widgets
+
+     and a fourth answer, bnCloseAllSections in js/pfedit.js, was written out
+     by hand as nine close() calls. That last one is where the bugs were. It
+     predated the ranking board, the theme page, the artwork viewer, the item
+     viewer, the album pages, Settings and every page Settings opens — so
+     tapping Home with any of those up closed the section UNDER them and left
+     the panel itself on screen, over the home page, with the nav lit up as if
+     you were home. "I tap home and a section is still showing" is exactly
+     that list of omissions.
+
+     One table now, and a panel joins the app by being added to it once. The
+     flags say what the panel does; `close` says how to shut it, by the name
+     of the function that owns the closing, so this table never becomes a
+     second implementation of a close.
+
+       lock    holds the scroll lock while it is open
+       nav     hides the bottom navigation bar
+       widget  hides the floating widgets and the assistant bubble
+
+     Order is the order the sweep shuts them in: a page that sits INSIDE
+     another one comes first, so nothing is ever closed out from under a child
+     that is still up. */
+  var DZ_PANELS = [
+    // small things over a section. Each of these four is a sheet or a
+    // backdrop written at the top of the document rather than inside the
+    // panel it belongs to, which is why they need shutting on their own: the
+    // gallery closing does not take the filter sheet with it, because the
+    // sheet is not inside the gallery.
+    { id:'dlQuotaMod',      close:['dzQuotaClose'] },
+    { id:'upqBackdrop',     close:['upqCloseModal'] },
+    { id:'fgFltPanel',      close:['closeFilterPanel'] },
+    { id:'fgFltOvr',        close:['closeFilterPanel'] },
+    { id:'tgMod',           close:['tgModClose'],           lock:1 },
+    { id:'legalBackdrop',   close:['closeLegal'],           lock:1, widget:1 },
+    { id:'legalPage',       close:['closeLegalPage'],       lock:1, nav:1, widget:1 },
+    { id:'showcasePicker',  close:['closeShowcasePicker'] },
+    // search pages, each over the section it searches
+    { id:'pfSearchPage',    close:['closePfSearch', true],           widget:1 },
+    { id:'fgSearchPage',    close:['closeFgSearch', true],  lock:1,  widget:1 },
+    { id:'cmSearchPage',    close:['cmCloseSearch'],        lock:1, nav:1, widget:1 },
+    { id:'cmBrowsePage',    close:['cmCloseBrowse'],        lock:1, nav:1, widget:1 },
+    { id:'cmInfoPage',      close:['cmiClose'],             lock:1, nav:1, widget:1 },
+    { id:'frdPage',         close:['closeFriendsPage'],     lock:1, nav:1, widget:1 },
+    // pages opened from a profile, from Settings, or from the quick links
+    { id:'albViewPage',     close:['albCloseView'],         lock:1, nav:1, widget:1 },
+    { id:'albPage',         close:['albClosePage'],         lock:1, nav:1, widget:1 },
+    { id:'bmPage',          close:['closeBookmarksPage'],   lock:1, nav:1, widget:1 },
+    { id:'anPage',          close:['closeAnalyticsPage'],   lock:1, nav:1, widget:1 },
+    { id:'xpPage',          close:['closeXpPage'],          lock:1, nav:1, widget:1 },
+    { id:'themePage',       close:['closeThemePage'],               nav:1, widget:1 },
+    { id:'rankPage',        close:['closeRankPage'],        lock:1, nav:1, widget:1 },
+    { id:'dzPanelHost',     close:['dzClosePanel'],         lock:1, nav:1, widget:1 },
+    { id:'admPage',         close:['dzOpsClose'],           lock:1, nav:1, widget:1 },
+    { id:'notifPage',       close:['closeNotifPage'],       lock:1, nav:1, widget:1 },
+    { id:'pfMyWorkPage',    close:['closeMyWorkPage'],      lock:1, nav:1, widget:1 },
+    { id:'pfEditPage',      close:['closePfEditPage'],      lock:1, nav:1, widget:1 },
+    { id:'setPage',         close:['closeSettingsPage'],    lock:1, nav:1, widget:1 },
+    { id:'subPage',         close:['closeSubscription'],    lock:1, nav:1, widget:1 },
+    { id:'zeoPage',         close:['zeoCloseChat'],         lock:1 },
+    /* The two item views. The artwork viewer's own close hands its address
+       and its page title back, so it is used as it is; the item viewer's
+       silent close is the one that leaves history alone, because a sweep is
+       the first half of a move and the second half writes the address for
+       wherever the member is going. Neither of them steps history back any
+       more — that is the bug in the note on dzNavBegin below.
+
+       The artwork viewer fades for 230ms before its class comes off, so it is
+       still "open" when the move finishes. Nothing here waits for it: the
+       address audit in js/routes.js runs again when the class does come off,
+       which is exactly the kind of late close it exists for. */
+    { id:'artModal',        close:['closeLB'],              lock:1, widget:1 },
+    { id:'dzView',          close:['dzCloseViewSilent'],    lock:1, widget:1 },
+    // the five destinations the bottom nav leads to
+    { id:'authMod',         close:['closeAuthMod'],         lock:1, widget:1 },
+    { id:'pfUpMod',         close:['closePfUpload'],        lock:1, widget:1 },
+    { id:'profilePage',     close:['closeProfilePage', false], lock:1, widget:1 },
+    // The chat slides over the community grid and is written beside it rather
+    // than inside it. closeCommunityPage resets it on the way out; listing it
+    // here as well is what makes the sweep complete on its own terms — the
+    // table is the answer to "what is on screen", and this is on screen.
+    { id:'cmChatPanel',     close:['cmCloseChat'] },
+    { id:'communityPage',   close:['closeCommunityPage'],   lock:1, widget:1 },
+    { id:'fg',              close:['closeFG'],              lock:1, widget:1 }
+  ];
+
+  function dzPanelEl(id){ return document.getElementById(id); }
+  function dzPanelIsOpen(el){
+    return !!el && (el.classList.contains('open') ||
+                    el.getAttribute('data-state') === 'open');
+  }
+  // The ids carrying one flag, for the watchers below and for js/sections.js.
+  function dzPanelIds(flag){
+    return DZ_PANELS.filter(function(p){ return !!p[flag]; })
+                    .map(function(p){ return p.id; });
+  }
+  window.dzPanelIds = dzPanelIds;
+  window.dzAnyPanelOpen = function(flag){
+    return DZ_PANELS.some(function(p){
+      return (!flag || p[flag]) && dzPanelIsOpen(dzPanelEl(p.id));
     });
-    if(!anyOpen){ document.body.style.overflow=''; document.documentElement.style.overflow=''; }
+  };
+
+  /* Shut everything.
+
+     A panel whose close function is absent — the admin panel for an ordinary
+     member, a page whose module failed to load — is shut by its class, which
+     is the one thing every panel here agrees on. That is a fallback and not
+     the path: a closer knows about polls to stop and state to drop, and this
+     does not. */
+  function dzCloseAllPanels(){
+    DZ_PANELS.forEach(function(p){
+      var el = dzPanelEl(p.id);
+      if(!dzPanelIsOpen(el)) return;
+      var fn = p.close && window[p.close[0]];
+      if(typeof fn === 'function'){
+        try{ fn.apply(null, p.close.slice(1)); return; }catch(e){}
+      }
+      el.classList.remove('open');
+      // Only the panels that keep one — writing data-state onto a panel that
+      // has never had one is inventing state for somebody else's element.
+      if(el.hasAttribute('data-state')) el.setAttribute('data-state','closed');
+    });
+    restoreScroll();
+  }
+  window.dzCloseAllPanels = dzCloseAllPanels;
+
+  /* ---- one move at a time -------------------------------------------------
+
+     Switching section is not one action, it is a sweep followed by an open,
+     and half of what runs in between is asynchronous: a MutationObserver
+     watching a panel's class (js/routes.js, and the Settings back-watcher in
+     js/auth.js) runs on a microtask after the switch has finished, and an
+     opener that needs a row out of the database — your own profile — finishes
+     after a network round trip.
+
+     Every glitch reported against fast switching came out of that gap:
+
+       - js/routes.js stepped history BACK when the panel its address named
+         closed. Tapping Upload while the community page was up therefore
+         closed community, which stepped back onto /profile/<name> — the entry
+         from two taps ago — and the popstate handler in js/gallery.js opened
+         the profile over the upload page. "I tap upload and the profile comes
+         up" is that, exactly.
+
+       - the same step left the address reading /profile/<name> while the
+         upload page was on screen, so a refresh opened the profile nobody had
+         asked for. That is the second report, and it is the first one's
+         shadow.
+
+       - the Settings back-watcher re-opens Settings when a page opened from
+         it closes and the profile is still up. Sweep the pages, open the
+         profile, and by the time the watcher runs both of its conditions are
+         true — so Settings slid in over a profile the member had just
+         navigated to.
+
+     So a move is a transaction. dzNavBegin stamps it and holds a flag up;
+     everything that reacts late asks whether a move is in progress before
+     touching history, and everything that finishes late asks whether ITS move
+     is still the current one before touching the screen.
+
+     The flag is dropped a task later rather than at dzNavEnd, because the
+     watchers this exists for are microtasks queued DURING the move: releasing
+     synchronously would drop it before the first of them ran. */
+  var navSeq = 0, navHold = 0, navTimer = null;
+
+  window.dzNavBegin = function(){
+    navHold++;
+    if(navTimer){ clearTimeout(navTimer); navTimer = null; }
+    return ++navSeq;
+  };
+  window.dzNavEnd = function(){
+    if(navHold > 1){ navHold--; return; }
+    navHold = 1;
+    if(navTimer) clearTimeout(navTimer);
+    navTimer = setTimeout(function(){ navTimer = null; navHold = 0; }, 0);
+  };
+  // A move is in progress: do not touch the address bar, and do not react to
+  // a panel closing — it is closing because something else is opening.
+  window.dzNavMoving = function(){ return navHold > 0; };
+  // The move this token was taken for is still the current one. An async
+  // opener that finds otherwise has been superseded and must not paint.
+  window.dzNavCurrent = function(token){ return token === navSeq; };
+  // The current move, without starting one. For work that begins before any
+  // move and finishes after one may have happened — the deep links in
+  // js/startup.js, which wait on the database and then open a panel.
+  window.dzNavToken = function(){ return navSeq; };
+
+  /* The scroll lock belongs to whatever is left on screen, so it is released
+     only when nothing is holding it. Who holds it is the `lock` flag in the
+     table above — it used to be a list written out here, which is how dzView
+     came to be missing from it and any overlay closing underneath the item
+     viewer handed the lock back out from under it. */
+  function restoreScroll(){
+    if(window.dzAnyPanelOpen('lock')) return;
+    document.body.style.overflow=''; document.documentElement.style.overflow='';
   }
 
   // The bottom nav belongs to the five sections it links to. Anything that
@@ -735,16 +927,12 @@
   // Panels the nav itself leads to are absent on purpose — the nav stays up
   // over the gallery, community, upload, login and profile pages, and marks
   // which of them you are in.
-  var NAV_OVER=['setPage','dzPanelHost','subPage','pfEditPage','pfMyWorkPage',
-                'notifPage','admPage','bmPage','frdPage','cmInfoPage','cmSearchPage','cmBrowsePage','xpPage','anPage','rankPage','themePage',
-                'albPage','albViewPage'];
+  // Which panels those are is the `nav` flag in the table above.
+  var NAV_OVER=dzPanelIds('nav');
   function dzNavSync(){
     var nav=document.getElementById('bnNav');
     if(!nav) return;
-    var over=NAV_OVER.some(function(id){
-      var el=document.getElementById(id);
-      return !!el&&el.classList.contains('open');
-    });
+    var over=window.dzAnyPanelOpen('nav');
     nav.style.display=over?'none':'';
   }
   window.dzNavSync=dzNavSync;

@@ -92,13 +92,21 @@
     return null;
   }
 
-  async function openOwnProfile(){
+  /* `token` is the bottom nav's move (js/pfedit.js). The session usually
+     knows your own @handle and this opens in the same tick, but when it does
+     not the row is a round trip away — and a member who taps Profile, sees
+     nothing happen and taps Community would then have had their profile slide
+     in over the community page when the row landed. A move that is no longer
+     the current one does not get to open anything. */
+  async function openOwnProfile(token){
     if(!currentUser){ showToast('Sign in to view your profile'); openAuthMod(); return; }
     if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
     // username from session
     var uname = currentUser.user_metadata && currentUser.user_metadata.username;
     if(uname){ openProfileByUsername(uname); return; }
     var row = await pfEnsureOwnProfile();
+    if(token != null && typeof window.dzNavCurrent === 'function' &&
+       !window.dzNavCurrent(token)) return;
     if(row && row.username){ openProfileByUsername(row.username); return; }
     showToast('Could not load your profile — please try again');
   }
@@ -133,6 +141,20 @@
     var panel = document.getElementById('profilePage');
     panel.classList.add('open');
     document.body.style.overflow='hidden';
+    /* THE ADDRESS IS WRITTEN HERE, with the panel, and not down in
+       pfPaintProfile where it used to be.
+
+       Down there it was written after the row had been fetched — and by then
+       the member may have tapped away, leaving the bar reading
+       /profile/<name> over whatever they had actually navigated to. Nothing
+       looked wrong until the next refresh, which read that address and opened
+       a profile nobody had asked for. That is the "profile opens by itself on
+       reload" report, and this line is the whole of it: the address cannot
+       name a panel that is not open if it is written by the open.
+
+       The name is corrected in pfPaintProfile if the database spells it
+       differently, by replacing rather than pushing. */
+    if(pushUrl !== false) pfAddress(username);
     // preload media on slide in
     var mediaCached = pfMediaCache[username];
     if(mediaCached){
@@ -238,9 +260,18 @@
           data = await pfEnsureOwnProfile();
         }
       }
-      if(!data){ showToast('Profile not found'); closeProfilePage(); return; }
-      // bail if superseded
+      // Bail if superseded — BEFORE acting on the answer, not after. This
+      // check used to sit below the not-found branch, so a lookup that came
+      // back empty closed whichever profile was on screen by then, including
+      // one the member had opened since.
       if(mySeq !== pfOpenSeq) return;
+      // And bail if this panel is not on screen any more. The member tapped
+      // Home, or Community, while the row was in flight; painting it now
+      // would write a name, a banner and an address for a page nobody is
+      // looking at — which is how the address bar came to name a profile
+      // over the upload page.
+      if(!document.getElementById('profilePage').classList.contains('open')) return;
+      if(!data){ showToast('Profile not found'); closeProfilePage(); return; }
       // use db username
       username = data.username;
       pfRowCache[String(username).toLowerCase()] = data;   // warm for next open
@@ -371,11 +402,44 @@
       // the row exists now, so a tab that was opened before it arrived and
       // bailed out of its own loader gets the load it was waiting for
       if(pf.tab && pf.tab !== 'gallery') pfLoadTab(pf.tab);
-      if(pushUrl!==false && window.location.pathname !== '/profile/'+encodeURIComponent(username)){
+      // The row may spell the name differently from the link that was
+      // followed. Corrected in place, and only while this profile is still
+      // the panel on screen — a row that lands after the member has moved on
+      // has no business touching the address bar.
+      if(pushUrl!==false &&
+         document.getElementById('profilePage').classList.contains('open')){
+        pfAddress(username);
+      }
+  }
+
+  /* The profile's address, written in one place so open, correct and close
+     cannot disagree about it.
+
+     A profile is two different things depending on how it was reached, and
+     the difference is exactly what pfCloseCompetingOverlays already worked
+     out: with a section still underneath (the gallery, an artwork, the
+     community page) it is a page over that section and takes an entry of its
+     own, so Back returns to what it covered. Reached from the bottom nav, it
+     IS the section, and it shares the one history entry the whole visit
+     spends — the same entry /explore and /community use — so Back leaves the
+     app's panels in a single press from anywhere. */
+  function pfAddress(username){
+    var path = '/profile/'+encodeURIComponent(username);
+    if(!window.pfReturnOverlay && typeof window.dzRouteAddress === 'function'){
+      pfReturnUrl = null;                    // the router is holding the way back
+      window.dzRouteAddress(path);
+      return;
+    }
+    if(window.location.pathname === path) return;
+    try{
+      if(pfReturnUrl === null){
         // where to put the address bar back when this closes
         pfReturnUrl = window.location.pathname + window.location.search;
-        try{ history.pushState({profileUser:username},'','/profile/'+encodeURIComponent(username)); }catch(e){}
+        history.pushState({profileUser:username},'',path);
+      } else {
+        history.replaceState({profileUser:username},'',path);
       }
+    }catch(e){}
   }
 
   // Where the address bar was when this panel took it over. Null means the
@@ -398,7 +462,15 @@
        opened from the gallery or from an artwork used to drop the reader on the
        home page instead of back where they were. */
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
-      try{ history.replaceState({},'', pfReturnUrl || '/'); }catch(e){}
+      if(pfReturnUrl === null && typeof window.dzRouteAddress === 'function'){
+        // Opened as a section, so the entry under it is the one js/routes.js
+        // took for this visit and it holds the way back — asking it is how
+        // Escape out of your own profile returns to where you came in rather
+        // than to a hard-coded home page.
+        window.dzRouteAddress(null);
+      } else {
+        try{ history.replaceState({},'', pfReturnUrl || '/'); }catch(e){}
+      }
       pfReturnUrl = null;
     }
     // back returns to overlay

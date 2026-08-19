@@ -103,10 +103,10 @@
   // sheet already use: one entry for the whole visit to these panels, and the
   // address the visit started from so closing can hand it back.
   //
-  // `pushed` means the entry currently in the bar is one this file pushed and
-  // can therefore be stepped back off. A popstate clears it: the browser has
-  // moved and whatever it landed on is not an entry to step off — stepping
-  // back there would walk past where the member just arrived.
+  // `pushed` means the entry currently in the bar is this visit's, and so is
+  // ours to swap the address on rather than stack another one over. A
+  // popstate clears it: the browser has moved, and the entry it landed on
+  // belongs to wherever it came from.
   var pushed = false;
   var returnUrl = null;
   // True while a route is being opened, so the chip watcher does not rewrite
@@ -127,50 +127,148 @@
     if (r.panel) owns = true;
   }
 
+  /* THE ADDRESS OF THE SECTION ON SCREEN, and the one function that writes it.
+
+     One entry for the whole visit into these panels, however many sections it
+     walks through: the first one pushes, every one after it swaps. So Back is
+     a single press out of the app's panels from anywhere inside them, rather
+     than a walk back through every section you looked at.
+
+     `path` null means the member is somewhere with no public address — home,
+     or the upload page, which is one member's draft and not a page. The bar
+     goes back to where the visit came from. It used to be left alone, and
+     that is a bug with a delay on it: the address went on naming the section
+     that had just been closed, so the next refresh opened it again.
+
+     This does NOT step history back, and that is the whole of the first
+     report. Closing the community page used to do exactly that, which walked
+     onto whatever entry happened to be behind it — /profile/<name>, two taps
+     ago — and js/gallery.js's popstate handler then opened the profile over
+     the page the member had just tapped through to. A step back is a
+     navigation: it is asynchronous, it fires popstate, and every other module
+     that answers popstate answers it too. Closing a panel is not a
+     navigation, so it swaps the address in place and nothing else moves. */
+  function address(path) {
+    try {
+      if (path) {
+        owns = true;
+        if (window.location.pathname === path) {
+          /* Already the address in the bar, so there is nothing to write and
+             — this is the part that matters — nothing to record as the way
+             back. We arrived here by Back, or by opening this url directly,
+             and in both cases the entry under us is the browser's rather than
+             ours. Claiming it as a return address pointed the way out of the
+             gallery AT the gallery. The entry is still ours to swap on the
+             next move, which is what `pushed` means from here. */
+          pushed = true;
+          return;
+        }
+        if (pushed) {
+          history.replaceState({ dzr: 1 }, '', path);
+        } else {
+          returnUrl = window.location.pathname + window.location.search;
+          history.pushState({ dzr: 1 }, '', path);
+          pushed = true;
+        }
+      } else {
+        owns = false;
+        // The way back, unless it is an address that would itself open
+        // something. The visit may have started at an artwork, and handing
+        // the bar back to /artwork/<id> with the viewer shut is the very
+        // thing being fixed, one step removed. '/' is the only address that
+        // opens nothing.
+        var back = returnUrl && !addressOfAClosedPanel(returnUrl) ? returnUrl : '/';
+        // Nothing to hand back if the bar is already somewhere harmless.
+        if (window.location.pathname !== '/' &&
+            window.location.pathname + window.location.search !== back) {
+          history.replaceState({ dzr: 1 }, '', back);
+        }
+      }
+    } catch (e) {}
+  }
+  window.dzRouteAddress = address;
+
   function enter(path) {
     var r = ROUTES[path];
     if (!r) return;
     if (r.foreign) { r.open(); return; }   // auth.js writes its own address
 
-    if (r.panel) {
-      try {
-        if (pushed) {
-          // Already inside these panels. The gallery is one place, not one
-          // place per section walked through, so the address is swapped
-          // rather than stacked — Back leaves in a single press however far
-          // along the row you are.
-          if (window.location.pathname !== path) history.replaceState({ dzr: 1 }, '', path);
-        } else {
-          returnUrl = window.location.pathname + window.location.search;
-          if (window.location.pathname !== path) history.pushState({ dzr: 1 }, '', path);
-          pushed = true;
-        }
-      } catch (e) {}
-    }
-    // Home has no address of its own to write: the panel it closes hands the
-    // bar back through the watcher below, which is the same path a tap on
-    // Home has always taken.
-    run(r);
+    if (window.dzNavBegin) window.dzNavBegin();
+    try { run(r); } finally { if (window.dzNavEnd) window.dzNavEnd(); }
+    // After the open, not before it: the openers sweep whatever was up on
+    // their way in, and a sweep is where the stale-address handlers live.
+    // Writing the address last means the move gets the last word on it.
+    // Home has no address of its own, so it asks for the bar to be made true
+    // rather than claiming one.
+    if (r.panel) address(path); else audit();
   }
 
-  // A panel that this file's address is pointing at has closed — by the nav,
-  // by Escape, by its own close button, it does not matter which. Hand the
-  // address back rather than leaving it naming a section nobody is looking at.
-  function panelClosed(panelId) {
-    var r = ROUTES[window.location.pathname];
-    // Not the panel this address names, so this close is somebody else's:
-    // moving between two routes shuts the outgoing panel on the way in, and
-    // the address is already pointing at the incoming one by the time this
-    // runs. Leaving `owns` alone matters — clearing it here left the panel
-    // that had JUST opened disowned, and Back then walked off the route with
-    // it still on screen.
-    if (!r || r.panel !== panelId) return;
-    owns = false;
-    try {
-      if (pushed) { pushed = false; history.back(); }
-      else history.replaceState({}, '', returnUrl || '/');
-    } catch (e) {}
-    returnUrl = null;
+  /* Which panel the address currently in the bar is the address OF.
+
+     Every one of these paths re-opens its panel on a reload — that is what
+     makes them worth having — so an address naming a panel that is not open
+     is a refresh away from opening something the member did not ask for.
+     Listed by pattern rather than by exact path because four of them belong
+     to a row of items rather than to one page. */
+  var ADDRESSED = [
+    { re: /^\/(?:explore|marketplace|resources|blog)\/?$/, panel: 'fg' },
+    { re: /^\/community\/?$/,                             panel: 'communityPage' },
+    { re: /^\/profile\/./,                                panel: 'profilePage' },
+    { re: /^\/artwork\/./,                                panel: 'artModal' },
+    { re: /^\/(?:resource|blog|listing|job)\/./,          panel: 'dzView' },
+    { re: /^\/login\/?$/,                                 panel: 'authMod' }
+  ];
+
+  /* THE INVARIANT: the address never names a panel that is not on screen.
+
+     Every module that opens a panel with an address of its own is supposed to
+     hand that address back when the panel closes, and most of the time each
+     of them does. What none of them can see is the other five: a panel closed
+     by somebody else's sweep, by a close that bailed out early because the
+     class had already gone, by a failed load — each of those leaves an
+     address behind that the next reload will act on.
+
+     So rather than one more rule per module, the rule is checked. Any panel
+     closing sets this off; if the bar names a panel that is not open, the bar
+     is wrong and is put back. It cannot fix a missing close, and it is not
+     meant to: it makes the address bar's claim true, which is what a reload,
+     a share and the Back button all read. */
+  // Does this url name a panel that is not on screen? True means a reload of
+  // it would open something the member is not looking at.
+  function addressOfAClosedPanel(url) {
+    var p = String(url).split('#')[0].split('?')[0];
+    for (var i = 0; i < ADDRESSED.length; i++) {
+      if (ADDRESSED[i].re.test(p)) return !isOpen(ADDRESSED[i].panel);
+    }
+    return false;
+  }
+
+  var auditTimer = null;
+  function audit() {
+    auditTimer = null;
+    if (addressOfAClosedPanel(window.location.pathname)) address(null);
+  }
+  /* Called after a move that had no address of its own to write — Home, the
+     upload page — where "no address" is not the same as "the home address".
+     A guest tapping Profile gets the sign-in sheet, and /login is the right
+     thing for the bar to say; the audit knows that because the sheet is open.
+     Overwriting it with '/' unconditionally would have been the same class of
+     bug this whole file is about, in the other direction. */
+  window.dzRouteAudit = audit;
+
+  /* A panel closed. Which panel, and by whose hand, does not matter: the
+     question is only whether the address is still true, and it is asked one
+     task later — a close and the open that replaces it are two separate
+     statements, and the moment between them is not a state to judge. A move
+     in progress answers it itself, at the end, so this stands down for one. */
+  function auditSoon() {
+    if (window.dzNavMoving && window.dzNavMoving()) return;
+    if (auditTimer) return;
+    auditTimer = setTimeout(function () {
+      auditTimer = null;
+      if (window.dzNavMoving && window.dzNavMoving()) return;
+      audit();
+    }, 0);
   }
 
   // The browser moved. Put the panels where the new address says they should
@@ -263,13 +361,17 @@
       new MutationObserver(chipMoved)
         .observe(tabs, { subtree: true, attributes: true, attributeFilter: ['class'] });
     }
-    ['fg', 'communityPage'].forEach(function (id) {
-      var node = el(id);
+    /* Every panel with an address, and not just this file's two. The two are
+       the ones this file opens; the rest are opened by js/gallery.js,
+       js/profile.js, js/sections.js and js/auth.js, and it is precisely the
+       ones nobody here is watching whose addresses were being left behind. */
+    ADDRESSED.forEach(function (a) {
+      var node = el(a.panel);
       if (!node) return;
       var was = node.classList.contains('open');
       new MutationObserver(function () {
         var now = node.classList.contains('open');
-        if (was && !now) panelClosed(id);
+        if (was && !now) auditSoon();
         was = now;
       }).observe(node, { attributes: true, attributeFilter: ['class'] });
     });

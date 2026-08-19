@@ -175,6 +175,13 @@
   function setDropBack() {
     if (setBackMo) { setBackMo.disconnect(); setBackMo = null; }
   }
+  /* The watcher above is right about a sub-page being closed by its own back
+     arrow and wrong about one being swept out of the way by a section move:
+     it would see the page gone and a profile open — the profile the member
+     has just navigated TO — and slide Settings in over it, unasked. So the
+     sweep drops it first (js/pfedit.js). Nothing else needs this, which is
+     why the function itself stays private. */
+  window.dzSetDropBack = setDropBack;
 
   // likes, bookmarks, friends counts
   async function pfMenuRefreshCounts() {
@@ -624,11 +631,13 @@
     // queued upload after login
     if(currentUser && sessionStorage.getItem('pendPfUp')==='1'){
       sessionStorage.removeItem('pendPfUp');
-      // open upload as a page
+      // Open upload as a page — through the nav's own entry and not by
+      // repeating its three steps here. Sweeping, opening and lighting the
+      // tab by hand skipped the fourth step nobody had written down: the
+      // address bar was left reading /login, and the next reload opened the
+      // sign-in sheet over the upload page it had just been dismissed from.
       setTimeout(function(){
-        if(typeof bnCloseAllSections==='function') bnCloseAllSections();
-        openPfUpload();
-        if(typeof bnSetActive==='function') bnSetActive('bnUpload');
+        if(typeof bnGoUpload==='function') bnGoUpload();
       },250);
     }
   }

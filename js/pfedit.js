@@ -185,56 +185,94 @@
     });
   }
 
-  // one section at a time
+  /* One section at a time, and every panel in the app counts as one.
+
+     This used to be nine hand-written close() calls, and what was missing
+     from them is what stayed on screen: the ranking board, the theme page,
+     Artist Progress, the album pages, the artwork viewer, the item viewer,
+     Settings and every page Settings opens. Tapping Home with any of those up
+     closed the section UNDERNEATH and left the panel itself standing over the
+     home page, with Home lit in the nav.
+
+     The list lives on the panel table in js/app-core.js now, so a panel is
+     swept because it exists rather than because somebody remembered to add a
+     line here. */
   function bnCloseAllSections(){
-    closeFG();
-    closeCommunityPage();
-    closeProfilePage();
-    closeSubscription();
-    closeAuthMod();
-    if(typeof dzOpsClose === 'function') dzOpsClose();
-    // close my work too
-    closeMyWorkPage();
-    closeNotifPage();
-    // close upload too
-    closePfUpload();
+    // Settings puts a page in front of itself and watches for that page to
+    // close so it can come back. A sweep closes both, and the watcher would
+    // fire afterwards, find a profile open — the one we are on our way to —
+    // and slide Settings in over a section nobody opened it from.
+    if(typeof window.dzSetDropBack === 'function') window.dzSetDropBack();
+    window.dzCloseAllPanels();
+  }
+
+  /* Going somewhere is a sweep and an open, and the two have to be one move.
+
+     Held open across both: the watchers that react to a panel closing run
+     after this returns and must not read a half-finished switch as "the
+     member closed the community page" (js/routes.js used to step history back
+     there, which is how tapping Upload could land you on a profile). And the
+     token is what an opener that has to wait for the database checks before
+     it paints — by then the member may have tapped twice more, and the
+     section they are looking at is not this one.
+
+     `path` is the address of where this lands. Every move sets it, including
+     the moves whose destination has no url of its own: leaving the address
+     naming the section you just left is what made a refresh re-open it. */
+  function bnGo(id, path, open){
+    var token = window.dzNavBegin();
+    try{
+      bnCloseAllSections();
+      // Lit before the open and not after it, so a slow opener cannot leave
+      // the nav marking the section being left.
+      bnSetActive(id);
+      open(token);
+    } finally {
+      window.dzNavEnd();
+      /* The move gets the last word on the address, after the sweep and after
+         the open. A destination with a url of its own says so; one without —
+         Home, Upload — asks js/routes.js to make the bar true instead of
+         forcing it to '/', because "no address of my own" is not the same as
+         "the home address": a guest tapping Profile lands on the sign-in
+         sheet, and /login is the right thing for the bar to say. */
+      if(path && typeof window.dzRouteAddress === 'function') window.dzRouteAddress(path);
+      else if(!path && typeof window.dzRouteAudit === 'function') window.dzRouteAudit();
+    }
   }
 
   function bnGoHome(){
-    bnCloseAllSections();
-    // the nav keeps each section's place: coming back to home lands where
-    // you left it, and tapping home from home is what rides to the top.
-    // without that script this is still the only way up, so it stays
-    if(!window.bnScrollMemory){
-      var hero = document.getElementById('hero');
-      if(hero) hero.scrollIntoView({behavior:'smooth', block:'start'});
-      else window.scrollTo({top:0, behavior:'smooth'});
-    }
-    bnSetActive('bnHome');
+    bnGo('bnHome', null, function(){
+      // the nav keeps each section's place: coming back to home lands where
+      // you left it, and tapping home from home is what rides to the top.
+      // without that script this is still the only way up, so it stays
+      if(!window.bnScrollMemory){
+        var hero = document.getElementById('hero');
+        if(hero) hero.scrollIntoView({behavior:'smooth', block:'start'});
+        else window.scrollTo({top:0, behavior:'smooth'});
+      }
+    });
   }
   function bnGoGallery(){
-    bnCloseAllSections();
-    ddOpenGallery();
-    bnSetActive('bnGallery');
+    bnGo('bnGallery', '/explore', ddOpenGallery);
   }
   // upload is a destination
   function bnGoUpload(){
-    // guests can view, gate on submit
-    bnCloseAllSections();
-    openPfUpload();
-    bnSetActive('bnUpload');
+    // guests can view, gate on submit. No public url — one member's draft is
+    // not a page — so the address goes back to where the visit came from.
+    bnGo('bnUpload', null, openPfUpload);
   }
   function bnGoCommunity(){
-    bnCloseAllSections();
-    ddOpenCommunity();
-    bnSetActive('bnCommunity');
+    bnGo('bnCommunity', '/community', ddOpenCommunity);
   }
   function bnGoProfile(e){
     if(e) e.stopPropagation();
-    // route through close all
-    bnCloseAllSections();
-    if(currentUser){ openOwnProfile(); } else { openAuthMod(); }
-    bnSetActive('bnProfile');
+    /* No path: whose profile this is may take a round trip to answer, so
+       js/profile.js writes /profile/<name> itself the moment the panel opens.
+       Signed out this is the sign-in sheet, which owns /login the same way. */
+    bnGo('bnProfile', null, function(token){
+      if(currentUser) openOwnProfile(token);
+      else openAuthMod();
+    });
   }
   // default state
   bnSetActive('bnHome');

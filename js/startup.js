@@ -2,6 +2,13 @@
   (
 
   async function init(){
+    /* Which move the page booted on — none, and that is the point. Everything
+       below waits on the database and then opens a panel from the address,
+       and a member who taps a section while that wait is running has said
+       where they want to be more recently than the url did. Opening the deep
+       link on top of them is the same bug as every other one this token
+       exists for, with the page load as the stale opener. */
+    var boot = window.dzNavToken ? window.dzNavToken() : null;
     /* THE FETCH STARTS NOW; THE WORK BELOW WAITS FOR THE PAGE TO FINISH
        PARSING. Everything after this point reaches into a file that loads
        AFTER this one — renderHome needs rebuildGalCarousels from js/feed.js,
@@ -30,12 +37,15 @@
     if(typeof window._heroLoadCb === 'function'){
       window._heroLoadCb(null);
     }
+    var stillBooting = (boot === null) ||
+                       (typeof window.dzNavCurrent !== 'function') ||
+                       window.dzNavCurrent(boot);
     // decoded, like the profile branch below and like js/engagement.js reading
     // the same segment — three readers of one path had two conventions
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
-    if(m) openArtworkById(dzDecodeSeg(m[1]), false);
+    if(m && stillBooting) openArtworkById(dzDecodeSeg(m[1]), false);
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
-    if(pm) openProfileByUsername(dzDecodeSeg(pm[1]), false);
+    if(pm && stillBooting) openProfileByUsername(dzDecodeSeg(pm[1]), false);
     /* /login used to be opened from here, and it does not belong here: every
        other deep link on this line needs a row out of the database and waits
        on `loading` for it, and the sign-in sheet needs nothing at all. It sat
@@ -48,7 +58,7 @@
     // link. Same shape as /artwork/<id>, and the same rule: the row is fetched
     // by id rather than hoping the section it belongs to has been browsed.
     var sm = window.location.pathname.match(/^\/(resource|blog|listing|job)\/([^/]+)\/?$/);
-    if(sm && typeof window.dzOpenById === 'function') window.dzOpenById(sm[1], sm[2]);
+    if(sm && stillBooting && typeof window.dzOpenById === 'function') window.dzOpenById(sm[1], sm[2]);
     // gallery structured data
     injectGallerySEO();
   })();

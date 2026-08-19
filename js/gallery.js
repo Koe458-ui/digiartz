@@ -988,6 +988,15 @@
     var m = window.location.pathname.match(/^\/artwork\/([^/]+)\/?$/);
     var pm = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
     if(m){
+      /* Already on screen. A Back or Forward that lands on the address of the
+         panel already open — stepping out of a profile opened from an
+         artwork, say — has nothing to do: re-opening would tear the panel
+         down and rebuild it from a fresh fetch, which reads as a flicker and
+         loses the reader's place in it. */
+      var artId = dzDecodeSeg(m[1]);
+      var _am = document.getElementById('artModal');
+      if(_am && _am.classList.contains('open') &&
+         avCurrentArt && String(avCurrentArt.id) === String(artId)) return;
       // close profile, reopen viewer
       var _fromGal = avLbFromGallery;
       if(document.getElementById('profilePage').classList.contains('open')) closeProfilePage(false);
@@ -998,9 +1007,14 @@
           if(typeof bnSetActive==='function') bnSetActive('bnGallery');
         }
       }
-      openArtworkById(dzDecodeSeg(m[1]), false);
+      openArtworkById(artId, false);
     } else if(pm){
-      openProfileByUsername(dzDecodeSeg(pm[1]), false);
+      var uname = dzDecodeSeg(pm[1]);
+      var _pp = document.getElementById('profilePage');
+      var shown = (typeof pf === 'object' && pf && pf.profile) ? pf.profile.username : null;
+      if(_pp && _pp.classList.contains('open') && shown &&
+         String(shown).toLowerCase() === String(uname).toLowerCase()) return;
+      openProfileByUsername(uname, false);
     } else if(window.location.pathname === '/login'){
       openAuthMod();
     } else {

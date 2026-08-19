@@ -4,6 +4,50 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v195 — one table of panels, and one writer for the address bar.
+
+       Three reports, one shape. Fast-switching between Profile,
+       Community and Upload put the wrong section on screen; a reload
+       sometimes opened a profile nobody had asked for; and tapping Home
+       left a section standing over the home page.
+
+       All three came out of the same thing: four separate hand-written
+       lists of which panels exist, and three modules each stepping
+       history BACK to close one.
+
+       The step back is the first two reports. Closing the community page
+       called history.back(), which is a navigation — asynchronous, and
+       answered by the popstate handler in every module that has one. It
+       walked onto whatever entry happened to be behind it, often
+       /profile/<name> from two taps earlier, and js/gallery.js then
+       opened that profile over the page just tapped through to. It also
+       left the bar reading /profile/<name>, which the next reload acted
+       on. Nothing closes a panel by stepping back any more: the entry is
+       swapped in place, and js/routes.js audits the bar after every
+       close so it can never name a panel that is not on screen.
+
+       The lists are the third. bnCloseAllSections was nine close() calls
+       written before the ranking board, the theme page, the artwork
+       viewer, the item viewer, the album pages, the gallery's filter
+       sheet, Settings and every page Settings opens — so tapping Home
+       with any of those up closed the section UNDER them. One table in
+       js/app-core.js now answers who holds the scroll lock, who hides
+       the nav, who hides the widgets and who gets swept, and the three
+       lists that each answered one of those are gone.
+
+       And a move is a move: the sweep and the open are held together, so
+       an opener that has to wait for the database — your own profile —
+       checks whether it is still the move the member is on before it
+       paints anything.
+
+       scripts/check-sections.mjs fails the build if a panel exists that
+       the table does not know about, if the table names a close function
+       that does not exist, or if a step back comes back.
+       Changed: js/app-core.js, js/routes.js, js/pfedit.js, js/profile.js,
+       js/gallery.js, js/sections.js, js/auth.js, js/startup.js,
+       js/zeo.js, index.html, sw.js, scripts/check-sections.mjs,
+       .github/workflows/checks.yml.
+
    v194 — the block that still thought there was one theme.
 
        css/panels.css opened with a section called "dark theme overrides".
@@ -3583,7 +3627,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v194';
+const CACHE_VERSION = 'v195';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3668,18 +3712,18 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=29',
+  '/js/app-core.js?v=30',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=88',
-  '/js/auth.js?v=17',
-  '/js/profile.js?v=15',
+  '/js/gallery.js?v=89',
+  '/js/auth.js?v=18',
+  '/js/profile.js?v=16',
   '/js/albums.js?v=16',
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=14',
+  '/js/pfedit.js?v=15',
   '/js/mywork.js?v=22',
-  '/js/startup.js?v=6',
+  '/js/startup.js?v=7',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=11',
   '/js/feed.js?v=3',
@@ -3687,12 +3731,12 @@ const SHELL_URLS = [
   '/js/effects.js?v=9',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
-  '/js/zeo.js?v=1',
+  '/js/zeo.js?v=2',
   '/js/theme.js?v=5',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=116',
-  '/js/routes.js?v=1',
+  '/js/sections.js?v=117',
+  '/js/routes.js?v=2',
   '/js/navprogress.js?v=5'
 ];
 

@@ -38,6 +38,23 @@ jobs:
       # wrong, which is why reviewing the classes did not catch it.
       - run: node scripts/check-overlays.mjs
 
+  sections:
+    name: one table of panels, one writer for the address bar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Three bugs came out of the same shape: four hand-written lists of
+      # which panels exist, and three modules each stepping history back to
+      # close one. A panel missing from a list stayed on screen when the
+      # member changed section; a step back fired popstate, which every other
+      # module answered, so tapping Upload could open a profile; and the
+      # address bar was left naming a section that had been closed, which the
+      # next reload acted on. This fails if any of the three can come back.
+      - run: node scripts/check-sections.mjs
+
   cache:
     name: cache keeps one member's data out of another's session
     runs-on: ubuntu-latest

@@ -131,6 +131,11 @@
     resumeBubble();
   }
 
+  // The sweep in js/app-core.js shuts this with everything else when the
+  // member changes section; without a name to call it would have been closed
+  // by its class, which leaves the launcher button still saying it is open.
+  window.zeoCloseChat = closeChat;
+
   function toggleChat() {
     if (isOpen) closeChat(); else openChat();
   }

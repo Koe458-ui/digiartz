@@ -4,6 +4,34 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v193 — the ad label sits over the ad it labels.
+
+       Both halves of the slot measured as centred to the pixel and still
+       read as misaligned, for two reasons that do not show up in a
+       measurement of the boxes.
+
+       The label ran the full width of the column while the box was held at
+       728 inside it, so the rule either side of the word overshot the ad
+       by 28px at each end. Two centred things of different widths do not
+       look centred, they look off. The label takes the ad's measure now —
+       one max-width for both, centred together — so the block has one set
+       of edges.
+
+       And letter-spacing applies after every character including the last,
+       so ADVERTISEMENT carried one space-width of nothing on its right and
+       every glyph sat that much left of true centre. The trailing space is
+       pulled back off the flex item on both the label and the NO ADS
+       placeholder, which puts the glyphs in the middle rather than the box
+       around them.
+
+       The placeholder itself was already dead centre on both axes and
+       stays that way — inset:0 makes its box the ad's box exactly, so it
+       centres in the 728x90 a desktop gets, in the narrower one a phone
+       gets, and it follows the box if a taller unit grows it. NO ADS is
+       wrapped in a span now so the same trailing-space correction can
+       reach it.
+       Changed: css/overrides.css, js/effects.js, index.html, sw.js.
+
    v192 — the six Browse destinations become six documents.
 
        Every route on this site answers with the same file. index.html is
@@ -3522,7 +3550,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v192';
+const CACHE_VERSION = 'v193';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3586,7 +3614,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=6',
   '/css/upload.css?v=13',
   '/css/widgets.css?v=9',
-  '/css/overrides.css?v=14',
+  '/css/overrides.css?v=15',
   '/css/select.css?v=3',
   '/css/analytics.css?v=7',
 
@@ -3623,7 +3651,7 @@ const SHELL_URLS = [
   '/js/search.js?v=11',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
-  '/js/effects.js?v=8',
+  '/js/effects.js?v=9',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',

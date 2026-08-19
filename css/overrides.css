@@ -307,15 +307,27 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
    comments down by a gap it never earned. On Max, where nothing is written
    into it, it takes no room at all. */
 #avAdSlot:empty{ display:none; }
-.dzAd{ display:flex; flex-direction:column; gap:.7rem; }
+/* The label and the ad are one block, so they take one measure. Both are
+   held to 728 and centred in the column: before this the label ran the full
+   width of the column and the box was held at 728 inside it, so the rule
+   either side of the word overshot the ad it was labelling by 28px at each
+   end. Two centred things with different widths do not read as centred —
+   they read as misaligned — even though both were, to the pixel. */
+.dzAd{ display:flex; flex-direction:column; align-items:center; gap:.7rem; }
 .dzAdLbl{
-  display:flex; align-items:center; gap:.75rem;
+  width:100%; max-width:728px;
+  display:flex; align-items:center; justify-content:center; gap:.75rem;
   font-family:var(--fm); font-size:.6rem; letter-spacing:.28em;
   text-transform:uppercase; color:var(--txd);
 }
 .dzAdLbl::before,
 .dzAdLbl::after{ content:''; flex:1 1 auto; height:1px; background:var(--bdr); }
-.dzAdLbl span{ flex:0 0 auto; }
+/* Letter-spacing is applied after every character including the last, so a
+   centred word carries one space-width of nothing on its right and sits that
+   much left of true centre. Pulling the trailing space back off the flex item
+   puts the glyphs themselves in the middle, which is where the eye measures
+   from. Same reason on the placeholder below. */
+.dzAdLbl span{ flex:0 0 auto; margin-right:-.28em; }
 .dzAdBox{
   position:relative;
   width:100%; max-width:728px; margin:0 auto;
@@ -331,11 +343,17 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 .dzAdNone{
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
+  text-align:center;
   font-family:var(--fm); font-size:.62rem; letter-spacing:.22em;
   color:var(--txd); opacity:.5;
   border:1px dashed var(--bdr); border-radius:10px;
   pointer-events:none;
 }
+/* Dead centre of the whole slot, on both axes, whatever size the slot is:
+   inset:0 makes this box the ad's box exactly, so it centres in the 728x90
+   a desktop gets and in the narrower one a phone gets, and it follows the
+   box if a taller unit grows it. */
+.dzAdNone span{ margin-right:-.22em; }
 .dzAdBox[data-filled] .dzAdNone{ display:none; }
 @media(max-width:520px){
   .dzAdBox{ min-height:60px; }

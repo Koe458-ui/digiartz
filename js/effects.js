@@ -104,7 +104,7 @@
     return '<div class="dzAd" data-dz-ad>' +
              '<div class="dzAdLbl"><span>Advertisement</span></div>' +
              '<div class="dzAdBox">' +
-               '<div class="dzAdNone">NO ADS</div>' +
+               '<div class="dzAdNone"><span>NO ADS</span></div>' +
              '</div>' +
            '</div>';
   };

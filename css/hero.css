@@ -1104,7 +1104,6 @@
       background:var(--bg);
       padding:0 var(--shellPad) clamp(1.3rem,3vw,1.9rem);
     }
-    .qlWrap{margin:0 auto;}
     .qlRail{
       display:flex;gap:var(--qlGap);align-items:stretch;
       overflow-x:auto;overscroll-behavior-x:contain;
@@ -1176,9 +1175,8 @@
     @media(min-width:768px){ #quickLinks{--qlPer:4;--qlGap:.7rem;--qlIco:32px;} } /* tablet */
     @media(min-width:1024px){ #quickLinks{--qlPer:5;--qlGap:.8rem;--qlIco:34px;} }/* desktop */
     @media(min-width:1440px){ #quickLinks{--qlPer:6;} }                           /* large desktop */
-    /* Ultrawide used to cap the rail at 1440 on its own. The shell holds
-       every band at --shellMax now, so a second cap here would pull the rail
-       in off the edge the thumbnails under it land on. */
+    /* Ultrawide holds at six across and stops growing: the shell caps the band
+       at --shellMax, so the rail stops with the thumbnails under it. */
 
     /* very narrow phones: 2 across still has to breathe */
     @media(max-width:359px){

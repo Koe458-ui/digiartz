@@ -20,7 +20,7 @@
    picture above them takes, which is the shell's. An 860px column centred
    inside a wider one is the floating card this layout is not. */
 #artModal .avSide{width:100%;margin:0;border-left:0;flex:0 0 auto;background:transparent;}
-#artModal .avSideScroll{height:auto;max-height:none;overflow:visible;padding-bottom:6rem;}
+#artModal .avSideScroll{height:auto;max-height:none;overflow:visible;}
 /* top bars */
 #artModal .avTopBar,.dzvTop{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.1rem;border-bottom:1px solid var(--bdr);background:var(--bg);}
 .avNavTxt{background:none;border:0;padding:.35rem .2rem;margin:0;cursor:pointer;
@@ -65,7 +65,7 @@
 #dzView.open{display:flex;}
 .dzvTop{flex-shrink:0;}
 .dzvBody{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:6rem;}
-.dzvMedia{background:transparent;padding:1rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;text-align:center;}
+.dzvMedia{background:transparent;box-sizing:border-box;text-align:center;}
 .dzvMedia img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
 .dzvCol{margin:0;padding:1.2rem 1.2rem 2rem;display:flex;flex-direction:column;gap:1.1rem;}
 .dzvTitle{font-family:var(--fd);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0;color:var(--tx);}

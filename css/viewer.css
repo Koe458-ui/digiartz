@@ -1,12 +1,10 @@
 /* artwork viewer */
     /* artwork viewer modal */
+    /* The viewer is full screen on every device — #artModal .avBox in
+       css/overrides.css owns its size. What is left here is the surface it is
+       drawn on and the way it arrives. */
     .avBox{
       position:relative;
-      width:min(1400px,94vw);
-      height:min(860px,90vh);
-      /* dvh for mobile viewport */
-      height:min(860px,90dvh);
-      max-width:1400px;
       display:flex;
       flex-direction:column;
       background:var(--sur);
@@ -27,7 +25,6 @@
     .avTopBar{
       flex:0 0 auto;
       display:flex;align-items:center;justify-content:space-between;
-      padding:.9rem 1.3rem;
       border-bottom:1px solid var(--bdr);
       position:relative;
       z-index:6;
@@ -218,17 +215,13 @@
       .dlqActions{flex-direction:column-reverse;}
     }
     @media(max-width:900px){
-      #artModal{padding:.7rem;}
-      .avBox{width:100%;height:96vh;height:96dvh;border-radius:16px;}
-      .avBody{flex-direction:column;}
-      .avImgPane{flex:0 0 44%;}
-      .avSide{flex:1 1 auto;width:100%;border-left:none;border-top:1px solid var(--bdr);}
+      /* Stacked, so the notes are under the picture rather than beside it and
+         the rule that separates them turns with them. Everything else this
+         block used to say — the modal's padding, the box's size, the column
+         direction, the panes' flex, the side column's width — is the shell's
+         now, in css/overrides.css. */
+      .avSide{border-top:1px solid var(--bdr);}
       .avTitle{font-size:1.2rem;}
-    }
-    @media(max-width:480px){
-      #artModal{padding:.5rem;}
-      .avTopBar{padding:.7rem 1rem;}
-      .avSideScroll{padding:1.2rem 1.1rem;}
     }
     @media(prefers-reduced-motion:reduce){
       .avImgViewport img{transition:none;}

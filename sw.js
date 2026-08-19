@@ -3681,7 +3681,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=10',
   '/css/hero.css?v=97',
-  '/css/viewer.css?v=15',
+  '/css/viewer.css?v=16',
   '/css/community.css?v=15',
   '/css/connect.css?v=5',
   '/css/ranking.css?v=3',

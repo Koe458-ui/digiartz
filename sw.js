@@ -3680,7 +3680,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=10',
-  '/css/hero.css?v=97',
+  '/css/hero.css?v=99',
   '/css/viewer.css?v=16',
   '/css/community.css?v=15',
   '/css/connect.css?v=5',
@@ -3691,7 +3691,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=8',
   '/css/upload.css?v=13',
   '/css/widgets.css?v=10',
-  '/css/overrides.css?v=16',
+  '/css/overrides.css?v=17',
   '/css/select.css?v=3',
   '/css/analytics.css?v=8',
 
@@ -3708,7 +3708,7 @@ const SHELL_URLS = [
   '/js/cache.js?v=1',
   '/js/ranking.js?v=3',
   '/js/community.js?v=6',
-  '/js/dm.js?v=9',
+  '/js/dm.js?v=10',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',

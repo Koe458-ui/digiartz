@@ -65,8 +65,20 @@ scroll through the gallery evicts the app itself.
 release is therefore a *different URL*, and a copy under the old URL cannot be
 wrong, only unused. `scripts/check-precache.mjs` fails the build if a reference
 is missing its `?v=`, if `index.html` and `sw.js` disagree about a version, or
-if the precache list holds something the page does not load. That check is what
-lets `_headers` serve `/js/*` and `/css/*` with `max-age=31536000, immutable`.
+if the precache list holds something the page does not load.
+
+That is only half of it, and the other half went unenforced for a long time:
+the number has to *move* when the file does. A stylesheet edited under a `?v=`
+that has already shipped is served to new visitors and to nobody else — the
+browser was told a year ago that this URL is `immutable`, so it never asks
+again, and the service worker answers it cache-first besides. The deploy
+succeeds, the edge holds the right bytes, and the returning visitor keeps last
+week's copy. "The update did not apply" is what that looks like from outside.
+A walk of the history found it in dozens of commits, and three assets were live
+in that state the day it was found. `scripts/check-cachebust.mjs` compares
+every versioned asset against the copy `origin/main` serves and fails when one
+changed without a new number. Those two checks together are what lets `_headers`
+serve `/js/*` and `/css/*` with `max-age=31536000, immutable`.
 
 **Why images can be held for a year.** Every upload path carries a timestamp —
 `artworks/<uid>/<ms>_<name>`, `avatars/<uid>/<ms>.jpg`,

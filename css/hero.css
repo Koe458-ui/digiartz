@@ -1140,9 +1140,21 @@
     }
     .qlDesc{
       font-family:var(--fb);font-size:clamp(.72rem,1.9vw,.82rem);
-      color:var(--txd);line-height:1.35;max-width:16ch;
-      /* two reserved lines keep the row on one grid however the copy wraps */
-      min-height:calc(2 * 1.35em);
+      color:var(--txd);line-height:1.35;
+      /* One line, and one reserved, so twelve tiles sit on one grid.
+         There used to be a 16ch cap here with two lines reserved under it,
+         which is why every description broke in half at every width — at
+         2560, in a 245px slot, on a phrase that needed 205px. The cap is
+         gone and the copy is cut to the tightest slot instead. Five across at
+         1024 is the narrowest any of them gets — 143px — and the longest line
+         measures 125px there, so every description clears its slot with room
+         to spare at every width from 320 to 3440. That margin is deliberate:
+         these are measured against the fallback face, and Inter arrives a
+         moment later with its own metrics. Roughly 21 characters is the
+         budget. Lengthen one past its slot and it wraps again and pushes this
+         tile taller than the one beside it, so the budget is the thing to
+         keep, not this rule. */
+      min-height:1.35em;
     }
     /* the icon hues are picked against charcoal, so paper uses its own
        darker cut per item — at full strength lime and cyan wash out on an

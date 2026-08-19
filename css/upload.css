@@ -110,7 +110,7 @@
     .upTopBar{
       position:sticky;top:0;z-index:12;
       min-height:3.5rem;
-      padding:.35rem 1.1rem;
+      padding:.35rem var(--shellPad);
       display:flex;align-items:center;justify-content:space-between;gap:.6rem;
       border-bottom:1px solid rgba(var(--pg-rgb),.08);
       isolation:isolate;
@@ -150,9 +150,12 @@
     }
     /* body padding — one column at every width, so on a wide screen the column
        is capped and centred rather than stretched across the whole desk */
-    #pfUpMod .upPgBdy{padding:3.5rem 10% 7.5rem;max-width:none;margin:0 auto;box-sizing:border-box;}
-    @media(max-width:1200px){#pfUpMod .upPgBdy{padding:3rem 10% 7rem;}}
-    @media(max-width:900px){#pfUpMod .upPgBdy{padding:2.5rem 1.8rem 7rem;}}
+    /* 10% was the shell before there was one, and it never capped: on an
+       ultrawide the form kept growing past the width every other page stops
+       at. The token is the same 10% on a desktop and holds at --shellMax. */
+    #pfUpMod .upPgBdy{padding:3.5rem var(--shellPad) 7.5rem;max-width:none;margin:0 auto;box-sizing:border-box;}
+    @media(max-width:1200px){#pfUpMod .upPgBdy{padding:3rem var(--shellPad) 7rem;}}
+    @media(max-width:900px){#pfUpMod .upPgBdy{padding:2.5rem var(--shellPad) 7rem;}}
     @media(max-width:640px){#pfUpMod .upPgBdy{padding:2rem 1.2rem 6.5rem;}}
     @media(max-width:420px){#pfUpMod .upPgBdy{padding:1.8rem 1rem 6rem;}}
     /* last, so it wins over the padding steps above it */

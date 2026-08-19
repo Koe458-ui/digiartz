@@ -247,8 +247,8 @@
     .cmHdr{
       position:sticky;top:0;z-index:10;
       border-bottom:1px solid var(--bdr);
-      /* reserve back button zone */
-      padding:1.1rem 4.2rem;
+      /* reserve back button zone — and never start inside the shell */
+      padding:1.1rem max(var(--shellPad),4.2rem);
       flex-shrink:0;
       display:flex;align-items:center;justify-content:center;gap:.8rem;
       isolation:isolate;
@@ -280,7 +280,7 @@
     /* narrow screens */
     @media(max-width:480px){
       .cmHdrTitle{font-size:1.02rem;letter-spacing:.08em;}
-      .cmHdr{padding:1rem 3.9rem;}
+      .cmHdr{padding:1rem max(var(--shellPad),3.9rem);}
       .cmHdrBack{left:1rem;}
     }
 
@@ -300,7 +300,7 @@
 
     /* chat banner mode */
     .cmHdrChat{display:none;align-items:center;gap:.7rem;flex:1;min-width:0;}
-    .cmHdr.chat{justify-content:flex-start;gap:.5rem;padding:.7rem 1rem;}
+    .cmHdr.chat{justify-content:flex-start;gap:.5rem;padding:.7rem var(--shellPad);}
     .cmHdr.chat .cmHdrTitle{display:none;}
     .cmHdr.chat .cmHdrChat{display:flex;}
     /* back arrow in flow */
@@ -348,7 +348,7 @@
     #communityPage .cmHdr.chat .cmHdrBack:hover,#cmChatPanel .cmHdr.chat .cmHdrBack:hover{background:var(--cmAccentDim);}
     #communityPage .cmHdrTap.on:active,#cmChatPanel .cmHdrTap.on:active{background:var(--cmAccentDim);}
     @media(max-width:480px){
-      .cmHdr.chat{padding:.6rem .8rem;}
+      .cmHdr.chat{padding:.6rem var(--shellPad);}
       .cmHdrAv{width:36px;height:36px;font-size:.92rem;}
       .cmHdrName{font-size:.9rem;}
     }
@@ -521,7 +521,7 @@
       position:relative;
       z-index:2;
       border-top:1px solid var(--bdrh);
-      padding:.75rem 1.2rem calc(.75rem + env(safe-area-inset-bottom,0px));
+      padding:.75rem var(--shellPad) calc(.75rem + env(safe-area-inset-bottom,0px));
       display:none;
       align-items:center;gap:.75rem;
       flex-shrink:0;

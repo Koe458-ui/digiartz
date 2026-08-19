@@ -1,8 +1,8 @@
 /* community tabs and theme */
     /* community and friends tab */
     .cmView{flex:1;min-height:0;flex-direction:column;}
-    .cmScroll{flex:1;min-height:0;overflow-y:auto;padding:1.4rem 1.5rem 100px;}
-    @media(max-width:640px){.cmScroll{padding:1.1rem 1.1rem 100px;}}
+    .cmScroll{flex:1;min-height:0;overflow-y:auto;padding:1.4rem var(--shellPad) 100px;}
+    @media(max-width:640px){.cmScroll{padding:1.1rem var(--shellPad) 100px;}}
 
     /* hero banner — the one block on the page whose colours are fixed rather
        than themed, so Connect/Share/Grow reads the same in every theme */
@@ -853,7 +853,7 @@
     @media(max-width:480px){
       .cpBarSend{width:40px;height:40px;padding:0;}
       .cpEmojiBtn{width:38px;height:38px;}
-      .cpBar{padding:.6rem .9rem;gap:.55rem;}
+      .cpBar{padding:.6rem var(--shellPad);gap:.55rem;}
     }
 
     /* connect */

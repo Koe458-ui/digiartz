@@ -16,14 +16,18 @@
     return VALID[v] ? v : 'graydark';
   }
 
-  /* Which theme a card stands for, read from either carrier it ships with.
-     index.html writes the id twice — data-theme for the stylesheet, value for
-     this — because everything the picker does hangs off getting it back: the
-     click applies it, syncCards ticks the matching card, and a card whose id
-     does not resolve is a card that silently does nothing when tapped. Two
-     independent attributes in the same tag cost nothing and mean one of them
-     failing to arrive is not a dead picker. */
+  /* Which theme a card stands for. Everything the picker does hangs off
+     getting this back: the tap applies it, syncCards ticks the matching
+     card. A card whose id does not resolve is a card that does nothing when
+     tapped, and says nothing about why.
+
+     The class is asked first, and it is the one to trust: a card that is on
+     screen as a card has its class attribute, because .thmCard is what draws
+     it. The two attributes stay as fallbacks. */
   function idOf (c) {
+    for (var k in VALID) {
+      if (VALID.hasOwnProperty(k) && c.classList.contains('thmCard--' + k)) return k;
+    }
     var v = c.getAttribute('data-theme') || c.getAttribute('value');
     return VALID[v] ? v : null;
   }

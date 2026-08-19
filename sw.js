@@ -4,6 +4,29 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v190 — a card is identified by what draws it.
+       v189 gave the preview its colours inline, and the previews came back.
+       The tap did not: the card's theme id was still only readable through
+       an attribute, and on the device this was reported from, that is
+       exactly what is not resolving. Two attributes rather than one had not
+       helped, so the carrier was the problem, not the count of them.
+       A card names its theme with a class now — .thmCard--graydark,
+       .thmCard--light — and js/theme.js reads that first. The class is the
+       one carrier this can trust: a card that is on screen as a card has
+       its class attribute, because .thmCard is what draws it. If the card
+       is visible, the id is readable. The attributes stay as fallbacks and
+       cost nothing.
+       css/widgets.css keys its copy of the swatch off the same class, so
+       what paints the preview and what answers the tap are one fact rather
+       than two that can disagree. The inline values on the element are
+       still the primary source and still cannot arrive separately from the
+       markup that spends them.
+       Verified at 360px, tapping both ways, four times over: as shipped,
+       with data-theme stripped, with data-theme and value both stripped,
+       and with those two and the inline style all gone. Every one ticks the
+       active card and switches on tap.
+       Changed: index.html, css/widgets.css, js/theme.js, sw.js.
+
    v189 — a theme card carries its own colours.
        The picker rendered as two correctly sized, completely empty boxes on
        at least one device, with no card ticked and nothing happening on tap.
@@ -3404,7 +3427,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v189';
+const CACHE_VERSION = 'v190';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3467,7 +3490,7 @@ const SHELL_URLS = [
   '/css/auth.css?v=1',
   '/css/panels.css?v=5',
   '/css/upload.css?v=13',
-  '/css/widgets.css?v=8',
+  '/css/widgets.css?v=9',
   '/css/overrides.css?v=13',
   '/css/select.css?v=3',
   '/css/analytics.css?v=7',
@@ -3509,7 +3532,7 @@ const SHELL_URLS = [
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
-  '/js/theme.js?v=4',
+  '/js/theme.js?v=5',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
   '/js/sections.js?v=115',

@@ -370,8 +370,15 @@
    whose colours are missing is not a preview that degrades — .thmPrev has a
    fixed aspect-ratio, so it holds its full size and paints nothing at all: a
    large, silent, empty box. The fallbacks are charcoal's, so the worst case
-   is a preview showing the wrong theme's ground rather than no theme at
-   all. */
+   is a preview showing the wrong theme's ground rather than no theme at all.
+
+   The class-keyed pair below is the same two swatches again, keyed the way
+   js/theme.js identifies a card. It is not the primary source — the inline
+   values are — but it means the stylesheet and the script agree on what
+   makes a card a charcoal card, instead of the CSS keying off one attribute
+   and the script off another. */
+.thmCard--graydark {--p-bg:#1A1A1F;--p-sur:#24242C;--p-ln:#40404E;--p-ac:#F4F4F6;}
+.thmCard--light    {--p-bg:#F7F5EB;--p-sur:#FFFEF9;--p-ln:#D8D3B8;--p-ac:#17151F;}
 .thmPrev{
   position:relative;display:block;overflow:hidden;
   background:var(--p-bg,#1A1A1F);border:1px solid var(--p-ln,#40404E);border-radius:10px;

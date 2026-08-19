@@ -24,6 +24,31 @@ jobs:
           node-version: '22'
       - run: node scripts/check-precache.mjs
 
+  cachebust:
+    name: a changed stylesheet or script carries a new ?v=
+    runs-on: ubuntu-latest
+    steps:
+      # The whole history: the check reads the file as production has it, which
+      # means resolving origin/main. A shallow clone has no main to resolve and
+      # the check refuses to run rather than passing everything.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # /css/* and /js/* are served immutable for a year and answered
+      # cache-first by the service worker, so a file whose bytes change under a
+      # url that has already shipped reaches new visitors only. The deploy looks
+      # clean, the edge is correct, and the returning visitor keeps last week's
+      # stylesheet — which is what "the update did not apply" is. It has
+      # happened in dozens of commits and was live in three assets the day this
+      # check was written.
+      - name: versions move when the files do
+        run: |
+          git fetch --no-tags origin main:refs/remotes/origin/main || true
+          node scripts/check-cachebust.mjs origin/main
+
   overlays:
     name: every dialog renders over the page, not in it
     runs-on: ubuntu-latest

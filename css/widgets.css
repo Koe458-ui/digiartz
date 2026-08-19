@@ -295,10 +295,10 @@
 }
 #themePage.open{transform:translateX(0);}
 .thmBdy{
-  max-width:1240px;margin:0 auto;
-  padding:1.4rem max(1.4rem,env(safe-area-inset-right))
+  margin:0 auto;box-sizing:border-box;
+  padding:1.4rem max(var(--shellPad),env(safe-area-inset-right))
           calc(6.5rem + env(safe-area-inset-bottom))
-          max(1.4rem,env(safe-area-inset-left));
+          max(var(--shellPad),env(safe-area-inset-left));
 }
 /* theme page intro */
 .thmIntro{text-align:center;padding:1.2rem 0 2rem;}
@@ -578,10 +578,10 @@ html.thmFade #themePage{
 .xpNote{font-family:var(--fm);font-size:.6rem;letter-spacing:.12em;color:var(--txd);text-align:center;padding:1.2rem 0;}
 @media(max-width:400px){ .xpGrid2{grid-template-columns:1fr;} }
 .bmBdy{
-  max-width:1080px;margin:0 auto;
-  padding:1.4rem max(1.4rem,env(safe-area-inset-right))
+  margin:0 auto;box-sizing:border-box;
+  padding:1.4rem max(var(--shellPad),env(safe-area-inset-right))
           calc(6.5rem + env(safe-area-inset-bottom))
-          max(1.4rem,env(safe-area-inset-left));
+          max(var(--shellPad),env(safe-area-inset-left));
 }
 .bmGrid{
   display:grid;gap:1rem;
@@ -730,10 +730,10 @@ html.thmFade #themePage{
 #albViewPage{z-index:548;}
 #albPage.open,#albViewPage.open{transform:translateX(0);}
 .albBdy{
-  max-width:1080px;margin:0 auto;
-  padding:1.4rem max(1.4rem,env(safe-area-inset-right))
+  margin:0 auto;box-sizing:border-box;
+  padding:1.4rem max(var(--shellPad),env(safe-area-inset-right))
           calc(6.5rem + env(safe-area-inset-bottom))
-          max(1.4rem,env(safe-area-inset-left));
+          max(var(--shellPad),env(safe-area-inset-left));
 }
 .albNote{
   font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;color:var(--txd);

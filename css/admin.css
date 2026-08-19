@@ -15,8 +15,8 @@
     }
     #admPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
     #admPage .subPgTitle{color:var(--tx);}
-    .admBdy{max-width:1100px;margin:0 auto;padding:1.6rem 2rem 6rem;}
-    @media(max-width:480px){.admBdy{padding:1.2rem 1.2rem 6rem;}}
+    .admBdy{margin:0 auto;box-sizing:border-box;padding:1.6rem var(--shellPad) 6rem;}
+    @media(max-width:480px){.admBdy{padding:1.2rem var(--shellPad) 6rem;}}
 
 
     /* tabs */

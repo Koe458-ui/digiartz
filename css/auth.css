@@ -78,7 +78,6 @@
     @media(max-width:480px){
       .awGrid{
         gap:.3rem;
-        padding:0 .6rem;
       }
     }
 

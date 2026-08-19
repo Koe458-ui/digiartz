@@ -11,7 +11,6 @@
       overflow-y:auto;overflow-x:hidden;transform:translateX(100%);
       transition:transform .45s cubic-bezier(.22,1,.36,1);
       --pfBlue:#2563EB;--pfBlueH:#1D4ED8;
-      --pfPad:clamp(1rem,4.2vw,1.5rem);
       --pfBarH:3.5rem;
     }
     #profilePage.open{transform:translateX(0);}
@@ -315,21 +314,15 @@
       font-family:var(--fb);font-size:.9rem;color:var(--txd);
     }
 
-    /* Past 1280 the artwork grid stops at 1680 and centres, the same as the
-       grid on the home screen. The blocks above it hold that same edge, so a
-       tile, a tab and a thumbnail all start on one line. */
-    @media(min-width:1280px){
-      .pfId,.pfTiles,.pfTabGroup,.pfAboutWrap,
-      .pfGrid,#profilePage .albGrid,#profilePage .dzList,#profilePage .xpWrap{
-        max-width:1680px;margin-left:auto;margin-right:auto;
-        padding-left:24px;padding-right:24px;
-      }
-      /* the bars are full bleed, so they cannot be capped — they take the
-         inset the capped content lands on, and the title stays over the name */
-      .pfTopBar,.pfSrchHdr{
-        padding-inline:max(24px,calc((100% - 1680px) / 2 + 24px));
-      }
-    }
+    /* Every block on the profile already measures from --pfPad, and --pfPad is
+       the shell from the tablet up — so the identity, the tiles, the tabs and
+       the thumbnails all start on one line without a cap of their own. The
+       two that did not read the token are added here.
+
+       The level panel's own cap is lifted with the rest of them — it lays its
+       cards out across the shell on a desktop, in css/overrides.css. */
+    #profilePage .xpWrap{ max-width:none; }
+    .pfTopBar,.pfSrchHdr{ padding-inline:var(--pfPad); }
 
     /* about */
     .pfAboutWrap{
@@ -375,7 +368,6 @@
       position:fixed;inset:0;z-index:530;background:var(--bg);color:var(--tx);
       overflow-y:auto;overflow-x:hidden;transform:translateX(100%);
       transition:transform .38s cubic-bezier(.22,1,.36,1);
-      --pfPad:clamp(1rem,4.2vw,1.5rem);
     }
     #pfSearchPage.open,#fgSearchPage.open{transform:translateX(0);}
     @media(prefers-reduced-motion:reduce){ #pfSearchPage,#fgSearchPage{transition:none;} }

@@ -170,6 +170,55 @@
       --heading-color:var(--tx);
       --link-color:var(--pb);
     }
+    /* ── the shell ───────────────────────────────────────────────────────────
+       One measure for the whole site, held in one token.
+
+       Every band on the page runs the full width of the window — the ground
+       under a section is the section's ground, so a background is never a
+       rectangle floating in a margin — and the content inside it is inset by
+       --shellPad on both sides. Nothing is a card on a mat; the page is the
+       mat, and the work sits on it.
+
+       The inset is a share of the window, not a fixed figure, so the measure
+       grows with the screen the way a gallery wall does:
+
+         phone     3% each side  → 94% content
+         tablet    6% each side  → 88% content
+         desktop  10% each side  → 80% content
+
+       Past 2000px the share would keep widening a row of thumbnails past the
+       point the eye can take in as one row, so the cap takes over: max() picks
+       whichever inset is larger, and beyond 2000px that is always the one that
+       holds the content at --shellMax. The content is centred, the ground is
+       not — it still runs to both edges.
+
+       Percentages resolve where the token is used, not where it is declared,
+       so --shellPad must only be spent on an element that spans the window. A
+       band inset by it is the shell; anything inside that band measures from
+       the band, and takes no inset of its own. That is what keeps a tab, a
+       heading and a thumbnail all starting on one line down the whole page —
+       the bars at the top of a page included: a page title that starts inside
+       or outside the work under it is the one thing that gives a shell away.
+
+       The overlay pages used to carry two more insets of their own, --fgPad
+       (the gallery and the four section pages) and --pfPad (the profile, the
+       search pages, the community's browse page). Both are the shell now, and
+       are kept only as names so the couple of hundred rules that spend them
+       did not all have to be rewritten. */
+    :root{
+      --shellMax:1600px;
+      --shellPad:3%;
+      --fgPad:var(--shellPad);
+      --pfPad:var(--shellPad);
+    }
+    /* tablet — 88% */
+    @media(min-width:768px){
+      :root{ --shellPad:6%; }
+    }
+    /* desktop and up — 80%, and never past the cap */
+    @media(min-width:1024px){
+      :root{ --shellPad:max(10%,calc((100% - var(--shellMax)) / 2)); }
+    }
     /* below fold render perf */
     #artworks,#subOverview,footer.siteFooter{
       content-visibility:auto;

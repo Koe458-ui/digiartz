@@ -3627,7 +3627,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v195';
+const CACHE_VERSION = 'v196';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3679,21 +3679,21 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=9',
-  '/css/hero.css?v=96',
+  '/css/base.css?v=10',
+  '/css/hero.css?v=97',
   '/css/viewer.css?v=15',
-  '/css/community.css?v=14',
-  '/css/connect.css?v=4',
-  '/css/ranking.css?v=2',
-  '/css/profile.css?v=10',
-  '/css/admin.css?v=1',
-  '/css/auth.css?v=1',
-  '/css/panels.css?v=7',
+  '/css/community.css?v=15',
+  '/css/connect.css?v=5',
+  '/css/ranking.css?v=3',
+  '/css/profile.css?v=11',
+  '/css/admin.css?v=2',
+  '/css/auth.css?v=2',
+  '/css/panels.css?v=8',
   '/css/upload.css?v=13',
-  '/css/widgets.css?v=9',
-  '/css/overrides.css?v=15',
+  '/css/widgets.css?v=10',
+  '/css/overrides.css?v=16',
   '/css/select.css?v=3',
-  '/css/analytics.css?v=7',
+  '/css/analytics.css?v=8',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.

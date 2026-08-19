@@ -368,7 +368,6 @@
       position:fixed;inset:0;z-index:540;background:var(--bg);color:var(--tx);
       overflow-y:auto;overflow-x:hidden;transform:translateX(100%);
       transition:transform .38s cubic-bezier(.22,1,.36,1);
-      --pfPad:clamp(1rem,4.2vw,1.5rem);
     }
     #cmSearchPage.open,#cmBrowsePage.open{transform:translateX(0);}
     @media(prefers-reduced-motion:reduce){
@@ -680,8 +679,6 @@
        theme. Sites where the accent is themed get a community page that turns
        grey in the mono themes, which is what this replaces. */
     #communityPage,#cmChatPanel{
-      /* .fgTopBar measures its padding in this, and it is defined on #fg */
-      --fgPad:clamp(1rem,4.2vw,1.5rem);
       --cmBg:var(--bg);
       --cmSur:var(--sur);
       --cmSur2:var(--sur2);
@@ -860,9 +857,12 @@
     }
 
     /* connect */
-    #connect{padding:4rem 2rem;text-align:center;max-width:1200px;margin:0 auto;}
+    /* The band runs the full window and the rule inside it runs the shell,
+       so the divider is the width of the content above it rather than a
+       1200px bar centred in a wider page. */
+    #connect{padding:4rem var(--shellPad);text-align:center;margin:0 auto;box-sizing:border-box;}
     .cDiv{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:2.5rem;}
-    .cDiv::before,.cDiv::after{content:'';flex:1;max-width:200px;height:1px;background:var(--bdr);}
+    .cDiv::before,.cDiv::after{content:'';flex:1;height:1px;background:var(--bdr);}
     .cLbl{font-family:var(--fm);font-size:.75rem;letter-spacing:.35em;color:var(--txd);display:flex;align-items:center;gap:.5rem;}
     .cLbl .s{color:var(--pg);}
 

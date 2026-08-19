@@ -5,14 +5,21 @@
 /* full page on all devices */
 #artModal{padding:0;}
 #artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;border:0;box-shadow:none;background:var(--bg);}
+/* Stacked — a phone and a tablet. The artist card is the first child of
+   .avBody now, so the column reads: who made it, the work, then the rail of
+   things you can do with it and everything written about it. */
 #artModal .avBody{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+#artModal #avAuthorCard{padding:var(--vwPad) var(--vwPad) 0;}
 #artModal .avImgPane{flex:0 0 auto;overflow:visible;background:transparent;}
 #artModal .avImgStage{position:static;height:auto;min-height:0;max-height:none;background:transparent;display:block;}
 #artModal .avImgViewport{position:static;height:auto;min-height:0;display:block;background:transparent;border:0;
-  padding:1rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;text-align:center;}
+  padding:1rem var(--vwPad) 0;box-sizing:border-box;text-align:center;}
 /* fit first screen */
 #artModal #lbImg{position:static;width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;transform:none!important;cursor:default;}
-#artModal .avSide{width:100%;max-width:860px;margin:0 auto;border-left:0;flex:0 0 auto;background:transparent;}
+/* No cap and no auto margins: stacked, the notes take the same measure the
+   picture above them takes, which is the shell's. An 860px column centred
+   inside a wider one is the floating card this layout is not. */
+#artModal .avSide{width:100%;margin:0;border-left:0;flex:0 0 auto;background:transparent;}
 #artModal .avSideScroll{height:auto;max-height:none;overflow:visible;padding-bottom:6rem;}
 /* top bars */
 #artModal .avTopBar,.dzvTop{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.1rem;border-bottom:1px solid var(--bdr);background:var(--bg);}
@@ -27,7 +34,7 @@
    so the gap under the lead image matches the gaps under the rest. */
 .avImgStack{display:flex;flex-direction:column;gap:clamp(1.1rem,2.4vw,2rem);
   background:transparent;
-  padding:clamp(1.1rem,2.4vw,2rem) clamp(1rem,5vw,3rem) 0;box-sizing:border-box;}
+  padding:clamp(1.1rem,2.4vw,2rem) var(--vwPad) 0;box-sizing:border-box;}
 .avImgStack{text-align:center;}
 .avImgStack img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
 /* hide while loading */
@@ -60,7 +67,7 @@
 .dzvBody{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:6rem;}
 .dzvMedia{background:transparent;padding:1rem clamp(1rem,5vw,3rem) 0;box-sizing:border-box;text-align:center;}
 .dzvMedia img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
-.dzvCol{max-width:860px;margin:0 auto;padding:1.2rem 1.2rem 2rem;display:flex;flex-direction:column;gap:1.1rem;}
+.dzvCol{margin:0;padding:1.2rem 1.2rem 2rem;display:flex;flex-direction:column;gap:1.1rem;}
 .dzvTitle{font-family:var(--fd);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0;color:var(--tx);}
 .dzvExcerpt{font-size:1rem;color:var(--txd);line-height:1.55;margin:0;}
 .dzvDesc,.dzvArticle{font-size:.95rem;line-height:1.65;color:var(--tx);margin:0;overflow-wrap:anywhere;}
@@ -102,24 +109,196 @@
 .dzvBuyCard{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid var(--pg);border-radius:14px;padding:.9rem 1.1rem;background:color-mix(in srgb,var(--pg) 8%,var(--sur));}
 .dzvPrice{font-family:var(--fd);font-size:1.5rem;font-weight:800;color:var(--tx);}
 .dzvBuyCard .dzBuy{margin-top:0;min-height:46px;padding:12px 22px;font-size:14px;border-radius:10px;}
+/* ── the chrome, on the shell's edges ────────────────────────────────────
+   The brand badge, the bell and the gallery's filter popover are chrome
+   rather than content, but all three are pinned to a window edge and all
+   three read as loose the moment the content beside them starts 10% in. They
+   take the shell's edges too, so the top line of the page is a line. */
+.hBadge{ left:var(--shellPad); }
+.hNotifBtn{ right:var(--shellPad); }
+@media (min-width:641px){
+  #fgFltPanel{ right:var(--shellPad); }
+}
+
+/* ── every page's top bar starts where its content does ──────────────────
+   A title or a back arrow sitting 1.5rem from the glass while the work under
+   it starts 10% in is the single clearest tell that a layout is a card on a
+   page rather than the page. Each of these bars runs the full width — they
+   carry a rule or a blur that has to reach both edges — so it is only their
+   padding that moves onto the shell. */
+.subPgHdr{ padding-inline:var(--shellPad); }
+#artModal .avTopBar,.dzvTop{ padding-inline:var(--shellPad); }
+
+/* ── the pitch, opened out ───────────────────────────────────────────────
+   760px is a phone's measure. From the tablet up the pitch takes the shell's,
+   like everything else on the page — otherwise the headline starts 16px
+   inside the tabs above it and the thumbnails below it. On a desktop it
+   becomes what it actually is: a statement and the three things behind it,
+   standing side by side across the full width, with the headline free to grow
+   to the size a wall that wide can carry. */
+@media (min-width:768px){
+  .hpInner{ max-width:none; }
+  /* Room for the brand paragraph to be a paragraph. 230px is three words a
+     line, which reads as a stack of fragments on a wall this wide. */
+  .ftBrandDesc{ max-width:34ch; }
+}
+@media (min-width:1024px){
+  .hpTabs{ margin-bottom:clamp(2rem,3.4vw,3rem); }
+  .hpPanel{
+    display:grid;
+    grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);
+    column-gap:clamp(3rem,7vw,7rem);
+    align-items:start;
+  }
+  .hpHead{
+    grid-column:1; grid-row:1 / span 2;
+    margin:0;
+    font-size:clamp(3rem,4.4vw,4.6rem);
+    /* a headline this size is read in one sweep, so it wants the tighter
+       tracking and the shorter leading a poster head has */
+    line-height:1.04; letter-spacing:-.03em;
+  }
+  .hpList{
+    grid-column:2; grid-row:1;
+    margin:.4rem 0 clamp(1.8rem,2.6vw,2.4rem);
+    gap:.95rem;
+  }
+  .hpList li{ font-size:1.05rem; line-height:1.5; }
+  .hpCta{ grid-column:2; grid-row:2; justify-self:start; }
+}
+
+/* ── the two viewers, side by side ───────────────────────────────────────
+   An artwork and a section item read the same way on a phone: who made it,
+   the work, then everything about it, straight down one column. That is right
+   for a screen you hold and wrong for one you sit in front of — the picture
+   ends up a third of the window with a column of metadata stretched under it,
+   and the work, which is the whole point, is the smallest thing on screen.
+
+   From the desktop breakpoint the two swap into the shape a gallery uses: the
+   work on the left taking whatever is left after the notes, the artist at the
+   head of the right column, and the notes under them. The two sides are two
+   scrollers, not one — the page itself does not scroll at all. Reading to the
+   bottom of the comments does not drag the picture off the top of the screen,
+   and a stack of images can be scrolled through without the notes moving. Each
+   stops at its own end, and overscroll-behavior keeps the one you are in from
+   handing the rest of its gesture to the other.
+
+   The image is no longer capped at 1100 either: the only limit on it is one
+   screen's height, so a wide screen shows a bigger picture rather than more
+   ground around the same one.
+
+   #dzView keys off :has(), because a post with no lead image has nothing to
+   put in the left column and has to stay a single column. A browser without
+   :has() gets the stacked layout, which is not a broken page — it is the
+   phone's page on a big screen. */
+@media (min-width:1024px){
+
+  /* ---- the artwork viewer ---- */
+  #artModal .avBox{ overflow:hidden; }
+  #artModal .avBody{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) clamp(320px,26%,480px);
+    grid-template-rows:auto minmax(0,1fr);
+    column-gap:clamp(1.6rem,2.6vw,3rem);
+    padding-inline:var(--shellPad);
+    /* the panes scroll; the body does not */
+    overflow:hidden;
+    min-height:0;
+  }
+  #artModal .avImgPane{
+    grid-column:1; grid-row:1 / span 2;
+    min-height:0;
+    overflow-y:auto; overscroll-behavior:contain;
+    /* A landscape picture cannot fill a pane this tall, and hung from the top
+       it leaves all of its air underneath. Centred, it hangs at eye level.
+       "safe" is what makes that survivable: the moment the content is taller
+       than the pane the alignment falls back to start, so the top of a tall
+       stack can never end up scrolled off above the scroller's own top. */
+    justify-content:safe center;
+  }
+  #artModal .avImgViewport,
+  #artModal .avImgStack{ padding-inline:0; }
+  #artModal .avImgViewport{ padding-bottom:var(--vwGap); }
+  #artModal .avImgStack{ padding-bottom:var(--vwGap); }
+  #artModal #lbImg,
+  #artModal .avImgStack img{ max-width:100%; }
+  #artModal #avAuthorCard{
+    grid-column:2; grid-row:1;
+    padding:var(--vwGap) 0;
+  }
+  #artModal .avSide{
+    grid-column:2; grid-row:2;
+    width:auto; max-width:none; margin:0;
+    min-height:0; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  #artModal .avSideScroll{
+    flex:1 1 auto; min-height:0;
+    height:auto; max-height:none;
+    overflow-y:auto; overscroll-behavior:contain;
+    padding:0 0 4rem;
+  }
+
+  /* ---- the section viewer: resources, blog, marketplace, jobs ---- */
+  .dzvBody{ padding-inline:var(--shellPad); }
+  .dzvBody:has(.dzvMedia){
+    display:grid;
+    grid-template-columns:minmax(0,1fr) clamp(320px,26%,480px);
+    column-gap:clamp(1.6rem,2.6vw,3rem);
+    align-items:stretch;
+    overflow:hidden;
+    padding-bottom:0;
+    min-height:0;
+  }
+  .dzvBody:has(.dzvMedia) .dzvMedia{
+    min-height:0;
+    overflow-y:auto; overscroll-behavior:contain;
+    padding:var(--vwGap) 0;
+  }
+  .dzvBody:has(.dzvMedia) .dzvMedia img{ max-width:100%; }
+  .dzvBody:has(.dzvMedia) .dzvCol{
+    max-width:none; margin:0;
+    min-height:0;
+    overflow-y:auto; overscroll-behavior:contain;
+    padding:var(--vwGap) 0 4rem;
+  }
+  /* Nothing to stand beside, so it stays one column — and a column of prose
+     keeps a measure, because a 1600px line is not a line anyone reads. */
+  .dzvBody:not(:has(.dzvMedia)) .dzvCol{
+    max-width:900px; margin-inline:auto; padding-inline:0;
+  }
+}
+
+/* ── the level panel, across the shell ───────────────────────────────────
+   Five stacked cards at 640px is the right shape for a phone and a very odd
+   one for a wall: on the shell the stack becomes two columns, with the rank
+   and its progress bar spanning both because that is the one card the page
+   is actually about. */
+@media (min-width:1024px){
+  .xpWrap{
+    max-width:none;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:1.1rem;
+    align-items:start;
+  }
+  .xpWrap > .xpRank{ grid-column:1 / -1; }
+}
+@media (min-width:1600px){
+  .xpWrap{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+
 /* desktop polish */
 @media (min-width:1280px){
 
-  /* grid columns */
+  /* Columns and gaps only. The measure is the shell's — every one of these
+     grids already takes --shellPad from the band it sits in, and a cap here
+     would pull the thumbnails in off the edge the bars above them land on. */
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
-    max-width:1680px;
-    margin-left:auto; margin-right:auto;
     grid-template-columns:repeat(4,1fr);
     gap:20px;
-    padding-left:24px; padding-right:24px;
   }
-  .dzList{ max-width:1080px; margin-left:auto; margin-right:auto; gap:.9rem; }
-
-  /* The gallery's bars are full bleed, so they cannot be capped the way the
-     grid under them is — they take the inset the capped grid lands on, so the
-     mark starts over the first thumbnail. The chip row is centred and needs
-     no such help. */
-  #fg{ --fgPad:max(24px,calc((100% - 1680px) / 2 + 24px)); }
+  .dzList{ gap:.9rem; }
 
   /* text sizes */
   .dzName{ font-size:15px; line-height:1.4; }
@@ -259,9 +438,9 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
    step down on a phone, and both columns read off them — so every viewer has
    the same space from the left, the same from the right, and the same
    distance between the things in it, at every width. */
-:root{ --vwGap:1.5rem; --vwPad:1.75rem; }
-@media(max-width:520px){ :root{ --vwPad:1.15rem; --vwGap:1.2rem; } }
-@media(min-width:1100px){ :root{ --vwPad:2.25rem; --vwGap:1.6rem; } }
+:root{ --vwGap:1.5rem; --vwPad:var(--shellPad); }
+@media(max-width:520px){ :root{ --vwGap:1.2rem; } }
+@media(min-width:1100px){ :root{ --vwGap:1.6rem; } }
 
 .dzvCol{
   gap:var(--vwGap);

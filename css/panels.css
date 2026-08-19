@@ -197,10 +197,15 @@ body{background:var(--bg);}
 }
 .subPgTitle .s { color: var(--pg); }
 
-/* scrollable body */
+/* scrollable body
+
+   Every full-screen sub-page hangs off this: subscription, upload, settings,
+   my work, notifications. It was a 1400px column centred in the window, which
+   on a wide screen read as a card lying on the page rather than as the page.
+   It is the shell now — ground to both edges, content inset by the same share
+   the gallery behind it uses. */
 .subPgBdy {
-  padding: 3.5rem 2.5rem 6rem;
-  max-width: 1400px;
+  padding: 3.5rem var(--shellPad) 6rem;
   margin: 0 auto;
   box-sizing: border-box;
 }
@@ -311,6 +316,13 @@ body{background:var(--bg);}
   margin-right: auto;
   gap: 1.5rem;
   align-items: start;
+}
+/* On the shell the cards take the width the page takes — three plans across
+   the wall, not a 1040px block floating in the middle of it. */
+@media (min-width: 1024px) {
+  .subGrid,
+  .subQuota{ max-width: none; }
+  .subGrid{ gap: clamp(1.5rem, 2.2vw, 2.4rem); }
 }
 /* tagline */
 .subTagline {
@@ -510,7 +522,7 @@ body{background:var(--bg);}
 
 /* laptop */
 @media (max-width: 1199px) {
-  .subPgBdy    { padding: 3rem 2rem 5rem; }
+  .subPgBdy    { padding: 3rem var(--shellPad) 5rem; }
   .subGrid     { gap: 1.2rem; }
   .subCardInner{ padding: 1.8rem 1.5rem 1.6rem; }
 }
@@ -524,7 +536,7 @@ body{background:var(--bg);}
     margin-left: auto;
     margin-right: auto;
   }
-  .subPgBdy { padding: 2.5rem 1.8rem 5rem; }
+  .subPgBdy { padding: 2.5rem var(--shellPad) 5rem; }
   .subPrice  { font-size: clamp(2rem, 4vw, 2.6rem); }
 }
 
@@ -535,13 +547,13 @@ body{background:var(--bg);}
     gap: 1rem;
   }
   .subCardInner { padding: 1.6rem 1.3rem 1.4rem; }
-  .subPgBdy     { padding: 2rem 1.2rem 5rem; }
+  .subPgBdy     { padding: 2rem var(--shellPad) 5rem; }
 }
 
 /* mobile */
 @media (max-width: 519px) {
   .subGrid          { grid-template-columns: 1fr; gap: .85rem; }
-  .subPgBdy         { padding: 1.8rem 1rem 4rem; }
+  .subPgBdy         { padding: 1.8rem var(--shellPad) 4rem; }
   .subPgHeadline    { margin-bottom: 2rem; }
   .subCardInner     { padding: 1.5rem 1.2rem 1.3rem; }
   .subFeatures li   { font-size: .8rem; }
@@ -564,20 +576,17 @@ body{background:var(--bg);}
    the Max column is useless if you can no longer see which row you are on.
 --------------------------------------------------------------------------- */
 .subCmp {
-  /* --subCmpPull is the side padding .subPgBdy carries at this width, and
-     cancelling it exactly is what puts the rules on the screen's edges. It is
-     matched to that rule's five breakpoints below. Deliberately not 100vw: vw
-     counts the scroll bar and the page does not, so on a desktop with a
-     classic scrollbar a 100vw block is a few pixels too wide and the whole
-     page starts scrolling sideways — the exact bug the sticky column already
-     caused here once. */
-  --subCmpPull: 2.5rem;
-  margin: 2.6rem calc(-1 * var(--subCmpPull)) 0;
+  /* The table used to cancel the page's side padding with a negative margin,
+     so its rules ran to the screen's edges while the page around it was a
+     1400px column. The page is the shell now: the rules already run the whole
+     content width, and pulling past it would put this one block outside the
+     line every other block on the site starts on.
+
+     It cannot be done with the shell's own token in any case — a percentage
+     margin resolves against the parent's content box, which is the width
+     already inside the padding, so -1 × --shellPad would not cancel it. */
+  margin: 2.6rem 0 0;
 }
-@media (max-width: 1199px) { .subCmp { --subCmpPull: 2rem; } }
-@media (max-width: 899px)  { .subCmp { --subCmpPull: 1.8rem; } }
-@media (max-width: 699px)  { .subCmp { --subCmpPull: 1.2rem; } }
-@media (max-width: 519px)  { .subCmp { --subCmpPull: 1rem; } }
 .subCmpTitle {
   font-family: var(--fd, sans-serif);
   font-weight: 700;
@@ -684,6 +693,19 @@ html[data-theme="light"] .subCmpNo  { color: #dc2626; }
   padding: 4rem 0 3rem;
   max-width: 860px;
   margin: 0 auto;
+}
+/* A question and its answer are read, and a 1600px line is not readable — so
+   the block takes the shell and splits into two columns rather than stretching
+   one. The category label stays across the top of its own pair. */
+@media (min-width: 1024px) {
+  .faqSection{ max-width: none; }
+  .faqCategory{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(2rem, 4vw, 4rem);
+    align-items: start;
+  }
+  .faqCategory > .faqCatLabel{ grid-column: 1 / -1; }
 }
 
 /* section header */
@@ -924,7 +946,8 @@ html[data-theme="light"] .subCmpNo  { color: #dc2626; }
 #zeoBtn {
   position: fixed;
   top: clamp(1rem, 2.6vw, 2rem);
-  right: calc(clamp(1rem, 2.6vw, 2rem) + clamp(42px, 8vw, 54px) + 10px);
+  /* one place left of the bell, and the bell sits on the shell's right edge */
+  right: calc(var(--shellPad) + clamp(42px, 8vw, 54px) + 10px);
   left: auto;
   bottom: auto;
   width: clamp(42px, 8vw, 54px);

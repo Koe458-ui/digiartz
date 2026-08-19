@@ -4,8 +4,13 @@
       position:relative;
       background:var(--bg);
       /* top bar clearance */
-      padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) clamp(1rem,4vw,2rem) clamp(2.2rem,5vw,3.4rem);
+      padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) var(--shellPad) clamp(2.2rem,5vw,3.4rem);
     }
+    /* On a phone the pitch is one column and 760 is the measure it reads at.
+       From the tablet up it is the page's opening statement and takes the
+       shell's full width; on a desktop the headline and the list stand side by
+       side. Both of those live in css/overrides.css, with the rest of the
+       shell's desktop layer. */
     .hpInner{max-width:760px;margin:0 auto;}
 
     /* segmented toggle */
@@ -191,7 +196,6 @@
       --tx:inherit;--txd:inherit;
       --pg:inherit;--pb:inherit;--ps:inherit;
       --pdim:inherit;
-      --fgPad:clamp(1rem,4.2vw,1.5rem);
       /* one measure, so header-to-tabs and tabs-to-artwork are the same */
       --fgGap:.9rem;
       background:var(--bg);color:var(--tx);
@@ -1098,7 +1102,7 @@
       --qlGap:.5rem;
       --qlIco:30px;              /* icon box, keeps every title on one line */
       background:var(--bg);
-      padding:0 clamp(1rem,4vw,2rem) clamp(1.3rem,3vw,1.9rem);
+      padding:0 var(--shellPad) clamp(1.3rem,3vw,1.9rem);
     }
     .qlWrap{margin:0 auto;}
     .qlRail{
@@ -1172,12 +1176,13 @@
     @media(min-width:768px){ #quickLinks{--qlPer:4;--qlGap:.7rem;--qlIco:32px;} } /* tablet */
     @media(min-width:1024px){ #quickLinks{--qlPer:5;--qlGap:.8rem;--qlIco:34px;} }/* desktop */
     @media(min-width:1440px){ #quickLinks{--qlPer:6;} }                           /* large desktop */
-    /* ultrawide keeps 6 across but stops growing, centred instead */
-    @media(min-width:1920px){ .qlWrap{max-width:1440px;} }
+    /* Ultrawide used to cap the rail at 1440 on its own. The shell holds
+       every band at --shellMax now, so a second cap here would pull the rail
+       in off the edge the thumbnails under it land on. */
 
     /* very narrow phones: 2 across still has to breathe */
     @media(max-width:359px){
-      #quickLinks{--qlIco:26px;padding-left:.75rem;padding-right:.75rem;}
+      #quickLinks{--qlIco:26px;}
       .qlDesc{font-size:.7rem;}
     }
 
@@ -1192,7 +1197,7 @@
     /* feed board rail — stands where the hero page's search bar used to */
     #artworks .ftRail{
       /* the grid's own inset, so a tab lines up with the thumbnails under it */
-      --ftInset:clamp(.7rem,2vw,2rem);
+      --ftInset:var(--shellPad);
       position:relative;              /* offsetParent for the reveal scroll */
       display:flex;gap:.55rem;
       /* centred at every width. safe keeps the scroll honest: once the tabs

@@ -79,10 +79,14 @@
     }
 
     /* main band */
+    /* The footer is a band, not a card: its ground runs to both edges and
+       its content takes the shell, the same measure the gallery above it
+       lands on. The 1200px cap that used to sit here left the brand sitting
+       well inside the thumbnails it was under. */
     .ftMain {
-      max-width: 1200px;
       margin: 0 auto;
-      padding: 4rem 3rem 3.5rem;
+      padding: 4rem var(--shellPad) 3.5rem;
+      box-sizing: border-box;
       display: flex;
       align-items: flex-start;
       gap: 5rem;
@@ -209,10 +213,10 @@
     /* copyright band */
     .ftBase {
       border-top: 1px solid var(--bdr);
-      padding: 2rem 3rem;
+      padding: 2rem var(--shellPad);
       /* clearance for bottom nav */
       padding-bottom: calc(2rem + 5.5rem);
-      max-width: 1200px;
+      box-sizing: border-box;
       margin: 0 auto;
       display: grid;
       grid-template-columns: auto 1fr auto;
@@ -249,15 +253,15 @@
 
     /* tablet */
     @media (max-width: 1024px) {
-      .ftMain { padding: 3.5rem 2.5rem 3rem; gap: 3.5rem; }
+      .ftMain { padding: 3.5rem var(--shellPad) 3rem; gap: 3.5rem; }
       .ftCols { gap: 2.5rem; }
-      .ftBase { padding: 1.8rem 2.5rem; padding-bottom: calc(1.8rem + 5.5rem); gap: 1rem 2rem; }
+      .ftBase { padding: 1.8rem var(--shellPad); padding-bottom: calc(1.8rem + 5.5rem); gap: 1rem 2rem; }
     }
     @media (max-width: 860px) {
       .ftMain {
         flex-direction: column;
         gap: 2.5rem;
-        padding: 3rem 2rem 2.5rem;
+        padding: 3rem var(--shellPad) 2.5rem;
       }
       .ftBrand { max-width: 100%; }
       .ftBrandDesc { max-width: 100%; }
@@ -269,7 +273,7 @@
       .ftBase {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto;
-        padding: 1.6rem 2rem;
+        padding: 1.6rem var(--shellPad);
         padding-bottom: calc(1.6rem + 5.5rem);
         gap: .9rem 2rem;
       }
@@ -286,7 +290,7 @@
     /* mobile */
     @media (max-width: 640px) {
       .ftMain {
-        padding: 2.5rem 1.4rem 2rem;
+        padding: 2.5rem var(--shellPad) 2rem;
         gap: 2rem;
       }
       .ftCols {
@@ -297,7 +301,7 @@
       .ftBase {
         grid-template-columns: 1fr;
         grid-template-rows: auto auto auto;
-        padding: 1.4rem;
+        padding: 1.4rem var(--shellPad);
         padding-bottom: calc(1.4rem + 5rem);
         gap: .75rem;
         text-align: center;
@@ -436,5 +440,5 @@
     .toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sur2);border:1px solid var(--pg);color:var(--ps);font-family:var(--fm);font-size:.76rem;letter-spacing:.15em;padding:.7rem 1.5rem;z-index:20100;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:normal;max-width:min(560px,calc(100vw - 2rem));width:max-content;text-align:center;line-height:1.5;border-radius:6px;}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-    .fsHdr{max-width:1200px;margin:0 auto;padding:0 2rem;}
+    .fsHdr{margin:0 auto;box-sizing:border-box;padding:0 var(--shellPad);}
 

@@ -3,7 +3,7 @@
     #rankSec{ padding: 4rem 0 0; }
     .rkHdr{
       width:100%; margin:0 auto;
-      padding:0 clamp(.9rem,2.5vw,2rem);
+      padding:0 var(--shellPad);
       box-sizing:border-box;
     }
     .rkLive{
@@ -24,7 +24,7 @@
       width:100%;
       box-sizing:border-box;
       margin:0;
-      padding:.4rem clamp(.9rem,2.5vw,2rem) 2rem;
+      padding:.4rem var(--shellPad) 2rem;
       gap:1rem;
       overflow-x:auto;
       overflow-y:hidden;
@@ -139,7 +139,7 @@
         gap:1.4rem;
         overflow:visible;
         scroll-snap-type:none;
-        padding:.4rem clamp(.9rem,2.5vw,2rem) 0;
+        padding:.4rem var(--shellPad) 0;
       }
       .rkCard{ flex:none; width:auto; }
       .rkNav, .rkDots{ display:none !important; }
@@ -160,7 +160,7 @@
     }
     #rankPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
     #rankPage .subPgTitle{color:var(--tx);}
-    .rkPgBdy{max-width:640px;margin:0 auto;padding:1.2rem 1.1rem 6rem;}
+    .rkPgBdy{margin:0 auto;box-sizing:border-box;padding:1.2rem var(--shellPad) 6rem;}
 
     .rkPgTabs{
       display:flex; gap:.5rem;
@@ -204,14 +204,14 @@
     .subOvHdr {
       width: 100%;
       margin: 0 auto;
-      padding: 0 clamp(.9rem,2.5vw,2rem);
+      padding: 0 var(--shellPad);
       box-sizing: border-box;
     }
 
     .subOvGrid {
       width: 100%;
       margin: 2.5rem auto 0;
-      padding: 0 clamp(.9rem,2.5vw,2rem);
+      padding: 0 var(--shellPad);
       box-sizing: border-box;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -429,7 +429,6 @@
     @media (max-width: 560px) {
       .subOvGrid {
         grid-template-columns: 1fr;
-        padding: 0 1.2rem;
       }
     }
 
@@ -448,7 +447,7 @@
     .awGrid{
       width:100%;
       margin:2.5rem auto 0;
-      padding:0 clamp(.3rem,1vw,.6rem);
+      padding:0 var(--shellPad);
       padding-bottom:calc(1rem + 84px);
       box-sizing:border-box;
       display:grid;

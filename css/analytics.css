@@ -90,10 +90,10 @@
 #anPage .subPgTitle{color:var(--tx);}
 
 .anBdy{
-  max-width:1100px;margin:0 auto;
-  padding:1.2rem max(1rem,env(safe-area-inset-right))
+  margin:0 auto;box-sizing:border-box;
+  padding:1.2rem max(var(--shellPad),env(safe-area-inset-right))
           calc(5rem + env(safe-area-inset-bottom))
-          max(1rem,env(safe-area-inset-left));
+          max(var(--shellPad),env(safe-area-inset-left));
 }
 /* a 320px phone loses the side gutters before it loses a chart */
 @media(max-width:400px){

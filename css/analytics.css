@@ -14,20 +14,19 @@
  * title, around 1.1rem for a section heading.
  *
  * SERIES COLOURS ARE FIXED HEX, NOT TOKENS, AND NONE OF THEM IS PURPLE. The
- * site ships three themes — dark, graydark, light — and the accent token
- * means something different in each: near-white in the two dark ones, near
- * black in light. That is a fine button and an unreadable line on a chart
- * beside five others. A metric's colour has to mean the same thing on every
- * theme and stay legible on both a near-black and a near-white ground, so
- * these six are chosen once and never swapped.
+ * site ships two themes — graydark, light — and the accent token means
+ * something different in each: near-white on the dark one, near black on
+ * light. That is a fine button and an unreadable line on a chart beside five
+ * others. A metric's colour has to mean the same thing on every theme and
+ * stay legible on both a charcoal and a near-white ground, so these six are
+ * chosen once and never swapped.
  *
  * They are the bright end of six hues an even distance apart — azure, red,
  * teal, amber, magenta, green — so no two lines on a six-line chart are ever
  * mistaken for one another, and every one of them holds its colour against a
- * near-black card without going muddy. The violet in base.css's bare :root
- * belongs to a palette this site does not use: theme.js always stamps
- * data-theme, so that block is never the live one, and nothing here reaches
- * for it.
+ * charcoal card without going muddy. base.css's bare :root is the charcoal
+ * theme itself now — it is the default, so the un-attributed document paints
+ * it — and it carries no violet for anything here to reach for.
  */
 
 :root{
@@ -584,11 +583,11 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
 }
 
 /* ---- the four themes ----------------------------------------------------
- * Everything above is written in tokens, so the three dark themes need
- * nothing: --sur, --bdr, --tx and --txd already carry them. Light is the one
- * that needs saying out loud, because two things in here are not tokens.
+ * Everything above is written in tokens, so charcoal needs nothing: --sur,
+ * --bdr, --tx and --txd already carry it. Paper is the one that needs saying
+ * out loud, because two things in here are not tokens.
  *
- *   The shadows are tuned for a near-black page. At 35% black under a white
+ *   The shadows are tuned for a charcoal page. At 35% black under a white
  *   card they read as smudges rather than lift.
  *
  *   The series colours stay exactly as they are. They are picked to hold on
@@ -607,12 +606,10 @@ html[data-theme="light"] .anHeatCol{opacity:1;}
 html[data-theme="light"] .anAchCard{opacity:.62;}
 html[data-theme="light"] .anAchCard.done{opacity:1;}
 
-/* The two dark themes make the accent near-white, which is right for a button
-   and wrong for a thin border on a dark card. The chart azure marks these
-   instead: already on the page, already meaning "this is a measurement". */
-html[data-theme="dark"] .anAchCard.done,
+/* Charcoal makes the accent near-white, which is right for a button and wrong
+   for a thin border on a dark card. The chart azure marks these instead:
+   already on the page, already meaning "this is a measurement". */
 html[data-theme="graydark"] .anAchCard.done{border-color:rgba(0,166,255,.35);}
-html[data-theme="dark"] .anAchBarFill,
 html[data-theme="graydark"] .anAchBarFill{background:var(--an-views);}
 
 /* ---- devices ------------------------------------------------------------

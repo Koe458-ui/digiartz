@@ -4,6 +4,47 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v188 — the theme is two themes, and both of them are built to be
+       scrolled for an hour.
+       A feed is read almost entirely by peripheral vision, and peripheral
+       vision answers to two things: depth and hue. The token layer now
+       gives it both, and the change is a background pass — accents,
+       brand red, role and milestone colours do not move, because they
+       mean something.
+       Charcoal is the default. Its page is #1A1A1F, high enough off the
+       panel's own black that light text does not bloom into it and low
+       enough that the wells still have somewhere to go: --vbg and --fbg
+       sit below the page, cards sit above it, so an overlay drops the
+       ground away under the page it covered and a card lifts off it. The
+       ladder steps by a near-constant 5 L* — page 9.4, card 14.5, raised
+       19.3 — so elevation reads as elevation rather than as noise, and
+       every ground leans further blue-violet the higher it rises, the way
+       a lit surface separates from its own shadow.
+       Paper is the light one, a warm ivory at #F7F5EB. A blue-white at
+       97 L* across a whole viewport is a lamp held up to the face; hue is
+       what takes the glare out of a bright ground without taking the
+       light out of it. Paper runs its lean the other way on purpose — the
+       wall is the warmest thing on it and the card the most neutral,
+       because the card is what a thumbnail is mounted on. Twelve points
+       of 255 off neutral, so it cannot tint artwork.
+       Card edges are edges: --bdr is 1.70:1 against charcoal's page and
+       --bdrh 2.15:1 against the card, 1.38:1 and 2.06:1 on paper. Ink is
+       pitched to the ground under it — body copy 15.7:1 and 15.4:1, near
+       enough the same figure on purpose so neither theme is the tiring
+       one, and secondary copy 6.3:1 and 4.9:1.
+       Charcoal lives in :root rather than in a data-theme block, since it
+       is what the un-attributed document has to paint anyway and two
+       copies of one palette are two palettes waiting to drift.
+       html[data-theme="graydark"] has nothing to say and does not exist;
+       the attribute is still stamped, and the picker and .bnItem key off
+       it. The picker offers the two and nothing else, so the resolve step
+       between a stored preference and a painted theme is gone with it:
+       what is in storage is what gets stamped, and anything unrecognised
+       falls to the default rather than being trusted.
+       Changed: css/base.css, css/widgets.css, css/analytics.css,
+       css/upload.css, js/theme.js, js/analytics.js, js/auth.js,
+       index.html, site.webmanifest, sw.js.
+
    v187 — the account-report sheet is a sheet again.
        It was styled by copying #rptMod's markup, but #rptMod's overlay rules
        are keyed to that id: position:fixed, inset:0, and display:none until
@@ -3337,7 +3378,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v187';
+const CACHE_VERSION = 'v188';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3389,8 +3430,8 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=6',
-  '/css/hero.css?v=95',
+  '/css/base.css?v=7',
+  '/css/hero.css?v=96',
   '/css/viewer.css?v=15',
   '/css/community.css?v=13',
   '/css/connect.css?v=3',
@@ -3399,11 +3440,11 @@ const SHELL_URLS = [
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
   '/css/panels.css?v=5',
-  '/css/upload.css?v=12',
-  '/css/widgets.css?v=6',
+  '/css/upload.css?v=13',
+  '/css/widgets.css?v=7',
   '/css/overrides.css?v=13',
   '/css/select.css?v=3',
-  '/css/analytics.css?v=6',
+  '/css/analytics.css?v=7',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.
@@ -3425,7 +3466,7 @@ const SHELL_URLS = [
   '/js/app-core.js?v=28',
   '/js/protect.js?v=3',
   '/js/gallery.js?v=87',
-  '/js/auth.js?v=16',
+  '/js/auth.js?v=17',
   '/js/profile.js?v=15',
   '/js/albums.js?v=16',
   '/js/drafts.js?v=8',
@@ -3442,8 +3483,8 @@ const SHELL_URLS = [
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
-  '/js/theme.js?v=2',
-  '/js/analytics.js?v=7',
+  '/js/theme.js?v=3',
+  '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
   '/js/sections.js?v=115',
   '/js/routes.js?v=1',

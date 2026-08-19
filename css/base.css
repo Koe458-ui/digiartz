@@ -1,27 +1,76 @@
 /* base tokens, reset, nav */
 
 
-    /* design tokens */
+    /* design tokens
+
+       Two themes: Charcoal (the default) and Paper. Both are built the
+       same way and for the same reasons, so the reasoning lives here once.
+
+       A feed you scroll for an hour is read almost entirely by peripheral
+       vision, and peripheral vision responds to two things: depth and
+       hue. Give it neither and the eye has nothing to fixate on, adapts
+       to the field within seconds, and stops reporting. Give it both and
+       a column of cards reads as a column of objects. Every rule below is
+       one of those two.
+
+       - Depth, by opening the range. Charcoal's page is #1A1A1F (L* 9.4),
+         high enough off the panel's own black that light text does not
+         bloom into it and low enough that the wells still have somewhere
+         to go. --vbg and --fbg sit below the page; cards sit above it. An
+         overlay drops the ground away under the page it covered, a card
+         lifts off it. Paper does the same in reverse.
+       - The ladder steps by a near-constant 5 L*: page 9.4, card 14.5,
+         raised 19.3. Even steps, so elevation reads as elevation rather
+         than as noise, and every one clears the discrimination threshold
+         at this luminance.
+       - Every ground carries a hue. Charcoal leans blue-violet and leans
+         further the higher it rises — B minus R goes 5, 8, 10, 14, 20 up
+         the ladder, the way a lit surface separates from its own shadow.
+         Paper runs the other way on purpose: the wall is the warmest
+         thing on it and the card the most neutral, because the card is
+         what an artwork is mounted on. Neither is saturated enough to
+         tint a thumbnail — paper's page is twelve points of 255 off
+         neutral — and both are enough that the field never goes inert.
+       - A card edge is an edge. On charcoal --bdr is 1.70:1 against the
+         page and --bdrh 2.15:1 against the card; on paper 1.38:1 and
+         2.06:1. A boundary at rest, a visibly brighter one under the
+         cursor, in both.
+
+       Ink is pitched to the ground it sits on. Body copy holds 15.7:1 on
+       charcoal and 15.4:1 on paper — near enough the same figure on
+       purpose, so neither theme is the tiring one — and secondary copy
+       6.3:1 and 4.9:1. Accents, brand red, role and milestone colours are
+       deliberately outside this: they mean something, so they do not move
+       with the ground.
+
+       Charcoal lives in :root rather than in a data-theme block. It is the
+       default, so the un-attributed document has to paint it anyway, and
+       holding it in one place is the only way two copies of one palette
+       cannot drift apart. html[data-theme="graydark"] therefore has
+       nothing to say and does not exist; the attribute is still set, and
+       the picker and .bnItem key off it. */
     :root{
       color-scheme: dark;
-      --tc:#8A8F98;
-      --bg:#08080D; --sur:#131320; --sur2:#191927;
-      --bdr:#26263A; --bdrh:#3A3A56;
-      --tx:#F5F4FB; --tx2-rgb:214,212,232; --txd:rgba(var(--tx2-rgb),.62);
-      --pg:#8B5CF6; --pb:#B9A3FB; --ps:#C9B8FD; --pgd:#7C3AED;
-      --pg-rgb:139,92,246; --pgd-rgb:124,58,237;
-      --pdim:rgba(var(--pg-rgb),.16);
-      --vbg:#050308; --vsur:#0D0A14; --vsur2:#120E1C;
-      --vtx:#F0E8FF; --vtx2-rgb:196,181,253; --vtxd:rgba(var(--vtx2-rgb),.6);
-      --vtc:#9A9EA5; --vtc-rgb:154,158,165;
-      --vpg:#8A8F98; --vpb:#B8BCC2; --vps:#CFD2D6;
-      --fbg:#040406; --fsur:#0B0B13; --fsur2:#101018;
-      --fbdr:#1C1C2C; --fbdrh:#2C2C44;
+      --tc:#9A9DA6;
+      --bg:#1A1A1F; --sur:#24242C; --sur2:#2E2E38;
+      --bdr:#40404E; --bdrh:#56566A;
+      --tx:#F3F3F8; --tx2-rgb:216,216,228; --txd:rgba(var(--tx2-rgb),.68);
+      --pg:#F4F4F6; --pb:#FFFFFF; --ps:#FFFFFF; --pgd:#C6C6CE;
+      --pg-rgb:244,244,246; --pgd-rgb:198,198,206;
+      --pdim:rgba(var(--pg-rgb),.10);
+      --text-on-accent:#1A1A1F;
+      /* the well: overlays and full-screen sub-pages sit below the page */
+      --vbg:#101015; --vsur:#191920; --vsur2:#222229;
+      --vtx:#F1F1F5; --vtx2-rgb:210,210,222; --vtxd:rgba(var(--vtx2-rgb),.66);
+      --vtc:#9DA1A9; --vtc-rgb:157,161,169;
+      --vpg:#8E939C; --vpb:#BCC0C6; --vps:#D2D5D9;
+      /* the footer: below the page, above the well */
+      --fbg:#131318; --fsur:#1C1C23; --fsur2:#23232B;
+      --fbdr:#31313D; --fbdrh:#43434F;
       /* fonts */
       --fd:'Sora','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
       --fb:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
       --fm:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-      --text-on-accent:#FFFFFF;
 
       /* status and role colors */
       --danger:#fca5a5;
@@ -47,55 +96,35 @@
       --ms8:#FACC15;  --ms8-name:#FACC15;   /* lvl 100 digiartz legend */
       --ms-ink:#0B0B12;
     }
-    /* dark theme */
-    html[data-theme="dark"]{
-      --tc:#8B8E96;
-      --brand-red:#EF4444;
-      --bg:#0A0A0E; --sur:#141419; --sur2:#1A1A21;
-      --bdr:#262630; --bdrh:#3A3A47;
-      --tx:#F4F4F7; --tx2-rgb:219,219,229;
-      --pg:#F5F5F7; --pb:#FFFFFF; --ps:#FFFFFF; --pgd:#C9C9D4;
-      --pg-rgb:245,245,247; --pgd-rgb:201,201,212;
-      --pdim:rgba(var(--pg-rgb),.10);
-      --text-on-accent:#0A0A0E;
-      --vbg:#060609; --vsur:#101015; --vsur2:#16161C;
-      --vtx:#F2F2F5; --vtx2-rgb:212,212,222;
-      --fbg:#040406; --fsur:#0B0B10; --fsur2:#101016;
-      --fbdr:#1C1C26; --fbdrh:#2C2C3A;
-    }
-    /* gray dark theme */
-    html[data-theme="graydark"]{
-      --tc:#94979F;
-      --brand-red:#EF4444;
-      --bg:#131317; --sur:#1C1C22; --sur2:#23232B;
-      --bdr:#30303A; --bdrh:#444450;
-      --tx:#F2F2F5; --tx2-rgb:216,216,226;
-      --pg:#F4F4F6; --pb:#FFFFFF; --ps:#FFFFFF; --pgd:#C6C6CE;
-      --pg-rgb:244,244,246; --pgd-rgb:198,198,206;
-      --pdim:rgba(var(--pg-rgb),.10);
-      --text-on-accent:#131317;
-      --vbg:#0E0E12; --vsur:#17171D; --vsur2:#1E1E25;
-      --vtx:#F0F0F4; --vtx2-rgb:208,208,218;
-      --fbg:#0B0B0F; --fsur:#14141A; --fsur2:#1A1A21;
-      --fbdr:#26262F; --fbdrh:#383844;
-    }
-    /* light theme */
+    /* light theme — Paper
+
+       A blue-white at 97 L* across a whole viewport is a lamp held up to
+       the face. Warmth is what takes the glare out of a bright ground
+       without taking the light out of it: hue 55 at low saturation, and
+       the field reads as paper rather than as a screen. The page also
+       holds half a point of L* back from the card, so the card has
+       somewhere to rise to — a 3.16 L* lift.
+
+       Artwork does not sit on the ivory. Cards are #FFFEF9, a point off
+       neutral, so a thumbnail is mounted on near-white the way a print is
+       mounted on a white board and hung on a warm wall. The ivory is the
+       wall; it never touches the work. */
     html[data-theme="light"]{
       color-scheme:light;
-      --tc:#6E6C80;
-      --bg:#F6F6F9; --sur:#FFFFFF; --sur2:#F1F0F6;
-      --bdr:#E3E2EE; --bdrh:#CBC9DD;
-      --tx:#1A1826; --tx2-rgb:62,60,86; --txd:rgba(var(--tx2-rgb),.72);
+      --tc:#6F6B58;
+      --bg:#F7F5EB; --sur:#FFFEF9; --sur2:#F0EEDF;
+      --bdr:#D8D3B8; --bdrh:#BAB499;
+      --tx:#1F1D15; --tx2-rgb:62,58,44; --txd:rgba(var(--tx2-rgb),.74);
       --pg:#17151F; --pb:#0F0E15; --ps:#000000; --pgd:#2E2C3A;
       --pg-rgb:23,21,31; --pgd-rgb:46,44,58;
       --pdim:rgba(var(--pg-rgb),.07);
       --text-on-accent:#FFFFFF;
-      --vbg:#EFEEF4; --vsur:#FFFFFF; --vsur2:#F5F4F9;
-      --vtx:#201E2C; --vtx2-rgb:70,68,94; --vtxd:rgba(var(--vtx2-rgb),.68);
-      --vtc:#71747E; --vtc-rgb:113,116,126;
-      --vpg:#5F626C; --vpb:#4D505A; --vps:#3D404A;
-      --fbg:#E9E8F0; --fsur:#F4F3F8; --fsur2:#EEEDF4;
-      --fbdr:#D8D7E4; --fbdrh:#C2C0D4;
+      --vbg:#EEEBDC; --vsur:#FBFAF2; --vsur2:#F3F1E4;
+      --vtx:#211F16; --vtx2-rgb:70,66,50; --vtxd:rgba(var(--vtx2-rgb),.78);
+      --vtc:#6E6957; --vtc-rgb:110,105,87;
+      --vpg:#63604F; --vpb:#514E3F; --vps:#403D31;
+      --fbg:#E8E5D4; --fsur:#F3F1E4; --fsur2:#EEEBDC;
+      --fbdr:#D4CFB4; --fbdrh:#BDB79C;
 
       /* status and role colors */
       --danger:#B3261E;
@@ -209,11 +238,11 @@
     .bnItem.bnActive svg{transform:translateY(-1px) scale(1.08);}
     /* one value for the dot and the line it grows into, so they never
        read as two different lights. each theme carries its own alpha: the
-       mark is near-white over near-black on the dark themes and near-black
-       over white on the light one, and matching those by eye means the
-       light theme needs a little more of its colour to weigh the same */
-    .bnItem{--bnMark:rgba(var(--pg-rgb),.5);}
-    html[data-theme="graydark"] .bnItem{--bnMark:rgba(var(--pg-rgb),.53);}
+       mark is near-white over charcoal and near-black over paper, and
+       matching those by eye means the
+       light theme needs a little more of its colour to weigh the same.
+       .53 is the base because charcoal is the default and lives in :root. */
+    .bnItem{--bnMark:rgba(var(--pg-rgb),.53);}
     html[data-theme="light"] .bnItem{--bnMark:rgba(var(--pg-rgb),.57);}
     /* once the line is up it draws the dot itself, as its own start cap —
        one stroke, so the two can never stack into a brighter spot */

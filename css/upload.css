@@ -3,10 +3,9 @@
     /* ---- the upload page's palette ---------------------------------------
        One named colour per role, so a chip, its guide sheet and the detail
        rows on its form all draw from the same jar and a change lands in one
-       place. The values are set for the ground they sit on: on the near-black
-       the page runs under by default they take the light, luminous step, and
-       under the light theme they take the saturated one, because the same hex
-       cannot be bright on both. Every use is a glyph, a chip edge or a tint —
+       place. The values are set for the ground they sit on: on charcoal they
+       take the light, luminous step, and on paper they take the saturated
+       one, because the same hex cannot be bright on both. Every use is a glyph, a chip edge or a tint —
        never type on a fill, which is why the button colours are not in here. */
     :root{
       --upcViolet:#A78BFA; --upcGreen:#4ADE80; --upcBlue:#60A5FA;
@@ -25,12 +24,12 @@
       --upcGreenInk:#4ADE80;
       --upcReq:#F87171;
     }
-    /* The one theme that moves these. The page runs on the near-black by
-       default and graydark is another dark ground, so both take the luminous
-       step above; only the light theme needs the saturated one. This is the
-       same split the gallery rail uses for the very same colours — .fgSecBtn
-       takes --fgA, and html[data-theme="light"] .fgSecBtn takes --fgAL — so
-       the two agree under all three themes rather than only under one. */
+    /* The one theme that moves these. The default ground is charcoal, so the
+       block above takes the luminous step; only paper needs the saturated
+       one. This is the same split the gallery rail uses for the very same
+       colours — .fgSecBtn takes --fgA, and html[data-theme="light"] .fgSecBtn
+       takes --fgAL — so the two agree under both themes rather than under
+       only one. */
     html[data-theme="light"]{
       --upcViolet:#7C3AED; --upcGreen:#16A34A; --upcBlue:#2563EB;
       --upcAmber:#D97706;  --upcPink:#DB2777;  --upcCyan:#0891B2;
@@ -80,21 +79,21 @@
        publish button and the tag chips all read from it.
 
        A fill and the type on it are one decision, so they are set together.
-       Over the near-black the fill is the bright violet and its label is ink,
-       because white on a violet that bright falls to about 2.7:1. Over the
-       light theme's white the fill is the saturated violet and its label is
-       white, for the same reason in reverse — the pair flips, and nothing
-       that sits on a fill reads from anywhere else. */
+       Over charcoal the fill is the bright violet and its label is ink,
+       because white on a violet that bright falls to about 2.7:1. Over
+       paper's white the fill is the saturated violet and its label is white,
+       for the same reason in reverse — the pair flips, and nothing that sits
+       on a fill reads from anywhere else. */
     #pfUpMod,#pfUpMod *,.upGdPop,.upGdPop *{
       --pg:#A78BFA;--pgd:#B49BFF;--pb:#C4B5FD;--ps:#C4B5FD;
       --pg-rgb:167,139,250;--pgd-rgb:180,155,255;
       --pdim:rgba(167,139,250,.16);
       --text-on-accent:#1A1526;
       /* The headline's blue. Edit Profile wears #2563EB as a button fill with
-         white on it, where it reads bright; as type on this page's near-black
-         it goes muted, so the dark themes take the step above it and the light
-         theme — where the ground is pale, like the button's own white — takes
-         the profile's exact value. */
+         white on it, where it reads bright; as type on this page's charcoal
+         it goes muted, so charcoal takes the step above it and paper — where
+         the ground is pale, like the button's own white — takes the profile's
+         exact value. */
       --upTitle:#3B82F6;
     }
     html[data-theme="light"] #pfUpMod,html[data-theme="light"] #pfUpMod *,

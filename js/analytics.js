@@ -223,8 +223,8 @@
 
   // The hex is what the SVG gets — a chart stroke cannot be a CSS variable
   // that resolves differently per theme. These six match css/analytics.css and
-  // must stay in step with it. None of them is purple: this site's three
-  // themes are dark, graydark and light.
+  // must stay in step with it. None of them is purple: this site's two themes
+  // are graydark and light.
   var METRICS = [
     { key: 'views',     label: 'Views',     ico: '👁', color: 'var(--an-views)',     hex: '#00A6FF' },
     { key: 'likes',     label: 'Likes',     ico: '❤️', color: 'var(--an-likes)',     hex: '#FF3D3D' },
@@ -262,8 +262,8 @@
   var DEVICE_LABEL = { mobile: 'Phone', tablet: 'Tablet', desktop: 'Desktop', unknown: 'Unknown' };
   var DEVICE_HEX   = { mobile: '#00A6FF', tablet: '#00D9B8', desktop: '#16D95F', unknown: '#8A8F98' };
   // twelve slices for the country donut, walked in order. No violet in it:
-  // this site's themes are dark, graydark and light, and none of them has a
-  // purple in its palette for these to sit beside.
+  // this site's themes are graydark and light, and neither has a purple in
+  // its palette for these to sit beside.
   var WHEEL = ['#00A6FF', '#FF3DE0', '#00D9B8', '#FFB300', '#16D95F', '#FF3D3D',
                '#4DC3FF', '#FF85EC', '#5BE7D2', '#FFD24D', '#5BE88F', '#8A8F98'];
 
@@ -2233,7 +2233,7 @@
     pg.setAttribute('role', 'dialog');
     pg.setAttribute('aria-modal', 'true');
     pg.style.cssText = 'position:fixed;inset:0;z-index:546;overflow-y:auto;' +
-                       'background:var(--bg,#0A0A0E);color:var(--tx,#F4F4F7);';
+                       'background:var(--bg,#1A1A1F);color:var(--tx,#F3F3F8);';
 
     var hdr = el('div', 'subPgHdr');
     var back = el('button', 'subPgX', '\u2190');

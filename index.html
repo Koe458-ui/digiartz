@@ -3,30 +3,36 @@
  <head>
   <meta charset="utf-8"/>
   <meta name="color-scheme" content="dark"/>
-  <meta name="theme-color" content="#08080D"/>
-  <!-- theme boot -->
+  <meta name="theme-color" content="#1A1A1F"/>
+  <!-- theme boot
+
+       Two themes: graydark (charcoal, the default) and light (paper).
+       This runs before any stylesheet so the document is stamped with its
+       theme in the same tick it starts painting — a theme applied later
+       is a flash of the wrong one. Anything unrecognised in storage falls
+       to the default rather than being trusted. -->
   <script>
   (function(){
-    var K='koeTheme',V={dark:1,graydark:1,light:1,system:1},p=null;
-    try{p=localStorage.getItem(K);}catch(e){}
-    if(!V[p])p='dark'; /* default theme */
-    var l=(p==='system')?((window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'):p;
-    var r=document.documentElement;
-    r.setAttribute('data-theme-pref',p);
-    r.setAttribute('data-theme',l);
-    var C={dark:'#0A0A0E',graydark:'#131317',light:'#F6F6F9'};
+    var K='koeTheme',V={graydark:1,light:1},t=null;
+    try{t=localStorage.getItem(K);}catch(e){}
+    if(!V[t])t='graydark'; /* default theme */
+    document.documentElement.setAttribute('data-theme',t);
+    var C={graydark:'#1A1A1F',light:'#F7F5EB'};
     var m=document.querySelector('meta[name="theme-color"]');
-    if(m)m.setAttribute('content',C[l]||C.dark);
+    if(m)m.setAttribute('content',C[t]);
     var s=document.querySelector('meta[name="color-scheme"]');
-    if(s)s.setAttribute('content',l==='light'?'light':'dark');
+    if(s)s.setAttribute('content',t==='light'?'light':'dark');
   })();
   </script>
   <!-- critical paint style -->
   <style>
-    html{background:var(--vbg,#050308);}
-    html[data-theme="dark"]{--vbg:#060609;}
-    html[data-theme="graydark"]{--vbg:#0E0E12;}
-    html[data-theme="light"]{--vbg:#EFEEF4;}
+    /* --vbg is the well the page sits in — the root ground behind
+       overscroll, and the ground every full-screen overlay takes. These
+       three lines are the boot copy of it, so the first paint is right
+       before css/base.css arrives; base.css is where the value is owned. */
+    html{background:var(--vbg,#101015);}
+    html[data-theme="graydark"]{--vbg:#101015;}
+    html[data-theme="light"]{--vbg:#EEEBDC;}
 
     /* An overlay must be an overlay before its stylesheet arrives.
        #anPage is a full dashboard sitting in this document at all times, held
@@ -157,8 +163,8 @@
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
-  <link rel="stylesheet" href="/css/base.css?v=6">
-  <link rel="stylesheet" href="/css/hero.css?v=95">
+  <link rel="stylesheet" href="/css/base.css?v=7">
+  <link rel="stylesheet" href="/css/hero.css?v=96">
   <link rel="stylesheet" href="/css/viewer.css?v=15">
   <link rel="stylesheet" href="/css/community.css?v=13">
   <link rel="stylesheet" href="/css/connect.css?v=3">
@@ -167,11 +173,11 @@
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
   <link rel="stylesheet" href="/css/panels.css?v=5">
-  <link rel="stylesheet" href="/css/upload.css?v=12">
-  <link rel="stylesheet" href="/css/widgets.css?v=6">
+  <link rel="stylesheet" href="/css/upload.css?v=13">
+  <link rel="stylesheet" href="/css/widgets.css?v=7">
   <link rel="stylesheet" href="/css/overrides.css?v=13">
   <link rel="stylesheet" href="/css/select.css?v=3">
-  <link rel="stylesheet" href="/css/analytics.css?v=6">
+  <link rel="stylesheet" href="/css/analytics.css?v=7">
  </head>
  <body>
 
@@ -2834,7 +2840,7 @@
   <script src="/js/app-core.js?v=28"></script>
   <script src="/js/protect.js?v=3"></script>
   <script src="/js/gallery.js?v=87"></script>
-  <script src="/js/auth.js?v=16"></script>
+  <script src="/js/auth.js?v=17"></script>
   <script src="/js/profile.js?v=15"></script>
   <script src="/js/albums.js?v=16"></script>
   <script src="/js/drafts.js?v=8"></script>
@@ -2956,25 +2962,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
       <p class="thmSub">Select the theme that suits your style</p>
     </div>
     <div class="thmGrid" role="radiogroup" aria-label="Theme">
-      <button class="thmCard" data-theme="dark" role="radio" aria-checked="false" type="button">
-        <span class="thmCheck" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7-8"/></svg></span>
-        <span class="thmPrev" aria-hidden="true">
-          <span class="thmPrevTop"><span class="thmPrevLogo"></span></span>
-          <span class="thmPrevBody">
-            <span class="thmPrevSide"><span class="thmLn"></span><span class="thmLn thmLn--s"></span><span class="thmLn thmLn--ac"></span><span class="thmLn thmLn--s"></span></span>
-            <span class="thmPrevMain">
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-            </span>
-          </span>
-        </span>
-        <span class="thmMeta">
-          <span class="thmName">Dark <em class="thmBadge">Default</em></span>
-          <span class="thmDesc">A sleek dark theme that makes your artwork stand out.</span>
-        </span>
-      </button>
       <button class="thmCard" data-theme="graydark" role="radio" aria-checked="false" type="button">
         <span class="thmCheck" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7-8"/></svg></span>
         <span class="thmPrev" aria-hidden="true">
@@ -2990,8 +2977,8 @@ window.ZEO_DATA = window.ZEO_DATA || {
           </span>
         </span>
         <span class="thmMeta">
-          <span class="thmName">Gray Dark</span>
-          <span class="thmDesc">A softer dark gray theme for a balanced look.</span>
+          <span class="thmName">Charcoal <em class="thmBadge">Default</em></span>
+          <span class="thmDesc">Deep, warm charcoal. Cards lift off the page so your eye lands on the art, not the screen.</span>
         </span>
       </button>
       <button class="thmCard" data-theme="light" role="radio" aria-checked="false" type="button">
@@ -3009,30 +2996,8 @@ window.ZEO_DATA = window.ZEO_DATA || {
           </span>
         </span>
         <span class="thmMeta">
-          <span class="thmName">Light</span>
-          <span class="thmDesc">A clean light theme for a bright and minimal feel.</span>
-        </span>
-      </button>
-      <button class="thmCard" data-theme="system" role="radio" aria-checked="false" type="button">
-        <span class="thmCheck" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7-8"/></svg></span>
-        <span class="thmPrev thmPrev--split" aria-hidden="true">
-          <span class="thmPrevTop"><span class="thmPrevLogo"></span></span>
-          <span class="thmPrevBody">
-            <span class="thmPrevSide"><span class="thmLn"></span><span class="thmLn thmLn--s"></span><span class="thmLn thmLn--ac"></span><span class="thmLn thmLn--s"></span></span>
-            <span class="thmPrevMain">
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-            </span>
-          </span>
-          <span class="thmSplitLight">
-            <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-            <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
-          </span>
-          <span class="thmSyncBadge"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 6.5A5.6 5.6 0 0 0 3 5.2M2.5 9.5A5.6 5.6 0 0 0 13 10.8"/><path d="M13.6 2.6v3.9h-3.9M2.4 13.4V9.5h3.9"/></svg></span>
-        </span>
-        <span class="thmMeta">
-          <span class="thmName">System Default</span>
-          <span class="thmDesc">Automatically switch theme based on your system preferences.</span>
+          <span class="thmName">Paper</span>
+          <span class="thmDesc">Warm gallery paper. Bright to work in, easy on the eyes for an hour.</span>
         </span>
       </button>
     </div>
@@ -3043,7 +3008,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-  <script src="/js/theme.js?v=2"></script>
+  <script src="/js/theme.js?v=3"></script>
 
 <!-- One page for all seven legal documents, opened from the Settings menu.
      Same shape as Theme or Edit My Work: a header with a back arrow, then the
@@ -3396,7 +3361,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <!-- Before engagement.js on purpose. It defines dzAnDims, which is what a
        view, a like and a download carry alongside themselves; engagement.js
        guards for its absence anyway, but the order means it is never absent. -->
-  <script src="/js/analytics.js?v=7"></script>
+  <script src="/js/analytics.js?v=8"></script>
   <script src="/js/engagement.js?v=9"></script>
 
 

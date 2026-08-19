@@ -319,10 +319,10 @@
   grid-template-columns:repeat(auto-fit,minmax(min(100%,196px),1fr));
   gap:clamp(.8rem,1.6vw,1.15rem);
 }
-/* desktop single row */
+/* desktop: both cards side by side, each wide enough to read as a page */
 @media(min-width:1024px){
-  .thmBdy{max-width:none;padding-left:8%;padding-right:8%;}
-  .thmGrid{grid-template-columns:repeat(4,1fr);}
+  .thmBdy{max-width:880px;}
+  .thmGrid{grid-template-columns:repeat(2,1fr);}
 }
 .thmCard{
   position:relative;display:flex;flex-direction:column;gap:0;
@@ -361,11 +361,13 @@
 }
 .thmCheck svg{width:13px;height:13px;}
 .thmCard[aria-checked="true"] .thmCheck{transform:scale(1);opacity:1;}
-.thmCard[data-theme="dark"]      {--p-bg:#0A0A0E;--p-sur:#1A1A21;--p-ln:#2C2C36;--p-ac:#F5F5F7;}
-.thmCard[data-theme="graydark"]  {--p-bg:#17171C;--p-sur:#23232B;--p-ln:#34343E;--p-ac:#F4F4F6;}
-.thmCard[data-theme="light"]     {--p-bg:#FFFFFF;--p-sur:#EDECF3;--p-ln:#DCDAE8;--p-ac:#17151F;}
-.thmCard[data-theme="system"]    {--p-bg:#0A0A0E;--p-sur:#1A1A21;--p-ln:#2C2C36;--p-ac:#F5F5F7;
-                                  --p-bg2:#FFFFFF;--p-sur2:#EDECF3;--p-ln2:#DCDAE8;}
+/* the swatch in each card is that theme's own ladder, so the preview shows
+   what the page becomes: --p-bg is the page, --p-sur the card sitting above
+   it, --p-ln the edge. Read off css/base.css — if a ground moves there it
+   has to move here, or the picker advertises something the site will not
+   paint. */
+.thmCard[data-theme="graydark"]  {--p-bg:#1A1A1F;--p-sur:#24242C;--p-ln:#40404E;--p-ac:#F4F4F6;}
+.thmCard[data-theme="light"]     {--p-bg:#F7F5EB;--p-sur:#FFFEF9;--p-ln:#D8D3B8;--p-ac:#17151F;}
 .thmPrev{
   position:relative;display:block;overflow:hidden;
   background:var(--p-bg);border:1px solid var(--p-ln);border-radius:10px;
@@ -407,27 +409,6 @@
   width:13%;aspect-ratio:1;border-radius:50%;background:var(--p-ln);
 }
 .thmTbWrap .thmLn{height:4px;width:82%;}
-.thmPrev--split::after{
-  content:'';position:absolute;top:0;bottom:0;left:50%;right:0;
-  background:var(--p-bg2);border-left:1px solid var(--p-ln2);
-}
-.thmPrev--split .thmSplitLight{
-  position:absolute;top:16%;bottom:0;left:50%;right:0;z-index:1;
-  padding:7% 6%;display:grid;grid-template-columns:1fr 1fr;gap:10% 9%;
-  align-content:start;
-}
-.thmPrev--split .thmSplitLight .thmTb{background:var(--p-sur2);}
-.thmPrev--split .thmSplitLight .thmTb::before,
-.thmPrev--split .thmSplitLight .thmTb::after{background:var(--p-ln2);}
-.thmSyncBadge{
-  position:absolute;top:50%;left:50%;z-index:2;
-  width:30px;height:30px;border-radius:50%;
-  transform:translate(-50%,-50%);
-  background:#fff;color:#17171f;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 3px 12px rgba(5,3,8,.45);
-}
-.thmSyncBadge svg{width:14px;height:14px;}
 .thmMeta{display:block;padding:.95rem .35rem 0;}
 .thmName{
   display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;

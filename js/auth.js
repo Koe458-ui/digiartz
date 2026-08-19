@@ -343,7 +343,7 @@
       + '-webkit-backdrop-filter:blur(4px);';
     var box = document.createElement('div');
     box.style.cssText = 'max-width:340px;width:100%;'
-      + 'background:var(--sur,#16161c);color:var(--tx,#fff);'
+      + 'background:var(--sur,#24242c);color:var(--tx,#fff);'
       + 'border:1px solid var(--bdr,#2c2c36);border-radius:16px;'
       + 'padding:1.4rem 1.3rem 1.15rem;box-shadow:0 20px 60px rgba(0,0,0,.5);'
       + 'font-family:var(--fb,sans-serif);text-align:center;';

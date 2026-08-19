@@ -275,9 +275,9 @@
        gradient. The two rails read as one family because they are drawn from
        one recipe. */
     .fgSecBtn{
-      /* the gradients are picked against near-black; the light theme swaps
-         in its own darker pair, spelled out per chip rather than mixed at
-         run time so it works without color-mix() too */
+      /* the gradients are picked against charcoal; paper swaps in its own
+         darker pair, spelled out per chip rather than mixed at run time so
+         it works without color-mix() too */
       --fgS1:var(--fgA);--fgS2:var(--fgB);
       flex:0 0 auto;scroll-snap-align:center;
       display:inline-flex;align-items:center;gap:.55rem;
@@ -1141,9 +1141,9 @@
       /* two reserved lines keep the row on one grid however the copy wraps */
       min-height:calc(2 * 1.35em);
     }
-    /* the icon hues are picked against near-black, so the light theme uses
-       its own darker cut per item — at full strength lime and cyan wash out
-       on #F6F6F9. Spelled out as --qlL rather than mixed at run time so it
+    /* the icon hues are picked against charcoal, so paper uses its own
+       darker cut per item — at full strength lime and cyan wash out on an
+       ivory ground. Spelled out as --qlL rather than mixed at run time so it
        works on browsers without color-mix() too. */
     html[data-theme="light"] .qlIco{color:var(--qlL,var(--qlC));}
     html[data-theme="light"] .qlDesc{color:rgba(var(--tx2-rgb),.84);}
@@ -1210,9 +1210,9 @@
     }
     #artworks .ftRail::-webkit-scrollbar{display:none;}
     .ftTab{
-      /* the icon gradients are picked against near-black; the light theme
-         swaps in its own darker pair, spelled out per tab rather than mixed
-         at run time so it works without color-mix() too */
+      /* the icon gradients are picked against charcoal; paper swaps in its
+         own darker pair, spelled out per tab rather than mixed at run time
+         so it works without color-mix() too */
       --ftS1:var(--ftA);--ftS2:var(--ftB);
       flex:0 0 auto;scroll-snap-align:center;
       display:inline-flex;align-items:center;gap:.55rem;

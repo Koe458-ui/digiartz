@@ -3,34 +3,27 @@
   'use strict';
 
   var KEY   = 'koeTheme';
-  var VALID = { dark:1, graydark:1, light:1, system:1 };
-  var META  = { dark:'#0A0A0E', graydark:'#131317', light:'#F6F6F9' };
-  var mq    = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
+  var VALID = { graydark:1, light:1 };
+  var META  = { graydark:'#1A1A1F', light:'#F7F5EB' };
   var page  = document.getElementById('themePage');
   var cards = Array.prototype.slice.call(document.querySelectorAll('.thmCard'));
   var lastFocus = null;
   var prevOverflow = { body:'', doc:'' };
 
-  function savedPref () {
+  function saved () {
     var v = null;
     try { v = localStorage.getItem(KEY); } catch (e) {}
-    return VALID[v] ? v : 'dark';
-  }
-  function resolve (pref) {
-    if (pref !== 'system') return pref;
-    return (mq && mq.matches) ? 'light' : 'dark';
+    return VALID[v] ? v : 'graydark';
   }
 
   // swap tokens at once
-  function paint (pref) {
-    var t = resolve(pref), root = document.documentElement;
-    root.setAttribute('data-theme-pref', pref);
-    root.setAttribute('data-theme', t);
+  function paint (t) {
+    document.documentElement.setAttribute('data-theme', t);
     var m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute('content', META[t] || META.dark);
+    if (m) m.setAttribute('content', META[t]);
     var cs = document.querySelector('meta[name="color-scheme"]');
     if (cs) cs.setAttribute('content', t === 'light' ? 'light' : 'dark');
-    syncCards(pref);
+    syncCards(t);
   }
 
   // fade during swap
@@ -42,19 +35,19 @@
     fadeTimer = setTimeout(function () { root.classList.remove('thmFade'); }, 360);
   }
 
-  function apply (pref) {
-    if (!VALID[pref]) return;
-    try { localStorage.setItem(KEY, pref); } catch (e) {}
+  function apply (t) {
+    if (!VALID[t]) return;
+    try { localStorage.setItem(KEY, t); } catch (e) {}
     var reduce = window.matchMedia &&
                  matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!reduce && pref !== document.documentElement.getAttribute('data-theme-pref')) fade();
-    paint(pref);
+    if (!reduce && t !== document.documentElement.getAttribute('data-theme')) fade();
+    paint(t);
   }
 
   // roving tabindex
-  function syncCards (pref) {
+  function syncCards (t) {
     cards.forEach(function (c) {
-      var on = c.getAttribute('data-theme') === pref;
+      var on = c.getAttribute('data-theme') === t;
       c.setAttribute('aria-checked', on ? 'true' : 'false');
       c.tabIndex = on ? 0 : -1;
     });
@@ -75,24 +68,11 @@
     });
   });
 
-  // follow os theme
-  if (mq) {
-    var onMq = function () {
-      if (savedPref() !== 'system') return;
-      var reduce = window.matchMedia &&
-                   matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (!reduce) fade();
-      paint('system');
-    };
-    if (mq.addEventListener) mq.addEventListener('change', onMq);
-    else if (mq.addListener) mq.addListener(onMq); // older safari
-  }
-
   // page open and close
   function openThemePage () {
     if (!page) return;
     lastFocus = document.activeElement;
-    syncCards(savedPref());
+    syncCards(saved());
     page.classList.add('open');
     prevOverflow.body = document.body.style.overflow;
     prevOverflow.doc  = document.documentElement.style.overflow;
@@ -117,5 +97,5 @@
   window.closeThemePage = closeThemePage;
 
   // sync cards on boot
-  syncCards(savedPref());
+  syncCards(saved());
 })();

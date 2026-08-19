@@ -54,11 +54,13 @@
   <!-- adsense — not here any more.
 
        The network's script used to load on every visit, before anybody had
-       asked for an ad and before this page knew whose visit it was. The only
-       ad surface on the site is the Sponsor panel, and Max is the plan that
-       has no ads at all, so js/effects.js fetches this script the first time
-       a member who has ads opens that panel — once, on demand. A Max member
-       never fetches it. -->
+       asked for an ad and before this page knew whose visit it was. The ad
+       surfaces are the four detail views — an artwork, a resource, a post, a
+       listing — where one slot sits between the tags and the comments, and
+       Max is the plan that has no ads at all. js/effects.js fetches the
+       script the first time one of those slots is mounted for a member who
+       has ads, once, on demand. A Max member never fetches it, and neither
+       does a visit that never opens a detail view. -->
   <!-- analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-21DL9JWJ58"></script>
   <script>
@@ -172,10 +174,10 @@
   <link rel="stylesheet" href="/css/profile.css?v=10">
   <link rel="stylesheet" href="/css/admin.css?v=1">
   <link rel="stylesheet" href="/css/auth.css?v=1">
-  <link rel="stylesheet" href="/css/panels.css?v=5">
+  <link rel="stylesheet" href="/css/panels.css?v=6">
   <link rel="stylesheet" href="/css/upload.css?v=13">
   <link rel="stylesheet" href="/css/widgets.css?v=9">
-  <link rel="stylesheet" href="/css/overrides.css?v=13">
+  <link rel="stylesheet" href="/css/overrides.css?v=14">
   <link rel="stylesheet" href="/css/select.css?v=3">
   <link rel="stylesheet" href="/css/analytics.css?v=7">
  </head>
@@ -1379,58 +1381,6 @@
           </ul>
         </div>
 
-        <div class="ftCol">
-          <div class="ftColHead">Legal</div>
-          <!-- Anchors, not buttons, and the href is the real standalone page.
-               A click still opens the modal — openLegal returns false and
-               cancels the navigation — but the link now has an address that a
-               crawler can follow, a payment provider's reviewer can open, and a
-               member can copy. If the script has not loaded, the browser simply
-               follows the href instead of doing nothing. -->
-          <ul class="ftColList">
-            <li>
-              <a class="ftColLink" href="/legal/privacy" onclick="return openLegal('privacy')" aria-label="Privacy Policy">Privacy Policy</a>
-            </li>
-            <li>
-              <a class="ftColLink" href="/legal/terms" onclick="return openLegal('terms')" aria-label="Terms of Service">Terms of Service</a>
-            </li>
-            <li>
-              <a class="ftColLink" href="/legal/refund" onclick="return openLegal('refund')" aria-label="Refund Policy">Refund Policy</a>
-              <a class="ftColLink" href="/legal/creator-terms" onclick="return openLegal('seller')" aria-label="Creator &amp; Seller Terms">Creator &amp; Seller Terms</a>
-            </li>
-            <li>
-              <a class="ftColLink" href="/legal/delivery" onclick="return openLegal('shipping')" aria-label="Delivery Policy">Delivery Policy</a>
-            </li>
-            <li>
-              <a class="ftColLink" href="/legal/cookies" onclick="return openLegal('cookie')" aria-label="Cookie Policy">Cookie Policy</a>
-            </li>
-          </ul>
-        </div>
-
-        <div class="ftCol">
-          <div class="ftColHead">Support</div>
-          <ul class="ftColList">
-            <li>
-              <button class="ftColLink" onclick="openSubscription()" aria-label="FAQ">FAQ</button>
-            </li>
-            <li>
-              <a class="ftColLink ftColLink--mail" href="mailto:DigiArtzsupport@gmail.com" aria-label="Help Center">Help Center</a>
-            </li>
-            <li>
-              <!-- A mailto is not a contact page. This one has an address and a
-                   phone number on it, which is what a payment provider's review
-                   looks for and what a buyer needs when email is not enough. -->
-              <a class="ftColLink" href="/legal/contact" onclick="return openLegal('contact')" aria-label="Contact Us">Contact Us</a>
-            </li>
-            <li>
-              <a class="ftColLink ftColLink--mail" href="mailto:DigiArtzsupport@gmail.com" aria-label="Report an Issue">Report an Issue</a>
-            </li>
-            <li>
-              <button class="ftColLink" data-dz-ads-entry onclick="openAdsPanel()" aria-label="Sponsor">Sponsor</button>
-            </li>
-          </ul>
-        </div>
-
       </div>
 
     </div>
@@ -2245,69 +2195,6 @@
 
   </div>
 
-  <div id="adsPanel">
-    <div class="apHdr">
-      <button class="apX" onclick="closeAdsPanel()" aria-label="Close">←</button>
-      <div class="apTitle">SPONSOR</div>
-    </div>
-    <div class="apBody">
-      <div class="apIntro">SWIPE TO BROWSE ADS</div>
-      <div class="apHint">← SCROLL →</div>
-
-      <div class="apTrackWrap" id="apTrackWrap">
-        <div class="apTrack" id="apTrack">
-
-          <div class="apCard">
-            <div class="apCardLbl">AD · 01</div>
-            <ins class="adsbygoogle"
-                 style="display:block"
-                 data-ad-client="ca-pub-1351696642556147"
-                 data-ad-slot="7070525551"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
-          </div>
-
-          <div class="apCard">
-            <div class="apCardLbl">AD · 02</div>
-            <ins class="adsbygoogle"
-                 style="display:block"
-                 data-ad-client="ca-pub-1351696642556147"
-                 data-ad-slot="7070525551"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
-          </div>
-
-          <div class="apCard">
-            <div class="apCardLbl">AD · 03</div>
-            <ins class="adsbygoogle"
-                 style="display:block"
-                 data-ad-client="ca-pub-1351696642556147"
-                 data-ad-slot="7070525551"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="apDots" id="apDots">
-        <div class="apDot active" data-idx="0"></div>
-        <div class="apDot" data-idx="1"></div>
-        <div class="apDot" data-idx="2"></div>
-      </div>
-
-      <div class="apDesc">
-        <div class="apDescTitle">SPONSOR</div>
-        <div class="apDescSub">SUPPORTING DIGIARTZ</div>
-        <p class="apDescTxt">
-          This section features sponsored content and advertisements that help support <strong>DigiArtz</strong> and keep the platform running. The ads shown here may include products, services, or creative tools from third-party partners. We try to keep everything relevant and useful so it blends naturally with the creative and digital art experience of the website. <strong>Sponsored content is clearly separated from the main content</strong> so users can easily identify it.
-        </p>
-      </div>
-
-    </div>
-  </div>
-
-
   <div class="cmMod" id="cmCreateMod" onclick="if(event.target===this)cmCloseMod('cmCreateMod')">
     <div class="cmModCard">
       <div class="cmModTitle">Create Community</div>
@@ -2496,6 +2383,13 @@
         <div class="avBlockH">Tags</div>
         <div class="avTagList" id="avTagList"></div>
        </div>
+       <!-- The one ad on an artwork, between what the artist filed it under
+            and what everybody said about it: past the work itself and before
+            the conversation, which is the seam a reader is already crossing.
+            Empty markup on purpose — js/effects.js builds the slot when the
+            viewer opens, so a Max member gets nothing here and a visit that
+            never opens an artwork never asks the network for anything. -->
+       <div id="avAdSlot"></div>
        <div class="avDiv"></div>
        <!-- The box you type in sits above what everyone else typed, and the
             comments arrive twenty at a time on the button under them. Nothing
@@ -2837,9 +2731,9 @@
   <script src="/js/badwords.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=28"></script>
+  <script src="/js/app-core.js?v=29"></script>
   <script src="/js/protect.js?v=3"></script>
-  <script src="/js/gallery.js?v=87"></script>
+  <script src="/js/gallery.js?v=88"></script>
   <script src="/js/auth.js?v=17"></script>
   <script src="/js/profile.js?v=15"></script>
   <script src="/js/albums.js?v=16"></script>
@@ -2861,7 +2755,7 @@
        scripts are deferred, so it lands well before anyone can click a footer
        link, and openLegal reads it at click time rather than at load time. -->
   <script type="module" src="/js/legal-content.js?v=1"></script>
-  <script src="/js/effects.js?v=7"></script>
+  <script src="/js/effects.js?v=8"></script>
 
 
 
@@ -3387,7 +3281,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=9"></script>
 
 
-  <script src="/js/sections.js?v=115"></script>
+  <script src="/js/sections.js?v=116"></script>
   <!-- The url of every public section, and the panel each one opens. After
        sections.js, whose qlGo and hero call-to-action hand over to it. -->
   <script src="/js/routes.js?v=1"></script>

@@ -796,6 +796,13 @@
       } else { tagListEl.innerHTML=''; tagsBlock.hidden=true; tagsDiv.hidden=true; }
     }
 
+    // The slot between the tags and the comments, rebuilt for this artwork.
+    // Rebuilt rather than filled once: this viewer is one node reused for
+    // every artwork, and AdSense will not push a second ad into an element it
+    // has already filled. js/effects.js drops the block entirely on a plan
+    // without ads.
+    if(typeof window.dzAdSlot === 'function') window.dzAdSlot('avAdSlot');
+
     avRenderMeta({ category:catLabelStr, software: art?art.software:null,
                    createdAt: art?art.created_at:null, hasArt: !!art, art: art });
     avRenderExtras(art);

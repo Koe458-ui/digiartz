@@ -32,7 +32,7 @@
   // visible while that panel was short; obvious once it grew a long one.
   // dzPanelHost is created by the signed-in module and is simply absent for
   // everyone else — overlayEls skips what it cannot find.
-  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'adsPanel', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'dzPanelHost', 'themePage', 'bmPage', 'xpPage', 'anPage', 'rankPage'];
+  var OVERLAY_IDS = ['profilePage', 'fg', 'communityPage', 'subPage', 'authMod', 'pfUpMod', 'upMod', 'artModal', 'notifPage', 'admPage', 'pfMyWorkPage', 'pfEditPage', 'setPage', 'dzPanelHost', 'themePage', 'bmPage', 'xpPage', 'anPage', 'rankPage'];
   var overlayEls = OVERLAY_IDS
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);
@@ -4855,6 +4855,13 @@
     if(!isFinite(t.getTime())) return String(v);
     return t.toLocaleDateString([], {year:'numeric', month:'short', day:'numeric'});
   }
+  /* The ad, between the tags and the comments — after everything the poster
+     wrote and before everything the readers did. js/effects.js owns it; this
+     asks for the markup and gets an empty string back on a plan without ads,
+     which drops the whole block rather than leaving a labelled hole. */
+  function adBlock(){
+    return (typeof window.dzAdHtml === 'function') ? window.dzAdHtml() : '';
+  }
   function cmBlock(kind, id){
     return '<div class="avCmBlock"><div class="avBlockH">Comments</div>'+
       '<div class="avCmBar">'+
@@ -4936,6 +4943,7 @@
         jobBlock('Content notes', r.safety_notes)+
         linkBlock('Links', r.external_links)+
         tagBlock(r.tags)+
+        adBlock()+
         cmBlock(kind, id)+
         '</div>';
     }
@@ -4965,6 +4973,7 @@
         linkBlock('Sources', r.external_refs)+
         (hasRelated ? '<div id="dzvRelated"></div>' : '')+
         tagBlock(r.tags)+
+        adBlock()+
         cmBlock(kind, id)+
         '</div>';
     }
@@ -5078,6 +5087,7 @@
         jobBlock('Content notes', r.safety_notes)+
         jobBlock('From the seller', r.seller_note)+
         tagBlock(r.tags)+
+        adBlock()+
         cmBlock(kind, id)+
         '</div>';
     }
@@ -5170,6 +5180,9 @@
     }
     host.innerHTML = html;
     if(typeof window.dzExtras === 'function') window.dzExtras();   // fills the slot above
+    // The column is in the document now, which is when the ad slot can be
+    // built: AdSense measures the width it is handed at push time.
+    if(typeof window.dzAdMount === 'function') window.dzAdMount(host);
 
     var multi = !curExt && rows().length > 1;
     var pb=document.getElementById('dzvPrev'), nb=document.getElementById('dzvNext');

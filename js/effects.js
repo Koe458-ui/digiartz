@@ -1,4 +1,4 @@
-// ripple, ads panel, legal modals, faq
+// ripple, the ad slot, legal modals, faq
   // global ripple
   (function(){
     var host = document.getElementById('rippleHost');
@@ -49,123 +49,144 @@
 // image linked comments
 
 (function(){
-  var panel  = document.getElementById('adsPanel');
-  var wrap   = document.getElementById('apTrackWrap');
-  var dots   = document.querySelectorAll('#apDots .apDot');
-  var cards  = document.querySelectorAll('#apTrack .apCard');
-  var adsInit = false;
+  /* One ad slot, four detail views.
 
-  /* Max is the plan without ads, and "without ads" is meant literally: the
-     network's script is never fetched, so there is nothing to block, nothing
-     to consent to and no third party told that this member opened the page.
-     That is only possible because the script is no longer in <head> — it was
-     loaded by every visit whether or not anybody ever opened this panel, and
-     it is fetched here, once, the first time somebody who has ads opens it. */
-  var adsSrc = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js' +
-               '?client=ca-pub-1351696642556147';
+     It replaces the Sponsor panel, which was a page of its own that a member
+     had to choose to open — three ad cards behind a footer link, seen by
+     almost nobody and worth almost nothing. The slot lives where a reader
+     already is instead: on an artwork, a resource, a post and a listing,
+     between the tags and the comments. That is the one seam on those pages
+     where the work has finished and the conversation has not started, so an
+     ad sits in it without interrupting either.
+
+     Nothing is in the markup. Each view asks for the slot when it renders and
+     this builds it, which is what keeps three promises at once:
+
+       - Max is the plan without ads, and "without ads" is literal. No slot is
+         drawn, the network's script is never fetched, and no third party is
+         told that this member opened anything.
+       - A visit that never opens a detail view never fetches the script
+         either. It used to load on every page view, before anybody had asked
+         for an ad.
+       - A fresh <ins> per view. AdSense refuses a second push into an element
+         it has already filled, and these viewers are one DOM node reused for
+         every artwork, so the element has to be rebuilt rather than re-pushed
+         or the second artwork opened would show the first one's ad forever.
+
+     The site is not approved for ads yet, so the honest state today is the
+     empty one: the label is always drawn, and under it "NO ADS" until the
+     network actually returns something. Nothing about that needs changing on
+     the day approval lands — a filled slot hides the placeholder itself. */
+  var AD_CLIENT = 'ca-pub-1351696642556147';
+  var AD_SLOT   = '7070525551';
+  var AD_SRC    = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js' +
+                  '?client=' + AD_CLIENT;
+
   function adsFree(){ return typeof dzTier === 'function' && dzTier() === 'max'; }
+
   function adsLoadScript(){
     if(document.querySelector('script[data-dz-ads]')) return;
     var s = document.createElement('script');
     s.async = true;
-    s.src = adsSrc;
+    s.src = AD_SRC;
     s.crossOrigin = 'anonymous';
     s.setAttribute('data-dz-ads', '1');
     document.head.appendChild(s);
   }
 
-  /* The Sponsor link in the footer is the only way in here, so on Max it is
-     not drawn. Called when the tier lands, and again if it changes. */
-  window.dzPaintAds = function(){
-    var links = document.querySelectorAll('[data-dz-ads-entry]');
-    for(var i = 0; i < links.length; i++){
-      var li = links[i].closest('li') || links[i];
-      li.hidden = adsFree();
-    }
+  /* The markup a view drops into its column. Built as a string because four
+     of the five callers assemble their page as one innerHTML and the fifth
+     writes it into a container it already owns. The box is empty here — the
+     <ins> is added by mount(), once the element is in the document, because
+     AdSense measures the width it is given at push time. */
+  window.dzAdHtml = function(){
+    if(adsFree()) return '';
+    return '<div class="dzAd" data-dz-ad>' +
+             '<div class="dzAdLbl"><span>Advertisement</span></div>' +
+             '<div class="dzAdBox">' +
+               '<div class="dzAdNone">NO ADS</div>' +
+             '</div>' +
+           '</div>';
   };
 
-  // open
-  window.openAdsPanel = function(){
-    // A Max member has no ads to browse. The entry point is already hidden
-    // for them; this is the same answer for anything else that calls in.
-    if(adsFree()) return;
+  /* "filled" is AdSense's own word for it, written onto the <ins> when an ad
+     comes back. Anything else — "unfilled", the attribute never appearing at
+     all because the script is blocked, or because this site is not approved
+     yet — leaves the placeholder where it is. */
+  function watch(box, ins){
+    function settle(){
+      var st = ins.getAttribute('data-ad-status');
+      if(st === 'filled'){ box.setAttribute('data-filled','1'); return true; }
+      return false;
+    }
+    if(settle()) return;
+    var obs = null;
+    if(typeof MutationObserver === 'function'){
+      obs = new MutationObserver(function(){
+        if(settle() && obs){ obs.disconnect(); obs = null; }
+      });
+      obs.observe(ins, {attributes:true, attributeFilter:['data-ad-status']});
+    }
+    // A stop either way: the observer is not left watching an element that
+    // was thrown away when the reader moved to the next artwork.
+    setTimeout(function(){
+      settle();
+      if(obs){ obs.disconnect(); obs = null; }
+    }, 8000);
+  }
+
+  function mount(wrap){
+    if(!wrap || wrap.getAttribute('data-dz-ad-on') === '1') return;
+    var box = wrap.querySelector('.dzAdBox');
+    if(!box) return;
+    wrap.setAttribute('data-dz-ad-on', '1');
+
+    var ins = document.createElement('ins');
+    ins.className = 'adsbygoogle';
+    ins.style.display = 'block';
+    ins.setAttribute('data-ad-client', AD_CLIENT);
+    ins.setAttribute('data-ad-slot', AD_SLOT);
+    ins.setAttribute('data-ad-format', 'auto');
+    ins.setAttribute('data-full-width-responsive', 'true');
+    box.appendChild(ins);
+
     adsLoadScript();
-    closeMenu();
-    panel.classList.add('open');
-    var hint = panel.querySelector('.apHint');
-    if (hint) {
-      hint.style.animation = 'none';
-      void hint.offsetWidth; // force reflow
-      hint.style.animation = '';
-    }
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    if(typeof zeoSectionTrigger==='function') zeoSectionTrigger();
-    if(!adsInit){
-      adsInit = true;
-      setTimeout(function(){
-        var slots = panel.querySelectorAll('ins.adsbygoogle');
-        slots.forEach(function(ins, i){
-          setTimeout(function(){
-            try{ (adsbygoogle = window.adsbygoogle || []).push({}); }catch(e){}
-          }, i * 150);
-        });
-      }, 800); // staggered push
-    }
-  };
-
-  // close
-  window.closeAdsPanel = function(){
-    panel.classList.remove('open');
-    // restore scroll
-    if (typeof restoreScroll === 'function') restoreScroll();
-    else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
-  };
-
-  // dot updater on scroll
-  function updateDots(){
-    if(!wrap || !cards.length) return;
-    var scrollLeft = wrap.scrollLeft;
-    var cardW = cards[0].offsetWidth + 16; // width + gap
-    var idx = Math.round(scrollLeft / cardW);
-    idx = Math.max(0, Math.min(idx, cards.length - 1));
-    dots.forEach(function(d, i){ d.classList.toggle('active', i === idx); });
-  }
-  if(wrap) wrap.addEventListener('scroll', updateDots, {passive:true});
-
-  // dot click scrolls
-  dots.forEach(function(dot){
-    dot.addEventListener('click', function(){
-      var idx = parseInt(dot.getAttribute('data-idx'), 10);
-      var cardW = cards[0] ? cards[0].offsetWidth + 16 : 0;
-      wrap.scrollTo({ left: idx * cardW, behavior: 'smooth' });
-    });
-  });
-
-  // drag to scroll
-  var isDragging = false, startX = 0, scrollStart = 0;
-  if(wrap){
-    wrap.addEventListener('mousedown', function(e){
-      isDragging = true;
-      startX = e.pageX - wrap.offsetLeft;
-      scrollStart = wrap.scrollLeft;
-      wrap.style.cursor = 'grabbing';
-    });
-    document.addEventListener('mousemove', function(e){
-      if(!isDragging) return;
-      var x = e.pageX - wrap.offsetLeft;
-      wrap.scrollLeft = scrollStart - (x - startX);
-    });
-    document.addEventListener('mouseup', function(){
-      isDragging = false;
-      if(wrap) wrap.style.cursor = 'grab';
-    });
+    watch(box, ins);
+    try{ (window.adsbygoogle = window.adsbygoogle || []).push({}); }catch(e){}
   }
 
-  // close on escape
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && panel.classList.contains('open')) closeAdsPanel();
-  });
+  /* Called by each view after it has written its column. Given a root it
+     mounts the slots inside it; given nothing it sweeps the document, which
+     is what the tier repaint below wants. */
+  window.dzAdMount = function(root){
+    if(adsFree()){ window.dzPaintAds(); return; }
+    var host = root || document;
+    var slots = host.querySelectorAll ? host.querySelectorAll('[data-dz-ad]') : [];
+    for(var i = 0; i < slots.length; i++) mount(slots[i]);
+  };
+
+  /* The artwork viewer is one node reused for every artwork, so its slot is
+     rebuilt rather than mounted — the previous artwork's <ins> is already
+     filled and AdSense will not touch it twice. The four section views get a
+     new column each render and go through dzAdMount instead. */
+  window.dzAdSlot = function(id){
+    var host = document.getElementById(id || 'avAdSlot');
+    if(!host) return;
+    host.innerHTML = window.dzAdHtml();
+    window.dzAdMount(host);
+  };
+
+  /* The tier lands after the page does, and it changes when somebody signs in
+     or out. A slot drawn for a member who turns out to be on Max is taken
+     back out here rather than left on screen. */
+  window.dzPaintAds = function(){
+    if(!adsFree()) return;
+    var slots = document.querySelectorAll('[data-dz-ad]');
+    for(var i = 0; i < slots.length; i++){
+      var s = slots[i];
+      if(s.parentNode) s.parentNode.removeChild(s);
+    }
+  };
 })();
 
 (function(){

@@ -4,6 +4,52 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v191 — the footer stops answering questions nobody asked, and the ads
+       move to where the reading happens.
+       Two blocks left the footer: Legal and Support. Both were plain
+       anchor lists of a dozen policy and help destinations, and on a
+       site whose footer is otherwise six words long that made them the
+       densest internal linking on the document. Search read them the
+       way linking says to read them — as what this site is for — and
+       started offering Privacy Policy and Refund Policy under the
+       result where Explore, Marketplace and Community belong. Browse
+       is the only column now, and it names the five sections and the
+       sign-in. Nothing became unreachable: every policy is still at
+       /legal/<slug> as a real page with its own canonical, still in the
+       sitemap, and still listed under Settings → Legal, which is where
+       a member looks for them and where a payment provider's reviewer
+       is sent. Support was two mailto links and a modal; the same
+       address is on the contact page those links pointed past.
+       The Sponsor panel is gone with it — markup, styles, script and
+       the footer entry that opened it. It was a full-screen page of
+       three ad cards a member had to choose to open, behind a link in
+       the block that was doing the damage above, and it was worth
+       almost nothing because almost nobody opened it. What replaces it
+       is one slot in the place a reader already is: on an artwork, a
+       resource, a post and a listing, between the tags and the
+       comments. That seam is the only point on those pages where the
+       work has finished and the conversation has not started.
+       The slot is built by script and is in no markup, which is what
+       keeps three things true at once. Max is still the plan without
+       ads and the word is still literal — no slot, no script, no third
+       party told anything. A visit that never opens a detail view never
+       fetches the network either. And each view gets a fresh <ins>:
+       AdSense refuses a second push into an element it has filled, and
+       the artwork viewer is one node reused for every artwork, so the
+       element is rebuilt rather than re-pushed — otherwise the second
+       artwork opened would wear the first one's ad for the session.
+       Drawn at a desktop banner's proportions, 728 wide with a 90px
+       floor, so the box holds its size whether or not anything arrives
+       and the comments under it do not jump. The label is fixed and
+       always shown. The site is not approved for ads yet, so the state
+       every slot is in today is the empty one, and it says so: NO ADS,
+       in the box, until the network returns something. Nothing needs
+       changing on the day approval lands — a filled slot hides the
+       placeholder itself.
+       Changed: index.html, css/panels.css, css/overrides.css,
+       js/effects.js, js/sections.js, js/gallery.js, js/app-core.js,
+       sw.js.
+
    v190 — a card is identified by what draws it.
        v189 gave the preview its colours inline, and the previews came back.
        The tap did not: the card's theme id was still only readable through
@@ -3427,7 +3473,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v190';
+const CACHE_VERSION = 'v191';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3488,10 +3534,10 @@ const SHELL_URLS = [
   '/css/profile.css?v=10',
   '/css/admin.css?v=1',
   '/css/auth.css?v=1',
-  '/css/panels.css?v=5',
+  '/css/panels.css?v=6',
   '/css/upload.css?v=13',
   '/css/widgets.css?v=9',
-  '/css/overrides.css?v=13',
+  '/css/overrides.css?v=14',
   '/css/select.css?v=3',
   '/css/analytics.css?v=7',
 
@@ -3512,9 +3558,9 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=28',
+  '/js/app-core.js?v=29',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=87',
+  '/js/gallery.js?v=88',
   '/js/auth.js?v=17',
   '/js/profile.js?v=15',
   '/js/albums.js?v=16',
@@ -3528,14 +3574,14 @@ const SHELL_URLS = [
   '/js/search.js?v=11',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
-  '/js/effects.js?v=7',
+  '/js/effects.js?v=8',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=1',
   '/js/theme.js?v=5',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=115',
+  '/js/sections.js?v=116',
   '/js/routes.js?v=1',
   '/js/navprogress.js?v=5'
 ];

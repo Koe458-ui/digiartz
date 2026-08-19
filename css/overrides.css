@@ -178,8 +178,6 @@
 .faqTitle{ color:var(--pg); }
 
 /* panels and modals */
-.apTitle,
-.apDescTitle,
 .spTitle,
 .albModTitle,
 .tgModTitle,
@@ -286,3 +284,59 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 /* a line in the cart: the listing's own card, and the way to take it out */
 .dzCartCell{ display:flex; flex-direction:column; gap:.5rem; }
 .dzCartRm{ align-self:stretch; text-align:center; }
+
+/* ── the ad slot ──────────────────────────────────────────────────────────
+   One slot, in the four detail views that have comments — an artwork, a
+   resource, a post, a listing — sitting between the tags and the comments.
+   It is drawn at a desktop banner's proportions on purpose: 728 wide is the
+   size the network actually has inventory for, and holding the box there
+   rather than at the column's full width keeps the ad from stretching to 860
+   on a wide screen and reading as part of the page.
+
+   The label is fixed and always drawn: a reader is told what the box is
+   before they are told whether anything is in it. The rule either side of
+   the word is what marks the block off from the tags above it, so the slot
+   needs no divider of its own.
+
+   Height is a floor, not a fixed figure. 90px is a leaderboard, so an empty
+   slot occupies exactly what a filled one would and the comments underneath
+   do not jump when an ad arrives; a taller unit is free to take the room it
+   needs. On a phone the floor drops to 60, which is the mobile banner. */
+/* The artwork viewer's slot is a container the script writes into, and its
+   column is a flex stack with a gap — so an empty one would still push the
+   comments down by a gap it never earned. On Max, where nothing is written
+   into it, it takes no room at all. */
+#avAdSlot:empty{ display:none; }
+.dzAd{ display:flex; flex-direction:column; gap:.7rem; }
+.dzAdLbl{
+  display:flex; align-items:center; gap:.75rem;
+  font-family:var(--fm); font-size:.6rem; letter-spacing:.28em;
+  text-transform:uppercase; color:var(--txd);
+}
+.dzAdLbl::before,
+.dzAdLbl::after{ content:''; flex:1 1 auto; height:1px; background:var(--bdr); }
+.dzAdLbl span{ flex:0 0 auto; }
+.dzAdBox{
+  position:relative;
+  width:100%; max-width:728px; margin:0 auto;
+  min-height:90px;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.dzAdBox ins.adsbygoogle{ display:block; width:100%; }
+/* What stands in the box until the network fills it. The site is not
+   approved for ads yet, so today this is what every slot shows — said
+   plainly rather than left as an unexplained empty rectangle. It is taken
+   out the moment an ad lands, which is the one thing data-filled marks. */
+.dzAdNone{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--fm); font-size:.62rem; letter-spacing:.22em;
+  color:var(--txd); opacity:.5;
+  border:1px dashed var(--bdr); border-radius:10px;
+  pointer-events:none;
+}
+.dzAdBox[data-filled] .dzAdNone{ display:none; }
+@media(max-width:520px){
+  .dzAdBox{ min-height:60px; }
+}

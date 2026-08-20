@@ -259,12 +259,8 @@
   #artModal .avImgStage,
   #artModal .avImgStack{ flex:0 0 auto; }
 
-  /* The air belongs to the pane, not to the boxes inside it. Held here it is
-     counted once: the picture is capped at the pane's height less this inset,
-     so the largest image the cap allows lands exactly inside the pane and the
-     pane does not scroll. Spent on the viewport instead it was counted twice
-     — subtracted from the cap and then added back around the picture — which
-     put a scrollbar on a portrait that was supposed to fit precisely. */
+  /* The air belongs to the pane, not to the boxes inside it, so it is counted
+     once rather than added around every picture in the column. */
   #artModal .avImgPane{ padding-block:var(--vwGap); }
   /* The inset on these two is the pane's already — .avBody is what carries
      --shellPad here, and a second copy of it inside the pane would narrow the
@@ -282,22 +278,31 @@
   /* only ever seen when there is a second image: the gap above the stack */
   #artModal .avImgStack{ padding:var(--vwGap) 0 0; }
 
-  /* One screen's worth of picture, measured against this layout rather than
-     the phone's. calc(100dvh - 132px) is the stacked column's budget — its
-     top bar plus the artist card above the work — and it is what the base
-     rule sets. Side by side there is no card above the picture and the pane
-     runs the full height under the top bar, so that figure left every image
-     short of the room it actually had. The bar is held at --vwTopBar just
-     below so this subtraction is a measurement and not a guess. */
+  /* The pane bounds the picture's WIDTH. It does not bound its height, and
+     that is the whole difference between a viewer and a thumbnail.
+
+     A height cap sounds like the safe thing and is not: fit a 900x2600 piece
+     into one screen and it comes out a 340px sliver of a column that was
+     1089px wide, unreadable, with nothing left to scroll — the pane's scroll
+     range was measured at exactly zero for every image, tall ones included.
+     So the wheel over the artwork had nothing to move and handed everything
+     to the notes, and the two panes that are supposed to move independently
+     could only ever move one of them. That is "I can't scroll the image".
+
+     Unbounded in height, a picture is drawn at the width of the column and
+     as tall as that makes it. Landscape work still fits and still centres —
+     safe-centring only centres what fits. Tall work overflows, so the pane
+     scrolls it, starting at the top, and stops at the picture's own end. A
+     stack behaves the same way for the same reason. Neither is ever upscaled:
+     width:auto on the base rule keeps a small image at its own size.
+
+     No dvh arithmetic is left here, so nothing has to be told how tall the
+     top bar is, and --vwTopBar has gone with the subtraction that wanted it. */
   #artModal #lbImg,
   #artModal .avImgStack img{
     max-width:100%;
-    max-height:calc(100dvh - var(--vwTopBar) - (2 * var(--vwGap)));
+    max-height:none;
   }
-
-  /* Two text buttons and a rule. Fixing the height is what lets the picture
-     above be sized off it. */
-  #artModal .avTopBar{ height:var(--vwTopBar); }
   #artModal #avAuthorCard{
     grid-column:2; grid-row:1;
     padding:var(--vwGap) 0;
@@ -520,7 +525,7 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
    step down on a phone, and both columns read off them — so every viewer has
    the same space from the left, the same from the right, and the same
    distance between the things in it, at every width. */
-:root{ --vwGap:1.5rem; --vwPad:var(--shellPad); --vwTopBar:54px; }
+:root{ --vwGap:1.5rem; --vwPad:var(--shellPad); }
 @media(max-width:520px){ :root{ --vwGap:1.2rem; } }
 @media(min-width:1100px){ :root{ --vwGap:1.6rem; } }
 

@@ -217,7 +217,13 @@
   #artModal .avBody{
     display:grid;
     grid-template-columns:minmax(0,1fr) clamp(320px,26%,480px);
-    grid-template-rows:auto minmax(0,1fr);
+    /* One row. The artist card used to have a row of its own above the notes,
+       which is what pinned it: a grid item cannot scroll inside a sibling, so
+       the notes moved under a card that never did. avPlaceCard in
+       js/gallery.js puts the card inside the notes' scroller at this width
+       instead, so the whole right-hand column — artist, buttons, title, and
+       everything written about the piece — is one thing that scrolls. */
+    grid-template-rows:minmax(0,1fr);
     column-gap:clamp(1.6rem,2.6vw,3rem);
     padding-inline:var(--shellPad);
     /* the panes scroll; the body does not */
@@ -225,7 +231,7 @@
     min-height:0;
   }
   #artModal .avImgPane{
-    grid-column:1; grid-row:1 / span 2;
+    grid-column:1; grid-row:1;
     min-height:0;
     overflow-y:auto; overscroll-behavior:contain;
     /* A landscape picture cannot fill a pane this tall, and hung from the top
@@ -303,12 +309,11 @@
     max-width:100%;
     max-height:none;
   }
-  #artModal #avAuthorCard{
-    grid-column:2; grid-row:1;
-    padding:var(--vwGap) 0;
-  }
+  /* Inside the scroller now, so it takes the column's own gap and none of the
+     padding the stacked layout gives it. */
+  #artModal #avAuthorCard{ padding:0; }
   #artModal .avSide{
-    grid-column:2; grid-row:2;
+    grid-column:2; grid-row:1;
     width:auto; max-width:none; margin:0;
     min-height:0; overflow:hidden;
     display:flex; flex-direction:column;

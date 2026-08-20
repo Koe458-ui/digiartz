@@ -369,7 +369,39 @@
     if(acts && acts.parentNode) acts.parentNode.removeChild(acts);
     return el;
   }
+  /* Where the artist card lives, which is not the same place in both layouts.
+
+     Stacked, it is the first thing in .avBody: you are told whose the work is
+     before you are shown it. Side by side, it has to be INSIDE the notes'
+     scroller — a grid item cannot scroll along with a sibling, so as a column
+     of its own it stayed pinned while everything written about the piece slid
+     under it. The card is one node either way; only its parent changes.
+
+     Moved rather than copied, so there is never a second card to keep filled,
+     and driven by the same 1024px the stylesheet uses so the two can never
+     disagree about which layout is on. */
+  var avWide = window.matchMedia ? window.matchMedia('(min-width:1024px)') : null;
+  function avPlaceCard(){
+    var card = document.getElementById('avAuthorCard');
+    if(!card) return;                       // older shell: avHost will make one
+    var body = document.querySelector('#artModal .avBody');
+    var scroll = document.querySelector('#artModal .avSideScroll');
+    if(!body || !scroll) return;
+    if(avWide && avWide.matches){
+      if(card.parentNode !== scroll) scroll.insertBefore(card, scroll.firstChild);
+    } else if(card.parentNode !== body){
+      body.insertBefore(card, body.firstChild);
+    }
+  }
+  if(avWide){
+    var onAvWide = function(){ avPlaceCard(); };
+    // addListener is the old name, and iOS Safari carried it alone for years
+    if(avWide.addEventListener) avWide.addEventListener('change', onAvWide);
+    else if(avWide.addListener) avWide.addListener(onAvWide);
+  }
+
   function avRenderCard(art){
+    avPlaceCard();
     var host = avHost('avAuthorCard');
     if(!host || typeof window.dzVwCard !== 'function') return;
     host.innerHTML = window.dzVwCard('avCard', 'closeLB()');

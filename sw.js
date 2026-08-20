@@ -3627,7 +3627,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v200';
+const CACHE_VERSION = 'v201';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3682,16 +3682,16 @@ const SHELL_URLS = [
   '/css/base.css?v=11',
   '/css/hero.css?v=100',
   '/css/viewer.css?v=19',
-  '/css/community.css?v=17',
+  '/css/community.css?v=18',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',
-  '/css/profile.css?v=13',
+  '/css/profile.css?v=14',
   '/css/admin.css?v=4',
   '/css/auth.css?v=3',
-  '/css/panels.css?v=10',
+  '/css/panels.css?v=11',
   '/css/upload.css?v=15',
   '/css/widgets.css?v=11',
-  '/css/overrides.css?v=18',
+  '/css/overrides.css?v=19',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 

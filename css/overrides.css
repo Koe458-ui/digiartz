@@ -42,7 +42,7 @@
 
 /* comments and actions */
 .avCmBlock{display:flex;flex-direction:column;gap:.6rem;}
-.avCmList{display:flex;flex-direction:column;gap:.65rem;max-height:340px;overflow-y:auto;padding-right:.2rem;}
+.avCmList{display:flex;flex-direction:column;gap:.65rem;overflow-y:auto;}
 .avCmEmpty{font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;color:var(--txd);padding:.9rem 0;text-align:center;}
 .avCm{display:flex;gap:.6rem;align-items:flex-start;}
 .avCmAv{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:var(--sur2);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:var(--txd);}
@@ -67,7 +67,7 @@
 .dzvBody{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:6rem;}
 .dzvMedia{background:transparent;box-sizing:border-box;text-align:center;}
 .dzvMedia img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
-.dzvCol{margin:0;padding:1.2rem 1.2rem 2rem;display:flex;flex-direction:column;gap:1.1rem;}
+.dzvCol{margin:0;display:flex;flex-direction:column;}
 .dzvTitle{font-family:var(--fd);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0;color:var(--tx);}
 .dzvExcerpt{font-size:1rem;color:var(--txd);line-height:1.55;margin:0;}
 .dzvDesc,.dzvArticle{font-size:.95rem;line-height:1.65;color:var(--tx);margin:0;overflow-wrap:anywhere;}

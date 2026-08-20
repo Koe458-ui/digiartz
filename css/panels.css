@@ -22,11 +22,8 @@ body{background:var(--bg);}
 
 /* overlay scrims */
 #fgFltOvr::before{background:color-mix(in srgb,var(--bg) 55%,transparent)!important;}
-.subPgHdr::before{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;}
-.subPgHdr{border-bottom:1px solid var(--bdr);}
 .cpBar::before{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;}
 .cpBar{border-top:1px solid var(--bdr);}
-#legalBackdrop::before{background:color-mix(in srgb,var(--bg) 75%,transparent)!important;}
 #artModal::before{background:color-mix(in srgb,var(--bg) 85%,transparent)!important;}
 /* The card hover scrim was declared here too, at the identical value css/hero.css
    already gives it, with an !important bolted on that nothing needed — no other
@@ -148,7 +145,6 @@ body{background:var(--bg);}
   background: var(--bg);
   overflow-y: auto;
   transform: translateX(100%);
-  transition: transform .45s cubic-bezier(.22,1,.36,1);
 }
 #subPage.open { transform: translateX(0); }
 
@@ -1099,7 +1095,6 @@ html[data-theme="light"] .subCmpNo  { color: #dc2626; }
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
-  transition: transform .4s cubic-bezier(.22,1,.36,1);
   overflow: hidden;
 }
 #zeoPage.open {

@@ -300,7 +300,6 @@
     #profilePage .dzList,
     #profilePage .xpWrap{padding-left:var(--pfPad);padding-right:var(--pfPad);}
     #profilePage .albGrid{margin-top:0;padding:0 var(--pfPad);}
-    #profilePage .xpWrap{max-width:760px;}
 
     /* artwork grid — the same shape as the grid on the home screen */
     .pfGrid{

@@ -739,6 +739,21 @@
       if(room <= 1) return false;
       return dy > 0 ? el.scrollTop < room - 1 : el.scrollTop > 1;
     }
+    /* deltaY is only in pixels when the browser says it is. Firefox reports
+       a wheel notch in lines (deltaMode 1) and a page key in pages (2), so
+       forwarding the raw number moved the notes about three pixels a notch
+       and the pane read as frozen — the very fault this forwarding exists to
+       fix. Lines are resolved against the element's own line-height so a
+       notch here travels the distance a notch travels anywhere else. */
+    function px(e, el){
+      if(e.deltaMode === 1){
+        var lh = parseFloat(getComputedStyle(el).lineHeight);
+        if(!(lh > 0)) lh = 16;
+        return e.deltaY * lh;
+      }
+      if(e.deltaMode === 2) return e.deltaY * el.clientHeight;
+      return e.deltaY;
+    }
     document.addEventListener('DOMContentLoaded', function(){
       var pane = document.querySelector('#artModal .avImgPane');
       if(!pane) return;
@@ -746,7 +761,7 @@
         if(canTake(pane, e.deltaY)) return;          // the picture still has room
         var side = document.querySelector('#artModal .avSideScroll');
         if(!canTake(side, e.deltaY)) return;          // neither has: let it be
-        side.scrollTop += e.deltaY;
+        side.scrollTop += px(e, side);
         e.preventDefault();
       }, { passive:false });
 
@@ -761,7 +776,7 @@
         if(canTake(media, e.deltaY)) return;
         var col = dzv.querySelector('.dzvCol');
         if(!canTake(col, e.deltaY)) return;
-        col.scrollTop += e.deltaY;
+        col.scrollTop += px(e, col);
         e.preventDefault();
       }, { passive:false });
     });
@@ -874,9 +889,16 @@
     modal.setAttribute('data-state','open');
     modal.classList.add('open');
     document.body.style.overflow='hidden';
+    // The way out takes focus, so the dialog is somewhere to tab from and Esc
+    // has an owner. .avCloseBtn is a name nothing wears any more — dzVwCard
+    // draws the card and its button is .vwClose — so this had been focusing
+    // nothing since the card was rewritten, and focus stayed behind on the
+    // gallery underneath. preventScroll because the three scrollers were
+    // just sent back to the top a few lines up, and bringing a button into
+    // view is exactly the kind of thing that would undo that.
     setTimeout(function(){
-      var closeBtn=document.querySelector('#artModal .avCloseBtn');
-      if(closeBtn) closeBtn.focus();
+      var closeBtn=document.querySelector('#artModal .vwClose');
+      if(closeBtn) closeBtn.focus({preventScroll:true});
     },50);
     // update url and meta
     if(id){

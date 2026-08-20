@@ -719,6 +719,54 @@
     });
   })();
 
+  /* The wheel over the artwork has somewhere to go.
+
+     Side by side, the picture and the notes are two scrollers, which is what
+     makes them move independently. It also makes the picture a dead zone: it
+     is the largest thing on the screen and the obvious place to leave the
+     cursor, but a pane showing an image that already fits has nothing to
+     scroll, and overscroll-behavior:contain stops the event going anywhere
+     else. Wheel over the artwork and the viewer looked frozen.
+
+     So the pane consumes what it can — a tall image, or a stack of them,
+     still scrolls on its own and stops at its own end — and hands the rest to
+     the notes. Nothing is forwarded while the pane can still use it, so the
+     two keep moving independently for as long as both have somewhere to go. */
+  (function(){
+    function canTake(el, dy){
+      if(!el) return false;
+      var room = el.scrollHeight - el.clientHeight;
+      if(room <= 1) return false;
+      return dy > 0 ? el.scrollTop < room - 1 : el.scrollTop > 1;
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      var pane = document.querySelector('#artModal .avImgPane');
+      if(!pane) return;
+      pane.addEventListener('wheel', function(e){
+        if(canTake(pane, e.deltaY)) return;          // the picture still has room
+        var side = document.querySelector('#artModal .avSideScroll');
+        if(!canTake(side, e.deltaY)) return;          // neither has: let it be
+        side.scrollTop += e.deltaY;
+        e.preventDefault();
+      }, { passive:false });
+
+      /* The section viewer has the same two panes and the same dead zone. It
+         rebuilds its body on every open, so the listener sits on the page
+         rather than on the media, and finds the current pair when it fires. */
+      var dzv = document.getElementById('dzView');
+      if(!dzv) return;
+      dzv.addEventListener('wheel', function(e){
+        var media = dzv.querySelector('.dzvMedia');
+        if(!media || !media.contains(e.target)) return;
+        if(canTake(media, e.deltaY)) return;
+        var col = dzv.querySelector('.dzvCol');
+        if(!canTake(col, e.deltaY)) return;
+        col.scrollTop += e.deltaY;
+        e.preventDefault();
+      }, { passive:false });
+    });
+  })();
+
   function openLB(src,name,cat,desc,id,pushUrl,navSource){
     var art = id ? findArtworkById(id) : null;
     if(!art && id && navSource && navSource.length){
@@ -739,6 +787,17 @@
       if(cl) cl.innerHTML='<div class="avCmEmpty">LOADING\u2026</div>';
       var ci=document.getElementById('avCmIn'); if(ci) ci.value='';
       var st=document.getElementById('avImgStack'); if(st){ st.hidden=true; st.innerHTML=''; }
+      // Back to the top of both panes. This markup is written once in
+      // index.html and reused for every artwork — unlike the section viewer,
+      // which rebuilds its body each time and so starts at the top for free —
+      // so without this the next artwork opens wherever the last one was left,
+      // which on a long comment thread is the bottom of the page.
+      var pane=document.querySelector('#artModal .avImgPane');
+      if(pane) pane.scrollTop=0;
+      var side=document.querySelector('#artModal .avSideScroll');
+      if(side) side.scrollTop=0;
+      var bdy=document.querySelector('#artModal .avBody');
+      if(bdy) bdy.scrollTop=0;
     })();
 
     var viewport=document.getElementById('avImgViewport');

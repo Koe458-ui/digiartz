@@ -41,22 +41,46 @@
 .avNavTxt:hover{color:var(--ps);}
 .avNavTxt:active{opacity:.7;}
 /* stacked images */
-/* Stacked images ran almost edge to edge, so two pictures read as one tall
-   one. Enough air to say "these are separate" and not so much that the set
-   stops reading as one upload — and the same figure above the first of them,
-   so the gap under the lead image matches the gaps under the rest. */
-.avImgStack{display:flex;flex-direction:column;gap:clamp(1.1rem,2.4vw,2rem);
-  background:transparent;
-  padding:clamp(1.1rem,2.4vw,2rem) var(--vwPad) 0;box-sizing:border-box;}
+/* The rail of thumbnails under the picture.
+
+   This element used to print the extra pages full width, one under another,
+   which turned the artwork column into a tall document. One picture in a box
+   with the set offered underneath does not depend on how many images an
+   upload carries: the box is always full, and this rail is the only thing
+   that scrolls — sideways, and only when there are more thumbnails than fit
+   across it. */
+.avImgStack{
+  display:flex; flex-direction:row; align-items:center;
+  /* Centred under a centred picture — "safe" so that when there are more
+     thumbnails than fit, the row falls back to starting at the left rather
+     than centring the overflow and putting the first one out of reach. */
+  justify-content:safe center;
+  gap:.55rem;
+  padding:.8rem var(--vwPad);
+  box-sizing:border-box; background:transparent;
+  overflow-x:auto; overflow-y:hidden;
+  scrollbar-width:thin;
+  overscroll-behavior-x:contain;
+}
 /* display:flex above outranks the browser's own [hidden]{display:none}, which
-   is a bare attribute selector and loses to any class. So the stack an artwork
-   with one image is told to hide went on being laid out — an empty flex box
-   still spending its padding, a couple of dozen pixels of nothing under every
-   single-image artwork, and enough to throw the centring on this pane off by
-   that much. hidden means hidden. */
+   is a bare attribute selector and loses to any class. A single-image artwork
+   is told to hide this, and hidden has to mean hidden. */
 .avImgStack[hidden]{display:none;}
-.avImgStack{text-align:center;}
-.avImgStack img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
+.avImgStack::-webkit-scrollbar{height:6px;}
+.avImgStack::-webkit-scrollbar-thumb{background:var(--bdrh);border-radius:3px;}
+.avThumb{
+  flex:0 0 auto;
+  width:64px; height:64px; padding:0;
+  border:2px solid transparent; border-radius:9px;
+  background:var(--sur2); overflow:hidden; cursor:pointer;
+  opacity:.6;
+  transition:opacity .15s ease, border-color .15s ease;
+}
+.avThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.avThumb:hover{opacity:1;}
+.avThumb.on{opacity:1;border-color:var(--pg);}
+.avThumb:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+
 /* hide while loading */
 
 /* comments and actions */
@@ -271,92 +295,67 @@
     grid-column:1; grid-row:1 / span 2;
     min-height:0;
     overflow-y:auto; overscroll-behavior:contain;
-    /* A landscape picture cannot fill a pane this tall, and hung from the top
-       it leaves all of its air underneath. Centred, it hangs at eye level.
-       "safe" is what makes that survivable: the moment the content is taller
-       than the pane the alignment falls back to start, so the top of a tall
-       stack can never end up scrolled off above the scroller's own top. */
+    /* The picture and the rail under it are one group, centred in the pane
+       together. "safe" so that if the pair is ever taller than the pane the
+       alignment falls back to start and the top of the work stays reachable. */
     justify-content:safe center;
+    align-items:center;
   }
 
-  /* Both children of the pane size to their content, and neither of them
-     flexes. .avImgStage still carries flex:1 1 auto from css/viewer.css,
-     where the pane was a fixed-height box with one picture in it, and spent
-     in a scrolling pane that figure is wrong in both directions:
+  /* The picture is a box that is always full, and the rail sits under it.
 
-       grow — one image, and the stage swells to the full height of the pane.
-       justify-content then has no free space left to place anything in, so
-       the picture hangs from the top with the whole pane's air stacked
-       underneath it. That is the centring three lines up never happening.
-
-       shrink — two images, and the stage is the flex item that gives way.
-       With min-height:0 on it, it gives way all the way to zero: the lead
-       image spills out of a box with no height, lands on top of the first
-       image of the stack, and sits outside the pane's scroll extent, so it
-       cannot be scrolled off and the last image can never be reached. That
-       is the viewer opening "already at the bottom" and refusing to move.
-
-     flex:0 0 auto is both fixes: the stage is exactly as tall as the picture
-     in it, so a single image leaves real free space for safe-centring, and a
-     set of them stacks in flow and scrolls. */
-  #artModal .avImgStage,
-  #artModal .avImgStack{ flex:0 0 auto; }
-
-  /* The air belongs to the pane, not to the boxes inside it, so it is counted
-     once rather than added around every picture in the column. */
+     The stage grows to whatever the pane has left once the rail has taken its
+     height; the rail never grows or shrinks. Absolutely positioned inside a
+     relative box, the picture needs no percentage-height chain to be told how
+     tall it may be — which is what kept going wrong when the stage sized to
+     its content instead: grow and the picture hung at the top of an empty
+     pane, shrink and it collapsed to nothing and painted over what followed. */
+  /* The air around the picture and its rail belongs to the pane, counted once
+     here rather than added around each box inside it. */
   #artModal .avImgPane{ padding:var(--vwGap); }
-  /* The inset on these two is the pane's already — .avBody is what carries
-     --shellPad here, and a second copy of it inside the pane would narrow the
-     picture to fit a phone's margin twice.
 
-     A flex box rather than a centred line of text, because #lbImg is an
-     inline-block and an inline-block sits on a baseline: the line it sits on
-     reserves room under it for the descenders of a font that is not there,
-     and those few pixels are real. They landed under the picture and not over
-     it, so a centred image hung low by half of them, and a portrait sized to
-     fill the pane exactly overflowed it by all of them and put a scrollbar on
-     a picture that fit. Blockified as a flex item, the image is the box it
-     draws and nothing more. */
-  #artModal .avImgViewport{ padding:0; display:flex; justify-content:center; }
-  /* only ever seen when there is a second image: the gap above the stack */
-  /* One measure for the space between pictures, spent twice: above the first
-     of the stack, which is the gap under the lead image, and between each
-     pair after it. They were two different figures — the pane's --vwGap above
-     the first and .avImgStack's own clamp() between the rest — so a set of
-     three was separated by 26px and then by 33px. One number, and the column
-     reads as evenly spaced pictures rather than a slightly wrong grid. */
-  #artModal .avImgStack{
-    padding:calc(var(--vwGap) * 1.5) 0 0;
-    gap:calc(var(--vwGap) * 1.5);
+  /* The box is exactly as tall as the picture, so the rail sits under the
+     work rather than at the foot of the column. --boxH is the pane's height
+     less its padding and less the rail, measured by avFitStage in
+     js/gallery.js and refreshed on resize; the picture takes that or its own
+     height, whichever is the smaller, so it is never blown up either. */
+  #artModal .avImgStage{
+    flex:0 0 auto; min-height:0; width:100%;
+    display:flex; align-items:center; justify-content:center;
+    position:static; aspect-ratio:auto;
+    max-width:100%; max-height:none;
   }
-
-  /* The pane bounds the picture's WIDTH. It does not bound its height, and
-     that is the whole difference between a viewer and a thumbnail.
-
-     A height cap sounds like the safe thing and is not: fit a 900x2600 piece
-     into one screen and it comes out a 340px sliver of a column that was
-     1089px wide, unreadable, with nothing left to scroll — the pane's scroll
-     range was measured at exactly zero for every image, tall ones included.
-     So the wheel over the artwork had nothing to move and handed everything
-     to the notes, and the two panes that are supposed to move independently
-     could only ever move one of them. That is "I can't scroll the image".
-
-     Unbounded in height, a picture is drawn at the width of the column and
-     as tall as that makes it. Landscape work still fits and still centres —
-     safe-centring only centres what fits. Tall work overflows, so the pane
-     scrolls it, starting at the top, and stops at the picture's own end. A
-     stack behaves the same way for the same reason. Neither is ever upscaled:
-     width:auto on the base rule keeps a small image at its own size.
-
-     No dvh arithmetic is left here, so nothing has to be told how tall the
-     top bar is, and --vwTopBar has gone with the subtraction that wanted it. */
-  #artModal #lbImg,
-  #artModal .avImgStack img{
+  #artModal .avImgViewport{
+    position:relative; display:block; padding:0;
+    max-width:100%; min-width:0;
+  }
+  #artModal #lbImg{
+    position:static; display:block;
+    width:auto; height:auto;
     max-width:100%;
-    max-height:none;
+    max-height:var(--boxH, 60vh);
+    object-fit:contain;
+    margin:0 auto;
   }
-  /* Inside the scroller now, so it takes the column's own gap and none of the
-     padding the stacked layout gives it. */
+  /* A stated height, not a measured one. avFitStage subtracts this rail from
+     the pane to size the picture, and measuring it caught 90px while the
+     thumbnails were still settling and 98 afterwards — eight pixels of
+     picture that then hung past the bottom of the pane. Declared here it is
+     the same figure before and after anything renders, so the subtraction is
+     right the first time and there is no moment to have to pick correctly. */
+  #artModal .avImgStack{
+    flex:0 0 auto;
+    padding:var(--vwGap) 0 0;
+    height:calc(72px + var(--vwGap));
+    /* The pane centres its children, which left this shrink-wrapped to the
+       width of its thumbnails — so a set too wide to fit pushed the PANE
+       sideways instead of scrolling inside the rail. Stretched to the pane,
+       the overflow is the rail's own and it scrolls, which is the whole
+       point of a rail. */
+    width:100%; align-self:stretch;
+  }
+  #artModal .avThumb{ width:72px; height:72px; }
+
   #artModal #avAuthorCard{ padding:0; }
   /* Belt and braces. avPlaceCard moves this into the notes' scroller, and the
      row above is empty — and therefore zero tall — once it has. If it has not,

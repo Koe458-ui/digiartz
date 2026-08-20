@@ -198,20 +198,173 @@
     }
     return list;
   }
-  // the extra pages, stacked under the cover
+  /* One picture at a time, and a rail of thumbnails to change which.
+
+     The pages used to be printed underneath the cover at full width, which
+     made the artwork column a tall document: fine for the one upload here
+     that has extra pages, and nothing at all for the twenty-four that do
+     not — a single image fits its box, so that column had a scroll range of
+     zero and the wheel over the biggest thing on the screen did nothing.
+
+     A picture that fills its box, with the set offered as thumbnails under
+     it, has no such dependency on how many images an upload happens to
+     carry. The box is always full, changing pictures is a click rather than
+     a hunt down a column, and the rail is the only thing that scrolls — 
+     sideways, and only when there are more thumbnails than fit. */
+  var avImgIndex = 0;
+
   function avBuildStrip(art, src){
     avImages = avImageList(art, src);
-    var stack = document.getElementById('avImgStack');
-    if(!stack) return;
+    avImgIndex = 0;
+    var rail = document.getElementById('avImgStack');
+    if(!rail) return;
     if(avImages.length < 2){
-      stack.hidden = true; stack.innerHTML = '';
+      rail.hidden = true; rail.innerHTML = '';
+      requestAnimationFrame(avFitStage);
       return;
     }
-    stack.hidden = false;
-    stack.innerHTML = avImages.slice(1).map(function(u,n){
-      return '<img src="'+esc(getViewUrl(u))+'" alt="Image '+(n+2)+' of '+avImages.length+'" loading="lazy" decoding="async">';
+    rail.hidden = false;
+    rail.innerHTML = avImages.map(function(u,i){
+      return '<button type="button" class="avThumb'+(i===0?' on':'')+'" data-i="'+i+'"'+
+             (i===0?' aria-current="true"':'')+
+             ' aria-label="Image '+(i+1)+' of '+avImages.length+'">'+
+             '<img src="'+esc(getThumbnailUrl(u))+'" alt="" loading="lazy" decoding="async">'+
+             '</button>';
     }).join('');
+    // The budget depends on how tall this rail ends up, and it is not that
+    // tall until the browser has laid the thumbnails out. Measured in the
+    // same tick it comes back short — by the pixels that then pushed a
+    // full-height picture past the bottom of the pane — so the fit is redone
+    // once the rail is real.
+    requestAnimationFrame(avFitStage);
   }
+
+  /* How tall the picture may be, in pixels, worked out rather than guessed.
+
+     Every percentage-height route to this fails, and each failed differently:
+     a stage that grew filled the pane and stranded the thumbnails at the very
+     bottom; a stage sized by aspect-ratio collapsed to nothing, because a
+     centred flex item has no width to take its height from; and a chain of
+     max-height:100% resolves to none the moment one link in it is auto.
+
+     So the budget is measured: what the pane has, less its own padding, less
+     the rail if there is one. The picture takes that or its own height,
+     whichever is smaller, and the box around it is then exactly as tall as
+     the picture — which puts the rail directly underneath, and lets the pane
+     centre the pair in the space it has. */
+  function avFitStage(){
+    var pane = document.querySelector('#artModal .avImgPane');
+    if(!pane) return;
+    var rail = document.getElementById('avImgStack');
+    /* offsetHeight, not getBoundingClientRect: the rect is in VISUAL
+       coordinates and .avBox opens from transform:scale(.92), so during that
+       animation a 97.6px rail measures 89.8 and a 72px thumbnail measures 66.
+       Mixed with pane.clientHeight, which is layout and unscaled, that bought
+       the picture eight pixels it did not have and hung it past the bottom of
+       the pane. offsetHeight is layout too, so both sides of the subtraction
+       are now in the same space. */
+    var railH = (rail && !rail.hidden) ? rail.offsetHeight : 0;
+    var cs = getComputedStyle(pane);
+    var avail = pane.clientHeight
+              - (parseFloat(cs.paddingTop) || 0)
+              - (parseFloat(cs.paddingBottom) || 0)
+              - railH;
+    if(!(avail > 0)) return;
+    pane.style.setProperty('--boxH', Math.floor(avail) + 'px');
+  }
+  /* The budget is a pixel figure, so it is only right for as long as the two
+     things it is measured from keep their size. Guessing when that has
+     settled is what kept being wrong: measured in the same tick the rail came
+     back 90px and ended up 98, and the picture was then eight pixels too tall
+     for the pane. So watch the pane and the rail instead of picking a moment.
+
+     This cannot feed back on itself: what avFitStage writes is the picture's
+     height, and neither the pane, which the grid sizes, nor the rail, whose
+     height is its thumbnails', is affected by that. */
+  (function(){
+    document.addEventListener('DOMContentLoaded', function(){
+      var pane = document.querySelector('#artModal .avImgPane');
+      var rail = document.getElementById('avImgStack');
+      if(typeof ResizeObserver === 'function' && pane){
+        var ro = new ResizeObserver(function(){ avFitStage(); });
+        ro.observe(pane);
+        if(rail) ro.observe(rail);
+      } else {
+        // no observer: the window changing shape is the case worth catching
+        var pending = false;
+        window.addEventListener('resize', function(){
+          if(pending) return;
+          pending = true;
+          requestAnimationFrame(function(){ pending = false; avFitStage(); });
+        });
+      }
+    });
+  })();
+
+  // Swap which of the set the box is showing.
+  function avShowImage(i){
+    if(!avImages.length) return;
+    if(i < 0) i = 0;
+    if(i > avImages.length - 1) i = avImages.length - 1;
+    avImgIndex = i;
+    var img = document.getElementById('lbImg');
+    var vp  = document.getElementById('avImgViewport');
+    if(img){
+      if(vp) vp.classList.add('loading');
+      img.onload = function(){
+        if(vp) vp.classList.remove('loading');
+        avFitStage();
+        avUpdateResolution(img.naturalWidth, img.naturalHeight);
+      };
+      img.onerror = function(){ if(vp) vp.classList.remove('loading'); };
+      img.src = getViewUrl(avImages[i]);
+      if(avImages.length > 1) img.alt = 'Image ' + (i+1) + ' of ' + avImages.length;
+      // a cached file can be complete before onload is ever wired
+      if(img.complete && img.naturalWidth){
+        if(vp) vp.classList.remove('loading');
+        avFitStage();
+        avUpdateResolution(img.naturalWidth, img.naturalHeight);
+      }
+    }
+    var rail = document.getElementById('avImgStack');
+    if(!rail) return;
+    var thumbs = rail.querySelectorAll('.avThumb');
+    for(var n = 0; n < thumbs.length; n++){
+      var on = (n === i);
+      thumbs[n].classList.toggle('on', on);
+      if(on) thumbs[n].setAttribute('aria-current','true');
+      else thumbs[n].removeAttribute('aria-current');
+    }
+    // keep the one you just picked where you can see it
+    var cur = rail.querySelector('.avThumb.on');
+    if(cur && cur.scrollIntoView){
+      try{ cur.scrollIntoView({ block:'nearest', inline:'nearest' }); }catch(e){}
+    }
+  }
+
+  /* Delegated, because the rail is rewritten for every artwork opened and a
+     listener per thumbnail would be rebuilt with it. The arrows walk the set
+     as well, which is what a row of images is expected to answer to. */
+  (function(){
+    document.addEventListener('DOMContentLoaded', function(){
+      var rail = document.getElementById('avImgStack');
+      if(!rail) return;
+      rail.addEventListener('click', function(e){
+        var b = e.target && e.target.closest ? e.target.closest('.avThumb') : null;
+        if(!b || !rail.contains(b)) return;
+        avShowImage(parseInt(b.getAttribute('data-i'), 10) || 0);
+      });
+      rail.addEventListener('keydown', function(e){
+        if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        var next = avImgIndex + (e.key === 'ArrowRight' ? 1 : -1);
+        if(next < 0 || next > avImages.length - 1) return;
+        e.preventDefault();
+        avShowImage(next);
+        var b = rail.querySelector('.avThumb.on');
+        if(b) b.focus();
+      });
+    });
+  })();
 
   function avCap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
 
@@ -910,12 +1063,14 @@
       imgEl.alt=name||'Untitled artwork';
       imgEl.onload=function(){
         if(viewport) viewport.classList.remove('loading');
+        avFitStage();
         avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
       };
       imgEl.onerror=function(){ if(viewport) viewport.classList.remove('loading'); };
       // cached image may skip onload
       if(imgEl.complete && imgEl.naturalWidth){
         if(viewport) viewport.classList.remove('loading');
+        avFitStage();
         avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
       }
     }

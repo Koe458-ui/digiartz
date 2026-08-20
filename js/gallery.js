@@ -814,6 +814,27 @@
     });
   })();
 
+  /* The page around the panel closes it.
+
+     .avBox stops click from bubbling, and has since this markup was written,
+     but nothing was ever listening above it — so the stopPropagation guarded
+     a handler that did not exist and clicking beside the artwork did nothing
+     at all. It does now, and the test is identity rather than a bubble: only
+     a click that landed on #artModal ITSELF is a click on the page behind the
+     panel. A click on anything inside it has that thing as its target, so a
+     button whose handler removes it from the document — the close in the
+     card, a comment's delete — can never be mistaken for a click on the
+     backdrop the way a contains() test would mistake it. */
+  (function(){
+    document.addEventListener('DOMContentLoaded', function(){
+      var modal = document.getElementById('artModal');
+      if(!modal) return;
+      modal.addEventListener('click', function(e){
+        if(e.target === modal) closeLB();
+      });
+    });
+  })();
+
   function openLB(src,name,cat,desc,id,pushUrl,navSource){
     var art = id ? findArtworkById(id) : null;
     if(!art && id && navSource && navSource.length){

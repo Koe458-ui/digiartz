@@ -213,7 +213,31 @@
 @media (min-width:1024px){
 
   /* ---- the artwork viewer ---- */
-  #artModal .avBox{ overflow:hidden; }
+
+  /* The dialog is a panel with the page around it, not the page.
+
+     It used to be the whole window, and the inset that kept the columns off
+     the edges was padding on .avBody — INSIDE the dialog. Padding is not a
+     scroller and it is not outside anything, so that band was dead: the wheel
+     over it moved nothing, because .avBody, .avBox, #artModal and <body> are
+     every one of them overflow:hidden, and a click on it closed nothing,
+     because it was still the dialog. Measured, that band was 22% of a
+     1920-wide screen and 55% of a 3440-wide one — on an ultrawide the notes
+     were a 416px strip in the middle of a screen that was mostly dead to the
+     mouse. That is the whole of "I can't scroll".
+
+     So the inset is the box's own width now. What is left over is the page
+     behind it, it closes the viewer when clicked (avCloseOnBackdrop in
+     js/gallery.js), and every pixel inside the box belongs to one of the two
+     scrollers. */
+  #artModal .avBox{
+    width:80%; height:88%;
+    max-width:none; max-height:none;
+    border:1px solid var(--bdr);
+    border-radius:16px;
+    box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
+    overflow:hidden;
+  }
   #artModal .avBody{
     display:grid;
     grid-template-columns:minmax(0,1fr) clamp(320px,26%,480px);
@@ -224,8 +248,13 @@
        instead, so the whole right-hand column — artist, buttons, title, and
        everything written about the piece — is one thing that scrolls. */
     grid-template-rows:minmax(0,1fr);
-    column-gap:clamp(1.6rem,2.6vw,3rem);
-    padding-inline:var(--shellPad);
+    /* No column-gap and no padding, because neither of them can be scrolled.
+       The space between the picture and the notes is padding on the two panes
+       instead, so it belongs to whichever of them the cursor is nearer, and
+       the wheel works everywhere inside the box rather than only over the
+       columns' text. */
+    column-gap:0;
+    padding-inline:0;
     /* the panes scroll; the body does not */
     overflow:hidden;
     min-height:0;
@@ -267,7 +296,7 @@
 
   /* The air belongs to the pane, not to the boxes inside it, so it is counted
      once rather than added around every picture in the column. */
-  #artModal .avImgPane{ padding-block:var(--vwGap); }
+  #artModal .avImgPane{ padding:var(--vwGap); }
   /* The inset on these two is the pane's already — .avBody is what carries
      --shellPad here, and a second copy of it inside the pane would narrow the
      picture to fit a phone's margin twice.
@@ -282,7 +311,16 @@
      draws and nothing more. */
   #artModal .avImgViewport{ padding:0; display:flex; justify-content:center; }
   /* only ever seen when there is a second image: the gap above the stack */
-  #artModal .avImgStack{ padding:var(--vwGap) 0 0; }
+  /* One measure for the space between pictures, spent twice: above the first
+     of the stack, which is the gap under the lead image, and between each
+     pair after it. They were two different figures — the pane's --vwGap above
+     the first and .avImgStack's own clamp() between the rest — so a set of
+     three was separated by 26px and then by 33px. One number, and the column
+     reads as evenly spaced pictures rather than a slightly wrong grid. */
+  #artModal .avImgStack{
+    padding:calc(var(--vwGap) * 1.5) 0 0;
+    gap:calc(var(--vwGap) * 1.5);
+  }
 
   /* The pane bounds the picture's WIDTH. It does not bound its height, and
      that is the whole difference between a viewer and a thumbnail.
@@ -329,7 +367,7 @@
      spends --vwPad sits further down this file at the same specificity, so
      without it that rule wins on source order and puts a phone's padding —
      10% of a 400px column — back on a column that has already been inset. */
-  #artModal .avSide > .avSideScroll{ padding:0 0 4rem; }
+  #artModal .avSide > .avSideScroll{ padding:var(--vwGap) var(--vwGap) 4rem; }
 
   /* ---- the section viewer: resources, blog, marketplace, jobs ---- */
   .dzvBody{ padding-inline:var(--shellPad); }

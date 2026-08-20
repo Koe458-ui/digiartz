@@ -38,7 +38,6 @@
 .avImgStack{text-align:center;}
 .avImgStack img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
 /* hide while loading */
-.avImgViewport.loading img{opacity:0;}
 
 /* comments and actions */
 .avCmBlock{display:flex;flex-direction:column;gap:.6rem;}

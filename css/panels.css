@@ -11,7 +11,6 @@
    The name is wrong and now gone. The shadows read --sh-card, which each
    palette defines for itself, so a card on paper is no longer lit like a card
    on charcoal. Charcoal's values are unchanged. */
-body{background:var(--bg);}
 
 /* glow and shadow */
 .gItem,.modal,.legalModal,#fgFltPanel{

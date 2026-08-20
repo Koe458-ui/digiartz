@@ -27,6 +27,18 @@
 // They are the reason the older browser still gets a layout. Anything whose
 // winner names a newer feature than its loser is excluded below.
 //
+// A WARNING about the companion question, "is this class used at all". Do not
+// answer it by grepping: class names get built rather than written. The top
+// three rows of a leaderboard wear .m1/.m2/.m3, and the only place they exist
+// is `'xpLbRank' + ' m' + (i + 1)` in js/misc-core.js and js/ranking.js. A
+// search for "m1" finds nothing and the rule looks dead; deleting it takes the
+// gold, silver and bronze off the board. Whole components are server-rendered
+// too — functions/api/store.js writes the subscription cards, so .subCard and
+// forty of its neighbours appear in no file under js/ at all. Opening the page
+// and asking which selectors match nothing is no better: with no backend,
+// 1876 of 3682 selectors match nothing, and almost all of them are simply
+// waiting for data. Every candidate has to be read before it is believed.
+//
 // Run: node scripts/check-css-dead.mjs [--verbose]
 // Exits 0 always; this reports, it does not gate.
 

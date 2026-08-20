@@ -357,7 +357,6 @@
       font-size:.9rem;border-radius:5px;
     }
     .cpMsgAct:hover{opacity:1;background:rgba(128,128,128,.16);}
-    .cpBubble{position:relative;}
     .cpBubble--act{padding-right:1.7rem;}
 
     /* ---- the search and browse pages ---------------------------------------

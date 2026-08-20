@@ -751,64 +751,94 @@
     });
   })();
 
-  /* The wheel over the artwork has somewhere to go.
+  /* The wheel works everywhere inside the viewer, not only over the columns.
 
-     Side by side, the picture and the notes are two scrollers, which is what
-     makes them move independently. It also makes the picture a dead zone: it
-     is the largest thing on the screen and the obvious place to leave the
-     cursor, but a pane showing an image that already fits has nothing to
-     scroll, and overscroll-behavior:contain stops the event going anywhere
-     else. Wheel over the artwork and the viewer looked frozen.
+     Two scrollers side by side leave a lot of surface that is neither of
+     them: the bar at the top, the air around the pictures, the space between
+     the columns, and anything the page happens to put over them — an ad's
+     iframe swallows the wheel whole, and so does any sheet that opens above
+     this one. Wheel over any of that and nothing moved, because every box
+     from .avBody up to <body> is overflow:hidden, so there was nothing to
+     scroll and nothing to chain to either.
 
-     So the pane consumes what it can — a tall image, or a stack of them,
-     still scrolls on its own and stops at its own end — and hands the rest to
-     the notes. Nothing is forwarded while the pane can still use it, so the
-     two keep moving independently for as long as both have somewhere to go. */
+     So the dialog itself takes the wheel and routes it. If anything under
+     the cursor can already scroll, this stands aside and lets the browser do
+     it natively — that keeps the momentum and smoothing the platform gives
+     you, and it is the case that fires whenever the cursor is honestly over
+     a column. Only when nothing under the cursor can scroll does this pick a
+     column by which side of the divide the cursor is on, and move that one;
+     if it has reached its own end, the other takes the rest.
+
+     Which also subsumes the forwarding this replaces: a picture that fits
+     has nothing to scroll, so the notes get the wheel, exactly as before. */
   (function(){
     function canTake(el, dy){
-      if(!el) return false;
+      if(!el || el.nodeType !== 1) return false;
+      var cs = getComputedStyle(el), ov = cs.overflowY;
+      if(ov !== 'auto' && ov !== 'scroll') return false;
       var room = el.scrollHeight - el.clientHeight;
       if(room <= 1) return false;
       return dy > 0 ? el.scrollTop < room - 1 : el.scrollTop > 1;
     }
-    /* deltaY is only in pixels when the browser says it is. Firefox reports
-       a wheel notch in lines (deltaMode 1) and a page key in pages (2), so
-       forwarding the raw number moved the notes about three pixels a notch
-       and the pane read as frozen — the very fault this forwarding exists to
-       fix. Lines are resolved against the element's own line-height so a
-       notch here travels the distance a notch travels anywhere else. */
-    function px(e, el){
+    /* deltaY is only in pixels when the browser says it is. Firefox reports a
+       notch in lines and a page key in pages, so the raw number moves a pane
+       about three pixels and reads as frozen. */
+    function wheelPx(e, el){
       if(e.deltaMode === 1){
         var lh = parseFloat(getComputedStyle(el).lineHeight);
-        if(!(lh > 0)) lh = 16;
-        return e.deltaY * lh;
+        return e.deltaY * (lh > 0 ? lh : 16);
       }
       if(e.deltaMode === 2) return e.deltaY * el.clientHeight;
       return e.deltaY;
     }
+    function scrollerUnder(from, dy, stop){
+      var el = from;
+      while(el && el.nodeType === 1 && el !== stop){
+        if(canTake(el, dy)) return el;
+        el = el.parentElement;
+      }
+      return null;
+    }
+    /* On the document rather than on the dialog, because a listener bound to
+       the dialog cannot hear a wheel that never reaches it. Anything painted
+       over the viewer — an ad's iframe, a sheet from another page left open
+       above it, any element with a bigger z-index — is the event's target,
+       and the event travels from there to the document without passing
+       through #artModal at all. Bound here it is heard wherever it lands.
+
+       It still yields to anything under the cursor that can scroll, which is
+       what keeps another open dialog's own scrolling working, and it does
+       nothing at all unless the artwork viewer is open. */
     document.addEventListener('DOMContentLoaded', function(){
-      var pane = document.querySelector('#artModal .avImgPane');
-      if(!pane) return;
-      pane.addEventListener('wheel', function(e){
-        if(canTake(pane, e.deltaY)) return;          // the picture still has room
-        var side = document.querySelector('#artModal .avSideScroll');
-        if(!canTake(side, e.deltaY)) return;          // neither has: let it be
-        side.scrollTop += px(e, side);
+      document.addEventListener('wheel', function(e){
+        var modal = document.getElementById('artModal');
+        if(!modal || !modal.classList.contains('open')) return;
+        var pane = modal.querySelector('.avImgPane');
+        var side = modal.querySelector('.avSideScroll');
+        if(!pane || !side) return;
+        var dy = wheelPx(e, side);
+        if(!dy) return;
+        if(scrollerUnder(e.target, dy, null)) return;   // the browser has this
+        var edge = side.getBoundingClientRect().left;
+        var first = e.clientX >= edge ? side : pane;
+        var second = first === side ? pane : side;
+        var t = canTake(first, dy) ? first : (canTake(second, dy) ? second : null);
+        if(!t) return;
+        t.scrollTop += dy;
         e.preventDefault();
       }, { passive:false });
 
-      /* The section viewer has the same two panes and the same dead zone. It
-         rebuilds its body on every open, so the listener sits on the page
-         rather than on the media, and finds the current pair when it fires. */
+      /* The section viewer has the same two panes and the same dead surface. */
       var dzv = document.getElementById('dzView');
-      if(!dzv) return;
-      dzv.addEventListener('wheel', function(e){
-        var media = dzv.querySelector('.dzvMedia');
-        if(!media || !media.contains(e.target)) return;
-        if(canTake(media, e.deltaY)) return;
-        var col = dzv.querySelector('.dzvCol');
-        if(!canTake(col, e.deltaY)) return;
-        col.scrollTop += px(e, col);
+      if(dzv) dzv.addEventListener('wheel', function(e){
+        var media = dzv.querySelector('.dzvMedia'), col = dzv.querySelector('.dzvCol');
+        if(!media || !col) return;
+        var dy = wheelPx(e, col);
+        if(!dy) return;
+        if(scrollerUnder(e.target, dy, dzv)) return;
+        var t = canTake(media, dy) ? media : (canTake(col, dy) ? col : null);
+        if(!t) return;
+        t.scrollTop += dy;
         e.preventDefault();
       }, { passive:false });
     });

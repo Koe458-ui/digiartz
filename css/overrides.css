@@ -247,7 +247,7 @@
        js/gallery.js puts the card inside the notes' scroller at this width
        instead, so the whole right-hand column — artist, buttons, title, and
        everything written about the piece — is one thing that scrolls. */
-    grid-template-rows:minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr);
     /* No column-gap and no padding, because neither of them can be scrolled.
        The space between the picture and the notes is padding on the two panes
        instead, so it belongs to whichever of them the cursor is nearer, and
@@ -260,7 +260,7 @@
     min-height:0;
   }
   #artModal .avImgPane{
-    grid-column:1; grid-row:1;
+    grid-column:1; grid-row:1 / span 2;
     min-height:0;
     overflow-y:auto; overscroll-behavior:contain;
     /* A landscape picture cannot fill a pane this tall, and hung from the top
@@ -350,8 +350,19 @@
   /* Inside the scroller now, so it takes the column's own gap and none of the
      padding the stacked layout gives it. */
   #artModal #avAuthorCard{ padding:0; }
+  /* Belt and braces. avPlaceCard moves this into the notes' scroller, and the
+     row above is empty — and therefore zero tall — once it has. If it has not,
+     because a client is running an older gallery.js against this stylesheet or
+     because something threw before it got there, the card is still a child of
+     .avBody with nowhere to go, and the grid auto-places it in a row of its
+     own under the picture, taking height off both panes. Named explicitly, the
+     un-moved card falls back to the row it used to have at the head of the
+     notes column: pinned rather than scrolling with them, which is the old
+     behaviour and not a broken one. A layout should degrade to the previous
+     design when its script does not run, never to a different one. */
+  #artModal .avBody > #avAuthorCard{ grid-column:2; grid-row:1; align-self:start; }
   #artModal .avSide{
-    grid-column:2; grid-row:1;
+    grid-column:2; grid-row:2;
     width:auto; max-width:none; margin:0;
     min-height:0; overflow:hidden;
     display:flex; flex-direction:column;

@@ -241,6 +241,7 @@
   function doLogout() {
     closeSettingsPage();
     if (sb) {
+      if (window.dzCaptcha) window.dzCaptcha.note('logout', null, true);
       sb.auth.signOut()
         .then(function(){ showToast('Signed out'); })
         .catch(function(e){ console.error('Error: ' + e.message); });
@@ -323,10 +324,28 @@
     err.textContent = ''; err.classList.remove('show');
 
     try {
-      var result = await sb.auth.signInWithPassword({ email: email, password: pass });
+      /* The challenge, when there is one. dzCaptcha resolves to null whenever
+         Turnstile is not configured or is unreachable, and signInWithPassword
+         ignores a null captchaToken — so this line is inert until the site key
+         and the Supabase CAPTCHA setting are both in place, and becomes a hard
+         requirement the moment they are. See js/captcha.js. */
+      var capTok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
+      var opts = capTok ? { captchaToken: capTok } : undefined;
+
+      var result = await sb.auth.signInWithPassword(
+        opts ? { email: email, password: pass, options: opts }
+             : { email: email, password: pass });
       if (result.error) throw result.error;
+      if (window.dzCaptcha) window.dzCaptcha.note('login', email, true);
       // auth listener closes the modal
     } catch (e) {
+      /* Recorded before the message is shown, because this is the count that
+         dz_captcha_required() reads: five failures from one address inside an
+         hour is what turns the challenge on for the next attempt. */
+      if (window.dzCaptcha) {
+        window.dzCaptcha.note('login', email, false);
+        window.dzCaptcha.reset();   // a Turnstile token is single-use
+      }
       err.textContent = e.message || 'Login failed. Check your credentials.';
       err.classList.add('show');
     } finally {
@@ -507,8 +526,19 @@
     btn.textContent = 'CREATING ACCOUNT…'; btn.disabled = true;
 
     try {
-      var result = await sb.auth.signUp({ email: email, password: pass, options: { data: { username: username } } });
-      if (result.error) throw result.error;
+      var capTok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
+      var suOpts = { data: { username: username } };
+      if (capTok) suOpts.captchaToken = capTok;
+
+      var result = await sb.auth.signUp({ email: email, password: pass, options: suOpts });
+      if (result.error) {
+        if (window.dzCaptcha) {
+          window.dzCaptcha.note('signup', email, false);
+          window.dzCaptcha.reset();
+        }
+        throw result.error;
+      }
+      if (window.dzCaptcha) window.dzCaptcha.note('signup', email, true);
 
       var session = result.data && result.data.session;
 

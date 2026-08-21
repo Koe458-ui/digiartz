@@ -134,6 +134,15 @@ begin
       using errcode = 'P0001';
   end if;
 
+  -- NEW is NULL in a BEFORE DELETE trigger, and a BEFORE trigger that returns
+  -- NULL CANCELS THE STATEMENT. So `return new` — correct for insert and
+  -- update, and the only thing this function ever did — silently swallowed
+  -- every delete the moment section 4 attached it to DELETE. No error, no
+  -- warning: the row simply stayed. That is a member unable to delete their
+  -- own comment, empty their cart, or unlike anything, with nothing in any log
+  -- to say why. Caught by a test that deleted its own fixtures and found them
+  -- still there afterwards.
+  if TG_OP = 'DELETE' then return old; end if;
   return new;
 end $$;
 

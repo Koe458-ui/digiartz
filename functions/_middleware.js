@@ -1,4 +1,7 @@
-// pages middleware, seo at the edge
+// pages middleware, seo at the edge — and the one rate limit every /api/ route
+// passes through, whether its handler has one of its own or not.
+
+import { underEdgeLimit, tooManyRequests } from './lib/ratelimit.js';
 
 const SITE = 'https://digiartz.net';
 const CACHE_SECONDS = 300;   // homepage feed, held at the edge
@@ -544,6 +547,17 @@ function applyMeta(rw, m) {
 
 export async function onRequest(context) {
   const { env, request, next } = context;
+
+  // The edge rate limit, before the router rather than inside each handler —
+  // see functions/lib/ratelimit.js for why it lives here. Checked FIRST, so a
+  // refused caller costs a bucket increment and nothing else: no Function
+  // invocation, no Supabase round trip, no payment-provider call.
+  let reqPath = '/';
+  try { reqPath = new URL(request.url).pathname; } catch { /* keep slash */ }
+
+  if (reqPath.startsWith('/api/')) {
+    if (!(await underEdgeLimit(env, request, reqPath))) return tooManyRequests();
+  }
 
   // run the rest of the pipeline
   const origin = await next();

@@ -164,6 +164,42 @@ var DZ_BW = (function () {
       out.push(/(?:https?:\/\/|www\.)[^\s<>"']+/g);
       out.push(new RegExp(
         '\\b[a-z0-9][a-z0-9-]*(?:\\.[a-z0-9-]+)*\\.(?:' + tld + ')\\b(?:\\/[^\\s<>"\']*)?', 'g'));
+
+      // ---- the forms the 2026-08-20 phishing comment used -----------------
+      // Every pattern above reads the text as typed, and the attacker's whole
+      // method was to type it differently. The stored comments show them
+      // working it out in real time: the first two attempts were caught and
+      // came back masked, and the third — `https:5347567%2eshop/227983727` —
+      // went through untouched and is what a reader saw. It beat both rules at
+      // once. No `//` after the scheme, so the first misses. The dot written
+      // `%2e`, so the second misses. The browser decodes it back on paste,
+      // which is the entire point.
+      //
+      // These three match the disguise in place rather than trying to undo it,
+      // which matters here: mask() maps every hit back to a span of the
+      // ORIGINAL string, so a pattern that matched against a rewritten copy
+      // would star out the wrong characters.
+      //
+      // The real enforcement is in the database — dz_has_link() in
+      // 20260824_antiphish_content_guard.sql, which deobfuscates properly and
+      // REFUSES the row. This file cannot be the control: it runs in the
+      // visitor's own browser, wrapped around supabase.createClient(), so it
+      // only ever filters people who are not attacking you. It is here so an
+      // ordinary member sees their link starred as they always did, instead of
+      // being refused by the server for something the page let them type.
+
+      // a scheme, with or without the slashes
+      out.push(/(?:https?|ftps?|wss?|magnet|tel|mailto)\s*:(?:\/\/)?[^\s<>"']+/g);
+      // hxxp / h**p, the two everybody uses
+      out.push(/h[x*#]{2}ps?\s*:(?:\/\/)?[^\s<>"']+/g);
+      // a dot spelled as anything but a dot: %2e, %252e, &#46;, [dot], (dot),
+      // " dot ", or a space parked either side of a real one
+      out.push(new RegExp(
+        '[a-z0-9][a-z0-9-]*(?:' +
+          '%25?2e|&#(?:46|x2e);|\\s*[\\(\\[\\{]\\s*(?:dot|d0t)\\s*[\\)\\]\\}]\\s*|' +
+          '\\s+dot\\s+|\\s+\\.\\s*' +
+        ')(?:[a-z0-9-]+(?:%25?2e|&#(?:46|x2e);|\\.))*(?:' + tld + ')\\b' +
+        '(?:\\/[^\\s<>"\']*)?', 'g'));
     }
     if (BLOCK.emails) out.push(/[a-z0-9._%+-]+\s?@\s?[a-z0-9.-]+\.[a-z]{2,}/g);
     if (BLOCK.digitRuns && DIGIT_MIN > 1) {

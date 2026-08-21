@@ -14,7 +14,7 @@
 // leaving config.js unwritten and the whole deploy failed. Note the two spaces
 // after "1:" — that is the giveaway. Copy the line below with no backslashes:
 //
-// [ "$T600_READY" = "true" ] && T6=true || T6=false; FN="${S3_FN_URL:-$SB_URL/functions/v1/smart-function}"; echo "window.KOE_CONFIG = { SB_URL: '$SB_URL', SB_KEY: '$SB_KEY', S3_FN_URL: '$FN', T600_READY: $T6 };" > config.js
+// [ "$T600_READY" = "true" ] && T6=true || T6=false; FN="${S3_FN_URL:-$SB_URL/functions/v1/smart-function}"; echo "window.KOE_CONFIG = { SB_URL: '$SB_URL', SB_KEY: '$SB_KEY', S3_FN_URL: '$FN', T600_READY: $T6, TURNSTILE_SITE_KEY: '$TURNSTILE_SITE_KEY' };" > config.js
 //
 // So adding a key here does nothing until the build command emits it. This
 // file exists to record what the generated shape should look like.
@@ -81,5 +81,17 @@ window.KOE_CONFIG = {
   // server-side and the browser hydrates over them, so if only one side is on
   // the two disagree. Pages variables are typed as text, so there it is the
   // string true; here it is the boolean.
-  T600_READY: true
+  T600_READY: true,
+
+  // Cloudflare Turnstile, the CAPTCHA the sign-in page shows when
+  // dz_captcha_required() says an address has been cycling through accounts.
+  // PUBLIC by design — a site key is meant to be in the page. Its partner, the
+  // SECRET key, does NOT go here and does not go to Cloudflare Pages either:
+  // it is pasted into the Supabase dashboard, which is what makes GoTrue
+  // enforce the token. See security/CAPTCHA-SETUP.md.
+  //
+  // Leave it unset and js/captcha.js is completely inert — no widget, no
+  // network call, sign-in behaves exactly as it does today. That is the
+  // intended "not turned on yet" state, not a broken one.
+  TURNSTILE_SITE_KEY: ''
 };

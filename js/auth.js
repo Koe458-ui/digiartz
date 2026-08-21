@@ -309,6 +309,40 @@
     }
   }
 
+  /* GoTrue's captcha refusal reads "captcha protection: no captcha token
+     found in request", which is precise and useless to whoever is staring at
+     the sign-in box. It has exactly two causes and they need different
+     audiences told:
+
+       - CAPTCHA is switched on in the Supabase dashboard but no site key ever
+         reached config.js, so the page has nothing to send. That is a
+         misconfiguration, it breaks sign-in for EVERY member, and the person
+         who needs to know is whoever runs the site — hence the console note,
+         which a member will never look at.
+       - The site key is set and Turnstile simply did not answer this time.
+         Refreshing genuinely fixes that one.
+
+     Either way the member gets one sentence they can act on instead of a
+     sentence about tokens. See security/CAPTCHA-SETUP.md. */
+  function dzAuthErr(e, fallback) {
+    var raw = ((e && e.message) || '').toLowerCase();
+    if (raw.indexOf('captcha') !== -1) {
+      var configured = !!(window.dzCaptcha && window.dzCaptcha.configured());
+      if (!configured) {
+        console.warn(
+          '[DigiArtz] Sign-in was refused for a missing captcha token, and no ' +
+          'TURNSTILE_SITE_KEY is present in config.js. CAPTCHA protection is ' +
+          'enabled in Supabase but the page cannot satisfy it, so sign-in and ' +
+          'sign-up are broken for everyone. Either set TURNSTILE_SITE_KEY (and ' +
+          'emit it from the Pages build command), or turn CAPTCHA protection ' +
+          'off in Supabase \u2192 Authentication \u2192 Attack Protection. ' +
+          'See security/CAPTCHA-SETUP.md.');
+      }
+      return 'Couldn\u2019t verify you\u2019re human. Refresh the page and try again.';
+    }
+    return (e && e.message) || fallback;
+  }
+
   // login
   async function doAuth() {
     if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
@@ -330,6 +364,19 @@
          and the Supabase CAPTCHA setting are both in place, and becomes a hard
          requirement the moment they are. See js/captcha.js. */
       var capTok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
+
+      /* Configured but no token means Turnstile did not answer — it failed to
+         load, it timed out, or an extension blocked it. Sending the request
+         anyway lets GoTrue refuse it with "captcha protection: no captcha
+         token found", which tells the member nothing they can act on. Stop
+         here instead and say something useful. */
+      if (window.dzCaptcha && window.dzCaptcha.configured() && !capTok) {
+        err.textContent = 'Couldn\u2019t verify you\u2019re human. Refresh the page and try again.';
+        err.classList.add('show');
+        btn.textContent = 'Log In'; btn.disabled = false;
+        return;
+      }
+
       var opts = capTok ? { captchaToken: capTok } : undefined;
 
       var result = await sb.auth.signInWithPassword(
@@ -346,7 +393,7 @@
         window.dzCaptcha.note('login', email, false);
         window.dzCaptcha.reset();   // a Turnstile token is single-use
       }
-      err.textContent = e.message || 'Login failed. Check your credentials.';
+      err.textContent = dzAuthErr(e, 'Login failed. Check your credentials.');
       err.classList.add('show');
     } finally {
       btn.textContent = 'Log In'; btn.disabled = false;
@@ -527,6 +574,12 @@
 
     try {
       var capTok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
+      if (window.dzCaptcha && window.dzCaptcha.configured() && !capTok) {
+        err.textContent = 'Couldn\u2019t verify you\u2019re human. Refresh the page and try again.';
+        err.classList.add('show');
+        btn.textContent = 'Create Account'; btn.disabled = false;
+        return;
+      }
       var suOpts = { data: { username: username } };
       if (capTok) suOpts.captchaToken = capTok;
 
@@ -575,6 +628,8 @@
         friendly = 'Network error. Please check your connection and try again.';
       } else if (raw.includes('rate limit') || raw.includes('too many')) {
         friendly = 'Too many attempts. Please wait a moment and try again.';
+      } else if (raw.includes('captcha')) {
+        friendly = dzAuthErr(e, 'Sign-up failed. Please try again.');
       } else {
         friendly = e.message || 'Sign-up failed. Please try again.';
       }

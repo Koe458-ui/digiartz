@@ -4,6 +4,33 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v196 — Paper is the theme a first visit opens in.
+
+       Nothing about either palette moved. What changed is the one word
+       every part of the boot resolves to when there is no stored
+       preference: 'graydark' became 'light', in the inline boot script in
+       index.html and in js/theme.js, which are the two places that read
+       koeTheme and the two that have to agree — the script stamps the
+       attribute before the first paint, the module re-reads it to tick the
+       picker.
+
+       The rest is the same fact said in the other four places it is also
+       said: <meta name="theme-color"> and <meta name="color-scheme"> in
+       the head, the --vbg literal in the critical style (the ground behind
+       overscroll before css/base.css arrives, now paper's #EEEBDC), the
+       manifest's theme_color and background_color, and the Default badge
+       on the picker card. A default that is only true in the script is a
+       default the install prompt, the browser chrome and the picker all
+       disagree with.
+
+       Charcoal stays in :root. It is not the default any more, but :root
+       is what a document paints before an attribute lands on it, and the
+       boot script means no visitor is ever in that state; the light block
+       overrides it exactly as before. Holding one palette in one place is
+       still worth more than making the fallback match the default.
+       Changed: index.html, js/theme.js, css/base.css, site.webmanifest,
+       sw.js.
+
    v195 — one table of panels, and one writer for the address bar.
 
        Three reports, one shape. Fast-switching between Profile,
@@ -3627,7 +3654,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v211';
+const CACHE_VERSION = 'v212';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3679,7 +3706,7 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=11',
+  '/css/base.css?v=12',
   '/css/hero.css?v=100',
   '/css/viewer.css?v=19',
   '/css/community.css?v=19',
@@ -3733,7 +3760,7 @@ const SHELL_URLS = [
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=2',
-  '/js/theme.js?v=5',
+  '/js/theme.js?v=6',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
   '/js/sections.js?v=117',

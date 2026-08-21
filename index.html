@@ -2,11 +2,11 @@
 <html lang="en">
  <head>
   <meta charset="utf-8"/>
-  <meta name="color-scheme" content="dark"/>
-  <meta name="theme-color" content="#1A1A1F"/>
+  <meta name="color-scheme" content="light"/>
+  <meta name="theme-color" content="#F7F5EB"/>
   <!-- theme boot
 
-       Two themes: graydark (charcoal, the default) and light (paper).
+       Two themes: light (paper, the default) and graydark (charcoal).
        This runs before any stylesheet so the document is stamped with its
        theme in the same tick it starts painting — a theme applied later
        is a flash of the wrong one. Anything unrecognised in storage falls
@@ -15,7 +15,7 @@
   (function(){
     var K='koeTheme',V={graydark:1,light:1},t=null;
     try{t=localStorage.getItem(K);}catch(e){}
-    if(!V[t])t='graydark'; /* default theme */
+    if(!V[t])t='light'; /* default theme */
     document.documentElement.setAttribute('data-theme',t);
     var C={graydark:'#1A1A1F',light:'#F7F5EB'};
     var m=document.querySelector('meta[name="theme-color"]');
@@ -30,7 +30,7 @@
        overscroll, and the ground every full-screen overlay takes. These
        three lines are the boot copy of it, so the first paint is right
        before css/base.css arrives; base.css is where the value is owned. */
-    html{background:var(--vbg,#101015);}
+    html{background:var(--vbg,#EEEBDC);}
     html[data-theme="graydark"]{--vbg:#101015;}
     html[data-theme="light"]{--vbg:#EEEBDC;}
 
@@ -165,7 +165,7 @@
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
-  <link rel="stylesheet" href="/css/base.css?v=11">
+  <link rel="stylesheet" href="/css/base.css?v=12">
   <link rel="stylesheet" href="/css/hero.css?v=100">
   <link rel="stylesheet" href="/css/viewer.css?v=19">
   <link rel="stylesheet" href="/css/community.css?v=19">
@@ -2901,7 +2901,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
           </span>
         </span>
         <span class="thmMeta">
-          <span class="thmName">Charcoal <em class="thmBadge">Default</em></span>
+          <span class="thmName">Charcoal</span>
           <span class="thmDesc">Deep, warm charcoal. Cards lift off the page so your eye lands on the art, not the screen.</span>
         </span>
       </button>
@@ -2921,7 +2921,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
           </span>
         </span>
         <span class="thmMeta">
-          <span class="thmName">Paper</span>
+          <span class="thmName">Paper <em class="thmBadge">Default</em></span>
           <span class="thmDesc">Warm gallery paper. Bright to work in, easy on the eyes for an hour.</span>
         </span>
       </button>
@@ -2933,7 +2933,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-  <script src="/js/theme.js?v=5"></script>
+  <script src="/js/theme.js?v=6"></script>
 
 <!-- One page for all seven legal documents, opened from the Settings menu.
      Same shape as Theme or Edit My Work: a header with a back arrow, then the

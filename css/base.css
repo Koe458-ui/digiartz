@@ -3,7 +3,7 @@
 
     /* design tokens
 
-       Two themes: Charcoal (the default) and Paper. Both are built the
+       Two themes: Paper (the default) and Charcoal. Both are built the
        same way and for the same reasons, so the reasoning lives here once.
 
        A feed you scroll for an hour is read almost entirely by peripheral
@@ -43,12 +43,16 @@
        deliberately outside this: they mean something, so they do not move
        with the ground.
 
-       Charcoal lives in :root rather than in a data-theme block. It is the
-       default, so the un-attributed document has to paint it anyway, and
-       holding it in one place is the only way two copies of one palette
-       cannot drift apart. html[data-theme="graydark"] therefore has
-       nothing to say and does not exist; the attribute is still set, and
-       the picker and .bnItem key off it. */
+       Charcoal lives in :root rather than in a data-theme block, and stays
+       there now Paper is the default. :root is the palette a document
+       paints before an attribute is on it, and every document gets one:
+       the boot script in index.html stamps data-theme in the same tick the
+       page starts painting, so what :root holds is never what a visitor
+       sees — it is the base the light block overrides, held in one place
+       so two copies of one palette cannot drift apart.
+       html[data-theme="graydark"] therefore still has nothing to say and
+       does not exist; the attribute is set either way, and the picker and
+       .bnItem key off it. */
     :root{
       color-scheme: dark;
       --tc:#9A9DA6;
@@ -104,7 +108,7 @@
       --ms8:#FACC15;  --ms8-name:#FACC15;   /* lvl 100 digiartz legend */
       --ms-ink:#0B0B12;
     }
-    /* light theme — Paper
+    /* light theme — Paper, the default
 
        A blue-white at 97 L* across a whole viewport is a lamp held up to
        the face. Warmth is what takes the glare out of a bright ground

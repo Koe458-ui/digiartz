@@ -2,6 +2,111 @@
 
 Summary of the security review and the changes made.
 
+---
+
+## Round 2 — 2026-08-21, after the phishing incident
+
+An account named **DigiArtzSupport** posted phishing comments under two
+artworks on 2026-08-20. The full write-up — what was posted, how it evaded the
+filters, and the cleanup — is in
+[`INCIDENT-2026-08-phishing.md`](INCIDENT-2026-08-phishing.md). The short
+version: `item_comments` had no content check of any kind, and the check that
+existed elsewhere read the text as typed, so `https:5347567%2eshop/…` walked
+past it.
+
+### Live on production now
+
+| # | Fix | Where |
+|---|-----|-------|
+| 1 | The attacker's account, profile and all 4 comments deleted; footprint verified empty across every table and storage | production |
+| 2 | `dz_deobfuscate()` — decodes percent-escapes, homoglyphs, fullwidth and invisible characters, `[dot]`/` dot `, `hxxp` before anything is matched | `20260824_antiphish_content_guard.sql` |
+| 3 | `dz_has_link()` / `dz_phish_score()` — link and scam-prose detection, matched against the decoded form | same |
+| 4 | Content guard on `item_comments` (insert **and** update), the community rooms, direct messages, and ten description/body columns — 23 triggers | same |
+| 5 | `dz_abuse_events` — **phishing attempts** logged with actor, IP, rule and sample; `dz_abuse_recent()` for staff | same |
+| 6 | `item_comments.body` capped at 1000 characters | same |
+| 7 | Reserved names — nobody can register or rename to anything containing "digiartz", or to `support`/`admin`/`verify`/… as a whole name. Checked on the folded form, so `D1giArtz_Support` is refused too | `20260824_reserved_names.sql` |
+| 8 | Anonymous writes are rate limited — `dz_write_rate` used to return early whenever `auth.uid()` was null, which is every anon caller, not just cron | `20260824_rate_limits_everywhere.sql` |
+| 9 | A global per-actor write ceiling above the per-table ones (240 / 5 min) | same |
+| 10 | Limiters auto-attached to every member-writable table, found by asking `pg_policy` rather than by remembering — **27 previously unlimited write paths**, plus 23 delete paths | same |
+| 11 | Signup limited to 6 accounts per hour per address | same |
+
+### In this branch, live on deploy
+
+| # | Fix | Where |
+|---|-----|-------|
+| 12 | Edge rate limit in front of **every** `/api/*` route, ahead of the router — ten of sixteen endpoints had none. Webhooks exempt (they verify signatures instead) | `functions/lib/ratelimit.js`, `functions/_middleware.js` |
+| 13 | A real CSP: `script-src`, `connect-src`, `worker-src`, `frame-src`, `form-action` allowlists. This is the anti-crypto-miner control — a miner is a script from an unknown host plus a socket to a pool, and both halves are now refused | `_headers` |
+| 14 | `Cross-Origin-Opener-Policy`, `X-Permitted-Cross-Domain-Policies`, tightened `Permissions-Policy` | `_headers` |
+| 15 | Client filter catches the obfuscated link forms too, so a member sees their link starred rather than being refused by the server for something the page let them type | `js/badwords.js` (v2) |
+
+### Two kinds of refusal, and why they differ
+
+Postgres has no autonomous transactions, so a trigger that writes an audit row
+and then raises an exception **rolls back its own audit row**. Rather than
+install `dblink` and store a database password to work around that, the guard
+picks the right refusal per rule:
+
+- **Phishing** → the row is *dropped* (the trigger returns `NULL`), so the
+  transaction commits and the evidence in `dz_abuse_events` survives. The
+  sender sees their message simply not appear, and gets no error text to tune
+  the next attempt against. This is the pattern `dz_chat_gate_comments`
+  already used.
+- **A plain link** → refused with a visible message, not logged. Whoever typed
+  it is almost always a member linking their portfolio, and they need to know
+  why it did not post.
+
+So `dz_abuse_events` is a record of *attacks*, not of every refusal — which is
+also what keeps it short enough to read.
+
+### Secrets audit — clean
+
+Checked, not assumed:
+
+- **No secret value has ever been committed.** All 115 commits scanned for JWT
+  shapes, `rzp_live_*`, `sk_live_*`, `AIzaSy*`, `sb_secret_*` and PEM private
+  keys. Nothing.
+- **`config.js` has never been tracked** — it is gitignored and generated at
+  deploy time from Pages environment variables.
+- **No client-served file references a secret's value.** The only occurrences
+  of `SERVICE_ROLE`, `CLIENT_SECRET`, `WEBHOOK_SECRET` etc. anywhere in the
+  tree are the *names*, in `config.example.js` documentation and in the Pages
+  Functions that read them from `env` at runtime.
+- **The config-status responses in `rzp.js` and `paypal.js` emit the missing
+  variable's NAME only**, never its value.
+
+Two things in client code are public **by design** and are not leaks, despite
+looking like credentials:
+
+- `SB_URL` (`https://tmqzqlrpjpydiftlrzmj.supabase.co`) — the browser has to
+  know which server to talk to. It cannot be hidden from a client that must
+  connect to it; every request reveals it.
+- `SB_KEY` (`sb_publishable_…`) — the publishable key. It is designed to be
+  public and carries no authority of its own: **Row-Level Security is what
+  stands behind it**, which is exactly why the fixes above went into the
+  database rather than into the page.
+
+The keys that would matter if leaked — `SUPABASE_SERVICE_ROLE_KEY`,
+`PAYPAL_CLIENT_SECRET`, `RAZORPAY_KEY_SECRET`, `MOD_SIGNING_SECRET`,
+`GEMINI_API_KEY` — are read from `env` inside Pages Functions and never reach
+the browser. That is already correct and was not changed.
+
+### Still worth doing
+
+1. **Leaked-password protection** — Supabase → Authentication → Passwords.
+   Still not enabled; it was already item 2 in the list below.
+2. **Require email confirmation before a first public write.** The attacker
+   posted two minutes after signup from an unverified throwaway address.
+3. **A report button on comments.** Items can be reported, individual comments
+   cannot, so a reader who spots one of these has no way to tell you.
+4. **Nonce-based CSP.** `'unsafe-inline'` is still in `script-src` because
+   `index.html` has inline scripts and a static `_headers` file cannot mint a
+   per-request nonce. `functions/_middleware.js` already rewrites the HTML and
+   could inject one.
+
+---
+
+## Round 1 — the original review
+
 ## Verdict
 No exposed secrets, no leaked Razorpay keys, payments are server-verified,
 Row-Level Security is on for every table, and no user can promote themselves to

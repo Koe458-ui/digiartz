@@ -3702,7 +3702,7 @@ const SHELL_URLS = [
   // word list goes with the engine
   '/js/badwords-list-a.js?v=1',
   '/js/badwords-list-b.js?v=1',
-  '/js/badwords.js?v=1',
+  '/js/badwords.js?v=2',
 
   // scripts
   '/js/cache.js?v=1',

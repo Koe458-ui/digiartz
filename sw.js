@@ -4,6 +4,24 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v210 — the notes column is off, temporarily, to halve the problem.
+
+       Switching the whole viewer off proved the box: empty, it is exactly the
+       80x90 rectangle it is meant to be. Full, it is not. So this cut leaves
+       the box and the picture and takes away everything the notes column
+       carries — the artist card, the action rail, the title, the description,
+       the details, the tags, the ad and the comment thread.
+
+       The box being right after that puts the fault inside the notes column,
+       and the next cut goes inside it. The box being wrong with only a
+       picture in it puts the fault in the picture or the pane it sits in, and
+       the readout in the top bar says which by how far the two disagree.
+       Either way the half that is left is small enough to name.
+
+       The grid drops to one column with the notes gone, so the picture has
+       the whole box rather than sitting beside an empty track.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v209 — the viewer is back on, and it measures itself.
 
        Switching it off answered the question it was asked: with the panel
@@ -4016,7 +4034,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v225';
+const CACHE_VERSION = 'v226';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4070,7 +4088,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=25',
+  '/css/viewer.css?v=26',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',

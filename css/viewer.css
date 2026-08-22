@@ -990,6 +990,32 @@
     @media(hover:hover){ .vwFileDl:hover{background:color-mix(in srgb,var(--vwGreen) 20%,var(--sur));} }
     .vwFileDl:active{transform:scale(.94);}
 
+    /* ── TEMPORARY — THE NOTES COLUMN IS OFF ──────────────────────────────
+
+       The bisect asked for: the box on, the picture on, the text off. What is
+       hidden is everything the notes column carries — the artist card, the
+       action rail, the title, the description, the details, the tags, the ad
+       and the comment thread — and what is left is the box and the work in it.
+
+       Read the answer off the next look:
+
+         the box is right          the fault is in what the notes column
+                                   renders, and the next cut is inside it
+         the box is still wrong    the fault is the picture or the pane it
+                                   sits in, and the readout in the bar says
+                                   which of the two by how much they differ
+
+       The grid drops to one column with them gone, so the picture has the
+       whole box rather than sitting beside an empty track.
+
+       TO PUT THE NOTES BACK: delete this block. It is the last thing in the
+       viewer's section and touches nothing else. */
+    #artModal .avSide,
+    #artModal #avAuthorCard{display:none !important;}
+    @media(min-width:900px){
+      #artModal .avBody{grid-template-columns:minmax(0,1fr);}
+    }
+
     /* ── the picture on its own ───────────────────────────────────────────
 
        The viewer is a panel: the work has a column of notes beside it, a

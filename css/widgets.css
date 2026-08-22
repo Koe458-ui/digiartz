@@ -584,7 +584,7 @@ html.thmFade #themePage{
           max(var(--shellPad),env(safe-area-inset-left));
 }
 .bmGrid{
-  display:grid;gap:1rem;
+  display:grid;gap:var(--artGap);
   grid-template-columns:repeat(2,1fr);
 }
 @media(min-width:700px){ .bmGrid{grid-template-columns:repeat(3,1fr);} }
@@ -623,10 +623,11 @@ html.thmFade #themePage{
 .albGrid{
   display:grid;margin-top:1.2rem;
   grid-template-columns:repeat(2,1fr);
-  gap:.3rem;
+  gap:var(--artGap);
 }
-@media(min-width:700px){ .albGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
-@media(min-width:1280px){ .albGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
+/* columns only — the gap is --artGap and steps at these same widths */
+@media(min-width:700px){ .albGrid{grid-template-columns:repeat(3,1fr);} }
+@media(min-width:1280px){ .albGrid{grid-template-columns:repeat(4,1fr);} }
 .albLoading{
   grid-column:1/-1;padding:3rem 1rem;text-align:center;
   font-family:var(--fm);font-size:.72rem;letter-spacing:.15em;color:var(--txd);

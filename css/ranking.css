@@ -452,10 +452,11 @@
       box-sizing:border-box;
       display:grid;
       grid-template-columns:repeat(2,1fr);
-      gap:.3rem;
+      gap:var(--artGap);
     }
-    @media(min-width:700px){ .awGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
-    @media(min-width:1280px){ .awGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
+    /* columns only — the gap is --artGap and steps at these same widths */
+    @media(min-width:700px){ .awGrid{grid-template-columns:repeat(3,1fr);} }
+    @media(min-width:1280px){ .awGrid{grid-template-columns:repeat(4,1fr);} }
     .awCard{
       position:relative;
       background:var(--sur);

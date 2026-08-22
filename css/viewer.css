@@ -729,12 +729,16 @@
     }
     .spTitle{font-family:var(--fd);font-size:1rem;font-weight:700;letter-spacing:.12em;color:var(--tx);}
     .spTitle .s{color:var(--pg);font-size:.7em;}
+    /* The picker is a wall of artwork like any other, so the space between
+       two pieces here is the same --artGap the gallery and the profile
+       spend — the padding is the panel's inset, and nothing sits between
+       the thumbnails but the hairline. */
     .spBody{
       flex:1;overflow-y:auto;
       padding:1.3rem 1.5rem 2.5rem;
       display:grid;
       grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-      gap:.9rem;
+      gap:var(--artGap);
       align-content:start;
     }
     .spItem{

@@ -2,9 +2,21 @@
 /* detail views */
 
 /* artwork viewer full page */
-/* full page on all devices */
+/* A phone gets the whole screen; everything else gets the box.
+
+   This rule used to have no media query on it, so "everything else" meant
+   1024px and up and a window of 900 CSS px got a phone's viewer: the panel
+   filling the screen edge to edge, one column, and every part of the artwork
+   laid out in it — picture, notes, details, tags, comments — scrolling as one
+   long document. A desktop reaches that width easily. A 1920 screen at 150%
+   system scaling is 1280 CSS px, and one step of browser zoom takes it under
+   the line, which is what a member was looking at while every fix to the
+   viewer went into rules that only applied above it. */
+@media (max-width:699px){
+  #artModal{padding:0;}
+  #artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;border:0;box-shadow:none;background:var(--bg);}
+}
 #artModal{padding:0;}
-#artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;border:0;box-shadow:none;background:var(--bg);}
 /* Stacked — a phone and a tablet. The artist card is the first child of
    .avBody now, so the column reads: who made it, the work, then the rail of
    things you can do with it and everything written about it. */
@@ -255,7 +267,34 @@
    put in the left column and has to stay a single column. A browser without
    :has() gets the stacked layout, which is not a broken page — it is the
    phone's page on a big screen. */
-@media (min-width:1024px){
+/* The box, from a tablet up: 80% of the window across and 90% down — a 10%
+   margin left and right, 5% above and below. Stated, fixed, and the same
+   rectangle whatever is opened in it. The picture is fitted to the space it
+   gets and the notes scroll in theirs, so nothing inside here has any say in
+   how big it is.
+
+   No measure cap. It used to be min(80%, --shellMax), because getViewUrl asks
+   for a 1000px-wide picture and an uncapped 80% of a 3440 screen gave it a
+   2200px pane to sit in the middle of. The margin is what was asked for, so
+   the margin is what this is; a very wide screen shows the picture at its own
+   resolution with air around it rather than blown up to fill the pane. */
+@media (min-width:700px){
+  #artModal .avBox{
+    width:80%; height:90%;
+    max-width:none; max-height:none;
+    border:1px solid var(--bdr);
+    border-radius:16px;
+    box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
+    overflow:hidden;
+    background:var(--bg);
+  }
+}
+
+/* Two columns as soon as there is room for them — 900px, not 1024. The
+   picture beside the notes needs about 500px for the work and 320 for the
+   column, and holding out for 1024 handed every window between the two a
+   phone's layout on a desktop screen. */
+@media (min-width:900px){
 
   /* ---- the artwork viewer ---- */
 

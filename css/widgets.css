@@ -754,6 +754,11 @@ html.thmFade #themePage{
 }
 .albActBtn:hover{border-color:var(--pg);color:var(--pb);}
 .albActBtn--danger:hover{border-color:#e0564f;color:#e0564f;background:rgba(224,86,79,.08);}
+/* A card in an album opens the picture itself — albOpenPicture in
+   js/albums.js — and not the artwork viewer the same card opens in a gallery.
+   The cursor is the only thing that has to say which of the two this is, and
+   keying it to the grid means the card's own markup stays the one markup. */
+#albViewGrid .awCard{cursor:zoom-in;}
 .albItemWrap{position:relative;}
 .albItemX{
   position:absolute;top:.35rem;right:.35rem;z-index:3;

@@ -791,6 +791,13 @@
        which is exactly the kind of late close it exists for. */
     { id:'artModal',        close:['closeLB'],              lock:1, widget:1 },
     { id:'dzView',          close:['dzCloseViewSilent'],    lock:1, widget:1 },
+    /* The work on the screen with nothing else on it, opened by clicking the
+       picture in the viewer. A panel like any other: it holds the lock while
+       it is up, it hides the floating widgets, and a sweep closes it — which
+       matters, because it is the one panel that opens OVER another one, and
+       leaving it standing over a swept viewer would leave a picture on the
+       screen belonging to a section the member has left. */
+    { id:'dzLight',         close:['dzLightClose'],         lock:1, widget:1 },
     // the five destinations the bottom nav leads to
     { id:'authMod',         close:['closeAuthMod'],         lock:1, widget:1 },
     { id:'pfUpMod',         close:['closePfUpload'],        lock:1, widget:1 },

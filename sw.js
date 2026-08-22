@@ -4,6 +4,165 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v200 — an album opens the picture.
+
+       A tap on an album item went to the artwork viewer, the way a tap on any
+       artwork thumbnail does. An album is the one place where that is the
+       wrong destination: it is a set somebody put together to look through,
+       and looking through a set is one picture after another, not a panel of
+       details and a comment thread between each of them. The card opens the
+       full-screen view directly now — 80% of the window, blurred ground, a
+       click anywhere around it to close — and the viewer is one step away
+       rather than in the way.
+
+       At viewing size, because the card holds a thumbnail: the same request
+       the community showcase makes, for the same reason. An item with no
+       picture opens nothing. The cursor says which of the two a card is, and
+       it is keyed to #albViewGrid so that the card's markup stays the one
+       markup this file shares with every other grid on the site.
+       Changed: js/albums.js, css/widgets.css, index.html, sw.js.
+
+   v199 — an album shows what is in it, and the work opens from there.
+
+       Every album with anything in it said "COULDN'T LOAD THIS ALBUM". The
+       set had loaded perfectly; what failed was drawing it. albItemHTML
+       called pfSavedCardHTML(), and no script in this bundle has ever defined
+       that name — not a stale name for something that moved, a name that has
+       never answered — so the map over the rows threw a ReferenceError inside
+       albOpen's try, which paints exactly that message. An empty album was the
+       only kind that worked, because an empty list never calls it. Likes and
+       Bookmarks are albums too, so they were out with the rest.
+
+       What an album holds is artworks, so it shows the card every other grid
+       of artworks on the site shows: pfGalleryCardHTML, with the same
+       measurements, the same lazy thumbnail and the same focal point. It
+       takes the name of its opener now, which is the whole of the change to
+       it — one card, two callers, no second copy of the markup to drift.
+       (Read only when it is a string: both callers pass it to Array.map,
+       which would otherwise hand it the index and name a function called 0.)
+
+       A tap opens the artwork viewer, where the picture opens full screen the
+       way it does everywhere else now. The album is the run its arrows walk:
+       pfOpenArtwork looks in the profile gallery, which is the wrong list
+       twice over — an album can hold work from anywhere on the site, so the
+       artwork is often not in that list at all, and Next out of an album item
+       would step through a gallery nobody opened.
+       Changed: js/albums.js, index.html, sw.js.
+
+   v198 — the same picture, everywhere a picture is the point.
+
+       The full-screen view now opens from the section viewer and from a
+       showcase post, not only from the artwork viewer: a marketplace listing's
+       preview, the extra shots under it, a resource's or a blog post's or a
+       job's picture, and a picture somebody shared in a community room. Same
+       view every time — 80% of the window, never blown up past the file's own
+       pixels, everything behind it dark and blurred, a click anywhere around
+       it to close.
+
+       One listener on #dzView answers for all four sections, because all four
+       share that panel and put their picture in .dzvMedia — the alternative
+       was a handler written into four renderers in js/sections.js, each of
+       which rebuilds its body from a string. The extra shots stay anchors: the
+       href is the picture at viewing size, so a middle click or a cmd-click
+       still opens a tab, and only a plain click is taken over.
+
+       A community showcase post used to open the artwork viewer and there was
+       nothing in it. A post keeps the picture and not the id of the work it
+       came from, so openLB was called with no artwork behind it: a panel with
+       no details, no download and no comments, around one image. The picture
+       was always the whole of it, and that is what a tap opens now — at
+       viewing size, since the card itself only holds a thumbnail.
+
+       Except that it opened nothing at all. The handler was written into the
+       markup by quoting the poster's name inside a string inside an
+       attribute, so a member called Ada produced
+
+           onclick="openLB('…','Ada's artwork')"
+
+       which does not parse: every click on a showcase picture has thrown a
+       SyntaxError and done nothing, for every poster whose name needs no
+       escaping. Escaping the apostrophe would not have saved it either — the
+       entity is decoded before the handler is compiled, so &#39; reaches the
+       parser as the apostrophe that broke it. The click is a bound listener
+       now, with no quoting left to get wrong.
+
+       What is over the panel answers for the panel's keys and its wheel while
+       it is up: Escape closes the picture and stops there, an arrow key no
+       longer steps the section viewer to the next listing under a picture
+       belonging to the last one, and the wheel moves nothing behind a view
+       that does not scroll. And every way a host page can go now takes the
+       picture with it — the sweep through the panel table, the viewer's own
+       close, the section viewer's two closes, and the browser's back button.
+       Changed: index.html, css/viewer.css, css/overrides.css, js/gallery.js,
+       js/sections.js, js/mywork.js, sw.js.
+
+   v197 — the picture, on the screen, with nothing else on it.
+
+       Clicking the work in the artwork viewer opens it full screen: the page
+       behind goes dark and blurred, the picture is fitted inside 80% of the
+       window, and a click anywhere around it closes the full view and leaves
+       the artwork exactly where it was. Nothing scrolls in there and there is
+       no chrome to find — Escape does the same thing as the click.
+
+       What it replaces is a zoom that had been dead for months and was the
+       wrong idea while it lived. A double tap doubled the picture with a
+       transform and a drag panned it inside a box with the overflow hidden:
+       a quarter of the work on screen, the rest gone, no scrollbar to say so,
+       and nothing to do about it at all without a mouse to drag with. It had
+       stopped happening long ago anyway — css/overrides.css pins #lbImg at
+       transform:none — so what was left was the residue: cursor:grab over the
+       biggest target in the viewer advertising a drag that did nothing, and
+       touch-action:none swallowing every real gesture over it. All of it is
+       out, on both sides: the state, the pointer handlers and the dblclick in
+       js/gallery.js, and the rules that reserved the finger for them in
+       css/viewer.css and css/overrides.css. The picture wears cursor:zoom-in
+       now, because that is what it does.
+
+       The full view is a dialog of its own beside #artModal, not a layer
+       inside it, and that is what makes the click safe: the viewer closes
+       when a click lands on the viewer itself, so a full-screen layer within
+       it would hand every click beside the picture to the artwork underneath
+       and close both. It is in DZ_PANELS like every other panel — it holds
+       the scroll lock, it hides the floating widgets, and a sweep closes it,
+       which is what stops a picture standing over a section the member has
+       already left.
+
+       Two caps size it and neither of them touches the file: 80% of the
+       window, written as the 10% margin around it, and the picture's own
+       pixels, measured on load and written onto the element, so a small
+       picture is shown at its own size rather than blown up to fill a screen
+       it has no resolution for. A portrait runs the full height, a landscape
+       the full width, and nothing is ever cropped to make either happen.
+       Changed: index.html, css/viewer.css, css/overrides.css, js/gallery.js,
+       js/app-core.js, sw.js.
+
+   v196 — Paper is the theme a first visit opens in.
+
+       Nothing about either palette moved. What changed is the one word
+       every part of the boot resolves to when there is no stored
+       preference: 'graydark' became 'light', in the inline boot script in
+       index.html and in js/theme.js, which are the two places that read
+       koeTheme and the two that have to agree — the script stamps the
+       attribute before the first paint, the module re-reads it to tick the
+       picker.
+
+       The rest is the same fact said in the other four places it is also
+       said: <meta name="theme-color"> and <meta name="color-scheme"> in
+       the head, the --vbg literal in the critical style (the ground behind
+       overscroll before css/base.css arrives, now paper's #EEEBDC), the
+       manifest's theme_color and background_color, and the Default badge
+       on the picker card. A default that is only true in the script is a
+       default the install prompt, the browser chrome and the picker all
+       disagree with.
+
+       Charcoal stays in :root. It is not the default any more, but :root
+       is what a document paints before an attribute lands on it, and the
+       boot script means no visitor is ever in that state; the light block
+       overrides it exactly as before. Holding one palette in one place is
+       still worth more than making the fallback match the default.
+       Changed: index.html, js/theme.js, css/base.css, site.webmanifest,
+       sw.js.
+
    v195 — one table of panels, and one writer for the address bar.
 
        Three reports, one shape. Fast-switching between Profile,
@@ -3627,7 +3786,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v211';
+const CACHE_VERSION = 'v216';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3679,9 +3838,9 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=11',
+  '/css/base.css?v=12',
   '/css/hero.css?v=100',
-  '/css/viewer.css?v=19',
+  '/css/viewer.css?v=21',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',
@@ -3690,8 +3849,8 @@ const SHELL_URLS = [
   '/css/auth.css?v=3',
   '/css/panels.css?v=12',
   '/css/upload.css?v=15',
-  '/css/widgets.css?v=11',
-  '/css/overrides.css?v=29',
+  '/css/widgets.css?v=12',
+  '/css/overrides.css?v=31',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 
@@ -3713,17 +3872,17 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=30',
+  '/js/app-core.js?v=31',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=96',
+  '/js/gallery.js?v=98',
   '/js/auth.js?v=20',
   '/js/profile.js?v=16',
-  '/js/albums.js?v=16',
+  '/js/albums.js?v=18',
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
   '/js/pfedit.js?v=15',
-  '/js/mywork.js?v=22',
+  '/js/mywork.js?v=23',
   '/js/startup.js?v=7',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=11',
@@ -3733,10 +3892,10 @@ const SHELL_URLS = [
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/zeo.js?v=2',
-  '/js/theme.js?v=5',
+  '/js/theme.js?v=6',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=117',
+  '/js/sections.js?v=118',
   '/js/routes.js?v=2',
   '/js/navprogress.js?v=5'
 ];

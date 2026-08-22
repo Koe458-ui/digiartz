@@ -13,7 +13,7 @@
   function saved () {
     var v = null;
     try { v = localStorage.getItem(KEY); } catch (e) {}
-    return VALID[v] ? v : 'graydark';
+    return VALID[v] ? v : 'light';
   }
 
   /* Which theme a card stands for. Everything the picker does hangs off

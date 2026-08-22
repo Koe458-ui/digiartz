@@ -229,13 +229,46 @@
         : 'Pick this album on the upload page to add artwork to it.')+'</div>';
     empty.style.display = '';
   }
-  // reuse saved card markup
+  /* One card, and this file already had it.
+
+     This called pfSavedCardHTML(), and nothing in this bundle has ever
+     defined that name — it is not a stale name for something that moved. So
+     the moment an album had anything in it, the map over its rows threw a
+     ReferenceError inside albOpen's try and painted "COULDN'T LOAD THIS
+     ALBUM" over a set that had loaded perfectly. An empty album was the only
+     kind that worked, because an empty list never calls it.
+
+     What an album holds is artworks, so what it shows is the card every other
+     grid of artworks on this site shows — same markup, same measurements,
+     same lazy thumbnail and the same focal point — with the album's own
+     opener on it. */
   function albItemHTML(a){
-    var card = pfSavedCardHTML(a);
+    var card = pfGalleryCardHTML(a, 'albOpenPicture');
     if(!albView || !albView.owner) return card;
     return '<div class="albItemWrap">'+card+
       '<button type="button" class="albItemX" aria-label="Remove from album" '+
       'onclick="event.stopPropagation();albRemoveItem(\''+esc(String(a.id))+'\')">\u2715</button></div>';
+  }
+  /* An album opens the picture, not the panel around it.
+
+     Everywhere else on the site a thumbnail of an artwork opens the artwork
+     viewer, and that is right where the details are the point — the artist,
+     the tags, the download, what everyone said about it. An album is the
+     other thing: a set somebody put together to look through, and the way
+     you look through it is one picture after another. So a tap here goes
+     straight to the full-screen view, and the panel stays one step away
+     rather than in the way.
+
+     The picture at viewing size, because the card holds a thumbnail — the
+     same request the community showcase makes for the same reason. Anything
+     without an image_url is not a picture to open, and does nothing. */
+  function albOpenPicture(id){
+    var rows = (albView && albView.rows) || [];
+    var art = rows.filter(function(a){ return String(a.id)===String(id); })[0] ||
+              (typeof findArtworkById === 'function' ? findArtworkById(id) : null);
+    if(!art || !art.image_url) return;
+    var shot = (typeof getViewUrl === 'function') ? getViewUrl(art.image_url) : art.image_url;
+    if(typeof dzLightOpen === 'function') dzLightOpen(shot, art.name || '');
   }
   function albCloseView(){
     document.getElementById('albViewPage').classList.remove('open');
@@ -665,10 +698,17 @@
     document.getElementById('pfGalleryEmpty').style.display = (pf.galleryRows.length || qHtml) ? 'none' : '';
     pfGallerySentinelSync();
   }
-  // the card is the thumbnail — the title, date and tags belong to the
-  // artwork view, which is one tap away
-  function pfGalleryCardHTML(a){
-    return '<div class="awCard" onclick="pfOpenArtwork(\''+esc(String(a.id))+'\')">'+
+  /* The card is the thumbnail — the title, date and tags belong to the artwork
+     view, which is one tap away, and the picture in there opens full screen.
+
+     `opener` is the name of the function that tap calls, so the album view can
+     hand the run of artworks the arrows should walk without a second copy of
+     this markup. It is read only when it is a string: the two callers here
+     pass this straight to Array.map, which would otherwise hand it the index
+     as a second argument and name a function called 0. */
+  function pfGalleryCardHTML(a, opener){
+    var open = (typeof opener === 'string' && opener) ? opener : 'pfOpenArtwork';
+    return '<div class="awCard" onclick="'+open+'(\''+esc(String(a.id))+'\')">'+
       '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" '+dzThumbAttrs(a.image_url)+' alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'">'+
       '</div></div>';
   }

@@ -4,6 +4,45 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v214 — the readout names the element, and says whether the notes scroll.
+
+       The bisect ended on the notes column: the box is right with the picture
+       alone and wrong with the text alone. There are only two ways text
+       breaks a box that cannot grow — it is wider than its column and pushes
+       it sideways, or the column is not scrolling and its height goes into
+       the box instead of into a scrollbar — and the readout now tests both.
+
+       It walks the box and names the three worst elements with their tag, id,
+       class and three numbers: how far past the side, how much wider their
+       content is than themselves, how far past the bottom. The bottom test
+       skips anything inside a scroller, because an element below the fold of
+       a scrolled column reports a rect past the bottom of the box while being
+       perfectly well behaved. Measuring that was the first thing this got
+       wrong, and it named innocent paragraphs.
+
+       Above the names it reads the scrollers themselves: the notes and the
+       body, each with their computed overflow, their client and scroll
+       heights, and one of three words — SCROLLS, fits, or
+       CLIPPED-NOT-SCROLLING, which is the shape of "all the text is already
+       in the box" if that is what is happening.
+       Changed: index.html, sw.js.
+
+   v213 — the readout names the element.
+
+       The bisect got as far as the notes column: the box is right with the
+       picture alone in it and wrong with the notes alone. Cutting that column
+       in half would take two more rounds, and there is a shorter way.
+
+       The readout now walks every element inside the box and asks each one
+       whether its border box reaches past the box's edges, or its own content
+       is wider than it is. The three worst are printed with tag, id and class
+       and the three numbers that separate the cases — how far past the side,
+       how much wider its content is than itself, how far past the bottom.
+
+       So the next report is a name. Ten rounds of adjectives could not get
+       one, and a name is all that is left to find.
+       Changed: index.html, sw.js.
+
    v212 — two viewers, written twice, with nothing between them.
 
        Asked for outright, and it is also the shape of the bug. The desktop
@@ -4075,7 +4114,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v228';
+const CACHE_VERSION = 'v230';
 
 /* One cache per thing cached, not one cache for everything.
 

@@ -4,6 +4,26 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v209 — the viewer is back on, and it measures itself.
+
+       Switching it off answered the question it was asked: with the panel
+       empty the box is exactly right, which means css/viewer.css is what
+       draws this viewer and the 80x90 rectangle arrives. The fault is in what
+       goes inside it, and it only appears with the real thing in there —
+       fed an ad iframe 970px wide, unbreakable strings and forty paragraphs,
+       the box here does not move at any width.
+
+       So the page reports its own numbers into the viewer's top bar: window,
+       box, the box as a percentage of the window, #artModal's position, the
+       body's display and scroll height, the pane, the picture and its natural
+       size, the notes column and its scroll height, and the document's own
+       size. One photograph of that line says which element is the wrong size
+       and by how much, which is what nine rounds of description could not.
+
+       It is one block in index.html, marked temporary, and it comes out as
+       soon as it has answered.
+       Changed: index.html, css/viewer.css, sw.js.
+
    v208 — the artwork viewer is switched off, on purpose, temporarily.
 
        Eight changes have shipped, the page reports the build they were in,
@@ -3996,7 +4016,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v224';
+const CACHE_VERSION = 'v225';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4050,7 +4070,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=24',
+  '/css/viewer.css?v=25',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',

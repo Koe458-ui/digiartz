@@ -4,12 +4,6 @@
   <meta charset="utf-8"/>
   <meta name="color-scheme" content="light"/>
   <meta name="theme-color" content="#F7F5EB"/>
-  <!-- Which copy of the site this is. It is here to answer one question that
-       kept costing a round trip each time it was asked: is the page in front
-       of somebody the code that was just shipped, or a copy their browser or
-       the service worker held on to? View source, look for dz-build, compare
-       it with CACHE_VERSION in sw.js. Keep the two in step. -->
-  <meta name="dz-build" content="v234"/>
   <!-- theme boot
 
        Two themes: light (paper, the default) and graydark (charcoal).
@@ -254,7 +248,7 @@
   </script>
   <link rel="stylesheet" href="/css/base.css?v=12">
   <link rel="stylesheet" href="/css/hero.css?v=101">
-  <link rel="stylesheet" href="/css/viewer.css?v=32">
+  <link rel="stylesheet" href="/css/viewer.css?v=33">
   <link rel="stylesheet" href="/css/community.css?v=19">
   <link rel="stylesheet" href="/css/connect.css?v=6">
   <link rel="stylesheet" href="/css/ranking.css?v=4">
@@ -264,7 +258,7 @@
   <link rel="stylesheet" href="/css/panels.css?v=13">
   <link rel="stylesheet" href="/css/upload.css?v=15">
   <link rel="stylesheet" href="/css/widgets.css?v=12">
-  <link rel="stylesheet" href="/css/overrides.css?v=35">
+  <link rel="stylesheet" href="/css/overrides.css?v=36">
   <link rel="stylesheet" href="/css/select.css?v=4">
   <link rel="stylesheet" href="/css/analytics.css?v=9">
  </head>
@@ -2430,10 +2424,12 @@
           stays on screen for as long as you are reading about the piece. -->
      <div id="avAuthorCard"></div>
      <div class="avImgPane">
-      <div class="avImgStage">
-       <div class="avImgViewport" id="avImgViewport">
-        <img alt="" id="lbImg" draggable="false"/>
-       </div>
+      <!-- One wrapper, not two. .avImgStage sat between the pane and the
+           viewport to give a fitted picture a box to be centred in; the
+           column prints its pictures at the column's width now and there is
+           nothing left for it to size. -->
+      <div class="avImgViewport" id="avImgViewport">
+       <img alt="" id="lbImg" draggable="false"/>
       </div>
       <div class="avImgStack" id="avImgStack" hidden></div>
      </div>
@@ -2848,107 +2844,7 @@
   <script src="/uploadVerifier.js"></script>
   <script src="/js/app-core.js?v=31"></script>
   <script src="/js/protect.js?v=3"></script>
-  <!-- TEMPORARY — the viewer measures itself and says so.
-
-       Nine changes have shipped and the reports have all been the same
-       sentence, which no longer separates anything: the box is right with the
-       panel empty and wrong with it full, and nothing I can build here
-       reproduces the wrong one. So the page reports its own numbers into the
-       viewer's top bar, and one photograph of that line says which element is
-       the wrong size and by how much. Delete this block when it has answered
-       that. -->
-  <script>
-  (function(){
-    function n(x){ return Math.round(x); }
-    function read(){
-      var m=document.getElementById('artModal');
-      if(!m||!m.classList.contains('open')) return;
-      var box=m.querySelector('.avBox'), body=m.querySelector('.avBody'),
-          pane=m.querySelector('.avImgPane'), side=m.querySelector('.avSideScroll'),
-          img=document.getElementById('lbImg'), bar=m.querySelector('.avTopBar');
-      if(!box||!bar) return;
-      var b=box.getBoundingClientRect(), W=innerWidth, H=innerHeight;
-      var out=document.getElementById('dzDiag');
-      if(!out){
-        out=document.createElement('div');
-        out.id='dzDiag';
-        out.style.cssText='position:absolute;left:0;right:0;top:100%;z-index:9;'+
-          'font:11px/1.45 monospace;color:#111;background:#ffe;padding:3px 8px;'+
-          'white-space:pre-wrap;word-break:break-all;border-bottom:1px solid #cc9;';
-        bar.appendChild(out);
-      }
-      /* Which element is too big, by name — and whether the notes scroll.
-
-         "Text is the issue" narrows it to one column, and there are only two
-         ways text breaks a box that cannot grow: it is wider than the column
-         and pushes it sideways, or the column is not scrolling and the height
-         goes into the box instead of into a scrollbar.
-
-         The walk below tests the first. It skips anything that merely sits
-         below the fold of a scroller, because an element inside a scrolled
-         column reports a rect past the bottom of the box while being
-         perfectly well behaved — measuring that was the first thing this got
-         wrong. The line above it tests the second, by reading the scrollers
-         themselves. */
-      function scrolledInside(el){
-        for (var p = el.parentElement; p && p !== box; p = p.parentElement){
-          var ov = getComputedStyle(p).overflowY;
-          if (ov === 'auto' || ov === 'scroll' || ov === 'hidden') return true;
-        }
-        return false;
-      }
-      var edge = box.getBoundingClientRect(), bad = [];
-      var all = box.querySelectorAll('*');
-      for (var i=0; i<all.length; i++){
-        var el = all[i], r = el.getBoundingClientRect();
-        if (!r.width && !r.height) continue;
-        var over = Math.max(0, Math.round(r.right - edge.right), Math.round(edge.left - r.left));
-        var wide = Math.max(0, Math.round(el.scrollWidth - el.clientWidth));
-        var tall = scrolledInside(el) ? 0 : Math.max(0, Math.round(r.bottom - edge.bottom));
-        var worst = Math.max(over, wide, tall);
-        if (worst < 4) continue;
-        var name = el.tagName.toLowerCase() +
-          (el.id ? '#'+el.id : '') +
-          (el.className && typeof el.className === 'string' && el.className.trim()
-            ? '.'+el.className.trim().split(/\s+/).slice(0,2).join('.') : '');
-        bad.push({ n:name, o:over, w:wide, t:tall, s:worst,
-                   size:Math.round(r.width)+'x'+Math.round(r.height) });
-      }
-      bad.sort(function(a,b){ return b.s - a.s; });
-      var names = bad.slice(0,3).map(function(x){
-        return x.n+' '+x.size+' [side+'+x.o+' content+'+x.w+' bottom+'+x.t+']';
-      }).join('   ') || 'nothing overflows the box';
-
-      var col = m.querySelector('.avSide');
-      function scroller(el, label){
-        if (!el) return label+' missing';
-        var cs = getComputedStyle(el);
-        return label+' '+cs.overflowY+' '+n(el.clientHeight)+'/'+n(el.scrollHeight)+
-               (el.scrollHeight > el.clientHeight + 1
-                 ? (cs.overflowY === 'auto' || cs.overflowY === 'scroll' ? ' SCROLLS' : ' CLIPPED-NOT-SCROLLING')
-                 : ' fits');
-      }
-
-      var two = matchMedia('(min-width:900px)').matches;
-      out.textContent =
-        ((document.querySelector('meta[name="dz-build"]')||{}).content||'?')+
-        ' '+(two?'two columns':'one column')+
-        ' win '+W+'x'+H+' dpr'+(window.devicePixelRatio||1)+
-        ' | box '+n(b.width)+'x'+n(b.height)+' ('+Math.round(b.width/W*100)+'%x'+Math.round(b.height/H*100)+'%)'+
-        ' | body '+getComputedStyle(body).display+' '+n(body.clientWidth)+'x'+n(body.clientHeight)+
-        ' | page '+n(document.documentElement.scrollWidth)+'x'+n(document.documentElement.scrollHeight)+
-        '\n'+(two ? scroller(col,'notes-col')+' | '+scroller(pane,'work-col')+' | '+scroller(body,'body')
-                   : scroller(body,'body (one column: the body is the scroller)'))+
-        ' | notesW '+n(side.clientWidth)+' contentW '+n(side.scrollWidth)+
-        '\nOVERFLOWING: '+names;
-    }
-    addEventListener('load', function(){
-      setInterval(read, 700);
-      addEventListener('resize', read);
-    });
-  })();
-  </script>
-  <script src="/js/gallery.js?v=99"></script>
+  <script src="/js/gallery.js?v=100"></script>
   <script src="/js/auth.js?v=20"></script>
   <script src="/js/profile.js?v=16"></script>
   <script src="/js/albums.js?v=18"></script>
@@ -3496,7 +3392,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=9"></script>
 
 
-  <script src="/js/sections.js?v=118"></script>
+  <script src="/js/sections.js?v=119"></script>
   <!-- The url of every public section, and the panel each one opens. After
        sections.js, whose qlGo and hero call-to-action hand over to it. -->
   <script src="/js/routes.js?v=2"></script>

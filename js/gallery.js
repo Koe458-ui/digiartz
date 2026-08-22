@@ -210,24 +210,36 @@
      carry. The box is always full, changing pictures is a click rather than
      a hunt down a column, and the rail is the only thing that scrolls — 
      sideways, and only when there are more thumbnails than fit. */
-  var avImgIndex = 0;
 
+  /* Every picture in the set, one under another, down the work column.
+
+     A rail of thumbnails under one picture was the shape before this, and it
+     asked the reader to hunt: the box showed image one and the rest were
+     64px squares to be clicked one at a time. A set is a set — the column
+     prints all of it, at the width of the column, in order, and the column
+     scrolls to its own end and stops. Which is what the notes beside it do,
+     and what the marketplace listing has always done.
+
+     #lbImg is the first of them and stays the element every other part of
+     this file already knows: openLB gives it its src, the full view opens
+     from it, and the resolution row reads its natural size. The rest are
+     appended after it, in the same container the rail used to live in, so
+     the markup in index.html does not change. */
   function avBuildStrip(art, src){
     avImages = avImageList(art, src);
-    avImgIndex = 0;
-    var rail = document.getElementById('avImgStack');
-    if(!rail) return;
+    var rest = document.getElementById('avImgStack');
+    if(!rest) return;
     if(avImages.length < 2){
-      rail.hidden = true; rail.innerHTML = '';
+      rest.hidden = true; rest.innerHTML = '';
       return;
     }
-    rail.hidden = false;
-    rail.innerHTML = avImages.map(function(u,i){
-      return '<button type="button" class="avThumb'+(i===0?' on':'')+'" data-i="'+i+'"'+
-             (i===0?' aria-current="true"':'')+
-             ' aria-label="Image '+(i+1)+' of '+avImages.length+'">'+
-             '<img src="'+esc(getThumbnailUrl(u))+'" alt="" loading="lazy" decoding="async">'+
-             '</button>';
+    rest.hidden = false;
+    // At viewing size, not thumbnail size: these are the work, not an index
+    // of it. Lazily, because a set of eight should not cost eight requests
+    // before the first one is on screen.
+    rest.innerHTML = avImages.slice(1).map(function(u,i){
+      return '<img class="avStackImg" src="'+esc(getViewUrl(u))+'" alt="Image '+(i+2)+
+             ' of '+avImages.length+'" loading="lazy" decoding="async" draggable="false">';
     }).join('');
   }
 
@@ -244,68 +256,13 @@
      stylesheet now and the picture is fitted into it with object-fit, so
      there is nothing to measure, nothing to keep current, and no moment
      after a rail renders that has to be picked correctly. */
-  // Swap which of the set the box is showing.
-  function avShowImage(i){
-    if(!avImages.length) return;
-    if(i < 0) i = 0;
-    if(i > avImages.length - 1) i = avImages.length - 1;
-    avImgIndex = i;
-    var img = document.getElementById('lbImg');
-    var vp  = document.getElementById('avImgViewport');
-    if(img){
-      if(vp) vp.classList.add('loading');
-      img.onload = function(){
-        if(vp) vp.classList.remove('loading');
-        avUpdateResolution(img.naturalWidth, img.naturalHeight);
-      };
-      img.onerror = function(){ if(vp) vp.classList.remove('loading'); };
-      img.src = getViewUrl(avImages[i]);
-      if(avImages.length > 1) img.alt = 'Image ' + (i+1) + ' of ' + avImages.length;
-      // a cached file can be complete before onload is ever wired
-      if(img.complete && img.naturalWidth){
-        if(vp) vp.classList.remove('loading');
-        avUpdateResolution(img.naturalWidth, img.naturalHeight);
-      }
-    }
-    var rail = document.getElementById('avImgStack');
-    if(!rail) return;
-    var thumbs = rail.querySelectorAll('.avThumb');
-    for(var n = 0; n < thumbs.length; n++){
-      var on = (n === i);
-      thumbs[n].classList.toggle('on', on);
-      if(on) thumbs[n].setAttribute('aria-current','true');
-      else thumbs[n].removeAttribute('aria-current');
-    }
-    // keep the one you just picked where you can see it
-    var cur = rail.querySelector('.avThumb.on');
-    if(cur && cur.scrollIntoView){
-      try{ cur.scrollIntoView({ block:'nearest', inline:'nearest' }); }catch(e){}
-    }
-  }
+  /* The swap is gone with the rail that needed it.
 
-  /* Delegated, because the rail is rewritten for every artwork opened and a
-     listener per thumbnail would be rebuilt with it. The arrows walk the set
-     as well, which is what a row of images is expected to answer to. */
-  (function(){
-    document.addEventListener('DOMContentLoaded', function(){
-      var rail = document.getElementById('avImgStack');
-      if(!rail) return;
-      rail.addEventListener('click', function(e){
-        var b = e.target && e.target.closest ? e.target.closest('.avThumb') : null;
-        if(!b || !rail.contains(b)) return;
-        avShowImage(parseInt(b.getAttribute('data-i'), 10) || 0);
-      });
-      rail.addEventListener('keydown', function(e){
-        if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-        var next = avImgIndex + (e.key === 'ArrowRight' ? 1 : -1);
-        if(next < 0 || next > avImages.length - 1) return;
-        e.preventDefault();
-        avShowImage(next);
-        var b = rail.querySelector('.avThumb.on');
-        if(b) b.focus();
-      });
-    });
-  })();
+     avShowImage put one of the set into #lbImg and ticked a thumbnail; the
+     thumbnails answered clicks and arrow keys to move between them. The
+     column prints the whole set now, so there is nothing to swap to: every
+     picture is already on screen, in order, and reaching the fourth is a
+     scroll rather than a hunt. */
 
   function avCap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
 
@@ -474,7 +431,11 @@
      Moved rather than copied, so there is never a second card to keep filled,
      and driven by the same 1024px the stylesheet uses so the two can never
      disagree about which layout is on. */
-  var avWide = window.matchMedia ? window.matchMedia('(min-width:1024px)') : null;
+  /* 900, which is where css/viewer.css puts the second column. It said 1024
+     for as long as the layout did, and when the layout moved this did not —
+     so between the two widths the card was left in .avBody, in a grid row of
+     its own, for a viewer that had already given it a column to sit in. */
+  var avWide = window.matchMedia ? window.matchMedia('(min-width:900px)') : null;
   function avPlaceCard(){
     var card = document.getElementById('avAuthorCard');
     if(!card) return;                       // older shell: avHost will make one
@@ -808,7 +769,6 @@
       rptBusy = false; btn.disabled = false; btn.textContent = '🚩 Submit Report';
     }
   }
-  function avCloseMoreMenu(){}
 
   /* The picture on its own.
 
@@ -899,6 +859,12 @@
         // currentSrc, so a browser that picked a candidate of its own is not
         // second-guessed; src for one that reports nothing.
         dzLightOpen(pic.currentSrc || pic.src, pic.alt);
+      });
+      // and the rest of the set, which are appended after it
+      var rest = document.getElementById('avImgStack');
+      if(rest) rest.addEventListener('click', function(e){
+        var img = e.target.closest ? e.target.closest('img') : null;
+        if(img) dzLightOpen(img.currentSrc || img.src, img.alt);
       });
       var box = document.getElementById('dzLight');
       if(box) box.addEventListener('click', function(e){
@@ -1060,13 +1026,35 @@
      button whose handler removes it from the document — the close in the
      card, a comment's delete — can never be mistaken for a click on the
      backdrop the way a contains() test would mistake it. */
+  /* The ground around the work closes the view.
+
+     There is no panel with a page behind it any more — the viewer IS the
+     page — so "outside" is not another element, it is the part of this one
+     that nothing has been put on: the gutters either side of the two
+     columns, the air above and below a picture that does not fill its
+     column, and the space under the notes. A click that lands on one of
+     those containers rather than on something inside it is a click on
+     nothing, and that is the gesture people already try.
+
+     Identity, not contains(): a click on the picture, the notes, a button or
+     a comment has that thing as its target and is left alone, including a
+     button that removes itself from the document as it is clicked — which is
+     what a contains() test gets wrong. */
+  function avGroundClick(e){
+    var t = e.target;
+    if(t === document.getElementById('artModal') ||
+       t === document.querySelector('#artModal .avBox') ||
+       t === document.querySelector('#artModal .avBody') ||
+       t === document.querySelector('#artModal .avImgPane') ||
+       t === document.querySelector('#artModal .avImgViewport') ||
+       t === document.querySelector('#artModal .avImgStack') ||
+       t === document.querySelector('#artModal .avSide')) closeLB();
+  }
   (function(){
     document.addEventListener('DOMContentLoaded', function(){
       var modal = document.getElementById('artModal');
       if(!modal) return;
-      modal.addEventListener('click', function(e){
-        if(e.target === modal) closeLB();
-      });
+      modal.addEventListener('click', avGroundClick);
     });
   })();
 
@@ -1081,7 +1069,6 @@
     avLbFromGallery = !!(_fgAtOpen && _fgAtOpen.classList.contains('open'));
     if(amCloseTimer){clearTimeout(amCloseTimer);amCloseTimer=null;}
     if(modal) modal.classList.remove('closing');
-    avCloseMoreMenu();
 
     // instant reset
     (function(){
@@ -1218,7 +1205,6 @@
        section, and the click on the page around the panel. */
     dzLightClose();
     modal.classList.add('closing');
-    avCloseMoreMenu();
     if(amCloseTimer)clearTimeout(amCloseTimer);
     amCloseTimer=setTimeout(function(){
       modal.classList.remove('open');
@@ -1247,15 +1233,10 @@
       resetArtworkSEO();
     }
   }
-  // backdrop click closes
-  (function(){
-    var modal=document.getElementById('artModal');
-    if(modal){
-      modal.addEventListener('click',function(e){
-        if(e.target===modal)closeLB();
-      });
-    }
-  })();
+  /* The second copy of this listener is gone. There were two, bound to the
+     same element for the same event, from the days when the viewer was a
+     panel — one of them is enough and avGroundClick above is the one that
+     knows where the ground is now. */
 
   // artwork urls and seo
   function handleArtClick(e,id){

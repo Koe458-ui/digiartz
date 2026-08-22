@@ -4,6 +4,53 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v219 — the set is a column, the ground closes the view, and the dead code
+       is gone.
+
+       THE SET IS A COLUMN. A rail of 64px thumbnails under one picture asked
+       the reader to hunt: image one was on screen and the rest were squares
+       to be clicked one at a time. Both viewers print the whole set now —
+       every picture in an artwork, every shot on a listing — one under
+       another, at the width of the column, in order, and the column scrolls
+       to its end and stops. The notes do the same beside them. avShowImage,
+       the thumbnail markup, the arrow-key walk and the .avThumb rules are
+       gone with the rail.
+
+       AND THE COLUMNS ARE THE SAME HEIGHT. The picture column spanned both
+       grid rows, which made it the thing that sized the row the artist card
+       sits in: a column of pictures 1811px tall took half the panel for a
+       row holding nothing, and the notes beside it got 279px of the 559 they
+       should have had. Both columns are in the same row now.
+
+       THE GROUND CLOSES THE VIEW. There is no panel with a page behind it any
+       more, so "outside" is the part of the viewer nothing has been put on:
+       the gutters, the air around a picture, the space under the notes. A
+       click that lands on one of those closes it; a click on the work, the
+       writing, a button or a comment does not. The second, duplicate backdrop
+       listener that had been bound to the same element for the same event
+       since the panel days is gone.
+
+       ONE COLUMN FOR THE WRITING. A job, a blog post and a resource are
+       writing with a picture at the top; two columns split a page that had no
+       reason to be split. They are single-column at every width now, with a
+       measure on the prose. The marketplace keeps its two.
+
+       THE SCROLLBARS. Both viewers, both themes, same bar: a thumb in the
+       border colour that warms on hover, a transparent trough, 10px wide, and
+       overscroll-behavior so a flick that runs out of column stops there
+       instead of moving the page behind it.
+
+       DEAD CODE. The readout and the dz-build marker have done their job and
+       are out. With them: avShowImage and the rail's click and key handlers,
+       avImgIndex, the .avThumb rules, .avImgStage — a wrapper that existed to
+       size a fitted picture and now sizes nothing — and avCloseMoreMenu,
+       an empty function called in three places. avPlaceCard's breakpoint was
+       1024 while the layout's was 900, so between the two widths it left the
+       card in a row of its own for a viewer that had already given it a
+       column; it is 900 now.
+       Changed: css/viewer.css, css/overrides.css, js/gallery.js,
+       js/sections.js, index.html, sw.js.
+
    v218 — restore the eight hundred lines the last splice deleted by accident.
 
        Replacing the viewer's layout with the section viewer's was done as a
@@ -4212,7 +4259,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v234';
+const CACHE_VERSION = 'v235';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4266,7 +4313,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=32',
+  '/css/viewer.css?v=33',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',
@@ -4276,7 +4323,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=13',
   '/css/upload.css?v=15',
   '/css/widgets.css?v=12',
-  '/css/overrides.css?v=35',
+  '/css/overrides.css?v=36',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 
@@ -4300,7 +4347,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=31',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=99',
+  '/js/gallery.js?v=100',
   '/js/auth.js?v=20',
   '/js/profile.js?v=16',
   '/js/albums.js?v=18',
@@ -4321,7 +4368,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=6',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=118',
+  '/js/sections.js?v=119',
   '/js/routes.js?v=2',
   '/js/navprogress.js?v=5'
 ];

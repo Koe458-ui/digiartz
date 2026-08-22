@@ -276,15 +276,19 @@
      js/gallery.js), and every pixel inside the box belongs to one of the two
      scrollers. */
   #artModal .avBox{
-    /* 80% of the window, and never past the measure the rest of the site is
-       held at. The cap is not cosmetic: getViewUrl asks for a 1000px-wide
-       image, so on a 3440 screen an uncapped 80% gave the picture a pane
-       2200px across to sit in and it filled less than half of it — a small
-       picture marooned in a large dark box, which is what "the image view is
-       not working properly on ultrawide" was. Capped, the pane is about
-       1130px and a 1000px image very nearly fills it, at its own resolution
-       rather than blown up to fit. */
-    width:min(80%, var(--shellMax)); height:88%;
+    /* 80% of the window across and 90% down: a 10% margin left and right, 5%
+       above and below. Stated, fixed, and the same rectangle whatever is
+       opened in it — the picture is fitted to the column it gets and the
+       notes scroll in theirs, so nothing inside here has any say in how big
+       this is.
+
+       No measure cap any more. It used to be min(80%, --shellMax), because
+       getViewUrl asks for a 1000px-wide image and an uncapped 80% of a 3440
+       screen gave that picture a 2200px pane to sit in the middle of. The
+       margin is what was asked for, so the margin is what this is; on a very
+       wide screen the picture holds its own resolution and takes the air
+       around it rather than being blown up to fill the pane. */
+    width:80%; height:90%;
     max-width:none; max-height:none;
     border:1px solid var(--bdr);
     border-radius:16px;

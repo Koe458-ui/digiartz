@@ -9,7 +9,7 @@
        of somebody the code that was just shipped, or a copy their browser or
        the service worker held on to? View source, look for dz-build, compare
        it with CACHE_VERSION in sw.js. Keep the two in step. -->
-  <meta name="dz-build" content="v219"/>
+  <meta name="dz-build" content="v220"/>
   <!-- theme boot
 
        Two themes: light (paper, the default) and graydark (charcoal).
@@ -98,8 +98,13 @@
        it sits in, and .avBody scrolls what does not fit. Both stylesheets say
        this more precisely and both come after this block, so these only ever
        decide anything on a load where they are missing. */
-    #artModal .avBox{height:100%;max-height:100%;overflow:hidden;}
+    #artModal .avBox{width:80%;height:90%;max-height:90%;overflow:hidden;}
     #artModal .avBody{min-height:0;max-height:100%;overflow:auto;}
+    /* And the picture is fitted to whatever it is in. css/viewer.css and
+       css/overrides.css both say this properly; this is the floor under them,
+       so a picture cannot lay out at its own 4000px on a load where neither
+       arrived. */
+    #artModal #lbImg{max-width:100%;max-height:80vh;object-fit:contain;}
   </style>
   <!-- Cloudflare Web Analytics -->
   <script data-cf-beacon='{"token": "aa4b7177387e4f689739a5fdf44cbffa"}' defer="" src="https://static.cloudflareinsights.com/beacon.min.js">
@@ -219,6 +224,32 @@
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
+  <!-- A stylesheet that does not arrive is asked for again.
+
+       Every file below is pinned by its ?v= and served immutable for a year,
+       which is right until the copy at that exact url cannot be had: a deploy
+       whose assets have not propagated answers 404, a flaky moment answers
+       nothing, and the page then renders with that file simply missing. For
+       css/overrides.css — which carries the whole desktop layout of the
+       artwork viewer — missing means the viewer comes apart, which is what
+       was photographed twice this week.
+
+       So: catch the load error, once per link, and refetch the same file
+       without its version and past any cache. A copy of the file is better
+       than no copy, and this costs one request only on a load where something
+       has already gone wrong. Registered before the links so the errors are
+       heard; capture, because an error on a subresource does not bubble. -->
+  <script>
+  (function(){
+    addEventListener('error', function(e){
+      var el = e.target;
+      if(!el || el.tagName !== 'LINK' || el.rel !== 'stylesheet') return;
+      if(el.dataset.retried) return;
+      el.dataset.retried = '1';
+      el.href = el.href.split('?')[0] + '?r=' + Date.now();
+    }, true);
+  })();
+  </script>
   <link rel="stylesheet" href="/css/base.css?v=12">
   <link rel="stylesheet" href="/css/hero.css?v=100">
   <link rel="stylesheet" href="/css/viewer.css?v=21">
@@ -231,7 +262,7 @@
   <link rel="stylesheet" href="/css/panels.css?v=12">
   <link rel="stylesheet" href="/css/upload.css?v=15">
   <link rel="stylesheet" href="/css/widgets.css?v=12">
-  <link rel="stylesheet" href="/css/overrides.css?v=32">
+  <link rel="stylesheet" href="/css/overrides.css?v=33">
   <link rel="stylesheet" href="/css/select.css?v=4">
   <link rel="stylesheet" href="/css/analytics.css?v=9">
  </head>

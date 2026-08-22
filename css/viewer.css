@@ -851,8 +851,14 @@
        problem is that a centred group there leaves dead margin on both sides
        and a thumb has less to hit. Edge to edge on a phone, centred once
        there is room to centre in. */
-    .vwActRow{display:flex;gap:1.15rem;align-items:center;justify-content:center;}
-    @media(max-width:520px){ .vwActRow{justify-content:space-between;gap:.4rem;} }
+    /* Wraps, never scrolls. Six 52px buttons and five 1.15rem gaps come to
+       about 330px, and the notes column is 320 at its narrowest — so the row
+       was wider than the column that holds it and the last of it was simply
+       cut off, which is where "like and report are cut" came from. A row of
+       actions is not a filmstrip: when it does not fit it goes onto a second
+       line, and nothing in either viewer scrolls sideways. */
+    .vwActRow{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;justify-content:center;}
+    @media(max-width:520px){ .vwActRow{gap:.5rem;} }
     .vwAct{
       width:52px;height:52px;border-radius:50%;flex:0 0 auto;cursor:pointer;
       display:flex;align-items:center;justify-content:center;
@@ -952,47 +958,25 @@
     @media(hover:hover){ .vwFileDl:hover{background:color-mix(in srgb,var(--vwGreen) 20%,var(--sur));} }
     .vwFileDl:active{transform:scale(.94);}
 
-    /* ── the scrollbars in both viewers ───────────────────────────────────
-       A column that scrolls should say so, and the browser's default bar
-       says it in the wrong voice: on Windows a 17px grey trough with square
-       buttons, wide enough to change the column's measure and loud enough to
-       read as chrome. This is the same bar in both viewers and in both
-       themes — a thumb in the border colour that warms on hover, a trough
-       that is the ground it sits on, and 10px of width whether it is over
-       the work or over the notes.
-
-       scrollbar-width and scrollbar-color are the standard properties and
-       Firefox takes only those; the ::-webkit- rules are for everything
-       else. Both are stated because they do not overlap. */
-    #artModal .avImgPane,#artModal .avSide,#artModal .avBody,
+    /* ── no scrollbars, in either viewer ─────────────────────────────────
+       The columns scroll; they do not need a rail down the side saying so.
+       A bar takes 10 to 17 pixels off the measure of a column that is 320
+       wide at its narrowest, sits over the notes on Windows whether or not
+       anything is being dragged, and is one more thing to style in two
+       themes. Hidden in every engine — scrollbar-width for Firefox and the
+       standard, ::-webkit-scrollbar for the rest — and the space goes back
+       to the content. Scrolling itself is untouched: wheel, trackpad, touch,
+       Page Down and the keyboard all work exactly as they did. */
+    #artModal .avImgPane,#artModal .avSide,#artModal .avSideScroll,#artModal .avBody,
     #dzView .dzvMedia,#dzView .dzvCol,#dzView .dzvBody{
-      scrollbar-width:thin;
-      scrollbar-color:var(--bdrh) transparent;
+      scrollbar-width:none;
+      -ms-overflow-style:none;
     }
     #artModal .avImgPane::-webkit-scrollbar,#artModal .avSide::-webkit-scrollbar,
-    #artModal .avBody::-webkit-scrollbar,#dzView .dzvMedia::-webkit-scrollbar,
-    #dzView .dzvCol::-webkit-scrollbar,#dzView .dzvBody::-webkit-scrollbar{
-      width:10px;height:10px;
-    }
-    #artModal .avImgPane::-webkit-scrollbar-track,#artModal .avSide::-webkit-scrollbar-track,
-    #artModal .avBody::-webkit-scrollbar-track,#dzView .dzvMedia::-webkit-scrollbar-track,
-    #dzView .dzvCol::-webkit-scrollbar-track,#dzView .dzvBody::-webkit-scrollbar-track{
-      background:transparent;
-    }
-    #artModal .avImgPane::-webkit-scrollbar-thumb,#artModal .avSide::-webkit-scrollbar-thumb,
-    #artModal .avBody::-webkit-scrollbar-thumb,#dzView .dzvMedia::-webkit-scrollbar-thumb,
-    #dzView .dzvCol::-webkit-scrollbar-thumb,#dzView .dzvBody::-webkit-scrollbar-thumb{
-      background:var(--bdrh);
-      border-radius:999px;
-      border:3px solid transparent;
-      background-clip:content-box;
-    }
-    @media(hover:hover){
-      #artModal .avImgPane::-webkit-scrollbar-thumb:hover,#artModal .avSide::-webkit-scrollbar-thumb:hover,
-      #artModal .avBody::-webkit-scrollbar-thumb:hover,#dzView .dzvMedia::-webkit-scrollbar-thumb:hover,
-      #dzView .dzvCol::-webkit-scrollbar-thumb:hover,#dzView .dzvBody::-webkit-scrollbar-thumb:hover{
-        background:var(--pg);background-clip:content-box;
-      }
+    #artModal .avSideScroll::-webkit-scrollbar,#artModal .avBody::-webkit-scrollbar,
+    #dzView .dzvMedia::-webkit-scrollbar,#dzView .dzvCol::-webkit-scrollbar,
+    #dzView .dzvBody::-webkit-scrollbar{
+      width:0;height:0;display:none;
     }
     /* Each column stops at its own end. Without this a flick that runs out of
        column carries on into whatever is behind it — the page, or the other
@@ -1000,6 +984,26 @@
     #artModal .avImgPane,#artModal .avSide,#artModal .avBody,
     #dzView .dzvMedia,#dzView .dzvCol,#dzView .dzvBody{
       overscroll-behavior:contain;
+    }
+
+    /* Top to bottom, and only that.
+
+       Every column in both viewers scrolls vertically and nothing scrolls
+       horizontally: what does not fit across wraps, and what cannot wrap is
+       broken rather than pushed off the edge. Stated here as a rule over the
+       whole of both viewers, because horizontal overflow arrives from
+       whatever was added last — a row of buttons, a url in a comment, a
+       table, an embed — and the fix is the same every time. */
+    #artModal,#artModal .avBox,#artModal .avBody,#artModal .avImgPane,
+    #artModal .avSide,#artModal .avSideScroll,
+    #dzView,#dzView .dzvBody,#dzView .dzvMedia,#dzView .dzvCol{
+      overflow-x:hidden;
+      overscroll-behavior-x:none;
+    }
+    #artModal .avSideScroll,#artModal .avSideScroll *,
+    #dzView .dzvCol,#dzView .dzvCol *{
+      min-width:0;
+      overflow-wrap:anywhere;
     }
 
     /* ── the picture on its own ───────────────────────────────────────────

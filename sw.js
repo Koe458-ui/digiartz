@@ -4,6 +4,44 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v220 — top to bottom only, the ground really does close it, and no bars.
+
+       THE CLICK NEVER REACHED THE HANDLER. .avBox carried
+       onclick="event.stopPropagation()" in the markup, put there when the
+       viewer was a panel over a page: it kept a click inside the panel from
+       reaching the backdrop. There is no backdrop and no panel now, so all it
+       did was swallow every click on the viewer's own ground before the
+       handler that closes on those could hear it. The handler was right and
+       had been right since it was written — measured directly it closed the
+       view every time, and dispatched as a real click it never fired once.
+       That is the third leftover from the panel era to break something after
+       the panel went, and it is why the ground-click did nothing.
+
+       NOTHING SCROLLS SIDEWAYS. The action rail — six 52px buttons with five
+       1.15rem gaps, about 330px — sat in a notes column that is 320px at its
+       narrowest, so the last of it was cut off: like and report, gone over
+       the edge. It wraps onto a second line now. The thumbnail rail's old
+       rule in css/overrides.css was still a horizontal scroller and still
+       won over the column in css/viewer.css, because that file loads last;
+       it is deleted. And both viewers now state it once for everything they
+       contain: overflow-x hidden, overscroll-behavior-x none, min-width 0 and
+       overflow-wrap anywhere, so what does not fit across wraps or breaks
+       rather than pushing off the edge.
+
+       NO SCROLLBARS. The columns scroll; they do not need a rail down the
+       side saying so. A bar costs 10 to 17 pixels of a 320px column, sits
+       over the notes on Windows whether or not anything is moving, and is one
+       more thing to style in two themes. Hidden in every engine, and the
+       space goes back to the content. Scrolling is untouched.
+
+       THE GROUND IS DESKTOP-ONLY. On a phone the ground is most of what a
+       thumb lands on — the gutters are the edges of the screen and the space
+       under the writing is where a scroll ends — so closing on it turns an
+       ordinary mis-tap into losing the page. Mobile keeps its close button
+       and the back gesture, and stays one column everywhere.
+       Changed: index.html, css/viewer.css, css/overrides.css, js/gallery.js,
+       js/sections.js, sw.js.
+
    v219 — the set is a column, the ground closes the view, and the dead code
        is gone.
 
@@ -4259,7 +4297,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v235';
+const CACHE_VERSION = 'v236';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4313,7 +4351,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=33',
+  '/css/viewer.css?v=34',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',
@@ -4323,7 +4361,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=13',
   '/css/upload.css?v=15',
   '/css/widgets.css?v=12',
-  '/css/overrides.css?v=36',
+  '/css/overrides.css?v=37',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 
@@ -4347,7 +4385,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=31',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=100',
+  '/js/gallery.js?v=101',
   '/js/auth.js?v=20',
   '/js/profile.js?v=16',
   '/js/albums.js?v=18',
@@ -4368,7 +4406,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=6',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=119',
+  '/js/sections.js?v=120',
   '/js/routes.js?v=2',
   '/js/navprogress.js?v=5'
 ];

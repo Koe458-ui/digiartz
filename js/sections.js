@@ -5349,6 +5349,28 @@
     pushed = false;
     vwReturnUrl = null;
   };
+  /* The ground closes this one too.
+
+     Same rule as the artwork viewer: the containers this view is built from
+     are the ground, and everything put inside one of them is not. Clicking
+     the gutters, the air beside a picture or the space under the writing
+     closes the view; clicking the work, the text, a button or a comment does
+     nothing. It had never been wired here at all — the artwork viewer got it
+     and this one was left with only its close button and the back key. */
+  (function(){
+    var DZ_GROUND = '#dzView, #dzView .dzvBody, #dzView .dzvMedia, #dzView .dzvCol';
+    document.addEventListener('DOMContentLoaded', function(){
+      var v = document.getElementById('dzView');
+      if(!v) return;
+      v.addEventListener('click', function(e){
+        // Desktop only, for the reason the artwork viewer gives: on a phone
+        // the ground is most of what a thumb lands on.
+        if(!(window.matchMedia && matchMedia('(min-width:900px)').matches)) return;
+        var t = e.target;
+        if(t && t.matches && t.matches(DZ_GROUND)) dzCloseView();
+      });
+    });
+  })();
   document.addEventListener('keydown', function(e){
     var v = document.getElementById('dzView');
     if(!v || !v.classList.contains('open')) return;

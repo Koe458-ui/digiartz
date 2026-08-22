@@ -1040,15 +1040,31 @@
      a comment has that thing as its target and is left alone, including a
      button that removes itself from the document as it is clicked — which is
      what a contains() test gets wrong. */
+  /* Every container in the viewer, and nothing that is content.
+
+     A list of ids compared one at a time was the first version of this and it
+     missed the notes' own scroller — which is the space under the writing,
+     the most obvious place to click when you want out. Written as a selector,
+     the rule is the thing it is trying to say: if what you clicked is one of
+     the boxes the viewer is built from rather than something put inside one,
+     you clicked the ground.
+
+     matches(), not contains(): a click on the work, the writing, a button or
+     a comment has that element as its target and is left alone — including a
+     button that takes itself out of the document as it is clicked, which is
+     exactly what a contains() test gets wrong. */
+  var AV_GROUND = '#artModal, #artModal .avBox, #artModal .avBody,' +
+                  '#artModal .avImgPane, #artModal .avImgViewport,' +
+                  '#artModal .avImgStack, #artModal .avSide, #artModal .avSideScroll';
+  /* Desktop only. On a phone the ground is most of what a thumb lands on —
+     the gutters are the edges of the screen and the space under the writing
+     is where a scroll ends — so closing on it turns an ordinary mis-tap into
+     losing the page. There is a close button and the back gesture there, and
+     they are enough. */
   function avGroundClick(e){
+    if(!(window.matchMedia && matchMedia('(min-width:900px)').matches)) return;
     var t = e.target;
-    if(t === document.getElementById('artModal') ||
-       t === document.querySelector('#artModal .avBox') ||
-       t === document.querySelector('#artModal .avBody') ||
-       t === document.querySelector('#artModal .avImgPane') ||
-       t === document.querySelector('#artModal .avImgViewport') ||
-       t === document.querySelector('#artModal .avImgStack') ||
-       t === document.querySelector('#artModal .avSide')) closeLB();
+    if(t && t.matches && t.matches(AV_GROUND)) closeLB();
   }
   (function(){
     document.addEventListener('DOMContentLoaded', function(){

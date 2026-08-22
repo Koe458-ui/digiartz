@@ -2,70 +2,15 @@
 /* detail views */
 
 /* artwork viewer full page */
-/* A phone gets the whole screen; everything else gets the box.
+/* The artwork viewer is not here any more — all of it, overlay to columns,
+   is in css/viewer.css. This file loads last and won every disagreement with
+   that one, which is how the desktop layout came to live here at all; a fix
+   written in the file named after the viewer was then overruled by this one,
+   and a load where this file was late or missing lost the layout entirely.
+   One file owns it now. What is left below is the section viewer. */
 
-   This rule used to have no media query on it, so "everything else" meant
-   1024px and up and a window of 900 CSS px got a phone's viewer: the panel
-   filling the screen edge to edge, one column, and every part of the artwork
-   laid out in it — picture, notes, details, tags, comments — scrolling as one
-   long document. A desktop reaches that width easily. A 1920 screen at 150%
-   system scaling is 1280 CSS px, and one step of browser zoom takes it under
-   the line, which is what a member was looking at while every fix to the
-   viewer went into rules that only applied above it. */
-@media (max-width:699px){
-  #artModal{padding:0;}
-  #artModal .avBox{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;border:0;box-shadow:none;background:var(--bg);}
-}
-#artModal{padding:0;}
-/* Stacked — a phone and a tablet. The artist card is the first child of
-   .avBody now, so the column reads: who made it, the work, then the rail of
-   things you can do with it and everything written about it. */
-#artModal .avBody{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
-#artModal #avAuthorCard{padding:var(--vwPad) var(--vwPad) 0;}
-/* The picture area is a box, and it is the same box for every artwork.
-
-   It used to be the picture's own size: the stage shrink-wrapped whatever was
-   in it and js measured a height budget and wrote it back as a max-height, so
-   a portrait made a tall narrow frame, a landscape a short wide one, and the
-   rail under it moved to wherever the picture happened to end. Opening one
-   artwork after another resized the furniture every time.
-
-   So the box is stated and the picture is fitted into it — object-fit:contain
-   against max-width and max-height, which shrinks anything too big for the
-   space and leaves anything smaller at its own size. The frame does not move
-   when the picture changes, and nothing in this column scrolls, because there
-   is never anything below the fold of a picture that has been fitted. */
-#artModal .avImgPane{flex:0 0 auto;overflow:hidden;background:transparent;
-  display:flex;flex-direction:column;height:52dvh;min-height:240px;}
-#artModal .avImgStage{position:static;flex:1 1 auto;min-height:0;max-height:none;background:transparent;
-  display:flex;align-items:center;justify-content:center;width:100%;}
-/* The viewport is a plain box around the picture, not a pan surface. It was
-   written as one — a zoom that doubled the picture with a transform and let
-   it be dragged inside a box with the overflow hidden — and both halves of
-   that are gone: the gesture rules have come out of css/viewer.css, and the
-   transform:none that had quietly pinned the picture flat since long before
-   this note has come out of the rule below with the zoom it was overruling.
-   What the zoom left behind was the worst of both: a cursor advertising a
-   drag that did nothing, and touch-action:none swallowing every gesture over
-   the biggest target in the viewer — a swipe over the artwork on a phone, or
-   on a laptop with a touch screen, scrolled nothing, because the browser had
-   been told this element handles its own touches and then no one handled
-   them. Every gesture is the browser's again, and the touch-action:auto and
-   cursor:default that were undoing them from here have gone with the rules
-   they were undoing. */
-#artModal .avImgViewport{position:static;flex:1 1 auto;min-height:0;width:100%;height:100%;
-  display:flex;align-items:center;justify-content:center;background:transparent;border:0;
-  padding:1rem var(--vwPad) 0;box-sizing:border-box;text-align:center;}
-/* Fit the first screen — and the picture is the way into the full view, so
-   the cursor says so. #dzLight in css/viewer.css is what a click opens. */
-#artModal #lbImg{position:static;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;display:block;margin:0 auto;cursor:zoom-in;}
-/* No cap and no auto margins: stacked, the notes take the same measure the
-   picture above them takes, which is the shell's. An 860px column centred
-   inside a wider one is the floating card this layout is not. */
-#artModal .avSide{width:100%;margin:0;border-left:0;flex:0 0 auto;background:transparent;}
-#artModal .avSideScroll{height:auto;max-height:none;overflow:visible;}
 /* top bars */
-#artModal .avTopBar,.dzvTop{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.1rem;border-bottom:1px solid var(--bdr);background:var(--bg);}
+.dzvTop{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.1rem;border-bottom:1px solid var(--bdr);background:var(--bg);}
 .avNavTxt{background:none;border:0;padding:.35rem .2rem;margin:0;cursor:pointer;
   color:var(--tx);font-family:var(--fb);font-size:16px;font-weight:600;letter-spacing:.01em;}
 .avNavTxt:hover{color:var(--ps);}
@@ -203,7 +148,7 @@
    carry a rule or a blur that has to reach both edges — so it is only their
    padding that moves onto the shell. */
 .subPgHdr{ padding-inline:var(--shellPad); }
-#artModal .avTopBar,.dzvTop{ padding-inline:var(--shellPad); }
+.dzvTop{ padding-inline:var(--shellPad); }
 
 /* ── the pitch, opened out ───────────────────────────────────────────────
    760px is a phone's measure. From the tablet up the pitch takes the shell's,
@@ -267,188 +212,7 @@
    put in the left column and has to stay a single column. A browser without
    :has() gets the stacked layout, which is not a broken page — it is the
    phone's page on a big screen. */
-/* The box, from a tablet up: 80% of the window across and 90% down — a 10%
-   margin left and right, 5% above and below. Stated, fixed, and the same
-   rectangle whatever is opened in it. The picture is fitted to the space it
-   gets and the notes scroll in theirs, so nothing inside here has any say in
-   how big it is.
-
-   No measure cap. It used to be min(80%, --shellMax), because getViewUrl asks
-   for a 1000px-wide picture and an uncapped 80% of a 3440 screen gave it a
-   2200px pane to sit in the middle of. The margin is what was asked for, so
-   the margin is what this is; a very wide screen shows the picture at its own
-   resolution with air around it rather than blown up to fill the pane. */
-@media (min-width:700px){
-  #artModal .avBox{
-    width:80%; height:90%;
-    max-width:none; max-height:none;
-    border:1px solid var(--bdr);
-    border-radius:16px;
-    box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
-    overflow:hidden;
-    background:var(--bg);
-  }
-}
-
-/* Two columns as soon as there is room for them — 900px, not 1024. The
-   picture beside the notes needs about 500px for the work and 320 for the
-   column, and holding out for 1024 handed every window between the two a
-   phone's layout on a desktop screen. */
 @media (min-width:900px){
-
-  /* ---- the artwork viewer ---- */
-
-  /* The dialog is a panel with the page around it, not the page.
-
-     It used to be the whole window, and the inset that kept the columns off
-     the edges was padding on .avBody — INSIDE the dialog. Padding is not a
-     scroller and it is not outside anything, so that band was dead: the wheel
-     over it moved nothing, because .avBody, .avBox, #artModal and <body> are
-     every one of them overflow:hidden, and a click on it closed nothing,
-     because it was still the dialog. Measured, that band was 22% of a
-     1920-wide screen and 55% of a 3440-wide one — on an ultrawide the notes
-     were a 416px strip in the middle of a screen that was mostly dead to the
-     mouse. That is the whole of "I can't scroll".
-
-     So the inset is the box's own width now. What is left over is the page
-     behind it, it closes the viewer when clicked (avCloseOnBackdrop in
-     js/gallery.js), and every pixel inside the box belongs to one of the two
-     scrollers. */
-  #artModal .avBox{
-    /* 80% of the window across and 90% down: a 10% margin left and right, 5%
-       above and below. Stated, fixed, and the same rectangle whatever is
-       opened in it — the picture is fitted to the column it gets and the
-       notes scroll in theirs, so nothing inside here has any say in how big
-       this is.
-
-       No measure cap any more. It used to be min(80%, --shellMax), because
-       getViewUrl asks for a 1000px-wide image and an uncapped 80% of a 3440
-       screen gave that picture a 2200px pane to sit in the middle of. The
-       margin is what was asked for, so the margin is what this is; on a very
-       wide screen the picture holds its own resolution and takes the air
-       around it rather than being blown up to fill the pane. */
-    width:80%; height:90%;
-    max-width:none; max-height:none;
-    border:1px solid var(--bdr);
-    border-radius:16px;
-    box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
-    overflow:hidden;
-  }
-  #artModal .avBody{
-    display:grid;
-    grid-template-columns:minmax(0,1fr) clamp(320px,26%,480px);
-    /* One row. The artist card used to have a row of its own above the notes,
-       which is what pinned it: a grid item cannot scroll inside a sibling, so
-       the notes moved under a card that never did. avPlaceCard in
-       js/gallery.js puts the card inside the notes' scroller at this width
-       instead, so the whole right-hand column — artist, buttons, title, and
-       everything written about the piece — is one thing that scrolls. */
-    grid-template-rows:auto minmax(0,1fr);
-    /* No column-gap and no padding, because neither of them can be scrolled.
-       The space between the picture and the notes is padding on the two panes
-       instead, so it belongs to whichever of them the cursor is nearer, and
-       the wheel works everywhere inside the box rather than only over the
-       columns' text. */
-    column-gap:0;
-    padding-inline:0;
-    /* the panes scroll; the body does not */
-    overflow:hidden;
-    min-height:0;
-  }
-  /* Side by side, the picture's box is the column: full height of the panel,
-     the width the grid gives it, and the same rectangle for every artwork
-     that opens in it. The air around it belongs to the pane, counted once
-     here rather than added around each box inside it, and nothing scrolls —
-     a fitted picture has nothing below its own fold. */
-  #artModal .avImgPane{
-    grid-column:1; grid-row:1 / span 2;
-    height:auto; min-height:0;
-    overflow:hidden;
-    padding:var(--vwGap);
-    align-items:stretch;
-  }
-
-  /* The stage takes what the pane has left once the rail has taken its own
-     height, and the picture is fitted into the stage.
-
-     This used to be the other way round: the stage was flex:0 0 auto and
-     shrink-wrapped the picture, whose height came from --boxH — a pixel
-     figure measured in js/gallery.js and written back onto the pane. That is
-     what made the frame follow the artwork. A portrait drew a tall narrow
-     box, a landscape a short wide one, the rail sat wherever the picture
-     ended, and every artwork opened moved the furniture. None of it is
-     needed: a flex item with min-height:0 in a column with a definite height
-     already knows how tall it may be, and object-fit:contain already shrinks
-     a picture to fit a box without ever blowing a small one up. */
-  #artModal .avImgStage{
-    flex:1 1 auto; min-height:0; width:100%;
-    display:flex; align-items:center; justify-content:center;
-    position:static; aspect-ratio:auto;
-    max-width:100%; max-height:none;
-  }
-  #artModal .avImgViewport{
-    position:relative; display:flex;
-    align-items:center; justify-content:center;
-    width:100%; height:100%; min-height:0;
-    padding:0; max-width:100%; min-width:0;
-  }
-  #artModal #lbImg{
-    position:static; display:block;
-    width:auto; height:auto;
-    max-width:100%; max-height:100%;
-    object-fit:contain;
-    margin:0 auto;
-  }
-  /* A stated height, not a measured one. avFitStage subtracts this rail from
-     the pane to size the picture, and measuring it caught 90px while the
-     thumbnails were still settling and 98 afterwards — eight pixels of
-     picture that then hung past the bottom of the pane. Declared here it is
-     the same figure before and after anything renders, so the subtraction is
-     right the first time and there is no moment to have to pick correctly. */
-  #artModal .avImgStack{
-    flex:0 0 auto;
-    padding:var(--vwGap) 0 0;
-    height:calc(72px + var(--vwGap));
-    /* The pane centres its children, which left this shrink-wrapped to the
-       width of its thumbnails — so a set too wide to fit pushed the PANE
-       sideways instead of scrolling inside the rail. Stretched to the pane,
-       the overflow is the rail's own and it scrolls, which is the whole
-       point of a rail. */
-    width:100%; align-self:stretch;
-  }
-  #artModal .avThumb{ width:72px; height:72px; }
-
-  #artModal #avAuthorCard{ padding:0; }
-  /* Belt and braces. avPlaceCard moves this into the notes' scroller, and the
-     row above is empty — and therefore zero tall — once it has. If it has not,
-     because a client is running an older gallery.js against this stylesheet or
-     because something threw before it got there, the card is still a child of
-     .avBody with nowhere to go, and the grid auto-places it in a row of its
-     own under the picture, taking height off both panes. Named explicitly, the
-     un-moved card falls back to the row it used to have at the head of the
-     notes column: pinned rather than scrolling with them, which is the old
-     behaviour and not a broken one. A layout should degrade to the previous
-     design when its script does not run, never to a different one. */
-  #artModal .avBody > #avAuthorCard{ grid-column:2; grid-row:1; align-self:start; }
-  #artModal .avSide{
-    grid-column:2; grid-row:2;
-    width:auto; max-width:none; margin:0;
-    min-height:0; overflow:hidden;
-    display:flex; flex-direction:column;
-  }
-  #artModal .avSideScroll{
-    flex:1 1 auto; min-height:0;
-    height:auto; max-height:none;
-    overflow-y:auto; overscroll-behavior:contain;
-  }
-  /* The inset comes off .avBody here, so the notes start on the same line as
-     the artist card above them and the picture beside them. The one extra
-     class is not decoration: the shared `#artModal .avSideScroll` rule that
-     spends --vwPad sits further down this file at the same specificity, so
-     without it that rule wins on source order and puts a phone's padding —
-     10% of a 400px column — back on a column that has already been inset. */
-  #artModal .avSide > .avSideScroll{ padding:var(--vwGap) var(--vwGap) 4rem; }
-
   /* ---- the section viewer: resources, blog, marketplace, jobs ---- */
   .dzvBody{ padding-inline:var(--shellPad); }
   .dzvBody:has(.dzvMedia){
@@ -653,10 +417,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 @media(min-width:1100px){ :root{ --vwGap:1.6rem; } }
 
 .dzvCol{
-  gap:var(--vwGap);
-  padding:var(--vwPad) var(--vwPad) 4rem;
-}
-#artModal .avSideScroll{
   gap:var(--vwGap);
   padding:var(--vwPad) var(--vwPad) 4rem;
 }

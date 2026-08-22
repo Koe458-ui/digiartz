@@ -23,7 +23,7 @@
 #fgFltOvr::before{background:color-mix(in srgb,var(--bg) 55%,transparent)!important;}
 .cpBar::before{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;}
 .cpBar{border-top:1px solid var(--bdr);}
-#artModal::before{background:color-mix(in srgb,var(--bg) 85%,transparent)!important;}
+/* #artModal's ground is in css/viewer.css with the rest of that viewer. */
 /* The card hover scrim was declared here too, at the identical value css/hero.css
    already gives it, with an !important bolted on that nothing needed — no other
    rule sets .gOv's background. One declaration now, in the file that owns the

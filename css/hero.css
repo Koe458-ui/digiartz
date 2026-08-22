@@ -1052,48 +1052,17 @@
     }
     @media(min-width:700px){ .fgGrid{grid-template-columns:repeat(3,1fr);gap:.35rem;} }
     @media(min-width:1280px){ .fgGrid{grid-template-columns:repeat(4,1fr);gap:.4rem;} }
-    #artModal{
-      position:fixed;inset:0;z-index:1100;
-      display:flex;align-items:center;justify-content:center;
-      padding:2rem;
-      opacity:0;
-      visibility:hidden;
-      pointer-events:none;
-      transition:opacity .32s cubic-bezier(.22,1,.36,1),visibility .32s;
-      isolation:isolate;
-    }
-    /* blur layer */
-    #artModal::before{
-      content:'';position:absolute;inset:0;
-      background:rgba(8,8,10,.5);
-      backdrop-filter:blur(10px) saturate(120%);
-      -webkit-backdrop-filter:blur(10px) saturate(120%);
-      z-index:-1;
-    }
-    #artModal.open{
-      opacity:1;
-      visibility:visible;
-      pointer-events:auto;
-    }
-    /* closing state */
-    #artModal.closing{
-      opacity:0;
-      transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;
-    }
+    /* The artwork viewer is not here any more. Overlay, ground, panel and
+       columns are all in css/viewer.css, which is the file named after it —
+       four stylesheets each owning a piece of one dialog is how a fix could
+       be written, shipped, and still not be what the browser used. */
     /* Shared with .avImgViewport.loading in css/viewer.css, which is the
        only caller left now that the .am* modal card it was written for
        has been replaced by .avBox. */
     @keyframes amShimmer{0%{background-position:140% 0;}100%{background-position:-40% 0;}}
 
 
-    /* mobile */
-    @media(max-width:640px){
-      #artModal{padding:.6rem;}
-    }
-    @media(prefers-reduced-motion:reduce){
-      #artModal,#artModal .avBox{transition:opacity .15s linear;}
-      .avBox{transform:none!important;}
-    }
+
 
 
     /* quick links rail */

@@ -4,6 +4,38 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v206 — one file owns the artwork viewer.
+
+       It was written across four. The overlay and its ground were in
+       css/hero.css and css/panels.css, the panel and its columns in
+       css/viewer.css, and the whole desktop layout in css/overrides.css,
+       which loads last and won every disagreement with the file named after
+       the viewer. Four files had to arrive, in order, for a viewer to be a
+       viewer.
+
+       Every symptom of the past week came out of that. A fix written in
+       viewer.css was overruled by overrides.css. A load where overrides.css
+       was late or missing lost the layout altogether and printed every part
+       of an artwork down the page. And the layout that did apply was chosen
+       by a media query in one file while the rule it had to beat sat
+       unqueried in another, so a desktop under 1024px got the phone's viewer
+       and none of the fixes above that line.
+
+       All of it is in css/viewer.css now: the overlay, the ground behind it,
+       the box, both layouts, the picture, the rail and the notes. Nothing
+       about this viewer is written anywhere else; index.html's critical style
+       carries a floor under it for the moment before the file arrives, and
+       that is the only other copy. The sizes fall back to their own literals,
+       so it does not need overrides.css to have defined the shared spacing
+       tokens either.
+
+       Measured with overrides.css removed entirely, and again with hero.css
+       removed: the box is still 80% x 90%, still two columns, the picture
+       still fitted, the notes still scrolling. Neither file can take the
+       viewer down with it any more.
+       Changed: css/viewer.css, css/hero.css, css/panels.css,
+       css/overrides.css, index.html, sw.js.
+
    v205 — the desktop layout stopped starting at 1024.
 
        "For a fifth of a second the right thing appears and then it goes back
@@ -3922,7 +3954,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v221';
+const CACHE_VERSION = 'v222';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3975,18 +4007,18 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=12',
-  '/css/hero.css?v=100',
-  '/css/viewer.css?v=21',
+  '/css/hero.css?v=101',
+  '/css/viewer.css?v=22',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',
   '/css/profile.css?v=14',
   '/css/admin.css?v=4',
   '/css/auth.css?v=3',
-  '/css/panels.css?v=12',
+  '/css/panels.css?v=13',
   '/css/upload.css?v=15',
   '/css/widgets.css?v=12',
-  '/css/overrides.css?v=34',
+  '/css/overrides.css?v=35',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 

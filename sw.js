@@ -4,6 +4,32 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v212 — two viewers, written twice, with nothing between them.
+
+       Asked for outright, and it is also the shape of the bug. The desktop
+       layout was a set of overrides on top of a base written for a phone, and
+       that base had no media query — so it governed every width the overrides
+       did not claim. A laptop at 150% system scaling with one step of browser
+       zoom landed in it, and fix after fix went into a block that width was
+       never in.
+
+       There is no shared layout rule left. Everything below the overlay is
+       inside one of two blocks: a mobile viewer under 900px and a desktop
+       viewer from 900 up, each written out in full. Neither inherits from the
+       other, there is no un-queried layout rule in the file for a width to
+       fall through to, and changing one cannot move the other. index.html's
+       critical style is split the same way, so the floor under a late
+       stylesheet cannot hand a phone the desktop's rectangle either.
+
+       The cost is that a genuinely shared change has to be made in both
+       places. That is the trade that was asked for and the cheaper of the
+       two.
+
+       The bisect that is running is desktop-only now. The last two cuts were
+       not, which took the picture off a phone as well for no reason: a test
+       on one viewer has no business touching the other.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v211 — the other half: the picture off, the notes on.
 
        With the box and the picture alone, everything was right. So the
@@ -4049,7 +4075,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v227';
+const CACHE_VERSION = 'v228';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4103,7 +4129,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=27',
+  '/css/viewer.css?v=28',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',

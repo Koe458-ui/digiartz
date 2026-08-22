@@ -1,28 +1,27 @@
 /* artwork viewer */
-    /* ── the artwork viewer, all of it, in one file ──────────────────────
+    /* ── the artwork viewer ───────────────────────────────────────────────
 
-       This used to be spread across four stylesheets: the overlay in
-       css/hero.css, the ground behind it in css/panels.css, the panel and its
-       columns here, and the whole desktop layout in css/overrides.css, which
-       loads last and won every disagreement. Four files had to arrive, in
-       order, for a viewer to be a viewer — and when the last one did not, the
-       panel became a block in the page flow with every part of an artwork
-       laid out inside it, which is what was being photographed. Fixes went
-       into whichever file seemed to own the rule and could not be seen,
-       because a different file was answering.
+       Two viewers, written twice on purpose.
 
-       One file answers now. Nothing about this viewer is written anywhere
-       else; index.html's critical style carries a floor under it for the
-       moment before this file arrives, and that is the only other copy.
+       Everything below the overlay is inside one of two media blocks: a
+       mobile viewer under 900px and a desktop viewer from 900 up. Neither
+       inherits a layout rule from the other and there is no un-queried
+       layout rule anywhere in this file, so no property of one can reach the
+       other by accident.
 
-       Three widths, and what separates them is how much room there is:
-         under 700   the screen, one column — a phone
-         from 700    the box: 80% across, 90% down, fixed
-         from 900    two columns, picture beside the notes
-       Sizes below fall back to their own literals, so this file does not need
-       css/overrides.css to have defined the shared spacing tokens. */
+       That is not tidiness, it is the bug. The desktop layout used to be a
+       set of overrides on top of a base written for a phone, and the base had
+       no media query — so it governed every width the overrides did not
+       claim, a laptop at 150% scaling with one step of zoom landed in it, and
+       fix after fix was written into a block that width was never in. Written
+       out twice, changing one cannot move the other, and there is nowhere for
+       a width to fall through to.
 
-    /* the overlay */
+       The cost is that a genuinely shared change has to be made in both. That
+       is the trade that was asked for, and it is the cheaper of the two. */
+
+    /* the overlay is the one shared thing: what makes this a dialog rather
+       than part of the page, and identical for both viewers */
     #artModal{
       position:fixed;inset:0;z-index:1100;
       display:flex;align-items:center;justify-content:center;
@@ -40,170 +39,185 @@
     #artModal.open{opacity:1;visibility:visible;pointer-events:auto;}
     #artModal.closing{opacity:0;transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;}
 
-    /* the box — the same rectangle at every width, on every device */
-    #artModal .avBox{
-      position:relative;
-      width:80%;height:90%;max-width:none;max-height:none;
-      display:flex;flex-direction:column;
-      background:var(--bg);
-      border:1px solid var(--bdr);
-      border-radius:16px;
-      box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
-      overflow:hidden;
-      transform:scale(.92) translateY(10px);opacity:0;
-      transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
-    }
-    #artModal.open .avBox{transform:scale(1) translateY(0);opacity:1;}
-    #artModal.closing .avBox{
-      transform:scale(.95) translateY(6px);opacity:0;
-      transition:transform .22s cubic-bezier(.4,0,1,1),opacity .2s cubic-bezier(.4,0,1,1);
-    }
-    /* 80% across, 90% down: a 10% margin left and right, 5% above and below.
-       Stated, fixed, the same rectangle whatever is opened in it and whatever
-       is looking at it — the picture is fitted to the space it gets and the
-       notes scroll in theirs, so nothing inside has any say in how big this
-       is. No measure cap and no device exception.
+    /* ══ THE MOBILE VIEWER — under 900px ═══════════════════════════════════
+       The whole screen, one column, and the column scrolls: the work, then
+       who made it, then everything written about it. A phone has no room to
+       put two things side by side and nothing here tries to. */
+    @media(max-width:899px){
+      #artModal .avBox{
+        position:relative;
+        width:100%;height:100%;max-width:none;max-height:none;
+        display:flex;flex-direction:column;
+        background:var(--bg);
+        border:0;border-radius:0;box-shadow:none;
+        overflow:hidden;
+        transform:scale(.96);opacity:0;
+        transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .28s ease;
+      }
+      #artModal.open .avBox{transform:none;opacity:1;}
+      #artModal.closing .avBox{transform:scale(.97);opacity:0;transition:transform .2s ease,opacity .18s ease;}
 
-       There WAS an exception: under 700px the box was the whole screen, one
-       column, every part of an artwork laid out in it and scrolling as a
-       document. That is a phone's viewer, and a laptop lands under 700 CSS px
-       easily — a 1920 screen at 150% system scaling is 1280, and browser zoom
-       takes it the rest of the way. So the one thing that had been asked for
-       over and over, a fixed box, was the one thing a window could opt out
-       of. It cannot now. */
-
-    #artModal .avTopBar{
-      flex:0 0 auto;position:relative;z-index:6;
-      display:flex;align-items:center;justify-content:space-between;
-      padding:.75rem 1.1rem;
-      border-bottom:1px solid var(--bdr);
-      background:var(--bg);
-    }
-
-    /* Stacked: who made it, the work, then everything written about it. The
-       body is the scroller — the box never grows to fit its contents. */
-    #artModal .avBody{
-      flex:1 1 auto;min-height:0;
-      display:flex;flex-direction:column;
-      overflow-y:auto;overflow-x:hidden;
-    }
-    #artModal #avAuthorCard{padding:var(--vwPad,1.5rem) var(--vwPad,1.5rem) 0;}
-
-    /* The picture area is a box, and the same box for every artwork. It used
-       to be the picture's own size — a stage that shrink-wrapped whatever was
-       in it and a height budget measured in js — so a portrait made a tall
-       narrow frame and a landscape a short wide one, and every artwork opened
-       moved the furniture. Stated here and fitted with object-fit:contain,
-       which shrinks anything too big for the space and leaves anything
-       smaller at its own size. */
-    #artModal .avImgPane{
-      flex:0 0 auto;
-      display:flex;flex-direction:column;
-      height:46dvh;min-height:200px;
-      background:transparent;overflow:hidden;
-    }
-    #artModal .avImgStage{
-      flex:1 1 auto;min-height:0;width:100%;max-height:none;
-      display:flex;align-items:center;justify-content:center;
-      background:transparent;position:static;
-    }
-    /* A plain box around the picture, not a pan surface. The zoom that needed
-       cursor:grab and touch-action:none is gone, and with it a cursor
-       advertising a drag that did nothing and a finger the browser had been
-       told this element would handle. */
-    #artModal .avImgViewport{
-      position:relative;flex:1 1 auto;min-height:0;
-      width:100%;height:100%;
-      display:flex;align-items:center;justify-content:center;
-      padding:1rem var(--vwPad,1.5rem) 0;box-sizing:border-box;
-      background:transparent;border:0;overflow:hidden;
-    }
-    #artModal .avImgViewport.loading::after{
-      content:'';position:absolute;inset:0;
-      background:linear-gradient(100deg,transparent 30%,rgba(var(--pg-rgb),.1) 50%,transparent 70%);
-      background-size:200% 100%;
-      animation:amShimmer 1.3s ease-in-out infinite;
-    }
-    #artModal .avImgViewport.loading img{opacity:0;}
-    /* Fitted, never blown up — and the picture is the way into the full
-       view, so the cursor says so. #dzLight at the foot of this file is what
-       a click opens. */
-    #artModal #lbImg{
-      position:static;display:block;margin:0 auto;
-      width:auto;height:auto;
-      max-width:100%;max-height:100%;
-      object-fit:contain;
-      transition:opacity .1s ease;
-      user-select:none;-webkit-user-drag:none;
-      cursor:zoom-in;
-    }
-
-    #artModal .avSide{
-      flex:0 0 auto;width:100%;margin:0;
-      background:transparent;border-left:0;
-      display:flex;flex-direction:column;min-height:0;
-    }
-    #artModal .avSideScroll{
-      height:auto;max-height:none;overflow:visible;
-      display:flex;flex-direction:column;
-      gap:var(--vwGap,1.6rem);
-      padding:var(--vwPad,1.5rem) var(--vwPad,1.5rem) 4rem;
-    }
-
-    /* ── two columns, as soon as there is room for them ──────────────────
-       900, not 1024: the work wants about 500px beside a 320px column, and
-       holding out for 1024 handed every window between the two a phone's
-       layout on a desktop screen — which is exactly what was on screen while
-       every fix to this viewer went into rules that only applied above it. */
-    @media(min-width:900px){
+      #artModal .avTopBar{
+        flex:0 0 auto;position:relative;z-index:6;
+        display:flex;align-items:center;justify-content:space-between;
+        padding:.7rem 1rem;
+        border-bottom:1px solid var(--bdr);background:var(--bg);
+      }
+      /* one column, and it is the scroller */
       #artModal .avBody{
+        flex:1 1 auto;min-height:0;
+        display:flex;flex-direction:column;
+        overflow-y:auto;overflow-x:hidden;
+      }
+      #artModal #avAuthorCard{padding:1.2rem 1.2rem 0;}
+      /* the work gets a stated share of the screen and is fitted into it, so
+         the frame is the same for every artwork opened */
+      #artModal .avImgPane{
+        flex:0 0 auto;
+        display:flex;flex-direction:column;
+        height:46dvh;min-height:200px;
+        background:transparent;overflow:hidden;
+      }
+      #artModal .avImgStage{
+        flex:1 1 auto;min-height:0;width:100%;
+        display:flex;align-items:center;justify-content:center;
+        background:transparent;position:static;
+      }
+      #artModal .avImgViewport{
+        position:relative;flex:1 1 auto;min-height:0;
+        width:100%;height:100%;
+        display:flex;align-items:center;justify-content:center;
+        padding:.9rem 1.2rem 0;box-sizing:border-box;
+        background:transparent;border:0;overflow:hidden;
+      }
+      #artModal #lbImg{
+        position:static;display:block;margin:0 auto;
+        width:auto;height:auto;max-width:100%;max-height:100%;
+        object-fit:contain;cursor:zoom-in;
+        user-select:none;-webkit-user-drag:none;
+      }
+      #artModal .avImgStack{
+        flex:0 0 auto;width:100%;
+        padding:.8rem 1.2rem 0;height:calc(64px + .8rem);
+      }
+      #artModal .avThumb{width:64px;height:64px;}
+      /* the notes are the rest of the one column; they do not scroll on their
+         own because the column already does */
+      #artModal .avSide{
+        flex:0 0 auto;width:100%;margin:0;
+        background:transparent;border-left:0;
+        display:flex;flex-direction:column;min-height:0;
+      }
+      #artModal .avSideScroll{
+        height:auto;max-height:none;overflow:visible;
+        display:flex;flex-direction:column;
+        gap:1.2rem;padding:1.2rem 1.2rem 4rem;
+      }
+    }
+
+    /* ══ THE DESKTOP VIEWER — 900px and up ═════════════════════════════════
+       A fixed box with the work on the left and the notes on the right. The
+       box is 80% of the window across and 90% down — a 10% margin left and
+       right, 5% above and below — and it is the same rectangle whatever is
+       opened in it: the picture is fitted to the space it gets and the notes
+       scroll in theirs, so nothing inside has any say in how big it is. */
+    @media(min-width:900px){
+      #artModal .avBox{
+        position:relative;
+        width:80%;height:90%;max-width:none;max-height:none;
+        display:flex;flex-direction:column;
+        background:var(--bg);
+        border:1px solid var(--bdr);
+        border-radius:16px;
+        box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
+        overflow:hidden;
+        transform:scale(.92) translateY(10px);opacity:0;
+        transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
+      }
+      #artModal.open .avBox{transform:scale(1) translateY(0);opacity:1;}
+      #artModal.closing .avBox{
+        transform:scale(.95) translateY(6px);opacity:0;
+        transition:transform .22s cubic-bezier(.4,0,1,1),opacity .2s cubic-bezier(.4,0,1,1);
+      }
+
+      #artModal .avTopBar{
+        flex:0 0 auto;position:relative;z-index:6;
+        display:flex;align-items:center;justify-content:space-between;
+        padding:.75rem 1.6rem;
+        border-bottom:1px solid var(--bdr);background:var(--bg);
+      }
+      /* two columns, and the panes are what scroll — never the body */
+      #artModal .avBody{
+        flex:1 1 auto;min-height:0;
         display:grid;
         grid-template-columns:minmax(0,1fr) clamp(320px,26%,480px);
         grid-template-rows:auto minmax(0,1fr);
         column-gap:0;padding-inline:0;
-        /* the panes scroll; the body does not */
-        overflow:hidden;min-height:0;
+        overflow:hidden;
       }
-      /* The picture's box is the column: full height of the panel, the width
-         the grid gives it, the same rectangle every time. The air around it
-         belongs to the pane, counted once here. */
+      /* the picture's box is the column: full height of the panel, the width
+         the grid gives it, the same rectangle every time */
       #artModal .avImgPane{
         grid-column:1;grid-row:1 / span 2;
         height:auto;min-height:0;
+        display:flex;flex-direction:column;
         overflow:hidden;
-        padding:var(--vwGap,1.6rem);
-        align-items:stretch;
+        padding:1.6rem;
+        background:transparent;
       }
-      #artModal .avImgViewport{padding:0;max-width:100%;min-width:0;}
-      /* A stated height, not a measured one: the rail is the same figure
-         before and after its thumbnails render, so the stage above it never
-         has to be resized once they do. */
+      #artModal .avImgStage{
+        flex:1 1 auto;min-height:0;width:100%;max-height:none;
+        display:flex;align-items:center;justify-content:center;
+        position:static;background:transparent;
+      }
+      #artModal .avImgViewport{
+        position:relative;flex:1 1 auto;min-height:0;
+        width:100%;height:100%;max-width:100%;min-width:0;
+        display:flex;align-items:center;justify-content:center;
+        padding:0;background:transparent;border:0;overflow:hidden;
+      }
+      #artModal #lbImg{
+        position:static;display:block;margin:0 auto;
+        width:auto;height:auto;max-width:100%;max-height:100%;
+        object-fit:contain;cursor:zoom-in;
+        transition:opacity .1s ease;
+        user-select:none;-webkit-user-drag:none;
+      }
+      /* a stated height, so the stage above it is never resized once the
+         thumbnails render */
       #artModal .avImgStack{
         flex:0 0 auto;
-        padding:var(--vwGap,1.6rem) 0 0;
-        height:calc(72px + var(--vwGap,1.6rem));
+        padding:1.6rem 0 0;height:calc(72px + 1.6rem);
         width:100%;align-self:stretch;
       }
       #artModal .avThumb{width:72px;height:72px;}
+
       #artModal #avAuthorCard{padding:0;}
       /* avPlaceCard moves the card into the notes' scroller at this width. If
-         it has not — an older gallery.js, or something threw first — the card
-         is still a child of .avBody, and this is the row it falls back to:
-         pinned at the head of the notes rather than taking height off both
-         columns. A layout should degrade to the previous design, never to a
-         different one. */
+         it has not, this is the row it falls back to: pinned at the head of
+         the notes rather than taking height off both columns. */
       #artModal .avBody > #avAuthorCard{grid-column:2;grid-row:1;align-self:start;}
       #artModal .avSide{
         grid-column:2;grid-row:2;
         width:auto;max-width:none;margin:0;
         min-height:0;overflow:hidden;
+        display:flex;flex-direction:column;
+        background:transparent;border-left:0;
       }
       #artModal .avSideScroll{
         flex:1 1 auto;min-height:0;
         height:auto;max-height:none;
         overflow-y:auto;overscroll-behavior:contain;
-        padding:var(--vwGap,1.6rem) var(--vwGap,1.6rem) 4rem;
+        display:flex;flex-direction:column;
+        gap:1.6rem;padding:1.6rem 1.6rem 4rem;
       }
+      #artModal .avImgViewport.loading::after{
+        content:'';position:absolute;inset:0;
+        background:linear-gradient(100deg,transparent 30%,rgba(var(--pg-rgb),.1) 50%,transparent 70%);
+        background-size:200% 100%;
+        animation:amShimmer 1.3s ease-in-out infinite;
+      }
+      #artModal .avImgViewport.loading img{opacity:0;}
     }
 
     .avSideScroll::-webkit-scrollbar{width:6px;}
@@ -1008,9 +1022,13 @@
 
        The grid drops to one column with the picture gone.
 
+       Desktop only. The last two cuts were not, which took the picture off
+       a phone as well for no reason — mobile and desktop are separate
+       viewers and a test on one has no business touching the other.
+
        TO PUT THE PICTURE BACK: delete this block. */
-    #artModal .avImgPane{display:none !important;}
     @media(min-width:900px){
+      #artModal .avImgPane{display:none !important;}
       #artModal .avBody{grid-template-columns:minmax(0,1fr);}
       #artModal .avSide{grid-column:1;}
       #artModal .avBody > #avAuthorCard{grid-column:1;}

@@ -4,6 +4,26 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v208 — the artwork viewer is switched off, on purpose, temporarily.
+
+       Eight changes have shipped, the page reports the build they were in,
+       and nothing on screen has moved. Two explanations are left and no
+       description can separate them: either css/viewer.css is not what draws
+       the viewer that is on screen, or it is and none of the changes were
+       ever the problem.
+
+       So the panel's contents are hidden and it says ARTWORK VIEWER OFF
+       instead. If that is what appears, this file draws the viewer and the
+       box around the words is the real rectangle — 80% across, 90% down —
+       and the work starts again from something known. If the old viewer is
+       still there, this file is not what the browser is using and no rule
+       anyone writes here will ever show.
+
+       It is one block at the foot of the viewer's section in css/viewer.css.
+       Deleting the block, or reverting the commit that added it, puts the
+       viewer back exactly as it was.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v207 — no window can opt out of the box.
 
        The build marker did its job: the page on screen said v222, so the code
@@ -3976,7 +3996,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v223';
+const CACHE_VERSION = 'v224';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4030,7 +4050,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=23',
+  '/css/viewer.css?v=24',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',

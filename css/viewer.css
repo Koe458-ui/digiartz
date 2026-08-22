@@ -990,37 +990,6 @@
     @media(hover:hover){ .vwFileDl:hover{background:color-mix(in srgb,var(--vwGreen) 20%,var(--sur));} }
     .vwFileDl:active{transform:scale(.94);}
 
-    /* ── TEMPORARY — THE ARTWORK VIEWER IS SWITCHED OFF ───────────────────
-
-       Asked for directly, and it is the one test left. Eight changes have
-       shipped, the page reports the build they were in, and nothing on screen
-       has moved — so either this file is not what is drawing the viewer that
-       is on screen, or it is and the changes were never the problem. There is
-       no way to tell those apart by describing them, and one look answers it:
-
-         the panel says ARTWORK VIEWER OFF   this file IS what draws it, and
-                                             the box shape below is real
-         the old viewer is still there       this file is NOT what draws it,
-                                             and the fault is in what the
-                                             browser is loading, not in any
-                                             rule anyone has written
-
-       The box itself is left exactly as it is — 80% across, 90% down — so the
-       same look also says whether that rectangle is arriving.
-
-       TO PUT THE VIEWER BACK: delete this block. It is the last thing in the
-       artwork viewer's section and it touches nothing else, or revert the one
-       commit that added it. */
-    #artModal .avBox > *{display:none !important;}
-    #artModal .avBox::after{
-      content:'ARTWORK VIEWER OFF \2014 build v224';
-      display:flex;align-items:center;justify-content:center;
-      width:100%;height:100%;
-      padding:2rem;text-align:center;
-      font-family:var(--fm);font-size:.78rem;letter-spacing:.16em;
-      color:var(--tx);opacity:.85;
-    }
-
     /* ── the picture on its own ───────────────────────────────────────────
 
        The viewer is a panel: the work has a column of notes beside it, a

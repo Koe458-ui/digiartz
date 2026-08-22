@@ -4,13 +4,6 @@
   <meta charset="utf-8"/>
   <meta name="color-scheme" content="light"/>
   <meta name="theme-color" content="#F7F5EB"/>
-  <!-- theme boot
-
-       Two themes: light (paper, the default) and graydark (charcoal).
-       This runs before any stylesheet so the document is stamped with its
-       theme in the same tick it starts painting — a theme applied later
-       is a flash of the wrong one. Anything unrecognised in storage falls
-       to the default rather than being trusted. -->
   <script>
   (function(){
     var K='koeTheme',V={graydark:1,light:1},t=null;
@@ -24,104 +17,31 @@
     if(s)s.setAttribute('content',t==='light'?'light':'dark');
   })();
   </script>
-  <!-- critical paint style -->
+
   <style>
-    /* --vbg is the well the page sits in — the root ground behind
-       overscroll, and the ground every full-screen overlay takes. These
-       three lines are the boot copy of it, so the first paint is right
-       before css/base.css arrives; base.css is where the value is owned. */
     html{background:var(--vbg,#EEEBDC);}
     html[data-theme="graydark"]{--vbg:#101015;}
     html[data-theme="light"]{--vbg:#EEEBDC;}
-
-    /* An overlay must be an overlay before its stylesheet arrives.
-       #anPage is a full dashboard sitting in this document at all times, held
-       off screen by one transform in css/analytics.css. If that file is late,
-       missing, or a stale copy the service worker is still serving against a
-       newer script, the rule is not there — and a fixed overlay becomes an
-       ordinary block, so the whole of Analytics prints down the bottom of the
-       home page. That happened. These four properties are the difference
-       between an overlay and a paragraph, so they live here where no
-       stylesheet has to load for them to hold; everything else about the page
-       stays in analytics.css. */
     #anPage{position:fixed;inset:0;z-index:545;overflow-y:auto;transform:translateX(100%);}
     #anPage.open{transform:translateX(0);}
-
-    /* The same, for the three views that open over the page, and for the same
-       reason: it happened again.
-
-       #artModal is the artwork viewer, #dzView the section viewer, #dzLight
-       the full-screen picture. Every one of them is written into this
-       document at all times and held off screen by a rule in a stylesheet —
-       css/hero.css for the first, css/overrides.css for the second,
-       css/viewer.css for the third. Miss that file and the panel is not
-       hidden and not positioned: it becomes an ordinary block in the page
-       flow.
-
-       That is what a member photographed. The artwork viewer had printed
-       down the page at the picture's own size, with the notes beside it, the
-       picture running off the bottom of the window, no way to close it, and
-       the whole thing scrolling as if it were the page — because for that
-       load, it was. css/hero.css is 116KB and carries #artModal's four
-       overlay properties; a copy that is late, refused, or missing from the
-       service worker's shell after a deploy takes the viewer down with it.
-
-       So the properties that make an overlay an overlay live here, where no
-       file has to load for them to hold. Everything else about all three —
-       the ground, the blur, the columns, the picture's box — stays in the
-       stylesheets, which are then free to be late without turning a viewer
-       into a paragraph. */
     #artModal{position:fixed;inset:0;z-index:1100;display:none;flex-direction:column;background:var(--bg,#F7F5EB);}
     #artModal.open{display:flex;}
     #dzView{position:fixed;inset:0;z-index:1300;display:none;}
     #dzView.open{display:flex;flex-direction:column;}
     #dzLight{position:fixed;inset:0;z-index:1500;display:none;}
     #dzLight.open{display:flex;align-items:center;justify-content:center;}
-
-    /* And the viewer is a page: the bar, then a body that scrolls. There is
-       no panel to size any more — the box is gone, and with it every rule
-       that had to decide how big it should be.
-
-       Being fixed keeps #artModal the size of the window; it does not stop
-       the box inside it growing to whatever its contents come to. That is the
-       other half of what was photographed — a box holding the picture at full
-       size, the notes, the details, the tags and the whole comment thread,
-       all rendered at once and taller than the screen. .avBox is sized by
-       css/overrides.css and css/viewer.css, and with neither of them here its
-       height is auto.
-
-       Two properties are enough: the box can never be taller than the window
-       it sits in, and .avBody scrolls what does not fit. Both stylesheets say
-       this more precisely and both come after this block, so these only ever
-       decide anything on a load where they are missing. */
     #artModal .avBox{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;}
     #artModal .avBody{flex:1;min-height:0;overflow:auto;}
-    /* And the picture is fitted to whatever it is in. css/viewer.css and
-       css/overrides.css both say this properly; this is the floor under them,
-       so a picture cannot lay out at its own 4000px on a load where neither
-       arrived. */
     #artModal #lbImg{max-width:100%;max-height:80vh;object-fit:contain;}
   </style>
-  <!-- Cloudflare Web Analytics -->
+
   <script data-cf-beacon='{"token": "aa4b7177387e4f689739a5fdf44cbffa"}' defer="" src="https://static.cloudflareinsights.com/beacon.min.js">
   </script>
-  <!-- /cloudflare analytics -->
-  <!-- adsense — not here any more.
 
-       The network's script used to load on every visit, before anybody had
-       asked for an ad and before this page knew whose visit it was. The ad
-       surfaces are the four detail views — an artwork, a resource, a post, a
-       listing — where one slot sits between the tags and the comments, and
-       Max is the plan that has no ads at all. js/effects.js fetches the
-       script the first time one of those slots is mounted for a member who
-       has ads, once, on demand. A Max member never fetches it, and neither
-       does a visit that never opens a detail view. -->
-  <!-- analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-21DL9JWJ58"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    // consent denied by default
     gtag('consent', 'default', {
       analytics_storage: 'denied',
       ad_storage: 'denied',
@@ -132,33 +52,13 @@
 
     gtag('config', 'G-21DL9JWJ58');
   </script>
-  <!-- /analytics -->
   <meta content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual" name="viewport"/>
   <title>
    DigiArtz — The Digital Art Community
   </title>
-  <!-- seo defaults -->
   <meta name="description" content="DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists."/>
   <link rel="canonical" href="https://digiartz.net/"/>
   <meta name="robots" content="index, follow, max-image-preview:large"/>
-  <!-- Google Search reads only these link tags — never the web manifest — picks a
-       single icon per hostname, and ignores the media attribute. The whole set is
-       therefore media-free and every entry clears 48px, so there is no declaration
-       here that resolves to a small or theme-conditional icon.
-
-       favicon.svg is first because it is the only one of these that is the
-       artwork rather than a photograph of it: a browser drawing the tab at
-       16px, at 32px on a retina panel, or at whatever a zoomed pinned tab
-       asks for renders the vectors at that size, so none of those is a
-       resample of another. Chrome, Firefox, Edge, Brave and Tor take it.
-       Safari has never supported rel=icon svg and iOS reads the touch icon,
-       so the raster set below is not a fallback for old browsers — it is the
-       live answer for a whole platform, and is generated from the same file.
-       The .ico stays for the bare GET /favicon.ico that arrives with no link
-       tag involved, and carries 128 so Google has a square over 48 to pick.
-       The ?v= is what a returning visitor needs: these are cached for a week
-       in _headers, and without a new url the old mark stays in the tab for
-       up to seven days after the deploy. -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3" sizes="any"/>
   <link rel="icon" href="/favicon.ico?v=3" sizes="16x16 32x32 48x48 64x64 128x128"/>
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=3"/>
@@ -173,16 +73,7 @@
     "logo": "https://digiartz.net/icon-512.png?v=3"
   }
   </script>
-  <!-- The site itself, and what it is organised into. Nothing here is invented:
-       every url below is a real page with its own title, description and
-       canonical (functions/_middleware.js writes them) and its own fallback in
-       _redirects, and every one of them is linked from the footer of this
-       document in plain anchors. This block adds no claim the page does not
-       already make; it says the same thing in the form a machine reads.
-
-       Only the destinations, and only the public ones. There is no cart here,
-       no dashboard, no upload manager: those are one member's own pages and
-       have no address to give. -->
+ 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -220,21 +111,6 @@
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
-  <!-- A stylesheet that does not arrive is asked for again.
-
-       Every file below is pinned by its ?v= and served immutable for a year,
-       which is right until the copy at that exact url cannot be had: a deploy
-       whose assets have not propagated answers 404, a flaky moment answers
-       nothing, and the page then renders with that file simply missing. For
-       css/overrides.css — which carries the whole desktop layout of the
-       artwork viewer — missing means the viewer comes apart, which is what
-       was photographed twice this week.
-
-       So: catch the load error, once per link, and refetch the same file
-       without its version and past any cache. A copy of the file is better
-       than no copy, and this costs one request only on a load where something
-       has already gone wrong. Registered before the links so the errors are
-       heard; capture, because an error on a subresource does not bubble. -->
   <script>
   (function(){
     addEventListener('error', function(e){
@@ -269,25 +145,6 @@
    <div class="iTxt">LOADING</div>
   </div>
   <div id="sBanner"></div>
-  <!-- The primary navigation, and now genuinely navigation: Home, Gallery and
-       Community are anchors with real addresses rather than buttons that only
-       a script can answer. The panels they open are unchanged — js/routes.js
-       hears the click, cancels the navigation and calls the same bnGo*
-       function the onclick used to — so nothing about how this behaves has
-       moved. What has moved is that the destinations now exist without a
-       script: they are in the sitemap, they can be shared, and a crawler can
-       follow them.
-
-       The gallery is called Explore here, in the quick links rail and in the
-       footer, because a destination linked under three different names is a
-       destination a search engine has three guesses at. The chip row inside
-       the gallery still says Artworks — that chip is one section of the
-       gallery among six and is not a link, so it names a place within the
-       page rather than the page.
-
-       Upload keeps its button. It is an action behind a sign-in gate, not a
-       public destination, and it has no url for the same reason the cart and
-       the settings sheet have none. -->
   <nav id="bnNav" aria-label="Primary navigation">
    <a class="bnItem" id="bnHome" href="/" title="Home" aria-label="Home">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h4.5v-6h2v6H17.5a1 1 0 0 0 1-1v-9"/></svg>
@@ -306,12 +163,6 @@
     <span class="bnLabel">Community</span>
    </a>
    <div class="bnItem bnProfile" id="bnProfile">
-    <!-- The sign-in control keeps its handler and gains an address. The
-         handler is what decides between the sheet and your own profile, so it
-         stays in charge; returning false cancels the navigation, and
-         js/routes.js stands down when a click has already been handled. Signed
-         out this is the /login link; signed in it is swapped for the avatar
-         button beside it, which goes to a profile and not to a public url. -->
     <a class="nLoginBtn" id="navLoginBtn" href="/login" onclick="bnGoProfile(event); return false;" title="Login" aria-label="Login">
      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
       <circle cx="12" cy="8" r="3.5"/>
@@ -354,15 +205,6 @@
     </div>
   </section>
 
-
-  <!-- Quick links. The five destinations that have a url of their own are
-       anchors carrying it; the rest — Jobs, Upload, Ranking, Level,
-       Subscription, Cart, Theme — stay buttons, because none of those is a
-       public destination this site puts forward: they are one member's own
-       page, one member's own basket, or a section that is simply not in the
-       index.
-       js/routes.js answers the anchors and js/sections.js still answers the
-       buttons, and both end up in qlGo either way. -->
   <section id="quickLinks" aria-label="Explore DigiArtz">
     <div class="qlWrap">
       <div class="qlRail" id="qlRail">
@@ -431,9 +273,7 @@
     </div>
   </section>
 
-  <!-- artworks section -->
   <section id="artworks">
-    <!-- feed boards -->
     <div class="ftRail" id="ftRail" role="tablist" aria-label="Feed boards">
       <button type="button" class="ftTab on" id="ftTab-trending" role="tab" aria-selected="true" aria-controls="awGrid" data-feed="trending"
               style="--ftA:#F97316;--ftB:#EF4444;--ftAL:#C2410C;--ftBL:#B91C1C">
@@ -693,11 +533,6 @@
   </section>
 
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
-
-    <!-- The bar is the page's own chrome, not the site's: the brand mark is a
-         profile mark, and the word under it is Profile. Search, notifications
-         and the menu are yours, so they are only drawn on your own profile;
-         on anyone else's the bar carries a way back instead. -->
     <header class="pfTopBar">
       <div class="pfTopL">
         <button class="pfTopBtn pfTopBack" id="pfTopBack" onclick="closeProfilePage()" aria-label="Go back" hidden>
@@ -719,9 +554,6 @@
         </span>
         <span class="pfTopTitle">PROFILE</span>
       </div>
-      <!-- Shown on somebody else's profile, and only to a signed-in visitor.
-           pfPaintTopBar decides; it is hidden here so it never flashes on the
-           owner's own page while the profile is still loading. -->
       <div class="pfTopR" id="pfTopGuest" hidden>
         <button class="pfTopBtn" id="pfTopReportBtn" onclick="pfReportUser()" aria-label="Report this account">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V4"/><path d="M4 5h11l-1.5 3L15 11H4"/></svg>
@@ -780,9 +612,6 @@
               <span class="pfActTxt">Share</span>
             </button>
           </div>
-          <!-- ordered by flexbox, not by source: on a phone the bio reads
-               under the name and the buttons sit last, under the thumb; once
-               the row is wide enough the buttons move up beside the name -->
           <div class="pfIdMeta">
             <p class="pfHeadBio" id="pfHeadBio"></p>
             <div class="pfJoined" id="pfJoined"></div>
@@ -790,8 +619,6 @@
         </div>
       </section>
 
-      <!-- One number per tile, the icon carries the meaning at a glance. Three
-           across on a phone, six across once the row has room for six. -->
       <div class="pfTiles" id="pfStatsRow" hidden>
         <div class="pfTile">
           <span class="pfTileIco" style="--tileC:#22D3EE" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg></span>
@@ -888,8 +715,6 @@
         <div class="xpWrap" id="pfXpWrap"></div>
       </div>
 
-      <!-- The tiles above already carry the counts, so About is what they do
-           not say: the bio in full, where to find them, and the merit score -->
       <div class="pfPanel" id="pfPanelAbout" role="tabpanel" aria-labelledby="pfTabAbout">
         <div class="pfAboutWrap">
           <section class="pfCard">
@@ -913,8 +738,6 @@
     </div>
   </div>
 
-  <!-- Search inside one profile: this artist's artwork, blog posts, listings
-       and resources, and nothing else on the site -->
   <div id="pfSearchPage" role="dialog" aria-modal="true" aria-label="Search this profile">
     <div class="pfSrchHdr">
       <button class="pfTopBtn" onclick="closePfSearch()" aria-label="Close search">
@@ -1119,10 +942,6 @@
 
   <div class="upPop" id="pfUpMod">
    <div class="upPopBox">
-    <!-- The bar the profile and the gallery already wear: the page's own mark
-         and name on the left, its one control on the right. The (i) carries the
-         guidelines for whichever section is open, so the rules travel with the
-         tab instead of taking a column of the page. -->
     <header class="upTopBar">
       <div class="upTopL">
         <span class="upMark" aria-hidden="true">
@@ -1135,9 +954,6 @@
               </linearGradient>
             </defs>
             <rect width="32" height="32" rx="10" fill="url(#upMarkGrad)"/>
-            <!-- An arrow leaving a tray, not a cloud. The cloud said "sent
-                 somewhere else"; this is the mark the rest of the web reads as
-                 upload, and it is the one the sheet was asked for. -->
             <g transform="translate(4 4)" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <path d="m7 8 5-5 5 5"/>
@@ -1165,22 +981,13 @@
       <input id="pfUpEditId" type="hidden" value=""/>
       <div class="upCard">
       <div class="upMediaCol">
-      <!-- Empty and picked are two faces of one zone, the way the marketplace
-           file picker already works: choosing a file swaps the dashed invite
-           for a row that names it, sizes it and says it is ready. -->
       <div class="upDz" id="pfDz">
        <input accept="image/*" id="pfUpF" onclick="if(pfGuestGate(event))return;" onchange="handlePfFile(event)" type="file"/>
        <div class="upDzEmpty">
-        <!-- The same tray and arrow the Select image button under it carries,
-             and the same one the sheet's header mark carries. The cloud that
-             was here was the last of them, and it sat two lines above a
-             button drawing the other glyph for the same action. -->
         <span class="upDzBadge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg></span>
         <div class="upDzTitle" id="pfDzTxt">Drag &amp; drop your artwork here</div>
         <div class="upDzSub">or browse from your device</div>
         <button type="button" class="upDzBtn" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg>Select image</button>
-        <!-- the number is the tier's, rewritten by dzPaintLimits; the sentence
-             around it is not touched -->
         <div class="upDzHint" data-dz-mb="image">JPG · PNG · WEBP · GIF · up to 20MB</div>
        </div>
        <div class="dzFilePicked" id="pfDzPicked">
@@ -1200,12 +1007,6 @@
       <div id="pfComicPagesWrap" style="display:none;">
         <div class="upDz upDzSm" id="pfDzPages">
          <input accept="image/*" id="pfUpPages" multiple="" onclick="if(pfGuestGate(event))return;" onchange="handlePfPagesFile(event)" type="file"/>
-         <!-- The tray and arrow every dropzone on the sheet leads with. It
-              was a text emoji among drawn glyphs; v151 drew it as a stack of
-              frames to tell the extras zone from the cover zone above it,
-              which turned out to be a second rule nobody asked for. One
-              glyph on all seven zones now — the title under it is what says
-              whether this one takes the cover or the extras. -->
          <div class="upDzIco" id="pfDzPagesIco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5"/><path d="M12 4v12"/></svg></div>
          <div class="upDzTitle" id="pfDzPagesTitle">Drop page images here or click to browse</div>
          <div class="upDzSub" id="pfDzPagesSub">Multiple pages supported</div>
@@ -1225,13 +1026,6 @@
           </div>
         </div>
       </div>
-
-      <!-- The artwork form's extra fields are injected here by js/sections.js,
-           in five slots so the whole form still reads in its specified order:
-           a summary between the title and the description, the medium between
-           the category and the tags, and so on. Sharing that renderer is what
-           gives this panel the same counters, conditional rows and chip lists
-           the other four forms have. -->
       <div id="pfUpX1"></div>
 
       <div class="upField upFCard" style="--fc:var(--upcGreen)">
@@ -1366,12 +1160,6 @@
         <button class="upBtnSec" id="pfDraftBtn" onclick="updrSave()">💾 Save Draft</button>
         <button class="upBtnPri" id="pfUpBtn" onclick="doPfUp()">📤 Upload Artwork</button>
       </div>
-      <!-- The other four forms have carried this line since they were built,
-           and this panel never did — while being the one form that actually
-           stops on it. Every artwork goes through /api/moderate-upload on the
-           way out (js/upqueue.js), so a member who is going to meet a refusal
-           is told before they spend the wait rather than after. "Uploads"
-           rather than "Posts" because that is what this form takes. -->
       <p class="dzHint" style="margin-top:.9rem">Uploads are reviewed before they appear publicly.</p>
      </div>
 
@@ -1392,10 +1180,6 @@
     </div>
    </div>
   </div>
-
-  <!-- The (i) in the upload bar. Every section carries its own rules and its
-       own tips, so the sheet is filled from whichever tab is open rather than
-       standing four copies of itself in the page. -->
   <div class="upGdPop" id="upGuideMod" role="dialog" aria-modal="true" aria-labelledby="upGuideTitle" onclick="upGuideBackdrop(event)">
    <div class="upGdBox" role="document">
     <div class="upGdHead">
@@ -1438,18 +1222,6 @@
       </div>
 
       <div class="ftCols">
-
-        <!-- Every public destination on the site, in one place, as plain
-             anchors with the words a visitor would search for. The bottom nav
-             carries four of these and the quick links rail carries six, but
-             both of those live above the fold and neither is a complete list;
-             this is the one block that names all of them together, which is
-             what makes it worth having for a reader skimming for a section and
-             for a crawler working out how the site is organised.
-
-             No handlers on any of them. js/routes.js hears the click and opens
-             the panel; with the script gone the browser follows the href and
-             the page boots into the same section. -->
         <div class="ftCol">
           <div class="ftColHead">Browse</div>
           <ul class="ftColList">
@@ -1484,9 +1256,6 @@
     </div>
   </div>
   <div id="fg" role="dialog" aria-modal="true" aria-label="Full Gallery">
-   <!-- Header on the profile's pattern: the section's own mark and name on the
-        left, its controls on the right. Search opens a page of its own rather
-        than sitting in a bar that holds a fifth of a phone screen unused. -->
    <header class="fgTopBar">
     <div class="fgTopL">
      <span class="fgMark" aria-hidden="true">
@@ -1518,12 +1287,6 @@
     </div>
    </header>
 
-    <!-- Six cards over the chip row: for each of the three boards the gallery
-         already scores — daily, weekly, monthly — the artist holding it and
-         the artwork leading it. One row at every width, and it is slid rather
-         than stepped: a wheel, a drag, a swipe, the dots, or the arrow keys.
-         Filled by js/fgshow.js, and out of the page entirely until there is
-         something to feature. -->
     <section class="fgShow" id="fgShow" aria-label="Featured showcase" hidden>
      <div class="fgShowHead">
       <div class="fgShowTitle">
@@ -1537,9 +1300,6 @@
      <div class="fgShowDots" id="fgShowDots" hidden></div>
     </section>
 
-    <!-- The chip row, shaped and coloured like the feed boards on the home
-         page: one surface chip per entry, its icon drawn in that entry's own
-         gradient. Six sections, one line, centred once there is room. -->
     <div class="fgSecRow" id="fgSecRow">
      <div class="fgSecTabs" id="fgSecTabs" role="tablist" aria-label="Gallery sections">
       <button class="fgSecBtn active" id="fgSecBtn-artworks" role="tab" tabindex="0" aria-selected="true" aria-controls="fgSec-artworks" onclick="fgSwitchSection('artworks')"
@@ -1620,12 +1380,7 @@
    </div>
   </div>
   <div id="communityPage">
-    <!-- The section header, on the same component every other section uses:
-         .fgTopBar with the section's own mark and name on the left and its
-         controls on the right. Literally the gallery's classes rather than a
-         copy of them, so the two cannot drift apart. Search and Browse each
-         open a page of their own; no avatar, because the member's own profile
-         is already in the nav. -->
+
     <header class="fgTopBar cmTopBar" id="cmHomeHdr">
      <div class="fgTopL">
       <span class="fgMark" aria-hidden="true">
@@ -1690,11 +1445,7 @@
               <span id="cmBannerNoteTxt">Join up to 50 communities and 200 friends.</span>
             </div>
           </div>
-          <!-- Decoration: dashed wire circles, dot grids and a few colour
-               dots. No pictures and no icons, so there is nothing here with a
-               fixed aspect ratio to distort — every piece is placed in
-               percentages of the banner and sized in a clamp of vw, which is
-               what lets the block stretch to any width or height a device
+
                gives it. aria-hidden, and never a tap target. -->
           <div class="cmBannerFx" aria-hidden="true">
             <span class="cmFxRing cmFxRing--1"></span>
@@ -1958,14 +1709,6 @@
 
    <div class="subPgBdy">
 
-    <!-- Deliberately empty.
-
-         Nothing about plans, prices or checkout is written into this page.
-         The markup that belongs here is served by /api/store, which turns
-         away any request that does not carry a session, and is sent
-         no-store so it never lands in a cache. A signed-out visitor, a
-         crawler, the service worker precache and anyone reading source all
-         get the container below and the one line inside it. -->
     <div id="subPgGate">
      <div class="subPgGateNote">
       <p>Sign in to view this section.</p>
@@ -2337,15 +2080,6 @@
     </div>
   </div>
 
-  <!-- Reporting an ACCOUNT, which is a different queue from reporting an
-       upload above and has different reasons: an upload is judged on what it
-       is, an account on what it keeps doing. The reasons here are exactly the
-       ones public.user_reports accepts — its check constraint is the authority
-       and this list has to match it, or a member picks a reason and the insert
-       is refused for a shape they cannot see.
-
-       Same card, same classes, same stylesheet. Nothing new to style, and the
-       two report sheets look like siblings because they are. -->
   <div id="rptUserMod" class="rptMod" role="dialog" aria-modal="true" aria-labelledby="rptUserTitle" onclick="if(event.target===this)rptUserClose()">
     <div class="rptCard">
       <div class="rptTitle" id="rptUserTitle">🚩 Report Account</div>
@@ -2382,9 +2116,6 @@
     </div>
   </div>
 
-  <!-- One question, asked before anything is deleted for good. The site asks
-       with the browser's own confirm in a few older places; the comment rails
-       ask here, in the site's own voice. dzConfirm fills it in. -->
   <div id="vwCfm" hidden onclick="if(event.target===this)dzConfirmClose()">
    <div class="vwCfmBox" role="dialog" aria-modal="true" aria-labelledby="vwCfmT">
     <div class="vwCfmT" id="vwCfmT">Are you sure?</div>
@@ -2411,23 +2142,10 @@
      <button class="avNavTxt" id="avNextBtn" onclick="avNav(1)" aria-label="Next">Next</button>
     </div>
     <div class="avBody">
-     <!-- Who made it, how to reach them, and the way out. Written by
-          dzVwCard so this viewer and the four section views open with the
-          same card at the same measurements.
 
-          It is a child of .avBody rather than of the notes column because it
-          sits in a different place in each of the two layouts, and moving one
-          element is cheaper than writing it twice: stacked, it is the first
-          thing on the screen, above the work — you are told whose this is
-          before you are shown it. Side by side, it is the head of the right
-          column and does not scroll with the notes under it, so the artist
-          stays on screen for as long as you are reading about the piece. -->
      <div id="avAuthorCard"></div>
      <div class="avImgPane">
-      <!-- One wrapper, not two. .avImgStage sat between the pane and the
-           viewport to give a fitted picture a box to be centred in; the
-           column prints its pictures at the column's width now and there is
-           nothing left for it to size. -->
+
       <div class="avImgViewport" id="avImgViewport">
        <img alt="" id="lbImg" draggable="false"/>
       </div>
@@ -2435,9 +2153,6 @@
      </div>
      <div class="avSide" id="avSide">
       <div class="avSideScroll" tabindex="0" role="region" aria-label="Artwork details">
-       <!-- Like, bookmark, download, share, report — the same rail the
-            section views carry, written by avRenderRail once the artwork is
-            known, because the download and the report both need its id. -->
        <div id="avActRail"></div>
        <div class="avDlNote" id="avDlNote" hidden></div>
        <div>
@@ -2445,18 +2160,9 @@
          <div class="avTitle" id="lbNm"></div>
         </div>
         <div class="avSubType" id="avSubType"></div>
-        <!-- Said here the way the other four sections say it on their own
-             detail views, so a featured artwork is not the one featured thing
-             on the site that never says so. -->
         <div class="avSubType" id="avFeatured" hidden>★ Featured artwork</div>
         <p class="avSummary" id="avSummary" hidden></p>
        </div>
-       <!-- What the artist wrote comes first — the description, then the
-            process notes and credits behind it. The details panel is what a
-            viewer checks afterwards, so it sits under the writing rather than
-            between the summary and it, and the links and tags close the
-            column. Each extra block carries its own divider, so an artwork
-            that filled none of them adds nothing at all here. -->
        <div class="avDiv" id="avDescDiv" hidden></div>
        <div id="avDescBlock" hidden>
         <div class="avBlockH">Description</div>
@@ -2474,18 +2180,8 @@
         <div class="avBlockH">Tags</div>
         <div class="avTagList" id="avTagList"></div>
        </div>
-       <!-- The one ad on an artwork, between what the artist filed it under
-            and what everybody said about it: past the work itself and before
-            the conversation, which is the seam a reader is already crossing.
-            Empty markup on purpose — js/effects.js builds the slot when the
-            viewer opens, so a Max member gets nothing here and a visit that
-            never opens an artwork never asks the network for anything. -->
        <div id="avAdSlot"></div>
        <div class="avDiv"></div>
-       <!-- The box you type in sits above what everyone else typed, and the
-            comments arrive twenty at a time on the button under them. Nothing
-            follows this block: every action the viewer offers is in the rail
-            at the top now. -->
        <div class="avCmBlock">
         <div class="avBlockH">Comments</div>
         <div class="avCmBar">
@@ -2502,22 +2198,6 @@
     </div>
    </div>
   </div>
-  <!-- The picture on its own.
-
-       Clicking the work in the viewer lifts it out of the panel and onto the
-       screen: everything behind it goes dark and blurred, and the picture is
-       fitted to the window rather than to a column that has notes and a
-       comment thread beside it. Nothing else is in here — no chrome, no
-       buttons, no scroller — so the only thing to do with it is look, and the
-       only gesture it needs is the one that puts it back: a click anywhere
-       around the picture.
-
-       A sibling of the viewer rather than a child of it, and that is what
-       makes the click safe. #artModal closes when a click lands on #artModal
-       itself, so a full-screen layer INSIDE it would hand every click beside
-       the picture to the panel underneath and close the artwork as well. Sat
-       here it is its own dialog: closing it leaves the viewer exactly as it
-       was, with the artwork still open behind it. -->
   <div id="dzLight" role="dialog" aria-modal="true" aria-label="Full picture" tabindex="-1">
    <img id="dzLightImg" alt="" draggable="false">
   </div>
@@ -2624,10 +2304,6 @@
       <div class="subPgTitle">SETTINGS</div>
     </div>
     <div class="bmBdy">
-      <!-- The same items as before, in named groups. Every item is still a
-           full-width button, so the whole row answers a tap — not just the
-           words on it. setGo(open, id): closes the menu, opens the page, and
-           puts you back on the menu when that page closes. -->
       <div class="setList">
 
         <section class="setGrp" aria-labelledby="setGrpPay">
@@ -2637,14 +2313,6 @@
           </h3>
           <div class="setGrpItems">
             <button class="pfMenuItem" onclick="setGo(openSubscription,'subPage')"><span class="pfMenuTxt">Subscription</span></button>
-            <!-- Three more items belong here and are not written here. They name
-                 what a member's account holds and how it is paid out, and this
-                 file is a static asset that anyone can read. /api/store injects
-                 them, and it answers no request without a session — so a
-                 signed-out visitor's page source carries neither the items nor
-                 the pages they open. The gate is display:contents, so what it
-                 injects lays out as rows of this group rather than one block
-                 inside it. -->
             <div id="setListGate"></div>
           </div>
         </section>
@@ -2673,12 +2341,6 @@
             <button class="pfMenuItem" onclick="setGo(openFriendsPage,'frdPage')"><span class="pfMenuTxt">Friends</span> <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
           </div>
         </section>
-
-        <!-- Four dashboards, one page. Each row opens the same panel with a
-             different scope, and the order here is the order they are listed
-             everywhere else: artwork, marketplace, blog, resources. The scope
-             tabs at the top of the page switch between them without coming
-             back out here. -->
         <section class="setGrp" aria-labelledby="setGrpAn">
           <h3 class="setGrpHd" id="setGrpAn">
             <span class="setGrpIcon" aria-hidden="true">📈</span>
@@ -2701,8 +2363,6 @@
             <button class="pfMenuItem pfMenuItem--soon" onclick="showToast('Privacy &amp; Security — coming soon')"><span class="pfMenuTxt">Privacy &amp; Security</span> <span class="pfMenuSoon">SOON</span></button>
             <button class="pfMenuItem pfMenuItem--soon" onclick="showToast('Notification settings — coming soon')"><span class="pfMenuTxt">Notifications</span> <span class="pfMenuSoon">SOON</span></button>
             <button class="pfMenuItem" onclick="setGo(openThemePage,'themePage')"><span class="pfMenuTxt">Theme</span></button>
-            <!-- syncAdmBtn in js/gallery.js puts one more item here, for the one
-                 account type entitled to it. Nobody else's page carries it. -->
             <div id="setAdmGate"></div>
           </div>
         </section>
@@ -2717,21 +2377,6 @@
             <button class="pfMenuItem pfMenuItem--danger" onclick="pfMenuLogout()"><span class="pfMenuTxt">Log Out</span></button>
           </div>
         </section>
-
-        <!-- Below the group carrying Log Out, because these are reference
-             documents rather than things a member does. Same shape as every
-             other group here: a heading, then the rows it covers.
-
-             setGoLegal, not openLegal: these open the slide page the way
-             Theme and Edit My Work do, so the back arrow returns to this menu
-             instead of a sheet floating over a menu you cannot see. The footer
-             still opens the modal — down there, there is no menu to go back
-             to. Same document either way.
-
-             Anchors, and the href is the real standalone page. setGoLegal
-             returns false to cancel the navigation once it has opened; where
-             it cannot — the documents have not loaded — it returns true and
-             the browser follows the href, so a row is never dead. -->
         <section class="setGrp" aria-labelledby="setGrpLegal">
           <h3 class="setGrpHd" id="setGrpLegal">
             <span class="setGrpIcon" aria-hidden="true">📄</span>
@@ -2751,13 +2396,9 @@
       </div>
     </div>
   </div>
-
-  <!-- Log Out is the last row of the Settings list and used to sign the
-       member out on that one tap. It asks first now. -->
   <div class="upPop loConfirm" id="loConfirm" role="dialog" aria-modal="true" aria-labelledby="loConfirmTitle" aria-describedby="loConfirmMsg">
     <div class="loConfirmBox">
-      <!-- drawn rather than typed: an emoji is whichever colour the device's
-           font makes it, and this one has to be red -->
+
       <svg class="loConfirmIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path class="loConfirmTri" d="M12 3.15c.62 0 1.19.33 1.5.87l7.35 12.73c.31.54.31 1.2 0 1.74-.31.54-.88.87-1.5.87H4.65c-.62 0-1.19-.33-1.5-.87a1.74 1.74 0 0 1 0-1.74L10.5 4.02c.31-.54.88-.87 1.5-.87Z"/>
         <path class="loConfirmBang" d="M12 8.6v4.6"/>
@@ -2772,12 +2413,6 @@
     </div>
   </div>
 
-  <!-- Three account pages used to be written out here, each with its own
-       heading and its own empty container. Even empty, the headings said what
-       a member's account holds and how money leaves it, in a file served to
-       everyone. They are built by /api/store now, into one panel it creates
-       itself, and nothing about them survives in this page. -->
-
   <div id="xpPage" role="dialog" aria-modal="true" aria-label="Artist progress">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeXpPage()" aria-label="Close progress">←</button>
@@ -2788,12 +2423,6 @@
     </div>
   </div>
 
-  <!-- Analytics. Twelve sections and every chart in them are built by
-       js/analytics.js the first time the page is opened, into #anBdy: the
-       markup is a few hundred nodes that mean nothing to a visitor who never
-       opens it, and writing it out here would put it in the HTML every page
-       load pays for. What is here is the shell, so the page can slide in and
-       the header can be read while the numbers are still on their way. -->
   <div id="anPage" role="dialog" aria-modal="true" aria-label="Analytics">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeAnalyticsPage()" aria-label="Close analytics">←</button>
@@ -2830,11 +2459,6 @@
 
   <div class="toast" id="toast">
   </div>
-  <!-- Served from here, not from a CDN. The service worker precaches the
-       whole shell, so a repeat visit works with no network at all — except
-       this one file, which used to be fetched from jsdelivr on every visit
-       and is the first thing app-core.js touches. Version is in the name:
-       upgrading is a new path, so no cache can hand back the old one. -->
   <script src="/js/vendor/supabase-js-2.112.2.min.js"></script>
   <script src="/js/badwords-list-a.js?v=1"></script>
   <script src="/js/badwords-list-b.js?v=1"></script>
@@ -2861,10 +2485,6 @@
 
  <div id="rippleHost"></div>
 
-  <!-- The legal documents, shared with the /legal/* pages that Pages Functions
-       renders from the same file. type="module" because it is one — module
-       scripts are deferred, so it lands well before anyone can click a footer
-       link, and openLegal reads it at click time rather than at load time. -->
   <script type="module" src="/js/legal-content.js?v=1"></script>
   <script src="/js/effects.js?v=9"></script>
 
@@ -2888,9 +2508,6 @@
       </div>
       <p class="ckBody">
         We use cookies to improve your experience and keep the site running smoothly. See our
-        <!-- An anchor for the same reason as the footer and the menu: if the
-             modal cannot open, the consent notice still points somewhere real
-             rather than at a button that does nothing. -->
         <a class="ckLink" href="/legal/cookies" onclick="return openLegal('cookie')" aria-label="Open Cookie Policy">Cookie Policy</a>
         for details.
       </p>
@@ -2966,26 +2583,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
       <h1 class="thmTitle">Choose Your Theme</h1>
       <p class="thmSub">Select the theme that suits your style</p>
     </div>
-    <!-- Each card carries its four preview colours inline, and names its
-         theme three ways: a class, data-theme, and value.
 
-         That is not belt and braces for its own sake. In the field the
-         picker rendered as two empty boxes that did nothing when tapped,
-         and every symptom traced to one thing — the card's theme id was
-         only ever readable through an attribute, so whatever stopped that
-         attribute resolving took the preview colours, the tick and the tap
-         with it, silently and all at once.
-
-         The class is the carrier this file trusts. A card that is visibly
-         a card has its class attribute intact, by definition: .thmCard is
-         what draws it. js/theme.js reads the class first and falls back to
-         the attributes, and css/widgets.css keys the swatch off the class
-         too, so what paints the preview and what answers the tap are the
-         same fact rather than two that can disagree.
-
-         css/base.css still owns the palette. These are the only two
-         swatches that have to travel with the markup, and they are inline
-         so they cannot arrive separately from it. -->
     <div class="thmGrid" role="radiogroup" aria-label="Theme">
       <button class="thmCard thmCard--graydark" data-theme="graydark" value="graydark" role="radio" aria-checked="false" type="button"
               style="--p-bg:#1A1A1F;--p-sur:#24242C;--p-ln:#40404E;--p-ac:#F4F4F6">
@@ -3037,11 +2635,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
 
   <script src="/js/theme.js?v=6"></script>
 
-<!-- One page for all seven legal documents, opened from the Settings menu.
-     Same shape as Theme or Edit My Work: a header with a back arrow, then the
-     document. The title and body are filled in by openLegalPage from
-     js/legal-content.js — the same text the footer modal and the /legal/<slug>
-     pages read, so there is still only one copy of any of it. -->
 <div id="legalPage" role="dialog" aria-modal="true" aria-labelledby="lgTitleText">
   <div class="subPgHdr">
     <button class="subPgX" onclick="closeLegalPage()" aria-label="Back to settings">←</button>
@@ -3050,13 +2643,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <div class="lgBdy" id="lgBody"></div>
 </div>
 
-
-
-
-<!-- Search across the whole gallery: every approved artwork on the site,
-     plus the listings, posts, resources and jobs. Same shape as the search
-     inside a profile, and it borrows that page's styles — what differs is
-     what it looks in, not how it looks. -->
 <div id="fgSearchPage" role="dialog" aria-modal="true" aria-label="Search the gallery">
   <div class="pfSrchHdr">
     <button class="pfTopBtn" type="button" onclick="closeFgSearch()" aria-label="Close search">
@@ -3084,10 +2670,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- The community section's search. Same component as #fgSearchPage and
-     #pfSearchPage — back arrow, one field, scope chips, results — because a
-     member who has used search anywhere else on the site has already learned
-     this one. The scope opens on whichever tab they were reading. -->
+
 <div id="cmSearchPage" role="dialog" aria-modal="true" aria-label="Search the community section">
   <div class="pfSrchHdr">
     <button class="pfTopBtn" type="button" onclick="cmCloseSearch()" aria-label="Close search">
@@ -3113,9 +2696,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- Browse every community, biggest first. Until now the only way to find one
-     you were not already in was to be handed its name and join ID by somebody
-     who was. Ranked by member count, which is what cm_browse orders by. -->
 <div id="cmBrowsePage" role="dialog" aria-modal="true" aria-label="Browse communities">
   <div class="pfSrchHdr">
     <button class="pfTopBtn" type="button" onclick="cmCloseBrowse()" aria-label="Back">
@@ -3137,8 +2717,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- Joining asks first. A community is a room full of people, and walking into
-     one should not be something a mistimed tap does on your behalf. -->
+
 <div class="cmMod" id="cmJoinAsk" onclick="if(event.target===this)cmCloseMod('cmJoinAsk')">
   <div class="cmModCard" style="max-width:340px;">
     <div class="cmModTitle" id="cmJoinAskTitle">Join this community?</div>
@@ -3250,12 +2829,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- The community's own page, opened by tapping its icon in the chat header.
-     A page and not a modal: it is where a community is read, its members are
-     listed and — for whoever can — where it is run, and none of that belongs
-     in a box you dismiss by tapping beside it. Everything under
-     data-cmi="staff" or data-cmi="owner" is hidden outright for anyone else,
-     by cmiPaintRole, rather than merely disabled. -->
+
 <div id="cmInfoPage" role="dialog" aria-modal="true" aria-label="Community">
   <div class="subPgHdr">
     <button class="subPgX" onclick="cmiClose()" aria-label="Back to the community">←</button>
@@ -3339,8 +2913,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- One sheet for a person, wherever they were tapped: a name in the chat or a
-     row in the member list. What it offers depends on who is looking. -->
 <div class="cmMod" id="cmUserMod" onclick="if(event.target===this)cmCloseMod('cmUserMod')">
   <div class="cmModCard" style="max-width:340px;">
     <div class="cmuHead">
@@ -3357,8 +2929,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- A single message: its author can delete it, a moderator can delete it,
-     anyone else can report it. Nothing else — no likes, no shares, no saves. -->
 <div class="cmMod" id="cmTxtMod" onclick="if(event.target===this)cmCloseMod('cmTxtMod')">
   <div class="cmModCard" style="max-width:340px;">
     <div class="cmModTitle">Message</div>
@@ -3370,7 +2940,6 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-<!-- Reason picker shared by the three community report kinds. -->
 <div class="cmMod" id="cmRptMod" onclick="if(event.target===this)cmCloseMod('cmRptMod')">
   <div class="cmModCard" style="max-width:380px;">
     <div class="cmModTitle" id="cmRptTitle">Report</div>
@@ -3385,24 +2954,10 @@ window.ZEO_DATA = window.ZEO_DATA || {
   </div>
 </div>
 
-  <!-- Before engagement.js on purpose. It defines dzAnDims, which is what a
-       view, a like and a download carry alongside themselves; engagement.js
-       guards for its absence anyway, but the order means it is never absent. -->
   <script src="/js/analytics.js?v=8"></script>
   <script src="/js/engagement.js?v=9"></script>
-
-
   <script src="/js/sections.js?v=119"></script>
-  <!-- The url of every public section, and the panel each one opens. After
-       sections.js, whose qlGo and hero call-to-action hand over to it. -->
   <script src="/js/routes.js?v=2"></script>
-
   <script src="/js/navprogress.js?v=5"></script>
-
-
-
-
-
-
 </body>
 </html>

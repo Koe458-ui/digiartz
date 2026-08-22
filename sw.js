@@ -4,6 +4,33 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v217 — there is no box. The viewer is a page, the way the marketplace is.
+
+       Asked for outright, and it is the right call: the box is what kept
+       going wrong, and #dzView — the marketplace listing, the resource, the
+       blog post, the job — has never gone wrong once. It is a plain page.
+       Fixed to the window, the site's own ground, a bar across the top, and
+       under it one scrolling column or two. No panel, no margin, no backdrop,
+       nothing centred inside anything else, and nothing whose size depends on
+       what is put in it.
+
+       The artwork viewer is now that layout with its own element names, and
+       every number is the section viewer's number: the same shell inset, the
+       same gap between columns, the same 320-to-480 notes column, the same
+       1100px cap on the picture and the same one-screen cap on its height.
+       One breakpoint, 900px, and it is the section viewer's breakpoint.
+
+       Which retires the whole argument. There is no box to be the wrong size,
+       no second layout for a window to fall through into, no rectangle to
+       state twice, and nothing for a zoom level to opt out of. Every rule
+       that existed to decide how big the panel should be is gone.
+
+       Measured at 390, 640, 853, 1280 and 1920: below 900 one column and the
+       body scrolls; from 900 the work and the notes scroll beside each other
+       and the body does not — notes-col 533/2531 SCROLLS, work-col 559/565
+       SCROLLS, body fits, nothing overflowing.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v216 — the picture is back, and the bisect is finished.
 
        It answered what it was for. The box alone was right; the box and the
@@ -4165,7 +4192,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v232';
+const CACHE_VERSION = 'v233';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4219,7 +4246,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=30',
+  '/css/viewer.css?v=31',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',

@@ -9,7 +9,7 @@
        of somebody the code that was just shipped, or a copy their browser or
        the service worker held on to? View source, look for dz-build, compare
        it with CACHE_VERSION in sw.js. Keep the two in step. -->
-  <meta name="dz-build" content="v232"/>
+  <meta name="dz-build" content="v233"/>
   <!-- theme boot
 
        Two themes: light (paper, the default) and graydark (charcoal).
@@ -77,16 +77,16 @@
        the ground, the blur, the columns, the picture's box — stays in the
        stylesheets, which are then free to be late without turning a viewer
        into a paragraph. */
-    #artModal{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;pointer-events:none;}
-    #artModal.open{opacity:1;visibility:visible;pointer-events:auto;}
+    #artModal{position:fixed;inset:0;z-index:1100;display:none;flex-direction:column;background:var(--bg,#F7F5EB);}
+    #artModal.open{display:flex;}
     #dzView{position:fixed;inset:0;z-index:1300;display:none;}
     #dzView.open{display:flex;flex-direction:column;}
     #dzLight{position:fixed;inset:0;z-index:1500;display:none;}
     #dzLight.open{display:flex;align-items:center;justify-content:center;}
 
-    /* And the panel inside the viewer is a panel, not a document. Split by
-       width like the stylesheet is, so this floor cannot hand a phone the
-       desktop's rectangle on a load where css/viewer.css is late.
+    /* And the viewer is a page: the bar, then a body that scrolls. There is
+       no panel to size any more — the box is gone, and with it every rule
+       that had to decide how big it should be.
 
        Being fixed keeps #artModal the size of the window; it does not stop
        the box inside it growing to whatever its contents come to. That is the
@@ -100,10 +100,8 @@
        it sits in, and .avBody scrolls what does not fit. Both stylesheets say
        this more precisely and both come after this block, so these only ever
        decide anything on a load where they are missing. */
-    #artModal .avBox{overflow:hidden;}
-    @media (max-width:899px){ #artModal .avBox{width:100%;height:100%;max-height:100%;} }
-    @media (pointer:fine), (min-width:900px){ #artModal .avBox{width:80%;height:90%;max-height:90%;} }
-    #artModal .avBody{min-height:0;max-height:100%;overflow:auto;}
+    #artModal .avBox{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;}
+    #artModal .avBody{flex:1;min-height:0;overflow:auto;}
     /* And the picture is fitted to whatever it is in. css/viewer.css and
        css/overrides.css both say this properly; this is the floor under them,
        so a picture cannot lay out at its own 4000px on a load where neither
@@ -256,7 +254,7 @@
   </script>
   <link rel="stylesheet" href="/css/base.css?v=12">
   <link rel="stylesheet" href="/css/hero.css?v=101">
-  <link rel="stylesheet" href="/css/viewer.css?v=30">
+  <link rel="stylesheet" href="/css/viewer.css?v=31">
   <link rel="stylesheet" href="/css/community.css?v=19">
   <link rel="stylesheet" href="/css/connect.css?v=6">
   <link rel="stylesheet" href="/css/ranking.css?v=4">
@@ -2921,6 +2919,7 @@
         return x.n+' '+x.size+' [side+'+x.o+' content+'+x.w+' bottom+'+x.t+']';
       }).join('   ') || 'nothing overflows the box';
 
+      var col = m.querySelector('.avSide');
       function scroller(el, label){
         if (!el) return label+' missing';
         var cs = getComputedStyle(el);
@@ -2930,18 +2929,15 @@
                  : ' fits');
       }
 
-      var fine = matchMedia('(pointer:fine)').matches;
-      var coarse = matchMedia('(pointer:coarse)').matches;
-      var desktop = matchMedia('(pointer:fine), (min-width:900px)').matches;
+      var two = matchMedia('(min-width:900px)').matches;
       out.textContent =
         ((document.querySelector('meta[name="dz-build"]')||{}).content||'?')+
-        ' '+(desktop?'DESKTOP':'MOBILE')+' viewer'+
-        ' (pointer '+(fine?'fine':coarse?'coarse':'none')+')'+
+        ' '+(two?'two columns':'one column')+
         ' win '+W+'x'+H+' dpr'+(window.devicePixelRatio||1)+
         ' | box '+n(b.width)+'x'+n(b.height)+' ('+Math.round(b.width/W*100)+'%x'+Math.round(b.height/H*100)+'%)'+
         ' | body '+getComputedStyle(body).display+' '+n(body.clientWidth)+'x'+n(body.clientHeight)+
         ' | page '+n(document.documentElement.scrollWidth)+'x'+n(document.documentElement.scrollHeight)+
-        '\n'+scroller(side,'notes')+' | '+scroller(body,'body')+
+        '\n'+scroller(col,'notes-col')+' | '+scroller(pane,'work-col')+' | '+scroller(body,'body')+
         ' | notesW '+n(side.clientWidth)+' contentW '+n(side.scrollWidth)+
         '\nOVERFLOWING: '+names;
     }

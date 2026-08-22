@@ -223,6 +223,33 @@
     @media(min-width:1024px){
       :root{ --shellPad:max(10%,calc((100% - var(--shellMax)) / 2)); }
     }
+
+    /* ── the gap between two artworks ────────────────────────────────────────
+       One token for the only space that is ever allowed to fall between two
+       pieces of work, wherever they sit next to each other: the gallery, the
+       home page's boards, a profile, my work, an album, the saved page, the
+       showcase picker. A thumbnail is the content; the space around it is not,
+       and every pixel spent on the space is a pixel taken off the picture.
+
+       It is stated in px rather than in a share of the font size because it is
+       a hairline — a rule between two pictures saying they are two pictures —
+       and a hairline is a fixed number of pixels or it is not a hairline.
+
+         mobile   3px
+         tablet   4px
+         desktop  5px
+
+       The breakpoints are the artwork grids' own column counts (2 / 3 / 4+),
+       not the shell's, because this measures the space between columns and
+       must step where the columns do.
+
+       Nothing that holds artwork adds a margin, a padding or a second gap on
+       top of this: a grid spends --artGap and the page inset, and nothing
+       else. */
+    :root{ --artGap:3px; }
+    @media(min-width:700px){  :root{ --artGap:4px; } }
+    @media(min-width:1280px){ :root{ --artGap:5px; } }
+
     /* below fold render perf */
     #artworks,#subOverview,footer.siteFooter{
       content-visibility:auto;

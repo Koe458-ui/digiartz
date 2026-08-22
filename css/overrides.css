@@ -257,13 +257,20 @@
 /* desktop polish */
 @media (min-width:1280px){
 
-  /* Columns and gaps only. The measure is the shell's — every one of these
-     grids already takes --shellPad from the band it sits in, and a cap here
-     would pull the thumbnails in off the edge the bars above them land on. */
+  /* Columns only. The measure is the shell's — every one of these grids
+     already takes --shellPad from the band it sits in, and a cap here would
+     pull the thumbnails in off the edge the bars above them land on.
+
+     The gap used to be set here too, at 20px, 22px and 24px as the screen
+     grew. It is --artGap now — 5px on any desktop — and it is set once, in
+     css/base.css, so a thumbnail is never widened at one breakpoint and
+     narrowed at the next by a number written in a second file. .dzGrid is
+     not artwork: its cards carry a name, a price and a line of meta, so it
+     keeps the desktop gaps it always had, stated on its own below. */
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
     grid-template-columns:repeat(4,1fr);
-    gap:20px;
   }
+  .dzGrid{ gap:20px; }
   .dzList{ gap:.9rem; }
 
   /* text sizes */
@@ -298,14 +305,14 @@
 @media (min-width:1440px){
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
     grid-template-columns:repeat(5,1fr);
-    gap:22px;
   }
+  .dzGrid{ gap:22px; }
 }
 
 /* ultrawide 1920 */
 @media (min-width:1920px){
-  .awGrid, .fgGrid, .pfGridArt, .dzGrid{ gap:24px; }
-                     }
+  .dzGrid{ gap:24px; }
+}
 
 /* title color */
 

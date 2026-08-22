@@ -40,13 +40,15 @@
     #artModal.open{opacity:1;visibility:visible;pointer-events:auto;}
     #artModal.closing{opacity:0;transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;}
 
-    /* the box — a phone gets the screen, everything else gets the panel */
+    /* the box — the same rectangle at every width, on every device */
     #artModal .avBox{
       position:relative;
-      width:100%;height:100%;max-width:none;max-height:none;
+      width:80%;height:90%;max-width:none;max-height:none;
       display:flex;flex-direction:column;
       background:var(--bg);
-      border:0;border-radius:0;box-shadow:none;
+      border:1px solid var(--bdr);
+      border-radius:16px;
+      box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
       overflow:hidden;
       transform:scale(.92) translateY(10px);opacity:0;
       transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
@@ -57,19 +59,18 @@
       transition:transform .22s cubic-bezier(.4,0,1,1),opacity .2s cubic-bezier(.4,0,1,1);
     }
     /* 80% across, 90% down: a 10% margin left and right, 5% above and below.
-       Stated, fixed, and the same rectangle whatever is opened in it — the
-       picture is fitted to the space it gets and the notes scroll in theirs,
-       so nothing inside has any say in how big this is. No measure cap: the
-       margin is what was asked for, so on a very wide screen the picture
-       holds its own resolution and takes the air around it. */
-    @media(min-width:700px){
-      #artModal .avBox{
-        width:80%;height:90%;
-        border:1px solid var(--bdr);
-        border-radius:16px;
-        box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
-      }
-    }
+       Stated, fixed, the same rectangle whatever is opened in it and whatever
+       is looking at it — the picture is fitted to the space it gets and the
+       notes scroll in theirs, so nothing inside has any say in how big this
+       is. No measure cap and no device exception.
+
+       There WAS an exception: under 700px the box was the whole screen, one
+       column, every part of an artwork laid out in it and scrolling as a
+       document. That is a phone's viewer, and a laptop lands under 700 CSS px
+       easily — a 1920 screen at 150% system scaling is 1280, and browser zoom
+       takes it the rest of the way. So the one thing that had been asked for
+       over and over, a fixed box, was the one thing a window could opt out
+       of. It cannot now. */
 
     #artModal .avTopBar{
       flex:0 0 auto;position:relative;z-index:6;
@@ -98,7 +99,7 @@
     #artModal .avImgPane{
       flex:0 0 auto;
       display:flex;flex-direction:column;
-      height:52dvh;min-height:240px;
+      height:46dvh;min-height:200px;
       background:transparent;overflow:hidden;
     }
     #artModal .avImgStage{

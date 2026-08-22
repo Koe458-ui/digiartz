@@ -4,6 +4,28 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v207 — no window can opt out of the box.
+
+       The build marker did its job: the page on screen said v222, so the code
+       was live and the layout being complained about was one this stylesheet
+       had asked for. Under 700px the box was the whole screen, one column,
+       every part of an artwork laid out in it and scrolling as a document —
+       a phone's viewer, and correct for a phone.
+
+       A laptop lands under 700 CSS px without trying. A 1920 screen at 150%
+       system scaling is 1280, and browser zoom takes it the rest of the way.
+       So the one thing asked for over and over — a fixed box — was the one
+       thing a window could opt out of, and every fix landed in a layout the
+       reporter was never being served.
+
+       There is no exception now. 80% across, 90% down, at every width and on
+       every device: 400x552 in a 500px window, 512x246 at 640, 1536x894 at
+       1920, always a 10% margin left and right and 5% above and below. What
+       changes with width is only what is inside — one column under 900, two
+       columns above it — and neither of those has any say in the size of the
+       box.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v206 — one file owns the artwork viewer.
 
        It was written across four. The overlay and its ground were in
@@ -3954,7 +3976,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v222';
+const CACHE_VERSION = 'v223';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4008,7 +4030,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=22',
+  '/css/viewer.css?v=23',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',

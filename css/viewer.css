@@ -52,10 +52,30 @@
       background:var(--bg);
     }
 
-    /* one column, and it scrolls — the section viewer's .dzvBody */
+    /* One column, and it scrolls — the section viewer's .dzvBody, which is
+       what this is a copy of, down to being a block.
+
+       It was a flex column, and that is what emptied the phone of every word
+       written about the work. A column flex container hands its items the
+       height it has, not the height they asked for: with the pictures at
+       1563px in a 759px body the free space is negative, so every item that
+       may shrink is shrunk, and .avSide — which states min-height:0 for the
+       desktop layout, where it is a scroller of its own — was shrunk to
+       exactly nothing. Its own contents still painted, 900px of title,
+       artist, description, details and comments hanging out of a box with no
+       height, and because they hang out of it the body never counted them:
+       scrollHeight stopped at 1725 where the content ended at 2634. So the
+       column scrolled to the bottom of the last picture and stopped, and
+       everything under it was unreachable and clipped away.
+
+       A block box has none of that. Each child is as tall as its content,
+       the scroller adds them up, and the whole column is there to be
+       scrolled — which is exactly why the section viewer, the same view
+       under other names, never had this bug: .dzvBody was never a flex
+       container. Two columns from 900px replace this with a grid. */
     #artModal .avBody{
       flex:1;min-height:0;
-      display:flex;flex-direction:column;
+      display:block;
       overflow-y:auto;overflow-x:hidden;
       padding-bottom:6rem;
     }
@@ -63,7 +83,6 @@
 
     /* the work — the section viewer's .dzvMedia */
     #artModal .avImgPane{
-      flex:0 0 auto;
       background:transparent;box-sizing:border-box;text-align:center;
       padding:var(--vwPad,1.5rem) var(--vwPad,1.5rem) 0;
     }
@@ -102,8 +121,13 @@
     }
 
     /* the notes — the section viewer's .dzvCol */
+    /* No min-height:0 here. It belongs to the two-column layout, where this
+       is a scroller of its own and has to be allowed to be shorter than what
+       is in it, and it is stated there. Up here it was the licence the flex
+       column used to crush this to nothing — and a flex item's own
+       min-height:auto is the thing that would otherwise have refused. */
     #artModal .avSide{
-      display:block;width:100%;margin:0;min-height:0;
+      display:block;width:100%;margin:0;
       background:transparent;border-left:0;overflow:visible;
     }
     #artModal .avSideScroll{

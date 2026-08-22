@@ -4,6 +4,41 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v223 — the phone gets the words back, because the column is a column again.
+
+       On a phone the artwork viewer showed the work and then nothing: no
+       title, no artist, no description, no comments, and on a single-image
+       artwork — which is most of them — the column would not scroll at all.
+
+       .avBody was a flex column. A column flex container hands its items the
+       height it has, not the height they asked for, so when the picture
+       filled the screen the free space went negative and every item allowed
+       to shrink was shrunk. .avSide states min-height:0 — it has to, for the
+       two-column layout, where it is a scroller of its own — and that is a
+       licence to shrink to nothing, so it did: 951px of writing in a box 56px
+       tall, or 0 with a set of pictures. Its contents still painted, hanging
+       out of a box with no height, and because they hung out of it the
+       scroller never counted them: with one picture scrollHeight came back
+       equal to clientHeight, so there was nothing to scroll and no way to
+       reach a word of it.
+
+       It is a block now, which is what the section viewer's .dzvBody always
+       was — the same view under other names, and the reason that one never
+       had this. Each child is as tall as its content, the scroller adds them
+       up, and the whole column scrolls. One picture: 0 scrollable before,
+       895 after, and the notes 951 tall instead of 56. Three: 966 before
+       against content ending at 2634, 1917 after against 2676.
+
+       min-height:0 stays in the two-column block where it is needed and is
+       gone from the base rule, so a flex item's own min-height:auto would
+       refuse this next time. .avImgPane's flex:0 0 auto went with it — dead
+       in a block and dead in a grid.
+
+       Desktop is untouched and measured: every number in the viewer is
+       identical before and after at 900, 1280 and 1500, with one picture and
+       with three.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v222 — a drag on a picture scrolls, and the phone gets its own pass.
 
        A finger put on an image and moved up the screen should move the
@@ -4360,7 +4395,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v238';
+const CACHE_VERSION = 'v239';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4414,7 +4449,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=13',
   '/css/hero.css?v=102',
-  '/css/viewer.css?v=36',
+  '/css/viewer.css?v=37',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=5',

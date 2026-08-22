@@ -1,86 +1,210 @@
 /* artwork viewer */
-    /* artwork viewer modal */
-    .avBox{
+    /* ── the artwork viewer, all of it, in one file ──────────────────────
+
+       This used to be spread across four stylesheets: the overlay in
+       css/hero.css, the ground behind it in css/panels.css, the panel and its
+       columns here, and the whole desktop layout in css/overrides.css, which
+       loads last and won every disagreement. Four files had to arrive, in
+       order, for a viewer to be a viewer — and when the last one did not, the
+       panel became a block in the page flow with every part of an artwork
+       laid out inside it, which is what was being photographed. Fixes went
+       into whichever file seemed to own the rule and could not be seen,
+       because a different file was answering.
+
+       One file answers now. Nothing about this viewer is written anywhere
+       else; index.html's critical style carries a floor under it for the
+       moment before this file arrives, and that is the only other copy.
+
+       Three widths, and what separates them is how much room there is:
+         under 700   the screen, one column — a phone
+         from 700    the box: 80% across, 90% down, fixed
+         from 900    two columns, picture beside the notes
+       Sizes below fall back to their own literals, so this file does not need
+       css/overrides.css to have defined the shared spacing tokens. */
+
+    /* the overlay */
+    #artModal{
+      position:fixed;inset:0;z-index:1100;
+      display:flex;align-items:center;justify-content:center;
+      padding:0;
+      opacity:0;visibility:hidden;pointer-events:none;
+      transition:opacity .32s cubic-bezier(.22,1,.36,1),visibility .32s;
+      isolation:isolate;
+    }
+    #artModal::before{
+      content:'';position:absolute;inset:0;z-index:-1;
+      background:color-mix(in srgb,var(--bg) 85%,transparent);
+      -webkit-backdrop-filter:blur(10px) saturate(120%);
+      backdrop-filter:blur(10px) saturate(120%);
+    }
+    #artModal.open{opacity:1;visibility:visible;pointer-events:auto;}
+    #artModal.closing{opacity:0;transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;}
+
+    /* the box — a phone gets the screen, everything else gets the panel */
+    #artModal .avBox{
       position:relative;
-      width:min(1400px,94vw);
-      height:min(860px,90vh);
-      /* dvh for mobile viewport */
-      height:min(860px,90dvh);
-      max-width:1400px;
-      display:flex;
-      flex-direction:column;
-      background:var(--sur);
-      border:1px solid var(--bdr);
-      border-radius:20px;
+      width:100%;height:100%;max-width:none;max-height:none;
+      display:flex;flex-direction:column;
+      background:var(--bg);
+      border:0;border-radius:0;box-shadow:none;
       overflow:hidden;
-      box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
-      transform:scale(.92) translateY(10px);
-      opacity:0;
+      transform:scale(.92) translateY(10px);opacity:0;
       transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
     }
     #artModal.open .avBox{transform:scale(1) translateY(0);opacity:1;}
     #artModal.closing .avBox{
-      transform:scale(.95) translateY(6px);
-      opacity:0;
+      transform:scale(.95) translateY(6px);opacity:0;
       transition:transform .22s cubic-bezier(.4,0,1,1),opacity .2s cubic-bezier(.4,0,1,1);
     }
-    .avTopBar{
-      flex:0 0 auto;
+    /* 80% across, 90% down: a 10% margin left and right, 5% above and below.
+       Stated, fixed, and the same rectangle whatever is opened in it — the
+       picture is fitted to the space it gets and the notes scroll in theirs,
+       so nothing inside has any say in how big this is. No measure cap: the
+       margin is what was asked for, so on a very wide screen the picture
+       holds its own resolution and takes the air around it. */
+    @media(min-width:700px){
+      #artModal .avBox{
+        width:80%;height:90%;
+        border:1px solid var(--bdr);
+        border-radius:16px;
+        box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
+      }
+    }
+
+    #artModal .avTopBar{
+      flex:0 0 auto;position:relative;z-index:6;
       display:flex;align-items:center;justify-content:space-between;
-      padding:.9rem 1.3rem;
+      padding:.75rem 1.1rem;
       border-bottom:1px solid var(--bdr);
-      position:relative;
-      z-index:6;
+      background:var(--bg);
     }
-    .avBody{flex:1 1 auto;display:flex;min-height:0;}
-    .avImgPane{
-      position:relative;flex:1 1 auto;min-width:0;
+
+    /* Stacked: who made it, the work, then everything written about it. The
+       body is the scroller — the box never grows to fit its contents. */
+    #artModal .avBody{
+      flex:1 1 auto;min-height:0;
       display:flex;flex-direction:column;
-      background:#000;overflow:hidden;
+      overflow-y:auto;overflow-x:hidden;
     }
-    /* image stage */
-    .avImgStage{
-      position:relative;
-      flex:1 1 auto;min-height:0;width:100%;
+    #artModal #avAuthorCard{padding:var(--vwPad,1.5rem) var(--vwPad,1.5rem) 0;}
+
+    /* The picture area is a box, and the same box for every artwork. It used
+       to be the picture's own size — a stage that shrink-wrapped whatever was
+       in it and a height budget measured in js — so a portrait made a tall
+       narrow frame and a landscape a short wide one, and every artwork opened
+       moved the furniture. Stated here and fitted with object-fit:contain,
+       which shrinks anything too big for the space and leaves anything
+       smaller at its own size. */
+    #artModal .avImgPane{
+      flex:0 0 auto;
+      display:flex;flex-direction:column;
+      height:52dvh;min-height:240px;
+      background:transparent;overflow:hidden;
+    }
+    #artModal .avImgStage{
+      flex:1 1 auto;min-height:0;width:100%;max-height:none;
       display:flex;align-items:center;justify-content:center;
+      background:transparent;position:static;
     }
-    /* A box around the picture, and nothing more. It was a pan surface once —
-       cursor:grab and touch-action:none, reserved for dragging a zoomed
-       picture around inside it — and the zoom that needed them has been dead
-       for as long as css/overrides.css has pinned #lbImg at transform:none.
-       What is left of them is a cursor advertising a drag that does not
-       happen and, worse, a finger the browser was told this element would
-       handle and then nothing did. The picture opens the full view now; the
-       gestures belong to the browser. */
-    .avImgViewport{
-      position:relative;width:100%;height:100%;
+    /* A plain box around the picture, not a pan surface. The zoom that needed
+       cursor:grab and touch-action:none is gone, and with it a cursor
+       advertising a drag that did nothing and a finger the browser had been
+       told this element would handle. */
+    #artModal .avImgViewport{
+      position:relative;flex:1 1 auto;min-height:0;
+      width:100%;height:100%;
       display:flex;align-items:center;justify-content:center;
-      overflow:hidden;
+      padding:1rem var(--vwPad,1.5rem) 0;box-sizing:border-box;
+      background:transparent;border:0;overflow:hidden;
     }
-    .avImgViewport.loading::after{
+    #artModal .avImgViewport.loading::after{
       content:'';position:absolute;inset:0;
       background:linear-gradient(100deg,transparent 30%,rgba(var(--pg-rgb),.1) 50%,transparent 70%);
       background-size:200% 100%;
       animation:amShimmer 1.3s ease-in-out infinite;
     }
-    /* hide while loading */
-    .avImgViewport.loading img{opacity:0;}
-    .avImgViewport img{
-      max-width:92%;max-height:88%;width:auto;height:auto;
-      object-fit:contain;display:block;
+    #artModal .avImgViewport.loading img{opacity:0;}
+    /* Fitted, never blown up — and the picture is the way into the full
+       view, so the cursor says so. #dzLight at the foot of this file is what
+       a click opens. */
+    #artModal #lbImg{
+      position:static;display:block;margin:0 auto;
+      width:auto;height:auto;
+      max-width:100%;max-height:100%;
+      object-fit:contain;
       transition:opacity .1s ease;
       user-select:none;-webkit-user-drag:none;
+      cursor:zoom-in;
     }
-    .avSide{
-      flex:0 0 360px;width:360px;
-      background:var(--sur);border-left:1px solid var(--bdr);
+
+    #artModal .avSide{
+      flex:0 0 auto;width:100%;margin:0;
+      background:transparent;border-left:0;
       display:flex;flex-direction:column;min-height:0;
     }
-    .avSideScroll{
-      flex:1 1 auto;overflow-y:auto;min-height:0;
-      padding:1.6rem 1.5rem 1.5rem;
-      display:flex;flex-direction:column;gap:1.25rem;
+    #artModal .avSideScroll{
+      height:auto;max-height:none;overflow:visible;
+      display:flex;flex-direction:column;
+      gap:var(--vwGap,1.6rem);
+      padding:var(--vwPad,1.5rem) var(--vwPad,1.5rem) 4rem;
     }
+
+    /* ── two columns, as soon as there is room for them ──────────────────
+       900, not 1024: the work wants about 500px beside a 320px column, and
+       holding out for 1024 handed every window between the two a phone's
+       layout on a desktop screen — which is exactly what was on screen while
+       every fix to this viewer went into rules that only applied above it. */
+    @media(min-width:900px){
+      #artModal .avBody{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) clamp(320px,26%,480px);
+        grid-template-rows:auto minmax(0,1fr);
+        column-gap:0;padding-inline:0;
+        /* the panes scroll; the body does not */
+        overflow:hidden;min-height:0;
+      }
+      /* The picture's box is the column: full height of the panel, the width
+         the grid gives it, the same rectangle every time. The air around it
+         belongs to the pane, counted once here. */
+      #artModal .avImgPane{
+        grid-column:1;grid-row:1 / span 2;
+        height:auto;min-height:0;
+        overflow:hidden;
+        padding:var(--vwGap,1.6rem);
+        align-items:stretch;
+      }
+      #artModal .avImgViewport{padding:0;max-width:100%;min-width:0;}
+      /* A stated height, not a measured one: the rail is the same figure
+         before and after its thumbnails render, so the stage above it never
+         has to be resized once they do. */
+      #artModal .avImgStack{
+        flex:0 0 auto;
+        padding:var(--vwGap,1.6rem) 0 0;
+        height:calc(72px + var(--vwGap,1.6rem));
+        width:100%;align-self:stretch;
+      }
+      #artModal .avThumb{width:72px;height:72px;}
+      #artModal #avAuthorCard{padding:0;}
+      /* avPlaceCard moves the card into the notes' scroller at this width. If
+         it has not — an older gallery.js, or something threw first — the card
+         is still a child of .avBody, and this is the row it falls back to:
+         pinned at the head of the notes rather than taking height off both
+         columns. A layout should degrade to the previous design, never to a
+         different one. */
+      #artModal .avBody > #avAuthorCard{grid-column:2;grid-row:1;align-self:start;}
+      #artModal .avSide{
+        grid-column:2;grid-row:2;
+        width:auto;max-width:none;margin:0;
+        min-height:0;overflow:hidden;
+      }
+      #artModal .avSideScroll{
+        flex:1 1 auto;min-height:0;
+        height:auto;max-height:none;
+        overflow-y:auto;overscroll-behavior:contain;
+        padding:var(--vwGap,1.6rem) var(--vwGap,1.6rem) 4rem;
+      }
+    }
+
     .avSideScroll::-webkit-scrollbar{width:6px;}
     .avSideScroll::-webkit-scrollbar-thumb{background:var(--bdrh);border-radius:3px;}
     /* The author strip, its avatar and its two lines of text are gone with
@@ -224,21 +348,12 @@
     @media(max-width:420px){
       .dlqActions{flex-direction:column-reverse;}
     }
-    @media(max-width:900px){
-      #artModal{padding:.7rem;}
-      .avBox{width:100%;height:96vh;height:96dvh;border-radius:16px;}
-      .avBody{flex-direction:column;}
-      .avImgPane{flex:0 0 44%;}
-      .avSide{flex:1 1 auto;width:100%;border-left:none;border-top:1px solid var(--bdr);}
-      .avTitle{font-size:1.2rem;}
-    }
-    @media(max-width:480px){
-      #artModal{padding:.5rem;}
-      .avTopBar{padding:.7rem 1rem;}
-      .avSideScroll{padding:1.2rem 1.1rem;}
-    }
+    @media(max-width:900px){ .avTitle{font-size:1.2rem;} }
+    @media(max-width:480px){ #artModal .avTopBar{padding:.7rem 1rem;} }
     @media(prefers-reduced-motion:reduce){
-      .avImgViewport img{transition:none;}
+      #artModal .avImgViewport img{transition:none;}
+      #artModal,#artModal .avBox{transition:opacity .15s linear;}
+      #artModal .avBox{transform:none!important;}
     }
 
     #communityPage{

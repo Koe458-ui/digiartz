@@ -4,6 +4,56 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v204 — the box is 80 across and 90 down, and it is the only thing that
+       decides that.
+
+       Stated as asked: 80% of the window wide, 90% tall — a 10% margin left
+       and right, 5% above and below — and nothing inside it has a say. The
+       picture is fitted to the column it gets, the notes scroll in theirs,
+       and the box is the same rectangle whatever is opened in it.
+
+       The measure cap is gone with it. .avBox was min(80%, --shellMax),
+       because getViewUrl asks for a 1000px-wide picture and an uncapped 80%
+       of a 3440 screen gave it a 2200px pane to sit in the middle of. The
+       margin is what was asked for, so the margin is what it is; a wide
+       screen now shows the picture at its own resolution with air around it
+       rather than blown up to fill the pane.
+
+       The same rectangle is in the critical style, so it holds on a load
+       where css/overrides.css does not arrive — which is what has been
+       happening. A photograph at 25% zoom showed the viewer as a small
+       centred panel of 1400x860, which is not any size this stylesheet asks
+       for: it is css/viewer.css's fallback, drawn because the file carrying
+       the desktop layout was not there. So a stylesheet that fails to load is
+       now asked for again, once, without its version and past any cache. A
+       copy of the file beats no copy, and the retry costs one request only on
+       a load that has already gone wrong.
+       Changed: index.html, css/overrides.css, sw.js.
+
+   v203 — the box cannot grow to fit what is in it, and the build says its name.
+
+       v202 stopped #artModal being a paragraph. Being fixed keeps the VIEWER
+       the size of the window, though, and does nothing about the box inside
+       it: .avBox is sized by css/overrides.css and css/viewer.css, and with
+       neither of them in effect its height is auto — so it renders the
+       picture at full size, the notes, the details, the tags and the whole
+       comment thread at once, taller than the screen, with nothing scrolling
+       inside it because everything is already laid out. That is the half of
+       the photograph the first guard did not cover.
+
+       Two more properties in the critical style: the box can never be taller
+       than the window, and .avBody scrolls what does not fit. Both stylesheets
+       say this more precisely and both come after that block, so these decide
+       anything only on a load where they are missing.
+
+       And index.html now carries <meta name="dz-build">, matching
+       CACHE_VERSION. Three rounds of "it still looks the same" turned on a
+       question nobody could answer from a photograph: whether the page on
+       screen was the code that had just shipped or a copy the browser was
+       holding. View source, find dz-build, compare. Keep it in step with the
+       version below.
+       Changed: index.html, sw.js.
+
    v202 — a viewer is an overlay before its stylesheet arrives.
 
        A member photographed the artwork viewer printing down the page: the
@@ -3845,7 +3895,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v218';
+const CACHE_VERSION = 'v220';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3909,7 +3959,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=12',
   '/css/upload.css?v=15',
   '/css/widgets.css?v=12',
-  '/css/overrides.css?v=32',
+  '/css/overrides.css?v=33',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 

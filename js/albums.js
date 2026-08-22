@@ -229,13 +229,39 @@
         : 'Pick this album on the upload page to add artwork to it.')+'</div>';
     empty.style.display = '';
   }
-  // reuse saved card markup
+  /* One card, and this file already had it.
+
+     This called pfSavedCardHTML(), and nothing in this bundle has ever
+     defined that name — it is not a stale name for something that moved. So
+     the moment an album had anything in it, the map over its rows threw a
+     ReferenceError inside albOpen's try and painted "COULDN'T LOAD THIS
+     ALBUM" over a set that had loaded perfectly. An empty album was the only
+     kind that worked, because an empty list never calls it.
+
+     What an album holds is artworks, so what it shows is the card every other
+     grid of artworks on this site shows — same markup, same measurements,
+     same lazy thumbnail and the same focal point — with the album's own
+     opener on it. */
   function albItemHTML(a){
-    var card = pfSavedCardHTML(a);
+    var card = pfGalleryCardHTML(a, 'albOpenArtwork');
     if(!albView || !albView.owner) return card;
     return '<div class="albItemWrap">'+card+
       '<button type="button" class="albItemX" aria-label="Remove from album" '+
       'onclick="event.stopPropagation();albRemoveItem(\''+esc(String(a.id))+'\')">\u2715</button></div>';
+  }
+  /* The album is the run the arrows walk. pfOpenArtwork looks in the profile
+     gallery it belongs to, which is the wrong list here twice over: an album
+     can hold work from anywhere on the site, so the artwork is often not in
+     it at all, and Next out of an album item would step through a gallery
+     nobody opened. The rows on screen are the list. */
+  function albOpenArtwork(id){
+    var rows = (albView && albView.rows) || [];
+    var art = rows.filter(function(a){ return String(a.id)===String(id); })[0] ||
+              (typeof findArtworkById === 'function' ? findArtworkById(id) : null);
+    if(!art) return;
+    var cats = catList(art.category).length ? catList(art.category)
+             : (catList(art.tags).length ? catList(art.tags) : ['others']);
+    openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, rows);
   }
   function albCloseView(){
     document.getElementById('albViewPage').classList.remove('open');
@@ -665,10 +691,17 @@
     document.getElementById('pfGalleryEmpty').style.display = (pf.galleryRows.length || qHtml) ? 'none' : '';
     pfGallerySentinelSync();
   }
-  // the card is the thumbnail — the title, date and tags belong to the
-  // artwork view, which is one tap away
-  function pfGalleryCardHTML(a){
-    return '<div class="awCard" onclick="pfOpenArtwork(\''+esc(String(a.id))+'\')">'+
+  /* The card is the thumbnail — the title, date and tags belong to the artwork
+     view, which is one tap away, and the picture in there opens full screen.
+
+     `opener` is the name of the function that tap calls, so the album view can
+     hand the run of artworks the arrows should walk without a second copy of
+     this markup. It is read only when it is a string: the two callers here
+     pass this straight to Array.map, which would otherwise hand it the index
+     as a second argument and name a function called 0. */
+  function pfGalleryCardHTML(a, opener){
+    var open = (typeof opener === 'string' && opener) ? opener : 'pfOpenArtwork';
+    return '<div class="awCard" onclick="'+open+'(\''+esc(String(a.id))+'\')">'+
       '<div class="awImgWrap awLoading"><img loading="lazy" onload="this.parentNode.classList.remove(\'awLoading\')" onerror="this.parentNode.classList.remove(\'awLoading\')" '+dzThumbAttrs(a.image_url)+' alt="'+esc(a.name||'')+'" style="'+thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom)+'">'+
       '</div></div>';
   }

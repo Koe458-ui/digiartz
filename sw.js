@@ -4,6 +4,33 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v199 — an album shows what is in it, and the work opens from there.
+
+       Every album with anything in it said "COULDN'T LOAD THIS ALBUM". The
+       set had loaded perfectly; what failed was drawing it. albItemHTML
+       called pfSavedCardHTML(), and no script in this bundle has ever defined
+       that name — not a stale name for something that moved, a name that has
+       never answered — so the map over the rows threw a ReferenceError inside
+       albOpen's try, which paints exactly that message. An empty album was the
+       only kind that worked, because an empty list never calls it. Likes and
+       Bookmarks are albums too, so they were out with the rest.
+
+       What an album holds is artworks, so it shows the card every other grid
+       of artworks on the site shows: pfGalleryCardHTML, with the same
+       measurements, the same lazy thumbnail and the same focal point. It
+       takes the name of its opener now, which is the whole of the change to
+       it — one card, two callers, no second copy of the markup to drift.
+       (Read only when it is a string: both callers pass it to Array.map,
+       which would otherwise hand it the index and name a function called 0.)
+
+       A tap opens the artwork viewer, where the picture opens full screen the
+       way it does everywhere else now. The album is the run its arrows walk:
+       pfOpenArtwork looks in the profile gallery, which is the wrong list
+       twice over — an album can hold work from anywhere on the site, so the
+       artwork is often not in that list at all, and Next out of an album item
+       would step through a gallery nobody opened.
+       Changed: js/albums.js, index.html, sw.js.
+
    v198 — the same picture, everywhere a picture is the point.
 
        The full-screen view now opens from the section viewer and from a
@@ -3741,7 +3768,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v214';
+const CACHE_VERSION = 'v215';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3832,7 +3859,7 @@ const SHELL_URLS = [
   '/js/gallery.js?v=98',
   '/js/auth.js?v=19',
   '/js/profile.js?v=16',
-  '/js/albums.js?v=16',
+  '/js/albums.js?v=17',
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',

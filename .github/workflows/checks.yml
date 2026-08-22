@@ -1,9 +1,3 @@
-# The checks that stop a known fault coming back.
-#
-# There is no build step in this project, so this is deliberately small: it does
-# not lint, and it tests one file. What it holds is an invariant that has broken
-# twice, the invariants of the cache service — where a mistake is a disclosure
-# rather than a glitch — and that everything served to a browser parses.
 name: checks
 
 on:
@@ -17,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # No dependencies to install and nothing to build — the check is one
-      # file of plain Node reading two other files.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -28,22 +20,12 @@ jobs:
     name: a changed stylesheet or script carries a new ?v=
     runs-on: ubuntu-latest
     steps:
-      # The whole history: the check reads the file as production has it, which
-      # means resolving origin/main. A shallow clone has no main to resolve and
-      # the check refuses to run rather than passing everything.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # /css/* and /js/* are served immutable for a year and answered
-      # cache-first by the service worker, so a file whose bytes change under a
-      # url that has already shipped reaches new visitors only. The deploy looks
-      # clean, the edge is correct, and the returning visitor keeps last week's
-      # stylesheet — which is what "the update did not apply" is. It has
-      # happened in dozens of commits and was live in three assets the day this
-      # check was written.
       - name: versions move when the files do
         run: |
           git fetch --no-tags origin main:refs/remotes/origin/main || true
@@ -57,10 +39,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # A dialog styled by id gives a second dialog copying its markup no
-      # position and no display:none, so it lands in the page flow and is
-      # permanently visible. Every inner class can be correct while this is
-      # wrong, which is why reviewing the classes did not catch it.
       - run: node scripts/check-overlays.mjs
 
   sections:
@@ -71,13 +49,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # Three bugs came out of the same shape: four hand-written lists of
-      # which panels exist, and three modules each stepping history back to
-      # close one. A panel missing from a list stayed on screen when the
-      # member changed section; a step back fired popstate, which every other
-      # module answered, so tapping Upload could open a profile; and the
-      # address bar was left naming a section that had been closed, which the
-      # next reload acted on. This fails if any of the three can come back.
       - run: node scripts/check-sections.mjs
 
   cache:
@@ -88,9 +59,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # No browser and no IndexedDB, which is the point twice over: the
-      # user-isolation and invalidation rules hold in plain Node, and the
-      # service has to stay correct with its disk tier missing.
       - run: node scripts/cache-test.mjs
 
   syntax:
@@ -98,15 +66,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # 22, not 20, and it matters: js/legal-content.js is ESM served to the
-      # browser from a .js file, and only 22 detects module syntax on its own.
-      # On 20, `node --check` reads it as CommonJS and stops at `export`.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # sw.js and the Pages Functions are served straight to browsers and to
-      # the edge with nothing in between to catch a typo. `node --check` is
-      # not a test, but it does mean a syntax error cannot reach production.
       - name: parse
         run: |
           set -e

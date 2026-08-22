@@ -5300,6 +5300,8 @@
   window.dzCloseView = function(){
     var v = document.getElementById('dzView');
     if(v) v.classList.remove('open');
+    // A picture opened out of this panel does not outlive it.
+    if(typeof window.dzLightClose === 'function') window.dzLightClose();
     vwUnlock();
     curExt = null;
     /* SWAP the address, do not step back to it.
@@ -5324,6 +5326,7 @@
   window.dzCloseViewSilent = function(){
     var v = document.getElementById('dzView');
     if(v) v.classList.remove('open');
+    if(typeof window.dzLightClose === 'function') window.dzLightClose();
     vwUnlock();
     pushed = false;
     vwReturnUrl = null;
@@ -5331,6 +5334,11 @@
   document.addEventListener('keydown', function(e){
     var v = document.getElementById('dzView');
     if(!v || !v.classList.contains('open')) return;
+    /* The full-screen picture is over this, and it answers for itself: it
+       takes Escape in js/gallery.js and stops it there, and an arrow key
+       while it is up would step this panel to the next listing under a
+       picture belonging to the last one. */
+    if(window.dzLightIsOpen && window.dzLightIsOpen()) return;
     if(e.key === 'Escape') dzCloseView();
     else if(e.key === 'ArrowLeft') dzViewNav(-1);
     else if(e.key === 'ArrowRight') dzViewNav(1);

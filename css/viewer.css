@@ -628,7 +628,10 @@
     .cpShowcase:last-child{margin-bottom:0;}
     .cpShowcaseHead{display:flex;align-items:center;gap:.7rem;padding:.85rem 1rem;}
     .cpShowcaseMeta{display:flex;flex-direction:column;gap:.15rem;min-width:0;}
-    .cpShowcaseImg{width:100%;max-height:560px;object-fit:cover;display:block;cursor:pointer;}
+    /* A showcase post is a picture somebody shared in a room, and a tap on it
+       opens it full screen — #dzLight at the foot of this file — rather than
+       the artwork viewer, which had no artwork to put in it. */
+    .cpShowcaseImg{width:100%;max-height:560px;object-fit:cover;display:block;cursor:zoom-in;}
     .cpShowcaseText{padding:.9rem 1rem 1.1rem;font-family:var(--fb);font-size:.92rem;line-height:1.65;color:var(--tx);word-break:break-word;}
 
     /* showcase picker */

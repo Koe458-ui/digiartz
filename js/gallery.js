@@ -900,14 +900,16 @@
     var box = document.getElementById('dzLight');
     var img = document.getElementById('dzLightImg');
     if(!box || !img || !src) return;
-    /* The file already on screen, not a larger one fetched for the occasion.
-       It is in the browser's cache, so this opens in the same frame it is
-       asked for, and what is shown is the resolution the artist uploaded
-       rather than a blow-up of it.
+    /* Whatever the caller hands over is what is shown, at the resolution that
+       url is, and it is never scaled past it. The artwork viewer and the
+       section views hand over the picture already on their screen, so those
+       open out of the browser's cache in the same frame they are asked for; a
+       community showcase post is a thumbnail on the page and hands over the
+       viewing size instead, which is one request and the right pixels.
 
        Blanked first when it is a different picture: the element is reused,
        and setting a src does not clear the pixels already decoded into it, so
-       the previous artwork would be what the screen shows for a frame. */
+       the last picture would be what the screen shows for a frame. */
     if(img.getAttribute('src') !== src){
       img.removeAttribute('src');
       img.style.removeProperty('--natW');
@@ -937,12 +939,16 @@
     }
     dzLightFocus = null;
   }
-  window.dzLightOpen  = dzLightOpen;
-  window.dzLightClose = dzLightClose;
   function dzLightIsOpen(){
     var box = document.getElementById('dzLight');
     return !!(box && box.classList.contains('open'));
   }
+  window.dzLightOpen   = dzLightOpen;
+  window.dzLightClose  = dzLightClose;
+  // Read by the key handlers that would otherwise act under it: the section
+  // viewer steps to the next item on an arrow key, and the item under a
+  // full-screen picture is not the one being looked at.
+  window.dzLightIsOpen = dzLightIsOpen;
 
   (function(){
     document.addEventListener('DOMContentLoaded', function(){
@@ -958,7 +964,38 @@
         // here, so anything else the click landed on is the ground around it.
         if(e.target !== document.getElementById('dzLightImg')) dzLightClose();
       });
+
+      /* The section viewer opens the same way. A marketplace listing, a
+         resource, a blog post and a job all share #dzView, and all of them
+         put their picture in .dzvMedia — so this is one listener on the panel
+         rather than a handler written into four renderers in js/sections.js,
+         which rebuilds its body from a string every time it opens.
+
+         The extra shots under a listing are anchors, and they stay anchors:
+         the href is the picture at viewing size, so a middle click or a
+         cmd-click still opens it in a tab the way any link on the page does,
+         and only a plain click is taken over. A link that swallows every
+         click is a link that has stopped being one. */
+      var view = document.getElementById('dzView');
+      if(view) view.addEventListener('click', function(e){
+        var shot = e.target.closest ? e.target.closest('.dzvGallery a') : null;
+        if(shot){
+          if(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+          var pic = shot.querySelector('img');
+          e.preventDefault();
+          dzLightOpen(shot.getAttribute('href'), pic ? pic.alt : '');
+          return;
+        }
+        var media = e.target.closest ? e.target.closest('.dzvMedia img') : null;
+        if(media) dzLightOpen(media.currentSrc || media.src, media.alt);
+      });
     });
+    /* Back closes it, whatever it was opened over. The panel table takes it
+       down when a move sweeps the section away, and closeLB takes it down
+       with the artwork viewer, but a page closed by the browser's own back
+       button goes through neither — and a picture left standing over a page
+       that is no longer there is the one state this must not have. */
+    window.addEventListener('popstate', function(){ dzLightClose(); });
     /* Escape closes this and stops there. The viewer behind it has its own
        ways out and none of them should fire from the same key press — the
        quota sheet above the viewer is handled the same way, a few hundred
@@ -1054,6 +1091,9 @@
       /* The section viewer has the same two panes and the same dead surface. */
       var dzv = document.getElementById('dzView');
       if(dzv) dzv.addEventListener('wheel', function(e){
+        // One picture on a blurred ground, with nothing behind it that should
+        // move while it is up.
+        if(dzLightIsOpen()){ e.preventDefault(); return; }
         var media = dzv.querySelector('.dzvMedia'), col = dzv.querySelector('.dzvCol');
         if(!media || !col) return;
         var dy = wheelPx(e, col);

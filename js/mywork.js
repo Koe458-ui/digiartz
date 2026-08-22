@@ -1672,7 +1672,19 @@ function hideCommentThumbnail(){
       if(isShowcase){
         // showcase post card
         div.className = 'cpShowcase';
-        var safeUrl = esc(c.image_url || '');
+        /* The picture at viewing size, for the full-screen view a tap opens.
+           The card itself shows a thumbnail, so this is the one caller of
+           dzLightOpen that hands over a url the page does not already have —
+           one request, and the right pixels for a screen.
+
+           It used to open the artwork viewer, and there was nothing in it: a
+           showcase post keeps the picture and not the id of the work it came
+           from, so openLB was called with no artwork behind it and drew a
+           panel with no details, no download and no comments around one
+           image. The picture was always the whole of it. */
+        var scShot = (typeof getViewUrl === 'function')
+                       ? getViewUrl(c.image_url || '')
+                       : (c.image_url || '');
         var scName = cpAuthorName(c);
         div.innerHTML =
           '<div class="cpShowcaseHead">' +
@@ -1682,8 +1694,25 @@ function hideCommentThumbnail(){
               '<div class="cpCommentTime">' + esc(c.time) + '</div>' +
             '</div>' +
           '</div>' +
-          (c.image_url ? ('<img class="cpShowcaseImg" src="' + esc(getThumbnailUrl(c.image_url||'')) + '" alt="' + esc(scName) + '\'s artwork" onclick="openLB(\'' + safeUrl.replace(/'/g,'&#39;') + '\',\'' + esc(scName).replace(/'/g,'&#39;') + '\'s artwork\')">') : '') +
+          (c.image_url ? ('<img class="cpShowcaseImg" src="' + esc(getThumbnailUrl(c.image_url||'')) + '" alt="' + esc(scName) + '\'s artwork">') : '') +
           '<div class="cpShowcaseText">' + esc(c.text) + '</div>';
+        /* Bound, not written into the markup — which is a fix as much as a
+           tidy. The handler this replaces was a name quoted inside a string
+           inside an attribute, so a poster called Ada produced
+
+               onclick="openLB('…','Ada's artwork')"
+
+           and that does not parse. Every click on a showcase picture has
+           thrown a SyntaxError and done nothing for as long as the line has
+           been there, for every poster whose name is ordinary enough to be
+           written without an escape. Escaping the apostrophe does not save it
+           either: the entity is decoded before the handler is compiled, so
+           &#39; arrives at the parser as the apostrophe that broke it. A
+           listener has no quoting to get wrong. */
+        var scImg = div.querySelector('.cpShowcaseImg');
+        if(scImg && scShot) scImg.addEventListener('click', function(){
+          if(typeof dzLightOpen === 'function') dzLightOpen(scShot, scName + '\u2019s artwork');
+        });
       } else {
         // chat row
         if(!c.text){ return; }

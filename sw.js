@@ -4,6 +4,53 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v198 — the same picture, everywhere a picture is the point.
+
+       The full-screen view now opens from the section viewer and from a
+       showcase post, not only from the artwork viewer: a marketplace listing's
+       preview, the extra shots under it, a resource's or a blog post's or a
+       job's picture, and a picture somebody shared in a community room. Same
+       view every time — 80% of the window, never blown up past the file's own
+       pixels, everything behind it dark and blurred, a click anywhere around
+       it to close.
+
+       One listener on #dzView answers for all four sections, because all four
+       share that panel and put their picture in .dzvMedia — the alternative
+       was a handler written into four renderers in js/sections.js, each of
+       which rebuilds its body from a string. The extra shots stay anchors: the
+       href is the picture at viewing size, so a middle click or a cmd-click
+       still opens a tab, and only a plain click is taken over.
+
+       A community showcase post used to open the artwork viewer and there was
+       nothing in it. A post keeps the picture and not the id of the work it
+       came from, so openLB was called with no artwork behind it: a panel with
+       no details, no download and no comments, around one image. The picture
+       was always the whole of it, and that is what a tap opens now — at
+       viewing size, since the card itself only holds a thumbnail.
+
+       Except that it opened nothing at all. The handler was written into the
+       markup by quoting the poster's name inside a string inside an
+       attribute, so a member called Ada produced
+
+           onclick="openLB('…','Ada's artwork')"
+
+       which does not parse: every click on a showcase picture has thrown a
+       SyntaxError and done nothing, for every poster whose name needs no
+       escaping. Escaping the apostrophe would not have saved it either — the
+       entity is decoded before the handler is compiled, so &#39; reaches the
+       parser as the apostrophe that broke it. The click is a bound listener
+       now, with no quoting left to get wrong.
+
+       What is over the panel answers for the panel's keys and its wheel while
+       it is up: Escape closes the picture and stops there, an arrow key no
+       longer steps the section viewer to the next listing under a picture
+       belonging to the last one, and the wheel moves nothing behind a view
+       that does not scroll. And every way a host page can go now takes the
+       picture with it — the sweep through the panel table, the viewer's own
+       close, the section viewer's two closes, and the browser's back button.
+       Changed: index.html, css/viewer.css, css/overrides.css, js/gallery.js,
+       js/sections.js, js/mywork.js, sw.js.
+
    v197 — the picture, on the screen, with nothing else on it.
 
        Clicking the work in the artwork viewer opens it full screen: the page
@@ -3694,7 +3741,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v213';
+const CACHE_VERSION = 'v214';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3748,7 +3795,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=100',
-  '/css/viewer.css?v=20',
+  '/css/viewer.css?v=21',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',
@@ -3758,7 +3805,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=12',
   '/css/upload.css?v=15',
   '/css/widgets.css?v=11',
-  '/css/overrides.css?v=30',
+  '/css/overrides.css?v=31',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 
@@ -3782,7 +3829,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=31',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=97',
+  '/js/gallery.js?v=98',
   '/js/auth.js?v=19',
   '/js/profile.js?v=16',
   '/js/albums.js?v=16',
@@ -3790,7 +3837,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
   '/js/pfedit.js?v=15',
-  '/js/mywork.js?v=22',
+  '/js/mywork.js?v=23',
   '/js/startup.js?v=7',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=11',
@@ -3803,7 +3850,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=6',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=117',
+  '/js/sections.js?v=118',
   '/js/routes.js?v=2',
   '/js/navprogress.js?v=5'
 ];

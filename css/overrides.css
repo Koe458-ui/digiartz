@@ -111,7 +111,10 @@
 .dzvTop{flex-shrink:0;}
 .dzvBody{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:6rem;}
 .dzvMedia{background:transparent;box-sizing:border-box;text-align:center;}
-.dzvMedia img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;}
+/* The picture is the way into the full view here too — one listener on
+   #dzView in js/gallery.js opens it for whichever of the four sections is
+   showing. The cursor is what says so. */
+.dzvMedia img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;cursor:zoom-in;}
 .dzvCol{margin:0;display:flex;flex-direction:column;}
 .dzvTitle{font-family:var(--fd);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0;color:var(--tx);}
 .dzvExcerpt{font-size:1rem;color:var(--txd);line-height:1.55;margin:0;}
@@ -141,7 +144,7 @@
    a token, so it follows whichever theme is on. */
 .dzvGallery{display:flex;flex-wrap:wrap;gap:.55rem;}
 .dzvGallery a{display:block;line-height:0;border-radius:10px;overflow:hidden;border:1px solid var(--bdr);background:var(--sur2);}
-.dzvGallery img{width:104px;height:104px;object-fit:cover;display:block;}
+.dzvGallery img{width:104px;height:104px;object-fit:cover;display:block;cursor:zoom-in;}
 @media(max-width:520px){.dzvGallery img{width:82px;height:82px;}}
 .dzvMeta{display:flex;flex-direction:column;gap:.35rem;border:1px solid var(--bdr);border-radius:12px;padding:.8rem 1rem;background:var(--sur);}
 .dzvMetaRow{display:flex;justify-content:space-between;gap:1rem;font-size:.85rem;}

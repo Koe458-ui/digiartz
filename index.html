@@ -248,7 +248,7 @@
   </script>
   <link rel="stylesheet" href="/css/base.css?v=12">
   <link rel="stylesheet" href="/css/hero.css?v=101">
-  <link rel="stylesheet" href="/css/viewer.css?v=33">
+  <link rel="stylesheet" href="/css/viewer.css?v=34">
   <link rel="stylesheet" href="/css/community.css?v=19">
   <link rel="stylesheet" href="/css/connect.css?v=6">
   <link rel="stylesheet" href="/css/ranking.css?v=4">
@@ -258,7 +258,7 @@
   <link rel="stylesheet" href="/css/panels.css?v=13">
   <link rel="stylesheet" href="/css/upload.css?v=15">
   <link rel="stylesheet" href="/css/widgets.css?v=12">
-  <link rel="stylesheet" href="/css/overrides.css?v=36">
+  <link rel="stylesheet" href="/css/overrides.css?v=37">
   <link rel="stylesheet" href="/css/select.css?v=4">
   <link rel="stylesheet" href="/css/analytics.css?v=9">
  </head>
@@ -2405,7 +2405,11 @@
   </div>
 
   <div id="artModal" role="dialog" aria-modal="true" aria-label="Artwork viewer" data-state="closed">
-   <div class="avBox" onclick="event.stopPropagation()">
+   <!-- No stopPropagation. It was here to keep a click inside the panel from
+        reaching the backdrop behind it, and there is no backdrop and no panel
+        any more — so all it did was swallow every click on the viewer's own
+        ground before the handler that closes on those could hear it. -->
+   <div class="avBox">
     <div class="avTopBar">
      <button class="avNavTxt" id="avPrevBtn" onclick="avNav(-1)" aria-label="Previous">Previous</button>
      <button class="avNavTxt" id="avNextBtn" onclick="avNav(1)" aria-label="Next">Next</button>
@@ -2844,7 +2848,7 @@
   <script src="/uploadVerifier.js"></script>
   <script src="/js/app-core.js?v=31"></script>
   <script src="/js/protect.js?v=3"></script>
-  <script src="/js/gallery.js?v=100"></script>
+  <script src="/js/gallery.js?v=101"></script>
   <script src="/js/auth.js?v=20"></script>
   <script src="/js/profile.js?v=16"></script>
   <script src="/js/albums.js?v=18"></script>
@@ -3392,7 +3396,7 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=9"></script>
 
 
-  <script src="/js/sections.js?v=119"></script>
+  <script src="/js/sections.js?v=120"></script>
   <!-- The url of every public section, and the panel each one opens. After
        sections.js, whose qlGo and hero call-to-action hand over to it. -->
   <script src="/js/routes.js?v=2"></script>

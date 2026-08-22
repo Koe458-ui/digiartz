@@ -16,27 +16,6 @@
 .avNavTxt:hover{color:var(--ps);}
 .avNavTxt:active{opacity:.7;}
 /* stacked images */
-/* The rail of thumbnails under the picture.
-
-   This element used to print the extra pages full width, one under another,
-   which turned the artwork column into a tall document. One picture in a box
-   with the set offered underneath does not depend on how many images an
-   upload carries: the box is always full, and this rail is the only thing
-   that scrolls — sideways, and only when there are more thumbnails than fit
-   across it. */
-.avImgStack{
-  display:flex; flex-direction:row; align-items:center;
-  /* Centred under a centred picture — "safe" so that when there are more
-     thumbnails than fit, the row falls back to starting at the left rather
-     than centring the overflow and putting the first one out of reach. */
-  justify-content:safe center;
-  gap:.55rem;
-  padding:.8rem var(--vwPad);
-  box-sizing:border-box; background:transparent;
-  overflow-x:auto; overflow-y:hidden;
-  scrollbar-width:thin;
-  overscroll-behavior-x:contain;
-}
 /* The rail of thumbnails is gone and so are its rules. The work column
    prints every picture in the set at the column's width now, so there is
    nothing 72px square left to style. */

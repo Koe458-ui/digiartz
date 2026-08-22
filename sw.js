@@ -4,6 +4,40 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v221 — one gap between two artworks, and it is a hairline.
+
+       THE SPACE WAS FIVE DIFFERENT NUMBERS. Every wall of work in the site
+       drew its own: the gallery and the profile stepped .3rem / .35rem /
+       .4rem, the home page's boards did the same, albums did the same, the
+       saved page sat at a flat 1rem, the showcase picker at .9rem, and
+       css/overrides.css then overrode four of them again at 1280, 1440 and
+       1920 with 20px, 22px and 24px. On a desktop that was 24 pixels of
+       nothing between two pictures, restated in a second file, and a
+       thumbnail that grew and shrank as the window crossed a breakpoint the
+       columns did not move at.
+
+       ONE TOKEN. --artGap in css/base.css: 3px on a phone, 4px on a tablet,
+       5px on a desktop, stepping at 700px and 1280px, which are the artwork
+       grids' own column counts rather than the shell's — it measures the
+       space between columns, so it steps where the columns do. .fgGrid,
+       .awGrid, .pfGrid/.pfGridArt, .albGrid, .bmGrid and .spBody all spend
+       it and nothing else; the per-breakpoint gaps are gone and those media
+       rules now carry columns only. Nothing holding artwork adds a margin or
+       a padding of its own on top of it — a grid spends --artGap and the
+       page inset, full stop.
+
+       .dzGrid IS NOT ARTWORK. Resources and the marketplace ride in the same
+       desktop rule for their column count, but their cards carry a name, a
+       price and a line of meta, and a 5px gutter between two blocks of text
+       reads as a mistake. It keeps 20 / 22 / 24px, stated on its own.
+       AND ONE THAT WAS HIDING. css/auth.css — the sign-in stylesheet — held
+       `@media(max-width:480px){ .awGrid{gap:.3rem} }`, four files away from
+       the grid it narrowed and loading after it, so on a small phone that is
+       what the home page actually used. Deleted; the token covers it.
+       Changed: css/base.css, css/hero.css, css/profile.css, css/ranking.css,
+       css/widgets.css, css/overrides.css, css/viewer.css, css/auth.css,
+       index.html, sw.js.
+
    v220 — top to bottom only, the ground really does close it, and no bars.
 
        THE CLICK NEVER REACHED THE HANDLER. .avBox carried
@@ -4297,7 +4331,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v236';
+const CACHE_VERSION = 'v237';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4349,19 +4383,19 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=12',
-  '/css/hero.css?v=101',
-  '/css/viewer.css?v=34',
+  '/css/base.css?v=13',
+  '/css/hero.css?v=102',
+  '/css/viewer.css?v=35',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
-  '/css/ranking.css?v=4',
-  '/css/profile.css?v=14',
+  '/css/ranking.css?v=5',
+  '/css/profile.css?v=15',
   '/css/admin.css?v=4',
-  '/css/auth.css?v=3',
+  '/css/auth.css?v=4',
   '/css/panels.css?v=13',
   '/css/upload.css?v=15',
-  '/css/widgets.css?v=12',
-  '/css/overrides.css?v=37',
+  '/css/widgets.css?v=13',
+  '/css/overrides.css?v=38',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 

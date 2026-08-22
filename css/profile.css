@@ -304,10 +304,11 @@
     /* artwork grid — the same shape as the grid on the home screen */
     .pfGrid{
       display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:.3rem;padding:0 var(--pfPad);
+      gap:var(--artGap);padding:0 var(--pfPad);
     }
-    @media(min-width:700px){ .pfGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem;} }
-    @media(min-width:1280px){ .pfGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem;} }
+    /* columns only — the gap is --artGap and steps at these same widths */
+    @media(min-width:700px){ .pfGrid{grid-template-columns:repeat(3,minmax(0,1fr));} }
+    @media(min-width:1280px){ .pfGrid{grid-template-columns:repeat(4,minmax(0,1fr));} }
     .pfEmpty{
       padding:3rem 1.25rem;text-align:center;
       font-family:var(--fb);font-size:.9rem;color:var(--txd);

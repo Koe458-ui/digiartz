@@ -1,46 +1,4 @@
 #!/usr/bin/env node
-// What in the stylesheets can never take effect?
-//
-// Fifteen stylesheets load in a fixed order and the later ones restate what the
-// earlier ones said. That is how the overrides layer was built, and it is also
-// how the sheets filled up with declarations nothing can ever read: a rule
-// written in css/viewer.css that css/overrides.css restates at a higher weight
-// is, on every screen there is, dead text. Two kinds of it, and they are not
-// equally safe to delete:
-//
-//   SHADOWED   the same selector and property declared twice inside ONE file,
-//              the later one winning. Deleting the earlier changes nothing at
-//              all -- the winner sits in the same file and loads with it.
-//
-//   CROSS-FILE the same selector and property in two files. The later file
-//              wins today, but deleting the earlier one makes the rule depend
-//              on that later file arriving. That dependency is real: taking
-//              css/viewer.css's own layout out, because css/overrides.css
-//              restated it, is what left the artwork viewer with a zero-width
-//              image pane the day overrides.css did not apply. So these are
-//              REPORTED, not condemned -- the fix for them is to give the
-//              component one owner, not to delete the loser.
-//
-// Progressive-enhancement fallbacks look exactly like shadowed declarations
-// and must never be touched: `justify-content:center` before `safe center`,
-// `min(90vh,..)` before `min(90dvh,..)`, a plain colour before color-mix().
-// They are the reason the older browser still gets a layout. Anything whose
-// winner names a newer feature than its loser is excluded below.
-//
-// A WARNING about the companion question, "is this class used at all". Do not
-// answer it by grepping: class names get built rather than written. The top
-// three rows of a leaderboard wear .m1/.m2/.m3, and the only place they exist
-// is `'xpLbRank' + ' m' + (i + 1)` in js/misc-core.js and js/ranking.js. A
-// search for "m1" finds nothing and the rule looks dead; deleting it takes the
-// gold, silver and bronze off the board. Whole components are server-rendered
-// too — functions/api/store.js writes the subscription cards, so .subCard and
-// forty of its neighbours appear in no file under js/ at all. Opening the page
-// and asking which selectors match nothing is no better: with no backend,
-// 1876 of 3682 selectors match nothing, and almost all of them are simply
-// waiting for data. Every candidate has to be read before it is believed.
-//
-// Run: node scripts/check-css-dead.mjs [--verbose]
-// Exits 0 always; this reports, it does not gate.
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 
@@ -49,9 +7,6 @@ const ORDER = ['base.css','hero.css','viewer.css','community.css','connect.css',
   'select.css','analytics.css'];
 const FILES = ORDER.filter((f) => existsSync('css/' + f));
 const verbose = process.argv.includes('--verbose');
-
-// a declaration whose value uses one of these is a newer spelling of the one
-// above it, kept as a fallback for browsers that do not understand it
 const NEWER = /dvh\b|dvw\b|\bsafe\s|color-mix\(|clamp\(|env\(|:has\(/;
 
 function declarations(file) {

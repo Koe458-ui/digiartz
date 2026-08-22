@@ -4,6 +4,38 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v224 — one line of css was holding every finger on the phone.
+
+       The words were all there and the column would not move a pixel, in the
+       artwork viewer and in the section viewer both.
+
+       overflow-x:hidden, stated over both viewers so nothing could scroll
+       sideways, does not clip one axis and leave the other alone. A visible
+       axis beside a hidden one computes to auto, and auto is a scroll
+       container — so that line quietly made scrollers of the picture pane,
+       the notes, the notes' own scroller, .dzvMedia and .dzvCol: boxes that
+       hold their content exactly and have not one pixel to scroll. Beside it
+       sat overscroll-behavior:contain, written for the two columns from
+       900px, where those same boxes really are the scrollers. A scroll
+       container with nothing to scroll normally hands the gesture up to its
+       parent; contain is the instruction not to. So every finger — on the
+       picture, on the title, on the description — landed in a box with
+       nowhere to go and a wall above it, and the one thing that could scroll
+       never heard about it. A mouse never noticed because the wheel is routed
+       to the panes by hand in js/gallery.js.
+
+       overflow-x:clip clips and makes no scroll container, and where the
+       other axis genuinely scrolls it is used as hidden — which is what the
+       desktop panes already had. contain is now stated on the body at every
+       width and on the panes only from 900px, where they are what scrolls.
+
+       Measured at 430px: the only scroll container left under a finger is
+       .avBody at 1917 scrollable, with everything above it visible or clip
+       and no containment; the section viewer the same, .dzvBody at 3053.
+       Desktop is identical before and after at 900, 1280 and 1500, with one
+       picture and with three.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v223 — the phone gets the words back, because the column is a column again.
 
        On a phone the artwork viewer showed the work and then nothing: no
@@ -4395,7 +4427,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v239';
+const CACHE_VERSION = 'v240';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4449,7 +4481,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=13',
   '/css/hero.css?v=102',
-  '/css/viewer.css?v=37',
+  '/css/viewer.css?v=38',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=5',

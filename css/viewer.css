@@ -1008,10 +1008,24 @@
     }
     /* Each column stops at its own end. Without this a flick that runs out of
        column carries on into whatever is behind it — the page, or the other
-       column — which reads as the view sliding when it should have stopped. */
-    #artModal .avImgPane,#artModal .avSide,#artModal .avBody,
-    #dzView .dzvMedia,#dzView .dzvCol,#dzView .dzvBody{
+       column — which reads as the view sliding when it should have stopped.
+
+       Only on what actually scrolls, and that is a different set at each
+       width. On a phone it is the body and nothing else; the pane and the
+       notes are boxes the body carries. Saying contain on a box that cannot
+       scroll is not harmless — it is a wall. A scroll container that has
+       nothing to scroll normally hands the gesture to its parent, and contain
+       is the instruction not to, so a finger landing anywhere on the picture
+       or the writing was caught by a box with nowhere to go and the column
+       behind it never moved. */
+    #artModal .avBody,#dzView .dzvBody{
       overscroll-behavior:contain;
+    }
+    @media(min-width:900px){
+      #artModal .avImgPane,#artModal .avSide,
+      #dzView .dzvMedia,#dzView .dzvCol{
+        overscroll-behavior:contain;
+      }
     }
 
     /* Top to bottom, and only that.
@@ -1021,11 +1035,28 @@
        broken rather than pushed off the edge. Stated here as a rule over the
        whole of both viewers, because horizontal overflow arrives from
        whatever was added last — a row of buttons, a url in a comment, a
-       table, an embed — and the fix is the same every time. */
+       table, an embed — and the fix is the same every time.
+
+       It is clip and not hidden, and that is the whole of why a phone could not
+       scroll a pixel. overflow-x:hidden against an overflow-y that was never
+       stated does not clip one axis and leave the other alone: the CSS is
+       written so that a visible axis beside a hidden one computes to auto,
+       and auto is a scroll container. So this one line quietly made scrollers
+       of the picture pane, the notes and the notes' own scroller — boxes that
+       hold their content exactly and have not a pixel to scroll — and the
+       finger was handed to one of those every time.
+
+       overflow-x:clip clips without any of that. It makes no scroll
+       container, and it leaves the other axis visible rather than promoting
+       it. Where the other axis really is a scroller — the two columns from
+       900px — clip is used as hidden, which is what those panes already had.
+       And an engine too old to know the value drops the declaration and
+       clips nothing, which is a stray horizontal scrollbar at worst and
+       never a view that will not move. */
     #artModal,#artModal .avBox,#artModal .avBody,#artModal .avImgPane,
     #artModal .avSide,#artModal .avSideScroll,
     #dzView,#dzView .dzvBody,#dzView .dzvMedia,#dzView .dzvCol{
-      overflow-x:hidden;
+      overflow-x:clip;
       overscroll-behavior-x:none;
     }
     #artModal .avSideScroll,#artModal .avSideScroll *,

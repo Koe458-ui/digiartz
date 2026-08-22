@@ -10,8 +10,23 @@
    things you can do with it and everything written about it. */
 #artModal .avBody{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
 #artModal #avAuthorCard{padding:var(--vwPad) var(--vwPad) 0;}
-#artModal .avImgPane{flex:0 0 auto;overflow:visible;background:transparent;}
-#artModal .avImgStage{position:static;height:auto;min-height:0;max-height:none;background:transparent;display:block;}
+/* The picture area is a box, and it is the same box for every artwork.
+
+   It used to be the picture's own size: the stage shrink-wrapped whatever was
+   in it and js measured a height budget and wrote it back as a max-height, so
+   a portrait made a tall narrow frame, a landscape a short wide one, and the
+   rail under it moved to wherever the picture happened to end. Opening one
+   artwork after another resized the furniture every time.
+
+   So the box is stated and the picture is fitted into it — object-fit:contain
+   against max-width and max-height, which shrinks anything too big for the
+   space and leaves anything smaller at its own size. The frame does not move
+   when the picture changes, and nothing in this column scrolls, because there
+   is never anything below the fold of a picture that has been fitted. */
+#artModal .avImgPane{flex:0 0 auto;overflow:hidden;background:transparent;
+  display:flex;flex-direction:column;height:52dvh;min-height:240px;}
+#artModal .avImgStage{position:static;flex:1 1 auto;min-height:0;max-height:none;background:transparent;
+  display:flex;align-items:center;justify-content:center;width:100%;}
 /* The viewport is a plain box around the picture, not a pan surface. It was
    written as one — a zoom that doubled the picture with a transform and let
    it be dragged inside a box with the overflow hidden — and both halves of
@@ -26,11 +41,12 @@
    them. Every gesture is the browser's again, and the touch-action:auto and
    cursor:default that were undoing them from here have gone with the rules
    they were undoing. */
-#artModal .avImgViewport{position:static;height:auto;min-height:0;display:block;background:transparent;border:0;
+#artModal .avImgViewport{position:static;flex:1 1 auto;min-height:0;width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;background:transparent;border:0;
   padding:1rem var(--vwPad) 0;box-sizing:border-box;text-align:center;}
 /* Fit the first screen — and the picture is the way into the full view, so
    the cursor says so. #dzLight in css/viewer.css is what a click opens. */
-#artModal #lbImg{position:static;width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;cursor:zoom-in;}
+#artModal #lbImg{position:static;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;display:block;margin:0 auto;cursor:zoom-in;}
 /* No cap and no auto margins: stacked, the notes take the same measure the
    picture above them takes, which is the shell's. An 860px column centred
    inside a wider one is the floating card this layout is not. */
@@ -296,49 +312,47 @@
     overflow:hidden;
     min-height:0;
   }
+  /* Side by side, the picture's box is the column: full height of the panel,
+     the width the grid gives it, and the same rectangle for every artwork
+     that opens in it. The air around it belongs to the pane, counted once
+     here rather than added around each box inside it, and nothing scrolls —
+     a fitted picture has nothing below its own fold. */
   #artModal .avImgPane{
     grid-column:1; grid-row:1 / span 2;
-    min-height:0;
-    overflow-y:auto; overscroll-behavior:contain;
-    /* The picture and the rail under it are one group, centred in the pane
-       together. "safe" so that if the pair is ever taller than the pane the
-       alignment falls back to start and the top of the work stays reachable. */
-    justify-content:safe center;
-    align-items:center;
+    height:auto; min-height:0;
+    overflow:hidden;
+    padding:var(--vwGap);
+    align-items:stretch;
   }
 
-  /* The picture is a box that is always full, and the rail sits under it.
+  /* The stage takes what the pane has left once the rail has taken its own
+     height, and the picture is fitted into the stage.
 
-     The stage grows to whatever the pane has left once the rail has taken its
-     height; the rail never grows or shrinks. Absolutely positioned inside a
-     relative box, the picture needs no percentage-height chain to be told how
-     tall it may be — which is what kept going wrong when the stage sized to
-     its content instead: grow and the picture hung at the top of an empty
-     pane, shrink and it collapsed to nothing and painted over what followed. */
-  /* The air around the picture and its rail belongs to the pane, counted once
-     here rather than added around each box inside it. */
-  #artModal .avImgPane{ padding:var(--vwGap); }
-
-  /* The box is exactly as tall as the picture, so the rail sits under the
-     work rather than at the foot of the column. --boxH is the pane's height
-     less its padding and less the rail, measured by avFitStage in
-     js/gallery.js and refreshed on resize; the picture takes that or its own
-     height, whichever is the smaller, so it is never blown up either. */
+     This used to be the other way round: the stage was flex:0 0 auto and
+     shrink-wrapped the picture, whose height came from --boxH — a pixel
+     figure measured in js/gallery.js and written back onto the pane. That is
+     what made the frame follow the artwork. A portrait drew a tall narrow
+     box, a landscape a short wide one, the rail sat wherever the picture
+     ended, and every artwork opened moved the furniture. None of it is
+     needed: a flex item with min-height:0 in a column with a definite height
+     already knows how tall it may be, and object-fit:contain already shrinks
+     a picture to fit a box without ever blowing a small one up. */
   #artModal .avImgStage{
-    flex:0 0 auto; min-height:0; width:100%;
+    flex:1 1 auto; min-height:0; width:100%;
     display:flex; align-items:center; justify-content:center;
     position:static; aspect-ratio:auto;
     max-width:100%; max-height:none;
   }
   #artModal .avImgViewport{
-    position:relative; display:block; padding:0;
-    max-width:100%; min-width:0;
+    position:relative; display:flex;
+    align-items:center; justify-content:center;
+    width:100%; height:100%; min-height:0;
+    padding:0; max-width:100%; min-width:0;
   }
   #artModal #lbImg{
     position:static; display:block;
     width:auto; height:auto;
-    max-width:100%;
-    max-height:var(--boxH, 60vh);
+    max-width:100%; max-height:100%;
     object-fit:contain;
     margin:0 auto;
   }

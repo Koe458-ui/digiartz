@@ -4,6 +4,35 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v201 — the frame stops moving with the artwork.
+
+       The artwork viewer's box is a fixed size and always was, but the
+       picture's box inside it was not: the stage shrink-wrapped whatever was
+       in it, and avFitStage measured the pane, subtracted its padding and the
+       rail, and wrote the remainder onto the pane as --boxH for the picture's
+       max-height. So the frame WAS the artwork. A portrait drew a tall narrow
+       box, a landscape a short wide one, a panorama a letterbox, and the rail
+       of thumbnails sat wherever the picture happened to end. Opening one
+       artwork after another moved the furniture every time.
+
+       It is the other way round now. The picture's box is the column: the
+       full height the panel gives it, less the rail if there is one, and the
+       same rectangle for every artwork that opens in it. The picture is
+       fitted into that box with object-fit:contain against max-width and
+       max-height — so it shrinks to fit whatever the space is, and a picture
+       smaller than the box is left at its own size rather than blown up. The
+       notes beside it scroll as they did; the picture's column no longer
+       scrolls at all, because a picture that has been fitted has nothing
+       below its own fold.
+
+       The measuring is gone with the layout that needed it: avFitStage, the
+       ResizeObserver watching the pane and the rail, the frame the strip
+       scheduled after painting thumbnails, and the four calls around image
+       loads. A flex item with min-height:0 in a column with a definite height
+       already knows how tall it may be. The stacked layout gets the same
+       treatment with a stated 52dvh box, so a phone's frame holds still too.
+       Changed: css/overrides.css, js/gallery.js, index.html, sw.js.
+
    v200 — an album opens the picture.
 
        A tap on an album item went to the artwork viewer, the way a tap on any
@@ -3786,7 +3815,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v216';
+const CACHE_VERSION = 'v217';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3850,7 +3879,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=12',
   '/css/upload.css?v=15',
   '/css/widgets.css?v=12',
-  '/css/overrides.css?v=31',
+  '/css/overrides.css?v=32',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 
@@ -3874,7 +3903,7 @@ const SHELL_URLS = [
   '/js/misc-core.js?v=5',
   '/js/app-core.js?v=31',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=98',
+  '/js/gallery.js?v=99',
   '/js/auth.js?v=20',
   '/js/profile.js?v=16',
   '/js/albums.js?v=18',

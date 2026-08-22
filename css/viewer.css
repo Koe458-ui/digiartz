@@ -1,1036 +1,147 @@
 /* artwork viewer */
-    /* ── the artwork viewer ───────────────────────────────────────────────
+    /* ── the artwork viewer — a page, the way the marketplace is ──────────
 
-       Two viewers, written twice on purpose.
+       There is no box any more, because the box is what kept going wrong and
+       the section viewer has never gone wrong once. #dzView — the marketplace
+       listing, the resource, the blog post, the job — is a plain page: fixed
+       to the window, the site's own ground, a bar across the top, and under
+       it either one scrolling column or two. No panel, no margin, no
+       backdrop, nothing centred inside anything else, and nothing whose size
+       depends on what is put in it.
 
-       Everything below the overlay is inside one of two media blocks, and
-       which one a visitor gets is decided by what they are pointing with —
-       not by how many CSS pixels wide their window happens to be.
+       This is that layout, with the artwork viewer's own element names. Every
+       number is the section viewer's number: the same shell inset, the same
+       gap between the columns, the same 320-to-480 notes column, the same
+       1100px cap on the picture and the same one-screen cap on its height.
+       Where the two files disagree the answer is now "whatever #dzView does",
+       and css/overrides.css is where that lives.
 
-         mobile    any window under 900px
-         desktop   a fine pointer at any width, or any window from 900 up,
-                   and written second so it wins wherever both match
+       One breakpoint, 900px, and it is the section viewer's breakpoint: below
+       it everything is one column that scrolls, above it the work and the
+       notes scroll beside each other. No box means nothing to opt out of and
+       no second layout to fall through into. */
 
-       The two have to cover everything between them, and the first attempt at
-       this did not: mobile asked for (pointer:coarse) and desktop for
-       (pointer:fine), which leaves a browser reporting pointer:none — a
-       headless one, a kiosk, some accessibility setups — matching neither,
-       with no layout at all. Measured, that dropped the box to 42% of the
-       window across and 395% of it down. So mobile is the plain width now and
-       desktop overrides it for a mouse: every visitor matches at least one,
-       and the fallback for an unknown pointer is a whole-screen viewer rather
-       than none.
-
-       Width alone cannot tell a phone from a laptop that has been zoomed. A
-       1920 screen at 150% system scaling is 1280 CSS px and one step of
-       browser zoom is under 900, at which point a width-only rule hands a
-       laptop with a mouse the layout written for a thumb: the whole screen,
-       one column, and text that does not scroll on its own because the
-       column already does. That is exactly what was being reported, over and
-       over, while the desktop rules sat in a block that window was never in.
-       A mouse is a mouse at every zoom level.
-
-       Neither block inherits a layout rule from the other and there is no
-       un-queried layout rule anywhere in this file, so no property of one can
-       reach the other by accident.
-
-       That is not tidiness, it is the bug. The desktop layout used to be a
-       set of overrides on top of a base written for a phone, and the base had
-       no media query — so it governed every width the overrides did not
-       claim, a laptop at 150% scaling with one step of zoom landed in it, and
-       fix after fix was written into a block that width was never in. Written
-       out twice, changing one cannot move the other, and there is nowhere for
-       a width to fall through to.
-
-       The cost is that a genuinely shared change has to be made in both. That
-       is the trade that was asked for, and it is the cheaper of the two. */
-
-    /* the overlay is the one shared thing: what makes this a dialog rather
-       than part of the page, and identical for both viewers */
     #artModal{
       position:fixed;inset:0;z-index:1100;
-      display:flex;align-items:center;justify-content:center;
-      padding:0;
-      opacity:0;visibility:hidden;pointer-events:none;
-      transition:opacity .32s cubic-bezier(.22,1,.36,1),visibility .32s;
+      display:none;flex-direction:column;
+      background:var(--bg);
       isolation:isolate;
     }
-    #artModal::before{
-      content:'';position:absolute;inset:0;z-index:-1;
-      background:color-mix(in srgb,var(--bg) 85%,transparent);
-      -webkit-backdrop-filter:blur(10px) saturate(120%);
-      backdrop-filter:blur(10px) saturate(120%);
+    #artModal.open{display:flex;}
+    /* the ground was a blur over the page behind a panel; there is no panel
+       and nothing behind it now */
+    #artModal::before{content:none;}
+
+    /* .avBox is not a box. It is the column the bar and the body sit in, and
+       it is the whole page. */
+    #artModal .avBox{
+      width:100%;height:100%;max-width:none;max-height:none;
+      display:flex;flex-direction:column;
+      background:transparent;
+      border:0;border-radius:0;box-shadow:none;
+      overflow:hidden;
+      transform:none;opacity:1;transition:none;
     }
-    #artModal.open{opacity:1;visibility:visible;pointer-events:auto;}
-    #artModal.closing{opacity:0;transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;}
+    #artModal.open .avBox,#artModal.closing .avBox{transform:none;opacity:1;}
 
-    /* ══ THE MOBILE VIEWER — a finger, in a small window ═══════════════════
-       The whole screen, one column, and the column scrolls: the work, then
-       who made it, then everything written about it. A phone has no room to
-       put two things side by side and nothing here tries to. */
-    @media (max-width:899px){
-      #artModal .avBox{
-        position:relative;
-        width:100%;height:100%;max-width:none;max-height:none;
-        display:flex;flex-direction:column;
-        background:var(--bg);
-        border:0;border-radius:0;box-shadow:none;
-        overflow:hidden;
-        transform:scale(.96);opacity:0;
-        transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .28s ease;
-      }
-      #artModal.open .avBox{transform:none;opacity:1;}
-      #artModal.closing .avBox{transform:scale(.97);opacity:0;transition:transform .2s ease,opacity .18s ease;}
-
-      #artModal .avTopBar{
-        flex:0 0 auto;position:relative;z-index:6;
-        display:flex;align-items:center;justify-content:space-between;
-        padding:.7rem 1rem;
-        border-bottom:1px solid var(--bdr);background:var(--bg);
-      }
-      /* one column, and it is the scroller */
-      #artModal .avBody{
-        flex:1 1 auto;min-height:0;
-        display:flex;flex-direction:column;
-        overflow-y:auto;overflow-x:hidden;
-      }
-      #artModal #avAuthorCard{padding:1.2rem 1.2rem 0;}
-      /* the work gets a stated share of the screen and is fitted into it, so
-         the frame is the same for every artwork opened */
-      #artModal .avImgPane{
-        flex:0 0 auto;
-        display:flex;flex-direction:column;
-        height:46dvh;min-height:200px;
-        background:transparent;overflow:hidden;
-      }
-      #artModal .avImgStage{
-        flex:1 1 auto;min-height:0;width:100%;
-        display:flex;align-items:center;justify-content:center;
-        background:transparent;position:static;
-      }
-      #artModal .avImgViewport{
-        position:relative;flex:1 1 auto;min-height:0;
-        width:100%;height:100%;
-        display:flex;align-items:center;justify-content:center;
-        padding:.9rem 1.2rem 0;box-sizing:border-box;
-        background:transparent;border:0;overflow:hidden;
-      }
-      #artModal #lbImg{
-        position:static;display:block;margin:0 auto;
-        width:auto;height:auto;max-width:100%;max-height:100%;
-        object-fit:contain;cursor:zoom-in;
-        user-select:none;-webkit-user-drag:none;
-      }
-      #artModal .avImgStack{
-        flex:0 0 auto;width:100%;
-        padding:.8rem 1.2rem 0;height:calc(64px + .8rem);
-      }
-      #artModal .avThumb{width:64px;height:64px;}
-      /* the notes are the rest of the one column; they do not scroll on their
-         own because the column already does */
-      #artModal .avSide{
-        flex:0 0 auto;width:100%;margin:0;
-        background:transparent;border-left:0;
-        display:flex;flex-direction:column;min-height:0;
-      }
-      #artModal .avSideScroll{
-        height:auto;max-height:none;overflow:visible;
-        display:flex;flex-direction:column;
-        gap:1.2rem;padding:1.2rem 1.2rem 4rem;
-      }
+    #artModal .avTopBar{
+      flex:0 0 auto;position:relative;z-index:6;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:.75rem 1.1rem;
+      border-bottom:1px solid var(--bdr);
+      background:var(--bg);
     }
 
-    /* ══ THE DESKTOP VIEWER — a mouse, or a window with room ═══════════════
-       Second of the two, so a fine pointer wins wherever the two could both
-       match: a laptop zoomed to 640 CSS px is still a laptop.
+    /* one column, and it scrolls — the section viewer's .dzvBody */
+    #artModal .avBody{
+      flex:1;min-height:0;
+      display:flex;flex-direction:column;
+      overflow-y:auto;overflow-x:hidden;
+      padding-bottom:6rem;
+    }
+    #artModal #avAuthorCard{padding:var(--vwPad,1.5rem) var(--vwPad,1.5rem) 0;}
 
-       A fixed box with the work on the left and the notes on the right. The
-       box is 80% of the window across and 90% down — a 10% margin left and
-       right, 5% above and below — and it is the same rectangle whatever is
-       opened in it: the picture is fitted to the space it gets and the notes
-       scroll in theirs, so nothing inside has any say in how big it is. */
-    @media (pointer:fine), (min-width:900px){
-      #artModal .avBox{
-        position:relative;
-        width:80%;height:90%;max-width:none;max-height:none;
-        display:flex;flex-direction:column;
-        background:var(--bg);
-        border:1px solid var(--bdr);
-        border-radius:16px;
-        box-shadow:0 40px 100px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.35);
-        overflow:hidden;
-        transform:scale(.92) translateY(10px);opacity:0;
-        transition:transform .38s cubic-bezier(.22,1,.36,1),opacity .32s cubic-bezier(.22,1,.36,1);
-      }
-      #artModal.open .avBox{transform:scale(1) translateY(0);opacity:1;}
-      #artModal.closing .avBox{
-        transform:scale(.95) translateY(6px);opacity:0;
-        transition:transform .22s cubic-bezier(.4,0,1,1),opacity .2s cubic-bezier(.4,0,1,1);
-      }
+    /* the work — the section viewer's .dzvMedia */
+    #artModal .avImgPane{
+      flex:0 0 auto;
+      background:transparent;box-sizing:border-box;text-align:center;
+      padding:var(--vwPad,1.5rem) var(--vwPad,1.5rem) 0;
+    }
+    #artModal .avImgStage{
+      display:block;position:static;
+      width:auto;height:auto;min-height:0;max-height:none;
+      background:transparent;
+    }
+    #artModal .avImgViewport{
+      display:block;position:relative;
+      width:auto;height:auto;min-height:0;
+      padding:0;background:transparent;border:0;overflow:visible;
+      text-align:center;
+    }
+    #artModal #lbImg{
+      position:static;display:inline-block;margin:0 auto;
+      width:auto;max-width:min(1100px,100%);
+      height:auto;max-height:calc(100dvh - 132px);
+      object-fit:contain;cursor:zoom-in;
+      user-select:none;-webkit-user-drag:none;
+    }
+    #artModal .avImgViewport.loading::after{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(100deg,transparent 30%,rgba(var(--pg-rgb),.1) 50%,transparent 70%);
+      background-size:200% 100%;
+      animation:amShimmer 1.3s ease-in-out infinite;
+    }
+    #artModal .avImgViewport.loading img{opacity:0;}
+    #artModal .avImgStack{
+      display:flex;gap:.5rem;overflow-x:auto;
+      padding:var(--vwGap,1.5rem) var(--vwPad,1.5rem) 0;
+    }
+    #artModal .avThumb{width:72px;height:72px;flex:0 0 auto;}
 
-      #artModal .avTopBar{
-        flex:0 0 auto;position:relative;z-index:6;
-        display:flex;align-items:center;justify-content:space-between;
-        padding:.75rem 1.6rem;
-        border-bottom:1px solid var(--bdr);background:var(--bg);
-      }
-      /* two columns, and the panes are what scroll — never the body */
+    /* the notes — the section viewer's .dzvCol */
+    #artModal .avSide{
+      display:block;width:100%;margin:0;min-height:0;
+      background:transparent;border-left:0;overflow:visible;
+    }
+    #artModal .avSideScroll{
+      margin:0;display:flex;flex-direction:column;
+      height:auto;max-height:none;overflow:visible;
+      gap:var(--vwGap,1.5rem);
+      padding:var(--vwPad,1.5rem) var(--vwPad,1.5rem) 4rem;
+    }
+
+    /* ══ two columns from 900px, the section viewer's breakpoint ═══════════
+       The body stops scrolling and the two columns scroll instead, each to
+       its own end, which is what the marketplace listing does. */
+    @media(min-width:900px){
+      #artModal .avTopBar{padding-inline:var(--shellPad,2rem);}
       #artModal .avBody{
-        flex:1 1 auto;min-height:0;
         display:grid;
         grid-template-columns:minmax(0,1fr) clamp(320px,26%,480px);
-        grid-template-rows:auto minmax(0,1fr);
-        column-gap:0;padding-inline:0;
+        column-gap:clamp(1.6rem,2.6vw,3rem);
+        align-items:stretch;
         overflow:hidden;
+        padding-inline:var(--shellPad,2rem);
+        padding-bottom:0;
+        min-height:0;
       }
-      /* the picture's box is the column: full height of the panel, the width
-         the grid gives it, the same rectangle every time */
       #artModal .avImgPane{
         grid-column:1;grid-row:1 / span 2;
-        height:auto;min-height:0;
-        display:flex;flex-direction:column;
-        overflow:hidden;
-        padding:1.6rem;
-        background:transparent;
+        min-height:0;
+        overflow-y:auto;overscroll-behavior:contain;
+        padding:var(--vwGap,1.5rem) 0;
       }
-      #artModal .avImgStage{
-        flex:1 1 auto;min-height:0;width:100%;max-height:none;
-        display:flex;align-items:center;justify-content:center;
-        position:static;background:transparent;
-      }
-      #artModal .avImgViewport{
-        position:relative;flex:1 1 auto;min-height:0;
-        width:100%;height:100%;max-width:100%;min-width:0;
-        display:flex;align-items:center;justify-content:center;
-        padding:0;background:transparent;border:0;overflow:hidden;
-      }
-      #artModal #lbImg{
-        position:static;display:block;margin:0 auto;
-        width:auto;height:auto;max-width:100%;max-height:100%;
-        object-fit:contain;cursor:zoom-in;
-        transition:opacity .1s ease;
-        user-select:none;-webkit-user-drag:none;
-      }
-      /* a stated height, so the stage above it is never resized once the
-         thumbnails render */
-      #artModal .avImgStack{
-        flex:0 0 auto;
-        padding:1.6rem 0 0;height:calc(72px + 1.6rem);
-        width:100%;align-self:stretch;
-      }
-      #artModal .avThumb{width:72px;height:72px;}
-
-      #artModal #avAuthorCard{padding:0;}
-      /* avPlaceCard moves the card into the notes' scroller at this width. If
-         it has not, this is the row it falls back to: pinned at the head of
-         the notes rather than taking height off both columns. */
+      #artModal #lbImg{max-width:100%;}
+      #artModal .avImgStack{padding:var(--vwGap,1.5rem) 0 0;}
+      #artModal #avAuthorCard{padding:var(--vwGap,1.5rem) 0 0;}
       #artModal .avBody > #avAuthorCard{grid-column:2;grid-row:1;align-self:start;}
       #artModal .avSide{
         grid-column:2;grid-row:2;
-        width:auto;max-width:none;margin:0;
-        min-height:0;overflow:hidden;
-        display:flex;flex-direction:column;
-        background:transparent;border-left:0;
-      }
-      #artModal .avSideScroll{
-        flex:1 1 auto;min-height:0;
-        height:auto;max-height:none;
+        max-width:none;margin:0;min-height:0;
         overflow-y:auto;overscroll-behavior:contain;
-        display:flex;flex-direction:column;
-        gap:1.6rem;padding:1.6rem 1.6rem 4rem;
       }
-      #artModal .avImgViewport.loading::after{
-        content:'';position:absolute;inset:0;
-        background:linear-gradient(100deg,transparent 30%,rgba(var(--pg-rgb),.1) 50%,transparent 70%);
-        background-size:200% 100%;
-        animation:amShimmer 1.3s ease-in-out infinite;
-      }
-      #artModal .avImgViewport.loading img{opacity:0;}
+      #artModal .avSideScroll{padding:var(--vwGap,1.5rem) 0 4rem;}
     }
-
-    .avSideScroll::-webkit-scrollbar{width:6px;}
-    .avSideScroll::-webkit-scrollbar-thumb{background:var(--bdrh);border-radius:3px;}
-    /* The author strip, its avatar and its two lines of text are gone with
-       the markup that carried them: the viewer's card is drawn by dzVwCard
-       and wears .vwCard. Nothing on the page uses these names any more. */
-    .avTitle{
-      font-family:var(--fd);font-weight:800;font-size:1.45rem;
-      color:var(--tx);line-height:1.25;word-break:break-word;
-    }
-    .avSubType{
-      font-family:var(--fb);font-size:.82rem;font-weight:600;
-      color:var(--pg);margin-top:.3rem;
-    }
-    .avDiv{width:100%;height:1px;background:var(--bdr);flex:0 0 auto;}
-    .avMetaList{display:flex;flex-direction:column;gap:.75rem;}
-    .avMetaRow{display:flex;align-items:center;justify-content:space-between;font-size:.83rem;gap:1rem;}
-    .avMetaLbl{color:rgba(var(--tx2-rgb),.55);font-family:var(--fb);}
-    .avMetaVal{color:var(--tx);font-family:var(--fb);font-weight:500;text-align:right;}
-    .avBlockH{
-      font-family:var(--fb);font-weight:700;font-size:.92rem;
-      color:var(--tx);margin-bottom:.6rem;
-    }
-    .avDescTxt{
-      font-family:var(--fb);font-size:.85rem;line-height:1.65;
-      color:rgba(var(--tx2-rgb),.75);word-break:break-word;
-    }
-    .avTagList{display:flex;flex-wrap:wrap;gap:.5rem;}
-    .avTagChip{
-      font-family:var(--fb);font-size:.75rem;font-weight:600;color:var(--ps);
-      background:rgba(var(--pg-rgb),.12);border:1px solid rgba(var(--pg-rgb),.3);
-      padding:.3rem .7rem;border-radius:8px;
-    }
-    .avReportBtn{
-      margin-top:auto;flex:0 0 auto;
-      display:flex;align-items:center;justify-content:center;gap:.5rem;
-      background:rgba(var(--pg-rgb),.04);border:1px solid var(--bdr);
-      color:rgba(var(--tx2-rgb),.7);font-family:var(--fb);
-      font-size:.82rem;font-weight:600;padding:.75rem 1rem;border-radius:10px;
-      cursor:pointer;transition:background .2s,color .2s,border-color .2s;
-    }
-    .avReportBtn:hover{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
-
-    /* report modals — a CLASS, not an id, and that is the whole point.
-       These rules carry three things a report sheet cannot do without: the
-       fixed full-screen overlay, and `display:none` until .open is added.
-       Written against #rptMod alone, a second report sheet inherits none of
-       them — it is not hidden, it is not positioned, and it lands in the
-       normal page flow at the bottom of the document, permanently visible.
-       That is exactly what the account-report sheet did when it was added
-       beside the artwork one. Any dialog wearing .rptMod is now an overlay. */
-    .rptMod{
-      position:fixed;inset:0;z-index:4000;display:none;
-      align-items:center;justify-content:center;padding:1rem;
-      background:rgba(0,0,0,.72);backdrop-filter:blur(4px);
-    }
-    .rptMod.open{display:flex;}
-    .rptCard{
-      width:100%;max-width:460px;max-height:88dvh;overflow-y:auto;
-      background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
-      padding:1.3rem;
-      -webkit-overflow-scrolling:touch;
-    }
-    .rptTitle{font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--tx);margin-bottom:.2rem;}
-    .rptSub{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-bottom:1rem;}
-    .rptOpts{display:flex;flex-direction:column;gap:.1rem;margin-bottom:1rem;}
-    .rptOpt{
-      display:flex;align-items:center;gap:.6rem;cursor:pointer;
-      padding:.5rem .55rem;border-radius:8px;
-      font-family:var(--fb);font-size:.85rem;color:var(--tx);
-      transition:background .15s;
-    }
-    .rptOpt:hover{background:var(--sur2);}
-    .rptOpt input{accent-color:var(--pg);width:16px;height:16px;flex-shrink:0;cursor:pointer;}
-    .rptLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);margin-bottom:.4rem;}
-    .rptArea{
-      width:100%;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;
-      padding:.7rem;color:var(--tx);font-family:var(--fb);font-size:.85rem;
-      resize:vertical;min-height:72px;margin-bottom:1rem;
-    }
-    .rptArea:focus{outline:none;border-color:var(--pg);}
-    .rptChecks{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1.2rem;}
-    .rptCheck{display:flex;align-items:center;gap:.6rem;cursor:pointer;font-family:var(--fb);font-size:.84rem;color:var(--tx);}
-    .rptCheck input{accent-color:var(--pg);width:16px;height:16px;flex-shrink:0;cursor:pointer;}
-    .rptActions{display:flex;gap:.7rem;justify-content:flex-end;}
-    .rptBtn{
-      font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;
-      padding:.6rem 1.2rem;border-radius:8px;cursor:pointer;
-      border:1px solid var(--bdr);background:none;color:var(--tx);
-      transition:border-color .2s,background .2s;
-    }
-    .rptBtn:hover{border-color:var(--pg);}
-    .rptBtn--go{border-color:var(--danger-bd);background:var(--danger-bg);color:var(--danger);}
-    .rptBtn--go:hover{background:var(--danger-bg-hover);}
-    .rptBtn:disabled{opacity:.55;cursor:default;}
-
-    .avDlNote{
-      font-family:var(--fm);font-size:.64rem;letter-spacing:.08em;
-      color:var(--txd);text-align:center;margin:-.35rem 0 .1rem;
-    }
-    .avDlNote--out{color:var(--danger);}
-
-    /* daily download quota modal */
-    #dlQuotaMod{
-      position:fixed;inset:0;z-index:5000;display:none;
-      align-items:center;justify-content:center;padding:1rem;
-      background:rgba(0,0,0,.72);backdrop-filter:blur(4px);
-    }
-    #dlQuotaMod.open{display:flex;}
-    .dlqCard{
-      width:100%;max-width:400px;
-      background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
-      padding:1.6rem 1.4rem 1.3rem;text-align:center;
-    }
-    .dlqIcon{
-      width:3rem;height:3rem;margin:0 auto .9rem;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-size:1.35rem;color:var(--pg);
-      background:rgba(var(--pg-rgb),.1);border:1px solid rgba(var(--pg-rgb),.28);
-    }
-    .dlqTitle{font-family:var(--fd);font-size:1.08rem;font-weight:700;color:var(--tx);margin-bottom:.5rem;}
-    .dlqSub{font-family:var(--fb);font-size:.85rem;line-height:1.55;color:var(--txd);margin:0 0 .9rem;}
-    .dlqMeta{
-      font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;
-      color:var(--txd);opacity:.85;margin-bottom:1.3rem;min-height:.8rem;
-    }
-    .dlqActions{display:flex;gap:.7rem;}
-    .dlqBtn{
-      flex:1;font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;
-      padding:.75rem .8rem;border-radius:8px;cursor:pointer;
-      border:1px solid var(--bdr);background:none;color:var(--tx);
-      transition:border-color .2s,background .2s,color .2s;
-    }
-    .dlqBtn:hover{border-color:var(--pg);}
-    .dlqBtn--go{
-      border-color:rgba(var(--pg-rgb),.5);
-      background:rgba(var(--pg-rgb),.12);color:var(--pg);font-weight:600;
-    }
-    .dlqBtn--go:hover{background:rgba(var(--pg-rgb),.2);}
-    .avActWide[aria-busy="true"]{opacity:.6;cursor:default;}
-    .avActWide:disabled{opacity:.6;cursor:default;}
-    @media(max-width:420px){
-      .dlqActions{flex-direction:column-reverse;}
-    }
-    @media(max-width:900px){ .avTitle{font-size:1.2rem;} }
-    @media(max-width:480px){ #artModal .avTopBar{padding:.7rem 1rem;} }
-    @media(prefers-reduced-motion:reduce){
-      #artModal .avImgViewport img{transition:none;}
-      #artModal,#artModal .avBox{transition:opacity .15s linear;}
-      #artModal .avBox{transform:none!important;}
-    }
-
-    #communityPage{
-  position:fixed;inset:0;z-index:500;
-  background:var(--bg);
-  display:flex;flex-direction:column;
-  transform:translateX(100%);
-  transition:transform .45s cubic-bezier(.22,1,.36,1);
-}
-    #communityPage.open{transform:translateX(0);}
-
-    /* community header */
-    .cmHdr{
-      position:sticky;top:0;z-index:10;
-      border-bottom:1px solid var(--bdr);
-      /* reserve back button zone — and never start inside the shell */
-      padding:1.1rem max(var(--shellPad),4.2rem);
-      flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;gap:.8rem;
-      isolation:isolate;
-    }
-    /* back button */
-    .cmHdrBack{
-      display:none;position:absolute;left:1.5rem;
-      background:none;border:1px solid var(--bdr);border-radius:8px;
-      width:34px;height:34px;flex-shrink:0;
-      align-items:center;justify-content:center;
-      color:var(--tx);cursor:pointer;transition:border-color .2s,background .2s;
-    }
-    .cmHdrBack.show{display:flex;}
-    .cmHdrBack:hover{border-color:var(--pg);background:var(--pdim);}
-    .cmHdrBack svg{width:16px;height:16px;}
-    /* blur layer */
-    .cmHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--sur) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
-    .cmHdrTitle{
-      font-family:var(--fd);font-size:1.15rem;font-weight:800;
-      letter-spacing:.16em;
-      background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-      display:flex;align-items:center;gap:.4rem;
-      text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
-    }
-    .cmHdrTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);flex-shrink:0;}
-    .cmHdrTitle{min-width:0;max-width:100%;}
-    #cmHdrTitleTxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    /* narrow screens */
-    @media(max-width:480px){
-      .cmHdrTitle{font-size:1.02rem;letter-spacing:.08em;}
-      .cmHdr{padding:1rem max(var(--shellPad),3.9rem);}
-      .cmHdrBack{left:1rem;}
-    }
-
-    /* Home mode is not a mode any more: #cmHomeHdr wears .fgTopBar, the same
-       header the gallery and the profile use. Only the badge on one of its
-       buttons is this section's own. */
-    .cmHdrBadge{
-      position:absolute;top:5px;right:5px;
-      min-width:17px;height:17px;padding:0 .25rem;border-radius:999px;
-      display:flex;align-items:center;justify-content:center;
-      font-family:var(--fm);font-size:.55rem;line-height:1;
-      background:#E4572E;color:#fff;
-      border:2px solid var(--bg);
-      pointer-events:none;
-    }
-    .cmHdrBadge[hidden]{display:none;}
-
-    /* chat banner mode */
-    .cmHdrChat{display:none;align-items:center;gap:.7rem;flex:1;min-width:0;}
-    .cmHdr.chat{justify-content:flex-start;gap:.5rem;padding:.7rem var(--shellPad);}
-    .cmHdr.chat .cmHdrTitle{display:none;}
-    .cmHdr.chat .cmHdrChat{display:flex;}
-    /* back arrow in flow */
-    .cmHdr.chat .cmHdrBack{
-      position:static;left:auto;border:none;background:none;
-      width:32px;height:32px;margin-left:-.35rem;
-    }
-    .cmHdr.chat .cmHdrBack svg{width:20px;height:20px;}
-    .cmHdr.chat .cmHdrBack:hover{background:var(--pdim);}
-    .cmHdrAv{
-      width:40px;height:40px;border-radius:50%;flex-shrink:0;overflow:hidden;
-      display:flex;align-items:center;justify-content:center;
-      font-family:var(--fb);font-size:1.02rem;font-weight:700;line-height:1;
-      color:var(--text-on-accent);background:linear-gradient(135deg,var(--pb),var(--pg));
-      border:1px solid var(--bdrh);
-    }
-    .cmHdrAv img{width:100%;height:100%;object-fit:cover;display:block;}
-    .cmHdrInfo{display:flex;flex-direction:column;min-width:0;gap:.14rem;flex:1;}
-    .cmHdrName{
-      font-family:var(--fb);font-size:.95rem;font-weight:700;color:var(--tx);
-      line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    .cmHdrSub{
-      font-family:var(--fm);font-size:.58rem;letter-spacing:.07em;color:var(--txd);
-      line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      display:flex;align-items:center;gap:.32rem;
-    }
-    .cmHdrSub .dot{
-      width:6px;height:6px;border-radius:50%;flex-shrink:0;
-      background:#2ecf7e;box-shadow:0 0 6px #2ecf7e;
-    }
-    /* avatar and name tap target */
-    .cmHdrTap{
-      display:flex;align-items:center;gap:.7rem;flex:1;min-width:0;
-      border-radius:10px;padding:.2rem .35rem;margin:-.2rem -.35rem;
-      transition:background .2s;
-    }
-    .cmHdrTap.on{cursor:pointer;}
-    .cmHdrTap.on:active{background:var(--pdim);}
-    /* community page tokens */
-    #communityPage .cmHdrName,#cmChatPanel .cmHdrName{color:var(--cmTx);}
-    #communityPage .cmHdrSub,#cmChatPanel .cmHdrSub{color:var(--cmTxd);}
-    #communityPage .cmHdrAv,#cmChatPanel .cmHdrAv{border:1px solid var(--cmBdrh);}
-    #communityPage .cmHdr.chat .cmHdrBack,#cmChatPanel .cmHdr.chat .cmHdrBack{color:var(--cmTx);}
-    #communityPage .cmHdr.chat .cmHdrBack:hover,#cmChatPanel .cmHdr.chat .cmHdrBack:hover{background:var(--cmAccentDim);}
-    #communityPage .cmHdrTap.on:active,#cmChatPanel .cmHdrTap.on:active{background:var(--cmAccentDim);}
-    @media(max-width:480px){
-      .cmHdr.chat{padding:.6rem var(--shellPad);}
-      .cmHdrAv{width:36px;height:36px;font-size:.92rem;}
-      .cmHdrName{font-size:.9rem;}
-    }
-
-    /* comments list */
-    .cpBody{
-      flex:1;
-      overflow-y:auto;
-      padding:1.5rem 1.5rem 1.2rem;
-    }
-    @media(max-width:640px){.cpBody{padding:1rem 1rem .9rem;}}
-
-    /* placeholder */
-    .cpEmpty{
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      height:100%;min-height:200px;
-      gap:.8rem;
-      font-family:var(--fm);font-size:.76rem;letter-spacing:.2em;color:var(--txd);
-      text-align:center;
-      padding:3rem 2rem;
-    }
-    .cpEmpty .cpEIco{font-size:2rem;color:color-mix(in srgb,var(--tc) 40%,transparent);}
-
-    /* comment card */
-    .cpComment{
-      display:flex;gap:.9rem;
-      padding:.9rem 1rem;
-      margin-bottom:.65rem;
-      border-radius:14px;
-      background:color-mix(in srgb,var(--tc) 6%,transparent);
-      border:1px solid var(--bdr);
-      transition:border-color .2s,background .2s;
-    }
-    .cpComment:last-child{margin-bottom:0;}
-    .cpComment:hover{border-color:var(--bdrh);background:color-mix(in srgb,var(--tc) 9%,transparent);}
-    .cpComment.hasImage{align-items:flex-start;}
-    /* user avatars */
-    .cpAvatar{
-      position:relative;
-      width:34px;height:34px;border-radius:50%;
-      background:color-mix(in srgb,var(--tc) 22%,transparent);
-      border:1px solid var(--bdrh);
-      display:flex;align-items:center;justify-content:center;
-      font-family:var(--fd);font-size:.85rem;font-weight:700;
-      color:var(--ps);flex-shrink:0;
-      overflow:visible;
-    }
-    /* avatar image */
-    .cpAvatar .cpAvatarImg{
-      width:100%;height:100%;border-radius:50%;
-      object-fit:cover;display:block;
-    }
-    .cpAvatar::after{
-      content:'';position:absolute;right:-1px;bottom:-1px;
-      width:10px;height:10px;border-radius:50%;
-      background:#22c55e;border:2px solid var(--sur);
-    }
-
-    /* tappable identity */
-    .cpMsgRow--them .cpMsgAvatar,
-    .cpMsgRow--them .cpBubbleName,
-    .cpShowcaseHead .cpAvatar,
-    .cpShowcaseHead .cpCommentUser{cursor:pointer;}
-    .cpCommentUser{font-family:var(--fm);font-size:.78rem;font-weight:700;letter-spacing:.15em;color:var(--ps);}
-    .cpCommentTime{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--txd);}
-
-    /* chat rows */
-    .chatDay{display:flex;justify-content:center;margin:1rem 0 .7rem;}
-    .chatDay span{
-      font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;
-      color:var(--txd);
-      background:color-mix(in srgb,var(--sur2) 85%,transparent);
-      border:1px solid var(--bdr);
-      padding:.3rem .85rem;border-radius:999px;
-      backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-    }
-    .cpMsgRow{display:flex;align-items:flex-end;gap:.5rem;margin-bottom:.45rem;}
-    .cpMsgRow--cont{margin-top:-.2rem;}
-    .cpMsgRow--me{justify-content:flex-end;}
-    .cpMsgAvatar{width:30px;height:30px;font-size:.76rem;}
-    .cpMsgAvatar::after{display:none;}
-    .cpMsgAvatar--ghost{visibility:hidden;}
-    .cpBubble{
-      position:relative;
-      max-width:min(78%,520px);
-      padding:.45rem .7rem .3rem .75rem;
-      border-radius:14px;
-      font-family:var(--fb);font-size:.92rem;line-height:1.45;
-      color:var(--tx);
-      box-shadow:0 1px 1px rgba(0,0,0,.12);
-    }
-    .cpMsgRow--them .cpBubble{background:var(--sur2);border:1px solid var(--bdr);}
-    .cpMsgRow--them:not(.cpMsgRow--cont) .cpBubble{border-bottom-left-radius:4px;}
-    .cpMsgRow--me .cpBubble{background:var(--pdim);border:1px solid rgba(var(--pg-rgb),.35);}
-    .cpMsgRow--me:not(.cpMsgRow--cont) .cpBubble{border-bottom-right-radius:4px;}
-    .cpBubbleName{
-      font-family:var(--fm);font-size:.66rem;font-weight:700;
-      letter-spacing:.08em;color:var(--pb);margin:.1rem 0 .2rem;
-    }
-    .cpBubbleText{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
-    /* timestamp in last line */
-    .cpBubbleTime{
-      float:right;margin:.65em -.1em 0 .65em;
-      font-family:var(--fm);font-size:.56rem;letter-spacing:.04em;
-      color:var(--txd);white-space:nowrap;user-select:none;
-    }
-    /* chat wallpaper */
-    #cmChatView .cpBody,#dmChatView .cpBody{
-      background-image:radial-gradient(color-mix(in srgb,var(--tc) 8%,transparent) 1px,transparent 1.5px);
-      background-size:22px 22px;
-    }
-
-    /* emoji picker */
-    #emojiPanel{
-      position:fixed;z-index:2100;
-      width:min(340px,calc(100vw - 1.6rem));
-      max-height:320px;
-      display:none;flex-direction:column;
-      background:var(--sur);
-      border:1px solid var(--bdrh);border-radius:16px;
-      box-shadow:0 14px 44px rgba(0,0,0,.45);
-      overflow:hidden;
-    }
-    #emojiPanel.open{display:flex;}
-    .emojiTabs{
-      display:flex;gap:.15rem;flex-shrink:0;
-      padding:.45rem .5rem;border-bottom:1px solid var(--bdr);
-      background:var(--sur2);
-      overflow-x:auto;scrollbar-width:none;
-    }
-    .emojiTabs::-webkit-scrollbar{display:none;}
-    .emojiTab{
-      flex-shrink:0;width:34px;height:34px;border-radius:9px;
-      display:flex;align-items:center;justify-content:center;
-      background:transparent;border:none;cursor:pointer;
-      font-size:1.05rem;line-height:1;opacity:.55;
-      transition:background .2s,opacity .2s;
-    }
-    .emojiTab:hover{opacity:.9;background:var(--pdim);}
-    .emojiTab.active{opacity:1;background:var(--pdim);}
-    .emojiGrid{
-      flex:1;overflow-y:auto;
-      display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));
-      gap:.1rem;padding:.5rem;
-      overscroll-behavior:contain;
-    }
-    .emojiCatLbl{
-      grid-column:1/-1;
-      font-family:var(--fm);font-size:.58rem;letter-spacing:.18em;
-      color:var(--txd);padding:.45rem .3rem .2rem;
-    }
-    .emojiCell{
-      width:100%;aspect-ratio:1;border:none;border-radius:9px;
-      background:transparent;cursor:pointer;
-      font-size:1.35rem;line-height:1;padding:0;
-      display:flex;align-items:center;justify-content:center;
-      transition:background .15s,transform .1s;
-    }
-    .emojiCell:hover{background:var(--pdim);}
-    .emojiCell:active{transform:scale(.85);}
-    @media(prefers-reduced-motion:no-preference){
-      #emojiPanel.open{animation:emojiIn .18s ease both;}
-      @keyframes emojiIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-    }
-
-    /* composer */
-    .cpComposerWrap{width:100%;display:flex;flex-direction:column;gap:6px;}
-    /* sits at the foot of the chat panel, no nav gap to reserve */
-    .cpBar{
-      position:relative;
-      z-index:2;
-      border-top:1px solid var(--bdrh);
-      padding:.75rem var(--shellPad) calc(.75rem + env(safe-area-inset-bottom,0px));
-      display:none;
-      align-items:center;gap:.75rem;
-      flex-shrink:0;
-      isolation:isolate;
-    }
-    /* blur layer */
-    .cpBar::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 97%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:-1;}
-    /* keyboard avoidance — the panel shrinks, the bar itself never resizes */
-    .cpBar,.dmBar{transition:transform .18s ease;}
-    .cpBarAvatar{
-      width:36px;height:36px;border-radius:50%;flex-shrink:0;
-      background:color-mix(in srgb,var(--tc) 22%,transparent);
-      border:1px solid var(--bdrh);
-      display:flex;align-items:center;justify-content:center;
-      font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--ps);
-      overflow:hidden;
-    }
-    .cpBarAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
-    .cpBarInput{
-      flex:1;
-      background:var(--sur2);
-      border:1px solid var(--bdr);
-      color:var(--tx);
-      font-family:var(--fb);font-size:.92rem;
-      padding:.66rem 1.1rem;
-      outline:none;
-      transition:border-color .25s;
-      min-width:60px;
-      border-radius:999px; /* input pill */
-    }
-    .cpBarInput:focus{border-color:var(--pg);}
-    .cpBarInput::placeholder{color:var(--txd);opacity:.6;}
-    /* emoji button */
-    .cpEmojiBtn{
-      flex-shrink:0;
-      width:40px;height:40px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      background:transparent;border:1px solid var(--bdr);
-      color:var(--txd);cursor:pointer;
-      transition:color .2s,border-color .2s,background .2s;
-    }
-    .cpEmojiBtn:hover,.cpEmojiBtn.active{color:var(--ps);border-color:var(--pg);background:var(--pdim);}
-    .cpEmojiBtn svg{width:21px;height:21px;}
-    .cpBarSend{
-      flex-shrink:0;
-      width:42px;height:42px;padding:0;
-      display:flex;align-items:center;justify-content:center;
-      background:var(--pg);
-      border:none;
-      color:var(--text-on-accent);
-      cursor:pointer;transition:filter .2s,transform .15s,box-shadow .25s;
-      border-radius:50%; /* send button */
-      box-shadow:0 2px 10px rgba(var(--pg-rgb),.3);
-    }
-    .cpBarSend svg{width:19px;height:19px;margin-left:2px;}
-    .cpBarSend:hover{filter:brightness(1.08);box-shadow:0 3px 14px rgba(var(--pg-rgb),.4);}
-    .cpBarSend:active{transform:scale(.94);}
-
-    /* locked channel notice */
-    .cpLockNote{
-      position:relative;
-      z-index:2;
-      border-top:1px solid var(--bdrh);
-      padding:.9rem 1.2rem calc(.9rem + env(safe-area-inset-bottom,0px));
-      display:none;
-      align-items:center;gap:.6rem;
-      flex-shrink:0;
-      font-family:var(--fm);font-size:.72rem;letter-spacing:.06em;
-      color:var(--txd);
-      isolation:isolate;
-    }
-    /* blur layer */
-    .cpLockNote::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 97%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:-1;}
-    .cpLockNote svg{width:18px;height:18px;flex-shrink:0;color:var(--txd);}
-
-    /* attach button */
-    .cpAttachBtn{
-      width:36px;height:36px;border-radius:50%;flex-shrink:0;
-      background:color-mix(in srgb,var(--tc) 14%,transparent);
-      border:1px solid var(--pg);
-      color:var(--ps);
-      display:none;align-items:center;justify-content:center;
-      cursor:pointer;transition:background .25s,transform .25s;
-    }
-    .cpAttachBtn svg{width:18px;height:18px;}
-    .cpAttachBtn:hover{background:color-mix(in srgb,var(--tc) 28%,transparent);}
-    .cpAttachBtn:active{transform:scale(.92);}
-
-    /* showcase cards */
-    .cpShowcase{
-      border-radius:16px;
-      background:color-mix(in srgb,var(--tc) 6%,transparent);
-      border:1px solid var(--bdr);
-      overflow:hidden;
-      margin-bottom:1rem;
-    }
-    .cpShowcase:last-child{margin-bottom:0;}
-    .cpShowcaseHead{display:flex;align-items:center;gap:.7rem;padding:.85rem 1rem;}
-    .cpShowcaseMeta{display:flex;flex-direction:column;gap:.15rem;min-width:0;}
-    /* A showcase post is a picture somebody shared in a room, and a tap on it
-       opens it full screen — #dzLight at the foot of this file — rather than
-       the artwork viewer, which had no artwork to put in it. */
-    .cpShowcaseImg{width:100%;max-height:560px;object-fit:cover;display:block;cursor:zoom-in;}
-    .cpShowcaseText{padding:.9rem 1rem 1.1rem;font-family:var(--fb);font-size:.92rem;line-height:1.65;color:var(--tx);word-break:break-word;}
-
-    /* showcase picker */
-    #showcasePicker{
-      position:fixed;inset:0;z-index:2200;
-      display:none;flex-direction:column;
-      background:color-mix(in srgb,var(--bg) 97%,transparent);
-      backdrop-filter:blur(16px);
-    }
-    #showcasePicker.open{display:flex;}
-    .spHdr{
-      position:sticky;top:0;z-index:1;
-      display:flex;align-items:center;justify-content:space-between;
-      padding:1.1rem 1.5rem;
-      border-bottom:1px solid var(--bdr);
-      flex-shrink:0;
-    }
-    .spTitle{font-family:var(--fd);font-size:1rem;font-weight:700;letter-spacing:.12em;color:var(--tx);}
-    .spTitle .s{color:var(--pg);font-size:.7em;}
-    .spBody{
-      flex:1;overflow-y:auto;
-      padding:1.3rem 1.5rem 2.5rem;
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-      gap:.9rem;
-      align-content:start;
-    }
-    .spItem{
-      cursor:pointer;
-      border-radius:10px;overflow:hidden;
-      border:1px solid var(--bdr);
-      background:color-mix(in srgb,var(--tc) 6%,transparent);
-      transition:border-color .2s,transform .2s;
-    }
-    .spItem:hover{border-color:var(--pg);transform:translateY(-2px);}
-    .spItem img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;}
-    .spItem span{display:block;padding:.5rem .6rem;font-family:var(--fb);font-size:.74rem;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .spEmpty{
-      display:none;flex-direction:column;align-items:center;justify-content:center;
-      flex:1;gap:.8rem;
-      font-family:var(--fm);font-size:.76rem;letter-spacing:.2em;color:var(--txd);
-      text-align:center;padding:3rem 2rem;
-    }
-
-
-    /* The one-line summary the artist wrote, under the title and above the
-       meta. It reads as a lead rather than as the description, so it takes
-       the muted ink the subtype above it uses at the description's size. */
-    .avSummary{
-      font-family:var(--fb);font-size:.9rem;line-height:1.5;
-      color:rgba(var(--tx2-rgb),.75);margin:.45rem 0 0;overflow-wrap:anywhere;
-    }
-
-    /* ── the viewer's own chrome ──────────────────────────────────────────
-       One card and one rail, shared by the artwork viewer and the four
-       section detail views, so all five open the same way: who made this,
-       how to reach them, and the way out.
-
-       Every colour here is a token and every token is redefined per theme,
-       so the rail follows whichever theme is on without a second rule. The
-       light themes take the darker, more saturated end of each hue because
-       a pastel icon on white is a smudge. */
-    :root{
-      --vwRed:#FF3B3B; --vwAmber:#FFB800; --vwGreen:#00E27A; --vwBlue:#2E9BFF;
-      /* The profile page declares these two on #profilePage, so outside it the
-         primary button had no blue to take and drew as a plain outline. Same
-         two values, hoisted to the root: Add friend is the blue here that it is
-         when you are looking at someone's profile. */
-      --pfBlue:#2563EB; --pfBlueH:#1D4ED8;
-    }
-    html[data-theme="light"]{
-      --vwRed:#FF2020; --vwAmber:#F08C00; --vwGreen:#00B85C; --vwBlue:#0B72E7;
-    }
-
-    /* the card: avatar and name, the way out, and the two buttons the
-       profile page carries — literally .pfActBtn, so they are the same size
-       and the same colour here as they are there */
-    .vwCard{
-      display:flex;flex-direction:column;gap:.9rem;
-      border:1px solid var(--bdr);border-radius:16px;background:var(--sur);
-      padding:1.05rem 1.1rem;box-sizing:border-box;
-    }
-    .vwCardTop{display:flex;align-items:center;gap:.9rem;min-width:0;}
-    .vwAv{
-      width:54px;height:54px;border-radius:50%;flex:0 0 auto;cursor:pointer;
-      background:linear-gradient(135deg,var(--pg),var(--pgd));
-      color:var(--text-on-accent);font-family:var(--fd);font-weight:700;font-size:1.2rem;
-      display:flex;align-items:center;justify-content:center;overflow:hidden;
-    }
-    .vwAv img{width:100%;height:100%;object-fit:cover;display:block;}
-    .vwWho{flex:1 1 auto;min-width:0;cursor:pointer;}
-    .vwName{
-      font-family:var(--fb);font-weight:700;font-size:1.08rem;color:var(--tx);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    .vwHandle{
-      font-family:var(--fm);font-size:.76rem;letter-spacing:.04em;
-      color:rgba(var(--tx2-rgb),.55);margin-top:.16rem;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    /* the way out, and the reason this whole card exists. Red, because it is
-       the one control on the page that leaves it */
-    .vwClose{
-      width:48px;height:48px;flex:0 0 auto;border-radius:14px;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      border:1px solid color-mix(in srgb,var(--vwRed) 60%,var(--bdr));
-      background:color-mix(in srgb,var(--vwRed) 16%,var(--sur));
-      color:var(--vwRed);
-      transition:background .15s ease,transform .15s ease;
-      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    }
-    .vwClose svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
-    @media(hover:hover){ .vwClose:hover{background:color-mix(in srgb,var(--vwRed) 22%,var(--sur));} }
-    .vwClose:active{transform:scale(.94);}
-    .vwClose:focus-visible{outline:2px solid var(--vwRed);outline-offset:2px;}
-    .vwActs{display:flex;gap:.6rem;min-width:0;}
-    .vwActs[hidden]{display:none;}
-    /* The profile page lets these two size to their words once the row is
-       wide enough. Here they are a pair and nothing else shares the row, so
-       they split it evenly at every width — same box, same colour, same
-       size as each other and as the ones on the profile. */
-    .vwActs .pfActBtn{flex:1 1 0;min-width:0;min-height:50px;padding-inline:.9rem;font-size:.9rem;border-radius:13px;}
-    /* The profile's own copies of these glyphs carry fill and stroke as
-       markup attributes; these are written from one icon table that holds
-       paths and nothing else, so the drawing rules live here. Without them
-       the cred star filled solid black on every dark theme instead of
-       drawing as an outline in the button's own ink. */
-    .vwActs .pfActBtn svg{
-      width:19px;height:19px;flex:0 0 auto;
-      fill:none;stroke:currentColor;stroke-width:1.8;
-      stroke-linecap:round;stroke-linejoin:round;
-    }
-
-    /* the rail: one round button per action, each in its own colour so the
-       row reads at a glance rather than as five identical grey circles */
-    /* Centred, because the rail is a row of five equal things and a row of
-       five equal things has a middle. On a phone it spreads instead: the
-       screen is narrower than the group is wide is not the problem — the
-       problem is that a centred group there leaves dead margin on both sides
-       and a thumb has less to hit. Edge to edge on a phone, centred once
-       there is room to centre in. */
-    .vwActRow{display:flex;gap:1.15rem;align-items:center;justify-content:center;}
-    @media(max-width:520px){ .vwActRow{justify-content:space-between;gap:.4rem;} }
-    .vwAct{
-      width:52px;height:52px;border-radius:50%;flex:0 0 auto;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      border:1px solid color-mix(in srgb,var(--vwc) 55%,var(--bdr));
-      background:color-mix(in srgb,var(--vwc) 16%,var(--sur));
-      color:var(--vwc);
-      transition:background .15s ease,transform .15s ease,border-color .15s ease;
-      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    }
-    .vwAct svg{
-      width:23px;height:23px;fill:none;stroke:currentColor;
-      stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
-      transition:fill .15s ease;
-    }
-    @media(hover:hover){
-      .vwAct:hover{background:color-mix(in srgb,var(--vwc) 28%,var(--sur));transform:scale(1.06);}
-    }
-    .vwAct:active{transform:scale(.94);}
-    .vwAct:focus-visible{outline:2px solid var(--vwc);outline-offset:2px;}
-    /* liked and bookmarked fill their glyph in, the way they always have */
-    .vwAct[aria-pressed="true"]{
-      background:color-mix(in srgb,var(--vwc) 30%,var(--sur));
-      border-color:var(--vwc);
-    }
-    .vwAct[aria-pressed="true"] svg{fill:currentColor;}
-    .vwAct[data-c="red"]{--vwc:var(--vwRed);}
-    .vwAct[data-c="amber"]{--vwc:var(--vwAmber);}
-    .vwAct[data-c="green"]{--vwc:var(--vwGreen);}
-    .vwAct[data-c="blue"]{--vwc:var(--vwBlue);}
-
-    /* one more page of comments, and nothing at all once there are none */
-    .vwMore{
-      align-self:flex-start;cursor:pointer;
-      font-family:var(--fm);font-size:.66rem;letter-spacing:.12em;
-      padding:.6rem 1rem;border-radius:10px;
-      border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
-      transition:border-color .15s ease;
-    }
-    .vwMore[hidden]{display:none;}
-    @media(hover:hover){ .vwMore:hover{border-color:var(--pg);color:var(--ps);} }
-    .vwMore:disabled{opacity:.6;cursor:default;}
-
-    /* ask before deleting. The site asks with the browser's own confirm in a
-       few older places; this is the same question in the site's own voice,
-       and it is the one the comment rail uses. */
-    #vwCfm{
-      position:fixed;inset:0;z-index:1200;display:flex;
-      align-items:center;justify-content:center;padding:1.2rem;
-      background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
-    }
-    #vwCfm[hidden]{display:none;}
-    .vwCfmBox{
-      width:100%;max-width:340px;box-sizing:border-box;
-      border:1px solid var(--bdr);border-radius:16px;background:var(--sur);
-      padding:1.2rem;display:flex;flex-direction:column;gap:.6rem;
-    }
-    .vwCfmT{font-family:var(--fd);font-weight:800;font-size:1.05rem;color:var(--tx);}
-    .vwCfmM{font-family:var(--fb);font-size:.85rem;line-height:1.55;color:var(--txd);margin:0;}
-    .vwCfmActs{display:flex;gap:.5rem;margin-top:.4rem;}
-    .vwCfmBtn{
-      flex:1 1 0;min-height:44px;cursor:pointer;border-radius:12px;
-      font-family:var(--fb);font-size:.85rem;font-weight:600;
-      border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
-      transition:background .15s ease,border-color .15s ease;
-    }
-    .vwCfmBtn:active{transform:scale(.98);}
-    .vwCfmBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    .vwCfmBtn--danger{
-      border-color:color-mix(in srgb,var(--vwRed) 45%,var(--bdr));
-      background:color-mix(in srgb,var(--vwRed) 14%,var(--sur));
-      color:var(--vwRed);
-    }
-    @media(hover:hover){
-      .vwCfmBtn:hover{border-color:var(--bdrh);}
-      .vwCfmBtn--danger:hover{background:color-mix(in srgb,var(--vwRed) 24%,var(--sur));}
-    }
-
-    /* a phone gives the card less room than the buttons want */
-    @media(max-width:400px){
-      .vwAct{width:48px;height:48px;}
-      .vwAct svg{width:21px;height:21px;}
-      .vwClose{width:44px;height:44px;}
-      .vwAv{width:48px;height:48px;}
-    }
-
-    /* the download beside one file in a package, as against the one in the
-       rail, which takes the whole package */
-    .vwFileDl{
-      width:46px;height:46px;flex:0 0 auto;border-radius:12px;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;margin-left:auto;
-      border:1px solid color-mix(in srgb,var(--vwGreen) 55%,var(--bdr));
-      background:color-mix(in srgb,var(--vwGreen) 16%,var(--sur));
-      color:var(--vwGreen);transition:background .15s ease,transform .15s ease;
-      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    }
-    .vwFileDl svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-    @media(hover:hover){ .vwFileDl:hover{background:color-mix(in srgb,var(--vwGreen) 20%,var(--sur));} }
-    .vwFileDl:active{transform:scale(.94);}
 
     /* ── the picture on its own ───────────────────────────────────────────
 

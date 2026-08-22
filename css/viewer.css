@@ -3,11 +3,36 @@
 
        Two viewers, written twice on purpose.
 
-       Everything below the overlay is inside one of two media blocks: a
-       mobile viewer under 900px and a desktop viewer from 900 up. Neither
-       inherits a layout rule from the other and there is no un-queried
-       layout rule anywhere in this file, so no property of one can reach the
-       other by accident.
+       Everything below the overlay is inside one of two media blocks, and
+       which one a visitor gets is decided by what they are pointing with —
+       not by how many CSS pixels wide their window happens to be.
+
+         mobile    any window under 900px
+         desktop   a fine pointer at any width, or any window from 900 up,
+                   and written second so it wins wherever both match
+
+       The two have to cover everything between them, and the first attempt at
+       this did not: mobile asked for (pointer:coarse) and desktop for
+       (pointer:fine), which leaves a browser reporting pointer:none — a
+       headless one, a kiosk, some accessibility setups — matching neither,
+       with no layout at all. Measured, that dropped the box to 42% of the
+       window across and 395% of it down. So mobile is the plain width now and
+       desktop overrides it for a mouse: every visitor matches at least one,
+       and the fallback for an unknown pointer is a whole-screen viewer rather
+       than none.
+
+       Width alone cannot tell a phone from a laptop that has been zoomed. A
+       1920 screen at 150% system scaling is 1280 CSS px and one step of
+       browser zoom is under 900, at which point a width-only rule hands a
+       laptop with a mouse the layout written for a thumb: the whole screen,
+       one column, and text that does not scroll on its own because the
+       column already does. That is exactly what was being reported, over and
+       over, while the desktop rules sat in a block that window was never in.
+       A mouse is a mouse at every zoom level.
+
+       Neither block inherits a layout rule from the other and there is no
+       un-queried layout rule anywhere in this file, so no property of one can
+       reach the other by accident.
 
        That is not tidiness, it is the bug. The desktop layout used to be a
        set of overrides on top of a base written for a phone, and the base had
@@ -39,11 +64,11 @@
     #artModal.open{opacity:1;visibility:visible;pointer-events:auto;}
     #artModal.closing{opacity:0;transition:opacity .22s cubic-bezier(.4,0,1,1),visibility .22s;}
 
-    /* ══ THE MOBILE VIEWER — under 900px ═══════════════════════════════════
+    /* ══ THE MOBILE VIEWER — a finger, in a small window ═══════════════════
        The whole screen, one column, and the column scrolls: the work, then
        who made it, then everything written about it. A phone has no room to
        put two things side by side and nothing here tries to. */
-    @media(max-width:899px){
+    @media (max-width:899px){
       #artModal .avBox{
         position:relative;
         width:100%;height:100%;max-width:none;max-height:none;
@@ -115,13 +140,16 @@
       }
     }
 
-    /* ══ THE DESKTOP VIEWER — 900px and up ═════════════════════════════════
+    /* ══ THE DESKTOP VIEWER — a mouse, or a window with room ═══════════════
+       Second of the two, so a fine pointer wins wherever the two could both
+       match: a laptop zoomed to 640 CSS px is still a laptop.
+
        A fixed box with the work on the left and the notes on the right. The
        box is 80% of the window across and 90% down — a 10% margin left and
        right, 5% above and below — and it is the same rectangle whatever is
        opened in it: the picture is fitted to the space it gets and the notes
        scroll in theirs, so nothing inside has any say in how big it is. */
-    @media(min-width:900px){
+    @media (pointer:fine), (min-width:900px){
       #artModal .avBox{
         position:relative;
         width:80%;height:90%;max-width:none;max-height:none;
@@ -1003,36 +1031,6 @@
     .vwFileDl svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
     @media(hover:hover){ .vwFileDl:hover{background:color-mix(in srgb,var(--vwGreen) 20%,var(--sur));} }
     .vwFileDl:active{transform:scale(.94);}
-
-    /* ── TEMPORARY — THE PICTURE IS OFF, THE NOTES ARE ON ─────────────────
-
-       The cut before this one settled half of it: box on, picture on, notes
-       off, and everything was right. So the picture and the pane it sits in
-       are not the fault, and whatever is, is in the column that carries the
-       artist card, the action rail, the title, the description, the details,
-       the tags, the ad slot and the comment thread.
-
-       This is that half on its own. If the box goes wrong with only the
-       notes in it, the next cut is inside them — the writing and the details
-       against the ad and the comments — and one more look after that names
-       the element. If the box is right with the notes alone AND right with
-       the picture alone, then neither half is the fault by itself and the two
-       together are: a column that is fine on its own pushing a grid that is
-       fine on its own, which is a different and much smaller question.
-
-       The grid drops to one column with the picture gone.
-
-       Desktop only. The last two cuts were not, which took the picture off
-       a phone as well for no reason — mobile and desktop are separate
-       viewers and a test on one has no business touching the other.
-
-       TO PUT THE PICTURE BACK: delete this block. */
-    @media(min-width:900px){
-      #artModal .avImgPane{display:none !important;}
-      #artModal .avBody{grid-template-columns:minmax(0,1fr);}
-      #artModal .avSide{grid-column:1;}
-      #artModal .avBody > #avAuthorCard{grid-column:1;}
-    }
 
     /* ── the picture on its own ───────────────────────────────────────────
 

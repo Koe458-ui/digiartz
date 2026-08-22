@@ -4,6 +4,57 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v216 — the picture is back, and the bisect is finished.
+
+       It answered what it was for. The box alone was right; the box and the
+       picture were right; the box and the text were wrong — and the reason
+       the text half was wrong is that it was the MOBILE half. Notes that do
+       not scroll on their own and a panel filling the screen are what the
+       mobile viewer is, and a laptop was being handed it because its window
+       reports under 900 CSS px at the zoom it is used at.
+
+       v215 moved that choice onto the pointer. Measured with a fine pointer
+       in a 640x400 window — the reported case, near enough — the desktop
+       viewer is what comes back: box 512x282, which is 80% across and 90%
+       down, in two columns. The same window with a coarse pointer gets the
+       mobile viewer, and one reporting no pointer at all gets the mobile
+       viewer rather than none.
+
+       So the cuts come out. The picture is back on desktop, and the readout
+       stays one more round to confirm on the machine it was reported from.
+       Changed: css/viewer.css, index.html, sw.js.
+
+   v215 — which viewer you get is decided by what you point with.
+
+       "The box is very zoomed and the text does not scroll" is the mobile
+       viewer, exactly as written: the whole screen, one column, and notes
+       that are not their own scroller because the column already is. It was
+       being served to a laptop.
+
+       Width cannot tell a phone from a zoomed laptop. A 1920 screen at 150%
+       system scaling is 1280 CSS px and one step of browser zoom is under
+       900, and every width-only rule then hands a mouse the layout written
+       for a thumb. That is the whole history of this bug: the desktop rules
+       were correct and sat in a block that window was never in, which is why
+       fix after fix changed nothing on screen.
+
+       A mouse is a mouse at every zoom level, so that is what chooses now:
+       mobile is any window under 900px, desktop is a fine pointer at any
+       width or any window from 900 up, written second so it wins wherever
+       both match. index.html's critical style and the running bisect follow
+       the same rule.
+
+       The two have to cover everything, and the first attempt did not: asking
+       mobile for (pointer:coarse) and desktop for (pointer:fine) leaves a
+       browser that reports pointer:none matching neither, with no layout at
+       all — measured at 42% of the window across and 395% down before it
+       shipped. Mobile is the plain width now, and an unknown pointer falls to
+       a whole-screen viewer rather than to nothing.
+
+       The readout says which of the two is live and which pointer it saw, so
+       there is no more inferring it from a photograph.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v214 — the readout names the element, and says whether the notes scroll.
 
        The bisect ended on the notes column: the box is right with the picture
@@ -4114,7 +4165,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v230';
+const CACHE_VERSION = 'v232';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4168,7 +4219,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=28',
+  '/css/viewer.css?v=30',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',

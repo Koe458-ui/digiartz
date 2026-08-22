@@ -1053,11 +1053,23 @@
        And an engine too old to know the value drops the declaration and
        clips nothing, which is a stray horizontal scrollbar at worst and
        never a view that will not move. */
-    #artModal,#artModal .avBox,#artModal .avBody,#artModal .avImgPane,
-    #artModal .avSide,#artModal .avSideScroll,
-    #dzView,#dzView .dzvBody,#dzView .dzvMedia,#dzView .dzvCol{
+       And it is said on the frames and on what scrolls, and on nothing else.
+       Every box between a finger and the scroller — the picture pane, the
+       notes, the notes' own scroller — is left with no overflow of its own at
+       all, which is the state #avAuthorCard was always in and the reason the
+       card was the one place on a phone a drag still worked. From 900px the
+       pane and the notes are the scrollers, so they say hidden there
+       themselves, beside the overflow-y that makes them scroll. */
+    #artModal,#artModal .avBox,#artModal .avBody,
+    #dzView,#dzView .dzvBody{
       overflow-x:clip;
       overscroll-behavior-x:none;
+    }
+    @media(min-width:900px){
+      #artModal .avImgPane,#artModal .avSide,
+      #dzView .dzvMedia,#dzView .dzvCol{
+        overflow-x:hidden;
+      }
     }
     #artModal .avSideScroll,#artModal .avSideScroll *,
     #dzView .dzvCol,#dzView .dzvCol *{
@@ -1100,33 +1112,22 @@
     }
 
     /* ── a drag that starts on a picture is a scroll ──────────────────────
-       A finger put on an image and moved up the screen should move the
-       column, and on a touch device it does not do that by default: the
-       browser is free to read the gesture as picking the image up, and while
-       it decides, nothing scrolls. On a page of writing that is rare; on this
-       one the pictures are most of what there is to put a thumb on, so most
-       of the view was dead to a scroll.
+       The two gestures that compete with a scroll for the same finger are
+       dragging the file out of the page and the long press that offers to
+       save it. Both are turned off here, on the pictures themselves, next to
+       the draggable="false" the markup already carries.
 
-       touch-action:pan-y says it outright — a vertical drag here is a scroll
-       and nothing else — and the browser stops waiting to find out. It is
-       stated on the pictures and on the boxes they sit in, in both viewers.
-       -webkit-user-drag and -webkit-touch-callout turn off the two gestures
-       that were competing for the same finger: dragging the file out, and the
-       long-press panel that offers to save it.
-
-       Touch only. A mouse has none of these behaviours, so the desktop
-       viewer, which is right, cannot be moved by any of it. */
+       There is no touch-action in this file, and that is deliberate. It was
+       here — pan-y, on the pictures and on every box they sit in — and it was
+       the last thing standing between a thumb and the column: the one place a
+       drag still worked on a phone was #avAuthorCard, the single box inside
+       the body that had never been given any of it. A box that neither
+       scrolls nor swallows is what makes a drag reach the scroller, and that
+       is what all of them are now. */
     #artModal #lbImg,#artModal .avStackImg,
     #dzView .dzvMedia img,#dzView .dzvGallery img{
-      touch-action:pan-y;
       -webkit-user-drag:none;user-select:none;
       -webkit-touch-callout:none;
-    }
-    #artModal .avImgPane,#artModal .avImgViewport,#artModal .avImgStack,
-    #artModal .avBody,#artModal .avSide,#artModal .avSideScroll,
-    #dzView .dzvMedia,#dzView .dzvGallery,#dzView .dzvGallery a,
-    #dzView .dzvBody,#dzView .dzvCol{
-      touch-action:pan-y;
     }
 
     /* ── the picture on its own ───────────────────────────────────────────

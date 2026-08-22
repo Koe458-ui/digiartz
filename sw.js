@@ -4,6 +4,35 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v225 — the card was the only place a thumb worked, so every box is a card now.
+
+       One box inside the viewer still scrolled on a phone: #avAuthorCard.
+       That is the whole diagnosis. It is the single box in the body that was
+       never given a touch-action and never given an overflow — and it is the
+       only one a drag ever reached the column from.
+
+       touch-action:pan-y was put on the pictures and on every box they sit in
+       to say a vertical drag is a scroll. Whatever it was meant to do, the
+       measurement is plain: every box carrying it was dead to a thumb and the
+       one box without it was not. It is gone. The two gestures that actually
+       compete with a scroll — dragging the file out and the long press
+       offering to save it — are turned off on the pictures themselves, where
+       they belong, beside the draggable="false" the markup already carries.
+
+       overflow-x is off the inner boxes too. It is stated on the frames and
+       on what scrolls: #artModal, .avBox, .avBody, #dzView, .dzvBody, and
+       from 900px on the pane and the notes, which are the scrollers there and
+       say hidden beside their own overflow-y. Everything between a finger and
+       the scroller now holds no overflow at all.
+
+       At 430px every box in both viewers reads overflow visible, touch-action
+       auto, overscroll auto — the card's own state — and the only scroll
+       container left is .avBody at 1917, or .dzvBody at 3053. Nothing scrolls
+       sideways at 430, 700, 899 or 1280. Desktop is identical before and
+       after at 900, 1280 and 1500, in both viewers, with one picture and with
+       three.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v224 — one line of css was holding every finger on the phone.
 
        The words were all there and the column would not move a pixel, in the
@@ -4427,7 +4456,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v240';
+const CACHE_VERSION = 'v241';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4481,7 +4510,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=13',
   '/css/hero.css?v=102',
-  '/css/viewer.css?v=38',
+  '/css/viewer.css?v=39',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=5',

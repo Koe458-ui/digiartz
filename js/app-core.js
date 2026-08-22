@@ -1,21 +1,15 @@
-// supabase and s3 helpers, loaders
-
-  // config.js defines window.KOE_CONFIG
   const SB_URL = (window.KOE_CONFIG && window.KOE_CONFIG.SB_URL) || '';
   const SB_KEY = (window.KOE_CONFIG && window.KOE_CONFIG.SB_KEY) || '';
 
-  // admin role from profiles.role
   const BUCKET   = 'koe-media';
   const S3_FN_URL = (window.KOE_CONFIG && window.KOE_CONFIG.S3_FN_URL) || '';
 
-  // s3 upload and delete
-  // s3 key sanitizer
   function safeSlug(str, maxLen){
     var s = String(str || '')
-      .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')  // fold accents
-      .replace(/[^a-zA-Z0-9]+/g, '_')                    // non alnum to underscore
-      .replace(/_+/g, '_')                               // collapse repeats
-      .replace(/^_+|_+$/g, '');                          // trim edges
+      .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
     if(!s) s = 'untitled';
     return s.slice(0, maxLen || 60);
   }
@@ -25,27 +19,16 @@
     if(!session) throw new Error('Sign in required');
     return 'Bearer '+session.access_token;
   }
-  // opts.private asks the signer for an object in the private bucket instead of
-  // the public one, and comes back with no url — the only file that wants this
-  // is a marketplace product file, whose whole value is that holding its url
-  // does not mean holding the goods. Non-images only; the signer ignores it
-  // otherwise, since an image already puts its original out of public reach.
   async function s3Upload(bucket, path, file, opts){
     if(!S3_FN_URL) throw new Error('Storage endpoint not configured (S3_FN_URL missing in config.js)');
     const auth = await s3AuthHeader();
     const key = bucket+'/'+path;
     const wantPrivate = !!(opts && opts.private);
-    // step 1, presigned put url
     let signRes;
     try{
       signRes = await fetch(S3_FN_URL, {
         method:'POST',
         headers:{'content-type':'application/json', 'authorization':auth},
-        // derivatives tells the signer which sizes this build knows how to
-        // produce. Without it the signer assumes the pre-t600 set, because a
-        // target we cannot derive for is worse than a missing one: the loop in
-        // sbUploadTargets falls through to `body = file` on an unrecognised
-        // role and would PUT the untouched original under a thumbnail's name.
         body: JSON.stringify({
           action:'upload', path:key, contentType:file.type, size:file.size,
           derivatives: Object.keys(DERIVE_SPEC),
@@ -58,16 +41,8 @@
     const signJson = await signRes.json().catch(function(){return{};});
     if(!signRes.ok) throw new Error(signJson.error || ('Upload authorization failed ('+signRes.status+')'));
 
-    // Supabase Storage when the signer offers it, S3 when it does not. The
-    // signer returns both shapes during the migration, so this works against
-    // either version of it and there is no deploy-order trap.
     if(Array.isArray(signJson.targets) && signJson.targets.length){
       await sbUploadTargets(signJson.targets, file);
-      // Where it actually landed, reported by the signer rather than assumed
-      // here. This matters for a private upload: an older signer that has not
-      // learned the flag yet signs the public bucket and says so, and a caller
-      // that recorded its own guess instead would write a path pointing at a
-      // bucket the object is not in. Deploy order stays a non-event.
       if(opts){
         var landed = null;
         for(var ti=0; ti<signJson.targets.length; ti++){
@@ -79,15 +54,12 @@
           ? { bucket: landed.bucket || BUCKET, path: landed.path || path }
           : { bucket: BUCKET, path: path };
       }
-      // a private upload has no public url to hand back, and saying so with
-      // null is the point — a caller that stores it stores nothing useful
       if(wantPrivate) return signJson.private === false ? (signJson.supabasePublicUrl || null) : null;
       return signJson.supabasePublicUrl || signJson.publicUrl;
     }
     if(wantPrivate) throw new Error('This upload service cannot store private files yet');
 
     if(!signJson.uploadUrl) throw new Error('Upload service returned no uploadUrl');
-    // step 2, put to s3
     let putRes;
     try{
       putRes = await fetch(signJson.uploadUrl, {method:'PUT', headers:{'content-type':file.type}, body:file});
@@ -98,11 +70,6 @@
     return signJson.publicUrl;
   }
 
-  // Downscale in the browser. Sizes are generated once here rather than resized
-  // per request, because Supabase image transformations are a paid-plan feature
-  // and this has to work without one. Never upscales: a small source is just
-  // re-encoded at its own width, which keeps the filename contract intact so
-  // every size a caller asks for actually exists.
   async function imgDerive(file, maxWidth, quality){
     var bmp;
     try{
@@ -127,7 +94,6 @@
     cx.drawImage(bmp, 0, 0, w, h);
     if(bmp.close) try{ bmp.close(); }catch(e){}
     var blob = await new Promise(function(res){ cv.toBlob(res, 'image/webp', quality); });
-    // a browser that cannot encode webp hands back null or another type
     if(!blob || blob.type !== 'image/webp'){
       blob = await new Promise(function(res){ cv.toBlob(res, 'image/jpeg', quality); });
     }
@@ -135,16 +101,6 @@
     return blob;
   }
 
-  // The sizes imgResize() can ask for. Widths match its thresholds, and the
-  // qualities are the ones the retired resizer used, so images uploaded now
-  // look like the ones migrated out of it.
-  //
-  // t600 is the odd one out: it was added after the migration because t300 was
-  // the only grid size and the grid is not 300px wide on a desktop. .fgGrid
-  // runs four columns across the full viewport, so a 1920px screen lays each
-  // cell out at ~480 CSS px and the 300px file was being upscaled 1.6x — worse
-  // on a high-DPI panel. Its quality is a shade below t300's because artefacts
-  // are less visible the more pixels you spread them over.
   var DERIVE_SPEC = {
     t300:  { width: 300,  quality: 0.55 },
     t600:  { width: 600,  quality: 0.52 },
@@ -152,8 +108,6 @@
     f1600: { width: 1600, quality: 0.82 }
   };
 
-  // PUT each signed target. The original goes up untouched; every other target
-  // is a derivative generated here first.
   async function sbUploadTargets(targets, file){
     for(var i=0;i<targets.length;i++){
       var t = targets[i];
@@ -192,17 +146,6 @@
     if(!res.ok || j.ok===false) throw new Error(j.error || 'Delete failed');
   }
 
-  // ── media bookkeeping ────────────────────────────────────────────────────
-  // Every upload button gets its own table. The site still reads the flat
-  // columns (artworks.image_url, profiles.avatar_url, resources.file_url …);
-  // these rows are the structured record beside them, so nothing here may ever
-  // fail a publish that has already succeeded. Every call is fail-soft.
-  //
-  // parent   the owning row's id column, null for the two profile tables which
-  //          are keyed on the user and therefore upserted instead of inserted
-  // url      true for the image tables, which also carry width/height. The file
-  //          tables carry original_filename instead and have no url: what they
-  //          point at is not public.
   var DZ_MEDIA = {
     artworkImage : { table:'artwork_image',        parent:'artwork_id',  url:true  },
     artworkFile  : { table:'artwork_file',         parent:'artwork_id',  url:false },
@@ -215,15 +158,9 @@
     banner       : { table:'profile_banner_image', parent:null,          url:true, onConflict:'user_id' }
   };
 
-  // Where an upload actually landed, worked out from the url s3Upload handed
-  // back rather than guessed from the filename. An image becomes four objects
-  // (the untouched original in koe-originals, three sizes in koe-media);
-  // anything else becomes one public object. The __f1600 suffix is the tell.
   function dzUploadTargets(uploadedUrl, uploadPath, isPrivate){
     var isImg = /__f1600\.webp$/.test(uploadedUrl || '');
     var base  = String(uploadPath || '').replace(/\.[a-z0-9]+$/i, '');
-    // a private non-image landed in koe-originals and has no url at all, so
-    // there is no image half to record and no link to record beside it
     if(isPrivate && !isImg){
       return { image: null, file: { bucket:'koe-originals', path: uploadPath } };
     }
@@ -234,7 +171,6 @@
           file:  { bucket:'koe-media',     path: uploadPath, url: uploadedUrl } };
   }
 
-  // best effort, never throws: dimensions are nice to have, not worth a failure
   async function dzImgDims(blob){
     try{
       if(!blob || !/^image\//.test(blob.type || '')) return {};
@@ -261,7 +197,6 @@
       };
       if(spec.parent) row[spec.parent] = opts.parentId;
 
-      // position exists on every table except the two profile ones
       if(spec.parent) row.position = opts.position || 0;
 
       if(spec.url){
@@ -279,15 +214,11 @@
       if(res && res.error) throw res.error;
       return true;
     }catch(e){
-      // bookkeeping must not sink a publish that already worked
       console.warn('media record failed (' + kind + '):', (e && e.message) || e);
       return false;
     }
   }
 
-  // Record one uploaded asset into both halves it can occupy: the public image
-  // table and the private file table. imageKind/fileKind may each be null when
-  // that half does not apply to this upload button.
   async function dzRecordUpload(o){
     var t = dzUploadTargets(o.url, o.path, o.private);
     if(o.imageKind && t.image){
@@ -304,15 +235,12 @@
     }
   }
 
-
-  // seo defaults from head
   var SITE_DEFAULT_TITLE = document.title;
   var SITE_DEFAULT_DESC  = (document.querySelector('meta[name="description"]')||{}).content || '';
   var SITE_DEFAULT_IMAGE = (document.querySelector('meta[property="og:image"]')||{}).content || '';
 
   let sb = null;
 
-  // one way to say it, wherever the client failed to appear
   function dzNoBackend(why){
     console.error(why);
     var _sb = document.getElementById('sBanner');
@@ -323,17 +251,6 @@
   }
 
   if (SB_URL && SB_KEY) {
-    /* This line used to be called bare, and it is the first thing in the file
-       that depends on anything outside it. If the script defining
-       createClient had not arrived — or it threw for any other reason — the
-       throw landed here and took the rest of the file with it: the 62
-       function declarations below hoisted and kept answering clicks, while
-       the 20 let/const bindings under it, images and filterCat among them,
-       stayed in the temporal dead zone and threw on every access. A page
-       that renders, responds, and is dead underneath.
-       sb stays null instead. That is a state the rest of the code already
-       knows how to be in: of the 71 functions that touch it, 37 check it
-       first and the rest reach it only inside a try. */
     try{
       sb = supabase.createClient(SB_URL, SB_KEY);
     }catch(e){
@@ -348,7 +265,6 @@
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
-  // never show raw backend errors
   function safeErr(e, fallback){
     var m = (e && e.message) ? String(e.message) : '';
     var internal = /row-level security|violates|constraint|relation |column |permission denied|JWT|supabase|postgres|duplicate key|null value|schema cache|Failed to fetch|NetworkError|\b(42501|23505|23503)\b|PGRST/i;
@@ -358,10 +274,7 @@
     }
     return m;
   }
-  // normalize category column
-  // slugs hidden from the ui
   var CAT_HIDDEN = { 'ai-art':1 };
-  // shared hidden check
   function catHidden(slug){ return !!CAT_HIDDEN[String(slug||'').trim()]; }
   function catList(val){
     var out = Array.isArray(val)
@@ -370,8 +283,6 @@
     return out.filter(function(c){ return c && !CAT_HIDDEN[c]; });
   }
 
-  // site categories
-  // filter option icons
   var FLT_GLYPH = {
     'anchor'   :'<circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21"/><path d="M7.5 11h9"/><path d="M4 15a8 8 0 0 0 16 0"/>',
     'archive'  :'<rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M5 8.5v10a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-10"/><path d="M10 12.5h4"/>',
@@ -589,7 +500,6 @@
     {slug:'others',          label:'Others'}
   ];
   var CAT_SLUGS = SITE_CATEGORIES.map(function(c){ return c.slug; });
-  // slug to label
   var CAT_LABELS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]=c.label; return m; },{});
   function catLabel(slug){
     if(!slug) return '';
@@ -597,9 +507,7 @@
     return String(slug).replace(/-/g,' ').replace(/\b\w/g,function(ch){ return ch.toUpperCase(); });
   }
 
-  // paint category driven ui
   function buildCategoryUI(){
-    // 1. filter radios
     var fo = document.getElementById('fltCatOpts');
     if(fo){
       fo.insertAdjacentHTML('beforeend', SITE_CATEGORIES.map(function(c){
@@ -608,7 +516,6 @@
                '<span class="fltLbl">'+esc(c.label.toUpperCase())+'</span></label>';
       }).join(''));
     }
-    // 2. upload checkboxes
     var pp = document.getElementById('pfUpCatPanel');
     if(pp){
       pp.innerHTML = SITE_CATEGORIES.map(function(c){
@@ -617,31 +524,12 @@
       }).join('');
     }
   }
-  // paint synchronously
   buildCategoryUI();
-  /* One path segment, decoded, without throwing on a malformed escape.
-     decodeURIComponent raises URIError on a lone '%' — which a hand-typed or
-     truncated url supplies — and a throw here takes the whole boot sequence
-     with it. The raw segment is the right fallback: it is what the readers
-     that never decoded were using anyway. */
   function dzDecodeSeg(s){
     try{ return decodeURIComponent(String(s)); }catch(e){ return String(s); }
   }
   window.dzDecodeSeg = dzDecodeSeg;
 
-  /* ── what a tier is allowed ────────────────────────────────────────────────
-     One table, read by every gate that asks a size question, so a limit
-     changes in one place and the panel, the picker and the hint cannot
-     disagree about it.
-
-     These are courtesies. The signer refuses the bytes and the row's own
-     check constraint refuses the number, both without asking the browser —
-     what this table decides is whether somebody is told before the upload or
-     after it. Any limit that would matter if a client lied is enforced in
-     supabase/functions/smart-function and in the migrations, not here.
-
-     A dev sees Max's ceilings: the alternative is testing the paid path by
-     buying it. */
   var DZ_TIER_LIMITS = {
     guest:   { image: 20, asset: 200 },
     lite:    { image: 20, asset: 200 },
@@ -650,12 +538,6 @@
     dev:     { image: 25, asset: 400 }
   };
 
-  /* The tier this member is actually on, expiry included.
-     userPlan in js/auth.js is profiles.subscription_tier as stored, and that
-     column keeps saying 'max' after the subscription has run out — the server
-     reads dz_effective_tier() precisely because the raw column is not the
-     answer. The expiry is read alongside it there and parked here, so every
-     client-side gate asks this rather than the column. */
   var dzPlanTier = 'guest', dzPlanExpires = 0;
   function dzSetPlan(tier, expiresAt){
     dzPlanTier = String(tier || 'guest');
@@ -667,7 +549,6 @@
     return DZ_TIER_LIMITS[dzPlanTier] ? dzPlanTier : 'guest';
   }
   function dzLimits(){ return DZ_TIER_LIMITS[dzTier()] || DZ_TIER_LIMITS.guest; }
-  /* the two questions every caller actually asks, in bytes and in whole MB */
   function dzImageMax(){ return dzLimits().image * 1024 * 1024; }
   function dzAssetMax(){ return dzLimits().asset * 1024 * 1024; }
   function dzImageMaxMb(){ return dzLimits().image; }
@@ -679,11 +560,6 @@
   window.dzImageMaxMb = dzImageMaxMb;
   window.dzAssetMaxMb = dzAssetMaxMb;
 
-  /* Every place that prints a ceiling into a sentence carries data-dz-mb, and
-     is repainted whenever the tier lands or changes. The attribute names which
-     ceiling — "image" or "asset" — and the element's text has exactly one
-     number in it to replace, so buying Max changes 20 to 25 and changes
-     nothing else about the sentence. */
   function dzPaintLimits(){
     var els = document.querySelectorAll('[data-dz-mb]');
     for(var i = 0; i < els.length; i++){
@@ -694,14 +570,6 @@
   }
   window.dzPaintLimits = dzPaintLimits;
 
-  /* Resolves once every classic script in the page has run.
-     This file is the third script tag; there are thirty-odd after it, and
-     js/startup.js — which boots the page — is in the middle of them. Anything
-     it calls that lives in a later file is only there if the parser has got
-     that far, and an `await` hands control back to the parser mid-flight, so
-     "later" is not a guarantee of "not yet". readyState leaves 'loading' at
-     DOMContentLoaded, which is precisely the point the last script tag has
-     executed. */
   function dzDomReady(){
     if(document.readyState !== 'loading') return Promise.resolve();
     return new Promise(function(res){
@@ -710,43 +578,7 @@
   }
   window.dzDomReady = dzDomReady;
 
-  /* ---- every panel this app can put on screen, in one table ---------------
-
-     There were three lists of these ids, in two files, and each of them was a
-     different partial answer to the same question — which panels are open on
-     top of the page:
-
-       restoreScroll's `locks`   who is holding the scroll lock
-       NAV_OVER                  who hides the bottom nav
-       OVERLAY_IDS (sections.js) who hides the floating widgets
-
-     and a fourth answer, bnCloseAllSections in js/pfedit.js, was written out
-     by hand as nine close() calls. That last one is where the bugs were. It
-     predated the ranking board, the theme page, the artwork viewer, the item
-     viewer, the album pages, Settings and every page Settings opens — so
-     tapping Home with any of those up closed the section UNDER them and left
-     the panel itself on screen, over the home page, with the nav lit up as if
-     you were home. "I tap home and a section is still showing" is exactly
-     that list of omissions.
-
-     One table now, and a panel joins the app by being added to it once. The
-     flags say what the panel does; `close` says how to shut it, by the name
-     of the function that owns the closing, so this table never becomes a
-     second implementation of a close.
-
-       lock    holds the scroll lock while it is open
-       nav     hides the bottom navigation bar
-       widget  hides the floating widgets and the assistant bubble
-
-     Order is the order the sweep shuts them in: a page that sits INSIDE
-     another one comes first, so nothing is ever closed out from under a child
-     that is still up. */
   var DZ_PANELS = [
-    // small things over a section. Each of these four is a sheet or a
-    // backdrop written at the top of the document rather than inside the
-    // panel it belongs to, which is why they need shutting on their own: the
-    // gallery closing does not take the filter sheet with it, because the
-    // sheet is not inside the gallery.
     { id:'dlQuotaMod',      close:['dzQuotaClose'] },
     { id:'upqBackdrop',     close:['upqCloseModal'] },
     { id:'fgFltPanel',      close:['closeFilterPanel'] },
@@ -755,14 +587,12 @@
     { id:'legalBackdrop',   close:['closeLegal'],           lock:1, widget:1 },
     { id:'legalPage',       close:['closeLegalPage'],       lock:1, nav:1, widget:1 },
     { id:'showcasePicker',  close:['closeShowcasePicker'] },
-    // search pages, each over the section it searches
     { id:'pfSearchPage',    close:['closePfSearch', true],           widget:1 },
     { id:'fgSearchPage',    close:['closeFgSearch', true],  lock:1,  widget:1 },
     { id:'cmSearchPage',    close:['cmCloseSearch'],        lock:1, nav:1, widget:1 },
     { id:'cmBrowsePage',    close:['cmCloseBrowse'],        lock:1, nav:1, widget:1 },
     { id:'cmInfoPage',      close:['cmiClose'],             lock:1, nav:1, widget:1 },
     { id:'frdPage',         close:['closeFriendsPage'],     lock:1, nav:1, widget:1 },
-    // pages opened from a profile, from Settings, or from the quick links
     { id:'albViewPage',     close:['albCloseView'],         lock:1, nav:1, widget:1 },
     { id:'albPage',         close:['albClosePage'],         lock:1, nav:1, widget:1 },
     { id:'bmPage',          close:['closeBookmarksPage'],   lock:1, nav:1, widget:1 },
@@ -778,34 +608,12 @@
     { id:'setPage',         close:['closeSettingsPage'],    lock:1, nav:1, widget:1 },
     { id:'subPage',         close:['closeSubscription'],    lock:1, nav:1, widget:1 },
     { id:'zeoPage',         close:['zeoCloseChat'],         lock:1 },
-    /* The two item views. The artwork viewer's own close hands its address
-       and its page title back, so it is used as it is; the item viewer's
-       silent close is the one that leaves history alone, because a sweep is
-       the first half of a move and the second half writes the address for
-       wherever the member is going. Neither of them steps history back any
-       more — that is the bug in the note on dzNavBegin below.
-
-       The artwork viewer fades for 230ms before its class comes off, so it is
-       still "open" when the move finishes. Nothing here waits for it: the
-       address audit in js/routes.js runs again when the class does come off,
-       which is exactly the kind of late close it exists for. */
     { id:'artModal',        close:['closeLB'],              lock:1, widget:1 },
     { id:'dzView',          close:['dzCloseViewSilent'],    lock:1, widget:1 },
-    /* The work on the screen with nothing else on it, opened by clicking the
-       picture in the viewer. A panel like any other: it holds the lock while
-       it is up, it hides the floating widgets, and a sweep closes it — which
-       matters, because it is the one panel that opens OVER another one, and
-       leaving it standing over a swept viewer would leave a picture on the
-       screen belonging to a section the member has left. */
     { id:'dzLight',         close:['dzLightClose'],         lock:1, widget:1 },
-    // the five destinations the bottom nav leads to
     { id:'authMod',         close:['closeAuthMod'],         lock:1, widget:1 },
     { id:'pfUpMod',         close:['closePfUpload'],        lock:1, widget:1 },
     { id:'profilePage',     close:['closeProfilePage', false], lock:1, widget:1 },
-    // The chat slides over the community grid and is written beside it rather
-    // than inside it. closeCommunityPage resets it on the way out; listing it
-    // here as well is what makes the sweep complete on its own terms — the
-    // table is the answer to "what is on screen", and this is on screen.
     { id:'cmChatPanel',     close:['cmCloseChat'] },
     { id:'communityPage',   close:['closeCommunityPage'],   lock:1, widget:1 },
     { id:'fg',              close:['closeFG'],              lock:1, widget:1 }
@@ -816,7 +624,6 @@
     return !!el && (el.classList.contains('open') ||
                     el.getAttribute('data-state') === 'open');
   }
-  // The ids carrying one flag, for the watchers below and for js/sections.js.
   function dzPanelIds(flag){
     return DZ_PANELS.filter(function(p){ return !!p[flag]; })
                     .map(function(p){ return p.id; });
@@ -828,13 +635,6 @@
     });
   };
 
-  /* Shut everything.
-
-     A panel whose close function is absent — the admin panel for an ordinary
-     member, a page whose module failed to load — is shut by its class, which
-     is the one thing every panel here agrees on. That is a fallback and not
-     the path: a closer knows about polls to stop and state to drop, and this
-     does not. */
   function dzCloseAllPanels(){
     DZ_PANELS.forEach(function(p){
       var el = dzPanelEl(p.id);
@@ -844,51 +644,12 @@
         try{ fn.apply(null, p.close.slice(1)); return; }catch(e){}
       }
       el.classList.remove('open');
-      // Only the panels that keep one — writing data-state onto a panel that
-      // has never had one is inventing state for somebody else's element.
       if(el.hasAttribute('data-state')) el.setAttribute('data-state','closed');
     });
     restoreScroll();
   }
   window.dzCloseAllPanels = dzCloseAllPanels;
 
-  /* ---- one move at a time -------------------------------------------------
-
-     Switching section is not one action, it is a sweep followed by an open,
-     and half of what runs in between is asynchronous: a MutationObserver
-     watching a panel's class (js/routes.js, and the Settings back-watcher in
-     js/auth.js) runs on a microtask after the switch has finished, and an
-     opener that needs a row out of the database — your own profile — finishes
-     after a network round trip.
-
-     Every glitch reported against fast switching came out of that gap:
-
-       - js/routes.js stepped history BACK when the panel its address named
-         closed. Tapping Upload while the community page was up therefore
-         closed community, which stepped back onto /profile/<name> — the entry
-         from two taps ago — and the popstate handler in js/gallery.js opened
-         the profile over the upload page. "I tap upload and the profile comes
-         up" is that, exactly.
-
-       - the same step left the address reading /profile/<name> while the
-         upload page was on screen, so a refresh opened the profile nobody had
-         asked for. That is the second report, and it is the first one's
-         shadow.
-
-       - the Settings back-watcher re-opens Settings when a page opened from
-         it closes and the profile is still up. Sweep the pages, open the
-         profile, and by the time the watcher runs both of its conditions are
-         true — so Settings slid in over a profile the member had just
-         navigated to.
-
-     So a move is a transaction. dzNavBegin stamps it and holds a flag up;
-     everything that reacts late asks whether a move is in progress before
-     touching history, and everything that finishes late asks whether ITS move
-     is still the current one before touching the screen.
-
-     The flag is dropped a task later rather than at dzNavEnd, because the
-     watchers this exists for are microtasks queued DURING the move: releasing
-     synchronously would drop it before the first of them ran. */
   var navSeq = 0, navHold = 0, navTimer = null;
 
   window.dzNavBegin = function(){
@@ -902,39 +663,15 @@
     if(navTimer) clearTimeout(navTimer);
     navTimer = setTimeout(function(){ navTimer = null; navHold = 0; }, 0);
   };
-  // A move is in progress: do not touch the address bar, and do not react to
-  // a panel closing — it is closing because something else is opening.
   window.dzNavMoving = function(){ return navHold > 0; };
-  // The move this token was taken for is still the current one. An async
-  // opener that finds otherwise has been superseded and must not paint.
   window.dzNavCurrent = function(token){ return token === navSeq; };
-  // The current move, without starting one. For work that begins before any
-  // move and finishes after one may have happened — the deep links in
-  // js/startup.js, which wait on the database and then open a panel.
   window.dzNavToken = function(){ return navSeq; };
 
-  /* The scroll lock belongs to whatever is left on screen, so it is released
-     only when nothing is holding it. Who holds it is the `lock` flag in the
-     table above — it used to be a list written out here, which is how dzView
-     came to be missing from it and any overlay closing underneath the item
-     viewer handed the lock back out from under it. */
   function restoreScroll(){
     if(window.dzAnyPanelOpen('lock')) return;
     document.body.style.overflow=''; document.documentElement.style.overflow='';
   }
 
-  // The bottom nav belongs to the five sections it links to. Anything that
-  // slides in over one of them has to take it down, and that used to be each
-  // panel's own job: a hide on the way in, paired with a show on the way out.
-  // A panel written without the pair kept the nav floating over its own
-  // content — which is what happened to Settings and to every page Settings
-  // opens. One watcher owns it now: the panels say whether they are open and
-  // this decides what the nav does, so a new page inherits the behaviour
-  // by being listed here rather than by remembering to write both halves.
-  // Panels the nav itself leads to are absent on purpose — the nav stays up
-  // over the gallery, community, upload, login and profile pages, and marks
-  // which of them you are in.
-  // Which panels those are is the `nav` flag in the table above.
   var NAV_OVER=dzPanelIds('nav');
   function dzNavSync(){
     var nav=document.getElementById('bnNav');
@@ -953,27 +690,11 @@
     }
     dzNavSync();
   }
-  // half these panels are written below this script in the page
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',dzNavWatch);
   else dzNavWatch();
 
-  // merged artworks table
   var ART_KIND_ART = 'art';
 
-  /* ---- the data cache --------------------------------------------------
-     What used to be here was a set of hand-written localStorage snapshots
-     — one member's profile, their friends, their conversations, the top
-     fifty artworks — read only when a fetch had already failed. They are
-     gone. js/cache.js is the one cache service now: memory, IndexedDB and
-     a small synchronous tier, one TTL table, single-flight requests and
-     invalidation by key rather than by clearing everything. The rules
-     about whose data may be read by whom did not get more relaxed in the
-     move; they got enforced in one place instead of five.
-
-     Everything below goes through dzCache, and every one of them works
-     without it: if the file failed to load, or IndexedDB is unavailable,
-     or the browser is in a mode where storage throws, dzCached() hands
-     back a shim that just calls the loader. Slower, never broken. */
   var DZ_CACHE_SHIM = {
     getOrSet: function(k, loader){ return Promise.resolve().then(loader); },
     warm:     function(k, loader){ return Promise.resolve().then(loader); },
@@ -999,15 +720,7 @@
   function dzCached(){ return window.dzCache || DZ_CACHE_SHIM; }
   window.dzCached = dzCached;
 
-  // The home page and the gallery read the same rows: one list of approved,
-  // published artwork, newest first. So it is one cache record, and the two
-  // surfaces sort and filter their own copy of it rather than each asking for
-  // it. Every page of every listing derived from these rows is invalidated
-  // together, by prefix, when a piece is added, edited or removed.
   var GAL_ALL = 'gallery:latest:all:page:1';
-  // The first twenty, trimmed to the columns a card needs and small enough to
-  // sit in the synchronous tier. This is what paints before the network has
-  // been asked at all, on the home page and in the gallery.
   var GAL_TOP = 'gallery:latest:top20';
 
   function galTrim(a){
@@ -1020,8 +733,6 @@
   }
 
   async function galFetch(){
-    // public load: approved, and published. A draft is kept and not shown,
-    // and a hidden piece is reachable by its own link and nowhere else.
     const{data:imgs,error}=await sb.from('artworks').select('*')
       .eq('status','approved').eq('visibility','published').eq('kind',ART_KIND_ART)
       .order('created_at',{ascending:false});
@@ -1029,19 +740,8 @@
     return imgs||[];
   }
 
-  // Applied in one place, whether the rows came from the cache, from the
-  // network, or from a background refresh that landed after the page had
-  // already painted. `repaint` is false on the first pass because startup
-  // renders as soon as loadDB returns; it is true for a refresh, which is the
-  // only case where nobody else is going to draw the new rows.
   function galApply(rows, repaint){
     if(!rows || !rows.length) return;
-    /* A COPY of the array, not the array. renderHome sorts `images` in place
-       by trending score, and `rows` here may be the very array the cache is
-       holding in memory — sorting that would quietly reorder a record other
-       readers are about to be handed, and leave the copy in memory disagreeing
-       with the copy on disk. The row objects are shared, which is intended:
-       an edit patches them and dzGalleryStore writes them back. */
     images = rows.slice();
     if(repaint){
       renderHome();
@@ -1051,9 +751,6 @@
     }
   }
 
-  // The newest twenty, whatever order the caller happens to be holding. Sorted
-  // here rather than trusted, because `images` is trending-sorted for most of
-  // its life and the first paint of the gallery reads this expecting latest.
   function galStore(rows){
     dzCached().set(GAL_TOP, rows.slice().sort(artTieBreak).slice(0,20).map(galTrim),
                    'gallery:latest');
@@ -1063,17 +760,10 @@
     if(!sb)return;
     var c = dzCached();
 
-    /* The saved copy goes on screen first. This is the whole reason the top
-       twenty are written down: on a repeat visit the grid is populated in the
-       time it takes to read one localStorage key, rather than after a round
-       trip to Supabase. It may be a few minutes old — or a day old, offline —
-       and the load below corrects it either way. */
     var snap = c.peek(GAL_TOP, 'gallery:latest', { any:true });
     if(snap && snap.length) images = snap;
 
     try{
-      // One record, one request however many panels want it, and a stale copy
-      // served immediately while the refresh runs behind it.
       var rows = await c.getOrSet(GAL_ALL, galFetch, 'gallery:latest', function(fresh){
         galApply(fresh, true);
         galStore(fresh);
@@ -1081,17 +771,10 @@
       galApply(rows, false);
       if(rows && rows.length){
         galStore(rows);
-        // Warm the thumbnails the first screens will ask for, at idle. Bounded
-        // and predictable — the top of the list, not the whole collection.
         c.warmImages(rows.slice(0,50).map(function(a){ return getThumbnailUrl(a.image_url); }), 50);
       }
     }catch(e){
       console.error(e);
-      /* Nothing fresh, and nothing inside the stale window either. Fall back to
-         whatever was last saved, however old, and say so — an old gallery with a
-         notice beats an empty page. The full list is preferred over the trimmed
-         twenty; the twenty is what is there when the full one was never stored,
-         or was swept. */
       var old = await c.recall(GAL_ALL, 'gallery:latest');
       if(!old || !old.length) old = c.peek(GAL_TOP, 'gallery:latest', { any:true });
       if(old && old.length){
@@ -1101,9 +784,6 @@
     }
   }
 
-  /* The grid, the viewer and a profile all edit rows in `images` in place —
-     a like counted, a piece removed. When they do, the cached copy has to
-     follow, or the next visit paints the state from before the edit. */
   function dzGalleryStore(){
     if(!images || !images.length) return;
     var c = dzCached();
@@ -1112,15 +792,6 @@
   }
   window.dzGalleryStore = dzGalleryStore;
 
-  /* Called after a confirmed write to an artwork: an upload, an edit, a
-     delete. It drops the listings the piece can appear in and nothing else —
-     not the section tabs, not communities, not anybody's private data — and
-     for a delete it also asks the service worker to drop that piece's images,
-     since the objects behind them are on their way out of storage.
-
-     Order matters and is not negotiable: this runs AFTER the database has
-     confirmed the write. Invalidating first means a refresh can land in the
-     window before the commit and cache the state the mutation was replacing. */
   function dzArtworkChanged(id, opts){
     var o = opts || {};
     var c = dzCached();
@@ -1130,26 +801,8 @@
   }
   window.dzArtworkChanged = dzArtworkChanged;
 
-  // Sizes are generated once at upload and live beside each other in
-  // koe-media, distinguished by a filename suffix:
-  //
-  //     <base>__t300.webp   __t600.webp   __v1000.webp   __f1600.webp
-  //
-  // The stored url is always the __f1600 one, so picking another size is a
-  // suffix swap. Supabase image transformations are a paid-plan feature and are
-  // deliberately not relied on. A url with no suffix to swap comes back
-  // untouched: there is no resizer to fall back to any more.
   var SB_SIZE_RE = /__(?:t300|t600|v1000|f1600)\.webp$/;
 
-  // t600 arrived after the migration, so it exists only for images uploaded
-  // since. Everything that can emit a t600 url is gated on this until the
-  // backfill has run and config.js sets it, because a MISSING srcset candidate
-  // is not survivable: the browser does not fall back to another entry in the
-  // list, it just fails the image. Left unset, every path below behaves exactly
-  // as it did before t600 existed.
-  // Accept a real boolean or the string spellings of one. A bare !! would read
-  // the string "false" as ON, which is exactly how someone turning this back
-  // off would write it.
   function dzFlagOn(v){
     return v === true || /^(1|true|yes|on)$/i.test(String(v == null ? '' : v).trim());
   }
@@ -1159,8 +812,6 @@
     return SB_SIZE_RE.test(url) ? url.replace(SB_SIZE_RE, suffix) : url;
   }
 
-  // width is the size being ASKED for; it maps to the nearest generated size at
-  // or above it. The quality argument is gone with the resizer that honoured it.
   function imgResize(url, width){
     if(!url || typeof url !== 'string') return url;
     if(width <= 300)  return sbSwapSize(url, '__t300.webp');
@@ -1171,31 +822,14 @@
   function getThumbnailUrl(url){ return imgResize(url, 300); }
   function getViewUrl(url){ return imgResize(url, 1000); }
 
-  // ── responsive grid thumbnails ───────────────────────────────────────────
-  // One fixed file cannot serve every screen. A grid cell is ~195 CSS px on a
-  // phone and ~480 on a 1080p desktop, so srcset hands the browser the list of
-  // sizes that exist and lets it pick: it computes (sizes value x DPR) and
-  // takes the smallest candidate at or above that.
-  //
-  // f1600 is deliberately NOT a candidate. It is the download size; letting a
-  // 4K screen pull 138KB per cell for a grid would cost more egress than the
-  // blur it fixes is worth.
   var DZ_SRCSET_WIDTHS = [300, 600, 1000];
 
-  // Effective DPR is capped at 2. Left uncapped, a DPR-3 phone with a ~215 CSS
-  // px cell asks for 645px and pulls v1000 (~60KB) instead of t600 (~28KB) —
-  // double the bytes on the connection least able to afford them, for a
-  // difference no eye resolves at that physical size. sizes is scaled down by
-  // cap/DPR so the browser's own multiply lands back on the capped figure.
   var DZ_DPR_CAP = 2;
   function dzDprScale(){
     var dpr = window.devicePixelRatio || 1;
     return dpr > DZ_DPR_CAP ? (DZ_DPR_CAP / dpr) : 1;
   }
 
-  // Mirrors the artwork grids in css: 4 columns at >=1280px, 3 at >=700px,
-  // 2 below. If those breakpoints move, these move with them or the browser
-  // picks against a layout that is not there any more.
   function dzGridSizes(){
     var s = dzDprScale();
     var f = function(vw){ return +(vw * s).toFixed(2); };
@@ -1209,9 +843,6 @@
     }).join(', ');
   }
 
-  // The src/srcset/sizes attribute triplet for a grid thumbnail, ready to drop
-  // into a template string. src stays t300 on its own so anything that ignores
-  // srcset behaves exactly as it did before.
   function dzThumbAttrs(url){
     var attrs = 'src="' + esc(getThumbnailUrl(url || '')) + '"';
     var ss = dzSrcset(url || '');
@@ -1219,7 +850,6 @@
     return attrs;
   }
 
-  // Same choice for an <img> built through the DOM rather than a template.
   function dzApplyThumb(im, url){
     if(!im) return;
     var ss = dzSrcset(url || '');
@@ -1322,8 +952,6 @@
     _dzArtistWanted = {};
     if(!ids.length || !sb) return;
     ids.forEach(function(u){ _dzArtistFlight[u] = true; });
-    // banner_url rides along for the artist board's card background — one
-    // column, and it keeps every reader of this cache seeing the same shape
     sb.from('profiles').select('id,username,display_name,avatar_url,banner_url,bio').in('id', ids)
       .then(function(res){
         var rows = (res && res.data) || [];
@@ -1356,44 +984,29 @@
     dzResolveArtist(chip.getAttribute('data-uid'));
   }, {passive:true});
 
-
-  // What an artwork has earned, before any decay: a view is worth 1, a
-  // bookmark 8, a download 6. Every board below scores on these same points
-  // and differs only in how fast they fade.
   function artPoints(a){
     var v=parseInt(a.view_count,10)||0,
         b=parseInt(a.bookmark_count,10)||0,
         d=parseInt(a.download_count,10)||0;
     return (v*1)+(b*8)+(d*6);
   }
-  // Hours since upload. An artwork with no date is treated as a year old, so
-  // it sinks rather than floats.
   function artAgeH(a, now){
     var t=a.created_at?new Date(a.created_at).getTime():0;
     return t?Math.max(0,(now-t)/3600000):(365*24);
   }
 
-  // Trending fades by the hour: today's uploads move constantly.
   function trendingScore(a, now){
     return artPoints(a)/Math.pow(artAgeH(a,now)+2,1.35);
   }
-  // Weekly hits fade by the week. Age is counted in whole weeks, so
-  // everything uploaded inside the current week is divided by the same
-  // number and the board is a straight points race for seven days; come the
-  // next week that week's entries drop a step and the one after that drops
-  // another.
   function weeklyScore(a, now){
     var weeks=Math.floor(artAgeH(a,now)/168);
     return artPoints(a)/Math.pow(weeks+2,1.35);
   }
-  // Monthly hits fade by the month, and harder: each 30 days past upload
-  // halves what an artwork's points are worth here.
   function monthlyScore(a, now){
     var months=Math.floor(artAgeH(a,now)/720);
     return artPoints(a)/Math.pow(2,months);
   }
 
-  // Newest first, then id, so the order never shuffles between renders.
   function artTieBreak(a, b){
     var tA=a.created_at?new Date(a.created_at).getTime():0;
     var tB=b.created_at?new Date(b.created_at).getTime():0;
@@ -1419,24 +1032,11 @@
     if(window.rebuildGalCarousels) window.rebuildGalCarousels(images);
   }
 
-  /* ---- scope guard -----------------------------------------------------
-     Every list on this site belongs to somebody: the signed-in member, or
-     the profile being looked at. A fetch is slow and a session is not, so
-     a reply can land after the thing it was asked for has already changed
-     — a different account signed in, a different profile opened — and
-     paint one member's rows under another member's name.
-
-     So a caller stamps the scope it is fetching for before it awaits, and
-     checks the stamp before it paints. If the stamp no longer matches, the
-     reply is stale by definition and is dropped rather than rendered. The
-     stamp carries the signed-in id, so nothing fetched for one account can
-     ever paint for another, whatever is sitting in a cache. */
   var DZ_SCOPE_SEQ = 0;
   function dzScope(){
     var uid = (typeof currentUser !== 'undefined' && currentUser) ? String(currentUser.id) : 'guest';
     return uid + '|' + DZ_SCOPE_SEQ;
   }
-  // called when the session changes: every stamp taken before now is stale
   function dzScopeBump(){ DZ_SCOPE_SEQ++; }
   function dzScopeStill(token){ return token != null && token === dzScope(); }
 
@@ -1525,9 +1125,6 @@
   function renderFG(){
     _renderFGPage();
   }
-  /* The gallery's search page looks in this rather than asking the database:
-     it is every approved artwork on the site, already loaded, already the
-     rows the grid draws — and already without whatever the viewer hid. */
   window.galleryImages = function(){ return filterHidden(images); };
 
   function _renderFGPage(){
@@ -1546,7 +1143,6 @@
         var tB=b.created_at?new Date(b.created_at).getTime():0;
         var diff=filterSrt==='new'?(tB-tA):(tA-tB);
         if(diff!==0)return diff;
-        // compare ids as strings
         var iA=String(a.id||''), iB=String(b.id||'');
         if(iA===iB) return 0;
         var asc = iA<iB ? -1 : 1;
@@ -1554,9 +1150,6 @@
       });
     }
 
-    /* Picked tags move matching artwork to the top, which is what the tag
-       picker has always said they do. Everything below keeps the order the
-       chosen sort just gave it — this lifts, it does not re-sort. */
     var picked = (typeof tgPickedTags === 'function') ? tgPickedTags() : null;
     if(picked && picked.size){
       var lifted=[], rest=[];
@@ -1598,7 +1191,6 @@
   function _fgSyncFilterBtn(){
     if(typeof fgSyncFilterBtn==='function') fgSyncFilterBtn();
   }
-  // read by the one filter button in the bar
   window.fgArtFiltered = function(){
     return filterCat!=='all' || filterSrt!=='trending';
   };
@@ -1633,14 +1225,7 @@
     document.getElementById('fg').classList.add('open');
     document.body.style.overflow='hidden';
     fgSwitchSection('artworks');
-    // the grid comes back at roughly the size it was left at, so returning
-    // to the gallery can land back on the row you were reading. capped,
-    // because past this depth the thumbs have aged out of the image cache
-    // and rebuilding them all would cost a fresh fetch each
     fgVisible=Math.min(fgVisible||0, gridInitialBatch()+gridStepBatch()*8);
     renderFG();
-    // the showcase over the chip row reads the same artworks the grid does,
-    // so it is refreshed with it rather than on a clock of its own
     if(typeof window.fgShowRender === 'function') window.fgShowRender();
   }
-

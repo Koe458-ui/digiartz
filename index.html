@@ -9,7 +9,7 @@
        of somebody the code that was just shipped, or a copy their browser or
        the service worker held on to? View source, look for dz-build, compare
        it with CACHE_VERSION in sw.js. Keep the two in step. -->
-  <meta name="dz-build" content="v233"/>
+  <meta name="dz-build" content="v234"/>
   <!-- theme boot
 
        Two themes: light (paper, the default) and graydark (charcoal).
@@ -254,7 +254,7 @@
   </script>
   <link rel="stylesheet" href="/css/base.css?v=12">
   <link rel="stylesheet" href="/css/hero.css?v=101">
-  <link rel="stylesheet" href="/css/viewer.css?v=31">
+  <link rel="stylesheet" href="/css/viewer.css?v=32">
   <link rel="stylesheet" href="/css/community.css?v=19">
   <link rel="stylesheet" href="/css/connect.css?v=6">
   <link rel="stylesheet" href="/css/ranking.css?v=4">
@@ -2937,7 +2937,8 @@
         ' | box '+n(b.width)+'x'+n(b.height)+' ('+Math.round(b.width/W*100)+'%x'+Math.round(b.height/H*100)+'%)'+
         ' | body '+getComputedStyle(body).display+' '+n(body.clientWidth)+'x'+n(body.clientHeight)+
         ' | page '+n(document.documentElement.scrollWidth)+'x'+n(document.documentElement.scrollHeight)+
-        '\n'+scroller(col,'notes-col')+' | '+scroller(pane,'work-col')+' | '+scroller(body,'body')+
+        '\n'+(two ? scroller(col,'notes-col')+' | '+scroller(pane,'work-col')+' | '+scroller(body,'body')
+                   : scroller(body,'body (one column: the body is the scroller)'))+
         ' | notesW '+n(side.clientWidth)+' contentW '+n(side.scrollWidth)+
         '\nOVERFLOWING: '+names;
     }

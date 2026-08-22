@@ -4,6 +4,12 @@
   <meta charset="utf-8"/>
   <meta name="color-scheme" content="light"/>
   <meta name="theme-color" content="#F7F5EB"/>
+  <!-- Which copy of the site this is. It is here to answer one question that
+       kept costing a round trip each time it was asked: is the page in front
+       of somebody the code that was just shipped, or a copy their browser or
+       the service worker held on to? View source, look for dz-build, compare
+       it with CACHE_VERSION in sw.js. Keep the two in step. -->
+  <meta name="dz-build" content="v219"/>
   <!-- theme boot
 
        Two themes: light (paper, the default) and graydark (charcoal).
@@ -77,6 +83,23 @@
     #dzView.open{display:flex;flex-direction:column;}
     #dzLight{position:fixed;inset:0;z-index:1500;display:none;}
     #dzLight.open{display:flex;align-items:center;justify-content:center;}
+
+    /* And the panel inside the viewer is a panel, not a document.
+
+       Being fixed keeps #artModal the size of the window; it does not stop
+       the box inside it growing to whatever its contents come to. That is the
+       other half of what was photographed — a box holding the picture at full
+       size, the notes, the details, the tags and the whole comment thread,
+       all rendered at once and taller than the screen. .avBox is sized by
+       css/overrides.css and css/viewer.css, and with neither of them here its
+       height is auto.
+
+       Two properties are enough: the box can never be taller than the window
+       it sits in, and .avBody scrolls what does not fit. Both stylesheets say
+       this more precisely and both come after this block, so these only ever
+       decide anything on a load where they are missing. */
+    #artModal .avBox{height:100%;max-height:100%;overflow:hidden;}
+    #artModal .avBody{min-height:0;max-height:100%;overflow:auto;}
   </style>
   <!-- Cloudflare Web Analytics -->
   <script data-cf-beacon='{"token": "aa4b7177387e4f689739a5fdf44cbffa"}' defer="" src="https://static.cloudflareinsights.com/beacon.min.js">

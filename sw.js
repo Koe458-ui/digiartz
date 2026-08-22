@@ -4,6 +4,30 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v203 — the box cannot grow to fit what is in it, and the build says its name.
+
+       v202 stopped #artModal being a paragraph. Being fixed keeps the VIEWER
+       the size of the window, though, and does nothing about the box inside
+       it: .avBox is sized by css/overrides.css and css/viewer.css, and with
+       neither of them in effect its height is auto — so it renders the
+       picture at full size, the notes, the details, the tags and the whole
+       comment thread at once, taller than the screen, with nothing scrolling
+       inside it because everything is already laid out. That is the half of
+       the photograph the first guard did not cover.
+
+       Two more properties in the critical style: the box can never be taller
+       than the window, and .avBody scrolls what does not fit. Both stylesheets
+       say this more precisely and both come after that block, so these decide
+       anything only on a load where they are missing.
+
+       And index.html now carries <meta name="dz-build">, matching
+       CACHE_VERSION. Three rounds of "it still looks the same" turned on a
+       question nobody could answer from a photograph: whether the page on
+       screen was the code that had just shipped or a copy the browser was
+       holding. View source, find dz-build, compare. Keep it in step with the
+       version below.
+       Changed: index.html, sw.js.
+
    v202 — a viewer is an overlay before its stylesheet arrives.
 
        A member photographed the artwork viewer printing down the page: the
@@ -3845,7 +3869,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v218';
+const CACHE_VERSION = 'v219';
 
 /* One cache per thing cached, not one cache for everything.
 

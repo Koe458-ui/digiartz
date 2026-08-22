@@ -4,6 +4,26 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v218 — restore the eight hundred lines the last splice deleted by accident.
+
+       Replacing the viewer's layout with the section viewer's was done as a
+       splice from one comment marker to the next, and the region between them
+       held far more than layout: the report sheets, the download-quota sheet,
+       the delete-confirm sheet, the titles, the metadata rows, the tags, the
+       action card and the showcase image. All of it went out with the rules
+       that were meant to go.
+
+       check-overlays caught it within the minute — four dialogs with no rule
+       giving them a position, which is the exact fault that check exists for
+       and the reason it was written. They are back, unchanged, and every
+       check passes.
+
+       The lesson is in the diff of the commit before this one: 159 lines
+       added, 1025 removed, for a change that was supposed to swap one layout
+       for another. A splice that deletes six times what it writes is a splice
+       that has taken something it was not looking at.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v217 — there is no box. The viewer is a page, the way the marketplace is.
 
        Asked for outright, and it is the right call: the box is what kept
@@ -4192,7 +4212,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v233';
+const CACHE_VERSION = 'v234';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4246,7 +4266,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=31',
+  '/css/viewer.css?v=32',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',

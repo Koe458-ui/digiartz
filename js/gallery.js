@@ -219,7 +219,6 @@
     if(!rail) return;
     if(avImages.length < 2){
       rail.hidden = true; rail.innerHTML = '';
-      requestAnimationFrame(avFitStage);
       return;
     }
     rail.hidden = false;
@@ -230,76 +229,21 @@
              '<img src="'+esc(getThumbnailUrl(u))+'" alt="" loading="lazy" decoding="async">'+
              '</button>';
     }).join('');
-    // The budget depends on how tall this rail ends up, and it is not that
-    // tall until the browser has laid the thumbnails out. Measured in the
-    // same tick it comes back short — by the pixels that then pushed a
-    // full-height picture past the bottom of the pane — so the fit is redone
-    // once the rail is real.
-    requestAnimationFrame(avFitStage);
   }
 
-  /* How tall the picture may be, in pixels, worked out rather than guessed.
+  /* There is no measuring here any more.
 
-     Every percentage-height route to this fails, and each failed differently:
-     a stage that grew filled the pane and stranded the thumbnails at the very
-     bottom; a stage sized by aspect-ratio collapsed to nothing, because a
-     centred flex item has no width to take its height from; and a chain of
-     max-height:100% resolves to none the moment one link in it is auto.
+     There used to be: avFitStage read the pane's height, subtracted its
+     padding and the rail, and wrote the remainder onto the pane as --boxH,
+     which css/overrides.css used as the picture's max-height. A
+     ResizeObserver on the pane and the rail kept the figure current.
 
-     So the budget is measured: what the pane has, less its own padding, less
-     the rail if there is one. The picture takes that or its own height,
-     whichever is smaller, and the box around it is then exactly as tall as
-     the picture — which puts the rail directly underneath, and lets the pane
-     centre the pair in the space it has. */
-  function avFitStage(){
-    var pane = document.querySelector('#artModal .avImgPane');
-    if(!pane) return;
-    var rail = document.getElementById('avImgStack');
-    /* offsetHeight, not getBoundingClientRect: the rect is in VISUAL
-       coordinates and .avBox opens from transform:scale(.92), so during that
-       animation a 97.6px rail measures 89.8 and a 72px thumbnail measures 66.
-       Mixed with pane.clientHeight, which is layout and unscaled, that bought
-       the picture eight pixels it did not have and hung it past the bottom of
-       the pane. offsetHeight is layout too, so both sides of the subtraction
-       are now in the same space. */
-    var railH = (rail && !rail.hidden) ? rail.offsetHeight : 0;
-    var cs = getComputedStyle(pane);
-    var avail = pane.clientHeight
-              - (parseFloat(cs.paddingTop) || 0)
-              - (parseFloat(cs.paddingBottom) || 0)
-              - railH;
-    if(!(avail > 0)) return;
-    pane.style.setProperty('--boxH', Math.floor(avail) + 'px');
-  }
-  /* The budget is a pixel figure, so it is only right for as long as the two
-     things it is measured from keep their size. Guessing when that has
-     settled is what kept being wrong: measured in the same tick the rail came
-     back 90px and ended up 98, and the picture was then eight pixels too tall
-     for the pane. So watch the pane and the rail instead of picking a moment.
-
-     This cannot feed back on itself: what avFitStage writes is the picture's
-     height, and neither the pane, which the grid sizes, nor the rail, whose
-     height is its thumbnails', is affected by that. */
-  (function(){
-    document.addEventListener('DOMContentLoaded', function(){
-      var pane = document.querySelector('#artModal .avImgPane');
-      var rail = document.getElementById('avImgStack');
-      if(typeof ResizeObserver === 'function' && pane){
-        var ro = new ResizeObserver(function(){ avFitStage(); });
-        ro.observe(pane);
-        if(rail) ro.observe(rail);
-      } else {
-        // no observer: the window changing shape is the case worth catching
-        var pending = false;
-        window.addEventListener('resize', function(){
-          if(pending) return;
-          pending = true;
-          requestAnimationFrame(function(){ pending = false; avFitStage(); });
-        });
-      }
-    });
-  })();
-
+     All of it existed to size the picture's box to the picture, and that is
+     the thing that was wrong: the frame changed shape with every artwork
+     opened, because the frame was the artwork. The box is stated in the
+     stylesheet now and the picture is fitted into it with object-fit, so
+     there is nothing to measure, nothing to keep current, and no moment
+     after a rail renders that has to be picked correctly. */
   // Swap which of the set the box is showing.
   function avShowImage(i){
     if(!avImages.length) return;
@@ -312,7 +256,6 @@
       if(vp) vp.classList.add('loading');
       img.onload = function(){
         if(vp) vp.classList.remove('loading');
-        avFitStage();
         avUpdateResolution(img.naturalWidth, img.naturalHeight);
       };
       img.onerror = function(){ if(vp) vp.classList.remove('loading'); };
@@ -321,7 +264,6 @@
       // a cached file can be complete before onload is ever wired
       if(img.complete && img.naturalWidth){
         if(vp) vp.classList.remove('loading');
-        avFitStage();
         avUpdateResolution(img.naturalWidth, img.naturalHeight);
       }
     }
@@ -1172,14 +1114,12 @@
       imgEl.alt=name||'Untitled artwork';
       imgEl.onload=function(){
         if(viewport) viewport.classList.remove('loading');
-        avFitStage();
         avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
       };
       imgEl.onerror=function(){ if(viewport) viewport.classList.remove('loading'); };
       // cached image may skip onload
       if(imgEl.complete && imgEl.naturalWidth){
         if(viewport) viewport.classList.remove('loading');
-        avFitStage();
         avUpdateResolution(imgEl.naturalWidth, imgEl.naturalHeight);
       }
     }

@@ -4,6 +4,24 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v200 — an album opens the picture.
+
+       A tap on an album item went to the artwork viewer, the way a tap on any
+       artwork thumbnail does. An album is the one place where that is the
+       wrong destination: it is a set somebody put together to look through,
+       and looking through a set is one picture after another, not a panel of
+       details and a comment thread between each of them. The card opens the
+       full-screen view directly now — 80% of the window, blurred ground, a
+       click anywhere around it to close — and the viewer is one step away
+       rather than in the way.
+
+       At viewing size, because the card holds a thumbnail: the same request
+       the community showcase makes, for the same reason. An item with no
+       picture opens nothing. The cursor says which of the two a card is, and
+       it is keyed to #albViewGrid so that the card's markup stays the one
+       markup this file shares with every other grid on the site.
+       Changed: js/albums.js, css/widgets.css, index.html, sw.js.
+
    v199 — an album shows what is in it, and the work opens from there.
 
        Every album with anything in it said "COULDN'T LOAD THIS ALBUM". The
@@ -3768,7 +3786,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v215';
+const CACHE_VERSION = 'v216';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3831,7 +3849,7 @@ const SHELL_URLS = [
   '/css/auth.css?v=3',
   '/css/panels.css?v=12',
   '/css/upload.css?v=15',
-  '/css/widgets.css?v=11',
+  '/css/widgets.css?v=12',
   '/css/overrides.css?v=31',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
@@ -3859,7 +3877,7 @@ const SHELL_URLS = [
   '/js/gallery.js?v=98',
   '/js/auth.js?v=19',
   '/js/profile.js?v=16',
-  '/js/albums.js?v=17',
+  '/js/albums.js?v=18',
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',

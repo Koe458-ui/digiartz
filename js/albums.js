@@ -243,25 +243,32 @@
      same lazy thumbnail and the same focal point — with the album's own
      opener on it. */
   function albItemHTML(a){
-    var card = pfGalleryCardHTML(a, 'albOpenArtwork');
+    var card = pfGalleryCardHTML(a, 'albOpenPicture');
     if(!albView || !albView.owner) return card;
     return '<div class="albItemWrap">'+card+
       '<button type="button" class="albItemX" aria-label="Remove from album" '+
       'onclick="event.stopPropagation();albRemoveItem(\''+esc(String(a.id))+'\')">\u2715</button></div>';
   }
-  /* The album is the run the arrows walk. pfOpenArtwork looks in the profile
-     gallery it belongs to, which is the wrong list here twice over: an album
-     can hold work from anywhere on the site, so the artwork is often not in
-     it at all, and Next out of an album item would step through a gallery
-     nobody opened. The rows on screen are the list. */
-  function albOpenArtwork(id){
+  /* An album opens the picture, not the panel around it.
+
+     Everywhere else on the site a thumbnail of an artwork opens the artwork
+     viewer, and that is right where the details are the point — the artist,
+     the tags, the download, what everyone said about it. An album is the
+     other thing: a set somebody put together to look through, and the way
+     you look through it is one picture after another. So a tap here goes
+     straight to the full-screen view, and the panel stays one step away
+     rather than in the way.
+
+     The picture at viewing size, because the card holds a thumbnail — the
+     same request the community showcase makes for the same reason. Anything
+     without an image_url is not a picture to open, and does nothing. */
+  function albOpenPicture(id){
     var rows = (albView && albView.rows) || [];
     var art = rows.filter(function(a){ return String(a.id)===String(id); })[0] ||
               (typeof findArtworkById === 'function' ? findArtworkById(id) : null);
-    if(!art) return;
-    var cats = catList(art.category).length ? catList(art.category)
-             : (catList(art.tags).length ? catList(art.tags) : ['others']);
-    openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, rows);
+    if(!art || !art.image_url) return;
+    var shot = (typeof getViewUrl === 'function') ? getViewUrl(art.image_url) : art.image_url;
+    if(typeof dzLightOpen === 'function') dzLightOpen(shot, art.name || '');
   }
   function albCloseView(){
     document.getElementById('albViewPage').classList.remove('open');

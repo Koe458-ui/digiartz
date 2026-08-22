@@ -990,30 +990,30 @@
     @media(hover:hover){ .vwFileDl:hover{background:color-mix(in srgb,var(--vwGreen) 20%,var(--sur));} }
     .vwFileDl:active{transform:scale(.94);}
 
-    /* ── TEMPORARY — THE NOTES COLUMN IS OFF ──────────────────────────────
+    /* ── TEMPORARY — THE PICTURE IS OFF, THE NOTES ARE ON ─────────────────
 
-       The bisect asked for: the box on, the picture on, the text off. What is
-       hidden is everything the notes column carries — the artist card, the
-       action rail, the title, the description, the details, the tags, the ad
-       and the comment thread — and what is left is the box and the work in it.
+       The cut before this one settled half of it: box on, picture on, notes
+       off, and everything was right. So the picture and the pane it sits in
+       are not the fault, and whatever is, is in the column that carries the
+       artist card, the action rail, the title, the description, the details,
+       the tags, the ad slot and the comment thread.
 
-       Read the answer off the next look:
+       This is that half on its own. If the box goes wrong with only the
+       notes in it, the next cut is inside them — the writing and the details
+       against the ad and the comments — and one more look after that names
+       the element. If the box is right with the notes alone AND right with
+       the picture alone, then neither half is the fault by itself and the two
+       together are: a column that is fine on its own pushing a grid that is
+       fine on its own, which is a different and much smaller question.
 
-         the box is right          the fault is in what the notes column
-                                   renders, and the next cut is inside it
-         the box is still wrong    the fault is the picture or the pane it
-                                   sits in, and the readout in the bar says
-                                   which of the two by how much they differ
+       The grid drops to one column with the picture gone.
 
-       The grid drops to one column with them gone, so the picture has the
-       whole box rather than sitting beside an empty track.
-
-       TO PUT THE NOTES BACK: delete this block. It is the last thing in the
-       viewer's section and touches nothing else. */
-    #artModal .avSide,
-    #artModal #avAuthorCard{display:none !important;}
+       TO PUT THE PICTURE BACK: delete this block. */
+    #artModal .avImgPane{display:none !important;}
     @media(min-width:900px){
       #artModal .avBody{grid-template-columns:minmax(0,1fr);}
+      #artModal .avSide{grid-column:1;}
+      #artModal .avBody > #avAuthorCard{grid-column:1;}
     }
 
     /* ── the picture on its own ───────────────────────────────────────────

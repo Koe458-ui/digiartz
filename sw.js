@@ -4,6 +4,21 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v211 — the other half: the picture off, the notes on.
+
+       With the box and the picture alone, everything was right. So the
+       picture and its pane are not the fault, and the half that carries it is
+       the column with the artist card, the action rail, the title, the
+       description, the details, the tags, the ad slot and the comment thread.
+
+       This is that half by itself. Wrong with only the notes in it, and the
+       next cut is inside them — the writing and the details against the ad
+       and the comments. Right with only the notes in it, given that it is
+       also right with only the picture, and neither half is the fault alone:
+       the two together are, which is a smaller and much more specific
+       question than the one this started as.
+       Changed: css/viewer.css, index.html, sw.js.
+
    v210 — the notes column is off, temporarily, to halve the problem.
 
        Switching the whole viewer off proved the box: empty, it is exactly the
@@ -4034,7 +4049,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v226';
+const CACHE_VERSION = 'v227';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4088,7 +4103,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=26',
+  '/css/viewer.css?v=27',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',

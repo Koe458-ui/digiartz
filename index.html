@@ -46,6 +46,37 @@
        stays in analytics.css. */
     #anPage{position:fixed;inset:0;z-index:545;overflow-y:auto;transform:translateX(100%);}
     #anPage.open{transform:translateX(0);}
+
+    /* The same, for the three views that open over the page, and for the same
+       reason: it happened again.
+
+       #artModal is the artwork viewer, #dzView the section viewer, #dzLight
+       the full-screen picture. Every one of them is written into this
+       document at all times and held off screen by a rule in a stylesheet —
+       css/hero.css for the first, css/overrides.css for the second,
+       css/viewer.css for the third. Miss that file and the panel is not
+       hidden and not positioned: it becomes an ordinary block in the page
+       flow.
+
+       That is what a member photographed. The artwork viewer had printed
+       down the page at the picture's own size, with the notes beside it, the
+       picture running off the bottom of the window, no way to close it, and
+       the whole thing scrolling as if it were the page — because for that
+       load, it was. css/hero.css is 116KB and carries #artModal's four
+       overlay properties; a copy that is late, refused, or missing from the
+       service worker's shell after a deploy takes the viewer down with it.
+
+       So the properties that make an overlay an overlay live here, where no
+       file has to load for them to hold. Everything else about all three —
+       the ground, the blur, the columns, the picture's box — stays in the
+       stylesheets, which are then free to be late without turning a viewer
+       into a paragraph. */
+    #artModal{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;pointer-events:none;}
+    #artModal.open{opacity:1;visibility:visible;pointer-events:auto;}
+    #dzView{position:fixed;inset:0;z-index:1300;display:none;}
+    #dzView.open{display:flex;flex-direction:column;}
+    #dzLight{position:fixed;inset:0;z-index:1500;display:none;}
+    #dzLight.open{display:flex;align-items:center;justify-content:center;}
   </style>
   <!-- Cloudflare Web Analytics -->
   <script data-cf-beacon='{"token": "aa4b7177387e4f689739a5fdf44cbffa"}' defer="" src="https://static.cloudflareinsights.com/beacon.min.js">

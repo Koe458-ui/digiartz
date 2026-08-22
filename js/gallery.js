@@ -177,7 +177,6 @@
   var avNavIndex = -1;
   // opened from gallery overlay
   var avLbFromGallery = false;
-  var avZoomLevel = 1, avPanX = 0, avPanY = 0;
   var avCurrentArt = null;
   // Where the address bar was when this viewer took it over, so closing can
   // hand it back rather than assuming the home page. Null means the viewer was
@@ -610,14 +609,6 @@
     openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), 'replace', avNavList);
   }
 
-  function avResetZoom(){
-    avZoomLevel=1; avPanX=0; avPanY=0;
-    avApplyTransform();
-  }
-  function avApplyTransform(){
-    var img=document.getElementById('lbImg');
-    if(img) img.style.transform='translate('+avPanX+'px,'+avPanY+'px) scale('+avZoomLevel+')';
-  }
   // the download button is the only way out of the site with a file, so every
   // click has to clear the server side daily quota first
   var avDlBusy=false;
@@ -877,31 +868,106 @@
   }
   function avCloseMoreMenu(){}
 
-  // drag to pan, double tap zoom
+  /* The picture on its own.
+
+     What was here was a zoom: a double tap doubled the picture with a
+     transform and a drag panned it around inside a box with the overflow
+     hidden. It had not worked in a long time — css/overrides.css pins #lbImg
+     at transform:none — and it was the wrong idea even when it did. Doubling
+     a picture inside a box the size of a column shows you a quarter of the
+     work and takes the rest away, with no scrollbar, no way back that says so,
+     and nothing at all on a screen without a mouse to drag with.
+
+     A click opens the work on the screen instead. #dzLight is a dialog of its
+     own next to the viewer in index.html, css/viewer.css fits the picture
+     inside 80% of the window without ever blowing it up past its own pixels,
+     and everything behind it goes dark and blurred. There is nothing to
+     scroll and nothing to aim at: a click anywhere around the picture puts it
+     back, and the artwork viewer is exactly as it was left — which is why
+     this is a sibling of #artModal and not a layer inside it. A click inside
+     the viewer that lands on the viewer closes the artwork, so a full-screen
+     layer in there would close the artwork along with itself.
+
+     dzLightOpen takes a url rather than reading one, so the section views can
+     hand it theirs later without this having to know what they are. */
+  var dzLightFocus = null;
+  function dzLightNat(img){
+    if(!img || !img.naturalWidth) return;
+    img.style.setProperty('--natW', img.naturalWidth + 'px');
+    img.style.setProperty('--natH', img.naturalHeight + 'px');
+  }
+  function dzLightOpen(src, alt){
+    var box = document.getElementById('dzLight');
+    var img = document.getElementById('dzLightImg');
+    if(!box || !img || !src) return;
+    /* The file already on screen, not a larger one fetched for the occasion.
+       It is in the browser's cache, so this opens in the same frame it is
+       asked for, and what is shown is the resolution the artist uploaded
+       rather than a blow-up of it.
+
+       Blanked first when it is a different picture: the element is reused,
+       and setting a src does not clear the pixels already decoded into it, so
+       the previous artwork would be what the screen shows for a frame. */
+    if(img.getAttribute('src') !== src){
+      img.removeAttribute('src');
+      img.style.removeProperty('--natW');
+      img.style.removeProperty('--natH');
+      img.src = src;
+    }
+    img.alt = alt || '';
+    dzLightNat(img);
+    dzLightFocus = document.activeElement;
+    box.classList.add('open');
+    // Somewhere for Escape and the tab key to be, and off the button that
+    // was focused behind it.
+    try{ box.focus({ preventScroll:true }); }catch(e){}
+  }
+  function dzLightClose(){
+    var box = document.getElementById('dzLight');
+    if(!box || !box.classList.contains('open')) return;
+    box.classList.remove('open');
+    /* The lock is the viewer's, not this one's, and the viewer is still open
+       underneath. restoreScroll hands it back only when nothing in the panel
+       table is holding it, so this is safe from either side: called with the
+       viewer open it does nothing, and called after a sweep has closed the
+       viewer it is what unlocks the page. */
+    if(typeof restoreScroll === 'function') restoreScroll();
+    if(dzLightFocus && dzLightFocus.focus){
+      try{ dzLightFocus.focus({ preventScroll:true }); }catch(e){}
+    }
+    dzLightFocus = null;
+  }
+  window.dzLightOpen  = dzLightOpen;
+  window.dzLightClose = dzLightClose;
+  function dzLightIsOpen(){
+    var box = document.getElementById('dzLight');
+    return !!(box && box.classList.contains('open'));
+  }
+
   (function(){
-    var dragging=false,startX=0,startY=0,origX=0,origY=0;
     document.addEventListener('DOMContentLoaded', function(){
-      var vp=document.getElementById('avImgViewport');
-      if(!vp) return;
-      vp.addEventListener('pointerdown',function(e){
-        if(avZoomLevel<=1) return;
-        dragging=true; startX=e.clientX; startY=e.clientY; origX=avPanX; origY=avPanY;
-        try{ vp.setPointerCapture(e.pointerId); }catch(err){}
-        vp.classList.add('dragging');
+      var pic = document.getElementById('lbImg');
+      if(pic) pic.addEventListener('click', function(){
+        // currentSrc, so a browser that picked a candidate of its own is not
+        // second-guessed; src for one that reports nothing.
+        dzLightOpen(pic.currentSrc || pic.src, pic.alt);
       });
-      vp.addEventListener('pointermove',function(e){
-        if(!dragging) return;
-        avPanX=origX+(e.clientX-startX); avPanY=origY+(e.clientY-startY);
-        avApplyTransform();
-      });
-      ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
-        vp.addEventListener(ev,function(){ dragging=false; vp.classList.remove('dragging'); });
-      });
-      vp.addEventListener('dblclick',function(){
-        if(avZoomLevel>1){ avZoomLevel=1; avPanX=0; avPanY=0; } else { avZoomLevel=2; }
-        avApplyTransform();
+      var box = document.getElementById('dzLight');
+      if(box) box.addEventListener('click', function(e){
+        // Identity, not a contains() test: the picture is the only thing in
+        // here, so anything else the click landed on is the ground around it.
+        if(e.target !== document.getElementById('dzLightImg')) dzLightClose();
       });
     });
+    /* Escape closes this and stops there. The viewer behind it has its own
+       ways out and none of them should fire from the same key press — the
+       quota sheet above the viewer is handled the same way, a few hundred
+       lines up. */
+    document.addEventListener('keydown', function(e){
+      if(e.key !== 'Escape' || !dzLightIsOpen()) return;
+      dzLightClose();
+      e.stopPropagation();
+    }, true);
   })();
 
   /* The wheel works everywhere inside the viewer, not only over the columns.
@@ -966,6 +1032,10 @@
       document.addEventListener('wheel', function(e){
         var modal = document.getElementById('artModal');
         if(!modal || !modal.classList.contains('open')) return;
+        // The full view is one picture on a blurred ground with nothing to
+        // scroll. Routing the wheel to the columns behind it would scroll a
+        // page nobody can see moving.
+        if(dzLightIsOpen()){ e.preventDefault(); return; }
         var pane = modal.querySelector('.avImgPane');
         var side = modal.querySelector('.avSideScroll');
         if(!pane || !side) return;
@@ -1029,7 +1099,6 @@
     avLbFromGallery = !!(_fgAtOpen && _fgAtOpen.classList.contains('open'));
     if(amCloseTimer){clearTimeout(amCloseTimer);amCloseTimer=null;}
     if(modal) modal.classList.remove('closing');
-    avResetZoom();
     avCloseMoreMenu();
 
     // instant reset
@@ -1161,6 +1230,13 @@
   function closeLB(keepUrl){
     var modal=document.getElementById('artModal');
     if(!modal || !modal.classList.contains('open'))return;
+    /* The full view goes with the artwork it was opened from. It is a sibling
+       of this panel rather than a child, which is what keeps a click beside
+       the picture from closing both — and the other side of that is that
+       nothing takes it down with the viewer unless the viewer says so. Every
+       way out ends here: the way back, the sweep when the member changes
+       section, and the click on the page around the panel. */
+    dzLightClose();
     modal.classList.add('closing');
     avCloseMoreMenu();
     if(amCloseTimer)clearTimeout(amCloseTimer);

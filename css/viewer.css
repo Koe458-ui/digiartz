@@ -44,12 +44,19 @@
       flex:1 1 auto;min-height:0;width:100%;
       display:flex;align-items:center;justify-content:center;
     }
+    /* A box around the picture, and nothing more. It was a pan surface once —
+       cursor:grab and touch-action:none, reserved for dragging a zoomed
+       picture around inside it — and the zoom that needed them has been dead
+       for as long as css/overrides.css has pinned #lbImg at transform:none.
+       What is left of them is a cursor advertising a drag that does not
+       happen and, worse, a finger the browser was told this element would
+       handle and then nothing did. The picture opens the full view now; the
+       gestures belong to the browser. */
     .avImgViewport{
       position:relative;width:100%;height:100%;
       display:flex;align-items:center;justify-content:center;
-      overflow:hidden;cursor:grab;touch-action:none;
+      overflow:hidden;
     }
-    .avImgViewport.dragging{cursor:grabbing;}
     .avImgViewport.loading::after{
       content:'';position:absolute;inset:0;
       background:linear-gradient(100deg,transparent 30%,rgba(var(--pg-rgb),.1) 50%,transparent 70%);
@@ -61,7 +68,7 @@
     .avImgViewport img{
       max-width:92%;max-height:88%;width:auto;height:auto;
       object-fit:contain;display:block;
-      transition:transform .05s linear, opacity .1s ease;
+      transition:opacity .1s ease;
       user-select:none;-webkit-user-drag:none;
     }
     .avSide{
@@ -863,3 +870,59 @@
     .vwFileDl svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
     @media(hover:hover){ .vwFileDl:hover{background:color-mix(in srgb,var(--vwGreen) 20%,var(--sur));} }
     .vwFileDl:active{transform:scale(.94);}
+
+    /* ── the picture on its own ───────────────────────────────────────────
+
+       The viewer is a panel: the work has a column of notes beside it, a
+       rail of thumbnails under it and a comment thread below that, and the
+       picture gets whatever is left. This is the other way of looking at
+       it — the work on the screen, and the screen holding nothing else.
+
+       Two rules make it, and both of them are about not touching the file:
+
+       - The box is 80% of the window, stated as the 10% margin around it,
+         and the picture takes as much of that box as it needs. It is fitted,
+         never filled: a portrait runs the full height and a landscape the
+         full width, and neither is cropped to make the other happen.
+       - It is never blown up. --natW and --natH are the file's own pixels,
+         written onto the element by dzLightOpen in js/gallery.js, and they
+         cap the box: a picture smaller than the window is shown at its own
+         size on its own ground rather than stretched to fill a screen it
+         does not have the resolution for.
+
+       Everything behind it goes dark and blurred, because the point of this
+       view is that there is nothing else in it. There is nothing to scroll
+       and no chrome to find: a click anywhere around the picture closes it,
+       and the viewer is exactly where it was left. */
+    #dzLight{
+      position:fixed;inset:0;z-index:1500;
+      display:none;align-items:center;justify-content:center;
+      /* the 80% box, written as the margin outside it */
+      padding:10vh 10vw;
+      padding:10dvh 10vw;
+      background:rgba(8,8,10,.72);
+      -webkit-backdrop-filter:blur(16px) saturate(120%);
+      backdrop-filter:blur(16px) saturate(120%);
+      overflow:hidden;
+      cursor:zoom-out;
+    }
+    #dzLight.open{display:flex;}
+    #dzLight img{
+      display:block;margin:auto;
+      width:auto;height:auto;
+      max-width:min(100%,var(--natW,100%));
+      max-height:min(100%,var(--natH,100%));
+      object-fit:contain;
+      border-radius:4px;
+      box-shadow:0 30px 80px rgba(0,0,0,.5);
+      cursor:default;
+      user-select:none;-webkit-user-drag:none;
+    }
+    #dzLight.open img{animation:dzLightIn .18s cubic-bezier(.22,1,.36,1) both;}
+    @keyframes dzLightIn{
+      from{opacity:0;transform:scale(.97);}
+      to{opacity:1;transform:none;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      #dzLight.open img{animation:none;}
+    }

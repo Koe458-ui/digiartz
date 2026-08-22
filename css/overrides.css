@@ -13,22 +13,24 @@
 #artModal .avImgPane{flex:0 0 auto;overflow:visible;background:transparent;}
 #artModal .avImgStage{position:static;height:auto;min-height:0;max-height:none;background:transparent;display:block;}
 /* The viewport is a plain box around the picture, not a pan surface. It was
-   written as one — css/viewer.css gives it touch-action:none and cursor:grab
-   so a zoomed image could be dragged inside it — but the rule below pins
-   #lbImg at transform:none, at every width, so there has been nothing to drag
-   for as long as that rule has been there. touch-action:none outlived the
-   gesture it was reserving the finger for and went on swallowing every other
-   one: a swipe over the artwork on a phone, or on a laptop with a touch
-   screen, scrolled nothing, because the browser had been told this element
-   handles its own touches and then no one handled them. The picture is the
-   biggest target in the viewer, so that is most of the viewer's surface. Both
-   go back to the browser, and the cursor stops advertising a drag that is not
-   there. */
+   written as one — a zoom that doubled the picture with a transform and let
+   it be dragged inside a box with the overflow hidden — and both halves of
+   that are gone: the gesture rules have come out of css/viewer.css, and the
+   transform:none that had quietly pinned the picture flat since long before
+   this note has come out of the rule below with the zoom it was overruling.
+   What the zoom left behind was the worst of both: a cursor advertising a
+   drag that did nothing, and touch-action:none swallowing every gesture over
+   the biggest target in the viewer — a swipe over the artwork on a phone, or
+   on a laptop with a touch screen, scrolled nothing, because the browser had
+   been told this element handles its own touches and then no one handled
+   them. Every gesture is the browser's again, and the touch-action:auto and
+   cursor:default that were undoing them from here have gone with the rules
+   they were undoing. */
 #artModal .avImgViewport{position:static;height:auto;min-height:0;display:block;background:transparent;border:0;
-  padding:1rem var(--vwPad) 0;box-sizing:border-box;text-align:center;
-  touch-action:auto;cursor:default;}
-/* fit first screen */
-#artModal #lbImg{position:static;width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;transform:none!important;cursor:default;}
+  padding:1rem var(--vwPad) 0;box-sizing:border-box;text-align:center;}
+/* Fit the first screen — and the picture is the way into the full view, so
+   the cursor says so. #dzLight in css/viewer.css is what a click opens. */
+#artModal #lbImg{position:static;width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;cursor:zoom-in;}
 /* No cap and no auto margins: stacked, the notes take the same measure the
    picture above them takes, which is the shell's. An 860px column centred
    inside a wider one is the floating card this layout is not. */

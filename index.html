@@ -167,7 +167,7 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/></noscript>
   <link rel="stylesheet" href="/css/base.css?v=12">
   <link rel="stylesheet" href="/css/hero.css?v=100">
-  <link rel="stylesheet" href="/css/viewer.css?v=19">
+  <link rel="stylesheet" href="/css/viewer.css?v=20">
   <link rel="stylesheet" href="/css/community.css?v=19">
   <link rel="stylesheet" href="/css/connect.css?v=6">
   <link rel="stylesheet" href="/css/ranking.css?v=4">
@@ -177,7 +177,7 @@
   <link rel="stylesheet" href="/css/panels.css?v=12">
   <link rel="stylesheet" href="/css/upload.css?v=15">
   <link rel="stylesheet" href="/css/widgets.css?v=11">
-  <link rel="stylesheet" href="/css/overrides.css?v=29">
+  <link rel="stylesheet" href="/css/overrides.css?v=30">
   <link rel="stylesheet" href="/css/select.css?v=4">
   <link rel="stylesheet" href="/css/analytics.css?v=9">
  </head>
@@ -2419,6 +2419,25 @@
     </div>
    </div>
   </div>
+  <!-- The picture on its own.
+
+       Clicking the work in the viewer lifts it out of the panel and onto the
+       screen: everything behind it goes dark and blurred, and the picture is
+       fitted to the window rather than to a column that has notes and a
+       comment thread beside it. Nothing else is in here — no chrome, no
+       buttons, no scroller — so the only thing to do with it is look, and the
+       only gesture it needs is the one that puts it back: a click anywhere
+       around the picture.
+
+       A sibling of the viewer rather than a child of it, and that is what
+       makes the click safe. #artModal closes when a click lands on #artModal
+       itself, so a full-screen layer INSIDE it would hand every click beside
+       the picture to the panel underneath and close the artwork as well. Sat
+       here it is its own dialog: closing it leaves the viewer exactly as it
+       was, with the artwork still open behind it. -->
+  <div id="dzLight" role="dialog" aria-modal="true" aria-label="Full picture" tabindex="-1">
+   <img id="dzLightImg" alt="" draggable="false">
+  </div>
   <div id="authMod" role="dialog" aria-modal="true" aria-label="Login">
     <div class="subPgHdr">
       <div class="subPgTitle">ACCOUNT <span class="s">◉</span></div>
@@ -2740,9 +2759,9 @@
   <script src="/js/captcha.js?v=1"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=30"></script>
+  <script src="/js/app-core.js?v=31"></script>
   <script src="/js/protect.js?v=3"></script>
-  <script src="/js/gallery.js?v=96"></script>
+  <script src="/js/gallery.js?v=97"></script>
   <script src="/js/auth.js?v=19"></script>
   <script src="/js/profile.js?v=16"></script>
   <script src="/js/albums.js?v=16"></script>

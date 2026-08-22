@@ -4,6 +4,46 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v197 — the picture, on the screen, with nothing else on it.
+
+       Clicking the work in the artwork viewer opens it full screen: the page
+       behind goes dark and blurred, the picture is fitted inside 80% of the
+       window, and a click anywhere around it closes the full view and leaves
+       the artwork exactly where it was. Nothing scrolls in there and there is
+       no chrome to find — Escape does the same thing as the click.
+
+       What it replaces is a zoom that had been dead for months and was the
+       wrong idea while it lived. A double tap doubled the picture with a
+       transform and a drag panned it inside a box with the overflow hidden:
+       a quarter of the work on screen, the rest gone, no scrollbar to say so,
+       and nothing to do about it at all without a mouse to drag with. It had
+       stopped happening long ago anyway — css/overrides.css pins #lbImg at
+       transform:none — so what was left was the residue: cursor:grab over the
+       biggest target in the viewer advertising a drag that did nothing, and
+       touch-action:none swallowing every real gesture over it. All of it is
+       out, on both sides: the state, the pointer handlers and the dblclick in
+       js/gallery.js, and the rules that reserved the finger for them in
+       css/viewer.css and css/overrides.css. The picture wears cursor:zoom-in
+       now, because that is what it does.
+
+       The full view is a dialog of its own beside #artModal, not a layer
+       inside it, and that is what makes the click safe: the viewer closes
+       when a click lands on the viewer itself, so a full-screen layer within
+       it would hand every click beside the picture to the artwork underneath
+       and close both. It is in DZ_PANELS like every other panel — it holds
+       the scroll lock, it hides the floating widgets, and a sweep closes it,
+       which is what stops a picture standing over a section the member has
+       already left.
+
+       Two caps size it and neither of them touches the file: 80% of the
+       window, written as the 10% margin around it, and the picture's own
+       pixels, measured on load and written onto the element, so a small
+       picture is shown at its own size rather than blown up to fill a screen
+       it has no resolution for. A portrait runs the full height, a landscape
+       the full width, and nothing is ever cropped to make either happen.
+       Changed: index.html, css/viewer.css, css/overrides.css, js/gallery.js,
+       js/app-core.js, sw.js.
+
    v196 — Paper is the theme a first visit opens in.
 
        Nothing about either palette moved. What changed is the one word
@@ -3654,7 +3694,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v212';
+const CACHE_VERSION = 'v213';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3708,7 +3748,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=100',
-  '/css/viewer.css?v=19',
+  '/css/viewer.css?v=20',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',
@@ -3718,7 +3758,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=12',
   '/css/upload.css?v=15',
   '/css/widgets.css?v=11',
-  '/css/overrides.css?v=29',
+  '/css/overrides.css?v=30',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 
@@ -3740,9 +3780,9 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=30',
+  '/js/app-core.js?v=31',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=96',
+  '/js/gallery.js?v=97',
   '/js/auth.js?v=19',
   '/js/profile.js?v=16',
   '/js/albums.js?v=16',

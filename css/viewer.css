@@ -67,11 +67,6 @@
       background:transparent;box-sizing:border-box;text-align:center;
       padding:var(--vwPad,1.5rem) var(--vwPad,1.5rem) 0;
     }
-    #artModal .avImgStage{
-      display:block;position:static;
-      width:auto;height:auto;min-height:0;max-height:none;
-      background:transparent;
-    }
     #artModal .avImgViewport{
       display:block;position:relative;
       width:auto;height:auto;min-height:0;
@@ -92,11 +87,19 @@
       animation:amShimmer 1.3s ease-in-out infinite;
     }
     #artModal .avImgViewport.loading img{opacity:0;}
+    /* the rest of the set, under the first, at the width of the column */
     #artModal .avImgStack{
-      display:flex;gap:.5rem;overflow-x:auto;
+      display:flex;flex-direction:column;align-items:center;
+      gap:var(--vwGap,1.5rem);
       padding:var(--vwGap,1.5rem) var(--vwPad,1.5rem) 0;
     }
-    #artModal .avThumb{width:72px;height:72px;flex:0 0 auto;}
+    #artModal .avImgStack[hidden]{display:none;}
+    #artModal .avStackImg{
+      display:block;width:auto;height:auto;
+      max-width:min(1100px,100%);max-height:calc(100dvh - 132px);
+      object-fit:contain;cursor:zoom-in;
+      user-select:none;-webkit-user-drag:none;
+    }
 
     /* the notes — the section viewer's .dzvCol */
     #artModal .avSide{
@@ -126,15 +129,29 @@
         min-height:0;
       }
       #artModal .avImgPane{
-        grid-column:1;grid-row:1 / span 2;
+        grid-column:1;grid-row:2;
         min-height:0;
         overflow-y:auto;overscroll-behavior:contain;
         padding:var(--vwGap,1.5rem) 0;
       }
       #artModal #lbImg{max-width:100%;}
+      #artModal .avStackImg{max-width:100%;}
       #artModal .avImgStack{padding:var(--vwGap,1.5rem) 0 0;}
       #artModal #avAuthorCard{padding:var(--vwGap,1.5rem) 0 0;}
-      #artModal .avBody > #avAuthorCard{grid-column:2;grid-row:1;align-self:start;}
+      /* The card belongs in the notes' scroller at this width and avPlaceCard
+         puts it there, which leaves row 1 empty and therefore no height at
+         all. This is the fallback for when it has not moved — an older
+         gallery.js, or something that threw first: the card takes the full
+         width above both columns, which is the layout it had before, rather
+         than a column of its own beside them.
+
+         The pane sits in row 2 rather than spanning both. Spanning them made
+         it the thing that sized the auto row: a column of pictures 1811px
+         tall handed row 1 half of the panel and left the notes beside it
+         with 279px of the 559 they should have had. A picture column and a
+         notes column are the same height now because they are in the same
+         row. */
+      #artModal .avBody > #avAuthorCard{grid-column:1 / span 2;grid-row:1;align-self:start;}
       #artModal .avSide{
         grid-column:2;grid-row:2;
         max-width:none;margin:0;min-height:0;
@@ -934,6 +951,56 @@
     .vwFileDl svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
     @media(hover:hover){ .vwFileDl:hover{background:color-mix(in srgb,var(--vwGreen) 20%,var(--sur));} }
     .vwFileDl:active{transform:scale(.94);}
+
+    /* ── the scrollbars in both viewers ───────────────────────────────────
+       A column that scrolls should say so, and the browser's default bar
+       says it in the wrong voice: on Windows a 17px grey trough with square
+       buttons, wide enough to change the column's measure and loud enough to
+       read as chrome. This is the same bar in both viewers and in both
+       themes — a thumb in the border colour that warms on hover, a trough
+       that is the ground it sits on, and 10px of width whether it is over
+       the work or over the notes.
+
+       scrollbar-width and scrollbar-color are the standard properties and
+       Firefox takes only those; the ::-webkit- rules are for everything
+       else. Both are stated because they do not overlap. */
+    #artModal .avImgPane,#artModal .avSide,#artModal .avBody,
+    #dzView .dzvMedia,#dzView .dzvCol,#dzView .dzvBody{
+      scrollbar-width:thin;
+      scrollbar-color:var(--bdrh) transparent;
+    }
+    #artModal .avImgPane::-webkit-scrollbar,#artModal .avSide::-webkit-scrollbar,
+    #artModal .avBody::-webkit-scrollbar,#dzView .dzvMedia::-webkit-scrollbar,
+    #dzView .dzvCol::-webkit-scrollbar,#dzView .dzvBody::-webkit-scrollbar{
+      width:10px;height:10px;
+    }
+    #artModal .avImgPane::-webkit-scrollbar-track,#artModal .avSide::-webkit-scrollbar-track,
+    #artModal .avBody::-webkit-scrollbar-track,#dzView .dzvMedia::-webkit-scrollbar-track,
+    #dzView .dzvCol::-webkit-scrollbar-track,#dzView .dzvBody::-webkit-scrollbar-track{
+      background:transparent;
+    }
+    #artModal .avImgPane::-webkit-scrollbar-thumb,#artModal .avSide::-webkit-scrollbar-thumb,
+    #artModal .avBody::-webkit-scrollbar-thumb,#dzView .dzvMedia::-webkit-scrollbar-thumb,
+    #dzView .dzvCol::-webkit-scrollbar-thumb,#dzView .dzvBody::-webkit-scrollbar-thumb{
+      background:var(--bdrh);
+      border-radius:999px;
+      border:3px solid transparent;
+      background-clip:content-box;
+    }
+    @media(hover:hover){
+      #artModal .avImgPane::-webkit-scrollbar-thumb:hover,#artModal .avSide::-webkit-scrollbar-thumb:hover,
+      #artModal .avBody::-webkit-scrollbar-thumb:hover,#dzView .dzvMedia::-webkit-scrollbar-thumb:hover,
+      #dzView .dzvCol::-webkit-scrollbar-thumb:hover,#dzView .dzvBody::-webkit-scrollbar-thumb:hover{
+        background:var(--pg);background-clip:content-box;
+      }
+    }
+    /* Each column stops at its own end. Without this a flick that runs out of
+       column carries on into whatever is behind it — the page, or the other
+       column — which reads as the view sliding when it should have stopped. */
+    #artModal .avImgPane,#artModal .avSide,#artModal .avBody,
+    #dzView .dzvMedia,#dzView .dzvCol,#dzView .dzvBody{
+      overscroll-behavior:contain;
+    }
 
     /* ── the picture on its own ───────────────────────────────────────────
 

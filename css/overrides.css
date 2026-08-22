@@ -37,24 +37,9 @@
   scrollbar-width:thin;
   overscroll-behavior-x:contain;
 }
-/* display:flex above outranks the browser's own [hidden]{display:none}, which
-   is a bare attribute selector and loses to any class. A single-image artwork
-   is told to hide this, and hidden has to mean hidden. */
-.avImgStack[hidden]{display:none;}
-.avImgStack::-webkit-scrollbar{height:6px;}
-.avImgStack::-webkit-scrollbar-thumb{background:var(--bdrh);border-radius:3px;}
-.avThumb{
-  flex:0 0 auto;
-  width:64px; height:64px; padding:0;
-  border:2px solid transparent; border-radius:9px;
-  background:var(--sur2); overflow:hidden; cursor:pointer;
-  opacity:.6;
-  transition:opacity .15s ease, border-color .15s ease;
-}
-.avThumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.avThumb:hover{opacity:1;}
-.avThumb.on{opacity:1;border-color:var(--pg);}
-.avThumb:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+/* The rail of thumbnails is gone and so are its rules. The work column
+   prints every picture in the set at the column's width now, so there is
+   nothing 72px square left to style. */
 
 /* hide while loading */
 
@@ -115,10 +100,18 @@
    than a carousel, because a carousel hides most of what the seller uploaded
    behind an arrow, and there are at most eight of them. Every colour here is
    a token, so it follows whichever theme is on. */
-.dzvGallery{display:flex;flex-wrap:wrap;gap:.55rem;}
-.dzvGallery a{display:block;line-height:0;border-radius:10px;overflow:hidden;border:1px solid var(--bdr);background:var(--sur2);}
-.dzvGallery img{width:104px;height:104px;object-fit:cover;display:block;cursor:zoom-in;}
-@media(max-width:520px){.dzvGallery img{width:82px;height:82px;}}
+/* The extra shots are the rest of the set, so they are printed like the
+   first one: down the column the picture is in, at the column's width, in
+   order. They were a wrapped strip of 104px squares in the middle of the
+   writing, which put pictures where the reading is and made every one of
+   them a click away from being visible at a useful size. */
+.dzvGallery{display:flex;flex-direction:column;align-items:center;gap:var(--vwGap,1.5rem);margin-top:var(--vwGap,1.5rem);}
+.dzvGallery a{display:block;line-height:0;max-width:100%;}
+.dzvGallery img{
+  width:auto;height:auto;
+  max-width:min(1100px,100%);max-height:calc(100dvh - 132px);
+  object-fit:contain;display:block;cursor:zoom-in;
+}
 .dzvMeta{display:flex;flex-direction:column;gap:.35rem;border:1px solid var(--bdr);border-radius:12px;padding:.8rem 1rem;background:var(--sur);}
 .dzvMetaRow{display:flex;justify-content:space-between;gap:1rem;font-size:.85rem;}
 .dzvMetaRow span{color:var(--txd);}
@@ -215,6 +208,26 @@
 @media (min-width:900px){
   /* ---- the section viewer: resources, blog, marketplace, jobs ---- */
   .dzvBody{ padding-inline:var(--shellPad); }
+  /* Two columns are for a listing, whose picture is the point. A job, a blog
+     post and a resource are writing with a picture at the top of it, and a
+     column of prose beside a column of one image reads as a page that has
+     been split for no reason — so those three stay single-column at every
+     width, with a measure on the writing. */
+  #dzView[data-sec="blog"] .dzvBody,
+  #dzView[data-sec="jobs"] .dzvBody,
+  #dzView[data-sec="resources"] .dzvBody{
+    display:block;overflow-y:auto;padding-bottom:6rem;
+  }
+  #dzView[data-sec="blog"] .dzvCol,
+  #dzView[data-sec="jobs"] .dzvCol,
+  #dzView[data-sec="resources"] .dzvCol{
+    max-width:900px;margin-inline:auto;overflow:visible;padding:var(--vwGap) 0 4rem;
+  }
+  #dzView[data-sec="blog"] .dzvMedia,
+  #dzView[data-sec="jobs"] .dzvMedia,
+  #dzView[data-sec="resources"] .dzvMedia{
+    max-width:900px;margin-inline:auto;overflow:visible;padding:var(--vwGap) 0 0;
+  }
   .dzvBody:has(.dzvMedia){
     display:grid;
     grid-template-columns:minmax(0,1fr) clamp(320px,26%,480px);

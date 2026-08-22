@@ -4890,7 +4890,20 @@
     if(!host || !r) return;
     host.scrollTop = 0;
     var sec = cur.sec, kind = KIND[sec], id = esc2(r.id), h = H(), html = '';
-    var img = function(u, alt){ return u ? '<div class="dzvMedia"><img src="'+esc2(getViewUrl(u))+'" alt="'+esc2(alt||'')+'" loading="lazy"></div>' : ''; };
+    /* Which section this is, on the panel itself. Two columns are for the
+       things whose picture is the point — a marketplace listing — and one is
+       for the things that are writing: a job, a blog post, a resource. The
+       stylesheet cannot tell those apart from the markup alone, because all
+       four build the same elements, so the panel says so. */
+    var vw = document.getElementById('dzView');
+    if(vw) vw.setAttribute('data-sec', sec);
+    var img = function(u, alt, more){
+      if(!u && !more) return '';
+      return '<div class="dzvMedia">'+
+        (u ? '<img src="'+esc2(getViewUrl(u))+'" alt="'+esc2(alt||'')+'" loading="lazy">' : '')+
+        (more || '')+
+      '</div>';
+    };
 
     if(sec === 'resources'){
       // What a downloader may actually do with it, scanned rather than read.
@@ -5003,7 +5016,7 @@
           var full = safeHref(getViewUrl(g.url));
           if(!full) return '';
           return '<a href="'+esc2(full)+'" target="_blank" rel="noopener">'+
-            '<img src="'+esc2(getThumbnailUrl(g.url))+'" alt="" loading="lazy"></a>';
+            '<img src="'+esc2(full)+'" alt="" loading="lazy"></a>';
         }).join('') +'</div>';
       }
       // What a buyer may actually do with it. Written as a list of answers
@@ -5052,11 +5065,16 @@
       // note that explains why there is no download button, and the request
       // link a commission is booked through. Those three used to be spread
       // between the top of the page and the far side of the tags.
-      html = img(r.preview_url, r.title) +
+      /* The extra shots go under the preview, in the column the preview is
+         in, at the width of that column. They used to be a wrapped strip of
+         104px squares in the middle of the writing, which put the pictures
+         where the reading is and asked for a click to see any of them at a
+         size worth looking at. A listing's pictures are a set: the column
+         prints all of them, one under another, and scrolls to its end. */
+      html = img(r.preview_url, r.title, galleryHtml) +
         '<div class="dzvCol">'+
         vwCard('dzvCard', 'dzCloseView()')+
         vwSecRail(sec, kind, id, r)+
-        galleryHtml+
         (r.featured ? '<p class="dzvExcerpt">★ Featured listing</p>' : '')+
         '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
         (r.summary ? '<p class="dzvExcerpt">'+esc2(r.summary)+'</p>' : '')+

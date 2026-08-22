@@ -4,6 +4,36 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v202 — a viewer is an overlay before its stylesheet arrives.
+
+       A member photographed the artwork viewer printing down the page: the
+       picture at its own size in a left column, the notes beside it, the work
+       running off the bottom of the window, nothing to close and the whole
+       thing scrolling as if it were the page. None of the three builds shipped
+       this month renders that, and the reason is that it is not a layout — it
+       is #artModal with its overlay rule missing. position:fixed, inset,
+       z-index and visibility live in css/hero.css, which is 116KB; a copy that
+       is late, refused, or absent from the shell after a deploy leaves the
+       viewer an ordinary block in the flow.
+
+       index.html has carried the same guard for #anPage since the analytics
+       dashboard printed itself down the home page for the same reason. It now
+       carries it for the three views that open over the page — the artwork
+       viewer, the section viewer and the full-screen picture. Four properties
+       each, in the critical style, where no file has to load for them to hold.
+       Everything else about all three stays in the stylesheets, which are free
+       to be late without taking a viewer apart.
+
+       And the service worker stops answering a stylesheet with nothing.
+       cacheFirst threw when the network could not produce a versioned file,
+       and returned the 404 when the edge did not have it yet — both of which
+       render the page with that stylesheet missing. It now falls back to any
+       cached copy of the same file, whatever version is on it: one release
+       behind on a stylesheet costs a rounded corner in the wrong place, and
+       the alternative costs the page. Stylesheets only — a script from another
+       release disagrees with the markup in ways that are much harder to see.
+       Changed: index.html, sw.js.
+
    v201 — the frame stops moving with the artwork.
 
        The artwork viewer's box is a fixed size and always was, but the
@@ -3815,7 +3845,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v217';
+const CACHE_VERSION = 'v218';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4078,6 +4108,41 @@ async function imageFirst(request, cacheName) {
 }
 
 // cache first, for our own versioned assets and for fonts
+/* Any copy of this stylesheet, whatever version is written on it.
+
+   A versioned url is answered cache-first and, when it is not in the cache,
+   from the network — and when the network cannot answer, this file used to
+   have nothing left to say and threw. For a script that is the honest
+   outcome. For a STYLESHEET it is the worst one available: a page that
+   renders with a stylesheet missing is not a page with slightly wrong
+   colours, it is a page whose overlays are paragraphs and whose panels print
+   down the middle of the home page. The site has now watched that happen to
+   the artwork viewer, live.
+
+   Last week's copy of the same file is a far better answer than no copy. It
+   is only ever reached when the exact version could not be fetched at all, or
+   came back refused — a deploy whose assets have not propagated, a cache that
+   was evicted, a train going into a tunnel — and the cost of being one
+   release behind on a stylesheet is a rounded corner in the wrong place.
+
+   Stylesheets only. A script from another release can disagree with the
+   markup in ways that are far harder to see than a stale border, and a script
+   that fails to load is a feature that does not run rather than a page that
+   comes apart. */
+async function anyVersionOf(cache, request) {
+  try {
+    const path = new URL(request.url).pathname;
+    if (!/\.css$/i.test(path)) return null;
+    const keys = await cache.keys();
+    for (const req of keys) {
+      if (new URL(req.url).pathname !== path) continue;
+      const res = await cache.match(req);
+      if (res) return res;
+    }
+  } catch (err) { /* fall through to whatever the caller had */ }
+  return null;
+}
+
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request);
@@ -4088,10 +4153,19 @@ async function cacheFirst(request, cacheName) {
       await cache.put(request, res.clone());
       trim(cacheName).catch(() => {});
     }
+    // A refusal is not an answer for a stylesheet either: an asset whose new
+    // version has not reached the edge yet 404s, and the page renders without
+    // it. Hand back the copy we have rather than the 404.
+    if (res && !res.ok) {
+      const older = await anyVersionOf(cache, request);
+      if (older) return older;
+    }
     return res;
   } catch (err) {
     const stale = await cache.match(request, { ignoreVary: true });
     if (stale) return stale;
+    const older = await anyVersionOf(cache, request);
+    if (older) return older;
     throw err;
   }
 }

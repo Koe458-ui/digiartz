@@ -1,237 +1,752 @@
-// avatar and banner upload
-  var PF_AVB_COOLDOWN_MS = 7*24*60*60*1000; // 1 week
-  var PF_AVB_DIMS = { avatar:{w:480,h:480}, banner:{w:1600,h:500} };
+var currentUser = null;
+var currentUserAvatarUrl = null;
+var authMode = 'login';
 
-  function pfRenderAvatarBanner(){
-    if(!pf.profile) return;
-    var aImg = document.getElementById('pfAvatarImg');
-    var aLetter = document.getElementById('pfAvatarLetter');
-    var eaImg = document.getElementById('pfEditAvatarImg');
-    var eaLetter = document.getElementById('pfEditAvatarLetter');
-    if(pf.profile.avatar_url){
-      aImg.src = getThumbnailUrl(pf.profile.avatar_url); aImg.style.display='block'; aLetter.style.display='none';
-      eaImg.src = getThumbnailUrl(pf.profile.avatar_url); eaImg.style.display='block'; eaLetter.style.display='none';
-    } else {
-      aImg.style.display='none'; aLetter.style.display='';
-      eaImg.style.display='none'; eaLetter.style.display='';
-    }
-    var bImg = document.getElementById('pfBannerImg');
-    var ebImg = document.getElementById('pfEditBannerImg');
-    if(pf.profile.banner_url){
-      bImg.src = getViewUrl(pf.profile.banner_url); bImg.style.display='block';
-      ebImg.src = getViewUrl(pf.profile.banner_url); ebImg.style.display='block';
-    } else {
-      bImg.style.display='none';
-      ebImg.style.display='none';
-    }
+function paintAvatarChip(imgId, txtId, url, letter){
+  var img = document.getElementById(imgId);
+  var txt = document.getElementById(txtId);
+  if(!img || !txt) return;
+  if(url){
+    img.src = getThumbnailUrl(url);
+    img.style.display = 'block';
+    txt.style.display = 'none';
+  } else {
+    img.removeAttribute('src');
+    img.style.display = 'none';
+    txt.style.display = '';
+    txt.textContent = letter || '?';
   }
+}
 
-  // cooldown left in ms
-  function pfAvBCooldownLeft(updatedAt){
-    if(!updatedAt) return 0;
-    var elapsed = Date.now() - new Date(updatedAt).getTime();
-    return Math.max(0, PF_AVB_COOLDOWN_MS - elapsed);
-  }
-  function pfAvBCooldownMsg(msLeft){
-    var days = Math.ceil(msLeft/(24*60*60*1000));
-    return 'You can re-upload in '+days+' day'+(days===1?'':'s')+'.';
+function syncAuthBtn() {
+  var loginBtn  = document.getElementById('navLoginBtn');
+  var avatarBtn = document.getElementById('navAvatarBtn');
+
+  if (currentUser) {
+    var letter = cpGetAvatarLetter();
+    paintAvatarChip('navAvatarImg', 'navAvatarLetter', currentUserAvatarUrl, letter);
+    if (loginBtn)  loginBtn.style.display  = 'none';
+    if (avatarBtn) {
+      avatarBtn.style.display = 'flex';
+      avatarBtn.title = 'Profile — ' + cpGetDisplayName();
+    }
+  } else {
+    if (loginBtn)  loginBtn.style.display  = '';
+    if (avatarBtn) avatarBtn.style.display  = 'none';
   }
 
-  function openPfAvatarPicker(){
-    if(!pf.isOwner){ showToast('You can only edit your own profile'); return; }
-    var left = pfAvBCooldownLeft(pf.profile && pf.profile.avatar_updated_at);
-    if(left>0){ showToast('Profile photo was updated recently. '+pfAvBCooldownMsg(left)); return; }
-    document.getElementById('pfAvatarFileInput').click();
-  }
-  function openPfBannerPicker(){
-    if(!pf.isOwner){ showToast('You can only edit your own profile'); return; }
-    var left = pfAvBCooldownLeft(pf.profile && pf.profile.banner_updated_at);
-    if(left>0){ showToast('Banner was updated recently. '+pfAvBCooldownMsg(left)); return; }
-    document.getElementById('pfBannerFileInput').click();
+  syncSubOverviewCard();
+  if (typeof cpSyncAvatar === 'function') cpSyncAvatar();
+}
+
+function syncSubOverviewCard() {
+  var avatarEl   = document.getElementById('subOvAvatarLetter');
+  var nameEl     = document.getElementById('subOvUsernameLabel');
+  var badgeEl    = document.getElementById('subOvBadge');
+  var profileCard = document.getElementById('subOvProfileCard');
+  if (!avatarEl || !nameEl || !badgeEl) return;
+
+  function setProfileTier(tier) {
+    if (!profileCard) return;
+    profileCard.classList.remove(
+      'subOvCard--profile-lite',
+      'subOvCard--profile-premium',
+      'subOvCard--profile-max',
+      'subOvCard--profile-dev'
+    );
+    if (tier === 'lite')    profileCard.classList.add('subOvCard--profile-lite');
+    if (tier === 'premium') profileCard.classList.add('subOvCard--profile-premium');
+    if (tier === 'max')     profileCard.classList.add('subOvCard--profile-max');
+    if (tier === 'dev')     profileCard.classList.add('subOvCard--profile-dev');
   }
 
-  function handlePfAvBFile(e, kind){
-    var f = e.target.files[0]; if(!f) return;
-    if(!f.type.startsWith('image/')){ showToast('Please select an image'); e.target.value=''; return; }
-    var r = new FileReader();
-    r.onload = function(ev){ openPfAvBCrop(f, ev.target.result, kind); };
-    r.readAsDataURL(f);
-  }
+  if (currentUser) {
+    var letter = cpGetAvatarLetter();
+    var name   = cpGetDisplayName();
+    paintAvatarChip('subOvAvatarImg', 'subOvAvatarTxt', currentUserAvatarUrl, letter);
+    nameEl.textContent   = name;
 
-  var pfAvBCropPending = null;
-  var pfAvBCrop = { kind:'avatar', natW:0, natH:0, stageW:280, stageH:280, x:50, y:50, axis:null, dragging:false, sx:0, sy:0, ox:50, oy:50 };
-  function openPfAvBCrop(file, dataUrl, kind){
-    pfAvBCropPending = file;
-    pfAvBCrop.kind = kind;
-    var stageEl = document.getElementById('pfAvBCropStage');
-    stageEl.classList.toggle('cropStage--banner', kind==='banner');
-    document.getElementById('pfAvBCropTitle').textContent = kind==='banner' ? 'Set Banner' : 'Set Profile Photo';
-    document.getElementById('pfAvBCropSub').textContent = kind==='banner'
-      ? 'Drag the photo to choose what shows across your banner.'
-      : 'Drag the photo to choose what shows in the square frame.';
-    var img = document.getElementById('pfAvBCropImg');
-    img.onload = function(){
-      var rect = stageEl.getBoundingClientRect();
-      pfAvBCrop.stageW = rect.width || 280; pfAvBCrop.stageH = rect.height || 280;
-      pfAvBCrop.natW = img.naturalWidth; pfAvBCrop.natH = img.naturalHeight;
-      var boxRatio = pfAvBCrop.stageW/pfAvBCrop.stageH;
-      var srcRatio = pfAvBCrop.natW/pfAvBCrop.natH;
-      pfAvBCrop.axis = srcRatio > boxRatio ? 'x' : (srcRatio < boxRatio ? 'y' : null);
-      pfAvBCrop.x = 50; pfAvBCrop.y = 50;
-      pfAvBCropRender();
-      document.getElementById('pfAvBCropMod').classList.add('open');
-    };
-    img.src = dataUrl;
+    var plan   = (typeof userPlan === 'string') ? userPlan : 'guest';
+    if (typeof isDev !== 'undefined' && isDev) plan = 'dev';
+    var labels = { guest:'FREE', lite:'LITE', premium:'PREMIUM', max:'MAX', dev:'DEV' };
+    var label  = labels[plan] || 'FREE';
+    badgeEl.textContent = label;
+
+    badgeEl.className = 'subOvPlanBadge subOvPlanBadge--' + (labels[plan] ? plan : 'guest');
+    setProfileTier(plan);
+  } else {
+    paintAvatarChip('subOvAvatarImg', 'subOvAvatarTxt', null, '?');
+    nameEl.textContent   = 'Profile';
+    badgeEl.textContent  = 'FREE';
+    badgeEl.className    = 'subOvPlanBadge subOvPlanBadge--guest';
+    setProfileTier('guest');
   }
-  function pfAvBCropRender(){
-    document.getElementById('pfAvBCropImg').style.objectPosition = pfAvBCrop.x+'% '+pfAvBCrop.y+'%';
+}
+
+var setLastFocus = null;
+var setBackMo = null;
+
+function openSettingsPage() {
+  var pg = document.getElementById('setPage');
+  if (!pg) return;
+  setDropBack();
+  if (!setLastFocus || setLastFocus.isConnected === false) setLastFocus = document.activeElement;
+  pg.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  pfMenuRefreshCounts();
+}
+
+function closeSettingsPage(keepBack) {
+  var pg = document.getElementById('setPage');
+  if (pg) pg.classList.remove('open');
+  restoreScroll();
+  if (keepBack === true) return;
+  setDropBack();
+  if (setLastFocus && setLastFocus.focus) { try { setLastFocus.focus(); } catch (e) {} }
+  setLastFocus = null;
+}
+
+function setGo(open, id) {
+  closeSettingsPage(true);
+  if (typeof open === 'function') open();
+  setWatchBack(id);
+}
+
+function setWatchBack(id) {
+  setDropBack();
+  var el = id && document.getElementById(id);
+  if (!el || !el.classList.contains('open')) {
+    openSettingsPage();
+    return;
   }
-  (function initPfAvBCropDrag(){
-    var stageEl = null;
-    function down(e){
-      if(!pfAvBCrop.axis) return;
-      stageEl = document.getElementById('pfAvBCropStage');
-      pfAvBCrop.dragging = true; stageEl.classList.add('dragging');
-      var p = e.touches ? e.touches[0] : e;
-      pfAvBCrop.sx = p.clientX; pfAvBCrop.sy = p.clientY;
-      pfAvBCrop.ox = pfAvBCrop.x; pfAvBCrop.oy = pfAvBCrop.y;
-      // drag scoped listeners
-      document.addEventListener('mousemove', move);
-      document.addEventListener('touchmove', move, {passive:false});
-      document.addEventListener('mouseup', up);
-      document.addEventListener('touchend', up);
-      e.preventDefault();
-    }
-    function move(e){
-      if(!pfAvBCrop.dragging) return;
-      var p = e.touches ? e.touches[0] : e;
-      var boxRatio = pfAvBCrop.stageW/pfAvBCrop.stageH;
-      var srcRatio = pfAvBCrop.natW/pfAvBCrop.natH;
-      var ratio = pfAvBCrop.axis==='x' ? (srcRatio/boxRatio) : (boxRatio/srcRatio);
-      var overflowPx = pfAvBCrop.axis==='x' ? pfAvBCrop.stageW*(ratio-1) : pfAvBCrop.stageH*(ratio-1);
-      if(overflowPx <= 0) return;
-      var dPx = pfAvBCrop.axis==='x' ? (p.clientX-pfAvBCrop.sx) : (p.clientY-pfAvBCrop.sy);
-      var dPct = -(dPx/overflowPx)*100;
-      var val = Math.max(0, Math.min(100, (pfAvBCrop.axis==='x'?pfAvBCrop.ox:pfAvBCrop.oy) + dPct));
-      if(pfAvBCrop.axis==='x') pfAvBCrop.x = val; else pfAvBCrop.y = val;
-      pfAvBCropRender();
-    }
-    function up(){
-      pfAvBCrop.dragging = false;
-      if(stageEl) stageEl.classList.remove('dragging');
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('touchmove', move);
-      document.removeEventListener('mouseup', up);
-      document.removeEventListener('touchend', up);
-    }
-    document.addEventListener('DOMContentLoaded', function(){
-      var el = document.getElementById('pfAvBCropStage');
-      if(!el) return;
-      el.addEventListener('mousedown', down);
-      el.addEventListener('touchstart', down, {passive:false});
+  if (!window.MutationObserver) return;
+  setBackMo = new MutationObserver(function () {
+    if (el.classList.contains('open')) return;
+    setDropBack();
+    var prof = document.getElementById('profilePage');
+    if (prof && prof.classList.contains('open')) openSettingsPage();
+  });
+  setBackMo.observe(el, { attributes: true, attributeFilter: ['class'] });
+}
+
+function setDropBack() {
+  if (setBackMo) { setBackMo.disconnect(); setBackMo = null; }
+}
+
+window.dzSetDropBack = setDropBack;
+
+async function pfMenuRefreshCounts() {
+  var L = document.getElementById('pfMenuLikeCount'),
+      B = document.getElementById('pfMenuBmCount'),
+      F = document.getElementById('pfMenuFrdCount');
+  if (L) L.textContent = ''; if (B) B.textContent = ''; if (F) F.textContent = '';
+  if (!sb || !currentUser) return;
+  var uid = currentUser.id;
+  sb.from('artwork_likes').select('artwork_id', { count: 'exact', head: true })
+    .eq('user_id', uid).then(function (r) {
+      if (L && !r.error && typeof r.count === 'number') L.textContent = r.count;
     });
-  })();
-  function cancelPfAvBCrop(){
-    document.getElementById('pfAvBCropMod').classList.remove('open');
-    pfAvBCropPending = null;
-    document.getElementById('pfAvatarFileInput').value = '';
-    document.getElementById('pfBannerFileInput').value = '';
+  sb.from('artwork_bookmarks').select('artwork_id', { count: 'exact', head: true })
+    .eq('user_id', uid).then(function (r) {
+      if (B && !r.error && typeof r.count === 'number') B.textContent = r.count;
+    });
+  if (typeof window.__dmFetchPartners === 'function') {
+    window.__dmFetchPartners().then(function (partners) {
+      if (F) F.textContent = partners.length;
+    }).catch(function(){});
   }
-  function confirmPfAvBCrop(){
-    if(!pfAvBCropPending) return;
-    var kind = pfAvBCrop.kind;
-    var dims = PF_AVB_DIMS[kind];
-    var natW = pfAvBCrop.natW, natH = pfAvBCrop.natH;
-    var targetRatio = dims.w/dims.h;
-    var srcRatio = natW/natH;
-    var cropW, cropH;
-    if(srcRatio > targetRatio){ cropH = natH; cropW = natH*targetRatio; }
-    else { cropW = natW; cropH = natW/targetRatio; }
-    var cropX = (natW-cropW) * (pfAvBCrop.x/100);
-    var cropY = (natH-cropH) * (pfAvBCrop.y/100);
-    var canvas = document.createElement('canvas');
-    canvas.width = dims.w; canvas.height = dims.h;
-    var ctx = canvas.getContext('2d');
-    var img = document.getElementById('pfAvBCropImg');
-    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, dims.w, dims.h);
-    var btn = document.getElementById('pfAvBCropBtn');
-    btn.disabled = true; btn.textContent = 'SAVING…';
-    canvas.toBlob(function(blob){
-      doPfAvBUpload(kind, blob).finally(function(){
-        btn.disabled = false; btn.textContent = 'Use This';
-        document.getElementById('pfAvBCropMod').classList.remove('open');
-        pfAvBCropPending = null;
-      });
-    }, 'image/jpeg', 0.9);
+}
+
+var loLastFocus = null;
+
+function pfMenuLogout() {
+  var m = document.getElementById('loConfirm');
+  if (!m) { doLogout(); return; }
+  loLastFocus = document.activeElement;
+  m.classList.add('open');
+  var no = document.getElementById('loConfirmNo');
+  if (no) { try { no.focus(); } catch (e) {} }
+}
+
+function closeLogoutConfirm() {
+  var m = document.getElementById('loConfirm');
+  if (m) m.classList.remove('open');
+  if (loLastFocus && loLastFocus.focus && loLastFocus.isConnected !== false) {
+    try { loLastFocus.focus(); } catch (e) {}
   }
-  async function doPfAvBUpload(kind, blob){
-    try{
-      if(!currentUser){ showToast('Sign in required'); return; }
-      var left = pfAvBCooldownLeft(pf.profile && pf.profile[kind+'_updated_at']);
-      if(left>0){ showToast((kind==='banner'?'Banner':'Profile photo')+' was updated recently. '+pfAvBCooldownMsg(left)); return; }
-      var oldPath = pf.profile && pf.profile[kind+'_storage_path'];
-      var path = kind+'s/'+currentUser.id+'/'+Date.now()+'.jpg';
-      var publicUrl = await s3Upload(BUCKET,path,blob);
-      var nowIso = new Date().toISOString();
-      var updates = {};
-      updates[kind+'_url'] = publicUrl;
-      updates[kind+'_storage_path'] = path;
-      updates[kind+'_updated_at'] = nowIso;
-      var{error:de}=await sb.from('profiles').update(updates).eq('id',currentUser.id);
-      if(de) throw de;
+  loLastFocus = null;
+}
 
-      // media bookkeeping. profile_image and profile_banner_image are unique on
-      // user_id and so are upserted: one row per person, replaced on re-crop,
-      // rather than a pile of rows for every avatar they have ever had.
-      await dzRecordUpload({
-        imageKind: (kind==='banner' ? 'banner' : 'avatar'),
-        fileKind: null, url: publicUrl, path: path, file: blob
-      });
+function confirmLogout() {
+  closeLogoutConfirm();
+  doLogout();
+}
 
-      // delete old file after commit
-      if(oldPath) await s3Delete(BUCKET,oldPath);
-      /* The new object is at a path carrying this moment's timestamp, so it is
-         a different URL and nothing cached under the old one can be served in
-         its place — which is why avatars can be held for a week without an
-         update ever being missed. What does need dropping is the profile ROW,
-         which still carries the old url, in this tab and on disk. */
-      if(window.dzCache){
-        try{ window.dzCache.invalidateProfile(currentUser.id, pf.profile && pf.profile.username); }catch(e){}
+function doLogout() {
+  closeSettingsPage();
+  if (sb) {
+    if (window.dzCaptcha) window.dzCaptcha.note('logout', null, true);
+    sb.auth.signOut()
+      .then(function(){ showToast('Signed out'); })
+      .catch(function(e){ console.error('Error: ' + e.message); });
+  }
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  var m = document.getElementById('loConfirm');
+  if (m && m.classList.contains('open')) { e.stopPropagation(); closeLogoutConfirm(); }
+}, true);
+
+document.addEventListener('click', function (e) {
+  var m = document.getElementById('loConfirm');
+  if (m && m.classList.contains('open') && e.target === m) closeLogoutConfirm();
+});
+
+var authReturnUrl = null;
+window.addEventListener('popstate', function(){ authReturnUrl = null; });
+
+function openAuthMod() {
+  document.getElementById('authUser').value  = '';
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPass').value  = '';
+  var err = document.getElementById('authErr');
+  err.textContent = ''; err.classList.remove('show');
+  var msg = document.getElementById('authMsg');
+  if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
+  switchAuthMode('login');
+  document.getElementById('authMod').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (window.location.pathname !== '/login') {
+    authReturnUrl = window.location.pathname + window.location.search;
+    try{ history.pushState({},'', '/login'); }catch(e){}
+  }
+  setTimeout(function(){
+    var mode = authMode;
+    var focusId = (mode === 'signup') ? 'authUser' : 'authEmail';
+    var el = document.getElementById(focusId);
+    if (el) el.focus();
+  }, 120);
+}
+
+function closeAuthMod(revertUrl) {
+  var panel = document.getElementById('authMod');
+  if (!panel.classList.contains('open')) return;
+  panel.classList.remove('open');
+  restoreScroll();
+  if (revertUrl !== false && window.location.pathname === '/login') {
+    try{ history.replaceState({},'', authReturnUrl || '/'); }catch(e){}
+    authReturnUrl = null;
+  }
+}
+
+function dzAuthErr(e, fallback) {
+  var raw = ((e && e.message) || '').toLowerCase();
+  if (raw.indexOf('captcha') !== -1) {
+    var configured = !!(window.dzCaptcha && window.dzCaptcha.configured());
+    if (!configured) {
+      console.warn(
+        '[DigiArtz] Sign-in was refused for a missing captcha token, and no ' +
+        'TURNSTILE_SITE_KEY is present in config.js. CAPTCHA protection is ' +
+        'enabled in Supabase but the page cannot satisfy it, so sign-in and ' +
+        'sign-up are broken for everyone. Either set TURNSTILE_SITE_KEY (and ' +
+        'emit it from the Pages build command), or turn CAPTCHA protection ' +
+        'off in Supabase \u2192 Authentication \u2192 Attack Protection. ' +
+        'See security/CAPTCHA-SETUP.md.');
+    }
+    return 'Couldn\u2019t verify you\u2019re human. Refresh the page and try again.';
+  }
+  return (e && e.message) || fallback;
+}
+
+async function doAuth() {
+  if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
+  var email = document.getElementById('authEmail').value.trim();
+  var pass  = document.getElementById('authPass').value;
+  var err   = document.getElementById('authErr');
+
+  if (!email) { err.textContent = 'Please enter your email.'; err.classList.add('show'); return; }
+  if (!pass)  { err.textContent = 'Please enter your password.'; err.classList.add('show'); return; }
+
+  var btn = document.getElementById('authBtn');
+  btn.textContent = 'SIGNING IN…'; btn.disabled = true;
+  err.textContent = ''; err.classList.remove('show');
+
+  try {
+    var capTok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
+
+    if (window.dzCaptcha && window.dzCaptcha.configured() && !capTok) {
+      err.textContent = 'Couldn\u2019t verify you\u2019re human. Refresh the page and try again.';
+      err.classList.add('show');
+      btn.textContent = 'Log In'; btn.disabled = false;
+      return;
+    }
+
+    var opts = capTok ? { captchaToken: capTok } : undefined;
+
+    var result = await sb.auth.signInWithPassword(
+      opts ? { email: email, password: pass, options: opts }
+           : { email: email, password: pass });
+    if (result.error) throw result.error;
+    if (window.dzCaptcha) window.dzCaptcha.note('login', email, true);
+  } catch (e) {
+    if (window.dzCaptcha) {
+      window.dzCaptcha.note('login', email, false);
+      window.dzCaptcha.reset();
+    }
+    err.textContent = dzAuthErr(e, 'Login failed. Check your credentials.');
+    err.classList.add('show');
+  } finally {
+    btn.textContent = 'Log In'; btn.disabled = false;
+  }
+}
+
+var OAUTH_LABELS = { google:'Google', discord:'Discord', apple:'Apple' };
+
+function showAppleUnavailable(){
+  if (document.getElementById('appleNaDlg')) return;
+  var ov = document.createElement('div');
+  ov.id = 'appleNaDlg';
+  ov.setAttribute('role','dialog');
+  ov.setAttribute('aria-modal','true');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:4000;display:flex;'
+    + 'align-items:center;justify-content:center;padding:1.5rem;'
+    + 'background:rgba(0,0,0,.55);backdrop-filter:blur(4px);'
+    + '-webkit-backdrop-filter:blur(4px);';
+  var box = document.createElement('div');
+  box.style.cssText = 'max-width:340px;width:100%;'
+    + 'background:var(--sur,#24242c);color:var(--tx,#fff);'
+    + 'border:1px solid var(--bdr,#2c2c36);border-radius:16px;'
+    + 'padding:1.4rem 1.3rem 1.15rem;box-shadow:0 20px 60px rgba(0,0,0,.5);'
+    + 'font-family:var(--fb,sans-serif);text-align:center;';
+  box.innerHTML =
+    '<div style="font-size:.96rem;line-height:1.5;margin-bottom:1.15rem;">'
+    + 'Apple sign-in isn\u2019t available at the moment. You can still '
+    + 'continue with Google or Discord.</div>'
+    + '<button type="button" id="appleNaOk" style="border:0;cursor:pointer;'
+    + 'background:var(--pg,#8B5CF6);color:var(--text-on-accent,#fff);'
+    + 'font-family:var(--fm,inherit);font-weight:700;letter-spacing:.06em;'
+    + 'padding:.62rem 1.7rem;border-radius:10px;font-size:.85rem;">OK</button>';
+  ov.appendChild(box);
+  function close(){ if (ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click', function(e){ if (e.target === ov) close(); });
+  document.body.appendChild(ov);
+  var ok = document.getElementById('appleNaOk');
+  if (ok){ ok.addEventListener('click', close); ok.focus(); }
+}
+
+async function doOAuth(provider, btnEl) {
+  if (provider === 'apple') { showAppleUnavailable(); return; }
+  if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
+  var label = OAUTH_LABELS[provider] || provider;
+  var err = document.getElementById('authErr');
+  err.textContent = ''; err.classList.remove('show');
+
+  var row = document.querySelector('.laSocial');
+  var btns = row ? row.querySelectorAll('.laSocialBtn') : [];
+  Array.prototype.forEach.call(btns, function(b){ b.disabled = true; });
+
+  try {
+    var opts = { redirectTo: window.location.origin };
+    if (provider === 'google') opts.queryParams = { prompt: 'select_account' };
+
+    var result = await sb.auth.signInWithOAuth({ provider: provider, options: opts });
+    if (result.error) throw result.error;
+  } catch (e) {
+    Array.prototype.forEach.call(btns, function(b){ b.disabled = false; });
+    var raw = (e && e.message || '').toLowerCase();
+    if (raw.includes('provider is not enabled') || raw.includes('unsupported provider')) {
+      err.textContent = label + ' sign-in isn\u2019t available right now. Try another method.';
+    } else {
+      err.textContent = (e && e.message) ? (label + ' sign-in failed: ' + e.message)
+                                         : (label + ' sign-in is unavailable right now.');
+    }
+    err.classList.add('show');
+  }
+}
+
+function switchAuthMode(mode) {
+  authMode = mode;
+  var title      = document.getElementById('authTitle');
+  var subtitle   = document.getElementById('authSubtitle');
+  var btn        = document.getElementById('authBtn');
+  var toggleBtn  = document.getElementById('authToggleBtn');
+  var leadText   = document.getElementById('authLeadText');
+  var err        = document.getElementById('authErr');
+  var msg        = document.getElementById('authMsg');
+  var userWrap   = document.getElementById('authUserWrap');
+  var passField  = document.getElementById('authPass');
+
+  err.textContent = ''; err.classList.remove('show');
+  msg.style.display = 'none'; msg.textContent = '';
+
+  if (mode === 'signup') {
+    title.textContent = 'Create Account';
+    subtitle.textContent = 'Choose a username (your public display name), enter your email, and set a password of at least 6 characters.';
+    subtitle.style.display = 'block';
+    btn.textContent = 'Create Account';
+    btn.onclick = doSignUp;
+    leadText.textContent = 'Already have an account?';
+    toggleBtn.textContent = 'Log in';
+    toggleBtn.onclick = function(){ switchAuthMode('login'); };
+    if (userWrap) userWrap.style.display = '';
+    passField.setAttribute('autocomplete', 'new-password');
+    setTimeout(function(){ var u = document.getElementById('authUser'); if (u) u.focus(); }, 60);
+  } else {
+    title.textContent = 'Welcome Back';
+    subtitle.textContent = 'Sign in to continue to your account.';
+    subtitle.style.display = 'block';
+    btn.textContent = 'Log In';
+    btn.onclick = doAuth;
+    leadText.textContent = "Don't have an account?";
+    toggleBtn.textContent = 'Sign up';
+    toggleBtn.onclick = function(){ switchAuthMode('signup'); };
+    if (userWrap) userWrap.style.display = 'none';
+    passField.setAttribute('autocomplete', 'current-password');
+  }
+}
+
+var AUTH_EYE_OPEN = '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>';
+var AUTH_EYE_OFF  = '<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.86 13.86 0 0 0 1 11s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+function toggleAuthPassVis() {
+  var inp  = document.getElementById('authPass');
+  var icon = document.getElementById('authEyeIcon');
+  if (!inp) return;
+  var showing = inp.type === 'password';
+  inp.type = showing ? 'text' : 'password';
+  if (icon) icon.innerHTML = showing ? AUTH_EYE_OFF : AUTH_EYE_OPEN;
+}
+
+async function doSignUp() {
+  if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
+
+  var email    = document.getElementById('authEmail').value.trim();
+  var pass     = document.getElementById('authPass').value;
+  var username = (document.getElementById('authUser').value || '').trim();
+  var err      = document.getElementById('authErr');
+  var msg      = document.getElementById('authMsg');
+
+  err.textContent = ''; err.classList.remove('show');
+  msg.style.display = 'none'; msg.textContent = '';
+
+  if (!username) {
+    err.textContent = 'Please enter a username.';
+    err.classList.add('show'); return;
+  }
+
+  if (!email) {
+    err.textContent = 'Please enter your email address.';
+    err.classList.add('show'); return;
+  }
+  var emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRx.test(email)) {
+    err.textContent = 'Please enter a valid email address.';
+    err.classList.add('show'); return;
+  }
+
+  if (!pass) {
+    err.textContent = 'Please enter a password.';
+    err.classList.add('show'); return;
+  }
+  if (pass.length < 6) {
+    err.textContent = 'Password must be at least 6 characters long.';
+    err.classList.add('show'); return;
+  }
+
+  var btn = document.getElementById('authBtn');
+  btn.textContent = 'CREATING ACCOUNT…'; btn.disabled = true;
+
+  try {
+    var capTok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
+    if (window.dzCaptcha && window.dzCaptcha.configured() && !capTok) {
+      err.textContent = 'Couldn\u2019t verify you\u2019re human. Refresh the page and try again.';
+      err.classList.add('show');
+      btn.textContent = 'Create Account'; btn.disabled = false;
+      return;
+    }
+    var suOpts = { data: { username: username } };
+    if (capTok) suOpts.captchaToken = capTok;
+
+    var result = await sb.auth.signUp({ email: email, password: pass, options: suOpts });
+    if (result.error) {
+      if (window.dzCaptcha) {
+        window.dzCaptcha.note('signup', email, false);
+        window.dzCaptcha.reset();
       }
-      // and the old object, on its way out of storage, out of the image caches
-      if(oldPath && window.dzCache && pf.profile && pf.profile[kind+'_url']){
-        try{ window.dzCache.purgeImages([pf.profile[kind+'_url']]); }catch(e){}
-      }
-      Object.assign(pf.profile, updates);
-      pfRenderAvatarBanner();
-      if(pf.profile.username){
-        pfMediaCache[pf.profile.username] = { avatar_url: pf.profile.avatar_url||null, banner_url: pf.profile.banner_url||null };
-      }
-      if(kind==='avatar'){
-        // update avatar chips app wide
-        currentUserAvatarUrl = publicUrl;
-        avAuthorProfileCache[currentUser.id] = { username: pf.profile.username, avatar_url: publicUrl };
-        syncAuthBtn();
-        // refresh chat author map
-        if(typeof cpAuthors !== 'undefined' && cpAuthors){
-          cpAuthors[String(currentUser.id)] = {
-            name  : (pf.profile.display_name || pf.profile.username || 'User'),
-            avatar: publicUrl
-          };
-          try{ if(typeof cpRender === 'function') cpRender(); }catch(e){}
+      throw result.error;
+    }
+    if (window.dzCaptcha) window.dzCaptcha.note('signup', email, true);
+
+    var session = result.data && result.data.session;
+
+    if (session) {
+      showToast('Account created. Welcome!');
+    } else {
+      document.getElementById('authEmail').value = '';
+      document.getElementById('authPass').value  = '';
+      msg.textContent = 'Check your email to confirm your account.';
+      msg.style.display = 'block';
+      btn.textContent = 'Create Account'; btn.disabled = false;
+      setTimeout(function(){
+        if (document.getElementById('authMod').classList.contains('open')) {
+          closeAuthMod();
         }
-      }
-      showToast((kind==='banner'?'Banner':'Profile photo')+' updated');
-    }catch(err){ console.error('Error: '+err.message);
-      // merit gate error
-      if(window.meritDenied && window.meritDenied(err, 'upload')) return;
-      showToast(safeErr(err, 'Upload failed \u2014 try again')); }
-    finally{
-      document.getElementById('pfAvatarFileInput').value = '';
-      document.getElementById('pfBannerFileInput').value = '';
+      }, 5000);
+      return;
+    }
+  } catch (e) {
+    var raw = (e.message || '').toLowerCase();
+    var friendly;
+    if (raw.includes('already registered') || raw.includes('already in use') || raw.includes('user already')) {
+      friendly = 'This email is already registered. Try logging in instead.';
+    } else if (raw.includes('weak password') || raw.includes('password should') || raw.includes('at least')) {
+      friendly = 'Password is too weak. Use at least 6 characters.';
+    } else if (raw.includes('invalid email') || raw.includes('unable to validate email')) {
+      friendly = 'Invalid email address. Please check and try again.';
+    } else if (raw.includes('network') || raw.includes('fetch') || raw.includes('failed to fetch')) {
+      friendly = 'Network error. Please check your connection and try again.';
+    } else if (raw.includes('rate limit') || raw.includes('too many')) {
+      friendly = 'Too many attempts. Please wait a moment and try again.';
+    } else if (raw.includes('captcha')) {
+      friendly = dzAuthErr(e, 'Sign-up failed. Please try again.');
+    } else {
+      friendly = e.message || 'Sign-up failed. Please try again.';
+    }
+    err.textContent = friendly;
+    err.classList.add('show');
+  } finally {
+    if (btn.disabled) {
+      btn.textContent = 'Create Account'; btn.disabled = false;
     }
   }
+}
 
-  let tT;
-  function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000);}
+let isDev = false;
+let userRole = null;
+let userPlan = null;
 
+function dzIsStaff(){ return userRole === 'admin' || userRole === 'dev'; }
+function dzIsPartner(){ return userRole === 'partner'; }
+window.dzIsStaff = dzIsStaff;
+window.dzIsPartner = dzIsPartner;
+
+async function checkUserRole(){
+  if(!sb || !currentUser){
+    isDev=false; userRole=null; userPlan=null; currentUserAvatarUrl=null;
+    dzSetPlan('guest', null); dzPaintLimits();
+    if(typeof dzPaintAds === 'function') dzPaintAds();
+    syncAdmBtn(); return;
+  }
+  try{
+    const{data,error}=await sb.from('profiles')
+      .select('role,subscription_tier,subscription_expires_at,avatar_url')
+      .eq('id',currentUser.id).single();
+    if(error) throw error;
+    isDev    = !!data && data.role==='dev';
+    userRole = (data && data.role) || null;
+    userPlan = (data && data.subscription_tier) ? data.subscription_tier : 'guest';
+    currentUserAvatarUrl = (data && data.avatar_url) ? data.avatar_url : null;
+    dzSetPlan(isDev ? 'dev' : userPlan,
+              (data && data.subscription_expires_at) || null);
+    dzPaintLimits();
+    if(typeof dzPaintAds === 'function') dzPaintAds();
+  }catch(e){
+    console.error(e);
+    isDev=false; userRole=null; userPlan='guest'; currentUserAvatarUrl=null;
+    dzSetPlan('guest', null); dzPaintLimits();
+    if(typeof dzPaintAds === 'function') dzPaintAds();
+  }
+  syncAdmBtn();
+  syncAuthBtn();
+  notifRefreshBadge();
+  if(currentUser && sessionStorage.getItem('pendPfUp')==='1'){
+    sessionStorage.removeItem('pendPfUp');
+    setTimeout(function(){
+      if(typeof bnGoUpload==='function') bnGoUpload();
+    },250);
+  }
+}
+
+var dzLastAuthId = (function(){
+  try { return currentUser && currentUser.id ? String(currentUser.id) : 'guest'; }
+  catch (e) { return 'guest'; }
+})();
+
+if (sb) {
+  sb.auth.onAuthStateChange(function(event, session) {
+    currentUser = session ? session.user : null;
+    var nowId = currentUser && currentUser.id ? String(currentUser.id) : 'guest';
+    var switched = nowId !== dzLastAuthId;
+    dzLastAuthId = nowId;
+
+    if (switched) {
+      dzScopeBump();
+      pfRowCache = {}; cmMineRows = []; cpMsgCache = {}; cmMineCache = {};
+      try{ albResetMine(); }catch(e){}
+      notifList = []; notifReadIds = {};
+      try{ if(window.dzCache) window.dzCache.dropPrivate(); }catch(e){}
+      try{
+        pf.albums = []; pf.albumsLoaded = false;
+        pf.galleryRows = []; pf.galleryIds = Object.create(null);
+        pf.galleryOffset = 0; pf.galleryDone = false;
+        pfMediaCache = {};
+      }catch(e){}
+      try{ syncAuthBtn(); }catch(e){ console.error('syncAuthBtn: '+(e.message||e)); }
+      try{ if (typeof window.rkRefresh === 'function') window.rkRefresh(); }catch(e){}
+      try{
+        loadHiddenArtworks().then(function(){
+          try{ renderHome(); }catch(e){}
+          try{ renderFG(); }catch(e){}
+        }, function(){});
+      }catch(e){ console.error('loadHiddenArtworks: '+(e.message||e)); }
+      try{ if(typeof tgLoad === 'function') tgLoad(true); }catch(e){}
+    }
+
+    if (event === 'SIGNED_IN') {
+      closeAuthMod();
+      checkUserRole();
+      var greetName = (currentUser && currentUser.user_metadata && currentUser.user_metadata.username)
+        ? currentUser.user_metadata.username
+        : '';
+      afterIntro(function(){
+        setTimeout(function(){
+          showToast(greetName ? ('Welcome, ' + greetName) : 'Signed in');
+        }, 460);
+      });
+    }
+    if (event === 'SIGNED_OUT') {
+      currentUserAvatarUrl = null;
+      syncAuthBtn();
+      isDev=false; userRole=null; userPlan=null; syncAdmBtn();
+      dzSetPlan('guest', null); dzPaintLimits();
+      if(typeof dzPaintAds === 'function') dzPaintAds();
+      syncSubOverviewCard();
+      notifRefreshBadge();
+      closeProfilePage();
+      closeMyWorkPage();
+      if(typeof dzOpsReset === 'function') dzOpsReset();
+    }
+  });
+
+  sb.auth.getSession().then(function(res) {
+    if (res.data && res.data.session) {
+      currentUser = res.data.session.user;
+      syncAuthBtn();
+      checkUserRole();
+    }
+  });
+}
+
+var notifList = [];
+var notifReadIds = {};
+
+function openNotifications(){
+  var el = document.getElementById('notifPage');
+  if(!el) return;
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
+  notifLoad();
+}
+
+function closeNotifPage(){
+  var el = document.getElementById('notifPage');
+  if(!el) return;
+  el.classList.remove('open');
+  restoreScroll();
+}
+
+function notifIcon(type){
+  if(type==='artwork_approved' || type==='comic_approved') return '✓';
+  if(type==='artwork_rejected' || type==='comic_rejected') return '✕';
+  return '🔔';
+}
+
+function notifRelTime(iso){
+  var d = new Date(iso), diff = Math.max(0, (Date.now()-d.getTime())/1000);
+  if(diff < 60) return 'Just now';
+  if(diff < 3600) return Math.floor(diff/60)+'m ago';
+  if(diff < 86400) return Math.floor(diff/3600)+'h ago';
+  if(diff < 604800) return Math.floor(diff/86400)+'d ago';
+  return d.toLocaleDateString();
+}
+
+var NOTIF_WINDOW = 60;
+
+async function notifLoad(){
+  if(!sb){ notifList=[]; notifRender(); return; }
+  try{
+    const{data,error} = await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(NOTIF_WINDOW);
+    if(error) throw error;
+    notifList = data||[];
+    if(currentUser){
+      const{data:reads,error:re} = await sb.from('notification_reads').select('notification_id').eq('user_id',currentUser.id);
+      if(re) throw re;
+      notifReadIds = {};
+      (reads||[]).forEach(function(r){ notifReadIds[r.notification_id]=true; });
+    } else {
+      notifReadIds = {};
+    }
+  }catch(e){
+    console.error('Error loading notifications: '+e.message);
+    notifList=[]; notifReadIds={};
+  }
+  notifRender();
+  notifMarkAllVisibleRead();
+}
+
+function notifRender(){
+  var wrap = document.getElementById('notifList'), empty = document.getElementById('notifEmpty');
+  if(!wrap) return;
+  if(!notifList.length){ wrap.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  wrap.innerHTML = notifList.map(function(n){
+    var unread = !!currentUser && !notifReadIds[n.id];
+    return '<div class="notifItem'+(unread?' unread':'')+'">'+
+      '<div class="notifIcoWrap ico-'+esc(n.type||'admin')+'">'+notifIcon(n.type)+'</div>'+
+      '<div class="notifBody">'+
+        '<div class="notifTitle">'+esc(n.title)+'</div>'+
+        '<div class="notifMsg">'+esc(n.message)+'</div>'+
+        '<div class="notifTime">'+(n.created_at?notifRelTime(n.created_at):'')+'</div>'+
+      '</div>'+
+      (unread?'<span class="notifDot" aria-hidden="true"></span>':'')+
+    '</div>';
+  }).join('');
+}
+
+async function notifMarkAllVisibleRead(){
+  if(!sb || !currentUser){ notifRefreshBadge(); return; }
+  var unread = notifList.filter(function(n){ return !notifReadIds[n.id]; });
+  if(!unread.length){ notifRefreshBadge(); return; }
+  try{
+    var rows = unread.map(function(n){ return {user_id:currentUser.id, notification_id:n.id}; });
+    const{error} = await sb.from('notification_reads').upsert(rows, {onConflict:'user_id,notification_id'});
+    if(error) throw error;
+    unread.forEach(function(n){ notifReadIds[n.id]=true; });
+    notifRender();
+  }catch(e){}
+  notifRefreshBadge();
+}
+
+function notifPaintBadges(on){
+  ['hNotifBtn','pfTopNotifBtn'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.classList.toggle('hasUnread', !!on);
+  });
+}
+
+async function notifRefreshBadge(){
+  var btn = document.getElementById('hNotifBtn');
+  if(!btn) return;
+  if(!sb || !currentUser){ notifPaintBadges(false); return; }
+  try{
+    const{data:all,error:e1} = await sb.from('notifications').select('id')
+      .order('created_at',{ascending:false}).limit(NOTIF_WINDOW);
+    if(e1) throw e1;
+    const{data:reads,error:e2} = await sb.from('notification_reads').select('notification_id').eq('user_id',currentUser.id);
+    if(e2) throw e2;
+    var readSet = {}; (reads||[]).forEach(function(r){ readSet[r.notification_id]=true; });
+    var hasUnread = (all||[]).some(function(n){ return !readSet[n.id]; });
+    notifPaintBadges(hasUnread);
+  }catch(e){}
+}

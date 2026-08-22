@@ -1006,6 +1006,70 @@
       overflow-wrap:anywhere;
     }
 
+    /* ── mobile only, and only mobile ─────────────────────────────────────
+       Everything in here is inside max-width:899px. The desktop viewer above
+       is right and nothing below this line can reach it.
+
+       What was wrong on a phone: a picture was allowed 100dvh minus 132px,
+       which is 83% of a 757px screen, and a set of three stacked to 1440px —
+       so the first screen was one picture with no sign that anything followed
+       it, and the title, the artist and every word about the work started
+       1572px down, past two full screens of scrolling.
+
+       Two changes. A picture takes at most 62% of the screen, so the next
+       thing in the column always shows at the bottom edge and the column
+       reads as a column rather than as a wall. And the inset comes off
+       --shellPad, which is 10% a side — 100px of a 500px phone spent on
+       margin — down to a thumb's worth, which gives the work back the width
+       it was losing. The order is unchanged: the work, then who made it, then
+       everything written about it, in one column that scrolls. */
+    @media(max-width:899px){
+      #artModal #lbImg,
+      #artModal .avStackImg{max-height:62dvh;}
+      #artModal .avImgPane{padding:.9rem .9rem 0;}
+      #artModal .avImgViewport{padding:0;}
+      #artModal .avImgStack{gap:.9rem;padding:.9rem 0 0;}
+      #artModal #avAuthorCard{padding:.9rem .9rem 0;}
+      #artModal .avSideScroll{gap:1.1rem;padding:1.1rem .9rem 5rem;}
+
+      /* the section viewer is the same view with other names */
+      #dzView .dzvMedia{padding:.9rem .9rem 0;}
+      #dzView .dzvMedia img,
+      #dzView .dzvGallery img{max-height:62dvh;}
+      #dzView .dzvGallery{gap:.9rem;margin-top:.9rem;}
+      #dzView .dzvCol{gap:1.1rem;padding:1.1rem .9rem 5rem;}
+    }
+
+    /* ── a drag that starts on a picture is a scroll ──────────────────────
+       A finger put on an image and moved up the screen should move the
+       column, and on a touch device it does not do that by default: the
+       browser is free to read the gesture as picking the image up, and while
+       it decides, nothing scrolls. On a page of writing that is rare; on this
+       one the pictures are most of what there is to put a thumb on, so most
+       of the view was dead to a scroll.
+
+       touch-action:pan-y says it outright — a vertical drag here is a scroll
+       and nothing else — and the browser stops waiting to find out. It is
+       stated on the pictures and on the boxes they sit in, in both viewers.
+       -webkit-user-drag and -webkit-touch-callout turn off the two gestures
+       that were competing for the same finger: dragging the file out, and the
+       long-press panel that offers to save it.
+
+       Touch only. A mouse has none of these behaviours, so the desktop
+       viewer, which is right, cannot be moved by any of it. */
+    #artModal #lbImg,#artModal .avStackImg,
+    #dzView .dzvMedia img,#dzView .dzvGallery img{
+      touch-action:pan-y;
+      -webkit-user-drag:none;user-select:none;
+      -webkit-touch-callout:none;
+    }
+    #artModal .avImgPane,#artModal .avImgViewport,#artModal .avImgStack,
+    #artModal .avBody,#artModal .avSide,#artModal .avSideScroll,
+    #dzView .dzvMedia,#dzView .dzvGallery,#dzView .dzvGallery a,
+    #dzView .dzvBody,#dzView .dzvCol{
+      touch-action:pan-y;
+    }
+
     /* ── the picture on its own ───────────────────────────────────────────
 
        The viewer is a panel: the work has a column of notes beside it, a

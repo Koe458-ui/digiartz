@@ -4,6 +4,35 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v221 — a drag on a picture scrolls, and the phone gets its own pass.
+
+       A finger put on an image and moved up the screen should move the
+       column, and on a touch device it does not do that by default: the
+       browser is free to read the gesture as picking the image up, and while
+       it is deciding, nothing scrolls. On a page of writing that hardly
+       matters; here the pictures are most of what there is to put a thumb on,
+       so most of the view was dead to a scroll. touch-action:pan-y says it
+       outright — a vertical drag here is a scroll and nothing else — on the
+       pictures and on every box they sit in, in both viewers.
+       -webkit-user-drag and -webkit-touch-callout turn off the two gestures
+       that were competing for the same finger: dragging the file out, and the
+       long-press panel offering to save it. The section viewer's pictures
+       carry draggable="false" like the artwork viewer's already did.
+
+       AND THE PHONE'S OWN MEASUREMENTS. A picture was allowed 100dvh minus
+       132px — 83% of a 757px screen — and a set of three stacked to 1440px,
+       so the first screen was one picture with nothing to say more followed,
+       and the title, the artist and every word about the work began 1572px
+       down. A picture takes at most 62% of the screen now, and the inset
+       comes off --shellPad's 10% a side — 100px of a 500px phone spent on
+       margin — down to a thumb's worth, which gives the work the width it was
+       losing.
+
+       All of it is inside max-width:899px or is touch-only. The desktop
+       viewer measures the same before and after, to the pixel: box 1280x613,
+       picture 481x481, work column 470, notes starting at 143.
+       Changed: css/viewer.css, js/sections.js, index.html, sw.js.
+
    v220 — top to bottom only, the ground really does close it, and no bars.
 
        THE CLICK NEVER REACHED THE HANDLER. .avBox carried
@@ -4297,7 +4326,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v236';
+const CACHE_VERSION = 'v237';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4351,7 +4380,7 @@ const SHELL_URLS = [
   // stylesheets
   '/css/base.css?v=12',
   '/css/hero.css?v=101',
-  '/css/viewer.css?v=34',
+  '/css/viewer.css?v=35',
   '/css/community.css?v=19',
   '/css/connect.css?v=6',
   '/css/ranking.css?v=4',
@@ -4406,7 +4435,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=6',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=120',
+  '/js/sections.js?v=121',
   '/js/routes.js?v=2',
   '/js/navprogress.js?v=5'
 ];

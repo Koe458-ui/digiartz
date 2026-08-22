@@ -4900,7 +4900,7 @@
     var img = function(u, alt, more){
       if(!u && !more) return '';
       return '<div class="dzvMedia">'+
-        (u ? '<img src="'+esc2(getViewUrl(u))+'" alt="'+esc2(alt||'')+'" loading="lazy">' : '')+
+        (u ? '<img src="'+esc2(getViewUrl(u))+'" alt="'+esc2(alt||'')+'" loading="lazy" draggable="false">' : '')+
         (more || '')+
       '</div>';
     };
@@ -5016,7 +5016,7 @@
           var full = safeHref(getViewUrl(g.url));
           if(!full) return '';
           return '<a href="'+esc2(full)+'" target="_blank" rel="noopener">'+
-            '<img src="'+esc2(full)+'" alt="" loading="lazy"></a>';
+            '<img src="'+esc2(full)+'" alt="" loading="lazy" draggable="false"></a>';
         }).join('') +'</div>';
       }
       // What a buyer may actually do with it. Written as a list of answers

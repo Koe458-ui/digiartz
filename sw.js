@@ -4,6 +4,33 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v205 — the desktop layout stopped starting at 1024.
+
+       "For a fifth of a second the right thing appears and then it goes back
+       to the bugged one" is the whole diagnosis, and it is a cascade, not a
+       race: index.html's critical style states the 80x90 box for every width,
+       so that is what paints first; css/overrides.css then lands and its
+       un-queried rule — width:100%, height:100% — wins on source order.
+
+       That rule is the phone's viewer: the panel filling the screen edge to
+       edge, one column, and every part of an artwork laid out in it, picture,
+       notes, details, tags and comments, scrolling as one long document.
+       Having no media query on it meant it governed everything below 1024px,
+       and a desktop reaches that width easily: a 1920 screen at 150% system
+       scaling is 1280 CSS px, and one step of browser zoom is under the line.
+       Which is where the member reporting all of this has been the whole
+       time — and every fix to the viewer this week went into rules that only
+       apply above it. That is why none of them showed.
+
+       Three widths now, and the difference between them is what there is room
+       for rather than what device it is: under 700, the whole screen and one
+       column, which is a phone. From 700, the box — 80% across, 90% down,
+       fixed, with the body scrolling inside it. From 900, two columns, the
+       picture fitted to the space it gets on the left and the notes scrolling
+       on the right. The two-column layout used to wait for 1024 and there is
+       no reason to: 500px for the work and 320 for the column is 900.
+       Changed: css/overrides.css, index.html, sw.js.
+
    v204 — the box is 80 across and 90 down, and it is the only thing that
        decides that.
 
@@ -3895,7 +3922,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v220';
+const CACHE_VERSION = 'v221';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -3959,7 +3986,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=12',
   '/css/upload.css?v=15',
   '/css/widgets.css?v=12',
-  '/css/overrides.css?v=33',
+  '/css/overrides.css?v=34',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 

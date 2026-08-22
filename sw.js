@@ -3862,7 +3862,7 @@ const SHELL_URLS = [
   '/js/badwords-list-a.js?v=1',
   '/js/badwords-list-b.js?v=1',
   '/js/badwords.js?v=2',
-  '/js/captcha.js?v=1',
+  '/js/captcha.js?v=2',
 
   // scripts
   '/js/cache.js?v=1',
@@ -3875,7 +3875,7 @@ const SHELL_URLS = [
   '/js/app-core.js?v=31',
   '/js/protect.js?v=3',
   '/js/gallery.js?v=98',
-  '/js/auth.js?v=19',
+  '/js/auth.js?v=20',
   '/js/profile.js?v=16',
   '/js/albums.js?v=18',
   '/js/drafts.js?v=8',

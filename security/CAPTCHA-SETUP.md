@@ -73,6 +73,34 @@ This is the one you asked for: a challenge when the same address keeps signing
 in and out of different accounts. Two halves, and **the code is already
 deployed and inert** until both are done.
 
+### ⚠️ DO THE STEPS IN ORDER. Step 3 before step 2 breaks sign-in for everyone.
+
+This happened on 2026-08-21 and is worth spelling out, because the symptom does
+not name its cause.
+
+CAPTCHA protection in Supabase is enforced by **GoTrue**, not by this site. Turn
+it on and GoTrue refuses every sign-in and sign-up that arrives without a valid
+token — including from your own pages. `js/captcha.js` can only produce a token
+once `TURNSTILE_SITE_KEY` is actually in `config.js`; with no key it stays inert
+and sends nothing. So:
+
+| State | Result |
+|---|---|
+| Step 2 done, step 3 not | Fine. Widget shows, token sent, nobody checks it yet. |
+| **Step 3 done, step 2 not** | **Sign-in and sign-up fail for every member**, with `captcha protection: no captcha token found in request`. |
+| Both done | Working as intended. |
+
+**If you are seeing that error now:** turn CAPTCHA protection **off** in
+Supabase → Authentication → Attack Protection. Sign-in recovers immediately.
+Then finish step 2, confirm `config.js` on the live site contains a non-empty
+`TURNSTILE_SITE_KEY`, and only then turn step 3 back on.
+
+To confirm step 2 actually landed before you re-enable step 3, open
+`https://digiartz.net/config.js` in a browser. You should see
+`TURNSTILE_SITE_KEY: '0x4AAA...'` with a real value. If it is `''` or the field
+is absent, the Pages build command is not emitting it and step 3 will break
+sign-in again.
+
 ### What decides when to show it
 
 `dz_captcha_required()` (in `20260825_auth_attempt_tracking.sql`, live now)
@@ -113,7 +141,9 @@ Redeploy.
 
 ### Step 3 — the secret key, into Supabase
 
-**This is the step that makes it a real control.**
+**This is the step that makes it a real control — and the step that breaks
+sign-in if step 2 is not finished first.** Confirm `TURNSTILE_SITE_KEY` is live
+in `config.js` before you touch this.
 
 **Supabase Dashboard → Authentication → Attack Protection → CAPTCHA protection**
 → on → provider **Cloudflare Turnstile** → paste the **secret key** → save.

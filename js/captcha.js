@@ -133,19 +133,29 @@
           } else {
             widgetId = window.turnstile.render(el, {
               sitekey: key,
-              // 'interactive' is Turnstile's managed mode: invisible for
-              // traffic it is happy with, a checkbox for traffic it is not.
-              // When our own detector has already seen this address cycling
-              // accounts, we stop leaving that to Turnstile and always show it.
-              appearance: force ? 'always' : 'interactive',
-              size: 'flexible',
+              // Turnstile accepts exactly three values here: 'always',
+              // 'execute' and 'interaction-only'. 'interactive' is not one of
+              // them — it was in the first version of this file and it is why
+              // no token was ever produced. 'interaction-only' is the managed
+              // behaviour we want by default: nothing shown for traffic
+              // Turnstile is happy with, a challenge for traffic it is not.
+              // When OUR detector has already seen this address cycling
+              // accounts, we stop leaving that judgement to Turnstile and show
+              // it regardless.
+              appearance: force ? 'always' : 'interaction-only',
+              size: 'normal',
               callback: function (t) { finish(t || null); },
               'error-callback': function () { finish(null); },
               'expired-callback': function () { finish(null); },
               'timeout-callback': function () { finish(null); }
             });
           }
-          if (widgetId !== null) window.turnstile.execute(widgetId);
+          // NO execute() CALL HERE, deliberately. turnstile.execute() is only
+          // valid on a widget rendered with execution:'execute'; on a default
+          // widget it throws, which landed in the catch below and resolved the
+          // whole thing to null a few milliseconds after render — before the
+          // challenge it had just started could possibly have called back.
+          // render() and reset() both run the challenge on their own.
         } catch (e) {
           finish(null);
         }

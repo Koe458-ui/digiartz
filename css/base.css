@@ -325,12 +325,14 @@
       flex:0 0 auto;
       display:inline-flex;align-items:baseline;
       font-family:var(--fd);font-weight:800;
-      /* The size of the words and the icons beside it, not a size above them.
-         A wordmark set two steps larger than its own navigation makes the bar
-         as deep as the wordmark rather than as deep as a bar — which is what
-         set the height of this one for a while. Weight carries the emphasis
-         instead: 800 against the links' 700, and the red. */
-      font-size:clamp(1.02rem,2.8vw,1.14rem);
+      /* A step above the words beside it, and only a step. It was set at
+         1.55rem once and the bar ended up as deep as the wordmark rather than
+         as deep as a bar; then at 1.14rem, which is the links' own size and
+         reads as one more link. This is between the two — plainly the name of
+         the place, and still short enough that the height above it is the
+         bar's own decision. Weight and the red carry the rest of the
+         emphasis: 800 against the links' 700. */
+      font-size:clamp(1.28rem,3.4vw,1.42rem);
       letter-spacing:-.01em;
       text-decoration:none;
       -webkit-tap-highlight-color:transparent;

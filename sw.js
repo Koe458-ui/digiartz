@@ -4,6 +4,18 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v245 — the wordmark, at a wordmark's size.
+
+       It has been set twice and wrong both times. At 1.55rem the bar was as
+       deep as the wordmark rather than as deep as a bar; cutting it to 1.14rem
+       fixed the height but put the name of the site at the size of the links
+       beside it, where it reads as a fifth link. 1.28–1.42rem is between the
+       two: plainly the name of the place, and short enough that the height
+       above it stays the bar's own decision — 12px of headroom on a phone,
+       14px on a desktop, and the bar unchanged at 56/60/64.
+
+       Changed: css/base.css.
+
    v244 — the bar goes under the sections, and comes down to a bar's height.
 
        It was hiding itself. A watcher in js/sections.js put a class on it
@@ -4127,7 +4139,7 @@
        security/daily-download-quota.sql (new, record only).
 
    v69 — the precache was covering URLs nobody asks for. Every tag in
-       index.html carries a query string (/css/base.css?v=20) while
+       index.html carries a query string (/css/base.css?v=21) while
        SHELL_URLS listed the bare path (/css/base.css), and cache.match
        keys on the full URL including the search, so 38 of the 41 shell
        assets were precached under a name the page never requests. They
@@ -4552,7 +4564,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v244';
+const CACHE_VERSION = 'v245';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4603,7 +4615,7 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=20',
+  '/css/base.css?v=21',
   '/css/hero.css?v=105',
   '/css/viewer.css?v=39',
   '/css/community.css?v=21',

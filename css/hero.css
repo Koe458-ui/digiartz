@@ -678,6 +678,48 @@
           linear-gradient(90deg,rgba(6,6,12,.78) 0%,rgba(6,6,12,.74) 30%,rgba(6,6,12,.6) 39%,rgba(6,6,12,.08) 46%,rgba(6,6,12,0) 50%);
       }
     }
+
+    /* ── a narrow card on a wide screen ───────────────────────────────────
+       Three cards across a desktop and four past 1600 are narrow cards — 331px
+       at 1280, 385px at 2560 — and every one of them lands under the 480px
+       container rule written for a phone. That rule veils the whole picture,
+       and it is right to on a phone: one card across a 390px screen puts the
+       description within a few percent of the far edge, so there is nowhere
+       on it that words are not.
+
+       On a desktop there is. Measured off the rendered glyphs rather than
+       assumed from the boxes: at 1440 the chips stop at 53% of the card, the
+       stats at 55%, the title at 38%, the button at 33%. Only the description
+       runs on to 94%, and only because it is a block that fills whatever it
+       is given. So it is given less — and the ink can then stop where the
+       words stop, which puts the right fifth of the artwork back.
+
+       The column is 68% of the card or 210px, whichever is larger. 210 is the
+       floor because the stats row is set in fixed sizes and measures 195-205px
+       at every card this rule sees; below that the two numbers wrap onto a
+       second line and push the button off a card that is only half as tall as
+       it is wide.
+
+       Scoped to the viewport as well as the card, and deliberately: a 385px
+       card at 2560 and a 367px card on a phone are the same box, and the
+       phone's is the one that needs its full width. Nothing below 1024 is
+       touched.
+
+       Cards narrower than 300px are left alone too — three across a 1024
+       screen makes one, at 262px, and there the words really do fill the
+       card. The ink holds at or above .62 everywhere a word sits, which is
+       above the .55 white type needs over a bright artwork, and is at nothing
+       well before the card's edge. */
+    @media(min-width:1024px){
+      @container fgs (min-width:300px) and (max-width:480px){
+        .fgsBody{width:max(68%,210px);}
+        .fgsScrim{
+          background:
+            linear-gradient(90deg,rgba(6,6,12,.76) 0%,rgba(6,6,12,.72) 55%,rgba(6,6,12,.62) 72%,rgba(6,6,12,.14) 82%,rgba(6,6,12,0) 90%);
+        }
+      }
+    }
+
     @media(prefers-reduced-motion:reduce){
       .fgsCard,.fgsMedia img,.fgsGo,.fgsDot{transition:none;}
       .fgShowTrack{scroll-behavior:auto;}

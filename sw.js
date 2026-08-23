@@ -4643,7 +4643,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=21',
-  '/css/hero.css?v=107',
+  '/css/hero.css?v=108',
   '/css/viewer.css?v=39',
   '/css/community.css?v=22',
   '/css/connect.css?v=7',

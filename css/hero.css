@@ -78,7 +78,12 @@
       .hpCta,.hpTab{transition:none;}
     }
     @media(max-width:480px){
-      .hpTabs{width:auto;}
+      /* The tabs used to be told width:auto here, which on a block-level flex
+         container means "fill the column" — so the pill ran the whole width of
+         the phone with its four words bunched at the left end and a third of it
+         empty after Sell. The base rule is right at every width: max-content
+         hugs the words, max-width:100% caps it at the column, and the overflow
+         already there lets it scroll on the phones where it does not fit. */
       .hpTab{padding:.5rem .95rem;font-size:.82rem;}
     }
 

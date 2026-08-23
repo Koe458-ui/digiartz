@@ -735,12 +735,15 @@
      second implementation of a close.
 
        lock    holds the scroll lock while it is open
-       widget  covers the page, so the top bar and the assistant button leave
 
-     There was a third flag, `nav`, naming the panels that hid the bottom
-     navigation bar. There is no bottom navigation bar: the one bar is at the
-     top of the document, every panel here covers it, and `widget` — which
-     already meant "this covers the page" — is the flag that says so.
+     There were two more flags. `nav` named the panels that hid the bottom
+     navigation bar, and `widget` those that hid the wordmark, the bell and the
+     assistant button floating over the page. Both were answers to "is the page
+     covered", asked so something could be moved out of the way — and both are
+     answered by the stack now: the one bar is at z-index 400, every panel here
+     is 500 or above, and the things that used to float have either moved into
+     the bar or gone. A flag nothing reads is a promise nothing keeps, so
+     neither is here.
 
      Order is the order the sweep shuts them in: a page that sits INSIDE
      another one comes first, so nothing is ever closed out from under a child
@@ -760,31 +763,31 @@
     { id:'fgFltPanel',      close:['closeFilterPanel'] },
     { id:'fgFltOvr',        close:['closeFilterPanel'] },
     { id:'tgMod',           close:['tgModClose'],           lock:1 },
-    { id:'legalBackdrop',   close:['closeLegal'],           lock:1, widget:1 },
-    { id:'legalPage',       close:['closeLegalPage'],       lock:1, widget:1 },
+    { id:'legalBackdrop',   close:['closeLegal'],           lock:1 },
+    { id:'legalPage',       close:['closeLegalPage'],       lock:1 },
     { id:'showcasePicker',  close:['closeShowcasePicker'] },
     // search pages, each over the section it searches
-    { id:'pfSearchPage',    close:['closePfSearch', true],           widget:1 },
-    { id:'fgSearchPage',    close:['closeFgSearch', true],  lock:1,  widget:1 },
-    { id:'cmSearchPage',    close:['cmCloseSearch'],        lock:1, widget:1 },
-    { id:'cmBrowsePage',    close:['cmCloseBrowse'],        lock:1, widget:1 },
-    { id:'cmInfoPage',      close:['cmiClose'],             lock:1, widget:1 },
-    { id:'frdPage',         close:['closeFriendsPage'],     lock:1, widget:1 },
+    { id:'pfSearchPage',    close:['closePfSearch', true] },
+    { id:'fgSearchPage',    close:['closeFgSearch', true],  lock:1 },
+    { id:'cmSearchPage',    close:['cmCloseSearch'],        lock:1 },
+    { id:'cmBrowsePage',    close:['cmCloseBrowse'],        lock:1 },
+    { id:'cmInfoPage',      close:['cmiClose'],             lock:1 },
+    { id:'frdPage',         close:['closeFriendsPage'],     lock:1 },
     // pages opened from a profile, from Settings, or from the quick links
-    { id:'albViewPage',     close:['albCloseView'],         lock:1, widget:1 },
-    { id:'albPage',         close:['albClosePage'],         lock:1, widget:1 },
-    { id:'bmPage',          close:['closeBookmarksPage'],   lock:1, widget:1 },
-    { id:'anPage',          close:['closeAnalyticsPage'],   lock:1, widget:1 },
-    { id:'xpPage',          close:['closeXpPage'],          lock:1, widget:1 },
-    { id:'themePage',       close:['closeThemePage'], widget:1 },
-    { id:'rankPage',        close:['closeRankPage'],        lock:1, widget:1 },
-    { id:'dzPanelHost',     close:['dzClosePanel'],         lock:1, widget:1 },
-    { id:'admPage',         close:['dzOpsClose'],           lock:1, widget:1 },
-    { id:'notifPage',       close:['closeNotifPage'],       lock:1, widget:1 },
-    { id:'pfMyWorkPage',    close:['closeMyWorkPage'],      lock:1, widget:1 },
-    { id:'pfEditPage',      close:['closePfEditPage'],      lock:1, widget:1 },
-    { id:'setPage',         close:['closeSettingsPage'],    lock:1, widget:1 },
-    { id:'subPage',         close:['closeSubscription'],    lock:1, widget:1 },
+    { id:'albViewPage',     close:['albCloseView'],         lock:1 },
+    { id:'albPage',         close:['albClosePage'],         lock:1 },
+    { id:'bmPage',          close:['closeBookmarksPage'],   lock:1 },
+    { id:'anPage',          close:['closeAnalyticsPage'],   lock:1 },
+    { id:'xpPage',          close:['closeXpPage'],          lock:1 },
+    { id:'themePage',       close:['closeThemePage'] },
+    { id:'rankPage',        close:['closeRankPage'],        lock:1 },
+    { id:'dzPanelHost',     close:['dzClosePanel'],         lock:1 },
+    { id:'admPage',         close:['dzOpsClose'],           lock:1 },
+    { id:'notifPage',       close:['closeNotifPage'],       lock:1 },
+    { id:'pfMyWorkPage',    close:['closeMyWorkPage'],      lock:1 },
+    { id:'pfEditPage',      close:['closePfEditPage'],      lock:1 },
+    { id:'setPage',         close:['closeSettingsPage'],    lock:1 },
+    { id:'subPage',         close:['closeSubscription'],    lock:1 },
     /* The two item views. The artwork viewer's own close hands its address
        and its page title back, so it is used as it is; the item viewer's
        silent close is the one that leaves history alone, because a sweep is
@@ -796,26 +799,26 @@
        still "open" when the move finishes. Nothing here waits for it: the
        address audit in js/routes.js runs again when the class does come off,
        which is exactly the kind of late close it exists for. */
-    { id:'artModal',        close:['closeLB'],              lock:1, widget:1 },
-    { id:'dzView',          close:['dzCloseViewSilent'],    lock:1, widget:1 },
+    { id:'artModal',        close:['closeLB'],              lock:1 },
+    { id:'dzView',          close:['dzCloseViewSilent'],    lock:1 },
     /* The work on the screen with nothing else on it, opened by clicking the
        picture in the viewer. A panel like any other: it holds the lock while
        it is up, it hides the floating widgets, and a sweep closes it — which
        matters, because it is the one panel that opens OVER another one, and
        leaving it standing over a swept viewer would leave a picture on the
        screen belonging to a section the member has left. */
-    { id:'dzLight',         close:['dzLightClose'],         lock:1, widget:1 },
+    { id:'dzLight',         close:['dzLightClose'],         lock:1 },
     // the five destinations the bar leads to
-    { id:'authMod',         close:['closeAuthMod'],         lock:1, widget:1 },
-    { id:'pfUpMod',         close:['closePfUpload'],        lock:1, widget:1 },
-    { id:'profilePage',     close:['closeProfilePage', false], lock:1, widget:1 },
+    { id:'authMod',         close:['closeAuthMod'],         lock:1 },
+    { id:'pfUpMod',         close:['closePfUpload'],        lock:1 },
+    { id:'profilePage',     close:['closeProfilePage', false], lock:1 },
     // The chat slides over the community grid and is written beside it rather
     // than inside it. closeCommunityPage resets it on the way out; listing it
     // here as well is what makes the sweep complete on its own terms — the
     // table is the answer to "what is on screen", and this is on screen.
     { id:'cmChatPanel',     close:['cmCloseChat'] },
-    { id:'communityPage',   close:['closeCommunityPage'],   lock:1, widget:1 },
-    { id:'fg',              close:['closeFG'],              lock:1, widget:1 }
+    { id:'communityPage',   close:['closeCommunityPage'],   lock:1 },
+    { id:'fg',              close:['closeFG'],              lock:1 }
   ];
 
   function dzPanelEl(id){ return document.getElementById(id); }
@@ -823,12 +826,6 @@
     return !!el && (el.classList.contains('open') ||
                     el.getAttribute('data-state') === 'open');
   }
-  // The ids carrying one flag, for the watchers below and for js/sections.js.
-  function dzPanelIds(flag){
-    return DZ_PANELS.filter(function(p){ return !!p[flag]; })
-                    .map(function(p){ return p.id; });
-  }
-  window.dzPanelIds = dzPanelIds;
   window.dzAnyPanelOpen = function(flag){
     return DZ_PANELS.some(function(p){
       return (!flag || p[flag]) && dzPanelIsOpen(dzPanelEl(p.id));

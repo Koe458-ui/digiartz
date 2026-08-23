@@ -288,23 +288,30 @@
        floating pill at the bottom of the screen holding five icons, and two
        more pills fixed over the top corners holding the wordmark and the bell.
 
-       Fixed, and only ever seen on the home page: every section on this site
-       is a panel that covers the document and carries a bar of its own, so
-       this one is taken down on the way in (.heroOut, driven by js/sections.js
-       off the same panel table the floating widgets used) rather than left to
-       stack two bars on top of each other.
+       Fixed, and only ever seen on the home page — but by being UNDERNEATH
+       the sections rather than by getting out of their way. Every section on
+       this site is an opaque panel covering the document at z-index 500 or
+       above, and this sits at 400 with its drawer and scrim just below it, so
+       a section simply covers all three.
+
+       It used to slide itself out instead, on a class js/sections.js put on it
+       when a panel opened. Two things wrong with that: the bar and the drawer
+       went on animating over the top of a section that had already opened, and
+       a panel that opened without the watcher seeing it left two bars stacked.
+       Being lower in the stack has neither failure mode — there is no state to
+       get wrong, and nothing to finish animating.
 
        --dzTopH is the bar's height and is spent in three other places: the
        clearance under it in css/hero.css, and the assistant button and its
        bubble in css/panels.css, which hang below it. */
-    :root{ --dzTopH:68px; }
-    @media(min-width:768px){ :root{ --dzTopH:76px; } }
-    @media(min-width:1280px){ :root{ --dzTopH:84px; } }
+    :root{ --dzTopH:56px; }
+    @media(min-width:768px){ :root{ --dzTopH:60px; } }
+    @media(min-width:1280px){ :root{ --dzTopH:64px; } }
 
     .dzTop{
       position:fixed;
       top:0;left:0;right:0;
-      z-index:1001;
+      z-index:400;
       height:var(--dzTopH);
       box-sizing:border-box;
       display:flex;align-items:center;gap:.75rem;
@@ -312,25 +319,18 @@
       border-bottom:1px solid var(--bdr);
       background:color-mix(in srgb,var(--bg) 92%,transparent);
       backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-      /* the way out is the curve every panel on this site slides on */
-      transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .28s ease;
-      /* gpu layer */
-      will-change:transform;
     }
-    /* A section is up and wearing its own bar: this one leaves upwards rather
-       than blinking out, and stops taking taps on the way. */
-    .dzTop.heroOut{
-      opacity:0;
-      transform:translateY(-100%);
-      pointer-events:none;
-    }
-
     /* the wordmark — black and brand red, the two colours it has always been */
     .dzBrand{
       flex:0 0 auto;
       display:inline-flex;align-items:baseline;
       font-family:var(--fd);font-weight:800;
-      font-size:clamp(1.2rem,4vw,1.55rem);
+      /* The size of the words and the icons beside it, not a size above them.
+         A wordmark set two steps larger than its own navigation makes the bar
+         as deep as the wordmark rather than as deep as a bar — which is what
+         set the height of this one for a while. Weight carries the emphasis
+         instead: 800 against the links' 700, and the red. */
+      font-size:clamp(1.02rem,2.8vw,1.14rem);
       letter-spacing:-.01em;
       text-decoration:none;
       -webkit-tap-highlight-color:transparent;
@@ -344,7 +344,7 @@
        own text colour and the red beside it goes on doing the identifying. */
     .dzBrandD{color:#0A0A0A;}
     html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
-    .dzBrandA,.dzBrandDot{color:var(--brand-red);}
+    .dzBrandA{color:var(--brand-red);}
 
     /* the wide bar's destinations, centred between the wordmark and the
        actions. Out of the document on a phone, where the hamburger holds the
@@ -362,7 +362,7 @@
       border:0;background:none;cursor:pointer;
       padding:.5rem .25rem;
       font-family:var(--fd);font-weight:700;
-      font-size:clamp(.94rem,1.05vw,1.02rem);letter-spacing:.01em;
+      font-size:clamp(.9rem,1vw,.96rem);letter-spacing:.01em;
       color:var(--txd);
       text-decoration:none;white-space:nowrap;
       -webkit-tap-highlight-color:transparent;
@@ -391,13 +391,13 @@
     }
     .dzIcon{
       position:relative;flex:0 0 auto;
-      width:46px;height:46px;border-radius:13px;
+      width:40px;height:40px;border-radius:11px;
       display:flex;align-items:center;justify-content:center;
       background:none;border:none;color:var(--tx);cursor:pointer;
       transition:background .18s,color .18s,transform .15s;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     }
-    .dzIcon svg{width:24px;height:24px;display:block;}
+    .dzIcon svg{width:20px;height:20px;display:block;}
     .dzIcon:active{transform:scale(.92);}
     .dzIcon:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
     @media(hover:hover){ .dzIcon:hover{background:var(--sur2);} }
@@ -421,7 +421,7 @@
        which is the one animation that says what the button will do next. */
     .dzHamBox{
       position:relative;
-      width:22px;height:16px;
+      width:19px;height:13px;
       display:block;
     }
     .dzHamBox span{
@@ -431,11 +431,11 @@
       transition:transform .34s cubic-bezier(.16,1,.3,1),opacity .16s ease;
     }
     .dzHamBox span:nth-child(1){top:0;}
-    .dzHamBox span:nth-child(2){top:7px;}
-    .dzHamBox span:nth-child(3){top:14px;}
-    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+    .dzHamBox span:nth-child(2){top:6px;}
+    .dzHamBox span:nth-child(3){top:12px;}
+    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(1){transform:translateY(6px) rotate(45deg);}
     .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(2){opacity:0;transform:scaleX(.4);}
-    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
 
     /* ── the menu ────────────────────────────────────────────────────────────
        A drawer that rolls down out of the bar. It is full width because it is
@@ -451,12 +451,14 @@
        words fading in underneath still read as a drawer.
 
        It is drawn under the bar in the stack as well as under it on the
-       screen, so the bar's own edge stays the line the drawer comes out of. */
+       screen, so the bar's own edge stays the line the drawer comes out of —
+       and under every section too, so one opening covers the drawer mid-roll
+       instead of letting it finish on top. */
     .dzMenu{
       position:fixed;
       top:var(--dzTopH);
       left:0;right:0;
-      z-index:1000;
+      z-index:399;
       display:grid;
       grid-template-rows:0fr;
       /* Opaque, and a surface rather than the ground. The bar above it is
@@ -556,7 +558,7 @@
     .dzMenuScrim{
       position:fixed;
       top:var(--dzTopH);left:0;right:0;bottom:0;
-      z-index:999;
+      z-index:398;
       background:transparent;
       display:none;
     }
@@ -588,8 +590,9 @@
     /* Three things used to float over this page in pills of their own — the
        wordmark, the bell and the assistant button — sharing a .fpFloat class
        and a .heroOut that took all three down when a section covered them.
-       The first two are inside #dzTop now and the third is gone, so the
-       class is gone; the bar keeps .heroOut, and its rule is with the bar. */
+       The first two are in #dzTop now and the third is gone, so both the class
+       and the hiding went: the bar is drawn under the sections instead, which
+       is a fact about the stack rather than a state something has to maintain. */
 
 
     /* image protection

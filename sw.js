@@ -4,6 +4,37 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v244 — the bar goes under the sections, and comes down to a bar's height.
+
+       It was hiding itself. A watcher in js/sections.js put a class on it
+       whenever a panel opened and it slid up out of the way, which is a state
+       two files had to agree on — and it went on animating over the top of a
+       section that had already opened, along with the drawer closing behind
+       it. It is drawn at z-index 400 now, under every panel in this app (500
+       and up), so a section covers it by being in front of it. Nothing to
+       maintain and nothing left to finish animating.
+
+       The watcher went with it, and so did the `widget` flag on the panel
+       table, which nothing else read. That is the second of the two flags to
+       go for the same reason: both answered "is the page covered" so that
+       something could be moved out of the way, and the stack answers it now.
+
+       And the bar is a bar again: 56/60/64px rather than 68/76/84. The
+       wordmark was set two steps above the words beside it, which made the
+       height a function of the wordmark instead of of the navigation — it is
+       the size of the links and the icons now, at 800 against their 700, and
+       it has lost its full stop. Icons come down to 40px on a 20px glyph.
+
+       Separately, the pitch's tab pill: on phones it was told width:auto,
+       which on a block-level flex container means "fill the column", so it ran
+       the full width of the screen with Explore/Learn/Buy/Sell bunched at the
+       left end and a third of it empty. The base rule — max-content capped at
+       100%, scrolling where it does not fit — was already right at every
+       width.
+
+       Changed: index.html, css/base.css, css/hero.css, js/app-core.js,
+       js/sections.js.
+
    v243 — the assistant is gone.
 
        The bot was a circle in a corner, a speech bubble that nudged from
@@ -4096,7 +4127,7 @@
        security/daily-download-quota.sql (new, record only).
 
    v69 — the precache was covering URLs nobody asks for. Every tag in
-       index.html carries a query string (/css/base.css?v=19) while
+       index.html carries a query string (/css/base.css?v=20) while
        SHELL_URLS listed the bare path (/css/base.css), and cache.match
        keys on the full URL including the search, so 38 of the 41 shell
        assets were precached under a name the page never requests. They
@@ -4521,7 +4552,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v243';
+const CACHE_VERSION = 'v244';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4572,8 +4603,8 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=19',
-  '/css/hero.css?v=104',
+  '/css/base.css?v=20',
+  '/css/hero.css?v=105',
   '/css/viewer.css?v=39',
   '/css/community.css?v=21',
   '/css/connect.css?v=7',
@@ -4606,7 +4637,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=33',
+  '/js/app-core.js?v=34',
   '/js/protect.js?v=3',
   '/js/gallery.js?v=101',
   '/js/auth.js?v=21',
@@ -4628,7 +4659,7 @@ const SHELL_URLS = [
   '/js/theme.js?v=6',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=123',
+  '/js/sections.js?v=124',
   '/js/routes.js?v=2',
   '/js/topnav.js?v=4',
   '/js/navprogress.js?v=6'

@@ -1,56 +1,14 @@
 // sections, detail view, hero
-(function () {
-  'use strict';
+/* A watcher lived here that hid whatever floated over the page whenever a
+   panel opened: the wordmark, the bell and the assistant button, and later the
+   bar those first two moved into.
 
-  /* What leaves when a panel covers the page.
-
-     It used to be three pills fixed over it — the wordmark, the bell and the
-     assistant button — found by the .fpFloat class the three of them shared.
-     The wordmark and the bell are inside #dzTop now and the assistant is gone
-     entirely, so the bar is the whole list, and .fpFloat with it. It takes
-     .heroOut from here rather than from a watcher of its own, which is what
-     the note on the panel table in js/app-core.js is about. */
-  var widgets = ['dzTop']
-    .map(function (id) { return document.getElementById(id); })
-    .filter(Boolean);
-  if (!widgets.length) return;
-
-  var panelOpen = false;
-  var wasOut = false;
-
-  function apply() {
-    var out = panelOpen;
-    widgets.forEach(function (el) {
-      el.classList.toggle('heroOut', out);
-    });
-  }
-
-  /* Overlay panels hide the widgets, and which panels those are is the
-     `widget` flag on the table in js/app-core.js. It used to be a list
-     written out here — the third copy of the same set of ids in this app, and
-     the one that kept falling behind: pfEditPage was missing from it while
-     every other full-screen panel was listed, so the floating widgets sat on
-     top of profile settings. A panel is listed in one place now.
-     dzPanelHost is built by the signed-in module and is simply absent for
-     everyone else — overlayEls skips what it cannot find. */
-  var OVERLAY_IDS = window.dzPanelIds ? window.dzPanelIds('widget') : [];
-  var overlayEls = OVERLAY_IDS
-    .map(function (id) { return document.getElementById(id); })
-    .filter(Boolean);
-
-  function refreshPanelOpen() {
-    panelOpen = overlayEls.some(function (el) { return el.classList.contains('open'); });
-    apply();
-  }
-
-  if (overlayEls.length && 'MutationObserver' in window) {
-    var mo = new MutationObserver(refreshPanelOpen);
-    overlayEls.forEach(function (el) {
-      mo.observe(el, { attributes: true, attributeFilter: ['class'] });
-    });
-    refreshPanelOpen();
-  }
-})();
+   There is nothing left for it to hide. The assistant is gone, and the bar is
+   drawn at z-index 400 while every panel in this app is 500 or above — so a
+   section covers it by being in front of it. That is a fact about the stack,
+   true the instant the section paints and true for a panel this file has never
+   heard of; the watcher was a state two things had to agree on, and it went on
+   animating the bar away over the top of a section that had already opened. */
 
 // section content
 (function(){

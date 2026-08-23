@@ -1373,91 +1373,33 @@
       .awGrid.awSwap{animation:none;}
     }
 
-    /* featured artist — first place on a scored board, two cells wide and
+    /* Featured artist — first place on a scored board, two cells wide and
        one tall. The narrowest grid is two across, so it is a full row on a
-       phone and half a row on a desktop, and never breaks the grid. */
+       phone and half a row on a desktop, and never breaks the grid.
+
+       The card itself is the gallery showcase's — .fgsCard, built by the same
+       function in js/fgshow.js — so everything it looks like is up there with
+       the showcase rather than repeated down here in a second set of rules
+       that used to say almost the same thing and drifted whenever one of them
+       was touched. What is left is the two things that genuinely differ: it
+       is a grid cell rather than a slide on a rail, and it carries no likes
+       and no views. */
     .fbBox{
-      --fbAccent:#38BDF8;
-      position:relative;
+      /* a showcase card takes its width from the rail's column count. This
+         one takes it from the grid it sits in, so those widths are dropped
+         rather than fought with. */
+      width:auto;flex:0 0 auto;scroll-snap-align:none;
       grid-column:span 2;
-      aspect-ratio:2/1;
-      overflow:hidden;
-      border-radius:14px;
-      background:var(--sur);border:1px solid var(--bdr);
     }
-    html[data-theme="light"] .fbBox{--fbAccent:#0369A1;}
-    .fbArt{
-      position:absolute;top:0;right:0;bottom:0;left:40%;
-      padding:0;border:0;background:none;cursor:pointer;
-      -webkit-tap-highlight-color:transparent;
-    }
-    .fbArt img{width:100%;height:100%;object-fit:cover;display:block;}
-    /* the picture runs under the words and fades out before it reaches them */
-    .fbArt::after{
-      content:'';position:absolute;inset:0;pointer-events:none;
-      background:linear-gradient(90deg,
-        var(--sur) 0%,
-        color-mix(in srgb,var(--sur) 62%,transparent) 38%,
-        transparent 78%);
-    }
-    .fbArt:focus-visible{outline:2px solid var(--pg);outline-offset:-3px;}
-    .fbInfo{
-      position:relative;z-index:2;height:100%;max-width:64%;
-      min-width:0;
-      box-sizing:border-box;padding:clamp(.7rem,4.5%,1.5rem);
-      display:flex;flex-direction:column;justify-content:center;gap:.2rem;
-    }
-    /* a narrow phone gives the words too little room at 64%: the bio lost
-       its second line and the name its second half. The picture gives some
-       back rather than the text going unreadable. */
-    @media(max-width:420px){
-      .fbInfo{max-width:74%;}
-      .fbArt{left:50%;}
-    }
-    .fbEyebrow{
-      font-family:var(--fm);font-size:clamp(.54rem,1.5vw,.64rem);
-      letter-spacing:.2em;text-transform:uppercase;color:var(--fbAccent);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    .fbName{
-      font-family:var(--fd);font-weight:800;letter-spacing:-.01em;
-      font-size:clamp(1rem,3.6vw,1.6rem);color:var(--tx);line-height:1.2;
-      max-width:100%;overflow:hidden;overflow-wrap:anywhere;
-      display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;
-      margin-top:.15rem;
-    }
-    .fbBio{
-      font-family:var(--fb);font-size:clamp(.7rem,1.9vw,.86rem);
-      color:var(--txd);line-height:1.35;margin-top:.15rem;
-      /* two lines, however long the bio runs */
-      display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
-      overflow:hidden;
-    }
-    .fbGoWrap{margin-top:.55rem;}
-    .fbGo{
-      display:inline-flex;align-items:center;gap:.3rem;
-      padding:.42rem .8rem;border-radius:999px;cursor:pointer;
-      background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);
-      font-family:var(--fm);font-size:clamp(.56rem,1.5vw,.64rem);
-      letter-spacing:.1em;text-transform:uppercase;
-      transition:border-color .2s,background .2s;
-    }
-    .fbGo svg{width:12px;height:12px;flex-shrink:0;}
-    @media(hover:hover){
-      .fbGo:hover{border-color:var(--pg);background:var(--pdim);}
-      .fbArt:hover img{transform:scale(1.03);}
-    }
-    .fbArt img{transition:transform .42s cubic-bezier(.22,1,.36,1);}
-    .fbGo:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    .fbGo[disabled]{opacity:.45;cursor:default;}
-    /* waiting on the profile behind the picture */
-    .fbBox:not(.fbReady) .fbName{width:46%;height:1em;border-radius:5px;background:var(--sur2);}
-    .fbBox:not(.fbReady) .fbBio{width:78%;height:.8em;border-radius:5px;background:var(--sur2);}
-    .fbBox:not(.fbReady) .fbGo{opacity:.4;}
-    @media(prefers-reduced-motion:reduce){
-      .fbArt img{transition:none;}
-      .fbGo{transition:none;}
-    }
+    /* Without the two numbers the button takes the bottom of the card they
+       used to hold down, so the words above it sit where they sit on a
+       showcase card instead of floating in the middle of the picture. */
+    .fbBox .fgsGo{margin-top:auto;}
+    /* the boards this banner runs on. Weekly and monthly are already spoken
+       for by the showcase, in the same two colours; trending is the home
+       page's own, and takes the orange its board tab wears. */
+    .fgsCard[data-fgs="trending"]{--fgsC:#F97316;}
+    .fgsCard[data-fgs="trending"] .fgsKind svg{color:#F97316;}
 
     /* logs — one long line per upload, not a thumbnail grid.
        minmax(0,1fr), never a bare 1fr: a bare one is minmax(auto,1fr), whose

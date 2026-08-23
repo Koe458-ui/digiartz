@@ -173,37 +173,60 @@
     for(var i = 0; i < imgs.length; i++) fgsFrame(imgs[i]);
   }
 
-  function fgsCard(slot, idx){
-    var a = slot.art;
-    var spot = slot.kind === 'Artist Spotlight';
+  /* One card, built in one place.
+
+     The gallery's showcase is not the only thing that wants it: the home
+     page's featured artist banner is the same card, over the same 2:1
+     picture, on the boards the home page scores — so it is built here too
+     rather than drawn a second time in js/feed.js and left to drift from
+     this one a fix at a time. What the caller chooses is the chip it wears,
+     which board colours it takes, and whether it carries the two numbers;
+     everything else — the scrim, the type, the crop, the button and what
+     the button opens — is the same card in both places.
+
+       art    the artwork behind it
+       extra  a class of the caller's own, for where the card is placed
+       kind   the chip's words, and ico its icon
+       board  the board id, which is where the chip's colour comes from
+       word   the board's own word, in the bright chip beside the kind
+       likes / views  the two numbers, or nothing at all for a card without
+              them (the home page's banner is one: the board under it is
+              already a ranking, and repeating its top row's counts at four
+              times the size says nothing the row does not)
+       eager  first on screen, so its picture is not lazy
+       sizes  what width this card's picture will actually be drawn at */
+  function fgsBuild(o){
+    var a = o.art || {};
+    var stats = o.likes != null || o.views != null;
     var el = document.createElement('article');
-    el.className = 'fgsCard';
-    el.setAttribute('data-fgs', slot.row.id);
-    if(slot.uid) el.setAttribute('data-uid', slot.uid);
+    el.className = 'fgsCard' + (o.extra ? ' ' + o.extra : '');
+    el.setAttribute('data-fgs', o.board || '');
+    if(o.uid) el.setAttribute('data-uid', o.uid);
 
     var line = String(a.description || '').replace(/\s+/g, ' ').trim();
 
     el.innerHTML =
       '<span class="fgsMedia" aria-hidden="true"><img alt="" decoding="async" loading="' +
-        (idx < 2 ? 'eager' : 'lazy') + '" draggable="false"></span>' +
+        (o.eager ? 'eager' : 'lazy') + '" draggable="false"></span>' +
       '<span class="fgsScrim" aria-hidden="true"></span>' +
       '<div class="fgsBody">' +
         '<div class="fgsChips">' +
-          '<span class="fgsKind">' + fgsSvg(spot ? 'star' : 'crown') +
-            '<span>' + esc(slot.kind) + '</span></span>' +
-          '<span class="fgsWhen">' + esc(slot.row.word) + '</span>' +
+          '<span class="fgsKind">' + fgsSvg(o.ico || 'star') +
+            '<span>' + esc(o.kind || '') + '</span></span>' +
+          '<span class="fgsWhen">' + esc(o.word || '') + '</span>' +
         '</div>' +
         '<h3 class="fgsTitle">' + esc(a.name || 'Untitled') + '</h3>' +
         // the handle is not known until the profile lands; the row is in the
         // card from the start so nothing below it jumps when the name arrives
         '<span class="fgsBy"></span>' +
         '<p class="fgsSub"' + (line ? '' : ' style="display:none"') + '>' + esc(line) + '</p>' +
+        (stats ?
         '<div class="fgsStats">' +
           '<span class="fgsStat"><span class="fgsStatIco fgsStatIco--like">' + fgsSvg('heart') + '</span>' +
-            '<b>' + esc(fgsFmt(slot.likes)) + '</b><i>Likes</i></span>' +
+            '<b>' + esc(fgsFmt(o.likes)) + '</b><i>Likes</i></span>' +
           '<span class="fgsStat"><span class="fgsStatIco fgsStatIco--view">' + fgsSvg('eye', 1.7) + '</span>' +
-            '<b>' + esc(fgsFmt(slot.views)) + '</b><i>Views</i></span>' +
-        '</div>' +
+            '<b>' + esc(fgsFmt(o.views)) + '</b><i>Views</i></span>' +
+        '</div>' : '') +
         '<button class="fgsGo" type="button" aria-label="View artwork ' + esc(a.name || 'Untitled') + '">' +
           '<span>View Artwork</span>' + fgsSvg('arrow', 2.2) +
         '</button>' +
@@ -214,7 +237,7 @@
     else img.src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(a.image_url || '') : (a.image_url || '');
     // a card is two grid cells wide, so the grid's own sizes would hand it the
     // 300 for a box that wants the 1000
-    if(img.srcset) img.sizes = fgsSizes();
+    if(img.srcset && o.sizes) img.sizes = o.sizes;
     // the crop needs the file's real proportions, which are not known until it
     // has arrived; until then it sits centred, which is where it would have
     // sat anyway
@@ -229,6 +252,21 @@
              a.description || '', a.id);
     };
     return el;
+  }
+
+  function fgsCard(slot, idx){
+    return fgsBuild({
+      art:   slot.art,
+      uid:   slot.uid,
+      kind:  slot.kind,
+      ico:   slot.kind === 'Artist Spotlight' ? 'star' : 'crown',
+      board: slot.row.id,
+      word:  slot.row.word,
+      likes: slot.likes,
+      views: slot.views,
+      eager: idx < 2,
+      sizes: fgsSizes()
+    });
   }
 
   // The one thing a card cannot say until the profile lands: who made it.
@@ -622,3 +660,12 @@
   })();
 
   window.fgShowRender = fgShowRender;
+  /* The home page's featured banner is this card too — same picture, same
+     scrim, same type — so js/feed.js builds it through here rather than
+     keeping a second copy of the markup. */
+  window.dzFeatureCard = fgsBuild;
+  /* And the crop it does: a 2:1 card can only show a band of the square its
+     uploader framed, and this is what puts that band over the middle of it.
+     Exported for the same reason — one crop, not two that agree until one
+     of them is fixed. */
+  window.dzFeatureFrame = fgsFrame;

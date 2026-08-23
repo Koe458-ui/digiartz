@@ -4643,7 +4643,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=21',
-  '/css/hero.css?v=105',
+  '/css/hero.css?v=106',
   '/css/viewer.css?v=39',
   '/css/community.css?v=22',
   '/css/connect.css?v=7',
@@ -4690,15 +4690,15 @@ const SHELL_URLS = [
   '/js/startup.js?v=7',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=14',
-  '/js/feed.js?v=3',
-  '/js/fgshow.js?v=4',
+  '/js/feed.js?v=4',
+  '/js/fgshow.js?v=5',
   '/js/effects.js?v=9',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/theme.js?v=6',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=124',
+  '/js/sections.js?v=125',
   '/js/routes.js?v=2',
   '/js/topnav.js?v=5',
   '/js/navprogress.js?v=6'

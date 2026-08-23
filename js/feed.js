@@ -143,89 +143,94 @@
   // it is a full row on a phone and half a row on a desktop.
   var FEATURED_BOARDS = { trending:1, weekly:1, monthly:1 };
 
-  // 60% of a two-cell banner, at each of the grid's own column counts, scaled
-  // for the screen's pixel ratio the same way dzGridSizes does
+  // The banner's own picture width, at each of the grid's column counts and
+  // scaled for the screen's pixel ratio the way dzGridSizes does. The picture
+  // is the whole card now rather than the right 60% of it, so these are two
+  // grid cells and the gap between them: a full row on a phone, two of three
+  // on a tablet, two of four on a desktop.
   function fbSizes(){
     var s = typeof dzDprScale === 'function' ? dzDprScale() : 1;
     var f = function(vw){ return +(vw * s).toFixed(2); };
-    return '(min-width:1280px) ' + f(30) + 'vw, (min-width:700px) ' + f(40) + 'vw, ' + f(60) + 'vw';
+    return '(min-width:1280px) ' + f(40) + 'vw, (min-width:700px) ' + f(56) + 'vw, ' + f(94) + 'vw';
   }
 
-  function buildFeatured(a){
-    var box = document.createElement('div');
-    box.className = 'fbBox';
-    box.setAttribute('data-uid', String(a.user_id || ''));
-    box.innerHTML =
-      '<button type="button" class="fbArt" aria-label="View ' + esc(a.name || 'artwork') + '">' +
-        '<img alt="" decoding="async">' +
-      '</button>' +
-      '<div class="fbInfo">' +
-        '<span class="fbEyebrow">Featured artist</span>' +
-        '<span class="fbName"></span>' +
-        '<span class="fbBio"></span>' +
-        '<span class="fbGoWrap"><button type="button" class="fbGo">View profile' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
-          'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-          '<polyline points="9 18 15 12 9 6"/></svg></button></span>' +
-      '</div>';
+  // the board's own word, for the bright chip on the banner
+  var FB_WORD = { trending:'Trending', weekly:'Weekly', monthly:'Monthly' };
 
-    var img = box.querySelector('.fbArt img');
-    dzApplyThumb(img, a.image_url || '');
-    // the banner is two cells wide and its picture covers 60% of that, so it
-    // is wider than a grid thumbnail and needs its own sizes or the browser
-    // picks the 300 for a box that wants the 600
-    if(img.srcset) img.sizes = fbSizes();
-    img.loading = 'lazy';
-    img.draggable = false;
-    img.style.cssText = thumbStyle(a.thumb_x, a.thumb_y, a.thumb_zoom);
-    box.querySelector('.fbArt').onclick = function(){
-      if(typeof openLB === 'function'){
-        openLB(a.image_url || '', a.name || 'Untitled',
-               catList(a.category)[0] || 'others', a.description || '', a.id);
-      }
-    };
+  /* The banner is the gallery showcase's card — the same 2:1 picture with the
+     same scrim, chips, type and button over it — so it is built by the same
+     function, in js/fgshow.js, rather than drawn a second time here.
+
+     It carries no likes and no views. That is the one difference, and it is
+     deliberate: this card sits directly above the board it leads, and that
+     board is a ranking of exactly those numbers. Printing the top row's two
+     counts again at four times the size says nothing the row underneath it
+     does not already say. */
+  function buildFeatured(a){
+    if(typeof window.dzFeatureCard !== 'function') return null;
+    var box = window.dzFeatureCard({
+      art:   a,
+      extra: 'fbBox',
+      uid:   String(a.user_id || ''),
+      kind:  'Featured Artist',
+      ico:   'star',
+      board: feedTab,
+      word:  FB_WORD[feedTab] || '',
+      eager: true,
+      sizes: fbSizes()
+    });
+    if(!box) return null;
+
+    /* The one thing the banner keeps that the showcase card has no use for:
+       the whole card opens the artwork, not only its button. The board under
+       it is a grid of thumbnails that every one of them opens on a tap, and
+       this is the first of them promoted out of that grid — a hand reaching
+       for the biggest picture on the page and getting nothing would be the
+       banner taking a tap target away by being promoted.
+
+       The button keeps its own handler and is skipped here, or one press
+       would open the viewer twice. It is also what a keyboard reaches, so
+       this stays a pointer's shortcut rather than a second tab stop over
+       the same action. */
+    box.style.cursor = 'pointer';
+    box.addEventListener('click', function(e){
+      var t = e.target;
+      if(t && t.closest && t.closest('.fgsGo')) return;
+      if(typeof openLB !== 'function') return;
+      openLB(a.image_url || '', a.name || 'Untitled',
+             catList(a.category)[0] || 'others', a.description || '', a.id);
+    });
 
     var p = dzArtistCache[a.user_id];
     if(p !== undefined) paintFeatured(box, p);
     return box;
   }
 
-  // Two sentences of a bio, then an ellipsis. A profile bio can run for a
-  // paragraph and the banner has room for a line of it, so the cut is made
-  // where the writing already breaks rather than mid-word. A bio with no
-  // second full stop is left alone — the line clamp still holds it.
-  function fbTrimBio(text){
-    var s = String(text || '').replace(/\s+/g, ' ').trim();
-    if(!s) return '';
-    var re = /[.!?]+(?=\s|$)/g, hits = 0, end = -1, m;
-    while((m = re.exec(s)) !== null){
-      if(++hits < 2) continue;
-      end = m.index + m[0].length;
-      break;
-    }
-    if(end < 0 || end >= s.length) return s;
-    return s.slice(0, end) + ' …';
-  }
-
+  // Who made it — the same byline the showcase card carries, and the same
+  // wait for it: the row is in the card from the start, so nothing below it
+  // moves when the profile lands.
   function paintFeatured(box, p){
     var name = (p && (p.display_name || p.username)) || 'Artist';
-    var user = p && p.username ? String(p.username) : '';
-    var nm  = box.querySelector('.fbName');
-    var bio = box.querySelector('.fbBio');
-    var go  = box.querySelector('.fbGo');
-
-    if(nm) nm.textContent = user ? '@' + user : name;
-    if(bio){
-      var line = fbTrimBio(p && p.bio);
-      bio.textContent = line;
-      bio.style.display = line ? '' : 'none';
-    }
-    if(go){
-      if(user) go.onclick = function(){ openProfileByUsername(user, true); };
-      else go.disabled = true;
-    }
+    var by = box.querySelector('.fgsBy');
+    if(by) by.textContent = 'by ' + name;
     box.classList.add('fbReady');
   }
+
+  /* A card's crop is cut to the card's shape, and the banner changes shape
+     with the window — two cells of a two-column grid on a phone is a wider
+     box than two cells of a four-column one. The showcase re-cuts its own on
+     resize; this is the banner's. */
+  (function(){
+    var t = null;
+    window.addEventListener('resize', function(){
+      clearTimeout(t);
+      t = setTimeout(function(){
+        if(typeof window.dzFeatureFrame !== 'function') return;
+        var img = document.querySelector('#awGrid .fbBox .fgsMedia img');
+        if(img) window.dzFeatureFrame(img);
+      }, 140);
+    }, { passive:true });
+  })();
 
   // Fill in whatever the batch just appended is still missing. Both the
   // artist cards and the log lines are keyed on the same uid, so one fetch
@@ -455,9 +460,15 @@
     if(empty) empty.style.display = 'none';
 
     if(featured){
-      grid.appendChild(buildFeatured(featured));
-      if(featured.user_id && dzArtistCache[featured.user_id] === undefined){
-        paintPeopleBatch([featured.user_id]);
+      // built by js/fgshow.js; nothing to promote if that has not loaded
+      var fbEl = buildFeatured(featured);
+      if(fbEl){
+        grid.appendChild(fbEl);
+        if(featured.user_id && dzArtistCache[featured.user_id] === undefined){
+          paintPeopleBatch([featured.user_id]);
+        }
+      } else {
+        awRList.unshift(featured);
       }
     }
 

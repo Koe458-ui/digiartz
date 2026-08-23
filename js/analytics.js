@@ -2236,7 +2236,10 @@
                        'background:var(--bg,#1A1A1F);color:var(--tx,#F3F3F8);';
 
     var hdr = el('div', 'subPgHdr');
-    var back = el('button', 'subPgX', '\u2190');
+    var back = el('button', 'subPgX', '');
+    // the chevron every other back button on the site wears
+    back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>';
     back.type = 'button';
     back.setAttribute('aria-label', 'Back to analytics');
     back.addEventListener('click', closeAnList);

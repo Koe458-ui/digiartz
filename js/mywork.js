@@ -1321,7 +1321,7 @@ function hideCommentThumbnail(){
     // list they were eleven boxes deep, and View profile — the thing almost
     // every tap is after — was buried at the top of a scroll.
     if(cmuView === 'role' || cmuView === 'timeout'){
-      cmuAct('← Back', function(){ cmUserOpen(p, m, 'main'); });
+      cmuAct('\u2039 Back', function(){ cmUserOpen(p, m, 'main'); });
       if(cmuView === 'role'){
         var targetRank = CM_RANK[m.role] || 1;
         ['member','jr_mod','sr_mod','admin'].forEach(function(role){

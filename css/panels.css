@@ -115,19 +115,34 @@
   -webkit-backdrop-filter: blur(12px);
   z-index: -1;
 }
+/* The back button on every sub-page: subscription, settings, ranking, my
+   work, albums, notifications, analytics and the rest.
+
+   It carries the same chevron the gallery, the community and the search
+   pages carry, drawn rather than typed. It used to be a ← in the mono face,
+   which is a different mark in a different weight at a different size on
+   every one of them — a page reached from the gallery changed its back
+   button on the way in. */
 .subPgX {
   background: none;
   border: none;
   color: var(--txd);
   cursor: pointer;
-  font-size: 1.3rem;
   line-height: 1;
   transition: color .2s;
   flex-shrink: 0;
-  font-family: var(--fm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
+/* the size the header's chevrons are drawn at everywhere else */
+.subPgX svg { width: 22px; height: 22px; display: block; }
 .subPgX:hover { color: var(--tc); }
+.subPgX:active { transform: scale(.92); }
+.subPgX:focus-visible { outline: 2px solid var(--pg); outline-offset: 2px; border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) { .subPgX:active { transform: none; } }
 .subPgTitle {
   font-family: var(--fm);
   font-weight: 600;

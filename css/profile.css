@@ -413,6 +413,17 @@
     }
     .pfSrchGrpCount{font-family:var(--fm);font-size:.66rem;color:var(--tc);}
     .pfSrchRows{display:flex;flex-direction:column;}
+    /* The gallery's search draws each group with the cards that section
+       already uses — artwork and artist cards in the home page's grid,
+       listings and resources in the Marketplace's, posts in the Blog's
+       column. All this adds is the page's own inset and the space between one
+       group and the next; the grids keep their own columns and gaps, which is
+       what makes a result look like the thing it is.
+
+       The home page's grid also carries the top margin it needs under the
+       board rail, and there is no board rail here. */
+    .pfSrchCards{padding:0 var(--pfPad) 1rem;box-sizing:border-box;}
+    .pfSrchCards.awGrid{margin:0;}
     .pfSrchRow{
       display:flex;align-items:center;gap:.75rem;width:100%;
       padding:.6rem var(--pfPad);min-height:60px;

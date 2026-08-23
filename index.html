@@ -252,7 +252,7 @@
   <link rel="stylesheet" href="/css/community.css?v=22">
   <link rel="stylesheet" href="/css/connect.css?v=7">
   <link rel="stylesheet" href="/css/ranking.css?v=6">
-  <link rel="stylesheet" href="/css/profile.css?v=16">
+  <link rel="stylesheet" href="/css/profile.css?v=17">
   <link rel="stylesheet" href="/css/admin.css?v=4">
   <link rel="stylesheet" href="/css/auth.css?v=5">
   <link rel="stylesheet" href="/css/panels.css?v=18">
@@ -2813,7 +2813,7 @@
   <script src="/js/mywork.js?v=25"></script>
   <script src="/js/startup.js?v=7"></script>
   <script src="/js/tagrail.js?v=3"></script>
-  <script src="/js/search.js?v=14"></script>
+  <script src="/js/search.js?v=15"></script>
   <script src="/js/feed.js?v=4"></script>
   <script src="/js/fgshow.js?v=5"></script>
 
@@ -2981,19 +2981,23 @@
     </button>
     <div class="tgSearch" id="fgSrchWrap">
       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input type="search" class="tgSearchIn" id="fgSrchIn" placeholder="Search artworks, listings, posts…"
+      <input type="search" class="tgSearchIn" id="fgSrchIn" placeholder="Search artworks, artists, listings…"
              autocomplete="off" autocapitalize="off" spellcheck="false"
              aria-label="Search the gallery" oninput="fgSearchInput(this.value)">
       <button type="button" class="tgSearchClear" onclick="fgSearchClear()" aria-label="Clear search">✕</button>
     </div>
   </div>
+  <!-- The chips are in the order js/search.js lists the groups, and the two
+       are read positionally — a chip added here needs its group added there,
+       in the same place. Jobs is not among them: a posting is found through
+       the Jobs section's own filters. -->
   <div class="pfSrchScopes" id="fgSrchScopes" role="tablist" aria-label="Limit search to a section">
     <button class="pfSrchChip on" role="tab" aria-selected="true"  type="button" onclick="fgSearchScope('all')">All</button>
     <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('artwork')">Artworks</button>
+    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('artist')">Artists</button>
     <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('marketplace')">Market</button>
     <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('blog')">Blog</button>
     <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('resources')">Resources</button>
-    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('jobs')">Jobs</button>
   </div>
   <div class="pfSrchBdy">
     <div class="pfSrchNote" id="fgSrchNote">Type to search the gallery.</div>
@@ -3309,7 +3313,7 @@
   <script src="/js/engagement.js?v=9"></script>
 
 
-  <script src="/js/sections.js?v=125"></script>
+  <script src="/js/sections.js?v=126"></script>
   <!-- The url of every public section, and the panel each one opens. After
        sections.js, whose qlGo and hero call-to-action hand over to it. -->
   <script src="/js/routes.js?v=2"></script>

@@ -1,12 +1,31 @@
 // gallery search — a page of its own, over the whole site
   var fgSrch = { q:'', scope:'all', seq:0, timer:null, rows:{} };
 
+  /* The groups, in the order they are rendered — and the order the chips are
+     written in the document, which is read positionally against this list.
+
+     Each one says how it is drawn, and every answer is a renderer this site
+     already has rather than a fourth rendering of the same row:
+
+       card    the artwork card the home page's boards are made of
+       artist  the artist card the home page's Artists board shows
+       sec     the section's own card, from js/sections.js — a marketplace
+               listing is the card the Marketplace draws, a blog post the row
+               the Blog draws, a resource the card Resources draws
+
+     A search result therefore looks like the thing it is wherever it is met,
+     rather than like a search result. Jobs is gone from here: it was the one
+     section whose postings are found through its own filters, and a job with
+     a title and a company reads as neither a card nor an artwork.
+
+     wrap is what the cards are laid out in: the same grid or column the
+     section itself uses. */
   var FG_SRCH_GROUPS = [
-    { key:'artwork',     label:'Artworks' },
-    { key:'marketplace', label:'Market' },
-    { key:'blog',        label:'Blog' },
-    { key:'resources',   label:'Resources' },
-    { key:'jobs',        label:'Jobs' }
+    { key:'artwork',     label:'Artworks',  how:'card',   wrap:'awGrid' },
+    { key:'artist',      label:'Artists',   how:'artist', wrap:'awGrid' },
+    { key:'marketplace', label:'Market',    how:'sec' },
+    { key:'blog',        label:'Blog',      how:'sec' },
+    { key:'resources',   label:'Resources', how:'sec' }
   ];
 
   function tgSearchChrome(wrapId, v){
@@ -203,22 +222,27 @@
             .order('created_at',{ascending:false}).limit(30)
             .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
         }
-        if(want('jobs')){
-          // visibility, same as the Jobs list applies it: a posting the poster
-          // marked unlisted or private is not a search result. Searching is
-          // exactly the way an unlisted posting would otherwise be found, which
-          // is the one thing marking it unlisted was meant to prevent.
-          jobs.push(sb.from('jobs')
-            .select('id,user_id,title,company,description,category,tags,employment_type,is_remote,work_mode,created_at')
-            .eq('status','approved').eq('visibility','public').ilike('title',pattern)
-            .order('created_at',{ascending:false}).limit(30)
-            .then(function(r){ return {key:'jobs', rows:(r&&r.data)||[]}; }));
+        if(want('artist')){
+          /* People, by the two names they are known under: the handle they
+             chose and the name they display. Both, because a visitor looking
+             for somebody has no way of knowing which of the two they are
+             remembering.
+
+             The columns are the ones an artist card draws — and the ones
+             dzArtistCache already holds for every face on the site, so a
+             profile found here is a profile the hover chips and the artist
+             board no longer have to fetch. */
+          jobs.push(sb.from('profiles')
+            .select('id,username,display_name,avatar_url,banner_url,bio')
+            .or('username.ilike.'+pattern+',display_name.ilike.'+pattern)
+            .order('username',{ascending:true}).limit(24)
+            .then(function(r){ return {key:'artist', rows:(r&&r.data)||[]}; }));
         }
       }
       return jobs;
     }
     var fgSearchWanted = !!(sb && pattern) &&
-      (want('marketplace') || want('blog') || want('resources') || want('jobs'));
+      (want('artist') || want('marketplace') || want('blog') || want('resources'));
 
     /* Searching is the most expensive thing a visitor can do casually: four
        ilike queries across four tables, re-run on the same word every time
@@ -291,46 +315,82 @@
     }, 1200);
   }
 
+  /* Results are drawn by the section they belong to. Nothing here knows what
+     a listing or a post looks like — it asks whoever does, and lays the cards
+     out in that section's own grid or column. */
   function fgSearchRender(warn){
     var res = document.getElementById('fgSrchRes');
     if(!res) return;
-    var total = 0, html = '';
+    res.innerHTML = '';
+    var total = 0, mounted = false;
+
     FG_SRCH_GROUPS.forEach(function(g){
       var rows = fgSrch.rows[g.key] || [];
       if(!rows.length) return;
       total += rows.length;
-      html += '<section class="pfSrchGrp"><div class="pfSrchGrpHd">'+
-                '<span class="pfSrchGrpTitle">'+esc(g.label)+'</span>'+
-                '<span class="pfSrchGrpCount">'+rows.length+'</span>'+
-              '</div><div class="pfSrchRows">'+
-              rows.map(function(r){ return fgSearchRowHTML(g.key, r); }).join('')+
-              '</div></section>';
-    });
-    res.innerHTML = html;
-    fgSearchNote(warn || (total ? '' : 'Nothing in the gallery matches \u201C'+fgSrch.q.trim()+'\u201D.'));
-  }
 
-  function fgSearchRowHTML(kind, r){
-    var title = (kind==='artwork' ? r.name : r.title) || 'Untitled';
-    var img   = kind==='artwork' ? r.image_url : (kind==='blog' ? r.cover_url : r.preview_url);
-    var thumb = img
-      ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(img))+'" alt="">'
-      : esc(String(kind==='resources' ? (r.file_ext||'FILE')
-                 : kind==='marketplace' ? (r.item_type||'ITEM')
-                 : kind==='blog' ? 'POST'
-                 : kind==='jobs' ? 'JOB' : 'ART').toUpperCase());
-    var meta;
-    if(kind==='artwork')          meta = (typeof catLabel==='function' ? catLabel((r.category||[])[0]) : '') || 'Artwork';
-    else if(kind==='blog')        meta = (r.read_minutes||1)+' min read';
-    else if(kind==='marketplace') meta = String(r.item_type||'Listing');
-    else if(kind==='jobs')        meta = [r.company, r.employment_type].filter(Boolean).join(' · ') || 'Job';
-    else                          meta = String(r.file_ext||'File').toUpperCase()+' · '+(r.download_count||0)+' downloads';
-    return '<button type="button" class="pfSrchRow" onclick="fgSearchOpen(\''+esc(kind)+'\',\''+esc(String(r.id))+'\')">'+
-      '<span class="pfSrchThumb">'+thumb+'</span>'+
-      '<span class="pfSrchTxt">'+
-        '<span class="pfSrchName">'+esc(title)+'</span>'+
-        '<span class="pfSrchMeta">'+esc(meta)+'</span>'+
-      '</span></button>';
+      var sec = document.createElement('section');
+      sec.className = 'pfSrchGrp';
+      sec.innerHTML = '<div class="pfSrchGrpHd">'+
+          '<span class="pfSrchGrpTitle">'+esc(g.label)+'</span>'+
+          '<span class="pfSrchGrpCount">'+rows.length+'</span>'+
+        '</div>';
+
+      var wrap = document.createElement('div');
+      wrap.className = 'pfSrchCards ' +
+        (g.wrap || (typeof window.dzSecLayout === 'function' ? window.dzSecLayout(g.key) : 'dzList'));
+
+      if(g.how === 'artist'){
+        /* The profiles came back whole, so they go into the cache the artist
+           cards read before a single one is built — no card here ever waits
+           on a fetch, and the next hover chip that wants one of these faces
+           has it already. */
+        rows.forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });
+        rows.forEach(function(p){
+          if(typeof buildArtistCard === 'function') wrap.appendChild(buildArtistCard(p.id));
+        });
+      } else if(g.how === 'card'){
+        rows.forEach(function(r){
+          if(typeof buildAwCard !== 'function') return;
+          var el = buildAwCard(r);
+          /* The card opens the artwork on its own, but through this instead:
+             it records the click against the term that found it, and it hands
+             the viewer the results as the list to step through, so the arrows
+             walk what was searched for rather than the whole gallery. */
+          el.onclick = function(){ fgSearchOpen('artwork', r.id); };
+          el.onkeydown = function(e){
+            if(e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            fgSearchOpen('artwork', r.id);
+          };
+          wrap.appendChild(el);
+        });
+      } else {
+        wrap.innerHTML = rows.map(function(r){
+          return (typeof window.dzSecCard === 'function') ? window.dzSecCard(g.key, r) : '';
+        }).join('');
+        /* The section's card opens itself through the section's own list, and
+           a row found by searching is not in that list — the section may not
+           have loaded at all. So each card is rebound to the row it was built
+           from, which is also what records the click against the term. */
+        Array.prototype.forEach.call(wrap.children, function(el, i){
+          var row = rows[i];
+          el.removeAttribute('onclick');
+          el.onclick = function(){ fgSearchOpen(g.key, row && row.id); };
+        });
+        mounted = mounted || g.key === 'marketplace';
+      }
+
+      sec.appendChild(wrap);
+      res.appendChild(sec);
+    });
+
+    // the buy and cart controls a marketplace card carries are mounted by the
+    // signed-in module, the same call the Marketplace panel makes after it
+    // paints its own grid
+    if(mounted && typeof window.dzExtras === 'function') window.dzExtras();
+
+    fgSearchNote(warn || (total ? '' : 'Nothing in the gallery matches \u201C'+fgSrch.q.trim()+'\u201D.'));
   }
 
   // the results stay up behind whatever opens, so closing the artwork or the

@@ -3684,6 +3684,19 @@
   };
   // the hero page's log lines name the same categories these cards do
   window.dzSecLabel = labelOf;
+  /* A section's own card, for anything outside this panel that shows one of
+     its rows. The gallery's search page is the caller: a marketplace listing
+     found by searching should be the card the Marketplace shows, and a blog
+     post the row the Blog shows, rather than a third rendering of the same
+     row that has to be kept in step with both.
+
+     dzSecLayout answers what the section wraps those cards in, because that
+     is the other half of what a card looks like — a grid of thumbnails or a
+     column of full-width rows. */
+  window.dzSecCard   = function(sec, row){ return SEC[sec] ? card(sec, row) : ''; };
+  window.dzSecLayout = function(sec){
+    return (SEC[sec] && SEC[sec].kind === 'grid') ? 'dzGrid' : 'dzList';
+  };
   window.dzHelpers = { money:money, bytes:bytes, ago:ago };
 })();
 

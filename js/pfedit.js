@@ -173,17 +173,30 @@
     if(typeof window.dzClosePanel === 'function') window.dzClosePanel();
   }});
 
-  // bottom navigation
+  // navigation
   function closeMenu(){}
 
-  // active tab highlight
-  var BN_IDS = ['bnHome','bnGallery','bnUpload','bnCommunity','bnProfile'];
+  /* Which section is on screen, said in one place.
+
+     It used to be said by lighting one of five elements, found by id, in the
+     bottom nav. There are two copies of every destination now — the row on the
+     wide bar and the same words inside the hamburger — so the name of the
+     section moved onto a data-bn attribute that both copies carry, and both
+     light together.
+
+     And it is written onto the document as well. js/navprogress.js keeps each
+     section's scroll position and has to know when the section changes; it
+     used to watch five elements' class attributes to find that out. One
+     attribute on the root is the same fact stated once, and it is stated even
+     for a section with no control of its own in the bar. */
   function bnSetActive(id){
-    BN_IDS.forEach(function(bid){
-      var el = document.getElementById(bid);
-      if(el) el.classList.toggle('bnActive', bid === id);
-    });
+    var nodes = document.querySelectorAll('[data-bn]');
+    for(var i=0;i<nodes.length;i++){
+      nodes[i].classList.toggle('bnActive', nodes[i].getAttribute('data-bn') === id);
+    }
+    try{ document.documentElement.setAttribute('data-section', id || ''); }catch(e){}
   }
+  window.bnSetActive = bnSetActive;
 
   /* One section at a time, and every panel in the app counts as one.
 
@@ -284,7 +297,6 @@
     var catR = document.querySelector('input[name="fltCat"][value="all"]');
     if(catR) catR.checked = true;
     openFG();
-    if(typeof zeoSectionTrigger==='function') zeoSectionTrigger();
   }
   function ddOpenCommunity(){ openCommunityHome(); }
   // The admin panel used to be opened from here. It is served by /api/ops now

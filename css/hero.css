@@ -3,8 +3,13 @@
     #heroPitch{
       position:relative;
       background:var(--bg);
-      /* top bar clearance */
-      padding:calc(clamp(1rem,2.6vw,2rem) + clamp(42px,8vw,54px) + 1.6rem) var(--shellPad) clamp(2.2rem,5vw,3.4rem);
+      /* Clearance under the fixed bar, and no more than clearance. It used to
+         be worked out from the two floating pills that hung over this section
+         — their inset, plus their height, plus a gap wide enough that the page
+         did not read as tucked under them — and the bar states its own height
+         and has a rule along its foot, so the only thing left to add is the
+         space any band takes above its first line. */
+      padding:calc(var(--dzTopH) + .7rem) var(--shellPad) clamp(2.2rem,5vw,3.4rem);
     }
     /* On a phone the pitch is one column and 760 is the measure it reads at.
        From the tablet up it is the page's opening statement and takes the
@@ -220,8 +225,12 @@
     }
     .fgTopL{display:flex;align-items:center;gap:.6rem;min-width:0;}
     .fgTopR{display:flex;align-items:center;gap:.15rem;flex:0 0 auto;}
-    .fgMark{display:flex;flex:0 0 auto;}
-    .fgMark svg{width:clamp(26px,7vw,30px);height:clamp(26px,7vw,30px);display:block;border-radius:9px;}
+    /* The way out of the section, where the section's gradient mark used to
+       be. A 42px control has whitespace of its own around a 22px chevron, so
+       it is pulled back by that difference — otherwise the title starts a
+       third of a centimetre inside the work under it, which is the one thing
+       that gives a shell away. */
+    .fgTopBack{margin-left:-.55rem;}
     .fgTopTitle{
       font-family:var(--fd);font-weight:800;
       font-size:clamp(.95rem,3.4vw,1.15rem);letter-spacing:.05em;
@@ -1047,8 +1056,10 @@
          starts under the mark. The home page's is a few pixels and reads as
          hard against the wall on a phone. */
       padding:0 var(--fgPad);
-      /* bottom nav clearance */
-      padding-bottom:calc(1rem + 84px);
+      /* Room to breathe at the end of the grid, and no more: the 84px that
+         used to be added here was the strip the floating bottom nav stood on,
+         and there is no bottom nav. */
+      padding-bottom:1rem;
     }
     /* columns only — the gap is --artGap and steps at these same widths */
     @media(min-width:700px){ .fgGrid{grid-template-columns:repeat(3,1fr);} }

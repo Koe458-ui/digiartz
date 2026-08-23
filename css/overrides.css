@@ -103,12 +103,12 @@
 .dzvPrice{font-family:var(--fd);font-size:1.5rem;font-weight:800;color:var(--tx);}
 .dzvBuyCard .dzBuy{margin-top:0;min-height:46px;padding:12px 22px;font-size:14px;border-radius:10px;}
 /* ── the chrome, on the shell's edges ────────────────────────────────────
-   The brand badge, the bell and the gallery's filter popover are chrome
-   rather than content, but all three are pinned to a window edge and all
-   three read as loose the moment the content beside them starts 10% in. They
-   take the shell's edges too, so the top line of the page is a line. */
-.hBadge{ left:var(--shellPad); }
-.hNotifBtn{ right:var(--shellPad); }
+   The gallery's filter popover is chrome rather than content, but it is
+   pinned to a window edge and reads as loose the moment the content beside
+   it starts 10% in. It takes the shell's edge too.
+   The brand badge and the bell were here for the same reason. Both are
+   inside #dzTop now, which is a band spanning the window with the shell's
+   padding on it — so they are on that line by being in it. */
 @media (min-width:641px){
   #fgFltPanel{ right:var(--shellPad); }
 }

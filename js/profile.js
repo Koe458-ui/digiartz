@@ -289,16 +289,17 @@
   // out of it instead — the bar is the only chrome the page has.
   // The bar names the page, not the person on it: it reads PROFILE on every
   // profile. Whose profile it is, is what the name under the banner is for.
-  // Only the two things that act on your own account move — the back arrow,
-  // which someone else's profile needs and yours does not, and the search,
-  // bell and menu, which are yours. isOwner null means the row has not landed
-  // yet: no back arrow, so opening your own does not flash one.
+  //
+  // The way back is drawn on both. It used to be drawn only on somebody
+  // else's — your own profile had the site's own navigation under it and did
+  // not need one — and the site's navigation is a bar at the top of the
+  // document now, which this page covers. A page with no way out of it is what
+  // that would leave, so the arrow is unconditional and only the search, bell
+  // and menu still move: those act on your account and are yours alone.
   function pfPaintTopBar(isOwner){
-    var back = document.getElementById('pfTopBack');
     var acts = document.getElementById('pfTopActions');
     var guest = document.getElementById('pfTopGuest');
     var known = (isOwner !== null && isOwner !== undefined);
-    if(back) back.hidden = !known || !!isOwner;
     if(acts) acts.hidden = !isOwner;
     // Only once we know whose profile this is, only on somebody else's, and
     // only for a member — there is nobody to attribute a signed-out report to,

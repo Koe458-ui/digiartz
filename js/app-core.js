@@ -735,13 +735,21 @@
      second implementation of a close.
 
        lock    holds the scroll lock while it is open
-       nav     hides the bottom navigation bar
-       widget  hides the floating widgets and the assistant bubble
+       widget  covers the page, so the top bar and the assistant button leave
+
+     There was a third flag, `nav`, naming the panels that hid the bottom
+     navigation bar. There is no bottom navigation bar: the one bar is at the
+     top of the document, every panel here covers it, and `widget` — which
+     already meant "this covers the page" — is the flag that says so.
 
      Order is the order the sweep shuts them in: a page that sits INSIDE
      another one comes first, so nothing is ever closed out from under a child
      that is still up. */
   var DZ_PANELS = [
+    // The top bar's menu. Shallowest thing this app puts on screen and the
+    // first shut, so changing section never leaves it hanging off a bar that
+    // has already slid away.
+    { id:'dzTopMenu',       close:['dzMenuClose'] },
     // small things over a section. Each of these four is a sheet or a
     // backdrop written at the top of the document rather than inside the
     // panel it belongs to, which is why they need shutting on their own: the
@@ -753,31 +761,30 @@
     { id:'fgFltOvr',        close:['closeFilterPanel'] },
     { id:'tgMod',           close:['tgModClose'],           lock:1 },
     { id:'legalBackdrop',   close:['closeLegal'],           lock:1, widget:1 },
-    { id:'legalPage',       close:['closeLegalPage'],       lock:1, nav:1, widget:1 },
+    { id:'legalPage',       close:['closeLegalPage'],       lock:1, widget:1 },
     { id:'showcasePicker',  close:['closeShowcasePicker'] },
     // search pages, each over the section it searches
     { id:'pfSearchPage',    close:['closePfSearch', true],           widget:1 },
     { id:'fgSearchPage',    close:['closeFgSearch', true],  lock:1,  widget:1 },
-    { id:'cmSearchPage',    close:['cmCloseSearch'],        lock:1, nav:1, widget:1 },
-    { id:'cmBrowsePage',    close:['cmCloseBrowse'],        lock:1, nav:1, widget:1 },
-    { id:'cmInfoPage',      close:['cmiClose'],             lock:1, nav:1, widget:1 },
-    { id:'frdPage',         close:['closeFriendsPage'],     lock:1, nav:1, widget:1 },
+    { id:'cmSearchPage',    close:['cmCloseSearch'],        lock:1, widget:1 },
+    { id:'cmBrowsePage',    close:['cmCloseBrowse'],        lock:1, widget:1 },
+    { id:'cmInfoPage',      close:['cmiClose'],             lock:1, widget:1 },
+    { id:'frdPage',         close:['closeFriendsPage'],     lock:1, widget:1 },
     // pages opened from a profile, from Settings, or from the quick links
-    { id:'albViewPage',     close:['albCloseView'],         lock:1, nav:1, widget:1 },
-    { id:'albPage',         close:['albClosePage'],         lock:1, nav:1, widget:1 },
-    { id:'bmPage',          close:['closeBookmarksPage'],   lock:1, nav:1, widget:1 },
-    { id:'anPage',          close:['closeAnalyticsPage'],   lock:1, nav:1, widget:1 },
-    { id:'xpPage',          close:['closeXpPage'],          lock:1, nav:1, widget:1 },
-    { id:'themePage',       close:['closeThemePage'],               nav:1, widget:1 },
-    { id:'rankPage',        close:['closeRankPage'],        lock:1, nav:1, widget:1 },
-    { id:'dzPanelHost',     close:['dzClosePanel'],         lock:1, nav:1, widget:1 },
-    { id:'admPage',         close:['dzOpsClose'],           lock:1, nav:1, widget:1 },
-    { id:'notifPage',       close:['closeNotifPage'],       lock:1, nav:1, widget:1 },
-    { id:'pfMyWorkPage',    close:['closeMyWorkPage'],      lock:1, nav:1, widget:1 },
-    { id:'pfEditPage',      close:['closePfEditPage'],      lock:1, nav:1, widget:1 },
-    { id:'setPage',         close:['closeSettingsPage'],    lock:1, nav:1, widget:1 },
-    { id:'subPage',         close:['closeSubscription'],    lock:1, nav:1, widget:1 },
-    { id:'zeoPage',         close:['zeoCloseChat'],         lock:1 },
+    { id:'albViewPage',     close:['albCloseView'],         lock:1, widget:1 },
+    { id:'albPage',         close:['albClosePage'],         lock:1, widget:1 },
+    { id:'bmPage',          close:['closeBookmarksPage'],   lock:1, widget:1 },
+    { id:'anPage',          close:['closeAnalyticsPage'],   lock:1, widget:1 },
+    { id:'xpPage',          close:['closeXpPage'],          lock:1, widget:1 },
+    { id:'themePage',       close:['closeThemePage'], widget:1 },
+    { id:'rankPage',        close:['closeRankPage'],        lock:1, widget:1 },
+    { id:'dzPanelHost',     close:['dzClosePanel'],         lock:1, widget:1 },
+    { id:'admPage',         close:['dzOpsClose'],           lock:1, widget:1 },
+    { id:'notifPage',       close:['closeNotifPage'],       lock:1, widget:1 },
+    { id:'pfMyWorkPage',    close:['closeMyWorkPage'],      lock:1, widget:1 },
+    { id:'pfEditPage',      close:['closePfEditPage'],      lock:1, widget:1 },
+    { id:'setPage',         close:['closeSettingsPage'],    lock:1, widget:1 },
+    { id:'subPage',         close:['closeSubscription'],    lock:1, widget:1 },
     /* The two item views. The artwork viewer's own close hands its address
        and its page title back, so it is used as it is; the item viewer's
        silent close is the one that leaves history alone, because a sweep is
@@ -798,7 +805,7 @@
        leaving it standing over a swept viewer would leave a picture on the
        screen belonging to a section the member has left. */
     { id:'dzLight',         close:['dzLightClose'],         lock:1, widget:1 },
-    // the five destinations the bottom nav leads to
+    // the five destinations the bar leads to
     { id:'authMod',         close:['closeAuthMod'],         lock:1, widget:1 },
     { id:'pfUpMod',         close:['closePfUpload'],        lock:1, widget:1 },
     { id:'profilePage',     close:['closeProfilePage', false], lock:1, widget:1 },
@@ -923,39 +930,15 @@
     document.body.style.overflow=''; document.documentElement.style.overflow='';
   }
 
-  // The bottom nav belongs to the five sections it links to. Anything that
-  // slides in over one of them has to take it down, and that used to be each
-  // panel's own job: a hide on the way in, paired with a show on the way out.
-  // A panel written without the pair kept the nav floating over its own
-  // content — which is what happened to Settings and to every page Settings
-  // opens. One watcher owns it now: the panels say whether they are open and
-  // this decides what the nav does, so a new page inherits the behaviour
-  // by being listed here rather than by remembering to write both halves.
-  // Panels the nav itself leads to are absent on purpose — the nav stays up
-  // over the gallery, community, upload, login and profile pages, and marks
-  // which of them you are in.
-  // Which panels those are is the `nav` flag in the table above.
-  var NAV_OVER=dzPanelIds('nav');
-  function dzNavSync(){
-    var nav=document.getElementById('bnNav');
-    if(!nav) return;
-    var over=window.dzAnyPanelOpen('nav');
-    nav.style.display=over?'none':'';
-  }
-  window.dzNavSync=dzNavSync;
-  function dzNavWatch(){
-    if(window.MutationObserver){
-      var mo=new MutationObserver(dzNavSync);
-      NAV_OVER.forEach(function(id){
-        var el=document.getElementById(id);
-        if(el) mo.observe(el,{attributes:true,attributeFilter:['class']});
-      });
-    }
-    dzNavSync();
-  }
-  // half these panels are written below this script in the page
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',dzNavWatch);
-  else dzNavWatch();
+  /* The bar used to be hidden here, by a watcher of its own.
+
+     That watcher existed because the bottom nav belonged to the five sections
+     it linked to and had to survive them while going down for everything
+     else — a distinction the `nav` flag above carried. The bar at the top of
+     the document has no such distinction: every panel in this table covers it,
+     and js/sections.js already takes the floating assistant button down for
+     exactly that set (the `widget` flag). The bar goes with it, in one
+     watcher, rather than in a second one that answers the same question. */
 
   // merged artworks table
   var ART_KIND_ART = 'art';

@@ -74,14 +74,24 @@
     if(input) setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
   }
 
-  // silent is for the gallery closing underneath it: the page goes with it,
-  // and the scroll lock belongs to whatever is left on screen
+  /* silent is for the gallery closing underneath it: the page goes with it,
+     and the focus does not go back to a button inside a section that has just
+     been swept.
+
+     The lock is asked for rather than assumed. This used to re-lock the page
+     outright on a member-driven close, on the grounds that the gallery was
+     still up underneath — true while the only way in was the gallery's own
+     search button. The bar at the top of the document opens this page from
+     the home page, where there is nothing underneath, and re-locking there
+     left a page nobody could scroll and no panel open to explain why.
+     restoreScroll releases the lock only when nothing in the panel table is
+     holding it, so the gallery case is unchanged: #fg holds it, and the lock
+     stays. */
   function closeFgSearch(silent){
     var pg = document.getElementById('fgSearchPage');
     if(!pg || !pg.classList.contains('open')) return;
     pg.classList.remove('open');
-    if(silent !== true) document.body.style.overflow = 'hidden';   // the gallery is still up
-    else if(typeof restoreScroll === 'function') restoreScroll();
+    if(typeof restoreScroll === 'function') restoreScroll();
     var back = fgSrchLastFocus; fgSrchLastFocus = null;
     if(silent !== true && back && back.isConnected && back.focus){
       try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
@@ -377,7 +387,6 @@
     el.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-    if(typeof zeoSectionTrigger==='function') zeoSectionTrigger();
   }
 
   function closeSubscription() {

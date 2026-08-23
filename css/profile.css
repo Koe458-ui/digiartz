@@ -59,10 +59,8 @@
     }
     .pfTopL{display:flex;align-items:center;gap:.6rem;min-width:0;}
     .pfTopR{display:flex;align-items:center;gap:.15rem;flex:0 0 auto;}
-    .pfMark{display:flex;flex:0 0 auto;}
     /* display:flex would otherwise win over the hidden attribute */
     .pfTopR[hidden]{display:none;}
-    .pfMark svg{width:clamp(26px,7vw,30px);height:clamp(26px,7vw,30px);display:block;border-radius:9px;}
     .pfTopTitle{
       font-family:var(--fd);font-weight:800;
       font-size:clamp(.95rem,3.4vw,1.15rem);letter-spacing:.05em;
@@ -82,7 +80,7 @@
     .pfTopBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
     @media(hover:hover){ .pfTopBtn:hover{background:var(--sur2);} }
     .pfTopBtn[hidden]{display:none;}
-    .pfTopBack{margin-left:-.35rem;}
+    .pfTopBack{margin-left:-.55rem;}
     /* unread mark, same signal as the one on the home screen */
     .pfTopDot{
       position:absolute;top:8px;right:8px;
@@ -93,7 +91,7 @@
     }
     .pfTopBtn.hasUnread .pfTopDot{display:block;}
 
-    .pfBdy{width:100%;padding:0 0 calc(2rem + 84px);background:var(--bg);}
+    .pfBdy{width:100%;padding:0 0 2rem;background:var(--bg);}
 
     /* banner */
     .pfBanner{
@@ -399,7 +397,7 @@
     }
     .pfSrchChip.on{background:var(--pdim);border-color:var(--pg);color:var(--tx);}
     .pfSrchChip:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    .pfSrchBdy{padding:0 0 calc(2rem + 84px);}
+    .pfSrchBdy{padding:0 0 2rem;}
     .pfSrchNote{
       padding:2.5rem var(--pfPad);text-align:center;
       font-family:var(--fb);font-size:.9rem;color:var(--txd);
@@ -470,7 +468,7 @@
        the modal. This is only the column it sits in. */
     .lgBdy{
       max-width:760px;margin:0 auto;
-      padding:1.5rem var(--pfPad,1.2rem) calc(3rem + 84px);
+      padding:1.5rem var(--pfPad,1.2rem) 3rem;
     }
     /* Settings is a stack of named groups. Phone first: one column, rows wide
        enough to hit with a thumb. It widens with the screen and splits into

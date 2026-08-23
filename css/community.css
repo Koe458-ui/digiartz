@@ -607,9 +607,8 @@
     /* art talk chat */
     .cmChat{display:none;flex-direction:column;flex:1;min-height:0;}
 
-    /* chat panel — built like #zeoPage: a fixed sheet over the whole
-       viewport, above the bottom nav so the nav is covered by the slide
-       rather than switched off ahead of it, same .4s curve */
+    /* chat panel — a fixed sheet over the whole viewport, sliding in on the
+       same .4s curve every full-screen page on this site uses */
     #cmChatPanel{
       position:fixed;inset:0;z-index:1500;
       display:flex;flex-direction:column;
@@ -787,7 +786,7 @@
     #communityPage .cmEmpty,#cmChatPanel .cmEmpty{border-color:var(--cmBdr);color:var(--cmTxd);}
     #communityPage .cmEmpty .cmEmptyIco,#cmChatPanel .cmEmpty .cmEmptyIco{color:var(--cmAccentSoft);}
 
-    /* friends list, zeo bot */
+    /* friends list */
     .cmFriendList{display:flex;flex-direction:column;gap:.7rem;margin-bottom:1.6rem;}
     .cmFriendItem{
       display:flex;align-items:center;gap:.9rem;
@@ -809,8 +808,6 @@
     #communityPage .cmFriendItem,#cmChatPanel .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
     #communityPage .cmFriendItem:hover,#cmChatPanel .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--cmAccent-rgb),.18);}
     #communityPage .cmFriendAvatar,#cmChatPanel .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
-    /* zeo avatar chip */
-    #communityPage .cmFriendAvatar.zeoChip,#cmChatPanel .cmFriendAvatar.zeoChip{background:linear-gradient(135deg,#1a2a4a,#2a4080);border-color:rgba(99,179,237,.3);}
     #communityPage .cmFriendName,#cmChatPanel .cmFriendName{color:var(--cmTx);}
     #communityPage .cmFriendStatus,#cmChatPanel .cmFriendStatus{color:var(--cmTxd);}
 

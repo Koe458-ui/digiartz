@@ -4,6 +4,71 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v243 — the assistant is gone.
+
+       The bot was a circle in a corner, a speech bubble that nudged from
+       beside it and a chat page behind both. The circle was its only way in,
+       so taking the circle off the page took the rest with it: js/zeo.js,
+       aiAssistantData.js, zeo-avatar.png, the standing bot row at the top of
+       the friends list, and every style the four of them used. A panel nothing
+       can open and an engine nothing can reach are weight on a page load and a
+       cost to maintain, with no screen to show for either.
+
+       And the bar it kept colliding with grew — 68px on a phone, 76 from the
+       tablet, 84 from 1280 — while the clearance under it came down to the
+       space any band takes above its first line. The old figure was measured
+       for two pills floating over the page with nothing under them; the bar
+       has a rule along its foot, and a page that starts an inch below a rule
+       reads as a page that has come loose from its own heading.
+
+       Changed: index.html, css/base.css, css/panels.css, css/hero.css,
+       css/community.css, js/app-core.js, js/sections.js, js/topnav.js,
+       js/pfedit.js, js/search.js, js/mywork.js.
+       Removed: js/zeo.js, aiAssistantData.js, zeo-avatar.png.
+
+   v242 — one navigation, at the top of the document.
+
+       The bottom navigation bar is gone. It was a floating pill holding five
+       icons, and beside it two more pills fixed over the top corners of the
+       page holding the wordmark and the bell. Three loose objects, and the
+       destinations named by pictures — a square with a mountain in it is not
+       the word Explore.
+
+       One bar now, at the top, at every width. On a phone it is the wordmark,
+       the bell and a hamburger, and the five destinations are words inside the
+       hamburger — a panel the size of its own text, which is what it opens to
+       rather than over the page. From 900px up there is no hamburger: the
+       words are on the bar and the search sits beside the bell.
+
+       Three things followed from it.
+
+       Every section wore its own gradient mark beside its title, on the
+       reasoning that the site's navigation was underneath the page and a way
+       out was only needed where there was none. The bar is on top of the
+       document now and every section covers it, so each of the four — gallery,
+       community, upload, profile — carries a back arrow in the slot that mark
+       held, and the profile's, which used to be drawn only on somebody else's,
+       is drawn on both.
+
+       Half the stylesheets in this project reserved a strip at the foot of
+       whatever they laid out, for a bar that stood there: `calc(1rem + 84px)`
+       under the gallery grid and the ranking board, `calc(2rem + 84px)` under
+       a profile and its search, `calc(2rem + 5.5rem)` under the footer's
+       copyright band. All of it is gone, and the last line of every page sits
+       where the page ends.
+
+       And the site's one search, which was reachable only from inside the
+       gallery, is on the bar — the same page opened by the same call, not a
+       second search. It re-locked the page on close on the grounds that the
+       gallery was underneath it, which is no longer true from the home page;
+       it asks the panel table who is holding the lock instead.
+
+       Changed: index.html, css/base.css, css/panels.css, css/hero.css,
+       css/profile.css, css/connect.css, css/upload.css, css/ranking.css,
+       css/community.css, css/overrides.css, js/topnav.js (new),
+       js/navprogress.js, js/pfedit.js, js/app-core.js, js/sections.js,
+       js/auth.js, js/profile.js, js/search.js.
+
    v225 — the card was the only place a thumb worked, so every box is a card now.
 
        One box inside the viewer still scrolled on a phone: #avAuthorCard.
@@ -4031,7 +4096,7 @@
        security/daily-download-quota.sql (new, record only).
 
    v69 — the precache was covering URLs nobody asks for. Every tag in
-       index.html carries a query string (/css/base.css?v=1) while
+       index.html carries a query string (/css/base.css?v=19) while
        SHELL_URLS listed the bare path (/css/base.css), and cache.match
        keys on the full URL including the search, so 38 of the 41 shell
        assets were precached under a name the page never requests. They
@@ -4456,7 +4521,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v241';
+const CACHE_VERSION = 'v243';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4500,7 +4565,6 @@ const SHELL_URLS = [
   '/index.html',
   '/config.js',
   '/uploadVerifier.js',
-  '/aiAssistantData.js',
   '/site.webmanifest',
   '/favicon.svg?v=3',
   '/favicon.ico?v=3',
@@ -4508,19 +4572,19 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=13',
-  '/css/hero.css?v=102',
+  '/css/base.css?v=19',
+  '/css/hero.css?v=104',
   '/css/viewer.css?v=39',
-  '/css/community.css?v=19',
-  '/css/connect.css?v=6',
-  '/css/ranking.css?v=5',
-  '/css/profile.css?v=15',
+  '/css/community.css?v=21',
+  '/css/connect.css?v=7',
+  '/css/ranking.css?v=6',
+  '/css/profile.css?v=16',
   '/css/admin.css?v=4',
   '/css/auth.css?v=4',
-  '/css/panels.css?v=13',
-  '/css/upload.css?v=15',
+  '/css/panels.css?v=17',
+  '/css/upload.css?v=16',
   '/css/widgets.css?v=13',
-  '/css/overrides.css?v=38',
+  '/css/overrides.css?v=39',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 
@@ -4542,32 +4606,32 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=31',
+  '/js/app-core.js?v=33',
   '/js/protect.js?v=3',
   '/js/gallery.js?v=101',
-  '/js/auth.js?v=20',
-  '/js/profile.js?v=16',
+  '/js/auth.js?v=21',
+  '/js/profile.js?v=17',
   '/js/albums.js?v=18',
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=15',
-  '/js/mywork.js?v=23',
+  '/js/pfedit.js?v=17',
+  '/js/mywork.js?v=24',
   '/js/startup.js?v=7',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=11',
+  '/js/search.js?v=13',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
   '/js/effects.js?v=9',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
-  '/js/zeo.js?v=2',
   '/js/theme.js?v=6',
   '/js/analytics.js?v=8',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=121',
+  '/js/sections.js?v=123',
   '/js/routes.js?v=2',
-  '/js/navprogress.js?v=5'
+  '/js/topnav.js?v=4',
+  '/js/navprogress.js?v=6'
 ];
 
 // hosts

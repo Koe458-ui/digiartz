@@ -448,7 +448,7 @@
       width:100%;
       margin:2.5rem auto 0;
       padding:0 var(--shellPad);
-      padding-bottom:calc(1rem + 84px);
+      padding-bottom:1rem;
       box-sizing:border-box;
       display:grid;
       grid-template-columns:repeat(2,1fr);

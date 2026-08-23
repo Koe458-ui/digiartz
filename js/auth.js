@@ -25,24 +25,41 @@
     }
   }
 
-  // sync navbar button
+  /* The account control in the top bar, and its copy inside the hamburger.
+
+     It used to be two elements swapped for one another — a person outline
+     while signed out, the member's own picture once signed in. The bar names
+     its destinations in words, so this is one control whose word changes:
+     Sign in on the wide bar, Login in the menu, Profile in both once there is
+     an account behind it. Two elements rather than one because the two copies
+     are in two places, and neither is ever removed — only rewritten, so
+     nothing about the row's width moves as the session settles. */
   function syncAuthBtn() {
-    var loginBtn  = document.getElementById('navLoginBtn');
-    var avatarBtn = document.getElementById('navAvatarBtn');
+    var bar  = document.getElementById('dzTopAccount');
+    var menu = document.getElementById('dzMenuAccount');
 
     if (currentUser) {
-      // logged in
-      var letter = cpGetAvatarLetter(); // reuse existing helper
-      paintAvatarChip('navAvatarImg', 'navAvatarLetter', currentUserAvatarUrl, letter);
-      if (loginBtn)  loginBtn.style.display  = 'none';
-      if (avatarBtn) {
-        avatarBtn.style.display = 'flex';
-        avatarBtn.title = 'Profile — ' + cpGetDisplayName();
+      /* cpGetDisplayName is in js/mywork.js, seven script tags below this
+         file, and the first auth event fires before that one is parsed — the
+         same reason cpSyncAvatar is guarded at the foot of this function. */
+      var name = typeof cpGetDisplayName === 'function' ? cpGetDisplayName() : '';
+      // Their own profile, which is a real address with a real fallback in
+      // _redirects. Not '/profile': there is no such page, and an anchor is a
+      // promise to a browser with no script as much as to a crawler.
+      var href = name && name !== 'User' ? '/profile/' + encodeURIComponent(name) : '/login';
+      if (bar) {
+        bar.textContent = 'Profile';
+        bar.title = 'Profile — ' + (name || 'you');
+        bar.setAttribute('href', href);
+      }
+      if (menu) {
+        menu.textContent = 'Profile';
+        menu.title = 'Profile — ' + (name || 'you');
+        menu.setAttribute('href', href);
       }
     } else {
-      // logged out
-      if (loginBtn)  loginBtn.style.display  = '';
-      if (avatarBtn) avatarBtn.style.display  = 'none';
+      if (bar)  { bar.textContent  = 'Sign in'; bar.removeAttribute('title');  bar.setAttribute('href', '/login'); }
+      if (menu) { menu.textContent = 'Login';   menu.removeAttribute('title'); menu.setAttribute('href', '/login'); }
     }
 
     // sync card and comment bar

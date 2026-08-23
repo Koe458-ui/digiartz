@@ -214,8 +214,6 @@
     .ftBase {
       border-top: 1px solid var(--bdr);
       padding: 2rem var(--shellPad);
-      /* clearance for bottom nav */
-      padding-bottom: calc(2rem + 5.5rem);
       box-sizing: border-box;
       margin: 0 auto;
       display: grid;
@@ -255,7 +253,7 @@
     @media (max-width: 1024px) {
       .ftMain { padding: 3.5rem var(--shellPad) 3rem; gap: 3.5rem; }
       .ftCols { gap: 2.5rem; }
-      .ftBase { padding: 1.8rem var(--shellPad); padding-bottom: calc(1.8rem + 5.5rem); gap: 1rem 2rem; }
+      .ftBase { padding: 1.8rem var(--shellPad); gap: 1rem 2rem; }
     }
     @media (max-width: 860px) {
       .ftMain {
@@ -274,7 +272,6 @@
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto;
         padding: 1.6rem var(--shellPad);
-        padding-bottom: calc(1.6rem + 5.5rem);
         gap: .9rem 2rem;
       }
       .ftBaseCopy { text-align: left; grid-column: 1; grid-row: 1; }
@@ -302,7 +299,6 @@
         grid-template-columns: 1fr;
         grid-template-rows: auto auto auto;
         padding: 1.4rem var(--shellPad);
-        padding-bottom: calc(1.4rem + 5rem);
         gap: .75rem;
         text-align: center;
       }

@@ -50,9 +50,10 @@
        page starts painting, so what :root holds is never what a visitor
        sees — it is the base the light block overrides, held in one place
        so two copies of one palette cannot drift apart.
-       html[data-theme="graydark"] therefore still has nothing to say and
-       does not exist; the attribute is set either way, and the picker and
-       .bnItem key off it. */
+       html[data-theme="graydark"] therefore still has something to say — the
+       wordmark in the top bar is ink-black on paper and cannot be on
+       charcoal — and the attribute is set either way, so the picker and that
+       one rule can both key off it. */
     :root{
       color-scheme: dark;
       --tc:#9A9DA6;
@@ -282,118 +283,299 @@
     @media(prefers-reduced-motion:reduce){.iSpin{animation-duration:1.6s;}}
 
 
-    /* bottom nav */
-    #bnNav{
+    /* ── the bar at the top of the document ──────────────────────────────────
+       One navigation, at the top, at every width. What it replaces was a
+       floating pill at the bottom of the screen holding five icons, and two
+       more pills fixed over the top corners holding the wordmark and the bell.
+
+       Fixed, and only ever seen on the home page: every section on this site
+       is a panel that covers the document and carries a bar of its own, so
+       this one is taken down on the way in (.heroOut, driven by js/sections.js
+       off the same panel table the floating widgets used) rather than left to
+       stack two bars on top of each other.
+
+       --dzTopH is the bar's height and is spent in three other places: the
+       clearance under it in css/hero.css, and the assistant button and its
+       bubble in css/panels.css, which hang below it. */
+    :root{ --dzTopH:68px; }
+    @media(min-width:768px){ :root{ --dzTopH:76px; } }
+    @media(min-width:1280px){ :root{ --dzTopH:84px; } }
+
+    .dzTop{
       position:fixed;
-      left:16px;right:16px;bottom:1.1rem;
-      margin:0 auto;
-      max-width:460px;
-      z-index:1000;
-      display:flex;align-items:center;justify-content:space-between;
-      padding:.55rem 1rem;
-      border-radius:999px;
-      border:1px solid rgba(var(--pg-rgb),.22);
-      box-shadow:0 10px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(var(--pg-rgb),.08);
-      isolation:isolate;
+      top:0;left:0;right:0;
+      z-index:1001;
+      height:var(--dzTopH);
+      box-sizing:border-box;
+      display:flex;align-items:center;gap:.75rem;
+      padding:0 var(--shellPad);
+      border-bottom:1px solid var(--bdr);
+      background:color-mix(in srgb,var(--bg) 92%,transparent);
+      backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      /* the way out is the curve every panel on this site slides on */
+      transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .28s ease;
       /* gpu layer */
-      transform:translateZ(0);
-      -webkit-transform:translateZ(0);
       will-change:transform;
     }
-    /* blur layer */
-    #bnNav::before{
-      content:'';
-      position:absolute;
-      inset:0;
-      border-radius:inherit;
-      background:linear-gradient(160deg,color-mix(in srgb,var(--sur) 92%,transparent) 0%,color-mix(in srgb,var(--bg) 94%,transparent) 100%);
-      z-index:-1;
-    }
-    .bnItem{
-      position:relative;
-      display:flex;align-items:center;justify-content:center;
-      flex:0 0 auto;
-      width:58px;height:58px;
-      border-radius:50%;
-      background:none;border:none;cursor:pointer;
-      color:rgba(var(--tx2-rgb),.62);
-      transition:color .22s,background .22s,transform .15s;
-    }
-    /* Home, Gallery and Community are anchors now, and Upload is still a
-       button — one row, two elements, and the rule above was written for the
-       button. These three properties are the whole of the difference: an
-       anchor arrives underlined, tinted with the link colour and inline, and
-       the flex above already fixes the last of those. Nothing else about the
-       bar moves. */
-    a.bnItem,a.nLoginBtn{text-decoration:none;color:rgba(var(--tx2-rgb),.62);-webkit-tap-highlight-color:transparent;}
-    .bnItem svg{width:26px;height:26px;display:block;stroke-width:1.8;transition:transform .22s cubic-bezier(.34,1.56,.64,1);}
-    .bnItem:hover{color:var(--tx);background:rgba(var(--pg-rgb),.14);}
-    .bnItem:active{transform:scale(.92);}
-    .bnItem:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    .bnItem.bnActive{color:var(--pb);background:rgba(var(--pg-rgb),.18);}
-    .bnItem.bnActive svg{transform:translateY(-1px) scale(1.08);}
-    /* one value for the dot and the line it grows into, so they never
-       read as two different lights. each theme carries its own alpha: the
-       mark is near-white over charcoal and near-black over paper, and
-       matching those by eye means the
-       light theme needs a little more of its colour to weigh the same.
-       .53 is the base because charcoal is the default and lives in :root. */
-    .bnItem{--bnMark:rgba(var(--pg-rgb),.53);}
-    html[data-theme="light"] .bnItem{--bnMark:rgba(var(--pg-rgb),.57);}
-    /* once the line is up it draws the dot itself, as its own start cap —
-       one stroke, so the two can never stack into a brighter spot */
-    #bnNav.bnMarks .bnItem.bnActive::after{display:none;}
-    .bnItem.bnActive::after{
-      content:'';
-      position:absolute;
-      bottom:5px;left:50%;
-      width:4px;height:4px;
-      transform:translateX(-50%);
-      border-radius:50%;
-      background:var(--bnMark);
-    }
-    /* the active dot stretches into a scroll line: same width, same colour,
-       starting where the dot sits and running clockwise around the icon */
-    .bnItem .bnRing{
-      position:absolute;
-      inset:0;
-      width:100%;height:100%;
-      pointer-events:none;
-      overflow:visible;
+    /* A section is up and wearing its own bar: this one leaves upwards rather
+       than blinking out, and stops taking taps on the way. */
+    .dzTop.heroOut{
       opacity:0;
-      transform:rotate(90deg);
-      transition:opacity .2s ease;
-    }
-    /* the active item nudges and scales its icon — the line must not follow */
-    .bnItem.bnActive .bnRing{opacity:1;transform:rotate(90deg);}
-    .bnRingBar{
-      fill:none;
-      stroke:var(--bnMark);
-      stroke-width:4;
-      stroke-linecap:round;
-    }
-    /* profile item */
-    .bnItem.bnProfile{padding:0;}
-    .bnItem .nLoginBtn,
-    .bnItem .nAvatarBtn{
-      width:42px;height:42px;margin:0;border-radius:50%;
-    }
-    .bnItem .nLoginBtn svg{width:24px;height:24px;stroke-width:1.8;}
-    .bnItem .nAvLetter{font-size:1.05rem;}
-
-    /* hidden labels */
-    .bnLabel{
-      position:absolute;width:1px;height:1px;padding:0;margin:-1px;
-      overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+      transform:translateY(-100%);
+      pointer-events:none;
     }
 
-    @media(max-width:640px){
-      #bnNav{bottom:.8rem;left:10px;right:10px;padding:.45rem .7rem;}
-      .bnItem{width:52px;height:52px;}
-      .bnItem svg{width:24px;height:24px;}
-      .bnItem .nLoginBtn,
-      .bnItem .nAvatarBtn{width:38px;height:38px;}
-      .bnItem .nLoginBtn svg{width:22px;height:22px;}
+    /* the wordmark — black and brand red, the two colours it has always been */
+    .dzBrand{
+      flex:0 0 auto;
+      display:inline-flex;align-items:baseline;
+      font-family:var(--fd);font-weight:800;
+      font-size:clamp(1.2rem,4vw,1.55rem);
+      letter-spacing:-.01em;
+      text-decoration:none;
+      -webkit-tap-highlight-color:transparent;
+      transition:opacity .2s ease,transform .15s ease;
+    }
+    .dzBrand:hover{opacity:.82;}
+    .dzBrand:active{transform:scale(.97);}
+    .dzBrand:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:6px;}
+    /* On paper this is ink. On charcoal an ink-black wordmark on a near-black
+       bar is a wordmark nobody can read, so the dark theme lends it the page's
+       own text colour and the red beside it goes on doing the identifying. */
+    .dzBrandD{color:#0A0A0A;}
+    html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
+    .dzBrandA,.dzBrandDot{color:var(--brand-red);}
+
+    /* the wide bar's destinations, centred between the wordmark and the
+       actions. Out of the document on a phone, where the hamburger holds the
+       same five words. */
+    .dzLinks{
+      display:none;
+      align-items:center;
+      gap:clamp(.5rem,1.8vw,1.6rem);
+      margin:0 auto;
+      min-width:0;
+    }
+    .dzLink{
+      position:relative;
+      flex:0 0 auto;
+      border:0;background:none;cursor:pointer;
+      padding:.5rem .25rem;
+      font-family:var(--fd);font-weight:700;
+      font-size:clamp(.94rem,1.05vw,1.02rem);letter-spacing:.01em;
+      color:var(--txd);
+      text-decoration:none;white-space:nowrap;
+      -webkit-tap-highlight-color:transparent;
+      transition:color .22s ease;
+    }
+    /* the mark under the word you are on, drawn from the middle out. It is on
+       the word rather than around it, so nothing about the bar's rhythm moves
+       when it lands. */
+    .dzLink::after{
+      content:'';
+      position:absolute;
+      left:50%;right:50%;bottom:.1rem;
+      height:2px;border-radius:2px;
+      background:var(--pg);
+      transition:left .3s cubic-bezier(.16,1,.3,1),right .3s cubic-bezier(.16,1,.3,1);
+    }
+    .dzLink:hover{color:var(--tx);}
+    .dzLink:hover::after{left:.2rem;right:.2rem;}
+    .dzLink.bnActive{color:var(--tx);}
+    .dzLink.bnActive::after{left:.2rem;right:.2rem;}
+    .dzLink:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:6px;}
+
+    .dzActions{
+      display:flex;align-items:center;gap:.1rem;
+      flex:0 0 auto;margin-left:auto;
+    }
+    .dzIcon{
+      position:relative;flex:0 0 auto;
+      width:46px;height:46px;border-radius:13px;
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;color:var(--tx);cursor:pointer;
+      transition:background .18s,color .18s,transform .15s;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .dzIcon svg{width:24px;height:24px;display:block;}
+    .dzIcon:active{transform:scale(.92);}
+    .dzIcon:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    @media(hover:hover){ .dzIcon:hover{background:var(--sur2);} }
+    /* the unread mark, the same signal the profile's own bar carries */
+    .hNotifDot{
+      position:absolute;top:7px;right:7px;
+      width:8px;height:8px;border-radius:50%;
+      background:var(--brand-red);
+      box-shadow:0 0 0 2px var(--bg);
+      display:none;
+    }
+    #hNotifBtn.hasUnread .hNotifDot{display:block;}
+
+    /* Search is a word on a phone and an icon on a wide bar: on a phone it is
+       the hamburger's first item, which is where the other four are, and a
+       third icon on a row that is already the wordmark, the bell and the
+       hamburger is what the row cannot take. */
+    .dzIconSearch{display:none;}
+
+    /* the hamburger. Three rules that fold into a cross while the menu is up,
+       which is the one animation that says what the button will do next. */
+    .dzHamBox{
+      position:relative;
+      width:22px;height:16px;
+      display:block;
+    }
+    .dzHamBox span{
+      position:absolute;left:0;
+      width:100%;height:2px;border-radius:2px;
+      background:currentColor;
+      transition:transform .34s cubic-bezier(.16,1,.3,1),opacity .16s ease;
+    }
+    .dzHamBox span:nth-child(1){top:0;}
+    .dzHamBox span:nth-child(2){top:7px;}
+    .dzHamBox span:nth-child(3){top:14px;}
+    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(2){opacity:0;transform:scaleX(.4);}
+    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+    /* ── the menu ────────────────────────────────────────────────────────────
+       A drawer that rolls down out of the bar. It is full width because it is
+       part of the bar rather than a card floating near it, and it stops at the
+       foot of its own five words — it never becomes a page, and the page under
+       it is never locked.
+
+       The roll is a grid track going 0fr → 1fr, which is the one way to
+       animate to a height nobody has measured. The row is the whole panel and
+       .dzMenuInner is what overflows out of it, so the words are revealed from
+       the top down rather than squashed. A browser too old to interpolate the
+       track still opens and closes it — it just arrives in one step, and the
+       words fading in underneath still read as a drawer.
+
+       It is drawn under the bar in the stack as well as under it on the
+       screen, so the bar's own edge stays the line the drawer comes out of. */
+    .dzMenu{
+      position:fixed;
+      top:var(--dzTopH);
+      left:0;right:0;
+      z-index:1000;
+      display:grid;
+      grid-template-rows:0fr;
+      /* Opaque, and a surface rather than the ground. The bar above it is
+         glass, which is right for a strip with the page moving under it; a
+         drawer with words in it is a thing that has come out of the bar and
+         has to be read against, so the headline it drops over does not show
+         through the middle of it. */
+      background:var(--sur);
+      border-bottom:1px solid transparent;
+      overflow:hidden;
+      visibility:hidden;
+      /* Shutting is the quicker half, and on a plain ease: a drawer being put
+         away does not need to be watched, and a slow close is the single most
+         common way a nav starts to feel heavy. */
+      transition:grid-template-rows .26s cubic-bezier(.4,0,.2,1),
+                 border-color .2s ease,
+                 box-shadow .2s ease,
+                 visibility 0s linear .26s;
+    }
+    .dzMenu.open{
+      grid-template-rows:1fr;
+      visibility:visible;
+      border-bottom-color:var(--bdr);
+      box-shadow:var(--sh-card-hover);
+      /* Opening runs longer and decelerates hard — it covers most of its
+         travel early and settles into the last few pixels, which is how a
+         thing with weight comes to rest rather than stopping. */
+      transition:grid-template-rows .42s cubic-bezier(.16,1,.3,1),
+                 border-color .3s ease,
+                 box-shadow .34s ease,
+                 visibility 0s;
+    }
+    .dzMenuInner{
+      min-height:0;
+      overflow:hidden;
+      display:flex;flex-direction:column;
+      padding:.35rem var(--shellPad) .6rem;
+    }
+    .dzMenuItem{
+      display:block;width:100%;
+      box-sizing:border-box;
+      text-align:left;
+      border:0;background:none;cursor:pointer;
+      padding:.78rem .55rem;
+      font-family:var(--fd);font-weight:700;
+      font-size:1rem;letter-spacing:.01em;
+      color:var(--tx);
+      text-decoration:none;white-space:nowrap;
+      -webkit-tap-highlight-color:transparent;
+      /* The words slide in from the left, one after the other, while the
+         drawer above them is still opening. Two movements at right angles to
+         each other: the panel drops, the words come in across it. One
+         direction for both would read as the whole block sliding, which is the
+         thing this is not.
+
+         The stagger is on the way in only. Closing, they go together and
+         quickly — a staggered exit means the last word is still travelling
+         after the drawer that held it has gone. */
+      opacity:0;
+      transform:translateX(-14px);
+      transition:background .18s ease,color .18s ease,
+                 opacity .13s ease,transform .13s ease;
+    }
+    .dzMenu.open .dzMenuItem{
+      opacity:1;
+      transform:translateX(0);
+      transition:background .18s ease,color .18s ease,
+                 opacity .34s cubic-bezier(.16,1,.3,1),
+                 transform .38s cubic-bezier(.16,1,.3,1);
+    }
+    /* 45ms apart, starting once the drawer has opened far enough to have
+       somewhere to put the first one */
+    .dzMenu.open .dzMenuItem:nth-child(1){transition-delay:0s,0s,.06s,.06s;}
+    .dzMenu.open .dzMenuItem:nth-child(2){transition-delay:0s,0s,.105s,.105s;}
+    .dzMenu.open .dzMenuItem:nth-child(3){transition-delay:0s,0s,.15s,.15s;}
+    .dzMenu.open .dzMenuItem:nth-child(4){transition-delay:0s,0s,.195s,.195s;}
+    .dzMenu.open .dzMenuItem:nth-child(5){transition-delay:0s,0s,.24s,.24s;}
+    /* A hairline between one word and the next. Five words down a full-width
+       panel with nothing between them read as a paragraph broken up rather
+       than as five things you can choose; the rule is what makes each one a
+       row. Drawn on the top edge of every item but the first, so there is no
+       rule against the bar's own edge above and none against the drawer's
+       edge below — the panel is bounded by its own border, not by a sixth
+       line floating at the end of the list. */
+    .dzMenuItem + .dzMenuItem{
+      border-top:1px solid var(--bdr);
+    }
+    .dzMenuItem:active{background:var(--sur2);}
+    .dzMenuItem:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
+    @media(hover:hover){ .dzMenuItem:hover{background:var(--sur2);} }
+    .dzMenuItem.bnActive{background:var(--pdim);color:var(--pb);}
+    /* The rest of the window, taking the tap that closes the drawer and
+       nothing else. It has no colour of its own — the page under an open
+       drawer looks exactly as it did before the drawer opened — and it starts
+       under the bar, because a tap on the bar closes the drawer too and that
+       one is handled in js/topnav.js. */
+    .dzMenuScrim{
+      position:fixed;
+      top:var(--dzTopH);left:0;right:0;bottom:0;
+      z-index:999;
+      background:transparent;
+      display:none;
+    }
+    .dzMenuScrim.on{display:block;}
+
+    /* ── from 900px up ───────────────────────────────────────────────────────
+       The five destinations come out of the hamburger and onto the bar, and
+       the search comes with them. There is no hamburger at this width: a menu
+       button beside a row of the same words is a second way to the same five
+       places. */
+    @media(min-width:900px){
+      .dzLinks{display:flex;}
+      .dzIconSearch{display:flex;}
+      .dzHam{display:none;}
+    }
+
+    @media(prefers-reduced-motion:reduce){
+      .dzTop,.dzMenu,.dzMenuItem,.dzLink::after,.dzHamBox span{transition-duration:.01ms;}
+      .dzMenu.open .dzMenuItem{transition-delay:0s;}
     }
 
     #hero {
@@ -403,81 +585,11 @@
       background: var(--bg);
     }
 
-    /* floating widgets */
-    .fpFloat {
-      position: fixed;
-      top: clamp(1rem, 2.6vw, 2rem);
-      z-index: 1001;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      border: 1px solid color-mix(in srgb,var(--vpg) 35%,transparent);
-      box-shadow: 0 10px 32px rgba(5,3,8,.35), inset 0 1px 0 color-mix(in srgb,var(--vpg) 15%,transparent);
-      color: var(--vtx);
-      isolation: isolate;
-      /* gpu layer */
-      transform: translateZ(0);
-      -webkit-transform: translateZ(0);
-      will-change: transform;
-    }
-    /* blur layer */
-    .fpFloat::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: linear-gradient(160deg,color-mix(in srgb,var(--vpg) 50%,transparent) 0%,color-mix(in srgb,var(--vpg) 30%,transparent) 100%);
-      z-index: -1;
-    }
-    /* hide on scroll out */
-    .fpFloat.heroOut,
-    #zeoBtn.heroOut {
-      opacity: 0;
-      transform: translateZ(0);
-      pointer-events: none;
-    }
-
-    /* brand badge */
-    .hBadge {
-      left: clamp(1rem, 2.6vw, 2rem);
-      width: clamp(112px, 24vw, 156px);
-      height: clamp(44px, 8vw, 60px);
-      font-family: var(--fd);
-      font-weight: 800;
-      font-size: clamp(.85rem, 2.6vw, 1.2rem);
-      letter-spacing: .01em;
-      pointer-events: none;
-    }
-    .hBadge .hBadgeD { color: #0a0a0a; }
-    .hBadge .hBadgeA { color: var(--brand-red); }
-    /* badge fill */
-    .hBadge::before { background: color-mix(in srgb,var(--vpg) 70%,transparent); }
-
-    /* notification button */
-    .hNotifBtn {
-      right: clamp(1rem, 2.6vw, 2rem);
-      width: clamp(42px, 8vw, 54px);
-      height: clamp(42px, 8vw, 54px);
-      border-radius: 50%;
-      cursor: pointer;
-    }
-    .hNotifBtn svg { width: clamp(18px, 3.6vw, 22px); height: clamp(18px, 3.6vw, 22px); stroke-width: 1.8; display: block; }
-    .hNotifBtn:hover { background: linear-gradient(160deg,color-mix(in srgb,var(--vpg) 50%,transparent) 0%,color-mix(in srgb,var(--vpg) 30%,transparent) 100%); }
-    .hNotifBtn:active { transform: scale(.95); }
-    .hNotifBtn:focus-visible { outline: 2px solid var(--pg); outline-offset: 2px; }
-    /* unread dot */
-    .hNotifDot {
-      position: absolute;
-      top: 6px; right: 6px;
-      width: 9px; height: 9px;
-      border-radius: 50%;
-      background: var(--pg);
-      box-shadow: 0 0 6px var(--pg);
-      display: none;
-    }
-    .hNotifBtn.hasUnread .hNotifDot { display: block; }
-
+    /* Three things used to float over this page in pills of their own — the
+       wordmark, the bell and the assistant button — sharing a .fpFloat class
+       and a .heroOut that took all three down when a section covered them.
+       The first two are inside #dzTop now and the third is gone, so the
+       class is gone; the bar keeps .heroOut, and its rule is with the bar. */
 
 
     /* image protection

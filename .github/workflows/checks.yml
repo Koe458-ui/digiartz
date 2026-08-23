@@ -115,4 +115,3 @@ jobs:
           done
           node --check sw.js
           node --check uploadVerifier.js
-          node --check aiAssistantData.js

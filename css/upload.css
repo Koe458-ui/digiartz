@@ -122,8 +122,8 @@
     }
     .upTopL{display:flex;align-items:center;gap:.6rem;min-width:0;}
     .upTopR{display:flex;align-items:center;gap:.15rem;flex:0 0 auto;}
-    .upMark{display:flex;flex:0 0 auto;}
-    .upMark svg{width:clamp(26px,7vw,30px);height:clamp(26px,7vw,30px);display:block;border-radius:9px;}
+    /* the way out, in the slot the page's gradient mark used to hold */
+    .upTopBack{margin-left:-.55rem;}
     .upTopTitle{
       font-family:var(--fd);font-weight:800;
       font-size:clamp(.95rem,3.4vw,1.15rem);letter-spacing:.05em;

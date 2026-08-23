@@ -246,19 +246,19 @@
     }, true);
   })();
   </script>
-  <link rel="stylesheet" href="/css/base.css?v=13">
-  <link rel="stylesheet" href="/css/hero.css?v=102">
+  <link rel="stylesheet" href="/css/base.css?v=19">
+  <link rel="stylesheet" href="/css/hero.css?v=104">
   <link rel="stylesheet" href="/css/viewer.css?v=39">
-  <link rel="stylesheet" href="/css/community.css?v=19">
-  <link rel="stylesheet" href="/css/connect.css?v=6">
-  <link rel="stylesheet" href="/css/ranking.css?v=5">
-  <link rel="stylesheet" href="/css/profile.css?v=15">
+  <link rel="stylesheet" href="/css/community.css?v=21">
+  <link rel="stylesheet" href="/css/connect.css?v=7">
+  <link rel="stylesheet" href="/css/ranking.css?v=6">
+  <link rel="stylesheet" href="/css/profile.css?v=16">
   <link rel="stylesheet" href="/css/admin.css?v=4">
   <link rel="stylesheet" href="/css/auth.css?v=4">
-  <link rel="stylesheet" href="/css/panels.css?v=13">
-  <link rel="stylesheet" href="/css/upload.css?v=15">
+  <link rel="stylesheet" href="/css/panels.css?v=17">
+  <link rel="stylesheet" href="/css/upload.css?v=16">
   <link rel="stylesheet" href="/css/widgets.css?v=13">
-  <link rel="stylesheet" href="/css/overrides.css?v=38">
+  <link rel="stylesheet" href="/css/overrides.css?v=39">
   <link rel="stylesheet" href="/css/select.css?v=4">
   <link rel="stylesheet" href="/css/analytics.css?v=9">
  </head>
@@ -269,81 +269,87 @@
    <div class="iTxt">LOADING</div>
   </div>
   <div id="sBanner"></div>
-  <!-- The primary navigation, and now genuinely navigation: Home, Gallery and
-       Community are anchors with real addresses rather than buttons that only
-       a script can answer. The panels they open are unchanged — js/routes.js
-       hears the click, cancels the navigation and calls the same bnGo*
-       function the onclick used to — so nothing about how this behaves has
-       moved. What has moved is that the destinations now exist without a
-       script: they are in the sitemap, they can be shared, and a crawler can
-       follow them.
+  <!-- The site's navigation, and the only one: one bar at the top of the
+       document, on a phone and on a desktop alike.
 
-       The gallery is called Explore here, in the quick links rail and in the
-       footer, because a destination linked under three different names is a
-       destination a search engine has three guesses at. The chip row inside
-       the gallery still says Artworks — that chip is one section of the
-       gallery among six and is not a link, so it names a place within the
-       page rather than the page.
+       What it replaces was a floating pill at the bottom of the screen with
+       five icons in it. Icons on a bar that small are a guessing game — a
+       square with a mountain in it is not the word Explore — and the bar took
+       a strip off the bottom of every page for as long as it existed, which
+       is why half the stylesheets in this project carried a padding-bottom
+       reserving room for it.
 
-       Upload keeps its button. It is an action behind a sign-in gate, not a
-       public destination, and it has no url for the same reason the cart and
-       the settings sheet have none. -->
-  <nav id="bnNav" aria-label="Primary navigation">
-   <a class="bnItem" id="bnHome" href="/" title="Home" aria-label="Home">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h4.5v-6h2v6H17.5a1 1 0 0 0 1-1v-9"/></svg>
-    <span class="bnLabel">Home</span>
-   </a>
-   <a class="bnItem" id="bnGallery" href="/explore" title="Explore" aria-label="Explore">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-    <span class="bnLabel">Explore</span>
-   </a>
-   <button class="bnItem" id="bnUpload" onclick="bnGoUpload()" title="Upload" aria-label="Upload artwork">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    <span class="bnLabel">Upload</span>
-   </button>
-   <a class="bnItem" id="bnCommunity" href="/community" title="Community" aria-label="Community">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M17 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.6V20"/><circle cx="9.5" cy="8" r="3"/><path d="M16 10.3a2.5 2.5 0 1 0-.7-4.9"/><path d="M19.5 20v-1.1a3 3 0 0 0-2.1-2.9"/></svg>
-    <span class="bnLabel">Community</span>
-   </a>
-   <div class="bnItem bnProfile" id="bnProfile">
-    <!-- The sign-in control keeps its handler and gains an address. The
-         handler is what decides between the sheet and your own profile, so it
-         stays in charge; returning false cancels the navigation, and
-         js/routes.js stands down when a click has already been handled. Signed
-         out this is the /login link; signed in it is swapped for the avatar
-         button beside it, which goes to a profile and not to a public url. -->
-    <a class="nLoginBtn" id="navLoginBtn" href="/login" onclick="bnGoProfile(event); return false;" title="Login" aria-label="Login">
-     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
-      <circle cx="12" cy="8" r="3.5"/>
-      <path d="M5 19.2c0-3.2 3.13-5.7 7-5.7s7 2.5 7 5.7"/>
-     </svg>
-    </a>
-    <button class="nAvatarBtn" id="navAvatarBtn"
-      onclick="bnGoProfile(event)"
-      title="Profile"
-      aria-label="Open profile"
-      aria-controls="profilePage"
-      style="display:none;">
-     <img id="navAvatarImg" alt="" style="display:none;">
-     <span class="nAvLetter" id="navAvatarLetter">?</span>
+       So: words, not pictures. On a phone the bar is the wordmark, the bell
+       and a hamburger, and the destinations live inside the hamburger — a
+       panel the size of its own text, not a page that swallows the screen.
+       From 900px up there is no hamburger: the destinations are on the bar
+       itself and the search sits beside the bell.
+
+       Explore and Community are real anchors carrying real addresses, exactly
+       as they were in the bar this replaces: js/routes.js hears the click,
+       cancels the navigation and opens the same panel. Upload and the account
+       control are buttons, because neither is a public destination — one is a
+       draft and the other is one member's own page.
+
+       data-bn is the section each control leads to. js/pfedit.js lights the
+       one you are in and js/navprogress.js keeps that section's scroll
+       position; both used to key off the old bar's element ids, and there are
+       two copies of every destination now (bar and menu), so the name moved
+       onto an attribute both copies can carry. -->
+  <header id="dzTop" class="dzTop">
+   <a class="dzBrand" href="/" data-bn="bnHome" aria-label="DigiArtz — home"><span class="dzBrandD">Digi</span><span class="dzBrandA">Artz</span><span class="dzBrandDot">.</span></a>
+
+   <!-- The wide bar's own row of destinations. Out of the document's flow on
+        a phone, where the hamburger carries the same five. -->
+   <nav class="dzLinks" aria-label="Primary">
+    <a class="dzLink" data-bn="bnGallery" href="/explore">Explore</a>
+    <a class="dzLink" data-bn="bnCommunity" href="/community">Community</a>
+    <button class="dzLink" type="button" data-bn="bnUpload" onclick="bnGoUpload()">Upload</button>
+    <!-- One control, two words: Sign in until there is an account behind it,
+         Profile after. js/auth.js writes the word on both copies. -->
+    <a class="dzLink" id="dzTopAccount" data-bn="bnProfile" href="/login" onclick="bnGoProfile(event); return false;">Sign in</a>
+   </nav>
+
+   <div class="dzActions">
+    <button class="dzIcon dzIconSearch" id="dzTopSearchBtn" type="button" onclick="dzOpenSearch()" aria-label="Search" aria-controls="fgSearchPage">
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
     </button>
-    <span class="bnLabel">Profile</span>
+    <button class="dzIcon" id="hNotifBtn" type="button" onclick="openNotifications()" title="Notifications" aria-label="Notifications" aria-controls="notifPage">
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+     </svg>
+     <span class="hNotifDot" aria-hidden="true"></span>
+    </button>
+    <button class="dzIcon dzHam" id="dzHamBtn" type="button" onclick="dzMenuToggle()" aria-label="Menu" aria-haspopup="true" aria-expanded="false" aria-controls="dzTopMenu">
+     <span class="dzHamBox" aria-hidden="true"><span></span><span></span><span></span></span>
+    </button>
+   </div>
+  </header>
+
+  <!-- A tap anywhere else shuts the menu — on the page under it, and on the
+       bar it hangs from. Transparent on purpose: this catches the tap without
+       dimming the page, because the menu is a drawer under the bar rather
+       than a sheet over the document. -->
+  <div class="dzMenuScrim" id="dzMenuScrim" onclick="dzMenuClose()" aria-hidden="true"></div>
+  <!-- The hamburger's contents, as a drawer that rolls down out of the bar.
+       Full width, because it is part of the bar and not a card floating near
+       it, and only as deep as the five words in it — it never becomes a page.
+       Search opens the same page the gallery's own search opens: one search on
+       this site, reached from wherever you are. -->
+  <nav id="dzTopMenu" class="dzMenu" aria-label="Site menu">
+   <div class="dzMenuInner">
+    <button class="dzMenuItem" type="button" onclick="dzOpenSearch()">Search</button>
+    <a class="dzMenuItem" data-bn="bnGallery" href="/explore" onclick="dzMenuClose()">Explore</a>
+    <a class="dzMenuItem" data-bn="bnCommunity" href="/community" onclick="dzMenuClose()">Community</a>
+    <button class="dzMenuItem" type="button" data-bn="bnUpload" onclick="dzMenuClose(); bnGoUpload();">Upload</button>
+    <a class="dzMenuItem" id="dzMenuAccount" data-bn="bnProfile" href="/login" onclick="dzMenuClose(); bnGoProfile(event); return false;">Login</a>
    </div>
   </nav>
 
   <section id="hero">
 
     <h1 class="srOnly">DigiArtz — The Digital Art Community · Art Has No Limits</h1>
-
-    <div class="hBadge fpFloat" aria-hidden="true"><span class="hBadgeD">Digi</span><span class="hBadgeA">Artz</span></div>
-
-    <button class="hNotifBtn fpFloat" id="hNotifBtn" onclick="openNotifications()" title="Notifications" aria-label="Notifications">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
-        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
-        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-      </svg>
-      <span class="hNotifDot" aria-hidden="true"></span>
-    </button>
 
   </section>
 
@@ -694,29 +700,17 @@
 
   <div id="profilePage" role="dialog" aria-modal="true" aria-label="User profile">
 
-    <!-- The bar is the page's own chrome, not the site's: the brand mark is a
-         profile mark, and the word under it is Profile. Search, notifications
-         and the menu are yours, so they are only drawn on your own profile;
-         on anyone else's the bar carries a way back instead. -->
+    <!-- The bar is the page's own chrome, not the site's: a way back, then
+         the word Profile. The way out used to be conditional — a gradient
+         mark on your own profile, a back arrow on somebody else's — and it is
+         the arrow on both now, because the bar at the top of the document
+         does not follow a section in and there has to be one way out of every
+         one of them. Search, notifications and the menu stay yours. -->
     <header class="pfTopBar">
       <div class="pfTopL">
-        <button class="pfTopBtn pfTopBack" id="pfTopBack" onclick="closeProfilePage()" aria-label="Go back" hidden>
+        <button class="pfTopBtn pfTopBack" id="pfTopBack" onclick="closeProfilePage()" aria-label="Go back">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
         </button>
-        <span class="pfMark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="32" height="32">
-            <defs>
-              <linearGradient id="pfMarkGrad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#38BDF8"/>
-                <stop offset=".5" stop-color="#3B82F6"/>
-                <stop offset="1" stop-color="#7C3AED"/>
-              </linearGradient>
-            </defs>
-            <rect width="32" height="32" rx="10" fill="url(#pfMarkGrad)"/>
-            <circle cx="16" cy="12.6" r="4.5" fill="#fff"/>
-            <path d="M7.8 26.4c0-4.35 3.75-7.3 8.2-7.3s8.2 2.95 8.2 7.3z" fill="#fff"/>
-          </svg>
-        </span>
         <span class="pfTopTitle">PROFILE</span>
       </div>
       <!-- Shown on somebody else's profile, and only to a signed-in visitor.
@@ -1119,32 +1113,15 @@
 
   <div class="upPop" id="pfUpMod">
    <div class="upPopBox">
-    <!-- The bar the profile and the gallery already wear: the page's own mark
-         and name on the left, its one control on the right. The (i) carries the
-         guidelines for whichever section is open, so the rules travel with the
-         tab instead of taking a column of the page. -->
+    <!-- The bar the profile and the gallery already wear: the way back and the
+         page's name on the left, its one control on the right. The (i) carries
+         the guidelines for whichever section is open, so the rules travel with
+         the tab instead of taking a column of the page. -->
     <header class="upTopBar">
       <div class="upTopL">
-        <span class="upMark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="32" height="32">
-            <defs>
-              <linearGradient id="upMarkGrad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#A5B4FC"/>
-                <stop offset=".55" stop-color="#6366F1"/>
-                <stop offset="1" stop-color="#4338CA"/>
-              </linearGradient>
-            </defs>
-            <rect width="32" height="32" rx="10" fill="url(#upMarkGrad)"/>
-            <!-- An arrow leaving a tray, not a cloud. The cloud said "sent
-                 somewhere else"; this is the mark the rest of the web reads as
-                 upload, and it is the one the sheet was asked for. -->
-            <g transform="translate(4 4)" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <path d="m7 8 5-5 5 5"/>
-              <path d="M12 3v12"/>
-            </g>
-          </svg>
-        </span>
+        <button class="upTopBtn upTopBack" type="button" onclick="closePfUpload()" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
+        </button>
         <span class="upTopTitle" id="pfUpNavTitle">UPLOAD</span>
       </div>
       <div class="upTopR">
@@ -1484,25 +1461,15 @@
     </div>
   </div>
   <div id="fg" role="dialog" aria-modal="true" aria-label="Full Gallery">
-   <!-- Header on the profile's pattern: the section's own mark and name on the
-        left, its controls on the right. Search opens a page of its own rather
-        than sitting in a bar that holds a fifth of a phone screen unused. -->
+   <!-- Header on the profile's pattern: the way back and the section's name on
+        the left, its controls on the right. Search opens a page of its own
+        rather than sitting in a bar that holds a fifth of a phone screen
+        unused. -->
    <header class="fgTopBar">
     <div class="fgTopL">
-     <span class="fgMark" aria-hidden="true">
-      <svg viewBox="0 0 32 32" width="32" height="32">
-       <defs>
-        <linearGradient id="fgMarkGrad" x1="0" y1="0" x2="1" y2="1">
-         <stop offset="0" stop-color="#C4B5FD"/>
-         <stop offset=".55" stop-color="#8B5CF6"/>
-         <stop offset="1" stop-color="#6D28D9"/>
-        </linearGradient>
-       </defs>
-       <rect width="32" height="32" rx="10" fill="url(#fgMarkGrad)"/>
-       <circle cx="12.2" cy="12.4" r="2.3" fill="#fff"/>
-       <path d="M6.4 23.8l6.2-6.2 3.4 3.4 4.6-4.6 5 5v1.4a1 1 0 0 1-1 1H6.4z" fill="#fff"/>
-      </svg>
-     </span>
+     <button class="fgTopBtn fgTopBack" type="button" onclick="closeFG()" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
+     </button>
      <span class="fgTopTitle">GALLERY</span>
     </div>
     <div class="fgTopR">
@@ -1621,29 +1588,16 @@
   </div>
   <div id="communityPage">
     <!-- The section header, on the same component every other section uses:
-         .fgTopBar with the section's own mark and name on the left and its
+         .fgTopBar with the way back and the section's name on the left and its
          controls on the right. Literally the gallery's classes rather than a
          copy of them, so the two cannot drift apart. Search and Browse each
          open a page of their own; no avatar, because the member's own profile
-         is already in the nav. -->
+         is one word away in the bar at the top of the document. -->
     <header class="fgTopBar cmTopBar" id="cmHomeHdr">
      <div class="fgTopL">
-      <span class="fgMark" aria-hidden="true">
-       <svg viewBox="0 0 32 32" width="32" height="32">
-        <defs>
-         <linearGradient id="cmMarkGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#7FD8C0"/>
-          <stop offset=".55" stop-color="#2FA37C"/>
-          <stop offset="1" stop-color="#16745A"/>
-         </linearGradient>
-        </defs>
-        <rect width="32" height="32" rx="10" fill="url(#cmMarkGrad)"/>
-        <circle cx="12.6" cy="11.4" r="3.4" fill="#fff"/>
-        <path d="M5.6 24.6v-1.4a5.2 5.2 0 0 1 5.2-5.2h3.6a5.2 5.2 0 0 1 5.2 5.2v1.4z" fill="#fff"/>
-        <circle cx="21.6" cy="12.4" r="2.6" fill="#fff" opacity=".72"/>
-        <path d="M18.9 18.3a5.2 5.2 0 0 1 7.5 4.9v1.4h-4.9v-1.4a6.6 6.6 0 0 0-2.6-4.9z" fill="#fff" opacity=".72"/>
-       </svg>
-      </span>
+      <button class="fgTopBtn fgTopBack" type="button" onclick="closeCommunityPage()" aria-label="Back">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
+      </button>
       <span class="fgTopTitle" id="cmHdrTitleTxt">COMMUNITY</span>
      </div>
      <div class="fgTopR">
@@ -1814,20 +1768,8 @@
           <button class="cmCreateBtn cmJoinBtn" type="button" onclick="openFriendsPage()">Requests</button>
         </div>
 
-        <div class="cmFriendList">
-          <div class="cmFriendItem" onclick="cmOpenZeo()">
-            <div class="cmFriendAvatar zeoChip">
-              <img src="/zeo-avatar.png?v=3"
-                   alt="Zeo" draggable="false"
-                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
-              <span class="cmFriendAvatarFallback" style="display:none;">🤖</span>
-            </div>
-            <div class="cmFriendMeta">
-              <div class="cmFriendName">Zeo <span class="cmBadge">BOT</span></div>
-              <div class="cmFriendStatus"><span class="cmDot"></span>Always online · Your DigiArtz bot</div>
-            </div>
-          </div>
-        </div>
+        <!-- The bot had a standing row at the top of this list, above the
+             people. It went with the bot. -->
 
         <div class="dmResults" id="dmResults" aria-live="polite"></div>
         <div class="dmConvoHead" id="dmConvoHead" style="display:none;">MESSAGES</div>
@@ -2846,20 +2788,20 @@
   <script src="/js/captcha.js?v=2"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=31"></script>
+  <script src="/js/app-core.js?v=33"></script>
   <script src="/js/protect.js?v=3"></script>
   <script src="/js/gallery.js?v=101"></script>
-  <script src="/js/auth.js?v=20"></script>
-  <script src="/js/profile.js?v=16"></script>
+  <script src="/js/auth.js?v=21"></script>
+  <script src="/js/profile.js?v=17"></script>
   <script src="/js/albums.js?v=18"></script>
   <script src="/js/drafts.js?v=8"></script>
   <script src="/js/upqueue.js?v=7"></script>
   <script src="/js/avatar.js?v=3"></script>
-  <script src="/js/pfedit.js?v=15"></script>
-  <script src="/js/mywork.js?v=23"></script>
+  <script src="/js/pfedit.js?v=17"></script>
+  <script src="/js/mywork.js?v=24"></script>
   <script src="/js/startup.js?v=7"></script>
   <script src="/js/tagrail.js?v=3"></script>
-  <script src="/js/search.js?v=11"></script>
+  <script src="/js/search.js?v=13"></script>
   <script src="/js/feed.js?v=3"></script>
   <script src="/js/fgshow.js?v=4"></script>
 
@@ -2912,53 +2854,12 @@
 
   <script src="/js/cookie.js?v=1"></script>
 
-<script src="/aiAssistantData.js"></script>
-<script>
-window.ZEO_DATA = window.ZEO_DATA || {
-  welcomeMessage: "Hi, I'm Zeo. Tap below to get help.",
-  welcomeOptions: [{ id: "helpCenter", label: "Get Help" }],
-  helpCenterMessage: "Choose a topic below.",
-  categories: [], responses: {}, speechBubbles: []
-};
-</script>
-
-
-<button id="zeoBtn" aria-label="Open Zeo Bot" title="Zeo Bot">
-  <img
-    id="zeoBtnImg"
-    class="zeoBtnAvatar"
-    src="/zeo-avatar.png?v=3"
-    alt="Zeo Bot"
-    aria-hidden="true"
-    draggable="false"
-    onerror="this.style.display='none';document.getElementById('zeoBtnFallback').style.display='flex';"
-  />
-  <svg id="zeoBtnFallback" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
-    <rect x="3" y="11" width="18" height="10" rx="3"/>
-    <path d="M12 3a2 2 0 0 1 2 2v2H10V5a2 2 0 0 1 2-2z"/>
-    <circle cx="9" cy="16" r="1" fill="currentColor" stroke="none"/>
-    <circle cx="15" cy="16" r="1" fill="currentColor" stroke="none"/>
-    <path d="M8 11V9M16 11V9"/>
-  </svg>
-  <span class="zeoTooltip">Need Help?</span>
-</button>
-
-<div class="zeoBubble" id="zeoBubble" aria-hidden="true" role="status"></div>
-
-<div id="zeoPage" role="dialog" aria-label="Zeo Bot" aria-modal="true">
-  <div class="zeoChatHeader">
-    <div class="zeoChatHeaderAvatar" aria-hidden="true"><img src="/zeo-avatar.png?v=3" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="var p=this.parentElement;this.remove();if(p)p.textContent='🤖';"/></div>
-    <div class="zeoChatHeaderInfo">
-      <div class="zeoChatHeaderName">Zeo</div>
-      <div class="zeoChatHeaderStatus">Bot · Online</div>
-    </div>
-    <button class="zeoChatCloseBtn" id="zeoChatClose" aria-label="Close Zeo Bot">✕</button>
-  </div>
-  <div class="zeoChatBody" id="zeoChatBody" aria-live="polite"></div>
-</div>
-
-  <script src="/js/zeo.js?v=2"></script>
-
+<!-- The assistant used to live here: a floating button in the corner, a
+     speech bubble that nudged from beside it, and a chat page behind both.
+     The button was its only way in, so taking the button off the page took
+     the rest with it — a panel nothing can open and an engine nothing can
+     reach are weight on every page load and a maintenance cost with no
+     screen. js/zeo.js and aiAssistantData.js are gone for the same reason. -->
 
 <div id="themePage" role="dialog" aria-modal="true" aria-label="Choose your theme">
   <div class="subPgHdr">
@@ -3396,12 +3297,17 @@ window.ZEO_DATA = window.ZEO_DATA || {
   <script src="/js/engagement.js?v=9"></script>
 
 
-  <script src="/js/sections.js?v=121"></script>
+  <script src="/js/sections.js?v=123"></script>
   <!-- The url of every public section, and the panel each one opens. After
        sections.js, whose qlGo and hero call-to-action hand over to it. -->
   <script src="/js/routes.js?v=2"></script>
 
-  <script src="/js/navprogress.js?v=5"></script>
+  <!-- The bar at the top of the document: its hamburger, and the one search
+       every way into search on this site goes through. -->
+  <script src="/js/topnav.js?v=4"></script>
+
+  <!-- Each section's scroll position, kept while you are away from it. -->
+  <script src="/js/navprogress.js?v=6"></script>
 
 
 

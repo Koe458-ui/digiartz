@@ -1,20 +1,26 @@
-// nav scroll progress and section memory
+// Each section keeps its place.
+//
+// Leaving a section and coming back puts you where you were, and choosing the
+// section you are already in is what takes you to the top — a glide you can
+// stop by touching the page.
+//
+// This file used to do a second thing as well: the dot under the active
+// bottom-nav icon stretched into a line that tracked how far the section was
+// scrolled, drawn clockwise around the icon. There are no icons. The bar at
+// the top of the document names its destinations in words, and a progress
+// ring has nowhere to be drawn on a word — so the ring is gone and the memory,
+// which was never about the ring, is what is left.
+//
+// Which section is on screen is read off one attribute: js/pfedit.js writes
+// data-section on the document root whenever the section changes. That used to
+// be five elements' class attributes watched at once, which is the same fact
+// stated five times — and it stopped being findable at all when the two copies
+// of every destination arrived (the bar's own row, and the same words inside
+// the hamburger).
 (function () {
   'use strict';
 
-  // the dot under the active bottom-nav item stretches into a line that
-  // tracks how far its section is scrolled: it starts where the dot sits
-  // and runs clockwise around the icon. sections load in as you go, so the
-  // line eases toward the reading instead of snapping to it — fresh
-  // thumbnails push it back down as gently as scrolling up does.
-
-  // each section also keeps its place. leaving one and coming back puts you
-  // where you were, and tapping the icon of the section you are already in
-  // is what takes you to the top — a glide you can stop by touching the
-  // page. the line follows either way, easing up to the restored spot from
-  // zero and back down as the glide runs.
-
-  // where each item's content lives; an empty list means the page scrolls
+  // where each section's content lives; an empty list means the page scrolls
   var ROOTS = {
     bnHome:      [],
     bnGallery:   ['#fg'],
@@ -22,86 +28,20 @@
     bnCommunity: ['#communityPage'],
     bnProfile:   ['#profilePage', '#authMod']
   };
-  var IDS = ['bnHome', 'bnGallery', 'bnUpload', 'bnCommunity', 'bnProfile'];
 
-  var DOT   = 7;                  // px from an item's edge to the dot's centre
-  var WIDE  = 4;                  // px the line is drawn at, matching the dot
-  var HALO  = 2;                  // px of glow ring the avatar carries outside itself
-  var GAIN  = 8.2;                // ease rate going forward, per second
-  var LOSS  = 4.2;                // ease rate coming back, deliberately softer
   var RANGE = 8;                  // px of overflow before a box counts as scrollable
   var DEPTH = 5;                  // how deep to hunt for a section's scroller
   var POLL  = 380;                // ms between growth checks
 
-  var nav = document.getElementById('bnNav');
-  if (!nav) return;
-
-  var rings    = {};              // id -> { svg, bar, circ }
   var activeId = '';
   var root     = null;            // section box, null = the document
   var scroller = null;            // box that actually scrolls, null = the document
-  var target   = 0, shown = 0;
-  var raf = 0, last = 0, timer = 0;
+  var timer = 0;
   var saved   = {};               // id -> the offset that section was left at
   var pending = '';               // section still waiting to be put back
   var pendingUntil = 0, hurry = 0;
   var glide = 0, wasLocked = false;
   var mqReduce = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
-
-  var NS = 'http://www.w3.org/2000/svg';
-
-  // the profile item is an avatar, not a line icon: it fills most of its
-  // circle, and a line cut to the dot's radius would run straight across
-  // its edge. measured, so it tracks the avatar at either nav size
-  function clears (item) {
-    var kids = item.querySelectorAll('.nAvatarBtn, .nLoginBtn');
-    for (var i = 0; i < kids.length; i++) {
-      if (kids[i].offsetWidth) return kids[i].offsetWidth / 2 + HALO + WIDE / 2;
-    }
-    return 0;
-  }
-
-  // the viewBox is the item's own pixel box, so the line lands on the dot
-  // at whatever size the nav is drawn — 58px, 52px on phones
-  function size (id) {
-    var ring = rings[id];
-    if (!ring) return;
-    var item = ring.svg.parentNode;
-    var w = item.clientWidth, h = item.clientHeight;
-    if (!w || !h || (w === ring.w && h === ring.h)) return;
-    var half = Math.min(w, h) / 2;
-    var r = half - DOT;
-    // ride outside the avatar rather than through it, but never off the item
-    var out = clears(item);
-    if (out > r) r = Math.min(out, half - WIDE / 2);
-    ring.w = w; ring.h = h;
-    ring.circ = 2 * Math.PI * r;
-    ring.svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-    ring.bar.setAttribute('cx', String(w / 2));
-    ring.bar.setAttribute('cy', String(h / 2));
-    ring.bar.setAttribute('r', String(r));
-  }
-
-  function build () {
-    IDS.forEach(function (id) {
-      var item = document.getElementById(id);
-      if (!item || rings[id]) return;
-      var svg = document.createElementNS(NS, 'svg');
-      svg.setAttribute('class', 'bnRing');
-      svg.setAttribute('aria-hidden', 'true');
-      svg.setAttribute('focusable', 'false');
-      var bar = document.createElementNS(NS, 'circle');
-      bar.setAttribute('class', 'bnRingBar');
-      svg.appendChild(bar);
-      // behind the icon, so nothing about the icon itself moves
-      item.insertBefore(svg, item.firstChild);
-      rings[id] = { svg: svg, bar: bar, circ: 0, w: 0, h: 0 };
-      size(id);
-      paint(id, 0);
-    });
-    // the css dot steps aside only once the line is really there to draw it
-    if (rings.bnHome) nav.classList.add('bnMarks');
-  }
 
   // ---- measuring ----------------------------------------------------
 
@@ -117,7 +57,7 @@
     return oy === 'auto' || oy === 'scroll' || oy === 'overlay';
   }
 
-  // the first open box for this item, or null for the document
+  // the first open box for this section, or null for the document
   function findRoot (id) {
     var sel = ROOTS[id] || [], i, el, fallback = null;
     for (i = 0; i < sel.length; i++) {
@@ -151,49 +91,6 @@
       depth++;
     }
     return best;
-  }
-
-  function reading () {
-    var box = scroller || docBox();
-    if (!box || !box.isConnected) return 0;
-    var max = box.scrollHeight - box.clientHeight;
-    if (max <= RANGE) return 0;
-    var p = box.scrollTop / max;
-    return p < 0 ? 0 : (p > 1 ? 1 : p);
-  }
-
-  // ---- painting -----------------------------------------------------
-
-  // the line is one dash with round caps, and it never drops below a
-  // hairline — at zero that cap is the dot, drawn in the dot's own place
-  function paint (id, p) {
-    var ring = rings[id];
-    if (!ring) return;
-    if (!ring.circ) { size(id); if (!ring.circ) return; }
-    var len = Math.max(0.01, ring.circ * p);
-    ring.bar.style.strokeDasharray = len.toFixed(2) + ' ' + (ring.circ - len).toFixed(2);
-  }
-
-  function tick (now) {
-    raf = 0;
-    var dt = last ? (now - last) / 1000 : 0;
-    last = now;
-    if (dt > 0.25) dt = 0.25;           // a backgrounded tab must not jump
-    var gap = target - shown;
-    if (Math.abs(gap) < 0.0004) shown = target;
-    else if (dt > 0) shown += gap * (1 - Math.exp(-(gap > 0 ? GAIN : LOSS) * dt));
-    paint(activeId, shown);
-    if (Math.abs(target - shown) > 0.0004) raf = requestAnimationFrame(tick);
-    else last = 0;
-  }
-
-  function animate () {
-    if (mqReduce && mqReduce.matches) {
-      shown = target;
-      paint(activeId, shown);
-      return;
-    }
-    if (!raf) { last = 0; raf = requestAnimationFrame(tick); }
   }
 
   // ---- memory -------------------------------------------------------
@@ -247,10 +144,10 @@
     var y = Math.min(saved[pending], max);
     if (Math.abs(box.scrollTop - y) > 1) setScroll(box, y);
     // short of the remembered spot means more is still rendering
-    if (y >= saved[pending] - 1) { dropPending(); measure(); }
+    if (y >= saved[pending] - 1) { dropPending(); }
   }
 
-  // tapping the section you are already in rides back up to the top
+  // choosing the section you are already in rides back up to the top
   function stopGlide () { if (glide) { cancelAnimationFrame(glide); glide = 0; } }
 
   function toTop (start) {
@@ -291,10 +188,6 @@
     if ((root && !root.isConnected) || (scroller && !scroller.isConnected)) relink();
     else if (!scroller && root) scroller = findScroller(root);
     remember();
-    var next = reading();
-    if (Math.abs(next - target) < 0.0004) return;
-    target = next;
-    animate();
   }
 
   function setActive (id) {
@@ -303,22 +196,11 @@
     stopGlide();
     activeId = id;
     relink();
-    // every other line resets, so the section comes back sweeping up from
-    // zero rather than appearing already part-drawn
-    IDS.forEach(function (other) { if (other !== id) paint(other, 0); });
-    shown = 0;
-    paint(id, 0);
-    target = reading();
-    animate();
     restoreLater(id);
   }
 
   function currentId () {
-    for (var i = 0; i < IDS.length; i++) {
-      var el = document.getElementById(IDS[i]);
-      if (el && el.classList.contains('bnActive')) return IDS[i];
-    }
-    return '';
+    return document.documentElement.getAttribute('data-section') || '';
   }
 
   // ---- wiring -------------------------------------------------------
@@ -334,13 +216,6 @@
       if (t !== scroller && overflow(t) > RANGE) scroller = t;
       if (t === scroller) measure();
     }
-  }
-
-  // the nav shrinks under 640px, so the line has to be re-cut to the dot
-  function reflow () {
-    IDS.forEach(size);
-    paint(activeId, shown);
-    measure();
   }
 
   // a lock that ends with the page at the top threw the offset away rather
@@ -362,45 +237,42 @@
     }, POLL);
   }
 
+  /* Choosing the section you are already in is what sends it to the top.
+
+     The handler behind that tap runs first and may rebuild the section from
+     scratch — the gallery does — which drops it to the top before the ride can
+     start, so the offset is taken here, while it still stands. Listened for on
+     the document because there are two copies of every destination: the row on
+     the wide bar and the same words inside the hamburger. */
   function onNavTap (e) {
     var el = e.target, item = null;
-    while (el && el !== nav) {
-      if (el.classList && el.classList.contains('bnItem')) { item = el; break; }
+    while (el && el !== document) {
+      if (el.getAttribute && el.hasAttribute('data-bn')) { item = el; break; }
       el = el.parentNode;
     }
-    if (!item || !rings[item.id]) return;
-    if (item.id !== activeId) return;
-    // the section you are already in is the one the tap sends to the top.
-    // the handler behind this tap runs first and may rebuild the section
-    // from scratch — gallery does — which drops it to the top before the
-    // ride can start, so the offset is taken here, while it still stands
+    if (!item) return;
+    if (item.getAttribute('data-bn') !== activeId) return;
     var box = boxOf();
     var from = box ? box.scrollTop : 0;
     requestAnimationFrame(function () { toTop(from); });
   }
 
-  build();
   setActive(currentId() || 'bnHome');
 
-  // the nav marks its own active item, whichever path opened the section
+  // js/pfedit.js writes the section onto the document root, whichever path
+  // opened it — a tap on the bar, a url, the hero's call to action.
   if (window.MutationObserver) {
-    var mo = new MutationObserver(function () {
+    new MutationObserver(function () {
       var id = currentId();
       if (id) setActive(id);
-    });
-    IDS.forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] });
-    });
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-section'] });
   }
 
   addEventListener('scroll', onScroll, { capture: true, passive: true });
-  addEventListener('resize', reflow, { passive: true });
-  addEventListener('orientationchange', reflow, { passive: true });
   addEventListener('pageshow', measure);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) measure(); });
 
-  nav.addEventListener('click', onNavTap, true);
+  document.addEventListener('click', onNavTap, true);
   ['wheel', 'touchstart', 'pointerdown', 'keydown'].forEach(function (ev) {
     addEventListener(ev, interrupt, { capture: true, passive: true });
   });

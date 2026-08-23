@@ -2,9 +2,17 @@
 (function () {
   'use strict';
 
-  var widgets = Array.prototype.slice.call(document.querySelectorAll('.fpFloat'));
-  var zeoBtn = document.getElementById('zeoBtn');
-  if (zeoBtn) widgets.push(zeoBtn);
+  /* What leaves when a panel covers the page.
+
+     It used to be three pills fixed over it — the wordmark, the bell and the
+     assistant button — found by the .fpFloat class the three of them shared.
+     The wordmark and the bell are inside #dzTop now and the assistant is gone
+     entirely, so the bar is the whole list, and .fpFloat with it. It takes
+     .heroOut from here rather than from a watcher of its own, which is what
+     the note on the panel table in js/app-core.js is about. */
+  var widgets = ['dzTop']
+    .map(function (id) { return document.getElementById(id); })
+    .filter(Boolean);
   if (!widgets.length) return;
 
   var panelOpen = false;
@@ -15,15 +23,6 @@
     widgets.forEach(function (el) {
       el.classList.toggle('heroOut', out);
     });
-    // mute the bubble too
-    if (out !== wasOut) {
-      wasOut = out;
-      if (out) {
-        if (typeof window.zeoPauseBubble === 'function') window.zeoPauseBubble();
-      } else {
-        if (typeof window.zeoResumeBubble === 'function') window.zeoResumeBubble();
-      }
-    }
   }
 
   /* Overlay panels hide the widgets, and which panels those are is the

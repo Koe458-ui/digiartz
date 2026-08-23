@@ -1531,12 +1531,6 @@ function hideCommentThumbnail(){
     finally{ btn.disabled = false; btn.textContent = 'Send report'; }
   }
 
-  // zeo opens the assistant page
-  function cmOpenZeo(){
-    var zeoBtn = document.getElementById('zeoBtn');
-    if(zeoBtn) zeoBtn.click();
-  }
-
   // comments pagination state
   var cpOffset = 0; // set in cprender
   var CP_INITIAL_LOAD = function(){ return 25; };

@@ -22,7 +22,12 @@
 #   googlesyndication /   AdSense, which loads a tree of Google ad hosts at
 #   doubleclick /         runtime. js/effects.js:82 is the entry point.
 #   adtrafficquality
-#   generativelanguage    the Zeo assistant calls Gemini directly.
+#   generativelanguage    Left in connect-src. The assistant that called Gemini
+#                         from the browser is gone; the only caller left is
+#                         functions/api/moderate-upload.js, which runs at the
+#                         edge and never sees this header. Narrowing a CSP is
+#                         its own change with its own way of going wrong, so
+#                         this is noted rather than done in a nav rewrite.
 #   challenges.cloudflare Turnstile. It needs THREE directives, not two: the
 #   .com                  script to load it, frame-src for the challenge
 #                         iframe, and connect-src for the widget's own calls
@@ -83,8 +88,6 @@
 /icon-maskable-512.png
   Cache-Control: public, max-age=604800
 /logo.svg
-  Cache-Control: public, max-age=604800
-/zeo-avatar.png
   Cache-Control: public, max-age=604800
 
 # The manifest and the crawler files are checked often enough to be worth an

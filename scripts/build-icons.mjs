@@ -22,11 +22,10 @@
  *                   to be there for it.
  *   TAB  (0.82)     the tab favicon. A 16px icon has no rounding to clear
  *                   and needs every pixel it can get, so it sits larger.
- *   SAFE (0.58)     Android maskable and the Zeo avatar. Both are cropped to
- *                   a circle by something that is not us — an adaptive icon
- *                   mask, a border-radius — and the mark has to survive the
- *                   worst crop, which is a circle of radius 40% of the
- *                   canvas, so 409.6 units on this one.
+ *   SAFE (0.58)     Android maskable. It is cropped to a circle by something
+ *                   that is not us — an adaptive icon mask — and the mark has
+ *                   to survive the worst crop, which is a circle of radius 40%
+ *                   of the canvas, so 409.6 units on this one.
  *
  * SAFE is not a taste decision and it moved when the mark did. Four bars are
  * far wider than two: the inked circumradius about the mark's own centre is
@@ -236,19 +235,11 @@ const bars = BARS.map((b, i) => {
     <line x1="${n(e.x1)}" y1="${n(e.y1)}" x2="${n(e.x2)}" y2="${n(e.y2)}" stroke="url(#dzGloss${i})" stroke-width="${WIDTH}"/>`;
 }).join('');
 
-/* THE ZEO DISC.
-   The assistant's avatar sits on the chat panel it opens, and the panel is
-   navy — a white disc on it read as a hole punched through the page. This is
-   the same blue the header chip already paints behind the avatar in
-   css/panels.css (.zeoChatHeaderAvatar), so the image and the fallback that
-   shows when the image fails are now the same colour instead of two.
-   Kept in step by hand; there is no build step that could read the CSS. */
-const ZEO_BLUE = ['#1a2a4a', '#2a4080'];
-
-/* One drawing, four ways of framing it.
+/* One drawing, three ways of framing it.
    `size` is the viewBox edge, `scale` the framing, `ground` what the mark sits
-   on — a full-bleed white square for the icons, the Zeo blue disc for the
-   avatar, and NOTHING for the brand file.
+   on — a full-bleed white square for the icons, and NOTHING for the brand
+   file. There was a fourth: a navy disc for the assistant's avatar, which went
+   when the assistant did.
 
    logo.svg carries no ground on purpose. It is the file a person opens when
    they want the logo, and a baked white rectangle is how a logo ends up as a
@@ -261,10 +252,6 @@ function svg({ size = 1024, scale = ICON, ground = 'square', shadowed = true, ti
   const half = size / 2;
   const bg =
     ground === 'none' ? ''
-    : ground === 'zeo'
-      ? `<defs><linearGradient id="dzZeo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${size}" y2="${size}">` +
-        `<stop offset="0" stop-color="${ZEO_BLUE[0]}"/><stop offset="1" stop-color="${ZEO_BLUE[1]}"/>` +
-        `</linearGradient></defs><circle cx="${half}" cy="${half}" r="${half}" fill="url(#dzZeo)"/>`
     : `<rect x="0" y="0" width="${size}" height="${size}" fill="#ffffff"/>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="${title}" shape-rendering="geometricPrecision">
@@ -287,7 +274,6 @@ const logoSvg = svg({ scale: ICON, ground: 'none', title: 'DigiArtz' });
 const iconSvg = svg({ scale: ICON, title: 'DigiArtz' });
 const tabSvg = svg({ scale: TAB, shadowed: false, title: 'DigiArtz' });
 const maskSvg = svg({ scale: SAFE, title: 'DigiArtz' });
-const avatarSvg = svg({ scale: SAFE, ground: 'zeo', title: 'Zeo' });
 
 writeFileSync(out('logo.svg'), logoSvg);
 writeFileSync(out('favicon.svg'), tabSvg);
@@ -314,7 +300,6 @@ await flat(iconSvg, 192).toFile(out('icon-192.png'));
 await flat(iconSvg, 512).toFile(out('icon-512.png'));
 await flat(iconSvg, 180).toFile(out('apple-touch-icon.png'));
 await flat(maskSvg, 512).toFile(out('icon-maskable-512.png'));
-await render(avatarSvg, 512).toFile(out('zeo-avatar.png'));
 
 /* favicon.ico, five sizes deep.
  *
@@ -357,5 +342,5 @@ frames.forEach((png, i) => {
 
 writeFileSync(out('favicon.ico'), Buffer.concat([header, dir, ...frames]));
 
-console.log('logo.svg, favicon.svg, favicon.ico (%s), icon-192, icon-512, icon-maskable-512, apple-touch-icon, zeo-avatar',
+console.log('logo.svg, favicon.svg, favicon.ico (%s), icon-192, icon-512, icon-maskable-512, apple-touch-icon',
   ICO_SIZES.join('/'));

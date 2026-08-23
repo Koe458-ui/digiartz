@@ -367,14 +367,27 @@
        swipe, the dots, or the arrow keys — so the only furniture is the row of
        dots under it saying how far along it is.
 
-       Scroll padding matches the page inset so a snapped card lands flush with
-       the mark above it rather than against the screen edge. */
+       It is inset by MARGIN rather than padding, at every width. The page
+       inset used to be the track's own padding, which put the scroller's box
+       edge to edge with the screen: the cards inside it stayed the same size,
+       but a card sliding past either end went on being drawn across the
+       gutter — the spotlight card half in the band and half outside it, with
+       nothing above or below it out there. A margin moves the box itself, so
+       the band's edge is where the rail is clipped and a card leaving it
+       disappears at the same line the heading, the chips and the thumbnails
+       all start on.
+
+       The card widths are unchanged by this: they are a percentage of the
+       track's content box, and that box measured the same when the inset was
+       padding. Scroll padding goes with it — the content now begins at the
+       band's edge, so there is nothing left to offset a snapped card by. */
     .fgShowTrack{
       display:flex;gap:var(--fgsGap,16px);
-      padding:0 var(--fgPad) 2px;
+      margin:0 var(--fgPad);
+      padding:0 0 2px;
       overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
       -webkit-overflow-scrolling:touch;
-      scroll-snap-type:x mandatory;scroll-padding-left:var(--fgPad);
+      scroll-snap-type:x mandatory;
       scroll-behavior:smooth;
       scrollbar-width:none;-ms-overflow-style:none;
       /* a mouse can take hold of this, and says so */

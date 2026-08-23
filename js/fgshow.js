@@ -90,13 +90,15 @@
     return out;
   }
 
-  // 60% of a card at each of the track's own column counts, scaled for the
-  // screen's pixel ratio the way dzGridSizes does. The picture covers the
-  // whole card, so these are the card's widths, not a slice of them.
+  // A card's width at each of the track's own column counts — four across
+  // past 1600, three on a desktop, two on a tablet, one on a phone — scaled
+  // for the screen's pixel ratio the way dzGridSizes does. The picture covers
+  // the whole card, so these are the card's widths, not a slice of them.
   function fgsSizes(){
     var s = (typeof dzDprScale === 'function') ? dzDprScale() : 1;
     var f = function(vw){ return +(vw * s).toFixed(2); };
-    return '(min-width:1600px) ' + f(31) + 'vw, (min-width:700px) ' + f(47) + 'vw, ' + f(92) + 'vw';
+    return '(min-width:1600px) ' + f(20) + 'vw, (min-width:1024px) ' + f(26) + 'vw, ' +
+           '(min-width:700px) ' + f(47) + 'vw, ' + f(92) + 'vw';
   }
 
   var FGS_ICO = {

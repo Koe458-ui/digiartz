@@ -440,12 +440,21 @@
          ever sees it. */
       container-type:inline-size;container-name:fgs;
     }
+    /* The column count, and the only place it is stated: a card is a share of
+       the rail's content box, and js/fgshow.js measures the card back rather
+       than repeating these numbers. One on a phone, two on a tablet, three
+       once the screen is a desktop's, four past 1600 — the same steps the
+       thumbnail grid under the rail takes, so a card and a thumbnail below it
+       are never two different ideas of how wide the screen is. */
     @media(min-width:700px){
       .fgsCard{width:calc((100% - var(--fgsGap,16px)) / 2);}
     }
+    @media(min-width:1024px){
+      .fgsCard{width:calc((100% - var(--fgsGap,16px) * 2) / 3);}
+    }
     @media(min-width:1600px){
       .fgShowTrack{--fgsGap:20px;}
-      .fgsCard{width:calc((100% - var(--fgsGap,20px) * 2) / 3);}
+      .fgsCard{width:calc((100% - var(--fgsGap,20px) * 3) / 4);}
     }
     @media(hover:hover){ .fgsCard:hover{border-color:var(--bdrh);transform:translateY(-2px);} }
 

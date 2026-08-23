@@ -740,7 +740,18 @@
     }
 
     /* section content */
-    .dzGrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));}
+    /* The same columns the artwork grid takes, at the same widths — two, then
+       three at 700, then the four and five css/overrides.css gives every grid
+       on the site past 1280 and 1440.
+
+       It used to fill by measure — auto-fill down to 230px — which agreed
+       with the thumbnails on a desktop and disagreed everywhere else: one
+       column across a phone where artwork showed two, two across a tablet
+       where artwork showed three. Switching from Artworks to Market doubled
+       the size of everything on screen, which reads as the page zooming
+       rather than as a different section of it. */
+    .dzGrid{display:grid;gap:var(--artGap);grid-template-columns:repeat(2,1fr);}
+    @media(min-width:700px){ .dzGrid{grid-template-columns:repeat(3,1fr);} }
     .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s;}
     @media(hover:hover){.dzCard:hover{border-color:var(--pg);transform:translateY(-2px);}}
     .dzThumb{position:relative;aspect-ratio:4/3;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;}

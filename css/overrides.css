@@ -264,13 +264,15 @@
      The gap used to be set here too, at 20px, 22px and 24px as the screen
      grew. It is --artGap now — 5px on any desktop — and it is set once, in
      css/base.css, so a thumbnail is never widened at one breakpoint and
-     narrowed at the next by a number written in a second file. .dzGrid is
-     not artwork: its cards carry a name, a price and a line of meta, so it
-     keeps the desktop gaps it always had, stated on its own below. */
+     narrowed at the next by a number written in a second file. .dzGrid used
+     to be the exception — its cards carry a name, a price and a line of meta,
+     so it kept desktop gaps of its own, 20px to 24px, stated here. It does
+     not any more: a listing sat in a different rhythm from a thumbnail, and
+     switching between the two sections was the two rhythms swapping under
+     you. One gap, --artGap, for every grid on the site. */
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
     grid-template-columns:repeat(4,1fr);
   }
-  .dzGrid{ gap:20px; }
   .dzList{ gap:.9rem; }
 
   /* text sizes */
@@ -306,12 +308,10 @@
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
     grid-template-columns:repeat(5,1fr);
   }
-  .dzGrid{ gap:22px; }
 }
 
 /* ultrawide 1920 */
 @media (min-width:1920px){
-  .dzGrid{ gap:24px; }
 }
 
 /* title color */

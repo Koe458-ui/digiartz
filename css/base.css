@@ -225,6 +225,42 @@
       :root{ --shellPad:max(10%,calc((100% - var(--shellMax)) / 2)); }
     }
 
+    /* ── the scrollbar's own strip ───────────────────────────────────────
+       Every full-screen page on this site is its own scroller: the gallery,
+       the profile, settings, the search pages, the community's browse page.
+       A desktop browser with classic scrollbars gives one of them a scrollbar
+       only while its content is taller than the window — so switching from
+       Artworks, which is a grid of hundreds of thumbnails and always scrolls,
+       to Market, which is often a dozen listings and does not, took the
+       scrollbar away and handed its strip back to the page. Everything then
+       re-laid out a scrollbar wider: the bar, the chip row, the grid and
+       every card in it grew and shifted at once, which reads as the screen
+       zooming rather than as a section changing.
+
+       scroll rather than auto, so the track is there whether or not there is
+       anything to scroll, and nothing moves when a section is short.
+
+       Every full-screen page is listed, not the gallery alone: the profile,
+       the three search pages, settings, my work, notifications, analytics and
+       its list, ranking, theme, friends, bookmarks, progress, albums, the
+       album view, the community's info and browse pages, the admin page and
+       the legal reader. A page that jumped in one place and not another would
+       be the same fault with a smaller blast radius.
+
+       overflow rather than scrollbar-gutter, which is the rule written for
+       this and the wrong one to use here: it reserves its strip on browsers
+       whose scrollbars are overlays and take no room at all — every phone,
+       and a Mac without a mouse — where there was never a jump to fix and
+       15px of the screen is worth more. overflow:scroll reserves the track
+       only where a scrollbar is drawn in the layout, which is exactly where
+       the jump was. */
+    #fg, #dzPanelHost, #profilePage, #pfSearchPage, #fgSearchPage, #setPage,
+    #legalPage, #pfEditPage, #subPage, #cmSearchPage, #cmBrowsePage,
+    #cmInfoPage, #admPage, #pfMyWorkPage, #notifPage, #anPage, #anListPage,
+    #rankPage, #themePage, #frdPage, #bmPage, #xpPage, #albPage, #albViewPage{
+      overflow-y:scroll;
+    }
+
     /* ── the gap between two artworks ────────────────────────────────────────
        One token for the only space that is ever allowed to fall between two
        pieces of work, wherever they sit next to each other: the gallery, the

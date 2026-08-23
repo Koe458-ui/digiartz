@@ -4166,7 +4166,7 @@
        security/daily-download-quota.sql (new, record only).
 
    v69 — the precache was covering URLs nobody asks for. Every tag in
-       index.html carries a query string (/css/base.css?v=21) while
+       index.html carries a query string (/css/base.css?v=22) while
        SHELL_URLS listed the bare path (/css/base.css), and cache.match
        keys on the full URL including the search, so 38 of the 41 shell
        assets were precached under a name the page never requests. They
@@ -4642,8 +4642,8 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=21',
-  '/css/hero.css?v=108',
+  '/css/base.css?v=22',
+  '/css/hero.css?v=109',
   '/css/viewer.css?v=39',
   '/css/community.css?v=22',
   '/css/connect.css?v=7',
@@ -4654,7 +4654,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=19',
   '/css/upload.css?v=16',
   '/css/widgets.css?v=13',
-  '/css/overrides.css?v=39',
+  '/css/overrides.css?v=40',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
 

@@ -433,6 +433,18 @@
           <span class="qlDesc">Switch how it looks</span>
         </button>
       </div>
+      <!-- Desktop only: the rail is slid by hand everywhere else — a wheel, a
+           drag, a swipe — but a mouse on a wide screen has nothing to take
+           hold of, so it gets a step back and a step on. Hidden on touch and
+           below 1024px, and hidden again whenever the twelve tiles already
+           fit, which is never at these widths but is what the progress bar
+           under them does too. -->
+      <button class="qlNav qlPrev" id="qlPrev" type="button" aria-label="Scroll quick links back" aria-controls="qlRail" onclick="qlNudge(-1)">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <button class="qlNav qlNext" id="qlNext" type="button" aria-label="Scroll quick links forward" aria-controls="qlRail" onclick="qlNudge(1)">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
       <div class="qlBar" id="qlBar" aria-hidden="true"><span class="qlBarFill" id="qlBarFill"></span></div>
     </div>
   </section>

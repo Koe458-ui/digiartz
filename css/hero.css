@@ -1154,6 +1154,40 @@
     .qlItem:active{transform:translateY(0) scale(.97);}
     .qlItem:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
 
+    /* Step back / step on. The rail answers a wheel, a drag and a swipe, and
+       those are all a phone or a trackpad ever needs; a mouse on a wide screen
+       has nothing to take hold of, so it gets two buttons. They stand in the
+       shell's own gutter beside the rail — at 1024 and up that inset is at
+       least a tenth of the screen, so a 38px button sits there without ever
+       covering a tile — and they are centred on the tiles rather than on the
+       block, which is why the progress bar's strip is discounted below. */
+    .qlWrap{position:relative;}
+    .qlNav{
+      display:none;                        /* touch and narrow: see below */
+      position:absolute;
+      /* the rail's own band: everything but the bar and the gap above it */
+      top:0;bottom:calc(.8rem + 3px);margin-block:auto;
+      width:38px;height:38px;padding:0;
+      align-items:center;justify-content:center;
+      border:1px solid var(--bdr);border-radius:999px;
+      background:var(--sur);color:var(--tx);cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      transition:background .2s,border-color .2s,opacity .2s,transform .2s;
+    }
+    .qlNav svg{width:18px;height:18px;display:block;}
+    .qlPrev{right:calc(100% + .45rem);}
+    .qlNext{left:calc(100% + .45rem);}
+    @media(hover:hover){
+      .qlNav:hover{background:var(--bdr);border-color:var(--bdrh);transform:scale(1.06);}
+    }
+    .qlNav:active{transform:scale(.94);}
+    .qlNav:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
+    /* At either end of the rail the button stays where it is and stops
+       answering, rather than disappearing and shifting the pair. */
+    .qlNav:disabled{opacity:.35;cursor:default;transform:none;}
+    /* nothing to scroll — the same call the progress bar answers */
+    .qlNav.qlHide{display:none;}
+
     /* scroll progress */
     .qlBar{
       position:relative;height:3px;margin-top:.8rem;
@@ -1173,6 +1207,13 @@
     @media(min-width:768px){ #quickLinks{--qlPer:4;--qlGap:.7rem;--qlIco:32px;} } /* tablet */
     @media(min-width:1024px){ #quickLinks{--qlPer:5;--qlGap:.8rem;--qlIco:34px;} }/* desktop */
     @media(min-width:1440px){ #quickLinks{--qlPer:6;} }                           /* large desktop */
+    /* the arrows are a desktop mouse's affordance and nothing else's: a
+       pointer that hovers, on a screen wide enough to have the gutter they
+       stand in. Everything narrower slides the rail by hand. */
+    @media(min-width:1024px) and (hover:hover) and (pointer:fine){
+      .qlNav{display:flex;}
+      .qlNav.qlHide{display:none;}
+    }
     /* Ultrawide holds at six across and stops growing: the shell caps the band
        at --shellMax, so the rail stops with the thumbnails under it. */
 
@@ -1183,6 +1224,8 @@
     }
 
     @media(prefers-reduced-motion:reduce){
+      .qlNav{transition:none;}
+      .qlNav:active,.qlNav:hover{transform:none;}
       .qlItem{transition:none;}
       .qlItem:active{transform:none;}
       .qlBarFill{transition:none;}

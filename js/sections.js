@@ -5469,17 +5469,52 @@
   var fill = document.getElementById('qlBarFill');
   if(!rail || !bar || !fill) return;
 
+  // the two desktop arrows. Missing is not an error: the bar predates them
+  // and still works on its own.
+  var prev = document.getElementById('qlPrev');
+  var next = document.getElementById('qlNext');
+
   var queued = false;
 
   // fill width = share of the rail on screen, offset = how far along it is
   function paint(){
     queued = false;
     var total = rail.scrollWidth, seen = rail.clientWidth;
-    if(!total || total - seen <= 1){ bar.classList.add('qlHide'); return; }
+    if(!total || total - seen <= 1){
+      bar.classList.add('qlHide');
+      arrows(false, 0, 0);
+      return;
+    }
     bar.classList.remove('qlHide');
     fill.style.width = (seen / total * 100) + '%';
     fill.style.left  = (rail.scrollLeft / total * 100) + '%';
+    arrows(true, rail.scrollLeft, total - seen);
   }
+
+  /* Shown only while there is something to scroll, and each one greyed out
+     at its own end. The 1px slack is the browser's: a rail scrolled to the
+     end reports a fractional pixel short of it often enough that an exact
+     test leaves the arrow lit with nowhere to go. */
+  function arrows(can, at, max){
+    if(prev){
+      prev.classList.toggle('qlHide', !can);
+      prev.disabled = !can || at <= 1;
+    }
+    if(next){
+      next.classList.toggle('qlHide', !can);
+      next.disabled = !can || at >= max - 1;
+    }
+  }
+
+  /* One screenful per press, which is --qlPer tiles: the rail snaps to the
+     nearest tile afterwards, so the step lands on a tile edge without this
+     having to know how wide one is. */
+  window.qlNudge = function(dir){
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    var by = rail.clientWidth * (dir < 0 ? -1 : 1);
+    if(rail.scrollBy) rail.scrollBy({ left:by, behavior: still ? 'auto' : 'smooth' });
+    else rail.scrollLeft += by;
+  };
   function sync(){
     if(queued) return;
     queued = true;

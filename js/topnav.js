@@ -70,7 +70,8 @@
     if (typeof window.openFgSearch === 'function') window.openFgSearch();
   }
 
-  window.dzMenuOpen   = dzMenuOpen;
+  // dzMenuOpen is not published: the only ways in are the button and the
+  // toggle, and an exported opener nothing calls is a promise to keep.
   window.dzMenuClose  = dzMenuClose;
   window.dzMenuToggle = dzMenuToggle;
   window.dzOpenSearch = dzOpenSearch;

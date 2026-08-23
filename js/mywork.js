@@ -207,7 +207,6 @@ function hideCommentThumbnail(){
 
   // community page open and close
   function openCommunityHome(){
-    closeMenu();
     var page = document.getElementById('communityPage');
     page.classList.add('open');
     document.body.style.overflow = 'hidden';

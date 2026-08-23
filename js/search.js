@@ -381,7 +381,6 @@
 
 
   function openSubscription() {
-    closeMenu();
     var el = document.getElementById('subPage');
     if (!el) return;
     el.classList.add('open');

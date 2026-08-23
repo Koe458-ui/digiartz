@@ -158,7 +158,7 @@
     if(_cmi && _cmi.classList.contains('open')) return;
     var _frd=document.getElementById('frdPage');
     if(_frd && _frd.classList.contains('open')) return;
-    closeLB();closeFG();closeMenu();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
+    closeLB();closeFG();closeFilterPanel();closeAuthMod();closeCommunityPage();closeShowcasePicker();closeSettingsPage();closeSubscription();closePfEditPage();closeProfilePage();closePfUpload();cancelPfAvBCrop();
     // escape closes overlays
     cancelPfCrop();closeNotifPage();closeMyWorkPage();
     // The admin panel closes through the handle its module publishes;
@@ -174,8 +174,6 @@
   }});
 
   // navigation
-  function closeMenu(){}
-
   /* Which section is on screen, said in one place.
 
      It used to be said by lighting one of five elements, found by id, in the
@@ -291,7 +289,6 @@
   bnSetActive('bnHome');
 
   function ddOpenGallery(){
-    closeMenu();
     // reset to full gallery
     filterCat = 'all';
     var catR = document.querySelector('input[name="fltCat"][value="all"]');

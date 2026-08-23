@@ -4,6 +4,33 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v246 — what the rewrite left behind.
+
+       closeMenu() was an empty function called from four places. It closed a
+       menu the app has not had for a long time; the bottom bar that replaced
+       that menu is itself gone now, and the four calls were four lines that
+       did nothing.
+
+       .cmDot and .cmFriendAvatarFallback were the green online dot and the
+       broken-image glyph on the bot's standing row at the top of the friends
+       list. That row went with the bot in v243; these are the two rules that
+       only it ever used. The rest of the .cmFriend* set is still built by
+       js/mywork.js for the real people in that list and stays.
+
+       .cpPhoto and .fgQ predate all of this and are named nowhere in the
+       document or the scripts — .fgQ was the gallery's inline search field,
+       from before search became a page of its own. .fgQ shared a rule with
+       .cpBarInput, which is live, so only its half of the selector went.
+
+       Everything else that looked orphaned is not: cmMemRole--, dzWlSt--,
+       subCard--, ico- and eight more prefixes are composed at runtime from a
+       value, and dzRouteGo and dzRoutePath are called through window. Checked
+       rather than assumed, because a class built by concatenation looks
+       exactly like a dead one to a search.
+
+       Changed: css/community.css, css/auth.css, css/panels.css, js/pfedit.js,
+       js/mywork.js, js/search.js, js/topnav.js.
+
    v245 — the wordmark, at a wordmark's size.
 
        It has been set twice and wrong both times. At 1.55rem the bar was as
@@ -4564,7 +4591,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v245';
+const CACHE_VERSION = 'v246';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4618,13 +4645,13 @@ const SHELL_URLS = [
   '/css/base.css?v=21',
   '/css/hero.css?v=105',
   '/css/viewer.css?v=39',
-  '/css/community.css?v=21',
+  '/css/community.css?v=22',
   '/css/connect.css?v=7',
   '/css/ranking.css?v=6',
   '/css/profile.css?v=16',
   '/css/admin.css?v=4',
-  '/css/auth.css?v=4',
-  '/css/panels.css?v=17',
+  '/css/auth.css?v=5',
+  '/css/panels.css?v=18',
   '/css/upload.css?v=16',
   '/css/widgets.css?v=13',
   '/css/overrides.css?v=39',
@@ -4658,11 +4685,11 @@ const SHELL_URLS = [
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=17',
-  '/js/mywork.js?v=24',
+  '/js/pfedit.js?v=18',
+  '/js/mywork.js?v=25',
   '/js/startup.js?v=7',
   '/js/tagrail.js?v=3',
-  '/js/search.js?v=13',
+  '/js/search.js?v=14',
   '/js/feed.js?v=3',
   '/js/fgshow.js?v=4',
   '/js/effects.js?v=9',
@@ -4673,7 +4700,7 @@ const SHELL_URLS = [
   '/js/engagement.js?v=9',
   '/js/sections.js?v=124',
   '/js/routes.js?v=2',
-  '/js/topnav.js?v=4',
+  '/js/topnav.js?v=5',
   '/js/navprogress.js?v=6'
 ];
 

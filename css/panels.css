@@ -42,8 +42,7 @@
 #fgFltPanel{background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%)!important;border-color:var(--bdr)!important;}
 
 /* inputs */
-.fgQ,.cpBarInput{background:var(--sur2)!important;color:var(--tx);border-color:var(--bdr)!important;}
-#fg .fgQ{background:var(--sur2)!important;color:var(--tx)!important;border-color:var(--bdr)!important;}
+.cpBarInput{background:var(--sur2)!important;color:var(--tx);border-color:var(--bdr)!important;}
 
 /* hero layer */
 #hero,#hero *{

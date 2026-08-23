@@ -588,7 +588,6 @@
     .cmCardMeta{flex:1;min-width:0;}
     .cmCardName{font-family:var(--fb);font-size:.98rem;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
     .cmCard p{font-family:var(--fb);font-size:.8rem;color:var(--txd);line-height:1.5;margin-top:.25rem;}
-    .cmDot{width:6px;height:6px;border-radius:50%;background:#3ecf8e;flex-shrink:0;box-shadow:0 0 6px #3ecf8e;}
 
 
 
@@ -777,7 +776,6 @@
     #communityPage .cmCard .cmCardName,#cmChatPanel .cmCard .cmCardName{color:var(--cmTx);}
     #communityPage .cmCard p,#cmChatPanel .cmCard p{color:var(--cmTxd);}
     #communityPage .cmBadge,#cmChatPanel .cmBadge{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
-    #communityPage .cmDot,#cmChatPanel .cmDot{background:var(--cmOnline);box-shadow:0 0 6px var(--cmOnline);}
 
     #communityPage .cmFooterCta,#cmChatPanel .cmFooterCta{background:var(--cmSur2);border:1px solid var(--cmBdr);}
     #communityPage .cmFooterCta strong,#cmChatPanel .cmFooterCta strong{color:var(--cmTx);}

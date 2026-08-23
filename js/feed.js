@@ -135,106 +135,9 @@
     }
   }
 
-  // The banner over the scored boards: whoever holds first place on the one
-  // being read. It is the top artwork promoted out of the grid rather than
-  // repeated above it — the piece that won the board is the picture on it,
-  // and showing it twice, one directly above the other, reads as a bug.
-  // Two cells wide and one tall, and since the narrowest grid is two across
-  // it is a full row on a phone and half a row on a desktop.
-  var FEATURED_BOARDS = { trending:1, weekly:1, monthly:1 };
-
-  // The banner's own picture width, at each of the grid's column counts and
-  // scaled for the screen's pixel ratio the way dzGridSizes does. The picture
-  // is the whole card now rather than the right 60% of it, so these are two
-  // grid cells and the gap between them: a full row on a phone, two of three
-  // on a tablet, two of four on a desktop.
-  function fbSizes(){
-    var s = typeof dzDprScale === 'function' ? dzDprScale() : 1;
-    var f = function(vw){ return +(vw * s).toFixed(2); };
-    return '(min-width:1280px) ' + f(40) + 'vw, (min-width:700px) ' + f(56) + 'vw, ' + f(94) + 'vw';
-  }
-
-  // the board's own word, for the bright chip on the banner
-  var FB_WORD = { trending:'Trending', weekly:'Weekly', monthly:'Monthly' };
-
-  /* The banner is the gallery showcase's card — the same 2:1 picture with the
-     same scrim, chips, type and button over it — so it is built by the same
-     function, in js/fgshow.js, rather than drawn a second time here.
-
-     It carries no likes and no views. That is the one difference, and it is
-     deliberate: this card sits directly above the board it leads, and that
-     board is a ranking of exactly those numbers. Printing the top row's two
-     counts again at four times the size says nothing the row underneath it
-     does not already say. */
-  function buildFeatured(a){
-    if(typeof window.dzFeatureCard !== 'function') return null;
-    var box = window.dzFeatureCard({
-      art:   a,
-      extra: 'fbBox',
-      uid:   String(a.user_id || ''),
-      kind:  'Featured Artist',
-      ico:   'star',
-      board: feedTab,
-      word:  FB_WORD[feedTab] || '',
-      eager: true,
-      sizes: fbSizes()
-    });
-    if(!box) return null;
-
-    /* The one thing the banner keeps that the showcase card has no use for:
-       the whole card opens the artwork, not only its button. The board under
-       it is a grid of thumbnails that every one of them opens on a tap, and
-       this is the first of them promoted out of that grid — a hand reaching
-       for the biggest picture on the page and getting nothing would be the
-       banner taking a tap target away by being promoted.
-
-       The button keeps its own handler and is skipped here, or one press
-       would open the viewer twice. It is also what a keyboard reaches, so
-       this stays a pointer's shortcut rather than a second tab stop over
-       the same action. */
-    box.style.cursor = 'pointer';
-    box.addEventListener('click', function(e){
-      var t = e.target;
-      if(t && t.closest && t.closest('.fgsGo')) return;
-      if(typeof openLB !== 'function') return;
-      openLB(a.image_url || '', a.name || 'Untitled',
-             catList(a.category)[0] || 'others', a.description || '', a.id);
-    });
-
-    var p = dzArtistCache[a.user_id];
-    if(p !== undefined) paintFeatured(box, p);
-    return box;
-  }
-
-  // Who made it — the same byline the showcase card carries, and the same
-  // wait for it: the row is in the card from the start, so nothing below it
-  // moves when the profile lands.
-  function paintFeatured(box, p){
-    var name = (p && (p.display_name || p.username)) || 'Artist';
-    var by = box.querySelector('.fgsBy');
-    if(by) by.textContent = 'by ' + name;
-    box.classList.add('fbReady');
-  }
-
-  /* A card's crop is cut to the card's shape, and the banner changes shape
-     with the window — two cells of a two-column grid on a phone is a wider
-     box than two cells of a four-column one. The showcase re-cuts its own on
-     resize; this is the banner's. */
-  (function(){
-    var t = null;
-    window.addEventListener('resize', function(){
-      clearTimeout(t);
-      t = setTimeout(function(){
-        if(typeof window.dzFeatureFrame !== 'function') return;
-        var img = document.querySelector('#awGrid .fbBox .fgsMedia img');
-        if(img) window.dzFeatureFrame(img);
-      }, 140);
-    }, { passive:true });
-  })();
-
-  // Fill in whatever the batch just appended is still missing. Both the
-  // artist cards and the log lines are keyed on the same uid, so one fetch
-  // paints whichever of them the batch put on screen.
+  // Fill in whatever the batch just appended is still missing. The artist
+  // cards and the log lines are keyed on the same uid, so one fetch paints
+  // whichever of them the batch put on screen.
   function paintPeopleBatch(uids){
     feedFetchArtists(uids, function(){
       var grid = document.getElementById('awGrid');
@@ -243,8 +146,6 @@
         var sel = (window.CSS && CSS.escape) ? CSS.escape(uid) : String(uid).replace(/["\\]/g, '\\$&');
         var card = grid.querySelector('.atCard[data-uid="' + sel + '"]');
         if(card && !card.classList.contains('atReady')) paintArtistCard(card, dzArtistCache[uid]);
-        var box = grid.querySelector('.fbBox[data-uid="' + sel + '"]:not(.fbReady)');
-        if(box) paintFeatured(box, dzArtistCache[uid]);
         var lines = grid.querySelectorAll('.lgRow[data-uid="' + sel + '"]:not(.lgReady)');
         for(var i = 0; i < lines.length; i++) paintLogRow(lines[i], dzArtistCache[uid]);
       });
@@ -438,19 +339,12 @@
     }
     grid.classList.toggle('awGrid--logs', feedTab === 'logs');
 
-    // first place comes out of the list and goes up as the banner
-    var featured = null;
-    if(FEATURED_BOARDS[feedTab] && awRList.length){
-      featured = awRList[0];
-      awRList = awRList.slice(1);
-    }
-
     var keep = reset ? 0 : awRShown;
     awRShown = 0;
     if(awSent){ awSent.destroy(); awSent = null; }
     grid.innerHTML = '';
 
-    if(!awRList.length && !featured){
+    if(!awRList.length){
       if(empty){
         empty.textContent = feedEmptyText();
         empty.style.display = 'block';
@@ -458,19 +352,6 @@
       return;
     }
     if(empty) empty.style.display = 'none';
-
-    if(featured){
-      // built by js/fgshow.js; nothing to promote if that has not loaded
-      var fbEl = buildFeatured(featured);
-      if(fbEl){
-        grid.appendChild(fbEl);
-        if(featured.user_id && dzArtistCache[featured.user_id] === undefined){
-          paintPeopleBatch([featured.user_id]);
-        }
-      } else {
-        awRList.unshift(featured);
-      }
-    }
 
     awAppendBatch(Math.max(gridInitialBatch(), keep));
     if(awRShown < awRList.length){

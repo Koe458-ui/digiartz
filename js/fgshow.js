@@ -175,16 +175,13 @@
     for(var i = 0; i < imgs.length; i++) fgsFrame(imgs[i]);
   }
 
-  /* One card, built in one place.
+  /* One card, and the options fgsCard fills in for it.
 
-     The gallery's showcase is not the only thing that wants it: the home
-     page's featured artist banner is the same card, over the same 2:1
-     picture, on the boards the home page scores — so it is built here too
-     rather than drawn a second time in js/feed.js and left to drift from
-     this one a fix at a time. What the caller chooses is the chip it wears,
-     which board colours it takes, and whether it carries the two numbers;
-     everything else — the scrim, the type, the crop, the button and what
-     the button opens — is the same card in both places.
+     It was built for two callers — the showcase here and the home page's
+     featured artist banner, which was the same card over the same 2:1
+     picture. The banner is gone, so this has one caller again; the options
+     are kept because they are what the six slots differ by, which chip a
+     card wears and which board's colour it takes.
 
        art    the artwork behind it
        extra  a class of the caller's own, for where the card is placed
@@ -662,12 +659,3 @@
   })();
 
   window.fgShowRender = fgShowRender;
-  /* The home page's featured banner is this card too — same picture, same
-     scrim, same type — so js/feed.js builds it through here rather than
-     keeping a second copy of the markup. */
-  window.dzFeatureCard = fgsBuild;
-  /* And the crop it does: a 2:1 card can only show a band of the square its
-     uploader framed, and this is what puts that band over the middle of it.
-     Exported for the same reason — one crop, not two that agree until one
-     of them is fixed. */
-  window.dzFeatureFrame = fgsFrame;

@@ -1435,34 +1435,6 @@
       .awGrid.awSwap{animation:none;}
     }
 
-    /* Featured artist — first place on a scored board, two cells wide and
-       one tall. The narrowest grid is two across, so it is a full row on a
-       phone and half a row on a desktop, and never breaks the grid.
-
-       The card itself is the gallery showcase's — .fgsCard, built by the same
-       function in js/fgshow.js — so everything it looks like is up there with
-       the showcase rather than repeated down here in a second set of rules
-       that used to say almost the same thing and drifted whenever one of them
-       was touched. What is left is the two things that genuinely differ: it
-       is a grid cell rather than a slide on a rail, and it carries no likes
-       and no views. */
-    .fbBox{
-      /* a showcase card takes its width from the rail's column count. This
-         one takes it from the grid it sits in, so those widths are dropped
-         rather than fought with. */
-      width:auto;flex:0 0 auto;scroll-snap-align:none;
-      grid-column:span 2;
-    }
-    /* Without the two numbers the button takes the bottom of the card they
-       used to hold down, so the words above it sit where they sit on a
-       showcase card instead of floating in the middle of the picture. */
-    .fbBox .fgsGo{margin-top:auto;}
-    /* the boards this banner runs on. Weekly and monthly are already spoken
-       for by the showcase, in the same two colours; trending is the home
-       page's own, and takes the orange its board tab wears. */
-    .fgsCard[data-fgs="trending"]{--fgsC:#F97316;}
-    .fgsCard[data-fgs="trending"] .fgsKind svg{color:#F97316;}
-
     /* logs — one long line per upload, not a thumbnail grid.
        minmax(0,1fr), never a bare 1fr: a bare one is minmax(auto,1fr), whose
        auto floor is the row's own content width, and one long title then

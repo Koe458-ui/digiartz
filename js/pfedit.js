@@ -187,10 +187,29 @@
      used to watch five elements' class attributes to find that out. One
      attribute on the root is the same fact stated once, and it is stated even
      for a section with no control of its own in the bar. */
+  /* Which word on the bar is lit.
+
+     Three of the four words are menus over more than one destination, and a
+     destination inside a menu has no word of its own — so the word it lives
+     under is lit instead. Without this the bar goes blank the moment you are
+     somewhere reached through a menu: on Friends, on Analytics, on your
+     payouts, the bar named nowhere at all and the member had no idea which of
+     four words would take them back.
+
+     The table is children only. A word that IS a destination — Communities is
+     bnCommunity, the portfolio is bnProfile — lights on its own id and needs
+     no entry here. */
+  var BN_PARENT = {
+    bnFriends:  'bnCommunity',   // Community → Friends
+    bnAnalytics:'bnProfile',     // Profile   → Analytics
+    bnPayouts:  'bnProfile'      // Profile   → Payouts
+  };
   function bnSetActive(id){
+    var parent = BN_PARENT[id] || null;
     var nodes = document.querySelectorAll('[data-bn]');
     for(var i=0;i<nodes.length;i++){
-      nodes[i].classList.toggle('bnActive', nodes[i].getAttribute('data-bn') === id);
+      var v = nodes[i].getAttribute('data-bn');
+      nodes[i].classList.toggle('bnActive', v === id || (parent && v === parent));
     }
     try{ document.documentElement.setAttribute('data-section', id || ''); }catch(e){}
   }

@@ -40,8 +40,16 @@
        thing you are admitted to, and a lone card on a second row announced it
        to everyone who saw the page.
 
+       Two things the verification pass turned up. The bar went blank whenever
+       a member was somewhere reached through a menu — on Friends, on their
+       analytics, on their payouts — because a destination inside a menu has no
+       word of its own to light. The word it lives under is lit instead, so
+       four words are always exactly one lit. And anGo was left with no callers
+       once the Settings rows went; it is gone.
+
        Changed: index.html, css/base.css, css/widgets.css, js/hubs.js (new),
-       js/topnav.js, js/auth.js, js/app-core.js, functions/api/store.js, sw.js.
+       js/topnav.js, js/auth.js, js/app-core.js, js/pfedit.js, js/analytics.js,
+       functions/api/store.js, sw.js.
 
    v249 — Communities and Friends are two pages, and Zeo is a friend.
 
@@ -4880,7 +4888,7 @@ const SHELL_URLS = [
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=20',
+  '/js/pfedit.js?v=21',
   '/js/mywork.js?v=27',
   '/js/startup.js?v=7',
   '/js/tagrail.js?v=3',
@@ -4890,8 +4898,8 @@ const SHELL_URLS = [
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/theme.js?v=6',
-  '/js/analytics.js?v=9',
-  '/js/hubs.js?v=1',
+  '/js/analytics.js?v=10',
+  '/js/hubs.js?v=2',
   '/js/engagement.js?v=9',
   '/js/sections.js?v=128',
   '/js/routes.js?v=3',

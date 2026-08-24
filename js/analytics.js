@@ -2512,18 +2512,9 @@
   window.openAnalyticsPage = openAnalyticsPage;
   window.closeAnalyticsPage = closeAnalyticsPage;
 
-  // What the four Settings rows call, instead of setGo.
-  //
-  // setGo watches the page it opened and slides Settings back the moment that
-  // page closes — right for Theme or Albums, wrong here twice over. Closing
-  // Analytics should put you back where you were, on your profile, not on the
-  // menu you passed through. And tapping a row to open an artwork closes
-  // Analytics on the way, so the watcher fired and dropped the Settings menu
-  // over the artwork that was opening underneath it — which is why nothing
-  // seemed to happen. closeSettingsPage() with no argument drops the pending
-  // return, so neither can happen.
-  window.anGo = function (scope) {
-    if (typeof closeSettingsPage === 'function') closeSettingsPage();
-    openAnalyticsPage(scope);
-  };
+  /* anGo was here: what the four Settings rows called instead of setGo,
+     closing the menu without arming its return-watcher. There are no Settings
+     rows any more — the four dashboards are cards on the Analytics board
+     (js/hubs.js), which opens them directly and stays up behind them — so the
+     problem it solved no longer exists and nothing called it. */
 })();

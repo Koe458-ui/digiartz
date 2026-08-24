@@ -78,7 +78,7 @@
      Neither has a url. A dashboard and a balance are one member's own page,
      the same reasoning the upload sheet and the cart are held to, so the
      address is asked to stay true rather than to name this. */
-  function openPage(id, before) {
+  function openPage(id, before, bn) {
     if (!window.currentUser) {
       if (typeof showToast === 'function') showToast('Sign in to see this');
       if (typeof openAuthMod === 'function') openAuthMod();
@@ -86,6 +86,11 @@
     }
     if (typeof bnCloseAllSections === 'function') bnCloseAllSections();
     var pg = el(id); if (!pg) return;
+    /* Light Profile on the bar. These are reached through its menu and have no
+       word of their own, so js/pfedit.js lights the word they live under —
+       without it the bar names nowhere while a member is looking at their own
+       numbers. Set after the sweep, which clears it. */
+    if (bn && typeof bnSetActive === 'function') bnSetActive(bn);
     if (before) before();
     pg.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -143,7 +148,7 @@
         };
         return c;
       }));
-    });
+    }, 'bnAnalytics');
   }
   function anHubClose() { closePage('anHubPage'); }
 
@@ -159,7 +164,7 @@
     openPage('payHubPage', function () {
       // Ask the store bundle to load and fill; it is a no-op once filled.
       if (typeof window.dzExtras === 'function') { try { window.dzExtras(); } catch (e) {} }
-    });
+    }, 'bnPayouts');
   }
   function payHubClose() { closePage('payHubPage'); }
 

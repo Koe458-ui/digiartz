@@ -758,7 +758,9 @@
     // on its wrapper, because that is what a word and its panel have in
     // common.
     { id:'dzExWrap',        close:['dzExClose'] },
+    { id:'dzCmWrap',        close:['dzCmClose'] },
     { id:'dzUpWrap',        close:['dzUpClose'] },
+    { id:'dzAcWrap',        close:['dzAcClose'] },
     // small things over a section. Each of these four is a sheet or a
     // backdrop written at the top of the document rather than inside the
     // panel it belongs to, which is why they need shutting on their own: the
@@ -786,7 +788,14 @@
     // The cart. It was the gallery's sixth chip and is a page of its own now,
     // reached from the icon beside the bell.
     { id:'cartPage',        close:['closeCartPage'],        lock:1 },
+    /* The two boards behind Profile, and the pages they lead to. Each board
+       is listed BEFORE the panels it opens, so a sweep shuts the dashboard
+       and then the board it came from rather than the other way round — the
+       table is read in order, and a board closing first would leave its
+       dashboard standing on an empty page. */
     { id:'anPage',          close:['closeAnalyticsPage'],   lock:1 },
+    { id:'anHubPage',       close:['anHubClose'],           lock:1 },
+    { id:'payHubPage',      close:['payHubClose'],          lock:1 },
     { id:'xpPage',          close:['closeXpPage'],          lock:1 },
     { id:'themePage',       close:['closeThemePage'] },
     { id:'rankPage',        close:['closeRankPage'],        lock:1 },

@@ -4,6 +4,45 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v250 — Profile is three destinations, and the bar is four menus.
+
+       ANALYTICS AND PAYOUTS WERE SETTINGS. Four dashboards filed under a gear
+       beside Theme and Notifications, and a member's own money injected below
+       Subscription — so a creator's numbers and a creator's balance were five
+       taps from the bar, in a menu you go to when something needs configuring.
+       Neither of them is a setting.
+
+       Profile carries them now. Signed in, the word opens a menu of three:
+       Portfolio, Analytics, Payouts. Signed out it is the word Sign in and a
+       link to the sheet, with no menu at all — js/auth.js arms the wrapper and
+       js/topnav.js will not open an unarmed one, so the two states cannot
+       disagree. Both groups are out of the Settings menu; Subscription stays,
+       because a plan is what YOU pay rather than what you are paid.
+
+       EACH OPENS ON A BOARD OF CARDS. One card per thing, in its own colour,
+       saying what it is and what it will show before a tap is spent finding
+       out — four analytics dashboards, four money pages. Picking one opens the
+       panel that already existed; nothing about a dashboard or a wallet
+       changed, only the way in. js/hubs.js draws both boards from one recipe.
+
+       The payouts board is EMPTY IN INDEX.HTML and filled by /api/store, which
+       answers no request without a session. That rule is why those rows were
+       injected in the first place, and moving them to a page they can be seen
+       on must not quietly turn it off.
+
+       COMMUNITY IS ONE WORD AGAIN, with Communities and Friends under it. They
+       were briefly two words on the bar; four words and four menus reads
+       better than five words where one pair behaves differently from its
+       neighbours. The pages themselves are unchanged.
+
+       The Collab Hub stays a row in Settings rather than a fifth card. The
+       board is what every member's account holds; the partner programme is a
+       thing you are admitted to, and a lone card on a second row announced it
+       to everyone who saw the page.
+
+       Changed: index.html, css/base.css, css/widgets.css, js/hubs.js (new),
+       js/topnav.js, js/auth.js, js/app-core.js, functions/api/store.js, sw.js.
+
    v249 — Communities and Friends are two pages, and Zeo is a friend.
 
        COMMUNITY WAS TWO THINGS UNDER ONE NAME. The page called Community held
@@ -4744,7 +4783,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v249';
+const CACHE_VERSION = 'v250';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4795,7 +4834,7 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=28',
+  '/css/base.css?v=29',
   '/css/hero.css?v=113',
   '/css/viewer.css?v=39',
   '/css/community.css?v=26',
@@ -4806,7 +4845,7 @@ const SHELL_URLS = [
   '/css/auth.css?v=5',
   '/css/panels.css?v=19',
   '/css/upload.css?v=17',
-  '/css/widgets.css?v=14',
+  '/css/widgets.css?v=15',
   '/css/overrides.css?v=40',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
@@ -4831,11 +4870,11 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=36',
+  '/js/app-core.js?v=38',
   '/js/protect.js?v=3',
   '/js/gallery.js?v=102',
   '/js/fghead.js?v=2',
-  '/js/auth.js?v=21',
+  '/js/auth.js?v=22',
   '/js/profile.js?v=17',
   '/js/albums.js?v=19',
   '/js/drafts.js?v=8',
@@ -4852,10 +4891,11 @@ const SHELL_URLS = [
   '/js/cookie.js?v=1',
   '/js/theme.js?v=6',
   '/js/analytics.js?v=9',
+  '/js/hubs.js?v=1',
   '/js/engagement.js?v=9',
   '/js/sections.js?v=128',
   '/js/routes.js?v=3',
-  '/js/topnav.js?v=7',
+  '/js/topnav.js?v=9',
   '/js/navprogress.js?v=6'
 ];
 

@@ -246,7 +246,7 @@
     }, true);
   })();
   </script>
-  <link rel="stylesheet" href="/css/base.css?v=28">
+  <link rel="stylesheet" href="/css/base.css?v=29">
   <link rel="stylesheet" href="/css/hero.css?v=113">
   <link rel="stylesheet" href="/css/viewer.css?v=39">
   <link rel="stylesheet" href="/css/community.css?v=26">
@@ -257,7 +257,7 @@
   <link rel="stylesheet" href="/css/auth.css?v=5">
   <link rel="stylesheet" href="/css/panels.css?v=19">
   <link rel="stylesheet" href="/css/upload.css?v=17">
-  <link rel="stylesheet" href="/css/widgets.css?v=14">
+  <link rel="stylesheet" href="/css/widgets.css?v=15">
   <link rel="stylesheet" href="/css/overrides.css?v=40">
   <link rel="stylesheet" href="/css/select.css?v=4">
   <link rel="stylesheet" href="/css/analytics.css?v=9">
@@ -342,13 +342,30 @@
       </div>
      </div>
     </div>
-    <!-- Two words where there was one. Communities and Friends were a pair of
-         chips inside one page called Community, so a member who wanted their
-         friends opened the communities grid first and then found a switch
-         above it. They are two pages now and the bar names both — no menu for
-         a list of two, which would be a click to reach a click. -->
-    <a class="dzLink" data-bn="bnCommunity" href="/community">Communities</a>
-    <button class="dzLink" type="button" data-bn="bnFriends" onclick="bnGoFriends()">Friends</button>
+    <!-- Communities and Friends were a pair of chips inside one page called
+         Community, so a member who wanted their friends opened the communities
+         grid first and then found a switch above it. They are two pages now,
+         and the bar reaches them the way it reaches everything else: one word
+         with a menu under it. Four words on the bar, four menus — a row where
+         one destination behaves differently from its neighbours is a row you
+         have to learn rather than read. -->
+    <div class="dzUpWrap" id="dzCmWrap">
+     <button class="dzLink dzLinkDd" type="button" id="dzCmBtn" data-bn="bnCommunity"
+             aria-haspopup="true" aria-expanded="false" aria-controls="dzCmDd"
+             onclick="dzCmToggle(event)">Community<svg class="dzLinkChev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+     <div class="dzUpDd" id="dzCmDd" role="menu" aria-labelledby="dzCmBtn">
+      <div class="dzUpDdInner">
+      <a class="dzUpItem" href="/community" role="menuitem" style="--upA:var(--upcTeal)" onclick="dzCmPick('communities', event)">
+       <span class="dzUpIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.5"/><path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/><path d="M16 3.6a3.5 3.5 0 0 1 0 6.8"/></svg></span>
+       <span class="dzUpTxt"><span class="dzUpNm">Communities</span><span class="dzUpDesc">Topic rooms to join, or one of your own</span></span>
+      </a>
+      <button class="dzUpItem" type="button" role="menuitem" style="--upA:var(--upcPink)" onclick="dzCmPick('friends', event)">
+       <span class="dzUpIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg></span>
+       <span class="dzUpTxt"><span class="dzUpNm">Friends</span><span class="dzUpDesc">Your people, your messages, and Zeo</span></span>
+      </button>
+      </div>
+     </div>
+    </div>
     <!-- Upload is five destinations rather than one. An artwork, a product
          listing, a blog post, a resource and a job posting are five forms with
          five sets of rules, so the bar names each of them and lands the member
@@ -389,8 +406,37 @@
      </div>
     </div>
     <!-- One control, two words: Sign in until there is an account behind it,
-         Profile after. js/auth.js writes the word on both copies. -->
-    <a class="dzLink" id="dzTopAccount" data-bn="bnProfile" href="/login" onclick="bnGoProfile(event); return false;">Sign in</a>
+         Profile after. js/auth.js writes the word on both copies — into the
+         span, not the button, because the chevron beside it is markup and
+         textContent on the button would delete it.
+
+         Signed in it is three destinations rather than one. A portfolio, a set
+         of dashboards and a balance are three different questions, and the
+         second and third used to be rows buried in the Settings menu — five
+         taps from the bar to your own payout methods. js/auth.js puts
+         .dzHasMenu on the wrapper once there is an account; without it this is
+         a plain link to the sign-in sheet and there is nothing to open. -->
+    <div class="dzUpWrap dzAcWrap" id="dzAcWrap">
+     <a class="dzLink dzLinkDd" id="dzTopAccount" data-bn="bnProfile" href="/login"
+        aria-haspopup="true" aria-expanded="false" aria-controls="dzAcDd"
+        onclick="dzAcClick(event)"><span id="dzTopAccountTxt">Sign in</span><svg class="dzLinkChev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></a>
+     <div class="dzUpDd" id="dzAcDd" role="menu" aria-labelledby="dzTopAccount">
+      <div class="dzUpDdInner">
+      <button class="dzUpItem" type="button" role="menuitem" style="--upA:var(--upcViolet)" onclick="dzAcPick('portfolio')">
+       <span class="dzUpIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.2a7.5 7.5 0 0 1 15 0"/></svg></span>
+       <span class="dzUpTxt"><span class="dzUpNm">Portfolio</span><span class="dzUpDesc">Your profile, as everyone else sees it</span></span>
+      </button>
+      <button class="dzUpItem" type="button" role="menuitem" style="--upA:var(--upcSky)" onclick="dzAcPick('analytics')">
+       <span class="dzUpIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="4" y="12" width="4" height="7" rx="1"/><rect x="10" y="8" width="4" height="11" rx="1"/><rect x="16" y="4" width="4" height="15" rx="1"/></svg></span>
+       <span class="dzUpTxt"><span class="dzUpNm">Analytics</span><span class="dzUpDesc">How your work is doing, section by section</span></span>
+      </button>
+      <button class="dzUpItem" type="button" role="menuitem" style="--upA:var(--upcGreen)" onclick="dzAcPick('payouts')">
+       <span class="dzUpIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M2.5 10.5h19"/><path d="M6.5 15h4"/></svg></span>
+       <span class="dzUpTxt"><span class="dzUpNm">Payouts</span><span class="dzUpDesc">Everything on your account to do with money</span></span>
+      </button>
+      </div>
+     </div>
+    </div>
    </nav>
 
    <div class="dzActions">
@@ -451,8 +497,19 @@
       </div>
      </div>
     </div>
-    <a class="dzMenuItem" data-bn="bnCommunity" href="/community" onclick="dzMenuClose()">Communities</a>
-    <button class="dzMenuItem" type="button" data-bn="bnFriends" onclick="dzMenuClose(); bnGoFriends();">Friends</button>
+    <!-- The same two, under one row. -->
+    <div class="dzMenuGrp" id="dzMenuCmGrp">
+     <button class="dzMenuItem dzMenuTog" type="button" id="dzMenuCmBtn" data-bn="bnCommunity"
+             aria-expanded="false" aria-controls="dzMenuCmSub" onclick="dzMenuSubToggle('cm')">
+      <span>Community</span><svg class="dzMenuChev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+     </button>
+     <div class="dzMenuSub" id="dzMenuCmSub">
+      <div class="dzMenuSubInner">
+      <a class="dzMenuSubItem" href="/community" style="--upA:var(--upcTeal)" onclick="dzCmPick('communities', event)"><span class="dzUpIco dzUpIcoSm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.5"/><path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/><path d="M16 3.6a3.5 3.5 0 0 1 0 6.8"/></svg></span><span>Communities</span></a>
+      <button class="dzMenuSubItem" type="button" style="--upA:var(--upcPink)" onclick="dzCmPick('friends', event)"><span class="dzUpIco dzUpIcoSm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg></span><span>Friends</span></button>
+      </div>
+     </div>
+    </div>
     <!-- Upload on a phone: one row that opens into the same five, rather
          than five rows pushing the account link off the drawer. The sub-list
          rolls open the way the drawer itself does — a grid track from 0fr to
@@ -472,7 +529,21 @@
       </div>
      </div>
     </div>
-    <a class="dzMenuItem" id="dzMenuAccount" data-bn="bnProfile" href="/login" onclick="dzMenuClose(); bnGoProfile(event); return false;">Login</a>
+    <!-- The same three, and the same rule: a chevron and a sub-list once
+         there is an account, a plain way to the sign-in sheet before that. -->
+    <div class="dzMenuGrp dzAcGrp" id="dzMenuAcGrp">
+     <a class="dzMenuItem dzMenuTog" id="dzMenuAccount" data-bn="bnProfile" href="/login"
+        aria-expanded="false" aria-controls="dzMenuAcSub" onclick="return dzAcMenuClick(event);">
+      <span id="dzMenuAccountTxt">Login</span><svg class="dzMenuChev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+     </a>
+     <div class="dzMenuSub" id="dzMenuAcSub">
+      <div class="dzMenuSubInner">
+      <button class="dzMenuSubItem" type="button" style="--upA:var(--upcViolet)" onclick="dzAcPick('portfolio')"><span class="dzUpIco dzUpIcoSm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.2a7.5 7.5 0 0 1 15 0"/></svg></span><span>Portfolio</span></button>
+      <button class="dzMenuSubItem" type="button" style="--upA:var(--upcSky)" onclick="dzAcPick('analytics')"><span class="dzUpIco dzUpIcoSm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="4" y="12" width="4" height="7" rx="1"/><rect x="10" y="8" width="4" height="11" rx="1"/><rect x="16" y="4" width="4" height="15" rx="1"/></svg></span><span>Analytics</span></button>
+      <button class="dzMenuSubItem" type="button" style="--upA:var(--upcGreen)" onclick="dzAcPick('payouts')"><span class="dzUpIco dzUpIcoSm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M2.5 10.5h19"/><path d="M6.5 15h4"/></svg></span><span>Payouts</span></button>
+      </div>
+     </div>
+    </div>
    </div>
   </nav>
 
@@ -2636,21 +2707,30 @@
            puts you back on the menu when that page closes. -->
       <div class="setList">
 
-        <section class="setGrp" aria-labelledby="setGrpPay">
-          <h3 class="setGrpHd" id="setGrpPay">
-            <span class="setGrpIcon" aria-hidden="true">💳</span>
-            <span class="setGrpTxt">Payments</span>
+        <!-- Payments and Analytics were two groups here. Both are pages off the
+             bar now (Profile → Payouts, Profile → Analytics), because a
+             creator's money and a creator's numbers are not settings — filing
+             them beside Theme and Notifications put your own payout methods
+             five taps from the bar.
+
+             Subscription stays: a plan is a setting, it is what YOU pay rather
+             than what you are paid, and it is the one row of that group a
+             signed-out visitor could always see. -->
+        <section class="setGrp" aria-labelledby="setGrpPlan">
+          <h3 class="setGrpHd" id="setGrpPlan">
+            <span class="setGrpIcon" aria-hidden="true">💎</span>
+            <span class="setGrpTxt">Plan</span>
           </h3>
           <div class="setGrpItems">
             <button class="pfMenuItem" onclick="setGo(openSubscription,'subPage')"><span class="pfMenuTxt">Subscription</span></button>
-            <!-- Three more items belong here and are not written here. They name
-                 what a member's account holds and how it is paid out, and this
-                 file is a static asset that anyone can read. /api/store injects
-                 them, and it answers no request without a session — so a
-                 signed-out visitor's page source carries neither the items nor
-                 the pages they open. The gate is display:contents, so what it
-                 injects lays out as rows of this group rather than one block
-                 inside it. -->
+            <!-- One more row belongs here for some members and is not written
+                 here. The partner programme is a thing you are admitted to,
+                 and naming it in a static asset anyone can read tells every
+                 visitor it exists. /api/store fills this, and it answers no
+                 request without a session — so a signed-out visitor's page
+                 source carries neither the row nor the page it opens. The gate
+                 is display:contents, so what it injects lays out as a row of
+                 this group rather than one block inside it. -->
             <div id="setListGate"></div>
           </div>
         </section>
@@ -2677,24 +2757,6 @@
             <button class="pfMenuItem" onclick="setGo(openLikesPage,'bmPage')"><span class="pfMenuTxt">Likes</span> <span class="pfMenuCount" id="pfMenuLikeCount"></span></button>
             <button class="pfMenuItem" onclick="setGo(openBookmarksPage,'bmPage')"><span class="pfMenuTxt">Bookmarks</span> <span class="pfMenuCount" id="pfMenuBmCount"></span></button>
             <button class="pfMenuItem" onclick="setGo(openFriendsPage,'frdPage')"><span class="pfMenuTxt">Friends</span> <span class="pfMenuCount" id="pfMenuFrdCount"></span></button>
-          </div>
-        </section>
-
-        <!-- Four dashboards, one page. Each row opens the same panel with a
-             different scope, and the order here is the order they are listed
-             everywhere else: artwork, marketplace, blog, resources. The scope
-             tabs at the top of the page switch between them without coming
-             back out here. -->
-        <section class="setGrp" aria-labelledby="setGrpAn">
-          <h3 class="setGrpHd" id="setGrpAn">
-            <span class="setGrpIcon" aria-hidden="true">📈</span>
-            <span class="setGrpTxt">Analytics</span>
-          </h3>
-          <div class="setGrpItems">
-            <button class="pfMenuItem" onclick="anGo('artwork')"><span class="pfMenuTxt">Artwork Analytics</span></button>
-            <button class="pfMenuItem" onclick="anGo('marketplace')"><span class="pfMenuTxt">Marketplace Analytics</span></button>
-            <button class="pfMenuItem" onclick="anGo('blog')"><span class="pfMenuTxt">Blog Analytics</span></button>
-            <button class="pfMenuItem" onclick="anGo('resource')"><span class="pfMenuTxt">Resources Analytics</span></button>
           </div>
         </section>
 
@@ -2800,6 +2862,58 @@
        opens it, and writing it out here would put it in the HTML every page
        load pays for. What is here is the shell, so the page can slide in and
        the header can be read while the numbers are still on their way. -->
+  <!-- ── the two hubs ────────────────────────────────────────────────────────
+       Analytics and Payouts were rows in the Settings menu: four dashboards
+       under a gear beside Theme and Notifications, and the member's own money
+       injected below Subscription. Five taps from the bar to your own payout
+       methods, and no way to see at a glance what either of them held.
+
+       They are destinations on the bar now, and each opens on a board of
+       cards rather than a list of words — one card per thing, saying what it
+       is and what it will show you before you spend a tap finding out. The
+       cards are built by js/hubs.js from one recipe, so the two boards are one
+       component with two lists.
+
+       The payouts board is EMPTY IN THIS FILE on purpose, and its gate below
+       is the whole of it. What a member's account holds and how it is paid out
+       is named by /api/store, which answers no request without a session — so
+       a signed-out visitor's page source carries neither the cards nor the
+       pages they open. That is the same rule the Settings rows were written
+       under, and moving them must not quietly break it. -->
+  <div id="anHubPage" role="dialog" aria-modal="true" aria-label="Analytics">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="anHubClose()" aria-label="Close analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg></button>
+      <div class="subPgTitle">ANALYTICS</div>
+    </div>
+    <div class="hubBdy">
+      <header class="hubHead">
+        <h2 class="hubLead">Your <em class="hubHi">Analytics</em></h2>
+        <p class="hubDesc">Four dashboards, one for each kind of thing you publish. Views, likes,
+          saves and downloads over time, where your audience arrives from, which pieces are
+          carrying the month, and — on the Marketplace — what you earned. Pick a board to open it.</p>
+      </header>
+      <div class="hubGrid" id="anHubGrid"></div>
+    </div>
+  </div>
+
+  <div id="payHubPage" role="dialog" aria-modal="true" aria-label="Payouts">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="payHubClose()" aria-label="Close payouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg></button>
+      <div class="subPgTitle">PAYOUTS</div>
+    </div>
+    <div class="hubBdy">
+      <header class="hubHead">
+        <h2 class="hubLead">Your <em class="hubHi">Money</em></h2>
+        <!-- Deliberately general. This paragraph is in a static asset, and
+             what a member's account actually holds is named by the cards
+             below it — which /api/store fills, and only for a session. -->
+        <p class="hubDesc">Everything on your account to do with money, in one place.</p>
+      </header>
+      <div class="hubGrid" id="payHubGrid"></div>
+      <div class="hubNote" id="payHubNote">Sign in to see this.</div>
+    </div>
+  </div>
+
   <div id="anPage" role="dialog" aria-modal="true" aria-label="Analytics">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeAnalyticsPage()" aria-label="Close analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg></button>
@@ -2848,13 +2962,13 @@
   <script src="/js/captcha.js?v=2"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=36"></script>
+  <script src="/js/app-core.js?v=38"></script>
   <script src="/js/protect.js?v=3"></script>
   <script src="/js/gallery.js?v=102"></script>
   <!-- the head each gallery section leads with: its name, what is in it,
        its own search box and its category rail -->
   <script src="/js/fghead.js?v=2"></script>
-  <script src="/js/auth.js?v=21"></script>
+  <script src="/js/auth.js?v=22"></script>
   <script src="/js/profile.js?v=17"></script>
   <script src="/js/albums.js?v=19"></script>
   <script src="/js/drafts.js?v=8"></script>
@@ -3417,6 +3531,8 @@
        view, a like and a download carry alongside themselves; engagement.js
        guards for its absence anyway, but the order means it is never absent. -->
   <script src="/js/analytics.js?v=9"></script>
+  <!-- the two boards behind Profile: Analytics and Payouts -->
+  <script src="/js/hubs.js?v=1"></script>
   <script src="/js/engagement.js?v=9"></script>
 
 
@@ -3427,7 +3543,7 @@
 
   <!-- The bar at the top of the document: its hamburger, and the one search
        every way into search on this site goes through. -->
-  <script src="/js/topnav.js?v=7"></script>
+  <script src="/js/topnav.js?v=9"></script>
 
   <!-- Each section's scroll position, kept while you are away from it. -->
   <script src="/js/navprogress.js?v=6"></script>

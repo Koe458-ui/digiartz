@@ -258,7 +258,7 @@
     #legalPage, #pfEditPage, #subPage, #cmSearchPage, #cmBrowsePage,
     #cmInfoPage, #admPage, #pfMyWorkPage, #notifPage, #anPage, #anListPage,
     #rankPage, #themePage, #frdPage, #bmPage, #xpPage, #albPage, #albViewPage,
-    #cartPage{
+    #cartPage, #anHubPage, #payHubPage{
       overflow-y:scroll;
     }
 

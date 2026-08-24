@@ -933,3 +933,131 @@ html.thmFade #themePage{
   font-family:var(--fm);font-size:.56rem;letter-spacing:.1em;
   color:var(--txd);margin-top:.9rem;text-align:center;
 }
+
+/* ── the two boards behind Profile ─────────────────────────────────────────
+   Analytics and Payouts. Each opens on a board of cards rather than a list of
+   words: one card per thing, in its own colour, saying what it is and what it
+   will show you before a tap is spent finding out.
+
+   One component, two lists. js/hubs.js draws both — the analytics list from
+   its own table, the payouts list handed in by /api/store — so the two boards
+   cannot drift into two different things. The gradient is the card's own, set
+   per card as --hubA and --hubB, and everything drawn on it is white: these
+   are the one place on the site where a saturated fill carries type, so the
+   pair is chosen dark enough to hold it in both themes rather than themed. */
+#anHubPage, #payHubPage{
+  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#anHubPage.open, #payHubPage.open{transform:translateX(0);}
+@media (prefers-reduced-motion:reduce){#anHubPage,#payHubPage{transition:none;}}
+
+.hubBdy{padding:0 var(--shellPad) clamp(2rem,5vw,3.5rem);}
+
+/* The head, on the gallery's own pattern: a title with the thing being named
+   in the brand red, and a paragraph at a reading measure under it. */
+.hubHead{
+  max-width:52rem;margin:0 auto;
+  padding:clamp(1.5rem,4vw,2.6rem) 0 clamp(1.4rem,3.5vw,2rem);
+  text-align:center;
+}
+.hubLead{
+  margin:0;
+  font-family:var(--fd);font-weight:800;
+  font-size:clamp(1.6rem,4.8vw,2.4rem);
+  line-height:1.1;letter-spacing:-.02em;color:var(--tx);
+}
+.hubHi{font-style:normal;color:var(--brand-red);font-weight:inherit;}
+.hubDesc{
+  margin:.75rem auto 0;max-width:46rem;
+  font-size:clamp(.85rem,2.2vw,.94rem);
+  line-height:1.65;color:var(--txd);
+  text-wrap:pretty;
+}
+
+/* Four across on a desktop, two on a tablet, one on a phone. auto-fit rather
+   than a fixed count, so a board of four and a board of five both fill their
+   row without either knowing how many the other has. */
+.hubGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));
+  gap:clamp(.8rem,2vw,1.15rem);
+  max-width:78rem;margin:0 auto;
+}
+@media(max-width:560px){
+  .hubGrid{grid-template-columns:1fr;}
+}
+
+.hubCard{
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;
+  gap:.55rem;
+  padding:clamp(1.4rem,3.5vw,2rem) 1.15rem clamp(1.1rem,2.5vw,1.4rem);
+  border:0;border-radius:20px;cursor:pointer;text-align:center;
+  background:linear-gradient(160deg,var(--hubA,#7C3AED) 0%,var(--hubB,#4C1D95) 100%);
+  color:#fff;
+  box-shadow:0 10px 26px -12px color-mix(in srgb,var(--hubB,#4C1D95) 70%,transparent);
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .22s ease;
+}
+@media(hover:hover){
+  .hubCard:hover{
+    transform:translateY(-3px);
+    box-shadow:0 18px 34px -14px color-mix(in srgb,var(--hubB,#4C1D95) 78%,transparent);
+  }
+}
+.hubCard:active{transform:translateY(-1px) scale(.99);}
+/* the ring is white because the card is a colour: an accent outline on a
+   saturated fill is a ring nobody can see */
+.hubCard:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+
+.hubIco{
+  display:flex;align-items:center;justify-content:center;
+  width:64px;height:64px;border-radius:18px;margin-bottom:.35rem;
+  background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.22);
+}
+.hubIco svg{width:32px;height:32px;display:block;}
+.hubName{
+  font-family:var(--fd);font-weight:800;
+  font-size:clamp(.95rem,2.4vw,1.06rem);
+  letter-spacing:.02em;text-transform:uppercase;line-height:1.25;
+}
+.hubBlurb{
+  font-size:.79rem;line-height:1.5;
+  color:rgba(255,255,255,.88);
+  text-wrap:pretty;
+  /* the blurbs are one, two or three lines; this holds the button on one line
+     across the row so the cards' feet agree */
+  flex:1 1 auto;
+}
+/* The call to action. A span and not a button — the whole card is the button,
+   and a control inside a control is two tap targets where the member sees
+   one. It is drawn as a pill because that is what it looks like it does. */
+.hubGo{
+  margin-top:.7rem;
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:2.4rem;padding:.4rem 1.5rem;
+  border-radius:999px;
+  background:#fff;
+  color:var(--hubB,#4C1D95);
+  font-family:var(--fd);font-weight:700;font-size:.85rem;letter-spacing:.01em;
+  white-space:nowrap;
+  transition:background .18s ease;
+}
+@media(hover:hover){ .hubCard:hover .hubGo{background:rgba(255,255,255,.92);} }
+
+/* Shown until the board has been filled — and it is only ever filled by a
+   signed-in session, so this is what a member sees while /api/store is on its
+   way and what an unreachable backend leaves behind. */
+.hubNote{
+  max-width:46rem;margin:1.4rem auto 0;text-align:center;
+  font-family:var(--fm);font-size:.72rem;letter-spacing:.14em;
+  color:var(--txd);
+}
+
+@media(prefers-reduced-motion:reduce){
+  .hubCard{transition:none;}
+  .hubCard:hover,.hubCard:active{transform:none;}
+}

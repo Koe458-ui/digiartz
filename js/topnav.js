@@ -122,12 +122,60 @@
         if (typeof window.fgSwitchSection === 'function') window.fgSwitchSection(sec);
       }
     },
+    /* Communities and Friends. Two pages, one word on the bar — the pair used
+       to be two chips inside a single page called Community, and briefly two
+       separate words here. Four words on the bar and four menus under them:
+       a row where one destination behaves differently from its neighbours is
+       a row you have to learn rather than read. */
+    cm: {
+      wrap:'dzCmWrap', btn:'dzCmBtn', grp:'dzMenuCmGrp', grpBtn:'dzMenuCmBtn',
+      secs:{ communities:1, friends:1 },
+      fallback:'communities',
+      pick: function (k, e) {
+        if (k === 'friends') {
+          if (e) e.preventDefault();
+          if (typeof window.bnGoFriends === 'function') window.bnGoFriends();
+          return;
+        }
+        // Communities has a url, so the router opens it and the click is left
+        // alone — the anchor is a real promise to a browser with no script.
+        if (typeof window.dzRouteGo === 'function' && window.dzRouteGo('/community')) {
+          if (e) e.preventDefault();
+          return;
+        }
+        if (e) e.preventDefault();
+        if (typeof window.bnGoCommunity === 'function') window.bnGoCommunity();
+      }
+    },
     up: {
       wrap:'dzUpWrap', btn:'dzUpBtn', grp:'dzMenuUpGrp', grpBtn:'dzMenuUpBtn',
       secs:{ artwork:1, marketplace:1, blog:1, resources:1, jobs:1 },
       fallback:'artwork',
       pick: function (sec) {
         if (typeof window.bnGoUpload === 'function') window.bnGoUpload(sec);
+      }
+    },
+    /* The member's own three: their portfolio, their dashboards and their
+       money. Analytics and Payouts were rows inside the Settings menu — five
+       taps from the bar to your own payout methods, and buried under a gear
+       beside Theme and Notifications, which is not what either of them is.
+
+       This one only exists while there is an account. `armed` is what says so:
+       js/auth.js sets it, and until then the word is Sign in and the control
+       is a plain link to the sheet. A menu of a member's own pages hanging
+       off the word Sign in would be three destinations nobody can reach. */
+    ac: {
+      wrap:'dzAcWrap', btn:'dzTopAccount', grp:'dzMenuAcGrp', grpBtn:'dzMenuAccount',
+      secs:{ portfolio:1, analytics:1, payouts:1 },
+      fallback:'portfolio',
+      armed: function () {
+        var w = el('dzAcWrap');
+        return !!w && w.classList.contains('dzHasMenu');
+      },
+      pick: function (k) {
+        if (k === 'analytics') { if (typeof window.anHubOpen === 'function') window.anHubOpen(); return; }
+        if (k === 'payouts')   { if (typeof window.payHubOpen === 'function') window.payHubOpen(); return; }
+        if (typeof window.bnGoProfile === 'function') window.bnGoProfile();
       }
     }
   };
@@ -153,7 +201,13 @@
   var ddTimer = null;
   function ddCancel() { if (ddTimer) { clearTimeout(ddTimer); ddTimer = null; } }
 
+  function armed(k) {
+    var m = MENUS[k];
+    return !m.armed || m.armed();
+  }
+
   function ddOpen(k) {
+    if (!armed(k)) return;
     ddCancel();
     // One at a time. The two words sit next to each other, and a pointer
     // sliding from one to the other would otherwise leave both panels down.
@@ -186,21 +240,24 @@
   // showing the bar's own links. A mouse has usually opened it on the way in,
   // so a click on the word closes it again rather than re-opening it.
   function ddToggle(k, e) {
+    if (!armed(k)) return false;      // the caller decides what else to do
     if (e) e.preventDefault();
     if (ddIsOpen(k)) ddClose(k); else ddOpen(k);
+    return true;
   }
 
   /* ── the drawer's own rows ─────────────────────────────────────────────── */
   function dzMenuSubToggle(k) {
-    var m = MENUS[k]; if (!m) return;
+    var m = MENUS[k]; if (!m || !armed(k)) return false;
     var g = el(m.grp), b = el(m.grpBtn);
-    if (!g) return;
+    if (!g) return false;
     var on = !g.classList.contains('open');
     // One open at a time here too, so the drawer never grows past the screen
     // with both lists of five down at once.
     if (on) for (var o in MENUS) if (o !== k) subClose(o);
     g.classList.toggle('open', on);
     if (b) b.setAttribute('aria-expanded', on ? 'true' : 'false');
+    return true;
   }
   function subClose(k) {
     var m = MENUS[k]; if (!m) return;
@@ -222,7 +279,28 @@
     m.pick(sec, e);
   }
   function dzExPick(sec, e) { pick('ex', sec, e); }
+  function dzCmPick(k, e)   { pick('cm', k, e); }
   function dzUpPick(sec, e) { pick('up', sec, e); }
+  function dzAcPick(k, e)   { pick('ac', k, e); }
+
+  /* The account control, which is two things depending on the session.
+     Signed in it is the word Profile with three pages under it; signed out it
+     is the word Sign in, and the click belongs to the sheet — so the anchor's
+     own href is left to do its job through js/routes.js rather than being
+     preventDefault'ed into a menu that is not there. */
+  function dzAcClick(e) {
+    if (ddToggle('ac', e)) return;
+    if (e) e.preventDefault();
+    if (typeof window.bnGoProfile === 'function') window.bnGoProfile(e);
+  }
+  // the same fork, for the row in the drawer
+  function dzAcMenuClick(e) {
+    if (dzMenuSubToggle('ac')) { if (e) e.preventDefault(); return false; }
+    if (e) e.preventDefault();
+    dzMenuClose();
+    if (typeof window.bnGoProfile === 'function') window.bnGoProfile(e);
+    return false;
+  }
 
   // dzMenuOpen is not published: the only ways in are the button and the
   // toggle, and an exported opener nothing calls is a promise to keep.
@@ -232,12 +310,19 @@
   window.dzMenuSubClose  = dzMenuSubClose;
   window.dzOpenSearch    = dzOpenSearch;
   window.dzExToggle      = function (e) { ddToggle('ex', e); };
+  window.dzCmToggle      = function (e) { ddToggle('cm', e); };
   window.dzUpToggle      = function (e) { ddToggle('up', e); };
   // named closers, because DZ_PANELS names its closers by name
   window.dzExClose       = function () { ddClose('ex'); };
+  window.dzCmClose       = function () { ddClose('cm'); };
   window.dzUpClose       = function () { ddClose('up'); };
   window.dzExPick        = dzExPick;
+  window.dzCmPick        = dzCmPick;
   window.dzUpPick        = dzUpPick;
+  window.dzAcPick        = dzAcPick;
+  window.dzAcClick       = dzAcClick;
+  window.dzAcMenuClick   = dzAcMenuClick;
+  window.dzAcClose       = function () { ddClose('ac'); };
 
   // A tap anywhere but the drawer and the button that opened it. The scrim
   // starts under the bar and catches the page; this catches the rest, which is

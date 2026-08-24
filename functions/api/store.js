@@ -871,7 +871,7 @@ const MODULE = `
 
   // Who this member is, asked ONCE.
   //
-  // fillMenu() needs it to decide whether to append the Collab Hub row, and
+  // fillCollabRow() needs it to decide whether to add the Collab Hub row, and
   // paintClaim() needs it to decide what the Max card's button is. Both run on
   // every signed-in page load, and both used to ask separately — two identical
   // round trips per member per load, for an answer that cannot differ between
@@ -1095,7 +1095,10 @@ const MODULE = `
     ownedIds[id] = true;
     repaintOwned();
     purchasesP = null;
-    if(document.getElementById('setListGate')){
+    /* The purchases panel, if this build has the board that leads to it —
+       the test used to name the Settings slot those rows were injected into,
+       which stopped existing when they became a page of their own. */
+    if(document.getElementById('payHubGrid')){
       openPanel('buy');
     } else if(hasFile && typeof window.dzMarketGet === 'function'){
       window.dzMarketGet(id);
@@ -1807,33 +1810,75 @@ const MODULE = `
     loadWallet(force, host, view === 'pay' ? renderBank : renderWallet, seq);
   }
 
-  // The Settings items. Injected into the one empty slot index.html leaves,
-  // and wired through setGo so they behave exactly like the items written
-  // above them — the menu closes, the panel opens, and closing it puts the
-  // member back on the menu rather than on their profile.
+  /* THE PAYOUTS BOARD.
+     These four were rows in the Settings menu, injected into an empty slot
+     index.html left for them. They are a page of their own now — Profile →
+     Payouts — and this fills its board.
+
+     What has not changed is why they are injected at all rather than written
+     in the document: this file answers no request without a session, so a
+     signed-out visitor's page source names neither a wallet nor a payout
+     method. Moving them to a page they can be seen on must not quietly turn
+     that off, so the page ships with an empty grid and this is the only thing
+     that fills it.
+
+     js/hubs.js draws the cards from this list, rather than this file drawing
+     its own, so the payouts board and the analytics board are one component. */
+  var PAY_CARDS = {
+    bal: { name:'Balance', cta:'View balance', a:'#4ADE80', b:'#15803D',
+           desc:'What you have earned, what has been paid out, and the history behind both.',
+           svg:'<rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M2.5 10.5h19"/>' +
+               '<path d="M6.5 15h4"/>' },
+    pay: { name:'Payout Methods', cta:'Manage methods', a:'#38BDF8', b:'#0369A1',
+           desc:'The account your earnings are sent to, and the details a payout needs.',
+           svg:'<rect x="3" y="4.5" width="18" height="15" rx="2.5"/>' +
+               '<path d="M3 9h18"/><path d="M15.5 14.5h3"/>' },
+    buy: { name:'My Purchases', cta:'View purchases', a:'#FB923C', b:'#C2410C',
+           desc:'Everything you have bought, and the files you own a licence to re-download.',
+           svg:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>' +
+               '<path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>' },
+    cur: { name:'Currency', cta:'Change currency', a:'#A78BFA', b:'#6D28D9',
+           desc:'The currency prices, balances and payouts are shown to you in.',
+           svg:'<circle cx="12" cy="12" r="9"/><path d="M14.5 9.2A2.8 2.8 0 0 0 12 8c-1.7 0-2.6.9-2.6 2 0 2.6 5.2 1.4 5.2 4 0 1.1-.9 2-2.6 2a2.8 2.8 0 0 1-2.5-1.2"/><path d="M12 6.2v11.6"/>' }
+  };
+
+  function payCard(v){
+    var c = PAY_CARDS[v];
+    return { key:v, name:c.name, desc:c.desc, cta:c.cta, a:c.a, b:c.b, svg:c.svg,
+             go: function(){ openPanel(v); } };
+  }
+
   function fillMenu(){
+    fillPayBoard();
+    fillCollabRow();
+  }
+
+  function fillPayBoard(){
+    if(typeof window.dzPayHubFill !== 'function') return;
+    var host = document.getElementById('payHubGrid');
+    if(!host || host.dataset.dzFilled) return;
+    host.dataset.dzFilled = '1';
+    window.dzPayHubFill(['bal','pay','buy','cur'].map(payCard));
+  }
+
+  /* COLLAB HUB, and only for a partner.
+
+     Not on the board with the four above. The board is what a member's account
+     holds — a balance, a way to be paid, what they bought, what it is counted
+     in — and every member has all four. The partner programme is not that: it
+     is a thing you are admitted to, most members are not in it, and a fifth
+     card sitting alone on a second row of an otherwise square board announced
+     it to everyone who saw a screenshot. It stays a row in Settings, which is
+     where it has always been.
+
+     Injected rather than written into index.html, for the reason the money
+     cards are: nothing about the Collab Hub is in that file, in this bundle's
+     markup, or in the menu until the server has said the word 'partner'. A
+     heading nobody is entitled to still tells them the programme exists. */
+  function fillCollabRow(){
     var host = document.getElementById('setListGate');
     if(!host || host.dataset.dzFilled) return;
     host.dataset.dzFilled = '1';
-    host.innerHTML = [['buy','My Purchases'], ['bal','Wallet'], ['pay','Payout Methods'],
-                      ['cur','Currency']]
-      .map(function(p){
-        return '<button class="pfMenuItem" type="button" data-v="' + esc(p[0]) + '">' +
-               esc(p[1]) + '</button>';
-      }).join('');
-    wireMenu(host);
-
-    // COLLAB HUB, and only for a partner.
-    //
-    // Appended after the four above rather than written with them, because it
-    // takes a round trip to know whether this member is entitled to it — and
-    // the four do not, so making all five wait would slow the menu down for
-    // everyone to hide one row from most of them.
-    //
-    // Nothing about the Collab Hub is in index.html, in this bundle's markup,
-    // or in the menu until the server has said the word 'partner'. That is the
-    // same reasoning that keeps the wallet out of the public page: a heading
-    // nobody is entitled to still tells them the programme exists.
     collabState().then(function(st){
       if(!st || !st.is_partner) return;
       if(host.querySelector('[data-v="collab"]')) return;   // menu rebuilt underneath us
@@ -1841,22 +1886,14 @@ const MODULE = `
       b.className = 'pfMenuItem';
       b.type = 'button';
       b.setAttribute('data-v', 'collab');
-      b.textContent = 'Collab Hub';
-      host.appendChild(b);
-      wireMenu(host);
-    }, function(){ /* unreachable endpoint simply leaves the four */ });
-  }
-
-  function wireMenu(host){
-    Array.prototype.forEach.call(host.querySelectorAll('[data-v]'), function(b){
-      if(b.dataset.dzWired) return;
-      b.dataset.dzWired = '1';
+      b.innerHTML = '<span class="pfMenuTxt"></span>';
+      b.firstChild.textContent = 'Collab Hub';
       b.addEventListener('click', function(){
-        var v = b.getAttribute('data-v');
-        if(typeof setGo === 'function') setGo(function(){ openPanel(v); }, 'dzPanelHost');
-        else openPanel(v);
+        if(typeof setGo === 'function') setGo(function(){ openPanel('collab'); }, 'dzPanelHost');
+        else openPanel('collab');
       });
-    });
+      host.appendChild(b);
+    }, function(){ /* unreachable endpoint simply leaves the menu as it is */ });
   }
 
 

@@ -37,6 +37,30 @@
   function syncAuthBtn() {
     var bar  = document.getElementById('dzTopAccount');
     var menu = document.getElementById('dzMenuAccount');
+    /* The word, and only the word. Both controls carry a chevron beside their
+       label now, and that chevron is markup — writing textContent on the
+       control itself would delete it and leave the word standing alone above
+       a menu with no handle. */
+    var barTxt  = document.getElementById('dzTopAccountTxt')  || bar;
+    var menuTxt = document.getElementById('dzMenuAccountTxt') || menu;
+
+    /* Signed in, Profile is three destinations: the portfolio, the analytics
+       dashboards and the payouts page. js/topnav.js will not open that menu
+       unless this class is on the wrapper, so the two states cannot disagree —
+       a menu of a member's own pages hanging off the word Sign in would be
+       three destinations nobody can reach. */
+    var wrap = document.getElementById('dzAcWrap');
+    var grp  = document.getElementById('dzMenuAcGrp');
+    if (wrap) wrap.classList.toggle('dzHasMenu', !!currentUser);
+    if (grp)  grp.classList.toggle('dzHasMenu', !!currentUser);
+    if (!currentUser) {
+      // A sub-list left open across a sign-out is a member's own pages listed
+      // under the word Sign in.
+      if (typeof window.dzAcClose === 'function') window.dzAcClose();
+      if (grp) grp.classList.remove('open');
+      if (bar)  bar.setAttribute('aria-expanded', 'false');
+      if (menu) menu.setAttribute('aria-expanded', 'false');
+    }
 
     if (currentUser) {
       /* cpGetDisplayName is in js/mywork.js, seven script tags below this
@@ -48,18 +72,20 @@
       // promise to a browser with no script as much as to a crawler.
       var href = name && name !== 'User' ? '/profile/' + encodeURIComponent(name) : '/login';
       if (bar) {
-        bar.textContent = 'Profile';
         bar.title = 'Profile — ' + (name || 'you');
         bar.setAttribute('href', href);
       }
+      if (barTxt) barTxt.textContent = 'Profile';
       if (menu) {
-        menu.textContent = 'Profile';
         menu.title = 'Profile — ' + (name || 'you');
         menu.setAttribute('href', href);
       }
+      if (menuTxt) menuTxt.textContent = 'Profile';
     } else {
-      if (bar)  { bar.textContent  = 'Sign in'; bar.removeAttribute('title');  bar.setAttribute('href', '/login'); }
-      if (menu) { menu.textContent = 'Login';   menu.removeAttribute('title'); menu.setAttribute('href', '/login'); }
+      if (bar)  { bar.removeAttribute('title');  bar.setAttribute('href', '/login'); }
+      if (menu) { menu.removeAttribute('title'); menu.setAttribute('href', '/login'); }
+      if (barTxt)  barTxt.textContent  = 'Sign in';
+      if (menuTxt) menuTxt.textContent = 'Login';
     }
 
     // sync card and comment bar

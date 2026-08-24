@@ -4,6 +4,64 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v249 — Communities and Friends are two pages, and Zeo is a friend.
+
+       COMMUNITY WAS TWO THINGS UNDER ONE NAME. The page called Community held
+       a pair of chips: Communities on one, Friends on the other. So a member
+       who wanted their friends opened the communities grid first and then
+       found a switch above it, and the bar named neither of the two things
+       actually behind that word.
+
+       The bar names both now — Communities and Friends, plainly, no menu for a
+       list of two — and they are two pages. The chips are gone. What was on
+       the Friends chip moved to the friends page whole, ids and all: the
+       conversation list, its empty state and the search results js/dm.js
+       paints into them. The friends page already held the requests in both
+       directions, the friend list and the blocked list; it holds everything
+       friends means now, and the community page holds communities.
+
+       Two consequences. The community page's search lost its scope chips —
+       they existed to serve both halves of a page that is now one thing, and
+       looking for a person starts on the friends page, which has a search of
+       its own. And the conversation list is painted when the friends page
+       opens rather than when the community page does, because that is where
+       it now is.
+
+       ZEO IS BACK, AS A FRIEND. The assistant was removed in v243 for what it
+       was attached to: a circle fixed in the corner of every page with a
+       speech bubble that nudged from beside it. None of that is coming back.
+       What was worth keeping was never the circle — it was the eighty-seven
+       written answers behind it, across eighteen topics.
+
+       So it has a standing row at the top of the friends list, above the
+       people, and opens in the same chat panel a conversation with a person
+       opens in: the same slide-in, the same header, the same way back. It is
+       not a friendship, cannot be removed and does not count against the cap.
+       It answers by menu, which is the design and not a limitation: every
+       answer is one somebody wrote, so it cannot invent a policy or a price.
+
+       Its colours were literals — a blue that existed nowhere else and
+       answered to no theme, because it used to have its own dark sheet. It
+       draws from the chat panel's tokens now and is right in all four themes.
+
+       Sixteen of its answers described navigation this site has not had since
+       v242: tapping ➕ Upload in the bottom bar, the Cart tab at the end of
+       the gallery's section row, the Community tab, Zeo's own floating
+       button. All of them now describe the bar that exists — Explore and
+       Upload menus, Communities, Friends, the cart icon.
+
+       Fixed on the way past: js/mywork.js DECLARES cmCloseChat and is parsed
+       after js/zeo.js, so a wrapper installed at parse time was overwritten
+       and the panel's back button never told the assistant it had closed. It
+       wraps on DOMContentLoaded now, as js/dm.js already did for the same
+       reason. And the --cm* tokens were declared on two ids; the friend rows
+       that moved to a third resolved --cmSur to nothing and came out
+       transparent — the tokens travel with the components that spend them.
+
+       Changed: index.html, css/base.css, css/community.css, js/dm.js,
+       js/community.js, js/pfedit.js, aiAssistantData.js (restored),
+       js/zeo.js (rewritten), zeo-avatar.png (restored), sw.js.
+
    v248 — the gallery, on the same terms as the upload sheet.
 
        THE FEATURED SHOWCASE IS GONE. Six cards over the gallery's chip row —
@@ -4686,7 +4744,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v248';
+const CACHE_VERSION = 'v249';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4737,10 +4795,10 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=27',
+  '/css/base.css?v=28',
   '/css/hero.css?v=113',
   '/css/viewer.css?v=39',
-  '/css/community.css?v=22',
+  '/css/community.css?v=26',
   '/css/connect.css?v=7',
   '/css/ranking.css?v=6',
   '/css/profile.css?v=17',
@@ -4766,8 +4824,10 @@ const SHELL_URLS = [
   // scripts
   '/js/cache.js?v=1',
   '/js/ranking.js?v=3',
-  '/js/community.js?v=6',
-  '/js/dm.js?v=10',
+  '/js/community.js?v=7',
+  '/js/dm.js?v=11',
+  '/aiAssistantData.js?v=4',
+  '/js/zeo.js?v=3',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
@@ -4781,7 +4841,7 @@ const SHELL_URLS = [
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=19',
+  '/js/pfedit.js?v=20',
   '/js/mywork.js?v=27',
   '/js/startup.js?v=7',
   '/js/tagrail.js?v=3',

@@ -768,6 +768,8 @@
     .dzMenu.open .dzMenuInner > :nth-child(3){transition-delay:0s,0s,.15s,.15s;}
     .dzMenu.open .dzMenuInner > :nth-child(4){transition-delay:0s,0s,.195s,.195s;}
     .dzMenu.open .dzMenuInner > :nth-child(5){transition-delay:0s,0s,.24s,.24s;}
+    /* Six rows since Community became Communities and Friends. */
+    .dzMenu.open .dzMenuInner > :nth-child(6){transition-delay:0s,0s,.285s,.285s;}
     /* A hairline between one word and the next. Five words down a full-width
        panel with nothing between them read as a paragraph broken up rather
        than as five things you can choose; the rule is what makes each one a

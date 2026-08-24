@@ -246,10 +246,10 @@
     }, true);
   })();
   </script>
-  <link rel="stylesheet" href="/css/base.css?v=27">
+  <link rel="stylesheet" href="/css/base.css?v=28">
   <link rel="stylesheet" href="/css/hero.css?v=113">
   <link rel="stylesheet" href="/css/viewer.css?v=39">
-  <link rel="stylesheet" href="/css/community.css?v=22">
+  <link rel="stylesheet" href="/css/community.css?v=26">
   <link rel="stylesheet" href="/css/connect.css?v=7">
   <link rel="stylesheet" href="/css/ranking.css?v=6">
   <link rel="stylesheet" href="/css/profile.css?v=17">
@@ -342,7 +342,13 @@
       </div>
      </div>
     </div>
-    <a class="dzLink" data-bn="bnCommunity" href="/community">Community</a>
+    <!-- Two words where there was one. Communities and Friends were a pair of
+         chips inside one page called Community, so a member who wanted their
+         friends opened the communities grid first and then found a switch
+         above it. They are two pages now and the bar names both — no menu for
+         a list of two, which would be a click to reach a click. -->
+    <a class="dzLink" data-bn="bnCommunity" href="/community">Communities</a>
+    <button class="dzLink" type="button" data-bn="bnFriends" onclick="bnGoFriends()">Friends</button>
     <!-- Upload is five destinations rather than one. An artwork, a product
          listing, a blog post, a resource and a job posting are five forms with
          five sets of rules, so the bar names each of them and lands the member
@@ -445,7 +451,8 @@
       </div>
      </div>
     </div>
-    <a class="dzMenuItem" data-bn="bnCommunity" href="/community" onclick="dzMenuClose()">Community</a>
+    <a class="dzMenuItem" data-bn="bnCommunity" href="/community" onclick="dzMenuClose()">Communities</a>
+    <button class="dzMenuItem" type="button" data-bn="bnFriends" onclick="dzMenuClose(); bnGoFriends();">Friends</button>
     <!-- Upload on a phone: one row that opens into the same five, rather
          than five rows pushing the account link off the drawer. The sub-list
          rolls open the way the drawer itself does — a grid track from 0fr to
@@ -1686,7 +1693,7 @@
       <button class="fgTopBtn fgTopBack" type="button" onclick="closeCommunityPage()" aria-label="Back">
        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
       </button>
-      <span class="fgTopTitle" id="cmHdrTitleTxt">COMMUNITY</span>
+      <span class="fgTopTitle" id="cmHdrTitleTxt">COMMUNITIES</span>
      </div>
      <div class="fgTopR">
       <button class="fgTopBtn" id="cmSearchBtn" type="button" onclick="cmOpenSearch()"
@@ -1704,7 +1711,7 @@
       </button>
      </div>
     </header>
-  <script src="/js/community.js?v=6"></script>
+  <script src="/js/community.js?v=7"></script>
 
     <div class="cmView" id="cmViewCommunity" style="display:flex;">
 
@@ -1756,20 +1763,6 @@
           </div>
         </div>
 
-        <div class="cmTabs" role="tablist" aria-label="Community sections">
-          <button class="cmTab active" id="cmTabCommunity" type="button" role="tab"
-                  aria-selected="true" aria-controls="cmPaneCommunity" onclick="cmSetTab('community')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.5"/><path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/><path d="M16 3.6a3.5 3.5 0 0 1 0 6.8"/></svg>
-            <span>Community</span>
-          </button>
-          <button class="cmTab" id="cmTabFriends" type="button" role="tab"
-                  aria-selected="false" aria-controls="cmPaneFriends" onclick="cmSetTab('friends')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg>
-            <span>Friends</span>
-          </button>
-        </div>
-
-        <div class="cmPane" id="cmPaneCommunity" role="tabpanel" aria-labelledby="cmTabCommunity">
 
         <div class="cmSectionHead" id="cmExploreHead">
           <div>
@@ -1844,31 +1837,6 @@
           </div>
         </div>
 
-        </div>
-
-        <div class="cmPane" id="cmPaneFriends" role="tabpanel" aria-labelledby="cmTabFriends" hidden>
-
-        <div class="cmSectionHead">
-          <div>
-            <h3>Friends</h3>
-            <p>People you connect with will show up here.</p>
-          </div>
-          <button class="cmCreateBtn cmJoinBtn" type="button" onclick="openFriendsPage()">Requests</button>
-        </div>
-
-        <!-- The bot had a standing row at the top of this list, above the
-             people. It went with the bot. -->
-
-        <div class="dmResults" id="dmResults" aria-live="polite"></div>
-        <div class="dmConvoHead" id="dmConvoHead" style="display:none;">MESSAGES</div>
-        <div class="cmFriendList" id="dmConvoList"></div>
-        <div class="cmEmpty" id="dmEmpty">
-          <div class="cmEmptyIco">◎</div>
-          <div>NO CONVERSATIONS YET</div>
-          <div class="cmEmptySub">Tap the search icon in the header to find artists and start a chat.</div>
-        </div>
-
-        </div>
       </div>
     </div>
   </div>
@@ -1907,7 +1875,11 @@
   </div>
 </div>
 
-  <script src="/js/dm.js?v=10"></script>
+  <script src="/js/dm.js?v=11"></script>
+  <!-- Zeo: the answers, then the engine that walks them. It is reached from
+       the friends list and nowhere else — there is no launcher on the page. -->
+  <script src="/aiAssistantData.js?v=4"></script>
+  <script src="/js/zeo.js?v=3"></script>
 
   <script src="/js/composer.js?v=2"></script>
 
@@ -2888,7 +2860,7 @@
   <script src="/js/drafts.js?v=8"></script>
   <script src="/js/upqueue.js?v=7"></script>
   <script src="/js/avatar.js?v=3"></script>
-  <script src="/js/pfedit.js?v=19"></script>
+  <script src="/js/pfedit.js?v=20"></script>
   <script src="/js/mywork.js?v=27"></script>
   <script src="/js/startup.js?v=7"></script>
   <script src="/js/tagrail.js?v=3"></script>
@@ -2946,10 +2918,15 @@
 
 <!-- The assistant used to live here: a floating button in the corner, a
      speech bubble that nudged from beside it, and a chat page behind both.
-     The button was its only way in, so taking the button off the page took
-     the rest with it — a panel nothing can open and an engine nothing can
-     reach are weight on every page load and a maintenance cost with no
-     screen. js/zeo.js and aiAssistantData.js are gone for the same reason. -->
+     All three are gone and none of them is coming back — a launcher fixed on
+     top of every page, tapping the reader on the shoulder, was the reason the
+     whole thing was removed.
+
+     Zeo itself is back, in the one place it belongs: the friends list. It has
+     a standing row there and opens in the same chat panel a conversation with
+     a person opens in. Its markup is that row (#zeoRow, in #frdPage) and a
+     view js/zeo.js builds inside #cmChatPanel on first use — there is nothing
+     for it here. -->
 
 <div id="themePage" role="dialog" aria-modal="true" aria-label="Choose your theme">
   <div class="subPgHdr">
@@ -3100,12 +3077,10 @@
       <button type="button" class="tgSearchClear" onclick="cmClearSearch()" aria-label="Clear search">✕</button>
     </div>
   </div>
-  <div class="pfSrchScopes" id="cmSrchScopes" role="tablist" aria-label="What to search">
-    <button class="pfSrchChip on" id="cmSrchScopeCommunity" role="tab" aria-selected="true"
-            type="button" onclick="cmSearchScope('community')">Communities</button>
-    <button class="pfSrchChip" id="cmSrchScopeFriends" role="tab" aria-selected="false"
-            type="button" onclick="cmSearchScope('friends')">Artists</button>
-  </div>
+  <!-- The two scope chips are gone with the Community | Friends pair they
+       belonged to. This page searches communities, because it is the search
+       button on the Communities page; the friends page has a search of its
+       own, which is where looking for a person now starts. -->
   <div class="pfSrchBdy">
     <div class="pfSrchNote" id="cmSrchNote">Type to search communities.</div>
     <div id="cmSrchRes" aria-live="polite"></div>
@@ -3238,6 +3213,14 @@
   <div class="fgBdy"><div id="fgSecC-cart"></div></div>
 </div>
 
+<!-- Friends, as a page of its own.
+     It was a chip beside Communities inside one page called Community, so the
+     way to your friends was to open the communities grid and then switch. It
+     is a destination on the bar now, and it holds everything friends means in
+     one place: the search that finds people, Zeo, your conversations, the
+     requests in both directions, your friends and anyone you have blocked.
+     The conversation list below moved here whole from that pane — same ids,
+     so js/dm.js paints it exactly as it did. -->
 <div id="frdPage" role="dialog" aria-modal="true" aria-label="Friends">
   <div class="subPgHdr">
     <button class="subPgX" onclick="closeFriendsPage()" aria-label="Close friends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg></button>
@@ -3249,6 +3232,36 @@
       <input class="dmSearchInput" id="frdSearchInput" type="text" placeholder="Search artists by username…" autocomplete="off">
     </div>
     <div id="frdResults"></div>
+
+    <!-- Zeo. A standing row at the top of the list, above the people: it is
+         not a friendship, cannot be removed and does not count against the
+         cap. js/zeo.js answers it. -->
+    <div class="frdSection">DIGIARTZ</div>
+    <div class="cmFriendList">
+      <div class="cmFriendItem" id="zeoRow" role="button" tabindex="0" onclick="zeoOpen()">
+        <div class="cmFriendAvatar zeoChip">
+          <img src="/zeo-avatar.png?v=4" alt="" draggable="false"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
+          <span class="cmFriendAvatarFallback" style="display:none;">🤖</span>
+        </div>
+        <div class="cmFriendMeta">
+          <div class="cmFriendName">Zeo <span class="cmBadge">BOT</span></div>
+          <div class="cmFriendStatus"><span class="cmDot"></span>Always online · Your DigiArtz assistant</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The conversations, moved here from the Friends chip in the community
+         page. js/dm.js owns all four of these ids. -->
+    <div class="dmResults" id="dmResults" aria-live="polite"></div>
+    <div class="dmConvoHead" id="dmConvoHead" style="display:none;">MESSAGES</div>
+    <div class="cmFriendList" id="dmConvoList"></div>
+    <div class="cmEmpty" id="dmEmpty" style="display:none;">
+      <div class="cmEmptyIco">◎</div>
+      <div>NO CONVERSATIONS YET</div>
+      <div class="cmEmptySub">Search for an artist above and send a friend request — once they accept, you can chat.</div>
+    </div>
+
     <div class="frdSection" id="frdReqHead" style="display:none;">FRIEND REQUESTS · <span id="frdReqCount">0</span></div>
     <div class="cmFriendList" id="frdReqList"></div>
     <div class="frdSection" id="frdSentHead" style="display:none;">REQUESTS SENT · <span id="frdSentCount">0</span></div>
@@ -3260,7 +3273,7 @@
     <div class="bmEmpty" id="frdEmptyState" style="display:none;">
       <div class="ico">✦</div>
       <div>NO FRIENDS YET</div>
-      <div style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">Search for artists above and send a friend request — once they accept, you can chat.</div>
+      <div style="margin-top:.5rem;letter-spacing:.06em;opacity:.75;">Search for artists above and send a friend request — once they accept, you can chat. Zeo is always there in the meantime.</div>
     </div>
   </div>
 </div>

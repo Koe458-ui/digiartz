@@ -673,8 +673,16 @@
        out of the banner illustration, fixed, so the tabs, the chips, the
        buttons and the card rings all belong to the same picture in every
        theme. Sites where the accent is themed get a community page that turns
-       grey in the mono themes, which is what this replaces. */
-    #communityPage,#cmChatPanel{
+       grey in the mono themes, which is what this replaces.
+
+       The friends page is on this list too. It is not part of the community
+       page any more — Communities and Friends were two chips under one banner
+       and are two destinations now — but it inherited that page's furniture:
+       the friend rows, the conversation list, the badges and Zeo. A rule
+       spending --cmSur on a page that never declared it resolves to nothing,
+       which is exactly what a transparent row on a transparent page looks
+       like. The tokens travel with the components that spend them. */
+    #communityPage,#cmChatPanel,#frdPage{
       --cmBg:var(--bg);
       --cmSur:var(--sur);
       --cmSur2:var(--sur2);
@@ -775,16 +783,21 @@
     #communityPage .cmCard .cmCardIcon,#cmChatPanel .cmCard .cmCardIcon{border:1px solid var(--cmBdrh);}
     #communityPage .cmCard .cmCardName,#cmChatPanel .cmCard .cmCardName{color:var(--cmTx);}
     #communityPage .cmCard p,#cmChatPanel .cmCard p{color:var(--cmTxd);}
-    #communityPage .cmBadge,#cmChatPanel .cmBadge{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
+    #communityPage .cmBadge,#cmChatPanel .cmBadge,#frdPage .cmBadge{background:var(--cmAccentDim);border:1px solid var(--cmAccent);color:var(--cmAccentSoft);}
 
     #communityPage .cmFooterCta,#cmChatPanel .cmFooterCta{background:var(--cmSur2);border:1px solid var(--cmBdr);}
     #communityPage .cmFooterCta strong,#cmChatPanel .cmFooterCta strong{color:var(--cmTx);}
     #communityPage .cmFooterCta p,#cmChatPanel .cmFooterCta p{color:var(--cmTxd);}
 
-    #communityPage .cmEmpty,#cmChatPanel .cmEmpty{border-color:var(--cmBdr);color:var(--cmTxd);}
-    #communityPage .cmEmpty .cmEmptyIco,#cmChatPanel .cmEmpty .cmEmptyIco{color:var(--cmAccentSoft);}
+    #communityPage .cmEmpty,#cmChatPanel .cmEmpty,#frdPage .cmEmpty{border-color:var(--cmBdr);color:var(--cmTxd);}
+    #communityPage .cmEmpty .cmEmptyIco,#cmChatPanel .cmEmpty .cmEmptyIco,#frdPage .cmEmpty .cmEmptyIco{color:var(--cmAccentSoft);}
 
-    /* friends list */
+    /* Friend rows.
+       They appear in three places now: the community page, the chat panel, and
+       the friends page — which is where the conversation list and Zeo moved
+       when Communities and Friends stopped being two chips on one page. The
+       rules below carry all three ids for that reason; the base shape here is
+       unscoped and shared by all of them. */
     .cmFriendList{display:flex;flex-direction:column;gap:.7rem;margin-bottom:1.6rem;}
     .cmFriendItem{
       display:flex;align-items:center;gap:.9rem;
@@ -803,11 +816,11 @@
     .cmFriendName{font-family:var(--fb);font-size:.98rem;font-weight:700;display:flex;align-items:center;gap:.5rem;}
     .cmFriendStatus{font-family:var(--fm);font-size:.68rem;letter-spacing:.04em;display:flex;align-items:center;gap:.4rem;margin-top:.25rem;}
 
-    #communityPage .cmFriendItem,#cmChatPanel .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cmFriendItem:hover,#cmChatPanel .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--cmAccent-rgb),.18);}
-    #communityPage .cmFriendAvatar,#cmChatPanel .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
-    #communityPage .cmFriendName,#cmChatPanel .cmFriendName{color:var(--cmTx);}
-    #communityPage .cmFriendStatus,#cmChatPanel .cmFriendStatus{color:var(--cmTxd);}
+    #communityPage .cmFriendItem,#cmChatPanel .cmFriendItem,#frdPage .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
+    #communityPage .cmFriendItem:hover,#cmChatPanel .cmFriendItem:hover,#frdPage .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--cmAccent-rgb),.18);}
+    #communityPage .cmFriendAvatar,#cmChatPanel .cmFriendAvatar,#frdPage .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
+    #communityPage .cmFriendName,#cmChatPanel .cmFriendName,#frdPage .cmFriendName{color:var(--cmTx);}
+    #communityPage .cmFriendStatus,#cmChatPanel .cmFriendStatus,#frdPage .cmFriendStatus{color:var(--cmTxd);}
 
     /* art talk chat */
     #communityPage .cmBack,#cmChatPanel .cmBack{border:1px solid var(--cmBdr);color:var(--cmTx);}
@@ -884,3 +897,139 @@
     }
     .cmGraceBtn:hover{background:#FBBF24;}
     .cmGraceBtn:focus-visible{outline:2px solid var(--tx);outline-offset:2px;}
+
+    /* ── Zeo ────────────────────────────────────────────────────────────────
+       The assistant in the friends list. It was a circle fixed in the corner of
+       every page with its own dark sheet behind it, so its colours were written
+       as literals — a blue that existed nowhere else on the site and answered
+       to no theme. It shares the chat panel with conversations and community
+       rooms now, so it draws from that panel's tokens and is right in all four
+       themes rather than in the one it was drawn against.
+
+       The avatar chip keeps a colour of its own, and only that: it is the one
+       place a bot should not look like a member. */
+    #communityPage .cmFriendAvatar.zeoChip,
+    #cmChatPanel   .cmFriendAvatar.zeoChip,
+    #frdPage       .cmFriendAvatar.zeoChip{
+      background:linear-gradient(135deg,#1a2a4a,#2a4080);
+      border-color:rgba(99,179,237,.35);
+    }
+    /* The image is a rectangle in a round hole and the fallback is an emoji in
+       the same hole — both fill the chip, neither is stretched. */
+    .cmFriendAvatarFallback{
+      width:100%;height:100%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.35rem;line-height:1;
+    }
+    /* "Always online", which for a menu of written answers is simply true */
+    .cmDot{
+      width:7px;height:7px;border-radius:50%;flex:0 0 auto;
+      background:var(--cmAccent);
+      box-shadow:0 0 6px rgba(var(--cmAccent-rgb),.55);
+    }
+    .zeoRowLocked{cursor:default;}
+
+    /* the thread */
+    .zeoChat{flex-direction:column;min-height:0;}
+    .zeoBody{
+      flex:1 1 auto;min-height:0;
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
+      display:flex;flex-direction:column;gap:.9rem;
+      padding:1.1rem var(--cmPad,1rem) 1.6rem;
+    }
+    /* The scroller runs the full width of the panel; what is in it does not.
+       A menu of eighteen topics stretched across a desktop is eighteen lines
+       with the label at one end and nothing at the other — this is a
+       conversation, and a conversation has a column. */
+    .zeoBody > *{width:100%;max-width:46rem;margin-inline:auto;}
+    .zeoMsg{
+      display:flex;flex-direction:column;gap:.55rem;
+      animation:zeoMsgIn .28s ease-out both;
+    }
+    @keyframes zeoMsgIn{
+      from{opacity:0;transform:translateY(6px);}
+      to{opacity:1;transform:none;}
+    }
+    .zeoMsgBubble{
+      align-self:flex-start;
+      background:var(--cmSur);
+      border:1px solid var(--cmBdr);
+      border-radius:14px 14px 14px 4px;
+      padding:.75rem .9rem;
+      color:var(--cmTx);
+      font-family:var(--fb);font-size:.86rem;line-height:1.6;
+      /* the answers are written as paragraphs and bullet lists with real line
+         breaks in them, and they are set as text — so the breaks have to be
+         honoured here rather than by putting markup in the data */
+      white-space:pre-line;
+      max-width:min(100%,42rem);
+    }
+    .zeoMsg.zeoMsgUser{align-items:flex-end;}
+    .zeoMsg.zeoMsgUser .zeoMsgBubble{
+      align-self:flex-end;
+      background:var(--cmAccentDim);
+      border-color:rgba(var(--cmAccent-rgb),.42);
+      border-radius:14px 14px 4px 14px;
+      max-width:85%;
+    }
+
+    /* the menu under an answer */
+    .zeoStepControls{display:flex;flex-direction:column;gap:.5rem;}
+    /* A menu that has been answered. It stays legible — the thread is a record
+       of the walk — and stops answering. */
+    .zeoStepControls.zeoLocked{
+      opacity:.45;filter:saturate(.65);pointer-events:none;
+      transition:opacity .25s ease,filter .25s ease;
+    }
+    .zeoOptions,.zeoCategories{
+      display:flex;flex-direction:column;gap:.45rem;padding-top:.15rem;
+    }
+    .zeoOption,.zeoCatCard,.zeoBackBtn{
+      background:var(--cmSur);
+      border:1px solid var(--cmBdr);
+      color:var(--cmTx);
+      cursor:pointer;text-align:left;
+      font-family:var(--fb);
+      -webkit-tap-highlight-color:transparent;
+      transition:background .18s,border-color .18s,transform .15s;
+    }
+    .zeoOption{
+      border-radius:10px;padding:.65rem .95rem;
+      font-size:.84rem;line-height:1.45;
+    }
+    @media(hover:hover){
+      .zeoOption:hover,.zeoCatCard:hover,.zeoBackBtn:hover{
+        background:var(--cmAccentDim);
+        border-color:var(--cmAccent);
+        transform:translateX(3px);
+      }
+    }
+    .zeoOption:active,.zeoCatCard:active,.zeoBackBtn:active{transform:translateX(3px) scale(.98);}
+    .zeoOption:focus-visible,.zeoCatCard:focus-visible,.zeoBackBtn:focus-visible{
+      outline:2px solid var(--cmAccent);outline-offset:2px;
+    }
+    .zeoCatCard{
+      border-radius:12px;padding:.7rem .9rem;
+      display:flex;align-items:center;gap:.7rem;
+    }
+    .zeoCatIco{flex:0 0 auto;width:28px;text-align:center;font-size:1.15rem;}
+    .zeoCatTxt{min-width:0;display:flex;flex-direction:column;gap:.12rem;}
+    .zeoCatLabel{font-size:.85rem;font-weight:700;color:var(--cmTx);line-height:1.2;}
+    .zeoCatDesc{font-size:.75rem;color:var(--cmTxd);line-height:1.35;}
+    .zeoBackBtn{
+      align-self:flex-start;
+      border-radius:999px;padding:.45rem .9rem;margin-top:.15rem;
+      font-size:.76rem;font-weight:600;color:var(--cmTxd);
+    }
+    .zeoComingSoon{
+      text-align:center;padding:1.4rem .6rem;
+      border:1px dashed var(--cmBdr);border-radius:12px;
+      color:var(--cmTxd);font-family:var(--fb);font-size:.82rem;line-height:1.6;
+    }
+    @media(prefers-reduced-motion:reduce){
+      .zeoMsg{animation:none;}
+      .zeoOption,.zeoCatCard,.zeoBackBtn{transition:none;}
+      .zeoOption:hover,.zeoCatCard:hover,.zeoBackBtn:hover,
+      .zeoOption:active,.zeoCatCard:active,.zeoBackBtn:active{transform:none;}
+    }

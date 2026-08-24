@@ -282,6 +282,15 @@
   function bnGoCommunity(){
     bnGo('bnCommunity', '/community', ddOpenCommunity);
   }
+  /* Friends, which was a chip inside the community page and is a destination
+     of its own now. No public url — a friend list is one member's own page,
+     the same reasoning the upload sheet and the cart are held to — so the
+     address goes back to where the visit came from. */
+  function bnGoFriends(){
+    bnGo('bnFriends', null, function(){
+      if(typeof openFriendsPage === 'function') openFriendsPage();
+    });
+  }
   function bnGoProfile(e){
     if(e) e.stopPropagation();
     /* No path: whose profile this is may take a round trip to answer, so

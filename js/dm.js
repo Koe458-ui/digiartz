@@ -370,6 +370,9 @@
     if (!db()) { toast('Backend not configured'); return; }
     if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
     dmPartner = p;
+    // The assistant shares this panel. It gives up its view and not the panel
+    // — zeoClose would shut the panel this thread is about to open.
+    if (typeof window.zeoHide === 'function') window.zeoHide();
     // grid stays mounted behind, the chat panel slides in over it
     var chat = $('dmChatView'), cmChat = $('cmChatView');
     if (cmChat) cmChat.style.display = 'none';
@@ -792,6 +795,10 @@
     var inp = $('frdSearchInput'); if (inp) inp.value = '';
     var res = $('frdResults'); if (res) res.innerHTML = '';
     loadFriendsPage();
+    /* The conversation list lives here now. It used to sit behind a chip in
+       the community page, so it was painted when THAT page opened; this is
+       the same call moved to the page the list is actually on. */
+    refreshConvos();
   }
   function closeFriendsPage () {
     $('frdPage').classList.remove('open');
@@ -811,6 +818,16 @@
     closeFriendsPage();
   });
   window.openFriendsPage  = openFriendsPage;
+  /* Put away whatever conversation is open, without the panel slide — js/zeo.js
+     calls this on its way in, because a thread left open behind it would still
+     be polling and still be on screen under it. A no-op when there is none. */
+  window.dmCloseThread = function () {
+    if (!dmPartner) return;
+    dmPartner = null;
+    clearInterval(dmPoll); dmPoll = null;
+    var dm = $('dmChatView'); if (dm) dm.style.display = 'none';
+    refreshConvos();
+  };
   // the community header's search box on its Friends tab
   window.dmPeopleSearch = function (q, box, onOpen) { return runSearch(q, box, onOpen || null); };
   // bridge for profile buttons
@@ -854,13 +871,13 @@
       if (dmPartner) { closeThread(); return; }
       if (typeof orig === 'function') orig.apply(this, arguments);
     };
-    // refresh convos on open
+    /* The community page keeps only the badge on its Friends button — the
+       conversation list moved to the friends page and is painted by
+       openFriendsPage, which is where it now is. */
     var origOpen = window.openCommunityHome;
     if (typeof origOpen === 'function') {
       window.openCommunityHome = function () {
         var out = origOpen.apply(this, arguments);
-        refreshConvos();
-        // the header's friends button carries the pending count
         loadFriendships().then(frPaintBadge);
         return out;
       };

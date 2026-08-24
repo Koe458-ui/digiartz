@@ -73,57 +73,24 @@
         }
       };
 
-      // ---- tabs -------------------------------------------------------------
-      // Community and Friends are two panes under one banner. Which one is open
-      // is also what the search page opens on, so a member searching from the
-      // Friends tab is looking for people without having to say so.
-      var tab = 'community', searchTimer = null;
+      /* ---- search ------------------------------------------------------------
+         A page, not a bar. Every other section on the site opens search the
+         same way — back arrow, one field, results underneath — and this is
+         that component (#fgSearchPage, #pfSearchPage) pointed at a different
+         haystack.
 
-      var TABS = {
-        community: { btn: 'cmTabCommunity', pane: 'cmPaneCommunity' },
-        friends:   { btn: 'cmTabFriends',   pane: 'cmPaneFriends' }
-      };
-
-      window.cmSetTab = function (next) {
-        if (!TABS[next]) return;
-        tab = next;
-        Object.keys(TABS).forEach(function (k) {
-          var on = k === next;
-          var b = $(TABS[k].btn), p = $(TABS[k].pane);
-          if (b) { b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
-          if (p) p.hidden = !on;
-        });
-        var scroll = $('cmGridScroll');
-        if (scroll) scroll.scrollTop = 0;
-      };
-
-      // ---- search ------------------------------------------------------------
-      // A page, not a bar. Every other section on the site opens search the
-      // same way — back arrow, one field, scope chips, results underneath —
-      // and this is that component (#fgSearchPage, #pfSearchPage) pointed at a
-      // different haystack. The scope opens on whichever tab was being read,
-      // and can be changed without leaving.
-      var srchScope = 'community';
+         It searches communities and only communities. It used to carry two
+         scope chips, because Community and Friends were two panes of one page
+         and the search had to serve both; they are two pages now, and the
+         friends page has a search of its own. */
+      var searchTimer = null;
       var srchLastFocus = null;
-
-      window.cmSearchScope = function (scope) {
-        if (scope !== 'community' && scope !== 'friends') return;
-        srchScope = scope;
-        var a = $('cmSrchScopeCommunity'), b = $('cmSrchScopeFriends');
-        if (a) { a.classList.toggle('on', scope === 'community'); a.setAttribute('aria-selected', scope === 'community'); }
-        if (b) { b.classList.toggle('on', scope === 'friends');   b.setAttribute('aria-selected', scope === 'friends'); }
-        var inp = $('cmSearchInput');
-        if (inp) inp.placeholder = scope === 'community' ? 'Search communities' : 'Search artists by username';
-        runSearch();
-      };
 
       window.cmOpenSearch = function () {
         var pg = $('cmSearchPage'); if (!pg) return;
         srchLastFocus = document.activeElement;
-        // whichever tab they were on is what they meant to search
-        window.cmSearchScope(tab === 'friends' ? 'friends' : 'community');
         var inp = $('cmSearchInput');
-        if (inp) inp.value = '';
+        if (inp) { inp.value = ''; inp.placeholder = 'Search communities'; }
         runSearch();
         pg.classList.add('open');
         document.body.style.overflow = 'hidden';
@@ -162,7 +129,9 @@
       // Each result clicks its own card, so a result opens exactly what the
       // card opens and neither can drift from the other.
       function searchCommunities (needle) {
-        var pane = $('cmPaneCommunity'), box = $('cmSrchRes');
+        // the cards' container, which is the scroller itself now that the
+        // Community pane wrapper has gone with the pair of chips above it
+        var pane = $('cmGridScroll'), box = $('cmSrchRes');
         if (!pane || !box) return;
         box.innerHTML = '';
         var cards = pane.querySelectorAll('.cmCard'), hits = 0;
@@ -195,18 +164,8 @@
         clearTimeout(searchTimer);
         if (box) box.innerHTML = '';
 
-        if (srchScope === 'community') {
-          if (!q) { srchNote('Type to search communities.'); return; }
-          searchCommunities(q.toLowerCase());
-          return;
-        }
-        if (q.length < 2) { srchNote('Type at least two letters to find an artist.'); return; }
-        srchNote('Searching\u2026');
-        searchTimer = setTimeout(function () {
-          if (typeof window.dmPeopleSearch !== 'function') { srchNote('Search is unavailable.'); return; }
-          window.dmPeopleSearch(q, box);
-          srchNote('');
-        }, 300);
+        if (!q) { srchNote('Type to search communities.'); return; }
+        searchCommunities(q.toLowerCase());
       }
 
       /* The page covers the section but does not remove it, so without this
@@ -243,11 +202,14 @@
       };
 
       // ---- the page opening -------------------------------------------------
-      // Called by openCommunityHome. Every visit lands on Community with the
-      // search closed, rather than on wherever the last visit left off.
+      // Called by openCommunityHome. Every visit lands at the top with the
+      // search closed, rather than on wherever the last visit left off. It
+      // used to set the Community chip as well, back when there was a pair of
+      // them and a visit could arrive on the wrong one.
       window.cmHomeReset = function () {
         window.cmCloseSearch();
-        window.cmSetTab('community');
+        var scroll = $('cmGridScroll');
+        if (scroll) scroll.scrollTop = 0;
       };
 
       // ---- banner counters --------------------------------------------------
@@ -256,7 +218,7 @@
       // than fetched, which it can be because every community is rendered —
       // seven cards under the banner is seven on it.
       window.cmSyncCount = function () {
-        var pane = $('cmPaneCommunity'), total = $('cmStatNum');
+        var pane = $('cmGridScroll'), total = $('cmStatNum');
         if (total && pane) total.textContent = pane.querySelectorAll('.cmCard').length;
         paintCaps();
       };

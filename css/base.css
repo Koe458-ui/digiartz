@@ -257,7 +257,8 @@
     #fg, #dzPanelHost, #profilePage, #pfSearchPage, #fgSearchPage, #setPage,
     #legalPage, #pfEditPage, #subPage, #cmSearchPage, #cmBrowsePage,
     #cmInfoPage, #admPage, #pfMyWorkPage, #notifPage, #anPage, #anListPage,
-    #rankPage, #themePage, #frdPage, #bmPage, #xpPage, #albPage, #albViewPage{
+    #rankPage, #themePage, #frdPage, #bmPage, #xpPage, #albPage, #albViewPage,
+    #cartPage{
       overflow-y:scroll;
     }
 
@@ -436,6 +437,17 @@
        and the panel is a mouseleave, and the menu shuts under the pointer on
        its way in. */
     .dzUpWrap{position:relative;flex:0 0 auto;display:flex;align-items:center;}
+    /* The bridge across the gap between the word and the panel. It hangs off
+       the wrapper rather than off the panel, because the panel clips its own
+       children now and a bridge above it would be the first thing clipped.
+       Only while the menu is up: an invisible strip under an idle word would
+       take the hover off whatever is behind it. */
+    .dzUpWrap::after{
+      content:'';
+      position:absolute;left:0;right:0;top:100%;height:.6rem;
+      display:none;
+    }
+    .dzUpWrap.open::after{display:block;}
     .dzLinkDd{display:inline-flex;align-items:center;gap:.3rem;}
     .dzLinkChev{
       width:13px;height:13px;flex:0 0 auto;opacity:.65;
@@ -448,6 +460,21 @@
        looks like it belongs to the bar rather than to Upload. */
     .dzUpWrap.open .dzLink{color:var(--tx);}
     .dzUpWrap.open .dzLink::after{left:.2rem;right:.2rem;}
+    /* It opens the way the drawer opens.
+       This used to fade and scale in, which is a different gesture from the
+       one the hamburger's panel makes two breakpoints away — the same five
+       destinations arriving two different ways depending on the width of the
+       window. It is the drawer's roll now: a grid track going 0fr → 1fr, which
+       is the one way to animate to a height nobody has measured, with the
+       words sliding in across it one after another. One motion for the menus
+       on this site, wherever they are opened from.
+
+       The chrome stays on this element and the padding moves inside it.
+       Padding on a grid item survives a 0fr row, so a padded panel would show
+       a sliver of its own surface while it was shut; its border and background
+       do not, because `visibility:hidden` takes the whole box out of the
+       painting until the roll begins. The box-shadow is drawn outside the
+       border box and so is not clipped by this element's own overflow. */
     .dzUpDd{
       position:absolute;
       top:calc(100% + .5rem);
@@ -455,41 +482,86 @@
       z-index:401;
       width:min(20.5rem,calc(100vw - 2rem));
       box-sizing:border-box;
-      padding:.3rem;
+      transform:translateX(-50%);
       background:var(--sur);
       border:1px solid var(--bdr);
       border-radius:16px;
       box-shadow:var(--sh-card-hover);
+      display:grid;
+      grid-template-rows:0fr;
+      overflow:hidden;
       /* Closed it is not merely see-through: visibility and pointer-events
          take it out of the page entirely, so a menu nobody has opened cannot
-         swallow a click meant for the headline under it. */
-      opacity:0;visibility:hidden;pointer-events:none;
-      transform:translateX(-50%) translateY(-6px) scale(.98);
-      transform-origin:top center;
-      transition:opacity .15s ease,transform .15s ease,visibility 0s linear .15s;
+         swallow a click meant for the headline under it. Shutting is the
+         quicker half and on a plain ease — a menu being put away does not need
+         to be watched. */
+      visibility:hidden;pointer-events:none;
+      transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1),
+                 visibility 0s linear .24s;
     }
-    /* the bridge across the gap above — see the note on .dzUpWrap */
-    .dzUpDd::before{content:'';position:absolute;left:0;right:0;top:-.6rem;height:.6rem;}
     .dzUpWrap.open .dzUpDd{
-      opacity:1;visibility:visible;pointer-events:auto;
-      transform:translateX(-50%) translateY(0) scale(1);
-      transition:opacity .2s ease,
-                 transform .34s cubic-bezier(.16,1,.3,1),
+      grid-template-rows:1fr;
+      visibility:visible;pointer-events:auto;
+      /* Opening runs longer and decelerates hard — it covers most of its
+         travel early and settles into the last few pixels, which is how a
+         thing with weight comes to rest rather than stopping. The drawer's
+         own numbers. */
+      transition:grid-template-rows .40s cubic-bezier(.16,1,.3,1),
                  visibility 0s;
     }
-    .dzUpDdInner{display:flex;flex-direction:column;}
+    /* The breathing room around the rows is margin on the rows and not padding
+       here, for the same reason the drawer's sub-list carries it that way:
+       padding on a grid item survives a 0fr row, and a shut panel that is
+       still twelve pixels tall is a shut panel with a box in it. A margin is
+       inside the box this clips, so shut is shut. */
+    .dzUpDdInner{
+      min-height:0;
+      overflow:hidden;
+      display:flex;flex-direction:column;
+    }
     .dzUpItem{
       --upA:var(--pg);
       display:flex;align-items:center;gap:.7rem;
-      width:100%;box-sizing:border-box;text-align:left;
-      padding:.6rem .6rem;
+      box-sizing:border-box;text-align:left;
+      padding:.6rem;margin:0 .3rem;
       border:0;border-radius:12px;background:none;cursor:pointer;
       color:var(--tx);
       -webkit-tap-highlight-color:transparent;
-      transition:background .18s ease,transform .16s ease;
+      /* The rows come in from the left one after another while the panel above
+         them is still rolling open — two movements at right angles to each
+         other, which is what the hamburger's drawer does with the same five
+         words. The stagger is on the way in only: closing, they go together
+         and quickly, because a staggered exit leaves the last row still
+         travelling after the panel that held it has gone. */
+      opacity:0;
+      transform:translateX(-12px);
+      transition:background .18s ease,
+                 opacity .12s ease,transform .12s ease;
     }
+    .dzUpWrap.open .dzUpItem{
+      opacity:1;
+      transform:translateX(0);
+      transition:background .18s ease,
+                 opacity .32s cubic-bezier(.16,1,.3,1),
+                 transform .36s cubic-bezier(.16,1,.3,1);
+    }
+    /* 45ms apart, starting once the panel has opened far enough to have
+       somewhere to put the first one — the drawer's own timings */
+    .dzUpWrap.open .dzUpDdInner > :nth-child(1){transition-delay:0s,.06s,.06s;}
+    .dzUpWrap.open .dzUpDdInner > :nth-child(2){transition-delay:0s,.105s,.105s;}
+    .dzUpWrap.open .dzUpDdInner > :nth-child(3){transition-delay:0s,.15s,.15s;}
+    .dzUpWrap.open .dzUpDdInner > :nth-child(4){transition-delay:0s,.195s,.195s;}
+    .dzUpWrap.open .dzUpDdInner > :nth-child(5){transition-delay:0s,.24s,.24s;}
+    /* Four of the Explore entries are anchors carrying real addresses and the
+       rest are buttons — an entry with a url gets one, so a middle-click opens
+       it in a tab and the status bar says where it goes. This is what stops
+       those four arriving underlined and wearing the link colour, so a menu
+       reads as one menu however each row is built. The quick-links rail on the
+       home page carries the same rule for the same reason. */
+    .dzUpItem:first-child{margin-top:.3rem;}
+    .dzUpItem:last-child{margin-bottom:.3rem;}
+    a.dzUpItem{text-decoration:none;color:inherit;}
     @media(hover:hover){ .dzUpItem:hover{background:var(--sur2);} }
-    .dzUpItem:active{transform:scale(.985);}
     .dzUpItem:focus-visible{outline:2px solid var(--upA);outline-offset:-2px;}
     /* the section's own glyph in the section's own colour — the same pairing
        the gallery's tab rail and the upload forms use, so a member meets one
@@ -538,6 +610,28 @@
       display:none;
     }
     #hNotifBtn.hasUnread .hNotifDot{display:block;}
+
+    /* The cart, beside the bell. It was the gallery's sixth chip — one
+       member's own basket in a row of five public sections, reachable only by
+       opening the gallery first. It is a control on the bar now, and the
+       number on it is how many things are waiting in it.
+
+       A count and not a dot: the bell's dot answers "is there anything", which
+       is all a notification needs, and a basket's answer is "how many". Empty
+       wears nothing at all rather than a nought — a badge saying 0 is a badge
+       asking to be looked at for no reason. */
+    .dzCartCount{
+      position:absolute;top:3px;right:1px;
+      min-width:16px;height:16px;padding:0 4px;
+      box-sizing:border-box;border-radius:999px;
+      display:none;align-items:center;justify-content:center;
+      background:var(--brand-red);color:#fff;
+      box-shadow:0 0 0 2px var(--bg);
+      font-family:var(--fm);font-size:.58rem;font-weight:700;
+      line-height:1;letter-spacing:0;
+      pointer-events:none;
+    }
+    .dzCartBtn.hasItems .dzCartCount{display:flex;}
 
     /* Search is a word on a phone and an icon on a wide bar: on a phone it is
        the hamburger's first item, which is where the other four are, and a
@@ -735,6 +829,7 @@
       -webkit-tap-highlight-color:transparent;
       transition:background .18s ease;
     }
+    a.dzMenuSubItem{text-decoration:none;color:var(--tx);}
     .dzMenuSubItem:first-child{margin-top:.1rem;}
     .dzMenuSubItem:last-child{margin-bottom:.4rem;}
     .dzMenuSubItem:active{background:var(--sur2);}
@@ -773,10 +868,11 @@
       .dzUpDd,.dzUpItem,.dzMenuSub,.dzMenuChev,.dzLinkChev,
       .dzMenuInner > .dzMenuItem,.dzMenuInner > .dzMenuGrp{transition-duration:.01ms;}
       .dzMenu.open .dzMenuInner > *{transition-delay:0s;}
-      /* the panel keeps its own centring transform — only the press and the
-         6px it arrives on are dropped */
-      .dzUpDd{transform:translateX(-50%);}
-      .dzUpItem:active{transform:none;}
+      .dzUpWrap.open .dzUpDdInner > *{transition-delay:0s;}
+      /* the rows arrive where they belong rather than travelling to it; the
+         panel keeps its own centring transform, which is layout and not
+         motion */
+      .dzUpItem{transform:none;}
     }
 
     #hero {

@@ -68,12 +68,13 @@
     return typeof window[name] === 'function' ? window[name] : null;
   }
 
-  // Which gallery chip is showing. Read off the DOM rather than out of
-  // gallery.js, whose fgSection is private to that file — and the chip row is
-  // the thing the member is actually looking at.
+  // Which of the gallery's sections is showing. Read off the panel that is
+  // open rather than out of gallery.js, whose fgSection is private to that
+  // file — and the open panel is the thing the member is actually looking at.
+  // It used to read the lit chip, back when there was a chip row to read.
   function activeSection() {
-    var b = document.querySelector('#fgSecTabs .fgSecBtn.active');
-    return b ? String(b.id).replace('fgSecBtn-', '') : null;
+    var p = document.querySelector('#fg .fgSec.active');
+    return p ? String(p.id).replace('fgSec-', '') : null;
   }
 
   // Openers. Each one calls the function the button always called, so a route
@@ -326,29 +327,28 @@
     enter(a.pathname);
   });
 
-  // The chip row is the gallery's own navigation and it is not going away, so
-  // the address follows it: switching to Blog inside the gallery leaves the
-  // bar reading /blog, and that url shares and refreshes to the same place.
+  // The address follows whichever section is on screen: landing on Blog
+  // leaves the bar reading /blog, and that url shares and refreshes to the
+  // same place.
   //
-  // Watched rather than wrapped around fgSwitchSection, because the row moves
-  // by three different routes — the onclick on each chip, the arrow keys in
-  // gallery.js, and openFG resetting to Artworks — and only a watcher sees
-  // all three.
+  // Watched rather than wrapped around fgSwitchSection, because the section
+  // moves by more than one route — the bar's Explore menu, a route arriving,
+  // openFG resetting to Artworks — and only a watcher sees all of them.
   function chipMoved() {
     if (opening || !owns) return;
     if (!isOpen('fg')) return;
     var path = SECTION_PATH[activeSection()];
     var here = ROUTES[window.location.pathname];
-    // Only rewrite an address this file put there. Cart has no public url —
-    // it is one member's basket — and a section opened while the bar is on an
-    // artwork or a listing has not taken the address over.
+    // Only rewrite an address this file put there. Jobs has no public url —
+    // the section is deliberately not one this site puts forward to search,
+    // see functions/_middleware.js — and a section opened while the bar is on
+    // an artwork or a listing has not taken the address over.
     if (!here || here.panel !== 'fg') return;
     try {
       if (path) { if (path !== window.location.pathname) history.replaceState({ dzr: 1 }, '', path); }
       else {
-        // Cart. It is one member's basket and has no public url, so the
-        // address goes back to where the visit came from rather than
-        // inventing one.
+        // Jobs. No public url, so the address goes back to where the visit
+        // came from rather than inventing one.
         history.replaceState({}, '', returnUrl || '/');
         pushed = false; returnUrl = null; owns = false;
       }
@@ -356,10 +356,15 @@
   }
 
   if (window.MutationObserver) {
-    var tabs = el('fgSecTabs');
-    if (tabs) {
+    /* The gallery's own panels. One of the five carries .active at a time and
+       fgSwitchSection is what moves it, so watching the container catches
+       every way that class can land — including the ones this file did not
+       cause. It watched the chip row for the same reason, until there stopped
+       being one. */
+    var gal = el('fg');
+    if (gal) {
       new MutationObserver(chipMoved)
-        .observe(tabs, { subtree: true, attributes: true, attributeFilter: ['class'] });
+        .observe(gal, { subtree: true, attributes: true, attributeFilter: ['class'] });
     }
     /* Every panel with an address, and not just this file's two. The two are
        the ones this file opens; the rest are opened by js/gallery.js,

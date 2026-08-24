@@ -487,6 +487,18 @@ html.thmFade #themePage{
   transition:transform .45s cubic-bezier(.22,1,.36,1);
 }
 #bmPage.open{transform:translateX(0);}
+/* The cart, on the same shell. It was the gallery's sixth chip and is a page
+   of its own now, reached from the icon beside the bell — so it slides in from
+   the right the way Bookmarks and Friends do rather than being a tab of
+   something else. The lines inside it are unchanged: js/sections.js still
+   fills #fgSecC-cart, and .fgBdy still wraps it. */
+#cartPage{
+  position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#cartPage.open{transform:translateX(0);}
+@media (prefers-reduced-motion:reduce){#cartPage{transition:none;}}
 #xpPage{
   position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
   overflow-y:auto;transform:translateX(100%);

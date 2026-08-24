@@ -149,12 +149,44 @@
 
   // load
   function dzSecEnter(sec){
-    // The Cart tab has been a tab with filters and nothing behind it since the
-    // gallery grew six of them. It has a table now, so it has a panel.
+    // The cart is not one of the gallery's sections any more — it is a page of
+    // its own behind the bar's cart icon — but it is still filled from here,
+    // so a caller that names it still gets it.
     if(sec === 'cart'){ dzCartRender(); return; }
     if(!SEC[sec] || dzLoaded[sec] || dzBusy[sec]) { dzSecRender(sec); return; }
     dzSecLoad(sec);
   }
+
+  /* ── the cart's page ─────────────────────────────────────────────────────
+     One member's basket, reached from the icon beside the bell. No url: a
+     basket is not a page this site publishes, so the address bar is asked to
+     stay true rather than to name this. */
+  function openCartPage(){
+    if(typeof bnCloseAllSections === 'function') bnCloseAllSections();
+    var pg = document.getElementById('cartPage');
+    if(!pg) return;
+    pg.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    dzCartRender();
+    if(typeof window.dzRouteAudit === 'function') window.dzRouteAudit();
+  }
+  function closeCartPage(){
+    var pg = document.getElementById('cartPage');
+    if(pg) pg.classList.remove('open');
+    if(typeof restoreScroll === 'function') restoreScroll();
+  }
+  // The bar's icon. A guest has no basket to open, so it asks them in first —
+  // the same gate every other member-only control on this site uses.
+  function dzGoCart(){
+    if(!window.currentUser){
+      if(typeof openAuthMod === 'function'){ openAuthMod(); return; }
+    }
+    openCartPage();
+  }
+  window.openCartPage  = openCartPage;
+  window.closeCartPage = closeCartPage;
+  window.dzGoCart      = dzGoCart;
 
   // ---- the cart ----------------------------------------------------------
   // What is in it, and the two things that can be done with a line in it:
@@ -167,6 +199,7 @@
     if(!host) return;
     if(!window.currentUser){
       host.innerHTML = '<div class="dzEmpty">SIGN IN TO USE YOUR CART</div>';
+      dzCartBadge(0);
       return;
     }
     if(!sb){ host.innerHTML = '<div class="dzEmpty">BACKEND NOT CONFIGURED</div>'; return; }
@@ -175,6 +208,7 @@
       var c = await sb.from('cart_items').select('item_id,created_at')
                 .eq('user_id', currentUser.id).order('created_at',{ascending:false}).limit(100);
       var ids = ((c && c.data) || []).map(function(x){ return x.item_id; });
+      dzCartBadge(ids.length);
       if(!ids.length){ host.innerHTML = '<div class="dzEmpty">YOUR CART IS EMPTY</div>'; return; }
       var m = await sb.from('marketplace_items').select(selectFor('marketplace')).in('id', ids);
       var rows = (m && m.data) || [];
@@ -182,6 +216,10 @@
       var byId = {};
       rows.forEach(function(r){ byId[String(r.id)] = r; });
       rows = ids.map(function(i){ return byId[String(i)]; }).filter(Boolean);
+      // What survived the join, not what the cart table claimed: a listing
+      // taken down leaves a row behind, and a badge counting those is a badge
+      // pointing at an empty page.
+      dzCartBadge(rows.length);
       if(!rows.length){ host.innerHTML = '<div class="dzEmpty">YOUR CART IS EMPTY</div>'; return; }
       dzCartRows = rows;
       host.innerHTML = '<div class="dzGrid">'+rows.map(function(r){
@@ -195,6 +233,32 @@
     }
   }
   var dzCartRows = [];
+  /* The number on the bar's icon. It is written from whatever the cart last
+     answered, so it cannot claim a count the page would contradict; a guest
+     and an empty basket both wear nothing rather than a zero, because a badge
+     saying 0 is a badge asking to be looked at for no reason. */
+  function dzCartBadge(n){
+    var b = document.getElementById('dzCartCount');
+    if(!b) return;
+    n = +n || 0;
+    b.textContent = n > 99 ? '99+' : (n ? String(n) : '');
+    b.parentNode.classList.toggle('hasItems', n > 0);
+  }
+  /* The badge on boot and on a sign-in, when nobody has opened the cart yet.
+     A count and no rows: the page's own render costs two round trips and
+     fetches every listing in the basket, which is far too much to pay for a
+     number next to a bell. A guest is emptied rather than asked. */
+  async function dzCartCountLoad(){
+    if(!window.currentUser || !sb){ dzCartBadge(0); return; }
+    try{
+      var r = await sb.from('cart_items')
+                .select('item_id', { count:'exact', head:true })
+                .eq('user_id', currentUser.id);
+      dzCartBadge((r && r.count) || 0);
+    }catch(e){ /* a badge that is absent is better than one that is wrong */ }
+  }
+  window.dzCartBadge  = dzCartBadge;
+  window.dzCartCount  = dzCartCountLoad;
   window.dzCartRows   = function(){ return dzCartRows; };
   window.dzCartPaint  = dzCartRender;
   window.dzCartRemove = async function(id){
@@ -204,7 +268,7 @@
                 .eq('user_id', currentUser.id).eq('item_id', id);
       if(r.error) throw r.error;
       showToast('Removed from cart');
-      dzCartRender();
+      dzCartRender();   // repaints the page and the bar's badge with it
     }catch(e){ showToast('Could not remove it — try again'); }
   };
   // The one column a signed-out visitor may not read. Asked for anyway it
@@ -3758,6 +3822,8 @@
   // session — and again the moment one appears.
   if(sb && sb.auth){
     window.dzExtras();
+    // and the number beside the bell, for the session already in hand
+    if(typeof window.dzCartCount === 'function') window.dzCartCount();
     // Gated on the member changing, not on an event arriving. This also runs
     // for TOKEN_REFRESHED — about once an hour per open tab — and the reset
     // below threw away a loaded marketplace tab and refetched two hundred rows
@@ -3773,6 +3839,8 @@
       // price_cents at all — so a page rendered in the other state has to be
       // thrown away rather than patched.
       if(typeof window.dzSecReset === 'function') window.dzSecReset('marketplace');
+      // Whose basket the bar is counting changed with the session.
+      if(typeof window.dzCartCount === 'function') window.dzCartCount();
       if(session) window.dzExtras();
       else { done = false; inflight = null; }
     });
@@ -5532,6 +5600,8 @@
   var OWN = {
     community:    function(){ if(typeof bnGoCommunity === 'function') bnGoCommunity(); },
     upload:       function(){ if(typeof bnGoUpload === 'function') bnGoUpload(); },
+    // one member's basket, on the bar beside the bell
+    cart:         function(){ if(typeof dzGoCart === 'function') dzGoCart(); },
     // the page Settings opens under Subscription
     subscription: function(){ if(typeof openSubscription === 'function') openSubscription(); },
     // Artist Progress, the profile's own level page. It reads whichever
@@ -5547,9 +5617,11 @@
     ranking:      function(){ if(typeof openRankPage === 'function') openRankPage(); }
   };
 
-  // sections that live inside the gallery overlay
+  // sections that live inside the gallery overlay. Cart was the sixth and is
+  // a page of its own now, behind the bar's cart icon — so it is listed with
+  // the destinations below rather than here.
   var GALLERY = {
-    artworks:1, marketplace:1, resources:1, blog:1, jobs:1, cart:1
+    artworks:1, marketplace:1, resources:1, blog:1, jobs:1
   };
 
   /* Whatever is open has to go first, and "whatever" now means every panel:

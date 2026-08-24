@@ -4,6 +4,71 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v248 — the gallery, on the same terms as the upload sheet.
+
+       THE FEATURED SHOWCASE IS GONE. Six cards over the gallery's chip row —
+       for each of the three boards the site scores, the artist holding it and
+       the artwork leading it. js/fgshow.js, its markup, its 587 lines of
+       stylesheet and the one call that painted it: all removed, nothing left
+       behind and nothing standing in for it.
+
+       EXPLORE IS FIVE SECTIONS, the way Upload became five forms. The gallery
+       held Artworks, Marketplace, Blog, Resources and Jobs on a chip row
+       inside itself, so a reader who wanted the Marketplace arrived at the
+       Artworks grid first and then had to find a switch above it. The bar's
+       Explore menu names all five and lands on the one that was asked for —
+       a panel under the word for a mouse, a row that rolls open in the
+       hamburger for a finger. The chip row is gone with its stylesheet, and
+       the gallery's own bar says which section is on screen.
+
+       THE CART IS ON THE BAR, beside the bell, with the number of things in
+       it. It was the sixth chip in that row, which put one member's own basket
+       among five public sections and made opening the gallery the way to it.
+       It is a page of its own now, on the shell Bookmarks and Friends wear.
+
+       EVERY SECTION LEADS WITH A HEAD. The gallery used to open on a grid and
+       a row of chips, which was the whole of what it told a reader about
+       itself. Each section now says what it is in its own words, above its own
+       body: a title, a paragraph on what is in it and what to do with it, a
+       search box for that section alone — half the window wide at a desktop
+       and no more — and every category it has as one line of chips. The rail
+       slides rather than wraps: two arrows in the gutters for a mouse, a swipe
+       for a finger, and a drag for either. Fifty-one artwork categories do not
+       wrap into anything a reader can use.
+
+       The chips, the filter sheet and the grid are one answer in three places
+       rather than three copies of it: picking a chip ticks the sheet's radio,
+       applying the sheet moves the chips, and closing the gallery puts all of
+       them back.
+
+       Fixed on the way past: .fgHead was capped AND padded by --shellPad,
+       which is a percentage — so the head got narrower as the screen got
+       wider. The band takes the shell inset and the paragraph inside it takes
+       the reading measure, which is the rule css/base.css already states.
+
+       The words that carry the point in each head go in the brand red, which
+       is the emphasis the hero already puts on "Digital Art" and the wordmark
+       puts on "Artz". Two or three phrases a paragraph and no more: a
+       paragraph with six red phrases in it has none. They are written as
+       *stars* in the copy and converted after escaping, so a section's text
+       can never put a tag on the page.
+
+       Both bar menus now open the way the hamburger's drawer opens — a grid
+       track from 0fr to 1fr with the rows sliding in across it, rather than
+       the fade and scale they arrived with. The same five destinations were
+       coming in two different ways depending on the width of the window. The
+       chrome stays on the panel and the padding moved onto the rows, because
+       padding on a grid item survives a 0fr row and a shut panel was still
+       twelve pixels tall.
+
+       The precache list had drifted from the document — eleven stale versions
+       and a file that no longer exists. It is the document's list again.
+
+       Changed: index.html, css/base.css, css/hero.css, css/widgets.css,
+       css/upload.css, js/fghead.js (new), js/fgshow.js (deleted),
+       js/gallery.js, js/sections.js, js/app-core.js, js/topnav.js,
+       js/routes.js, sw.js.
+
    v247 — Upload is five destinations, not one word with a switch under it.
 
        Posting an artwork, listing a product, writing a blog post, sharing a
@@ -4621,7 +4686,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v247';
+const CACHE_VERSION = 'v248';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4672,8 +4737,8 @@ const SHELL_URLS = [
   '/icon-192.png?v=3',
 
   // stylesheets
-  '/css/base.css?v=22',
-  '/css/hero.css?v=110',
+  '/css/base.css?v=27',
+  '/css/hero.css?v=113',
   '/css/viewer.css?v=39',
   '/css/community.css?v=22',
   '/css/connect.css?v=7',
@@ -4682,8 +4747,8 @@ const SHELL_URLS = [
   '/css/admin.css?v=4',
   '/css/auth.css?v=5',
   '/css/panels.css?v=19',
-  '/css/upload.css?v=16',
-  '/css/widgets.css?v=13',
+  '/css/upload.css?v=17',
+  '/css/widgets.css?v=14',
   '/css/overrides.css?v=40',
   '/css/select.css?v=4',
   '/css/analytics.css?v=9',
@@ -4706,31 +4771,31 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=34',
+  '/js/app-core.js?v=36',
   '/js/protect.js?v=3',
-  '/js/gallery.js?v=101',
+  '/js/gallery.js?v=102',
+  '/js/fghead.js?v=2',
   '/js/auth.js?v=21',
   '/js/profile.js?v=17',
-  '/js/albums.js?v=18',
+  '/js/albums.js?v=19',
   '/js/drafts.js?v=8',
   '/js/upqueue.js?v=7',
   '/js/avatar.js?v=3',
-  '/js/pfedit.js?v=18',
-  '/js/mywork.js?v=26',
+  '/js/pfedit.js?v=19',
+  '/js/mywork.js?v=27',
   '/js/startup.js?v=7',
   '/js/tagrail.js?v=3',
   '/js/search.js?v=15',
   '/js/feed.js?v=5',
-  '/js/fgshow.js?v=7',
   '/js/effects.js?v=9',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
   '/js/theme.js?v=6',
   '/js/analytics.js?v=9',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=126',
-  '/js/routes.js?v=2',
-  '/js/topnav.js?v=5',
+  '/js/sections.js?v=128',
+  '/js/routes.js?v=3',
+  '/js/topnav.js?v=7',
   '/js/navprogress.js?v=6'
 ];
 

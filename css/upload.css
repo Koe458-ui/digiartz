@@ -12,12 +12,13 @@
       --upcAmber:#FBBF24;  --upcPink:#F472B6;  --upcCyan:#22D3EE;
       --upcTeal:#2DD4BF;   --upcOrange:#FB923C;--upcPurple:#C084FC;
       --upcRose:#FB7185;   --upcYellow:#FCD34D;--upcLilac:#C4B5FD;
-      /* Two steps the gallery's tab rail owns and this palette had no name
-         for. A section is one colour across the site, so the rail's hex is
-         the authority and these carry it rather than approximating it:
-         --upcSky is Jobs, --upcIndigo is Blog. Read off the --fgA values on
-         #fgSecTabs in index.html. Marketplace needed no new name — the
-         rail's orange is --upcOrange, which was already here. */
+      /* Two steps the gallery's chip row owned and this palette had no name
+         for. A section is one colour across the site: --upcSky is Jobs,
+         --upcIndigo is Blog. They were read off the --fgA values on the
+         gallery's tab rail, which no longer exists — the bar's Explore and
+         Upload menus draw the five sections from these instead, so this block
+         is the authority on them now rather than a copy of one. Marketplace
+         needed no new name: the rail's orange was --upcOrange, already here. */
       --upcSky:#38BDF8;    --upcIndigo:#818CF8;
       /* the ready mark's word is 9px, so it needs its own darker step where
          the tint it sits in is pale */
@@ -26,10 +27,9 @@
     }
     /* The one theme that moves these. The default ground is charcoal, so the
        block above takes the luminous step; only paper needs the saturated
-       one. This is the same split the gallery rail uses for the very same
-       colours — .fgSecBtn takes --fgA, and html[data-theme="light"] .fgSecBtn
-       takes --fgAL — so the two agree under both themes rather than under
-       only one. */
+       one. This is the split the gallery's own chip row used for the very same
+       colours before that row was removed, so the two agreed under both themes
+       rather than under only one. */
     html[data-theme="light"]{
       --upcViolet:#7C3AED; --upcGreen:#16A34A; --upcBlue:#2563EB;
       --upcAmber:#D97706;  --upcPink:#DB2777;  --upcCyan:#0891B2;

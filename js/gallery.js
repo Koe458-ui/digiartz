@@ -7,20 +7,35 @@
     jobs:        { label:'Jobs',        opts:['Freelance','Full-Time','Part-Time','Remote','Internship','Contest','Hiring Artists','Collaboration'] },
     cart:        { label:'Cart',        opts:['Shopping Cart','Saved for Later','Checkout','Orders','Downloads','Licenses'] }
   };
-  var fgSection = 'artworks';           // active tab
+  var fgSection = 'artworks';           // section on screen
   var fgFltMode = 'artworks';           // panel owner
   var fgSecFilter = {};                 // chosen option per section
   var fgSecQuery  = {};                 // typed query per section
-  // reading order of the chip row, and the order the arrow keys walk
-  var FG_TABS = ['artworks','marketplace','blog','resources','jobs','cart'];
+  /* The five the gallery holds. Cart was the sixth and is a page of its own
+     now, behind the bar's cart icon: it is one member's basket, which is not a
+     section of a public gallery and never read as one next to Blog and Jobs.
+     The chip row these used to sit on is gone too — the bar's Explore menu
+     names all five and lands on the one that was asked for. */
+  var FG_TABS = ['artworks','marketplace','blog','resources','jobs'];
+  // What the bar says the member is looking at, now that no chip row says it.
+  var FG_TITLE = {
+    artworks:'ARTWORKS', marketplace:'MARKETPLACE', blog:'BLOG',
+    resources:'RESOURCES', jobs:'JOBS'
+  };
 
   // one place to ask, so every motion in here agrees about it
   function fgReduceMotion(){
     return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
+  /* Show one of the five.
+     This was the chip row's handler and is now the whole of how a section is
+     reached: the member picked it in the bar's Explore menu, or arrived on its
+     url, and this puts that panel on screen. There is no row to light up any
+     more — the bar's own title is what says where they are, and each section's
+     head says it again in its own words. */
   function fgSwitchSection(id){
-    if(!id) return;
+    if(!id || !FG_TITLE[id]) return;
     /* Back to the top before the swap, not after. The panel about to be shown
        is the one that decides how tall the page is, so a scroll reset landing
        after it has been drawn is a visible jump; landing before means the new
@@ -28,36 +43,12 @@
     var fg=document.getElementById('fg'); if(fg) fg.scrollTop=0;
     var secs=document.querySelectorAll('#fg .fgSec'), i;
     for(i=0;i<secs.length;i++) secs[i].classList.toggle('active', secs[i].id==='fgSec-'+id);
-    var btns=document.querySelectorAll('#fgSecTabs .fgSecBtn'), on;
-    for(i=0;i<btns.length;i++){
-      on = btns[i].id==='fgSecBtn-'+id;
-      btns[i].classList.toggle('active', on);
-      btns[i].setAttribute('aria-selected', on?'true':'false');
-      // a tab rail is one stop on the page, not six: Tab lands on the
-      // selected chip and the arrow keys move within
-      btns[i].tabIndex = on ? 0 : -1;
-    }
     fgSection=id;
-    // One line at every width, which on a phone is wider than the screen, so
-    // a section opened from somewhere else — a quick link, the hero CTA —
-    // would land with its chip off the edge. Measured off the boxes rather
-    // than offsetLeft, which is relative to whatever happens to be positioned
-    // above the chip rather than to the scroller. This one does glide: the
-    // row it moves through is not being replaced, so there is something to
-    // watch it travel across.
-    var rail=document.getElementById('fgSecRow');
-    var tab=document.getElementById('fgSecBtn-'+id);
-    if(rail && tab){
-      var rr=rail.getBoundingClientRect(), tr=tab.getBoundingClientRect();
-      var want=rail.scrollLeft+(tr.left-rr.left)-(rr.width-tr.width)/2;
-      var max=rail.scrollWidth-rail.clientWidth;
-      var left=Math.max(0,Math.min(want,max));
-      if(!fgReduceMotion() && typeof rail.scrollTo==='function'){
-        rail.scrollTo({left:left, behavior:'smooth'});
-      } else {
-        rail.scrollLeft=left;
-      }
-    }
+    var t=document.getElementById('fgTopTitle');
+    if(t) t.textContent = FG_TITLE[id];
+    // The head is built once per section and lives inside the panel, so a
+    // switch only has to make sure the one being shown has been built.
+    if(typeof window.fgHeadBuild==='function') fgHeadBuild(id);
     fgSyncFilterBtn();
     // load section on first visit
     if(id!=='artworks' && typeof dzSecEnter==='function') dzSecEnter(id);
@@ -82,44 +73,25 @@
   window.fgOpenFilter=fgOpenFilter;
   window.fgSyncFilterBtn=fgSyncFilterBtn;
 
-  /* Arrow keys along the chip row, Home and End to its ends — the tabs
-     pattern anything with role="tablist" answers to. Selection follows the
-     arrow: the panel is already in the page, so switching costs nothing. Up
-     and Down are left alone; the row is horizontal. */
-  function fgTabKey(e){
-    var i = FG_TABS.indexOf(fgSection);
-    if(i === -1) return;
-    var next;
-    if(e.key === 'ArrowRight')     next = (i + 1) % FG_TABS.length;
-    else if(e.key === 'ArrowLeft') next = (i - 1 + FG_TABS.length) % FG_TABS.length;
-    else if(e.key === 'Home')      next = 0;
-    else if(e.key === 'End')       next = FG_TABS.length - 1;
-    else return;
-    e.preventDefault();
-    fgSwitchSection(FG_TABS[next]);
-    var btn = document.getElementById('fgSecBtn-' + FG_TABS[next]);
-    if(btn) btn.focus();
-  }
-  (function(){
-    var tabs = document.getElementById('fgSecTabs');
-    if(tabs) tabs.addEventListener('keydown', fgTabKey);
-  })();
-
   // stub sections hold the query
   var fgSecQTimer={};
+  /* One section's query. The box it comes from is the one in that section's
+     head (js/fghead.js), which wears its own "there is something typed here"
+     class — this used to reach for a wrapper by id that stopped existing when
+     each section's search moved into its head. */
   function fgSecSearchInput(id,v){
     fgSecQuery[id]=String(v||'');
-    var w=document.getElementById(id+'SearchWrap');
-    if(w) w.classList.toggle('tgHasQ', !!fgSecQuery[id].length);
     // debounced input
     clearTimeout(fgSecQTimer[id]);
     fgSecQTimer[id]=setTimeout(function(){
       if(typeof dzSecRender==='function') dzSecRender(id);
     },140);
   }
+  /* Kept as the name the section pages call, and handed to the head, which
+     owns the box and its clear button now — the field this reached for by id
+     went with the search bar each section used to carry of its own. */
   function fgSecSearchClear(id){
-    var el=document.getElementById(id+'SearchIn');
-    if(el){ el.value=''; el.focus(); }
+    if(typeof window.fgHeadSearchClear==='function'){ fgHeadSearchClear(id); return; }
     fgSecSearchInput(id,'');
   }
 
@@ -151,8 +123,17 @@
     fgSecFilter[id]=r?r.value:'all';
     fgSyncFilterBtn();
     closeFilterPanel();
+    // the chip rail in this section's head names the same option this does
+    if(typeof window.fgHeadSyncCat==='function') fgHeadSyncCat(id);
     if(typeof dzSecRender==='function') dzSecRender(id);
   }
+
+  /* FG_SECTIONS, fgSecFilter and fgSecQuery are not re-exported here: this
+     file is a plain script, so its top-level `var`s are already on window, and
+     js/sections.js has read them off it that way since before this note. The
+     head's chip rails read the same three — they ask rather than keeping a
+     copy of the answer, which is what stops a chip claiming a category the
+     grid under it is not showing. */
 
   // expose for inline handlers
   window.fgSwitchSection=fgSwitchSection;
@@ -166,10 +147,23 @@
     if(typeof closeFgSearch==='function') closeFgSearch(true);
     document.getElementById('fg').classList.remove('open');
     restoreScroll();
-    // reset category filter
+    /* The visit ends where the next one starts: back on every category, with
+       nothing typed. Three controls name that state now — the filter sheet's
+       radio, the chip rail in each section's head, and the head's own search
+       box — so all three are put back, not just the one this line reset when
+       the sheet was the only way to filter anything. */
     filterCat = 'all';
     var catR = document.querySelector('input[name="fltCat"][value="all"]');
     if(catR) catR.checked = true;
+    for(var k in fgSecFilter) fgSecFilter[k] = 'all';
+    for(var q in fgSecQuery)  fgSecQuery[q]  = '';
+    var boxes = document.querySelectorAll('#fg .fgHeadIn');
+    for(var i=0;i<boxes.length;i++){
+      boxes[i].value = '';
+      boxes[i].parentNode.classList.remove('hasQ');
+    }
+    if(typeof window.fgHeadSyncAll === 'function') fgHeadSyncAll();
+    fgSyncFilterBtn();
   }
   // viewer open and close
   var amCloseTimer = null;

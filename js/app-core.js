@@ -753,9 +753,11 @@
     // first shut, so changing section never leaves it hanging off a bar that
     // has already slid away.
     { id:'dzTopMenu',       close:['dzMenuClose'] },
-    // The wide bar's Upload menu, which hangs off the word rather than off the
-    // bar and so is not inside the drawer above. It carries the open class on
-    // its wrapper, because that is what the word and the panel have in common.
+    // The wide bar's two menus, which hang off their words rather than off the
+    // bar and so are not inside the drawer above. Each carries the open class
+    // on its wrapper, because that is what a word and its panel have in
+    // common.
+    { id:'dzExWrap',        close:['dzExClose'] },
     { id:'dzUpWrap',        close:['dzUpClose'] },
     // small things over a section. Each of these four is a sheet or a
     // backdrop written at the top of the document rather than inside the
@@ -781,6 +783,9 @@
     { id:'albViewPage',     close:['albCloseView'],         lock:1 },
     { id:'albPage',         close:['albClosePage'],         lock:1 },
     { id:'bmPage',          close:['closeBookmarksPage'],   lock:1 },
+    // The cart. It was the gallery's sixth chip and is a page of its own now,
+    // reached from the icon beside the bell.
+    { id:'cartPage',        close:['closeCartPage'],        lock:1 },
     { id:'anPage',          close:['closeAnalyticsPage'],   lock:1 },
     { id:'xpPage',          close:['closeXpPage'],          lock:1 },
     { id:'themePage',       close:['closeThemePage'] },
@@ -1587,6 +1592,30 @@
     return filterCat!=='all' || filterSrt!=='trending';
   };
 
+  /* The artworks grid's category, for the chip rail in the section's head
+     (js/fghead.js). `filterCat` is a binding in this file and not on window,
+     so the rail asks rather than reaching for it — called with a slug it sets
+     one, called with nothing it reports the one in force.
+
+     The filter sheet's radio is moved with it in both directions. Two controls
+     naming the same thing is fine; two controls disagreeing about it is not,
+     and opening the sheet after picking a chip used to show ALL CATEGORIES
+     ticked over a grid showing one. */
+  window.dzArtCat = function(slug){
+    if(slug === undefined) return filterCat;
+    filterCat = slug || 'all';
+    var r = document.querySelector('input[name="fltCat"][value="'+filterCat+'"]');
+    if(r) r.checked = true;
+    fgVisible = 0;      // a new filter is a new grid, not the old one scrolled
+    renderFG();
+  };
+  // The head's search box is #fgSearchIn, which _renderFGPage already reads —
+  // so searching the grid is only a re-render.
+  window.dzArtSearch = function(){
+    fgVisible = 0;
+    renderFG();
+  };
+
   function openFilterPanel(){
     fgFltMode = 'artworks';
     var _t=document.getElementById('fltPTitle'); if(_t) _t.textContent='FILTERS';
@@ -1611,6 +1640,8 @@
     filterSrt=srtR?srtR.value:'trending';
     fgVisible=0;
     closeFilterPanel();
+    // the chip rail in the section's head names the same category this does
+    if(typeof window.fgHeadSyncCat==='function') window.fgHeadSyncCat('artworks');
     renderFG();
   }
   function openFG(){
@@ -1623,8 +1654,5 @@
     // and rebuilding them all would cost a fresh fetch each
     fgVisible=Math.min(fgVisible||0, gridInitialBatch()+gridStepBatch()*8);
     renderFG();
-    // the showcase over the chip row reads the same artworks the grid does,
-    // so it is refreshed with it rather than on a clock of its own
-    if(typeof window.fgShowRender === 'function') window.fgShowRender();
   }
 

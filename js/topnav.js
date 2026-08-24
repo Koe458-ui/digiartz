@@ -8,15 +8,16 @@
 // to hang off) and keeping aria-expanded honest for a screen reader that
 // cannot see the three rules fold into a cross or the chevron turn over.
 //
-// Upload is five destinations rather than one, and the second half of this
-// file is that list in its two shapes: a panel under the word for a mouse, and
-// a row that rolls open inside the drawer for a finger. Both end in dzUpPick,
-// so there is one list of five and one way to reach any of them.
+// Explore and Upload are each five destinations rather than one, and the
+// second half of this file is those two lists in their two shapes: a panel
+// under the word for a mouse, and a row that rolls open inside the drawer for
+// a finger. One set of functions drives both menus — they differ only in which
+// five they list and where a pick goes.
 //
-// Both panels are listed in DZ_PANELS (js/app-core.js) like every other thing
+// The panels are listed in DZ_PANELS (js/app-core.js) like every other thing
 // this app puts on screen, so changing section sweeps them shut without this
-// file being asked. That is also why dzMenuClose and dzUpClose are published
-// on window: the table names its closers by name.
+// file being asked. That is also why the closers are published on window: the
+// table names them by name.
 (function () {
   'use strict';
 
@@ -55,7 +56,7 @@
     if (h) h.setAttribute('aria-expanded', 'false');
     // A sub-list left open would be the state the drawer opens in next time,
     // which is not where anybody left off — it is where somebody left off
-    // three sections ago. It folds with the drawer.
+    // three sections ago. Both fold with the drawer.
     dzMenuSubClose();
     // Hand focus back to the button that opened it, but only if it is still
     // inside the panel: a member who has tapped a destination is on their way
@@ -80,48 +81,92 @@
     if (typeof window.openFgSearch === 'function') window.openFgSearch();
   }
 
-  /* ── Upload, and the five things it means ───────────────────────────────
-     An artwork, a product listing, a blog post, a resource and a job posting
-     are five forms with five sets of rules. Upload used to be one word that
-     opened the artwork form with a row of chips above it, so four of the five
-     were somewhere else than where the member had been sent. The word names
-     all five now, and each of them opens its own form.
+  /* ── The two menus on the bar ───────────────────────────────────────────
+     Explore is five sections and Upload is five forms. Both used to be one
+     word: Explore opened the gallery on its Artworks grid with a chip row
+     above it for the other four, and Upload opened the artwork form with a
+     chip row above it for the other four. In both cases four of the five were
+     somewhere other than where the member had been sent, and the page they
+     landed on named none of them.
 
-     Two shapes for the one list, because the two inputs want different things.
-     A mouse wants the panel under the word on the way past it — no click to
-     open, no click to shut. A finger has no hover and no room for a panel that
-     hangs off a bar, so in the drawer the same five roll out under a row.
+     The bar names all ten now, in two menus that behave identically — the
+     code below is one implementation with a table of two, because a second
+     copy of it is how the two would start drifting apart.
 
-     Both end in dzUpPick, so there is one list and one destination table. */
+     Two shapes for each list, because the two inputs want different things. A
+     mouse wants the panel under the word on the way past it — no click to
+     open, no click to shut. A finger has no hover and no room for a panel
+     hanging off a bar, so in the drawer the same five roll out under a row.
 
-  var UP_SECS = { artwork:1, marketplace:1, blog:1, resources:1, jobs:1 };
+     Every entry in both shapes ends in the menu's own `pick`, so each list has
+     one destination table however it was reached. */
 
-  function upWrap() { return el('dzUpWrap'); }
-  function upBtn()  { return el('dzUpBtn'); }
-  function upIsOpen() {
-    var w = upWrap();
+  var MENUS = {
+    ex: {
+      wrap:'dzExWrap', btn:'dzExBtn', grp:'dzMenuExGrp', grpBtn:'dzMenuExBtn',
+      secs:{ artworks:1, marketplace:1, blog:1, resources:1, jobs:1 },
+      fallback:'artworks',
+      /* Four of the five have a url, so the entry is an anchor and the router
+         is what opens it — the click is left alone and only the menus are
+         shut. Jobs has none (see functions/_middleware.js on why), so it is a
+         button and goes straight to the gallery. */
+      pick: function (sec, e) {
+        var path = (typeof window.dzRoutePath === 'function') ? window.dzRoutePath(sec) : null;
+        if (path && typeof window.dzRouteGo === 'function' && window.dzRouteGo(path)) {
+          if (e) e.preventDefault();
+          return;
+        }
+        if (e) e.preventDefault();
+        if (typeof window.bnGoGallery === 'function') window.bnGoGallery();
+        else if (typeof window.openFG === 'function') window.openFG();
+        if (typeof window.fgSwitchSection === 'function') window.fgSwitchSection(sec);
+      }
+    },
+    up: {
+      wrap:'dzUpWrap', btn:'dzUpBtn', grp:'dzMenuUpGrp', grpBtn:'dzMenuUpBtn',
+      secs:{ artwork:1, marketplace:1, blog:1, resources:1, jobs:1 },
+      fallback:'artwork',
+      pick: function (sec) {
+        if (typeof window.bnGoUpload === 'function') window.bnGoUpload(sec);
+      }
+    }
+  };
+
+  function wrapOf(k) { return el(MENUS[k].wrap); }
+  function ddIsOpen(k) {
+    var w = wrapOf(k);
     return !!w && w.classList.contains('open');
+  }
+  // which menu, if any, this node belongs to
+  function menuAt(node) {
+    for (var k in MENUS) {
+      var w = wrapOf(k);
+      if (w && w.contains(node)) return k;
+    }
+    return null;
   }
 
   // Closing on the pointer leaving is on a short delay. The panel sits a few
   // pixels below the word, and a pointer crossing that gap has left the word
   // before it has arrived at the panel — shutting on that reading is a menu
   // that cannot be reached with a mouse.
-  var upTimer = null;
-  function upCancel() { if (upTimer) { clearTimeout(upTimer); upTimer = null; } }
+  var ddTimer = null;
+  function ddCancel() { if (ddTimer) { clearTimeout(ddTimer); ddTimer = null; } }
 
-  function dzUpOpen() {
-    upCancel();
-    var w = upWrap(), b = upBtn();
-    if (!w || upIsOpen()) return;
+  function ddOpen(k) {
+    ddCancel();
+    // One at a time. The two words sit next to each other, and a pointer
+    // sliding from one to the other would otherwise leave both panels down.
+    for (var o in MENUS) if (o !== k) ddClose(o);
+    var w = wrapOf(k), b = el(MENUS[k].btn);
+    if (!w || ddIsOpen(k)) return;
     w.classList.add('open');
     if (b) b.setAttribute('aria-expanded', 'true');
   }
 
-  function dzUpClose() {
-    upCancel();
-    var w = upWrap(), b = upBtn();
-    if (!w || !upIsOpen()) return;
+  function ddClose(k) {
+    var w = wrapOf(k), b = el(MENUS[k].btn);
+    if (!w || !w.classList.contains('open')) return;
     w.classList.remove('open');
     if (b) b.setAttribute('aria-expanded', 'false');
     // Focus goes back to the word only if it is still inside the panel being
@@ -132,41 +177,52 @@
     }
   }
 
+  function ddCloseAll() {
+    ddCancel();
+    for (var k in MENUS) ddClose(k);
+  }
+
   // The click half, for a keyboard and for a touch screen wide enough to be
   // showing the bar's own links. A mouse has usually opened it on the way in,
   // so a click on the word closes it again rather than re-opening it.
-  function dzUpToggle(e) {
+  function ddToggle(k, e) {
     if (e) e.preventDefault();
-    if (upIsOpen()) dzUpClose(); else dzUpOpen();
+    if (ddIsOpen(k)) ddClose(k); else ddOpen(k);
   }
 
-  /* ── the drawer's Upload row ───────────────────────────────────────────── */
-  function upGrp() { return el('dzMenuUpGrp'); }
-
-  function dzMenuSubToggle() {
-    var g = upGrp(), b = el('dzMenuUpBtn');
+  /* ── the drawer's own rows ─────────────────────────────────────────────── */
+  function dzMenuSubToggle(k) {
+    var m = MENUS[k]; if (!m) return;
+    var g = el(m.grp), b = el(m.grpBtn);
     if (!g) return;
     var on = !g.classList.contains('open');
+    // One open at a time here too, so the drawer never grows past the screen
+    // with both lists of five down at once.
+    if (on) for (var o in MENUS) if (o !== k) subClose(o);
     g.classList.toggle('open', on);
     if (b) b.setAttribute('aria-expanded', on ? 'true' : 'false');
   }
-
-  function dzMenuSubClose() {
-    var g = upGrp(), b = el('dzMenuUpBtn');
+  function subClose(k) {
+    var m = MENUS[k]; if (!m) return;
+    var g = el(m.grp), b = el(m.grpBtn);
     if (!g || !g.classList.contains('open')) return;
     g.classList.remove('open');
     if (b) b.setAttribute('aria-expanded', 'false');
   }
+  function dzMenuSubClose() { for (var k in MENUS) subClose(k); }
 
-  /* Where all ten of those buttons end up. Both menus shut first — the one
-     that was used and the one that was not — so nothing is left hanging over
-     the form that is about to open. */
-  function dzUpPick(sec) {
-    if (!UP_SECS[sec]) sec = 'artwork';
-    dzUpClose();
+  /* Where all twenty of those entries end up. Both menus and the drawer shut
+     first — the one that was used and the ones that were not — so nothing is
+     left hanging over the page that is about to open. */
+  function pick(k, sec, e) {
+    var m = MENUS[k];
+    if (!m.secs[sec]) sec = m.fallback;
+    ddCloseAll();
     dzMenuClose();
-    if (typeof window.bnGoUpload === 'function') window.bnGoUpload(sec);
+    m.pick(sec, e);
   }
+  function dzExPick(sec, e) { pick('ex', sec, e); }
+  function dzUpPick(sec, e) { pick('up', sec, e); }
 
   // dzMenuOpen is not published: the only ways in are the button and the
   // toggle, and an exported opener nothing calls is a promise to keep.
@@ -175,8 +231,12 @@
   window.dzMenuSubToggle = dzMenuSubToggle;
   window.dzMenuSubClose  = dzMenuSubClose;
   window.dzOpenSearch    = dzOpenSearch;
-  window.dzUpToggle      = dzUpToggle;
-  window.dzUpClose       = dzUpClose;
+  window.dzExToggle      = function (e) { ddToggle('ex', e); };
+  window.dzUpToggle      = function (e) { ddToggle('up', e); };
+  // named closers, because DZ_PANELS names its closers by name
+  window.dzExClose       = function () { ddClose('ex'); };
+  window.dzUpClose       = function () { ddClose('up'); };
+  window.dzExPick        = dzExPick;
   window.dzUpPick        = dzUpPick;
 
   // A tap anywhere but the drawer and the button that opened it. The scrim
@@ -191,35 +251,32 @@
     dzMenuClose();
   }, true);
 
-  /* The Upload menu's own way out. Same reading as the drawer's: a click that
-     landed neither in the panel nor on the word that owns it is a click
-     somewhere else, and somewhere else closes it. */
+  /* The bar menus' own way out. Same reading as the drawer's: a click that
+     landed in neither panel nor on either word is a click somewhere else, and
+     somewhere else closes them. */
   document.addEventListener('click', function (e) {
-    if (!upIsOpen()) return;
-    var w = upWrap();
-    if (w && w.contains(e.target)) return;
-    dzUpClose();
+    if (!menuAt(e.target)) ddCloseAll();
   }, true);
 
-  /* Hover, for a pointer that has one. Bound on the wrapper, which contains
-     the panel as well as the word, so moving down the list is not a series of
-     leavings. Delegated rather than bound to the node, because this file runs
+  /* Hover, for a pointer that has one. Read off the wrapper, which contains
+     the panel as well as the word, so moving down a list is not a series of
+     leavings. Delegated rather than bound to the nodes, because this file runs
      before nothing in particular and the bar is markup either way. */
   if (!window.matchMedia || matchMedia('(hover: hover)').matches) {
     document.addEventListener('mouseover', function (e) {
-      var w = upWrap();
-      if (w && w.contains(e.target)) dzUpOpen();
+      var k = menuAt(e.target);
+      if (k) ddOpen(k);
     });
     document.addEventListener('mouseout', function (e) {
-      var w = upWrap();
-      if (!w || !upIsOpen()) return;
-      if (!w.contains(e.target)) return;
+      var k = menuAt(e.target);
+      if (!k || !ddIsOpen(k)) return;
       // Where the pointer went, not where it was: moving from the word to the
-      // panel leaves the word but never the wrapper.
+      // panel leaves the word but never the wrapper. Landing on the other
+      // word is a leaving, and its own mouseover opens that one.
       var to = e.relatedTarget;
-      if (to && w.contains(to)) return;
-      upCancel();
-      upTimer = setTimeout(dzUpClose, 180);
+      if (to && wrapOf(k).contains(to)) return;
+      ddCancel();
+      ddTimer = setTimeout(function () { ddClose(k); }, 180);
     });
   }
 
@@ -228,9 +285,11 @@
   // would otherwise close the section underneath it instead.
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    // The Upload menu is the shallower of the two and goes first: it can be
-    // open on the wide bar with no drawer behind it at all.
-    if (upIsOpen()) { e.stopPropagation(); dzUpClose(); return; }
+    // A bar menu is the shallowest thing here and goes first: one can be open
+    // on the wide bar with no drawer behind it at all.
+    for (var k in MENUS) {
+      if (ddIsOpen(k)) { e.stopPropagation(); ddClose(k); return; }
+    }
     if (!isOpen()) return;
     e.stopPropagation();
     dzMenuClose();
@@ -240,10 +299,10 @@
   // dragged wider with the menu up used to be the one way to see that.
   if (window.matchMedia) {
     var mq = matchMedia(WIDE);
-    // Narrowing puts the bar's links away, and with them the word the Upload
-    // panel hangs off. Widening puts the hamburger away, and with it the
+    // Narrowing puts the bar's links away, and with them the words the two
+    // panels hang off. Widening puts the hamburger away, and with it the
     // drawer. Each direction closes what the other width does not have.
-    var onWide = function () { if (mq.matches) dzMenuClose(); else dzUpClose(); };
+    var onWide = function () { if (mq.matches) dzMenuClose(); else ddCloseAll(); };
     if (mq.addEventListener) mq.addEventListener('change', onWide);
     else if (mq.addListener) mq.addListener(onWide);
   }

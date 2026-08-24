@@ -384,7 +384,7 @@
       margin-top:clamp(1rem,2.6vw,1.4rem);
     }
     .fgCatRail{
-      display:flex;flex-wrap:nowrap;align-items:center;gap:.45rem;
+      display:flex;flex-wrap:nowrap;align-items:center;
       /* centred where the row fits, honest start where it does not: safe keeps
          a scrolled rail reachable instead of parking its first chip off-screen
          with no way back to it */
@@ -395,7 +395,12 @@
       scrollbar-width:none;-ms-overflow-style:none;
       /* the chips are the thing being dragged, so the rail takes the cursor */
       cursor:grab;
-      padding:.15rem;
+      /* Tight. The home page's board rail sets .55rem between six tabs; this
+         one carries fifty-one, and at that count a wide gap is what turns a
+         row into a scattering. Close together they read as one control with
+         many settings, which is what they are. */
+      gap:.25rem;
+      padding:.2rem;
       scroll-behavior:smooth;
     }
     .fgCatRail::-webkit-scrollbar{display:none;}
@@ -404,16 +409,29 @@
        text and the pull turns into a highlight. */
     .fgCatRail.fgDrag{cursor:grabbing;scroll-behavior:auto;}
     .fgCatRail.fgDrag .fgCatChip{pointer-events:none;user-select:none;-webkit-user-select:none;}
+    /* The hero page's board tab's SIZE, to the pixel: same padding, same type
+       size and weight, same height, same surface and border. Two rails of
+       chips on one site that are nearly but not quite the same size is the
+       kind of difference a reader feels without being able to name.
+
+       The corner is its own. A board tab is one of six things you switch
+       between and is rounded like a button; these are a long row of filters
+       on one control, and a squarer corner is what tells a reader they belong
+       to each other rather than each being its own button. */
     .fgCatChip{
       flex:0 0 auto;
-      /* Boxes rather than pills. A pill is the shape this site uses for a
-         thing that is on or off on its own; these are one row of one choice,
-         and a squared corner is what tells a reader they belong to each
-         other. */
-      padding:.5rem .85rem;margin:0;
-      border:1px solid var(--bdr);border-radius:9px;
+      display:inline-flex;align-items:center;
+      padding:.7rem 1rem;margin:0;box-sizing:border-box;
+      /* A board tab is padding + a 26px icon + its two borders tall. These
+         carry no icon — fifty-one of them with a glyph each would be a wall —
+         so the height an icon would have given them is stated instead. Without
+         it the two rails share a padding and a type size and still sit eleven
+         pixels apart, which is exactly the sort of near-match a reader feels
+         and cannot name. */
+      min-height:calc(1.4rem + 26px + 2px);
+      border:1px solid var(--bdr);border-radius:6px;
       background:var(--sur);color:var(--txd);cursor:pointer;
-      font-family:var(--fb);font-size:.83rem;font-weight:600;letter-spacing:-.01em;
+      font-family:var(--fb);font-size:.86rem;font-weight:600;letter-spacing:-.01em;
       white-space:nowrap;-webkit-tap-highlight-color:transparent;
       transition:background .2s ease,border-color .2s ease,color .2s ease,transform .16s ease;
     }
@@ -434,14 +452,14 @@
     .fgCatNav{
       display:none;
       position:absolute;top:50%;transform:translateY(-50%);
-      width:34px;height:34px;padding:0;z-index:2;
+      width:38px;height:38px;padding:0;z-index:2;
       align-items:center;justify-content:center;
       border:1px solid var(--bdr);border-radius:999px;
       background:var(--sur);color:var(--tx);cursor:pointer;
       -webkit-tap-highlight-color:transparent;
       transition:background .2s,border-color .2s,opacity .2s;
     }
-    .fgCatNav svg{width:17px;height:17px;display:block;}
+    .fgCatNav svg{width:18px;height:18px;display:block;}
     .fgCatPrev{left:0;}
     .fgCatNext{right:0;}
     @media(hover:hover){
@@ -455,17 +473,213 @@
       .fgCatNav{display:flex;}
       .fgCatNav.fgNavOff{display:none;}
       /* room either side for them to stand in */
-      .fgCatWrap{padding:0 2.9rem;}
+      .fgCatWrap{padding:0 3.1rem;}
     }
+    /* the same step down on a phone that .ftTab takes, and tighter still */
     @media(max-width:600px){
-      .fgCatRail{gap:.35rem;}
-      .fgCatChip{padding:.44rem .7rem;font-size:.78rem;border-radius:8px;}
+      .fgCatRail{gap:.2rem;}
+      .fgCatChip{
+        font-size:.8rem;padding:.6rem .85rem;border-radius:5px;
+        min-height:calc(1.2rem + 23px + 2px);   /* .ftIco is 23px here */
+      }
     }
     @media(prefers-reduced-motion:reduce){
       .fgCatChip{transition:none;}
       .fgCatChip:active{transform:none;}
       .fgCatRail{scroll-behavior:auto;}
       .fgCatNav{transition:none;}
+    }
+
+    /* ── the section cards, and the file picker ─────────────────────────────
+       Restored. Removing the featured showcase took these with it: the splice
+       ran from the showcase's own comment to the last comment before
+       `.fgSec`, and everything between the showcase and that point went too —
+       the cards the Marketplace, Blog, Resources and Jobs sections are drawn
+       from, and the dropzone every upload form picks a file in. Both sat
+       AFTER the block being removed and had nothing to do with it.
+
+       overrides.css and upload.css still carried rules for these classes,
+       which is what made it survive a look at the page: those are colour and
+       spacing tweaks written on top of the layout below, so with the layout
+       gone the cards had borders and no shape and the dropzone had no box at
+       all. A stylesheet that still mentions a class is not a stylesheet that
+       still lays it out. */
+    /* The same columns the artwork grid takes, at the same widths — two, then
+       three at 700, then the four and five css/overrides.css gives every grid
+       on the site past 1280 and 1440.
+
+       It used to fill by measure — auto-fill down to 230px — which agreed
+       with the thumbnails on a desktop and disagreed everywhere else: one
+       column across a phone where artwork showed two, two across a tablet
+       where artwork showed three. Switching from Artworks to Market doubled
+       the size of everything on screen, which reads as the page zooming
+       rather than as a different section of it. */
+    .dzGrid{display:grid;gap:var(--artGap);grid-template-columns:repeat(2,1fr);}
+    @media(min-width:700px){ .dzGrid{grid-template-columns:repeat(3,1fr);} }
+    .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s;}
+    @media(hover:hover){.dzCard:hover{border-color:var(--pg);transform:translateY(-2px);}}
+    .dzThumb{position:relative;aspect-ratio:4/3;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    .dzThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .dzExt{font-family:var(--fm);font-size:.9rem;letter-spacing:.14em;color:var(--txd);}
+    .dzBadge{position:absolute;top:.5rem;right:.5rem;background:color-mix(in srgb,var(--bg) 78%,transparent);border:1px solid var(--bdr);border-radius:999px;padding:.2rem .55rem;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);}
+    .dzBody{padding:.7rem .8rem .85rem;display:flex;flex-direction:column;gap:.3rem;}
+    .dzName{font-size:.88rem;font-weight:600;color:var(--tx);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .dzMeta{font-family:var(--fm);font-size:.63rem;letter-spacing:.08em;color:var(--txd);display:flex;flex-wrap:wrap;gap:.15rem .55rem;}
+    .dzPrice{font-size:.85rem;font-weight:700;color:var(--ps);}
+    .dzRow{display:flex;gap:.85rem;align-items:flex-start;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:.9rem 1rem;cursor:pointer;transition:border-color .2s;}
+    @media(hover:hover){.dzRow:hover{border-color:var(--pg);}}
+    .dzRowIco{width:44px;height:44px;border-radius:10px;flex-shrink:0;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--fd);font-weight:700;color:var(--txd);}
+    .dzRowIco img{width:100%;height:100%;object-fit:cover;}
+    .dzList{display:flex;flex-direction:column;gap:.7rem;}
+    .dzChipRow{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem;}
+    .dzChip{font-family:var(--fm);font-size:.58rem;letter-spacing:.09em;color:var(--txd);border:1px solid var(--bdr);border-radius:999px;padding:.15rem .5rem;}
+    .dzEmpty{text-align:center;padding:3.5rem 1.5rem;color:var(--txd);font-family:var(--fm);font-size:.75rem;letter-spacing:.16em;}
+    .dzBusy{text-align:center;padding:2.5rem;color:var(--txd);font-family:var(--fm);font-size:.7rem;letter-spacing:.2em;}
+    .dzBuy{margin-top:.6rem;padding:.5rem .8rem;border:0;border-radius:9px;background:var(--pg);color:var(--text-on-accent);font-family:var(--fm);font-size:.62rem;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:filter .15s,transform .15s;}
+    .dzBuy:active{transform:scale(.97);}
+    @media(hover:hover){.dzBuy:hover{filter:brightness(1.12);}}
+    .dzBuy--free{background:var(--sur2);color:var(--tx);border:1px solid var(--bdr);}
+
+    .dzHint{font-size:.72rem;color:var(--txd);margin-top:.3rem;line-height:1.5;}
+    /* file picker */
+    .dzFileField{margin-bottom:1.75rem;}
+    .dzFileZone{
+      position:relative;border-radius:16px;
+      border:1.5px dashed color-mix(in srgb,var(--upcViolet) 46%,transparent);
+      background:color-mix(in srgb,var(--upcViolet) 5%,transparent);
+      padding:2.35rem 1.6rem;
+      transition:border-color .2s ease,background .2s ease,box-shadow .2s ease;
+    }
+    .dzFileZone.over,.dzFileZone:focus-within{
+      border-color:var(--upcViolet);
+      background:color-mix(in srgb,var(--upcViolet) 11%,transparent);
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--upcViolet) 18%,transparent);
+    }
+    @media(hover:hover){
+      .dzFileZone:hover{border-color:var(--upcViolet);background:color-mix(in srgb,var(--upcViolet) 8%,transparent);}
+    }
+    /* hidden file input */
+    .dzFileIn{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;}
+    .dzFileEmpty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.55rem;pointer-events:none;}
+    .dzFileZone .upDzBadge{margin-bottom:.35rem;}
+    .dzFileTitle{font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--tx);}
+    .dzFileSub{font-size:.8rem;color:var(--txd);}
+    .dzFileBtn{
+      margin-top:.6rem;padding:.62rem 1.4rem;border-radius:10px;
+      background:linear-gradient(135deg,var(--pg),var(--pgd,var(--pg)));
+      color:var(--text-on-accent);font-family:var(--fd);font-size:.82rem;font-weight:700;
+      box-shadow:0 4px 14px color-mix(in srgb,var(--pg) 28%,transparent);
+    }
+    .dzFileTypes{margin-top:.5rem;font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--txd);}
+
+    /* Picked state. A chosen file is a small win, so the zone says so in
+       colour: the dashed invite turns into a solid green-edged card with a
+       tinted wash, and the "ready" line is a pill rather than grey type. The
+       artwork dropzone wears the same face — one picked state, one look. */
+    .dzFilePicked{display:none;align-items:center;gap:1rem;}
+    .dzFileZone.dzHasFile,.upDz.dzHasFile{
+      --dzOk:var(--upcGreen);
+      border-style:solid;
+      border-color:color-mix(in srgb,var(--dzOk) 42%,transparent);
+      background:
+        linear-gradient(135deg,
+          color-mix(in srgb,var(--dzOk) 9%,transparent),
+          color-mix(in srgb,var(--pg) 7%,transparent)),
+        var(--sur);
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--dzOk) 9%,transparent);
+    }
+    .dzFileZone.dzHasFile{padding:1.1rem 1.15rem;}
+    @media(hover:hover){
+      .dzFileZone.dzHasFile:hover,.upDz.dzHasFile:hover{
+        border-color:color-mix(in srgb,var(--dzOk) 42%,transparent);
+        background:
+          linear-gradient(135deg,
+            color-mix(in srgb,var(--dzOk) 9%,transparent),
+            color-mix(in srgb,var(--pg) 7%,transparent)),
+          var(--sur);
+      }
+    }
+    .dzFileZone.dzHasFile .dzFileEmpty{display:none;}
+    .dzFileZone.dzHasFile .dzFilePicked{display:flex;}
+    .dzFileThumb{
+      width:66px;height:66px;flex-shrink:0;border-radius:12px;overflow:hidden;
+      background:var(--sur2);border:1px solid color-mix(in srgb,var(--pg) 30%,var(--bdr));
+      display:flex;align-items:center;justify-content:center;
+    }
+    .dzFileThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .dzFileThumbExt{font-family:var(--fm);font-size:.66rem;font-weight:700;letter-spacing:.1em;color:var(--ps);}
+    .dzFileMeta{flex:1;min-width:0;}
+    .dzFileNm{font-size:.9rem;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .dzFileSz{margin-top:.3rem;display:flex;align-items:center;flex-wrap:wrap;gap:.4rem;font-family:var(--fm);font-size:.64rem;letter-spacing:.08em;color:var(--txd);}
+    /* the ready mark */
+    .dzFileOk{
+      display:inline-flex;align-items:center;gap:.3rem;
+      padding:.16rem .45rem;border-radius:999px;
+      background:color-mix(in srgb,var(--upcGreen) 16%,transparent);
+      border:1px solid color-mix(in srgb,var(--upcGreen) 38%,transparent);
+      color:var(--upcGreenInk);font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    }
+    .dzFileOk::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
+    /* file actions */
+    .dzFileActs{display:flex;gap:.45rem;flex-shrink:0;position:relative;z-index:2;}
+    .dzFileAct{
+      border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
+      border-radius:9px;padding:.45rem .8rem;cursor:pointer;
+      font-family:var(--fm);font-size:.62rem;font-weight:700;letter-spacing:.1em;
+      transition:border-color .2s,color .2s,background .2s;
+    }
+    @media(hover:hover){.dzFileAct:hover{border-color:var(--pg);color:var(--ps);}}
+    .dzFileActRm{color:var(--txd);}
+    @media(hover:hover){.dzFileActRm:hover{border-color:var(--danger-strong,#D63A3F);color:var(--danger-strong,#D63A3F);}}
+    /* ---- several files, one listing -------------------------------------
+       A marketplace listing sells whatever the buyer receives, which is rarely
+       one object. The picked state becomes a column of rows; everything in it
+       sits above .dzFileIn, whose invisible full-bleed input would otherwise
+       swallow the taps meant for Remove. */
+    .dzFileZone.dzHasFile .dzFileMulti{
+      display:flex;flex-direction:column;align-items:stretch;gap:.5rem;
+      width:100%;position:relative;z-index:2;
+    }
+    .dzFileRows{display:flex;flex-direction:column;gap:.4rem;}
+    .dzFileRow{
+      display:flex;align-items:center;gap:.7rem;min-width:0;
+      padding:.5rem .6rem;border:1px solid var(--bdr);border-radius:10px;background:var(--sur2);
+    }
+    /* the extension is the label here, so the chip sizes to the word rather
+       than cropping it — .brushset and .procreate are both longer than a
+       square 40px box can hold */
+    .dzFileRow .dzFileThumb{
+      width:auto;min-width:2.5rem;max-width:5.5rem;height:2.2rem;
+      padding:0 .45rem;border-radius:8px;
+    }
+    .dzFileRow .dzFileThumbExt{
+      font-size:.56rem;letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    /* a filename is worth reading in full when there are several of them */
+    .dzFileRow .dzFileNm{
+      font-size:.82rem;white-space:normal;overflow-wrap:break-word;word-break:break-word;
+    }
+    .dzFileRow .dzFileSz{margin-top:.15rem;}
+    .dzFileRow .dzFileAct{flex-shrink:0;}
+    .dzFileSum{
+      display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+      padding-top:.15rem;font-family:var(--fm);font-size:.62rem;letter-spacing:.06em;color:var(--txd);
+    }
+    .dzFileSum span{flex:1;min-width:10rem;}
+
+    @media(max-width:560px){
+      .dzFileZone{padding:1.9rem 1.1rem;}
+      .dzFileZone.dzHasFile{padding:1rem;}
+      .dzFilePicked{flex-wrap:wrap;}
+      .dzFileActs{width:100%;}
+      .dzFileAct{flex:1;}
+      .dzFileRow{flex-wrap:wrap;}
+      .dzFileRow .dzFileAct{flex:0 0 auto;}
+      .dzFileSum span{flex:1 0 100%;}
+      .dzFileSum .dzFileAct{flex:1 1 auto;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .dzFileZone{transition:none;}
     }
 
     /* one panel at a time */

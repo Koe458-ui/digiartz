@@ -4,6 +4,45 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v251 — the cards and the dropzones come back.
+
+       A REGRESSION, AND A BAD ONE. Removing the featured showcase in v248 cut
+       from that block's own comment to the last comment before `.fgSec`, and
+       took everything in between with it — 220 lines that had nothing to do
+       with the showcase and sat after it by accident of ordering:
+
+         · the section cards. .dzGrid, .dzCard, .dzThumb, .dzBadge, .dzBody,
+           .dzName, .dzMeta, .dzPrice, .dzRow, .dzList and the rest — every
+           box the Marketplace, Blog, Resources and Jobs sections are drawn
+           from.
+         · the file picker. .dzFileZone, .dzFilePicked, .upDz, .upDzBadge and
+           the whole picked/empty pair — the dropzone every upload form picks
+           an image or a file in.
+
+       So the marketplace grid had no cards, the blog and resources lists had
+       no rows, and both upload dropzones had no box. Restored whole, from the
+       commit before the splice, with nothing else riding along.
+
+       WHY IT SURVIVED A LOOK. css/overrides.css and css/upload.css still
+       carry rules for those classes — type sizes, colours, a gap — so the
+       names were all still present in the stylesheets and a search for them
+       found plenty. They are written ON TOP of the layout that had gone. A
+       stylesheet that still mentions a class is not a stylesheet that still
+       lays it out, and the check that would have caught this is the one added
+       now: every class removed from any stylesheet, tested against every
+       class still referenced by the document and the bundles.
+
+       AND THE CATEGORY CHIPS ARE THE RIGHT SIZE. They were smaller than the
+       board tabs on the home page for no reason anybody chose — a padding, a
+       type size and a height nobody had matched to anything. They take
+       .ftTab's measurements to the pixel now, including the height an icon
+       would have given them, so the two rails read as one family. The corner
+       is squarer and the gap is a quarter of the board rail's: six tabs you
+       switch between want air, fifty-one filters on one control want to look
+       like one control.
+
+       Changed: css/hero.css, index.html, sw.js.
+
    v250 — Profile is three destinations, and the bar is four menus.
 
        ANALYTICS AND PAYOUTS WERE SETTINGS. Four dashboards filed under a gear
@@ -4791,7 +4830,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v250';
+const CACHE_VERSION = 'v251';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4843,7 +4882,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=29',
-  '/css/hero.css?v=113',
+  '/css/hero.css?v=116',
   '/css/viewer.css?v=39',
   '/css/community.css?v=26',
   '/css/connect.css?v=7',

@@ -61,6 +61,14 @@
     if(!currentUser || String(art.user_id)!==String(currentUser.id)){ showToast('You can only edit your own artwork'); return; }
     pf.upFile = null;
     pf.upThumbFocus = null;
+    /* Show the artwork half of the sheet before filling it in.
+       The upload page holds five forms and shows one, and this reuses it
+       without going through openPfUpload — so whichever of the five was last
+       on screen is still the one showing. Listing a product and then editing a
+       piece used to land on the listing form with the artwork's title above
+       it. Silent, because the two lines under that title are this function's
+       own and are written immediately below. */
+    if(typeof upSwitchSection === 'function') upSwitchSection('artwork', true);
     document.getElementById('pfUpEditId').value = String(art.id);
     document.getElementById('pfUpTitle').textContent = 'Edit Artwork';
     document.getElementById('pfUpSubtitle').textContent = 'Update the details for this piece.';

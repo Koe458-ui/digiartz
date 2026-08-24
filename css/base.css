@@ -423,6 +423,96 @@
     .dzLink.bnActive::after{left:.2rem;right:.2rem;}
     .dzLink:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:6px;}
 
+    /* ── Upload, and the five things it means ────────────────────────────────
+       Posting an artwork, listing a product, writing a post, sharing a resource
+       and posting a job are five forms with five sets of rules. The bar used to
+       name none of them: it said Upload, opened the artwork form and left a row
+       of chips above it for anyone who wanted one of the other four. So the
+       word carries the five instead, and each one lands on its own form.
+
+       The panel hangs off the word rather than off the bar, so it stays under
+       Upload wherever the row of links happens to sit. Its own gap is bridged
+       by ::before below — without it, crossing the few pixels between the word
+       and the panel is a mouseleave, and the menu shuts under the pointer on
+       its way in. */
+    .dzUpWrap{position:relative;flex:0 0 auto;display:flex;align-items:center;}
+    .dzLinkDd{display:inline-flex;align-items:center;gap:.3rem;}
+    .dzLinkChev{
+      width:13px;height:13px;flex:0 0 auto;opacity:.65;
+      transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .2s ease;
+    }
+    .dzUpWrap.open .dzLinkChev{transform:rotate(180deg);opacity:1;}
+    /* The word wears the same mark it wears on hover for as long as its menu
+       is up. Opened from the keyboard there is no pointer on it, and a panel
+       hanging off a word drawn as if nothing were happening is a panel that
+       looks like it belongs to the bar rather than to Upload. */
+    .dzUpWrap.open .dzLink{color:var(--tx);}
+    .dzUpWrap.open .dzLink::after{left:.2rem;right:.2rem;}
+    .dzUpDd{
+      position:absolute;
+      top:calc(100% + .5rem);
+      left:50%;
+      z-index:401;
+      width:min(20.5rem,calc(100vw - 2rem));
+      box-sizing:border-box;
+      padding:.3rem;
+      background:var(--sur);
+      border:1px solid var(--bdr);
+      border-radius:16px;
+      box-shadow:var(--sh-card-hover);
+      /* Closed it is not merely see-through: visibility and pointer-events
+         take it out of the page entirely, so a menu nobody has opened cannot
+         swallow a click meant for the headline under it. */
+      opacity:0;visibility:hidden;pointer-events:none;
+      transform:translateX(-50%) translateY(-6px) scale(.98);
+      transform-origin:top center;
+      transition:opacity .15s ease,transform .15s ease,visibility 0s linear .15s;
+    }
+    /* the bridge across the gap above — see the note on .dzUpWrap */
+    .dzUpDd::before{content:'';position:absolute;left:0;right:0;top:-.6rem;height:.6rem;}
+    .dzUpWrap.open .dzUpDd{
+      opacity:1;visibility:visible;pointer-events:auto;
+      transform:translateX(-50%) translateY(0) scale(1);
+      transition:opacity .2s ease,
+                 transform .34s cubic-bezier(.16,1,.3,1),
+                 visibility 0s;
+    }
+    .dzUpDdInner{display:flex;flex-direction:column;}
+    .dzUpItem{
+      --upA:var(--pg);
+      display:flex;align-items:center;gap:.7rem;
+      width:100%;box-sizing:border-box;text-align:left;
+      padding:.6rem .6rem;
+      border:0;border-radius:12px;background:none;cursor:pointer;
+      color:var(--tx);
+      -webkit-tap-highlight-color:transparent;
+      transition:background .18s ease,transform .16s ease;
+    }
+    @media(hover:hover){ .dzUpItem:hover{background:var(--sur2);} }
+    .dzUpItem:active{transform:scale(.985);}
+    .dzUpItem:focus-visible{outline:2px solid var(--upA);outline-offset:-2px;}
+    /* the section's own glyph in the section's own colour — the same pairing
+       the gallery's tab rail and the upload forms use, so a member meets one
+       mark for Marketplace whether they are browsing it or posting to it */
+    .dzUpIco{
+      flex:0 0 auto;width:34px;height:34px;border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      background:color-mix(in srgb,var(--upA) 15%,transparent);
+      color:var(--upA);
+      transition:background .18s ease;
+    }
+    .dzUpIco svg{width:18px;height:18px;display:block;}
+    @media(hover:hover){
+      .dzUpItem:hover .dzUpIco{background:color-mix(in srgb,var(--upA) 26%,transparent);}
+    }
+    .dzUpTxt{display:flex;flex-direction:column;gap:.08rem;min-width:0;}
+    .dzUpNm{
+      font-family:var(--fd);font-weight:700;
+      font-size:.9rem;letter-spacing:.005em;color:var(--tx);
+      white-space:nowrap;
+    }
+    .dzUpDesc{font-size:.73rem;line-height:1.35;color:var(--txd);white-space:normal;}
+
     .dzActions{
       display:flex;align-items:center;gap:.1rem;
       flex:0 0 auto;margin-left:auto;
@@ -555,12 +645,22 @@
          The stagger is on the way in only. Closing, they go together and
          quickly — a staggered exit means the last word is still travelling
          after the drawer that held it has gone. */
+      transition:background .18s ease,color .18s ease;
+    }
+    /* The reveal is on whatever the drawer lists, which since Upload became a
+       group of five is not always an item: a wrapper carrying a row and the
+       sub-list under it is one entry in this drawer and animates as one. The
+       five inside it are not direct children and so do not take the stagger
+       twice — the sub-list has a roll of its own. */
+    .dzMenuInner > .dzMenuItem,
+    .dzMenuInner > .dzMenuGrp{
       opacity:0;
       transform:translateX(-14px);
       transition:background .18s ease,color .18s ease,
                  opacity .13s ease,transform .13s ease;
     }
-    .dzMenu.open .dzMenuItem{
+    .dzMenu.open .dzMenuInner > .dzMenuItem,
+    .dzMenu.open .dzMenuInner > .dzMenuGrp{
       opacity:1;
       transform:translateX(0);
       transition:background .18s ease,color .18s ease,
@@ -569,11 +669,11 @@
     }
     /* 45ms apart, starting once the drawer has opened far enough to have
        somewhere to put the first one */
-    .dzMenu.open .dzMenuItem:nth-child(1){transition-delay:0s,0s,.06s,.06s;}
-    .dzMenu.open .dzMenuItem:nth-child(2){transition-delay:0s,0s,.105s,.105s;}
-    .dzMenu.open .dzMenuItem:nth-child(3){transition-delay:0s,0s,.15s,.15s;}
-    .dzMenu.open .dzMenuItem:nth-child(4){transition-delay:0s,0s,.195s,.195s;}
-    .dzMenu.open .dzMenuItem:nth-child(5){transition-delay:0s,0s,.24s,.24s;}
+    .dzMenu.open .dzMenuInner > :nth-child(1){transition-delay:0s,0s,.06s,.06s;}
+    .dzMenu.open .dzMenuInner > :nth-child(2){transition-delay:0s,0s,.105s,.105s;}
+    .dzMenu.open .dzMenuInner > :nth-child(3){transition-delay:0s,0s,.15s,.15s;}
+    .dzMenu.open .dzMenuInner > :nth-child(4){transition-delay:0s,0s,.195s,.195s;}
+    .dzMenu.open .dzMenuInner > :nth-child(5){transition-delay:0s,0s,.24s,.24s;}
     /* A hairline between one word and the next. Five words down a full-width
        panel with nothing between them read as a paragraph broken up rather
        than as five things you can choose; the rule is what makes each one a
@@ -581,13 +681,68 @@
        rule against the bar's own edge above and none against the drawer's
        edge below — the panel is bounded by its own border, not by a sixth
        line floating at the end of the list. */
-    .dzMenuItem + .dzMenuItem{
+    .dzMenuInner > * + *{
       border-top:1px solid var(--bdr);
     }
     .dzMenuItem:active{background:var(--sur2);}
     .dzMenuItem:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
     @media(hover:hover){ .dzMenuItem:hover{background:var(--sur2);} }
     .dzMenuItem.bnActive{background:var(--pdim);color:var(--pb);}
+
+    /* ── Upload, in the drawer ───────────────────────────────────────────────
+       Five rows for one word would push the account link off the end of a
+       phone-height drawer, so Upload stays one row and opens into the five.
+       The roll is the drawer's own trick — a grid track from 0fr to 1fr —
+       which is how a list nobody has measured animates to the height of its
+       own contents. */
+    .dzMenuTog{
+      display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+    }
+    .dzMenuChev{
+      width:17px;height:17px;flex:0 0 auto;color:var(--txd);
+      transition:transform .3s cubic-bezier(.16,1,.3,1),color .18s ease;
+    }
+    .dzMenuGrp.open .dzMenuChev{transform:rotate(180deg);color:var(--tx);}
+    .dzMenuSub{
+      display:grid;
+      grid-template-rows:0fr;
+      overflow:hidden;
+      transition:grid-template-rows .28s cubic-bezier(.4,0,.2,1);
+    }
+    .dzMenuGrp.open .dzMenuSub{
+      grid-template-rows:1fr;
+      transition:grid-template-rows .4s cubic-bezier(.16,1,.3,1);
+    }
+    /* The breathing room around the five is margin on the rows and not padding
+       here, because padding on a grid item survives a 0fr row: eight pixels of
+       it sat under the Upload word while the list was folded away, making that
+       one row taller than the four above it. A margin is inside the box this
+       clips, so folded is folded. */
+    .dzMenuSubInner{
+      min-height:0;overflow:hidden;
+      display:flex;flex-direction:column;
+    }
+    .dzMenuSubItem{
+      --upA:var(--pg);
+      display:flex;align-items:center;gap:.6rem;
+      box-sizing:border-box;text-align:left;
+      margin-left:.3rem;
+      border:0;background:none;cursor:pointer;
+      padding:.58rem .5rem;border-radius:11px;
+      font-family:var(--fd);font-weight:600;
+      font-size:.92rem;letter-spacing:.005em;color:var(--tx);
+      white-space:nowrap;
+      -webkit-tap-highlight-color:transparent;
+      transition:background .18s ease;
+    }
+    .dzMenuSubItem:first-child{margin-top:.1rem;}
+    .dzMenuSubItem:last-child{margin-bottom:.4rem;}
+    .dzMenuSubItem:active{background:var(--sur2);}
+    .dzMenuSubItem:focus-visible{outline:2px solid var(--upA);outline-offset:-2px;}
+    @media(hover:hover){ .dzMenuSubItem:hover{background:var(--sur2);} }
+    /* the same badge the wide bar's menu draws, a size down for a row */
+    .dzUpIcoSm{width:30px;height:30px;border-radius:9px;}
+    .dzUpIcoSm svg{width:16px;height:16px;}
     /* The rest of the window, taking the tap that closes the drawer and
        nothing else. It has no colour of its own — the page under an open
        drawer looks exactly as it did before the drawer opened — and it starts
@@ -614,8 +769,14 @@
     }
 
     @media(prefers-reduced-motion:reduce){
-      .dzTop,.dzMenu,.dzMenuItem,.dzLink::after,.dzHamBox span{transition-duration:.01ms;}
-      .dzMenu.open .dzMenuItem{transition-delay:0s;}
+      .dzTop,.dzMenu,.dzMenuItem,.dzLink::after,.dzHamBox span,
+      .dzUpDd,.dzUpItem,.dzMenuSub,.dzMenuChev,.dzLinkChev,
+      .dzMenuInner > .dzMenuItem,.dzMenuInner > .dzMenuGrp{transition-duration:.01ms;}
+      .dzMenu.open .dzMenuInner > *{transition-delay:0s;}
+      /* the panel keeps its own centring transform — only the press and the
+         6px it arrives on are dropped */
+      .dzUpDd{transform:translateX(-50%);}
+      .dzUpItem:active{transform:none;}
     }
 
     #hero {

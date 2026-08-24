@@ -4,6 +4,36 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v247 — Upload is five destinations, not one word with a switch under it.
+
+       Posting an artwork, listing a product, writing a blog post, sharing a
+       resource and posting a job are five forms with five sets of rules. The
+       top bar said Upload, opened the artwork form, and drew a row of chips
+       above it so the other four could be reached from inside the first — so
+       four of the five were somewhere other than where the member had been
+       sent, and the sheet named none of them in its own bar.
+
+       The bar names all five now. On the wide bar Upload opens a menu under
+       the word — on hover for a mouse, on click or Enter for a keyboard —
+       listing Upload Artwork, List a Product, Write a Blog Post, Share a
+       Resource and Post a Job, each with the section's own glyph and colour.
+       In the hamburger's drawer the same five roll out under an Upload row
+       with a chevron, the way the drawer itself rolls out of the bar.
+
+       Each entry lands on its own form, and the page's bar says which one it
+       is — UPLOAD ARTWORK, LIST A PRODUCT and so on — rather than the bare
+       word for all five. The chip row is gone with its stylesheet: nothing on
+       the upload page switches between the sections any more.
+
+       Two callers that reached past the sheet to switch the form afterwards
+       ask for the section they want instead — the hero's Sell tab, which also
+       lights the bar's Upload now, and Edit on an artwork, which used to open
+       whichever of the five had been on screen last.
+
+       Changed: index.html, css/base.css, css/hero.css, js/topnav.js,
+       js/sections.js, js/pfedit.js, js/albums.js, js/mywork.js,
+       js/app-core.js, sw.js.
+
    v246 — what the rewrite left behind.
 
        closeMenu() was an empty function called from four places. It closed a
@@ -4591,7 +4621,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v246';
+const CACHE_VERSION = 'v247';
 
 /* One cache per thing cached, not one cache for everything.
 

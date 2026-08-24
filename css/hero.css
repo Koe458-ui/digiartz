@@ -776,63 +776,6 @@
     @media(hover:hover){.dzBuy:hover{filter:brightness(1.12);}}
     .dzBuy--free{background:var(--sur2);color:var(--tx);border:1px solid var(--bdr);}
 
-    /* Upload section tabs, borrowed from the gallery's chip row: one surface
-       chip per section, its glyph in that section's own colour. The row is
-       centred wherever it fits — which on a desktop is always — and scrolls
-       sideways on a phone rather than wrapping. */
-    .upSecRow{
-      min-width:0;margin:0 0 1.4rem;
-      display:flex;flex-wrap:nowrap;align-items:center;
-      /* centred where the row fits, honest start where it does not: safe keeps
-         a scrolled row reachable instead of parking its first chip off-screen */
-      justify-content:center;
-      justify-content:safe center;
-      overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
-      -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
-      scrollbar-width:none;-ms-overflow-style:none;
-    }
-    .upSecRow::-webkit-scrollbar{display:none;}
-    .upSecTabs{flex:0 0 auto;display:flex;flex-wrap:nowrap;align-items:center;gap:.5rem;padding:.2rem;}
-    .upSecBtn{
-      --upA:var(--pg);
-      flex:0 0 auto;scroll-snap-align:center;
-      display:inline-flex;align-items:center;gap:.55rem;
-      padding:.5rem .85rem;margin:0;box-sizing:border-box;
-      border-radius:14px;cursor:pointer;
-      background:var(--sur);border:1px solid var(--bdr);color:var(--txd);
-      font-family:var(--fb);font-size:.86rem;font-weight:600;letter-spacing:-.01em;
-      white-space:nowrap;-webkit-tap-highlight-color:transparent;
-      transition:background .24s cubic-bezier(.22,1,.36,1),
-                 border-color .24s cubic-bezier(.22,1,.36,1),
-                 color .24s cubic-bezier(.22,1,.36,1),
-                 transform .18s cubic-bezier(.22,1,.36,1);
-    }
-    @media(hover:hover){ .upSecBtn:hover{border-color:var(--bdrh);color:var(--tx);} }
-    .upSecBtn:active{transform:scale(.97);}
-    .upSecBtn:focus-visible{outline:2px solid var(--upA);outline-offset:2px;}
-    .upSecBtn.active{
-      color:var(--tx);
-      border-color:color-mix(in srgb,var(--upA) 55%,transparent);
-      background:color-mix(in srgb,var(--upA) 14%,var(--sur));
-    }
-    .upSecIco{
-      flex:0 0 auto;width:28px;height:28px;border-radius:9px;
-      display:flex;align-items:center;justify-content:center;
-      background:color-mix(in srgb,var(--upA) 16%,transparent);
-      color:var(--upA);
-    }
-    .upSecIco svg{width:16px;height:16px;display:block;}
-    .upSecBtn.active .upSecIco{background:color-mix(in srgb,var(--upA) 24%,transparent);}
-    @media(max-width:600px){
-      .upSecTabs{gap:.4rem;}
-      .upSecBtn{padding:.45rem .7rem;gap:.45rem;font-size:.8rem;border-radius:12px;}
-      .upSecIco{width:24px;height:24px;border-radius:8px;}
-      .upSecIco svg{width:14px;height:14px;}
-    }
-    @media(prefers-reduced-motion:reduce){
-      .upSecBtn{transition:none;}
-      .upSecBtn:active{transform:none;}
-    }
     .dzHint{font-size:.72rem;color:var(--txd);margin-top:.3rem;line-height:1.5;}
     /* file picker */
     .dzFileField{margin-bottom:1.75rem;}

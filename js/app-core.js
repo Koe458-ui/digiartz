@@ -753,6 +753,10 @@
     // first shut, so changing section never leaves it hanging off a bar that
     // has already slid away.
     { id:'dzTopMenu',       close:['dzMenuClose'] },
+    // The wide bar's Upload menu, which hangs off the word rather than off the
+    // bar and so is not inside the drawer above. It carries the open class on
+    // its wrapper, because that is what the word and the panel have in common.
+    { id:'dzUpWrap',        close:['dzUpClose'] },
     // small things over a section. Each of these four is a sheet or a
     // backdrop written at the top of the document rather than inside the
     // panel it belongs to, which is why they need shutting on their own: the

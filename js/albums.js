@@ -1248,13 +1248,23 @@
     if(typeof closePfAlbumDd==='function') closePfAlbumDd();
   }
 
+  /* The upload page, opened on its artwork form.
+     This function owns the artwork half only. Which of the five forms the
+     member actually asked for is settled by the wrapper js/sections.js puts
+     around it — the four others are markup that file builds — so the argument
+     is not read here and does not need to be: everything below is the reset
+     and the setup the page needs whichever form ends up on top of it, and the
+     wrapper shows the right one immediately afterwards.
+
+     Its own name for the page goes in as a fallback for the same reason. The
+     wrapper overwrites it with the name of the form on screen; it is what the
+     bar says if that call ever fails. */
   function openPfUpload(){
-    // universal upload
     pfUpResetSession();
     document.getElementById('pfUpEditId').value = '';
     document.getElementById('pfUpTitle').textContent = 'Upload Artwork';
     document.getElementById('pfUpSubtitle').textContent = 'Share your creativity with artists around the world.';
-    document.getElementById('pfUpNavTitle').textContent = 'UPLOAD';
+    document.getElementById('pfUpNavTitle').textContent = 'UPLOAD ARTWORK';
     document.getElementById('pfDzTxt').textContent = 'Drag & drop your artwork here';
     document.getElementById('pfUpCatField').style.display = '';
     // optional extra images

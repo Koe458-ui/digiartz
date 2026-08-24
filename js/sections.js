@@ -893,40 +893,37 @@
     return s;
   }
 
-  // Order and names are the gallery's, which is the canonical rail: it is
-  // where a member meets these five sections first and most often, so the
-  // upload sheet follows it rather than the other way round. The gallery's
-  // sixth tab, Cart, has nothing to post to and so has no tab here.
-  var ORDER = ['artwork','marketplace','blog','resources','jobs'];
+  /* Names, and the order they are offered in, are the gallery's — it is where
+     a member meets these five sections first and most often, so the upload
+     sheet follows it rather than the other way round.
+
+     That order used to be a list here, because this sheet drew a row of chips
+     across its own top. It does not any more: the top bar names the five and
+     lands the member on the one they picked (js/topnav.js, js/pfedit.js), so
+     the sheet is one form rather than one form under a switch for four others.
+     What survives is what is still read — the label the (i) sheet kicks off
+     with, and the name this page wears in its own bar. */
   var TAB_LABEL = {artwork:'Artworks', resources:'Resources', blog:'Blog', marketplace:'Market', jobs:'Jobs'};
-  var TAB_ICO   = {artwork:'artworks', resources:'resources', blog:'blog', marketplace:'marketplace', jobs:'jobs'};
+  // What the page's own bar says it is. The sheet arrived at directly is the
+  // only thing on screen naming itself, so it says which of the five this is
+  // rather than the bare word Upload — five destinations cannot share one
+  // title and still be five destinations.
+  var NAV_TITLE = {artwork:'UPLOAD ARTWORK', marketplace:'LIST A PRODUCT',
+                   blog:'WRITE A BLOG POST', resources:'SHARE A RESOURCE',
+                   jobs:'POST A JOB'};
   var upSec = 'artwork';
 
-  // One icon per section, and the same one the gallery's tab rail uses for
-  // that section — the path data below is copied from #fgSecTabs in
-  // index.html rather than drawn again. A section is one thing to a member
-  // whether they are browsing it or posting to it, so it cannot be a
-  // storefront on the gallery and a shopping bag on the upload sheet.
-  // Artworks and Jobs already agreed; Marketplace, Blog and Resources did
-  // not, and each was a different object rather than a different drawing of
-  // the same one.
-  var SEC_SVG = {
-    artworks:    '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>',
-    resources:   '<path d="M12 2.7 2.8 7.1 12 11.5l9.2-4.4z"/><path d="M3.2 12.1 12 16.3l8.8-4.2"/><path d="M3.2 16.5 12 20.7l8.8-4.2"/>',
-    blog:        '<rect x="3.4" y="3" width="17.2" height="18" rx="2.4"/><path d="M7.3 8.2h9.4"/><path d="M7.3 12h9.4"/><path d="M7.3 15.8h5.2"/>',
-    marketplace: '<path d="M3 9.4 4.8 4.3A2 2 0 0 1 6.7 3h10.6a2 2 0 0 1 1.9 1.3L21 9.4"/><path d="M4.6 9.4V19a2 2 0 0 0 2 2h10.8a2 2 0 0 0 2-2V9.4"/><path d="M3 9.4h18"/><path d="M9.6 21v-5.4h4.8V21"/>',
-    jobs:        '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'
-  };
   // The round tinted badge an empty dropzone leads with. It takes the accent
   // from the page, so it survives the light theme's white surface — a
   // white-stroked glyph on no background did not.
   //
   // One glyph for every dropzone on the sheet, and it is the upload mark
   // rather than the section's own. A badge here answers "what does this box
-  // do", not "which section am I in" — the highlighted tab already answers
-  // that, and the title under the badge already says what goes in. Drawing
-  // the section glyph instead left the sheet with two rules: the artwork
-  // zone said upload, the other three said resources, blog, marketplace.
+  // do", not "which section am I in" — the bar at the top of the page already
+  // answers that, and the title under the badge already says what goes in.
+  // Drawing the section glyph instead left the sheet with two rules: the
+  // artwork zone said upload, the other three said resources, blog,
+  // marketplace.
   var DZ_ZONE_SVG = '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>'+
     '<path d="m7 9 5-5 5 5"/><path d="M12 4v12"/>';
   function zoneIco(){
@@ -935,10 +932,10 @@
       'stroke-linejoin="round">'+DZ_ZONE_SVG+'</svg></span>';
   }
 
-  // One colour per section, so a chip, its guide sheet and its form icons all
-  // speak with the same voice — and the same hex the gallery's rail gives
-  // that section, so the voice does not change between browsing it and
-  // posting to it.
+  // One colour per section, so its entry in the bar's Upload menu, its guide
+  // sheet and its form icons all speak with the same voice — and the same hex
+  // the gallery's rail gives that section, so the voice does not change
+  // between browsing it and posting to it.
   //
   // Artwork and Resources always did agree, which is what made the other
   // three read as drift rather than as a second palette. Jobs was pink here
@@ -954,35 +951,21 @@
     artwork:'var(--upcViolet)', resources:'var(--upcGreen)', blog:'var(--upcIndigo)',
     marketplace:'var(--upcOrange)', jobs:'var(--upcSky)'
   };
-  // the chip's glyph: the section's own outline, drawn in the section's colour
-  function tabIco(sec){
-    var k = TAB_ICO[sec] || 'artworks';
-    return '<span class="upSecIco" aria-hidden="true">'+
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '+
-      'stroke-linecap="round" stroke-linejoin="round">'+SEC_SVG[k]+'</svg></span>';
-  }
+  /* Show one of the five forms.
+     This was the chip row's handler and is now the whole of how a section is
+     reached: the member picked it in the top bar, and openPfUpload passes it
+     through. Nothing on this page switches between the five any more, so there
+     is no row to light up here — only the form to show, the (i) to point at
+     that section's rules, and the page's own bar to name it.
 
-  function buildTabs(){
-    var host = document.getElementById('upSecTabs');
-    if(!host || host.childNodes.length) return;
-    host.innerHTML = ORDER.map(function(s){
-      return '<button class="upSecBtn'+(s==='artwork'?' active':'')+'" id="upSecBtn-'+s+
-        '" style="--upA:'+SEC_COLOR[s]+'"'+
-        ' role="tab" aria-selected="'+(s==='artwork')+'" onclick="upSwitchSection(\''+s+'\')">'+
-        tabIco(s)+'<span>'+TAB_LABEL[s]+'</span></button>';
-    }).join('');
-  }
-
+     `silent` is the artwork form's own case: openPfUpload has already written
+     its title and subtitle, so re-writing them here would be the same two
+     lines twice. */
   function upSwitchSection(sec, silent){
-    buildTabs();               // idempotent
     upSec = sec;
-    upGuideRender();           // the (i) follows the open tab
-    var btns = document.querySelectorAll('#upSecTabs .upSecBtn');
-    for(var i=0;i<btns.length;i++){
-      var on = btns[i].id === 'upSecBtn-'+sec;
-      btns[i].classList.toggle('active', on);
-      btns[i].setAttribute('aria-selected', on ? 'true' : 'false');
-    }
+    upGuideRender();           // the (i) follows the form on screen
+    var nav = document.getElementById('pfUpNavTitle');
+    if(nav) nav.textContent = NAV_TITLE[sec] || 'UPLOAD';
     var art = document.querySelector('#uploadPage .upPopBody') || document.querySelector('.upPopBody');
     var box = document.getElementById('upSecForms');
     var h   = document.getElementById('pfUpTitle');
@@ -3595,17 +3578,19 @@
     if(t && t.tagName === 'TEXTAREA' && t.closest && t.closest('#pfUpMod')) upGrow(t);
   }, true);
 
-  // runs last in body
-  buildTabs();
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildTabs);
-
-  // never land on a hidden form
+  /* Never land on a hidden form.
+     openPfUpload (js/albums.js) sets up the artwork half of this sheet and
+     knows nothing about the other four, so which one is wanted is handed
+     through it to here. No argument means the artwork form, which is what
+     every older caller means: the quick-links tile, a resumed draft, the
+     scheduled-post path that reopens the page after publishing. */
   (function(){
     var orig = window.openPfUpload;
     if(typeof orig !== 'function') return;
-    window.openPfUpload = function(){
+    window.openPfUpload = function(sec){
       var r = orig.apply(this, arguments);
-      try{ upSwitchSection('artwork', true); }catch(e){}
+      if(!SEC_COLOR[sec]) sec = 'artwork';
+      try{ upSwitchSection(sec, sec === 'artwork'); }catch(e){}
       return r;
     };
   })();
@@ -5396,10 +5381,14 @@
   // where each tab goes
   function go(to){
     if(to === 'sell'){
-      if(typeof openPfUpload === 'function'){
-        openPfUpload();
-        if(typeof upSwitchSection === 'function') upSwitchSection('marketplace');
-      }
+      // The listing form, in one move. This used to open the sheet and then
+      // reach past it to switch the form, which is the shape the chip row
+      // forced on every caller; the sheet takes the section it wants now.
+      // bnGoUpload lights the bar's Upload while it is open — openPfUpload on
+      // its own leaves the word unlit, which is the one thing the direct call
+      // ever cost.
+      if(typeof bnGoUpload === 'function') bnGoUpload('marketplace');
+      else if(typeof openPfUpload === 'function') openPfUpload('marketplace');
       return;
     }
     // Explore, Learn and Buy all land on a section that has a url of its own

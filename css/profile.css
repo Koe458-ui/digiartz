@@ -133,15 +133,23 @@
     .pfActionRow{order:3;}
     @media(min-width:720px){ .pfActionRow{order:2;} .pfIdMeta{order:3;} }
     .pfNameRow{display:flex;align-items:center;gap:.4rem;min-width:0;}
+    /* The name and the handle both step up a size. Whose page this is was the
+       smallest thing in the identity block — smaller than the section
+       headings under it — and it is the one fact the block exists to state.
+       Both keep the clamp they were written with, so they still scale with
+       the viewport between the same two ends rather than jumping at a
+       breakpoint, and both keep the nowrap-and-ellipsis that has always
+       stopped a long name from pushing the row: a bigger name runs out of
+       room sooner and is cut the same way it was before. */
     .pfUsername{
       font-family:var(--fd);font-weight:800;
-      font-size:clamp(1.2rem,4.6vw,1.9rem);letter-spacing:-.02em;line-height:1.15;
+      font-size:clamp(1.5rem,5.6vw,2.4rem);letter-spacing:-.02em;line-height:1.15;
       color:var(--tx);
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;
     }
     .pfHandle{
-      font-family:var(--fm);font-size:clamp(.72rem,2.6vw,.82rem);
-      letter-spacing:.02em;color:var(--txd);margin-top:.1rem;
+      font-family:var(--fm);font-size:clamp(.85rem,3.1vw,1rem);
+      letter-spacing:.02em;color:var(--txd);margin-top:.15rem;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
     /* low merit warning */

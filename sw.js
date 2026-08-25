@@ -5004,12 +5004,12 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=30',
-  '/css/hero.css?v=119',
+  '/css/hero.css?v=120',
   '/css/viewer.css?v=40',
   '/css/community.css?v=29',
   '/css/connect.css?v=7',
   '/css/ranking.css?v=8',
-  '/css/profile.css?v=18',
+  '/css/profile.css?v=19',
   '/css/admin.css?v=4',
   '/css/auth.css?v=5',
   '/css/panels.css?v=21',
@@ -5039,7 +5039,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',
-  '/js/app-core.js?v=38',
+  '/js/app-core.js?v=39',
   '/js/protect.js?v=3',
   '/js/gallery.js?v=102',
   '/js/fghead.js?v=2',

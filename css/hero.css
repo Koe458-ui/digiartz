@@ -123,10 +123,15 @@
     .gNm{display:none;}
     /* hover reveal */
     .awImgWrap{position:relative;}
-    .gOv{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;clip-path:inset(0 0 0 100%);transition:clip-path .42s cubic-bezier(.22,1,.36,1);z-index:2;}
+    /* The scrim that wipes across a tile on hover. It held a magnifier in the
+       middle of it and does not any more — a search icon over an artwork
+       promised a search and opened the work — so the flex centring that put
+       the icon there is gone with it. The scrim is empty now and still
+       earning its place: it darkens the picture so the artist's name and
+       handle can be read in white over it. */
+    .gOv{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);clip-path:inset(0 0 0 100%);transition:clip-path .42s cubic-bezier(.22,1,.36,1);z-index:2;}
     .gItem:hover .gOv,.gItem:focus-within .gOv,
     .awCard:hover .gOv,.awCard:focus-within .gOv,.awCard:focus-visible .gOv{clip-path:inset(0 0 0 0);}
-    .gOv svg{width:36px;height:36px;color:var(--ps);}
     /* no clip path fallback */
     @supports not (clip-path:inset(0 0 0 0)){
       .gOv{opacity:0;transition:opacity .3s;}

@@ -1246,7 +1246,7 @@
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
         <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>${multiBadge}
         <img ${thumbAttrs} alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
-        <div class="gOv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+        <div class="gOv"></div>
         ${artistChip}
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
       </a>
@@ -1261,8 +1261,12 @@
   function dzBuildHoverReveal(uid){
     var frag = document.createDocumentFragment();
     var ov = document.createElement('div');
+    // The scrim, and nothing on it. It used to carry a magnifier in the middle,
+    // which promised a search and opened a picture — the tile's job is to open
+    // the work, and a search icon is what the bar at the top of the page is
+    // for. The scrim itself stays: it is what darkens the artwork so the
+    // artist's name reads in white over it.
     ov.className = 'gOv';
-    ov.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
     frag.appendChild(ov);
     if(uid){
       var chip = document.createElement('div');

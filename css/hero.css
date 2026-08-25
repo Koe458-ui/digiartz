@@ -102,13 +102,20 @@
 .secSub{font-family:var(--fm);font-size:.7rem;letter-spacing:.3em;color:var(--txd);margin-bottom:2.5rem;}
 
     /* gallery card */
-    .gItem{position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s,transform .3s;border-radius:6px;line-height:0;}
+    /* The tile keeps its outline and loses its elevation. The border is doing
+       work — it is what separates one work from the next in a grid whose gap
+       is three pixels — but the shadow and the lift were not: together they
+       said the thumbnail was an object resting on the page rather than the
+       page's own content. The corner comes down to 4px, enough to soften the
+       crop and not enough to read as a rounded box. Hover is the picture
+       moving inside a still frame, and the frame brightening. */
+    .gItem{position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s;border-radius:4px;line-height:0;}
     .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
-    .gItem:hover{border-color:var(--bdrh);transform:translateY(-3px);}
+    .gItem:hover{border-color:var(--bdrh);}
     .gItem img{width:100%;aspect-ratio:1;display:block;height:auto;object-fit:cover;transition:transform .4s;}
     /* shimmer keyframe */
     @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    .gItem:hover img{transform:scale(1.04);}
+    .gItem:hover img{transform:scale(1.03);}
     .gNm{display:none;}
     /* hover reveal */
     .awImgWrap{position:relative;}
@@ -516,21 +523,38 @@
        rather than as a different section of it. */
     .dzGrid{display:grid;gap:var(--artGap);grid-template-columns:repeat(2,1fr);}
     @media(min-width:700px){ .dzGrid{grid-template-columns:repeat(3,1fr);} }
-    .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s;}
-    @media(hover:hover){.dzCard:hover{border-color:var(--pg);transform:translateY(-2px);}}
+    /* Outline, no elevation, and 4px of corner rather than twelve — the same
+       box every tile on the site now takes. Hover moves the picture and
+       brightens the edge; nothing rises off the page. */
+    .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:4px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s;}
+    @media(hover:hover){
+      .dzCard:hover{border-color:var(--bdrh);}
+      .dzCard:hover .dzThumb img{transform:scale(1.03);}
+    }
     .dzThumb{position:relative;aspect-ratio:4/3;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;}
-    .dzThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .dzThumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s cubic-bezier(.22,1,.36,1);}
     .dzExt{font-family:var(--fm);font-size:.9rem;letter-spacing:.14em;color:var(--txd);}
     .dzBadge{position:absolute;top:.5rem;right:.5rem;background:color-mix(in srgb,var(--bg) 78%,transparent);border:1px solid var(--bdr);border-radius:999px;padding:.2rem .55rem;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);}
     .dzBody{padding:.7rem .8rem .85rem;display:flex;flex-direction:column;gap:.3rem;}
     .dzName{font-size:.88rem;font-weight:600;color:var(--tx);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
     .dzMeta{font-family:var(--fm);font-size:.63rem;letter-spacing:.08em;color:var(--txd);display:flex;flex-wrap:wrap;gap:.15rem .55rem;}
     .dzPrice{font-size:.85rem;font-weight:700;color:var(--ps);}
-    .dzRow{display:flex;gap:.85rem;align-items:flex-start;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:.9rem 1rem;cursor:pointer;transition:border-color .2s;}
-    @media(hover:hover){.dzRow:hover{border-color:var(--pg);}}
-    .dzRowIco{width:44px;height:44px;border-radius:10px;flex-shrink:0;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--fd);font-weight:700;color:var(--txd);}
+    /* A post and a posting are rows in a list, not boxes on a tray. Artwork
+       and the two shop grids keep an outline because a picture butted against
+       another picture needs one; a stack of prose does not. What separates one
+       row from the next here is a hairline — the least a list can spend and
+       still be a list — and the surface only appears under the cursor, so the
+       row being read is the only one wearing one. This is the shape
+       .pfSrchRow already uses for search results. */
+    .dzRow{display:flex;gap:.85rem;align-items:flex-start;border-bottom:1px solid var(--bdr);padding:.95rem .35rem;cursor:pointer;transition:background .15s;}
+    @media(hover:hover){.dzRow:hover{background:var(--sur);}}
+    .dzRow:active{background:var(--sur2);}
+    .dzRow:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
+    .dzRowIco{width:44px;height:44px;border-radius:4px;flex-shrink:0;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--fd);font-weight:700;color:var(--txd);}
     .dzRowIco img{width:100%;height:100%;object-fit:cover;}
-    .dzList{display:flex;flex-direction:column;gap:.7rem;}
+    /* the rules do the separating, so the gap goes */
+    .dzList{display:flex;flex-direction:column;}
+    .dzList .dzRow:last-child{border-bottom:0;}
     .dzChipRow{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem;}
     .dzChip{font-family:var(--fm);font-size:.58rem;letter-spacing:.09em;color:var(--txd);border:1px solid var(--bdr);border-radius:999px;padding:.15rem .5rem;}
     .dzEmpty{text-align:center;padding:3.5rem 1.5rem;color:var(--txd);font-family:var(--fm);font-size:.75rem;letter-spacing:.16em;}
@@ -789,7 +813,7 @@
     /* skeleton tile */
     .igSkelCard{
       aspect-ratio:1;
-      border-radius:6px;
+      border-radius:4px;
       background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);
       background-size:200% 100%;
       animation:imgShimmer 1.4s infinite;
@@ -997,25 +1021,28 @@
        has no text to measure. */
     .awGrid.awGrid--logs{
       grid-template-columns:minmax(0,1fr);
-      gap:.5rem;
+      /* a rule between the rows instead of a box around each, so the vertical
+         gap goes to nothing and the rules do the separating */
+      gap:0;
     }
     /* one column on a phone, two on a desktop, three once there is room
        for a third without squeezing the line into a chip */
-    @media(min-width:900px){  .awGrid.awGrid--logs{grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;} }
+    @media(min-width:900px){  .awGrid.awGrid--logs{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:2rem;} }
     @media(min-width:1600px){ .awGrid.awGrid--logs{grid-template-columns:repeat(3,minmax(0,1fr));} }
     .lgRow{
       display:flex;align-items:center;gap:.75rem;
       min-width:0;                      /* shrink with the track, never past it */
-      padding:.7rem .85rem;box-sizing:border-box;
-      background:var(--sur);border:1px solid var(--bdr);border-radius:12px;
+      padding:.75rem .35rem;box-sizing:border-box;
+      /* the same row the Blog and Jobs lists draw */
+      border-bottom:1px solid var(--bdr);
       cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;
-      transition:border-color .2s,transform .2s,background .2s;
+      transition:background .15s;
     }
     @media(hover:hover){
-      .lgRow:hover{border-color:var(--bdrh);transform:translateY(-2px);}
+      .lgRow:hover{background:var(--sur);}
     }
-    .lgRow:active{transform:translateY(0) scale(.995);}
-    .lgRow:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+    .lgRow:active{background:var(--sur2);}
+    .lgRow:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
     .lgAv{
       width:38px;height:38px;flex:0 0 auto;
       border-radius:50%;overflow:hidden;

@@ -375,7 +375,7 @@
     /* results reuse the cards and rows they came from, and want the page's
        gutter rather than the grid's */
     #cmSrchRes,#cmBrwList{
-      display:flex;flex-direction:column;gap:.6rem;
+      display:flex;flex-direction:column;
       padding:.4rem var(--pfPad) 0;
     }
     #cmSearchPage .pfSrchChip.on,#cmBrowsePage .pfSrchChip.on{
@@ -387,13 +387,17 @@
       padding:.9rem var(--pfPad) .2rem;
       font-family:var(--fm);font-size:.6rem;letter-spacing:.18em;color:var(--txd);
     }
+    /* A row in a list of communities, not a box on a tray: a hairline between
+       one and the next, and a surface only under the cursor. */
     .cmBrwRow{
       display:flex;align-items:center;gap:.8rem;
-      padding:.85rem 1rem;
-      background:var(--sur);border:1px solid var(--bdr);border-radius:12px;
-      cursor:pointer;transition:border-color .2s,box-shadow .2s;
+      padding:.85rem .4rem;
+      border-bottom:1px solid var(--bdr);
+      cursor:pointer;transition:background .15s;
     }
-    .cmBrwRow:hover{border-color:#2FA37C;box-shadow:0 6px 20px rgba(47,163,124,.16);}
+    .cmBrwRow:hover{background:var(--sur);}
+    .cmBrwRow:active{background:var(--sur2);}
+    #cmBrwList .cmBrwRow:last-child{border-bottom:0;}
     .cmBrwRank{
       flex-shrink:0;min-width:1.4rem;text-align:center;
       font-family:var(--fd);font-weight:800;font-size:.95rem;color:var(--txd);
@@ -431,7 +435,7 @@
     }
     .cmBrwMoreWrap{padding:1rem var(--pfPad) 0;}
     @media(max-width:420px){
-      .cmBrwRow{padding:.7rem .8rem;gap:.6rem;}
+      .cmBrwRow{padding:.7rem .3rem;gap:.6rem;}
       .cmBrwRank{min-width:1rem;font-size:.8rem;}
       .cmBrwIco{width:36px;height:36px;font-size:1rem;}
       .cmBrwJoin{padding:.5rem .7rem;font-size:.58rem;letter-spacing:.08em;}
@@ -566,18 +570,18 @@
     }
     /* community cards */
     /* card list layout */
-    .cmGrid{display:flex;flex-direction:column;gap:.7rem;}
+    /* card list layout — a rule between the rows, no box around each */
+    .cmGrid{display:flex;flex-direction:column;}
     .cmCard{
-      background:var(--sur);
-      border:1px solid var(--bdr);
-      border-radius:12px;
+      border-bottom:1px solid var(--bdr);
       cursor:pointer;
-      transition:border-color .25s,transform .2s,box-shadow .25s;
+      transition:background .15s;
       display:flex;align-items:center;gap:.9rem;
-      padding:.9rem 1.1rem;
+      padding:.9rem .4rem;
     }
-    .cmCard:hover{border-color:var(--bdrh);}
-    .cmCard:active{transform:scale(.99);}
+    .cmCard:hover{background:var(--sur);}
+    .cmCard:active{background:var(--sur2);}
+    .cmGrid .cmCard:last-child,#cmSrchRes .cmCard:last-child{border-bottom:0;}
     /* icon chip */
     .cmCardIcon{
       width:46px;height:46px;border-radius:50%;flex-shrink:0;
@@ -781,8 +785,13 @@
       box-shadow:0 0 18px rgba(244,183,64,.3);
     }
 
-    #communityPage .cmCard,#cmChatPanel .cmCard{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cmCard:hover,#cmChatPanel .cmCard:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--cmAccent-rgb),.18);}
+    /* The page's own palette, applied to a row rather than to a card: the
+       hairline is the community ground's border colour and the hover surface
+       is that ground's first step up. The accent glow that used to bloom out
+       from under a hovered card is gone with the card. */
+    #communityPage .cmCard,#cmChatPanel .cmCard{border-bottom-color:var(--cmBdr);}
+    #communityPage .cmCard:hover,#cmChatPanel .cmCard:hover{background:var(--cmSur);}
+    #communityPage .cmCard:active,#cmChatPanel .cmCard:active{background:var(--cmSur2);}
     #communityPage .cmCard .cmCardIcon,#cmChatPanel .cmCard .cmCardIcon{border:1px solid var(--cmBdrh);}
     #communityPage .cmCard .cmCardName,#cmChatPanel .cmCard .cmCardName{color:var(--cmTx);}
     #communityPage .cmCard p,#cmChatPanel .cmCard p{color:var(--cmTxd);}
@@ -801,14 +810,14 @@
        when Communities and Friends stopped being two chips on one page. The
        rules below carry all three ids for that reason; the base shape here is
        unscoped and shared by all of them. */
-    .cmFriendList{display:flex;flex-direction:column;gap:.7rem;margin-bottom:1.6rem;}
+    .cmFriendList{display:flex;flex-direction:column;margin-bottom:1.6rem;}
     .cmFriendItem{
       display:flex;align-items:center;gap:.9rem;
-      padding:.9rem 1.1rem;
-      border-radius:12px;cursor:pointer;
-      transition:border-color .25s,transform .2s,box-shadow .25s;
+      padding:.9rem .4rem;
+      cursor:pointer;
+      transition:background .15s;
     }
-    .cmFriendItem:active{transform:scale(.99);}
+    .cmFriendList .cmFriendItem:last-child{border-bottom:0;}
     .cmFriendAvatar{
       width:46px;height:46px;border-radius:50%;flex-shrink:0;
       overflow:hidden;display:flex;align-items:center;justify-content:center;
@@ -819,8 +828,9 @@
     .cmFriendName{font-family:var(--fb);font-size:.98rem;font-weight:700;display:flex;align-items:center;gap:.5rem;}
     .cmFriendStatus{font-family:var(--fm);font-size:.68rem;letter-spacing:.04em;display:flex;align-items:center;gap:.4rem;margin-top:.25rem;}
 
-    #communityPage .cmFriendItem,#cmChatPanel .cmFriendItem,#frdPage .cmFriendItem{background:var(--cmSur);border:1px solid var(--cmBdr);}
-    #communityPage .cmFriendItem:hover,#cmChatPanel .cmFriendItem:hover,#frdPage .cmFriendItem:hover{border-color:var(--cmAccent);box-shadow:0 6px 20px rgba(var(--cmAccent-rgb),.18);}
+    #communityPage .cmFriendItem,#cmChatPanel .cmFriendItem,#frdPage .cmFriendItem{border-bottom:1px solid var(--cmBdr);}
+    #communityPage .cmFriendItem:hover,#cmChatPanel .cmFriendItem:hover,#frdPage .cmFriendItem:hover{background:var(--cmSur);}
+    #communityPage .cmFriendItem:active,#cmChatPanel .cmFriendItem:active,#frdPage .cmFriendItem:active{background:var(--cmSur2);}
     #communityPage .cmFriendAvatar,#cmChatPanel .cmFriendAvatar,#frdPage .cmFriendAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);}
     #communityPage .cmFriendName,#cmChatPanel .cmFriendName,#frdPage .cmFriendName{color:var(--cmTx);}
     #communityPage .cmFriendStatus,#cmChatPanel .cmFriendStatus,#frdPage .cmFriendStatus{color:var(--cmTxd);}

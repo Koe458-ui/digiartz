@@ -67,7 +67,9 @@
 .dzvRefs a{color:var(--ps);}
 .dzvRelRow{display:flex;flex-wrap:wrap;gap:.6rem;}
 .dzvRelCard{width:118px;cursor:pointer;display:flex;flex-direction:column;gap:.35rem;}
-.dzvRelCard img,.dzvRelNo{width:118px;height:88px;object-fit:cover;display:block;border-radius:10px;border:1px solid var(--bdr);background:var(--sur2);}
+/* A related work is a picture in a footnote. It takes the same 4px crop every
+   other thumbnail on the site takes, and no frame around it. */
+.dzvRelCard img,.dzvRelNo{width:118px;height:88px;object-fit:cover;display:block;border-radius:4px;background:var(--sur2);}
 .dzvRelNm{font-size:.75rem;line-height:1.35;color:var(--txd);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .dzvRelCard:hover .dzvRelNm{color:var(--tx);}
 @media(max-width:520px){
@@ -273,7 +275,8 @@
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
     grid-template-columns:repeat(4,1fr);
   }
-  .dzList{ gap:.9rem; }
+  /* .dzList had a desktop gap of its own when its rows were boxes. They are
+     hairline-separated rows now and the gap is theirs to not have. */
 
   /* text sizes */
   .dzName{ font-size:15px; line-height:1.4; }

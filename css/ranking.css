@@ -457,33 +457,32 @@
     /* columns only — the gap is --artGap and steps at these same widths */
     @media(min-width:700px){ .awGrid{grid-template-columns:repeat(3,1fr);} }
     @media(min-width:1280px){ .awGrid{grid-template-columns:repeat(4,1fr);} }
+    /* The board's tile, and the artist tile too — js/feed.js builds that one as
+       `awCard atCard`. It matches .gItem now: outline kept, shadow and lift
+       gone, 4px of corner instead of six. Two shadows and a four-pixel rise
+       were what made a wall of artwork read as a tray of objects held above
+       the page; the outline alone still says where one work ends and the next
+       begins, which is all the grid ever needed from it. */
     .awCard{
       position:relative;
       background:var(--sur);
       border:1px solid var(--bdr);
-      border-radius:6px;
+      border-radius:4px;
       overflow:hidden;
       display:flex;
       flex-direction:column;
       cursor:pointer;
-      transition:border-color .28s,transform .28s,box-shadow .28s;
-      box-shadow:
-        0 2px 6px rgba(0,0,0,.10),
-        0 8px 20px rgba(0,0,0,.09);
+      transition:border-color .28s,transform .2s;
     }
     @media(hover:hover){
       .awCard:hover{
         border-color:var(--bdrh);
-        transform:translateY(-4px);
-        box-shadow:
-          0 4px 12px rgba(0,0,0,.14),
-          0 16px 36px rgba(0,0,0,.13);
       }
       .awCard:hover .awImgWrap img{
-        transform:scale(1.045);
+        transform:scale(1.03);
       }
     }
-    .awCard:active{transform:translateY(-1px) scale(.99);}
+    .awCard:active{transform:scale(.99);}
     .awImgWrap{
       width:100%;
       aspect-ratio:1;

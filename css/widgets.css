@@ -652,16 +652,27 @@ html.thmFade #themePage{
 .albCard{
   position:relative;display:block;width:100%;aspect-ratio:1;
   padding:0;text-align:left;
-  background:var(--sur);border:1px solid var(--bdr);border-radius:12px;
+  background:var(--sur);border:1px solid transparent;border-radius:4px;
   overflow:hidden;cursor:pointer;color:inherit;font:inherit;
-  transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s,box-shadow .25s;
+  transition:transform .2s,border-color .2s;
 }
 @supports not (aspect-ratio:1){
   .albCard{height:0;padding-top:100%;}
 }
+/* Four pictures and a name, and the four pictures reach every edge — there is
+   no ground showing for an outline to bound, so the tile draws none, and no
+   shadow and no lift with it.
+
+   The border stays declared, and transparent. Two of the tiles say something
+   with it — .albCard--virt colours it, .albCard--priv dashes it, and those are
+   the only marks a virtual or a private album gets — so the box has to keep its
+   geometry even where it draws nothing, or those two states lose their only
+   signal and every album's mosaic shifts a pixel besides. */
 @media(hover:hover){
-  .albCard:hover{transform:translateY(-3px);border-color:var(--bdrh);box-shadow:0 10px 26px rgba(0,0,0,.28);}
+  .albCard:hover{border-color:var(--bdrh);}
+  .albCard:hover .albCell img{transform:scale(1.03);}
 }
+.albCard:active{transform:scale(.99);}
 .albCard:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 .albMosaic{
   position:absolute;inset:0;
@@ -669,7 +680,7 @@ html.thmFade #themePage{
   gap:1px;background:var(--bdr);
 }
 .albCell{display:block;overflow:hidden;background:var(--sur2);}
-.albCell img{width:100%;height:100%;object-fit:cover;display:block;}
+.albCell img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s cubic-bezier(.22,1,.36,1);}
 .albCellEmpty{
   background:
     repeating-linear-gradient(45deg,

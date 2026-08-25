@@ -323,14 +323,19 @@
     .pfTopBar,.pfSrchHdr{ padding-inline:var(--pfPad); }
 
     /* about */
+    /* Bio, Connect and Standing. Three blocks of a person's own page, which is
+       what they are — not three panels laid on it. Each already announces
+       itself in a label the eye reads as a heading, so the box around it was
+       saying a second time what the label said first. The space between them
+       does that work now, which is why the gap grows as the boxes go: what
+       used to be a border plus an inset is a single, larger interval. */
     .pfAboutWrap{
-      display:grid;gap:.7rem;padding:0 var(--pfPad);
+      display:grid;gap:1.6rem;padding:0 var(--pfPad);
       grid-template-columns:minmax(0,1fr);
     }
-    @media(min-width:900px){ .pfAboutWrap{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:.9rem;} }
+    @media(min-width:900px){ .pfAboutWrap{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.8rem 2.2rem;} }
     .pfCard{
-      background:var(--sur);border:1px solid var(--bdr);border-radius:16px;
-      padding:1.1rem 1.15rem;
+      padding:0;
     }
     .pfCardLbl{
       font-family:var(--fm);font-size:.66rem;font-weight:700;letter-spacing:.16em;
@@ -435,7 +440,7 @@
     .pfSrchRow:active{background:var(--sur2);}
     .pfSrchRow:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
     .pfSrchThumb{
-      flex:0 0 auto;width:48px;height:48px;border-radius:10px;overflow:hidden;
+      flex:0 0 auto;width:48px;height:48px;border-radius:4px;overflow:hidden;
       background:var(--sur2);border:1px solid var(--bdr);
       display:flex;align-items:center;justify-content:center;
       font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;color:var(--txd);

@@ -12,11 +12,17 @@
    palette defines for itself, so a card on paper is no longer lit like a card
    on charcoal. Charcoal's values are unchanged. */
 
-/* glow and shadow */
-.gItem,.modal,.legalModal,#fgFltPanel{
+/* glow and shadow
+
+   A drop shadow is a promise that the thing casting it is a separate object
+   lying on top of the page. That is true of a modal and of the filter panel —
+   both are lifted over the document and have to read as lifted. It was never
+   true of a thumbnail: an artwork is the page's content, not an object resting
+   on it. .gItem keeps its outline, which is what tells one work from the next
+   in a grid three pixels apart; it casts nothing. */
+.modal,.legalModal,#fgFltPanel{
   box-shadow:var(--sh-card)!important;
 }
-.gItem:hover{box-shadow:var(--sh-card-hover)!important;}
 .fltDone:hover,.sCard:hover,.cpBarSend:hover,.fgFltBtn:hover,.fgFltBtn.active{box-shadow:none!important;}
 
 /* overlay scrims */

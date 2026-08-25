@@ -39,6 +39,8 @@
 // hand), so there is no RazorpayX batch whose fate we would need to hear about.
 // If that ever changes, payout events belong in this file next to the rest.
 
+import { sbUrl, sbSvc, ledger } from '../lib/sb.js';
+
 const SUB_DAYS = 31;
 const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
 
@@ -49,18 +51,6 @@ const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
-
-// ---------------------------------------------------------------------------
-// Supabase environment names.
-//
-// This project uses two spellings. The older Functions read SUPABASE_URL /
-// SUPABASE_ANON_KEY; the newer ones read SB_URL / SB_KEY, and config.example.js
-// documents the service key as SUPABASE_SERVICE_ROLE_KEY while the code asks
-// for SB_SERVICE_KEY. Either is fine to bind — what is not fine is a deploy
-// that half-works because of which spelling someone picked, so both are
-// accepted here.
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 async function sbService(env, path, init = {}) {
   const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
@@ -101,24 +91,6 @@ async function signed(env, raw, signature) {
   const b = new TextEncoder().encode(sig);
   if (a.byteLength !== b.byteLength) return false;
   return crypto.subtle.timingSafeEqual(a, b);
-}
-
-// ---------------------------------------------------------------------------
-// Independent record of the same movement, taken from what the PROVIDER
-// reported rather than from our own arithmetic — that is the whole point of it.
-// Appended, never updated: the table refuses UPDATE and DELETE to every role.
-async function ledger(env, args) {
-  try {
-    await fetch(sbUrl(env) + '/rest/v1/rpc/dz_ledger_append', {
-      method: 'POST',
-      headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(args),
-    });
-  } catch { /* never block a settlement on the audit write */ }
 }
 
 // A marketplace sale owes the seller their share. Written once per payment —

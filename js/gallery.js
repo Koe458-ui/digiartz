@@ -23,11 +23,6 @@
     resources:'RESOURCES', jobs:'JOBS'
   };
 
-  // one place to ask, so every motion in here agrees about it
-  function fgReduceMotion(){
-    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  }
-
   /* Show one of the five.
      This was the chip row's handler and is now the whole of how a section is
      reached: the member picked it in the bar's Explore menu, or arrived on its

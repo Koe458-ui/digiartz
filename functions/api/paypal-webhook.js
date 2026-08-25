@@ -29,6 +29,9 @@
 //   PAYMENTS.PAYOUTS-ITEM.UNCLAIMED   sent, recipient has not accepted yet
 //   PAYMENTS.PAYOUTS-ITEM.FAILED / .BLOCKED / .RETURNED / .DENIED / .REFUNDED
 
+import { sbUrl, sbSvc } from '../lib/sb.js';
+import { ppFee } from '../lib/money.js';
+
 const SUB_DAYS   = 31;
 const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
 
@@ -37,17 +40,6 @@ const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null
 // buyer paid and what PayPal took, and does no arithmetic on money.
 
 // smallest currency unit, for reading PayPal's decimal strings back
-const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD']);
-
-function ppFee(capture, currency) {
-  const br = (capture && capture.seller_receivable_breakdown) || {};
-  const f  = br.paypal_fee;
-  if (!f || f.currency_code !== currency) return 0;
-  const v = parseFloat(f.value);
-  if (!Number.isFinite(v)) return 0;
-  return ZERO_DECIMAL.has(currency) ? Math.round(v) : Math.round(v * 100);
-}
-
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
 
@@ -95,19 +87,6 @@ async function pp(env, path, init = {}) {
   }
   return body;
 }
-
-// ---------------------------------------------------------------------------
-// Supabase environment names.
-//
-// This project uses two spellings. The older Functions read SUPABASE_URL /
-// SUPABASE_ANON_KEY; the newer ones read SB_URL / SB_KEY, and config.example.js
-// documents the service key as SUPABASE_SERVICE_ROLE_KEY while the code asks
-// for SB_SERVICE_KEY. Either is fine to bind — what is not fine is a deploy
-// that half-works because of which spelling someone picked, so both are
-// accepted here and the endpoint says exactly what is missing when neither is.
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
-const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 async function sbService(env, path, init = {}) {
   const res = await fetch(sbUrl(env) + '/rest/v1' + path, {

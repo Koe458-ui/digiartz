@@ -18,6 +18,9 @@
 // correct resting place: reviewed, owed, not yet sent. Everything up to that
 // point works without the approval.
 
+import { sbUrl, sbAnon, sbSvc, sbUser, underLimit } from '../lib/sb.js';
+import { toValue } from '../lib/money.js';
+
 // The minimum is per currency, and it is NOT one figure converted eight ways.
 // Converting a dollar minimum into the seller's currency would be the same
 // mistake the wallet used to make in the other direction — a rate moving would
@@ -52,10 +55,6 @@ const apiBase = (env) =>
 const PP_PAYOUT_CURRENCIES = new Set(['AUD', 'BRL', 'CAD', 'CZK', 'DKK', 'EUR',
   'HKD', 'HUF', 'ILS', 'JPY', 'MYR', 'MXN', 'TWD', 'NZD', 'NOK', 'PHP', 'PLN',
   'GBP', 'SGD', 'SEK', 'CHF', 'THB', 'USD']);
-
-const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD']);
-const toValue = (minor, cur) =>
-  ZERO_DECIMAL.has(cur) ? String(minor) : (minor / 100).toFixed(2);
 
 // rough shape check; PayPal does the real validation
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,24}$/i;
@@ -130,30 +129,6 @@ async function sbRpc(env, request, fn, args = {}) {
   return res.json().catch(() => null);
 }
 
-// ---------------------------------------------------------------------------
-// Supabase environment names.
-//
-// This project uses two spellings. The older Functions read SUPABASE_URL /
-// SUPABASE_ANON_KEY; the newer ones read SB_URL / SB_KEY, and config.example.js
-// documents the service key as SUPABASE_SERVICE_ROLE_KEY while the code asks
-// for SB_SERVICE_KEY. Either is fine to bind — what is not fine is a deploy
-// that half-works because of which spelling someone picked, so both are
-// accepted here and the endpoint says exactly what is missing when neither is.
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
-const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-async function sbUser(env, request) {
-  const bearer = request.headers.get('authorization') || '';
-  if (!bearer.startsWith('Bearer ')) return null;
-  const res = await fetch(sbUrl(env) + '/auth/v1/user', {
-    headers: { apikey: sbAnon(env), authorization: bearer },
-  });
-  if (!res.ok) return null;
-  const u = await res.json().catch(() => null);
-  return u && u.id ? u : null;
-}
-
 async function sbService(env, path, init = {}) {
   const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
     ...init,
@@ -198,27 +173,6 @@ async function isAdmin(env, userId) {
   const rows = await sbService(env, '/profiles?id=eq.' + userId + '&select=role&limit=1');
   const role = rows && rows[0] && rows[0].role;
   return role === 'admin' || role === 'dev';
-}
-
-// ---------------------------------------------------------------------------
-// Rate limit. Cloudflare stops the floods; this stops the cheap targeted abuse
-// it has no reason to block — walking item ids through checkout, opening
-// orders to spam the ledger, hammering a payout race. Fails OPEN: if the
-// limiter itself is broken, a paying customer still gets served.
-async function underLimit(env, bucket, limit, seconds) {
-  try {
-    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_rate_take', {
-      method: 'POST',
-      headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ p_bucket: bucket, p_limit: limit, p_seconds: seconds }),
-    });
-    if (!res.ok) return true;
-    return (await res.json()) !== false;
-  } catch { return true; }
 }
 
 // ---------------------------------------------------------------------------

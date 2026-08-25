@@ -32,14 +32,11 @@
 //      SB_SERVICE_KEY (falls back to SUPABASE_SERVICE_ROLE_KEY),
 //      ALLOWED_ORIGINS (comma separated extra hosts)
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { sbUrl, sbAnon, sbSvc, peekJwt } from '../lib/sb.js';
+import { UUID_RE, sameOrigin, allowedHost, encodePath, json } from '../lib/http.js';
 
 // long enough to fetch, short enough to be worthless if it ever escaped
 const SIGN_TTL = 120;
-
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
-const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function onRequestPost({ request, env }) {
   const SB_URL = sbUrl(env), SB_KEY = sbAnon(env), SB_SVC = sbSvc(env);
@@ -148,75 +145,10 @@ export async function onRequestPost({ request, env }) {
   }
 }
 
-// Storage paths are stored raw; the url they go into is not raw.
-function encodePath(p) {
-  return String(p).split('/').map(encodeURIComponent).join('/');
-}
-
-// the request has to have come from a page we serve. Sec-Fetch-Site is the
-// primary signal — browsers set it themselves and page script cannot override
-// it — with Origin and Referer as the fallback.
-function sameOrigin(request, env) {
-  const h = request.headers;
-  let host = '';
-  try { host = new URL(request.url).host; } catch { return false; }
-
-  const allowed = new Set([host]);
-  for (const extra of String(env.ALLOWED_ORIGINS || '').split(',')) {
-    const v = extra.trim();
-    if (!v) continue;
-    try { allowed.add(new URL(v.includes('://') ? v : 'https://' + v).host); }
-    catch { allowed.add(v); }
-  }
-
-  const site = h.get('Sec-Fetch-Site');
-  if (site) return site === 'same-origin';
-
-  for (const name of ['Origin', 'Referer']) {
-    const raw = h.get(name);
-    if (!raw) continue;
-    try { return allowed.has(new URL(raw).host); } catch { return false; }
-  }
-  return false;
-}
-
-// reads a jwt payload without verifying it. only ever used to refuse early
-function peekJwt(token) {
-  const parts = String(token).split('.');
-  if (parts.length !== 3) return null;
-  try {
-    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const pad = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
-    return JSON.parse(atob(pad));
-  } catch { return null; }
-}
-
-// only our own storage host may be fetched. the url always comes from the
-// signer or from a column the browser cannot write, so this is a backstop
-// against a poisoned row rather than a trust boundary
-function allowedHost(url, sbUrlStr) {
-  let u;
-  try { u = new URL(url); } catch { return false; }
-  if (u.protocol !== 'https:') return false;
-  try { if (u.hostname === new URL(sbUrlStr).hostname) return true; } catch { /* keep checking */ }
-  return u.hostname.endsWith('.supabase.co');
-}
-
 function niceName(name) {
   const clean = String(name || 'file').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 80);
   return clean || 'file';
 }
 function asciiName(name) {
   return niceName(name).replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
-}
-
-function json(obj, status, extra) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
-      ...(extra || {}),
-    },
-  });
 }

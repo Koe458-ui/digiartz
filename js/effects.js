@@ -199,8 +199,6 @@
   var backdrop = document.getElementById('legalBackdrop');
   var titleEl  = document.getElementById('lmTitleText');
   var bodyEl   = document.getElementById('lmBody');
-  // local escaper
-  function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
   // Returns FALSE when it opened the modal and TRUE when it could not.
   //
@@ -277,8 +275,11 @@
     els.title.innerHTML = c.title;
     els.body.innerHTML  = c.html;
     els.page.scrollTop  = 0;
+    // Recorded only on the open that actually opens — see the same guard in
+    // js/theme.js. Opening a second document while this page is already up
+    // would otherwise save the lock this function set as the state to restore.
+    if (!els.page.classList.contains('open')) lgPrevOverflow = document.body.style.overflow;
     els.page.classList.add('open');
-    lgPrevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     var back = els.page.querySelector('.subPgX');
     if(back) setTimeout(function(){ back.focus({preventScroll:true}); }, 80);

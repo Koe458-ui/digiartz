@@ -17,6 +17,8 @@
 // provider ids are public by design and worthless without the secrets, which
 // never leave the Worker. The gate is against everyone up to that point.
 
+import { sbUrl, sbAnon, sbSvc, sbUser } from '../lib/sb.js';
+
 // ---------------------------------------------------------------------------
 // plans — what each one IS. What each one COSTS is not here: prices live in
 // public.subscription_prices, one row per plan per currency, and are read at
@@ -98,7 +100,6 @@ const COMPARE = {
     { label: 'Priority support',    free: false,     lite: false,     premium: false,      max: true },
   ],
 };
-
 
 // ---------------------------------------------------------------------------
 // The twelve currencies this site transacts in. Ordered as a member would
@@ -2555,20 +2556,6 @@ const MODULE = `
 })(__dzStore);
 `;
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// Supabase environment names.
-//
-// This project uses two spellings. The older Functions read SUPABASE_URL /
-// SUPABASE_ANON_KEY; the newer ones read SB_URL / SB_KEY, and config.example.js
-// documents the service key as SUPABASE_SERVICE_ROLE_KEY while the code asks
-// for SB_SERVICE_KEY. Either is fine to bind — what is not fine is a deploy
-// that half-works because of which spelling someone picked, so both are
-// accepted here and the endpoint says exactly what is missing when neither is.
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
-const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
-
 // Service-role read. THIS WAS MISSING and every call to it threw a
 // ReferenceError that the try/catch around the pricing block then swallowed,
 // so the plan grid rendered empty and the currency stayed on its default —
@@ -2587,16 +2574,6 @@ async function sbService(env, path, init = {}) {
   return res.json().catch(() => null);
 }
 
-async function sbUser(env, request) {
-  const bearer = request.headers.get('authorization') || '';
-  if (!bearer.startsWith('Bearer ')) return null;
-  const res = await fetch(sbUrl(env) + '/auth/v1/user', {
-    headers: { apikey: sbAnon(env), authorization: bearer },
-  });
-  if (!res.ok) return null;
-  const u = await res.json().catch(() => null);
-  return u && u.id ? u : null;
-}
 
 // Which providers can actually take money. Decided here, from the credentials
 // bound to the Pages project, so the browser is never in a position to ask.

@@ -52,7 +52,12 @@ const verbose = process.argv.includes('--verbose');
 
 // a declaration whose value uses one of these is a newer spelling of the one
 // above it, kept as a fallback for browsers that do not understand it
-const NEWER = /dvh\b|dvw\b|\bsafe\s|color-mix\(|clamp\(|env\(|:has\(/;
+// `clip` is in this list for the same reason as the rest: it is newer than
+// `hidden`, and #artModal .avBody says overflow-x:hidden at viewer.css:79
+// and overflow-x:clip at viewer.css:1066 precisely so a browser without
+// clip still gets a clipped box. Without it here this file reported that
+// fallback as dead text that could simply go.
+const NEWER = /dvh\b|dvw\b|\bsafe\s|color-mix\(|clamp\(|env\(|:has\(|\bclip\b/;
 
 function declarations(file) {
   const raw = readFileSync('css/' + file, 'utf8');

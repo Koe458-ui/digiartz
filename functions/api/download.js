@@ -28,10 +28,11 @@
 //      SB_SERVICE_KEY (or SUPABASE_SERVICE_ROLE_KEY) for the per-IP limiter,
 //      ALLOWED_ORIGINS (comma separated extra hosts)
 
+import { peekJwt } from '../lib/sb.js';
+import { UUID_RE, sameOrigin, allowedHost, json } from '../lib/http.js';
+
 const SB_URL_FALLBACK  = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
 const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Free tiers get the public 1600px derivative, paid tiers get the original.
 // Each size is its own Supabase Storage object, named by suffix, so choosing
@@ -196,62 +197,10 @@ async function underIpLimit(env, ip) {
   } catch { return true; }
 }
 
-// the request has to have come from a page we serve.
-// Sec-Fetch-Site is the primary signal: browsers set it themselves and page
-// script cannot override it, so a fetch() from another site cannot claim
-// same-origin. Origin and Referer are the fallback for anything that omits it.
-function sameOrigin(request, env) {
-  const h = request.headers;
-  let host = '';
-  try { host = new URL(request.url).host; } catch { return false; }
-
-  const allowed = new Set([host]);
-  for (const extra of String(env.ALLOWED_ORIGINS || '').split(',')) {
-    const v = extra.trim();
-    if (!v) continue;
-    try { allowed.add(new URL(v.includes('://') ? v : 'https://' + v).host); }
-    catch { allowed.add(v); }
-  }
-
-  const site = h.get('Sec-Fetch-Site');
-  if (site) return site === 'same-origin';
-
-  for (const name of ['Origin', 'Referer']) {
-    const raw = h.get(name);
-    if (!raw) continue;
-    try { return allowed.has(new URL(raw).host); } catch { return false; }
-  }
-  // no browser signal at all — a scripted client
-  return false;
-}
-
-// reads a jwt payload without verifying it. only ever used to refuse early;
-// PostgREST does the real signature check on the calls that follow
-function peekJwt(token) {
-  const parts = String(token).split('.');
-  if (parts.length !== 3) return null;
-  try {
-    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const pad = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
-    return JSON.parse(atob(pad));
-  } catch { return null; }
-}
-
 // mirrors imgResize in js/app-core.js: the largest public derivative
 function previewUrl(url) {
   if (!url || typeof url !== 'string') return url;
   return SB_SIZE_RE.test(url) ? url.replace(SB_SIZE_RE, '__f1600.webp') : url;
-}
-
-// only our own media host may be fetched. the url always comes from
-// smart-function rather than the request, so this is a backstop against a
-// poisoned artworks row, not a trust boundary
-function allowedHost(url, sbUrl) {
-  let u;
-  try { u = new URL(url); } catch { return false; }
-  if (u.protocol !== 'https:') return false;
-  try { if (u.hostname === new URL(sbUrl).hostname) return true; } catch { /* keep checking */ }
-  return u.hostname.endsWith('.supabase.co');
 }
 
 function extFor(src, type) {
@@ -271,15 +220,4 @@ function niceName(name, src, type) {
 // header-safe fallback for clients that ignore filename*
 function asciiName(name, src, type) {
   return niceName(name, src, type).replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
-}
-
-function json(obj, status, extra) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
-      ...(extra || {})
-    }
-  });
 }

@@ -27,8 +27,15 @@
   'use strict';
 
   function el(id) { return document.getElementById(id); }
+  /* Its own, and not window.esc: there has never been a window.esc in this
+     bundle — js/app-core.js and js/sections.js each keep a private one — so
+     the reach for a global always missed and the fallback beside it, plain
+     String(), escaped nothing at all. Everything below it, mark() included,
+     was documented as escaping and did not. */
   function esc(s) {
-    return (typeof window.esc === 'function') ? window.esc(s) : String(s == null ? '' : s);
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
   /* Escape first, then let the stars through as emphasis. The order is the
      whole point: nothing a section's copy contains can become a tag, because

@@ -1,0 +1,120 @@
+// What the two checkout backends read before they name a price.
+//
+// functions/api/rzp.js and functions/api/paypal.js are two different providers
+// with two different order shapes, two different signature schemes and two
+// different webhooks. What they are NOT different about is the five questions
+// they each ask the database before an order exists: which currency does this
+// member transact in, what does this plan cost there, what are the floor and
+// ceiling on a support payment, what does this member already hold, and is
+// this promo code real. Those five were byte-identical in both files, along
+// with the service-role reader underneath them.
+//
+// Five copies of "what does this plan cost" is five chances to charge the
+// wrong amount, and that is not a hypothetical failure mode in this directory:
+// the note this codebase kept above rzp.js's ZERO_DECIMAL records the time one
+// copy of a currency list fell behind the other three and priced an order at a
+// hundredth of the quoted figure. The rule these two files already state — one
+// price list, read at request time, never written into code — applies to the
+// readers as much as to the prices.
+//
+// Only these two import this. store.js, payouts.js and both webhooks keep
+// service-role readers of their own, because theirs answer differently on
+// failure; see the note in functions/lib/sb.js.
+
+import { sbUrl, sbAnon, sbSvc } from './sb.js';
+
+// Service-role read, asking PostgREST for the row back so a write can be
+// checked. Throws on anything but 2xx: a checkout that cannot read the price
+// list must fail loudly rather than quote a default.
+export async function sbService(env, path, init = {}) {
+  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
+    ...init,
+    headers: {
+      apikey: sbSvc(env),
+      authorization: 'Bearer ' + sbSvc(env),
+      'content-type': 'application/json',
+      prefer: 'return=representation',
+      ...(init.headers || {}),
+    },
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok) throw new Error('Database error (' + res.status + ')');
+  return body;
+}
+
+// What this member transacts in. Dollars for anyone who has not chosen, and
+// for anyone whose stored value is not a currency code.
+export async function memberCurrency(env, userId) {
+  const rows = await sbService(env,
+    '/profiles?id=eq.' + userId + '&select=currency&limit=1');
+  const c = rows && rows[0] && rows[0].currency;
+  return /^[A-Z]{3}$/.test(String(c || '')) ? c : 'USD';
+}
+
+// What a plan costs in that currency, in the currency's smallest unit. null
+// when there is no row — a plan with no price in a currency is not orderable
+// in it, which is a different answer from "free".
+export async function planPrice(env, plan, currency) {
+  const rows = await sbService(env,
+    '/subscription_prices?plan=eq.' + encodeURIComponent(plan) +
+    '&currency=eq.' + encodeURIComponent(currency) + '&select=amount&limit=1');
+  const a = rows && rows[0] && Number(rows[0].amount);
+  return Number.isFinite(a) && a > 0 ? a : null;
+}
+
+// The floor and ceiling on a support payment in that currency.
+export async function supportLimits(env, currency) {
+  const rows = await sbService(env,
+    '/support_limits?currency=eq.' + encodeURIComponent(currency) +
+    '&select=min_amount,max_amount&limit=1');
+  const r = rows && rows[0];
+  return r ? { min: Number(r.min_amount), max: Number(r.max_amount) } : null;
+}
+
+// What the member already holds. Read before an order is created, so a plan
+// that would take something away can be refused while the buyer still has
+// their money, and read again at settlement.
+export async function currentPlan(env, userId) {
+  try {
+    const rows = await sbService(env, '/profiles?id=eq.' + userId +
+      '&select=subscription_tier,subscription_expires_at&limit=1');
+    const p = rows && rows[0];
+    const t = p && p.subscription_expires_at
+      ? new Date(p.subscription_expires_at).getTime() : 0;
+    // an expired subscription is not a subscription
+    if (t && t > Date.now()) return { tier: p.subscription_tier || null, expires: t };
+  } catch { /* unreadable — treated as holding nothing */ }
+  return { tier: null, expires: 0 };
+}
+
+// A promo code, resolved AS THE CALLER — the rpc runs on their token, not on
+// the service role, so a code's own eligibility rules apply to the person
+// spending it.
+export async function resolvePromo(env, request, code, kind) {
+  const raw = String(code || '').trim().toUpperCase();
+  if (!raw) return { id: null, discountBps: 0 };
+  if (!/^[A-Z0-9]{4,6}$/.test(raw)) return { error: 'That code does not look right' };
+  try {
+    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_promo_resolve', {
+      method: 'POST',
+      headers: {
+        apikey: sbAnon(env),
+        authorization: request.headers.get('authorization') || '',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ p_code: raw, p_kind: kind }),
+    });
+    if (!res.ok) return { error: 'That code could not be checked' };
+    const r = await res.json();
+    if (!r || !r.ok) return { error: (r && r.error) || 'No such code' };
+    // Clamped on the way out. The discount comes from a config row an admin can
+    // edit, and a typo there should cost the platform a sale, not the whole
+    // price of one.
+    const bps = Math.min(Math.max(Number(r.discount_bps) || 0, 0), 9500);
+    return { id: r.id, code: raw, discountBps: bps };
+  } catch {
+    // A code that cannot be checked is not silently honoured and not silently
+    // dropped either — the buyer is told, and can pay without it.
+    return { error: 'That code could not be checked' };
+  }
+}

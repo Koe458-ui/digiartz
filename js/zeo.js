@@ -246,7 +246,7 @@
       cmHdrChatMode({
         name  : 'Zeo',
         sub   : 'Bot · Always online',
-        avatar: '/zeo-avatar.png?v=4',
+        avatar: '/zeo-avatar.png?v=6',
         letter: '🤖',
         tap   : null          // a bot has no profile to open
       });

@@ -4,6 +4,34 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v254 — Zeo wears the mark too.
+
+       v253 put the pagoda on every icon the DOCUMENT declares and stopped
+       there. The site's mark lives in one more place nothing in that head
+       block points at: zeo-avatar.png, the assistant's face in the friends
+       list and at the top of its chat. It was still the old bars mark on a
+       navy disc, so the two marks the site shows a member disagreed with each
+       other.
+
+       IT IS FITTED TO A CIRCLE, NOT TO A SQUARE. .cmFriendAvatar is 46px with
+       border-radius 50% and overflow hidden, so this is a round hole and the
+       favicon's own framing would have had the pagoda's base clipped off at
+       both bottom corners. The mark reaches 90% of the circle's radius and is
+       67.8% of the box — smaller than the largest that fits, because a mark
+       that just clears a round clip reads as one straining against it, and the
+       ring of white it stands in is what makes it read as a mark rather than
+       as a picture someone cropped.
+
+       THE RING WENT WITH IT. The chip was a navy gradient behind a pale blue
+       ring, which was the ground the old bars mark was drawn against. Around a
+       mark that carries its own white, that ring is a colour picked for
+       nothing and the gradient is a rim the clip never quite hides. It is
+       white now, with the border every other avatar wears. What tells a reader
+       Zeo is not a member is the mark and the BOT badge beside it, which is
+       the same job done in a word instead of a hue.
+
+       Changed: zeo-avatar.png, css/community.css, index.html, js/zeo.js, sw.js.
+
    v253 — a third theme, and it is the default; a new mark.
 
        OFF-WHITE. Paper is warm on purpose — hue 55, twelve points of 255 off
@@ -4924,7 +4952,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v253';
+const CACHE_VERSION = 'v254';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4978,7 +5006,7 @@ const SHELL_URLS = [
   '/css/base.css?v=30',
   '/css/hero.css?v=117',
   '/css/viewer.css?v=40',
-  '/css/community.css?v=27',
+  '/css/community.css?v=28',
   '/css/connect.css?v=7',
   '/css/ranking.css?v=6',
   '/css/profile.css?v=17',
@@ -5007,7 +5035,7 @@ const SHELL_URLS = [
   '/js/community.js?v=7',
   '/js/dm.js?v=11',
   '/aiAssistantData.js?v=4',
-  '/js/zeo.js?v=3',
+  '/js/zeo.js?v=4',
   '/js/composer.js?v=2',
   '/js/share.js?v=1',
   '/js/misc-core.js?v=5',

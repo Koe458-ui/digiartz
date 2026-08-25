@@ -909,13 +909,18 @@
        rooms now, so it draws from that panel's tokens and is right in all four
        themes rather than in the one it was drawn against.
 
-       The avatar chip keeps a colour of its own, and only that: it is the one
-       place a bot should not look like a member. */
+       The avatar chip is the ground the mark sits on, and nothing more. It
+       used to be a navy gradient behind a pale blue ring, which was the ground
+       the old bars mark was drawn against — around the site's own mark, which
+       carries its own white, that ring is a colour picked for nothing and the
+       gradient is a rim the clip never quite hides. White, and the border every
+       other avatar wears. The chip is no longer what tells a reader this is not
+       a member; the mark is, and the BOT badge beside it says so in a word. */
     #communityPage .cmFriendAvatar.zeoChip,
     #cmChatPanel   .cmFriendAvatar.zeoChip,
     #frdPage       .cmFriendAvatar.zeoChip{
-      background:linear-gradient(135deg,#1a2a4a,#2a4080);
-      border-color:rgba(99,179,237,.35);
+      background:#FFFFFF;
+      border-color:var(--cmBdrh);
     }
     /* The image is a rectangle in a round hole and the fallback is an emoji in
        the same hole — both fill the chip, neither is stretched. */

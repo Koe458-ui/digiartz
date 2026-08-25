@@ -13,14 +13,14 @@
 // whose whole safety argument is "it only ever refuses", and that argument has
 // to hold in every copy at once.
 //
-// What is NOT here, deliberately: sbService. Six files have one and they are
-// not the same function — collab.js throws a Refused it can turn into a status
-// code, payouts.js and both webhooks ask PostgREST for the row back, store.js
-// does not. Folding four different error contracts into one parameterised
-// helper would make each caller harder to read to save a dozen lines, so each
-// keeps its own. paypal.js and rzp.js share theirs through lib/billing.js,
-// where the two really are identical and the money they move is the reason to
-// keep them that way.
+// What is NOT here, deliberately: sbService. Five files still have one of
+// their own and they are not the same function — collab.js throws a Refused it
+// can turn into a status code, payouts.js and both webhooks ask PostgREST for
+// the row back, store.js does not. Folding four different error contracts into
+// one parameterised helper would make each caller harder to read to save a
+// dozen lines, so each keeps its own. paypal.js and rzp.js share theirs
+// through lib/billing.js, where the two really are identical and the money
+// they move is the reason to keep them that way.
 
 // ---------------------------------------------------------------------------
 // Supabase environment names.

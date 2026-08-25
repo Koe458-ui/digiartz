@@ -3,7 +3,8 @@
 import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, ledger } from '../lib/sb.js';
 import { fromPriceCents, minCharge, showAmount } from '../lib/money.js';
 import {
-  sbService, memberCurrency, planPrice, supportLimits, currentPlan, resolvePromo
+  sbService, memberCurrency, planPrice, supportLimits, currentPlan, resolvePromo,
+  PLAN_TIERS, TIER_RANK, PLAN_LABEL, applySubscription
 } from '../lib/billing.js';
 
 // Plan prices are NOT here. They live in public.subscription_prices, one row
@@ -12,16 +13,6 @@ import {
 // chances to charge the wrong amount. They are LOCAL prices per currency, not
 // a dollar figure run through an exchange rate — that is how you end up
 // quoting Rs 416.67 a month.
-const TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
-// What a member already holds decides both whether a plan may be ordered and
-// how a settled month is applied, so the three need an order. The same block
-// is in paypal.js and both webhooks — see applySubscription below.
-const TIER_RANK = { lite: 1, premium: 2, max: 3 };
-const PLAN_LABEL = {
-  lite: 'Lite \u2014 1 month', premium: 'Premium \u2014 1 month',
-  max: 'Max \u2014 1 month',   support: 'Support DigiArtz',
-};
-const SUB_DAYS = 31;
 
 // TWO UNITS LIVE IN THIS SYSTEM AND THEY ARE NOT THE SAME UNIT.
 //
@@ -64,7 +55,6 @@ async function rzp(env, path, init = {}) {
   if (!res.ok) throw new Error((body.error && body.error.description) || 'Payment provider error (' + res.status + ')');
   return body;
 }
-
 
 // signature check
 async function validSignature(env, orderId, paymentId, signature) {
@@ -146,41 +136,6 @@ async function recordEarning(env, row, prov) {
   });
 }
 
-
-// APPLYING A MONTH TO WHAT IS ALREADY THERE.
-//
-// The same block is in paypal.js, rzp-webhook.js and paypal-webhook.js, which
-// with this file are the four paths that can settle a subscription. It used to
-// be an unconditional PATCH to { tier, now + 31 days } in all four, reading
-// neither the current tier nor the current expiry first:
-//
-//   buying a month with twenty days left gave thirty-one, not fifty-one, so
-//   twenty paid days were destroyed — and the plan copy invites exactly that
-//   purchase ("A single charge for 31 days. Nothing recurring");
-//
-//   buying Lite while holding Max dropped the daily quota from twenty to ten
-//   on the spot and took the remaining Max days with it.
-//
-// So: extend from whichever is later, now or the existing expiry, and never
-// come out of this holding a lower tier than went in. sub-order refuses a
-// downgrade before any money moves; this is the backstop for an order created
-// before an upgrade and settled after it, where the money is already taken and
-// the only wrong answer is to give less than was there before.
-async function applySubscription(env, userId, tier) {
-  const cur = await currentPlan(env, userId);
-  const from = Math.max(Date.now(), cur.expires);
-  const keep = (TIER_RANK[cur.tier] || 0) > (TIER_RANK[tier] || 0) ? cur.tier : tier;
-  await sbService(env, '/profiles?id=eq.' + userId, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      subscription_tier: keep,
-      subscription_expires_at: new Date(from + SUB_DAYS * 86400000).toISOString(),
-    }),
-  });
-  return keep;
-}
-
-
 // Only Max carries a promo discount. A code typed against Lite or Premium is
 // refused rather than quietly ignored: a buyer who thinks they used a code and
 // was charged full price will say so, and they will be right.
@@ -256,7 +211,7 @@ export async function onRequestPost({ env, request }) {
     // subscriptions
     if (body.action === 'sub-order') {
       const key = String(body.plan || '');
-      if (!(key in TIERS)) return json({ error: 'Unknown plan' }, 400);
+      if (!(key in PLAN_TIERS)) return json({ error: 'Unknown plan' }, 400);
 
       const currency = await memberCurrency(env, user.id);
       let amount;
@@ -400,7 +355,7 @@ export async function onRequestPost({ env, request }) {
 
       let tier = null;
       if (notes.kind === 'subscription') {
-        const t = TIERS[notes.plan];
+        const t = PLAN_TIERS[notes.plan];
         if (t) {
           // What they end up holding, which is not always what they bought —
           // a month bought under a higher tier extends that tier instead.

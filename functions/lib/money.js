@@ -44,9 +44,9 @@ const MIN_CHARGE_DEFAULT = 50;
 export const minCharge = (cur) =>
   MIN_CHARGE[cur] != null ? MIN_CHARGE[cur] : MIN_CHARGE_DEFAULT;
 
-// What PayPal took out of a capture, in minor units, or zero if it did not say
-// — or said it in a currency other than the one the buyer paid in, which is
-// not a fee this row can subtract.
+// What PayPal kept. Reported on the capture as seller_receivable_breakdown, in
+// the capture's own currency — if it ever comes back in a different one, zero
+// is recorded rather than a number in the wrong denomination.
 export function ppFee(capture, currency) {
   const br = (capture && capture.seller_receivable_breakdown) || {};
   const f  = br.paypal_fee;

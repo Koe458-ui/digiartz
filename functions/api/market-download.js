@@ -33,7 +33,10 @@
 //      ALLOWED_ORIGINS (comma separated extra hosts)
 
 import { sbUrl, sbAnon, sbSvc, peekJwt } from '../lib/sb.js';
-import { UUID_RE, sameOrigin, allowedHost, encodePath, json } from '../lib/http.js';
+import {
+  UUID_RE, sameOrigin, allowedHost, encodePath, json,
+  storedFileName, storedFileNameAscii
+} from '../lib/http.js';
 
 // long enough to fetch, short enough to be worthless if it ever escaped
 const SIGN_TTL = 120;
@@ -131,8 +134,8 @@ export async function onRequestPost({ request, env }) {
       status: 200,
       headers: new Headers({
         'Content-Type': type,
-        'Content-Disposition': 'attachment; filename="' + asciiName(name) + '"; ' +
-                               "filename*=UTF-8''" + encodeURIComponent(niceName(name)),
+        'Content-Disposition': 'attachment; filename="' + storedFileNameAscii(name) + '"; ' +
+                               "filename*=UTF-8''" + encodeURIComponent(storedFileName(name)),
         // a purchase is not a public asset and the signed source is single-use
         'Cache-Control': 'no-store, private',
         'X-Content-Type-Options': 'nosniff',
@@ -143,12 +146,4 @@ export async function onRequestPost({ request, env }) {
   } catch (err) {
     return json({ error: 'Download failed — try again.', detail: String(err).slice(0, 200) }, 500);
   }
-}
-
-function niceName(name) {
-  const clean = String(name || 'file').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 80);
-  return clean || 'file';
-}
-function asciiName(name) {
-  return niceName(name).replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
 }

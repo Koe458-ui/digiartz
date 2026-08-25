@@ -17,9 +17,13 @@
 // price list, read at request time, never written into code — applies to the
 // readers as much as to the prices.
 //
-// Only these two import this. store.js, payouts.js and both webhooks keep
-// service-role readers of their own, because theirs answer differently on
-// failure; see the note in functions/lib/sb.js.
+// The five readers and sbService are for those two. The block at the foot of
+// this file — the plan tables and applySubscription — is for all four money
+// files, because settlement runs in the webhooks as well.
+//
+// store.js, payouts.js and both webhooks keep service-role readers of their
+// own for their other calls, because theirs answer differently on failure; see
+// the note in functions/lib/sb.js.
 
 import { sbUrl, sbAnon, sbSvc } from './sb.js';
 
@@ -117,4 +121,74 @@ export async function resolvePromo(env, request, code, kind) {
     // dropped either — the buyer is told, and can pay without it.
     return { error: 'That code could not be checked' };
   }
+}
+
+// ---------------------------------------------------------------------------
+// WHAT A PLAN IS WORTH, AND WHAT A SETTLED MONTH DOES TO IT.
+//
+// These three tables and the function under them were written out in all four
+// money files — rzp.js, paypal.js and both webhooks — and each file's own
+// comment said so ("Same table in rzp.js and both webhooks"). Four hand-kept
+// copies of the rule that decides what a member gets for their money is four
+// chances for a renewal to be a month in one file and something else in
+// another, and the renewal is not a detail: it runs after the money is taken.
+
+// Which tier a plan grants. `support` is a payment that grants nothing, which
+// is why it is null rather than absent — the difference between "not a plan"
+// and "a plan with no tier" is what tells a settled support payment apart from
+// a plan name nobody recognises. rzp.js and paypal.js called this TIERS and
+// the two webhooks called it PLAN_TIERS; it is one table with one name now.
+export const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
+
+// What a member already holds decides both whether a plan may be ordered and
+// how a settled month is applied, so the three need an order. It matters most
+// in the window between an order placed before an upgrade and settled after
+// it, where the money is already taken and the only wrong answer is to give
+// less than was there before.
+export const TIER_RANK = { lite: 1, premium: 2, max: 3 };
+
+export const PLAN_LABEL = {
+  lite: 'Lite \u2014 1 month', premium: 'Premium \u2014 1 month',
+  max: 'Max \u2014 1 month',   support: 'Support DigiArtz',
+};
+
+// A month, in days.
+export const SUB_DAYS = 31;
+
+// Add a settled month to what the member holds.
+//
+// Four paths can settle a subscription — rzp.js, paypal.js and the two
+// webhooks — and this used to be an unconditional PATCH to
+// { tier, now + 31 days } in all four, reading neither the current tier nor
+// the current expiry first:
+//
+//   buying a month with twenty days left gave thirty-one, not fifty-one, so
+//   twenty paid days were destroyed — and the plan copy invites exactly that
+//   purchase ("A single charge for 31 days. Nothing recurring");
+//
+//   buying Lite while holding Max dropped the daily quota from twenty to ten
+//   on the spot and took the remaining Max days with it.
+//
+// So: extend from whichever is later, now or the existing expiry, and never
+// come out of this holding a lower tier than went in. sub-order refuses a
+// downgrade before any money moves; this is the backstop for an order created
+// before an upgrade and settled after it, where the money is already taken and
+// the only wrong answer is to give less than was there before.
+//
+// An expired subscription is not a subscription and starts from today; a
+// profile that cannot be read (currentPlan swallows that) falls through to a
+// plain month from now, because the money is already taken and refusing to
+// grant anything is the one answer that is certainly wrong.
+export async function applySubscription(env, userId, tier) {
+  const cur = await currentPlan(env, userId);
+  const from = Math.max(Date.now(), cur.expires);
+  const keep = (TIER_RANK[cur.tier] || 0) > (TIER_RANK[tier] || 0) ? cur.tier : tier;
+  await sbService(env, '/profiles?id=eq.' + userId, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      subscription_tier: keep,
+      subscription_expires_at: new Date(from + SUB_DAYS * 86400000).toISOString(),
+    }),
+  });
+  return keep;
 }

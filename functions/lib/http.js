@@ -9,13 +9,12 @@
 // hole in whichever gate was missed, and nothing about those checks depends on
 // which gate is asking.
 //
-// niceName and asciiName are NOT here. All three files have a pair and the
-// three pairs are not the same function: the artwork gate appends an extension
-// derived from the source url and the content type, because an artwork's row
-// carries a title and not a filename, and the other two are handed a real
-// filename by the database and must not touch it. Folding those together would
-// mean a flag that means "invent an extension", which is a worse thing to read
-// than two short functions that each say what they do.
+// storedFileName / storedFileNameAscii are the pair the two gates that stream a
+// STORED file share. The artwork gate keeps its own: an artwork's row carries a
+// title and not a filename, so its pair appends an extension derived from the
+// source url and the content type. Folding all three together would mean a flag
+// meaning "invent an extension", which is worse to read than one shared pair and
+// one that says what it does.
 
 // Every table these endpoints address keys on a uuid, so anything else is not
 // an id that could exist. It is also the whole of the injection guard on the
@@ -79,4 +78,19 @@ export function json(obj, status, extra) {
       ...(extra || {}),
     },
   });
+}
+
+// The filename a stored file goes out under, for the two gates whose database
+// row carries a real one. Stripped of the characters Windows refuses in a path
+// and capped, but otherwise the seller's or uploader's own name for the file.
+export function storedFileName(name) {
+  const clean = String(name || 'file').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 80);
+  return clean || 'file';
+}
+
+// The same name for the bare `filename=` parameter, which is not allowed to
+// carry anything outside printable ASCII. Clients that understand `filename*`
+// use the percent-encoded UTF-8 form instead and never see this one.
+export function storedFileNameAscii(name) {
+  return storedFileName(name).replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
 }

@@ -44,7 +44,10 @@
 //      ALLOWED_ORIGINS (comma separated extra hosts)
 
 import { sbUrl, sbAnon, sbSvc, peekJwt } from '../lib/sb.js';
-import { UUID_RE, sameOrigin, allowedHost, encodePath, json } from '../lib/http.js';
+import {
+  UUID_RE, sameOrigin, allowedHost, encodePath, json,
+  storedFileName, storedFileNameAscii
+} from '../lib/http.js';
 
 // long enough to fetch, short enough to be worthless if it ever escaped
 const SIGN_TTL = 120;
@@ -146,8 +149,8 @@ export async function onRequestPost({ request, env }) {
 
     const headers = new Headers({
       'Content-Type': fileRes.headers.get('content-type') || 'application/octet-stream',
-      'Content-Disposition': 'attachment; filename="' + asciiName(name) + '"; ' +
-                             "filename*=UTF-8''" + encodeURIComponent(niceName(name)),
+      'Content-Disposition': 'attachment; filename="' + storedFileNameAscii(name) + '"; ' +
+                             "filename*=UTF-8''" + encodeURIComponent(storedFileName(name)),
       // a metered download is not a public asset and the signed source is
       // single use — a cached copy would be a second download nobody paid for
       'Cache-Control': 'no-store, private',
@@ -169,12 +172,4 @@ export async function onRequestPost({ request, env }) {
 function clientIp(request) {
   return request.headers.get('CF-Connecting-IP') ||
          String(request.headers.get('X-Forwarded-For') || '').split(',')[0].trim() || '';
-}
-
-function niceName(name) {
-  const clean = String(name || 'file').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 80);
-  return clean || 'file';
-}
-function asciiName(name) {
-  return niceName(name).replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
 }

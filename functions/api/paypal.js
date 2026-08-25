@@ -17,22 +17,9 @@
 import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, ledger } from '../lib/sb.js';
 import { fromPriceCents, toValue, minCharge, ppFee, showAmount } from '../lib/money.js';
 import {
-  sbService, memberCurrency, planPrice, supportLimits, currentPlan, resolvePromo
+  sbService, memberCurrency, planPrice, supportLimits, currentPlan, resolvePromo,
+  PLAN_TIERS, TIER_RANK, PLAN_LABEL, applySubscription
 } from '../lib/billing.js';
-
-// Plan prices are NOT here. They live in public.subscription_prices, one row
-// per plan per currency, read on the service role — see the note in rzp.js.
-// The browser names a plan and never a price or a currency.
-const TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
-// What a member already holds decides both whether a plan may be ordered and
-// how a settled month is applied \u2014 see applySubscription below. Same table in
-// rzp.js and both webhooks.
-const TIER_RANK = { lite: 1, premium: 2, max: 3 };
-const PLAN_LABEL = {
-  lite: 'Lite \u2014 1 month', premium: 'Premium \u2014 1 month',
-  max: 'Max \u2014 1 month',   support: 'Support DigiArtz',
-};
-const SUB_DAYS = 31;
 
 // PayPal quotes amounts as decimal strings, and rejects a fractional part on a
 // currency that has none. These are the zero-decimal currencies PayPal lists.
@@ -115,7 +102,6 @@ async function pp(env, path, init = {}) {
   return body;
 }
 
-
 // The commission, the TDS, the GST TCS and the settlement date are worked out
 // by dz_earning_apply_deductions() in Postgres, from one config row, not here
 // and not in the three other files that also write earnings. What is sent from
@@ -167,44 +153,6 @@ async function recordEarning(env, row, prov) {
     p_provider_currency: (prov && prov.currency) || row.currency,
     p_ref_table: 'payments', p_ref_id: row.id,
   });
-}
-
-// What PayPal kept. Reported on the capture as seller_receivable_breakdown,
-// in the capture's own currency — if it ever comes back in a different one,
-// nothing is recorded rather than a number in the wrong denomination.
-
-
-// APPLYING A MONTH TO WHAT IS ALREADY THERE.
-//
-// The same block is in paypal.js, rzp-webhook.js and paypal-webhook.js, which
-// with this file are the four paths that can settle a subscription. It used to
-// be an unconditional PATCH to { tier, now + 31 days } in all four, reading
-// neither the current tier nor the current expiry first:
-//
-//   buying a month with twenty days left gave thirty-one, not fifty-one, so
-//   twenty paid days were destroyed — and the plan copy invites exactly that
-//   purchase ("A single charge for 31 days. Nothing recurring");
-//
-//   buying Lite while holding Max dropped the daily quota from twenty to ten
-//   on the spot and took the remaining Max days with it.
-//
-// So: extend from whichever is later, now or the existing expiry, and never
-// come out of this holding a lower tier than went in. sub-order refuses a
-// downgrade before any money moves; this is the backstop for an order created
-// before an upgrade and settled after it, where the money is already taken and
-// the only wrong answer is to give less than was there before.
-async function applySubscription(env, userId, tier) {
-  const cur = await currentPlan(env, userId);
-  const from = Math.max(Date.now(), cur.expires);
-  const keep = (TIER_RANK[cur.tier] || 0) > (TIER_RANK[tier] || 0) ? cur.tier : tier;
-  await sbService(env, '/profiles?id=eq.' + userId, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      subscription_tier: keep,
-      subscription_expires_at: new Date(from + SUB_DAYS * 86400000).toISOString(),
-    }),
-  });
-  return keep;
 }
 
 // create order and ledger row
@@ -298,7 +246,7 @@ export async function onRequestPost({ env, request }) {
     // subscriptions
     if (body.action === 'sub-order') {
       const key = String(body.plan || '');
-      if (!(key in TIERS)) return json({ error: 'Unknown plan' }, 400);
+      if (!(key in PLAN_TIERS)) return json({ error: 'Unknown plan' }, 400);
 
       const currency = await memberCurrency(env, user.id);
       // A member transacting in a currency PayPal will not settle is sent to
@@ -452,7 +400,7 @@ export async function onRequestPost({ env, request }) {
 
       let tier = null;
       if (row.kind === 'subscription') {
-        const t = TIERS[row.plan];
+        const t = PLAN_TIERS[row.plan];
         if (t) {
           // What they end up holding, which is not always what they bought —
           // a month bought under a higher tier extends that tier instead.

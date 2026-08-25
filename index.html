@@ -247,7 +247,7 @@
   })();
   </script>
   <link rel="stylesheet" href="/css/base.css?v=29">
-  <link rel="stylesheet" href="/css/hero.css?v=116">
+  <link rel="stylesheet" href="/css/hero.css?v=117">
   <link rel="stylesheet" href="/css/viewer.css?v=39">
   <link rel="stylesheet" href="/css/community.css?v=26">
   <link rel="stylesheet" href="/css/connect.css?v=7">
@@ -560,94 +560,6 @@
     </div>
   </section>
 
-
-  <!-- Quick links. The five destinations that have a url of their own are
-       anchors carrying it; the rest — Jobs, Upload, Ranking, Level,
-       Subscription, Cart, Theme — stay buttons, because none of those is a
-       public destination this site puts forward: they are one member's own
-       page, one member's own basket, or a section that is simply not in the
-       index.
-       js/routes.js answers the anchors and js/sections.js still answers the
-       buttons, and both end up in qlGo either way. -->
-  <section id="quickLinks" aria-label="Explore DigiArtz">
-    <div class="qlWrap">
-      <div class="qlRail" id="qlRail">
-        <a class="qlItem" href="/explore" style="--qlC:#22D3EE;--qlL:#178D9F">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span>
-          <span class="qlTitle">Explore</span>
-          <span class="qlDesc">Art from top creators</span>
-        </a>
-        <a class="qlItem" href="/marketplace" style="--qlC:#22C55E;--qlL:#199446">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-          <span class="qlTitle">Marketplace</span>
-          <span class="qlDesc">Buy and sell products</span>
-        </a>
-        <a class="qlItem" href="/resources" style="--qlC:#A78BFA;--qlL:#8972CD">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c-1.8-1.3-4-2-6.5-2H3v13h2.5c2.5 0 4.7.7 6.5 2 1.8-1.3 4-2 6.5-2H21V5h-2.5C16 5 13.8 5.7 12 7z"/><path d="M12 7v13"/></svg></span>
-          <span class="qlTitle">Resources</span>
-          <span class="qlDesc">Level up your skills</span>
-        </a>
-        <a class="qlItem" href="/blog" style="--qlC:#3B82F6;--qlL:#397EEF">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg></span>
-          <span class="qlTitle">Blog</span>
-          <span class="qlDesc">Tutorials and stories</span>
-        </a>
-        <button class="qlItem" type="button" style="--qlC:#F97316;--qlL:#CF5F12" onclick="qlGo('jobs')">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M2 13h20"/></svg></span>
-          <span class="qlTitle">Jobs</span>
-          <span class="qlDesc">Find creative work</span>
-        </button>
-        <a class="qlItem" href="/community" style="--qlC:#F43F5E;--qlL:#EA3C5A">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-          <span class="qlTitle">Community</span>
-          <span class="qlDesc">Connect and share</span>
-        </a>
-        <button class="qlItem" type="button" style="--qlC:#6366F1;--qlL:#6366F1" onclick="qlGo('upload')">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg></span>
-          <span class="qlTitle">Upload</span>
-          <span class="qlDesc">Publish your work</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#F59E0B;--qlL:#B37308" onclick="qlGo('ranking')">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="9" y="7" width="6" height="14" rx="1"/><rect x="3" y="12" width="6" height="9" rx="1"/><rect x="15" y="10" width="6" height="11" rx="1"/></svg></span>
-          <span class="qlTitle">Ranking</span>
-          <span class="qlDesc">Top artists, live</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#A3E635;--qlL:#638C20" onclick="qlGo('level')">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/><path d="M12 15v3"/><path d="M8.5 21h7l-1-3h-5z"/></svg></span>
-          <span class="qlTitle">Level</span>
-          <span class="qlDesc">Track your progress</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#D946EF;--qlL:#CA41DE" onclick="qlGo('subscription')">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l4.5 3.5L12 4l4.5 6.5L21 7l-1.8 11H4.8z"/><path d="M4.8 18h14.4"/></svg></span>
-          <span class="qlTitle">Subscription</span>
-          <span class="qlDesc">Unlock creator perks</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#EAB308;--qlL:#A17C06" onclick="qlGo('cart')">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.4a1.8 1.8 0 0 0 1.8 1.4h8.4a1.8 1.8 0 0 0 1.8-1.4L21.5 7H6"/></svg></span>
-          <span class="qlTitle">Cart</span>
-          <span class="qlDesc">Items in your cart</span>
-        </button>
-        <button class="qlItem" type="button" style="--qlC:#38BDF8;--qlL:#298AB5" onclick="qlGo('theme')">
-          <span class="qlIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg></span>
-          <span class="qlTitle">Theme</span>
-          <span class="qlDesc">Switch how it looks</span>
-        </button>
-      </div>
-      <!-- Desktop only: the rail is slid by hand everywhere else — a wheel, a
-           drag, a swipe — but a mouse on a wide screen has nothing to take
-           hold of, so it gets a step back and a step on. Hidden on touch and
-           below 1024px, and hidden again whenever the twelve tiles already
-           fit, which is never at these widths but is what the progress bar
-           under them does too. -->
-      <button class="qlNav qlPrev" id="qlPrev" type="button" aria-label="Scroll quick links back" aria-controls="qlRail" onclick="qlNudge(-1)">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-      </button>
-      <button class="qlNav qlNext" id="qlNext" type="button" aria-label="Scroll quick links forward" aria-controls="qlRail" onclick="qlNudge(1)">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
-      </button>
-      <div class="qlBar" id="qlBar" aria-hidden="true"><span class="qlBarFill" id="qlBarFill"></span></div>
-    </div>
-  </section>
 
   <!-- artworks section -->
   <section id="artworks">
@@ -1628,12 +1540,12 @@
       <div class="ftCols">
 
         <!-- Every public destination on the site, in one place, as plain
-             anchors with the words a visitor would search for. The bottom nav
-             carries four of these and the quick links rail carries six, but
-             both of those live above the fold and neither is a complete list;
-             this is the one block that names all of them together, which is
-             what makes it worth having for a reader skimming for a section and
-             for a crawler working out how the site is organised.
+             anchors with the words a visitor would search for. The bar's
+             Explore menu carries five of these, but it lives above the fold
+             and is not a complete list; this is the one block that names all
+             of them together, which is what makes it worth having for a reader
+             skimming for a section and for a crawler working out how the site
+             is organised.
 
              No handlers on any of them. js/routes.js hears the click and opens
              the panel; with the script gone the browser follows the href and
@@ -3536,7 +3448,7 @@
   <script src="/js/engagement.js?v=9"></script>
 
 
-  <script src="/js/sections.js?v=128"></script>
+  <script src="/js/sections.js?v=129"></script>
   <!-- The url of every public section, and the panel each one opens. After
        sections.js, whose qlGo and hero call-to-action hand over to it. -->
   <script src="/js/routes.js?v=3"></script>

@@ -278,9 +278,10 @@
   /* ── the rail ───────────────────────────────────────────────────────────
      Three ways along it, all moving the same scroller so there is one answer
      to where it is: the arrows for a mouse, a swipe for a finger, and a drag
-     for either. The arrows are a desktop mouse's affordance only — the same
-     condition the home page's quick-links rail uses — and each is greyed out
-     at its own end rather than disappearing, so the pair does not shift.
+     for either. The arrows are a desktop mouse's affordance only — a pointer
+     that hovers, on a screen wide enough to have the gutter they stand in —
+     and each is greyed out at its own end rather than disappearing, so the
+     pair does not shift.
 
      The 1px slack in `ends` is the browser's: a rail scrolled to its end
      reports a fractional pixel short of it often enough that an exact test

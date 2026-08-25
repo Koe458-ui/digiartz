@@ -4,6 +4,45 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v252 — the home page's quick links are gone.
+
+       A rail of twelve icon tiles stood between the pitch and the artwork
+       boards — Explore, Marketplace, Resources, Blog, Jobs, Community, Upload,
+       Ranking, Level, Subscription, Cart, Theme — sliding two across on a
+       phone and six on a wide desktop, with two arrows for a mouse and a
+       progress bar under it. It is removed at every width rather than hidden
+       at some of them: the section and its twelve tiles out of index.html, the
+       150 lines of .ql* rules out of css/hero.css, and the scroll maths that
+       drew the bar and greyed the arrows — paint, arrows, sync, qlNudge and
+       the scroll, resize and ResizeObserver listeners — out of js/sections.js.
+
+       WHAT STAYS, AND WHY. qlGo is not the rail. It is the one function that
+       knows how to reach a destination with no url of its own — the cart, the
+       level page, the theme page, the ranking boards, a subscription — and
+       three callers still reach for it: js/feed.js hands it a log row's kind,
+       the hero's call to action goes through it, and js/routes.js names it as
+       the common path. It used to sit behind an early return that read the
+       rail out of the document and gave up when it was missing, so deleting
+       the markup alone would have left every one of those callers with an
+       undefined function. The guard is gone with the rail it guarded and qlGo
+       is defined unconditionally now.
+
+       Every destination the rail held is still reachable: five sections from
+       the bar's Explore menu, Upload from its own menu, Community from the
+       bar, the cart from the icon beside the bell, and Ranking, Level, Theme
+       and Subscription from the profile and Settings menus.
+
+       The comments that pointed at the rail as a live thing were corrected
+       rather than left to rot — the arrow condition css/hero.css and
+       js/fghead.js both described by pointing at it, the anchor-vs-button rule
+       in css/base.css, the caller lists in js/routes.js, js/sections.js and
+       js/pfedit.js, the footer's note on what else names the sections, and the
+       Jobs note in functions/_middleware.js.
+
+       Changed: index.html, css/hero.css, css/base.css, js/sections.js,
+       js/routes.js, js/fghead.js, js/pfedit.js, js/app-core.js,
+       functions/_middleware.js, sw.js.
+
    v251 — the cards and the dropzones come back.
 
        A REGRESSION, AND A BAD ONE. Removing the featured showcase in v248 cut
@@ -4830,7 +4869,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v251';
+const CACHE_VERSION = 'v252';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4882,7 +4921,7 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=29',
-  '/css/hero.css?v=116',
+  '/css/hero.css?v=117',
   '/css/viewer.css?v=39',
   '/css/community.css?v=26',
   '/css/connect.css?v=7',
@@ -4940,7 +4979,7 @@ const SHELL_URLS = [
   '/js/analytics.js?v=10',
   '/js/hubs.js?v=2',
   '/js/engagement.js?v=9',
-  '/js/sections.js?v=128',
+  '/js/sections.js?v=129',
   '/js/routes.js?v=3',
   '/js/topnav.js?v=9',
   '/js/navprogress.js?v=6'

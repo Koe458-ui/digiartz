@@ -3646,8 +3646,8 @@
      openPfUpload (js/albums.js) sets up the artwork half of this sheet and
      knows nothing about the other four, so which one is wanted is handed
      through it to here. No argument means the artwork form, which is what
-     every older caller means: the quick-links tile, a resumed draft, the
-     scheduled-post path that reopens the page after publishing. */
+     every older caller means: a resumed draft, and the scheduled-post path
+     that reopens the page after publishing. */
   (function(){
     var orig = window.openPfUpload;
     if(typeof orig !== 'function') return;
@@ -5530,71 +5530,14 @@
   window.hpGo     = hpGo;
 })();
 
-// quick links rail
+// quick-link destinations
+/* The rail of twelve icon tiles this opened is gone from the home page, and
+   with it the arrows, the progress bar and the scroll maths that drew them.
+   qlGo stays: it is the one place that knows how to reach a destination that
+   is not a gallery section, and the feed's log rows, the hero's call to action
+   and js/routes.js all still hand over to it. */
 (function(){
   'use strict';
-
-  var rail = document.getElementById('qlRail');
-  var bar  = document.getElementById('qlBar');
-  var fill = document.getElementById('qlBarFill');
-  if(!rail || !bar || !fill) return;
-
-  // the two desktop arrows. Missing is not an error: the bar predates them
-  // and still works on its own.
-  var prev = document.getElementById('qlPrev');
-  var next = document.getElementById('qlNext');
-
-  var queued = false;
-
-  // fill width = share of the rail on screen, offset = how far along it is
-  function paint(){
-    queued = false;
-    var total = rail.scrollWidth, seen = rail.clientWidth;
-    if(!total || total - seen <= 1){
-      bar.classList.add('qlHide');
-      arrows(false, 0, 0);
-      return;
-    }
-    bar.classList.remove('qlHide');
-    fill.style.width = (seen / total * 100) + '%';
-    fill.style.left  = (rail.scrollLeft / total * 100) + '%';
-    arrows(true, rail.scrollLeft, total - seen);
-  }
-
-  /* Shown only while there is something to scroll, and each one greyed out
-     at its own end. The 1px slack is the browser's: a rail scrolled to the
-     end reports a fractional pixel short of it often enough that an exact
-     test leaves the arrow lit with nowhere to go. */
-  function arrows(can, at, max){
-    if(prev){
-      prev.classList.toggle('qlHide', !can);
-      prev.disabled = !can || at <= 1;
-    }
-    if(next){
-      next.classList.toggle('qlHide', !can);
-      next.disabled = !can || at >= max - 1;
-    }
-  }
-
-  /* One screenful per press, which is --qlPer tiles: the rail snaps to the
-     nearest tile afterwards, so the step lands on a tile edge without this
-     having to know how wide one is. */
-  window.qlNudge = function(dir){
-    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-    var by = rail.clientWidth * (dir < 0 ? -1 : 1);
-    if(rail.scrollBy) rail.scrollBy({ left:by, behavior: still ? 'auto' : 'smooth' });
-    else rail.scrollLeft += by;
-  };
-  function sync(){
-    if(queued) return;
-    queued = true;
-    requestAnimationFrame(paint);
-  }
-
-  rail.addEventListener('scroll', sync, { passive:true });
-  window.addEventListener('resize', sync);
-  if(window.ResizeObserver) new ResizeObserver(sync).observe(rail);
-  sync();
 
   // everything that is not a gallery section
   var OWN = {
@@ -5638,12 +5581,12 @@
     /* Six of these destinations have a url of their own. They go through the
        router, which closes what is open (the openers below are the same
        bnGo* functions this used to call) and leaves the address bar naming
-       where the member ended up — so arriving from the rail, from the hero,
-       from a feed card or from a search result all agree.
+       where the member ended up — so arriving from the hero, from a feed card
+       or from a search result all agree.
 
-       The rail used to sweep three pages of its own before handing over,
-       because the nav's sweep predated them. It does not any more: one table
-       lists every panel and one sweep reads it. */
+       The home page's rail used to sweep three pages of its own before handing
+       over, because the nav's sweep predated them. It does not any more: one
+       table lists every panel and one sweep reads it. */
     var path = typeof window.dzRoutePath === 'function' ? window.dzRoutePath(id) : null;
     if(path && typeof window.dzRouteGo === 'function' && window.dzRouteGo(path)) return;
 

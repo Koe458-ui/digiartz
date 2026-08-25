@@ -383,7 +383,7 @@
   }
 
   // Anything else that wants to move between these destinations — the hero
-  // call to action, the quick links rail — goes through here, so there is one
+  // call to action, the feed's log rows — goes through here, so there is one
   // answer to "what happens when you go to the marketplace" rather than one
   // per caller.
   window.dzRouteGo = function (path) {
@@ -398,10 +398,9 @@
      and the sign-in sheet are linked by anchors that carry their url already.
 
      There was an alias table beside this for `community` and `explore`. Every
-     id that can arrive here comes from one of three lists — the hero's tabs,
-     the quick link onclicks, and LOG_KINDS in js/feed.js — and neither name
-     appears in any of them, so both entries were unreachable from the day
-     they were written. */
+     id that can arrive here comes from one of two lists — the hero's tabs and
+     LOG_KINDS in js/feed.js — and neither name appears in either of them, so
+     both entries were unreachable from the day they were written. */
   window.dzRoutePath = function (id) { return SECTION_PATH[id] || null; };
 
   // Boot. A member who opened /marketplace directly, or followed one out of a

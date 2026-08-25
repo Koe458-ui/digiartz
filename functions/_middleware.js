@@ -134,8 +134,8 @@ const SECTIONS = {
     ld: 'CollectionPage'
   },
   // Jobs is deliberately not here. The section is in the app and is not going
-  // anywhere — it is a chip in the gallery and a quick link on the home page —
-  // it is simply not one of the destinations this site is putting forward to
+  // anywhere — it is one of the five the bar's Explore menu names — it is
+  // simply not one of the destinations this site is putting forward to
   // search. So there is no /jobs url, no entry in the sitemap and no link in
   // the footer. Individual postings keep their own /job/<id> address, because
   // those links are shared and have to answer as themselves rather than as the

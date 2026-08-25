@@ -290,8 +290,8 @@
      and posting a job are five forms with five sets of rules, and the top bar
      now names each of them (js/topnav.js). Which one was asked for travels
      through here to openPfUpload, whose default is still the artwork form —
-     the quick-links tile, the hero's Sell tab and a resumed draft all call it
-     with nothing to say, and all three mean what they always meant.
+     the hero's Sell tab and a resumed draft both call it with nothing to say,
+     and both mean what they always meant.
 
      Guests can view, gate on submit. No public url — one member's draft is
      not a page — so the address goes back to where the visit came from. */

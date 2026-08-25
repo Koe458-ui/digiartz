@@ -556,8 +556,7 @@
        rest are buttons — an entry with a url gets one, so a middle-click opens
        it in a tab and the status bar says where it goes. This is what stops
        those four arriving underlined and wearing the link colour, so a menu
-       reads as one menu however each row is built. The quick-links rail on the
-       home page carries the same rule for the same reason. */
+       reads as one menu however each row is built. */
     .dzUpItem:first-child{margin-top:.3rem;}
     .dzUpItem:last-child{margin-bottom:.3rem;}
     a.dzUpItem{text-decoration:none;color:inherit;}

@@ -781,7 +781,7 @@
     { id:'cmBrowsePage',    close:['cmCloseBrowse'],        lock:1 },
     { id:'cmInfoPage',      close:['cmiClose'],             lock:1 },
     { id:'frdPage',         close:['closeFriendsPage'],     lock:1 },
-    // pages opened from a profile, from Settings, or from the quick links
+    // pages opened from a profile or from Settings
     { id:'albViewPage',     close:['albCloseView'],         lock:1 },
     { id:'albPage',         close:['albClosePage'],         lock:1 },
     { id:'bmPage',          close:['closeBookmarksPage'],   lock:1 },

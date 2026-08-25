@@ -445,10 +445,10 @@
       border-color:var(--pg);background:var(--pdim);color:var(--tx);
     }
 
-    /* The two arrows. A desktop mouse's affordance and nothing else's — the
-       same condition the home page's quick-links rail uses — and each greyed
-       out at its own end rather than disappearing, so the pair does not shift
-       under the pointer that is using it. */
+    /* The two arrows. A desktop mouse's affordance and nothing else's — a
+       pointer that hovers, on a screen wide enough to have the gutter they
+       stand in — and each greyed out at its own end rather than disappearing,
+       so the pair does not shift under the pointer that is using it. */
     .fgCatNav{
       display:none;
       position:absolute;top:50%;transform:translateY(-50%);
@@ -859,160 +859,6 @@
        only caller left now that the .am* modal card it was written for
        has been replaced by .avBox. */
     @keyframes amShimmer{0%{background-position:140% 0;}100%{background-position:-40% 0;}}
-
-
-
-
-
-    /* quick links rail */
-    #quickLinks{
-      --qlPer:2;                 /* items across the rail, per device */
-      --qlGap:.5rem;
-      --qlIco:30px;              /* icon box, keeps every title on one line */
-      background:var(--bg);
-      padding:0 var(--shellPad) clamp(1.3rem,3vw,1.9rem);
-    }
-    .qlRail{
-      display:flex;gap:var(--qlGap);align-items:stretch;
-      overflow-x:auto;overscroll-behavior-x:contain;
-      scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
-      scrollbar-width:none;-ms-overflow-style:none;
-    }
-    .qlRail::-webkit-scrollbar{display:none;}
-    .qlItem{
-      /* one slot = viewport share minus the gaps between slots */
-      flex:0 0 calc((100% - (var(--qlPer) - 1) * var(--qlGap)) / var(--qlPer));
-      scroll-snap-align:start;
-      display:flex;flex-direction:column;align-items:center;
-      gap:.45rem;padding:.85rem .35rem .95rem;
-      border:0;border-radius:14px;background:none;cursor:pointer;
-      text-align:center;-webkit-tap-highlight-color:transparent;
-      transition:background .2s,transform .2s;
-    }
-    /* Six of the twelve slots are anchors now and six are still buttons. The
-       rule above was written for the button; this is what stops the anchor
-       arriving underlined and wearing the link colour, so the row reads as one
-       row however each slot is built. */
-    a.qlItem{text-decoration:none;color:inherit;}
-    .qlIco{
-      /* fixed box so icons of different heights still share one baseline */
-      display:flex;align-items:center;justify-content:center;
-      height:var(--qlIco);color:var(--qlC,var(--pg));
-    }
-    .qlIco svg{width:var(--qlIco);height:var(--qlIco);display:block;}
-    .qlTitle{
-      font-family:var(--fd);font-weight:700;
-      font-size:clamp(.82rem,2.2vw,.98rem);color:var(--tx);
-      line-height:1.25;letter-spacing:-.01em;
-      max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    }
-    .qlDesc{
-      font-family:var(--fb);font-size:clamp(.72rem,1.9vw,.82rem);
-      color:var(--txd);line-height:1.35;
-      /* One line, and one reserved, so twelve tiles sit on one grid.
-         There used to be a 16ch cap here with two lines reserved under it,
-         which is why every description broke in half at every width — at
-         2560, in a 245px slot, on a phrase that needed 205px. The cap is
-         gone and the copy is cut to the tightest slot instead. Five across at
-         1024 is the narrowest any of them gets — 143px — and the longest line
-         measures 125px there, so every description clears its slot with room
-         to spare at every width from 320 to 3440. That margin is deliberate:
-         these are measured against the fallback face, and Inter arrives a
-         moment later with its own metrics. Roughly 21 characters is the
-         budget. Lengthen one past its slot and it wraps again and pushes this
-         tile taller than the one beside it, so the budget is the thing to
-         keep, not this rule. */
-      min-height:1.35em;
-    }
-    /* the icon hues are picked against charcoal, so paper uses its own
-       darker cut per item — at full strength lime and cyan wash out on an
-       ivory ground. Spelled out as --qlL rather than mixed at run time so it
-       works on browsers without color-mix() too. */
-    html[data-theme="light"] .qlIco{color:var(--qlL,var(--qlC));}
-    html[data-theme="light"] .qlDesc{color:rgba(var(--tx2-rgb),.84);}
-    @media(hover:hover){
-      .qlItem:hover{background:var(--sur);transform:translateY(-2px);}
-    }
-    .qlItem:active{transform:translateY(0) scale(.97);}
-    .qlItem:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
-
-    /* Step back / step on. The rail answers a wheel, a drag and a swipe, and
-       those are all a phone or a trackpad ever needs; a mouse on a wide screen
-       has nothing to take hold of, so it gets two buttons. They stand in the
-       shell's own gutter beside the rail — at 1024 and up that inset is at
-       least a tenth of the screen, so a 38px button sits there without ever
-       covering a tile — and they are centred on the tiles rather than on the
-       block, which is why the progress bar's strip is discounted below. */
-    .qlWrap{position:relative;}
-    .qlNav{
-      display:none;                        /* touch and narrow: see below */
-      position:absolute;
-      /* the rail's own band: everything but the bar and the gap above it */
-      top:0;bottom:calc(.8rem + 3px);margin-block:auto;
-      width:38px;height:38px;padding:0;
-      align-items:center;justify-content:center;
-      border:1px solid var(--bdr);border-radius:999px;
-      background:var(--sur);color:var(--tx);cursor:pointer;
-      -webkit-tap-highlight-color:transparent;
-      transition:background .2s,border-color .2s,opacity .2s,transform .2s;
-    }
-    .qlNav svg{width:18px;height:18px;display:block;}
-    .qlPrev{right:calc(100% + .45rem);}
-    .qlNext{left:calc(100% + .45rem);}
-    @media(hover:hover){
-      .qlNav:hover{background:var(--bdr);border-color:var(--bdrh);transform:scale(1.06);}
-    }
-    .qlNav:active{transform:scale(.94);}
-    .qlNav:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
-    /* At either end of the rail the button stays where it is and stops
-       answering, rather than disappearing and shifting the pair. */
-    .qlNav:disabled{opacity:.35;cursor:default;transform:none;}
-    /* nothing to scroll — the same call the progress bar answers */
-    .qlNav.qlHide{display:none;}
-
-    /* scroll progress */
-    .qlBar{
-      position:relative;height:3px;margin-top:.8rem;
-      border-radius:999px;overflow:hidden;
-      /* tied to the text colour so the track stays visible on every theme */
-      background:rgba(var(--tx2-rgb),.22);
-    }
-    .qlBar.qlHide{visibility:hidden;}
-    .qlBarFill{
-      position:absolute;top:0;left:0;height:100%;width:30%;min-width:14%;
-      border-radius:999px;background:var(--pg);
-      transition:left .12s linear,width .12s linear;
-    }
-
-    /* items per row, by device — never below 2, never above 6 */
-    @media(min-width:480px){ #quickLinks{--qlPer:3;--qlGap:.6rem;} }             /* large mobile */
-    @media(min-width:768px){ #quickLinks{--qlPer:4;--qlGap:.7rem;--qlIco:32px;} } /* tablet */
-    @media(min-width:1024px){ #quickLinks{--qlPer:5;--qlGap:.8rem;--qlIco:34px;} }/* desktop */
-    @media(min-width:1440px){ #quickLinks{--qlPer:6;} }                           /* large desktop */
-    /* the arrows are a desktop mouse's affordance and nothing else's: a
-       pointer that hovers, on a screen wide enough to have the gutter they
-       stand in. Everything narrower slides the rail by hand. */
-    @media(min-width:1024px) and (hover:hover) and (pointer:fine){
-      .qlNav{display:flex;}
-      .qlNav.qlHide{display:none;}
-    }
-    /* Ultrawide holds at six across and stops growing: the shell caps the band
-       at --shellMax, so the rail stops with the thumbnails under it. */
-
-    /* very narrow phones: 2 across still has to breathe */
-    @media(max-width:359px){
-      #quickLinks{--qlIco:26px;}
-      .qlDesc{font-size:.7rem;}
-    }
-
-    @media(prefers-reduced-motion:reduce){
-      .qlNav{transition:none;}
-      .qlNav:active,.qlNav:hover{transform:none;}
-      .qlItem{transition:none;}
-      .qlItem:active{transform:none;}
-      .qlBarFill{transition:none;}
-      .qlRail{scroll-behavior:auto;}
-    }
 
 
     /* feed board rail — stands where the hero page's search bar used to */

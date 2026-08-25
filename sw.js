@@ -5004,12 +5004,12 @@ const SHELL_URLS = [
 
   // stylesheets
   '/css/base.css?v=30',
-  '/css/hero.css?v=120',
+  '/css/hero.css?v=121',
   '/css/viewer.css?v=40',
   '/css/community.css?v=29',
   '/css/connect.css?v=7',
   '/css/ranking.css?v=8',
-  '/css/profile.css?v=19',
+  '/css/profile.css?v=20',
   '/css/admin.css?v=4',
   '/css/auth.css?v=5',
   '/css/panels.css?v=21',

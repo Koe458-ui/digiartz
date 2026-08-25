@@ -141,7 +141,7 @@
 
     /* artist chip */
     .gArtist{
-      position:absolute;right:0;bottom:0;width:50%;height:50%;
+      position:absolute;right:0;bottom:0;width:62%;height:57%;
       box-sizing:border-box;
       padding:0 clamp(.4rem,4%,.7rem) clamp(.4rem,4%,.7rem) 0;
       display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;
@@ -166,12 +166,20 @@
     .awCard:hover .gArtistName,.awCard:focus-within .gArtistName,.awCard:focus-visible .gArtistName{transition-delay:.38s;}
     .gItem:hover .gArtistHandle,.gItem:focus-within .gArtistHandle,
     .awCard:hover .gArtistHandle,.awCard:focus-within .gArtistHandle,.awCard:focus-visible .gArtistHandle{transition-delay:.45s;}
+    /* The chip's three parts all step up a size — the face, the name and the
+       handle. They sit in the tile's bottom-right quarter and that quarter has
+       not changed, so the increase is spent out of the slack that was already
+       inside it rather than by giving the chip more of the picture: the box
+       still measures 50% by 50% and still clips, the avatar still tops out at
+       a hard pixel ceiling, and the name and handle still ellipsize at the
+       chip's width the way they always have. A longer name runs out of room
+       a little sooner than it used to and is cut exactly as before. */
     .gArtistAv{
-      width:clamp(30px,32%,54px);aspect-ratio:1;flex:0 0 auto;
+      width:clamp(36px,31%,64px);aspect-ratio:1;flex:0 0 auto;
       border-radius:50%;overflow:hidden;
       background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.38);
       display:flex;align-items:center;justify-content:center;
-      font-family:var(--fm);font-size:.9rem;line-height:1;color:#fff;
+      font-family:var(--fm);font-size:1.05rem;line-height:1;color:#fff;
     }
     /* artist avatar. It used to need a rule holding it at transform:none —
        the tile's hover scaled every img inside itself, this one included, and
@@ -182,11 +190,11 @@
     .gArtistName,.gArtistHandle{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .gArtistName{
       font-family:var(--fd);font-weight:700;
-      font-size:clamp(.82rem,1.5vw,1.08rem);color:#fff;
+      font-size:clamp(.96rem,1.8vw,1.28rem);color:#fff;
       text-shadow:0 1px 4px rgba(0,0,0,.55);
     }
     .gArtistHandle{
-      font-family:var(--fm);font-size:clamp(.68rem,1.15vw,.88rem);
+      font-family:var(--fm);font-size:clamp(.79rem,1.38vw,1.02rem);
       letter-spacing:.04em;color:rgba(255,255,255,.72);
     }
     @media(prefers-reduced-motion:reduce){

@@ -895,7 +895,8 @@
       white-space:nowrap;-webkit-tap-highlight-color:transparent;
       transition:border-color .2s,background .2s,color .2s,transform .2s;
     }
-    html[data-theme="light"] .ftTab{--ftS1:var(--ftAL);--ftS2:var(--ftBL);}
+    html[data-theme="light"] .ftTab,
+    html[data-theme="offwhite"] .ftTab{--ftS1:var(--ftAL);--ftS2:var(--ftBL);}
     .ftIco{display:flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;}
     .ftIco svg{width:100%;height:100%;display:block;}
     .ftTab.on{border-color:var(--pg);background:var(--pdim);color:var(--tx);}

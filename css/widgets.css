@@ -319,10 +319,14 @@
   grid-template-columns:repeat(auto-fit,minmax(min(100%,196px),1fr));
   gap:clamp(.8rem,1.6vw,1.15rem);
 }
-/* desktop: both cards side by side, each wide enough to read as a page */
+/* desktop: all three cards side by side, each wide enough to read as a page.
+   Two was the count when there were two themes; left at two, the third would
+   have dropped to a row of its own and read as the odd one out rather than as
+   one of three. Below this the auto-fit above still decides: three across on a
+   tablet, one under the other on a phone. */
 @media(min-width:1024px){
-  .thmBdy{max-width:880px;}
-  .thmGrid{grid-template-columns:repeat(2,1fr);}
+  .thmBdy{max-width:1180px;}
+  .thmGrid{grid-template-columns:repeat(3,1fr);}
 }
 .thmCard{
   position:relative;display:flex;flex-direction:column;gap:0;
@@ -372,13 +376,14 @@
    large, silent, empty box. The fallbacks are charcoal's, so the worst case
    is a preview showing the wrong theme's ground rather than no theme at all.
 
-   The class-keyed pair below is the same two swatches again, keyed the way
+   The class-keyed set below is the same three swatches again, keyed the way
    js/theme.js identifies a card. It is not the primary source — the inline
    values are — but it means the stylesheet and the script agree on what
    makes a card a charcoal card, instead of the CSS keying off one attribute
    and the script off another. */
 .thmCard--graydark {--p-bg:#1A1A1F;--p-sur:#24242C;--p-ln:#40404E;--p-ac:#F4F4F6;}
 .thmCard--light    {--p-bg:#F7F5EB;--p-sur:#FFFEF9;--p-ln:#D8D3B8;--p-ac:#17151F;}
+.thmCard--offwhite {--p-bg:#F3F3F1;--p-sur:#FCFCFA;--p-ln:#D2D2CD;--p-ac:#17171A;}
 .thmPrev{
   position:relative;display:block;overflow:hidden;
   background:var(--p-bg,#1A1A1F);border:1px solid var(--p-ln,#40404E);border-radius:10px;

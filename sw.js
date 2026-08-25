@@ -4,6 +4,61 @@
    bump CACHE_VERSION to refill every client
 
    changelog
+   v253 — a third theme, and it is the default; a new mark.
+
+       OFF-WHITE. Paper is warm on purpose — hue 55, twelve points of 255 off
+       neutral — and that warmth is the one thing people ask to be rid of.
+       Off-White is the same light theme with the hue taken out and nothing
+       else changed: page #F3F3F1, card #FCFCFA, a 3.12 L* lift against
+       Paper's 3.16, borders at 1.37:1 and 2.07:1 against Paper's 1.38 and
+       2.06, body copy at 15.7:1 and secondary at 5.4:1. Accents, brand red,
+       role and milestone colours are not restated — they mean something, so
+       they are inherited exactly.
+
+       IT IS THE DEFAULT, AND IT IS NOT THE BASE. A first visit opens in
+       Off-White now; anyone who has already chosen keeps what they chose,
+       because the boot script only falls back for storage it does not
+       recognise. What did NOT move is where the light-family palette is
+       stated: Paper still owns that block, and Off-White is the shorter
+       block after it that edits the neutrals. The default is a fact about
+       the boot script, not about which stylesheet is the base.
+
+       HOW IT AVOIDS BEING A THIRD PALETTE. Twenty rules across seven
+       stylesheets were written as html[data-theme="light"] — the tooltip
+       shadow, the chart grid and its tracks, the upload accents, the
+       community amber, the comparison table's columns, the board tabs'
+       gradient stops, the viewer. Each now carries an offwhite twin in its
+       selector list, so the new theme inherits every light-ground fix rather
+       than silently taking the dark-tuned value. Written as a second
+       comma-separated selector rather than :is(), which an older engine
+       would fail to parse and drop the whole rule with. Checked by reading
+       every token those rules set, under all three themes, and asserting
+       Off-White matches Paper on the inherited ones and differs on the
+       fourteen it restates.
+
+       Also fixed on the way past: color-scheme was written as "is the theme
+       paper, else dark", which would have called this light theme dark. It
+       asks whether the theme is charcoal now.
+
+       THE MARK IS THE PAGODA. Red sun, three-tier pagoda, white ground,
+       centred to the pixel on a square — left margin equals right, top
+       equals bottom, in every file. favicon.svg is a real trace of the
+       artwork in three flat layers rather than a raster in an SVG wrapper,
+       so a tab at 16px and a pinned tab at 64 each render the vectors at
+       that size. The .ico carries five sizes and its own container, because
+       one image resampled five times throws away the tiers at 16px — 16, 32
+       and 48 get a touch of unsharp so the roofs stay separate. The maskable
+       512 is scaled so every artwork pixel is inside the safe circle, which
+       a launcher's round mask will not clip. Every icon url goes to ?v=4:
+       they are cached for a week in _headers, and without a new url the old
+       mark stays in the tab for seven days after the deploy.
+
+       Changed: index.html, css/base.css, css/analytics.css, css/community.css,
+       css/panels.css, css/upload.css, css/viewer.css, css/widgets.css,
+       js/theme.js, js/analytics.js, site.webmanifest, favicon.svg,
+       favicon.ico, icon-192.png, icon-512.png, icon-maskable-512.png,
+       apple-touch-icon.png, sw.js.
+
    v252 — the home page's quick links are gone.
 
        A rail of twelve icon tiles stood between the pitch and the artwork
@@ -4869,7 +4924,7 @@
 */
 'use strict';
 
-const CACHE_VERSION = 'v252';
+const CACHE_VERSION = 'v253';
 
 /* One cache per thing cached, not one cache for everything.
 
@@ -4914,27 +4969,27 @@ const SHELL_URLS = [
   '/config.js',
   '/uploadVerifier.js',
   '/site.webmanifest',
-  '/favicon.svg?v=3',
-  '/favicon.ico?v=3',
-  '/apple-touch-icon.png?v=3',
-  '/icon-192.png?v=3',
+  '/favicon.svg?v=4',
+  '/favicon.ico?v=4',
+  '/apple-touch-icon.png?v=4',
+  '/icon-192.png?v=4',
 
   // stylesheets
-  '/css/base.css?v=29',
+  '/css/base.css?v=30',
   '/css/hero.css?v=117',
-  '/css/viewer.css?v=39',
-  '/css/community.css?v=26',
+  '/css/viewer.css?v=40',
+  '/css/community.css?v=27',
   '/css/connect.css?v=7',
   '/css/ranking.css?v=6',
   '/css/profile.css?v=17',
   '/css/admin.css?v=4',
   '/css/auth.css?v=5',
-  '/css/panels.css?v=19',
-  '/css/upload.css?v=17',
-  '/css/widgets.css?v=15',
+  '/css/panels.css?v=20',
+  '/css/upload.css?v=18',
+  '/css/widgets.css?v=16',
   '/css/overrides.css?v=40',
   '/css/select.css?v=4',
-  '/css/analytics.css?v=9',
+  '/css/analytics.css?v=10',
 
   // the backend client. Cached like any other script now it is served from
   // here — the shell was fully offline-capable apart from this one file.
@@ -4975,8 +5030,8 @@ const SHELL_URLS = [
   '/js/effects.js?v=9',
   '/js/legal-content.js?v=1',
   '/js/cookie.js?v=1',
-  '/js/theme.js?v=6',
-  '/js/analytics.js?v=10',
+  '/js/theme.js?v=7',
+  '/js/analytics.js?v=11',
   '/js/hubs.js?v=2',
   '/js/engagement.js?v=9',
   '/js/sections.js?v=129',

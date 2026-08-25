@@ -617,14 +617,20 @@
 /* The light theme reverses which end of each ramp is legible: these sit on a
    near-white surface there, where the bright ends miss 4.5:1 as text. Same
    hues, darker step — the plan cards make the same swap. */
-html[data-theme="light"] .subCmpTbl thead th.subCmpCol--free    { color: #475569; }
-html[data-theme="light"] .subCmpTbl thead th.subCmpCol--lite    { color: #1d4ed8; }
-html[data-theme="light"] .subCmpTbl thead th.subCmpCol--premium { color: #7e22ce; }
-html[data-theme="light"] .subCmpTbl thead th.subCmpCol--max     { color: #a16207; }
+html[data-theme="light"] .subCmpTbl thead th.subCmpCol--free,
+html[data-theme="offwhite"] .subCmpTbl thead th.subCmpCol--free{ color: #475569; }
+html[data-theme="light"] .subCmpTbl thead th.subCmpCol--lite,
+html[data-theme="offwhite"] .subCmpTbl thead th.subCmpCol--lite{ color: #1d4ed8; }
+html[data-theme="light"] .subCmpTbl thead th.subCmpCol--premium,
+html[data-theme="offwhite"] .subCmpTbl thead th.subCmpCol--premium{ color: #7e22ce; }
+html[data-theme="light"] .subCmpTbl thead th.subCmpCol--max,
+html[data-theme="offwhite"] .subCmpTbl thead th.subCmpCol--max{ color: #a16207; }
 .subCmpYes { color: #22ff88; font-size: 1.05rem; font-weight: 800; }
 .subCmpNo  { color: #ff5c5c; font-size: 1rem; font-weight: 700; }
-html[data-theme="light"] .subCmpYes { color: #059669; }
-html[data-theme="light"] .subCmpNo  { color: #dc2626; }
+html[data-theme="light"] .subCmpYes,
+html[data-theme="offwhite"] .subCmpYes{ color: #059669; }
+html[data-theme="light"] .subCmpNo,
+html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
 .subCmpNote {
   font-family: var(--fb, sans-serif);
   font-size: .74rem;

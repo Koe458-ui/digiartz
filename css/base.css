@@ -3,8 +3,14 @@
 
     /* design tokens
 
-       Two themes: Paper (the default) and Charcoal. Both are built the
-       same way and for the same reasons, so the reasoning lives here once.
+       Three themes: Off-White (the default), Paper, and Charcoal. Paper
+       and Charcoal are built the same way and for the same reasons, so the
+       reasoning lives here once; Off-White is Paper with the hue taken out
+       of it and restates nothing else, so it is a short block after it
+       rather than a third palette to keep in step. It being the default
+       does not make it the block the others are written against — Paper is
+       still where the light-family palette is stated, and Off-White is
+       still the shorter block that edits it.
 
        A feed you scroll for an hour is read almost entirely by peripheral
        vision, and peripheral vision responds to two things: depth and
@@ -44,7 +50,7 @@
        with the ground.
 
        Charcoal lives in :root rather than in a data-theme block, and stays
-       there now Paper is the default. :root is the palette a document
+       there now the default is a light one. :root is the palette a document
        paints before an attribute is on it, and every document gets one:
        the boot script in index.html stamps data-theme in the same tick the
        page starts painting, so what :root holds is never what a visitor
@@ -109,7 +115,7 @@
       --ms8:#FACC15;  --ms8-name:#FACC15;   /* lvl 100 digiartz legend */
       --ms-ink:#0B0B12;
     }
-    /* light theme — Paper, the default
+    /* light theme — Paper, and the light family's palette
 
        A blue-white at 97 L* across a whole viewport is a lamp held up to
        the face. Warmth is what takes the glare out of a bright ground
@@ -122,7 +128,8 @@
        neutral, so a thumbnail is mounted on near-white the way a print is
        mounted on a white board and hung on a warm wall. The ivory is the
        wall; it never touches the work. */
-    html[data-theme="light"]{
+    html[data-theme="light"],
+    html[data-theme="offwhite"]{
       color-scheme:light;
       --tc:#6F6B58;
       --bg:#F7F5EB; --sur:#FFFEF9; --sur2:#F0EEDF;
@@ -162,6 +169,52 @@
       --ms6-name:#EB1515;   /* crimson */
       --ms7-name:#048196;   /* cyan */
       --ms8-name:#8F7303;   /* legend gold */
+    }
+    /* off-white — the third theme, and the neutral one
+
+       Paper is warm on purpose: hue 55, twelve points of 255 off neutral, a
+       ground that reads as a gallery wall. That warmth is also the one thing
+       people ask to be rid of — a photographer checking a grey card, anyone
+       who finds ivory yellow on their panel. This is the same light theme
+       with the hue taken out of it, and nothing else changed: it inherits the
+       whole block above and restates only the neutrals.
+
+       Off-white, not white. #FFFFFF across a viewport is the glare Paper was
+       written to avoid, so the page holds twelve points of 255 back from it
+       and the card three — enough that the field reads as a surface rather
+       than as a lamp, and the card still has somewhere to rise to. The lift
+       is 3.12 L*, against Paper's 3.16: a card sits off this page as far as
+       it sits off that one.
+
+       A card edge is an edge, at the figures Paper holds: --bdr is 1.37:1
+       against the page and --bdrh 2.07:1 against the card, where paper's are
+       1.38 and 2.06.
+
+       Ink is pitched to the ground the way both other themes are: body copy
+       holds 15.7:1 here, charcoal's figure to two places and a quarter of a
+       point above paper's 15.4, so no theme is the tiring one. Secondary copy
+       is 5.4:1, between charcoal's 6.3 and paper's 4.9. Accents, brand red,
+       role and milestone colours are not restated — they mean something, so
+       they stay exactly what the light block makes them. */
+    html[data-theme="offwhite"]{
+      --tc:#6C6C68;
+      --bg:#F3F3F1; --sur:#FCFCFA; --sur2:#EAEAE7;
+      --bdr:#D2D2CD; --bdrh:#B2B2AC;
+      --tx:#1A1A18; --tx2-rgb:58,58,54; --txd:rgba(var(--tx2-rgb),.78);
+      --pg:#17171A; --pb:#0F0F12; --ps:#000000; --pgd:#2E2E32;
+      --pg-rgb:23,23,26; --pgd-rgb:46,46,50;
+      --pdim:rgba(var(--pg-rgb),.07);
+      /* the same weight of ink Paper drops, mixed neutral rather than warm */
+      --sh-card:0 1px 3px rgba(24,24,28,.10),0 4px 14px rgba(24,24,28,.12);
+      --sh-card-hover:0 6px 20px rgba(24,24,28,.16);
+      /* the well: overlays and full-screen sub-pages sit below the page */
+      --vbg:#E9E9E6; --vsur:#F8F8F6; --vsur2:#EFEFEC;
+      --vtx:#1D1D1B; --vtx2-rgb:64,64,60; --vtxd:rgba(var(--vtx2-rgb),.80);
+      --vtc:#6A6A65; --vtc-rgb:106,106,101;
+      --vpg:#60605C; --vpb:#4E4E4A; --vps:#3D3D3A;
+      /* the footer: below the page, above the well */
+      --fbg:#E5E5E2; --fsur:#EFEFEC; --fsur2:#E9E9E6;
+      --fbdr:#D5D5D0; --fbdrh:#BDBDB7;
     }
     /* The two aliases the base typography rules below actually read.
        Declared on * rather than on :root deliberately: a dozen panels

@@ -3,25 +3,31 @@
  <head>
   <meta charset="utf-8"/>
   <meta name="color-scheme" content="light"/>
-  <meta name="theme-color" content="#F7F5EB"/>
+  <meta name="theme-color" content="#F3F3F1"/>
   <!-- theme boot
 
-       Two themes: light (paper, the default) and graydark (charcoal).
-       This runs before any stylesheet so the document is stamped with its
-       theme in the same tick it starts painting — a theme applied later
-       is a flash of the wrong one. Anything unrecognised in storage falls
-       to the default rather than being trusted. -->
+       Three themes: offwhite (the default), light (paper) and graydark
+       (charcoal). This runs before any stylesheet so
+       the document is stamped with its theme in the same tick it starts
+       painting — a theme applied later is a flash of the wrong one.
+       Anything unrecognised in storage falls to the default rather than
+       being trusted.
+
+       Charcoal is the only dark one, so color-scheme is decided by asking
+       whether the theme IS charcoal rather than whether it is paper: the
+       second phrasing made every theme that is not paper dark, which is
+       what a third light theme would have been caught by. -->
   <script>
   (function(){
-    var K='koeTheme',V={graydark:1,light:1},t=null;
+    var K='koeTheme',V={graydark:1,light:1,offwhite:1},t=null;
     try{t=localStorage.getItem(K);}catch(e){}
-    if(!V[t])t='light'; /* default theme */
+    if(!V[t])t='offwhite'; /* default theme */
     document.documentElement.setAttribute('data-theme',t);
-    var C={graydark:'#1A1A1F',light:'#F7F5EB'};
+    var C={graydark:'#1A1A1F',light:'#F7F5EB',offwhite:'#F3F3F1'};
     var m=document.querySelector('meta[name="theme-color"]');
     if(m)m.setAttribute('content',C[t]);
     var s=document.querySelector('meta[name="color-scheme"]');
-    if(s)s.setAttribute('content',t==='light'?'light':'dark');
+    if(s)s.setAttribute('content',t==='graydark'?'dark':'light');
   })();
   </script>
   <!-- critical paint style -->
@@ -30,9 +36,10 @@
        overscroll, and the ground every full-screen overlay takes. These
        three lines are the boot copy of it, so the first paint is right
        before css/base.css arrives; base.css is where the value is owned. */
-    html{background:var(--vbg,#EEEBDC);}
+    html{background:var(--vbg,#E9E9E6);}
     html[data-theme="graydark"]{--vbg:#101015;}
     html[data-theme="light"]{--vbg:#EEEBDC;}
+    html[data-theme="offwhite"]{--vbg:#E9E9E6;}
 
     /* An overlay must be an overlay before its stylesheet arrives.
        #anPage is a full dashboard sitting in this document at all times, held
@@ -159,10 +166,10 @@
        The ?v= is what a returning visitor needs: these are cached for a week
        in _headers, and without a new url the old mark stays in the tab for
        up to seven days after the deploy. -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3" sizes="any"/>
-  <link rel="icon" href="/favicon.ico?v=3" sizes="16x16 32x32 48x48 64x64 128x128"/>
-  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=3"/>
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" sizes="any"/>
+  <link rel="icon" href="/favicon.ico?v=4" sizes="16x16 32x32 48x48 64x64 128x128"/>
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=4"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4"/>
   <link rel="manifest" href="/site.webmanifest"/>
   <script type="application/ld+json">
   {
@@ -170,7 +177,7 @@
     "@type": "Organization",
     "name": "Digiartz",
     "url": "https://digiartz.net/",
-    "logo": "https://digiartz.net/icon-512.png?v=3"
+    "logo": "https://digiartz.net/icon-512.png?v=4"
   }
   </script>
   <!-- The site itself, and what it is organised into. Nothing here is invented:
@@ -210,12 +217,12 @@
   <meta property="og:title" content="DigiArtz — The Digital Art Community"/>
   <meta property="og:description" content="DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists."/>
   <meta property="og:url" content="https://digiartz.net/"/>
-  <meta property="og:image" content="https://digiartz.net/icon-512.png?v=3"/>
+  <meta property="og:image" content="https://digiartz.net/icon-512.png?v=4"/>
   <meta property="og:image:alt" content="Digiartz — digital art showcase"/>
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="DigiArtz — The Digital Art Community"/>
   <meta name="twitter:description" content="DigiArtz is a place for digital artists to share their work, build a portfolio and meet other artists."/>
-  <meta name="twitter:image" content="https://digiartz.net/icon-512.png?v=3"/>
+  <meta name="twitter:image" content="https://digiartz.net/icon-512.png?v=4"/>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet';"/>
@@ -246,21 +253,21 @@
     }, true);
   })();
   </script>
-  <link rel="stylesheet" href="/css/base.css?v=29">
+  <link rel="stylesheet" href="/css/base.css?v=30">
   <link rel="stylesheet" href="/css/hero.css?v=117">
-  <link rel="stylesheet" href="/css/viewer.css?v=39">
-  <link rel="stylesheet" href="/css/community.css?v=26">
+  <link rel="stylesheet" href="/css/viewer.css?v=40">
+  <link rel="stylesheet" href="/css/community.css?v=27">
   <link rel="stylesheet" href="/css/connect.css?v=7">
   <link rel="stylesheet" href="/css/ranking.css?v=6">
   <link rel="stylesheet" href="/css/profile.css?v=17">
   <link rel="stylesheet" href="/css/admin.css?v=4">
   <link rel="stylesheet" href="/css/auth.css?v=5">
-  <link rel="stylesheet" href="/css/panels.css?v=19">
-  <link rel="stylesheet" href="/css/upload.css?v=17">
-  <link rel="stylesheet" href="/css/widgets.css?v=15">
+  <link rel="stylesheet" href="/css/panels.css?v=20">
+  <link rel="stylesheet" href="/css/upload.css?v=18">
+  <link rel="stylesheet" href="/css/widgets.css?v=16">
   <link rel="stylesheet" href="/css/overrides.css?v=40">
   <link rel="stylesheet" href="/css/select.css?v=4">
-  <link rel="stylesheet" href="/css/analytics.css?v=9">
+  <link rel="stylesheet" href="/css/analytics.css?v=10">
  </head>
  <body>
 
@@ -2981,7 +2988,7 @@
          too, so what paints the preview and what answers the tap are the
          same fact rather than two that can disagree.
 
-         css/base.css still owns the palette. These are the only two
+         css/base.css still owns the palette. These are the only three
          swatches that have to travel with the markup, and they are inline
          so they cannot arrive separately from it. -->
     <div class="thmGrid" role="radiogroup" aria-label="Theme">
@@ -3021,8 +3028,28 @@
           </span>
         </span>
         <span class="thmMeta">
-          <span class="thmName">Paper <em class="thmBadge">Default</em></span>
+          <span class="thmName">Paper</span>
           <span class="thmDesc">Warm gallery paper. Bright to work in, easy on the eyes for an hour.</span>
+        </span>
+      </button>
+      <button class="thmCard thmCard--offwhite" data-theme="offwhite" value="offwhite" role="radio" aria-checked="false" type="button"
+              style="--p-bg:#F3F3F1;--p-sur:#FCFCFA;--p-ln:#D2D2CD;--p-ac:#17171A">
+        <span class="thmCheck" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7-8"/></svg></span>
+        <span class="thmPrev" aria-hidden="true">
+          <span class="thmPrevTop"><span class="thmPrevLogo"></span></span>
+          <span class="thmPrevBody">
+            <span class="thmPrevSide"><span class="thmLn"></span><span class="thmLn thmLn--s"></span><span class="thmLn thmLn--ac"></span><span class="thmLn thmLn--s"></span></span>
+            <span class="thmPrevMain">
+              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
+              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
+              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
+              <span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>
+            </span>
+          </span>
+        </span>
+        <span class="thmMeta">
+          <span class="thmName">Off-White <em class="thmBadge">Default</em></span>
+          <span class="thmDesc">Paper with the warmth taken out. The same brightness on a neutral ground, for a wall with no colour in it.</span>
         </span>
       </button>
     </div>
@@ -3033,7 +3060,7 @@
   </div>
 </div>
 
-  <script src="/js/theme.js?v=6"></script>
+  <script src="/js/theme.js?v=7"></script>
 
 <!-- One page for all seven legal documents, opened from the Settings menu.
      Same shape as Theme or Edit My Work: a header with a back arrow, then the
@@ -3442,7 +3469,7 @@
   <!-- Before engagement.js on purpose. It defines dzAnDims, which is what a
        view, a like and a download carry alongside themselves; engagement.js
        guards for its absence anyway, but the order means it is never absent. -->
-  <script src="/js/analytics.js?v=10"></script>
+  <script src="/js/analytics.js?v=11"></script>
   <!-- the two boards behind Profile: Analytics and Payouts -->
   <script src="/js/hubs.js?v=2"></script>
   <script src="/js/engagement.js?v=9"></script>

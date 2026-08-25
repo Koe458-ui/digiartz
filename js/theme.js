@@ -3,8 +3,8 @@
   'use strict';
 
   var KEY   = 'koeTheme';
-  var VALID = { graydark:1, light:1 };
-  var META  = { graydark:'#1A1A1F', light:'#F7F5EB' };
+  var VALID = { graydark:1, light:1, offwhite:1 };
+  var META  = { graydark:'#1A1A1F', light:'#F7F5EB', offwhite:'#F3F3F1' };
   var page  = document.getElementById('themePage');
   var cards = Array.prototype.slice.call(document.querySelectorAll('.thmCard'));
   var lastFocus = null;
@@ -13,7 +13,7 @@
   function saved () {
     var v = null;
     try { v = localStorage.getItem(KEY); } catch (e) {}
-    return VALID[v] ? v : 'light';
+    return VALID[v] ? v : 'offwhite';
   }
 
   /* Which theme a card stands for. Everything the picker does hangs off
@@ -38,7 +38,7 @@
     var m = document.querySelector('meta[name="theme-color"]');
     if (m) m.setAttribute('content', META[t]);
     var cs = document.querySelector('meta[name="color-scheme"]');
-    if (cs) cs.setAttribute('content', t === 'light' ? 'light' : 'dark');
+    if (cs) cs.setAttribute('content', t === 'graydark' ? 'dark' : 'light');
     syncCards(t);
   }
 

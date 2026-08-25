@@ -14,12 +14,12 @@
  * title, around 1.1rem for a section heading.
  *
  * SERIES COLOURS ARE FIXED HEX, NOT TOKENS, AND NONE OF THEM IS PURPLE. The
- * site ships two themes — graydark, light — and the accent token means
- * something different in each: near-white on the dark one, near black on
- * light. That is a fine button and an unreadable line on a chart beside five
- * others. A metric's colour has to mean the same thing on every theme and
- * stay legible on both a charcoal and a near-white ground, so these six are
- * chosen once and never swapped.
+ * site ships three themes — graydark, light, offwhite — and the accent token
+ * means something different across them: near-white on the dark one, near
+ * black on the two light ones. That is a fine button and an unreadable line on
+ * a chart beside five others. A metric's colour has to mean the same thing on
+ * every theme and stay legible on both a charcoal and a near-white ground, so
+ * these six are chosen once and never swapped.
  *
  * They are the bright end of six hues an even distance apart — azure, red,
  * teal, amber, magenta, green — so no two lines on a six-line chart are ever
@@ -596,15 +596,24 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
  *   survive. What does change is how much of them is washed over a pale
  *   background: the faint tracks go a shade stronger, or they disappear.
  */
-html[data-theme="light"] .anTip{box-shadow:0 10px 26px rgba(26,24,38,.14);}
-html[data-theme="light"] .anAchBarFill{background:var(--an-views);}
+html[data-theme="light"] .anTip,
+html[data-theme="offwhite"] .anTip{box-shadow:0 10px 26px rgba(26,24,38,.14);}
+html[data-theme="light"] .anAchBarFill,
+html[data-theme="offwhite"] .anAchBarFill{background:var(--an-views);}
 html[data-theme="light"] .anBarTrack,
-html[data-theme="light"] .anAchBar{background:rgba(var(--tx2-rgb),.14);}
-html[data-theme="light"] .anCmpBar{background:rgba(var(--tx2-rgb),.10);}
-html[data-theme="light"]{--an-grid:rgba(var(--tx2-rgb),.16);}
-html[data-theme="light"] .anHeatCol{opacity:1;}
-html[data-theme="light"] .anAchCard{opacity:.62;}
-html[data-theme="light"] .anAchCard.done{opacity:1;}
+html[data-theme="offwhite"] .anBarTrack,
+html[data-theme="light"] .anAchBar,
+html[data-theme="offwhite"] .anAchBar{background:rgba(var(--tx2-rgb),.14);}
+html[data-theme="light"] .anCmpBar,
+html[data-theme="offwhite"] .anCmpBar{background:rgba(var(--tx2-rgb),.10);}
+html[data-theme="light"],
+html[data-theme="offwhite"]{--an-grid:rgba(var(--tx2-rgb),.16);}
+html[data-theme="light"] .anHeatCol,
+html[data-theme="offwhite"] .anHeatCol{opacity:1;}
+html[data-theme="light"] .anAchCard,
+html[data-theme="offwhite"] .anAchCard{opacity:.62;}
+html[data-theme="light"] .anAchCard.done,
+html[data-theme="offwhite"] .anAchCard.done{opacity:1;}
 
 /* Charcoal makes the accent near-white, which is right for a button and wrong
    for a thin border on a dark card. The chart azure marks these instead:

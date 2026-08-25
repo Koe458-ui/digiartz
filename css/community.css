@@ -767,7 +767,10 @@
       background:var(--cmAccent);
       box-shadow:0 0 18px rgba(var(--cmAccent-rgb),.35);
     }
-    html[data-theme="light"] #communityPage,html[data-theme="light"] #cmChatPanel{--cmAmberInk:#9A6A08;}
+    html[data-theme="light"] #communityPage,
+    html[data-theme="offwhite"] #communityPage,
+    html[data-theme="light"] #cmChatPanel,
+    html[data-theme="offwhite"] #cmChatPanel{--cmAmberInk:#9A6A08;}
     #communityPage .cmJoinBtn,#cmChatPanel .cmJoinBtn{
       background:rgba(244,183,64,.14);
       border-color:var(--cmAmber);

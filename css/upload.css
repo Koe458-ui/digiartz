@@ -30,7 +30,8 @@
        one. This is the split the gallery's own chip row used for the very same
        colours before that row was removed, so the two agreed under both themes
        rather than under only one. */
-    html[data-theme="light"]{
+    html[data-theme="light"],
+    html[data-theme="offwhite"]{
       --upcViolet:#7C3AED; --upcGreen:#16A34A; --upcBlue:#2563EB;
       --upcAmber:#D97706;  --upcPink:#DB2777;  --upcCyan:#0891B2;
       --upcTeal:#0D9488;   --upcOrange:#EA580C;--upcPurple:#9333EA;
@@ -96,8 +97,14 @@
          exact value. */
       --upTitle:#3B82F6;
     }
-    html[data-theme="light"] #pfUpMod,html[data-theme="light"] #pfUpMod *,
-    html[data-theme="light"] .upGdPop,html[data-theme="light"] .upGdPop *{
+    html[data-theme="light"] #pfUpMod,
+    html[data-theme="offwhite"] #pfUpMod,
+    html[data-theme="light"] #pfUpMod *,
+    html[data-theme="offwhite"] #pfUpMod *,
+    html[data-theme="light"] .upGdPop,
+    html[data-theme="offwhite"] .upGdPop,
+    html[data-theme="light"] .upGdPop *,
+    html[data-theme="offwhite"] .upGdPop *{
       --pg:#7C3AED;--pgd:#6D28D9;--pb:#6D28D9;--ps:#5B21B6;
       --pg-rgb:124,58,237;--pgd-rgb:109,40,217;
       --pdim:rgba(124,58,237,.10);

@@ -808,7 +808,8 @@
          when you are looking at someone's profile. */
       --pfBlue:#2563EB; --pfBlueH:#1D4ED8;
     }
-    html[data-theme="light"]{
+    html[data-theme="light"],
+    html[data-theme="offwhite"]{
       --vwRed:#FF2020; --vwAmber:#F08C00; --vwGreen:#00B85C; --vwBlue:#0B72E7;
     }
 

@@ -29,25 +29,15 @@
 //   PAYMENTS.PAYOUTS-ITEM.UNCLAIMED   sent, recipient has not accepted yet
 //   PAYMENTS.PAYOUTS-ITEM.FAILED / .BLOCKED / .RETURNED / .DENIED / .REFUNDED
 
-const SUB_DAYS   = 31;
-const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
+import { sbUrl, sbSvc } from '../lib/sb.js';
+import { PLAN_TIERS, applySubscription } from '../lib/billing.js';
+import { ppFee } from '../lib/money.js';
 
 // The commission, the TDS, the GST TCS and the settlement date are worked out
 // by dz_earning_apply_deductions() in Postgres. This file reports what the
 // buyer paid and what PayPal took, and does no arithmetic on money.
 
 // smallest currency unit, for reading PayPal's decimal strings back
-const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD']);
-
-function ppFee(capture, currency) {
-  const br = (capture && capture.seller_receivable_breakdown) || {};
-  const f  = br.paypal_fee;
-  if (!f || f.currency_code !== currency) return 0;
-  const v = parseFloat(f.value);
-  if (!Number.isFinite(v)) return 0;
-  return ZERO_DECIMAL.has(currency) ? Math.round(v) : Math.round(v * 100);
-}
-
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
 
@@ -95,19 +85,6 @@ async function pp(env, path, init = {}) {
   }
   return body;
 }
-
-// ---------------------------------------------------------------------------
-// Supabase environment names.
-//
-// This project uses two spellings. The older Functions read SUPABASE_URL /
-// SUPABASE_ANON_KEY; the newer ones read SB_URL / SB_KEY, and config.example.js
-// documents the service key as SUPABASE_SERVICE_ROLE_KEY while the code asks
-// for SB_SERVICE_KEY. Either is fine to bind — what is not fine is a deploy
-// that half-works because of which spelling someone picked, so both are
-// accepted here and the endpoint says exactly what is missing when neither is.
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
-const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 async function sbService(env, path, init = {}) {
   const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
@@ -182,51 +159,6 @@ async function recordEarning(env, row, capture) {
 //
 // Takes the capture OBJECT rather than its id: the fee PayPal kept is on the
 // capture's seller_receivable_breakdown, and an id alone cannot report it.
-// ---------------------------------------------------------------------------
-// APPLYING A MONTH TO WHAT THE MEMBER ALREADY HOLDS.
-//
-// The same block is in rzp.js, paypal.js, rzp-webhook.js and paypal-webhook.js,
-// which are the four paths that can settle a subscription. It used to be an
-// unconditional PATCH to { tier, now + 31 days } in all four, reading neither
-// the current tier nor the current expiry first:
-//
-//   buying a month with twenty days left gave thirty-one, not fifty-one, so
-//   twenty paid days were destroyed — and the plan copy invites exactly that
-//   purchase ("A single charge for 31 days. Nothing recurring");
-//
-//   buying Lite while holding Max dropped the daily quota from twenty to ten
-//   on the spot and took the remaining Max days with it.
-//
-// So: extend from whichever is later, now or the existing expiry, and never
-// come out of this holding a lower tier than went in. sub-order refuses a
-// downgrade before any money moves; this is the backstop for an order created
-// before an upgrade and settled after it, where the money is already taken and
-// the only wrong answer is to give less than was there before.
-const TIER_RANK = { lite: 1, premium: 2, max: 3 };
-
-async function applySubscription(env, userId, tier) {
-  let curTier = null, curExp = 0;
-  try {
-    const rows = await sbService(env, '/profiles?id=eq.' + userId +
-      '&select=subscription_tier,subscription_expires_at&limit=1');
-    const p = rows && rows[0];
-    const t = p && p.subscription_expires_at
-      ? new Date(p.subscription_expires_at).getTime() : 0;
-    // an expired subscription is not a subscription; it starts from today
-    if (t && t > Date.now()) { curTier = p.subscription_tier || null; curExp = t; }
-  } catch { /* unreadable — fall through to a plain month from now */ }
-
-  const from = Math.max(Date.now(), curExp);
-  const keep = (TIER_RANK[curTier] || 0) > (TIER_RANK[tier] || 0) ? curTier : tier;
-  await sbService(env, '/profiles?id=eq.' + userId, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      subscription_tier: keep,
-      subscription_expires_at: new Date(from + SUB_DAYS * 86400000).toISOString(),
-    }),
-  });
-  return keep;
-}
 
 async function fulfil(env, orderId, capture) {
   const captureId = (capture && capture.id) || '';

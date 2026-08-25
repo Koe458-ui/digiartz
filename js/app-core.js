@@ -346,7 +346,11 @@
   let images = [];
   let filterCat = 'all', filterSrt = 'trending';
 
-  function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+  // String() and not (s||''): a number reached this and threw, because
+  // (5||'') is the number 5 and Number has no .replace — which is why two
+  // of the call sites below already wrap their argument by hand. A zero
+  // survived only by becoming the empty string, which is its own quiet bug.
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
   // never show raw backend errors
   function safeErr(e, fallback){
@@ -797,7 +801,14 @@
     { id:'anHubPage',       close:['anHubClose'],           lock:1 },
     { id:'payHubPage',      close:['payHubClose'],          lock:1 },
     { id:'xpPage',          close:['closeXpPage'],          lock:1 },
-    { id:'themePage',       close:['closeThemePage'] },
+    /* lock:1, like every other page that holds the scroll. js/theme.js sets
+       overflow:hidden on both body and documentElement when this opens, so
+       it IS a lock holder; leaving it out of the flag meant restoreScroll —
+       the one reader of this column — could hand the scroll back while the
+       theme page was still on screen, and the home page scrolled underneath
+       it. #legalPage, which is the same shape and opens the same way, has
+       carried the flag all along. */
+    { id:'themePage',       close:['closeThemePage'],       lock:1 },
     { id:'rankPage',        close:['closeRankPage'],        lock:1 },
     { id:'dzPanelHost',     close:['dzClosePanel'],         lock:1 },
     { id:'admPage',         close:['dzOpsClose'],           lock:1 },

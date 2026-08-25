@@ -1,21 +1,18 @@
 // razorpay checkout backend
 
+import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, ledger } from '../lib/sb.js';
+import { fromPriceCents, minCharge, showAmount } from '../lib/money.js';
+import {
+  sbService, memberCurrency, planPrice, supportLimits, currentPlan, resolvePromo,
+  PLAN_TIERS, TIER_RANK, PLAN_LABEL, applySubscription
+} from '../lib/billing.js';
+
 // Plan prices are NOT here. They live in public.subscription_prices, one row
 // per plan per currency, because this file, paypal.js and the module in
 // store.js all price subscriptions and three copies of a price list is three
 // chances to charge the wrong amount. They are LOCAL prices per currency, not
 // a dollar figure run through an exchange rate — that is how you end up
 // quoting Rs 416.67 a month.
-const TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
-// What a member already holds decides both whether a plan may be ordered and
-// how a settled month is applied, so the three need an order. The same block
-// is in paypal.js and both webhooks — see applySubscription below.
-const TIER_RANK = { lite: 1, premium: 2, max: 3 };
-const PLAN_LABEL = {
-  lite: 'Lite \u2014 1 month', premium: 'Premium \u2014 1 month',
-  max: 'Max \u2014 1 month',   support: 'Support DigiArtz',
-};
-const SUB_DAYS = 31;
 
 // TWO UNITS LIVE IN THIS SYSTEM AND THEY ARE NOT THE SAME UNIT.
 //
@@ -37,25 +34,11 @@ const SUB_DAYS = 31;
 // checkout page even showed both figures — the plan grid's, and the server
 // order's at the gateway step — and they disagreed on screen.
 //
-// The set matches paypal.js, payouts.js and store.js. It said {JPY} alone
-// here, which was a second 100x error waiting on whoever added HUF or TWD to
-// the currency list.
-const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD']);
-
 // The smallest charge a gateway will accept, per currency, in minor units.
 // A 90% discount on a cheap plan in a cheap currency can land under this, and
 // a gateway refusing the order is a checkout that fails with a message the
 // buyer cannot act on. The floor is roughly one major unit — a rupee, a cent,
 // a yen — which is what both providers document as their minimum.
-const MIN_CHARGE = { INR: 100, JPY: 1, HUF: 1, TWD: 1 };
-const MIN_CHARGE_DEFAULT = 50;
-const minCharge = (cur) => MIN_CHARGE[cur] != null ? MIN_CHARGE[cur] : MIN_CHARGE_DEFAULT;
-
-
-// price_cents -> the currency's smallest unit. Listings only.
-const fromPriceCents = (cents, cur) =>
-  ZERO_DECIMAL.has(cur) ? Math.round(cents / 100) : cents;
-
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
 
@@ -70,47 +53,6 @@ async function rzp(env, path, init = {}) {
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((body.error && body.error.description) || 'Payment provider error (' + res.status + ')');
-  return body;
-}
-
-// supabase caller and service role
-// ---------------------------------------------------------------------------
-// Supabase environment names.
-//
-// This project uses two spellings. The older Functions read SUPABASE_URL /
-// SUPABASE_ANON_KEY; the newer ones read SB_URL / SB_KEY, and config.example.js
-// documents the service key as SUPABASE_SERVICE_ROLE_KEY while the code asks
-// for SB_SERVICE_KEY. Either is fine to bind — what is not fine is a deploy
-// that half-works because of which spelling someone picked, so both are
-// accepted here and the endpoint says exactly what is missing when neither is.
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
-const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-async function sbUser(env, request) {
-  const bearer = request.headers.get('authorization') || '';
-  if (!bearer.startsWith('Bearer ')) return null;
-  const res = await fetch(sbUrl(env) + '/auth/v1/user', {
-    headers: { apikey: sbAnon(env), authorization: bearer },
-  });
-  if (!res.ok) return null;
-  const u = await res.json().catch(() => null);
-  return u && u.id ? u : null;
-}
-
-async function sbService(env, path, init = {}) {
-  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
-    ...init,
-    headers: {
-      apikey: sbSvc(env),
-      authorization: 'Bearer ' + sbSvc(env),
-      'content-type': 'application/json',
-      prefer: 'return=representation',
-      ...(init.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error('Database error (' + res.status + ')');
   return body;
 }
 
@@ -139,25 +81,6 @@ async function validSignature(env, orderId, paymentId, signature) {
 // arithmetic was four chances for them to disagree about what a seller is
 // owed. What is sent from here is only what this side actually knows: what the
 // buyer paid, and what the gateway took out of it before it reached us.
-
-// Independent record of the same movement, taken from what the PROVIDER
-// reported rather than from our own arithmetic — that is the whole point of
-// it. Appended, never updated: the table refuses UPDATE and DELETE to every
-// role. If our maths drifts, this does not drift with it, and the mismatch is
-// what stops a withdrawal.
-async function ledger(env, args) {
-  try {
-    await fetch(sbUrl(env) + '/rest/v1/rpc/dz_ledger_append', {
-      method: 'POST',
-      headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(args),
-    });
-  } catch { /* never block a settlement on the audit write */ }
-}
 
 async function recordEarning(env, row, prov) {
   if (row.kind !== 'marketplace' || !row.item_id) return;
@@ -211,156 +134,6 @@ async function recordEarning(env, row, prov) {
     p_provider_currency: (prov && prov.currency) || row.currency,
     p_ref_table: 'payments', p_ref_id: row.id,
   });
-}
-
-// ---------------------------------------------------------------------------
-// Rate limit. Cloudflare stops the floods; this stops the cheap targeted abuse
-// it has no reason to block — walking item ids through checkout, opening
-// orders to spam the ledger, hammering a payout race. Fails OPEN: if the
-// limiter itself is broken, a paying customer still gets served.
-async function underLimit(env, bucket, limit, seconds) {
-  try {
-    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_rate_take', {
-      method: 'POST',
-      headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ p_bucket: bucket, p_limit: limit, p_seconds: seconds }),
-    });
-    if (!res.ok) return true;
-    return (await res.json()) !== false;
-  } catch { return true; }
-}
-
-
-// ---------------------------------------------------------------------------
-// What this member transacts in, and what a plan costs there.
-//
-// Both read from the database on the service role. The browser names a plan
-// and nothing else — it never names a price or a currency, so it cannot pick
-// either.
-async function memberCurrency(env, userId) {
-  const rows = await sbService(env,
-    '/profiles?id=eq.' + userId + '&select=currency&limit=1');
-  const c = rows && rows[0] && rows[0].currency;
-  return /^[A-Z]{3}$/.test(String(c || '')) ? c : 'USD';
-}
-
-async function planPrice(env, plan, currency) {
-  const rows = await sbService(env,
-    '/subscription_prices?plan=eq.' + encodeURIComponent(plan) +
-    '&currency=eq.' + encodeURIComponent(currency) + '&select=amount&limit=1');
-  const a = rows && rows[0] && Number(rows[0].amount);
-  return Number.isFinite(a) && a > 0 ? a : null;
-}
-
-async function supportLimits(env, currency) {
-  const rows = await sbService(env,
-    '/support_limits?currency=eq.' + encodeURIComponent(currency) +
-    '&select=min_amount,max_amount&limit=1');
-  const r = rows && rows[0];
-  return r ? { min: Number(r.min_amount), max: Number(r.max_amount) } : null;
-}
-
-const showAmount = (minor, cur) =>
-  ZERO_DECIMAL.has(cur) ? String(minor) + ' ' + cur
-                        : (minor / 100).toFixed(2) + ' ' + cur;
-
-// ---------------------------------------------------------------------------
-// WHAT THE MEMBER ALREADY HOLDS.
-//
-// Read before an order is created, so a plan that would take something away
-// can be refused while the buyer still has their money, and read again at
-// settlement so a month is added to what is there rather than written over it.
-async function currentPlan(env, userId) {
-  try {
-    const rows = await sbService(env, '/profiles?id=eq.' + userId +
-      '&select=subscription_tier,subscription_expires_at&limit=1');
-    const p = rows && rows[0];
-    const t = p && p.subscription_expires_at
-      ? new Date(p.subscription_expires_at).getTime() : 0;
-    // an expired subscription is not a subscription
-    if (t && t > Date.now()) return { tier: p.subscription_tier || null, expires: t };
-  } catch { /* unreadable — treated as holding nothing */ }
-  return { tier: null, expires: 0 };
-}
-
-// APPLYING A MONTH TO WHAT IS ALREADY THERE.
-//
-// The same block is in paypal.js, rzp-webhook.js and paypal-webhook.js, which
-// with this file are the four paths that can settle a subscription. It used to
-// be an unconditional PATCH to { tier, now + 31 days } in all four, reading
-// neither the current tier nor the current expiry first:
-//
-//   buying a month with twenty days left gave thirty-one, not fifty-one, so
-//   twenty paid days were destroyed — and the plan copy invites exactly that
-//   purchase ("A single charge for 31 days. Nothing recurring");
-//
-//   buying Lite while holding Max dropped the daily quota from twenty to ten
-//   on the spot and took the remaining Max days with it.
-//
-// So: extend from whichever is later, now or the existing expiry, and never
-// come out of this holding a lower tier than went in. sub-order refuses a
-// downgrade before any money moves; this is the backstop for an order created
-// before an upgrade and settled after it, where the money is already taken and
-// the only wrong answer is to give less than was there before.
-async function applySubscription(env, userId, tier) {
-  const cur = await currentPlan(env, userId);
-  const from = Math.max(Date.now(), cur.expires);
-  const keep = (TIER_RANK[cur.tier] || 0) > (TIER_RANK[tier] || 0) ? cur.tier : tier;
-  await sbService(env, '/profiles?id=eq.' + userId, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      subscription_tier: keep,
-      subscription_expires_at: new Date(from + SUB_DAYS * 86400000).toISOString(),
-    }),
-  });
-  return keep;
-}
-
-
-// ---------------------------------------------------------------------------
-// A PROMO CODE, AND WHAT IT IS WORTH.
-//
-// Resolved by Postgres, AS THE BUYER — the caller's own bearer, not the
-// service key — because dz_promo_resolve() has to know who is asking in order
-// to refuse a partner spending their own code. Sending the service key here
-// would make every check pass and hand a partner a 90% discount on their own
-// Max plus a rebate to themselves on top of it.
-//
-// Nothing about the discount is decided in the browser. The browser sends six
-// characters; the amount charged is computed here from what Postgres said the
-// code was worth, and the code's id goes onto the payments row so the
-// commission trigger can find it at settlement.
-async function resolvePromo(env, request, code, kind) {
-  const raw = String(code || '').trim().toUpperCase();
-  if (!raw) return { id: null, discountBps: 0 };
-  if (!/^[A-Z0-9]{4,6}$/.test(raw)) return { error: 'That code does not look right' };
-  try {
-    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_promo_resolve', {
-      method: 'POST',
-      headers: {
-        apikey: sbAnon(env),
-        authorization: request.headers.get('authorization') || '',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ p_code: raw, p_kind: kind }),
-    });
-    if (!res.ok) return { error: 'That code could not be checked' };
-    const r = await res.json();
-    if (!r || !r.ok) return { error: (r && r.error) || 'No such code' };
-    // Clamped on the way out. The discount comes from a config row an admin can
-    // edit, and a typo there should cost the platform a sale, not the whole
-    // price of one.
-    const bps = Math.min(Math.max(Number(r.discount_bps) || 0, 0), 9500);
-    return { id: r.id, code: raw, discountBps: bps };
-  } catch {
-    // A code that cannot be checked is not silently honoured and not silently
-    // dropped either — the buyer is told, and can pay without it.
-    return { error: 'That code could not be checked' };
-  }
 }
 
 // Only Max carries a promo discount. A code typed against Lite or Premium is
@@ -438,7 +211,7 @@ export async function onRequestPost({ env, request }) {
     // subscriptions
     if (body.action === 'sub-order') {
       const key = String(body.plan || '');
-      if (!(key in TIERS)) return json({ error: 'Unknown plan' }, 400);
+      if (!(key in PLAN_TIERS)) return json({ error: 'Unknown plan' }, 400);
 
       const currency = await memberCurrency(env, user.id);
       let amount;
@@ -582,7 +355,7 @@ export async function onRequestPost({ env, request }) {
 
       let tier = null;
       if (notes.kind === 'subscription') {
-        const t = TIERS[notes.plan];
+        const t = PLAN_TIERS[notes.plan];
         if (t) {
           // What they end up holding, which is not always what they bought —
           // a month bought under a higher tier extends that tier instead.

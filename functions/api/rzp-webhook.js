@@ -39,8 +39,8 @@
 // hand), so there is no RazorpayX batch whose fate we would need to hear about.
 // If that ever changes, payout events belong in this file next to the rest.
 
-const SUB_DAYS = 31;
-const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null };
+import { sbUrl, sbSvc, ledger } from '../lib/sb.js';
+import { PLAN_TIERS, applySubscription } from '../lib/billing.js';
 
 // The commission, the TDS, the GST TCS and the settlement date are worked out
 // by dz_earning_apply_deductions() in Postgres, not here. This file reports
@@ -49,18 +49,6 @@ const PLAN_TIERS = { lite: 'lite', premium: 'premium', max: 'max', support: null
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
-
-// ---------------------------------------------------------------------------
-// Supabase environment names.
-//
-// This project uses two spellings. The older Functions read SUPABASE_URL /
-// SUPABASE_ANON_KEY; the newer ones read SB_URL / SB_KEY, and config.example.js
-// documents the service key as SUPABASE_SERVICE_ROLE_KEY while the code asks
-// for SB_SERVICE_KEY. Either is fine to bind — what is not fine is a deploy
-// that half-works because of which spelling someone picked, so both are
-// accepted here.
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 async function sbService(env, path, init = {}) {
   const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
@@ -101,24 +89,6 @@ async function signed(env, raw, signature) {
   const b = new TextEncoder().encode(sig);
   if (a.byteLength !== b.byteLength) return false;
   return crypto.subtle.timingSafeEqual(a, b);
-}
-
-// ---------------------------------------------------------------------------
-// Independent record of the same movement, taken from what the PROVIDER
-// reported rather than from our own arithmetic — that is the whole point of it.
-// Appended, never updated: the table refuses UPDATE and DELETE to every role.
-async function ledger(env, args) {
-  try {
-    await fetch(sbUrl(env) + '/rest/v1/rpc/dz_ledger_append', {
-      method: 'POST',
-      headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(args),
-    });
-  } catch { /* never block a settlement on the audit write */ }
 }
 
 // A marketplace sale owes the seller their share. Written once per payment —
@@ -178,52 +148,6 @@ async function rowFor(env, orderId, select) {
     '/payments?rzp_order_id=eq.' + encodeURIComponent(orderId) +
     '&provider=eq.razorpay&select=' + select + '&limit=1');
   return (rows && rows[0]) || null;
-}
-
-// ---------------------------------------------------------------------------
-// APPLYING A MONTH TO WHAT THE MEMBER ALREADY HOLDS.
-//
-// The same block is in rzp.js, paypal.js, rzp-webhook.js and paypal-webhook.js,
-// which are the four paths that can settle a subscription. It used to be an
-// unconditional PATCH to { tier, now + 31 days } in all four, reading neither
-// the current tier nor the current expiry first:
-//
-//   buying a month with twenty days left gave thirty-one, not fifty-one, so
-//   twenty paid days were destroyed — and the plan copy invites exactly that
-//   purchase ("A single charge for 31 days. Nothing recurring");
-//
-//   buying Lite while holding Max dropped the daily quota from twenty to ten
-//   on the spot and took the remaining Max days with it.
-//
-// So: extend from whichever is later, now or the existing expiry, and never
-// come out of this holding a lower tier than went in. sub-order refuses a
-// downgrade before any money moves; this is the backstop for an order created
-// before an upgrade and settled after it, where the money is already taken and
-// the only wrong answer is to give less than was there before.
-const TIER_RANK = { lite: 1, premium: 2, max: 3 };
-
-async function applySubscription(env, userId, tier) {
-  let curTier = null, curExp = 0;
-  try {
-    const rows = await sbService(env, '/profiles?id=eq.' + userId +
-      '&select=subscription_tier,subscription_expires_at&limit=1');
-    const p = rows && rows[0];
-    const t = p && p.subscription_expires_at
-      ? new Date(p.subscription_expires_at).getTime() : 0;
-    // an expired subscription is not a subscription; it starts from today
-    if (t && t > Date.now()) { curTier = p.subscription_tier || null; curExp = t; }
-  } catch { /* unreadable — fall through to a plain month from now */ }
-
-  const from = Math.max(Date.now(), curExp);
-  const keep = (TIER_RANK[curTier] || 0) > (TIER_RANK[tier] || 0) ? curTier : tier;
-  await sbService(env, '/profiles?id=eq.' + userId, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      subscription_tier: keep,
-      subscription_expires_at: new Date(from + SUB_DAYS * 86400000).toISOString(),
-    }),
-  });
-  return keep;
 }
 
 // ---------------------------------------------------------------------------

@@ -30,6 +30,8 @@
 // Environment: SB_URL / SB_KEY. No service key: this endpoint reads a role and
 // serves text, and everything the text goes on to do is guarded again.
 
+import { sbUrl, sbAnon, sbUser } from '../lib/sb.js';
+
 // ---------------------------------------------------------------------------
 // Which tabs each role gets, and in the order they are useful. Reports leads
 // for a partner because it is the only queue they act on; telemetry leads for
@@ -971,19 +973,6 @@ const FOOT = `
 // ---------------------------------------------------------------------------
 // Supabase environment names. Two spellings are in use across this project and
 // both are accepted; see the same note in functions/api/payouts.js.
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
-
-async function sbUser(env, request) {
-  const bearer = request.headers.get('authorization') || '';
-  if (!bearer.startsWith('Bearer ')) return null;
-  const res = await fetch(sbUrl(env) + '/auth/v1/user', {
-    headers: { apikey: sbAnon(env), authorization: bearer },
-  });
-  if (!res.ok) return null;
-  const u = await res.json().catch(() => null);
-  return u && u.id ? u : null;
-}
 
 // Asked of Postgres, as the caller. Never read from a header, a query string
 // or anything else the browser is in a position to write.

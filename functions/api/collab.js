@@ -26,6 +26,9 @@
 //
 // Environment: SB_URL / SB_KEY, and SB_SERVICE_KEY for the broadcast only.
 
+import { sbUrl, sbAnon, sbSvc, sbUser, underLimit } from '../lib/sb.js';
+import { UUID_RE } from '../lib/http.js';
+
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), {
     status: s,
@@ -35,24 +38,6 @@ const json = (b, s = 200) =>
       'x-robots-tag': 'noindex, nofollow',
     },
   });
-
-// ---------------------------------------------------------------------------
-// Supabase environment names. Two spellings are in use across this project and
-// both are accepted; see the same note in functions/api/payouts.js.
-const sbUrl = (env) => env.SB_URL || env.SUPABASE_URL || '';
-const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
-const sbSvc = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-async function sbUser(env, request) {
-  const bearer = request.headers.get('authorization') || '';
-  if (!bearer.startsWith('Bearer ')) return null;
-  const res = await fetch(sbUrl(env) + '/auth/v1/user', {
-    headers: { apikey: sbAnon(env), authorization: bearer },
-  });
-  if (!res.ok) return null;
-  const u = await res.json().catch(() => null);
-  return u && u.id ? u : null;
-}
 
 // A refusal raised by a Postgres guard, turned into the status code it means.
 //
@@ -139,27 +124,12 @@ async function sbService(env, path, init = {}) {
   return res.json().catch(() => null);
 }
 
-// Fails OPEN, like the limiter in /api/payouts: a broken limiter should not
-// stop a partner reading their own wallet. The actions that could be abused at
-// speed are the ones with a Postgres-side uniqueness rule behind them anyway —
-// a code can only be created once whatever the limiter says.
-async function underLimit(env, bucket, limit, seconds) {
-  try {
-    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_rate_take', {
-      method: 'POST',
-      headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ p_bucket: bucket, p_limit: limit, p_seconds: seconds }),
-    });
-    if (!res.ok) return true;
-    return (await res.json()) !== false;
-  } catch { return true; }
-}
+// The limiter this file leans on fails OPEN (see functions/lib/sb.js), which is
+// the right trade here: a broken limiter should not stop a partner reading
+// their own wallet, and the actions that could be abused at speed are the ones
+// with a Postgres-side uniqueness rule behind them anyway — a code can only be
+// created once whatever the limiter says.
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
 
 // ---------------------------------------------------------------------------

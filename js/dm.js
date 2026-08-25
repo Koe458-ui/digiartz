@@ -12,8 +12,12 @@
   function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
   function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
   function escq (s) { // html escape
-    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-                    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    // String(), not (s || ''): a non-string argument reaches .replace as
+    // itself, and Number has none — the same shape that threw in
+    // js/app-core.js. Every other escaper in this bundle normalises first.
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
   function toast (m) { if (typeof showToast === 'function') showToast(m); }
   function when (iso) {

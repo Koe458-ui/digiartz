@@ -87,11 +87,19 @@
   // page open and close
   function openThemePage () {
     if (!page) return;
-    lastFocus = document.activeElement;
+    /* What to put back, and where to hand focus back to, are read on the open
+       that actually opens and not on a repeat. A second call while the page is
+       already up would record 'hidden' — the value this function itself wrote
+       — as the overflow to restore, so closing would leave the page locked
+       with nothing on screen holding it, and would hand focus to a card inside
+       the page it had just closed. */
+    if (!page.classList.contains('open')) {
+      lastFocus = document.activeElement;
+      prevOverflow.body = document.body.style.overflow;
+      prevOverflow.doc  = document.documentElement.style.overflow;
+    }
     syncCards(saved());
     page.classList.add('open');
-    prevOverflow.body = document.body.style.overflow;
-    prevOverflow.doc  = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
     var sel = cards.filter(function (c) { return c.tabIndex === 0; })[0];

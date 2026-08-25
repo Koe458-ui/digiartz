@@ -107,15 +107,19 @@
        is three pixels — but the shadow and the lift were not: together they
        said the thumbnail was an object resting on the page rather than the
        page's own content. The corner comes down to 4px, enough to soften the
-       crop and not enough to read as a rounded box. Hover is the picture
-       moving inside a still frame, and the frame brightening. */
+       crop and not enough to read as a rounded box. Hover is the frame
+       brightening, and nothing else: the picture used to scale under the
+       cursor and no longer does. A thumbnail that grows on approach crops
+       itself to do it — the work loses a sliver of its own edges at the
+       moment somebody looks at it — and across a grid of them the whole page
+       twitches as the pointer crosses. The overlay and the artist's name
+       still arrive on hover; the artwork holds still. */
     .gItem{position:relative;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);transition:border-color .3s;border-radius:4px;line-height:0;}
     .gItemLink{display:block;color:inherit;text-decoration:none;cursor:pointer;}
     .gItem:hover{border-color:var(--bdrh);}
-    .gItem img{width:100%;aspect-ratio:1;display:block;height:auto;object-fit:cover;transition:transform .4s;}
+    .gItem img{width:100%;aspect-ratio:1;display:block;height:auto;object-fit:cover;}
     /* shimmer keyframe */
     @keyframes imgShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    .gItem:hover img{transform:scale(1.03);}
     .gNm{display:none;}
     /* hover reveal */
     .awImgWrap{position:relative;}
@@ -164,9 +168,12 @@
       display:flex;align-items:center;justify-content:center;
       font-family:var(--fm);font-size:.9rem;line-height:1;color:#fff;
     }
-    /* artist avatar */
+    /* artist avatar. It used to need a rule holding it at transform:none —
+       the tile's hover scaled every img inside itself, this one included, and
+       a face bulging inside its own circle was the result. Nothing scales on
+       hover now, so the guard has nothing left to guard against and is gone
+       with the rule that made it necessary. */
     .gArtistAv img{width:100%;height:100%;aspect-ratio:1;object-fit:cover;display:block;}
-    .gItem:hover .gArtistAv img,.awCard:hover .gArtistAv img{transform:none;}
     .gArtistName,.gArtistHandle{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .gArtistName{
       font-family:var(--fd);font-weight:700;
@@ -524,15 +531,15 @@
     .dzGrid{display:grid;gap:var(--artGap);grid-template-columns:repeat(2,1fr);}
     @media(min-width:700px){ .dzGrid{grid-template-columns:repeat(3,1fr);} }
     /* Outline, no elevation, and 4px of corner rather than twelve — the same
-       box every tile on the site now takes. Hover moves the picture and
-       brightens the edge; nothing rises off the page. */
+       box every tile on the site now takes. Hover brightens the edge and
+       leaves the preview where it is; a listing's picture is what is being
+       sold, and cropping it on approach is not a way to show it. */
     .dzCard{display:flex;flex-direction:column;background:var(--sur);border:1px solid var(--bdr);border-radius:4px;overflow:hidden;text-align:left;cursor:pointer;transition:border-color .2s;}
     @media(hover:hover){
       .dzCard:hover{border-color:var(--bdrh);}
-      .dzCard:hover .dzThumb img{transform:scale(1.03);}
     }
     .dzThumb{position:relative;aspect-ratio:4/3;background:var(--sur2);display:flex;align-items:center;justify-content:center;overflow:hidden;}
-    .dzThumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s cubic-bezier(.22,1,.36,1);}
+    .dzThumb img{width:100%;height:100%;object-fit:cover;display:block;}
     .dzExt{font-family:var(--fm);font-size:.9rem;letter-spacing:.14em;color:var(--txd);}
     .dzBadge{position:absolute;top:.5rem;right:.5rem;background:color-mix(in srgb,var(--bg) 78%,transparent);border:1px solid var(--bdr);border-radius:999px;padding:.2rem .55rem;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);}
     .dzBody{padding:.7rem .8rem .85rem;display:flex;flex-direction:column;gap:.3rem;}

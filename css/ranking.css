@@ -478,9 +478,6 @@
       .awCard:hover{
         border-color:var(--bdrh);
       }
-      .awCard:hover .awImgWrap img{
-        transform:scale(1.03);
-      }
     }
     .awCard:active{transform:scale(.99);}
     .awImgWrap{
@@ -496,7 +493,6 @@
       height:100%;
       object-fit:cover;
       display:block;
-      transition:transform .42s cubic-bezier(.22,1,.36,1);
     }
     .awImgWrap.awLoading img{
       background:linear-gradient(90deg,var(--sur) 25%,var(--sur2) 50%,var(--sur) 75%);

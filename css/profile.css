@@ -334,9 +334,6 @@
       grid-template-columns:minmax(0,1fr);
     }
     @media(min-width:900px){ .pfAboutWrap{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.8rem 2.2rem;} }
-    .pfCard{
-      padding:0;
-    }
     .pfCardLbl{
       font-family:var(--fm);font-size:.66rem;font-weight:700;letter-spacing:.16em;
       text-transform:uppercase;color:var(--txd);margin-bottom:.7rem;

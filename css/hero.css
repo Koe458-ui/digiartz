@@ -1119,7 +1119,6 @@
     }
     @media(prefers-reduced-motion:reduce){
       .lgRow{transition:none;}
-      .lgRow:active{transform:none;}
       .lgRow:not(.lgReady) .lgAv{animation:none;}
     }
     @media(prefers-reduced-motion:reduce){

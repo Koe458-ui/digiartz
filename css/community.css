@@ -817,7 +817,13 @@
       cursor:pointer;
       transition:background .15s;
     }
-    .cmFriendList .cmFriendItem:last-child{border-bottom:0;}
+    /* The friend row's hairline is declared under the three page ids below, so
+       the rule that takes the last one off has to carry them too — a bare
+       .cmFriendList .cmFriendItem:last-child loses to an id and the list ends
+       on a rule the other three lists do not. */
+    #communityPage .cmFriendList .cmFriendItem:last-child,
+    #cmChatPanel .cmFriendList .cmFriendItem:last-child,
+    #frdPage .cmFriendList .cmFriendItem:last-child{border-bottom:0;}
     .cmFriendAvatar{
       width:46px;height:46px;border-radius:50%;flex-shrink:0;
       overflow:hidden;display:flex;align-items:center;justify-content:center;

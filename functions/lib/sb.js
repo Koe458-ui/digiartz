@@ -1,3 +1,5 @@
+import { encodePath } from './http.js';
+
 export const sbUrl  = (env) => env.SB_URL || env.SUPABASE_URL || '';
 export const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
 export const sbSvc  = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -21,6 +23,38 @@ export function peekJwt(token) {
     const pad = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
     return JSON.parse(atob(pad));
   } catch { return null; }
+}
+
+export async function sbService(env, path, init = {}) {
+  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
+    ...init,
+    headers: {
+      apikey: sbSvc(env),
+      authorization: 'Bearer ' + sbSvc(env),
+      'content-type': 'application/json',
+      prefer: 'return=representation',
+      ...(init.headers || {}),
+    },
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok) throw new Error('Database error (' + res.status + ')');
+  return body;
+}
+
+export async function signObject(sbUrlStr, svcKey, bucket, path, seconds) {
+  const res = await fetch(sbUrlStr + '/storage/v1/object/sign/' + bucket + '/' + encodePath(path), {
+    method: 'POST',
+    headers: {
+      apikey: svcKey,
+      authorization: 'Bearer ' + svcKey,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ expiresIn: seconds }),
+  });
+  const sig = await res.json().catch(() => null);
+  const signed = sig && (sig.signedURL || sig.signedUrl);
+  if (!res.ok || !signed) return '';
+  return signed.startsWith('http') ? signed : sbUrlStr + '/storage/v1' + signed;
 }
 
 export async function underLimit(env, bucket, limit, seconds) {

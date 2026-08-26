@@ -1,5 +1,5 @@
 import { sbUrl, sbSvc, ledger } from '../lib/sb.js';
-import { PLAN_TIERS, applySubscription } from '../lib/billing.js';
+import { PLAN_TIERS, applySubscription, recordEarning } from '../lib/billing.js';
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
@@ -37,43 +37,6 @@ async function signed(env, raw, signature) {
   return crypto.subtle.timingSafeEqual(a, b);
 }
 
-async function recordEarning(env, row, prov) {
-  if (row.kind !== 'marketplace' || !row.item_id) return;
-
-  const items = await sbService(env,
-    '/marketplace_items?id=eq.' + row.item_id + '&select=user_id&limit=1');
-  const sellerId = items && items[0] && items[0].user_id;
-  if (!sellerId || sellerId === row.user_id) return;
-
-  const made = await sbService(env, '/marketplace_earnings', {
-    method: 'POST',
-    headers: { prefer: 'return=representation,resolution=ignore-duplicates' },
-    body: JSON.stringify({
-      payment_id: row.id, item_id: row.item_id,
-      seller_id: sellerId, buyer_id: row.user_id,
-      gross_amount: Number(row.amount) || 0,
-      gateway_fee: (prov && prov.fee) || 0,
-      currency: row.currency,
-      promo_code_id: row.promo_code_id || null,
-      provider: 'razorpay',
-      status: 'available',
-    }),
-  }).catch(() => null);
-
-  const earning = Array.isArray(made) && made[0];
-  if (!earning) return;
-
-  await ledger(env, {
-    p_user: sellerId, p_type: 'sale_credit', p_direction: 'credit',
-    p_amount: Number(earning.net_amount) || 0, p_currency: row.currency,
-    p_source: 'razorpay',
-    p_provider_txn: (prov && prov.txn) || null,
-    p_provider_amount: (prov && prov.amount) || null,
-    p_provider_currency: (prov && prov.currency) || row.currency,
-    p_ref_table: 'payments', p_ref_id: row.id,
-  });
-}
-
 async function rowFor(env, orderId, select) {
   const rows = await sbService(env,
     '/payments?rzp_order_id=eq.' + encodeURIComponent(orderId) +
@@ -101,7 +64,7 @@ async function fulfil(env, orderId, payment) {
   });
   const first = Array.isArray(patched) && patched.length > 0;
 
-  await recordEarning(env, row, {
+  await recordEarning(env, 'razorpay', row, {
     txn: (payment && payment.id) || null,
     amount: Number.isFinite(paid) ? paid : null,
     currency: cur || row.currency,

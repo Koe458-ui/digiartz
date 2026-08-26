@@ -2097,6 +2097,11 @@
     d = d.slice(0, 160);
     return d.length >= 50 ? d : null;
   }
+  function dzSeoInto(row, title, summary, body, stamp){
+    row.seo_title = dzSeoTitle(title);
+    row.seo_description = dzSeoDesc(summary, body);
+    row.slug = slugify(title).slice(0,110) + '-' + String(stamp).slice(-6);
+  }
   async function dzAuthorBio(){
     if(!sb || !window.currentUser) return null;
     try{
@@ -2668,9 +2673,7 @@
         row.file_name = rf.name; row.file_ext = rf.ext; row.file_size = rf.size;
         row.file_count = rCount;
         row.dimensions = rDims;
-        row.seo_title = dzSeoTitle(val(sec,'title'));
-        row.seo_description = dzSeoDesc(val(sec,'summary'), val(sec,'description'));
-        row.slug = slugify(val(sec,'title')).slice(0,110) + '-' + String(stamp).slice(-6);
+        dzSeoInto(row, val(sec,'title'), val(sec,'summary'), val(sec,'description'), stamp);
         if(rp){ row.preview_url = rp.url; row.preview_storage_path = rp.path; }
         pendingMedia.push({ fileKind:'resourceFile', url:rf.url, path:rf.path, file:s.files.file });
         if(rp) pendingMedia.push({ imageKind:'resourceImage', url:rp.url, path:rp.path, file:s.files.preview });
@@ -2703,9 +2706,7 @@
         row.external_refs = dzRefList('dz_blog_external_refs').slice(0, 20);
         row.visibility = bVis;
         row.featured = val(sec,'featured') === true;
-        row.seo_title = dzSeoTitle(bTitle);
-        row.seo_description = dzSeoDesc(bExcerpt, body);
-        row.slug = slugify(bTitle).slice(0,110) + '-' + String(stamp).slice(-6);
+        dzSeoInto(row, bTitle, bExcerpt, body, stamp);
         row.read_minutes = dzReadMinutes(body);
         row.author_bio = await dzAuthorBio();
         row.published_at = bWhen ? new Date(bWhen).toISOString() : new Date().toISOString();
@@ -2800,9 +2801,7 @@
         row.featured = val(sec,'featured') === true;
         row.closing_date = val(sec,'closing_date') || null;
         row.internal_notes = val(sec,'internal_notes') || null;
-        row.seo_title = dzSeoTitle(val(sec,'title'));
-        row.seo_description = dzSeoDesc(val(sec,'summary'), val(sec,'description'));
-        row.slug = slugify(val(sec,'title')).slice(0,110) + '-' + String(stamp).slice(-6);
+        dzSeoInto(row, val(sec,'title'), val(sec,'summary'), val(sec,'description'), stamp);
         if(galRows.length) row.gallery = galRows;
         if(pendingSell.length){
           var totalBytes = 0;

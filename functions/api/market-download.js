@@ -1,8 +1,5 @@
-import { sbUrl, sbAnon, sbSvc, peekJwt } from '../lib/sb.js';
-import {
-  UUID_RE, sameOrigin, allowedHost, encodePath, json,
-  storedFileName, storedFileNameAscii
-} from '../lib/http.js';
+import { sbUrl, sbAnon, sbSvc, peekJwt, signObject } from '../lib/sb.js';
+import { UUID_RE, sameOrigin, allowedHost, json, downloadHeaders } from '../lib/http.js';
 
 const SIGN_TTL = 120;
 
@@ -58,20 +55,8 @@ export async function onRequestPost({ request, env }) {
     let src = '';
     if (path && bucket && !path.startsWith('/') && !path.includes('..')) {
       if (!SB_SVC) return json({ error: 'Downloads are not configured.' }, 503);
-      const sigRes = await fetch(
-        SB_URL + '/storage/v1/object/sign/' + bucket + '/' + encodePath(path), {
-          method: 'POST',
-          headers: {
-            apikey: SB_SVC,
-            authorization: 'Bearer ' + SB_SVC,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({ expiresIn: SIGN_TTL }),
-        });
-      const sig = await sigRes.json().catch(() => null);
-      const signed = sig && (sig.signedURL || sig.signedUrl);
-      if (!sigRes.ok || !signed) return json({ error: 'The file could not be prepared.' }, 502);
-      src = signed.startsWith('http') ? signed : SB_URL + '/storage/v1' + signed;
+      src = await signObject(SB_URL, SB_SVC, bucket, path, SIGN_TTL);
+      if (!src) return json({ error: 'The file could not be prepared.' }, 502);
     } else if (row.legacy_url) {
       src = String(row.legacy_url);
     }
@@ -82,17 +67,9 @@ export async function onRequestPost({ request, env }) {
     const fileRes = await fetch(src);
     if (!fileRes.ok || !fileRes.body) return json({ error: 'The file could not be fetched.' }, 502);
 
-    const type = row.mime || fileRes.headers.get('content-type') || 'application/octet-stream';
     return new Response(fileRes.body, {
       status: 200,
-      headers: new Headers({
-        'Content-Type': type,
-        'Content-Disposition': 'attachment; filename="' + storedFileNameAscii(name) + '"; ' +
-                               "filename*=UTF-8''" + encodeURIComponent(storedFileName(name)),
-        'Cache-Control': 'no-store, private',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Robots-Tag': 'noindex, nofollow',
-      }),
+      headers: downloadHeaders(name, row.mime || fileRes.headers.get('content-type')),
     });
 
   } catch (err) {

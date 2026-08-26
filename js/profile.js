@@ -377,9 +377,7 @@
       xpLoadInto('pfXpWrap', pf.profile.id, { leaderboard:true });
     }
     if(tab==='album') albLoadProfileTab();
-    if(tab==='resources') pfLoadResources();
-    if(tab==='blog') pfLoadBlog();
-    if(tab==='marketplace') pfLoadMarket();
+    if(tab==='resources' || tab==='blog' || tab==='marketplace') pfLoadList(tab);
   }
 
   function pfTabKey(e){
@@ -437,55 +435,56 @@
     return !!pf.profile && String(pf.profile.id) === String(forId);
   }
 
-  async function pfLoadResources(){
-    if(!pf.profile || pf.resLoaded) return;
-    var grid = document.getElementById('pfResGrid'), empty = document.getElementById('pfResEmpty');
-    if(!grid) return;
-    var forId = String(pf.profile.id);
-    if(empty) empty.style.display='none';
-    grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
-    try{
-      const{data,error}=await sb.from('resources')
-        .select('id,user_id,title,description,category,tags,file_storage_path,file_name,file_ext,file_size,preview_url,license,software,download_count,created_at')
-        .eq('user_id', pf.profile.id).eq('status','approved')
-        .order('created_at',{ascending:false}).limit(60);
-      if(error) throw error;
-      if(!pfStillOn(forId)) return;
-      var rows = data||[];
-      pf.resLoaded=true; pf.resRows=rows;
-      grid.innerHTML = rows.map(pfDzCard('resources')).join('');
-      if(empty) empty.style.display = rows.length ? 'none' : '';
-    }catch(e){
-      if(!pfStillOn(forId)) return;
-      grid.innerHTML=''; if(empty) empty.style.display='';
-      showToast('Couldn\u2019t load \u2014 try again');
-    }
-  }
-
-  async function pfLoadMarket(){
-    if(!pf.profile || pf.mktLoaded) return;
-    var grid = document.getElementById('pfMktGrid'), empty = document.getElementById('pfMktEmpty');
-    if(!grid) return;
-    var forId = String(pf.profile.id);
-    if(empty) empty.style.display='none';
-    grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
-    try{
-      const{data,error}=await sb.from('marketplace_items')
-        .select(typeof window.dzSelectFor === 'function'
+  var PF_LISTS = {
+    resources: {
+      table:'resources', host:'pfResGrid', empty:'pfResEmpty', loaded:'resLoaded', rows:'resRows',
+      select:function(){
+        return 'id,user_id,title,description,category,tags,file_storage_path,file_name,file_ext,file_size,preview_url,license,software,download_count,created_at';
+      },
+      html:function(rows){ return rows.map(pfDzCard('resources')).join(''); }
+    },
+    marketplace: {
+      table:'marketplace_items', host:'pfMktGrid', empty:'pfMktEmpty', loaded:'mktLoaded', rows:'mktRows',
+      select:function(){
+        return typeof window.dzSelectFor === 'function'
           ? window.dzSelectFor('marketplace')
-          : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
+          : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at';
+      },
+      html:function(rows){ return rows.map(pfDzCard('marketplace')).join(''); },
+      after:function(){ if(typeof window.dzExtras === 'function') window.dzExtras(); }
+    },
+    blog: {
+      table:'blog_posts', host:'pfBlogList', empty:'pfBlogEmpty', loaded:'blogLoaded', rows:'blogRows',
+      select:function(){
+        return 'id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at';
+      },
+      html:function(rows){ return rows.map(pfBlogRow).join(''); }
+    }
+  };
+
+  async function pfLoadList(kind){
+    var cfg = PF_LISTS[kind];
+    if(!pf.profile || pf[cfg.loaded]) return;
+    var host = document.getElementById(cfg.host), empty = document.getElementById(cfg.empty);
+    if(!host) return;
+    var forId = String(pf.profile.id);
+    if(empty) empty.style.display='none';
+    host.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
+    try{
+      const{data,error}=await sb.from(cfg.table)
+        .select(cfg.select())
         .eq('user_id', pf.profile.id).eq('status','approved')
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
       if(!pfStillOn(forId)) return;
       var rows = data||[];
-      pf.mktLoaded=true; pf.mktRows=rows;
-      grid.innerHTML = rows.map(pfDzCard('marketplace')).join('');
-      if(typeof window.dzExtras === 'function') window.dzExtras();
+      pf[cfg.loaded]=true; pf[cfg.rows]=rows;
+      host.innerHTML = cfg.html(rows);
+      if(cfg.after) cfg.after();
       if(empty) empty.style.display = rows.length ? 'none' : '';
     }catch(e){
       if(!pfStillOn(forId)) return;
-      grid.innerHTML=''; if(empty) empty.style.display='';
+      host.innerHTML=''; if(empty) empty.style.display='';
       showToast('Couldn\u2019t load \u2014 try again');
     }
   }
@@ -502,31 +501,6 @@
       '<div class="dzMeta" style="margin:.2rem 0 .3rem"><span>'+esc(H.ago(r.created_at))+'</span>'+
       '<span>'+esc(String(r.read_minutes||1))+' min read</span></div>'+
       '<div class="dzHint">'+esc(ex)+'</div></div></div>';
-  }
-
-  async function pfLoadBlog(){
-    if(!pf.profile || pf.blogLoaded) return;
-    var host = document.getElementById('pfBlogList'), empty = document.getElementById('pfBlogEmpty');
-    if(!host) return;
-    var forId = String(pf.profile.id);
-    if(empty) empty.style.display='none';
-    host.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
-    try{
-      const{data,error}=await sb.from('blog_posts')
-        .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at')
-        .eq('user_id', pf.profile.id).eq('status','approved')
-        .order('created_at',{ascending:false}).limit(60);
-      if(error) throw error;
-      if(!pfStillOn(forId)) return;
-      var rows = data||[];
-      pf.blogLoaded=true; pf.blogRows=rows;
-      host.innerHTML = rows.map(pfBlogRow).join('');
-      if(empty) empty.style.display = rows.length ? 'none' : '';
-    }catch(e){
-      if(!pfStillOn(forId)) return;
-      host.innerHTML=''; if(empty) empty.style.display='';
-      showToast('Couldn\u2019t load \u2014 try again');
-    }
   }
 
   function thumbStyle(x, y, z){

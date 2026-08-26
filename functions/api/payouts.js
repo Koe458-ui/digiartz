@@ -1,4 +1,4 @@
-import { sbUrl, sbAnon, sbSvc, sbUser, underLimit } from '../lib/sb.js';
+import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService, ledger } from '../lib/sb.js';
 import { toValue } from '../lib/money.js';
 
 const MIN_PAYOUT = {
@@ -79,36 +79,6 @@ async function sbRpc(env, request, fn, args = {}) {
   });
   if (!res.ok) throw new Error('Could not read your balance (' + res.status + ')');
   return res.json().catch(() => null);
-}
-
-async function sbService(env, path, init = {}) {
-  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
-    ...init,
-    headers: {
-      apikey: sbSvc(env),
-      authorization: 'Bearer ' + sbSvc(env),
-      'content-type': 'application/json',
-      prefer: 'return=representation',
-      ...(init.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error('Database error (' + res.status + ')');
-  return body;
-}
-
-async function ledgerAppend(env, args) {
-  try {
-    await fetch(sbUrl(env) + '/rest/v1/rpc/dz_ledger_append', {
-      method: 'POST',
-      headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(args),
-    });
-  } catch {   }
 }
 
 async function isAdmin(env, userId) {
@@ -533,7 +503,7 @@ export async function onRequestPost({ env, request }) {
           left -= Number(e.net_amount || 0);
         }
 
-        await ledgerAppend(env, {
+        await ledger(env, {
           p_user: req.user_id, p_type: 'payout_debit', p_direction: 'debit',
           p_amount: retired, p_currency: req.currency,
           p_source: 'paypal', p_provider_txn: bid,

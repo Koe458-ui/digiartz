@@ -48,6 +48,17 @@ export function json(obj, status, extra) {
   });
 }
 
+export function downloadHeaders(name, type) {
+  return new Headers({
+    'Content-Type': type || 'application/octet-stream',
+    'Content-Disposition': 'attachment; filename="' + storedFileNameAscii(name) + '"; ' +
+                           "filename*=UTF-8''" + encodeURIComponent(storedFileName(name)),
+    'Cache-Control': 'no-store, private',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Robots-Tag': 'noindex, nofollow',
+  });
+}
+
 export function storedFileName(name) {
   const clean = String(name || 'file').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 80);
   return clean || 'file';

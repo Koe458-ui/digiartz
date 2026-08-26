@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 
 const ORDER = ['base.css','hero.css','viewer.css','community.css','connect.css','ranking.css',
   'profile.css','admin.css','auth.css','panels.css','upload.css','widgets.css','overrides.css',

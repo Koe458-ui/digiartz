@@ -1,5 +1,3 @@
-/* admin panel, edit my work, notifications */
-    /* admin panel page */
     #admPage{
       position:fixed;inset:0;z-index:520;background:var(--bg);
       overflow-y:auto;transform:translateX(100%);
@@ -18,8 +16,6 @@
     .admBdy{margin:0 auto;box-sizing:border-box;padding:1.6rem var(--shellPad) 6rem;}
     @media(max-width:480px){.admBdy{padding:1.2rem var(--shellPad) 6rem;}}
 
-
-    /* tabs */
     #admPage .pfTabs{padding:0;border-bottom:1px solid var(--bdr);position:static;margin-bottom:.4rem;}
     #admPage .pfTabs::before{display:none;}
     #admPage .pfTab{position:relative;}
@@ -31,14 +27,11 @@
     }
     #admPage .pfPanel{padding:1.4rem 0 0;}
 
-    /* review cards */
     .admCard{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;}
-    /* thumbnail box */
     .admCardThumb{
       position:relative;width:100%;aspect-ratio:1/1;
       overflow:hidden;background:var(--sur2);
     }
-    /* square fallback */
     @supports not (aspect-ratio:1/1){
       .admCardThumb{height:0;padding-top:100%;}
     }
@@ -56,7 +49,6 @@
     }
     .admEmptyIcon{font-size:1.6rem;display:block;margin-bottom:.6rem;opacity:.6;}
 
-    /* broadcast composer */
     .admNotiLbl{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--tx);margin-bottom:.6rem;}
     .admNotiCompose{background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;padding:1rem;margin-bottom:1.6rem;}
     .admNotiInput,.admNotiTextarea{
@@ -79,7 +71,6 @@
     .admNotiSentMsg{font-family:var(--fb);font-size:.76rem;color:var(--txd);margin-top:.2rem;}
     .admNotiSentTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.06em;color:var(--txd);opacity:.65;margin-top:.35rem;}
 
-    /* edit my work page */
     #pfMyWorkPage{
       position:fixed;inset:0;z-index:520;background:var(--bg);
       overflow-y:auto;transform:translateX(100%);
@@ -104,8 +95,6 @@
     .mwDeleteBtn{background:none;color:#f87171;border:1px solid #7f1d1d;}
     .mwDeleteBtn:hover{background:rgba(220,38,38,.15);}
 
-
-    /* notifications page */
     #notifPage{
       position:fixed;inset:0;z-index:525;background:var(--bg);
       overflow-y:auto;transform:translateX(100%);
@@ -142,4 +131,3 @@
     .notifMsg{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-top:.2rem;line-height:1.45;word-break:break-word;}
     .notifTime{font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;color:var(--txd);opacity:.7;margin-top:.4rem;}
     .notifDot{position:absolute;top:.9rem;right:.9rem;width:8px;height:8px;border-radius:50%;background:var(--pg);}
-

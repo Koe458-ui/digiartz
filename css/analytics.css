@@ -1,34 +1,3 @@
-/* DigiArtz Analytics — the dashboard behind Profile → Settings → Activity
- *
- * Everything is prefixed `an`. The page shell borrows the shape every other
- * slide-in page uses (#bmPage, #xpPage): fixed, translated off to the right,
- * brought back by .open.
- *
- * TYPE SCALE. Seven variables, set on #anPage and re-set at the same three
- * breakpoints the rest of the site uses — 480 for phone, 640 for tablet, 1000
- * for desktop, the same ones css/profile.css sizes the settings menu at. A
- * dashboard is mostly labels, and sizing forty of them one at a time is how a
- * page ends up reading smaller than everything around it: change --an-fs-body
- * here and every row on the page moves with it. The values line up with the
- * site's own — .84–.9rem for a row of text, .68–.72rem for an all-caps card
- * title, around 1.1rem for a section heading.
- *
- * SERIES COLOURS ARE FIXED HEX, NOT TOKENS, AND NONE OF THEM IS PURPLE. The
- * site ships three themes — graydark, light, offwhite — and the accent token
- * means something different across them: near-white on the dark one, near
- * black on the two light ones. That is a fine button and an unreadable line on
- * a chart beside five others. A metric's colour has to mean the same thing on
- * every theme and stay legible on both a charcoal and a near-white ground, so
- * these six are chosen once and never swapped.
- *
- * They are the bright end of six hues an even distance apart — azure, red,
- * teal, amber, magenta, green — so no two lines on a six-line chart are ever
- * mistaken for one another, and every one of them holds its colour against a
- * charcoal card without going muddy. base.css's bare :root is the charcoal
- * theme itself now — it is the default, so the un-attributed document paints
- * it — and it carries no violet for anything here to reach for.
- */
-
 :root{
   --an-views:#00A6FF;
   --an-likes:#FF3D3D;
@@ -42,17 +11,14 @@
 }
 
 #anPage,#anListPage{
-  /* the scale — phone first, raised at 640 and again at 1000. The full-list
-     page is built from the same cards and rows, so it reads from the same
-     variables rather than keeping a second copy of them. */
-  --an-fs-micro:.64rem;   /* fact labels, sub-lines, the smallest thing here */
-  --an-fs-label:.68rem;   /* all-caps tracked card titles */
-  --an-fs-chip:.68rem;    /* nav chips, legend and sort buttons */
-  --an-fs-num:.78rem;     /* inline figures beside a label */
-  --an-fs-body:.84rem;    /* rows, names, anything read as a sentence */
-  --an-fs-big:1.2rem;     /* the number in a fact tile */
-  --an-fs-kpi:1.42rem;    /* the number in a KPI tile */
-  --an-fs-sec:1.12rem;    /* section heading */
+  --an-fs-micro:.64rem;
+  --an-fs-label:.68rem;
+  --an-fs-chip:.68rem;
+  --an-fs-num:.78rem;
+  --an-fs-body:.84rem;
+  --an-fs-big:1.2rem;
+  --an-fs-kpi:1.42rem;
+  --an-fs-sec:1.12rem;
 }
 #anPage{
   position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
@@ -77,14 +43,6 @@
   }
 }
 
-/* Solid, not glass. The header and the chip row under it are stacked against
-   the top of the page with the cards running beneath both, and anything short
-   of opaque turns the join between them into a bright seam that changes with
-   whatever is passing behind it. The fill is the page's own background, so the
-   header looks no different where there is nothing behind it. The blur layer
-   panels.css paints over the header is filled in the same way — it sits on top
-   of this background, so leaving it translucent would let the page through
-   again. */
 #anPage .subPgHdr{background:var(--bg)!important;border-bottom:1px solid color-mix(in srgb,var(--pg) 8%,var(--bg));}
 #anPage .subPgHdr::before{background:var(--bg)!important;backdrop-filter:none;-webkit-backdrop-filter:none;}
 #anPage .subPgTitle{color:var(--tx);}
@@ -95,7 +53,6 @@
           calc(5rem + env(safe-area-inset-bottom))
           max(var(--shellPad),env(safe-area-inset-left));
 }
-/* a 320px phone loses the side gutters before it loses a chart */
 @media(max-width:400px){
   .anBdy{padding-left:max(.7rem,env(safe-area-inset-left));padding-right:max(.7rem,env(safe-area-inset-right));}
   .anCard{padding:.9rem .85rem;}
@@ -104,12 +61,10 @@
   .anBdy{padding-top:1.6rem;}
 }
 
-/* ---- top bar ------------------------------------------------------------ */
 .anTop{
   display:flex;align-items:flex-end;justify-content:space-between;
   gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem;
 }
-/* the same clamp the profile sizes a display name with */
 .anHi{
   font-family:var(--fd);font-weight:800;color:var(--tx);
   font-size:clamp(1.35rem,4.6vw,1.9rem);letter-spacing:-.02em;line-height:1.15;
@@ -146,16 +101,10 @@
 }
 .anRange:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 
-/* ---- section jump chips ------------------------------------------------- */
 .anNav{
-  /* --an-hdr is measured from the real header in analytics.js: it is not the
-     same height on a phone as on a desktop, and a hardcoded offset either
-     hides the chips behind the bar or floats them below a gap */
   position:sticky;top:var(--an-hdr,52px);z-index:6;
   display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;
   padding:.6rem 0;margin-bottom:.9rem;
-  /* opaque for the same reason the header above it is: the two are stuck
-     together as one block and the cards pass under both */
   background:var(--bg);
   border-bottom:1px solid var(--bdr);
 }
@@ -169,12 +118,6 @@
 .anNavBtn:hover{color:var(--tx);border-color:var(--bdrh);}
 .anNavBtn.on{color:var(--text-on-accent);background:var(--pg);border-color:var(--pg);}
 
-/* ---- section + card ----------------------------------------------------- */
-/* Two things are stuck to the top of this page — the page header and the chip
-   row under it — so a heading jumped to by a chip has to clear BOTH or it
-   arrives tucked under the bar it was scrolled to by. Measured off the same
-   --an-hdr the chip row is positioned with, plus the chip row's own height and
-   a gap, rather than one hardcoded number that was right at one width. */
 .anSec{scroll-margin-top:calc(var(--an-hdr,52px) + 76px);margin:0 0 2.4rem;}
 .anSecHd{display:flex;align-items:baseline;gap:.6rem;margin:0 0 .9rem;flex-wrap:wrap;}
 .anSecTitle{font-family:var(--fd);font-weight:700;font-size:var(--an-fs-sec);color:var(--tx);letter-spacing:-.01em;}
@@ -187,15 +130,6 @@
 @media(min-width:1000px){ .anCard{padding:1.2rem 1.25rem;} }
 .anCardHd{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin-bottom:1rem;flex-wrap:wrap;}
 .anCardTitle{font-family:var(--fm);font-size:var(--an-fs-label);letter-spacing:.18em;color:var(--txd);text-transform:uppercase;}
-/* ONE GAP, SET IN ONE PLACE.
- *
- * Spacing between boxes used to be a margin on whichever card happened to
- * need one, which is how two boxes end up touching: the day a card is added
- * without the margin, or a grid lands next to a card, nothing separates them.
- * Every section body is a flex column with a fixed gap instead, so the
- * distance between any two boxes is the same distance and no card has to
- * remember anything. --an-gap is the only number involved.
- */
 #anPage,#anListPage{--an-gap:1.1rem;}
 @media(min-width:1000px){ #anPage,#anListPage{--an-gap:1.25rem;} }
 
@@ -204,17 +138,8 @@
 @media(min-width:860px){ .anGrid2{grid-template-columns:1fr 1fr;} }
 .anGrid2w{display:grid;gap:var(--an-gap);grid-template-columns:1fr;}
 @media(min-width:860px){ .anGrid2w{grid-template-columns:1.6fr 1fr;} }
-/* the flex gap above owns the spacing now; the class is kept because the
-   painters still tag the cards that used to carry a margin, and it must not
-   add a second one on top of the gap */
 .anStack{margin-top:0;}
 
-/* ---- 1. KPI tiles ------------------------------------------------------- */
-/* Six tiles, and every one of them shows the number in full — 238,393, not
-   238K. That is the constraint the sizing is built around: the value scales
-   with the viewport rather than sitting at one size, and it is allowed to
-   break onto a second line rather than be clipped, because a truncated total
-   is worse than a tall tile. */
 .anKpis{display:grid;gap:var(--an-gap);grid-template-columns:repeat(2,1fr);}
 @media(min-width:560px){ .anKpis{grid-template-columns:repeat(3,1fr);} }
 @media(min-width:1040px){ .anKpis{grid-template-columns:repeat(6,1fr);} }
@@ -248,11 +173,8 @@
 .anKpiSpark{height:36px;margin:.2rem -.25rem -.25rem;}
 .anKpiSpark svg{display:block;width:100%;height:100%;}
 
-/* ---- charts ------------------------------------------------------------- */
 .anChartWrap{position:relative;}
 .anChart{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y;}
-/* the size comes from analytics.js, which picks it from the measured width —
-   a hardcoded px here would win and undo that */
 .anAxis{font-family:var(--fm);font-size:inherit;fill:var(--txd);letter-spacing:.04em;}
 .anGridLine{stroke:var(--an-grid);stroke-width:1;}
 .anTip{
@@ -279,7 +201,6 @@
 .anLegBtn.off{opacity:.4;}
 .anLegBtn:hover{color:var(--tx);border-color:var(--bdrh);}
 
-/* ---- donut + legend ----------------------------------------------------- */
 .anDonutRow{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;}
 .anDonut{flex:0 0 auto;width:140px;height:140px;position:relative;}
 @media(min-width:1000px){ .anDonut{width:154px;height:154px;} }
@@ -295,7 +216,6 @@
 .anLegName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .anLegPct{margin-left:auto;color:var(--txd);font-variant-numeric:tabular-nums;white-space:nowrap;font-size:var(--an-fs-num);}
 
-/* ---- horizontal bars ---------------------------------------------------- */
 .anBars{display:flex;flex-direction:column;gap:.6rem;}
 .anBar{display:grid;grid-template-columns:minmax(78px,30%) 1fr auto;align-items:center;gap:.65rem;}
 .anBarLbl{
@@ -306,9 +226,6 @@
 .anBarFill{height:100%;border-radius:99px;background:var(--an-views);transition:width .5s cubic-bezier(.22,1,.36,1);}
 .anBarVal{font-family:var(--fm);font-size:var(--an-fs-num);color:var(--txd);font-variant-numeric:tabular-nums;white-space:nowrap;}
 @media (prefers-reduced-motion:reduce){ .anBarFill{transition:none;} }
-/* Under about 560px a three-column bar row cannot hold a label, a track and a
-   written-out figure without squeezing the track to nothing, so the label and
-   the figure share the top line and the track gets the width to itself. */
 @media(max-width:560px){
   .anBar{grid-template-columns:1fr auto;grid-template-areas:"lbl val" "trk trk";gap:.3rem .5rem;}
   .anBarLbl{grid-area:lbl;}
@@ -316,7 +233,6 @@
   .anBarTrack{grid-area:trk;}
 }
 
-/* ---- artwork performance rows ------------------------------------------ */
 .anSort{display:flex;gap:.35rem;flex-wrap:wrap;}
 .anSortBtn{
   background:transparent;border:1px solid var(--bdr);color:var(--txd);border-radius:999px;
@@ -338,7 +254,6 @@
   width:52px;height:52px;border-radius:9px;object-fit:cover;background:var(--sur2);
   display:block;
 }
-/* an artwork whose image failed or was never set: a tile, not a broken icon */
 .anArtNoThumb{
   width:52px;height:52px;border-radius:9px;background:var(--sur2);border:1px solid var(--bdr);
   display:grid;place-items:center;font-size:1rem;
@@ -368,9 +283,6 @@
   .anArtNums{padding-left:0;gap:.6rem;}
 }
 
-/* ---- view all ----------------------------------------------------------- */
-/* A button, centred under the ten rows it continues — not a full-width dashed
-   strip, which reads as a drop zone rather than something to press. */
 .anMore{
   display:block;width:fit-content;max-width:100%;margin:.5rem auto 0;
   background:var(--sur2);border:1px solid var(--bdr);color:var(--tx);
@@ -382,12 +294,9 @@
 .anMore:hover{border-color:var(--bdrh);background:var(--sur);}
 .anMore:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 
-/* the strip at the bottom of a lazy list: it is what the observer watches,
-   and it is the "loading" line while the next twenty are being added */
 .anSentinel{padding:.4rem 0 .2rem;}
 .anSentinel .anEmpty{padding:.9rem .6rem;}
 
-/* ---- the full list, on a page of its own -------------------------------- */
 #anListPage{
   position:fixed;inset:0;z-index:546;background:var(--bg);color:var(--tx);
   overflow-y:auto;transform:translateX(100%);
@@ -395,13 +304,11 @@
 }
 #anListPage.open{transform:translateX(0);}
 @media (prefers-reduced-motion:reduce){ #anListPage{transition:none;} }
-/* the full list is the same page with the same header, held to the same rule */
 #anListPage .subPgHdr{background:var(--bg)!important;border-bottom:1px solid color-mix(in srgb,var(--pg) 8%,var(--bg));}
 #anListPage .subPgHdr::before{background:var(--bg)!important;backdrop-filter:none;-webkit-backdrop-filter:none;}
 #anListPage .subPgTitle{color:var(--tx);}
 #anListBdy{display:flex;flex-direction:column;gap:var(--an-gap);}
 
-/* ---- hour heat ---------------------------------------------------------- */
 .anHeat{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;align-items:end;height:76px;}
 .anHeatCol{
   background:var(--an-views);border-radius:3px 3px 0 0;min-height:2px;opacity:.85;
@@ -411,10 +318,7 @@
 .anHeatAxis span{font-family:var(--fm);font-size:var(--an-fs-micro);color:var(--txd);letter-spacing:.04em;}
 @media (prefers-reduced-motion:reduce){ .anHeatCol{transition:none;} }
 
-/* ---- people lists ------------------------------------------------------- */
 .anPeople{display:flex;flex-direction:column;gap:.4rem;}
-/* a button when there is a profile behind it, a div when there is not — both
-   have to lay out identically, so the button is stripped back to one */
 .anPerson{
   display:flex;align-items:center;gap:.65rem;min-width:0;width:100%;
   background:transparent;border:1px solid transparent;border-radius:10px;
@@ -440,7 +344,6 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
 .anPersonSub{font-family:var(--fm);font-size:var(--an-fs-micro);color:var(--txd);letter-spacing:.04em;}
 .anPersonN{margin-left:auto;font-family:var(--fm);font-size:var(--an-fs-num);color:var(--pb);white-space:nowrap;}
 
-/* ---- small stat pairs --------------------------------------------------- */
 .anFacts{display:grid;gap:.6rem;grid-template-columns:repeat(2,1fr);}
 @media(min-width:640px){ .anFacts{grid-template-columns:repeat(4,1fr);gap:.7rem;} }
 .anFact{
@@ -459,10 +362,7 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 
-/* ---- search table ------------------------------------------------------- */
 .anTerms{display:flex;flex-direction:column;gap:.35rem;}
-/* the three number columns are sized for a written-out figure, not a rounded
-   one, and they widen with the viewport rather than clipping */
 .anTermHd,.anTerm{
   display:grid;
   grid-template-columns:minmax(0,1fr) minmax(58px,auto) minmax(58px,auto) minmax(50px,auto);
@@ -480,7 +380,6 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
 .anTermN{font-family:var(--fm);font-size:var(--an-fs-num);color:var(--txd);text-align:right;font-variant-numeric:tabular-nums;}
 .anTermN.hi{color:var(--pb);}
 
-/* ---- engagement ring ---------------------------------------------------- */
 .anRingRow{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;}
 .anRing{width:124px;height:124px;position:relative;flex:0 0 auto;}
 @media(min-width:1000px){ .anRing{width:138px;height:138px;} }
@@ -489,7 +388,6 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
 .anRingN{font-family:var(--fd);font-weight:800;font-size:var(--an-fs-big);color:var(--tx);line-height:1;}
 .anRingL{font-family:var(--fm);font-size:var(--an-fs-micro);letter-spacing:.14em;color:var(--txd);text-transform:uppercase;margin-top:.2rem;}
 
-/* ---- activity feed ------------------------------------------------------ */
 .anFeed{display:flex;flex-direction:column;gap:.5rem;}
 .anFeedRow{display:flex;align-items:center;gap:.6rem;min-width:0;}
 .anFeedIco{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:.76rem;flex:0 0 auto;}
@@ -500,7 +398,6 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
 .anFeedTxt b{font-weight:600;}
 .anFeedAt{margin-left:auto;font-family:var(--fm);font-size:var(--an-fs-micro);color:var(--txd);white-space:nowrap;}
 
-/* ---- goals -------------------------------------------------------------- */
 .anGoals{display:flex;flex-direction:column;gap:.75rem;}
 .anGoal{background:var(--sur2);border:1px solid var(--bdr);border-radius:12px;padding:.75rem .85rem;}
 .anGoalTop{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap;}
@@ -535,7 +432,6 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
 }
 .anGoalAdd:disabled{opacity:.5;cursor:default;}
 
-/* ---- achievements ------------------------------------------------------- */
 .anAch{display:grid;gap:.6rem;grid-template-columns:repeat(2,1fr);}
 @media(max-width:460px){ .anAch{grid-template-columns:1fr;} }
 @media(min-width:760px){ .anAch{grid-template-columns:repeat(3,1fr);} }
@@ -551,10 +447,6 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
 .anAchBar{height:5px;border-radius:99px;background:rgba(var(--tx2-rgb),.12);margin-top:.4rem;overflow:hidden;}
 .anAchBarFill{height:100%;border-radius:99px;background:var(--pg);}
 
-/* ---- comparisons -------------------------------------------------------- */
-/* The bar clips its fill, so the reference marks live in a wrapper around it
-   rather than inside it — labels under an overflow:hidden bar are labels
-   nobody ever sees, which is what the first version of this did. */
 .anCmpWrap{position:relative;margin:.7rem 0 2.9rem;}
 .anCmpBar{position:relative;height:38px;border-radius:10px;background:rgba(var(--tx2-rgb),.08);overflow:hidden;}
 .anCmpFill{height:100%;background:linear-gradient(90deg,rgba(0,166,255,.35),var(--an-views));border-radius:10px;}
@@ -567,7 +459,6 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
   font-family:var(--fb);font-size:var(--an-fs-body);color:var(--txd);margin-top:.2rem;
 }
 
-/* ---- states ------------------------------------------------------------- */
 .anEmpty{
   font-family:var(--fm);font-size:var(--an-fs-num);letter-spacing:.08em;color:var(--txd);
   text-align:center;padding:1.5rem .6rem;line-height:1.8;
@@ -582,20 +473,6 @@ button.anPerson:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
   font-family:var(--fm);font-size:var(--an-fs-chip);letter-spacing:.1em;text-transform:uppercase;
 }
 
-/* ---- the four themes ----------------------------------------------------
- * Everything above is written in tokens, so charcoal needs nothing: --sur,
- * --bdr, --tx and --txd already carry it. Paper is the one that needs saying
- * out loud, because two things in here are not tokens.
- *
- *   The shadows are tuned for a charcoal page. At 35% black under a white
- *   card they read as smudges rather than lift.
- *
- *   The series colours stay exactly as they are. They are picked to hold on
- *   both grounds, and swapping them per theme would mean "views" is one
- *   colour here and another there — the one thing a chart legend cannot
- *   survive. What does change is how much of them is washed over a pale
- *   background: the faint tracks go a shade stronger, or they disappear.
- */
 html[data-theme="light"] .anTip,
 html[data-theme="offwhite"] .anTip{box-shadow:0 10px 26px rgba(26,24,38,.14);}
 html[data-theme="light"] .anAchBarFill,
@@ -615,31 +492,20 @@ html[data-theme="offwhite"] .anAchCard{opacity:.62;}
 html[data-theme="light"] .anAchCard.done,
 html[data-theme="offwhite"] .anAchCard.done{opacity:1;}
 
-/* Charcoal makes the accent near-white, which is right for a button and wrong
-   for a thin border on a dark card. The chart azure marks these instead:
-   already on the page, already meaning "this is a measurement". */
 html[data-theme="graydark"] .anAchCard.done{border-color:rgba(0,166,255,.35);}
 html[data-theme="graydark"] .anAchBarFill{background:var(--an-views);}
 
-/* ---- devices ------------------------------------------------------------
- * The chart SVGs measure their own container and are redrawn on resize, so
- * they need no breakpoints. These are for the things CSS owns. */
-
-/* a phone held sideways has almost no height: the sticky chip row costs more
-   than it gives, and the sections should not each fill the viewport */
 @media(max-height:520px) and (orientation:landscape){
   .anNav{position:static;}
   .anSec{scroll-margin-top:calc(var(--an-hdr,52px) + 12px);margin-bottom:1.8rem;}
 }
 
-/* touch: the tap targets that were sized for a cursor */
 @media(hover:none){
   .anNavBtn,.anSortBtn,.anLegBtn{padding-top:.5rem;padding-bottom:.5rem;}
   .anGoalX{padding:.4rem .55rem;}
   .anArt{padding:.65rem .7rem;}
 }
 
-/* printing a dashboard is a real thing an artist does before a meeting */
 @media print{
   #anPage{position:static;transform:none;overflow:visible;}
   .anNav,.anRange,.anLive,.subPgHdr,.anSort,.anGoalNew,.anRetry{display:none!important;}

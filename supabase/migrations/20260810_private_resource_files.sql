@@ -1,41 +1,9 @@
--- Resource packages stop being public objects
---
--- The daily download budget reached resources one migration ago, but it capped
--- the button rather than the bytes: resources.file_url was a public storage url
--- printed into the page, so anyone who copied it could pull the file as often
--- as they liked and never touch the counter. A brush pack is the largest file
--- on the site, so that was the one hole worth closing.
---
--- This is the treatment artworks and sold marketplace files already have. The
--- object goes to the private bucket, the row keeps a bucket and a path instead
--- of a url, and the only route to the bytes is functions/api/resource-download,
--- which spends a unit of the caller's quota, signs a short-lived GET with the
--- service role, and streams the response from our own origin. The browser never
--- receives a url of any kind, so there is nothing to copy and nothing to share.
---
--- This is a good moment for it: public.resources has no rows, so no published
--- package is being taken away from anyone and no link that ever worked stops
--- working. Rows written before this — there are none, and this is written so
--- that if any appear from a backup they still work — keep their file_url and
--- are served through the same endpoint, so every downloader's path is one path.
-
 alter table public.resources
   add column if not exists file_storage_bucket text;
 
--- The url is what a resource no longer has. Existing rows keep whatever they
--- have; new ones write a bucket and a path and leave this null.
 alter table public.resources
   alter column file_url drop not null;
 
--- ---- the grant -----------------------------------------------------------
--- Runs AS THE CALLER, so auth.uid() is the downloader and no header the
--- browser sends can talk it out of the answer. Same order of checks as
--- dz_request_download and dz_request_item_download: refuse the cheap way
--- first, never charge someone for their own upload, mirror the read policy of
--- the table, then take a unit under a per viewer lock.
---
--- It returns a storage location, never a url. The endpoint signs what it is
--- handed; it does not get a say in what it may sign.
 create or replace function public.dz_resource_file_grant(
   p_resource uuid,
   p_ip       text default null
@@ -77,7 +45,6 @@ begin
 
   v_own := v_r.user_id = v_uid;
 
-  -- a draft or a hidden resource is still the uploader's own to fetch
   if not v_own and (v_r.status is distinct from 'approved'
                     or v_r.visibility is distinct from 'published') then
     return jsonb_build_object('allowed', false, 'reason', 'not_found');
@@ -103,8 +70,6 @@ begin
     insert into public.download_events (viewer_key, kind, subject_id)
     values (v_key, 'resource', p_resource);
 
-    -- the count on the card is what other people took, not what the uploader
-    -- fetched back
     update public.resources
        set download_count = coalesce(download_count, 0) + 1
      where id = p_resource;
@@ -127,19 +92,12 @@ end $function$;
 revoke all on function public.dz_resource_file_grant(uuid, text) from public;
 grant execute on function public.dz_resource_file_grant(uuid, text) to authenticated;
 
--- download_count is maintained by the grant above now, which runs as a definer
--- and is the only writer that should ever touch it. Nothing else did, and this
--- says so rather than leaving the column open to a client update.
 do $$
 begin
   if not exists (
     select 1 from pg_policies
      where schemaname='public' and tablename='resources' and policyname='resources_no_client_counter'
   ) then
-    -- no policy is added: resources' own update policy already limits a member
-    -- to their own rows, and a member inflating the count on their own resource
-    -- is not a threat worth a trigger. Noted here so the next reader does not
-    -- go looking for one.
     null;
   end if;
 end $$;

@@ -1,28 +1,9 @@
-/* detail view + desktop polish, keep last */
-/* detail views */
-
-/* artwork viewer full page */
-/* The artwork viewer is not here any more — all of it, overlay to columns,
-   is in css/viewer.css. This file loads last and won every disagreement with
-   that one, which is how the desktop layout came to live here at all; a fix
-   written in the file named after the viewer was then overruled by this one,
-   and a load where this file was late or missing lost the layout entirely.
-   One file owns it now. What is left below is the section viewer. */
-
-/* top bars */
 .dzvTop{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.1rem;border-bottom:1px solid var(--bdr);background:var(--bg);}
 .avNavTxt{background:none;border:0;padding:.35rem .2rem;margin:0;cursor:pointer;
   color:var(--tx);font-family:var(--fb);font-size:16px;font-weight:600;letter-spacing:.01em;}
 .avNavTxt:hover{color:var(--ps);}
 .avNavTxt:active{opacity:.7;}
-/* stacked images */
-/* The rail of thumbnails is gone and so are its rules. The work column
-   prints every picture in the set at the column's width now, so there is
-   nothing 72px square left to style. */
 
-/* hide while loading */
-
-/* comments and actions */
 .avCmBlock{display:flex;flex-direction:column;gap:.6rem;}
 .avCmList{display:flex;flex-direction:column;gap:.65rem;overflow-y:auto;}
 .avCmEmpty{font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;color:var(--txd);padding:.9rem 0;text-align:center;}
@@ -42,33 +23,23 @@
 .avActWide{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;min-height:46px;border-radius:10px;border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);font-family:var(--fm);font-size:.78rem;letter-spacing:.12em;cursor:pointer;text-decoration:none;box-sizing:border-box;}
 .avActWide:hover{border-color:var(--pg);color:var(--ps);}
 
-/* dzview overlay */
 #dzView{position:fixed;inset:0;z-index:1300;background:var(--bg);display:none;flex-direction:column;}
 #dzView.open{display:flex;}
 .dzvTop{flex-shrink:0;}
 .dzvBody{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:6rem;}
 .dzvMedia{background:transparent;box-sizing:border-box;text-align:center;}
-/* The picture is the way into the full view here too — one listener on
-   #dzView in js/gallery.js opens it for whichever of the four sections is
-   showing. The cursor is what says so. */
 .dzvMedia img{width:auto;max-width:min(1100px,100%);height:auto;max-height:calc(100dvh - 132px);object-fit:contain;display:inline-block;margin:0 auto;cursor:zoom-in;}
 .dzvCol{margin:0;display:flex;flex-direction:column;}
 .dzvTitle{font-family:var(--fd);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0;color:var(--tx);}
 .dzvExcerpt{font-size:1rem;color:var(--txd);line-height:1.55;margin:0;}
 .dzvDesc,.dzvArticle{font-size:.95rem;line-height:1.65;color:var(--tx);margin:0;overflow-wrap:anywhere;}
 .dzvArticle a{color:var(--ps);}
-/* A post's byline, its sources, and the work it points at. All three read as
-   footnotes to the article rather than as part of it, so they sit a step down
-   in weight — and every colour is a token, so they follow whichever theme is
-   on without a second definition. */
 .dzvAuthBio{font-size:.86rem;line-height:1.55;color:var(--txd);margin:-.5rem 0 0;}
 .dzvRefs{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:.3rem;}
 .dzvRefs li{font-size:.86rem;line-height:1.5;color:var(--txd);overflow-wrap:anywhere;}
 .dzvRefs a{color:var(--ps);}
 .dzvRelRow{display:flex;flex-wrap:wrap;gap:.6rem;}
 .dzvRelCard{width:118px;cursor:pointer;display:flex;flex-direction:column;gap:.35rem;}
-/* A related work is a picture in a footnote. It takes the same 4px crop every
-   other thumbnail on the site takes, and no frame around it. */
 .dzvRelCard img,.dzvRelNo{width:118px;height:88px;object-fit:cover;display:block;border-radius:4px;background:var(--sur2);}
 .dzvRelNm{font-size:.75rem;line-height:1.35;color:var(--txd);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .dzvRelCard:hover .dzvRelNm{color:var(--tx);}
@@ -77,15 +48,6 @@
   .dzvRelCard img,.dzvRelNo{height:72px;}
 }
 
-/* The extra preview shots on a marketplace listing. A strip that wraps rather
-   than a carousel, because a carousel hides most of what the seller uploaded
-   behind an arrow, and there are at most eight of them. Every colour here is
-   a token, so it follows whichever theme is on. */
-/* The extra shots are the rest of the set, so they are printed like the
-   first one: down the column the picture is in, at the column's width, in
-   order. They were a wrapped strip of 104px squares in the middle of the
-   writing, which put pictures where the reading is and made every one of
-   them a click away from being visible at a useful size. */
 .dzvGallery{display:flex;flex-direction:column;align-items:center;gap:var(--vwGap,1.5rem);margin-top:var(--vwGap,1.5rem);}
 .dzvGallery a{display:block;line-height:0;max-width:100%;}
 .dzvGallery img{
@@ -104,37 +66,15 @@
 .dzvBuyCard{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid var(--pg);border-radius:14px;padding:.9rem 1.1rem;background:color-mix(in srgb,var(--pg) 8%,var(--sur));}
 .dzvPrice{font-family:var(--fd);font-size:1.5rem;font-weight:800;color:var(--tx);}
 .dzvBuyCard .dzBuy{margin-top:0;min-height:46px;padding:12px 22px;font-size:14px;border-radius:10px;}
-/* ── the chrome, on the shell's edges ────────────────────────────────────
-   The gallery's filter popover is chrome rather than content, but it is
-   pinned to a window edge and reads as loose the moment the content beside
-   it starts 10% in. It takes the shell's edge too.
-   The brand badge and the bell were here for the same reason. Both are
-   inside #dzTop now, which is a band spanning the window with the shell's
-   padding on it — so they are on that line by being in it. */
 @media (min-width:641px){
   #fgFltPanel{ right:var(--shellPad); }
 }
 
-/* ── every page's top bar starts where its content does ──────────────────
-   A title or a back arrow sitting 1.5rem from the glass while the work under
-   it starts 10% in is the single clearest tell that a layout is a card on a
-   page rather than the page. Each of these bars runs the full width — they
-   carry a rule or a blur that has to reach both edges — so it is only their
-   padding that moves onto the shell. */
 .subPgHdr{ padding-inline:var(--shellPad); }
 .dzvTop{ padding-inline:var(--shellPad); }
 
-/* ── the pitch, opened out ───────────────────────────────────────────────
-   760px is a phone's measure. From the tablet up the pitch takes the shell's,
-   like everything else on the page — otherwise the headline starts 16px
-   inside the tabs above it and the thumbnails below it. On a desktop it
-   becomes what it actually is: a statement and the three things behind it,
-   standing side by side across the full width, with the headline free to grow
-   to the size a wall that wide can carry. */
 @media (min-width:768px){
   .hpInner{ max-width:none; }
-  /* Room for the brand paragraph to be a paragraph. 230px is three words a
-     line, which reads as a stack of fragments on a wall this wide. */
   .ftBrandDesc{ max-width:34ch; }
 }
 @media (min-width:1024px){
@@ -149,8 +89,6 @@
     grid-column:1; grid-row:1 / span 2;
     margin:0;
     font-size:clamp(3rem,4.4vw,4.6rem);
-    /* a headline this size is read in one sweep, so it wants the tighter
-       tracking and the shorter leading a poster head has */
     line-height:1.04; letter-spacing:-.03em;
   }
   .hpList{
@@ -162,38 +100,8 @@
   .hpCta{ grid-column:2; grid-row:2; justify-self:start; }
 }
 
-/* ── the two viewers, side by side ───────────────────────────────────────
-   An artwork and a section item read the same way on a phone: who made it,
-   the work, then everything about it, straight down one column. That is right
-   for a screen you hold and wrong for one you sit in front of — the picture
-   ends up a third of the window with a column of metadata stretched under it,
-   and the work, which is the whole point, is the smallest thing on screen.
-
-   From the desktop breakpoint the two swap into the shape a gallery uses: the
-   work on the left taking whatever is left after the notes, the artist at the
-   head of the right column, and the notes under them. The two sides are two
-   scrollers, not one — the page itself does not scroll at all. Reading to the
-   bottom of the comments does not drag the picture off the top of the screen,
-   and a stack of images can be scrolled through without the notes moving. Each
-   stops at its own end, and overscroll-behavior keeps the one you are in from
-   handing the rest of its gesture to the other.
-
-   The image is no longer capped at 1100 either: the only limit on it is one
-   screen's height, so a wide screen shows a bigger picture rather than more
-   ground around the same one.
-
-   #dzView keys off :has(), because a post with no lead image has nothing to
-   put in the left column and has to stay a single column. A browser without
-   :has() gets the stacked layout, which is not a broken page — it is the
-   phone's page on a big screen. */
 @media (min-width:900px){
-  /* ---- the section viewer: resources, blog, marketplace, jobs ---- */
   .dzvBody{ padding-inline:var(--shellPad); }
-  /* Two columns are for a listing, whose picture is the point. A job, a blog
-     post and a resource are writing with a picture at the top of it, and a
-     column of prose beside a column of one image reads as a page that has
-     been split for no reason — so those three stay single-column at every
-     width, with a measure on the writing. */
   #dzView[data-sec="blog"] .dzvBody,
   #dzView[data-sec="jobs"] .dzvBody,
   #dzView[data-sec="resources"] .dzvBody{
@@ -230,18 +138,11 @@
     overflow-y:auto; overscroll-behavior:contain;
     padding:var(--vwGap) 0 4rem;
   }
-  /* Nothing to stand beside, so it stays one column — and a column of prose
-     keeps a measure, because a 1600px line is not a line anyone reads. */
   .dzvBody:not(:has(.dzvMedia)) .dzvCol{
     max-width:900px; margin-inline:auto; padding-inline:0;
   }
 }
 
-/* ── the level panel, across the shell ───────────────────────────────────
-   Five stacked cards at 640px is the right shape for a phone and a very odd
-   one for a wall: on the shell the stack becomes two columns, with the rank
-   and its progress bar spanning both because that is the one card the page
-   is actually about. */
 @media (min-width:1024px){
   .xpWrap{
     max-width:none;
@@ -256,29 +157,12 @@
   .xpWrap{ grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 
-/* desktop polish */
 @media (min-width:1280px){
 
-  /* Columns only. The measure is the shell's — every one of these grids
-     already takes --shellPad from the band it sits in, and a cap here would
-     pull the thumbnails in off the edge the bars above them land on.
-
-     The gap used to be set here too, at 20px, 22px and 24px as the screen
-     grew. It is --artGap now — 5px on any desktop — and it is set once, in
-     css/base.css, so a thumbnail is never widened at one breakpoint and
-     narrowed at the next by a number written in a second file. .dzGrid used
-     to be the exception — its cards carry a name, a price and a line of meta,
-     so it kept desktop gaps of its own, 20px to 24px, stated here. It does
-     not any more: a listing sat in a different rhythm from a thumbnail, and
-     switching between the two sections was the two rhythms swapping under
-     you. One gap, --artGap, for every grid on the site. */
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
     grid-template-columns:repeat(4,1fr);
   }
-  /* .dzList had a desktop gap of its own when its rows were boxes. They are
-     hairline-separated rows now and the gap is theirs to not have. */
 
-  /* text sizes */
   .dzName{ font-size:15px; line-height:1.4; }
   .dzMeta{ font-size:12.5px; letter-spacing:.06em; gap:.2rem .7rem; }
   .dzChip{ font-size:12px; letter-spacing:.07em; padding:.22rem .6rem; }
@@ -294,7 +178,6 @@
   .upField label{ font-size:13px; }
   .upIn, .upField textarea, .upField select{ font-size:15px; }
 
-  /* button hit targets */
   .upBtnPri, .dzBuy, .subBtn, .hpCta{
     min-height:46px;
     font-size:14px;
@@ -306,52 +189,35 @@
   .hpCta{ font-size:15px; border-radius:999px; padding:12px 24px; }
 }
 
-/* desktop 1440 */
 @media (min-width:1440px){
   .awGrid, .fgGrid, .pfGridArt, .dzGrid{
     grid-template-columns:repeat(5,1fr);
   }
 }
 
-/* ultrawide 1920 */
 @media (min-width:1920px){
 }
 
-/* title color */
-
-/* home section headings */
 .secT{ color:var(--pg); }
 
-/* sub page headers */
 .subPgTitle{ color:var(--pg); }
 
-/* subscription headline */
-/* the upload page's headline — Upload Artwork, Share a Resource, Post a Job.
-   It reads in the blue the profile's Edit Profile button wears, set as
-   --upTitle beside the page's other tokens. */
 .subPgHeadline h2{ color:var(--upTitle,var(--pg)); }
 .faqTitle{ color:var(--pg); }
 
-/* panels and modals */
 .spTitle,
 .albModTitle,
 .tgModTitle,
 .pfShareTitle,
 .fltPH h3{ color:var(--pg); }
 
-/* section labels */
 .upDraftTitle,
 .dmConvoHead{ color:var(--pg); }
 
-/* connect divider */
 .cLbl{ color:var(--pg); }
 
-/* rank title */
 .xpRankTitle{ color:var(--pg); }
 
-/* upload calendar */
-
-/* schedule hour minute */
 .upSchedSel{
   appearance:none;-webkit-appearance:none;-moz-appearance:none;
   padding:.32rem 1.35rem .32rem .5rem;
@@ -364,7 +230,6 @@
 .upSchedSel:focus{outline:none;border-color:var(--pg);}
 .upSchedSel option{background:var(--sur2);color:var(--tx);}
 
-/* date field icon */
 input[type=date].upIn::-webkit-calendar-picker-indicator{
   opacity:.55;
   cursor:pointer;
@@ -373,20 +238,17 @@ input[type=date].upIn::-webkit-calendar-picker-indicator{
 input[type=date].upIn:hover::-webkit-calendar-picker-indicator,
 input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 
-/* section upload sidebar */
 .dzUpWrap{ display:grid; grid-template-columns:1fr; gap:1.5rem; align-items:start; }
 .dzUpForm{ min-width:0; }
 .dzUpSide{ display:flex; flex-direction:column; gap:1.3rem; min-width:0; }
 .dzUpWrap>*{ min-width:0; }
 
-/* text tile */
 .dzPCard{ background:rgba(var(--pg-rgb),.045); }
 .dzPSched{ cursor:default; }
 .dzPSched:hover{ transform:none; }
 .dzPIn{
   position:absolute; inset:0; overflow:hidden; text-align:left;
   display:flex; flex-direction:column; gap:.3rem;
-  /* clear close mark */
   padding:1.9rem .6rem .6rem;
 }
 
@@ -404,16 +266,8 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 }
 .dzPKind{ font-family:var(--fm); letter-spacing:.05em; text-transform:capitalize; color:var(--pg); }
 .dzPMeta span:last-child{ text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-/* failed schedule */
 .dzPMeta span.dzPErr{ color:var(--danger); white-space:normal; line-height:1.3; }
 
-/* ── one set of measurements for all five viewers ─────────────────────────
-   The artwork viewer's side panel and the four section views' column grew
-   their own padding and their own gaps, so the same card sat at a different
-   inset depending on which of them you opened. One pair of tokens now, one
-   step down on a phone, and both columns read off them — so every viewer has
-   the same space from the left, the same from the right, and the same
-   distance between the things in it, at every width. */
 :root{ --vwGap:1.5rem; --vwPad:var(--shellPad); }
 @media(max-width:520px){ :root{ --vwGap:1.2rem; } }
 @media(min-width:1100px){ :root{ --vwGap:1.6rem; } }
@@ -422,48 +276,14 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   gap:var(--vwGap);
   padding:var(--vwPad) var(--vwPad) 4rem;
 }
-/* The media above a section view takes the same inset as the column under
-   it, instead of a clamp that drifted from it at every width. */
 .dzvMedia{ padding:var(--vwPad) var(--vwPad) 0; }
 
-/* Comments run down the page now rather than inside a 340px window of their
-   own: the page already scrolls, the newest is at the top, and the rest
-   arrive twenty at a time on the button below them. A scroller inside a
-   scroller was hiding the button that loads them. */
 .avCmList{ max-height:none; overflow:visible; padding-right:0; }
 
-/* a line in the cart: the listing's own card, and the way to take it out */
 .dzCartCell{ display:flex; flex-direction:column; gap:.5rem; }
 .dzCartRm{ align-self:stretch; text-align:center; }
 
-/* ── the ad slot ──────────────────────────────────────────────────────────
-   One slot, in the four detail views that have comments — an artwork, a
-   resource, a post, a listing — sitting between the tags and the comments.
-   It is drawn at a desktop banner's proportions on purpose: 728 wide is the
-   size the network actually has inventory for, and holding the box there
-   rather than at the column's full width keeps the ad from stretching to 860
-   on a wide screen and reading as part of the page.
-
-   The label is fixed and always drawn: a reader is told what the box is
-   before they are told whether anything is in it. The rule either side of
-   the word is what marks the block off from the tags above it, so the slot
-   needs no divider of its own.
-
-   Height is a floor, not a fixed figure. 90px is a leaderboard, so an empty
-   slot occupies exactly what a filled one would and the comments underneath
-   do not jump when an ad arrives; a taller unit is free to take the room it
-   needs. On a phone the floor drops to 60, which is the mobile banner. */
-/* The artwork viewer's slot is a container the script writes into, and its
-   column is a flex stack with a gap — so an empty one would still push the
-   comments down by a gap it never earned. On Max, where nothing is written
-   into it, it takes no room at all. */
 #avAdSlot:empty{ display:none; }
-/* The label and the ad are one block, so they take one measure. Both are
-   held to 728 and centred in the column: before this the label ran the full
-   width of the column and the box was held at 728 inside it, so the rule
-   either side of the word overshot the ad it was labelling by 28px at each
-   end. Two centred things with different widths do not read as centred —
-   they read as misaligned — even though both were, to the pixel. */
 .dzAd{ display:flex; flex-direction:column; align-items:center; gap:.7rem; }
 .dzAdLbl{
   width:100%; max-width:728px;
@@ -473,11 +293,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 }
 .dzAdLbl::before,
 .dzAdLbl::after{ content:''; flex:1 1 auto; height:1px; background:var(--bdr); }
-/* Letter-spacing is applied after every character including the last, so a
-   centred word carries one space-width of nothing on its right and sits that
-   much left of true centre. Pulling the trailing space back off the flex item
-   puts the glyphs themselves in the middle, which is where the eye measures
-   from. Same reason on the placeholder below. */
 .dzAdLbl span{ flex:0 0 auto; margin-right:-.28em; }
 .dzAdBox{
   position:relative;
@@ -487,10 +302,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   overflow:hidden;
 }
 .dzAdBox ins.adsbygoogle{ display:block; width:100%; }
-/* What stands in the box until the network fills it. The site is not
-   approved for ads yet, so today this is what every slot shows — said
-   plainly rather than left as an unexplained empty rectangle. It is taken
-   out the moment an ad lands, which is the one thing data-filled marks. */
 .dzAdNone{
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
@@ -500,10 +311,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   border:1px dashed var(--bdr); border-radius:10px;
   pointer-events:none;
 }
-/* Dead centre of the whole slot, on both axes, whatever size the slot is:
-   inset:0 makes this box the ad's box exactly, so it centres in the 728x90
-   a desktop gets and in the narrower one a phone gets, and it follows the
-   box if a taller unit grows it. */
 .dzAdNone span{ margin-right:-.22em; }
 .dzAdBox[data-filled] .dzAdNone{ display:none; }
 @media(max-width:520px){

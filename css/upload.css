@@ -1,35 +1,12 @@
-/* upload popup */
-
-    /* ---- the upload page's palette ---------------------------------------
-       One named colour per role, so a chip, its guide sheet and the detail
-       rows on its form all draw from the same jar and a change lands in one
-       place. The values are set for the ground they sit on: on charcoal they
-       take the light, luminous step, and on paper they take the saturated
-       one, because the same hex cannot be bright on both. Every use is a glyph, a chip edge or a tint —
-       never type on a fill, which is why the button colours are not in here. */
     :root{
       --upcViolet:#A78BFA; --upcGreen:#4ADE80; --upcBlue:#60A5FA;
       --upcAmber:#FBBF24;  --upcPink:#F472B6;  --upcCyan:#22D3EE;
       --upcTeal:#2DD4BF;   --upcOrange:#FB923C;--upcPurple:#C084FC;
       --upcRose:#FB7185;   --upcYellow:#FCD34D;--upcLilac:#C4B5FD;
-      /* Two steps the gallery's chip row owned and this palette had no name
-         for. A section is one colour across the site: --upcSky is Jobs,
-         --upcIndigo is Blog. They were read off the --fgA values on the
-         gallery's tab rail, which no longer exists — the bar's Explore and
-         Upload menus draw the five sections from these instead, so this block
-         is the authority on them now rather than a copy of one. Marketplace
-         needed no new name: the rail's orange was --upcOrange, already here. */
       --upcSky:#38BDF8;    --upcIndigo:#818CF8;
-      /* the ready mark's word is 9px, so it needs its own darker step where
-         the tint it sits in is pale */
       --upcGreenInk:#4ADE80;
       --upcReq:#F87171;
     }
-    /* The one theme that moves these. The default ground is charcoal, so the
-       block above takes the luminous step; only paper needs the saturated
-       one. This is the split the gallery's own chip row used for the very same
-       colours before that row was removed, so the two agreed under both themes
-       rather than under only one. */
     html[data-theme="light"],
     html[data-theme="offwhite"]{
       --upcViolet:#7C3AED; --upcGreen:#16A34A; --upcBlue:#2563EB;
@@ -42,21 +19,16 @@
     }
 
     .upPop{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:.9rem;opacity:0;pointer-events:none;transition:opacity .25s ease;isolation:isolate;}
-    /* blur layer */
     .upPop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:-1;}
     .upPop.open{opacity:1;pointer-events:auto;}
     .upPopBox{background:var(--sur);border:1px solid rgba(var(--pg-rgb),.28);border-radius:16px;width:100%;max-width:960px;max-height:min(90vh,780px);max-height:min(90dvh,780px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);}
     .upPopX{background:rgba(var(--pg-rgb),.06);border:1px solid rgba(var(--pg-rgb),.1);color:rgb(var(--tx2-rgb));width:32px;height:32px;border-radius:8px;cursor:pointer;flex-shrink:0;font-size:.85rem;line-height:1;transition:background .2s,color .2s;}
     .upPopX:hover{background:rgba(var(--pg-rgb),.2);color:var(--tx);}
-    /* single column */
     .upPopBody{overflow-y:auto;padding:1.3rem;display:grid;grid-template-columns:1fr;gap:1.3rem;}
-    /* form actions — outside the card now, so the publish button reads as the
-       page's one act rather than as the last row of the form */
     .upActions{display:flex;flex-direction:column-reverse;gap:.7rem;margin-top:1.2rem;}
     .upActions button{width:100%;}
     .upActions .upBtnPri{padding:1rem 1.35rem;border-radius:14px;font-size:.95rem;letter-spacing:.01em;}
 
-    /* upload page mode */
     #pfUpMod{
       z-index:600;display:block;padding:0;opacity:1;
       background:var(--bg);overflow-y:auto;
@@ -66,7 +38,6 @@
     }
     #pfUpMod::before{display:none;}
     #pfUpMod.open{visibility:visible;pointer-events:auto;transform:translateX(0);transition-delay:0s,0s;}
-    /* dark scoping */
     #pfUpMod,#pfUpMod *{
       --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
       --tx:var(--vtx);--txd:var(--vtxd);
@@ -74,27 +45,12 @@
       --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
       --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
     }
-    /* The viewer scope this page borrows is deliberately colourless, because a
-       page showing artwork should let the artwork carry the colour. This page
-       shows a form, so it takes the brand's violet back — the dropzone, the
-       publish button and the tag chips all read from it.
 
-       A fill and the type on it are one decision, so they are set together.
-       Over charcoal the fill is the bright violet and its label is ink,
-       because white on a violet that bright falls to about 2.7:1. Over
-       paper's white the fill is the saturated violet and its label is white,
-       for the same reason in reverse — the pair flips, and nothing that sits
-       on a fill reads from anywhere else. */
     #pfUpMod,#pfUpMod *,.upGdPop,.upGdPop *{
       --pg:#A78BFA;--pgd:#B49BFF;--pb:#C4B5FD;--ps:#C4B5FD;
       --pg-rgb:167,139,250;--pgd-rgb:180,155,255;
       --pdim:rgba(167,139,250,.16);
       --text-on-accent:#1A1526;
-      /* The headline's blue. Edit Profile wears #2563EB as a button fill with
-         white on it, where it reads bright; as type on this page's charcoal
-         it goes muted, so charcoal takes the step above it and paper — where
-         the ground is pale, like the button's own white — takes the profile's
-         exact value. */
       --upTitle:#3B82F6;
     }
     html[data-theme="light"] #pfUpMod,
@@ -111,9 +67,6 @@
       --text-on-accent:#FFFFFF;
       --upTitle:#2563EB;
     }
-    /* The upload sheet's title bar, drawn to the profile's and the gallery's
-       pattern: the page's own mark and name on the left, its one control on
-       the right. The (i) opens the guidelines for the open tab. */
     .upTopBar{
       position:sticky;top:0;z-index:12;
       min-height:3.5rem;
@@ -129,7 +82,6 @@
     }
     .upTopL{display:flex;align-items:center;gap:.6rem;min-width:0;}
     .upTopR{display:flex;align-items:center;gap:.15rem;flex:0 0 auto;}
-    /* the way out, in the slot the page's gradient mark used to hold */
     .upTopBack{margin-left:-.55rem;}
     .upTopTitle{
       font-family:var(--fd);font-weight:800;
@@ -155,34 +107,23 @@
       max-width:none;margin:0;max-height:none;min-height:100%;overflow:visible;
       display:block;
     }
-    /* body padding — one column at every width, so on a wide screen the column
-       is capped and centred rather than stretched across the whole desk */
-    /* 10% was the shell before there was one, and it never capped: on an
-       ultrawide the form kept growing past the width every other page stops
-       at. The token is the same 10% on a desktop and holds at --shellMax. */
     #pfUpMod .upPgBdy{padding:3.5rem var(--shellPad) 7.5rem;max-width:none;margin:0 auto;box-sizing:border-box;}
     @media(max-width:1200px){#pfUpMod .upPgBdy{padding:3rem var(--shellPad) 7rem;}}
     @media(max-width:900px){#pfUpMod .upPgBdy{padding:2.5rem var(--shellPad) 7rem;}}
     @media(max-width:640px){#pfUpMod .upPgBdy{padding:2rem 1.2rem 6.5rem;}}
     @media(max-width:420px){#pfUpMod .upPgBdy{padding:1.8rem 1rem 6rem;}}
-    /* last, so it wins over the padding steps above it */
     @media(min-width:980px){#pfUpMod .upPgBdy{padding:3.5rem 1.5rem 7.5rem;max-width:860px;}}
     #pfUpMod .upPopBody{overflow:visible;padding:0;}
-    /* one column layout */
     #pfUpMod .upMain{display:grid;grid-template-columns:1fr;gap:0;align-items:start;}
-    /* drafts rail */
     .upOpt{font-size:.6rem;font-weight:600;color:rgba(var(--tx2-rgb),.45);text-transform:uppercase;letter-spacing:.12em;margin-left:.35rem;}
     .upSchedHint{font-size:.68rem;color:rgba(var(--tx2-rgb),.5);margin-top:.35rem;}
     .upSchedHint.bad{color:var(--danger);}
-    /* schedule input */
-    /* draft preview modal */
     .upPv{z-index:20010;}
     .upPvHead{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem 1.1rem;border-bottom:1px solid rgba(var(--pg-rgb),.08);flex-shrink:0;}
     .upPvKind{font-family:var(--fm);font-size:.62rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--txd);}
     .upPvBody{overflow-y:auto;padding:1.1rem;display:grid;grid-template-columns:1fr;gap:1.1rem;}
     @media(min-width:760px){.upPvBody{grid-template-columns:1.1fr 1fr;align-items:start;}}
     .upPvImgWrap{background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.1);border-radius:12px;overflow:hidden;line-height:0;}
-    /* full image */
     .upPvImgWrap img{width:100%;max-height:60vh;object-fit:contain;display:block;}
     .upPvRow{margin-bottom:.9rem;}
     .upPvRow:last-child{margin-bottom:0;}
@@ -195,7 +136,6 @@
     .upPvWhen b{color:var(--pg);}
     .upPvWhen.bad{color:var(--danger);}
     @media(max-width:519px){.upPvFoot button{width:100%;}.upPvWhen{width:100%;margin:0 0 .2rem;}}
-    /* schedule picker */
     #pfUpSchedTrigger{font-family:var(--fm);letter-spacing:.04em;}
     .upSchedPh{color:rgba(var(--tx2-rgb),.42);}
     .upSchedPanel{max-height:min(70vh,460px);overflow-y:auto;padding:.7rem;}
@@ -219,15 +159,12 @@
     .upSchedActs{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.6rem;}
     .upSchedActs button{padding:.45rem .9rem;font-size:.74rem;}
 
-    /* scheduled card mark */
     .upSchedMark{background:var(--pg)!important;}
     .upSchedBad{border-color:var(--danger-bd,rgba(214,58,63,.55));}
     .upSchedBad img{opacity:.45;filter:grayscale(.5);}
-    /* micro label */
     .upDraftTitle{font-family:var(--fm);font-weight:600;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--txd);}
     .upDraftTitle .s{color:var(--pg);}
     .upDraftNote{font-size:.62rem;color:rgba(var(--tx2-rgb),.45);line-height:1.35;margin:.3rem 0 .7rem;}
-    /* ghost slots */
     .upDraftGhost{cursor:default;background:rgba(var(--pg-rgb),.02);border-style:dashed;border-color:rgba(var(--pg-rgb),.14);}
     .upDraftGhost:hover{transform:none;border-color:rgba(var(--pg-rgb),.14);}
     .upDraftGhostIn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:rgba(var(--pg-rgb),.28);}
@@ -235,38 +172,26 @@
       background:color-mix(in srgb,var(--tc) 28%,transparent);
       color:var(--tx);box-shadow:none;
     }
-    /* draft rail */
     .upDraftRow{
       --slots:2;
       --gap:.6rem;
       display:flex;gap:var(--gap);
       overflow-x:auto;overflow-y:hidden;
-      /* keep rail inside viewport */
       min-width:0;max-width:100%;
       padding-bottom:.45rem;scrollbar-width:thin;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
     }
-    /* slot count */
-    @media(min-width:641px){.upDraftRow{--slots:3;}}   /* tablet */
-    @media(min-width:860px){.upDraftRow{--slots:4;}}   /* desktop */
-    /* stop rail overflow */
+    @media(min-width:641px){.upDraftRow{--slots:3;}}
+    @media(min-width:860px){.upDraftRow{--slots:4;}}
     #pfUpMod{overflow-x:hidden;}
     #pfUpMod .upPopBody>*,#pfUpMod .upMain>*,#pfUpMod .upSide>*{min-width:0;}
-    /* square tile */
-    /* slot width */
     .upDraftCard{position:relative;flex:0 0 calc((100% - (var(--slots) - 1) * var(--gap)) / var(--slots));aspect-ratio:1;cursor:pointer;background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.14);border-radius:10px;overflow:hidden;transition:border-color .2s,transform .2s;scroll-snap-align:start;}
     .upDraftCard>img{width:100%;height:100%;object-fit:cover;display:block;}
     .upDraftCard:hover{border-color:var(--pg);transform:translateY(-2px);}
-    /* expiry mark */
     .upDraftExp{position:absolute;top:5px;right:5px;z-index:2;background:var(--danger-strong,#D63A3F);color:#fff;font-family:var(--fm);font-size:.56rem;font-weight:700;letter-spacing:.02em;line-height:1;padding:.22rem .34rem;border-radius:5px;box-shadow:0 1px 5px rgba(0,0,0,.4);}
-    /* delete button */
     .upDraftX{position:absolute;top:5px;left:5px;z-index:2;width:22px;height:22px;border-radius:6px;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:.7rem;line-height:1;cursor:pointer;transition:background .2s;}
     .upDraftX:hover{background:var(--danger-strong,#D63A3F);}
-    /* guidance cards */
     #pfUpMod .upSide{display:flex;flex-direction:column;gap:1.3rem;}
 
-    /* The form is one card: the dropzone sits at its head, the detail rows
-       follow under a hairline, and the publish button lives outside it so the
-       page reads invite → details → act. One column at every width. */
     .upCard{
       background:var(--sur);
       border:1px solid var(--bdr);
@@ -279,12 +204,9 @@
       display:flex;flex-direction:column;gap:.6rem;
       border-top:1px solid var(--bdr);padding-top:1.1rem;
     }
-    /* a section form has no media column, so its rows start at the card edge */
     .upCard>.upFieldsCol:first-child{border-top:0;padding-top:0;}
     @media(max-width:519px){ .upCard{padding:.85rem;border-radius:16px;} }
 
-    /* a detail row: a tinted glyph in the field's own colour, the label above
-       the control, and no box around the control itself — the row is the box */
     .upFCard{
       display:flex;align-items:flex-start;gap:.8rem;
       background:color-mix(in srgb,var(--fc,var(--pg)) 5%,var(--sur2));
@@ -305,7 +227,6 @@
     .upFIco svg{width:21px;height:21px;display:block;}
     .upFBody{flex:1;min-width:0;}
     .upFCard .upLbl{margin-bottom:.15rem;font-size:.86rem;}
-    /* the control is bare inside the row */
     .upFCard .upIn,
     .upFCard .upCatTrigger,
     .upFCard .upTagBox{
@@ -322,18 +243,11 @@
     .upFCard .upInWrapArea .upCount{top:auto;bottom:-.15rem;}
     .upFCard .upTagBox{padding:0;gap:.3rem;}
     .upFCard .upTagInput{padding:0;}
-    /* A chip list that also carries a menu. Both halves are bare inside a
-       row, so without a line between them the trigger and the box read as one
-       control and the chips look like they belong to the trigger. */
     .upFCard .upRefDd{margin-bottom:.4rem;}
     .upFCard .upRefDd+.upTagBox{
       border-top:1px solid color-mix(in srgb,var(--fc,var(--pg)) 20%,transparent);
       padding-top:.4rem;
     }
-    /* The menu belongs to the row that opened it, so it is drawn in that row's
-       colour rather than in the sheet's one accent — the same rule for the
-       artwork pickers and for the section forms, which open this menu now
-       instead of the platform's own <select> popup. */
     .upFCard .upCatPanel{
       left:-.9rem;right:-.9rem;
       border-color:color-mix(in srgb,var(--fc,var(--pg)) 45%,transparent);
@@ -345,24 +259,14 @@
     .upFCard .upCatOpt:hover{background:color-mix(in srgb,var(--fc,var(--pg)) 15%,transparent);}
     .upFCard .upCatSearch:focus{border-color:var(--fc,var(--pg));}
     .upFCard .upCatSearchWrap{border-bottom-color:color-mix(in srgb,var(--fc,var(--pg)) 22%,transparent);}
-    /* the schedule row's calendar, in the schedule row's colour */
-    /* The row's colour tints and outlines the calendar, but does not fill
-       anything that carries type. --fc is a different hue per row and each
-       theme moves it, so a label on top of it would need its own ink twelve
-       times over; the two filled things here keep the accent, whose ink is
-       set beside it. */
     .upFCard .upSchedDay:hover:not(:disabled){background:color-mix(in srgb,var(--fc,var(--pg)) 18%,transparent);}
     .upFCard .upSchedDay.today:not(.sel){border-color:color-mix(in srgb,var(--fc,var(--pg)) 50%,transparent);}
     .upFCard .upFChk{padding:.2rem 0 0;font-size:.86rem;color:var(--tx);}
     .upFCard .dzHint,.upFCard .upSchedHint{margin-top:.35rem;}
-    /* a text box that grows with what is written in it — the height is set by
-       upGrow(), so the drag handle would only fight it */
     #pfUpMod textarea{resize:none;overflow-y:hidden;}
-    /* the dropzone fields keep their own frame inside the card */
     .upCard .dzFileField{margin-bottom:.6rem;}
     .upCard .dzFileField:last-child{margin-bottom:0;}
 
-    /* artwork dropzone */
     .upDz{
       position:relative;display:flex;flex-direction:column;align-items:center;gap:.55rem;
       border:1.5px dashed color-mix(in srgb,var(--upcViolet) 46%,transparent);border-radius:16px;
@@ -371,7 +275,6 @@
       transition:border-color .2s ease,background .2s ease,box-shadow .2s ease;
     }
     .upDzEmpty{display:flex;flex-direction:column;align-items:center;gap:.55rem;pointer-events:none;width:100%;}
-    /* the round badge the empty zone leads with */
     .upDzBadge{
       width:74px;height:74px;border-radius:50%;margin-bottom:.35rem;
       display:flex;align-items:center;justify-content:center;
@@ -388,10 +291,7 @@
       .upDz:hover{border-color:var(--upcViolet);background:color-mix(in srgb,var(--upcViolet) 8%,transparent);}
     }
     .upDz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:1;}
-    /* dropzone icon */
     .upDzIco{width:48px;height:48px;margin:0 auto .3rem;border-radius:14px;background:rgba(var(--pg-rgb),.16);display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:var(--pb);}
-    /* the tile holds a drawn glyph now rather than a character, so it needs a
-       size of its own — font-size does nothing to an svg */
     .upDzIco svg{width:25px;height:25px;display:block;}
     .upDzTitle{font-family:var(--fd);font-weight:700;color:var(--tx);font-size:.95rem;}
     .upDzSub{color:var(--txd);font-size:.8rem;}
@@ -414,9 +314,6 @@
     @media(prefers-reduced-motion:reduce){
       .upDz{transition:none;}
     }
-    /* Picked, in the marketplace picker's shape: the dashed invite gives way
-       to a row that shows the thumbnail, names the file and says it is ready.
-       .upDz keeps its own empty face, so only the swap is shared. */
     .upDz .dzFilePicked{display:none;width:100%;text-align:left;}
     .upDz.dzHasFile{
       cursor:default;
@@ -425,7 +322,6 @@
     }
     .upDz.dzHasFile .upDzEmpty{display:none;}
     .upDz.dzHasFile .dzFilePicked{display:flex;align-items:center;gap:1rem;}
-    /* the invisible input covers the zone; the picked row has to sit over it */
     .upDz.dzHasFile input{pointer-events:none;}
     .upDz .dzFileThumb{line-height:0;}
     .upDz .upPrev{width:100%;height:100%;object-fit:cover;display:block;margin:0;border:0;border-radius:0;}
@@ -433,7 +329,6 @@
     .upPagesPreview img{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid rgba(var(--pg-rgb),.1);}
 
     .upField{margin-bottom:1rem;}
-    /* a detail row is spaced by the card's gap, not by its own margin */
     .upField.upFCard{margin-bottom:0;}
     .upLbl{display:block;font-size:.78rem;font-weight:700;color:var(--tx);margin-bottom:.4rem;letter-spacing:.02em;}
     .upReq{color:var(--upcReq,#f87171);}
@@ -451,7 +346,6 @@
     .upCatDd.open .upChev{transform:rotate(180deg);}
     .upCatPanel{position:absolute;top:calc(100% + .4rem);left:0;right:0;background:var(--sur2);border:1px solid rgba(var(--pg-rgb),.3);border-radius:8px;padding:.5rem;display:none;flex-direction:column;gap:.15rem;z-index:5;box-shadow:0 10px 26px rgba(0,0,0,.45);max-height:210px;overflow-y:auto;}
     .upCatDd.open .upCatPanel{display:flex;}
-    /* category picker */
     #pfUpCatPanelWrap{overflow:hidden;padding:0;gap:0;max-height:min(300px,46vh);}
     .upCatSearchWrap{
       position:relative;flex-shrink:0;
@@ -503,10 +397,6 @@
     .upTipList li{display:flex;gap:.45rem;align-items:flex-start;}
     .upTipList li::before{content:'✓';color:var(--pg);font-weight:700;flex-shrink:0;}
 
-    /* ---- the (i) sheet ---------------------------------------------------
-       Guidelines and tips used to take a column beside the form and repeat
-       themselves once per section. They live here instead, filled from the
-       open tab, so the page keeps its single column at every width. */
     .upGdPop{
       position:fixed;inset:0;z-index:20040;
       display:flex;align-items:flex-end;justify-content:center;
@@ -520,7 +410,6 @@
       backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
     }
     .upGdPop.open{opacity:1;pointer-events:auto;visibility:visible;transition-delay:0s,0s;}
-    /* dark scoping, the same the upload page runs under */
     .upGdPop,.upGdPop *{
       --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
       --tx:var(--vtx);--txd:var(--vtxd);
@@ -546,8 +435,6 @@
       padding:1.05rem 1.1rem .9rem 1.2rem;
       border-bottom:1px solid var(--bdr);
     }
-    /* the sheet takes the open tab's colour, so the rules you are reading are
-       visibly the rules for the thing you are posting */
     .upGdHeadIco{
       flex:0 0 auto;width:40px;height:40px;border-radius:12px;
       display:flex;align-items:center;justify-content:center;
@@ -575,20 +462,17 @@
       .upPopBody{padding:1rem;}
     }
 
-    /* background upload queue */
     .upqCard{position:relative;border-radius:12px;overflow:hidden;background:var(--sur);border:1px solid var(--bdr);cursor:pointer;isolation:isolate;}
     .upqImgWrap{position:relative;width:100%;aspect-ratio:1;overflow:hidden;background:var(--sur2);}
     .upqImg{width:100%;height:100%;object-fit:cover;
       filter:blur(16px) saturate(.85) brightness(.82);
       transform:scale(1.12);
     }
-    /* dark scrim */
     .upqOvl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.55rem;background:rgba(8,8,13,.38);text-align:center;padding:.8rem;}
     .upqSpin{width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.22);border-top-color:#FFFFFF;animation:upqSpin .9s linear infinite;}
     @keyframes upqSpin{to{transform:rotate(360deg);}}
     .upqStage{font-family:var(--fm);font-size:.68rem;font-weight:700;letter-spacing:.22em;color:#FFFFFF;text-transform:uppercase;text-shadow:0 1px 6px rgba(0,0,0,.55);}
     .upqSub{font-size:.7rem;color:rgba(255,255,255,.78);line-height:1.35;text-shadow:0 1px 5px rgba(0,0,0,.5);max-width:92%;}
-    /* live flash */
     .upqCard.upqLive .upqSpin{display:none;}
     .upqCard.upqLive .upqOvl{background:rgba(8,8,13,.28);}
     .upqCheck{display:none;width:34px;height:34px;border-radius:50%;background:#22C55E;color:#fff;font-size:1.05rem;line-height:34px;font-weight:800;box-shadow:0 0 18px rgba(34,197,94,.55);}
@@ -596,14 +480,12 @@
     @keyframes upqPop{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
     @media(prefers-reduced-motion:reduce){.upqSpin{animation-duration:2.2s;}.upqCard.upqLive .upqCheck{animation:none;}}
 
-    /* status modal */
     #upqBackdrop{position:fixed;inset:0;z-index:20120;display:flex;align-items:center;justify-content:center;padding:1.2rem;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .3s ease,visibility 0s linear .3s;isolation:isolate;}
     #upqBackdrop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 75%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:-1;}
     #upqBackdrop.open{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s;}
     #upqBackdrop .legalModal{max-width:440px;}
     #upqBackdrop.open .legalModal{transform:translateY(0) scale(1);opacity:1;}
     .upqMBody{padding:1.4rem 1.6rem 1.7rem;background:var(--sur2);overflow-y:auto;}
-    /* verification tracker */
     .upqTrk{display:flex;gap:.85rem;align-items:flex-start;}
     .upqTrkRail{display:flex;flex-direction:column;align-items:center;flex-shrink:0;align-self:stretch;}
     .upqTrkIco{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;border:2px solid var(--bdr);color:#fff;background:var(--sur);position:relative;}
@@ -629,7 +511,6 @@
     .upqFin.busy{color:#F59E0B;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);}
     .upqFin.ok{color:#22C55E;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);}
     .upqFin.fail{color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-bd);}
-    /* fail header */
     .upqFailBox{display:flex;gap:.8rem;align-items:flex-start;background:var(--danger-bg);border:1px solid var(--danger-bd);border-radius:10px;padding:.9rem 1rem;margin-bottom:1.1rem;}
     .upqFailIco{width:34px;height:34px;border-radius:50%;background:var(--danger-strong);color:#fff;font-weight:800;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .upqFailTitle{font-size:.92rem;font-weight:800;color:var(--tx);}
@@ -639,9 +520,7 @@
     .upqOkBtn{padding:.6rem 1.6rem;border-radius:8px;border:1px solid var(--pg);background:var(--pdim);color:var(--ps);font-family:var(--fm);font-size:.78rem;letter-spacing:.14em;cursor:pointer;transition:background .2s;}
     .upqOkBtn:hover{background:color-mix(in srgb,var(--tc) 22%,transparent);}
 
-    /* thumbnail cropper */
     .cropPop{position:fixed;inset:0;z-index:20050;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity .25s ease;isolation:isolate;}
-    /* blur layer */
     .cropPop::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:-1;}
     .cropPop.open{opacity:1;pointer-events:auto;}
     .cropBox{background:var(--sur);border:1px solid rgba(var(--pg-rgb),.28);border-radius:16px;width:100%;max-width:420px;box-shadow:0 24px 70px rgba(0,0,0,.6);font-family:var(--fb);overflow:hidden;}
@@ -658,32 +537,16 @@
     .cropStage img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;}
     .cropGrid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(var(--pg-rgb),.35) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--pg-rgb),.35) 1px,transparent 1px);background-size:33.33% 33.33%;}
     .cropFoot{padding:1rem 1.3rem;border-top:1px solid rgba(var(--pg-rgb),.08);display:flex;justify-content:flex-end;gap:.7rem;}
-    /* zoom controls */
     .cropZoomRow{display:flex;align-items:center;gap:.6rem;width:min(320px,100%);}
     .cropZoomBtn{width:30px;height:30px;flex-shrink:0;border-radius:8px;border:1px solid rgba(var(--pg-rgb),.15);background:rgba(var(--pg-rgb),.06);color:var(--tx);font-size:1rem;line-height:1;cursor:pointer;transition:background .2s;}
     .cropZoomBtn:hover{background:rgba(var(--pg-rgb),.16);}
     .cropZoom{flex:1;accent-color:var(--pg);cursor:pointer;min-width:0;}
 
-    /* avatar and banner cropper */
     .cropStage--banner{aspect-ratio:16/5;width:min(420px,100%);}
     @media(max-width:480px){.cropStage--banner{aspect-ratio:3/1;}}
 
-    /* ---- min–max on a section form ---------------------------------------
-       Every text field on the job form has a floor and a ceiling. The ceiling
-       is the element's own maxlength, so the keystroke past it never lands and
-       there is nothing here to draw for it. The floor is a thing to say, and
-       it is said in the one place a long form has room for it: on the label
-       line, opposite the label, where it reads the same above a one-line input
-       and above an eight-row textarea and never sits on top of what is being
-       typed.
-
-       Colour comes from the tokens the rest of the page uses — the count is
-       the page's own muted ink under whichever theme is on, and --upcReq is
-       the same red the required asterisk already wears, which is defined for
-       the dark and the light ground separately at the top of this file. */
     .upLblRow{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;}
     .upLblRow .upLbl{margin-bottom:0;min-width:0;}
-    /* beats `.upFCard .upCount`, which pins the floating variant to a corner */
     .upFCard .upCountInline,
     .upCountInline{
       position:static;top:auto;right:auto;bottom:auto;
@@ -693,32 +556,10 @@
     .upCount.bad{color:var(--upcReq,#f87171);font-weight:600;}
     .upFCard .upLblRow{margin-bottom:.15rem;}
 
-    /* A question that only applies to some answers is not dimmed or disabled,
-       it is absent: a remote posting is never asked for a city, and a
-       permanent one is never asked how long the contract runs. */
     .upField.upFHide{display:none;}
 
-    /* ---- the artwork panel's injected rows --------------------------------
-       The extra fields are written into five empty divs cut into the panel's
-       hand-written markup. Those divs are direct children of .upFieldsCol,
-       which is the flex column that spaces every row apart — so each slot
-       counted as ONE row and the cards inside it were left touching, while
-       the panel's own rows kept their gap.
-
-       display:contents removes the wrapper from layout entirely, so the rows
-       inside a slot become direct participants of the same flex column and
-       are spaced by the same gap as everything else. It also means an empty
-       slot takes up nothing at all, rather than eating a gap. */
     #pfUpX1, #pfUpX2, #pfUpX3, #pfUpX4, #pfUpX5{ display:contents; }
 
-    /* ---- the Automatic Details rows ---------------------------------------
-       A rule between each pair, so the label and the value it belongs to read
-       as one line rather than as a block of text. The last row has none —
-       inside a bordered card a trailing rule reads as a mistake.
-
-       The value is tabular so a figure that ticks up while somebody types
-       does not shift the ones under it, and it keeps its own line on a narrow
-       screen rather than crushing the label. */
     .upAutoList .dzvMetaRow{ padding:.3rem 0; align-items:baseline; }
     .upAutoList .dzvMetaRow:first-child{ padding-top:0; }
     .upAutoList .dzvMetaRow:last-child{ padding-bottom:0; }

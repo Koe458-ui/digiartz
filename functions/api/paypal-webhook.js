@@ -1,43 +1,7 @@
-// paypal webhook receiver
-//
-// PayPal calls this; no user session is involved, so nothing here may be
-// trusted on arrival. Every event is verified against PAYPAL_WEBHOOK_ID before
-// a single row is touched, and the endpoint fails CLOSED — with no webhook id
-// bound it refuses everything rather than accepting unverified events. That
-// matters more than usual: a forged PAYMENT.CAPTURE.COMPLETED would hand out a
-// subscription, or credit a seller for a sale that never happened.
-//
-// Register this URL at developer.paypal.com -> your app -> Webhooks:
-//   https://digiartz.net/api/paypal-webhook
-// PayPal issues the webhook id once the URL is registered, which is why this
-// has to exist before PAYPAL_WEBHOOK_ID can be bound.
-//
-// Subscribing to every event is fine — anything not listed below is verified
-// and then ignored. The only cost is a verification round-trip for noise.
-//
-// Money coming IN:
-//   CHECKOUT.ORDER.APPROVED    buyer approved but the browser never came back
-//   PAYMENT.CAPTURE.COMPLETED  the settlement of record
-//   PAYMENT.CAPTURE.REFUNDED   money returned
-//   PAYMENT.CAPTURE.REVERSED   chargeback or reversal
-//   PAYMENT.CAPTURE.DENIED     never settled
-//
-// Money going OUT — these are not optional if payouts are used. A batch PayPal
-// accepts is not money that arrived, and without them a payout that failed,
-// was blocked or was never claimed would sit reading as paid forever:
-//   PAYMENTS.PAYOUTS-ITEM.SUCCEEDED   it actually landed
-//   PAYMENTS.PAYOUTS-ITEM.UNCLAIMED   sent, recipient has not accepted yet
-//   PAYMENTS.PAYOUTS-ITEM.FAILED / .BLOCKED / .RETURNED / .DENIED / .REFUNDED
-
 import { sbUrl, sbSvc } from '../lib/sb.js';
 import { PLAN_TIERS, applySubscription } from '../lib/billing.js';
 import { ppFee } from '../lib/money.js';
 
-// The commission, the TDS, the GST TCS and the settlement date are worked out
-// by dz_earning_apply_deductions() in Postgres. This file reports what the
-// buyer paid and what PayPal took, and does no arithmetic on money.
-
-// smallest currency unit, for reading PayPal's decimal strings back
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
 
@@ -102,9 +66,6 @@ async function sbService(env, path, init = {}) {
   return body;
 }
 
-// ---------------------------------------------------------------------------
-// Ask PayPal whether it really sent this. The body must be handed back as the
-// parsed object it arrived as — re-serialising a reordered copy fails.
 async function verified(env, request, headers, event) {
   const res = await pp(env, '/v1/notifications/verify-webhook-signature', {
     method: 'POST',
@@ -121,17 +82,13 @@ async function verified(env, request, headers, event) {
   return !!(res && res.verification_status === 'SUCCESS');
 }
 
-// ---------------------------------------------------------------------------
-// A marketplace sale owes the seller their share. Written once per payment —
-// the unique constraint on payment_id is what makes a replayed webhook a
-// no-op rather than a second credit.
 async function recordEarning(env, row, capture) {
   if (row.kind !== 'marketplace' || !row.item_id) return;
 
   const items = await sbService(env,
     '/marketplace_items?id=eq.' + row.item_id + '&select=user_id&limit=1');
   const sellerId = items && items[0] && items[0].user_id;
-  if (!sellerId || sellerId === row.user_id) return;   // no seller, or self-purchase
+  if (!sellerId || sellerId === row.user_id) return;
 
   await sbService(env, '/marketplace_earnings', {
     method: 'POST',
@@ -142,23 +99,12 @@ async function recordEarning(env, row, capture) {
       gross_amount: Number(row.amount) || 0,
       gateway_fee: ppFee(capture, row.currency),
       currency: row.currency,
-      // Which promo code, if any, the buyer arrived with. Nothing here does
-      // anything with it: dz_partner_credit_market() reads it off the inserted
-      // row and takes the partner's share out of the platform's commission,
-      // for the same reason the deductions are computed there rather than in
-      // four checkout paths. A marketplace code is attribution only — it does
-      // not change the price, and it does not change what the seller keeps.
       promo_code_id: row.promo_code_id || null,
       provider: 'paypal',
       status: 'available',
     }),
-  }).catch(() => {});   // duplicate is the expected outcome on a replay
+  }).catch(() => {});
 }
-
-// settle a ledger row, once
-//
-// Takes the capture OBJECT rather than its id: the fee PayPal kept is on the
-// capture's seller_receivable_breakdown, and an id alone cannot report it.
 
 async function fulfil(env, orderId, capture) {
   const captureId = (capture && capture.id) || '';
@@ -178,8 +124,6 @@ async function fulfil(env, orderId, capture) {
   });
   const first = Array.isArray(patched) && patched.length > 0;
 
-  // Earnings are recorded even on a replay: the browser capture may have
-  // settled the row already without ever getting this far.
   await recordEarning(env, row, capture);
 
   if (!first) return 'already settled';
@@ -190,7 +134,6 @@ async function fulfil(env, orderId, capture) {
   return 'settled';
 }
 
-// money went back
 async function reverse(env, orderId, status) {
   const rows = await sbService(env,
     '/payments?pp_order_id=eq.' + encodeURIComponent(orderId) +
@@ -202,15 +145,11 @@ async function reverse(env, orderId, status) {
     method: 'PATCH', body: JSON.stringify({ status }),
   });
 
-  // The seller must not keep a claim on money the buyer took back. Anything
-  // already paid out is left alone — that is a debt to chase, not a row to
-  // rewrite.
   await sbService(env, '/marketplace_earnings?payment_id=eq.' + row.id +
     '&status=in.(pending,available)', {
     method: 'PATCH', body: JSON.stringify({ status: 'reversed' }),
   }).catch(() => {});
 
-  // A refunded subscription stops being a subscription.
   if (status === 'refunded' && row.kind === 'subscription' && PLAN_TIERS[row.plan]) {
     await sbService(env, '/profiles?id=eq.' + row.user_id, {
       method: 'PATCH',
@@ -220,7 +159,6 @@ async function reverse(env, orderId, status) {
   return 'reversed';
 }
 
-// ---------------------------------------------------------------------------
 export async function onRequestPost({ env, request }) {
   if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET || !env.PAYPAL_WEBHOOK_ID ||
       !sbUrl(env) || !sbSvc(env))
@@ -235,20 +173,15 @@ export async function onRequestPost({ env, request }) {
   const type     = String(event.event_type || '');
   const resource = event.resource || {};
   const related  = (resource.supplementary_data && resource.supplementary_data.related_ids) || {};
-  // a capture names its order here; an order event is its own id
   const orderId  = related.order_id || (type.startsWith('CHECKOUT.ORDER.') ? resource.id : '');
 
   try {
-    // Payout events are about money going OUT and name no order, so they are
-    // routed before the order-id guard below.
     if (type.startsWith('PAYMENTS.PAYOUTS-ITEM.'))
       return json({ ok: true, result: await payoutItem(env, type, resource) });
 
     if (!orderId) return json({ ok: true, skipped: 'no order id' });
 
     if (type === 'CHECKOUT.ORDER.APPROVED') {
-      // The buyer approved and then the browser never made the capture call —
-      // closed tab, lost connection. Capture it here so the sale is not lost.
       const open = await sbService(env,
         '/payments?pp_order_id=eq.' + encodeURIComponent(orderId) +
         '&status=eq.created&select=id&limit=1');
@@ -270,7 +203,6 @@ export async function onRequestPost({ env, request }) {
     }
 
     if (type === 'PAYMENT.CAPTURE.COMPLETED')
-      // resource IS the capture on this event, breakdown and all
       return json({ ok: true, result: await fulfil(env, orderId, resource) });
 
     if (type === 'PAYMENT.CAPTURE.REFUNDED')
@@ -284,21 +216,11 @@ export async function onRequestPost({ env, request }) {
 
     return json({ ok: true, skipped: type });
   } catch (err) {
-    // A 500 tells PayPal to retry, which is what we want for a transient
-    // database failure — every handler above is idempotent.
     return json({ error: (err && err.message) || 'handler failed' }, 500);
   }
 }
 
-// ---------------------------------------------------------------------------
-// Payout items settle asynchronously.
-//
-// /v1/payments/payouts accepting a batch is NOT the money arriving. The item
-// can still fail afterwards — a bad address, a blocked or returned item, or
-// one the recipient never claims. These events are the only honest signal, so
-// a payout stays 'processing' until one of them says otherwise.
 async function payoutItem(env, type, resource) {
-  // sender_item_id is the payout_requests row id, set when the batch was sent
   const id = String((resource && resource.sender_item_id) || '');
   if (!/^[0-9a-f-]{36}$/.test(id)) return 'no request id';
 
@@ -319,9 +241,6 @@ async function payoutItem(env, type, resource) {
     return 'paid';
   }
 
-  // Unclaimed is not a failure yet — PayPal holds it for the recipient and
-  // returns it after 30 days if they never accept. Leave it processing and
-  // say so, rather than paying it twice or writing it off early.
   if (type === 'PAYMENTS.PAYOUTS-ITEM.UNCLAIMED') {
     await sbService(env, '/payout_requests?id=eq.' + id, {
       method: 'PATCH',
@@ -330,9 +249,6 @@ async function payoutItem(env, type, resource) {
     return 'unclaimed';
   }
 
-  // Everything else means the money did not go. Put the request back where an
-  // admin can act on it and hand the seller their earnings back, so the
-  // balance stops under-reporting what they are owed.
   const note = {
     'PAYMENTS.PAYOUTS-ITEM.FAILED':   'PayPal could not send this item',
     'PAYMENTS.PAYOUTS-ITEM.BLOCKED':  'PayPal blocked this item',
@@ -345,7 +261,6 @@ async function payoutItem(env, type, resource) {
     method: 'PATCH',
     body: JSON.stringify({ status: 'approved', review_note: note, paid_at: null }),
   });
-  // hand back exactly what this payout retired
   await sbService(env,
     '/marketplace_earnings?seller_id=eq.' + req.user_id +
     '&currency=eq.' + req.currency + '&status=eq.paid_out', {

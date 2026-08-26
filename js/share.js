@@ -1,22 +1,20 @@
-// share profile, qr
 (function () {
   'use strict';
 
-// qr generator
 function qrMake (text) {
   'use strict';
-  var ECL_M = { ord: 1, fmt: 0 }; // format bits for M = 0b00
+  var ECL_M = { ord: 1, fmt: 0 };
   var data = [];
   for (var i = 0; i < text.length; i++) {
     var c = text.charCodeAt(i);
     if (c < 128) { data.push(c); }
-    else { // UTF-8 encode
+    else {
       var enc = unescape(encodeURIComponent(text[i]));
       for (var k = 0; k < enc.length; k++) data.push(enc.charCodeAt(k));
     }
   }
 
-  var ECC_PER_BLOCK_M  = [10,16,26,18,24,16,18,22,22,26];       // v1..v10
+  var ECC_PER_BLOCK_M  = [10,16,26,18,24,16,18,22,22,26];
   var NUM_BLOCKS_M     = [1,1,1,2,2,4,4,4,5,5];
 
   function rawModules (ver) {
@@ -32,7 +30,6 @@ function qrMake (text) {
     return Math.floor(rawModules(ver) / 8) - ECC_PER_BLOCK_M[ver-1] * NUM_BLOCKS_M[ver-1];
   }
 
-  // pick version
   var ver = -1;
   for (var v = 1; v <= 10; v++) {
     var cntBits = v <= 9 ? 8 : 16;
@@ -43,15 +40,14 @@ function qrMake (text) {
   var size = ver * 4 + 17;
   var countBits = ver <= 9 ? 8 : 16;
 
-  // bitstream
   var bits = [];
   function pushBits (val, n) { for (var b = n - 1; b >= 0; b--) bits.push((val >>> b) & 1); }
-  pushBits(4, 4);                 // byte mode
+  pushBits(4, 4);
   pushBits(data.length, countBits);
   data.forEach(function (byte) { pushBits(byte, 8); });
   var capBits = dataCapacityBytes(ver) * 8;
-  pushBits(0, Math.min(4, capBits - bits.length));        // terminator
-  pushBits(0, (8 - bits.length % 8) % 8);                 // byte align
+  pushBits(0, Math.min(4, capBits - bits.length));
+  pushBits(0, (8 - bits.length % 8) % 8);
   for (var pad = 0xEC; bits.length < capBits; pad ^= 0xEC ^ 0x11) pushBits(pad, 8);
   var dataCw = [];
   for (var bi = 0; bi < bits.length; bi += 8) {
@@ -60,7 +56,6 @@ function qrMake (text) {
     dataCw.push(by);
   }
 
-  // reed solomon
   function gfMul (x, y) {
     var z = 0;
     for (var b = 7; b >= 0; b--) {
@@ -72,7 +67,7 @@ function qrMake (text) {
   function rsDivisor (degree) {
     var result = [];
     for (var i = 0; i < degree - 1; i++) result.push(0);
-    result.push(1);                    // monic, x^0 coefficient last
+    result.push(1);
     var root = 1;
     for (var i = 0; i < degree; i++) {
       for (var j = 0; j < result.length; j++) {
@@ -93,11 +88,10 @@ function qrMake (text) {
     return result;
   }
 
-  // blocks, ecc, interleave
   var numBlocks = NUM_BLOCKS_M[ver-1], eccLen = ECC_PER_BLOCK_M[ver-1];
   var totalCw = Math.floor(rawModules(ver) / 8);
   var numShort = numBlocks - totalCw % numBlocks;
-  var shortLen = Math.floor(totalCw / numBlocks);   // incl. ecc
+  var shortLen = Math.floor(totalCw / numBlocks);
   var blocks = [], off = 0, divisor = rsDivisor(eccLen);
   for (var b2 = 0; b2 < numBlocks; b2++) {
     var dlen = shortLen - eccLen + (b2 < numShort ? 0 : 1);
@@ -105,7 +99,6 @@ function qrMake (text) {
     var ecc = rsRemainder(dat, divisor);
     blocks.push({ data: dat, ecc: ecc });
   }
-  // interleave order
   var allCw = [];
   var maxDataLen = shortLen - eccLen + 1;
   for (var ci = 0; ci < maxDataLen; ci++)
@@ -113,12 +106,10 @@ function qrMake (text) {
   for (var ce = 0; ce < eccLen; ce++)
     blocks.forEach(function (blk) { allCw.push(blk.ecc[ce]); });
 
-  // module grids
   var grid = [], func = [];
   for (var y = 0; y < size; y++) { grid.push(new Array(size).fill(false)); func.push(new Array(size).fill(false)); }
   function setF (x, y, dark) { grid[y][x] = dark; func[y][x] = true; }
 
-  // finders and separators
   function finder (cx, cy) {
     for (var dy = -4; dy <= 4; dy++) for (var dx = -4; dx <= 4; dx++) {
       var x = cx + dx, y = cy + dy;
@@ -128,12 +119,10 @@ function qrMake (text) {
     }
   }
   finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
-  // timing
   for (var t = 0; t < size; t++) {
     if (!func[6][t]) setF(t, 6, t % 2 === 0);
     if (!func[t][6]) setF(6, t, t % 2 === 0);
   }
-  // alignment
   var alignPos = [];
   if (ver > 1) {
     var na2 = Math.floor(ver / 7) + 2;
@@ -143,19 +132,16 @@ function qrMake (text) {
   }
   alignPos.forEach(function (ay) {
     alignPos.forEach(function (ax) {
-      // skip finder corners
       if ((ax === 6 && ay === 6) || (ax === 6 && ay === size - 7) || (ax === size - 7 && ay === 6)) return;
       for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++)
         setF(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
     });
   });
-  // reserve format areas
   for (var fi = 0; fi <= 8; fi++) {
     if (fi !== 6) { setF(8, fi, false); setF(fi, 8, false); }
     if (fi < 8)  { setF(size - 1 - fi, 8, false); setF(8, size - 1 - fi, false); }
   }
-  setF(8, size - 8, true); // dark module
-  // version info
+  setF(8, size - 8, true);
   if (ver >= 7) {
     var vrem = ver;
     for (var vi = 0; vi < 12; vi++) vrem = (vrem << 1) ^ ((vrem >>> 11) * 0x1F25);
@@ -167,7 +153,6 @@ function qrMake (text) {
     }
   }
 
-  // zigzag data placement
   function placeData (cw, readMode) {
     var out = readMode ? [] : null;
     var i2 = 0;
@@ -193,7 +178,6 @@ function qrMake (text) {
   }
   placeData(allCw, false);
 
-  // masking and penalty
   var MASKS = [
     function (x, y) { return (x + y) % 2 === 0; },
     function (x, y) { return y % 2 === 0; },
@@ -223,25 +207,25 @@ function qrMake (text) {
   }
   function penalty () {
     var p = 0, y3, x3;
-    for (y3 = 0; y3 < size; y3++) {           // rows: runs
+    for (y3 = 0; y3 < size; y3++) {
       var runC = grid[y3][0], runL = 1;
       for (x3 = 1; x3 < size; x3++) {
         if (grid[y3][x3] === runC) { runL++; if (runL === 5) p += 3; else if (runL > 5) p++; }
         else { runC = grid[y3][x3]; runL = 1; }
       }
     }
-    for (x3 = 0; x3 < size; x3++) {           // cols: runs
+    for (x3 = 0; x3 < size; x3++) {
       var runC2 = grid[0][x3], runL2 = 1;
       for (y3 = 1; y3 < size; y3++) {
         if (grid[y3][x3] === runC2) { runL2++; if (runL2 === 5) p += 3; else if (runL2 > 5) p++; }
         else { runC2 = grid[y3][x3]; runL2 = 1; }
       }
     }
-    for (y3 = 0; y3 < size - 1; y3++) for (x3 = 0; x3 < size - 1; x3++) {   // 2x2
+    for (y3 = 0; y3 < size - 1; y3++) for (x3 = 0; x3 < size - 1; x3++) {
       var c2 = grid[y3][x3];
       if (c2 === grid[y3][x3+1] && c2 === grid[y3+1][x3] && c2 === grid[y3+1][x3+1]) p += 3;
     }
-    var PAT = [1,0,1,1,1,0,1];                 // finder-like 1:1:3:1:1 + 4 light
+    var PAT = [1,0,1,1,1,0,1];
     function runHas (get, len) {
       for (var s2 = 0; s2 < len - 10; s2++) {
         var okA = true, okB = true;
@@ -266,13 +250,12 @@ function qrMake (text) {
     applyMask(m2); drawFormat(m2);
     var pp = penalty();
     if (pp < bestP) { bestP = pp; best = m2; }
-    applyMask(m2); // undo (mask is an involution)
+    applyMask(m2);
   }
   applyMask(best); drawFormat(best);
 
   return { size: size, get: function (x, y) { return grid[y][x]; } };
 }
-
 
   function qrToSvg (q, quiet) {
     quiet = quiet == null ? 4 : quiet;
@@ -327,14 +310,12 @@ function qrMake (text) {
         title: 'DigiArtz \u2014 ' + uname,
         text: 'Check out ' + uname + ' on DigiArtz',
         url: shareUrl
-      }).catch(function () { /* user cancelled the sheet */ });
+      }).catch(function () {   });
     } else {
-      // no native share, copy
       window.pfShareCopy();
     }
   };
 
-  // backdrop tap and escape
   document.addEventListener('click', function (e) {
     var mod = document.getElementById('pfShareMod');
     if (mod && e.target === mod) window.closePfShare();

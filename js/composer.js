@@ -1,5 +1,3 @@
-// emoji picker, keyboard lift
-// emoji picker
 (function () {
   'use strict';
   var CATS = [
@@ -100,21 +98,18 @@
     var s = inp.selectionStart != null ? inp.selectionStart : v.length;
     var e = inp.selectionEnd != null ? inp.selectionEnd : v.length;
     var next = v.slice(0, s) + ch + v.slice(e);
-    if (max && next.length > max) return; // maxlength
+    if (max && next.length > max) return;
     inp.value = next;
     var pos = s + ch.length;
     try { inp.setSelectionRange(pos, pos); } catch (err) {}
     inp.focus({ preventScroll: true });
-    // notify input listeners
     try { inp.dispatchEvent(new Event('input', { bubbles: true })); } catch (err) {}
   }
 
-  // close on outside tap
   document.addEventListener('click', function (e) {
     if (!panel || !panel.classList.contains('open')) return;
     if (panel.contains(e.target)) return;
     if (anchorBtn && (e.target === anchorBtn || anchorBtn.contains(e.target))) return;
-    // keep open on target input
     var t = targetId ? document.getElementById(targetId) : null;
     if (t && e.target === t) return;
     close();
@@ -123,23 +118,20 @@
   window.addEventListener('resize', function () {
     if (panel && panel.classList.contains('open')) position();
   });
-  // follow keyboard lift
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', function () {
       if (panel && panel.classList.contains('open')) setTimeout(position, 60);
     });
   }
-  // keep focus on input
   document.addEventListener('mousedown', function (e) {
     if (panel && panel.contains(e.target)) e.preventDefault();
   });
 })();
 
-// keyboard lift
 (function () {
   'use strict';
   var vv = window.visualViewport;
-  if (!vv) return; // old browsers
+  if (!vv) return;
 
   var activeBar = null;
 
@@ -158,14 +150,11 @@
     if (!activeBar) return;
     var kb = occlusion();
     var panel = panelFor(activeBar);
-    // inside the chat panel: inset the column so the bar lands on the
-    // keyboard without resizing itself. Padding rather than a shorter
-    // panel, so the panel keeps painting behind the keyboard
     if (panel) {
       panel.style.paddingBottom = kb > 0 ? kb + 'px' : '';
       if (kb > 0) {
         var pb = chatBodyFor(activeBar);
-        if (pb) pb.scrollTop = pb.scrollHeight; // keep latest message visible
+        if (pb) pb.scrollTop = pb.scrollHeight;
       }
       return;
     }
@@ -184,12 +173,11 @@
     var panel = panelFor(bar);
     if (panel) panel.style.paddingBottom = '';
     bar.style.transform = '';
-    bar.style.willChange = '';   // drop compositor hint
+    bar.style.willChange = '';
     bar.classList.remove('kbLift');
     if (activeBar === bar) activeBar = null;
   }
 
-  // lift only on input focus
   document.addEventListener('focusin', function (e) {
     var t = e.target;
     if (!t || !t.matches || !t.matches('input, textarea')) return;
@@ -197,9 +185,8 @@
     if (!bar) return;
     if (activeBar && activeBar !== bar) release(activeBar);
     activeBar = bar;
-    if (!panelFor(bar)) bar.style.willChange = 'transform'; // compositor hint
+    if (!panelFor(bar)) bar.style.willChange = 'transform';
     update();
-    // ios viewport delay
     setTimeout(update, 120);
     setTimeout(update, 350);
   });
@@ -207,7 +194,6 @@
   document.addEventListener('focusout', function (e) {
     var t = e.target;
     if (!t || !t.closest || !t.closest('.cpBar, .dmBar')) return;
-    // focus bounce grace
     setTimeout(function () {
       var a = document.activeElement;
       if (a && a.closest && a.closest('.cpBar, .dmBar')) return;
@@ -215,9 +201,7 @@
     }, 80);
   });
 
-  // track keyboard and resize
   vv.addEventListener('resize', update);
   vv.addEventListener('scroll', update);
-  // keyboard dismissed
   window.addEventListener('orientationchange', function () { setTimeout(update, 250); });
 })();

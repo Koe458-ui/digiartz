@@ -1,16 +1,13 @@
 export async function onRequestGet(context) {
   const { env } = context;
 
-  // accept either env name
   const SUPABASE_URL = env.SB_URL || env.SUPABASE_URL || 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
   const SUPABASE_ANON_KEY = env.SB_KEY || env.SUPABASE_ANON_KEY || '';
   const SITE_URL = 'https://digiartz.net';
 
-  // usernames never sent to google
   const BLOCKED = ['madarchod', 'bhenchod', 'chutiya', 'lund', 'randi'];
   const LEET = { '4': 'a', '@': 'a', '3': 'e', '1': 'i', '!': 'i', '0': 'o', '5': 's', '$': 's', '7': 't' };
   const isBlocked = (u) => {
-    // leetspeak first, then separators
     const flat = String(u || '')
       .toLowerCase()
       .replace(/[4@31!05$7]/g, (c) => LEET[c])
@@ -18,21 +15,13 @@ export async function onRequestGet(context) {
     return BLOCKED.some((bad) => flat.includes(bad));
   };
 
-  // skip placeholder handles
   const isPlaceholder = (u) => /^user_[0-9a-f]{8}$/i.test(String(u || ''));
 
-  // xml escape
   const xesc = (s) =>
     String(s ?? '').replace(/[&<>"']/g, (c) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c])
     );
 
-  // Google is pointed at the public derivative, never at the stored original:
-  // koe-originals is private, and an <image:loc> that 403s would drop these out
-  // of image search. Stored urls already point at __f1600, the largest public
-  // derivative and exactly what a crawler should index, so they are indexed
-  // as-is. Anything that is not a Supabase Storage url is skipped rather than
-  // guessed at — there is no resizer left to route it through.
   const crawlImage = (url) => {
     if (!url || typeof url !== 'string') return '';
     let u;
@@ -51,15 +40,6 @@ export async function onRequestGet(context) {
     return res.ok ? res.json() : [];
   };
 
-  /* The four section item types, published and approved only. Same filters
-     the section panels use, plus the moderation gate: a draft, a hidden
-     listing or an unreviewed post is reachable by its own link on purpose and
-     is not something to hand to a crawler. functions/_middleware.js marks the
-     same rows noindex when one is opened directly, so the two agree.
-
-     Each type's url segment is what the app pushes when the item is open —
-     /listing/<id> for a marketplace item, not /marketplace/<id> — so these are
-     the addresses that exist. */
   const ITEM_FEEDS = [
     { seg: 'resource', q: 'resources?select=id,created_at&visibility=eq.published&status=eq.approved' },
     { seg: 'blog',     q: 'blog_posts?select=id,created_at&visibility=eq.published&status=eq.approved' },
@@ -70,7 +50,6 @@ export async function onRequestGet(context) {
   let profiles = [];
   let itemSets = ITEM_FEEDS.map(() => []);
   try {
-    // approved art only
     const all = await Promise.all([
       sbGet('artworks?select=id,name,image_url,created_at&status=eq.approved&kind=eq.art&order=created_at.desc&limit=5000'),
       sbGet('profiles?select=username&limit=5000'),
@@ -80,10 +59,8 @@ export async function onRequestGet(context) {
     profiles = all[1];
     itemSets = all.slice(2);
   } catch (e) {
-    // still serve a partial sitemap
   }
 
-  // read usernames live
   const usernames = profiles
     .map((p) => p && p.username)
     .filter((u) => u && !isBlocked(u) && !isPlaceholder(u))
@@ -92,7 +69,6 @@ export async function onRequestGet(context) {
   const artworkEntries = artworks
     .map((a) => {
       const lastmod = a.created_at ? new Date(a.created_at).toISOString().slice(0, 10) : '';
-      // escape, do not delete
       const title = xesc(a.name);
       const imageUrl = xesc(crawlImage(a.image_url));
 
@@ -114,19 +90,6 @@ export async function onRequestGet(context) {
     )
     .join('\n');
 
-  /* The public sections, listed first and weighted above everything below
-     them because they are what the site is organised into: Explore is the
-     gallery, Marketplace is the shop, Community is the forum, and each one is
-     the parent of a whole class of item urls further down this file.
-
-     /login is here as well and deliberately so. It is a public page — a sign-in
-     form anybody can open, not a page BEHIND sign-in — and it is one of the
-     four destinations a visitor looks for by name. Nothing that requires a
-     session is in this file: no cart, no dashboard, no upload manager, no
-     admin, no settings.
-
-     Kept in step with the SECTIONS table in functions/_middleware.js, the
-     ROUTES table in js/routes.js and the fallbacks in _redirects. */
   const sectionEntries = [
     ['/explore', '0.9', 'daily'],
     ['/marketplace', '0.9', 'daily'],
@@ -160,12 +123,6 @@ export async function onRequestGet(context) {
     .filter(Boolean)
     .join('\n');
 
-  // The standalone legal pages. Listed so they are crawlable and so anyone
-  // auditing the site — a payment provider reviewing the domain, most of all —
-  // can find them without being handed a link. The slugs are defined by
-  // functions/legal/[doc].js; they are repeated rather than imported because
-  // that route's filename carries brackets and is an awkward import specifier.
-  // A slug that drifts out of step costs a 404 in a sitemap, nothing more.
   const legalEntries = [
     'privacy', 'terms', 'refund', 'delivery', 'creator-terms', 'cookies', 'contact',
   ]

@@ -1,63 +1,11 @@
-// signed-in AND entitled only: the moderation and administration panel
-//
-// This file exists for the reason /api/store exists, and the reasoning is
-// worth repeating rather than cross-referencing.
-//
-// js/pfedit.js is a static asset. Cloudflare serves it to anyone who asks, the
-// service worker caches it, and Googlebot reads it. The admin panel used to
-// live there — seven hundred lines naming every privileged endpoint, every
-// telemetry field, the partner programme, the invite flow and the ban engine.
-// None of it was exploitable: every action behind it is refused by a SECURITY
-// DEFINER guard in Postgres, and a member who edited their role in a console
-// got a panel of buttons that all answered 403.
-//
-// But "not exploitable" is not the standard the rest of this system is held
-// to. A signed-out visitor's page source names no payment provider and quotes
-// no price. It should not describe the moderation tooling either.
-//
-// So the panel is served from here instead, and TWO things gate it:
-//
-//   1. A valid Supabase session, checked against the auth server.
-//   2. A role of admin, dev or partner, checked by asking Postgres — never by
-//      believing a header. An ordinary member gets a comment and no code.
-//
-// AND THE MODULE IS BUILT FOR THE CALLER. A partner is entitled to reports and
-// moderation, so that is the whole of what they are sent: their copy contains
-// no telemetry code, no partner list, no invite flow, no audit reader and no
-// broadcast composer. Not hidden — absent. There is nothing in their browser
-// to read, re-enable in a console, or find in a cache.
-//
-// Environment: SB_URL / SB_KEY. No service key: this endpoint reads a role and
-// serves text, and everything the text goes on to do is guarded again.
-
 import { sbUrl, sbAnon, sbUser } from '../lib/sb.js';
 
-// ---------------------------------------------------------------------------
-// Which tabs each role gets, and in the order they are useful. Reports leads
-// for a partner because it is the only queue they act on; telemetry leads for
-// staff because it is what anyone opening an admin panel looks at first.
 const TABS_STAFF = [
   ['tel', 'TELEMETRY'], ['rpt', 'REPORTS'], ['mod', 'MODERATION'],
   ['prt', 'PARTNERS'], ['log', 'AUDIT'], ['noti', 'NOTIFY'],
 ];
 const TABS_PARTNER = [['rpt', 'REPORTS'], ['mod', 'MODERATION']];
 
-// ---------------------------------------------------------------------------
-// The stylesheet travels with the module, and is split the same way the code
-// is.
-//
-// It used to be appended to css/admin.css, which is as public as the script
-// was: .admPrtAdd, .admBanGo and .admTelGrid describe the panel to anyone who
-// reads the file, and moving the JavaScript while leaving its stylesheet
-// behind would have been a half-move. css/admin.css is back to exactly what it
-// was before any of this — the shell, the tabs and the notification composer
-// it has always carried.
-//
-// Splitting it matters for the same reason splitting the code did. A partner
-// who received the whole sheet would be holding class names for a telemetry
-// grid, a partner list and an invite button — which describes the staff panel
-// just as plainly as the functions would have. Telemetry first, then the two
-// halves both roles need, then partners and the audit trail.
 const STYLE_STAFF = `
 .admTelGrp{margin-bottom:1.6rem;}
 .admTelHd{margin:0 0 .6rem;font-family:var(--fm);font-size:.64rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txd);}
@@ -69,7 +17,6 @@ const STYLE_STAFF = `
 .admTelAt{margin:0;font-family:var(--fb);font-size:.76rem;line-height:1.55;color:var(--txd);}
 `;
 
-// And the half both roles get: the reports queue and the member card.
 const STYLE_CORE = `
 .admRptSwitch{display:flex;gap:.4rem;margin-bottom:1rem;}
 .admRptTog{padding:.42rem .85rem;border:1px solid var(--bdr);border-radius:999px;background:var(--sur);color:var(--txd);font-family:var(--fm);font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
@@ -110,7 +57,6 @@ const STYLE_CORE = `
 @media(hover:hover){.admBanGo:hover{background:var(--danger-bg-hover);}}
 `;
 
-// Partners and the audit trail, staff only, continued.
 const STYLE_STAFF2 = `
 .admPrtTop{display:flex;align-items:center;gap:.7rem;margin-bottom:1rem;}
 .admPrtLbl{font-family:var(--fm);font-size:.68rem;font-weight:700;letter-spacing:.1em;color:var(--tx);}
@@ -139,15 +85,6 @@ const STYLE_STAFF2 = `
 .admLogWhen{font-family:var(--fm);font-size:.6rem;color:var(--txd);opacity:.75;}
 `;
 
-// ---------------------------------------------------------------------------
-// The module: the head, then whichever panels the caller is entitled to, then
-// the boot line. Everything lives in one IIFE over an injected config object,
-// so nothing here reaches window except the two handles the rest of the app
-// genuinely needs — and both of those are closers, not openers.
-//
-// Written with no backticks and no ${ } below, the same discipline
-// functions/api/store.js keeps, so this reads as ordinary JavaScript rather
-// than an escaping puzzle.
 const HEAD = `
 (function(C){
   'use strict';
@@ -600,13 +537,6 @@ const HEAD = `
   }
 `;
 
-// ---------------------------------------------------------------------------
-// STAFF-ONLY PANELS.
-//
-// Spliced into the module only when the caller is admin or dev. A partner's
-// copy does not contain these strings at all — not commented out, not behind a
-// flag, not present. There is nothing in their browser to find in a cache, read
-// in a console, or re-enable by flipping a variable.
 const PANEL_TEL = `
   // ---- telemetry ----------------------------------------------------------
   //
@@ -910,13 +840,6 @@ const PANEL_NOTI = `
   }
 `;
 
-// ---------------------------------------------------------------------------
-// The boot line, and the only two names this module puts on window.
-//
-// Both are closers. There is no window.openAdmPage: the menu entry this module
-// builds holds the opener in a closure, so the panel cannot be opened by name
-// from a console — not that opening it would show anything, since every panel
-// fetches its contents through a guard.
 const FOOT = `
   // The Settings entry, built here rather than in index.html, so the menu of
   // an account without the role carries no trace of it. Same slot the static
@@ -970,12 +893,6 @@ const FOOT = `
 })(__dzOps);
 `;
 
-// ---------------------------------------------------------------------------
-// Supabase environment names. Two spellings are in use across this project and
-// both are accepted; see the same note in functions/api/payouts.js.
-
-// Asked of Postgres, as the caller. Never read from a header, a query string
-// or anything else the browser is in a position to write.
 async function roleOf(env, request) {
   const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_my_collab_state', {
     method: 'POST',
@@ -991,9 +908,6 @@ async function roleOf(env, request) {
 }
 
 export async function onRequestGet({ env, request }) {
-  // Every refusal looks the same from outside: a JavaScript comment, no-store,
-  // noindex. An ordinary member cannot tell "you are not entitled to this" from
-  // "there is nothing here", which is the point of serving it this way at all.
   const deny = (s) =>
     new Response(s === 401 ? '/* sign in required */' : '/* unavailable */', {
       status: s,
@@ -1014,24 +928,16 @@ export async function onRequestGet({ env, request }) {
 
   const staff = !!state.is_staff;
   const partner = !!state.is_partner;
-  // 404, not 403. A member who is neither gets the same answer they would get
-  // for an endpoint that does not exist.
   if (!staff && !partner) return deny(404);
 
   const cfg = {
     staff,
     tabs: staff ? TABS_STAFF : TABS_PARTNER,
-    // A partner opens something called MODERATION, not something called ADMIN
-    // PANEL with most of it missing.
     title: staff ? 'Admin panel' : 'Moderation',
     menu: staff ? '⚙ ADMIN PANEL' : '🛡 MODERATION',
     css: STYLE_CORE + (staff ? STYLE_STAFF + STYLE_STAFF2 : ''),
   };
 
-  // The staff panels are concatenated in only for staff. This is the line that
-  // makes the difference real rather than cosmetic: a partner's response body
-  // does not contain the telemetry, partner-management, audit or broadcast
-  // code in any form.
   const body =
     'var __dzOps = ' + JSON.stringify(cfg) + ';\n' +
     HEAD +
@@ -1041,8 +947,6 @@ export async function onRequestGet({ env, request }) {
   return new Response(body, {
     headers: {
       'content-type': 'application/javascript; charset=utf-8',
-      // never written to a disk cache, never revalidated from one, and never
-      // reachable by a shared cache that has no idea who asked
       'cache-control': 'no-store, private, max-age=0',
       'x-robots-tag': 'noindex, nofollow',
       'x-content-type-options': 'nosniff',

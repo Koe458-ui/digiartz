@@ -1,17 +1,3 @@
--- Two corrections to the entitlement functions, found while wiring the
--- composer to them.
---
--- 1. The legacy grant assumed koe-media. That was true of every listing
---    published before this change and false of every listing published after
---    it: the composer now keeps the first product file's path on the item row
---    as well (the storage delete gate matches a seller against that column), so
---    a listing whose marketplace_file rows failed to write would fall back to
---    the legacy branch and be signed against the wrong bucket. The bucket is
---    not a guess to make — storage.objects knows which one holds the object.
---
--- 2. file_count added the item's own file column to the marketplace_file count,
---    so a listing that carries both — which is now every new listing — reported
---    one file more than it has.
 create or replace function public.dz_market_file_grant(p_item uuid, p_file uuid)
 returns table (
   bucket    text,
@@ -94,8 +80,6 @@ as $$
          p.currency::text,
          coalesce(p.paid_at, p.created_at),
          p.provider::text,
-         -- the same rule dz_market_files uses: attached files if there are any,
-         -- otherwise the one file the item row carries by itself
          (case
             when (select count(*) from public.marketplace_file f where f.item_id = i.id) > 0
               then (select count(*) from public.marketplace_file f where f.item_id = i.id)

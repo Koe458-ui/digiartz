@@ -1,25 +1,3 @@
--- A job posting says the whole job
---
--- The composer asked for a title, a company, one description box and a pay
--- range, and left everything an applicant actually decides on — the hours,
--- the timezone, what to send, when it closes — to be buried inside that one
--- box or left out entirely. This is the rest of the posting, one column per
--- thing rather than one prose field standing in for twenty.
---
--- Everything added here is nullable (or defaulted) so every row already in
--- the table stays valid and keeps reading exactly as it did. The bounds below
--- are the same numbers the composer enforces while typing; they are repeated
--- here because a form is a courtesy and a constraint is a guarantee, and the
--- two have to agree or the browser is the only thing standing between the
--- table and a hundred thousand word posting.
---
--- work_mode replaces the is_remote checkbox as the thing the composer asks
--- for, because "remote or not" cannot say hybrid. is_remote stays and stays
--- authoritative: the two existing location constraints are written against
--- it, the cards and the search index read it, and the composer keeps it in
--- step (is_remote = work_mode is 'remote'). Existing rows are backfilled from
--- it in the same direction.
-
 alter table public.jobs
   add column if not exists about_company            text,
   add column if not exists experience_level         text,
@@ -45,18 +23,12 @@ alter table public.jobs
   add column if not exists visibility               text    not null default 'public',
   add column if not exists featured                 boolean not null default false;
 
--- the postings that predate the column already said which of the three they
--- were, in the only two words the old form had
 update public.jobs
    set work_mode = case when is_remote then 'remote' else 'onsite' end
  where work_mode is null;
 
 alter table public.jobs alter column work_mode set default 'onsite';
 
--- ---- bounds ---------------------------------------------------------------
--- Each one is `x is null or …` so a row that never carried the field is not
--- retroactively invalid. do-blocks because `add constraint if not exists` is
--- not a thing, and this migration has to be safe to run twice.
 do $$
 declare
   c record;
@@ -97,10 +69,6 @@ begin
   end loop;
 end $$;
 
--- ---- grants ---------------------------------------------------------------
--- Every privilege on this table is column level, so a column nobody was
--- granted is a column the client cannot read, write, or even name in a select
--- list without failing the whole request. New columns need saying out loud.
 grant select (
   about_company, experience_level, years_experience, openings, responsibilities,
   requirements, required_skills, nice_to_have_skills, benefits, work_mode,
@@ -125,7 +93,5 @@ grant update (
   portfolio_required, resume_required, cover_letter_required, visibility, featured
 ) on public.jobs to anon, authenticated;
 
--- The list only ever shows public postings, and it sorts featured first. Both
--- of those are one index away from being a sort of the whole table.
 create index if not exists jobs_feed_idx
   on public.jobs (status, visibility, featured desc, created_at desc);

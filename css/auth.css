@@ -1,5 +1,3 @@
-/* login and signup */
-    /* login signup page */
     #authMod{
       position:fixed;inset:0;z-index:500;background:var(--vbg);
       overflow-y:auto;transform:translateX(100%);
@@ -74,13 +72,6 @@
       .laSocialBtn{ flex:1 1 calc(50% - .35rem); }
     }
 
-    /* The small-phone tightening of the home page's artwork grid used to be
-       here — .awGrid{gap:.3rem} under max-width:480px, in the sign-in
-       stylesheet, four files away from the grid it was narrowing and loading
-       after it, so it quietly won. The gap is --artGap now (css/base.css),
-       3px on every phone, and there is nothing left for this rule to do. */
-
-/* image linked comments */
 .cpSelectedImage{
 display:none;
 align-items:flex-start;
@@ -127,6 +118,3 @@ width:80px;
 height:80px;
 }
 }
-
-
-

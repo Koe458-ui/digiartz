@@ -1,11 +1,3 @@
-/* profile page */
-
-    /* One margin for the whole page. The bar, the name, the bio, the tiles,
-       the tabs and the thumbnails all start on the same line, and none of them
-       touch the glass. A phone gets the roomiest share of its width — 16px
-       at 390 — and it settles at 24px from tablet up, which is what every
-       other grid on the site uses. The artwork grid
-       keeps the home grid's columns and gaps — only its margin is this one. */
     #profilePage{
       position:fixed;inset:0;z-index:500;background:var(--bg);
       overflow-y:auto;overflow-x:hidden;transform:translateX(100%);
@@ -16,7 +8,6 @@
     #profilePage.open{transform:translateX(0);}
     @media(prefers-reduced-motion:reduce){ #profilePage{transition:none;} }
 
-    /* the profile, settings, albums and search overlays share one palette */
     #profilePage,#profilePage *,#setPage,#setPage *,
     #pfSearchPage,#pfSearchPage *,
     #albPage,#albPage *,#albViewPage,#albViewPage *{
@@ -25,20 +16,12 @@
       --tc:var(--vtc);--pg:var(--vpg);--pb:var(--vpb);--ps:var(--vps);
       --bdr:color-mix(in srgb,var(--tc) 18%,transparent);
       --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
-      /* The same line as --bdr, mixed into the page instead of into
-         transparency. A translucent line reads as the colour of whatever is
-         behind it, which is fine over the page and wrong on the edge of a bar
-         the page scrolls under: there it lights up thumbnail by thumbnail. Any
-         hairline that sits on scrolling chrome uses this one. */
       --bdrs:color-mix(in srgb,var(--tc) 18%,var(--bg));
     }
     #profilePage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
     #profilePage .subPgTitle{color:var(--tx);}
     #profilePage .awCard{background:var(--sur);}
 
-    /* top bar — the mark is the page's own, not the site's. Search, the bell
-       and the menu are only drawn on your own profile; on anyone else's the
-       left slot carries a way back instead of the mark. */
     .pfTopBar{
       position:sticky;top:0;z-index:12;
       min-height:var(--pfBarH);
@@ -47,19 +30,12 @@
       border-bottom:1px solid var(--bdrs,var(--bdr));
       isolation:isolate;
     }
-    /* Solid, not glass. The bar and the tab row under it are stacked against
-       the top of the page with the grid running beneath both, and anything
-       short of opaque turns the join between them into a bright seam that
-       changes colour with the thumbnail passing behind it. The fill is the
-       page's own background, so nothing about the bar looks different where
-       there is nothing behind it. */
     .pfTopBar::before{
       content:'';position:absolute;inset:0;z-index:-1;
       background:var(--bg);
     }
     .pfTopL{display:flex;align-items:center;gap:.6rem;min-width:0;}
     .pfTopR{display:flex;align-items:center;gap:.15rem;flex:0 0 auto;}
-    /* display:flex would otherwise win over the hidden attribute */
     .pfTopR[hidden]{display:none;}
     .pfTopTitle{
       font-family:var(--fd);font-weight:800;
@@ -81,7 +57,6 @@
     @media(hover:hover){ .pfTopBtn:hover{background:var(--sur2);} }
     .pfTopBtn[hidden]{display:none;}
     .pfTopBack{margin-left:-.55rem;}
-    /* unread mark, same signal as the one on the home screen */
     .pfTopDot{
       position:absolute;top:8px;right:8px;
       width:8px;height:8px;border-radius:50%;
@@ -93,7 +68,6 @@
 
     .pfBdy{width:100%;padding:0 0 2rem;background:var(--bg);}
 
-    /* banner */
     .pfBanner{
       position:relative;width:100%;
       height:clamp(132px,30vw,300px);
@@ -103,15 +77,12 @@
       overflow:hidden;
     }
     .pfBanner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0;}
-    /* the banner fades into the page so the identity block below reads as one
-       piece with it rather than as a strip stuck on top */
     .pfBanner::after{
       content:'';position:absolute;left:0;right:0;bottom:0;height:45%;
       background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--bg) 82%,transparent));
       pointer-events:none;
     }
 
-    /* identity */
     .pfId{padding:0 var(--pfPad) .9rem;}
     .pfIdTop{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.85rem 1.1rem;}
     .pfIdWho{display:flex;align-items:flex-end;gap:.85rem;min-width:0;flex:1 1 auto;}
@@ -144,14 +115,12 @@
       letter-spacing:.02em;color:var(--txd);margin-top:.1rem;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
-    /* low merit warning */
     .pfWarnMark{
       display:none;flex:0 0 auto;color:var(--danger-strong);font-weight:900;
       cursor:help;line-height:1;
     }
     .pfWarnMark.on{display:inline;}
 
-    /* milestone components */
     .msName{color:var(--ms-c,inherit);}
     .msRibbon{
       display:inline-flex;align-items:center;max-width:100%;margin-top:.45rem;
@@ -181,8 +150,6 @@
     }
     .pfJoined:empty{display:none;}
 
-    /* actions — full width and under the thumb on a phone, back beside the
-       name once the row is wide enough to hold both */
     .pfActionRow{display:flex;gap:.5rem;flex:1 1 100%;min-width:0;}
     .pfActionRow[hidden]{display:none;}
     .pfActBtn{
@@ -205,14 +172,11 @@
       background:var(--pfBlue);border-color:var(--pfBlue);color:#fff;
     }
     @media(hover:hover){ .pfActBtn--pri:hover{background:var(--pfBlueH);border-color:var(--pfBlueH);} }
-    /* on, as in already credited or already friends */
     .pfActBtn.on{background:var(--pdim);border-color:var(--pg);color:var(--tx);}
     @media(min-width:720px){
       .pfActionRow{flex:0 0 auto;padding-bottom:.2rem;}
       .pfActBtn{flex:0 0 auto;padding-inline:1.15rem;}
     }
-    /* three labelled buttons do not fit a phone. Share is the one that
-       reads without its word, so it is the one that loses it */
     @media(max-width:520px){
       #pfBtnShare{flex:0 0 auto;width:46px;padding-inline:0;}
       #pfBtnShare .pfActTxt{display:none;}
@@ -221,14 +185,10 @@
       .pfActBtn{padding-inline:.55rem;gap:.35rem;font-size:.8rem;}
     }
 
-    /* stat tiles — one line at every width. On a phone that line scrolls,
-       with the fifth tile half in view so it reads as more to the right */
     .pfTiles{
       display:flex;gap:.45rem;padding:0 var(--pfPad);margin:.35rem 0 1.1rem;
       overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
       scrollbar-width:none;-ms-overflow-style:none;
-      /* without this the first tile snaps to the scrollport edge, which is
-         inside the padding, and comes to rest against the glass */
       scroll-snap-type:x proximity;scroll-padding-inline:var(--pfPad);
     }
     .pfTiles::-webkit-scrollbar{display:none;}
@@ -239,7 +199,6 @@
       padding:.8rem .55rem .7rem;
       background:var(--sur);border:1px solid var(--bdr);border-radius:14px;
     }
-    /* once six fit without squeezing, they stop scrolling and share the row */
     @media(min-width:720px){
       .pfTiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.6rem;overflow:visible;}
       .pfTile{min-width:0;}
@@ -255,13 +214,8 @@
       color:var(--txd);text-align:center;
     }
 
-    /* tabs */
-    /* Stuck to the bar's bottom edge, opaque for the same reason it is —
-       the two of them are one block of chrome and the grid passes under it. */
     .pfTabs{
       position:sticky;top:var(--pfBarH);z-index:5;
-      /* the admin, my-work and edit pages borrow this row without borrowing
-         the palette above, so the plain line stays the fallback */
       border-bottom:1px solid var(--bdrs,var(--bdr));isolation:isolate;
     }
     .pfTabs::before{
@@ -290,8 +244,6 @@
     .pfTab.active{color:var(--tx);border-bottom-color:var(--pg);}
     .pfTab:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;border-radius:6px;}
 
-    /* panels — the panel adds no inset of its own, each block owns the one
-       that suits it, so grids reach the edge and prose does not */
     .pfPanel{display:none;padding:1.1rem 0 0;}
     .pfPanel.active{display:block;}
     #profilePage .dzGrid,
@@ -299,12 +251,10 @@
     #profilePage .xpWrap{padding-left:var(--pfPad);padding-right:var(--pfPad);}
     #profilePage .albGrid{margin-top:0;padding:0 var(--pfPad);}
 
-    /* artwork grid — the same shape as the grid on the home screen */
     .pfGrid{
       display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
       gap:var(--artGap);padding:0 var(--pfPad);
     }
-    /* columns only — the gap is --artGap and steps at these same widths */
     @media(min-width:700px){ .pfGrid{grid-template-columns:repeat(3,minmax(0,1fr));} }
     @media(min-width:1280px){ .pfGrid{grid-template-columns:repeat(4,minmax(0,1fr));} }
     .pfEmpty{
@@ -312,23 +262,9 @@
       font-family:var(--fb);font-size:.9rem;color:var(--txd);
     }
 
-    /* Every block on the profile already measures from --pfPad, and --pfPad is
-       the shell from the tablet up — so the identity, the tiles, the tabs and
-       the thumbnails all start on one line without a cap of their own. The
-       two that did not read the token are added here.
-
-       The level panel's own cap is lifted with the rest of them — it lays its
-       cards out across the shell on a desktop, in css/overrides.css. */
     #profilePage .xpWrap{ max-width:none; }
     .pfTopBar,.pfSrchHdr{ padding-inline:var(--pfPad); }
 
-    /* about */
-    /* Bio, Connect and Standing. Three blocks of a person's own page, which is
-       what they are — not three panels laid on it. Each already announces
-       itself in a label the eye reads as a heading, so the box around it was
-       saying a second time what the label said first. The space between them
-       does that work now, which is why the gap grows as the boxes go: what
-       used to be a border plus an inset is a single, larger interval. */
     .pfAboutWrap{
       display:grid;gap:1.6rem;padding:0 var(--pfPad);
       grid-template-columns:minmax(0,1fr);
@@ -353,17 +289,12 @@
       color:var(--tc);margin-top:.6rem;
     }
 
-    /* connect, one platform per line */
     .pfConnectList{display:flex;flex-direction:column;align-items:flex-start;gap:.7rem;}
     .pfConnectItem{font-family:var(--fb);font-size:.88rem;font-weight:600;text-decoration:none;}
     .pfConnectItem--on{color:var(--pb);}
     .pfConnectItem--on:hover{text-decoration:underline;}
     .pfConnectItem--off{color:var(--tc);cursor:default;}
 
-    /* Search inside one profile — and, on the same styles, search across the
-       whole gallery. Same component, different haystack: the gallery's page
-       keeps the site palette rather than the profile's, so it is added here
-       and not to the palette block above. */
     #pfSearchPage,#fgSearchPage{
       position:fixed;inset:0;z-index:530;background:var(--bg);color:var(--tx);
       overflow-y:auto;overflow-x:hidden;transform:translateX(100%);
@@ -415,15 +346,7 @@
     }
     .pfSrchGrpCount{font-family:var(--fm);font-size:.66rem;color:var(--tc);}
     .pfSrchRows{display:flex;flex-direction:column;}
-    /* The gallery's search draws each group with the cards that section
-       already uses — artwork and artist cards in the home page's grid,
-       listings and resources in the Marketplace's, posts in the Blog's
-       column. All this adds is the page's own inset and the space between one
-       group and the next; the grids keep their own columns and gaps, which is
-       what makes a result look like the thing it is.
 
-       The home page's grid also carries the top margin it needs under the
-       board rail, and there is no board rail here. */
     .pfSrchCards{padding:0 var(--pfPad) 1rem;box-sizing:border-box;}
     .pfSrchCards.awGrid{margin:0;}
     .pfSrchRow{
@@ -455,7 +378,6 @@
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
 
-    /* profile menu drawer, scrollable item list, settings page */
     #setPage{
       position:fixed;inset:0;z-index:546;background:var(--bg);color:var(--tx);
       overflow-y:auto;transform:translateX(100%);
@@ -463,13 +385,6 @@
     }
     #setPage.open{transform:translateX(0);}
 
-    /* A legal document opened from Settings is a step further in, like Theme
-       or Edit My Work — so it slides in over the menu and its back arrow
-       returns there. The footer still opens the modal: from the bottom of the
-       home page there is no menu to go back to, and a sheet over the page is
-       the right shape for that. One document, two containers.
-
-       547, above Settings at 546, so it covers the menu it came from. */
     #legalPage{
       position:fixed;inset:0;z-index:547;background:var(--bg);color:var(--tx);
       overflow-y:auto;transform:translateX(100%);
@@ -477,15 +392,10 @@
     }
     #legalPage.open{transform:translateX(0);}
     @media(prefers-reduced-motion:reduce){ #legalPage{transition:none;} }
-    /* Typography comes from the .lgBdy selectors in connect.css, shared with
-       the modal. This is only the column it sits in. */
     .lgBdy{
       max-width:760px;margin:0 auto;
       padding:1.5rem var(--pfPad,1.2rem) 3rem;
     }
-    /* Settings is a stack of named groups. Phone first: one column, rows wide
-       enough to hit with a thumb. It widens with the screen and splits into
-       two columns once there is room for two without either going narrow. */
     .setList{
       display:flex;flex-direction:column;gap:1.35rem;
       max-width:640px;margin:0 auto;padding:1rem 1rem 4rem;
@@ -500,11 +410,8 @@
     }
     .setGrpIcon{font-size:1.3em;line-height:1;flex:0 0 auto;}
     .setGrpItems{display:flex;flex-direction:column;gap:.4rem;}
-    /* what /api/store and syncAdmBtn inject becomes a row of the group it sits
-       in, not one block wedged inside it */
     #setListGate,#setAdmGate{display:contents;}
 
-    /* the row, not the words on it: the whole line is the button */
     .pfMenuItem{
       width:100%;box-sizing:border-box;min-height:52px;
       font-family:var(--fb);font-size:.95rem;font-weight:500;letter-spacing:.01em;text-align:left;
@@ -515,12 +422,8 @@
       transition:background .18s,color .18s,border-color .18s,transform .18s;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     }
-    /* The Terms & Privacy rows are anchors, because they carry a real
-       /legal/<slug> href to fall back on. Everything else about them is
-       already a menu row; only the link underline has to go. */
     a.pfMenuItem{text-decoration:none;}
     .pfMenuTxt{flex:1 1 auto;min-width:0;}
-    /* chevron — also drawn for the rows JS injects, which carry no markup */
     .pfMenuItem::after{
       content:'';flex:0 0 auto;width:7px;height:7px;margin-right:2px;
       border-right:2px solid var(--txd);border-bottom:2px solid var(--txd);
@@ -536,13 +439,11 @@
     .pfMenuItem:hover::after{border-color:var(--pg);transform:rotate(-45deg) translate(1px,1px);}
     .pfMenuItem:active{transform:scale(.99);}
     .pfMenuItem:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    /* a device without a hover pointer should not keep a hover state stuck on */
     @media(hover:none){
       .pfMenuItem:hover{background:var(--sur);border-color:var(--bdr);}
       .pfMenuItem:hover::after{border-color:var(--txd);transform:rotate(-45deg);}
     }
 
-    /* named, but nothing behind it yet */
     .pfMenuItem--soon{color:var(--txd);}
     .pfMenuItem--soon::after{display:none;}
     .pfMenuSoon{
@@ -551,30 +452,24 @@
       padding:.15rem .45rem;flex:0 0 auto;
     }
 
-    /* log out — no chevron: it does something, it does not go somewhere */
     .pfMenuItem--danger{color:var(--danger);border-color:rgba(220,38,38,.28);}
     .pfMenuItem--danger::after{display:none;}
     .pfMenuItem--danger:hover{background:var(--danger-bg);border-color:var(--danger-bd);color:var(--danger);}
 
-    /* phone */
     @media(max-width:480px){
       .setList{gap:1.15rem;padding:.85rem .8rem 4.5rem;}
       .setGrpHd{font-size:1rem;}
       .pfMenuItem{font-size:.9rem;min-height:50px;padding:.8rem .9rem;border-radius:11px;}
     }
-    /* tablet up: a little more air */
     @media(min-width:640px){
       .setList{max-width:720px;padding:1.4rem 1.25rem 4rem;}
       .setGrpHd{font-size:1.12rem;}
       .pfMenuItem{min-height:54px;}
     }
-    /* desktop: one column, same as every other width. The list stays a single
-       thread to read down, centred, and only the measure grows. */
     @media(min-width:1000px){
       .setList{max-width:760px;padding:1.8rem 1.5rem 4rem;}
     }
 
-    /* log out confirmation — .upPop gives the backdrop, blur and fade */
     .loConfirm{z-index:20050;}
     .loConfirmBox{
       background:var(--sur);border:1px solid var(--bdr);border-radius:18px;
@@ -585,8 +480,6 @@
     .loConfirm.open .loConfirmBox{transform:scale(1);}
     .loConfirmIcon{display:block;width:46px;height:46px;margin:0 auto .7rem;}
     .loConfirmTri{fill:var(--brand-red);}
-    /* the mark is cut out of the triangle, so it stays legible on whichever
-       surface the theme puts behind it */
     .loConfirmBang{stroke:var(--sur);stroke-width:2.1;stroke-linecap:round;}
     .loConfirmDot{fill:var(--sur);}
     .loConfirmTitle{
@@ -610,7 +503,6 @@
     .loConfirmBtn--no:hover{background:var(--bdr);border-color:var(--bdrh);}
     .loConfirmBtn--yes{background:var(--danger-bg);border:1px solid var(--danger-bd);color:var(--danger);}
     .loConfirmBtn--yes:hover{background:var(--danger-bg-hover);border-color:var(--danger-strong);}
-    /* phone: stack, with the way out on top and under the thumb */
     @media(max-width:380px){
       .loConfirmBox{padding:1.4rem 1.1rem 1.15rem;}
       .loConfirmBtns{flex-direction:column-reverse;}
@@ -620,14 +512,12 @@
       .loConfirm.open .loConfirmBox{transform:none;}
     }
 
-    /* share profile sheet */
     .pfShareBox{max-width:340px;align-items:center;padding:1.6rem 1.4rem 1.5rem;position:relative;}
     .pfShareTitle{
       font-family:var(--fd);font-size:.92rem;font-weight:800;letter-spacing:.18em;
       color:var(--tx);margin:0 0 1.1rem;text-align:center;
     }
     .pfShareTitle .s{color:var(--pb);font-size:.75em;}
-    /* qr stays dark on white */
     .pfShareQrCard{
       background:#FFFFFF;border-radius:14px;padding:10px;
       width:min(210px,62vw);aspect-ratio:1;
@@ -658,7 +548,6 @@
     .pfShareCirc--pri{background:var(--pg);border-color:var(--pg);color:var(--text-on-accent);box-shadow:0 3px 14px rgba(var(--pg-rgb),.35);}
     .pfShareCirc--pri:hover{filter:brightness(1.08);background:var(--pg);}
 
-    /* avatar and banner edit */
     .pfAvBEditBtn{
       position:absolute;z-index:3;width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
       display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;
@@ -667,7 +556,6 @@
     .pfAvBEditBtn:hover{background:rgba(0,0,0,.75);}
     .pfAvBEditBtn svg{width:14px;height:14px;}
 
-    /* edit profile page */
     #pfEditPage{
       position:fixed;inset:0;z-index:560;
       background:var(--vbg);color:var(--vtx);
@@ -677,9 +565,6 @@
     #pfEditPage.open{transform:translateX(0);}
     #pfEditPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
     #pfEditPage .subPgTitle{color:var(--tx);}
-    /* A 520px column centred in a 1600px window is the floating card the
-       shell exists to remove. It takes the page's measure like everything
-       else; the fields inside it keep a readable one of their own. */
     .pfEditBdy{margin:0 auto;box-sizing:border-box;padding:1.6rem var(--shellPad) 4rem;}
     .pfEditBdy > *{max-width:640px;}
     .pfEditBannerWrap{
@@ -719,7 +604,6 @@
     .pfEditSaveBtn:hover{opacity:.88;}
     .pfEditSaveBtn:disabled{opacity:.5;cursor:not-allowed;}
 
-    /* connect rows in edit */
     .pfConnectRow{margin-bottom:.9rem;}
     .pfConnectRow:last-child{margin-bottom:0;}
     .pfConnectRowLbl{display:block;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;color:rgba(var(--vtx2-rgb),.55);margin-bottom:.35rem;}

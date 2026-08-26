@@ -1,13 +1,11 @@
-// ranking boards
   (function () {
     'use strict';
 
-    var TICK_MS = 45000;    // refresh cadence
-    var TOP = 10;           // box shows top 10
-    var PG_PAGE = 50;       // rows per fetch
-    var NEAR_END = 240;     // scroll trigger distance
+    var TICK_MS = 45000;
+    var TOP = 10;
+    var PG_PAGE = 50;
+    var NEAR_END = 240;
 
-    // row value label
     var BOARDS = [
       { key:'level',     name:'LEVEL',     word:'LEVEL' },
       { key:'cred',      name:'CRED',      word:'CRED' },
@@ -15,7 +13,7 @@
       { key:'bookmarks', name:'BOOKMARKS', word:'SAVES' }
     ];
 
-    var state = {};   // board state
+    var state = {};
     var timer = null, seen = false, started = false;
 
     function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
@@ -37,16 +35,13 @@
         : (b.word + ' ' + num(row.score));
     }
 
-    // card shell
     function buildCards () {
       var grid = document.getElementById('rkGrid');
       if (!grid) return false;
       grid.innerHTML = '';
       BOARDS.forEach(function (b) {
-        // reuse xpcard
         var card = el('article', 'rkCard rkCard--' + b.key + ' xpCard');
 
-        // heading, name and count
         var head = el('div', 'rkHead');
         head.appendChild(el('div', 'rkHeadT', b.name + ' LEADERBOARD'));
         head.appendChild(el('div', 'rkHeadN', 'TOP 10'));
@@ -75,10 +70,8 @@
       return true;
     }
 
-    // carousel, one board per slide
     var track, dotsWrap, prevBtn, nextBtn, cur = 0;
 
-    // slide by card position
     function cardAt (i) { return (track && track.children[i]) ? track.children[i] : null; }
     function centreOf (c) { return c.offsetLeft + c.clientWidth / 2; }
 
@@ -91,7 +84,6 @@
     }
     function syncNav () {
       if (!track) return;
-      // nearest card is current
       var mid = track.scrollLeft + track.clientWidth / 2, best = 0, bd = Infinity;
       for (var i = 0; i < BOARDS.length; i++) {
         var c = cardAt(i);
@@ -137,7 +129,6 @@
         if (raf) return;
         raf = requestAnimationFrame(function () { raf = null; syncNav(); });
       }, { passive: true });
-      // re anchor on resize
       window.addEventListener('resize', function () {
         var c = cardAt(cur);
         if (c) track.scrollLeft = centreOf(c) - track.clientWidth / 2;
@@ -146,16 +137,6 @@
       syncNav();
     }
 
-    /* The top ten of a board.
-
-       get_rank_board is the most expensive read on the site \u2014 it ranks every
-       member \u2014 and it is on the home page, so every visitor triggers it and
-       they all get the same answer. That is the textbook case for a cache:
-       public, identical for everyone, costly to compute, and nobody minds if
-       the leaderboard is three minutes behind. Held for three, servable for
-       ten while a refresh runs, and one request however many boards ask at
-       once. A board painted from the saved copy repaints when the fresh rows
-       land. */
     async function loadTop (b) {
       var s = state[b.key], c = db();
       if (!s || s.busy) return;
@@ -188,7 +169,6 @@
       s.listEl.appendChild(el('div', 'xpNote', msg));
     }
 
-    // one ranking row
     var MEDAL = ['1ST', '2ND', '3RD'];
 
     function rowEl (b, r, uid, onTap) {
@@ -196,7 +176,6 @@
       row.setAttribute('role', 'button');
       row.setAttribute('tabindex', '0');
 
-      // real rank, ties share place
       var pos = Number(r.rnk) || 0;
       row.appendChild(el('div',
         'xpLbRank' + (pos >= 1 && pos <= 3 ? ' m' + pos : ''),
@@ -216,7 +195,6 @@
       row.appendChild(ava);
 
       var nameEl = el('div', 'xpLbName', r.username || 'Artist');
-      // tier tint on name
       if (window.DZ_MS) DZ_MS.paintName(nameEl, Number(r.lvl) || 0);
       row.appendChild(nameEl);
 
@@ -229,7 +207,6 @@
       return row;
     }
 
-    // paint a box
     function render (b) {
       var s = state[b.key];
       var uid = me() ? me().id : null;
@@ -238,11 +215,9 @@
       if (sig === s.sig) return;
       s.sig = sig;
 
-      // heading count
       var n = s.headEl && s.headEl.querySelector('.rkHeadN');
       if (n) n.textContent = s.total ? (num(s.total) + (s.total === 1 ? ' ARTIST' : ' ARTISTS')) : 'TOP 10';
 
-      // hidden count on button
       if (s.allEl) {
         s.allEl.textContent = (s.total > s.rows.length)
           ? ('VIEW ALL ' + num(s.total) + ' \u2192')
@@ -262,7 +237,6 @@
       });
     }
 
-    // your rank footer
     async function loadMine (b) {
       var s = state[b.key], c = db(), u = me();
       if (!s) return;
@@ -280,7 +254,6 @@
       if (!c) { f.appendChild(el('span', 'rkMineLbl', 'Your rank')); return; }
 
       f.appendChild(el('span', 'rkMineLbl', 'Your rank'));
-      // footer opens full page
       f.classList.add('tap');
       f.onclick = function () { openRankPage(b.key); };
       try {
@@ -288,7 +261,6 @@
         if (r.error) throw r.error;
         var d = (r.data && r.data[0]) || null;
         if (!d) {
-          // unranked
           var un = el('span', 'rkMinePos', 'UNRANKED');
           f.appendChild(un);
           return;
@@ -300,13 +272,11 @@
       }
     }
 
-    // refresh one board
     function reload (b) {
       loadTop(b);
       loadMine(b);
     }
 
-    // refresh every board
     function tick () {
       if (document.visibilityState !== 'visible' || !seen) return;
       BOARDS.forEach(reload);
@@ -324,7 +294,6 @@
       if (!buildCards()) return;
       buildNav();
       var sec = document.getElementById('rankSec');
-      // wake on scroll into view
       if (sec && 'IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entries) {
           entries.forEach(function (en) {
@@ -336,13 +305,11 @@
       } else {
         seen = true; start();
       }
-      // refresh on tab focus
       document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible' && started) tick();
       });
     });
 
-    // full ranking page
     var pg = { board: 'level', rows: [], off: 0, total: 0, done: false, busy: false, wired: false };
 
     function pgBoard () {
@@ -384,7 +351,6 @@
       pgLoad();
     }
 
-    // page in fifty at a time
     async function pgLoad () {
       var c = db(), b = pgBoard();
       if (pg.busy || pg.done) return;
@@ -393,9 +359,6 @@
       if (!c) { list.innerHTML = ''; list.appendChild(el('div', 'xpNote', 'RANKING UNAVAILABLE')); return; }
       pg.busy = true;
       try {
-        // The full board, fifty at a time. Same query, same public answer, so
-        // each page is cached under its own offset — a reader scrolling back up
-        // and down the leaderboard does not re-rank the site for every screen.
         var pgCache = window.dzCached ? window.dzCached() : null;
         var pgLoadRows = async function () {
           var r = await c.rpc('get_rank_board', { board: b.key, lim: PG_PAGE, off: pg.off });
@@ -406,7 +369,7 @@
           ? await pgCache.getOrSet(
               'ranking:' + b.key + ':page:' + pg.off + ':' + PG_PAGE, pgLoadRows, 'ranking')
           : await pgLoadRows();
-        if (!pg.off) list.innerHTML = '';               // clear skeletons
+        if (!pg.off) list.innerHTML = '';
         if (rows.length) pg.total = Number(rows[0].total) || pg.total;
         pg.rows = pg.rows.concat(rows);
         pg.off += rows.length;
@@ -416,7 +379,6 @@
         rows.forEach(function (row) {
           list.appendChild(rowEl(b, row, uid, function (rr) {
             if (!rr.username || typeof openProfileByUsername !== 'function') return;
-            // remember for back out
             openProfileByUsername(rr.username, true);
           }));
         });
@@ -469,7 +431,6 @@
 
       if (!pg.wired) {
         pg.wired = true;
-        // page scroll loads more
         page.addEventListener('scroll', function () {
           if (pg.busy || pg.done) return;
           if (page.scrollHeight - page.scrollTop - page.clientHeight < NEAR_END) pgLoad();
@@ -492,14 +453,12 @@
       else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
     };
 
-    // escape closes
     document.addEventListener('keydown', function (ev) {
       if (ev.key !== 'Escape') return;
       var page = document.getElementById('rankPage');
       if (page && page.classList.contains('open')) closeRankPage();
     });
 
-    // refresh on auth change
     window.rkRefresh = function () {
       if (started) BOARDS.forEach(reload);
       var page = document.getElementById('rankPage');

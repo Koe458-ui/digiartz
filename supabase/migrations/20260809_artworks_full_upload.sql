@@ -1,26 +1,3 @@
--- An artwork says what it is, and what may be done with it
---
--- The fourth and last of these. The upload panel asked for an image, a title,
--- a description, a category, tags and one piece of software. What medium it
--- is, who else worked on it, what a viewer may do with it, whether it is
--- mature, and where the process was written up were all unaskable.
---
--- Two notes on columns that already existed and are kept rather than replaced:
---
---   software is a single name and half the site reads it — the gallery card,
---   the search index, the edit form. software_list is the real answer now,
---   and the composer keeps software in step with its first entry, so nothing
---   that reads the old column has to learn anything.
---
---   is_mature is already set by moderation from the AI rating. It stays that
---   way and gains a second source: the uploader's own declaration. The two are
---   OR-ed, because an uploader saying "this is mature" is information
---   moderation does not have, and moderation saying so about work the
---   uploader called safe is information the uploader did not volunteer.
---
--- Everything added here is nullable or defaulted, so every artwork already in
--- the table stays valid and reads exactly as it did.
-
 alter table public.artworks
   add column if not exists summary              text,
   add column if not exists subject_matter       text,
@@ -39,18 +16,12 @@ alter table public.artworks
   add column if not exists seo_title            text,
   add column if not exists seo_description      text,
   add column if not exists slug                 text,
-  -- the derived half: read off the upload, never typed
   add column if not exists file_ext             text,
   add column if not exists file_size            bigint,
   add column if not exists width                integer,
   add column if not exists height               integer,
   add column if not exists updated_at           timestamptz not null default now();
 
--- ---- bounds ---------------------------------------------------------------
--- New columns are checked outright — they are null or empty on every existing
--- row. name and description are tightened NOT VALID and left unvalidated: the
--- check still applies to every INSERT and UPDATE from here on, and what it
--- skips is the sweep over artworks uploaded under the old bounds.
 do $$
 declare c record;
 begin
@@ -75,13 +46,8 @@ begin
       ('art_tags_len',         'public.arr_items_within(tags, 1, 30)', true),
       ('art_category_n',       'cardinality(category) <= 5', true),
       ('art_dims_rng',         '(width is null or width between 1 and 100000) and (height is null or height between 1 and 100000)', true),
-      -- The signer already refuses an image over 25MB before a byte is
-      -- stored, and the panel refuses over 20MB. This is that ceiling written
-      -- where the row lives, so a row cannot claim a size storage would never
-      -- have accepted.
       ('art_file_size_rng',    'file_size is null or (file_size >= 0 and file_size <= 26214400)', true),
       ('art_pages_n',          'pages is null or jsonb_typeof(pages) <> ''array'' or jsonb_array_length(pages) <= 10', true),
-      -- tightened on existing columns: enforced from here on, not backfilled
       ('art_name_len',         'name is null or char_length(btrim(name)) between 3 and 100', false),
       ('art_description_len',  'description is null or char_length(btrim(description)) between 20 and 5000', false)
     ) as t(name, expr, do_validate)
@@ -96,9 +62,6 @@ begin
   end loop;
 end $$;
 
--- ---- grants ---------------------------------------------------------------
--- Column level, like every other table here. Nothing on an artwork is
--- private — an artwork is a thing shared on purpose.
 grant select (
   summary, subject_matter, medium, software_list, license, commercial_use,
   attribution_required, modification_allowed, credits, process_notes,
@@ -120,16 +83,9 @@ grant update (
   seo_description, slug, file_ext, file_size, width, height, updated_at
 ) on public.artworks to anon, authenticated;
 
--- the gallery only shows published artwork, and sorts featured first
 create index if not exists artworks_feed_idx
   on public.artworks (status, visibility, kind, featured desc, created_at desc);
 
--- ---- the scheduled path carries them too ----------------------------------
--- A scheduled upload sits in scheduled_uploads until its time comes, and the
--- publisher builds the artwork row from it. Everything added above would have
--- been silently dropped on the way through. One jsonb column carries it
--- rather than twenty more columns, because this table is a waiting room and
--- nothing queries it by these fields.
 alter table public.scheduled_uploads add column if not exists extra jsonb;
 
 grant select (extra) on public.scheduled_uploads to anon, authenticated;
@@ -193,7 +149,6 @@ BEGIN
       COALESCE(r.thumb_x,50), COALESCE(r.thumb_y,50), COALESCE(r.thumb_zoom,1),
       r.pages, r.kind, r.user_id, r.software,
       r.phash, 'approved', COALESCE(r.content_rating,'SAFE'),
-      -- the uploader's declaration and the reviewer's judgement, OR-ed
       COALESCE(r.is_mature,false) OR COALESCE((x->>'declared_mature')::boolean, false),
       r.ai_moderation,
       x->>'summary', x->>'subject_matter', x->>'medium',
@@ -217,8 +172,6 @@ BEGIN
     )
     RETURNING id INTO new_art;
 
-    -- Re-attach the albums picked at upload time. Albums deleted or
-    -- reassigned while the piece waited are simply skipped.
     IF r.album_ids IS NOT NULL AND array_length(r.album_ids, 1) > 0 THEN
       INSERT INTO public.album_items (album_id, artwork_id)
       SELECT al.id, new_art

@@ -1,56 +1,22 @@
-/* dark overrides, subscription */
-/* Ground, glow and chrome.
-
-   This section used to be called "dark theme overrides", and it was: it is
-   older than the second theme, from when the site had one ground and this was
-   the file that forced everything onto it. The rules themselves were brought
-   over to tokens long ago — --bg, --sur, --sur2, --bdr, --tx all follow
-   whichever theme is on — but two shadows and a scrim were left as literals,
-   and the name kept saying the block belonged to one theme.
-
-   The name is wrong and now gone. The shadows read --sh-card, which each
-   palette defines for itself, so a card on paper is no longer lit like a card
-   on charcoal. Charcoal's values are unchanged. */
-
-/* glow and shadow
-
-   A drop shadow is a promise that the thing casting it is a separate object
-   lying on top of the page. That is true of a modal and of the filter panel —
-   both are lifted over the document and have to read as lifted. It was never
-   true of a thumbnail: an artwork is the page's content, not an object resting
-   on it. .gItem keeps its outline, which is what tells one work from the next
-   in a grid three pixels apart; it casts nothing. */
 .modal,.legalModal,#fgFltPanel{
   box-shadow:var(--sh-card)!important;
 }
 .fltDone:hover,.sCard:hover,.cpBarSend:hover,.fgFltBtn:hover,.fgFltBtn.active{box-shadow:none!important;}
 
-/* overlay scrims */
 #fgFltOvr::before{background:color-mix(in srgb,var(--bg) 55%,transparent)!important;}
 .cpBar::before{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;}
 .cpBar{border-top:1px solid var(--bdr);}
-/* #artModal's ground is in css/viewer.css with the rest of that viewer. */
-/* The card hover scrim was declared here too, at the identical value css/hero.css
-   already gives it, with an !important bolted on that nothing needed — no other
-   rule sets .gOv's background. One declaration now, in the file that owns the
-   card. It is deliberately not a token and deliberately not theme-aware: it
-   darkens ARTWORK so the artist's name can be read in white over it, and a
-   photograph is the same photograph in both themes. */
 
-/* cards and containers */
 .gItem,.modal,.legalModal,#fgFltPanel{
   background:var(--sur);border-color:var(--bdr);
 }
 .awCard{background:var(--sur);border-color:var(--bdr);}
 #artworks .awCard{background:var(--sur);}
 
-/* gallery chrome */
 #fgFltPanel{background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%)!important;border-color:var(--bdr)!important;}
 
-/* inputs */
 .cpBarInput{background:var(--sur2)!important;color:var(--tx);border-color:var(--bdr)!important;}
 
-/* hero layer */
 #hero,#hero *{
   --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
   --tx:var(--vtx);--txd:var(--vtxd);
@@ -59,14 +25,7 @@
   --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
   --pdim:color-mix(in srgb,var(--tc) 12%,transparent);
 }
-/* The bottom nav's sign-in chip and avatar chip were here — a 34px circle
-   holding either a person outline or the member's own picture. The bar at the
-   top of the document names its account control in words instead (Sign in /
-   Profile, written by js/auth.js), so there is no chip left to style. */
 
-/* subscription page */
-
-/* keyframes */
 @keyframes subBorderSpin {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
@@ -88,7 +47,6 @@
   0%,100% { opacity:1; }
   50%      { opacity:.7; }
 }
-/* overlay panel */
 #subPage {
   position: fixed;
   inset: 0;
@@ -99,7 +57,6 @@
 }
 #subPage.open { transform: translateX(0); }
 
-/* header bar */
 .subPgHdr {
   position: sticky;
   top: 0;
@@ -111,7 +68,6 @@
   gap: 1rem;
   isolation: isolate;
 }
-/* blur layer */
 .subPgHdr::before {
   content: '';
   position: absolute;
@@ -121,14 +77,7 @@
   -webkit-backdrop-filter: blur(12px);
   z-index: -1;
 }
-/* The back button on every sub-page: subscription, settings, ranking, my
-   work, albums, notifications, analytics and the rest.
 
-   It carries the same chevron the gallery, the community and the search
-   pages carry, drawn rather than typed. It used to be a ← in the mono face,
-   which is a different mark in a different weight at a different size on
-   every one of them — a page reached from the gallery changed its back
-   button on the way in. */
 .subPgX {
   background: none;
   border: none;
@@ -143,7 +92,6 @@
   padding: 0;
   -webkit-tap-highlight-color: transparent;
 }
-/* the size the header's chevrons are drawn at everywhere else */
 .subPgX svg { width: 22px; height: 22px; display: block; }
 .subPgX:hover { color: var(--tc); }
 .subPgX:active { transform: scale(.92); }
@@ -159,20 +107,12 @@
 }
 .subPgTitle .s { color: var(--pg); }
 
-/* scrollable body
-
-   Every full-screen sub-page hangs off this: subscription, upload, settings,
-   my work, notifications. It was a 1400px column centred in the window, which
-   on a wide screen read as a card lying on the page rather than as the page.
-   It is the shell now — ground to both edges, content inset by the same share
-   the gallery behind it uses. */
 .subPgBdy {
   padding: 3.5rem var(--shellPad) 6rem;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
-/* page headline */
 .subPgHeadline {
   text-align: center;
   margin-bottom: 3rem;
@@ -195,7 +135,6 @@
   text-transform: uppercase;
 }
 
-/* download allowance strip, sits above the plan cards */
 .subQuota {
   max-width: 1040px;
   margin: 0 auto 2.6rem;
@@ -250,8 +189,6 @@
   font-size: .72rem;
   color: var(--txd);
 }
-/* one accent per plan, matching the cards below. the border carries it, not the
-   number: gold on the light theme's near-white surface misses 4.5:1 as text */
 .subQuotaCell--lite    { border-color: rgba(59,130,246,.35); }
 .subQuotaCell--premium { border-color: rgba(168,85,247,.35); }
 .subQuotaCell--max     { border-color: rgba(234,179,8,.35); }
@@ -269,7 +206,6 @@
   .subQuotaNote  { font-size: .72rem; text-align: left; }
 }
 
-/* card grid */
 .subGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -279,26 +215,21 @@
   gap: 1.5rem;
   align-items: start;
 }
-/* On the shell the cards take the width the page takes — three plans across
-   the wall, not a 1040px block floating in the middle of it. */
 @media (min-width: 1024px) {
   .subGrid,
   .subQuota{ max-width: none; }
   .subGrid{ gap: clamp(1.5rem, 2.2vw, 2.4rem); }
 }
-/* tagline */
 .subTagline {
   font-size: .78rem;
   color: var(--txd);
   margin: .2rem 0 .35rem;
 }
-/* featured card */
 .subCard--featured { box-shadow: 0 14px 44px rgba(124,58,237,.28); }
 @media (min-width: 900px) {
   .subCard--featured { transform: scale(1.045); z-index: 1; }
 }
 
-/* card shell */
 .subCard {
   position: relative;
   border-radius: 16px;
@@ -312,7 +243,6 @@
               border-color .28s ease;
   animation: subCardIn .5s ease both;
   box-shadow: 0 1px 3px rgba(5,3,8,.3), 0 4px 18px rgba(5,3,8,.35);
-  /* equal height */
   height: 100%;
 }
 .subCard:hover {
@@ -320,7 +250,6 @@
   box-shadow: 0 8px 32px rgba(20,20,30,.12);
 }
 
-/* accent top bar */
 .subCard::before {
   content: '';
   display: block;
@@ -335,17 +264,14 @@
 .subCard--gold::before   { background: linear-gradient(90deg,#eab308,#f97316,#eab308); background-size:300% 100%; }
 .subCard--green::before  { background: linear-gradient(90deg,#22c55e,#10b981,#22c55e); background-size:300% 100%; }
 
-/* featured glow */
 .subCard--purple { animation: subCardIn .5s ease both, subGlowPurple 3.5s ease-in-out 1s infinite; }
 .subCard--gold   { animation: subCardIn .5s ease both, subGlowGold   3.5s ease-in-out 1.2s infinite; }
 
-/* stagger delays */
 .subCard:nth-child(1) { animation-delay: .06s; }
 .subCard:nth-child(2) { animation-delay: .14s; }
 .subCard:nth-child(3) { animation-delay: .22s; }
 .subCard:nth-child(4) { animation-delay: .30s; }
 
-/* card inner */
 .subCardInner {
   padding: 2rem 1.8rem 1.8rem;
   display: flex;
@@ -355,7 +281,6 @@
   box-sizing: border-box;
 }
 
-/* badge */
 .subBadge {
   display: inline-block;
   font-family: var(--fm);
@@ -380,7 +305,6 @@
   color: #b45309;
 }
 
-/* plan name */
 .subPlanName {
   font-family: var(--fm);
   font-size: .65rem;
@@ -394,7 +318,6 @@
 .subCard--gold   .subPlanName { color: #b45309; }
 .subCard--green  .subPlanName { color: #15803d; }
 
-/* price */
 .subPrice {
   font-family: var(--fd);
   font-size: clamp(2rem, 2.8vw, 2.8rem);
@@ -413,7 +336,6 @@
   margin-bottom: 1.5rem;
 }
 
-/* divider */
 .subCardDiv {
   height: 1px;
   background: var(--bdr);
@@ -421,7 +343,6 @@
   flex-shrink: 0;
 }
 
-/* feature list */
 .subFeatures {
   list-style: none;
   padding: 0;
@@ -452,7 +373,6 @@
 .subCard--gold   .subFeatures li::before { color: #eab308; }
 .subCard--green  .subFeatures li::before { color: #22c55e; }
 
-/* cta button */
 .subBtn {
   width: 100%;
   padding: .82rem 1rem;
@@ -481,15 +401,12 @@
 .subBtn--gold:hover   { box-shadow:0 5px 22px rgba(234,179,8,.40); }
 .subBtn--green:hover  { box-shadow:0 5px 22px rgba(34,197,94,.38); }
 
-
-/* laptop */
 @media (max-width: 1199px) {
   .subPgBdy    { padding: 3rem var(--shellPad) 5rem; }
   .subGrid     { gap: 1.2rem; }
   .subCardInner{ padding: 1.8rem 1.5rem 1.6rem; }
 }
 
-/* tablet landscape */
 @media (max-width: 899px) {
   .subGrid {
     grid-template-columns: 1fr;
@@ -502,7 +419,6 @@
   .subPrice  { font-size: clamp(2rem, 4vw, 2.6rem); }
 }
 
-/* tablet portrait */
 @media (max-width: 699px) {
   .subGrid {
     max-width: 100%;
@@ -512,7 +428,6 @@
   .subPgBdy     { padding: 2rem var(--shellPad) 5rem; }
 }
 
-/* mobile */
 @media (max-width: 519px) {
   .subGrid          { grid-template-columns: 1fr; gap: .85rem; }
   .subPgBdy         { padding: 1.8rem var(--shellPad) 4rem; }
@@ -521,32 +436,8 @@
   .subFeatures li   { font-size: .8rem; }
 }
 
-/* ---------------------------------------------------------------------------
-   PLAN COMPARISON — the table between the last card and the FAQ
-
-   Rules and nothing else. No box around it, no rounded corners, no vertical
-   dividers: one line under each row, running the full width of the screen.
-   The table is pulled out of the page's side padding and its 1400px cap by a
-   block 100vw wide centred on its parent's centre line, clamped so that a
-   desktop scrollbar — which 100vw counts and the window does not — cannot
-   make it a few pixels too wide and start the page scrolling sideways.
-
-   Two shapes, one table. Wide screens fit all four plans, so nothing scrolls
-   and the columns share the width evenly. A phone does not, so the table
-   keeps the width its words need and is dragged sideways inside its own
-   scroller, with the feature column pinned at the left edge — scrolling to
-   the Max column is useless if you can no longer see which row you are on.
---------------------------------------------------------------------------- */
 .subCmp {
-  /* The table used to cancel the page's side padding with a negative margin,
-     so its rules ran to the screen's edges while the page around it was a
-     1400px column. The page is the shell now: the rules already run the whole
-     content width, and pulling past it would put this one block outside the
-     line every other block on the site starts on.
 
-     It cannot be done with the shell's own token in any case — a percentage
-     margin resolves against the parent's content box, which is the width
-     already inside the padding, so -1 × --shellPad would not cancel it. */
   margin: 2.6rem 0 0;
 }
 .subCmpTitle {
@@ -561,21 +452,12 @@
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
-  /* A sticky descendant inside a scroller is counted in the scrollable
-     overflow of everything ABOVE the scroller too, so the sticky feature
-     column below made the whole page wider than the phone it was on — the
-     table scrolled sideways as intended and so did the document. `contain:
-     paint` says the box paints nothing outside itself, which was already
-     true, and the leak stops. overflow-x:hidden on an ancestor does not fix
-     this; it only hides the symptom on the element that carries it. */
   contain: paint;
 }
 .subCmpScroll:focus-visible { outline: 2px solid var(--pg); outline-offset: -2px; }
 .subCmpTbl {
   border-collapse: collapse;
   width: 100%;
-  /* Wider than a phone on purpose: past this the scroller takes over rather
-     than the columns giving up their words. */
   min-width: 560px;
   font-family: var(--fb, sans-serif);
   font-size: .82rem;
@@ -589,7 +471,6 @@
   border-bottom: 1px solid var(--bdr);
   white-space: nowrap;
 }
-/* the row label: left aligned, and it stays put while the rest is dragged */
 .subCmpTbl .subCmpFeat {
   position: sticky;
   left: 0;
@@ -611,18 +492,11 @@
   color: var(--txd);
 }
 .subCmpCell { color: var(--tx); font-variant-numeric: tabular-nums; }
-/* Each plan's own hue at full strength, on the head and on the line under it
-   — the whole point of the row is to be found at a glance from the other end
-   of the table. The line is the only place the colour lives: a wash down the
-   column would be a vertical band, and there is nothing vertical here. */
 .subCmpTbl thead th.subCmpCol { border-bottom-width: 3px; }
 .subCmpTbl thead th.subCmpCol--free    { border-bottom-color: #94a3b8; color: #cbd5e1; }
 .subCmpTbl thead th.subCmpCol--lite    { border-bottom-color: #3b9dff; color: #3b9dff; }
 .subCmpTbl thead th.subCmpCol--premium { border-bottom-color: #c77dff; color: #c77dff; }
 .subCmpTbl thead th.subCmpCol--max     { border-bottom-color: #ffc93c; color: #ffc93c; }
-/* The light theme reverses which end of each ramp is legible: these sit on a
-   near-white surface there, where the bright ends miss 4.5:1 as text. Same
-   hues, darker step — the plan cards make the same swap. */
 html[data-theme="light"] .subCmpTbl thead th.subCmpCol--free,
 html[data-theme="offwhite"] .subCmpTbl thead th.subCmpCol--free{ color: #475569; }
 html[data-theme="light"] .subCmpTbl thead th.subCmpCol--lite,
@@ -656,15 +530,11 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   .subCmpNote { text-align: left; }
 }
 
-/* faq wrapper */
 .faqSection {
   padding: 4rem 0 3rem;
   max-width: 860px;
   margin: 0 auto;
 }
-/* A question and its answer are read, and a 1600px line is not readable — so
-   the block takes the shell and splits into two columns rather than stretching
-   one. The category label stays across the top of its own pair. */
 @media (min-width: 1024px) {
   .faqSection{ max-width: none; }
   .faqCategory{
@@ -676,7 +546,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   .faqCategory > .faqCatLabel{ grid-column: 1 / -1; }
 }
 
-/* section header */
 .faqHdr {
   text-align: center;
   margin-bottom: 3.5rem;
@@ -706,7 +575,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   margin: 0 auto;
 }
 
-/* top divider */
 .faqSection .faqTopDiv {
   width: 100%;
   height: 1px;
@@ -714,7 +582,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   margin-bottom: 2.5rem;
 }
 
-/* category group */
 .faqCategory {
   margin-bottom: 2.8rem;
 }
@@ -722,7 +589,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   margin-bottom: 0;
 }
 
-/* category label */
 .faqCatLabel {
   display: flex;
   align-items: center;
@@ -746,7 +612,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   opacity: .7;
 }
 
-/* accordion item */
 .faqItem {
   border: 1px solid var(--bdr);
   border-radius: 8px;
@@ -767,7 +632,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   box-shadow: 0 2px 16px rgba(20,20,30,.08);
 }
 
-/* question button */
 .faqQ {
   width: 100%;
   display: flex;
@@ -794,7 +658,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   background: color-mix(in srgb, var(--tc) 3%, transparent);
 }
 
-/* question text */
 .faqQTxt {
   font-family: var(--fb);
   font-size: .92rem;
@@ -807,7 +670,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   color: var(--ps);
 }
 
-/* toggle icon */
 .faqIcon {
   flex-shrink: 0;
   width: 22px;
@@ -835,7 +697,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   color: var(--ps);
 }
 
-/* answer panel */
 .faqA {
   max-height: 0;
   overflow: hidden;
@@ -845,7 +706,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   max-height: 400px;
 }
 
-/* answer body */
 .faqATxt {
   font-family: var(--fb);
   font-size: .89rem;
@@ -856,7 +716,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   padding-top: .85rem;
 }
 
-/* category divider */
 .faqCatDiv {
   width: 100%;
   height: 1px;
@@ -864,7 +723,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   margin: 2.8rem 0;
 }
 
-/* faq responsive */
 @media (max-width: 699px) {
   .faqSection { padding: 3rem 0 2rem; }
   .faqHdr     { margin-bottom: 2.5rem; }
@@ -887,19 +745,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   .faqIcon    { transition: none; }
 }
 
-
-
-
-
-/* keyframes */
-/* The bubble rises out of the button and settles back into it. It used to
-   drop out of one hanging above it; the button is at the foot of the window
-   now, so the travel turns over with it. */
-/* The assistant's styles were here — the floating button, its tooltip, the
-   speech bubble that nudged from beside it, the chat page and every control
-   inside it. All of it went with the button, which was its only way in. */
-
-/* legal modal dark fix */
 #legalBackdrop{
   --bg:inherit;--sur:inherit;--sur2:inherit;
   --bdr:inherit;--bdrh:inherit;
@@ -924,7 +769,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
 .lmBody strong{color:var(--tx)!important;}
 .lmDate{color:var(--ps)!important;background:rgba(var(--pg-rgb),.1)!important;border-color:var(--bdr)!important;}
 
-/* cookie banner */
 #cookieBanner{
   background:var(--sur)!important;
   border-color:var(--bdrh)!important;
@@ -944,7 +788,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
 .ckReject{background:transparent!important;border-color:var(--bdr)!important;color:rgba(var(--tx2-rgb),.62)!important;}
 .ckReject:hover{background:rgba(var(--pg-rgb),.06)!important;border-color:var(--bdrh)!important;color:var(--ps)!important;}
 
-/* hidden panel visibility */
 #fg,#communityPage,#subPage,#profilePage,#admPage,#notifPage,#pfMyWorkPage,#authMod{
   visibility:hidden;
   transition:transform .45s cubic-bezier(.22,1,.36,1),visibility 0s linear .45s;
@@ -957,4 +800,3 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   visibility:visible;
   transition-delay:0s,0s;
 }
-

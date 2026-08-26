@@ -1,20 +1,4 @@
 #!/usr/bin/env node
-// Does the cache keep its promises?
-//
-// js/cache.js decides what the site is allowed to remember, and two classes of
-// mistake in it are not the kind you find by clicking around. One is a leak:
-// one member's conversations, bookmarks or analytics answered from a record
-// written for somebody else, which on a shared device is a real disclosure and
-// on a laptop is a confusing bug that never reproduces. The other is a lost
-// write: an answer that landed a moment before a mutation invalidated its key,
-// stored anyway, so a piece somebody just deleted is still in the grid.
-//
-// Both are exactly the shape a small harness catches. There is no browser here
-// and no IndexedDB, which also exercises the degradation path — with the disk
-// tier unavailable the service must still be correct, just smaller.
-//
-// Run: node scripts/cache-test.mjs
-// Exits 0 when every assertion holds, 1 on the first that does not.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -55,13 +39,11 @@ const ok = (name, cond, extra) => {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ── keys ────────────────────────────────────────────────────────────────
 ok('key joins and drops empties', c.key('gallery', 'latest', '', null, 'page', 1) === 'gallery:latest:page:1');
 ok('norm folds case and space', c.norm('  Dragon   Art ') === 'dragon-art');
 ok('params sort is order free', c.params({ b: 2, a: 1 }) === c.params({ a: 1, b: 2 }));
 ok('params drops all/empty', c.params({ cat: 'all', q: '', sort: 'latest' }) === 'sort=latest');
 
-// ── single flight ───────────────────────────────────────────────────────
 let calls = 0;
 const slow = () => new Promise((r) => setTimeout(() => { calls++; r(['row']); }, 30));
 const many = await Promise.all([1,2,3,4,5,6,7,8,9,10].map(() =>
@@ -69,13 +51,11 @@ const many = await Promise.all([1,2,3,4,5,6,7,8,9,10].map(() =>
 ok('ten callers, one origin call', calls === 1, 'calls=' + calls);
 ok('all ten got the value', many.every((r) => r[0] === 'row'));
 
-// ── hit ─────────────────────────────────────────────────────────────────
 calls = 0;
 await c.getOrSet('gallery:latest:page:1', slow, 'gallery:latest');
 ok('fresh read makes no request', calls === 0);
 ok('peek is synchronous', c.peek('gallery:latest:page:1', 'gallery:latest')[0] === 'row');
 
-// ── stale while revalidate ──────────────────────────────────────────────
 await c.set('sw:test', ['old'], { policy: 'gallery:latest', ttl: 20, swr: 5000 });
 await sleep(40);
 calls = 0;
@@ -87,19 +67,15 @@ ok('refresh ran behind it', calls === 1);
 ok('cache now holds the fresh value',
   (c.peek('sw:test', { policy: 'gallery:latest', ttl: 20, swr: 5000 }) || [])[0] === 'new');
 
-// ── errors never overwrite ──────────────────────────────────────────────
 await c.set('err:test', ['good'], 'gallery:latest');
 const back = await c.getOrSet('err:test', () => Promise.reject(new Error('offline')), 'gallery:latest');
 ok('fresh value survives a failing loader', back[0] === 'good');
-// A policy that asked for it serves what it has when the origin is gone...
 await c.set('err:old', ['saved'], { policy: 'section:blog', ttl: 1, swr: 1 });
 await sleep(20);
 const lastResort = await c.getOrSet('err:old', () => Promise.reject(new Error('offline')),
   { policy: 'section:blog', ttl: 1, swr: 1 });
 ok('offline:true serves the saved copy when the origin is gone', lastResort[0] === 'saved');
 
-// ...and one that did not hands the error to the caller, which is what lets the
-// gallery say "showing saved artworks" rather than showing them silently.
 await c.set('err:quiet', ['saved'], { policy: 'gallery:latest', ttl: 1, swr: 1 });
 await sleep(20);
 let quietThrew = false;
@@ -117,7 +93,6 @@ try {
 } catch (e) { threw = true; }
 ok('a miss with no saved copy rethrows', threw);
 
-// ── private partitioning ────────────────────────────────────────────────
 win.currentUser = { id: 'user-A' };
 await c.set(c.ukey('bookmarks'), ['a1', 'a2'], 'user:list');
 ok('A reads A', (c.peek(c.ukey('bookmarks'), 'user:list') || []).length === 2);
@@ -129,15 +104,9 @@ ok('B reads B', (c.peek(c.ukey('bookmarks'), 'user:list') || []).length === 1);
 win.currentUser = { id: 'user-A' };
 ok('A still reads A after B wrote', (c.peek(c.ukey('bookmarks'), 'user:list') || []).length === 2);
 
-// A guest must not inherit a signed-in member's records
 win.currentUser = null;
 ok('guest sees no member record', c.peek('user:user-A:bookmarks', 'user:list') === null);
 
-/* The two records where getting this wrong is a disclosure rather than a
-   glitch: what was said in a members-only community room, and one member's
-   analytics. Both are private-scoped, so each is written under a key carrying
-   the reader's id AND stamped with it — B cannot reach A's by guessing the key,
-   and could not read it if they did. */
 win.currentUser = { id: 'user-A' };
 await c.set(c.ukey('community', 'private-room'), [{ text: 'members only' }], 'community:posts');
 await c.set(c.ukey('analytics', 'artworks', '7d'), [{ views: 4210 }], 'user:analytics');
@@ -149,21 +118,12 @@ ok('B cannot read A\'s room by A\'s own key',
 ok('B cannot read A\'s analytics',
   c.peek('user:user-A:analytics:artworks:7d', 'user:analytics') === null);
 
-/* The owner stamp, tested on its own.
-
-   Above, B never got near A's records because the STORAGE key carries the
-   member id, so B looked in a place A had never written to. The stamp is the
-   second lock, for the case the first one does not cover: a record that does
-   reach the right key with the wrong owner on it — a policy that changed scope
-   between releases, a key built by hand instead of through ukey(). Planted
-   directly into the synchronous tier here, since nothing the service does can
-   produce it. */
 const planted = {
   k: c.build + '|u|user-B|user:user-B:friends',
   key: 'user:user-B:friends',
   v: { 'someone-else': { status: 'accepted' } },
   t: Date.now(), f: Date.now() + 60000, s: Date.now() + 60000,
-  u: 'user-A',                     // written for A, sitting under B's key
+  u: 'user-A',
   a: Date.now(), p: 'user:friends',
 };
 store.set('dzc2:' + planted.k, JSON.stringify(planted));
@@ -176,7 +136,6 @@ win.currentUser = { id: 'user-A' };
 ok('A still reads A\'s room',
   (c.peek(c.ukey('community', 'private-room'), 'community:posts') || [])[0].text === 'members only');
 
-// ── sign out ────────────────────────────────────────────────────────────
 win.currentUser = { id: 'user-A' };
 await c.set(c.ukey('thread', 'p1'), ['hi'], 'user:thread');
 await c.set('gallery:latest:page:9', ['public'], 'gallery:latest');
@@ -184,7 +143,6 @@ await c.dropPrivate();
 ok('sign out drops private', c.peek(c.ukey('thread', 'p1'), 'user:thread') === null);
 ok('sign out keeps public', (c.peek('gallery:latest:page:9', 'gallery:latest') || [])[0] === 'public');
 
-// ── targeted invalidation ───────────────────────────────────────────────
 await c.set('gallery:latest:page:1', ['g'], 'gallery:latest');
 await c.set('section:blog:page:1', ['b'], 'section:blog');
 await c.set('community:posts:showcase', ['m'], 'community:posts');
@@ -193,7 +151,6 @@ ok('artwork edit drops gallery', c.peek('gallery:latest:page:1', 'gallery:latest
 ok('artwork edit spares the blog tab', (c.peek('section:blog:page:1', 'section:blog') || [])[0] === 'b');
 ok('artwork edit spares community', (c.peek('community:posts:showcase', 'community:posts') || [])[0] === 'm');
 
-// an invalidation mid-flight must not be undone by the answer that lands after
 let resolveLate;
 const late = new Promise((r) => { resolveLate = r; });
 const p = c.getOrSet('gallery:trending:page:1', () => late, 'gallery:trending');
@@ -204,9 +161,6 @@ await p;
 ok('answer from before an invalidation is not stored',
   c.peek('gallery:trending:page:1', 'gallery:trending') === null);
 
-/* Same race, with two callers waiting on the one request. This is what a flag
-   cannot do: whichever of them checked first would clear it, and the second
-   would store the very answer the first was told to discard. */
 let resolveShared;
 const shared = new Promise((r) => { resolveShared = r; });
 const both = Promise.all([
@@ -221,10 +175,6 @@ ok('and neither of them stores it',
   c.peek('gallery:oldest:page:1', 'gallery:oldest') === null,
   c.peek('gallery:oldest:page:1', 'gallery:oldest'));
 
-/* And the window before a request has announced itself: invalidate while the
-   caller is still looking in the cache, before its loader has been called at
-   all. Marking in-flight keys does not cover this — there is nothing in flight
-   yet — which is why the invalidation is recorded with a time instead. */
 let loaderRan = false;
 const early = c.getOrSet('gallery:category:anime:page:1',
   () => { loaderRan = true; return ['pre-mutation']; }, 'gallery:category');
@@ -235,9 +185,6 @@ ok('but an answer from before the mutation is not stored',
   c.peek('gallery:category:anime:page:1', 'gallery:category') === null,
   c.peek('gallery:category:anime:page:1', 'gallery:category'));
 
-/* Sign-out is the same shape and the one that matters most: a private request
-   in flight for the member leaving must not be written under the session that
-   replaces them. */
 win.currentUser = { id: 'user-A' };
 let resolveMine;
 const mine = new Promise((r) => { resolveMine = r; });
@@ -253,14 +200,12 @@ ok('a reply for the member who signed out is not stored',
   c.peek(c.ukey('analytics', 'artworks', '30d'), 'user:analytics'));
 win.currentUser = null;
 
-// ── policy 'none' never stores ──────────────────────────────────────────
 calls = 0;
 await c.getOrSet('quota:today', () => { calls++; return { left: 3 }; }, 'none');
 await c.getOrSet('quota:today', () => { calls++; return { left: 3 }; }, 'none');
 ok('an uncacheable policy asks every time', calls === 2, 'calls=' + calls);
 ok('and stores nothing', c.peek('quota:today', 'none') === null);
 
-// ── mirror survives a new tab ───────────────────────────────────────────
 await c.set('categories:all', ['anime', 'cars'], 'categories');
 const mirrored = [...store.keys()].filter((k) => k.includes('categories:all'));
 ok('sync policy reaches localStorage', mirrored.length === 1, mirrored);

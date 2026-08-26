@@ -1,54 +1,3 @@
--- THE MONEY FLOW. This file is the whole of it — there is no older one.
---
--- Applied to the live project on 2 August 2026, as two steps recorded there as
--- `single_currency_money_flow` and `pending_wallet_and_statutory_deductions`.
--- They are consolidated here into one file on purpose: two migrations where
--- the second rewrites half of the first is exactly how someone later deletes
--- the wrong one. This is the end state, and it runs from clean.
---
---   BUYER pays, in the listing's own currency
---     |
---   PAYMENT GATEWAY takes its fee immediately
---     |
---   GROSS SALE RECEIVED
---     |
---   SELLER WALLET = PENDING          the whole gross, withdrawable by nobody
---     |
---   section 194-O                    TDS withheld at CREDIT, which is here
---     |                              nil for an individual or HUF at or under
---     |                              Rs 5,00,000 for the year with a PAN
---     |
---   section 52 GST TCS               collected through the month, remittable
---     |                              by the 10th of the next one
---     |
---   SETTLEMENT WINDOW                Razorpay domestic T+2 working days
---     |                              Razorpay international T+7
---     |                              PayPal up to 5 business days
---     |
---   SELLER WALLET = AVAILABLE        what is genuinely theirs
---     |
---   Seller withdraws, in the same currency they earned in
---
--- TWO RULES THIS FILE EXISTS TO ENFORCE
---
--- 1. A seller's money is never converted. Not to display it, not to pay it,
---    not to tax it. It was earned in one currency and it leaves in that
---    currency. The old wallet totalled every currency into USD and the payout
---    form then asked PayPal for USD, so a EUR sale crossed a spread twice and
---    the tax basis was computed off the far side of both. fx_rates.usd_rate is
---    dropped below so no future query can quietly route through the dollar
---    again.
---
--- 2. Only what is actually the platform's is converted to INR: the commission,
---    once, at settlement, at a rate frozen onto the row. That plus the
---    subscriptions is all that reaches the platform's bank account. A seller's
---    net and the two statutory collections are other people's money passing
---    through, and dz_platform_revenue() reports them separately so they cannot
---    be mistaken for income.
-
--- ===========================================================================
--- RATES — direct to INR, with no third currency in the middle
--- ===========================================================================
 alter table public.fx_rates add column if not exists inr_rate numeric(18,8);
 
 update public.fx_rates f
@@ -65,17 +14,14 @@ comment on column public.fx_rates.inr_rate is
   'Rupees per one major unit of this currency. Maintain as a DIRECT rate — '
   'nothing in this schema converts through a third currency.';
 
--- ===========================================================================
--- RATES OF TAX AND COMMISSION — in a table, because statute changes
--- ===========================================================================
 create table if not exists public.platform_tax_config (
   id                smallint primary key default 1 check (id = 1),
-  commission_bps    integer not null default 1500,     -- 15%, the platform's cut
-  tds_bps           integer not null default 10,       -- 0.1% since 01-10-2024
-  tds_no_pan_bps    integer not null default 500,      -- 5% under section 206AA
-  tds_floor_inr     bigint  not null default 50000000, -- Rs 5,00,000 in paise
-  tcs_active        boolean not null default false,    -- on only once registered
-  tcs_bps           integer not null default 50,       -- 0.5% since 10-07-2024
+  commission_bps    integer not null default 1500,
+  tds_bps           integer not null default 10,
+  tds_no_pan_bps    integer not null default 500,
+  tds_floor_inr     bigint  not null default 50000000,
+  tcs_active        boolean not null default false,
+  tcs_bps           integer not null default 50,
   updated_at        timestamptz not null default now()
 );
 insert into public.platform_tax_config (id) values (1) on conflict (id) do nothing;
@@ -91,9 +37,6 @@ comment on column public.platform_tax_config.tcs_active is
   'collecting a tax there is no registration to remit under is worse than not '
   'collecting it.';
 
--- ===========================================================================
--- SETTLEMENT WINDOWS — the providers' own published terms
--- ===========================================================================
 create table if not exists public.settlement_windows (
   provider text not null,
   scope    text not null check (scope in ('domestic', 'international', 'any')),
@@ -111,9 +54,6 @@ on conflict (provider, scope) do update
 alter table public.settlement_windows enable row level security;
 revoke all on public.settlement_windows from anon, authenticated;
 
--- Working days, counted the way a settlement team counts them. Public holidays
--- are not modelled — the providers quote these as approximate, and erring a day
--- late errs in the direction of not releasing money that has not arrived.
 create or replace function public.dz_add_business_days(p_from timestamptz, p_days integer)
 returns timestamptz language plpgsql immutable as $$
 declare v_at timestamptz := p_from; v_left integer := greatest(p_days, 0);
@@ -125,9 +65,6 @@ begin
   return v_at;
 end $$;
 
--- ===========================================================================
--- THE EARNING — every deduction lands on the row that earned it
--- ===========================================================================
 alter table public.marketplace_earnings
   add column if not exists gateway_fee     bigint  not null default 0,
   add column if not exists tds_amount      bigint  not null default 0,
@@ -139,8 +76,6 @@ alter table public.marketplace_earnings
   add column if not exists fee_inr         bigint,
   add column if not exists fx_inr_rate     numeric(18,8);
 
--- The old rule said commission plus net was the whole sale. It is not, and
--- believing it was is what let three deductions go missing.
 alter table public.marketplace_earnings drop constraint if exists earnings_splits_add_up;
 alter table public.marketplace_earnings add constraint earnings_splits_add_up check (
   gateway_fee + fee_amount + tds_amount + tcs_amount + net_amount = gross_amount
@@ -156,13 +91,6 @@ comment on column public.marketplace_earnings.fee_inr is
   'Platform commission in paise, converted once at settlement at the rate '
   'frozen in fx_inr_rate. The seller''s net_amount is NOT converted, ever.';
 
--- ---------------------------------------------------------------------------
--- Every derived figure, in one place, at the moment of the sale.
---
--- Four checkout paths insert here — rzp.js, paypal.js and both webhooks — and
--- four copies of this arithmetic were four chances to disagree about what a
--- seller is owed. They now send facts only: the gross, what the gateway took,
--- the currency and the provider.
 create or replace function public.dz_earning_apply_deductions()
 returns trigger language plpgsql security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -182,30 +110,18 @@ begin
   select * into cfg from public.platform_tax_config where id = 1;
   if not found then raise exception 'platform_tax_config is missing'; end if;
 
-  -- Amounts are in each currency's smallest unit, and a zero-decimal
-  -- currency's smallest unit IS its major unit — 100 JPY is stored as 100, not
-  -- 10000. Rupees have paise, so the factor goes back on when converting.
   v_scale := case when new.currency in ('JPY', 'HUF', 'TWD') then 100 else 1 end;
 
   new.gateway_fee := greatest(coalesce(new.gateway_fee, 0), 0);
   v_after_gw      := new.gross_amount - new.gateway_fee;
   if v_after_gw < 0 then raise exception 'gateway fee exceeds the sale'; end if;
 
-  -- ---- our commission ------------------------------------------------------
   new.fee_bps    := coalesce(nullif(new.fee_bps, 0), cfg.commission_bps);
   new.fee_amount := round(new.gross_amount::numeric * new.fee_bps / 10000);
 
-  -- ---- 194-O, withheld at CREDIT -------------------------------------------
-  -- "at credit or payment, whichever is earlier". The credit is this row, so
-  -- this is the earlier of the two — it used to be taken at payout time, which
-  -- was late by the length of the hold and was taken a second time on a
-  -- balance that had already had it deducted.
   select country, pan, is_individual into v_tax
     from public.seller_tax where user_id = new.seller_id;
 
-  -- No declaration on file reads as Indian residence without a PAN. Under-
-  -- withholding is the platform's liability; over-withholding is the seller's
-  -- to reclaim in their own return.
   v_country := coalesce(v_tax.country, 'IN');
   v_pan     := v_tax.pan;
   v_indiv   := coalesce(v_tax.is_individual, true);
@@ -222,7 +138,6 @@ begin
   end if;
   new.tds_amount := round(new.gross_amount::numeric * new.tds_bps / 10000);
 
-  -- ---- section 52 GST TCS --------------------------------------------------
   if cfg.tcs_active and v_country = 'IN' then
     new.tcs_bps    := cfg.tcs_bps;
     new.tcs_amount := round(new.gross_amount::numeric * cfg.tcs_bps / 10000);
@@ -231,19 +146,13 @@ begin
     new.tcs_amount := 0;
   end if;
 
-  -- ---- what is left is the seller's ----------------------------------------
   new.net_amount := v_after_gw - new.fee_amount - new.tds_amount - new.tcs_amount;
   if new.net_amount < 0 then
-    -- Deductions cannot exceed the sale. Our commission gives way before the
-    -- statutory pieces do — those are not ours to waive.
     new.fee_amount := greatest(v_after_gw - new.tds_amount - new.tcs_amount, 0);
     new.net_amount := v_after_gw - new.fee_amount - new.tds_amount - new.tcs_amount;
   end if;
   if new.net_amount < 0 then raise exception 'deductions exceed the sale value'; end if;
 
-  -- ---- when it clears ------------------------------------------------------
-  -- Not a flat seven-day hold any more; the provider's own window, and for
-  -- Razorpay that turns on whether the sale was domestic.
   v_scope := case
     when new.provider = 'razorpay' and new.currency = 'INR' then 'domestic'
     when new.provider = 'razorpay' then 'international'
@@ -266,7 +175,6 @@ begin
     new.settlement_note := 'Settling';
   end if;
 
-  -- ---- our commission in rupees, frozen ------------------------------------
   select inr_rate into v_rate from public.fx_rates where code = new.currency;
   if v_rate is not null then
     new.fx_inr_rate := v_rate;
@@ -284,13 +192,6 @@ create trigger dz_earning_apply_deductions
   for each row execute function public.dz_earning_apply_deductions();
 revoke all on function public.dz_earning_apply_deductions() from public, anon, authenticated;
 
--- ===========================================================================
--- THE WALLET — two halves, per currency, that never mix
--- ===========================================================================
--- A row is PENDING while available_at is still in the future, and it carries
--- the whole gross. It becomes AVAILABLE on its own, at the settlement date,
--- with no job to run and nothing to flip — the date is the fact, so there is
--- no second copy of it to fall out of step.
 drop function if exists public.dz_wallet_summary();
 create function public.dz_wallet_summary()
 returns table(
@@ -355,17 +256,8 @@ $$;
 revoke all on function public.dz_wallet_summary() from public, anon;
 grant execute on function public.dz_wallet_summary() to authenticated;
 
--- dz_seller_balance() answered the same question one column short and nothing
--- called it. Two functions that have to agree about money is one too many.
 drop function if exists public.dz_seller_balance();
 
--- ===========================================================================
--- THE 194-O THRESHOLD — the only place a seller's sales are read in rupees
--- ===========================================================================
--- The rate applies to the sale in its own currency and is withheld in that
--- currency. Only the Rs 5,00,000 exemption floor is a rupee figure by law, so
--- this expresses the year's gross in INR to compare against it — in a single
--- hop, and no money moves on the answer.
 create or replace function public.dz_fy_gross(p_user uuid)
 returns bigint language sql security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -387,13 +279,10 @@ set search_path to 'public', 'pg_temp' as $$
 $$;
 revoke all on function public.dz_fy_gross(uuid) from public, anon, authenticated;
 
--- ===========================================================================
--- WHAT IS OWED TO THE GOVERNMENT, AND BY WHEN
--- ===========================================================================
 create table if not exists public.tax_remittances (
   id          uuid primary key default gen_random_uuid(),
   kind        text not null check (kind in ('gst_tcs', 'tds_194o')),
-  period      date not null,                -- first day of the month covered
+  period      date not null,
   amount_inr  bigint not null,
   remitted_at timestamptz,
   reference   text,
@@ -416,7 +305,6 @@ begin
   return query
   with m as (
     select date_trunc('month', e.created_at)::date as period,
-      -- owed in rupees whatever the sale was priced in
       sum(round(e.tcs_amount * f.inr_rate *
           case when e.currency in ('JPY','HUF','TWD') then 100 else 1 end))::bigint as tcs,
       sum(round(e.tds_amount * f.inr_rate *
@@ -427,12 +315,10 @@ begin
     group by 1
   ),
   rows_out as (
-    -- TCS: by the 10th of the following month
     select 'gst_tcs'::text as kind, m.period, m.tcs as collected,
            (m.period + interval '1 month' + interval '9 days')::date as remit_by
     from m where m.tcs > 0
     union all
-    -- TDS: by the 7th of the following month
     select 'tds_194o'::text, m.period, m.tds,
            (m.period + interval '1 month' + interval '6 days')::date
     from m where m.tds > 0
@@ -446,13 +332,6 @@ end $$;
 revoke all on function public.dz_tax_due() from public, anon;
 grant execute on function public.dz_tax_due() to authenticated;
 
--- ===========================================================================
--- WHAT REACHES THE PLATFORM'S BANK ACCOUNT, AND NOTHING ELSE
--- ===========================================================================
--- Commission and subscriptions are ours. A seller's net is theirs and sits in
--- the provider account under their name in our books until a payout sends it
--- on. TCS and TDS pass through us to the government. The last three are
--- reported separately so none of them can be read as income.
 drop function if exists public.dz_platform_revenue();
 create function public.dz_platform_revenue()
 returns table(commission_inr bigint, subscriptions_inr bigint, total_inr bigint,
@@ -485,7 +364,6 @@ begin
     where p.kind = 'subscription' and p.status = 'paid'
   ),
   held as (
-    -- owed to sellers, per currency, unconverted: the money that is NOT ours
     select coalesce(json_object_agg(currency, amt), '{}'::json) as js
     from (
       select currency, sum(net_amount)::bigint as amt

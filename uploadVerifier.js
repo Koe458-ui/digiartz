@@ -1,17 +1,15 @@
-// upload gate: rate limit, duplicate, ai scan
 (function () {
   'use strict';
 
   var CONFIG = {
-    rate10min:     10,       // max uploads per 10 minutes (art + comics combined)
-    rateDay:       40,       // max uploads per rolling 24h
-    nearThreshold: 6,        // Hamming distance (of 64) counted as a "near" match
-    scanBytes:     524288,   // bytes of each file head scanned for AI markers (512 KB)
-    recentPull:    800,      // most-recent phashes pulled per table for near-match
-    aiApiEnabled:  false     // keep false — no external AI-detection API wired
+    rate10min:     10,
+    rateDay:       40,
+    nearThreshold: 6,
+    scanBytes:     524288,
+    recentPull:    800,
+    aiApiEnabled:  false
   };
 
-  // perceptual hash
   function fileToBitmap(file) {
     if (typeof createImageBitmap === 'function') {
       return createImageBitmap(file);
@@ -19,7 +17,6 @@
     return new Promise(function (res, rej) {
       var img = new Image();
       var url = URL.createObjectURL(file);
-      // revoke the blob url on both paths
       img.onload = function () { URL.revokeObjectURL(url); res(img); };
       img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('Could not read image')); };
       img.src = url;
@@ -39,7 +36,6 @@
     for (var i = 0; i < W * H; i++) {
       gray[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
     }
-    // build 64 bits
     var hex = '';
     var nibble = 0, bitCount = 0;
     for (var y = 0; y < H; y++) {
@@ -50,7 +46,7 @@
         if (bitCount === 4) { hex += nibble.toString(16); nibble = 0; bitCount = 0; }
       }
     }
-    return hex; // 16 chars
+    return hex;
   }
 
   var POP = [0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4];
@@ -63,7 +59,6 @@
     return d;
   }
 
-  // ai metadata scan
   var STRONG_SIGS = [
     { k: 'negative prompt',        label: 'SD prompt params' },
     { k: 'denoising strength',     label: 'SD params' },
@@ -107,21 +102,18 @@
     catch (e) { return latin1(u8); }
   }
 
-  // compressed png text chunks
   async function inflate(u8) {
-    if (typeof DecompressionStream !== 'function') return null;   // old browser: skip, never throw
+    if (typeof DecompressionStream !== 'function') return null;
     try {
       var stream = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate'));
       return new Uint8Array(await new Response(stream).arrayBuffer());
-    } catch (e) { return null; }                                   // corrupt/odd chunk: ignore
+    } catch (e) { return null; }
   }
 
   function isPNG(u8) {
     return u8.length > 8 && u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e && u8[3] === 0x47;
   }
 
-  // u8 may be only the HEAD of the file, so a chunk running past the end is
-  // the ordinary way this stops rather than a sign of corruption.
   async function pngTextChunks(u8) {
     var out = '', p = 8;
     var dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
@@ -130,22 +122,18 @@
       var len  = dv.getUint32(p);
       var type = String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
       var at   = p + 8;
-      // getUint32 is unsigned, so the old `len < 0` half of this could never
-      // be true; the length check is the one doing the work.
-      if (len > u8.length - at) break;                             // truncated / past the head
+      if (len > u8.length - at) break;
       var d = u8.subarray(at, at + len);
 
       if (type === 'tEXt') {
         out += latin1(d) + '\n';
       } else if (type === 'zTXt') {
-        // ztxt layout
         var z = d.indexOf(0);
         if (z !== -1) {
           var inf = await inflate(d.subarray(z + 2));
           out += latin1(d.subarray(0, z)) + '\n' + (inf ? utf8(inf) : '') + '\n';
         }
       } else if (type === 'iTXt') {
-        // itxt layout
         var k = d.indexOf(0);
         if (k !== -1) {
           var flag = d[k + 1];
@@ -159,20 +147,11 @@
         }
       } else if (type === 'IEND') break;
 
-      p = at + len + 4;                                            // + CRC
+      p = at + len + 4;
     }
     return out;
   }
 
-  // Reads only the two ends of the file, which is what scanBytes was always
-  // meant to mean. It used to say so and then do the opposite: the whole file
-  // went into memory as one Uint8Array before scanBytes was applied to it, and
-  // pngTextChunks walked all of it. On an eleven-page upload at 25MB a page
-  // that is a quarter of a gigabyte read through a phone's JS heap to look at
-  // half a megabyte of it — and js/upqueue.js has no way to survive the tab
-  // being discarded for it.
-  //
-  // Blob.slice() is a view, not a copy: the bytes in between are never read.
   var META_TAIL_BYTES = 65536;
 
   async function scanAIMeta(file) {
@@ -185,15 +164,10 @@
 
       var raw = latin1(head) + '\n' + latin1(tail);
 
-      // PNG text chunks, over the head only. tEXt/zTXt/iTXt are written before
-      // IDAT by every encoder that puts generation parameters in them, so the
-      // first half-megabyte is where they are; a chunk that runs past the head
-      // stops the walk, which is the same thing a truncated file does.
       if (isPNG(head)) {
         try { raw += '\n' + await pngTextChunks(head); } catch (e) {}
       }
 
-      // utf 16 metadata
       var s = (raw + '\n' + raw.replace(/\u0000/g, '')).toLowerCase();
 
       var found = [];
@@ -206,7 +180,6 @@
     } catch (e) { return []; }
   }
 
-  // individual checks
   async function rateCheck(sb, userId) {
     var now = Date.now();
     var t10 = new Date(now - 10 * 60 * 1000).toISOString();
@@ -227,27 +200,13 @@
 
   async function dupCheck(sb, phash) {
     if (!phash) return { block: false, flag: false, detail: 'skipped' };
-    // exact match, hard block
     var ex = await Promise.all([
       sb.from('artworks').select('id', { count: 'exact', head: true }).eq('phash', phash),
       sb.from('comics').select('id', { count: 'exact', head: true }).eq('phash', phash)
     ]);
     if (((ex[0].count || 0) + (ex[1].count || 0)) > 0)
       return { block: true, flag: false, detail: 'This exact image is already on DigiArtz.' };
-    /* NEAR match, and this half only sees a WINDOW of the catalogue.
-       The exact check above is a single indexed equality and covers every row
-       in both tables. This one has to compare bit distances, which no index
-       can answer, so it pulls the most recent recentPull hashes per table and
-       compares in the browser. Anything older than that window is not looked
-       at — so as the catalogue grows past it, a near-duplicate of an older
-       piece passes with no flag at all, and silently.
 
-       Left as a window on purpose rather than widened: two thousand rows a
-       side is four thousand hashes down a phone connection on every single
-       upload, and the honest fix is an LSH band index in Postgres so the
-       distance query can be asked of the database. Until then the coverage is
-       reported rather than implied, so the admin reading a verdict can see
-       what was actually compared. */
     var rc = await Promise.all([
       sb.from('artworks').select('phash').not('phash', 'is', null)
         .order('created_at', { ascending: false }).limit(CONFIG.recentPull),
@@ -257,8 +216,6 @@
     var pool = [];
     (rc[0].data || []).forEach(function (r) { if (r.phash) pool.push(r.phash); });
     (rc[1].data || []).forEach(function (r) { if (r.phash) pool.push(r.phash); });
-    // whether either table filled its window, which is what says the
-    // comparison was partial rather than exhaustive
     var partial = ((rc[0].data || []).length >= CONFIG.recentPull) ||
                   ((rc[1].data || []).length >= CONFIG.recentPull);
     var scope = pool.length + ' recent' + (partial ? ' (window, not the whole catalogue)' : '');
@@ -275,16 +232,6 @@
     return { block: false, flag: false, detail: 'no duplicates in ' + scope };
   }
 
-  /* Paid detector hook, not wired up.
-     TODO: point setAiHook() at an AI-image-detection API and set
-     CONFIG.aiApiEnabled = true.
-
-     Read off the exported object rather than out of this closure, which is
-     what makes it installable at all. The variable was exported by VALUE —
-     `_aiApiHook: _aiApiHook` copied null onto the public object once, at load
-     — so assigning UploadVerifier._aiApiHook = fn replaced a property nothing
-     read, while the check below went on testing a closure binding that could
-     never change. The documented extension point silently did nothing. */
   var _aiApiHook = null;
   function aiHook() {
     var pub = window.UploadVerifier && window.UploadVerifier._aiApiHook;
@@ -304,14 +251,13 @@
       try {
         var api = await hook(file);
         if (api && api.flag && hits.indexOf(api.detail || 'AI model') === -1) hits.push(api.detail || 'AI model');
-      } catch (e) { /* api failures never block */ }
+      } catch (e) {   }
     }
     if (hits.length)
       return { flag: true, detail: 'AI markers in file metadata: ' + hits.slice(0, 3).join(', ') + (hits.length > 3 ? '…' : '') };
     return { flag: false, detail: 'no AI metadata' };
   }
 
-  // orchestrator
   function fire(onStep, id, state, detail) {
     if (typeof onStep === 'function') { try { onStep(id, state, detail); } catch (e) {} }
   }
@@ -323,14 +269,12 @@
     if (!file) throw new Error('No file to verify');
     var checks = [];
 
-    // 1 rate limit
     fire(onStep, 'ratelimit', 'run');
     var rl = await rateCheck(meta.sb, meta.userId);
     checks.push({ name: 'ratelimit', result: rl });
     fire(onStep, 'ratelimit', rl.block ? 'block' : 'pass', rl.detail);
     if (rl.block) return { verdict: 'block', reason: rl.detail, phash: null, checks: checks };
 
-    // 2 duplicate
     fire(onStep, 'duplicate', 'run');
     var phash = null;
     try { phash = await computeDHash(file); } catch (e) { phash = null; }
@@ -339,7 +283,6 @@
     fire(onStep, 'duplicate', dup.block ? 'block' : (dup.flag ? 'flag' : 'pass'), dup.detail);
     if (dup.block) return { verdict: 'block', reason: dup.detail, phash: phash, checks: checks };
 
-    // 3 ai metadata
     fire(onStep, 'ai', 'run');
     var ai = await aiCheck(file, meta.pages);
     checks.push({ name: 'ai', result: ai });
@@ -358,8 +301,6 @@
     computeDHash: computeDHash,
     hamming: hamming,
     scanAIMeta: scanAIMeta,
-    // Either works: call setAiHook(fn), or assign _aiApiHook on this object.
-    // aiHook() reads the property first, so both actually take effect now.
     setAiHook: setAiHook,
     _aiApiHook: null
   };

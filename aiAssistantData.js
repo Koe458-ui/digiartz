@@ -1,29 +1,14 @@
-// zeo assistant content
-//
-// The knowledge behind the assistant in the friends list: a welcome, a menu of
-// topics, and a set of question-and-answer pairs under each. js/zeo.js walks
-// it; nothing here knows how it is drawn.
-//
-// It answers by menu rather than by free text, and that is the design and not
-// a limitation: every answer here is one somebody wrote and checked, so it
-// cannot invent a policy, a price or a step that does not exist. Adding an
-// answer is adding an entry to `responses` under a category id.
-
 window.ZEO_DATA = {
 
-  // screen 1, welcome
   welcomeMessage: "Hi, I'm Zeo — your DigiArtz assistant. Tell me what you need and I'll walk you through it one step at a time. Pick an option to begin.",
 
-  // welcome buttons
   welcomeOptions: [
     { id: "helpCenter",  label: "🧭 Get Help" },
     { id: "cat_contact", label: "✉️ Contact a Human" }
   ],
 
-  // screen 2, topic menu
   helpCenterMessage: "What do you need help with? Choose a topic and I'll ask a couple of quick questions to get you to the right answer.",
 
-  // topics
   categories: [
     { id: "about",     icon: "💠", label: "About DigiArtz",        description: "What this place is and who made it.",       prompt: "What would you like to know about DigiArtz?" },
     { id: "navigation",icon: "🧭", label: "Getting Around",         description: "Find your way and reach any section.",       prompt: "What are you trying to find or reach?" },
@@ -45,10 +30,8 @@ window.ZEO_DATA = {
     { id: "contact",   icon: "✉️", label: "Contact a Human",        description: "Reach the DigiArtz team directly.",          prompt: "How would you like to reach us?" }
   ],
 
-  // responses by topic id
   responses: {
 
-    // about
     about: [
       {
         question: "What is DigiArtz?",
@@ -95,7 +78,6 @@ Pick any of those topics from the menu and I'll guide you.`
       }
     ],
 
-    // navigation
     navigation: [
       {
         question: "What is in the top bar?",
@@ -146,7 +128,6 @@ Your choice is saved on this device and stays next time you visit.`
       }
     ],
 
-    // account and login
     account: [
       {
         question: "How do I sign up?",
@@ -220,7 +201,6 @@ I won't ask for your password — never share it with anyone.`
       }
     ],
 
-    // profile
     profile: [
       {
         question: "How do I edit my profile?",
@@ -283,7 +263,6 @@ If a name is taken, try a small variation. Your username is how others find and 
       }
     ],
 
-    // uploading art
     upload: [
       {
         question: "How do I upload artwork?",
@@ -371,7 +350,6 @@ A failed upload never leaves a half-published piece — storage is cleaned up au
       }
     ],
 
-    // upload checks
     moderation: [
       {
         question: "Why was my upload rejected?",
@@ -437,7 +415,6 @@ The only thing rejected is a direct repost of official media — unedited anime 
       }
     ],
 
-    // gallery
     gallery: [
       {
         question: "How do I download an artwork?",
@@ -515,7 +492,6 @@ Our team reviews reports and takes action when needed. For urgent issues, also e
       }
     ],
 
-    // resources
     resources: [
       {
         question: "What are Resources?",
@@ -553,7 +529,6 @@ The preview image is separate: JPG, PNG, WEBP or GIF, up to 25MB.`
       }
     ],
 
-    // blog
     blog: [
       {
         question: "What is the Blog?",
@@ -584,7 +559,6 @@ Posts go live right away. A cover image, if you add one, is checked the same way
       }
     ],
 
-    // marketplace
     marketplace: [
       {
         question: "What is the Marketplace?",
@@ -634,7 +608,6 @@ If something genuinely went wrong — a double charge, or a file that never deli
       }
     ],
 
-    // jobs
     jobs: [
       {
         question: "What is the Jobs board?",
@@ -672,7 +645,6 @@ Spam, MLM and pay-to-apply postings aren't allowed and get removed.`
       }
     ],
 
-    // cart and orders
     cart: [
       {
         question: "Where is my Cart?",
@@ -700,7 +672,6 @@ The cart brings orders, downloads and licences into one spot. Some of it is stil
       }
     ],
 
-    // community and chat
     community: [
       {
         question: "How do communities work?",
@@ -760,7 +731,6 @@ Pick a topic and I'll take it from there.`
       }
     ],
 
-    // subscriptions and refunds
     billing: [
       {
         question: "What subscription tiers are there?",
@@ -827,7 +797,6 @@ If you can't find the option, email DigiArtzsupport@gmail.com before your next b
       }
     ],
 
-    // policies
     policies: [
       {
         question: "Privacy Policy (summary)",
@@ -891,7 +860,6 @@ For details and requests, see the Privacy Policy or email DigiArtzsupport@gmail.
       }
     ],
 
-    // safety and reporting
     safety: [
       {
         question: "How do I report an artwork?",
@@ -950,7 +918,6 @@ Never share your password — DigiArtz staff and I will never ask for it.`
       }
     ],
 
-    // technical
     trouble: [
       {
         question: "The site won't load",
@@ -1012,7 +979,6 @@ Details like these help us fix it fast.`
       }
     ],
 
-    // contact
     contact: [
       {
         question: "Email support",
@@ -1050,12 +1016,6 @@ The DigiArtz team reviews every message.`
 
   },
 
-  // speech bubble, kept off
-  /* Kept empty and kept here. These were the lines the floating circle
-     murmured from the corner of the page; the circle is gone and is not
-     coming back — Zeo lives in the friends list now, where a member goes to
-     it rather than being tapped on the shoulder by it. js/zeo.js no longer
-     reads this. */
   speechBubbles: []
 
 };

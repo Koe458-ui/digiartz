@@ -1,66 +1,6 @@
--- DigiArtz Analytics: what the numbers cannot already say
---
--- Almost everything an artist would want counted is already counted. Views
--- live in artwork_view_dedup, one row per viewer per artwork per day, which is
--- a daily time series nobody has ever drawn. Likes and bookmarks carry
--- created_at. Downloads have their own dedup table. Comments are in
--- item_comments under kind='artwork'. profile_creds records who gave an artist
--- cred and when. Twelve sections of a dashboard can be read off tables that
--- already exist, with real history behind them — the day this ships, the
--- charts are not empty.
---
--- Cred is the recognition metric here, and there is no other. This site has no
--- follow button, so a followers chart would be a chart of a feature that does
--- not exist; friendships are a two-way connection, which is a different thing
--- again and belongs under community rather than under reach.
---
--- No money anywhere in here, deliberately. An artwork is not for sale on this
--- site: an earnings tile on an artwork dashboard would read zero for everyone
--- forever, and a zero that can never move is worse than no tile. Selling is
--- the marketplace's business and belongs to the marketplace's dashboard.
---
--- Four things are genuinely missing, and no existing table can be made to
--- answer them because nothing ever wrote them down:
---
---   WHERE a viewer came from  (direct, social, a search engine, a referral)
---   WHERE a viewer is         (country)
---   WHAT they are on          (phone, tablet, desktop)
---   WHAT they searched for    (the term, and whether they clicked)
---
--- and one more that has no table at all: a share. analytics_events is that
--- table. It holds dimensions, not counts — the dashboard still reads its
--- totals from the authoritative tables above, so a bug here can never make a
--- like disappear, and the table being empty for a new artist costs the
--- breakdown charts and nothing else.
---
--- WHY DEDUP IS BUILT IN. A dimension row per tap is a flood: one bored viewer
--- refreshing an artwork would own the country chart. The unique index collapses
--- everything to one row per (owner, event, subject, viewer, term, day), which
--- is exactly the granularity artwork_view_dedup already chose for views. Two
--- taps on the same heart on the same day are one row, and that is the answer
--- we want rather than a lossy version of a better one.
---
--- WHY A WRITE RPC AND NO INSERT POLICY. owner_id decides whose dashboard a row
--- lands on. If the client set it, anyone could write rows onto anyone's
--- dashboard, so the client never sets it: dz_analytics_track resolves it from
--- the artwork and refuses everything it cannot resolve. The table has a SELECT
--- policy for its owner and no INSERT policy at all.
---
--- SCOPE. Artworks only, deliberately. Marketplace, blog and resources have a
--- scope value reserved and nothing writing it; when their dashboards arrive
--- they add rows under their own scope and every artwork number here is
--- untouched, because every reader below filters on it.
-
--- ---------------------------------------------------------------------------
--- the dimension log
--- ---------------------------------------------------------------------------
 create table if not exists public.analytics_events (
   id            bigint generated always as identity primary key,
-  -- whose dashboard this row belongs to. Resolved server-side, always.
   owner_id      uuid not null references public.profiles(id) on delete cascade,
-  -- who did it, when they were signed in. Null for a signed-out visitor, which
-  -- is most of them; viewer_key identifies those, and it is the same key
-  -- artwork_view_dedup uses, so the two tables agree about who is who.
   actor_id      uuid references public.profiles(id) on delete set null,
   viewer_key    text not null,
   scope         text not null default 'artwork',
@@ -88,8 +28,6 @@ create table if not exists public.analytics_events (
   constraint an_ev_vkey    check (char_length(viewer_key) between 3 and 80)
 );
 
--- One row per viewer per thing per day. See the note above: this is the whole
--- flood defence, and it is why a repeat tap costs nothing.
 create unique index if not exists analytics_events_once_idx
   on public.analytics_events (
     owner_id, event,
@@ -97,8 +35,6 @@ create unique index if not exists analytics_events_once_idx
     viewer_key, coalesce(term, ''), day
   );
 
--- The dashboard's shapes of question: a window of days for one owner, one
--- metric over that window, one artwork's own row, one search term.
 create index if not exists analytics_events_owner_day_idx
   on public.analytics_events (owner_id, day desc);
 create index if not exists analytics_events_owner_event_idx
@@ -115,19 +51,9 @@ create policy analytics_events_select_own on public.analytics_events
   for select to authenticated
   using (owner_id = auth.uid());
 
--- No insert, update or delete policy anywhere. dz_analytics_track and the two
--- register_* functions are the only writers, and all three are SECURITY
--- DEFINER.
 revoke all on public.analytics_events from anon, authenticated;
 grant select on public.analytics_events to authenticated;
 
--- ---------------------------------------------------------------------------
--- goals an artist sets for themselves
--- ---------------------------------------------------------------------------
--- Plain RLS rather than an RPC: a goal is one member's own row, it carries
--- nobody else's data, and the dashboard wants to write it the moment a number
--- is typed. achieved_at is stamped by the reader when the target is first met,
--- so a goal remembers the day it was hit rather than re-announcing it forever.
 create table if not exists public.analytics_goals (
   id          bigint generated always as identity primary key,
   user_id     uuid not null references public.profiles(id) on delete cascade,
@@ -137,14 +63,6 @@ create table if not exists public.analytics_goals (
   created_at  timestamptz not null default now(),
   achieved_at timestamptz,
 
-  -- No money metric. Artworks are not sold, so an earnings goal on an artwork
-  -- dashboard would be a target nothing here can ever move. Selling lives in
-  -- the marketplace, and its dashboard can add the metric when it exists.
-  --
-  -- cred, not followers. This site has no follow button: what one artist gives
-  -- another is cred, it has its own table and its own count on the profile,
-  -- and a "followers" goal would be a target pointing at a feature that does
-  -- not exist here.
   constraint an_goal_metric check (metric in
     ('views','likes','bookmarks','downloads','comments','cred','uploads')),
   constraint an_goal_period check (period in ('7d','30d','90d','all')),
@@ -152,8 +70,6 @@ create table if not exists public.analytics_goals (
 );
 
 create index if not exists analytics_goals_user_idx on public.analytics_goals (user_id, created_at desc);
--- One live goal per metric per window. Raising a target edits that row rather
--- than stacking a second one beside it.
 create unique index if not exists analytics_goals_one_idx
   on public.analytics_goals (user_id, metric, period);
 
@@ -167,7 +83,6 @@ create policy analytics_goals_all_own on public.analytics_goals
 
 grant select, insert, update, delete on public.analytics_goals to authenticated;
 
--- A member may keep a dozen goals, not a thousand.
 create or replace function public.dz_analytics_goal_cap()
 returns trigger language plpgsql security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -182,15 +97,6 @@ drop trigger if exists analytics_goals_cap on public.analytics_goals;
 create trigger analytics_goals_cap before insert on public.analytics_goals
   for each row execute function public.dz_analytics_goal_cap();
 
--- ---------------------------------------------------------------------------
--- country, read off the edge rather than taken on trust
--- ---------------------------------------------------------------------------
--- Supabase sits behind Cloudflare, which is why dz_client_ip can read
--- cf-connecting-ip. The same hop sets cf-ipcountry, so the honest answer is
--- usually already in the request. The client's hint — the region subtag of its
--- own locale — is the fallback and only the fallback: it is a guess a visitor
--- can trivially change, and it must never overwrite a header that the edge,
--- rather than the browser, wrote.
 create or replace function public.dz_an_country(p_hint text default null)
 returns text language plpgsql stable security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -213,8 +119,6 @@ begin
       v_cc := null;
     end;
   end if;
-  -- Cloudflare answers XX for anonymised traffic and T1 for Tor. Neither is a
-  -- place, so both fall through to the hint rather than becoming a country.
   if v_cc is not null and v_cc ~ '^[A-Z]{2}$' and v_cc not in ('XX', 'T1') then
     return v_cc;
   end if;
@@ -223,10 +127,6 @@ begin
   return null;
 end $$;
 
--- The viewer key mirrors register_artwork_view exactly: the signed-in id when
--- there is one, the hashed edge IP when there is not, and the browser's own
--- key only when neither is available. Same rules, same shape, so a viewer is
--- the same viewer in both tables.
 create or replace function public.dz_an_viewer_key(p_anon_key text)
 returns text language plpgsql stable security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -247,9 +147,6 @@ begin
   return 'a:' || p_anon_key;
 end $$;
 
--- ---------------------------------------------------------------------------
--- the one writer
--- ---------------------------------------------------------------------------
 create or replace function public.dz_analytics_track(
   p_event    text,
   p_subject  uuid default null,
@@ -276,10 +173,6 @@ declare
 begin
   if p_event is null then return; end if;
 
-  -- Views and downloads are not tracked here. register_artwork_view and
-  -- register_artwork_download own them, because they own the dedup row that
-  -- decides whether a view happened at all, and a second opinion about that
-  -- would be a second, disagreeing number.
   if p_event not in ('like','unlike','bookmark','unbookmark','comment','share',
                      'profile_view','search_impression','search_click',
                      'follow','unfollow','cred') then
@@ -289,13 +182,8 @@ begin
   v_key := public.dz_an_viewer_key(p_anon_key);
   if v_key is null then return; end if;
 
-  -- Generous, because the unique index already means a repeat costs one
-  -- rejected insert. This is here to stop a script, not a person.
   if not public.dz_rate_ok('an:' || v_key, 240, 60) then return; end if;
 
-  -- Who this lands on. An artwork answers for itself; the profile-shaped
-  -- events name a profile and it has to exist. Nothing else is accepted, so
-  -- there is no path where a caller picks an owner freely.
   if p_subject is not null and coalesce(p_scope, 'artwork') = 'artwork' then
     select a.user_id into v_owner
       from public.artworks a
@@ -305,9 +193,6 @@ begin
   end if;
   if v_owner is null then return; end if;
 
-  -- Nobody's own dashboard should count their own taps: an artist opening
-  -- their own gallery is not an audience, and on a small account it is most
-  -- of one.
   if auth.uid() is not null and auth.uid() = v_owner then return; end if;
 
   v_source := lower(coalesce(p_source, 'direct'));
@@ -320,9 +205,6 @@ begin
     v_device := 'unknown';
   end if;
 
-  -- A search term is free text a stranger typed. It is only ever read back to
-  -- the artist whose work matched it, never to the person who typed it, and
-  -- only terms that matched something are stored at all.
   v_term := nullif(btrim(lower(coalesce(p_term, ''))), '');
   if v_term is not null then v_term := left(v_term, 80); end if;
   if p_event not in ('search_impression','search_click') then v_term := null; end if;
@@ -338,12 +220,6 @@ begin
     v_scope := 'artwork';
   end if;
 
-  -- A cred row exists only so the receiver's dashboard hears about it the
-  -- moment it happens; the names it then shows come from the reader, off
-  -- profile_creds itself. So this row carries no identity — it does not need
-  -- any to do its job, and a log that holds only what it uses is the smaller
-  -- thing to get wrong later. The hash still dedups one cred per giver per
-  -- receiver per day.
   if p_event = 'cred' then
     v_actor := null;
     v_key := 'c:' || md5('dzcred|' || v_key);
@@ -360,8 +236,6 @@ begin
   on conflict do nothing;
 end $$;
 
--- A search shows a page of results, and every one of them is an impression for
--- a different artist. One round trip rather than twelve.
 create or replace function public.dz_analytics_track_search(
   p_subjects uuid[],
   p_term     text,
@@ -378,7 +252,7 @@ begin
   if p_subjects is null or p_term is null or btrim(p_term) = '' then return; end if;
   foreach v_id in array p_subjects loop
     v_n := v_n + 1;
-    exit when v_n > 12;   -- the visible page of results, not the whole match set
+    exit when v_n > 12;
     perform public.dz_analytics_track(
       'search_impression', v_id, 'artwork', null,
       p_source, p_ref, p_device, p_country, p_term, p_anon_key);
@@ -392,16 +266,6 @@ grant execute on function public.dz_analytics_track_search(uuid[],text,text,text
 grant execute on function public.dz_an_country(text) to anon, authenticated;
 grant execute on function public.dz_an_viewer_key(text) to anon, authenticated;
 
--- ---------------------------------------------------------------------------
--- views and downloads learn to say where they came from
--- ---------------------------------------------------------------------------
--- These two already decide whether a view or a download happened — the dedup
--- insert is that decision. They gain four optional parameters and write the
--- dimension row inside the same `if found` branch, so the analytics view count
--- and artworks.view_count can never disagree. Dropped and recreated rather
--- than overloaded: two functions of one name is an ambiguity PostgREST would
--- have to guess at. Every new parameter defaults, so a page still running the
--- old JavaScript calls this exactly as it always did.
 drop function if exists public.register_artwork_view(uuid, text);
 create or replace function public.register_artwork_view(
   p_artwork  uuid,
@@ -462,7 +326,6 @@ begin
      where id = p_artwork;
     perform set_config('app.allow_view_count_write', '0', true);
 
-    -- the same view, with the four things the dedup row cannot hold
     if v_owner is not null and (auth.uid() is null or auth.uid() <> v_owner) then
       insert into public.analytics_events
         (owner_id, actor_id, viewer_key, scope, subject_id, event,
@@ -562,19 +425,6 @@ end $$;
 grant execute on function public.register_artwork_view(uuid,text,text,text,text,text) to anon, authenticated;
 grant execute on function public.register_artwork_download(uuid,text,text,text,text,text) to anon, authenticated;
 
--- ---------------------------------------------------------------------------
--- the readers
--- ---------------------------------------------------------------------------
--- Four functions, twelve sections, one member: auth.uid() and nobody else.
--- SECURITY DEFINER because the honest answers cross tables an artist cannot
--- read row by row — every viewer's dedup row, the site-wide median another
--- artist's numbers go into — and what comes back out is only ever their own
--- totals and anonymous aggregates.
---
--- Window convention, used by all four: p_days days ending today inclusive, and
--- the equal-length window immediately before it, so "up 18% on the last 30
--- days" means something exact.
-
 create or replace function public.dz_an_days(p_days int)
 returns int language sql immutable as $$
   select case when p_days in (7, 14, 30, 90, 365) then p_days else 30 end;
@@ -582,10 +432,6 @@ $$;
 
 grant execute on function public.dz_an_days(int) to authenticated;
 
--- ---- what a goal's progress actually is ------------------------------------
--- Split out because two callers need the same answer: the reader that paints
--- the bar, and the update that decides a goal has been met. One definition, so
--- the bar and the tick can never disagree.
 create or replace function public.dz_an_goal_progress(p_user uuid, p_metric text, p_period text)
 returns bigint language plpgsql stable security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -629,7 +475,6 @@ begin
   end;
 end $$;
 
--- ---- achievements: milestones nobody has to set for themselves -------------
 create or replace function public.dz_an_achievements(p_user uuid)
 returns jsonb language plpgsql stable security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -675,7 +520,6 @@ end $$;
 grant execute on function public.dz_an_goal_progress(uuid, text, text) to authenticated;
 grant execute on function public.dz_an_achievements(uuid) to authenticated;
 
--- ---- 1 Overview, 2 Growth & Trends, 12 Comparisons ------------------------
 create or replace function public.dz_analytics_overview(p_days int default 30)
 returns jsonb language plpgsql stable security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -695,7 +539,6 @@ begin
       from public.artworks a
      where a.user_id = v_me
   ),
-  -- every metric, per day, in one shape: (day, metric, n)
   daily as (
     select d.day as day, 'views'::text as metric, count(*)::bigint as n
       from public.artwork_view_dedup d join mine m on m.id = d.artwork_id
@@ -754,8 +597,6 @@ begin
              'uploads', uploads) order by day) as rows
       from per_day
   ),
-  -- a fixed metric list, so a metric with no rows at all still reports a zero
-  -- rather than going missing from the object
   names (metric) as (values ('views'),('likes'),('bookmarks'),('downloads'),
                             ('comments'),('cred'),('uploads')),
   win as (
@@ -775,8 +616,6 @@ begin
       (select count(*) from public.profile_creds c
         where c.receiver_id = v_me)::bigint as cred_all
   ),
-  -- 12. Comparisons. Every artist's views in this window, so one artist can be
-  -- told where they sit without being told anything about anybody else.
   peers as (
     select a.user_id, count(*)::bigint as n
       from public.artwork_view_dedup d
@@ -814,7 +653,6 @@ begin
   return coalesce(v_out, '{}'::jsonb);
 end $$;
 
--- ---- 3 Artwork Performance, 4 Content Insights ----------------------------
 create or replace function public.dz_analytics_content(p_days int default 30)
 returns jsonb language plpgsql stable security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -833,8 +671,6 @@ begin
       from public.artworks a
      where a.user_id = v_me
   ),
-  -- grouped once each rather than a subquery per artwork, so a member with
-  -- four hundred pieces costs the same shape of query as one with four
   g_views as (select d.artwork_id as id, count(*)::bigint as n
                 from public.artwork_view_dedup d join mine m on m.id = d.artwork_id
                where d.day between v_from and v_to group by 1),
@@ -965,7 +801,6 @@ begin
   return coalesce(v_out, '{}'::jsonb);
 end $$;
 
--- ---- 5 Audience, 6 Traffic Sources, 7 Search ------------------------------
 create or replace function public.dz_analytics_reach(p_days int default 30)
 returns jsonb language plpgsql stable security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -984,8 +819,6 @@ begin
      where e.owner_id = v_me and e.day between v_from and v_to
        and e.scope in ('artwork', 'profile')
   ),
-  -- Audience size comes from the dedup table rather than from analytics_events:
-  -- it has the full history, and it is the same viewer key, so the two agree.
   seen as (
     select d.viewer_key, count(distinct d.day)::int as days
       from public.artwork_view_dedup d join mine m on m.id = d.artwork_id
@@ -1028,7 +861,6 @@ begin
                    from public.artwork_view_dedup d join mine m on m.id = d.artwork_id
                   where d.day between v_from and v_to group by 1) s on s.ww = w
   ),
-  -- who actually did something, rather than who merely looked
   fans as (
     select jsonb_agg(jsonb_build_object(
              'id', p.id, 'name', coalesce(nullif(p.display_name, ''), p.username, 'Artist'),
@@ -1083,19 +915,12 @@ begin
       'impressions', (select count(*) from ev where event = 'search_impression'),
       'clicks',      (select count(*) from ev where event = 'search_click')
     ),
-    -- the breakdown charts are the one part with no history behind them, and
-    -- an empty chart should be able to say why rather than look broken
     'dimension_rows', (select count(*) from ev)
   ) into v_out;
 
   return coalesce(v_out, '{}'::jsonb);
 end $$;
 
--- ---- 8 Engagement, 9 Cred, 10 Community, 11 Goals & Achievements ---------
--- Volatile, not stable: it stamps achieved_at on any goal that has just been
--- met. The reader is the only thing that knows the progress, so it is the only
--- thing that can record the moment; the write is idempotent, so re-reading a
--- met goal changes nothing.
 create or replace function public.dz_analytics_activity(p_days int default 30)
 returns jsonb language plpgsql security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -1133,9 +958,6 @@ begin
         where e.owner_id = v_me and e.event = 'profile_view'
           and e.day between v_from and v_to)::bigint as profile_views
   ),
-  -- Cred, not followers: there is no follow button on this site. One artist
-  -- gives another cred, profile_creds records who gave it and when, and
-  -- profiles.cred_received_count is the running total the profile shows.
   cseries as (
     select jsonb_agg(jsonb_build_object('d', cal.day, 'gained', coalesce(g.n, 0)) order by cal.day) as list
       from (select gs::date as day from generate_series(v_from, v_to, interval '1 day') gs) cal
@@ -1146,11 +968,6 @@ begin
          group by 1
       ) g on g.day = cal.day
   ),
-  -- Who gave it, by name. profile_creds' own SELECT policy lets only the
-  -- giver read their rows, so this reader is the one place a receiver sees
-  -- it — a deliberate widening, asked for, not a side effect. It is the
-  -- receiver's own eight most recent and nobody else's, and giving cred is
-  -- an attributable act on this site, the same way a like is.
   recent_cred as (
     select jsonb_agg(jsonb_build_object(
              'id', p.id, 'name', coalesce(nullif(p.display_name, ''), p.username, 'Artist'),
@@ -1240,13 +1057,6 @@ grant execute on function public.dz_analytics_content(int)  to authenticated;
 grant execute on function public.dz_analytics_reach(int)    to authenticated;
 grant execute on function public.dz_analytics_activity(int) to authenticated;
 
--- ---------------------------------------------------------------------------
--- live
--- ---------------------------------------------------------------------------
--- The dashboard subscribes to its own rows. Realtime applies the same SELECT
--- policy the table already carries, so a socket delivers an artist their own
--- events and nobody else's. Nothing else on the site uses realtime yet, which
--- is why the publication has to be told the table exists at all.
 do $$
 begin
   if not exists (
@@ -1257,7 +1067,5 @@ begin
     alter publication supabase_realtime add table public.analytics_events;
   end if;
 exception when undefined_object then
-  -- no supabase_realtime publication on this database; the dashboard falls
-  -- back to polling on its own
   null;
 end $$;

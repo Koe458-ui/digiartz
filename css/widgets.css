@@ -1,5 +1,3 @@
-/* friends search, ripple, theme page, tags */
-/* friends user search */
 .dmSearchWrap{
   position:relative;display:flex;align-items:center;
   margin:0 0 1rem;
@@ -33,7 +31,6 @@
 }
 .dmPreview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txd);}
 .dmWhen{font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:var(--tc);flex-shrink:0;margin-left:.5rem;}
-/* thread view */
 #dmChatView .cpBody{display:flex;flex-direction:column;gap:.55rem;}
 .dmMsg{
   max-width:min(78%,520px);width:fit-content;
@@ -49,7 +46,6 @@
   border:1px solid rgba(var(--pg-rgb),.35);
 }
 .dmMsg--me:not(.dmMsg--cont){border-bottom-right-radius:4px;}
-/* grouped message */
 .dmMsg--cont{margin-top:-.32rem;}
 .dmMsgTime{
   float:right;font-family:var(--fm);font-size:.56rem;
@@ -63,7 +59,6 @@
   background:color-mix(in srgb,var(--sur) 92%,transparent);
 }
 .dmBar .cpBarInput{flex:1;}
-/* friend gate */
 .dmGate{
   flex-shrink:0;border-top:1px solid var(--bdr);
   padding:1rem 1.2rem calc(1rem + env(safe-area-inset-bottom,0px));
@@ -91,10 +86,8 @@
   .dmMsg{animation:dmIn .18s ease both;}
   @keyframes dmIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 }
-  /* no tap flash */
   *{-webkit-tap-highlight-color:transparent;}
 
-  /* ripple host */
   #rippleHost{
     position:fixed;
     top:0;
@@ -105,7 +98,6 @@
     z-index:999999999;
   }
 
-  /* ripple keyframe */
   @keyframes rplGrow{
     from{ transform:scale(0);   opacity:0.5; }
     to  { transform:scale(1.2); opacity:0;    }
@@ -264,7 +256,6 @@
   color: var(--ps);
 }
 
-/* mobile strip */
 @media (max-width: 560px) {
   #cookieBanner {
     bottom: 0;
@@ -300,7 +291,6 @@
           calc(6.5rem + env(safe-area-inset-bottom))
           max(var(--shellPad),env(safe-area-inset-left));
 }
-/* theme page intro */
 .thmIntro{text-align:center;padding:1.2rem 0 2rem;}
 .thmTitle{
   font-family:var(--fd);font-weight:800;
@@ -313,17 +303,11 @@
   font-family:var(--fb);font-size:clamp(.85rem,2.4vw,1rem);
   color:var(--txd);margin-top:.55rem;
 }
-/* card grid */
 .thmGrid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(min(100%,196px),1fr));
   gap:clamp(.8rem,1.6vw,1.15rem);
 }
-/* desktop: all three cards side by side, each wide enough to read as a page.
-   Two was the count when there were two themes; left at two, the third would
-   have dropped to a row of its own and read as the odd one out rather than as
-   one of three. Below this the auto-fit above still decides: three across on a
-   tablet, one under the other on a phone. */
 @media(min-width:1024px){
   .thmBdy{max-width:1180px;}
   .thmGrid{grid-template-columns:repeat(3,1fr);}
@@ -365,22 +349,7 @@
 }
 .thmCheck svg{width:13px;height:13px;}
 .thmCard[aria-checked="true"] .thmCheck{transform:scale(1);opacity:1;}
-/* The swatch is that theme's own ladder, so the preview shows what the page
-   becomes: --p-bg is the page, --p-sur the card sitting above it, --p-ln the
-   edge, --p-ac the accent. Each card carries its four values inline in
-   index.html, next to the markup that spends them.
 
-   Every property below that spends one names a fallback anyway. A preview
-   whose colours are missing is not a preview that degrades — .thmPrev has a
-   fixed aspect-ratio, so it holds its full size and paints nothing at all: a
-   large, silent, empty box. The fallbacks are charcoal's, so the worst case
-   is a preview showing the wrong theme's ground rather than no theme at all.
-
-   The class-keyed set below is the same three swatches again, keyed the way
-   js/theme.js identifies a card. It is not the primary source — the inline
-   values are — but it means the stylesheet and the script agree on what
-   makes a card a charcoal card, instead of the CSS keying off one attribute
-   and the script off another. */
 .thmCard--graydark {--p-bg:#1A1A1F;--p-sur:#24242C;--p-ln:#40404E;--p-ac:#F4F4F6;}
 .thmCard--light    {--p-bg:#F7F5EB;--p-sur:#FFFEF9;--p-ln:#D8D3B8;--p-ac:#17151F;}
 .thmCard--offwhite {--p-bg:#F3F3F1;--p-sur:#FCFCFA;--p-ln:#D2D2CD;--p-ac:#17171A;}
@@ -471,9 +440,6 @@ html.thmFade #themePage{
 }
 .avTitleRow{display:flex;align-items:flex-start;gap:.75rem;}
 .avTitleRow .avTitle{flex:1 1 auto;min-width:0;}
-/* .avTitleActs held the viewer's like and bookmark in the title row. Both
-   are in the rail under the card now, wearing .vwAct, so the row and its
-   two overrides have nothing left to style. */
 #frdPage{
   position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
   overflow-y:auto;transform:translateX(100%);
@@ -492,11 +458,6 @@ html.thmFade #themePage{
   transition:transform .45s cubic-bezier(.22,1,.36,1);
 }
 #bmPage.open{transform:translateX(0);}
-/* The cart, on the same shell. It was the gallery's sixth chip and is a page
-   of its own now, reached from the icon beside the bell — so it slides in from
-   the right the way Bookmarks and Friends do rather than being a tab of
-   something else. The lines inside it are unchanged: js/sections.js still
-   fills #fgSecC-cart, and .fgBdy still wraps it. */
 #cartPage{
   position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
   overflow-y:auto;transform:translateX(100%);
@@ -642,7 +603,6 @@ html.thmFade #themePage{
   grid-template-columns:repeat(2,1fr);
   gap:var(--artGap);
 }
-/* columns only — the gap is --artGap and steps at these same widths */
 @media(min-width:700px){ .albGrid{grid-template-columns:repeat(3,1fr);} }
 @media(min-width:1280px){ .albGrid{grid-template-columns:repeat(4,1fr);} }
 .albLoading{
@@ -659,15 +619,7 @@ html.thmFade #themePage{
 @supports not (aspect-ratio:1){
   .albCard{height:0;padding-top:100%;}
 }
-/* Four pictures and a name, and the four pictures reach every edge — there is
-   no ground showing for an outline to bound, so the tile draws none, and no
-   shadow and no lift with it.
 
-   The border stays declared, and transparent. Two of the tiles say something
-   with it — .albCard--virt colours it, .albCard--priv dashes it, and those are
-   the only marks a virtual or a private album gets — so the box has to keep its
-   geometry even where it draws nothing, or those two states lose their only
-   signal and every album's mosaic shifts a pixel besides. */
 @media(hover:hover){
   .albCard:hover{border-color:var(--bdrh);}
   .albCard:hover .albCell img{transform:scale(1.03);}
@@ -783,10 +735,6 @@ html.thmFade #themePage{
 }
 .albActBtn:hover{border-color:var(--pg);color:var(--pb);}
 .albActBtn--danger:hover{border-color:#e0564f;color:#e0564f;background:rgba(224,86,79,.08);}
-/* A card in an album opens the picture itself — albOpenPicture in
-   js/albums.js — and not the artwork viewer the same card opens in a gallery.
-   The cursor is the only thing that has to say which of the two this is, and
-   keying it to the grid means the card's own markup stays the one markup. */
 #albViewGrid .awCard{cursor:zoom-in;}
 .albItemWrap{position:relative;}
 .albItemX{
@@ -842,9 +790,6 @@ html.thmFade #themePage{
   #albPage,#albViewPage,.albCard{transition:none;}
 }
 
-/* The search box carries no inset of its own — every bar it sits in owns
-   that, and owning it in one place is what keeps the box lined up with
-   whatever runs beside or under it. */
 .tgSearch{
   display:flex;align-items:center;gap:.65rem;
   width:100%;
@@ -950,17 +895,6 @@ html.thmFade #themePage{
   color:var(--txd);margin-top:.9rem;text-align:center;
 }
 
-/* ── the two boards behind Profile ─────────────────────────────────────────
-   Analytics and Payouts. Each opens on a board of cards rather than a list of
-   words: one card per thing, in its own colour, saying what it is and what it
-   will show you before a tap is spent finding out.
-
-   One component, two lists. js/hubs.js draws both — the analytics list from
-   its own table, the payouts list handed in by /api/store — so the two boards
-   cannot drift into two different things. The gradient is the card's own, set
-   per card as --hubA and --hubB, and everything drawn on it is white: these
-   are the one place on the site where a saturated fill carries type, so the
-   pair is chosen dark enough to hold it in both themes rather than themed. */
 #anHubPage, #payHubPage{
   position:fixed;inset:0;z-index:545;background:var(--bg);color:var(--tx);
   overflow-y:auto;transform:translateX(100%);
@@ -971,8 +905,6 @@ html.thmFade #themePage{
 
 .hubBdy{padding:0 var(--shellPad) clamp(2rem,5vw,3.5rem);}
 
-/* The head, on the gallery's own pattern: a title with the thing being named
-   in the brand red, and a paragraph at a reading measure under it. */
 .hubHead{
   max-width:52rem;margin:0 auto;
   padding:clamp(1.5rem,4vw,2.6rem) 0 clamp(1.4rem,3.5vw,2rem);
@@ -992,9 +924,6 @@ html.thmFade #themePage{
   text-wrap:pretty;
 }
 
-/* Four across on a desktop, two on a tablet, one on a phone. auto-fit rather
-   than a fixed count, so a board of four and a board of five both fill their
-   row without either knowing how many the other has. */
 .hubGrid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));
@@ -1024,8 +953,6 @@ html.thmFade #themePage{
   }
 }
 .hubCard:active{transform:translateY(-1px) scale(.99);}
-/* the ring is white because the card is a colour: an accent outline on a
-   saturated fill is a ring nobody can see */
 .hubCard:focus-visible{outline:2px solid #fff;outline-offset:3px;}
 
 .hubIco{
@@ -1044,13 +971,8 @@ html.thmFade #themePage{
   font-size:.79rem;line-height:1.5;
   color:rgba(255,255,255,.88);
   text-wrap:pretty;
-  /* the blurbs are one, two or three lines; this holds the button on one line
-     across the row so the cards' feet agree */
   flex:1 1 auto;
 }
-/* The call to action. A span and not a button — the whole card is the button,
-   and a control inside a control is two tap targets where the member sees
-   one. It is drawn as a pill because that is what it looks like it does. */
 .hubGo{
   margin-top:.7rem;
   display:inline-flex;align-items:center;justify-content:center;
@@ -1064,9 +986,6 @@ html.thmFade #themePage{
 }
 @media(hover:hover){ .hubCard:hover .hubGo{background:rgba(255,255,255,.92);} }
 
-/* Shown until the board has been filled — and it is only ever filled by a
-   signed-in session, so this is what a member sees while /api/store is on its
-   way and what an unreachable backend leaves behind. */
 .hubNote{
   max-width:46rem;margin:1.4rem auto 0;text-align:center;
   font-family:var(--fm);font-size:.72rem;letter-spacing:.14em;

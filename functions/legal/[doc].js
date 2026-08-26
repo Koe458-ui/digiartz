@@ -1,24 +1,7 @@
-// Standalone legal pages: /legal/privacy, /legal/refund, /legal/contact, ...
-//
-// The site is a single-page app and every one of these documents used to be
-// reachable only by clicking a footer button that opened a modal. That is fine
-// for a member and useless for everyone else: a payment provider reviewing the
-// site asks for a URL it can open, and so does a crawler. Razorpay's website
-// review in particular wants to read the refund, delivery, contact and terms
-// pages before it will approve a domain for live payments.
-//
-// One dynamic route rather than seven near-identical files, and the text comes
-// from js/legal-content.js — the same module the modal reads, so a policy
-// cannot say one thing here and another thing in the modal.
-
 import { LEGAL } from '../../js/legal-content.js';
 
 const SITE = 'https://digiartz.net';
 
-// Public slug -> key in LEGAL. Kept deliberately separate from the internal
-// keys: 'seller' and 'cookie' are fine as object keys and poor as URLs, and a
-// slug is a permanent public commitment in a way a key is not. Changing a key
-// is a refactor; changing a slug breaks a link a payment provider has on file.
 const SLUGS = {
   'privacy':       { key: 'privacy', title: 'Privacy Policy' },
   'terms':         { key: 'terms',   title: 'Terms of Service' },
@@ -34,9 +17,6 @@ export const LEGAL_SLUGS = Object.keys(SLUGS);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// Strip tags for the meta description. The stored html is ours, not user
-// input, so this is a summariser and not a sanitiser — it is never the thing
-// standing between a stranger's markup and the page.
 function describe(html) {
   const text = String(html || '')
     .replace(/<[^>]+>/g, ' ')
@@ -46,10 +26,6 @@ function describe(html) {
   return text.length <= 160 ? text : text.slice(0, 159).replace(/\s\S*$/, '') + '…';
 }
 
-// Self-contained on purpose: no stylesheet from the app, no scripts, nothing
-// from a third party. These pages have to render for a reviewer on a cold
-// cache with an ad blocker up, and every asset they depend on is another way
-// that fails. Colours follow the visitor's own light/dark preference.
 function page(slug, doc, navTitle) {
   const url = `${SITE}/legal/${slug}`;
   const others = Object.entries(SLUGS)
@@ -139,8 +115,6 @@ export async function onRequestGet({ params }) {
   const entry = SLUGS[slug];
   const doc = entry && LEGAL[entry.key];
 
-  // An unknown slug is a real 404, not a redirect to the homepage. A provider
-  // checking a URL it was given should be told plainly that it is wrong.
   if (!doc) {
     return new Response('Not found', {
       status: 404,
@@ -151,8 +125,6 @@ export async function onRequestGet({ params }) {
   return new Response(page(slug, doc, entry.title), {
     headers: {
       'content-type': 'text/html; charset=utf-8',
-      // Long enough to be cheap, short enough that a policy correction is live
-      // the same day rather than whenever an edge node feels like expiring.
       'cache-control': 'public, max-age=600',
     },
   });

@@ -1,21 +1,18 @@
-// profile page
   var pf = {
-    profile: null,        // profiles row being viewed
+    profile: null,
     isOwner: false,
     tab: 'gallery',
     galleryRows: [], galleryDone: false, galleryBusy: false,
     upFile: null,
-    upThumbFocus: null,    // crop position percent
+    upThumbFocus: null,
     upPageFiles: [],
-    upAlbums: [],          // album ids from upload
-    albums: [], albumsLoaded: false   // albums strip
+    upAlbums: [],
+    albums: [], albumsLoaded: false
   };
 
-  // avatar and banner preload
   var pfMediaCache = {};
-  // row cache by username
   var pfRowCache = {};
-  var pfOpenSeq = 0;   // guards stale fetch
+  var pfOpenSeq = 0;
   function pfPreloadImage(url){
     if(!url) return;
     var img = new Image();
@@ -29,13 +26,8 @@
     }catch(e){ return ''; }
   }
 
-  // profile columns
   var PF_PROFILE_COLS = 'id,username,display_name,bio,role,created_at,username_changed_at,cred_received_count,merit,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
 
-  // One member's own row. Private, so the cache stamps it with their id and
-  // refuses it for anybody else; short, because it is what the header, the
-  // greeting and every avatar chip read; and written down, so the profile
-  // panel opens with a name in it rather than a blank while the query runs.
   function pfOwnKey(){
     var c = window.dzCached ? window.dzCached() : null;
     return (c && c.ukey) ? c.ukey('profile') : null;
@@ -52,11 +44,9 @@
   async function pfEnsureOwnProfile(){
     if(!sb || !currentUser) return null;
     try{
-      // zero rows is expected
       const{data:existing,error:se}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('id',currentUser.id).maybeSingle();
       if(se) throw se;
       if(existing){ pfCacheOwn(existing); return existing; }
-      // build username from session
       var base = (currentUser.user_metadata && currentUser.user_metadata.username) ||
                  (currentUser.email ? currentUser.email.split('@')[0] : '') || 'user';
       base = base.replace(/[^a-zA-Z0-9_.]/g,'').slice(0,30) || 'user';
@@ -64,7 +54,6 @@
       for(var attempt=0; attempt<3; attempt++){
         const{data:ins,error:ie}=await sb.from('profiles').insert({id:currentUser.id,username:uname}).select(PF_PROFILE_COLS).single();
         if(!ie && ins){
-          // sync auth copy
           if(uname !== (currentUser.user_metadata && currentUser.user_metadata.username)){
             try{ await sb.auth.updateUser({data:{username:uname}}); }catch(e){}
           }
@@ -73,7 +62,6 @@
         }
         var msg = (ie && ie.message) || '';
         if(/duplicate|unique|23505/i.test(msg)){
-          // handle id or name conflict
           const{data:again}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('id',currentUser.id).maybeSingle();
           if(again){ pfCacheOwn(again); return again; }
           uname = base.slice(0,24)+'_'+Math.random().toString(36).slice(2,6);
@@ -84,24 +72,15 @@
       }
     }catch(e){
       console.error('pfEnsureOwnProfile: '+(e.message||e));
-      // Offline. Their own saved row, however old — refused outright if the
-      // session it was written for is not this one.
       var cachedProf = window.pfOwnProfileCached();
       if(cachedProf){ showToast('Offline \u2014 showing saved profile'); return cachedProf; }
     }
     return null;
   }
 
-  /* `token` is the bottom nav's move (js/pfedit.js). The session usually
-     knows your own @handle and this opens in the same tick, but when it does
-     not the row is a round trip away — and a member who taps Profile, sees
-     nothing happen and taps Community would then have had their profile slide
-     in over the community page when the row landed. A move that is no longer
-     the current one does not get to open anything. */
   async function openOwnProfile(token){
     if(!currentUser){ showToast('Sign in to view your profile'); openAuthMod(); return; }
     if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return; }
-    // username from session
     var uname = currentUser.user_metadata && currentUser.user_metadata.username;
     if(uname){ openProfileByUsername(uname); return; }
     var row = await pfEnsureOwnProfile();
@@ -111,9 +90,7 @@
     showToast('Could not load your profile — please try again');
   }
 
-  // close competing overlays
   function pfCloseCompetingOverlays(){
-    // remember overlay to return to
     try{
       var _dz = document.getElementById('dzView');
       var _fg = document.getElementById('fg');
@@ -124,14 +101,12 @@
       else if(_cm && _cm.classList.contains('open')) window.pfReturnOverlay = 'communityPage';
       else if(_rk && _rk.classList.contains('open')) window.pfReturnOverlay = 'rankPage';
       else window.pfReturnOverlay = null;
-      // artworks keep their own url
     }catch(e){ window.pfReturnOverlay = null; }
     try{ if(typeof closeLB==='function') closeLB(true); }catch(e){}
     try{ if(typeof closeFG==='function') closeFG(); }catch(e){}
     try{ if(typeof closePfUpload==='function') closePfUpload(); }catch(e){}
     try{ if(typeof closeCommunityPage==='function') closeCommunityPage(); }catch(e){}
     try{ if(typeof window.closeRankPage==='function') window.closeRankPage(); }catch(e){}
-    // silent close keeps history
     try{ if(typeof window.dzCloseViewSilent==='function') window.dzCloseViewSilent(); else if(typeof window.dzCloseView==='function') window.dzCloseView(); }catch(e){}
   }
 
@@ -141,21 +116,8 @@
     var panel = document.getElementById('profilePage');
     panel.classList.add('open');
     document.body.style.overflow='hidden';
-    /* THE ADDRESS IS WRITTEN HERE, with the panel, and not down in
-       pfPaintProfile where it used to be.
 
-       Down there it was written after the row had been fetched — and by then
-       the member may have tapped away, leaving the bar reading
-       /profile/<name> over whatever they had actually navigated to. Nothing
-       looked wrong until the next refresh, which read that address and opened
-       a profile nobody had asked for. That is the "profile opens by itself on
-       reload" report, and this line is the whole of it: the address cannot
-       name a panel that is not open if it is written by the open.
-
-       The name is corrected in pfPaintProfile if the database spells it
-       differently, by replacing rather than pushing. */
     if(pushUrl !== false) pfAddress(username);
-    // preload media on slide in
     var mediaCached = pfMediaCache[username];
     if(mediaCached){
       pfPreloadImage(getThumbnailUrl(mediaCached.avatar_url));
@@ -165,61 +127,24 @@
       pfPreloadImage(getThumbnailUrl(currentUserAvatarUrl));
     }
     pf.profile=null; pf.galleryRows=[]; pf.galleryDone=false; pf.galleryBusy=false;
-    // the page window and the ids already on it belong to one profile
     pf.galleryOffset=0; pf.galleryIds=Object.create(null);
-    // and so does any claim on the totals tiles
     ['pfStatLikes','pfStatViews'].forEach(function(id){
       var e=document.getElementById(id); if(e) delete e.dataset.total;
     });
     pf.resLoaded=false; pf.mktLoaded=false; pf.blogLoaded=false; pf.resRows=[]; pf.mktRows=[]; pf.blogRows=[];
-    // reset albums per profile
     pf.albumsLoaded=false; pf.albums=[];
-    /* And the panels themselves, which is the half this used to leave out.
-       Everything above empties the ARRAYS a panel is drawn from; the drawn
-       panel stayed in the document, holding the last profile opened.
 
-       It cost two bugs, both of which read as caching because both only
-       happened on a profile that had been opened before — the warm path is
-       the one that skipped the clear:
-
-       the gallery multiplied. Its loader appends a page rather than
-       replacing the grid, and the id-dedupe it appends through was reset one
-       line above. So a second open drew page one under page one, a third
-       drew it a third time, and every artwork appeared once per visit.
-
-       the other tabs showed the wrong member's work. A tab's loader starts
-       `if(!pf.profile) return`, and pf.profile is null from here until the
-       row lands, so tapping Albums in that window returned before the grid
-       was cleared and left the previous profile's Likes and Bookmarks
-       covers on screen, under this profile's name.
-
-       Emptied here, beside the state each one mirrors, so a panel and the
-       array behind it cannot disagree about whose profile this is. */
     ['pfGalleryGrid','pfAlbumGrid','pfResGrid','pfBlogList','pfMktGrid','pfXpWrap',
      'pfConnectList']
       .forEach(function(id){ var e=document.getElementById(id); if(e) e.innerHTML=''; });
-    // About is painted from the row rather than fetched, so it has no loader
-    // to clear it and was showing the last profile's bio, links and merit
-    // under this profile's name for as long as the row took to arrive.
     var _bio=document.getElementById('pfBioText'); if(_bio) _bio.textContent='';
     var _mer=document.getElementById('pfStatMerit'); if(_mer) _mer.textContent='—';
-    // an empty-state belongs to the panel it sits under, and none of them has
-    // been answered for this profile yet
     ['pfGalleryEmpty','pfAlbumEmpty','pfResEmpty','pfBlogEmpty','pfMktEmpty']
       .forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
-    // a profile's search results belong to that profile
     pfSearchReset();
     var _pgs=document.getElementById('pfGallerySentinel'); if(_pgs) _pgs.style.display='none';
-    // stale fetch guard
     var mySeq = ++pfOpenSeq;
 
-    /* Stale while revalidate, now across visits rather than only within one.
-       pfRowCache is this tab's memory and empties on reload; the cache service
-       keeps the row on disk under the name it was opened by, so opening a
-       profile you have seen before paints the header, avatar and banner
-       immediately and the query behind it only corrects them. Public data, so
-       it is not partitioned by viewer — a profile page looks the same to
-       everybody, which is exactly why it is safe to share on a device. */
     var pfLc = String(username).toLowerCase();
     var pfCache = window.dzCached ? window.dzCached() : null;
     var pfKey = 'profile:public:name:' + (pfCache ? pfCache.norm(pfLc) : pfLc);
@@ -229,8 +154,6 @@
       pfSwitchTab('gallery');
       pfPaintProfile(cachedRow, cachedRow.username, pushUrl);
     } else {
-      // first visit, show skeleton. The panels were emptied above, on both
-      // paths — this branch only has the header left to blank.
       document.getElementById('pfUsername').textContent='Loading…';
       document.getElementById('pfAvatarLetter').textContent='?';
       document.getElementById('pfAvatarImg').style.display='none';
@@ -242,7 +165,6 @@
       var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.hidden=true;
       var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
       pfPaintTopBar(null);
-      // clear previous tint
       if(window.DZ_MS){
         DZ_MS.paintName(document.getElementById('pfUsername'), 0);
         DZ_MS.paintRibbon(document.getElementById('pfMsRibbon'), 0);
@@ -250,69 +172,35 @@
       pfSwitchTab('gallery');
     }
     try{
-      // missing row is not an error
       let{data,error}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('username',username).maybeSingle();
       if(error) throw error;
       if(!data && currentUser){
-        // create own row if missing
         var metaName = currentUser.user_metadata && currentUser.user_metadata.username;
         if(metaName && metaName.toLowerCase() === String(username).toLowerCase()){
           data = await pfEnsureOwnProfile();
         }
       }
-      // Bail if superseded — BEFORE acting on the answer, not after. This
-      // check used to sit below the not-found branch, so a lookup that came
-      // back empty closed whichever profile was on screen by then, including
-      // one the member had opened since.
       if(mySeq !== pfOpenSeq) return;
-      // And bail if this panel is not on screen any more. The member tapped
-      // Home, or Community, while the row was in flight; painting it now
-      // would write a name, a banner and an address for a page nobody is
-      // looking at — which is how the address bar came to name a profile
-      // over the upload page.
       if(!document.getElementById('profilePage').classList.contains('open')) return;
       if(!data){ showToast('Profile not found'); closeProfilePage(); return; }
-      // use db username
       username = data.username;
-      pfRowCache[String(username).toLowerCase()] = data;   // warm for next open
-      if(pfCache) pfCache.set(pfKey, data, 'profile:public');   // and for the next visit
+      pfRowCache[String(username).toLowerCase()] = data;
+      if(pfCache) pfCache.set(pfKey, data, 'profile:public');
       pfPaintProfile(data, username, pushUrl);
     }catch(e){
       console.error('Error: '+e.message);
-      // keep cached row on failure
       if(!cachedRow && mySeq === pfOpenSeq) closeProfilePage();
     }
   }
 
-  // Search, the bell and the settings menu act on your own account, so they
-  // are only drawn on your own profile. Somebody else's carries a way back
-  // out of it instead — the bar is the only chrome the page has.
-  // The bar names the page, not the person on it: it reads PROFILE on every
-  // profile. Whose profile it is, is what the name under the banner is for.
-  //
-  // The way back is drawn on both. It used to be drawn only on somebody
-  // else's — your own profile had the site's own navigation under it and did
-  // not need one — and the site's navigation is a bar at the top of the
-  // document now, which this page covers. A page with no way out of it is what
-  // that would leave, so the arrow is unconditional and only the search, bell
-  // and menu still move: those act on your account and are yours alone.
   function pfPaintTopBar(isOwner){
     var acts = document.getElementById('pfTopActions');
     var guest = document.getElementById('pfTopGuest');
     var known = (isOwner !== null && isOwner !== undefined);
     if(acts) acts.hidden = !isOwner;
-    // Only once we know whose profile this is, only on somebody else's, and
-    // only for a member — there is nobody to attribute a signed-out report to,
-    // and user_reports.reporter_id is how a queue of them is deduplicated.
     if(guest) guest.hidden = !known || !!isOwner || !currentUser;
   }
 
-  // ---- reporting an account ------------------------------------------------
-  //
-  // The sibling of the artwork report in js/gallery.js, and it shares that
-  // sheet's markup classes so the two look alike. What it does NOT share is
-  // the reason list: an upload is judged on what it is, an account on what it
-  // keeps doing, and the values here are the ones public.user_reports accepts.
   var rptUserBusy = false;
 
   function pfReportUser(){
@@ -325,7 +213,6 @@
     var chosen = m.querySelector('input[name="rptUserReason"]:checked');
     if(chosen) chosen.checked = false;
     document.getElementById('rptUserDetails').value = '';
-    // The handle, so nobody reports the wrong account off a stale sheet.
     var sub = document.getElementById('rptUserSub');
     if(sub) sub.textContent = 'Why are you reporting @' +
       (pf.profile.username || 'this account') + '?';
@@ -353,36 +240,23 @@
         reason     : picked.value,
         details    : (document.getElementById('rptUserDetails').value.trim() || null)
       });
-      // A second report of the same account by the same member is refused by
-      // the partial unique index, and that is not a failure to tell them
-      // about: they reported it, it is in the queue, and saying so twice would
-      // only invite them to try a third time.
       if(ins.error && ins.error.code !== '23505') throw ins.error;
       rptUserClose();
       showToast('Report submitted — thank you');
     }catch(e){
-      // safeErr passes our own messages through and swallows anything that
-      // reads like a database error — which is how the suspension notice from
-      // dz_ban_gate() reaches a banned member who tries to report their way
-      // out of it, while a constraint violation does not.
       showToast(safeErr(e, 'Couldn\u2019t submit report — try again'));
     }finally{
       rptUserBusy = false; btn.disabled = false; btn.textContent = '🚩 Submit Report';
     }
   }
 
-  // paint profile row
   function pfPaintProfile(data, username, pushUrl){
       pf.profile = data;
       pf.isOwner = !!(currentUser && currentUser.id === data.id);
       pfPaintTopBar(pf.isOwner);
-      // Somebody else's profile, opened. Deduped per viewer per day in the
-      // database, and dropped outright when the viewer is the owner, so this
-      // does not need to know whether the page was already open.
       if(!pf.isOwner && typeof window.dzAnTrack === 'function'){
         window.dzAnTrack('profile_view', null, { scope: 'profile', owner: String(data.id) });
       }
-      // cache and preload
       pfMediaCache[username] = { avatar_url: data.avatar_url||null, banner_url: data.banner_url||null };
       pfPreloadImage(getThumbnailUrl(data.avatar_url));
       pfPreloadImage(getViewUrl(data.banner_url));
@@ -400,41 +274,23 @@
       pfLoadHeadStats();
       pfLoadActionRow();
       pfLoadMoreGallery();
-      // the row exists now, so a tab that was opened before it arrived and
-      // bailed out of its own loader gets the load it was waiting for
       if(pf.tab && pf.tab !== 'gallery') pfLoadTab(pf.tab);
-      // The row may spell the name differently from the link that was
-      // followed. Corrected in place, and only while this profile is still
-      // the panel on screen — a row that lands after the member has moved on
-      // has no business touching the address bar.
       if(pushUrl!==false &&
          document.getElementById('profilePage').classList.contains('open')){
         pfAddress(username);
       }
   }
 
-  /* The profile's address, written in one place so open, correct and close
-     cannot disagree about it.
-
-     A profile is two different things depending on how it was reached, and
-     the difference is exactly what pfCloseCompetingOverlays already worked
-     out: with a section still underneath (the gallery, an artwork, the
-     community page) it is a page over that section and takes an entry of its
-     own, so Back returns to what it covered. Reached from the bottom nav, it
-     IS the section, and it shares the one history entry the whole visit
-     spends — the same entry /explore and /community use — so Back leaves the
-     app's panels in a single press from anywhere. */
   function pfAddress(username){
     var path = '/profile/'+encodeURIComponent(username);
     if(!window.pfReturnOverlay && typeof window.dzRouteAddress === 'function'){
-      pfReturnUrl = null;                    // the router is holding the way back
+      pfReturnUrl = null;
       window.dzRouteAddress(path);
       return;
     }
     if(window.location.pathname === path) return;
     try{
       if(pfReturnUrl === null){
-        // where to put the address bar back when this closes
         pfReturnUrl = window.location.pathname + window.location.search;
         history.pushState({profileUser:username},'',path);
       } else {
@@ -443,11 +299,7 @@
     }catch(e){}
   }
 
-  // Where the address bar was when this panel took it over. Null means the
-  // profile was opened by its own url and there is nothing behind it.
   var pfReturnUrl = null;
-  // A browser-driven move invalidates it: the recorded position is not where
-  // we are any more.
   window.addEventListener('popstate', function(){ pfReturnUrl = null; });
 
   function closeProfilePage(revertUrl, restore){
@@ -457,24 +309,14 @@
     closePfSearch(true);
     document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
-    /* REPLACE, do not push. Opening pushed /profile/<name>; closing pushed '/'
-       on top of it, so each visit left two entries behind and Back re-opened
-       the profile that had just been closed. And '/' was a guess: a profile
-       opened from the gallery or from an artwork used to drop the reader on the
-       home page instead of back where they were. */
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
       if(pfReturnUrl === null && typeof window.dzRouteAddress === 'function'){
-        // Opened as a section, so the entry under it is the one js/routes.js
-        // took for this visit and it holds the way back — asking it is how
-        // Escape out of your own profile returns to where you came in rather
-        // than to a hard-coded home page.
         window.dzRouteAddress(null);
       } else {
         try{ history.replaceState({},'', pfReturnUrl || '/'); }catch(e){}
       }
       pfReturnUrl = null;
     }
-    // back returns to overlay
     var ret = window.pfReturnOverlay; window.pfReturnOverlay = null;
     if(restore===true){
       if(ret==='fg'){
@@ -485,18 +327,14 @@
           if(typeof bnSetActive==='function') bnSetActive('bnGallery');
         }
       } else if(ret==='communityPage'){
-        // re enter community properly
         if(typeof openCommunityHome==='function'){
           openCommunityHome();
           if(typeof bnSetActive==='function') bnSetActive('bnCommunity');
         }
       } else if(ret==='rankPage'){
-        // re open same board
         if(typeof window.openRankPage==='function'){ window.openRankPage(); }
       } else if(ret==='dzView'){
-        // re reveal detail view
         setTimeout(function(){
-          // re reveal gallery behind
           var fg = document.getElementById('fg');
           if(fg && !fg.classList.contains('open')){
             fg.classList.add('open');
@@ -512,7 +350,6 @@
     }
   }
 
-  // reading order of the rail, and the order the arrow keys walk
   var PF_TABS = ['gallery','album','resources','blog','marketplace','progress','about'];
 
   function pfSwitchTab(tab){
@@ -525,12 +362,7 @@
       if(btn){
         btn.classList.toggle('active', on);
         btn.setAttribute('aria-selected', on ? 'true' : 'false');
-        // A tab rail is one stop on the page, not seven. Tab lands on the
-        // selected one and the arrow keys move within — which is also why
-        // the others are taken out of the tab order rather than hidden.
         btn.tabIndex = on ? 0 : -1;
-        // seven tabs do not fit a phone, so the one in use is scrolled into
-        // the rail rather than left off the end of it
         if(on && btn.scrollIntoView){
           try{ btn.scrollIntoView({behavior:'smooth', inline:'nearest', block:'nearest'}); }catch(e){}
         }
@@ -540,13 +372,6 @@
     pfLoadTab(tab);
   }
 
-  /* The four tabs that fetch when they are opened, and the one that needs the
-     row to exist first. Every one of them starts by checking pf.profile, which
-     is null from the moment a profile is opened until its row lands — so a tab
-     tapped in that window used to load nothing and never try again. It is
-     called from two places for that reason: when a tab is chosen, and when the
-     row arrives, whichever happens second. Each loader keeps its own loaded
-     flag, so being asked twice costs one call. */
   function pfLoadTab(tab){
     if(tab==='progress' && typeof xpLoadInto==='function' && pf.profile){
       xpLoadInto('pfXpWrap', pf.profile.id, { leaderboard:true });
@@ -557,11 +382,6 @@
     if(tab==='marketplace') pfLoadMarket();
   }
 
-  /* Arrow keys along the rail, Home and End to its ends — the tabs pattern
-     everything else with role="tablist" answers to. Selection follows the
-     arrow, which is right here because switching a tab costs nothing: the
-     panel is already in the page. Up and Down are left alone; this rail is
-     horizontal and they belong to the scroll. */
   function pfTabKey(e){
     var i = PF_TABS.indexOf(pf.tab);
     if(i === -1) return;
@@ -575,7 +395,6 @@
     var t = PF_TABS[next];
     pfSwitchTab(t);
     var btn = document.getElementById('pfTab' + t.charAt(0).toUpperCase() + t.slice(1));
-    // pfSwitchTab already scrolled it into the rail; focus must not fight that
     if(btn) try{ btn.focus({preventScroll:true}); }catch(e2){ btn.focus(); }
   }
   document.addEventListener('DOMContentLoaded', function(){
@@ -583,7 +402,6 @@
     if(rail) rail.addEventListener('keydown', pfTabKey);
   });
 
-  // resources and marketplace tabs
   function pfDzCard(sec){
     return function(r){
       var id = esc(String(r.id));
@@ -599,7 +417,6 @@
           '<span>'+esc(String(r.download_count||0))+' downloads</span>'+
           '<span>'+esc(r.license||'')+'</span></div></div></div>';
       }
-      // price and buy live in the slot, which only the signed-in module fills
       return '<div class="dzCard" onclick="pfDzOpen(\'marketplace\',\''+id+'\')">'+
         '<div class="dzThumb">'+thumb+'<span class="dzBadge">'+esc((r.item_type||'').toUpperCase())+'</span></div>'+
         '<div class="dzBody"><div class="dzName">'+esc(r.title||'')+'</div>'+
@@ -616,13 +433,6 @@
     if(row && typeof window.dzOpenRow==='function') window.dzOpenRow(sec, row);
   }
 
-  /* Whose profile a tab is being loaded for, checked again when the reply
-     lands. All three of these await a query and then paint, and none of them
-     used to look up afterwards — so opening one profile, tapping Resources
-     and opening another before the reply arrived painted the first member's
-     work into the second member's tab, and set the loaded flag, so the right
-     rows were never fetched at all. The albums tab and the gallery pager have
-     always checked; these three are brought into line with them. */
   function pfStillOn(forId){
     return !!pf.profile && String(pf.profile.id) === String(forId);
   }
@@ -640,7 +450,7 @@
         .eq('user_id', pf.profile.id).eq('status','approved')
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
-      if(!pfStillOn(forId)) return;   // another profile owns this tab now
+      if(!pfStillOn(forId)) return;
       var rows = data||[];
       pf.resLoaded=true; pf.resRows=rows;
       grid.innerHTML = rows.map(pfDzCard('resources')).join('');
@@ -660,7 +470,6 @@
     if(empty) empty.style.display='none';
     grid.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
     try{
-      // file url not selected
       const{data,error}=await sb.from('marketplace_items')
         .select(typeof window.dzSelectFor === 'function'
           ? window.dzSelectFor('marketplace')
@@ -668,7 +477,7 @@
         .eq('user_id', pf.profile.id).eq('status','approved')
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
-      if(!pfStillOn(forId)) return;   // another profile owns this tab now
+      if(!pfStillOn(forId)) return;
       var rows = data||[];
       pf.mktLoaded=true; pf.mktRows=rows;
       grid.innerHTML = rows.map(pfDzCard('marketplace')).join('');
@@ -681,7 +490,6 @@
     }
   }
 
-  // blog rows, not grid
   function pfBlogRow(r){
     var id = esc(String(r.id));
     var H  = window.dzHelpers || { ago:function(){return '';} };
@@ -709,7 +517,7 @@
         .eq('user_id', pf.profile.id).eq('status','approved')
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
-      if(!pfStillOn(forId)) return;   // another profile owns this tab now
+      if(!pfStillOn(forId)) return;
       var rows = data||[];
       pf.blogLoaded=true; pf.blogRows=rows;
       host.innerHTML = rows.map(pfBlogRow).join('');
@@ -721,7 +529,6 @@
     }
   }
 
-  // thumbnail crop, shared by every grid card on the page
   function thumbStyle(x, y, z){
     var tx = (x!=null && isFinite(+x)) ? +x : 50;
     var ty = (y!=null && isFinite(+y)) ? +y : 50;
@@ -730,12 +537,6 @@
     if(tz > 1) s += ';transform:scale('+tz+');transform-origin:'+tx+'% '+ty+'%';
     return s;
   }
-
-
-  /* ---- search inside one profile -------------------------------------
-     Scoped to the profile being viewed and to nothing else: this artist's
-     artwork, blog posts, listings and resources. It is drawn on your own
-     profile only, so in practice it is you searching your own work. */
 
   var pfSrch = { q:'', scope:'all', seq:0, timer:null, rows:{} };
 
@@ -746,9 +547,6 @@
     { key:'resources',   label:'Resources' }
   ];
 
-  // ilike takes a pattern, so the wildcards a user types are literal text to
-  // them and syntax to us. Strip those, and the characters PostgREST reads as
-  // filter punctuation, rather than searching for something nobody asked for.
   function pfSearchPattern(q){
     var clean = String(q||'').replace(/[%_*(),."\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
     return clean ? '%'+clean+'%' : '';
@@ -774,12 +572,6 @@
     n.hidden = !msg;
   }
 
-  /* The search page covers the profile but does not remove it, so without
-     this Tab walks straight off the bottom of the search results and into
-     the tabs, buttons and thumbnails still sitting underneath — a keyboard
-     or screen reader ends up somewhere it cannot see. Tab is kept inside
-     the dialog, and where focus came from is remembered so it can be handed
-     back when the dialog closes. */
   var pfSrchLastFocus = null;
 
   function pfSrchFocusable(){
@@ -788,7 +580,6 @@
     var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
               'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
     return Array.prototype.filter.call(pg.querySelectorAll(sel), function(el){
-      // the clear button only exists while there is something to clear
       return !el.hidden && el.offsetParent !== null;
     });
   }
@@ -800,8 +591,6 @@
     var items = pfSrchFocusable();
     if(!items.length) return;
     var first = items[0], last = items[items.length - 1];
-    // focus outside the dialog at all — a click through, or a stray tabindex —
-    // comes back to the near end rather than being left where it was
     if(!pg.contains(document.activeElement)){
       e.preventDefault();
       (e.shiftKey ? last : first).focus();
@@ -820,19 +609,14 @@
     pg.classList.add('open');
     document.body.style.overflow='hidden';
     var input = document.getElementById('pfSrchIn');
-    // the keyboard should come up with the page, not after a second tap
     if(input) setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
   }
 
-  // silent is for the profile closing underneath it: the page goes with it,
-  // and the scroll lock belongs to whatever is left on screen
   function closePfSearch(silent){
     var pg = document.getElementById('pfSearchPage');
     if(!pg || !pg.classList.contains('open')) return;
     pg.classList.remove('open');
-    if(silent !== true) document.body.style.overflow='hidden';   // profile is still up
-    // hand focus back to whatever opened the search — the bar button, usually.
-    // Not when the profile went with it: that button is gone from the page too.
+    if(silent !== true) document.body.style.overflow='hidden';
     var back = pfSrchLastFocus; pfSrchLastFocus = null;
     if(silent !== true && back && back.isConnected && back.focus){
       try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
@@ -926,7 +710,6 @@
       pfSearchNote('Couldn\u2019t search — try again.');
       return;
     }
-    // a slower earlier query must not land on top of a newer one
     if(mySeq !== pfSrch.seq || !pf.profile || pf.profile.id !== uid) return;
 
     pfSrch.rows = {};
@@ -974,8 +757,6 @@
       '</span></button>';
   }
 
-  // the results stay up behind whatever opens, so closing the artwork or the
-  // listing puts you back on the same search rather than back at the profile
   function pfSearchOpen(kind, id){
     var rows = pfSrch.rows[kind] || [];
     var row  = rows.find(function(x){ return String(x.id)===String(id); });

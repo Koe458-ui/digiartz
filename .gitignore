@@ -1,9 +1,5 @@
 config.js
 
-# security/backfill-t600.mjs is run by hand and needs @supabase/supabase-js and
-# sharp installed beside it. Node resolves bare imports by walking up from the
-# script's own directory, so the install has to land inside this tree — these
-# are the leftovers of that, not part of the site.
 node_modules/
 package.json
 package-lock.json

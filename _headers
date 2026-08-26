@@ -1,43 +1,3 @@
-# security headers, every response
-#
-# THE CSP NOW NAMES WHERE SCRIPT MAY COME FROM. It used to carry only
-# frame-ancestors/object-src/base-uri, with a note saying a real script-src
-# "breaks adsense, gtm, razorpay". That was true of a script-src 'self' — and
-# the answer to that is an allowlist, not an absent directive. Without one,
-# any script that reaches the page may load any other script from anywhere and
-# talk to anywhere, which is precisely the shape of a crypto-miner injection:
-# a miner is a script from a host you have never heard of plus a socket to a
-# pool. Both halves are now refused by name.
-#
-# WHAT EACH NON-OBVIOUS ENTRY IS FOR — do not prune these without checking:
-#   blob: in script-src   js/sections.js:3762 and js/gallery.js:1395 fetch the
-#                         store and ops modules as TEXT and run them from a
-#                         Blob URL. Drop blob: and checkout and the ops panel
-#                         stop loading. It is NOT a leftover.
-#   'unsafe-inline'       index.html carries three inline <script> blocks and
-#                         inline handlers. Removing it needs per-request
-#                         nonces, which a static _headers file cannot mint —
-#                         functions/_middleware.js would have to inject them.
-#                         Worth doing later; it is the one real gap left here.
-#   googlesyndication /   AdSense, which loads a tree of Google ad hosts at
-#   doubleclick /         runtime. js/effects.js:82 is the entry point.
-#   adtrafficquality
-#   generativelanguage    Left in connect-src. The assistant that called Gemini
-#                         from the browser is gone; the only caller left is
-#                         functions/api/moderate-upload.js, which runs at the
-#                         edge and never sees this header. Narrowing a CSP is
-#                         its own change with its own way of going wrong, so
-#                         this is noted rather than done in a nav rewrite.
-#   challenges.cloudflare Turnstile. It needs THREE directives, not two: the
-#   .com                  script to load it, frame-src for the challenge
-#                         iframe, and connect-src for the widget's own calls
-#                         back to Cloudflare. Missing the third let the widget
-#                         load and then silently fail to ever produce a token,
-#                         which reads as "couldn't verify you're human" with
-#                         nothing in the network tab that looks like a refusal.
-#
-# ROLLING IT BACK is one edit: delete the Content-Security-Policy line. Nothing
-# else in the file depends on it.
 /*
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
@@ -51,30 +11,15 @@
 /sw.js
   Cache-Control: no-cache
 
-# Scripts and stylesheets. Every reference to one of these carries ?v=<n> —
-# index.html is the authority for the numbers and scripts/check-precache.mjs
-# fails the build if a reference is missing its version or disagrees with the
-# service worker. That enforcement is what makes a year and `immutable` correct
-# here: a release changes the URL, so this copy can never be the wrong one, and
-# the browser is told it need not even ask.
-#
-# The unversioned path (/js/app-core.js with no query) gets the same header and
-# is not referenced by anything, so nothing can pin content that changes.
 /js/*
   Cache-Control: public, max-age=31536000, immutable
 
 /css/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Runtime configuration, deliberately unversioned so a key can be rotated
-# without a deploy. Short, and revalidated.
 /config.js
   Cache-Control: public, max-age=300, must-revalidate
 
-# Icons and the touch icon. A week, and index.html carries a ?v= on every one
-# of them, so a mark that changes reaches a returning visitor on the deploy
-# rather than whenever their week happens to be up. Rules here match on the
-# path, so the query string does not need repeating.
 /favicon.svg
   Cache-Control: public, max-age=604800
 /favicon.ico
@@ -90,39 +35,16 @@
 /logo.svg
   Cache-Control: public, max-age=604800
 
-# The manifest and the crawler files are checked often enough to be worth an
-# hour and no more. Never immutable: nothing in their URL says which copy this
-# is, and a pinned manifest is a pinned app identity.
 /site.webmanifest
   Cache-Control: public, max-age=3600
 /robots.txt
   Cache-Control: public, max-age=3600
 /ads.txt
   Cache-Control: public, max-age=3600
-# The IndexNow ownership key. Bing, Yandex, Seznam and Naver fetch this back
-# to prove a submission came from whoever runs the domain, so it has to stay
-# reachable and has to keep saying the same thing — see scripts/indexnow.mjs.
-# Not a secret: the protocol works by publishing it.
 /8968b78d9c9d0df0553bf47f2e121021.txt
   Cache-Control: public, max-age=3600
   Content-Type: text/plain; charset=utf-8
 
-# The HTML, spelled out rather than left to a platform default.
-#
-# index.html is the one file that says which bundles are current, so it is the
-# one file that must never be answered from a cache without asking. Everything
-# above depends on that: /js/* and /css/* are pinned for a year precisely
-# BECAUSE the HTML pointing at them is always revalidated, and a release that
-# could not update the HTML would be a release nobody receives.
-#
-# Every path here resolves to index.html — the artwork link, the four section
-# links, the profile link and /login are SPA fallbacks in _redirects, and a
-# header rule matches the path that was REQUESTED, not the file that answers
-# it, so each one needs saying. Keep this list and _redirects in step: a path
-# listed here with no fallback there is a 404 wearing a cache policy, which is
-# exactly what /profile/* was.
-# must-revalidate rather than no-store: the browser may keep its copy, it just
-# may not use it without checking.
 /
   Cache-Control: public, max-age=0, must-revalidate
 /index.html
@@ -152,10 +74,6 @@
 /community
   Cache-Control: public, max-age=0, must-revalidate
 
-# Pages Functions answer per caller, behind a session check. Nothing here may
-# be held by a browser cache, a shared cache or a crawler — a stored copy is a
-# signed-in answer waiting to be handed to whoever asks next. The functions set
-# these themselves; this is the second lock.
 /api/*
   Cache-Control: no-store, private, max-age=0
   X-Robots-Tag: noindex, nofollow

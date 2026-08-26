@@ -1,29 +1,3 @@
-/* DigiArtz Analytics — Profile → Settings → Activity → Analytics
- *
- * Two halves in one file, because they are two ends of one thing.
- *
- * THE FIRST HALF is four or five lines of context every visitor's browser
- * knows and the database cannot: where this visit came from, what it is being
- * read on, and roughly where. It is worked out once per session and handed to
- * the RPCs that record a view, a like, a download, a share or a search. Every
- * call is fire-and-forget: analytics must never be the reason an action fails,
- * so nothing here is awaited and nothing here throws.
- *
- * THE SECOND HALF is the dashboard. Twelve sections, four RPC calls, and a
- * repaint. It is only ever about the signed-in member: the readers are scoped
- * to auth.uid() server-side, so there is no id to pass and no way to ask for
- * somebody else's.
- *
- * WHY THE CHARTS ARE HAND-DRAWN SVG. A charting library is a network fetch
- * this page cannot make — the service worker precaches a fixed shell and the
- * site is meant to open offline — and the six chart shapes here are a path
- * builder, an arc, and a rectangle. The whole drawing layer is under 200 lines
- * and it costs nothing to load.
- *
- * WHY IT IS ARTWORKS ONLY. The marketplace, the blog and resources are coming;
- * they are not here. Every number on this page is an artwork's, the readers
- * filter for it, and nothing pretends to speak for the rest.
- */
 (function () {
   'use strict';
 
@@ -32,15 +6,8 @@
   function $(id) { return document.getElementById(id); }
   function toast(m) { if (typeof showToast === 'function') showToast(m); }
 
-  /* =======================================================================
-     1. WHAT A VISIT CARRIES
-     ======================================================================= */
-
   var SESS_KEY = 'dzAnSrc1';
 
-  // Hosts worth naming. Everything else that referred a visit is a 'referral'
-  // and keeps its hostname, which is the more useful answer anyway — an artist
-  // wants to see the actual forum, not a bucket called "other".
   var SEARCH_HOSTS = /(^|\.)(google|bing|duckduckgo|yahoo|yandex|baidu|ecosia|search\.brave|startpage|qwant|naver|seznam)\./;
   var SOCIAL_HOSTS = /(^|\.)(instagram|facebook|fb|twitter|x|t|pinterest|reddit|tiktok|youtube|youtu|tumblr|linkedin|discord|telegram|whatsapp|threads|artstation|deviantart|behance|vk|weibo|line|snapchat|mastodon|bsky)\.[a-z.]+$/;
 
@@ -49,10 +16,6 @@
     catch (e) { return ''; }
   }
 
-  // Worked out from the referrer of the FIRST page of this session and then
-  // frozen. Reading document.referrer per event would call every in-app
-  // navigation a referral from ourselves; where a visitor came from is a fact
-  // about the visit, not about the tap.
   function entry() {
     var saved = null;
     try { saved = JSON.parse(sessionStorage.getItem(SESS_KEY) || 'null'); } catch (e) {}
@@ -79,23 +42,17 @@
     try {
       var uad = navigator.userAgentData;
       if (uad && typeof uad.mobile === 'boolean') {
-        // the hint only says mobile-or-not, so a tablet still needs the string
         if (!uad.mobile) return 'desktop';
       }
       var ua = navigator.userAgent || '';
       if (/iPad|Tablet|PlayBook|Silk/i.test(ua)) return 'tablet';
-      // Android without "Mobile" is a tablet, by Google's own convention
       if (/Android/i.test(ua) && !/Mobile/i.test(ua)) return 'tablet';
       if (/Mobi|Android|iPhone|iPod|Windows Phone/i.test(ua)) return 'mobile';
-      // a touch screen with a narrow viewport, for browsers that say nothing
       if (navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 500) return 'mobile';
       return 'desktop';
     } catch (e) { return 'unknown'; }
   }
 
-  // A hint and nothing more. The database prefers the country Cloudflare put
-  // on the request and only falls back to this, because a locale is a setting
-  // and an edge header is a measurement.
   function countryHint() {
     try {
       var tags = [];
@@ -120,9 +77,6 @@
     return ctxCache;
   }
 
-  // The four dimensions, named the way both register_artwork_view and
-  // dz_analytics_track spell them, so a caller of either passes the same
-  // object through.
   window.dzAnDims = function () {
     var c = ctx();
     return { p_source: c.source, p_ref: c.ref || null, p_device: c.device, p_country: c.country };
@@ -150,7 +104,6 @@
 
   window.dzAnTrack = track;
 
-  // One call for a page of results rather than one per row.
   window.dzAnSearch = function (ids, term, scope) {
     var c = db();
     if (!c || !term || !ids || !ids.length) return;
@@ -166,11 +119,6 @@
     } catch (e) {}
   };
 
-  // A view of a listing, a post or a resource. Artworks have their own
-  // function and their own dedup table; these three had neither until now,
-  // so this is the only thing that records that they were opened at all.
-  // Same client-side cooldown the gallery uses, so a page reopened three
-  // times in a minute is not three calls before the database even sees it.
   var ITEM_SEEN_KEY = 'dzAnItemSeen', ITEM_COOLDOWN = 6 * 3600 * 1000;
   window.dzAnItemView = function (kind, id) {
     var c = db();
@@ -193,12 +141,6 @@
     } catch (e) {}
   };
 
-  /* =======================================================================
-     2. THE DASHBOARD
-     ======================================================================= */
-
-  // Four dashboards, one page. The order is the order they appear in the
-  // Settings menu and the order they are listed everywhere else.
   var SCOPES = [
     { key: 'artwork',     label: 'Artwork',     noun: 'artwork',  nouns: 'artworks',
       title: 'ARTWORK ANALYTICS',     sub: 'Everything your artworks did, and where it came from.' },
@@ -221,27 +163,18 @@
     { d: 365, label: 'Last 12 months' }
   ];
 
-  // The hex is what the SVG gets — a chart stroke cannot be a CSS variable
-  // that resolves differently per theme. These six match css/analytics.css and
-  // must stay in step with it. None of them is purple: this site's three
-  // themes are graydark, light and offwhite.
   var METRICS = [
     { key: 'views',     label: 'Views',     ico: '👁', color: 'var(--an-views)',     hex: '#00A6FF' },
     { key: 'likes',     label: 'Likes',     ico: '❤️', color: 'var(--an-likes)',     hex: '#FF3D3D' },
     { key: 'bookmarks', label: 'Saves',     ico: '🔖', color: 'var(--an-bookmarks)', hex: '#00D9B8' },
     { key: 'downloads', label: 'Downloads', ico: '⬇️', color: 'var(--an-downloads)', hex: '#FFB300' },
     { key: 'comments',  label: 'Comments',  ico: '💬', color: 'var(--an-comments)',  hex: '#FF3DE0' },
-    // Shares, not cred. Every tile in this row has to be a number this
-    // section earned, and cred is given to a person on their profile — it has
-    // no section to belong to, so it lives in the account block instead.
     { key: 'shares',    label: 'Shares',    ico: '↗',  color: 'var(--an-cred)',      hex: '#16D95F' }
   ];
   function metric(key) {
     for (var i = 0; i < METRICS.length; i++) if (METRICS[i].key === key) return METRICS[i];
     return METRICS[0];
   }
-  // Nothing is downloaded from the marketplace — it is bought. Same slot in
-  // the row, same colour, the word that is true for the section.
   function metricsFor(sc) {
     return METRICS.map(function (m) {
       if (m.key === 'downloads' && sc === 'marketplace') {
@@ -261,15 +194,9 @@
   };
   var DEVICE_LABEL = { mobile: 'Phone', tablet: 'Tablet', desktop: 'Desktop', unknown: 'Unknown' };
   var DEVICE_HEX   = { mobile: '#00A6FF', tablet: '#00D9B8', desktop: '#16D95F', unknown: '#8A8F98' };
-  // twelve slices for the country donut, walked in order. No violet in it:
-  // this site's themes are graydark, light and offwhite, and none of them has
-  // a purple in its palette for these to sit beside.
   var WHEEL = ['#00A6FF', '#FF3DE0', '#00D9B8', '#FFB300', '#16D95F', '#FF3D3D',
                '#4DC3FF', '#FF85EC', '#5BE7D2', '#FFD24D', '#5BE88F', '#8A8F98'];
 
-  // Enough of ISO 3166 to name what the site actually sees, and the raw code
-  // for anywhere else — a two-letter code is a worse label than a name and a
-  // better one than nothing.
   var COUNTRY = {
     IN:'India', US:'United States', GB:'United Kingdom', ID:'Indonesia', BR:'Brazil',
     PH:'Philippines', CA:'Canada', AU:'Australia', DE:'Germany', FR:'France',
@@ -293,14 +220,6 @@
 
   var WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  /* ---- formatting -------------------------------------------------------- */
-  // Every number on this page is written out in full. 238393 reads as
-  // "238,393", never "238K": an artist looking at their own numbers wants the
-  // number, and the rounding a dashboard usually does to save space hides
-  // exactly the digits that moved since yesterday. num and full are the same
-  // function under two names — num is kept because the call sites read better
-  // with it, and having one of them quietly abbreviate is the bug this note
-  // exists to prevent.
   function full(n) { return Number(n || 0).toLocaleString(); }
   function num(n) { return full(n); }
   function pct(n) { return (Math.round(Number(n || 0) * 10) / 10) + '%'; }
@@ -309,9 +228,6 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  // The wording matters more than it looks. An earlier version said "level
-  // with last period" under a number, and on a tile labelled CRED that reads
-  // as a level — which cred is not. Nothing here says level, rank or tier.
   function delta(cur, prev) {
     cur = Number(cur) || 0; prev = Number(prev) || 0;
     if (prev === 0) {
@@ -356,11 +272,6 @@
     return n;
   }
 
-  /* ---- drawing ----------------------------------------------------------- */
-
-  // A path through the points, smoothed with a monotone cubic so the curve
-  // never dips below zero between two zero days — a plain Catmull-Rom does,
-  // and a chart of views that swings negative is a lie a tooltip cannot fix.
   function smoothPath(pts) {
     if (!pts.length) return '';
     if (pts.length < 3) return 'M' + pts.map(function (p) { return p[0] + ',' + p[1]; }).join('L');
@@ -371,8 +282,6 @@
       var t = 0.28;
       var c1x = p1[0] + (p2[0] - p0[0]) * t, c1y = p1[1] + (p2[1] - p0[1]) * t;
       var c2x = p2[0] - (p3[0] - p1[0]) * t, c2y = p2[1] - (p3[1] - p1[1]) * t;
-      // clamp the control points inside the segment's own value range, which
-      // is what stops the overshoot
       var lo = Math.min(p1[1], p2[1]), hi = Math.max(p1[1], p2[1]);
       c1y = Math.max(lo - (hi - lo) * 0.4, Math.min(hi + (hi - lo) * 0.4, c1y));
       c2y = Math.max(lo - (hi - lo) * 0.4, Math.min(hi + (hi - lo) * 0.4, c2y));
@@ -410,14 +319,6 @@
     return svg;
   }
 
-  // The big one. Series is [{key,hex,values:[]}], labels is the day strings.
-  //
-  // The viewBox is measured from the container rather than fixed, so one SVG
-  // unit is one CSS pixel at every width. A fixed viewBox would have locked
-  // the chart to one aspect ratio: on a 340px phone a 720×240 box renders 113px
-  // tall with 4px axis text, which is not a chart. Measured, the phone gets a
-  // shorter chart with readable labels and the desktop gets a taller one.
-  // paint() re-runs on resize, so a rotation redraws at the new width.
   function lineChart(host, labels, series) {
     host.innerHTML = '';
     var wrap = el('div', 'anChartWrap');
@@ -433,15 +334,10 @@
     series.forEach(function (s) {
       s.values.forEach(function (v) { if (Number(v) > max) max = Number(v); });
     });
-    // a round ceiling, so the gridline labels are numbers a person would say
     var step = Math.pow(10, Math.floor(Math.log(max) / Math.LN10));
     var top = Math.ceil(max / step) * step;
     if (top / max > 2 && step > 1) { step = step / 2; top = Math.ceil(max / step) * step; }
 
-    // How many gridlines, chosen so every label is a whole number and no two
-    // read the same. Four lines over a ceiling of 3 gives 0, 1, 2, 2, 3 —
-    // which looks like a rendering bug and is really just rounding, and a
-    // chart of cred or uploads is exactly where the ceiling is that small.
     var ticks = 4;
     if (top <= 4) {
       ticks = Math.max(1, Math.round(top));
@@ -452,9 +348,6 @@
       }
     }
 
-    // Axis labels are written out in full like everything else, so the gutter
-    // is measured from the widest one rather than guessed at — "1,250,000" and
-    // "40" need very different amounts of room.
     var axisFont = narrow ? 11 : 12;
     var widest = 0;
     for (var gi = 0; gi <= ticks; gi++) {
@@ -473,22 +366,18 @@
     function xAt(i) { return n === 1 ? L + iw / 2 : L + (i / (n - 1)) * iw; }
     function yAt(v) { return T + ih - (Number(v) / top) * ih; }
 
-    // gridlines
     var seenLabel = null;
     for (var g = 0; g <= ticks; g++) {
       var v = (top / ticks) * g, y = yAt(v);
       svg.appendChild(svgEl('line', { class: 'anGridLine', x1: L, y1: y, x2: W - R, y2: y }));
       var text = full(Math.round(v));
-      if (text === seenLabel) continue;   // belt and braces against the above
+      if (text === seenLabel) continue;
       seenLabel = text;
       var lbl = svgEl('text', { class: 'anAxis', x: L - 6, y: y + 3.5, 'text-anchor': 'end' });
       lbl.textContent = text;
       svg.appendChild(lbl);
     }
 
-    // x labels: first, last, and however many fit between them without
-    // touching. A date is about 34px wide at this size, so the count comes off
-    // the real width rather than off a guess that only holds on a laptop.
     var fit = Math.max(2, Math.floor(iw / (narrow ? 52 : 74)));
     var every = Math.max(1, Math.ceil(n / fit));
     for (var i = 0; i < n; i += every) {
@@ -522,7 +411,6 @@
       }));
     });
 
-    // hover marker
     var mark = svgEl('line', { x1: 0, y1: T, x2: 0, y2: T + ih, stroke: 'var(--bdrh)', 'stroke-width': 1, opacity: 0 });
     svg.appendChild(mark);
     var dots = series.map(function (s) {
@@ -553,8 +441,6 @@
       });
       tip.innerHTML = html;
       tip.classList.add('on');
-      // keep the card inside the chart on a narrow screen: centred on the day
-      // where there is room, nudged in where there is not
       var px = (x / W) * box.width;
       var half = (tip.offsetWidth || 120) / 2;
       tip.style.left = Math.max(half + 2, Math.min(box.width - half - 2, px)) + 'px';
@@ -678,7 +564,6 @@
     host.appendChild(wrap);
   }
 
-  // How many rows a dashboard card shows before it stops being a dashboard.
   var CARD_ROWS = 10;
 
   function moreBtn(label, onTap) {
@@ -693,7 +578,6 @@
     host.appendChild(el('div', 'anEmpty', msg));
   }
 
-  /* ---- state ------------------------------------------------------------- */
   var state = {
     scope: 'artwork',
     days: 30,
@@ -711,10 +595,6 @@
     again: false
   };
 
-  /* Which window the page opens on, remembered. A device preference, not a
-     fact about anybody — held under the one policy in the cache service that is
-     device-wide rather than member-scoped, because this is read while the page
-     is still starting and the session has not been restored yet. */
   var AN_DAYS_KEY = 'device:prefs:analytics:days';
   try {
     var savedDays = parseInt(
@@ -722,8 +602,6 @@
       localStorage.getItem('dzAnDays') || '30', 10);
     if ([7, 30, 90, 365].indexOf(savedDays) !== -1) state.days = savedDays;
   } catch (e) {}
-
-  /* ---- page shell -------------------------------------------------------- */
 
   function buildShell() {
     var body = $('anBdy');
@@ -770,9 +648,6 @@
     top.appendChild(right);
     body.appendChild(top);
 
-    // No scope switcher. Artwork Analytics is artworks and nothing else —
-    // the row you tapped in Settings is the dashboard you get, and there is
-    // no control on the page that quietly turns it into a different one.
     var nav = el('div', 'anNav');
     nav.id = 'anNav';
     body.appendChild(nav);
@@ -802,9 +677,6 @@
     watchNav();
   }
 
-
-  // The chip row marks where you are. An observer rather than a scroll
-  // handler, so it costs nothing while the page sits still.
   function watchNav() {
     if (!window.IntersectionObserver) return;
     var nav = $('anNav');
@@ -828,7 +700,6 @@
   var SECTIONS = [
     { id: 'overview',  short: 'Overview',   title: 'Overview',              note: 'the period at a glance' },
     { id: 'growth',    short: 'Growth',     title: 'Growth & Trends',       note: 'day by day' },
-    // the one section whose name is the section it is in
     { id: 'artworks',  short: 'Artworks',   title: 'Artwork Performance',   note: 'piece by piece',
       per: { marketplace: ['Listings',  'Listing Performance',  'listing by listing'],
              blog:        ['Posts',     'Post Performance',     'post by post'],
@@ -838,7 +709,6 @@
     { id: 'traffic',   short: 'Traffic',    title: 'Traffic Sources',       note: 'how they arrived' },
     { id: 'search',    short: 'Search',     title: 'Search Analytics',      note: 'what they typed' },
     { id: 'engage',    short: 'Engagement', title: 'Engagement',            note: 'what a view turns into' },
-    // marketplace only — the page drops it when the reader sends no revenue
     { id: 'revenue',   short: 'Revenue',    title: 'Revenue',               note: 'what your listings earned',
       only: 'marketplace' },
     { id: 'account',   short: 'Account',    title: 'Account & Cred',        note: 'you, not this section' },
@@ -854,8 +724,6 @@
       });
   }
 
-  /* ---- loading ----------------------------------------------------------- */
-
   async function load(showSkeleton) {
     var c = db();
     if (!c || !me()) return;
@@ -869,20 +737,6 @@
     }
     var d = state.days, sc = state.scope;
 
-    /* Four aggregate readers over one member's own rows, and every one of them
-       is a scan. Opening the dashboard, switching from 7 days to 30 and back,
-       or leaving and returning re-ran all four — so they are cached, for two
-       minutes, under a key carrying the member id, the scope and the window.
-
-       Private, in every sense the cache service understands: stamped with the
-       member id, refused for any other session, dropped from the device when
-       they sign out, and never eligible for a shared cache. Nobody's numbers
-       can be answered from a record written for somebody else — the key would
-       have to match AND the owner stamp would have to match, and neither does.
-
-       No stale-while-revalidate here. A dashboard is read as a statement of
-       fact; showing an old figure and correcting it under the reader's eyes is
-       worse than making them wait two hundred milliseconds. */
     var cache = window.dzCached ? window.dzCached() : null;
     var key = cache ? cache.ukey('analytics', sc, d + 'd') : null;
     var load = function () {
@@ -892,9 +746,6 @@
         c.rpc('dz_analytics_reach',    { p_days: d, p_scope: sc }),
         c.rpc('dz_analytics_activity', { p_days: d, p_scope: sc })
       ]).then(function (res) {
-        // Stored as the four payloads rather than the four responses: a
-        // Supabase response object is not worth writing to disk, and a reader
-        // that failed is stored as null so the card can say so.
         return res.map(function (r) { return (r && !r.error) ? r.data : null; });
       });
     };
@@ -911,7 +762,6 @@
     if (seq !== state.seq) return;
     state.loading = false;
 
-    // One section failing takes its own card, not the page.
     state.data.overview = out[0] || null;
     state.data.content  = out[1] || null;
     state.data.reach    = out[2] || null;
@@ -919,7 +769,6 @@
 
     paint();
 
-    // something landed while this was in flight
     if (state.again) { state.again = false; if (state.open) load(false); }
   }
 
@@ -936,22 +785,12 @@
     });
   }
 
-  // The greeting wants a name, and nothing on the page holds the signed-in
-  // member's own profile row — pf.profile is whichever profile is being
-  // looked at, which is usually somebody else's. One small query, cached for
-  // the session, and the heading reads "Your analytics" until it lands rather
-  // than flashing a wrong name.
   var myName = null;
   async function loadMyName() {
     var c = db(), u = me();
     if (!c || !u || myName !== null) return;
     myName = '';
     try {
-      /* The signed-in member's own name. It was already cached for the session;
-         it is cached across sessions now, so the greeting reads their name on
-         open rather than "Your analytics" until a query lands. Their own row,
-         so the same record the profile panel keeps — one query on this device
-         per minute instead of one per page load. */
       var cache = window.dzCached ? window.dzCached() : null;
       var nameLoad = async function () {
         var res = await c.from('profiles').select('username,display_name').eq('id', u.id).maybeSingle();
@@ -994,7 +833,6 @@
 
   function box(id) { return $('anBox_' + id); }
 
-  /* ---- 1. Overview ------------------------------------------------------- */
   function paintOverview() {
     var b = box('overview'), o = state.data.overview;
     if (!b) return;
@@ -1051,7 +889,6 @@
     b.appendChild(card);
   }
 
-  /* ---- 2. Growth & Trends ------------------------------------------------ */
   function paintGrowth() {
     var b = box('growth'), o = state.data.overview;
     if (!b) return;
@@ -1075,7 +912,6 @@
       btn.appendChild(document.createTextNode(m.label));
       btn.addEventListener('click', function () {
         var on = !!state.chartMetrics[m.key];
-        // one line has to stay, or the chart is an empty box with a legend
         if (on && Object.keys(state.chartMetrics).filter(function (k) { return state.chartMetrics[k]; }).length === 1) return;
         state.chartMetrics[m.key] = !on;
         paintGrowth();
@@ -1094,7 +930,6 @@
       return { key: m.key, label: m.label, hex: m.hex, values: series.map(function (r) { return Number(r[m.key]) || 0; }) };
     }));
 
-    // the facts a curve does not say out loud
     var views = series.map(function (r) { return Number(r.views) || 0; });
     var best = 0, bestI = 0, sum = 0, active = 0;
     views.forEach(function (v, i) { sum += v; if (v > best) { best = v; bestI = i; } if (v > 0) active++; });
@@ -1105,7 +940,6 @@
       ? (lastHalf > 0 ? 'Rising' : 'Flat')
       : (lastHalf > firstHalf * 1.1 ? 'Rising' : lastHalf < firstHalf * 0.9 ? 'Cooling' : 'Steady');
 
-    // the current run of days with at least one view, counted back from today
     var streak = 0;
     for (var i = views.length - 1; i >= 0 && views[i] > 0; i--) streak++;
 
@@ -1129,7 +963,6 @@
     b.appendChild(f);
   }
 
-  /* ---- 3. Artwork Performance ------------------------------------------- */
   var ART_SORTS = [
     { key: 'views', label: 'Views' },
     { key: 'likes', label: 'Likes' },
@@ -1139,10 +972,6 @@
     { key: 'created_at', label: 'Newest' }
   ];
 
-  // One row builder for both places the list appears: the ten on the
-  // dashboard and all of them on the page behind "View all". They have to be
-  // the same row — a different-looking list on the full page would read as a
-  // different list.
   function artRows(rows, limit) {
     var list = el('div', 'anArts');
     var show = limit ? rows.slice(0, limit) : rows;
@@ -1156,9 +985,6 @@
       row.type = 'button';
       row.appendChild(el('div', 'anArtRank', String(i + 1)));
 
-      // An empty src is not "no image", it is a request for the current page
-      // that comes back as a broken-image icon. A row whose file never landed
-      // gets a tile instead.
       var src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(r.thumb || '') : (r.thumb || '');
       if (src) {
         var img = document.createElement('img');
@@ -1201,9 +1027,6 @@
         closeAnList();
         closeAnalyticsPage();
         if (state.scope === 'artwork') {
-          // the gallery owns the artwork viewer, and only if the grid it
-          // reads is actually on the page. Opened from Settings it usually is
-          // not, so the honest fallback is the artwork's own address.
           if (typeof window.handleArtClick === 'function' &&
               document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
             window.handleArtClick({ preventDefault: function () {}, stopPropagation: function () {} }, id);
@@ -1212,7 +1035,6 @@
           }
           return;
         }
-        // the other three share one viewer, opened by path segment and id
         var seg = { marketplace: 'listing', blog: 'blog', resource: 'resource' }[state.scope];
         if (typeof window.dzOpenById === 'function') {
           window.dzOpenById(seg, id);
@@ -1262,7 +1084,6 @@
     }
     b.appendChild(card);
 
-    // best and quietest, said plainly
     var byViews = rows.slice().sort(function (x, y) { return (y.views || 0) - (x.views || 0); });
     var top = byViews[0], low = byViews[byViews.length - 1];
     var f = el('div', 'anCard');
@@ -1282,7 +1103,6 @@
     b.appendChild(f);
   }
 
-  /* ---- 4. Content Insights ---------------------------------------------- */
   function paintContent() {
     var b = box('content'), c = state.data.content;
     if (!b) return;
@@ -1375,7 +1195,6 @@
     b.appendChild(f);
   }
 
-  /* ---- 5. Audience ------------------------------------------------------- */
   function paintAudience() {
     var b = box('audience'), r = state.data.reach;
     if (!b) return;
@@ -1469,11 +1288,6 @@
     b.appendChild(g);
   }
 
-  // A name on this page is a person the artist may well want to go and look
-  // at — the artist who gave them cred, the one who has liked nine of their
-  // pieces. So the row opens that profile, the same way every other list of
-  // people on the site does. A row with no handle has nothing to open and
-  // stays a plain div rather than a button that does nothing.
   function personRow(p, sub) {
     var row = el(p && p.handle ? 'button' : 'div', 'anPerson');
     if (p && p.handle) {
@@ -1503,15 +1317,12 @@
     return row;
   }
 
-  // The one honest thing to say when a breakdown chart is empty: these
-  // dimensions only exist from the day the site started recording them.
   function dimNote(r) {
     return (r && r.dimension_rows > 0)
       ? 'NOTHING RECORDED IN THIS PERIOD'
       : 'NOTHING YET — THIS FILLS IN AS PEOPLE VISIT YOUR WORK FROM NOW ON';
   }
 
-  /* ---- 6. Traffic Sources ------------------------------------------------ */
   function paintTraffic() {
     var b = box('traffic'), r = state.data.reach;
     if (!b) return;
@@ -1563,7 +1374,6 @@
     b.appendChild(rCard);
   }
 
-  /* ---- 7. Search Analytics ----------------------------------------------- */
   function paintSearch() {
     var b = box('search'), r = state.data.reach;
     if (!b) return;
@@ -1615,7 +1425,6 @@
     b.appendChild(card);
   }
 
-  /* ---- 8. Engagement ----------------------------------------------------- */
   function paintEngagement() {
     var b = box('engage'), a = state.data.activity;
     if (!b) return;
@@ -1674,8 +1483,6 @@
     if (!feed.length) {
       empty(card, 'NOTHING YET');
     } else {
-      // the same row builder the full list uses, so the ten on the card and
-      // the rest behind View all are the same rows in the same colours
       var list = el('div', 'anFeed');
       feed.slice(0, CARD_ROWS).forEach(function (x) { list.appendChild(feedRow(x)); });
       card.appendChild(list);
@@ -1686,11 +1493,9 @@
     b.appendChild(card);
   }
 
-  /* ---- 9. Followers ------------------------------------------------------ */
-  /* ---- Revenue — the marketplace only ------------------------------------ */
   function paintRevenue() {
     var b = box('revenue'), a = state.data.activity;
-    if (!b) return;                                  // not drawn for this scope
+    if (!b) return;
     if (!a || a.error) { empty(b, 'COULDN\u2019T LOAD REVENUE'); return; }
     var r = a.revenue;
     if (!r) { empty(b, 'NOTHING SOLD IN THIS PERIOD'); return; }
@@ -1740,7 +1545,6 @@
     b.appendChild(cCard);
   }
 
-  /* ---- Account & Cred — the one block that is not this section ----------- */
   function paintAccount() {
     var b = box('account'), a = state.data.activity;
     if (!b) return;
@@ -1751,9 +1555,6 @@
     var fCard = el('div', 'anCard');
     var fh = el('div', 'anCardHd');
     fh.appendChild(el('div', 'anCardTitle', 'Cred received'));
-    // The one thing on the page that is deliberately not a section number,
-    // and it says so rather than being mistaken for one. Cred is given to a
-    // person on their profile — there is no blog cred or artwork cred.
     fh.appendChild(el('div', 'anSecNote', 'account-wide \u2014 cred is given to you, not to a ' +
                                           scopeOf(state.scope).noun));
     fCard.appendChild(fh);
@@ -1801,7 +1602,6 @@
     b.appendChild(g);
   }
 
-  /* ---- 10. Community ----------------------------------------------------- */
   function paintCommunity() {
     var b = box('community'), a = state.data.activity;
     if (!b) return;
@@ -1829,7 +1629,6 @@
     b.appendChild(card);
   }
 
-  /* ---- 11. Goals & Achievements ------------------------------------------ */
   var GOAL_METRICS = [
     { key: 'views', label: 'Views' }, { key: 'likes', label: 'Likes' },
     { key: 'bookmarks', label: 'Saves' }, { key: 'downloads', label: 'Downloads' },
@@ -1960,9 +1759,6 @@
     b.appendChild(aCard);
   }
 
-  // Goals are plain rows under RLS, so they are written straight rather than
-  // through an RPC. The unique index means "set 500 views in 30 days" twice is
-  // one goal with the newer target, which is what a person means by it.
   async function addGoal(metric, target, period) {
     var c = db(), u = me();
     if (!c || !u) return;
@@ -1989,7 +1785,6 @@
     } catch (e) { toast('Could not remove the goal'); }
   }
 
-  /* ---- 12. Comparisons --------------------------------------------------- */
   function paintCompare() {
     var b = box('compare'), o = state.data.overview;
     if (!b) return;
@@ -2025,10 +1820,6 @@
     bar.appendChild(fill);
     wrap.appendChild(bar);
 
-    // The marks go on the wrapper, not in the bar: the bar clips its fill, so
-    // a label hung below it inside is a label nobody can see. Two references
-    // that land on top of each other — which is what happens when an artist is
-    // far ahead of both — are stacked rather than overprinted.
     var marks = [['median_views', 'median'], ['avg_views', 'average']]
       .map(function (pair) { return { v: Number(cmp[pair[0]]) || 0, name: pair[1] }; })
       .filter(function (m) { return m.v > 0; })
@@ -2040,7 +1831,6 @@
       tick.style.left = p + '%';
       wrap.appendChild(tick);
       var lb = el('div', 'anCmpMarkL', m.name + ' ' + full(m.v));
-      // past 70% the label would run off the right edge, so it hangs left
       if (p > 70) { lb.style.right = (100 - p) + '%'; lb.style.textAlign = 'right'; }
       else lb.style.left = p + '%';
       if (p - lastPct < 18) lb.style.top = '58px';
@@ -2050,7 +1840,6 @@
     sCard.appendChild(wrap);
     sCard.appendChild(el('div', 'anCmpMine', 'Your ' + full(cmp.my_views) + ' views this period'));
 
-    // the reference labels under the bar own the space above this
     var fb = el('div', 'anStack');
     facts(fb, [
       { n: full(cmp.my_views), l: 'Your views' },
@@ -2062,24 +1851,6 @@
     b.appendChild(sCard);
   }
 
-  /* ---- live -------------------------------------------------------------- */
-
-  // Two ways to hear about a change, because neither is enough alone.
-  // Realtime is instant and can be blocked by a proxy, a corporate firewall or
-  // a flaky socket; the poll is slow and always works. Both funnel into one
-  // debounced refresh, so a burst of ten likes is one repaint.
-  //
-  // A refresh asked for while one is already in flight is not dropped — it is
-  // remembered and run once the first lands. Dropping it is how a dashboard
-  // ends up one event behind and stays there: the very moment something
-  // happens is the moment a load is most likely to be running.
-  /* Refresh means "something changed" — a goal set or cleared, a live event
-     landing, the reader pressing it — so it drops the cached readings before
-     asking again. Without that, the two-minute window would swallow exactly the
-     reloads that were requested BECAUSE the numbers are known to have moved,
-     which is the one way a cache on a dashboard becomes a bug rather than a
-     saving. Every window and scope goes, not just the one on screen: whatever
-     changed did not change only the last seven days. */
   function refresh() {
     if (state.loading) { state.again = true; return Promise.resolve(); }
     try { if (window.dzCache) window.dzCache.invalidateAnalytics(); } catch (e) {}
@@ -2102,11 +1873,6 @@
 
     if (typeof c.channel !== 'function') { setLive(false); return; }
 
-    // Realtime reads the same RLS policy the table carries, so the socket has
-    // to be carrying this member's token or the server has nothing to check
-    // and sends nothing. supabase-js sets it on its own when the session
-    // changes; a page that has been open since before this panel existed may
-    // never have had that moment, so it is set here too.
     try {
       if (c.realtime && typeof c.realtime.setAuth === 'function' &&
           c.auth && typeof c.auth.getSession === 'function') {
@@ -2124,9 +1890,6 @@
             markDirty)
         .subscribe(function (status) {
           setLive(status === 'SUBSCRIBED');
-          // A dropped socket is the case the poll exists for, so nothing is
-          // lost while this is down — but it should come back rather than
-          // leave the page on the slow path for the rest of the session.
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             clearTimeout(state.retry);
             state.retry = setTimeout(function () {
@@ -2158,17 +1921,10 @@
                  : 'Refreshing every 45 seconds';
   }
 
-  // Coming back to a tab that has been asleep should not show yesterday.
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && state.open) refresh();
   });
 
-  /* ---- fitting the screen ------------------------------------------------ */
-
-  // The charts are drawn at the width they were measured at, so a rotation or
-  // a window drag has to redraw them. It is a repaint from data already in
-  // hand — no request goes out — and it is debounced, because a drag fires
-  // this a hundred times.
   var fitTimer = null;
   function refit() {
     clearTimeout(fitTimer);
@@ -2181,21 +1937,6 @@
   window.addEventListener('resize', refit);
   window.addEventListener('orientationchange', refit);
 
-  // The chip row sits under the page header, and the header is not the same
-  // height on a phone as on a desktop. Measured rather than hardcoded, so the
-  // chips never hide behind it or float below a gap.
-  //
-  // Measured more than once, because the header is not its final height at the
-  // moment the page opens: the title is still the one in the markup until the
-  // first paint replaces it, and the webfont it is set in may not have arrived
-  // yet. Either can move the header by a line or by a pixel, and a stale
-  // number leaves exactly the seam of scrolling page the opaque bars are there
-  // to close. Setting the same value twice costs nothing.
-  // Rounded down, never up. A header is 53.8 tall as often as it is 54, and
-  // the half pixel decides which of two things happens: down, and the chip row
-  // is stuck a fraction too high, where the header covers it and nobody can
-  // tell; up, and it is stuck a fraction too low, which is a crack of moving
-  // page between the two bars — thin, but bright enough to read as a gap.
   function measureHeader() {
     var pg = $('anPage');
     if (!pg) return;
@@ -2203,28 +1944,6 @@
     if (hdr) pg.style.setProperty('--an-hdr', Math.floor(hdr.getBoundingClientRect().height) + 'px');
   }
 
-  /* ---- the full list, on a page of its own -------------------------------
-   * The dashboard shows ten of anything. Everything else is here: the same
-   * rows, the same sort buttons, no cap. It is built on demand and it sits
-   * over the dashboard rather than replacing it, so closing it puts you back
-   * exactly where you were — the same way every other sub-page on this site
-   * behaves.
-   */
-  // Built when it opens, removed when it closes — never parked in the
-  // document waiting to be hidden by a stylesheet.
-  //
-  // The first version appended this to <body> once and left it there, off
-  // screen by transform alone. That is fine until a client runs this file
-  // against a cached older analytics.css, which has no rule for it at all:
-  // with no rule it is a plain block at the end of <body>, so "LATEST ON YOUR
-  // WORK" and the whole feed appear at the bottom of the home page. The
-  // service worker updates the two files on separate fetches, so that window
-  // is real and a version bump does not close it.
-  //
-  // Two answers, both applied. It is not in the document unless it is open,
-  // and the handful of properties that decide whether it is an overlay or a
-  // paragraph are set inline, where no stylesheet has to be present for them
-  // to hold.
   function anListHost() {
     var pg = $('anListPage');
     if (pg && pg.parentNode) pg.parentNode.removeChild(pg);
@@ -2237,7 +1956,6 @@
 
     var hdr = el('div', 'subPgHdr');
     var back = el('button', 'subPgX', '');
-    // the chevron every other back button on the site wears
     back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>';
     back.type = 'button';
@@ -2259,11 +1977,8 @@
   function openAnList(mode) {
     anList.mode = mode === 'activity' ? 'activity' : 'items';
     var pg = anListHost();
-    // the class drives the slide; the inline transform is what actually keeps
-    // it off screen for the first frame, with or without the stylesheet
     pg.style.transform = 'translateX(100%)';
     pg.classList.add('open');
-    /* force a frame so the transition has something to animate from */
     void pg.offsetWidth;
     pg.style.transform = 'translateX(0)';
     var hdr = pg.querySelector('.subPgHdr');
@@ -2278,11 +1993,9 @@
     if (!pg) return;
     pg.classList.remove('open');
     pg.style.transform = 'translateX(100%)';
-    // the dashboard is still open underneath, so the scroll lock stays on
     if ($('anPage') && $('anPage').classList.contains('open')) {
       document.body.style.overflow = 'hidden';
     }
-    // and then it leaves the document entirely, once the slide has finished
     anListStop();
     clearTimeout(anListGone);
     anListGone = setTimeout(function () {
@@ -2290,16 +2003,6 @@
     }, 500);
   }
 
-  /* Lazy, because "all of them" can be hundreds of rows and a page that
-   * builds hundreds of DOM nodes before it will paint is a page that stalls
-   * on the tap that opened it. A first screenful goes in, then the next
-   * twenty arrive as the sentinel at the bottom scrolls into view — so
-   * scrolling is the only thing that ever costs anything, and only for what
-   * is about to be looked at.
-   *
-   * Twenty for items, fifty for activity: an activity row is one line and a
-   * screenful of them is far more than twenty.
-   */
   var anList = { rows: [], mode: 'items', shown: 0, listEl: null, sentinel: null, io: null };
   var AN_FIRST = { items: 20, activity: 50 }, AN_STEP = 20;
 
@@ -2331,7 +2034,6 @@
     s.appendChild(el('div', 'anEmpty', 'Loading more\u2026'));
     anList.sentinel = s;
     if (!window.IntersectionObserver) {
-      // no observer: a button does the same job, just by hand
       s.innerHTML = '';
       s.appendChild(moreBtn('Load more', function () { anListChunk(AN_STEP); }));
       return s;
@@ -2393,8 +2095,8 @@
         btn.type = 'button';
         btn.addEventListener('click', function () {
           state.artSort = so.key;
-          paintAnList();       // back to the top of a freshly sorted list
-          paintArtworks();     // and the card behind agrees with the page in front
+          paintAnList();
+          paintArtworks();
           pg.scrollTop = 0;
         });
         sorts.appendChild(btn);
@@ -2424,15 +2126,9 @@
     var pg = $('anListPage');
     if (!pg || !pg.classList.contains('open')) return;
     closeAnList();
-    // stopImmediatePropagation, not stopPropagation: the dashboard's own
-    // Escape handler is on this same node, and stopPropagation does not hold
-    // off a listener on the node the event is already at. Without this, one
-    // press closes the list and then the dashboard behind it.
     e.stopImmediatePropagation();
     e.preventDefault();
   }, true);
-
-  /* ---- open / close ------------------------------------------------------ */
 
   function openAnalyticsPage(scope) {
     if (!me()) {
@@ -2442,9 +2138,6 @@
     }
     var pg = $('anPage');
     if (!pg) return;
-    // Rebuilt every time rather than repainted: the section list differs by
-    // scope — Revenue exists under Marketplace and nowhere else — and a card
-    // left behind from the last dashboard would be a lie.
     var want = scopeOf(scope || 'artwork').key;
     state.scope = want;
     var body = $('anBdy');
@@ -2467,7 +2160,6 @@
   function closeAnalyticsPage() {
     var pg = $('anPage');
     if (!pg) return;
-    // nothing of this page is left behind on whatever is underneath it
     var lp = $('anListPage');
     if (lp && lp.parentNode) { anListStop(); clearTimeout(anListGone); lp.parentNode.removeChild(lp); }
     state.open = false;
@@ -2484,23 +2176,16 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    // The full list sits over the dashboard and closes first. Both handlers
-    // are capture-phase listeners on document, so stopPropagation in the
-    // other one cannot hold this one off — it has to check for itself, and
-    // then the order the two were registered in stops mattering.
     var list = $('anListPage');
     if (list && list.classList.contains('open')) return;
     var pg = $('anPage');
     if (pg && pg.classList.contains('open')) { closeAnalyticsPage(); e.stopPropagation(); }
   }, true);
 
-  // Signing out with the page open must not leave one member's numbers on
-  // screen for the next one.
   document.addEventListener('DOMContentLoaded', function () {
     var c = db();
     if (c && c.auth && c.auth.onAuthStateChange) {
       c.auth.onAuthStateChange(function () {
-        // the cached name belongs to whoever was signed in a moment ago
         myName = null;
         if (!state.open) return;
         if (!me()) closeAnalyticsPage();
@@ -2512,9 +2197,4 @@
   window.openAnalyticsPage = openAnalyticsPage;
   window.closeAnalyticsPage = closeAnalyticsPage;
 
-  /* anGo was here: what the four Settings rows called instead of setGo,
-     closing the menu without arming its return-watcher. There are no Settings
-     rows any more — the four dashboards are cards on the Analytics board
-     (js/hubs.js), which opens them directly and stays up behind them — so the
-     problem it solved no longer exists and nothing called it. */
 })();

@@ -1,43 +1,3 @@
--- Analytics for all four sections, and every number belongs to its own
---
--- The artwork dashboard shipped first. Marketplace, blog and resources get the
--- same twelve sections here, under one rule that decides most of this file:
---
---   A NUMBER APPEARS IN THE SECTION IT CAME FROM AND NOWHERE ELSE.
---
--- A like on an artwork is one like under Artworks and zero under the other
--- three. A blog post's five likes are five under Blog and zero elsewhere. The
--- artwork dashboard is not a summary of the account and never was; it is the
--- artworks, and now each of the other three is itself in the same way.
---
--- THE ONE THING THAT CANNOT BE SPLIT is cred. profile_creds has a giver, a
--- receiver and a time, and no subject — cred is given to a person on their
--- profile, not to a piece of work — so there is no blog cred to separate from
--- artwork cred. Rather than print the same account total in four places and
--- let it read as four different section figures, cred stops being reported as
--- a section metric at all: no cred tile in the KPI row, no cred goal, and the
--- count moved into an `account` block that says out loud what it covers.
--- Communities, DMs, merit and friends are in there with it for the same
--- reason. Per-section cred would need cred to be giveable on an item, which
--- is a feature, not a query.
---
--- WHAT THE OTHER THREE SECTIONS DID NOT HAVE. Artworks came with history:
--- artwork_view_dedup, artwork_likes, artwork_bookmarks. The other three had
--- item_likes, item_bookmarks and item_comments keyed by (kind, subject) — and
--- no views at all. marketplace_items.view_count, blog_posts.view_count and
--- resources.view_count existed and were never once incremented; nothing wrote
--- them. item_view_dedup and register_item_view are that missing half.
---
--- WHY THE ITEM TABLES ARE NOT TOUCHED ON A VIEW. The obvious move is to bump
--- view_count the way register_artwork_view does. Not here: all three tables
--- carry dz_touch_updated_at and dz_write_rate('edits', …) on UPDATE, so every
--- view would restamp updated_at — reordering the listings a viewer is looking
--- at — and spend the viewer's own edit budget. item_view_dedup is the record,
--- and the readers count it directly.
-
--- ---------------------------------------------------------------------------
--- views for the three sections that never had them
--- ---------------------------------------------------------------------------
 create table if not exists public.item_view_dedup (
   kind       text not null,
   subject_id uuid not null,
@@ -53,8 +13,6 @@ create index if not exists item_view_dedup_subject_idx on public.item_view_dedup
 alter table public.item_view_dedup enable row level security;
 revoke all on public.item_view_dedup from anon, authenticated;
 
--- The same shape and the same viewer key as register_artwork_view, so a
--- viewer is the same viewer across all four sections.
 create or replace function public.register_item_view(
   p_kind     text,
   p_subject  uuid,
@@ -89,8 +47,6 @@ begin
   end if;
 
   if v_owner is null then return; end if;
-  -- a draft or an unlisted row cannot have been opened from outside, so a
-  -- view claimed against one is not a view
   if v_status is distinct from 'approved' or v_vis is distinct from 'published' then
     return;
   end if;
@@ -137,15 +93,6 @@ end $$;
 
 revoke all on function public.register_item_view(text,uuid,text,text,text,text,text) from public;
 grant execute on function public.register_item_view(text,uuid,text,text,text,text,text) to anon, authenticated;
-
--- ---------------------------------------------------------------------------
--- one shape for four sections
--- ---------------------------------------------------------------------------
--- Every reader works off these, so a second section costs a scope filter
--- rather than a second copy of every query. They bypass RLS — a view runs as
--- its owner unless it says otherwise — and are therefore granted to nobody:
--- the only things that read them are the SECURITY DEFINER readers, and those
--- scope to auth.uid() on the first line.
 
 create or replace view public.an_item as
   select 'artwork'::text as kind, a.id, a.user_id,
@@ -213,10 +160,6 @@ create or replace view public.an_bookmark as
   union all
   select k.kind, k.subject_id, k.user_id, k.created_at from public.item_bookmarks k;
 
--- Downloads come from two records that do not agree on shape: the artwork side
--- is already one row per viewer per day, download_events is one row per
--- download. The group by collapses the second to the first's grain, so the two
--- halves of one number are not counted by two different rules.
 create or replace view public.an_download as
   select 'artwork'::text as kind, d.artwork_id as subject_id, d.viewer_key, d.day
     from public.artwork_download_dedup d
@@ -230,8 +173,6 @@ create or replace view public.an_download as
 revoke all on public.an_item, public.an_view, public.an_like,
               public.an_bookmark, public.an_download from public, anon, authenticated;
 
--- 'resources' is what the section is called in the interface; 'resource' is
--- what every table has always stored. One spelling from here down.
 create or replace function public.dz_an_scope(p_scope text)
 returns text language sql immutable as $$
   select case lower(coalesce(p_scope, 'artwork'))
@@ -244,19 +185,11 @@ returns text language sql immutable as $$
 $$;
 grant execute on function public.dz_an_scope(text) to authenticated;
 
--- ---------------------------------------------------------------------------
--- goals and achievements belong to a dashboard
--- ---------------------------------------------------------------------------
--- "500 views in 30 days" means something different under Artworks than under
--- Blog, and until now one goal was shared by all four.
 alter table public.analytics_goals add column if not exists scope text not null default 'artwork';
 alter table public.analytics_goals drop constraint if exists an_goal_scope;
 alter table public.analytics_goals add constraint an_goal_scope
   check (scope in ('artwork','marketplace','blog','resource'));
 
--- cred leaves the metric list for the reason at the top of this file, and
--- sales joins it, because the marketplace is the one section where a sale is
--- a thing that happens.
 alter table public.analytics_goals drop constraint if exists an_goal_metric;
 alter table public.analytics_goals add constraint an_goal_metric check (metric in
   ('views','likes','bookmarks','downloads','comments','uploads','sales'));
@@ -372,11 +305,6 @@ end $$;
 grant execute on function public.dz_an_achievements(uuid, text) to authenticated;
 drop function if exists public.dz_an_achievements(uuid);
 
--- ---------------------------------------------------------------------------
--- the writer learns the other three sections
--- ---------------------------------------------------------------------------
--- Same rules as before, one addition: each kind resolves its owner from its
--- own table, and only a row the public can actually reach counts.
 create or replace function public.dz_analytics_track(
   p_event    text,
   p_subject  uuid default null,
@@ -458,11 +386,6 @@ begin
     v_scope := 'profile';
   end if;
 
-  -- A cred row exists only so the receiver's dashboard hears about it the
-  -- moment it happens; the names it then shows come from the reader, off
-  -- profile_creds itself. So this row carries no identity — it does not need
-  -- any to do its job. The hash still dedups one cred per giver per receiver
-  -- per day.
   if p_event = 'cred' then
     v_actor := null;
     v_key := 'c:' || md5('dzcred|' || v_key);
@@ -479,8 +402,6 @@ begin
   on conflict do nothing;
 end $$;
 
--- The search page searches every section, so an impression can belong to any
--- of them; it takes the scope now instead of assuming artworks.
 drop function if exists public.dz_analytics_track_search(uuid[],text,text,text,text,text,text);
 create or replace function public.dz_analytics_track_search(
   p_subjects uuid[],
@@ -508,14 +429,6 @@ end $$;
 
 grant execute on function public.dz_analytics_track(text,uuid,text,uuid,text,text,text,text,text,text) to anon, authenticated;
 grant execute on function public.dz_analytics_track_search(uuid[],text,text,text,text,text,text,text) to anon, authenticated;
-
--- ---------------------------------------------------------------------------
--- the readers, one scope at a time
--- ---------------------------------------------------------------------------
--- The four readers are the artwork ones with `and kind = v_sc` running through
--- them and the tables swapped for the normalised views. Two shapes are new:
--- `sales`, which only the marketplace can have, and the `account` block, which
--- is the only place a number that is not this section's is allowed to appear.
 
 create or replace function public.dz_analytics_overview(p_days int default 30, p_scope text default 'artwork')
 returns jsonb language plpgsql stable security definer
@@ -995,8 +908,6 @@ begin
         select 'comment', c.created_at, m.title, m.id
           from public.item_comments c join mine m on m.id = c.subject_id
          where c.kind = v_sc and c.user_id <> v_me
-        -- the card shows ten; the dedicated list page shows the rest, so
-        -- the reader has to return more than the card asks for
         order by at desc limit 100
       ) s
   ),
@@ -1051,8 +962,6 @@ begin
         'comment_rate', case when views > 0 then round((comments::numeric / views) * 100, 1) else 0 end
       ) from eng),
     'activity', coalesce((select list from feed), '[]'::jsonb),
-    -- The one block that is allowed to hold a number this section did not
-    -- earn, and it is labelled account-wide wherever it is drawn.
     'account', jsonb_build_object(
       'cred_total',  (select count(*) from public.profile_creds c where c.receiver_id = v_me),
       'cred_gained', (select count(*) from public.profile_creds c
@@ -1078,9 +987,6 @@ begin
                    where f.status = 'accepted' and (f.requester_id = v_me or f.addressee_id = v_me)),
       'merit', (select coalesce(merit, 100) from public.profiles where id = v_me)
     ),
-    -- null everywhere but the marketplace, and the page draws no revenue
-    -- section when it is null. An artwork is not for sale here; a blog post
-    -- and a resource are free.
     'revenue', case when v_sc = 'marketplace' then (
         select jsonb_build_object(
           'currency', m.currency, 'net', m.net, 'gross', m.gross, 'fees', m.fees,

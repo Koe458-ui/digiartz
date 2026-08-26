@@ -1,25 +1,3 @@
--- Likes, bookmarks and a cart for the four sections
---
--- Artworks have had artwork_likes and artwork_bookmarks since the gallery was
--- built. Resources, posts and listings never had either, so the heart and the
--- flag on their detail views had nowhere to write. These two tables are the
--- same idea with the kind/subject_id shape the rest of the section machinery
--- already uses — item_comments and item_reports are keyed exactly this way —
--- rather than three more pairs of per-table columns.
---
--- cart_items is the store behind the Cart tab, which has existed as a tab with
--- filters and nothing behind it. A cart is a list of listings a member means
--- to buy; it holds no prices and no money, because the price a buyer is
--- charged is decided by the checkout backend at the moment of payment and
--- never by a row a client can write.
---
--- Every policy here follows the ones already on artwork_likes and
--- item_comments: a member reads, writes and deletes their own rows and nobody
--- else's, and the write is gated on merit exactly as the artwork tables are.
--- The cart is deliberately NOT merit gated — buying is not a social action,
--- and a member with low merit may still spend money.
-
--- ---- likes ---------------------------------------------------------------
 create table if not exists public.item_likes (
   kind        text        not null check (kind in ('resource','blog','marketplace')),
   subject_id  uuid        not null,
@@ -40,7 +18,6 @@ drop policy if exists item_likes_delete_own on public.item_likes;
 create policy item_likes_delete_own on public.item_likes
   for delete using (user_id = auth.uid());
 
--- ---- bookmarks -----------------------------------------------------------
 create table if not exists public.item_bookmarks (
   kind        text        not null check (kind in ('resource','blog','marketplace')),
   subject_id  uuid        not null,
@@ -61,9 +38,6 @@ drop policy if exists item_bookmarks_delete_own on public.item_bookmarks;
 create policy item_bookmarks_delete_own on public.item_bookmarks
   for delete using (user_id = auth.uid());
 
--- ---- cart ----------------------------------------------------------------
--- One row per listing a member means to buy. The listing is referenced, so a
--- listing its seller deletes leaves no orphan in anyone's cart.
 create table if not exists public.cart_items (
   user_id     uuid        not null references auth.users(id) on delete cascade,
   item_id     uuid        not null references public.marketplace_items(id) on delete cascade,
@@ -83,11 +57,6 @@ drop policy if exists cart_items_delete_own on public.cart_items;
 create policy cart_items_delete_own on public.cart_items
   for delete using (user_id = auth.uid());
 
--- ---- the same rate ceilings the rest of the writes keep to ---------------
--- dz_write_rate is the trigger the write-limits migration installed on every
--- table a member can write to. A heart is cheap to press and cheap to script,
--- so it gets a per-five-minute ceiling like a comment rather than a per-hour
--- one like an upload.
 do $$
 declare r record;
 begin

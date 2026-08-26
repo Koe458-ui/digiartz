@@ -1,4 +1,3 @@
-// theme engine
 (function () {
   'use strict';
 
@@ -16,14 +15,6 @@
     return VALID[v] ? v : 'offwhite';
   }
 
-  /* Which theme a card stands for. Everything the picker does hangs off
-     getting this back: the tap applies it, syncCards ticks the matching
-     card. A card whose id does not resolve is a card that does nothing when
-     tapped, and says nothing about why.
-
-     The class is asked first, and it is the one to trust: a card that is on
-     screen as a card has its class attribute, because .thmCard is what draws
-     it. The two attributes stay as fallbacks. */
   function idOf (c) {
     for (var k in VALID) {
       if (VALID.hasOwnProperty(k) && c.classList.contains('thmCard--' + k)) return k;
@@ -32,7 +23,6 @@
     return VALID[v] ? v : null;
   }
 
-  // swap tokens at once
   function paint (t) {
     document.documentElement.setAttribute('data-theme', t);
     var m = document.querySelector('meta[name="theme-color"]');
@@ -42,7 +32,6 @@
     syncCards(t);
   }
 
-  // fade during swap
   var fadeTimer = null;
   function fade () {
     var root = document.documentElement;
@@ -60,7 +49,6 @@
     paint(t);
   }
 
-  // roving tabindex
   function syncCards (t) {
     cards.forEach(function (c) {
       var on = idOf(c) === t;
@@ -84,15 +72,8 @@
     });
   });
 
-  // page open and close
   function openThemePage () {
     if (!page) return;
-    /* What to put back, and where to hand focus back to, are read on the open
-       that actually opens and not on a repeat. A second call while the page is
-       already up would record 'hidden' — the value this function itself wrote
-       — as the overflow to restore, so closing would leave the page locked
-       with nothing on screen holding it, and would hand focus to a card inside
-       the page it had just closed. */
     if (!page.classList.contains('open')) {
       lastFocus = document.activeElement;
       prevOverflow.body = document.body.style.overflow;
@@ -120,6 +101,5 @@
   window.openThemePage  = openThemePage;
   window.closeThemePage = closeThemePage;
 
-  // sync cards on boot
   syncCards(saved());
 })();

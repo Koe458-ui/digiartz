@@ -1,24 +1,3 @@
--- The other three sections start counting views, and a view stops being an edit
---
--- The previous migration recorded item views in item_view_dedup and left
--- marketplace_items.view_count, blog_posts.view_count and
--- resources.view_count alone, on the reasoning that the touch trigger and the
--- edit rate limiter on those tables made a counter bump impossible. That
--- reasoning was wrong, and artworks is the proof: it carries the same two
--- triggers and register_artwork_view has been bumping its counter since the
--- day it was written.
---
--- What is true is that both triggers treat a counter bump as if a person had
--- edited the row, and both are wrong to. Fixing that is most of this file.
--- Then two more things fell out of actually trying it.
-
--- ---------------------------------------------------------------------------
--- 1. a counter write is not an edit
--- ---------------------------------------------------------------------------
--- dz_write_rate charges an UPDATE to the signed-in caller's edit budget — 120
--- an hour. On a view that is the VIEWER's budget, not the owner's: a member
--- who opens 120 pieces in an hour starts having their views silently dropped,
--- and their next real edit refused. This has been true of artworks all along.
 create or replace function public.dz_write_rate()
 returns trigger language plpgsql security definer
 set search_path to 'public', 'pg_temp' as $$
@@ -30,10 +9,6 @@ declare
 begin
   if v_uid is null then return new; end if;
 
-  -- A view or a download counted against a row is not something this member
-  -- wrote, so it does not come out of what they are allowed to write. Only
-  -- the SECURITY DEFINER register_* functions can set these flags, and they
-  -- set them for the length of one statement.
   if coalesce(current_setting('app.allow_view_count_write', true), '') = '1'
      or coalesce(current_setting('app.allow_download_count_write', true), '') = '1'
      or coalesce(current_setting('app.allow_like_count_write', true), '') = '1'
@@ -49,11 +24,6 @@ begin
   return new;
 end $$;
 
--- dz_touch_updated_at sets updated_at = now(), so every view has been
--- restamping the piece as freshly edited. The item viewer prints that as
--- "Updated 2 minutes ago" on something nobody has touched in a month. This
--- trigger is named trg_artworks_protect_like_count, which sorts after
--- artworks_touch, so it runs last and gets the final say.
 create or replace function public.protect_artwork_like_count()
 returns trigger language plpgsql security definer
 set search_path to 'public' as $$
@@ -82,21 +52,11 @@ begin
   return NEW;
 end $$;
 
--- The other three get the same protection. Named zz_ so it sorts after
--- <table>_touch and has the last word on updated_at.
---
--- view_count only. like_count, bookmark_count, download_count and sales_count
--- on these tables are maintained by nothing today, and a guard on a column
--- somebody else's code writes without knowing about the flag would zero it
--- silently — the payment path writes sales_count. One column: the one this
--- change starts writing.
 create or replace function public.dz_protect_item_view_count()
 returns trigger language plpgsql security definer
 set search_path to 'public', 'pg_temp' as $$
 begin
   if coalesce(current_setting('app.allow_view_count_write', true), '') <> '1' then
-    -- an owner can update their own listing; that must not include inventing
-    -- an audience for it
     if TG_OP = 'INSERT' then NEW.view_count := 0; else NEW.view_count := OLD.view_count; end if;
   elsif TG_OP = 'UPDATE' then
     NEW.updated_at := OLD.updated_at;
@@ -116,38 +76,12 @@ drop trigger if exists zz_protect_view_count on public.resources;
 create trigger zz_protect_view_count before insert or update on public.resources
   for each row execute function public.dz_protect_item_view_count();
 
--- ---------------------------------------------------------------------------
--- 2. tightened bounds apply to the field being written, not to the row
--- ---------------------------------------------------------------------------
--- Trying the bump turned up something bigger. These three tables carry CHECK
--- constraints added NOT VALID when the bounds were tightened. NOT VALID skips
--- the back-sweep, but a CHECK is evaluated against the whole new row on every
--- UPDATE — so a row written under the old bounds is frozen. Not "cannot be
--- brought up to standard": cannot be updated at all, in any column, by anyone.
--- Every row in these tables was in that state:
---
---   the blog post had a 56-character body against a 100 minimum
---   the listing had a 19-character description against a 100 minimum
---
--- Their owners could not save an edit. Moderation could not change a status.
--- Nothing could count a view.
---
--- The intent of those migrations is kept exactly — writing the field still
--- enforces the bound, on insert and on update. What changes is that NOT
--- writing it no longer re-judges it. Edit the body and it must reach 100
--- characters; leave it alone and the row is not held hostage by it.
---
--- A trigger rather than a CHECK because only a trigger can see OLD, and
--- therefore tell "this field is being written" from "this row is being
--- touched". Nothing here accepts content the upload form would reject.
-
 create or replace function public.dz_bounds_on_change()
 returns trigger language plpgsql
 set search_path to 'public', 'pg_temp' as $$
 declare
   i int; col text; lo int; hi int; nullable boolean; newv text; oldv text;
 begin
-  -- TG_ARGV comes in fours: column, min, max, 'null-ok' or 'required'
   i := 0;
   while i < TG_NARGS loop
     col      := TG_ARGV[i];
@@ -242,14 +176,6 @@ create trigger dz_range_resources before insert or update on public.resources
   for each row execute function public.dz_range_on_change(
     'file_size', '0', '209715200', 'required');
 
--- ---------------------------------------------------------------------------
--- 3. the counter is kept, and a stale cache never costs a real view
--- ---------------------------------------------------------------------------
--- item_view_dedup is the record the dashboard reads; view_count is a cache of
--- it that the public grid reads. So the order is: write the record, write the
--- dimensions, then try the cache — and never let the cache take the record
--- down with it. Nothing above should make the counter fail any more, but a
--- constraint added tomorrow should cost a number on a card, not a view.
 create or replace function public.register_item_view(
   p_kind     text,
   p_subject  uuid,
@@ -307,14 +233,12 @@ begin
     end if;
   end if;
 
-  -- the record
   insert into public.item_view_dedup (kind, subject_id, viewer_key, day)
   values (p_kind, p_subject, v_key, current_date)
   on conflict do nothing;
 
   if not found then return; end if;
 
-  -- the dimensions the breakdown charts read
   if auth.uid() is null or auth.uid() <> v_owner then
     insert into public.analytics_events
       (owner_id, actor_id, viewer_key, scope, subject_id, event,
@@ -331,7 +255,6 @@ begin
     on conflict do nothing;
   end if;
 
-  -- the cache
   begin
     perform set_config('app.allow_view_count_write', '1', true);
     if p_kind = 'marketplace' then
@@ -352,8 +275,6 @@ end $$;
 
 grant execute on function public.register_item_view(text,uuid,text,text,text,text,text) to anon, authenticated;
 
--- Set the cache from the record, so the two start in step and re-running this
--- repairs any drift.
 do $$
 begin
   perform set_config('app.allow_view_count_write', '1', true);

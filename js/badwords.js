@@ -1,28 +1,16 @@
-// profanity mask
-
 var DZ_BW = (function () {
 
-  // 1. the lists
-
-  // words, whole word plus endings
-  // bulk list lives in badwords-list
   var EXTERNAL = (window.DZ_WORDLIST && window.DZ_WORDLIST.words) || [];
 
   var WORDS = EXTERNAL.concat([
-    // add your own here
   ]);
 
-  // strict, no ending expansion
   var STRICT = [
-    // example: ass, hell
   ];
 
-  // anywhere, matched mid word
   var ANYWHERE = [
-    // example: fuck, cunt
   ];
 
-  // allow, never masked
   var ALLOW = [
     'class', 'classic', 'classes', 'assassin', 'assassins', 'assess',
     'assessment', 'assign', 'assist', 'assistant', 'associate', 'assume',
@@ -36,34 +24,27 @@ var DZ_BW = (function () {
     'shiitake', 'matsushita', 'phuket'
   ];
 
-  // promo, off platform contact
   var PROMO = [
     'whatsapp', 'whats app', 'wa.me', 'telegram', 't.me', 'snapchat',
     'dm me', 'dm me on', 'inbox me', 'message me on', 'contact me on',
     'text me on', 'add me on'
 
-    // payment providers left out
   ];
 
-  // 1b. shape patterns
-
   var BLOCK = {
-    urls      : true,   // links and bare domains
-    emails    : true,   // email
+    urls      : true,
+    emails    : true,
 
-    // numbers are off
-    digitRuns : false,  // digit runs
-    govIds    : false   // id shapes
+    digitRuns : false,
+    govIds    : false
   };
 
-  var DIGIT_MIN = 10;   // used when digit runs is on
+  var DIGIT_MIN = 10;
 
-  // allowed domains
   var DOMAIN_ALLOW = [
     'digiartz.net'
   ];
 
-  // domain suffixes
   var TLDS = [
     'com', 'net', 'org', 'info', 'biz', 'online', 'site', 'shop', 'store',
     'app', 'dev', 'link', 'live', 'club', 'fun', 'top', 'vip', 'pro',
@@ -72,90 +53,67 @@ var DZ_BW = (function () {
     'nl', 'se', 'pl', 'tr', 'ir', 'pk', 'bd', 'lk', 'np'
   ];
 
-  // 2. tuning
+  var MASK_CHAR   = '*';
+  var APPLY_TO_DEV = false;
+  var MIN_LEN     = 3;
+  var SKELETONS   = true;
 
-  var MASK_CHAR   = '*';    // mask character
-  var APPLY_TO_DEV = false; // filter dev accounts too
-  var MIN_LEN     = 3;      // minimum latin length
-  var SKELETONS   = true;   // catch vowel dropped spelling
-
-  // skeletons from this list only
   var SKELETON_FROM = [
     'fuck', 'shit', 'bitch', 'bastard', 'asshole', 'bullshit',
     'motherfucker', 'faggot', 'nigger', 'nigga', 'retard', 'wanker',
     'bollocks', 'arsehole', 'pussy', 'fucker', 'fucking'
-    // whore left out, skeleton is whr
   ];
-  var CJK_MIN     = 2;      // minimum cjk length
+  var CJK_MIN     = 2;
 
-  // leetspeak map
   var LEET_MAP = {
     '@':'a', '4':'a', '8':'b', '(':'c', '3':'e', '6':'g', '9':'g',
     '1':'i', '!':'i', '|':'i', '0':'o', '$':'s', '5':'s', '7':'t',
     '+':'t', '2':'z', 'v':'u'
   };
 
-  // endings
   var SUFFIXES = ['ings','ing','ins','in','ers','er','ies','ed','es','s','y','z'];
 
-
-
-  // 3. columns that get cleaned
-
   var FIELDS = {
-    // chat and comments
     comments          : ['comment_text', 'username'],
     direct_messages   : ['content'],
     item_comments     : ['body', 'username'],
 
-    // profile
-    profiles          : ['bio', 'display_name'],   // see username policy
+    profiles          : ['bio', 'display_name'],
 
-    // artwork and upload
     artworks          : ['name', 'title', 'description', 'tags', 'software'],
     scheduled_uploads : ['name', 'description', 'tags', 'software'],
     comics            : ['title', 'description', 'tags'],
     albums            : ['name'],
 
-    // section tables
     resources         : ['title', 'description', 'tags', 'software'],
     blog_posts        : ['title', 'excerpt', 'body', 'tags'],
     marketplace_items : ['title', 'description', 'tags'],
     jobs              : ['title', 'company', 'description', 'tags',
                          'location_city', 'location_region'],
 
-    // communities
     communities       : ['name', 'description', 'rules'],
 
-    // reports, free text only
     artwork_reports   : ['details'],
     item_reports      : ['reason']
   };
 
-  // rpc arguments
   var RPC_ARGS = [
     'p_name', 'p_desc', 'p_description', 'p_title', 'p_body', 'p_text',
     'p_message', 'p_comment', 'p_reason', 'p_details', 'p_rules', 'p_bio',
     'p_content', 'p_excerpt', 'p_company'
   ];
 
-  // username policy
   var USERNAME_POLICY = 'block';
 
-  // substring match for usernames
   var USERNAME_SUBSTRING = true;
   var USERNAME_MIN_SUB   = 4;
-
-  // 4. engine
 
   var dict = null;
 
   function reEsc(c) { return c.replace(/[.*+?^${}()|[\]\\\-]/g, '\\$&'); }
 
-  // date, never a phone number
   var DATE_SAFE = /\b\d{4}-\d{2}-\d{2}(?:[t ]\d{2}:\d{2}(?::\d{2})?)?\b/g;
 
-  // shape patterns
   function shapes() {
     var out = [];
     if (BLOCK.urls) {
@@ -165,35 +123,8 @@ var DZ_BW = (function () {
       out.push(new RegExp(
         '\\b[a-z0-9][a-z0-9-]*(?:\\.[a-z0-9-]+)*\\.(?:' + tld + ')\\b(?:\\/[^\\s<>"\']*)?', 'g'));
 
-      // ---- the forms the 2026-08-20 phishing comment used -----------------
-      // Every pattern above reads the text as typed, and the attacker's whole
-      // method was to type it differently. The stored comments show them
-      // working it out in real time: the first two attempts were caught and
-      // came back masked, and the third — `https:5347567%2eshop/227983727` —
-      // went through untouched and is what a reader saw. It beat both rules at
-      // once. No `//` after the scheme, so the first misses. The dot written
-      // `%2e`, so the second misses. The browser decodes it back on paste,
-      // which is the entire point.
-      //
-      // These three match the disguise in place rather than trying to undo it,
-      // which matters here: mask() maps every hit back to a span of the
-      // ORIGINAL string, so a pattern that matched against a rewritten copy
-      // would star out the wrong characters.
-      //
-      // The real enforcement is in the database — dz_has_link() in
-      // 20260824_antiphish_content_guard.sql, which deobfuscates properly and
-      // REFUSES the row. This file cannot be the control: it runs in the
-      // visitor's own browser, wrapped around supabase.createClient(), so it
-      // only ever filters people who are not attacking you. It is here so an
-      // ordinary member sees their link starred as they always did, instead of
-      // being refused by the server for something the page let them type.
-
-      // a scheme, with or without the slashes
       out.push(/(?:https?|ftps?|wss?|magnet|tel|mailto)\s*:(?:\/\/)?[^\s<>"']+/g);
-      // hxxp / h**p, the two everybody uses
       out.push(/h[x*#]{2}ps?\s*:(?:\/\/)?[^\s<>"']+/g);
-      // a dot spelled as anything but a dot: %2e, %252e, &#46;, [dot], (dot),
-      // " dot ", or a space parked either side of a real one
       out.push(new RegExp(
         '[a-z0-9][a-z0-9-]*(?:' +
           '%25?2e|&#(?:46|x2e);|\\s*[\\(\\[\\{]\\s*(?:dot|d0t)\\s*[\\)\\]\\}]\\s*|' +
@@ -206,15 +137,14 @@ var DZ_BW = (function () {
       out.push(new RegExp('\\+?\\d(?:[\\s.()+-]{0,2}\\d){' + (DIGIT_MIN - 1) + ',}', 'g'));
     }
     if (BLOCK.govIds) {
-      out.push(/\b[a-z]{5}[0-9]{4}[a-z]\b/g);                     // pan
-      out.push(/\b[0-9]{2}[a-z]{5}[0-9]{4}[a-z][0-9a-z]{3}\b/g);  // gstin
-      out.push(/\b[a-z]{3}[0-9]{7}\b/g);                          // voter id
-      out.push(/\b[a-z][0-9]{7}\b/g);                             // passport
+      out.push(/\b[a-z]{5}[0-9]{4}[a-z]\b/g);
+      out.push(/\b[0-9]{2}[a-z]{5}[0-9]{4}[a-z][0-9a-z]{3}\b/g);
+      out.push(/\b[a-z]{3}[0-9]{7}\b/g);
+      out.push(/\b[a-z][0-9]{7}\b/g);
     }
     return out;
   }
 
-  // text folding
   function fold(s) {
     var n = '', map = [], i, j, d;
     for (i = 0; i < s.length; i++) {
@@ -226,7 +156,6 @@ var DZ_BW = (function () {
     return { n: n, map: map };
   }
 
-  // leetspeak on text and list
   function canon(s) {
     var o = '', i, ch;
     for (i = 0; i < s.length; i++) {
@@ -236,22 +165,19 @@ var DZ_BW = (function () {
     return o;
   }
 
-  // unicode tokeniser
   var UNI_SPLIT = null;
   try { UNI_SPLIT = new RegExp('[\\p{L}\\p{N}]+', 'gu'); } catch (e) { UNI_SPLIT = null; }
 
   var RE_CJK = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\u0e00-\u0e7f\uac00-\ud7af]/;
 
-  // vowel dropped spelling
   function skeleton(w) {
     var sk = w.replace(/[aeiou]/g, '');
     return (sk.length >= 3 && sk.length < w.length) ? sk : null;
   }
 
-  function squash(t) { return t.replace(/(.)\1+/g, '$1'); }      // squeeze stretched letters
-  function squash2(t) { return t.replace(/(.)\1{2,}/g, '$1$1'); } // squeeze stretched letters
+  function squash(t) { return t.replace(/(.)\1+/g, '$1'); }
+  function squash2(t) { return t.replace(/(.)\1{2,}/g, '$1$1'); }
 
-  // build dictionary once
   function compile() {
     if (dict) return dict;
 
@@ -270,12 +196,10 @@ var DZ_BW = (function () {
     }
 
     function register(raw, bag, allowSkeleton) {
-      // fold entries like the text
       var folded = fold(String(raw || '').trim()).n;
       if (!folded) return;
 
-      if (RE_CJK.test(folded)) {                  // no spaces in this script
-        // not canon, raw folded text
+      if (RE_CJK.test(folded)) {
         if (folded.length >= CJK_MIN) cjk.push(folded);
         return;
       }
@@ -283,7 +207,7 @@ var DZ_BW = (function () {
       var tk = tokens(w);
       if (!tk.length) return;
 
-      if (tk.length > 1) {                        // multi word entries
+      if (tk.length > 1) {
         var head = tk[0];
         (phrases[head] = phrases[head] || []).push(tk);
         if (tk.length > maxPhrase) maxPhrase = tk.length;
@@ -311,7 +235,6 @@ var DZ_BW = (function () {
       }
     }
 
-    // anywhere stays a regex
     for (i = 0; i < ANYWHERE.length; i++) {
       var a = canon(fold(String(ANYWHERE[i] || '')).n).replace(/[^a-z0-9]/g, '');
       if (a.length >= MIN_LEN) anywhere.push(a.split('').map(reEsc).join('+') + '+');
@@ -352,7 +275,6 @@ var DZ_BW = (function () {
     return dict;
   }
 
-  // is this token listed
   function lookup(t) {
     var d = dict, i, s;
     if (t.length < MIN_LEN) return false;
@@ -369,15 +291,13 @@ var DZ_BW = (function () {
     return false;
   }
 
-  // the scan
   function find(text) {
     var d = compile();
     var f = fold(text), n = f.n;
     if (!n) return [];
-    var c = canon(n);            // same length, spans line up
+    var c = canon(n);
     var hits = [], safe = [], m, k, i;
 
-    // untouched regions
     for (k = 0; k < d.okDomain.length; k++) {
       var od = d.okDomain[k]; od.lastIndex = 0;
       while ((m = od.exec(n)) !== null) {
@@ -385,7 +305,7 @@ var DZ_BW = (function () {
         if (m.index === od.lastIndex) od.lastIndex++;
       }
     }
-    if (BLOCK.digitRuns) {   // only when digit rule is on
+    if (BLOCK.digitRuns) {
       DATE_SAFE.lastIndex = 0;
       while ((m = DATE_SAFE.exec(n)) !== null) {
         safe.push([m.index, m.index + m[0].length]);
@@ -393,7 +313,6 @@ var DZ_BW = (function () {
       }
     }
 
-    // tokenise once
     var toks = [];
     if (UNI_SPLIT) {
       UNI_SPLIT.lastIndex = 0;
@@ -405,7 +324,6 @@ var DZ_BW = (function () {
       while ((m = re.exec(c)) !== null) toks.push({ t: m[0], a: m.index, b: m.index + m[0].length });
     }
 
-    // allowed words shield their span
     for (i = 0; i < toks.length; i++) {
       if (d.allow[toks[i].t]) safe.push([toks[i].a, toks[i].b]);
     }
@@ -415,16 +333,13 @@ var DZ_BW = (function () {
     }
     function hit(a, b) { if (!shielded(a, b)) hits.push([f.map[a], f.map[b - 1] + 1]); }
 
-    // skip digit only tokens
     function allDigits(t) { return /^[0-9]+$/.test(n.slice(t.a, t.b)); }
 
-    // 1. plain tokens
     for (i = 0; i < toks.length; i++) {
       if (allDigits(toks[i])) continue;
       if (lookup(toks[i].t)) hit(toks[i].a, toks[i].b);
     }
 
-    // 2. split letters
     for (i = 0; i < toks.length; i++) {
       if (toks[i].t.length > 2 || allDigits(toks[i])) continue;
       var joined = '', j = i;
@@ -435,7 +350,6 @@ var DZ_BW = (function () {
       }
     }
 
-    // 3. multi word entries
     for (i = 0; i < toks.length; i++) {
       var list = d.phrases[toks[i].t];
       if (!list) continue;
@@ -450,7 +364,6 @@ var DZ_BW = (function () {
       }
     }
 
-    // 4. no space scripts
     if (d.cjkRe) {
       d.cjkRe.lastIndex = 0;
       while ((m = d.cjkRe.exec(n)) !== null) {
@@ -459,7 +372,6 @@ var DZ_BW = (function () {
       }
     }
 
-    // 5. anywhere and shapes
     var pool = d.anyRe ? [d.anyRe].concat(d.shapes) : d.shapes;
     for (k = 0; k < pool.length; k++) {
       var p = pool[k]; p.lastIndex = 0;
@@ -483,14 +395,12 @@ var DZ_BW = (function () {
 
   function bypass() {
     if (APPLY_TO_DEV) return false;
-    // isdev may still be in tdz
     try { if (typeof isDev !== 'undefined' && isDev === true) return true; } catch (e) {}
     return false;
   }
 
   function stars(n) { var s = ''; while (s.length < n) s += MASK_CHAR; return s; }
 
-  // main entry point
   function mask(text, opts) {
     if (text === null || text === undefined) return text;
     var s = String(text);
@@ -513,7 +423,6 @@ var DZ_BW = (function () {
     return find(String(text)).length > 0;
   }
 
-  // usernames only
   function hasInside(text) {
     if (text === null || text === undefined) return false;
     if (has(text)) return true;
@@ -522,7 +431,6 @@ var DZ_BW = (function () {
     var t = canon(fold(String(text)).n).replace(/[^a-z]/g, '');
     if (t.length < USERNAME_MIN_SUB) return false;
 
-    // blank allowed words first
     var okAt = [], key, at;
     for (key in d.allow) {
       if (!Object.prototype.hasOwnProperty.call(d.allow, key)) continue;
@@ -543,8 +451,6 @@ var DZ_BW = (function () {
     }
     return false;
   }
-
-  // payload scrubbing
 
   function scrubValue(v) {
     if (typeof v === 'string') return mask(v);
@@ -618,7 +524,6 @@ var DZ_BW = (function () {
     return copy || args;
   }
 
-  // wrap the write methods
   function guard(client) {
     if (!client || client.__dzGuarded) return client;
     client.__dzGuarded = true;
@@ -654,7 +559,6 @@ var DZ_BW = (function () {
     console.warn('badwords.js loaded before supabase-js — filter not installed.');
   }
 
-  // public surface
   window.dzMask = mask;
   window.dzHasBadWord = has;
 
@@ -662,6 +566,6 @@ var DZ_BW = (function () {
     mask: mask, has: has, guard: guard,
     words: WORDS, strict: STRICT, anywhere: ANYWHERE, allow: ALLOW,
     fields: FIELDS,
-    reload: function () { dict = null; }   // re read lists after edit
+    reload: function () { dict = null; }
   };
 })();

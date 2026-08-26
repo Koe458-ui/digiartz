@@ -1,29 +1,5 @@
-// signed-in only: everything the site knows about money
-//
-// Nothing under this file is a static asset. Cloudflare Pages compiles
-// functions/ into the Worker, so this is not fetchable as source, and the one
-// thing it serves — the checkout module — is handed out per request, only to a
-// caller holding a valid Supabase session, with no-store on the way back.
-//
-// What that buys: a signed-out visitor's page source names no provider, quotes
-// no price, and carries no /api path for either checkout. View-source, the
-// service worker cache, the precache list and Googlebot all see the same
-// nothing. The plan prices themselves live here and in the two checkout
-// backends, never in index.html.
-//
-// Where it stops, and this is worth being honest about in the file rather than
-// in a commit message: once a signed-in buyer opens the sheet, this module is
-// running in their browser and the PayPal client id is in the SDK url. Both
-// provider ids are public by design and worthless without the secrets, which
-// never leave the Worker. The gate is against everyone up to that point.
-
 import { sbUrl, sbAnon, sbSvc, sbUser } from '../lib/sb.js';
 
-// ---------------------------------------------------------------------------
-// plans — what each one IS. What each one COSTS is not here: prices live in
-// public.subscription_prices, one row per plan per currency, and are read at
-// request time for the currency this member transacts in. A plan therefore has
-// no dollar figure written into it anywhere.
 const PLANS = [
   {
     id: 'lite', name: 'Lite', tone: 'blue',
@@ -66,21 +42,6 @@ const PLANS = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// The same plans read the other way round: one row per thing somebody is
-// deciding between, rather than one card per plan. A card answers "what do I
-// get"; this answers "what do I get that I do not get now", which is the
-// question somebody scrolling past three prices is actually asking.
-//
-// Ordered by what changes a decision, not by what is easiest to list. The
-// download allowance is why most people are on this page at all, so it leads;
-// the two upload ceilings and the seller's share follow, because they are the
-// numbers a working artist checks; the two Max-only switches come last, where
-// a reader who has got that far is already deciding between Premium and Max.
-//
-// Every row here is enforced somewhere in this repository. Nothing in this
-// table is a plan for a feature — a comparison table that promises is a
-// comparison table nobody trusts twice.
 const COMPARE = {
   cols: [
     { key: 'free',    label: 'Free',    tone: 'free'    },
@@ -101,10 +62,6 @@ const COMPARE = {
   ],
 };
 
-// ---------------------------------------------------------------------------
-// The twelve currencies this site transacts in. Ordered as a member would
-// scan them, not alphabetically. Every one has an fx rate, three plan prices
-// and a support floor and ceiling — the migration checks that.
 const CURRENCIES = [
   { code: 'USD', name: 'US dollar' },
   { code: 'INR', name: 'Indian rupee' },
@@ -121,7 +78,6 @@ const CURRENCIES = [
 ];
 const CURRENCY_CODES = new Set(CURRENCIES.map((c) => c.code));
 
-// JPY quotes whole units; the rest have minor units.
 const ZERO_DECIMAL_SRV = new Set(['JPY', 'HUF', 'TWD']);
 
 function fmtMoney(minor, cur) {
@@ -182,14 +138,9 @@ function plansHtml(priced) {
       '</div>').join('') +
     '</div>';
 
-  // Between the last card and the FAQ, which is where somebody who has read
-  // three cards and not decided is looking.
   const compare =
     '<div class="subCmp" aria-labelledby="subCmpTitle">' +
       '<div class="subCmpTitle" id="subCmpTitle">Every plan, side by side</div>' +
-      // The scroller is its own element so the table inside can keep its
-      // natural width on a phone and be dragged, while on a wide screen the
-      // table is centred and the scroller never scrolls.
       '<div class="subCmpScroll" tabindex="0" role="region" aria-label="Plan comparison, scrolls sideways">' +
         '<table class="subCmpTbl">' +
           '<thead><tr>' +
@@ -203,8 +154,6 @@ function plansHtml(priced) {
               '<th scope="row" class="subCmpFeat">' + esc(r.label) + '</th>' +
               COMPARE.cols.map((c) => {
                 const v = r[c.key];
-                // A tick and a cross are read by everyone; the screen reader
-                // is given the word, because "✓" alone is not an answer.
                 const cell = v === true
                   ? '<span class="subCmpYes" aria-hidden="true">✓</span>' +
                     '<span class="srOnly">Included</span>'
@@ -227,12 +176,6 @@ function plansHtml(priced) {
          quota + cards + compare;
 }
 
-// ---------------------------------------------------------------------------
-// the module itself
-//
-// Written against a single injected config object so nothing needs
-// interpolating into the body — no backticks and no ${ } below, which is what
-// keeps this readable as ordinary JavaScript rather than an escaping puzzle.
 const MODULE = `
 (function(C){
   'use strict';
@@ -2556,10 +2499,6 @@ const MODULE = `
 })(__dzStore);
 `;
 
-// Service-role read. THIS WAS MISSING and every call to it threw a
-// ReferenceError that the try/catch around the pricing block then swallowed,
-// so the plan grid rendered empty and the currency stayed on its default —
-// the endpoint answering 200 the whole time.
 async function sbService(env, path, init = {}) {
   const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
     ...init,
@@ -2574,9 +2513,6 @@ async function sbService(env, path, init = {}) {
   return res.json().catch(() => null);
 }
 
-
-// Which providers can actually take money. Decided here, from the credentials
-// bound to the Pages project, so the browser is never in a position to ask.
 function liveProviders(env) {
   const out = [];
   if (env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET) out.push('rzp');
@@ -2599,8 +2535,6 @@ export async function onRequestGet({ env, request }) {
   const user = await sbUser(env, request);
   if (!user) return deny(401);
 
-  // Everything below is priced in THIS member's currency, read from their
-  // profile and then from the price table — never converted from a dollar.
   let currency = 'USD';
   let prices = {};
   let support = null;
@@ -2616,10 +2550,8 @@ export async function onRequestGet({ env, request }) {
     const lim = await sbService(env,
       '/support_limits?currency=eq.' + currency + '&select=min_amount,max_amount&limit=1');
     if (lim && lim[0]) support = { min: Number(lim[0].min_amount), max: Number(lim[0].max_amount) };
-  } catch { /* fall back to USD below rather than serve no checkout at all */ }
+  } catch {   }
 
-  // A currency with no price row would render a blank plan grid, so it falls
-  // back to dollars rather than showing a plan nobody can buy.
   if (!Object.keys(prices).length) {
     currency = 'USD';
     try {
@@ -2628,7 +2560,7 @@ export async function onRequestGet({ env, request }) {
       const lim = await sbService(env,
         '/support_limits?currency=eq.USD&select=min_amount,max_amount&limit=1');
       if (lim && lim[0]) support = { min: Number(lim[0].min_amount), max: Number(lim[0].max_amount) };
-    } catch { /* the grid simply will not render, which is the honest outcome */ }
+    } catch {   }
   }
 
   const priced = PLANS
@@ -2638,18 +2570,11 @@ export async function onRequestGet({ env, request }) {
       amount: prices[p.id],
     }));
 
-  // plansHtml is the grid on the subscription page; plans is the same table in
-  // a shape the checkout page can read, so what a buyer is told they get at
-  // checkout is the plan's own wording rather than a second, drifting copy.
   const cfg = {
     providers: liveProviders(env),
     currency,
     currencies: CURRENCIES,
     support,
-    // Zero, written the way this member's currency writes it, so a partner's
-    // claimed Max card reads "₹0.00" or "¥0" rather than a bare digit. Formatted
-    // here for the same reason every other price on this page is: fmtMoney
-    // knows which currencies have no minor unit and the browser does not.
     freePrice: fmtMoney(0, currency),
     plansHtml: plansHtml(priced),
     plans: priced.map((p) => ({
@@ -2662,8 +2587,6 @@ export async function onRequestGet({ env, request }) {
   return new Response(body, {
     headers: {
       'content-type': 'application/javascript; charset=utf-8',
-      // never written to a disk cache, never revalidated from one, and never
-      // reachable by a shared cache that has no idea who asked
       'cache-control': 'no-store, private, max-age=0',
       'x-robots-tag': 'noindex, nofollow',
       'x-content-type-options': 'nosniff',

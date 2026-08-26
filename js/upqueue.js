@@ -1,4 +1,3 @@
-// background upload queue
   var upq = { jobs: [], seq: 0, modalJob: null, modalSnap: null };
 
   var UPQ_STAGE_LABEL = { checking:'VERIFYING', uploading:'UPLOADING', finalizing:'ALMOST DONE', live:'LIVE', failed:'FAILED' };
@@ -9,12 +8,9 @@
       stage: 'checking',
       name: snap.name, desc: snap.desc, tags: snap.tags, cats: snap.cats,
       software: snap.software, file: snap.file, pageFiles: snap.pageFiles,
-      // the rest of the upload form, snapshotted with everything else so the
-      // panel is free to reset the moment the job is queued
       extra: snap.extra || {},
       thumbFocus: snap.thumbFocus, preview: snap.preview,
       albums: (snap.albums || []).slice(),
-      // copy publish time from snapshot
       publishAt: snap.publishAt || '',
       upDone: 0, upTotal: 1 + snap.pageFiles.length,
       steps: { ratelimit:{state:'',detail:''}, duplicate:{state:'',detail:''}, ai:{state:'',detail:''}, moderation:{state:'',detail:''} },
@@ -36,7 +32,6 @@
     upqSync();
   }
 
-  // repaint queue surfaces
   function upqSync(){
     if(currentUser && pf.profile && String(pf.profile.id)===String(currentUser.id) && Array.isArray(pf.galleryRows)){
       pfRenderGallery();
@@ -47,7 +42,6 @@
     upqRenderModal();
   }
 
-  // blurred processing cards
   function upqOwnQueueHTML(){
     if(!currentUser || !upq.jobs.length) return '';
     return upq.jobs.map(function(j){
@@ -71,7 +65,6 @@
 
   async function upqRun(job){
     try{
-      // 1 checking
       job.stage='checking'; upqSync();
       var phash = null;
       if(window.UploadVerifier && typeof UploadVerifier.verify==='function'){
@@ -79,7 +72,6 @@
           sb: sb, userId: currentUser.id, kind: 'art', pages: job.pageFiles,
           onStep: function(stepId, state, detail){
             if(job.steps[stepId]){ job.steps[stepId].state=state; job.steps[stepId].detail=detail||''; }
-            // live sub status
             if(state==='run'){
               job.checkHint = { ratelimit:'Running spam check',
                                 duplicate:'Scanning for duplicates',
@@ -101,7 +93,6 @@
         ['ratelimit','duplicate','ai'].forEach(function(k){ job.steps[k].state='pass'; job.steps[k].detail='skipped'; });
       }
 
-      // 1b gemini moderation
       job.steps.moderation.state='run';
       job.mod.artwork='run'; job.mod.safety=''; job.mod.quality='';
       job.checkHint='Confirming it\u2019s artwork'; upqSync();
@@ -126,7 +117,6 @@
         var devCode = (typeof isDev!=='undefined' && isDev && mod.code)
           ? ('Code: '+mod.code + (mod.failIndex>0 ? ' \u00b7 image '+(mod.failIndex+1) : '')) : '';
         job.steps.moderation.detail = devCode;
-        // mark the failed row
         if(mod.code==='BLANK_IMAGE' || mod.code==='LOW_QUALITY'){
           job.mod.artwork='pass'; job.mod.artworkSub='Original artwork confirmed';
           job.mod.safety='pass';  job.mod.safetySub='Safe for all audiences';
@@ -145,10 +135,8 @@
       job.mod.artwork='pass'; job.mod.artworkSub='Original artwork confirmed';
       job.mod.safety='pass';  job.mod.safetySub = mod.rating==='MATURE' ? 'Approved \u00b7 18+ content' : 'Safe for all audiences';
       job.mod.quality='pass'; job.mod.qualitySub='Quality acceptable';
-      // close tracker when done
       if(upq.modalJob===job.id){ upqCloseModal(); } else { upqRenderModal(); }
 
-      // 2 uploading
       job.stage='uploading'; job.upDone=0; upqSync();
       var uniq = Date.now()+'_'+job.id.split('_')[1];
       var ext = safeSlug(job.file.name.split('.').pop(), 8) || 'jpg';
@@ -167,14 +155,8 @@
         job.upDone = 1+ai+1; upqSync();
       }
 
-      // 3 almost done
       job.stage='finalizing'; upqSync();
 
-      // ---- the half of the row nobody typed --------------------------------
-      // Format, size and dimensions come off the file itself; the SEO pair and
-      // the slug come off what was typed. None of them has a box on the panel,
-      // because a format someone types disagrees with the file and a slug that
-      // drifts from the title is a link that lies.
       var x = {}, ek;
       for(ek in (job.extra||{})) x[ek] = job.extra[ek];
       var _f = job.file || {};
@@ -182,7 +164,7 @@
       x.file_ext  = _em ? _em[1].toLowerCase() : ((_f.type||'').split('/')[1] || null);
       x.file_size = _f.size || null;
       if(typeof dzImageDims === 'function'){
-        var _d = await dzImageDims(_f);           // "3000×4000 px", or nothing
+        var _d = await dzImageDims(_f);
         var _dm = _d && /^(\d+)×(\d+)/.exec(_d);
         if(_dm){ x.width = +_dm[1]; x.height = +_dm[2]; }
       }
@@ -191,10 +173,8 @@
       x.slug = (typeof dzSlugify === 'function')
         ? (dzSlugify(job.name).slice(0,110) + '-' + String(Date.now()).slice(-6))
         : null;
-      // the uploader's declaration and the reviewer's judgement, OR-ed
       var _mature = (mod.rating === 'MATURE') || !!x.declared_mature;
 
-      // scheduled branch
       if(job.publishAt){
         const{error:se}=await sb.from('scheduled_uploads').insert({
           user_id:currentUser.id, publish_at:job.publishAt,
@@ -203,18 +183,15 @@
           thumb_x:job.thumbFocus.x, thumb_y:job.thumbFocus.y, thumb_zoom:job.thumbFocus.z||1,
           pages:artPageUrls.length?artPageUrls:null, kind:ART_KIND_ART,
           software:job.software||null, phash:phash,
-          // reattach albums later
           album_ids: (job.albums && job.albums.length) ? job.albums : null,
           content_rating:mod.rating, is_mature:_mature, ai_moderation:mod.audit,
           mod_token:mod.token||null,
-          // the rest of the form, unpacked by publish_due_scheduled_uploads
-          // when its time comes
           extra: x
         });
         if(se) throw se;
         job.stage='done'; upqSync();
-        upqRemove(job.id);   // clears the queue card
-        uschLoad();          // new scheduled card
+        upqRemove(job.id);
+        uschLoad();
         return;
       }
       var artRow = {
@@ -226,9 +203,6 @@
         content_rating:mod.rating, is_mature:_mature, ai_moderation:mod.audit,
         mod_token:mod.token||null
       };
-      // everything the panel's extra fields hold, plus what was read off the
-      // upload. declared_mature is not a column — it was folded into is_mature
-      // above, which is the one the site reads.
       ['summary','subject_matter','medium','software_list','license','commercial_use',
        'attribution_required','modification_allowed','credits','process_notes',
        'external_links','comments_allowed','visibility','featured',
@@ -238,13 +212,9 @@
       const{data:rows,error:de}=await sb.from('artworks').insert(artRow).select();
       if(de) throw de;
 
-      // album membership
       var _newRow = rows && rows[0];
       if(_newRow && job.albums && job.albums.length) await albAttach(_newRow.id, job.albums);
 
-      // media bookkeeping: cover at position 0, extra pages after it. Each one
-      // lands in artwork_image (the public derivative) and artwork_file (the
-      // untouched original). Fail-soft by design — the artwork is already live.
       if(_newRow){
         await dzRecordUpload({
           imageKind:'artworkImage', fileKind:'artworkFile', parentId:_newRow.id,
@@ -259,20 +229,10 @@
         }
       }
 
-      // 4 live
       job.stage='live';
       upqSync();
       var row = rows && rows[0];
 
-      /* The piece is published. Every cached listing it belongs in is dropped
-         now — and NOT one line earlier: the order is upload the object, write
-         the row, confirm the write, then invalidate. Dropping the caches before
-         the insert lands leaves a window in which a refresh reads the gallery
-         from before the upload and stores that as the current answer, which is
-         exactly the bug this ordering exists to prevent.
-
-         No image purge here. The objects were written seconds ago under paths
-         nothing has requested yet, so there is nothing cached to remove. */
       if(row && typeof window.dzArtworkChanged === 'function'){
         window.dzArtworkChanged(row.id, { userId: row.user_id || (currentUser && currentUser.id) });
       }
@@ -281,8 +241,6 @@
           if(pf.profile && String(pf.profile.id)===String(currentUser.id) && Array.isArray(pf.galleryRows) &&
              pf.galleryRows.findIndex(function(i){return String(i.id)===String(row.id);})===-1){
             pf.galleryRows.unshift(row);
-            // it is on the page without having been fetched, so the paging
-            // index and the window have to count it
             if(typeof pfGalleryAdopt==='function') pfGalleryAdopt(row.id);
             var _st=document.getElementById('pfStatArt');
             if(_st) _st.textContent = (parseInt(_st.textContent,10)||0)+1;
@@ -291,15 +249,12 @@
           if(typeof mw==='object' && mw && Array.isArray(mw.art) && mw.art.findIndex(function(i){return String(i.id)===String(row.id);})===-1) mw.art.unshift(row);
           if(typeof renderHome==='function') renderHome();
           var _fgEl=document.getElementById('fg'); if(_fgEl && _fgEl.classList.contains('open') && typeof renderFG==='function') renderFG();
-          // the new piece was pushed onto `images` above, so the saved copy is
-          // rewritten with it at the front rather than left one short
           if(typeof window.dzGalleryStore==='function') window.dzGalleryStore();
         }
-        upqRemove(job.id); // blur card out, real card in
+        upqRemove(job.id);
       }, 1600);
       showToast('\u201C'+(job.name||'Artwork')+'\u201D is live');
     }catch(err){
-      // failed, wipe uploads
       for(var d=0; d<job.uploadedPaths.length; d++){
         try{ await s3Delete(BUCKET, job.uploadedPaths[d]); }
         catch(e){ console.error('upq cleanup:', e.message); }
@@ -313,16 +268,14 @@
         job.failReason = safeErr(err, 'Upload failed \u2014 please try again');
       }
       console.error('upq failed:', err && err.message);
-      upqOpenModal(job.id); // open check failed popup
+      upqOpenModal(job.id);
     }
   }
 
-  // status modal
   function upqOpenModal(id){
     var j = upqFind(id);
     if(!j) return;
     if(j.stage==='failed'){
-      // detach, keep snapshot
       upq.modalSnap = j; upq.modalJob = null;
       var i = upq.jobs.indexOf(j); if(i!==-1) upq.jobs.splice(i,1);
       upqSync();
@@ -338,7 +291,6 @@
     if(bd) bd.classList.remove('open');
   }
 
-  // verification tracker row
   function upqTrackRow(state, name, sub, last){
     var cls = state==='run' ? 'run' : (state==='pass' ? 'pass' : (state==='flag'||state==='block'||state==='fail') ? 'fail' : 'pend');
     var ico = cls==='pass' ? '\u2713' : cls==='fail' ? '\u2715' : '';
@@ -375,7 +327,6 @@
         '<div class="upqFailReason">'+esc(j.failReason||'The artwork did not pass verification.')+'</div></div>'+
       '</div>';
     }
-    // check rows
     var rows = [
       ['pass', 'Upload received', ''],
       ['pass', 'File integrity & format', ''],
@@ -402,25 +353,6 @@
     body.innerHTML = html;
   }
 
-
-  /* ---- leaving with an upload still running ------------------------------
-     The queue lives in this tab and nowhere else. Nothing is written down and
-     nothing resumes, so a refresh, a closed tab or a tapped link took the job
-     with it and said nothing — after minutes of somebody's connection, and
-     with however many objects had already reached storage left behind. The
-     cleanup that removes those runs only inside upqRun's own catch, so it
-     never gets the chance.
-
-     A confirmation is what a page can actually do about that. Browsers show
-     their own wording and ignore whatever string is returned, so there is no
-     message to write here; what matters is that the event is cancelled, and
-     only while something is genuinely in flight — a dialog on every navigation
-     would be worse than the bug.
-
-     Not attempted: sweeping the leftover objects on the next visit. It would
-     need a list of paths that survives the crash, and a list that is one write
-     behind reality is a list that deletes a published artwork's file. The
-     orphans are a storage cost; that would be data loss. */
   function upqBusy(){
     for(var i = 0; i < upq.jobs.length; i++){
       var st = upq.jobs[i].stage;
@@ -433,6 +365,6 @@
   window.addEventListener('beforeunload', function(e){
     if(!upqBusy()) return;
     e.preventDefault();
-    e.returnValue = '';   // the half every current browser actually reads
+    e.returnValue = '';
     return '';
   });

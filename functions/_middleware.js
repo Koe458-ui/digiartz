@@ -1,17 +1,9 @@
-// pages middleware, seo at the edge — and the one rate limit every /api/ route
-// passes through, whether its handler has one of its own or not.
-
 import { underEdgeLimit, tooManyRequests } from './lib/ratelimit.js';
 
 const SITE = 'https://digiartz.net';
-const CACHE_SECONDS = 300;   // homepage feed, held at the edge
-const ROW_CACHE_SECONDS = 60;   // single artwork/profile rows
+const CACHE_SECONDS = 300;
+const ROW_CACHE_SECONDS = 60;
 
-// mirrors imgResize in js/app-core.js. Every image is a Supabase Storage
-// object now and each size is its own object, identified by a filename suffix
-// (__t300 / __t600 / __v1000 / __f1600), so picking a size is a suffix swap
-// rather than an on-the-fly resize. A url carrying no suffix is handed back
-// untouched: there is nothing to swap, and no resizer left to ask.
 const SB_SIZE_RE = /__(?:t300|t600|v1000|f1600)\.webp$/;
 
 function resize(url, width) {
@@ -23,17 +15,6 @@ function resize(url, width) {
 const thumb = (url) => resize(url, 300);
 const t600 = (url) => (SB_SIZE_RE.test(url || '') ? url.replace(SB_SIZE_RE, '__t600.webp') : url);
 
-// srcset for the homepage cards this worker renders. Mirrors dzThumbAttrs in
-// js/app-core.js, minus the device-pixel-ratio cap: there is no DPR to read at
-// the edge, so the browser applies its own and picks from what it is offered.
-//
-// Gated on T600_READY for the same reason as the client — a srcset candidate
-// that 404s breaks the image rather than falling back. Unset, this emits
-// exactly the single-src markup it always did.
-//
-// Pages environment variables arrive as STRINGS, so a bare truthiness test
-// would read "false" and "0" as ON — which is precisely how someone disabling
-// this would write it. Only the affirmative spellings count.
 const flagOn = (v) => /^(1|true|yes|on)$/i.test(String(v ?? '').trim());
 
 function thumbAttrs(url, env) {
@@ -44,21 +25,15 @@ function thumbAttrs(url, env) {
          `sizes="(min-width:1280px) 25vw, (min-width:700px) 33.33vw, 50vw"`;
 }
 const ogImage = (url) => resize(url, 1200);
-// schema.org contentUrl. Never the stored original: koe-originals is private,
-// and a contentUrl that 403s drops the image out of Google Images. The largest
-// public derivative is the honest answer.
 const fullImage = (url) => resize(url, 1600);
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// clamp for search snippets
 function clamp(s, n = 160) {
   const t = String(s ?? '').replace(/\s+/g, ' ').trim();
   return t.length <= n ? t : t.slice(0, n - 1).replace(/\s\S*$/, '') + '…';
 }
-
-// supabase
 
 async function sbGet(env, query, ttl) {
   const res = await fetch(`${env.SB_URL}/rest/v1/${query}`, {
@@ -81,17 +56,6 @@ async function fetchArtworks(env) {
   } catch { return []; }
 }
 
-// the public sections
-
-/* One entry per public destination that is a panel in the app rather than a
-   document of its own. The panels are unchanged — js/routes.js opens the same
-   ones the buttons always opened — but each now has a url, and a url with the
-   home page's title, description and canonical on it is a url Google reads as
-   the home page. This table is what makes each one its own page.
-
-   Keep it in step with the ROUTES table in js/routes.js, the fallbacks in
-   _redirects and the cache rules in _headers: a path in one list and not the
-   others is either a 404 or a page wearing the wrong name. */
 const SECTIONS = {
   '/explore': {
     crumb: 'Explore',
@@ -133,50 +97,20 @@ const SECTIONS = {
           'digital art community.',
     ld: 'CollectionPage'
   },
-  // Jobs is deliberately not here. The section is in the app and is not going
-  // anywhere — it is one of the five the bar's Explore menu names — it is
-  // simply not one of the destinations this site is putting forward to
-  // search. So there is no /jobs url, no entry in the sitemap and no link in
-  // the footer. Individual postings keep their own /job/<id> address, because
-  // those links are shared and have to answer as themselves rather than as the
-  // home page.
   '/login': {
-    // One word, and it leads. The sitelink label a search engine prints for a
-    // page is drawn from its title and from the words the site links to it
-    // with, so all three say the same thing: the anchor in the footer, the
-    // accessible name on the nav control, and this.
     crumb: 'Login',
     h1: 'Login',
     title: 'Login — DigiArtz',
     desc: 'Sign in to your DigiArtz account to upload artwork, sell in the marketplace, ' +
           'join communities and follow other artists.',
-    // A sign-in form is a page, not a collection, and it is the one entry here
-    // with nothing behind it to collect.
     ld: 'WebPage'
   }
 };
-
-// route resolution
 
 const PROFILE_RE = /^\/profile\/([^/]+)\/?$/;
 const ARTWORK_RE = /^\/artwork\/([^/]+)\/?$/;
 const ITEM_RE    = /^\/(resource|blog|listing|job)\/([^/]+)\/?$/;
 
-/* The four section item types, by the url segment each one is published under.
-   `parent` is the section index the item belongs beneath, which is what makes
-   /marketplace → /listing/<id> a hierarchy rather than two unrelated pages.
-
-   `select` asks for the columns the anon key is granted and no more. Several
-   of these tables revoke a column from anon at the grant level — a marketplace
-   listing's price and file url among them — and asking for one of those fails
-   the whole query rather than returning null, so this list is deliberately
-   short: it is what a search result needs and nothing else.
-
-   `eq` is the same visibility filter the app's own lists use. An item that
-   does not match is not deleted — a hidden listing stays reachable by its own
-   link, which is the point of hiding rather than unpublishing — it is simply
-   not something to put in an index, so it comes back unresolved and the page
-   is marked noindex below. */
 const ITEMS = {
   resource: {
     table: 'resources', parent: '/resources', crumb: 'Resources', vis: 'visibility=eq.published&status=eq.approved',
@@ -195,34 +129,20 @@ const ITEMS = {
     ld: 'CreativeWork'
   },
   job: {
-    // No `parent`, alone among these four: there is no /jobs index to sit
-    // under, so a posting's trail is Home → the posting. A breadcrumb pointing
-    // at a url that does not resolve is worse than a short breadcrumb.
     table: 'jobs', crumb: 'Jobs',
     vis: 'visibility=eq.public&status=eq.approved',
     select: 'id,title,company,description,created_at',
-    // Deliberately not JobPosting. That type is worth having and is worth
-    // having correctly — datePosted, validThrough, hiringOrganization,
-    // jobLocation and employmentType all carry policy — and a half-filled one
-    // is worse than none. WebPage is the honest description of what this is
-    // until the full set is mapped.
     ld: 'WebPage'
   }
 };
 
-// safe username charset
 const SAFE_NAME = /^[\p{L}\p{N}._-]{1,40}$/u;
-// '_' and '%' are wildcards to SQL LIKE; a username is not a pattern.
 const likeEscape = (s) => String(s).replace(/[\\%_]/g, '\\$&');
-// the row that answered has to be the member who was asked for
 const sameName = (a, b) =>
   String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase();
 const UUID_RE   = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// resolve a path
 async function resolve(env, pathname) {
-  // The section indexes are static text — no row to look up, so no round trip
-  // to discover that.
   const sec = SECTIONS[pathname.replace(/(.)\/$/, '$1')];
   if (sec) return { type: 'section', status: 'found', sec, path: pathname.replace(/(.)\/$/, '$1') };
 
@@ -233,19 +153,11 @@ async function resolve(env, pathname) {
     if (!env || !env.SB_URL || !env.SB_KEY) return { type: 'item', status: 'unknown', cfg };
     let raw;
     try { raw = decodeURIComponent(im[2]); } catch { return { type: 'other', status: 'found' }; }
-    // Every one of these tables keys on a uuid, so anything else is not an id
-    // that could exist — and handing it to PostgREST is a 400 rather than an
-    // empty result. It is also the whole of the injection guard on the query
-    // below: nothing but a uuid ever reaches it.
     if (!UUID_RE.test(raw)) return { type: 'item', status: 'gone', cfg, seg: im[1] };
     try {
       const rows = await sbGet(env,
         `${cfg.table}?select=${cfg.select}&id=eq.${raw}&${cfg.vis}&limit=1`,
         ROW_CACHE_SECONDS);
-      // Not published, or not there at all. This one is deliberately NOT a
-      // 404: a hidden listing is reachable by its own link on purpose, and
-      // that link has been shared. The page is served, kept out of the index,
-      // and left carrying its own address rather than the home page's.
       if (!rows.length) return { type: 'item', status: 'unlisted', cfg, seg: im[1], id: raw };
       return { type: 'item', status: 'found', cfg, seg: im[1], row: rows[0] };
     } catch { return { type: 'item', status: 'unknown', cfg }; }
@@ -264,20 +176,11 @@ async function resolve(env, pathname) {
   if (type === 'profile') {
     if (!SAFE_NAME.test(raw)) return { type, status: 'gone' };
     try {
-      // Case-insensitive lookup, and the pattern is escaped on the way in.
-      // ILIKE reads '_' as "any single character" and SAFE_NAME admits '_' in
-      // a username — so /profile/a_b matched a member called axb, and with
-      // limit=1 and no order an arbitrary one of them won. The page then went
-      // out with somebody else's name, bio, avatar and canonical url on it.
-      // ('%' is already refused by the charset; both are escaped anyway, with
-      // the backslash Postgres takes as LIKE's default escape character.)
       const rows = await sbGet(env,
         'profiles?select=id,username,display_name,bio,avatar_url,banner_url' +
         `&username=ilike.${encodeURIComponent(likeEscape(raw))}&limit=1`,
         ROW_CACHE_SECONDS);
       if (!rows.length) return { type, status: 'gone' };
-      // The escape above is the fix; this is the proof. Whatever the pattern
-      // did, the row that came back has to be the member who was asked for.
       if (!sameName(rows[0].username, raw)) return { type, status: 'gone' };
       return { type, status: 'found', row: rows[0] };
     } catch { return { type, status: 'unknown' }; }
@@ -285,7 +188,6 @@ async function resolve(env, pathname) {
 
   if (!UUID_RE.test(raw)) return { type, status: 'gone' };
   try {
-    // approved rows only
     const rows = await sbGet(env,
       'artworks?select=id,name,description,image_url,created_at,category,software,user_id' +
       `&id=eq.${raw}&status=eq.approved&kind=eq.art&limit=1`,
@@ -293,7 +195,6 @@ async function resolve(env, pathname) {
     if (!rows.length) return { type, status: 'gone' };
     const row = rows[0];
 
-    // artist needs its own lookup
     let artist = null;
     if (row.user_id) {
       try {
@@ -301,13 +202,11 @@ async function resolve(env, pathname) {
           `profiles?select=username,display_name&id=eq.${row.user_id}&limit=1`,
           ROW_CACHE_SECONDS);
         artist = p[0] || null;
-      } catch { /* byline is optional */ }
+      } catch {   }
     }
     return { type, status: 'found', row, artist };
   } catch { return { type, status: 'unknown' }; }
 }
-
-// metadata builders
 
 function artworkMeta(row, artist) {
   const name = row.name || 'Untitled artwork';
@@ -369,9 +268,6 @@ function profileMeta(row) {
   };
 }
 
-// A trail back up to the home page, on every page that has one. It is the
-// cheapest way to tell a crawler that /listing/<id> sits under /marketplace
-// which sits under /, and it is the same trail the app's own back button walks.
 function crumbs(trail) {
   return {
     '@context': 'https://schema.org',
@@ -388,9 +284,6 @@ function sectionMeta(path, sec) {
     title: sec.title,
     desc: sec.desc,
     url,
-    // The section indexes have no single image of their own — the grid behind
-    // them changes by the hour — so the site card stands, which is what the
-    // document already carries.
     img: '',
     imgAlt: `${sec.crumb} on DigiArtz`,
     ogType: 'website',
@@ -417,8 +310,6 @@ function itemMeta(seg, cfg, row) {
   const img = ogImage(row.preview_url || row.cover_url || '') || '';
   const date = (row.published_at || row.created_at || '').slice(0, 10);
   const desc = clamp(body || `${name} — ${cfg.crumb.toLowerCase()} on DigiArtz.`);
-  // The company is part of what a job posting IS, so it belongs in the title
-  // where a searcher reads it rather than only in the body.
   const title = seg === 'job' && row.company
     ? `${name} at ${row.company} — DigiArtz`
     : `${name} — DigiArtz`;
@@ -442,8 +333,6 @@ function itemMeta(seg, cfg, row) {
         ...(img ? { image: img } : {}),
         isPartOf: { '@type': 'WebSite', name: 'DigiArtz', url: `${SITE}/` }
       },
-      // The section index, where there is one to point at. A job posting has
-      // none, so its trail is Home → the posting.
       crumbs(cfg.parent
         ? [{ name: cfg.crumb, url: `${SITE}${cfg.parent}` }, { name, url }]
         : [{ name, url }])
@@ -452,10 +341,6 @@ function itemMeta(seg, cfg, row) {
   };
 }
 
-// An item that is real enough for the app to open and not public enough to
-// index: a hidden listing, an unpublished draft, a posting that has been taken
-// down. It keeps its own canonical — pointing it at the home page would be a
-// lie about what is here — and is told plainly not to be indexed.
 function unlistedMeta(seg, cfg, id) {
   const url = `${SITE}/${seg}/${id}`;
   return {
@@ -474,7 +359,6 @@ function unlistedMeta(seg, cfg, id) {
   };
 }
 
-// rewrite head tags in place
 function applyMeta(rw, m) {
   const set = (sel, val) => rw.on(sel, {
     element(el) { el.setAttribute('content', val); }
@@ -482,29 +366,6 @@ function applyMeta(rw, m) {
 
   rw.on('title', { element(el) { el.setInnerContent(m.title); } });
 
-  /* The page's heading, and the one piece of BODY text that has ever told
-     these routes apart.
-
-     Every route on this site answers with the same document — index.html, the
-     app shell — and until now everything this rewriter changed was inside
-     <head>. So /explore, /marketplace, /community, /resources, /blog and
-     /login each arrived with a correct, unique title and canonical wrapped
-     around twelve thousand characters of identical body text, whose only
-     heading read "DigiArtz — The Digital Art Community" on all six.
-
-     Google renders the page and sees the section the app opens. Bing, Yandex,
-     Seznam, Naver, Marginalia and everything reading Bing's index second-hand
-     — DuckDuckGo, Ecosia, Brave's fallback — do far less of that, and what
-     they were handed was six near-identical documents. Near-identical
-     documents get collapsed to one, and the one they kept was rarely the one
-     anybody searched for.
-
-     The heading is the highest-weighted element in the body and it is now the
-     page's own. It costs nothing at render time — the element is already
-     there, this replaces its text — and it changes nothing on screen: the h1
-     is .srOnly, so it has always been for readers who arrive by screen reader
-     and by crawler, and both of those are now told which page this is instead
-     of being told the site's name six times. */
   if (m.h1) rw.on('h1.srOnly', { element(el) { el.setInnerContent(m.h1); } });
 
   set('meta[name="description"]', m.desc);
@@ -525,12 +386,8 @@ function applyMeta(rw, m) {
   set('meta[name="twitter:title"]', m.title);
   set('meta[name="twitter:description"]', m.desc);
 
-  // Only when the page asks for one. The document's own directive is
-  // "index, follow, max-image-preview:large" and that is the right answer for
-  // everything here except an item that is not published.
   if (m.robots) set('meta[name="robots"]', m.robots);
 
-  // client looks this up by id
   const json = JSON.stringify(m.ld).replace(/<\//g, '<\\/');
   rw.on('head', {
     element(el) {
@@ -543,41 +400,28 @@ function applyMeta(rw, m) {
   return rw;
 }
 
-// entry point
-
 export async function onRequest(context) {
   const { env, request, next } = context;
 
-  // The edge rate limit, before the router rather than inside each handler —
-  // see functions/lib/ratelimit.js for why it lives here. Checked FIRST, so a
-  // refused caller costs a bucket increment and nothing else: no Function
-  // invocation, no Supabase round trip, no payment-provider call.
   let reqPath = '/';
-  try { reqPath = new URL(request.url).pathname; } catch { /* keep slash */ }
+  try { reqPath = new URL(request.url).pathname; } catch {   }
 
   if (reqPath.startsWith('/api/')) {
     if (!(await underEdgeLimit(env, request, reqPath))) return tooManyRequests();
   }
 
-  // run the rest of the pipeline
   const origin = await next();
 
-  // non html passes through
   const ct = origin.headers.get('content-type') || '';
   if (!ct.includes('text/html')) return origin;
 
   let pathname = '/';
-  try { pathname = new URL(request.url).pathname; } catch { /* keep slash */ }
+  try { pathname = new URL(request.url).pathname; } catch {   }
 
-  // The legal pages arrive complete — their own title, description and
-  // canonical, and none of the elements this rewriter fills in. Everything
-  // below would be a Supabase round trip per view to discover it has nothing
-  // to change.
   if (pathname.startsWith('/legal/')) return origin;
 
   const hit = await resolve(env, pathname);
 
-  // gone, real 404 and noindex
   if (hit.status === 'gone') {
     const gone = new HTMLRewriter()
       .on('head', {
@@ -597,19 +441,12 @@ export async function onRequest(context) {
              : hit.status === 'unlisted' ? unlistedMeta(hit.seg, hit.cfg, hit.id)
              : null;
 
-  if (!arts.length && !meta) return origin;   // nothing to say, pass through
+  if (!arts.length && !meta) return origin;
 
-  // The home page's gallery is the home page's. It is described once, at '/',
-  // and nowhere else: the same ImageGallery block repeated on /marketplace and
-  // on every artwork page said each of those urls WAS that gallery, at the url
-  // of a different page. The cards below still go into every route — they are
-  // real links to real artworks and are how a crawler walks off any page into
-  // the collection — but the claim about what the page is stays at home.
   const home = pathname === '/' || pathname === '/index.html';
 
   let rw = new HTMLRewriter();
 
-  // Elsewhere the block baked into index.html is the same claim, so it goes.
   if (!home) rw = rw.on('script#ldGallery', { element(el) { el.remove(); } });
 
   if (arts.length) {
@@ -633,7 +470,6 @@ export async function onRequest(context) {
     rw = rw.on('div#awGrid', {
       element(el) { el.setInnerContent(cards, { html: true }); }
     });
-    // overwrite, never append
     if (home) {
       rw = rw.on('script#ldGallery', {
         element(el) { el.setInnerContent(galleryLd, { html: true }); }

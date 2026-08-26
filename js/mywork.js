@@ -1,4 +1,3 @@
-// edit my work, community create
   var mw = { art: [], tab: 'art' };
 
   function openMyWorkPage(){
@@ -47,13 +46,11 @@
   function mwRenderArt(){
     var grid = document.getElementById('mwArtGrid'), empty = document.getElementById('mwArtEmpty');
     if(!grid) return;
-    // queue cards lead the grid
     var qHtml = (typeof upq==='object' && currentUser) ? upqOwnQueueHTML() : '';
     grid.innerHTML = qHtml + mw.art.map(mwCardHTML).join('');
     empty.style.display = (mw.art.length || qHtml) ? 'none' : 'block';
   }
 
-  // edit, reuses upload modal
   function mwEditArt(id, e){
     if(e) e.stopPropagation();
     var art = mw.art.find(function(r){ return String(r.id)===String(id); });
@@ -61,13 +58,6 @@
     if(!currentUser || String(art.user_id)!==String(currentUser.id)){ showToast('You can only edit your own artwork'); return; }
     pf.upFile = null;
     pf.upThumbFocus = null;
-    /* Show the artwork half of the sheet before filling it in.
-       The upload page holds five forms and shows one, and this reuses it
-       without going through openPfUpload — so whichever of the five was last
-       on screen is still the one showing. Listing a product and then editing a
-       piece used to land on the listing form with the artwork's title above
-       it. Silent, because the two lines under that title are this function's
-       own and are written immediately below. */
     if(typeof upSwitchSection === 'function') upSwitchSection('artwork', true);
     document.getElementById('pfUpEditId').value = String(art.id);
     document.getElementById('pfUpTitle').textContent = 'Edit Artwork';
@@ -76,11 +66,8 @@
     document.getElementById('pfDzTxt').textContent = 'Drag & drop your artwork here';
     document.getElementById('pfUpCatField').style.display = '';
     document.getElementById('pfComicPagesWrap').style.display = 'none';
-    // The one-of-ten software picker was replaced by a list; showing it here
-    // would put two software controls on the same form.
     var _swF = document.getElementById('pfUpSoftwareField');
     if(_swF) _swF.style.display = 'none';
-    // albums not edited here
     var _albF2 = document.getElementById('pfUpAlbumField'); if(_albF2) _albF2.style.display = 'none';
     document.getElementById('pfUpNm').value = art.name||'';
     document.getElementById('pfUpDesc').value = art.description||'';
@@ -89,30 +76,21 @@
     pfSetTagsFromArray(art.tags||[]);
     pfSetCats(catList(art.category).length?catList(art.category):['others']);
     if(typeof pfSetSoftware==='function') pfSetSoftware(art.software||'');
-    // The rest of the form starts from the stored piece rather than from its
-    // defaults — otherwise saving an edit would write "All rights reserved,
-    // published, no credits" over whatever the uploader really chose.
     if(typeof dzArtRestore === 'function' && typeof dzArtFromRow === 'function'){
       dzArtRestore(dzArtFromRow(art));
     }
-    // What moderation decided, remembered so an edit cannot lower it.
     pf.upEditModMature = (art.content_rating === 'MATURE');
     closePfCatDd();
     document.getElementById('pfDz').style.display='';
     var prev = document.getElementById('pfUpPrev');
-    // the resized copy, not the stored original: the origin bucket is not meant
-    // to stay publicly readable, and this is only an edit-form thumbnail
     prev.src = art.image_url ? getViewUrl(art.image_url) : '';
     prev.style.cssText = thumbStyle(art.thumb_x, art.thumb_y, art.thumb_zoom);
-    // the image itself is not editable here, so the zone shows it without the
-    // Adjust / Replace / Remove row
     if(art.image_url){
       pfPaintPicked({ name: art.name || 'Current image', meta: 'Current image', note: 'Published', locked: true });
     } else {
       pfPaintPicked(null);
     }
     if(typeof upGrowAll === 'function') upGrowAll();
-    // edit mode hides drafts
     document.getElementById('upDraftSec').style.display = 'none';
     document.getElementById('upSchedSec').style.display = 'none';
     var _schF2 = document.getElementById('pfUpSchedField'); if(_schF2) _schF2.style.display = 'none';
@@ -121,7 +99,6 @@
     document.getElementById('pfUpBtn').textContent = '📤 Save Changes';
     document.getElementById('pfUpMod').classList.add('open');
   }
-  // delete row and files
   async function mwDeleteArt(id, e){
     if(e) e.stopPropagation();
     var art = mw.art.find(function(r){ return String(r.id)===String(id); });
@@ -132,17 +109,7 @@
       if(art.storage_path) await s3Delete(BUCKET,art.storage_path);
       const{error}=await sb.from('artworks').delete().eq('id',id);
       if(error) throw error;
-      /* The row is gone, so every listing that carried it is now wrong: the
-         gallery, this artist's profile page, the searches that matched it and
-         the rankings that counted it. They are dropped by name — not the whole
-         cache, which would also cost this member the three hundred thumbnails
-         they have already downloaded and every section tab they have opened.
-         The piece's own images go too, out of the service worker's caches,
-         because the objects behind them have just left storage. */
       if(typeof window.dzArtworkChanged === 'function'){
-        // Awaited, so the drops finish before dzGalleryStore below writes the
-        // list back. Unawaited, the two overlap and the write that carries the
-        // deletion can be the one the invalidation cancels.
         await window.dzArtworkChanged(id, { userId: art.user_id, images: [art.image_url] });
       }
       mw.art = mw.art.filter(function(r){ return String(r.id)!==String(id); });
@@ -152,24 +119,18 @@
       if(document.getElementById('fg').classList.contains('open')) renderFG();
       if(pf.profile && currentUser && pf.profile.id===currentUser.id){
         pf.galleryRows = pf.galleryRows.filter(function(r){ return String(r.id)!==String(id); });
-        // the paging index has to lose it too, or the next page steps over a row
         if(typeof pfGalleryForget==='function') pfGalleryForget(id);
         pfRenderGallery();
       }
       injectGallerySEO();
-      // `images` was filtered above; the saved copy has to lose it too, or the
-      // next visit paints the piece back in from disk.
       if(typeof window.dzGalleryStore === 'function') window.dzGalleryStore();
       showToast('Artwork removed');
     }catch(err){ console.error('Error: '+err.message); }
   }
 
-  // comments page
-  var cpComments = [];   // in memory comment list
-  var cpMsgCache = {};   // last messages per channel
+  var cpComments = [];
+  var cpMsgCache = {};
 
-  // live chat channels
-  // icon mirrors the card chip
   var CM_CHANNELS = {
     official: { name:'DigiArtz Official', desc:'Official community of DigiArtz. Get updates, announcements and more.', readOnly:true,
                 icon:'🎨', grad:'linear-gradient(135deg,#4c1d95 0%,#7c3aed 55%,#a855f7 100%)' },
@@ -184,10 +145,9 @@
     showcase: { name:'Showcase',         desc:'Share your latest work, celebrate progress and inspire others.', type:'showcase', cooldownMs:3600000,
                 icon:'✦', grad:'linear-gradient(135deg,#701a75 0%,#a21caf 55%,#6366f1 100%)' }
   };
-  var cpCurrentChannel = 'arttalk'; // channel showing in cpbody
+  var cpCurrentChannel = 'arttalk';
 
   function cpGetAvatarLetter(){
-    // username initial only
     if(currentUser){
       var name = (currentUser.user_metadata && currentUser.user_metadata.username) || '';
       return name ? name.charAt(0).toUpperCase() : '?';
@@ -196,7 +156,6 @@
   }
 
   function cpGetDisplayName(){
-    // username is the display name
     if(currentUser){
       return (currentUser.user_metadata && currentUser.user_metadata.username) || 'User';
     }
@@ -207,41 +166,33 @@
     paintAvatarChip('cpBarAvatarImg', 'cpBarAvatarTxt', currentUser ? currentUserAvatarUrl : null, cpGetAvatarLetter());
   }
 
-
 function hideCommentThumbnail(){
   var box=document.getElementById('cpSelectedImage');
   if(box) box.style.display='none';
 }
 
-  // community page open and close
   function openCommunityHome(){
     var page = document.getElementById('communityPage');
     page.classList.add('open');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-    // land on the grid without the chat sliding out over it
     if(typeof cmChatPanelReset === 'function') cmChatPanelReset();
     cmCloseChat();
-    // Community tab, search closed — every visit starts the same way
     if(typeof cmHomeReset === 'function') cmHomeReset();
-    cmLoadMine();  // refresh own communities
+    cmLoadMine();
   }
 
   function closeCommunityPage(){
-    clearInterval(cpPoll); cpPoll = null; // stop the poll
+    clearInterval(cpPoll); cpPoll = null;
     document.getElementById('communityPage').classList.remove('open');
-    // the section is leaving, so drop the chat panel with it
     if(typeof cmChatPanelReset === 'function') cmChatPanelReset();
     document.getElementById('cpBar').style.display = 'none';
     var lockNote = document.getElementById('cpLockNote');
     if(lockNote) lockNote.style.display = 'none';
-    // clear active channel
     cpCurrentChannel = null;
-    // restore scroll
     restoreScroll();
   }
 
-  // community card tap
   async function cmOpenCommunity(id){
     if(!currentUser){
       showToast('Please login to join this community.');
@@ -249,7 +200,6 @@ function hideCommentThumbnail(){
       return;
     }
     var chan = CM_CHANNELS[id];
-    // user made channels are c:uuid
     if(!chan && /^c:/.test(id)){
       var uc = cmMineCache[id];
       if(uc){
@@ -263,12 +213,6 @@ function hideCommentThumbnail(){
       showToast('This community is coming soon');
       return;
     }
-    /* A community that exists on somebody's Max subscription goes quiet three
-       days after that subscription does. Asked here, before ANY of the state
-       below is touched: the header flips to chat mode a few lines down, and a
-       room that turns out to be locked would have left that header behind on
-       the community home with nothing under it. Nothing is mutated until the
-       room is known to be open. */
     var state = await cmStateOf(id);
     if(state.state === 'locked'){
       showToast(state.mine
@@ -280,16 +224,12 @@ function hideCommentThumbnail(){
 
     cpCurrentChannel = id;
 
-    // update composer
     var inpEl      = document.getElementById('cpBarInput');
     var attachBtn  = document.getElementById('cpAttachBtn');
     var isShowcase = chan.type === 'showcase';
     if(inpEl)   inpEl.placeholder = isShowcase ? 'Write a caption for your artwork...' : ('Message #' + chan.name);
     if(attachBtn) attachBtn.style.display = isShowcase ? 'flex' : 'none';
 
-    // header flips to chat banner. Its icon and name are the way into the
-    // community's own page — what it is, who is in it, and for whoever is
-    // entitled to it, how it is run.
     if(typeof cmHdrChatMode === 'function'){
       cmHdrChatMode({
         name  : chan.name,
@@ -302,48 +242,32 @@ function hideCommentThumbnail(){
       });
     }
 
-    // read only channels — settled before the slide so the foot of the
-    // panel doesn't change once it is on screen
     var canPost = !chan.readOnly || isDev;
     var bar = document.getElementById('cpBar');
     var lockNote = document.getElementById('cpLockNote');
     if(bar) bar.style.display = canPost ? 'flex' : 'none';
     if(lockNote) lockNote.style.display = canPost ? 'none' : 'flex';
-    // In grace the room works exactly as it did; what changes is that it says
-    // so, with the date it stops on, to whoever can do something about it.
     cmPaintGrace(state);
 
-    // the bottom nav is left alone — the panel outranks it and slides
-    // over it, so it is covered rather than switched off ahead of time
-    // grid stays mounted behind, the chat panel slides in over it
     var dmChat = document.getElementById('dmChatView');
     var chat = document.getElementById('cmChatView');
     if(dmChat) dmChat.style.display = 'none';
     if(chat) chat.style.display = 'flex';
     if(typeof cmChatPanelOpen === 'function') cmChatPanelOpen();
-    // reset offset
     cpOffset = 0;
-    cpLastSig = ''; // force a paint
-    /* Swap to this channel now, from whatever copy exists: this tab's memory
-       first, then the copy on disk from a previous visit. A room you have been
-       in before opens with its last messages already on screen — which is the
-       difference between a chat panel and a loading spinner — and the fetch
-       below replaces them a moment later. */
+    cpLastSig = '';
     cpComments = cpMsgCache[id] || cpSavedMessages(id) || [];
     try{ cpRender(); }catch(e){}
     await cpLoadComments();
 
-    // bail if the user moved on
     if(cpCurrentChannel !== id) return;
 
     cpSyncAvatar();
     var thumb=document.getElementById('cpSelectedImage');
     var thumbImg=document.getElementById('cpSelectedImageImg');
-    // open with an empty composer
     if(thumb) thumb.style.display = 'none';
     if(thumbImg) thumbImg.src = '';
 
-    // live update poll
     clearInterval(cpPoll);
     cpPoll = setInterval(function(){
       if(document.visibilityState === 'visible' && cpCurrentChannel === id){
@@ -352,33 +276,17 @@ function hideCommentThumbnail(){
     }, CP_POLL_MS);
   }
 
-  // back to the grid
   function cmCloseChat(){
-    clearInterval(cpPoll); cpPoll = null; // stop the poll
-    // slide the panel away — its contents stay as they are so nothing
-    // flickers on the way out, each open sets them again
+    clearInterval(cpPoll); cpPoll = null;
     if(typeof cmChatPanelClose === 'function') cmChatPanelClose();
     if(typeof cmHdrHomeMode === 'function') cmHdrHomeMode();
-    // clear active channel
     cpCurrentChannel = null;
-    // the nav is uncovered by the slide itself, nothing to restore
   }
 
-  // user made communities
-
-  /* ── a community's subscription, and the three days after it ──────────────
-     A community created on a Max subscription stays up for three days after
-     that subscription lapses, and is locked after that. The rule is
-     public.cm_state(cid) and it is asked rather than worked out here: the
-     owner's expiry is not something a member's browser can see, and a lock
-     a client decides for itself is a lock anybody can decide against.
-
-     Cached for a minute per room. The state changes on a day boundary, not on
-     a keystroke, and this is asked every time a room is opened. */
   var cmStateCache = {};
   async function cmStateOf(chanId){
     var out = { state:'live', mine:false, until:null };
-    if(!/^c:/.test(String(chanId || ''))) return out;      // a built-in room
+    if(!/^c:/.test(String(chanId || ''))) return out;
     var cid = String(chanId).slice(2);
     var hit = cmStateCache[cid];
     if(hit && (Date.now() - hit.at) < 60000) return hit.val;
@@ -393,19 +301,12 @@ function hideCommentThumbnail(){
       var mine = cmMineCache['c:' + cid];
       out.mine = !!(currentUser && mine && mine.owner_id === currentUser.id);
     }catch(e){
-      // Unreachable is not locked. The database refuses the join and the
-      // message on its own, so failing open here costs nothing but a wasted
-      // trip, while failing closed would shut a paid-up room over one bad
-      // request.
       return out;
     }
     cmStateCache[cid] = { at: Date.now(), val: out };
     return out;
   }
 
-  /* The banner inside a room that is in its last three days. Built here rather
-     than in index.html because it belongs to a state most rooms are never in,
-     and it is removed the moment they are not in it. */
   function cmPaintGrace(state){
     var host = document.getElementById('cmChatView');
     var old  = document.getElementById('cmGraceBar');
@@ -441,13 +342,10 @@ function hideCommentThumbnail(){
     { m:43200, lbl:'1 month'   },
     { m:0,     lbl:'Clear timeout' }
   ];
-  var cmMineCache = {};  // channel lookup map
-  var cmMineRows  = [];  // last membership rows
-  // Mirrors the database cap in supabase/migrations/20260811_community_and_friend_caps.sql.
-  // The trigger is what enforces it; this is here so the member is told before
-  // the round trip rather than after it.
+  var cmMineCache = {};
+  var cmMineRows  = [];
   var CM_MAX_JOINED = 50;
-  window.CM_MAX_JOINED = CM_MAX_JOINED;   // read by the banner in js/community.js
+  window.CM_MAX_JOINED = CM_MAX_JOINED;
 
   function cmErr(e){
     var m = (e && e.message) || '';
@@ -455,12 +353,9 @@ function hideCommentThumbnail(){
     if(/CM_ALREADY_OWNER/.test(m)) return 'You already own every community your level and plan allow.';
     if(/CM_LOCKED/.test(m))        return 'That community is closed — its subscription ended.';
     if(/CM_OWNER_LEAVE/.test(m))   return 'You own this community — delete it instead of leaving.';
-    // the CHECK that backs the four length limits, when a paste gets past the
-    // form and the database is the one that has to say no
     if(/communities_text_len_chk/.test(m))
       return 'One of those is too long — name 40, short description 120, description 500, rules 2000.';
     if(/CM_MAX_JOINED/.test(m))    return 'You’re in ' + CM_MAX_JOINED + ' communities — the most allowed. Leave one to join another.';
-    // the shared write rate limiter words its own message for the member
     if(/Too many .* in a short time/i.test(m)) return m;
     if(/CM_NAME_TAKEN/.test(m) || /communities_name_lower_idx/.test(m))
                                    return 'That community name is already taken.';
@@ -482,7 +377,6 @@ function hideCommentThumbnail(){
     if(m) m.classList.add('open');
   }
 
-  // keep focused field above keyboard
   document.addEventListener('focusin', function(e){
     var t = e.target;
     if(!t || !t.matches || !t.matches('input, textarea')) return;
@@ -492,7 +386,6 @@ function hideCommentThumbnail(){
     }, 320);
   });
 
-  // create
   async function cmCreateCommunity(){
     if(!currentUser){ openAuthMod(); return; }
     document.getElementById('cmNewName').value = '';
@@ -500,10 +393,6 @@ function hideCommentThumbnail(){
     var sub = document.getElementById('cmCreateSub');
     sub.textContent = 'Requires artist Level 100, or a Max subscription.';
     cmOpenMod('cmCreateMod');
-    // Which of the two routes is open, in the member's own terms. A room
-    // earned at Level 100 is theirs for good; one that comes with Max lasts
-    // as long as the subscription does, and this is the only honest place to
-    // say so — before they name it and invite anybody into it.
     try{
       var pr = await sb.rpc('get_artist_progress', { target: currentUser.id });
       var lvl = (pr.data && pr.data[0] && pr.data[0].level) || 1;
@@ -531,7 +420,6 @@ function hideCommentThumbnail(){
     finally{ btn.disabled = false; btn.textContent = 'Create'; }
   }
 
-  // join
   function cmOpenJoin(){
     if(!currentUser){ openAuthMod(); return; }
     if(cmAtJoinCap()) return;
@@ -540,7 +428,6 @@ function hideCommentThumbnail(){
     cmOpenMod('cmJoinMod');
   }
 
-  // the cap the database holds, checked against the list already loaded
   function cmAtJoinCap(){
     if(cmMineRows.length < CM_MAX_JOINED) return false;
     showToast('You’re in ' + CM_MAX_JOINED + ' communities — the most allowed. Leave one to join another.');
@@ -564,12 +451,10 @@ function hideCommentThumbnail(){
     finally{ btn.disabled = false; btn.textContent = 'Join'; }
   }
 
-  // render own communities
   async function cmLoadMine(){
     var wrap = document.getElementById('cmMineWrap');
     var grid = document.getElementById('cmMineGrid');
     if(!wrap || !grid || !sb || !currentUser){ if(wrap) wrap.style.display='none'; return; }
-    // paint last known list first
     if(cmMineRows.length) cmRenderMine(cmMineRows);
     try{
       var mem = await sb.from('community_members')
@@ -622,7 +507,6 @@ function hideCommentThumbnail(){
         p.textContent = c.description || 'No description yet.';
         meta.appendChild(nm); meta.appendChild(p);
         card.appendChild(ico); card.appendChild(meta);
-        // card opens chat, staff get manage
         var chKey = 'c:' + c.id;
         cmMineCache[chKey] = c;
         card.onclick = function(){ cmOpenCommunity(chKey); };
@@ -636,7 +520,6 @@ function hideCommentThumbnail(){
         }
         grid.appendChild(card);
       });
-    // the banner counts the cards that are actually there
     if(typeof cmSyncCount === 'function') cmSyncCount();
   }
 
@@ -650,17 +533,6 @@ function hideCommentThumbnail(){
     }catch(e){ showToast(cmErr(e)); }
   }
 
-  // ===========================================================================
-  // the community page
-  //
-  // Opened by tapping the community's icon in the chat header. It is the one
-  // place a community is read — icon, name, the short line, the description,
-  // the rules, who is in it — and, for whoever is entitled to it, the one
-  // place it is run. What somebody may do is decided once, in cmiPaintRole,
-  // and everything they may not do is removed from the page rather than
-  // greyed out: a member never sees a ban list, a settings form or a delete
-  // button, and the server would refuse them anyway if they forged one.
-  // ===========================================================================
   var cmi = { key:null, cid:null, c:null, role:null, rank:0, isOwner:false,
               isMember:false, memRows:[], memTab:'all', builtin:null };
 
@@ -679,8 +551,6 @@ function hideCommentThumbnail(){
     if(cmi.cid) cmiLoadCommunity();
     else cmiPaintBuiltin();
   }
-  // Escape leaves this page. The global handler in js/pfedit.js steps aside
-  // while it is open, so this is the only thing that acts.
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
     var page = document.getElementById('cmInfoPage');
@@ -692,7 +562,6 @@ function hideCommentThumbnail(){
   function cmiClose(){
     var page = cmiEl('cmInfoPage');
     if(page) page.classList.remove('open');
-    // the chat panel is still open behind this, and owns the scroll lock
     var chat = document.getElementById('cmChatPanel');
     var home = document.getElementById('communityPage');
     if(!(chat && chat.classList.contains('open')) &&
@@ -702,9 +571,6 @@ function hideCommentThumbnail(){
     }
   }
 
-  // The six rooms the site runs are not rows in communities: they have no
-  // members, no owner and no settings. The page still opens on them, and shows
-  // the half of itself that means anything.
   function cmiPaintBuiltin(){
     var ch = cmi.builtin || {};
     cmiSetIcon(null, ch.icon || (ch.name || '?').charAt(0).toUpperCase(), ch.grad);
@@ -760,7 +626,6 @@ function hideCommentThumbnail(){
       el.textContent = letter || '?';
     }
   }
-  // a section with nothing in it is removed, not left as a bare heading
   function cmiSecText(secId, txtId, value){
     var sec = cmiEl(secId), txt = cmiEl(txtId);
     if(txt) txt.textContent = value || '';
@@ -783,10 +648,8 @@ function hideCommentThumbnail(){
     cmiSecText('cmiRulesSec','cmiRules', c.rules || '');
   }
 
-  // The one place the question "what may this person do here?" is answered.
   function cmiPaintRole(){
-    var isStaff = cmi.rank >= 2;   // jr_mod and up. In a community with no
-                                   // moderators that is the owner and nobody else.
+    var isStaff = cmi.rank >= 2;
     document.querySelectorAll('#cmInfoPage [data-cmi]').forEach(function(el){
       var need = el.getAttribute('data-cmi');
       el.hidden = (need === 'owner') ? !cmi.isOwner : !isStaff;
@@ -886,9 +749,6 @@ function hideCommentThumbnail(){
     });
   }
 
-  // The four lengths, in one place, matching the CHECK constraint on
-  // communities exactly. maxlength on the input stops typing past them; this
-  // is what catches a paste, and says which field is the problem.
   var CM_TEXT_LIMITS = [
     { id:'cmiSetName',  label:'Name',              min:3, max:40   },
     { id:'cmiSetShort', label:'Short description', min:0, max:120  },
@@ -912,8 +772,6 @@ function hideCommentThumbnail(){
     if(problem){ showToast(problem); return; }
     btn.disabled = true; btn.textContent = 'SAVING…';
     try{
-      // the icon is not in here: it is committed by the picker the moment it
-      // is chosen, the way a profile photo is, rather than waiting on Save
       var upd = {
         name             : name,
         short_description: cmiEl('cmiSetShort').value.trim() || null,
@@ -926,18 +784,12 @@ function hideCommentThumbnail(){
       Object.keys(upd).forEach(function(k){ cmi.c[k] = upd[k]; });
       cmiPaint();
       showToast('Community updated');
-      // the card on the community page carries the same name and icon
       delete CM_CHANNELS['c:' + cmi.cid];
       cmLoadMine();
     }catch(e){ showToast(cmErr(e)); }
     finally{ btn.disabled = false; btn.textContent = 'Save settings'; }
   }
 
-  // ---- the icon ------------------------------------------------------------
-  // A picker, not a URL box. The old field wanted a link to an image already
-  // hosted somewhere else — which most people do not have, and which can rot,
-  // redirect or be swapped out from under the site later. This uploads through
-  // the same signer profile photos go through, so the file lives on DigiArtz.
   var CMI_ICON_PX = 256;
 
   function cmiPaintIconPreview(){
@@ -971,8 +823,6 @@ function hideCommentThumbnail(){
     var img = new Image();
     img.onload = function(){
       URL.revokeObjectURL(url);
-      // centre square crop, so a wide or tall photo is not squashed into the
-      // circle it is about to be drawn in
       var side = Math.min(img.naturalWidth, img.naturalHeight);
       if(side < 64){ showToast('That image is too small — 128×128 or larger'); return; }
       var sx = (img.naturalWidth  - side) / 2;
@@ -980,10 +830,6 @@ function hideCommentThumbnail(){
       var cv = document.createElement('canvas');
       cv.width = cv.height = CMI_ICON_PX;
       cv.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, CMI_ICON_PX, CMI_ICON_PX);
-      // WebP, like every other image this site stores. toBlob ignores a type
-      // it cannot encode and hands back a PNG instead, so what actually came
-      // out decides the extension rather than what was asked for — a .webp
-      // holding PNG bytes would be served with the wrong content type.
       cv.toBlob(function(blob){
         if(blob) { cmiUploadIcon(blob); return; }
         cv.toBlob(function(fallback){ if(fallback) cmiUploadIcon(fallback); }, 'image/jpeg', 0.9);
@@ -997,9 +843,6 @@ function hideCommentThumbnail(){
     var btn = cmiEl('cmiIconBtn');
     btn.disabled = true; btn.textContent = 'UPLOADING…';
     try{
-      // koe-media's policies read the second path segment as the owner, so the
-      // uploader's id has to sit there — not the community's. The extension
-      // comes off the blob, so it always matches the bytes inside it.
       var ext = ({ 'image/webp':'webp', 'image/png':'png' })[blob.type] || 'jpg';
       var path = 'communities/' + currentUser.id + '/' + cmi.cid + '-' + Date.now() + '.' + ext;
       var publicUrl = await s3Upload(BUCKET, path, blob);
@@ -1010,7 +853,6 @@ function hideCommentThumbnail(){
       if(r.error) throw r.error;
       cmi.c.avatar_url = publicUrl;
       cmi.c.avatar_storage_path = path;
-      // only once the row points at the new file
       if(old){ try{ await s3Delete(BUCKET, old); }catch(e){} }
       cmiPaintIconPreview();
       cmiSetIcon(publicUrl, (cmi.c.name || '?').charAt(0).toUpperCase(), null);
@@ -1077,7 +919,6 @@ function hideCommentThumbnail(){
   async function cmiDelete(){
     if(!cmi.isOwner || !cmi.cid) return;
     var nm = (cmi.c && cmi.c.name) || 'this community';
-    // two steps, because there is no undo and every message goes with it
     if(!confirm('Delete ' + nm + '? Every message in it is deleted too, and this cannot be undone.')) return;
     var typed = prompt('Type the community name to confirm:', '');
     if(typed === null) return;
@@ -1106,8 +947,6 @@ function hideCommentThumbnail(){
     });
   });
 
-  // Escape leaves the browse page, and stops there — js/pfedit.js would
-  // otherwise close the section behind it.
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
     var pg = document.getElementById('cmBrowsePage');
@@ -1116,17 +955,6 @@ function hideCommentThumbnail(){
     cmCloseBrowse();
   });
 
-  // ===========================================================================
-  // browse every community
-  //
-  // Until this, the only way to find a community you were not already in was
-  // to be handed its name and its six-character join ID by somebody who was.
-  // cm_browse ranks them by member count — banned rows excluded, because that
-  // is what a member count means — and pages 30 at a time.
-  //
-  // A private community is listed because its row has always been readable;
-  // being listed is not being let in. Joining one still needs its join ID.
-  // ===========================================================================
   var CM_BRW_PAGE = 30;
   var cmBrw = { q:'', offset:0, busy:false, done:false, timer:null };
 
@@ -1145,7 +973,6 @@ function hideCommentThumbnail(){
     if(!pg || !pg.classList.contains('open')) return;
     pg.classList.remove('open');
     clearTimeout(cmBrw.timer);
-    // the community section is still up behind it and owns the scroll lock
     var back = cmBrw.lastFocus; cmBrw.lastFocus = null;
     if(back && back.isConnected && back.focus){
       try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
@@ -1232,8 +1059,6 @@ function hideCommentThumbnail(){
       if(c.joined){
         btn.textContent = 'Open';
         btn.classList.add('cmBrwJoin--in');
-        // cmOpenCommunity resolves a c:<id> channel out of this cache, so seed
-        // it here rather than relying on cmLoadMine having already run
         cmMineCache['c:' + c.id] = c;
         btn.onclick = function(){ cmCloseBrowse(); cmOpenCommunity('c:' + c.id); };
       } else {
@@ -1242,8 +1067,6 @@ function hideCommentThumbnail(){
       }
 
       card.appendChild(num); card.appendChild(ico); card.appendChild(meta); card.appendChild(btn);
-      // the row itself opens the community's page, so somebody can read what it
-      // is before deciding
       card.addEventListener('click', function(e){
         if(e.target.closest('.cmBrwJoin')) return;
         cmCloseBrowse();
@@ -1253,9 +1076,6 @@ function hideCommentThumbnail(){
     });
   }
 
-  // ---- joining asks first --------------------------------------------------
-  // Browse lists public communities only — a private one is not in the list to
-  // be joined from it — so this never has to explain a join ID.
   var cmJoinAskC = null;
   function cmJoinAsk(c){
     if(!currentUser){ openAuthMod(); return; }
@@ -1281,15 +1101,6 @@ function hideCommentThumbnail(){
     finally{ btn.disabled = false; cmJoinAskC = null; }
   }
 
-  // ===========================================================================
-  // one person, one sheet
-  //
-  // Reached from a name in the chat and from a row in the member list, and it
-  // is the same sheet either way. Everyone gets the profile and the report;
-  // the moderation half only appears for somebody who actually holds rank in
-  // the community being looked at, over somebody below them. cm_assert_can_act
-  // enforces the same rule server-side, so this is the courtesy copy.
-  // ===========================================================================
   var cmuUser = null, cmuView = 'main';
 
   function cmuAct(label, fn, danger){
@@ -1300,7 +1111,6 @@ function hideCommentThumbnail(){
     document.getElementById('cmuActs').appendChild(b);
   }
 
-  // p: {id,name,username,avatar}   mem: the community_members row, when known
   function cmUserOpen(p, mem, view){
     if(!p || !p.id) return;
     cmuUser = p;
@@ -1325,15 +1135,12 @@ function hideCommentThumbnail(){
     var canModerate = !!(cmi.cid && m && !isSelf && cmi.rank >= 2 &&
                          (CM_RANK[m.role] || 1) < cmi.rank);
 
-    // The role and timeout pickers are their own step. Flattened into one
-    // list they were eleven boxes deep, and View profile — the thing almost
-    // every tap is after — was buried at the top of a scroll.
     if(cmuView === 'role' || cmuView === 'timeout'){
       cmuAct('\u2039 Back', function(){ cmUserOpen(p, m, 'main'); });
       if(cmuView === 'role'){
         var targetRank = CM_RANK[m.role] || 1;
         ['member','jr_mod','sr_mod','admin'].forEach(function(role){
-          if(CM_RANK[role] >= cmi.rank) return;   // cannot grant your own rank
+          if(CM_RANK[role] >= cmi.rank) return;
           if(role === m.role) return;
           var verb = CM_RANK[role] > targetRank ? 'Promote to ' : 'Demote to ';
           cmuAct(verb + CM_ROLE_LABEL[role], function(){
@@ -1390,7 +1197,6 @@ function hideCommentThumbnail(){
     cmOpenMod('cmUserMod');
   }
 
-  // the member row for somebody tapped in the chat rather than the list
   function cmuMemberRow(uid){
     for(var i = 0; i < cmi.memRows.length; i++){
       if(String(cmi.memRows[i].user_id) === String(uid)) return cmi.memRows[i];
@@ -1398,8 +1204,6 @@ function hideCommentThumbnail(){
     return null;
   }
 
-  // A name tapped in the chat: the sheet opens on what the message already
-  // knows, and the handle fills in when the profile lands.
   async function cmUserOpenById(uid){
     if(!uid) return;
     var a = cpAuthors[String(uid)] || null;
@@ -1407,7 +1211,7 @@ function hideCommentThumbnail(){
     try{
       var r = await sb.from('profiles').select('username,display_name,avatar_url').eq('id', uid).maybeSingle();
       if(r.error || !r.data) return;
-      if(!cmuUser || String(cmuUser.id) !== String(uid)) return;   // sheet moved on
+      if(!cmuUser || String(cmuUser.id) !== String(uid)) return;
       cmUserOpen({
         id: uid,
         name: r.data.display_name || r.data.username || 'User',
@@ -1417,14 +1221,6 @@ function hideCommentThumbnail(){
     }catch(e){}
   }
 
-  // ===========================================================================
-  // one message
-  //
-  // Text only, and only what text needs: its author or a moderator can delete
-  // it, anyone else can report it, and anyone can copy it. No likes, no
-  // shares, no bookmarks — those do not exist in a community and are not
-  // quietly reachable from here.
-  // ===========================================================================
   function cmTxtOpen(mid){
     var msg = null;
     for(var i = 0; i < cpComments.length; i++){
@@ -1455,7 +1251,6 @@ function hideCommentThumbnail(){
       add('Report this message', function(){
         cmCloseMod('cmTxtMod');
         if(!currentUser){ openAuthMod(); return; }
-        // the subject is the community; the message is what the report points at
         cmRptOpen('community_message', cmi.cid || null, String(msg.id), 'Report this message');
       });
     }
@@ -1472,17 +1267,13 @@ function hideCommentThumbnail(){
       if(r.error) throw r.error;
       cmCloseMod('cmTxtMod');
       showToast('Message deleted');
-      cpLastSig = '';           // force a repaint, the list is one shorter
-      // and the saved copy of this room, so a re-open does not bring it back
+      cpLastSig = '';
       var cDel = window.dzCached && window.dzCached();
       if(cDel){ try{ await cDel.invalidateCommunity(cpCurrentChannel); }catch(e2){} }
       await cpLoadComments();
     }catch(e){ showToast('Couldn’t delete that message'); }
   }
 
-  // ===========================================================================
-  // reporting, for the three things a community has to report
-  // ===========================================================================
   var CM_RPT_REASONS = [
     'Spam or advertising',
     'Harassment or bullying',
@@ -1530,7 +1321,6 @@ function hideCommentThumbnail(){
         reporter_id: currentUser.id,
         reason     : detail ? (cmRpt.reason + ' — ' + detail).slice(0, 500) : cmRpt.reason
       });
-      // reporting the same thing twice is not an error worth showing
       if(r.error && r.error.code !== '23505') throw r.error;
       cmCloseMod('cmRptMod');
       showToast('Report sent — thank you');
@@ -1538,18 +1328,14 @@ function hideCommentThumbnail(){
     finally{ btn.disabled = false; btn.textContent = 'Send report'; }
   }
 
-  // comments pagination state
-  var cpOffset = 0; // set in cprender
+  var cpOffset = 0;
   var CP_INITIAL_LOAD = function(){ return 25; };
   var CP_LOAD_STEP = 25;
-  // pin position while loading older
   var cpLoadingOlder = false;
-  // live update poll
   var cpPoll = null;
   var CP_POLL_MS = 5000;
   var cpLastSig = '';
 
-  // chat feed helpers
   function cpHHMM(iso){
     if(!iso) return '';
     try{ return new Date(iso).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
@@ -1563,7 +1349,6 @@ function hideCommentThumbnail(){
     catch(e){ return d.toDateString().toUpperCase(); }
   }
 
-  // chat author identity
   var cpAuthors = {};
 
   async function cpLoadAuthors(list){
@@ -1584,14 +1369,12 @@ function hideCommentThumbnail(){
           avatar: p.avatar_url || null
         };
       });
-    }catch(e){ /* keep what we have */ }
+    }catch(e){   }
   }
 
-  // avatar markup for a chat row
   function cpAvatarHTML(c, extraCls){
     var a = c.user_id ? cpAuthors[String(c.user_id)] : null;
     var cls = 'cpAvatar' + (extraCls ? ' ' + extraCls : '');
-    // data uid for the delegated listener
     var uid = c.user_id ? ' data-uid="' + esc(String(c.user_id)) + '"' : '';
     if(a && a.avatar){
       return '<div class="' + cls + '"' + uid + '>' +
@@ -1602,15 +1385,11 @@ function hideCommentThumbnail(){
     return '<div class="' + cls + '"' + uid + '>' + esc(c.initial) + '</div>';
   }
 
-  // current display name
   function cpAuthorName(c){
     var a = c.user_id ? cpAuthors[String(c.user_id)] : null;
     return (a && a.name) ? a.name : c.user;
   }
 
-  // mini profile card
-  // A name in the chat opens the person sheet — the same one the member list
-  // opens, so there is one place a person is acted on rather than two.
   document.addEventListener('click', function(e){
     var t = e.target.closest && e.target.closest('[data-uid]');
     if(!t) return;
@@ -1619,8 +1398,6 @@ function hideCommentThumbnail(){
     cmUserOpenById(t.getAttribute('data-uid'));
   });
 
-  // The ⋯ on a bubble. A message has actions, and a bubble you can also select
-  // text in is the wrong place to hang them off a plain tap.
   document.addEventListener('click', function(e){
     var t = e.target.closest && e.target.closest('.cpMsgAct');
     if(!t) return;
@@ -1633,22 +1410,18 @@ function hideCommentThumbnail(){
     var empty = document.getElementById('cpEmpty');
     if(!body) return;
 
-    // seed the visible window
     if(cpOffset === 0) cpOffset = CP_INITIAL_LOAD();
 
-    // skip rebuild if unchanged
     var sig = cpComments.length + '|' + cpOffset + '|' +
               (cpComments.length ? (cpComments[cpComments.length - 1].raw_time || '') : '');
     var firstPaint = (cpLastSig === '');
     if(sig === cpLastSig) return;
     cpLastSig = sig;
 
-    // capture scroll state first
     var prevHeight = body.scrollHeight;
     var prevTop    = body.scrollTop;
     var atBottom   = (prevHeight - prevTop - body.clientHeight) < 80;
 
-    // remove rendered items
     body.querySelectorAll('.cpComment, .cpShowcase, .cpMsgRow, .chatDay').forEach(function(el){ el.remove(); });
 
     if(cpComments.length === 0){
@@ -1657,32 +1430,18 @@ function hideCommentThumbnail(){
     }
     if(empty) empty.style.display = 'none';
 
-    // clamp to what we have
     var showCount = Math.min(cpOffset, cpComments.length);
-    // slice from the end
     var toShow = cpComments.slice(cpComments.length - showCount);
 
-    // loader sits at the top
     var isShowcase = cpCurrentChannel === 'showcase';
 
-    // grouping and date chip state
     var cpLastDayKey = '', cpLastSenderKey = null, cpLastTs = 0;
 
     toShow.forEach(function(c){
       var div = document.createElement('div');
       if(isShowcase){
-        // showcase post card
         div.className = 'cpShowcase';
-        /* The picture at viewing size, for the full-screen view a tap opens.
-           The card itself shows a thumbnail, so this is the one caller of
-           dzLightOpen that hands over a url the page does not already have —
-           one request, and the right pixels for a screen.
 
-           It used to open the artwork viewer, and there was nothing in it: a
-           showcase post keeps the picture and not the id of the work it came
-           from, so openLB was called with no artwork behind it and drew a
-           panel with no details, no download and no comments around one
-           image. The picture was always the whole of it. */
         var scShot = (typeof getViewUrl === 'function')
                        ? getViewUrl(c.image_url || '')
                        : (c.image_url || '');
@@ -1697,25 +1456,12 @@ function hideCommentThumbnail(){
           '</div>' +
           (c.image_url ? ('<img class="cpShowcaseImg" src="' + esc(getThumbnailUrl(c.image_url||'')) + '" alt="' + esc(scName) + '\'s artwork">') : '') +
           '<div class="cpShowcaseText">' + esc(c.text) + '</div>';
-        /* Bound, not written into the markup — which is a fix as much as a
-           tidy. The handler this replaces was a name quoted inside a string
-           inside an attribute, so a poster called Ada produced
 
-               onclick="openLB('…','Ada's artwork')"
-
-           and that does not parse. Every click on a showcase picture has
-           thrown a SyntaxError and done nothing for as long as the line has
-           been there, for every poster whose name is ordinary enough to be
-           written without an escape. Escaping the apostrophe does not save it
-           either: the entity is decoded before the handler is compiled, so
-           &#39; arrives at the parser as the apostrophe that broke it. A
-           listener has no quoting to get wrong. */
         var scImg = div.querySelector('.cpShowcaseImg');
         if(scImg && scShot) scImg.addEventListener('click', function(){
           if(typeof dzLightOpen === 'function') dzLightOpen(scShot, scName + '\u2019s artwork');
         });
       } else {
-        // chat row
         if(!c.text){ return; }
         var mine = !!(typeof currentUser !== 'undefined' && currentUser && c.user_id && String(c.user_id) === String(currentUser.id));
         var d = c.raw_time ? new Date(c.raw_time) : null;
@@ -1726,7 +1472,7 @@ function hideCommentThumbnail(){
           chip.innerHTML = '<span>' + cpDayChip(d) + '</span>';
           body.appendChild(chip);
           cpLastDayKey = dayKey;
-          cpLastSenderKey = null; // new day restarts the group
+          cpLastSenderKey = null;
         }
         var senderKey = c.user_id != null ? 's:'+c.user_id : 'n:'+c.user;
         var ts = d ? d.getTime() : 0;
@@ -1736,8 +1482,6 @@ function hideCommentThumbnail(){
         var shortTime = cpHHMM(c.raw_time) || esc(c.time);
 
         div.className = 'cpMsgRow ' + (mine ? 'cpMsgRow--me' : 'cpMsgRow--them') + (cont ? ' cpMsgRow--cont' : '');
-        // A message cached offline from before this existed has no id, and
-        // without one there is nothing to delete or report.
         var act = c.id != null
           ? '<button class="cpMsgAct" type="button" data-mid="' + esc(String(c.id)) + '" title="Message options" aria-label="Message options">⋯</button>'
           : '';
@@ -1754,37 +1498,30 @@ function hideCommentThumbnail(){
     });
 
     if(cpLoadingOlder){
-      // keep reading position
       body.scrollTop = prevTop + (body.scrollHeight - prevHeight);
       cpLoadingOlder = false;
     } else if(firstPaint || atBottom){
-      // pin to the bottom
       body.scrollTop = body.scrollHeight;
     } else {
-      // do not yank while reading
       body.scrollTop = prevTop;
     }
   }
 
-  // load older on scroll up
   (function(){
     var _cpRefreshing = false;
     var _cpRefreshTimer = null;
 
     function cpTriggerRefresh(){
       if(_cpRefreshing) return;
-      // nothing older left
       if(cpOffset >= cpComments.length) return;
       _cpRefreshing = true;
       var wrap = document.getElementById('cpRefreshWrap');
       if(wrap) wrap.classList.add('visible');
 
-      // reveal 25 more
       cpLoadingOlder = true;
       cpOffset += CP_LOAD_STEP;
 
       cpLoadComments().then(function(){
-        // keep spinner visible briefly
         setTimeout(function(){
           if(wrap) wrap.classList.remove('visible');
           _cpRefreshing = false;
@@ -1796,13 +1533,11 @@ function hideCommentThumbnail(){
       });
     }
 
-    // attach scroll listener
     document.addEventListener('DOMContentLoaded', function(){
       var body = document.getElementById('cpBody');
       if(!body) return;
 
       body.addEventListener('scroll', function(){
-        // trigger near the top
         var nearTop = body.scrollTop <= 40;
         if(nearTop && !_cpRefreshing){
           clearTimeout(_cpRefreshTimer);
@@ -1847,8 +1582,6 @@ function hideCommentThumbnail(){
       }
     }
 
-    // the same limits the database holds, checked here so the member is told
-    // to wait rather than watching a send do nothing
     var wait = window.dzChat.check(text);
     if(wait){ showToast(wait); return; }
 
@@ -1859,7 +1592,6 @@ function hideCommentThumbnail(){
     await cpLoadComments();
   }
 
-  // showcase cooldown
   function cpShowcaseCooldownRemaining(){
     if(!currentUser) return 0;
     var last = 0;
@@ -1881,7 +1613,6 @@ function hideCommentThumbnail(){
     return mins + 'm';
   }
 
-  // showcase picker
   function cpOpenShowcasePicker(){
     if(!currentUser){ showToast('Please login first.'); openAuthMod(); return; }
     var body  = document.getElementById('spBody');
@@ -1930,7 +1661,6 @@ function hideCommentThumbnail(){
     if(el) el.classList.remove('open');
   }
 
-  // enter sends
   document.addEventListener('DOMContentLoaded', function(){
     var inp = document.getElementById('cpBarInput');
     if(inp){
@@ -1940,14 +1670,6 @@ function hideCommentThumbnail(){
     }
   });
 
-  /* A room's recent messages, kept on the device.
-
-     Read and written through js/cache.js, which stamps each record with the id
-     of the member it was fetched for and refuses it for anybody else. That
-     matters here more than it looks: most channels are open to everyone, but
-     whether this member may read THIS one is the database's call, and a record
-     shared across sessions on one device would hand a members-only room to
-     whoever signs in next. Fifty messages, the last dozen rooms visited. */
   function cpMsgKey(channel){
     var c = window.dzCached ? window.dzCached() : null;
     return (c && channel) ? c.ukey('community', channel) : null;
@@ -1964,18 +1686,15 @@ function hideCommentThumbnail(){
     c.set(k, rows.slice(-50), 'community:posts');
   }
 
-  // load comments
   async function cpLoadComments(silent){
     if(!sb){
-      if(silent) return; // background poll, keep screen
+      if(silent) return;
       cpComments = [];
       cpRender();
       return;
     }
     try{
-      // pin the channel for this load
       var forChannel = cpCurrentChannel;
-      // loading state on first open
       var emptyEl = document.getElementById('cpEmpty');
       if(emptyEl && cpComments.length === 0){
         emptyEl.innerHTML = '<div class="cpEIco">◎</div><div>LOADING…</div>';
@@ -1986,7 +1705,7 @@ function hideCommentThumbnail(){
         .eq('channel', forChannel)
         .order('created_at', { ascending: true });
       if(result.error) throw result.error;
-      if(cpCurrentChannel !== forChannel) return;   // user switched rooms
+      if(cpCurrentChannel !== forChannel) return;
       var rows = result.data || [];
       cpComments = rows.map(function(row){
         var displayName = row.username || 'User';
@@ -2003,24 +1722,19 @@ function hideCommentThumbnail(){
           image_url : row.image_url || null
         };
       });
-      // resolve authors live
       await cpLoadAuthors(cpComments);
-      if(cpCurrentChannel !== forChannel) return;   // switched during author fetch
-      // warm the channel cache
+      if(cpCurrentChannel !== forChannel) return;
       cpMsgCache[forChannel] = cpComments;
-      // restore empty placeholder
       if(emptyEl){
         emptyEl.innerHTML = cpCurrentChannel === 'showcase'
           ? '<div class="cpEIco">◎</div><div>NOTHING SHOWCASED YET</div><div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO SHARE YOUR WORK</div>'
           : '<div class="cpEIco">◎</div><div>NO COMMENTS YET</div><div style="font-size:.68rem;opacity:.6;margin-top:.2rem;">BE THE FIRST TO LEAVE ONE</div>';
       }
       cpRender();
-      // The last fifty of this room, on this device, for this member.
       cpSaveMessages(forChannel, cpComments);
     }catch(e){
       console.error('cpLoadComments:', e);
-      if(silent) return; // transient poll error
-      // offline, serve saved copy
+      if(silent) return;
       var cachedCp = cpSavedMessages(cpCurrentChannel);
       if(cachedCp && cachedCp.length){
         cpComments = cachedCp;
@@ -2035,12 +1749,10 @@ function hideCommentThumbnail(){
     }
   }
 
-  // save comment
   async function cpSaveComment(text){
     if(!sb){ showToast('Can\u2019t connect \u2014 try again'); return false; }
     if(!currentUser){ showToast('Please login to comment.'); openAuthMod(); return false; }
 
-    // optional linked image
     var imageUrl = null;
     var thumbEl  = document.getElementById('cpSelectedImage');
     var thumbImg = document.getElementById('cpSelectedImageImg');
@@ -2048,18 +1760,13 @@ function hideCommentThumbnail(){
       imageUrl = thumbImg.src;
     }
 
-    // disable send while saving
     var sendBtn = document.getElementById('cpBarSend');
     if(sendBtn){ sendBtn.disabled = true; sendBtn.style.opacity = '.55'; }
 
     try{
-      // username only, never email
       var commentUsername = (currentUser.user_metadata && currentUser.user_metadata.username) || 'User';
-      // .select() is what makes the rate gate visible: it drops the row
-      // rather than raising, so a refusal arrives as no error and no row
       var result = await sb.from('comments').insert({
         user_id      : currentUser.id,
-        // email not stored
         username     : commentUsername,
         comment_text : text,
         image_url    : imageUrl,
@@ -2071,13 +1778,11 @@ function hideCommentThumbnail(){
         return false;
       }
       window.dzChat.note(text);
-      // clear thumbnail
       if(thumbEl)  thumbEl.style.display = 'none';
       if(thumbImg) thumbImg.src = '';
       return true;
     }catch(e){
       console.error('cpSaveComment:', e);
-      // explain channel rejections
       var msg = (e && e.message) || '';
       if(/CM_NO_LINKS/.test(msg)){
         showToast('Links aren\u2019t allowed in this community');
@@ -2087,9 +1792,7 @@ function hideCommentThumbnail(){
         showToast('You can\u2019t post here right now — you may be timed out or banned.');
         return false;
       }
-      // merit gate error
       if(window.meritDenied && window.meritDenied(e, 'chat')) return false;
-      // surface the real reason
       showToast(safeErr(e, 'Could not send \u2014 try again'));
       return false;
     }finally{
@@ -2097,9 +1800,6 @@ function hideCommentThumbnail(){
     }
   }
 
-
-
-  // post intro callback queue
   var __introRevealed = false;
   var __afterIntroQueue = [];
   function afterIntro(cb){
@@ -2116,7 +1816,6 @@ function hideCommentThumbnail(){
   (function(){
     var introEl = document.getElementById('intro');
     var revealed = false;
-    // reveal when everything is in
     var progress = {dom:0, img:0, fonts:0};
 
     function total(){
@@ -2132,10 +1831,9 @@ function hideCommentThumbnail(){
           if(e.propertyName === 'opacity'){
             introEl.classList.add('iGone');
             introEl.removeEventListener('transitionend', handler);
-            __flushAfterIntro(); // release queued toasts
+            __flushAfterIntro();
           }
         });
-        // fallback if transitionend misses
         setTimeout(__flushAfterIntro, 450);
       } else {
         __flushAfterIntro();
@@ -2143,25 +1841,21 @@ function hideCommentThumbnail(){
     }
 
     function paint(){
-      // loaded means done
       if(total() >= 100) reveal();
     }
 
-    // dom slice
     if(document.readyState === 'complete' || document.readyState === 'interactive'){
       progress.dom = 100; paint();
     } else {
       document.addEventListener('DOMContentLoaded', function(){ progress.dom = 100; paint(); });
     }
 
-    // fonts slice
     if(document.fonts && document.fonts.ready){
       document.fonts.ready.then(function(){ progress.fonts = 100; paint(); });
     } else {
       progress.fonts = 100;
     }
 
-    // hero image slice
     window._heroLoadCb = function(url){
       if(!url){ progress.img = 100; paint(); return; }
       var pre = new Image();
@@ -2172,7 +1866,5 @@ function hideCommentThumbnail(){
     };
 
     paint();
-    // safety net
     setTimeout(reveal, 9000);
   })();
-

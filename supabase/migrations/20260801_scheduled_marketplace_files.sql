@@ -1,14 +1,3 @@
--- Scheduled marketplace listings keep their files
---
--- A listing is no longer one row with a file column on it: the files it sells
--- live in marketplace_file, written by the composer straight after the item
--- row. The scheduler had no idea about that second write, so a listing set to
--- go live on Friday would have gone live with nothing to download — the only
--- part of a paid listing that has to work.
---
--- The queued row now carries what to attach, and the publisher attaches it in
--- the same pass that creates the item. Nothing changes for the other three
--- sections: sell_files is null for all of them and the branch never runs.
 alter table public.scheduled_sections
   add column if not exists sell_files jsonb;
 
@@ -48,8 +37,6 @@ BEGIN
       fail_msg := 'Account no longer active';
     END IF;
 
-    -- Build the insert from only the payload keys that are real columns,
-    -- so every other column (id, created_at, …) keeps its own default.
     IF fail_msg IS NULL THEN
       body := (r.payload - 'status')
               || jsonb_build_object('status','approved','user_id', r.user_id::text);
@@ -61,8 +48,6 @@ BEGIN
         fail_msg := 'Nothing to publish';
       ELSE
         BEGIN
-          -- id is returned for every one of the four tables, and it is what the
-          -- file rows below hang off.
           EXECUTE format(
             'INSERT INTO public.%I (%s) SELECT %s FROM jsonb_populate_record(NULL::public.%I, $1) RETURNING id',
             tbl, collist, collist, tbl) USING body INTO new_id;
@@ -72,9 +57,6 @@ BEGIN
       END IF;
     END IF;
 
-    -- The goods, attached to the listing that now exists. A listing that
-    -- publishes without them is a shop window with an empty box behind it, so
-    -- this failing fails the whole publish rather than passing quietly.
     IF fail_msg IS NULL AND r.section = 'marketplace' AND new_id IS NOT NULL
        AND jsonb_typeof(r.sell_files) = 'array' THEN
       BEGIN

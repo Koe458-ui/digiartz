@@ -1,20 +1,3 @@
-// The legal documents, in one place.
-//
-// These used to live inside the modal code in js/effects.js, which meant they
-// existed only after that script ran and had no address of their own. A
-// payment provider reviewing this site cannot open a modal — it asks for
-// digiartz.net/refund-policy and expects to read the policy there — and nor can
-// a crawler. So the text moved here, and both the modal and the Pages Functions
-// that serve /privacy, /terms and the rest read it from this file.
-//
-// ONE COPY. Editing a policy here changes the modal, the standalone page and
-// the sitemap together. Do not paste this text into a template somewhere: a
-// refund policy that says two different things in two places is the kind of
-// contradiction that costs a chargeback dispute.
-//
-// Loaded in the browser as <script type="module">, which is why it both exports
-// LEGAL and hangs it on window for the classic scripts that read it.
-
 export const LEGAL = {
     privacy: {
       title: 'PRIVACY POLICY',
@@ -336,16 +319,6 @@ export const LEGAL = {
         '<p>Email: DigiArtzsupport@gmail.com<br>Website: digiartz.net</p>' +
         '<span class="lmDate">EFFECTIVE DATE: JULY 2026</span>'
     },
-    // ------------------------------------------------------------------
-    // The two documents below did not exist before. A payment provider's
-    // website review asks for a contact route and a delivery timeline, and
-    // neither was written down anywhere on this site.
-    //
-    // NO POSTAL ADDRESS OR PHONE NUMBER HERE, deliberately. Razorpay's review
-    // does ask for both, so this page may come back as a rejection reason —
-    // but a made-up address on a live payments site is worse than a missing
-    // one, and the real ones were not available when this was written. Add
-    // them as two more <h3> blocks when they are.
     contact: {
       title: 'CONTACT US',
       html: '<h2>Contact DigiArtz</h2>' +

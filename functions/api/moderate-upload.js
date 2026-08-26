@@ -1,14 +1,8 @@
-// ai moderation gate
-// response: allowed, rating, reason, audit
-// env: GEMINI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY
-// optional: GEMINI_MODEL
-
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 6;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MIN_CONFIDENCE = 0.6;
 
-// category codes
 const CATEGORIES = [
   'ARTWORK_OK','SELFIE','MIRROR_SELFIE','FAMILY_PHOTO','GROUP_PHOTO','COUPLE_PHOTO',
   'BABY_PHOTO','PET_PHOTO','CASUAL_PHOTO','TRAVEL_PHOTO','FOOD_PHOTO','DRINK_PHOTO',
@@ -77,7 +71,6 @@ const MESSAGES = {
   UNCLEAR:           'We could not confirm this image as original artwork. Please upload a clearer artwork image.'
 };
 
-// resource mode judges the preview
 const RESOURCE_CATEGORIES = [
   'RESOURCE_OK','AI_GENERATED','PERSON_PHOTO','NSFW_CONTENT','GORE_CONTENT',
   'TEXT_ONLY','SCREENSHOT','DOCUMENT','SPAM_IMAGE','BLANK_IMAGE','LOW_QUALITY',
@@ -203,7 +196,6 @@ Decision Rules
 
 Return your verdict as JSON with fields: allow, artwork, rating, quality, category (one code from the list), reason (short internal note), confidence (0 to 1).`;
 
-// public values, env can override
 const SB_URL_FALLBACK = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
 const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
 
@@ -212,12 +204,10 @@ export async function onRequestPost(context) {
   const SB_URL = env.SUPABASE_URL || SB_URL_FALLBACK;
   const SB_ANON = env.SUPABASE_ANON_KEY || SB_ANON_FALLBACK;
   try {
-    // fail loudly if the secret is missing
     if (!env.GEMINI_API_KEY) {
       return json({ error: 'Server not configured: GEMINI_API_KEY missing in Cloudflare environment variables.' }, 500);
     }
 
-    // auth, verify the jwt
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
     if (!token) return json({ error: 'Not signed in.' }, 401);
 
@@ -228,7 +218,6 @@ export async function onRequestPost(context) {
     const user = await userRes.json();
     if (!user.id) return json({ error: 'Invalid session.' }, 401);
 
-    // collect files
     const form = await request.formData();
     const files = form.getAll('files').filter(f => f instanceof File);
     if (files.length === 0) return json({ error: 'No images received.' }, 400);
@@ -240,8 +229,6 @@ export async function onRequestPost(context) {
       if (f.size > MAX_BYTES) return json({ error: 'Each image must be under 10 MB.' }, 400);
     }
 
-    // pick the moderator
-    // absent means artwork
     const modeRaw = String(form.get('mode') || 'artwork').toLowerCase();
     const isResource = (modeRaw === 'resource' || modeRaw === 'marketplace');
     const cfg = isResource
@@ -249,15 +236,12 @@ export async function onRequestPost(context) {
       : { resource: false, prompt: MODERATION_PROMPT,  categories: CATEGORIES };
     const MSG = isResource ? RESOURCE_MESSAGES : MESSAGES;
 
-    // moderate every image
     const verdicts = await Promise.all(files.map(async f => {
       const b64 = toBase64(await f.arrayBuffer());
       return moderateWithGemini(env, b64, f.type, cfg);
     }));
 
-    // combine, worst rating wins
     let allowed = true;
-    // approved code per mode
     let code = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
     let reason = 'Approved.';
     let rating = 'SAFE';
@@ -266,8 +250,6 @@ export async function onRequestPost(context) {
 
     for (let i = 0; i < verdicts.length; i++) {
       const v = verdicts[i];
-      // resources must be safe, non ai
-      // artwork may be safe or mature
       const pass = isResource
         ? ( v.ok && v.allow === true && v.resource === true &&
             v.ai_generated !== true && v.quality === 'GOOD' &&
@@ -281,7 +263,6 @@ export async function onRequestPost(context) {
       if (!pass && allowed) {
         allowed = false;
         failIndex = i;
-        // canonical message, not the model's
         const okCode = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
         code = (v.ok && v.category && v.category !== okCode) ? v.category : 'UNCLEAR';
         if (isResource) {
@@ -304,12 +285,11 @@ export async function onRequestPost(context) {
         rating: v.rating || null,
         quality: v.quality || null,
         category: v.category || null,
-        reason: v.reason || null,          // model's internal note — admin/audit only
+        reason: v.reason || null,
         confidence: v.confidence ?? null
       });
     }
 
-    // log every decision
     context.waitUntil(fetch(`${SB_URL}/rest/v1/moderation_logs`, {
       method: 'POST',
       headers: {
@@ -328,7 +308,6 @@ export async function onRequestPost(context) {
       })
     }).catch(() => {}));
 
-    // signed approval ticket
     let modToken = null;
     if (allowed && env.MOD_SIGNING_SECRET) {
       try { modToken = await signApproval(env.MOD_SIGNING_SECRET, user.id); } catch { modToken = null; }
@@ -337,10 +316,10 @@ export async function onRequestPost(context) {
     return json({
       allowed,
       rating,
-      code,            // admin-facing reason code, e.g. 'SELFIE'
-      failIndex,       // which image failed (-1 when approved)
-      reason,          // canonical user-facing message
-      token: modToken, // server-signed approval, verified DB-side (may be null)
+      code,
+      failIndex,
+      reason,
+      token: modToken,
       audit: {
         model: env.GEMINI_MODEL || 'gemini-flash-latest',
         checked_at: new Date().toISOString(),
@@ -353,13 +332,11 @@ export async function onRequestPost(context) {
   }
 }
 
-// gemini vision, fail closed
 async function moderateWithGemini(env, b64, mimeType, cfg) {
   cfg = cfg || { resource: false, prompt: MODERATION_PROMPT, categories: CATEGORIES };
   const model = env.GEMINI_MODEL || 'gemini-flash-latest';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
 
-  // schema depends on the mode
   const props = cfg.resource
     ? {
         allow: { type: 'BOOLEAN' },
@@ -396,7 +373,6 @@ async function moderateWithGemini(env, b64, mimeType, cfg) {
       responseMimeType: 'application/json',
       responseSchema: { type: 'OBJECT', properties: props, required: required }
     },
-    // classify mature art, do not refuse
     safetySettings: [
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
@@ -445,10 +421,8 @@ async function moderateWithGemini(env, b64, mimeType, cfg) {
   }
 }
 
-// mint a single use ticket
-// format: exp.jti.hexsig
 async function signApproval(secret, uid) {
-  const exp = Math.floor(Date.now() / 1000) + 600;   // valid 10 minutes
+  const exp = Math.floor(Date.now() / 1000) + 600;
   const jti = crypto.randomUUID();
   const msg = `${uid}.${exp}.${jti}`;
   const key = await crypto.subtle.importKey(

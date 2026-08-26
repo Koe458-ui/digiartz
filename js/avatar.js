@@ -1,5 +1,4 @@
-// avatar and banner upload
-  var PF_AVB_COOLDOWN_MS = 7*24*60*60*1000; // 1 week
+  var PF_AVB_COOLDOWN_MS = 7*24*60*60*1000;
   var PF_AVB_DIMS = { avatar:{w:480,h:480}, banner:{w:1600,h:500} };
 
   function pfRenderAvatarBanner(){
@@ -26,7 +25,6 @@
     }
   }
 
-  // cooldown left in ms
   function pfAvBCooldownLeft(updatedAt){
     if(!updatedAt) return 0;
     var elapsed = Date.now() - new Date(updatedAt).getTime();
@@ -95,7 +93,6 @@
       var p = e.touches ? e.touches[0] : e;
       pfAvBCrop.sx = p.clientX; pfAvBCrop.sy = p.clientY;
       pfAvBCrop.ox = pfAvBCrop.x; pfAvBCrop.oy = pfAvBCrop.y;
-      // drag scoped listeners
       document.addEventListener('mousemove', move);
       document.addEventListener('touchmove', move, {passive:false});
       document.addEventListener('mouseup', up);
@@ -180,25 +177,15 @@
       var{error:de}=await sb.from('profiles').update(updates).eq('id',currentUser.id);
       if(de) throw de;
 
-      // media bookkeeping. profile_image and profile_banner_image are unique on
-      // user_id and so are upserted: one row per person, replaced on re-crop,
-      // rather than a pile of rows for every avatar they have ever had.
       await dzRecordUpload({
         imageKind: (kind==='banner' ? 'banner' : 'avatar'),
         fileKind: null, url: publicUrl, path: path, file: blob
       });
 
-      // delete old file after commit
       if(oldPath) await s3Delete(BUCKET,oldPath);
-      /* The new object is at a path carrying this moment's timestamp, so it is
-         a different URL and nothing cached under the old one can be served in
-         its place — which is why avatars can be held for a week without an
-         update ever being missed. What does need dropping is the profile ROW,
-         which still carries the old url, in this tab and on disk. */
       if(window.dzCache){
         try{ window.dzCache.invalidateProfile(currentUser.id, pf.profile && pf.profile.username); }catch(e){}
       }
-      // and the old object, on its way out of storage, out of the image caches
       if(oldPath && window.dzCache && pf.profile && pf.profile[kind+'_url']){
         try{ window.dzCache.purgeImages([pf.profile[kind+'_url']]); }catch(e){}
       }
@@ -208,11 +195,9 @@
         pfMediaCache[pf.profile.username] = { avatar_url: pf.profile.avatar_url||null, banner_url: pf.profile.banner_url||null };
       }
       if(kind==='avatar'){
-        // update avatar chips app wide
         currentUserAvatarUrl = publicUrl;
         avAuthorProfileCache[currentUser.id] = { username: pf.profile.username, avatar_url: publicUrl };
         syncAuthBtn();
-        // refresh chat author map
         if(typeof cpAuthors !== 'undefined' && cpAuthors){
           cpAuthors[String(currentUser.id)] = {
             name  : (pf.profile.display_name || pf.profile.username || 'User'),
@@ -223,7 +208,6 @@
       }
       showToast((kind==='banner'?'Banner':'Profile photo')+' updated');
     }catch(err){ console.error('Error: '+err.message);
-      // merit gate error
       if(window.meritDenied && window.meritDenied(err, 'upload')) return;
       showToast(safeErr(err, 'Upload failed \u2014 try again')); }
     finally{
@@ -234,4 +218,3 @@
 
   let tT;
   function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000);}
-

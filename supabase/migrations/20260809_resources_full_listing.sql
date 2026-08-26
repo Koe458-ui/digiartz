@@ -1,21 +1,3 @@
--- A resource says what is in the package and what may be done with it
---
--- The composer asked for a file, a preview, a title, a description, a
--- category and a license. What kind of asset it is, what software opens it,
--- what is actually inside the zip, whether it may be sold on, and how to
--- install it were all left to one description box.
---
--- The last of the four, and it carries the same two ideas as the other three.
--- Floors and ceilings are repeated here as constraints because a form is a
--- courtesy and a constraint is a guarantee. And the line between what a
--- person types and what the system works out is drawn on purpose: file
--- format, file size, how many files are inside the package, the preview's
--- dimensions, the author, the dates and the download count are all derived
--- and none of them has a box on the form.
---
--- Everything added here is nullable or defaulted, so every resource already
--- in the table stays valid and reads exactly as it did.
-
 alter table public.resources
   add column if not exists summary              text,
   add column if not exists resource_type        text,
@@ -32,15 +14,9 @@ alter table public.resources
   add column if not exists safety_notes         text,
   add column if not exists visibility           text not null default 'published',
   add column if not exists featured             boolean not null default false,
-  -- the derived half: read off the upload, never typed
   add column if not exists file_count           integer,
   add column if not exists dimensions           text;
 
--- ---- bounds ---------------------------------------------------------------
--- New columns are checked outright — they are null or empty on every existing
--- row. title and description are tightened NOT VALID and left unvalidated: a
--- NOT VALID check is still enforced on every INSERT and UPDATE from here on,
--- and what it skips is the sweep over rows written under the old bounds.
 do $$
 declare c record;
 begin
@@ -65,11 +41,7 @@ begin
       ('res_tags_n',           'cardinality(tags) <= 10', true),
       ('res_tags_len',         'public.arr_items_within(tags, 1, 30)', true),
       ('res_category_n',       'cardinality(category) <= 5', true),
-      -- The signer already refuses anything over 200MB before a byte is
-      -- stored. This is the same ceiling written where the row lives, so a
-      -- row cannot claim a size the storage layer would never have accepted.
       ('res_file_size_rng',    'file_size >= 0 and file_size <= 209715200', false),
-      -- tightened on existing columns: enforced from here on, not backfilled
       ('res_title_len',        'char_length(btrim(title)) between 3 and 100', false),
       ('res_description_len',  'description is null or char_length(btrim(description)) between 50 and 5000', false)
     ) as t(name, expr, do_validate)
@@ -84,12 +56,8 @@ begin
   end loop;
 end $$;
 
--- the old 2–120 title rule is superseded by res_title_len
 alter table public.resources drop constraint if exists resources_title_check;
 
--- ---- grants ---------------------------------------------------------------
--- Column level, like every other table here. Nothing on a resource is
--- private — a resource is a thing shared on purpose.
 grant select (
   summary, resource_type, subcategory, commercial_use, attribution_required,
   modification_allowed, compatible_software, compatible_versions,
@@ -111,9 +79,5 @@ grant update (
   visibility, featured, file_count, dimensions
 ) on public.resources to anon, authenticated;
 
--- download_count stays the system's: readable by everyone, and already not
--- writable through the client.
-
--- the grid only shows published resources, and sorts featured first
 create index if not exists resources_feed_idx
   on public.resources (status, visibility, featured desc, created_at desc);

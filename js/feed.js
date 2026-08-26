@@ -1,22 +1,8 @@
-// hero feed boards
-  // The rail under the hero stands where the search bar used to. Every board
-  // reads the same set of approved artworks and only reorders it, so nothing
-  // here fetches: switching boards is instant and costs no request.
-  //
-  //   trending  hour by hour, the gallery's own order
-  //   new       newest upload first
-  //   weekly    points, fading a step each whole week
-  //   monthly   points, halving each whole month
-  //   artists   the trending order read back as the people behind it
-  //   logs      next step
-  //
-  // These live on the hero page only. The gallery keeps its own filters.
   var FEED_CAP = 200;
   var feedTab  = 'trending';
 
   function feedIsArtists(){ return feedTab === 'artists'; }
 
-  // The board an id names, or trending for anything unrecognised.
   function feedSort(list){
     if(feedTab === 'new')     return sortByNewest(list);
     if(feedTab === 'weekly')  return sortByWeekly(list);
@@ -24,10 +10,6 @@
     return sortByTrending(list);
   }
 
-  // One card per artist, in the order their work appears on the trending
-  // board — the first card is whoever made the first thumbnail, the second
-  // the next artist after them. A run of uploads by one person takes one
-  // slot, not the whole row.
   function feedArtistsOf(list){
     var out = [], seen = {};
     var src = sortByTrending((list || []).slice());
@@ -40,15 +22,12 @@
     return out;
   }
 
-  // dzArtistCache is the same store the hover chips fill, so a profile
-  // fetched for one is already paid for by the other.
   function feedFetchArtists(ids, done){
     var missing = ids.filter(function(u){ return dzArtistCache[u] === undefined; });
     if(!missing.length || !sb){ done(); return; }
     sb.from('profiles').select('id,username,display_name,avatar_url,banner_url,bio').in('id', missing)
       .then(function(res){
         ((res && res.data) || []).forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });
-        // a profile that came back empty is cached as missing, not retried
         missing.forEach(function(u){ if(dzArtistCache[u] === undefined) dzArtistCache[u] = null; });
         done();
       }, function(){ done(); });
@@ -85,16 +64,6 @@
     if(nm) nm.textContent = name;
     if(un) un.textContent = user ? '@' + user : '';
 
-    // The banner sits behind the card. It is drawn for a desktop-wide strip,
-    // so the card takes the square out of the middle of it and holds it at
-    // 60% — a tint of the artist's own page, not a picture competing with
-    // their name.
-    //
-    // Asked for at 600, which is the generated webp size this needs: only
-    // the middle third of a banner survives the square crop, so a ~200px
-    // card is fed by a ~600px wide source. imgResize hands back the nearest
-    // size that exists, so this is t600 once the backfill has run and
-    // v1000 until then — never the full-size file.
     var bg = card.querySelector('.atBg');
     if(bg && p && p.banner_url){
       bg.style.backgroundImage = 'url("' + imgResize(p.banner_url, 600) + '")';
@@ -118,7 +87,6 @@
     }
 
     card.classList.add('atReady');
-    // the whole card opens the profile, so the label needs no handler of its own
     if(user){
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
@@ -130,14 +98,10 @@
         openProfileByUsername(user, true);
       };
     } else {
-      // no username to route to — the card stays as a face, not a link
       card.classList.add('atDead');
     }
   }
 
-  // Fill in whatever the batch just appended is still missing. The artist
-  // cards and the log lines are keyed on the same uid, so one fetch paints
-  // whichever of them the batch put on screen.
   function paintPeopleBatch(uids){
     feedFetchArtists(uids, function(){
       var grid = document.getElementById('awGrid');
@@ -152,10 +116,6 @@
     });
   }
 
-  // Logs — who uploaded what, newest first, across everything a member can
-  // publish. Capped at 200 like the rest, and since that 200 is the newest
-  // of everything, each line is inside its own section's newest 200 too:
-  // whatever the log shows can always be opened where it lives.
   var LOG_KINDS = {
     artworks:    { noun:'an artwork',          tag:'Artwork'     },
     marketplace: { noun:'a marketplace item',  tag:'Marketplace', table:'marketplace_items' },
@@ -175,7 +135,6 @@
     logFailed = false;
 
     var out = [];
-    // the artworks are already in hand from the home load
     (typeof images !== 'undefined' ? images : []).forEach(function(a){
       out.push({ kind:'artworks', id:a.id, user_id:a.user_id,
                  title:a.name, cats:catList(a.category), at:a.created_at });
@@ -192,14 +151,11 @@
         if(tY !== tX) return tY - tX;
         return String(x.id) < String(y.id) ? 1 : -1;
       }).slice(0, FEED_CAP);
-      // the reader may have moved on while this was in the air
       if(feedTab === 'logs') renderAwGrid(awArtworksCache, true);
     }
     if(!sb){ logFailed = true; left = 1; settle(); return; }
 
     secs.forEach(function(sec){
-      // only the columns a line needs — the full row is fetched by the
-      // section itself if the reader opens one
       sb.from(LOG_KINDS[sec].table).select('id,user_id,title,category,created_at')
         .eq('status','approved').order('created_at',{ascending:false}).limit(FEED_CAP)
         .then(function(res){
@@ -221,14 +177,10 @@
   function logCatLabel(e){
     var slug = e.cats && e.cats[0];
     if(!slug) return '';
-    // the tag rail used to own this lookup; the log is the last caller left
     if(e.kind === 'artworks') return typeof catLabel === 'function' ? catLabel(slug) : slug;
     return typeof window.dzSecLabel === 'function' ? window.dzSecLabel(e.kind, slug) : slug;
   }
 
-  // An artwork opens in the lightbox. The other three live in the gallery,
-  // so the section is opened first and the row's own view follows once that
-  // section's rows have landed.
   function logOpen(e){
     if(e.kind === 'artworks'){
       if(typeof openArtworkById === 'function') openArtworkById(e.id, true);
@@ -241,7 +193,7 @@
       for(var i = 0; i < rows.length; i++){
         if(String(rows[i].id) === String(e.id)){ window.dzOpenView(e.kind, e.id); return; }
       }
-      if(++tries > 40) return;   // the section is open either way
+      if(++tries > 40) return;
       setTimeout(wait, 120);
     })();
   }
@@ -266,8 +218,6 @@
       '</span>';
 
     row.setAttribute('aria-label', 'Open ' + (e.title || 'this upload'));
-    // the chips are labels, not controls — a tap on one names the kind and
-    // the category and does nothing else, so it does not open the upload
     row.onclick = function(ev){
       if(ev.target && ev.target.closest && ev.target.closest('.lgMeta')) return;
       logOpen(e);
@@ -319,8 +269,6 @@
     return 'NO ARTWORK YET';
   }
 
-  // reset drops the reader back to the top of a board; without it the grid
-  // comes back at the depth it was left at, which is what a refresh wants
   function renderAwGrid(list, reset){
     var grid  = document.getElementById('awGrid');
     var empty = document.getElementById('awEmpty');
@@ -328,9 +276,7 @@
 
     var src = filterHidden((list || []).slice());
     if(feedTab === 'logs'){
-      // one load per session, on the first visit to the board
       if(logRows === null && !logBusy) logLoad();
-      // hidden artworks are hidden here too; the ids only ever match those
       awRList = filterHidden(logRows || []);
     } else if(feedIsArtists()){
       awRList = feedArtistsOf(src);
@@ -373,7 +319,6 @@
       if(artists){ frag.appendChild(buildArtistCard(item)); uid = item; }
       else if(logs){ frag.appendChild(buildLogRow(item)); uid = item.user_id; }
       else frag.appendChild(buildAwCard(item));
-      // one fetch per batch, not per card, and never for a face already held
       if(uid && dzArtistCache[uid] === undefined && wanted.indexOf(uid) === -1) wanted.push(uid);
     }
     awRShown = end;
@@ -387,20 +332,13 @@
     }
   }
 
-  // home feed
   window.rebuildGalCarousels = function(artworks){
     awArtworksCache = artworks || [];
     renderAwGrid(awArtworksCache);
   };
 
-  // First paint. renderHome only calls through if this file has already run,
-  // so on the rare load where the artworks arrive first — every script warm
-  // in the cache, a quick answer from the backend — it hands over what it
-  // found rather than clearing the grid and waiting for a render that has
-  // already been and gone.
   window.rebuildGalCarousels(typeof images !== 'undefined' ? images : []);
 
-  // rail
   function ftSelect(id){
     if(!id || id === feedTab) return;
     var rail = document.getElementById('ftRail');
@@ -420,9 +358,6 @@
     if(grid) grid.setAttribute('aria-labelledby', picked.id);
     ftReveal(picked);
     renderAwGrid(awArtworksCache, true);
-    // the swap is a cut otherwise: one board's grid replaced by another's
-    // between two frames. Restarted by hand because re-adding a class the
-    // element already carries does not replay the animation.
     if(grid){
       grid.classList.remove('awSwap');
       void grid.offsetWidth;
@@ -430,8 +365,6 @@
     }
   }
 
-  // A board picked at the far end of the rail pulls itself into the middle,
-  // so the one either side of it is reachable without a second swipe.
   function ftReveal(btn){
     var rail = document.getElementById('ftRail');
     if(!rail || !btn) return;
@@ -449,7 +382,6 @@
       var btn = e.target.closest ? e.target.closest('.ftTab') : null;
       if(btn) ftSelect(btn.getAttribute('data-feed'));
     });
-    // arrow keys walk the rail, the way a tablist is expected to
     rail.addEventListener('keydown', function(e){
       var step = e.key === 'ArrowRight' ? 1 : (e.key === 'ArrowLeft' ? -1 : 0);
       if(!step) return;

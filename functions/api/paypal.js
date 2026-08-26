@@ -1,42 +1,14 @@
-// paypal checkout backend
-//
-// Sits alongside functions/api/rzp.js and answers the same three questions
-// with the same shapes: make me a subscription order, make me a marketplace
-// order, and settle one. Both write the same public.payments ledger, tagged by
-// the provider column, so everything downstream — dz_market_owns, the
-// subscription tier on profiles — reads one table and never learns which
-// checkout the money came through.
-//
-// Environment (Cloudflare Pages project variables, never config.js):
-//   PAYPAL_CLIENT_ID       public half of the REST app credentials
-//   PAYPAL_CLIENT_SECRET   secret half — a leak lets anyone take payments as us
-//   PAYPAL_ENV             'sandbox' to point at PayPal's test bank, anything
-//                          else (or unset) means live
-// plus SB_URL, SB_KEY and SB_SERVICE_KEY, exactly as rzp.js reads them.
-
-import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, ledger } from '../lib/sb.js';
+import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService } from '../lib/sb.js';
 import { fromPriceCents, toValue, minCharge, ppFee, showAmount } from '../lib/money.js';
 import {
-  sbService, memberCurrency, planPrice, supportLimits, currentPlan, resolvePromo,
-  PLAN_TIERS, TIER_RANK, PLAN_LABEL, applySubscription
+  memberCurrency, planPrice, supportLimits, currentPlan, resolvePromo,
+  PLAN_TIERS, TIER_RANK, PLAN_LABEL, applySubscription, recordEarning
 } from '../lib/billing.js';
 
-// PayPal quotes amounts as decimal strings, and rejects a fractional part on a
-// currency that has none. These are the zero-decimal currencies PayPal lists.
-// The smallest charge a gateway will accept, per currency, in minor units.
-// A 90% discount on a cheap plan in a cheap currency can land under this, and
-// a gateway refusing the order is a checkout that fails with a message the
-// buyer cannot act on. The floor is roughly one major unit — a rupee, a cent,
-// a yen — which is what both providers document as their minimum.
-// The marketplace composer offers USD, EUR, GBP, INR and JPY. PayPal settles
-// four of those; INR is not a currency it will take here, so an INR listing
-// stays a Razorpay purchase and says so rather than failing inside the popup.
 const SUPPORTED = new Set(['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF',
   'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'NZD', 'SGD', 'HKD', 'MXN',
   'BRL', 'ILS', 'PHP', 'THB', 'TWD']);
 
-// TWO UNITS, AND ONLY ONE OF THEM NEEDS CONVERTING. See the long note in
-// rzp.js: payments.amount, marketplace_earnings, support_limits and
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
 
@@ -45,12 +17,7 @@ const apiBase = (env) =>
     ? 'https://api-m.sandbox.paypal.com'
     : 'https://api-m.paypal.com';
 
-// paypal rest
-//
-// The access token is good for hours and this module lives as long as the
-// isolate does, so one token serves many requests. Held per client id so a
-// credential swap can never be answered with the old token.
-let tokenCache = null;   // { key, token, expires }
+let tokenCache = null;
 
 async function ppToken(env) {
   const key = apiBase(env) + '|' + env.PAYPAL_CLIENT_ID;
@@ -69,7 +36,6 @@ async function ppToken(env) {
   if (!res.ok || !body.access_token)
     throw new Error('Payment provider rejected our credentials');
 
-  // retire the token a minute early rather than mid-request
   tokenCache = {
     key,
     token: body.access_token,
@@ -102,61 +68,6 @@ async function pp(env, path, init = {}) {
   return body;
 }
 
-// The commission, the TDS, the GST TCS and the settlement date are worked out
-// by dz_earning_apply_deductions() in Postgres, from one config row, not here
-// and not in the three other files that also write earnings. What is sent from
-// this side is only what this side knows: what the buyer paid, and what PayPal
-// took out of it before it reached us.
-
-async function recordEarning(env, row, prov) {
-  if (row.kind !== 'marketplace' || !row.item_id) return;
-  const items = await sbService(env,
-    '/marketplace_items?id=eq.' + row.item_id + '&select=user_id&limit=1');
-  const sellerId = items && items[0] && items[0].user_id;
-  if (!sellerId || sellerId === row.user_id) return;
-
-  // one earning per payment; a replay hits the unique constraint and stops
-  const made = await sbService(env, '/marketplace_earnings', {
-    method: 'POST',
-    headers: { prefer: 'return=representation,resolution=ignore-duplicates' },
-    body: JSON.stringify({
-      payment_id: row.id, item_id: row.item_id,
-      seller_id: sellerId, buyer_id: row.user_id,
-      gross_amount: Number(row.amount) || 0,
-      gateway_fee: (prov && prov.fee) || 0,
-      currency: row.currency,
-      // Which promo code, if any, the buyer arrived with. Nothing here does
-      // anything with it: dz_partner_credit_market() reads it off the inserted
-      // row and takes the partner's share out of the platform's commission,
-      // for the same reason the deductions are computed there rather than in
-      // four checkout paths. A marketplace code is attribution only — it does
-      // not change the price, and it does not change what the seller keeps.
-      promo_code_id: row.promo_code_id || null,
-      provider: 'paypal',
-      status: 'available',
-    }),
-  }).catch(() => null);
-
-  // Only a real insert reaches the ledger — this runs on the browser's capture
-  // AND on the webhook for the same sale, and an append-only record that got
-  // two credits for one payment would put the seller's own withdrawals into
-  // permanent reconciliation failure.
-  const earning = Array.isArray(made) && made[0];
-  if (!earning) return;
-
-  await ledger(env, {
-    p_user: sellerId, p_type: 'sale_credit', p_direction: 'credit',
-    p_amount: Number(earning.net_amount) || 0, p_currency: row.currency,
-    p_source: 'paypal',
-    p_provider_txn: (prov && prov.txn) || null,
-    p_provider_amount: (prov && prov.amount) || null,
-    p_provider_currency: (prov && prov.currency) || row.currency,
-    p_ref_table: 'payments', p_ref_id: row.id,
-  });
-}
-
-// create order and ledger row
-
 const PROMO_PLAN = 'max';
 
 async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label, promoId }) {
@@ -173,25 +84,19 @@ async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label
       }],
       application_context: {
         brand_name: 'DigiArtz',
-        shipping_preference: 'NO_SHIPPING',   // nothing here is posted to an address
+        shipping_preference: 'NO_SHIPPING',
         user_action: 'PAY_NOW',
       },
     }),
   });
   if (!order.id) throw new Error('Payment provider error');
 
-  // The ledger row is written before the buyer ever sees the popup, and it is
-  // what capture reads back. Nothing the browser sends is trusted at capture
-  // time beyond the order id.
   await sbService(env, '/payments', {
     method: 'POST',
     body: JSON.stringify({
       user_id: user.id, kind, plan: plan || null, item_id: itemId || null,
       amount: minor, currency, provider: 'paypal',
-      // Set at checkout and never afterwards. The commission triggers read it
-      // at settlement; nothing else in this file touches it again.
       promo_code_id: promoId || null,
-      // the title as it stood at checkout, so a purchase outlives its listing
       order_label: label ? String(label).slice(0, 200) : null,
       pp_order_id: order.id, status: 'created',
     }),
@@ -205,15 +110,6 @@ async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label
   });
 }
 
-// availability probe
-//
-// The browser asks who can take money before it draws a chooser, so a provider
-// with no credentials bound is simply not offered.
-//
-// Signed in only, and it answers with a bare boolean. Whether this site takes
-// PayPal is not something an anonymous scraper gets told, and the client id is
-// not handed out here at all — it comes back with an order, which is already
-// behind the same sign-in, so nothing about payments is reachable in public.
 export async function onRequestGet({ env, request }) {
   if (!(await sbUser(env, request))) return json({ error: 'Sign in required' }, 401);
   const ready = !!(env.PAYPAL_CLIENT_ID && env.PAYPAL_CLIENT_SECRET &&
@@ -221,7 +117,6 @@ export async function onRequestGet({ env, request }) {
   return json({ enabled: ready });
 }
 
-// entry point
 export async function onRequestPost({ env, request }) {
   const missing = [
     ['PAYPAL_CLIENT_ID', env.PAYPAL_CLIENT_ID],
@@ -235,7 +130,6 @@ export async function onRequestPost({ env, request }) {
   const user = await sbUser(env, request);
   if (!user) return json({ error: 'Sign in required' }, 401);
 
-  // thirty checkout calls a minute is far past any real buyer
   if (!(await underLimit(env, 'pp:' + user.id, 30, 60)))
     return json({ error: 'Too many attempts — wait a moment' }, 429);
 
@@ -243,14 +137,11 @@ export async function onRequestPost({ env, request }) {
   try { body = await request.json(); } catch { return json({ error: 'Bad request' }, 400); }
 
   try {
-    // subscriptions
     if (body.action === 'sub-order') {
       const key = String(body.plan || '');
       if (!(key in PLAN_TIERS)) return json({ error: 'Unknown plan' }, 400);
 
       const currency = await memberCurrency(env, user.id);
-      // A member transacting in a currency PayPal will not settle is sent to
-      // the other checkout rather than silently charged in dollars.
       if (!SUPPORTED.has(currency))
         return json({ error: 'PayPal cannot take ' + currency + ' \u2014 use the other checkout' }, 400);
 
@@ -266,11 +157,6 @@ export async function onRequestPost({ env, request }) {
         amount = await planPrice(env, key, currency);
         if (!amount) return json({ error: 'That plan is not priced in ' + currency }, 400);
 
-        // Refused BEFORE the order exists, which is the only place a downgrade
-        // can be refused without taking someone's money for it. Buying Lite
-        // while Max is still running used to drop the quota from twenty
-        // downloads to ten on the spot and discard the remaining Max days;
-        // buying the same plan again is fine and extends it.
         const cur = await currentPlan(env, user.id);
         if (cur.tier && (TIER_RANK[cur.tier] || 0) > (TIER_RANK[key] || 0)) {
           return json({ error: 'Your ' + cur.tier + ' plan runs until ' +
@@ -280,8 +166,6 @@ export async function onRequestPost({ env, request }) {
         }
       }
 
-      // A promo code, if one was typed. Applied after the downgrade check, so
-      // a discounted order still cannot take a plan away from somebody.
       const promo = await resolvePromo(env, request, body.promo, 'subscription');
       if (promo.error) return json({ error: promo.error }, 400);
       if (promo.id && key !== PROMO_PLAN)
@@ -291,15 +175,12 @@ export async function onRequestPost({ env, request }) {
         amount = Math.max(amount, minCharge(currency));
       }
 
-      // A plan price and a support amount are both already in the smallest
-      // unit, so they go through untouched.
       return await makeOrder(env, user, {
         minor: amount, currency, promoId: promo.id,
         kind: 'subscription', plan: key, label: PLAN_LABEL[key],
       });
     }
 
-    // marketplace
     if (body.action === 'market-order') {
       const itemId = String(body.itemId || '');
       if (!/^[0-9a-f-]{36}$/.test(itemId)) return json({ error: 'Bad item id' }, 400);
@@ -316,16 +197,11 @@ export async function onRequestPost({ env, request }) {
       if (!SUPPORTED.has(currency))
         return json({ error: 'PayPal cannot take ' + currency + ' — use the other checkout' }, 400);
 
-      // already bought, skip checkout — provider does not matter here
       const paid = await sbService(env,
         '/payments?item_id=eq.' + itemId + '&user_id=eq.' + user.id +
         '&status=eq.paid&select=id&limit=1');
       if (paid && paid.length) return json({ owned: true });
 
-      // A code on a marketplace purchase is attribution, not a discount — the
-      // buyer pays the listed price and the partner's share comes out of the
-      // platform's commission. dz_promo_resolve() returns discount_bps 0 for
-      // this kind, so there is nothing to apply; only the id is carried.
       const promo = await resolvePromo(env, request, body.promo, 'marketplace');
       if (promo.error) return json({ error: promo.error }, 400);
 
@@ -337,13 +213,10 @@ export async function onRequestPost({ env, request }) {
       });
     }
 
-    // capture and fulfill
     if (body.action === 'capture') {
       const orderId = String(body.orderId || '');
       if (!/^[A-Z0-9]{6,64}$/i.test(orderId)) return json({ error: 'Bad request' }, 400);
 
-      // our own row is the source of truth for who is paying for what. Scoped
-      // to the caller, so someone else's order id buys them nothing.
       const rows = await sbService(env,
         '/payments?pp_order_id=eq.' + encodeURIComponent(orderId) +
         '&user_id=eq.' + user.id +
@@ -351,8 +224,6 @@ export async function onRequestPost({ env, request }) {
       const row = rows && rows[0];
       if (!row) return json({ error: 'Order does not belong to you' }, 403);
 
-      // Capture is the settling call, and PayPal refuses a second one. An
-      // already-captured order is a retry — read it back instead of failing.
       let order;
       try {
         order = await pp(env, '/v2/checkout/orders/' + orderId + '/capture', {
@@ -371,14 +242,11 @@ export async function onRequestPost({ env, request }) {
       if (order.status !== 'COMPLETED' || capture.status !== 'COMPLETED')
         return json({ error: 'Payment not completed yet' }, 400);
 
-      // what PayPal says it took must be what we asked for
       const paidAmount = capture.amount || {};
       if (paidAmount.currency_code !== row.currency ||
           paidAmount.value !== toValue(row.amount, row.currency))
         return json({ error: 'Payment amount does not match the order' }, 400);
 
-      // block replayed captures: only the created -> paid transition returns a
-      // row, so a second call through here fulfils nothing twice
       const paidRows = await sbService(env, '/payments?id=eq.' + row.id + '&status=eq.created', {
         method: 'PATCH',
         body: JSON.stringify({
@@ -389,9 +257,7 @@ export async function onRequestPost({ env, request }) {
       });
       const firstCapture = Array.isArray(paidRows) && paidRows.length > 0;
 
-      // Recorded regardless of who got here first — the webhook may already
-      // have settled the row, and the earning is idempotent either way.
-      await recordEarning(env, row, {
+      await recordEarning(env, 'paypal', row, {
         txn: capture.id,
         amount: Math.round(parseFloat(paidAmount.value) * 100),
         currency: paidAmount.currency_code,
@@ -402,8 +268,6 @@ export async function onRequestPost({ env, request }) {
       if (row.kind === 'subscription') {
         const t = PLAN_TIERS[row.plan];
         if (t) {
-          // What they end up holding, which is not always what they bought —
-          // a month bought under a higher tier extends that tier instead.
           tier = firstCapture ? await applySubscription(env, user.id, t) : t;
         }
       }

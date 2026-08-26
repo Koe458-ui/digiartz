@@ -1,10 +1,8 @@
-// tag preferences and the picker they are chosen in
   var tgAll = [];
   var tgPrefs = new Set();
   var tgLoaded = false;
   var TG_LS = 'dz_tagprefs1';
 
-  // skip hidden categories
   function tgVisible(tag){
     if(!tag) return false;
     return (typeof catHidden === 'function') ? !catHidden(tag) : true;
@@ -82,8 +80,6 @@
       .map(function(c){ return { tag:c.slug, uses:0, kind:'cat' }; });
   }
 
-  /* The chip is the only place a picked tag shows now that the rail has
-     gone, so it carries the dot the filter button uses for the same job. */
   function tgSyncBtn(){
     var btn = document.getElementById('fgTagsBtn');
     if(!btn) return;
@@ -92,14 +88,11 @@
       ? 'Tags — ' + tgPrefs.size + ' picked'
       : 'Tags');
   }
-  // the gallery is the grid the picks reorder — repaint it only while it is
-  // on screen, since opening it paints from scratch anyway
   function tgApply(){
     var fg = document.getElementById('fg');
     if(!fg || !fg.classList.contains('open')) return;
     if(typeof renderFG === 'function'){ try{ renderFG(); }catch(e){} }
   }
-  // read by the gallery's own sort
   window.tgPickedTags = function(){ return tgPrefs; };
 
   function tgModOpen(){

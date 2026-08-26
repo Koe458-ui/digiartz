@@ -1,20 +1,15 @@
-// direct messages
 (function () {
   'use strict';
-  var LINK_RE = /(https?:\/\/|www\.|\S+\.(com|net|org|io|gg|xyz)\b)/i; // mirror of the db check
+  var LINK_RE = /(https?:\/\/|www\.|\S+\.(com|net|org|io|gg|xyz)\b)/i;
   var POLL_MS = 5000, MAX_LEN = 1000;
-  var dmPartner = null;     // open thread partner
+  var dmPartner = null;
   var dmPoll = null, dmSending = false;
-  // message paging
   var dmLimit = 25, DM_LOAD_STEP = 25, dmHasMore = false, dmLoadingOlder = false, dmLastSig = '';
 
   function $ (id) { return document.getElementById(id); }
   function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
   function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
-  function escq (s) { // html escape
-    // String(), not (s || ''): a non-string argument reaches .replace as
-    // itself, and Number has none — the same shape that threw in
-    // js/app-core.js. Every other escaper in this bundle normalises first.
+  function escq (s) {
     return String(s == null ? '' : s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -28,13 +23,11 @@
     if (diff < 10080)return Math.floor(diff / 1440) + 'd';
     return d.toLocaleDateString();
   }
-  // clock time in bubble
   function hhmm (iso) {
     if (!iso) return '';
     try { return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
     catch (e) { return ''; }
   }
-  // date separator label
   function dayChip (d) {
     var now = new Date(), y = new Date(); y.setDate(now.getDate() - 1);
     if (d.toDateString() === now.toDateString()) return 'TODAY';
@@ -43,17 +36,12 @@
     catch (e) { return d.toDateString().toUpperCase(); }
   }
 
-  // friendships
-  // Mirrors the database cap in
-  // supabase/migrations/20260811_community_and_friend_caps.sql. The trigger is
-  // what enforces it; this is here so nobody sends a request that cannot land.
   var FR_MAX_FRIENDS = 200;
-  window.FR_MAX_FRIENDS = FR_MAX_FRIENDS;   // read by the banner in js/community.js
+  window.FR_MAX_FRIENDS = FR_MAX_FRIENDS;
   var frMap = {};
   function frCount (status) {
     return Object.keys(frMap).filter(function (k) { return frMap[k].status === status; }).length;
   }
-  // incoming requests waiting on this member — the header badge
   function frPending () {
     var uid = me() && me().id;
     if (!uid) return 0;
@@ -71,21 +59,11 @@
     toast('You have ' + FR_MAX_FRIENDS + ' friends — the most allowed. Remove one first.');
     return true;
   }
-  /* Friends, conversations and messages are one member's, and the cache
-     service treats them that way: stamped with the member id, refused for
-     anybody else, dropped from the device when they sign out, and never
-     eligible for a shared cache of any kind. What they are NOT is uncached —
-     the friend map decides whether a chat box is even usable, and asking the
-     database for it before the panel can paint is a visible wait every time
-     the panel opens. Thirty seconds fresh, five minutes servable, and every
-     friend change invalidates it outright rather than waiting for either. */
   function dmc () { return window.dzCached ? window.dzCached() : null; }
   function frKey () { var c = dmc(); return c ? c.ukey('friends') : null; }
 
   async function loadFriendships () {
     var c = dmc(), k = frKey();
-    // The saved map goes in place before the query runs, so a panel opening
-    // now has something to gate on rather than treating everyone as a stranger.
     var warm = (c && k) ? c.peek(k, 'user:friends', { any: true }) : null;
     frMap = warm ? warm : {};
     if (!db() || !me()) { frMap = {}; return; }
@@ -95,9 +73,6 @@
         : frFetch());
       frMap = fresh || {};
     } catch (e) {
-      // Leave whatever was warmed in place: a stale friend list is how the
-      // chat panel stays usable on a bad connection. It cannot grant anything
-      // — every send is checked by the database.
       if (!frMap) frMap = {};
     }
   }
@@ -122,25 +97,17 @@
     return f.requester_id === (me() && me().id) ? 'sent' : 'incoming';
   }
   async function refreshAfterFrChange () {
-    /* A request sent, accepted, declined or blocked. The write has already
-       been confirmed by the time this runs, so the cached map is now known to
-       be wrong and is dropped rather than left to expire — the caller is about
-       to repaint, and repainting from a copy taken before the change is how a
-       declined request stays on screen. The conversation list goes with it: a
-       block changes who is in it. */
     var c = dmc();
     if (c && c.invalidateFriends) { try { await c.invalidateFriends(); } catch (e) {} }
     await loadFriendships();
     frPaintBadge();
     if ($('frdPage') && $('frdPage').classList.contains('open')) loadFriendsPage();
     if (dmPartner) dmApplyGate();
-    // update open search boxes
     ['cmSearchInput', 'frdSearchInput'].forEach(function (id) {
       var i = $(id);
       if (i && i.value.trim().length >= 2) i.dispatchEvent(new Event('input'));
     });
   }
-  // what the member sees when the database turns a write down
   function frErr (e, fallback) {
     var m = (e && e.message) || '';
     if (/FR_MAX_FRIENDS/.test(m))  return 'That would go over the ' + FR_MAX_FRIENDS + ' friend limit.';
@@ -171,7 +138,6 @@
     } catch (e) { toast(frErr(e, 'Couldn\u2019t accept — try again')); }
     await refreshAfterFrChange();
   }
-  // delete row cancels or unblocks
   async function frRemove (pid, okMsg) {
     var f = frMap[pid]; if (!f || !db()) return;
     try {
@@ -189,7 +155,6 @@
         var r = await db().from('friendships').update({ status: 'blocked' }).eq('id', f.id);
         if (r.error) throw r.error;
       } else {
-        // block a stranger
         var i = await db().from('friendships').insert({ requester_id: me().id, addressee_id: pid }).select().single();
         if (i.error) throw i.error;
         var u = await db().from('friendships').update({ status: 'blocked' }).eq('id', i.data.id);
@@ -199,7 +164,6 @@
     } catch (e) { toast('Couldn\u2019t block — try again'); }
     await refreshAfterFrChange();
   }
-  // action pill
   function frBtnEl (label, cls, fn) {
     var b = document.createElement('button');
     b.className = 'frBtn' + (cls ? ' ' + cls : '');
@@ -208,9 +172,6 @@
     return b;
   }
 
-  // username search. The community page has one search box in its header
-  // rather than one per pane, so it drives this rather than owning a copy —
-  // js/community.js debounces and calls in.
   async function runSearch (q, box, onOpen) {
     if (!db()) { toast('Backend not configured'); return; }
     var safe = q.replace(/[%_]/g, '\\$&');
@@ -220,10 +181,10 @@
         .ilike('username', '%' + safe + '%')
         .limit(8);
       if (r.error) throw r.error;
-      await loadFriendships(); // fresh button states
+      await loadFriendships();
       var rows = (r.data || []).filter(function (p) {
         if (me() && p.id === me().id) return false;
-        return frState(p.id) !== 'blocked_me'; // hide users who blocked me
+        return frState(p.id) !== 'blocked_me';
       });
       box.innerHTML = '';
       if (!rows.length) {
@@ -234,7 +195,6 @@
     } catch (e) { box.innerHTML = '<div class="dmSearchNote">SEARCH FAILED — TRY AGAIN</div>'; }
   }
 
-  // one row, search and convos
   function userRow (p, isSearch, preview, ts, onOpen) {
     var item = document.createElement('div');
     item.className = 'cmFriendItem';
@@ -264,7 +224,6 @@
     meta.appendChild(name); meta.appendChild(status);
     item.appendChild(av); item.appendChild(meta);
     if (isSearch) {
-      // friends only actions
       var acts = document.createElement('span');
       acts.className = 'frRowBtns';
       if (st === 'none')            acts.appendChild(frBtnEl('ADD FRIEND', '', function () { frSendReq(p.id); }));
@@ -290,7 +249,6 @@
     return item;
   }
 
-  // conversations
   async function fetchPartners () {
     if (!db() || !me()) return [];
     var uid = me().id;
@@ -309,7 +267,6 @@
     });
     return partners;
   }
-  // friend count for drawer
   window.__dmFetchPartners = async function () {
     await loadFriendships();
     return Object.keys(frMap)
@@ -317,8 +274,6 @@
       .map(function (k) { return { id: k }; });
   };
 
-  // One record for the whole list: the partners and the profile rows that go
-  // with them, so painting it needs no second query.
   async function convosFetch () {
     var partners = await fetchPartners();
     if (!partners.length) return { partners: [], profiles: {} };
@@ -348,11 +303,6 @@
     if (!list || !db() || !me()) return;
     var c = dmc(), k = c ? c.ukey('convos') : null;
     try {
-      /* The saved list paints first and the refresh corrects it. This is the
-         one place in chat where a slightly old answer is welcome: the row
-         previews are already only as fresh as the last poll, and an empty
-         drawer that fills in half a second later reads as a bug. The messages
-         themselves are a different matter — see loadThread. */
       if (c && k) {
         await c.warm(k, convosFetch, 'user:convos', convosPaint, convosPaint)
                .then(convosPaint);
@@ -360,8 +310,6 @@
         convosPaint(await convosFetch());
       }
     } catch (e) {
-      // Nothing fresh. Whatever was last saved for THIS member, or the list
-      // stays as it is — never blanked on a failed refresh.
       if (c && k) {
         var old = await c.recall(k, 'user:convos');
         if (old && old.partners && old.partners.length) convosPaint(old);
@@ -369,23 +317,17 @@
     }
   }
 
-  // thread
   function openThread (p) {
     if (!db()) { toast('Backend not configured'); return; }
     if (!me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
     dmPartner = p;
-    // The assistant shares this panel. It gives up its view and not the panel
-    // — zeoClose would shut the panel this thread is about to open.
     if (typeof window.zeoHide === 'function') window.zeoHide();
-    // grid stays mounted behind, the chat panel slides in over it
     var chat = $('dmChatView'), cmChat = $('cmChatView');
     if (cmChat) cmChat.style.display = 'none';
     if (chat) chat.style.display = 'flex';
-    // the dm thread carries its own bar
     var cpBarEl = $('cpBar');   if (cpBarEl) cpBarEl.style.display = 'none';
     var lockEl  = $('cpLockNote'); if (lockEl) lockEl.style.display = 'none';
     if (typeof cmChatPanelOpen === 'function') cmChatPanelOpen();
-    // header becomes dm banner
     if (typeof cmHdrChatMode === 'function') {
       cmHdrChatMode({
         name  : p.username || 'Artist',
@@ -394,24 +336,16 @@
         letter: (p.username || '?').charAt(0).toUpperCase(),
         tap   : function () {
           if (!p.username) return;
-          // back returns to community
           if (typeof openProfileByUsername === 'function') openProfileByUsername(p.username, true);
         }
       });
     }
-    // the bottom nav is left alone — the panel outranks it and covers it
     var res = $('dmResults');   if (res) res.innerHTML = '';
-    // the header search is the one that found this person — close it behind us
     if (typeof window.cmSearchReset === 'function') window.cmSearchReset();
     $('dmBody').innerHTML = '<div class="dmSearchNote">LOADING…</div>';
-    // friend gate. Paint it from the cached friend map first, so the
-    // composer rides in with the panel instead of appearing a round-trip
-    // later; the refresh below corrects it if the cache was wrong. Only
-    // the placeholder shows for someone we have never loaded — guessing
-    // there would flash the wrong bar
     var gEl = $('dmGate'), bEl = document.querySelector('#dmChatView .dmBar');
     if (frMap[p.id]) {
-      dmApplyGate(true); // no focus yet, the panel is still sliding
+      dmApplyGate(true);
     } else {
       if (bEl) bEl.style.display = 'none';
       if (gEl) { gEl.style.display = 'flex'; gEl.innerHTML = '<div class="dmGateTxt">…</div>'; }
@@ -423,29 +357,21 @@
     dmPoll = setInterval(function () {
       if (document.visibilityState === 'visible') loadThread(false);
     }, POLL_MS);
-    // focus after entrance
     setTimeout(function () { var i = $('dmInput'); if (i) i.focus({ preventScroll: true }); }, 340);
   }
   function closeThread () {
     dmPartner = null;
     clearInterval(dmPoll); dmPoll = null;
-    // contents stay put while the panel slides out, each open sets them again
     if (typeof cmChatPanelClose === 'function') cmChatPanelClose();
     if (typeof cmHdrHomeMode === 'function') cmHdrHomeMode();
-    // the nav is uncovered by the slide itself, nothing to restore
     refreshConvos();
   }
-  /* Painting a thread, separated from fetching one so the saved copy can use
-     it. `mode` is 'open' (jump to the newest), 'older' (hold the reading
-     position while earlier messages are prepended) or 'poll' (stay put unless
-     already at the end). */
   function dmPaint (rows, hasMore, mode, uid) {
     var body = $('dmBody');
     if (!body) return;
     var atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
     var prevHeight = body.scrollHeight, prevTop = body.scrollTop;
 
-    // day chips and grouping
     var msgHtml = '';
     var lastDayKey = '', lastSender = null, lastTs = 0;
     rows.forEach(function (m) {
@@ -455,7 +381,7 @@
       if (dayKey && dayKey !== lastDayKey) {
         msgHtml += '<div class="chatDay"><span>' + dayChip(d) + '</span></div>';
         lastDayKey = dayKey;
-        lastSender = null; // new day restarts group
+        lastSender = null;
       }
       var ts = d ? d.getTime() : 0;
       var cont = lastSender === m.sender_id && ts && (ts - lastTs) < 300000;
@@ -466,7 +392,6 @@
              '</div>';
     });
 
-    // load older spinner
     var loaderHtml = hasMore
       ? '<div class="cpRefreshWrap visible" id="dmRefreshWrap" aria-hidden="true"><div class="cpRefreshSpinner"></div></div>'
       : '';
@@ -475,31 +400,14 @@
       '<div class="dmSearchNote">SAY HI — THIS IS THE START OF YOUR CHAT</div>');
 
     if (mode === 'older') {
-      // keep reading position
       body.scrollTop = prevTop + (body.scrollHeight - prevHeight);
     } else if (mode === 'open' || atEnd) {
       body.scrollTop = body.scrollHeight;
     } else {
-      // background poll, keep view
       body.scrollTop = prevTop;
     }
   }
 
-  /* A thread, cached for the paint and NEVER for the poll.
-
-     The messages themselves are written down — the last fifty of each of the
-     last thirty conversations, stamped with the member id, on this device only
-     — so opening a chat you have had before shows it instantly instead of an
-     empty panel with a spinner. That is the whole benefit, and it is worth
-     having: a chat that takes a beat to appear feels broken in a way a gallery
-     does not.
-
-     What is deliberately absent is a cached READ on the five-second poll. A
-     message that has arrived and is not shown is the one thing chat may never
-     do, so every poll goes to the database, and the cache is written from the
-     answer rather than consulted before it. Same reason there is no
-     stale-while-revalidate here: for messages, "briefly out of date" is not a
-     smaller version of correct. */
   function dmThreadKey (pid) {
     var c = dmc();
     return c ? c.ukey('thread', pid) : null;
@@ -510,7 +418,6 @@
     var uid = me().id, pid = dmPartner.id;
     var c = dmc(), k = dmThreadKey(pid);
 
-    // On open, and only on open: the saved copy goes up while the fetch runs.
     if (scrollToEnd && c && k) {
       var snap = c.peek(k, 'user:thread', { any: true });
       if (snap && snap.rows && snap.rows.length) {
@@ -519,32 +426,23 @@
     }
 
     try {
-      // fetch newest messages
       var r = await db().from('direct_messages')
         .select('id,sender_id,content,created_at')
         .or('and(sender_id.eq.' + uid + ',recipient_id.eq.' + pid + '),and(sender_id.eq.' + pid + ',recipient_id.eq.' + uid + ')')
         .order('created_at', { ascending: false })
         .limit(dmLimit + 1);
       if (r.error) throw r.error;
-      if (!dmPartner || dmPartner.id !== pid) return; // stale response
+      if (!dmPartner || dmPartner.id !== pid) return;
       var rows = r.data || [];
       dmHasMore = rows.length > dmLimit;
       if (dmHasMore) rows = rows.slice(0, dmLimit);
-      rows.reverse(); // oldest first for display
+      rows.reverse();
 
-      /* Written down whether or not it repaints: the poll that found nothing
-         new still confirms what the saved copy should be.
-
-         `more` is true if the server said there are older messages beyond the
-         window, OR if the window itself is longer than the fifty kept here —
-         somebody who has scrolled back through a long thread has more above
-         them than this record holds, and the saved paint should say so. */
       if (c && k) {
         c.set(k, { rows: rows.slice(-50), more: dmHasMore || rows.length > 50 },
               'user:thread');
       }
 
-      // skip repaint if unchanged
       var sig = dmLimit + '|' + dmHasMore + '|' + rows.map(function (m) { return m.id; }).join(',');
       if (!scrollToEnd && !dmLoadingOlder && sig === dmLastSig) return;
       dmLastSig = sig;
@@ -552,10 +450,9 @@
       var mode = dmLoadingOlder ? 'older' : (scrollToEnd ? 'open' : 'poll');
       dmLoadingOlder = false;
       dmPaint(rows, dmHasMore, mode, uid);
-    } catch (e) { dmLoadingOlder = false; /* keep last good render */ }
+    } catch (e) { dmLoadingOlder = false;   }
   }
 
-  // reveal older on scroll top
   function dmMaybeLoadOlder () {
     if (dmLoadingOlder || !dmHasMore || !dmPartner) return;
     dmLoadingOlder = true;
@@ -563,8 +460,6 @@
     loadThread(false);
   }
 
-  // composer or gate bar. skipFocus is for the open-time paint, where the
-  // panel is mid-slide and openThread already schedules the focus
   function dmApplyGate (skipFocus) {
     var bar = document.querySelector('#dmChatView .dmBar'), gate = $('dmGate');
     if (!bar || !gate || !dmPartner) return;
@@ -603,7 +498,6 @@
     if (row.children.length) gate.appendChild(row);
   }
 
-  // send
   async function send () {
     var inp = $('dmInput'), btn = $('dmSendBtn');
     if (!inp || dmSending || !dmPartner) return;
@@ -612,18 +506,13 @@
     if (!text) return;
     if (text.length > MAX_LEN) { toast('Message is too long (max 1000 characters)'); return; }
     if (LINK_RE.test(text)) { toast('Links aren\'t allowed in messages'); return; }
-    // friends only
     if (frState(dmPartner.id) !== 'friends') { dmApplyGate(); toast('You can only message friends'); return; }
-    // the same limits the database holds, answered here first so a member is
-    // told to wait rather than watching a send do nothing
     if (window.dzChat) {
       var wait = window.dzChat.check(text);
       if (wait) { toast(wait); return; }
     }
     dmSending = true; if (btn) btn.disabled = true;
     try {
-      // .select() is what makes the rate gate visible: it drops the row rather
-      // than raising, so a refusal arrives as no error and no row
       var r = await db().from('direct_messages')
         .insert({ sender_id: me().id, recipient_id: dmPartner.id, content: text })
         .select('id');
@@ -635,11 +524,6 @@
       }
       if (window.dzChat) window.dzChat.note(text);
       inp.value = '';
-      /* The row is in. The conversation list now shows a preview from before
-         this message, so it is dropped — the drawer is repainted on the way
-         out of the thread and would otherwise show the previous line as the
-         latest. The thread itself is not dropped; loadThread is about to
-         overwrite it with the answer that includes this message. */
       var c = dmc();
       if (c && c.deleteByPrefix) { try { c.deleteByPrefix(c.ukey('convos')); } catch (e2) {} }
       await loadThread(true);
@@ -654,16 +538,13 @@
     }
   }
 
-  // friends page
   var frdLastFocus = null, frdSearchTimer = null;
   function frdStartChat (p) {
     closeFriendsPage();
     var page = document.getElementById('communityPage');
     var wasOpen = !!(page && page.classList.contains('open'));
     if (typeof window.openCommunityHome === 'function') window.openCommunityHome();
-    // open thread right away
     if (wasOpen || !page) { openThread(p); return; }
-    // wait for page transition
     var fired = false;
     function go(){ if (fired) return; fired = true; openThread(p); }
     page.addEventListener('transitionend', function h(e){
@@ -671,10 +552,9 @@
       page.removeEventListener('transitionend', h);
       go();
     });
-    setTimeout(go, 520);  // fallback if transitionend missed
+    setTimeout(go, 520);
   }
   async function loadFriendsPage () {
-    // four friendship sections
     var list = $('frdList'), empty = $('frdEmptyState'),
         head = $('frdListHead'), cnt = $('frdCount'),
         reqHead = $('frdReqHead'), reqList = $('frdReqList'), reqCnt = $('frdReqCount'),
@@ -700,17 +580,10 @@
         else if (f.status === 'blocked' && f.blocked_by === uid) blocked.push(pid);
       });
       list.innerHTML = '';
-      // shown against the cap, so a member near it can see why the next
-      // request is being turned down
       if (cnt) cnt.textContent = friends.length + ' / ' + FR_MAX_FRIENDS;
       frPaintBadge();
       var allIds = reqs.concat(sent, friends, blocked);
       if (!allIds.length) { empty.style.display = ''; return; }
-      /* The names and avatars behind the ids. Which ids these are is private —
-         it is this member's friend list — so the record is theirs, keyed by
-         the list it was fetched for: a new request means a different set of
-         ids and a different key, rather than a partial map reused for a list
-         it does not cover. */
       var byId = {};
       var c = dmc();
       var frpKey = c ? c.ukey('list', 'frprofiles', allIds.length) : null;
@@ -726,7 +599,6 @@
       try {
         byId = (c && frpKey) ? await c.getOrSet(frpKey, frpLoad, 'user:list') : await frpLoad();
       } catch (ppe) {
-        // offline: their own saved copy, or first initials in place of avatars
         byId = (c && frpKey) ? (await c.recall(frpKey, 'user:list')) || {} : {};
       }
       function prof (pid) { return byId[pid] || { id: pid, username: 'Artist' }; }
@@ -747,7 +619,6 @@
         sentHead.style.display = '';
         if (sentCnt) sentCnt.textContent = sent.length;
         sent.forEach(function (pid) {
-          // outgoing pending
           var row = userRow(prof(pid), false, 'Request pending…', null, function(){});
           var acts = document.createElement('span'); acts.className = 'frRowBtns';
           acts.appendChild(frBtnEl('CANCEL', 'frBtn--ghost', function () { frRemove(pid, 'Request cancelled'); }));
@@ -760,8 +631,6 @@
         friends.forEach(function (pid) {
           var row = userRow(prof(pid), false, 'Friend, tap to chat', null, frdStartChat);
           var acts = document.createElement('span'); acts.className = 'frRowBtns';
-          // ending a friendship and blocking somebody are not the same act,
-          // and blocking was the only one on offer here
           acts.appendChild(frBtnEl('REMOVE', 'frBtn--ghost', function () {
             var u = prof(pid).username || 'this artist';
             if (confirm('Remove ' + u + ' as a friend? Neither of you will be able to message the other until one sends a new request.')) {
@@ -799,22 +668,14 @@
     var inp = $('frdSearchInput'); if (inp) inp.value = '';
     var res = $('frdResults'); if (res) res.innerHTML = '';
     loadFriendsPage();
-    /* The conversation list lives here now. It used to sit behind a chip in
-       the community page, so it was painted when THAT page opened; this is
-       the same call moved to the page the list is actually on. */
     refreshConvos();
   }
   function closeFriendsPage () {
     $('frdPage').classList.remove('open');
-    // restore scroll
     if (typeof restoreScroll === 'function') restoreScroll();
     else document.body.style.overflow = '';
     if (frdLastFocus && frdLastFocus.focus) frdLastFocus.focus({ preventScroll: true });
   }
-  // Escape leaves this page and stops there. js/dm.js is loaded before
-  // js/pfedit.js, whose global Escape closes the community section — and its
-  // guard cannot help, because by the time it runs this has already taken the
-  // .open class off. Stopping here is what keeps the section standing.
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     if (!$('frdPage') || !$('frdPage').classList.contains('open')) return;
@@ -822,9 +683,6 @@
     closeFriendsPage();
   });
   window.openFriendsPage  = openFriendsPage;
-  /* Put away whatever conversation is open, without the panel slide — js/zeo.js
-     calls this on its way in, because a thread left open behind it would still
-     be polling and still be on screen under it. A no-op when there is none. */
   window.dmCloseThread = function () {
     if (!dmPartner) return;
     dmPartner = null;
@@ -832,9 +690,7 @@
     var dm = $('dmChatView'); if (dm) dm.style.display = 'none';
     refreshConvos();
   };
-  // the community header's search box on its Friends tab
   window.dmPeopleSearch = function (q, box, onOpen) { return runSearch(q, box, onOpen || null); };
-  // bridge for profile buttons
   window.pfFriendBridge = {
     load:   loadFriendships,
     state:  frState,
@@ -846,9 +702,7 @@
   };
   window.closeFriendsPage = closeFriendsPage;
 
-  // wiring
   document.addEventListener('DOMContentLoaded', function () {
-    // friends page search
     var fInp = $('frdSearchInput'), fBox = $('frdResults');
     if (fInp && fBox) fInp.addEventListener('input', function () {
       clearTimeout(frdSearchTimer);
@@ -861,7 +715,6 @@
     if (inp) inp.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
-    // scroll top loads older
     var dmScrollT = null, dmBodyEl = $('dmBody');
     if (dmBodyEl) dmBodyEl.addEventListener('scroll', function () {
       if (dmBodyEl.scrollTop <= 40 && !dmLoadingOlder && dmHasMore) {
@@ -869,15 +722,11 @@
         dmScrollT = setTimeout(dmMaybeLoadOlder, 250);
       }
     }, { passive: true });
-    // back button
     var orig = window.cmCloseChat;
     window.cmCloseChat = function () {
       if (dmPartner) { closeThread(); return; }
       if (typeof orig === 'function') orig.apply(this, arguments);
     };
-    /* The community page keeps only the badge on its Friends button — the
-       conversation list moved to the friends page and is painted by
-       openFriendsPage, which is where it now is. */
     var origOpen = window.openCommunityHome;
     if (typeof origOpen === 'function') {
       window.openCommunityHome = function () {
@@ -886,12 +735,8 @@
         return out;
       };
     }
-    // first load after auth
     if (db() && db().auth && db().auth.onAuthStateChange) {
       db().auth.onAuthStateChange(function () {
-        // the friendship map drives who the profile offers to add, message
-        // or block. Emptied now rather than in 400ms, so nothing in that
-        // gap is answered out of the last member's friend list.
         frMap = {};
         frPaintBadge();
         setTimeout(function () { loadFriendships().then(frPaintBadge); refreshConvos(); }, 400);

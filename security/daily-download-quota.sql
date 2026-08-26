@@ -1,37 +1,3 @@
--- daily download quota + burst limiter
---
--- already applied to the live project. kept here as the record of what runs
--- server-side behind /api/download, and so it can be replayed on a fresh
--- database.
---
--- daily caps per tier:
---   free / normal : 5  downloads per day
---   lite          : 10
---   premium       : 15
---   max           : 20
---   dev           : effectively unlimited (staff)
---
--- the window is a UTC calendar day: everything counted since
--- date_trunc('day', now()), resetting at 00:00 UTC.
---
--- signing in is required. an anonymous viewer key lives in the browser and can
--- be wiped at will, so a guest cap is not enforceable — dz_request_download
--- answers reason='auth' when there is no session and the viewer shows the
--- sign-in prompt.
---
--- roll back:
---   drop function if exists public.dz_download_quota();
---   drop function if exists public.dz_request_download(uuid, text);
---   drop function if exists public.dz_download_limit(text);
---   drop function if exists public.dz_rate_ok(text, int, int);
---   drop table    if exists public.rate_hits;
-
--- ---------------------------------------------------------------- burst limiter
--- The daily quota caps how many files leave the site, but it does not cap how
--- often someone may ask. Once the quota is spent every further request still
--- costs a function invocation and an RPC, so a script can run the bill up on
--- refusals alone. This counts attempts in a fixed window and refuses early.
-
 create table if not exists public.rate_hits (
   bucket       text        not null,
   window_start timestamptz not null,
@@ -39,7 +5,6 @@ create table if not exists public.rate_hits (
   primary key (bucket, window_start)
 );
 
--- no policies: only security definer functions may touch it
 alter table public.rate_hits enable row level security;
 
 create index if not exists rate_hits_window_idx on public.rate_hits (window_start);
@@ -66,7 +31,6 @@ begin
   on conflict (bucket, window_start) do update set hits = public.rate_hits.hits + 1
   returning hits into v_hits;
 
-  -- opportunistic sweep, keeps the table from growing without a cron job
   if random() < 0.005 then
     delete from public.rate_hits where window_start < now() - interval '1 hour';
   end if;
@@ -74,10 +38,8 @@ begin
   return v_hits <= p_max;
 end $$;
 
--- callable only by the definer functions below, never from a browser
 revoke all on function public.dz_rate_ok(text, int, int) from anon, authenticated, public;
 
--- ------------------------------------------------------------------ tier limits
 create or replace function public.dz_download_limit(p_tier text)
 returns int
 language sql
@@ -85,22 +47,14 @@ immutable
 set search_path to 'public', 'pg_temp'
 as $$
   select case lower(coalesce(p_tier, 'guest'))
-    when 'dev'     then 100000   -- staff, effectively unlimited
+    when 'dev'     then 100000
     when 'max'     then 20
     when 'premium' then 15
     when 'lite'    then 10
-    else 5                       -- signed-in free user
+    else 5
   end;
 $$;
 
--- ------------------------------------------------------------------- the gate
--- spends one unit of today's quota and reports what is left.
--- every granted download is a row in download_events; there is no path that
--- hands out bytes without one.
---
--- p_ip is a hint /api/download passes from CF-Connecting-IP, feeding a second
--- limiter bucket. best effort: a caller reaching the RPC directly could send
--- anything, but the user bucket is keyed on auth.uid() and cannot be spoofed.
 create or replace function public.dz_request_download(p_artwork uuid, p_ip text default null::text)
 returns jsonb
 language plpgsql
@@ -122,9 +76,6 @@ begin
     return jsonb_build_object('allowed', false, 'reason', 'auth');
   end if;
 
-  -- burst guard first: a refusal has to be the cheapest answer we can give.
-  -- 30 a minute per account is far above a person clicking a button (the top
-  -- tier only grants 20 files a day) and far below what a script needs.
   if not public.dz_rate_ok('dl:u:' || v_uid::text, 30, 60) then
     return jsonb_build_object('allowed', false, 'reason', 'rate', 'retry_after', 60);
   end if;
@@ -139,12 +90,10 @@ begin
     return jsonb_build_object('allowed', false, 'reason', 'not_found');
   end if;
 
-  -- your own artwork never costs quota
   if v_owner = v_uid then
     return jsonb_build_object('allowed', true, 'full', true, 'own', true);
   end if;
 
-  -- mirrors the read policy on artworks
   if v_status is distinct from 'approved' then
     return jsonb_build_object('allowed', false, 'reason', 'not_found');
   end if;
@@ -152,12 +101,8 @@ begin
   v_key   := 'u:' || v_uid::text;
   v_tier  := coalesce(public.dz_effective_tier(v_uid), 'guest');
   v_limit := public.dz_download_limit(v_tier);
-  -- the untouched original is Premium, Max and dev only. Lite buys a bigger
-  -- daily allowance (10 against free's 5), not a bigger file — it takes the
-  -- same public 1600px derivative Free does.
   v_full  := v_tier in ('premium', 'max', 'dev');
 
-  -- serialise per viewer so parallel clicks cannot both slip past the check
   perform pg_advisory_xact_lock(hashtext(v_key));
 
   select count(*) into v_used from public.download_events
@@ -180,8 +125,6 @@ begin
                             'resets_at', v_day + interval '1 day');
 end $$;
 
--- ------------------------------------------------------------- read-only view
--- so the viewer can print "3 of 5 downloads left today" without spending one
 create or replace function public.dz_download_quota()
 returns jsonb
 language plpgsql
@@ -198,7 +141,6 @@ begin
   if v_uid is null then
     return jsonb_build_object('signed_in', false);
   end if;
-  -- browser-facing, one call per artwork opened, so the ceiling is loose
   if not public.dz_rate_ok('dq:u:' || v_uid::text, 120, 60) then
     return jsonb_build_object('signed_in', true, 'reason', 'rate');
   end if;
@@ -213,12 +155,6 @@ begin
                             'resets_at', v_day + interval '1 day');
 end $$;
 
--- anon may call both: they answer reason='auth' / signed_in=false instead of
--- raising a permission error, which is what the viewer needs to prompt a login
 grant execute on function public.dz_request_download(uuid, text) to anon, authenticated;
 grant execute on function public.dz_download_quota()             to anon, authenticated;
 grant execute on function public.dz_download_limit(text)         to anon, authenticated;
-
--- the existing (viewer_key, created_at) index already serves the daily count
--- create index if not exists download_events_month_idx
---   on public.download_events (viewer_key, created_at);

@@ -1,9 +1,7 @@
-// community header modes
     (function () {
       'use strict';
       function $ (id) { return document.getElementById(id); }
 
-      // the chat panel slides in over the community page, which stays mounted
       window.cmChatPanelOpen = function () {
         var p = $('cmChatPanel'); if (!p) return;
         p.style.paddingBottom = '';
@@ -12,16 +10,15 @@
       window.cmChatPanelClose = function () {
         var p = $('cmChatPanel'); if (!p) return;
         p.classList.remove('open');
-        p.style.paddingBottom = ''; // drop any keyboard offset
+        p.style.paddingBottom = '';
       };
-      // the whole section is leaving, so skip the slide
       window.cmChatPanelReset = function () {
         var p = $('cmChatPanel'); if (!p) return;
         p.classList.add('noAnim');
         p.classList.remove('open');
         p.style.paddingBottom = '';
-        void p.offsetWidth;          // commit the closed state untransitioned
-        p.classList.remove('noAnim'); // next open slides again
+        void p.offsetWidth;
+        p.classList.remove('noAnim');
       };
 
       window.cmHdrChatMode = function (o) {
@@ -35,7 +32,6 @@
           if (o.avatar) {
             img.src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(o.avatar) : o.avatar;
             img.style.display = 'block'; txt.style.display = 'none';
-            // fallback to initial
             img.onerror = function () {
               img.style.display = 'none'; txt.style.display = '';
               txt.textContent = o.emoji || o.letter || '?';
@@ -61,8 +57,6 @@
         hdr.classList.add('chat');
         var back = $('cmHdrBack'); if (back) back.classList.add('show');
       };
-      // the header lives in the chat panel, so leave its look alone while it
-      // slides out — only the handlers need clearing
       window.cmHdrHomeMode = function () {
         var tap = $('cmHdrTap');
         if (tap) {
@@ -73,16 +67,6 @@
         }
       };
 
-      /* ---- search ------------------------------------------------------------
-         A page, not a bar. Every other section on the site opens search the
-         same way — back arrow, one field, results underneath — and this is
-         that component (#fgSearchPage, #pfSearchPage) pointed at a different
-         haystack.
-
-         It searches communities and only communities. It used to carry two
-         scope chips, because Community and Friends were two panes of one page
-         and the search had to serve both; they are two pages now, and the
-         friends page has a search of its own. */
       var searchTimer = null;
       var srchLastFocus = null;
 
@@ -94,7 +78,6 @@
         runSearch();
         pg.classList.add('open');
         document.body.style.overflow = 'hidden';
-        // the keyboard comes up with the page, not after a second tap
         if (inp) setTimeout(function () { try { inp.focus(); } catch (e) {} }, 60);
       };
 
@@ -103,13 +86,11 @@
         if (!pg || !pg.classList.contains('open')) return;
         pg.classList.remove('open');
         clearTimeout(searchTimer);
-        // the community section is still up behind it and owns the lock
         var back = srchLastFocus; srchLastFocus = null;
         if (back && back.isConnected && back.focus) {
           try { back.focus({ preventScroll: true }); } catch (e) { try { back.focus(); } catch (e2) {} }
         }
       };
-      // dm.js closes it when a chat opens out of a result
       window.cmSearchReset = window.cmCloseSearch;
 
       window.cmClearSearch = function () {
@@ -123,14 +104,7 @@
         if (n) { n.textContent = msg || ''; n.hidden = !msg; }
       }
 
-      // Communities are searched off the page rather than over the network:
-      // every one of them is already rendered — there is no "view all" and
-      // nothing held back — so the list under the banner is the whole set.
-      // Each result clicks its own card, so a result opens exactly what the
-      // card opens and neither can drift from the other.
       function searchCommunities (needle) {
-        // the cards' container, which is the scroller itself now that the
-        // Community pane wrapper has gone with the pair of chips above it
         var pane = $('cmGridScroll'), box = $('cmSrchRes');
         if (!pane || !box) return;
         box.innerHTML = '';
@@ -143,7 +117,6 @@
           Array.prototype.forEach.call(row.querySelectorAll('[onclick]'), function (el) {
             el.removeAttribute('onclick');
           });
-          // MANAGE belongs on the card, not in a result
           Array.prototype.forEach.call(row.querySelectorAll('button'), function (el) { el.remove(); });
           row.setAttribute('role', 'button');
           row.tabIndex = 0;
@@ -168,9 +141,6 @@
         searchCommunities(q.toLowerCase());
       }
 
-      /* The page covers the section but does not remove it, so without this
-         Tab walks off the bottom of the results and into the cards still
-         sitting underneath. #fgSearchPage earns its trap the same way. */
       function srchFocusable () {
         var pg = $('cmSearchPage'); if (!pg) return [];
         var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
@@ -193,7 +163,6 @@
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }, true);
 
-      // ---- pending friend requests badge ------------------------------------
       window.cmSetFriendBadge = function (n) {
         var el = $('cmFrdBadge'); if (!el) return;
         n = Number(n) || 0;
@@ -201,34 +170,21 @@
         el.hidden = n < 1;
       };
 
-      // ---- the page opening -------------------------------------------------
-      // Called by openCommunityHome. Every visit lands at the top with the
-      // search closed, rather than on wherever the last visit left off. It
-      // used to set the Community chip as well, back when there was a pair of
-      // them and a visit could arrive on the wrong one.
       window.cmHomeReset = function () {
         window.cmCloseSearch();
         var scroll = $('cmGridScroll');
         if (scroll) scroll.scrollTop = 0;
       };
 
-      // ---- banner counters --------------------------------------------------
-      // The member's own count, not a headline number: the six the site runs
-      // plus whatever they have joined or created. Counted off the page rather
-      // than fetched, which it can be because every community is rendered —
-      // seven cards under the banner is seven on it.
       window.cmSyncCount = function () {
         var pane = $('cmGridScroll'), total = $('cmStatNum');
         if (total && pane) total.textContent = pane.querySelectorAll('.cmCard').length;
         paintCaps();
       };
-      // dm.js owns the friendship map, so it pushes rather than us pulling
       window.cmSetFriendCount = function (n) {
         var el = $('cmStatFriends');
         if (el) el.textContent = Number(n) || 0;
       };
-      // the two limits, written once from the constants the code enforces so
-      // the page cannot claim a number the triggers disagree with
       function paintCaps () {
         var c = window.CM_MAX_JOINED, f = window.FR_MAX_FRIENDS;
         var max = $('cmCapMax');   if (max && c) max.textContent = c;
@@ -236,12 +192,6 @@
         if (note && c && f) note.textContent = 'Join up to ' + c + ' communities and ' + f + ' friends.';
       }
 
-      // ---- the chat gate, this side of it -----------------------------------
-      // The database is what enforces the limits; this exists so a member is
-      // told to wait before the round trip rather than watching a send quietly
-      // do nothing. The bands are the same five, mirrored — when the two
-      // disagree the server wins, and syncing from its answer is how they stop
-      // disagreeing.
       var CHAT_BANDS = [
         { ms: 10000,    max: 5,    label: '5 messages in ten seconds' },
         { ms: 60000,    max: 30,   label: '30 messages in a minute' },
@@ -253,13 +203,13 @@
       var CHAT_MIN_GAP_MS = 1000;
       var CHAT_DUPE_MS = 30000;
 
-      var sent = [];          // timestamps, newest last
-      var lastText = '';      // normalised, for the identical check
+      var sent = [];
+      var lastText = '';
       var lastTextAt = 0;
       var coolUntil = 0;
       var coolReason = '';
       var coolTimer = null;
-      var coolTargets = [];   // [{btn, input, label}]
+      var coolTargets = [];
 
       function norm (s) { return String(s || '').trim().toLowerCase(); }
       function secsLeft () { return Math.max(0, Math.ceil((coolUntil - Date.now()) / 1000)); }
@@ -286,14 +236,12 @@
       window.dzChat = {
         MAX_CHARS: CHAT_MAX_CHARS,
 
-        // register a composer so its send button carries the countdown
         watch: function (btnId, label) {
           if (!coolTargets.some(function (t) { return t.btn === btnId; })) {
             coolTargets.push({ btn: btnId, label: label });
           }
         },
 
-        // may this text go? Returns null when it may, a message when it may not.
         check: function (text) {
           var now = Date.now();
           var left = secsLeft();
@@ -319,18 +267,14 @@
           return null;
         },
 
-        // a message actually landed
         note: function (text) {
           var now = Date.now();
           sent.push(now);
-          // nothing older than the widest band can matter again
           var cut = now - CHAT_BANDS[CHAT_BANDS.length - 1].ms;
           while (sent.length && sent[0] < cut) sent.shift();
           lastText = norm(text); lastTextAt = now;
         },
 
-        // The server dropped the row. It knows why and for how long, and this
-        // is the only place that answer comes from.
         async fromServer (sb) {
           try {
             var r = await sb.rpc('dz_chat_status');

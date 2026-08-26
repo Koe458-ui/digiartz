@@ -1,24 +1,3 @@
--- One daily download budget, for everything a member downloads
---
--- The 5 / 10 / 15 / 20 a day that free, Lite, Premium and Max get has only
--- ever counted artworks. A resource package and a blog cover were handed over
--- as ordinary links and cost nothing, which is the wrong way round: a brush
--- pack is the largest file on the site and an artwork is not.
---
--- Nothing about the ceiling changes — dz_download_limit already returns those
--- four numbers and every kind now draws on the same one, so a member who takes
--- three resources has two artworks left rather than a fresh five.
---
--- The marketplace is deliberately outside it. A buyer paid for those bytes and
--- market-download.js is entitlement gated already; a daily cap there would be
--- charging someone for a file and then rationing it.
-
--- ---- what a download event was about ------------------------------------
--- artwork_id stays, and the artwork path keeps writing it, so nothing that
--- reads this table by artwork has to change. kind and subject_id are what the
--- other two write. The count that enforces the budget is per viewer per day
--- and does not look at either column, so the budget is shared from the moment
--- these exist.
 alter table public.download_events
   add column if not exists kind       text not null default 'artwork',
   add column if not exists subject_id uuid;
@@ -35,11 +14,6 @@ end $$;
 create index if not exists download_events_viewer_day_idx
   on public.download_events (viewer_key, created_at desc);
 
--- ---- the grant, for a resource or a post --------------------------------
--- Same shape and the same order of checks as dz_request_download: refuse the
--- cheap way first, never charge someone for their own file, mirror the read
--- policy of the table being downloaded, then take a unit under a per viewer
--- lock so two parallel clicks cannot both slip past a full budget.
 create or replace function public.dz_request_item_download(
   p_kind text,
   p_id   uuid,
@@ -67,8 +41,6 @@ begin
     return jsonb_build_object('allowed', false, 'reason', 'auth');
   end if;
 
-  -- the same burst guard the artwork path keeps, and the same budget, so the
-  -- two cannot be alternated to get twice the allowance
   if not public.dz_rate_ok('dl:u:' || v_uid::text, 30, 60) then
     return jsonb_build_object('allowed', false, 'reason', 'rate', 'retry_after', 60);
   end if;
@@ -89,7 +61,6 @@ begin
     return jsonb_build_object('allowed', false, 'reason', 'not_found');
   end if;
 
-  -- your own upload never costs quota, exactly as your own artwork does not
   if v_owner = v_uid then
     return jsonb_build_object('allowed', true, 'own', true);
   end if;

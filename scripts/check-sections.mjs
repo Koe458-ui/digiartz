@@ -1,30 +1,4 @@
 #!/usr/bin/env node
-// Does the section layer still hold together?
-//
-// A "section" here is any panel that slides in over the page — the gallery,
-// community, the upload page, a profile, the artwork viewer, Settings and
-// every page Settings opens. Between them they had four separate answers to
-// "which panels are there", and each of those answers was a hand-written list
-// somebody had to remember to add to. Three bugs came straight out of that:
-//
-//   - tapping Home left the ranking board, the theme page, the artwork viewer
-//     and half a dozen others standing over the home page, because the bottom
-//     nav's sweep predated all of them;
-//   - closing a panel stepped history BACK, which is a navigation, which the
-//     popstate handlers in three other files then answered — so tapping
-//     Upload could land you on a profile;
-//   - and the address bar was left naming a section that had been closed, so
-//     the next reload opened it again.
-//
-// The lists are one table now (DZ_PANELS in js/app-core.js) and the address
-// bar has one writer (js/routes.js). This check is what keeps it that way: it
-// fails when a panel exists that the table does not know about, when the
-// table names a close function that does not exist, and when a step back
-// creeps into the panel layer again.
-//
-// No dependencies and no browser, in keeping with the other checks here.
-//
-// Run: node scripts/check-sections.mjs
 
 import { readFileSync, readdirSync } from 'node:fs';
 
@@ -39,11 +13,6 @@ const routes = readFileSync('js/routes.js', 'utf8');
 const problems = [];
 const fail = (msg) => problems.push(msg);
 
-// ---- the table ------------------------------------------------------------
-//
-// Read out of the source rather than imported: js/app-core.js is a classic
-// script that reaches for window and for config.js on the first line, and
-// none of that exists here.
 const tableSrc = core.match(/var DZ_PANELS = \[([\s\S]*?)\n  \];/);
 if (!tableSrc) fail('js/app-core.js: DZ_PANELS is gone, or its shape changed — nothing else here can run');
 
@@ -53,25 +22,12 @@ const panels = [...(tableSrc ? tableSrc[1] : '').matchAll(
 
 if (panels.length < 20) fail(`js/app-core.js: only ${panels.length} panels parsed out of DZ_PANELS — the table or this parser is wrong`);
 
-// ---- every panel in the table is real --------------------------------------
-//
-// dzPanelHost is built at runtime by the signed-in module (functions/api/ops.js
-// serves it) and is absent from the document on purpose.
 const BUILT_AT_RUNTIME = new Set(['dzPanelHost']);
 
-// A closer is real if it is declared at the top level of a classic script —
-// which puts it on window — or assigned to window outright. Depth is counted
-// in braces, skipping comments and strings, because every one of these files
-// is a mix of top-level declarations and IIFEs.
 function topLevelNames(file, src) {
   const names = new Set();
   const depth = new Array(src.length).fill(0);
   let d = 0, i = 0;
-  // The last thing that was not whitespace or a comment. It is what tells a
-  // regex literal from a division, and getting that wrong is not academic:
-  // /filename="([^"]+)"/ in js/gallery.js reads as a quoted string to a
-  // scanner without this, and every brace after it is counted in the wrong
-  // scope.
   let prev = '';
   const REGEX_AFTER = new Set(['(', ',', '=', ':', '[', '!', '&', '|', '?', '{', '}', ';', '+', '-', '*', '%', '<', '>', '~', '^', 'return', 'typeof', 'case', 'in', 'of', 'new', 'delete', 'do', 'else', 'yield', 'await']);
   while (i < src.length) {
@@ -112,13 +68,9 @@ function topLevelNames(file, src) {
     if (c === '{') { depth[i] = d; d++; i++; prev = c; continue; }
     if (c === '}') { d--; depth[i] = d; i++; prev = c; continue; }
     depth[i] = d;
-    // Identifiers accumulate so `return` and `typeof` are seen whole;
-    // whitespace leaves the last token standing.
     if (!/\s/.test(c)) prev = /[\w$]/.test(c) && /[\w$]/.test(prev) ? prev + c : c;
     i++;
   }
-  // A scanner that ends anywhere but back at the top has lost its place, and
-  // every answer it gave is suspect. Say so rather than reporting names.
   if (d !== 0) fail(`${file}: the scope scanner in this check ended at brace depth ${d} — it has misread the file, so its answers cannot be trusted`);
   for (const m of src.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\(/g)) {
     if (depth[m.index] === 0) names.add(m[1]);
@@ -128,7 +80,6 @@ function topLevelNames(file, src) {
 }
 const reachable = new Set();
 for (const [name, src] of jsFiles) for (const n of topLevelNames(name, src)) reachable.add(n);
-// The admin panel is served from functions/api/ops.js and only to an admin.
 for (const n of topLevelNames('functions/api/ops.js', readFileSync('functions/api/ops.js', 'utf8'))) reachable.add(n);
 
 for (const p of panels) {
@@ -142,19 +93,6 @@ for (const p of panels) {
   }
 }
 
-// ---- and every real panel is in the table ----------------------------------
-//
-// A panel is an element that (a) has a stylesheet rule making it visible when
-// it carries `open`, and (b) sits directly inside <body> rather than inside
-// another panel. Both halves matter: the first is what every panel in this app
-// has in common however it is built, and the second is what tells a section
-// apart from the filter sheet inside the gallery or the chat panel inside the
-// community page — those go down with the panel that contains them, and
-// sweeping them separately would be closing the same thing twice.
-//
-// Written this way rather than as "the ids some script opens" so that it
-// catches the panel somebody adds next year without reading any of this: a new
-// full-screen page cannot be styled or placed without tripping both halves.
 const css = readdirSync('css')
   .filter((f) => f.endsWith('.css'))
   .map((f) => readFileSync('css/' + f, 'utf8'))
@@ -168,9 +106,6 @@ for (const m of (css + '\n' + inlineCss).matchAll(/#([\w-]+)\[data-state=["']ope
 const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
                       'link', 'meta', 'param', 'source', 'track', 'wbr']);
 function bodyChildren(doc) {
-  // Comments first. There is a `/legal/<slug>` inside one of them, and to a
-  // tag scanner that is an element that never closes — every panel after it
-  // then reads as nested inside it.
   doc = doc.replace(/<!--[\s\S]*?-->/g, '');
   const ids = [];
   const stack = [];
@@ -206,11 +141,6 @@ for (const id of found) {
   fail(`#${id} is a panel — it sits in <body> and its stylesheet shows it when it carries .open — and DZ_PANELS does not list it, so nothing sweeps it when the member changes section`);
 }
 
-// ---- nothing in the panel layer steps history back -------------------------
-//
-// A step back is a navigation: asynchronous, and answered by the popstate
-// handler in every module that has one. Closing a panel is not a navigation.
-// This is the bug where tapping Upload opened a profile.
 for (const [name, src] of jsFiles) {
   const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   if (/history\s*\.\s*(back|forward|go)\s*\(/.test(stripped)) {
@@ -218,15 +148,12 @@ for (const [name, src] of jsFiles) {
   }
 }
 
-// ---- one writer for the address bar ----------------------------------------
 if (!/window\.dzRouteAddress\s*=/.test(routes)) fail('js/routes.js no longer publishes dzRouteAddress — the section address has no owner');
 if (!/window\.dzRouteAudit\s*=/.test(routes))   fail('js/routes.js no longer publishes dzRouteAudit — nothing checks that the address names an open panel');
 for (const need of ['dzNavBegin', 'dzNavEnd', 'dzNavMoving', 'dzNavCurrent', 'dzNavToken', 'dzCloseAllPanels']) {
   if (!new RegExp(`window\\.${need}\\s*=`).test(core)) fail(`js/app-core.js no longer publishes ${need}`);
 }
 
-// Every panel the router calls addressable has to be a panel the table knows,
-// or the audit is asking about something nothing can open or close.
 for (const m of routes.matchAll(/panel:\s*'([^']+)'/g)) {
   if (!known.has(m[1])) fail(`js/routes.js addresses #${m[1]}, which is not in DZ_PANELS`);
 }

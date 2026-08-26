@@ -1,960 +1,516 @@
-/* base tokens, reset, nav */
+:root{
+  color-scheme: dark;
+  --tc:#9A9DA6;
+  --bg:#1A1A1F; --sur:#24242C; --sur2:#2E2E38;
+  --bdr:#40404E; --bdrh:#56566A;
+  --tx:#F3F3F8; --tx2-rgb:216,216,228; --txd:rgba(var(--tx2-rgb),.68);
+  --pg:#F4F4F6; --pb:#FFFFFF; --ps:#FFFFFF; --pgd:#C6C6CE;
+  --pg-rgb:244,244,246; --pgd-rgb:198,198,206;
+  --pdim:rgba(var(--pg-rgb),.10);
+  --text-on-accent:#1A1A1F;
+  --sh-card:0 1px 3px rgba(5,3,8,.3),0 4px 14px rgba(5,3,8,.35);
+  --sh-card-hover:0 6px 20px rgba(5,3,8,.4);
+  --vbg:#101015; --vsur:#191920; --vsur2:#222229;
+  --vtx:#F1F1F5; --vtx2-rgb:210,210,222; --vtxd:rgba(var(--vtx2-rgb),.66);
+  --vtc:#9DA1A9; --vtc-rgb:157,161,169;
+  --vpg:#8E939C; --vpb:#BCC0C6; --vps:#D2D5D9;
+  --fbg:#131318; --fsur:#1C1C23; --fsur2:#23232B;
+  --fbdr:#31313D; --fbdrh:#43434F;
+  --fd:'Sora','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fb:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --fm:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
+  --danger:#fca5a5;
+  --brand-red:#EF4444;
+  --danger-strong:#dc2626;
+  --danger-bg:rgba(220,38,38,.14);
+  --danger-bg-hover:rgba(220,38,38,.24);
+  --danger-bd:rgba(220,38,38,.45);
+  --role-owner:#fbbf24;  --role-owner-bd:rgba(251,191,36,.45);
+  --role-admin:#f87171;  --role-admin-bd:rgba(248,113,113,.45);
+  --role-srmod:#60a5fa;  --role-srmod-bd:rgba(96,165,250,.45);
+  --role-jrmod:#34d399;  --role-jrmod-bd:rgba(52,211,153,.45);
 
-    /* design tokens
+  --ms1:#BFC5D2;  --ms1-name:#BFC5D2;
+  --ms2:#22C55E;  --ms2-name:#22C55E;
+  --ms3:#3B82F6;  --ms3-name:#3B82F6;
+  --ms4:#8B5CF6;  --ms4-name:#8B5CF6;
+  --ms5:#F59E0B;  --ms5-name:#F59E0B;
+  --ms6:#EF4444;  --ms6-name:#EF4444;
+  --ms7:#06B6D4;  --ms7-name:#06B6D4;
+  --ms8:#FACC15;  --ms8-name:#FACC15;
+  --ms-ink:#0B0B12;
+}
 
-       Three themes: Off-White (the default), Paper, and Charcoal. Paper
-       and Charcoal are built the same way and for the same reasons, so the
-       reasoning lives here once; Off-White is Paper with the hue taken out
-       of it and restates nothing else, so it is a short block after it
-       rather than a third palette to keep in step. It being the default
-       does not make it the block the others are written against — Paper is
-       still where the light-family palette is stated, and Off-White is
-       still the shorter block that edits it.
+html[data-theme="light"],
+html[data-theme="offwhite"]{
+  color-scheme:light;
+  --tc:#6F6B58;
+  --bg:#F7F5EB; --sur:#FFFEF9; --sur2:#F0EEDF;
+  --bdr:#D8D3B8; --bdrh:#BAB499;
+  --tx:#1F1D15; --tx2-rgb:62,58,44; --txd:rgba(var(--tx2-rgb),.74);
+  --pg:#17151F; --pb:#0F0E15; --ps:#000000; --pgd:#2E2C3A;
+  --pg-rgb:23,21,31; --pgd-rgb:46,44,58;
+  --pdim:rgba(var(--pg-rgb),.07);
+  --text-on-accent:#FFFFFF;
+  --sh-card:0 1px 3px rgba(26,24,38,.10),0 4px 14px rgba(26,24,38,.12);
+  --sh-card-hover:0 6px 20px rgba(26,24,38,.16);
+  --vbg:#EEEBDC; --vsur:#FBFAF2; --vsur2:#F3F1E4;
+  --vtx:#211F16; --vtx2-rgb:70,66,50; --vtxd:rgba(var(--vtx2-rgb),.78);
+  --vtc:#6E6957; --vtc-rgb:110,105,87;
+  --vpg:#63604F; --vpb:#514E3F; --vps:#403D31;
+  --fbg:#E8E5D4; --fsur:#F3F1E4; --fsur2:#EEEBDC;
+  --fbdr:#D4CFB4; --fbdrh:#BDB79C;
 
-       A feed you scroll for an hour is read almost entirely by peripheral
-       vision, and peripheral vision responds to two things: depth and
-       hue. Give it neither and the eye has nothing to fixate on, adapts
-       to the field within seconds, and stops reporting. Give it both and
-       a column of cards reads as a column of objects. Every rule below is
-       one of those two.
+  --danger:#B3261E;
+  --brand-red:#DC2626;
+  --danger-strong:#B3261E;
+  --danger-bg:rgba(179,38,30,.08);
+  --danger-bg-hover:rgba(179,38,30,.14);
+  --danger-bd:rgba(179,38,30,.38);
+  --role-owner:#8A5A00;  --role-owner-bd:rgba(138,90,0,.38);
+  --role-admin:#B3261E;  --role-admin-bd:rgba(179,38,30,.38);
+  --role-srmod:#1D4ED8;  --role-srmod-bd:rgba(29,78,216,.38);
+  --role-jrmod:#046B4E;  --role-jrmod-bd:rgba(4,107,78,.38);
 
-       - Depth, by opening the range. Charcoal's page is #1A1A1F (L* 9.4),
-         high enough off the panel's own black that light text does not
-         bloom into it and low enough that the wells still have somewhere
-         to go. --vbg and --fbg sit below the page; cards sit above it. An
-         overlay drops the ground away under the page it covered, a card
-         lifts off it. Paper does the same in reverse.
-       - The ladder steps by a near-constant 5 L*: page 9.4, card 14.5,
-         raised 19.3. Even steps, so elevation reads as elevation rather
-         than as noise, and every one clears the discrimination threshold
-         at this luminance.
-       - Every ground carries a hue. Charcoal leans blue-violet and leans
-         further the higher it rises — B minus R goes 5, 8, 10, 14, 20 up
-         the ladder, the way a lit surface separates from its own shadow.
-         Paper runs the other way on purpose: the wall is the warmest
-         thing on it and the card the most neutral, because the card is
-         what an artwork is mounted on. Neither is saturated enough to
-         tint a thumbnail — paper's page is twelve points of 255 off
-         neutral — and both are enough that the field never goes inert.
-       - A card edge is an edge. On charcoal --bdr is 1.70:1 against the
-         page and --bdrh 2.15:1 against the card; on paper 1.38:1 and
-         2.06:1. A boundary at rest, a visibly brighter one under the
-         cursor, in both.
+  --ms1-name:#687695;
+  --ms2-name:#178841;
+  --ms3-name:#1E6FF5;
+  --ms4-name:#8655F6;
+  --ms5-name:#A56A07;
+  --ms6-name:#EB1515;
+  --ms7-name:#048196;
+  --ms8-name:#8F7303;
+}
 
-       Ink is pitched to the ground it sits on. Body copy holds 15.7:1 on
-       charcoal and 15.4:1 on paper — near enough the same figure on
-       purpose, so neither theme is the tiring one — and secondary copy
-       6.3:1 and 4.9:1. Accents, brand red, role and milestone colours are
-       deliberately outside this: they mean something, so they do not move
-       with the ground.
+html[data-theme="offwhite"]{
+  --tc:#6C6C68;
+  --bg:#F3F3F1; --sur:#FCFCFA; --sur2:#EAEAE7;
+  --bdr:#D2D2CD; --bdrh:#B2B2AC;
+  --tx:#1A1A18; --tx2-rgb:58,58,54; --txd:rgba(var(--tx2-rgb),.78);
+  --pg:#17171A; --pb:#0F0F12; --ps:#000000; --pgd:#2E2E32;
+  --pg-rgb:23,23,26; --pgd-rgb:46,46,50;
+  --pdim:rgba(var(--pg-rgb),.07);
+  --sh-card:0 1px 3px rgba(24,24,28,.10),0 4px 14px rgba(24,24,28,.12);
+  --sh-card-hover:0 6px 20px rgba(24,24,28,.16);
+  --vbg:#E9E9E6; --vsur:#F8F8F6; --vsur2:#EFEFEC;
+  --vtx:#1D1D1B; --vtx2-rgb:64,64,60; --vtxd:rgba(var(--vtx2-rgb),.80);
+  --vtc:#6A6A65; --vtc-rgb:106,106,101;
+  --vpg:#60605C; --vpb:#4E4E4A; --vps:#3D3D3A;
+  --fbg:#E5E5E2; --fsur:#EFEFEC; --fsur2:#E9E9E6;
+  --fbdr:#D5D5D0; --fbdrh:#BDBDB7;
+}
+*{
+  --heading-color:var(--tx);
+  --link-color:var(--pb);
+}
 
-       Charcoal lives in :root rather than in a data-theme block, and stays
-       there now the default is a light one. :root is the palette a document
-       paints before an attribute is on it, and every document gets one:
-       the boot script in index.html stamps data-theme in the same tick the
-       page starts painting, so what :root holds is never what a visitor
-       sees — it is the base the light block overrides, held in one place
-       so two copies of one palette cannot drift apart.
-       html[data-theme="graydark"] therefore still has something to say — the
-       wordmark in the top bar is ink-black on paper and cannot be on
-       charcoal — and the attribute is set either way, so the picker and that
-       one rule can both key off it. */
-    :root{
-      color-scheme: dark;
-      --tc:#9A9DA6;
-      --bg:#1A1A1F; --sur:#24242C; --sur2:#2E2E38;
-      --bdr:#40404E; --bdrh:#56566A;
-      --tx:#F3F3F8; --tx2-rgb:216,216,228; --txd:rgba(var(--tx2-rgb),.68);
-      --pg:#F4F4F6; --pb:#FFFFFF; --ps:#FFFFFF; --pgd:#C6C6CE;
-      --pg-rgb:244,244,246; --pgd-rgb:198,198,206;
-      --pdim:rgba(var(--pg-rgb),.10);
-      --text-on-accent:#1A1A1F;
-      /* The ink a raised surface casts. Every shadow in the stylesheets was a
-         literal before this, which meant a card on paper was lit the way a
-         card on charcoal is: a near-black drop at dark-ground weight, on
-         ivory. Charcoal keeps exactly the values it always had; paper drops
-         its own ink far lighter, at the alpha the one light-theme shadow that
-         already existed uses — html[data-theme="light"] .anTip. */
-      --sh-card:0 1px 3px rgba(5,3,8,.3),0 4px 14px rgba(5,3,8,.35);
-      --sh-card-hover:0 6px 20px rgba(5,3,8,.4);
-      /* the well: overlays and full-screen sub-pages sit below the page */
-      --vbg:#101015; --vsur:#191920; --vsur2:#222229;
-      --vtx:#F1F1F5; --vtx2-rgb:210,210,222; --vtxd:rgba(var(--vtx2-rgb),.66);
-      --vtc:#9DA1A9; --vtc-rgb:157,161,169;
-      --vpg:#8E939C; --vpb:#BCC0C6; --vps:#D2D5D9;
-      /* the footer: below the page, above the well */
-      --fbg:#131318; --fsur:#1C1C23; --fsur2:#23232B;
-      --fbdr:#31313D; --fbdrh:#43434F;
-      /* fonts */
-      --fd:'Sora','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-      --fb:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-      --fm:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+:root{
+  --shellMax:1600px;
+  --shellPad:3%;
+  --fgPad:var(--shellPad);
+  --pfPad:var(--shellPad);
+}
+@media(min-width:768px){
+  :root{ --shellPad:6%; }
+}
+@media(min-width:1024px){
+  :root{ --shellPad:max(10%,calc((100% - var(--shellMax)) / 2)); }
+}
 
-      /* status and role colors */
-      --danger:#fca5a5;
-      /* brand red */
-      --brand-red:#EF4444;
-      --danger-strong:#dc2626;
-      --danger-bg:rgba(220,38,38,.14);
-      --danger-bg-hover:rgba(220,38,38,.24);
-      --danger-bd:rgba(220,38,38,.45);
-      --role-owner:#fbbf24;  --role-owner-bd:rgba(251,191,36,.45);
-      --role-admin:#f87171;  --role-admin-bd:rgba(248,113,113,.45);
-      --role-srmod:#60a5fa;  --role-srmod-bd:rgba(96,165,250,.45);
-      --role-jrmod:#34d399;  --role-jrmod-bd:rgba(52,211,153,.45);
+:root{ --artGap:3px; }
+@media(min-width:700px){  :root{ --artGap:4px; } }
+@media(min-width:1280px){ :root{ --artGap:5px; } }
 
-      /* milestone colors */
-      --ms1:#BFC5D2;  --ms1-name:#BFC5D2;   /* lvl 5 new artist */
-      --ms2:#22C55E;  --ms2-name:#22C55E;   /* lvl 10 sketch explorer */
-      --ms3:#3B82F6;  --ms3-name:#3B82F6;   /* lvl 20 creative soul */
-      --ms4:#8B5CF6;  --ms4-name:#8B5CF6;   /* lvl 35 gallery artist */
-      --ms5:#F59E0B;  --ms5-name:#F59E0B;   /* lvl 50 community star */
-      --ms6:#EF4444;  --ms6-name:#EF4444;   /* lvl 70 master creator */
-      --ms7:#06B6D4;  --ms7-name:#06B6D4;   /* lvl 85 elite artist */
-      --ms8:#FACC15;  --ms8-name:#FACC15;   /* lvl 100 digiartz legend */
-      --ms-ink:#0B0B12;
-    }
-    /* light theme — Paper, and the light family's palette
+#artworks,#subOverview,footer.siteFooter{
+  content-visibility:auto;
+}
+#artworks{contain-intrinsic-size:auto 900px;}
+#subOverview{contain-intrinsic-size:auto 700px;}
+footer.siteFooter{contain-intrinsic-size:auto 480px;}
 
-       A blue-white at 97 L* across a whole viewport is a lamp held up to
-       the face. Warmth is what takes the glare out of a bright ground
-       without taking the light out of it: hue 55 at low saturation, and
-       the field reads as paper rather than as a screen. The page also
-       holds half a point of L* back from the card, so the card has
-       somewhere to rise to — a 3.16 L* lift.
+body{line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+h1,h2,h3,h4,h5,h6{color:var(--heading-color);line-height:1.15;}
+h1{font-weight:800;letter-spacing:-.02em;}
+h2,h3{font-weight:700;letter-spacing:-.01em;}
+a{color:var(--link-color);}
+kbd{font-variant-numeric:tabular-nums;}
 
-       Artwork does not sit on the ivory. Cards are #FFFEF9, a point off
-       neutral, so a thumbnail is mounted on near-white the way a print is
-       mounted on a white board and hung on a warm wall. The ivory is the
-       wall; it never touches the work. */
-    html[data-theme="light"],
-    html[data-theme="offwhite"]{
-      color-scheme:light;
-      --tc:#6F6B58;
-      --bg:#F7F5EB; --sur:#FFFEF9; --sur2:#F0EEDF;
-      --bdr:#D8D3B8; --bdrh:#BAB499;
-      --tx:#1F1D15; --tx2-rgb:62,58,44; --txd:rgba(var(--tx2-rgb),.74);
-      --pg:#17151F; --pb:#0F0E15; --ps:#000000; --pgd:#2E2C3A;
-      --pg-rgb:23,21,31; --pgd-rgb:46,44,58;
-      --pdim:rgba(var(--pg-rgb),.07);
-      --text-on-accent:#FFFFFF;
-      --sh-card:0 1px 3px rgba(26,24,38,.10),0 4px 14px rgba(26,24,38,.12);
-      --sh-card-hover:0 6px 20px rgba(26,24,38,.16);
-      --vbg:#EEEBDC; --vsur:#FBFAF2; --vsur2:#F3F1E4;
-      --vtx:#211F16; --vtx2-rgb:70,66,50; --vtxd:rgba(var(--vtx2-rgb),.78);
-      --vtc:#6E6957; --vtc-rgb:110,105,87;
-      --vpg:#63604F; --vpb:#514E3F; --vps:#403D31;
-      --fbg:#E8E5D4; --fsur:#F3F1E4; --fsur2:#EEEBDC;
-      --fbdr:#D4CFB4; --fbdrh:#BDB79C;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
-      /* status and role colors */
-      --danger:#B3261E;
-      --brand-red:#DC2626;
-      --danger-strong:#B3261E;
-      --danger-bg:rgba(179,38,30,.08);
-      --danger-bg-hover:rgba(179,38,30,.14);
-      --danger-bd:rgba(179,38,30,.38);
-      --role-owner:#8A5A00;  --role-owner-bd:rgba(138,90,0,.38);
-      --role-admin:#B3261E;  --role-admin-bd:rgba(179,38,30,.38);
-      --role-srmod:#1D4ED8;  --role-srmod-bd:rgba(29,78,216,.38);
-      --role-jrmod:#046B4E;  --role-jrmod-bd:rgba(4,107,78,.38);
+html{scroll-behavior:smooth;background:var(--vbg);}
+body{background:var(--bg);color:var(--tx);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
 
-      /* milestone name colors */
-      --ms1-name:#687695;   /* soft gray */
-      --ms2-name:#178841;   /* emerald */
-      --ms3-name:#1E6FF5;   /* sapphire */
-      --ms4-name:#8655F6;   /* royal purple */
-      --ms5-name:#A56A07;   /* amber gold */
-      --ms6-name:#EB1515;   /* crimson */
-      --ms7-name:#048196;   /* cyan */
-      --ms8-name:#8F7303;   /* legend gold */
-    }
-    /* off-white — the third theme, and the neutral one
+#intro{position:fixed;inset:0;z-index:9999;background:color-mix(in srgb,var(--bg) 28%,transparent);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;opacity:1;transition:opacity .3s ease;pointer-events:auto;}
+#intro.iHide{opacity:0;pointer-events:none;}
+#intro.iGone{visibility:hidden;}
+.iSpin{width:44px;height:44px;border-radius:50%;border:3px solid rgba(var(--pg-rgb),.18);border-top-color:var(--pg);animation:iSpin .8s linear infinite;}
+@keyframes iSpin{to{transform:rotate(360deg)}}
+.iTxt{font-family:var(--fm);font-size:.72rem;letter-spacing:.3em;color:var(--tx);text-shadow:0 1px 6px rgba(0,0,0,.35);}
+@media(prefers-reduced-motion:reduce){.iSpin{animation-duration:1.6s;}}
 
-       Paper is warm on purpose: hue 55, twelve points of 255 off neutral, a
-       ground that reads as a gallery wall. That warmth is also the one thing
-       people ask to be rid of — a photographer checking a grey card, anyone
-       who finds ivory yellow on their panel. This is the same light theme
-       with the hue taken out of it, and nothing else changed: it inherits the
-       whole block above and restates only the neutrals.
+:root{ --dzTopH:56px; }
+@media(min-width:768px){ :root{ --dzTopH:60px; } }
+@media(min-width:1280px){ :root{ --dzTopH:64px; } }
 
-       Off-white, not white. #FFFFFF across a viewport is the glare Paper was
-       written to avoid, so the page holds twelve points of 255 back from it
-       and the card three — enough that the field reads as a surface rather
-       than as a lamp, and the card still has somewhere to rise to. The lift
-       is 3.12 L*, against Paper's 3.16: a card sits off this page as far as
-       it sits off that one.
+.dzTop{
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:400;
+  height:var(--dzTopH);
+  box-sizing:border-box;
+  display:flex;align-items:center;gap:.75rem;
+  padding:0 var(--shellPad);
+  border-bottom:1px solid var(--bdr);
+  background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.dzBrand{
+  flex:0 0 auto;
+  display:inline-flex;align-items:baseline;
+  font-family:var(--fd);font-weight:800;
+  font-size:clamp(1.28rem,3.4vw,1.42rem);
+  letter-spacing:-.01em;
+  text-decoration:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:opacity .2s ease,transform .15s ease;
+}
+.dzBrand:hover{opacity:.82;}
+.dzBrand:active{transform:scale(.97);}
+.dzBrand:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:6px;}
+.dzBrandD{color:#0A0A0A;}
+html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
+.dzBrandA{color:var(--brand-red);}
 
-       A card edge is an edge, at the figures Paper holds: --bdr is 1.37:1
-       against the page and --bdrh 2.07:1 against the card, where paper's are
-       1.38 and 2.06.
+.dzLinks{
+  display:none;
+  align-items:center;
+  gap:clamp(.5rem,1.8vw,1.6rem);
+  margin:0 auto;
+  min-width:0;
+}
+.dzLink{
+  position:relative;
+  flex:0 0 auto;
+  border:0;background:none;cursor:pointer;
+  padding:.5rem .25rem;
+  font-family:var(--fd);font-weight:700;
+  font-size:clamp(.9rem,1vw,.96rem);letter-spacing:.01em;
+  color:var(--txd);
+  text-decoration:none;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .22s ease;
+}
+.dzLink::after{
+  content:'';
+  position:absolute;
+  left:50%;right:50%;bottom:.1rem;
+  height:2px;border-radius:2px;
+  background:var(--pg);
+  transition:left .3s cubic-bezier(.16,1,.3,1),right .3s cubic-bezier(.16,1,.3,1);
+}
+.dzLink:hover,.dzLink.bnActive,.dzUpWrap.open .dzLink{color:var(--tx);}
+.dzLink:hover::after,.dzLink.bnActive::after{left:.2rem;right:.2rem;}
+.dzLink:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:6px;}
 
-       Ink is pitched to the ground the way both other themes are: body copy
-       holds 15.7:1 here, charcoal's figure to two places and a quarter of a
-       point above paper's 15.4, so no theme is the tiring one. Secondary copy
-       is 5.4:1, between charcoal's 6.3 and paper's 4.9. Accents, brand red,
-       role and milestone colours are not restated — they mean something, so
-       they stay exactly what the light block makes them. */
-    html[data-theme="offwhite"]{
-      --tc:#6C6C68;
-      --bg:#F3F3F1; --sur:#FCFCFA; --sur2:#EAEAE7;
-      --bdr:#D2D2CD; --bdrh:#B2B2AC;
-      --tx:#1A1A18; --tx2-rgb:58,58,54; --txd:rgba(var(--tx2-rgb),.78);
-      --pg:#17171A; --pb:#0F0F12; --ps:#000000; --pgd:#2E2E32;
-      --pg-rgb:23,23,26; --pgd-rgb:46,46,50;
-      --pdim:rgba(var(--pg-rgb),.07);
-      /* the same weight of ink Paper drops, mixed neutral rather than warm */
-      --sh-card:0 1px 3px rgba(24,24,28,.10),0 4px 14px rgba(24,24,28,.12);
-      --sh-card-hover:0 6px 20px rgba(24,24,28,.16);
-      /* the well: overlays and full-screen sub-pages sit below the page */
-      --vbg:#E9E9E6; --vsur:#F8F8F6; --vsur2:#EFEFEC;
-      --vtx:#1D1D1B; --vtx2-rgb:64,64,60; --vtxd:rgba(var(--vtx2-rgb),.80);
-      --vtc:#6A6A65; --vtc-rgb:106,106,101;
-      --vpg:#60605C; --vpb:#4E4E4A; --vps:#3D3D3A;
-      /* the footer: below the page, above the well */
-      --fbg:#E5E5E2; --fsur:#EFEFEC; --fsur2:#E9E9E6;
-      --fbdr:#D5D5D0; --fbdrh:#BDBDB7;
-    }
-    /* The two aliases the base typography rules below actually read.
-       Declared on * rather than on :root deliberately: a dozen panels
-       redefine --tx and --pb for their own surface (admin, profile, upload,
-       ranking, the community page), and a heading inside one of those has to
-       resolve against the scope it is in. On :root it would resolve once, at
-       the root, and every scoped panel would lose its heading colour.
-       Four more aliases stood here — --text-primary, --text-secondary,
-       --text-muted and --border-color — that nothing ever read. */
-    *{
-      --heading-color:var(--tx);
-      --link-color:var(--pb);
-    }
-    /* ── the shell ───────────────────────────────────────────────────────────
-       One measure for the whole site, held in one token.
+.dzUpWrap{position:relative;flex:0 0 auto;display:flex;align-items:center;}
+.dzUpWrap::after{
+  content:'';
+  position:absolute;left:0;right:0;top:100%;height:.6rem;
+  display:none;
+}
+.dzUpWrap.open::after{display:block;}
+.dzLinkDd{display:inline-flex;align-items:center;gap:.3rem;}
+.dzLinkChev{
+  width:13px;height:13px;flex:0 0 auto;opacity:.65;
+  transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .2s ease;
+}
+.dzUpWrap.open .dzLinkChev{transform:rotate(180deg);opacity:1;}
+.dzUpWrap.open .dzLink::after{left:.2rem;right:.2rem;}
 
-       Every band on the page runs the full width of the window — the ground
-       under a section is the section's ground, so a background is never a
-       rectangle floating in a margin — and the content inside it is inset by
-       --shellPad on both sides. Nothing is a card on a mat; the page is the
-       mat, and the work sits on it.
+.dzUpDd{
+  position:absolute;
+  top:calc(100% + .5rem);
+  left:50%;
+  z-index:401;
+  width:min(20.5rem,calc(100vw - 2rem));
+  box-sizing:border-box;
+  transform:translateX(-50%);
+  background:var(--sur);
+  border:1px solid var(--bdr);
+  border-radius:16px;
+  box-shadow:var(--sh-card-hover);
+  display:grid;
+  grid-template-rows:0fr;
+  overflow:hidden;
+  visibility:hidden;pointer-events:none;
+  transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1),
+             visibility 0s linear .24s;
+}
+.dzUpWrap.open .dzUpDd{
+  grid-template-rows:1fr;
+  visibility:visible;pointer-events:auto;
+  transition:grid-template-rows .40s cubic-bezier(.16,1,.3,1),
+             visibility 0s;
+}
+.dzUpDdInner{
+  min-height:0;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.dzUpItem{
+  --upA:var(--pg);
+  display:flex;align-items:center;gap:.7rem;
+  box-sizing:border-box;text-align:left;
+  padding:.6rem;margin:0 .3rem;
+  border:0;border-radius:12px;background:none;cursor:pointer;
+  color:var(--tx);
+  -webkit-tap-highlight-color:transparent;
+  opacity:0;
+  transform:translateX(-12px);
+  transition:background .18s ease,
+             opacity .12s ease,transform .12s ease;
+}
+.dzUpWrap.open .dzUpItem{
+  opacity:1;
+  transform:translateX(0);
+  transition:background .18s ease,
+             opacity .32s cubic-bezier(.16,1,.3,1),
+             transform .36s cubic-bezier(.16,1,.3,1);
+}
+.dzUpWrap.open .dzUpDdInner > :nth-child(1){transition-delay:0s,.06s,.06s;}
+.dzUpWrap.open .dzUpDdInner > :nth-child(2){transition-delay:0s,.105s,.105s;}
+.dzUpWrap.open .dzUpDdInner > :nth-child(3){transition-delay:0s,.15s,.15s;}
+.dzUpWrap.open .dzUpDdInner > :nth-child(4){transition-delay:0s,.195s,.195s;}
+.dzUpWrap.open .dzUpDdInner > :nth-child(5){transition-delay:0s,.24s,.24s;}
+.dzUpItem:first-child{margin-top:.3rem;}
+.dzUpItem:last-child{margin-bottom:.3rem;}
+a.dzUpItem{text-decoration:none;color:inherit;}
+.dzUpItem:focus-visible{outline:2px solid var(--upA);outline-offset:-2px;}
+.dzUpIco{
+  flex:0 0 auto;width:34px;height:34px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--upA) 15%,transparent);
+  color:var(--upA);
+  transition:background .18s ease;
+}
+.dzUpIco svg{width:18px;height:18px;display:block;}
+@media(hover:hover){
+  .dzUpItem:hover{background:var(--sur2);}
+  .dzUpItem:hover .dzUpIco{background:color-mix(in srgb,var(--upA) 26%,transparent);}
+}
+.dzUpTxt{display:flex;flex-direction:column;gap:.08rem;min-width:0;}
+.dzUpNm{
+  font-family:var(--fd);font-weight:700;
+  font-size:.9rem;letter-spacing:.005em;color:var(--tx);
+  white-space:nowrap;
+}
+.dzUpDesc{font-size:.73rem;line-height:1.35;color:var(--txd);white-space:normal;}
 
-       The inset is a share of the window, not a fixed figure, so the measure
-       grows with the screen the way a gallery wall does:
+.dzActions{
+  display:flex;align-items:center;gap:.1rem;
+  flex:0 0 auto;margin-left:auto;
+}
+.dzIcon{
+  position:relative;flex:0 0 auto;
+  width:40px;height:40px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:none;color:var(--tx);cursor:pointer;
+  transition:background .18s,color .18s,transform .15s;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.dzIcon svg{width:20px;height:20px;display:block;}
+.dzIcon:active{transform:scale(.92);}
+.dzIcon:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+@media(hover:hover){ .dzIcon:hover{background:var(--sur2);} }
+.hNotifDot{
+  position:absolute;top:7px;right:7px;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--brand-red);
+  box-shadow:0 0 0 2px var(--bg);
+  display:none;
+}
+#hNotifBtn.hasUnread .hNotifDot{display:block;}
 
-         phone     3% each side  → 94% content
-         tablet    6% each side  → 88% content
-         desktop  10% each side  → 80% content
+.dzCartCount{
+  position:absolute;top:3px;right:1px;
+  min-width:16px;height:16px;padding:0 4px;
+  box-sizing:border-box;border-radius:999px;
+  display:none;align-items:center;justify-content:center;
+  background:var(--brand-red);color:#fff;
+  box-shadow:0 0 0 2px var(--bg);
+  font-family:var(--fm);font-size:.58rem;font-weight:700;
+  line-height:1;letter-spacing:0;
+  pointer-events:none;
+}
+.dzCartBtn.hasItems .dzCartCount{display:flex;}
 
-       Past 2000px the share would keep widening a row of thumbnails past the
-       point the eye can take in as one row, so the cap takes over: max() picks
-       whichever inset is larger, and beyond 2000px that is always the one that
-       holds the content at --shellMax. The content is centred, the ground is
-       not — it still runs to both edges.
+.dzIconSearch{display:none;}
 
-       Percentages resolve where the token is used, not where it is declared,
-       so --shellPad must only be spent on an element that spans the window. A
-       band inset by it is the shell; anything inside that band measures from
-       the band, and takes no inset of its own. That is what keeps a tab, a
-       heading and a thumbnail all starting on one line down the whole page —
-       the bars at the top of a page included: a page title that starts inside
-       or outside the work under it is the one thing that gives a shell away.
+.dzHamBox{
+  position:relative;
+  width:19px;height:13px;
+  display:block;
+}
+.dzHamBox span{
+  position:absolute;left:0;
+  width:100%;height:2px;border-radius:2px;
+  background:currentColor;
+  transition:transform .34s cubic-bezier(.16,1,.3,1),opacity .16s ease;
+}
+.dzHamBox span:nth-child(1){top:0;}
+.dzHamBox span:nth-child(2){top:6px;}
+.dzHamBox span:nth-child(3){top:12px;}
+.dzHam[aria-expanded="true"] .dzHamBox span:nth-child(1){transform:translateY(6px) rotate(45deg);}
+.dzHam[aria-expanded="true"] .dzHamBox span:nth-child(2){opacity:0;transform:scaleX(.4);}
+.dzHam[aria-expanded="true"] .dzHamBox span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
 
-       The overlay pages used to carry two more insets of their own, --fgPad
-       (the gallery and the four section pages) and --pfPad (the profile, the
-       search pages, the community's browse page). Both are the shell now, and
-       are kept only as names so the couple of hundred rules that spend them
-       did not all have to be rewritten. */
-    :root{
-      --shellMax:1600px;
-      --shellPad:3%;
-      --fgPad:var(--shellPad);
-      --pfPad:var(--shellPad);
-    }
-    /* tablet — 88% */
-    @media(min-width:768px){
-      :root{ --shellPad:6%; }
-    }
-    /* desktop and up — 80%, and never past the cap */
-    @media(min-width:1024px){
-      :root{ --shellPad:max(10%,calc((100% - var(--shellMax)) / 2)); }
-    }
+.dzMenu{
+  position:fixed;
+  top:var(--dzTopH);
+  left:0;right:0;
+  z-index:399;
+  display:grid;
+  grid-template-rows:0fr;
+  background:var(--sur);
+  border-bottom:1px solid transparent;
+  overflow:hidden;
+  visibility:hidden;
+  transition:grid-template-rows .26s cubic-bezier(.4,0,.2,1),
+             border-color .2s ease,
+             box-shadow .2s ease,
+             visibility 0s linear .26s;
+}
+.dzMenu.open{
+  grid-template-rows:1fr;
+  visibility:visible;
+  border-bottom-color:var(--bdr);
+  box-shadow:var(--sh-card-hover);
+  transition:grid-template-rows .42s cubic-bezier(.16,1,.3,1),
+             border-color .3s ease,
+             box-shadow .34s ease,
+             visibility 0s;
+}
+.dzMenuInner{
+  min-height:0;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  padding:.35rem var(--shellPad) .6rem;
+}
+.dzMenuItem{
+  display:block;width:100%;
+  box-sizing:border-box;
+  text-align:left;
+  border:0;background:none;cursor:pointer;
+  padding:.78rem .55rem;
+  font-family:var(--fd);font-weight:700;
+  font-size:1rem;letter-spacing:.01em;
+  color:var(--tx);
+  text-decoration:none;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
 
-    /* ── the scrollbar's own strip ───────────────────────────────────────
-       Every full-screen page on this site is its own scroller: the gallery,
-       the profile, settings, the search pages, the community's browse page.
-       A desktop browser with classic scrollbars gives one of them a scrollbar
-       only while its content is taller than the window — so switching from
-       Artworks, which is a grid of hundreds of thumbnails and always scrolls,
-       to Market, which is often a dozen listings and does not, took the
-       scrollbar away and handed its strip back to the page. Everything then
-       re-laid out a scrollbar wider: the bar, the chip row, the grid and
-       every card in it grew and shifted at once, which reads as the screen
-       zooming rather than as a section changing.
+  transition:background .18s ease,color .18s ease;
+}
+.dzMenuInner > .dzMenuItem,
+.dzMenuInner > .dzMenuGrp{
+  opacity:0;
+  transform:translateX(-14px);
+  transition:background .18s ease,color .18s ease,
+             opacity .13s ease,transform .13s ease;
+}
+.dzMenu.open .dzMenuInner > .dzMenuItem,
+.dzMenu.open .dzMenuInner > .dzMenuGrp{
+  opacity:1;
+  transform:translateX(0);
+  transition:background .18s ease,color .18s ease,
+             opacity .34s cubic-bezier(.16,1,.3,1),
+             transform .38s cubic-bezier(.16,1,.3,1);
+}
+.dzMenu.open .dzMenuInner > :nth-child(1){transition-delay:0s,0s,.06s,.06s;}
+.dzMenu.open .dzMenuInner > :nth-child(2){transition-delay:0s,0s,.105s,.105s;}
+.dzMenu.open .dzMenuInner > :nth-child(3){transition-delay:0s,0s,.15s,.15s;}
+.dzMenu.open .dzMenuInner > :nth-child(4){transition-delay:0s,0s,.195s,.195s;}
+.dzMenu.open .dzMenuInner > :nth-child(5){transition-delay:0s,0s,.24s,.24s;}
+.dzMenu.open .dzMenuInner > :nth-child(6){transition-delay:0s,0s,.285s,.285s;}
+.dzMenuInner > * + *{
+  border-top:1px solid var(--bdr);
+}
+.dzMenuItem:active{background:var(--sur2);}
+.dzMenuItem:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
+@media(hover:hover){ .dzMenuItem:hover{background:var(--sur2);} }
+.dzMenuItem.bnActive{background:var(--pdim);color:var(--pb);}
 
-       scroll rather than auto, so the track is there whether or not there is
-       anything to scroll, and nothing moves when a section is short.
+.dzMenuTog{
+  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+}
+.dzMenuChev{
+  width:17px;height:17px;flex:0 0 auto;color:var(--txd);
+  transition:transform .3s cubic-bezier(.16,1,.3,1),color .18s ease;
+}
+.dzMenuGrp.open .dzMenuChev{transform:rotate(180deg);color:var(--tx);}
+.dzMenuSub{
+  display:grid;
+  grid-template-rows:0fr;
+  overflow:hidden;
+  transition:grid-template-rows .28s cubic-bezier(.4,0,.2,1);
+}
+.dzMenuGrp.open .dzMenuSub{
+  grid-template-rows:1fr;
+  transition:grid-template-rows .4s cubic-bezier(.16,1,.3,1);
+}
+.dzMenuSubInner{
+  min-height:0;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.dzMenuSubItem{
+  --upA:var(--pg);
+  display:flex;align-items:center;gap:.6rem;
+  box-sizing:border-box;text-align:left;
+  margin-left:.3rem;
+  border:0;background:none;cursor:pointer;
+  padding:.58rem .5rem;border-radius:11px;
+  font-family:var(--fd);font-weight:600;
+  font-size:.92rem;letter-spacing:.005em;color:var(--tx);
+  white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .18s ease;
+}
+a.dzMenuSubItem{text-decoration:none;color:var(--tx);}
+.dzMenuSubItem:first-child{margin-top:.1rem;}
+.dzMenuSubItem:last-child{margin-bottom:.4rem;}
+.dzMenuSubItem:active{background:var(--sur2);}
+.dzMenuSubItem:focus-visible{outline:2px solid var(--upA);outline-offset:-2px;}
+@media(hover:hover){ .dzMenuSubItem:hover{background:var(--sur2);} }
+.dzUpIcoSm{width:30px;height:30px;border-radius:9px;}
+.dzUpIcoSm svg{width:16px;height:16px;}
+.dzMenuScrim{
+  position:fixed;
+  top:var(--dzTopH);left:0;right:0;bottom:0;
+  z-index:398;
+  background:transparent;
+  display:none;
+}
+.dzMenuScrim.on{display:block;}
 
-       Every full-screen page is listed, not the gallery alone: the profile,
-       the three search pages, settings, my work, notifications, analytics and
-       its list, ranking, theme, friends, bookmarks, progress, albums, the
-       album view, the community's info and browse pages, the admin page and
-       the legal reader. A page that jumped in one place and not another would
-       be the same fault with a smaller blast radius.
+@media(min-width:900px){
+  .dzLinks,.dzIconSearch{display:flex;}
+  .dzHam{display:none;}
+}
 
-       overflow rather than scrollbar-gutter, which is the rule written for
-       this and the wrong one to use here: it reserves its strip on browsers
-       whose scrollbars are overlays and take no room at all — every phone,
-       and a Mac without a mouse — where there was never a jump to fix and
-       15px of the screen is worth more. overflow:scroll reserves the track
-       only where a scrollbar is drawn in the layout, which is exactly where
-       the jump was. */
-    #fg, #dzPanelHost, #profilePage, #pfSearchPage, #fgSearchPage, #setPage,
-    #legalPage, #pfEditPage, #subPage, #cmSearchPage, #cmBrowsePage,
-    #cmInfoPage, #admPage, #pfMyWorkPage, #notifPage, #anPage, #anListPage,
-    #rankPage, #themePage, #frdPage, #bmPage, #xpPage, #albPage, #albViewPage,
-    #cartPage, #anHubPage, #payHubPage{
-      overflow-y:scroll;
-    }
+@media(prefers-reduced-motion:reduce){
+  .dzTop,.dzMenu,.dzMenuItem,.dzLink::after,.dzHamBox span,
+  .dzUpDd,.dzUpItem,.dzMenuSub,.dzMenuChev,.dzLinkChev,
+  .dzMenuInner > .dzMenuItem,.dzMenuInner > .dzMenuGrp{transition-duration:.01ms;}
+  .dzMenu.open .dzMenuInner > *,.dzUpWrap.open .dzUpDdInner > *{transition-delay:0s;}
+  .dzUpItem{transform:none;}
+}
 
-    /* ── the gap between two artworks ────────────────────────────────────────
-       One token for the only space that is ever allowed to fall between two
-       pieces of work, wherever they sit next to each other: the gallery, the
-       home page's boards, a profile, my work, an album, the saved page, the
-       showcase picker. A thumbnail is the content; the space around it is not,
-       and every pixel spent on the space is a pixel taken off the picture.
-
-       It is stated in px rather than in a share of the font size because it is
-       a hairline — a rule between two pictures saying they are two pictures —
-       and a hairline is a fixed number of pixels or it is not a hairline.
-
-         mobile   3px
-         tablet   4px
-         desktop  5px
-
-       The breakpoints are the artwork grids' own column counts (2 / 3 / 4+),
-       not the shell's, because this measures the space between columns and
-       must step where the columns do.
-
-       Nothing that holds artwork adds a margin, a padding or a second gap on
-       top of this: a grid spends --artGap and the page inset, and nothing
-       else. */
-    :root{ --artGap:3px; }
-    @media(min-width:700px){  :root{ --artGap:4px; } }
-    @media(min-width:1280px){ :root{ --artGap:5px; } }
-
-    /* below fold render perf */
-    #artworks,#subOverview,footer.siteFooter{
-      content-visibility:auto;
-    }
-    #artworks{contain-intrinsic-size:auto 900px;}
-    #subOverview{contain-intrinsic-size:auto 700px;}
-    footer.siteFooter{contain-intrinsic-size:auto 480px;}
-
-    /* typography base */
-    body{line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
-    h1,h2,h3,h4,h5,h6{color:var(--heading-color);line-height:1.15;}
-    h1{font-weight:800;letter-spacing:-.02em;}
-    h2,h3{font-weight:700;letter-spacing:-.01em;}
-    a{color:var(--link-color);}
-    kbd{font-variant-numeric:tabular-nums;}
-
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-
-    html{scroll-behavior:smooth;background:var(--vbg);}
-    body{background:var(--bg);color:var(--tx);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
-
-    /* intro */
-    /* loading veil */
-    #intro{position:fixed;inset:0;z-index:9999;background:color-mix(in srgb,var(--bg) 28%,transparent);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;opacity:1;transition:opacity .3s ease;pointer-events:auto;}
-    #intro.iHide{opacity:0;pointer-events:none;}
-    #intro.iGone{visibility:hidden;}
-    .iSpin{width:44px;height:44px;border-radius:50%;border:3px solid rgba(var(--pg-rgb),.18);border-top-color:var(--pg);animation:iSpin .8s linear infinite;}
-    @keyframes iSpin{to{transform:rotate(360deg)}}
-    .iTxt{font-family:var(--fm);font-size:.72rem;letter-spacing:.3em;color:var(--tx);text-shadow:0 1px 6px rgba(0,0,0,.35);}
-    @media(prefers-reduced-motion:reduce){.iSpin{animation-duration:1.6s;}}
-
-
-    /* ── the bar at the top of the document ──────────────────────────────────
-       One navigation, at the top, at every width. What it replaces was a
-       floating pill at the bottom of the screen holding five icons, and two
-       more pills fixed over the top corners holding the wordmark and the bell.
-
-       Fixed, and only ever seen on the home page — but by being UNDERNEATH
-       the sections rather than by getting out of their way. Every section on
-       this site is an opaque panel covering the document at z-index 500 or
-       above, and this sits at 400 with its drawer and scrim just below it, so
-       a section simply covers all three.
-
-       It used to slide itself out instead, on a class js/sections.js put on it
-       when a panel opened. Two things wrong with that: the bar and the drawer
-       went on animating over the top of a section that had already opened, and
-       a panel that opened without the watcher seeing it left two bars stacked.
-       Being lower in the stack has neither failure mode — there is no state to
-       get wrong, and nothing to finish animating.
-
-       --dzTopH is the bar's height and is spent in three other places: the
-       clearance under it in css/hero.css, and the assistant button and its
-       bubble in css/panels.css, which hang below it. */
-    :root{ --dzTopH:56px; }
-    @media(min-width:768px){ :root{ --dzTopH:60px; } }
-    @media(min-width:1280px){ :root{ --dzTopH:64px; } }
-
-    .dzTop{
-      position:fixed;
-      top:0;left:0;right:0;
-      z-index:400;
-      height:var(--dzTopH);
-      box-sizing:border-box;
-      display:flex;align-items:center;gap:.75rem;
-      padding:0 var(--shellPad);
-      border-bottom:1px solid var(--bdr);
-      background:color-mix(in srgb,var(--bg) 92%,transparent);
-      backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    }
-    /* the wordmark — black and brand red, the two colours it has always been */
-    .dzBrand{
-      flex:0 0 auto;
-      display:inline-flex;align-items:baseline;
-      font-family:var(--fd);font-weight:800;
-      /* A step above the words beside it, and only a step. It was set at
-         1.55rem once and the bar ended up as deep as the wordmark rather than
-         as deep as a bar; then at 1.14rem, which is the links' own size and
-         reads as one more link. This is between the two — plainly the name of
-         the place, and still short enough that the height above it is the
-         bar's own decision. Weight and the red carry the rest of the
-         emphasis: 800 against the links' 700. */
-      font-size:clamp(1.28rem,3.4vw,1.42rem);
-      letter-spacing:-.01em;
-      text-decoration:none;
-      -webkit-tap-highlight-color:transparent;
-      transition:opacity .2s ease,transform .15s ease;
-    }
-    .dzBrand:hover{opacity:.82;}
-    .dzBrand:active{transform:scale(.97);}
-    .dzBrand:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:6px;}
-    /* On paper this is ink. On charcoal an ink-black wordmark on a near-black
-       bar is a wordmark nobody can read, so the dark theme lends it the page's
-       own text colour and the red beside it goes on doing the identifying. */
-    .dzBrandD{color:#0A0A0A;}
-    html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
-    .dzBrandA{color:var(--brand-red);}
-
-    /* the wide bar's destinations, centred between the wordmark and the
-       actions. Out of the document on a phone, where the hamburger holds the
-       same five words. */
-    .dzLinks{
-      display:none;
-      align-items:center;
-      gap:clamp(.5rem,1.8vw,1.6rem);
-      margin:0 auto;
-      min-width:0;
-    }
-    .dzLink{
-      position:relative;
-      flex:0 0 auto;
-      border:0;background:none;cursor:pointer;
-      padding:.5rem .25rem;
-      font-family:var(--fd);font-weight:700;
-      font-size:clamp(.9rem,1vw,.96rem);letter-spacing:.01em;
-      color:var(--txd);
-      text-decoration:none;white-space:nowrap;
-      -webkit-tap-highlight-color:transparent;
-      transition:color .22s ease;
-    }
-    /* the mark under the word you are on, drawn from the middle out. It is on
-       the word rather than around it, so nothing about the bar's rhythm moves
-       when it lands. */
-    .dzLink::after{
-      content:'';
-      position:absolute;
-      left:50%;right:50%;bottom:.1rem;
-      height:2px;border-radius:2px;
-      background:var(--pg);
-      transition:left .3s cubic-bezier(.16,1,.3,1),right .3s cubic-bezier(.16,1,.3,1);
-    }
-    .dzLink:hover{color:var(--tx);}
-    .dzLink:hover::after{left:.2rem;right:.2rem;}
-    .dzLink.bnActive{color:var(--tx);}
-    .dzLink.bnActive::after{left:.2rem;right:.2rem;}
-    .dzLink:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:6px;}
-
-    /* ── Upload, and the five things it means ────────────────────────────────
-       Posting an artwork, listing a product, writing a post, sharing a resource
-       and posting a job are five forms with five sets of rules. The bar used to
-       name none of them: it said Upload, opened the artwork form and left a row
-       of chips above it for anyone who wanted one of the other four. So the
-       word carries the five instead, and each one lands on its own form.
-
-       The panel hangs off the word rather than off the bar, so it stays under
-       Upload wherever the row of links happens to sit. Its own gap is bridged
-       by ::before below — without it, crossing the few pixels between the word
-       and the panel is a mouseleave, and the menu shuts under the pointer on
-       its way in. */
-    .dzUpWrap{position:relative;flex:0 0 auto;display:flex;align-items:center;}
-    /* The bridge across the gap between the word and the panel. It hangs off
-       the wrapper rather than off the panel, because the panel clips its own
-       children now and a bridge above it would be the first thing clipped.
-       Only while the menu is up: an invisible strip under an idle word would
-       take the hover off whatever is behind it. */
-    .dzUpWrap::after{
-      content:'';
-      position:absolute;left:0;right:0;top:100%;height:.6rem;
-      display:none;
-    }
-    .dzUpWrap.open::after{display:block;}
-    .dzLinkDd{display:inline-flex;align-items:center;gap:.3rem;}
-    .dzLinkChev{
-      width:13px;height:13px;flex:0 0 auto;opacity:.65;
-      transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .2s ease;
-    }
-    .dzUpWrap.open .dzLinkChev{transform:rotate(180deg);opacity:1;}
-    /* The word wears the same mark it wears on hover for as long as its menu
-       is up. Opened from the keyboard there is no pointer on it, and a panel
-       hanging off a word drawn as if nothing were happening is a panel that
-       looks like it belongs to the bar rather than to Upload. */
-    .dzUpWrap.open .dzLink{color:var(--tx);}
-    .dzUpWrap.open .dzLink::after{left:.2rem;right:.2rem;}
-    /* It opens the way the drawer opens.
-       This used to fade and scale in, which is a different gesture from the
-       one the hamburger's panel makes two breakpoints away — the same five
-       destinations arriving two different ways depending on the width of the
-       window. It is the drawer's roll now: a grid track going 0fr → 1fr, which
-       is the one way to animate to a height nobody has measured, with the
-       words sliding in across it one after another. One motion for the menus
-       on this site, wherever they are opened from.
-
-       The chrome stays on this element and the padding moves inside it.
-       Padding on a grid item survives a 0fr row, so a padded panel would show
-       a sliver of its own surface while it was shut; its border and background
-       do not, because `visibility:hidden` takes the whole box out of the
-       painting until the roll begins. The box-shadow is drawn outside the
-       border box and so is not clipped by this element's own overflow. */
-    .dzUpDd{
-      position:absolute;
-      top:calc(100% + .5rem);
-      left:50%;
-      z-index:401;
-      width:min(20.5rem,calc(100vw - 2rem));
-      box-sizing:border-box;
-      transform:translateX(-50%);
-      background:var(--sur);
-      border:1px solid var(--bdr);
-      border-radius:16px;
-      box-shadow:var(--sh-card-hover);
-      display:grid;
-      grid-template-rows:0fr;
-      overflow:hidden;
-      /* Closed it is not merely see-through: visibility and pointer-events
-         take it out of the page entirely, so a menu nobody has opened cannot
-         swallow a click meant for the headline under it. Shutting is the
-         quicker half and on a plain ease — a menu being put away does not need
-         to be watched. */
-      visibility:hidden;pointer-events:none;
-      transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1),
-                 visibility 0s linear .24s;
-    }
-    .dzUpWrap.open .dzUpDd{
-      grid-template-rows:1fr;
-      visibility:visible;pointer-events:auto;
-      /* Opening runs longer and decelerates hard — it covers most of its
-         travel early and settles into the last few pixels, which is how a
-         thing with weight comes to rest rather than stopping. The drawer's
-         own numbers. */
-      transition:grid-template-rows .40s cubic-bezier(.16,1,.3,1),
-                 visibility 0s;
-    }
-    /* The breathing room around the rows is margin on the rows and not padding
-       here, for the same reason the drawer's sub-list carries it that way:
-       padding on a grid item survives a 0fr row, and a shut panel that is
-       still twelve pixels tall is a shut panel with a box in it. A margin is
-       inside the box this clips, so shut is shut. */
-    .dzUpDdInner{
-      min-height:0;
-      overflow:hidden;
-      display:flex;flex-direction:column;
-    }
-    .dzUpItem{
-      --upA:var(--pg);
-      display:flex;align-items:center;gap:.7rem;
-      box-sizing:border-box;text-align:left;
-      padding:.6rem;margin:0 .3rem;
-      border:0;border-radius:12px;background:none;cursor:pointer;
-      color:var(--tx);
-      -webkit-tap-highlight-color:transparent;
-      /* The rows come in from the left one after another while the panel above
-         them is still rolling open — two movements at right angles to each
-         other, which is what the hamburger's drawer does with the same five
-         words. The stagger is on the way in only: closing, they go together
-         and quickly, because a staggered exit leaves the last row still
-         travelling after the panel that held it has gone. */
-      opacity:0;
-      transform:translateX(-12px);
-      transition:background .18s ease,
-                 opacity .12s ease,transform .12s ease;
-    }
-    .dzUpWrap.open .dzUpItem{
-      opacity:1;
-      transform:translateX(0);
-      transition:background .18s ease,
-                 opacity .32s cubic-bezier(.16,1,.3,1),
-                 transform .36s cubic-bezier(.16,1,.3,1);
-    }
-    /* 45ms apart, starting once the panel has opened far enough to have
-       somewhere to put the first one — the drawer's own timings */
-    .dzUpWrap.open .dzUpDdInner > :nth-child(1){transition-delay:0s,.06s,.06s;}
-    .dzUpWrap.open .dzUpDdInner > :nth-child(2){transition-delay:0s,.105s,.105s;}
-    .dzUpWrap.open .dzUpDdInner > :nth-child(3){transition-delay:0s,.15s,.15s;}
-    .dzUpWrap.open .dzUpDdInner > :nth-child(4){transition-delay:0s,.195s,.195s;}
-    .dzUpWrap.open .dzUpDdInner > :nth-child(5){transition-delay:0s,.24s,.24s;}
-    /* Four of the Explore entries are anchors carrying real addresses and the
-       rest are buttons — an entry with a url gets one, so a middle-click opens
-       it in a tab and the status bar says where it goes. This is what stops
-       those four arriving underlined and wearing the link colour, so a menu
-       reads as one menu however each row is built. */
-    .dzUpItem:first-child{margin-top:.3rem;}
-    .dzUpItem:last-child{margin-bottom:.3rem;}
-    a.dzUpItem{text-decoration:none;color:inherit;}
-    @media(hover:hover){ .dzUpItem:hover{background:var(--sur2);} }
-    .dzUpItem:focus-visible{outline:2px solid var(--upA);outline-offset:-2px;}
-    /* the section's own glyph in the section's own colour — the same pairing
-       the gallery's tab rail and the upload forms use, so a member meets one
-       mark for Marketplace whether they are browsing it or posting to it */
-    .dzUpIco{
-      flex:0 0 auto;width:34px;height:34px;border-radius:10px;
-      display:flex;align-items:center;justify-content:center;
-      background:color-mix(in srgb,var(--upA) 15%,transparent);
-      color:var(--upA);
-      transition:background .18s ease;
-    }
-    .dzUpIco svg{width:18px;height:18px;display:block;}
-    @media(hover:hover){
-      .dzUpItem:hover .dzUpIco{background:color-mix(in srgb,var(--upA) 26%,transparent);}
-    }
-    .dzUpTxt{display:flex;flex-direction:column;gap:.08rem;min-width:0;}
-    .dzUpNm{
-      font-family:var(--fd);font-weight:700;
-      font-size:.9rem;letter-spacing:.005em;color:var(--tx);
-      white-space:nowrap;
-    }
-    .dzUpDesc{font-size:.73rem;line-height:1.35;color:var(--txd);white-space:normal;}
-
-    .dzActions{
-      display:flex;align-items:center;gap:.1rem;
-      flex:0 0 auto;margin-left:auto;
-    }
-    .dzIcon{
-      position:relative;flex:0 0 auto;
-      width:40px;height:40px;border-radius:11px;
-      display:flex;align-items:center;justify-content:center;
-      background:none;border:none;color:var(--tx);cursor:pointer;
-      transition:background .18s,color .18s,transform .15s;
-      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    }
-    .dzIcon svg{width:20px;height:20px;display:block;}
-    .dzIcon:active{transform:scale(.92);}
-    .dzIcon:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-    @media(hover:hover){ .dzIcon:hover{background:var(--sur2);} }
-    /* the unread mark, the same signal the profile's own bar carries */
-    .hNotifDot{
-      position:absolute;top:7px;right:7px;
-      width:8px;height:8px;border-radius:50%;
-      background:var(--brand-red);
-      box-shadow:0 0 0 2px var(--bg);
-      display:none;
-    }
-    #hNotifBtn.hasUnread .hNotifDot{display:block;}
-
-    /* The cart, beside the bell. It was the gallery's sixth chip — one
-       member's own basket in a row of five public sections, reachable only by
-       opening the gallery first. It is a control on the bar now, and the
-       number on it is how many things are waiting in it.
-
-       A count and not a dot: the bell's dot answers "is there anything", which
-       is all a notification needs, and a basket's answer is "how many". Empty
-       wears nothing at all rather than a nought — a badge saying 0 is a badge
-       asking to be looked at for no reason. */
-    .dzCartCount{
-      position:absolute;top:3px;right:1px;
-      min-width:16px;height:16px;padding:0 4px;
-      box-sizing:border-box;border-radius:999px;
-      display:none;align-items:center;justify-content:center;
-      background:var(--brand-red);color:#fff;
-      box-shadow:0 0 0 2px var(--bg);
-      font-family:var(--fm);font-size:.58rem;font-weight:700;
-      line-height:1;letter-spacing:0;
-      pointer-events:none;
-    }
-    .dzCartBtn.hasItems .dzCartCount{display:flex;}
-
-    /* Search is a word on a phone and an icon on a wide bar: on a phone it is
-       the hamburger's first item, which is where the other four are, and a
-       third icon on a row that is already the wordmark, the bell and the
-       hamburger is what the row cannot take. */
-    .dzIconSearch{display:none;}
-
-    /* the hamburger. Three rules that fold into a cross while the menu is up,
-       which is the one animation that says what the button will do next. */
-    .dzHamBox{
-      position:relative;
-      width:19px;height:13px;
-      display:block;
-    }
-    .dzHamBox span{
-      position:absolute;left:0;
-      width:100%;height:2px;border-radius:2px;
-      background:currentColor;
-      transition:transform .34s cubic-bezier(.16,1,.3,1),opacity .16s ease;
-    }
-    .dzHamBox span:nth-child(1){top:0;}
-    .dzHamBox span:nth-child(2){top:6px;}
-    .dzHamBox span:nth-child(3){top:12px;}
-    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(1){transform:translateY(6px) rotate(45deg);}
-    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(2){opacity:0;transform:scaleX(.4);}
-    .dzHam[aria-expanded="true"] .dzHamBox span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
-
-    /* ── the menu ────────────────────────────────────────────────────────────
-       A drawer that rolls down out of the bar. It is full width because it is
-       part of the bar rather than a card floating near it, and it stops at the
-       foot of its own five words — it never becomes a page, and the page under
-       it is never locked.
-
-       The roll is a grid track going 0fr → 1fr, which is the one way to
-       animate to a height nobody has measured. The row is the whole panel and
-       .dzMenuInner is what overflows out of it, so the words are revealed from
-       the top down rather than squashed. A browser too old to interpolate the
-       track still opens and closes it — it just arrives in one step, and the
-       words fading in underneath still read as a drawer.
-
-       It is drawn under the bar in the stack as well as under it on the
-       screen, so the bar's own edge stays the line the drawer comes out of —
-       and under every section too, so one opening covers the drawer mid-roll
-       instead of letting it finish on top. */
-    .dzMenu{
-      position:fixed;
-      top:var(--dzTopH);
-      left:0;right:0;
-      z-index:399;
-      display:grid;
-      grid-template-rows:0fr;
-      /* Opaque, and a surface rather than the ground. The bar above it is
-         glass, which is right for a strip with the page moving under it; a
-         drawer with words in it is a thing that has come out of the bar and
-         has to be read against, so the headline it drops over does not show
-         through the middle of it. */
-      background:var(--sur);
-      border-bottom:1px solid transparent;
-      overflow:hidden;
-      visibility:hidden;
-      /* Shutting is the quicker half, and on a plain ease: a drawer being put
-         away does not need to be watched, and a slow close is the single most
-         common way a nav starts to feel heavy. */
-      transition:grid-template-rows .26s cubic-bezier(.4,0,.2,1),
-                 border-color .2s ease,
-                 box-shadow .2s ease,
-                 visibility 0s linear .26s;
-    }
-    .dzMenu.open{
-      grid-template-rows:1fr;
-      visibility:visible;
-      border-bottom-color:var(--bdr);
-      box-shadow:var(--sh-card-hover);
-      /* Opening runs longer and decelerates hard — it covers most of its
-         travel early and settles into the last few pixels, which is how a
-         thing with weight comes to rest rather than stopping. */
-      transition:grid-template-rows .42s cubic-bezier(.16,1,.3,1),
-                 border-color .3s ease,
-                 box-shadow .34s ease,
-                 visibility 0s;
-    }
-    .dzMenuInner{
-      min-height:0;
-      overflow:hidden;
-      display:flex;flex-direction:column;
-      padding:.35rem var(--shellPad) .6rem;
-    }
-    .dzMenuItem{
-      display:block;width:100%;
-      box-sizing:border-box;
-      text-align:left;
-      border:0;background:none;cursor:pointer;
-      padding:.78rem .55rem;
-      font-family:var(--fd);font-weight:700;
-      font-size:1rem;letter-spacing:.01em;
-      color:var(--tx);
-      text-decoration:none;white-space:nowrap;
-      -webkit-tap-highlight-color:transparent;
-      /* The words slide in from the left, one after the other, while the
-         drawer above them is still opening. Two movements at right angles to
-         each other: the panel drops, the words come in across it. One
-         direction for both would read as the whole block sliding, which is the
-         thing this is not.
-
-         The stagger is on the way in only. Closing, they go together and
-         quickly — a staggered exit means the last word is still travelling
-         after the drawer that held it has gone. */
-      transition:background .18s ease,color .18s ease;
-    }
-    /* The reveal is on whatever the drawer lists, which since Upload became a
-       group of five is not always an item: a wrapper carrying a row and the
-       sub-list under it is one entry in this drawer and animates as one. The
-       five inside it are not direct children and so do not take the stagger
-       twice — the sub-list has a roll of its own. */
-    .dzMenuInner > .dzMenuItem,
-    .dzMenuInner > .dzMenuGrp{
-      opacity:0;
-      transform:translateX(-14px);
-      transition:background .18s ease,color .18s ease,
-                 opacity .13s ease,transform .13s ease;
-    }
-    .dzMenu.open .dzMenuInner > .dzMenuItem,
-    .dzMenu.open .dzMenuInner > .dzMenuGrp{
-      opacity:1;
-      transform:translateX(0);
-      transition:background .18s ease,color .18s ease,
-                 opacity .34s cubic-bezier(.16,1,.3,1),
-                 transform .38s cubic-bezier(.16,1,.3,1);
-    }
-    /* 45ms apart, starting once the drawer has opened far enough to have
-       somewhere to put the first one */
-    .dzMenu.open .dzMenuInner > :nth-child(1){transition-delay:0s,0s,.06s,.06s;}
-    .dzMenu.open .dzMenuInner > :nth-child(2){transition-delay:0s,0s,.105s,.105s;}
-    .dzMenu.open .dzMenuInner > :nth-child(3){transition-delay:0s,0s,.15s,.15s;}
-    .dzMenu.open .dzMenuInner > :nth-child(4){transition-delay:0s,0s,.195s,.195s;}
-    .dzMenu.open .dzMenuInner > :nth-child(5){transition-delay:0s,0s,.24s,.24s;}
-    /* Six rows since Community became Communities and Friends. */
-    .dzMenu.open .dzMenuInner > :nth-child(6){transition-delay:0s,0s,.285s,.285s;}
-    /* A hairline between one word and the next. Five words down a full-width
-       panel with nothing between them read as a paragraph broken up rather
-       than as five things you can choose; the rule is what makes each one a
-       row. Drawn on the top edge of every item but the first, so there is no
-       rule against the bar's own edge above and none against the drawer's
-       edge below — the panel is bounded by its own border, not by a sixth
-       line floating at the end of the list. */
-    .dzMenuInner > * + *{
-      border-top:1px solid var(--bdr);
-    }
-    .dzMenuItem:active{background:var(--sur2);}
-    .dzMenuItem:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
-    @media(hover:hover){ .dzMenuItem:hover{background:var(--sur2);} }
-    .dzMenuItem.bnActive{background:var(--pdim);color:var(--pb);}
-
-    /* ── Upload, in the drawer ───────────────────────────────────────────────
-       Five rows for one word would push the account link off the end of a
-       phone-height drawer, so Upload stays one row and opens into the five.
-       The roll is the drawer's own trick — a grid track from 0fr to 1fr —
-       which is how a list nobody has measured animates to the height of its
-       own contents. */
-    .dzMenuTog{
-      display:flex;align-items:center;justify-content:space-between;gap:.6rem;
-    }
-    .dzMenuChev{
-      width:17px;height:17px;flex:0 0 auto;color:var(--txd);
-      transition:transform .3s cubic-bezier(.16,1,.3,1),color .18s ease;
-    }
-    .dzMenuGrp.open .dzMenuChev{transform:rotate(180deg);color:var(--tx);}
-    .dzMenuSub{
-      display:grid;
-      grid-template-rows:0fr;
-      overflow:hidden;
-      transition:grid-template-rows .28s cubic-bezier(.4,0,.2,1);
-    }
-    .dzMenuGrp.open .dzMenuSub{
-      grid-template-rows:1fr;
-      transition:grid-template-rows .4s cubic-bezier(.16,1,.3,1);
-    }
-    /* The breathing room around the five is margin on the rows and not padding
-       here, because padding on a grid item survives a 0fr row: eight pixels of
-       it sat under the Upload word while the list was folded away, making that
-       one row taller than the four above it. A margin is inside the box this
-       clips, so folded is folded. */
-    .dzMenuSubInner{
-      min-height:0;overflow:hidden;
-      display:flex;flex-direction:column;
-    }
-    .dzMenuSubItem{
-      --upA:var(--pg);
-      display:flex;align-items:center;gap:.6rem;
-      box-sizing:border-box;text-align:left;
-      margin-left:.3rem;
-      border:0;background:none;cursor:pointer;
-      padding:.58rem .5rem;border-radius:11px;
-      font-family:var(--fd);font-weight:600;
-      font-size:.92rem;letter-spacing:.005em;color:var(--tx);
-      white-space:nowrap;
-      -webkit-tap-highlight-color:transparent;
-      transition:background .18s ease;
-    }
-    a.dzMenuSubItem{text-decoration:none;color:var(--tx);}
-    .dzMenuSubItem:first-child{margin-top:.1rem;}
-    .dzMenuSubItem:last-child{margin-bottom:.4rem;}
-    .dzMenuSubItem:active{background:var(--sur2);}
-    .dzMenuSubItem:focus-visible{outline:2px solid var(--upA);outline-offset:-2px;}
-    @media(hover:hover){ .dzMenuSubItem:hover{background:var(--sur2);} }
-    /* the same badge the wide bar's menu draws, a size down for a row */
-    .dzUpIcoSm{width:30px;height:30px;border-radius:9px;}
-    .dzUpIcoSm svg{width:16px;height:16px;}
-    /* The rest of the window, taking the tap that closes the drawer and
-       nothing else. It has no colour of its own — the page under an open
-       drawer looks exactly as it did before the drawer opened — and it starts
-       under the bar, because a tap on the bar closes the drawer too and that
-       one is handled in js/topnav.js. */
-    .dzMenuScrim{
-      position:fixed;
-      top:var(--dzTopH);left:0;right:0;bottom:0;
-      z-index:398;
-      background:transparent;
-      display:none;
-    }
-    .dzMenuScrim.on{display:block;}
-
-    /* ── from 900px up ───────────────────────────────────────────────────────
-       The five destinations come out of the hamburger and onto the bar, and
-       the search comes with them. There is no hamburger at this width: a menu
-       button beside a row of the same words is a second way to the same five
-       places. */
-    @media(min-width:900px){
-      .dzLinks{display:flex;}
-      .dzIconSearch{display:flex;}
-      .dzHam{display:none;}
-    }
-
-    @media(prefers-reduced-motion:reduce){
-      .dzTop,.dzMenu,.dzMenuItem,.dzLink::after,.dzHamBox span,
-      .dzUpDd,.dzUpItem,.dzMenuSub,.dzMenuChev,.dzLinkChev,
-      .dzMenuInner > .dzMenuItem,.dzMenuInner > .dzMenuGrp{transition-duration:.01ms;}
-      .dzMenu.open .dzMenuInner > *{transition-delay:0s;}
-      .dzUpWrap.open .dzUpDdInner > *{transition-delay:0s;}
-      /* the rows arrive where they belong rather than travelling to it; the
-         panel keeps its own centring transform, which is layout and not
-         motion */
-      .dzUpItem{transform:none;}
-    }
-
-    #hero {
-      position: relative;
-      min-height: 1px;
-      overflow: hidden;
-      background: var(--bg);
-    }
-
-    /* Three things used to float over this page in pills of their own — the
-       wordmark, the bell and the assistant button — sharing a .fpFloat class
-       and a .heroOut that took all three down when a section covered them.
-       The first two are in #dzTop now and the third is gone, so both the class
-       and the hiding went: the bar is drawn under the sections instead, which
-       is a fact about the stack rather than a state something has to maintain. */
-
-
-    /* image protection
-       the download button is the only way to save artwork, so the browser's
-       own long press / right click / drag shortcuts are shut off on media */
-    img, picture, canvas, video {
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-user-drag: none;
-      user-drag: none;
-    }
-    /* printing the page is another way to lift the pixels out */
-    @media print {
-      img, picture, canvas, video { visibility: hidden !important; }
-    }
+#hero {
+  position: relative;
+  min-height: 1px;
+  overflow: hidden;
+  background: var(--bg);
+}
+@media print {
+  img, picture, canvas, video { visibility: hidden !important; }
+}

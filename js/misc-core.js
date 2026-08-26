@@ -1,5 +1,3 @@
-// milestone colors, offline cache
-// milestone colors
 (function () {
   'use strict';
   var TIERS = [
@@ -13,14 +11,13 @@
     { lvl: 100, name: 'DigiArtz Legend', v: '--ms8' }
   ];
 
-  // highest tier reached
   function tierFor (level) {
     var lv = Number(level) || 0, t = null;
     for (var i = 0; i < TIERS.length; i++) { if (lv >= TIERS[i].lvl) t = TIERS[i]; }
     return t;
   }
-  function fill (t) { return t ? 'var(' + t.v + ')' : ''; }        // chip background
-  function nameC (t) { return t ? 'var(' + t.v + '-name)' : ''; }  // text on the page
+  function fill (t) { return t ? 'var(' + t.v + ')' : ''; }
+  function nameC (t) { return t ? 'var(' + t.v + '-name)' : ''; }
 
   function paintName (el, level) {
     if (!el) return;
@@ -55,7 +52,6 @@
   };
 })();
 
-// artist progress
 (function () {
   'use strict';
   var XP_TOTALS = [0,8,16,24,32,41,50,59,68,78,88,98,108,119,130,141,152,164,176,188,
@@ -101,7 +97,6 @@
     comment:  '<path d="M21 12a8 8 0 0 1-8 8H4l1.6-3.2A8 8 0 1 1 21 12Z"/>'
   };
 
-  // data and render
   function client () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
 
   window.xpLoadInto = async function (wrapId, targetId, opts) {
@@ -132,7 +127,6 @@
     var xp = Number(p.xp) || 0;
     var level = Number(p.level) || levelOf(xp);
 
-    // rank card
     var rank = el('div', 'xpCard xpRank');
     rank.appendChild(el('div', 'xpRankLvl', 'LEVEL ' + level));
     rank.appendChild(el('div', 'xpRankTitle', rankTitle(level)));
@@ -156,11 +150,9 @@
     }
     rank.appendChild(nxt);
     wrap.appendChild(rank);
-    // animate fill
     var pct = next != null ? Math.max(0, Math.min(100, (xp - cur) * 100 / (next - cur))) : 100;
     requestAnimationFrame(function () { requestAnimationFrame(function () { fill.style.width = pct + '%'; }); });
 
-    // how to earn
     var earn = el('div', 'xpCard');
     earn.appendChild(el('div', 'xpCardLbl', 'HOW TO EARN XP'));
     var eg = el('div', 'xpGrid2');
@@ -177,7 +169,6 @@
     earn.appendChild(eg);
     wrap.appendChild(earn);
 
-    // stats
     var stats = el('div', 'xpCard');
     stats.appendChild(el('div', 'xpCardLbl', 'COMMUNITY ACTIVITY'));
     var sg = el('div', 'xpGrid2');
@@ -191,14 +182,12 @@
     stats.appendChild(sg);
     wrap.appendChild(stats);
 
-    // milestones
     var mile = el('div', 'xpCard');
     mile.appendChild(el('div', 'xpCardLbl', 'ARTIST MILESTONES'));
     var curTitle = rankTitle(level);
     RANKS.forEach(function (r) {
       var done = level >= r.lvl;
       var row = el('div', 'xpMile' + (done ? ' done' : '') + (done && r.name === curTitle ? ' cur' : ''));
-      // tier color per row
       var t = window.DZ_MS && DZ_MS.tierFor(r.lvl);
       if (t && done) {
         row.style.setProperty('--ms-c', DZ_MS.fill(t));
@@ -211,7 +200,6 @@
     });
     wrap.appendChild(mile);
 
-    // leaderboard
     if (lb) {
       var board = el('div', 'xpCard');
       board.appendChild(el('div', 'xpCardLbl', 'COMMUNITY LEADERBOARD'));
@@ -239,7 +227,6 @@
     }
   }
 
-  // sliding page
   var xpLastFocus = null;
   window.openXpPage = function () {
     var pg = document.getElementById('xpPage');
@@ -247,7 +234,6 @@
     xpLastFocus = document.activeElement;
     pg.classList.add('open');
     document.body.style.overflow = 'hidden';
-    // viewed profile, else self
     var target = (window.pf && window.pf.profile && window.pf.profile.id) ||
                  (typeof currentUser !== 'undefined' && currentUser && currentUser.id) || null;
     window.xpLoadInto('xpPageWrap', target, { leaderboard: true });
@@ -267,13 +253,11 @@
   });
 })();
 
-// offline cache
 (function () {
   'use strict';
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/sw.js').catch(function () {
-        // best effort registration
       });
     });
   }
@@ -284,4 +268,3 @@
     if (typeof showToast === 'function') showToast('Back online');
   });
 })();
-

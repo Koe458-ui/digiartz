@@ -1,42 +1,4 @@
 #!/usr/bin/env node
-// Backfill the __t600.webp derivative for images uploaded before the size
-// existed.
-//
-// STATUS: the 2026-07-30 backfill was NOT run with this script. There was no
-// Node available, so it ran inside Supabase instead — see
-// supabase/functions/backfill-t600/index.ts, which sources from the existing
-// f1600 rather than the original because an edge worker cannot hold a
-// full-size decode in memory. All 30 images were covered, 0 failed.
-// This script is still the better tool when Node IS available: it works from
-// the untouched originals, so it avoids the extra lossy generation. Keep it
-// for the next batch of images that predates a new size.
-//
-// WHY THIS EXISTS
-// Derivatives are generated in the browser at upload time (Supabase image
-// transformations are a paid-plan feature), so adding a size to DERIVE_SPEC
-// only affects new uploads. Everything already in koe-media has t300/v1000/
-// f1600 and no t600. Until this has run, config.js T600_READY must stay false:
-// a srcset candidate that 404s does not fall back to another entry, the
-// browser just fails the image.
-//
-// WHAT IT DOES
-// For every original in koe-originals, checks whether the matching
-// <base>__t600.webp exists in koe-media, and if not, downsamples the original
-// to 600px wide at quality 52 and uploads it. Idempotent: re-running skips
-// everything already present, so it is safe to stop and restart.
-//
-// It never writes to koe-originals and never touches an existing object.
-// --dry-run lists what would be created without uploading anything.
-//
-// USAGE
-//   npm i @supabase/supabase-js sharp
-//   SUPABASE_URL=https://xxxx.supabase.co \
-//   SUPABASE_SERVICE_ROLE_KEY=eyJ... \
-//   node security/backfill-t600.mjs [--dry-run] [--limit=N]
-//
-// The service role key is required: koe-originals is private and its select
-// policies are owner-scoped. Take it from the Supabase dashboard, keep it in
-// your shell only, and never commit it.
 
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
@@ -52,8 +14,6 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 const DRY_RUN = process.argv.includes('--dry-run');
 const LIMIT   = Number((process.argv.find((a) => a.startsWith('--limit=')) || '').split('=')[1]) || Infinity;
 
-// must match DERIVE_SPEC.t600 in js/app-core.js, or backfilled images will not
-// match the ones uploaded since
 const WIDTH   = 600;
 const QUALITY = 52;
 
@@ -64,7 +24,6 @@ const sb = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: fal
 
 const stripExt = (p) => p.replace(/\.[a-z0-9]+$/i, '');
 
-// storage.list() is per-prefix and caps at 100 by default, so walk the tree
 async function walk(bucket, prefix = '') {
   const out = [];
   let offset = 0;
@@ -74,7 +33,6 @@ async function walk(bucket, prefix = '') {
     if (!data || !data.length) break;
     for (const entry of data) {
       const full = prefix ? `${prefix}/${entry.name}` : entry.name;
-      // a row with no id is a folder, not an object
       if (entry.id === null) out.push(...await walk(bucket, full));
       else out.push(full);
     }
@@ -111,9 +69,6 @@ async function main() {
       if (dlErr) throw new Error(`download: ${dlErr.message}`);
 
       const input = Buffer.from(await blob.arrayBuffer());
-      // withoutEnlargement mirrors imgDerive's Math.min(1, maxWidth/sw): a
-      // source narrower than 600px is re-encoded at its own width, never
-      // upscaled, so the filename contract holds without inventing pixels
       const output = await sharp(input)
         .resize({ width: WIDTH, withoutEnlargement: true })
         .webp({ quality: QUALITY })
@@ -121,7 +76,7 @@ async function main() {
 
       const { error: upErr } = await sb.storage.from(PUBLIC_BUCKET).upload(target, output, {
         contentType: 'image/webp',
-        upsert: false            // never clobber an object that is already there
+        upsert: false
       });
       if (upErr) throw new Error(`upload: ${upErr.message}`);
 

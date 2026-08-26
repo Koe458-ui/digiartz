@@ -1,25 +1,5 @@
-// gallery search — a page of its own, over the whole site
   var fgSrch = { q:'', scope:'all', seq:0, timer:null, rows:{} };
 
-  /* The groups, in the order they are rendered — and the order the chips are
-     written in the document, which is read positionally against this list.
-
-     Each one says how it is drawn, and every answer is a renderer this site
-     already has rather than a fourth rendering of the same row:
-
-       card    the artwork card the home page's boards are made of
-       artist  the artist card the home page's Artists board shows
-       sec     the section's own card, from js/sections.js — a marketplace
-               listing is the card the Marketplace draws, a blog post the row
-               the Blog draws, a resource the card Resources draws
-
-     A search result therefore looks like the thing it is wherever it is met,
-     rather than like a search result. Jobs is gone from here: it was the one
-     section whose postings are found through its own filters, and a job with
-     a title and a company reads as neither a card nor an artwork.
-
-     wrap is what the cards are laid out in: the same grid or column the
-     section itself uses. */
   var FG_SRCH_GROUPS = [
     { key:'artwork',     label:'Artworks',  how:'card',   wrap:'awGrid' },
     { key:'artist',      label:'Artists',   how:'artist', wrap:'awGrid' },
@@ -33,10 +13,6 @@
     if(w) w.classList.toggle('tgHasQ', !!String(v || '').length);
   }
 
-  // ilike takes a pattern, so the wildcards a visitor types are literal text
-  // to them and syntax to us. Strip those, and the characters PostgREST reads
-  // as filter punctuation, rather than searching for something nobody asked
-  // for. Same guard the profile's search uses.
   function fgSearchPattern(q){
     var clean = String(q||'').replace(/[%_*(),."\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
     return clean ? '%'+clean+'%' : '';
@@ -49,11 +25,6 @@
     n.hidden = !msg;
   }
 
-  /* The search page covers the gallery but does not remove it, so without
-     this Tab walks off the bottom of the results and into the chips and
-     thumbnails still sitting underneath — somewhere a keyboard or a screen
-     reader cannot see it has gone. The profile's search page earns its trap
-     the same way. */
   var fgSrchLastFocus = null;
 
   function fgSrchFocusable(){
@@ -89,23 +60,9 @@
     pg.classList.add('open');
     document.body.style.overflow = 'hidden';
     var input = document.getElementById('fgSrchIn');
-    // the keyboard should come up with the page, not after a second tap
     if(input) setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
   }
 
-  /* silent is for the gallery closing underneath it: the page goes with it,
-     and the focus does not go back to a button inside a section that has just
-     been swept.
-
-     The lock is asked for rather than assumed. This used to re-lock the page
-     outright on a member-driven close, on the grounds that the gallery was
-     still up underneath — true while the only way in was the gallery's own
-     search button. The bar at the top of the document opens this page from
-     the home page, where there is nothing underneath, and re-locking there
-     left a page nobody could scroll and no panel open to explain why.
-     restoreScroll releases the lock only when nothing in the panel table is
-     holding it, so the gallery case is unchanged: #fg holds it, and the lock
-     stays. */
   function closeFgSearch(silent){
     var pg = document.getElementById('fgSearchPage');
     if(!pg || !pg.classList.contains('open')) return;
@@ -148,11 +105,6 @@
     });
   }
 
-  /* Artwork is answered from the list the gallery is already holding rather
-     than from a query. That list is every approved artwork on the site — the
-     same rows the grid draws — so searching it means the results and the
-     grid can never disagree about what exists, it costs no round trip, and
-     anything the viewer has hidden stays hidden here too. */
   function fgSearchArtworks(q){
     var all = (typeof window.galleryImages === 'function') ? window.galleryImages() : null;
     if(!all) return [];
@@ -185,10 +137,6 @@
     var rows = {};
     if(want('artwork')) rows.artwork = fgSearchArtworks(raw);
 
-    /* Built inside a function, not up front. A Supabase builder issues its
-       request the moment .then() is called on it, so constructing these four
-       eagerly and then finding the answer in the cache would send every query
-       the cache exists to avoid. Nothing is asked until the loader runs. */
     function fgSearchJobs(){
       var jobs = [];
       if(sb && pattern){
@@ -196,8 +144,6 @@
           jobs.push(sb.from('marketplace_items')
             .select(typeof window.dzSelectFor === 'function' ? window.dzSelectFor('marketplace')
               : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
-            // visibility, same as the Marketplace grid applies it — a draft or a
-            // hidden listing is not a search result
             .eq('status','approved').eq('visibility','published').ilike('title',pattern)
             .order('created_at',{ascending:false}).limit(30)
             .then(function(r){ return {key:'marketplace', rows:(r&&r.data)||[]}; }));
@@ -206,8 +152,6 @@
           jobs.push(sb.from('blog_posts')
             .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,'+
                     'content_type,featured,published_at,created_at')
-            // a draft is not a search result, and neither is a post its author
-            // marked hidden
             .eq('status','approved').eq('visibility','published').ilike('title',pattern)
             .order('created_at',{ascending:false}).limit(30)
             .then(function(r){ return {key:'blog', rows:(r&&r.data)||[]}; }));
@@ -217,21 +161,12 @@
             .select('id,user_id,title,summary,description,resource_type,category,tags,'+
                     'file_url,file_name,file_ext,file_size,file_count,preview_url,license,'+
                     'featured,download_count,created_at')
-            // a draft or a hidden resource is not a search result
             .eq('status','approved').eq('visibility','published').ilike('title',pattern)
             .order('created_at',{ascending:false}).limit(30)
             .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
         }
         if(want('artist')){
-          /* People, by the two names they are known under: the handle they
-             chose and the name they display. Both, because a visitor looking
-             for somebody has no way of knowing which of the two they are
-             remembering.
 
-             The columns are the ones an artist card draws — and the ones
-             dzArtistCache already holds for every face on the site, so a
-             profile found here is a profile the hover chips and the artist
-             board no longer have to fetch. */
           jobs.push(sb.from('profiles')
             .select('id,username,display_name,avatar_url,banner_url,bio')
             .or('username.ilike.'+pattern+',display_name.ilike.'+pattern)
@@ -244,18 +179,6 @@
     var fgSearchWanted = !!(sb && pattern) &&
       (want('artist') || want('marketplace') || want('blog') || want('resources'));
 
-    /* Searching is the most expensive thing a visitor can do casually: four
-       ilike queries across four tables, re-run on the same word every time
-       somebody clears the box and types it again, or walks back through the
-       scope chips. So the whole set of section results is one cached record,
-       keyed by the NORMALISED query and the scope — "  Dragon " and "dragon"
-       are the same search and get the same record — held for a minute, in
-       memory only, and capped so a bot walking the alphabet cannot grow it
-       without bound. Every row in it is public and already filtered to
-       approved and published, which is what makes it shareable.
-
-       Artwork is not part of this: it is answered from the list the gallery is
-       already holding, which costs nothing to redo. */
     if(fgSearchWanted){
       var out;
       var cSrch = window.dzCached ? window.dzCached() : null;
@@ -270,14 +193,11 @@
       }
       catch(e){
         if(mySeq !== fgSrch.seq) return;
-        // artwork came from memory and is already good, so a failed query
-        // loses its own section rather than the whole answer
         if(mySeq !== fgSrch.seq) return;
         fgSrch.rows = rows;
         fgSearchRender('Some sections couldn\u2019t be searched — try again.');
         return;
       }
-      // a slower earlier query must not land on top of a newer one
       if(mySeq !== fgSrch.seq) return;
       out.forEach(function(o){ rows[o.key] = o.rows; });
     }
@@ -287,13 +207,6 @@
     fgSearchLog(raw);
   }
 
-  /* An artist's Search Analytics should say what people looked for, not what
-     they typed on the way there. Typing "robin" fires this five times — r, ro,
-     rob, robi, robin — and four of those are keystrokes, not searches. So the
-     term is only recorded once it has sat still for a beat, and only when it
-     actually matched somebody's artwork; a search that found nothing belongs
-     to nobody's dashboard. dz_analytics_track_search takes the whole visible
-     page of results in one call. */
   var fgSrchLogTimer = null, fgSrchLogged = '';
   var FG_SRCH_SCOPE = { artwork:'artwork', marketplace:'marketplace', blog:'blog', resources:'resource' };
   function fgSearchLog(term){
@@ -315,9 +228,6 @@
     }, 1200);
   }
 
-  /* Results are drawn by the section they belong to. Nothing here knows what
-     a listing or a post looks like — it asks whoever does, and lays the cards
-     out in that section's own grid or column. */
   function fgSearchRender(warn){
     var res = document.getElementById('fgSrchRes');
     if(!res) return;
@@ -341,10 +251,6 @@
         (g.wrap || (typeof window.dzSecLayout === 'function' ? window.dzSecLayout(g.key) : 'dzList'));
 
       if(g.how === 'artist'){
-        /* The profiles came back whole, so they go into the cache the artist
-           cards read before a single one is built — no card here ever waits
-           on a fetch, and the next hover chip that wants one of these faces
-           has it already. */
         rows.forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });
         rows.forEach(function(p){
           if(typeof buildArtistCard === 'function') wrap.appendChild(buildArtistCard(p.id));
@@ -353,10 +259,6 @@
         rows.forEach(function(r){
           if(typeof buildAwCard !== 'function') return;
           var el = buildAwCard(r);
-          /* The card opens the artwork on its own, but through this instead:
-             it records the click against the term that found it, and it hands
-             the viewer the results as the list to step through, so the arrows
-             walk what was searched for rather than the whole gallery. */
           el.onclick = function(){ fgSearchOpen('artwork', r.id); };
           el.onkeydown = function(e){
             if(e.key !== 'Enter' && e.key !== ' ') return;
@@ -369,10 +271,6 @@
         wrap.innerHTML = rows.map(function(r){
           return (typeof window.dzSecCard === 'function') ? window.dzSecCard(g.key, r) : '';
         }).join('');
-        /* The section's card opens itself through the section's own list, and
-           a row found by searching is not in that list — the section may not
-           have loaded at all. So each card is rebound to the row it was built
-           from, which is also what records the click against the term. */
         Array.prototype.forEach.call(wrap.children, function(el, i){
           var row = rows[i];
           el.removeAttribute('onclick');
@@ -385,21 +283,15 @@
       res.appendChild(sec);
     });
 
-    // the buy and cart controls a marketplace card carries are mounted by the
-    // signed-in module, the same call the Marketplace panel makes after it
-    // paints its own grid
     if(mounted && typeof window.dzExtras === 'function') window.dzExtras();
 
     fgSearchNote(warn || (total ? '' : 'Nothing in the gallery matches \u201C'+fgSrch.q.trim()+'\u201D.'));
   }
 
-  // the results stay up behind whatever opens, so closing the artwork or the
-  // listing puts you back on the same search rather than back at the gallery
   function fgSearchOpen(kind, id){
     var rows = fgSrch.rows[kind] || [];
     var row  = rows.find(function(x){ return String(x.id)===String(id); });
     if(!row) return;
-    // the other half of the CTR: this term was shown, and this one was opened
     if(FG_SRCH_SCOPE[kind] && typeof window.dzAnTrack === 'function'){
       var sq = String(fgSrch.q||'').trim();
       if(sq) window.dzAnTrack('search_click', String(id), { term: sq, scope: FG_SRCH_SCOPE[kind] });
@@ -419,8 +311,6 @@
     if(pg && pg.classList.contains('open')) closeFgSearch();
   });
 
-  // ⌘K belongs to the gallery, and only while it is open. It opens the search
-  // page now rather than reaching for a box that is no longer in the bar.
   document.addEventListener('keydown', function(e){
     if(e.key !== 'k' && e.key !== 'K') return;
     if(!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
@@ -439,7 +329,6 @@
   window.fgSearchScope = fgSearchScope;
   window.fgSearchOpen = fgSearchOpen;
 
-
   function openSubscription() {
     var el = document.getElementById('subPage');
     if (!el) return;
@@ -454,4 +343,3 @@
     el.classList.remove('open');
     restoreScroll();
   }
-

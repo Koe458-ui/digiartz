@@ -191,8 +191,7 @@
       scrollbar-width:none;-ms-overflow-style:none;
       scroll-snap-type:x proximity;scroll-padding-inline:var(--pfPad);
     }
-    .pfTiles::-webkit-scrollbar{display:none;}
-    .pfTiles[hidden]{display:none;}
+    .pfTiles::-webkit-scrollbar,.pfTiles[hidden]{display:none;}
     .pfTile{
       flex:0 0 auto;min-width:88px;scroll-snap-align:start;
       display:flex;flex-direction:column;align-items:center;gap:.25rem;

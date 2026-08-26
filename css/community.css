@@ -106,33 +106,13 @@
     }
     @media(max-height:520px) and (orientation:landscape){
       .cmBanner{padding:1.1rem 1.2rem;margin-bottom:1.1rem;min-height:0;}
-      .cmBannerSub{display:none;}
-      .cmBannerNote{display:none;}
+      .cmBannerSub,.cmBannerNote{display:none;}
     }
     @media(min-width:1000px){
       .cmBanner{padding:2.4rem 2.2rem;}
       .cmBannerCopy{max-width:620px;}
       .cmFxDots--br{right:8%;}
     }
-
-    .cmTabs{
-      display:grid;grid-template-columns:1fr 1fr;gap:.35rem;
-      padding:.3rem;margin-bottom:1.6rem;
-      background:var(--sur2);border:1px solid var(--bdr);border-radius:12px;
-    }
-    .cmTab{
-      display:flex;align-items:center;justify-content:center;gap:.5rem;
-      padding:.7rem .6rem;min-width:0;
-      background:none;border:1px solid transparent;border-radius:9px;
-      font-family:var(--fb);font-size:.86rem;font-weight:600;
-      color:var(--txd);cursor:pointer;
-      transition:background .2s,color .2s,border-color .2s;
-    }
-    .cmTab svg{width:17px;height:17px;flex-shrink:0;}
-    .cmTab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .cmTab.active{background:var(--sur);color:var(--tx);border-color:var(--bdrh);}
-    .cmTab:active{transform:scale(.99);}
-    .cmPane[hidden]{display:none;}
 
     .cmSectionHead{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem;}
     .cmSectionHead h3{font-family:var(--fd);font-size:1.3rem;font-weight:700;color:var(--tx);}
@@ -220,8 +200,7 @@
       color:var(--txd);cursor:pointer;transition:background .2s,color .2s,border-color .2s;
     }
     .cmiSegBtn.active{background:var(--sur);color:#2FA37C;border-color:#2FA37C;}
-    .cmiSegBtn[hidden]{display:none;}
-    .cmiSeg[hidden]{display:none;}
+    .cmiSegBtn[hidden],.cmiSeg[hidden]{display:none;}
 
     #cmInfoPage .cmiIcon{border-color:rgba(47,163,124,.4);}
     #cmInfoPage .cmiChip--role{color:#2FA37C;border-color:rgba(47,163,124,.45);background:rgba(47,163,124,.1);}
@@ -597,18 +576,10 @@
       border-bottom:1px solid var(--cmBdr);
     }
     #communityPage .cmHdr::before,#cmChatPanel .cmHdr::before{background:var(--cmBg)!important;}
-    #communityPage .cmTabs,#cmChatPanel .cmTabs{background:var(--cmSur2);border:1px solid var(--cmBdr);}
-    #communityPage .cmTab,#cmChatPanel .cmTab{color:var(--cmTxd);}
-    #communityPage .cmTab.active,#cmChatPanel .cmTab.active{
-      color:var(--cmAccent);background:var(--cmAccentDim);border-color:var(--cmAccent);
-    }
-    #communityPage .cmTab:hover,#cmChatPanel .cmTab:hover{color:var(--cmTx);}
-    #communityPage .cmTab.active:hover,#cmChatPanel .cmTab.active:hover{color:var(--cmAccent);}
 
     #communityPage .cmTopBar{border-bottom:1px solid var(--cmBdr);}
     #communityPage .cmTopBar::before{background:color-mix(in srgb,var(--cmBg) 92%,transparent);}
-    #communityPage .fgTopTitle{color:var(--cmTx);}
-    #communityPage .fgTopBtn{color:var(--cmTx);}
+    #communityPage .fgTopTitle,#communityPage .fgTopBtn{color:var(--cmTx);}
     #communityPage .fgTopBtn:focus-visible{outline-color:var(--cmAccent);}
     #communityPage .cmHdrBadge{background:var(--cmCoral);border-color:var(--cmBg);}
     @media(hover:hover){
@@ -723,8 +694,7 @@
 
     #communityPage .cpBar::before,#cmChatPanel .cpBar::before{background:var(--cmSur)!important;}
     #communityPage .cpBar,#cmChatPanel .cpBar{border-top:1px solid var(--cmBdr);}
-    #communityPage .cpBarAvatar,#cmChatPanel .cpBarAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);}
-    #communityPage .cpBarAvatar,#cmChatPanel .cpBarAvatar{display:none;}
+    #communityPage .cpBarAvatar,#cmChatPanel .cpBarAvatar{background:var(--cmAccentDim);border:1px solid var(--cmBdrh);color:var(--cmAccentSoft);display:none;}
     #communityPage .cpBarInput,#cmChatPanel .cpBarInput{background:var(--cmSur2)!important;color:var(--cmTx)!important;border:1px solid var(--cmBdr)!important;}
     #communityPage .cpBarInput::placeholder,#cmChatPanel .cpBarInput::placeholder{color:var(--cmTxd);}
     #communityPage .cpBarSend,#cmChatPanel .cpBarSend{background:var(--cmAccent);border:none;color:#fff;}
@@ -780,7 +750,6 @@
       background:var(--cmAccent);
       box-shadow:0 0 6px rgba(var(--cmAccent-rgb),.55);
     }
-    .zeoRowLocked{cursor:default;}
 
     .zeoChat{flex-direction:column;min-height:0;}
     .zeoBody{

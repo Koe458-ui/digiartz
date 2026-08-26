@@ -7,10 +7,9 @@
 .cpBar::before{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;}
 .cpBar{border-top:1px solid var(--bdr);}
 
-.gItem,.modal,.legalModal,#fgFltPanel{
+.gItem,.modal,.legalModal,#fgFltPanel,.awCard{
   background:var(--sur);border-color:var(--bdr);
 }
-.awCard{background:var(--sur);border-color:var(--bdr);}
 #artworks .awCard{background:var(--sur);}
 
 #fgFltPanel{background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%)!important;border-color:var(--bdr)!important;}
@@ -412,8 +411,6 @@
     grid-template-columns: 1fr;
     gap: 1.2rem;
     max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
   }
   .subPgBdy { padding: 2.5rem var(--shellPad) 5rem; }
   .subPrice  { font-size: clamp(2rem, 4vw, 2.6rem); }
@@ -741,7 +738,7 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   .faqCategory{ margin-bottom: 2rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .faqA       { transition: none; }
+  .faqA,
   .faqIcon    { transition: none; }
 }
 

@@ -335,7 +335,6 @@
     .fgCatNav.fgNavOff{display:none;}
     @media(min-width:1024px) and (hover:hover) and (pointer:fine){
       .fgCatNav{display:flex;}
-      .fgCatNav.fgNavOff{display:none;}
       .fgCatWrap{padding:0 3.1rem;}
     }
     @media(max-width:600px){
@@ -346,10 +345,9 @@
       }
     }
     @media(prefers-reduced-motion:reduce){
-      .fgCatChip{transition:none;}
+      .fgCatChip,.fgCatNav{transition:none;}
       .fgCatChip:active{transform:none;}
       .fgCatRail{scroll-behavior:auto;}
-      .fgCatNav{transition:none;}
     }
 
     .dzGrid{display:grid;gap:var(--artGap);grid-template-columns:repeat(2,1fr);}
@@ -496,10 +494,9 @@
     @media(max-width:560px){
       .dzFileZone{padding:1.9rem 1.1rem;}
       .dzFileZone.dzHasFile{padding:1rem;}
-      .dzFilePicked{flex-wrap:wrap;}
+      .dzFilePicked,.dzFileRow{flex-wrap:wrap;}
       .dzFileActs{width:100%;}
       .dzFileAct{flex:1;}
-      .dzFileRow{flex-wrap:wrap;}
       .dzFileRow .dzFileAct{flex:0 0 auto;}
       .dzFileSum span{flex:1 0 100%;}
       .dzFileSum .dzFileAct{flex:1 1 auto;}
@@ -815,15 +812,10 @@
       .lgName{-webkit-line-clamp:3;}
     }
     @media(prefers-reduced-motion:reduce){
-      .lgRow{transition:none;}
-      .lgRow:not(.lgReady) .lgAv{animation:none;}
-    }
-    @media(prefers-reduced-motion:reduce){
-      .ftTab{transition:none;}
+      .lgRow,.ftTab,.atGo{transition:none;}
+      .lgRow:not(.lgReady) .lgAv,.atCard:not(.atReady) .atAv{animation:none;}
       .ftTab:active{transform:none;}
       #artworks .ftRail{scroll-behavior:auto;}
-      .atCard:not(.atReady) .atAv{animation:none;}
-      .atGo{transition:none;}
     }
 
     .dzPay{
@@ -1056,8 +1048,7 @@
     .dzSlot:empty{display:none;}
 
     @media(prefers-reduced-motion:reduce){
-      .dzPay{animation:none;}
-      .dzCo{animation:none;}
+      .dzPay,.dzCo{animation:none;}
       .dzPayOpt{transition:none;}
       .dzPayOpt:active{transform:none;}
     }

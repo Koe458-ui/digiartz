@@ -48,7 +48,6 @@
       width:auto;max-width:min(1100px,100%);
       height:auto;max-height:calc(100dvh - 132px);
       object-fit:contain;cursor:zoom-in;
-      user-select:none;-webkit-user-drag:none;
     }
     #artModal .avImgViewport.loading::after{
       content:'';position:absolute;inset:0;
@@ -67,7 +66,6 @@
       display:block;width:auto;height:auto;
       max-width:min(1100px,100%);max-height:calc(100dvh - 132px);
       object-fit:contain;cursor:zoom-in;
-      user-select:none;-webkit-user-drag:none;
     }
 
     #artModal .avSide{
@@ -96,19 +94,17 @@
       #artModal .avImgPane{
         grid-column:1;grid-row:2;
         min-height:0;
-        overflow-y:auto;overscroll-behavior:contain;
+        overflow-y:auto;
         padding:var(--vwGap,1.5rem) 0;
       }
-      #artModal #lbImg{max-width:100%;}
-      #artModal .avStackImg{max-width:100%;}
-      #artModal .avImgStack{padding:var(--vwGap,1.5rem) 0 0;}
-      #artModal #avAuthorCard{padding:var(--vwGap,1.5rem) 0 0;}
+      #artModal #lbImg,#artModal .avStackImg{max-width:100%;}
+      #artModal .avImgStack,#artModal #avAuthorCard{padding:var(--vwGap,1.5rem) 0 0;}
 
       #artModal .avBody > #avAuthorCard{grid-column:1 / span 2;grid-row:1;align-self:start;}
       #artModal .avSide{
         grid-column:2;grid-row:2;
         max-width:none;margin:0;min-height:0;
-        overflow-y:auto;overscroll-behavior:contain;
+        overflow-y:auto;
       }
       #artModal .avSideScroll{padding:var(--vwGap,1.5rem) 0 4rem;}
     }
@@ -239,8 +235,7 @@
       background:rgba(var(--pg-rgb),.12);color:var(--pg);font-weight:600;
     }
     .dlqBtn--go:hover{background:rgba(var(--pg-rgb),.2);}
-    .avActWide[aria-busy="true"]{opacity:.6;cursor:default;}
-    .avActWide:disabled{opacity:.6;cursor:default;}
+    .avActWide[aria-busy="true"],.avActWide:disabled{opacity:.6;cursor:default;}
     @media(max-width:420px){
       .dlqActions{flex-direction:column-reverse;}
     }
@@ -281,6 +276,7 @@
     .cmHdrBack svg{width:16px;height:16px;}
     .cmHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--sur) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
     .cmHdrTitle{
+      min-width:0;max-width:100%;
       font-family:var(--fd);font-size:1.15rem;font-weight:800;
       letter-spacing:.16em;
       background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
@@ -289,7 +285,6 @@
       text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
     }
     .cmHdrTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);flex-shrink:0;}
-    .cmHdrTitle{min-width:0;max-width:100%;}
     #cmHdrTitleTxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     @media(max-width:480px){
       .cmHdrTitle{font-size:1.02rem;letter-spacing:.08em;}

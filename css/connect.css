@@ -243,7 +243,7 @@
         gap: 2.5rem;
         padding: 3rem var(--shellPad) 2.5rem;
       }
-      .ftBrand { max-width: 100%; }
+      .ftBrand,
       .ftBrandDesc { max-width: 100%; }
       .ftCols {
         justify-content: flex-start;

@@ -149,13 +149,42 @@ enable **"Prevent use of compromised passwords."**
 2. Cloudflare Pages → **Settings → Environment variables → Production** →
    add `MOD_SIGNING_SECRET` = the secret Claude gave you in chat → redeploy.
 3. Upload one artwork to confirm it still publishes normally.
-4. Run `security/activate-moderation-gate.sql` in the Supabase SQL editor
-   (paste the SAME secret into it first).
+4. Only then, in the Supabase SQL editor, with the SAME value:
+
+   ```sql
+   update private.mod_config
+      set secret = '<the same secret as MOD_SIGNING_SECRET>'
+    where id = true;
+   ```
+
+   Order matters. Setting the secret before the Worker can mint a ticket means
+   every insert fails the check and every upload silently lands in `pending`.
 5. Test again: a normal upload still publishes; a direct insert without a valid
    token now lands in `status='pending'` instead of going public.
 
 If anything looks off, the gate **fails safe** (uploads go to review, never
-error) and rolls back instantly — see the top of the SQL file.
+error) and rolls back instantly:
+
+```sql
+-- make it inert again, dropping nothing
+update private.mod_config set secret = '' where id = true;
+
+-- or remove it entirely
+drop trigger  if exists trg_artwork_mod_gate on public.artworks;
+drop function if exists public.dz_artwork_mod_gate();
+drop table    if exists private.used_mod_tokens;
+drop table    if exists private.mod_config;
+```
+
+To check which state it is in:
+
+```sql
+select case when secret = '' then 'inert' else 'enforcing' end
+  from private.mod_config where id = true;
+```
+
+The secret is a credential: it belongs in the Cloudflare dashboard and the
+database, never in git.
 
 ## Payment exposure — what is and is not hidden
 

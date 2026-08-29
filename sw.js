@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = 'v254';
+const CACHE_VERSION = 'v255';
 
 const STATIC = `dz-static-${CACHE_VERSION}`;
 const THUMB  = `dz-img-thumb-${CACHE_VERSION}`;
@@ -42,7 +42,7 @@ const SHELL_URLS = [
   '/css/admin.css?v=7',
   '/css/auth.css?v=7',
   '/css/panels.css?v=23',
-  '/css/upload.css?v=20',
+  '/css/upload.css?v=21',
   '/css/widgets.css?v=18',
   '/css/overrides.css?v=43',
   '/css/select.css?v=5',
@@ -68,7 +68,7 @@ const SHELL_URLS = [
   '/js/protect.js?v=4',
   '/js/gallery.js?v=106',
   '/js/fghead.js?v=4',
-  '/js/auth.js?v=24',
+  '/js/auth.js?v=25',
   '/js/profile.js?v=19',
   '/js/albums.js?v=20',
   '/js/drafts.js?v=10',
@@ -87,7 +87,7 @@ const SHELL_URLS = [
   '/js/analytics.js?v=13',
   '/js/hubs.js?v=3',
   '/js/engagement.js?v=10',
-  '/js/sections.js?v=131',
+  '/js/sections.js?v=132',
   '/js/routes.js?v=4',
   '/js/topnav.js?v=10',
   '/js/navprogress.js?v=7'

@@ -629,17 +629,29 @@ Every genuine posting has a way to apply — a link or an email — so you alway
         question: "How do I post a job?",
         answer:
 `1. Open Upload → Post a Job in the top bar
-2. Add the title, company, and a description (at least 80 characters)
-3. Set the category, employment type, and location — or tick remote and list the eligible countries
-4. Add the pay range (optional) and a closing date
-5. Give a way to apply — an apply link or an email is required — then post
+2. Posting needs a Premium or Max subscription — without one the page offers you both plans instead of the form
+3. Add the title, company, and a description (at least 80 characters)
+4. Set the category, employment type, and location — or tick remote and list the eligible countries
+5. Add the pay range (optional) and a closing date
+6. Give a way to apply — an apply link or an email is required — then post
 
 No image needed. Postings past their closing date hide themselves automatically.`
       },
       {
+        question: "Who can post a job?",
+        answer:
+`Premium and Max members.
+
+• Premium — 1 posting per plan month
+• Max — 2 postings per plan month
+• Free and Lite — read and apply to every posting, but cannot put one up
+
+Your allowance refills once every plan month, and the form shows how many you have left before you start writing. A posting waiting on a scheduled publish date has already used its slot.`
+      },
+      {
         question: "Is there a fee to post a job?",
         answer:
-`Posting a role is part of the normal upload flow — no image, no checkout. Just fill in the form and publish.
+`There is no separate checkout for a posting — it is part of a subscription. Premium includes 1 posting a plan month and Max includes 2, and no image or extra payment is needed beyond that.
 
 Spam, MLM and pay-to-apply postings aren't allowed and get removed.`
       }

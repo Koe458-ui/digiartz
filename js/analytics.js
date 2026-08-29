@@ -980,70 +980,68 @@
   }
 
   function artRow(r, i) {
-    {
-      var row = el('button', 'anArt');
-      row.type = 'button';
-      row.appendChild(el('div', 'anArtRank', String(i + 1)));
+    var row = el('button', 'anArt');
+    row.type = 'button';
+    row.appendChild(el('div', 'anArtRank', String(i + 1)));
 
-      var src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(r.thumb || '') : (r.thumb || '');
-      if (src) {
-        var img = document.createElement('img');
-        img.className = 'anArtThumb';
-        img.loading = 'lazy'; img.decoding = 'async'; img.alt = '';
-        img.src = src;
-        img.addEventListener('error', function () {
-          var ph = el('div', 'anArtNoThumb', '\uD83D\uDDBC');
-          if (img.parentNode) img.parentNode.replaceChild(ph, img);
-        });
-        row.appendChild(img);
-      } else {
-        row.appendChild(el('div', 'anArtNoThumb', '\uD83D\uDDBC'));
-      }
-
-      var txt = el('div', 'anArtTxt');
-      txt.appendChild(el('div', 'anArtName', r.title));
-      var metaBits = [];
-      if (typeof catLabel === 'function') metaBits.push(catLabel(r.category) || r.category);
-      else metaBits.push(r.category);
-      metaBits.push(pct(r.engagement) + ' engaged');
-      if (r.visibility && r.visibility !== 'published') metaBits.push('unlisted');
-      txt.appendChild(el('div', 'anArtMeta', metaBits.filter(Boolean).join(' \u00B7 ')));
-      row.appendChild(txt);
-
-      var nums = el('div', 'anArtNums');
-      var last = state.scope === 'marketplace'
-        ? ['\uD83D\uDED2', r.sales] : ['\u2B07\uFE0F', r.downloads];
-      [['\uD83D\uDC41', r.views], ['\u2764\uFE0F', r.likes],
-       ['\uD83D\uDD16', r.bookmarks], last].forEach(function (p) {
-        var n = el('span', 'anArtNum');
-        n.appendChild(document.createTextNode(p[0] + ' '));
-        n.appendChild(el('b', null, num(p[1])));
-        nums.appendChild(n);
+    var src = (typeof getThumbnailUrl === 'function') ? getThumbnailUrl(r.thumb || '') : (r.thumb || '');
+    if (src) {
+      var img = document.createElement('img');
+      img.className = 'anArtThumb';
+      img.loading = 'lazy'; img.decoding = 'async'; img.alt = '';
+      img.src = src;
+      img.addEventListener('error', function () {
+        var ph = el('div', 'anArtNoThumb', '\uD83D\uDDBC');
+        if (img.parentNode) img.parentNode.replaceChild(ph, img);
       });
-      row.appendChild(nums);
-
-      row.addEventListener('click', function () {
-        var id = String(r.id);
-        closeAnList();
-        closeAnalyticsPage();
-        if (state.scope === 'artwork') {
-          if (typeof window.handleArtClick === 'function' &&
-              document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
-            window.handleArtClick({ preventDefault: function () {}, stopPropagation: function () {} }, id);
-          } else {
-            location.href = '/artwork/' + encodeURIComponent(id);
-          }
-          return;
-        }
-        var seg = { marketplace: 'listing', blog: 'blog', resource: 'resource' }[state.scope];
-        if (typeof window.dzOpenById === 'function') {
-          window.dzOpenById(seg, id);
-        } else {
-          location.href = '/' + seg + '/' + encodeURIComponent(id);
-        }
-      });
-      return row;
+      row.appendChild(img);
+    } else {
+      row.appendChild(el('div', 'anArtNoThumb', '\uD83D\uDDBC'));
     }
+
+    var txt = el('div', 'anArtTxt');
+    txt.appendChild(el('div', 'anArtName', r.title));
+    var metaBits = [];
+    if (typeof catLabel === 'function') metaBits.push(catLabel(r.category) || r.category);
+    else metaBits.push(r.category);
+    metaBits.push(pct(r.engagement) + ' engaged');
+    if (r.visibility && r.visibility !== 'published') metaBits.push('unlisted');
+    txt.appendChild(el('div', 'anArtMeta', metaBits.filter(Boolean).join(' \u00B7 ')));
+    row.appendChild(txt);
+
+    var nums = el('div', 'anArtNums');
+    var last = state.scope === 'marketplace'
+      ? ['\uD83D\uDED2', r.sales] : ['\u2B07\uFE0F', r.downloads];
+    [['\uD83D\uDC41', r.views], ['\u2764\uFE0F', r.likes],
+     ['\uD83D\uDD16', r.bookmarks], last].forEach(function (p) {
+      var n = el('span', 'anArtNum');
+      n.appendChild(document.createTextNode(p[0] + ' '));
+      n.appendChild(el('b', null, num(p[1])));
+      nums.appendChild(n);
+    });
+    row.appendChild(nums);
+
+    row.addEventListener('click', function () {
+      var id = String(r.id);
+      closeAnList();
+      closeAnalyticsPage();
+      if (state.scope === 'artwork') {
+        if (typeof window.handleArtClick === 'function' &&
+            document.querySelector('.gItem[data-id="' + CSS.escape(id) + '"]')) {
+          window.handleArtClick({ preventDefault: function () {}, stopPropagation: function () {} }, id);
+        } else {
+          location.href = '/artwork/' + encodeURIComponent(id);
+        }
+        return;
+      }
+      var seg = { marketplace: 'listing', blog: 'blog', resource: 'resource' }[state.scope];
+      if (typeof window.dzOpenById === 'function') {
+        window.dzOpenById(seg, id);
+      } else {
+        location.href = '/' + seg + '/' + encodeURIComponent(id);
+      }
+    });
+    return row;
   }
 
   function paintArtworks() {

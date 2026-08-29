@@ -9,7 +9,6 @@
   var fgFltMode = 'artworks';
   var fgSecFilter = {};
   var fgSecQuery  = {};
-  var FG_TABS = ['artworks','marketplace','blog','resources','jobs'];
   var FG_TITLE = {
     artworks:'ARTWORKS', marketplace:'MARKETPLACE', blog:'BLOG',
     resources:'RESOURCES', jobs:'JOBS'

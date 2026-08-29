@@ -1,5 +1,7 @@
 import { sbUrl, sbSvc, ledger } from '../lib/sb.js';
-import { PLAN_TIERS, applySubscription, recordEarning } from '../lib/billing.js';
+import {
+  PLAN_TIERS, applySubscription, revokeSubscription, recordEarning
+} from '../lib/billing.js';
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
@@ -91,10 +93,7 @@ async function reverseRow(env, row, status) {
   }).catch(() => {});
 
   if (row.kind === 'subscription' && PLAN_TIERS[row.plan]) {
-    await sbService(env, '/profiles?id=eq.' + row.user_id, {
-      method: 'PATCH',
-      body: JSON.stringify({ subscription_tier: null, subscription_expires_at: null }),
-    }).catch(() => {});
+    await revokeSubscription(env, row.user_id).catch(() => {});
   }
   return status;
 }

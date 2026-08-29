@@ -84,6 +84,26 @@ export async function applySubscription(env, userId, tier) {
   return keep;
 }
 
+export async function revokeSubscription(env, userId) {
+  const cur = await currentPlan(env, userId);
+  if (!cur.expires) return null;
+
+  const back = cur.expires - SUB_DAYS * 86400000;
+  if (back > Date.now()) {
+    await sbService(env, '/profiles?id=eq.' + userId, {
+      method: 'PATCH',
+      body: JSON.stringify({ subscription_expires_at: new Date(back).toISOString() }),
+    });
+    return cur.tier;
+  }
+
+  await sbService(env, '/profiles?id=eq.' + userId, {
+    method: 'PATCH',
+    body: JSON.stringify({ subscription_tier: null, subscription_expires_at: null }),
+  });
+  return null;
+}
+
 export async function recordEarning(env, provider, row, prov) {
   if (row.kind !== 'marketplace' || !row.item_id) return;
   const items = await sbService(env,

@@ -560,65 +560,63 @@
     var btn = document.getElementById('pfUpBtn');
     btn.disabled = true;
     try{
-      {
-        if(editId){
-          btn.textContent='SAVING…';
-          var editCats = pf.upCats.length ? pf.upCats : ['others'];
-          var editPatch = {
-            name:nm, description:desc||null, tags:tags, category:editCats,
-            software:software||null, updated_at:new Date().toISOString()
-          };
-          ['summary','subject_matter','medium','software_list','license','commercial_use',
-           'attribution_required','modification_allowed','credits','process_notes',
-           'external_links','comments_allowed','visibility','featured'].forEach(function(k){
-            if(k in extra) editPatch[k] = extra[k];
+      if(editId){
+        btn.textContent='SAVING…';
+        var editCats = pf.upCats.length ? pf.upCats : ['others'];
+        var editPatch = {
+          name:nm, description:desc||null, tags:tags, category:editCats,
+          software:software||null, updated_at:new Date().toISOString()
+        };
+        ['summary','subject_matter','medium','software_list','license','commercial_use',
+         'attribution_required','modification_allowed','credits','process_notes',
+         'external_links','comments_allowed','visibility','featured'].forEach(function(k){
+          if(k in extra) editPatch[k] = extra[k];
+        });
+        editPatch.is_mature = !!extra.declared_mature || !!pf.upEditModMature;
+        const{error}=await sb.from('artworks').update(editPatch).eq('id',editId);
+        if(error) throw error;
+        var idx = images.findIndex(function(i){return String(i.id)===String(editId);});
+        if(idx!==-1){ images[idx].name=nm; images[idx].description=desc||null; images[idx].tags=tags; images[idx].category=editCats; images[idx].software=software||null; }
+        var mwIdx = mw.art.findIndex(function(i){return String(i.id)===String(editId);});
+        if(mwIdx!==-1){ mw.art[mwIdx].name=nm; mw.art[mwIdx].description=desc||null; mw.art[mwIdx].tags=tags; mw.art[mwIdx].category=editCats; mw.art[mwIdx].software=software||null; }
+        var pgIdx = Array.isArray(pf.galleryRows) ? pf.galleryRows.findIndex(function(i){return String(i.id)===String(editId);}) : -1;
+        if(pgIdx!==-1){ pf.galleryRows[pgIdx].name=nm; pf.galleryRows[pgIdx].description=desc||null; pf.galleryRows[pgIdx].tags=tags; pf.galleryRows[pgIdx].category=editCats; pf.galleryRows[pgIdx].software=software||null; }
+        pfRenderGallery();
+        if(typeof mwRenderArt==='function') mwRenderArt();
+        if(typeof renderHome==='function') renderHome();
+        if(typeof window.dzArtworkChanged === 'function'){
+          await window.dzArtworkChanged(editId, {
+            userId: (currentUser && currentUser.id) || null,
+            ranking: false
           });
-          editPatch.is_mature = !!extra.declared_mature || !!pf.upEditModMature;
-          const{error}=await sb.from('artworks').update(editPatch).eq('id',editId);
-          if(error) throw error;
-          var idx = images.findIndex(function(i){return String(i.id)===String(editId);});
-          if(idx!==-1){ images[idx].name=nm; images[idx].description=desc||null; images[idx].tags=tags; images[idx].category=editCats; images[idx].software=software||null; }
-          var mwIdx = mw.art.findIndex(function(i){return String(i.id)===String(editId);});
-          if(mwIdx!==-1){ mw.art[mwIdx].name=nm; mw.art[mwIdx].description=desc||null; mw.art[mwIdx].tags=tags; mw.art[mwIdx].category=editCats; mw.art[mwIdx].software=software||null; }
-          var pgIdx = Array.isArray(pf.galleryRows) ? pf.galleryRows.findIndex(function(i){return String(i.id)===String(editId);}) : -1;
-          if(pgIdx!==-1){ pf.galleryRows[pgIdx].name=nm; pf.galleryRows[pgIdx].description=desc||null; pf.galleryRows[pgIdx].tags=tags; pf.galleryRows[pgIdx].category=editCats; pf.galleryRows[pgIdx].software=software||null; }
-          pfRenderGallery();
-          if(typeof mwRenderArt==='function') mwRenderArt();
-          if(typeof renderHome==='function') renderHome();
-          if(typeof window.dzArtworkChanged === 'function'){
-            await window.dzArtworkChanged(editId, {
-              userId: (currentUser && currentUser.id) || null,
-              ranking: false
-            });
-          }
-          if(typeof window.dzGalleryStore === 'function') window.dzGalleryStore();
-          closePfUpload(); showToast('Artwork updated');
-        } else {
-          var prevEl = document.getElementById('pfUpPrev');
-          var _schedAt = _when;
-          upqStart({
-            name: nm, desc: desc, tags: tags, software: software,
-            extra: extra,
-            cats: (pf.upCats && pf.upCats.length) ? pf.upCats.slice() : ['others'],
-            file: pf.upFile,
-            pageFiles: (pf.upPageFiles || []).slice(),
-            thumbFocus: pf.upThumbFocus ? { x: pf.upThumbFocus.x, y: pf.upThumbFocus.y, z: pf.upThumbFocus.z || 1 } : { x: 50, y: 50, z: 1 },
-            preview: (prevEl && prevEl.src) ? prevEl.src : '',
-            albums: (pf.upAlbums || []).slice(),
-            publishAt: _schedAt
-          });
-          if(updrActiveId){ updrDel(updrActiveId); updrActiveId = null; }
-          if(_schedAt){
-            openPfUpload();
-            showToast('Scheduled, publishes ' + uschFmt(_schedAt));
-            return;
-          }
-          pfUpResetSession();
-          closePfUpload();
-          openOwnProfile();
-          if(typeof bnSetActive==='function') bnSetActive('bnProfile');
-          showToast('Verifying your artwork, watch it on your profile');
         }
+        if(typeof window.dzGalleryStore === 'function') window.dzGalleryStore();
+        closePfUpload(); showToast('Artwork updated');
+      } else {
+        var prevEl = document.getElementById('pfUpPrev');
+        var _schedAt = _when;
+        upqStart({
+          name: nm, desc: desc, tags: tags, software: software,
+          extra: extra,
+          cats: (pf.upCats && pf.upCats.length) ? pf.upCats.slice() : ['others'],
+          file: pf.upFile,
+          pageFiles: (pf.upPageFiles || []).slice(),
+          thumbFocus: pf.upThumbFocus ? { x: pf.upThumbFocus.x, y: pf.upThumbFocus.y, z: pf.upThumbFocus.z || 1 } : { x: 50, y: 50, z: 1 },
+          preview: (prevEl && prevEl.src) ? prevEl.src : '',
+          albums: (pf.upAlbums || []).slice(),
+          publishAt: _schedAt
+        });
+        if(updrActiveId){ updrDel(updrActiveId); updrActiveId = null; }
+        if(_schedAt){
+          openPfUpload();
+          showToast('Scheduled, publishes ' + uschFmt(_schedAt));
+          return;
+        }
+        pfUpResetSession();
+        closePfUpload();
+        openOwnProfile();
+        if(typeof bnSetActive==='function') bnSetActive('bnProfile');
+        showToast('Verifying your artwork, watch it on your profile');
       }
     }catch(err){ console.error('Error: '+err.message);
       if(window.meritDenied && window.meritDenied(err, 'upload')) return;

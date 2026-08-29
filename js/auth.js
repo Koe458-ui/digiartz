@@ -510,7 +510,6 @@
             closeAuthMod();
           }
         }, 5000);
-        return;
       }
     } catch (e) {
       var raw = (e.message || '').toLowerCase();

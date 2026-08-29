@@ -34,7 +34,7 @@ const SHELL_URLS = [
 
   '/css/base.css?v=33',
   '/css/hero.css?v=124',
-  '/css/viewer.css?v=43',
+  '/css/viewer.css?v=44',
   '/css/community.css?v=33',
   '/css/connect.css?v=10',
   '/css/ranking.css?v=10',

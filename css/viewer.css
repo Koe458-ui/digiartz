@@ -275,19 +275,8 @@
 .cmHdrBack:hover{border-color:var(--pg);background:var(--pdim);}
 .cmHdrBack svg{width:16px;height:16px;}
 .cmHdr::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--sur) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:-1;}
-.cmHdrTitle{
-  min-width:0;max-width:100%;
-  font-family:var(--fd);font-size:1.15rem;font-weight:800;
-  letter-spacing:.16em;
-  background:linear-gradient(135deg,var(--tx),var(--pb),var(--pg));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  display:flex;align-items:center;gap:.4rem;
-  text-shadow:0 0 18px rgba(var(--pg-rgb),.35);
-}
-.cmHdrTitle .s{color:var(--pb);font-size:.7em;-webkit-text-fill-color:var(--pb);flex-shrink:0;}
 #cmHdrTitleTxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 @media(max-width:480px){
-  .cmHdrTitle{font-size:1.02rem;letter-spacing:.08em;}
   .cmHdr{padding:1rem max(var(--shellPad),3.9rem);}
   .cmHdrBack{left:1rem;}
 }
@@ -305,7 +294,6 @@
 
 .cmHdrChat{display:none;align-items:center;gap:.7rem;flex:1;min-width:0;}
 .cmHdr.chat{justify-content:flex-start;gap:.5rem;padding:.7rem var(--shellPad);}
-.cmHdr.chat .cmHdrTitle{display:none;}
 .cmHdr.chat .cmHdrChat{display:flex;}
 .cmHdr.chat .cmHdrBack{
   position:static;left:auto;border:none;background:none;

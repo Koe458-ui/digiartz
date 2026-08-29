@@ -256,10 +256,6 @@
     var after = afterId && document.getElementById(afterId);
     if(after && after.parentNode === scroll) scroll.insertBefore(el, after.nextSibling);
     else scroll.insertBefore(el, scroll.firstChild);
-    var strip = document.getElementById('avAuthorRow');
-    if(strip && strip.parentNode) strip.parentNode.removeChild(strip);
-    var acts = document.querySelector('#artModal .avTitleActs');
-    if(acts && acts.parentNode) acts.parentNode.removeChild(acts);
     return el;
   }
 

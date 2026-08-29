@@ -1,6 +1,8 @@
 import { sbUrl, sbSvc } from '../lib/sb.js';
-import { PLAN_TIERS, applySubscription, recordEarning } from '../lib/billing.js';
-import { ppFee } from '../lib/money.js';
+import {
+  PLAN_TIERS, applySubscription, revokeSubscription, recordEarning
+} from '../lib/billing.js';
+import { ppFee, toValue } from '../lib/money.js';
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
@@ -90,6 +92,12 @@ async function fulfil(env, orderId, capture) {
   const row = rows && rows[0];
   if (!row) return 'no ledger row';
 
+  const paidAmount = (capture && capture.amount) || {};
+  if (paidAmount.value != null && paidAmount.value !== toValue(row.amount, row.currency))
+    return 'amount mismatch';
+  if (paidAmount.currency_code && String(paidAmount.currency_code) !== String(row.currency))
+    return 'currency mismatch';
+
   const patched = await sbService(env, '/payments?id=eq.' + row.id + '&status=eq.created', {
     method: 'PATCH',
     body: JSON.stringify({
@@ -100,7 +108,6 @@ async function fulfil(env, orderId, capture) {
   });
   const first = Array.isArray(patched) && patched.length > 0;
 
-  const paidAmount = (capture && capture.amount) || {};
   await recordEarning(env, 'paypal', row, {
     txn: capture && capture.id,
     amount: Math.round(parseFloat(paidAmount.value) * 100),
@@ -119,13 +126,17 @@ async function fulfil(env, orderId, capture) {
 async function reverse(env, orderId, status) {
   const rows = await sbService(env,
     '/payments?pp_order_id=eq.' + encodeURIComponent(orderId) +
-    '&select=id,user_id,kind,plan&limit=1');
+    '&select=id,user_id,kind,plan,status&limit=1');
   const row = rows && rows[0];
   if (!row) return 'no ledger row';
 
-  await sbService(env, '/payments?id=eq.' + row.id, {
+  const from = status === 'failed' ? '&status=in.(created,paid)' : '&status=eq.paid';
+  const patched = await sbService(env, '/payments?id=eq.' + row.id + from, {
     method: 'PATCH', body: JSON.stringify({ status }),
   });
+  if (!(Array.isArray(patched) && patched.length)) return 'nothing to reverse';
+
+  if (row.status !== 'paid') return status;
 
   await sbService(env, '/marketplace_earnings?payment_id=eq.' + row.id +
     '&status=in.(pending,available)', {
@@ -133,12 +144,9 @@ async function reverse(env, orderId, status) {
   }).catch(() => {});
 
   if (status === 'refunded' && row.kind === 'subscription' && PLAN_TIERS[row.plan]) {
-    await sbService(env, '/profiles?id=eq.' + row.user_id, {
-      method: 'PATCH',
-      body: JSON.stringify({ subscription_tier: null, subscription_expires_at: null }),
-    }).catch(() => {});
+    await revokeSubscription(env, row.user_id).catch(() => {});
   }
-  return 'reversed';
+  return status;
 }
 
 export async function onRequestPost({ env, request }) {

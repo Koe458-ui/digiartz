@@ -15,8 +15,13 @@ export function sameOrigin(request, env) {
   }
 
   const site = h.get('Sec-Fetch-Site');
-  if (site) return site === 'same-origin';
+  if (site === 'same-origin') return true;
+  if (site === 'none') return false;
 
+  // Anything else - cross-site, same-site, or no header at all - is decided by
+  // the allowlist below. With ALLOWED_ORIGINS unset that set holds this host
+  // and nothing else, which a cross-origin request can never match, so the
+  // default deployment stays exactly as strict as it was.
   for (const name of ['Origin', 'Referer']) {
     const raw = h.get(name);
     if (!raw) continue;

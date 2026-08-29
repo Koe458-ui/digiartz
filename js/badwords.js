@@ -559,9 +559,6 @@ var DZ_BW = (function () {
     console.warn('badwords.js loaded before supabase-js — filter not installed.');
   }
 
-  window.dzMask = mask;
-  window.dzHasBadWord = has;
-
   return {
     mask: mask, has: has, guard: guard,
     words: WORDS, strict: STRICT, anywhere: ANYWHERE, allow: ALLOW,

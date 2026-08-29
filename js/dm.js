@@ -690,7 +690,6 @@
     var dm = $('dmChatView'); if (dm) dm.style.display = 'none';
     refreshConvos();
   };
-  window.dmPeopleSearch = function (q, box, onOpen) { return runSearch(q, box, onOpen || null); };
   window.pfFriendBridge = {
     load:   loadFriendships,
     state:  frState,

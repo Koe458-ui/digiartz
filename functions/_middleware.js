@@ -1,4 +1,5 @@
 import { underEdgeLimit, tooManyRequests } from './lib/ratelimit.js';
+import { sbUrl, sbAnon } from './lib/sb.js';
 
 const SITE = 'https://digiartz.net';
 const CACHE_SECONDS = 300;
@@ -35,9 +36,11 @@ function clamp(s, n = 160) {
   return t.length <= n ? t : t.slice(0, n - 1).replace(/\s\S*$/, '') + '…';
 }
 
+const sbReady = (env) => !!(env && sbUrl(env) && sbAnon(env));
+
 async function sbGet(env, query, ttl) {
-  const res = await fetch(`${env.SB_URL}/rest/v1/${query}`, {
-    headers: { apikey: env.SB_KEY, authorization: `Bearer ${env.SB_KEY}` },
+  const res = await fetch(`${sbUrl(env)}/rest/v1/${query}`, {
+    headers: { apikey: sbAnon(env), authorization: `Bearer ${sbAnon(env)}` },
     cf: { cacheTtl: ttl, cacheEverything: true }
   });
   if (!res.ok) throw new Error('sb ' + res.status);
@@ -47,7 +50,7 @@ async function sbGet(env, query, ttl) {
 }
 
 async function fetchArtworks(env) {
-  if (!env || !env.SB_URL || !env.SB_KEY) return [];
+  if (!sbReady(env)) return [];
   try {
     return await sbGet(env,
       'artworks?select=id,name,image_url,created_at' +
@@ -150,7 +153,7 @@ async function resolve(env, pathname) {
   if (im) {
     const cfg = ITEMS[im[1]];
     if (!cfg) return { type: 'other', status: 'found' };
-    if (!env || !env.SB_URL || !env.SB_KEY) return { type: 'item', status: 'unknown', cfg };
+    if (!sbReady(env)) return { type: 'item', status: 'unknown', cfg };
     let raw;
     try { raw = decodeURIComponent(im[2]); } catch { return { type: 'other', status: 'found' }; }
     if (!UUID_RE.test(raw)) return { type: 'item', status: 'gone', cfg, seg: im[1] };
@@ -168,7 +171,7 @@ async function resolve(env, pathname) {
   if (!pm && !am) return { type: 'other', status: 'found' };
 
   const type = pm ? 'profile' : 'artwork';
-  if (!env || !env.SB_URL || !env.SB_KEY) return { type, status: 'unknown' };
+  if (!sbReady(env)) return { type, status: 'unknown' };
 
   let raw;
   try { raw = decodeURIComponent(pm ? pm[1] : am[1]); } catch { return { type, status: 'gone' }; }

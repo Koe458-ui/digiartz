@@ -193,7 +193,6 @@
       }
       catch(e){
         if(mySeq !== fgSrch.seq) return;
-        if(mySeq !== fgSrch.seq) return;
         fgSrch.rows = rows;
         fgSearchRender('Some sections couldn\u2019t be searched — try again.');
         return;

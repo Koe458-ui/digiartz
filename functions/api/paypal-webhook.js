@@ -1,5 +1,5 @@
 import { sbUrl, sbSvc } from '../lib/sb.js';
-import { PLAN_TIERS, applySubscription } from '../lib/billing.js';
+import { PLAN_TIERS, applySubscription, recordEarning } from '../lib/billing.js';
 import { ppFee } from '../lib/money.js';
 
 const json = (b, s = 200) =>
@@ -82,30 +82,6 @@ async function verified(env, request, headers, event) {
   return !!(res && res.verification_status === 'SUCCESS');
 }
 
-async function recordEarning(env, row, capture) {
-  if (row.kind !== 'marketplace' || !row.item_id) return;
-
-  const items = await sbService(env,
-    '/marketplace_items?id=eq.' + row.item_id + '&select=user_id&limit=1');
-  const sellerId = items && items[0] && items[0].user_id;
-  if (!sellerId || sellerId === row.user_id) return;
-
-  await sbService(env, '/marketplace_earnings', {
-    method: 'POST',
-    headers: { prefer: 'return=representation,resolution=ignore-duplicates' },
-    body: JSON.stringify({
-      payment_id: row.id, item_id: row.item_id,
-      seller_id: sellerId, buyer_id: row.user_id,
-      gross_amount: Number(row.amount) || 0,
-      gateway_fee: ppFee(capture, row.currency),
-      currency: row.currency,
-      promo_code_id: row.promo_code_id || null,
-      provider: 'paypal',
-      status: 'available',
-    }),
-  }).catch(() => {});
-}
-
 async function fulfil(env, orderId, capture) {
   const captureId = (capture && capture.id) || '';
   const rows = await sbService(env,
@@ -124,7 +100,13 @@ async function fulfil(env, orderId, capture) {
   });
   const first = Array.isArray(patched) && patched.length > 0;
 
-  await recordEarning(env, row, capture);
+  const paidAmount = (capture && capture.amount) || {};
+  await recordEarning(env, 'paypal', row, {
+    txn: capture && capture.id,
+    amount: Math.round(parseFloat(paidAmount.value) * 100),
+    currency: paidAmount.currency_code,
+    fee: ppFee(capture, row.currency),
+  });
 
   if (!first) return 'already settled';
 

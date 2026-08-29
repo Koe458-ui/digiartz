@@ -53,6 +53,24 @@
     return card;
   }
 
+  function feedPaintAvatar(av, ltr, p, name){
+    if(!av) return;
+    if(p && p.avatar_url){
+      var im = av.querySelector('img');
+      if(!im){
+        im = document.createElement('img');
+        im.alt = ''; im.loading = 'lazy'; im.decoding = 'async';
+        im.draggable = false;
+        av.appendChild(im);
+      }
+      im.src = getThumbnailUrl(p.avatar_url);
+      if(ltr) ltr.style.display = 'none';
+    } else if(ltr){
+      ltr.textContent = name.charAt(0).toUpperCase();
+      ltr.style.display = '';
+    }
+  }
+
   function paintArtistCard(card, p){
     var name = (p && (p.display_name || p.username)) || 'Artist';
     var user = p && p.username ? String(p.username) : '';
@@ -69,22 +87,7 @@
       bg.style.backgroundImage = 'url("' + imgResize(p.banner_url, 600) + '")';
       card.classList.add('atHasBg');
     }
-    if(av){
-      if(p && p.avatar_url){
-        var im = av.querySelector('img');
-        if(!im){
-          im = document.createElement('img');
-          im.alt = ''; im.loading = 'lazy'; im.decoding = 'async';
-          im.draggable = false;
-          av.appendChild(im);
-        }
-        im.src = getThumbnailUrl(p.avatar_url);
-        if(ltr) ltr.style.display = 'none';
-      } else if(ltr){
-        ltr.textContent = name.charAt(0).toUpperCase();
-        ltr.style.display = '';
-      }
-    }
+    feedPaintAvatar(av, ltr, p, name);
 
     card.classList.add('atReady');
     if(user){
@@ -240,22 +243,7 @@
     var user = row.querySelector('.lgUser');
 
     if(user) user.textContent = p && p.username ? '@' + p.username : name;
-    if(av){
-      if(p && p.avatar_url){
-        var im = av.querySelector('img');
-        if(!im){
-          im = document.createElement('img');
-          im.alt = ''; im.loading = 'lazy'; im.decoding = 'async';
-          im.draggable = false;
-          av.appendChild(im);
-        }
-        im.src = getThumbnailUrl(p.avatar_url);
-        if(ltr) ltr.style.display = 'none';
-      } else if(ltr){
-        ltr.textContent = name.charAt(0).toUpperCase();
-        ltr.style.display = '';
-      }
-    }
+    feedPaintAvatar(av, ltr, p, name);
     row.classList.add('lgReady');
   }
 

@@ -769,6 +769,19 @@
     marketplace:'var(--upcOrange)', jobs:'var(--upcSky)'
   };
 
+  function upMountForm(sec){
+    var box = document.getElementById('upSecForms');
+    if(!box) return;
+    box.innerHTML = buildForm(sec);
+    renderTags(sec);
+    dzPaintFiles(sec);
+    dzCountAll(sec);
+    upGrowAll();
+    dzSchReset();
+    dzDraftStrip(sec);
+    dzSchedStrip(sec);
+  }
+
   function upSwitchSection(sec, silent){
     upSec = sec;
     upGuideRender();
@@ -789,16 +802,196 @@
       return;
     }
     if(art) art.style.display = 'none';
-    if(box){ box.style.display = ''; box.innerHTML = buildForm(sec); }
+    if(box) box.style.display = '';
     if(h) h.textContent = FORMS[sec].title;
     if(p) p.textContent = FORMS[sec].sub;
-    renderTags(sec);
-    dzPaintFiles(sec);
-    dzCountAll(sec);
-    upGrowAll();
-    dzSchReset();
-    dzDraftStrip(sec);
-    dzSchedStrip(sec);
+
+    // Hiring is the one section behind a plan, so the form is not built until
+    // the plan says it may be. Every other section mounts as it always has.
+    if(sec === 'jobs'){ dzJobGateMount(); return; }
+    upMountForm(sec);
+  }
+
+  /* ---- Post a Job: the plan gate -----------------------------------------
+   *
+   * Premium posts 1 role a plan month, Max posts 2, and Free and Lite post
+   * none. The rule lives in the database (dz_job_quota / dz_job_post_gate);
+   * what follows is the page that says so before someone spends twenty
+   * minutes writing a posting the insert would refuse.
+   *
+   * The upload page therefore opens for everyone — Post a Job is never a dead
+   * menu item — and shows one of three things: the two plans that can hire,
+   * the form, or the form replaced by "this month's postings are spent".
+   */
+
+  var dzJobQ = null, dzJobQAt = 0, dzJobQFly = null;
+  var DZ_JOB_Q_TTL = 60000;
+
+  function dzJobQuota(force){
+    if(!sb || !window.currentUser){
+      return Promise.resolve({allowed:false, reason:'auth', limit:0, used:0, remaining:0});
+    }
+    if(!force && dzJobQ && (Date.now() - dzJobQAt) < DZ_JOB_Q_TTL){
+      return Promise.resolve(dzJobQ);
+    }
+    if(!force && dzJobQFly) return dzJobQFly;
+    dzJobQFly = sb.rpc('dz_job_quota').then(function(res){
+      dzJobQFly = null;
+      if(res.error) throw res.error;
+      dzJobQ = res.data || {allowed:false, reason:'plan', limit:0, used:0, remaining:0};
+      dzJobQAt = Date.now();
+      return dzJobQ;
+    }, function(err){
+      dzJobQFly = null;
+      throw err;
+    });
+    return dzJobQFly;
+  }
+  function dzJobQuotaForget(){ dzJobQ = null; dzJobQAt = 0; }
+
+  var DZ_JOB_PLANS = [
+    {id:'premium', name:'Premium', tone:'var(--upcIndigo)', n:1,
+     line:'1 job posting a month', cta:'Join Premium'},
+    {id:'max', name:'Max', tone:'var(--upcOrange)', n:2,
+     line:'2 job postings a month', cta:'Get Max'}
+  ];
+
+  function dzJobPlanCards(){
+    return '<div class="upGatePlans">'+
+      DZ_JOB_PLANS.map(function(pl){
+        return '<div class="upGatePlan" style="--gpC:'+pl.tone+'">'+
+          '<div class="upGatePlanName">'+esc(pl.name)+'</div>'+
+          '<div class="upGatePlanNum">'+pl.n+'</div>'+
+          '<div class="upGatePlanLine">'+esc(pl.line)+'</div>'+
+          '<button type="button" class="upBtnPri upGatePlanBtn" '+
+            'onclick="dzJobGateSubscribe()">'+esc(pl.cta)+'</button>'+
+        '</div>';
+      }).join('')+
+    '</div>';
+  }
+
+  function dzJobGateShell(kicker, title, body, inner){
+    return '<div class="upGate">'+
+      '<div class="upGateIco" aria-hidden="true">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '+
+        'stroke-linecap="round" stroke-linejoin="round">'+
+        '<rect x="2" y="7" width="20" height="14" rx="2"/>'+
+        '<path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>'+
+      '</div>'+
+      '<div class="upGateKicker">'+esc(kicker)+'</div>'+
+      '<h3 class="upGateTitle">'+esc(title)+'</h3>'+
+      '<p class="upGateBody">'+esc(body)+'</p>'+
+      (inner || '')+
+    '</div>';
+  }
+
+  function dzJobFmtDate(iso){
+    if(!iso) return '';
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return '';
+    try{
+      return d.toLocaleDateString(undefined, {day:'numeric', month:'short', year:'numeric'});
+    }catch(e){ return d.toISOString().slice(0,10); }
+  }
+
+  function dzJobGateHtml(q){
+    if(!q || q.reason === 'auth'){
+      return dzJobGateShell(
+        'POST A JOB',
+        'Sign in to hire an artist',
+        'Job postings are tied to an account and a plan. Sign in, then pick '+
+        'Premium or Max to post your first role.',
+        '<div class="upGateActs">'+
+          '<button type="button" class="upBtnPri" onclick="dzJobGateSignIn()">Sign in</button>'+
+        '</div>');
+    }
+
+    if(q.reason === 'limit'){
+      var isMax   = String(q.tier || '') === 'max';
+      var resets  = dzJobFmtDate(q.period_end);
+      var used    = Number(q.used) || 0;
+      var lim     = Number(q.limit) || 0;
+      var inner   = '<div class="upGateMeter"><span>'+used+' of '+lim+' used</span>'+
+                    (resets ? '<span>Resets '+esc(resets)+'</span>' : '')+'</div>';
+      if(!isMax){
+        inner += '<div class="upGatePlans upGatePlans--one">'+
+          '<div class="upGatePlan" style="--gpC:var(--upcOrange)">'+
+            '<div class="upGatePlanName">Max</div>'+
+            '<div class="upGatePlanNum">2</div>'+
+            '<div class="upGatePlanLine">2 job postings a month</div>'+
+            '<button type="button" class="upBtnPri upGatePlanBtn" '+
+              'onclick="dzJobGateSubscribe()">Upgrade to Max</button>'+
+          '</div></div>';
+      }
+      return dzJobGateShell(
+        'POST A JOB',
+        isMax ? 'Both Max postings are live this month'
+              : 'Your Premium posting is live this month',
+        isMax
+          ? ('Max carries 2 postings a plan month. Yours are both up' +
+             (resets ? ' — the next two unlock on ' + resets + '.' : '.'))
+          : ('Premium carries 1 posting a plan month' +
+             (resets ? ', and yours renews on ' + resets + '.' : '.') +
+             ' Max posts two.'),
+        inner);
+    }
+
+    return dzJobGateShell(
+      'POST A JOB',
+      'Hiring is for Premium and Max',
+      'Anyone can read a posting and apply to it. Putting one up is part of a '+
+      'subscription — Premium posts one role a month, Max posts two.',
+      dzJobPlanCards());
+  }
+
+  function dzJobQuotaStrip(q){
+    if(!q || q.staff || q.limit == null) return '';
+    var left = Number(q.remaining) || 0;
+    var lim  = Number(q.limit) || 0;
+    var when = dzJobFmtDate(q.period_end);
+    return '<div class="upQuotaBar">'+
+      '<span class="upQuotaDot" aria-hidden="true"></span>'+
+      '<span class="upQuotaTx"><b>'+left+' of '+lim+'</b> job '+
+      (lim === 1 ? 'posting' : 'postings')+' left on '+
+      esc(String(q.tier || '').replace(/^./, function(c){ return c.toUpperCase(); }))+
+      ' this month</span>'+
+      (when ? '<span class="upQuotaWhen">Resets '+esc(when)+'</span>' : '')+
+    '</div>';
+  }
+
+  function dzJobGateMount(){
+    var box = document.getElementById('upSecForms');
+    if(!box) return;
+    box.innerHTML = '<div class="upGate upGate--wait"><div class="upGateKicker">POST A JOB</div>'+
+                    '<p class="upGateBody">Checking your plan\u2026</p></div>';
+    dzJobQuota().then(dzJobGateApply, function(){
+      // The rule is enforced on insert whatever this page decided, so an
+      // unreachable check opens the form rather than locking out a member who
+      // has paid for it.
+      if(upSec === 'jobs') upMountForm('jobs');
+    });
+  }
+
+  function dzJobGateApply(q){
+    if(upSec !== 'jobs') return;
+    var box = document.getElementById('upSecForms');
+    if(!box) return;
+    if(!q || !q.allowed){ box.innerHTML = dzJobGateHtml(q); return; }
+    upMountForm('jobs');
+    var strip = dzJobQuotaStrip(q);
+    if(!strip) return;
+    var main = box.querySelector('.upMain');
+    if(main) main.insertAdjacentHTML('afterbegin', strip);
+  }
+
+  function dzJobGateSubscribe(){
+    if(typeof closePfUpload === 'function') closePfUpload();
+    if(typeof openSubscription === 'function') openSubscription();
+  }
+  function dzJobGateSignIn(){
+    if(typeof pfGuestGate === 'function'){
+      pfGuestGate({preventDefault:function(){}, stopPropagation:function(){}});
+    }
   }
 
   var GUIDE = {
@@ -852,6 +1045,7 @@
     },
     jobs: {
       guide: [
+        ['🎟','A plan to post','Hiring is a Premium or Max feature — Premium posts one role a plan month, Max posts two.'],
         ['🧭','Be specific','A real title, scope and skill list draws better applicants.'],
         ['📍','Location or remote','On-site and hybrid roles need a city and country code; a remote one needs the countries you can hire from.'],
         ['💰','Say what it pays','A pay range, a currency and a period are all required — postings without them get ignored.'],
@@ -2182,6 +2376,10 @@
     if(old && old.urls) Object.keys(old.urls).forEach(function(k){ dzRevoke(old.urls[k]); });
     S[sec] = {tags:[], files:{}, urls:{}};
     dzAutoReset(sec);
+    // A posting has just spent a slot, so the blank form the poster is handed
+    // back is whatever the plan now allows — an empty one, or the panel that
+    // says the month is done.
+    if(sec === 'jobs'){ dzJobGateMount(); return; }
     var box = document.getElementById('upSecForms');
     if(box) box.innerHTML = buildForm(sec);
     renderTags(sec);
@@ -2327,11 +2525,28 @@
                 .catch(function(){ showToast('Could not save draft on this device'); });
   }
   function dzDeleteDraft(id){ dzdbDel(id).then(function(){ dzDraftStrip(upSec); }); }
+  // Jobs mount their form only after the plan check answers, so a draft
+  // cannot be poured into fields that may not exist yet on a fixed delay.
+  function dzFormReady(sec, cb){
+    var tries = 0;
+    (function poll(){
+      if(document.getElementById('dzSubmit-'+sec)){ cb(true); return; }
+      if(++tries > 60){ cb(false); return; }
+      setTimeout(poll, 66);
+    })();
+  }
+
   function dzResumeDraft(id){
     dzdbGet(id).then(function(d){
       if(!d) return;
       upSwitchSection(d.sec);
-      setTimeout(function(){
+      dzFormReady(d.sec, function(ok){
+        if(!ok){
+          showToast(d.sec === 'jobs'
+            ? 'Posting a job needs Premium or Max — your draft is still saved'
+            : 'Could not open that draft');
+          return;
+        }
         var s=st(d.sec); s.tags=(d.data.__tags||[]).slice();
         FORMS[d.sec].fields.forEach(function(fd){
           if(fd.t==='tags'||dzIsFileType(fd.t)) return;
@@ -2345,7 +2560,7 @@
         dzCountAll(d.sec);
         upGrowAll();
         showToast('Draft loaded — re-attach any files, then publish');
-      }, 60);
+      });
     });
   }
 
@@ -2544,6 +2759,22 @@
       if(typeof pfGuestGate === 'function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
       return;
     }
+
+    // The plan can have lapsed, or the allowance been spent in another tab,
+    // since this form was drawn. Asking again costs one round trip and saves
+    // a whole posting from dying on the insert.
+    if(sec === 'jobs'){
+      var jq = null;
+      try{ jq = await dzJobQuota(true); }catch(e){ jq = null; }
+      if(jq && !jq.allowed){
+        showToast(jq.reason === 'limit'
+          ? 'You have used this month\u2019s job postings'
+          : 'Posting a job needs Premium or Max');
+        dzJobGateApply(jq);
+        return;
+      }
+    }
+
     var btn = document.getElementById('dzSubmit-'+sec);
     var s = st(sec), row = {user_id: currentUser.id, tags: s.tags, status:'approved'};
 
@@ -2906,6 +3137,7 @@
         if(sres.error) throw sres.error;
         if(moderated){ dzV.step('publish','pass','Scheduled for '+dzFmtWhen(when)); setTimeout(function(){ dzV.close(); }, 1400); }
         showToast('Scheduled for '+dzFmtWhen(when));
+        if(sec === 'jobs') dzJobQuotaForget();
         dzResetForm(sec);
         return;
       }
@@ -2940,11 +3172,13 @@
 
       if(moderated){ dzV.step('publish','pass'); setTimeout(function(){ dzV.close(); }, 1400); }
       showToast('Published');
+      if(sec === 'jobs') dzJobQuotaForget();
       dzResetForm(sec);
       dzLoaded[sec] = false;
       var cPub = dzc();
       if(cPub){ try{ await cPub.invalidateSection(sec, res.data && res.data.id); }catch(e3){} }
     }catch(err){
+      if(sec === 'jobs') dzJobQuotaForget();
       if(moderated){ dzV.fail((err && err.message) ? err.message : 'Could not publish'); }
       else { showToast((err && err.message) ? err.message : 'Could not publish'); }
     }finally{
@@ -2983,6 +3217,10 @@
   window.dzSecEnter      = dzSecEnter;
   window.dzSecRender     = dzSecRender;
   window.upSwitchSection = upSwitchSection;
+  window.dzJobQuota        = dzJobQuota;
+  window.dzJobQuotaForget  = dzJobQuotaForget;
+  window.dzJobGateSubscribe= dzJobGateSubscribe;
+  window.dzJobGateSignIn   = dzJobGateSignIn;
   window.upGuideOpen     = upGuideOpen;
   window.upGuideClose    = upGuideClose;
   window.upGuideBackdrop = upGuideBackdrop;

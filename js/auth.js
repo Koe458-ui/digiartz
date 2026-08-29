@@ -546,10 +546,16 @@
   window.dzIsStaff = dzIsStaff;
   window.dzIsPartner = dzIsPartner;
 
+  // Anything the page remembers because of the plan it last read — the job
+  // posting allowance among it — is stale the moment the plan is re-read.
+  function dzForgetPlanCaches(){
+    if(typeof window.dzJobQuotaForget === 'function') window.dzJobQuotaForget();
+  }
+
   async function checkUserRole(){
     if(!sb || !currentUser){
       isDev=false; userRole=null; userPlan=null; currentUserAvatarUrl=null;
-      dzSetPlan('guest', null); dzPaintLimits();
+      dzSetPlan('guest', null); dzPaintLimits(); dzForgetPlanCaches();
       if(typeof dzPaintAds === 'function') dzPaintAds();
       syncAdmBtn(); return;
     }
@@ -565,11 +571,12 @@
       dzSetPlan(isDev ? 'dev' : userPlan,
                 (data && data.subscription_expires_at) || null);
       dzPaintLimits();
+      dzForgetPlanCaches();
       if(typeof dzPaintAds === 'function') dzPaintAds();
     }catch(e){
       console.error(e);
       isDev=false; userRole=null; userPlan='guest'; currentUserAvatarUrl=null;
-      dzSetPlan('guest', null); dzPaintLimits();
+      dzSetPlan('guest', null); dzPaintLimits(); dzForgetPlanCaches();
       if(typeof dzPaintAds === 'function') dzPaintAds();
     }
     syncAdmBtn();

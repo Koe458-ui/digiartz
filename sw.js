@@ -33,11 +33,11 @@ const SHELL_URLS = [
   '/icon-192.png?v=4',
 
   '/css/base.css?v=33',
-  '/css/hero.css?v=128',
+  '/css/hero.css?v=129',
   '/css/viewer.css?v=44',
   '/css/community.css?v=33',
   '/css/connect.css?v=10',
-  '/css/ranking.css?v=10',
+  '/css/ranking.css?v=11',
   '/css/profile.css?v=23',
   '/css/admin.css?v=7',
   '/css/auth.css?v=7',
@@ -56,7 +56,7 @@ const SHELL_URLS = [
   '/js/captcha.js?v=3',
 
   '/js/cache.js?v=2',
-  '/js/ranking.js?v=4',
+  '/js/ranking.js?v=5',
   '/js/community.js?v=8',
   '/js/dm.js?v=14',
   '/aiAssistantData.js?v=5',
@@ -64,7 +64,7 @@ const SHELL_URLS = [
   '/js/composer.js?v=3',
   '/js/share.js?v=2',
   '/js/misc-core.js?v=6',
-  '/js/app-core.js?v=42',
+  '/js/app-core.js?v=43',
   '/js/protect.js?v=4',
   '/js/gallery.js?v=106',
   '/js/fghead.js?v=4',
@@ -87,9 +87,9 @@ const SHELL_URLS = [
   '/js/analytics.js?v=13',
   '/js/hubs.js?v=3',
   '/js/engagement.js?v=10',
-  '/js/sections.js?v=132',
+  '/js/sections.js?v=133',
   '/js/routes.js?v=4',
-  '/js/topnav.js?v=10',
+  '/js/topnav.js?v=11',
   '/js/navprogress.js?v=7'
 ];
 

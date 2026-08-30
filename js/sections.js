@@ -4693,7 +4693,7 @@
       if(typeof openXpPage === 'function') openXpPage();
     },
     theme:        function(){ if(typeof openThemePage === 'function') openThemePage(); },
-    ranking:      function(){ if(typeof openRankPage === 'function') openRankPage(); }
+    ranking:      function(){ if(typeof openRankHub === 'function') openRankHub(); }
   };
 
   var GALLERY = {

@@ -130,11 +130,11 @@
   })();
   </script>
   <link rel="stylesheet" href="/css/base.css?v=33">
-  <link rel="stylesheet" href="/css/hero.css?v=128">
+  <link rel="stylesheet" href="/css/hero.css?v=129">
   <link rel="stylesheet" href="/css/viewer.css?v=44">
   <link rel="stylesheet" href="/css/community.css?v=33">
   <link rel="stylesheet" href="/css/connect.css?v=10">
-  <link rel="stylesheet" href="/css/ranking.css?v=10">
+  <link rel="stylesheet" href="/css/ranking.css?v=11">
   <link rel="stylesheet" href="/css/profile.css?v=23">
   <link rel="stylesheet" href="/css/admin.css?v=7">
   <link rel="stylesheet" href="/css/auth.css?v=7">
@@ -203,6 +203,10 @@
       <button class="dzUpItem" type="button" role="menuitem" style="--upA:var(--upcPink)" onclick="dzCmPick('friends', event)">
        <span class="dzUpIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg></span>
        <span class="dzUpTxt"><span class="dzUpNm">Friends</span><span class="dzUpDesc">Your people, your messages, and Zeo</span></span>
+      </button>
+      <button class="dzUpItem" type="button" role="menuitem" style="--upA:var(--upcYellow)" onclick="dzCmPick('ranking', event)">
+       <span class="dzUpIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 5.5H4.5v1A3.5 3.5 0 0 0 7 9.9"/><path d="M17 5.5h2.5v1A3.5 3.5 0 0 1 17 9.9"/></svg></span>
+       <span class="dzUpTxt"><span class="dzUpNm">Ranking</span><span class="dzUpDesc">Who is on top this week, board by board</span></span>
       </button>
       </div>
      </div>
@@ -313,6 +317,7 @@
       <div class="dzMenuSubInner">
       <a class="dzMenuSubItem" href="/community" style="--upA:var(--upcTeal)" onclick="dzCmPick('communities', event)"><span class="dzUpIco dzUpIcoSm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.5"/><path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/><path d="M16 3.6a3.5 3.5 0 0 1 0 6.8"/></svg></span><span>Communities</span></a>
       <button class="dzMenuSubItem" type="button" style="--upA:var(--upcPink)" onclick="dzCmPick('friends', event)"><span class="dzUpIco dzUpIcoSm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg></span><span>Friends</span></button>
+      <button class="dzMenuSubItem" type="button" style="--upA:var(--upcYellow)" onclick="dzCmPick('ranking', event)"><span class="dzUpIco dzUpIcoSm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 5.5H4.5v1A3.5 3.5 0 0 0 7 9.9"/><path d="M17 5.5h2.5v1A3.5 3.5 0 0 1 17 9.9"/></svg></span><span>Ranking</span></button>
       </div>
      </div>
     </div>
@@ -479,10 +484,16 @@
     </div>
     <div class="awEmpty" id="awEmpty" style="display:none;">NO ARTWORK YET</div>
   </section>
+  <script src="/js/cache.js?v=2"></script>
+  <script src="/js/ranking.js?v=5"></script>
 
-  <section id="rankSec" aria-labelledby="rkTitle">
+  <div id="rankHub" role="dialog" aria-modal="true" aria-labelledby="rkTitle">
+    <div class="subPgHdr">
+      <button class="subPgX" onclick="closeRankHub()" aria-label="Close ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg></button>
+      <div class="subPgTitle" id="rkTitle">RANKING</div>
+    </div>
+    <section id="rankSec" aria-labelledby="rkTitle">
     <div class="rkHdr fsHdr">
-      <div class="secT" id="rkTitle">RANKING</div>
       <div class="secSub"><span class="rkLive" aria-hidden="true"></span>TOP ARTISTS · LIVE</div>
     </div>
     <div class="rkWrap">
@@ -496,17 +507,14 @@
     </div>
     <div class="rkDots" id="rkDots" role="tablist" aria-label="Board"></div>
   </section>
-
-  <script src="/js/cache.js?v=2"></script>
-  <script src="/js/ranking.js?v=4"></script>
+  </div>
 
   <div id="rankPage" role="dialog" aria-modal="true" aria-label="Full ranking">
     <div class="subPgHdr">
       <button class="subPgX" onclick="closeRankPage()" aria-label="Close ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg></button>
-      <div class="subPgTitle">RANKING</div>
+      <div class="subPgTitle" id="rkPgTitle">RANKING</div>
     </div>
     <div class="rkPgBdy">
-      <div class="rkPgTabs" id="rkPgTabs" role="tablist" aria-label="Ranking board"></div>
       <div class="rkPgMine" id="rkPgMine"></div>
       <div class="xpCard" id="rkPgList"></div>
       <div class="rkPgEnd" id="rkPgEnd"></div>
@@ -2406,7 +2414,7 @@
   <script src="/js/captcha.js?v=3"></script>
   <script src="/config.js"></script>
   <script src="/uploadVerifier.js"></script>
-  <script src="/js/app-core.js?v=42"></script>
+  <script src="/js/app-core.js?v=43"></script>
   <script src="/js/protect.js?v=4"></script>
   <script src="/js/gallery.js?v=106"></script>
   <script src="/js/fghead.js?v=4"></script>
@@ -2871,10 +2879,10 @@
   <script src="/js/engagement.js?v=10"></script>
 
 
-  <script src="/js/sections.js?v=132"></script>
+  <script src="/js/sections.js?v=133"></script>
   <script src="/js/routes.js?v=4"></script>
 
-  <script src="/js/topnav.js?v=10"></script>
+  <script src="/js/topnav.js?v=11"></script>
 
   <script src="/js/navprogress.js?v=7"></script>
 

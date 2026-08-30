@@ -626,6 +626,7 @@
     { id:'payHubPage',      close:['payHubClose'],          lock:1 },
     { id:'xpPage',          close:['closeXpPage'],          lock:1 },
     { id:'themePage',       close:['closeThemePage'],       lock:1 },
+    { id:'rankHub',         close:['closeRankHub'],         lock:1 },
     { id:'rankPage',        close:['closeRankPage'],        lock:1 },
     { id:'dzPanelHost',     close:['dzClosePanel'],         lock:1 },
     { id:'admPage',         close:['dzOpsClose'],           lock:1 },

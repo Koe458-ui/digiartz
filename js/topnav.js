@@ -65,9 +65,14 @@
     },
     cm: {
       wrap:'dzCmWrap', btn:'dzCmBtn', grp:'dzMenuCmGrp', grpBtn:'dzMenuCmBtn',
-      secs:{ communities:1, friends:1 },
+      secs:{ communities:1, friends:1, ranking:1 },
       fallback:'communities',
       pick: function (k, e) {
+        if (k === 'ranking') {
+          if (e) e.preventDefault();
+          if (typeof window.openRankHub === 'function') window.openRankHub();
+          return;
+        }
         if (k === 'friends') {
           if (e) e.preventDefault();
           if (typeof window.bnGoFriends === 'function') window.bnGoFriends();

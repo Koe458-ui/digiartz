@@ -293,22 +293,29 @@
     document.addEventListener('DOMContentLoaded', function () {
       if (!buildCards()) return;
       buildNav();
-      var sec = document.getElementById('rankSec');
-      if (sec && 'IntersectionObserver' in window) {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (en) {
-            seen = en.isIntersecting;
-            if (seen) start();
-          });
-        }, { rootMargin: '200px 0px' });
-        io.observe(sec);
-      } else {
-        seen = true; start();
-      }
       document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible' && started) tick();
       });
     });
+
+    window.openRankHub = function () {
+      var hub = document.getElementById('rankHub');
+      if (!hub) return;
+      hub.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      seen = true;
+      if (started) tick(); else start();
+    };
+
+    window.closeRankHub = function () {
+      var hub = document.getElementById('rankHub');
+      if (!hub) return;
+      hub.classList.remove('open');
+      seen = false;
+      if (typeof restoreScroll === 'function') restoreScroll();
+      else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
+    };
 
     var pg = { board: 'level', rows: [], off: 0, total: 0, done: false, busy: false, wired: false };
 
@@ -317,23 +324,9 @@
       return BOARDS[0];
     }
 
-    function pgBuildTabs () {
-      var wrap = document.getElementById('rkPgTabs');
-      if (!wrap) return;
-      wrap.innerHTML = '';
-      BOARDS.forEach(function (b) {
-        var t = el('button', 'rkPgTab' + (b.key === pg.board ? ' on' : ''), b.name);
-        t.type = 'button';
-        t.setAttribute('role', 'tab');
-        t.setAttribute('aria-selected', b.key === pg.board ? 'true' : 'false');
-        t.onclick = function () {
-          if (pg.board === b.key) return;
-          pg.board = b.key;
-          pgBuildTabs();
-          pgReset();
-        };
-        wrap.appendChild(t);
-      });
+    function pgTitle () {
+      var t = document.getElementById('rkPgTitle');
+      if (t) t.textContent = pgBoard().name + ' RANKING';
     }
 
     function pgReset () {
@@ -441,7 +434,7 @@
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
 
-      pgBuildTabs();
+      pgTitle();
       pgReset();
     };
 
@@ -456,7 +449,9 @@
     document.addEventListener('keydown', function (ev) {
       if (ev.key !== 'Escape') return;
       var page = document.getElementById('rankPage');
-      if (page && page.classList.contains('open')) closeRankPage();
+      if (page && page.classList.contains('open')) { closeRankPage(); return; }
+      var hub = document.getElementById('rankHub');
+      if (hub && hub.classList.contains('open')) closeRankHub();
     });
 
     window.rkRefresh = function () {

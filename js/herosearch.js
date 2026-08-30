@@ -28,7 +28,6 @@
       input.setAttribute('aria-label', m.label);
     }
     if(btn){
-      btn.setAttribute('aria-pressed', hsState.mode === 'artist' ? 'true' : 'false');
       btn.setAttribute('aria-label', m.swap);
       btn.title = m.swap;
     }
@@ -206,19 +205,8 @@
 
   function hsInput(v){
     hsState.q = String(v || '');
-    if(typeof tgSearchChrome === 'function') tgSearchChrome('hsBar', hsState.q);
     clearTimeout(hsState.timer);
     hsState.timer = setTimeout(hsRun, 220);
-  }
-
-  function hsClear(){
-    var input = hsEl('hsIn');
-    if(input){ input.value = ''; try{ input.focus(); }catch(e){} }
-    clearTimeout(hsState.timer);
-    hsState.q = '';
-    if(typeof tgSearchChrome === 'function') tgSearchChrome('hsBar', '');
-    hsState.rows = [];
-    hsClose();
   }
 
   function hsToggleMode(){
@@ -270,5 +258,4 @@
   })();
 
   window.hsInput      = hsInput;
-  window.hsClear      = hsClear;
   window.hsToggleMode = hsToggleMode;

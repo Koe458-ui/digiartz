@@ -328,7 +328,7 @@ export async function onRequestPost(context) {
     }, 200);
 
   } catch (err) {
-    return json({ error: 'Moderation check failed — try again.', detail: String(err).slice(0, 200) }, 500);
+    return json({ error: 'Moderation check failed — try again.' }, 500);
   }
 }
 
@@ -388,8 +388,9 @@ async function moderateWithGemini(env, b64, mimeType, cfg) {
       body: JSON.stringify(body)
     });
     if (!res.ok) {
-      const errBody = await res.text().catch(() => '');
-      return { ok: false, reason: 'Moderation service unavailable (HTTP ' + res.status + '): ' + errBody.slice(0, 180) };
+      // The provider's body can carry request ids, model names and quota
+      // detail. The caller is a browser: it gets the fact, not the transcript.
+      return { ok: false, reason: 'Moderation service unavailable — try again.' };
     }
 
     const data = await res.json();

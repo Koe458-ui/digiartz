@@ -220,7 +220,7 @@ export async function onRequestPost({ env, request }) {
       const rows = await sbService(env,
         '/payments?pp_order_id=eq.' + encodeURIComponent(orderId) +
         '&user_id=eq.' + user.id +
-        '&select=id,kind,plan,item_id,amount,currency,status,promo_code_id&limit=1');
+        '&select=id,user_id,kind,plan,item_id,amount,currency,status,promo_code_id&limit=1');
       const row = rows && rows[0];
       if (!row) return json({ error: 'Order does not belong to you' }, 403);
 

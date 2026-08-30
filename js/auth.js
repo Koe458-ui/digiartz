@@ -743,7 +743,12 @@
     if(!unread.length){ notifRefreshBadge(); return; }
     try{
       var rows = unread.map(function(n){ return {user_id:currentUser.id, notification_id:n.id}; });
-      const{error} = await sb.from('notification_reads').upsert(rows, {onConflict:'user_id,notification_id'});
+      // ignoreDuplicates, so this is ON CONFLICT DO NOTHING rather than DO UPDATE.
+      // Marking a notification read is idempotent — there is nothing to rewrite
+      // on the second attempt — and the DO UPDATE form needs an UPDATE policy
+      // the table does not have, so a re-mark used to throw.
+      const{error} = await sb.from('notification_reads')
+        .upsert(rows, {onConflict:'user_id,notification_id', ignoreDuplicates:true});
       if(error) throw error;
       unread.forEach(function(n){ notifReadIds[n.id]=true; });
       notifRender();

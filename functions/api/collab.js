@@ -232,11 +232,17 @@ export async function handle(action, { env, request }) {
     catch { return json({ error: 'Bad request' }, 400); }
   }
 
+  // Own-property only. `name` is caller-supplied, and a bare object literal
+  // answers to 'constructor', '__proto__' and every other Object.prototype key
+  // with something truthy — which would then be called with { env, ... } and
+  // its return value serialised straight back to the caller.
   const name = String(action || body.action || '');
+  const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+  if (!has(ACTIONS, name)) return json({ error: 'Unknown action' }, 404);
   const fn = ACTIONS[name];
-  if (!fn) return json({ error: 'Unknown action' }, 404);
+  if (typeof fn !== 'function') return json({ error: 'Unknown action' }, 404);
 
-  const [limit, seconds] = LIMITS[name] || LIMIT_DEFAULT;
+  const [limit, seconds] = has(LIMITS, name) ? LIMITS[name] : LIMIT_DEFAULT;
   if (!(await underLimit(env, 'cl:' + name + ':' + user.id, limit, seconds)))
     return json({ error: 'Too many attempts — wait a moment' }, 429);
 

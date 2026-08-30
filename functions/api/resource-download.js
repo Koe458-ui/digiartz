@@ -82,7 +82,7 @@ export async function onRequestPost({ request, env }) {
     return new Response(fileRes.body, { status: 200, headers });
 
   } catch (err) {
-    return json({ error: 'Download failed — try again.', detail: String(err).slice(0, 200) }, 500);
+    return json({ error: 'Download failed — try again.' }, 500);
   }
 }
 

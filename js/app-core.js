@@ -62,7 +62,7 @@
     if(!signJson.uploadUrl) throw new Error('Upload service returned no uploadUrl');
     let putRes;
     try{
-      putRes = await fetch(signJson.uploadUrl, {method:'PUT', headers:{'content-type':file.type}, body:file});
+      putRes = await fetch(signJson.uploadUrl, {method:'PUT', headers:{'content-type':safeUploadType(file.type)}, body:file});
     }catch(e){
       throw new Error('Upload blocked by the storage server — add this site\u2019s origin with PUT to the S3 bucket\u2019s CORS policy');
     }
@@ -108,14 +108,33 @@
     f1600: { width: 1600, quality: 0.82 }
   };
 
+  // The only content types the pipeline ever needs to store. Everything else is
+  // a downloadable asset — a brush pack, a font, a .blend, a PDF — and every
+  // one of those is fetched back through /api/*-download, which sets its own
+  // Content-Type and Content-Disposition from the database row. The type stored
+  // beside the bytes is never read on the way out.
+  //
+  // So it is declared octet-stream, and koe-media is a PUBLIC bucket: an object
+  // stored as text/html or image/svg+xml is a page the storage domain will
+  // render, on a hostname close enough to ours to be worth a phishing attempt.
+  // The bucket's allowed_mime_types refuses those outright — this is the half
+  // that keeps a legitimate .svg or .pdf upload working under that rule rather
+  // than being refused with it.
+  var UPLOAD_IMAGE_TYPES =
+    ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'];
+  function safeUploadType(type){
+    var t = String(type || '').toLowerCase();
+    return UPLOAD_IMAGE_TYPES.indexOf(t) >= 0 ? t : 'application/octet-stream';
+  }
+
   async function sbUploadTargets(targets, file){
     for(var i=0;i<targets.length;i++){
       var t = targets[i];
-      var body = file, type = file.type;
+      var body = file, type = safeUploadType(file.type);
       if(t.role && DERIVE_SPEC[t.role]){
         var spec = DERIVE_SPEC[t.role];
         body = await imgDerive(file, spec.width, spec.quality);
-        type = body.type || 'image/webp';
+        type = safeUploadType(body.type || 'image/webp');
       }
       var res;
       try{

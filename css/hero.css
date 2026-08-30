@@ -760,7 +760,10 @@
 }
 #artworks .ftRail::-webkit-scrollbar{display:none;}
 .ftTab{
-  --ftS1:var(--ftA);--ftS2:var(--ftB);
+  --ftS1:currentColor;
+  --ftS2:color-mix(in srgb,currentColor 60%,var(--sur));
+  --ftC1:color-mix(in srgb,currentColor 24%,var(--sur));
+  --ftC2:color-mix(in srgb,currentColor 44%,var(--sur));
   flex:0 0 auto;scroll-snap-align:center;
   display:inline-flex;align-items:center;gap:.55rem;
   padding:.7rem 1rem;box-sizing:border-box;
@@ -770,8 +773,6 @@
   white-space:nowrap;-webkit-tap-highlight-color:transparent;
   transition:border-color .2s,background .2s,color .2s,transform .2s;
 }
-html[data-theme="light"] .ftTab,
-html[data-theme="offwhite"] .ftTab{--ftS1:var(--ftAL);--ftS2:var(--ftBL);}
 .ftIco{display:flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;}
 .ftIco svg{width:100%;height:100%;display:block;}
 .ftTab.on{border-color:var(--pg);background:var(--pdim);color:var(--tx);}

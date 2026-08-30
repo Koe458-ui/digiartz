@@ -7,7 +7,7 @@ const SECTIONS = [
   '/', '/explore', '/marketplace', '/community', '/resources', '/blog', '/login'
 ];
 const LEGAL = [
-  'privacy', 'terms', 'refund', 'delivery', 'creator-terms', 'cookies', 'contact'
+  'privacy', 'terms'
 ].map((s) => `/legal/${s}`);
 
 async function fromSitemap() {

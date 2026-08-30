@@ -5,11 +5,6 @@ const SITE = 'https://digiartz.net';
 const SLUGS = {
   'privacy':       { key: 'privacy', title: 'Privacy Policy' },
   'terms':         { key: 'terms',   title: 'Terms of Service' },
-  'cookies':       { key: 'cookie',  title: 'Cookie Policy' },
-  'refund':        { key: 'refund',  title: 'Refund Policy' },
-  'creator-terms': { key: 'seller',  title: 'Creator & Seller Terms' },
-  'contact':       { key: 'contact', title: 'Contact Us' },
-  'delivery':      { key: 'shipping', title: 'Delivery Policy' },
 };
 
 export const LEGAL_SLUGS = Object.keys(SLUGS);

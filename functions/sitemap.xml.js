@@ -124,7 +124,7 @@ export async function onRequestGet(context) {
     .join('\n');
 
   const legalEntries = [
-    'privacy', 'terms', 'refund', 'delivery', 'creator-terms', 'cookies', 'contact',
+    'privacy', 'terms',
   ]
     .map(
       (slug) => `  <url>

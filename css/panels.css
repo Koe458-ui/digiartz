@@ -766,24 +766,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
 .lmBody strong{color:var(--tx)!important;}
 .lmDate{color:var(--ps)!important;background:rgba(var(--pg-rgb),.1)!important;border-color:var(--bdr)!important;}
 
-#cookieBanner{
-  background:var(--sur)!important;
-  border-color:var(--bdrh)!important;
-  box-shadow:0 2px 8px rgba(5,3,8,.3),0 8px 28px rgba(5,3,8,.4),0 20px 48px rgba(5,3,8,.35)!important;
-}
-.ckTitle{color:var(--tx)!important;}
-.ckBody{color:rgba(var(--tx2-rgb),.62)!important;}
-.ckLink{color:var(--pg)!important;}
-.ckLink:hover{color:var(--ps)!important;border-bottom-color:var(--bdrh)!important;}
-.ckAccept{
-  background:var(--pg)!important;
-  border-color:var(--pg)!important;
-  color:var(--text-on-accent)!important;
-  box-shadow:0 2px 10px rgba(var(--pg-rgb),.3)!important;
-}
-.ckAccept:hover{background:var(--ps)!important;border-color:var(--ps)!important;color:var(--sur)!important;box-shadow:0 4px 18px rgba(var(--pg-rgb),.4)!important;}
-.ckReject{background:transparent!important;border-color:var(--bdr)!important;color:rgba(var(--tx2-rgb),.62)!important;}
-.ckReject:hover{background:rgba(var(--pg-rgb),.06)!important;border-color:var(--bdrh)!important;color:var(--ps)!important;}
 
 #fg,#communityPage,#subPage,#profilePage,#admPage,#notifPage,#pfMyWorkPage,#authMod{
   visibility:hidden;

@@ -113,146 +113,11 @@
         var sel = (window.CSS && CSS.escape) ? CSS.escape(uid) : String(uid).replace(/["\\]/g, '\\$&');
         var card = grid.querySelector('.atCard[data-uid="' + sel + '"]');
         if(card && !card.classList.contains('atReady')) paintArtistCard(card, dzArtistCache[uid]);
-        var lines = grid.querySelectorAll('.lgRow[data-uid="' + sel + '"]:not(.lgReady)');
-        for(var i = 0; i < lines.length; i++) paintLogRow(lines[i], dzArtistCache[uid]);
       });
     });
   }
 
-  var LOG_KINDS = {
-    artworks:    { noun:'an artwork',          tag:'Artwork'     },
-    marketplace: { noun:'a marketplace item',  tag:'Marketplace', table:'marketplace_items' },
-    blog:        { noun:'a blog post',         tag:'Blog',        table:'blog_posts' },
-    resources:   { noun:'a resource',          tag:'Resource',    table:'resources' }
-  };
-  var logRows = null, logBusy = false, logFailed = false;
-
-  function logCats(v){
-    if(Array.isArray(v)) return v;
-    return v ? [v] : [];
-  }
-
-  function logLoad(){
-    if(logBusy) return;
-    logBusy = true;
-    logFailed = false;
-
-    var out = [];
-    (typeof images !== 'undefined' ? images : []).forEach(function(a){
-      out.push({ kind:'artworks', id:a.id, user_id:a.user_id,
-                 title:a.name, cats:catList(a.category), at:a.created_at });
-    });
-
-    var secs = ['marketplace','blog','resources'];
-    var left = secs.length;
-    function settle(){
-      if(--left > 0) return;
-      logBusy = false;
-      logRows = out.sort(function(x, y){
-        var tX = x.at ? new Date(x.at).getTime() : 0;
-        var tY = y.at ? new Date(y.at).getTime() : 0;
-        if(tY !== tX) return tY - tX;
-        return String(x.id) < String(y.id) ? 1 : -1;
-      }).slice(0, FEED_CAP);
-      if(feedTab === 'logs') renderAwGrid(awArtworksCache, true);
-    }
-    if(!sb){ logFailed = true; left = 1; settle(); return; }
-
-    secs.forEach(function(sec){
-      sb.from(LOG_KINDS[sec].table).select('id,user_id,title,category,created_at')
-        .eq('status','approved').order('created_at',{ascending:false}).limit(FEED_CAP)
-        .then(function(res){
-          ((res && res.data) || []).forEach(function(r){
-            out.push({ kind:sec, id:r.id, user_id:r.user_id, title:r.title,
-                       cats:logCats(r.category), at:r.created_at });
-          });
-          settle();
-        }, function(){ logFailed = true; settle(); });
-    });
-  }
-
-  function logDate(ts){
-    var d = ts ? new Date(ts) : null;
-    if(!d || isNaN(d.getTime())) return '';
-    try{ return d.toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' }); }
-    catch(e){ return d.toISOString().slice(0, 10); }
-  }
-  function logCatLabel(e){
-    var slug = e.cats && e.cats[0];
-    if(!slug) return '';
-    if(e.kind === 'artworks') return typeof catLabel === 'function' ? catLabel(slug) : slug;
-    return typeof window.dzSecLabel === 'function' ? window.dzSecLabel(e.kind, slug) : slug;
-  }
-
-  function logOpen(e){
-    if(e.kind === 'artworks'){
-      if(typeof openArtworkById === 'function') openArtworkById(e.id, true);
-      return;
-    }
-    if(typeof qlGo === 'function') qlGo(e.kind);
-    var tries = 0;
-    (function wait(){
-      var rows = (typeof window.dzGetRows === 'function' ? window.dzGetRows(e.kind) : []) || [];
-      for(var i = 0; i < rows.length; i++){
-        if(String(rows[i].id) === String(e.id)){ window.dzOpenView(e.kind, e.id); return; }
-      }
-      if(++tries > 40) return;
-      setTimeout(wait, 120);
-    })();
-  }
-
-  function buildLogRow(e){
-    var kind = LOG_KINDS[e.kind] || LOG_KINDS.artworks;
-    var row = document.createElement('div');
-    row.className = 'lgRow lgRow--' + e.kind;
-    row.setAttribute('data-uid', String(e.user_id || ''));
-    row.setAttribute('role', 'button');
-    row.setAttribute('tabindex', '0');
-
-    var cat = logCatLabel(e);
-    row.innerHTML =
-      '<span class="lgAv"><span class="lgLtr" aria-hidden="true"></span></span>' +
-      '<span class="lgBody">' +
-        '<span class="lgLine"><span class="lgUser"></span>' +
-          '<span class="lgAct"> uploaded ' + esc(kind.noun) + ' on ' + esc(logDate(e.at)) + '</span></span>' +
-        '<span class="lgName">' + esc(e.title || 'Untitled') + '</span>' +
-        '<span class="lgMeta"><span class="lgTag">' + esc(kind.tag) + '</span>' +
-          (cat ? '<span class="lgCat">' + esc(cat) + '</span>' : '') + '</span>' +
-      '</span>';
-
-    row.setAttribute('aria-label', 'Open ' + (e.title || 'this upload'));
-    row.onclick = function(ev){
-      if(ev.target && ev.target.closest && ev.target.closest('.lgMeta')) return;
-      logOpen(e);
-    };
-    row.onkeydown = function(ev){
-      if(ev.key !== 'Enter' && ev.key !== ' ') return;
-      ev.preventDefault();
-      logOpen(e);
-    };
-
-    var p = dzArtistCache[e.user_id];
-    if(p !== undefined) paintLogRow(row, p);
-    return row;
-  }
-
-  function paintLogRow(row, p){
-    var name = (p && (p.display_name || p.username)) || 'An artist';
-    var av   = row.querySelector('.lgAv');
-    var ltr  = row.querySelector('.lgLtr');
-    var user = row.querySelector('.lgUser');
-
-    if(user) user.textContent = p && p.username ? '@' + p.username : name;
-    feedPaintAvatar(av, ltr, p, name);
-    row.classList.add('lgReady');
-  }
-
   function feedEmptyText(){
-    if(feedTab === 'logs'){
-      if(logBusy)   return 'LOADING LOGS\u2026';
-      if(logFailed) return 'COULD NOT LOAD LOGS \u2014 TRY AGAIN';
-      return 'NOTHING UPLOADED YET';
-    }
     if(feedTab === 'artists') return 'NO ARTISTS YET';
     return 'NO ARTWORK YET';
   }
@@ -263,15 +128,11 @@
     if(!grid) return;
 
     var src = filterHidden((list || []).slice());
-    if(feedTab === 'logs'){
-      if(logRows === null && !logBusy) logLoad();
-      awRList = filterHidden(logRows || []);
-    } else if(feedIsArtists()){
+    if(feedIsArtists()){
       awRList = feedArtistsOf(src);
     } else {
       awRList = feedSort(src).slice(0, FEED_CAP);
     }
-    grid.classList.toggle('awGrid--logs', feedTab === 'logs');
 
     var keep = reset ? 0 : awRShown;
     awRShown = 0;
@@ -299,13 +160,12 @@
     if(!grid || awRShown >= awRList.length) return;
     var size = count || gridStepBatch();
     var end  = Math.min(awRShown + size, awRList.length);
-    var artists = feedIsArtists(), logs = feedTab === 'logs';
+    var artists = feedIsArtists();
     var frag = document.createDocumentFragment();
     var wanted = [];
     for(var i = awRShown; i < end; i++){
       var item = awRList[i], uid = null;
       if(artists){ frag.appendChild(buildArtistCard(item)); uid = item; }
-      else if(logs){ frag.appendChild(buildLogRow(item)); uid = item.user_id; }
       else frag.appendChild(buildAwCard(item));
       if(uid && dzArtistCache[uid] === undefined && wanted.indexOf(uid) === -1) wanted.push(uid);
     }

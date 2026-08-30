@@ -4,13 +4,11 @@
     artwork: { ph:'Search artworks',
                label:'Search artworks',
                swap:'Switch to searching artists',
-               head:'Artworks',
-               empty:'No artwork matches ' },
+               head:'Artworks' },
     artist:  { ph:'Search artists',
                label:'Search artists',
                swap:'Switch to searching artworks',
-               head:'Artists',
-               empty:'No artist matches ' }
+               head:'Artists' }
   };
 
   var hsArtistMemo = {}, hsArtistKeys = [];
@@ -40,18 +38,27 @@
     if(input) input.setAttribute('aria-expanded', on ? 'true' : 'false');
   }
 
-  function hsNote(msg){
-    var res = hsEl('hsRes');
-    if(!res) return;
-    res.innerHTML = '<div class="hsNote"></div>';
-    res.firstChild.textContent = msg;
-    hsShow(true);
-  }
-
   function hsClose(){
     hsShow(false);
     var res = hsEl('hsRes');
     if(res) res.innerHTML = '';
+  }
+
+  function hsPage(title, text){
+    var box = hsEl('hsEmpty'), sec = hsEl('artworks');
+    var head = hsEl('hsEmptyTitle'), body = hsEl('hsEmptyText');
+    if(!box) return;
+    if(head){ head.textContent = title || ''; head.hidden = !title; }
+    if(body) body.textContent = text || '';
+    box.hidden = false;
+    if(sec) sec.classList.add('hsNoRes');
+    hsClose();
+  }
+
+  function hsPageHide(){
+    var box = hsEl('hsEmpty'), sec = hsEl('artworks');
+    if(box) box.hidden = true;
+    if(sec) sec.classList.remove('hsNoRes');
   }
 
   function hsArtworks(raw){
@@ -90,10 +97,12 @@
     var m = hsMode();
 
     if(!hsState.rows.length){
-      hsNote(m.empty + '“' + raw + '”.');
+      hsPage('No results found',
+             'It seems we can\u2019t find any results based on your search.');
       return;
     }
 
+    hsPageHide();
     res.innerHTML = '';
 
     var head = document.createElement('div');
@@ -177,7 +186,7 @@
 
   function hsRun(){
     var raw = String(hsState.q || '').trim();
-    if(!raw){ hsState.rows = []; hsClose(); return; }
+    if(!raw){ hsState.rows = []; hsPageHide(); hsClose(); return; }
 
     var mySeq = ++hsState.seq;
 
@@ -188,15 +197,16 @@
 
     if(!hsClient()){
       hsState.rows = [];
-      hsNote('Artist search needs a connection — try again in a moment.');
+      hsPage('Search unavailable',
+             'Artist search needs a connection — try again in a moment.');
       return;
     }
-    hsNote('Searching…');
+    hsPage('', 'Searching…');
     hsArtists(raw, function(rows){
       if(mySeq !== hsState.seq) return;
       if(rows === null){
         hsState.rows = [];
-        hsNote('Artists couldn’t be searched — try again.');
+        hsPage('Something went wrong', 'Artists couldn’t be searched — try again.');
         return;
       }
       hsRender(rows);
@@ -217,7 +227,7 @@
     var input = hsEl('hsIn');
     if(input){ try{ input.focus(); }catch(e){} }
     if(String(hsState.q || '').trim()) hsRun();
-    else hsClose();
+    else { hsPageHide(); hsClose(); }
   }
 
   (function(){

@@ -4,6 +4,123 @@ Summary of the security review and the changes made.
 
 ---
 
+## Deployment check — 2026-08-30
+
+Run against the branch before merge: git state, every CI job, both regression
+suites, and — the part that mattered — a reconciliation of what the two
+migration files *claim* against what the live catalogue actually says.
+
+Sixteen of the seventeen claims reconciled. One did not.
+
+### The one that did not: a revoke that returned success and changed nothing
+
+Round 3 item 6 said INSERT on the entitlement columns of `profiles` was revoked
+at the grant layer. It was not. The statement was:
+
+```sql
+revoke insert (role, max_claimed, partner_since, subscription_tier, ...)
+  on public.profiles from anon, authenticated;
+```
+
+**A column-level `REVOKE` cannot subtract from a table-level `GRANT`.** Postgres
+keeps conferring the privilege on every column, the statement reports success,
+and nothing changes. `authenticated` held table-level INSERT on `profiles`, so
+all eight columns were still grantable:
+
+```
+subscription_tier   has_column_privilege(authenticated, INSERT) = true
+role                has_column_privilege(authenticated, INSERT) = true
+merit               has_column_privilege(authenticated, INSERT) = true    (all 8)
+```
+
+`anon` was clean, but only by accident — Round 3b's table-level sweep over inert
+grants happened to catch it, which is also why the discrepancy was one-sided and
+easy to miss.
+
+**Exposure: none.** `dz_profiles_guard_insert` refuses every member-side insert
+into `profiles` regardless, and the attack suite proved it throughout
+(`member inserts a privileged profile → refused P0001`). What was missing was
+the second layer — the one whose entire purpose is to not depend on the first.
+The documentation asserted defence in depth that was one deep.
+
+### Fixed
+
+Drop the table-level grant, then re-grant per column, with the safe set built
+from the catalogue rather than typed out:
+
+```sql
+revoke insert on public.profiles from anon, authenticated;
+grant insert (<every column except the eight>) on public.profiles to authenticated;
+```
+
+The two layers are now independently observable, which is the test that they are
+in fact two:
+
+| attempt | refused by | code |
+|---|---|---|
+| `insert (id, username, subscription_tier)` | the **grant** | `42501 permission denied for table profiles` |
+| `insert (id, username, role)` | the **grant** | `42501 permission denied for table profiles` |
+| `insert (id, username)` — the app's own fallback shape | the **trigger**, as before | `P0001 role, max_claimed and partner_since are not yours to set` |
+| `update` own `display_name` / `bio` | nothing — still accepted | — |
+
+Before the fix the first two rows also read `P0001`: the trigger was doing all
+the work and the grant layer was decorative.
+
+`security/rls-regression.sql` now asserts the column grants directly, so this
+cannot silently revert.
+
+### Why it was caught
+
+Not by re-reading the diff — the SQL looks right, and it runs without error. It
+was caught by asking the live catalogue whether each claim in the migration was
+true, one claim at a time. A migration that runs cleanly is not evidence that it
+did what it says.
+
+### Everything else reconciled
+
+profiles guard ✓ · `dz_market_owns` visibility gate ✓ · `dz_market_download`
+delegation ✓ · 3 counter triggers ✓ · `payments.pp_order_id` unique index ✓ ·
+0 unpinned `search_path` ✓ · 0 `TRUNCATE`/`REFERENCES`/`TRIGGER` ✓ · 0
+trigger-function `EXECUTE` ✓ · default ACL narrowed to `arwd` ✓ · both buckets
+size- and MIME-bounded with no html/svg/pdf ✓ · single deliberate inert grant
+(`notification_reads/authenticated/UPDATE`) ✓.
+
+Suites at the time of the check: **122/122** JS checks, **22/22** attack cases,
+**23/23** client write paths, 7/7 CI jobs.
+
+### Not verifiable from the audit environment
+
+Recorded as manual, not as outstanding work:
+
+- **Leaked Password Protection** and **Email Confirmation** — enabled by the
+  operator and taken as such. The `auth_leaked_password_protection` advisor
+  still appears, but it is the only one of 150 lints carrying no `observed_at`
+  timestamp, so it cannot be dated and is not evidence either way. No signup has
+  occurred since the toggles (18 users, all confirmed, newest 2026-08-26), so
+  the data says nothing either. **MANUALLY VERIFIED.**
+- **Turnstile in production** — `config.js` is generated at deploy from Pages
+  environment variables and is gitignored; outbound egress to `digiartz.net` is
+  blocked from the audit environment. Confirm `TURNSTILE_SITE_KEY` is non-empty
+  in the deployed file.
+- **The bucket MIME rule end to end** — configuration is asserted in the suite,
+  but no real `PUT` was performed: egress to `supabase.co` is blocked and there
+  is no user JWT to sign one with. Upload a webp, a `.pdf` and a `.svg` after
+  deploy.
+
+### Deploy ordering, which is live right now
+
+The database and storage changes are **already applied to production**. The two
+JavaScript changes are **not** — they are on the branch, and `main` does not
+have them.
+
+That means the bucket MIME allowlist is enforcing while the deployed client
+still sends the raw `file.type`. A `.svg` or `.pdf` **asset** upload would be
+refused until the branch merges. koe-media held 152 objects, every one
+`image/webp`, and the asset path had never been used against it, so nothing in
+flight is affected — but the window is real and closes on merge.
+
+---
+
 ## Round 3b — 2026-08-30, the grant layer and the storage content types
 
 Round 3 left two things open and named them. This closes both, and in going
@@ -200,7 +317,7 @@ checkbox: it is an advertised part of the upload form, not a hole.
 |---|------|----------|-------|
 | 4 | **A free listing was downloadable whatever its status.** `dz_market_owns()` let any signed-in member fetch the file of any `price_cents = 0` listing — including one pulled for moderation, or still a draft. A *paid* purchase is deliberately still honoured regardless of status: somebody who paid keeps their download if the listing is later withdrawn | MEDIUM | migration §2 |
 | 5 | **A second, weaker copy of that same rule.** `dz_market_download()` — the older RPC, still reachable over `/rest/v1/rpc` though nothing calls it — carried its own owner/free/paid test, and the copy had already drifted (no visibility check, no `kind` check). It now asks `dz_market_owns()` instead of re-deciding | MEDIUM | migration §2b |
-| 6 | **`profiles` INSERT was granted on every column, entitlement columns included.** The guard named only `role`, `max_claimed` and `partner_since`. Nothing exploits this today — `handle_new_user()` writes the row the moment the account exists, so a member's own insert always collides on the primary key, and an upsert would need UPDATE privilege on columns they do not hold — but both of those are accidents of ordering rather than decisions. The guard now names the tier and merit columns too, and INSERT on them is revoked at the grant layer, which does not depend on trigger ordering at all | MEDIUM | migration §1 |
+| 6 | **`profiles` INSERT was granted on every column, entitlement columns included.** The guard named only `role`, `max_claimed` and `partner_since`. Nothing exploits this today — `handle_new_user()` writes the row the moment the account exists, so a member's own insert always collides on the primary key, and an upsert would need UPDATE privilege on columns they do not hold — but both of those are accidents of ordering rather than decisions. The guard now names the tier and merit columns too, and INSERT on them is withheld at the grant layer, which does not depend on trigger ordering at all. **The grant half was initially written as a column-level `REVOKE` and did nothing** — see the deployment check below | MEDIUM | migration §1 |
 | 7 | **The action router answered to `Object.prototype`.** `ACTIONS[name]` with a caller-supplied `name`: `constructor`, `__proto__`, `toString` all resolve to something truthy. Reaching the call with `fn = Object` would have returned `{ env, request, body, user }` — the service-role key inside it — straight into the JSON response. It never got that far only because `LIMITS[name]` is destructured first and throws on the same keys. That is one refactor away from being the real thing | MEDIUM | `functions/api/collab.js` |
 
 ### Fixed — abuse and disclosure

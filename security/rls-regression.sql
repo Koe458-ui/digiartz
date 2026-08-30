@@ -279,4 +279,23 @@ select
   -- expect false for every one of these.
   (select bool_or('text/html' = any(allowed_mime_types)) from storage.buckets)      as any_bucket_allows_html,
   (select bool_or('image/svg+xml' = any(allowed_mime_types)) from storage.buckets)  as any_bucket_allows_svg,
-  (select bool_or('application/pdf' = any(allowed_mime_types)) from storage.buckets) as any_bucket_allows_pdf;
+  (select bool_or('application/pdf' = any(allowed_mime_types)) from storage.buckets) as any_bucket_allows_pdf,
+
+  -- expect 'none'. A column-level REVOKE cannot subtract from a table-level
+  -- GRANT, so the obvious way to withhold these reports success and does
+  -- nothing. has_column_privilege is the only honest way to ask.
+  (select coalesce(string_agg(r.x||'.'||c.col, ', '), 'none')
+     from unnest(array['role','max_claimed','partner_since','subscription_tier',
+                       'subscription_expires_at','merit','merit_updated_at',
+                       'cred_received_count']) as c(col)
+     cross join (values ('anon'),('authenticated')) r(x)
+    where has_column_privilege(r.x, 'public.profiles', c.col, 'INSERT'))
+    as privileged_profile_cols_insertable_expect_none,
+
+  -- expect 'none' as well: none of them may be UPDATE-able either.
+  (select coalesce(string_agg(r.x||'.'||c.col, ', '), 'none')
+     from unnest(array['role','max_claimed','partner_since','subscription_tier',
+                       'subscription_expires_at','merit','cred_received_count']) as c(col)
+     cross join (values ('anon'),('authenticated')) r(x)
+    where has_column_privilege(r.x, 'public.profiles', c.col, 'UPDATE'))
+    as privileged_profile_cols_updatable_expect_none;

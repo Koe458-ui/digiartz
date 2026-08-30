@@ -43,10 +43,44 @@ begin
   return new;
 end $$;
 
-revoke insert (role, max_claimed, partner_since,
-               subscription_tier, subscription_expires_at,
-               merit, merit_updated_at, cred_received_count)
-  on public.profiles from anon, authenticated;
+-- The grant half, and the reason it is written this way.
+--
+-- The obvious form of this is a column-level revoke:
+--
+--   revoke insert (role, subscription_tier, ...) on public.profiles from authenticated;
+--
+-- That is a NO-OP here, and silently so. A column-level REVOKE cannot subtract
+-- from a table-level GRANT — Postgres keeps conferring the privilege on every
+-- column — and `authenticated` holds INSERT on public.profiles at the table
+-- level. The revoke returns success and changes nothing. It was written that
+-- way first, and the deployment check caught it only because the live catalogue
+-- was compared against what this file claims.
+--
+-- So: drop the table-level grant, then re-grant per column. The safe set is
+-- built from the catalogue rather than typed out, so a column added to profiles
+-- later is granted by default and has to be named here to be withheld — the
+-- failure mode is a member being unable to write a new display field, not a
+-- member being able to write a new privileged one.
+
+do $$
+declare safe_cols text;
+begin
+  select string_agg(quote_ident(column_name), ', ' order by ordinal_position)
+    into safe_cols
+    from information_schema.columns
+   where table_schema = 'public' and table_name = 'profiles'
+     and column_name not in ('role','max_claimed','partner_since',
+                             'subscription_tier','subscription_expires_at',
+                             'merit','merit_updated_at','cred_received_count');
+
+  execute 'revoke insert on public.profiles from anon, authenticated';
+  execute format('grant insert (%s) on public.profiles to authenticated', safe_cols);
+end $$;
+
+-- After this, the two layers refuse different things and can be told apart:
+--   insert naming subscription_tier -> 42501, refused by the GRANT
+--   insert of {id, username}        -> P0001, refused by the TRIGGER
+-- Before it, only the second refusal existed.
 
 -- 2 ------------------------------------------------------------------------
 -- dz_market_owns(): a free listing was downloadable by anyone signed in

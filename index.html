@@ -138,9 +138,9 @@
   <link rel="stylesheet" href="/css/profile.css?v=23">
   <link rel="stylesheet" href="/css/admin.css?v=7">
   <link rel="stylesheet" href="/css/auth.css?v=7">
-  <link rel="stylesheet" href="/css/panels.css?v=23">
+  <link rel="stylesheet" href="/css/panels.css?v=24">
   <link rel="stylesheet" href="/css/upload.css?v=21">
-  <link rel="stylesheet" href="/css/widgets.css?v=18">
+  <link rel="stylesheet" href="/css/widgets.css?v=19">
   <link rel="stylesheet" href="/css/overrides.css?v=43">
   <link rel="stylesheet" href="/css/select.css?v=5">
   <link rel="stylesheet" href="/css/analytics.css?v=11">
@@ -1750,21 +1750,6 @@
           <p class="faqATxt">Since subscriptions do not automatically renew, there is no cancellation process required. Access simply ends when your subscription period expires.</p>
         </div>
       </div>
-
-      <div class="faqItem" role="listitem">
-        <button
-          class="faqQ"
-          aria-expanded="false"
-          aria-controls="faqA-1-6"
-          id="faqQ-1-6"
-          onclick="faqToggle(this)">
-          <span class="faqQTxt">Do you offer refunds?</span>
-          <span class="faqIcon" aria-hidden="true">+</span>
-        </button>
-        <div class="faqA" id="faqA-1-6" role="region" aria-labelledby="faqQ-1-6" hidden>
-          <p class="faqATxt">All subscription purchases are final and non-refundable.</p>
-        </div>
-      </div>
     </section>
 
     <div class="faqCatDiv" aria-hidden="true"></div>
@@ -1855,21 +1840,6 @@
     <section class="faqCategory" aria-labelledby="faqCat3">
       <div class="faqCatLabel" id="faqCat3">
         <span class="faqCatIco" aria-hidden="true">✦</span>Support
-      </div>
-
-      <div class="faqItem" role="listitem">
-        <button
-          class="faqQ"
-          aria-expanded="false"
-          aria-controls="faqA-3-1"
-          id="faqQ-3-1"
-          onclick="faqToggle(this)">
-          <span class="faqQTxt">What should I do if I am charged more than once or an incorrect amount is deducted?</span>
-          <span class="faqIcon" aria-hidden="true">+</span>
-        </button>
-        <div class="faqA" id="faqA-3-1" role="region" aria-labelledby="faqQ-3-1" hidden>
-          <p class="faqATxt">If an overcharge occurs due to an issue on our side, we will review the transaction and refund any excess amount. We are unable to provide refunds or compensation for issues caused by banks, payment providers, or user-side errors.</p>
-        </div>
       </div>
 
       <div class="faqItem" role="listitem">
@@ -2318,11 +2288,6 @@
           <div class="setGrpItems">
             <a class="pfMenuItem" href="/legal/privacy" onclick="return setGoLegal('privacy')"><span class="pfMenuTxt">Privacy Policy</span></a>
             <a class="pfMenuItem" href="/legal/terms" onclick="return setGoLegal('terms')"><span class="pfMenuTxt">Terms &amp; Conditions</span></a>
-            <a class="pfMenuItem" href="/legal/refund" onclick="return setGoLegal('refund')"><span class="pfMenuTxt">Refund Policy</span></a>
-            <a class="pfMenuItem" href="/legal/delivery" onclick="return setGoLegal('shipping')"><span class="pfMenuTxt">Delivery Policy</span></a>
-            <a class="pfMenuItem" href="/legal/creator-terms" onclick="return setGoLegal('seller')"><span class="pfMenuTxt">Creator &amp; Seller Terms</span></a>
-            <a class="pfMenuItem" href="/legal/cookies" onclick="return setGoLegal('cookie')"><span class="pfMenuTxt">Cookie Policy</span></a>
-            <a class="pfMenuItem" href="/legal/contact" onclick="return setGoLegal('contact')"><span class="pfMenuTxt">Contact Us</span></a>
           </div>
         </section>
 
@@ -2452,45 +2417,13 @@
 
  <div id="rippleHost"></div>
 
-  <script type="module" src="/js/legal-content.js?v=2"></script>
+  <script type="module" src="/js/legal-content.js?v=3"></script>
   <script src="/js/effects.js?v=11"></script>
 
 
 
 
 
-<div
-  id="cookieBanner"
-  role="dialog"
-  aria-modal="false"
-  aria-label="Cookie consent"
-  aria-live="polite"
-  aria-hidden="true"
->
-  <div class="ckInner">
-    <div class="ckText">
-      <div class="ckTitle">
-        <span class="ckIcon" aria-hidden="true">🍪</span>
-        We use cookies
-      </div>
-      <p class="ckBody">
-        We use cookies to improve your experience and keep the site running smoothly. See our
-        <a class="ckLink" href="/legal/cookies" onclick="return openLegal('cookie')" aria-label="Open Cookie Policy">Cookie Policy</a>
-        for details.
-      </p>
-    </div>
-    <div class="ckActions">
-      <button class="ckAccept" id="ckAcceptBtn" onclick="ckAccept()" aria-label="Accept cookies">
-        Accept Cookies
-      </button>
-      <button class="ckReject" id="ckRejectBtn" onclick="ckReject()" aria-label="Reject non-essential cookies">
-        Reject Cookies
-      </button>
-    </div>
-  </div>
-</div>
-
-  <script src="/js/cookie.js?v=2"></script>
 
 
 

@@ -23,8 +23,8 @@ window.ZEO_DATA = {
     { id: "jobs",      icon: "💼", label: "Jobs",                   description: "Post a role or apply to one.",                prompt: "Are you hiring, or looking for work?" },
     { id: "cart",      icon: "🛒", label: "Cart & Orders",          description: "Purchases, downloads and licenses.",          prompt: "What do you need from your Cart?" },
     { id: "community", icon: "💬", label: "Community & Chat",       description: "Communities, comments, and messages.",       prompt: "Which part of the community do you need help with?" },
-    { id: "billing",   icon: "💎", label: "Subscriptions & Refunds",description: "Plans, payments, refunds, cancelling.",      prompt: "What are you facing with billing or your plan?" },
-    { id: "policies",  icon: "⚖️", label: "Policies & Legal",       description: "Privacy, Terms, Cookies, Refund policy.",     prompt: "Which policy would you like a quick summary of?" },
+    { id: "billing",   icon: "💎", label: "Subscriptions & Billing", description: "Plans, payments, cancelling.",               prompt: "What are you facing with billing or your plan?" },
+    { id: "policies",  icon: "⚖️", label: "Policies & Legal",       description: "Privacy and Terms.",                          prompt: "Which policy would you like a quick summary of?" },
     { id: "safety",    icon: "🚩", label: "Safety & Reporting",     description: "Report content, harassment, stolen art.",    prompt: "What safety issue can I help with?" },
     { id: "trouble",   icon: "🛠️", label: "Technical Problems",     description: "Loading, saving, and display issues.",       prompt: "What's going wrong?" },
     { id: "contact",   icon: "✉️", label: "Contact a Human",        description: "Reach the DigiArtz team directly.",          prompt: "How would you like to reach us?" }
@@ -61,7 +61,7 @@ It is a place for digital artists anywhere to put their work up and have people 
 2. Create a free account (or log in)
 3. Start uploading and interacting
 
-Optional paid subscription tiers add extra perks — see the "Subscriptions & Refunds" topic for details.`
+Optional paid subscription tiers add extra perks — see the "Subscriptions & Billing" topic for details.`
       },
       {
         question: "What can I do here?",
@@ -598,13 +598,6 @@ The preview is auto-checked, so make sure it shows the real product.`
 `Checkout runs through our payment partner. Your payment is verified before anything unlocks, and digital files release automatically once it clears.
 
 If a charge went through but the item didn't unlock, email DigiArtzsupport@gmail.com with the details and we'll sort it out.`
-      },
-      {
-        question: "How do refunds work?",
-        answer:
-`Digital purchases are generally final — see Policies → Refund Policy for the full terms.
-
-If something genuinely went wrong — a double charge, or a file that never delivered — contact DigiArtzsupport@gmail.com with your transaction details and we'll review it.`
       }
     ],
 
@@ -772,19 +765,6 @@ Browsing and posting stay free — subscriptions are optional.`
 Once done, your perks and badge activate on your account.`
       },
       {
-        question: "I want a refund",
-        answer:
-`Please note our Refund Policy: subscription and digital purchases are generally final and non-refundable.
-
-If you think your case is an exception (for example a billing error):
-
-1. Gather your payment details / transaction ID
-2. Email DigiArtzsupport@gmail.com explaining what happened
-3. We'll review and help where appropriate
-
-See Policies → Refund Policy for the full terms.`
-      },
-      {
         question: "I was charged twice",
         answer:
 `Sorry about that — let's sort it out:
@@ -833,30 +813,6 @@ Read the full version any time from the footer → Privacy Policy.`
 4. Moderation, advertising and limitation of liability
 
 Full text: footer → Terms & Conditions.`
-      },
-      {
-        question: "Cookie Policy (summary)",
-        answer:
-`Cookies help DigiArtz work and improve:
-
-1. Essential cookies keep you signed in and secure
-2. Preference cookies remember your settings (like theme)
-3. Analytics cookies help us understand usage
-4. Advertising cookies (incl. Google) support and measure ads
-
-You can control cookies in your browser. Full text: footer → Cookie Policy.`
-      },
-      {
-        question: "Refund Policy (summary)",
-        answer:
-`Key points of the Refund Policy:
-
-1. Digital purchases and subscriptions are generally final
-2. Refunds, exchanges and cancellations aren't guaranteed
-3. Genuine billing errors (like double charges) will be reviewed
-4. Contact support with your transaction details for any issue
-
-Full text: footer → Refund Policy.`
       },
       {
         question: "How is my data used?",

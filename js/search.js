@@ -329,28 +329,13 @@
     openFgSearch();
   });
 
-  function fgSearchStart(q, scope){
-    var term = String(q || '').trim();
-    openFgSearch();
-    var input = document.getElementById('fgSrchIn');
-    if(input) input.value = term;
-    fgSrch.scope = FG_SRCH_GROUPS.some(function(g){ return g.key === scope; }) ? scope : 'all';
-    fgSearchPaintScopes();
-    fgSrch.q = term;
-    tgSearchChrome('fgSrchWrap', term);
-    clearTimeout(fgSrch.timer);
-    fgSearchRun();
-  }
-
   window.openFgSearch = openFgSearch;
   window.closeFgSearch = closeFgSearch;
   window.fgSearchInput = fgSearchInput;
   window.fgSearchClear = fgSearchClear;
   window.fgSearchScope = fgSearchScope;
   window.fgSearchOpen = fgSearchOpen;
-  window.fgSearchStart = fgSearchStart;
   window.fgSearchArtworks = fgSearchArtworks;
-  window.fgSearchPattern = fgSearchPattern;
   window.fgArtistPattern = fgArtistPattern;
 
   function openSubscription() {

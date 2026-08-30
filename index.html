@@ -130,7 +130,7 @@
   })();
   </script>
   <link rel="stylesheet" href="/css/base.css?v=33">
-  <link rel="stylesheet" href="/css/hero.css?v=124">
+  <link rel="stylesheet" href="/css/hero.css?v=125">
   <link rel="stylesheet" href="/css/viewer.css?v=44">
   <link rel="stylesheet" href="/css/community.css?v=33">
   <link rel="stylesheet" href="/css/connect.css?v=10">
@@ -362,6 +362,23 @@
 
 
   <section id="artworks">
+    <div class="awTop">
+    <div class="hsWrap" id="hsWrap">
+      <div class="tgSearch hsBar" id="hsBar" data-mode="artwork">
+        <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" class="tgSearchIn" id="hsIn" placeholder="Search artworks"
+               autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="60"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="hsRes"
+               aria-label="Search artworks" oninput="hsInput(this.value)">
+        <button type="button" class="tgSearchClear" onclick="hsClear()" aria-label="Clear search">✕</button>
+        <button type="button" class="hsMode" id="hsModeBtn" aria-pressed="false"
+                aria-label="Switch to searching artists" title="Switch to searching artists"
+                onclick="hsToggleMode()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg>
+        </button>
+      </div>
+      <div class="hsRes" id="hsRes" role="region" aria-label="Search results" aria-live="polite" hidden></div>
+    </div>
     <div class="ftRail" id="ftRail" role="tablist" aria-label="Feed boards">
       <button type="button" class="ftTab on" id="ftTab-trending" role="tab" aria-selected="true" aria-controls="awGrid" data-feed="trending"
               style="--ftA:#F97316;--ftB:#EF4444;--ftAL:#C2410C;--ftBL:#B91C1C">
@@ -444,6 +461,7 @@
         </span>
         <span class="ftLbl">Logs</span>
       </button>
+    </div>
     </div>
     <div class="awGrid" id="awGrid" role="tabpanel" aria-labelledby="ftTab-trending">
       <a class="awCard" href="/artwork/7cd74497-cd51-446b-a084-afb6b04fa84c"><div class="awImgWrap"><img loading="lazy" decoding="async" src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet__t300.webp" alt="Ethereal Violet — digital artwork on DigiArtz"></div></a>
@@ -2412,8 +2430,9 @@
   <script src="/js/mywork.js?v=28"></script>
   <script src="/js/startup.js?v=8"></script>
   <script src="/js/tagrail.js?v=4"></script>
-  <script src="/js/search.js?v=17"></script>
+  <script src="/js/search.js?v=18"></script>
   <script src="/js/feed.js?v=7"></script>
+  <script src="/js/herosearch.js?v=1"></script>
 
  <div id="rippleHost"></div>
 

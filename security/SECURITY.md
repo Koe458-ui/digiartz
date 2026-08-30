@@ -623,11 +623,7 @@ it loads. Both are designed to be public and are useless without their
 secrets. `PAYPAL_CLIENT_SECRET`, `RAZORPAY_KEY_SECRET` and `SB_SERVICE_KEY`
 never leave the Worker.
 
-Two things were left public on purpose:
-- The **Billing & Payments FAQ** (refunds, no auto-renew, cancellation). It
-  names no provider and quotes no price, and both Razorpay and PayPal require
-  a publicly reachable refund/cancellation policy as a condition of merchant
-  approval — hiding it risks the activation still pending.
+One thing was left public on purpose:
 - The **seller-side price field** in the marketplace composer, and the
   `.subCard` / `.subGrid` style rules. Neither carries an amount or a provider;
   removing them would break listing creation and leave the injected plan grid

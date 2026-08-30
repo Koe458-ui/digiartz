@@ -74,7 +74,7 @@
 
   function hsArtists(raw, done){
     var db = hsClient();
-    var pattern = (typeof window.fgSearchPattern === 'function') ? window.fgSearchPattern(raw) : '';
+    var pattern = (typeof window.fgArtistPattern === 'function') ? window.fgArtistPattern(raw) : '';
     if(!db || !pattern){ done(null); return; }
     var key = pattern.toLowerCase();
     if(hsArtistMemo[key]){ done(hsArtistMemo[key]); return; }
@@ -267,5 +267,17 @@
     }
   })();
 
+  function hsReset(){
+    var input = hsEl('hsIn');
+    if(input) input.value = '';
+    clearTimeout(hsState.timer);
+    hsState.q = '';
+    hsState.rows = [];
+    hsState.seq++;
+    hsPageHide();
+    hsClose();
+  }
+
   window.hsInput      = hsInput;
   window.hsToggleMode = hsToggleMode;
+  window.hsReset      = hsReset;

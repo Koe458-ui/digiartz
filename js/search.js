@@ -18,6 +18,13 @@
     return clean ? '%'+clean+'%' : '';
   }
 
+  function fgArtistPattern(q){
+    var clean = String(q||'').replace(/[,()"\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
+    if(!clean) return '';
+    var body = clean.replace(/[^0-9A-Za-z\u00C0-\uFFFF]+/g,'%');
+    return body ? '%'+body+'%' : '';
+  }
+
   function fgSearchNote(msg){
     var n = document.getElementById('fgSrchNote');
     if(!n) return;
@@ -167,9 +174,10 @@
         }
         if(want('artist')){
 
+          var who = fgArtistPattern(raw);
           jobs.push(sb.from('profiles')
             .select('id,username,display_name,avatar_url,banner_url,bio')
-            .or('username.ilike.'+pattern+',display_name.ilike.'+pattern)
+            .or('username.ilike.'+who+',display_name.ilike.'+who)
             .order('username',{ascending:true}).limit(24)
             .then(function(r){ return {key:'artist', rows:(r&&r.data)||[]}; }));
         }
@@ -343,6 +351,7 @@
   window.fgSearchStart = fgSearchStart;
   window.fgSearchArtworks = fgSearchArtworks;
   window.fgSearchPattern = fgSearchPattern;
+  window.fgArtistPattern = fgArtistPattern;
 
   function openSubscription() {
     var el = document.getElementById('subPage');

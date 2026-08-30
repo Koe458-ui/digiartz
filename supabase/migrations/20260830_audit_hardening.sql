@@ -237,16 +237,24 @@ alter function public.dz_content_fingerprint(text)   set search_path to 'public'
 -- Storage. koe-media is the PUBLIC bucket and it carried no file_size_limit at
 -- all, so the only size check on an upload was the one the edge function makes
 -- against the size the CLIENT declares before it mints the signed URL. Declare
--- one byte, PUT a gigabyte. koe-originals already had this limit; koe-media now
--- matches it, which is the same 400MB ceiling smart-function grants a Max
--- member, so no legitimate upload changes.
+-- one byte, PUT a gigabyte. 400MB is the same ceiling smart-function grants a
+-- Max member, so no legitimate upload changes.
 --
 -- Applied to the live project on 2026-08-30; kept here so a rebuilt project
 -- gets it too.
+--
+-- Both buckets are named, not just koe-media. On the live project koe-originals
+-- already carried this limit, so the original statement only had to fix the
+-- public one — but that made this file describe the project it was written
+-- against rather than the state it is supposed to produce. Replayed onto a
+-- rebuilt project where koe-originals came up unbounded, it would have left it
+-- unbounded. `is null` is kept so neither bucket is overwritten if an operator
+-- has deliberately set a different ceiling.
 
 update storage.buckets
    set file_size_limit = 419430400          -- 400 MB, = MAX_ASSET_BYTES_MAX
- where id = 'koe-media' and file_size_limit is null;
+ where id in ('koe-media', 'koe-originals')
+   and file_size_limit is null;
 
 -- NOT done here, deliberately: allowed_mime_types on koe-media. The bucket has
 -- to accept every extension in smart-function's ASSET_EXT — archives, fonts,

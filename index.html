@@ -130,7 +130,7 @@
   })();
   </script>
   <link rel="stylesheet" href="/css/base.css?v=33">
-  <link rel="stylesheet" href="/css/hero.css?v=130">
+  <link rel="stylesheet" href="/css/hero.css?v=131">
   <link rel="stylesheet" href="/css/viewer.css?v=44">
   <link rel="stylesheet" href="/css/community.css?v=33">
   <link rel="stylesheet" href="/css/connect.css?v=10">
@@ -377,27 +377,31 @@
         <button type="button" class="hsMode" id="hsModeBtn"
                 aria-label="Switch to searching artists" title="Switch to searching artists"
                 onclick="hsToggleMode()">
-          <svg class="hsIco hsIcoArtist" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="7.4" r="4.4"/><path d="M4.4 20.6v-.7a7.6 7.6 0 0 1 15.2 0v.7"/>
+          <svg class="hsIco hsIcoArtist" viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <linearGradient id="hsgArtist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--hsW1)"/><stop offset="1" style="stop-color:var(--hsW2)"/></linearGradient>
+            <g stroke="url(#hsgArtist)"><circle cx="12" cy="7.4" r="4.4"/><path d="M4.4 20.6v-.7a7.6 7.6 0 0 1 15.2 0v.7"/></g>
           </svg>
-          <svg class="hsIco hsIcoArt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>
+          <svg class="hsIco hsIcoArt" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <linearGradient id="hsgArt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--hsA1)"/><stop offset="1" style="stop-color:var(--hsA2)"/></linearGradient>
+            <g stroke="url(#hsgArt)"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></g>
           </svg>
         </button>
       </div>
     </div>
     <div class="ftRail" id="ftRail" role="tablist" aria-label="Feed boards">
-      <button type="button" class="ftTab on" id="ftTab-trending" role="tab" aria-selected="true" aria-controls="awGrid" data-feed="trending">
+      <button type="button" class="ftTab on" id="ftTab-trending" role="tab" aria-selected="true" aria-controls="awGrid" data-feed="trending"
+              style="--ftA:#F97316;--ftB:#EF4444;--ftAL:#C2410C;--ftBL:#B91C1C">
         <span class="ftIco" aria-hidden="true">
           <svg viewBox="0 0 24 24"><linearGradient id="ftgTrending" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
-            <linearGradient id="ftgTrendCore" x1="0" y1="1" x2="0" y2="0"><stop offset="0" style="stop-color:var(--ftC1)"/><stop offset="1" style="stop-color:var(--ftC2)"/></linearGradient>
+            <linearGradient id="ftgTrendCore" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#F97316"/></linearGradient>
             <path fill="url(#ftgTrending)" d="M12 1.8c1.6 3.4.6 5.5-1 7.4-1.8 2.1-4.4 3.4-4.4 6a5.9 5.9 0 0 0 11.8 0c0-2.6-1.4-4.3-2.8-5.8-.3 1-.9 1.7-1.7 2.1 1.1-3.3-.5-7.2-1.9-9.7Z"/>
             <path fill="url(#ftgTrendCore)" d="M12 12.6c.9 1.6.2 2.7-.4 3.5-.5.6-.9 1.1-.9 2a2.5 2.5 0 0 0 5 0c0-1.3-.9-2.1-1.7-2.9-.3.5-.7.8-1.1.9.4-1.2-.3-2.6-.9-3.5Z"/>
           </svg>
         </span>
         <span class="ftLbl">Trending</span>
       </button>
-      <button type="button" class="ftTab" id="ftTab-new" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="new">
+      <button type="button" class="ftTab" id="ftTab-new" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="new"
+              style="--ftA:#C4B5FD;--ftB:#7C3AED;--ftAL:#7C3AED;--ftBL:#5B21B6">
         <span class="ftIco" aria-hidden="true">
           <svg viewBox="0 0 24 24"><linearGradient id="ftgNew" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
             <g fill="url(#ftgNew)">
@@ -409,7 +413,8 @@
         </span>
         <span class="ftLbl">New arrival</span>
       </button>
-      <button type="button" class="ftTab" id="ftTab-weekly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="weekly">
+      <button type="button" class="ftTab" id="ftTab-weekly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="weekly"
+              style="--ftA:#FB7185;--ftB:#E11D48;--ftAL:#BE123C;--ftBL:#9F1239">
         <span class="ftIco" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><linearGradient id="ftgWeekly" x1="0" y1="1" x2="1" y2="0"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
             <g stroke="url(#ftgWeekly)">
@@ -421,7 +426,8 @@
         </span>
         <span class="ftLbl">Weekly hits</span>
       </button>
-      <button type="button" class="ftTab" id="ftTab-monthly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="monthly">
+      <button type="button" class="ftTab" id="ftTab-monthly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="monthly"
+              style="--ftA:#38BDF8;--ftB:#2563EB;--ftAL:#0369A1;--ftBL:#1D4ED8">
         <span class="ftIco" aria-hidden="true">
           <svg viewBox="0 0 24 24"><linearGradient id="ftgMonthly" x1="1" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
             <g fill="none" stroke="url(#ftgMonthly)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -439,7 +445,8 @@
         </span>
         <span class="ftLbl">Monthly hits</span>
       </button>
-      <button type="button" class="ftTab" id="ftTab-artists" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="artists">
+      <button type="button" class="ftTab" id="ftTab-artists" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="artists"
+              style="--ftA:#5EEAD4;--ftB:#0D9488;--ftAL:#0F766E;--ftBL:#115E59">
         <span class="ftIco" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><linearGradient id="ftgArtists" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
             <g stroke="url(#ftgArtists)">

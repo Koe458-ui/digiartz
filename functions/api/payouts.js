@@ -149,6 +149,26 @@ async function withdrawable(env, userId) {
   return by;
 }
 
+// Earnings only, no requests subtracted: the pot a payout is drawn from.
+async function earnedAvailable(env, userId, currency) {
+  const rows = await sbService(env,
+    '/marketplace_earnings?seller_id=eq.' + userId +
+    '&status=eq.available&currency=eq.' + encodeURIComponent(currency) +
+    '&available_at=lte.' + new Date().toISOString() + '&select=net_amount');
+  return (rows || []).reduce((n, e) => n + Number(e.net_amount || 0), 0);
+}
+
+// Everything already spoken for in this currency, optionally ignoring one row.
+async function claimedTotal(env, userId, currency, statuses, exceptId) {
+  const rows = await sbService(env,
+    '/payout_requests?user_id=eq.' + userId +
+    '&currency=eq.' + encodeURIComponent(currency) +
+    '&status=in.(' + statuses.join(',') + ')&select=id,amount');
+  return (rows || [])
+    .filter((r) => !exceptId || r.id !== exceptId)
+    .reduce((n, r) => n + Number(r.amount || 0), 0);
+}
+
 export async function onRequestPost({ env, request }) {
   if (!sbUrl(env) || !sbAnon(env) || !sbSvc(env))
     return json({ error: 'Not configured' }, 503);
@@ -387,7 +407,33 @@ export async function onRequestPost({ env, request }) {
           tds_amount: tdsAlready, tds_bps: 0, net_amount: amount,
         }),
       });
-      return json({ ok: true, request: rows && rows[0], tds: 0, net: amount,
+      const made = Array.isArray(rows) && rows[0];
+
+      // The balance check above and this insert are two round trips, so two
+      // requests fired together can both pass it and both be created — the same
+      // money withdrawn twice. Re-read the open set now that our own row is in
+      // it: whoever is over the line withdraws their request again. Both sides
+      // standing down is the safe way to lose this race; the seller re-requests
+      // and gets one.
+      if (made) {
+        const pot = await earnedAvailable(env, user.id, currency);
+        const claimed = await claimedTotal(env, user.id, currency,
+          ['requested', 'approved', 'processing'], null);
+        if (claimed > pot) {
+          await sbService(env, '/payout_requests?id=eq.' + made.id + '&status=eq.requested', {
+            method: 'PATCH',
+            body: JSON.stringify({
+              status: 'rejected',
+              review_note: 'Withdrawn automatically — another request for the same balance was already open',
+              decided_at: new Date().toISOString(),
+            }),
+          }).catch(() => {});
+          return json({ error: 'Another payout request for this balance is already open — ' +
+                               'check your payouts list and try again.' }, 409);
+        }
+      }
+
+      return json({ ok: true, request: made, tds: 0, net: amount,
                     tdsAlreadyWithheld: tdsAlready });
     }
 
@@ -429,13 +475,17 @@ export async function onRequestPost({ env, request }) {
       if (!req) return json({ error: 'No such open request' }, 404);
 
       if (approve) {
-        const earned = await sbService(env,
-          '/marketplace_earnings?seller_id=eq.' + req.user_id +
-          '&status=eq.available&currency=eq.' + req.currency +
-          '&available_at=lte.' + new Date().toISOString() + '&select=net_amount');
-        const total = (earned || []).reduce((n, e) => n + Number(e.net_amount || 0), 0);
-        if (total < Number(req.amount))
-          return json({ error: 'Balance has fallen below the requested amount — reject or ask them to re-request' }, 400);
+        // Weigh this request against what is already committed, not against the
+        // balance on its own: two requests each within the balance can still be
+        // more than the balance together.
+        const total = await earnedAvailable(env, req.user_id, req.currency);
+        const committed = await claimedTotal(env, req.user_id, req.currency,
+          ['approved', 'processing'], req.id);
+        if (total < Number(req.amount) + committed)
+          return json({ error: committed
+            ? 'This seller already has ' + toValue(committed, req.currency) + ' ' +
+              req.currency + ' approved or in flight; the balance does not cover both'
+            : 'Balance has fallen below the requested amount — reject or ask them to re-request' }, 400);
       }
 
       const rows = await sbService(env, '/payout_requests?id=eq.' + id + '&status=eq.requested', {
@@ -461,6 +511,23 @@ export async function onRequestPost({ env, request }) {
       });
       const req = Array.isArray(claimed) && claimed[0];
       if (!req) return json({ error: 'That request is not approved and waiting' }, 400);
+
+      // Last gate before the money leaves. The earnings that backed this request
+      // may have been reversed, disputed or already retired by another send
+      // since it was approved.
+      const pot = await earnedAvailable(env, req.user_id, req.currency);
+      const alsoInFlight = await claimedTotal(env, req.user_id, req.currency,
+        ['processing'], req.id);
+      if (pot < Number(req.amount) + alsoInFlight) {
+        await sbService(env, '/payout_requests?id=eq.' + req.id + '&status=eq.processing', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            status: 'approved',
+            review_note: 'Not sent: the available balance no longer covers this request',
+          }),
+        }).catch(() => {});
+        return json({ error: 'The available balance no longer covers this request — nothing was sent' }, 409);
+      }
 
       const batchId = 'dzpo_' + req.id.slice(0, 8) + '_' + Date.now();
       const retiredIds = [];

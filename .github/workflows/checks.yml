@@ -5,6 +5,11 @@ on:
     branches: ['**']
   pull_request:
 
+# Read-only by default. None of these jobs writes to the repository, and a
+# workflow that runs on every pull request should not hold a token that could.
+permissions:
+  contents: read
+
 jobs:
   precache:
     name: service worker precaches what index.html loads
@@ -60,6 +65,16 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/cache-test.mjs
+
+  security:
+    name: the security controls still refuse what they refused
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/security-test.mjs
 
   syntax:
     name: changed javascript parses

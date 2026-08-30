@@ -675,15 +675,6 @@
 }
 .hsMode:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:50%;}
 
-.hsRes{
-  position:absolute;top:calc(100% + .55rem);
-  left:var(--shellPad);right:var(--shellPad);
-  max-width:640px;margin:0 auto;
-  max-height:min(62vh,460px);overflow-y:auto;overscroll-behavior:contain;
-  box-sizing:border-box;padding:.55rem;
-  background:var(--sur);border:1px solid var(--bdr);border-radius:16px;
-  box-shadow:0 18px 44px color-mix(in srgb,var(--tc) 22%,transparent);
-}
 .hsEmpty{
   max-width:1300px;
   margin:3rem auto;
@@ -705,36 +696,9 @@
   font-family:var(--fb);font-size:clamp(.88rem,2.3vw,1rem);
   line-height:1.5;color:var(--txd);
 }
-#artworks.hsNoRes .awGrid{display:none;}
-#artworks.hsNoRes .awEmpty{display:none!important;}
-.hsHead{
-  display:flex;align-items:baseline;gap:.5rem;
-  padding:.15rem .35rem .5rem;
-}
-.hsHeadTitle{
-  font-family:var(--fm);font-size:.66rem;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--txd);
-}
-.hsHeadCount{font-family:var(--fm);font-size:.66rem;color:var(--tc);}
-.hsGrid{
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:var(--artGap);
-}
-.hsMore{
-  display:block;width:100%;margin-top:.55rem;padding:.6rem;
-  border:1px solid var(--bdr);border-radius:10px;cursor:pointer;
-  background:var(--sur2);color:var(--tx);
-  font-family:var(--fb);font-size:.8rem;font-weight:600;
-  transition:border-color .18s,background .18s;
-}
-@media(hover:hover){
-  .hsMore:hover{border-color:var(--bdrh);}
-}
-.hsMore:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-
-@media(min-width:700px){
-  .hsGrid{grid-template-columns:repeat(3,minmax(0,1fr));}
-}
+#hsResults[hidden]{display:none;}
+#artworks.hsOn > .awGrid:not(#hsResults){display:none;}
+#artworks.hsOn .awEmpty{display:none!important;}
 
 @media(min-width:1024px){
   .awTop{
@@ -746,8 +710,6 @@
     margin:0;padding:0;
   }
   .tgSearch.hsBar{max-width:none;}
-  .hsRes{left:0;right:0;max-width:none;}
-  .hsGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
   #artworks .awTop .ftRail{
     flex:0 1 auto;min-width:0;
     --ftInset:0px;
@@ -761,7 +723,7 @@
 }
 
 @media(prefers-reduced-motion:reduce){
-  .hsMode,.hsMore,.hsIco{transition:none;}
+  .hsMode,.hsIco{transition:none;}
 }
 
 #artworks .ftRail{

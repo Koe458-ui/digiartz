@@ -1,14 +1,12 @@
-  var hsState = { q:'', mode:'artwork', seq:0, timer:null, rows:[], open:false };
-  var HS_CAP = 12;
+  var hsState = { q:'', mode:'artwork', seq:0, timer:null, rows:[] };
+  var HS_ART_CAP = 40, HS_WHO_CAP = 24;
   var HS_MODES = {
     artwork: { ph:'Search artworks',
                label:'Search artworks',
-               swap:'Switch to searching artists',
-               head:'Artworks' },
+               swap:'Switch to searching artists' },
     artist:  { ph:'Search artists',
                label:'Search artists',
-               swap:'Switch to searching artworks',
-               head:'Artists' }
+               swap:'Switch to searching artworks' }
   };
 
   var hsArtistMemo = {}, hsArtistKeys = [];
@@ -31,39 +29,40 @@
     }
   }
 
-  function hsShow(on){
-    var res = hsEl('hsRes'), input = hsEl('hsIn');
-    hsState.open = !!on;
-    if(res) res.hidden = !on;
-    if(input) input.setAttribute('aria-expanded', on ? 'true' : 'false');
+  // a search stands in front of the feed: its own grid, or its note, never both
+  function hsStand(on){
+    var sec = hsEl('artworks');
+    if(sec) sec.classList.toggle('hsOn', !!on);
   }
 
-  function hsClose(){
-    hsShow(false);
-    var res = hsEl('hsRes');
-    if(res) res.innerHTML = '';
+  function hsShowGrid(){
+    var grid = hsEl('hsResults'), box = hsEl('hsEmpty');
+    if(box) box.hidden = true;
+    if(grid) grid.hidden = false;
+    hsStand(true);
+    return grid;
   }
 
-  function hsPage(title, text){
-    var box = hsEl('hsEmpty'), sec = hsEl('artworks');
+  function hsShowNote(title, text){
+    var grid = hsEl('hsResults'), box = hsEl('hsEmpty');
     var head = hsEl('hsEmptyTitle'), body = hsEl('hsEmptyText');
-    if(!box) return;
+    if(grid){ grid.hidden = true; grid.innerHTML = ''; }
     if(head){ head.textContent = title || ''; head.hidden = !title; }
     if(body) body.textContent = text || '';
-    box.hidden = false;
-    if(sec) sec.classList.add('hsNoRes');
-    hsClose();
+    if(box) box.hidden = false;
+    hsStand(true);
   }
 
-  function hsPageHide(){
-    var box = hsEl('hsEmpty'), sec = hsEl('artworks');
+  function hsStandDown(){
+    var grid = hsEl('hsResults'), box = hsEl('hsEmpty');
+    if(grid){ grid.hidden = true; grid.innerHTML = ''; }
     if(box) box.hidden = true;
-    if(sec) sec.classList.remove('hsNoRes');
+    hsStand(false);
   }
 
   function hsArtworks(raw){
     if(typeof window.fgSearchArtworks !== 'function') return [];
-    return window.fgSearchArtworks(raw).slice(0, HS_CAP);
+    return window.fgSearchArtworks(raw).slice(0, HS_ART_CAP);
   }
 
   function hsMemoPut(key, rows){
@@ -81,7 +80,7 @@
     db.from('profiles')
       .select('id,username,display_name,avatar_url,banner_url,bio')
       .or('username.ilike.' + pattern + ',display_name.ilike.' + pattern)
-      .order('username', { ascending:true }).limit(HS_CAP)
+      .order('username', { ascending:true }).limit(HS_WHO_CAP)
       .then(function(r){
         var rows = (r && r.data) || [];
         hsMemoPut(key, rows);
@@ -90,30 +89,18 @@
   }
 
   function hsRender(rows){
-    var res = hsEl('hsRes');
-    if(!res) return;
     hsState.rows = rows || [];
     var raw = String(hsState.q || '').trim();
-    var m = hsMode();
 
     if(!hsState.rows.length){
-      hsPage('No results found',
-             'It seems we can\u2019t find any results based on your search.');
+      hsShowNote('No results found',
+                 'It seems we can’t find any results based on your search.');
       return;
     }
 
-    hsPageHide();
-    res.innerHTML = '';
-
-    var head = document.createElement('div');
-    head.className = 'hsHead';
-    head.innerHTML = '<span class="hsHeadTitle"></span><span class="hsHeadCount"></span>';
-    head.firstChild.textContent = m.head;
-    head.lastChild.textContent = String(hsState.rows.length);
-    res.appendChild(head);
-
-    var grid = document.createElement('div');
-    grid.className = 'hsGrid';
+    var grid = hsShowGrid();
+    if(!grid) return;
+    grid.innerHTML = '';
 
     if(hsState.mode === 'artist'){
       hsState.rows.forEach(function(p){
@@ -135,16 +122,6 @@
         grid.appendChild(card);
       });
     }
-    res.appendChild(grid);
-
-    var more = document.createElement('button');
-    more.type = 'button';
-    more.className = 'hsMore';
-    more.textContent = 'See all matches';
-    more.onclick = function(){ hsSeeAll(); };
-    res.appendChild(more);
-
-    hsShow(true);
     hsLog(raw);
   }
 
@@ -162,13 +139,6 @@
            String(row.id), false, hsState.rows);
   }
 
-  function hsSeeAll(){
-    var term = String(hsState.q || '').trim();
-    if(!term || typeof window.fgSearchStart !== 'function') return;
-    hsClose();
-    window.fgSearchStart(term, hsState.mode);
-  }
-
   var hsLogTimer = null, hsLogged = '';
   function hsLog(term){
     clearTimeout(hsLogTimer);
@@ -179,14 +149,15 @@
     hsLogTimer = setTimeout(function(){
       if(String(hsState.q || '').trim() !== q) return;
       if(!hsState.rows.length) return;
-      window.dzAnSearch(hsState.rows.map(function(r){ return String(r.id); }), q, 'artwork');
+      window.dzAnSearch(hsState.rows.slice(0, 12).map(function(r){ return String(r.id); }),
+                        q, 'artwork');
       hsLogged = q;
     }, 1200);
   }
 
   function hsRun(){
     var raw = String(hsState.q || '').trim();
-    if(!raw){ hsState.rows = []; hsPageHide(); hsClose(); return; }
+    if(!raw){ hsState.rows = []; hsStandDown(); return; }
 
     var mySeq = ++hsState.seq;
 
@@ -197,16 +168,16 @@
 
     if(!hsClient()){
       hsState.rows = [];
-      hsPage('Search unavailable',
-             'Artist search needs a connection — try again in a moment.');
+      hsShowNote('Search unavailable',
+                 'Artist search needs a connection — try again in a moment.');
       return;
     }
-    hsPage('', 'Searching…');
+    hsShowNote('', 'Searching…');
     hsArtists(raw, function(rows){
       if(mySeq !== hsState.seq) return;
       if(rows === null){
         hsState.rows = [];
-        hsPage('Something went wrong', 'Artists couldn’t be searched — try again.');
+        hsShowNote('Something went wrong', 'Artists couldn’t be searched — try again.');
         return;
       }
       hsRender(rows);
@@ -227,7 +198,17 @@
     var input = hsEl('hsIn');
     if(input){ try{ input.focus(); }catch(e){} }
     if(String(hsState.q || '').trim()) hsRun();
-    else { hsPageHide(); hsClose(); }
+    else hsStandDown();
+  }
+
+  function hsReset(){
+    var input = hsEl('hsIn');
+    if(input) input.value = '';
+    clearTimeout(hsState.timer);
+    hsState.q = '';
+    hsState.rows = [];
+    hsState.seq++;
+    hsStandDown();
   }
 
   (function(){
@@ -238,45 +219,24 @@
 
     var input = hsEl('hsIn');
     if(input){
-      input.addEventListener('focus', function(){
-        if(String(hsState.q || '').trim() && !hsState.open) hsRun();
-      });
       input.addEventListener('keydown', function(e){
-        if(e.key === 'Escape'){ hsClose(); return; }
+        if(e.key === 'Escape'){ hsReset(); return; }
         if(e.key !== 'Enter') return;
         e.preventDefault();
         clearTimeout(hsState.timer);
-        hsSeeAll();
+        hsRun();
       });
     }
-
-    document.addEventListener('click', function(e){
-      if(!hsState.open) return;
-      var wrap = hsEl('hsWrap');
-      if(wrap && wrap.contains(e.target)) return;
-      hsClose();
-    });
 
     var prevRebuild = window.rebuildGalCarousels;
     if(typeof prevRebuild === 'function'){
       window.rebuildGalCarousels = function(){
         var out = prevRebuild.apply(this, arguments);
-        if(hsState.open && hsState.mode === 'artwork' && String(hsState.q || '').trim()) hsRun();
+        if(hsState.mode === 'artwork' && String(hsState.q || '').trim()) hsRun();
         return out;
       };
     }
   })();
-
-  function hsReset(){
-    var input = hsEl('hsIn');
-    if(input) input.value = '';
-    clearTimeout(hsState.timer);
-    hsState.q = '';
-    hsState.rows = [];
-    hsState.seq++;
-    hsPageHide();
-    hsClose();
-  }
 
   window.hsInput      = hsInput;
   window.hsToggleMode = hsToggleMode;

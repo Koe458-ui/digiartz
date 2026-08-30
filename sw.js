@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = 'v255';
+const CACHE_VERSION = 'v256';
 
 const STATIC = `dz-static-${CACHE_VERSION}`;
 const THUMB  = `dz-img-thumb-${CACHE_VERSION}`;
@@ -64,11 +64,11 @@ const SHELL_URLS = [
   '/js/composer.js?v=3',
   '/js/share.js?v=2',
   '/js/misc-core.js?v=6',
-  '/js/app-core.js?v=41',
+  '/js/app-core.js?v=42',
   '/js/protect.js?v=4',
   '/js/gallery.js?v=106',
   '/js/fghead.js?v=4',
-  '/js/auth.js?v=25',
+  '/js/auth.js?v=26',
   '/js/profile.js?v=19',
   '/js/albums.js?v=20',
   '/js/drafts.js?v=10',

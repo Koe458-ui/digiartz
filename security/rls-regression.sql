@@ -216,12 +216,67 @@ end $fn$;
 
 select * from pg_temp.dz_sec_suite();
 
--- Structural assertions: no SECURITY DEFINER function may float its search_path,
--- and no bucket may accept an upload of unbounded size.
-select p.proname as unpinned_security_definer
-  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
- where n.nspname = 'public' and p.prosecdef
-   and (p.proconfig is null
-        or not exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%'));
+-- ---------------------------------------------------------------------------
+-- Structural assertions. Every one of these must come back with the stated
+-- value; anything else is a regression in the grant or storage layer, which no
+-- amount of policy review will show you.
 
-select id as bucket_without_a_size_limit from storage.buckets where file_size_limit is null;
+with tbl as (
+  select c.oid, c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
+   where n.nspname='public' and c.relkind in ('r','p') and c.relrowsecurity
+),
+cmds(priv,code) as (values ('SELECT','r'),('INSERT','a'),('UPDATE','w'),('DELETE','d')),
+roles(rr) as (values ('anon'),('authenticated')),
+inert as (
+  select t.relname, ro.rr, c.priv
+    from tbl t cross join cmds c cross join roles ro
+   where has_table_privilege(ro.rr, t.oid, c.priv)
+     and not exists (
+       select 1 from pg_policy p
+        where p.polrelid = t.oid and (p.polcmd = c.code or p.polcmd = '*')
+          and (p.polroles = '{0}'::oid[]
+               or (select oid from pg_roles where rolname = ro.rr) = any(p.polroles)))
+)
+select
+  -- expect exactly 'notification_reads/authenticated/UPDATE' — the one grant
+  -- kept on purpose, because an upsert needs UPDATE privilege to plan.
+  (select coalesce(string_agg(relname||'/'||rr||'/'||priv, ', ' order by relname), 'none')
+     from inert) as inert_grants_expect_notification_reads_only,
+
+  -- expect 0. TRUNCATE is NOT filtered by RLS: the grant is the whole check.
+  (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
+     cross join (values ('anon'),('authenticated')) r(x)
+    where n.nspname='public' and c.relkind in ('r','p')
+      and (has_table_privilege(r.x, c.oid, 'TRUNCATE')
+        or has_table_privilege(r.x, c.oid, 'REFERENCES')
+        or has_table_privilege(r.x, c.oid, 'TRIGGER')))
+    as truncate_references_trigger_expect_0,
+
+  -- expect 0. Trigger functions are not callable and should not be addressable.
+  (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public' and p.prorettype='trigger'::regtype
+      and (has_function_privilege('anon', p.oid, 'EXECUTE')
+        or has_function_privilege('authenticated', p.oid, 'EXECUTE')))
+    as trigger_fns_executable_expect_0,
+
+  -- expect 0, definer and invoker alike.
+  (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public'
+      and (p.proconfig is null
+           or not exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%')))
+    as functions_without_pinned_search_path_expect_0,
+
+  -- expect 0. A bucket with either unset accepts an upload the app never asked for.
+  (select count(*) from storage.buckets
+    where file_size_limit is null or allowed_mime_types is null)
+    as buckets_unbounded_expect_0,
+
+  -- expect 0.
+  (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind in ('r','p') and not c.relrowsecurity)
+    as tables_without_rls_expect_0,
+
+  -- expect false for every one of these.
+  (select bool_or('text/html' = any(allowed_mime_types)) from storage.buckets)      as any_bucket_allows_html,
+  (select bool_or('image/svg+xml' = any(allowed_mime_types)) from storage.buckets)  as any_bucket_allows_svg,
+  (select bool_or('application/pdf' = any(allowed_mime_types)) from storage.buckets) as any_bucket_allows_pdf;

@@ -4,6 +4,175 @@ Summary of the security review and the changes made.
 
 ---
 
+## Round 3b — 2026-08-30, the grant layer and the storage content types
+
+Round 3 left two things open and named them. This closes both, and in going
+after the second one properly it opened a layer nobody had audited: Postgres
+**grants**, which sit underneath RLS rather than beside it.
+
+A policy decides which *rows* a role may touch. A grant decides whether the role
+may touch the table at all — and two of the privileges found here are not
+row-filtered by RLS in the first place.
+
+### The finding that mattered
+
+**`anon` held `TRUNCATE` on 51 tables. `authenticated` held it on 54.**
+
+`TRUNCATE` is not filtered by row-level security. There is no policy that
+narrows it, no `USING` clause it consults; holding the privilege *is* the whole
+check. Every control in this schema is built on RLS, and this is a
+delete-every-row primitive that RLS does not see.
+
+It was not reachable through PostgREST — which speaks SELECT/INSERT/UPDATE/
+DELETE and RPC, and has no TRUNCATE verb — so this was a latent privilege
+rather than an open door, and it is scored MEDIUM for that reason. But it sat on
+the **anonymous** role, on almost every table in the database, exempt from the
+one control everything else relies on.
+
+The cause is not a mistake anyone made. Supabase's default privileges grant
+`ALL` on new tables to `anon` and `authenticated`, and `ALL` includes `TRUNCATE`,
+`REFERENCES` and `TRIGGER`. Every table created since the project started
+inherited them silently. Fixed on the existing 73 tables, and the default
+narrowed to `SELECT, INSERT, UPDATE, DELETE` so the next one does not inherit
+them either — a new table still works behind its policies exactly as before.
+
+| # | What | Severity | Where |
+|---|------|----------|-------|
+| 13 | `TRUNCATE`, `REFERENCES`, `TRIGGER` on all 73 public tables, held by both roles; `TRUNCATE` is RLS-exempt | **MEDIUM** | `20260830_least_privilege.sql` §1 |
+| 14 | 80 further (table, role, privilege) triples held where RLS has no matching policy. Inert today — the grant reaches the table, the missing policy refuses every row — and removed because "inert" is a property of the current policy set, not of the grant. The day somebody adds a convenience `FOR ALL` policy, the write privilege is already sitting there | LOW | §2 |
+| 15 | `EXECUTE` on all 43 trigger functions, held by both roles, making each one an addressable `/rest/v1/rpc` name | LOW | §3 |
+| 16 | **`koe-media` accepted any content type** — the item Round 3 left open. See below | MEDIUM | §4 |
+
+### The storage content types, and why Round 3 did not just do it
+
+Round 3 wrote: *"Not done blind: the list has to cover every extension in
+`smart-function`'s `ASSET_EXT`, and one missing entry silently breaks that
+upload."* That was the right call and it is still true — which is why the fix is
+two halves, not one.
+
+The half that made it safe: **every asset now declares
+`application/octet-stream`**. Nothing was lost by doing that, because every
+asset is fetched back through `/api/market-download` or
+`/api/resource-download`, and both set their own `Content-Type` and
+`Content-Disposition: attachment` from the database row. *The type stored beside
+the bytes is never read on the way out.* Checked before relying on it: no
+`file_url` is ever used as an `<img src>` — everything rendered inline is a webp
+derivative from `preview_url`, `cover_url` or `image_url`.
+
+So the only content types the app can now produce are five image types and
+`application/octet-stream`, and the bucket list can be closed against renderable
+types without a `.blend` or a `.procreate` ever being caught by it.
+
+Not on the allowlist, on purpose: `text/html`, `application/xhtml+xml`, every
+other `text/*`, `image/svg+xml`, `application/xml`, `application/pdf`. Each
+renders in a browser window rather than landing in a downloads folder. SVG is
+the one worth naming — it is an image by extension and a script host by
+behaviour, and `.svg` is a legitimate asset format here, so it still uploads
+happily as a download and simply cannot be rendered from the storage origin any
+more.
+
+Ground truth when this was applied: koe-media held 152 objects, **every one of
+them `image/webp`**. The asset path had never been used against that bucket, so
+nothing was orphaned and nothing in flight was affected. Both buckets now carry
+the list.
+
+### The regression I caused, and how it was caught
+
+Revoking the inert grants broke **marking notifications read**.
+
+`js/auth.js` upserts `notification_reads`, and an upsert is
+`INSERT … ON CONFLICT DO UPDATE`, which Postgres requires the `UPDATE`
+privilege to *plan* — whether or not a row actually conflicts. The measurement
+was right that no `UPDATE` policy exists; it did not follow that the privilege
+was unused.
+
+It was caught by running every one of the 23 direct client write paths against
+the live database, not by reading the diff. The `UPDATE` grant is restored, and
+`js/auth.js` now passes `ignoreDuplicates`, making it `ON CONFLICT DO NOTHING` —
+which needs no `UPDATE` privilege and is what "mark read" actually means, so a
+re-mark no longer throws either. The grant is deliberately left in place until
+that ships, so neither deploy order can break production.
+
+That is the one place in this audit where a change of mine broke something. It
+is written down here rather than quietly fixed, because the lesson is the
+useful part: an inert-looking grant is only inert for the statements you
+thought of.
+
+### Tests
+
+Both suites grew, and both were re-verified by reverting each fix and watching
+them go red.
+
+- `scripts/security-test.mjs` — now **122 checks**. New: `safeUploadType` pulled
+  out of the shipped `app-core.js` and executed (not re-implemented) against
+  `text/html`, `image/svg+xml`, `application/xhtml+xml`, `application/pdf`,
+  empty, `null`, `constructor` and `__proto__`; that no PUT still sends the raw
+  `file.type`; that the notification upsert ignores duplicates.
+- `security/rls-regression.sql` — the 22 attack cases, plus structural
+  assertions that now fail loudly if the grant layer drifts: inert grants must
+  be exactly the one documented exception, `TRUNCATE`/`REFERENCES`/`TRIGGER`
+  must be 0, trigger-function `EXECUTE` must be 0, unpinned `search_path` must
+  be 0, unbounded buckets must be 0, tables without RLS must be 0, and no bucket
+  may allow html, svg or pdf.
+- 23 direct client write paths re-run after every revoke: **23/23**.
+
+### What was proven rather than assumed
+
+Two things were tested inside a rolled-back transaction before being applied to
+43 functions:
+
+- a trigger function cannot be called as an RPC at all — Postgres refuses it
+  itself with `0A000 trigger functions can only be called as triggers`, so the
+  `EXECUTE` grant was never exploitable, only noisy;
+- revoking `EXECUTE` does **not** stop a trigger firing. The privilege is
+  checked at `CREATE TRIGGER`, not per row. An insert into `artwork_likes` was
+  accepted with the ban gate, the write limiter and the content guard all
+  revoked, and every one of them still ran.
+
+### Also checked this round
+
+- **No `pg_net`, no `http` extension** — the database cannot make outbound
+  requests, so there is no SSRF primitive inside Postgres. Installed: `pg_cron`,
+  `pg_stat_statements`, `pgcrypto`, `plpgsql`, `supabase_vault`, `uuid-ossp`.
+- **`auth.users` is not reachable** by `anon` or `authenticated`. Neither is the
+  `vault` schema. The `cron` schema has no grants to either role, and its four
+  jobs are the expected ones (merit regen, scheduled publishing ×2, subscription
+  expiry).
+- **Statement timeouts are set**: `anon` 3s, `authenticated` 8s. That is a real
+  application-DoS control and it was already correct.
+- **Every table in `public` has RLS enabled** — 0 without.
+
+### Advisor count
+
+189 lints at the start of this audit, **150** now: all 9
+`function_search_path_mutable` gone, and 30 of the
+`security_definer_function_executable` warnings gone with the trigger-function
+revokes. The remaining 128 are the intentional RPC API — every one that returns
+member data gates on `auth.uid()` internally — and the 21
+`rls_enabled_no_policy` are fail-closed tables whose grants are now stripped as
+well, so they are closed twice.
+
+### What is still open after this round
+
+- **`'unsafe-inline'` in `script-src`.** Unchanged, and still the highest-value
+  item left. It is why session tokens in `localStorage` matter.
+- **Leaked-password protection** and **email confirmation before a first public
+  write** — still two dashboard toggles nobody can set from the repository.
+- **The `supabase_admin` default-privilege entry** still grants the full set
+  including `TRUNCATE`. It could not be altered from the `postgres` role and
+  applies only to tables created *by* `supabase_admin`, which migrations are
+  not. The regression suite asserts the live count stays at zero, so if it ever
+  comes back it will be visible.
+- **`Access-Control-Allow-Origin: *` on the edge function.** Not exploitable —
+  it authenticates by `Authorization` header, which a cross-origin caller cannot
+  supply — but wider than it needs to be.
+- **The bucket MIME rule was not exercised with a real upload.** It is enforced
+  by Supabase Storage, and the configuration is verified in the suite, but no
+  end-to-end PUT was performed from this session. Worth one manual upload of
+  each kind after deploy.
+
+---
+
 ## Round 3 — 2026-08-30, full-scope audit
 
 A ground-up pass over the whole surface: every Pages Function, every RLS
@@ -113,7 +282,7 @@ Honestly, and none of them newly introduced by this round:
 
 | Risk | State | What closing it takes |
 |---|---|---|
-| **`koe-media` accepts any content type.** A member can upload `text/html` into the public bucket and get a working page on the project's storage domain. It cannot touch a digiartz.net session — different origin, and the CSP names no supabase.co host in `script-src` or `frame-src` — but it is a phishing page on a domain that looks like ours, two weeks after a phishing incident | **NOT FIXED** — deliberately | `allowed_mime_types` on the bucket. Not done blind: the list has to cover every extension in `smart-function`'s `ASSET_EXT` (archives, fonts, `.blend`, `.procreate`, brush sets), and one missing entry silently breaks that upload. Build the list from what is actually in the bucket today, then set it |
+| ~~**`koe-media` accepts any content type.**~~ | **FIXED in Round 3b** — see above. Both buckets now carry an allowed_mime_types list that excludes html, xhtml, every other text/*, svg, xml and pdf, and the client declares application/octet-stream for every non-image upload so no legitimate asset is caught by it | — |
 | **`'unsafe-inline'` and `'unsafe-eval'` in `script-src`** | NOT FIXED — carried from round 2 | `index.html` has inline scripts and a static `_headers` file cannot mint a nonce. `functions/_middleware.js` already rewrites the HTML and could |
 | **Session tokens live in `localStorage`** (Supabase JS default) | ACCEPTED | Inherent to the SPA + PostgREST design. It is why the CSP item above matters more than it looks |
 | **Leaked-password protection is still off** | NOT FIXED — **requires human action** | Supabase → Authentication → Passwords. Third round of asking |

@@ -101,6 +101,49 @@ for (const f of ['download', 'market-download', 'resource-download', 'moderate-u
   truthy('send re-checks before paying', /pot < Number\(req\.amount\) \+ alsoInFlight/.test(src));
 }
 
+// --- an upload never declares a content type the storage domain will render --
+// koe-media is public. An object stored as text/html or image/svg+xml is a page
+// on the project's storage hostname. The bucket's allowed_mime_types is the
+// control; this is the half that keeps a legitimate .svg or .pdf asset
+// uploading under that rule rather than being refused by it.
+{
+  const src = readFileSync('js/app-core.js', 'utf8');
+
+  // pull the real function out of the shipped file and run it, rather than
+  // re-implementing it here and testing the copy
+  const list = src.match(/var UPLOAD_IMAGE_TYPES\s*=\s*\n?\s*(\[[^\]]*\]);/);
+  const fn   = src.match(/function safeUploadType\(type\)\{[\s\S]*?\n  \}/);
+  truthy('safeUploadType is present in app-core.js', list && fn);
+  if (list && fn) {
+    const safeUploadType = new Function(
+      `var UPLOAD_IMAGE_TYPES = ${list[1]}; ${fn[0]} return safeUploadType;`)();
+
+    check('webp passes through',      safeUploadType('image/webp'), 'image/webp');
+    check('png passes through',       safeUploadType('image/png'), 'image/png');
+    check('case is normalised',       safeUploadType('IMAGE/JPEG'), 'image/jpeg');
+    for (const bad of ['text/html', 'image/svg+xml', 'application/xhtml+xml',
+                       'application/pdf', 'text/xml', 'application/xml',
+                       'text/plain', '', null, undefined, 'constructor', '__proto__']) {
+      check(`${JSON.stringify(bad)} is declared as a download`,
+            safeUploadType(bad), 'application/octet-stream');
+    }
+  }
+
+  falsy('no PUT still sends the raw file.type',
+        /'content-type'\s*:\s*(file|body)\.type/.test(src));
+  truthy('the signed-target PUT normalises', /'content-type':\s*type,/.test(src));
+  truthy('the legacy PUT normalises', /'content-type':safeUploadType\(file\.type\)/.test(src));
+}
+
+// --- marking a notification read is idempotent -------------------------------
+// The DO UPDATE form of an upsert needs an UPDATE privilege the table has no
+// policy for, so a re-mark used to throw.
+{
+  const src = readFileSync('js/auth.js', 'utf8');
+  truthy('notification_reads upsert ignores duplicates',
+         /notification_reads'\)\s*\n?\s*\.upsert\([\s\S]{0,120}ignoreDuplicates:\s*true/.test(src));
+}
+
 // --- no secret-shaped literal in anything the browser is served --------------
 {
   const SECRET = /(eyJ[A-Za-z0-9_-]{20,}\.eyJ[A-Za-z0-9_-]{20,})|(\brzp_(live|test)_[A-Za-z0-9]{10,})|(\bsk_live_[A-Za-z0-9]{10,})|(\bAIzaSy[A-Za-z0-9_-]{20,})|(\bsb_secret_[A-Za-z0-9_-]{10,})|(-----BEGIN [A-Z ]*PRIVATE KEY-----)/;

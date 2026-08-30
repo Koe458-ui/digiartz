@@ -765,18 +765,6 @@ Browsing and posting stay free — subscriptions are optional.`
 Once done, your perks and badge activate on your account.`
       },
       {
-        question: "I was charged twice",
-        answer:
-`Sorry about that — let's sort it out:
-
-1. Check your bank statement for the duplicate charge
-2. Note both transaction IDs and dates
-3. Email DigiArtzsupport@gmail.com with those details
-4. We'll investigate the double charge and refund the extra amount if it was on our side
-
-We can't refund issues caused by your bank or a user-side error, but we'll always review.`
-      },
-      {
         question: "How do I cancel my subscription?",
         answer:
 `To stop a subscription renewing:

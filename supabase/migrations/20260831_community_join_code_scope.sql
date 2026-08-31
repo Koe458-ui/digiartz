@@ -21,6 +21,8 @@
 --   2. `join_code` leaves anon's grant entirely. A signed-out visitor has no
 --      management screen and never needed the column; taking it away means the
 --      code is unreachable for that role even if a future policy widens again.
+--      Note HOW that is done below — the obvious column-level REVOKE is a no-op
+--      against a table-level grant, so the grant is dropped and re-issued.
 --
 -- What still works, checked against the callers in js/:
 --   * cm_browse(), cm_state(), can_read_community() and cm_join() are all
@@ -53,13 +55,14 @@ create policy communities_read
     or public.can_read_community(id)
   );
 
-revoke select (join_code) on public.communities from anon;
-
--- Correction, applied as its own migration on production: the REVOKE above
--- returned success and changed nothing. anon held table-level SELECT
+-- THE COLUMN-LEVEL REVOKE THAT BELONGS HERE DOES NOT WORK, and the statement
+-- that used to sit on this line has been removed rather than left in as a
+-- comforting no-op. `revoke select (join_code) on public.communities from anon`
+-- returns success and changes nothing: anon held table-level SELECT
 -- (`anon=r/postgres` in relacl), and a column-level REVOKE cannot carve a hole
--- in a table-level grant — the same shape of silent no-op Round 3b hit. The
--- grant has to be dropped and re-issued column by column.
+-- in a table-level grant — the same shape of silent no-op Round 3b hit from the
+-- other direction. The grant has to be dropped and re-issued column by column,
+-- which is what actually follows.
 revoke select on public.communities from anon;
 
 grant select (

@@ -245,6 +245,45 @@ because a slug that answers is a slug someone can probe; see below.
 The lesson is the inventory, not the bug. **A deployed function that is not in
 the repository will not be audited, because nobody knows to look for it.**
 
+### Cleanup — four read policies that granted nothing their neighbour did not
+
+Not a finding on its own; the same hazard as the comics one, caught before it
+cost anything. Policies for one command are OR-ed, so a table carrying several
+is decided by the most permissive, and a reviewer reading the narrow-looking
+sibling comes away with the wrong idea of what the table allows. `comics` was
+exactly that: a sensible `status = 'approved'` policy for anon sitting beside a
+`USING (true)` for everyone, and the second one decided every read.
+
+Two tables still carried the pattern:
+
+| table | dropped | kept |
+|---|---|---|
+| `artworks` | `artworks_anon_read` {anon} `status='approved'` | `public read approved` {PUBLIC} `status='approved' OR user_id=auth.uid()` |
+| `profiles` | `profiles public read` {PUBLIC} `true`, `profiles_anon_read` {anon} `true`, `profiles_select_own` {PUBLIC} `auth.uid()=id` | `profiles_select_public` {anon, authenticated} `true` |
+
+Every dropped policy is a strict subset of one that stays — PUBLIC covers anon,
+and for a signed-out caller `auth.uid()` is NULL, so the kept `artworks` policy
+reduces to exactly the dropped one's predicate. Three of the four `profiles`
+policies were three ways of writing `true`. The survivor names its roles rather
+than relying on PUBLIC, which also narrows it slightly: `service_role` and
+`postgres` bypass RLS and never needed a policy.
+
+Six read policies became two, and it was measured rather than reasoned about:
+anon saw 15 profiles and 25 artworks before and after, a member saw the same,
+and a member could still see their own unapproved artwork — the one branch only
+the surviving policy provides — while another member and anon could not.
+
+Profiles stay world-readable on purpose; usernames, bios and avatars are the
+public face of the site. What keeps that honest is the column-grant layer, not
+these policies: `email`, `currency`, `max_claimed` and `partner_since` are not
+selectable by `anon` or `authenticated` at all.
+
+**Left alone deliberately:** the two INSERT policies on `comments`. They look
+like a duplicate pair and are not — one covers `channel <> 'official'`, the
+other `channel = 'official' AND is_dev()`. Disjoint cases, both load-bearing.
+`security/rls-regression.sql` now asserts zero *stacked SELECT* policies rather
+than zero stacked policies, so this split stays legal.
+
 ### Looked at and found correct
 
 Worth saying explicitly, because "no finding" is a result:
@@ -281,8 +320,13 @@ Worth saying explicitly, because "no finding" is a result:
 
 ### Tests
 
-- `scripts/security-test.mjs` — 38 new assertions on this round's fixes, on top
+- `scripts/security-test.mjs` — 49 new assertions on this round's fixes, on top
   of the existing suite. All pass.
+- `security/rls-regression.sql` — 7 new live assertions covering this round:
+  anon cannot read `join_code`; no `USING (true)` left on communities, comics or
+  album_items; **zero tables with stacked SELECT policies**; zero anon write
+  grants; zero loose storage policies; 3 section mod gates; 4 mod_token update
+  guards. Run against production, all 7 match.
 - The other five suites (`check-precache`, `check-overlays`, `check-sections`,
   `cache-test`, `check-css-dead`) and `check-cachebust` — all pass.
 - Every `.js`/`.mjs` in `js/`, `functions/`, `scripts/`, plus `sw.js` and
@@ -999,43 +1043,32 @@ comfort; and once the setting is on, GoTrue issues no session until the address
 is confirmed, so an unconfirmed account holds no JWT and cannot write anyway.
 There is no code substitute — only this toggle.
 
-### 🟠 3. Activate the moderation gate (when ready to test)
-1. Deploy this branch to production.
-2. Cloudflare Pages → **Settings → Environment variables → Production** →
-   add `MOD_SIGNING_SECRET` = the secret Claude gave you in chat → redeploy.
-3. Upload one artwork to confirm it still publishes normally.
-4. Only then, in the Supabase SQL editor, with the SAME value:
+### ✅ 3. The artwork moderation gate — done, nothing to do
 
-   ```sql
-   update private.mod_config
-      set secret = '<the same secret as MOD_SIGNING_SECRET>'
-    where id = true;
-   ```
+Superseded, and kept only as a status line so it does not read as an open task
+next to item 0. This was Round 3's rollout for `public.artworks`; it is live and
+verified enforcing. `MOD_SIGNING_SECRET` is set in Cloudflare and the matching
+secret is in `private.mod_config`, or the gate could not be enforcing.
 
-   Order matters. Setting the secret before the Worker can mint a ticket means
-   every insert fails the check and every upload silently lands in `pending`.
-5. Test again: a normal upload still publishes; a direct insert without a valid
-   token now lands in `status='pending'` instead of going public.
+**Item 0 above is the remaining half** — the same gate for resources, listings
+and blog posts. That one is still inert and waiting on your deploy. The two are
+separate switches on purpose: `secret` arms the artwork gate,
+`sections_enforced` arms the other three.
 
-If anything looks off, the gate **fails safe** (uploads go to review, never
-error) and rolls back instantly:
+Check either at any time:
 
 ```sql
--- make it inert again, dropping nothing
-update private.mod_config set secret = '' where id = true;
-
--- or remove it entirely
-drop trigger  if exists trg_artwork_mod_gate on public.artworks;
-drop function if exists public.dz_artwork_mod_gate();
-drop table    if exists private.used_mod_tokens;
-drop table    if exists private.mod_config;
+select case when secret = '' then 'inert' else 'enforcing' end as artwork_gate,
+       case when sections_enforced then 'enforcing' else 'inert' end as section_gate
+  from private.mod_config where id = true;
 ```
 
-To check which state it is in:
+Both fail safe and roll back without dropping anything — an upload goes to
+review, it never errors:
 
 ```sql
-select case when secret = '' then 'inert' else 'enforcing' end
-  from private.mod_config where id = true;
+update private.mod_config set secret = '' where id = true;              -- artworks
+update private.mod_config set sections_enforced = false where id = true; -- sections
 ```
 
 The secret is a credential: it belongs in the Cloudflare dashboard and the

@@ -298,4 +298,76 @@ select
                        'subscription_expires_at','merit','cred_received_count']) as c(col)
      cross join (values ('anon'),('authenticated')) r(x)
     where has_column_privilege(r.x, 'public.profiles', c.col, 'UPDATE'))
-    as privileged_profile_cols_updatable_expect_none;
+    as privileged_profile_cols_updatable_expect_none,
+
+  -- ---- Round 4 -------------------------------------------------------------
+
+  -- expect 'none'. A private community's join_code was readable by anon and by
+  -- every signed-in member, and cm_join(name, code) is the entire gate on a
+  -- private room.
+  (select coalesce(string_agg(r.x, ', '), 'none')
+     from (values ('anon'),('authenticated')) r(x)
+    where r.x = 'anon'
+      and has_column_privilege(r.x, 'public.communities', 'join_code', 'SELECT'))
+    as anon_reads_join_code_expect_none,
+
+  -- expect 'none'. Every one of these had a read policy that said USING (true)
+  -- and meant something narrower.
+  (select coalesce(string_agg(c.relname||'.'||p.polname, ', '), 'none')
+     from pg_policy p
+     join pg_class c on c.oid = p.polrelid
+     join pg_namespace nsp on nsp.oid = c.relnamespace
+    where nsp.nspname = 'public'
+      and p.polcmd::text = 'r'
+      and c.relname in ('communities', 'comics', 'album_items')
+      and pg_get_expr(p.polqual, p.polrelid) = 'true')
+    as unscoped_read_policies_expect_none,
+
+  -- expect 0. Policies for one command are OR-ed, so the most permissive one
+  -- decides every read and a narrow-looking sibling tells a reviewer nothing.
+  -- comics carried exactly that pair. This does not forbid stacking outright --
+  -- comments deliberately splits its INSERT across two disjoint cases -- it
+  -- flags a SELECT stack, which is where the hazard has actually bitten.
+  (select count(*) from (
+     select c.relname
+       from pg_policy p
+       join pg_class c on c.oid = p.polrelid
+       join pg_namespace nsp on nsp.oid = c.relnamespace
+      where nsp.nspname = 'public' and p.polcmd::text = 'r'
+      group by c.relname having count(*) > 1) x)
+    as tables_with_stacked_read_policies_expect_0,
+
+  -- expect 0. anon is a signed-out visitor: it reads, it does not write. Each
+  -- of these grants sat in front of a policy comparing a column to auth.uid(),
+  -- which is NULL for anon -- unreachable, until the day a policy is dropped.
+  (select count(*) from pg_class c
+     join pg_namespace nsp on nsp.oid = c.relnamespace,
+     lateral (values ('INSERT'),('UPDATE'),('DELETE')) v(p)
+    where nsp.nspname = 'public' and c.relkind = 'r'
+      and has_table_privilege('anon', c.oid, v.p))
+    as anon_write_grants_expect_0,
+
+  -- expect 0. A storage policy granted to PUBLIC rather than to authenticated,
+  -- and three that keyed on a hardcoded personal email instead of is_dev().
+  (select count(*) from pg_policy p
+     join pg_class c on c.oid = p.polrelid
+     join pg_namespace nsp on nsp.oid = c.relnamespace
+    where nsp.nspname = 'storage' and c.relname = 'objects'
+      and (array_to_string(p.polroles::regrole[], ',') = '-'
+        or coalesce(pg_get_expr(p.polqual, p.polrelid), '') ||
+           coalesce(pg_get_expr(p.polwithcheck, p.polrelid), '') like '%@gmail.com%'))
+    as loose_storage_policies_expect_0,
+
+  -- expect 3. The AI moderation check was advisory for everything but art: the
+  -- browser received a signed ticket and threw it away, and nothing on this
+  -- side asked whether the check had happened.
+  (select count(*) from pg_trigger
+    where tgname in ('trg_resources_mod_gate','trg_blog_mod_gate','trg_marketplace_mod_gate'))
+    as section_mod_gates_expect_3,
+
+  -- expect 4. mod_token inherited SELECT/UPDATE from its tables' table-wide
+  -- grants, and both gates are BEFORE INSERT -- so an UPDATE never reached them
+  -- and the column was a member-writable, world-readable free-text field that
+  -- dz_content_guard does not run on.
+  (select count(*) from pg_trigger where tgname = 'zz_mod_token_clear')
+    as mod_token_update_guards_expect_4;

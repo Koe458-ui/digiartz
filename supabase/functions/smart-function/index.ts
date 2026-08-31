@@ -1,3 +1,128 @@
+// ═══════════════════════════════════════════════════════════════
+// DigiArtz — Supabase Edge Function: "s3-sign"
+// Secure bridge between the static site and storage. The browser
+// never gets to write anywhere on its own; it asks this function
+// (with the user's Supabase JWT) for a signed upload target, a
+// signed download, or a delete.
+//
+// The name is historical. Nothing here talks to S3 any more.
+//
+// v13 — asset uploads. Images keep the original rules unchanged
+// (25MB, strict image/* allowlist). Two new key prefixes carry the
+// downloadable files behind Resources and Marketplace, where the
+// gate is the file EXTENSION rather than the content type: browsers
+// report .abr / .procreate / .blend / .clip as octet-stream, so a
+// content-type allowlist would reject exactly the files these
+// sections exist to host. Executables are excluded by omission.
+//
+// v14 — hero banner slides removed from the product, so the
+// hero-slides/ prefix and its admin gate are gone with them. Only
+// koe-media/ keys are signable now.
+//
+// v15 — per-user upload rate limit (bill abuse guard). A signed
+// PUT URL is cheap to mint but each one can push bytes into storage, so
+// a scripted account could otherwise inflate storage/egress cost. The
+// limit is FAIL-OPEN: any error in the ledger lets the upload through
+// (a real artist is never blocked by a hiccup); the only new hard
+// outcome is a 429 when one account mints far more upload URLs than
+// any human workflow needs. Counts live in public.upload_events.
+//
+// v16 — "download" action, so the bucket can stop being public.
+// It mints a short-lived signed GET for an artwork's ORIGINAL, and
+// it charges the caller's daily quota through dz_request_download
+// before doing so. The gate lives here, which is the whole point: a
+// signed GET cannot come into existence without a download having
+// been spent, so calling this function directly buys nothing that the
+// Download button does not. Unlike upload/delete it takes an artwork
+// ID rather than a key, so no caller can aim it at an arbitrary
+// object. FAIL-CLOSED, unlike the upload limiter: if the quota cannot
+// be checked, nothing is signed.
+//
+// v17 — storage migration. Media moved to Supabase Storage, and this
+// function kept its job of being the only thing that authorises a
+// write. Uploads get SUPABASE signed upload URLs: the point is that
+// every check below — mime allowlist, size ceilings, extension
+// allowlist, per-user flood limit — stays on the server. Letting the
+// browser talk to Supabase Storage directly would have thrown all of
+// it away and left only what RLS can express.
+//
+// An image yields FOUR signed targets, because sizes are generated
+// once at upload rather than resized per request (Supabase image
+// transformations are paid-plan only):
+//   original -> koe-originals  (private)
+//   t300 / v1000 / f1600 -> koe-media  (public derivatives)
+// Non-images get a single public target, which is what they had before;
+// changing that would silently alter the security model of a feature
+// rather than migrating it.
+//
+// The upload signing client is the CALLER's, not the service role, so
+// the storage RLS policies still apply on top of these checks.
+//
+// v18 — delete removes with the service role instead of the caller's
+// client. The ownership test above it was always the real gate; RLS
+// underneath was not a second line of defence but a broken one. No
+// koe-media policy matches artworks/* except one pinned to a single dev
+// email, and koe-originals tests foldername(name)[2] = auth.uid(), which
+// is NULL for the twenty pre-convention artworks stored flat as
+// artworks/<file>. Since remove() on a blocked object returns an empty
+// list and no error, deletes reported success while the bytes stayed —
+// hidden only by the S3 leg doing the real work. The response now counts
+// what actually went rather than trusting a missing error.
+//
+// v18 also completes the migration: aws4fetch, the five AWS secrets and
+// every dual-mode S3 branch are gone. They were reachable only for a row
+// whose url still pointed at CloudFront, and there are none left. Note
+// that upload no longer returns the legacy uploadUrl/publicUrl pair, so a
+// browser running pre-migration JS out of its service worker cache will
+// fail its next upload until the worker updates. That path was going to
+// break regardless, because it uploaded to a bucket that is being deleted.
+//
+// v19 — a fourth derivative, t600. t300 was the only grid size and the
+// grid is not 300px wide on a desktop, so cards were being served an
+// upscaled thumbnail. The new size is negotiated rather than assumed:
+// the caller sends the roles it can encode and gets signed targets for
+// those only.
+//
+// That negotiation is the whole point of the version. The client derives
+// the bytes for each target, and sbUploadTargets falls through to
+// `body = file` for a role it does not recognise — so handing a t600
+// target to a build that predates t600 would upload the untouched
+// original, up to 25MB, under a thumbnail's name, with nothing
+// downstream to catch it. A caller that says nothing gets exactly the
+// three sizes v17 gave it, which makes this function safe to deploy
+// before, after, or independently of the site, and safe against clients
+// still running old JS out of a service worker cache.
+//
+// v20 — a non-image upload can ask to land in the private bucket, for
+// the one kind of file where a public url is the whole problem: a
+// marketplace product file is the thing being sold, so anyone holding
+// its url holds the goods. Passing visibility:"private" signs the
+// object into koe-originals and returns supabasePublicUrl:null, because
+// there is no url to return — the bytes come back only through
+// /api/market-download, which asks the database whether this caller has
+// paid before it signs anything.
+//
+// It is a flag, not a change of default: a caller that does not send it
+// gets the public object it got before, so this deploys independently of
+// the site and an older cached bundle keeps working. delete already
+// sweeps both buckets for the same key, so removing one of these needs
+// nothing new.
+//
+// v21 — delete authorises on the object KEY rather than on a row that
+// claims it. The old test asked whether the caller owned a row whose
+// storage_path matched, across nine columns; every one of those columns
+// is written by the browser, so inserting a row naming somebody else's
+// key was enough to have it removed on the service role. Ownership now
+// comes from the second path segment, which is where every upload here
+// puts the uploader and where koe-media's own policies already look for
+// it. Two consequences worth knowing before deploying: the twenty
+// pre-convention artworks stored flat as artworks/<file> are staff-only
+// to delete, and a failed upload can now clean up its own objects before
+// a row exists — which the row check had been silently refusing.
+//
+// v22 (Round 4 security review) — the CORS wildcard is gone, and the
+// signing error no longer comes back as text. See the notes at each.
+// ═══════════════════════════════════════════════════════════════
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const MAX_IMG_BYTES   = 25 * 1024 * 1024;

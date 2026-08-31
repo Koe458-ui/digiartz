@@ -201,8 +201,9 @@ verbatim.
   residual since Round 3. Still not exploitable for the reason Round 3 gave, but
   now an allowlist (`ALLOWED_ORIGINS`, plus the site's own origins). An unknown
   or absent Origin gets no ACAO header, so a browser refuses the response while
-  a server-to-server caller is unaffected. **Requires a redeploy of the function
-  to take effect — see below.** Fixing it turned up a bug in my own first
+  a server-to-server caller is unaffected. **Deployed — `smart-function` v27**,
+  and the deployed source was read back and compared against what was sent
+  before this was called done. Fixing it turned up a bug in my own first
   attempt: a module-level `let cors` would have let one request's Origin decide
   another's reply, since `Deno.serve` runs requests concurrently on one isolate.
   It is request-scoped now, and the regression suite asserts the mutable is gone.
@@ -211,6 +212,38 @@ verbatim.
   is called by the Worker, never by the page. With `'unsafe-inline'` still in
   `script-src`, every origin in `connect-src` is a place an injected script may
   post to; this one bought nothing. Removed.
+
+### HIGH — an edge function that was live, unaudited, and an open email relay
+
+The project has **five** deployed edge functions. Two are in this repository.
+The other three had never been read by any round of this review, because
+nothing in the repo pointed at them.
+
+`report-notify` mails the owner when an artwork report is filed. It took
+`body.record` from the request and emailed its contents. The payload is
+*supposed* to come from a database webhook — but nothing checked that it had,
+and the gateway asks only for a valid JWT, which every signed-in member holds.
+So any member could POST a JSON body of their choosing and have the function
+send mail, with content they chose, to the owner's personal inbox, as often as
+they liked. That is three things at once: an inbox flood, a Resend quota burn,
+and a phishing lure wearing the site's own return address — which is precisely
+the shape of the attack this project has already had once. It also returned
+Resend's error body to the caller verbatim.
+
+Rewritten so the request supplies exactly one thing: an id. Every word of the
+email is now read back out of `artwork_reports` on the service role, so the
+worst a forged call can do is re-send an alert about a report that genuinely
+exists — and even that is closed off, because only a report filed in the last
+ten minutes is mailed and `dz_rate_take` caps the hourly send. It fails closed:
+no row, no mail. Deployed (v7).
+
+The other two, `storage-copy` and `t600-probe`, are already inert stubs that
+return 410 — one-shot migration tools whose bodies were removed when their job
+finished. They hold nothing and can do nothing. They should still be deleted,
+because a slug that answers is a slug someone can probe; see below.
+
+The lesson is the inventory, not the bug. **A deployed function that is not in
+the repository will not be audited, because nobody knows to look for it.**
 
 ### Looked at and found correct
 
@@ -283,9 +316,35 @@ Unchanged from Round 3, and still true:
   handlers, and `js/` generates more `onclick=` strings at runtime; a nonce
   cannot cover `script-src-attr`, so closing this is a refactor of the event
   model, not a header change. It is why session tokens in `localStorage` matter.
+
+  `'unsafe-eval'` was checked separately and **deliberately left**. Nothing
+  first-party needs it — no `eval` or `new Function` in `js/`, `index.html`,
+  `sw.js`, `uploadVerifier.js` or the vendored supabase-js. But the directive
+  also covers AdSense, GTM/GA, Razorpay Checkout and the PayPal SDK, and some
+  of those have historically needed it on paths that vary by geography and ad
+  inventory. This environment cannot reach `digiartz.net` to test it, and
+  removing it blind risks the ad script or the checkout sheet for a directive
+  that buys almost nothing while `'unsafe-inline'` is still there — an attacker
+  who can inject inline script has no need of `eval`. Worth doing when someone
+  can watch a real browser console through a purchase and a page of ads.
 - **Session tokens in `localStorage`** — inherent to the SPA + PostgREST design.
 - **Leaked-password protection** and **email confirmation before a first public
-  write** — two dashboard toggles, fourth round of asking.
+  write** — two dashboard toggles, fourth round of asking. This round checked
+  whether either could be done from code instead, and neither can:
+
+  Email confirmation is currently **off**, and that is now measured rather than
+  assumed — all 15 email signups in `auth.users` were confirmed within two
+  seconds of being created, which is GoTrue auto-confirming, not people
+  clicking links. That also rules out the obvious workaround: a policy gating
+  writes on `email_confirmed_at` would pass instantly for a throwaway signup
+  and give false comfort. And once the toggle IS on, GoTrue issues no session
+  until the address is confirmed, so an unconfirmed account has no JWT and
+  cannot write anyway. **The toggle is the control; there is no code substitute
+  for it.**
+
+  Leaked-password protection is a HaveIBeenPwned check inside GoTrue. A
+  client-side imitation would be bypassable by anyone calling the auth endpoint
+  directly, which is most of the point of having it, so it was not built.
 - **`featured` is self-service.** Any member can tick "Feature this listing" and
   sort themselves to the top of a section. That is what the composer's own
   checkbox offers, so it is a product decision rather than a defect, and this
@@ -887,13 +946,28 @@ select case when sections_enforced then 'enforcing' else 'inert' end
   from private.mod_config where id;
 ```
 
-### 🟠 0b. Redeploy the edge function (Round 4)
+### ✅ 0b. Edge functions — already done, nothing for you unless you use previews
 
-The CORS allowlist in `supabase/functions/smart-function/index.ts` only takes
-effect once the function is redeployed — the repo copy is not what is running.
-If you use preview deployments, set `ALLOWED_ORIGINS` (comma-separated) on the
-function first, otherwise uploads from those origins will be refused by the
-browser. `https://digiartz.net` and `https://www.digiartz.net` are built in.
+Both were deployed during the review and the deployed source was read back and
+verified, so there is no action here:
+
+- `smart-function` **v27** — CORS allowlist instead of `*`, signing errors no
+  longer returned as text.
+- `report-notify` **v7** — no longer emails whatever the caller sends.
+
+One conditional: if you use Cloudflare **preview deployments**, add their
+origins to `ALLOWED_ORIGINS` (comma-separated) under Supabase → Edge Functions →
+Secrets, or uploads from a preview URL will be refused by the browser.
+`https://digiartz.net` and `https://www.digiartz.net` are built in and need no
+configuration.
+
+### 🟢 0c. Delete two retired edge functions (one minute, tidiness)
+
+`storage-copy` and `t600-probe` are finished one-shot migration tools. Their
+bodies were already removed and both return 410, so they hold nothing and can
+do nothing — but a slug that answers is a slug someone can probe, and the
+management API had no delete call when they were retired. Supabase Dashboard →
+Edge Functions → each one → Delete.
 
 
 ### 🔴 1. Storage spend alarm (do today — this is your bill protection)
@@ -906,6 +980,24 @@ sizes the grid and lightbox actually request, which is what keeps it small.
 ### 🟠 2. Turn on leaked-password protection (30 seconds)
 Supabase Dashboard → **Authentication → Policies / Passwords** →
 enable **"Prevent use of compromised passwords."**
+
+### 🟠 2b. Require email confirmation before a first write (Round 4)
+
+Supabase Dashboard → **Authentication → Providers → Email** → enable
+**Confirm email**.
+
+This is measured, not guessed: all 15 email signups in `auth.users` were
+confirmed within two seconds of creation, which is GoTrue auto-confirming
+because the setting is off. The 2026-08-20 phishing account posted two minutes
+after signing up from an unverified throwaway address, and this is the switch
+that would have stopped it.
+
+Round 4 checked whether it could be enforced from code instead. It cannot, in
+either direction: while the setting is off, `email_confirmed_at` is filled in
+at signup, so a policy testing it would pass for a throwaway and give false
+comfort; and once the setting is on, GoTrue issues no session until the address
+is confirmed, so an unconfirmed account holds no JWT and cannot write anyway.
+There is no code substitute — only this toggle.
 
 ### 🟠 3. Activate the moderation gate (when ready to test)
 1. Deploy this branch to production.

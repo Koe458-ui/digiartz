@@ -237,5 +237,32 @@ for (const f of ['rzp', 'paypal', 'payouts']) {
         /grant select \([^)]*join_code/s.test(sql));
 }
 
+// The edge functions. report-notify was live for months without ever being in
+// this repository, which is how it kept an open email relay: it emailed
+// whatever `body.record` said, and the gateway asks only for a JWT that every
+// signed-in member holds.
+{
+  const src = readFileSync('supabase/functions/report-notify/index.ts', 'utf8');
+  truthy('report-notify reads the report from the database',
+         /loadReport\(id\)/.test(src) && /artwork_reports\`/.test(src));
+  truthy('report-notify uses the service role for that read',
+         /authorization: `Bearer \$\{SB_SVC\(\)\}`/.test(src));
+  truthy('report-notify takes only an id from the request',
+         /const id = String\(\(r && r\.id\) \?\? ""\);/.test(src));
+  truthy('report-notify validates that id as a uuid', /UUID_RE\.test\(id\)/.test(src));
+  truthy('report-notify refuses a report it cannot find',
+         /if \(!row\) return new Response\("no such report"/.test(src));
+  truthy('report-notify will not replay an old report', /FRESH_MS/.test(src));
+  truthy('report-notify caps outbound mail', /dz_rate_take/.test(src));
+  // The old body took every field from the caller.
+  falsy('report-notify does not email the request payload',
+        /esc\(r\.details\)|REASONS\[r\.reason\]/.test(src));
+  falsy('report-notify does not return the Resend error body',
+        /Resend error: \$\{t\}/.test(src));
+  // A subject line is a header wherever it ends up.
+  truthy('report-notify strips control characters from the subject',
+         /subjectSafe/.test(src));
+}
+
 console.log(failed ? `\n${failed} check(s) failed` : '\nall checks passed');
 process.exit(failed ? 1 : 0);

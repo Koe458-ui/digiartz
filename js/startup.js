@@ -52,7 +52,7 @@
 
   var awArtworksCache = [];
 
-  function buildAwCard(item){
+  function buildAwCard(item, eager){
     var fullSrc = item.image_url || '';
     var name    = item.name || 'Untitled';
     var cat     = catList(item.category)[0] || 'others';
@@ -71,12 +71,15 @@
     var img = document.createElement('img');
     img.onload  = function(){ wrap.classList.remove('awLoading'); };
     img.onerror = function(){ wrap.classList.remove('awLoading'); };
-    dzApplyThumb(img, fullSrc);
-    img.style.cssText = thumbStyle(item.thumb_x, item.thumb_y, item.thumb_zoom);
-    img.alt = name;
-    img.loading = 'lazy';
+
+    img.loading = eager ? 'eager' : 'lazy';
+    if(eager) img.setAttribute('fetchpriority', 'high');
     img.decoding = 'async';
     img.draggable = false;
+    img.alt = name;
+    img.style.cssText = thumbStyle(item.thumb_x, item.thumb_y, item.thumb_zoom);
+
+    dzApplyThumb(img, fullSrc);
 
     wrap.appendChild(img);
     if(typeof dzBuildHoverReveal === 'function') wrap.appendChild(dzBuildHoverReveal(item.user_id));

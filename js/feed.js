@@ -166,7 +166,7 @@
     for(var i = awRShown; i < end; i++){
       var item = awRList[i], uid = null;
       if(artists){ frag.appendChild(buildArtistCard(item)); uid = item; }
-      else frag.appendChild(buildAwCard(item));
+      else frag.appendChild(buildAwCard(item, i < 4));
       if(uid && dzArtistCache[uid] === undefined && wanted.indexOf(uid) === -1) wanted.push(uid);
     }
     awRShown = end;

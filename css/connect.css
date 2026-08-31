@@ -196,7 +196,7 @@ footer.siteFooter {
 }
 .ftBase {
   border-top: 1px solid var(--bdr);
-  padding: 2rem var(--shellPad);
+  padding: 2rem var(--shellPad) calc(2rem + var(--sab));
   box-sizing: border-box;
   margin: 0 auto;
   display: grid;
@@ -235,7 +235,7 @@ footer.siteFooter {
 @media (max-width: 1024px) {
   .ftMain { padding: 3.5rem var(--shellPad) 3rem; gap: 3.5rem; }
   .ftCols { gap: 2.5rem; }
-  .ftBase { padding: 1.8rem var(--shellPad); gap: 1rem 2rem; }
+  .ftBase { padding: 1.8rem var(--shellPad) calc(1.8rem + var(--sab)); gap: 1rem 2rem; }
 }
 @media (max-width: 860px) {
   .ftMain {
@@ -253,7 +253,7 @@ footer.siteFooter {
   .ftBase {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto auto;
-    padding: 1.6rem var(--shellPad);
+    padding: 1.6rem var(--shellPad) calc(1.6rem + var(--sab));
     gap: .9rem 2rem;
   }
   .ftBaseCopy { text-align: left; grid-column: 1; grid-row: 1; }
@@ -279,7 +279,7 @@ footer.siteFooter {
   .ftBase {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
-    padding: 1.4rem var(--shellPad);
+    padding: 1.4rem var(--shellPad) calc(1.4rem + var(--sab));
     gap: .75rem;
     text-align: center;
   }
@@ -318,7 +318,7 @@ footer.siteFooter {
              0 32px 64px rgba(5,3,8,.7),
              inset 0 1px 0 color-mix(in srgb,var(--tc) 10%,transparent);
   width:100%;max-width:640px;
-  max-height:88vh;
+  max-height:min(88vh,88dvh);
   display:flex;flex-direction:column;
   overflow:hidden;
   transform:translateY(22px) scale(.97);

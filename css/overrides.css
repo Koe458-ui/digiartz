@@ -340,9 +340,15 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 #fgSearchPage,#albPage,#albViewPage,#bmPage,#cartPage,#frdPage,
 #setPage,#legalPage,#xpPage,
 #anHubPage,#payHubPage,#anPage,#anListPage,
-#themePage,#artModal,#dzView,#showcasePicker,#authMod{
+#themePage,#artModal,#dzView,#showcasePicker,#authMod,
+#dzPanelHost,.dzCo{
   padding-top:var(--sat);
 }
+/* The checkout and the wallet/payout panels are rendered by
+   functions/api/store.js into the same fixed-to-the-edges frame. */
+.dzPanelWrap{ padding-bottom:calc(2.5rem + var(--sab)); }
+.dzCoWrap{ padding-bottom:calc(4rem + var(--sab)); }
+@media (min-width:700px){ .dzCoWrap{ padding-bottom:calc(5rem + var(--sab)); } }
 
 /* Sheets that float over the page keep clear of both ends. */
 #legalBackdrop,#upqBackdrop{
@@ -373,7 +379,7 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   margin-inline-start:-.55rem;
   border-radius:10px;
 }
-.fltPX,.lmClose,.upPopX{
+.fltPX,.lmClose,.upPopX,.dzCoBack,.dzPayX{
   width:40px;height:40px;
   flex-shrink:0;
 }

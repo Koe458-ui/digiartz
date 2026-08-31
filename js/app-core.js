@@ -873,6 +873,16 @@
     if(ss){ im.srcset = ss; im.sizes = dzGridSizes(); }
     im.src = getThumbnailUrl(url || '');
   }
+
+
+  /* A click a link should be allowed to handle itself: open in a new tab,
+     a new window, a download. Anything that intercepts a card click has to
+     let these through or the card stops behaving like a link. */
+  function dzModifiedClick(e){
+    return !!(e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1));
+  }
+  window.dzModifiedClick = dzModifiedClick;
+
   function itemHTML(img, idx){
     const eager = typeof idx === 'number' && idx < 4;
     const thumbAttrs=dzThumbAttrs(img.image_url||'');

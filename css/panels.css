@@ -3,7 +3,6 @@
 }
 .fltDone:hover,.sCard:hover,.cpBarSend:hover,.fgFltBtn:hover,.fgFltBtn.active{box-shadow:none!important;}
 
-#fgFltOvr::before{background:color-mix(in srgb,var(--bg) 55%,transparent)!important;}
 .cpBar::before{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;}
 .cpBar{border-top:1px solid var(--bdr);}
 

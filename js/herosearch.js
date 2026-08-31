@@ -113,12 +113,19 @@
       hsState.rows.forEach(function(r){
         if(typeof buildAwCard !== 'function') return;
         var card = buildAwCard(r);
-        card.onclick = function(){ hsOpen(r.id); };
-        card.onkeydown = function(e){
-          if(e.key !== 'Enter' && e.key !== ' ') return;
-          e.preventDefault();
+        card.onclick = function(e){
+          if(dzModifiedClick(e)) return true;
+          if(e) e.preventDefault();
           hsOpen(r.id);
+          return false;
         };
+        if(!card.href){
+          card.onkeydown = function(e){
+            if(e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            hsOpen(r.id);
+          };
+        }
         grid.appendChild(card);
       });
     }

@@ -59,11 +59,20 @@
     var desc    = item.description || '';
     var id      = item.id;
 
-    var card = document.createElement('div');
+
+
+    // A real link, like the cards the server renders and the ones in the
+    // full gallery. A div swallows ctrl-click, middle-click and the URL
+    // preview, which is most of what a mouse is for.
+    var card = document.createElement('a');
     card.className = 'awCard';
-    card.setAttribute('role','button');
-    card.setAttribute('tabindex','0');
     card.setAttribute('aria-label','View ' + name);
+    if(id !== undefined && id !== null && id !== ''){
+      card.href = '/artwork/' + encodeURIComponent(String(id));
+    } else {
+      card.setAttribute('role','button');
+      card.setAttribute('tabindex','0');
+    }
 
     var wrap = document.createElement('div');
     wrap.className = 'awImgWrap awLoading';
@@ -101,8 +110,19 @@
     card.appendChild(meta);
 
     (function(s,n,c,d,i){
-      card.onclick = function(){ openLB(s,n,c,d,i); };
-      card.onkeydown = function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openLB(s,n,c,d,i); } };
+      card.onclick = function(e){
+        if(dzModifiedClick(e)) return true;
+        if(e) e.preventDefault();
+        openLB(s,n,c,d,i);
+        return false;
+      };
+      if(!card.href){
+        card.onkeydown = function(e){
+          if(e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          openLB(s,n,c,d,i);
+        };
+      }
     })(fullSrc, name, cat, desc, id);
     return card;
   }

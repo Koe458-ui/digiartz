@@ -55,7 +55,6 @@
 }
 @media(max-width:400px){
   .anBdy{padding-left:max(.7rem,env(safe-area-inset-left));padding-right:max(.7rem,env(safe-area-inset-right));}
-  .anCard{padding:.9rem .85rem;}
 }
 @media(min-width:1000px){
   .anBdy{padding-top:1.6rem;}
@@ -128,6 +127,7 @@
   padding:1.05rem 1.1rem;
 }
 @media(min-width:1000px){ .anCard{padding:1.2rem 1.25rem;} }
+@media(max-width:400px){  .anCard{padding:.9rem .85rem;} }
 .anCardHd{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin-bottom:1rem;flex-wrap:wrap;}
 .anCardTitle{font-family:var(--fm);font-size:var(--an-fs-label);letter-spacing:.18em;color:var(--txd);text-transform:uppercase;}
 #anPage,#anListPage{--an-gap:1.1rem;}

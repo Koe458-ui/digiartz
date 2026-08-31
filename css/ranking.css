@@ -440,6 +440,7 @@
 }
 @media(min-width:700px){ .awGrid{grid-template-columns:repeat(3,1fr);} }
 @media(min-width:1280px){ .awGrid{grid-template-columns:repeat(4,1fr);} }
+a.awCard{color:inherit;text-decoration:none;}
 .awCard{
   position:relative;
   background:var(--sur);

@@ -4,6 +4,308 @@ Summary of the security review and the changes made.
 
 ---
 
+## Round 4 — 2026-08-31, the predicates and the grants under them
+
+Rounds 1 to 3 read the code. This round read the **live catalogue** — every RLS
+policy expression, every column grant, both buckets' policies, and the trigger
+set — and compared each one against what the callers in `js/` actually need. The
+advisor is no help here: it reports whether a policy *exists*, not what it says,
+and every finding below sat behind a policy that existed.
+
+Two findings were exploitable today. The rest are the layer under them.
+
+### HIGH — every private community's join code was world-readable
+
+`cm_join(name, code)` is the whole gate on a private room: match the name, match
+the code, you are a member, and `can_read_community()` then opens every post in
+it. Both halves of that secret were public.
+
+`communities_read` was `USING (true)` for `anon` and `authenticated` alike, and
+`join_code` sat in a table-level SELECT grant held by both roles. So:
+
+```
+GET /rest/v1/communities?select=name,join_code&is_public=is.false
+```
+
+with the publishable key that ships in `config.js` returned the key to every
+private room on the site, to a caller who was not signed in. There are no
+private rooms on production right now, which is the only reason this is a
+latent hole rather than a live one — the first one created would have been open
+from the moment it existed.
+
+Fixed in two places, because either alone leaves a way round:
+
+- The read policy is now `is_public OR owner_id = auth.uid() OR
+  can_read_community(id)`. A private room is visible to its owner and its
+  members and to nobody else, so the row carrying the code is not selectable.
+- `join_code` left `anon`'s grant entirely — a signed-out visitor has no
+  management screen and never needed the column.
+
+**Two things went wrong on the way to that fix, and both are worth recording.**
+
+The first: `revoke select (join_code) ... from anon` returned success and
+changed nothing. `anon` held SELECT on the whole table (`anon=r` in `relacl`),
+and a column-level REVOKE cannot carve a hole in a table-level grant. This is
+the same silent no-op Round 3b hit from the other direction. The grant has to be
+dropped and re-issued column by column, which is what
+`20260831_community_join_code_scope.sql` now does. Verified after applying, not
+assumed: `has_column_privilege('anon', ..., 'join_code', 'SELECT')` is false.
+
+The second, worse: the first version of the policy tested membership with an
+inline `exists (select 1 from community_members ...)`. A policy expression is
+evaluated **as the calling role**, and `anon` holds no SELECT on
+`community_members` — correctly. Every anon read of `public.communities` then
+raised `permission denied for table community_members`, which emptied the
+signed-out community page. The regression probe caught it before it went
+anywhere. `can_read_community()` is SECURITY DEFINER and is what the `comments`
+policy already uses for this exact question, so the lookup now happens as its
+owner and the caller needs no grant.
+
+### HIGH — the AI moderation check was skippable for everything except art
+
+`artworks` has been gated since Round 3 by `dz_artwork_mod_gate()`. Resources,
+marketplace listings and blog posts were not.
+
+The composer in `js/sections.js` does the right thing on its face: it posts the
+preview to `/api/moderate-upload`, refuses to continue if Gemini says no, and
+receives a signed ticket back. It then **threw the ticket away** and inserted
+the row itself with `status: 'approved'`. Nothing on the database side asked
+whether the check had happened — the RLS policy on those tables is
+`auth.uid() = user_id AND current_merit() >= 80` and says nothing about status.
+So the check was a courtesy the client extended to itself:
+
+```
+POST /rest/v1/resources
+{ "user_id": "<me>", "title": "...", "status": "approved",
+  "visibility": "published", ... }
+```
+
+published straight to the front page, past Gemini, from curl. Given what the
+2026-08-20 incident was, this is that door with a different handle.
+
+`dz_section_mod_gate()` generalises the artwork gate onto the three tables. Same
+HMAC over `uid.exp.jti`, same shared secret, same `private.used_mod_tokens`
+burn-on-use — one moderation pass buys one publish, whatever section it lands
+in. It fails the way the artwork gate fails: a missing, malformed, expired or
+replayed ticket does not raise, it rewrites `status` to `'pending'`, so a bad
+deploy sends work to review rather than breaking the composer. `js/sections.js`
+now carries the ticket it was already being handed.
+
+One deliberate exception: a **blog cover is optional**, and
+`/api/moderate-upload` cannot mint a ticket for an image nobody uploaded.
+Demanding one unconditionally would have sent every cover-less post to a review
+queue nobody staffs, which is not moderation, it is breakage. The trigger takes
+an optional column name and skips the ticket requirement when that column is
+null. `resources` and `marketplace_items` pass no argument on purpose — their
+preview is required, and an insert must not be able to buy itself an exemption
+by leaving the column out. A cover-less post is still guarded: `dz_content_guard`
+runs on `blog_posts.body`, which is the control the phishing incident called for.
+
+**This gate ships INERT and there is a manual step to finish it — see “What YOU
+need to do” below.** `private.mod_config.sections_enforced` defaults to false
+because the artwork secret is already live: turning it on before the browser is
+sending tickets would send every new listing to `'pending'`.
+
+### MEDIUM — three more read predicates that were wider than they read
+
+- **`comics_select_public` was `USING (true)`.** The table also carried
+  `comics_anon_read` limiting anon to approved rows — but policies for the same
+  command are OR-ed, so the permissive one decided every read and a comic in
+  `pending` or `rejected` was as readable as an approved one, to a caller who
+  was not signed in. Now `status = 'approved' OR user_id = auth.uid()`, the same
+  rule the other content tables use.
+
+- **`album_items_read` was `USING (true)`.** `get_album_artworks()` is careful —
+  it returns a private album's contents only to its owner. The table underneath
+  it was not, so selecting `album_items` by `album_id` listed the artwork ids
+  inside any private album, straight past the check the RPC exists to make. The
+  new policy *is* the RPC's predicate, so the two now agree by construction.
+
+- **`mod_token` arrived readable and writable.** `grant insert (mod_token)` was
+  meant to be the whole of it; `resources`, `blog_posts` and `artworks` already
+  carry table-wide SELECT and UPDATE grants for `authenticated`, and a
+  table-level grant covers columns added later — the join-code trap from the
+  opposite direction. Readable is harmless (both gates null the column before
+  the row lands). Writable is not: the gates are BEFORE INSERT, so an UPDATE
+  never reaches them, which left `mod_token` as a free-text column any member
+  could write after the fact and, on the three tables with a public read policy,
+  anyone could read. `dz_content_guard` does not run on it. Closed at the data
+  level rather than by re-issuing every grant on those tables: a BEFORE UPDATE
+  trigger nulls it for `anon` and `authenticated`, so it can never hold a value.
+  `artworks` included — it had the same latent column since Round 3.
+
+### MEDIUM — the moderation endpoint was an open tap on a metered API
+
+`/api/moderate-upload` bills Gemini once per image and had no same-origin check
+and no per-account limit of its own. The edge limiter counts *requests* (20/min),
+and the endpoint accepts six images per request — 120 images a minute per
+account, and a cross-origin page could fire them even though it could not read
+the reply. It now refuses cross-origin callers, takes a second bucket keyed to
+the account and sized to what actually costs money, and rejects an oversized
+body from `content-length` before `formData()` pulls it into memory.
+
+It also announced `Server not configured: GEMINI_API_KEY missing in Cloudflare
+environment variables` — naming the variable and the dashboard it lives in — to
+a caller that had not signed in yet. The config check now runs after auth and
+says nothing.
+
+### MEDIUM — internal errors reaching the browser
+
+`rzp.js`, `paypal.js` and `payouts.js` all ended in
+`catch (err) { return json({ error: err.message }) }`. `sbService()` throws
+`Database error (403)` and `sbRpc()` threw `Could not read your balance (403)`,
+so a prober learned exactly which call it had reached and how it failed.
+
+Only a message deliberately written for a person to read now comes back. The
+providers' own descriptions ("international cards are not supported") carry a
+`userFacing` flag and survive, because those are what a buyer needs; everything
+else collapses to one sentence. `payout_requests.review_note` gets the same
+filter — it is seller-readable, and it was being written with the raw throw.
+
+`smart-function` had the same shape: `createSignedUploadUrl()`'s error text
+names buckets, object keys and the policy that refused, and it was returned
+verbatim.
+
+### LOW — least privilege, and a wildcard closed
+
+- **`anon` is now read-only.** Seventeen tables carried INSERT/UPDATE/DELETE
+  grants for `anon`, and six carried SELECT on tables that are entirely own-row
+  (`cart_items`, `friendships`, `item_likes`, `item_bookmarks`,
+  `scheduled_sections`, `user_tag_prefs`, plus `marketplace_earnings` and
+  `payout_requests`). None was reachable — every policy in front of them
+  compares a column to `auth.uid()`, which is NULL for a signed-out caller.
+  That is *why* it was worth doing: today RLS is the only thing between `anon`
+  and every row of `marketplace_earnings`. A policy dropped by accident, a table
+  rebuilt without one, an `alter table ... disable row level security` in the
+  wrong window — any of those turns a live grant into a live read. A grant that
+  was never there cannot. No answer the API gives today changes.
+
+- **`storage_user_upload_own_folder` was granted to PUBLIC**, not to
+  `authenticated`. Not exploitable — both halves of its predicate are
+  NULL/false for a signed-out caller, and `anon` holds no INSERT on
+  `storage.objects` — but "not exploitable because two other things happen to be
+  true" is not "cannot apply", and this is the INSERT policy on the bucket the
+  whole site serves images from. Every sibling policy already says
+  `authenticated`.
+
+- **Three storage policies keyed on `auth.email() = '<a personal address>'`.**
+  Not forgeable (GoTrue will not move an address without confirming it), but it
+  made an admin grant depend on a mutable identity claim rather than the role
+  column every other privileged check on this project reads, hardcoded a
+  personal address into schema committed to git, and could not be handed to a
+  second admin or taken back without a migration. Now `is_dev()`, which one
+  UPDATE revokes. Verified first that the account at that address holds
+  `role = 'dev'`, so the same person keeps the same access.
+
+- **`Access-Control-Allow-Origin: *` on the edge function** — carried as a known
+  residual since Round 3. Still not exploitable for the reason Round 3 gave, but
+  now an allowlist (`ALLOWED_ORIGINS`, plus the site's own origins). An unknown
+  or absent Origin gets no ACAO header, so a browser refuses the response while
+  a server-to-server caller is unaffected. **Requires a redeploy of the function
+  to take effect — see below.** Fixing it turned up a bug in my own first
+  attempt: a module-level `let cors` would have let one request's Origin decide
+  another's reply, since `Deno.serve` runs requests concurrently on one isolate.
+  It is request-scoped now, and the regression suite asserts the mutable is gone.
+
+- **`connect-src` allowed `https://generativelanguage.googleapis.com`.** Gemini
+  is called by the Worker, never by the page. With `'unsafe-inline'` still in
+  `script-src`, every origin in `connect-src` is a place an injected script may
+  post to; this one bought nothing. Removed.
+
+### Looked at and found correct
+
+Worth saying explicitly, because "no finding" is a result:
+
+- **No SQL injection anywhere.** Only two SECURITY DEFINER functions build
+  dynamic SQL. `publish_due_scheduled_sections()` uses `quote_ident` over a
+  whitelist of four tables and filters the payload's keys against
+  `information_schema.columns`. `search_artworks()` escapes LIKE wildcards
+  before interpolating. Every PostgREST filter built in `functions/` is
+  interpolated from a value already validated against a UUID, `^[A-Z]{3}$`,
+  `^[a-z,]{1,60}$` or similar.
+- **The payment paths.** Amounts are always re-derived server-side from
+  `subscription_prices` or `marketplace_items.price_cents`, never taken from the
+  request. Razorpay's signature check and the PayPal capture both use
+  `crypto.subtle.timingSafeEqual` after a length check. Settlement is idempotent
+  through `status=eq.created` on the PATCH. The webhook signature checks are
+  correct.
+- **Column grants on `profiles`.** `email`, `currency`, `max_claimed` and
+  `partner_since` are not selectable by `anon` or `authenticated`, and
+  `subscription_tier` / `subscription_expires_at` / `role` are not updatable —
+  belt (`protect_privileged_cols`), braces (`dz_profiles_guard_privileged`) and
+  the grant layer all agree.
+- **XSS.** Every builder in `js/` that concatenates HTML runs its values through
+  an `esc()`; user-supplied URLs pass `safeHref()`, which admits only `http:` and
+  `https:`. `functions/_middleware.js` writes meta through HTMLRewriter's
+  escaping API and `<\/` -escapes its JSON-LD. Both storage buckets exclude
+  `text/html`, `image/svg+xml` and every `text/*` from `allowed_mime_types`, so
+  an uploaded object cannot be a page on the storage hostname.
+- **Upload paths are bound to the uploader by storage RLS**, not by the edge
+  function's own arithmetic, and `koe-media` has no UPDATE policy for members —
+  so one member cannot overwrite another's object.
+- **RLS is enabled on all 74 public tables**, and an event trigger
+  (`rls_auto_enable`) turns it on for any new one.
+
+### Tests
+
+- `scripts/security-test.mjs` — 38 new assertions on this round's fixes, on top
+  of the existing suite. All pass.
+- The other five suites (`check-precache`, `check-overlays`, `check-sections`,
+  `cache-test`, `check-css-dead`) and `check-cachebust` — all pass.
+- Every `.js`/`.mjs` in `js/`, `functions/`, `scripts/`, plus `sw.js` and
+  `uploadVerifier.js`, parses under `node --check`.
+- **Live behavioural probes against production**, each one run inside a
+  transaction that raises at the end so it rolls back, and each one verified
+  afterwards to have left no rows behind:
+  - private room: non-member `0`, anon `0`, owner `1`, after joining `1`; anon
+    reading `join_code` → permission denied
+  - `album_items`: other user sees `0` of a private album, owner sees `1`
+  - `comics`: other user sees `0` of a pending comic, owner sees `1`
+  - section gate: inert+no ticket → `approved`; enforcing+no ticket → `pending`;
+    valid ticket → `approved`; replayed → `pending`; expired → `pending`;
+    non-approved insert untouched; dev without a ticket → `approved`
+  - blog cover exception: no cover → `approved`; cover without ticket →
+    `pending`; cover with ticket → `approved`; and `resources` /
+    `marketplace_items` get **no** null-image exemption
+  - `mod_token` after a member UPDATE → NULL
+  - regression sweep as anon: public rooms visible, `cm_browse` works, public
+    album items visible, private album items not, approved artworks and profiles
+    visible; as a member: rooms visible, `get_album_artworks` works; publishing
+    with the gate inert still lands `approved`
+
+### What is still open after this round
+
+Unchanged from Round 3, and still true:
+
+- **`'unsafe-inline'` and `'unsafe-eval'` in `script-src`.** Still the
+  highest-value item left, and still not something this round could take.
+  `index.html` carries 3 inline `<script>` blocks and ~340 inline event
+  handlers, and `js/` generates more `onclick=` strings at runtime; a nonce
+  cannot cover `script-src-attr`, so closing this is a refactor of the event
+  model, not a header change. It is why session tokens in `localStorage` matter.
+- **Session tokens in `localStorage`** — inherent to the SPA + PostgREST design.
+- **Leaked-password protection** and **email confirmation before a first public
+  write** — two dashboard toggles, fourth round of asking.
+- **`featured` is self-service.** Any member can tick "Feature this listing" and
+  sort themselves to the top of a section. That is what the composer's own
+  checkbox offers, so it is a product decision rather than a defect, and this
+  round did not change it — but every member ticking it makes the ordering
+  meaningless, and it is worth a policy decision.
+- **Image-content binding.** A ticket says "this account passed a check", not
+  "this file passed a check", so moderate image A / upload image B is still
+  possible, as is editing an approved row's image afterwards (both gates are
+  BEFORE INSERT). Unchanged from Round 3, and a larger redesign.
+- **`dz_client_ip()` falls back to `true-client-ip`, `x-real-ip` and
+  `x-forwarded-for`** when `cf-connecting-ip` is absent. Cloudflare sets and
+  overwrites `cf-connecting-ip` on everything it proxies, so the first entry in
+  that coalesce is trustworthy and the fallbacks are unreachable in practice —
+  but they are client-supplied headers on a direct-to-Supabase request, and they
+  key the per-IP download and auth-attempt limits.
+- **No CDN/WAF rate limiting in front of the edge limiter** — a volumetric flood
+  still costs a Supabase round trip per request before being refused.
+
+---
+
 ## Deployment check — 2026-08-30
 
 Run against the branch before merge: git state, every CI job, both regression
@@ -553,6 +855,46 @@ remaining gaps.
 | 9 | `security/` no longer served — the repo root is the deploy output, so every `.sql` here was downloadable | `functions/security/[[path]].js` | ✅ in branch |
 
 ## What YOU need to do
+
+### 🔴 0. Finish the section moderation gate (Round 4 — do this after deploy)
+
+The gate is installed on `resources`, `marketplace_items` and `blog_posts` and
+is **inert**. It stays inert until you turn it on, and it must not be turned on
+before the deploy that makes the browser send tickets.
+
+1. Deploy this branch to production.
+2. Publish one resource, one marketplace listing and one blog post. Confirm each
+   goes live as normal.
+3. Only then, in the Supabase SQL editor:
+
+   ```sql
+   update private.mod_config set sections_enforced = true where id;
+   ```
+
+4. Re-test: a normal publish still works; a direct PostgREST insert with
+   `status='approved'` and no token now lands in `status='pending'`.
+
+Roll back at any time, dropping nothing:
+
+```sql
+update private.mod_config set sections_enforced = false where id;
+```
+
+Check which state it is in:
+
+```sql
+select case when sections_enforced then 'enforcing' else 'inert' end
+  from private.mod_config where id;
+```
+
+### 🟠 0b. Redeploy the edge function (Round 4)
+
+The CORS allowlist in `supabase/functions/smart-function/index.ts` only takes
+effect once the function is redeployed — the repo copy is not what is running.
+If you use preview deployments, set `ALLOWED_ORIGINS` (comma-separated) on the
+function first, otherwise uploads from those origins will be refused by the
+browser. `https://digiartz.net` and `https://www.digiartz.net` are built in.
+
 
 ### 🔴 1. Storage spend alarm (do today — this is your bill protection)
 Media now lives in Supabase Storage, so the bill to watch is Supabase's, not

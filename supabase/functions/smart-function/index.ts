@@ -42,13 +42,47 @@ const ASSET_EXT = new Set([
   "mp4","webm","mov",
 ]);
 
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-const json = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { ...cors, "content-type": "application/json" } });
+// The wildcard this used to carry was flagged as "not exploitable but wider
+// than it needs to be" in Round 3, and that reading was right: the function
+// authenticates by Authorization header, which a cross-origin page cannot make
+// the browser attach on its behalf. Wide is still wide, though — with `*` any
+// page on the internet could put this endpoint's signed-upload machinery behind
+// its own UI, and the reply told them how it went. The allowlist costs nothing.
+//
+// ALLOWED_ORIGINS is a comma-separated list (preview deployments go here). An
+// unknown or absent Origin gets no ACAO header at all, so a browser refuses to
+// hand the response over while a server-to-server caller — which never sends
+// Origin and is not bound by CORS — is unaffected.
+const DEFAULT_ORIGINS = ["https://digiartz.net", "https://www.digiartz.net"];
+
+function allowedOrigins(): string[] {
+  const extra = String(Deno.env.get("ALLOWED_ORIGINS") ?? "")
+    .split(",").map((s) => s.trim()).filter(Boolean);
+  return [...DEFAULT_ORIGINS, ...extra];
+}
+
+function corsFor(req: Request): Record<string, string> {
+  const base: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+  const origin = req.headers.get("Origin") ?? "";
+  if (origin && allowedOrigins().includes(origin)) {
+    base["Access-Control-Allow-Origin"] = origin;
+  }
+  return base;
+}
+
+// Built per request inside the handler rather than held in a module-level
+// binding: Deno.serve runs requests concurrently on one isolate, and a shared
+// mutable would let a second request's Origin decide a first request's reply.
+const replier = (cors: Record<string, string>) =>
+  (b: unknown, s = 200) =>
+    new Response(JSON.stringify(b), {
+      status: s,
+      headers: { ...cors, "content-type": "application/json" },
+    });
 
 const extOf = (p: string) => (p.split(".").pop() || "").toLowerCase();
 
@@ -59,6 +93,9 @@ function serviceClient() {
 }
 
 Deno.serve(async (req) => {
+  const cors = corsFor(req);
+  const json = replier(cors);
+
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   if (req.method !== "POST")    return json({ error: "POST only" }, 405);
 
@@ -194,8 +231,10 @@ Deno.serve(async (req) => {
       } else {
         await sign(PUBLIC_BUCKET, objKey, "file");
       }
-    } catch (e) {
-      return json({ error: String((e as Error).message || e) }, 500);
+    } catch (_e) {
+      // createSignedUploadUrl()'s error text names buckets, object keys and the
+      // policy that refused. The caller is a browser: it gets the fact.
+      return json({ error: "Could not prepare the upload — try again." }, 500);
     }
 
     return json({

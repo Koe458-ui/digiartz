@@ -153,5 +153,89 @@ for (const f of ['download', 'market-download', 'resource-download', 'moderate-u
   for (const f of served) falsy(`${f} carries no secret-shaped literal`, SECRET.test(readFileSync(f, 'utf8')));
 }
 
+// --- Round 4 -----------------------------------------------------------------
+
+// The composer's moderation ticket reaches the insert. It used to be read for
+// its verdict and dropped, which left the whole Gemini check advisory: the row
+// carries status:'approved' and nothing on the database side asked whether the
+// check had happened.
+{
+  const src = readFileSync('js/sections.js', 'utf8');
+  truthy('sections.js keeps the moderation ticket', /modTicket\s*=\s*mod\.token/.test(src));
+  truthy('sections.js sends it with the row', /if\(modTicket\)\s*row\.mod_token\s*=\s*modTicket/.test(src));
+  truthy('only the gated sections carry one',
+         /MOD_GATED\s*=\s*\{\s*resources:1,\s*marketplace:1,\s*blog:1\s*\}/.test(src));
+  // A ticket lives ten minutes and is single-use; a scheduled row is published
+  // hours later by a trigger the gate already trusts.
+  truthy('a scheduled payload carries no stale ticket',
+         /pk!=='status'\s*&&\s*pk!=='mod_token'/.test(src));
+}
+
+// The moderation endpoint spends real money at a third party on every call.
+{
+  const src = readFileSync('functions/api/moderate-upload.js', 'utf8');
+  truthy('moderate-upload refuses cross-origin callers', /if \(!sameOrigin\(request, env\)\)/.test(src));
+  truthy('moderate-upload rate-limits per account', /underLimit\(env, 'mod:' \+ user\.id/.test(src));
+  truthy('moderate-upload caps the request body', /content-length/.test(src));
+  // The old message named the variable AND the dashboard it lives in, to a
+  // caller that had not signed in yet.
+  falsy('moderate-upload does not name GEMINI_API_KEY to the caller',
+        /error: 'Server not configured: GEMINI_API_KEY/.test(src));
+}
+
+// No endpoint hands an unclassified throw back to the browser. sbService()
+// throws 'Database error (403)'; the catch-alls used to return err.message.
+for (const f of ['rzp', 'paypal', 'payouts']) {
+  const src = readFileSync(`functions/api/${f}.js`, 'utf8');
+  falsy(`${f}.js does not return a bare err.message`,
+        /error: \(err && err\.message\)/.test(src));
+  truthy(`${f}.js filters errors through safeMessage`, /safeMessage\(err,/.test(src));
+}
+
+// The CSP names only origins the browser actually talks to. Gemini is called by
+// the Worker, never by the page, so its origin in connect-src was one more place
+// an injected script could have posted to.
+{
+  const headers = readFileSync('_headers', 'utf8');
+  falsy('CSP does not allow the browser to reach Gemini',
+        /generativelanguage\.googleapis\.com/.test(headers));
+  const csp = (headers.match(/Content-Security-Policy: ([^\n]+)/) || [])[1] || '';
+  truthy('CSP is present', csp.length > 100);
+  for (const d of ['object-src \'none\'', 'base-uri \'self\'', 'frame-ancestors \'self\'']) {
+    truthy(`CSP keeps ${d}`, csp.includes(d));
+  }
+  const connect = (csp.match(/connect-src ([^;]+)/) || [])[1] || '';
+  falsy('connect-src carries no wildcard host', /(^|\s)\*(\s|$)/.test(connect));
+}
+
+// The edge function answers a named origin or no origin at all, never '*'.
+{
+  const src = readFileSync('supabase/functions/smart-function/index.ts', 'utf8');
+  falsy('smart-function does not send ACAO: *',
+        /"Access-Control-Allow-Origin":\s*"\*"/.test(src));
+  truthy('smart-function checks the Origin against an allowlist',
+         /allowedOrigins\(\)\.includes\(origin\)/.test(src));
+  truthy('smart-function varies on Origin', /"Vary":\s*"Origin"/.test(src));
+  // Deno.serve runs requests concurrently on one isolate: a module-level
+  // mutable would let one request's Origin decide another's reply.
+  falsy('smart-function holds no shared mutable cors binding',
+        /^let cors/m.test(src));
+  falsy('smart-function does not return the storage error text',
+        /String\(\(e as Error\)\.message/.test(src));
+}
+
+// The migrations that closed the join-code leak have to keep saying so. A
+// column-level REVOKE cannot carve a hole in a table-level GRANT, so the fix is
+// specifically the drop-and-reissue pair, not the REVOKE on its own.
+{
+  const sql = readFileSync('supabase/migrations/20260831_community_join_code_scope.sql', 'utf8');
+  truthy('communities_read is no longer USING (true)',
+         /is_public\s*\n?\s*or owner_id = auth\.uid\(\)/.test(sql));
+  truthy('anon\'s table-wide SELECT is dropped', /revoke select on public\.communities from anon/.test(sql));
+  truthy('anon is re-granted column by column', /grant select \(/.test(sql));
+  falsy('and join_code is not among the columns',
+        /grant select \([^)]*join_code/s.test(sql));
+}
+
 console.log(failed ? `\n${failed} check(s) failed` : '\nall checks passed');
 process.exit(failed ? 1 : 0);

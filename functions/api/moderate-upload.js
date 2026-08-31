@@ -1,3 +1,6 @@
+import { sameOrigin } from '../lib/http.js';
+import { underLimit } from '../lib/sb.js';
+
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 6;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -199,13 +202,28 @@ Return your verdict as JSON with fields: allow, artwork, rating, quality, catego
 const SB_URL_FALLBACK = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
 const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
 
+// Six images at ten megabytes each is the most this endpoint will ever look at.
+// Reading the declared length first means an oversized body is refused before
+// formData() pulls it into memory, rather than after.
+const MAX_BODY_BYTES = MAX_FILES * MAX_BYTES + 65536;
+
+// Every call here is billed Gemini traffic, one request per image, and the
+// edge limiter counts requests rather than images: at its 20-a-minute ceiling
+// a single account could put 120 images a minute through the provider. This
+// second bucket counts what actually costs money and is keyed to the account,
+// so a stolen-token flood cannot spread itself across IPs to get more.
+const MOD_CALLS_PER_MIN = 30;
+
 export async function onRequestPost(context) {
   const { request, env } = context;
   const SB_URL = env.SUPABASE_URL || SB_URL_FALLBACK;
   const SB_ANON = env.SUPABASE_ANON_KEY || SB_ANON_FALLBACK;
   try {
-    if (!env.GEMINI_API_KEY) {
-      return json({ error: 'Server not configured: GEMINI_API_KEY missing in Cloudflare environment variables.' }, 500);
+    // The composer is the only caller. A cross-origin page cannot read the
+    // reply anyway, but it can still spend the Gemini budget by firing the
+    // request, and this refuses that before the provider is touched.
+    if (!sameOrigin(request, env)) {
+      return json({ error: 'Uploads must come from the DigiArtz site.' }, 403);
     }
 
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
@@ -217,6 +235,26 @@ export async function onRequestPost(context) {
     if (!userRes.ok) return json({ error: 'Session expired — sign in again.' }, 401);
     const user = await userRes.json();
     if (!user.id) return json({ error: 'Invalid session.' }, 401);
+
+    // Configuration state is not a signed-out caller's business, and the old
+    // message named the variable and the dashboard it lives in.
+    if (!env.GEMINI_API_KEY) {
+      return json({ error: 'Upload review is unavailable right now — try again shortly.' }, 503);
+    }
+
+    // Refuse an oversized body from the declared length, before formData()
+    // pulls it into the isolate's memory. The per-file checks below still run:
+    // this is the cheap outer bound, not a replacement for them.
+    const declared = Number(request.headers.get('content-length') || 0);
+    if (declared > MAX_BODY_BYTES) {
+      return json({ error: `That is too much at once — up to ${MAX_FILES} images, ` +
+                           `each under ${Math.round(MAX_BYTES / 1048576)} MB.` }, 413);
+    }
+
+    // Ahead of formData(), so a flood does not get the body parsed for free.
+    if (!(await underLimit(env, 'mod:' + user.id, MOD_CALLS_PER_MIN, 60))) {
+      return json({ error: 'Too many upload checks — wait a moment and try again.' }, 429);
+    }
 
     const form = await request.formData();
     const files = form.getAll('files').filter(f => f instanceof File);

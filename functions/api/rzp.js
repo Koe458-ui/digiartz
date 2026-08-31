@@ -6,7 +6,19 @@ import {
 } from '../lib/billing.js';
 
 const json = (b, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
+  new Response(JSON.stringify(b), {
+    status: s,
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+  });
+
+// Only a message this file deliberately wrote for a buyer to read comes back to
+// the buyer. Everything else — a PostgREST status from sbService(), a TypeError,
+// whatever a future refactor throws — collapses to one flat sentence, because
+// the catch-all at the bottom used to hand `err.message` straight out and
+// "Database error (403)" told a prober exactly which call it had reached.
+const userError = (msg) => Object.assign(new Error(msg), { userFacing: true });
+const safeMessage = (err, fallback) =>
+  (err && err.userFacing && err.message) ? err.message : fallback;
 
 async function rzp(env, path, init = {}) {
   const res = await fetch('https://api.razorpay.com' + path, {
@@ -17,7 +29,13 @@ async function rzp(env, path, init = {}) {
     },
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((body.error && body.error.description) || 'Payment provider error (' + res.status + ')');
+  // The provider's own description is written for the payer ("international
+  // cards are not supported", "amount exceeds maximum") and is worth keeping.
+  if (!res.ok) {
+    throw (body.error && body.error.description)
+      ? userError(String(body.error.description).slice(0, 200))
+      : new Error('Payment provider error (' + res.status + ')');
+  }
   return body;
 }
 
@@ -203,6 +221,6 @@ export async function onRequestPost({ env, request }) {
 
     return json({ error: 'Unknown action' }, 400);
   } catch (err) {
-    return json({ error: (err && err.message) || 'Payment service error' }, 500);
+    return json({ error: safeMessage(err, 'Payment service error — try again.') }, 500);
   }
 }

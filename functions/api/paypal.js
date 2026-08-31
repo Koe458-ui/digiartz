@@ -10,7 +10,17 @@ const SUPPORTED = new Set(['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF',
   'BRL', 'ILS', 'PHP', 'THB', 'TWD']);
 
 const json = (b, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
+  new Response(JSON.stringify(b), {
+    status: s,
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+  });
+
+// See the note in rzp.js: the catch-all below returned err.message verbatim,
+// which meant sbService()'s "Database error (403)" and any stray internal
+// throw reached the browser. Only messages deliberately written for a buyer
+// carry the flag; everything else collapses to one sentence.
+const safeMessage = (err, fallback) =>
+  (err && err.userFacing && err.message) ? err.message : fallback;
 
 const apiBase = (env) =>
   String(env.PAYPAL_ENV || '').trim().toLowerCase() === 'sandbox'
@@ -56,11 +66,13 @@ async function pp(env, path, init = {}) {
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(
-      body.message ||
-      (body.details && body.details[0] && body.details[0].description) ||
-      'Payment provider error (' + res.status + ')'
-    );
+    const described = body.message ||
+      (body.details && body.details[0] && body.details[0].description) || '';
+    const err = new Error(described
+      ? String(described).slice(0, 200)
+      : 'Payment provider error (' + res.status + ')');
+    // The provider writes these for the payer, so they stay readable.
+    err.userFacing = !!described;
     err.status = res.status;
     err.issue = (body.details && body.details[0] && body.details[0].issue) || body.name || '';
     throw err;
@@ -276,6 +288,6 @@ export async function onRequestPost({ env, request }) {
 
     return json({ error: 'Unknown action' }, 400);
   } catch (err) {
-    return json({ error: (err && err.message) || 'Payment service error' }, 500);
+    return json({ error: safeMessage(err, 'Payment service error — try again.') }, 500);
   }
 }

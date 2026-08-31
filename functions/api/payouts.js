@@ -10,7 +10,17 @@ const MIN_DEFAULT = 500;
 const minPayout = (cur) => MIN_PAYOUT[cur] != null ? MIN_PAYOUT[cur] : MIN_DEFAULT;
 
 const json = (b, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
+  new Response(JSON.stringify(b), {
+    status: s,
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+  });
+
+// Same rule as rzp.js and paypal.js: the catch-all at the bottom of this file
+// handed err.message out verbatim, so sbService()'s "Database error (403)" and
+// sbRpc()'s status code both reached a seller's browser. Only a message written
+// for a person to read carries the flag.
+const safeMessage = (err, fallback) =>
+  (err && err.userFacing && err.message) ? err.message : fallback;
 
 const apiBase = (env) =>
   String(env.PAYPAL_ENV || '').trim().toLowerCase() === 'sandbox'
@@ -56,11 +66,13 @@ async function pp(env, path, init = {}) {
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(
-      body.message ||
-      (body.details && body.details[0] && body.details[0].description) ||
-      'Payout provider error (' + res.status + ')'
-    );
+    const described = body.message ||
+      (body.details && body.details[0] && body.details[0].description) || '';
+    const err = new Error(described
+      ? String(described).slice(0, 200)
+      : 'Payout provider error (' + res.status + ')');
+    // PayPal's refusal is what an admin needs to see to act on a stuck payout.
+    err.userFacing = !!described;
     err.name_ = body.name || '';
     throw err;
   }
@@ -77,7 +89,7 @@ async function sbRpc(env, request, fn, args = {}) {
     },
     body: JSON.stringify(args),
   });
-  if (!res.ok) throw new Error('Could not read your balance (' + res.status + ')');
+  if (!res.ok) throw new Error('balance rpc ' + fn + ' ' + res.status);
   return res.json().catch(() => null);
 }
 
@@ -593,7 +605,10 @@ export async function onRequestPost({ env, request }) {
           method: 'PATCH',
           body: JSON.stringify({
             status: 'approved',
-            review_note: String((err && err.message) || 'Send failed').slice(0, 500),
+            // payout_requests.review_note is readable by the seller
+            // (payout_requests_select_own), so it gets the same filter the
+            // response does: PayPal's own refusal, or nothing.
+            review_note: safeMessage(err, 'Send failed — the provider refused this payout').slice(0, 500),
           }),
         }).catch(() => {});
         if (retiredIds.length) {
@@ -603,12 +618,12 @@ export async function onRequestPost({ env, request }) {
             method: 'PATCH', body: JSON.stringify({ status: 'available' }),
           }).catch(() => {});
         }
-        return json({ error: (err && err.message) || 'Could not send the payout' }, 502);
+        return json({ error: safeMessage(err, 'Could not send the payout') }, 502);
       }
     }
 
     return json({ error: 'Unknown action' }, 400);
   } catch (err) {
-    return json({ error: (err && err.message) || 'Payout service error' }, 500);
+    return json({ error: safeMessage(err, 'Payout service error — try again.') }, 500);
   }
 }

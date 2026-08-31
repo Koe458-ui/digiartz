@@ -2792,6 +2792,13 @@
     if(bad){ dzFieldFail(sec, bad.k, bad.msg); return; }
 
     if(btn){ btn.disabled = true; btn.textContent = 'Publishing…'; }
+    // The ticket /api/moderate-upload signs when the image passes. It used to
+    // be read for its verdict and then dropped on the floor, which left the
+    // whole check advisory: the insert below carries status:'approved', and
+    // nothing on the database side asked whether the check had happened. It
+    // travels with the row now, and dz_section_mod_gate() burns it.
+    var modTicket = null;
+    var MOD_GATED = { resources:1, marketplace:1, blog:1 };
     var modImg = null, modMode = null, modRecv = 'File & preview received';
     if(sec === 'resources'){   modImg = st(sec).files.preview; modMode = 'resource'; }
     else if(sec === 'marketplace'){ modImg = st(sec).files.preview; modMode = 'marketplace'; }
@@ -2833,6 +2840,7 @@
           throw new Error(mod.reason || 'This upload did not pass the content check.');
         }
         dzV.step('safety','pass', mod.rating === 'MATURE' ? 'Approved · 18+' : 'Safe for all audiences');
+        if(MOD_GATED[sec] && mod.token) modTicket = mod.token;
         dzV.step('transfer','run');
       }
 
@@ -3122,7 +3130,11 @@
       var when = dzSchPicked();
       if(when){
         if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
-        var payload = {}; for(var pk in row){ if(pk!=='status') payload[pk]=row[pk]; }
+        // A ticket expires in ten minutes and is single-use; a scheduled row is
+        // published later by publish_due_scheduled_sections(), which runs with
+        // no JWT and is trusted by the gate on that basis. Carrying a stale
+        // ticket through would only give a reader the wrong idea.
+        var payload = {}; for(var pk in row){ if(pk!=='status' && pk!=='mod_token') payload[pk]=row[pk]; }
         var paths = [];
         ['file_storage_path','preview_storage_path','cover_storage_path'].forEach(function(k){ if(row[k]) paths.push(row[k]); });
         pendingSell.forEach(function(x){ paths.push(x.path); });
@@ -3143,6 +3155,7 @@
       }
 
       if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
+      if(modTicket) row.mod_token = modTicket;
       var res = await sb.from(SEC[sec].table).insert(row).select('id').single();
       if(res.error) throw res.error;
 

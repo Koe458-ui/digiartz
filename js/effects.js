@@ -142,6 +142,11 @@
 
   window.openLegal = function(type){
     var docs = window.DZ_LEGAL;
+    if(!docs && window.dzLazy){
+      // The documents are a chunk now; fetch them and come straight back.
+      window.dzLazy('legal').then(function(){ window.openLegal(type); });
+      return false;
+    }
     var c = docs && docs[type];
     if(!c) return true;
     titleEl.innerHTML = c.title;
@@ -178,6 +183,10 @@
 
   window.openLegalPage = function(type){
     var docs = window.DZ_LEGAL;
+    if(!docs && window.dzLazy){
+      window.dzLazy('legal').then(function(){ window.openLegalPage(type); });
+      return false;
+    }
     var c = docs && docs[type];
     var els = lgEls();
     if(!c || !els) return true;
@@ -200,8 +209,16 @@
   };
 
   window.setGoLegal = function(type){
+    if(!lgEls() || typeof setGo !== 'function') return true;
     var docs = window.DZ_LEGAL;
-    if(!docs || !docs[type] || !lgEls() || typeof setGo !== 'function') return true;
+    if(!docs && window.dzLazy){
+      // Handle the click here rather than letting the link fall through to a
+      // full page load: the documents are one fetch away.
+      window.dzLazy('legal').then(function(){ window.setGoLegal(type); })
+        ['catch'](function(){ location.href = '/legal/' + type; });
+      return false;
+    }
+    if(!docs || !docs[type]) return true;
     setGo(function(){ window.openLegalPage(type); }, 'legalPage');
     return false;
   };

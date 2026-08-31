@@ -12,7 +12,8 @@ const base = args.filter((a) => a !== '--each')[0] || 'origin/main';
 
 function git(args, allowFail = false) {
   try {
-    return execFileSync('git', args, { cwd: root, encoding: 'utf8' });
+    return execFileSync('git', args,
+      { cwd: root, encoding: 'utf8', stdio: allowFail ? ['ignore', 'pipe', 'ignore'] : 'pipe' });
   } catch (e) {
     if (allowFail) return null;
     throw e;
@@ -39,11 +40,22 @@ function versionsIn(html) {
   return out;
 }
 
+// A versioned url may be referenced from index.html or from the chunk
+// manifest in js/lazy.js. Reading only the first would let a lazily loaded
+// file change under a ?v= that has already shipped — the exact failure the
+// rest of this script exists to prevent.
+const SOURCES = ['index.html', 'js/lazy.js'];
+
+function sourcesAt(rev) {
+  const parts = SOURCES.map((f) =>
+    rev === null ? readFileSync(join(root, f), 'utf8') : git(['show', `${rev}:${f}`], true));
+  if (parts[0] === null) return null;               // no index.html: nothing to compare
+  return parts.map((p) => p || '').join('\n');
+}
+
 function step(from, to) {
-  const headHtml = to === null
-    ? readFileSync(join(root, 'index.html'), 'utf8')
-    : git(['show', `${to}:index.html`], true);
-  const baseHtml = git(['show', `${from}:index.html`], true);
+  const headHtml = sourcesAt(to);
+  const baseHtml = sourcesAt(from);
   if (headHtml === null || baseHtml === null) return [];
 
   const now = versionsIn(headHtml);

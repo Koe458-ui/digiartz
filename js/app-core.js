@@ -777,12 +777,17 @@
       }
     }catch(e){
       console.error(e);
-      var old = await c.recall(GAL_ALL, 'gallery:latest');
-      if(!old || !old.length) old = c.peek(GAL_TOP, 'gallery:latest', { any:true });
-      if(old && old.length){
-        images = old.slice();
-        showToast('Offline — showing saved artworks');
-      }
+      // The recovery read can fail too — a blocked IndexedDB, a storage
+      // quota, a browser in private mode. It must not take the boot with
+      // it: the page behind the loader stays uninteractive until it ends.
+      try{
+        var old = await c.recall(GAL_ALL, 'gallery:latest');
+        if(!old || !old.length) old = c.peek(GAL_TOP, 'gallery:latest', { any:true });
+        if(old && old.length){
+          images = old.slice();
+          showToast('Offline — showing saved artworks');
+        }
+      }catch(e2){ console.error(e2); }
     }
   }
 

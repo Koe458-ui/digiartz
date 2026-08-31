@@ -5,11 +5,28 @@
 
     var loading = loadDB();
     await dzDomReady();
-    await loading;
-    renderHome();
-    if(typeof window._heroLoadCb === 'function'){
-      window._heroLoadCb(null);
+
+    // The loader covers the page and swallows every tap until it lifts, so
+    // it must not be tied to the network. Give the first query a short head
+    // start — on a good connection it lands well inside it and the grid is
+    // already painted — then reveal regardless. What is behind it is either
+    // the cached rows or the markup the server sent; the fresh rows land on
+    // top when they arrive. Before this, a first load that failed held the
+    // page for the nine-second fallback timer.
+    var revealed = false;
+    function reveal(){
+      if(revealed) return;
+      revealed = true;
+      if(typeof window._heroLoadCb === 'function') window._heroLoadCb(null);
     }
+    var headStart = setTimeout(reveal, 2500);
+
+    try{ await loading; }
+    catch(e){ console.error(e); }
+    clearTimeout(headStart);
+    try{ renderHome(); }
+    catch(e){ console.error(e); }
+    reveal();
     var stillBooting = (boot === null) ||
                        (typeof window.dzNavCurrent !== 'function') ||
                        window.dzNavCurrent(boot);

@@ -92,8 +92,8 @@
     position:fixed;
     top:0;
     left:0;
-    width:100vw;
-    height:100vh;
+    right:0;
+    bottom:0;
     pointer-events:none;
     z-index:999999999;
   }
@@ -688,7 +688,7 @@ html.thmFade #themePage{
 .tgModSearch::placeholder{color:var(--txd);opacity:.6;}
 .tgModGrid{
   display:grid;gap:.5rem;grid-template-columns:repeat(2,1fr);
-  overflow-y:auto;max-height:min(52vh,420px);padding:.1rem;
+  overflow-y:auto;max-height:min(52dvh,52vh,420px);padding:.1rem;
   overscroll-behavior:contain;
 }
 @media(min-width:700px){ .tgModGrid{grid-template-columns:repeat(3,1fr);} }

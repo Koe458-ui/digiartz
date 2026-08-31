@@ -266,12 +266,19 @@
         rows.forEach(function(r){
           if(typeof buildAwCard !== 'function') return;
           var el = buildAwCard(r);
-          el.onclick = function(){ fgSearchOpen('artwork', r.id); };
-          el.onkeydown = function(e){
-            if(e.key !== 'Enter' && e.key !== ' ') return;
-            e.preventDefault();
+          el.onclick = function(e){
+            if(dzModifiedClick(e)) return true;
+            if(e) e.preventDefault();
             fgSearchOpen('artwork', r.id);
+            return false;
           };
+          if(!el.href){
+            el.onkeydown = function(e){
+              if(e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              fgSearchOpen('artwork', r.id);
+            };
+          }
           wrap.appendChild(el);
         });
       } else {

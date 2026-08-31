@@ -5,11 +5,28 @@
 
     var loading = loadDB();
     await dzDomReady();
-    await loading;
-    renderHome();
-    if(typeof window._heroLoadCb === 'function'){
-      window._heroLoadCb(null);
+
+    // The loader covers the page and swallows every tap until it lifts, so
+    // it must not be tied to the network. Give the first query a short head
+    // start — on a good connection it lands well inside it and the grid is
+    // already painted — then reveal regardless. What is behind it is either
+    // the cached rows or the markup the server sent; the fresh rows land on
+    // top when they arrive. Before this, a first load that failed held the
+    // page for the nine-second fallback timer.
+    var revealed = false;
+    function reveal(){
+      if(revealed) return;
+      revealed = true;
+      if(typeof window._heroLoadCb === 'function') window._heroLoadCb(null);
     }
+    var headStart = setTimeout(reveal, 2500);
+
+    try{ await loading; }
+    catch(e){ console.error(e); }
+    clearTimeout(headStart);
+    try{ renderHome(); }
+    catch(e){ console.error(e); }
+    reveal();
     var stillBooting = (boot === null) ||
                        (typeof window.dzNavCurrent !== 'function') ||
                        window.dzNavCurrent(boot);
@@ -52,18 +69,27 @@
 
   var awArtworksCache = [];
 
-  function buildAwCard(item){
+  function buildAwCard(item, eager){
     var fullSrc = item.image_url || '';
     var name    = item.name || 'Untitled';
     var cat     = catList(item.category)[0] || 'others';
     var desc    = item.description || '';
     var id      = item.id;
 
-    var card = document.createElement('div');
+
+
+    // A real link, like the cards the server renders and the ones in the
+    // full gallery. A div swallows ctrl-click, middle-click and the URL
+    // preview, which is most of what a mouse is for.
+    var card = document.createElement('a');
     card.className = 'awCard';
-    card.setAttribute('role','button');
-    card.setAttribute('tabindex','0');
     card.setAttribute('aria-label','View ' + name);
+    if(id !== undefined && id !== null && id !== ''){
+      card.href = '/artwork/' + encodeURIComponent(String(id));
+    } else {
+      card.setAttribute('role','button');
+      card.setAttribute('tabindex','0');
+    }
 
     var wrap = document.createElement('div');
     wrap.className = 'awImgWrap awLoading';
@@ -71,12 +97,15 @@
     var img = document.createElement('img');
     img.onload  = function(){ wrap.classList.remove('awLoading'); };
     img.onerror = function(){ wrap.classList.remove('awLoading'); };
-    dzApplyThumb(img, fullSrc);
-    img.style.cssText = thumbStyle(item.thumb_x, item.thumb_y, item.thumb_zoom);
-    img.alt = name;
-    img.loading = 'lazy';
+
+    img.loading = eager ? 'eager' : 'lazy';
+    if(eager) img.setAttribute('fetchpriority', 'high');
     img.decoding = 'async';
     img.draggable = false;
+    img.alt = name;
+    img.style.cssText = thumbStyle(item.thumb_x, item.thumb_y, item.thumb_zoom);
+
+    dzApplyThumb(img, fullSrc);
 
     wrap.appendChild(img);
     if(typeof dzBuildHoverReveal === 'function') wrap.appendChild(dzBuildHoverReveal(item.user_id));
@@ -98,8 +127,19 @@
     card.appendChild(meta);
 
     (function(s,n,c,d,i){
-      card.onclick = function(){ openLB(s,n,c,d,i); };
-      card.onkeydown = function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openLB(s,n,c,d,i); } };
+      card.onclick = function(e){
+        if(dzModifiedClick(e)) return true;
+        if(e) e.preventDefault();
+        openLB(s,n,c,d,i);
+        return false;
+      };
+      if(!card.href){
+        card.onkeydown = function(e){
+          if(e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          openLB(s,n,c,d,i);
+        };
+      }
     })(fullSrc, name, cat, desc, id);
     return card;
   }

@@ -1,7 +1,9 @@
 #heroPitch{
   position:relative;
   background:var(--bg);
-  padding:calc(var(--dzTopH) + .7rem) var(--shellPad) clamp(2.2rem,5vw,3.4rem);
+  padding:calc(var(--dzTopOff) + clamp(.5rem,2.2vw,1.1rem))
+          var(--shellPad)
+          clamp(1.6rem,4.5vw,3.4rem);
 }
 .hpInner{max-width:760px;margin:0 auto;}
 
@@ -25,15 +27,15 @@
 .hpTab:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
 
 .hpHead{
-  margin:0 0 clamp(1.1rem,2.6vw,1.5rem);
+  margin:0 0 clamp(.9rem,2.6vw,1.5rem);
   font-family:var(--fd);font-weight:800;
-  font-size:clamp(1.85rem,5.6vw,3.1rem);
+  font-size:clamp(1.7rem,5.6vw,3.1rem);
   line-height:1.1;letter-spacing:-.02em;color:var(--tx);
   text-wrap:balance;
 }
 .hpHead em{font-style:normal;color:var(--brand-red);}
 
-.hpList{list-style:none;margin:0 0 clamp(1.5rem,3.5vw,2rem);padding:0;display:flex;flex-direction:column;gap:.7rem;}
+.hpList{list-style:none;margin:0 0 clamp(1.2rem,3.5vw,2rem);padding:0;display:flex;flex-direction:column;gap:clamp(.5rem,1.8vw,.7rem);}
 .hpList li{display:flex;align-items:flex-start;gap:.65rem;font-family:var(--fb);font-size:clamp(.9rem,2.2vw,1rem);line-height:1.45;color:var(--txd);}
 .hpTick{
   flex-shrink:0;width:20px;height:20px;margin-top:.08rem;border-radius:50%;
@@ -55,11 +57,22 @@
 
 .hpPanel.hpIn > *,
 .hpPanel.hpIn > .hpList li{animation:none;opacity:1;transform:none;}
+/* A phone on its side has about 390px of height. Tabs, a headline, three
+   bullets and a button fill all of it, so the art — the thing the page is
+   for — starts below the fold. The bullets are the part that keeps. */
+@media(max-height:500px) and (orientation:landscape){
+  #heroPitch{padding-bottom:1rem;}
+  .hpList{display:none;}
+  .hpHead{margin-bottom:.9rem;font-size:clamp(1.5rem,4.4vw,2.2rem);}
+  .hpTabs{margin-bottom:.9rem;}
+}
+
 @media(prefers-reduced-motion:reduce){
   .hpCta,.hpTab{transition:none;}
 }
 @media(max-width:480px){
   .hpTab{padding:.5rem .95rem;font-size:.82rem;}
+  .hpTabs{margin-bottom:clamp(1.1rem,4vw,1.4rem);}
 }
 
 .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
@@ -531,16 +544,20 @@
   border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);
   box-shadow:0 -8px 40px rgba(5,3,8,.75),inset 0 1px 0 color-mix(in srgb,var(--tc) 14%,transparent);
   border-radius:6px 6px 0 0;
-  max-height:88vh;overflow-y:auto;
+  max-height:min(88vh,88dvh);overflow-y:auto;
+  padding-bottom:var(--sab);
   transform:translateY(100%);
   transition:transform .4s cubic-bezier(.22,1,.36,1);
 }
 #fgFltPanel.open{transform:translateY(0);}
 @media(min-width:641px){
   #fgFltPanel{
-    bottom:auto;top:64px;right:1.4rem;left:auto;
+    bottom:auto;top:calc(64px + var(--sat));right:1.4rem;left:auto;
     border-radius:6px;border:1px solid var(--bdrh);
-    max-width:300px;max-height:calc(100vh - 80px);
+    padding-bottom:0;
+    max-width:300px;
+    max-height:calc(100vh - 80px);
+    max-height:calc(100dvh - 80px - var(--sat));
     transform:translateY(-8px) scale(.97);
     opacity:0;
     pointer-events:none;
@@ -687,7 +704,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   margin:3rem auto;
   padding:4rem 2rem;
   box-sizing:border-box;
-  min-height:48vh;
+  min-height:min(48vh,48dvh);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   text-align:center;
 }
@@ -707,7 +724,12 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 #artworks.hsOn > .awGrid:not(#hsResults){display:none;}
 #artworks.hsOn .awEmpty{display:none!important;}
 
-@media(min-width:1024px){
+@media(min-width:700px) and (max-width:1279px){
+
+  #artworks .ftRail{--ftInset:1rem;}
+}
+
+@media(min-width:1280px){
   .awTop{
     display:flex;align-items:center;gap:.55rem;
     margin:1.25rem 0 0;padding:0 var(--shellPad);
@@ -862,7 +884,7 @@ html[data-theme="offwhite"] .ftTab{--ftS1:var(--ftAL);--ftS2:var(--ftBL);}
 }
 @keyframes dzPayIn{from{opacity:0;}to{opacity:1;}}
 .dzPayCard{
-  position:relative;width:100%;max-width:400px;max-height:88vh;overflow-y:auto;
+  position:relative;width:100%;max-width:400px;max-height:min(88vh,88dvh);overflow-y:auto;
   padding:1.4rem 1.25rem 1.25rem;border:1px solid var(--bdr);border-radius:16px;
   background:var(--sur);box-shadow:0 24px 60px rgba(0,0,0,.45);
 }

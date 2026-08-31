@@ -777,12 +777,17 @@
       }
     }catch(e){
       console.error(e);
-      var old = await c.recall(GAL_ALL, 'gallery:latest');
-      if(!old || !old.length) old = c.peek(GAL_TOP, 'gallery:latest', { any:true });
-      if(old && old.length){
-        images = old.slice();
-        showToast('Offline — showing saved artworks');
-      }
+      // The recovery read can fail too — a blocked IndexedDB, a storage
+      // quota, a browser in private mode. It must not take the boot with
+      // it: the page behind the loader stays uninteractive until it ends.
+      try{
+        var old = await c.recall(GAL_ALL, 'gallery:latest');
+        if(!old || !old.length) old = c.peek(GAL_TOP, 'gallery:latest', { any:true });
+        if(old && old.length){
+          images = old.slice();
+          showToast('Offline — showing saved artworks');
+        }
+      }catch(e2){ console.error(e2); }
     }
   }
 
@@ -832,10 +837,25 @@
     return dpr > DZ_DPR_CAP ? (DZ_DPR_CAP / dpr) : 1;
   }
 
+
+
+  var DZ_GRID_SIZES = [
+    ['(min-width:2000px)', 268, 'px'],
+    ['(min-width:1600px)', 320, 'px'],
+    ['(min-width:1440px)', 16,  'vw'],
+    ['(min-width:1024px)', 20,  'vw'],
+    ['(min-width:1000px)', 22,  'vw'],
+    ['(min-width:768px)',  30,  'vw'],
+    ['(min-width:700px)',  32,  'vw'],
+    ['',                   48,  'vw']
+  ];
+
   function dzGridSizes(){
     var s = dzDprScale();
-    var f = function(vw){ return +(vw * s).toFixed(2); };
-    return '(min-width:1280px) ' + f(25) + 'vw, (min-width:700px) ' + f(33.33) + 'vw, ' + f(50) + 'vw';
+    return DZ_GRID_SIZES.map(function(row){
+      var v = +(row[1] * s).toFixed(2) + row[2];
+      return row[0] ? row[0] + ' ' + v : v;
+    }).join(', ');
   }
 
   function dzSrcset(url){
@@ -858,7 +878,18 @@
     if(ss){ im.srcset = ss; im.sizes = dzGridSizes(); }
     im.src = getThumbnailUrl(url || '');
   }
-  function itemHTML(img){
+
+
+  /* A click a link should be allowed to handle itself: open in a new tab,
+     a new window, a download. Anything that intercepts a card click has to
+     let these through or the card stops behaving like a link. */
+  function dzModifiedClick(e){
+    return !!(e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1));
+  }
+  window.dzModifiedClick = dzModifiedClick;
+
+  function itemHTML(img, idx){
+    const eager = typeof idx === 'number' && idx < 4;
     const thumbAttrs=dzThumbAttrs(img.image_url||'');
     const thumbPos=thumbStyle(img.thumb_x, img.thumb_y, img.thumb_zoom);
     const fullSrc=esc(img.image_url);
@@ -879,7 +910,7 @@
     return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
         <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>${multiBadge}
-        <img ${thumbAttrs} alt="${altText}" loading="lazy" decoding="async" itemprop="contentUrl" style="${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
+        <img ${thumbAttrs} alt="${altText}" loading="${eager?'eager':'lazy'}"${eager?' fetchpriority="high"':''} decoding="async" itemprop="contentUrl" style="${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
         <div class="gOv"></div>
         ${artistChip}
         <div class="gNm" itemprop="name">${esc(img.name)}</div>
@@ -1041,12 +1072,19 @@
   function dzScopeBump(){ DZ_SCOPE_SEQ++; }
   function dzScopeStill(token){ return token != null && token === dzScope(); }
 
+
+
   function gridCols(){
     var w = window.innerWidth || document.documentElement.clientWidth || 1280;
-    return w >= 1280 ? 4 : (w >= 700 ? 3 : 2);
+    if(w >= 2000) return 6;
+    if(w >= 1440) return 5;
+    if(w >= 1000) return 4;
+    if(w >= 700)  return 3;
+    return 2;
   }
-  function gridInitialBatch(){ var c = gridCols(); return c === 4 ? 16 : (c === 3 ? 12 : 10); }
-  function gridStepBatch(){    var c = gridCols(); return c === 4 ?  8 : (c === 3 ?  6 :  4); }
+
+  function gridInitialBatch(){ return Math.max(10, gridCols() * 4); }
+  function gridStepBatch(){    return gridCols() * 2; }
 
   function makeGridSentinel(rootEl, onHit, existingEl){
     var sent = existingEl || document.createElement('div');
@@ -1182,7 +1220,8 @@
     if(!grid || fgVisible >= fgList.length) return;
     var next = fgList.slice(fgVisible, fgVisible + gridStepBatch());
     fgVisible += next.length;
-    grid.insertAdjacentHTML('beforeend', next.map(itemHTML).join(''));
+    var from = fgVisible - next.length;
+    grid.insertAdjacentHTML('beforeend', next.map(function(x, i){ return itemHTML(x, from + i); }).join(''));
     if(fgVisible >= fgList.length){
       if(fgSent){ fgSent.destroy(); fgSent = null; }
     } else if(fgSent){

@@ -12,6 +12,12 @@ const ALLOW_UNCACHED = new Set([
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 const sw = readFileSync(join(root, 'sw.js'), 'utf8');
 
+// index.html is no longer the only place an asset is referenced: js/lazy.js
+// holds the manifest of chunks the page fetches on demand. Both are sources
+// of truth for "what the app can load", and sw.js follows both.
+const lazy = readFileSync(join(root, 'js', 'lazy.js'), 'utf8');
+const refs = html + '\n' + lazy.replace(/'(\/[^']+)'/g, 'src="$1"');
+
 const open = sw.indexOf('const SHELL_URLS');
 if (open === -1) fail('could not find `const SHELL_URLS` in sw.js');
 const close = sw.indexOf('];', open);
@@ -37,7 +43,7 @@ for (const url of shellRaw) {
 }
 
 const loaded = new Map();
-for (const [, url] of html.matchAll(/(?:src|href)="(\/(?:js|css)\/[^"]+)"/g)) {
+for (const [, url] of refs.matchAll(/(?:src|href)="(\/(?:js|css)\/[^"]+)"/g)) {
   if (!GOVERNED.test(url)) continue;
   if (ALLOW_UNCACHED.has(url)) continue;
   const [path, version] = split(url);
@@ -51,14 +57,14 @@ for (const [path, want] of loaded) {
     problems.push({
       kind: 'not precached',
       path,
-      detail: `index.html loads ${show(want)}, sw.js has no entry`,
+      detail: `the app loads ${show(want)}, sw.js has no entry`,
       fix: `add '${withVersion(path, want)}' to SHELL_URLS`,
     });
   } else if (got !== want) {
     problems.push({
       kind: 'version drift',
       path,
-      detail: `index.html loads ${show(want)}, sw.js precaches ${show(got)}`,
+      detail: `the app loads ${show(want)}, sw.js precaches ${show(got)}`,
       fix: `change SHELL_URLS to '${withVersion(path, want)}'`,
     });
   }
@@ -68,8 +74,8 @@ for (const [path, version] of shell) {
   problems.push({
     kind: 'precached but unused',
     path,
-    detail: `sw.js precaches ${show(version)}, index.html does not load it`,
-    fix: `drop '${withVersion(path, version)}' from SHELL_URLS, or load it in index.html`,
+    detail: `sw.js precaches ${show(version)}, nothing loads it`,
+    fix: `drop '${withVersion(path, version)}' from SHELL_URLS, or load it from index.html or js/lazy.js`,
   });
 }
 for (const path of dupes) {
@@ -81,7 +87,7 @@ for (const path of dupes) {
   });
 }
 
-for (const [, url] of html.matchAll(/(?:src|href)="(\/(?:js|css)\/[^"]+)"/g)) {
+for (const [, url] of refs.matchAll(/(?:src|href)="(\/(?:js|css)\/[^"]+)"/g)) {
   if (/\/js\/vendor\//.test(url)) continue;
   if (ALLOW_UNCACHED.has(url)) continue;
   const [path, version] = split(url);
@@ -89,14 +95,14 @@ for (const [, url] of html.matchAll(/(?:src|href)="(\/(?:js|css)\/[^"]+)"/g)) {
   problems.push({
     kind: 'unversioned',
     path,
-    detail: 'index.html loads it with no ?v=, and _headers serves /js/* and ' +
+    detail: 'it is loaded with no ?v=, and _headers serves /js/* and ' +
             '/css/* as immutable for a year',
     fix: `load it as '${path}?v=1' and add that url to SHELL_URLS`,
   });
 }
 
 if (problems.length === 0) {
-  console.log(`precache ok — ${loaded.size} versioned assets, index.html and sw.js agree`);
+  console.log(`precache ok — ${loaded.size} versioned assets, index.html + js/lazy.js and sw.js agree`);
   process.exit(0);
 }
 
@@ -106,8 +112,9 @@ for (const p of problems) {
   console.error(`    ${p.detail}`);
   console.error(`    fix: ${p.fix}\n`);
 }
-console.error('index.html is the authority: it is the only place these assets are');
-console.error('referenced, so sw.js follows it. Bump CACHE_VERSION with the fix so');
+console.error('index.html and js/lazy.js are the authority: between them they are');
+console.error('the only places these assets are referenced, so sw.js follows both.');
+console.error('Bump CACHE_VERSION with the fix so');
 console.error('installed clients refill against the corrected list.\n');
 process.exit(1);
 

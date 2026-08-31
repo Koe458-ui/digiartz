@@ -281,8 +281,8 @@
     m.style.left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8)) + 'px';
     setTimeout(function(){
       document.addEventListener('click', albMenuClose, true);
-      window.addEventListener('resize', albMenuClose, true);
-      window.addEventListener('scroll', albMenuClose, true);
+      window.addEventListener('resize', albMenuClose, { capture:true, passive:true });
+      window.addEventListener('scroll', albMenuClose, { capture:true, passive:true });
     }, 0);
   }
   async function albMenuVis(src, id){

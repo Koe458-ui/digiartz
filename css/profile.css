@@ -70,7 +70,10 @@
 
 .pfBanner{
   position:relative;width:100%;
-  height:clamp(132px,30vw,300px);
+  /* A banner that is 30vw tall eats two thirds of a phone held sideways,
+     so it is also held to a share of the height it actually has. */
+  height:min(clamp(132px,30vw,300px),38dvh);
+  min-height:132px;
   background:
     radial-gradient(120% 150% at 20% 12%,rgba(59,130,246,.40),transparent 62%),
     linear-gradient(160deg,color-mix(in srgb,#1E3A8A 26%,var(--sur2)) 0%,var(--sur2) 62%);

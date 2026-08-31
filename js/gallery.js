@@ -842,7 +842,7 @@
 
   function handleArtClick(e,id){
     if(e){
-      if(e.metaKey||e.ctrlKey||e.shiftKey||e.button===1) return true;
+      if(dzModifiedClick(e)) return true;
       e.preventDefault();
     }
     var el = document.querySelector('.gItem[data-id="'+id+'"]');

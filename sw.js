@@ -55,7 +55,7 @@ const SHELL_URLS = [
   '/js/badwords.js?v=4',
   '/js/captcha.js?v=3',
 
-  '/js/boot.js?v=1',
+  '/js/boot.js?v=2',
   '/js/cache.js?v=2',
   '/js/ranking.js?v=5',
   '/js/community.js?v=8',
@@ -92,8 +92,10 @@ const SHELL_URLS = [
      visitor already has them when they ask. */
   '/js/analytics.js?v=14',
   '/js/hubs.js?v=4',
+  '/js/secview.js?v=1',
   '/js/engagement.js?v=10',
-  '/js/sections.js?v=133',
+  '/js/sections.js?v=134',
+  '/js/heropitch.js?v=1',
   '/js/routes.js?v=4',
   '/js/topnav.js?v=11',
   '/js/navprogress.js?v=7'

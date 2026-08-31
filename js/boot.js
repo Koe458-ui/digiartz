@@ -101,8 +101,20 @@
 
   var watched = [];
 
+  /* An <img src> inside a closed panel is still fetched: the panel is only
+     translated off-screen, and loading="lazy" does not save it either. Spell
+     it data-src and it waits for the panel it lives in. */
+  function wake(el){
+    var imgs = el.querySelectorAll('img[data-src]');
+    for(var i = 0; i < imgs.length; i++){
+      imgs[i].src = imgs[i].getAttribute('data-src');
+      imgs[i].removeAttribute('data-src');
+    }
+  }
+
   function apply(el){
     var open = el.classList.contains('open');
+    if(open) wake(el);
     if(el.inert === !open) return;
     el.inert = !open;
   }

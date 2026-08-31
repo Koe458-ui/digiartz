@@ -143,7 +143,6 @@
   <link rel="stylesheet" href="/css/widgets.css?v=20">
   <link rel="stylesheet" href="/css/overrides.css?v=44">
   <link rel="stylesheet" href="/css/select.css?v=5">
-  <link rel="stylesheet" href="/css/analytics.css?v=12">
  </head>
  <body>
 
@@ -490,7 +489,7 @@
     </div>
     <div class="awEmpty" id="awEmpty" style="display:none;">NO ARTWORK YET</div>
   </section>
-  <script defer src="/js/boot.js?v=1"></script>
+  <script defer src="/js/boot.js?v=2"></script>
   <script defer src="/js/cache.js?v=2"></script>
   <script defer src="/js/ranking.js?v=5"></script>
 
@@ -2717,7 +2716,7 @@
     <div class="cmFriendList">
       <div class="cmFriendItem" id="zeoRow" role="button" tabindex="0" onclick="zeoOpen()">
         <div class="cmFriendAvatar zeoChip">
-          <img src="/zeo-avatar.png?v=6" alt="" draggable="false"
+          <img data-src="/zeo-avatar.png?v=6" alt="" draggable="false" loading="lazy" decoding="async"
                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
           <span class="cmFriendAvatarFallback" style="display:none;">🤖</span>
         </div>
@@ -2881,7 +2880,8 @@
   <script defer src="/js/engagement.js?v=10"></script>
 
 
-  <script defer src="/js/sections.js?v=133"></script>
+  <script defer src="/js/sections.js?v=134"></script>
+  <script defer src="/js/heropitch.js?v=1"></script>
   <script defer src="/js/routes.js?v=4"></script>
 
   <script defer src="/js/topnav.js?v=11"></script>

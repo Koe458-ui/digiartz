@@ -320,6 +320,21 @@
      for this rather than carrying its own copy. */
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
+  /* A block of outside links, each shown without its scheme and made a link
+     only when it really is one. The artwork viewer and the section viewer
+     draw the same list under the same heading. */
+  window.dzLinkBlock = function(head, arr){
+    if(!Array.isArray(arr) || !arr.length) return '';
+    return '<div><div class="avBlockH">'+esc(head)+'</div><ul class="dzvRefs">'+
+      arr.map(function(u){
+        var safe = /^https?:\/\//i.test(String(u||'')) ? String(u) : '';
+        var show = String(u||'').replace(/^https?:\/\//i,'');
+        return safe
+          ? '<li><a href="'+esc(safe)+'" target="_blank" rel="noopener nofollow">'+esc(show)+'</a></li>'
+          : '<li>'+esc(show)+'</li>';
+      }).join('')+'</ul></div>';
+  };
+
   function safeErr(e, fallback){
     var m = (e && e.message) ? String(e.message) : '';
     var internal = /row-level security|violates|constraint|relation |column |permission denied|JWT|supabase|postgres|duplicate key|null value|schema cache|Failed to fetch|NetworkError|\b(42501|23505|23503)\b|PGRST/i;

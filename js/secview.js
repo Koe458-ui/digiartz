@@ -685,17 +685,7 @@
     if(!body) return '';
     return head ? '<div><div class="avBlockH">'+esc(head)+'</div>'+body+'</div>' : body;
   }
-  function linkBlock(head, arr){
-    if(!Array.isArray(arr) || !arr.length) return '';
-    return '<div><div class="avBlockH">'+esc(head)+'</div><ul class="dzvRefs">'+
-      arr.map(function(u){
-        var safe = /^https?:\/\//i.test(String(u||'')) ? String(u) : '';
-        var show = String(u||'').replace(/^https?:\/\//i,'');
-        return safe
-          ? '<li><a href="'+esc(safe)+'" target="_blank" rel="noopener nofollow">'+esc(show)+'</a></li>'
-          : '<li>'+esc(show)+'</li>';
-      }).join('')+'</ul></div>';
-  }
+  var linkBlock = window.dzLinkBlock;
   function jobBlock(head, body){
     body = String(body == null ? '' : body).trim();
     if(!body) return '';

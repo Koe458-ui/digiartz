@@ -65,9 +65,9 @@ const SHELL_URLS = [
   '/js/composer.js?v=3',
   '/js/share.js?v=3',
   '/js/misc-core.js?v=7',
-  '/js/app-core.js?v=49',
+  '/js/app-core.js?v=51',
   '/js/protect.js?v=4',
-  '/js/gallery.js?v=107',
+  '/js/gallery.js?v=109',
   '/js/fghead.js?v=5',
   '/js/auth.js?v=27',
   '/js/profile.js?v=22',
@@ -86,13 +86,13 @@ const SHELL_URLS = [
   '/js/legal-content.js?v=4',
   '/js/theme.js?v=10',
   '/js/antrack.js?v=1',
-  '/js/lazy.js?v=4',
+  '/js/lazy.js?v=5',
 
   /* chunks: fetched on demand by js/lazy.js, precached so a returning
      visitor already has them when they ask. */
   '/js/analytics.js?v=17',
   '/js/hubs.js?v=4',
-  '/js/secview.js?v=2',
+  '/js/secview.js?v=4',
   '/js/engagement.js?v=10',
   '/js/sections.js?v=138',
   '/js/heropitch.js?v=3',

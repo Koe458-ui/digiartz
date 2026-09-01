@@ -310,8 +310,8 @@ const HEAD = `
   // Accounts. The queue a partner is here for, and the one the ban engine
   // acts on. dz_reports_queue already narrows a partner's rows to the accounts
   // they may act on, so nothing is filtered here.
-  // One card, whichever queue the row came from. `who` and `meta` are already
-  // escaped markup; `details` is the reporter's own words and the one field on
+  // One card, whichever queue the row came from. who and meta are already
+  // escaped markup; details is the reporter's own words and the one field on
   // the card somebody else typed, so it goes in as text.
   function rptFill(p, rows, card){
     if(!rows.length) return rptEmpty(p);

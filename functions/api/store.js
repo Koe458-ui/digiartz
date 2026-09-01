@@ -329,19 +329,30 @@ const MODULE = `
   function orderMoney(o){ return moneyMinor(o.amount, o.currency); }
 
   // ---- provider sdks ------------------------------------------------------
-  var rzpP = null;
-  function loadRzp(){
-    if(window.Razorpay) return Promise.resolve();
-    if(rzpP) return rzpP;
-    rzpP = new Promise(function(res, rej){
+  // One <script> loader for both. ready() reads back the global the script
+  // defines, so a load that answers with something other than the sdk is a
+  // failure, and a failed load is retried the next time the buyer asks.
+  var sdks = {};
+  function loadSdk(key, src, attrs, ready){
+    var got = ready();
+    if(got) return Promise.resolve(got);
+    if(sdks[key]) return sdks[key];
+    sdks[key] = new Promise(function(res, rej){
+      function fail(){ delete sdks[key]; rej(new Error('Could not load the payment window')); }
       var s = document.createElement('script');
-      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      s.src = src;
       s.async = true;
-      s.onload = res;
-      s.onerror = function(){ rzpP = null; rej(new Error('Could not load the payment window')); };
+      for(var a in attrs) s.setAttribute(a, attrs[a]);
+      s.onload = function(){ var g = ready(); if(g) res(g); else fail(); };
+      s.onerror = fail;
       document.head.appendChild(s);
     });
-    return rzpP;
+    return sdks[key];
+  }
+
+  function loadRzp(){
+    return loadSdk('rzp', 'https://checkout.razorpay.com/v1/checkout.js', null,
+      function(){ return window.Razorpay; });
   }
 
   // PayPal is the PayPal account and nothing else here.
@@ -360,26 +371,14 @@ const MODULE = `
   // USD plan need two different loads. Each gets its own global through
   // data-namespace — without that the second script would quietly win and the
   // buttons would quote the wrong currency.
-  var ppLoads = {};
   function loadPP(clientId, currency){
     var ns = 'dzpp_' + currency;
-    if(window[ns]) return Promise.resolve(window[ns]);
-    if(ppLoads[ns]) return ppLoads[ns];
-    ppLoads[ns] = new Promise(function(res, rej){
-      var s = document.createElement('script');
-      s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) +
-              '&currency=' + encodeURIComponent(currency) +
-              '&intent=capture&components=buttons&disable-funding=' + PP_OFF;
-      s.setAttribute('data-namespace', ns);
-      s.async = true;
-      s.onload = function(){
-        if(window[ns]) res(window[ns]);
-        else { delete ppLoads[ns]; rej(new Error('Could not load the payment window')); }
-      };
-      s.onerror = function(){ delete ppLoads[ns]; rej(new Error('Could not load the payment window')); };
-      document.head.appendChild(s);
-    });
-    return ppLoads[ns];
+    return loadSdk(ns,
+      'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) +
+      '&currency=' + encodeURIComponent(currency) +
+      '&intent=capture&components=buttons&disable-funding=' + PP_OFF,
+      { 'data-namespace': ns },
+      function(){ return window[ns]; });
   }
 
   // ---- backends -----------------------------------------------------------

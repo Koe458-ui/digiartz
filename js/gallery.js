@@ -220,18 +220,8 @@
     }
     var links = document.getElementById('avLinkBlocks');
     if(links){
-      var lo = '';
-      if(art && Array.isArray(art.external_links) && art.external_links.length){
-        lo = '<div class="avDiv"></div><div><div class="avBlockH">Links</div><ul class="dzvRefs">'+
-          art.external_links.map(function(u){
-            var safe = /^https?:\/\//i.test(String(u||'')) ? String(u) : '';
-            var show = String(u||'').replace(/^https?:\/\//i,'');
-            return safe
-              ? '<li><a href="'+esc(safe)+'" target="_blank" rel="noopener nofollow">'+esc(show)+'</a></li>'
-              : '<li>'+esc(show)+'</li>';
-          }).join('')+'</ul></div>';
-      }
-      links.innerHTML = lo;
+      var lo = art ? window.dzLinkBlock('Links', art.external_links) : '';
+      links.innerHTML = lo ? '<div class="avDiv"></div>' + lo : '';
     }
     var off = !!(art && art.comments_allowed === false);
     var bar = document.querySelector('#artModal .avCmBar');

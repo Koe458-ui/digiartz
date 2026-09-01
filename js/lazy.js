@@ -37,7 +37,7 @@
       api: ['zeoOpen', 'zeoHide']
     },
     secview: {
-      src: ['/js/secview.js?v=2'],
+      src: ['/js/secview.js?v=4'],
       // Opening an artwork calls dzVwFill for the author card, so unlike the
       // rest of these this one sits on a path people take. It is warmed in
       // the background rather than waited for.

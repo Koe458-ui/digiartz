@@ -459,6 +459,21 @@ function hideCommentThumbnail(){
     }catch(e){ if(!cmMineRows.length && wrap) wrap.style.display='none'; }
   }
 
+  /* An avatar box: their picture, or the first letter of their name when
+     there is none — and when the picture will not load, which is the same
+     thing as far as somebody looking at it is concerned. */
+  function cmAvatar(box, url, name, style){
+    var letter = String(name || '?').charAt(0).toUpperCase();
+    box.textContent = '';
+    if(!url){ box.textContent = letter; return; }
+    var im = document.createElement('img');
+    im.src = getThumbnailUrl(url);
+    im.alt = '';
+    if(style) im.style.cssText = style;
+    im.onerror = function(){ im.remove(); box.textContent = letter; };
+    box.appendChild(im);
+  }
+
   function cmRenderMine(rows){
     var wrap = document.getElementById('cmMineWrap');
     var grid = document.getElementById('cmMineGrid');
@@ -478,14 +493,8 @@ function hideCommentThumbnail(){
         var ico = document.createElement('div');
         ico.className = 'cmCardIcon';
         ico.style.background = 'linear-gradient(135deg,#1e3a8a 0%,#3b82f6 55%,#60a5fa 100%)';
-        if(c.avatar_url){
-          var im = document.createElement('img');
-          im.src = getThumbnailUrl(c.avatar_url);
-          im.alt = ''; im.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:inherit;';
-          ico.textContent=''; ico.appendChild(im);
-        } else {
-          ico.textContent = (c.name || '?').charAt(0).toUpperCase();
-        }
+        cmAvatar(ico, c.avatar_url, c.name,
+                 'width:100%;height:100%;object-fit:cover;border-radius:inherit;');
         var meta = document.createElement('div');
         meta.className = 'cmCardMeta';
         var nm = document.createElement('div');
@@ -712,13 +721,7 @@ function hideCommentThumbnail(){
       row.className = 'cmMemRow';
       var ava = document.createElement('div');
       ava.className = 'cmMemAva';
-      if(p.avatar_url){
-        var im = document.createElement('img');
-        im.src = getThumbnailUrl(p.avatar_url); im.alt = '';
-        ava.appendChild(im);
-      } else {
-        ava.textContent = (p.display_name || p.username || '?').charAt(0).toUpperCase();
-      }
+      cmAvatar(ava, p.avatar_url, p.display_name || p.username);
       var nm = document.createElement('div');
       nm.className = 'cmMemName';
       nm.textContent = p.display_name || p.username || 'User';
@@ -787,15 +790,7 @@ function hideCommentThumbnail(){
   function cmiPaintIconPreview(){
     var el = cmiEl('cmiIconPrev'); if(!el) return;
     var url = cmi.c && cmi.c.avatar_url;
-    el.textContent = '';
-    if(url){
-      var im = document.createElement('img');
-      im.src = getThumbnailUrl(url); im.alt = '';
-      im.onerror = function(){ im.remove(); el.textContent = ((cmi.c && cmi.c.name) || '?').charAt(0).toUpperCase(); };
-      el.appendChild(im);
-    } else {
-      el.textContent = ((cmi.c && cmi.c.name) || '?').charAt(0).toUpperCase();
-    }
+    cmAvatar(el, url, cmi.c && cmi.c.name);
     var clear = cmiEl('cmiIconClear');
     if(clear) clear.hidden = !url;
   }
@@ -1025,14 +1020,7 @@ function hideCommentThumbnail(){
 
       var ico = document.createElement('div');
       ico.className = 'cmCardIcon cmBrwIco';
-      if(c.avatar_url){
-        var im = document.createElement('img');
-        im.src = getThumbnailUrl(c.avatar_url); im.alt = '';
-        im.onerror = function(){ im.remove(); ico.textContent = (c.name||'?').charAt(0).toUpperCase(); };
-        ico.appendChild(im);
-      } else {
-        ico.textContent = (c.name || '?').charAt(0).toUpperCase();
-      }
+      cmAvatar(ico, c.avatar_url, c.name);
 
       var meta = document.createElement('div');
       meta.className = 'cmBrwMeta';
@@ -1095,28 +1083,24 @@ function hideCommentThumbnail(){
 
   var cmuUser = null, cmuView = 'main';
 
-  function cmuAct(label, fn, danger){
+  /* One row in an action sheet. */
+  function cmActItem(host, label, fn, danger){
     var b = document.createElement('button');
     b.className = 'cmActItem' + (danger ? ' cmActItem--danger' : '');
     b.textContent = label;
     b.onclick = fn;
-    document.getElementById('cmuActs').appendChild(b);
+    host.appendChild(b);
+    return b;
+  }
+  function cmuAct(label, fn, danger){
+    cmActItem(document.getElementById('cmuActs'), label, fn, danger);
   }
 
   function cmUserOpen(p, mem, view){
     if(!p || !p.id) return;
     cmuUser = p;
     cmuView = view || 'main';
-    var ava = document.getElementById('cmuAva');
-    ava.textContent = '';
-    if(p.avatar){
-      var im = document.createElement('img');
-      im.src = getThumbnailUrl(p.avatar); im.alt = '';
-      im.onerror = function(){ im.remove(); ava.textContent = (p.name || '?').charAt(0).toUpperCase(); };
-      ava.appendChild(im);
-    } else {
-      ava.textContent = (p.name || '?').charAt(0).toUpperCase();
-    }
+    cmAvatar(document.getElementById('cmuAva'), p.avatar, p.name);
     document.getElementById('cmuName').textContent   = p.name || 'User';
     document.getElementById('cmuHandle').textContent = p.username ? ('@' + p.username) : '…';
     var acts = document.getElementById('cmuActs');
@@ -1222,12 +1206,7 @@ function hideCommentThumbnail(){
     document.getElementById('cmTxtQuote').textContent = msg.text || '';
     var acts = document.getElementById('cmTxtActs');
     acts.innerHTML = '';
-    function add(label, fn, danger){
-      var b = document.createElement('button');
-      b.className = 'cmActItem' + (danger ? ' cmActItem--danger' : '');
-      b.textContent = label; b.onclick = fn;
-      acts.appendChild(b);
-    }
+    function add(label, fn, danger){ cmActItem(acts, label, fn, danger); }
     var mine = !!(currentUser && msg.user_id && String(msg.user_id) === String(currentUser.id));
     var canModerate = cmi.cid && cmi.rank >= 2;
 
@@ -1286,15 +1265,11 @@ function hideCommentThumbnail(){
     var box = document.getElementById('cmRptReasons');
     box.innerHTML = '';
     CM_RPT_REASONS.forEach(function(reason){
-      var b = document.createElement('button');
-      b.className = 'cmActItem';
-      b.textContent = reason;
-      b.onclick = function(){
+      var b = cmActItem(box, reason, function(){
         cmRpt.reason = reason;
         Array.prototype.forEach.call(box.children, function(c){ c.classList.remove('cmActItem--on'); });
         b.classList.add('cmActItem--on');
-      };
-      box.appendChild(b);
+      });
     });
     cmOpenMod('cmRptMod');
   }

@@ -59,25 +59,15 @@
     500,518,536,554,572,591,610,629,648,668,688,708,728,749,770,791,812,834,856,878,
     900,923,946,969,992,1016,1040,1064,1089,1115,1141,1167,1193,1220,1247,1274,1301,1329,1357,1385,
     1413,1442,1471,1500,1529,1559,1589,1619,1649,1680,1711,1742,1773,1805,1837,1869,1901,1934,1967,2000];
-  var RANKS = [
-    { lvl: 5,   name: 'New Artist' },
-    { lvl: 10,  name: 'Sketch Explorer' },
-    { lvl: 20,  name: 'Creative Soul' },
-    { lvl: 35,  name: 'Gallery Artist' },
-    { lvl: 50,  name: 'Community Star' },
-    { lvl: 70,  name: 'Master Creator' },
-    { lvl: 85,  name: 'Elite Artist' },
-    { lvl: 100, name: 'DigiArtz Legend' }
-  ];
   function levelOf (xp) {
     var l = 1;
     for (var i = 0; i < XP_TOTALS.length; i++) { if (xp >= XP_TOTALS[i]) l = i + 1; else break; }
     return l;
   }
+  /* The same eight tiers the ribbon above is drawn from. */
   function rankTitle (level) {
-    var t = 'Newcomer';
-    RANKS.forEach(function (r) { if (level >= r.lvl) t = r.name; });
-    return t;
+    var t = window.DZ_MS && window.DZ_MS.tierFor(level);
+    return t ? t.name : 'Newcomer';
   }
   function el (tag, cls, text) {
     var e = document.createElement(tag);
@@ -185,7 +175,7 @@
     var mile = el('div', 'xpCard');
     mile.appendChild(el('div', 'xpCardLbl', 'ARTIST MILESTONES'));
     var curTitle = rankTitle(level);
-    RANKS.forEach(function (r) {
+    ((window.DZ_MS && DZ_MS.TIERS) || []).forEach(function (r) {
       var done = level >= r.lvl;
       var row = el('div', 'xpMile' + (done ? ' done' : '') + (done && r.name === curTitle ? ' cur' : ''));
       var t = window.DZ_MS && DZ_MS.tierFor(r.lvl);

@@ -9,11 +9,6 @@
   function $ (id) { return document.getElementById(id); }
   function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
   function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
-  function escq (s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
   function toast (m) { if (typeof showToast === 'function') showToast(m); }
   function when (iso) {
     var d = new Date(iso), diff = (Date.now() - d.getTime()) / 6e4;
@@ -387,7 +382,7 @@
       var cont = lastSender === m.sender_id && ts && (ts - lastTs) < 300000;
       lastSender = m.sender_id; lastTs = ts;
       msgHtml += '<div class="dmMsg ' + (mine ? 'dmMsg--me' : 'dmMsg--them') + (cont ? ' dmMsg--cont' : '') + '">' +
-               escq(m.content) +
+               esc(m.content) +
                '<span class="dmMsgTime">' + hhmm(m.created_at) + '</span>' +
              '</div>';
     });

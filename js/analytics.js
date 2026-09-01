@@ -90,11 +90,6 @@
 
   function full(n) { return Number(n || 0).toLocaleString(); }
   function pct(n) { return (Math.round(Number(n || 0) * 10) / 10) + '%'; }
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
   function delta(cur, prev) {
     cur = Number(cur) || 0; prev = Number(prev) || 0;
     if (prev === 0) {

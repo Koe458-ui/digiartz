@@ -34,7 +34,6 @@
              '<polyline points="20 6 9 17 4 12"/></svg></span>';
   var cur = 0;
 
-  function esc2(s){ return (typeof esc === 'function') ? esc(s) : String(s); }
 
   function go(to){
     if(to === 'sell'){
@@ -56,7 +55,7 @@
     host.innerHTML = TABS.map(function(t, i){
       return '<button class="hpTab" type="button" role="tab" id="hpTab-'+t.id+'"'+
              ' aria-selected="'+(i === cur)+'" tabindex="'+(i === cur ? '0' : '-1')+'"'+
-             ' onclick="hpSelect('+i+')">'+esc2(t.label)+'</button>';
+             ' onclick="hpSelect('+i+')">'+esc(t.label)+'</button>';
     }).join('');
   }
 
@@ -65,10 +64,10 @@
     if(!p) return;
     var t = TABS[cur];
     p.innerHTML =
-      '<h1 class="hpHead">'+esc2(t.lead)+' <em>'+esc2(t.em)+'</em></h1>'+
+      '<h1 class="hpHead">'+esc(t.lead)+' <em>'+esc(t.em)+'</em></h1>'+
       '<ul class="hpList">'+ t.list.map(function(x){
-        return '<li>'+TICK+'<span>'+esc2(x)+'</span></li>'; }).join('') +'</ul>'+
-      '<button class="hpCta" type="button" onclick="hpGo()">'+esc2(t.cta)+'</button>';
+        return '<li>'+TICK+'<span>'+esc(x)+'</span></li>'; }).join('') +'</ul>'+
+      '<button class="hpCta" type="button" onclick="hpGo()">'+esc(t.cta)+'</button>';
     p.setAttribute('aria-labelledby', 'hpTab-'+t.id);
     p.classList.remove('hpIn');
     void p.offsetWidth;

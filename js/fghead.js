@@ -2,11 +2,6 @@
   'use strict';
 
   function el(id) { return document.getElementById(id); }
-  function esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
   function mark(s) {
     return esc(s).replace(/\*([^*]+)\*/g, '<em class="fgHi">$1</em>');
   }

@@ -19,7 +19,7 @@
 
   var CHUNKS = {
     analytics: {
-      src: ['/js/analytics.js?v=16'],
+      src: ['/js/analytics.js?v=17'],
       css: ['/css/analytics.css?v=14'],
       api: ['openAnalyticsPage']
     },
@@ -37,7 +37,7 @@
       api: ['zeoOpen', 'zeoHide']
     },
     secview: {
-      src: ['/js/secview.js?v=1'],
+      src: ['/js/secview.js?v=2'],
       // Opening an artwork calls dzVwFill for the author card, so unlike the
       // rest of these this one sits on a path people take. It is warmed in
       // the background rather than waited for.

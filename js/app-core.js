@@ -316,6 +316,8 @@
   let images = [];
   let filterCat = 'all', filterSrt = 'trending';
 
+  /* The one HTML escaper the browser side uses; every panel script reaches
+     for this rather than carrying its own copy. */
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
   function safeErr(e, fallback){

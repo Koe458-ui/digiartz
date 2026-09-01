@@ -16,7 +16,6 @@
   var profCache = {};
 
   function H(){ return window.dzHelpers || { money:function(){return '';}, bytes:function(){return '';}, ago:function(){return '';} }; }
-  function esc2(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function safeHref(u){ return /^https?:\/\//i.test(String(u||'')) ? String(u) : ''; }
   function rows(){ return (typeof window.dzGetRows==='function' ? window.dzGetRows(cur.sec) : []) || []; }
   function dzc(){ return window.dzCached ? window.dzCached() : null; }
@@ -25,11 +24,11 @@
   function cmRow(c, kind, id, listId){
     var mine = window.currentUser && c.user_id === currentUser.id;
     return '<div class="avCm">'+
-      '<div class="avCmAv">'+esc2((c.username||'?').charAt(0).toUpperCase())+'</div>'+
-      '<div class="avCmMain"><div class="avCmHead"><span class="avCmName">'+esc2(c.username||'artist')+'</span>'+
-      '<span class="avCmTime">'+esc2(H().ago(c.created_at))+'</span>'+
-      (mine ? '<button class="avCmDel" onclick="dzCmDelAsk('+c.id+',\''+esc2(kind)+'\',\''+esc2(id)+'\',\''+listId+'\')" aria-label="Delete comment">\u2715</button>' : '')+
-      '</div><div class="avCmBody">'+esc2(c.body)+'</div></div></div>';
+      '<div class="avCmAv">'+esc((c.username||'?').charAt(0).toUpperCase())+'</div>'+
+      '<div class="avCmMain"><div class="avCmHead"><span class="avCmName">'+esc(c.username||'artist')+'</span>'+
+      '<span class="avCmTime">'+esc(H().ago(c.created_at))+'</span>'+
+      (mine ? '<button class="avCmDel" onclick="dzCmDelAsk('+c.id+',\''+esc(kind)+'\',\''+esc(id)+'\',\''+listId+'\')" aria-label="Delete comment">\u2715</button>' : '')+
+      '</div><div class="avCmBody">'+esc(c.body)+'</div></div></div>';
   }
   function cmMoreBtn(listId, show, busy){
     var b = document.getElementById(listId+'_more');
@@ -183,10 +182,10 @@
           out += '<div><div class="avBlockH">Related artwork</div><div class="dzvRelRow">'+
             arows.map(function(x){
               var nm = x.name || x.title || 'Untitled';
-              return '<div class="dzvRelCard" onclick="dzOpenArtwork(\''+esc2(x.id)+'\')">'+
-                (x.image_url ? '<img src="'+esc2(getThumbnailUrl(x.image_url))+'" alt="" loading="lazy">'
+              return '<div class="dzvRelCard" onclick="dzOpenArtwork(\''+esc(x.id)+'\')">'+
+                (x.image_url ? '<img src="'+esc(getThumbnailUrl(x.image_url))+'" alt="" loading="lazy">'
                              : '<span class="dzvRelNo"></span>')+
-                '<span class="dzvRelNm">'+esc2(nm)+'</span></div>';
+                '<span class="dzvRelNm">'+esc(nm)+'</span></div>';
             }).join('')+'</div></div>';
         }
       }
@@ -197,10 +196,10 @@
         if(mrows.length){
           out += '<div><div class="avBlockH">Related listings</div><div class="dzvRelRow">'+
             mrows.map(function(x){
-              return '<div class="dzvRelCard" onclick="dzOpenListing(\''+esc2(x.id)+'\')">'+
-                (x.preview_url ? '<img src="'+esc2(getThumbnailUrl(x.preview_url))+'" alt="" loading="lazy">'
+              return '<div class="dzvRelCard" onclick="dzOpenListing(\''+esc(x.id)+'\')">'+
+                (x.preview_url ? '<img src="'+esc(getThumbnailUrl(x.preview_url))+'" alt="" loading="lazy">'
                                : '<span class="dzvRelNo"></span>')+
-                '<span class="dzvRelNm">'+esc2(x.title||'Untitled')+'</span></div>';
+                '<span class="dzvRelNm">'+esc(x.title||'Untitled')+'</span></div>';
             }).join('')+'</div></div>';
         }
       }
@@ -248,9 +247,9 @@
       var common = ' class="vwAct'+(a.cls ? ' '+a.cls : '')+'" data-c="'+a.c+'"'+
         (a.id ? ' id="'+a.id+'"' : '')+(a.attrs || '')+
         (a.press ? ' aria-pressed="false"' : '')+
-        ' aria-label="'+esc2(a.label)+'" title="'+esc2(a.label)+'"';
+        ' aria-label="'+esc(a.label)+'" title="'+esc(a.label)+'"';
       return a.href
-        ? '<a href="'+esc2(a.href)+'" target="_blank" rel="noopener" download'+common+'>'+vwSvg(a.k)+'</a>'
+        ? '<a href="'+esc(a.href)+'" target="_blank" rel="noopener" download'+common+'>'+vwSvg(a.k)+'</a>'
         : '<button type="button"'+common+' onclick="'+a.on+'">'+vwSvg(a.k)+'</button>';
     }).join('');
     return out ? '<div class="vwActRow">'+out+'</div>' : '';
@@ -270,10 +269,10 @@
         ? { k:'cart', c:'blue', id:'vwAct_cart', press:1, label:'Add to cart',
             on:'dzVwEng(\'cart\',\''+kind+'\',\''+id+'\')' }
         : { k:'dl', c:'green', id:'vwAct_dl',
-            on:'dzVwDownload(\''+kind+'\',\''+id+'\',\''+esc2(dl)+'\')',
+            on:'dzVwDownload(\''+kind+'\',\''+id+'\',\''+esc(dl)+'\')',
             label: sec === 'blog' ? 'Download cover' : 'Download everything' },
       { k:'share', c:'blue', label:'Share',
-        on:'dzVwShare(\''+sec+'\',\''+id+'\',\''+esc2(title)+'\')' },
+        on:'dzVwShare(\''+sec+'\',\''+id+'\',\''+esc(title)+'\')' },
       { k:'report', c:'red', label:'Report',
         on:'dzReportItem(\''+kind+'\',\''+id+'\')' }
     ]);
@@ -455,8 +454,8 @@
     var av = document.getElementById(id+'_av');
     if(av){
       av.innerHTML = (p && p.avatar_url)
-        ? '<img src="'+esc2(getThumbnailUrl(p.avatar_url))+'" alt="">'
-        : esc2(name.charAt(0).toUpperCase());
+        ? '<img src="'+esc(getThumbnailUrl(p.avatar_url))+'" alt="">'
+        : esc(name.charAt(0).toUpperCase());
     }
     var acts = document.getElementById(id+'_acts');
     if(!acts) return;
@@ -677,31 +676,31 @@
 
   function metaRow(pairs){
     var out = pairs.filter(function(x){ return x[1]; }).map(function(x){
-      return '<div class="dzvMetaRow"><span>'+esc2(x[0])+'</span><b>'+esc2(x[1])+'</b></div>';
+      return '<div class="dzvMetaRow"><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>';
     }).join('');
     return out ? '<div class="dzvMeta">'+out+'</div>' : '';
   }
   function metaBlock(head, pairs){
     var body = metaRow(pairs);
     if(!body) return '';
-    return head ? '<div><div class="avBlockH">'+esc2(head)+'</div>'+body+'</div>' : body;
+    return head ? '<div><div class="avBlockH">'+esc(head)+'</div>'+body+'</div>' : body;
   }
   function linkBlock(head, arr){
     if(!Array.isArray(arr) || !arr.length) return '';
-    return '<div><div class="avBlockH">'+esc2(head)+'</div><ul class="dzvRefs">'+
+    return '<div><div class="avBlockH">'+esc(head)+'</div><ul class="dzvRefs">'+
       arr.map(function(u){
         var safe = /^https?:\/\//i.test(String(u||'')) ? String(u) : '';
         var show = String(u||'').replace(/^https?:\/\//i,'');
         return safe
-          ? '<li><a href="'+esc2(safe)+'" target="_blank" rel="noopener nofollow">'+esc2(show)+'</a></li>'
-          : '<li>'+esc2(show)+'</li>';
+          ? '<li><a href="'+esc(safe)+'" target="_blank" rel="noopener nofollow">'+esc(show)+'</a></li>'
+          : '<li>'+esc(show)+'</li>';
       }).join('')+'</ul></div>';
   }
   function jobBlock(head, body){
     body = String(body == null ? '' : body).trim();
     if(!body) return '';
-    return '<div><div class="avBlockH">'+esc2(head)+'</div>'+
-      '<div class="dzvArticle">'+esc2(body).replace(/\n/g,'<br>')+'</div></div>';
+    return '<div><div class="avBlockH">'+esc(head)+'</div>'+
+      '<div class="dzvArticle">'+esc(body).replace(/\n/g,'<br>')+'</div></div>';
   }
   function catLabels(sec, arr){
     if(!Array.isArray(arr) || !arr.length) return '';
@@ -712,7 +711,7 @@
   function tagBlock(tags){
     if(!Array.isArray(tags) || !tags.length) return '';
     return '<div><div class="avBlockH">Tags</div><div class="avTagList">'+
-      tags.map(function(t){ return '<span class="avTagChip">'+esc2(t)+'</span>'; }).join('')+
+      tags.map(function(t){ return '<span class="avTagChip">'+esc(t)+'</span>'; }).join('')+
       '</div></div>';
   }
   function updatedAgo(r, h){
@@ -747,13 +746,13 @@
     var r = curExt || rows()[cur.idx];
     if(!host || !r) return;
     host.scrollTop = 0;
-    var sec = cur.sec, kind = KIND[sec], id = esc2(r.id), h = H(), html = '';
+    var sec = cur.sec, kind = KIND[sec], id = esc(r.id), h = H(), html = '';
     var vw = document.getElementById('dzView');
     if(vw) vw.setAttribute('data-sec', sec);
     var img = function(u, alt, more){
       if(!u && !more) return '';
       return '<div class="dzvMedia">'+
-        (u ? '<img src="'+esc2(getViewUrl(u))+'" alt="'+esc2(alt||'')+'" loading="lazy" draggable="false">' : '')+
+        (u ? '<img src="'+esc(getViewUrl(u))+'" alt="'+esc(alt||'')+'" loading="lazy" draggable="false">' : '')+
         (more || '')+
       '</div>';
     };
@@ -769,18 +768,18 @@
         vwCard('dzvCard', 'dzCloseView()')+
         vwSecRail(sec, kind, id, r)+
         (r.featured ? '<p class="dzvExcerpt">\u2605 Featured resource</p>' : '')+
-        '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
-        (r.summary ? '<p class="dzvExcerpt">'+esc2(r.summary)+'</p>' : '')+
-        '<div class="dzvFileCard"><span class="dzvExt">'+esc2((r.file_ext||'FILE').toUpperCase())+'</span>'+
-        '<div><div class="dzvFileName">'+esc2(r.file_name||r.title)+'</div>'+
-        '<div class="dzvFileMeta">'+esc2(h.bytes(r.file_size))+
-          (r.file_count ? ' \u00b7 '+esc2(String(r.file_count))+' file'+(r.file_count===1?'':'s') : '')+
-          ' \u00b7 '+esc2(String(r.download_count||0))+' downloads</div></div>'+
+        '<h1 class="dzvTitle">'+esc(r.title)+'</h1>'+
+        (r.summary ? '<p class="dzvExcerpt">'+esc(r.summary)+'</p>' : '')+
+        '<div class="dzvFileCard"><span class="dzvExt">'+esc((r.file_ext||'FILE').toUpperCase())+'</span>'+
+        '<div><div class="dzvFileName">'+esc(r.file_name||r.title)+'</div>'+
+        '<div class="dzvFileMeta">'+esc(h.bytes(r.file_size))+
+          (r.file_count ? ' \u00b7 '+esc(String(r.file_count))+' file'+(r.file_count===1?'':'s') : '')+
+          ' \u00b7 '+esc(String(r.download_count||0))+' downloads</div></div>'+
         (r.file_storage_path ? '<button type="button" class="vwFileDl" '+
           'onclick="dzVwDownload(\''+kind+'\',\''+id+'\',\'\')" '+
           'aria-label="Download this file" title="Download this file">'+vwSvg('dl')+'</button>' : '')+
         '</div>'+
-        (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
+        (r.description ? '<p class="dzvDesc">'+esc(r.description)+'</p>' : '')+
         jobBlock('What\u2019s included', r.whats_included)+
         jobBlock('Installation and use', r.instructions)+
         metaBlock('Details',
@@ -812,15 +811,15 @@
         vwCard('dzvCard', 'dzCloseView()')+
         vwSecRail(sec, kind, id, r)+
         (r.featured ? '<p class="dzvExcerpt">★ Featured post</p>' : '')+
-        '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
-        (r.excerpt ? '<p class="dzvExcerpt">'+esc2(r.excerpt)+'</p>' : '')+
-        (r.author_bio ? '<p class="dzvAuthBio">'+esc2(r.author_bio)+'</p>' : '')+
+        '<h1 class="dzvTitle">'+esc(r.title)+'</h1>'+
+        (r.excerpt ? '<p class="dzvExcerpt">'+esc(r.excerpt)+'</p>' : '')+
+        (r.author_bio ? '<p class="dzvAuthBio">'+esc(r.author_bio)+'</p>' : '')+
         metaRow([['Type', r.content_type],
                  ['Category', catLabels('blog', r.category)],
                  ['Published', h.ago(r.published_at || r.created_at)],
                  ['Read time', (r.read_minutes||1)+' min'],
                  ['Updated', updatedAgo(r, h)]])+
-        '<div class="dzvArticle">'+esc2(r.body||'').replace(/\n/g,'<br>')+'</div>'+
+        '<div class="dzvArticle">'+esc(r.body||'').replace(/\n/g,'<br>')+'</div>'+
         linkBlock('Sources', r.external_refs)+
         (hasRelated ? '<div id="dzvRelated"></div>' : '')+
         tagBlock(r.tags)+
@@ -836,8 +835,8 @@
           if(!g || !g.url) return '';
           var full = safeHref(getViewUrl(g.url));
           if(!full) return '';
-          return '<a href="'+esc2(full)+'" target="_blank" rel="noopener">'+
-            '<img src="'+esc2(full)+'" alt="" loading="lazy" draggable="false"></a>';
+          return '<a href="'+esc(full)+'" target="_blank" rel="noopener">'+
+            '<img src="'+esc(full)+'" alt="" loading="lazy" draggable="false"></a>';
         }).join('') +'</div>';
       }
       var rights = r.product_type ? [
@@ -856,10 +855,10 @@
       var reqUrl = safeHref(r.apply_url);
       var reqBtn =
         (reqUrl
-          ? '<a class="avActWide" href="'+esc2(reqUrl)+'" target="_blank" rel="noopener">Request this ↗</a>'
+          ? '<a class="avActWide" href="'+esc(reqUrl)+'" target="_blank" rel="noopener">Request this ↗</a>'
           : '')+
         (r.apply_email
-          ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Request by email ✉</a>'
+          ? '<a class="avActWide" href="mailto:'+esc(r.apply_email)+'">Request by email ✉</a>'
           : '');
 
       html = img(r.preview_url, r.title, galleryHtml) +
@@ -867,12 +866,12 @@
         vwCard('dzvCard', 'dzCloseView()')+
         vwSecRail(sec, kind, id, r)+
         (r.featured ? '<p class="dzvExcerpt">★ Featured listing</p>' : '')+
-        '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
-        (r.summary ? '<p class="dzvExcerpt">'+esc2(r.summary)+'</p>' : '')+
+        '<h1 class="dzvTitle">'+esc(r.title)+'</h1>'+
+        (r.summary ? '<p class="dzvExcerpt">'+esc(r.summary)+'</p>' : '')+
         (window.dzSlot ? window.dzSlot(r, id, hasFile, 'view') : '')+
         lockNote+
         reqBtn+
-        (r.description ? '<p class="dzvDesc">'+esc2(r.description)+'</p>' : '')+
+        (r.description ? '<p class="dzvDesc">'+esc(r.description)+'</p>' : '')+
         jobBlock('What you get', r.buyer_gets)+
         metaBlock('Details',
                 [['Type', r.item_type],['Product', r.product_type],
@@ -919,19 +918,19 @@
       var applyUrl = safeHref(r.apply_url);
       var applyBtn =
         (applyUrl
-          ? '<a class="avActWide" href="'+esc2(applyUrl)+'" target="_blank" rel="noopener">Apply \u2197</a>'
+          ? '<a class="avActWide" href="'+esc(applyUrl)+'" target="_blank" rel="noopener">Apply \u2197</a>'
           : '')+
         (r.apply_email
-          ? '<a class="avActWide" href="mailto:'+esc2(r.apply_email)+'">Apply by email \u2709</a>'
+          ? '<a class="avActWide" href="mailto:'+esc(r.apply_email)+'">Apply by email \u2709</a>'
           : '');
 
       html = '<div class="dzvCol">'+
         vwCard('dzvCard', 'dzCloseView()')+
         (r.featured ? '<p class="dzvExcerpt">\u2605 Featured posting</p>' : '')+
-        '<h1 class="dzvTitle">'+esc2(r.title)+'</h1>'+
-        '<p class="dzvExcerpt">'+esc2(r.company||'')+
+        '<h1 class="dzvTitle">'+esc(r.title)+'</h1>'+
+        '<p class="dzvExcerpt">'+esc(r.company||'')+
           (safeHref(r.company_url)
-            ? ' \u00b7 <a href="'+esc2(safeHref(r.company_url))+'" target="_blank" rel="noopener">website</a>'
+            ? ' \u00b7 <a href="'+esc(safeHref(r.company_url))+'" target="_blank" rel="noopener">website</a>'
             : '')+'</p>'+
         metaRow([
           ['Location', jw],

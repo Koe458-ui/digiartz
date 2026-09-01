@@ -1,6 +1,6 @@
 import { underEdgeLimit, tooManyRequests } from './lib/ratelimit.js';
 import { sbUrl, sbAnon, SB_SIZE_RE } from './lib/sb.js';
-import { SITE, UUID_RE } from './lib/http.js';
+import { SITE, UUID_RE, esc } from './lib/http.js';
 
 const CACHE_SECONDS = 300;
 const ROW_CACHE_SECONDS = 60;
@@ -25,9 +25,6 @@ function thumbAttrs(url, env) {
 }
 const ogImage = (url) => resize(url, 1200);
 const fullImage = (url) => resize(url, 1600);
-
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
-  (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function clamp(s, n = 160) {
   const t = String(s ?? '').replace(/\s+/g, ' ').trim();

@@ -1,5 +1,6 @@
 import { sbUrl, sbAnon, sbSvc, sbUser } from '../lib/sb.js';
 import { ZERO_DECIMAL } from '../lib/money.js';
+import { esc } from '../lib/http.js';
 
 const PLANS = [
   {
@@ -99,9 +100,6 @@ const QUOTA = [
   { plan: 'Premium', num: '15', tone: 'premium' },
   { plan: 'Max', num: '20', tone: 'max' },
 ];
-
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
-  (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function plansHtml(priced) {
   const quota =

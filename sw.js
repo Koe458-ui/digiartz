@@ -82,9 +82,9 @@ const SHELL_URLS = [
   '/js/search.js?v=23',
   '/js/feed.js?v=10',
   '/js/herosearch.js?v=7',
-  '/js/effects.js?v=12',
+  '/js/effects.js?v=13',
   '/js/legal-content.js?v=4',
-  '/js/theme.js?v=9',
+  '/js/theme.js?v=10',
   '/js/antrack.js?v=1',
   '/js/lazy.js?v=3',
 

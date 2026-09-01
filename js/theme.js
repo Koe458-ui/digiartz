@@ -2,8 +2,49 @@
   'use strict';
 
   var KEY   = 'koeTheme';
-  var VALID = { graydark:1, light:1, offwhite:1 };
-  var META  = { graydark:'#1A1A1F', light:'#F7F5EB', offwhite:'#F3F3F1' };
+
+  /* The three themes, and the miniature of the page each card shows. The
+     cards were the same twenty-two lines of markup three times over. */
+  var THEMES = [
+    { id:'graydark', name:'Charcoal', bg:'#1A1A1F', sur:'#24242C', ln:'#40404E', ac:'#F4F4F6',
+      desc:'Deep, warm charcoal. Cards lift off the page so your eye lands on the art, not the screen.' },
+    { id:'light', name:'Paper', bg:'#F7F5EB', sur:'#FFFEF9', ln:'#D8D3B8', ac:'#17151F',
+      desc:'Warm gallery paper. Bright to work in, easy on the eyes for an hour.' },
+    { id:'offwhite', name:'Off-White <em class="thmBadge">Default</em>',
+      bg:'#F3F3F1', sur:'#FCFCFA', ln:'#D2D2CD', ac:'#17171A',
+      desc:'Paper with the warmth taken out. The same brightness on a neutral ground, ' +
+           'for a wall with no colour in it.' }
+  ];
+  var VALID = {}, META = {};
+  THEMES.forEach(function (t) { VALID[t.id] = 1; META[t.id] = t.bg; });
+
+  var TICK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7-8"/></svg>';
+  var ROW  = '<span class="thmTbWrap"><span class="thmTb"></span><span class="thmLn"></span></span>';
+
+  var grid = document.getElementById('thmGrid');
+  if (grid) {
+    grid.innerHTML = THEMES.map(function (t) {
+      return '<button class="thmCard thmCard--' + t.id + '" data-theme="' + t.id + '" value="' + t.id + '" ' +
+          'role="radio" aria-checked="false" type="button" ' +
+          'style="--p-bg:' + t.bg + ';--p-sur:' + t.sur + ';--p-ln:' + t.ln + ';--p-ac:' + t.ac + '">' +
+        '<span class="thmCheck" aria-hidden="true">' + TICK + '</span>' +
+        '<span class="thmPrev" aria-hidden="true">' +
+          '<span class="thmPrevTop"><span class="thmPrevLogo"></span></span>' +
+          '<span class="thmPrevBody">' +
+            '<span class="thmPrevSide"><span class="thmLn"></span><span class="thmLn thmLn--s"></span>' +
+              '<span class="thmLn thmLn--ac"></span><span class="thmLn thmLn--s"></span></span>' +
+            '<span class="thmPrevMain">' + ROW + ROW + ROW + ROW + '</span>' +
+          '</span>' +
+        '</span>' +
+        '<span class="thmMeta">' +
+          '<span class="thmName">' + t.name + '</span>' +
+          '<span class="thmDesc">' + t.desc + '</span>' +
+        '</span>' +
+      '</button>';
+    }).join('');
+  }
+
   var page  = document.getElementById('themePage');
   var cards = Array.prototype.slice.call(document.querySelectorAll('.thmCard'));
   var lastFocus = null;

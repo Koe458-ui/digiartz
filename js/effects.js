@@ -240,14 +240,81 @@
 
 (function(){
 
+  /* The questions the subscription page answers, and the order they are
+     asked in. Each was fifteen lines of identical markup in index.html. */
+  var FAQ = [
+    { ico:'◈', label:'Billing &amp; Payments', qa:[
+      ['How do I subscribe?',
+       'Select the subscription plan that best suits your needs and complete the checkout process using our secure payment system.'],
+      ['What payment methods do you accept?',
+       'We accept the payment methods supported by our payment provider at the time of checkout.'],
+      ['Is the subscription billed monthly or yearly?',
+       'All subscription plans are billed on a monthly basis.'],
+      ['Will my subscription renew automatically?',
+       'No. Subscriptions do not renew automatically. Once your subscription expires, you may choose to purchase a new plan at any time.'],
+      ['Can I cancel my subscription?',
+       'Since subscriptions do not automatically renew, there is no cancellation process required. Access simply ends when your subscription period expires.']
+    ]},
+    { ico:'◎', label:'Account &amp; Access', qa:[
+      ['When will my subscription be activated?',
+       'Your subscription benefits are activated automatically as soon as your payment is successfully processed.'],
+      ['How do I access my subscription benefits?',
+       'Once activated, all eligible subscription features become available directly through your account.'],
+      ['Can I use my subscription on multiple accounts?',
+       'No. Each subscription is intended for a single account and may not be shared across multiple accounts.'],
+      ['What happens when my subscription expires?',
+       'When your subscription expires, access to subscription-only features and benefits will no longer be available until a new subscription is purchased.'],
+      ['Can I upgrade or downgrade my plan?',
+       'Plan changes are not currently supported. You may select a different plan when purchasing your next subscription.']
+    ]},
+    { ico:'✦', label:'Support', qa:[
+      ['How can I contact support?',
+       'You can reach us through the "Let\'s Connect" section of our website.'],
+      ['How long does it take to receive a response?',
+       'Most support inquiries receive a response within 1–2 business days.']
+    ]},
+    { ico:'◉', label:'Trust &amp; Security', qa:[
+      ['Is my payment information secure?',
+       'Payments are processed through our secure payment provider. While no online system can guarantee absolute security, we take reasonable measures to help protect your information.'],
+      ['Do you store my card or payment details?',
+       'No. We do not store card information or payment details on our servers.'],
+      ['Will my personal information be shared with third parties?',
+       'No. We do not sell, rent, or share your personal information with third parties.']
+    ]}
+  ];
+
+  function faqHtml(){
+    return FAQ.map(function(cat, ci){
+      var n = ci + 1;
+      return '<section class="faqCategory" aria-labelledby="faqCat' + n + '">' +
+        '<div class="faqCatLabel" id="faqCat' + n + '">' +
+          '<span class="faqCatIco" aria-hidden="true">' + cat.ico + '</span>' + cat.label +
+        '</div>' +
+        cat.qa.map(function(qa, qi){
+          var id = n + '-' + (qi + 1);
+          return '<div class="faqItem" role="listitem">' +
+            '<button class="faqQ" aria-expanded="false" aria-controls="faqA-' + id + '" ' +
+              'id="faqQ-' + id + '" onclick="faqToggle(this)">' +
+              '<span class="faqQTxt">' + qa[0] + '</span>' +
+              '<span class="faqIcon" aria-hidden="true">+</span>' +
+            '</button>' +
+            '<div class="faqA" id="faqA-' + id + '" role="region" aria-labelledby="faqQ-' + id + '">' +
+              '<p class="faqATxt">' + qa[1] + '</p>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</section>' +
+      (ci < FAQ.length - 1 ? '<div class="faqCatDiv" aria-hidden="true"></div>' : '');
+    }).join('');
+  }
+
   function mountFaq(){
-    var faqEl  = document.getElementById('faqSection');
-    var subBdy = document.querySelector('.subPgBdy');
-    if(!faqEl || !subBdy){ return; }
+    var faqEl = document.getElementById('faqSection');
+    if(!faqEl) return;
     faqEl.removeAttribute('hidden');
-    subBdy.appendChild(faqEl);
-    var panels = faqEl.querySelectorAll('.faqA[hidden]');
-    panels.forEach(function(p){ p.removeAttribute('hidden'); });
+    faqEl.insertAdjacentHTML('beforeend', faqHtml());
+    var subBdy = document.querySelector('.subPgBdy');
+    if(subBdy) subBdy.appendChild(faqEl);
   }
 
   if(document.readyState === 'loading'){

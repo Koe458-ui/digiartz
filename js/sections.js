@@ -3281,8 +3281,6 @@
     var host = sec && document.getElementById('fgSecC-'+sec);
     if(host && host.children.length) dzSecLoad(sec);
   };
-  window.dzSecLabel = labelOf;
-
   window.dzSecCard   = function(sec, row){ return SEC[sec] ? card(sec, row) : ''; };
   window.dzSecLayout = function(sec){
     return (SEC[sec] && SEC[sec].kind === 'grid') ? 'dzGrid' : 'dzList';

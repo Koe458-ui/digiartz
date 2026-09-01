@@ -19,7 +19,7 @@
 
   var CHUNKS = {
     analytics: {
-      src: ['/js/analytics.js?v=14'],
+      src: ['/js/analytics.js?v=15'],
       css: ['/css/analytics.css?v=12'],
       api: ['openAnalyticsPage']
     },
@@ -100,7 +100,6 @@
   }
 
   window.dzLazy = load;
-  window.dzLazyLoaded = function(name){ return !!pending[name]; };
 
   function stub(chunk, name){
     var placeholder = function(){

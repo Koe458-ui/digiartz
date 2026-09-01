@@ -673,6 +673,28 @@
   }
   window.dzCloseAllPanels = dzCloseAllPanels;
 
+  /* The Tab trap the three search pages share. Each still owns its own
+     keydown listener — one of them also answers Escape — but the wrapping
+     itself is written once. `pg` is the open page; the caller has already
+     established that it is open. */
+  window.dzTrapTab = function(pg, e){
+    if(e.key !== 'Tab' || !pg) return;
+    var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
+              'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    var items = Array.prototype.filter.call(pg.querySelectorAll(sel), function(el){
+      return !el.hidden && el.offsetParent !== null;
+    });
+    if(!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    if(!pg.contains(document.activeElement)){
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+      return;
+    }
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  };
+
   var navSeq = 0, navHold = 0, navTimer = null;
 
   window.dzNavBegin = function(){

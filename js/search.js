@@ -34,29 +34,10 @@
 
   var fgSrchLastFocus = null;
 
-  function fgSrchFocusable(){
-    var pg = document.getElementById('fgSearchPage');
-    if(!pg) return [];
-    var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
-              'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
-    return Array.prototype.filter.call(pg.querySelectorAll(sel), function(el){
-      return !el.hidden && el.offsetParent !== null;
-    });
-  }
   function fgSrchTrap(e){
-    if(e.key !== 'Tab') return;
     var pg = document.getElementById('fgSearchPage');
     if(!pg || !pg.classList.contains('open')) return;
-    var items = fgSrchFocusable();
-    if(!items.length) return;
-    var first = items[0], last = items[items.length - 1];
-    if(!pg.contains(document.activeElement)){
-      e.preventDefault();
-      (e.shiftKey ? last : first).focus();
-      return;
-    }
-    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
-    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    if(typeof window.dzTrapTab === 'function') window.dzTrapTab(pg, e);
   }
   document.addEventListener('keydown', fgSrchTrap, true);
 

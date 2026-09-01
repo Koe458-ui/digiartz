@@ -8,15 +8,11 @@
     { key:'resources',   label:'Resources', how:'sec' }
   ];
 
-  function tgSearchChrome(wrapId, v){
-    var w = document.getElementById(wrapId);
-    if(w) w.classList.toggle('tgHasQ', !!String(v || '').length);
-  }
-
-  function fgSearchPattern(q){
-    var clean = String(q||'').replace(/[%_*(),."\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
-    return clean ? '%'+clean+'%' : '';
-  }
+  var FG_SRCH_UI = {
+    page:'fgSearchPage', input:'fgSrchIn', wrap:'fgSrchWrap', note:'fgSrchNote',
+    scopes:'fgSrchScopes', groups:FG_SRCH_GROUPS, st:fgSrch,
+    run:function(){ fgSearchRun(); }, lastFocus:null
+  };
 
   function fgArtistPattern(q){
     var clean = String(q||'').replace(/[,()"\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
@@ -25,73 +21,22 @@
     return body ? '%'+body+'%' : '';
   }
 
-  function fgSearchNote(msg){
-    var n = document.getElementById('fgSrchNote');
-    if(!n) return;
-    n.textContent = msg || '';
-    n.hidden = !msg;
-  }
-
-  var fgSrchLastFocus = null;
-
-  function fgSrchTrap(e){
-    var pg = document.getElementById('fgSearchPage');
-    if(!pg || !pg.classList.contains('open')) return;
-    if(typeof window.dzTrapTab === 'function') window.dzTrapTab(pg, e);
-  }
-  document.addEventListener('keydown', fgSrchTrap, true);
-
-  function openFgSearch(){
-    var pg = document.getElementById('fgSearchPage');
-    if(!pg) return;
-    fgSrchLastFocus = document.activeElement;
-    pg.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    var input = document.getElementById('fgSrchIn');
-    if(input) setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
-  }
+  function fgSearchNote(msg){ window.dzSearchUI.note(FG_SRCH_UI, msg); }
+  window.dzSearchUI.trap(FG_SRCH_UI);
+  function openFgSearch(){ window.dzSearchUI.open(FG_SRCH_UI); }
 
   function closeFgSearch(silent){
     var pg = document.getElementById('fgSearchPage');
     if(!pg || !pg.classList.contains('open')) return;
     pg.classList.remove('open');
     if(typeof restoreScroll === 'function') restoreScroll();
-    var back = fgSrchLastFocus; fgSrchLastFocus = null;
-    if(silent !== true && back && back.isConnected && back.focus){
-      try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
-    }
+    window.dzSearchUI.restoreFocus(FG_SRCH_UI, silent);
   }
 
-  function fgSearchClear(){
-    var input = document.getElementById('fgSrchIn');
-    if(input){ input.value = ''; try{ input.focus(); }catch(e){} }
-    fgSearchInput('');
-  }
-
-  function fgSearchInput(v){
-    fgSrch.q = String(v||'');
-    tgSearchChrome('fgSrchWrap', fgSrch.q);
-    clearTimeout(fgSrch.timer);
-    fgSrch.timer = setTimeout(fgSearchRun, 220);
-  }
-
-  function fgSearchScope(scope){
-    if(fgSrch.scope === scope) return;
-    fgSrch.scope = scope;
-    fgSearchPaintScopes();
-    fgSearchRun();
-  }
-
-  function fgSearchPaintScopes(){
-    var wrap = document.getElementById('fgSrchScopes');
-    if(!wrap) return;
-    var order = ['all'].concat(FG_SRCH_GROUPS.map(function(g){ return g.key; }));
-    Array.prototype.forEach.call(wrap.children, function(btn, i){
-      var on = order[i] === fgSrch.scope;
-      btn.classList.toggle('on', on);
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
-  }
+  function fgSearchClear(){ window.dzSearchUI.clear(FG_SRCH_UI); }
+  function fgSearchInput(v){ window.dzSearchUI.input(FG_SRCH_UI, v); }
+  function fgSearchScope(scope){ window.dzSearchUI.scope(FG_SRCH_UI, scope); }
+  function fgSearchPaintScopes(){ window.dzSearchUI.paintScopes(FG_SRCH_UI); }
 
   function fgSearchArtworks(q){
     var all = (typeof window.galleryImages === 'function') ? window.galleryImages() : null;
@@ -117,7 +62,7 @@
       return;
     }
     var mySeq = ++fgSrch.seq;
-    var pattern = fgSearchPattern(raw);
+    var pattern = window.dzSearchUI.pattern(raw);
     fgSearchNote('Searching…');
 
     function want(key){ return fgSrch.scope === 'all' || fgSrch.scope === key; }

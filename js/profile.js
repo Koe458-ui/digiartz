@@ -521,10 +521,11 @@
     { key:'resources',   label:'Resources' }
   ];
 
-  function pfSearchPattern(q){
-    var clean = String(q||'').replace(/[%_*(),."\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
-    return clean ? '%'+clean+'%' : '';
-  }
+  var PF_SRCH_UI = {
+    page:'pfSearchPage', input:'pfSrchIn', wrap:'pfSrchWrap', note:'pfSrchNote',
+    scopes:'pfSrchScopes', groups:PF_SRCH_GROUPS, st:pfSrch,
+    run:function(){ pfSearchRun(); }, lastFocus:null
+  };
 
   function pfSearchReset(){
     pfSrch.q=''; pfSrch.scope='all'; pfSrch.rows={};
@@ -532,38 +533,19 @@
     pfSrch.seq++;
     var input = document.getElementById('pfSrchIn');
     if(input) input.value='';
-    tgSearchChrome('pfSrchWrap','');
+    window.dzSearchUI.chrome('pfSrchWrap','');
     pfSearchPaintScopes();
     var res = document.getElementById('pfSrchRes');
     if(res) res.innerHTML='';
     pfSearchNote('Type a name to search this profile.');
   }
 
-  function pfSearchNote(msg){
-    var n = document.getElementById('pfSrchNote');
-    if(!n) return;
-    n.textContent = msg || '';
-    n.hidden = !msg;
-  }
-
-  var pfSrchLastFocus = null;
-
-  function pfSrchTrap(e){
-    var pg = document.getElementById('pfSearchPage');
-    if(!pg || !pg.classList.contains('open')) return;
-    if(typeof window.dzTrapTab === 'function') window.dzTrapTab(pg, e);
-  }
-  document.addEventListener('keydown', pfSrchTrap, true);
+  function pfSearchNote(msg){ window.dzSearchUI.note(PF_SRCH_UI, msg); }
+  window.dzSearchUI.trap(PF_SRCH_UI);
 
   function openPfSearch(){
-    if(!pf.profile){ showToast('Profile still loading — try again'); return; }
-    var pg = document.getElementById('pfSearchPage');
-    if(!pg) return;
-    pfSrchLastFocus = document.activeElement;
-    pg.classList.add('open');
-    document.body.style.overflow='hidden';
-    var input = document.getElementById('pfSrchIn');
-    if(input) setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
+    if(!pf.profile){ showToast('Profile still loading \u2014 try again'); return; }
+    window.dzSearchUI.open(PF_SRCH_UI);
   }
 
   function closePfSearch(silent){
@@ -571,46 +553,17 @@
     if(!pg || !pg.classList.contains('open')) return;
     pg.classList.remove('open');
     if(silent !== true) document.body.style.overflow='hidden';
-    var back = pfSrchLastFocus; pfSrchLastFocus = null;
-    if(silent !== true && back && back.isConnected && back.focus){
-      try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
-    }
+    window.dzSearchUI.restoreFocus(PF_SRCH_UI, silent);
   }
 
-  function pfSearchClear(){
-    var input = document.getElementById('pfSrchIn');
-    if(input){ input.value=''; try{ input.focus(); }catch(e){} }
-    pfSearchInput('');
-  }
-
-  function pfSearchInput(v){
-    pfSrch.q = String(v||'');
-    tgSearchChrome('pfSrchWrap', pfSrch.q);
-    clearTimeout(pfSrch.timer);
-    pfSrch.timer = setTimeout(pfSearchRun, 220);
-  }
-
-  function pfSearchScope(scope){
-    if(pfSrch.scope === scope) return;
-    pfSrch.scope = scope;
-    pfSearchPaintScopes();
-    pfSearchRun();
-  }
-
-  function pfSearchPaintScopes(){
-    var wrap = document.getElementById('pfSrchScopes');
-    if(!wrap) return;
-    var order = ['all'].concat(PF_SRCH_GROUPS.map(function(g){ return g.key; }));
-    Array.prototype.forEach.call(wrap.children, function(btn, i){
-      var on = order[i] === pfSrch.scope;
-      btn.classList.toggle('on', on);
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
-  }
+  function pfSearchClear(){ window.dzSearchUI.clear(PF_SRCH_UI); }
+  function pfSearchInput(v){ window.dzSearchUI.input(PF_SRCH_UI, v); }
+  function pfSearchScope(scope){ window.dzSearchUI.scope(PF_SRCH_UI, scope); }
+  function pfSearchPaintScopes(){ window.dzSearchUI.paintScopes(PF_SRCH_UI); }
 
   async function pfSearchRun(){
     if(!pf.profile || !sb) return;
-    var pattern = pfSearchPattern(pfSrch.q);
+    var pattern = window.dzSearchUI.pattern(pfSrch.q);
     var res = document.getElementById('pfSrchRes');
     if(!res) return;
     if(!pattern){

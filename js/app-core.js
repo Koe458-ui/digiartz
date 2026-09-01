@@ -972,23 +972,104 @@
     });
   };
 
-  /* The schedule picker both upload forms use. There are two of them because
-     there are two forms — the artwork form is markup in index.html, the
-     section forms are generated — so each owns its own elements and its own
-     state. Everything they do with those is the same, and lives here.
+  /* The two search pages — one over a profile, one over the gallery. They
+     look for different things in different places, but the chrome around the
+     looking is the same: a note line, a debounced input, a row of scope tabs,
+     a Tab trap, and giving focus back to whatever opened the page. A page is
+     described by one config naming its elements, its scope groups, its state
+     and how to run a search. */
+  window.dzSearchUI = {
+    /* An ILIKE pattern with the wildcards and quoting taken out. */
+    pattern: function(q){
+      var clean = String(q||'').replace(/[%_*(),."\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
+      return clean ? '%'+clean+'%' : '';
+    },
 
-     A picker is described by one config: the ids it paints, the global its
-     day buttons call, how it words a chosen time, and whether it hands back
-     an ISO instant or the raw local value. Keeping `hint` and `picked`
-     together matters: they share the five-minute rule, and if that ever drifts
-     between them the hint would say a time is fine while the form quietly
-     dropped it. */
+    /* Marks the search bar as carrying a query, so it can style itself. */
+    chrome: function(wrapId, v){
+      var w = document.getElementById(wrapId);
+      if(w) w.classList.toggle('tgHasQ', !!String(v || '').length);
+    },
+
+    note: function(c, msg){
+      var n = document.getElementById(c.note);
+      if(!n) return;
+      n.textContent = msg || '';
+      n.hidden = !msg;
+    },
+
+    /* Keeps Tab inside the page while it is open. */
+    trap: function(c){
+      document.addEventListener('keydown', function(e){
+        var pg = document.getElementById(c.page);
+        if(!pg || !pg.classList.contains('open')) return;
+        if(typeof window.dzTrapTab === 'function') window.dzTrapTab(pg, e);
+      }, true);
+    },
+
+    open: function(c){
+      var pg = document.getElementById(c.page);
+      if(!pg) return;
+      c.lastFocus = document.activeElement;
+      pg.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      var input = document.getElementById(c.input);
+      if(input) setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
+    },
+
+    /* Hands focus back to whatever opened the page, unless it is gone. */
+    restoreFocus: function(c, silent){
+      var back = c.lastFocus; c.lastFocus = null;
+      if(silent !== true && back && back.isConnected && back.focus){
+        try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
+      }
+    },
+
+    clear: function(c){
+      var input = document.getElementById(c.input);
+      if(input){ input.value = ''; try{ input.focus(); }catch(e){} }
+      window.dzSearchUI.input(c, '');
+    },
+
+    /* Typing runs the search, but not on every keystroke. */
+    input: function(c, v){
+      c.st.q = String(v||'');
+      window.dzSearchUI.chrome(c.wrap, c.st.q);
+      clearTimeout(c.st.timer);
+      c.st.timer = setTimeout(c.run, 220);
+    },
+
+    scope: function(c, scope){
+      if(c.st.scope === scope) return;
+      c.st.scope = scope;
+      window.dzSearchUI.paintScopes(c);
+      c.run();
+    },
+
+    /* The scope tabs sit in markup order behind "All". */
+    paintScopes: function(c){
+      var wrap = document.getElementById(c.scopes);
+      if(!wrap) return;
+      var order = ['all'].concat(c.groups.map(function(g){ return g.key; }));
+      Array.prototype.forEach.call(wrap.children, function(btn, i){
+        var on = order[i] === c.st.scope;
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+    }
+  };
+
+  /* The schedule picker both upload forms use — the artwork form's markup is
+     in index.html, the section forms are generated, so each owns its elements
+     and state and passes them here as one config. `hint` and `picked` belong
+     together: they share the five-minute rule, and were it to drift the hint
+     would call a time fine while the form quietly dropped it. */
   var DZ_SCHED_MIN = 5 * 60 * 1000;
 
   function dzSchedPad(n){ return (n < 10 ? '0' : '') + n; }
 
   window.dzSchedUI = {
-    /* Fills the hour and minute lists once, defaulting to an hour from now. */
+    /* Filled once; defaults to an hour from now. */
     hours: function(c){
       var hs = document.getElementById(c.h), ms = document.getElementById(c.m);
       if(!hs || hs.options.length) return;
@@ -1006,7 +1087,7 @@
       else if(st.vm > 11){ st.vm = 0; st.vy++; }
     },
 
-    /* Paints the month. Days already gone are disabled. */
+    /* Paints the month; days already gone are disabled. */
     grid: function(c, st){
       var grid = document.getElementById(c.grid), mon = document.getElementById(c.mon);
       if(!grid) return;
@@ -1034,7 +1115,7 @@
       if(dd) dd.classList.remove('open');
     },
 
-    /* A tap anywhere outside the open panel shuts it. */
+    /* A tap outside the open panel shuts it. */
     watchOutside: function(c){
       document.addEventListener('click', function(ev){
         var dd = document.getElementById(c.dd);
@@ -1042,7 +1123,7 @@
       });
     },
 
-    /* Writes the picked day and time into the form's hidden field. */
+    /* Writes the chosen day and time into the form's hidden field. */
     apply: function(c, st){
       if(st.y === null) return;
       var hs = document.getElementById(c.h), ms = document.getElementById(c.m);
@@ -1053,7 +1134,7 @@
       window.dzSchedUI.hint(c);
     },
 
-    /* The trigger's label and the line under it. */
+    /* The trigger's label, and the line under it. */
     hint: function(c){
       var el = document.getElementById(c.val), hint = document.getElementById(c.hint);
       if(!el || !hint) return;
@@ -1080,7 +1161,7 @@
       return c.iso ? new Date(t).toISOString() : el.value;
     },
 
-    /* Both forms word a time the same way bar the hour: one pads it. */
+    /* Same wording bar the hour, which one form pads. */
     fmt: function(iso, twoDigitHour){
       return new Date(iso).toLocaleString([], {
         month:'short', day:'numeric',

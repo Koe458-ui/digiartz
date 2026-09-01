@@ -673,6 +673,28 @@
   }
   window.dzCloseAllPanels = dzCloseAllPanels;
 
+  /* The Tab trap the three search pages share. Each still owns its own
+     keydown listener — one of them also answers Escape — but the wrapping
+     itself is written once. `pg` is the open page; the caller has already
+     established that it is open. */
+  window.dzTrapTab = function(pg, e){
+    if(e.key !== 'Tab' || !pg) return;
+    var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
+              'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    var items = Array.prototype.filter.call(pg.querySelectorAll(sel), function(el){
+      return !el.hidden && el.offsetParent !== null;
+    });
+    if(!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    if(!pg.contains(document.activeElement)){
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+      return;
+    }
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  };
+
   var navSeq = 0, navHold = 0, navTimer = null;
 
   window.dzNavBegin = function(){
@@ -887,6 +909,282 @@
     return !!(e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1));
   }
   window.dzModifiedClick = dzModifiedClick;
+
+  /* Wiring a built card to open something. Three places build cards this way
+     — the front page rail, the hero search and the gallery search — and each
+     wants the same thing: a plain click opens it here, a modified click is
+     left to the browser, and a card that is not already a link answers Enter
+     and Space so the keyboard can reach it too. */
+  /* Publishing asks the same three things of visibility and the schedule
+     field, wherever it is asked: a scheduled item needs a time, an unlisted
+     one must not carry one, and "scheduled" is stored as "published" with the
+     time in its own column. `phrase` is how the refusal names the thing —
+     "resource is not listed", "artwork is not shown" — because the upload
+     forms say it differently. Returns `error` for the caller to raise its own
+     way: the section forms throw, the artwork form toasts. */
+  window.dzVisibilitySchedule = function(vis, when, phrase){
+    vis = vis || 'published';
+    if(vis === 'scheduled' && !when)
+      return { error: 'Pick a time under Schedule, or set visibility to Published' };
+    if((vis === 'draft' || vis === 'hidden') && when)
+      return { error: 'A ' + vis + ' ' + phrase + ', so it does not need a schedule' };
+    return { vis: vis === 'scheduled' ? 'published' : vis, when: when };
+  };
+
+  /* Dragging an image around inside its crop stage. Two crop modals do it —
+     the avatar and banner picker, and the artwork picker with its zoom — and
+     the bookkeeping is the same for both: which pointer, where it started,
+     and the four listeners that have to come off again on release. What the
+     drag adds up to is the part that differs, and that is `onMove`, which is
+     handed the pointer once the drag is known to be live. */
+  window.dzDragStage = function(stageId, st, canDrag, onMove){
+    var stageEl = null;
+    function down(e){
+      if(!canDrag()) return;
+      stageEl = document.getElementById(stageId);
+      st.dragging = true; stageEl.classList.add('dragging');
+      var p = e.touches ? e.touches[0] : e;
+      st.sx = p.clientX; st.sy = p.clientY;
+      st.ox = st.x; st.oy = st.y;
+      document.addEventListener('mousemove', move);
+      document.addEventListener('touchmove', move, {passive:false});
+      document.addEventListener('mouseup', up);
+      document.addEventListener('touchend', up);
+      e.preventDefault();
+    }
+    function move(e){
+      if(!st.dragging) return;
+      onMove(e.touches ? e.touches[0] : e);
+    }
+    function up(){
+      st.dragging = false;
+      if(stageEl) stageEl.classList.remove('dragging');
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('touchmove', move);
+      document.removeEventListener('mouseup', up);
+      document.removeEventListener('touchend', up);
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      var el = document.getElementById(stageId);
+      if(!el) return;
+      el.addEventListener('mousedown', down);
+      el.addEventListener('touchstart', down, {passive:false});
+    });
+  };
+
+  /* The two search pages — one over a profile, one over the gallery. They
+     look for different things in different places, but the chrome around the
+     looking is the same: a note line, a debounced input, a row of scope tabs,
+     a Tab trap, and giving focus back to whatever opened the page. A page is
+     described by one config naming its elements, its scope groups, its state
+     and how to run a search. */
+  window.dzSearchUI = {
+    /* An ILIKE pattern with the wildcards and quoting taken out. */
+    pattern: function(q){
+      var clean = String(q||'').replace(/[%_*(),."\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
+      return clean ? '%'+clean+'%' : '';
+    },
+
+    /* Marks the search bar as carrying a query, so it can style itself. */
+    chrome: function(wrapId, v){
+      var w = document.getElementById(wrapId);
+      if(w) w.classList.toggle('tgHasQ', !!String(v || '').length);
+    },
+
+    note: function(c, msg){
+      var n = document.getElementById(c.note);
+      if(!n) return;
+      n.textContent = msg || '';
+      n.hidden = !msg;
+    },
+
+    /* Keeps Tab inside the page while it is open. */
+    trap: function(c){
+      document.addEventListener('keydown', function(e){
+        var pg = document.getElementById(c.page);
+        if(!pg || !pg.classList.contains('open')) return;
+        if(typeof window.dzTrapTab === 'function') window.dzTrapTab(pg, e);
+      }, true);
+    },
+
+    open: function(c){
+      var pg = document.getElementById(c.page);
+      if(!pg) return;
+      c.lastFocus = document.activeElement;
+      pg.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      var input = document.getElementById(c.input);
+      if(input) setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
+    },
+
+    /* Hands focus back to whatever opened the page, unless it is gone. */
+    restoreFocus: function(c, silent){
+      var back = c.lastFocus; c.lastFocus = null;
+      if(silent !== true && back && back.isConnected && back.focus){
+        try{ back.focus({preventScroll:true}); }catch(e){ try{ back.focus(); }catch(e2){} }
+      }
+    },
+
+    clear: function(c){
+      var input = document.getElementById(c.input);
+      if(input){ input.value = ''; try{ input.focus(); }catch(e){} }
+      window.dzSearchUI.input(c, '');
+    },
+
+    /* Typing runs the search, but not on every keystroke. */
+    input: function(c, v){
+      c.st.q = String(v||'');
+      window.dzSearchUI.chrome(c.wrap, c.st.q);
+      clearTimeout(c.st.timer);
+      c.st.timer = setTimeout(c.run, 220);
+    },
+
+    scope: function(c, scope){
+      if(c.st.scope === scope) return;
+      c.st.scope = scope;
+      window.dzSearchUI.paintScopes(c);
+      c.run();
+    },
+
+    /* The scope tabs sit in markup order behind "All". */
+    paintScopes: function(c){
+      var wrap = document.getElementById(c.scopes);
+      if(!wrap) return;
+      var order = ['all'].concat(c.groups.map(function(g){ return g.key; }));
+      Array.prototype.forEach.call(wrap.children, function(btn, i){
+        var on = order[i] === c.st.scope;
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+    }
+  };
+
+  /* The schedule picker both upload forms use — the artwork form's markup is
+     in index.html, the section forms are generated, so each owns its elements
+     and state and passes them here as one config. `hint` and `picked` belong
+     together: they share the five-minute rule, and were it to drift the hint
+     would call a time fine while the form quietly dropped it. */
+  var DZ_SCHED_MIN = 5 * 60 * 1000;
+
+  function dzSchedPad(n){ return (n < 10 ? '0' : '') + n; }
+
+  window.dzSchedUI = {
+    /* Filled once; defaults to an hour from now. */
+    hours: function(c){
+      var hs = document.getElementById(c.h), ms = document.getElementById(c.m);
+      if(!hs || hs.options.length) return;
+      var i, o;
+      for(i = 0; i < 24; i++){ o = document.createElement('option'); o.value = i; o.textContent = dzSchedPad(i); hs.appendChild(o); }
+      for(i = 0; i < 60; i += 5){ o = document.createElement('option'); o.value = i; o.textContent = dzSchedPad(i); ms.appendChild(o); }
+      var t = new Date(Date.now() + 60 * 60 * 1000);
+      hs.value = t.getHours(); ms.value = Math.floor(t.getMinutes() / 5) * 5;
+    },
+
+    /* Steps the shown month, carrying into the year. */
+    nav: function(st, delta){
+      st.vm += delta;
+      if(st.vm < 0){ st.vm = 11; st.vy--; }
+      else if(st.vm > 11){ st.vm = 0; st.vy++; }
+    },
+
+    /* Paints the month; days already gone are disabled. */
+    grid: function(c, st){
+      var grid = document.getElementById(c.grid), mon = document.getElementById(c.mon);
+      if(!grid) return;
+      var y = st.vy, m = st.vm;
+      mon.textContent = new Date(y, m, 1).toLocaleString([], {month:'long', year:'numeric'});
+      var first = new Date(y, m, 1).getDay();
+      var days  = new Date(y, m + 1, 0).getDate();
+      var now = new Date();
+      var todayKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate();
+      var html = '';
+      for(var p = 0; p < first; p++) html += '<span class="upSchedDay pad"></span>';
+      for(var d = 1; d <= days; d++){
+        var past = new Date(y, m, d, 23, 59, 59).getTime() < Date.now();
+        var cls = 'upSchedDay';
+        if(todayKey === y + '-' + m + '-' + d) cls += ' today';
+        if(st.y === y && st.m === m && st.d === d) cls += ' sel';
+        html += '<button type="button" class="' + cls + '"' + (past ? ' disabled' : '') +
+                ' onclick="' + c.pick + '(' + y + ',' + m + ',' + d + ',event)">' + d + '</button>';
+      }
+      grid.innerHTML = html;
+    },
+
+    close: function(c){
+      var dd = document.getElementById(c.dd);
+      if(dd) dd.classList.remove('open');
+    },
+
+    /* A tap outside the open panel shuts it. */
+    watchOutside: function(c){
+      document.addEventListener('click', function(ev){
+        var dd = document.getElementById(c.dd);
+        if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) window.dzSchedUI.close(c);
+      });
+    },
+
+    /* Writes the chosen day and time into the form's hidden field. */
+    apply: function(c, st){
+      if(st.y === null) return;
+      var hs = document.getElementById(c.h), ms = document.getElementById(c.m);
+      var h = +hs.value || 0, mi = +ms.value || 0;
+      var el = document.getElementById(c.val);
+      if(el) el.value = st.y + '-' + dzSchedPad(st.m + 1) + '-' + dzSchedPad(st.d) +
+                        'T' + dzSchedPad(h) + ':' + dzSchedPad(mi);
+      window.dzSchedUI.hint(c);
+    },
+
+    /* The trigger's label, and the line under it. */
+    hint: function(c){
+      var el = document.getElementById(c.val), hint = document.getElementById(c.hint);
+      if(!el || !hint) return;
+      var lbl = document.getElementById(c.lbl);
+      if(lbl){
+        if(el.value){ lbl.textContent = c.fmt(el.value); lbl.classList.remove('upSchedPh'); }
+        else { lbl.innerHTML = '__/__/____&nbsp;&nbsp;__:__'; lbl.classList.add('upSchedPh'); }
+      }
+      if(!el.value){ hint.textContent = 'Leave empty to publish immediately.'; hint.classList.remove('bad'); return; }
+      var t = new Date(el.value).getTime();
+      if(!isFinite(t) || t < Date.now() + DZ_SCHED_MIN){
+        hint.textContent = 'Pick a time at least 5 minutes from now.'; hint.classList.add('bad');
+      } else {
+        hint.textContent = 'Publishes ' + c.fmt(el.value) + ' \u00B7 ' + c.tail; hint.classList.remove('bad');
+      }
+    },
+
+    /* The chosen time, or '' when there is none or it is too soon. */
+    picked: function(c){
+      var el = document.getElementById(c.val);
+      if(!el || !el.value) return '';
+      var t = new Date(el.value).getTime();
+      if(!isFinite(t) || t < Date.now() + DZ_SCHED_MIN) return '';
+      return c.iso ? new Date(t).toISOString() : el.value;
+    },
+
+    /* Same wording bar the hour, which one form pads. */
+    fmt: function(iso, twoDigitHour){
+      return new Date(iso).toLocaleString([], {
+        month:'short', day:'numeric',
+        hour: twoDigitHour ? '2-digit' : 'numeric', minute:'2-digit'
+      });
+    }
+  };
+
+  window.dzCardActivate = function(card, open){
+    card.onclick = function(e){
+      if(dzModifiedClick(e)) return true;
+      if(e) e.preventDefault();
+      open();
+      return false;
+    };
+    if(!card.href){
+      card.onkeydown = function(e){
+        if(e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        open();
+      };
+    }
+  };
 
   function itemHTML(img, idx){
     const eager = typeof idx === 'number' && idx < 4;

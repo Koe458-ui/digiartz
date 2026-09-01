@@ -8,18 +8,22 @@
   --bdrh:color-mix(in srgb,var(--tc) 45%,transparent);
 }
 
-#admPage{
+#admPage,
+#pfMyWorkPage{
   position:fixed;inset:0;z-index:520;background:var(--bg);
   overflow-y:auto;transform:translateX(100%);
   transition:transform .45s cubic-bezier(.22,1,.36,1);
 }
 #admPage.open{transform:translateX(0);}
-#admPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
+#admPage .subPgHdr,
+#pfMyWorkPage .subPgHdr,
+#notifPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
 #admPage .subPgTitle{color:var(--tx);}
 .admBdy{margin:0 auto;box-sizing:border-box;padding:1.6rem var(--shellPad) 6rem;}
 @media(max-width:480px){.admBdy{padding:1.2rem var(--shellPad) 6rem;}}
 
-#admPage .pfTabs{padding:0;border-bottom:1px solid var(--bdr);position:static;margin-bottom:.4rem;}
+#admPage .pfTabs,
+#pfMyWorkPage .pfTabs{padding:0;border-bottom:1px solid var(--bdr);position:static;margin-bottom:.4rem;}
 #admPage .pfTabs::before{display:none;}
 #admPage .pfTab{position:relative;}
 .admTabCount{
@@ -74,15 +78,8 @@
 .admNotiSentMsg{font-family:var(--fb);font-size:.76rem;color:var(--txd);margin-top:.2rem;}
 .admNotiSentTime{font-family:var(--fm);font-size:.58rem;letter-spacing:.06em;color:var(--txd);opacity:.65;margin-top:.35rem;}
 
-#pfMyWorkPage{
-  position:fixed;inset:0;z-index:520;background:var(--bg);
-  overflow-y:auto;transform:translateX(100%);
-  transition:transform .45s cubic-bezier(.22,1,.36,1);
-}
 #pfMyWorkPage.open{transform:translateX(0);}
-#pfMyWorkPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
 #pfMyWorkPage .subPgTitle{color:var(--tx);}
-#pfMyWorkPage .pfTabs{padding:0;border-bottom:1px solid var(--bdr);position:static;margin-bottom:.4rem;}
 #pfMyWorkPage .pfTabs::before{display:none;}
 #pfMyWorkPage .pfTab{position:relative;}
 #pfMyWorkPage .pfPanel{padding:1.4rem 0 0;}
@@ -97,7 +94,6 @@
   transition:transform .45s cubic-bezier(.22,1,.36,1);
 }
 #notifPage.open{transform:translateX(0);}
-#notifPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
 #notifPage .subPgTitle{color:var(--tx);}
 .notifBdy{max-width:640px;margin:0 auto;padding:1.4rem 1.4rem 6rem;}
 .notifListWrap{display:flex;flex-direction:column;gap:.6rem;}

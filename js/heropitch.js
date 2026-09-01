@@ -1,6 +1,5 @@
-/* The four tabs above the fold and the quick links that share their router.
-   This paints during boot, so unlike the rest of what was sections.js it
-   ships with the shell. */
+/* The four tabs above the fold. This paints during boot, so unlike the rest
+   of what was sections.js it ships with the shell. */
 (function(){
   'use strict';
 
@@ -106,50 +105,4 @@
 
   window.hpSelect = hpSelect;
   window.hpGo     = hpGo;
-})();
-
-(function(){
-  'use strict';
-
-  var OWN = {
-    community:    function(){ if(typeof bnGoCommunity === 'function') bnGoCommunity(); },
-    upload:       function(){ if(typeof bnGoUpload === 'function') bnGoUpload(); },
-    cart:         function(){ if(typeof dzGoCart === 'function') dzGoCart(); },
-    subscription: function(){ if(typeof openSubscription === 'function') openSubscription(); },
-    level:        function(){
-      if(window.pf) window.pf.profile = null;
-      if(typeof openXpPage === 'function') openXpPage();
-    },
-    theme:        function(){ if(typeof openThemePage === 'function') openThemePage(); },
-    ranking:      function(){ if(typeof openRankHub === 'function') openRankHub(); }
-  };
-
-  var GALLERY = {
-    artworks:1, marketplace:1, resources:1, blog:1, jobs:1
-  };
-
-  function shut(){
-    if(typeof bnCloseAllSections === 'function') bnCloseAllSections();
-  }
-
-  window.qlGo = function(id){
-
-    var path = typeof window.dzRoutePath === 'function' ? window.dzRoutePath(id) : null;
-    if(path && typeof window.dzRouteGo === 'function' && window.dzRouteGo(path)) return;
-
-    if(window.dzNavBegin) window.dzNavBegin();
-    try{
-      if(GALLERY[id]){
-        if(typeof bnGoGallery === 'function') bnGoGallery();
-        else if(typeof openFG === 'function') openFG();
-        if(typeof fgSwitchSection === 'function') fgSwitchSection(id);
-      } else {
-        shut();
-        if(OWN[id]) OWN[id]();
-      }
-    } finally {
-      if(window.dzNavEnd) window.dzNavEnd();
-      if(typeof window.dzRouteAudit === 'function') window.dzRouteAudit();
-    }
-  };
 })();

@@ -19,13 +19,13 @@
 
   var CHUNKS = {
     analytics: {
-      src: ['/js/analytics.js?v=14'],
-      css: ['/css/analytics.css?v=12'],
+      src: ['/js/analytics.js?v=15'],
+      css: ['/css/analytics.css?v=13'],
       api: ['openAnalyticsPage']
     },
     hubs: {
       src: ['/js/hubs.js?v=4'],
-      css: ['/css/analytics.css?v=12'],
+      css: ['/css/analytics.css?v=13'],
       api: ['anHubOpen', 'payHubOpen']
     },
     share: {
@@ -100,7 +100,6 @@
   }
 
   window.dzLazy = load;
-  window.dzLazyLoaded = function(name){ return !!pending[name]; };
 
   function stub(chunk, name){
     var placeholder = function(){

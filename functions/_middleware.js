@@ -1,11 +1,9 @@
 import { underEdgeLimit, tooManyRequests } from './lib/ratelimit.js';
-import { sbUrl, sbAnon } from './lib/sb.js';
+import { sbUrl, sbAnon, SB_SIZE_RE } from './lib/sb.js';
+import { SITE, UUID_RE, esc } from './lib/http.js';
 
-const SITE = 'https://digiartz.net';
 const CACHE_SECONDS = 300;
 const ROW_CACHE_SECONDS = 60;
-
-const SB_SIZE_RE = /__(?:t300|t600|v1000|f1600)\.webp$/;
 
 function resize(url, width) {
   if (!url || typeof url !== 'string') return url;
@@ -27,9 +25,6 @@ function thumbAttrs(url, env) {
 }
 const ogImage = (url) => resize(url, 1200);
 const fullImage = (url) => resize(url, 1600);
-
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
-  (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function clamp(s, n = 160) {
   const t = String(s ?? '').replace(/\s+/g, ' ').trim();
@@ -143,7 +138,6 @@ const SAFE_NAME = /^[\p{L}\p{N}._-]{1,40}$/u;
 const likeEscape = (s) => String(s).replace(/[\\%_]/g, '\\$&');
 const sameName = (a, b) =>
   String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase();
-const UUID_RE   = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function resolve(env, pathname) {
   const sec = SECTIONS[pathname.replace(/(.)\/$/, '$1')];

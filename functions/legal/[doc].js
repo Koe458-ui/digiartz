@@ -1,6 +1,5 @@
 import { LEGAL } from '../../js/legal-content.js';
-
-const SITE = 'https://digiartz.net';
+import { SITE, esc } from '../lib/http.js';
 
 const SLUGS = {
   'privacy':       { key: 'privacy', title: 'Privacy Policy' },
@@ -8,9 +7,6 @@ const SLUGS = {
 };
 
 export const LEGAL_SLUGS = Object.keys(SLUGS);
-
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
-  (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function describe(html) {
   const text = String(html || '')

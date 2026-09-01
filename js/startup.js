@@ -127,19 +127,7 @@
     card.appendChild(meta);
 
     (function(s,n,c,d,i){
-      card.onclick = function(e){
-        if(dzModifiedClick(e)) return true;
-        if(e) e.preventDefault();
-        openLB(s,n,c,d,i);
-        return false;
-      };
-      if(!card.href){
-        card.onkeydown = function(e){
-          if(e.key !== 'Enter' && e.key !== ' ') return;
-          e.preventDefault();
-          openLB(s,n,c,d,i);
-        };
-      }
+      window.dzCardActivate(card, function(){ openLB(s,n,c,d,i); });
     })(fullSrc, name, cat, desc, id);
     return card;
   }

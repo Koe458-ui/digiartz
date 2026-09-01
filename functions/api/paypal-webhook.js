@@ -1,4 +1,5 @@
-import { sbUrl, sbSvc } from '../lib/sb.js';
+import { sbUrl, sbSvc, sbService } from '../lib/sb.js';
+import { pp } from '../lib/paypal.js';
 import {
   PLAN_TIERS, applySubscription, revokeSubscription, recordEarning
 } from '../lib/billing.js';
@@ -6,67 +7,6 @@ import { ppFee, toValue } from '../lib/money.js';
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
-
-const apiBase = (env) =>
-  String(env.PAYPAL_ENV || '').trim().toLowerCase() === 'sandbox'
-    ? 'https://api-m.sandbox.paypal.com'
-    : 'https://api-m.paypal.com';
-
-let tokenCache = null;
-async function ppToken(env) {
-  const key = apiBase(env) + '|' + env.PAYPAL_CLIENT_ID;
-  if (tokenCache && tokenCache.key === key && tokenCache.expires > Date.now())
-    return tokenCache.token;
-  const res = await fetch(apiBase(env) + '/v1/oauth2/token', {
-    method: 'POST',
-    headers: {
-      authorization: 'Basic ' + btoa(env.PAYPAL_CLIENT_ID + ':' + env.PAYPAL_CLIENT_SECRET),
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || !body.access_token) throw new Error('paypal auth failed');
-  tokenCache = {
-    key, token: body.access_token,
-    expires: Date.now() + Math.max(60, (Number(body.expires_in) || 3600) - 60) * 1000,
-  };
-  return tokenCache.token;
-}
-
-async function pp(env, path, init = {}) {
-  const res = await fetch(apiBase(env) + path, {
-    ...init,
-    headers: {
-      authorization: 'Bearer ' + (await ppToken(env)),
-      'content-type': 'application/json',
-      ...(init.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(body.message || 'paypal ' + res.status);
-    err.issue = (body.details && body.details[0] && body.details[0].issue) || body.name || '';
-    throw err;
-  }
-  return body;
-}
-
-async function sbService(env, path, init = {}) {
-  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
-    ...init,
-    headers: {
-      apikey: sbSvc(env),
-      authorization: 'Bearer ' + sbSvc(env),
-      'content-type': 'application/json',
-      prefer: 'return=representation',
-      ...(init.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error('db ' + res.status);
-  return body;
-}
 
 async function verified(env, request, headers, event) {
   const res = await pp(env, '/v1/notifications/verify-webhook-signature', {

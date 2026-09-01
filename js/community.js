@@ -141,26 +141,11 @@
         searchCommunities(q.toLowerCase());
       }
 
-      function srchFocusable () {
-        var pg = $('cmSearchPage'); if (!pg) return [];
-        var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
-                  'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
-        return Array.prototype.filter.call(pg.querySelectorAll(sel), function (el) {
-          return !el.hidden && el.offsetParent !== null;
-        });
-      }
       document.addEventListener('keydown', function (e) {
         var pg = $('cmSearchPage');
         if (!pg || !pg.classList.contains('open')) return;
         if (e.key === 'Escape') { e.stopImmediatePropagation(); window.cmCloseSearch(); return; }
-        if (e.key !== 'Tab') return;
-        var items = srchFocusable(); if (!items.length) return;
-        var first = items[0], last = items[items.length - 1];
-        if (!pg.contains(document.activeElement)) {
-          e.preventDefault(); (e.shiftKey ? last : first).focus(); return;
-        }
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        if (typeof window.dzTrapTab === 'function') window.dzTrapTab(pg, e);
       }, true);
 
       window.cmSetFriendBadge = function (n) {

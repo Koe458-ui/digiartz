@@ -1,5 +1,14 @@
 import { encodePath } from './http.js';
 
+/* The project this site is deployed against, for the handful of endpoints
+   that answer with it when the binding is missing rather than failing. Three
+   files each carried their own copy of both. */
+export const SB_URL_FALLBACK  = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
+export const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
+
+/* The size suffix Supabase storage renditions carry. */
+export const SB_SIZE_RE = /__(?:t300|t600|v1000|f1600)\.webp$/;
+
 export const sbUrl  = (env) => env.SB_URL || env.SUPABASE_URL || '';
 export const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
 export const sbSvc  = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -57,13 +66,20 @@ export async function signObject(sbUrlStr, svcKey, bucket, path, seconds) {
   return signed.startsWith('http') ? signed : sbUrlStr + '/storage/v1' + signed;
 }
 
+/* The one call to dz_rate_take. The edge middleware, the download endpoint
+   and the three payment endpoints all used to make it themselves, in three
+   slightly different ways. A bucket that cannot be counted is allowed
+   through: a rate limiter that fails closed would take the site down. */
 export async function underLimit(env, bucket, limit, seconds) {
+  const key = sbSvc(env);
+  if (!key) return true;
+  const base = String(sbUrl(env) || SB_URL_FALLBACK).replace(/\/$/, '');
   try {
-    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_rate_take', {
+    const res = await fetch(base + '/rest/v1/rpc/dz_rate_take', {
       method: 'POST',
       headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
+        apikey: key,
+        authorization: 'Bearer ' + key,
         'content-type': 'application/json',
       },
       body: JSON.stringify({ p_bucket: bucket, p_limit: limit, p_seconds: seconds }),
@@ -71,6 +87,24 @@ export async function underLimit(env, bucket, limit, seconds) {
     if (!res.ok) return true;
     return (await res.json()) !== false;
   } catch { return true; }
+}
+
+/* Constant-time HMAC-SHA256 check, shared by the two places Razorpay asks for
+   one: the payment signature on a completed order, and the webhook signature
+   on a delivery. They differ only in which secret and which message. */
+export async function hmacMatches(secret, message, signature) {
+  const sig = String(signature || '');
+  if (!sig) return false;
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
+  const hex = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const a = new TextEncoder().encode(hex);
+  const b = new TextEncoder().encode(sig);
+  if (a.byteLength !== b.byteLength) return false;
+  return crypto.subtle.timingSafeEqual(a, b);
 }
 
 export async function ledger(env, args) {

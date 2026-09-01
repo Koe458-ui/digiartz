@@ -296,42 +296,42 @@
 .subOvPlanBadge--max     { color: #fcd34d; border-color: #b45309; background: rgba(180,83,9,.18); }
 .subOvPlanBadge--dev     { color: #fca5a5; border-color: #dc2626; background: rgba(220,38,38,.16); }
 
-.subOvCard--lite    { border-color: #93c5fd; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(59,130,246,.18); }
+.subOvCard--lite,
+.subOvCard--profile-lite{ border-color: #93c5fd; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(59,130,246,.18); }
 .subOvCard--lite .subOvArrow { border-color: #93c5fd; color: #2563eb; }
 @media (hover: hover) {
-  .subOvCard--lite:hover    { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(59,130,246,.32); }
+  .subOvCard--lite:hover,
+.subOvCard--profile-lite:hover{ border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(59,130,246,.32); }
   .subOvCard--lite .subOvArrow:hover { border-color: #3b82f6; background: rgba(59,130,246,.16); box-shadow: 0 0 14px rgba(59,130,246,.35); }
 }
-.subOvCard--premium { border-color: #C4B5FD; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(168,85,247,.18); }
+.subOvCard--premium,
+.subOvCard--profile-premium{ border-color: #C4B5FD; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(168,85,247,.18); }
 .subOvCard--premium .subOvArrow { border-color: #C4B5FD; color: #7c3aed; }
 @media (hover: hover) {
-  .subOvCard--premium:hover    { border-color: #a855f7; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(168,85,247,.32); }
+  .subOvCard--premium:hover,
+.subOvCard--profile-premium:hover{ border-color: #a855f7; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(168,85,247,.32); }
   .subOvCard--premium .subOvArrow:hover { border-color: #a855f7; background: rgba(168,85,247,.18); box-shadow: 0 0 14px rgba(168,85,247,.35); }
 }
-.subOvCard--max     { border-color: #fcd34d; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(234,179,8,.20); }
+.subOvCard--max,
+.subOvCard--profile-max{ border-color: #fcd34d; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(234,179,8,.20); }
 .subOvCard--max .subOvArrow { border-color: #fcd34d; color: #b45309; }
 @media (hover: hover) {
-  .subOvCard--max:hover    { border-color: #eab308; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(234,179,8,.34); }
+  .subOvCard--max:hover,
+.subOvCard--profile-max:hover{ border-color: #eab308; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(234,179,8,.34); }
   .subOvCard--max .subOvArrow:hover { border-color: #eab308; background: rgba(234,179,8,.18); box-shadow: 0 0 14px rgba(234,179,8,.38); }
 }
 
-.subOvCard--profile-lite    { border-color: #93c5fd; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(59,130,246,.18); }
 .subOvCard--profile-lite .subOvAvatar { border-color: #93c5fd; }
 @media (hover: hover) {
-  .subOvCard--profile-lite:hover    { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(59,130,246,.32); }
-  .subOvCard--profile-lite:hover .subOvAvatar { border-color: #3b82f6; }
+    .subOvCard--profile-lite:hover .subOvAvatar { border-color: #3b82f6; }
 }
-.subOvCard--profile-premium { border-color: #C4B5FD; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(168,85,247,.18); }
 .subOvCard--profile-premium .subOvAvatar { border-color: #C4B5FD; }
 @media (hover: hover) {
-  .subOvCard--profile-premium:hover    { border-color: #a855f7; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(168,85,247,.32); }
-  .subOvCard--profile-premium:hover .subOvAvatar { border-color: #a855f7; }
+    .subOvCard--profile-premium:hover .subOvAvatar { border-color: #a855f7; }
 }
-.subOvCard--profile-max     { border-color: #fcd34d; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(234,179,8,.20); }
 .subOvCard--profile-max .subOvAvatar { border-color: #fcd34d; }
 @media (hover: hover) {
-  .subOvCard--profile-max:hover    { border-color: #eab308; box-shadow: 0 4px 12px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.13), 0 0 38px rgba(234,179,8,.34); }
-  .subOvCard--profile-max:hover .subOvAvatar { border-color: #eab308; }
+    .subOvCard--profile-max:hover .subOvAvatar { border-color: #eab308; }
 }
 .subOvCard--profile-dev     { border-color: #fca5a5; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 20px rgba(0,0,0,.09), 0 0 22px rgba(220,38,38,.18); }
 .subOvCard--profile-dev .subOvAvatar { border-color: #fca5a5; }

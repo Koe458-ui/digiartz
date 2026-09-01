@@ -1,9 +1,11 @@
+import { SITE as SITE_URL } from './lib/http.js';
+import { SB_URL_FALLBACK } from './lib/sb.js';
+
 export async function onRequestGet(context) {
   const { env } = context;
 
-  const SUPABASE_URL = env.SB_URL || env.SUPABASE_URL || 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
+  const SUPABASE_URL = env.SB_URL || env.SUPABASE_URL || SB_URL_FALLBACK;
   const SUPABASE_ANON_KEY = env.SB_KEY || env.SUPABASE_ANON_KEY || '';
-  const SITE_URL = 'https://digiartz.net';
 
   const BLOCKED = ['madarchod', 'bhenchod', 'chutiya', 'lund', 'randi'];
   const LEET = { '4': 'a', '@': 'a', '3': 'e', '1': 'i', '!': 'i', '0': 'o', '5': 's', '$': 's', '7': 't' };

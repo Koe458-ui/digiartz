@@ -1,3 +1,5 @@
+import { SB_URL_FALLBACK, SB_ANON_FALLBACK } from '../lib/sb.js';
+
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 6;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -195,9 +197,6 @@ Decision Rules
 - allow = false when the image is a photograph, screenshot, or document, when the rating is ADULT, or when an always-reject rule applies
 
 Return your verdict as JSON with fields: allow, artwork, rating, quality, category (one code from the list), reason (short internal note), confidence (0 to 1).`;
-
-const SB_URL_FALLBACK = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
-const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
 
 export async function onRequestPost(context) {
   const { request, env } = context;

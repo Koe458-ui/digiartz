@@ -109,7 +109,9 @@
   transition:transform .45s cubic-bezier(.22,1,.36,1);
 }
 #themePage.open{transform:translateX(0);}
-.thmBdy{
+.thmBdy,
+.bmBdy,
+.albBdy{
   margin:0 auto;box-sizing:border-box;
   padding:1.4rem max(var(--shellPad),env(safe-area-inset-right))
           calc(6.5rem + env(safe-area-inset-bottom))
@@ -379,12 +381,6 @@ html.thmFade #themePage{
 .xpLbLvl{margin-left:auto;font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--pb);white-space:nowrap;}
 .xpNote{font-family:var(--fm);font-size:.6rem;letter-spacing:.12em;color:var(--txd);text-align:center;padding:1.2rem 0;}
 @media(max-width:400px){ .xpGrid2{grid-template-columns:1fr;} }
-.bmBdy{
-  margin:0 auto;box-sizing:border-box;
-  padding:1.4rem max(var(--shellPad),env(safe-area-inset-right))
-          calc(6.5rem + env(safe-area-inset-bottom))
-          max(var(--shellPad),env(safe-area-inset-left));
-}
 .bmGrid{
   display:grid;gap:var(--artGap);
   grid-template-columns:repeat(2,1fr);
@@ -413,11 +409,13 @@ html.thmFade #themePage{
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
 }
 .bmRemove:hover{border-color:var(--pg);color:var(--pg);}
-.bmEmpty{
+.bmEmpty,
+.albEmpty{
   text-align:center;padding:3.5rem 1rem;color:var(--txd);
   font-family:var(--fm);font-size:.72rem;letter-spacing:.14em;
 }
-.bmEmpty .ico{font-size:1.8rem;margin-bottom:.8rem;opacity:.6;}
+.bmEmpty .ico,
+.albEmpty .ico{font-size:1.8rem;margin-bottom:.8rem;opacity:.6;}
 @media(prefers-reduced-motion:reduce){
   #bmPage,.bmCard{transition:none;}
 }
@@ -449,7 +447,8 @@ html.thmFade #themePage{
   .albCard:hover .albCell img{transform:scale(1.03);}
 }
 .albCard:active{transform:scale(.99);}
-.albCard:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+.albCard:focus-visible,
+.albDots:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 .albMosaic{
   position:absolute;inset:0;
   display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
@@ -494,7 +493,6 @@ html.thmFade #themePage{
   opacity:.9;transition:background .18s,opacity .18s;
 }
 @media(hover:hover){ .albDots:hover{background:rgba(0,0,0,.66);opacity:1;} }
-.albDots:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 .albMenu{
   position:fixed;z-index:120;min-width:168px;padding:.3rem;
   background:var(--sur);border:1px solid var(--bdr);border-radius:11px;
@@ -534,12 +532,6 @@ html.thmFade #themePage{
 #albPage{z-index:547;}
 #albViewPage{z-index:548;}
 #albPage.open,#albViewPage.open{transform:translateX(0);}
-.albBdy{
-  margin:0 auto;box-sizing:border-box;
-  padding:1.4rem max(var(--shellPad),env(safe-area-inset-right))
-          calc(6.5rem + env(safe-area-inset-bottom))
-          max(var(--shellPad),env(safe-area-inset-left));
-}
 .albNote{
   font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;color:var(--txd);
   padding:.2rem 0 .1rem;
@@ -574,11 +566,6 @@ html.thmFade #themePage{
 .albItemWrap:hover .albItemX,.albItemX:focus-visible{opacity:1;}
 @media(hover:none){.albItemX{opacity:1;}}
 .albItemX:hover{border-color:#e0564f;color:#e0564f;}
-.albEmpty{
-  text-align:center;padding:3.5rem 1rem;color:var(--txd);
-  font-family:var(--fm);font-size:.72rem;letter-spacing:.14em;
-}
-.albEmpty .ico{font-size:1.8rem;margin-bottom:.8rem;opacity:.6;}
 
 #albMod .albModBox{max-width:420px;padding:1.4rem 1.3rem 1.2rem;gap:.2rem;}
 .albModTitle{

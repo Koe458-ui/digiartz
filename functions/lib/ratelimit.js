@@ -1,4 +1,4 @@
-const SB_URL_FALLBACK = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
+import { underLimit } from './sb.js';
 
 const LIMITS = [
   ['/api/rzp',               20],
@@ -51,32 +51,8 @@ export async function underEdgeLimit(env, request, pathname) {
   const rule = limitFor(pathname);
   if (!rule) return true;
 
-  const key = env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
-  if (!key) return true;
-
-  const base = String(env.SB_URL || env.SUPABASE_URL || SB_URL_FALLBACK)
-    .replace(/\/$/, '');
-
-  try {
-    const actor = await actorKey(request);
-    const res = await fetch(base + '/rest/v1/rpc/dz_rate_take', {
-      method: 'POST',
-      headers: {
-        apikey: key,
-        authorization: 'Bearer ' + key,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        p_bucket: 'edge:' + rule.bucket + ':' + actor,
-        p_limit: rule.limit,
-        p_seconds: 60
-      })
-    });
-    if (!res.ok) return true;
-    return (await res.json()) !== false;
-  } catch {
-    return true;
-  }
+  const actor = await actorKey(request);
+  return underLimit(env, 'edge:' + rule.bucket + ':' + actor, rule.limit, 60);
 }
 
 export function tooManyRequests() {

@@ -2389,10 +2389,13 @@
     dzSchedStrip(sec);
   }
 
-  var DZ_SCH_MIN = 5 * 60 * 1000;
   var dzSch = { y:null, m:null, d:null, vy:null, vm:null };
-
-  function dzSchPad(n){ return (n<10?'0':'')+n; }
+  var DZ_SCHED = {
+    dd:'dzSchedDd', h:'dzSchedH', m:'dzSchedM', grid:'dzSchedGrid',
+    mon:'dzSchedMon', lbl:'dzSchedLbl', hint:'dzSchedHint', val:'dzSchedVal',
+    pick:'dzSchPick', iso:false, fmt:function(v){ return dzFmtWhen(v); },
+    tail:'verified now, published at the set time.'
+  };
   function dzSchToggle(e){
     if(e) e.stopPropagation();
     var dd = document.getElementById('dzSchedDd'); if(!dd) return;
@@ -2402,51 +2405,17 @@
       dzSchBuildTime(); dzSchRender();
     }
   }
-  function dzSchClose(){ var dd=document.getElementById('dzSchedDd'); if(dd) dd.classList.remove('open'); }
-  document.addEventListener('click', function(ev){
-    var dd = document.getElementById('dzSchedDd');
-    if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) dzSchClose();
-  });
-  function dzSchBuildTime(){
-    var hs=document.getElementById('dzSchedH'), ms=document.getElementById('dzSchedM');
-    if(!hs || hs.options.length) return;
-    var i,o;
-    for(i=0;i<24;i++){ o=document.createElement('option'); o.value=i; o.textContent=dzSchPad(i); hs.appendChild(o); }
-    for(i=0;i<60;i+=5){ o=document.createElement('option'); o.value=i; o.textContent=dzSchPad(i); ms.appendChild(o); }
-    var t=new Date(Date.now()+60*60*1000);
-    hs.value=t.getHours(); ms.value=Math.floor(t.getMinutes()/5)*5;
-  }
+  function dzSchClose(){ window.dzSchedUI.close(DZ_SCHED); }
+  window.dzSchedUI.watchOutside(DZ_SCHED);
+  function dzSchBuildTime(){ window.dzSchedUI.hours(DZ_SCHED); }
   function dzSchNav(delta,e){
     if(e) e.stopPropagation();
-    dzSch.vm += delta;
-    if(dzSch.vm<0){ dzSch.vm=11; dzSch.vy--; } else if(dzSch.vm>11){ dzSch.vm=0; dzSch.vy++; }
+    window.dzSchedUI.nav(dzSch, delta);
     dzSchRender();
   }
-  function dzSchRender(){
-    var grid=document.getElementById('dzSchedGrid'), mon=document.getElementById('dzSchedMon');
-    if(!grid) return;
-    var y=dzSch.vy, m=dzSch.vm;
-    mon.textContent=new Date(y,m,1).toLocaleString([], {month:'long', year:'numeric'});
-    var first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate(), now=new Date();
-    var todayKey=now.getFullYear()+'-'+now.getMonth()+'-'+now.getDate(), html='';
-    for(var p=0;p<first;p++) html+='<span class="upSchedDay pad"></span>';
-    for(var d=1; d<=days; d++){
-      var end=new Date(y,m,d,23,59,59), past=end.getTime()<Date.now(), cls='upSchedDay';
-      if(todayKey===y+'-'+m+'-'+d) cls+=' today';
-      if(dzSch.y===y && dzSch.m===m && dzSch.d===d) cls+=' sel';
-      html+='<button type="button" class="'+cls+'"'+(past?' disabled':'')+' onclick="dzSchPick('+y+','+m+','+d+',event)">'+d+'</button>';
-    }
-    grid.innerHTML=html;
-  }
+  function dzSchRender(){ window.dzSchedUI.grid(DZ_SCHED, dzSch); }
   function dzSchPick(y,m,d,e){ if(e) e.stopPropagation(); dzSch.y=y; dzSch.m=m; dzSch.d=d; dzSchRender(); dzSchApply(); }
-  function dzSchApply(){
-    if(dzSch.y===null) return;
-    var hs=document.getElementById('dzSchedH'), ms=document.getElementById('dzSchedM');
-    var h=+hs.value||0, mi=+ms.value||0;
-    var el=document.getElementById('dzSchedVal');
-    if(el) el.value=dzSch.y+'-'+dzSchPad(dzSch.m+1)+'-'+dzSchPad(dzSch.d)+'T'+dzSchPad(h)+':'+dzSchPad(mi);
-    dzSchHint();
-  }
+  function dzSchApply(){ window.dzSchedUI.apply(DZ_SCHED, dzSch); }
   function dzSchClear(e){
     if(e) e.stopPropagation();
     dzSch.y=dzSch.m=dzSch.d=null;
@@ -2460,29 +2429,9 @@
     var el=document.getElementById('dzSchedVal'); if(el) el.value='';
     dzSchClose(); dzSchHint();
   }
-  function dzFmtWhen(iso){
-    var dt=new Date(iso);
-    return dt.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
-  }
-  function dzSchHint(){
-    var el=document.getElementById('dzSchedVal'), hint=document.getElementById('dzSchedHint'), lbl=document.getElementById('dzSchedLbl');
-    if(!el||!hint) return;
-    if(lbl){
-      if(el.value){ lbl.textContent=dzFmtWhen(el.value); lbl.classList.remove('upSchedPh'); }
-      else { lbl.innerHTML='__/__/____&nbsp;&nbsp;__:__'; lbl.classList.add('upSchedPh'); }
-    }
-    if(!el.value){ hint.textContent='Leave empty to publish immediately.'; hint.classList.remove('bad'); return; }
-    var t=new Date(el.value).getTime();
-    if(!isFinite(t) || t < Date.now()+DZ_SCH_MIN){ hint.textContent='Pick a time at least 5 minutes from now.'; hint.classList.add('bad'); }
-    else { hint.textContent='Publishes '+dzFmtWhen(el.value)+' · verified now, published at the set time.'; hint.classList.remove('bad'); }
-  }
-  function dzSchPicked(){
-    var el=document.getElementById('dzSchedVal');
-    if(!el||!el.value) return '';
-    var t=new Date(el.value).getTime();
-    if(!isFinite(t) || t < Date.now()+DZ_SCH_MIN) return '';
-    return el.value;
-  }
+  function dzFmtWhen(iso){ return window.dzSchedUI.fmt(iso, true); }
+  function dzSchHint(){ window.dzSchedUI.hint(DZ_SCHED); }
+  function dzSchPicked(){ return window.dzSchedUI.picked(DZ_SCHED); }
 
   function dzdbOpen(){
     return new Promise(function(res,rej){
@@ -2864,15 +2813,10 @@
       var pendingSell = [];
 
       if(sec === 'resources'){
-        var rVis = val(sec,'visibility') || 'published';
-        var rWhen = dzSchPicked();
-        if(rVis === 'scheduled' && !rWhen){
-          throw new Error('Pick a time under Schedule, or set visibility to Published');
-        }
-        if((rVis === 'draft' || rVis === 'hidden') && rWhen){
-          throw new Error('A ' + rVis + ' resource is not listed, so it does not need a schedule');
-        }
-        if(rVis === 'scheduled') rVis = 'published';
+        var rSched = window.dzVisibilitySchedule(val(sec,'visibility'), dzSchPicked(),
+                                                 'resource is not listed');
+        if(rSched.error) throw new Error(rSched.error);
+        var rVis = rSched.vis;
 
         var rCount = await dzZipCount(s.files.file);
         var rDims  = await dzImageDims(s.files.preview);
@@ -2914,16 +2858,10 @@
         var bTitle = val(sec,'title');
         var body = val(sec,'body');
         var bExcerpt = val(sec,'excerpt');
-        var bVis = val(sec,'visibility') || 'published';
-        var bWhen = dzSchPicked();
-
-        if(bVis === 'scheduled' && !bWhen){
-          throw new Error('Pick a time under Schedule, or set visibility to Published');
-        }
-        if((bVis === 'draft' || bVis === 'hidden') && bWhen){
-          throw new Error('A ' + bVis + ' post is not listed, so it does not need a schedule');
-        }
-        if(bVis === 'scheduled') bVis = 'published';
+        var bSched = window.dzVisibilitySchedule(val(sec,'visibility'), dzSchPicked(),
+                                                 'post is not listed');
+        if(bSched.error) throw new Error(bSched.error);
+        var bVis = bSched.vis, bWhen = bSched.when;
 
         var bc = await put('cover','blog');
 
@@ -3281,8 +3219,6 @@
     var host = sec && document.getElementById('fgSecC-'+sec);
     if(host && host.children.length) dzSecLoad(sec);
   };
-  window.dzSecLabel = labelOf;
-
   window.dzSecCard   = function(sec, row){ return SEC[sec] ? card(sec, row) : ''; };
   window.dzSecLayout = function(sec){
     return (SEC[sec] && SEC[sec].kind === 'grid') ? 'dzGrid' : 'dzList';

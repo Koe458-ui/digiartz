@@ -1,3 +1,11 @@
+/* The one HTML escaper for pages rendered at the edge. The middleware, the
+   store page and the legal pages each used to carry an identical copy. */
+export const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+  (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* This site's canonical origin, for the pages that build absolute links. */
+export const SITE = 'https://digiartz.net';
+
 export const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

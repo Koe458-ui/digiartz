@@ -125,9 +125,13 @@
     }catch(e){ showToast('Could not open that schedule'); }
   }
 
-  var USCH_MIN_LEAD = 5*60*1000;
   var pfSched = { y:null, m:null, d:null, vy:0, vm:0 };
-  function pfSchedPad(n){ return (n<10?'0':'')+n; }
+  var PF_SCHED = {
+    dd:'pfUpSchedDd', h:'pfUpSchedH', m:'pfUpSchedM', grid:'pfUpSchedGrid',
+    mon:'pfUpSchedMon', lbl:'pfUpSchedLbl', hint:'pfUpSchedHint', val:'pfUpSched',
+    pick:'pfSchedPick', iso:true, fmt:function(v){ return uschFmt(v); },
+    tail:'verified now, re-checked at publish.'
+  };
   function pfSchedToggle(e){
     if(e){ e.stopPropagation(); }
     var dd = document.getElementById('pfUpSchedDd');
@@ -143,67 +147,22 @@
       pfSchedRender();
     }
   }
-  function pfSchedClose(){
-    var dd = document.getElementById('pfUpSchedDd');
-    if(dd) dd.classList.remove('open');
-  }
-  document.addEventListener('click', function(ev){
-    var dd = document.getElementById('pfUpSchedDd');
-    if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) pfSchedClose();
-  });
-  function pfSchedBuildTime(){
-    var hs = document.getElementById('pfUpSchedH'), ms = document.getElementById('pfUpSchedM');
-    if(!hs || hs.options.length) return;
-    var i, o;
-    for(i=0;i<24;i++){ o=document.createElement('option'); o.value=i; o.textContent=pfSchedPad(i); hs.appendChild(o); }
-    for(i=0;i<60;i+=5){ o=document.createElement('option'); o.value=i; o.textContent=pfSchedPad(i); ms.appendChild(o); }
-    var t = new Date(Date.now()+60*60*1000);
-    hs.value = t.getHours(); ms.value = Math.floor(t.getMinutes()/5)*5;
-  }
+  function pfSchedClose(){ window.dzSchedUI.close(PF_SCHED); }
+  window.dzSchedUI.watchOutside(PF_SCHED);
+  function pfSchedBuildTime(){ window.dzSchedUI.hours(PF_SCHED); }
   function pfSchedNav(delta, e){
     if(e){ e.stopPropagation(); }
-    pfSched.vm += delta;
-    if(pfSched.vm < 0){ pfSched.vm = 11; pfSched.vy--; }
-    else if(pfSched.vm > 11){ pfSched.vm = 0; pfSched.vy++; }
+    window.dzSchedUI.nav(pfSched, delta);
     pfSchedRender();
   }
-  function pfSchedRender(){
-    var grid = document.getElementById('pfUpSchedGrid');
-    var mon  = document.getElementById('pfUpSchedMon');
-    if(!grid) return;
-    var y = pfSched.vy, m = pfSched.vm;
-    mon.textContent = new Date(y, m, 1).toLocaleString([], {month:'long', year:'numeric'});
-    var first = new Date(y, m, 1).getDay();
-    var days  = new Date(y, m+1, 0).getDate();
-    var now = new Date();
-    var todayKey = now.getFullYear()+'-'+now.getMonth()+'-'+now.getDate();
-    var html = '';
-    for(var p=0;p<first;p++) html += '<span class="upSchedDay pad"></span>';
-    for(var d=1; d<=days; d++){
-      var end = new Date(y, m, d, 23, 59, 59);
-      var past = end.getTime() < Date.now();
-      var cls = 'upSchedDay';
-      if(todayKey === y+'-'+m+'-'+d) cls += ' today';
-      if(pfSched.y===y && pfSched.m===m && pfSched.d===d) cls += ' sel';
-      html += '<button type="button" class="'+cls+'"'+(past?' disabled':'')+
-              ' onclick="pfSchedPick('+y+','+m+','+d+',event)">'+d+'</button>';
-    }
-    grid.innerHTML = html;
-  }
+  function pfSchedRender(){ window.dzSchedUI.grid(PF_SCHED, pfSched); }
   function pfSchedPick(y, m, d, e){
     if(e){ e.stopPropagation(); }
     pfSched.y=y; pfSched.m=m; pfSched.d=d;
     pfSchedRender();
     pfSchedApply();
   }
-  function pfSchedApply(){
-    if(pfSched.y===null) return;
-    var hs = document.getElementById('pfUpSchedH'), ms = document.getElementById('pfUpSchedM');
-    var h = +hs.value || 0, mi = +ms.value || 0;
-    document.getElementById('pfUpSched').value =
-      pfSched.y+'-'+pfSchedPad(pfSched.m+1)+'-'+pfSchedPad(pfSched.d)+'T'+pfSchedPad(h)+':'+pfSchedPad(mi);
-    pfSchedHint();
-  }
+  function pfSchedApply(){ window.dzSchedUI.apply(PF_SCHED, pfSched); }
   function pfSchedClear(e){
     if(e){ e.stopPropagation(); }
     pfSched.y = pfSched.m = pfSched.d = null;
@@ -224,39 +183,9 @@
     pfSchedClose();
     pfSchedHint();
   }
-  function pfSchedHint(){
-    var el = document.getElementById('pfUpSched');
-    var hint = document.getElementById('pfUpSchedHint');
-    if(!el || !hint) return;
-    var lbl = document.getElementById('pfUpSchedLbl');
-    if(lbl){
-      if(el.value){
-        lbl.textContent = uschFmt(new Date(el.value).toISOString());
-        lbl.classList.remove('upSchedPh');
-      }else{
-        lbl.innerHTML = '__/__/____&nbsp;&nbsp;__:__';
-        lbl.classList.add('upSchedPh');
-      }
-    }
-    if(!el.value){ hint.textContent = 'Leave empty to publish immediately.'; hint.classList.remove('bad'); return; }
-    var t = new Date(el.value).getTime();
-    if(!isFinite(t) || t < Date.now() + USCH_MIN_LEAD){
-      hint.textContent = 'Pick a time at least 5 minutes from now.'; hint.classList.add('bad');
-    }else{
-      hint.textContent = 'Publishes ' + uschFmt(new Date(t).toISOString()) + ' \u00B7 verified now, re-checked at publish.'; hint.classList.remove('bad');
-    }
-  }
-  function uschPicked(){
-    var el = document.getElementById('pfUpSched');
-    if(!el || !el.value) return '';
-    var t = new Date(el.value).getTime();
-    if(!isFinite(t) || t < Date.now() + USCH_MIN_LEAD) return '';
-    return new Date(t).toISOString();
-  }
-  function uschFmt(iso){
-    var d = new Date(iso);
-    return d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
-  }
+  function pfSchedHint(){ window.dzSchedUI.hint(PF_SCHED); }
+  function uschPicked(){ return window.dzSchedUI.picked(PF_SCHED); }
+  function uschFmt(iso){ return window.dzSchedUI.fmt(iso, false); }
   function uschLeft(iso){
     var ms = new Date(iso).getTime() - Date.now();
     if(ms <= 0) return 'due';
@@ -431,24 +360,11 @@
     zs.value = v;
     pfCropSetZoom(v);
   }
-  (function initPfCropDrag(){
-    var stageEl = null;
-    function down(e){
-      if(!pfCrop.axis && pfCrop.z<=1) return;
-      stageEl = document.getElementById('pfCropStage');
-      pfCrop.dragging = true; stageEl.classList.add('dragging');
-      var p = e.touches ? e.touches[0] : e;
-      pfCrop.sx = p.clientX; pfCrop.sy = p.clientY;
-      pfCrop.ox = pfCrop.x; pfCrop.oy = pfCrop.y;
-      document.addEventListener('mousemove', move);
-      document.addEventListener('touchmove', move, {passive:false});
-      document.addEventListener('mouseup', up);
-      document.addEventListener('touchend', up);
-      e.preventDefault();
-    }
-    function move(e){
-      if(!pfCrop.dragging) return;
-      var p = e.touches ? e.touches[0] : e;
+  /* Both axes here, because zooming in can make the picture overflow a
+     square frame in each direction at once. */
+  window.dzDragStage('pfCropStage', pfCrop,
+    function(){ return !!pfCrop.axis || pfCrop.z > 1; },
+    function(p){
       var rx = pfCrop.natW>=pfCrop.natH ? pfCrop.natW/pfCrop.natH : 1;
       var ry = pfCrop.natH>pfCrop.natW ? pfCrop.natH/pfCrop.natW : 1;
       var oxPx = pfCrop.stage*(rx*pfCrop.z-1);
@@ -457,22 +373,7 @@
       if(oxPx>0) pfCrop.x = Math.max(0, Math.min(100, pfCrop.ox - ((p.clientX-pfCrop.sx)/oxPx)*100));
       if(oyPx>0) pfCrop.y = Math.max(0, Math.min(100, pfCrop.oy - ((p.clientY-pfCrop.sy)/oyPx)*100));
       pfCropRender();
-    }
-    function up(){
-      pfCrop.dragging = false;
-      if(stageEl) stageEl.classList.remove('dragging');
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('touchmove', move);
-      document.removeEventListener('mouseup', up);
-      document.removeEventListener('touchend', up);
-    }
-    document.addEventListener('DOMContentLoaded', function(){
-      var el = document.getElementById('pfCropStage');
-      if(!el) return;
-      el.addEventListener('mousedown', down);
-      el.addEventListener('touchstart', down, {passive:false});
     });
-  })();
   function cancelPfCrop(){
     document.getElementById('pfCropMod').classList.remove('open');
     pfCropPending = null;
@@ -549,14 +450,11 @@
         return;
       }
     }
-    var _vis = extra.visibility || 'published';
-    var _when = uschPicked();
-    if(_vis === 'scheduled' && !_when){ showToast('Pick a time under Schedule, or set visibility to Published'); return; }
-    if((_vis === 'draft' || _vis === 'hidden') && _when){
-      showToast('A ' + _vis + ' artwork is not shown, so it does not need a schedule'); return;
-    }
-    if(_vis === 'scheduled') _vis = 'published';
-    extra.visibility = _vis;
+    var _sched = window.dzVisibilitySchedule(extra.visibility, uschPicked(),
+                                             'artwork is not shown');
+    if(_sched.error){ showToast(_sched.error); return; }
+    var _when = _sched.when;
+    extra.visibility = _sched.vis;
     var btn = document.getElementById('pfUpBtn');
     btn.disabled = true;
     try{

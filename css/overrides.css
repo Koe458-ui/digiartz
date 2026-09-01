@@ -171,14 +171,14 @@
   .dzName{ font-size:15px; line-height:1.4; }
   .dzMeta{ font-size:12.5px; letter-spacing:.06em; gap:.2rem .7rem; }
   .dzChip{ font-size:12px; letter-spacing:.07em; padding:.22rem .6rem; }
-  .dzHint{ font-size:15px; line-height:1.55; }
+  .dzHint,
+.subFeatures li{ font-size:15px; line-height:1.55; }
   .dzExt{ font-size:15px; }
   .dzEmpty,.dzBusy{ font-size:13px; }
   .secSub{ font-size:13px; letter-spacing:.28em; }
   .tgSearchIn{ font-size:15px; }
   .subTagline{ font-size:14px; }
-  .subFeatures li{ font-size:15px; line-height:1.55; }
-  .faqQTxt{ font-size:16px; }
+    .faqQTxt{ font-size:16px; }
   .faqATxt{ font-size:15px; line-height:1.6; }
   .upField label{ font-size:13px; }
   .upIn, .upField textarea, .upField select{ font-size:15px; }
@@ -397,15 +397,15 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   .pfSrchChip,.cmiSegBtn{min-height:40px;}
   .hpTab{min-height:40px;}
   .cmiMini,.albActBtn{min-height:36px;}
-  .cropZoomBtn{width:38px;height:38px;}
+  .cropZoomBtn,
+.fgHeadSX{width:38px;height:38px;}
   .avCmDel{padding:.45rem .55rem;}
-  .fgHeadSX{width:38px;height:38px;}
-}
+  }
 
 /* Range thumbs are drawn by the platform and default to something a
    mouse can hit and a finger cannot. */
 input[type=range].cropZoom{height:32px;background:transparent;}
-input[type=range].cropZoom::-webkit-slider-thumb{width:22px;height:22px;}
+input[type=range].cropZoom::-webkit-slider-thumb,
 input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
 
 /* --- Small copy -------------------------------------------------------

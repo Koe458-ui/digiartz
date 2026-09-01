@@ -1,5 +1,6 @@
 import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService, ledger } from '../lib/sb.js';
 import { toValue } from '../lib/money.js';
+import { pp } from '../lib/paypal.js';
 
 const MIN_PAYOUT = {
   USD: 500, EUR: 500, GBP: 400, INR: 50000, JPY: 700,
@@ -12,60 +13,11 @@ const minPayout = (cur) => MIN_PAYOUT[cur] != null ? MIN_PAYOUT[cur] : MIN_DEFAU
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
 
-const apiBase = (env) =>
-  String(env.PAYPAL_ENV || '').trim().toLowerCase() === 'sandbox'
-    ? 'https://api-m.sandbox.paypal.com'
-    : 'https://api-m.paypal.com';
-
 const PP_PAYOUT_CURRENCIES = new Set(['AUD', 'BRL', 'CAD', 'CZK', 'DKK', 'EUR',
   'HKD', 'HUF', 'ILS', 'JPY', 'MYR', 'MXN', 'TWD', 'NZD', 'NOK', 'PHP', 'PLN',
   'GBP', 'SGD', 'SEK', 'CHF', 'THB', 'USD']);
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,24}$/i;
-
-let tokenCache = null;
-async function ppToken(env) {
-  const key = apiBase(env) + '|' + env.PAYPAL_CLIENT_ID;
-  if (tokenCache && tokenCache.key === key && tokenCache.expires > Date.now())
-    return tokenCache.token;
-  const res = await fetch(apiBase(env) + '/v1/oauth2/token', {
-    method: 'POST',
-    headers: {
-      authorization: 'Basic ' + btoa(env.PAYPAL_CLIENT_ID + ':' + env.PAYPAL_CLIENT_SECRET),
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || !body.access_token) throw new Error('Payment provider rejected our credentials');
-  tokenCache = {
-    key, token: body.access_token,
-    expires: Date.now() + Math.max(60, (Number(body.expires_in) || 3600) - 60) * 1000,
-  };
-  return tokenCache.token;
-}
-
-async function pp(env, path, init = {}) {
-  const res = await fetch(apiBase(env) + path, {
-    ...init,
-    headers: {
-      authorization: 'Bearer ' + (await ppToken(env)),
-      'content-type': 'application/json',
-      ...(init.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(
-      body.message ||
-      (body.details && body.details[0] && body.details[0].description) ||
-      'Payout provider error (' + res.status + ')'
-    );
-    err.name_ = body.name || '';
-    throw err;
-  }
-  return body;
-}
 
 async function sbRpc(env, request, fn, args = {}) {
   const res = await fetch(sbUrl(env) + '/rest/v1/rpc/' + fn, {
@@ -550,7 +502,7 @@ export async function onRequestPost({ env, request }) {
               sender_item_id: req.id,
             }],
           }),
-        });
+        }, 'Payout');
 
         const bid = (out.batch_header && out.batch_header.payout_batch_id) || batchId;
 

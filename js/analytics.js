@@ -89,7 +89,6 @@
   var WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   function full(n) { return Number(n || 0).toLocaleString(); }
-  function num(n) { return full(n); }
   function pct(n) { return (Math.round(Number(n || 0) * 10) / 10) + '%'; }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -353,7 +352,7 @@
     box.appendChild(svg);
     var mid = el('div', 'anDonutMid');
     var midWrap = el('div');
-    midWrap.appendChild(el('div', 'anDonutMidN', num(total)));
+    midWrap.appendChild(el('div', 'anDonutMidN', full(total)));
     midWrap.appendChild(el('div', 'anDonutMidL', opts.midLabel || 'total'));
     mid.appendChild(midWrap);
     box.appendChild(mid);
@@ -719,7 +718,7 @@
       top.appendChild(ico);
       top.appendChild(el('div', 'anKpiLbl', m.label));
       tile.appendChild(top);
-      tile.appendChild(el('div', 'anKpiVal', num(win[m.key])));
+      tile.appendChild(el('div', 'anKpiVal', full(win[m.key])));
       var dl = delta(win[m.key], prev[m.key]);
       var dEl = el('div', 'anKpiDelta ' + dl.dir, dl.txt);
       tile.appendChild(dEl);
@@ -884,7 +883,7 @@
      ['\uD83D\uDD16', r.bookmarks], last].forEach(function (p) {
       var n = el('span', 'anArtNum');
       n.appendChild(document.createTextNode(p[0] + ' '));
-      n.appendChild(el('b', null, num(p[1])));
+      n.appendChild(el('b', null, full(p[1])));
       nums.appendChild(n);
     });
     row.appendChild(nums);
@@ -959,8 +958,8 @@
     f.appendChild(fh);
     var fb = el('div');
     facts(fb, [
-      { n: num(top ? top.views : 0), l: top ? 'Best: ' + top.title : 'Best' },
-      { n: num(low ? low.views : 0), l: low ? 'Quietest: ' + low.title : 'Quietest' },
+      { n: full(top ? top.views : 0), l: top ? 'Best: ' + top.title : 'Best' },
+      { n: full(low ? low.views : 0), l: low ? 'Quietest: ' + low.title : 'Quietest' },
       { n: full(rows.reduce(function (a, r) { return a + (Number(r.views) || 0); }, 0)), l: 'Views in period' },
       { n: pct(rows.reduce(function (a, r) { return a + (Number(r.engagement) || 0); }, 0) / rows.length),
         l: 'Average engagement' }
@@ -1327,12 +1326,12 @@
     fCard.appendChild(fh);
     var fb = el('div');
     facts(fb, [
-      { n: num(e.views), l: 'Views' },
-      { n: num(e.likes), l: 'Likes' },
-      { n: num(e.bookmarks), l: 'Saves' },
-      { n: num(e.comments), l: 'Comments' },
-      { n: num(e.shares), l: 'Shares' },
-      { n: num(e.downloads), l: 'Downloads' },
+      { n: full(e.views), l: 'Views' },
+      { n: full(e.likes), l: 'Likes' },
+      { n: full(e.bookmarks), l: 'Saves' },
+      { n: full(e.comments), l: 'Comments' },
+      { n: full(e.shares), l: 'Shares' },
+      { n: full(e.downloads), l: 'Downloads' },
       { n: pct(e.rate), l: 'Engagement rate' },
       { n: full(e.views > 0 ? Math.round((e.likes / e.views) * 100) / 100 : 0), l: 'Likes per view' }
     ]);

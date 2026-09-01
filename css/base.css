@@ -348,7 +348,6 @@ a.dzUpItem{text-decoration:none;color:inherit;}
 }
 .dzIcon svg{width:20px;height:20px;display:block;}
 .dzIcon:active{transform:scale(.92);}
-.dzIcon:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 @media(hover:hover){ .dzIcon:hover{background:var(--sur2);} }
 .hNotifDot{
   position:absolute;top:7px;right:7px;
@@ -463,7 +462,6 @@ a.dzUpItem{text-decoration:none;color:inherit;}
   border-top:1px solid var(--bdr);
 }
 .dzMenuItem:active{background:var(--sur2);}
-.dzMenuItem:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
 @media(hover:hover){ .dzMenuItem:hover{background:var(--sur2);} }
 .dzMenuItem.bnActive{background:var(--pdim);color:var(--pb);}
 

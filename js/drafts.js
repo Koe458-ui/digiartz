@@ -1,26 +1,10 @@
   var UPDR_TTL = 7*24*60*60*1000, UPDR_MAX = 12, UPDR_SLOTS = 4;
   var updrActiveId = null;
   var updrUrls = [];
-  function updrDb(){
-    return new Promise(function(res, rej){
-      var rq = indexedDB.open('digiartz-drafts', 1);
-      rq.onupgradeneeded = function(){ rq.result.createObjectStore('drafts', {keyPath:'id'}); };
-      rq.onsuccess = function(){ res(rq.result); };
-      rq.onerror = function(){ rej(rq.error); };
-    });
-  }
-  function updrTx(mode, fn){
-    return updrDb().then(function(db){
-      return new Promise(function(res, rej){
-        var tx = db.transaction('drafts', mode);
-        var out = fn(tx.objectStore('drafts'));
-        tx.oncomplete = function(){ res(out && out.result); };
-        tx.onerror = function(){ rej(tx.error); };
-      });
-    });
-  }
-  function updrAll(){ return updrTx('readonly', function(st){ return st.getAll(); }); }
-  function updrDel(id){ return updrTx('readwrite', function(st){ st.delete(id); }); }
+  var updrStore = window.dzIdb('digiartz-drafts', 'drafts');
+  var updrTx = updrStore.run;
+  var updrAll = updrStore.all;
+  var updrDel = updrStore.del;
   async function updrSave(){
     if(pfGuestGate()) return;
     if(document.getElementById('pfUpEditId').value) return;

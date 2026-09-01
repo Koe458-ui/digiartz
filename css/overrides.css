@@ -327,6 +327,49 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
    the per-component sizes set earlier.
    ============================================================ */
 
+/* --- The panels that slide in from the right --------------------------
+   Eleven of them are the same page: fixed to the viewport, scrolling on
+   their own, parked off the right edge until .open. Only the stacking
+   order differs, so only that is said more than once. #xpPage keeps its
+   slide under prefers-reduced-motion, as it always has. */
+#frdPage,#bmPage,#cartPage,#xpPage,#anHubPage,#payHubPage,#anPage,
+#anListPage,#setPage,#legalPage,#dzPanelHost,#albPage,#albViewPage{
+  position:fixed;inset:0;background:var(--bg);color:var(--tx);
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+#frdPage,#bmPage,#cartPage,#xpPage,#anHubPage,#payHubPage,#anPage{z-index:545;}
+#anListPage,#setPage{z-index:546;}
+#legalPage,#dzPanelHost,#albPage{z-index:547;}
+#albViewPage{z-index:548;}
+#frdPage.open,#bmPage.open,#cartPage.open,#xpPage.open,#anHubPage.open,
+#payHubPage.open,#anPage.open,#anListPage.open,#setPage.open,#legalPage.open,
+#dzPanelHost.open,#albPage.open,#albViewPage.open{transform:translateX(0);}
+@media (prefers-reduced-motion:reduce){
+  #frdPage,#bmPage,#cartPage,#anHubPage,#payHubPage,
+  #anPage,#anListPage,#setPage,#legalPage,#dzPanelHost{transition:none;}
+}
+
+/* Every keyboard focus ring on the site, said once. */
+.dzIcon:focus-visible,.dzMenuItem:focus-visible,.dzRow:focus-visible,
+.lmClose:focus-visible,.fgTopBtn:focus-visible,.fgCatChip:focus-visible,
+.fgCatNav:focus-visible,.ftTab:focus-visible,.atCard:focus-visible,
+.dzWlGuideMail:focus-visible,.dzClInfoBtn:focus-visible,
+.pfTopBtn:focus-visible,.pfActBtn:focus-visible,.pfSrchChip:focus-visible,
+.pfMenuItem:focus-visible,.loConfirmBtn:focus-visible,.pfSrchRow:focus-visible,
+.upTopBtn:focus-visible,.vwCfmBtn:focus-visible,.albCard:focus-visible,
+.albDots:focus-visible,.albMenuItem:focus-visible,
+.anRange:focus-visible,.anMore:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+.dzMenuItem:focus-visible,.dzRow:focus-visible,.pfSrchRow:focus-visible,
+.albMenuItem:focus-visible{outline-offset:-2px;}
+
+/* An avatar, a thumbnail or a preview fills the box it is given. */
+.cmiIcon img,.cmiIconPrev img,.cmuAva img,.cmFriendAvatar img,
+.dzThumb img,.dzFileThumb img,.atAv img,.pfSrchThumb img,
+.upDraftCard>img,.cmHdrAv img,.vwAv img{
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+
 /* --- Safe areas -------------------------------------------------------
    The panels are fixed to the four edges of the *display*, so on a
    notched phone (and in the installed PWA, where there is no browser

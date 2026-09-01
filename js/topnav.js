@@ -190,10 +190,6 @@
     dzMenuClose();
     m.pick(sec, e);
   }
-  function dzExPick(sec, e) { pick('ex', sec, e); }
-  function dzCmPick(k, e)   { pick('cm', k, e); }
-  function dzUpPick(sec, e) { pick('up', sec, e); }
-  function dzAcPick(k, e)   { pick('ac', k, e); }
 
   function dzAcClick(e) {
     if (ddToggle('ac', e)) return;
@@ -213,19 +209,22 @@
   window.dzMenuSubToggle = dzMenuSubToggle;
   window.dzMenuSubClose  = dzMenuSubClose;
   window.dzOpenSearch    = dzOpenSearch;
+  window.dzAcClick       = dzAcClick;
+  window.dzAcMenuClick   = dzAcMenuClick;
+
+  /* Named one by one on purpose: scripts/check-sections.mjs reads this file
+     to prove every panel in DZ_PANELS has the closer it claims. */
   window.dzExToggle      = function (e) { ddToggle('ex', e); };
   window.dzCmToggle      = function (e) { ddToggle('cm', e); };
   window.dzUpToggle      = function (e) { ddToggle('up', e); };
   window.dzExClose       = function () { ddClose('ex'); };
   window.dzCmClose       = function () { ddClose('cm'); };
   window.dzUpClose       = function () { ddClose('up'); };
-  window.dzExPick        = dzExPick;
-  window.dzCmPick        = dzCmPick;
-  window.dzUpPick        = dzUpPick;
-  window.dzAcPick        = dzAcPick;
-  window.dzAcClick       = dzAcClick;
-  window.dzAcMenuClick   = dzAcMenuClick;
   window.dzAcClose       = function () { ddClose('ac'); };
+  window.dzExPick        = function (sec, e) { pick('ex', sec, e); };
+  window.dzCmPick        = function (k, e)   { pick('cm', k, e); };
+  window.dzUpPick        = function (sec, e) { pick('up', sec, e); };
+  window.dzAcPick        = function (k, e)   { pick('ac', k, e); };
 
   document.addEventListener('click', function (e) {
     if (!isOpen()) return;

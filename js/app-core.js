@@ -177,6 +177,40 @@
     banner       : { table:'profile_banner_image', parent:null,          url:true, onConflict:'user_id' }
   };
 
+  /* One promise-shaped IndexedDB object store. The artwork drafts and the
+     section drafts each carried their own copy of this. */
+  window.dzIdb = function(name, store){
+    function open(){
+      return new Promise(function(res, rej){
+        if(!window.indexedDB){ rej(new Error('no idb')); return; }
+        var q = indexedDB.open(name, 1);
+        q.onupgradeneeded = function(){
+          if(!q.result.objectStoreNames.contains(store)){
+            q.result.createObjectStore(store, {keyPath:'id'});
+          }
+        };
+        q.onsuccess = function(){ res(q.result); };
+        q.onerror   = function(){ rej(q.error); };
+      });
+    }
+    function run(mode, fn){
+      return open().then(function(db){
+        return new Promise(function(res, rej){
+          var tx = db.transaction(store, mode), out = fn(tx.objectStore(store));
+          tx.oncomplete = function(){ res(out ? out.result : undefined); };
+          tx.onerror    = function(){ rej(tx.error); };
+        });
+      });
+    }
+    return {
+      run: run,
+      all: function(){    return run('readonly',  function(s){ return s.getAll(); }); },
+      get: function(id){  return run('readonly',  function(s){ return s.get(id); }); },
+      put: function(rec){ return run('readwrite', function(s){ return s.put(rec); }); },
+      del: function(id){  return run('readwrite', function(s){ s.delete(id); }); }
+    };
+  };
+
   function dzUploadTargets(uploadedUrl, uploadPath, isPrivate){
     var isImg = /__f1600\.webp$/.test(uploadedUrl || '');
     var base  = String(uploadPath || '').replace(/\.[a-z0-9]+$/i, '');
@@ -360,105 +394,32 @@
     'wifi'     :'<path d="M2.5 9a14 14 0 0 1 19 0"/><path d="M6 12.5a9 9 0 0 1 12 0"/><path d="M9.5 16a4 4 0 0 1 5 0"/><circle cx="12" cy="19.5" r="1"/>',
     'zap'      :'<path d="M13.5 2.5 4.5 13.5h6l-.5 8 9-11h-6z"/>'
   };
-  var FLT_ICO_MAP = {
-    '3d-art'            :'cube',
-    '3d-assets'         :'cube',
-    '3d-models'         :'cube',
-    'abstract'          :'layers',
-    'aesthetic-art'     :'sparkle',
-    'aircraft'          :'plane',
-    'all'               :'grid',
-    'animals'           :'paw',
-    'anime'             :'smile',
-    'announcements'     :'megaphone',
-    'architecture'      :'building',
-    'artist-spotlights' :'star',
-    'artwork'           :'image',
-    'bikes'             :'bike',
-    'birds'             :'feather',
-    'brushes'           :'brush',
-    'buildings'         :'building',
-    'buses'             :'truck',
-    'cars'              :'car',
-    'challenges'        :'trophy',
-    'characters'        :'user',
-    'checkout'          :'card',
-    'chibi'             :'sparkle',
-    'cityscape'         :'building',
-    'collaboration'     :'users',
-    'color-palettes'    :'palette',
-    'comic'             :'book',
-    'commissions'       :'user',
-    'community'         :'users',
-    'concept-art'       :'palette',
-    'contest'           :'trophy',
-    'digital-art'       :'monitor',
-    'digital-downloads' :'download',
-    'downloads'         :'download',
-    'dragons'           :'flame',
-    'events'            :'calendar',
-    'fan-art'           :'brush',
-    'fantasy'           :'sparkle',
-    'flowers'           :'flower',
-    'fonts'             :'type',
-    'food-art'          :'cup',
-    'freelance'         :'briefcase',
-    'full-time'         :'building',
-    'hiring-artists'    :'user',
-    'icons'             :'smile',
-    'illustrations'     :'file',
-    'interior-design'   :'home',
-    'internship'        :'cap',
-    'interviews'        :'mic',
-    'landscapes'        :'mountain',
-    'licenses'          :'shield',
-    'logos'             :'tag',
-    'manga'             :'book',
-    'marine-life'       :'droplet',
-    'mecha'             :'cpu',
-    'mockups'           :'monitor',
-    'monsters'          :'flame',
-    'mythology'         :'flame',
-    'nature'            :'leaf',
-    'new'               :'clock',
-    'news'              :'file',
-    'old'               :'archive',
-    'orders'            :'archive',
-    'others'            :'dots',
-    'part-time'         :'clock',
-    'patterns'          :'grid',
-    'pixel-art'         :'grid',
-    'plugins'           :'puzzle',
-    'poster-art'        :'tag',
-    'prints'            :'tag',
-    'psd-files'         :'file',
-    'references'        :'image',
-    'releases'          :'archive',
-    'remote'            :'wifi',
-    'reviews'           :'message',
-    'robots'            :'cpu',
-    'saved-for-later'   :'heart',
-    'scenery'           :'mountain',
-    'sci-fi'            :'atom',
-    'services'          :'bag',
-    'ships'             :'anchor',
-    'shopping-cart'     :'cart',
-    'sketches'          :'pencil',
-    'space'             :'moon',
-    'templates'         :'layout',
-    'textures'          :'grid',
-    'tips-guides'       :'cube',
-    'traditional-art'   :'brush',
-    'trees'             :'leaf',
-    'trending'          :'chart',
-    'trucks'            :'truck',
-    'tutorials'         :'book',
-    'typography'        :'type',
-    'ui-kits'           :'layout',
-    'wallpapers'        :'image',
-    'weapons'           :'zap',
-    'website-templates' :'monitor'
-  };
+  /* Which glyph each category, tag or view is drawn with. Grouped by glyph:
+     the first word of a run names it, the rest are the keys that use it. */
+  var FLT_ICO_MAP = {};
+  (
+    'anchor ships|archive old orders releases|atom sci-fi|bag services|bike bikes|' +
+    'book comic manga tutorials|briefcase freelance|' +
+    'brush brushes fan-art traditional-art|' +
+    'building architecture buildings cityscape full-time|calendar events|cap internship|' +
+    'car cars|card checkout|cart shopping-cart|chart trending|clock new part-time|' +
+    'cpu mecha robots|cube 3d-art 3d-assets 3d-models tips-guides|cup food-art|' +
+    'dots others|download digital-downloads downloads|droplet marine-life|feather birds|' +
+    'file illustrations news psd-files|flame dragons monsters mythology|flower flowers|' +
+    'grid all patterns pixel-art textures|heart saved-for-later|home interior-design|' +
+    'image artwork references wallpapers|layers abstract|layout templates ui-kits|' +
+    'leaf nature trees|megaphone announcements|message reviews|mic interviews|' +
+    'monitor digital-art mockups website-templates|moon space|' +
+    'mountain landscapes scenery|palette color-palettes concept-art|paw animals|' +
+    'pencil sketches|plane aircraft|puzzle plugins|shield licenses|smile anime icons|' +
+    'sparkle aesthetic-art chibi fantasy|star artist-spotlights|' +
+    'tag logos poster-art prints|trophy challenges contest|truck buses trucks|' +
+    'type fonts typography|user characters commissions hiring-artists|' +
+    'users collaboration community|wifi remote|zap weapons'
+  ).split('|').forEach(function(run){
+    var w = run.split(' ');
+    for(var i = 1; i < w.length; i++) FLT_ICO_MAP[w[i]] = w[0];
+  });
   function fltIco(key){
     var g = FLT_GLYPH[FLT_ICO_MAP[key] || 'dots'] || FLT_GLYPH.dots;
     return '<span class="fltIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" '+
@@ -466,65 +427,24 @@
            'stroke-linejoin="round">'+g+'</svg></span>';
   }
 
-  var SITE_CATEGORIES = [
-    {slug:'characters',      label:'Characters'},
-    {slug:'anime',           label:'Anime'},
-    {slug:'manga',           label:'Manga'},
-    {slug:'comic',           label:'Comic'},
-    {slug:'fan-art',         label:'Fan Art'},
-    {slug:'chibi',           label:'Chibi'},
-    {slug:'sketches',        label:'Sketches'},
-    {slug:'illustrations',   label:'Illustrations'},
-    {slug:'concept-art',     label:'Concept Art'},
-    {slug:'digital-art',     label:'Digital Art'},
-    {slug:'traditional-art', label:'Traditional Art'},
-    {slug:'abstract',        label:'Abstract'},
-    {slug:'typography',      label:'Typography'},
-    {slug:'poster-art',      label:'Poster Art'},
-    {slug:'logos',           label:'Logos'},
-    {slug:'icons',           label:'Icons'},
-    {slug:'wallpapers',      label:'Wallpapers'},
-    {slug:'cars',            label:'Cars'},
-    {slug:'bikes',           label:'Bikes'},
-    {slug:'trucks',          label:'Trucks'},
-    {slug:'buses',           label:'Buses'},
-    {slug:'aircraft',        label:'Aircraft'},
-    {slug:'ships',           label:'Ships'},
-    {slug:'robots',          label:'Robots'},
-    {slug:'mecha',           label:'Mecha'},
-    {slug:'weapons',         label:'Weapons'},
-    {slug:'fantasy',         label:'Fantasy'},
-    {slug:'dragons',         label:'Dragons'},
-    {slug:'monsters',        label:'Monsters'},
-    {slug:'mythology',       label:'Mythology'},
-    {slug:'sci-fi',          label:'Sci-Fi'},
-    {slug:'space',           label:'Space'},
-    {slug:'nature',          label:'Nature'},
-    {slug:'animals',         label:'Animals'},
-    {slug:'birds',           label:'Birds'},
-    {slug:'marine-life',     label:'Marine Life'},
-    {slug:'landscapes',      label:'Landscape'},
-    {slug:'scenery',         label:'Scenery'},
-    {slug:'cityscape',       label:'Cityscape'},
-    {slug:'architecture',    label:'Architecture'},
-    {slug:'buildings',       label:'Buildings'},
-    {slug:'interior-design', label:'Interior Design'},
-    {slug:'food-art',        label:'Food Art'},
-    {slug:'flowers',         label:'Flowers'},
-    {slug:'trees',           label:'Trees'},
-    {slug:'patterns',        label:'Patterns'},
-    {slug:'3d-art',          label:'3D Art'},
-    {slug:'pixel-art',       label:'Pixel Art'},
-    {slug:'aesthetic-art',   label:'Aesthetic Art'},
-    {slug:'others',          label:'Others'}
-  ];
-  var CAT_SLUGS = SITE_CATEGORIES.map(function(c){ return c.slug; });
-  var CAT_LABELS = SITE_CATEGORIES.reduce(function(m,c){ m[c.slug]=c.label; return m; },{});
+  /* Every category the site knows, in the order the filter offers them. A
+     label is the slug title-cased, which reads right for all but three. */
+  var CAT_LABEL_FIX = { 'sci-fi':'Sci-Fi', landscapes:'Landscape', '3d-art':'3D Art' };
   function catLabel(slug){
     if(!slug) return '';
-    if(CAT_LABELS[slug]) return CAT_LABELS[slug];
-    return String(slug).replace(/-/g,' ').replace(/\b\w/g,function(ch){ return ch.toUpperCase(); });
+    return CAT_LABEL_FIX[slug] ||
+      String(slug).replace(/-/g,' ').replace(/\b\w/g,function(ch){ return ch.toUpperCase(); });
   }
+  var CAT_SLUGS = (
+    'characters anime manga comic fan-art chibi sketches illustrations ' +
+    'concept-art digital-art traditional-art abstract typography poster-art ' +
+    'logos icons wallpapers cars bikes trucks buses aircraft ships robots ' +
+    'mecha weapons fantasy dragons monsters mythology sci-fi space nature ' +
+    'animals birds marine-life landscapes scenery cityscape architecture ' +
+    'buildings interior-design food-art flowers trees patterns 3d-art ' +
+    'pixel-art aesthetic-art others'
+  ).split(' ');
+  var SITE_CATEGORIES = CAT_SLUGS.map(function(s){ return { slug:s, label:catLabel(s) }; });
 
   function buildCategoryUI(){
     var fo = document.getElementById('fltCatOpts');

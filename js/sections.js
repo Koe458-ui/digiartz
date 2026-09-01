@@ -2248,6 +2248,28 @@
     dzSetFile(sec, key, f);
   }
 
+  /* The straight copies from a section's form to its row. A name on its own
+     takes the field as typed; what follows a colon says what the column wants
+     instead:
+       ?      null when the field is empty, or the word after it as a default
+       []     the value alone in an array (the category columns)
+       y / Y  a yes-no select — true only on 'yes', or true unless 'no'
+       b      a checkbox
+       # / .  a whole number / a number, or null when neither             */
+  function dzCopy(sec, row, names){
+    names.split(/\s+/).filter(Boolean).forEach(function(name){
+      var bits = name.split(':'), k = bits[0], how = bits[1] || '', v = val(sec, k);
+      row[k] = how === ''   ? v
+             : how === '[]' ? [v]
+             : how === 'y'  ? v === 'yes'
+             : how === 'Y'  ? v !== 'no'
+             : how === 'b'  ? v === true
+             : how === '#'  ? dzInt(v)
+             : how === '.'  ? dzNum(v)
+             : (v || how.slice(1) || null);
+    });
+  }
+
   function val(sec, k){
     var el = document.getElementById('dz_'+sec+'_'+k);
     if(!el) return '';
@@ -2433,28 +2455,7 @@
   function dzSchHint(){ window.dzSchedUI.hint(DZ_SCHED); }
   function dzSchPicked(){ return window.dzSchedUI.picked(DZ_SCHED); }
 
-  function dzdbOpen(){
-    return new Promise(function(res,rej){
-      if(!window.indexedDB){ rej(new Error('no idb')); return; }
-      var q=indexedDB.open('dzsecdrafts',1);
-      q.onupgradeneeded=function(){ if(!q.result.objectStoreNames.contains('d')) q.result.createObjectStore('d',{keyPath:'id'}); };
-      q.onsuccess=function(){ res(q.result); };
-      q.onerror=function(){ rej(q.error); };
-    });
-  }
-  function dzdbReq(mode, run){
-    return dzdbOpen().then(function(db){
-      return new Promise(function(res,rej){
-        var tx=db.transaction('d',mode), stx=tx.objectStore('d'), rq=run(stx);
-        tx.oncomplete=function(){ res(rq?rq.result:undefined); };
-        tx.onerror=function(){ rej(tx.error); };
-      });
-    });
-  }
-  function dzdbAll(){ return dzdbReq('readonly', function(s){ return s.getAll(); }); }
-  function dzdbGet(id){ return dzdbReq('readonly', function(s){ return s.get(id); }); }
-  function dzdbPut(rec){ return dzdbReq('readwrite', function(s){ return s.put(rec); }); }
-  function dzdbDel(id){ return dzdbReq('readwrite', function(s){ s.delete(id); return null; }); }
+  var dzdb = window.dzIdb('dzsecdrafts', 'd');
 
   function dzSaveDraft(sec){
     var s=st(sec), data={};
@@ -2470,10 +2471,10 @@
     if(!title && !String(data.description||data.body||'').trim()){ showToast('Nothing to save yet'); return; }
     var rec={ id:'d_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
               sec:sec, title:title, data:data, savedAt:Date.now() };
-    dzdbPut(rec).then(function(){ showToast('Draft saved'); dzDraftStrip(sec); })
+    dzdb.put(rec).then(function(){ showToast('Draft saved'); dzDraftStrip(sec); })
                 .catch(function(){ showToast('Could not save draft on this device'); });
   }
-  function dzDeleteDraft(id){ dzdbDel(id).then(function(){ dzDraftStrip(upSec); }); }
+  function dzDeleteDraft(id){ dzdb.del(id).then(function(){ dzDraftStrip(upSec); }); }
   // Jobs mount their form only after the plan check answers, so a draft
   // cannot be poured into fields that may not exist yet on a fixed delay.
   function dzFormReady(sec, cb){
@@ -2486,7 +2487,7 @@
   }
 
   function dzResumeDraft(id){
-    dzdbGet(id).then(function(d){
+    dzdb.get(id).then(function(d){
       if(!d) return;
       upSwitchSection(d.sec);
       dzFormReady(d.sec, function(ok){
@@ -2568,10 +2569,10 @@
   }
   function dzDraftStrip(sec){
     var row=document.getElementById('dzDraftRow-'+sec); if(!row) return;
-    dzdbAll().then(function(all){
+    dzdb.all().then(function(all){
       all=(all||[]).filter(function(d){ return d.sec===sec; });
       var cutoff=Date.now()-7*864e5, keep=[];
-      all.forEach(function(d){ if(d.savedAt<cutoff) dzdbDel(d.id); else keep.push(d); });
+      all.forEach(function(d){ if(d.savedAt<cutoff) dzdb.del(d.id); else keep.push(d); });
       keep.sort(function(a,b){ return b.savedAt-a.savedAt; });
       var html=keep.map(dzDraftCard).join('');
       for(var i=keep.length;i<4;i++) html+=dzGhostCard();
@@ -2823,26 +2824,14 @@
 
         var rf = await putPrivate(s.files.file, 'resources', 0);
         var rp = await put('preview','resources');
-        row.title = val(sec,'title');
-        row.summary = val(sec,'summary');
-        row.description = val(sec,'description');
-        row.resource_type = val(sec,'resource_type') || null;
-        row.category = [val(sec,'category')];
-        row.subcategory = val(sec,'subcategory') || null;
-        row.license = val(sec,'license') || 'personal';
-        row.commercial_use = val(sec,'commercial_use') === 'yes';
-        row.attribution_required = val(sec,'attribution_required') === 'yes';
-        row.modification_allowed = val(sec,'modification_allowed') !== 'no';
-        row.software = val(sec,'software') || null;
+        dzCopy(sec, row,
+          'title summary description whats_included resource_type:? category:[] ' +
+          'subcategory:? license:?personal commercial_use:y attribution_required:y ' +
+          'modification_allowed:Y software:? compatible_versions:? instructions:? ' +
+          'version:? safety_notes:? featured:b');
         row.compatible_software = dzRefList('dz_resources_compatible_software').slice(0, 10);
-        row.compatible_versions = val(sec,'compatible_versions') || null;
-        row.whats_included = val(sec,'whats_included');
-        row.instructions = val(sec,'instructions') || null;
-        row.version = val(sec,'version') || null;
         row.external_links = dzRefList('dz_resources_external_links').slice(0, 5);
-        row.safety_notes = val(sec,'safety_notes') || null;
         row.visibility = rVis;
-        row.featured = val(sec,'featured') === true;
         row.file_url = null;
         row.file_storage_bucket = rf.bucket; row.file_storage_path = rf.path;
         row.file_name = rf.name; row.file_ext = rf.ext; row.file_size = rf.size;
@@ -2865,16 +2854,14 @@
 
         var bc = await put('cover','blog');
 
+        dzCopy(sec, row, 'category:[] content_type:?Article featured:b');
         row.title = bTitle; row.body = body;
         row.excerpt = bExcerpt;
-        row.category = [val(sec,'category')];
         row.tags = s.tags;
-        row.content_type = val(sec,'content_type') || 'Article';
         row.related_artworks = dzUuids(val(sec,'related_artworks'));
         row.related_items = dzUuids(val(sec,'related_items'));
         row.external_refs = dzRefList('dz_blog_external_refs').slice(0, 20);
         row.visibility = bVis;
-        row.featured = val(sec,'featured') === true;
         dzSeoInto(row, bTitle, bExcerpt, body, stamp);
         row.read_minutes = dzReadMinutes(body);
         row.author_bio = await dzAuthorBio();
@@ -2932,44 +2919,21 @@
           pendingMedia.push({ imageKind:'marketImage', url:gurl, path:gpath, file:gal[gi] });
         }
 
-        row.title = val(sec,'title'); row.description = val(sec,'description');
-        row.summary = val(sec,'summary');
-        row.category = [val(sec,'category')];
-        row.subcategory = val(sec,'subcategory') || null;
+        dzCopy(sec, row,
+          'title description summary buyer_gets file_format category:[] subcategory:? ' +
+          'product_type:? file_count:# file_size_mb:. dimensions:? software:? ' +
+          'source_files_included:b license:?standard commercial_use:Y personal_use:b ' +
+          'modification_allowed:b attribution_required:b stock:# delivery_type:?instant ' +
+          'delivery_notes:? custom_requests:b revision_count:# support_period:? ' +
+          'refund_policy:? preview_watermark:b safety_notes:? seller_note:? ' +
+          'visibility:?published featured:b closing_date:? internal_notes:?');
         row.item_type = type;
-        row.product_type = val(sec,'product_type') || null;
-        row.buyer_gets = val(sec,'buyer_gets');
-        row.file_format = val(sec,'file_format');
-        row.file_count = dzInt(val(sec,'file_count'));
-        row.file_size_mb = dzNum(val(sec,'file_size_mb'));
-        row.dimensions = val(sec,'dimensions') || null;
-        row.software = val(sec,'software') || null;
-        row.source_files_included = val(sec,'source_files_included') === true;
         row.price_cents = mkCents;
         row.sale_price_cents = saleCents;
         row.currency = val(sec,'currency') || dzPrefCurrency();
-        row.license = val(sec,'license') || 'standard';
-        row.commercial_use = val(sec,'commercial_use') !== 'no';
-        row.personal_use = val(sec,'personal_use') === true;
-        row.modification_allowed = val(sec,'modification_allowed') === true;
-        row.attribution_required = val(sec,'attribution_required') === true;
-        row.stock = dzInt(val(sec,'stock'));
-        row.delivery_type = val(sec,'delivery_type') || 'instant';
         row.delivery_days = isSvc ? dzInt(val(sec,'delivery_days')) : null;
-        row.delivery_notes = val(sec,'delivery_notes') || null;
-        row.custom_requests = val(sec,'custom_requests') === true;
-        row.revision_count = dzInt(val(sec,'revision_count'));
-        row.support_period = val(sec,'support_period') || null;
-        row.refund_policy = val(sec,'refund_policy') || null;
-        row.preview_watermark = val(sec,'preview_watermark') === true;
-        row.safety_notes = val(sec,'safety_notes') || null;
-        row.seller_note = val(sec,'seller_note') || null;
         row.apply_url = isSvc ? (mkUrl || null) : null;
         row.apply_email = isSvc ? (mkMail || null) : null;
-        row.visibility = val(sec,'visibility') || 'published';
-        row.featured = val(sec,'featured') === true;
-        row.closing_date = val(sec,'closing_date') || null;
-        row.internal_notes = val(sec,'internal_notes') || null;
         dzSeoInto(row, val(sec,'title'), val(sec,'summary'), val(sec,'description'), stamp);
         if(galRows.length) row.gallery = galRows;
         if(pendingSell.length){
@@ -3016,45 +2980,26 @@
           throw new Error('The closing date has already passed');
         }
 
-        row.title = val(sec,'title'); row.company = val(sec,'company');
-        row.about_company = val(sec,'about_company');
+        dzCopy(sec, row,
+          'title company about_company description responsibilities requirements ' +
+          'required_skills timezone working_hours application_instructions ' +
+          'application_materials category:[] employment_type:?CONTRACTOR ' +
+          'experience_level:? years_experience:# openings:# nice_to_have_skills:? ' +
+          'benefits:? schedule:? start_date:? salary_currency:?USD salary_unit:?MONTH ' +
+          'application_questions:? portfolio_required:b resume_required:b ' +
+          'cover_letter_required:b visibility:?public featured:b');
         row.company_url = site || null;
-        row.description = val(sec,'description');
-        row.category = [val(sec,'category')];
-        row.employment_type = val(sec,'employment_type') || 'CONTRACTOR';
-        row.experience_level = val(sec,'experience_level') || null;
-        row.years_experience = dzInt(val(sec,'years_experience'));
-        row.openings = dzInt(val(sec,'openings'));
-        row.responsibilities = val(sec,'responsibilities');
-        row.requirements = val(sec,'requirements');
-        row.required_skills = val(sec,'required_skills');
-        row.nice_to_have_skills = val(sec,'nice_to_have_skills') || null;
-        row.benefits = val(sec,'benefits') || null;
         row.work_mode = mode;
         row.is_remote = remote;
         row.location_city = city || null;
         row.location_country = cc || null;
         row.applicant_countries = countries;
-        row.timezone = val(sec,'timezone');
-        row.working_hours = val(sec,'working_hours');
-        row.schedule = val(sec,'schedule') || null;
-        row.start_date = val(sec,'start_date') || null;
         row.contract_duration = dzCondShow(sec, dzField(sec,'contract_duration'))
           ? (val(sec,'contract_duration') || null) : null;
         row.salary_min = payFrom;
         row.salary_max = payTo;
-        row.salary_currency = val(sec,'salary_currency') || 'USD';
-        row.salary_unit = val(sec,'salary_unit') || 'MONTH';
         row.apply_url = url || null; row.apply_email = mail || null;
-        row.application_instructions = val(sec,'application_instructions');
-        row.application_materials = val(sec,'application_materials');
-        row.application_questions = val(sec,'application_questions') || null;
-        row.portfolio_required = val(sec,'portfolio_required') === true;
-        row.resume_required = val(sec,'resume_required') === true;
-        row.cover_letter_required = val(sec,'cover_letter_required') === true;
         row.valid_through = closes;
-        row.visibility = val(sec,'visibility') || 'public';
-        row.featured = val(sec,'featured') === true;
       }
 
       var when = dzSchPicked();

@@ -352,7 +352,6 @@ footer.siteFooter {
   outline:none;
 }
 .lmClose:hover{border-color:var(--pg);color:var(--ps);background:var(--pdim);}
-.lmClose:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 .lmBody{
   flex:1;overflow-y:auto;
   padding:1.6rem 1.8rem 2rem;

@@ -561,6 +561,21 @@
   function pfSearchScope(scope){ window.dzSearchUI.scope(PF_SRCH_UI, scope); }
   function pfSearchPaintScopes(){ window.dzSearchUI.paintScopes(PF_SRCH_UI); }
 
+  /* One query per section this page searches. Everything else about them is
+     the same: this member's rows, newest first, thirty of them. */
+  var PF_SRCH_QUERIES = [
+    { key:'artwork', table:'artworks', on:'name', select:function(){
+      return 'id,name,description,category,tags,image_url,thumb_x,thumb_y,thumb_zoom,status,created_at'; } },
+    { key:'blog', table:'blog_posts', on:'title', select:function(){
+      return 'id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at'; } },
+    { key:'marketplace', table:'marketplace_items', on:'title', select:function(){
+      return typeof window.dzSelectFor === 'function' ? window.dzSelectFor('marketplace')
+        : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at'; } },
+    { key:'resources', table:'resources', on:'title', select:function(){
+      return 'id,user_id,title,description,category,tags,file_storage_path,file_name,file_ext,' +
+             'file_size,preview_url,license,software,download_count,created_at'; } }
+  ];
+
   async function pfSearchRun(){
     if(!pf.profile || !sb) return;
     var pattern = window.dzSearchUI.pattern(pfSrch.q);
@@ -577,37 +592,13 @@
 
     function want(key){ return pfSrch.scope === 'all' || pfSrch.scope === key; }
 
-    var jobs = [];
-    if(want('artwork')){
-      jobs.push(sb.from('artworks')
-        .select('id,name,description,category,tags,image_url,thumb_x,thumb_y,thumb_zoom,status,created_at')
-        .eq('user_id',uid).eq('kind',ART_KIND_ART).ilike('name',pattern)
-        .order('created_at',{ascending:false}).limit(30)
-        .then(function(r){ return {key:'artwork', rows:(r&&r.data)||[]}; }));
-    }
-    if(want('blog')){
-      jobs.push(sb.from('blog_posts')
-        .select('id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at')
-        .eq('user_id',uid).eq('status','approved').ilike('title',pattern)
-        .order('created_at',{ascending:false}).limit(30)
-        .then(function(r){ return {key:'blog', rows:(r&&r.data)||[]}; }));
-    }
-    if(want('marketplace')){
-      jobs.push(sb.from('marketplace_items')
-        .select(typeof window.dzSelectFor === 'function'
-          ? window.dzSelectFor('marketplace')
-          : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
-        .eq('user_id',uid).eq('status','approved').ilike('title',pattern)
-        .order('created_at',{ascending:false}).limit(30)
-        .then(function(r){ return {key:'marketplace', rows:(r&&r.data)||[]}; }));
-    }
-    if(want('resources')){
-      jobs.push(sb.from('resources')
-        .select('id,user_id,title,description,category,tags,file_storage_path,file_name,file_ext,file_size,preview_url,license,software,download_count,created_at')
-        .eq('user_id',uid).eq('status','approved').ilike('title',pattern)
-        .order('created_at',{ascending:false}).limit(30)
-        .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
-    }
+    var jobs = PF_SRCH_QUERIES.filter(function(q){ return want(q.key); }).map(function(q){
+      var sel = sb.from(q.table).select(q.select())
+        .eq('user_id', uid).ilike(q.on, pattern)
+        .order('created_at',{ascending:false}).limit(30);
+      sel = q.key === 'artwork' ? sel.eq('kind', ART_KIND_ART) : sel.eq('status','approved');
+      return sel.then(function(r){ return {key:q.key, rows:(r&&r.data)||[]}; });
+    });
 
     var out;
     try{ out = await Promise.all(jobs); }

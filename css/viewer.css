@@ -308,8 +308,6 @@
   color:var(--text-on-accent);background:linear-gradient(135deg,var(--pb),var(--pg));
   border:1px solid var(--bdrh);
 }
-.cmHdrAv img,
-.vwAv img{width:100%;height:100%;object-fit:cover;display:block;}
 .cmHdrInfo{display:flex;flex-direction:column;min-width:0;gap:.14rem;flex:1;}
 .cmHdrName{
   font-family:var(--fb);font-size:.95rem;font-weight:700;color:var(--tx);
@@ -757,7 +755,6 @@ html[data-theme="offwhite"]{
   transition:background .15s ease,border-color .15s ease;
 }
 .vwCfmBtn:active{transform:scale(.98);}
-.vwCfmBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 .vwCfmBtn--danger{
   border-color:color-mix(in srgb,var(--vwRed) 45%,var(--bdr));
   background:color-mix(in srgb,var(--vwRed) 14%,var(--sur));

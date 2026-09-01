@@ -229,10 +229,7 @@
     document.getElementById('authUser').value  = '';
     document.getElementById('authEmail').value = '';
     document.getElementById('authPass').value  = '';
-    var err = document.getElementById('authErr');
-    err.textContent = ''; err.classList.remove('show');
-    var msg = document.getElementById('authMsg');
-    if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
+    authClear();
     switchAuthMode('login');
     document.getElementById('authMod').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -258,6 +255,32 @@
     }
   }
 
+  /* The one place the sign-in form says no. `authClear` wipes both the error
+     and the confirmation line the two flows share. */
+  function authEl(id) { return document.getElementById(id); }
+  function authFail(msg) {
+    var err = authEl('authErr');
+    err.textContent = msg;
+    err.classList.add('show');
+  }
+  function authClear() {
+    var err = authEl('authErr'), msg = authEl('authMsg');
+    err.textContent = ''; err.classList.remove('show');
+    if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
+  }
+
+  /* The token the backend will demand, or null when there is nothing to get.
+     false means captcha is switched on but could not produce one — the attempt
+     would be refused, and the refusal reads better said here than there. */
+  async function authCaptcha() {
+    var tok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
+    if (window.dzCaptcha && window.dzCaptcha.configured() && !tok) {
+      authFail('Couldn\u2019t verify you\u2019re human. Refresh the page and try again.');
+      return false;
+    }
+    return tok;
+  }
+
   function dzAuthErr(e, fallback) {
     var raw = ((e && e.message) || '').toLowerCase();
     if (raw.indexOf('captcha') !== -1) {
@@ -279,26 +302,19 @@
 
   async function doAuth() {
     if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
-    var email = document.getElementById('authEmail').value.trim();
-    var pass  = document.getElementById('authPass').value;
-    var err   = document.getElementById('authErr');
+    var email = authEl('authEmail').value.trim();
+    var pass  = authEl('authPass').value;
 
-    if (!email) { err.textContent = 'Please enter your email.'; err.classList.add('show'); return; }
-    if (!pass)  { err.textContent = 'Please enter your password.'; err.classList.add('show'); return; }
+    if (!email) { authFail('Please enter your email.'); return; }
+    if (!pass)  { authFail('Please enter your password.'); return; }
 
-    var btn = document.getElementById('authBtn');
+    var btn = authEl('authBtn');
     btn.textContent = 'SIGNING IN…'; btn.disabled = true;
-    err.textContent = ''; err.classList.remove('show');
+    authEl('authErr').textContent = ''; authEl('authErr').classList.remove('show');
 
     try {
-      var capTok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
-
-      if (window.dzCaptcha && window.dzCaptcha.configured() && !capTok) {
-        err.textContent = 'Couldn\u2019t verify you\u2019re human. Refresh the page and try again.';
-        err.classList.add('show');
-        btn.textContent = 'Log In'; btn.disabled = false;
-        return;
-      }
+      var capTok = await authCaptcha();
+      if (capTok === false) { btn.textContent = 'Log In'; btn.disabled = false; return; }
 
       var opts = capTok ? { captchaToken: capTok } : undefined;
 
@@ -312,8 +328,7 @@
         window.dzCaptcha.note('login', email, false);
         window.dzCaptcha.reset();
       }
-      err.textContent = dzAuthErr(e, 'Login failed. Check your credentials.');
-      err.classList.add('show');
+      authFail(dzAuthErr(e, 'Login failed. Check your credentials.'));
     } finally {
       btn.textContent = 'Log In'; btn.disabled = false;
     }
@@ -357,8 +372,7 @@
     if (provider === 'apple') { showAppleUnavailable(); return; }
     if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
     var label = OAUTH_LABELS[provider] || provider;
-    var err = document.getElementById('authErr');
-    err.textContent = ''; err.classList.remove('show');
+    authEl('authErr').textContent = ''; authEl('authErr').classList.remove('show');
 
     var row = document.querySelector('.laSocial');
     var btns = row ? row.querySelectorAll('.laSocialBtn') : [];
@@ -373,54 +387,47 @@
     } catch (e) {
       Array.prototype.forEach.call(btns, function(b){ b.disabled = false; });
       var raw = (e && e.message || '').toLowerCase();
-      if (raw.includes('provider is not enabled') || raw.includes('unsupported provider')) {
-        err.textContent = label + ' sign-in isn\u2019t available right now. Try another method.';
-      } else {
-        err.textContent = (e && e.message) ? (label + ' sign-in failed: ' + e.message)
-                                           : (label + ' sign-in is unavailable right now.');
-      }
-      err.classList.add('show');
+      authFail(/provider is not enabled|unsupported provider/.test(raw)
+        ? label + ' sign-in isn\u2019t available right now. Try another method.'
+        : (e && e.message) ? label + ' sign-in failed: ' + e.message
+                           : label + ' sign-in is unavailable right now.');
     }
   }
 
+  var AUTH_MODES = {
+    signup: {
+      title: 'Create Account', cta: 'Create Account', other: 'login', alt: 'Log in',
+      sub: 'Choose a username (your public display name), enter your email, and set a password of at least 6 characters.',
+      lead: 'Already have an account?', user: '', autocomplete: 'new-password'
+    },
+    login: {
+      title: 'Welcome Back', cta: 'Log In', other: 'signup', alt: 'Sign up',
+      sub: 'Sign in to continue to your account.',
+      lead: "Don't have an account?", user: 'none', autocomplete: 'current-password'
+    }
+  };
+
   function switchAuthMode(mode) {
+    var m = AUTH_MODES[mode] || AUTH_MODES.login;
     authMode = mode;
-    var title      = document.getElementById('authTitle');
-    var subtitle   = document.getElementById('authSubtitle');
-    var btn        = document.getElementById('authBtn');
-    var toggleBtn  = document.getElementById('authToggleBtn');
-    var leadText   = document.getElementById('authLeadText');
-    var err        = document.getElementById('authErr');
-    var msg        = document.getElementById('authMsg');
-    var userWrap   = document.getElementById('authUserWrap');
-    var passField  = document.getElementById('authPass');
+    authClear();
 
-    err.textContent = ''; err.classList.remove('show');
-    msg.style.display = 'none'; msg.textContent = '';
-
+    authEl('authTitle').textContent = m.title;
+    var subtitle = authEl('authSubtitle');
+    subtitle.textContent = m.sub;
+    subtitle.style.display = 'block';
+    var btn = authEl('authBtn');
+    btn.textContent = m.cta;
+    btn.onclick = mode === 'signup' ? doSignUp : doAuth;
+    authEl('authLeadText').textContent = m.lead;
+    var toggleBtn = authEl('authToggleBtn');
+    toggleBtn.textContent = m.alt;
+    toggleBtn.onclick = function(){ switchAuthMode(m.other); };
+    var userWrap = authEl('authUserWrap');
+    if (userWrap) userWrap.style.display = m.user;
+    authEl('authPass').setAttribute('autocomplete', m.autocomplete);
     if (mode === 'signup') {
-      title.textContent = 'Create Account';
-      subtitle.textContent = 'Choose a username (your public display name), enter your email, and set a password of at least 6 characters.';
-      subtitle.style.display = 'block';
-      btn.textContent = 'Create Account';
-      btn.onclick = doSignUp;
-      leadText.textContent = 'Already have an account?';
-      toggleBtn.textContent = 'Log in';
-      toggleBtn.onclick = function(){ switchAuthMode('login'); };
-      if (userWrap) userWrap.style.display = '';
-      passField.setAttribute('autocomplete', 'new-password');
-      setTimeout(function(){ var u = document.getElementById('authUser'); if (u) u.focus(); }, 60);
-    } else {
-      title.textContent = 'Welcome Back';
-      subtitle.textContent = 'Sign in to continue to your account.';
-      subtitle.style.display = 'block';
-      btn.textContent = 'Log In';
-      btn.onclick = doAuth;
-      leadText.textContent = "Don't have an account?";
-      toggleBtn.textContent = 'Sign up';
-      toggleBtn.onclick = function(){ switchAuthMode('signup'); };
-      if (userWrap) userWrap.style.display = 'none';
-      passField.setAttribute('autocomplete', 'current-password');
+      setTimeout(function(){ var u = authEl('authUser'); if (u) u.focus(); }, 60);
     }
   }
 
@@ -435,53 +442,39 @@
     if (icon) icon.innerHTML = showing ? AUTH_EYE_OFF : AUTH_EYE_OPEN;
   }
 
+  /* What Supabase said, in words a person can act on. */
+  var SIGNUP_REFUSALS = [
+    [/already registered|already in use|user already/, 'This email is already registered. Try logging in instead.'],
+    [/weak password|password should|at least/,         'Password is too weak. Use at least 6 characters.'],
+    [/invalid email|unable to validate email/,         'Invalid email address. Please check and try again.'],
+    [/network|fetch|failed to fetch/,                  'Network error. Please check your connection and try again.'],
+    [/rate limit|too many/,                            'Too many attempts. Please wait a moment and try again.']
+  ];
+
   async function doSignUp() {
     if (!sb) { showToast('Can\u2019t connect \u2014 try again'); return; }
 
-    var email    = document.getElementById('authEmail').value.trim();
-    var pass     = document.getElementById('authPass').value;
-    var username = (document.getElementById('authUser').value || '').trim();
-    var err      = document.getElementById('authErr');
-    var msg      = document.getElementById('authMsg');
+    var email    = authEl('authEmail').value.trim();
+    var pass     = authEl('authPass').value;
+    var username = (authEl('authUser').value || '').trim();
+    var msg      = authEl('authMsg');
 
-    err.textContent = ''; err.classList.remove('show');
-    msg.style.display = 'none'; msg.textContent = '';
+    authClear();
 
-    if (!username) {
-      err.textContent = 'Please enter a username.';
-      err.classList.add('show'); return;
-    }
+    var wrong = !username ? 'Please enter a username.'
+      : !email ? 'Please enter your email address.'
+      : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'Please enter a valid email address.'
+      : !pass ? 'Please enter a password.'
+      : pass.length < 6 ? 'Password must be at least 6 characters long.'
+      : '';
+    if (wrong) { authFail(wrong); return; }
 
-    if (!email) {
-      err.textContent = 'Please enter your email address.';
-      err.classList.add('show'); return;
-    }
-    var emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRx.test(email)) {
-      err.textContent = 'Please enter a valid email address.';
-      err.classList.add('show'); return;
-    }
-
-    if (!pass) {
-      err.textContent = 'Please enter a password.';
-      err.classList.add('show'); return;
-    }
-    if (pass.length < 6) {
-      err.textContent = 'Password must be at least 6 characters long.';
-      err.classList.add('show'); return;
-    }
-
-    var btn = document.getElementById('authBtn');
+    var btn = authEl('authBtn');
     btn.textContent = 'CREATING ACCOUNT…'; btn.disabled = true;
 
     try {
-      var capTok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
-      if (window.dzCaptcha && window.dzCaptcha.configured() && !capTok) {
-        err.textContent = 'Couldn\u2019t verify you\u2019re human. Refresh the page and try again.';
-        err.classList.add('show');
-        btn.textContent = 'Create Account'; btn.disabled = false;
-        return;
-      }
+      var capTok = await authCaptcha();
+      if (capTok === false) { btn.textContent = 'Create Account'; btn.disabled = false; return; }
       var suOpts = { data: { username: username } };
       if (capTok) suOpts.captchaToken = capTok;
 
@@ -500,37 +493,21 @@
       if (session) {
         showToast('Account created. Welcome!');
       } else {
-        document.getElementById('authEmail').value = '';
-        document.getElementById('authPass').value  = '';
+        authEl('authEmail').value = '';
+        authEl('authPass').value  = '';
         msg.textContent = 'Check your email to confirm your account.';
         msg.style.display = 'block';
         btn.textContent = 'Create Account'; btn.disabled = false;
         setTimeout(function(){
-          if (document.getElementById('authMod').classList.contains('open')) {
-            closeAuthMod();
-          }
+          if (authEl('authMod').classList.contains('open')) closeAuthMod();
         }, 5000);
       }
     } catch (e) {
       var raw = (e.message || '').toLowerCase();
-      var friendly;
-      if (raw.includes('already registered') || raw.includes('already in use') || raw.includes('user already')) {
-        friendly = 'This email is already registered. Try logging in instead.';
-      } else if (raw.includes('weak password') || raw.includes('password should') || raw.includes('at least')) {
-        friendly = 'Password is too weak. Use at least 6 characters.';
-      } else if (raw.includes('invalid email') || raw.includes('unable to validate email')) {
-        friendly = 'Invalid email address. Please check and try again.';
-      } else if (raw.includes('network') || raw.includes('fetch') || raw.includes('failed to fetch')) {
-        friendly = 'Network error. Please check your connection and try again.';
-      } else if (raw.includes('rate limit') || raw.includes('too many')) {
-        friendly = 'Too many attempts. Please wait a moment and try again.';
-      } else if (raw.includes('captcha')) {
-        friendly = dzAuthErr(e, 'Sign-up failed. Please try again.');
-      } else {
-        friendly = e.message || 'Sign-up failed. Please try again.';
-      }
-      err.textContent = friendly;
-      err.classList.add('show');
+      var hit = SIGNUP_REFUSALS.find(function (r) { return r[0].test(raw); });
+      authFail(hit ? hit[1]
+        : raw.includes('captcha') ? dzAuthErr(e, 'Sign-up failed. Please try again.')
+        : (e.message || 'Sign-up failed. Please try again.'));
     } finally {
       if (btn.disabled) {
         btn.textContent = 'Create Account'; btn.disabled = false;

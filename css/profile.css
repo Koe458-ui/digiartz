@@ -23,45 +23,8 @@
 #profilePage .subPgTitle{color:var(--tx);}
 #profilePage .awCard{background:var(--sur);}
 
-.pfTopBar{
-  position:sticky;top:0;z-index:12;
-  min-height:var(--pfBarH);
-  padding:.35rem var(--pfPad);
-  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
-  border-bottom:1px solid var(--bdrs,var(--bdr));
-  isolation:isolate;
-}
-.pfTopBar::before{
-  content:'';position:absolute;inset:0;z-index:-1;
-  background:var(--bg);
-}
-.pfTopL{display:flex;align-items:center;gap:.6rem;min-width:0;}
-.pfTopR{display:flex;align-items:center;gap:.15rem;flex:0 0 auto;}
 .pfTopR[hidden]{display:none;}
-.pfTopTitle{
-  font-family:var(--fd);font-weight:800;
-  font-size:clamp(.95rem,3.4vw,1.15rem);letter-spacing:.05em;
-  color:var(--tx);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
-}
-.pfTopBtn{
-  position:relative;flex:0 0 auto;
-  width:42px;height:42px;border-radius:12px;
-  display:flex;align-items:center;justify-content:center;
-  background:none;border:none;color:var(--tx);cursor:pointer;
-  transition:background .18s,color .18s,transform .15s;
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-}
-.pfTopBtn svg{width:22px;height:22px;display:block;}
-.pfTopBtn:active{transform:scale(.92);}
-.pfTopBtn:focus-visible,
-.pfActBtn:focus-visible,
-.pfSrchChip:focus-visible,
-.pfMenuItem:focus-visible,
-.loConfirmBtn:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-@media(hover:hover){ .pfTopBtn:hover{background:var(--sur2);} }
 .pfTopBtn[hidden]{display:none;}
-.pfTopBack{margin-left:-.55rem;}
 .pfTopDot{
   position:absolute;top:8px;right:8px;
   width:8px;height:8px;border-radius:50%;
@@ -365,14 +328,12 @@
 }
 @media(hover:hover){ .pfSrchRow:hover{background:var(--sur);} }
 .pfSrchRow:active{background:var(--sur2);}
-.pfSrchRow:focus-visible{outline:2px solid var(--pg);outline-offset:-2px;}
 .pfSrchThumb{
   flex:0 0 auto;width:48px;height:48px;border-radius:4px;overflow:hidden;
   background:var(--sur2);border:1px solid var(--bdr);
   display:flex;align-items:center;justify-content:center;
   font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;color:var(--txd);
 }
-.pfSrchThumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .pfSrchTxt{display:block;min-width:0;flex:1 1 auto;}
 .pfSrchName{
   display:block;
@@ -385,20 +346,6 @@
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 
-#setPage{
-  position:fixed;inset:0;z-index:546;background:var(--bg);color:var(--tx);
-  overflow-y:auto;transform:translateX(100%);
-  transition:transform .45s cubic-bezier(.22,1,.36,1);
-}
-#setPage.open{transform:translateX(0);}
-
-#legalPage{
-  position:fixed;inset:0;z-index:547;background:var(--bg);color:var(--tx);
-  overflow-y:auto;transform:translateX(100%);
-  transition:transform .45s cubic-bezier(.22,1,.36,1);
-}
-#legalPage.open{transform:translateX(0);}
-@media(prefers-reduced-motion:reduce){ #legalPage{transition:none;} }
 .lgBdy{
   max-width:760px;margin:0 auto;
   padding:1.5rem var(--pfPad,1.2rem) 3rem;
@@ -407,7 +354,6 @@
   display:flex;flex-direction:column;gap:1.35rem;
   max-width:640px;margin:0 auto;padding:1rem 1rem 4rem;
 }
-@media(prefers-reduced-motion:reduce){ #setPage{transition:none;} }
 
 .setGrp{display:flex;flex-direction:column;gap:.55rem;}
 .setGrpHd{

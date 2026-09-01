@@ -13,1033 +13,9 @@ create sequence if not exists public.chat_rate_events_id_seq as bigint increment
 create sequence if not exists public.dz_abuse_events_id_seq as bigint increment by 1 start with 1 no cycle;
 create sequence if not exists public.ledger_entries_seq_seq as bigint increment by 1 start with 1 no cycle;
 
-create table if not exists private.mod_config (
-  id boolean default true not null,
-  secret text not null,
-  sections_enforced boolean default false not null
-);
 alter table private.mod_config add constraint mod_config_pkey PRIMARY KEY (id);
 alter table private.mod_config add constraint mod_config_singleton CHECK (id);
-create table if not exists private.used_mod_tokens (
-  jti text not null,
-  user_id uuid,
-  used_at timestamp with time zone default now() not null
-);
 alter table private.used_mod_tokens add constraint used_mod_tokens_pkey PRIMARY KEY (jti);
-
-create table if not exists public.album_items (
-  album_id uuid not null,
-  artwork_id uuid not null,
-  added_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.albums (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  name text not null,
-  created_at timestamp with time zone default now() not null,
-  is_public boolean default true not null
-);
-
-create table if not exists public.analytics_events (
-  id bigint generated always as identity not null,
-  owner_id uuid not null,
-  actor_id uuid,
-  viewer_key text not null,
-  scope text default 'artwork'::text not null,
-  subject_id uuid,
-  event text not null,
-  source text default 'direct'::text not null,
-  referrer_host text,
-  country text,
-  device text default 'unknown'::text not null,
-  term text,
-  created_at timestamp with time zone default now() not null,
-  day date default CURRENT_DATE not null
-);
-
-create table if not exists public.analytics_goals (
-  id bigint generated always as identity not null,
-  user_id uuid not null,
-  metric text not null,
-  target bigint not null,
-  period text default '30d'::text not null,
-  created_at timestamp with time zone default now() not null,
-  achieved_at timestamp with time zone,
-  scope text default 'artwork'::text not null
-);
-
-create table if not exists public.artwork_bookmarks (
-  user_id uuid not null,
-  artwork_id uuid not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.artwork_download_dedup (
-  artwork_id uuid not null,
-  viewer_key text not null,
-  day date not null
-);
-
-create table if not exists public.artwork_file (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  artwork_id uuid not null,
-  storage_bucket text default 'koe-originals'::text not null,
-  storage_path text,
-  original_filename text,
-  mime text,
-  bytes bigint,
-  "position" smallint default 0 not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.artwork_image (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  artwork_id uuid not null,
-  storage_bucket text default 'koe-media'::text not null,
-  storage_path text,
-  url text,
-  mime text,
-  bytes bigint,
-  width integer,
-  height integer,
-  "position" smallint default 0 not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.artwork_likes (
-  artwork_id uuid not null,
-  user_id uuid not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.artwork_reports (
-  id uuid default gen_random_uuid() not null,
-  artwork_id uuid not null,
-  reporter_id uuid,
-  reason text not null,
-  details text,
-  status text default 'open'::text not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.artwork_view_dedup (
-  artwork_id uuid not null,
-  viewer_key text not null,
-  day date default CURRENT_DATE not null
-);
-
-create table if not exists public.artworks (
-  id uuid default gen_random_uuid() not null,
-  title text,
-  image_url text,
-  created_at timestamp without time zone default now(),
-  category text[] default '{others}'::text[] not null,
-  name text,
-  storage_path text,
-  description text,
-  user_id uuid,
-  tags text[] default '{}'::text[] not null,
-  status text default 'pending'::text not null,
-  software text,
-  thumb_x numeric default 50,
-  thumb_y numeric default 50,
-  view_count bigint default 0 not null,
-  phash text,
-  kind text default 'art'::text not null,
-  pages jsonb,
-  like_count bigint default 0 not null,
-  bookmark_count bigint default 0 not null,
-  download_count integer default 0 not null,
-  content_rating text default 'SAFE'::text not null,
-  is_mature boolean default false not null,
-  ai_moderation jsonb,
-  thumb_zoom numeric default 1 not null,
-  mod_token text,
-  summary text,
-  subject_matter text,
-  medium text,
-  software_list text[] default '{}'::text[] not null,
-  license text,
-  commercial_use boolean default false not null,
-  attribution_required boolean default false not null,
-  modification_allowed boolean default false not null,
-  credits text[] default '{}'::text[] not null,
-  process_notes text,
-  external_links text[] default '{}'::text[] not null,
-  comments_allowed boolean default true not null,
-  visibility text default 'published'::text not null,
-  featured boolean default false not null,
-  seo_title text,
-  seo_description text,
-  slug text,
-  file_ext text,
-  file_size bigint,
-  width integer,
-  height integer,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.audit_log (
-  id bigint generated always as identity not null,
-  actor_id uuid,
-  actor_role text,
-  action text not null,
-  target_id uuid,
-  metadata jsonb default '{}'::jsonb not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.auth_attempts (
-  id bigint default nextval('auth_attempts_id_seq'::regclass) not null,
-  created_at timestamp with time zone default now() not null,
-  ip text,
-  email_key text,
-  event text not null,
-  ok boolean
-);
-
-create table if not exists public.blog_image (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  post_id uuid not null,
-  storage_bucket text default 'koe-media'::text not null,
-  storage_path text,
-  url text,
-  mime text,
-  bytes bigint,
-  width integer,
-  height integer,
-  "position" smallint default 0 not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.blog_posts (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  title text not null,
-  slug text,
-  excerpt text,
-  body text not null,
-  cover_url text,
-  cover_storage_path text,
-  category text[] default '{}'::text[] not null,
-  tags text[] default '{}'::text[] not null,
-  read_minutes integer default 1 not null,
-  like_count bigint default 0 not null,
-  view_count bigint default 0 not null,
-  status text default 'approved'::text not null,
-  published_at timestamp with time zone,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null,
-  content_type text,
-  related_artworks uuid[] default '{}'::uuid[] not null,
-  related_items uuid[] default '{}'::uuid[] not null,
-  external_refs text[] default '{}'::text[] not null,
-  visibility text default 'published'::text not null,
-  featured boolean default false not null,
-  author_bio text,
-  seo_title text,
-  seo_description text,
-  bookmark_count bigint default 0 not null,
-  mod_token text
-);
-
-create table if not exists public.cart_items (
-  user_id uuid not null,
-  item_id uuid not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.chat_cooldowns (
-  user_id uuid not null,
-  strikes integer default 0 not null,
-  until timestamp with time zone,
-  last_strike_at timestamp with time zone,
-  reason text
-);
-
-create table if not exists public.chat_rate_events (
-  id bigint default nextval('chat_rate_events_id_seq'::regclass) not null,
-  user_id uuid not null,
-  scope text not null,
-  body_hash text,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.comics (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid,
-  title text not null,
-  description text,
-  tags text[] default '{}'::text[] not null,
-  cover_image_url text not null,
-  cover_storage_path text,
-  pages text[] default '{}'::text[] not null,
-  created_at timestamp with time zone default now() not null,
-  status text default 'pending'::text not null,
-  cover_thumb_x numeric default 50,
-  cover_thumb_y numeric default 50,
-  phash text
-);
-
-create table if not exists public.comments (
-  id bigint generated always as identity not null,
-  user_id uuid not null,
-  user_email text,
-  comment_text text not null,
-  image_url text,
-  created_at timestamp with time zone default now() not null,
-  username text default 'User'::text not null,
-  channel text default 'arttalk'::text not null
-);
-
-create table if not exists public.communities (
-  id uuid default gen_random_uuid() not null,
-  name text not null,
-  join_code text not null,
-  description text,
-  avatar_url text,
-  banner_url text,
-  rules text,
-  owner_id uuid not null,
-  created_at timestamp with time zone default now() not null,
-  short_description text,
-  is_public boolean default false not null,
-  avatar_storage_path text,
-  plan_backed boolean default false not null
-);
-
-create table if not exists public.community_members (
-  community_id uuid not null,
-  user_id uuid not null,
-  role text default 'member'::text not null,
-  banned boolean default false not null,
-  timeout_until timestamp with time zone,
-  joined_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.content_repeats (
-  user_id uuid not null,
-  fingerprint text not null,
-  n integer default 1 not null,
-  first_at timestamp with time zone default now() not null,
-  last_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.direct_messages (
-  id uuid default gen_random_uuid() not null,
-  sender_id uuid not null,
-  recipient_id uuid not null,
-  content text not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.download_events (
-  id bigint generated always as identity not null,
-  viewer_key text not null,
-  artwork_id uuid,
-  created_at timestamp with time zone default now() not null,
-  kind text default 'artwork'::text not null,
-  subject_id uuid
-);
-
-create table if not exists public.dz_abuse_events (
-  id bigint default nextval('dz_abuse_events_id_seq'::regclass) not null,
-  created_at timestamp with time zone default now() not null,
-  user_id uuid,
-  ip text,
-  surface text not null,
-  rule text not null,
-  detail text,
-  sample text
-);
-
-create table if not exists public.dz_secrets (
-  name text not null,
-  value text not null
-);
-
-create table if not exists public.friendships (
-  id uuid default gen_random_uuid() not null,
-  requester_id uuid not null,
-  addressee_id uuid not null,
-  status text default 'pending'::text not null,
-  blocked_by uuid,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.fx_rates (
-  code text not null,
-  updated_at timestamp with time zone default now() not null,
-  inr_rate numeric(18,8) not null
-);
-
-create table if not exists public.hidden_artworks (
-  user_id uuid not null,
-  artwork_id uuid not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.item_bookmarks (
-  kind text not null,
-  subject_id uuid not null,
-  user_id uuid not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.item_comments (
-  id bigint generated always as identity not null,
-  kind text not null,
-  subject_id uuid not null,
-  user_id uuid not null,
-  username text,
-  body text not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.item_likes (
-  kind text not null,
-  subject_id uuid not null,
-  user_id uuid not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.item_reports (
-  id uuid default gen_random_uuid() not null,
-  kind text not null,
-  subject_id uuid not null,
-  reporter_id uuid not null,
-  reason text not null,
-  status text default 'open'::text not null,
-  created_at timestamp with time zone default now() not null,
-  subject_ref text
-);
-
-create table if not exists public.item_view_dedup (
-  kind text not null,
-  subject_id uuid not null,
-  viewer_key text not null,
-  day date default CURRENT_DATE not null
-);
-
-create table if not exists public.jobs (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  title text not null,
-  company text not null,
-  company_url text,
-  company_logo_url text,
-  description text not null,
-  category text[] default '{}'::text[] not null,
-  tags text[] default '{}'::text[] not null,
-  employment_type text default 'CONTRACTOR'::text not null,
-  is_remote boolean default false not null,
-  location_city text,
-  location_region text,
-  location_country character(2),
-  applicant_countries text[] default '{}'::text[] not null,
-  salary_min numeric(12,2),
-  salary_max numeric(12,2),
-  salary_currency character(3) default 'USD'::bpchar not null,
-  salary_unit text,
-  apply_url text,
-  apply_email text,
-  valid_through timestamp with time zone,
-  view_count bigint default 0 not null,
-  status text default 'approved'::text not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null,
-  about_company text,
-  experience_level text,
-  years_experience integer,
-  openings integer,
-  responsibilities text,
-  requirements text,
-  required_skills text,
-  nice_to_have_skills text,
-  benefits text,
-  work_mode text default 'onsite'::text,
-  timezone text,
-  working_hours text,
-  schedule text,
-  start_date date,
-  contract_duration text,
-  application_instructions text,
-  application_materials text,
-  application_questions text,
-  portfolio_required boolean default false not null,
-  resume_required boolean default false not null,
-  cover_letter_required boolean default false not null,
-  visibility text default 'public'::text not null,
-  featured boolean default false not null
-);
-
-create table if not exists public.ledger_entries (
-  seq bigint default nextval('ledger_entries_seq_seq'::regclass) not null,
-  user_id uuid not null,
-  entry_type text not null,
-  direction text not null,
-  amount bigint not null,
-  currency text not null,
-  source text,
-  provider_txn_id text,
-  provider_amount bigint,
-  provider_currency text,
-  ref_table text,
-  ref_id uuid,
-  note text,
-  prev_hash text,
-  entry_hash text not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.marketplace_earnings (
-  id uuid default gen_random_uuid() not null,
-  payment_id uuid not null,
-  item_id uuid not null,
-  seller_id uuid not null,
-  buyer_id uuid not null,
-  gross_amount bigint not null,
-  fee_amount bigint not null,
-  net_amount bigint not null,
-  fee_bps integer not null,
-  currency text not null,
-  status text default 'pending'::text not null,
-  available_at timestamp with time zone not null,
-  created_at timestamp with time zone default now() not null,
-  fee_inr bigint,
-  fx_inr_rate numeric(18,8),
-  gateway_fee bigint default 0 not null,
-  tds_amount bigint default 0 not null,
-  tds_bps integer default 0 not null,
-  tcs_amount bigint default 0 not null,
-  tcs_bps integer default 0 not null,
-  provider text,
-  settlement_note text,
-  promo_code_id uuid
-);
-
-create table if not exists public.marketplace_file (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  item_id uuid not null,
-  storage_bucket text default 'koe-originals'::text not null,
-  storage_path text,
-  original_filename text,
-  mime text,
-  bytes bigint,
-  "position" smallint default 0 not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.marketplace_image (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  item_id uuid not null,
-  storage_bucket text default 'koe-media'::text not null,
-  storage_path text,
-  url text,
-  mime text,
-  bytes bigint,
-  width integer,
-  height integer,
-  "position" smallint default 0 not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.marketplace_items (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  title text not null,
-  description text,
-  category text[] default '{}'::text[] not null,
-  tags text[] default '{}'::text[] not null,
-  item_type text default 'digital'::text not null,
-  price_cents integer default 0 not null,
-  currency character(3) default 'USD'::bpchar not null,
-  file_url text,
-  file_storage_path text,
-  file_name text,
-  file_ext text,
-  file_size bigint default 0 not null,
-  preview_url text,
-  preview_storage_path text,
-  gallery jsonb,
-  license text default 'standard'::text not null,
-  delivery_days integer,
-  sales_count integer default 0 not null,
-  like_count bigint default 0 not null,
-  view_count bigint default 0 not null,
-  status text default 'approved'::text not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null,
-  product_type text,
-  summary text,
-  subcategory text,
-  buyer_gets text,
-  file_format text,
-  file_count integer,
-  file_size_mb numeric(12,2),
-  dimensions text,
-  software text,
-  source_files_included boolean default false not null,
-  commercial_use boolean default true not null,
-  personal_use boolean default false not null,
-  modification_allowed boolean default false not null,
-  attribution_required boolean default false not null,
-  sale_price_cents integer,
-  stock integer,
-  delivery_type text default 'instant'::text not null,
-  delivery_notes text,
-  custom_requests boolean default false not null,
-  revision_count integer,
-  support_period text,
-  refund_policy text,
-  preview_watermark boolean default false not null,
-  safety_notes text,
-  seller_note text,
-  apply_url text,
-  apply_email text,
-  visibility text default 'published'::text not null,
-  featured boolean default false not null,
-  closing_date date,
-  internal_notes text,
-  seo_title text,
-  seo_description text,
-  slug text,
-  mod_token text
-);
-
-create table if not exists public.moderation_logs (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  allowed boolean not null,
-  code text,
-  rating text,
-  confidence numeric,
-  audit jsonb,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.notification_reads (
-  user_id uuid not null,
-  notification_id bigint not null,
-  read_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.notifications (
-  id bigint generated by default as identity not null,
-  user_id uuid,
-  type text default 'admin'::text not null,
-  title text not null,
-  message text not null,
-  ref_table text,
-  ref_id bigint,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.partner_commissions (
-  id uuid default gen_random_uuid() not null,
-  partner_id uuid not null,
-  promo_code_id uuid not null,
-  buyer_id uuid,
-  kind text not null,
-  earning_id uuid,
-  payment_id uuid,
-  label text,
-  gross_amount bigint not null,
-  rate_bps integer not null,
-  amount bigint not null,
-  currency text not null,
-  amount_inr bigint,
-  fx_inr_rate numeric(18,8),
-  payout_status text default 'wallet_credited'::text not null,
-  payout_id uuid,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.payments (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  kind text not null,
-  plan text,
-  item_id uuid,
-  amount bigint not null,
-  currency text not null,
-  rzp_order_id text,
-  rzp_payment_id text,
-  status text default 'created'::text not null,
-  created_at timestamp with time zone default now() not null,
-  paid_at timestamp with time zone,
-  provider text default 'razorpay'::text not null,
-  pp_order_id text,
-  pp_capture_id text,
-  order_label text,
-  transaction_id text,
-  promo_code_id uuid
-);
-
-create table if not exists public.payout_methods (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  provider text not null,
-  kind text not null,
-  label text,
-  paypal_email text,
-  upi_vpa text,
-  holder_name text,
-  bank_name text,
-  bank_last4 text,
-  bank_ifsc text,
-  provider_token text,
-  is_default boolean default false not null,
-  verified boolean default false not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.payout_requests (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  amount bigint not null,
-  currency text not null,
-  status text default 'requested'::text not null,
-  method text default 'paypal'::text not null,
-  destination text,
-  review_note text,
-  batch_id text,
-  provider_item_id text,
-  requested_at timestamp with time zone default now() not null,
-  decided_at timestamp with time zone,
-  paid_at timestamp with time zone,
-  gross_basis bigint,
-  tds_bps integer,
-  tds_amount bigint default 0 not null,
-  net_amount bigint
-);
-
-create table if not exists public.platform_tax_config (
-  id smallint default 1 not null,
-  commission_bps integer default 1500 not null,
-  tds_bps integer default 10 not null,
-  tds_no_pan_bps integer default 500 not null,
-  tds_floor_inr bigint default 50000000 not null,
-  tcs_active boolean default false not null,
-  tcs_bps integer default 50 not null,
-  updated_at timestamp with time zone default now() not null,
-  max_commission_bps integer default 1000 not null,
-  partner_market_bps integer default 500 not null,
-  partner_sub_bps integer default 250 not null,
-  promo_sub_discount_bps integer default 9000 not null
-);
-
-create table if not exists public.profile_banner_image (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  storage_bucket text default 'koe-media'::text not null,
-  storage_path text,
-  url text,
-  mime text,
-  bytes bigint,
-  width integer,
-  height integer,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.profile_creds (
-  id uuid default gen_random_uuid() not null,
-  giver_id uuid not null,
-  receiver_id uuid not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.profile_image (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  storage_bucket text default 'koe-media'::text not null,
-  storage_path text,
-  url text,
-  mime text,
-  bytes bigint,
-  width integer,
-  height integer,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.profiles (
-  id uuid not null,
-  email text,
-  role text default 'guest'::text not null,
-  created_at timestamp with time zone default now() not null,
-  subscription_tier text default 'guest'::text not null,
-  username text,
-  bio text,
-  avatar_url text,
-  avatar_storage_path text,
-  avatar_updated_at timestamp with time zone,
-  banner_url text,
-  banner_storage_path text,
-  banner_updated_at timestamp with time zone,
-  social_links jsonb,
-  display_name text,
-  username_changed_at timestamp with time zone,
-  cred_received_count bigint default 0 not null,
-  merit integer default 100 not null,
-  merit_updated_at timestamp with time zone default now() not null,
-  subscription_expires_at timestamp with time zone,
-  likes_public boolean default false not null,
-  bookmarks_public boolean default false not null,
-  currency text default 'USD'::text not null,
-  max_claimed boolean default false not null,
-  partner_since timestamp with time zone
-);
-
-create table if not exists public.promo_codes (
-  id uuid default gen_random_uuid() not null,
-  code text not null,
-  partner_id uuid not null,
-  is_active boolean default true not null,
-  usage_count integer default 0 not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.rate_hits (
-  bucket text not null,
-  window_start timestamp with time zone not null,
-  hits integer default 0 not null
-);
-
-create table if not exists public.reconciliation_flags (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  currency text not null,
-  operational bigint not null,
-  ledger bigint not null,
-  discrepancy bigint not null,
-  kind text default 'balance_mismatch'::text not null,
-  status text default 'open'::text not null,
-  detail text,
-  created_at timestamp with time zone default now() not null,
-  resolved_at timestamp with time zone
-);
-
-create table if not exists public.reserved_names (
-  name text not null,
-  mode text default 'exact'::text not null,
-  reason text,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.resources (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  title text not null,
-  description text,
-  category text[] default '{}'::text[] not null,
-  tags text[] default '{}'::text[] not null,
-  file_url text,
-  file_storage_path text,
-  file_name text,
-  file_ext text,
-  file_size bigint default 0 not null,
-  preview_url text,
-  preview_storage_path text,
-  license text default 'personal'::text not null,
-  software text,
-  download_count integer default 0 not null,
-  like_count bigint default 0 not null,
-  view_count bigint default 0 not null,
-  status text default 'approved'::text not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null,
-  summary text,
-  resource_type text,
-  subcategory text,
-  commercial_use boolean default false not null,
-  attribution_required boolean default false not null,
-  modification_allowed boolean default true not null,
-  compatible_software text[] default '{}'::text[] not null,
-  compatible_versions text,
-  whats_included text,
-  instructions text,
-  version text,
-  external_links text[] default '{}'::text[] not null,
-  safety_notes text,
-  visibility text default 'published'::text not null,
-  featured boolean default false not null,
-  file_count integer,
-  dimensions text,
-  file_storage_bucket text,
-  seo_title text,
-  seo_description text,
-  slug text,
-  mod_token text
-);
-
-create table if not exists public.resources_file (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  resource_id uuid not null,
-  storage_bucket text default 'koe-originals'::text not null,
-  storage_path text,
-  original_filename text,
-  mime text,
-  bytes bigint,
-  "position" smallint default 0 not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.resources_image (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  resource_id uuid not null,
-  storage_bucket text default 'koe-media'::text not null,
-  storage_path text,
-  url text,
-  mime text,
-  bytes bigint,
-  width integer,
-  height integer,
-  "position" smallint default 0 not null,
-  created_at timestamp with time zone default now() not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.scheduled_sections (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  section text not null,
-  payload jsonb not null,
-  storage_paths jsonb,
-  publish_at timestamp with time zone not null,
-  publish_error text,
-  attempts integer default 0 not null,
-  last_attempt_at timestamp with time zone,
-  created_at timestamp with time zone default now() not null,
-  sell_files jsonb
-);
-
-create table if not exists public.scheduled_uploads (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  publish_at timestamp with time zone not null,
-  name text not null,
-  description text,
-  tags text[],
-  category text[],
-  image_url text not null,
-  storage_path text,
-  thumb_x numeric default 50,
-  thumb_y numeric default 50,
-  thumb_zoom numeric default 1,
-  pages jsonb,
-  kind text,
-  software text,
-  phash text,
-  content_rating text default 'SAFE'::text,
-  is_mature boolean default false,
-  ai_moderation jsonb,
-  created_at timestamp with time zone default now() not null,
-  publish_error text,
-  attempts integer default 0 not null,
-  last_attempt_at timestamp with time zone,
-  album_ids uuid[],
-  mod_token text,
-  extra jsonb
-);
-
-create table if not exists public.seller_tax (
-  user_id uuid not null,
-  country text default 'IN'::text not null,
-  pan text,
-  is_individual boolean default true not null,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.settings (
-  key text not null,
-  value text,
-  updated_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.settlement_windows (
-  provider text not null,
-  scope text not null,
-  days integer not null,
-  business boolean default true not null,
-  label text not null
-);
-
-create table if not exists public.subscription_prices (
-  plan text not null,
-  currency text not null,
-  amount bigint not null
-);
-
-create table if not exists public.support_limits (
-  currency text not null,
-  min_amount bigint not null,
-  max_amount bigint not null
-);
-
-create table if not exists public.tax_remittances (
-  id uuid default gen_random_uuid() not null,
-  kind text not null,
-  period date not null,
-  amount_inr bigint not null,
-  remitted_at timestamp with time zone,
-  reference text,
-  note text,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.upload_events (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid default auth.uid() not null,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.user_bans (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid not null,
-  reason text not null,
-  note text,
-  banned_by uuid,
-  banned_at timestamp with time zone default now() not null,
-  expires_at timestamp with time zone,
-  lifted_by uuid,
-  lifted_at timestamp with time zone
-);
-
-create table if not exists public.user_reports (
-  id uuid default gen_random_uuid() not null,
-  reporter_id uuid,
-  target_id uuid not null,
-  reason text not null,
-  details text,
-  status text default 'pending'::text not null,
-  resolved_by uuid,
-  resolved_at timestamp with time zone,
-  resolution text,
-  created_at timestamp with time zone default now() not null
-);
-
-create table if not exists public.user_tag_prefs (
-  user_id uuid not null,
-  tag text not null,
-  created_at timestamp with time zone default now() not null
-);
 
 alter sequence public.auth_attempts_id_seq owned by public.auth_attempts.id;
 alter sequence public.chat_rate_events_id_seq owned by public.chat_rate_events.id;
@@ -1558,221 +534,14 @@ CREATE UNIQUE INDEX promo_codes_partner_idx ON public.promo_codes USING btree (p
 CREATE UNIQUE INDEX user_bans_live_idx ON public.user_bans USING btree (user_id) WHERE (lifted_at IS NULL);
 CREATE UNIQUE INDEX user_reports_one_open_idx ON public.user_reports USING btree (reporter_id, target_id) WHERE (status = 'pending'::text);
 
-create or replace view public.an_bookmark as
- SELECT 'artwork'::text AS kind,
-    b.artwork_id AS subject_id,
-    b.user_id,
-    b.created_at
-   FROM artwork_bookmarks b
-UNION ALL
- SELECT k.kind,
-    k.subject_id,
-    k.user_id,
-    k.created_at
-   FROM item_bookmarks k;
+create or replace view public.an_bookmark as  SELECT 'artwork'::text AS kind, b.artwork_id AS subject_id, b.user_id, b.created_at FROM artwork_bookmarks b UNION ALL SELECT k.kind, k.subject_id, k.user_id, k.created_at FROM item_bookmarks k;
+create or replace view public.an_download as  SELECT 'artwork'::text AS kind, d.artwork_id AS subject_id, d.viewer_key, d.day FROM artwork_download_dedup d UNION ALL SELECT CASE WHEN (e.kind = 'resources'::text) THEN 'resource'::text ELSE e.kind END AS kind, e.subject_id, e.viewer_key, (e.created_at)::date AS day FROM download_events e WHERE ((e.kind <> 'artwork'::text) AND (e.subject_id IS NOT NULL)) GROUP BY CASE WHEN (e.kind = 'resources'::text) THEN 'resource'::text ELSE e.kind END, e.subject_id, e.viewer_key, ((e.created_at)::date);
+create or replace view public.an_item as  SELECT 'artwork'::text AS kind, a.id, a.user_id, COALESCE(NULLIF(btrim(a.name), ''::text), 'Untitled'::text) AS title, a.image_url AS thumb, a.category, a.tags, CASE WHEN (COALESCE(array_length(a.software_list, 1), 0) > 0) THEN a.software_list WHEN ((a.software IS NOT NULL) AND (btrim(a.software) <> ''::text)) THEN ARRAY[a.software] ELSE '{}'::text[] END AS software, (a.created_at)::timestamp with time zone AS created_at, a.status, a.visibility, a.featured, a.license, a.is_mature, COALESCE(a.view_count, (0)::bigint) AS view_count, COALESCE(a.like_count, (0)::bigint) AS like_count, COALESCE(a.bookmark_count, (0)::bigint) AS bookmark_count, (COALESCE(a.download_count, 0))::bigint AS download_count, (0)::bigint AS sales_count, (0)::bigint AS price_cents FROM artworks a UNION ALL SELECT 'marketplace'::text AS kind, m.id, m.user_id, COALESCE(NULLIF(btrim(m.title), ''::text), 'Untitled'::text) AS title, m.preview_url AS thumb, m.category, m.tags, CASE WHEN ((m.software IS NOT NULL) AND (btrim(m.software) <> ''::text)) THEN ARRAY[m.software] ELSE '{}'::text[] END AS software, m.created_at, m.status, m.visibility, m.featured, m.license, false AS is_mature, COALESCE(m.view_count, (0)::bigint) AS view_count, COALESCE(m.like_count, (0)::bigint) AS like_count, (0)::bigint AS bookmark_count, (0)::bigint AS download_count, (COALESCE(m.sales_count, 0))::bigint AS sales_count, (COALESCE(m.price_cents, 0))::bigint AS price_cents FROM marketplace_items m UNION ALL SELECT 'blog'::text AS kind, b.id, b.user_id, COALESCE(NULLIF(btrim(b.title), ''::text), 'Untitled'::text) AS title, b.cover_url AS thumb, b.category, b.tags, '{}'::text[] AS software, b.created_at, b.status, b.visibility, b.featured, NULL::text AS license, false AS is_mature, COALESCE(b.view_count, (0)::bigint) AS view_count, COALESCE(b.like_count, (0)::bigint) AS like_count, COALESCE(b.bookmark_count, (0)::bigint) AS bookmark_count, (0)::bigint AS download_count, (0)::bigint AS sales_count, (0)::bigint AS price_cents FROM blog_posts b UNION ALL SELECT 'resource'::text AS kind, r.id, r.user_id, COALESCE(NULLIF(btrim(r.title), ''::text), 'Untitled'::text) AS title, r.preview_url AS thumb, r.category, r.tags, CASE WHEN (COALESCE(array_length(r.compatible_software, 1), 0) > 0) THEN r.compatible_software WHEN ((r.software IS NOT NULL) AND (btrim(r.software) <> ''::text)) THEN ARRAY[r.software] ELSE '{}'::text[] END AS software, r.created_at, r.status, r.visibility, r.featured, r.license, false AS is_mature, COALESCE(r.view_count, (0)::bigint) AS view_count, COALESCE(r.like_count, (0)::bigint) AS like_count, (0)::bigint AS bookmark_count, (COALESCE(r.download_count, 0))::bigint AS download_count, (0)::bigint AS sales_count, (0)::bigint AS price_cents FROM resources r;
+create or replace view public.an_like as  SELECT 'artwork'::text AS kind, l.artwork_id AS subject_id, l.user_id, l.created_at FROM artwork_likes l UNION ALL SELECT k.kind, k.subject_id, k.user_id, k.created_at FROM item_likes k;
+create or replace view public.an_view as  SELECT 'artwork'::text AS kind, d.artwork_id AS subject_id, d.viewer_key, d.day FROM artwork_view_dedup d UNION ALL SELECT v.kind, v.subject_id, v.viewer_key, v.day FROM item_view_dedup v;
+create or replace view public.wallet_history with (security_invoker=true) as  SELECT p.id, p.user_id, 'purchase'::text AS direction, p.kind AS category, COALESCE(p.order_label, CASE WHEN (p.kind = 'subscription'::text) THEN COALESCE(initcap(p.plan), 'Subscription'::text) ELSE 'Marketplace item'::text END) AS title, p.amount, p.currency, p.status, p.provider, p.transaction_id, COALESCE(p.paid_at, p.created_at) AS happened_at FROM payments p UNION ALL SELECT e.id, e.seller_id AS user_id, 'sale'::text AS direction, 'marketplace'::text AS category, COALESCE(m.title, 'Marketplace item'::text) AS title, e.net_amount AS amount, e.currency, e.status, NULL::text AS provider, NULL::text AS transaction_id, e.created_at AS happened_at FROM (marketplace_earnings e LEFT JOIN marketplace_items m ON ((m.id = e.item_id))) UNION ALL SELECT r.id, r.user_id, 'payout'::text AS direction, 'payout'::text AS category, 'Withdrawal'::text AS title, r.amount, r.currency, r.status, r.method AS provider, r.batch_id AS transaction_id, COALESCE(r.paid_at, r.decided_at, r.requested_at) AS happened_at FROM payout_requests r;
 
-create or replace view public.an_download as
- SELECT 'artwork'::text AS kind,
-    d.artwork_id AS subject_id,
-    d.viewer_key,
-    d.day
-   FROM artwork_download_dedup d
-UNION ALL
- SELECT
-        CASE
-            WHEN e.kind = 'resources'::text THEN 'resource'::text
-            ELSE e.kind
-        END AS kind,
-    e.subject_id,
-    e.viewer_key,
-    e.created_at::date AS day
-   FROM download_events e
-  WHERE e.kind <> 'artwork'::text AND e.subject_id IS NOT NULL
-  GROUP BY (
-        CASE
-            WHEN e.kind = 'resources'::text THEN 'resource'::text
-            ELSE e.kind
-        END), e.subject_id, e.viewer_key, (e.created_at::date);
-
-create or replace view public.an_item as
- SELECT 'artwork'::text AS kind,
-    a.id,
-    a.user_id,
-    COALESCE(NULLIF(btrim(a.name), ''::text), 'Untitled'::text) AS title,
-    a.image_url AS thumb,
-    a.category,
-    a.tags,
-        CASE
-            WHEN COALESCE(array_length(a.software_list, 1), 0) > 0 THEN a.software_list
-            WHEN a.software IS NOT NULL AND btrim(a.software) <> ''::text THEN ARRAY[a.software]
-            ELSE '{}'::text[]
-        END AS software,
-    a.created_at::timestamp with time zone AS created_at,
-    a.status,
-    a.visibility,
-    a.featured,
-    a.license,
-    a.is_mature,
-    COALESCE(a.view_count, 0::bigint) AS view_count,
-    COALESCE(a.like_count, 0::bigint) AS like_count,
-    COALESCE(a.bookmark_count, 0::bigint) AS bookmark_count,
-    COALESCE(a.download_count, 0)::bigint AS download_count,
-    0::bigint AS sales_count,
-    0::bigint AS price_cents
-   FROM artworks a
-UNION ALL
- SELECT 'marketplace'::text AS kind,
-    m.id,
-    m.user_id,
-    COALESCE(NULLIF(btrim(m.title), ''::text), 'Untitled'::text) AS title,
-    m.preview_url AS thumb,
-    m.category,
-    m.tags,
-        CASE
-            WHEN m.software IS NOT NULL AND btrim(m.software) <> ''::text THEN ARRAY[m.software]
-            ELSE '{}'::text[]
-        END AS software,
-    m.created_at,
-    m.status,
-    m.visibility,
-    m.featured,
-    m.license,
-    false AS is_mature,
-    COALESCE(m.view_count, 0::bigint) AS view_count,
-    COALESCE(m.like_count, 0::bigint) AS like_count,
-    0::bigint AS bookmark_count,
-    0::bigint AS download_count,
-    COALESCE(m.sales_count, 0)::bigint AS sales_count,
-    COALESCE(m.price_cents, 0)::bigint AS price_cents
-   FROM marketplace_items m
-UNION ALL
- SELECT 'blog'::text AS kind,
-    b.id,
-    b.user_id,
-    COALESCE(NULLIF(btrim(b.title), ''::text), 'Untitled'::text) AS title,
-    b.cover_url AS thumb,
-    b.category,
-    b.tags,
-    '{}'::text[] AS software,
-    b.created_at,
-    b.status,
-    b.visibility,
-    b.featured,
-    NULL::text AS license,
-    false AS is_mature,
-    COALESCE(b.view_count, 0::bigint) AS view_count,
-    COALESCE(b.like_count, 0::bigint) AS like_count,
-    COALESCE(b.bookmark_count, 0::bigint) AS bookmark_count,
-    0::bigint AS download_count,
-    0::bigint AS sales_count,
-    0::bigint AS price_cents
-   FROM blog_posts b
-UNION ALL
- SELECT 'resource'::text AS kind,
-    r.id,
-    r.user_id,
-    COALESCE(NULLIF(btrim(r.title), ''::text), 'Untitled'::text) AS title,
-    r.preview_url AS thumb,
-    r.category,
-    r.tags,
-        CASE
-            WHEN COALESCE(array_length(r.compatible_software, 1), 0) > 0 THEN r.compatible_software
-            WHEN r.software IS NOT NULL AND btrim(r.software) <> ''::text THEN ARRAY[r.software]
-            ELSE '{}'::text[]
-        END AS software,
-    r.created_at,
-    r.status,
-    r.visibility,
-    r.featured,
-    r.license,
-    false AS is_mature,
-    COALESCE(r.view_count, 0::bigint) AS view_count,
-    COALESCE(r.like_count, 0::bigint) AS like_count,
-    0::bigint AS bookmark_count,
-    COALESCE(r.download_count, 0)::bigint AS download_count,
-    0::bigint AS sales_count,
-    0::bigint AS price_cents
-   FROM resources r;
-
-create or replace view public.an_like as
- SELECT 'artwork'::text AS kind,
-    l.artwork_id AS subject_id,
-    l.user_id,
-    l.created_at
-   FROM artwork_likes l
-UNION ALL
- SELECT k.kind,
-    k.subject_id,
-    k.user_id,
-    k.created_at
-   FROM item_likes k;
-
-create or replace view public.an_view as
- SELECT 'artwork'::text AS kind,
-    d.artwork_id AS subject_id,
-    d.viewer_key,
-    d.day
-   FROM artwork_view_dedup d
-UNION ALL
- SELECT v.kind,
-    v.subject_id,
-    v.viewer_key,
-    v.day
-   FROM item_view_dedup v;
-
-create or replace view public.wallet_history as
- SELECT p.id,
-    p.user_id,
-    'purchase'::text AS direction,
-    p.kind AS category,
-    COALESCE(p.order_label,
-        CASE
-            WHEN p.kind = 'subscription'::text THEN COALESCE(initcap(p.plan), 'Subscription'::text)
-            ELSE 'Marketplace item'::text
-        END) AS title,
-    p.amount,
-    p.currency,
-    p.status,
-    p.provider,
-    p.transaction_id,
-    COALESCE(p.paid_at, p.created_at) AS happened_at
-   FROM payments p
-UNION ALL
- SELECT e.id,
-    e.seller_id AS user_id,
-    'sale'::text AS direction,
-    'marketplace'::text AS category,
-    COALESCE(m.title, 'Marketplace item'::text) AS title,
-    e.net_amount AS amount,
-    e.currency,
-    e.status,
-    NULL::text AS provider,
-    NULL::text AS transaction_id,
-    e.created_at AS happened_at
-   FROM marketplace_earnings e
-     LEFT JOIN marketplace_items m ON m.id = e.item_id
-UNION ALL
- SELECT r.id,
-    r.user_id,
-    'payout'::text AS direction,
-    'payout'::text AS category,
-    'Withdrawal'::text AS title,
-    r.amount,
-    r.currency,
-    r.status,
-    r.method AS provider,
-    r.batch_id AS transaction_id,
-    COALESCE(r.paid_at, r.decided_at, r.requested_at) AS happened_at
-   FROM payout_requests r;
-
-alter view public.wallet_history set (security_invoker = true);
-
-CREATE OR REPLACE FUNCTION public.albums_cap_guard()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
+CREATE OR REPLACE FUNCTION public.albums_cap_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
 declare v_cap int;
 begin
   v_cap := case when coalesce(public.dz_effective_tier(new.user_id),'guest') in ('premium','max')
@@ -1781,15 +550,9 @@ begin
     raise exception 'Album limit reached (%)', v_cap;
   end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.apply_merit_penalty()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.apply_merit_penalty() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 declare
   owner_id uuid;
 begin
@@ -1805,28 +568,16 @@ begin
     end if;
   end if;
   return NEW;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.arr_items_within(a text[], lo integer, hi integer)
- RETURNS boolean
- LANGUAGE sql
- IMMUTABLE PARALLEL SAFE
- SET search_path TO 'pg_catalog', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.arr_items_within(a text[], lo integer, hi integer) RETURNS boolean LANGUAGE sql IMMUTABLE PARALLEL SAFE SET search_path TO 'pg_catalog', 'pg_temp' AS $function$
   select coalesce(
     (select bool_and(char_length(btrim(x)) between lo and hi)
        from unnest(coalesce(a, '{}'::text[])) x),
     true)
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.can_post_community(cid uuid)
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.can_post_community(cid uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   select exists (
     select 1 from public.community_members m
      where m.community_id = cid
@@ -1834,15 +585,9 @@ AS $function$
        and m.banned = false
        and (m.timeout_until is null or m.timeout_until <= now())
   )
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.can_read_community(cid uuid)
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.can_read_community(cid uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   select exists (
     select 1 from public.communities c
      where c.id = cid and c.is_public
@@ -1852,15 +597,9 @@ AS $function$
        and m.user_id = auth.uid()
        and m.banned = false
   )
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.cm_assert_can_act(cid uuid, target uuid, need integer)
- RETURNS void
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_assert_can_act(cid uuid, target uuid, need integer) RETURNS void LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
 declare
   actor_rank  int := public.my_community_rank(cid);
   target_role text;
@@ -1881,15 +620,9 @@ begin
   if target_rank >= actor_rank then
     raise exception 'CM_RANK' using errcode='P0001';
   end if;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_browse(p_q text DEFAULT NULL::text, p_limit integer DEFAULT 30, p_offset integer DEFAULT 0)
- RETURNS TABLE(id uuid, name text, short_description text, description text, avatar_url text, is_public boolean, members bigint, joined boolean)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_browse(p_q text DEFAULT NULL::text, p_limit integer DEFAULT 30, p_offset integer DEFAULT 0) RETURNS TABLE(id uuid, name text, short_description text, description text, avatar_url text, is_public boolean, members bigint, joined boolean) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select c.id,
          c.name,
          c.short_description,
@@ -1910,15 +643,9 @@ AS $function$
    order by count(m.user_id) filter (where m.banned = false) desc, c.name asc, c.id asc
    limit greatest(1, least(coalesce(p_limit, 30), 50))
   offset greatest(0, coalesce(p_offset, 0))
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.cm_create(p_name text, p_desc text)
- RETURNS uuid
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_create(p_name text, p_desc text) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 declare
   new_id uuid;
   code   text;
@@ -1968,15 +695,9 @@ begin
   values (new_id, auth.uid(), 'owner');
 
   return new_id;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_delete(cid uuid)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_delete(cid uuid) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   if not exists (select 1 from public.communities where id = cid and owner_id = auth.uid()) then
     raise exception 'CM_FORBIDDEN' using errcode = 'P0001';
@@ -1984,38 +705,20 @@ begin
   delete from public.comments where channel = 'c:' || cid::text;
   delete from public.community_members where community_id = cid;
   delete from public.communities where id = cid;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_grace_days()
- RETURNS integer
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$ select 3 $function$
-;
+CREATE OR REPLACE FUNCTION public.cm_grace_days() RETURNS integer LANGUAGE sql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$ select 3 $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_grace_until(cid uuid)
- RETURNS timestamp with time zone
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_grace_until(cid uuid) RETURNS timestamp with time zone LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select case when public.cm_state(cid) = 'grace'
     then p.subscription_expires_at + (public.cm_grace_days() || ' days')::interval
   end
   from public.communities c
   join public.profiles p on p.id = c.owner_id
   where c.id = cid;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.cm_join(p_name text, p_code text)
- RETURNS uuid
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_join(p_name text, p_code text) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 declare cid uuid;
 begin
   select id into cid from public.communities
@@ -2035,15 +738,9 @@ begin
   values (cid, auth.uid(), 'member')
   on conflict (community_id, user_id) do nothing;
   return cid;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_join_public(cid uuid)
- RETURNS uuid
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_join_public(cid uuid) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   if auth.uid() is null then
     raise exception 'CM_FORBIDDEN' using errcode = 'P0001';
@@ -2062,28 +759,16 @@ begin
   values (cid, auth.uid(), 'member')
   on conflict (community_id, user_id) do nothing;
   return cid;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_kick(cid uuid, target uuid)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_kick(cid uuid, target uuid) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   perform public.cm_assert_can_act(cid, target, 2);
   delete from public.community_members
    where community_id = cid and user_id = target;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_leave(cid uuid)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_leave(cid uuid) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   if auth.uid() is null then
     raise exception 'CM_FORBIDDEN' using errcode = 'P0001';
@@ -2093,15 +778,9 @@ begin
   end if;
   delete from public.community_members
    where community_id = cid and user_id = auth.uid();
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_member_cap()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_member_cap() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_max int := 50;
   v_n   int;
@@ -2119,15 +798,9 @@ begin
     raise exception 'CM_MAX_JOINED' using errcode = 'P0001';
   end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_set_ban(cid uuid, target uuid, do_ban boolean)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_set_ban(cid uuid, target uuid, do_ban boolean) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   perform public.cm_assert_can_act(cid, target, 3);
   update public.community_members
@@ -2135,15 +808,9 @@ begin
          role   = case when do_ban then 'member' else role end,
          timeout_until = case when do_ban then null else timeout_until end
    where community_id = cid and user_id = target;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_set_role(cid uuid, target uuid, new_role text)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_set_role(cid uuid, target uuid, new_role text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 declare actor_rank int := public.my_community_rank(cid);
 begin
   if new_role not in ('member','jr_mod','sr_mod','admin') then
@@ -2156,15 +823,9 @@ begin
   update public.community_members
      set role = new_role
    where community_id = cid and user_id = target;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.cm_state(cid uuid)
- RETURNS text
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_state(cid uuid) RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select case
     when c.id is null                     then 'locked'
     when not c.plan_backed                then 'live'
@@ -2177,15 +838,9 @@ AS $function$
   from (select cid as id) q
   left join public.communities c on c.id = q.id
   left join public.profiles    p on p.id = c.owner_id;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.cm_timeout(cid uuid, target uuid, minutes integer)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.cm_timeout(cid uuid, target uuid, minutes integer) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   if minutes not in (0,5,60,1440,10080,43200) then
     raise exception 'CM_BAD_DURATION' using errcode='P0001';
@@ -2195,58 +850,28 @@ begin
      set timeout_until = case when minutes = 0 then null
                               else now() + (minutes || ' minutes')::interval end
    where community_id = cid and user_id = target;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.community_channel_id(ch text)
- RETURNS uuid
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO ''
-AS $function$
+CREATE OR REPLACE FUNCTION public.community_channel_id(ch text) RETURNS uuid LANGUAGE sql IMMUTABLE SET search_path TO '' AS $function$
   select case
     when ch ~ '^c:[0-9a-fA-F-]{36}$'
     then substring(ch from 3)::uuid
     else null
   end
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.community_rank(r text)
- RETURNS integer
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO ''
-AS $function$ select case r
+CREATE OR REPLACE FUNCTION public.community_rank(r text) RETURNS integer LANGUAGE sql IMMUTABLE SET search_path TO '' AS $function$ select case r
         when 'owner'  then 5 when 'admin' then 4
         when 'sr_mod' then 3 when 'jr_mod' then 2
-        else 1 end $function$
-;
+        else 1 end $function$;
 
-CREATE OR REPLACE FUNCTION public.current_artist_level()
- RETURNS integer
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.current_artist_level() RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   select coalesce((select level from public.get_artist_progress(auth.uid())), 1)
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.current_merit()
- RETURNS integer
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO ''
-AS $function$ select coalesce((select merit from public.profiles where id = auth.uid()), 100) $function$
-;
+CREATE OR REPLACE FUNCTION public.current_merit() RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $function$ select coalesce((select merit from public.profiles where id = auth.uid()), 100) $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_abuse_recent(p_hours integer DEFAULT 24, p_limit integer DEFAULT 200)
- RETURNS SETOF dz_abuse_events
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_abuse_recent(p_hours integer DEFAULT 24, p_limit integer DEFAULT 200) RETURNS SETOF dz_abuse_events LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if to_regprocedure('public.dz_is_staff()') is not null then
     if not public.dz_is_staff() then raise exception 'staff only' using errcode='42501'; end if;
@@ -2260,15 +885,9 @@ begin
      where created_at > now() - make_interval(hours => greatest(1, least(coalesce(p_hours,24),720)))
      order by created_at desc
      limit greatest(1, least(coalesce(p_limit,200),1000));
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_actor_key()
- RETURNS text
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_actor_key() RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_uid uuid := auth.uid(); v_role text; v_hdr text; v_ip text;
 begin
   if v_uid is not null then return 'u:' || v_uid::text; end if;
@@ -2283,15 +902,9 @@ begin
     begin v_ip := public.dz_client_ip(); exception when others then v_ip := null; end;
   end if;
   return case when v_ip is not null and v_ip <> '' then 'ip:' || v_ip else 'anon' end;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_add_business_days(p_from timestamp with time zone, p_days integer)
- RETURNS timestamp with time zone
- LANGUAGE plpgsql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_add_business_days(p_from timestamp with time zone, p_days integer) RETURNS timestamp with time zone LANGUAGE plpgsql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_at timestamptz := p_from; v_left integer := greatest(p_days, 0);
 begin
   while v_left > 0 loop
@@ -2299,15 +912,9 @@ begin
     if extract(isodow from v_at) < 6 then v_left := v_left - 1; end if;
   end loop;
   return v_at;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_admin_partners()
- RETURNS TABLE(partner_id uuid, username text, display_name text, partner_since timestamp with time zone, max_claimed boolean, code text, code_active boolean, usage_count integer, conversions bigint, earned_json jsonb)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_admin_partners() RETURNS TABLE(partner_id uuid, username text, display_name text, partner_since timestamp with time zone, max_claimed boolean, code text, code_active boolean, usage_count integer, conversions bigint, earned_json jsonb) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if not public.dz_is_staff(auth.uid()) then
     raise exception 'not allowed';
@@ -2330,15 +937,9 @@ begin
     ) x on true
    where p.role = 'partner'
    order by p.partner_since desc nulls last, p.username;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_admin_telemetry()
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_admin_telemetry() RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_sub     jsonb;
   v_content jsonb;
@@ -2412,15 +1013,9 @@ begin
   return jsonb_build_object(
     'at', now(), 'subscriptions', v_sub, 'content', v_content,
     'devices', v_dev, 'engagement', v_eng, 'moderation', v_mod);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_an_achievements(p_user uuid, p_scope text DEFAULT 'artwork'::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_an_achievements(p_user uuid, p_scope text DEFAULT 'artwork'::text) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_sc text := public.dz_an_scope(p_scope);
   v_up bigint; v_vw bigint; v_lk bigint; v_dl bigint; v_cm bigint;
@@ -2468,15 +1063,9 @@ begin
     ) as t(ord, k, title, note, have, need);
 
   return coalesce(v_out, '[]'::jsonb);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_an_country(p_hint text DEFAULT NULL::text)
- RETURNS text
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_an_country(p_hint text DEFAULT NULL::text) RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_raw text;
   v_hdr json;
@@ -2502,25 +1091,13 @@ begin
   v_cc := upper(btrim(coalesce(p_hint, '')));
   if v_cc ~ '^[A-Z]{2}$' then return v_cc; end if;
   return null;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_an_days(p_days integer)
- RETURNS integer
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_an_days(p_days integer) RETURNS integer LANGUAGE sql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
   select case when p_days in (7, 14, 30, 90, 365) then p_days else 30 end;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_an_goal_progress(p_user uuid, p_metric text, p_period text, p_scope text DEFAULT 'artwork'::text)
- RETURNS bigint
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_an_goal_progress(p_user uuid, p_metric text, p_period text, p_scope text DEFAULT 'artwork'::text) RETURNS bigint LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_sc   text := public.dz_an_scope(p_scope);
   v_from date := case p_period
@@ -2562,15 +1139,9 @@ begin
           and e.created_at::date >= v_from)
     else 0
   end;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_an_scope(p_scope text)
- RETURNS text
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_an_scope(p_scope text) RETURNS text LANGUAGE sql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
   select case lower(coalesce(p_scope, 'artwork'))
            when 'marketplace' then 'marketplace'
            when 'blog'        then 'blog'
@@ -2578,15 +1149,9 @@ AS $function$
            when 'resources'   then 'resource'
            else 'artwork'
          end;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_an_viewer_key(p_anon_key text)
- RETURNS text
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_an_viewer_key(p_anon_key text) RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_ip text;
 begin
   if auth.uid() is not null then
@@ -2602,15 +1167,9 @@ begin
     return null;
   end if;
   return 'a:' || p_anon_key;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_analytics_activity(p_days integer DEFAULT 30, p_scope text DEFAULT 'artwork'::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_analytics_activity(p_days integer DEFAULT 30, p_scope text DEFAULT 'artwork'::text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_me   uuid := auth.uid();
   v_days int  := public.dz_an_days(p_days);
@@ -2780,15 +1339,9 @@ begin
   ) into v_out;
 
   return coalesce(v_out, '{}'::jsonb);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_analytics_content(p_days integer DEFAULT 30, p_scope text DEFAULT 'artwork'::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_analytics_content(p_days integer DEFAULT 30, p_scope text DEFAULT 'artwork'::text) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_me   uuid := auth.uid();
   v_sc   text := public.dz_an_scope(p_scope);
@@ -2921,29 +1474,17 @@ begin
   ) into v_out;
 
   return coalesce(v_out, '{}'::jsonb);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_analytics_goal_cap()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_analytics_goal_cap() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if (select count(*) from public.analytics_goals where user_id = new.user_id) >= 12 then
     raise exception 'goal limit reached' using errcode = 'check_violation';
   end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_analytics_overview(p_days integer DEFAULT 30, p_scope text DEFAULT 'artwork'::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_analytics_overview(p_days integer DEFAULT 30, p_scope text DEFAULT 'artwork'::text) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_me    uuid := auth.uid();
   v_days  int  := public.dz_an_days(p_days);
@@ -3079,15 +1620,9 @@ begin
   ) into v_out;
 
   return coalesce(v_out, '{}'::jsonb);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_analytics_reach(p_days integer DEFAULT 30, p_scope text DEFAULT 'artwork'::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_analytics_reach(p_days integer DEFAULT 30, p_scope text DEFAULT 'artwork'::text) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_me   uuid := auth.uid();
   v_sc   text := public.dz_an_scope(p_scope);
@@ -3205,15 +1740,9 @@ begin
   ) into v_out;
 
   return coalesce(v_out, '{}'::jsonb);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_analytics_track(p_event text, p_subject uuid DEFAULT NULL::uuid, p_scope text DEFAULT 'artwork'::text, p_owner uuid DEFAULT NULL::uuid, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_term text DEFAULT NULL::text, p_anon_key text DEFAULT NULL::text)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_analytics_track(p_event text, p_subject uuid DEFAULT NULL::uuid, p_scope text DEFAULT 'artwork'::text, p_owner uuid DEFAULT NULL::uuid, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_term text DEFAULT NULL::text, p_anon_key text DEFAULT NULL::text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_key    text;
   v_owner  uuid;
@@ -3299,15 +1828,9 @@ begin
     (v_owner, v_actor, v_key, v_scope, p_subject, p_event,
      v_source, v_ref, public.dz_an_country(p_country), v_device, v_term)
   on conflict do nothing;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_analytics_track_search(p_subjects uuid[], p_term text, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_anon_key text DEFAULT NULL::text, p_scope text DEFAULT 'artwork'::text)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_analytics_track_search(p_subjects uuid[], p_term text, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_anon_key text DEFAULT NULL::text, p_scope text DEFAULT 'artwork'::text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_id uuid; v_n int := 0;
 begin
   if p_subjects is null or p_term is null or btrim(p_term) = '' then return; end if;
@@ -3318,15 +1841,9 @@ begin
       'search_impression', v_id, coalesce(p_scope, 'artwork'), null,
       p_source, p_ref, p_device, p_country, p_term, p_anon_key);
   end loop;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_artwork_mod_gate()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_artwork_mod_gate() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
 declare
   v_secret text;
   v_uid    uuid := auth.uid();
@@ -3374,27 +1891,15 @@ begin
 
   NEW.status := 'pending'; NEW.mod_token := null; return NEW;
 end;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_audit(p_action text, p_target uuid, p_meta jsonb DEFAULT '{}'::jsonb)
- RETURNS void
- LANGUAGE sql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_audit(p_action text, p_target uuid, p_meta jsonb DEFAULT '{}'::jsonb) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   insert into public.audit_log (actor_id, actor_role, action, target_id, metadata)
   values (auth.uid(), public.dz_role(auth.uid()), p_action, p_target,
           coalesce(p_meta, '{}'::jsonb));
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_audit_log(p_limit integer DEFAULT 100, p_before timestamp with time zone DEFAULT NULL::timestamp with time zone)
- RETURNS TABLE(id bigint, created_at timestamp with time zone, action text, actor_id uuid, actor_username text, actor_role text, target_id uuid, target_username text, metadata jsonb)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_audit_log(p_limit integer DEFAULT 100, p_before timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE(id bigint, created_at timestamp with time zone, action text, actor_id uuid, actor_username text, actor_role text, target_id uuid, target_username text, metadata jsonb) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if not public.dz_is_staff(auth.uid()) then
     raise exception 'not allowed';
@@ -3410,15 +1915,9 @@ begin
    where p_before is null or a.created_at < p_before
    order by a.created_at desc, a.id desc
    limit least(greatest(coalesce(p_limit, 100), 1), 200);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_auth_churn(p_hours integer DEFAULT 24)
- RETURNS TABLE(ip text, accounts bigint, logins bigint, failures bigint, signups bigint, first_at timestamp with time zone, last_at timestamp with time zone)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_auth_churn(p_hours integer DEFAULT 24) RETURNS TABLE(ip text, accounts bigint, logins bigint, failures bigint, signups bigint, first_at timestamp with time zone, last_at timestamp with time zone) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if to_regprocedure('public.dz_is_staff()') is not null then
     if not public.dz_is_staff() then raise exception 'staff only' using errcode='42501'; end if;
@@ -3439,15 +1938,9 @@ begin
      group by a.ip
      having count(distinct a.email_key) > 1 or count(*) filter (where a.event='login' and a.ok is false) > 2
      order by count(distinct a.email_key) desc, count(*) desc;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_ban_gate()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_ban_gate() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_uid uuid := auth.uid();
 begin
   if v_uid is null then return new; end if;
@@ -3456,15 +1949,9 @@ begin
       using errcode = 'P0001';
   end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_ban_user(p_target uuid, p_reason text, p_note text DEFAULT NULL::text, p_days integer DEFAULT NULL::integer)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_ban_user(p_target uuid, p_reason text, p_note text DEFAULT NULL::text, p_days integer DEFAULT NULL::integer) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_expires timestamptz;
   v_id      uuid;
@@ -3495,14 +1982,9 @@ begin
     'ban_id', v_id, 'reason', btrim(p_reason), 'expires_at', v_expires));
 
   return jsonb_build_object('ok', true, 'ban_id', v_id, 'expires_at', v_expires);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_bounds_on_change()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_bounds_on_change() RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   i        int;
   col      text;
@@ -3540,15 +2022,9 @@ begin
     i := i + 4;
   end loop;
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_captcha_required()
- RETURNS boolean
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_captcha_required() RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_ip text; v_since timestamptz := now() - interval '1 hour';
         v_accts int; v_fails int; v_signup int;
 begin
@@ -3562,15 +2038,9 @@ begin
     into v_accts, v_fails, v_signup
     from public.auth_attempts where ip = v_ip and created_at > v_since;
   return coalesce(v_accts,0) >= 3 or coalesce(v_fails,0) >= 5 or coalesce(v_signup,0) >= 2;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_chat_gate(p_scope text, p_text text, p_channel text DEFAULT NULL::text)
- RETURNS boolean
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_chat_gate(p_scope text, p_text text, p_channel text DEFAULT NULL::text) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_uid     uuid := auth.uid();
   v_hash    text;
@@ -3665,58 +2135,34 @@ begin
      where coalesce(until, last_strike_at) < v_now - interval '2 hours';
   end if;
   return true;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_chat_gate_comments()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_chat_gate_comments() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if public.dz_chat_gate('community', new.comment_text, new.channel) then
     return new;
   end if;
   return null;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_chat_gate_dm()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_chat_gate_dm() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if public.dz_chat_gate('dm', new.content, null) then
     return new;
   end if;
   return null;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_chat_status()
- RETURNS TABLE(cooldown_seconds integer, strikes integer, reason text)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_chat_status() RETURNS TABLE(cooldown_seconds integer, strikes integer, reason text) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select
     greatest(0, coalesce(ceil(extract(epoch from (c.until - now())))::int, 0)),
     coalesce(c.strikes, 0),
     c.reason
   from (select 1) one
   left join public.chat_cooldowns c on c.user_id = auth.uid()
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_claim_max()
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_claim_max() RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_until timestamptz;
 begin
   if not public.dz_is_partner(auth.uid()) then
@@ -3741,15 +2187,9 @@ begin
 
   return jsonb_build_object('ok', true, 'changed', true, 'tier', 'max',
                             'until', v_until);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_client_ip()
- RETURNS text
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_client_ip() RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_raw text;
   v_hdr json;
@@ -3775,15 +2215,9 @@ begin
 
   return left(v_ip, 64);
 end
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_comment_community_open()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_comment_community_open() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare cid uuid;
 begin
   if new.channel is null or left(new.channel, 2) <> 'c:' then
@@ -3798,27 +2232,15 @@ begin
     raise exception 'CM_LOCKED' using errcode='P0001';
   end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_content_fingerprint(p_text text)
- RETURNS text
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_content_fingerprint(p_text text) RETURNS text LANGUAGE sql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
   select case
     when length(regexp_replace(public.dz_deobfuscate(p_text),'[^a-z0-9]+','','g')) < 30 then null
     else md5(regexp_replace(public.dz_deobfuscate(p_text),'[^a-z0-9]+','','g')) end;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_content_guard()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_content_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_col text := coalesce(nullif(TG_ARGV[0],''),'body');
   v_text text; v_row json := row_to_json(NEW); v_dev boolean := false;
@@ -3837,15 +2259,9 @@ begin
     return null;
   end if;
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_deobfuscate(p_text text)
- RETURNS text
- LANGUAGE plpgsql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_deobfuscate(p_text text) RETURNS text LANGUAGE plpgsql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
 declare t text;
 begin
   t := lower(coalesce(p_text, ''));
@@ -3873,15 +2289,9 @@ begin
   t := regexp_replace(t, '(?<=[a-z0-9])\s*/\s*(?=[a-z0-9])', '/', 'g');
   t := regexp_replace(t, '\.{2,}', '.', 'g');
   return t;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_dm_guard()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_dm_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_dev boolean := false;
 begin
   if NEW.content is null or btrim(NEW.content) = '' then return NEW; end if;
@@ -3897,15 +2307,9 @@ begin
     return null;
   end if;
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_download_limit(p_tier text)
- RETURNS integer
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_download_limit(p_tier text) RETURNS integer LANGUAGE sql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
   SELECT CASE lower(coalesce(p_tier, 'guest'))
     WHEN 'dev'     THEN 100000
     WHEN 'max'     THEN 20
@@ -3913,15 +2317,9 @@ AS $function$
     WHEN 'lite'    THEN 10
     ELSE 5
   END;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_download_quota()
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_download_quota() RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 DECLARE
   v_uid   uuid := auth.uid();
   v_tier  text;
@@ -3944,15 +2342,9 @@ BEGIN
                             'limit', v_limit, 'used', v_used,
                             'remaining', greatest(v_limit - v_used, 0),
                             'resets_at', v_day + interval '1 day');
-END $function$
-;
+END $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_earning_apply_deductions()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_earning_apply_deductions() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   cfg        public.platform_tax_config%rowtype;
   v_tax      record;
@@ -4044,68 +2436,38 @@ begin
   end if;
 
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_effective_tier(p_user uuid)
- RETURNS text
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_effective_tier(p_user uuid) RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   SELECT CASE
     WHEN p.subscription_expires_at IS NOT NULL
      AND p.subscription_expires_at < now() THEN 'guest'
     ELSE COALESCE(p.subscription_tier, 'guest')
   END
   FROM public.profiles p WHERE p.id = p_user;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_email_key(p_email text)
- RETURNS text
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'extensions', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_email_key(p_email text) RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'extensions', 'pg_temp' AS $function$
 declare v_key text; v_norm text := lower(btrim(coalesce(p_email,'')));
 begin
   if v_norm = '' then return null; end if;
   select value into v_key from public.dz_secrets where name='auth_attempt_key';
   if v_key is null then return null; end if;
   return left(encode(extensions.hmac(v_norm, v_key, 'sha256'),'hex'), 32);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_fill_comment_username()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_fill_comment_username() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 BEGIN
   NEW.username := (SELECT COALESCE(display_name, username, 'artist')
                      FROM public.profiles WHERE id = NEW.user_id);
   RETURN NEW;
-END $function$
-;
+END $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_fold_name(p_name text)
- RETURNS text
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_fold_name(p_name text) RETURNS text LANGUAGE sql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
   select translate(regexp_replace(public.dz_deobfuscate(p_name), '[^a-z0-9]+', '', 'g'), '0134578', 'oieasrt');
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_fy_gross(p_user uuid)
- RETURNS bigint
- LANGUAGE sql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_fy_gross(p_user uuid) RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select coalesce(sum(
            round(e.gross_amount * f.inr_rate *
                  case when e.currency in ('JPY', 'HUF', 'TWD') then 100 else 1 end)
@@ -4121,15 +2483,9 @@ AS $function$
              else extract(year from now())::int - 1 end,
         4, 1, 0, 0, 0, 'UTC')
     );
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_grant_partner(p_email text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_grant_partner(p_email text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_email text := lower(btrim(coalesce(p_email, '')));
   v_id    uuid;
@@ -4173,15 +2529,9 @@ begin
 
   return jsonb_build_object('ok', true, 'changed', true,
                             'user_id', v_id, 'username', v_name);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_guard_identity()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_guard_identity() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_hit text; v_dev boolean := false;
 begin
   if to_regprocedure('public.is_dev()') is not null then
@@ -4202,15 +2552,9 @@ begin
     end if;
   end if;
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_has_link(p_text text)
- RETURNS boolean
- LANGUAGE plpgsql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_has_link(p_text text) RETURNS boolean LANGUAGE plpgsql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
 declare t text := public.dz_deobfuscate(p_text);
 begin
   if t = '' then return false; end if;
@@ -4227,91 +2571,49 @@ begin
   if t ~ '\y[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\y' then return true; end if;
   if t ~ '\y(\d{1,3}\.){3}\d{1,3}(:\d+)?(/|\y)' then return true; end if;
   return false;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_is_banned(p_user uuid DEFAULT auth.uid())
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_is_banned(p_user uuid DEFAULT auth.uid()) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select exists (
     select 1 from public.user_bans
      where user_id = p_user
        and lifted_at is null
        and (expires_at is null or expires_at > now()));
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_is_ordinary(p_user uuid DEFAULT auth.uid())
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_is_ordinary(p_user uuid DEFAULT auth.uid()) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select coalesce(
     (select role is null or role = 'guest' from public.profiles where id = p_user),
     false);
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_is_partner(p_user uuid DEFAULT auth.uid())
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_is_partner(p_user uuid DEFAULT auth.uid()) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select coalesce(
     (select role = 'partner' from public.profiles where id = p_user),
     false);
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_is_privileged()
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_is_privileged() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   SELECT coalesce(nullif(current_setting('request.jwt.claims', true), ''), '') = ''
       OR (current_setting('request.jwt.claims', true))::jsonb->>'role' = 'service_role'
       OR public.is_dev();
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_is_staff(p_user uuid DEFAULT auth.uid())
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_is_staff(p_user uuid DEFAULT auth.uid()) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select coalesce(
     (select role in ('admin', 'dev') from public.profiles where id = p_user),
     false);
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_job_allowance(p_tier text)
- RETURNS integer
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_job_allowance(p_tier text) RETURNS integer LANGUAGE sql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
   select case lower(coalesce(p_tier, ''))
            when 'premium' then 1
            when 'max'     then 2
            else 0
          end
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_job_plan(p_user uuid)
- RETURNS TABLE(tier text, allowance integer, period_start timestamp with time zone, period_end timestamp with time zone)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_job_plan(p_user uuid) RETURNS TABLE(tier text, allowance integer, period_start timestamp with time zone, period_end timestamp with time zone) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select q.tier,
          public.dz_job_allowance(q.tier),
          q.p_start,
@@ -4332,15 +2634,9 @@ AS $function$
         from (select p_user as uid) s
         left join public.profiles p on p.id = s.uid
     ) q
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_job_post_gate()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_job_post_gate() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_uid   uuid;
   v_plan  record;
@@ -4391,15 +2687,9 @@ begin
   end if;
 
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_job_quota()
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_job_quota() RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_uid   uuid := auth.uid();
   v_plan  record;
@@ -4448,15 +2738,9 @@ begin
     'reason',       case when v_used < v_plan.allowance then null else 'limit' end,
     'period_start', v_plan.period_start,
     'period_end',   v_plan.period_end);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_ledger_append(p_user uuid, p_type text, p_direction text, p_amount bigint, p_currency text, p_source text DEFAULT NULL::text, p_provider_txn text DEFAULT NULL::text, p_provider_amount bigint DEFAULT NULL::bigint, p_provider_currency text DEFAULT NULL::text, p_ref_table text DEFAULT NULL::text, p_ref_id uuid DEFAULT NULL::uuid, p_note text DEFAULT NULL::text)
- RETURNS bigint
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_ledger_append(p_user uuid, p_type text, p_direction text, p_amount bigint, p_currency text, p_source text DEFAULT NULL::text, p_provider_txn text DEFAULT NULL::text, p_provider_amount bigint DEFAULT NULL::bigint, p_provider_currency text DEFAULT NULL::text, p_ref_table text DEFAULT NULL::text, p_ref_id uuid DEFAULT NULL::uuid, p_note text DEFAULT NULL::text) RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_prev text; v_hash text; v_seq bigint;
 begin
   select entry_hash into v_prev from public.ledger_entries order by seq desc limit 1;
@@ -4477,15 +2761,9 @@ begin
   returning seq into v_seq;
 
   return v_seq;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_ledger_chain_ok()
- RETURNS bigint
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_ledger_chain_ok() RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare r record; v_prev text := null; v_calc text;
 begin
   for r in select * from public.ledger_entries order by seq loop
@@ -4500,40 +2778,23 @@ begin
     v_prev := r.entry_hash;
   end loop;
   return null;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_ledger_immutable()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_ledger_immutable() RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   raise exception 'ledger_entries is append-only: % is not permitted', tg_op;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_log_abuse(p_surface text, p_rule text, p_detail text, p_sample text)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_log_abuse(p_surface text, p_rule text, p_detail text, p_sample text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   insert into public.dz_abuse_events (user_id, ip, surface, rule, detail, sample)
   values (auth.uid(),
           case when to_regprocedure('public.dz_client_ip()') is not null then public.dz_client_ip() else null end,
           p_surface, p_rule, left(coalesce(p_detail,''),200), left(coalesce(p_sample,''),500));
 exception when others then return;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_market_download(p_item uuid)
- RETURNS text
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_market_download(p_item uuid) RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v record;
 begin
   if auth.uid() is null then
@@ -4554,15 +2815,9 @@ begin
   end if;
 
   return v.file_url;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_market_file_grant(p_item uuid, p_file uuid)
- RETURNS TABLE(bucket text, path text, filename text, mime text, legacy_url text)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_market_file_grant(p_item uuid, p_file uuid) RETURNS TABLE(bucket text, path text, filename text, mime text, legacy_url text) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if not public.dz_market_owns(p_item) then
     raise exception 'Purchase required';
@@ -4596,15 +2851,9 @@ begin
       from public.marketplace_file f
      where f.id = p_file
        and f.item_id = p_item;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_market_files(p_item uuid)
- RETURNS TABLE(file_id uuid, name text, ext text, bytes bigint, ordinal smallint)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_market_files(p_item uuid) RETURNS TABLE(file_id uuid, name text, ext text, bytes bigint, ordinal smallint) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if not public.dz_market_owns(p_item) then
     raise exception 'Purchase required';
@@ -4635,28 +2884,16 @@ begin
       from public.marketplace_items i
      where i.id = p_item
        and (i.file_storage_path is not null or i.file_url is not null);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_market_owned(p_items uuid[])
- RETURNS SETOF uuid
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_market_owned(p_items uuid[]) RETURNS SETOF uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select i.id
     from public.marketplace_items i
    where i.id = any(coalesce(p_items, '{}'::uuid[]))
      and public.dz_market_owns(i.id);
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_market_owns(p_item uuid)
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_market_owns(p_item uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select auth.uid() is not null and exists (
     select 1
       from public.marketplace_items i
@@ -4675,15 +2912,9 @@ AS $function$
          )
        )
   );
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_may_moderate(p_actor uuid, p_target uuid)
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_may_moderate(p_actor uuid, p_target uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select case
     when p_actor is null or p_target is null then false
     when p_actor = p_target                  then false
@@ -4691,15 +2922,9 @@ AS $function$
     when public.dz_is_partner(p_actor)       then public.dz_is_ordinary(p_target)
     else false
   end;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_mod_find(p_query text)
- RETURNS TABLE(id uuid, username text, display_name text, email text, role text, tier text, banned boolean, ban_reason text, ban_expires_at timestamp with time zone, can_moderate boolean)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_mod_find(p_query text) RETURNS TABLE(id uuid, username text, display_name text, email text, role text, tier text, banned boolean, ban_reason text, ban_expires_at timestamp with time zone, can_moderate boolean) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_q     text := btrim(coalesce(p_query, ''));
   v_id    uuid;
@@ -4737,28 +2962,17 @@ begin
       or lower(p.username) = lower(v_q)
       or lower(u.email)    = lower(v_q)
    limit 1;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_mod_token_clear()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_mod_token_clear() RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if current_user in ('authenticated', 'anon') then
     NEW.mod_token := null;
   end if;
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_my_collab_state()
- RETURNS jsonb
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_my_collab_state() RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select coalesce(
     (select jsonb_build_object(
        'role', p.role,
@@ -4775,15 +2989,9 @@ AS $function$
       'role', null, 'is_partner', false, 'is_staff', false,
       'max_claimed', false, 'tier', 'guest',
       'has_promo', false, 'has_payout_method', false));
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_my_purchases()
- RETURNS TABLE(payment_id uuid, item_id uuid, title text, preview_url text, item_type text, license text, seller_id uuid, seller_name text, amount bigint, currency text, paid_at timestamp with time zone, provider text, file_count integer, delisted boolean)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_my_purchases() RETURNS TABLE(payment_id uuid, item_id uuid, title text, preview_url text, item_type text, license text, seller_id uuid, seller_name text, amount bigint, currency text, paid_at timestamp with time zone, provider text, file_count integer, delisted boolean) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select p.id,
          p.item_id,
          coalesce(i.title, p.order_label, 'Marketplace item')::text,
@@ -4810,15 +3018,9 @@ AS $function$
      and p.kind    = 'marketplace'
      and p.status  = 'paid'
    order by coalesce(p.paid_at, p.created_at) desc;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_name_reserved(p_name text)
- RETURNS text
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_name_reserved(p_name text) RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_folded text := public.dz_fold_name(p_name); v_hit text;
 begin
   if v_folded is null or v_folded = '' then return null; end if;
@@ -4827,15 +3029,9 @@ begin
       or (r.mode='contains' and position(r.name in v_folded) > 0)
    order by length(r.name) desc limit 1;
   return v_hit;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_note_auth(p_event text, p_email text DEFAULT NULL::text, p_ok boolean DEFAULT NULL::boolean)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_note_auth(p_event text, p_email text DEFAULT NULL::text, p_ok boolean DEFAULT NULL::boolean) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_ip text;
 begin
   if p_event is null or p_event not in ('login','signup','logout','recover') then return; end if;
@@ -4848,15 +3044,9 @@ begin
   values (v_ip, public.dz_email_key(p_email), p_event, p_ok);
   if random() < 0.01 then delete from public.auth_attempts where created_at < now() - interval '1 day'; end if;
 exception when others then return;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_partner_credit_market()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_partner_credit_market() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   cfg     public.platform_tax_config%rowtype;
   v_part  uuid;
@@ -4899,15 +3089,9 @@ begin
   end if;
 
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_partner_credit_sub()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_partner_credit_sub() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   cfg     public.platform_tax_config%rowtype;
   v_part  uuid;
@@ -4955,15 +3139,9 @@ begin
   end if;
 
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_partner_ledger(p_limit integer DEFAULT 50, p_before timestamp with time zone DEFAULT NULL::timestamp with time zone)
- RETURNS TABLE(id uuid, created_at timestamp with time zone, kind text, label text, buyer_username text, gross_amount bigint, rate_bps integer, amount bigint, currency text, payout_status text)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_partner_ledger(p_limit integer DEFAULT 50, p_before timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE(id uuid, created_at timestamp with time zone, kind text, label text, buyer_username text, gross_amount bigint, rate_bps integer, amount bigint, currency text, payout_status text) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if not public.dz_is_partner(auth.uid()) then
     raise exception 'not allowed';
@@ -4979,15 +3157,9 @@ begin
      and (p_before is null or c.created_at < p_before)
    order by c.created_at desc
    limit least(greatest(coalesce(p_limit, 50), 1), 100);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_partner_reverse()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_partner_reverse() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_rows integer;
 begin
   update public.partner_commissions
@@ -5004,15 +3176,9 @@ begin
   end if;
 
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_partner_wallet()
- RETURNS TABLE(currency text, available bigint, lifetime bigint, paid_out bigint, conversions bigint, has_payout_method boolean, route text)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_partner_wallet() RETURNS TABLE(currency text, available bigint, lifetime bigint, paid_out bigint, conversions bigint, has_payout_method boolean, route text) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_has boolean;
 begin
   if not public.dz_is_partner(auth.uid()) then
@@ -5034,15 +3200,9 @@ begin
    where c.partner_id = auth.uid()
    group by c.currency
    order by c.currency;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_phish_score(p_text text)
- RETURNS integer
- LANGUAGE plpgsql
- IMMUTABLE
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_phish_score(p_text text) RETURNS integer LANGUAGE plpgsql IMMUTABLE SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   t text := regexp_replace(public.dz_deobfuscate(p_text), '[^a-z0-9@:/. ]+', ' ', 'g');
   n int := 0; pat text;
@@ -5065,15 +3225,9 @@ begin
     exit when n >= 2;
   end loop;
   return n;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_platform_revenue()
- RETURNS TABLE(commission_inr bigint, subscriptions_inr bigint, partner_inr bigint, total_inr bigint, tds_held_inr bigint, tcs_held_inr bigint, held_for_sellers json)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_platform_revenue() RETURNS TABLE(commission_inr bigint, subscriptions_inr bigint, partner_inr bigint, total_inr bigint, tds_held_inr bigint, tcs_held_inr bigint, held_for_sellers json) LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if not public.dz_is_staff(auth.uid()) then
     raise exception 'not allowed';
@@ -5118,14 +3272,9 @@ begin
          (com.amt + sub.amt - prt.amt)::bigint,
          stat.tds, stat.tcs, held.js
   from com, sub, stat, prt, held;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_profiles_guard_insert()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_profiles_guard_insert() RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if current_user in ('authenticated', 'anon') then
     if new.role is not null or new.max_claimed or new.partner_since is not null then
@@ -5141,14 +3290,9 @@ begin
     end if;
   end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_profiles_guard_privileged()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_profiles_guard_privileged() RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if (new.role          is distinct from old.role)
   or (new.max_claimed   is distinct from old.max_claimed)
@@ -5158,15 +3302,9 @@ begin
     end if;
   end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_promo_create(p_code text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_promo_create(p_code text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_code text := upper(btrim(coalesce(p_code, '')));
   v_id   uuid;
@@ -5205,15 +3343,9 @@ begin
     jsonb_build_object('promo_id', v_id, 'code', v_code));
 
   return jsonb_build_object('ok', true, 'id', v_id, 'code', v_code);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_promo_mine()
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_promo_mine() RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   r      record;
   v_conv record;
@@ -5244,15 +3376,9 @@ begin
     'marketplace_conversions', coalesce(v_conv.market, 0),
     'subscription_conversions', coalesce(v_conv.subs, 0),
     'unique_buyers', coalesce(v_conv.buyers, 0));
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_promo_resolve(p_code text, p_kind text)
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_promo_resolve(p_code text, p_kind text) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_code text := upper(btrim(coalesce(p_code, '')));
   r      record;
@@ -5285,15 +3411,9 @@ begin
     'id', r.id,
     'code', v_code,
     'discount_bps', case when p_kind = 'subscription' then 9000 else 0 end);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_protect_item_view_count()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_protect_item_view_count() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if coalesce(current_setting('app.allow_view_count_write', true), '') <> '1' then
     if TG_OP = 'INSERT' then NEW.view_count := 0; else NEW.view_count := OLD.view_count; end if;
@@ -5301,14 +3421,9 @@ begin
     NEW.updated_at := OLD.updated_at;
   end if;
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_protect_social_counters()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_protect_social_counters() RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if current_user not in ('authenticated', 'anon') then return new; end if;
 
@@ -5335,14 +3450,9 @@ begin
   end if;
 
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_range_on_change()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_range_on_change() RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   i int; col text; lo bigint; hi bigint; nullable boolean;
   newv numeric; oldv numeric;
@@ -5367,15 +3477,9 @@ begin
     i := i + 4;
   end loop;
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_rate_ok(p_bucket text, p_max integer, p_window_seconds integer)
- RETURNS boolean
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_rate_ok(p_bucket text, p_max integer, p_window_seconds integer) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 DECLARE
   v_start timestamptz;
   v_hits  int;
@@ -5397,15 +3501,9 @@ BEGIN
   END IF;
 
   RETURN v_hits <= p_max;
-END $function$
-;
+END $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_rate_take(p_bucket text, p_limit integer, p_seconds integer)
- RETURNS boolean
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_rate_take(p_bucket text, p_limit integer, p_seconds integer) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_start timestamptz := to_timestamp(
     floor(extract(epoch from now()) / p_seconds) * p_seconds);
@@ -5422,30 +3520,18 @@ begin
   end if;
 
   return v_hits <= p_limit;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_read_guard(p_name text, p_max integer, p_win integer)
- RETURNS void
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_read_guard(p_name text, p_max integer, p_win integer) RETURNS void LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_key text := public.dz_actor_key();
 begin
   if v_key is null then return; end if;
   if not public.dz_rate_ok('read:' || p_name || ':' || v_key, p_max, p_win) then
     raise exception 'Too many requests — slow down and try again' using errcode='P0001';
   end if;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_reconcile(p_user uuid)
- RETURNS TABLE(currency text, operational bigint, ledger bigint, discrepancy bigint, agrees boolean)
- LANGUAGE sql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_reconcile(p_user uuid) RETURNS TABLE(currency text, operational bigint, ledger bigint, discrepancy bigint, agrees boolean) LANGUAGE sql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   with op as (
     select e.currency,
            coalesce(sum(e.net_amount), 0) as amt
@@ -5471,15 +3557,9 @@ AS $function$
   from cur c
   left join op  on op.currency  = c.currency
   left join led on led.currency = c.currency;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_repeat_guard()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_repeat_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_col text := coalesce(nullif(TG_ARGV[0],''),'body');
   v_limit int := coalesce(nullif(TG_ARGV[1],'')::int, 5);
@@ -5511,15 +3591,9 @@ begin
     perform public.dz_log_abuse(TG_TABLE_NAME,'repeat','n='||v_n||' auto-ban 1 day', v_text);
   end if;
   return null;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_report_resolve(p_id uuid, p_status text, p_note text DEFAULT NULL::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_report_resolve(p_id uuid, p_status text, p_note text DEFAULT NULL::text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_target uuid;
 begin
   if not (public.dz_is_staff(auth.uid()) or public.dz_is_partner(auth.uid())) then
@@ -5542,15 +3616,9 @@ begin
   perform public.dz_audit('resolve_report', v_target,
     jsonb_build_object('report_id', p_id, 'status', p_status));
   return jsonb_build_object('ok', true, 'changed', true);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_reports_queue(p_status text DEFAULT 'pending'::text, p_limit integer DEFAULT 100)
- RETURNS TABLE(id uuid, reason text, details text, status text, created_at timestamp with time zone, target_id uuid, target_username text, target_banned boolean, reporter_id uuid, reporter_username text, resolved_by uuid, resolved_at timestamp with time zone, resolution text)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_reports_queue(p_status text DEFAULT 'pending'::text, p_limit integer DEFAULT 100) RETURNS TABLE(id uuid, reason text, details text, status text, created_at timestamp with time zone, target_id uuid, target_username text, target_banned boolean, reporter_id uuid, reporter_username text, resolved_by uuid, resolved_at timestamp with time zone, resolution text) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_staff boolean := public.dz_is_staff(auth.uid());
 begin
   if not (v_staff or public.dz_is_partner(auth.uid())) then
@@ -5572,15 +3640,9 @@ begin
      and (v_staff or public.dz_may_moderate(auth.uid(), r.target_id))
    order by r.created_at desc
    limit least(greatest(coalesce(p_limit, 100), 1), 200);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_request_download(p_artwork uuid, p_ip text DEFAULT NULL::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_request_download(p_artwork uuid, p_ip text DEFAULT NULL::text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_uid    uuid := auth.uid();
   v_key    text;
@@ -5643,15 +3705,9 @@ begin
                             'remaining', v_limit - v_used - 1,
                             'limit', v_limit, 'tier', v_tier,
                             'resets_at', v_day + interval '1 day');
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_request_item_download(p_kind text, p_id uuid, p_ip text DEFAULT NULL::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_request_item_download(p_kind text, p_id uuid, p_ip text DEFAULT NULL::text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_uid    uuid := auth.uid();
   v_key    text;
@@ -5722,15 +3778,9 @@ begin
                             'remaining', v_limit - v_used - 1,
                             'limit', v_limit, 'tier', v_tier,
                             'resets_at', v_day + interval '1 day');
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_resource_file_grant(p_resource uuid, p_ip text DEFAULT NULL::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_resource_file_grant(p_resource uuid, p_ip text DEFAULT NULL::text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_uid    uuid := auth.uid();
   v_key    text;
@@ -5806,15 +3856,9 @@ begin
     'remaining', case when v_own then null else greatest(v_limit - v_used - 1, 0) end,
     'resets_at', v_day + interval '1 day'
   );
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_revoke_partner(p_user uuid)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_revoke_partner(p_user uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if not public.dz_is_staff(auth.uid()) then
     raise exception 'not allowed';
@@ -5828,25 +3872,13 @@ begin
 
   perform public.dz_audit('revoke_partner', p_user, '{}'::jsonb);
   return jsonb_build_object('ok', true, 'changed', true);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_role(p_user uuid DEFAULT auth.uid())
- RETURNS text
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_role(p_user uuid DEFAULT auth.uid()) RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select role from public.profiles where id = p_user;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_section_mod_gate()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_section_mod_gate() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
 declare
   v_secret text;
   v_on     boolean;
@@ -5905,15 +3937,9 @@ begin
 
   NEW.status := 'pending'; NEW.mod_token := null; return NEW;
 end;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_signup_rate()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_signup_rate() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_ip text;
 begin
   if to_regprocedure('public.dz_client_ip()') is null then return NEW; end if;
@@ -5923,15 +3949,9 @@ begin
     raise exception 'Too many accounts created from here recently — try again later' using errcode='P0001';
   end if;
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_tax_due()
- RETURNS TABLE(kind text, period date, collected bigint, remit_by date, remitted_at timestamp with time zone, overdue boolean)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_tax_due() RETURNS TABLE(kind text, period date, collected bigint, remit_by date, remitted_at timestamp with time zone, overdue boolean) LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if not public.dz_is_staff(auth.uid()) then
     raise exception 'not allowed';
@@ -5962,23 +3982,12 @@ begin
   from rows_out r
   left join public.tax_remittances t on t.kind = r.kind and t.period = r.period
   order by r.period desc, r.kind;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_touch_updated_at()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-begin new.updated_at = now(); return new; end $function$
-;
+CREATE OR REPLACE FUNCTION public.dz_touch_updated_at() RETURNS trigger LANGUAGE plpgsql SET search_path TO '' AS $function$
+begin new.updated_at = now(); return new; end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_unban_user(p_target uuid)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_unban_user(p_target uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_rows integer;
 begin
   if not public.dz_may_moderate(auth.uid(), p_target) then
@@ -5996,15 +4005,9 @@ begin
 
   perform public.dz_audit('unban_user', p_target, '{}'::jsonb);
   return jsonb_build_object('ok', true, 'changed', true);
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.dz_wallet_summary()
- RETURNS TABLE(currency text, pending_gross bigint, pending_net bigint, pending_gateway bigint, pending_fee bigint, pending_tds bigint, pending_tcs bigint, next_clears_at timestamp with time zone, settlement_note text, available bigint, locked bigint, withdrawable bigint, total_sales bigint, gateway_fees bigint, commission bigint, tds_withheld bigint, tcs_collected bigint, paid_out bigint, items_sold bigint)
- LANGUAGE sql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_wallet_summary() RETURNS TABLE(currency text, pending_gross bigint, pending_net bigint, pending_gateway bigint, pending_fee bigint, pending_tds bigint, pending_tcs bigint, next_clears_at timestamp with time zone, settlement_note text, available bigint, locked bigint, withdrawable bigint, total_sales bigint, gateway_fees bigint, commission bigint, tds_withheld bigint, tcs_collected bigint, paid_out bigint, items_sold bigint) LANGUAGE sql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   with e as (
     select
       currency,
@@ -6055,15 +4058,9 @@ AS $function$
   left join e on e.currency = c.currency
   left join l on l.currency = c.currency
   order by c.currency;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.dz_write_rate()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.dz_write_rate() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_key text := public.dz_actor_key();
   v_noun text := coalesce(nullif(TG_ARGV[0],''),'requests');
@@ -6083,15 +4080,9 @@ begin
   end if;
   if TG_OP = 'DELETE' then return old; end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.enforce_community_links()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.enforce_community_links() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_dev boolean := false;
 begin
   if NEW.comment_text is null or btrim(NEW.comment_text) = '' then return NEW; end if;
@@ -6107,15 +4098,9 @@ begin
     return null;
   end if;
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.enforce_showcase_cooldown()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
+CREATE OR REPLACE FUNCTION public.enforce_showcase_cooldown() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
         declare
           last_post timestamptz;
           begin
@@ -6130,15 +4115,9 @@ AS $function$
                                         end if;
                                           return new;
                                           end;
-                                          $function$
-;
+                                          $function$;
 
-CREATE OR REPLACE FUNCTION public.fr_cap()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.fr_cap() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_max_friends int := 200;
   v_max_pending int := 100;
@@ -6171,15 +4150,9 @@ begin
   end if;
 
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.friendships_guard()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.friendships_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 BEGIN
   NEW.requester_id := OLD.requester_id;
   NEW.addressee_id := OLD.addressee_id;
@@ -6201,30 +4174,18 @@ BEGIN
     NEW.blocked_by := auth.uid(); RETURN NEW;
   END IF;
   RAISE EXCEPTION 'Invalid friendship transition';
-END $function$
-;
+END $function$;
 
-CREATE OR REPLACE FUNCTION public.get_album_artworks(album uuid, lim integer DEFAULT 60, off integer DEFAULT 0)
- RETURNS TABLE(id uuid, name text, image_url text, thumb_x numeric, thumb_y numeric, thumb_zoom numeric, added_at timestamp with time zone)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_album_artworks(album uuid, lim integer DEFAULT 60, off integer DEFAULT 0) RETURNS TABLE(id uuid, name text, image_url text, thumb_x numeric, thumb_y numeric, thumb_zoom numeric, added_at timestamp with time zone) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   select a.id, a.name, a.image_url, a.thumb_x, a.thumb_y, a.thumb_zoom, ai.added_at
   from album_items ai join artworks a on a.id = ai.artwork_id
   where ai.album_id = album and a.status='approved' and a.kind='art'
     and exists(select 1 from albums al where al.id = album and (al.is_public or al.user_id = auth.uid()))
   order by ai.added_at desc
   limit greatest(1, least(coalesce(lim,60),100)) offset greatest(coalesce(off,0),0)
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.get_artist_progress(target uuid)
- RETURNS TABLE(uploads bigint, likes_given bigint, bookmarks_given bigint, comments_made bigint, xp integer, level integer)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_artist_progress(target uuid) RETURNS TABLE(uploads bigint, likes_given bigint, bookmarks_given bigint, comments_made bigint, xp integer, level integer) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   WITH c AS (
     SELECT
       (SELECT count(*) FROM artworks a
@@ -6237,15 +4198,9 @@ AS $function$
          (up*10 + lk*2 + bm*2 + cmt)::int,
          public.xp_to_level((up*10 + lk*2 + bm*2 + cmt)::int)
   FROM c
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.get_profile_engagement(p_user uuid)
- RETURNS TABLE(total_views bigint, total_likes bigint)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_profile_engagement(p_user uuid) RETURNS TABLE(total_views bigint, total_likes bigint) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
                                                                                                                                                                                                                                                                                                                                                                                                                                                                         select
                                                                                                                                                                                                                                                                                                                                                                                                                                                                             coalesce((select sum(a.view_count)
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             from public.artworks a
@@ -6254,15 +4209,9 @@ AS $function$
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                from public.artwork_likes l
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                join public.artworks a2 on a2.id = l.artwork_id
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               where a2.user_id = p_user), 0)::bigint;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              $function$
-;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              $function$;
 
-CREATE OR REPLACE FUNCTION public.get_rank_board(board text, lim integer DEFAULT 20, off integer DEFAULT 0)
- RETURNS TABLE(rnk bigint, uid uuid, username text, avatar_url text, score bigint, lvl integer, total bigint)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_rank_board(board text, lim integer DEFAULT 20, off integer DEFAULT 0) RETURNS TABLE(rnk bigint, uid uuid, username text, avatar_url text, score bigint, lvl integer, total bigint) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   with pick as (
     select s.id, s.username, s.avatar_url, s.lvl,
       case lower(coalesce(board,'level'))
@@ -6285,15 +4234,9 @@ AS $function$
   order by rnk asc, username asc
   limit  greatest(1, least(coalesce(lim,20), 50))
   offset greatest(0, coalesce(off,0))
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.get_rank_me(board text)
- RETURNS TABLE(rnk bigint, score bigint, lvl integer, total bigint)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_rank_me(board text) RETURNS TABLE(rnk bigint, score bigint, lvl integer, total bigint) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   with pick as (
     select s.id, s.lvl,
       case lower(coalesce(board,'level'))
@@ -6314,15 +4257,9 @@ AS $function$
   select r.rnk, r.score, r.lvl, r.total
   from ranked r
   where r.id = auth.uid()
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.get_top_tags(lim integer DEFAULT 200)
- RETURNS TABLE(tag text, uses integer, kind text)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_top_tags(lim integer DEFAULT 200) RETURNS TABLE(tag text, uses integer, kind text) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   with t as (
     select lower(btrim(x)) as tag, count(*)::int as uses
     from artworks a
@@ -6347,15 +4284,9 @@ AS $function$
   ) merged
   order by uses desc, tag asc
   limit greatest(1, least(coalesce(lim, 200), 500))
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.get_user_albums(target uuid)
- RETURNS TABLE(id uuid, name text, item_count integer, created_at timestamp with time zone, covers text[], is_public boolean)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_user_albums(target uuid) RETURNS TABLE(id uuid, name text, item_count integer, created_at timestamp with time zone, covers text[], is_public boolean) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   select al.id, al.name,
     (select count(*) from album_items ai join artworks a on a.id = ai.artwork_id
       where ai.album_id = al.id and a.status='approved' and a.kind='art')::int,
@@ -6368,45 +4299,27 @@ AS $function$
   from albums al
   where al.user_id = target and (al.is_public or al.user_id = auth.uid())
   order by al.created_at desc
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.get_user_bookmarked_artworks(target uuid, lim integer DEFAULT 60, off integer DEFAULT 0)
- RETURNS TABLE(id uuid, name text, image_url text, thumb_x numeric, thumb_y numeric, saved_at timestamp with time zone)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_user_bookmarked_artworks(target uuid, lim integer DEFAULT 60, off integer DEFAULT 0) RETURNS TABLE(id uuid, name text, image_url text, thumb_x numeric, thumb_y numeric, saved_at timestamp with time zone) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   SELECT a.id, a.name, a.image_url, a.thumb_x, a.thumb_y, b.created_at
   FROM artwork_bookmarks b JOIN artworks a ON a.id = b.artwork_id
   WHERE b.user_id = target AND a.status='approved' AND a.kind='art'
     AND (target = auth.uid() OR exists(select 1 from profiles p where p.id=target and p.bookmarks_public))
   ORDER BY b.created_at DESC
   LIMIT greatest(1, least(coalesce(lim,60),100)) OFFSET greatest(coalesce(off,0),0)
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.get_user_liked_artworks(target uuid, lim integer DEFAULT 60, off integer DEFAULT 0)
- RETURNS TABLE(id uuid, name text, image_url text, thumb_x numeric, thumb_y numeric, saved_at timestamp with time zone)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_user_liked_artworks(target uuid, lim integer DEFAULT 60, off integer DEFAULT 0) RETURNS TABLE(id uuid, name text, image_url text, thumb_x numeric, thumb_y numeric, saved_at timestamp with time zone) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   SELECT a.id, a.name, a.image_url, a.thumb_x, a.thumb_y, l.created_at
   FROM artwork_likes l JOIN artworks a ON a.id = l.artwork_id
   WHERE l.user_id = target AND a.status='approved' AND a.kind='art'
     AND (target = auth.uid() OR exists(select 1 from profiles p where p.id=target and p.likes_public))
   ORDER BY l.created_at DESC
   LIMIT greatest(1, least(coalesce(lim,60),100)) OFFSET greatest(coalesce(off,0),0)
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.get_xp_leaderboard(lim integer DEFAULT 10)
- RETURNS TABLE(user_id uuid, username text, avatar_url text, xp integer, level integer)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.get_xp_leaderboard(lim integer DEFAULT 10) RETURNS TABLE(user_id uuid, username text, avatar_url text, xp integer, level integer) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   WITH agg AS (
     SELECT p.id, p.username, p.avatar_url,
       (coalesce(a.up,0)*10 + coalesce(l.lk,0)*2
@@ -6425,15 +4338,9 @@ AS $function$
   WHERE xp > 0 AND username IS NOT NULL
   ORDER BY xp DESC, username ASC
   LIMIT greatest(1, least(coalesce(lim,10), 50))
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.guard_profile_update()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
+CREATE OR REPLACE FUNCTION public.guard_profile_update() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
 DECLARE
   cooldown CONSTANT interval := interval '90 days';
 BEGIN
@@ -6465,15 +4372,9 @@ BEGIN
     END IF;
   END IF;
   RETURN NEW;
-END $function$
-;
+END $function$;
 
-CREATE OR REPLACE FUNCTION public.handle_new_user()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 declare
   base_name text;
     final_name text;
@@ -6500,27 +4401,15 @@ declare
 
                                                           return new;
                                                           end;
-                                                          $function$
-;
+                                                          $function$;
 
-CREATE OR REPLACE FUNCTION public.is_dev()
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO ''
-AS $function$
+CREATE OR REPLACE FUNCTION public.is_dev() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $function$
                 select exists(
                     select 1 from public.profiles where id = auth.uid() and role = 'dev'
                       );
-                      $function$
-;
+                      $function$;
 
-CREATE OR REPLACE FUNCTION public.marketplace_file_cap()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.marketplace_file_cap() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare n int;
 begin
   select count(*) into n from public.marketplace_file where item_id = new.item_id;
@@ -6528,29 +4417,17 @@ begin
     raise exception 'A listing can carry at most 50 files';
   end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.my_community_rank(cid uuid)
- RETURNS integer
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.my_community_rank(cid uuid) RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   select coalesce((
     select public.community_rank(role)
       from public.community_members
      where community_id = cid and user_id = auth.uid() and banned = false
   ), 0)
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.protect_artwork_like_count()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.protect_artwork_like_count() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 declare v_counter boolean := false;
 begin
   if coalesce(current_setting('app.allow_like_count_write', true), '') <> '1' then
@@ -6574,15 +4451,9 @@ begin
   end if;
 
   return NEW;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.protect_privileged_cols()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.protect_privileged_cols() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 BEGIN
   IF public.dz_is_privileged() THEN
     RETURN NEW;
@@ -6593,15 +4464,9 @@ BEGIN
   NEW.subscription_tier       := OLD.subscription_tier;
   NEW.subscription_expires_at := OLD.subscription_expires_at;
   RETURN NEW;
-END $function$
-;
+END $function$;
 
-CREATE OR REPLACE FUNCTION public.publish_due_scheduled_sections()
- RETURNS integer
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.publish_due_scheduled_sections() RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 DECLARE
   r        record;
   moved    int := 0;
@@ -6695,15 +4560,9 @@ BEGIN
     moved := moved + 1;
   END LOOP;
   RETURN moved;
-END; $function$
-;
+END; $function$;
 
-CREATE OR REPLACE FUNCTION public.publish_due_scheduled_uploads()
- RETURNS integer
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.publish_due_scheduled_uploads() RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 DECLARE
   r        record;
   moved    integer := 0;
@@ -6796,15 +4655,9 @@ BEGIN
 
   RETURN moved;
 END;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.rank_scores()
- RETURNS TABLE(id uuid, username text, avatar_url text, lvl integer, xp bigint, cred bigint, likes bigint, bookmarks bigint)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.rank_scores() RETURNS TABLE(id uuid, username text, avatar_url text, lvl integer, xp bigint, cred bigint, likes bigint, bookmarks bigint) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   with agg as (
     select
       p.id, p.username, p.avatar_url,
@@ -6836,15 +4689,9 @@ AS $function$
     (up*10 + likes_given*2 + bm_given*2 + comments)::bigint                  as xp,
     cred, likes, bookmarks
   from agg
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.regen_merit_daily()
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.regen_merit_daily() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   perform set_config('app.allow_merit_write', '1', true);
   update public.profiles
@@ -6852,15 +4699,9 @@ begin
          merit_updated_at = now()
    where merit < 100;
   perform set_config('app.allow_merit_write', '0', true);
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.register_artwork_download(p_artwork uuid, p_anon_key text DEFAULT NULL::text, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.register_artwork_download(p_artwork uuid, p_anon_key text DEFAULT NULL::text, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_key   text;
   v_ip    text;
@@ -6926,15 +4767,9 @@ begin
       on conflict do nothing;
     end if;
   end if;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.register_artwork_view(p_artwork uuid, p_anon_key text DEFAULT NULL::text, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.register_artwork_view(p_artwork uuid, p_anon_key text DEFAULT NULL::text, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_key   text;
   v_ip    text;
@@ -7000,15 +4835,9 @@ begin
       on conflict do nothing;
     end if;
   end if;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.register_item_view(p_kind text, p_subject uuid, p_anon_key text DEFAULT NULL::text, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
+CREATE OR REPLACE FUNCTION public.register_item_view(p_kind text, p_subject uuid, p_anon_key text DEFAULT NULL::text, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_key    text;
   v_ip     text;
@@ -7093,15 +4922,9 @@ begin
   exception when others then
     perform set_config('app.allow_view_count_write', '0', true);
   end;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.rls_auto_enable()
- RETURNS event_trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog'
-AS $function$
+CREATE OR REPLACE FUNCTION public.rls_auto_enable() RETURNS event_trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'pg_catalog' AS $function$
 DECLARE
   cmd record;
 BEGIN
@@ -7124,15 +4947,9 @@ BEGIN
      END IF;
   END LOOP;
 END;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.search_artworks(q text, lim integer DEFAULT 60, off integer DEFAULT 0)
- RETURNS TABLE(id uuid, name text, image_url text, thumb_x numeric, thumb_y numeric, thumb_zoom numeric, category text[], tags text[], created_at timestamp with time zone, match text)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.search_artworks(q text, lim integer DEFAULT 60, off integer DEFAULT 0) RETURNS TABLE(id uuid, name text, image_url text, thumb_x numeric, thumb_y numeric, thumb_zoom numeric, category text[], tags text[], created_at timestamp with time zone, match text) LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
   with n as (
     select lower(btrim(coalesce(q,''))) as raw,
            replace(replace(replace(lower(btrim(coalesce(q,''))),'\','\\'),'%','\%'),'_','\_') as pat
@@ -7164,15 +4981,9 @@ AS $function$
     a.created_at desc
   limit  greatest(1, least(coalesce(lim, 60), 100))
   offset greatest(coalesce(off, 0), 0)
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.sync_artwork_bookmark_count()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.sync_artwork_bookmark_count() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   perform set_config('app.allow_bookmark_count_write', '1', true);
   if TG_OP = 'INSERT' then
@@ -7186,15 +4997,9 @@ begin
     perform set_config('app.allow_bookmark_count_write', '0', true);
     return OLD;
   end if;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.sync_artwork_like_count()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.sync_artwork_like_count() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   perform set_config('app.allow_like_count_write', '1', true);
   if TG_OP = 'INSERT' then
@@ -7211,15 +5016,9 @@ begin
     return OLD;
   end if;
 end;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.sync_profile_cred_count()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.sync_profile_cred_count() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 begin
   perform set_config('app.allow_cred_count_write', '1', true);
   if TG_OP = 'INSERT' then
@@ -7233,62 +5032,37 @@ begin
     perform set_config('app.allow_cred_count_write', '0', true);
     return OLD;
   end if;
-end; $function$
-;
+end; $function$;
 
-CREATE OR REPLACE FUNCTION public.sync_profile_username()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
+CREATE OR REPLACE FUNCTION public.sync_profile_username() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
 begin
   if new.username is null then
       new.username := 'user_' || substr(new.id::text, 1, 8);
         end if;
           return new;
           end;
-          $function$
-;
+          $function$;
 
-CREATE OR REPLACE FUNCTION public.user_tag_prefs_cap_guard()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
+CREATE OR REPLACE FUNCTION public.user_tag_prefs_cap_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
 begin
   if (select count(*) from public.user_tag_prefs where user_id = new.user_id) >= 200 then
     raise exception 'Tag preference limit reached (200)';
   end if;
   return new;
-end $function$
-;
+end $function$;
 
-CREATE OR REPLACE FUNCTION public.xp_level_thresholds()
- RETURNS integer[]
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.xp_level_thresholds() RETURNS integer[] LANGUAGE sql IMMUTABLE SET search_path TO 'public' AS $function$
   SELECT ARRAY[0,8,16,24,32,41,50,59,68,78,88,98,108,119,130,141,152,164,176,188,
     200,213,226,239,252,266,280,294,308,323,338,353,368,384,400,416,432,449,466,483,
     500,518,536,554,572,591,610,629,648,668,688,708,728,749,770,791,812,834,856,878,
     900,923,946,969,992,1016,1040,1064,1089,1115,1141,1167,1193,1220,1247,1274,1301,1329,1357,1385,
     1413,1442,1471,1500,1529,1559,1589,1619,1649,1680,1711,1742,1773,1805,1837,1869,1901,1934,1967,2000]
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.xp_to_level(xp integer)
- RETURNS integer
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO 'public'
-AS $function$
+CREATE OR REPLACE FUNCTION public.xp_to_level(xp integer) RETURNS integer LANGUAGE sql IMMUTABLE SET search_path TO 'public' AS $function$
   SELECT count(*)::int FROM unnest(public.xp_level_thresholds()) t
   WHERE t <= greatest(coalesce(xp,0), 0)
-$function$
-;
+$function$;
 
 alter table public.artworks add constraint art_credits_len CHECK (arr_items_within(credits, 2, 300));
 alter table public.artworks add constraint art_links_len CHECK (arr_items_within(external_links, 5, 200));
@@ -7790,177 +5564,36 @@ grant UPDATE (summary, resource_type, subcategory, commercial_use, attribution_r
 grant UPDATE (summary, subject_matter, medium, software_list, license, commercial_use, attribution_required, modification_allowed, credits, process_notes, external_links, comments_allowed, visibility, featured, seo_title, seo_description, slug, file_ext, file_size, width, height, updated_at) on public.artworks to authenticated;
 grant UPDATE (username, bio, avatar_url, avatar_storage_path, avatar_updated_at, banner_url, banner_storage_path, banner_updated_at, social_links, display_name, likes_public, bookmarks_public) on public.profiles to authenticated;
 
-grant execute on function public.arr_items_within(a text[], lo integer, hi integer) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.can_post_community(cid uuid) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.can_read_community(cid uuid) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.cm_browse(p_q text, p_limit integer, p_offset integer) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.cm_delete(cid uuid) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.cm_grace_days() to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.cm_grace_until(cid uuid) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.cm_join_public(cid uuid) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.cm_leave(cid uuid) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.cm_state(cid uuid) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.community_channel_id(ch text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.community_rank(r text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.current_merit() to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_actor_key() to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_add_business_days(p_from timestamp with time zone, p_days integer) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_an_achievements(p_user uuid, p_scope text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_an_country(p_hint text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_an_days(p_days integer) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_an_goal_progress(p_user uuid, p_metric text, p_period text, p_scope text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_an_scope(p_scope text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_an_viewer_key(p_anon_key text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_analytics_activity(p_days integer, p_scope text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_analytics_content(p_days integer, p_scope text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_analytics_overview(p_days integer, p_scope text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_analytics_reach(p_days integer, p_scope text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_analytics_track_search(p_subjects uuid[], p_term text, p_source text, p_ref text, p_device text, p_country text, p_anon_key text, p_scope text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_chat_gate(p_scope text, p_text text, p_channel text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_chat_status() to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_content_fingerprint(p_text text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_deobfuscate(p_text text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_download_limit(p_tier text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_download_quota() to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_fold_name(p_name text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_has_link(p_text text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_job_allowance(p_tier text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_log_abuse(p_surface text, p_rule text, p_detail text, p_sample text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_mod_token_clear() to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_name_reserved(p_name text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_phish_score(p_text text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.dz_request_download(p_artwork uuid, p_ip text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.get_album_artworks(album uuid, lim integer, off integer) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.get_profile_engagement(p_user uuid) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.get_rank_board(board text, lim integer, off integer) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.get_rank_me(board text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.get_top_tags(lim integer) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.get_user_albums(target uuid) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.register_artwork_download(p_artwork uuid, p_anon_key text, p_source text, p_ref text, p_device text, p_country text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.register_artwork_view(p_artwork uuid, p_anon_key text, p_source text, p_ref text, p_device text, p_country text) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.search_artworks(q text, lim integer, off integer) to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.xp_level_thresholds() to PUBLIC, anon, authenticated, service_role;
-grant execute on function public.xp_to_level(xp integer) to PUBLIC, anon, authenticated, service_role;
-
-grant execute on function public.dz_analytics_track(p_event text, p_subject uuid, p_scope text, p_owner uuid, p_source text, p_ref text, p_device text, p_country text, p_term text, p_anon_key text) to anon, authenticated, service_role;
-grant execute on function public.dz_captcha_required() to anon, authenticated, service_role;
-grant execute on function public.dz_market_download(p_item uuid) to anon, authenticated, service_role;
-grant execute on function public.dz_note_auth(p_event text, p_email text, p_ok boolean) to anon, authenticated, service_role;
-grant execute on function public.dz_request_item_download(p_kind text, p_id uuid, p_ip text) to anon, authenticated, service_role;
-grant execute on function public.dz_resource_file_grant(p_resource uuid, p_ip text) to anon, authenticated, service_role;
-grant execute on function public.get_artist_progress(target uuid) to anon, authenticated, service_role;
-grant execute on function public.get_user_bookmarked_artworks(target uuid, lim integer, off integer) to anon, authenticated, service_role;
-grant execute on function public.get_user_liked_artworks(target uuid, lim integer, off integer) to anon, authenticated, service_role;
-grant execute on function public.get_xp_leaderboard(lim integer) to anon, authenticated, service_role;
-grant execute on function public.register_item_view(p_kind text, p_subject uuid, p_anon_key text, p_source text, p_ref text, p_device text, p_country text) to anon, authenticated, service_role;
-
-grant execute on function public.cm_create(p_name text, p_desc text) to authenticated, service_role;
-grant execute on function public.cm_join(p_name text, p_code text) to authenticated, service_role;
-grant execute on function public.cm_kick(cid uuid, target uuid) to authenticated, service_role;
-grant execute on function public.cm_set_ban(cid uuid, target uuid, do_ban boolean) to authenticated, service_role;
-grant execute on function public.cm_set_role(cid uuid, target uuid, new_role text) to authenticated, service_role;
-grant execute on function public.cm_timeout(cid uuid, target uuid, minutes integer) to authenticated, service_role;
-grant execute on function public.current_artist_level() to authenticated, service_role;
-grant execute on function public.dz_abuse_recent(p_hours integer, p_limit integer) to authenticated, service_role;
-grant execute on function public.dz_admin_partners() to authenticated, service_role;
-grant execute on function public.dz_admin_telemetry() to authenticated, service_role;
-grant execute on function public.dz_audit_log(p_limit integer, p_before timestamp with time zone) to authenticated, service_role;
-grant execute on function public.dz_auth_churn(p_hours integer) to authenticated, service_role;
-grant execute on function public.dz_ban_user(p_target uuid, p_reason text, p_note text, p_days integer) to authenticated, service_role;
-grant execute on function public.dz_claim_max() to authenticated, service_role;
-grant execute on function public.dz_grant_partner(p_email text) to authenticated, service_role;
-grant execute on function public.dz_is_privileged() to authenticated, service_role;
-grant execute on function public.dz_job_quota() to authenticated, service_role;
-grant execute on function public.dz_market_file_grant(p_item uuid, p_file uuid) to authenticated, service_role;
-grant execute on function public.dz_market_files(p_item uuid) to authenticated, service_role;
-grant execute on function public.dz_market_owned(p_items uuid[]) to authenticated, service_role;
-grant execute on function public.dz_market_owns(p_item uuid) to authenticated, service_role;
-grant execute on function public.dz_mod_find(p_query text) to authenticated, service_role;
-grant execute on function public.dz_my_collab_state() to authenticated, service_role;
-grant execute on function public.dz_my_purchases() to authenticated, service_role;
-grant execute on function public.dz_partner_ledger(p_limit integer, p_before timestamp with time zone) to authenticated, service_role;
-grant execute on function public.dz_partner_wallet() to authenticated, service_role;
-grant execute on function public.dz_platform_revenue() to authenticated, service_role;
-grant execute on function public.dz_promo_create(p_code text) to authenticated, service_role;
-grant execute on function public.dz_promo_mine() to authenticated, service_role;
-grant execute on function public.dz_promo_resolve(p_code text, p_kind text) to authenticated, service_role;
-grant execute on function public.dz_report_resolve(p_id uuid, p_status text, p_note text) to authenticated, service_role;
-grant execute on function public.dz_reports_queue(p_status text, p_limit integer) to authenticated, service_role;
-grant execute on function public.dz_revoke_partner(p_user uuid) to authenticated, service_role;
-grant execute on function public.dz_tax_due() to authenticated, service_role;
-grant execute on function public.dz_unban_user(p_target uuid) to authenticated, service_role;
-grant execute on function public.dz_wallet_summary() to authenticated, service_role;
-grant execute on function public.is_dev() to authenticated, service_role;
-grant execute on function public.my_community_rank(cid uuid) to authenticated, service_role;
-
-grant execute on function public.albums_cap_guard() to service_role;
-grant execute on function public.apply_merit_penalty() to service_role;
-grant execute on function public.cm_assert_can_act(cid uuid, target uuid, need integer) to service_role;
-grant execute on function public.cm_member_cap() to service_role;
-grant execute on function public.dz_analytics_goal_cap() to service_role;
-grant execute on function public.dz_artwork_mod_gate() to service_role;
-grant execute on function public.dz_audit(p_action text, p_target uuid, p_meta jsonb) to service_role;
-grant execute on function public.dz_ban_gate() to service_role;
-grant execute on function public.dz_bounds_on_change() to service_role;
-grant execute on function public.dz_chat_gate_comments() to service_role;
-grant execute on function public.dz_chat_gate_dm() to service_role;
-grant execute on function public.dz_client_ip() to service_role;
-grant execute on function public.dz_comment_community_open() to service_role;
-grant execute on function public.dz_content_guard() to service_role;
-grant execute on function public.dz_dm_guard() to service_role;
-grant execute on function public.dz_earning_apply_deductions() to service_role;
-grant execute on function public.dz_effective_tier(p_user uuid) to service_role;
-grant execute on function public.dz_email_key(p_email text) to service_role;
-grant execute on function public.dz_fill_comment_username() to service_role;
-grant execute on function public.dz_fy_gross(p_user uuid) to service_role;
-grant execute on function public.dz_guard_identity() to service_role;
-grant execute on function public.dz_is_banned(p_user uuid) to service_role;
-grant execute on function public.dz_is_ordinary(p_user uuid) to service_role;
-grant execute on function public.dz_is_partner(p_user uuid) to service_role;
-grant execute on function public.dz_is_staff(p_user uuid) to service_role;
-grant execute on function public.dz_job_plan(p_user uuid) to service_role;
-grant execute on function public.dz_job_post_gate() to service_role;
-grant execute on function public.dz_ledger_append(p_user uuid, p_type text, p_direction text, p_amount bigint, p_currency text, p_source text, p_provider_txn text, p_provider_amount bigint, p_provider_currency text, p_ref_table text, p_ref_id uuid, p_note text) to service_role;
-grant execute on function public.dz_ledger_chain_ok() to service_role;
-grant execute on function public.dz_ledger_immutable() to service_role;
-grant execute on function public.dz_may_moderate(p_actor uuid, p_target uuid) to service_role;
-grant execute on function public.dz_partner_credit_market() to service_role;
-grant execute on function public.dz_partner_credit_sub() to service_role;
-grant execute on function public.dz_partner_reverse() to service_role;
-grant execute on function public.dz_profiles_guard_insert() to service_role;
-grant execute on function public.dz_profiles_guard_privileged() to service_role;
-grant execute on function public.dz_protect_item_view_count() to service_role;
-grant execute on function public.dz_protect_social_counters() to service_role;
-grant execute on function public.dz_range_on_change() to service_role;
-grant execute on function public.dz_rate_ok(p_bucket text, p_max integer, p_window_seconds integer) to service_role;
-grant execute on function public.dz_rate_take(p_bucket text, p_limit integer, p_seconds integer) to service_role;
-grant execute on function public.dz_read_guard(p_name text, p_max integer, p_win integer) to service_role;
-grant execute on function public.dz_reconcile(p_user uuid) to service_role;
-grant execute on function public.dz_repeat_guard() to service_role;
-grant execute on function public.dz_role(p_user uuid) to service_role;
-grant execute on function public.dz_section_mod_gate() to service_role;
-grant execute on function public.dz_signup_rate() to service_role;
-grant execute on function public.dz_touch_updated_at() to service_role;
-grant execute on function public.dz_write_rate() to service_role;
-grant execute on function public.enforce_community_links() to service_role;
-grant execute on function public.enforce_showcase_cooldown() to service_role;
-grant execute on function public.fr_cap() to service_role;
-grant execute on function public.friendships_guard() to service_role;
-grant execute on function public.guard_profile_update() to service_role;
-grant execute on function public.handle_new_user() to service_role;
-grant execute on function public.marketplace_file_cap() to service_role;
-grant execute on function public.protect_artwork_like_count() to service_role;
-grant execute on function public.protect_privileged_cols() to service_role;
-grant execute on function public.publish_due_scheduled_sections() to service_role;
-grant execute on function public.publish_due_scheduled_uploads() to service_role;
-grant execute on function public.rank_scores() to service_role;
-grant execute on function public.regen_merit_daily() to service_role;
-grant execute on function public.rls_auto_enable() to service_role;
-grant execute on function public.sync_artwork_bookmark_count() to service_role;
-grant execute on function public.sync_artwork_like_count() to service_role;
-grant execute on function public.sync_profile_cred_count() to service_role;
-grant execute on function public.sync_profile_username() to service_role;
-grant execute on function public.user_tag_prefs_cap_guard() to service_role;
+grant execute on function public.arr_items_within(a text[], lo integer, hi integer), public.can_post_community(cid uuid), public.can_read_community(cid uuid), public.cm_browse(p_q text, p_limit integer, p_offset integer), public.cm_delete(cid uuid), public.cm_grace_days() to PUBLIC, anon, authenticated, service_role;
+grant execute on function public.cm_grace_until(cid uuid), public.cm_join_public(cid uuid), public.cm_leave(cid uuid), public.cm_state(cid uuid), public.community_channel_id(ch text), public.community_rank(r text) to PUBLIC, anon, authenticated, service_role;
+grant execute on function public.current_merit(), public.dz_actor_key(), public.dz_add_business_days(p_from timestamp with time zone, p_days integer), public.dz_an_achievements(p_user uuid, p_scope text), public.dz_an_country(p_hint text), public.dz_an_days(p_days integer) to PUBLIC, anon, authenticated, service_role;
+grant execute on function public.dz_an_goal_progress(p_user uuid, p_metric text, p_period text, p_scope text), public.dz_an_scope(p_scope text), public.dz_an_viewer_key(p_anon_key text), public.dz_analytics_activity(p_days integer, p_scope text), public.dz_analytics_content(p_days integer, p_scope text), public.dz_analytics_overview(p_days integer, p_scope text) to PUBLIC, anon, authenticated, service_role;
+grant execute on function public.dz_analytics_reach(p_days integer, p_scope text), public.dz_analytics_track_search(p_subjects uuid[], p_term text, p_source text, p_ref text, p_device text, p_country text, p_anon_key text, p_scope text), public.dz_chat_gate(p_scope text, p_text text, p_channel text), public.dz_chat_status(), public.dz_content_fingerprint(p_text text), public.dz_deobfuscate(p_text text) to PUBLIC, anon, authenticated, service_role;
+grant execute on function public.dz_download_limit(p_tier text), public.dz_download_quota(), public.dz_fold_name(p_name text), public.dz_has_link(p_text text), public.dz_job_allowance(p_tier text), public.dz_log_abuse(p_surface text, p_rule text, p_detail text, p_sample text) to PUBLIC, anon, authenticated, service_role;
+grant execute on function public.dz_mod_token_clear(), public.dz_name_reserved(p_name text), public.dz_phish_score(p_text text), public.dz_request_download(p_artwork uuid, p_ip text), public.get_album_artworks(album uuid, lim integer, off integer), public.get_profile_engagement(p_user uuid) to PUBLIC, anon, authenticated, service_role;
+grant execute on function public.get_rank_board(board text, lim integer, off integer), public.get_rank_me(board text), public.get_top_tags(lim integer), public.get_user_albums(target uuid), public.register_artwork_download(p_artwork uuid, p_anon_key text, p_source text, p_ref text, p_device text, p_country text), public.register_artwork_view(p_artwork uuid, p_anon_key text, p_source text, p_ref text, p_device text, p_country text) to PUBLIC, anon, authenticated, service_role;
+grant execute on function public.search_artworks(q text, lim integer, off integer), public.xp_level_thresholds(), public.xp_to_level(xp integer) to PUBLIC, anon, authenticated, service_role;
+grant execute on function public.dz_analytics_track(p_event text, p_subject uuid, p_scope text, p_owner uuid, p_source text, p_ref text, p_device text, p_country text, p_term text, p_anon_key text), public.dz_captcha_required(), public.dz_market_download(p_item uuid), public.dz_note_auth(p_event text, p_email text, p_ok boolean), public.dz_request_item_download(p_kind text, p_id uuid, p_ip text), public.dz_resource_file_grant(p_resource uuid, p_ip text) to anon, authenticated, service_role;
+grant execute on function public.get_artist_progress(target uuid), public.get_user_bookmarked_artworks(target uuid, lim integer, off integer), public.get_user_liked_artworks(target uuid, lim integer, off integer), public.get_xp_leaderboard(lim integer), public.register_item_view(p_kind text, p_subject uuid, p_anon_key text, p_source text, p_ref text, p_device text, p_country text) to anon, authenticated, service_role;
+grant execute on function public.cm_create(p_name text, p_desc text), public.cm_join(p_name text, p_code text), public.cm_kick(cid uuid, target uuid), public.cm_set_ban(cid uuid, target uuid, do_ban boolean), public.cm_set_role(cid uuid, target uuid, new_role text), public.cm_timeout(cid uuid, target uuid, minutes integer) to authenticated, service_role;
+grant execute on function public.current_artist_level(), public.dz_abuse_recent(p_hours integer, p_limit integer), public.dz_admin_partners(), public.dz_admin_telemetry(), public.dz_audit_log(p_limit integer, p_before timestamp with time zone), public.dz_auth_churn(p_hours integer) to authenticated, service_role;
+grant execute on function public.dz_ban_user(p_target uuid, p_reason text, p_note text, p_days integer), public.dz_claim_max(), public.dz_grant_partner(p_email text), public.dz_is_privileged(), public.dz_job_quota(), public.dz_market_file_grant(p_item uuid, p_file uuid) to authenticated, service_role;
+grant execute on function public.dz_market_files(p_item uuid), public.dz_market_owned(p_items uuid[]), public.dz_market_owns(p_item uuid), public.dz_mod_find(p_query text), public.dz_my_collab_state(), public.dz_my_purchases() to authenticated, service_role;
+grant execute on function public.dz_partner_ledger(p_limit integer, p_before timestamp with time zone), public.dz_partner_wallet(), public.dz_platform_revenue(), public.dz_promo_create(p_code text), public.dz_promo_mine(), public.dz_promo_resolve(p_code text, p_kind text) to authenticated, service_role;
+grant execute on function public.dz_report_resolve(p_id uuid, p_status text, p_note text), public.dz_reports_queue(p_status text, p_limit integer), public.dz_revoke_partner(p_user uuid), public.dz_tax_due(), public.dz_unban_user(p_target uuid), public.dz_wallet_summary() to authenticated, service_role;
+grant execute on function public.is_dev(), public.my_community_rank(cid uuid) to authenticated, service_role;
+grant execute on function public.albums_cap_guard(), public.apply_merit_penalty(), public.cm_assert_can_act(cid uuid, target uuid, need integer), public.cm_member_cap(), public.dz_analytics_goal_cap(), public.dz_artwork_mod_gate() to service_role;
+grant execute on function public.dz_audit(p_action text, p_target uuid, p_meta jsonb), public.dz_ban_gate(), public.dz_bounds_on_change(), public.dz_chat_gate_comments(), public.dz_chat_gate_dm(), public.dz_client_ip() to service_role;
+grant execute on function public.dz_comment_community_open(), public.dz_content_guard(), public.dz_dm_guard(), public.dz_earning_apply_deductions(), public.dz_effective_tier(p_user uuid), public.dz_email_key(p_email text) to service_role;
+grant execute on function public.dz_fill_comment_username(), public.dz_fy_gross(p_user uuid), public.dz_guard_identity(), public.dz_is_banned(p_user uuid), public.dz_is_ordinary(p_user uuid), public.dz_is_partner(p_user uuid) to service_role;
+grant execute on function public.dz_is_staff(p_user uuid), public.dz_job_plan(p_user uuid), public.dz_job_post_gate(), public.dz_ledger_append(p_user uuid, p_type text, p_direction text, p_amount bigint, p_currency text, p_source text, p_provider_txn text, p_provider_amount bigint, p_provider_currency text, p_ref_table text, p_ref_id uuid, p_note text), public.dz_ledger_chain_ok(), public.dz_ledger_immutable() to service_role;
+grant execute on function public.dz_may_moderate(p_actor uuid, p_target uuid), public.dz_partner_credit_market(), public.dz_partner_credit_sub(), public.dz_partner_reverse(), public.dz_profiles_guard_insert(), public.dz_profiles_guard_privileged() to service_role;
+grant execute on function public.dz_protect_item_view_count(), public.dz_protect_social_counters(), public.dz_range_on_change(), public.dz_rate_ok(p_bucket text, p_max integer, p_window_seconds integer), public.dz_rate_take(p_bucket text, p_limit integer, p_seconds integer), public.dz_read_guard(p_name text, p_max integer, p_win integer) to service_role;
+grant execute on function public.dz_reconcile(p_user uuid), public.dz_repeat_guard(), public.dz_role(p_user uuid), public.dz_section_mod_gate(), public.dz_signup_rate(), public.dz_touch_updated_at() to service_role;
+grant execute on function public.dz_write_rate(), public.enforce_community_links(), public.enforce_showcase_cooldown(), public.fr_cap(), public.friendships_guard(), public.guard_profile_update() to service_role;
+grant execute on function public.handle_new_user(), public.marketplace_file_cap(), public.protect_artwork_like_count(), public.protect_privileged_cols(), public.publish_due_scheduled_sections(), public.publish_due_scheduled_uploads() to service_role;
+grant execute on function public.rank_scores(), public.regen_merit_daily(), public.rls_auto_enable(), public.sync_artwork_bookmark_count(), public.sync_artwork_like_count(), public.sync_profile_cred_count() to service_role;
+grant execute on function public.sync_profile_username(), public.user_tag_prefs_cap_guard() to service_role;
 
 comment on column public.artworks.description is 'Optional long-form description of the artwork, shown in the artwork modal and used for SEO/structured data. NULL for artworks uploaded before this field existed.';
 comment on column public.communities.plan_backed is 'True when this community exists because its owner was on Max. It stays up for three days after the subscription lapses and is locked after that. False is a community earned with artist level 100, which no subscription can take away.';

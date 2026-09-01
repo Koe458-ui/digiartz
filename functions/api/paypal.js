@@ -1,4 +1,5 @@
 import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService } from '../lib/sb.js';
+import { pp } from '../lib/paypal.js';
 import { fromPriceCents, toValue, minCharge, ppFee, showAmount } from '../lib/money.js';
 import {
   memberCurrency, planPrice, supportLimits, currentPlan, resolvePromo,
@@ -11,62 +12,6 @@ const SUPPORTED = new Set(['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF',
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
-
-const apiBase = (env) =>
-  String(env.PAYPAL_ENV || '').trim().toLowerCase() === 'sandbox'
-    ? 'https://api-m.sandbox.paypal.com'
-    : 'https://api-m.paypal.com';
-
-let tokenCache = null;
-
-async function ppToken(env) {
-  const key = apiBase(env) + '|' + env.PAYPAL_CLIENT_ID;
-  if (tokenCache && tokenCache.key === key && tokenCache.expires > Date.now())
-    return tokenCache.token;
-
-  const res = await fetch(apiBase(env) + '/v1/oauth2/token', {
-    method: 'POST',
-    headers: {
-      authorization: 'Basic ' + btoa(env.PAYPAL_CLIENT_ID + ':' + env.PAYPAL_CLIENT_SECRET),
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || !body.access_token)
-    throw new Error('Payment provider rejected our credentials');
-
-  tokenCache = {
-    key,
-    token: body.access_token,
-    expires: Date.now() + Math.max(60, (Number(body.expires_in) || 3600) - 60) * 1000,
-  };
-  return tokenCache.token;
-}
-
-async function pp(env, path, init = {}) {
-  const token = await ppToken(env);
-  const res = await fetch(apiBase(env) + path, {
-    ...init,
-    headers: {
-      authorization: 'Bearer ' + token,
-      'content-type': 'application/json',
-      ...(init.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(
-      body.message ||
-      (body.details && body.details[0] && body.details[0].description) ||
-      'Payment provider error (' + res.status + ')'
-    );
-    err.status = res.status;
-    err.issue = (body.details && body.details[0] && body.details[0].issue) || body.name || '';
-    throw err;
-  }
-  return body;
-}
 
 const PROMO_PLAN = 'max';
 

@@ -1,26 +1,10 @@
-import { sbUrl, sbSvc, ledger } from '../lib/sb.js';
+import { sbUrl, sbSvc, sbService, ledger } from '../lib/sb.js';
 import {
   PLAN_TIERS, applySubscription, revokeSubscription, recordEarning
 } from '../lib/billing.js';
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
-
-async function sbService(env, path, init = {}) {
-  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
-    ...init,
-    headers: {
-      apikey: sbSvc(env),
-      authorization: 'Bearer ' + sbSvc(env),
-      'content-type': 'application/json',
-      prefer: 'return=representation',
-      ...(init.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error('db ' + res.status);
-  return body;
-}
 
 async function signed(env, raw, signature) {
   const sig = String(signature || '');

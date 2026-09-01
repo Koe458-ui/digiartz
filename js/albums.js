@@ -512,7 +512,6 @@
     if(!pf.galleryIds) pf.galleryIds = Object.create(null);
     return pf.galleryIds[String(id)] === true;
   }
-  /* The offset counts the rows already in hand, so it moves with the set. */
   function pfGalleryMark(id, keep){
     if(!pf.galleryIds) pf.galleryIds = Object.create(null);
     if((pf.galleryIds[String(id)] === true) === keep) return;

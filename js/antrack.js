@@ -1,8 +1,3 @@
-/* What every visit records: where the visit came from, what device it is on,
-   and the four calls the rest of the site makes to note a view, a search or a
-   share. It used to be the first 140 lines of an eighty-kilobyte file whose
-   other 1900 lines draw the artist's dashboard — so every visitor downloaded
-   and parsed the dashboard in order to record a page view. */
 (function () {
   'use strict';
 

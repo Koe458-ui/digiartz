@@ -16,8 +16,6 @@ export function onRequestPost({ request, env }) {
       ? json({ reason: 'auth', error: 'Sign in to download.' }, 401)
       : json({ error: 'Could not check your download allowance.' }, 502)),
 
-    // The allowance is counted by Postgres, and it says in the row why it
-    // stopped: the day's quota, the burst limiter, or no session at all.
     withheld: (row) => {
       if (row && row.allowed) return null;
       const why = row && row.reason;

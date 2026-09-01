@@ -191,7 +191,6 @@
     if(!id || id === feedTab) return;
     var rail = document.getElementById('ftRail');
     if(!rail) return;
-    // picking a board is a request for the feed, so a search standing in front of it steps aside
     if(typeof window.hsReset === 'function') window.hsReset();
     var tabs = rail.querySelectorAll('.ftTab');
     var picked = null;

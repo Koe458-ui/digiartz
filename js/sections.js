@@ -798,23 +798,9 @@
     if(h) h.textContent = FORMS[sec].title;
     if(p) p.textContent = FORMS[sec].sub;
 
-    // Hiring is the one section behind a plan, so the form is not built until
-    // the plan says it may be. Every other section mounts as it always has.
     if(sec === 'jobs'){ dzJobGateMount(); return; }
     upMountForm(sec);
   }
-
-  /* ---- Post a Job: the plan gate -----------------------------------------
-   *
-   * Premium posts 1 role a plan month, Max posts 2, and Free and Lite post
-   * none. The rule lives in the database (dz_job_quota / dz_job_post_gate);
-   * what follows is the page that says so before someone spends twenty
-   * minutes writing a posting the insert would refuse.
-   *
-   * The upload page therefore opens for everyone — Post a Job is never a dead
-   * menu item — and shows one of three things: the two plans that can hire,
-   * the form, or the form replaced by "this month's postings are spent".
-   */
 
   var dzJobQ = null, dzJobQAt = 0, dzJobQFly = null;
   var DZ_JOB_Q_TTL = 60000;
@@ -957,9 +943,6 @@
     box.innerHTML = '<div class="upGate upGate--wait"><div class="upGateKicker">POST A JOB</div>'+
                     '<p class="upGateBody">Checking your plan\u2026</p></div>';
     dzJobQuota().then(dzJobGateApply, function(){
-      // The rule is enforced on insert whatever this page decided, so an
-      // unreachable check opens the form rather than locking out a member who
-      // has paid for it.
       if(upSec === 'jobs') upMountForm('jobs');
     });
   }
@@ -1311,7 +1294,6 @@
       }
     }
   }
-  /* Repaint every field of one kind in a section's form. */
   function dzEachField(sec, kinds, fn){
     (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
       if(kinds.indexOf(fd.t) !== -1) fn('dz_'+sec+'_'+fd.k, fd);
@@ -1602,7 +1584,7 @@
       ? list.length + ' selected'
       : (lb.getAttribute('data-ph') || 'Pick from the list');
   }
-  var dzRefMenu = dzSelToggle;   // the same dropdown, opened from a list field
+  var dzRefMenu = dzSelToggle;
   function dzRefOpt(id, box, cap){
     var hid = document.getElementById(id);
     if(!hid) return;
@@ -2221,14 +2203,6 @@
     dzSetFile(sec, key, f);
   }
 
-  /* The straight copies from a section's form to its row. A name on its own
-     takes the field as typed; what follows a colon says what the column wants
-     instead:
-       ?      null when the field is empty, or the word after it as a default
-       []     the value alone in an array (the category columns)
-       y / Y  a yes-no select — true only on 'yes', or true unless 'no'
-       b      a checkbox
-       # / .  a whole number / a number, or null when neither             */
   function dzCopy(sec, row, names){
     names.split(/\s+/).filter(Boolean).forEach(function(name){
       var bits = name.split(':'), k = bits[0], how = bits[1] || '', v = val(sec, k);
@@ -2371,9 +2345,6 @@
     if(old && old.urls) Object.keys(old.urls).forEach(function(k){ dzRevoke(old.urls[k]); });
     S[sec] = {tags:[], files:{}, urls:{}};
     dzAutoReset(sec);
-    // A posting has just spent a slot, so the blank form the poster is handed
-    // back is whatever the plan now allows — an empty one, or the panel that
-    // says the month is done.
     if(sec === 'jobs'){ dzJobGateMount(); return; }
     var box = document.getElementById('upSecForms');
     if(box) box.innerHTML = buildForm(sec);
@@ -2448,8 +2419,6 @@
                 .catch(function(){ showToast('Could not save draft on this device'); });
   }
   function dzDeleteDraft(id){ dzdb.del(id).then(function(){ dzDraftStrip(upSec); }); }
-  // Jobs mount their form only after the plan check answers, so a draft
-  // cannot be poured into fields that may not exist yet on a fixed delay.
   function dzFormReady(sec, cb){
     var tries = 0;
     (function poll(){
@@ -2683,9 +2652,6 @@
       return;
     }
 
-    // The plan can have lapsed, or the allowance been spent in another tab,
-    // since this form was drawn. Asking again costs one round trip and saves
-    // a whole posting from dying on the insert.
     if(sec === 'jobs'){
       var jq = null;
       try{ jq = await dzJobQuota(true); }catch(e){ jq = null; }

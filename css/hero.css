@@ -57,9 +57,6 @@
 
 .hpPanel.hpIn > *,
 .hpPanel.hpIn > .hpList li{animation:none;opacity:1;transform:none;}
-/* A phone on its side has about 390px of height. Tabs, a headline, three
-   bullets and a button fill all of it, so the art — the thing the page is
-   for — starts below the fold. The bullets are the part that keeps. */
 @media(max-height:500px) and (orientation:landscape){
   #heroPitch{padding-bottom:1rem;}
   .hpList{display:none;}
@@ -183,10 +180,6 @@
 }
 #fg.open{transform:translateX(0);}
 
-/* One panel top bar, worn by three panels: the gallery, the profile and the
-   upload sheet. They differ in their side padding, the rule under them and
-   whether the strip behind blurs; everything else was written out three
-   times, once per stylesheet. */
 .fgTopBar,.pfTopBar,.upTopBar{
   position:sticky;top:0;z-index:12;
   min-height:3.5rem;

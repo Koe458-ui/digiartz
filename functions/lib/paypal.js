@@ -1,7 +1,3 @@
-/* One PayPal client for the three endpoints that talk to them: checkout
-   (api/paypal.js), payouts (api/payouts.js) and the webhook. Each used to
-   carry its own copy of the base URL, the token cache and the fetch wrapper. */
-
 export const apiBase = (env) =>
   String(env.PAYPAL_ENV || '').trim().toLowerCase() === 'sandbox'
     ? 'https://api-m.sandbox.paypal.com'
@@ -34,9 +30,6 @@ export async function ppToken(env) {
   return tokenCache.token;
 }
 
-/* `label` names the provider in the fallback message, so a failed payout reads
-   as a payout problem rather than a payment one. `err.issue` is what callers
-   branch on — ORDER_ALREADY_CAPTURED is not a failure to either of them. */
 export async function pp(env, path, init = {}, label = 'Payment') {
   const res = await fetch(apiBase(env) + path, {
     ...init,

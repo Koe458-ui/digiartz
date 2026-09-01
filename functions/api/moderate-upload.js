@@ -388,8 +388,6 @@ async function moderateWithGemini(env, b64, mimeType, cfg) {
       body: JSON.stringify(body)
     });
     if (!res.ok) {
-      // The provider's body can carry request ids, model names and quota
-      // detail. The caller is a browser: it gets the fact, not the transcript.
       return { ok: false, reason: 'Moderation service unavailable — try again.' };
     }
 
@@ -444,4 +442,3 @@ function toBase64(buf) {
   }
   return btoa(bin);
 }
-

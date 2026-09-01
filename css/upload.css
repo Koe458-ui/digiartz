@@ -532,10 +532,6 @@ html[data-theme="offwhite"] .upGdPop *{
 .upAutoList .dzvMetaRow + .dzvMetaRow{ border-top:1px solid var(--bdr); }
 .upAutoList .dzvMetaRow b{ font-variant-numeric:tabular-nums; }
 
-/* ---- Post a Job: the plan gate ----------------------------------------- */
-/* Shown in place of the posting form when the account cannot post one: no
-   plan, no sign-in, or this plan month's postings already spent. */
-
 .upGate{
   background:var(--sur);
   border:1px solid var(--bdr);
@@ -595,7 +591,6 @@ html[data-theme="offwhite"] .upGdPop *{
   letter-spacing:.12em;text-transform:uppercase;color:var(--txd);
 }
 
-/* The strip above the form when the plan does allow a posting. */
 .upQuotaBar{
   display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;
   background:color-mix(in srgb,var(--upcSky) 7%,var(--sur2));

@@ -27,7 +27,7 @@ const problems = [];
 
 for (const m of html.matchAll(/<(\/?)(\w+)([^>]*?)(\/?)>/g)) {
   const [, closing, tag, attrs, selfClose] = m;
-  if (closing) { 
+  if (closing) {
     for (let i = stack.length - 1; i >= 0; i--) {
       if (stack[i].tag === tag) { stack.length = i; break; }
     }

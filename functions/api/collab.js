@@ -40,7 +40,6 @@ async function rpc(env, request, fn, args = {}) {
   return res.body;
 }
 
-/* The shared reader, with its failure said in this endpoint's own terms. */
 function sbService(env, path, init) {
   return sbRead(env, path, init)
     .catch((e) => { throw new Refused(e.message, 500); });
@@ -215,10 +214,6 @@ export async function handle(action, { env, request }) {
     catch { return json({ error: 'Bad request' }, 400); }
   }
 
-  // Own-property only. `name` is caller-supplied, and a bare object literal
-  // answers to 'constructor', '__proto__' and every other Object.prototype key
-  // with something truthy — which would then be called with { env, ... } and
-  // its return value serialised straight back to the caller.
   const name = String(action || body.action || '');
   const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
   if (!has(ACTIONS, name)) return json({ error: 'Unknown action' }, 404);

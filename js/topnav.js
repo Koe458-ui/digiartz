@@ -212,8 +212,6 @@
   window.dzAcClick       = dzAcClick;
   window.dzAcMenuClick   = dzAcMenuClick;
 
-  /* Named one by one on purpose: scripts/check-sections.mjs reads this file
-     to prove every panel in DZ_PANELS has the closer it claims. */
   window.dzExToggle      = function (e) { ddToggle('ex', e); };
   window.dzCmToggle      = function (e) { ddToggle('cm', e); };
   window.dzUpToggle      = function (e) { ddToggle('up', e); };

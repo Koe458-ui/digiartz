@@ -1,53 +1,18 @@
--- ============================================================================
--- digiartz — database baseline
---
--- This is a CURRENT-STATE snapshot, not a history. It was reconstructed from
--- the live catalog of the production project, and it is the single source of
--- truth for the schema: applied to an empty Supabase database it reproduces
--- the database the site runs on today.
---
--- Sections, in dependency order:
---   1  extensions            6  views              11 grants
---   2  schemas               7  functions          12 comments
---   3  sequences             8  triggers           13 configuration rows
---   4  tables + constraints  9  row level security 14 storage buckets
---   5  indexes              10 policies            15 scheduled jobs
---
--- Notes for anyone applying this by hand:
---   * Supabase's own bootstrap (the auth and storage schemas and the anon /
---     authenticated / service_role roles) must already exist.
---   * check_function_bodies is off while functions are created, because they
---     are written in name order rather than dependency order.
---   * This creates a database; it does not migrate one. It is meant for an
---     empty project. Run it against a database that already has these objects
---     and the CREATE POLICY and ADD CONSTRAINT statements will fail on the
---     ones already there.
--- ============================================================================
-
 set check_function_bodies = off;
 
--- 1 ── extensions ------------------------------------------------------------
 create extension if not exists pgcrypto      with schema extensions;
 create extension if not exists "uuid-ossp"   with schema extensions;
 create extension if not exists pg_stat_statements with schema extensions;
 create extension if not exists pg_cron;
 
--- 2 ── schemas ---------------------------------------------------------------
--- `private` holds moderation secrets. It is deliberately unreachable from the
--- API roles: no usage grant, so anon/authenticated cannot see inside it even
--- though the tables carry no policies of their own.
 create schema if not exists private;
 revoke all on schema private from anon, authenticated;
 
--- 3 ── sequences ------------------------------------------------------------
--- The other seven sequences in public are created implicitly by their tables'
--- identity columns; only these four predate identity and are named in a default.
 create sequence if not exists public.auth_attempts_id_seq as bigint increment by 1 start with 1 no cycle;
 create sequence if not exists public.chat_rate_events_id_seq as bigint increment by 1 start with 1 no cycle;
 create sequence if not exists public.dz_abuse_events_id_seq as bigint increment by 1 start with 1 no cycle;
 create sequence if not exists public.ledger_entries_seq_seq as bigint increment by 1 start with 1 no cycle;
 
--- 4 ── tables ---------------------------------------------------------------
 create table if not exists private.mod_config (
   id boolean default true not null,
   secret text not null,
@@ -1081,7 +1046,6 @@ alter sequence public.chat_rate_events_id_seq owned by public.chat_rate_events.i
 alter sequence public.dz_abuse_events_id_seq owned by public.dz_abuse_events.id;
 alter sequence public.ledger_entries_seq_seq owned by public.ledger_entries.seq;
 
--- primary keys, unique and check constraints
 alter table public.album_items add constraint album_items_pkey PRIMARY KEY (album_id, artwork_id);
 alter table public.albums add constraint albums_pkey PRIMARY KEY (id);
 alter table public.analytics_events add constraint analytics_events_pkey PRIMARY KEY (id);
@@ -1391,7 +1355,6 @@ alter table public.user_reports add constraint user_reports_status CHECK ((statu
 alter table public.user_tag_prefs add constraint user_tag_prefs_len CHECK (((char_length(tag) >= 1) AND (char_length(tag) <= 15)));
 alter table public.user_tag_prefs add constraint user_tag_prefs_norm CHECK ((tag = lower(btrim(tag))));
 
--- foreign keys
 alter table public.album_items add constraint album_items_album_id_fkey FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE CASCADE;
 alter table public.album_items add constraint album_items_artwork_id_fkey FOREIGN KEY (artwork_id) REFERENCES artworks(id) ON DELETE CASCADE;
 alter table public.albums add constraint albums_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
@@ -1478,7 +1441,6 @@ alter table public.user_reports add constraint user_reports_resolved_by_fkey FOR
 alter table public.user_reports add constraint user_reports_target_id_fkey FOREIGN KEY (target_id) REFERENCES profiles(id) ON DELETE CASCADE;
 alter table public.user_tag_prefs add constraint user_tag_prefs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
--- 5 ── indexes ---------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS album_items_artwork_idx ON public.album_items USING btree (artwork_id);
 CREATE INDEX IF NOT EXISTS albums_user_created_idx ON public.albums USING btree (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS analytics_events_owner_day_idx ON public.analytics_events USING btree (owner_id, day DESC);
@@ -1596,10 +1558,6 @@ CREATE UNIQUE INDEX promo_codes_partner_idx ON public.promo_codes USING btree (p
 CREATE UNIQUE INDEX user_bans_live_idx ON public.user_bans USING btree (user_id) WHERE (lifted_at IS NULL);
 CREATE UNIQUE INDEX user_reports_one_open_idx ON public.user_reports USING btree (reporter_id, target_id) WHERE (status = 'pending'::text);
 
--- 6 ── views ----------------------------------------------------------------
--- wallet_history runs security_invoker, so a signed-in user reads only their own
--- ledger through it. The an_* views carry no grants for the API roles at all:
--- they are reached only from the security-definer analytics functions.
 create or replace view public.an_bookmark as
  SELECT 'artwork'::text AS kind,
     b.artwork_id AS subject_id,
@@ -1807,10 +1765,8 @@ UNION ALL
     COALESCE(r.paid_at, r.decided_at, r.requested_at) AS happened_at
    FROM payout_requests r;
 
--- wallet_history has to run as the caller, or every user reads every ledger row.
 alter view public.wallet_history set (security_invoker = true);
 
--- 7 ── functions ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.albums_cap_guard()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -2116,7 +2072,7 @@ CREATE OR REPLACE FUNCTION public.cm_kick(cid uuid, target uuid)
  SET search_path TO 'public'
 AS $function$
 begin
-  perform public.cm_assert_can_act(cid, target, 2);          -- jr_mod+
+  perform public.cm_assert_can_act(cid, target, 2);
   delete from public.community_members
    where community_id = cid and user_id = target;
 end; $function$
@@ -2150,9 +2106,6 @@ declare
   v_max int := 50;
   v_n   int;
 begin
-  -- cm_join inserts with ON CONFLICT DO NOTHING, and a BEFORE trigger fires
-  -- ahead of the conflict being resolved. Re-joining a community you are
-  -- already in adds nothing, so it must not be refused at the cap.
   if exists (select 1 from public.community_members
               where community_id = new.community_id and user_id = new.user_id) then
     return new;
@@ -2176,7 +2129,7 @@ CREATE OR REPLACE FUNCTION public.cm_set_ban(cid uuid, target uuid, do_ban boole
  SET search_path TO 'public'
 AS $function$
 begin
-  perform public.cm_assert_can_act(cid, target, 3);          -- sr_mod+
+  perform public.cm_assert_can_act(cid, target, 3);
   update public.community_members
      set banned = do_ban,
          role   = case when do_ban then 'member' else role end,
@@ -2196,8 +2149,7 @@ begin
   if new_role not in ('member','jr_mod','sr_mod','admin') then
     raise exception 'CM_BAD_ROLE' using errcode='P0001';
   end if;
-  perform public.cm_assert_can_act(cid, target, 4);          -- admin+
-  -- can't grant a rank at or above your own (admins can't mint admins)
+  perform public.cm_assert_can_act(cid, target, 4);
   if public.community_rank(new_role) >= actor_rank then
     raise exception 'CM_RANK' using errcode='P0001';
   end if;
@@ -2238,7 +2190,7 @@ begin
   if minutes not in (0,5,60,1440,10080,43200) then
     raise exception 'CM_BAD_DURATION' using errcode='P0001';
   end if;
-  perform public.cm_assert_can_act(cid, target, 2);          -- jr_mod+
+  perform public.cm_assert_can_act(cid, target, 2);
   update public.community_members
      set timeout_until = case when minutes = 0 then null
                               else now() + (minutes || ' minutes')::interval end
@@ -2368,11 +2320,6 @@ begin
          coalesce(x.earned, '{}'::jsonb)
     from public.profiles p
     left join public.promo_codes c on c.partner_id = p.id
-    -- pc, not a bare table name: partner_id is also this function's first OUT
-    -- parameter, and an unqualified reference to it here resolves to the
-    -- variable rather than the column. Postgres calls that ambiguous and
-    -- refuses the whole function at run time — which is a PARTNERS tab that
-    -- shows an error and no list.
     left join lateral (
       select count(*) as n,
              jsonb_object_agg(t.currency, t.amt) as earned
@@ -2403,9 +2350,6 @@ begin
     raise exception 'not allowed';
   end if;
 
-  -- Tiers, live. Counted through the expiry rather than off subscription_tier,
-  -- so a lapsed Max is not reported as a Max — the column still says 'max' the
-  -- morning after, which is the whole reason dz_effective_tier() exists.
   select jsonb_build_object(
            'lite',    count(*) filter (where tier = 'lite'),
            'premium', count(*) filter (where tier = 'premium'),
@@ -2436,9 +2380,6 @@ begin
              'jobs',        (select count(*) from public.jobs             where created_at >= current_date)))
     into v_content;
 
-  -- Devices over the last 24 hours of recorded activity. 'unknown' is reported
-  -- rather than folded into desktop: a bucket that quietly absorbs what the
-  -- client could not tell us is a bucket that hides a broken client.
   select coalesce(jsonb_object_agg(device, n), '{}'::jsonb)
     into v_dev
     from (select device, count(distinct viewer_key)::bigint as n
@@ -3296,14 +3237,9 @@ begin
 
   if not public.dz_rate_ok('an:' || v_key, 240, 60) then return; end if;
 
-  -- 'resources' is what the section is called in the interface and 'resource'
-  -- is what every table has always stored. One spelling from here down.
   v_scope := lower(coalesce(p_scope, 'artwork'));
   if v_scope = 'resources' then v_scope := 'resource'; end if;
 
-  -- Who this lands on. Each kind answers from its own table, and only a row
-  -- the public can actually reach counts — a draft nobody can open cannot
-  -- have been liked from outside.
   if p_subject is not null and v_scope = 'artwork' then
     select a.user_id into v_owner from public.artworks a
      where a.id = p_subject and a.status = 'approved';
@@ -3349,11 +3285,6 @@ begin
     v_scope := 'artwork';
   end if;
 
-  -- A cred row exists only so the receiver's dashboard hears about it the
-  -- moment it happens; the names it then shows come from the reader, off
-  -- profile_creds itself. So this row carries no identity — it does not need
-  -- any to do its job. The hash still dedups one cred per giver per receiver
-  -- per day.
   if p_event = 'cred' then
     v_actor := null;
     v_key := 'c:' || md5('dzcred|' || v_key);
@@ -3405,18 +3336,15 @@ declare
   v_sig    text;
   v_calc   text;
 begin
-  -- only approved inserts are gated; pending/rejected need no ticket
   if NEW.status is distinct from 'approved' then return NEW; end if;
 
-  -- no jwt means a server/service-role context, which is already trusted
   if v_uid is null then return NEW; end if;
 
   select secret into v_secret from private.mod_config where id = true;
-  if v_secret is null or v_secret = '' then return NEW; end if;   -- inert
+  if v_secret is null or v_secret = '' then return NEW; end if;
 
   if public.is_dev() then NEW.mod_token := null; return NEW; end if;
 
-  -- ticket shape: exp.jti.hexsig, signed over uid.exp.jti
   parts := string_to_array(coalesce(NEW.mod_token, ''), '.');
   if array_length(parts, 1) is distinct from 3 then
     NEW.status := 'pending'; NEW.mod_token := null; return NEW;
@@ -3438,13 +3366,13 @@ begin
     begin
       insert into private.used_mod_tokens (jti, user_id) values (v_jti, v_uid);
       NEW.mod_token := null;
-      return NEW;                                   -- valid, stays approved
+      return NEW;
     exception when unique_violation then
-      NEW.status := 'pending'; NEW.mod_token := null; return NEW;   -- replay
+      NEW.status := 'pending'; NEW.mod_token := null; return NEW;
     end;
   end if;
 
-  NEW.status := 'pending'; NEW.mod_token := null; return NEW;       -- bad/expired
+  NEW.status := 'pending'; NEW.mod_token := null; return NEW;
 end;
 $function$
 ;
@@ -3524,10 +3452,6 @@ declare v_uid uuid := auth.uid();
 begin
   if v_uid is null then return new; end if;
   if public.dz_is_banned(v_uid) then
-    -- Worded to survive safeErr in js/app-core.js, which suppresses anything
-    -- that reads like a database error and shows the rest to the member. The
-    -- reason is not quoted back: it is written for the audit log and for
-    -- support, not as a message to argue with.
     raise exception 'Your account is suspended. Contact DigiArtzsupport@gmail.com'
       using errcode = 'P0001';
   end if;
@@ -3546,9 +3470,6 @@ declare
   v_id      uuid;
 begin
   if not public.dz_may_moderate(auth.uid(), p_target) then
-    -- One message for "you are not a moderator" and for "not that member".
-    -- A partner probing which accounts refuse learns nothing from the reply
-    -- about who the other partners are.
     raise exception 'not allowed';
   end if;
   if coalesce(char_length(btrim(p_reason)), 0) < 2 then
@@ -3591,7 +3512,6 @@ declare
   newv     text;
   oldv     text;
 begin
-  -- TG_ARGV comes in fours: column, min, max, 'null-ok' or 'required'
   i := 0;
   while i < TG_NARGS loop
     col      := TG_ARGV[i];
@@ -3606,7 +3526,6 @@ begin
       oldv := null;
     end if;
 
-    -- only the field actually being written is judged
     if TG_OP = 'INSERT' or newv is distinct from oldv then
       if newv is null then
         if not nullable then
@@ -3988,11 +3907,11 @@ CREATE OR REPLACE FUNCTION public.dz_download_limit(p_tier text)
  SET search_path TO 'public', 'pg_temp'
 AS $function$
   SELECT CASE lower(coalesce(p_tier, 'guest'))
-    WHEN 'dev'     THEN 100000   -- staff, effectively unlimited
+    WHEN 'dev'     THEN 100000
     WHEN 'max'     THEN 20
     WHEN 'premium' THEN 15
     WHEN 'lite'    THEN 10
-    ELSE 5                       -- signed-in free user
+    ELSE 5
   END;
 $function$
 ;
@@ -4233,8 +4152,6 @@ begin
     from public.profiles p where p.id = v_id;
 
   if v_role in ('admin', 'dev') then
-    -- Not a promotion. Staff already outrank a partner everywhere in this
-    -- file, and writing 'partner' over 'admin' would quietly demote them.
     raise exception 'That account is already staff';
   end if;
   if v_role = 'partner' then
@@ -4412,9 +4329,6 @@ AS $function$
                        - (ceil(extract(epoch from (p.subscription_expires_at - now()))
                                / 2678400.0)::double precision * interval '31 days')
              end as p_start
-        -- left join, so an id with no profile row still answers "no plan"
-        -- rather than answering nothing and leaving the caller's record
-        -- unassigned.
         from (select p_user as uid) s
         left join public.profiles p on p.id = s.uid
     ) q
@@ -4433,9 +4347,6 @@ declare
   v_used  integer;
   v_staff boolean := false;
 begin
-  -- Nested rather than one condition: plpgsql evaluates a whole expression at
-  -- once, so a single "and" would still reach for new.section on the jobs
-  -- table, which has no such column.
   if TG_TABLE_NAME = 'scheduled_sections' then
     if coalesce(new.section, '') <> 'jobs' then
       return new;
@@ -4465,9 +4376,6 @@ begin
   select count(*) into v_used from public.jobs
    where user_id = v_uid and created_at >= v_plan.period_start;
 
-  -- Scheduling asks for a slot it has not spent yet, so the postings already
-  -- queued count against it. The publish itself must not count the queued row
-  -- it is in the middle of turning into a posting.
   if TG_TABLE_NAME = 'scheduled_sections' then
     select v_used + count(*) into v_used from public.scheduled_sections
      where user_id = v_uid and section = 'jobs' and publish_error is null;
@@ -4522,9 +4430,6 @@ begin
                               'remaining', 0, 'allowed', false, 'reason', 'plan');
   end if;
 
-  -- A posting waiting on a publish date has already spent its slot. Counting
-  -- it here is what stops someone scheduling four and being told, four times
-  -- over and long after the fact, that three of them could not be published.
   select count(*) into v_used
     from (
       select 1 from public.jobs
@@ -4590,11 +4495,11 @@ begin
         coalesce(r.provider_txn_id,'') || '|' || coalesce(r.provider_amount::text,''),
         'UTF8')), 'hex');
     if v_calc <> r.entry_hash then
-      return r.seq;   -- first broken link
+      return r.seq;
     end if;
     v_prev := r.entry_hash;
   end loop;
-  return null;        -- intact
+  return null;
 end $function$
 ;
 
@@ -4644,10 +4549,6 @@ begin
     raise exception 'This listing has no downloadable file';
   end if;
 
-  -- One entitlement rule, not two. This function used to carry its own copy of
-  -- the owner / free / paid test, and the copy had already drifted: it read a
-  -- free listing as downloadable whatever its visibility, and counted any paid
-  -- payment carrying the item id regardless of kind.
   if not public.dz_market_owns(p_item) then
     raise exception 'Purchase required';
   end if;
@@ -4787,10 +4688,6 @@ AS $function$
     when p_actor is null or p_target is null then false
     when p_actor = p_target                  then false
     when public.dz_is_staff(p_actor)         then not public.dz_is_staff(p_target)
-    -- dz_is_ordinary, not "role is null". Written as the latter, a partner
-    -- could moderate nobody at all on the live database, where every ordinary
-    -- member's role is the string 'guest' — the ban engine would have shipped
-    -- refusing every target a partner was given the power to act on.
     when public.dz_is_partner(p_actor)       then public.dz_is_ordinary(p_target)
     else false
   end;
@@ -4815,8 +4712,6 @@ begin
     raise exception 'search for a username, an email or a user id';
   end if;
 
-  -- A uuid is matched as a uuid; anything else is matched as text, and the
-  -- leading @ people paste with a handle is dropped rather than searched for.
   begin
     v_id := v_q::uuid;
   exception when others then
@@ -4824,28 +4719,6 @@ begin
   end;
   v_q := ltrim(v_q, '@');
 
-  -- WHAT COMES BACK DEPENDS ON WHO ASKED, and this is the second half of the
-  -- isolation rule rather than a nicety.
-  --
-  -- Staff get the whole row, including the address, because staff are the
-  -- people who answer support mail about an account.
-  --
-  -- A partner gets neither the email nor the role, and both omissions matter:
-  --
-  --   role would have made this an oracle for exactly the thing partners are
-  --   not allowed to see. Look up handles, read the role back, and you have
-  --   the list of who the other partners are — the isolation rule defeated
-  --   through the moderation tool rather than through the analytics.
-  --
-  --   email would have turned a username into an address. A partner searching
-  --   BY an address already knows it; being handed one they did not have is a
-  --   different thing, and it is address harvesting with a moderator's badge on.
-  --
-  -- can_moderate is the answer a moderator actually needs, and it is computed
-  -- by dz_may_moderate() rather than inferred from a role on this side. A
-  -- partner is told they cannot act on this account. They are not told whether
-  -- that is because it is an admin, a dev, or a fellow partner — and there is
-  -- no field in this result from which they could work it out.
   return query
   select p.id,
          p.username,
@@ -4996,22 +4869,12 @@ begin
   select partner_id into v_part from public.promo_codes
    where id = new.promo_code_id and is_active;
   if v_part is null then return new; end if;
-  -- Attribution is not a payment. A code belonging to somebody who is no
-  -- longer a partner stays on the sale for the record and earns nothing.
   if not public.dz_is_partner(v_part) then return new; end if;
-  -- Belt and braces on top of dz_promo_resolve(): the code cannot pay its own
-  -- owner, whichever side of the sale they were on.
   if v_part = new.seller_id or v_part = new.buyer_id then return new; end if;
 
   select * into cfg from public.platform_tax_config where id = 1;
   v_amt := round(new.gross_amount::numeric * cfg.partner_market_bps / 10000);
 
-  -- The commission is the ceiling. On a sale where the deductions had already
-  -- eaten into the platform's cut — dz_earning_apply_deductions() reduces
-  -- fee_amount rather than let the statutory pieces go short — there may be
-  -- less than five points left, and the partner gets what there is. This is
-  -- the line that guarantees the seller's net is untouched: the money can only
-  -- come from fee_amount, which has already been taken off the top.
   v_amt := least(v_amt, new.fee_amount);
   if v_amt <= 0 then return new; end if;
 
@@ -5029,11 +4892,6 @@ begin
     v_rate)
   on conflict (earning_id) where earning_id is not null do nothing;
 
-  -- Only when a row was actually written. FOUND is false on the conflict path,
-  -- and without this test a replayed webhook — which writes no commission,
-  -- because the unique index refuses it — still walked the counter up, so a
-  -- code that had converted twice reported three uses and the dashboard's
-  -- conversion list did not match its own headline number.
   if found then
     update public.promo_codes
        set usage_count = usage_count + 1
@@ -5069,16 +4927,10 @@ begin
 
   select * into cfg from public.platform_tax_config where id = 1;
 
-  -- charge = list * (10000 - discount) / 10000, so list = charge * 10000 /
-  -- (10000 - discount). A discount of 100% would divide by zero and is refused
-  -- rather than guessed at.
   if cfg.promo_sub_discount_bps >= 10000 then return new; end if;
   v_list := round(new.amount::numeric * 10000 / (10000 - cfg.promo_sub_discount_bps));
   v_amt  := round(v_list::numeric * cfg.partner_sub_bps / 10000);
 
-  -- Never more than came in. At the briefed rates the charge is 10% of list
-  -- and the partner takes 2.5 points of list, which is a quarter of it, so
-  -- this bites only if somebody edits the rates into an impossible shape.
   v_amt := least(v_amt, new.amount);
   if v_amt <= 0 then return new; end if;
 
@@ -5096,9 +4948,6 @@ begin
     v_rate)
   on conflict (payment_id) where payment_id is not null do nothing;
 
-  -- Same guard as the marketplace trigger above, and it matters more here:
-  -- this one hangs off a status transition, and a payment can be walked back
-  -- to 'created' and settled again by a provider retry.
   if found then
     update public.promo_codes
        set usage_count = usage_count + 1
@@ -5148,8 +4997,6 @@ begin
           or (tg_table_name = 'payments'             and payment_id = new.id));
   get diagnostics v_rows = row_count;
 
-  -- The counter follows the ledger, as it does on the way in. A code whose one
-  -- sale was charged back reads as zero uses, which is the truth.
   if v_rows > 0 then
     update public.promo_codes c
        set usage_count = greatest(c.usage_count - v_rows, 0)
@@ -5168,13 +5015,6 @@ CREATE OR REPLACE FUNCTION public.dz_partner_wallet()
 AS $function$
 declare v_has boolean;
 begin
-  -- Partner only, and the same guard as dz_partner_ledger() and
-  -- dz_promo_mine() beside it. This admitted staff for a while, which was
-  -- worse than useless: nothing calls it as staff — an admin reads
-  -- dz_admin_partners() — so the branch was dead, and a dead branch saying
-  -- "staff may read a partner's wallet" is a sentence about this system that
-  -- is not true. The three functions a partner's own page is built from now
-  -- answer the same question the same way.
   if not public.dz_is_partner(auth.uid()) then
     raise exception 'not allowed';
   end if;
@@ -5260,8 +5100,6 @@ begin
     join public.fx_rates f on f.code = p.currency
     where p.kind = 'subscription' and p.status = 'paid'
   ),
-  -- Owed to partners or already sent to them. Not ours, on either side of the
-  -- payout — the same reasoning that keeps a seller's net out of this figure.
   prt as (
     select coalesce(sum(c.amount_inr), 0)::bigint as amt
     from public.partner_commissions c
@@ -5435,9 +5273,6 @@ begin
   if not found or not r.is_active then
     return jsonb_build_object('ok', false, 'error', 'No such code');
   end if;
-  -- The code stops working the moment the role does. A demoted partner's code
-  -- is not deleted — the commissions already earned under it stay attributable
-  -- — it simply stops taking new business.
   if not public.dz_is_partner(r.partner_id) then
     return jsonb_build_object('ok', false, 'error', 'No such code');
   end if;
@@ -5449,9 +5284,6 @@ begin
     'ok', true,
     'id', r.id,
     'code', v_code,
-    -- A marketplace code changes nothing about what the buyer pays. It is an
-    -- attribution, not a discount, and saying so here keeps the checkout from
-    -- drawing a discount line that would not appear on the charge.
     'discount_bps', case when p_kind = 'subscription' then 9000 else 0 end);
 end $function$
 ;
@@ -5464,8 +5296,6 @@ CREATE OR REPLACE FUNCTION public.dz_protect_item_view_count()
 AS $function$
 begin
   if coalesce(current_setting('app.allow_view_count_write', true), '') <> '1' then
-    -- an owner can update their own listing; that must not include inventing
-    -- an audience for it
     if TG_OP = 'INSERT' then NEW.view_count := 0; else NEW.view_count := OLD.view_count; end if;
   elsif TG_OP = 'UPDATE' then
     NEW.updated_at := OLD.updated_at;
@@ -5562,7 +5392,6 @@ BEGIN
   ON CONFLICT (bucket, window_start) DO UPDATE SET hits = public.rate_hits.hits + 1
   RETURNING hits INTO v_hits;
 
-  -- opportunistic sweep, keeps the table from growing without a cron job
   IF random() < 0.005 THEN
     DELETE FROM public.rate_hits WHERE window_start < now() - interval '1 hour';
   END IF;
@@ -5588,7 +5417,6 @@ begin
     do update set hits = public.rate_hits.hits + 1
   returning hits into v_hits;
 
-  -- opportunistic sweep so the table cannot grow without bound
   if random() < 0.01 then
     delete from public.rate_hits where window_start < now() - interval '1 day';
   end if;
@@ -5732,15 +5560,6 @@ begin
     raise exception 'unknown status';
   end if;
 
-  -- A partner's queue is the queue they can act on, and nothing else.
-  --
-  -- Without the dz_may_moderate() line a report filed against an admin, a dev
-  -- or a fellow partner would appear in every partner's queue, naming them —
-  -- which is the same leak dz_mod_find() would have been, arriving by the
-  -- other door. Filtering it here also happens to be the better queue: a
-  -- partner is never shown a row whose buttons would refuse them.
-  --
-  -- Staff see every row, including reports about each other.
   return query
   select r.id, r.reason, r.details, r.status, r.created_at,
          r.target_id, t.username, public.dz_is_banned(r.target_id),
@@ -5777,9 +5596,6 @@ begin
     return jsonb_build_object('allowed', false, 'reason', 'auth');
   end if;
 
-  -- burst guard first: a refusal has to be the cheapest answer we can give.
-  -- 30 a minute per account is far above a person clicking a button (the top
-  -- tier only grants 20 files a day) and far below what a script needs.
   if not public.dz_rate_ok('dl:u:' || v_uid::text, 30, 60) then
     return jsonb_build_object('allowed', false, 'reason', 'rate', 'retry_after', 60);
   end if;
@@ -5794,12 +5610,10 @@ begin
     return jsonb_build_object('allowed', false, 'reason', 'not_found');
   end if;
 
-  -- your own artwork never costs quota
   if v_owner = v_uid then
     return jsonb_build_object('allowed', true, 'full', true, 'own', true);
   end if;
 
-  -- mirrors the read policy on artworks
   if v_status is distinct from 'approved' then
     return jsonb_build_object('allowed', false, 'reason', 'not_found');
   end if;
@@ -5807,11 +5621,8 @@ begin
   v_key   := 'u:' || v_uid::text;
   v_tier  := coalesce(public.dz_effective_tier(v_uid), 'guest');
   v_limit := public.dz_download_limit(v_tier);
-  -- the untouched original is Premium, Max and dev only. Lite buys a bigger
-  -- daily allowance, not a bigger file.
   v_full  := v_tier in ('premium', 'max', 'dev');
 
-  -- serialise per viewer so parallel clicks cannot both slip past the check
   perform pg_advisory_xact_lock(hashtext(v_key));
 
   select count(*) into v_used from public.download_events
@@ -6012,14 +5823,7 @@ begin
     return jsonb_build_object('ok', true, 'changed', false);
   end if;
 
-  -- 'guest', not null: a revoked partner should be indistinguishable from
-  -- every other member, and on this database that is what every other member
-  -- says. dz_is_ordinary() accepts either, so this is about not leaving one
-  -- odd row behind rather than about correctness.
   update public.profiles set role = 'guest' where id = p_user;
-  -- The code stops taking business; it is not deleted, because every
-  -- commission row points at it and the history has to stay readable. Nothing
-  -- already earned is touched, and a balance stays withdrawable.
   update public.promo_codes set is_active = false where partner_id = p_user;
 
   perform public.dz_audit('revoke_partner', p_user, '{}'::jsonb);
@@ -6058,7 +5862,6 @@ begin
   if NEW.status is distinct from 'approved' then return NEW; end if;
   if v_uid is null then return NEW; end if;
 
-  -- optional: the column carrying the image a ticket would have covered
   if TG_NARGS >= 1 then
     v_imgcol := TG_ARGV[0];
     execute format('select ($1).%I::text', v_imgcol) into v_img using NEW;
@@ -6278,8 +6081,6 @@ begin
   if not public.dz_rate_ok('all:' || v_key, 240, 300) then
     raise exception 'Too many changes in a short time — wait a moment and try again' using errcode='P0001';
   end if;
-  -- NEW is NULL in a BEFORE DELETE trigger and a BEFORE trigger returning NULL
-  -- cancels the statement, so deletes must hand back OLD.
   if TG_OP = 'DELETE' then return old; end if;
   return new;
 end $function$
@@ -6380,21 +6181,19 @@ CREATE OR REPLACE FUNCTION public.friendships_guard()
  SET search_path TO 'public'
 AS $function$
 BEGIN
-  NEW.requester_id := OLD.requester_id;  -- the pair is immutable
+  NEW.requester_id := OLD.requester_id;
   NEW.addressee_id := OLD.addressee_id;
   NEW.created_at   := OLD.created_at;
   NEW.updated_at   := now();
   IF NEW.status = OLD.status AND NEW.blocked_by IS NOT DISTINCT FROM OLD.blocked_by THEN
-    RETURN NEW;  -- no state change
+    RETURN NEW;
   END IF;
-  -- accept: pending → accepted, recipient only
   IF OLD.status = 'pending' AND NEW.status = 'accepted' THEN
     IF auth.uid() <> OLD.addressee_id THEN
       RAISE EXCEPTION 'Only the recipient can accept a friend request';
     END IF;
     NEW.blocked_by := NULL; RETURN NEW;
   END IF;
-  -- block: any non-blocked state → blocked, participant only, blocker = self
   IF NEW.status = 'blocked' AND OLD.status <> 'blocked' THEN
     IF auth.uid() <> OLD.requester_id AND auth.uid() <> OLD.addressee_id THEN
       RAISE EXCEPTION 'Not a participant';
@@ -6679,7 +6478,6 @@ declare
   base_name text;
     final_name text;
     begin
-      -- Prefer an explicit username (email signup), then provider name, then email local-part
         base_name := coalesce(
             nullif(new.raw_user_meta_data->>'username',''),
                 nullif(new.raw_user_meta_data->>'full_name',''),
@@ -6687,13 +6485,11 @@ declare
                         split_part(new.email,'@',1),
                             'user'
                               );
-                                -- Match the client's charset rules (letters, digits, _ .) and cap length
                                   base_name := regexp_replace(base_name, '[^a-zA-Z0-9_.]', '', 'g');
                                     if base_name = '' then base_name := 'user'; end if;
                                       base_name := left(base_name, 30);
 
                                         final_name := base_name;
-                                          -- Ensure uniqueness with a short random suffix if taken
                                             while exists (select 1 from public.profiles where username = final_name) loop
                                                 final_name := left(base_name, 24) || '_' || substr(md5(random()::text), 1, 4);
                                                   end loop;
@@ -6773,9 +6569,6 @@ begin
     if TG_OP = 'INSERT' then NEW.download_count := 0; else NEW.download_count := OLD.download_count; end if;
   else v_counter := true; end if;
 
-  -- artworks_touch has already set updated_at = now(). Put it back: somebody
-  -- looking at a piece is not the artist revising it, and the viewer reads
-  -- that date.
   if v_counter and TG_OP = 'UPDATE' then
     NEW.updated_at := OLD.updated_at;
   end if;
@@ -7262,14 +7055,12 @@ begin
     end if;
   end if;
 
-  -- the record
   insert into public.item_view_dedup (kind, subject_id, viewer_key, day)
   values (p_kind, p_subject, v_key, current_date)
   on conflict do nothing;
 
   if not found then return; end if;
 
-  -- the dimensions, which the dashboard's breakdown charts read
   if auth.uid() is null or auth.uid() <> v_owner then
     insert into public.analytics_events
       (owner_id, actor_id, viewer_key, scope, subject_id, event,
@@ -7286,9 +7077,6 @@ begin
     on conflict do nothing;
   end if;
 
-  -- the cache the public grid reads. Last, and in its own block: a row that
-  -- fails a NOT VALID check it predates must not throw away the two writes
-  -- above, and must not fail the caller either.
   begin
     perform set_config('app.allow_view_count_write', '1', true);
     if p_kind = 'marketplace' then
@@ -7346,7 +7134,6 @@ CREATE OR REPLACE FUNCTION public.search_artworks(q text, lim integer DEFAULT 60
  SET search_path TO 'public'
 AS $function$
   with n as (
-    -- neutralise LIKE wildcards so a literal % or _ can't match everything
     select lower(btrim(coalesce(q,''))) as raw,
            replace(replace(replace(lower(btrim(coalesce(q,''))),'\','\\'),'%','\%'),'_','\_') as pat
   )
@@ -7503,7 +7290,6 @@ AS $function$
 $function$
 ;
 
--- Check constraints that call a function, and so have to wait for it.
 alter table public.artworks add constraint art_credits_len CHECK (arr_items_within(credits, 2, 300));
 alter table public.artworks add constraint art_links_len CHECK (arr_items_within(external_links, 5, 200));
 alter table public.artworks add constraint art_software_len CHECK (arr_items_within(software_list, 2, 50));
@@ -7514,7 +7300,6 @@ alter table public.resources add constraint res_compat_sw_len CHECK (arr_items_w
 alter table public.resources add constraint res_links_len CHECK (arr_items_within(external_links, 5, 200));
 alter table public.resources add constraint res_tags_len CHECK (arr_items_within(tags, 1, 30));
 
--- 8 ── triggers -------------------------------------------------------------
 CREATE TRIGGER albums_cap BEFORE INSERT ON public.albums FOR EACH ROW EXECUTE FUNCTION albums_cap_guard();
 CREATE TRIGGER analytics_goals_cap BEFORE INSERT ON public.analytics_goals FOR EACH ROW EXECUTE FUNCTION dz_analytics_goal_cap();
 CREATE TRIGGER artworks_touch BEFORE UPDATE ON public.artworks FOR EACH ROW EXECUTE FUNCTION dz_touch_updated_at();
@@ -7736,8 +7521,6 @@ CREATE TRIGGER zz_protect_view_count BEFORE INSERT OR UPDATE ON public.marketpla
 CREATE TRIGGER zz_protect_view_count BEFORE INSERT OR UPDATE ON public.resources FOR EACH ROW EXECUTE FUNCTION dz_protect_item_view_count();
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 9 ── row level security ----------------------------------------------------
--- Every table in public has RLS on, without exception.
 do $$
 declare t text;
 begin
@@ -7746,7 +7529,6 @@ begin
   end loop;
 end $$;
 
--- 10 ── policies -------------------------------------------------------------
 create policy album_items_delete_own on public.album_items as PERMISSIVE for DELETE to public using ((EXISTS ( SELECT 1
    FROM albums al
   WHERE ((al.id = album_items.album_id) AND (al.user_id = auth.uid())))));
@@ -7909,7 +7691,6 @@ create policy utp_delete_own on public.user_tag_prefs as PERMISSIVE for DELETE t
 create policy utp_insert_own on public.user_tag_prefs as PERMISSIVE for INSERT to public with check ((user_id = auth.uid()));
 create policy utp_select_own on public.user_tag_prefs as PERMISSIVE for SELECT to public using ((user_id = auth.uid()));
 
--- storage.objects policies
 create policy "avatars delete own" on storage.objects as PERMISSIVE for DELETE to authenticated using (((bucket_id = 'koe-media'::text) AND ((storage.foldername(name))[1] = 'avatars'::text) AND ((storage.foldername(name))[2] = (auth.uid())::text)));
 create policy "avatars insert own" on storage.objects as PERMISSIVE for INSERT to authenticated with check (((bucket_id = 'koe-media'::text) AND ((storage.foldername(name))[1] = 'avatars'::text) AND ((storage.foldername(name))[2] = (auth.uid())::text)));
 create policy "banners delete own" on storage.objects as PERMISSIVE for DELETE to authenticated using (((bucket_id = 'koe-media'::text) AND ((storage.foldername(name))[1] = 'banners'::text) AND ((storage.foldername(name))[2] = (auth.uid())::text)));
@@ -7923,11 +7704,6 @@ create policy "originals select own folder" on storage.objects as PERMISSIVE for
 create policy "originals update own folder" on storage.objects as PERMISSIVE for UPDATE to authenticated using (((bucket_id = 'koe-originals'::text) AND (((storage.foldername(name))[2] = (auth.uid())::text) OR is_dev()))) with check (((bucket_id = 'koe-originals'::text) AND (((storage.foldername(name))[2] = (auth.uid())::text) OR is_dev())));
 create policy storage_user_upload_own_folder on storage.objects as PERMISSIVE for INSERT to authenticated with check (((bucket_id = 'koe-media'::text) AND (((storage.foldername(name))[2] = (auth.uid())::text) OR is_dev())));
 
--- 11 ── grants ---------------------------------------------------------------
--- Supabase's default privileges hand anon and authenticated full DML on every
--- new object in public, so the baseline takes that back first and then grants
--- exactly what the site uses. Dropping these revokes silently opens up every
--- table in the schema.
 revoke all on all tables in schema public from anon, authenticated, service_role;
 revoke all on all sequences in schema public from anon, authenticated, service_role;
 revoke execute on all functions in schema public from public, anon, authenticated, service_role;
@@ -7935,8 +7711,6 @@ revoke all on all tables in schema private from anon, authenticated, service_rol
 
 grant usage, select, update on all sequences in schema public to anon, authenticated, service_role;
 
--- service_role is the edge functions' key: everything, except the right to
--- rewrite the append-only ledger.
 grant all on public.album_items, public.albums, public.an_bookmark, public.an_download to service_role;
 grant all on public.an_item, public.an_like, public.an_view, public.analytics_events to service_role;
 grant all on public.analytics_goals, public.artwork_bookmarks, public.artwork_download_dedup, public.artwork_file to service_role;
@@ -7960,7 +7734,6 @@ grant all on public.user_tag_prefs, public.wallet_history to service_role;
 grant all on public.ledger_entries to service_role;
 revoke update, delete on public.ledger_entries from service_role;
 
--- anon
 grant SELECT on public.album_items, public.albums, public.artwork_image, public.artworks to anon;
 grant SELECT on public.blog_image, public.blog_posts, public.comics, public.comments to anon;
 grant SELECT on public.fx_rates, public.item_comments, public.jobs, public.marketplace_image to anon;
@@ -7968,7 +7741,6 @@ grant SELECT on public.notifications, public.profile_banner_image, public.profil
 grant SELECT on public.resources_image, public.settings to anon;
 grant all on public.wallet_history to anon;
 
--- authenticated
 grant INSERT, UPDATE, DELETE on public.marketplace_items to authenticated;
 grant INSERT on public.user_reports to authenticated;
 grant SELECT, DELETE on public.community_members to authenticated;
@@ -7989,10 +7761,6 @@ grant SELECT on public.payments, public.payout_methods, public.payout_requests, 
 grant SELECT on public.seller_tax, public.settings to authenticated;
 grant all on public.wallet_history to authenticated;
 
--- Column grants. These are the real read model for the tables below: `profiles`
--- and `marketplace_items` have no table-wide select for the API roles, so the
--- column list is the whole of what a client can see (no profiles.email, no
--- unpublished marketplace_items.price_cents for anon).
 grant INSERT (about_company, experience_level, years_experience, openings, responsibilities, requirements, required_skills, nice_to_have_skills, benefits, work_mode, timezone, working_hours, schedule, start_date, contract_duration, application_instructions, application_materials, application_questions, portfolio_required, resume_required, cover_letter_required, visibility, featured) on public.jobs to authenticated;
 grant INSERT (content_type, related_artworks, related_items, external_refs, visibility, featured, author_bio, seo_title, seo_description, mod_token) on public.blog_posts to authenticated;
 grant INSERT (extra) on public.scheduled_uploads to authenticated;
@@ -8022,10 +7790,6 @@ grant UPDATE (summary, resource_type, subcategory, commercial_use, attribution_r
 grant UPDATE (summary, subject_matter, medium, software_list, license, commercial_use, attribution_required, modification_allowed, credits, process_notes, external_links, comments_allowed, visibility, featured, seo_title, seo_description, slug, file_ext, file_size, width, height, updated_at) on public.artworks to authenticated;
 grant UPDATE (username, bio, avatar_url, avatar_storage_path, avatar_updated_at, banner_url, banner_storage_path, banner_updated_at, social_links, display_name, likes_public, bookmarks_public) on public.profiles to authenticated;
 
--- Execute grants. PUBLIC still holds execute on the helpers and read-only
--- RPCs below; everything else is reachable only by the named roles.
-
--- to PUBLIC, anon, authenticated, service_role
 grant execute on function public.arr_items_within(a text[], lo integer, hi integer) to PUBLIC, anon, authenticated, service_role;
 grant execute on function public.can_post_community(cid uuid) to PUBLIC, anon, authenticated, service_role;
 grant execute on function public.can_read_community(cid uuid) to PUBLIC, anon, authenticated, service_role;
@@ -8078,7 +7842,6 @@ grant execute on function public.search_artworks(q text, lim integer, off intege
 grant execute on function public.xp_level_thresholds() to PUBLIC, anon, authenticated, service_role;
 grant execute on function public.xp_to_level(xp integer) to PUBLIC, anon, authenticated, service_role;
 
--- to anon, authenticated, service_role
 grant execute on function public.dz_analytics_track(p_event text, p_subject uuid, p_scope text, p_owner uuid, p_source text, p_ref text, p_device text, p_country text, p_term text, p_anon_key text) to anon, authenticated, service_role;
 grant execute on function public.dz_captcha_required() to anon, authenticated, service_role;
 grant execute on function public.dz_market_download(p_item uuid) to anon, authenticated, service_role;
@@ -8091,7 +7854,6 @@ grant execute on function public.get_user_liked_artworks(target uuid, lim intege
 grant execute on function public.get_xp_leaderboard(lim integer) to anon, authenticated, service_role;
 grant execute on function public.register_item_view(p_kind text, p_subject uuid, p_anon_key text, p_source text, p_ref text, p_device text, p_country text) to anon, authenticated, service_role;
 
--- to authenticated, service_role
 grant execute on function public.cm_create(p_name text, p_desc text) to authenticated, service_role;
 grant execute on function public.cm_join(p_name text, p_code text) to authenticated, service_role;
 grant execute on function public.cm_kick(cid uuid, target uuid) to authenticated, service_role;
@@ -8131,7 +7893,6 @@ grant execute on function public.dz_wallet_summary() to authenticated, service_r
 grant execute on function public.is_dev() to authenticated, service_role;
 grant execute on function public.my_community_rank(cid uuid) to authenticated, service_role;
 
--- to service_role
 grant execute on function public.albums_cap_guard() to service_role;
 grant execute on function public.apply_merit_penalty() to service_role;
 grant execute on function public.cm_assert_can_act(cid uuid, target uuid, need integer) to service_role;
@@ -8201,7 +7962,6 @@ grant execute on function public.sync_profile_cred_count() to service_role;
 grant execute on function public.sync_profile_username() to service_role;
 grant execute on function public.user_tag_prefs_cap_guard() to service_role;
 
--- 12 ── comments -------------------------------------------------------------
 comment on column public.artworks.description is 'Optional long-form description of the artwork, shown in the artwork modal and used for SEO/structured data. NULL for artworks uploaded before this field existed.';
 comment on column public.communities.plan_backed is 'True when this community exists because its owner was on Max. It stays up for three days after the subscription lapses and is locked after that. False is a community earned with artist level 100, which no subscription can take away.';
 comment on column public.fx_rates.inr_rate is 'Rupees per one major unit of this currency. Maintain as a DIRECT rate - nothing in this schema converts through a third currency any more.';
@@ -8222,9 +7982,6 @@ comment on table public.partner_commissions is 'A partner''s whole wallet. There
 comment on table public.promo_codes is 'No RLS policy grants a read. A partner reads their own code through dz_promo_mine(); a buyer never reads this table at all, they type a code and dz_promo_resolve() answers yes or no. Selecting the table would list every partner''s code to every partner, which is the isolation rule this feature exists under.';
 comment on table public.subscription_prices is 'Local prices per currency, in minor units (JPY in whole yen). Read by the checkout backends on the service role. Never exposed to a client, and never derived from a rate.';
 
--- 13 ── configuration rows ----------------------------------------------------
--- Pricing, payout windows, FX and the reserved-name list are configuration the
--- site reads at runtime, so they belong with the schema, not with user data.
 insert into public.reserved_names (name, mode, reason) values
   ('admin', 'exact', 'implies the site is speaking'),
   ('administrator', 'exact', 'implies the site is speaking'),
@@ -8337,8 +8094,6 @@ insert into public.fx_rates (code, inr_rate) values
   ('USD', 83.33333333)
 on conflict (code) do nothing;
 
--- The auth-attempt hashing key and the moderation HMAC key are generated here
--- rather than checked in, so each database gets its own.
 insert into public.dz_secrets (name, value)
 select 'auth_attempt_key', encode(extensions.gen_random_bytes(32), 'hex')
 where not exists (select 1 from public.dz_secrets where name = 'auth_attempt_key');
@@ -8349,9 +8104,6 @@ on conflict (id) do nothing;
 
 insert into public.platform_tax_config (id) values (1) on conflict (id) do nothing;
 
--- 14 ── storage buckets ------------------------------------------------------
--- koe-media is public (avatars, banners, previews); koe-originals is private
--- and served only through signed URLs from the edge functions.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 select b.id, b.id, b.public, 419430400, array[
     'image/png','image/jpeg','image/webp','image/gif','image/avif','image/tiff','image/bmp',
@@ -8369,8 +8121,6 @@ on conflict (id) do update
       file_size_limit = excluded.file_size_limit,
       allowed_mime_types = excluded.allowed_mime_types;
 
-
--- 15 ── scheduled jobs -------------------------------------------------------
 select cron.schedule('merit-daily-regen', '10 0 * * *',
   $$select public.regen_merit_daily()$$);
 select cron.schedule('publish-scheduled-uploads', '*/5 * * * *',

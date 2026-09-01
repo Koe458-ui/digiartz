@@ -1,5 +1,3 @@
-/* The four tabs above the fold. This paints during boot, so unlike the rest
-   of what was sections.js it ships with the shell. */
 (function(){
   'use strict';
 
@@ -33,7 +31,6 @@
   var TICK = '<span class="hpTick" aria-hidden="true"><svg viewBox="0 0 24 24">'+
              '<polyline points="20 6 9 17 4 12"/></svg></span>';
   var cur = 0;
-
 
   function go(to){
     if(to === 'sell'){

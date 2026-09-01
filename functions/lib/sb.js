@@ -1,12 +1,8 @@
 import { encodePath } from './http.js';
 
-/* The project this site is deployed against, for the handful of endpoints
-   that answer with it when the binding is missing rather than failing. Three
-   files each carried their own copy of both. */
 export const SB_URL_FALLBACK  = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
 export const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
 
-/* The size suffix Supabase storage renditions carry. */
 export const SB_SIZE_RE = /__(?:t300|t600|v1000|f1600)\.webp$/;
 
 export const sbUrl  = (env) => env.SB_URL || env.SUPABASE_URL || '';
@@ -34,12 +30,6 @@ export function peekJwt(token) {
   } catch { return null; }
 }
 
-/* POST to a Postgres function. Pass `request` and the caller's own bearer is
-   forwarded against the anon key, so Postgres decides what they may see; leave
-   it out and the service key asks. The two edge modules, the payout endpoint
-   and the billing helper each carried their own copy of this fetch, and the
-   rate limiter and the ledger a service-key one. Answers with the status so
-   each caller can keep refusing in its own words. */
 export async function sbRpc(env, fn, args = {}, request) {
   const base = String(sbUrl(env) || SB_URL_FALLBACK).replace(/\/$/, '');
   const key = request ? sbAnon(env) : sbSvc(env);
@@ -87,10 +77,6 @@ export async function signObject(sbUrlStr, svcKey, bucket, path, seconds) {
   return signed.startsWith('http') ? signed : sbUrlStr + '/storage/v1' + signed;
 }
 
-/* The one call to dz_rate_take. The edge middleware, the download endpoint
-   and the three payment endpoints all used to make it themselves, in three
-   slightly different ways. A bucket that cannot be counted is allowed
-   through: a rate limiter that fails closed would take the site down. */
 export async function underLimit(env, bucket, limit, seconds) {
   if (!sbSvc(env)) return true;
   try {
@@ -100,9 +86,6 @@ export async function underLimit(env, bucket, limit, seconds) {
   } catch { return true; }
 }
 
-/* Constant-time HMAC-SHA256 check, shared by the two places Razorpay asks for
-   one: the payment signature on a completed order, and the webhook signature
-   on a delivery. They differ only in which secret and which message. */
 export async function hmacMatches(secret, message, signature) {
   const sig = String(signature || '');
   if (!sig) return false;

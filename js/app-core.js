@@ -108,18 +108,6 @@
     f1600: { width: 1600, quality: 0.82 }
   };
 
-  // The only content types the pipeline ever needs to store. Everything else is
-  // a downloadable asset — a brush pack, a font, a .blend, a PDF — and every
-  // one of those is fetched back through /api/*-download, which sets its own
-  // Content-Type and Content-Disposition from the database row. The type stored
-  // beside the bytes is never read on the way out.
-  //
-  // So it is declared octet-stream, and koe-media is a PUBLIC bucket: an object
-  // stored as text/html or image/svg+xml is a page the storage domain will
-  // render, on a hostname close enough to ours to be worth a phishing attempt.
-  // The bucket's allowed_mime_types refuses those outright — this is the half
-  // that keeps a legitimate .svg or .pdf upload working under that rule rather
-  // than being refused with it.
   var UPLOAD_IMAGE_TYPES =
     ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'];
   function safeUploadType(type){
@@ -177,8 +165,6 @@
     banner       : { table:'profile_banner_image', parent:null,          url:true, onConflict:'user_id' }
   };
 
-  /* One promise-shaped IndexedDB object store. The artwork drafts and the
-     section drafts each carried their own copy of this. */
   window.dzIdb = function(name, store){
     function open(){
       return new Promise(function(res, rej){
@@ -316,13 +302,8 @@
   let images = [];
   let filterCat = 'all', filterSrt = 'trending';
 
-  /* The one HTML escaper the browser side uses; every panel script reaches
-     for this rather than carrying its own copy. */
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
-  /* A block of outside links, each shown without its scheme and made a link
-     only when it really is one. The artwork viewer and the section viewer
-     draw the same list under the same heading. */
   window.dzLinkBlock = function(head, arr){
     if(!Array.isArray(arr) || !arr.length) return '';
     return '<div><div class="avBlockH">'+esc(head)+'</div><ul class="dzvRefs">'+
@@ -411,8 +392,6 @@
     'wifi'     :'<path d="M2.5 9a14 14 0 0 1 19 0"/><path d="M6 12.5a9 9 0 0 1 12 0"/><path d="M9.5 16a4 4 0 0 1 5 0"/><circle cx="12" cy="19.5" r="1"/>',
     'zap'      :'<path d="M13.5 2.5 4.5 13.5h6l-.5 8 9-11h-6z"/>'
   };
-  /* Which glyph each category, tag or view is drawn with. Grouped by glyph:
-     the first word of a run names it, the rest are the keys that use it. */
   var FLT_ICO_MAP = {};
   (
     'anchor ships|archive old orders releases|atom sci-fi|bag services|bike bikes|' +
@@ -444,8 +423,6 @@
            'stroke-linejoin="round">'+g+'</svg></span>';
   }
 
-  /* Every category the site knows, in the order the filter offers them. A
-     label is the slug title-cased, which reads right for all but three. */
   var CAT_LABEL_FIX = { 'sci-fi':'Sci-Fi', landscapes:'Landscape', '3d-art':'3D Art' };
   function catLabel(slug){
     if(!slug) return '';
@@ -462,8 +439,6 @@
     'pixel-art aesthetic-art others'
   ).split(' ');
   var SITE_CATEGORIES = CAT_SLUGS.map(function(s){ return { slug:s, label:catLabel(s) }; });
-  /* Slug to label for the site's own categories only — a tag that is not one
-     of them keeps the spelling its author gave it (see tgLabel). */
   var CAT_LABELS = {};
   SITE_CATEGORIES.forEach(function(c){ CAT_LABELS[c.slug] = c.label; });
 
@@ -590,11 +565,6 @@
 
   function dzPanelEl(id){ return document.getElementById(id); }
 
-  /* Opening and closing one of the panels that slide in over the page. Every
-     one of them adds .open and locks what is behind it, and gives the scroll
-     position back on the way out; what each does while it is up is its own
-     business. Both hand back the element, or null when the page has no such
-     panel, so a caller can say `if (!pg) return;` as it always did. */
   window.dzPanelOpen = function(id){
     var pg = document.getElementById(id);
     if(!pg) return null;
@@ -610,7 +580,6 @@
     return pg;
   };
 
-  /* An element with a class and, where it is only text, its text. */
   window.dzEl = function(tag, cls, text){
     var e = document.createElement(tag);
     if(cls) e.className = cls;
@@ -618,7 +587,6 @@
     return e;
   };
 
-  /* Hand a blob to the browser as a download. */
   window.dzSaveBlob = function(blob, name){
     var obj = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -627,8 +595,6 @@
     setTimeout(function(){ URL.revokeObjectURL(obj); }, 60000);
   };
 
-  /* A message's clock time, and the chip that heads a day of them. Direct
-     messages and the community rooms show both the same way. */
   window.dzHHMM = function(iso){
     if(!iso) return '';
     try{ return new Date(iso).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
@@ -642,7 +608,6 @@
     catch(e){ return d.toDateString().toUpperCase(); }
   };
 
-  /* The placeholder that keeps a draft or schedule strip four cards wide. */
   window.dzGhost = function(glyph, mark){
     return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
       '<span class="upDraftGhostIn">'+glyph+'</span>'+
@@ -673,10 +638,6 @@
   }
   window.dzCloseAllPanels = dzCloseAllPanels;
 
-  /* The Tab trap the three search pages share. Each still owns its own
-     keydown listener — one of them also answers Escape — but the wrapping
-     itself is written once. `pg` is the open page; the caller has already
-     established that it is open. */
   window.dzTrapTab = function(pg, e){
     if(e.key !== 'Tab' || !pg) return;
     var sel = 'a[href],button:not([disabled]),input:not([disabled]),' +
@@ -799,9 +760,6 @@
       }
     }catch(e){
       console.error(e);
-      // The recovery read can fail too — a blocked IndexedDB, a storage
-      // quota, a browser in private mode. It must not take the boot with
-      // it: the page behind the loader stays uninteractive until it ends.
       try{
         var old = await c.recall(GAL_ALL, 'gallery:latest');
         if(!old || !old.length) old = c.peek(GAL_TOP, 'gallery:latest', { any:true });
@@ -859,8 +817,6 @@
     return dpr > DZ_DPR_CAP ? (DZ_DPR_CAP / dpr) : 1;
   }
 
-
-
   var DZ_GRID_SIZES = [
     ['(min-width:2000px)', 268, 'px'],
     ['(min-width:1600px)', 320, 'px'],
@@ -901,27 +857,11 @@
     im.src = getThumbnailUrl(url || '');
   }
 
-
-  /* A click a link should be allowed to handle itself: open in a new tab,
-     a new window, a download. Anything that intercepts a card click has to
-     let these through or the card stops behaving like a link. */
   function dzModifiedClick(e){
     return !!(e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1));
   }
   window.dzModifiedClick = dzModifiedClick;
 
-  /* Wiring a built card to open something. Three places build cards this way
-     — the front page rail, the hero search and the gallery search — and each
-     wants the same thing: a plain click opens it here, a modified click is
-     left to the browser, and a card that is not already a link answers Enter
-     and Space so the keyboard can reach it too. */
-  /* Publishing asks the same three things of visibility and the schedule
-     field, wherever it is asked: a scheduled item needs a time, an unlisted
-     one must not carry one, and "scheduled" is stored as "published" with the
-     time in its own column. `phrase` is how the refusal names the thing —
-     "resource is not listed", "artwork is not shown" — because the upload
-     forms say it differently. Returns `error` for the caller to raise its own
-     way: the section forms throw, the artwork form toasts. */
   window.dzVisibilitySchedule = function(vis, when, phrase){
     vis = vis || 'published';
     if(vis === 'scheduled' && !when)
@@ -931,12 +871,6 @@
     return { vis: vis === 'scheduled' ? 'published' : vis, when: when };
   };
 
-  /* Dragging an image around inside its crop stage. Two crop modals do it —
-     the avatar and banner picker, and the artwork picker with its zoom — and
-     the bookkeeping is the same for both: which pointer, where it started,
-     and the four listeners that have to come off again on release. What the
-     drag adds up to is the part that differs, and that is `onMove`, which is
-     handed the pointer once the drag is known to be live. */
   window.dzDragStage = function(stageId, st, canDrag, onMove){
     var stageEl = null;
     function down(e){
@@ -972,20 +906,12 @@
     });
   };
 
-  /* The two search pages — one over a profile, one over the gallery. They
-     look for different things in different places, but the chrome around the
-     looking is the same: a note line, a debounced input, a row of scope tabs,
-     a Tab trap, and giving focus back to whatever opened the page. A page is
-     described by one config naming its elements, its scope groups, its state
-     and how to run a search. */
   window.dzSearchUI = {
-    /* An ILIKE pattern with the wildcards and quoting taken out. */
     pattern: function(q){
       var clean = String(q||'').replace(/[%_*(),."\\]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
       return clean ? '%'+clean+'%' : '';
     },
 
-    /* Marks the search bar as carrying a query, so it can style itself. */
     chrome: function(wrapId, v){
       var w = document.getElementById(wrapId);
       if(w) w.classList.toggle('tgHasQ', !!String(v || '').length);
@@ -998,7 +924,6 @@
       n.hidden = !msg;
     },
 
-    /* Keeps Tab inside the page while it is open. */
     trap: function(c){
       document.addEventListener('keydown', function(e){
         var pg = document.getElementById(c.page);
@@ -1017,7 +942,6 @@
       if(input) setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
     },
 
-    /* Hands focus back to whatever opened the page, unless it is gone. */
     restoreFocus: function(c, silent){
       var back = c.lastFocus; c.lastFocus = null;
       if(silent !== true && back && back.isConnected && back.focus){
@@ -1031,7 +955,6 @@
       window.dzSearchUI.input(c, '');
     },
 
-    /* Typing runs the search, but not on every keystroke. */
     input: function(c, v){
       c.st.q = String(v||'');
       window.dzSearchUI.chrome(c.wrap, c.st.q);
@@ -1046,7 +969,6 @@
       c.run();
     },
 
-    /* The scope tabs sit in markup order behind "All". */
     paintScopes: function(c){
       var wrap = document.getElementById(c.scopes);
       if(!wrap) return;
@@ -1059,17 +981,11 @@
     }
   };
 
-  /* The schedule picker both upload forms use — the artwork form's markup is
-     in index.html, the section forms are generated, so each owns its elements
-     and state and passes them here as one config. `hint` and `picked` belong
-     together: they share the five-minute rule, and were it to drift the hint
-     would call a time fine while the form quietly dropped it. */
   var DZ_SCHED_MIN = 5 * 60 * 1000;
 
   function dzSchedPad(n){ return (n < 10 ? '0' : '') + n; }
 
   window.dzSchedUI = {
-    /* Filled once; defaults to an hour from now. */
     hours: function(c){
       var hs = document.getElementById(c.h), ms = document.getElementById(c.m);
       if(!hs || hs.options.length) return;
@@ -1080,14 +996,12 @@
       hs.value = t.getHours(); ms.value = Math.floor(t.getMinutes() / 5) * 5;
     },
 
-    /* Steps the shown month, carrying into the year. */
     nav: function(st, delta){
       st.vm += delta;
       if(st.vm < 0){ st.vm = 11; st.vy--; }
       else if(st.vm > 11){ st.vm = 0; st.vy++; }
     },
 
-    /* Paints the month; days already gone are disabled. */
     grid: function(c, st){
       var grid = document.getElementById(c.grid), mon = document.getElementById(c.mon);
       if(!grid) return;
@@ -1115,7 +1029,6 @@
       if(dd) dd.classList.remove('open');
     },
 
-    /* A tap outside the open panel shuts it. */
     watchOutside: function(c){
       document.addEventListener('click', function(ev){
         var dd = document.getElementById(c.dd);
@@ -1123,7 +1036,6 @@
       });
     },
 
-    /* Writes the chosen day and time into the form's hidden field. */
     apply: function(c, st){
       if(st.y === null) return;
       var hs = document.getElementById(c.h), ms = document.getElementById(c.m);
@@ -1134,7 +1046,6 @@
       window.dzSchedUI.hint(c);
     },
 
-    /* The trigger's label, and the line under it. */
     hint: function(c){
       var el = document.getElementById(c.val), hint = document.getElementById(c.hint);
       if(!el || !hint) return;
@@ -1152,7 +1063,6 @@
       }
     },
 
-    /* The chosen time, or '' when there is none or it is too soon. */
     picked: function(c){
       var el = document.getElementById(c.val);
       if(!el || !el.value) return '';
@@ -1161,7 +1071,6 @@
       return c.iso ? new Date(t).toISOString() : el.value;
     },
 
-    /* Same wording bar the hour, which one form pads. */
     fmt: function(iso, twoDigitHour){
       return new Date(iso).toLocaleString([], {
         month:'short', day:'numeric',
@@ -1369,8 +1278,6 @@
   }
   function dzScopeBump(){ DZ_SCOPE_SEQ++; }
   function dzScopeStill(token){ return token != null && token === dzScope(); }
-
-
 
   function gridCols(){
     var w = window.innerWidth || document.documentElement.clientWidth || 1280;

@@ -85,7 +85,6 @@ async function withdrawable(env, userId) {
   return by;
 }
 
-// Earnings only, no requests subtracted: the pot a payout is drawn from.
 async function earnedAvailable(env, userId, currency) {
   const rows = await sbService(env,
     '/marketplace_earnings?seller_id=eq.' + userId +
@@ -94,7 +93,6 @@ async function earnedAvailable(env, userId, currency) {
   return (rows || []).reduce((n, e) => n + Number(e.net_amount || 0), 0);
 }
 
-// Everything already spoken for in this currency, optionally ignoring one row.
 async function claimedTotal(env, userId, currency, statuses, exceptId) {
   const rows = await sbService(env,
     '/payout_requests?user_id=eq.' + userId +
@@ -345,12 +343,6 @@ export async function onRequestPost({ env, request }) {
       });
       const made = Array.isArray(rows) && rows[0];
 
-      // The balance check above and this insert are two round trips, so two
-      // requests fired together can both pass it and both be created — the same
-      // money withdrawn twice. Re-read the open set now that our own row is in
-      // it: whoever is over the line withdraws their request again. Both sides
-      // standing down is the safe way to lose this race; the seller re-requests
-      // and gets one.
       if (made) {
         const pot = await earnedAvailable(env, user.id, currency);
         const claimed = await claimedTotal(env, user.id, currency,
@@ -411,9 +403,6 @@ export async function onRequestPost({ env, request }) {
       if (!req) return json({ error: 'No such open request' }, 404);
 
       if (approve) {
-        // Weigh this request against what is already committed, not against the
-        // balance on its own: two requests each within the balance can still be
-        // more than the balance together.
         const total = await earnedAvailable(env, req.user_id, req.currency);
         const committed = await claimedTotal(env, req.user_id, req.currency,
           ['approved', 'processing'], req.id);
@@ -448,9 +437,6 @@ export async function onRequestPost({ env, request }) {
       const req = Array.isArray(claimed) && claimed[0];
       if (!req) return json({ error: 'That request is not approved and waiting' }, 400);
 
-      // Last gate before the money leaves. The earnings that backed this request
-      // may have been reversed, disputed or already retired by another send
-      // since it was approved.
       const pot = await earnedAvailable(env, req.user_id, req.currency);
       const alsoInFlight = await claimedTotal(env, req.user_id, req.currency,
         ['processing'], req.id);

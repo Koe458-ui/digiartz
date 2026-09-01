@@ -1,11 +1,3 @@
-/* Handing over a private file. Two endpoints do it — a resource, and a file
-   somebody bought in the marketplace — and they ask the same questions in the
-   same order: is this the site asking, is somebody signed in, does Postgres
-   grant it, and is the object still where the row says it is. Each endpoint
-   supplies the ids it takes, the grant function to call, how to say no, and
-   what to put on the way out; nothing else about the path differs, and it is
-   the path that decides who may read a paid file. */
-
 import { sbUrl, sbAnon, sbSvc, peekJwt, signObject } from './sb.js';
 import { sameOrigin, allowedHost, json, downloadHeaders } from './http.js';
 

@@ -561,8 +561,6 @@
   function pfSearchScope(scope){ window.dzSearchUI.scope(PF_SRCH_UI, scope); }
   function pfSearchPaintScopes(){ window.dzSearchUI.paintScopes(PF_SRCH_UI); }
 
-  /* One query per section this page searches. Everything else about them is
-     the same: this member's rows, newest first, thirty of them. */
   var PF_SRCH_QUERIES = [
     { key:'artwork', table:'artworks', on:'name', select:function(){
       return 'id,name,description,category,tags,image_url,thumb_x,thumb_y,thumb_zoom,status,created_at'; } },

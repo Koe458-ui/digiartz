@@ -6,13 +6,6 @@
     var loading = loadDB();
     await dzDomReady();
 
-    // The loader covers the page and swallows every tap until it lifts, so
-    // it must not be tied to the network. Give the first query a short head
-    // start — on a good connection it lands well inside it and the grid is
-    // already painted — then reveal regardless. What is behind it is either
-    // the cached rows or the markup the server sent; the fresh rows land on
-    // top when they arrive. Before this, a first load that failed held the
-    // page for the nine-second fallback timer.
     var revealed = false;
     function reveal(){
       if(revealed) return;
@@ -76,11 +69,6 @@
     var desc    = item.description || '';
     var id      = item.id;
 
-
-
-    // A real link, like the cards the server renders and the ones in the
-    // full gallery. A div swallows ctrl-click, middle-click and the URL
-    // preview, which is most of what a mouse is for.
     var card = document.createElement('a');
     card.className = 'awCard';
     card.setAttribute('aria-label','View ' + name);

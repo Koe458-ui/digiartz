@@ -1,20 +1,3 @@
--- RLS and privilege regression suite.
---
--- Run against the project with a service-role / postgres connection:
---
---   psql "$DATABASE_URL" -f security/rls-regression.sql
---
--- Every case is an attack that used to be worth trying. Each one impersonates a
--- real PostgREST caller by setting request.jwt.claims and switching role, the
--- same two things PostgREST does per request — nothing here trusts the
--- application layer to have checked first.
---
--- Writes happen inside PL/pgSQL sub-blocks, which are savepoints: the block
--- raises at the end and catches its own exception, so an attack that SUCCEEDS
--- is still rolled back and only the verdict survives. Safe to run on
--- production. It reads two member ids out of profiles rather than creating
--- accounts, so it leaves nothing behind either way.
-
 create or replace function pg_temp.dz_sec_suite()
 returns table(check_name text, observed text, verdict text)
 language plpgsql as $fn$
@@ -31,7 +14,6 @@ begin
     return query select 'fixtures', 'need two member rows', 'SKIP'; return;
   end if;
 
-  -- ---- anonymous ----------------------------------------------------------
   perform set_config('request.jwt.claims', '', true);
   set local role anon;
 
@@ -68,7 +50,6 @@ begin
   exception when insufficient_privilege then return query select 'anon reads platform_tax_config','denied','PASS'; end;
   reset role;
 
-  -- ---- member A, horizontally ---------------------------------------------
   perform set_config('request.jwt.claims',
     json_build_object('sub', uid_a, 'role','authenticated')::text, true);
   set local role authenticated;
@@ -89,7 +70,6 @@ begin
     return query select 'member reads another member''s ledger', n||' rows', case when n=0 then 'PASS' else 'FAIL' end;
   exception when insufficient_privilege then return query select 'member reads another member''s ledger','denied','PASS'; end;
 
-  -- ---- member A, vertically ------------------------------------------------
   begin
     execute format('insert into public.payments (user_id,kind,amount,currency,provider,rzp_order_id,status)
                     values (%L,''subscription'',1,''USD'',''razorpay'',''dz_suite_probe'',''paid'')', uid_a);
@@ -162,7 +142,6 @@ begin
     return query select 'marketplace cases','no listing rows','SKIP'; return;
   end if;
 
-  -- ---- social proof --------------------------------------------------------
   select like_count, sales_count into before_like, before_sales
     from public.marketplace_items where id = item;
   perform set_config('request.jwt.claims',
@@ -183,7 +162,6 @@ begin
   end;
   reset role;
 
-  -- ---- marketplace entitlement --------------------------------------------
   perform set_config('request.jwt.claims',
     json_build_object('sub', uid_b, 'role','authenticated')::text, true);
   set local role authenticated;
@@ -208,18 +186,13 @@ begin
   return query select 'stranger owns a free APPROVED listing?', okb::text,
                       case when okb then 'PASS' else 'FAIL (regression)' end;
 
-  raise exception '%', RB;                     -- undo the listing fixture
+  raise exception '%', RB;
 exception when others then
   if sqlerrm <> RB then raise; end if;
   return;
 end $fn$;
 
 select * from pg_temp.dz_sec_suite();
-
--- ---------------------------------------------------------------------------
--- Structural assertions. Every one of these must come back with the stated
--- value; anything else is a regression in the grant or storage layer, which no
--- amount of policy review will show you.
 
 with tbl as (
   select c.oid, c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
@@ -238,12 +211,9 @@ inert as (
                or (select oid from pg_roles where rolname = ro.rr) = any(p.polroles)))
 )
 select
-  -- expect exactly 'notification_reads/authenticated/UPDATE' — the one grant
-  -- kept on purpose, because an upsert needs UPDATE privilege to plan.
   (select coalesce(string_agg(relname||'/'||rr||'/'||priv, ', ' order by relname), 'none')
      from inert) as inert_grants_expect_notification_reads_only,
 
-  -- expect 0. TRUNCATE is NOT filtered by RLS: the grant is the whole check.
   (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
      cross join (values ('anon'),('authenticated')) r(x)
     where n.nspname='public' and c.relkind in ('r','p')
@@ -252,38 +222,30 @@ select
         or has_table_privilege(r.x, c.oid, 'TRIGGER')))
     as truncate_references_trigger_expect_0,
 
-  -- expect 0. Trigger functions are not callable and should not be addressable.
   (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     where n.nspname='public' and p.prorettype='trigger'::regtype
       and (has_function_privilege('anon', p.oid, 'EXECUTE')
         or has_function_privilege('authenticated', p.oid, 'EXECUTE')))
     as trigger_fns_executable_expect_0,
 
-  -- expect 0, definer and invoker alike.
   (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     where n.nspname='public'
       and (p.proconfig is null
            or not exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%')))
     as functions_without_pinned_search_path_expect_0,
 
-  -- expect 0. A bucket with either unset accepts an upload the app never asked for.
   (select count(*) from storage.buckets
     where file_size_limit is null or allowed_mime_types is null)
     as buckets_unbounded_expect_0,
 
-  -- expect 0.
   (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
     where n.nspname='public' and c.relkind in ('r','p') and not c.relrowsecurity)
     as tables_without_rls_expect_0,
 
-  -- expect false for every one of these.
   (select bool_or('text/html' = any(allowed_mime_types)) from storage.buckets)      as any_bucket_allows_html,
   (select bool_or('image/svg+xml' = any(allowed_mime_types)) from storage.buckets)  as any_bucket_allows_svg,
   (select bool_or('application/pdf' = any(allowed_mime_types)) from storage.buckets) as any_bucket_allows_pdf,
 
-  -- expect 'none'. A column-level REVOKE cannot subtract from a table-level
-  -- GRANT, so the obvious way to withhold these reports success and does
-  -- nothing. has_column_privilege is the only honest way to ask.
   (select coalesce(string_agg(r.x||'.'||c.col, ', '), 'none')
      from unnest(array['role','max_claimed','partner_since','subscription_tier',
                        'subscription_expires_at','merit','merit_updated_at',
@@ -292,7 +254,6 @@ select
     where has_column_privilege(r.x, 'public.profiles', c.col, 'INSERT'))
     as privileged_profile_cols_insertable_expect_none,
 
-  -- expect 'none' as well: none of them may be UPDATE-able either.
   (select coalesce(string_agg(r.x||'.'||c.col, ', '), 'none')
      from unnest(array['role','max_claimed','partner_since','subscription_tier',
                        'subscription_expires_at','merit','cred_received_count']) as c(col)

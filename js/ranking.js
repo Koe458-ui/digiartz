@@ -18,7 +18,7 @@
 
     function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
     function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
-    var el = window.dzEl;   // tag, class, text
+    var el = window.dzEl;
     function num (n) { return (Number(n) || 0).toLocaleString(); }
     function thumb (u) {
       if (!u) return null;
@@ -232,9 +232,6 @@
       });
     }
 
-    /* Both rank strips say the same three things — sign in, your rank, or a
-       dash when the call will not answer. Only the one on a board card is
-       also a way into the full page, which is what `openPage` is for. */
     async function paintMine (box, b, openPage) {
       var c = db(), u = me();
       box.innerHTML = '';

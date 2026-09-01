@@ -3,8 +3,6 @@
 
   var KEY   = 'koeTheme';
 
-  /* The three themes, and the miniature of the page each card shows. The
-     cards were the same twenty-two lines of markup three times over. */
   var THEMES = [
     { id:'graydark', name:'Charcoal', bg:'#1A1A1F', sur:'#24242C', ln:'#40404E', ac:'#F4F4F6',
       desc:'Deep, warm charcoal. Cards lift off the page so your eye lands on the art, not the screen.' },

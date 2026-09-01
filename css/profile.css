@@ -38,8 +38,6 @@
 
 .pfBanner{
   position:relative;width:100%;
-  /* A banner that is 30vw tall eats two thirds of a phone held sideways,
-     so it is also held to a share of the height it actually has. */
   height:min(clamp(132px,30vw,300px),38dvh);
   min-height:132px;
   background:

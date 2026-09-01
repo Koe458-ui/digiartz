@@ -143,7 +143,6 @@
   window.openLegal = function(type){
     var docs = window.DZ_LEGAL;
     if(!docs && window.dzLazy){
-      // The documents are a chunk now; fetch them and come straight back.
       window.dzLazy('legal').then(function(){ window.openLegal(type); });
       return false;
     }
@@ -212,8 +211,6 @@
     if(!lgEls() || typeof setGo !== 'function') return true;
     var docs = window.DZ_LEGAL;
     if(!docs && window.dzLazy){
-      // Handle the click here rather than letting the link fall through to a
-      // full page load: the documents are one fetch away.
       window.dzLazy('legal').then(function(){ window.setGoLegal(type); })
         ['catch'](function(){ location.href = '/legal/' + type; });
       return false;
@@ -240,8 +237,6 @@
 
 (function(){
 
-  /* The questions the subscription page answers, and the order they are
-     asked in. Each was fifteen lines of identical markup in index.html. */
   var FAQ = [
     { ico:'◈', label:'Billing &amp; Payments', qa:[
       ['How do I subscribe?',

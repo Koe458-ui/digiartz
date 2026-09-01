@@ -10,7 +10,6 @@ export function onRequestPost({ request, env }) {
     gone,
     type: (row) => row.mime,
 
-    // A listing sold as one file names the item as the file.
     args: (b) => {
       const item = String(b.item || '');
       const file = String(b.file || item || '');

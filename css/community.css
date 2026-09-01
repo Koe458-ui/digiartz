@@ -492,8 +492,6 @@
 .cmFooterCta strong{font-family:var(--fb);font-size:.95rem;color:var(--tx);display:block;}
 .cmFooterCta p{font-family:var(--fb);font-size:.8rem;color:var(--txd);margin-top:.2rem;}
 
-/* Declared after the base rule on purpose: an earlier @media block of the
-   same specificity loses to it, which is what happened before. */
 @media(max-width:520px){
   .cmFooterCta{padding:1.1rem 1rem;}
   .cmFooterCta > div:first-child{flex:1 1 100%;}

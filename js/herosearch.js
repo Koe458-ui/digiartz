@@ -29,7 +29,6 @@
     }
   }
 
-  // a search stands in front of the feed: its own grid, or its note, never both
   function hsStand(on){
     var sec = hsEl('artworks');
     if(sec) sec.classList.toggle('hsOn', !!on);

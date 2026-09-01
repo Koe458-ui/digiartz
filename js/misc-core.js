@@ -64,12 +64,11 @@
     for (var i = 0; i < XP_TOTALS.length; i++) { if (xp >= XP_TOTALS[i]) l = i + 1; else break; }
     return l;
   }
-  /* The same eight tiers the ribbon above is drawn from. */
   function rankTitle (level) {
     var t = window.DZ_MS && window.DZ_MS.tierFor(level);
     return t ? t.name : 'Newcomer';
   }
-  var el = window.dzEl;   // tag, class, text
+  var el = window.dzEl;
   function svgIcon (d) {
     var w = document.createElement('span');
     w.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';

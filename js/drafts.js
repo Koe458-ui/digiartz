@@ -336,8 +336,6 @@
     zs.value = v;
     pfCropSetZoom(v);
   }
-  /* Both axes here, because zooming in can make the picture overflow a
-     square frame in each direction at once. */
   window.dzDragStage('pfCropStage', pfCrop,
     function(){ return !!pfCrop.axis || pfCrop.z > 1; },
     function(p){

@@ -1,9 +1,6 @@
-/* The one HTML escaper for pages rendered at the edge. The middleware, the
-   store page and the legal pages each used to carry an identical copy. */
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/* This site's canonical origin, for the pages that build absolute links. */
 export const SITE = 'https://digiartz.net';
 
 export const UUID_RE =
@@ -26,10 +23,6 @@ export function sameOrigin(request, env) {
   if (site === 'same-origin') return true;
   if (site === 'none') return false;
 
-  // Anything else - cross-site, same-site, or no header at all - is decided by
-  // the allowlist below. With ALLOWED_ORIGINS unset that set holds this host
-  // and nothing else, which a cross-origin request can never match, so the
-  // default deployment stays exactly as strict as it was.
   for (const name of ['Origin', 'Referer']) {
     const raw = h.get(name);
     if (!raw) continue;
@@ -61,8 +54,6 @@ export function json(obj, status, extra) {
   });
 }
 
-/* The 404 both catch-all routes answer with: /supabase/* and /security/* are
-   internal paths that must not look like anything from the outside. */
 export const notFound = () => new Response('Not found', {
   status: 404,
   headers: {

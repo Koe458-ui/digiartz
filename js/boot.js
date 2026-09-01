@@ -1,8 +1,3 @@
-/* The loading overlay and the queue of work that waits behind it.
-   This used to sit two thirds of the way down mywork.js, which meant the
-   page could not come out of its loading state until seventy kilobytes of
-   "edit my work" had been fetched and run. It is the shell; it loads with
-   the shell. */
   var __introRevealed = false;
   var __afterIntroQueue = [];
   function afterIntro(cb){
@@ -72,13 +67,6 @@
     setTimeout(reveal, 9000);
   })();
 
-/* Closed panels are pushed off-screen with a transform, which hides them from
-   the eye and from nobody else. Every control inside all forty of them stayed
-   in the tab order and in the accessibility tree, so tabbing past the feed
-   rail on the home page landed on the ranking panel's back button — seventy
-   phantom stops before the footer. `inert` removes a subtree from both. The
-   `open` class is already the site's signal for which panel is showing, so
-   that is what this watches. */
 (function(){
   'use strict';
 
@@ -93,7 +81,6 @@
     if(cs.display === 'none') return true;
     var r = el.getBoundingClientRect();
     if(!r.width || !r.height) return true;
-    // wholly outside the viewport: a closed slide-in
     return r.right <= 0 || r.left >= innerWidth || r.bottom <= 0 || r.top >= innerHeight;
   }
 
@@ -101,9 +88,6 @@
 
   var watched = [];
 
-  /* An <img src> inside a closed panel is still fetched: the panel is only
-     translated off-screen, and loading="lazy" does not save it either. Spell
-     it data-src and it waits for the panel it lives in. */
   function wake(el){
     var imgs = el.querySelectorAll('img[data-src]');
     for(var i = 0; i < imgs.length; i++){
@@ -119,9 +103,6 @@
     el.inert = !open;
   }
 
-  // One observer, watching each panel's own class attribute rather than the
-  // whole subtree: the app changes classes constantly and none of the rest
-  // of it is any of this code's business.
   var classes = new MutationObserver(function(muts){
     for(var i = 0; i < muts.length; i++) apply(muts[i].target);
   });

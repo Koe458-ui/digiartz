@@ -1,27 +1,5 @@
 #!/usr/bin/env node
 
-// Writes the sale_credit entries that functions/api/paypal-webhook.js failed to
-// write while it carried its own copy of recordEarning.
-//
-// A marketplace sale settles down one of two paths. A buyer who comes back from
-// PayPal hits /api/paypal action=capture, which calls lib/billing.js
-// recordEarning and gets both the marketplace_earnings row and the sale_credit
-// that follows it. A buyer who closes the tab is settled by the webhook, which
-// wrote the earnings row and stopped there. payouts.js gates every withdrawal on
-// dz_reconcile, which compares the wallet against the ledger, so those sellers
-// have been blocked by a gap they did not cause.
-//
-// The route is fixed. This repairs the rows it already left behind.
-//
-// SCHEMA THIS ASSUMES, because ledger_entries is not in this repository:
-//   ledger_entries(type, ref_table, ref_id, ...) with a sale_credit row per
-//   payment. The script probes for those three columns before it writes
-//   anything and stops if they are not there, rather than guessing.
-//
-//   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node security/backfill-paypal-ledger.mjs
-//
-// Dry run unless you pass --apply. Read the plan first — it is money.
-
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.SB_URL;
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SB_SERVICE_KEY;
 
@@ -50,7 +28,6 @@ async function rest(path, init = {}) {
   return body;
 }
 
-// PostgREST caps a response; walk it rather than trusting one page.
 async function page(pathNoRange, size = 1000) {
   const out = [];
   for (let from = 0; ; from += size) {
@@ -98,7 +75,6 @@ async function main() {
     return;
   }
 
-  // pp_capture_id is what the webhook would have passed as p_provider_txn.
   const ids = [...new Set(missing.map((e) => e.payment_id))];
   const pays = new Map();
   for (let i = 0; i < ids.length; i += 100) {
@@ -108,7 +84,6 @@ async function main() {
     for (const p of rows || []) pays.set(String(p.id), p);
   }
 
-  // A sale that never settled must not be credited.
   const todo = [];
   const skipped = [];
   for (const e of missing) {

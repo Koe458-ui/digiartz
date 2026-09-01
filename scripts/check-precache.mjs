@@ -12,9 +12,6 @@ const ALLOW_UNCACHED = new Set([
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 const sw = readFileSync(join(root, 'sw.js'), 'utf8');
 
-// index.html is no longer the only place an asset is referenced: js/lazy.js
-// holds the manifest of chunks the page fetches on demand. Both are sources
-// of truth for "what the app can load", and sw.js follows both.
 const lazy = readFileSync(join(root, 'js', 'lazy.js'), 'utf8');
 const refs = html + '\n' + lazy.replace(/'(\/[^']+)'/g, 'src="$1"');
 

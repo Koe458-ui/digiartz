@@ -134,18 +134,8 @@ export async function recordEarning(env, provider, row, prov) {
   });
 }
 
-/* Only Max is ever discounted by a code. */
 export const PROMO_PLAN = 'max';
 
-/* What a subscription order should charge, or why it must be refused.
-   PayPal and Razorpay ask the same questions in the same order — does the
-   support amount sit inside its band, is the plan priced in this currency,
-   would this quietly downgrade a tier the member has already paid for, does
-   the code apply to the plan it was typed against.
-
-   The caller has already established that `key` names a real plan and that
-   it can take `currency`: those two refusals differ between the checkouts
-   and have to run in each one's own order. An `error` here means 400. */
 export async function subscriptionAmount(env, request, user, body, key, currency) {
   let amount;
 
@@ -180,9 +170,6 @@ export async function subscriptionAmount(env, request, user, body, key, currency
   return { amount, promoId: promo.id };
 }
 
-/* The listing a marketplace order is for, or why it cannot be bought. Both
-   checkouts ask the same four questions of it; each then decides for itself
-   whether it can take the listing's currency. */
 export async function marketplaceItem(env, user, itemId) {
   if (!/^[0-9a-f-]{36}$/.test(itemId)) return { error: 'Bad item id', status: 400 };
 
@@ -198,7 +185,6 @@ export async function marketplaceItem(env, user, itemId) {
   return { item };
 }
 
-/* Whether this member has already paid for this listing. */
 export async function alreadyPaid(env, user, itemId) {
   const paid = await sbService(env,
     '/payments?item_id=eq.' + itemId + '&user_id=eq.' + user.id +

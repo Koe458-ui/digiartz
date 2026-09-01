@@ -1,6 +1,3 @@
-/* The artist's analytics dashboard. Loaded on demand by js/lazy.js the first
-   time the page is opened; the recording layer it used to share a file with
-   now lives in js/antrack.js and ships with the shell. */
 (function () {
   'use strict';
 
@@ -120,7 +117,7 @@
     return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
-  var el = window.dzEl;   // tag, class, text
+  var el = window.dzEl;
   function svgEl(tag, attrs) {
     var n = document.createElementNS('http://www.w3.org/2000/svg', tag);
     for (var k in attrs) if (attrs[k] != null) n.setAttribute(k, attrs[k]);
@@ -419,10 +416,6 @@
     host.appendChild(wrap);
   }
 
-  /* Every panel below is built from the same card: a head carrying a title and
-     an optional note or control, then whatever the panel draws. `anCard` hands
-     back the card, `cardBody` the plain box the drawing goes in, and
-     `factsCard` the whole thing when that box only holds a fact grid. */
   function anCard(host, title, opts) {
     opts = opts || {};
     var c = el('div', 'anCard' + (opts.stack ? ' anStack' : ''));

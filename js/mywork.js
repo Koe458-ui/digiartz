@@ -459,9 +459,6 @@ function hideCommentThumbnail(){
     }catch(e){ if(!cmMineRows.length && wrap) wrap.style.display='none'; }
   }
 
-  /* An avatar box: their picture, or the first letter of their name when
-     there is none — and when the picture will not load, which is the same
-     thing as far as somebody looking at it is concerned. */
   function cmAvatar(box, url, name, style){
     var letter = String(name || '?').charAt(0).toUpperCase();
     box.textContent = '';
@@ -1083,7 +1080,6 @@ function hideCommentThumbnail(){
 
   var cmuUser = null, cmuView = 'main';
 
-  /* One row in an action sheet. */
   function cmActItem(host, label, fn, danger){
     var b = document.createElement('button');
     b.className = 'cmActItem' + (danger ? ' cmActItem--danger' : '');
@@ -1755,4 +1751,3 @@ function hideCommentThumbnail(){
       if(sendBtn){ sendBtn.disabled = false; sendBtn.style.opacity = ''; }
     }
   }
-

@@ -1,13 +1,3 @@
-/* The detail view behind a /blog, /listing, /resource or /job link: the page,
-   its comments, its download and share actions, and the author card the
-   artwork viewer shares with it.
-
-   Split out of sections.js, whose other half — the grids, the filters, the
-   cart, the payment providers and the upload form's extra fields — the
-   profile page, the search and the upload modal all call synchronously and
-   read the answer, so it has to be there before they ask. This half is only
-   reached by opening something, so js/lazy.js fetches it then, and warms it
-   in the background once the page has gone quiet. */
 (function(){
   'use strict';
   var KIND = { resources:'resource', blog:'blog', marketplace:'marketplace', jobs:'job' };
@@ -563,7 +553,7 @@
       ? { user_id: currentUser.id, item_id: id }
       : { kind: kind, subject_id: id, user_id: currentUser.id };
   }
-  var vwEngMatch = vwEngRow;   // the row to write, and the row to look for
+  var vwEngMatch = vwEngRow;
   async function vwEngPaint(kind, id){
     var tok = ++vwEngTok;
     ['like','bm','cart'].forEach(function(w){

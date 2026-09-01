@@ -90,7 +90,7 @@ const HEAD = `
   'use strict';
 
   var TABS = C.tabs;
-  var PANELS = {};          // filled in below by whatever was spliced in
+  var PANELS = {};
   var tab = TABS[0][0];
 
   function esc(v){
@@ -100,11 +100,6 @@ const HEAD = `
   }
   function toast(m){ if(typeof showToast==='function') showToast(m); }
 
-  // Amounts are stored in each currency's smallest unit, and a zero-decimal
-  // currency's smallest unit IS its major unit — 100 JPY is stored as 100, not
-  // 10000. The partner list used to print the raw figure with "(minor units)"
-  // beside it, which is a number nobody reads as money: 7250 for what the
-  // partner's own hub, three taps away, calls $72.50.
   var ZERO_DEC = { JPY:1, HUF:1, TWD:1 };
   function money(minor, cur){
     var n = Number(minor) || 0;
@@ -125,9 +120,6 @@ const HEAD = `
     document.head.appendChild(s);
   }
 
-  // Everything privileged goes through /api/collab, which asks Postgres who
-  // the caller is on every single call. Nothing this module decides is
-  // trusted by anything on the other side of it.
   function api(action, body){
     if(typeof sb === 'undefined' || !sb) return Promise.reject(new Error('Not signed in'));
     return sb.auth.getSession().then(function(s){
@@ -156,10 +148,6 @@ const HEAD = `
     return b;
   }
 
-  // ---- the shell ----------------------------------------------------------
-  // index.html carries an empty div and nothing else; this writes the inside
-  // of it. No inline onclick anywhere — every handler is attached here, so the
-  // panel exposes no function names to the page it is drawn into.
   function build(el){
     if(el.firstElementChild) return;
     style();
@@ -208,7 +196,7 @@ const HEAD = `
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
     load(tab);
-    loadReports();                       // the tab badge, whichever tab is up
+    loadReports();
   }
 
   function close(){
@@ -244,7 +232,6 @@ const HEAD = `
     return el ? el.querySelector('[data-p="' + name + '"]') : null;
   }
 
-  // ---- reports ------------------------------------------------------------
   var RPT_LABELS = {
     copyright:'Copyright infringement', ai_undisclosed:'AI-generated without disclosure',
     nudity:'Nudity / Sexual content', violence:'Violence / Gore',
@@ -307,12 +294,6 @@ const HEAD = `
     return rptWhich === 'item' ? loadItemReports() : loadUserReports();
   }
 
-  // Accounts. The queue a partner is here for, and the one the ban engine
-  // acts on. dz_reports_queue already narrows a partner's rows to the accounts
-  // they may act on, so nothing is filtered here.
-  // One card, whichever queue the row came from. who and meta are already
-  // escaped markup; details is the reporter's own words and the one field on
-  // the card somebody else typed, so it goes in as text.
   function rptFill(p, rows, card){
     if(!rows.length) return rptEmpty(p);
     p.empty.hidden = true;
@@ -366,9 +347,6 @@ const HEAD = `
     }, function(e){ toast(e.message || 'Action failed'); });
   }
 
-  // Uploads. The queue that predates all of this, reading the same table it
-  // always did — artwork_reports is governed by its own policy and needs no
-  // endpoint of its own.
   function loadItemReports(){
     var p = rptParts();
     if(!p || typeof sb === 'undefined' || !sb) return;
@@ -401,14 +379,6 @@ const HEAD = `
     }, function(){ toast('Action failed \\u2014 try again'); });
   }
 
-  // ---- moderation ---------------------------------------------------------
-  //
-  // One member at a time, found exactly. dz_mod_find refuses a prefix, so this
-  // cannot be walked to enumerate accounts, and it withholds role and email
-  // from a partner so it cannot be used to work out who the other partners
-  // are. The reply carries can_moderate, computed by Postgres for THIS
-  // moderator against THIS target, so the buttons drawn are the ones that will
-  // work.
   PANELS.mod = {
     html: function(){
       return '<div class="admModLbl">FIND A MEMBER</div>' +
@@ -448,10 +418,6 @@ const HEAD = `
     });
   }
 
-  // role and email come back null for a partner, and neither is invented here:
-  // the role chip is drawn only when there is a role to draw. Labelling a
-  // withheld role 'member' would have shown a partner a badge saying the
-  // opposite of the truth, and then refused them when they acted on it.
   function renderMember(out, u){
     out.innerHTML =
       '<div class="admMemb">' +
@@ -479,9 +445,6 @@ const HEAD = `
 
     var acts = out.querySelector('.admMembActs');
 
-    // Postgres has already answered whether this moderator may touch this
-    // member. Where it says no, the reason is a sentence rather than a button
-    // that would answer 403.
     if(!u.can_moderate){
       var no = document.createElement('p');
       no.className = 'admMembNo';
@@ -536,11 +499,6 @@ const HEAD = `
 `;
 
 const PANEL_TEL = `
-  // ---- telemetry ----------------------------------------------------------
-  //
-  // One call. Nine separate fetches would show a submission count from one
-  // second beside an active-user count from another, and somebody eventually
-  // reconciles the two and finds a bug that is not there.
   PANELS.tel = {
     html: function(){ return '<div data-tel="host"></div>'; },
     load: function(){
@@ -598,8 +556,6 @@ const PANEL_TEL = `
            '<ul class="admTelGrid">' + body + '</ul></section>';
   }
 
-  // A zero is drawn as a zero rather than hidden: "0 today" is information,
-  // where a missing line is ambiguous between none and not measured.
   function stat(label, n, today){
     return '<li class="admTelCell">' +
       '<span class="admTelN">' + esc(Number(n) || 0) + '</span>' +
@@ -611,7 +567,6 @@ const PANEL_TEL = `
 `;
 
 const PANEL_PRT = `
-  // ---- partners -----------------------------------------------------------
   PANELS.prt = {
     html: function(){
       return '<div class="admPrtTop">' +
@@ -640,9 +595,6 @@ const PANEL_PRT = `
         empty.hidden = true;
 
         rows.forEach(function(p){
-          // Every partner's earnings, unblurred, because this is the staff
-          // view — the isolation rule is about what one PARTNER sees of
-          // another, and dz_admin_partners refuses anyone who is not staff.
           var earned = p.earned_json || {};
           var earnedTxt = Object.keys(earned).map(function(c){
             return esc(money(earned[c], c));
@@ -684,11 +636,6 @@ const PANEL_PRT = `
     }
   };
 
-  // An email address, because that is what an admin has to hand: they are
-  // inviting somebody they have spoken to, not somebody they found in a list.
-  // An unregistered address is refused rather than held as a pending
-  // invitation, so no state can hand the role to whoever signs up with that
-  // address later.
   function invite(){
     var email = prompt('Email address of the member to make a partner:', '');
     if(email === null) return;
@@ -704,11 +651,6 @@ const PANEL_PRT = `
 `;
 
 const PANEL_LOG = `
-  // ---- the audit trail ----------------------------------------------------
-  //
-  // The actor's role is shown from the row rather than looked up now, because
-  // that is how it was recorded: a partner demoted since must not make the ban
-  // they placed look like a member placed it.
   var VERB = {
     ban_user:'banned', unban_user:'lifted the ban on',
     grant_partner:'made a partner', revoke_partner:'removed as a partner',
@@ -743,8 +685,6 @@ const PANEL_LOG = `
           row.className = 'admLog';
           var who  = e.actor_username ? '@' + e.actor_username : 'someone';
           var whom = e.target_username ? '@' + e.target_username : '';
-          // The reason a moderator typed is the one field here somebody else
-          // wrote, so it goes in as text rather than as markup.
           var why = (e.metadata && e.metadata.reason) ? String(e.metadata.reason) : '';
 
           row.innerHTML =
@@ -771,13 +711,6 @@ const PANEL_LOG = `
 `;
 
 const PANEL_NOTI = `
-  // ---- the broadcast composer ---------------------------------------------
-  //
-  // Posts through /api/collab rather than straight at the notifications table.
-  // A row with a null user_id is a row every member reads, so who may write one
-  // is not a question to leave to whichever policy happens to be on that table:
-  // the endpoint asks Postgres whether the caller is staff and only then picks
-  // up the service role.
   PANELS.noti = {
     html: function(){
       return '<div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>' +
@@ -839,17 +772,9 @@ const PANEL_NOTI = `
 `;
 
 const FOOT = `
-  // The Settings entry, built here rather than in index.html, so the menu of
-  // an account without the role carries no trace of it. Same slot the static
-  // page leaves empty, same setGo the items written above it use, so closing
-  // the panel returns to the menu rather than to a profile.
   function menu(){
     var gate = document.getElementById('setAdmGate');
     if(!gate) return;
-    // Replaced, not skipped. Switching accounts in one tab injects a second
-    // copy of this module built for the new role, and an early return here
-    // would have left the previous account's entry — and its closure — in
-    // place, so a partner could land on a menu row built for an admin.
     var old = gate.querySelector('#smAdmBtn');
     if(old) old.parentNode.removeChild(old);
     var b = document.createElement('button');
@@ -865,16 +790,6 @@ const FOOT = `
     gate.appendChild(b);
   }
 
-  // Closing and resetting only. js/auth.js shuts this panel on sign-out and
-  // the global escape handler shuts it with everything else; neither needs to
-  // be able to OPEN it, so neither is given the means. There is no
-  // window.openAdmPage: the menu entry holds the opener in a closure, so the
-  // panel cannot be opened by name from a console.
-  //
-  // reset empties the shell as well as closing it. build() returns early when
-  // the shell already has content, so without this a panel built for one
-  // account would still be standing when a different one signed in, and the
-  // incoming module would decline to redraw it.
   function reset(){
     close();
     var el = document.getElementById('admPage');

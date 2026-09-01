@@ -114,8 +114,6 @@ html[data-theme="offwhite"]{
 }
 
 :root{
-  /* The shell holds at 1600 on a normal desktop and opens up on an
-     ultrawide, where a 1600px column leaves half the display empty. */
   --shellMax:clamp(1600px,75vw,1920px);
   --shellPad:max(3%,var(--safeX));
   --fgPad:var(--shellPad);

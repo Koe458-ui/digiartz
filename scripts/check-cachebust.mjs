@@ -40,16 +40,12 @@ function versionsIn(html) {
   return out;
 }
 
-// A versioned url may be referenced from index.html or from the chunk
-// manifest in js/lazy.js. Reading only the first would let a lazily loaded
-// file change under a ?v= that has already shipped — the exact failure the
-// rest of this script exists to prevent.
 const SOURCES = ['index.html', 'js/lazy.js'];
 
 function sourcesAt(rev) {
   const parts = SOURCES.map((f) =>
     rev === null ? readFileSync(join(root, f), 'utf8') : git(['show', `${rev}:${f}`], true));
-  if (parts[0] === null) return null;               // no index.html: nothing to compare
+  if (parts[0] === null) return null;
   return parts.map((p) => p || '').join('\n');
 }
 

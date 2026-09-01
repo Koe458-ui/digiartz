@@ -77,9 +77,6 @@
   .ftBrandDesc{ max-width:34ch; }
 }
 @media (min-width:1024px){
-  /* Two columns of pitch read as one thought up to about a laptop; past
-     that the shell keeps widening and they drift apart, so hold the pair
-     to a measure and keep it aligned with the grid below. */
   .hpInner{ max-width:min(100%,1320px); margin-inline:0; }
   .hpTabs{ margin-bottom:clamp(2rem,3.4vw,3rem); }
   .hpPanel{
@@ -321,17 +318,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   .dzAdBox{ min-height:60px; }
 }
 
-/* ============================================================
-   Device fit — safe areas, touch, form controls, wide screens.
-   Late file on purpose: these are floors that have to win over
-   the per-component sizes set earlier.
-   ============================================================ */
-
-/* --- The panels that slide in from the right --------------------------
-   Eleven of them are the same page: fixed to the viewport, scrolling on
-   their own, parked off the right edge until .open. Only the stacking
-   order differs, so only that is said more than once. #xpPage keeps its
-   slide under prefers-reduced-motion, as it always has. */
 #frdPage,#bmPage,#cartPage,#xpPage,#anHubPage,#payHubPage,#anPage,
 #anListPage,#setPage,#legalPage,#dzPanelHost,#albPage,#albViewPage{
   position:fixed;inset:0;background:var(--bg);color:var(--tx);
@@ -350,7 +336,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   #anPage,#anListPage,#setPage,#legalPage,#dzPanelHost{transition:none;}
 }
 
-/* Every keyboard focus ring on the site, said once. */
 .dzIcon:focus-visible,.dzMenuItem:focus-visible,.dzRow:focus-visible,
 .lmClose:focus-visible,.fgTopBtn:focus-visible,.fgCatChip:focus-visible,
 .fgCatNav:focus-visible,.ftTab:focus-visible,.atCard:focus-visible,
@@ -363,19 +348,12 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 .dzMenuItem:focus-visible,.dzRow:focus-visible,.pfSrchRow:focus-visible,
 .albMenuItem:focus-visible{outline-offset:-2px;}
 
-/* An avatar, a thumbnail or a preview fills the box it is given. */
 .cmiIcon img,.cmiIconPrev img,.cmuAva img,.cmFriendAvatar img,
 .dzThumb img,.dzFileThumb img,.atAv img,.pfSrchThumb img,
 .upDraftCard>img,.cmHdrAv img,.vwAv img{
   width:100%;height:100%;object-fit:cover;display:block;
 }
 
-/* --- Safe areas -------------------------------------------------------
-   The panels are fixed to the four edges of the *display*, so on a
-   notched phone (and in the installed PWA, where there is no browser
-   chrome to sit under the status bar) their headers land underneath it.
-   Insetting the panel itself, rather than each header, keeps the sticky
-   header stuck to the right edge and needs no per-header arithmetic. */
 #fg,#subPage,#rankHub,#rankPage,
 #profilePage,#pfSearchPage,#pfEditPage,#pfMyWorkPage,#pfUpMod,
 #notifPage,#admPage,
@@ -387,13 +365,10 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 #dzPanelHost,.dzCo{
   padding-top:var(--sat);
 }
-/* The checkout and the wallet/payout panels are rendered by
-   functions/api/store.js into the same fixed-to-the-edges frame. */
 .dzPanelWrap{ padding-bottom:calc(2.5rem + var(--sab)); }
 .dzCoWrap{ padding-bottom:calc(4rem + var(--sab)); }
 @media (min-width:700px){ .dzCoWrap{ padding-bottom:calc(5rem + var(--sab)); } }
 
-/* Sheets that float over the page keep clear of both ends. */
 #legalBackdrop,#upqBackdrop{
   padding-block:calc(1.2rem + var(--sat)) calc(1.2rem + var(--sab));
 }
@@ -402,11 +377,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 }
 .toast{bottom:calc(5rem + var(--sab));}
 
-/* --- Form controls ----------------------------------------------------
-   Mobile Safari zooms the viewport whenever a text field it is focusing
-   renders below 16px, and every field on the site was between 12 and 15.
-   Raising the floor is the fix; the zoom cannot be suppressed without
-   also taking pinch-zoom away from everyone. */
 @media (max-width:1024px){
   input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]),
   textarea{
@@ -414,9 +384,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   }
 }
 
-/* --- Touch targets ----------------------------------------------------
-   A 22px close button is a coin toss with a thumb. The visual weight of
-   each control is unchanged; only the box you can hit grows. */
 .subPgX{
   width:40px;height:40px;
   margin-inline-start:-.55rem;
@@ -429,7 +396,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 .hsMode{width:40px;height:40px;margin-right:-.5rem;}
 .hsMode .hsIco{inset:7px;width:auto;height:auto;}
 
-/* The ranking dots stay 7px wide and gain an invisible thumb-sized box. */
 .rkDot{position:relative;}
 .rkDot::after{content:'';position:absolute;inset:-9px;border-radius:50%;}
 .rkDots{gap:.7rem;}
@@ -445,16 +411,10 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   .avCmDel{padding:.45rem .55rem;}
   }
 
-/* Range thumbs are drawn by the platform and default to something a
-   mouse can hit and a finger cannot. */
 input[type=range].cropZoom{height:32px;background:transparent;}
 input[type=range].cropZoom::-webkit-slider-thumb,
 input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
 
-/* --- Small copy -------------------------------------------------------
-   The tracked micro-labels are part of the type system, but a few had
-   fallen under 9px, which is below what most people can read on a phone
-   held at arm's length. */
 @media (max-width:640px){
   .rkHeadN{font-size:.64rem;}
   .rkAll{font-size:.66rem;}
@@ -464,30 +424,18 @@ input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
   .cpBubbleTime,.dmMsgTime{font-size:.62rem;}
 }
 
-/* --- Wide screens -----------------------------------------------------
-   A conversation is a column of text; stretched across an ultrawide it
-   reads as two disconnected edges. Centre it once the room appears. */
 @media (min-width:1100px){
   .cpBody{padding-inline:max(1.5rem,calc((100% - 1180px) / 2));}
 }
 
-/* --- Motion and paint -------------------------------------------------
-   A permanent will-change keeps a compositor layer alive for a modal
-   that is closed almost all of the time. */
 .legalModal{will-change:auto;}
 
-/* The lightbox is the one place the artwork is meant to fill the screen;
-   a flat 10vw inset spent a third of a phone's width on nothing. */
 #dzLight{
   padding:max(var(--sat),clamp(.75rem,4dvh,6rem))
           clamp(.75rem,4vw,6rem)
           max(var(--sab),clamp(.75rem,4dvh,6rem));
 }
 
-/* --- Environments -----------------------------------------------------
-   Someone who has asked their system for less transparency is usually
-   asking for legibility, a cheaper compositor, or both. Every blurred
-   bar on the site sits over a solid colour anyway. */
 @media (prefers-reduced-transparency:reduce){
   .dzTop,.fgTopBar::before,.subPgHdr::before,.cpBar::before,
   .cpLockNote::before,#legalBackdrop::before,#upqBackdrop::before,
@@ -497,8 +445,6 @@ input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
   .dzTop{background:var(--bg);}
 }
 
-/* Windows high-contrast paints its own palette and drops backgrounds,
-   which leaves the icon buttons and the selected chips unreadable. */
 @media (forced-colors:active){
   .dzIcon,.fgTopBtn,.subPgX,.cmBack,.fltPX,.upPopX,
   .ftTab,.fgCatChip,.hpTab,.pfSrchChip{
@@ -514,9 +460,6 @@ input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
   :focus-visible{outline:2px solid Highlight;outline-offset:2px;}
 }
 
-/* Short landscape viewports: close the gaps the portrait rhythm leaves so
-   the first row of art reaches the fold. Lives here because the margins
-   it answers are set in ranking.css, which loads after hero.css. */
 @media (max-height:500px) and (orientation:landscape){
   .hsWrap{ margin-top:.9rem; }
   #artworks > .awGrid{ margin-top:.8rem; }

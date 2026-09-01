@@ -250,8 +250,6 @@
     }
   }
 
-  /* The one place the sign-in form says no. `authClear` wipes both the error
-     and the confirmation line the two flows share. */
   function authEl(id) { return document.getElementById(id); }
   function authFail(msg) {
     var err = authEl('authErr');
@@ -264,9 +262,6 @@
     if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
   }
 
-  /* The token the backend will demand, or null when there is nothing to get.
-     false means captcha is switched on but could not produce one — the attempt
-     would be refused, and the refusal reads better said here than there. */
   async function authCaptcha() {
     var tok = window.dzCaptcha ? await window.dzCaptcha.forAuth() : null;
     if (window.dzCaptcha && window.dzCaptcha.configured() && !tok) {
@@ -437,7 +432,6 @@
     if (icon) icon.innerHTML = showing ? AUTH_EYE_OFF : AUTH_EYE_OPEN;
   }
 
-  /* What Supabase said, in words a person can act on. */
   var SIGNUP_REFUSALS = [
     [/already registered|already in use|user already/, 'This email is already registered. Try logging in instead.'],
     [/weak password|password should|at least/,         'Password is too weak. Use at least 6 characters.'],
@@ -518,8 +512,6 @@
   window.dzIsStaff = dzIsStaff;
   window.dzIsPartner = dzIsPartner;
 
-  // Anything the page remembers because of the plan it last read — the job
-  // posting allowance among it — is stale the moment the plan is re-read.
   function dzForgetPlanCaches(){
     if(typeof window.dzJobQuotaForget === 'function') window.dzJobQuotaForget();
   }
@@ -702,10 +694,6 @@
     if(!unread.length){ notifRefreshBadge(); return; }
     try{
       var rows = unread.map(function(n){ return {user_id:currentUser.id, notification_id:n.id}; });
-      // ignoreDuplicates, so this is ON CONFLICT DO NOTHING rather than DO UPDATE.
-      // Marking a notification read is idempotent — there is nothing to rewrite
-      // on the second attempt — and the DO UPDATE form needs an UPDATE policy
-      // the table does not have, so a re-mark used to throw.
       const{error} = await sb.from('notification_reads')
         .upsert(rows, {onConflict:'user_id,notification_id', ignoreDuplicates:true});
       if(error) throw error;

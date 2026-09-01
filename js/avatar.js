@@ -80,7 +80,6 @@
   function pfAvBCropRender(){
     document.getElementById('pfAvBCropImg').style.objectPosition = pfAvBCrop.x+'% '+pfAvBCrop.y+'%';
   }
-  /* One axis only: whichever way the picture overflows the frame. */
   window.dzDragStage('pfAvBCropStage', pfAvBCrop,
     function(){ return !!pfAvBCrop.axis; },
     function(p){

@@ -182,29 +182,6 @@ const MODULE = `
 (function(C){
   'use strict';
 
-  // The two providers take DIFFERENT things, and the chooser has to say so
-  // before the buyer commits — someone who only has a card must not pick
-  // PayPal and find there is nothing there for them, and someone who wants to
-  // pay from a PayPal balance must not be sent to a card form.
-  //
-  //   Razorpay  every method the account has switched on: credit card, debit
-  //             card, UPI, net banking, wallets, EMI.
-  //   PayPal    the PayPal account itself, and nothing else. Card funding is
-  //             turned off in the SDK url below, so PayPal's guest
-  //             "Debit or Credit Card" button is not offered here at all.
-  //
-  // Each provider's card carries that provider's OWN logo and colours —
-  // Razorpay's blue chevron, PayPal's double-P on their navy and gold. The
-  // marks are inline SVG rather than a letter or a hosted image: a payment
-  // choice must not be waiting on someone else's CDN, and a broken image where
-  // the gateway's logo belongs is exactly the moment a buyer stops trusting
-  // the page. The colours are fixed hex, not theme variables, for the same
-  // reason — a Razorpay card that turns purple in one theme stops looking like
-  // Razorpay.
-  //
-  // Held as bare paths rather than finished SVG, because the same artwork is
-  // drawn twice: white on the provider's colour at the head of a card, and in
-  // the brand's own colour on a white chip in the accepted-methods strip.
   var PATH_RZP =
     'M22.436 0l-11.91 7.773-1.174 4.276 6.625-4.297L11.65 24h4.391l6.395-24z' +
     'M14.26 10.098L3.389 17.166 1.564 24h9.008l3.688-13.902Z';
@@ -222,14 +199,6 @@ const MODULE = `
       (fill ? ' style="fill:' + fill + '"' : '') + '><path d="' + path + '"/></svg>';
   }
 
-  // What each provider actually takes, in the brands' own marks rather than in
-  // our words for them. A buyer recognises the Visa and Mastercard logos in a
-  // way no chip reading "Credit card" can manage.
-  //
-  // UPI and RuPay have no artwork we are able to carry offline, and an
-  // approximated logo would be worse than none — so UPI is shown by the apps
-  // that ride it, which is what a buyer opens anyway, and the exact wording
-  // stays in the chips underneath where nothing is left to a logo to imply.
   var MARKS = {
     visa: { name: 'Visa', hex: '#1A1F71',
       path: 'M9.112 8.262L5.97 15.758H3.92L2.374 9.775c-.094-.368-.175-.503-.461-.658C1.447 8.864.677 8.627 0 8.479l.046-.217h3.3a.904.904 0 01.894.764l.817 4.338 2.018-5.102zm8.033 5.049c.008-1.979-2.736-2.088-2.717-2.972.006-.269.262-.555.822-.628a3.66 3.66 0 011.913.336l.34-1.59a5.207 5.207 0 00-1.814-.333c-1.917 0-3.266 1.02-3.278 2.479-.012 1.079.963 1.68 1.698 2.04.756.367 1.01.603 1.006.931-.005.504-.602.725-1.16.734-.975.015-1.54-.263-1.992-.473l-.351 1.642c.453.208 1.289.39 2.156.398 2.037 0 3.37-1.006 3.377-2.564m5.061 2.447H24l-1.565-7.496h-1.656a.883.883 0 00-.826.55l-2.909 6.946h2.036l.405-1.12h2.488zm-2.163-2.656l1.02-2.815.588 2.815zm-8.16-4.84l-1.603 7.496H8.34l1.605-7.496z' },
@@ -251,14 +220,6 @@ const MODULE = `
     }).join('') + '</span>';
   }
 
-  // What Razorpay can actually offer depends on the ORDER'S CURRENCY, and the
-  // chooser must not promise otherwise.
-  //
-  // UPI, net banking, wallets and EMI are domestic rails: Razorpay offers them
-  // on an INR order and on nothing else. A USD order gets international cards
-  // and only international cards. Listing UPI beside a dollar price is a
-  // promise the checkout window then breaks, and the buyer is already
-  // committed by the time they find out.
   var RZP_WAYS = {
     INR:   ['Credit card', 'Debit card', 'UPI', 'Net banking', 'Wallets', 'EMI'],
     other: ['Credit card', 'Debit card']
@@ -270,12 +231,6 @@ const MODULE = `
   };
   function rzpKey(cur){ return cur === 'INR' ? 'INR' : 'other'; }
 
-  // What PayPal will settle. Mirrors the SUPPORTED set in functions/api/paypal.js,
-  // which refuses anything outside it — INR most notably, which is exactly the
-  // currency a seller pricing for an Indian audience will pick.
-  //
-  // A provider that cannot take this order is not drawn. It used to be offered
-  // and then refuse, which spends the buyer's decision before telling them.
   var PP_CURRENCIES = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','SEK','NOK',
     'DKK','PLN','CZK','HUF','NZD','SGD','HKD','MXN','BRL','ILS','PHP','THB','TWD'];
 
@@ -313,25 +268,12 @@ const MODULE = `
     }catch(e){ return ((Number(cents)||0)/100).toFixed(2)+' '+(cur||'USD'); }
   }
 
-  // money() takes HUNDREDTHS OF A MAJOR UNIT, because that is what
-  // marketplace_items.price_cents holds for every currency — the composer
-  // writes Math.round(price * 100) and does not special-case anything.
-  //
-  // Most figures on this page are not that. An order amount, a support
-  // minimum, a wallet balance and an earning are all in the currency's
-  // SMALLEST unit, which for a zero-decimal currency is the major unit: ¥1500
-  // is 1500, not 150000. Handing one of those to money() shows a hundredth of
-  // it. Same list the backends use.
   var ZERO_DEC = {JPY:1, HUF:1, TWD:1};
   function moneyMinor(v, cur){
     return money(ZERO_DEC[cur] ? Number(v) * 100 : v, cur);
   }
   function orderMoney(o){ return moneyMinor(o.amount, o.currency); }
 
-  // ---- provider sdks ------------------------------------------------------
-  // One <script> loader for both. ready() reads back the global the script
-  // defines, so a load that answers with something other than the sdk is a
-  // failure, and a failed load is retried the next time the buyer asks.
   var sdks = {};
   function loadSdk(key, src, attrs, ready){
     var got = ready();
@@ -355,22 +297,10 @@ const MODULE = `
       function(){ return window.Razorpay; });
   }
 
-  // PayPal is the PayPal account and nothing else here.
-  //
-  // Left alone, the SDK renders a second button — "Debit or Credit Card" —
-  // which takes a card through PayPal's guest checkout. That is not what this
-  // provider is for on this site: cards belong to Razorpay, which handles them
-  // properly alongside UPI and the rest. Every card-shaped and local funding
-  // source is switched off, so the sheet offers exactly one thing: sign in to
-  // PayPal and pay from the account.
   var PP_OFF = ['card','credit','paylater','venmo','bancontact','blik','eps',
     'giropay','ideal','mercadopago','mybank','p24','sepa','sofort','trustly',
     'multibanco','satispay','wechatpay'].join(',');
 
-  // The PayPal SDK fixes its currency in the script url, so a EUR listing and a
-  // USD plan need two different loads. Each gets its own global through
-  // data-namespace — without that the second script would quietly win and the
-  // buttons would quote the wrong currency.
   function loadPP(clientId, currency){
     var ns = 'dzpp_' + currency;
     return loadSdk(ns,
@@ -381,7 +311,6 @@ const MODULE = `
       function(){ return window[ns]; });
   }
 
-  // ---- backends -----------------------------------------------------------
   async function api(prov, body){
     var s = await sb.auth.getSession();
     var session = s && s.data && s.data.session;
@@ -407,11 +336,6 @@ const MODULE = `
   }
   function toast(m){ if(typeof showToast === 'function') showToast(m); }
 
-  // ---- the sheet ----------------------------------------------------------
-  // The small forms — request a payout, add a payout method. Buying is NOT one
-  // of these any more: a purchase gets the full checkout page further down,
-  // because a popup is the wrong shape for "here is exactly what you are
-  // paying for, and exactly what you get".
   var sheet = null;
   function closeSheet(){
     if(!sheet) return;
@@ -443,22 +367,10 @@ const MODULE = `
     return sheet;
   }
 
-  // ---- provider runs ------------------------------------------------------
-  // No 'method' block is passed to Razorpay, and that is deliberate.
-  //
-  // It used to name every method explicitly, as documentation. It could only
-  // ever SUBTRACT: Razorpay shows what the account has enabled for the order's
-  // currency, and a hand-written list silently hides anything not on it — a
-  // method added to the account later, or one this list never knew about
-  // (cardless EMI, bank transfer, the pay-by-app options). Left off, the
-  // account settings decide, which is where that decision belongs.
   function runRzp(order, onPaid){
     gateNote('Opening ' + PROV.rzp.name + '\\u2026');
     return loadRzp().then(function(){
-      if(!co) return;                       // buyer left while the sdk loaded
-      // The checkout page stays up UNDERNEATH Razorpay's own window. A buyer
-      // who dismisses it lands back on their order rather than on whatever
-      // page they started from, and can pick again without starting over.
+      if(!co) return;
       gatePaying('rzp', order, 'Razorpay is open. Finish paying in its window \\u2014 ' +
         'card, UPI, net banking or a wallet, whichever you prefer.');
       new Razorpay({
@@ -487,14 +399,10 @@ const MODULE = `
     });
   }
 
-  // PayPal draws its own buttons, so they are rendered into the gateway step of
-  // the checkout page — the buyer keeps the order in front of them the whole
-  // time. The order already exists server-side by this point; createOrder just
-  // names it, which is what keeps the amount out of the browser's hands.
   function runPP(order, onPaid){
     gateNote('Loading ' + PROV.paypal.name + '\\u2026');
     return loadPP(order.clientId, order.currency).then(function(pp){
-      if(!co) return;                       // buyer left while the sdk loaded
+      if(!co) return;
       co.gate.innerHTML =
         payingHtml('paypal', order) +
         '<div class="dzCoGateNote">Sign in to PayPal to finish. Cards are not ' +
@@ -530,16 +438,6 @@ const MODULE = `
     });
   }
 
-  // ---- the checkout page --------------------------------------------------
-  // A purchase gets a whole page, not a popup. Top to bottom it answers the
-  // three questions in the order a buyer actually asks them:
-  //
-  //   1  What am I buying, and what do I get for it?
-  //   2  How am I paying — which of the two, and what does each one take?
-  //   3  The gateway itself, which only appears once a method is chosen.
-  //
-  // Nothing is ordered and no ledger row is written until step 2 is answered,
-  // so leaving from step 1 costs nothing and leaves no trace.
   var co = null;
 
   function closeCo(){
@@ -554,8 +452,6 @@ const MODULE = `
     if(co) co.gate.innerHTML = '<div class="dzCoGateNote">' + esc(msg) + '</div>';
   }
 
-  // Whose window is about to open, in their own logo and colours, so the
-  // gateway step names the provider the same way the chooser did.
   function provHtml(id){
     var p = PROV[id];
     return '<div class="dzCoProv dzCoProv--' + esc(id) + '">' +
@@ -563,9 +459,6 @@ const MODULE = `
       '<span class="dzCoProvName">' + esc(p.name) + '</span></div>';
   }
 
-  // The amount again, at the gateway, straight off the order the SERVER made —
-  // not off the figure step 1 quoted. If those two ever disagreed, this is
-  // where the buyer would see it before paying rather than after.
   function payingHtml(id, order){
     return provHtml(id) +
       '<div class="dzCoPaying">' +
@@ -578,9 +471,6 @@ const MODULE = `
       '<div class="dzCoGateNote">' + esc(msg) + '</div>';
   }
 
-  // Something went wrong, or the buyer backed out of a provider's window. The
-  // order still stands — it is the method that needs choosing again — so the
-  // page goes back to step 2 with the reason on it rather than collapsing.
   function coRetry(why){
     if(!co) return;
     co.step3.hidden = true;
@@ -599,8 +489,6 @@ const MODULE = `
     });
   }
 
-  // What the buyer is paying for, drawn from what the page already knows —
-  // no extra round trip before the order even exists.
   function itemHtml(s){
     var thumb = s.thumb
       ? '<img class="dzCoThumb" src="' + esc(s.thumb) + '" alt="" loading="lazy" decoding="async">'
@@ -626,22 +514,16 @@ const MODULE = `
       (s.note ? '<p class="dzCoItemNote">' + esc(s.note) + '</p>' : '');
   }
 
-  // The two providers, side by side and clearly ALTERNATIVES — one or the
-  // other, never both. The "or" between them is not decoration: they take
-  // different things, and a buyer choosing blind is how someone with only a
-  // card ends up in PayPal with nothing to pay with.
   function pickHtml(list, currency){
     var k = rzpKey(currency);
     var opts = list.map(function(id){
       var p = PROV[id];
-      // Razorpay's offer is currency-dependent; PayPal's is not.
       if(id === 'rzp')
         p = { name: p.name, logo: p.logo,
               note: RZP_NOTE[k], marks: RZP_MARKS[k], ways: RZP_WAYS[k] };
       return '<button class="dzPayOpt dzPayOpt--' + esc(id) + '" type="button" ' +
                'data-prov="' + esc(id) + '" aria-pressed="false">' +
                '<span class="dzPayOptTop">' +
-                 // our own constant markup, not anything a row supplied
                  '<span class="dzPayLogo">' + p.logo + '</span>' +
                  '<span class="dzPayOptName">' + esc(p.name) + '</span>' +
                  '<span class="dzPayOptTick" aria-hidden="true">\\u2713</span>' +
@@ -669,8 +551,6 @@ const MODULE = `
     root.innerHTML =
       '<header class="dzCoBar">' +
         '<button class="dzCoBack" type="button" aria-label="Leave checkout">\\u2190</button>' +
-        // the wordmark exactly as the site wears it everywhere else: Digi in
-        // the page's own text colour, Artz in the brand red
         '<div class="dzCoBrand">Digi<span class="dzCoBrandA">Artz</span></div>' +
         '<div class="dzCoLock"><span aria-hidden="true">\\ud83d\\udd12</span>Secure</div>' +
       '</header>' +
@@ -686,9 +566,6 @@ const MODULE = `
           '</div>' +
         '</section>' +
 
-        // Only where a code can actually do something. Drawing the field on
-        // every checkout and refusing the code afterwards is how a buyer ends
-        // up believing they got a discount they did not get.
         (spec.promo ?
         '<section class="dzCoStep" id="dzCoPromo">' +
           '<div class="dzCoStepHead"><span class="dzCoNum">2</span>' +
@@ -740,11 +617,6 @@ const MODULE = `
       step3: root.querySelector('#dzCoGo'),
       gate: root.querySelector('.dzCoGate'),
       pickMsg: root.querySelector('.dzCoPickMsg'),
-      // The code the buyer has successfully applied, or null. Read by the
-      // order callback at the moment the order is created — NOT stored
-      // anywhere else, and never trusted for the price: the server resolves
-      // the code again and computes the charge itself. What this holds is a
-      // string to send and a line to show, nothing more.
       promo: null
     };
 
@@ -752,13 +624,6 @@ const MODULE = `
     return co;
   }
 
-  // Checking a code before the buyer commits to it.
-  //
-  // The check is the same call the server makes at order time —
-  // /api/collab promo-resolve — so a code that passes here is a code that
-  // will pass there, and the discount quoted is the discount charged. It has
-  // to be: quoting a saving the order then does not honour is worse than
-  // offering no field at all.
   function wirePromo(spec){
     var input = co.root.querySelector('#dzCoPromoIn');
     var btn   = co.root.querySelector('#dzCoPromoGo');
@@ -807,33 +672,17 @@ const MODULE = `
     input.addEventListener('keydown', function(e){
       if(e.key === 'Enter'){ e.preventDefault(); apply(); }
     });
-    // Typing after applying drops the applied code, so the order cannot go out
-    // carrying one string while the buyer is looking at another.
     input.addEventListener('input', function(){
       if(co && co.promo){ co.promo = null; say('', ''); }
     });
   }
 
-  // Who this member is, asked ONCE.
-  //
-  // fillCollabRow() needs it to decide whether to add the Collab Hub row, and
-  // paintClaim() needs it to decide what the Max card's button is. Both run on
-  // every signed-in page load, and both used to ask separately — two identical
-  // round trips per member per load, for an answer that cannot differ between
-  // them.
-  //
-  // Cached as the PROMISE rather than the answer, so two callers racing on
-  // first paint share one request rather than starting a second while the
-  // first is still open. Cleared by dzCollabForget() when the answer could
-  // have changed, which is after claiming Max.
   var statePromise = null;
   function collabState(){
     if(!statePromise){
       statePromise = collabApi('state', {}).then(function(r){
         return (r && r.state) || null;
       }, function(){
-        // A failed lookup is not cached: the next paint should ask again
-        // rather than treat one dropped request as "not a partner" forever.
         statePromise = null;
         return null;
       });
@@ -842,8 +691,6 @@ const MODULE = `
   }
   function dzCollabForget(){ statePromise = null; }
 
-  // The collab endpoint, which is not one of the two payment providers and so
-  // does not go through api(). Same session, same no-store.
   function collabApi(action, body){
     if(typeof sb === 'undefined' || !sb) return Promise.reject(new Error('Sign in required'));
     return sb.auth.getSession().then(function(s){
@@ -861,10 +708,6 @@ const MODULE = `
     }).then(function(res){ return res.json().catch(function(){ return null; }); });
   }
 
-  // ---- one flow, either provider -----------------------------------------
-  // The provider list was decided server-side, from which credentials are
-  // actually bound — a provider with nothing bound is never drawn. Nothing is
-  // ordered, and no ledger row written, until one has been picked.
   function start(spec, order, onPaid){
     if(gate()) return;
     var all  = C.providers || [];
@@ -887,8 +730,8 @@ const MODULE = `
 
       order(id)
         .then(function(o){
-          if(!o){ closeCo(); return; }              // handled by the caller
-          if(!co) return;                           // buyer left
+          if(!o){ closeCo(); return; }
+          if(!co) return;
           return id === 'paypal' ? runPP(o, onPaid) : runRzp(o, onPaid);
         })
         .catch(function(e){
@@ -901,23 +744,10 @@ const MODULE = `
       b.addEventListener('click', function(){ pick(b.getAttribute('data-prov')); });
     });
 
-    // One provider bound and there is no choice to make — the step still shows
-    // what it takes, and the gateway opens straight away.
     if(list.length === 1) pick(list[0]);
   }
 
-  // ---- entry points -------------------------------------------------------
-  // A plan's own card is the honest description of what the money buys, so the
-  // checkout page reuses it rather than inventing a shorter one.
   function planSpec(id, amount){
-    // The member's own currency, which is what the plan was priced in. This
-    // used to say 'USD' with a note that plans are priced in dollars
-    // server-side; that stopped being true when prices moved into
-    // subscription_prices, one row per plan per currency. The string stayed,
-    // and it is what decides the accepted-methods strip and which providers
-    // are drawn — so an INR member was quoted a rupee price, told only cards
-    // were taken, and offered PayPal, which refuses INR. sub-order reads the
-    // same profile column, so this is the currency the order is created in.
     var cur = C.currency || 'USD';
     var p = null;
     (C.plans || []).forEach(function(x){ if(x.id === id) p = x; });
@@ -925,17 +755,12 @@ const MODULE = `
       title: 'Checkout',
       name: p.name + ' membership',
       sub: 'One month \\u00b7 ' + p.tagline,
-      price: p.price,             // already formatted in cur, server-side
+      price: p.price,
       priceLabel: 'Plan price',
       currency: cur,
       icon: '\\u2605',
-      // Lite is blue, Premium purple, Max gold on the plan page. Checkout
-      // wears the same colour, so the buyer can see they are paying for the
-      // card they tapped and not one next to it.
       tone: p.tone,
       gets: p.features,
-      // Max is the only plan a promo code touches, and the server agrees:
-      // rzp.js and paypal.js both refuse a code sent against anything else.
       promo: id === 'max',
       promoKind: 'subscription',
       note: 'A single charge for 31 days. Nothing recurring \\u2014 it does not ' +
@@ -946,7 +771,6 @@ const MODULE = `
       title: 'Support DigiArtz',
       name: 'Support DigiArtz',
       sub: 'A one-off contribution',
-      // smallest unit, the same figure the order is created with
       price: moneyMinor(amount, cur),
       priceLabel: 'Amount',
       currency: cur,
@@ -963,10 +787,6 @@ const MODULE = `
     if(plan === 'support'){
       var cur = C.currency || 'USD';
       var min = (C.support && C.support.min) || 50;
-      // support_limits.min_amount is in the smallest unit, and minorOf() puts
-      // what the member types into the same unit, so the two compare directly.
-      // Only the DISPLAY needed fixing: money() would have quoted a ¥700
-      // minimum as ¥7 and then refused ¥7.
       var v = prompt('Support amount in ' + cur +
                      ' (minimum ' + moneyMinor(min, cur) + '):', '');
       if(v === null) return;
@@ -976,9 +796,6 @@ const MODULE = `
       }
     }
     start(planSpec(plan, amount), function(prov){
-      // co.promo is whatever the buyer applied and saw confirmed. The server
-      // resolves it again and computes the charge from its own figures — this
-      // is a string being forwarded, not a price being asserted.
       return api(prov, {action:'sub-order', plan:plan, amount:amount,
                         promo:(co && co.promo) || null});
     }, function(r){
@@ -986,9 +803,6 @@ const MODULE = `
     });
   };
 
-  // The listing's own slot carries the title, preview and price the page is
-  // already showing, so the checkout page can name what is being bought
-  // without a round trip and without waiting.
   function slotSpec(id, hasFile){
     var el = document.querySelector('.dzSlot[data-i="' + id + '"]');
     var title = (el && el.getAttribute('data-t')) || 'Marketplace item';
@@ -1017,7 +831,7 @@ const MODULE = `
   window.dzMarketBuy = function(id, hasFile){
     start(slotSpec(id, hasFile), function(prov){
       return api(prov, {action:'market-order', itemId:id}).then(function(o){
-        if(o.owned){                      // bought before, straight to the files
+        if(o.owned){
           afterPurchase(id, hasFile, true);
           return null;
         }
@@ -1028,21 +842,11 @@ const MODULE = `
     });
   };
 
-  // Where a sale ends. The payment has been verified by the provider and
-  // recorded by its backend before this runs, so the item is already unlocked
-  // by the time the buyer is shown it — nothing here grants anything.
-  //
-  // The buyer lands on My Purchases rather than back on the listing they were
-  // reading, because that page is the answer to the question they now have:
-  // where are my files, and where will they be tomorrow.
   function afterPurchase(id, hasFile, wasAlreadyOwned){
     toast(wasAlreadyOwned ? 'You already own this' : 'Purchased \\u2014 your files are unlocked');
     ownedIds[id] = true;
     repaintOwned();
     purchasesP = null;
-    /* The purchases panel, if this build has the board that leads to it —
-       the test used to name the Settings slot those rows were injected into,
-       which stopped existing when they became a page of their own. */
     if(document.getElementById('payHubGrid')){
       openPanel('buy');
     } else if(hasFile && typeof window.dzMarketGet === 'function'){
@@ -1050,11 +854,6 @@ const MODULE = `
     }
   }
 
-  // ---- filling the gaps the public bundle leaves --------------------------
-  // js/sections.js and js/profile.js render an empty slot wherever a price or
-  // a buy control belongs, and index.html holds an empty container where the
-  // plan grid belongs. Neither file contains the markup, so a signed-out
-  // visitor's page has nothing to read. This puts it back.
   function fillPlans(){
     var host = document.getElementById('subPgGate');
     if(!host || host.dataset.dzFilled) return;
@@ -1066,33 +865,23 @@ const MODULE = `
     paintClaim(host);
   }
 
-  // ---- the partner's Max --------------------------------------------------
-  //
-  // A partner does not buy Max, so for a partner the Max card's button is not
-  // a payment button. It is replaced outright rather than hidden beside a
-  // second one: two buttons on one card, one of which charges money, is a
-  // mistake waiting for a mis-tap.
-  //
-  // The state comes from the server on every paint. Nothing about who is a
-  // partner is cached in this module or written into the page — a member who
-  // is not one sees the ordinary card and no trace that another one exists.
   function paintClaim(host){
     var card = host.querySelector('.subBtn[data-plan="max"]');
     if(!card) return;
 
     collabState().then(function(st){
-      if(!st || !st.is_partner) return;              // ordinary member, ordinary card
+      if(!st || !st.is_partner) return;
       var btn = host.querySelector('.subBtn[data-plan="max"]');
-      if(!btn) return;                               // repainted underneath us
+      if(!btn) return;
 
       if(st.max_claimed){ claimed(btn); return; }
 
       btn.textContent = 'Claim Max Membership';
       btn.classList.add('subBtn--claim');
-      btn.removeAttribute('data-plan');              // dzSubBuy can no longer reach it
+      btn.removeAttribute('data-plan');
       btn.setAttribute('aria-label', 'Claim your free Max membership');
 
-      var fresh = btn.cloneNode(true);               // drops the buy listener
+      var fresh = btn.cloneNode(true);
       btn.parentNode.replaceChild(fresh, btn);
       fresh.addEventListener('click', function(){
         fresh.disabled = true;
@@ -1105,11 +894,8 @@ const MODULE = `
             return;
           }
           claimed(fresh);
-          dzCollabForget();          // max_claimed has moved
+          dzCollabForget();
           toast('Max is yours \u2014 enjoy it');
-          // The rest of the page reads the tier off the profile, so it has to
-          // be told the profile moved. checkUserRole() repaints the nav chip,
-          // the daily limits and the ad slots from one read.
           if(typeof window.checkUserRole === 'function') window.checkUserRole();
         }, function(){
           fresh.disabled = false;
@@ -1117,7 +903,7 @@ const MODULE = `
           toast('Could not claim Max');
         });
       });
-    }, function(){ /* unreachable collab endpoint leaves the ordinary card */ });
+    }, function(){  });
 
     function claimed(btn){
       btn.textContent = 'Max Claimed';
@@ -1135,10 +921,6 @@ const MODULE = `
     }
   }
 
-  // What this caller has already bought, as far as the last answer goes. It is
-  // a display hint and nothing more: the download itself is authorised in
-  // Postgres on every single request, so a stale or forged entry here buys
-  // exactly nothing.
   var ownedIds = {};
 
   function paintSlot(el){
@@ -1154,8 +936,6 @@ const MODULE = `
                 (owned && priced ? 'Purchased' : esc(money(cents, cur))) + '</div>';
     var btn;
     if(owned && hasFile){
-      // The only state in which a download control exists at all. Everyone
-      // else — signed out, signed in, subscribed to anything — gets the price.
       btn = '<button class="dzBuy dzBuy--own" type="button" data-act="get">' +
               (view ? '\\u2b07 Download your files' : '\\u2b07 Download') + '</button>';
     } else if(owned){
@@ -1179,8 +959,6 @@ const MODULE = `
       });
     });
 
-    // the lock note the public bundle leaves on the detail view has nothing
-    // left to say once these files are this caller's
     var lock = document.getElementById('dzvLock-' + id);
     if(lock) lock.hidden = owned;
   }
@@ -1191,7 +969,6 @@ const MODULE = `
     });
   }
 
-  // One question for the whole page rather than one per card.
   function askOwned(ids){
     if(!ids.length || typeof sb === 'undefined' || !sb || !sb.rpc) return;
     sb.rpc('dz_market_owned', {p_items: ids}).then(function(res){
@@ -1202,7 +979,7 @@ const MODULE = `
         if(v){ ownedIds[String(v)] = true; got = true; }
       });
       if(got) repaintOwned();
-    }, function(){ /* a slot that stays priced is the safe way to be wrong */ });
+    }, function(){  });
   }
 
   function fillSlots(){
@@ -1217,11 +994,6 @@ const MODULE = `
     askOwned(fresh);
   }
 
-  // ---- wallet and payout methods -----------------------------------------
-  // Both live in profile settings, both behind this module, so a signed-out
-  // visitor's page carries neither the markup nor the endpoint. Every figure
-  // shown here was computed server-side from the ledger — nothing below adds
-  // money up, it only formats what it was handed.
   function pay(action, extra){
     return api('payouts', Object.assign({action:action}, extra || {}));
   }
@@ -1258,9 +1030,6 @@ const MODULE = `
       '</div></li>';
   }
 
-  // Which kinds a payout can actually be sent to, straight from the payout
-  // service so this cannot drift from what it will accept. Absent (an older
-  // backend) means say nothing rather than guess.
   var sendable = null;
   function canSendTo(kind){
     return !sendable || sendable.indexOf(kind) !== -1;
@@ -1270,9 +1039,6 @@ const MODULE = `
     var what = m.kind === 'paypal_email' ? 'PayPal · ' + esc(m.paypal_email)
              : m.kind === 'upi'          ? 'UPI · ' + esc(m.upi_vpa)
              : 'Bank · ' + esc(m.bank_name || 'Account') + ' ••••' + esc(m.bank_last4 || '');
-    // A method that cannot be paid to says so on its own row, where the seller
-    // is looking at it — rather than at the end of a payout request, after
-    // they have typed an account number in.
     var manual = !canSendTo(m.kind);
     return '<li class="dzBkRow' + (m.is_default ? ' dzBkRow--def' : '') +
         (manual ? ' dzBkRow--manual' : '') + '">' +
@@ -1307,20 +1073,6 @@ const MODULE = `
       'accounts apart. The full number is never stored.</p>'
   };
 
-  // The wallet has two halves and they are kept apart on purpose.
-  //
-  // PENDING holds the gross of sales that have not settled yet. It is the
-  // whole sale, before the gateway's fee, our commission and any tax, and NONE
-  // of it is withdrawable — the money is still with the gateway. Showing it
-  // inside the wallet balance is how a seller comes to believe a hundred-pound
-  // sale is a hundred pounds of theirs.
-  //
-  // WALLET holds only what has settled and survived every deduction. That is
-  // the number they can actually have, and it is the only number the payout
-  // button will accept.
-  //
-  // Per currency, both of them, with no total across currencies — producing
-  // one would need an exchange rate, and a seller's money is never converted.
   function pendingCard(s){
     var cur = s.currency;
     var g   = s.pending_gross || 0;
@@ -1351,9 +1103,6 @@ const MODULE = `
     '</div>';
   }
 
-  // Why the payout button cannot be pressed, or '' when it can. Answered here
-  // so the button says it, rather than the request failing at the end with the
-  // seller already committed to a form.
   function payoutBlock(d){
     var ms = d.methods || [], def = null;
     if(!ms.length) return 'Add a payout method';
@@ -1389,22 +1138,14 @@ const MODULE = `
   }
 
   function renderWallet(host, d){
-    // Both views are fed by the same overview call, and either can be the
-    // first one opened, so both read this.
     sendable = Array.isArray(d.sendableKinds) ? d.sendableKinds : null;
     var rows = Array.isArray(d.summary) ? d.summary : [];
-    // The member's own currency leads. The rest keep their order — they are
-    // separate balances, not a ranking, and none of them is converted into
-    // any other to decide which is bigger.
     var pref = C.currency || 'USD';
     rows = rows.slice().sort(function(a, b){
       return (b.currency === pref) - (a.currency === pref);
     });
     var paid = (d.payouts || []).filter(function(p){ return p.status === 'paid'; });
 
-    // A blocked balance is the first thing the member sees, and the request
-    // button goes with it — there is no point offering an action the server
-    // will refuse.
     var flagged = (d.flags || []).length > 0;
 
     host.innerHTML =
@@ -1431,7 +1172,6 @@ const MODULE = `
             '</div>') +
         '<div class="dzWlMsg" hidden></div>' +
 
-        // Its own section, below the wallet and never added into it.
         (rows.some(function(s){ return (s.pending_gross || 0) > 0; })
           ? '<div class="dzWlSect">Pending \\u2014 not yet yours</div>' +
             rows.map(pendingCard).join('')
@@ -1452,8 +1192,6 @@ const MODULE = `
           ? '<ul class="dzWlList">' + d.history.map(row).join('') + '</ul>'
           : '<div class="dzWlEmpty">Nothing yet.</div>') +
 
-        // House rules for the money side, kept at the foot of the wallet so
-        // they sit next to the balance and the payout button they describe.
         '<div class="dzWlSect">Wallet guidelines</div>' +
         '<ol class="dzWlGuide">' +
           '<li>You are paid in the currency you priced your listing in. Your ' +
@@ -1488,9 +1226,6 @@ const MODULE = `
         '</ol>' +
       '</div>';
 
-    // Each balance has its own button, and the payout it opens is denominated
-    // in that balance's currency from the label down to the request body. The
-    // form no longer knows what a dollar is.
     Array.prototype.forEach.call(host.querySelectorAll('.dzWlReq[data-cur]'), function(btn){
       btn.addEventListener('click', function(){
         var cur = btn.getAttribute('data-cur');
@@ -1502,8 +1237,6 @@ const MODULE = `
     });
   }
 
-  // Zero-decimal currencies quote whole units, so the amount a seller types is
-  // the amount, not hundredths of it. Same list the checkout backends use.
   function minorOf(v, cur){
     return ZERO_DEC[cur] ? Math.round(v) : Math.round(v * 100);
   }
@@ -1553,7 +1286,6 @@ const MODULE = `
               function(e){
                 m2.textContent = e.message || 'Could not request that';
                 m2.classList.add('dzWlMsg--bad');
-                // a freshly-raised flag should show on the wallet at once
                 if(/paused|verified/i.test(e.message || '')) refreshPanel();
               });
     });
@@ -1561,9 +1293,6 @@ const MODULE = `
 
   function renderBank(host, d){
     sendable = Array.isArray(d.sendableKinds) ? d.sendableKinds : null;
-    // Said once, above the buttons, and again on any row it applies to. The
-    // three kinds were offered as equals while only one of them could actually
-    // be paid — which a seller discovered after filling in a bank form.
     var manualKinds = ['upi', 'bank_account'].filter(function(k){ return !canSendTo(k); });
     host.innerHTML =
       '<div class="dzBk">' +
@@ -1662,14 +1391,6 @@ const MODULE = `
     });
   }
 
-  // ---- the account panel --------------------------------------------------
-  // The three money pages, and the three Settings items that open them, are
-  // built here rather than written into index.html. That file is a static
-  // asset served to everyone, and even with every figure stripped out its
-  // headings still announced that members hold a balance and get paid out.
-  //
-  // One panel, three views, one neutral id. Simpler than three shells that had
-  // to be kept in step, and there is nothing in the public page to read.
   var VIEWS = { bal: 'Balance', pay: 'Payout methods', buy: 'My purchases',
                 cur: 'Currency', collab: 'Collab Hub' };
 
@@ -1694,14 +1415,9 @@ const MODULE = `
   function closePanel(){
     var el = document.getElementById('dzPanelHost');
     if(el) el.classList.remove('open');
-    // hand the lock back the way every other overlay does, so closing this
-    // one on top of another does not unlock the page under both
     if(typeof restoreScroll === 'function') restoreScroll();
     else document.body.style.overflow = '';
   }
-  /* The page cannot reach this panel by name — it is built here, and the id
-     is deliberately neutral. Escape has to close it like any other overlay,
-     so the one handle it needs is published. */
   window.dzClosePanel = closePanel;
 
   function openPanel(view){
@@ -1716,22 +1432,6 @@ const MODULE = `
     paintPanel(true);
   }
 
-  // One host holds all four views, and switching between them used to leave
-  // the last one's markup up until the next one's fetch came back — so the
-  // wallet's balance sat there under the MY PURCHASES heading for as long as
-  // the round trip took, which on a slow connection is long enough to read.
-  // Two separate things caused that, and both are handled here.
-  //
-  // The host is emptied the moment the view changes, so a section that has not
-  // loaded yet shows nothing rather than the section before it. Nothing is put
-  // in its place on purpose: a spinner or a LOADING line is still something to
-  // read in a section it does not belong to.
-  //
-  // And every paint carries the number it started with. Both loaders below
-  // close over the host they were handed, so a wallet fetch that settles after
-  // the member has already moved to My Purchases would otherwise paint itself
-  // into it — the same wrong text, arriving by the other route. A paint whose
-  // number is no longer the current one drops what it fetched.
   var paintSeq = 0;
   function stale(seq){ return seq !== paintSeq; }
 
@@ -1741,8 +1441,6 @@ const MODULE = `
     var host = el.querySelector('.dzPanelWrap');
     var view = el.dataset.view;
 
-    // On a real view change only. refreshPanel repaints the view already up,
-    // after a payout or a method change, and blanking there would flash it.
     if(host.dataset.shown !== view){
       host.innerHTML = '';
       host.dataset.shown = view;
@@ -1755,20 +1453,6 @@ const MODULE = `
     loadWallet(force, host, view === 'pay' ? renderBank : renderWallet, seq);
   }
 
-  /* THE PAYOUTS BOARD.
-     These four were rows in the Settings menu, injected into an empty slot
-     index.html left for them. They are a page of their own now — Profile →
-     Payouts — and this fills its board.
-
-     What has not changed is why they are injected at all rather than written
-     in the document: this file answers no request without a session, so a
-     signed-out visitor's page source names neither a wallet nor a payout
-     method. Moving them to a page they can be seen on must not quietly turn
-     that off, so the page ships with an empty grid and this is the only thing
-     that fills it.
-
-     js/hubs.js draws the cards from this list, rather than this file drawing
-     its own, so the payouts board and the analytics board are one component. */
   var PAY_CARDS = {
     bal: { name:'Balance', cta:'View balance', a:'#4ADE80', b:'#15803D',
            desc:'What you have earned, what has been paid out, and the history behind both.',
@@ -1806,27 +1490,13 @@ const MODULE = `
     window.dzPayHubFill(['bal','pay','buy','cur'].map(payCard));
   }
 
-  /* COLLAB HUB, and only for a partner.
-
-     Not on the board with the four above. The board is what a member's account
-     holds — a balance, a way to be paid, what they bought, what it is counted
-     in — and every member has all four. The partner programme is not that: it
-     is a thing you are admitted to, most members are not in it, and a fifth
-     card sitting alone on a second row of an otherwise square board announced
-     it to everyone who saw a screenshot. It stays a row in Settings, which is
-     where it has always been.
-
-     Injected rather than written into index.html, for the reason the money
-     cards are: nothing about the Collab Hub is in that file, in this bundle's
-     markup, or in the menu until the server has said the word 'partner'. A
-     heading nobody is entitled to still tells them the programme exists. */
   function fillCollabRow(){
     var host = document.getElementById('setListGate');
     if(!host || host.dataset.dzFilled) return;
     host.dataset.dzFilled = '1';
     collabState().then(function(st){
       if(!st || !st.is_partner) return;
-      if(host.querySelector('[data-v="collab"]')) return;   // menu rebuilt underneath us
+      if(host.querySelector('[data-v="collab"]')) return;
       var b = document.createElement('button');
       b.className = 'pfMenuItem';
       b.type = 'button';
@@ -1838,21 +1508,8 @@ const MODULE = `
         else openPanel('collab');
       });
       host.appendChild(b);
-    }, function(){ /* unreachable endpoint simply leaves the menu as it is */ });
+    }, function(){  });
   }
-
-
-  // ---- the Collab Hub -----------------------------------------------------
-  //
-  // A partner's own code, their own numbers, their own money. Every figure on
-  // this page comes from one call, so the balance and the rows under it are
-  // from the same moment — the same rule the wallet is built on.
-  //
-  // THERE IS NOTHING TO ISOLATE HERE, WHICH IS THE POINT. This view cannot ask
-  // about another partner: dz_promo_mine(), dz_partner_wallet() and
-  // dz_partner_ledger() take no partner argument at all, so there is no id for
-  // this code to get wrong and no filter for it to forget. Partner 2's figures
-  // are not blurred out of this page — they never reach the browser.
 
   var collabP = null;
 
@@ -1881,13 +1538,6 @@ const MODULE = `
     if(el && el.classList.contains('open') && el.dataset.view === 'collab') paintPanel(true);
   }
 
-  // The breakdown behind the ⓘ.
-  //
-  // Written out to the last decimal because a partner is being asked to trust
-  // an arithmetic they cannot see run. The marketplace row says where the
-  // money comes from — the platform's cut, not the seller's — because that is
-  // the question anyone reading a revenue share asks second, and answering it
-  // badly is how a creator programme gets a reputation.
   var SPLIT_INFO = [
     {
       head: 'When someone buys a marketplace file with your code',
@@ -1949,16 +1599,10 @@ const MODULE = `
     var ledger = d.ledger || [];
     var pref   = C.currency || 'USD';
 
-    // The member's own currency first; the rest keep their order. Separate
-    // balances, not a ranking — and nothing is converted to decide which is
-    // bigger, here or anywhere else in this system.
     wallet = wallet.slice().sort(function(a, b){
       return (b.currency === pref) - (a.currency === pref);
     });
 
-    // Read from the state, not from the wallet rows. dz_partner_wallet()
-    // groups by currency, so it returns nothing at all until the first
-    // commission lands — and "no rows" is not "no payout method".
     var routed = !!(d.state && d.state.has_payout_method);
 
     host.innerHTML =
@@ -1997,15 +1641,10 @@ const MODULE = `
 
     var add = host.querySelector('#dzClAddPay');
     if(add) add.addEventListener('click', function(){
-      // The payout methods view already exists and is the one place an
-      // instrument is added. Sending the partner there rather than building a
-      // second form means one form to keep correct, and a partner who is also
-      // a seller keeps every instrument in one list.
       openPanel('pay');
     });
   }
 
-  // ---- the code -----------------------------------------------------------
   function promoHtml(promo){
     if(!promo.code){
       return '<section class="dzClCard">' +
@@ -2085,7 +1724,6 @@ const MODULE = `
     });
   }
 
-  // ---- the money ----------------------------------------------------------
   function collabWalletHtml(wallet, routed){
     if(!wallet.length){
       return '<section class="dzClCard">' +
@@ -2110,10 +1748,6 @@ const MODULE = `
     }).join('') + routeHtml(routed);
   }
 
-  // Which of the two routes this partner is on. Decided by the server — the
-  // route column of dz_partner_wallet() — and restated here in a sentence
-  // rather than a status word, because "wallet" and "direct" mean nothing to
-  // somebody who has not read the schema.
   function routeHtml(routed){
     if(routed){
       return '<section class="dzClCard dzClRoute dzClRoute--on">' +
@@ -2133,7 +1767,6 @@ const MODULE = `
     '</section>';
   }
 
-  // ---- who used it, and on what -------------------------------------------
   function ledgerHtml(rows){
     if(!rows.length){
       return '<section class="dzClCard">' +
@@ -2166,15 +1799,6 @@ const MODULE = `
     '</section>';
   }
 
-  // ---- currency ------------------------------------------------------------
-  // What this member transacts in: the currency their subscription is charged
-  // in, the one their own listings are priced in by default, and the one their
-  // balance is shown in first.
-  //
-  // It does NOT convert anyone else's price. A listing belongs to its seller
-  // and is paid in the seller's currency — putting a rate in that path is what
-  // takes a spread out of the seller's money and distorts the tax on it, and
-  // it is deliberately not done anywhere in this system.
   function renderCurrency(host){
     var cur  = C.currency || 'USD';
     var list = C.currencies || [];
@@ -2206,17 +1830,10 @@ const MODULE = `
         if(code === (C.currency || 'USD')) return;
         msg.textContent = 'Saving\u2026'; msg.hidden = false;
         msg.classList.remove('dzWlMsg--bad');
-        // Up for the whole change, not just the save: the prices on the page
-        // behind this are the old currency's until the new module has
-        // repainted them, and a half-converted page is the one thing this
-        // must not show.
         veil(true);
         pay('currency', {currency: code})
           .then(function(){
                   C.currency = code;
-                  // Prices, the plan grid and the wallet were all built for the
-                  // old currency. Rather than patch them one by one and risk
-                  // one being missed, the module is fetched again.
                   reloadModule(function(ok){
                     veil(false);
                     toast(ok ? 'Currency set to ' + code
@@ -2232,19 +1849,9 @@ const MODULE = `
     });
   }
 
-  // The page's own loading veil, borrowed rather than reinvented: #intro is
-  // already in the document with the spinner the site opens on, so a currency
-  // change wears the same animation the first paint does instead of a second
-  // one that would have to be kept looking like it.
-  //
-  // It covers at z-index 9999, over the account panel at 547, and swallows
-  // clicks while it is up — which is the point. Between the save and the
-  // repaint the page is showing rupee prices with a dollar module still bound
-  // to it, and nothing there should be clickable.
   function veilEl(){
     var el = document.getElementById('intro');
     if(el) return el;
-    // No intro on this page — build the same thing so the veil still shows.
     el = document.createElement('div');
     el.id = 'intro';
     el.setAttribute('role', 'status');
@@ -2259,18 +1866,13 @@ const MODULE = `
   function veil(on){
     var el = veilEl();
     if(on){
-      el.classList.remove('iGone');   // visibility back before the fade
-      void el.offsetWidth;            // so removing iHide animates, not jumps
+      el.classList.remove('iGone');
+      void el.offsetWidth;
       el.classList.remove('iHide');
       return;
     }
     el.classList.add('iHide');
     var done = false;
-    // Whichever of the two gets here first takes the listener off with it. The
-    // timeout used to set the flag and leave the handler bound — and it is the
-    // one that wins in a background tab, with prefers-reduced-motion, or any
-    // time the transition never starts — so a dead listener accumulated on
-    // #intro, which lives as long as the page does.
     var h = function(e){
       if(e.propertyName !== 'opacity') return;
       gone();
@@ -2282,17 +1884,9 @@ const MODULE = `
       el.classList.add('iGone');
     };
     el.addEventListener('transitionend', h);
-    setTimeout(gone, 450);            // transitionend can be missed
+    setTimeout(gone, 450);
   }
 
-  // Re-fetch /api/store so every price on the page is rebuilt server-side in
-  // the new currency. Nothing is converted in the browser.
-  //
-  // done() runs once the new module has executed AND repainted — dzFill is
-  // synchronous, so by the time it returns every price on the page is the new
-  // currency's. That is the moment the veil can come down, and it is why the
-  // caller waits for this rather than for the script's load event alone. It is
-  // also called on a failed load, so the veil can never be left up.
   function reloadModule(done){
     closePanel();
     var fired = false;
@@ -2305,7 +1899,7 @@ const MODULE = `
     s.src = '/api/store?t=' + Date.now();
     s.onload = function(){
       var host = document.getElementById('subPgGate');
-      if(host) host.dataset.dzFilled = '';   // let the new module repaint the grid
+      if(host) host.dataset.dzFilled = '';
       if(typeof window.dzFill === 'function') window.dzFill();
       finish(true);
     };
@@ -2314,7 +1908,6 @@ const MODULE = `
     setTimeout(function(){ finish(false); }, 15000);
   }
 
-  // One fetch feeds every view, so two of them can never disagree.
   var walletP = null;
   function loadWallet(force, host, render, seq){
     if(!host) return;
@@ -2322,28 +1915,14 @@ const MODULE = `
     if(!walletP) walletP = pay('overview');
     walletP.then(function(d){ if(stale(seq)) return; render(host, d); },
                  function(e){
-                   // dropped either way, so the next visit refetches
                    walletP = null;
                    if(stale(seq)) return;
                    host.innerHTML = '<div class="dzWlEmpty">' +
                      esc(e.message || 'Could not load') + '</div>';
                  });
   }
-  // repaint whatever view is open, after a payout or a method change.
-  // Local: nothing outside this module opens or refreshes the panel any more.
   function refreshPanel(){ walletP = null; paintPanel(true); }
 
-  // ---- my purchases -------------------------------------------------------
-  // The buyer's side of the wallet: everything this account has paid for on the
-  // marketplace, with every file it came with, unlocked and at full quality,
-  // for as long as the account exists. A purchase is not a rental and not a
-  // plan benefit — there is no expiry to show and no tier that could take it
-  // away, which is why the note at the top says so rather than leaving anyone
-  // to wonder whether cancelling Max costs them their files.
-  //
-  // dz_my_purchases reads the payments this caller has standing at 'paid'. A
-  // refunded or reversed sale is not one of those, so it leaves this list at
-  // the same moment it stops unlocking the download — the two cannot drift.
   function purchaseRow(p){
     var title = esc(p.title || 'Marketplace item');
     var thumb = p.preview_url
@@ -2395,26 +1974,19 @@ const MODULE = `
     });
   }
 
-  // Expands one purchase into its files. Asked for on the tap rather than up
-  // front: a list of twenty purchases should not be twenty roundtrips.
   function openFiles(btn){
     var item = btn.getAttribute('data-get');
     var box  = btn.parentNode.querySelector('.dzPuList');
     if(!box) return;
     if(!box.hidden){ box.hidden = true; return; }
     if(box.dataset.loaded){ box.hidden = false; return; }
-    // A purchase with ONE file never reached the dataset.loaded line below —
-    // it handed off and returned — so every tap on it asked dz_market_files
-    // again. The answer does not change: a listing's file list is fixed once
-    // it is bought. Remembered on the row, so a second tap starts the download
-    // rather than a round trip.
     if(box.dzOneFile){
       if(typeof window.dzMarketFetch === 'function'){
         window.dzMarketFetch(item, box.dzOneFile.file_id, box.dzOneFile.name, btn);
       }
       return;
     }
-    if(btn.disabled) return;   // a tap while the first one is still in flight
+    if(btn.disabled) return;
 
     btn.disabled = true;
     sb.rpc('dz_market_files', {p_item: item}).then(function(res){
@@ -2425,7 +1997,6 @@ const MODULE = `
       }
       var files = res.data || [];
       if(!files.length){ toast('This listing has no files attached'); return; }
-      // one file is not a list — hand it straight over
       if(files.length === 1 && typeof window.dzMarketFetch === 'function'){
         box.dzOneFile = files[0];
         window.dzMarketFetch(item, files[0].file_id, files[0].name, btn);
@@ -2465,9 +2036,6 @@ const MODULE = `
   function loadPurchases(force, host, seq){
     if(!host || typeof sb === 'undefined' || !sb || !sb.rpc) return;
     if(force) purchasesP = null;
-    // Promise.resolve, not the builder itself: a PostgrestBuilder fires a fresh
-    // request every time something calls .then on it, so caching the builder
-    // would cache nothing and double the traffic instead.
     if(!purchasesP) purchasesP = Promise.resolve(sb.rpc('dz_my_purchases'));
     purchasesP.then(function(res){
       if(!res || res.error){
@@ -2478,9 +2046,6 @@ const MODULE = `
         return;
       }
       if(!stale(seq)) renderPurchases(host, res.data || []);
-      // the same answer tells the marketplace which cards to unlock, and that
-      // is true whichever view is up by now — so it runs even when the paint
-      // above was dropped.
       var changed = false;
       (res.data || []).forEach(function(p){
         if(p.item_id && !ownedIds[p.item_id]){ ownedIds[p.item_id] = true; changed = true; }
@@ -2493,8 +2058,6 @@ const MODULE = `
     });
   }
 
-  // The public bundle calls this after every render that could have produced a
-  // slot, and once when this module lands.
   window.dzFill = function(){ fillPlans(); fillSlots(); fillMenu(); paintPanel(false); };
   window.dzFill();
 })(__dzStore);

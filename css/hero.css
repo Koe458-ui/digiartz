@@ -739,7 +739,6 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 #artworks.hsOn .awEmpty{display:none!important;}
 
 @media(min-width:700px) and (max-width:1279px){
-
   #artworks .ftRail{--ftInset:1rem;}
 }
 

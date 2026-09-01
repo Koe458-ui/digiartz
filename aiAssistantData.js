@@ -1,5 +1,4 @@
 window.ZEO_DATA = {
-
   welcomeMessage: "Hi, I'm Zeo — your DigiArtz assistant. Tell me what you need and I'll walk you through it one step at a time. Pick an option to begin.",
 
   welcomeOptions: [
@@ -31,7 +30,6 @@ window.ZEO_DATA = {
   ],
 
   responses: {
-
     about: [
       {
         question: "What is DigiArtz?",
@@ -969,9 +967,7 @@ We'll get back to you as soon as we can.`
 The DigiArtz team reviews every message.`
       }
     ]
-
   },
 
   speechBubbles: []
-
 };

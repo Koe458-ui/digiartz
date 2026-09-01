@@ -1,5 +1,4 @@
 var DZ_BW = (function () {
-
   var EXTERNAL = (window.DZ_WORDLIST && window.DZ_WORDLIST.words) || [];
 
   var WORDS = EXTERNAL.concat([
@@ -28,7 +27,6 @@ var DZ_BW = (function () {
     'whatsapp', 'whats app', 'wa.me', 'telegram', 't.me', 'snapchat',
     'dm me', 'dm me on', 'inbox me', 'message me on', 'contact me on',
     'text me on', 'add me on'
-
   ];
 
   var BLOCK = {

@@ -99,7 +99,6 @@
             .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
         }
         if(want('artist')){
-
           var who = fgArtistPattern(raw);
           jobs.push(sb.from('profiles')
             .select('id,username,display_name,avatar_url,banner_url,bio')

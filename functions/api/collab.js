@@ -48,7 +48,6 @@ function sbService(env, path, init) {
 const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
 
 const ACTIONS = {
-
   async state({ env, request }) {
     return { ok: true, state: await rpc(env, request, 'dz_my_collab_state') };
   },

@@ -164,7 +164,6 @@
 }
 
 @media (min-width:1280px){
-
   .dzName{ font-size:15px; line-height:1.4; }
   .dzMeta{ font-size:12.5px; letter-spacing:.06em; gap:.2rem .7rem; }
   .dzChip{ font-size:12px; letter-spacing:.07em; padding:.22rem .6rem; }

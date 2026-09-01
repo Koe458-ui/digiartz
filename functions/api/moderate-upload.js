@@ -326,7 +326,6 @@ export async function onRequestPost(context) {
         images: audit
       }
     }, 200);
-
   } catch (err) {
     return json({ error: 'Moderation check failed — try again.' }, 500);
   }

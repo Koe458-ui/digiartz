@@ -94,7 +94,6 @@ export async function onRequestPost(context) {
       'Access-Control-Expose-Headers': 'X-Dz-Remaining, X-Dz-Limit, X-Dz-Tier'
     });
     return new Response(fileRes.body, { status: 200, headers });
-
   } catch (err) {
     return json({ error: 'Download failed — try again.' }, 500);
   }

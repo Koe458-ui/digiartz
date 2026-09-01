@@ -2781,7 +2781,6 @@
         pendingMedia.push({ fileKind:'resourceFile', url:rf.url, path:rf.path, file:s.files.file });
         if(rp) pendingMedia.push({ imageKind:'resourceImage', url:rp.url, path:rp.path, file:s.files.preview });
       }
-
       else if(sec === 'blog'){
         var bTitle = val(sec,'title');
         var body = val(sec,'body');
@@ -2809,7 +2808,6 @@
         if(bc){ row.cover_url = bc.url; row.cover_storage_path = bc.path; }
         if(bc) pendingMedia.push({ imageKind:'blogImage', url:bc.url, path:bc.path, file:s.files.cover });
       }
-
       else if(sec === 'marketplace'){
         var type = val(sec,'item_type') || 'digital';
         var isSvc = !!ITEM_SERVICE[type];
@@ -2886,7 +2884,6 @@
         if(mp){ row.preview_url = mp.url; row.preview_storage_path = mp.path; }
         if(mp) pendingMedia.push({ imageKind:'marketImage', url:mp.url, path:mp.path, file:s.files.preview });
       }
-
       else if(sec === 'jobs'){
         var mode   = val(sec,'work_mode') || 'remote';
         var remote = mode === 'remote';

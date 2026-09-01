@@ -1,5 +1,4 @@
   (
-
   async function init(){
     var boot = window.dzNavToken ? window.dzNavToken() : null;
 

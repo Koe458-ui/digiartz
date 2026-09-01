@@ -64,7 +64,6 @@ export async function servePrivateFile(request, env, spec) {
     if (spec.headers) spec.headers(headers, row, fileRes);
 
     return new Response(fileRes.body, { status: 200, headers });
-
   } catch (err) {
     return json({ error: 'Download failed — try again.' }, 500);
   }

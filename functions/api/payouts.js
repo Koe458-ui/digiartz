@@ -163,14 +163,12 @@ export async function onRequestPost({ env, request }) {
           return json({ error: 'That does not look like an email address' }, 400);
         row.provider = 'paypal';
         row.paypal_email = email;
-
       } else if (kind === 'upi') {
         const vpa = String(body.upi || '').trim().toLowerCase();
         if (!/^[a-z0-9.\-_]{2,64}@[a-z][a-z0-9.\-]{1,40}$/.test(vpa))
           return json({ error: 'That does not look like a UPI ID' }, 400);
         row.provider = 'razorpay';
         row.upi_vpa = vpa;
-
       } else if (kind === 'bank_account') {
         const holder = String(body.holderName || '').trim().slice(0, 80);
         const acct   = String(body.accountNumber || '').replace(/\s+/g, '');
@@ -184,7 +182,6 @@ export async function onRequestPost({ env, request }) {
         row.bank_name   = String(body.bankName || '').trim().slice(0, 80) || null;
         row.bank_ifsc   = ifsc || null;
         row.bank_last4  = acct.slice(-4);
-
       } else {
         return json({ error: 'Unknown payout method' }, 400);
       }

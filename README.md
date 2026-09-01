@@ -15,6 +15,5 @@ https://digiartz.net
 - Supabase (database and storage)
 - Cloudflare Pages (hosting)
 
-
 ## 👥 Team
 The DigiArtz Team — digiartz.net

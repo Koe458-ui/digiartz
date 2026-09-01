@@ -38,11 +38,9 @@
         spawnRipple(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
       }
     }, {capture:true, passive:true});
-
   })();
 
 (function(){
-
   var AD_CLIENT = 'ca-pub-1351696642556147';
   var AD_SLOT   = '7070525551';
   var AD_SRC    = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js' +
@@ -135,7 +133,6 @@
 })();
 
 (function(){
-
   var backdrop = document.getElementById('legalBackdrop');
   var titleEl  = document.getElementById('lmTitleText');
   var bodyEl   = document.getElementById('lmBody');
@@ -232,11 +229,9 @@
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape' && backdrop.classList.contains('open')) closeLegal();
   });
-
 })();
 
 (function(){
-
   var FAQ = [
     { ico:'◈', label:'Billing &amp; Payments', qa:[
       ['How do I subscribe?',
@@ -382,5 +377,4 @@
         break;
     }
   });
-
 })();

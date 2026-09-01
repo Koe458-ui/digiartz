@@ -1853,5 +1853,4 @@
 
   window.openAnalyticsPage = openAnalyticsPage;
   window.closeAnalyticsPage = closeAnalyticsPage;
-
 })();

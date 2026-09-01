@@ -84,24 +84,10 @@
   function pfAvBCropRender(){
     document.getElementById('pfAvBCropImg').style.objectPosition = pfAvBCrop.x+'% '+pfAvBCrop.y+'%';
   }
-  (function initPfAvBCropDrag(){
-    var stageEl = null;
-    function down(e){
-      if(!pfAvBCrop.axis) return;
-      stageEl = document.getElementById('pfAvBCropStage');
-      pfAvBCrop.dragging = true; stageEl.classList.add('dragging');
-      var p = e.touches ? e.touches[0] : e;
-      pfAvBCrop.sx = p.clientX; pfAvBCrop.sy = p.clientY;
-      pfAvBCrop.ox = pfAvBCrop.x; pfAvBCrop.oy = pfAvBCrop.y;
-      document.addEventListener('mousemove', move);
-      document.addEventListener('touchmove', move, {passive:false});
-      document.addEventListener('mouseup', up);
-      document.addEventListener('touchend', up);
-      e.preventDefault();
-    }
-    function move(e){
-      if(!pfAvBCrop.dragging) return;
-      var p = e.touches ? e.touches[0] : e;
+  /* One axis only: whichever way the picture overflows the frame. */
+  window.dzDragStage('pfAvBCropStage', pfAvBCrop,
+    function(){ return !!pfAvBCrop.axis; },
+    function(p){
       var boxRatio = pfAvBCrop.stageW/pfAvBCrop.stageH;
       var srcRatio = pfAvBCrop.natW/pfAvBCrop.natH;
       var ratio = pfAvBCrop.axis==='x' ? (srcRatio/boxRatio) : (boxRatio/srcRatio);
@@ -112,22 +98,7 @@
       var val = Math.max(0, Math.min(100, (pfAvBCrop.axis==='x'?pfAvBCrop.ox:pfAvBCrop.oy) + dPct));
       if(pfAvBCrop.axis==='x') pfAvBCrop.x = val; else pfAvBCrop.y = val;
       pfAvBCropRender();
-    }
-    function up(){
-      pfAvBCrop.dragging = false;
-      if(stageEl) stageEl.classList.remove('dragging');
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('touchmove', move);
-      document.removeEventListener('mouseup', up);
-      document.removeEventListener('touchend', up);
-    }
-    document.addEventListener('DOMContentLoaded', function(){
-      var el = document.getElementById('pfAvBCropStage');
-      if(!el) return;
-      el.addEventListener('mousedown', down);
-      el.addEventListener('touchstart', down, {passive:false});
     });
-  })();
   function cancelPfAvBCrop(){
     document.getElementById('pfAvBCropMod').classList.remove('open');
     pfAvBCropPending = null;

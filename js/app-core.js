@@ -915,6 +915,47 @@
      wants the same thing: a plain click opens it here, a modified click is
      left to the browser, and a card that is not already a link answers Enter
      and Space so the keyboard can reach it too. */
+  /* Dragging an image around inside its crop stage. Two crop modals do it —
+     the avatar and banner picker, and the artwork picker with its zoom — and
+     the bookkeeping is the same for both: which pointer, where it started,
+     and the four listeners that have to come off again on release. What the
+     drag adds up to is the part that differs, and that is `onMove`, which is
+     handed the pointer once the drag is known to be live. */
+  window.dzDragStage = function(stageId, st, canDrag, onMove){
+    var stageEl = null;
+    function down(e){
+      if(!canDrag()) return;
+      stageEl = document.getElementById(stageId);
+      st.dragging = true; stageEl.classList.add('dragging');
+      var p = e.touches ? e.touches[0] : e;
+      st.sx = p.clientX; st.sy = p.clientY;
+      st.ox = st.x; st.oy = st.y;
+      document.addEventListener('mousemove', move);
+      document.addEventListener('touchmove', move, {passive:false});
+      document.addEventListener('mouseup', up);
+      document.addEventListener('touchend', up);
+      e.preventDefault();
+    }
+    function move(e){
+      if(!st.dragging) return;
+      onMove(e.touches ? e.touches[0] : e);
+    }
+    function up(){
+      st.dragging = false;
+      if(stageEl) stageEl.classList.remove('dragging');
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('touchmove', move);
+      document.removeEventListener('mouseup', up);
+      document.removeEventListener('touchend', up);
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      var el = document.getElementById(stageId);
+      if(!el) return;
+      el.addEventListener('mousedown', down);
+      el.addEventListener('touchstart', down, {passive:false});
+    });
+  };
+
   /* The month grid the two schedule pickers draw. There are two pickers
      because there are two upload forms — the artwork form is markup in
      index.html, the section forms are generated — and they genuinely differ

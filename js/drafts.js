@@ -401,24 +401,11 @@
     zs.value = v;
     pfCropSetZoom(v);
   }
-  (function initPfCropDrag(){
-    var stageEl = null;
-    function down(e){
-      if(!pfCrop.axis && pfCrop.z<=1) return;
-      stageEl = document.getElementById('pfCropStage');
-      pfCrop.dragging = true; stageEl.classList.add('dragging');
-      var p = e.touches ? e.touches[0] : e;
-      pfCrop.sx = p.clientX; pfCrop.sy = p.clientY;
-      pfCrop.ox = pfCrop.x; pfCrop.oy = pfCrop.y;
-      document.addEventListener('mousemove', move);
-      document.addEventListener('touchmove', move, {passive:false});
-      document.addEventListener('mouseup', up);
-      document.addEventListener('touchend', up);
-      e.preventDefault();
-    }
-    function move(e){
-      if(!pfCrop.dragging) return;
-      var p = e.touches ? e.touches[0] : e;
+  /* Both axes here, because zooming in can make the picture overflow a
+     square frame in each direction at once. */
+  window.dzDragStage('pfCropStage', pfCrop,
+    function(){ return !!pfCrop.axis || pfCrop.z > 1; },
+    function(p){
       var rx = pfCrop.natW>=pfCrop.natH ? pfCrop.natW/pfCrop.natH : 1;
       var ry = pfCrop.natH>pfCrop.natW ? pfCrop.natH/pfCrop.natW : 1;
       var oxPx = pfCrop.stage*(rx*pfCrop.z-1);
@@ -427,22 +414,7 @@
       if(oxPx>0) pfCrop.x = Math.max(0, Math.min(100, pfCrop.ox - ((p.clientX-pfCrop.sx)/oxPx)*100));
       if(oyPx>0) pfCrop.y = Math.max(0, Math.min(100, pfCrop.oy - ((p.clientY-pfCrop.sy)/oyPx)*100));
       pfCropRender();
-    }
-    function up(){
-      pfCrop.dragging = false;
-      if(stageEl) stageEl.classList.remove('dragging');
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('touchmove', move);
-      document.removeEventListener('mouseup', up);
-      document.removeEventListener('touchend', up);
-    }
-    document.addEventListener('DOMContentLoaded', function(){
-      var el = document.getElementById('pfCropStage');
-      if(!el) return;
-      el.addEventListener('mousedown', down);
-      el.addEventListener('touchstart', down, {passive:false});
     });
-  })();
   function cancelPfCrop(){
     document.getElementById('pfCropMod').classList.remove('open');
     pfCropPending = null;

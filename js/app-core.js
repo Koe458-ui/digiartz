@@ -462,6 +462,10 @@
     'pixel-art aesthetic-art others'
   ).split(' ');
   var SITE_CATEGORIES = CAT_SLUGS.map(function(s){ return { slug:s, label:catLabel(s) }; });
+  /* Slug to label for the site's own categories only — a tag that is not one
+     of them keeps the spelling its author gave it (see tgLabel). */
+  var CAT_LABELS = {};
+  SITE_CATEGORIES.forEach(function(c){ CAT_LABELS[c.slug] = c.label; });
 
   function buildCategoryUI(){
     var fo = document.getElementById('fltCatOpts');

@@ -1,6 +1,5 @@
 import { LEGAL } from '../../js/legal-content.js';
-
-const SITE = 'https://digiartz.net';
+import { SITE } from '../lib/http.js';
 
 const SLUGS = {
   'privacy':       { key: 'privacy', title: 'Privacy Policy' },

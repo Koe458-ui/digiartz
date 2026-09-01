@@ -1,5 +1,14 @@
 import { encodePath } from './http.js';
 
+/* The project this site is deployed against, for the handful of endpoints
+   that answer with it when the binding is missing rather than failing. Three
+   files each carried their own copy of both. */
+export const SB_URL_FALLBACK  = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
+export const SB_ANON_FALLBACK = 'sb_publishable_x7xlsCx-ZsvpNLCXRxyvMw_PsJQT2xy';
+
+/* The size suffix Supabase storage renditions carry. */
+export const SB_SIZE_RE = /__(?:t300|t600|v1000|f1600)\.webp$/;
+
 export const sbUrl  = (env) => env.SB_URL || env.SUPABASE_URL || '';
 export const sbAnon = (env) => env.SB_KEY || env.SUPABASE_ANON_KEY || '';
 export const sbSvc  = (env) => env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';

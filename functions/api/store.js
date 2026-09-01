@@ -1,4 +1,5 @@
 import { sbUrl, sbAnon, sbSvc, sbUser } from '../lib/sb.js';
+import { ZERO_DECIMAL } from '../lib/money.js';
 
 const PLANS = [
   {
@@ -81,15 +82,13 @@ const CURRENCIES = [
 ];
 const CURRENCY_CODES = new Set(CURRENCIES.map((c) => c.code));
 
-const ZERO_DECIMAL_SRV = new Set(['JPY', 'HUF', 'TWD']);
-
 function fmtMoney(minor, cur) {
-  const major = ZERO_DECIMAL_SRV.has(cur) ? Number(minor) : Number(minor) / 100;
+  const major = ZERO_DECIMAL.has(cur) ? Number(minor) : Number(minor) / 100;
   try {
     return new Intl.NumberFormat('en', {
       style: 'currency', currency: cur,
-      minimumFractionDigits: ZERO_DECIMAL_SRV.has(cur) ? 0 : (major % 1 ? 2 : 0),
-      maximumFractionDigits: ZERO_DECIMAL_SRV.has(cur) ? 0 : 2,
+      minimumFractionDigits: ZERO_DECIMAL.has(cur) ? 0 : (major % 1 ? 2 : 0),
+      maximumFractionDigits: ZERO_DECIMAL.has(cur) ? 0 : 2,
     }).format(major);
   } catch { return major + ' ' + cur; }
 }

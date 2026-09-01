@@ -1,4 +1,4 @@
-const SB_URL_FALLBACK = 'https://tmqzqlrpjpydiftlrzmj.supabase.co';
+import { SB_URL_FALLBACK } from './sb.js';
 
 const LIMITS = [
   ['/api/rzp',               20],

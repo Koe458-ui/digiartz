@@ -57,7 +57,7 @@ const SHELL_URLS = [
 
   '/js/boot.js?v=2',
   '/js/cache.js?v=2',
-  '/js/ranking.js?v=5',
+  '/js/ranking.js?v=6',
   '/js/community.js?v=9',
   '/js/dm.js?v=14',
   '/aiAssistantData.js?v=6',

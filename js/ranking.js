@@ -237,39 +237,42 @@
       });
     }
 
-    async function loadMine (b) {
-      var s = state[b.key], c = db(), u = me();
-      if (!s) return;
-      var f = s.mineEl;
-      f.innerHTML = '';
-      f.classList.remove('tap');
-      f.onclick = null;
+    /* Both rank strips say the same three things — sign in, your rank, or a
+       dash when the call will not answer. Only the one on a board card is
+       also a way into the full page, which is what `openPage` is for. */
+    async function paintMine (box, b, openPage) {
+      var c = db(), u = me();
+      box.innerHTML = '';
+      box.classList.remove('tap');
+      box.onclick = null;
 
       if (!u) {
-        f.appendChild(el('span', 'rkMineLbl', 'Sign in to see your rank'));
-        f.classList.add('tap');
-        f.onclick = function () { if (typeof openAuthMod === 'function') openAuthMod(); };
+        box.appendChild(el('span', 'rkMineLbl', 'Sign in to see your rank'));
+        box.classList.add('tap');
+        box.onclick = function () { if (typeof openAuthMod === 'function') openAuthMod(); };
         return;
       }
-      if (!c) { f.appendChild(el('span', 'rkMineLbl', 'Your rank')); return; }
 
-      f.appendChild(el('span', 'rkMineLbl', 'Your rank'));
-      f.classList.add('tap');
-      f.onclick = function () { openRankPage(b.key); };
+      box.appendChild(el('span', 'rkMineLbl', 'Your rank'));
+      if (!c) return;
+      if (openPage) { box.classList.add('tap'); box.onclick = openPage; }
+
       try {
         var r = await c.rpc('get_rank_me', { board: b.key });
         if (r.error) throw r.error;
         var d = (r.data && r.data[0]) || null;
-        if (!d) {
-          var un = el('span', 'rkMinePos', 'UNRANKED');
-          f.appendChild(un);
-          return;
-        }
-        f.appendChild(el('span', 'rkMinePos',
+        if (!d) { box.appendChild(el('span', 'rkMinePos', 'UNRANKED')); return; }
+        box.appendChild(el('span', 'rkMinePos',
           '#' + num(d.rnk) + ' OF ' + num(d.total) + ' \u00B7 ' + valueOf(b, d)));
       } catch (e) {
-        f.appendChild(el('span', 'rkMinePos', '\u2014'));
+        box.appendChild(el('span', 'rkMinePos', '\u2014'));
       }
+    }
+
+    function loadMine (b) {
+      var s = state[b.key];
+      if (!s) return;
+      paintMine(s.mineEl, b, function () { openRankPage(b.key); });
     }
 
     function reload (b) {
@@ -390,31 +393,10 @@
       }
     }
 
-    async function pgLoadMine () {
-      var box = document.getElementById('rkPgMine'), c = db(), u = me(), b = pgBoard();
+    function pgLoadMine () {
+      var box = document.getElementById('rkPgMine');
       if (!box) return;
-      box.innerHTML = '';
-      box.classList.remove('tap');
-      box.onclick = null;
-
-      if (!u) {
-        box.appendChild(el('span', 'rkMineLbl', 'Sign in to see your rank'));
-        box.classList.add('tap');
-        box.onclick = function () { if (typeof openAuthMod === 'function') openAuthMod(); };
-        return;
-      }
-      box.appendChild(el('span', 'rkMineLbl', 'Your rank'));
-      if (!c) return;
-      try {
-        var r = await c.rpc('get_rank_me', { board: b.key });
-        if (r.error) throw r.error;
-        var d = (r.data && r.data[0]) || null;
-        if (!d) { box.appendChild(el('span', 'rkMinePos', 'UNRANKED')); return; }
-        box.appendChild(el('span', 'rkMinePos',
-          '#' + num(d.rnk) + ' OF ' + num(d.total) + ' \u00B7 ' + valueOf(b, d)));
-      } catch (e) {
-        box.appendChild(el('span', 'rkMinePos', '\u2014'));
-      }
+      paintMine(box, pgBoard(), null);
     }
 
     window.openRankPage = function (boardKey) {

@@ -125,9 +125,13 @@
     }catch(e){ showToast('Could not open that schedule'); }
   }
 
-  var USCH_MIN_LEAD = 5*60*1000;
   var pfSched = { y:null, m:null, d:null, vy:0, vm:0 };
-  function pfSchedPad(n){ return (n<10?'0':'')+n; }
+  var PF_SCHED = {
+    dd:'pfUpSchedDd', h:'pfUpSchedH', m:'pfUpSchedM', grid:'pfUpSchedGrid',
+    mon:'pfUpSchedMon', lbl:'pfUpSchedLbl', hint:'pfUpSchedHint', val:'pfUpSched',
+    pick:'pfSchedPick', iso:true, fmt:function(v){ return uschFmt(v); },
+    tail:'verified now, re-checked at publish.'
+  };
   function pfSchedToggle(e){
     if(e){ e.stopPropagation(); }
     var dd = document.getElementById('pfUpSchedDd');
@@ -143,37 +147,22 @@
       pfSchedRender();
     }
   }
-  function pfSchedClose(){
-    var dd = document.getElementById('pfUpSchedDd');
-    if(dd) dd.classList.remove('open');
-  }
-  document.addEventListener('click', function(ev){
-    var dd = document.getElementById('pfUpSchedDd');
-    if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) pfSchedClose();
-  });
-  function pfSchedBuildTime(){ window.dzSchedUI.hours('pfUpSchedH', 'pfUpSchedM'); }
+  function pfSchedClose(){ window.dzSchedUI.close(PF_SCHED); }
+  window.dzSchedUI.watchOutside(PF_SCHED);
+  function pfSchedBuildTime(){ window.dzSchedUI.hours(PF_SCHED); }
   function pfSchedNav(delta, e){
     if(e){ e.stopPropagation(); }
     window.dzSchedUI.nav(pfSched, delta);
     pfSchedRender();
   }
-  function pfSchedRender(){
-    window.dzSchedUI.grid('pfUpSchedGrid', 'pfUpSchedMon', pfSched, 'pfSchedPick');
-  }
+  function pfSchedRender(){ window.dzSchedUI.grid(PF_SCHED, pfSched); }
   function pfSchedPick(y, m, d, e){
     if(e){ e.stopPropagation(); }
     pfSched.y=y; pfSched.m=m; pfSched.d=d;
     pfSchedRender();
     pfSchedApply();
   }
-  function pfSchedApply(){
-    if(pfSched.y===null) return;
-    var hs = document.getElementById('pfUpSchedH'), ms = document.getElementById('pfUpSchedM');
-    var h = +hs.value || 0, mi = +ms.value || 0;
-    document.getElementById('pfUpSched').value =
-      pfSched.y+'-'+pfSchedPad(pfSched.m+1)+'-'+pfSchedPad(pfSched.d)+'T'+pfSchedPad(h)+':'+pfSchedPad(mi);
-    pfSchedHint();
-  }
+  function pfSchedApply(){ window.dzSchedUI.apply(PF_SCHED, pfSched); }
   function pfSchedClear(e){
     if(e){ e.stopPropagation(); }
     pfSched.y = pfSched.m = pfSched.d = null;
@@ -194,39 +183,9 @@
     pfSchedClose();
     pfSchedHint();
   }
-  function pfSchedHint(){
-    var el = document.getElementById('pfUpSched');
-    var hint = document.getElementById('pfUpSchedHint');
-    if(!el || !hint) return;
-    var lbl = document.getElementById('pfUpSchedLbl');
-    if(lbl){
-      if(el.value){
-        lbl.textContent = uschFmt(new Date(el.value).toISOString());
-        lbl.classList.remove('upSchedPh');
-      }else{
-        lbl.innerHTML = '__/__/____&nbsp;&nbsp;__:__';
-        lbl.classList.add('upSchedPh');
-      }
-    }
-    if(!el.value){ hint.textContent = 'Leave empty to publish immediately.'; hint.classList.remove('bad'); return; }
-    var t = new Date(el.value).getTime();
-    if(!isFinite(t) || t < Date.now() + USCH_MIN_LEAD){
-      hint.textContent = 'Pick a time at least 5 minutes from now.'; hint.classList.add('bad');
-    }else{
-      hint.textContent = 'Publishes ' + uschFmt(new Date(t).toISOString()) + ' \u00B7 verified now, re-checked at publish.'; hint.classList.remove('bad');
-    }
-  }
-  function uschPicked(){
-    var el = document.getElementById('pfUpSched');
-    if(!el || !el.value) return '';
-    var t = new Date(el.value).getTime();
-    if(!isFinite(t) || t < Date.now() + USCH_MIN_LEAD) return '';
-    return new Date(t).toISOString();
-  }
-  function uschFmt(iso){
-    var d = new Date(iso);
-    return d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
-  }
+  function pfSchedHint(){ window.dzSchedUI.hint(PF_SCHED); }
+  function uschPicked(){ return window.dzSchedUI.picked(PF_SCHED); }
+  function uschFmt(iso){ return window.dzSchedUI.fmt(iso, false); }
   function uschLeft(iso){
     var ms = new Date(iso).getTime() - Date.now();
     if(ms <= 0) return 'due';
@@ -491,14 +450,11 @@
         return;
       }
     }
-    var _vis = extra.visibility || 'published';
-    var _when = uschPicked();
-    if(_vis === 'scheduled' && !_when){ showToast('Pick a time under Schedule, or set visibility to Published'); return; }
-    if((_vis === 'draft' || _vis === 'hidden') && _when){
-      showToast('A ' + _vis + ' artwork is not shown, so it does not need a schedule'); return;
-    }
-    if(_vis === 'scheduled') _vis = 'published';
-    extra.visibility = _vis;
+    var _sched = window.dzVisibilitySchedule(extra.visibility, uschPicked(),
+                                             'artwork is not shown');
+    if(_sched.error){ showToast(_sched.error); return; }
+    var _when = _sched.when;
+    extra.visibility = _sched.vis;
     var btn = document.getElementById('pfUpBtn');
     btn.disabled = true;
     try{

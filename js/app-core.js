@@ -915,6 +915,22 @@
      wants the same thing: a plain click opens it here, a modified click is
      left to the browser, and a card that is not already a link answers Enter
      and Space so the keyboard can reach it too. */
+  /* Publishing asks the same three things of visibility and the schedule
+     field, wherever it is asked: a scheduled item needs a time, an unlisted
+     one must not carry one, and "scheduled" is stored as "published" with the
+     time in its own column. `phrase` is how the refusal names the thing —
+     "resource is not listed", "artwork is not shown" — because the upload
+     forms say it differently. Returns `error` for the caller to raise its own
+     way: the section forms throw, the artwork form toasts. */
+  window.dzVisibilitySchedule = function(vis, when, phrase){
+    vis = vis || 'published';
+    if(vis === 'scheduled' && !when)
+      return { error: 'Pick a time under Schedule, or set visibility to Published' };
+    if((vis === 'draft' || vis === 'hidden') && when)
+      return { error: 'A ' + vis + ' ' + phrase + ', so it does not need a schedule' };
+    return { vis: vis === 'scheduled' ? 'published' : vis, when: when };
+  };
+
   /* Dragging an image around inside its crop stage. Two crop modals do it —
      the avatar and banner picker, and the artwork picker with its zoom — and
      the bookkeeping is the same for both: which pointer, where it started,
@@ -956,20 +972,29 @@
     });
   };
 
-  /* The month grid the two schedule pickers draw. There are two pickers
-     because there are two upload forms — the artwork form is markup in
-     index.html, the section forms are generated — and they genuinely differ
-     in what opening one closes, how a chosen time is formatted and what the
-     hint below says. None of that is the calendar, which was the same
-     calendar written twice. `st` is the caller's {y,m,d,vy,vm}. */
+  /* The schedule picker both upload forms use. There are two of them because
+     there are two forms — the artwork form is markup in index.html, the
+     section forms are generated — so each owns its own elements and its own
+     state. Everything they do with those is the same, and lives here.
+
+     A picker is described by one config: the ids it paints, the global its
+     day buttons call, how it words a chosen time, and whether it hands back
+     an ISO instant or the raw local value. Keeping `hint` and `picked`
+     together matters: they share the five-minute rule, and if that ever drifts
+     between them the hint would say a time is fine while the form quietly
+     dropped it. */
+  var DZ_SCHED_MIN = 5 * 60 * 1000;
+
+  function dzSchedPad(n){ return (n < 10 ? '0' : '') + n; }
+
   window.dzSchedUI = {
     /* Fills the hour and minute lists once, defaulting to an hour from now. */
-    hours: function(hId, mId){
-      var hs = document.getElementById(hId), ms = document.getElementById(mId);
+    hours: function(c){
+      var hs = document.getElementById(c.h), ms = document.getElementById(c.m);
       if(!hs || hs.options.length) return;
-      var i, o, pad = function(n){ return (n < 10 ? '0' : '') + n; };
-      for(i = 0; i < 24; i++){ o = document.createElement('option'); o.value = i; o.textContent = pad(i); hs.appendChild(o); }
-      for(i = 0; i < 60; i += 5){ o = document.createElement('option'); o.value = i; o.textContent = pad(i); ms.appendChild(o); }
+      var i, o;
+      for(i = 0; i < 24; i++){ o = document.createElement('option'); o.value = i; o.textContent = dzSchedPad(i); hs.appendChild(o); }
+      for(i = 0; i < 60; i += 5){ o = document.createElement('option'); o.value = i; o.textContent = dzSchedPad(i); ms.appendChild(o); }
       var t = new Date(Date.now() + 60 * 60 * 1000);
       hs.value = t.getHours(); ms.value = Math.floor(t.getMinutes() / 5) * 5;
     },
@@ -981,9 +1006,9 @@
       else if(st.vm > 11){ st.vm = 0; st.vy++; }
     },
 
-    /* Paints the month. `pick` names the global each day button calls. */
-    grid: function(gridId, monId, st, pick){
-      var grid = document.getElementById(gridId), mon = document.getElementById(monId);
+    /* Paints the month. Days already gone are disabled. */
+    grid: function(c, st){
+      var grid = document.getElementById(c.grid), mon = document.getElementById(c.mon);
       if(!grid) return;
       var y = st.vy, m = st.vm;
       mon.textContent = new Date(y, m, 1).toLocaleString([], {month:'long', year:'numeric'});
@@ -999,9 +1024,68 @@
         if(todayKey === y + '-' + m + '-' + d) cls += ' today';
         if(st.y === y && st.m === m && st.d === d) cls += ' sel';
         html += '<button type="button" class="' + cls + '"' + (past ? ' disabled' : '') +
-                ' onclick="' + pick + '(' + y + ',' + m + ',' + d + ',event)">' + d + '</button>';
+                ' onclick="' + c.pick + '(' + y + ',' + m + ',' + d + ',event)">' + d + '</button>';
       }
       grid.innerHTML = html;
+    },
+
+    close: function(c){
+      var dd = document.getElementById(c.dd);
+      if(dd) dd.classList.remove('open');
+    },
+
+    /* A tap anywhere outside the open panel shuts it. */
+    watchOutside: function(c){
+      document.addEventListener('click', function(ev){
+        var dd = document.getElementById(c.dd);
+        if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) window.dzSchedUI.close(c);
+      });
+    },
+
+    /* Writes the picked day and time into the form's hidden field. */
+    apply: function(c, st){
+      if(st.y === null) return;
+      var hs = document.getElementById(c.h), ms = document.getElementById(c.m);
+      var h = +hs.value || 0, mi = +ms.value || 0;
+      var el = document.getElementById(c.val);
+      if(el) el.value = st.y + '-' + dzSchedPad(st.m + 1) + '-' + dzSchedPad(st.d) +
+                        'T' + dzSchedPad(h) + ':' + dzSchedPad(mi);
+      window.dzSchedUI.hint(c);
+    },
+
+    /* The trigger's label and the line under it. */
+    hint: function(c){
+      var el = document.getElementById(c.val), hint = document.getElementById(c.hint);
+      if(!el || !hint) return;
+      var lbl = document.getElementById(c.lbl);
+      if(lbl){
+        if(el.value){ lbl.textContent = c.fmt(el.value); lbl.classList.remove('upSchedPh'); }
+        else { lbl.innerHTML = '__/__/____&nbsp;&nbsp;__:__'; lbl.classList.add('upSchedPh'); }
+      }
+      if(!el.value){ hint.textContent = 'Leave empty to publish immediately.'; hint.classList.remove('bad'); return; }
+      var t = new Date(el.value).getTime();
+      if(!isFinite(t) || t < Date.now() + DZ_SCHED_MIN){
+        hint.textContent = 'Pick a time at least 5 minutes from now.'; hint.classList.add('bad');
+      } else {
+        hint.textContent = 'Publishes ' + c.fmt(el.value) + ' \u00B7 ' + c.tail; hint.classList.remove('bad');
+      }
+    },
+
+    /* The chosen time, or '' when there is none or it is too soon. */
+    picked: function(c){
+      var el = document.getElementById(c.val);
+      if(!el || !el.value) return '';
+      var t = new Date(el.value).getTime();
+      if(!isFinite(t) || t < Date.now() + DZ_SCHED_MIN) return '';
+      return c.iso ? new Date(t).toISOString() : el.value;
+    },
+
+    /* Both forms word a time the same way bar the hour: one pads it. */
+    fmt: function(iso, twoDigitHour){
+      return new Date(iso).toLocaleString([], {
+        month:'short', day:'numeric',
+        hour: twoDigitHour ? '2-digit' : 'numeric', minute:'2-digit'
+      });
     }
   };
 

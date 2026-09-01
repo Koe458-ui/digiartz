@@ -124,7 +124,8 @@
   line-height: 1.1;
   margin-bottom: .55rem;
 }
-.subPgHeadline h2 .s { color: var(--pg); font-size: .5em; vertical-align: middle; }
+.subPgHeadline h2 .s,
+.faqTitle .s{ color: var(--pg); font-size: .5em; vertical-align: middle; }
 .subPgHeadline p {
   font-family: var(--fm);
   font-size: .72rem;
@@ -554,11 +555,6 @@ html[data-theme="offwhite"] .subCmpNo{ color: #dc2626; }
   color: var(--tx);
   line-height: 1.1;
   margin-bottom: .7rem;
-}
-.faqTitle .s {
-  color: var(--pg);
-  font-size: .5em;
-  vertical-align: middle;
 }
 .faqSubtitle {
   font-family: var(--fm);

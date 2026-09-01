@@ -1,4 +1,4 @@
-import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService, ledger } from '../lib/sb.js';
+import { sbUrl, sbAnon, sbSvc, sbUser, sbRpc, underLimit, sbService, ledger } from '../lib/sb.js';
 import { toValue } from '../lib/money.js';
 import { pp } from '../lib/paypal.js';
 
@@ -19,18 +19,10 @@ const PP_PAYOUT_CURRENCIES = new Set(['AUD', 'BRL', 'CAD', 'CZK', 'DKK', 'EUR',
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,24}$/i;
 
-async function sbRpc(env, request, fn, args = {}) {
-  const res = await fetch(sbUrl(env) + '/rest/v1/rpc/' + fn, {
-    method: 'POST',
-    headers: {
-      apikey: sbAnon(env),
-      authorization: request.headers.get('authorization') || '',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(args),
-  });
+async function wallet(env, request, fn, args = {}) {
+  const res = await sbRpc(env, fn, args, request);
   if (!res.ok) throw new Error('Could not read your balance (' + res.status + ')');
-  return res.json().catch(() => null);
+  return res.body;
 }
 
 async function isAdmin(env, userId) {
@@ -42,17 +34,9 @@ async function isAdmin(env, userId) {
 async function reconciled(env, userId, currency) {
   let rows;
   try {
-    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_reconcile', {
-      method: 'POST',
-      headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ p_user: userId }),
-    });
+    const res = await sbRpc(env, 'dz_reconcile', { p_user: userId });
     if (!res.ok) return { ok: false, reason: 'check unavailable' };
-    rows = await res.json();
+    rows = res.body;
   } catch {
     return { ok: false, reason: 'check unavailable' };
   }
@@ -137,7 +121,7 @@ export async function onRequestPost({ env, request }) {
   try {
     if (body.action === 'overview') {
       const [summary, history, methods] = await Promise.all([
-        sbRpc(env, request, 'dz_wallet_summary'),
+        wallet(env, request, 'dz_wallet_summary'),
         sbService(env, '/wallet_history?user_id=eq.' + user.id +
           '&order=happened_at.desc&limit=100' +
           '&select=id,direction,category,title,amount,currency,status,provider,transaction_id,happened_at'),

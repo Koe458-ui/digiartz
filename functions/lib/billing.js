@@ -1,4 +1,4 @@
-import { sbUrl, sbAnon, sbService, ledger } from './sb.js';
+import { sbRpc, sbService, ledger } from './sb.js';
 import { minCharge, showAmount } from './money.js';
 
 export async function memberCurrency(env, userId) {
@@ -41,17 +41,10 @@ export async function resolvePromo(env, request, code, kind) {
   if (!raw) return { id: null, discountBps: 0 };
   if (!/^[A-Z0-9]{4,6}$/.test(raw)) return { error: 'That code does not look right' };
   try {
-    const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_promo_resolve', {
-      method: 'POST',
-      headers: {
-        apikey: sbAnon(env),
-        authorization: request.headers.get('authorization') || '',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ p_code: raw, p_kind: kind }),
-    });
+    const res = await sbRpc(env, 'dz_promo_resolve',
+      { p_code: raw, p_kind: kind }, request);
     if (!res.ok) return { error: 'That code could not be checked' };
-    const r = await res.json();
+    const r = res.body;
     if (!r || !r.ok) return { error: (r && r.error) || 'No such code' };
     const bps = Math.min(Math.max(Number(r.discount_bps) || 0, 0), 9500);
     return { id: r.id, code: raw, discountBps: bps };

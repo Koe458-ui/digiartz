@@ -1,4 +1,4 @@
-import { sbUrl, sbAnon, sbSvc, sbUser } from '../lib/sb.js';
+import { sbUrl, sbAnon, sbUser, sbService } from '../lib/sb.js';
 import { ZERO_DECIMAL } from '../lib/money.js';
 import { esc } from '../lib/http.js';
 
@@ -2500,20 +2500,6 @@ const MODULE = `
   window.dzFill();
 })(__dzStore);
 `;
-
-async function sbService(env, path, init = {}) {
-  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
-    ...init,
-    headers: {
-      apikey: sbSvc(env),
-      authorization: 'Bearer ' + sbSvc(env),
-      'content-type': 'application/json',
-      ...(init.headers || {}),
-    },
-  });
-  if (!res.ok) throw new Error('Database error (' + res.status + ')');
-  return res.json().catch(() => null);
-}
 
 function liveProviders(env) {
   const out = [];

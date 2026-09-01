@@ -1,4 +1,4 @@
-import { sbUrl, sbAnon, sbSvc, sbUser, underLimit } from '../lib/sb.js';
+import { sbUrl, sbAnon, sbSvc, sbUser, sbRpc, sbService as sbRead, underLimit } from '../lib/sb.js';
 import { UUID_RE } from '../lib/http.js';
 
 const json = (b, s = 200) =>
@@ -35,32 +35,15 @@ function refusalFrom(status, body) {
 }
 
 async function rpc(env, request, fn, args = {}) {
-  const res = await fetch(sbUrl(env) + '/rest/v1/rpc/' + fn, {
-    method: 'POST',
-    headers: {
-      apikey: sbAnon(env),
-      authorization: request.headers.get('authorization') || '',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(args),
-  });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) throw refusalFrom(res.status, body);
-  return body;
+  const res = await sbRpc(env, fn, args, request);
+  if (!res.ok) throw refusalFrom(res.status, res.body);
+  return res.body;
 }
 
-async function sbService(env, path, init = {}) {
-  const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
-    ...init,
-    headers: {
-      apikey: sbSvc(env),
-      authorization: 'Bearer ' + sbSvc(env),
-      'content-type': 'application/json',
-      ...(init.headers || {}),
-    },
-  });
-  if (!res.ok) throw new Refused('Database error (' + res.status + ')', 500);
-  return res.json().catch(() => null);
+/* The shared reader, with its failure said in this endpoint's own terms. */
+function sbService(env, path, init) {
+  return sbRead(env, path, init)
+    .catch((e) => { throw new Refused(e.message, 500); });
 }
 
 const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max);

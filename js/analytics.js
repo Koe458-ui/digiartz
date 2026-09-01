@@ -431,6 +431,30 @@
     host.appendChild(wrap);
   }
 
+  /* Every panel below is built from the same card: a head carrying a title and
+     an optional note or control, then whatever the panel draws. `anCard` hands
+     back the card, `cardBody` the plain box the drawing goes in, and
+     `factsCard` the whole thing when that box only holds a fact grid. */
+  function anCard(host, title, opts) {
+    opts = opts || {};
+    var c = el('div', 'anCard' + (opts.stack ? ' anStack' : ''));
+    var hd = el('div', 'anCardHd');
+    hd.appendChild(el('div', 'anCardTitle', title));
+    if (opts.note) hd.appendChild(el('div', 'anSecNote', opts.note));
+    if (opts.extra) hd.appendChild(opts.extra);
+    c.appendChild(hd);
+    if (host) host.appendChild(c);
+    return c;
+  }
+  function cardBody(host, title, opts) {
+    var body = el('div');
+    anCard(host, title, opts).appendChild(body);
+    return body;
+  }
+  function factsCard(host, title, list, opts) {
+    facts(cardBody(host, title, opts), list);
+  }
+
   var CARD_ROWS = 10;
 
   function moreBtn(label, onTap) {
@@ -731,13 +755,6 @@
 
     var t = o.totals || {};
     var sc = scopeOf(state.scope);
-    var card = el('div', 'anCard');
-    card.classList.add('anStack');
-    var hd = el('div', 'anCardHd');
-    hd.appendChild(el('div', 'anCardTitle', 'All time'));
-    hd.appendChild(el('div', 'anSecNote', sc.nouns + ' only'));
-    card.appendChild(hd);
-    var fbox = el('div');
     var tiles = [
       { n: full(t.items), l: sc.nouns.charAt(0).toUpperCase() + sc.nouns.slice(1) },
       { n: full(t.views_all), l: 'Total views' },
@@ -751,9 +768,7 @@
       : { n: full(t.downloads_all), l: 'Downloads' });
     tiles.push({ n: t.items > 0 ? full(Math.round((t.views_all || 0) / t.items)) : '0',
                  l: 'Views / ' + sc.noun });
-    facts(fbox, tiles);
-    card.appendChild(fbox);
-    b.appendChild(card);
+    factsCard(b, 'All time', tiles, { stack: true, note: sc.nouns + ' only' });
   }
 
   function paintGrowth() {
@@ -765,9 +780,6 @@
     var series = o.series;
     var labels = series.map(function (r) { return r.d; });
 
-    var card = el('div', 'anCard');
-    var hd = el('div', 'anCardHd');
-    hd.appendChild(el('div', 'anCardTitle', 'Daily totals'));
     var mx = metricsFor(state.scope);
     var legend = el('div', 'anLegend');
     mx.forEach(function (m) {
@@ -785,12 +797,7 @@
       });
       legend.appendChild(btn);
     });
-    hd.appendChild(legend);
-    card.appendChild(hd);
-
-    var chartHost = el('div');
-    card.appendChild(chartHost);
-    b.appendChild(card);
+    var chartHost = cardBody(b, 'Daily totals', { extra: legend });
 
     var picked = mx.filter(function (m) { return state.chartMetrics[m.key]; });
     lineChart(chartHost, labels, picked.map(function (m) {
@@ -810,13 +817,7 @@
     var streak = 0;
     for (var i = views.length - 1; i >= 0 && views[i] > 0; i--) streak++;
 
-    var f = el('div', 'anCard');
-    f.classList.add('anStack');
-    var fh = el('div', 'anCardHd');
-    fh.appendChild(el('div', 'anCardTitle', 'Trend read'));
-    f.appendChild(fh);
-    var fb = el('div');
-    facts(fb, [
+    factsCard(b, 'Trend read', [
       { n: trend, l: 'Second half vs first' },
       { n: full(best), l: best > 0 ? 'Best day · ' + shortDate(labels[bestI]) : 'Best day' },
       { n: full(Math.round((sum / Math.max(1, views.length)) * 10) / 10), l: 'Views per day' },
@@ -825,9 +826,7 @@
       { n: full((o['window'] || {}).uploads), l: 'Uploads this period' },
       { n: full((o['window'] || {}).views), l: 'Views this period' },
       { n: full((o.prev || {}).views), l: 'Views previous period' }
-    ]);
-    f.appendChild(fb);
-    b.appendChild(f);
+    ], { stack: true });
   }
 
   var ART_SORTS = [
@@ -923,9 +922,6 @@
     }
     b.innerHTML = '';
 
-    var card = el('div', 'anCard');
-    var hd = el('div', 'anCardHd');
-    hd.appendChild(el('div', 'anCardTitle', 'Ranked over the period'));
     var sorts = el('div', 'anSort');
     ART_SORTS.forEach(function (s) {
       var btn = el('button', 'anSortBtn' + (state.artSort === s.key ? ' on' : ''), s.label);
@@ -933,8 +929,7 @@
       btn.addEventListener('click', function () { state.artSort = s.key; paintArtworks(); });
       sorts.appendChild(btn);
     });
-    hd.appendChild(sorts);
-    card.appendChild(hd);
+    var card = anCard(b, 'Ranked over the period', { extra: sorts });
 
     var k = state.artSort;
     rows.sort(function (x, y) {
@@ -942,30 +937,20 @@
       return (Number(y[k]) || 0) - (Number(x[k]) || 0);
     });
 
-    var list = artRows(rows, CARD_ROWS);
-    card.appendChild(list);
+    card.appendChild(artRows(rows, CARD_ROWS));
     if (rows.length > CARD_ROWS) {
       card.appendChild(moreBtn('View all', function () { openAnList('items'); }));
     }
-    b.appendChild(card);
 
     var byViews = rows.slice().sort(function (x, y) { return (y.views || 0) - (x.views || 0); });
     var top = byViews[0], low = byViews[byViews.length - 1];
-    var f = el('div', 'anCard');
-    f.classList.add('anStack');
-    var fh = el('div', 'anCardHd');
-    fh.appendChild(el('div', 'anCardTitle', 'Highs and lows'));
-    f.appendChild(fh);
-    var fb = el('div');
-    facts(fb, [
+    factsCard(b, 'Highs and lows', [
       { n: full(top ? top.views : 0), l: top ? 'Best: ' + top.title : 'Best' },
       { n: full(low ? low.views : 0), l: low ? 'Quietest: ' + low.title : 'Quietest' },
       { n: full(rows.reduce(function (a, r) { return a + (Number(r.views) || 0); }, 0)), l: 'Views in period' },
       { n: pct(rows.reduce(function (a, r) { return a + (Number(r.engagement) || 0); }, 0) / rows.length),
         l: 'Average engagement' }
-    ]);
-    f.appendChild(fb);
-    b.appendChild(f);
+    ], { stack: true });
   }
 
   function paintContent() {
@@ -976,11 +961,7 @@
 
     var g = el('div', 'anGrid2');
 
-    var catCard = el('div', 'anCard');
-    var ch = el('div', 'anCardHd');
-    ch.appendChild(el('div', 'anCardTitle', 'Views by category'));
-    catCard.appendChild(ch);
-    var catHost = el('div');
+    var catHost = cardBody(g, 'Views by category');
     var cats = (c.by_category || []).map(function (r, i) {
       return {
         label: (typeof catLabel === 'function' ? (catLabel(r.key) || r.key) : r.key),
@@ -989,40 +970,22 @@
       };
     });
     if (cats.length) bars(catHost, cats); else empty(catHost, 'NO CATEGORIES YET');
-    catCard.appendChild(catHost);
-    g.appendChild(catCard);
 
-    var tagCard = el('div', 'anCard');
-    var th = el('div', 'anCardHd');
-    th.appendChild(el('div', 'anCardTitle', 'Views by tag'));
-    tagCard.appendChild(th);
-    var tagHost = el('div');
+    var tagHost = cardBody(g, 'Views by tag');
     var tags = (c.by_tag || []).slice(0, 10).map(function (r) {
       return { label: '#' + r.key, n: r.views, sub: full(r.views) };
     });
     if (tags.length) bars(tagHost, tags, '#FF3DE0');
     else empty(tagHost, 'TAG YOUR WORK AND THIS FILLS IN');
-    tagCard.appendChild(tagHost);
-    g.appendChild(tagCard);
 
-    var softCard = el('div', 'anCard');
-    var sh = el('div', 'anCardHd');
-    sh.appendChild(el('div', 'anCardTitle', 'Views by software'));
-    softCard.appendChild(sh);
-    var softHost = el('div');
+    var softHost = cardBody(g, 'Views by software');
     var softs = (c.by_software || []).map(function (r) {
       return { label: r.key, n: r.views, sub: full(r.views) };
     });
     if (softs.length) bars(softHost, softs, '#00D9B8');
     else empty(softHost, 'NAME THE SOFTWARE ON AN UPLOAD AND THIS FILLS IN');
-    softCard.appendChild(softHost);
-    g.appendChild(softCard);
 
-    var cadCard = el('div', 'anCard');
-    var dh = el('div', 'anCardHd');
-    dh.appendChild(el('div', 'anCardTitle', 'Uploads per month'));
-    cadCard.appendChild(dh);
-    var cadHost = el('div');
+    var cadHost = cardBody(g, 'Uploads per month');
     var cad = (c.cadence || []).map(function (r) {
       var parts = String(r.month).split('-');
       var dt = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, 1));
@@ -1033,19 +996,11 @@
     });
     if (cad.length) bars(cadHost, cad, '#16D95F');
     else empty(cadHost, 'NO UPLOADS IN THE LAST YEAR');
-    cadCard.appendChild(cadHost);
-    g.appendChild(cadCard);
 
     b.appendChild(g);
 
     var s = c.shape || {};
-    var f = el('div', 'anCard');
-    f.classList.add('anStack');
-    var fh = el('div', 'anCardHd');
-    fh.appendChild(el('div', 'anCardTitle', 'Your body of work'));
-    f.appendChild(fh);
-    var fb = el('div');
-    facts(fb, [
+    factsCard(b, 'Your body of work', [
       { n: full(s.artworks), l: scopeOf(state.scope).nouns.charAt(0).toUpperCase() +
                                  scopeOf(state.scope).nouns.slice(1) },
       { n: full(s.approved), l: 'Approved' },
@@ -1055,9 +1010,7 @@
       { n: full(s.avg_likes), l: 'Average likes' },
       { n: full(s.licensed), l: 'With a licence' },
       { n: s.last_upload ? ago(s.last_upload) : '—', l: 'Last upload' }
-    ]);
-    f.appendChild(fb);
-    b.appendChild(f);
+    ], { stack: true });
   }
 
   function paintAudience() {
@@ -1067,12 +1020,7 @@
     b.innerHTML = '';
     var a = r.audience || {};
 
-    var f = el('div', 'anCard');
-    var fh = el('div', 'anCardHd');
-    fh.appendChild(el('div', 'anCardTitle', 'Who came by'));
-    f.appendChild(fh);
-    var fb = el('div');
-    facts(fb, [
+    factsCard(b, 'Who came by', [
       { n: full(a.viewers), l: 'Unique viewers' },
       { n: full(a['new']), l: 'Saw you once' },
       { n: full(a.returning), l: 'Came back' },
@@ -1082,56 +1030,32 @@
       { n: full((r.countries || []).length), l: 'Countries seen' },
       { n: full((a.top_fans || []).length), l: 'Active fans' }
     ]);
-    f.appendChild(fb);
-    b.appendChild(f);
 
     var g = el('div', 'anGrid2');
 
-    var cCard = el('div', 'anCard');
-    var chd = el('div', 'anCardHd');
-    chd.appendChild(el('div', 'anCardTitle', 'Countries'));
-    cCard.appendChild(chd);
-    var cHost = el('div');
+    var cHost = cardBody(g, 'Countries');
     var countries = (r.countries || []).map(function (x, i) {
       return { label: flag(x.key) + '  ' + countryName(x.key), n: x.n, hex: WHEEL[i % WHEEL.length] };
     });
     if (countries.length) donut(cHost, countries, { midLabel: 'views' });
     else empty(cHost, dimNote(r));
-    cCard.appendChild(cHost);
-    g.appendChild(cCard);
 
-    var fanCard = el('div', 'anCard');
-    var fhd = el('div', 'anCardHd');
-    fhd.appendChild(el('div', 'anCardTitle', 'Top fans'));
-    fanCard.appendChild(fhd);
-    var fanHost = el('div');
+    var fanHost = cardBody(g, 'Top fans');
     var fans = a.top_fans || [];
     if (fans.length) {
       var wrap = el('div', 'anPeople');
       fans.forEach(function (p) { wrap.appendChild(personRow(p, p.n + (p.n === 1 ? ' action' : ' actions'))); });
       fanHost.appendChild(wrap);
     } else empty(fanHost, 'NOBODY HAS LIKED, SAVED OR COMMENTED YET');
-    fanCard.appendChild(fanHost);
-    g.appendChild(fanCard);
 
-    var wdCard = el('div', 'anCard');
-    var whd = el('div', 'anCardHd');
-    whd.appendChild(el('div', 'anCardTitle', 'Busiest weekday'));
-    wdCard.appendChild(whd);
-    var wdHost = el('div');
+    var wdHost = cardBody(g, 'Busiest weekday');
     var wd = (a.by_weekday || []).map(function (x) {
       return { label: WEEKDAY[x.w] || String(x.w), n: x.n, sub: full(x.n) };
     });
     if (wd.some(function (x) { return x.n > 0; })) bars(wdHost, wd);
     else empty(wdHost, 'NO VIEWS IN THIS PERIOD');
-    wdCard.appendChild(wdHost);
-    g.appendChild(wdCard);
 
-    var hCard = el('div', 'anCard');
-    var hhd = el('div', 'anCardHd');
-    hhd.appendChild(el('div', 'anCardTitle', 'Views by hour (UTC)'));
-    hCard.appendChild(hhd);
-    var hHost = el('div');
+    var hHost = cardBody(g, 'Views by hour (UTC)');
     var hours = a.by_hour || [];
     if (hours.some(function (x) { return x.n > 0; })) {
       var maxH = hours.reduce(function (m, x) { return Math.max(m, x.n); }, 1);
@@ -1147,8 +1071,6 @@
       ['00', '06', '12', '18', '23'].forEach(function (t) { ax.appendChild(el('span', null, t)); });
       hHost.appendChild(ax);
     } else empty(hHost, dimNote(r));
-    hCard.appendChild(hHost);
-    g.appendChild(hCard);
 
     b.appendChild(g);
   }
@@ -1196,47 +1118,28 @@
 
     var g = el('div', 'anGrid2');
 
-    var sCard = el('div', 'anCard');
-    var sh = el('div', 'anCardHd');
-    sh.appendChild(el('div', 'anCardTitle', 'How people arrived'));
-    sCard.appendChild(sh);
-    var sHost = el('div');
+    var sHost = cardBody(g, 'How people arrived');
     var srcs = (r.sources || []).map(function (x) {
       return { label: SOURCE_LABEL[x.key] || x.key, n: x.n, hex: SOURCE_HEX[x.key] || '#8A8F98' };
     });
     if (srcs.length) donut(sHost, srcs, { midLabel: 'views' });
     else empty(sHost, dimNote(r));
-    sCard.appendChild(sHost);
-    g.appendChild(sCard);
 
-    var dCard = el('div', 'anCard');
-    var dh = el('div', 'anCardHd');
-    dh.appendChild(el('div', 'anCardTitle', 'Devices'));
-    dCard.appendChild(dh);
-    var dHost = el('div');
+    var dHost = cardBody(g, 'Devices');
     var devs = (r.devices || []).map(function (x) {
       return { label: DEVICE_LABEL[x.key] || x.key, n: x.n, hex: DEVICE_HEX[x.key] || '#8A8F98' };
     });
     if (devs.length) donut(dHost, devs, { midLabel: 'views' });
     else empty(dHost, dimNote(r));
-    dCard.appendChild(dHost);
-    g.appendChild(dCard);
 
     b.appendChild(g);
 
-    var rCard = el('div', 'anCard');
-    rCard.classList.add('anStack');
-    var rh = el('div', 'anCardHd');
-    rh.appendChild(el('div', 'anCardTitle', 'Sites that sent people'));
-    rCard.appendChild(rh);
-    var rHost = el('div');
+    var rHost = cardBody(b, 'Sites that sent people', { stack: true });
     var refs = (r.referrers || []).map(function (x) {
       return { label: x.key, n: x.n, sub: full(x.n) };
     });
     if (refs.length) bars(rHost, refs, '#FFB300');
     else empty(rHost, 'NO OUTSIDE LINKS RECORDED — SHARE A PIECE AND WATCH THIS');
-    rCard.appendChild(rHost);
-    b.appendChild(rCard);
   }
 
   function paintSearch() {
@@ -1247,26 +1150,15 @@
     var s = r.search || {};
     var terms = s.terms || [];
 
-    var f = el('div', 'anCard');
-    var fh = el('div', 'anCardHd');
-    fh.appendChild(el('div', 'anCardTitle', 'On-site search'));
-    f.appendChild(fh);
-    var fb = el('div');
     var ctr = s.impressions > 0 ? Math.round((s.clicks / s.impressions) * 1000) / 10 : 0;
-    facts(fb, [
+    factsCard(b, 'On-site search', [
       { n: full(s.impressions), l: 'Times you appeared' },
       { n: full(s.clicks), l: 'Times you were opened' },
       { n: ctr + '%', l: 'Click-through rate' },
       { n: full(terms.length), l: 'Distinct terms' }
     ]);
-    f.appendChild(fb);
-    b.appendChild(f);
 
-    var card = el('div', 'anCard');
-    card.classList.add('anStack');
-    var hd = el('div', 'anCardHd');
-    hd.appendChild(el('div', 'anCardTitle', 'What people searched'));
-    card.appendChild(hd);
+    var card = anCard(b, 'What people searched', { stack: true });
     if (!terms.length) {
       empty(card, dimNote(r));
     } else {
@@ -1287,7 +1179,6 @@
       });
       card.appendChild(wrap);
     }
-    b.appendChild(card);
   }
 
   function paintEngagement() {
@@ -1299,10 +1190,7 @@
 
     var g = el('div', 'anGrid2w');
 
-    var rCard = el('div', 'anCard');
-    var rh = el('div', 'anCardHd');
-    rh.appendChild(el('div', 'anCardTitle', 'What a view turns into'));
-    rCard.appendChild(rh);
+    var rCard = anCard(g, 'What a view turns into');
     var row = el('div', 'anRingRow');
     var ringHost = el('div');
     ring(ringHost, e.rate, 'engaged', '#00A6FF');
@@ -1318,14 +1206,8 @@
     rates.appendChild(rateHost);
     row.appendChild(rates);
     rCard.appendChild(row);
-    g.appendChild(rCard);
 
-    var fCard = el('div', 'anCard');
-    var fh = el('div', 'anCardHd');
-    fh.appendChild(el('div', 'anCardTitle', 'Totals'));
-    fCard.appendChild(fh);
-    var fb = el('div');
-    facts(fb, [
+    factsCard(g, 'Totals', [
       { n: full(e.views), l: 'Views' },
       { n: full(e.likes), l: 'Likes' },
       { n: full(e.bookmarks), l: 'Saves' },
@@ -1335,16 +1217,10 @@
       { n: pct(e.rate), l: 'Engagement rate' },
       { n: full(e.views > 0 ? Math.round((e.likes / e.views) * 100) / 100 : 0), l: 'Likes per view' }
     ]);
-    fCard.appendChild(fb);
-    g.appendChild(fCard);
     b.appendChild(g);
 
     var feed = a.activity || [];
-    var card = el('div', 'anCard');
-    card.classList.add('anStack');
-    var hd = el('div', 'anCardHd');
-    hd.appendChild(el('div', 'anCardTitle', 'Latest on your work'));
-    card.appendChild(hd);
+    var card = anCard(b, 'Latest on your work', { stack: true });
     if (!feed.length) {
       empty(card, 'NOTHING YET');
     } else {
@@ -1355,7 +1231,6 @@
         card.appendChild(moreBtn('View all', function () { openAnList('activity'); }));
       }
     }
-    b.appendChild(card);
   }
 
   function paintRevenue() {
@@ -1375,13 +1250,7 @@
       } catch (e) { return cur + ' ' + n.toFixed(2); }
     }
 
-    var fCard = el('div', 'anCard');
-    var fh = el('div', 'anCardHd');
-    fh.appendChild(el('div', 'anCardTitle', 'Earned in this period'));
-    fh.appendChild(el('div', 'anSecNote', 'after the platform fee'));
-    fCard.appendChild(fh);
-    var fb = el('div');
-    facts(fb, [
+    factsCard(b, 'Earned in this period', [
       { n: money(r.net), l: 'Net this period' },
       { n: money(r.gross), l: 'Gross' },
       { n: money(r.fees), l: 'Fees' },
@@ -1390,15 +1259,9 @@
       { n: money(r.available), l: 'Available' },
       { n: money(r.pending), l: 'Clearing' },
       { n: r.sales > 0 ? money(Math.round(r.net / r.sales)) : money(0), l: 'Average sale' }
-    ]);
-    fCard.appendChild(fb);
-    b.appendChild(fCard);
+    ], { note: 'after the platform fee' });
 
-    var cCard = el('div', 'anCard anStack');
-    var ch = el('div', 'anCardHd');
-    ch.appendChild(el('div', 'anCardTitle', 'Earned per day'));
-    cCard.appendChild(ch);
-    var cHost = el('div');
+    var cHost = cardBody(b, 'Earned per day', { stack: true });
     var srs = r.series || [];
     if (srs.some(function (x) { return Number(x.net) > 0; })) {
       lineChart(cHost, srs.map(function (x) { return x.d; }), [{
@@ -1406,8 +1269,6 @@
         values: srs.map(function (x) { return (Number(x.net) || 0) / 100; })
       }]);
     } else empty(cHost, 'NOTHING EARNED IN THIS PERIOD');
-    cCard.appendChild(cHost);
-    b.appendChild(cCard);
   }
 
   function paintAccount() {
@@ -1417,29 +1278,16 @@
     b.innerHTML = '';
     var f = a.account || {};
 
-    var fCard = el('div', 'anCard');
-    var fh = el('div', 'anCardHd');
-    fh.appendChild(el('div', 'anCardTitle', 'Cred received'));
-    fh.appendChild(el('div', 'anSecNote', 'account-wide \u2014 cred is given to you, not to a ' +
-                                          scopeOf(state.scope).noun));
-    fCard.appendChild(fh);
-    var fb = el('div');
-    facts(fb, [
+    factsCard(b, 'Cred received', [
       { n: full(f.cred_total), l: 'Cred all time' },
       { n: '+' + full(f.cred_gained), l: 'This period' },
       { n: full(f.cred_givers), l: 'Artists who gave it' },
       { n: full(f.cred_given), l: 'Cred you gave' }
-    ]);
-    fCard.appendChild(fb);
-    b.appendChild(fCard);
+    ], { note: 'account-wide \u2014 cred is given to you, not to a ' + scopeOf(state.scope).noun });
 
     var g = el('div', 'anGrid2 anStack');
 
-    var cCard = el('div', 'anCard');
-    var ch = el('div', 'anCardHd');
-    ch.appendChild(el('div', 'anCardTitle', 'Cred per day'));
-    cCard.appendChild(ch);
-    var cHost = el('div');
+    var cHost = cardBody(g, 'Cred per day');
     var srs = f.cred_series || [];
     if (srs.some(function (x) { return x.gained > 0; })) {
       lineChart(cHost, srs.map(function (x) { return x.d; }), [{
@@ -1447,22 +1295,14 @@
         values: srs.map(function (x) { return Number(x.gained) || 0; })
       }]);
     } else empty(cHost, 'NO CRED IN THIS PERIOD');
-    cCard.appendChild(cHost);
-    g.appendChild(cCard);
 
-    var rCard = el('div', 'anCard');
-    var rh = el('div', 'anCardHd');
-    rh.appendChild(el('div', 'anCardTitle', 'Who gave it'));
-    rCard.appendChild(rh);
-    var rHost = el('div');
+    var rHost = cardBody(g, 'Who gave it');
     var recent = f.cred_recent || [];
     if (recent.length) {
       var wrap = el('div', 'anPeople');
       recent.forEach(function (p) { wrap.appendChild(personRow(p, ago(p.at))); });
       rHost.appendChild(wrap);
     } else empty(rHost, 'NOBODY HAS GIVEN YOU CRED YET');
-    rCard.appendChild(rHost);
-    g.appendChild(rCard);
 
     b.appendChild(g);
   }
@@ -1474,13 +1314,7 @@
     b.innerHTML = '';
     var c = a.account || {};
 
-    var card = el('div', 'anCard');
-    var hd = el('div', 'anCardHd');
-    hd.appendChild(el('div', 'anCardTitle', 'Your part in the place'));
-    hd.appendChild(el('div', 'anSecNote', 'account-wide'));
-    card.appendChild(hd);
-    var fb = el('div');
-    facts(fb, [
+    factsCard(b, 'Your part in the place', [
       { n: full(c.communities_joined), l: 'Communities joined' },
       { n: full(c.communities_owned), l: 'Communities you run' },
       { n: full(c.messages), l: 'Messages sent' },
@@ -1489,9 +1323,7 @@
       { n: full(c.friends), l: 'Friends' },
       { n: full(c.profile_views), l: 'Profile views' },
       { n: full(c.merit), l: 'Merit' }
-    ]);
-    card.appendChild(fb);
-    b.appendChild(card);
+    ], { note: 'account-wide' });
   }
 
   var GOAL_METRICS = [
@@ -1525,11 +1357,7 @@
     if (!a || a.error) { empty(b, 'COULDN’T LOAD GOALS'); return; }
     b.innerHTML = '';
 
-    var gCard = el('div', 'anCard');
-    var gh = el('div', 'anCardHd');
-    gh.appendChild(el('div', 'anCardTitle', 'Goals'));
-    gh.appendChild(el('div', 'anSecNote', 'for ' + scopeOf(state.scope).nouns));
-    gCard.appendChild(gh);
+    var gCard = anCard(b, 'Goals', { note: 'for ' + scopeOf(state.scope).nouns });
 
     var goals = a.goals || [];
     var list = el('div', 'anGoals');
@@ -1594,15 +1422,10 @@
     });
     form.appendChild(mSel); form.appendChild(tIn); form.appendChild(pSel); form.appendChild(add);
     gCard.appendChild(form);
-    b.appendChild(gCard);
 
-    var aCard = el('div', 'anCard');
-    aCard.classList.add('anStack');
-    var ah = el('div', 'anCardHd');
-    ah.appendChild(el('div', 'anCardTitle', 'Achievements'));
     var done = (a.achievements || []).filter(function (x) { return x.done; }).length;
-    ah.appendChild(el('div', 'anSecNote', done + ' of ' + (a.achievements || []).length + ' earned'));
-    aCard.appendChild(ah);
+    var aCard = anCard(b, 'Achievements', { stack: true,
+      note: done + ' of ' + (a.achievements || []).length + ' earned' });
     var grid = el('div', 'anAch');
     (a.achievements || []).forEach(function (x) {
       var card = el('div', 'anAchCard' + (x.done ? ' done' : ''));
@@ -1621,7 +1444,6 @@
       grid.appendChild(card);
     });
     aCard.appendChild(grid);
-    b.appendChild(aCard);
   }
 
   async function addGoal(metric, target, period) {
@@ -1657,25 +1479,15 @@
     b.innerHTML = '';
     var cmp = o.compare || {}, win = o['window'] || {}, prev = o.prev || {};
 
-    var pCard = el('div', 'anCard');
-    var ph = el('div', 'anCardHd');
-    ph.appendChild(el('div', 'anCardTitle', 'This period vs the one before'));
-    pCard.appendChild(ph);
-    var pHost = el('div');
+    var pHost = cardBody(b, 'This period vs the one before');
     bars(pHost, metricsFor(state.scope).map(function (m) {
       var cur = Number(win[m.key]) || 0, pv = Number(prev[m.key]) || 0;
       var d = delta(cur, pv);
       return { label: m.label, n: cur, sub: full(cur) + ' vs ' + full(pv) + ' · ' + d.txt.replace(' on previous', '') };
     }));
-    pCard.appendChild(pHost);
-    b.appendChild(pCard);
 
-    var sCard = el('div', 'anCard');
-    sCard.classList.add('anStack');
-    var sh = el('div', 'anCardHd');
-    sh.appendChild(el('div', 'anCardTitle', 'Against the rest of DigiArtz'));
-    sh.appendChild(el('div', 'anSecNote', 'views over the same window'));
-    sCard.appendChild(sh);
+    var sCard = anCard(b, 'Against the rest of DigiArtz',
+      { stack: true, note: 'views over the same window' });
 
     var top = Math.max(Number(cmp.my_views) || 0, Number(cmp.median_views) || 0, Number(cmp.avg_views) || 0, 1);
     var wrap = el('div', 'anCmpWrap');
@@ -1713,7 +1525,6 @@
       { n: (cmp.percentile == null ? 0 : cmp.percentile) + '%', l: 'You beat this share' }
     ]);
     sCard.appendChild(fb);
-    b.appendChild(sCard);
   }
 
   function refresh() {

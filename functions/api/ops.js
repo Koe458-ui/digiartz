@@ -1,4 +1,4 @@
-import { sbUrl, sbAnon, sbUser } from '../lib/sb.js';
+import { sbUrl, sbAnon, sbUser, sbRpc } from '../lib/sb.js';
 
 const TABS_STAFF = [
   ['tel', 'TELEMETRY'], ['rpt', 'REPORTS'], ['mod', 'MODERATION'],
@@ -310,39 +310,51 @@ const HEAD = `
   // Accounts. The queue a partner is here for, and the one the ban engine
   // acts on. dz_reports_queue already narrows a partner's rows to the accounts
   // they may act on, so nothing is filtered here.
+  // One card, whichever queue the row came from. `who` and `meta` are already
+  // escaped markup; `details` is the reporter's own words and the one field on
+  // the card somebody else typed, so it goes in as text.
+  function rptFill(p, rows, card){
+    if(!rows.length) return rptEmpty(p);
+    p.empty.hidden = true;
+    p.list.innerHTML = '';
+    rows.forEach(function(rep){
+      var o = card(rep);
+      var el = document.createElement('div');
+      el.className = 'pfCard admRptCard';
+      el.innerHTML =
+        '<div class="admRptWhy">\\ud83d\\udea9 ' +
+          esc(RPT_LABELS[rep.reason] || rep.reason) + '</div>' +
+        '<div class="admRptWho">' + o.who + '</div>' +
+        (rep.details ? '<div class="admRptDet"></div>' : '') +
+        '<div class="admRptMeta">' + o.meta + '</div>' +
+        '<div class="admRptActs"></div>';
+      if(rep.details) el.querySelector('.admRptDet').textContent = rep.details;
+      var acts = el.querySelector('.admRptActs');
+      o.acts.forEach(function(a){ acts.appendChild(btn(a[0], a[1])); });
+      p.list.appendChild(el);
+    });
+  }
+
+  function rptWhen(at){ return esc(at ? new Date(at).toLocaleString() : ''); }
+
   function loadUserReports(){
     var p = rptParts();
     if(!p) return;
     api('reports', {status:'pending'}).then(function(r){
       var rows = (r && r.reports) || [];
       rptCount(rows.length);
-      if(!rows.length) return rptEmpty(p);
-      p.empty.hidden = true;
-      p.list.innerHTML = '';
-      rows.forEach(function(rep){
-        var card = document.createElement('div');
-        card.className = 'pfCard admRptCard';
-        card.innerHTML =
-          '<div class="admRptWhy">\\ud83d\\udea9 ' +
-            esc(RPT_LABELS[rep.reason] || rep.reason) + '</div>' +
-          '<div class="admRptWho">@' + esc(rep.target_username || 'unknown') +
-            (rep.target_banned ? ' <span class="admRptBanned">banned</span>' : '') + '</div>' +
-          (rep.details ? '<div class="admRptDet"></div>' : '') +
-          '<div class="admRptMeta">by @' + esc(rep.reporter_username || 'someone') +
-            ' \\u00b7 ' + esc(rep.created_at ? new Date(rep.created_at).toLocaleString() : '') +
-          '</div><div class="admRptActs"></div>';
-        // The reporter's own words. The one field on this card somebody else
-        // typed, so it goes in as text.
-        if(rep.details) card.querySelector('.admRptDet').textContent = rep.details;
-
-        var acts = card.querySelector('.admRptActs');
-        acts.appendChild(btn('REVIEW', function(){
-          switchTo('mod');
-          modSearch(rep.target_id, true);
-        }));
-        acts.appendChild(btn('RESOLVE', function(){ resolveUser(rep.id, 'resolved'); }));
-        acts.appendChild(btn('DISMISS', function(){ resolveUser(rep.id, 'dismissed'); }));
-        p.list.appendChild(card);
+      rptFill(p, rows, function(rep){
+        return {
+          who: '@' + esc(rep.target_username || 'unknown') +
+               (rep.target_banned ? ' <span class="admRptBanned">banned</span>' : ''),
+          meta: 'by @' + esc(rep.reporter_username || 'someone') +
+                ' \\u00b7 ' + rptWhen(rep.created_at),
+          acts: [
+            ['REVIEW',  function(){ switchTo('mod'); modSearch(rep.target_id, true); }],
+            ['RESOLVE', function(){ resolveUser(rep.id, 'resolved'); }],
+            ['DISMISS', function(){ resolveUser(rep.id, 'dismissed'); }]
+          ]
+        };
       });
     }, function(err){ rptEmpty(p, err.message); });
   }
@@ -365,32 +377,18 @@ const HEAD = `
       .eq('status','open').order('created_at',{ascending:false}).limit(100)
       .then(function(r){
         if(r.error){ rptEmpty(p, 'Could not load reports.'); return; }
-        var rows = r.data || [];
-        if(!rows.length) return rptEmpty(p);
-        p.empty.hidden = true;
-        p.list.innerHTML = '';
-        rows.forEach(function(rep){
-          var art = rep.artworks || {};
-          var card = document.createElement('div');
-          card.className = 'pfCard admRptCard';
-          card.innerHTML =
-            '<div class="admRptWhy">\\ud83d\\udea9 ' +
-              esc(RPT_LABELS[rep.reason] || rep.reason) + '</div>' +
-            '<div class="admRptWho"></div>' +
-            (rep.details ? '<div class="admRptDet"></div>' : '') +
-            '<div class="admRptMeta">' +
-              esc(rep.created_at ? new Date(rep.created_at).toLocaleString() : '') +
-            '</div><div class="admRptActs"></div>';
-          card.querySelector('.admRptWho').textContent = art.name || '(untitled artwork)';
-          if(rep.details) card.querySelector('.admRptDet').textContent = rep.details;
-
-          var acts = card.querySelector('.admRptActs');
-          acts.appendChild(btn('VIEW', function(){
-            if(typeof openArtworkById === 'function') openArtworkById(String(rep.artwork_id), false);
-          }));
-          acts.appendChild(btn('RESOLVE', function(){ resolveItem(rep.id, 'resolved'); }));
-          acts.appendChild(btn('DISMISS', function(){ resolveItem(rep.id, 'dismissed'); }));
-          p.list.appendChild(card);
+        rptFill(p, r.data || [], function(rep){
+          return {
+            who: esc((rep.artworks || {}).name || '(untitled artwork)'),
+            meta: rptWhen(rep.created_at),
+            acts: [
+              ['VIEW', function(){
+                if(typeof openArtworkById === 'function') openArtworkById(String(rep.artwork_id), false);
+              }],
+              ['RESOLVE', function(){ resolveItem(rep.id, 'resolved'); }],
+              ['DISMISS', function(){ resolveItem(rep.id, 'dismissed'); }]
+            ]
+          };
         });
       }, function(){ rptEmpty(p, 'Could not load reports.'); });
   }
@@ -894,17 +892,8 @@ const FOOT = `
 `;
 
 async function roleOf(env, request) {
-  const res = await fetch(sbUrl(env) + '/rest/v1/rpc/dz_my_collab_state', {
-    method: 'POST',
-    headers: {
-      apikey: sbAnon(env),
-      authorization: request.headers.get('authorization') || '',
-      'content-type': 'application/json',
-    },
-    body: '{}',
-  });
-  if (!res.ok) return null;
-  return res.json().catch(() => null);
+  const res = await sbRpc(env, 'dz_my_collab_state', {}, request);
+  return res.ok ? res.body : null;
 }
 
 export async function onRequestGet({ env, request }) {

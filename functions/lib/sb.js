@@ -34,6 +34,27 @@ export function peekJwt(token) {
   } catch { return null; }
 }
 
+/* POST to a Postgres function. Pass `request` and the caller's own bearer is
+   forwarded against the anon key, so Postgres decides what they may see; leave
+   it out and the service key asks. The two edge modules, the payout endpoint
+   and the billing helper each carried their own copy of this fetch, and the
+   rate limiter and the ledger a service-key one. Answers with the status so
+   each caller can keep refusing in its own words. */
+export async function sbRpc(env, fn, args = {}, request) {
+  const base = String(sbUrl(env) || SB_URL_FALLBACK).replace(/\/$/, '');
+  const key = request ? sbAnon(env) : sbSvc(env);
+  const res = await fetch(base + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: {
+      apikey: key,
+      authorization: request ? (request.headers.get('authorization') || '') : 'Bearer ' + key,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(args),
+  });
+  return { ok: res.ok, status: res.status, body: await res.json().catch(() => null) };
+}
+
 export async function sbService(env, path, init = {}) {
   const res = await fetch(sbUrl(env) + '/rest/v1' + path, {
     ...init,
@@ -71,21 +92,11 @@ export async function signObject(sbUrlStr, svcKey, bucket, path, seconds) {
    slightly different ways. A bucket that cannot be counted is allowed
    through: a rate limiter that fails closed would take the site down. */
 export async function underLimit(env, bucket, limit, seconds) {
-  const key = sbSvc(env);
-  if (!key) return true;
-  const base = String(sbUrl(env) || SB_URL_FALLBACK).replace(/\/$/, '');
+  if (!sbSvc(env)) return true;
   try {
-    const res = await fetch(base + '/rest/v1/rpc/dz_rate_take', {
-      method: 'POST',
-      headers: {
-        apikey: key,
-        authorization: 'Bearer ' + key,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ p_bucket: bucket, p_limit: limit, p_seconds: seconds }),
-    });
-    if (!res.ok) return true;
-    return (await res.json()) !== false;
+    const r = await sbRpc(env, 'dz_rate_take',
+      { p_bucket: bucket, p_limit: limit, p_seconds: seconds });
+    return !r.ok || r.body !== false;
   } catch { return true; }
 }
 
@@ -108,15 +119,5 @@ export async function hmacMatches(secret, message, signature) {
 }
 
 export async function ledger(env, args) {
-  try {
-    await fetch(sbUrl(env) + '/rest/v1/rpc/dz_ledger_append', {
-      method: 'POST',
-      headers: {
-        apikey: sbSvc(env),
-        authorization: 'Bearer ' + sbSvc(env),
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(args),
-    });
-  } catch {   }
+  try { await sbRpc(env, 'dz_ledger_append', args); } catch {   }
 }

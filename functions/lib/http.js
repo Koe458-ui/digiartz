@@ -61,6 +61,17 @@ export function json(obj, status, extra) {
   });
 }
 
+/* The 404 both catch-all routes answer with: /supabase/* and /security/* are
+   internal paths that must not look like anything from the outside. */
+export const notFound = () => new Response('Not found', {
+  status: 404,
+  headers: {
+    'content-type': 'text/plain; charset=utf-8',
+    'cache-control': 'no-store',
+    'x-robots-tag': 'noindex, nofollow',
+  },
+});
+
 export function downloadHeaders(name, type) {
   return new Headers({
     'Content-Type': type || 'application/octet-stream',
